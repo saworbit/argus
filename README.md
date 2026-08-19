@@ -4,6 +4,8 @@ Argus is an advanced deathmatch bot for Quake 1 built in pure vanilla QuakeC. It
 
 The bot combines the spiritual lineage of the **Reaper Bot** (1996) and **Omicron Bot** (1997) with a modern, closed-loop telemetry and analysis pipeline. Every subsystem — from movement physics and hazard avoidance to Goal-Oriented Action Planning (GOAP) and humanized aim tracking — is tuned from empirical match telemetry.
 
+![Argus navigation graph for dm2 (Claustrophobopolis): waypoints, walk and drop links, typed jump / rocket-jump / lift / door / train links over the BSP wireframe](docs/media/nav_dm2.png)
+
 ---
 
 ## System architecture
@@ -354,4 +356,4 @@ Lava deaths in experiment/compare are hull-0 contents (same as `analyze_match.py
 
 ## License
 
-The QuakeC game mod is licensed under the GNU General Public License v2 (GPL-2.0), matching the original 1996 Quake 1.06 source code and LibreQuake base. Python tooling, documentation, and the Rust Lab MCP server are provided under the MIT License.
+The QuakeC game mod (`src/`, `game/`) is licensed under the GNU General Public License v2 ([LICENSE](LICENSE)), matching the original 1996 Quake 1.06 source code and LibreQuake base it derives from. The Python tooling, documentation, and the Rust lab MCP server are provided under the MIT License ([LICENSE-MIT](LICENSE-MIT)).

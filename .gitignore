@@ -34,6 +34,9 @@ match.log
 # history and safe to commit (runs/*.png are regenerable plots)
 !runs/*.log
 
+# curated README media is the one PNG exception
+!docs/media/*.png
+
 # assistant, agent, and IDE configuration
 .claude/
 .claude
