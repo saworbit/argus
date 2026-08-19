@@ -1361,13 +1361,27 @@ void() Argus_Physics =
                 }
             }
 
-            if (Argus_MoveHazard (myaw, 32))
+            // speed-scaled probe distance (the dm4 lava-band session):
+            // a fixed 32u at 320+ u/s is a tenth of a second of
+            // reaction, and the pit-floor boundary ate full-sprint
+            // crossers for six straight builds. Scale with speed up
+            // to 52 - inside the 48u envelope the steering fan
+            // already probes safely, and the guard has since gained
+            // the bridge test, the stair rescue and the HazardSteer
+            // hold that the 2026-08-14 long-probe walkway storms
+            // predate.
+            rhoriz = 32;
+            if (spd > 250)
+                rhoriz = 32 + (spd - 250) * 0.11;
+            if (rhoriz > 52)
+                rhoriz = 52;
+            if (Argus_MoveHazard (myaw, rhoriz))
             {
                 // deflect along the brink, keeping speed: a dead stop
                 // here reads as a stall and bleeds all momentum.
                 // HazardSteer holds the last safe heading so the
                 // +50/-50 fan does not flip every frame at a corner.
-                myaw = Argus_HazardSteer (myaw, 32);
+                myaw = Argus_HazardSteer (myaw, rhoriz);
                 makevectors ('0 0 0' + myaw * '0 1 0');
                 self.velocity_x = v_forward_x * spd;
                 self.velocity_y = v_forward_y * spd;
