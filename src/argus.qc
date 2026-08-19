@@ -2245,9 +2245,19 @@ float(entity it) Argus_GoalOK =
 {
     if (it == world)
         return FALSE;
-    if (it.solid != SOLID_TRIGGER)
-        return FALSE;
-    return TRUE;
+    if (it.solid == SOLID_TRIGGER)
+        return TRUE;
+    // item clocks (campaign item 4; triple-converged with mre's
+    // timer awareness and cortex's CONTROL_MAJOR "be early, not on
+    // time"): a picked-up item is not gone, it is a SUB_regen think
+    // whose nextthink IS the respawn clock, readable in pure vanilla
+    // QC. A pending respawn stays a valid goal while the clock runs;
+    // the 20 s goal-abandon timer is the backstop if the timing run
+    // goes wrong.
+    if (it.solid == SOLID_NOT && it.think == SUB_regen
+        && it.nextthink > time && it.nextthink - time < 20)
+        return TRUE;
+    return FALSE;
 };
 
 vector(entity it) Argus_GoalPoint =
@@ -2498,7 +2508,10 @@ void() Argus_PickGoal =
     e = nextent (world);
     while (e != world)
     {
-        if ((e.flags & FL_ITEM) && e.solid == SOLID_TRIGGER)
+        if ((e.flags & FL_ITEM)
+            && (e.solid == SOLID_TRIGGER
+                || (e.solid == SOLID_NOT && e.think == SUB_regen
+                    && e.nextthink > time)))
         {
             cls = Argus_ItemClass (e);
             // failed goals rest on a shelf; powerups rest longer,
@@ -2527,12 +2540,32 @@ void() Argus_PickGoal =
                 d = gp - self.origin;
                 d_z = d_z * 2;
                 dist = vlen (d);
-                if (dist < neard)
+                if (dist < neard && e.solid == SOLID_TRIGGER)
                 {
                     near = e;       // value-blind fallback target
-                    neard = dist;
+                    neard = dist;   // (live items only: patrolling to
+                                    // an empty spawn point looks broken)
                 }
                 v = Argus_ItemValue (e, cls);
+                // the item-clock gate: chase a pending respawn only
+                // when we would arrive at most ~3 s before it pops -
+                // a timing run, not a camp. dist * 0.0036 is travel
+                // time at a conservative 280 u/s. Clocks apply only
+                // to items WORTH timing (weapons, armour, powerups,
+                // the mega): the first clock ladder had bots orbiting
+                // empty SHELL spawns on the dm4 pit floor at the lava
+                // boundary - pennies of value for real exposure
+                // (hazard x30 at the spawn cells, world deaths above
+                // band). Humans do not time shell boxes either.
+                if (e.solid == SOLID_NOT)
+                {
+                    if (cls != AR_C_WEAPON && cls != AR_C_ARMOR
+                        && cls != AR_C_POWER
+                        && !(cls == AR_C_HEALTH && e.healamount >= 100))
+                        v = 0;
+                    else if (e.nextthink - time > dist * 0.0036 + 3)
+                        v = 0;
+                }
                 if (v > 0)
                 {
                     sc = v * 320 / (dist + 160);
