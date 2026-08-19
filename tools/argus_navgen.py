@@ -377,6 +377,33 @@ def force_way(x, y, z, snap=48):
     ways.append(nid)
     return len(ways) - 1
 
+def boarding_pad(bm, face_z):
+    """WAIT_NODE discipline (mre's Obot design, proven necessary by
+    the dm2 *31 statue forensics): the boarding pad must sit OUTSIDE
+    the plat's footprint - a bot waiting inside the swept column
+    blocks the descending slab with its body, and its touches
+    postpone the cycle, so the plat never seats. Prefer a standable
+    sample in a ring 4..96u outside the bbox whose floor is within a
+    step of the slab's seated top face; nearest to the slab wins."""
+    best, bestd = None, 1e9
+    for (cx, cy), zs in samples.items():
+        x, y = xs[cx], ys[cy]
+        if bm[0] - 4 <= x <= bm[3] + 4 and bm[1] - 4 <= y <= bm[4] + 4:
+            continue                    # inside the swept column
+        if not (bm[0] - 96 <= x <= bm[3] + 96
+                and bm[1] - 96 <= y <= bm[4] + 96):
+            continue
+        for zz in zs:
+            if abs(zz - face_z) <= 20:
+                dx = max(bm[0] - x, 0, x - bm[3])
+                dy = max(bm[1] - y, 0, y - bm[4])
+                d = (dx * dx + dy * dy) ** 0.5
+                if d < bestd:
+                    best, bestd = (x, y, zz), d
+    if best is None:
+        return None
+    return force_way(best[0], best[1], best[2] + 24, snap=32)
+
 lifts = []
 for b in ent_blocks:
     e = kv(b)
@@ -386,7 +413,13 @@ for b in ent_blocks:
     top_z = bm[5]
     height = float(e.get("height", 0) or 0) or (bm[5] - bm[2] - 8)
     pcx, pcy = (bm[0] + bm[3]) / 2, (bm[1] + bm[4]) / 2
-    lo = force_way(pcx, pcy, top_z - height + 24)
+    lo = boarding_pad(bm, top_z - height)
+    if lo is None:
+        lo = force_way(pcx, pcy, top_z - height + 24)
+        if lo is not None:
+            print(f"plat at ({pcx:.0f} {pcy:.0f}): no boarding sample "
+                  f"outside the footprint; pad falls back INSIDE the "
+                  f"swept column (statue risk - see cartograph plats)")
     hi = force_way(pcx, pcy, top_z + 24)
     if lo is None or hi is None or lo == hi:
         print(f"plat at ({pcx:.0f} {pcy:.0f}) travel {height:.0f}: "

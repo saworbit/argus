@@ -3132,7 +3132,13 @@ void() Argus_AI =
                 }
             }
 
-            if (self.ar_hoplift && vlen (to) < 56 && tp_z > self.origin_z + 40)
+            // 200, not 56: the WAIT_NODE pads sit OUTSIDE the swept
+            // column now, 100-160u horizontal from the exit node
+            // overhead. At 56 the whole wait-and-give-up block never
+            // engaged from the new pads, and with the stall detector
+            // suppressed for lift hops the result was an unbounded
+            // statue (82 s at the *34 base, ab_dm2_waitnode2).
+            if (self.ar_hoplift && vlen (to) < 200 && tp_z > self.origin_z + 40)
             {
                 // lift hop, standing over the boarding pad with the
                 // exit node overhead: park and let the plat do the
