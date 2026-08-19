@@ -57,11 +57,24 @@ pub fn cost_path(cfg: &Config, map: &str) -> std::path::PathBuf {
     cfg.src.join(format!("argus_nav_{map}.costs.json"))
 }
 
-fn cell_cost(kind: &str, count: u32) -> Option<f64> {
+/// Kind-aware overlay policy (the 2026-08-19 dm4 negative result:
+/// folding hazard-DEFLECTION clusters at radius 128 into navgen
+/// amputated the pit floor - lava 9 -> 1 but routefails 164 and a
+/// trapped-suicide storm, because deflection cells mark where the
+/// brink guard SUCCEEDS; punishing them guts connectivity. Death
+/// cells, meanwhile, never reached the overlay at all: the global
+/// top-16-by-count truncation let 26-87-count hazard cells crowd out
+/// the 1-5-count lava cells every time).
+///
+/// Policy now: lava DEATH cells go out tight and expensive (they mark
+/// killing edges, radius 64 so only boundary-crossing fine edges pay);
+/// chronic stalls go out moderate; hazard deflections are REPORTED but
+/// never written to the overlay.
+fn cell_overlay(kind: &str, count: u32, logs: u32) -> Option<(f64, f64)> {
+    // -> (radius, cost)
     match kind {
-        "lava" => Some(8.0),
-        "stall" if count >= 3 => Some(4.0),
-        "hazard" if count >= 5 => Some(2.0),
+        "lava" if count >= 2 => Some((64.0, 8.0)),
+        "stall" if count >= 4 && logs >= 2 => Some((96.0, 3.0)),
         _ => None,
     }
 }
@@ -125,8 +138,28 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
             }
         })
         .collect();
+    // Per-kind budgets, not a global top-N: raw hazard counts run
+    // 20-90 per cell while a lethal lava cell may carry only 2-5
+    // deaths, so a global sort-and-truncate silently dropped every
+    // lava cell (the exact reason the first live overlay contained
+    // no death cells at all).
     learned.sort_by(|a, b| b.count.cmp(&a.count));
-    learned.truncate(16);
+    let mut budgeted: Vec<LearnedCell> = Vec::new();
+    for kind in ["lava", "stall", "hazard"] {
+        let cap = match kind {
+            "lava" => 8,
+            "stall" => 6,
+            _ => 4,
+        };
+        budgeted.extend(
+            learned
+                .iter()
+                .filter(|c| c.kind == kind)
+                .take(cap)
+                .cloned(),
+        );
+    }
+    let mut learned = budgeted;
 
     brief_stub.map = Some(map.clone());
     brief_stub.hotspots = learned
@@ -157,14 +190,14 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
         cells: learned
             .iter()
             .filter_map(|c| {
-                let cost = cell_cost(&c.kind, c.count)?;
+                let (radius, cost) = cell_overlay(&c.kind, c.count, c.logs)?;
                 Some(CostCell {
                     kind: c.kind.clone(),
                     x: c.x,
                     y: c.y,
                     z: c.z,
                     count: c.count,
-                    radius: CELL,
+                    radius,
                     cost,
                 })
             })
@@ -285,6 +318,43 @@ mod tests {
     use crate::config::load_for_reads_from;
     use std::collections::HashMap;
     use std::fs;
+
+    #[test]
+    fn hazard_deflections_are_reported_but_never_written() {
+        let root = std::env::temp_dir().join(format!("argus-learn2-{}", std::process::id()));
+        let runs = root.join("runs");
+        fs::create_dir_all(&runs).unwrap();
+        // a tape where hazard chatter dwarfs the lava deaths - the
+        // shape that amputated the dm4 pit floor on 2026-08-19
+        let mut tape = String::from("ARGUS init on dm4\n");
+        tape.push_str("ARGLOG Reap t 1.0 pos '200 -230 -296' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n");
+        for _ in 0..60 {
+            tape.push_str("ARGEVT Reap hazard\n");
+        }
+        tape.push_str("ARGEVT Reap death world pos '80 144 -360'\n");
+        tape.push_str("ARGEVT Reap death world pos '82 150 -361'\n");
+        fs::write(runs.join("ab_dm4_storm.log"), tape).unwrap();
+        let mut env = HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = load_for_reads_from(&env, &root).unwrap();
+        let report = learn_hotspots(&cfg, "dm4", 5).unwrap();
+        // the hazard cluster is REPORTED (top count) ...
+        assert!(report.cells.iter().any(|c| c.kind == "hazard" && c.count >= 60));
+        // ... and the lava cell is not crowded out of the report
+        assert!(report.cells.iter().any(|c| c.kind == "lava"));
+        // but the OVERLAY carries only the death cells, tight radius
+        let wrote = report.wrote.expect("lava cells should write");
+        let overlay: CostOverlay =
+            serde_json::from_str(&fs::read_to_string(&wrote).unwrap()).unwrap();
+        assert!(!overlay.cells.is_empty());
+        for c in &overlay.cells {
+            assert_ne!(c.kind, "hazard", "deflection cells must never be written");
+            if c.kind == "lava" {
+                assert!((c.radius - 64.0).abs() < 0.01);
+            }
+        }
+        let _ = fs::remove_dir_all(&root);
+    }
 
     #[test]
     fn learns_lava_cell_from_named_log() {

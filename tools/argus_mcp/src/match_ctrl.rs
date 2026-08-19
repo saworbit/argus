@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::diagnose::{diagnose_log, log_has_tape, tail_nonempty};
 use crate::engine::{validate_map, EngineChild};
-use crate::intel::{brief_text, MatchBrief};
+use crate::intel::{brief_text, brief_text_hull, MatchBrief};
 use crate::parse_arglog::{parse_arglog, MatchSummary};
 use crate::paths::{default_run_name, valid_run_name};
 use serde::Serialize;
@@ -321,7 +321,7 @@ impl MatchCtrl {
             elapsed_sec: st.elapsed_sec.unwrap_or(0),
             exit_code: st.exit_code,
             summary: parse_arglog(&text),
-            brief: brief_text(&text, Some(map)),
+            brief: brief_text_hull(cfg, &text, Some(map)),
         })
     }
 

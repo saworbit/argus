@@ -110,6 +110,24 @@ pub struct MapAtlas {
     pub door_cuts: Vec<DoorCut>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub corridor_misses: Vec<CorridorMiss>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub plats: Vec<PlatBrief>,
+}
+
+/// Boardability analysis per func_plat (the dm2 *31 forensics turned
+/// into a static check: an unboardable plat or a ledge inside the
+/// swept column costs a runtime session to diagnose; the cartographer
+/// can say it up front).
+#[derive(Debug, Clone, Serialize)]
+pub struct PlatBrief {
+    pub model: String,
+    pub travel: f32,
+    pub seated_face_z: f32,
+    pub raised_face_z: f32,
+    pub centre: [f32; 2],
+    pub boardable: bool,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -820,6 +838,13 @@ fn atlas_from_bsp(
         ));
     }
 
+    let plats = analyze_plats(&items, bsp);
+    for p in &plats {
+        for w in &p.warnings {
+            implications.push(format!("plat {}: {w}", p.model));
+        }
+    }
+
     let headline = atlas_headline(
         map,
         &counts,
@@ -874,7 +899,122 @@ fn atlas_from_bsp(
         graph_cuts,
         door_cuts,
         corridor_misses,
+        plats,
     }
+}
+
+/// Static plat boardability: seated-face height, a boarding-floor ring
+/// probe outside the footprint, and a ledge-inside-the-swept-column
+/// probe (the *31 statue class, found the hard way on 2026-08-19).
+fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29) -> Vec<PlatBrief> {
+    let Some(hull) = bsp.hull0.as_ref() else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    for i in items.iter().filter(|i| i.kind == "plat") {
+        let Some(raw) = i.model.as_deref().and_then(|m| m.strip_prefix('*')) else {
+            continue;
+        };
+        let Ok(idx) = raw.parse::<usize>() else {
+            continue;
+        };
+        let Some(m) = bsp.models.get(idx) else {
+            continue;
+        };
+        // plats are compiled at the extended position; travel is the
+        // height key (not retained in the lump we keep) or size_z - 8
+        let travel = (m.maxs[2] - m.mins[2] - 8.0).max(8.0);
+        let seated = m.maxs[2] - travel;
+        let cx = (m.mins[0] + m.maxs[0]) / 2.0;
+        let cy = (m.mins[1] + m.maxs[1]) / 2.0;
+
+        let ring = [
+            (m.mins[0] - 24.0, cy),
+            (m.maxs[0] + 24.0, cy),
+            (cx, m.mins[1] - 24.0),
+            (cx, m.maxs[1] + 24.0),
+            (m.mins[0] - 24.0, m.mins[1] - 24.0),
+            (m.maxs[0] + 24.0, m.mins[1] - 24.0),
+            (m.mins[0] - 24.0, m.maxs[1] + 24.0),
+            (m.maxs[0] + 24.0, m.maxs[1] + 24.0),
+        ];
+        let mut boardable = false;
+        for (x, y) in ring {
+            let open =
+                hull.contents_at([x, y, seated + 30.0]) != crate::bsp::CONTENTS_SOLID;
+            let floor =
+                hull.contents_at([x, y, seated - 6.0]) == crate::bsp::CONTENTS_SOLID;
+            if open && floor {
+                boardable = true;
+                break;
+            }
+        }
+
+        let mut warnings = Vec::new();
+        if !boardable {
+            warnings.push(format!(
+                "no static floor within a step of the seated face (z {seated:.0}) beside the footprint - the runtime cannot walk aboard; needs a virtual pad on the slab rest-top (navgen 5b gap)"
+            ));
+        }
+
+        // 5x5 interior grid: narrow ledge strips (the *31 corridor is
+        // one 30u band of a 94u footprint) slip through a 3x3
+        let xs = [
+            m.mins[0] + 12.0,
+            (m.mins[0] + cx) / 2.0,
+            cx,
+            (cx + m.maxs[0]) / 2.0,
+            m.maxs[0] - 12.0,
+        ];
+        let ys = [
+            m.mins[1] + 12.0,
+            (m.mins[1] + cy) / 2.0,
+            cy,
+            (cy + m.maxs[1]) / 2.0,
+            m.maxs[1] - 12.0,
+        ];
+        // a ledge is a STANDABLE static point inside the footprint:
+        // solid floor with headroom, at any height a waiting bot could
+        // occupy while the slab sweeps through. The slab itself is a
+        // moving bmodel and lives in no static hull, so it cannot
+        // false-positive here. (*31's ledge floors sit at 160-199
+        // around a seated face of 169 - probe below it as well as
+        // above.)
+        let mut ledge = false;
+        for x in xs {
+            for y in ys {
+                for dz in [-16.0f32, 8.0, 40.0, 80.0] {
+                    let h = seated + dz;
+                    if h + 56.0 > m.maxs[2] {
+                        continue;
+                    }
+                    let floor =
+                        hull.contents_at([x, y, h - 6.0]) == crate::bsp::CONTENTS_SOLID;
+                    let room =
+                        hull.contents_at([x, y, h + 30.0]) != crate::bsp::CONTENTS_SOLID;
+                    if floor && room {
+                        ledge = true;
+                    }
+                }
+            }
+        }
+        if ledge {
+            warnings.push(
+                "static ledge inside the swept column: a bot waiting on it stands in the slab's path and its touches postpone the cycle (the *31 statue class); boarding pads must sit outside the footprint".into(),
+            );
+        }
+
+        out.push(PlatBrief {
+            model: i.model.clone().unwrap_or_default(),
+            travel,
+            seated_face_z: seated,
+            raised_face_z: m.maxs[2],
+            centre: [cx, cy],
+            boardable,
+            warnings,
+        });
+    }
+    out
 }
 
 struct NavGraph {
@@ -1623,6 +1763,43 @@ mod tests {
     use crate::config::load_for_reads_from;
     use std::collections::HashMap;
     use std::fs;
+
+    /// Machine-local regression: on the real dm2 (licensed data, so
+    /// this silently passes where the BSP is absent), plat *31 must be
+    /// flagged for its static ledge inside the swept column - the
+    /// geometry behind the 2026-08-19/20 statue forensics.
+    #[test]
+    fn dm2_plat_31_flags_the_ledge_in_its_column() {
+        let p = std::path::Path::new("C:/argus/maps_local/dm2.bsp");
+        if !p.exists() {
+            return;
+        }
+        let bsp = crate::bsp::read_bsp29(p).unwrap();
+        let ents = parse_entities(&bsp.entities);
+        let items: Vec<AtlasItem> = ents
+            .iter()
+            .filter(|e| e.get("classname").map(|c| c.as_str()) == Some("func_plat"))
+            .map(|e| AtlasItem {
+                classname: "func_plat".into(),
+                kind: "plat".into(),
+                origin: None,
+                target: e.get("target").cloned(),
+                targetname: e.get("targetname").cloned(),
+                model: e.get("model").cloned(),
+                spawnflags: 0,
+                health: None,
+            })
+            .collect();
+        assert_eq!(items.len(), 2, "dm2 carries two plats");
+        let plats = analyze_plats(&items, &bsp);
+        assert_eq!(plats.len(), 2);
+        let p31 = plats.iter().find(|p| p.model == "*31").expect("*31 analyzed");
+        assert!(
+            p31.warnings.iter().any(|w| w.contains("swept column")),
+            "*31 must be flagged for the ledge in its column, got {:?}",
+            p31.warnings
+        );
+    }
 
     fn ents() -> &'static str {
         r#"

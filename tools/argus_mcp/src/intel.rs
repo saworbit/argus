@@ -357,6 +357,21 @@ pub fn brief_text(text: &str, map_hint: Option<&str>) -> MatchBrief {
     brief_tape(&parse_tape(text), map_hint)
 }
 
+/// Like brief_text, but classifies lava deaths by hull-0 contents when
+/// the BSP is on hand - the same rule as analyze_match.py and
+/// compare_runs. Without this, experiment's match section reported
+/// lava under the z < -300 fallback while its own compare section used
+/// contents, and the two disagreed on dm2 (killing lava at z -35) and
+/// on dm4 (solid pit floors at -360).
+pub fn brief_text_hull(cfg: &Config, text: &str, map_hint: Option<&str>) -> MatchBrief {
+    let tape = parse_tape(text);
+    let map = map_hint
+        .map(|s| s.to_ascii_lowercase())
+        .or_else(|| tape.map.clone());
+    let hull = map.as_deref().and_then(|m| hull0_for_map(cfg, m));
+    brief_tape_lava(&tape, map_hint, hull.as_ref())
+}
+
 pub fn brief_path(path: &Path, map_hint: Option<&str>) -> Result<MatchBrief, String> {
     let tape = parse_tape_path(path).map_err(|e| format!("{}: {e}", path.display()))?;
     Ok(brief_tape(&tape, map_hint))

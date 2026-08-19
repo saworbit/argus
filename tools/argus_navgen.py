@@ -1288,9 +1288,18 @@ if "--register" in sys.argv[5:]:
                       f"(recompile to take effect)")
 
 # ---- 8b. debug plot ----
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+# The PNG is a convenience, not a product: the QC and json are already
+# written by this point. A python without matplotlib (the MCP invokes
+# ARGUS_PYTHON, which may be a bare install) must not turn a successful
+# generation into a failure exit.
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except ImportError:
+    print(f"debug plot skipped: matplotlib not available in this python "
+          f"(nav QC and json are written and valid)")
+    sys.exit(0)
 vo, vl = lumps[3]; eo, el = lumps[12]
 verts = [struct.unpack_from("<fff", data, vo + i*12) for i in range(vl // 12)]
 edges = [struct.unpack_from("<HH", data, eo + i*4) for i in range(el // 4)]
