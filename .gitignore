@@ -17,8 +17,8 @@ engine/qconsole.log
 # a shippable build; see tools/mdl_skins.py header)
 *.mdl
 
-# build outputs
-lq1/
+# build outputs (root only: src/lq1/ is QC source and must commit)
+/lq1/
 __pycache__/
 tools/argus_mcp/target*/
 backups/
