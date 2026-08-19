@@ -2973,7 +2973,68 @@ void() Argus_AI =
                     Argus_Event ("abandon");
                 }
                 else
-                    self.ar_liftwait = 1;
+                {
+                    // plat-state-aware wait (Shane's report: a bot
+                    // stuck UNDER the raised slab, pinning it up).
+                    // plat_center_touch postpones the descent on
+                    // EVERY touch and touches fire on movement, so a
+                    // bot fidgeting in the shaft volume keeps the
+                    // plat up forever; one parked INSIDE the
+                    // footprint blocks the descent with its head
+                    // (crush-reverse loop) instead. Raised slab and
+                    // we are beneath it: step out from under. Raised
+                    // and clear: stand utterly still so the 1 s
+                    // descent delay can expire. Resting: walk ONTO
+                    // the slab - the approach itself summons the
+                    // ride with us aboard.
+                    turn = 99999;
+                    nx = world;
+                    dr = find (world, classname, "func_plat");
+                    while (dr != world)
+                    {
+                        gp = (dr.absmin + dr.absmax) * 0.5;
+                        gp_z = self.origin_z;
+                        if (vlen (gp - self.origin) < turn)
+                        {
+                            turn = vlen (gp - self.origin);
+                            nx = dr;
+                        }
+                        dr = find (dr, classname, "func_plat");
+                    }
+                    if (nx == world || turn > 320)
+                        self.ar_liftwait = 1;   // no plat near: park
+                    else if (nx.state != STATE_BOTTOM)
+                    {
+                        if (self.origin_x > nx.absmin_x - 4
+                            && self.origin_x < nx.absmax_x + 4
+                            && self.origin_y > nx.absmin_y - 4
+                            && self.origin_y < nx.absmax_y + 4
+                            && self.origin_z < nx.absmin_z)
+                        {
+                            gp = (nx.absmin + nx.absmax) * 0.5;
+                            to = self.origin - gp;
+                            to_z = 0;
+                            if (vlen (to) < 8)
+                                to = '96 0 0';
+                            else
+                                to = normalize (to) * 96;
+                            tp = self.origin + to;
+                        }
+                        else
+                        {
+                            self.ar_liftwait = 1;
+                            self.velocity_x = 0;
+                            self.velocity_y = 0;
+                        }
+                    }
+                    else
+                    {
+                        tp = (nx.absmin + nx.absmax) * 0.5;
+                        tp_z = self.origin_z;
+                    }
+                    to = tp - self.origin;
+                    to_z = 0;
+                }
             }
             else if (vlen (to) > 340 && !self.ar_hoptrain)
             {
