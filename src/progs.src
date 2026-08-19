@@ -1,0 +1,75 @@
+#ifdef __QW__
+#pragma progs_dat "../lq1/qwprogs.dat"
+#else
+#pragma progs_dat "../lq1/progs.dat"
+#endif
+
+#includelist
+
+defs.qc
+localized_text.qc       // LQ: Localized strings, also applies to Quake
+deathmatch_settings.qc
+subs.qc
+
+#ifdef __QW__
+server.qc
+#endif
+
+#ifndef __QW__
+fight.qc
+ai.qc
+lq1/cutscene_camera.qc  // LQ: svc_cutscene firing camera
+#endif
+
+combat.qc
+
+items.qc
+weapons.qc
+argus_nav.qc
+argus_nav_lqdm2.qc
+argus_nav_dm2.qc
+argus_nav_dm3.qc
+argus_nav_dm4.qc
+argus_nav_dm6.qc
+argus_nav_dispatch.qc
+argus.qc
+argus_cam.qc
+world.qc
+client.qc
+
+#ifdef __QW__
+spectate.qc
+#endif
+
+player.qc
+
+#ifndef __QW__
+monsters.qc
+#endif
+
+doors.qc
+buttons.qc
+triggers.qc
+plats.qc
+misc.qc
+
+#ifndef __QW__
+monsters/ogre.qc
+monsters/fiend.qc
+monsters/shambler.qc
+monsters/knight.qc
+monsters/grunt.qc
+monsters/scrag.qc
+monsters/rottweiler.qc
+monsters/zombie.qc
+monsters/chthon.qc
+
+monsters/spawn.qc			// registered
+monsters/hellknight.qc	    // registered
+monsters/rotfish.qc		    // registered
+monsters/vore.qc			// registered
+monsters/enforcer.qc		// registered
+monsters/shub.qc			// registered
+#endif
+
+#endlist

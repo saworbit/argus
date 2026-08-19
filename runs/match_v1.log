@@ -1,0 +1,771 @@
+Command line: /usr/games/quakespasm -dedicated 8 -basedir /home/claude/quake -game botlab +developer 1 +deathmatch 1 +map lqdm2
+Found SDL version 2.30.0
+Terminal input not available.
+Detected 1 CPUs.
+Initializing QuakeSpasm v0.96.1
+Host_Init
+Playing registered version.
+UDP Initialized
+Server using protocol 666 (FitzQuake)
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from '/home/claude/quake'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: lqdm2
+Clearing memory
+Programs occupy 349K.
+Map has lit water
+trying to open external vis file
+maps/lqdm2.vis not found, trying botlab.vis
+external vis not found
+"mapversion" is not a field
+BOTLAB worldspawn reached
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+"color" is not a field
+0 entities inhibited
+BOTLAB init on lqdm2
+BOTEVT Reap spawned
+BOTEVT Omi spawned
+Server spawned.
+BOTLOG Reap t   1.2 pos '-32.0 784.0 376.0' spd 0 yaw 221.7 mode 0 st 0 gl 0
+BOTLOG Omi t   1.2 pos '-96.0 224.0  24.0' spd 0 yaw  59.6 mode 0 st 0 gl 0
+BOTEVT Reap goal item_shells
+BOTEVT Omi goal weapon_nailgun
+BOTLOG Reap t   1.7 pos '-106.7 645.4 360.0' spd 380.4 yaw 311 mode 1 st 0 gl 0
+BOTLOG Omi t   1.7 pos ' 22.5 328.5  24.0' spd 358.0 yaw 342 mode 1 st 0 gl 0
+BOTEVT Omi goal item_armor2
+BOTLOG Reap t   2.2 pos '-22.0 499.8 296.0' spd 321.5 yaw 316 mode 1 st 0 gl 0
+BOTLOG Omi t   2.2 pos '175.3 277.7  24.0' spd 359.0 yaw  47.0 mode 1 st 0 gl 1
+BOTLOG Reap t   2.7 pos ' 88.7 378.6 216.0' spd 320.6 yaw 318 mode 1 st 0 gl 0
+BOTLOG Omi t   2.7 pos '200.1 427.7  24.0' spd 351.8 yaw 158 mode 1 st 0 gl 1
+BOTLOG Reap t   3.2 pos '208.0 266.6 216.0' spd 320.0 yaw 319 mode 1 st 0 gl 0
+BOTLOG Omi t   3.2 pos ' 45.5 492.2  24.0' spd 329.8 yaw 193 mode 0 st 0 gl 2
+BOTEVT Reap goal item_shells
+BOTEVT Reap goal weapon_supershotgun
+BOTEVT Omi goal item_shells
+BOTEVT Reap goal item_health
+BOTLOG Reap t   3.8 pos '364.8 212.3 216.0' spd 369.5 yaw  58.6 mode 1 st 0 gl 3
+BOTLOG Omi t   3.8 pos '-112.0 463.0  24.0' spd 135.3 yaw 242.0 mode 1 st 0 gl 2
+BOTLOG Reap t   4.3 pos '361.7 359.7 216.0' spd 320.5 yaw 184 mode 1 st 0 gl 3
+BOTLOG Omi t   4.3 pos '-100.9 303.5  24.0' spd 320.1 yaw 278 mode 1 st 0 gl 2
+BOTLOG Reap t   4.8 pos '198.1 350.3 216.0' spd 320.0 yaw 184 mode 1 st 0 gl 3
+BOTLOG Omi t   4.8 pos '-78.3 141.3  24.0' spd 320.0 yaw 278 mode 1 st 0 gl 2
+BOTLOG Reap t   5.3 pos ' 35.0 338.8 216.0' spd 320.0 yaw 183 mode 1 st 0 gl 3
+BOTLOG Omi t   5.3 pos '-55.6 -20.7  24.0' spd 320 yaw 278 mode 1 st 0 gl 2
+BOTEVT Reap jump
+BOTLOG Reap t   5.8 pos '-112.0 328.7 227.7' spd  14.4 yaw 181 mode 1 st 0 gl 3
+BOTLOG Omi t   5.8 pos '-32.8 -182.6  40.0' spd 320 yaw 278 mode 1 st 0 gl 2
+BOTLOG Reap t   6.3 pos '-144.2 324.8 248.0' spd 302.4 yaw 175 mode 1 st 0 gl 3
+BOTLOG Omi t   6.3 pos ' -9.6 -304.0  88.0' spd  49.2 yaw 277 mode 1 st 0 gl 2
+BOTEVT Reap goal item_health
+BOTEVT Reap goal weapon_nailgun
+BOTLOG Reap t   6.8 pos '-270.6 223.7 248.0' spd 359.9 yaw 290 mode 1 st 0 gl 5
+BOTLOG Omi t   6.8 pos '  7.0 -304.0  88.0' spd  14.2 yaw 275 mode 1 st 0 gl 2
+BOTLOG Reap t   7.3 pos '-258.3  50.9 216.0' spd 333.7 yaw 304 mode 1 st 0 gl 5
+BOTLOG Omi t   7.3 pos ' 13.0 -304.0  88.0' spd  11.6 yaw 274 mode 1 st 0 gl 2
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTEVT Omi goal item_artifact_super_damage
+BOTEVT Reap goal item_spikes
+BOTLOG Reap t   7.8 pos '-172.7 -90.1 216.0' spd 322.1 yaw 284.4 mode 1 st 0 gl 6
+BOTLOG Omi t   7.8 pos ' 21.4 -295.3 123.2' spd  31.1 yaw 36 mode 1 st 1 gl 2
+BOTLOG Reap t   8.4 pos '-245.3 -109.7 216.0' spd 320.4 yaw 174 mode 1 st 0 gl 6
+BOTLOG Omi t   8.4 pos ' 31.4 -282.9 -21.4' spd  31.1 yaw 36 mode 1 st 1 gl 2
+BOTLOG Reap t   8.9 pos '-406.8 -84.2 216.0' spd 320.2 yaw 178 mode 1 st 0 gl 6
+BOTLOG Omi t   8.9 pos ' 96.4 -234.8 -168.0' spd 320.0 yaw 35 mode 1 st 1 gl 2
+BOTEVT Reap goal item_rockets
+BOTLOG Reap t   9.4 pos '-571.8 -101.8 216.0' spd 381.5 yaw 264.6 mode 1 st 0 gl 7
+BOTLOG Omi t   9.4 pos '229.8 -140.7 -168.0' spd 320.0 yaw 37 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t   9.9 pos '-483.9 -219.9 216.0' spd 423.5 yaw  68.1 mode 1 st 0 gl 7
+BOTLOG Omi t   9.9 pos '350.2 -80.0 -144.9' spd  99.4 yaw 145.9 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  10.4 pos '-508.6 -65.3 216.0' spd 439.1 yaw 232.0 mode 1 st 0 gl 7
+BOTLOG Omi t  10.4 pos '209.2 -120.1 -128.9' spd 359.0 yaw 309.8 mode 1 st 1 gl 2
+BOTLOG Reap t  10.9 pos '-529.0 -220.9 216.0' spd 440.7 yaw  35.8 mode 1 st 0 gl 7
+BOTLOG Omi t  10.9 pos '240.0 -230.3 -168.0' spd  71.1 yaw 70 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  11.4 pos '-463.6 -77.7 216.0' spd 440.7 yaw 199.3 mode 1 st 0 gl 7
+BOTLOG Omi t  11.4 pos '241.5 -80.3 -130.3' spd  30.0 yaw 342 mode 1 st 1 gl 2
+BOTLOG Reap t  11.9 pos '-564.1 -197.1 216.0' spd 440.7 yaw   2.8 mode 1 st 0 gl 7
+BOTLOG Omi t  11.9 pos '273.8 -91.4 -163.8' spd 293.1 yaw 343 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  12.4 pos '-431.8 -111.8 216.0' spd 440.4 yaw 166.4 mode 1 st 0 gl 7
+BOTLOG Omi t  12.4 pos '420.5 -106.3 -131.7' spd  92.0 yaw 146.5 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  13.0 pos '-580.9 -155.9 216.0' spd 440.8 yaw 329.6 mode 1 st 0 gl 7
+BOTLOG Omi t  13.0 pos '293.3 -95.3 -125.2' spd 320.0 yaw 188 mode 1 st 1 gl 2
+BOTLOG Reap t  13.5 pos '-423.6 -155.6 216.0' spd 440.4 yaw 133.7 mode 1 st 0 gl 7
+BOTLOG Omi t  13.5 pos '153.6 -134.4 -165.3' spd 303.5 yaw 352.2 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  14.0 pos '-572.7 -111.5 216.0' spd 440.8 yaw 296.9 mode 1 st 0 gl 7
+BOTLOG Omi t  14.0 pos '240.0 -131.6 -139.1' spd 130.8 yaw 36 mode 1 st 1 gl 2
+BOTLOG Reap t  14.5 pos '-440.8 -197.1 216.0' spd 440.8 yaw 100.1 mode 1 st 0 gl 7
+BOTLOG Omi t  14.5 pos '251.5 -81.1 -166.3' spd  32.3 yaw 338 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  15.0 pos '-540.1 -77.0 216.0' spd 440.8 yaw 263.3 mode 1 st 0 gl 7
+BOTLOG Omi t  15.0 pos '388.5 -148.2 -123.8' spd 314.7 yaw 208.4 mode 1 st 1 gl 2
+BOTLOG Reap t  15.5 pos '-476.8 -220.9 216.0' spd 440.7 yaw  66.8 mode 1 st 0 gl 7
+BOTLOG Omi t  15.5 pos '336.0 -192.2 -163.3' spd 314.4 yaw 116 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  16.0 pos '-495.1 -64.7 216.0' spd 440.7 yaw 230.4 mode 1 st 0 gl 7
+BOTLOG Omi t  16.0 pos '329.2 -80.0 -125.2' spd  33.7 yaw 202 mode 1 st 1 gl 2
+BOTEVT Omi jump
+BOTLOG Reap t  16.5 pos '-520.0 -219.7 216.0' spd 440.8 yaw  33.9 mode 1 st 0 gl 7
+BOTLOG Omi t  16.5 pos '238.4 -123.1 -144.8' spd 330.0 yaw 272.3 mode 1 st 1 gl 2
+BOTLOG Reap t  17.0 pos '-449.9 -78.8 216.0' spd 440.8 yaw 197.1 mode 1 st 0 gl 7
+BOTLOG Omi t  17.0 pos '220.2 -241.3 -163.2' spd 300.2 yaw 64 mode 1 st 1 gl 2
+BOTLOG Reap t  17.6 pos '-554.9 -194.2 216.0' spd 440.5 yaw   1.2 mode 1 st 0 gl 7
+BOTEVT Omi abandon
+BOTEVT Omi goal weapon_supershotgun
+BOTLOG Omi t  17.6 pos '308.7 -240.0 -168.0' spd  10.3 yaw 113.6 mode 1 st 1 gl 2
+BOTLOG Reap t  18.1 pos '-420.1 -112.6 216.0' spd 440.7 yaw 164.8 mode 1 st 0 gl 7
+BOTLOG Omi t  18.1 pos '170.3 -275.9 -168.0' spd 390.2 yaw 277.2 mode 1 st 1 gl 2
+BOTLOG Reap t  18.6 pos '-570.4 -153.4 216.0' spd 440.4 yaw 328.6 mode 1 st 0 gl 7
+BOTLOG Omi t  18.6 pos '259.7 -309.5 -168.0' spd 329.1 yaw 317 mode 1 st 1 gl 2
+BOTEVT Omi goal item_health
+BOTLOG Reap t  19.1 pos '-413.2 -157.3 216.0' spd 440.8 yaw 132.1 mode 1 st 0 gl 7
+BOTLOG Omi t  19.1 pos '419.2 -282.8 -159.2' spd 417.5 yaw 120.5 mode 1 st 1 gl 3
+BOTEVT Reap abandon
+BOTEVT Reap goal item_armor2
+BOTLOG Reap t  19.6 pos '-561.2 -108.6 216.0' spd 440.8 yaw 282 mode 1 st 0 gl 7
+BOTLOG Omi t  19.6 pos '325.7 -130.2 -159.3' spd 334.8 yaw 172 mode 1 st 1 gl 3
+BOTEVT Omi goal item_armor1
+BOTLOG Reap t  20.1 pos '-573.1 -283.3 203.4' spd 328.3 yaw 294 mode 1 st 0 gl 7
+BOTLOG Omi t  20.1 pos '160.5 -114.2 -168.0' spd 338.3 yaw 217 mode 1 st 1 gl 4
+BOTLOG Reap t  20.6 pos '-546.4 -449.5  24.4' spd 328.3 yaw 326 mode 1 st 0 gl 7
+BOTLOG Omi t  20.6 pos ' 20.6 -203.0 -168.0' spd 321.2 yaw 226 mode 1 st 1 gl 4
+BOTEVT Omi goal item_health
+BOTEVT Reap jump
+BOTLOG Reap t  21.1 pos '-453.9 -552.0 -76.5' spd 311.0 yaw 115 mode 1 st 0 gl 7
+BOTLOG Omi t  21.1 pos '-98.8 -306.3 -168.0' spd 344.3 yaw 245 mode 1 st 1 gl 5
+BOTEVT Omi goal item_health
+BOTLOG Reap t  21.6 pos '-458.4 -438.3 -126.2' spd 246.0 yaw 250 mode 1 st 0 gl 7
+BOTLOG Omi t  21.6 pos '-211.5 -432.8 -154.1' spd 327.7 yaw 201 mode 1 st 1 gl 6
+BOTEVT Reap jump
+BOTEVT Omi goal item_health
+BOTLOG Reap t  22.2 pos '-516.2 -542.5 -94.3' spd 271.9 yaw  46.6 mode 1 st 0 gl 7
+BOTLOG Omi t  22.2 pos '-361.2 -480.5 -133.8' spd 385.0 yaw 269.3 mode 1 st 1 gl 7
+BOTEVT Reap jump
+BOTLOG Reap t  22.7 pos '-469.4 -437.3 -93.9' spd 390.1 yaw 198.9 mode 1 st 0 gl 7
+BOTLOG Omi t  22.7 pos '-292.8 -590.0 -134.8' spd 320.2 yaw 5 mode 1 st 1 gl 7
+BOTLOG Reap t  23.2 pos '-584.5 -445.0 -112.9' spd 332.3 yaw 334 mode 1 st 0 gl 7
+BOTLOG Omi t  23.2 pos '-129.0 -578.5 -152.2' spd 320.0 yaw 6 mode 1 st 1 gl 7
+BOTEVT Reap jump
+BOTEVT Omi goal weapon_grenadelauncher
+BOTLOG Reap t  23.7 pos '-444.1 -549.1 -76.5' spd 340.9 yaw  96.9 mode 1 st 0 gl 7
+BOTLOG Omi t  23.7 pos ' 33.6 -561.7 -168.0' spd 320.0 yaw 8 mode 1 st 1 gl 8
+BOTEVT Reap jump
+BOTLOG Reap t  24.2 pos '-435.0 -446.1 -117.9' spd 308.1 yaw 228 mode 1 st 0 gl 7
+BOTLOG Omi t  24.2 pos '196.2 -541.2 -166.8' spd 320.0 yaw 9 mode 1 st 1 gl 8
+BOTLOG Reap t  24.7 pos '-539.2 -510.0 -113.9' spd 286.1 yaw 13 mode 1 st 0 gl 7
+BOTLOG Omi t  24.7 pos '350.0 -527.5 -148.8' spd 322.4 yaw 10 mode 1 st 1 gl 8
+BOTEVT Reap jump
+BOTLOG Reap t  25.2 pos '-387.9 -434.6 -84.9' spd 387.1 yaw 169.6 mode 1 st 0 gl 7
+BOTLOG Omi t  25.2 pos '512.2 -508.1 -132.0' spd 320.1 yaw 11 mode 1 st 1 gl 8
+BOTLOG Reap t  25.7 pos '-501.0 -368.8 -125.7' spd 323.4 yaw 280 mode 1 st 0 gl 7
+BOTLOG Omi t  25.7 pos '673.0 -478.3 -72.0' spd 320.0 yaw 12 mode 1 st 1 gl 8
+BOTEVT Reap jump
+BOTLOG Reap t  26.2 pos '-504.0 -546.6 -81.6' spd 347.4 yaw  32.6 mode 1 st 0 gl 7
+BOTLOG Omi t  26.2 pos '832.8 -444.9  -8.0' spd 320.0 yaw 15 mode 1 st 1 gl 8
+BOTEVT Omi goal item_health
+BOTEVT Omi jump
+BOTLOG Reap t  26.8 pos '-417.8 -506.8 -126.6' spd 379.1 yaw 170 mode 1 st 0 gl 7
+BOTEVT Reap jump
+BOTLOG Omi t  26.8 pos '908.0 -415.3  30.1' spd  28.3 yaw 343 mode 1 st 1 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  27.3 pos '-561.4 -462.7 -103.3' spd 343.1 yaw 332.9 mode 1 st 0 gl 7
+BOTLOG Omi t  27.3 pos '908.0 -430.5   3.7' spd  70.9 yaw 359 mode 1 st 1 gl 9
+BOTEVT Reap jump
+BOTLOG Reap t  27.8 pos '-430.5 -525.6 -82.2' spd 378.7 yaw 109.3 mode 1 st 0 gl 7
+BOTLOG Omi t  27.8 pos '908.0 -444.0  24.0' spd  80.4 yaw 13 mode 1 st 1 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  28.3 pos '-438.0 -394.7 -130.7' spd 315.1 yaw 248 mode 1 st 0 gl 7
+BOTLOG Omi t  28.3 pos '908.0 -405.2  26.3' spd  17.1 yaw 333 mode 1 st 1 gl 9
+BOTEVT Reap jump
+BOTLOG Reap t  28.8 pos '-535.6 -531.3 -87.3' spd 355.7 yaw  15.9 mode 1 st 0 gl 7
+BOTLOG Omi t  28.8 pos '908.0 -425.1  -8.0' spd  69.6 yaw 353 mode 1 st 1 gl 9
+BOTEVT Omi jump
+BOTEVT Reap abandon
+BOTEVT Reap goal item_health
+BOTLOG Reap t  29.3 pos '-442.1 -504.9 -124.2' spd 320.0 yaw  67.0 mode 1 st 0 gl 7
+BOTLOG Omi t  29.3 pos '908.0 -447.8  27.3' spd  11.8 yaw 16 mode 1 st 1 gl 9
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTLOG Reap t  29.8 pos '-297.4 -444.0 -142.4' spd 426.7 yaw 263.2 mode 1 st 0 gl 7
+BOTEVT Omi goal item_health
+BOTLOG Omi t  29.8 pos '905.1 -432.6  26.4' spd  51.6 yaw 149.2 mode 1 st 2 gl 9
+BOTEVT Reap goal item_health
+BOTEVT Omi jump
+BOTLOG Reap t  30.3 pos '-381.1 -469.1 -132.4' spd 372.2 yaw 117.4 mode 1 st 0 gl 8
+BOTLOG Omi t  30.3 pos '899.4 -405.7   3.7' spd  64.9 yaw 346.0 mode 1 st 2 gl 9
+BOTLOG Reap t  30.8 pos '-362.5 -310.5 -145.2' spd 392.0 yaw 347 mode 1 st 0 gl 8
+BOTLOG Omi t  30.8 pos '908.0 -402.4   5.5' spd  44.1 yaw 331 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  31.4 pos '-192.8 -320.9 -163.7' spd 326.9 yaw 324 mode 1 st 0 gl 8
+BOTLOG Omi t  31.4 pos '908.0 -455.0  29.7' spd  50.4 yaw 23 mode 1 st 2 gl 9
+BOTEVT Reap goal item_armor1
+BOTLOG Reap t  31.9 pos '-80.0 -342.0 -168.0' spd 269.3 yaw 60 mode 1 st 0 gl 9
+BOTLOG Omi t  31.9 pos '908.0 -420.7   3.2' spd 129.0 yaw 348 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTEVT Reap goal item_health
+BOTLOG Reap t  32.4 pos '  0.7 -191.6 -168.0' spd 329.4 yaw 22 mode 1 st 0 gl 10
+BOTLOG Omi t  32.4 pos '908.0 -404.8  27.1' spd  38.8 yaw 333 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  32.9 pos '149.5 -122.5 -168.0' spd 320.9 yaw 13 mode 1 st 0 gl 10
+BOTLOG Omi t  32.9 pos '908.0 -439.4  13.3' spd  80.3 yaw 8 mode 1 st 2 gl 9
+BOTEVT Reap goal weapon_supershotgun
+BOTLOG Reap t  33.4 pos '294.7 -144.0 -165.3' spd 149.0 yaw 269 mode 1 st 0 gl 11
+BOTLOG Omi t  33.4 pos '908.0 -439.9  22.0' spd 107.6 yaw 8 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  33.9 pos '300.2 -144.0 -164.5' spd  14.7 yaw 267 mode 1 st 0 gl 11
+BOTLOG Omi t  33.9 pos '908.0 -403.4  29.7' spd   2.7 yaw 332 mode 1 st 2 gl 9
+BOTLOG Reap t  34.4 pos '293.9 -144.0 -165.4' spd   9.1 yaw 269 mode 1 st 0 gl 11
+BOTLOG Omi t  34.4 pos '908.0 -428.0  -8.0' spd  75.6 yaw 356 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTEVT Reap stall
+BOTEVT Reap jump
+BOTEVT Reap goal weapon_grenadelauncher
+BOTLOG Reap t  34.9 pos '291.0 -134.1 -126.8' spd  49.5 yaw   9.2 mode 1 st 1 gl 11
+BOTLOG Omi t  34.9 pos '908.0 -449.9  24.0' spd   1.0 yaw 18 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  35.4 pos '355.1 -145.8 -156.3' spd 320.0 yaw 332 mode 1 st 1 gl 11
+BOTLOG Omi t  35.4 pos '908.0 -412.9  20.9' spd  52.4 yaw 340 mode 1 st 2 gl 9
+BOTLOG Reap t  36.0 pos '456.0 -231.1 -147.4' spd 238.6 yaw 335 mode 1 st 1 gl 11
+BOTLOG Omi t  36.0 pos '908.0 -420.5  -8.0' spd  49.3 yaw 348 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  36.5 pos '534.9 -350.7 -136.0' spd 330.4 yaw 347 mode 1 st 1 gl 11
+BOTLOG Omi t  36.5 pos '908.0 -447.3  30.2' spd  27.4 yaw 16 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  37.0 pos '692.5 -397.2 -56.0' spd 320.3 yaw 350 mode 1 st 1 gl 11
+BOTLOG Omi t  37.0 pos '908.0 -419.7   3.7' spd  72.9 yaw 347 mode 1 st 2 gl 9
+BOTEVT Reap goal item_health
+BOTLOG Reap t  37.5 pos '853.1 -426.4  -8.0' spd 320.0 yaw 357 mode 1 st 1 gl 12
+BOTLOG Omi t  37.5 pos '908.0 -416.7   6.2' spd  37.7 yaw 344 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  38.0 pos '875.9 -432.0  -8.0' spd 0 yaw 360 mode 1 st 1 gl 12
+BOTLOG Omi t  38.0 pos '908.0 -442.5  29.7' spd  40.6 yaw 11 mode 1 st 2 gl 9
+BOTLOG Reap t  38.5 pos '875.9 -432.0  -8.0' spd 0 yaw 360 mode 1 st 1 gl 12
+BOTLOG Omi t  38.5 pos '908.0 -439.8  -8.0' spd  49.1 yaw 8 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTEVT Reap stall
+BOTEVT Reap jump
+BOTEVT Reap goal item_health
+BOTLOG Reap t  39.0 pos '874.4 -431.6  13.5' spd 30 yaw 150.1 mode 1 st 2 gl 12
+BOTLOG Omi t  39.0 pos '908.0 -417.7  22.0' spd  19.4 yaw 345 mode 1 st 2 gl 9
+BOTEVT Omi jump
+BOTLOG Reap t  39.5 pos '864.1 -411.2  -5.6' spd  76.7 yaw 348 mode 1 st 2 gl 12
+BOTLOG Omi t  39.5 pos '908.0 -435.4  21.0' spd  62.4 yaw 3 mode 1 st 2 gl 9
+BOTEVT Reap jump
+BOTEVT Omi abandon
+BOTEVT Omi goal weapon_grenadelauncher
+BOTEVT Omi goal weapon_supershotgun
+BOTLOG Reap t  40.0 pos '908.0 -411.1  30.0' spd 0 yaw 339 mode 1 st 2 gl 12
+BOTLOG Omi t  40.0 pos '908.0 -443.1  11.4' spd 0 yaw  97.9 mode 1 st 2 gl 10
+BOTEVT Reap jump
+BOTLOG Reap t  40.6 pos '908.0 -429.8   3.7' spd 104.8 yaw 358 mode 1 st 2 gl 12
+BOTLOG Omi t  40.6 pos '802.9 -433.4  -8.0' spd 320.4 yaw 169 mode 1 st 2 gl 10
+BOTLOG Reap t  41.1 pos '908.0 -448.0  24.0' spd 110.5 yaw 17 mode 1 st 2 gl 12
+BOTLOG Omi t  41.1 pos '641.8 -403.6 -88.0' spd 320.0 yaw 169 mode 1 st 2 gl 10
+BOTEVT Reap jump
+BOTLOG Reap t  41.6 pos '908.0 -398.6  26.3' spd   6.5 yaw 328 mode 1 st 2 gl 12
+BOTLOG Omi t  41.6 pos '481.3 -372.4 -152.4' spd 320.0 yaw 169 mode 1 st 2 gl 10
+BOTLOG Reap t  42.1 pos '908.0 -422.0  -8.0' spd  83.2 yaw 350 mode 1 st 2 gl 12
+BOTLOG Omi t  42.1 pos '320.8 -341.2 -168.0' spd 320.0 yaw 171 mode 1 st 2 gl 10
+BOTEVT Omi goal item_health
+BOTEVT Reap jump
+BOTLOG Reap t  42.6 pos '908.0 -453.7  27.1' spd  10.2 yaw 22 mode 1 st 2 gl 12
+BOTLOG Omi t  42.6 pos '197.8 -229.6 -168.0' spd 333.7 yaw 92 mode 1 st 2 gl 11
+BOTEVT Omi goal item_armor1
+BOTEVT Reap jump
+BOTLOG Reap t  43.1 pos '908.0 -408.0   3.7' spd  88.4 yaw 336 mode 1 st 2 gl 12
+BOTLOG Omi t  43.1 pos '171.2 -80.0 -168.0' spd 141.8 yaw 157.6 mode 1 st 2 gl 12
+BOTLOG Reap t  43.6 pos '908.0 -414.2   5.5' spd  52.3 yaw 342 mode 1 st 2 gl 12
+BOTLOG Omi t  43.6 pos ' 20.2 -142.6 -168.0' spd 335.0 yaw 246 mode 1 st 2 gl 12
+BOTEVT Reap jump
+BOTEVT Omi goal item_health
+BOTLOG Reap t  44.1 pos '908.0 -446.5  29.7' spd  45.0 yaw 15 mode 1 st 2 gl 12
+BOTLOG Omi t  44.1 pos '-60.7 -288.0 -168.0' spd 163.3 yaw 230 mode 1 st 2 gl 13
+BOTEVT Omi goal item_health
+BOTLOG Reap t  44.6 pos '908.0 -426.2  -7.4' spd  83.8 yaw 354 mode 1 st 2 gl 12
+BOTLOG Omi t  44.6 pos '-172.3 -403.6 -162.1' spd 341.4 yaw 205 mode 1 st 2 gl 14
+BOTEVT Reap jump
+BOTLOG Reap t  45.2 pos '908.0 -411.8  22.2' spd  27.4 yaw 339 mode 1 st 2 gl 12
+BOTLOG Omi t  45.2 pos '-318.9 -470.3 -138.7' spd 326.2 yaw 201 mode 0 st 2 gl 15
+BOTEVT Reap stall
+BOTEVT Reap jump
+BOTEVT Reap goal weapon_grenadelauncher
+BOTEVT Reap goal item_health
+BOTEVT Omi goal item_health
+BOTLOG Reap t  45.7 pos '907.0 -436.7  30.9' spd  53.0 yaw 259.4 mode 1 st 3 gl 13
+BOTLOG Omi t  45.7 pos '-460.6 -558.4 -119.3' spd 351.5 yaw 271.4 mode 1 st 2 gl 15
+BOTEVT Reap jump
+BOTLOG Reap t  46.2 pos '905.6 -457.7  20.9' spd  13.5 yaw 25 mode 1 st 3 gl 13
+BOTLOG Omi t  46.2 pos '-372.2 -590.8 -126.6' spd 320.1 yaw 4 mode 1 st 2 gl 15
+BOTLOG Reap t  46.7 pos '908.0 -436.0  -8.0' spd  59.8 yaw 4 mode 1 st 3 gl 13
+BOTLOG Omi t  46.7 pos '-208.9 -582.3 -143.8' spd 320.0 yaw 5 mode 1 st 2 gl 15
+BOTEVT Reap jump
+BOTLOG Reap t  47.2 pos '908.0 -427.9  30.1' spd   4.1 yaw 356 mode 1 st 3 gl 13
+BOTLOG Omi t  47.2 pos '-45.3 -569.7 -161.3' spd 320.0 yaw 7 mode 1 st 2 gl 15
+BOTEVT Omi goal item_artifact_super_damage
+BOTEVT Reap stall
+BOTEVT Reap jump
+BOTEVT Reap goal item_health
+BOTLOG Reap t  47.7 pos '903.6 -426.6  26.3' spd  37.3 yaw  91.7 mode 1 st 4 gl 13
+BOTLOG Omi t  47.7 pos '104.9 -501.0 -168.0' spd 332.6 yaw 65 mode 1 st 2 gl 16
+BOTEVT Reap jump
+BOTLOG Reap t  48.2 pos '908.0 -399.1   3.7' spd  55.6 yaw 328 mode 1 st 4 gl 13
+BOTLOG Omi t  48.2 pos '188.3 -384.0 -168.0' spd 166.2 yaw 70 mode 1 st 2 gl 16
+BOTLOG Reap t  48.7 pos '908.0 -414.7   5.9' spd  58.5 yaw 342 mode 1 st 4 gl 13
+BOTLOG Omi t  48.7 pos '262.2 -241.6 -168.0' spd 321.6 yaw 79 mode 1 st 2 gl 16
+BOTEVT Reap jump
+BOTLOG Reap t  49.2 pos '908.0 -446.4  29.7' spd  41.5 yaw 15 mode 1 st 4 gl 13
+BOTLOG Omi t  49.2 pos '290.5 -240.0 -168.0' spd 0 yaw 90 mode 1 st 2 gl 16
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTLOG Reap t  49.8 pos '908.0 -427.1  -7.4' spd  79.3 yaw 355 mode 1 st 4 gl 13
+BOTLOG Omi t  49.8 pos '291.6 -241.1 -146.5' spd 30 yaw 315.9 mode 0 st 3 gl 16
+BOTEVT Reap jump
+BOTEVT Omi goal weapon_grenadelauncher
+BOTLOG Reap t  50.3 pos '908.0 -412.4  21.9' spd  24.8 yaw 340 mode 1 st 4 gl 13
+BOTLOG Omi t  50.3 pos '303.8 -252.3 -166.1' spd  33.1 yaw 343 mode 1 st 3 gl 16
+BOTEVT Reap jump
+BOTLOG Reap t  50.8 pos '908.0 -439.0  20.9' spd  55.4 yaw 7 mode 1 st 4 gl 13
+BOTLOG Omi t  50.8 pos '437.5 -294.1 -157.6' spd 320.0 yaw 343 mode 1 st 3 gl 16
+BOTLOG Reap t  51.3 pos '908.0 -444.0  -8.0' spd  30.1 yaw 12 mode 1 st 4 gl 13
+BOTLOG Omi t  51.3 pos '594.6 -328.0 -138.0' spd 320.0 yaw 340 mode 1 st 3 gl 16
+BOTEVT Reap jump
+BOTLOG Reap t  51.8 pos '908.0 -419.7  30.1' spd  32.9 yaw 347 mode 1 st 4 gl 13
+BOTLOG Omi t  51.8 pos '763.9 -328.0 -113.1' spd 343.6 yaw 319 mode 1 st 3 gl 16
+BOTEVT Reap jump
+BOTLOG Reap t  52.3 pos '908.0 -429.3   3.7' spd  58.1 yaw 358 mode 1 st 4 gl 13
+BOTLOG Omi t  52.3 pos '816.0 -328.0 -105.4' spd 0 yaw 302 mode 1 st 3 gl 16
+BOTLOG Reap t  52.8 pos '908.0 -447.8   4.4' spd   9.1 yaw 16 mode 1 st 4 gl 13
+BOTLOG Omi t  52.8 pos '816.0 -328.0 -105.4' spd 0 yaw 302 mode 1 st 3 gl 16
+BOTEVT Reap jump
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTLOG Reap t  53.3 pos '908.0 -422.1  29.7' spd  55.5 yaw 350 mode 1 st 4 gl 13
+BOTLOG Omi t  53.3 pos '816.0 -327.8 -83.8' spd   3.5 yaw   6.7 mode 0 st 4 gl 16
+BOTLOG Reap t  53.9 pos '908.0 -422.0  -8.0' spd  64.1 yaw 350 mode 1 st 4 gl 13
+BOTLOG Omi t  53.9 pos '816.0 -316.6 -103.3' spd  36.2 yaw   6.7 mode 0 st 4 gl 16
+BOTEVT Reap jump
+BOTEVT Omi goal weapon_nailgun
+BOTLOG Reap t  54.4 pos '908.0 -450.9  24.0' spd  17.2 yaw 19 mode 1 st 4 gl 13
+BOTLOG Omi t  54.4 pos '792.6 -228.3 -96.7' spd 320.3 yaw 153.6 mode 1 st 4 gl 16
+BOTEVT Reap stall
+BOTEVT Reap goal weapon_supershotgun
+BOTLOG Reap t  54.9 pos '898.2 -386.9  -8.0' spd 328.6 yaw 144.3 mode 1 st 5 gl 13
+BOTLOG Omi t  54.9 pos '656.0 -181.8 -114.0' spd  45.1 yaw 173 mode 1 st 4 gl 16
+BOTLOG Reap t  55.4 pos '746.4 -307.6 -28.8' spd 334.5 yaw 184 mode 1 st 5 gl 13
+BOTLOG Omi t  55.4 pos '656.0 -172.3 -113.0' spd  12.6 yaw 174 mode 1 st 4 gl 16
+BOTLOG Reap t  55.9 pos '577.8 -276.2 -135.2' spd 326.3 yaw 192 mode 1 st 5 gl 13
+BOTLOG Omi t  55.9 pos '656.0 -166.1 -112.4' spd   9.8 yaw 175 mode 1 st 4 gl 16
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTEVT Omi goal weapon_grenadelauncher
+BOTLOG Reap t  56.4 pos '466.0 -312.2 -154.2' spd 322.6 yaw 188 mode 1 st 5 gl 13
+BOTLOG Omi t  56.4 pos '661.8 -162.9 -73.2' spd  30.2 yaw 311.3 mode 1 st 5 gl 16
+BOTEVT Reap goal item_health
+BOTLOG Reap t  56.9 pos '304.6 -339.0 -168.0' spd 322.3 yaw 159.7 mode 1 st 5 gl 14
+BOTLOG Omi t  56.9 pos '694.7 -202.4 -110.4' spd 320.2 yaw 309 mode 1 st 5 gl 16
+BOTLOG Reap t  57.4 pos '183.9 -222.3 -168.0' spd 337.2 yaw 85 mode 1 st 5 gl 14
+BOTLOG Omi t  57.4 pos '797.5 -328.0 -108.1' spd 190.7 yaw 309 mode 1 st 5 gl 16
+BOTEVT Reap goal item_armor1
+BOTLOG Reap t  57.9 pos '160.5 -80.0 -168.0' spd 232.8 yaw 168.2 mode 1 st 5 gl 15
+BOTLOG Omi t  57.9 pos '816.0 -328.0 -105.4' spd 0 yaw 302 mode 1 st 5 gl 16
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTLOG Reap t  58.4 pos ' 11.4 -151.2 -168.0' spd 333.0 yaw 248 mode 1 st 5 gl 15
+BOTEVT Omi goal weapon_supershotgun
+BOTLOG Omi t  58.4 pos '811.6 -326.7 -71.1' spd 30 yaw 179.7 mode 1 st 6 gl 16
+BOTEVT Reap goal item_health
+BOTLOG Reap t  59.0 pos '-62.4 -288.0 -168.0' spd 162.4 yaw 231 mode 1 st 5 gl 16
+BOTLOG Omi t  59.0 pos '785.7 -324.5 -109.5' spd 211.1 yaw 182 mode 1 st 6 gl 16
+BOTEVT Reap goal item_health
+BOTLOG Reap t  59.5 pos '-171.6 -405.3 -162.0' spd 343.1 yaw 205 mode 1 st 5 gl 17
+BOTLOG Omi t  59.5 pos '621.5 -328.0 -134.0' spd 322.7 yaw 182 mode 1 st 6 gl 16
+BOTLOG Reap t  60.0 pos '-318.6 -470.4 -138.8' spd 326.2 yaw 201 mode 0 st 5 gl 18
+BOTLOG Omi t  60.0 pos '457.9 -332.3 -155.2' spd 320.0 yaw 182 mode 1 st 6 gl 16
+BOTEVT Omi goal item_health
+BOTLOG Reap t  60.5 pos '-483.0 -471.9 -121.8' spd 320.3 yaw 171.9 mode 0 st 5 gl 18
+BOTLOG Omi t  60.5 pos '294.0 -335.6 -168.0' spd 329.4 yaw 146.0 mode 1 st 6 gl 17
+BOTLOG Reap t  61.0 pos '-592.0 -448.8 -111.2' spd  58.9 yaw 171.9 mode 0 st 5 gl 18
+BOTLOG Omi t  61.0 pos '184.1 -206.3 -168.0' spd 333.0 yaw 85 mode 1 st 6 gl 17
+BOTEVT Reap goal weapon_supershotgun
+BOTEVT Omi goal item_armor1
+BOTLOG Reap t  61.5 pos '-580.0 -327.1 -119.9' spd 361.5 yaw  24.3 mode 1 st 5 gl 18
+BOTLOG Omi t  61.5 pos '140.7 -80.0 -168.0' spd 320.9 yaw 187.9 mode 1 st 6 gl 18
+BOTLOG Reap t  62.0 pos '-420.5 -259.3 -132.8' spd 323.8 yaw 354 mode 1 st 5 gl 18
+BOTLOG Omi t  62.0 pos ' -0.8 -168.4 -168.0' spd 330.6 yaw 251 mode 1 st 6 gl 18
+BOTEVT Omi goal item_health
+BOTLOG Reap t  62.5 pos '-257.1 -266.5 -154.6' spd 320.1 yaw 353 mode 1 st 5 gl 18
+BOTLOG Omi t  62.5 pos '-80.1 -294.8 -168.0' spd 267.2 yaw 237 mode 1 st 6 gl 19
+BOTEVT Omi goal item_health
+BOTLOG Reap t  63.0 pos '-94.8 -283.2 -168.0' spd 320.0 yaw 353 mode 1 st 5 gl 18
+BOTLOG Omi t  63.0 pos '-195.5 -416.4 -157.8' spd 326.0 yaw 205 mode 1 st 6 gl 20
+BOTEVT Omi goal weapon_grenadelauncher
+BOTLOG Reap t  63.6 pos ' 69.3 -292.0 -168.0' spd 321.2 yaw 349 mode 1 st 5 gl 18
+BOTLOG Omi t  63.6 pos '-341.9 -463.7 -136.8' spd 282.7 yaw 249.0 mode 1 st 6 gl 21
+BOTLOG Reap t  64.1 pos ' 72.0 848.1 376.0' spd 320.0 yaw 281 mode 1 st 5 gl 18
+BOTLOG Omi t  64.1 pos '-306.0 -591.7 -133.3' spd 321.6 yaw 7 mode 1 st 6 gl 21
+BOTLOG Reap t  64.6 pos '103.2 687.5 376.0' spd 320.0 yaw 281 mode 1 st 5 gl 18
+BOTLOG Omi t  64.6 pos '-143.0 -578.0 -150.8' spd 320.0 yaw 8 mode 1 st 6 gl 21
+BOTLOG Reap t  65.1 pos '134.2 527.0 261.1' spd 320.0 yaw 281 mode 1 st 5 gl 18
+BOTLOG Omi t  65.1 pos ' 19.4 -558.0 -168.0' spd 320.0 yaw 8 mode 1 st 6 gl 21
+BOTLOG Reap t  65.6 pos '165.3 366.4  24.0' spd 320.0 yaw 280 mode 1 st 5 gl 18
+BOTLOG Omi t  65.6 pos '181.7 -538.1 -168.0' spd 320 yaw 8 mode 1 st 6 gl 21
+BOTLOG Reap t  66.1 pos '196.5 205.9  24.0' spd 320.0 yaw 280 mode 1 st 5 gl 18
+BOTLOG Omi t  66.1 pos '326.4 -528.0 -151.4' spd 309.0 yaw 9 mode 1 st 6 gl 21
+BOTLOG Reap t  66.6 pos '227.6  45.7  24.0' spd 320.0 yaw 279 mode 1 st 5 gl 18
+BOTLOG Omi t  66.6 pos '488.9 -510.4 -134.4' spd 320.1 yaw 11 mode 1 st 6 gl 21
+BOTLOG Reap t  67.1 pos '259.6  16.0  24.0' spd  60.8 yaw 275 mode 1 st 5 gl 18
+BOTLOG Omi t  67.1 pos '649.9 -481.7 -88.0' spd 320.0 yaw 12 mode 1 st 6 gl 21
+BOTLOG Reap t  67.6 pos '271.9  16.0  24.0' spd   8.5 yaw 273 mode 1 st 5 gl 18
+BOTLOG Omi t  67.6 pos '809.9 -449.5  -8.0' spd 320.0 yaw 13 mode 1 st 6 gl 21
+BOTEVT Omi goal item_health
+BOTEVT Omi jump
+BOTLOG Reap t  68.2 pos '276.5  16.0   8.0' spd   5.7 yaw 272 mode 1 st 5 gl 18
+BOTLOG Omi t  68.2 pos '908.0 -419.2  31.0' spd  38.9 yaw 347 mode 1 st 6 gl 22
+BOTLOG Reap t  68.7 pos '279.4  16.0   8.0' spd   5.7 yaw 272 mode 1 st 5 gl 18
+BOTLOG Omi t  68.7 pos '908.0 -426.2  -8.0' spd  59.6 yaw 354 mode 1 st 6 gl 22
+BOTEVT Omi jump
+BOTEVT Reap stall
+BOTEVT Reap jump
+BOTEVT Reap goal item_shells
+BOTLOG Reap t  69.2 pos '286.2  16.1  42.3' spd  33.6 yaw  45.9 mode 1 st 6 gl 18
+BOTLOG Omi t  69.2 pos '907.9 -448.2  15.3' spd   1.6 yaw 17 mode 1 st 6 gl 22
+BOTEVT Omi jump
+BOTLOG Reap t  69.7 pos '287.6  39.2   8.0' spd 189.3 yaw 183 mode 1 st 6 gl 18
+BOTLOG Omi t  69.7 pos '908.0 -424.6  26.3' spd  55.7 yaw 352 mode 1 st 6 gl 22
+BOTEVT Reap goal weapon_nailgun
+BOTLOG Reap t  70.2 pos '122.3  43.5  24.0' spd 354.7 yaw 125.7 mode 1 st 6 gl 19
+BOTLOG Omi t  70.2 pos '908.0 -419.9  -8.0' spd  42.2 yaw 347 mode 1 st 6 gl 22
+BOTEVT Omi jump
+BOTLOG Reap t  70.7 pos '133.8 188.0  24.0' spd 327.6 yaw 69 mode 1 st 6 gl 19
+BOTLOG Omi t  70.7 pos '908.0 -448.3  27.3' spd  30.9 yaw 17 mode 1 st 6 gl 22
+BOTEVT Reap goal item_armor2
+BOTEVT Omi jump
+BOTLOG Reap t  71.2 pos '165.4 351.5  24.0' spd 340.0 yaw 128 mode 1 st 6 gl 20
+BOTLOG Omi t  71.2 pos '908.0 -415.4  13.5' spd  65.1 yaw 343 mode 1 st 6 gl 22
+BOTLOG Reap t  71.8 pos ' 69.0 487.4  24.0' spd 327.2 yaw 195.7 mode 0 st 6 gl 21
+BOTLOG Omi t  71.8 pos '908.0 -418.4  -6.1' spd  45.0 yaw 346 mode 1 st 6 gl 22
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTEVT Omi goal item_health
+BOTEVT Reap goal item_shells
+BOTLOG Reap t  72.3 pos '-101.4 483.6  24.0' spd 354.0 yaw 244.7 mode 1 st 6 gl 21
+BOTLOG Omi t  72.3 pos '908.0 -449.9  27.3' spd  63.1 yaw 347.6 mode 1 st 7 gl 22
+BOTEVT Omi jump
+BOTLOG Reap t  72.8 pos '-100.6 326.0  24.0' spd 320.1 yaw 278 mode 1 st 6 gl 21
+BOTLOG Omi t  72.8 pos '915.3 -458.2  56.0' spd  30.5 yaw 30 mode 1 st 7 gl 22
+BOTEVT Omi goal item_spikes
+BOTEVT Omi goal item_spikes
+BOTLOG Reap t  73.3 pos '-78.1 164.4  24.0' spd 320.0 yaw 278 mode 1 st 6 gl 21
+BOTLOG Omi t  73.3 pos '1072.9 -433.2  43.5' spd 347.8 yaw 282.4 mode 1 st 7 gl 24
+BOTLOG Reap t  73.8 pos '-55.4   2.5  24.0' spd 320.0 yaw 278 mode 1 st 6 gl 21
+BOTLOG Omi t  73.8 pos '1031.8 -461.4  -8.0' spd 325.7 yaw 172 mode 1 st 7 gl 24
+BOTLOG Reap t  74.3 pos '-32.6 -159.5  24.0' spd 320 yaw 278 mode 1 st 6 gl 21
+BOTLOG Omi t  74.3 pos '1012.0 -450.6  -8.0' spd  27.6 yaw 173 mode 1 st 7 gl 24
+BOTLOG Reap t  74.8 pos ' -9.7 -304.0  88.0' spd  46.8 yaw 277 mode 1 st 6 gl 21
+BOTLOG Omi t  74.8 pos '1012.0 -440.4  -8.0' spd  17.1 yaw 175 mode 1 st 7 gl 24
+BOTLOG Reap t  75.3 pos '  6.5 -304.0  88.0' spd  14.2 yaw 275 mode 1 st 6 gl 21
+BOTLOG Omi t  75.3 pos '1012.0 -433.2  -8.0' spd  14.2 yaw 175 mode 1 st 7 gl 24
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTLOG Reap t  75.8 pos ' 12.6 -304.0  88.0' spd  11.4 yaw 274 mode 1 st 6 gl 21
+BOTLOG Omi t  75.8 pos '1021.5 -425.0  27.3' spd  32.0 yaw  13.3 mode 0 st 8 gl 24
+BOTEVT Reap stall
+BOTEVT Reap jump
+BOTEVT Reap goal item_artifact_super_damage
+BOTLOG Reap t  76.3 pos ' 19.1 -300.5 122.3' spd  30.9 yaw 37 mode 1 st 7 gl 21
+BOTLOG Omi t  76.3 pos '1099.7 -403.8  -8.0' spd 320.0 yaw  13.3 mode 0 st 8 gl 24
+BOTLOG Reap t  76.9 pos ' 30.0 -289.0  62.0' spd  30.9 yaw 36 mode 1 st 7 gl 21
+BOTLOG Omi t  76.9 pos '1104.0 -384.0  -8.0' spd 0 yaw  13.3 mode 0 st 8 gl 24
+BOTLOG Reap t  77.4 pos ' 46.8 -273.5 -168.0' spd 173.5 yaw 36 mode 1 st 7 gl 21
+BOTLOG Omi t  77.4 pos '1104.0 -384.0  -8.0' spd 0 yaw  13.3 mode 0 st 8 gl 24
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTLOG Reap t  77.9 pos '178.6 -177.7 -168.0' spd 320.0 yaw 36 mode 1 st 7 gl 21
+BOTLOG Omi t  77.9 pos '1100.8 -391.0  30.9' spd 30 yaw 246.0 mode 0 st 9 gl 24
+BOTEVT Reap jump
+BOTLOG Reap t  78.4 pos '320.7 -80.0 -129.8' spd 258.8 yaw  95.3 mode 1 st 7 gl 21
+BOTLOG Omi t  78.4 pos '1056.3 -441.0  -8.0' spd 320.0 yaw 223.7 mode 0 st 9 gl 24
+BOTEVT Omi goal item_health
+BOTEVT Reap jump
+BOTLOG Reap t  78.9 pos '260.2 -97.6 -151.6' spd 356.9 yaw 259.1 mode 1 st 7 gl 21
+BOTLOG Omi t  78.9 pos '983.4 -521.5  -8.0' spd 304.6 yaw 183 mode 1 st 9 gl 24
+BOTLOG Reap t  79.5 pos '212.2 -219.9 -149.6' spd 320.9 yaw 58 mode 1 st 7 gl 21
+BOTLOG Omi t  79.5 pos '820.3 -541.9  -8.0' spd 320.1 yaw 182 mode 1 st 9 gl 24
+BOTEVT Reap jump
+BOTLOG Reap t  80.0 pos '240.0 -115.2 -146.7' spd 350.5 yaw 21 mode 1 st 7 gl 21
+BOTLOG Omi t  80.0 pos '657.3 -550.2 -101.6' spd 320.0 yaw 181 mode 1 st 9 gl 24
+BOTLOG Reap t  80.5 pos '252.2 -82.4 -165.3' spd  30.4 yaw 340 mode 1 st 7 gl 21
+BOTLOG Omi t  80.5 pos '492.6 -549.8 -129.9' spd 320.0 yaw 182 mode 1 st 9 gl 24
+BOTEVT Reap jump
+BOTLOG Reap t  81.0 pos '382.9 -123.3 -123.0' spd 317.3 yaw  97.2 mode 1 st 7 gl 21
+BOTLOG Omi t  81.0 pos '329.5 -555.5 -148.3' spd 320.0 yaw 181 mode 1 st 9 gl 24
+BOTLOG Reap t  81.5 pos '341.5 -98.9 -154.1' spd 320.0 yaw 176 mode 1 st 7 gl 21
+BOTEVT Reap jump
+BOTLOG Omi t  81.5 pos '165.8 -560.6 -167.8' spd 320.1 yaw 179 mode 1 st 9 gl 24
+BOTEVT Omi goal weapon_supershotgun
+BOTLOG Reap t  82.0 pos '180.4 -97.4 -130.9' spd 315.3 yaw 304.2 mode 1 st 7 gl 21
+BOTLOG Omi t  82.0 pos '  0.6 -548.1 -168.0' spd 360.3 yaw 115.7 mode 1 st 9 gl 25
+BOTLOG Reap t  82.5 pos '240.0 -151.1 -168.0' spd 133.2 yaw 48 mode 1 st 7 gl 21
+BOTEVT Reap jump
+BOTLOG Omi t  82.5 pos ' 13.5 -384.2 -168.0' spd 360.2 yaw 9 mode 1 st 9 gl 25
+BOTLOG Reap t  83.0 pos '244.5 -83.0 -144.7' spd 140.6 yaw 344 mode 1 st 7 gl 21
+BOTLOG Omi t  83.0 pos '107.5 880.2 376.0' spd 355.8 yaw 279 mode 1 st 9 gl 25
+BOTEVT Reap jump
+BOTLOG Reap t  83.5 pos '350.8 -122.5 -127.5' spd 320.0 yaw 254.4 mode 1 st 7 gl 21
+BOTLOG Omi t  83.5 pos '169.4 724.4 376.0' spd 320.9 yaw 277 mode 1 st 9 gl 25
+BOTLOG Reap t  84.0 pos '342.3 -227.2 -165.5' spd 304.6 yaw 112 mode 1 st 7 gl 21
+BOTLOG Omi t  84.0 pos '195.1 562.5 317.1' spd 320.1 yaw 276 mode 1 st 9 gl 25
+BOTEVT Reap jump
+BOTLOG Reap t  84.6 pos '320.0 -80.0 -125.1' spd  63.1 yaw 194.0 mode 1 st 7 gl 21
+BOTLOG Omi t  84.6 pos '219.8 401.1  56.2' spd 320.1 yaw 276 mode 1 st 9 gl 25
+BOTLOG Reap t  85.1 pos '284.7 -90.7 -162.1' spd 208.6 yaw 281.3 mode 1 st 7 gl 21
+BOTLOG Omi t  85.1 pos '240.0 239.1  24.0' spd 318.5 yaw 275 mode 1 st 9 gl 25
+BOTEVT Reap jump
+BOTLOG Reap t  85.6 pos '296.5 -142.6 -130.2' spd  44.9 yaw  85.2 mode 1 st 7 gl 21
+BOTLOG Omi t  85.6 pos '242.6  74.9  24.0' spd 320.6 yaw 277 mode 1 st 9 gl 25
+BOTEVT Reap jump
+BOTLOG Reap t  86.1 pos '275.7 -80.0 -140.5' spd 129.1 yaw 164.3 mode 1 st 7 gl 21
+BOTLOG Omi t  86.1 pos '256.2  16.0  24.0' spd  17.4 yaw 276 mode 1 st 9 gl 25
+BOTEVT Reap abandon
+BOTEVT Reap goal item_health
+BOTLOG Reap t  86.6 pos '209.9 -80.0 -159.3' spd 129.1 yaw 241 mode 1 st 7 gl 21
+BOTLOG Omi t  86.6 pos '263.8  16.0  24.0' spd  14.2 yaw 274 mode 1 st 9 gl 25
+BOTEVT Reap goal weapon_supershotgun
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTEVT Omi goal item_shells
+BOTLOG Reap t  87.1 pos '204.3 -223.2 -168.0' spd 331.1 yaw 307 mode 1 st 7 gl 22
+BOTLOG Omi t  87.1 pos '272.8  21.2  61.7' spd  44.0 yaw 115.9 mode 1 st 10 gl 25
+BOTEVT Reap goal item_armor1
+BOTLOG Reap t  87.6 pos '294.0 -363.8 -168.0' spd 351.0 yaw 253.7 mode 1 st 7 gl 23
+BOTLOG Omi t  87.6 pos '241.8  46.9  24.0' spd 311.1 yaw 189 mode 1 st 10 gl 25
+BOTEVT Omi goal weapon_nailgun
+BOTLOG Reap t  88.1 pos '187.0 -413.4 -168.0' spd 330.0 yaw 144 mode 1 st 7 gl 23
+BOTLOG Omi t  88.1 pos '108.8  59.8  24.0' spd 279.5 yaw  97.8 mode 1 st 10 gl 26
+BOTLOG Reap t  88.6 pos ' 48.2 -324.8 -168.0' spd 320.5 yaw 139 mode 1 st 7 gl 23
+BOTLOG Omi t  88.6 pos '149.4 214.6  24.0' spd 325.8 yaw 74 mode 1 st 10 gl 26
+BOTEVT Omi goal item_armor2
+BOTEVT Reap goal item_health
+BOTLOG Reap t  89.2 pos '-89.2 -237.3 -168.0' spd 408.0 yaw 243.6 mode 1 st 7 gl 24
+BOTLOG Omi t  89.2 pos '154.3 380.4  24.0' spd 333.6 yaw 132 mode 1 st 10 gl 27
+BOTEVT Reap goal item_health
+BOTLOG Reap t  89.7 pos '-151.5 -402.4 -164.8' spd 326.4 yaw 244.7 mode 1 st 7 gl 25
+BOTLOG Omi t  89.7 pos ' 35.7 493.4  24.0' spd 367.1 yaw 200.6 mode 0 st 10 gl 28
+BOTEVT Omi goal item_shells
+BOTLOG Reap t  90.2 pos '-208.0 -511.8 -147.8' spd 0 yaw 166 mode 1 st 7 gl 25
+BOTLOG Omi t  90.2 pos '-111.1 427.0  24.0' spd 321.5 yaw 278 mode 1 st 10 gl 28
+BOTLOG Reap t  90.7 pos '-207.7 -476.3 -150.1' spd  36.0 yaw 182 mode 1 st 7 gl 25
+BOTLOG Omi t  90.7 pos '-92.3 264.4  24.0' spd 320.0 yaw 278 mode 1 st 10 gl 28
+BOTLOG Reap t  91.2 pos '-208.0 -476.8 -150.0' spd 0 yaw 182 mode 1 st 7 gl 25
+BOTLOG Omi t  91.2 pos '-69.5 102.2  24.0' spd 320.0 yaw 278 mode 1 st 10 gl 28
+BOTLOG Reap t  91.7 pos '-208.0 -476.8 -150.0' spd 0 yaw 182 mode 1 st 7 gl 25
+BOTLOG Omi t  91.7 pos '-46.8 -59.8  24.0' spd 320 yaw 278 mode 1 st 10 gl 28
+BOTEVT Reap stall
+BOTEVT Reap jump
+BOTEVT Reap goal item_health
+BOTLOG Reap t  92.3 pos '-197.8 -483.3 -114.9' spd  43.8 yaw 251.0 mode 1 st 8 gl 25
+BOTLOG Omi t  92.3 pos '-23.9 -222.0  56.0' spd 320.0 yaw 278 mode 1 st 10 gl 28
+BOTLOG Reap t  92.8 pos '-208.0 -497.7 -148.6' spd 0 yaw 172 mode 1 st 8 gl 25
+BOTLOG Omi t  92.8 pos ' -2.6 -272.0  72.0' spd  33.0 yaw 276 mode 1 st 10 gl 28
+BOTEVT Reap stall
+BOTLOG Reap t  93.3 pos '-208.0 -497.7 -148.6' spd 0 yaw 368.8 mode 0 st 9 gl 25
+BOTEVT Reap jump
+BOTLOG Omi t  93.3 pos '  6.0 -272.0  72.0' spd  11.6 yaw 274 mode 1 st 10 gl 28
+BOTEVT Reap goal item_health
+BOTLOG Reap t  93.8 pos '-195.1 -487.6 -125.3' spd  43.3 yaw 343 mode 1 st 9 gl 25
+BOTLOG Omi t  93.8 pos ' 11.8 -272.0  72.0' spd  11.4 yaw 274 mode 1 st 10 gl 28
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTEVT Omi goal item_artifact_super_damage
+BOTLOG Reap t  94.3 pos '-82.3 -510.0 -162.2' spd 320.6 yaw 337 mode 1 st 9 gl 25
+BOTLOG Omi t  94.3 pos '  7.3 -266.4 110.9' spd  41.6 yaw  71.1 mode 1 st 11 gl 28
+BOTEVT Reap goal weapon_grenadelauncher
+BOTLOG Reap t  94.8 pos ' 75.5 -561.1 -168.0' spd 330.6 yaw 9 mode 1 st 9 gl 26
+BOTLOG Omi t  94.8 pos ' 39.7 -223.3  70.0' spd 320.9 yaw 27 mode 1 st 11 gl 28
+BOTLOG Reap t  95.3 pos '239.3 -551.1 -159.4' spd 320.2 yaw 10 mode 1 st 9 gl 26
+BOTLOG Omi t  95.3 pos '179.7 -138.5 -65.3' spd 320.9 yaw 21 mode 1 st 11 gl 28
+BOTEVT Omi jump
+BOTLOG Reap t  95.8 pos '400.8 -525.8 -143.1' spd 320.0 yaw 11 mode 1 st 9 gl 26
+BOTLOG Omi t  95.8 pos '319.9 -80.0 -129.1' spd 274.5 yaw 277.8 mode 1 st 11 gl 28
+BOTLOG Reap t  96.3 pos '562.2 -497.4 -120.0' spd 320.0 yaw 11 mode 1 st 9 gl 26
+BOTLOG Omi t  96.3 pos '300.8 -138.1 -163.9' spd 400.1 yaw 114.2 mode 1 st 11 gl 28
+BOTEVT Omi jump
+BOTLOG Reap t  96.9 pos '722.6 -467.3 -40.0' spd 320.0 yaw 12 mode 1 st 9 gl 26
+BOTLOG Omi t  96.9 pos '201.5 -80.0 -140.6' spd  30.4 yaw 350 mode 1 st 11 gl 28
+BOTEVT Omi jump
+BOTEVT Reap goal item_health
+BOTLOG Reap t  97.4 pos '883.0 -434.7  -8.0' spd 322.1 yaw 2 mode 1 st 9 gl 27
+BOTEVT Reap jump
+BOTLOG Omi t  97.4 pos '310.2 -99.3 -133.4' spd 320.0 yaw 312.4 mode 1 st 11 gl 28
+BOTLOG Reap t  97.9 pos '908.0 -416.7  15.3' spd   2.2 yaw 344 mode 1 st 9 gl 27
+BOTLOG Omi t  97.9 pos '376.9 -178.1 -155.8' spd 353.0 yaw 149.2 mode 1 st 11 gl 28
+BOTEVT Omi jump
+BOTEVT Reap jump
+BOTLOG Reap t  98.4 pos '908.0 -438.8  26.4' spd  57.5 yaw 7 mode 1 st 9 gl 27
+BOTLOG Omi t  98.4 pos '334.3 -83.3 -121.3' spd 240.4 yaw 196 mode 1 st 11 gl 28
+BOTLOG Reap t  98.9 pos '908.0 -443.1  -8.0' spd  44.0 yaw 12 mode 1 st 9 gl 27
+BOTLOG Omi t  98.9 pos '269.8 -118.8 -166.9' spd 356.1 yaw 284.0 mode 1 st 11 gl 28
+BOTEVT Omi jump
+BOTEVT Reap jump
+BOTLOG Reap t  99.4 pos '908.0 -416.5  27.3' spd  27.1 yaw 344 mode 1 st 9 gl 27
+BOTLOG Omi t  99.4 pos '261.2 -143.5 -143.6' spd  43.3 yaw 60 mode 1 st 11 gl 28
+BOTEVT Omi jump
+BOTEVT Reap jump
+BOTLOG Reap t  99.9 pos '908.0 -433.5  13.3' spd  70.8 yaw 1 mode 1 st 9 gl 27
+BOTLOG Omi t  99.9 pos '307.1 -80.0 -128.3' spd  19.0 yaw 152.6 mode 1 st 11 gl 28
+BOTLOG Reap t 100.4 pos '908.0 -439.6  17.8' spd  83.2 yaw 8 mode 1 st 9 gl 27
+BOTEVT Omi stall
+BOTLOG Omi t 100.4 pos '285.4 -93.6 -162.2' spd 206.5 yaw 405.1 mode 0 st 12 gl 28
+BOTEVT Omi jump
+BOTEVT Reap jump
+BOTEVT Omi goal item_health
+BOTLOG Reap t 101.0 pos '908.0 -408.7  31.0' spd   4.0 yaw 336 mode 1 st 9 gl 27
+BOTLOG Omi t 101.0 pos '331.4 -110.9 -139.0' spd 147.2 yaw 145.4 mode 1 st 12 gl 28
+BOTLOG Reap t 101.5 pos '908.0 -430.5  -8.0' spd  63.4 yaw 359 mode 1 st 9 gl 27
+BOTEVT Reap jump
+BOTEVT Omi goal weapon_supershotgun
+BOTLOG Omi t 101.5 pos '210.1 -96.6 -168.0' spd 331.6 yaw 226.3 mode 1 st 12 gl 29
+BOTLOG Reap t 102.0 pos '908.0 -446.7  24.0' spd  50.4 yaw 15 mode 1 st 9 gl 27
+BOTLOG Omi t 102.0 pos '172.4 -257.9 -168.0' spd 353.4 yaw 326 mode 1 st 12 gl 29
+BOTEVT Reap jump
+BOTEVT Omi goal item_health
+BOTLOG Reap t 102.5 pos '908.0 -411.6  26.3' spd  35.9 yaw 339 mode 1 st 9 gl 27
+BOTLOG Omi t 102.5 pos '304.6 -363.1 -168.0' spd 342.0 yaw 285.7 mode 1 st 12 gl 30
+BOTLOG Reap t 103.0 pos '908.0 -424.1  -8.0' spd  62.0 yaw 352 mode 1 st 9 gl 27
+BOTLOG Omi t 103.0 pos '275.6 -432.0 -168.0' spd 338.0 yaw 208 mode 1 st 12 gl 30
+BOTEVT Reap jump
+BOTLOG Reap t 103.5 pos '908.0 -447.9  27.2' spd  16.2 yaw 16 mode 1 st 9 gl 27
+BOTLOG Omi t 103.5 pos '115.3 -482.7 -168.0' spd 324.2 yaw 223 mode 1 st 12 gl 30
+BOTEVT Omi goal item_health
+BOTEVT Reap jump
+BOTLOG Reap t 104.0 pos '908.0 -431.2  13.3' spd  52.2 yaw 0 mode 1 st 9 gl 27
+BOTLOG Omi t 104.0 pos '-19.5 -582.8 -163.2' spd 369.4 yaw 151.1 mode 1 st 12 gl 31
+BOTLOG Reap t 104.5 pos '908.0 -417.5  -7.4' spd   9.4 yaw 345 mode 1 st 9 gl 27
+BOTLOG Omi t 104.5 pos '-144.9 -460.5 -159.6' spd 339.7 yaw 79 mode 1 st 12 gl 31
+BOTEVT Reap jump
+BOTEVT Omi goal item_armor1
+BOTLOG Reap t 105.0 pos '908.0 -443.6  31.0' spd  48.8 yaw 12 mode 1 st 9 gl 27
+BOTLOG Omi t 105.0 pos '-96.8 -300.8 -168.0' spd 331.2 yaw 34 mode 1 st 12 gl 32
+BOTEVT Omi goal item_health
+BOTLOG Reap t 105.6 pos '908.0 -436.6  -8.0' spd  58.4 yaw 5 mode 1 st 9 gl 27
+BOTEVT Reap jump
+BOTLOG Omi t 105.6 pos ' 62.6 -280.8 -168.0' spd 418.6 yaw 255.1 mode 1 st 12 gl 33
+BOTLOG Reap t 106.1 pos '908.0 -415.7  14.6' spd   4.7 yaw 343 mode 1 st 9 gl 27
+BOTLOG Omi t 106.1 pos '-16.4 -439.5 -168.0' spd 336.9 yaw 188 mode 1 st 12 gl 33
+BOTEVT Reap jump
+BOTLOG Reap t 106.6 pos '908.0 -439.7  26.4' spd  64.5 yaw 8 mode 1 st 9 gl 27
+BOTLOG Omi t 106.6 pos '-176.6 -478.1 -153.8' spd 320.7 yaw 181 mode 1 st 12 gl 33
+BOTLOG Reap t 107.1 pos '908.0 -431.1   3.2' spd  82.0 yaw 0 mode 1 st 9 gl 27
+BOTLOG Omi t 107.1 pos '-208.0 -480.3 -149.6' spd 0 yaw 179 mode 1 st 12 gl 33
+BOTEVT Reap jump
+BOTEVT Reap abandon
+BOTEVT Reap goal weapon_supershotgun
+BOTLOG Reap t 107.6 pos '908.0 -420.2  27.2' spd  32.1 yaw 231.4 mode 1 st 9 gl 27
+BOTEVT Omi stall
+BOTLOG Omi t 107.6 pos '-208.0 -480.3 -149.6' spd 0 yaw 406.0 mode 0 st 13 gl 33
+BOTEVT Omi jump
+BOTEVT Omi goal item_health
+BOTLOG Reap t 108.1 pos '828.9 -423.3  -8.0' spd 320.4 yaw 170 mode 1 st 9 gl 27
+BOTLOG Omi t 108.1 pos '-205.1 -463.6 -126.5' spd  54.8 yaw 180.1 mode 1 st 13 gl 33
+BOTLOG Reap t 108.6 pos '667.6 -396.3 -72.0' spd 320.0 yaw 170 mode 1 st 9 gl 27
+BOTLOG Omi t 108.6 pos '-313.9 -469.9 -139.3' spd 322.7 yaw 201 mode 0 st 13 gl 34
+BOTLOG Reap t 109.1 pos '506.3 -367.8 -149.4' spd 320.0 yaw 171 mode 1 st 9 gl 27
+BOTLOG Omi t 109.1 pos '-468.9 -523.6 -120.4' spd 320.0 yaw 201 mode 0 st 13 gl 34
+BOTLOG Reap t 109.6 pos '344.8 -342.0 -168.0' spd 320.0 yaw 174 mode 1 st 9 gl 27
+BOTLOG Omi t 109.6 pos '-592.0 -583.5 -103.7' spd 145.6 yaw 201 mode 0 st 13 gl 34
+BOTEVT Reap goal item_health
+BOTLOG Reap t 110.2 pos '207.7 -249.7 -168.0' spd 339.5 yaw 96 mode 1 st 9 gl 28
+BOTLOG Omi t 110.2 pos '-592.0 -592.0 -104.0' spd 0 yaw 207.9 mode 0 st 13 gl 34
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTEVT Reap goal item_armor1
+BOTLOG Reap t 110.7 pos '176.9 -85.0 -168.0' spd 346.5 yaw 143.3 mode 1 st 9 gl 29
+BOTEVT Omi goal item_health
+BOTLOG Omi t 110.7 pos '-587.4 -591.5 -69.7' spd 30 yaw  22.5 mode 1 st 14 gl 34
+BOTLOG Reap t 111.2 pos ' 30.5 -131.5 -168.0' spd 338.2 yaw 244 mode 1 st 9 gl 29
+BOTLOG Omi t 111.2 pos '-562.6 -584.1 -107.4' spd 203.2 yaw 32 mode 1 st 14 gl 34
+BOTEVT Reap goal item_health
+BOTLOG Reap t 111.7 pos '-52.2 -275.7 -168.0' spd 323.9 yaw 231 mode 1 st 9 gl 30
+BOTLOG Omi t 111.7 pos '-422.0 -500.6 -126.5' spd 320.0 yaw 32 mode 1 st 14 gl 34
+BOTEVT Reap goal item_health
+BOTLOG Reap t 112.2 pos '-160.7 -390.6 -164.7' spd 334.1 yaw 208 mode 1 st 9 gl 31
+BOTLOG Omi t 112.2 pos '-281.5 -416.2 -147.1' spd 320.0 yaw 32 mode 1 st 14 gl 34
+BOTLOG Reap t 112.7 pos '-302.1 -467.4 -128.4' spd 325.1 yaw 201 mode 1 st 9 gl 31
+BOTLOG Omi t 112.7 pos '-142.4 -331.0 -168.0' spd 320.0 yaw 33 mode 1 st 14 gl 34
+BOTLOG Reap t 113.2 pos '-466.7 -451.5 -124.6' spd 321.4 yaw 157.6 mode 0 st 9 gl 32
+BOTLOG Omi t 113.2 pos ' -4.0 -244.5 -168.0' spd 320.0 yaw 34 mode 1 st 14 gl 34
+BOTLOG Reap t 113.7 pos '-592.0 -390.8 -114.4' spd 158.0 yaw 157.6 mode 0 st 9 gl 32
+BOTLOG Omi t 113.7 pos '132.4 -154.9 -168.0' spd 320.0 yaw 35 mode 1 st 14 gl 34
+BOTEVT Omi goal weapon_supershotgun
+BOTEVT Reap goal item_health
+BOTLOG Reap t 114.2 pos '-588.1 -250.4 -115.0' spd 341.8 yaw  43.3 mode 1 st 9 gl 32
+BOTLOG Omi t 114.2 pos '294.5 -129.3 -164.0' spd 409.6 yaw 269 mode 1 st 14 gl 35
+BOTLOG Reap t 114.8 pos '-427.9 -197.5 -128.1' spd 338.6 yaw 322 mode 1 st 9 gl 32
+BOTLOG Omi t 114.8 pos '309.7 -144.0 -163.0' spd  70.6 yaw 264 mode 1 st 14 gl 35
+BOTLOG Reap t 115.3 pos '-286.4 -282.0 -152.8' spd 320.3 yaw 319 mode 1 st 9 gl 32
+BOTLOG Omi t 115.3 pos '287.8 -144.0 -166.4' spd   3.4 yaw 271 mode 1 st 14 gl 35
+BOTLOG Reap t 115.8 pos '-160.0 -385.8 -164.9' spd 320.0 yaw 318 mode 1 st 9 gl 32
+BOTLOG Omi t 115.8 pos '286.1 -144.0 -166.6' spd   3.4 yaw 271 mode 1 st 14 gl 35
+BOTEVT Omi stall
+BOTEVT Omi jump
+BOTLOG Reap t 116.3 pos '-31.8 -498.8 -168.0' spd 320.0 yaw 317 mode 1 st 9 gl 32
+BOTLOG Omi t 116.3 pos '285.6 -143.1 -145.6' spd  30.1 yaw  32.0 mode 0 st 15 gl 35
+BOTEVT Omi goal item_armor1
+BOTEVT Reap goal item_health
+BOTLOG Reap t 116.8 pos '119.1 -568.3 -168.0' spd 400.8 yaw  69.2 mode 1 st 9 gl 33
+BOTLOG Omi t 116.8 pos '294.9 -125.3 -163.6' spd  62.9 yaw 178.8 mode 1 st 15 gl 35
+BOTLOG Reap t 117.3 pos '206.6 -415.7 -168.0' spd 325.8 yaw 92 mode 1 st 9 gl 33
+BOTLOG Omi t 117.3 pos '142.9 -164.0 -168.0' spd 321.1 yaw 208 mode 1 st 15 gl 35
+BOTLOG Reap t 117.8 pos '209.5 -251.4 -168.0' spd 320.3 yaw 97 mode 1 st 9 gl 33
+BOTLOG Omi t 117.8 pos ' -2.7 -239.5 -168.0' spd 320.1 yaw 210 mode 1 st 15 gl 35
+BOTEVT Omi goal item_health
+BOTEVT Reap goal item_armor1
+BOTLOG Reap t 118.4 pos '178.5 -84.8 -168.0' spd 364.7 yaw 166.6 mode 1 st 9 gl 34
+BOTEVT Omi goal item_health
+BOTLOG Omi t 118.4 pos '-136.0 -351.6 -168.0' spd 363.1 yaw 251.4 mode 1 st 15 gl 37
+BOTLOG Reap t 118.9 pos ' 29.5 -146.3 -168.0' spd 329.3 yaw 241 mode 1 st 9 gl 34
+BOTLOG Omi t 118.9 pos '-256.8 -465.0 -131.8' spd 326.6 yaw 191 mode 1 st 15 gl 37
+BOTEVT Omi goal item_health
+BOTEVT Reap goal item_health
+BOTLOG Reap t 119.4 pos '-59.3 -285.2 -168.0' spd 321.2 yaw 231 mode 1 st 9 gl 35
+BOTLOG Omi t 119.4 pos '-388.2 -546.4 -127.4' spd 418.0 yaw 321.2 mode 1 st 15 gl 38
+BOTEVT Reap goal item_health
+BOTLOG Reap t 119.9 pos '-170.3 -396.3 -163.1' spd 330.2 yaw 207 mode 1 st 9 gl 36
+BOTLOG Omi t 119.9 pos '-245.0 -587.7 -139.8' spd 320.1 yaw 5 mode 1 st 15 gl 38
+BOTLOG Reap t 120.4 pos '-314.6 -468.3 -139.3' spd 327.7 yaw 201 mode 0 st 9 gl 37
+BOTLOG Omi t 120.4 pos '-82.3 -574.6 -157.2' spd 320.0 yaw 7 mode 1 st 15 gl 38
+BOTEVT Omi goal item_health
+BOTEVT Reap goal item_health
+BOTLOG Reap t 120.9 pos '-468.8 -525.0 -120.3' spd 320.2 yaw 222.5 mode 1 st 9 gl 37
+BOTLOG Omi t 120.9 pos ' 78.7 -531.9 -168.0' spd 379.8 yaw  91.9 mode 1 st 15 gl 39

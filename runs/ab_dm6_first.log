@@ -1,0 +1,1827 @@
+LOG started on: 08/18/2026 07:08:44 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm6
+Clearing memory
+Programs occupy 501K.
+trying to open external vis file
+maps/dm6.vis not found, trying argus.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 153 nodes, 650 links
+0 entities inhibited
+ARGUS init on dm6
+ARGEVT Reap spawned
+ARGEVT Omi spawned
+ARGEVT Zeus spawned
+Server spawned.
+ARGLOG Zeus t   1.2 pos '  0.0 -1088.0 264.0' spd 0 yaw 323.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Omi t   1.2 pos '1016.0 -416.0  40.0' spd 0 yaw 280.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   1.2 pos '232.0 -1512.0  40.0' spd 0 yaw 162.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus hazard
+ARGLOG Zeus t   1.7 pos ' -8.5 -1091.9 264.0' spd 166.4 yaw  45.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Omi t   1.7 pos '1045.6 -568.3  40.0' spd 320.0 yaw 280.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   1.7 pos ' 87.7 -1495.5  40.0' spd 223.0 yaw 302.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Zeus t   2.2 pos '  2.2 -1093.2 264.0' spd 106.7 yaw 235.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Omi t   2.2 pos '1072.0 -731.5  40.0' spd 322.8 yaw 280.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   2.2 pos '139.9 -1650.5  40.0' spd 320.7 yaw 302.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus engage Reap
+ARGEVT Reap engage Zeus
+ARGLOG Zeus t   2.7 pos ' 71.8 -1092.2 264.0' spd 151.1 yaw   5.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Omi t   2.7 pos '1075.7 -896.9 -24.0' spd 321.3 yaw 280.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   2.7 pos '200.0 -922.6 139.8' spd 300 yaw 248.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Reap hazard
+ARGLOG Zeus t   3.3 pos '207.3 -1099.1 219.5' spd 320.9 yaw 108 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Omi engage Zeus
+ARGLOG Omi t   3.3 pos '1101.2 -1059.8 -32.0' spd 320.0 yaw 267.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   3.3 pos '143.2 -943.1 128.0' spd 322.0 yaw 289 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Zeus t   3.8 pos '263.4 -1168.0 112.0' spd 337.4 yaw  84.3 mode 0 st 0 gl 0 hp 80 frg 0
+ARGLOG Omi t   3.8 pos '369.6 -1693.0  40.0' spd 347.4 yaw 99 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   3.8 pos '291.6 -893.4 136.0' spd  99.7 yaw 261 mode 0 st 0 gl 0 hp 76 frg 0
+ARGEVT Omi pursue
+ARGLOG Zeus t   4.3 pos '160.8 -1239.8 112.0' spd 281.4 yaw  13.9 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   4.3 pos '348.9 -1626.9  40.0' spd 320.4 yaw 199.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   4.3 pos '367.3 -1711.4  40.0' spd 365.3 yaw 109 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGLOG Zeus t   4.8 pos '304.0 -1165.9 112.0' spd 346.8 yaw 102 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   4.8 pos '188.0 -1601.6  40.0' spd 278.2 yaw 237.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   4.8 pos '416.4 -1633.7  40.0' spd 332.6 yaw 257.2 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t   5.3 pos '280.3 -1003.2 112.0' spd 320.5 yaw 108 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   5.3 pos ' 24.1 -1633.6  40.0' spd 408.1 yaw  89.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   5.3 pos '294.0 -1728.5  56.0' spd 430.9 yaw 101 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Omi hazard
+ARGLOG Zeus t   5.8 pos '322.1 -1769.3  64.6' spd 162.8 yaw  66.4 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   5.8 pos '  0.0 -1704.4  40.0' spd 320.7 yaw 212.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   5.8 pos '193.0 -1599.0  40.0' spd 286.1 yaw  63.7 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t   6.3 pos '197.7 -987.6 120.0' spd 320.7 yaw 264 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   6.3 pos ' 29.5 -1712.7  40.0' spd 320.6 yaw 163.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   6.3 pos '105.0 -1584.0  40.0' spd  12.5 yaw 80 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Omi pursue
+ARGEVT Reap pursue
+ARGEVT Reap hazard
+ARGEVT Zeus pursue
+ARGEVT Omi hazard
+ARGLOG Zeus t   6.9 pos '183.6 -1151.8 112.0' spd 320.0 yaw 264 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   6.9 pos ' 62.0 -1590.9  40.0' spd 335.8 yaw 359.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   6.9 pos '186.9 -1493.5  40.0' spd 347.8 yaw 340.7 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t   7.4 pos '184.3 -1286.8 112.0' spd 162.8 yaw  53.1 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   7.4 pos '213.3 -1660.2  40.0' spd 325.2 yaw 305 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   7.4 pos '212.8 -1519.0  40.0' spd 332.1 yaw 217.8 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Reap hazard
+ARGEVT Zeus hazard
+ARGLOG Zeus t   7.9 pos '303.7 -1219.2 112.0' spd 168.5 yaw 265.6 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   7.9 pos '317.7 -1787.7  56.0' spd 320.0 yaw 306.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   7.9 pos '130.1 -1536.0  40.0' spd 256.6 yaw 305 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t   8.4 pos '258.6 -1261.6 112.0' spd 320.1 yaw 125.7 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   8.4 pos '343.6 -1950.3  40.0' spd 410.6 yaw 173.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   8.4 pos '243.4 -1520.4  40.0' spd 317.7 yaw 125.6 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t   8.9 pos '135.7 -1147.0 112.0' spd 321.8 yaw 158.3 mode 0 st 0 gl 0 hp 168 frg 0
+ARGLOG Omi t   8.9 pos '256.0 -1939.3  40.0' spd 207.9 yaw 157.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   8.9 pos '182.5 -1529.4  40.0' spd 171.0 yaw  51.4 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Reap hazard
+ARGLOG Zeus t   9.4 pos '210.2 -1043.1 112.0' spd 321.7 yaw  27.5 mode 0 st 0 gl 0 hp 167 frg 0
+ARGLOG Omi t   9.4 pos '139.1 -1836.9  56.0' spd 321.1 yaw 157.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   9.4 pos '195.9 -1523.0  40.0' spd 325.3 yaw  22.3 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t   9.9 pos '239.0 -954.8 128.0' spd 328.4 yaw 162.8 mode 0 st 0 gl 0 hp 167 frg 0
+ARGLOG Omi t   9.9 pos ' 22.1 -1773.5  40.0' spd 124.3 yaw 355.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   9.9 pos '228.6 -1530.0  40.0' spd 145.2 yaw 136.4 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Reap hazard
+ARGLOG Zeus t  10.5 pos '114.3 -881.3 136.0' spd 249.5 yaw  37.7 mode 0 st 0 gl 0 hp 166 frg 0
+ARGLOG Omi t  10.5 pos '182.8 -1773.3  56.0' spd 320.1 yaw 355.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  10.5 pos '198.8 -1498.2  40.0' spd 288.4 yaw 194.5 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Zeus engage Omi
+ARGEVT Zeus weapon sg
+ARGEVT Omi engage Zeus
+ARGEVT Zeus weapon rl
+ARGLOG Zeus t  11.0 pos '112.0 -796.6 167.6' spd 137.6 yaw 301.1 mode 0 st 0 gl 0 hp 166 frg 0
+ARGLOG Omi t  11.0 pos '119.5 -1007.0 112.0' spd 352.5 yaw 159.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  11.0 pos ' 82.6 -1501.9  40.0' spd 299.4 yaw 183.6 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t  11.5 pos '121.7 -736.0 144.5' spd  30.8 yaw 301 mode 0 st 0 gl 0 hp 141 frg 0
+ARGLOG Omi t  11.5 pos '243.8 -984.2 120.0' spd 734.2 yaw 122 mode 0 st 0 gl 0 hp 45 frg 0
+ARGLOG Reap t  11.5 pos ' 84.5 -1527.7  40.0' spd 197.7 yaw 288.1 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Zeus pursue
+ARGLOG Zeus t  12.0 pos '124.5 -806.0 157.4' spd 219.4 yaw 292 mode 0 st 0 gl 0 hp 141 frg 0
+ARGLOG Omi t  12.0 pos '220.2 -994.7 120.0' spd 322.8 yaw 119 mode 0 st 0 gl 0 hp 45 frg 0
+ARGLOG Reap t  12.0 pos '120.3 -1688.9  40.0' spd 320.2 yaw 288.1 mode 0 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t  12.5 pos '120.9 -803.3 149.9' spd 190.0 yaw 279 mode 0 st 0 gl 0 hp 116 frg 0
+ARGLOG Omi t  12.5 pos '150.7 -1018.9 112.0' spd 320.0 yaw 96 mode 0 st 0 gl 0 hp 45 frg 0
+ARGLOG Reap t  12.5 pos '170.6 -1845.5  56.0' spd 320.0 yaw 288.1 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Zeus hazard
+ARGLOG Zeus t  13.0 pos ' 96.8 -752.5 136.0' spd 360.6 yaw 309 mode 0 st 0 gl 0 hp 69 frg 0
+ARGLOG Omi t  13.0 pos '301.5 -952.2 128.0' spd 330.1 yaw 136 mode 0 st 0 gl 0 hp 45 frg 0
+ARGEVT Omi hazard
+ARGLOG Reap t  13.0 pos '239.1 -1912.0  40.0' spd 200.4 yaw 288.1 mode 0 st 0 gl 0 hp 87 frg 0
+ARGEVT Zeus pursue
+ARGEVT Omi pursue
+ARGLOG Zeus t  13.5 pos '150.2 -762.2 136.0' spd  35.9 yaw 289 mode 0 st 0 gl 0 hp 69 frg 0
+ARGLOG Omi t  13.5 pos '181.3 -890.1 136.0' spd 330.4 yaw 117 mode 0 st 0 gl 0 hp 45 frg 0
+ARGEVT Reap engage Omi
+ARGLOG Reap t  13.5 pos '328.3 -2036.3  40.0' spd 321.0 yaw 299.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Zeus t  14.1 pos '165.1 -762.2 136.0' spd  24.4 yaw 286 mode 0 st 0 gl 0 hp 69 frg 0
+ARGLOG Omi t  14.1 pos '367.3 -1640.1  40.0' spd 327.4 yaw 105 mode 0 st 0 gl 0 hp 45 frg 0
+ARGLOG Reap t  14.1 pos '497.8 -2046.1  40.0' spd 325.4 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Reap pursue
+ARGEVT Reap hazard
+ARGLOG Zeus t  14.6 pos '175.8 -762.2 136.0' spd  19.3 yaw 284 mode 0 st 0 gl 0 hp 69 frg 0
+ARGLOG Omi t  14.6 pos '462.2 -1651.8  40.0' spd 366.1 yaw  30.7 mode 0 st 0 gl 0 hp 45 frg 0
+ARGLOG Reap t  14.6 pos '406.2 -2024.0  40.0' spd 198.6 yaw  88.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Omi hazard
+ARGLOG Zeus t  15.1 pos '184.6 -762.2 136.0' spd  16.3 yaw 281 mode 0 st 0 gl 0 hp 69 frg 0
+ARGLOG Omi t  15.1 pos '479.6 -1628.9  40.0' spd 323.5 yaw 242.0 mode 0 st 0 gl 0 hp 45 frg 0
+ARGLOG Reap t  15.1 pos '372.3 -2001.1  40.0' spd 320.1 yaw 74 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Zeus t  15.6 pos '202.8 -808.8 136.0' spd 226.4 yaw 318.1 mode 0 st 0 gl 0 hp 69 frg 0
+ARGLOG Omi t  15.6 pos '346.0 -1729.4  48.0' spd 322.8 yaw 192.1 mode 0 st 0 gl 0 hp 45 frg 0
+ARGLOG Reap t  15.6 pos '262.3 -1931.0  40.0' spd 320.0 yaw 72 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus weapon sg
+ARGEVT Omi death
+ARGEVT Omi death Zeus pos '330.5 -1734.8  56.0'
+ARGEVT Reap engage Zeus
+ARGEVT Zeus engage Reap
+ARGLOG Zeus t  16.1 pos '396.0 -1788.3  40.0' spd 293.8 yaw 318.1 mode 0 st 0 gl 0 hp 69 frg 1
+ARGLOG Reap t  16.1 pos '361.0 -1915.9  40.0' spd 320.4 yaw 70 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Reap pursue
+ARGLOG Zeus t  16.6 pos '447.7 -1785.1  40.0' spd 330.4 yaw 290.9 mode 0 st 0 gl 0 hp 45 frg 1
+ARGLOG Reap t  16.6 pos '508.2 -1920.3  40.0' spd 268.2 yaw 125 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus pursue
+ARGLOG Zeus t  17.2 pos '291.1 -1854.9  56.0' spd 373.7 yaw 359 mode 0 st 0 gl 0 hp 45 frg 1
+ARGLOG Reap t  17.2 pos '434.5 -1864.0  40.0' spd  71.7 yaw 166.1 mode 0 st 0 gl 0 hp 92 frg 0
+ARGEVT Reap hazard
+ARGEVT Omi respawn
+ARGLOG Omi t  17.3 pos '456.0 -1504.0 256.0' spd 0 yaw 282.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Omi engage Zeus
+ARGEVT Zeus weapon rl
+ARGLOG Zeus t  17.7 pos '328.7 -2027.4  40.0' spd 411.0 yaw  87.4 mode 0 st 0 gl 0 hp 37 frg 1
+ARGLOG Reap t  17.7 pos '311.4 -1826.6  56.0' spd 344.7 yaw 274.0 mode 0 st 0 gl 0 hp 68 frg 0
+ARGLOG Omi t  17.8 pos '447.2 -1616.1 248.0' spd 328.6 yaw 256 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Omi pursue
+ARGEVT Zeus hazard
+ARGLOG Zeus t  18.2 pos '504.2 -2037.9  40.0' spd 269.7 yaw 156 mode 0 st 0 gl 0 hp 17 frg 1
+ARGLOG Reap t  18.2 pos '198.5 -1912.0  40.0' spd 151.4 yaw 339 mode 0 st 0 gl 0 hp 68 frg 0
+ARGLOG Omi t  18.3 pos '306.6 -1712.9 216.3' spd 375.8 yaw 271 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus death
+ARGEVT Zeus death Zeus pos '509.1 -1998.2  40.0'
+ARGEVT Omi engage Reap
+ARGEVT Reap engage Omi
+ARGLOG Reap t  18.7 pos '251.2 -1838.9  56.0' spd 172.5 yaw 350.6 mode 0 st 0 gl 0 hp 68 frg 0
+ARGLOG Omi t  18.8 pos '281.6 -1799.5 176.0' spd 330.2 yaw 249 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  19.2 pos '153.9 -1803.5  48.0' spd 447.1 yaw 12 mode 0 st 0 gl 0 hp 44 frg 0
+ARGLOG Omi t  19.3 pos '369.6 -1779.7  61.9' spd 190.6 yaw 178 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Reap t  19.7 pos '143.5 -1626.4  40.0' spd 353.2 yaw 310 mode 0 st 0 gl 0 hp 44 frg 0
+ARGEVT Omi pursue
+ARGLOG Omi t  19.8 pos '338.7 -1902.5  40.0' spd 327.8 yaw 144 mode 0 st 0 gl 0 hp 72 frg 0
+ARGEVT Reap pursue
+ARGEVT Zeus respawn
+ARGEVT Omi goal weapon_supernailgun
+ARGEVT Reap goal weapon_lightning
+ARGEVT Omi route 4 start '225.0 -1903.0  40.0' goal '481.0 -2031.0 168.0'
+ARGEVT Zeus goal weapon_rocketlauncher
+ARGLOG Zeus t  20.2 pos '408.0 -1088.0 256.0' spd 0 yaw  16.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  20.2 pos '294.6 -1647.5  40.0' spd 330.6 yaw 303 mode 0 st 0 gl 0 hp 44 frg 0
+ARGEVT Zeus route 10 start '417.0 -1071.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Omi t  20.3 pos '181.9 -1833.1  56.0' spd 326.5 yaw 125 mode 2 st 0 gl 0 hp 72 frg 0
+ARGEVT Reap routefail
+ARGEVT Zeus hazard
+ARGEVT Reap goal weapon_supernailgun
+ARGEVT Reap route 6 start '417.0 -1711.0  40.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t  20.7 pos '507.4 -1041.8 256.0' spd 133.5 yaw 161.5 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  20.8 pos '376.0 -1792.8  40.0' spd 332.6 yaw 223.4 mode 2 st 0 gl 0 hp 44 frg 0
+ARGLOG Omi t  20.9 pos ' 72.2 -1816.1  40.0' spd 343.5 yaw 250.7 mode 2 st 0 gl 0 hp 72 frg 0
+ARGLOG Zeus t  21.2 pos '400.0 -1105.0 256.0' spd 307.3 yaw 201 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  21.3 pos '371.5 -1957.7  40.0' spd 320.0 yaw 184 mode 2 st 0 gl 0 hp 44 frg 0
+ARGLOG Omi t  21.4 pos ' 47.8 -1987.2  88.0' spd 324.3 yaw 3 mode 2 st 0 gl 0 hp 48 frg 0
+ARGEVT Reap jump
+ARGEVT Zeus hazard
+ARGEVT Reap route 5 start '353.0 -1967.0  40.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t  21.7 pos '400.0 -1157.7 256.0' spd 212.4 yaw 163 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  21.8 pos '352.0 -2043.3  78.9' spd  31.3 yaw 164 mode 2 st 0 gl 0 hp 40 frg 0
+ARGEVT Omi pursue
+ARGLOG Omi t  21.9 pos ' 84.9 -1962.1  88.0' spd 320.6 yaw 348 mode 2 st 0 gl 0 hp 48 frg 0
+ARGEVT Reap pursue
+ARGLOG Zeus t  22.2 pos '400.0 -1157.7 256.0' spd 207.3 yaw 163 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  22.3 pos '367.8 -1993.4  40.0' spd 320.1 yaw 144 mode 2 st 0 gl 0 hp 40 frg 0
+ARGLOG Omi t  22.4 pos '194.6 -1839.1  56.0' spd 320.2 yaw 329 mode 2 st 0 gl 0 hp 48 frg 0
+ARGEVT Zeus hazard
+ARGEVT Omi route 12 start '225.0 -911.0 136.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t  22.8 pos '400.0 -1157.7 256.0' spd 208.0 yaw 163 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Reap pursue
+ARGLOG Reap t  22.8 pos '401.0 -1864.0  40.0' spd 136.5 yaw 118.3 mode 2 st 0 gl 0 hp 16 frg 0
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '321.0 -1135.0 151.0'
+ARGEVT Zeus jump
+ARGEVT Omi pursue
+ARGLOG Omi t  22.9 pos '213.7 -1036.6 112.0' spd 320.2 yaw 282 mode 2 st 0 gl 0 hp 48 frg 0
+ARGEVT Zeus route 11 start '417.0 -1231.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Zeus t  23.3 pos '441.8 -1226.6 291.0' spd 209.7 yaw  68.3 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Reap t  23.3 pos '201.5 -938.6 136.0' spd 301.1 yaw 270 mode 0 st 0 gl 0 hp 16 frg 0
+ARGLOG Omi t  23.4 pos '178.2 -1184.5 112.0' spd 408.7 yaw 344.2 mode 2 st 0 gl 0 hp 32 frg 0
+ARGEVT Reap route 12 start '225.0 -911.0 136.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t  23.8 pos '473.6 -1138.1 256.0' spd 327.4 yaw 130 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Reap t  23.8 pos '241.6 -1011.4 112.0' spd 320.1 yaw 261 mode 2 st 0 gl 0 hp 16 frg 0
+ARGLOG Omi t  23.9 pos '213.8 -1268.3 112.0' spd 384.0 yaw 95 mode 2 st 0 gl 0 hp 16 frg 0
+ARGEVT Zeus hazard
+ARGEVT Omi death
+ARGEVT Omi death Reap pos '283.6 -1293.9 112.0'
+ARGLOG Zeus t  24.3 pos '400.0 -1099.8 256.0' spd 296.3 yaw 205 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Reap t  24.4 pos '104.3 -1048.3 112.0' spd 196.3 yaw 289 mode 0 st 0 gl 0 hp 16 frg 1
+ARGEVT Reap route 12 start ' 97.0 -1135.0 112.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t  24.8 pos '400.0 -1154.3 256.0' spd 208.9 yaw 166 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Reap t  24.9 pos '198.6 -1184.2 112.0' spd 405.6 yaw  44.8 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Zeus hazard
+ARGEVT Reap hazard
+ARGLOG Zeus t  25.3 pos '400.0 -1154.3 256.0' spd 207.6 yaw 166 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Reap t  25.4 pos '304.0 -1116.6 112.0' spd 293.3 yaw 5 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '321.0 -1135.0 151.0'
+ARGEVT Zeus jump
+ARGEVT Omi respawn
+ARGLOG Zeus t  25.8 pos '406.2 -1171.8 277.5' spd 177.6 yaw 33 mode 0 st 2 gl 0 hp 100 frg 0
+ARGEVT Omi goal item_armorInv
+ARGLOG Omi t  25.8 pos '896.0 -1464.0 256.0' spd 0 yaw  16.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  25.9 pos '463.5 -1071.5 128.4' spd 325.1 yaw 345 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Omi route 10 start '929.0 -1455.0 256.0' goal '1729.0 -367.0 168.0'
+ARGEVT Zeus route 11 start '417.0 -1231.0 256.0' goal '1441.0 -463.0  40.0'
+ARGEVT Omi hazard
+ARGLOG Zeus t  26.4 pos '481.4 -1202.9 257.4' spd 185.8 yaw 116 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  26.4 pos '1040.4 -1419.3 256.0' spd 346.8 yaw  56.6 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  26.4 pos '626.9 -1099.4  92.3' spd 321.1 yaw 358 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Reap engage Omi
+ARGEVT Omi engage Reap
+ARGLOG Zeus t  26.9 pos '423.8 -1066.6 256.0' spd 370.5 yaw 192.3 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  26.9 pos '1122.8 -1287.5 256.0' spd 109.7 yaw  50.7 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus hazard
+ARGLOG Reap t  26.9 pos '790.1 -1138.7  22.0' spd 329.2 yaw 341.9 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Zeus engage Omi
+ARGLOG Zeus t  27.4 pos '493.4 -1137.3 256.0' spd 322.6 yaw 305.7 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  27.4 pos '1079.3 -1337.8 256.0' spd 320.0 yaw 153 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus pursue
+ARGLOG Reap t  27.4 pos '876.6 -1262.0 -40.0' spd 332.3 yaw 333 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Reap pursue
+ARGEVT Omi pursue
+ARGEVT Reap hazard
+ARGEVT Omi route 9 start '993.0 -1327.0 256.0' goal '1729.0 -367.0 168.0'
+ARGLOG Zeus t  27.9 pos '661.8 -1136.0 256.0' spd 324.8 yaw 346 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  27.9 pos '950.8 -1329.3 256.0' spd 331.4 yaw 119 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  28.0 pos '967.6 -1281.7 -24.0' spd 331.2 yaw 4 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Zeus route 11 start '673.0 -1071.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Zeus t  28.4 pos '794.8 -1101.3 256.0' spd 113.1 yaw 303 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  28.4 pos '868.2 -1218.8 256.0' spd 124.7 yaw  59.4 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t  28.5 pos '1108.4 -1248.8 -40.0' spd 166.6 yaw  72.2 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Reap pursue
+ARGEVT Reap hazard
+ARGEVT Omi pursue
+ARGLOG Zeus t  28.9 pos '740.7 -1186.2 256.0' spd 252.4 yaw 315 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  28.9 pos '909.2 -1366.2 256.0' spd 328.4 yaw 32 mode 2 st 0 gl 0 hp 76 frg 0
+ARGLOG Reap t  29.0 pos '1104.0 -1359.7 -17.6' spd  90.6 yaw 147 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Zeus hazard
+ARGLOG Zeus t  29.4 pos '815.5 -1159.1 256.0' spd 320.3 yaw 333 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  29.4 pos '1087.7 -1311.6 256.0' spd 350.3 yaw  54.4 mode 2 st 0 gl 0 hp 52 frg 0
+ARGLOG Reap t  29.5 pos '1056.2 -1260.9 -24.0' spd 337.5 yaw 165 mode 2 st 0 gl 0 hp 16 frg 1
+ARGLOG Zeus t  30.0 pos '788.5 -1323.4 256.0' spd 328.1 yaw 11 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  30.0 pos '1227.7 -1220.6 256.0' spd 358.6 yaw  87.9 mode 2 st 0 gl 0 hp 36 frg 0
+ARGLOG Reap t  30.0 pos '900.0 -1196.2 -40.0' spd 351.4 yaw 109.8 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Zeus route 10 start '833.0 -1359.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Zeus t  30.5 pos '825.2 -1306.1 256.0' spd 322.3 yaw 33 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Omi t  30.5 pos '1231.2 -1039.9 256.0' spd 332.1 yaw 208 mode 2 st 0 gl 0 hp 24 frg 0
+ARGLOG Reap t  30.5 pos '890.8 -1260.1 -40.0' spd 331.9 yaw 36 mode 2 st 0 gl 0 hp 16 frg 1
+ARGEVT Omi death
+ARGEVT Omi death Reap pos '1201.5 -974.2 256.0'
+ARGEVT Zeus route 10 start '737.0 -1263.0 256.0' goal '1441.0 -463.0  40.0'
+ARGEVT Zeus engage Reap
+ARGEVT Zeus hazard
+ARGEVT Reap engage Zeus
+ARGLOG Zeus t  31.0 pos '839.3 -1151.2 256.0' spd 151.1 yaw 352.9 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  31.0 pos '970.7 -1246.6 -40.0' spd 249.5 yaw  87.1 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Reap pursue
+ARGEVT Zeus pursue
+ARGLOG Zeus t  31.5 pos '837.6 -1292.9 256.0' spd 348.3 yaw 19 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  31.6 pos '929.9 -1092.6 -40.0' spd 418.6 yaw 213 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Zeus route 10 start '833.0 -1359.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Zeus t  32.0 pos '1011.5 -1281.7 256.0' spd 320.9 yaw 19 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  32.1 pos '838.7 -1223.9 -40.0' spd 433.0 yaw   1.5 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Omi respawn
+ARGEVT Omi goal item_armorInv
+ARGLOG Omi t  32.2 pos '1892.0 -160.0 168.0' spd 0 yaw 230 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Omi route 2 start '1857.0 -271.0 168.0' goal '1729.0 -367.0 168.0'
+ARGLOG Zeus t  32.5 pos '1113.1 -1321.4 256.0' spd 331.8 yaw  84.9 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  32.6 pos '995.7 -1331.1  -8.0' spd 345.9 yaw 350 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGLOG Omi t  32.7 pos '1856.6 -309.8 168.0' spd 320.0 yaw 271 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Zeus t  33.0 pos '1020.5 -1338.6 256.0' spd 324.4 yaw 137 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Omi hazard
+ARGLOG Reap t  33.1 pos '1126.4 -1310.6   1.7' spd 411.0 yaw 111 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  33.2 pos '1804.2 -432.6 168.0' spd 321.6 yaw 171.4 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Zeus hazard
+ARGEVT Zeus route 9 start '897.0 -1231.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Zeus t  33.6 pos '908.6 -1261.1 256.0' spd 126.5 yaw  40.5 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  33.6 pos '1146.8 -1144.8 -40.0' spd 321.4 yaw 213.7 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Omi goal weapon_rocketlauncher
+ARGLOG Omi t  33.8 pos '1705.9 -312.0 168.0' spd 320.3 yaw 102.8 mode 1 st 0 gl 1 hp 100 frg 0
+ARGEVT Reap pursue
+ARGEVT Zeus pursue
+ARGLOG Zeus t  34.1 pos '1004.4 -1383.7 256.0' spd 286.1 yaw 59 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  34.1 pos '1156.4 -1254.4 -40.0' spd 372.6 yaw 185 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  34.3 pos '1588.5 -265.8 168.0' spd 366.5 yaw 246 mode 1 st 0 gl 1 hp 100 frg 0
+ARGLOG Zeus t  34.6 pos '1123.5 -1264.2 256.0' spd 330.7 yaw  23.0 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  34.6 pos '992.1 -1291.8 -24.0' spd 324.4 yaw 167 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  34.8 pos '1504.2 -412.6 161.7' spd 330.5 yaw 292.3 mode 1 st 0 gl 1 hp 100 frg 0
+ARGLOG Zeus t  35.1 pos '1275.2 -1189.1 256.0' spd 331.1 yaw  51.3 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  35.1 pos '911.0 -1157.4 -40.0' spd 425.4 yaw   2.5 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  35.3 pos '1544.1 -532.2  83.0' spd 272.2 yaw  96.8 mode 1 st 0 gl 1 hp 100 frg 0
+ARGEVT Reap route 6 start '417.0 -1711.0  40.0' goal '481.0 -2031.0 168.0'
+ARGEVT Zeus goal 
+ARGLOG Zeus t  35.6 pos '1271.6 -1033.3 256.0' spd 430.2 yaw 216.1 mode 1 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  35.7 pos '388.6 -1711.1  40.0' spd 320.4 yaw 39 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Omi goal weapon_supershotgun
+ARGEVT Zeus hazard
+ARGLOG Omi t  35.8 pos '1524.8 -394.1  40.0' spd 355.2 yaw 230.7 mode 1 st 0 gl 2 hp 100 frg 0
+ARGLOG Zeus t  36.1 pos '1209.7 -1100.9 256.0' spd 109.1 yaw 102.2 mode 1 st 2 gl 0 hp 100 frg 0
+ARGLOG Reap t  36.2 pos '512.0 -1601.8  40.0' spd 265.4 yaw  88.3 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Reap hazard
+ARGLOG Omi t  36.3 pos '1405.0 -499.9  40.0' spd 329.2 yaw 262 mode 1 st 0 gl 2 hp 100 frg 0
+ARGEVT Zeus goal item_rockets
+ARGEVT Zeus route 9 start '1153.0 -975.0 256.0' goal '321.0 -1615.0  40.0'
+ARGEVT Omi goal item_weapon
+ARGEVT Omi route 7 start '1377.0 -623.0  40.0' goal '1313.0 -335.0 168.0'
+ARGLOG Zeus t  36.6 pos '1182.8 -938.2 256.0' spd 373.7 yaw 169.2 mode 2 st 2 gl 1 hp 100 frg 0
+ARGEVT Omi hazard
+ARGLOG Reap t  36.7 pos '360.5 -1597.2  40.0' spd 340.1 yaw 221 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Zeus goal weapon_rocketlauncher
+ARGLOG Omi t  36.8 pos '1408.0 -618.9  40.0' spd 322.8 yaw 350.2 mode 2 st 0 gl 3 hp 100 frg 0
+ARGEVT Zeus route 5 start '1153.0 -975.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Zeus t  37.2 pos '1016.2 -888.0 256.0' spd 328.9 yaw 215.6 mode 2 st 2 gl 1 hp 100 frg 0
+ARGLOG Reap t  37.2 pos '225.8 -1696.7  48.0' spd 321.1 yaw 229 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  37.4 pos '1428.0 -500.4  40.0' spd 325.6 yaw  59.4 mode 2 st 0 gl 3 hp 100 frg 0
+ARGLOG Zeus t  37.7 pos '858.3 -944.9 256.0' spd 334.9 yaw 215 mode 2 st 2 gl 1 hp 100 frg 0
+ARGLOG Reap t  37.7 pos '104.0 -1808.3  40.0' spd 320.6 yaw 212 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  37.9 pos '1577.0 -447.7  40.0' spd 427.7 yaw 268 mode 2 st 0 gl 3 hp 100 frg 0
+ARGLOG Zeus t  38.2 pos '720.0 -1029.3 256.0' spd 183.2 yaw 189.0 mode 2 st 2 gl 1 hp 100 frg 0
+ARGLOG Reap t  38.2 pos ' 12.4 -1947.6  88.0' spd 341.6 yaw 293.3 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  38.4 pos '1588.1 -622.8  40.0' spd 370.3 yaw 190.4 mode 2 st 0 gl 3 hp 100 frg 0
+ARGEVT Omi hazard
+ARGEVT Omi jump
+ARGLOG Zeus t  38.7 pos '582.5 -1078.3 256.0' spd 322.2 yaw 177 mode 2 st 2 gl 1 hp 100 frg 0
+ARGLOG Reap t  38.7 pos '126.5 -2064.0  88.0' spd 320 yaw 360 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Reap jump
+ARGLOG Omi t  38.9 pos '1460.0 -609.2 106.9' spd  21.7 yaw 184 mode 2 st 0 gl 3 hp 100 frg 0
+ARGLOG Zeus t  39.2 pos '418.2 -1073.8 256.0' spd 320.1 yaw 179 mode 2 st 2 gl 1 hp 100 frg 0
+ARGLOG Reap t  39.3 pos '185.2 -2063.6 123.1' spd  30.1 yaw 6 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  39.4 pos '1320.8 -615.4 168.0' spd 344.2 yaw 135.0 mode 2 st 0 gl 3 hp 100 frg 0
+ARGLOG Zeus t  39.7 pos '400.0 -1071.0 256.0' spd   2.9 yaw 181 mode 2 st 2 gl 1 hp 100 frg 0
+ARGLOG Reap t  39.8 pos '224.0 -2055.0 104.0' spd  14.2 yaw 5 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  39.9 pos '1238.7 -464.7 168.0' spd 331.5 yaw 73 mode 1 st 0 gl 3 hp 100 frg 0
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '225.0 -1071.0 112.0'
+ARGEVT Zeus jump
+ARGLOG Zeus t  40.2 pos '401.6 -1070.9 277.6' spd  30.1 yaw 335.2 mode 0 st 3 gl 1 hp 100 frg 0
+ARGEVT Omi goal item_weapon
+ARGLOG Reap t  40.3 pos '224.0 -2048.7 104.0' spd  11.4 yaw 3 mode 2 st 0 gl 0 hp 16 frg 2
+ARGEVT Zeus route 1 start '417.0 -1071.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Omi t  40.4 pos '1292.7 -307.4 168.0' spd 323.7 yaw 40 mode 1 st 0 gl 4 hp 100 frg 0
+ARGEVT Omi goal weapon_lightning
+ARGEVT Reap abandon
+ARGEVT Reap goal item_health
+ARGLOG Zeus t  40.8 pos '419.2 -1092.8 256.0' spd  91.2 yaw 173 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Omi routefail
+ARGLOG Reap t  40.8 pos '362.1 -2024.3 152.0' spd 349.6 yaw  64.3 mode 0 st 0 gl 0 hp 16 frg 2
+ARGEVT Zeus engage Reap
+ARGEVT Zeus weapon sg
+ARGEVT Omi goal item_health
+ARGEVT Reap engage Zeus
+ARGLOG Omi t  41.0 pos '1455.4 -311.0 168.0' spd 414.5 yaw 249.5 mode 0 st 0 gl 5 hp 100 frg 0
+ARGEVT Omi route 12 start '1441.0 -271.0 168.0' goal '225.0 -1231.0 112.0'
+ARGEVT Reap route 2 start '385.0 -1935.0 168.0' goal '353.0 -1967.0  40.0'
+ARGLOG Zeus t  41.3 pos '402.0 -1218.1 256.0' spd 320.1 yaw 268.8 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Zeus weapon gl
+ARGLOG Reap t  41.3 pos '431.2 -1866.8 168.0' spd 323.1 yaw 87 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  41.5 pos '1364.0 -484.0 109.1' spd 150.2 yaw 108 mode 2 st 0 gl 5 hp 100 frg 0
+ARGLOG Zeus t  41.8 pos '480.9 -1340.5 256.0' spd 164.2 yaw 267 mode 0 st 3 gl 1 hp 100 frg 0
+ARGEVT Zeus route 3 start '417.0 -1391.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Reap t  41.8 pos '471.9 -1744.2 200.0' spd 295.1 yaw 93 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  42.0 pos '1322.8 -394.7  40.0' spd 361.9 yaw 174.9 mode 2 st 0 gl 5 hp 100 frg 0
+ARGLOG Zeus t  42.3 pos '459.4 -1390.1 256.0' spd 320.0 yaw 266 mode 2 st 3 gl 1 hp 82 frg 0
+ARGLOG Reap t  42.3 pos '400.0 -1688.0 216.0' spd 0 yaw 75 mode 2 st 0 gl 0 hp 16 frg 2
+ARGLOG Omi t  42.5 pos '1165.0 -432.6  40.0' spd 320.6 yaw 209 mode 2 st 0 gl 5 hp 100 frg 0
+ARGEVT Reap death
+ARGEVT Reap death Zeus pos '400.0 -1688.0 216.0'
+ARGEVT Zeus hazard
+ARGLOG Zeus t  42.8 pos '405.6 -1450.9 256.0' spd 330.4 yaw 163.0 mode 2 st 3 gl 1 hp 64 frg 1
+ARGLOG Omi t  43.0 pos '1027.6 -528.5  40.0' spd 344.8 yaw 258 mode 2 st 0 gl 5 hp 100 frg 0
+ARGLOG Zeus t  43.3 pos '404.9 -1366.7 256.0' spd 320.1 yaw 84 mode 2 st 3 gl 1 hp 64 frg 1
+ARGLOG Omi t  43.5 pos '984.1 -689.6  40.0' spd 322.6 yaw 275 mode 2 st 0 gl 5 hp 100 frg 0
+ARGLOG Zeus t  43.8 pos '416.1 -1202.6 256.0' spd 320.1 yaw 89 mode 2 st 3 gl 1 hp 64 frg 1
+ARGLOG Omi t  44.0 pos '1022.2 -852.0  -8.0' spd 342.3 yaw 330 mode 2 st 0 gl 5 hp 100 frg 0
+ARGEVT Reap respawn
+ARGEVT Reap goal weapon_rocketlauncher
+ARGLOG Reap t  44.1 pos '232.0 -1512.0  40.0' spd 0 yaw 163.7 mode 0 st 0 gl 0 hp 100 frg 2
+ARGEVT Reap route 4 start '193.0 -1519.0  40.0' goal '225.0 -1071.0 112.0'
+ARGLOG Zeus t  44.4 pos '400.0 -1040.0 256.0' spd 0 yaw 173.6 mode 2 st 3 gl 1 hp 89 frg 1
+ARGEVT Zeus hazard
+ARGLOG Omi t  44.6 pos '1087.4 -1006.2 -32.0' spd 328.5 yaw 257 mode 2 st 0 gl 5 hp 100 frg 0
+ARGLOG Reap t  44.6 pos ' 88.4 -1559.2  40.0' spd 341.1 yaw 294.0 mode 2 st 0 gl 0 hp 100 frg 2
+ARGLOG Zeus t  44.9 pos '400.0 -1089.5 256.0' spd  13.4 yaw 173 mode 2 st 3 gl 1 hp 89 frg 1
+ARGEVT Omi engage Reap
+ARGEVT Reap engage Omi
+ARGEVT Omi route 4 start '321.0 -1807.0  56.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t  45.1 pos '340.9 -1755.1  58.2' spd 300 yaw  82.2 mode 2 st 0 gl 5 hp 100 frg 0
+ARGLOG Reap t  45.1 pos '151.0 -1733.6  48.0' spd 331.9 yaw 353.9 mode 2 st 0 gl 0 hp 100 frg 2
+ARGLOG Zeus t  45.4 pos '400.0 -1081.6 256.0' spd  11.6 yaw 176 mode 2 st 3 gl 1 hp 89 frg 1
+ARGLOG Omi t  45.6 pos '318.1 -1589.9  40.0' spd 363.8 yaw 206.0 mode 2 st 0 gl 5 hp 100 frg 0
+ARGLOG Reap t  45.6 pos '246.0 -1871.1  48.0' spd 344.4 yaw 79 mode 2 st 0 gl 0 hp 100 frg 2
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '225.0 -1071.0 112.0'
+ARGLOG Zeus t  45.9 pos '400.0 -1076.7 256.0' spd   8.5 yaw 333.8 mode 0 st 4 gl 1 hp 89 frg 1
+ARGEVT Zeus jump
+ARGLOG Omi t  46.1 pos '146.3 -1609.6  40.0' spd 391.9 yaw 316 mode 2 st 0 gl 5 hp 96 frg 0
+ARGEVT Zeus route 1 start '417.0 -1071.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Reap t  46.2 pos '388.5 -1873.6  40.0' spd  93.9 yaw 139 mode 2 st 0 gl 0 hp 100 frg 2
+ARGLOG Zeus t  46.4 pos '413.8 -1101.6 257.4' spd  98.7 yaw 170 mode 2 st 4 gl 1 hp 89 frg 1
+ARGLOG Omi t  46.6 pos '  5.8 -1714.6  40.0' spd 352.1 yaw 313 mode 2 st 0 gl 5 hp 92 frg 0
+ARGEVT Omi hazard
+ARGLOG Reap t  46.7 pos '256.0 -1946.3  40.0' spd 121.7 yaw 143 mode 2 st 0 gl 0 hp 72 frg 2
+ARGLOG Zeus t  46.9 pos '400.0 -1085.4 256.0' spd  74.2 yaw 175 mode 2 st 4 gl 1 hp 89 frg 1
+ARGLOG Omi t  47.1 pos '121.7 -1658.2  40.0' spd 320.0 yaw 315 mode 2 st 0 gl 5 hp 92 frg 0
+ARGLOG Reap t  47.2 pos '351.4 -1910.4  40.0' spd 321.0 yaw 124 mode 2 st 0 gl 0 hp 72 frg 2
+ARGLOG Zeus t  47.4 pos '400.0 -1073.2 256.0' spd   2.8 yaw 179 mode 2 st 4 gl 1 hp 89 frg 1
+ARGLOG Omi t  47.7 pos '268.5 -1584.0  40.0' spd 301.5 yaw 283.5 mode 2 st 0 gl 5 hp 90 frg 0
+ARGLOG Reap t  47.7 pos '305.6 -1885.0  40.0' spd 325.2 yaw 92 mode 2 st 0 gl 0 hp 72 frg 2
+ARGLOG Zeus t  48.0 pos '400.0 -1071.7 256.0' spd   2.8 yaw 179 mode 2 st 4 gl 1 hp 89 frg 1
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '225.0 -1071.0 112.0'
+ARGEVT Zeus jump
+ARGLOG Omi t  48.2 pos '430.3 -1625.9  40.0' spd 339.1 yaw 223 mode 2 st 0 gl 5 hp 90 frg 0
+ARGEVT Zeus route 1 start '417.0 -1071.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Reap t  48.2 pos '147.7 -1827.6  48.0' spd 341.9 yaw 29 mode 2 st 0 gl 0 hp 72 frg 2
+ARGLOG Zeus t  48.5 pos '415.7 -1079.2 284.4' spd  71.1 yaw 228.4 mode 2 st 5 gl 1 hp 89 frg 1
+ARGLOG Omi t  48.7 pos '505.3 -1781.0  40.0' spd 354.6 yaw 173 mode 2 st 0 gl 5 hp 89 frg 0
+ARGLOG Reap t  48.7 pos '103.5 -1664.0  40.0' spd 337.2 yaw 340 mode 2 st 0 gl 0 hp 72 frg 2
+ARGLOG Zeus t  49.0 pos '400.0 -1092.1 256.0' spd  35.4 yaw 173 mode 2 st 5 gl 1 hp 89 frg 1
+ARGLOG Omi t  49.2 pos '450.9 -1948.1  40.0' spd 340.1 yaw 137 mode 2 st 0 gl 5 hp 88 frg 0
+ARGLOG Reap t  49.3 pos '112.4 -1650.4  40.0' spd 324.6 yaw 316 mode 2 st 0 gl 0 hp 21 frg 2
+ARGEVT Omi weapon ssg
+ARGLOG Zeus t  49.5 pos '400.0 -1081.1 256.0' spd  11.6 yaw 176 mode 2 st 5 gl 1 hp 89 frg 1
+ARGLOG Omi t  49.7 pos '309.6 -2019.0  40.0' spd 320.1 yaw 142 mode 2 st 0 gl 5 hp 87 frg 0
+ARGLOG Reap t  49.8 pos ' 42.8 -1803.0  40.0' spd 320.3 yaw 320 mode 2 st 0 gl 0 hp 21 frg 2
+ARGEVT Omi route 5 start '257.0 -2063.0  40.0' goal '225.0 -1231.0 112.0'
+ARGLOG Zeus t  50.0 pos '400.0 -1076.5 256.0' spd   5.8 yaw 178 mode 2 st 5 gl 1 hp 89 frg 1
+ARGEVT Omi pursue
+ARGEVT Reap pursue
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '225.0 -1071.0 112.0'
+ARGEVT Zeus jump
+ARGLOG Omi t  50.2 pos '269.9 -1988.2  40.0' spd 374.6 yaw 137 mode 2 st 0 gl 5 hp 87 frg 0
+ARGLOG Reap t  50.3 pos ' 51.5 -1869.9  56.0' spd 333.0 yaw 327 mode 2 st 0 gl 0 hp 21 frg 2
+ARGEVT Zeus route 1 start '417.0 -1071.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Zeus t  50.5 pos '410.6 -1082.4 287.8' spd  78.8 yaw 234.9 mode 2 st 6 gl 1 hp 89 frg 1
+ARGEVT Reap death
+ARGEVT Reap death Omi pos '126.2 -1874.9  72.0'
+ARGLOG Omi t  50.7 pos '231.3 -1832.0  56.0' spd 166.5 yaw 108.1 mode 2 st 0 gl 5 hp 87 frg 1
+ARGEVT Omi route 2 start '225.0 -911.0 136.0' goal '225.0 -1231.0 112.0'
+ARGLOG Zeus t  51.1 pos '400.0 -1100.1 256.0' spd  58.2 yaw 170 mode 2 st 6 gl 1 hp 89 frg 1
+ARGLOG Omi t  51.3 pos '206.6 -1036.1 112.0' spd 320.1 yaw 276 mode 2 st 0 gl 5 hp 87 frg 1
+ARGEVT Zeus hazard
+ARGEVT Zeus goal item_artifact_invisibility
+ARGLOG Zeus t  51.6 pos '400.0 -1062.4 256.0' spd 175.6 yaw 111.4 mode 0 st 6 gl 1 hp 89 frg 1
+ARGEVT Zeus routefail
+ARGEVT Zeus goal item_health
+ARGEVT Zeus route 2 start '417.0 -1071.0 256.0' goal '225.0 -1231.0 112.0'
+ARGEVT Omi goal 
+ARGLOG Omi t  51.8 pos '212.9 -1200.9 112.0' spd 320.4 yaw 282.3 mode 1 st 0 gl 6 hp 187 frg 1
+ARGEVT Zeus goal 
+ARGEVT Zeus route 4 start '417.0 -1071.0 256.0' goal '385.0 -1679.0 232.0'
+ARGLOG Zeus t  52.1 pos '480.3 -1134.3 256.0' spd 373.0 yaw 237 mode 2 st 6 gl 1 hp 89 frg 1
+ARGEVT Reap respawn
+ARGEVT Reap goal weapon_nailgun
+ARGLOG Reap t  52.1 pos '1016.0 -416.0  40.0' spd 0 yaw 286.6 mode 0 st 0 gl 0 hp 100 frg 2
+ARGEVT Reap route 5 start '1057.0 -399.0  40.0' goal '1185.0 -1103.0 -40.0'
+ARGEVT Omi goal 
+ARGEVT Omi route 8 start '225.0 -1231.0 112.0' goal '129.0 -1807.0  40.0'
+ARGLOG Omi t  52.3 pos '303.8 -1303.6 128.9' spd  16.9 yaw 212.0 mode 2 st 0 gl 7 hp 187 frg 1
+ARGLOG Zeus t  52.6 pos '450.2 -1301.4 256.0' spd 320.5 yaw 263 mode 2 st 6 gl 1 hp 89 frg 1
+ARGLOG Reap t  52.7 pos '1016.7 -573.8  40.0' spd 320.9 yaw 259 mode 2 st 0 gl 0 hp 100 frg 2
+ARGLOG Omi t  52.8 pos '274.5 -1235.7 112.0' spd 320.4 yaw 106 mode 2 st 0 gl 7 hp 187 frg 1
+ARGLOG Zeus t  53.1 pos '424.3 -1464.7 256.0' spd 320.3 yaw 260 mode 2 st 6 gl 1 hp 89 frg 1
+ARGLOG Reap t  53.2 pos '1000.2 -738.5  24.0' spd 320.0 yaw 281.6 mode 2 st 0 gl 0 hp 100 frg 2
+ARGLOG Omi t  53.3 pos '284.2 -1069.7 112.0' spd 402.8 yaw 350.2 mode 2 st 0 gl 7 hp 187 frg 1
+ARGLOG Zeus t  53.6 pos '406.5 -1628.9 248.0' spd 320.0 yaw 264 mode 1 st 6 gl 1 hp 89 frg 1
+ARGLOG Reap t  53.7 pos '1119.2 -854.8  -8.0' spd 351.3 yaw   1.7 mode 2 st 0 gl 0 hp 100 frg 2
+ARGEVT Zeus goal item_armorInv
+ARGLOG Omi t  53.8 pos '342.3 -1084.4 128.0' spd 326.6 yaw 356 mode 2 st 0 gl 7 hp 187 frg 1
+ARGEVT Zeus route 15 start '385.0 -1679.0 232.0' goal '1729.0 -367.0 168.0'
+ARGEVT Omi engage Reap
+ARGEVT Reap engage Omi
+ARGLOG Zeus t  54.1 pos '491.0 -1765.6 200.0' spd 417.3 yaw  51.8 mode 2 st 6 gl 2 hp 89 frg 1
+ARGLOG Reap t  54.2 pos '1227.6 -918.5 -40.0' spd 330.8 yaw 226.7 mode 1 st 0 gl 0 hp 100 frg 2
+ARGLOG Omi t  54.4 pos '507.8 -1099.8 121.3' spd 321.5 yaw 20 mode 2 st 0 gl 7 hp 187 frg 1
+ARGLOG Zeus t  54.7 pos '462.7 -1685.8 232.0' spd 326.2 yaw 108 mode 2 st 6 gl 2 hp 89 frg 1
+ARGLOG Reap t  54.7 pos '1076.1 -971.3 -40.0' spd 373.5 yaw 198 mode 1 st 0 gl 0 hp 100 frg 2
+ARGLOG Omi t  54.9 pos '645.2 -1111.5  89.9' spd 114.7 yaw 18 mode 2 st 0 gl 7 hp 184 frg 1
+ARGLOG Zeus t  55.2 pos '421.7 -1584.0 248.0' spd  12.5 yaw 91 mode 2 st 6 gl 2 hp 89 frg 1
+ARGLOG Reap t  55.2 pos '963.3 -846.8  -8.0' spd 322.1 yaw 224 mode 1 st 0 gl 0 hp 100 frg 2
+ARGLOG Omi t  55.4 pos '705.4 -1116.0  66.9' spd 324.9 yaw 48 mode 2 st 0 gl 7 hp 180 frg 1
+ARGLOG Zeus t  55.7 pos '420.2 -1584.0 248.0' spd   2.9 yaw 90 mode 2 st 6 gl 2 hp 89 frg 1
+ARGLOG Reap t  55.7 pos '1030.7 -955.9 -40.0' spd 320.0 yaw 226 mode 1 st 0 gl 0 hp 100 frg 2
+ARGLOG Omi t  55.9 pos '846.8 -1188.3  28.1' spd 288.0 yaw  45.2 mode 2 st 0 gl 7 hp 176 frg 1
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '417.0 -1391.0 256.0'
+ARGEVT Zeus jump
+ARGLOG Zeus t  56.2 pos '423.8 -1587.5 282.5' spd  34.4 yaw   3.9 mode 0 st 7 gl 2 hp 89 frg 1
+ARGLOG Reap t  56.3 pos '1116.3 -1114.0 -40.0' spd 327.7 yaw 190.1 mode 1 st 0 gl 0 hp 58 frg 2
+ARGEVT Zeus route 14 start '417.0 -1551.0 256.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t  56.4 pos '856.0 -1118.2 -44.0' spd 362.2 yaw 352 mode 2 st 0 gl 7 hp 173 frg 1
+ARGLOG Zeus t  56.7 pos '448.9 -1584.0 248.0' spd  12.9 yaw 99 mode 2 st 7 gl 2 hp 89 frg 1
+ARGLOG Reap t  56.8 pos '1080.9 -1278.6 -24.0' spd 346.0 yaw 124 mode 1 st 0 gl 0 hp 58 frg 2
+ARGLOG Omi t  56.9 pos '924.7 -956.0 -40.0' spd 409.0 yaw 296 mode 2 st 0 gl 7 hp 168 frg 1
+ARGLOG Zeus t  57.2 pos '435.2 -1584.0 248.0' spd  14.2 yaw 95 mode 2 st 7 gl 2 hp 89 frg 1
+ARGLOG Reap t  57.3 pos '920.6 -1331.3 -10.0' spd 336.6 yaw 70 mode 1 st 0 gl 0 hp 58 frg 2
+ARGLOG Omi t  57.4 pos '1095.0 -917.6 -24.0' spd 338.8 yaw 239 mode 2 st 0 gl 7 hp 168 frg 1
+ARGLOG Zeus t  57.8 pos '429.4 -1584.0 248.0' spd   8.5 yaw 93 mode 2 st 7 gl 2 hp 89 frg 1
+ARGLOG Reap t  57.8 pos '786.7 -1249.3 -40.0' spd 326.0 yaw 32 mode 1 st 0 gl 0 hp 58 frg 2
+ARGLOG Omi t  58.0 pos '1228.6 -1021.7 -40.0' spd 358.9 yaw 206 mode 2 st 0 gl 7 hp 165 frg 1
+ARGEVT Omi weapon ssg
+ARGEVT Reap goal item_health
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '417.0 -1391.0 256.0'
+ARGEVT Zeus jump
+ARGLOG Zeus t  58.3 pos '426.1 -1585.6 269.3' spd  30.5 yaw 305.5 mode 0 st 8 gl 2 hp 89 frg 1
+ARGLOG Reap t  58.3 pos '740.1 -1090.0  -8.5' spd 328.1 yaw 355 mode 1 st 0 gl 0 hp 58 frg 2
+ARGEVT Zeus route 14 start '417.0 -1551.0 256.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t  58.5 pos '1270.4 -1185.4 -24.0' spd 331.6 yaw 162 mode 2 st 0 gl 7 hp 165 frg 1
+ARGEVT Reap pursue
+ARGLOG Zeus t  58.8 pos '448.0 -1595.2 249.7' spd  80.3 yaw 98 mode 2 st 8 gl 2 hp 89 frg 1
+ARGEVT Omi pursue
+ARGLOG Reap t  58.8 pos '839.8 -979.7 -40.0' spd 339.0 yaw 335.1 mode 1 st 0 gl 0 hp 58 frg 2
+ARGLOG Omi t  59.0 pos '1151.0 -1283.1 -40.0' spd 359.5 yaw 150 mode 2 st 0 gl 7 hp 164 frg 1
+ARGEVT Reap goal item_armorInv
+ARGEVT Reap route 14 start '929.0 -911.0 -40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Zeus t  59.3 pos '439.5 -1451.7 256.0' spd 320.5 yaw 95 mode 2 st 8 gl 2 hp 89 frg 1
+ARGEVT Reap pursue
+ARGLOG Reap t  59.3 pos '1000.2 -934.3 -40.0' spd 333.6 yaw 296 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  59.5 pos '994.7 -1222.4 -40.0' spd 320.9 yaw 146 mode 2 st 0 gl 7 hp 164 frg 1
+ARGLOG Zeus t  59.8 pos '423.7 -1287.9 256.0' spd 320.0 yaw 96 mode 2 st 8 gl 2 hp 89 frg 1
+ARGLOG Reap t  59.9 pos '1110.0 -1066.0 -40.0' spd 323.7 yaw 255.7 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  60.0 pos '876.9 -1103.3 -44.0' spd 352.3 yaw  59.1 mode 2 st 0 gl 7 hp 163 frg 1
+ARGLOG Zeus t  60.3 pos '496.0 -1139.5 256.0' spd 178.6 yaw 0 mode 2 st 8 gl 2 hp 89 frg 1
+ARGLOG Reap t  60.4 pos '1150.2 -1076.2 -40.0' spd 436.5 yaw 158 mode 2 st 0 gl 1 hp 48 frg 2
+ARGLOG Omi t  60.5 pos '905.6 -937.1 -40.0' spd 321.7 yaw 341 mode 2 st 0 gl 7 hp 163 frg 1
+ARGEVT Omi hazard
+ARGLOG Zeus t  60.8 pos '651.3 -1114.0 256.0' spd 321.7 yaw 353 mode 2 st 8 gl 2 hp 89 frg 1
+ARGLOG Reap t  60.9 pos '1244.9 -929.9 -40.0' spd 325.6 yaw 166 mode 0 st 0 gl 1 hp 48 frg 2
+ARGLOG Omi t  61.0 pos '934.7 -904.9 -40.0' spd 326.5 yaw 7 mode 2 st 0 gl 7 hp 161 frg 1
+ARGEVT Reap route 13 start '1249.0 -975.0 -40.0' goal '1729.0 -367.0 168.0'
+ARGEVT Reap hazard
+ARGEVT Zeus engage Reap
+ARGLOG Zeus t  61.4 pos '819.6 -1140.0 256.0' spd 372.2 yaw 356.1 mode 2 st 8 gl 2 hp 89 frg 1
+ARGEVT Zeus hazard
+ARGLOG Reap t  61.4 pos '1204.0 -791.7   2.7' spd 100.2 yaw 232 mode 2 st 0 gl 1 hp 28 frg 2
+ARGLOG Omi t  61.6 pos '319.0 -1777.0  68.8' spd 300 yaw 47 mode 0 st 0 gl 7 hp 157 frg 1
+ARGEVT Omi route 1 start '321.0 -1807.0  56.0' goal '129.0 -1807.0  40.0'
+ARGLOG Zeus t  61.9 pos '837.0 -1054.9 256.0' spd 330.0 yaw  19.3 mode 2 st 8 gl 2 hp 89 frg 1
+ARGEVT Reap pursue
+ARGEVT Omi pursue
+ARGLOG Reap t  61.9 pos '1155.1 -926.4 -40.0' spd 328.7 yaw 217 mode 2 st 0 gl 1 hp 28 frg 2
+ARGLOG Omi t  62.1 pos '432.7 -1662.9  40.0' spd 320.0 yaw 47 mode 2 st 0 gl 7 hp 156 frg 1
+ARGEVT Zeus weapon gl
+ARGEVT Omi route 3 start '545.0 -1647.0  40.0' goal '129.0 -1807.0  40.0'
+ARGLOG Zeus t  62.4 pos '839.6 -900.1 256.0' spd 103.4 yaw 329 mode 2 st 8 gl 2 hp 89 frg 1
+ARGEVT Omi hazard
+ARGLOG Reap t  62.4 pos '1029.8 -1034.6 -24.0' spd 323.5 yaw 242.0 mode 2 st 0 gl 1 hp 28 frg 2
+ARGEVT Zeus pursue
+ARGLOG Omi t  62.6 pos '512.0 -1597.4  40.0' spd 262.3 yaw 324.8 mode 2 st 0 gl 7 hp 156 frg 1
+ARGEVT Zeus hazard
+ARGLOG Zeus t  62.9 pos '926.0 -922.4 256.0' spd 386.9 yaw 307.0 mode 2 st 8 gl 2 hp 89 frg 1
+ARGEVT Reap route 19 start '417.0 -1711.0  40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Reap t  62.9 pos '369.3 -1695.6  40.0' spd 327.4 yaw 2 mode 2 st 0 gl 1 hp 28 frg 2
+ARGLOG Omi t  63.1 pos '555.9 -1657.5  40.0' spd 320.3 yaw 202.4 mode 2 st 0 gl 7 hp 145 frg 1
+ARGEVT Reap hazard
+ARGLOG Zeus t  63.4 pos '942.4 -920.0 256.0' spd 171.2 yaw 262 mode 2 st 8 gl 2 hp 89 frg 1
+ARGLOG Reap t  63.5 pos '364.0 -1630.1  40.0' spd 323.5 yaw 340 mode 2 st 0 gl 1 hp 16 frg 2
+ARGLOG Omi t  63.6 pos '507.7 -1719.7  40.0' spd 273.2 yaw 161 mode 2 st 0 gl 7 hp 121 frg 1
+ARGEVT Zeus hazard
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '897.0 -1231.0 256.0'
+ARGLOG Zeus t  63.9 pos '942.4 -920.0 256.0' spd 167.7 yaw 449.1 mode 0 st 9 gl 2 hp 89 frg 1
+ARGEVT Zeus jump
+ARGEVT Reap death
+ARGEVT Reap death Omi pos '325.6 -1774.1  56.0'
+ARGLOG Omi t  64.1 pos '420.7 -1801.1  40.0' spd 320.9 yaw 155 mode 2 st 0 gl 7 hp 97 frg 2
+ARGEVT Zeus route 10 start '961.0 -911.0 256.0' goal '1729.0 -367.0 168.0'
+ARGLOG Zeus t  64.4 pos '1012.0 -869.5 278.7' spd 167.7 yaw 324 mode 2 st 9 gl 2 hp 100 frg 1
+ARGLOG Omi t  64.6 pos '200.0 -922.9 139.6' spd 300 yaw 261 mode 0 st 0 gl 7 hp 97 frg 2
+ARGEVT Omi route 8 start '225.0 -911.0 136.0' goal '129.0 -1807.0  40.0'
+ARGLOG Zeus t  64.9 pos '1124.5 -917.3 256.0' spd 328.5 yaw 297 mode 2 st 9 gl 2 hp 100 frg 1
+ARGEVT Zeus hazard
+ARGLOG Omi t  65.1 pos '255.1 -1079.0 112.0' spd 360.6 yaw 353 mode 2 st 0 gl 7 hp 97 frg 2
+ARGLOG Zeus t  65.5 pos '1230.3 -1032.2 256.0' spd 323.8 yaw 297 mode 2 st 9 gl 2 hp 100 frg 1
+ARGEVT Reap respawn
+ARGEVT Omi engage Reap
+ARGEVT Reap goal weapon_lightning
+ARGEVT Reap engage Omi
+ARGLOG Reap t  65.5 pos '  0.0 -1088.0 264.0' spd 0 yaw 355 mode 0 st 0 gl 1 hp 100 frg 2
+ARGEVT Reap hazard
+ARGEVT Reap routefail
+ARGLOG Omi t  65.7 pos '396.8 -1076.1 128.0' spd 361.0 yaw  51.7 mode 2 st 0 gl 7 hp 97 frg 2
+ARGEVT Reap goal weapon_rocketlauncher
+ARGEVT Reap route 11 start '  1.0 -1103.0 264.0' goal '1441.0 -463.0  40.0'
+ARGLOG Zeus t  66.0 pos '1310.6 -1177.6 256.0' spd 324.4 yaw 322.3 mode 2 st 9 gl 2 hp 100 frg 1
+ARGLOG Reap t  66.0 pos '  4.7 -1080.3 264.0' spd 297.6 yaw 356 mode 2 st 0 gl 1 hp 100 frg 2
+ARGEVT Zeus hazard
+ARGLOG Omi t  66.2 pos '398.3 -1105.2 128.9' spd 239.4 yaw 175 mode 2 st 0 gl 7 hp 97 frg 2
+ARGLOG Zeus t  66.5 pos '1328.0 -1229.0 256.0' spd 214.7 yaw 16 mode 2 st 9 gl 2 hp 100 frg 1
+ARGLOG Reap t  66.5 pos ' -6.4 -1082.8 264.0' spd 152.0 yaw 359 mode 2 st 0 gl 1 hp 100 frg 2
+ARGEVT Reap hazard
+ARGLOG Omi t  66.7 pos '374.8 -1120.8 140.6' spd 107.5 yaw 182 mode 2 st 0 gl 7 hp 93 frg 2
+ARGLOG Zeus t  67.0 pos '1328.0 -1229.0 256.0' spd 211.1 yaw 16 mode 2 st 9 gl 2 hp 100 frg 1
+ARGLOG Reap t  67.1 pos ' -6.8 -1093.9 264.0' spd 247.0 yaw 11 mode 2 st 0 gl 1 hp 92 frg 2
+ARGEVT Zeus hazard
+ARGLOG Omi t  67.2 pos '342.4 -1101.4 128.0' spd 320.7 yaw 176 mode 2 st 0 gl 7 hp 89 frg 2
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '1537.0 -1167.0 204.0'
+ARGLOG Zeus t  67.5 pos '1328.0 -1229.0 256.0' spd 213.9 yaw 244.0 mode 0 st 10 gl 2 hp 100 frg 1
+ARGEVT Zeus jump
+ARGLOG Reap t  67.6 pos ' -9.9 -1109.8 264.0' spd  62.7 yaw 5 mode 2 st 0 gl 1 hp 92 frg 2
+ARGEVT Reap hazard
+ARGLOG Omi t  67.7 pos '306.0 -1041.3 161.0' spd 160.3 yaw 189 mode 2 st 0 gl 7 hp 89 frg 2
+ARGEVT Zeus route 7 start '1313.0 -1199.0 256.0' goal '1729.0 -367.0 168.0'
+ARGLOG Zeus t  68.0 pos '1283.9 -1289.3 278.6' spd 158.5 yaw  79.6 mode 2 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  68.1 pos '-16.0 -1103.7 264.0' spd 225.8 yaw 21 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  68.2 pos '257.3 -1002.8 112.0' spd 321.3 yaw 201 mode 2 st 0 gl 7 hp 77 frg 2
+ARGEVT Omi route 8 start '225.0 -911.0 136.0' goal '129.0 -1807.0  40.0'
+ARGLOG Zeus t  68.5 pos '1324.2 -1182.8 256.0' spd 359.4 yaw 4 mode 2 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  68.6 pos ' 19.3 -1081.2 264.0' spd 122.6 yaw 47 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  68.7 pos '329.6 -1766.4  64.8' spd 300 yaw  69.7 mode 0 st 0 gl 7 hp 77 frg 2
+ARGEVT Reap pursue
+ARGEVT Omi pursue
+ARGEVT Omi route 1 start '321.0 -1807.0  56.0' goal '129.0 -1807.0  40.0'
+ARGLOG Zeus t  69.1 pos '1467.8 -1151.1 224.5' spd 323.5 yaw 348 mode 2 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  69.1 pos '150.6 -1064.5 251.5' spd 339.4 yaw 58 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  69.3 pos '344.4 -1604.3  40.0' spd 326.9 yaw 138.3 mode 2 st 0 gl 7 hp 77 frg 2
+ARGEVT Omi hazard
+ARGLOG Zeus t  69.6 pos '1636.5 -1142.3 175.1' spd 376.2 yaw 65 mode 2 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  69.6 pos '303.1 -977.5 120.0' spd 352.4 yaw  13.8 mode 2 st 0 gl 1 hp 88 frg 2
+ARGEVT Reap hazard
+ARGLOG Omi t  69.8 pos '178.5 -1584.0  40.0' spd 336.5 yaw 108 mode 2 st 0 gl 7 hp 77 frg 2
+ARGLOG Zeus t  70.1 pos '1715.4 -991.3 168.0' spd 326.7 yaw 97 mode 2 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  70.1 pos '302.5 -941.5 128.0' spd 321.9 yaw 274.6 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  70.3 pos ' 72.0 -1512.3  40.0' spd 320.9 yaw  79.4 mode 2 st 0 gl 7 hp 77 frg 2
+ARGEVT Omi hazard
+ARGLOG Zeus t  70.6 pos '1712.3 -825.0 168.0' spd 320.2 yaw 96 mode 2 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  70.7 pos '233.9 -1093.0 112.0' spd 410.1 yaw 141.8 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  70.8 pos '205.0 -1512.6  40.0' spd 380.6 yaw 274.2 mode 2 st 0 gl 7 hp 77 frg 2
+ARGLOG Zeus t  71.1 pos '1702.3 -661.4 168.0' spd 320.0 yaw 92 mode 2 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  71.2 pos '183.5 -945.6 128.0' spd 438.5 yaw 337.6 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  71.3 pos '167.8 -1530.3  40.0' spd 384.5 yaw 263 mode 2 st 0 gl 7 hp 77 frg 2
+ARGEVT Omi hazard
+ARGEVT Reap hazard
+ARGEVT Omi weapon rl
+ARGLOG Zeus t  71.6 pos '1709.6 -496.3 168.0' spd 320.4 yaw 80 mode 1 st 10 gl 2 hp 100 frg 1
+ARGLOG Reap t  71.7 pos '304.0 -1001.3 126.0' spd 371.5 yaw 325 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  71.8 pos ' 87.1 -1627.5  40.0' spd 328.9 yaw 266.4 mode 1 st 0 gl 7 hp 77 frg 2
+ARGEVT Zeus goal weapon_rocketlauncher
+ARGLOG Zeus t  72.1 pos '1740.0 -333.3 168.0' spd 330.6 yaw 111.8 mode 1 st 10 gl 3 hp 100 frg 1
+ARGLOG Reap t  72.2 pos '409.6 -1131.2 148.4' spd 342.5 yaw 9 mode 2 st 0 gl 1 hp 88 frg 2
+ARGEVT Omi goal item_armor1
+ARGLOG Omi t  72.4 pos ' 60.1 -1792.4  40.0' spd 378.2 yaw 221.4 mode 1 st 0 gl 8 hp 77 frg 2
+ARGLOG Zeus t  72.7 pos '1601.4 -280.6 168.0' spd 368.5 yaw 240 mode 1 st 10 gl 3 hp 100 frg 1
+ARGLOG Reap t  72.7 pos '575.7 -1113.9 116.0' spd 321.2 yaw 4 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  72.9 pos ' 26.1 -1956.8  88.0' spd 333.5 yaw 301 mode 1 st 0 gl 8 hp 77 frg 2
+ARGEVT Omi goal weapon_supernailgun
+ARGEVT Omi route 2 start '  1.0 -2031.0  88.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t  73.2 pos '1500.8 -419.0 155.2' spd 331.1 yaw 295.3 mode 1 st 10 gl 3 hp 100 frg 1
+ARGLOG Reap t  73.2 pos '739.9 -1083.5  53.1' spd 330.5 yaw 39 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  73.4 pos '147.5 -2064.0  88.0' spd 320 yaw 360 mode 2 st 0 gl 9 hp 77 frg 2
+ARGEVT Omi jump
+ARGEVT Zeus goal weapon_supershotgun
+ARGLOG Zeus t  73.7 pos '1497.8 -466.1  40.0' spd 307.3 yaw  79.3 mode 1 st 10 gl 4 hp 100 frg 1
+ARGEVT Reap goal weapon_supernailgun
+ARGLOG Reap t  73.7 pos '896.3 -1014.1 -40.0' spd 341.8 yaw  47.6 mode 0 st 0 gl 1 hp 88 frg 2
+ARGEVT Reap route 8 start '833.0 -1007.0 -40.0' goal '481.0 -2031.0 168.0'
+ARGLOG Omi t  73.9 pos '272.0 -2060.6 120.0' spd  55.8 yaw 19 mode 1 st 0 gl 9 hp 77 frg 2
+ARGLOG Zeus t  74.2 pos '1413.6 -334.5  40.0' spd 427.3 yaw 243.8 mode 1 st 10 gl 4 hp 100 frg 1
+ARGLOG Reap t  74.3 pos '1058.0 -1013.9 -32.0' spd 388.1 yaw 270 mode 2 st 0 gl 1 hp 88 frg 2
+ARGEVT Reap goal weapon_supershotgun
+ARGEVT Omi goal item_health
+ARGLOG Omi t  74.4 pos '390.0 -2007.2 168.0' spd 324.3 yaw  18.6 mode 0 st 0 gl 10 hp 77 frg 2
+ARGEVT Reap route 6 start '1025.0 -1007.0 -32.0' goal '1377.0 -623.0  40.0'
+ARGEVT Zeus hazard
+ARGEVT Omi route 3 start '481.0 -2031.0 168.0' goal '353.0 -1967.0  40.0'
+ARGLOG Zeus t  74.7 pos '1365.9 -488.0  40.0' spd 354.6 yaw 286 mode 1 st 10 gl 4 hp 100 frg 1
+ARGLOG Reap t  74.8 pos '1179.8 -1135.6 -40.0' spd 404.2 yaw  51.8 mode 0 st 0 gl 1 hp 88 frg 2
+ARGEVT Reap route 7 start '1185.0 -1103.0 -40.0' goal '1377.0 -623.0  40.0'
+ARGEVT Zeus goal item_weapon
+ARGLOG Omi t  74.9 pos '458.2 -1865.8 168.0' spd 424.7 yaw 182.5 mode 2 st 0 gl 10 hp 77 frg 2
+ARGEVT Zeus route 7 start '1377.0 -623.0  40.0' goal '1313.0 -335.0 168.0'
+ARGEVT Reap goal item_weapon
+ARGEVT Reap route 5 start '1185.0 -1103.0 -40.0' goal '801.0 -1647.0  40.0'
+ARGLOG Zeus t  75.2 pos '1428.0 -621.4  40.0' spd  97.7 yaw 349.6 mode 2 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  75.3 pos '1252.4 -985.8 -40.0' spd 423.1 yaw 184.0 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  75.4 pos '267.4 -1901.3 135.8' spd 399.0 yaw 319.6 mode 1 st 0 gl 10 hp 77 frg 2
+ARGLOG Zeus t  75.7 pos '1428.0 -516.4  40.0' spd 323.5 yaw 76 mode 2 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  75.8 pos '1081.0 -1032.1 -32.0' spd 344.8 yaw 257 mode 2 st 0 gl 1 hp 88 frg 2
+ARGEVT Omi goal item_weapon
+ARGEVT Omi route 2 start '225.0 -1903.0  40.0' goal '449.0 -2063.0  40.0'
+ARGEVT Omi engage Reap
+ARGEVT Omi weapon sng
+ARGLOG Omi t  75.9 pos '313.4 -1930.2  40.0' spd 343.1 yaw 325.8 mode 2 st 0 gl 11 hp 100 frg 2
+ARGEVT Reap engage Omi
+ARGEVT Reap route 3 start '321.0 -1807.0  56.0' goal '801.0 -1647.0  40.0'
+ARGEVT Omi weapon rl
+ARGLOG Zeus t  76.3 pos '1560.6 -427.0  40.0' spd 407.9 yaw 283.0 mode 2 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  76.3 pos '417.9 -1720.0  40.0' spd 331.4 yaw 318.7 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  76.5 pos '481.5 -1934.5  40.0' spd 320.9 yaw  88.7 mode 1 st 0 gl 11 hp 100 frg 2
+ARGLOG Zeus t  76.8 pos '1602.9 -600.2  40.0' spd 351.4 yaw 208.7 mode 2 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  76.8 pos '455.2 -1705.9  40.0' spd 320.1 yaw 250 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  77.0 pos '363.9 -1874.9  40.0' spd 357.7 yaw 72 mode 1 st 0 gl 11 hp 84 frg 2
+ARGEVT Zeus jump
+ARGLOG Zeus t  77.3 pos '1519.4 -621.3 109.7' spd  30.5 yaw 181 mode 2 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  77.3 pos '292.6 -1681.6  40.0' spd 320.0 yaw 251 mode 2 st 0 gl 1 hp 88 frg 2
+ARGEVT Omi weapon sng
+ARGLOG Omi t  77.5 pos '232.7 -1843.0  56.0' spd 116.4 yaw  87.5 mode 1 st 0 gl 11 hp 84 frg 2
+ARGLOG Zeus t  77.8 pos '1452.8 -620.9 120.0' spd 320.0 yaw 181 mode 2 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  77.9 pos '284.6 -1652.8  40.0' spd 320.0 yaw 295 mode 2 st 0 gl 1 hp 88 frg 2
+ARGLOG Omi t  78.0 pos '384.4 -1787.0  40.0' spd 370.8 yaw 120 mode 1 st 0 gl 11 hp 68 frg 2
+ARGLOG Zeus t  78.3 pos '1286.3 -601.2 168.0' spd 377.4 yaw 105 mode 2 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  78.4 pos '444.0 -1610.4  40.0' spd 329.2 yaw 266.2 mode 2 st 0 gl 1 hp 88 frg 2
+ARGEVT Reap route 1 start '545.0 -1647.0  40.0' goal '801.0 -1647.0  40.0'
+ARGEVT Omi weapon rl
+ARGLOG Omi t  78.5 pos '391.5 -1763.6  40.0' spd 427.0 yaw  56.3 mode 1 st 0 gl 11 hp 52 frg 2
+ARGLOG Zeus t  78.8 pos '1244.0 -432.5 168.0' spd 326.1 yaw 70 mode 1 st 10 gl 5 hp 100 frg 1
+ARGLOG Reap t  78.9 pos '581.5 -1696.2  40.0' spd 139.6 yaw 172 mode 2 st 0 gl 1 hp 88 frg 2
+ARGEVT Zeus goal item_weapon
+ARGLOG Omi t  79.0 pos '274.9 -1628.9  40.0' spd 432.8 yaw 1 mode 1 st 0 gl 11 hp 36 frg 2
+ARGEVT Reap death
+ARGEVT Reap death Omi pos '591.7 -1647.5  40.0'
+ARGLOG Zeus t  79.3 pos '1320.9 -287.6 168.0' spd 374.2 yaw 356.1 mode 1 st 10 gl 6 hp 100 frg 1
+ARGEVT Zeus goal item_weapon
+ARGEVT Zeus route 10 start '1313.0 -335.0 168.0' goal '801.0 -1647.0  40.0'
+ARGLOG Omi t  79.5 pos '357.9 -1667.7  40.0' spd 327.6 yaw 288 mode 1 st 0 gl 11 hp 36 frg 3
+ARGLOG Zeus t  79.9 pos '1456.1 -369.8 168.0' spd 426.2 yaw 208.0 mode 2 st 10 gl 7 hp 100 frg 1
+ARGLOG Omi t  80.1 pos '421.4 -1816.0  40.0' spd 110.6 yaw 284 mode 1 st 0 gl 11 hp 36 frg 3
+ARGEVT Omi hazard
+ARGLOG Zeus t  80.4 pos '1363.1 -485.0  50.9' spd  30.0 yaw 108 mode 2 st 10 gl 7 hp 100 frg 1
+ARGLOG Omi t  80.6 pos '491.9 -1816.0  40.0' spd  88.0 yaw 265 mode 1 st 0 gl 11 hp 36 frg 3
+ARGEVT Reap respawn
+ARGEVT Reap goal 
+ARGLOG Reap t  80.6 pos '456.0 -1504.0 256.0' spd 0 yaw 286.3 mode 0 st 0 gl 1 hp 100 frg 2
+ARGEVT Reap route 2 start '417.0 -1551.0 256.0' goal '545.0 -1647.0  40.0'
+ARGLOG Zeus t  80.9 pos '1285.6 -384.9  40.0' spd 323.0 yaw 206.2 mode 2 st 10 gl 7 hp 100 frg 1
+ARGLOG Omi t  81.1 pos '489.7 -1816.0  40.0' spd  11.4 yaw 266 mode 1 st 0 gl 11 hp 36 frg 3
+ARGLOG Reap t  81.1 pos '420.0 -1655.6 232.0' spd 332.7 yaw 237.6 mode 2 st 0 gl 1 hp 100 frg 2
+ARGLOG Zeus t  81.4 pos '1130.6 -447.9  40.0' spd 320.3 yaw 210 mode 2 st 10 gl 7 hp 100 frg 1
+ARGLOG Omi t  81.6 pos '484.5 -1816.0  40.0' spd   8.5 yaw 267 mode 1 st 0 gl 11 hp 36 frg 3
+ARGLOG Reap t  81.7 pos '397.9 -1821.6 192.0' spd 298.2 yaw  42.1 mode 2 st 0 gl 1 hp 100 frg 2
+ARGEVT Omi stall
+ARGEVT Omi jump
+ARGEVT Omi route 2 start '417.0 -1711.0  40.0' goal '449.0 -2063.0  40.0'
+ARGLOG Zeus t  81.9 pos '1005.9 -559.6  40.0' spd 336.5 yaw 265 mode 2 st 10 gl 7 hp 100 frg 1
+ARGEVT Reap hazard
+ARGLOG Omi t  82.1 pos '490.9 -1808.5  78.0' spd  46.8 yaw 124.3 mode 2 st 1 gl 11 hp 36 frg 3
+ARGLOG Reap t  82.2 pos '509.0 -1736.0 200.0' spd  41.6 yaw 67 mode 2 st 0 gl 1 hp 100 frg 2
+ARGLOG Zeus t  82.4 pos '983.1 -723.7  40.0' spd 321.4 yaw 277 mode 2 st 10 gl 7 hp 100 frg 1
+ARGLOG Omi t  82.6 pos '458.5 -1747.4  40.0' spd 321.1 yaw 138 mode 2 st 1 gl 11 hp 36 frg 3
+ARGLOG Reap t  82.7 pos '512.0 -1736.0 200.0' spd 0 yaw 69 mode 2 st 0 gl 1 hp 100 frg 2
+ARGLOG Zeus t  82.9 pos '1045.3 -877.4  -8.0' spd 320.2 yaw 297.0 mode 2 st 10 gl 7 hp 100 frg 1
+ARGLOG Omi t  83.1 pos '301.9 -1759.3  56.0' spd 413.3 yaw 284 mode 2 st 1 gl 11 hp 36 frg 3
+ARGLOG Reap t  83.2 pos '512.0 -1736.0 200.0' spd 0 yaw 69 mode 2 st 0 gl 1 hp 100 frg 2
+ARGEVT Reap stall
+ARGEVT Reap stallnode '545.0 -1647.0  40.0'
+ARGEVT Reap jump
+ARGLOG Zeus t  83.5 pos '1085.5 -1040.3 -32.0' spd 325.1 yaw 254 mode 2 st 10 gl 7 hp 100 frg 1
+ARGEVT Reap route 1 start '385.0 -1679.0 232.0' goal '545.0 -1647.0  40.0'
+ARGLOG Omi t  83.7 pos '319.6 -1931.5  40.0' spd 332.0 yaw 315 mode 2 st 1 gl 11 hp 36 frg 3
+ARGLOG Reap t  83.7 pos '502.7 -1746.5 235.0' spd  53.9 yaw 150 mode 2 st 1 gl 1 hp 100 frg 2
+ARGEVT Zeus route 4 start '1057.0 -1135.0 -24.0' goal '801.0 -1647.0  40.0'
+ARGLOG Zeus t  84.0 pos '1034.1 -1197.5 -40.0' spd 320.1 yaw 245 mode 0 st 10 gl 7 hp 100 frg 1
+ARGEVT Zeus route 4 start '1057.0 -1135.0 -24.0' goal '801.0 -1647.0  40.0'
+ARGLOG Omi t  84.2 pos '448.3 -2037.3  40.0' spd 348.8 yaw   7.3 mode 1 st 1 gl 11 hp 36 frg 3
+ARGLOG Reap t  84.2 pos '427.0 -1712.1 216.0' spd 320.6 yaw 141 mode 2 st 1 gl 1 hp 100 frg 2
+ARGEVT Omi goal item_health
+ARGEVT Omi route 6 start '449.0 -2063.0  40.0' goal '225.0 -1231.0 112.0'
+ARGEVT Omi hazard
+ARGLOG Zeus t  84.5 pos '883.7 -1242.9 -40.0' spd 422.4 yaw  80.5 mode 2 st 10 gl 7 hp 100 frg 1
+ARGLOG Omi t  84.7 pos '501.1 -1927.6  40.0' spd 361.3 yaw 155.2 mode 2 st 1 gl 12 hp 36 frg 3
+ARGLOG Reap t  84.7 pos '461.7 -1617.8 248.0' spd 382.7 yaw 341 mode 2 st 1 gl 1 hp 100 frg 2
+ARGEVT Reap hazard
+ARGLOG Zeus t  85.0 pos '973.5 -1096.1 -24.0' spd 366.8 yaw 336 mode 2 st 10 gl 7 hp 100 frg 1
+ARGEVT Omi engage Zeus
+ARGEVT Omi weapon sng
+ARGEVT Zeus engage Omi
+ARGEVT Zeus weapon sng
+ARGLOG Omi t  85.2 pos '383.9 -1875.2  40.0' spd 239.5 yaw 167.3 mode 2 st 1 gl 12 hp 36 frg 3
+ARGEVT Zeus route 3 start '321.0 -1807.0  56.0' goal '801.0 -1647.0  40.0'
+ARGLOG Reap t  85.3 pos '512.0 -1646.3 248.0' spd 344.8 yaw 325 mode 1 st 1 gl 1 hp 100 frg 2
+ARGLOG Zeus t  85.5 pos '448.3 -1709.7  40.0' spd 324.8 yaw 297.5 mode 2 st 10 gl 7 hp 100 frg 1
+ARGEVT Omi hazard
+ARGEVT Reap engage Zeus
+ARGLOG Omi t  85.7 pos '496.0 -1862.5  40.0' spd  19.1 yaw 75 mode 2 st 1 gl 12 hp 36 frg 3
+ARGEVT Reap goal weapon_rocketlauncher
+ARGLOG Reap t  85.8 pos '508.7 -1736.0 203.5' spd  35.3 yaw  87.3 mode 0 st 1 gl 1 hp 100 frg 2
+ARGEVT Reap route 4 start '385.0 -1807.0 192.0' goal '225.0 -1071.0 112.0'
+ARGLOG Zeus t  86.0 pos '555.7 -1701.5  40.0' spd 225.5 yaw 245 mode 2 st 10 gl 7 hp 100 frg 1
+ARGEVT Omi route 4 start '417.0 -1711.0  40.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t  86.2 pos '455.5 -1768.5  40.0' spd 327.0 yaw 66 mode 2 st 1 gl 12 hp 36 frg 3
+ARGLOG Reap t  86.3 pos '512.0 -1654.2 232.0' spd  71.4 yaw 317.0 mode 2 st 1 gl 1 hp 100 frg 2
+ARGEVT Zeus hazard
+ARGLOG Zeus t  86.5 pos '443.4 -1585.4  40.0' spd 328.9 yaw 237 mode 2 st 10 gl 7 hp 91 frg 1
+ARGLOG Omi t  86.7 pos '313.7 -1717.0  56.0' spd 336.6 yaw 36 mode 2 st 1 gl 12 hp 24 frg 3
+ARGLOG Reap t  86.8 pos '502.9 -1800.0 188.3' spd 330.1 yaw 173.9 mode 2 st 1 gl 1 hp 100 frg 2
+ARGEVT Zeus weapon rl
+ARGEVT Omi weapon rl
+ARGLOG Zeus t  87.0 pos '433.9 -1719.0  40.0' spd 345.3 yaw 160.6 mode 2 st 10 gl 7 hp 85 frg 1
+ARGEVT Omi hazard
+ARGLOG Omi t  87.3 pos '296.9 -1585.8  40.0' spd 323.4 yaw 295 mode 2 st 1 gl 12 hp 24 frg 3
+ARGLOG Reap t  87.3 pos '421.7 -1880.5 168.0' spd 219.9 yaw 110.8 mode 2 st 1 gl 1 hp 100 frg 2
+ARGEVT Reap pursue
+ARGEVT Omi death
+ARGEVT Omi death Zeus pos '362.9 -1584.9  40.0'
+ARGLOG Zeus t  87.6 pos '312.8 -1832.9  56.0' spd 201.4 yaw  48.0 mode 2 st 10 gl 7 hp 77 frg 2
+ARGLOG Reap t  87.8 pos '433.9 -1717.3 216.0' spd 407.4 yaw 193.2 mode 2 st 1 gl 1 hp 100 frg 2
+ARGLOG Zeus t  88.1 pos '418.2 -1712.8  40.0' spd 322.3 yaw 27 mode 2 st 10 gl 7 hp 77 frg 2
+ARGEVT Zeus route 2 start '417.0 -1711.0  40.0' goal '801.0 -1647.0  40.0'
+ARGEVT Zeus engage Reap
+ARGLOG Reap t  88.3 pos '393.9 -1815.1 195.2' spd 323.4 yaw 197.3 mode 2 st 1 gl 1 hp 100 frg 2
+ARGLOG Zeus t  88.6 pos '452.1 -1630.0  40.0' spd 342.6 yaw 304.1 mode 0 st 10 gl 7 hp 77 frg 2
+ARGEVT Zeus route 2 start '417.0 -1711.0  40.0' goal '801.0 -1647.0  40.0'
+ARGLOG Reap t  88.9 pos '503.4 -1909.3 168.0' spd 359.8 yaw 117 mode 2 st 1 gl 1 hp 100 frg 2
+ARGEVT Reap hazard
+ARGEVT Omi respawn
+ARGEVT Omi goal weapon_rocketlauncher
+ARGLOG Omi t  89.0 pos '408.0 -1088.0 256.0' spd 0 yaw 343.4 mode 0 st 1 gl 12 hp 100 frg 3
+ARGEVT Omi route 1 start '417.0 -1071.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Zeus t  89.1 pos '279.2 -1646.2  40.0' spd 332.3 yaw 296 mode 2 st 10 gl 7 hp 76 frg 2
+ARGEVT Omi engage Reap
+ARGLOG Reap t  89.4 pos '385.0 -1983.4 168.0' spd 320.4 yaw 126 mode 2 st 1 gl 1 hp 100 frg 2
+ARGLOG Omi t  89.5 pos '496.0 -1217.7 256.0' spd 330.7 yaw 257 mode 2 st 1 gl 12 hp 100 frg 3
+ARGEVT Zeus route 3 start '225.0 -1711.0  56.0' goal '801.0 -1647.0  40.0'
+ARGLOG Zeus t  89.6 pos '141.5 -1738.6  40.0' spd 321.8 yaw 303 mode 2 st 10 gl 7 hp 75 frg 2
+ARGEVT Omi route 3 start '417.0 -1391.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Reap t  89.9 pos '339.5 -1979.5 152.0' spd 321.6 yaw 117 mode 2 st 1 gl 1 hp 100 frg 2
+ARGLOG Omi t  90.0 pos '474.6 -1380.7 256.0' spd 320.0 yaw 259 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  90.1 pos '266.1 -1704.3  56.0' spd 320.1 yaw 300 mode 2 st 10 gl 7 hp 75 frg 2
+ARGLOG Reap t  90.4 pos '469.4 -1878.1 168.0' spd 320.0 yaw 112 mode 2 st 1 gl 1 hp 96 frg 2
+ARGLOG Omi t  90.6 pos '474.8 -1481.1 256.0' spd 327.6 yaw 274 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  90.7 pos '418.3 -1639.3  40.0' spd 325.2 yaw 282.3 mode 2 st 10 gl 7 hp 74 frg 2
+ARGEVT Reap pursue
+ARGEVT Zeus pursue
+ARGLOG Reap t  90.9 pos '398.1 -1836.8 168.0' spd 364.6 yaw 108 mode 2 st 1 gl 1 hp 80 frg 2
+ARGEVT Zeus route 1 start '545.0 -1647.0  40.0' goal '801.0 -1647.0  40.0'
+ARGLOG Omi t  91.1 pos '444.0 -1543.5 256.0' spd 322.6 yaw 254 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  91.2 pos '512.2 -1712.0  40.0' spd  13.6 yaw 256 mode 2 st 10 gl 7 hp 74 frg 2
+ARGEVT Omi route 4 start '417.0 -1551.0 256.0' goal '225.0 -1071.0 112.0'
+ARGLOG Reap t  91.4 pos '200.0 -892.0 146.0' spd 300 yaw 280.9 mode 0 st 1 gl 1 hp 56 frg 2
+ARGEVT Reap route 1 start '225.0 -911.0 136.0' goal '225.0 -1071.0 112.0'
+ARGLOG Omi t  91.6 pos '417.5 -1534.7 256.0' spd 346.7 yaw 178.6 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  91.7 pos '496.9 -1730.4  40.0' spd 326.3 yaw 158.8 mode 2 st 10 gl 7 hp 66 frg 2
+ARGEVT Zeus pursue
+ARGEVT Omi pursue
+ARGEVT Omi hazard
+ARGEVT Reap pursue
+ARGLOG Reap t  91.9 pos '227.0 -1051.5 112.0' spd 320.7 yaw 291 mode 1 st 1 gl 1 hp 56 frg 2
+ARGEVT Zeus route 2 start '417.0 -1711.0  40.0' goal '801.0 -1647.0  40.0'
+ARGEVT Omi goal item_health
+ARGLOG Omi t  92.1 pos '400.4 -1455.4 256.0' spd 101.3 yaw 253 mode 0 st 1 gl 12 hp 100 frg 3
+ARGEVT Omi route 4 start '417.0 -1391.0 256.0' goal '225.0 -1231.0 112.0'
+ARGEVT Reap goal item_health
+ARGLOG Zeus t  92.2 pos '347.6 -1685.5  40.0' spd 364.4 yaw 242 mode 2 st 10 gl 7 hp 66 frg 2
+ARGLOG Reap t  92.5 pos '284.2 -1206.1 112.0' spd 320.0 yaw 291 mode 1 st 1 gl 2 hp 56 frg 2
+ARGEVT Omi route 5 start '417.0 -1551.0 256.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t  92.6 pos '400.0 -1627.3 249.5' spd 341.8 yaw 237 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  92.7 pos '358.5 -1842.6  48.0' spd 428.0 yaw  35.8 mode 2 st 10 gl 7 hp 66 frg 2
+ARGEVT Zeus hazard
+ARGEVT Reap hazard
+ARGLOG Reap t  93.0 pos '262.2 -1301.2 123.7' spd 269.6 yaw 176.8 mode 1 st 1 gl 2 hp 56 frg 2
+ARGEVT Omi goal weapon_lightning
+ARGLOG Omi t  93.1 pos '338.9 -1798.5 201.7' spd 411.3 yaw 149.7 mode 0 st 1 gl 12 hp 100 frg 3
+ARGEVT Reap goal item_armorInv
+ARGLOG Zeus t  93.2 pos '374.2 -1690.6  40.0' spd 416.5 yaw 199.6 mode 2 st 10 gl 7 hp 66 frg 2
+ARGEVT Omi routefail
+ARGEVT Omi goal item_armor1
+ARGEVT Reap route 19 start '225.0 -1231.0 112.0' goal '1729.0 -367.0 168.0'
+ARGLOG Reap t  93.5 pos '208.7 -1170.2 112.0' spd 422.8 yaw 354.8 mode 2 st 1 gl 3 hp 156 frg 2
+ARGLOG Omi t  93.6 pos '148.2 -1831.2  48.0' spd 380.3 yaw  50.8 mode 1 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  93.7 pos '282.7 -1737.5  56.0' spd 290.4 yaw   5.1 mode 2 st 10 gl 7 hp 66 frg 2
+ARGLOG Reap t  94.0 pos '304.0 -1250.6 112.0' spd 369.4 yaw 338.3 mode 2 st 1 gl 3 hp 156 frg 2
+ARGLOG Omi t  94.2 pos '200.0 -938.2 136.0' spd 300 yaw 287 mode 1 st 1 gl 12 hp 100 frg 3
+ARGEVT Reap hazard
+ARGLOG Zeus t  94.3 pos '445.5 -1704.1  40.0' spd 321.7 yaw 29 mode 2 st 10 gl 7 hp 66 frg 2
+ARGEVT Reap engage Omi
+ARGLOG Reap t  94.5 pos '287.0 -1205.5 112.0' spd 302.7 yaw  77.3 mode 2 st 1 gl 3 hp 132 frg 2
+ARGLOG Omi t  94.7 pos '104.0 -1062.3 112.0' spd 105.2 yaw 312 mode 1 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  94.8 pos '605.6 -1665.1  40.0' spd 320.4 yaw 5 mode 2 st 10 gl 7 hp 66 frg 2
+ARGLOG Reap t  95.0 pos '134.6 -1254.8 112.0' spd 351.5 yaw 72 mode 0 st 1 gl 3 hp 108 frg 2
+ARGLOG Omi t  95.2 pos '256.6 -1051.0 112.0' spd 352.8 yaw 234 mode 1 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  95.3 pos '768.3 -1640.8  40.0' spd 320.3 yaw 14 mode 1 st 10 gl 7 hp 66 frg 2
+ARGEVT Reap route 20 start ' 97.0 -1295.0 112.0' goal '1729.0 -367.0 168.0'
+ARGEVT Zeus goal item_weapon
+ARGEVT Zeus hazard
+ARGLOG Reap t  95.5 pos '203.4 -1311.7 146.9' spd 324.7 yaw 78 mode 2 st 1 gl 3 hp 84 frg 2
+ARGLOG Omi t  95.7 pos '231.4 -1110.7 112.0' spd 321.2 yaw 270 mode 1 st 1 gl 12 hp 49 frg 3
+ARGLOG Zeus t  95.8 pos '915.2 -1620.7  40.0' spd 101.9 yaw 148.2 mode 1 st 10 gl 8 hp 66 frg 2
+ARGLOG Reap t  96.1 pos '292.4 -1296.3 112.7' spd  90.9 yaw 145 mode 2 st 1 gl 3 hp 68 frg 2
+ARGEVT Omi death
+ARGEVT Omi death Reap pos '101.1 -1187.8 112.0'
+ARGEVT Zeus goal item_health
+ARGLOG Zeus t  96.3 pos '764.1 -1627.5  40.0' spd 339.9 yaw 215 mode 0 st 10 gl 9 hp 66 frg 2
+ARGEVT Zeus route 3 start '801.0 -1647.0  40.0' goal '353.0 -1967.0  40.0'
+ARGLOG Reap t  96.6 pos '233.1 -1171.6 112.0' spd 335.2 yaw 164 mode 2 st 1 gl 3 hp 48 frg 3
+ARGLOG Zeus t  96.8 pos '607.0 -1685.0  40.0' spd 320.9 yaw 188 mode 2 st 10 gl 9 hp 66 frg 2
+ARGLOG Reap t  97.1 pos '143.6 -1032.0 112.0' spd 411.7 yaw  17.6 mode 2 st 1 gl 3 hp 48 frg 3
+ARGLOG Zeus t  97.3 pos '443.8 -1712.7  40.0' spd 325.9 yaw 216.6 mode 2 st 10 gl 9 hp 66 frg 2
+ARGEVT Reap hazard
+ARGLOG Reap t  97.6 pos '303.2 -990.1 120.0' spd 335.2 yaw 323 mode 2 st 1 gl 3 hp 48 frg 3
+ARGEVT Omi respawn
+ARGEVT Omi goal weapon_grenadelauncher
+ARGLOG Omi t  97.8 pos '896.0 -1464.0 256.0' spd 0 yaw  16.6 mode 0 st 1 gl 12 hp 100 frg 3
+ARGEVT Omi route 3 start '929.0 -1455.0 256.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Zeus t  97.9 pos '333.2 -1842.1  56.0' spd 326.3 yaw 262 mode 1 st 10 gl 9 hp 66 frg 2
+ARGLOG Reap t  98.1 pos '391.1 -1121.5 141.2' spd 344.7 yaw 5 mode 2 st 1 gl 3 hp 48 frg 3
+ARGEVT Zeus goal item_artifact_invisibility
+ARGLOG Omi t  98.3 pos '1048.0 -1431.1 256.0' spd 102.8 yaw  57.0 mode 2 st 1 gl 12 hp 100 frg 3
+ARGEVT Zeus routefail
+ARGEVT Zeus goal item_weapon
+ARGLOG Zeus t  98.4 pos '256.0 -1967.0  40.0' spd  14.5 yaw 131.9 mode 0 st 10 gl 10 hp 96 frg 2
+ARGEVT Zeus route 9 start '225.0 -1903.0  40.0' goal '1281.0 -1231.0 -24.0'
+ARGLOG Reap t  98.6 pos '557.3 -1115.4 120.6' spd 321.2 yaw 4 mode 2 st 1 gl 3 hp 48 frg 3
+ARGLOG Omi t  98.8 pos '1100.5 -1278.7 256.0' spd 320.5 yaw 56 mode 2 st 1 gl 12 hp 100 frg 3
+ARGEVT Omi hazard
+ARGLOG Zeus t  98.9 pos '296.3 -1819.5  56.0' spd 329.4 yaw 41 mode 2 st 10 gl 10 hp 96 frg 2
+ARGEVT Omi engage Reap
+ARGEVT Reap engage Omi
+ARGLOG Reap t  99.1 pos '715.9 -1064.1  59.3' spd 336.5 yaw 326 mode 2 st 1 gl 3 hp 48 frg 3
+ARGLOG Omi t  99.3 pos '1047.2 -1320.5 256.0' spd 322.7 yaw 139 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  99.4 pos '420.7 -1709.3  40.0' spd 321.5 yaw 26 mode 2 st 10 gl 10 hp 96 frg 2
+ARGEVT Reap pursue
+ARGEVT Omi route 2 start '993.0 -1327.0 256.0' goal '1217.0 -1103.0 256.0'
+ARGEVT Omi pursue
+ARGLOG Reap t  99.7 pos '862.6 -980.7 -40.0' spd 328.5 yaw 304 mode 2 st 1 gl 3 hp 63 frg 3
+ARGLOG Omi t  99.8 pos '902.0 -1364.2 256.0' spd 363.0 yaw 116 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t  99.9 pos '578.0 -1658.3  40.0' spd 321.3 yaw 2 mode 2 st 10 gl 10 hp 96 frg 2
+ARGEVT Zeus engage Reap
+ARGLOG Reap t 100.2 pos '319.0 -1777.0  68.8' spd 300 yaw 32 mode 0 st 1 gl 3 hp 78 frg 3
+ARGLOG Omi t 100.3 pos '807.4 -1225.3 256.0' spd 321.5 yaw 109 mode 0 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t 100.4 pos '698.8 -1686.9  40.0' spd 336.9 yaw 297.5 mode 2 st 10 gl 10 hp 96 frg 2
+ARGEVT Reap route 19 start '417.0 -1711.0  40.0' goal '1729.0 -367.0 168.0'
+ARGEVT Omi route 3 start '801.0 -1135.0 256.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Reap t 100.7 pos '444.1 -1676.1  40.0' spd 320.4 yaw 31 mode 2 st 1 gl 3 hp 78 frg 3
+ARGLOG Omi t 100.8 pos '762.8 -1065.0 256.0' spd 363.9 yaw  41.4 mode 2 st 1 gl 12 hp 100 frg 3
+ARGEVT Reap route 18 start '545.0 -1647.0  40.0' goal '1729.0 -367.0 168.0'
+ARGEVT Zeus weapon sng
+ARGLOG Zeus t 100.9 pos '683.0 -1669.5  40.0' spd 298.2 yaw 190.2 mode 2 st 10 gl 10 hp 88 frg 2
+ARGEVT Zeus hazard
+ARGEVT Omi hazard
+ARGLOG Reap t 101.2 pos '591.8 -1616.9  40.0' spd 321.0 yaw 352 mode 2 st 1 gl 3 hp 78 frg 3
+ARGLOG Omi t 101.3 pos '846.9 -991.4 256.0' spd  80.5 yaw 237.2 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t 101.5 pos '777.6 -1703.5  40.0' spd 332.9 yaw 142 mode 2 st 10 gl 10 hp 88 frg 2
+ARGLOG Reap t 101.7 pos '757.8 -1627.7  40.0' spd 349.6 yaw 359.3 mode 2 st 1 gl 3 hp 42 frg 3
+ARGLOG Omi t 101.9 pos '778.9 -1141.5 256.0' spd 398.6 yaw 323 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t 102.0 pos '964.3 -1650.3  40.0' spd 417.8 yaw 166 mode 2 st 10 gl 10 hp 88 frg 2
+ARGEVT Reap death
+ARGEVT Reap death Zeus pos '871.3 -1616.0  40.0'
+ARGEVT Zeus weapon rl
+ARGEVT Omi hazard
+ARGLOG Omi t 102.4 pos '901.0 -1241.1 256.0' spd 328.9 yaw 2 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t 102.5 pos '987.9 -1498.4  40.0' spd 320.1 yaw 104 mode 2 st 10 gl 10 hp 88 frg 3
+ARGLOG Omi t 102.9 pos '1069.7 -1270.2 256.0' spd 327.3 yaw  38.3 mode 2 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t 103.0 pos '1033.8 -1344.3   8.0' spd 403.6 yaw 332.8 mode 2 st 10 gl 10 hp 88 frg 3
+ARGLOG Omi t 103.4 pos '1213.7 -1186.6 256.0' spd 338.5 yaw 84 mode 1 st 1 gl 12 hp 100 frg 3
+ARGLOG Zeus t 103.5 pos '1201.6 -1313.9 -40.0' spd 320.0 yaw 13 mode 1 st 10 gl 10 hp 88 frg 3
+ARGEVT Reap respawn
+ARGEVT Zeus goal item_weapon
+ARGEVT Reap goal weapon_rocketlauncher
+ARGLOG Reap t 103.6 pos '1892.0 -160.0 168.0' spd 0 yaw 216 mode 0 st 1 gl 3 hp 100 frg 3
+ARGEVT Reap route 4 start '1857.0 -271.0 168.0' goal '1441.0 -463.0  40.0'
+ARGEVT Omi goal item_armorInv
+ARGEVT Omi route 8 start '1217.0 -1103.0 256.0' goal '1729.0 -367.0 168.0'
+ARGEVT Zeus goal weapon_nailgun
+ARGLOG Omi t 103.9 pos '1240.2 -1017.4 256.0' spd 357.9 yaw  31.8 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 104.0 pos '1321.9 -1203.0 -24.0' spd 394.8 yaw 130 mode 1 st 10 gl 12 hp 88 frg 3
+ARGLOG Reap t 104.1 pos '1857.5 -304.0 168.0' spd 320.0 yaw 270 mode 2 st 1 gl 3 hp 100 frg 3
+ARGEVT Omi hazard
+ARGLOG Omi t 104.4 pos '1327.7 -1028.7 256.0' spd 320.3 yaw 266 mode 2 st 1 gl 13 hp 100 frg 3
+ARGEVT Reap hazard
+ARGEVT Zeus goal item_armorInv
+ARGLOG Zeus t 104.5 pos '1229.3 -1056.1 -40.0' spd 322.2 yaw 109.7 mode 0 st 10 gl 13 hp 88 frg 3
+ARGEVT Zeus route 12 start '1185.0 -1103.0 -40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Reap t 104.6 pos '1804.8 -436.9 168.0' spd 324.8 yaw 170.4 mode 2 st 1 gl 3 hp 100 frg 3
+ARGLOG Omi t 104.9 pos '1320.9 -1194.1 256.0' spd 341.7 yaw 311.3 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 105.0 pos '1290.1 -912.6 -40.0' spd 428.3 yaw 305.2 mode 2 st 10 gl 13 hp 88 frg 3
+ARGLOG Reap t 105.2 pos '1638.5 -416.7 161.5' spd 322.9 yaw 187 mode 1 st 1 gl 3 hp 100 frg 3
+ARGEVT Omi hazard
+ARGLOG Omi t 105.5 pos '1328.0 -1226.3 256.0' spd 252.1 yaw 15 mode 2 st 1 gl 13 hp 100 frg 3
+ARGEVT Reap goal weapon_supershotgun
+ARGEVT Reap route 2 start '1505.0 -495.0  96.0' goal '1377.0 -623.0  40.0'
+ARGLOG Zeus t 105.6 pos '1328.0 -944.0 -40.0' spd 0 yaw 277 mode 2 st 10 gl 13 hp 88 frg 3
+ARGLOG Reap t 105.7 pos '1482.7 -386.8  40.0' spd 290.4 yaw 259.4 mode 2 st 1 gl 3 hp 100 frg 3
+ARGLOG Omi t 106.0 pos '1401.3 -1149.9 243.9' spd 326.6 yaw 353 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 106.1 pos '1328.0 -944.0 -40.0' spd 0 yaw 277 mode 2 st 10 gl 13 hp 88 frg 3
+ARGLOG Reap t 106.2 pos '1404.9 -535.1  40.0' spd 321.1 yaw 256 mode 1 st 1 gl 3 hp 100 frg 3
+ARGEVT Reap goal item_armorInv
+ARGEVT Reap route 9 start '1377.0 -623.0  40.0' goal '1729.0 -367.0 168.0'
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '1345.0 -1103.0  -8.0'
+ARGEVT Zeus jump
+ARGEVT Reap hazard
+ARGLOG Omi t 106.5 pos '1566.6 -1159.6 195.6' spd 320.1 yaw  12.3 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 106.6 pos '1326.8 -939.5  -5.7' spd  30.0 yaw 105 mode 0 st 11 gl 13 hp 88 frg 3
+ARGEVT Zeus route 13 start '1249.0 -975.0 -40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Reap t 106.7 pos '1361.2 -542.5  40.0' spd 327.7 yaw  57.4 mode 2 st 1 gl 4 hp 100 frg 3
+ARGLOG Omi t 107.0 pos '1701.2 -1059.4 168.0' spd 341.6 yaw 91 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 107.1 pos '1308.9 -931.6 -40.0' spd 181.2 yaw 235 mode 2 st 11 gl 13 hp 88 frg 3
+ARGLOG Reap t 107.2 pos '1503.8 -450.4  40.0' spd 341.8 yaw 322.7 mode 2 st 1 gl 4 hp 100 frg 3
+ARGLOG Omi t 107.5 pos '1715.8 -893.9 168.0' spd 320.1 yaw 95 mode 2 st 1 gl 13 hp 100 frg 3
+ARGEVT Reap engage Omi
+ARGLOG Zeus t 107.6 pos '1219.6 -1071.5 -40.0' spd 363.8 yaw 301.6 mode 2 st 11 gl 13 hp 88 frg 3
+ARGEVT Omi engage Reap
+ARGLOG Reap t 107.7 pos '1643.2 -565.0  40.0' spd 359.0 yaw 280 mode 2 st 1 gl 4 hp 100 frg 3
+ARGLOG Omi t 108.0 pos '1674.2 -792.9 135.8' spd 164.3 yaw 67 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 108.1 pos '1364.4 -1146.6  -8.0' spd 322.2 yaw   7.2 mode 2 st 11 gl 13 hp 88 frg 3
+ARGLOG Reap t 108.2 pos '1801.9 -618.8  40.0' spd 329.5 yaw 230 mode 2 st 1 gl 4 hp 100 frg 3
+ARGEVT Reap hazard
+ARGEVT Omi weapon sg
+ARGEVT Reap weapon ssg
+ARGLOG Omi t 108.5 pos '1665.4 -703.9  40.0' spd 325.1 yaw 58 mode 2 st 1 gl 13 hp 100 frg 3
+ARGEVT Omi hazard
+ARGLOG Zeus t 108.6 pos '1530.1 -1125.2  40.0' spd 340.2 yaw 41 mode 2 st 11 gl 13 hp 88 frg 3
+ARGLOG Reap t 108.8 pos '1676.5 -570.6  40.0' spd 338.8 yaw 266.6 mode 2 st 1 gl 4 hp 100 frg 3
+ARGEVT Zeus engage Omi
+ARGEVT Omi weapon gl
+ARGEVT Reap weapon rl
+ARGLOG Omi t 109.1 pos '1777.0 -678.5  40.0' spd 372.7 yaw 160.6 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 109.2 pos '1693.0 -1066.2  40.0' spd 326.4 yaw 83 mode 2 st 11 gl 13 hp 88 frg 3
+ARGLOG Reap t 109.3 pos '1570.0 -574.6  56.0' spd 324.3 yaw 344 mode 2 st 1 gl 4 hp 100 frg 3
+ARGEVT Omi jump
+ARGEVT Omi weapon sg
+ARGLOG Omi t 109.6 pos '1773.4 -512.2  51.9' spd 321.6 yaw 162 mode 2 st 1 gl 13 hp 54 frg 3
+ARGEVT Reap weapon ssg
+ARGLOG Zeus t 109.7 pos '1770.4 -1040.5  40.0' spd 291.0 yaw 94 mode 2 st 11 gl 13 hp 88 frg 3
+ARGLOG Reap t 109.8 pos '1615.8 -416.1  40.0' spd 336.5 yaw 354 mode 2 st 1 gl 4 hp 84 frg 3
+ARGEVT Omi weapon gl
+ARGEVT Reap weapon rl
+ARGEVT Omi weapon sg
+ARGLOG Omi t 110.1 pos '1804.5 -373.3  74.6' spd 119.9 yaw 162 mode 2 st 1 gl 13 hp 6 frg 3
+ARGEVT Reap weapon ssg
+ARGEVT Omi death
+ARGEVT Omi death Zeus pos '1798.8 -372.0  67.3'
+ARGEVT Zeus engage Reap
+ARGEVT Reap engage Zeus
+ARGEVT Reap weapon rl
+ARGLOG Zeus t 110.2 pos '1713.6 -877.3  40.0' spd 361.1 yaw 103 mode 2 st 11 gl 13 hp 88 frg 4
+ARGEVT Reap route 8 start '1633.0 -271.0  40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Reap t 110.3 pos '1650.0 -309.5  40.0' spd 145.2 yaw 306.0 mode 2 st 1 gl 4 hp 84 frg 3
+ARGLOG Zeus t 110.7 pos '1721.8 -757.5  40.0' spd 321.0 yaw 114 mode 2 st 11 gl 13 hp 88 frg 4
+ARGLOG Reap t 110.8 pos '1504.1 -381.6  40.0' spd 326.0 yaw 307 mode 2 st 1 gl 4 hp 84 frg 3
+ARGLOG Zeus t 111.2 pos '1723.4 -751.6  40.0' spd 320.2 yaw 142 mode 2 st 11 gl 13 hp 88 frg 4
+ARGLOG Reap t 111.3 pos '1391.8 -502.9  40.0' spd 320.3 yaw 317 mode 2 st 1 gl 4 hp 84 frg 3
+ARGEVT Zeus hazard
+ARGEVT Reap pursue
+ARGEVT Omi respawn
+ARGEVT Zeus pursue
+ARGEVT Omi goal weapon_supernailgun
+ARGLOG Omi t 111.7 pos '232.0 -1512.0  40.0' spd 0 yaw 192 mode 0 st 1 gl 13 hp 100 frg 3
+ARGEVT Omi route 6 start '193.0 -1519.0  40.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t 111.7 pos '1652.7 -647.9  40.0' spd 320.0 yaw 100.0 mode 2 st 11 gl 13 hp 26 frg 4
+ARGLOG Reap t 111.8 pos '1428.0 -624.0  40.0' spd 0 yaw 342 mode 2 st 1 gl 4 hp 84 frg 3
+ARGEVT Omi hazard
+ARGLOG Omi t 112.2 pos ' 73.3 -1553.0  40.0' spd 384.4 yaw 246 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 112.3 pos '1574.5 -499.6  64.0' spd 328.1 yaw 154 mode 2 st 11 gl 13 hp 26 frg 4
+ARGLOG Reap t 112.4 pos '1428.0 -624.0  40.0' spd 0 yaw 342 mode 2 st 1 gl 4 hp 84 frg 3
+ARGLOG Omi t 112.7 pos ' 40.0 -1710.7  40.0' spd 320.1 yaw 257 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 112.8 pos '1509.3 -451.8  40.0' spd 311.0 yaw 232.5 mode 2 st 11 gl 13 hp 26 frg 4
+ARGLOG Reap t 112.9 pos '1410.8 -607.6  40.0' spd 295.1 yaw 43 mode 2 st 1 gl 4 hp 38 frg 3
+ARGEVT Reap pursue
+ARGEVT Zeus pursue
+ARGLOG Omi t 113.2 pos ' 10.9 -1872.1  72.0' spd 320.5 yaw 267 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Zeus t 113.3 pos '1583.6 -559.9  56.0' spd 373.0 yaw 203 mode 2 st 11 gl 13 hp 26 frg 4
+ARGLOG Reap t 113.4 pos '1425.1 -458.1  40.0' spd 352.6 yaw   0.7 mode 2 st 1 gl 4 hp 38 frg 3
+ARGEVT Zeus death
+ARGEVT Zeus death Zeus pos '1546.8 -598.2  72.0'
+ARGLOG Omi t 113.7 pos ' 79.4 -1960.5  88.0' spd 320.0 yaw 325 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Reap t 113.9 pos '1589.5 -499.4  40.0' spd 381.3 yaw 261 mode 2 st 1 gl 4 hp 38 frg 3
+ARGEVT Omi jump
+ARGLOG Omi t 114.3 pos '176.0 -2052.5 122.4' spd 183.0 yaw 354.3 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Reap t 114.4 pos '1564.8 -623.2  56.0' spd 293.1 yaw 179 mode 2 st 1 gl 4 hp 38 frg 3
+ARGEVT Reap jump
+ARGLOG Omi t 114.8 pos '224.0 -2059.9 104.0' spd  31.8 yaw 6 mode 2 st 1 gl 13 hp 100 frg 3
+ARGEVT Zeus respawn
+ARGLOG Reap t 114.9 pos '1484.3 -620.1 104.0' spd  30.5 yaw 181 mode 2 st 1 gl 4 hp 38 frg 3
+ARGEVT Zeus goal weapon_lightning
+ARGLOG Zeus t 115.0 pos '1016.0 -416.0  40.0' spd 0 yaw 253.7 mode 0 st 11 gl 13 hp 100 frg 3
+ARGEVT Zeus routefail
+ARGEVT Zeus goal item_armorInv
+ARGEVT Zeus route 10 start '993.0 -527.0  40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t 115.3 pos '224.0 -2051.5 104.0' spd  11.6 yaw 4 mode 2 st 1 gl 13 hp 100 frg 3
+ARGLOG Reap t 115.4 pos '1326.3 -618.0 168.0' spd 344.2 yaw 131.7 mode 2 st 1 gl 4 hp 38 frg 3
+ARGLOG Zeus t 115.5 pos '1018.7 -574.3  40.0' spd 401.3 yaw   4.5 mode 2 st 11 gl 13 hp 100 frg 3
+ARGEVT Zeus hazard
+ARGLOG Omi t 115.8 pos '281.1 -2043.6 136.0' spd 321.8 yaw 13 mode 1 st 1 gl 13 hp 100 frg 3
+ARGLOG Reap t 116.0 pos '1248.0 -465.2 168.0' spd 339.5 yaw 63 mode 2 st 1 gl 4 hp 63 frg 3
+ARGLOG Zeus t 116.0 pos '1095.8 -455.5  40.0' spd 381.5 yaw 9 mode 0 st 11 gl 13 hp 100 frg 3
+ARGEVT Omi goal item_weapon
+ARGEVT Zeus route 9 start '1185.0 -463.0  40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t 116.3 pos '429.3 -1976.8 168.0' spd 320.8 yaw  25.6 mode 0 st 1 gl 14 hp 100 frg 3
+ARGEVT Omi route 3 start '385.0 -1935.0 168.0' goal '449.0 -2063.0  40.0'
+ARGLOG Reap t 116.5 pos '1360.8 -342.6 168.0' spd 341.7 yaw 353 mode 2 st 1 gl 4 hp 63 frg 3
+ARGLOG Zeus t 116.5 pos '1258.3 -408.4  40.0' spd 328.6 yaw 344 mode 2 st 11 gl 13 hp 100 frg 3
+ARGEVT Omi hazard
+ARGEVT Zeus engage Reap
+ARGEVT Reap engage Zeus
+ARGLOG Omi t 116.8 pos '510.7 -1871.1 168.0' spd 328.8 yaw 124.1 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 117.0 pos '1450.1 -320.4 168.0' spd 332.0 yaw 280.3 mode 2 st 1 gl 4 hp 63 frg 3
+ARGLOG Zeus t 117.0 pos '1405.7 -448.5  40.0' spd 326.3 yaw  55.4 mode 2 st 11 gl 13 hp 100 frg 3
+ARGLOG Omi t 117.3 pos '400.0 -1830.4 184.0' spd 320.7 yaw 262 mode 2 st 1 gl 14 hp 100 frg 3
+ARGEVT Reap route 2 start '1313.0 -335.0 168.0' goal '1729.0 -367.0 168.0'
+ARGLOG Reap t 117.5 pos '1285.9 -357.5 168.0' spd 585.5 yaw 331 mode 2 st 1 gl 4 hp 23 frg 3
+ARGLOG Zeus t 117.5 pos '1509.8 -479.2  40.0' spd 323.9 yaw 160 mode 2 st 11 gl 13 hp 100 frg 3
+ARGLOG Omi t 117.9 pos '329.2 -1980.9 152.0' spd 411.4 yaw 143 mode 2 st 1 gl 14 hp 100 frg 3
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGLOG Reap t 118.0 pos '1240.4 -497.8 168.0' spd 300.8 yaw 3 mode 2 st 1 gl 4 hp 23 frg 3
+ARGLOG Zeus t 118.1 pos '1367.9 -525.6  40.0' spd 393.3 yaw 123 mode 2 st 11 gl 13 hp 100 frg 3
+ARGEVT Zeus hazard
+ARGLOG Omi t 118.4 pos '180.2 -1868.4  98.6' spd 393.5 yaw  17.8 mode 2 st 1 gl 14 hp 100 frg 3
+ARGEVT Reap weapon ssg
+ARGEVT Reap weapon rl
+ARGLOG Reap t 118.5 pos '1364.0 -523.4 161.5' spd  16.9 yaw  58.9 mode 2 st 1 gl 4 hp 23 frg 3
+ARGLOG Zeus t 118.6 pos '1383.1 -386.6  40.0' spd 361.1 yaw 192.8 mode 2 st 11 gl 13 hp 100 frg 3
+ARGEVT Reap death
+ARGEVT Reap death Zeus pos '1364.0 -449.2 153.8'
+ARGLOG Omi t 118.9 pos '201.2 -954.4 128.0' spd 325.2 yaw 285 mode 0 st 1 gl 14 hp 100 frg 3
+ARGEVT Omi route 9 start '225.0 -911.0 136.0' goal '449.0 -2063.0  40.0'
+ARGLOG Zeus t 119.1 pos '1505.3 -475.9  40.0' spd 330.1 yaw 268.0 mode 2 st 11 gl 13 hp 100 frg 4
+ARGEVT Zeus hazard
+ARGLOG Omi t 119.4 pos '299.4 -1088.3 112.0' spd 337.1 yaw 355 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Zeus t 119.6 pos '1576.4 -488.0  40.0' spd 133.0 yaw 267 mode 2 st 11 gl 13 hp 100 frg 4
+ARGLOG Omi t 119.9 pos '463.5 -1113.6 135.3' spd 321.1 yaw 5 mode 2 st 1 gl 14 hp 100 frg 3
+ARGEVT Zeus jump
+ARGLOG Zeus t 120.1 pos '1523.9 -624.0  93.5' spd 255.4 yaw 178 mode 2 st 11 gl 13 hp 100 frg 4
+ARGLOG Omi t 120.4 pos '628.4 -1106.2  93.2' spd 320.0 yaw 2 mode 2 st 1 gl 14 hp 100 frg 3
+ARGEVT Reap respawn
+ARGEVT Omi engage Reap
+ARGEVT Reap goal item_health
+ARGEVT Reap engage Omi
+ARGLOG Reap t 120.5 pos '  0.0 -1088.0 264.0' spd 0 yaw 6 mode 0 st 1 gl 4 hp 100 frg 3
+ARGEVT Reap route 2 start '  1.0 -1103.0 264.0' goal '225.0 -1231.0 112.0'
+ARGLOG Zeus t 120.6 pos '1420.0 -622.5 136.0' spd 320.0 yaw 181 mode 2 st 11 gl 13 hp 100 frg 4
+ARGLOG Omi t 120.9 pos '542.8 -1094.3 114.7' spd 310.4 yaw 238.6 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 121.0 pos '132.0 -1156.6 251.4' spd 353.1 yaw 7 mode 1 st 1 gl 4 hp 100 frg 3
+ARGLOG Zeus t 121.2 pos '1260.5 -572.8 168.0' spd 367.7 yaw  83.7 mode 2 st 11 gl 13 hp 100 frg 4
+ARGEVT Reap goal item_armorInv
+ARGEVT Reap route 19 start '257.0 -1327.0 181.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t 121.5 pos '501.6 -1109.0 126.3' spd 260.5 yaw 215 mode 2 st 1 gl 14 hp 89 frg 3
+ARGEVT Reap pursue
+ARGLOG Reap t 121.5 pos '238.4 -1302.1 125.7' spd 323.7 yaw 40 mode 2 st 1 gl 5 hp 200 frg 3
+ARGEVT Omi pursue
+ARGLOG Zeus t 121.7 pos '1266.7 -398.8 168.0' spd 347.5 yaw  23.7 mode 2 st 11 gl 13 hp 100 frg 4
+ARGLOG Omi t 122.0 pos '340.9 -1097.6 128.0' spd 326.0 yaw 211 mode 0 st 1 gl 14 hp 89 frg 3
+ARGEVT Omi route 7 start '321.0 -1135.0 151.0' goal '449.0 -2063.0  40.0'
+ARGLOG Reap t 122.0 pos '287.6 -1221.5 112.0' spd 137.9 yaw  91.4 mode 2 st 1 gl 5 hp 200 frg 3
+ARGLOG Zeus t 122.2 pos '1427.4 -337.3 168.0' spd 328.2 yaw 345 mode 2 st 11 gl 13 hp 100 frg 4
+ARGEVT Omi weapon sng
+ARGEVT Omi route 8 start '225.0 -1071.0 112.0' goal '449.0 -2063.0  40.0'
+ARGLOG Omi t 122.5 pos '185.4 -1082.8 112.0' spd 320.1 yaw 258 mode 2 st 1 gl 14 hp 89 frg 3
+ARGLOG Reap t 122.5 pos '139.2 -1218.8 112.0' spd 349.0 yaw 85 mode 2 st 1 gl 5 hp 200 frg 3
+ARGLOG Zeus t 122.7 pos '1591.3 -348.6 168.0' spd 320.6 yaw 1 mode 1 st 11 gl 13 hp 100 frg 4
+ARGEVT Reap goal 
+ARGEVT Zeus goal 
+ARGLOG Omi t 123.0 pos '181.6 -1050.9 112.0' spd 320.1 yaw 285 mode 2 st 1 gl 14 hp 73 frg 3
+ARGEVT Reap route 10 start '225.0 -1231.0 112.0' goal '929.0 -1711.0  40.0'
+ARGLOG Reap t 123.1 pos '223.5 -1175.2 112.0' spd 321.7 yaw 96 mode 2 st 1 gl 5 hp 182 frg 3
+ARGLOG Zeus t 123.2 pos '1758.1 -361.7 168.0' spd 339.4 yaw 316 mode 0 st 11 gl 14 hp 100 frg 4
+ARGEVT Omi weapon sg
+ARGEVT Zeus route 2 start '1729.0 -367.0 168.0' goal '1697.0 -399.0  40.0'
+ARGLOG Omi t 123.5 pos '246.2 -991.5 120.0' spd 320.2 yaw 264 mode 2 st 1 gl 14 hp 57 frg 3
+ARGLOG Reap t 123.6 pos '221.8 -1148.7 112.0' spd 326.5 yaw 89 mode 2 st 1 gl 5 hp 158 frg 3
+ARGLOG Zeus t 123.7 pos '1765.6 -439.2 168.0' spd 334.2 yaw 162 mode 2 st 11 gl 14 hp 100 frg 4
+ARGEVT Omi hazard
+ARGLOG Omi t 124.0 pos '114.0 -984.5 120.0' spd 129.6 yaw 286 mode 0 st 1 gl 14 hp 41 frg 3
+ARGEVT Omi route 9 start ' 97.0 -975.0 120.0' goal '449.0 -2063.0  40.0'
+ARGLOG Reap t 124.1 pos '183.8 -1131.7 112.0' spd 336.8 yaw 102 mode 2 st 1 gl 5 hp 134 frg 3
+ARGLOG Zeus t 124.2 pos '1602.5 -405.0 147.0' spd 322.6 yaw 149 mode 2 st 11 gl 14 hp 100 frg 4
+ARGLOG Omi t 124.5 pos '268.0 -934.5 136.0' spd 320.5 yaw 288 mode 2 st 1 gl 14 hp 25 frg 3
+ARGLOG Reap t 124.6 pos '347.2 -1094.0 128.0' spd 346.1 yaw 106 mode 2 st 1 gl 5 hp 110 frg 3
+ARGEVT Omi weapon rl
+ARGLOG Zeus t 124.7 pos '1501.1 -326.6  40.0' spd 336.6 yaw 358.5 mode 2 st 11 gl 14 hp 100 frg 4
+ARGEVT Omi pursue
+ARGLOG Omi t 125.1 pos '227.0 -1014.2 112.0' spd 321.9 yaw 333 mode 2 st 1 gl 14 hp 9 frg 3
+ARGLOG Reap t 125.1 pos '421.0 -1108.9 131.7' spd 321.5 yaw 161 mode 2 st 1 gl 5 hp 110 frg 3
+ARGLOG Zeus t 125.3 pos '1677.0 -338.8  40.0' spd 320.8 yaw 332 mode 1 st 11 gl 14 hp 100 frg 4
+ARGEVT Reap hazard
+ARGLOG Omi t 125.6 pos '230.1 -1181.5 112.0' spd 352.4 yaw 41 mode 2 st 1 gl 14 hp 9 frg 3
+ARGEVT Omi death
+ARGEVT Omi death Reap pos '238.4 -1197.2 112.0'
+ARGLOG Reap t 125.6 pos '388.6 -1048.5 145.7' spd  90.1 yaw 242.3 mode 2 st 1 gl 5 hp 110 frg 4
+ARGEVT Zeus goal 
+ARGEVT Zeus route 6 start '1697.0 -399.0  40.0' goal '1313.0 -335.0 168.0'
+ARGLOG Zeus t 125.8 pos '1808.0 -435.4  40.0' spd 329.5 yaw 250.6 mode 2 st 11 gl 15 hp 100 frg 4
+ARGLOG Reap t 126.1 pos '447.2 -1127.6 145.7' spd 321.2 yaw 10 mode 2 st 1 gl 5 hp 110 frg 4
+ARGLOG Zeus t 126.3 pos '1679.9 -541.2  40.0' spd 324.2 yaw 192.0 mode 2 st 11 gl 15 hp 100 frg 4
+ARGLOG Reap t 126.7 pos '611.7 -1106.2 100.6' spd 320.7 yaw 1 mode 2 st 1 gl 5 hp 109 frg 4
+ARGEVT Zeus jump
+ARGLOG Zeus t 126.8 pos '1528.9 -621.9  83.9' spd 337.0 yaw 182 mode 2 st 11 gl 15 hp 100 frg 4
+ARGEVT Omi respawn
+ARGEVT Omi goal 
+ARGLOG Omi t 127.2 pos '456.0 -1504.0 256.0' spd 0 yaw 253.4 mode 0 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 127.2 pos '782.2 -1117.1  24.1' spd 339.3 yaw 291 mode 2 st 1 gl 5 hp 109 frg 4
+ARGEVT Omi route 5 start '417.0 -1551.0 256.0' goal '225.0 -1231.0 112.0'
+ARGLOG Zeus t 127.3 pos '1510.1 -623.5  88.0' spd  30.0 yaw 179 mode 2 st 11 gl 15 hp 100 frg 4
+ARGEVT Omi hazard
+ARGLOG Omi t 127.7 pos '400.0 -1576.2 256.0' spd 231.9 yaw  88.2 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 127.7 pos '950.9 -1133.3 -32.0' spd 320.2 yaw 360 mode 2 st 1 gl 5 hp 108 frg 4
+ARGLOG Zeus t 127.8 pos '1354.0 -623.2 168.0' spd 320.0 yaw 162.4 mode 2 st 11 gl 15 hp 100 frg 4
+ARGEVT Omi engage Reap
+ARGEVT Reap engage Omi
+ARGEVT Reap route 3 start '321.0 -1807.0  56.0' goal '929.0 -1711.0  40.0'
+ARGLOG Omi t 128.2 pos '467.8 -1644.1 232.0' spd 321.4 yaw 182.9 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 128.2 pos '386.9 -1733.9  40.0' spd 357.7 yaw  48.5 mode 2 st 1 gl 5 hp 108 frg 4
+ARGEVT Omi pursue
+ARGEVT Reap pursue
+ARGLOG Zeus t 128.4 pos '1269.9 -485.3 168.0' spd 378.3 yaw 35 mode 1 st 11 gl 15 hp 100 frg 4
+ARGEVT Omi route 5 start '385.0 -1807.0 192.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t 128.7 pos '405.5 -1765.7 200.0' spd 336.0 yaw 186 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 128.7 pos '462.1 -1619.8  40.0' spd 369.0 yaw 122.7 mode 2 st 1 gl 5 hp 107 frg 4
+ARGEVT Zeus goal item_weapon
+ARGEVT Reap hazard
+ARGEVT Zeus route 7 start '1313.0 -335.0 168.0' goal '1281.0 -1231.0 -24.0'
+ARGLOG Zeus t 128.9 pos '1414.4 -392.8 168.0' spd 370.3 yaw 311.1 mode 2 st 11 gl 16 hp 100 frg 4
+ARGLOG Omi t 129.2 pos '342.2 -1846.6 140.5' spd 189.8 yaw 104.7 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 129.2 pos '335.0 -1585.2  40.0' spd 321.7 yaw 148.9 mode 0 st 1 gl 5 hp 107 frg 4
+ARGEVT Reap route 3 start '321.0 -1615.0  40.0' goal '929.0 -1711.0  40.0'
+ARGLOG Zeus t 129.4 pos '1530.0 -488.0  50.4' spd  36.5 yaw 145.7 mode 2 st 11 gl 16 hp 100 frg 4
+ARGLOG Omi t 129.7 pos '443.1 -1867.1  40.0' spd 343.9 yaw 140 mode 2 st 1 gl 14 hp 100 frg 3
+ARGEVT Omi hazard
+ARGLOG Reap t 129.7 pos '172.1 -1631.9  40.0' spd 339.1 yaw 257.5 mode 2 st 1 gl 5 hp 86 frg 4
+ARGLOG Zeus t 129.9 pos '1413.7 -406.1  40.0' spd 320.0 yaw 144 mode 2 st 11 gl 16 hp 100 frg 4
+ARGEVT Reap pursue
+ARGEVT Omi pursue
+ARGLOG Omi t 130.3 pos '440.3 -1864.0  40.0' spd  25.7 yaw 164 mode 2 st 1 gl 14 hp 100 frg 3
+ARGLOG Reap t 130.3 pos '130.0 -1779.9  40.0' spd 342.7 yaw 348 mode 2 st 1 gl 5 hp 86 frg 4
+ARGLOG Zeus t 130.4 pos '1310.3 -411.4  40.0' spd 321.3 yaw 203 mode 2 st 11 gl 16 hp 100 frg 4
+ARGLOG Omi t 130.8 pos '440.3 -1864.0  40.0' spd  85.9 yaw 183 mode 2 st 1 gl 14 hp 84 frg 3
+ARGEVT Omi hazard
+ARGLOG Reap t 130.8 pos '141.2 -1888.0  72.0' spd  79.2 yaw 0 mode 2 st 1 gl 5 hp 74 frg 4
+ARGLOG Zeus t 130.9 pos '1160.1 -477.4  40.0' spd 320.3 yaw 197 mode 2 st 11 gl 16 hp 100 frg 4
+ARGLOG Omi t 131.3 pos '354.4 -1781.9  48.0' spd 320.8 yaw 191 mode 2 st 1 gl 14 hp 72 frg 3
+ARGLOG Reap t 131.3 pos '149.2 -1815.7  48.0' spd 320.3 yaw 11 mode 2 st 1 gl 5 hp 50 frg 4
+ARGLOG Zeus t 131.4 pos '1002.5 -541.9  40.0' spd 359.3 yaw 267 mode 2 st 11 gl 16 hp 100 frg 4
+ARGLOG Omi t 131.8 pos '305.2 -1624.9  40.0' spd 320.5 yaw 193 mode 2 st 1 gl 14 hp 64 frg 3
+ARGLOG Reap t 131.8 pos '111.8 -1652.6  40.0' spd 321.0 yaw 18 mode 2 st 1 gl 5 hp 26 frg 4
+ARGLOG Zeus t 132.0 pos '979.8 -707.2  40.0' spd 320.4 yaw 277 mode 2 st 11 gl 16 hp 100 frg 4
+ARGEVT Reap route 4 start ' 97.0 -1615.0  40.0' goal '929.0 -1711.0  40.0'
+ARGEVT Reap hazard
+ARGLOG Omi t 132.3 pos '241.6 -1715.0  56.0' spd 352.5 yaw 116 mode 0 st 1 gl 14 hp 56 frg 3
+ARGLOG Reap t 132.3 pos '133.5 -1495.3  40.0' spd 367.3 yaw 295.1 mode 2 st 1 gl 5 hp 2 frg 4
+ARGEVT Omi route 3 start '225.0 -1711.0  56.0' goal '225.0 -1231.0 112.0'
+ARGLOG Zeus t 132.5 pos '1079.9 -837.9  -8.0' spd 349.4 yaw 9 mode 2 st 11 gl 16 hp 100 frg 4
+ARGEVT Omi pursue
+ARGEVT Reap pursue
+ARGEVT Omi route 3 start '225.0 -1711.0  56.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t 132.8 pos '102.3 -1667.6  40.0' spd 342.7 yaw 96 mode 2 st 1 gl 14 hp 56 frg 3
+ARGLOG Reap t 132.8 pos '246.2 -1522.1  40.0' spd  95.3 yaw 284 mode 2 st 1 gl 5 hp 2 frg 4
+ARGLOG Zeus t 133.0 pos '1241.5 -878.8 -40.0' spd 382.2 yaw 277 mode 2 st 11 gl 16 hp 100 frg 4
+ARGEVT Reap death
+ARGEVT Reap death Omi pos '200.9 -1534.7  40.0'
+ARGLOG Omi t 133.3 pos '106.0 -1524.6  40.0' spd 176.5 yaw 316.4 mode 2 st 1 gl 14 hp 56 frg 4
+ARGLOG Zeus t 133.5 pos '1295.4 -1040.5 -24.0' spd 322.6 yaw 266 mode 2 st 11 gl 16 hp 100 frg 4
+ARGEVT Omi hazard
+ARGLOG Omi t 133.9 pos '243.7 -1522.4  40.0' spd 282.9 yaw 265 mode 2 st 1 gl 14 hp 56 frg 4
+ARGLOG Zeus t 134.0 pos '1299.7 -1205.4 -24.0' spd 320.2 yaw 266 mode 1 st 11 gl 16 hp 100 frg 4
+ARGEVT Zeus goal item_weapon
+ARGEVT Zeus goal weapon_grenadelauncher
+ARGLOG Omi t 134.4 pos '168.6 -1535.4  40.0' spd 199.5 yaw 288 mode 2 st 1 gl 14 hp 56 frg 4
+ARGEVT Zeus route 20 start '1281.0 -1231.0 -24.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Zeus t 134.5 pos '1200.0 -1332.0 -40.0' spd 415.9 yaw 121.1 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi hazard
+ARGEVT Reap respawn
+ARGEVT Reap goal weapon_grenadelauncher
+ARGLOG Reap t 134.8 pos '408.0 -1088.0 256.0' spd 0 yaw 0 mode 0 st 1 gl 5 hp 100 frg 4
+ARGEVT Reap route 5 start '417.0 -1071.0 256.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Omi t 134.9 pos '168.6 -1535.4  40.0' spd 217.1 yaw 288 mode 2 st 1 gl 14 hp 56 frg 4
+ARGLOG Zeus t 135.0 pos '1198.4 -1172.4 -40.0' spd 355.2 yaw  22.2 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Reap t 135.3 pos '562.3 -1110.5 256.0' spd 320.2 yaw 355 mode 2 st 1 gl 5 hp 100 frg 4
+ARGLOG Omi t 135.4 pos '168.6 -1535.4  40.0' spd 213.9 yaw 288 mode 2 st 1 gl 14 hp 56 frg 4
+ARGLOG Zeus t 135.6 pos '1351.0 -1107.2  -8.0' spd 332.2 yaw 354 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi stall
+ARGEVT Omi stallnode '225.0 -1711.0  56.0'
+ARGEVT Omi jump
+ARGEVT Zeus engage Reap
+ARGEVT Reap engage Zeus
+ARGLOG Reap t 135.8 pos '726.3 -1129.0 256.0' spd 331.5 yaw 341.9 mode 2 st 1 gl 5 hp 100 frg 4
+ARGEVT Omi route 5 start '193.0 -1519.0  40.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t 135.9 pos '114.7 -1505.4  40.0' spd 209.4 yaw  30.4 mode 2 st 2 gl 14 hp 56 frg 4
+ARGEVT Omi hazard
+ARGLOG Zeus t 136.1 pos '1389.3 -1110.4   8.0' spd 320.1 yaw 286.1 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap hazard
+ARGLOG Reap t 136.3 pos '844.2 -1155.8 256.0' spd 140.3 yaw 0 mode 2 st 1 gl 5 hp 100 frg 4
+ARGLOG Omi t 136.4 pos '245.7 -1528.6  40.0' spd 163.5 yaw 224.6 mode 2 st 2 gl 14 hp 56 frg 4
+ARGEVT Zeus jump
+ARGLOG Zeus t 136.6 pos '1244.9 -1054.0 -28.3' spd 344.9 yaw 184 mode 0 st 11 gl 18 hp 100 frg 4
+ARGEVT Zeus route 20 start '1185.0 -1103.0 -40.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Reap t 136.8 pos '835.3 -996.1 256.0' spd 322.8 yaw 4 mode 2 st 1 gl 5 hp 100 frg 4
+ARGLOG Omi t 136.9 pos ' 95.3 -1544.3  40.0' spd 358.6 yaw 276.3 mode 2 st 2 gl 14 hp 56 frg 4
+ARGLOG Zeus t 137.1 pos '1160.0 -909.5 -40.0' spd 293.3 yaw 181 mode 2 st 11 gl 18 hp 96 frg 4
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGLOG Reap t 137.4 pos '860.7 -920.5 256.0' spd 281.5 yaw   5.4 mode 2 st 1 gl 5 hp 100 frg 4
+ARGLOG Omi t 137.5 pos '154.2 -1705.6  48.0' spd 349.5 yaw 356 mode 2 st 2 gl 14 hp 56 frg 4
+ARGEVT Zeus route 21 start '1217.0 -815.0 -18.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Zeus t 137.6 pos '1104.0 -827.9 -29.9' spd  95.8 yaw 207 mode 2 st 11 gl 18 hp 96 frg 4
+ARGEVT Omi route 3 start '225.0 -1711.0  56.0' goal '225.0 -1231.0 112.0'
+ARGLOG Reap t 137.9 pos '1022.3 -893.4 256.0' spd 325.0 yaw 339 mode 0 st 1 gl 5 hp 100 frg 4
+ARGEVT Omi route 4 start '321.0 -1615.0  40.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t 138.0 pos '305.0 -1640.2  40.0' spd 384.2 yaw 122.6 mode 2 st 2 gl 14 hp 56 frg 4
+ARGEVT Reap route 1 start '1153.0 -975.0 256.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Zeus t 138.1 pos '1038.8 -930.9 -40.0' spd 333.2 yaw 180.1 mode 2 st 11 gl 18 hp 96 frg 4
+ARGLOG Reap t 138.4 pos '1075.2 -873.6 256.0' spd 360.2 yaw 270.1 mode 2 st 1 gl 5 hp 100 frg 4
+ARGLOG Omi t 138.5 pos '182.6 -1631.6  40.0' spd 396.6 yaw 287.4 mode 2 st 2 gl 14 hp 56 frg 4
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGLOG Zeus t 138.6 pos '1142.1 -1041.1 -40.0' spd 326.9 yaw 104 mode 2 st 11 gl 18 hp 96 frg 4
+ARGEVT Reap hazard
+ARGEVT Omi hazard
+ARGLOG Reap t 138.9 pos '1043.0 -910.4 256.0' spd 324.9 yaw 330 mode 2 st 1 gl 5 hp 87 frg 4
+ARGEVT Omi route 3 start '225.0 -1711.0  56.0' goal '225.0 -1231.0 112.0'
+ARGLOG Omi t 139.0 pos '259.5 -1707.8  56.0' spd 359.0 yaw 86 mode 0 st 2 gl 14 hp 56 frg 4
+ARGEVT Omi route 3 start '225.0 -1711.0  56.0' goal '225.0 -1231.0 112.0'
+ARGLOG Zeus t 139.2 pos '1175.6 -865.6 -40.0' spd 379.5 yaw   9.1 mode 2 st 11 gl 18 hp 96 frg 4
+ARGLOG Reap t 139.4 pos '1186.5 -992.6 256.0' spd 324.3 yaw 292 mode 1 st 1 gl 5 hp 87 frg 4
+ARGLOG Omi t 139.5 pos '219.6 -1587.5  40.0' spd 334.7 yaw 220.2 mode 2 st 2 gl 14 hp 56 frg 4
+ARGEVT Zeus goal weapon_lightning
+ARGLOG Zeus t 139.7 pos '1293.5 -939.2 -40.0' spd 412.0 yaw 204.0 mode 0 st 11 gl 18 hp 96 frg 4
+ARGEVT Reap goal weapon_rocketlauncher
+ARGEVT Zeus routefail
+ARGEVT Zeus goal weapon_supershotgun
+ARGLOG Reap t 139.9 pos '1264.1 -1142.3 256.0' spd 344.8 yaw 251.7 mode 0 st 1 gl 6 hp 87 frg 4
+ARGEVT Zeus route 7 start '1249.0 -975.0 -40.0' goal '1377.0 -623.0  40.0'
+ARGLOG Omi t 140.0 pos '195.0 -1741.2  56.0' spd 430.6 yaw  25.9 mode 2 st 2 gl 14 hp 56 frg 4
+ARGLOG Zeus t 140.2 pos '1119.9 -970.4 -40.0' spd 320.4 yaw 145.0 mode 2 st 11 gl 18 hp 96 frg 4
+ARGEVT Reap route 7 start '1313.0 -1199.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Reap t 140.5 pos '1162.4 -1233.7 256.0' spd 165.5 yaw 115 mode 2 st 1 gl 6 hp 87 frg 4
+ARGLOG Omi t 140.6 pos '211.8 -1053.7 112.0' spd 328.1 yaw 296 mode 1 st 2 gl 14 hp 56 frg 4
+ARGLOG Zeus t 140.7 pos '953.3 -966.7 -40.0' spd 350.6 yaw 209.9 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi goal item_health
+ARGLOG Reap t 141.0 pos '1247.5 -1095.8 256.0' spd 333.2 yaw 174 mode 2 st 1 gl 6 hp 87 frg 4
+ARGLOG Omi t 141.1 pos '283.5 -1203.1 112.0' spd 353.2 yaw 355.3 mode 0 st 2 gl 15 hp 56 frg 4
+ARGEVT Omi route 31 start '225.0 -1231.0 112.0' goal '417.0 -1071.0 256.0'
+ARGEVT Omi hazard
+ARGLOG Zeus t 141.2 pos '884.7 -1120.6 -44.0' spd 340.4 yaw 317.2 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap pursue
+ARGLOG Reap t 141.5 pos '1211.1 -941.7 256.0' spd 320.3 yaw 223.0 mode 2 st 1 gl 6 hp 87 frg 4
+ARGLOG Omi t 141.6 pos '293.1 -1158.2 112.0' spd 336.3 yaw 128 mode 2 st 2 gl 15 hp 56 frg 4
+ARGEVT Zeus route 8 start '897.0 -1263.0 -40.0' goal '1377.0 -623.0  40.0'
+ARGLOG Zeus t 141.7 pos '969.0 -1266.5 -24.0' spd 336.6 yaw 64 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap route 9 start '1153.0 -975.0 256.0' goal '1441.0 -463.0  40.0'
+ARGLOG Reap t 142.0 pos '1064.1 -864.7 256.0' spd 332.4 yaw 272 mode 2 st 1 gl 6 hp 87 frg 4
+ARGLOG Omi t 142.1 pos '304.0 -1000.0 112.0' spd 0 yaw 325 mode 2 st 2 gl 15 hp 56 frg 4
+ARGEVT Omi hazard
+ARGLOG Zeus t 142.3 pos '1133.3 -1301.2 -10.1' spd 331.5 yaw 102 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Reap t 142.5 pos '1088.8 -856.6 256.0' spd 320.0 yaw 288 mode 2 st 1 gl 6 hp 87 frg 4
+ARGLOG Omi t 142.6 pos '374.2 -1113.5 135.1' spd 348.3 yaw 2 mode 2 st 2 gl 15 hp 56 frg 4
+ARGEVT Zeus route 8 start '1281.0 -1231.0 -24.0' goal '1377.0 -623.0  40.0'
+ARGLOG Zeus t 142.8 pos '1297.6 -1266.9 -40.0' spd 321.7 yaw 109 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap weapon sg
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGEVT Omi engage Zeus
+ARGLOG Reap t 143.0 pos '1244.0 -859.8 256.0' spd 337.8 yaw 269 mode 2 st 1 gl 6 hp 87 frg 4
+ARGLOG Omi t 143.1 pos '541.8 -1121.0 127.7' spd 323.1 yaw 353 mode 2 st 2 gl 15 hp 56 frg 4
+ARGLOG Zeus t 143.3 pos '1249.6 -1162.1 -40.0' spd 320.6 yaw 117 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi death
+ARGEVT Omi death Reap pos '656.8 -1121.6  92.4'
+ARGLOG Reap t 143.5 pos '1274.7 -1026.2 256.0' spd 321.8 yaw 262 mode 2 st 1 gl 6 hp 87 frg 5
+ARGLOG Zeus t 143.8 pos '1172.8 -1015.9 -40.0' spd 320.0 yaw 117 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Reap t 144.1 pos '1255.6 -1191.0 256.0' spd 320.2 yaw 258 mode 2 st 1 gl 6 hp 87 frg 5
+ARGLOG Zeus t 144.3 pos '1106.5 -861.5 -40.0' spd 361.4 yaw  52.1 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Zeus route 7 start '1121.0 -911.0 -40.0' goal '1377.0 -623.0  40.0'
+ARGLOG Reap t 144.6 pos '1138.1 -1292.9 256.0' spd 369.3 yaw 120.0 mode 2 st 1 gl 6 hp 87 frg 5
+ARGEVT Reap hazard
+ARGLOG Zeus t 144.8 pos '1178.2 -834.7 -36.0' spd 327.7 yaw 323.4 mode 2 st 11 gl 18 hp 90 frg 4
+ARGEVT Omi respawn
+ARGEVT Omi goal item_armorInv
+ARGLOG Omi t 145.0 pos '896.0 -1464.0 256.0' spd 0 yaw  16.3 mode 0 st 2 gl 15 hp 100 frg 4
+ARGLOG Reap t 145.1 pos '1200.9 -1253.2 256.0' spd 320.0 yaw 79 mode 2 st 1 gl 6 hp 87 frg 5
+ARGEVT Omi route 10 start '929.0 -1455.0 256.0' goal '1729.0 -367.0 168.0'
+ARGEVT Omi engage Reap
+ARGEVT Zeus pursue
+ARGLOG Zeus t 145.3 pos '1291.7 -900.9 -40.0' spd 223.8 yaw 249.7 mode 2 st 11 gl 18 hp 90 frg 4
+ARGEVT Reap pursue
+ARGEVT Omi hazard
+ARGLOG Omi t 145.5 pos '1014.8 -1462.0 256.0' spd 119.8 yaw 42 mode 2 st 2 gl 15 hp 100 frg 4
+ARGLOG Reap t 145.6 pos '1313.7 -1176.0 256.0' spd 339.9 yaw 105 mode 2 st 1 gl 6 hp 87 frg 5
+ARGLOG Zeus t 145.9 pos '1219.8 -1050.0 -40.0' spd 320.4 yaw 252 mode 2 st 11 gl 18 hp 90 frg 4
+ARGLOG Omi t 146.1 pos '1004.6 -1362.5 256.0' spd 325.2 yaw 51 mode 2 st 2 gl 15 hp 100 frg 4
+ARGLOG Reap t 146.1 pos '1307.3 -1003.6 256.0' spd 333.5 yaw 119 mode 2 st 1 gl 6 hp 63 frg 5
+ARGLOG Zeus t 146.4 pos '1166.8 -1205.7 -40.0' spd 327.6 yaw 219.4 mode 2 st 11 gl 18 hp 90 frg 4
+ARGLOG Omi t 146.6 pos '986.9 -1281.3 256.0' spd 321.9 yaw 56 mode 2 st 2 gl 15 hp 100 frg 4
+ARGLOG Reap t 146.6 pos '1219.7 -855.2 256.0' spd 402.4 yaw 209.9 mode 2 st 1 gl 6 hp 51 frg 5
+ARGLOG Zeus t 146.9 pos '1012.1 -1202.6 -40.0' spd 430.1 yaw  55.5 mode 2 st 11 gl 18 hp 90 frg 4
+ARGEVT Reap hazard
+ARGLOG Omi t 147.1 pos '1148.4 -1312.5 256.0' spd 323.8 yaw 90 mode 2 st 2 gl 15 hp 100 frg 4
+ARGLOG Reap t 147.1 pos '1150.4 -941.7 256.0' spd 135.7 yaw 319.7 mode 2 st 1 gl 6 hp 43 frg 5
+ARGLOG Zeus t 147.4 pos '1136.9 -1154.1 -40.0' spd 321.8 yaw  81.6 mode 2 st 11 gl 18 hp 90 frg 4
+ARGLOG Omi t 147.6 pos '1309.9 -1278.7 256.0' spd 324.0 yaw 114 mode 2 st 2 gl 15 hp 100 frg 4
+ARGLOG Reap t 147.6 pos '1172.5 -916.9 256.0' spd 333.9 yaw 279 mode 2 st 1 gl 6 hp 19 frg 5
+ARGLOG Zeus t 147.9 pos '1300.7 -1128.1 -24.0' spd 320.6 yaw 98 mode 2 st 11 gl 18 hp 90 frg 4
+ARGEVT Reap death
+ARGEVT Reap death Omi pos '1253.8 -896.0 256.0'
+ARGLOG Omi t 148.1 pos '1218.3 -1235.7 256.0' spd 330.1 yaw  24.1 mode 2 st 2 gl 15 hp 100 frg 5
+ARGLOG Zeus t 148.4 pos '1233.0 -1013.4 -40.0' spd 335.9 yaw 178 mode 2 st 11 gl 18 hp 90 frg 4
+ARGLOG Omi t 148.6 pos '1374.9 -1158.9 251.7' spd 323.7 yaw 358 mode 2 st 2 gl 15 hp 100 frg 5
+ARGLOG Zeus t 148.9 pos '1067.5 -973.9 -40.0' spd 369.3 yaw 115 mode 2 st 11 gl 18 hp 90 frg 4
+ARGLOG Omi t 149.1 pos '1539.5 -1159.8 203.5' spd 320.0 yaw 357 mode 2 st 2 gl 15 hp 100 frg 5
+ARGEVT Zeus jump
+ARGLOG Zeus t 149.4 pos '971.4 -876.0  10.5' spd 155.1 yaw 83 mode 2 st 11 gl 18 hp 90 frg 4
+ARGEVT Reap respawn
+ARGEVT Reap goal weapon_rocketlauncher
+ARGLOG Reap t 149.5 pos '1892.0 -160.0 168.0' spd 0 yaw 216 mode 0 st 1 gl 6 hp 100 frg 5
+ARGEVT Reap route 4 start '1857.0 -271.0 168.0' goal '1441.0 -463.0  40.0'
+ARGLOG Omi t 149.7 pos '1684.8 -1077.0 168.0' spd 348.2 yaw 86 mode 2 st 2 gl 15 hp 100 frg 5
+ARGLOG Zeus t 150.0 pos '899.5 -837.5 -38.5' spd 140.1 yaw 58 mode 2 st 11 gl 18 hp 90 frg 4
+ARGLOG Reap t 150.0 pos '1857.8 -304.0 168.0' spd 320.0 yaw 270 mode 2 st 1 gl 6 hp 100 frg 5
+ARGEVT Zeus hazard
+ARGLOG Omi t 150.2 pos '1712.5 -912.6 168.0' spd 320.4 yaw 93 mode 2 st 2 gl 15 hp 100 frg 5
+ARGEVT Reap hazard
+ARGLOG Zeus t 150.5 pos '1020.1 -784.0  16.0' spd 335.2 yaw 96 mode 2 st 11 gl 18 hp 90 frg 4
+ARGEVT Omi engage Reap
+ARGEVT Reap engage Omi
+ARGLOG Reap t 150.5 pos '1803.2 -435.7 168.0' spd 336.9 yaw 224.6 mode 2 st 1 gl 6 hp 100 frg 5
+ARGLOG Omi t 150.7 pos '1665.7 -754.7 165.9' spd 338.8 yaw 78 mode 2 st 2 gl 15 hp 100 frg 5
+ARGLOG Zeus t 151.0 pos '1058.9 -659.8  40.0' spd 324.7 yaw 116 mode 2 st 11 gl 18 hp 90 frg 4
+ARGLOG Reap t 151.0 pos '1637.8 -446.8 161.8' spd 322.2 yaw 281.7 mode 1 st 1 gl 6 hp 100 frg 5
+ARGLOG Omi t 151.2 pos '1684.1 -663.4  40.0' spd 132.7 yaw 114 mode 2 st 2 gl 15 hp 88 frg 5
+ARGEVT Zeus engage Reap
+ARGLOG Zeus t 151.5 pos '1031.3 -495.9  40.0' spd 325.2 yaw  65.1 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap goal item_armorInv
+ARGLOG Reap t 151.6 pos '1445.4 -401.6  40.0' spd 419.4 yaw 332.9 mode 0 st 1 gl 6 hp 76 frg 5
+ARGEVT Reap route 8 start '1441.0 -463.0  40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t 151.7 pos '1784.9 -534.9  40.0' spd 330.5 yaw 164 mode 2 st 2 gl 15 hp 88 frg 5
+ARGEVT Zeus hazard
+ARGEVT Reap hazard
+ARGLOG Zeus t 152.0 pos '1062.6 -486.0  40.0' spd 489.9 yaw 8 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Reap t 152.1 pos '1369.3 -502.5  40.0' spd 309.2 yaw 8 mode 2 st 1 gl 6 hp 56 frg 5
+ARGEVT Zeus goal item_artifact_invisibility
+ARGLOG Omi t 152.2 pos '1792.5 -367.8  40.0' spd 330.6 yaw 204 mode 2 st 2 gl 15 hp 88 frg 5
+ARGEVT Zeus routefail
+ARGEVT Zeus goal item_weapon
+ARGEVT Zeus pursue
+ARGEVT Zeus route 8 start '1057.0 -399.0  40.0' goal '1313.0 -335.0 168.0'
+ARGLOG Zeus t 152.5 pos '1042.6 -429.9  40.0' spd 285.3 yaw 350 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi pursue
+ARGLOG Reap t 152.6 pos '1414.7 -605.4  40.0' spd 270.0 yaw 51 mode 2 st 1 gl 6 hp 14 frg 5
+ARGEVT Reap pursue
+ARGEVT Reap death
+ARGEVT Reap death Omi pos '1401.6 -557.7  40.0'
+ARGLOG Omi t 152.7 pos '1662.3 -279.4  40.0' spd 372.8 yaw 228 mode 2 st 2 gl 15 hp 88 frg 6
+ARGEVT Zeus engage Omi
+ARGEVT Omi engage Zeus
+ARGLOG Zeus t 153.1 pos '1172.9 -413.5  40.0' spd 337.9 yaw   6.3 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Omi t 153.3 pos '1601.8 -413.5  40.0' spd 320.3 yaw 189 mode 2 st 2 gl 15 hp 88 frg 6
+ARGLOG Zeus t 153.6 pos '1235.0 -407.2  40.0' spd 326.4 yaw 347.3 mode 2 st 11 gl 18 hp 97 frg 4
+ARGLOG Omi t 153.8 pos '1565.7 -574.8  56.0' spd 322.9 yaw 162 mode 2 st 2 gl 15 hp 88 frg 6
+ARGEVT Zeus pursue
+ARGLOG Zeus t 154.1 pos '1268.6 -421.2  40.0' spd 320.1 yaw 339 mode 2 st 11 gl 18 hp 97 frg 4
+ARGEVT Omi pursue
+ARGLOG Omi t 154.3 pos '1533.8 -504.1  80.0' spd 377.3 yaw 146 mode 2 st 2 gl 15 hp 88 frg 6
+ARGEVT Reap respawn
+ARGEVT Reap goal weapon_rocketlauncher
+ARGLOG Reap t 154.3 pos '232.0 -1512.0  40.0' spd 0 yaw 163.7 mode 0 st 1 gl 6 hp 100 frg 5
+ARGEVT Reap route 4 start '193.0 -1519.0  40.0' goal '225.0 -1071.0 112.0'
+ARGEVT Zeus weapon ng
+ARGLOG Zeus t 154.6 pos '1409.4 -327.4  40.0' spd 332.5 yaw 313.3 mode 2 st 11 gl 18 hp 93 frg 4
+ARGLOG Omi t 154.8 pos '1461.3 -405.7  40.0' spd 327.8 yaw 114 mode 2 st 2 gl 15 hp 88 frg 6
+ARGLOG Reap t 154.9 pos ' 89.0 -1559.2  40.0' spd 341.6 yaw 293.6 mode 2 st 1 gl 6 hp 100 frg 5
+ARGLOG Zeus t 155.1 pos '1407.7 -252.1  40.0' spd 337.2 yaw 262.3 mode 2 st 11 gl 18 hp 89 frg 4
+ARGEVT Zeus weapon rl
+ARGLOG Omi t 155.3 pos '1304.5 -405.0  40.0' spd 121.1 yaw 39 mode 0 st 2 gl 15 hp 88 frg 6
+ARGLOG Reap t 155.4 pos '178.1 -1710.8  56.0' spd 344.4 yaw   9.6 mode 2 st 1 gl 6 hp 100 frg 5
+ARGEVT Omi route 9 start '1313.0 -399.0  40.0' goal '1729.0 -367.0 168.0'
+ARGEVT Reap route 2 start '225.0 -1711.0  56.0' goal '225.0 -1071.0 112.0'
+ARGLOG Zeus t 155.6 pos '1504.5 -346.9  40.0' spd 347.9 yaw 223 mode 2 st 11 gl 18 hp 85 frg 4
+ARGEVT Zeus weapon ng
+ARGLOG Omi t 155.8 pos '1436.0 -494.1  40.5' spd  62.6 yaw 30 mode 2 st 2 gl 15 hp 7 frg 6
+ARGLOG Reap t 155.9 pos '284.1 -1596.3  40.0' spd 432.7 yaw 173.2 mode 2 st 1 gl 6 hp 100 frg 5
+ARGEVT Zeus weapon rl
+ARGLOG Zeus t 156.1 pos '1617.7 -480.7  40.0' spd 388.0 yaw 179 mode 2 st 11 gl 18 hp 81 frg 4
+ARGLOG Omi t 156.3 pos '1435.2 -496.0  40.0' spd  14.2 yaw 336 mode 2 st 2 gl 15 hp 7 frg 6
+ARGLOG Reap t 156.4 pos '172.4 -1696.3  48.0' spd 420.2 yaw 338.6 mode 2 st 1 gl 6 hp 100 frg 5
+ARGEVT Omi pursue
+ARGEVT Reap route 1 start '225.0 -911.0 136.0' goal '225.0 -1071.0 112.0'
+ARGEVT Zeus pursue
+ARGLOG Zeus t 156.7 pos '1634.8 -596.3  40.0' spd 220.2 yaw 153 mode 2 st 11 gl 18 hp 81 frg 4
+ARGLOG Omi t 156.9 pos '1428.0 -564.8  40.0' spd   4.1 yaw 13 mode 2 st 2 gl 15 hp 7 frg 6
+ARGLOG Reap t 156.9 pos '201.4 -1020.7 112.0' spd 320 yaw 270 mode 1 st 1 gl 6 hp 100 frg 5
+ARGLOG Zeus t 157.2 pos '1548.0 -499.6  72.0' spd 124.4 yaw 178 mode 2 st 11 gl 18 hp 81 frg 4
+ARGEVT Reap goal item_health
+ARGLOG Omi t 157.4 pos '1428.0 -527.9  40.0' spd  69.5 yaw 3 mode 2 st 2 gl 15 hp 7 frg 6
+ARGLOG Reap t 157.4 pos '157.4 -1184.3 112.0' spd 357.4 yaw 303.5 mode 1 st 1 gl 7 hp 100 frg 5
+ARGEVT Zeus weapon ng
+ARGEVT Omi weapon sg
+ARGEVT Reap goal weapon_supernailgun
+ARGLOG Zeus t 157.7 pos '1565.8 -488.0  40.0' spd 211.8 yaw 202 mode 2 st 11 gl 18 hp 63 frg 4
+ARGEVT Reap route 12 start '225.0 -1231.0 112.0' goal '481.0 -2031.0 168.0'
+ARGEVT Omi weapon rl
+ARGEVT Zeus weapon rl
+ARGEVT Omi hazard
+ARGLOG Omi t 157.9 pos '1421.5 -618.2  40.0' spd 131.1 yaw 22 mode 2 st 2 gl 15 hp 7 frg 6
+ARGEVT Omi pursue
+ARGLOG Reap t 157.9 pos '229.1 -1303.3 128.3' spd 182.0 yaw   9.9 mode 2 st 1 gl 8 hp 200 frg 5
+ARGEVT Zeus pursue
+ARGLOG Zeus t 158.2 pos '1587.6 -582.3  56.0' spd 351.8 yaw 164 mode 2 st 11 gl 18 hp 63 frg 4
+ARGEVT Zeus jump
+ARGEVT Zeus weapon ng
+ARGEVT Omi weapon sg
+ARGLOG Omi t 158.4 pos '1451.1 -472.4  40.0' spd 390.0 yaw 352.5 mode 2 st 2 gl 15 hp 7 frg 6
+ARGLOG Reap t 158.5 pos '290.0 -1196.5 112.0' spd 340.7 yaw 117 mode 2 st 1 gl 8 hp 200 frg 5
+ARGLOG Zeus t 158.7 pos '1516.1 -581.9 110.0' spd  31.2 yaw  81.6 mode 2 st 11 gl 18 hp 63 frg 4
+ARGEVT Zeus weapon rl
+ARGEVT Omi weapon rl
+ARGLOG Omi t 158.9 pos '1615.2 -435.7  40.0' spd 347.5 yaw 232 mode 2 st 2 gl 15 hp 7 frg 6
+ARGLOG Reap t 159.0 pos '303.5 -1028.1 112.0' spd 402.3 yaw 350.8 mode 2 st 1 gl 8 hp 200 frg 5
+ARGEVT Reap hazard
+ARGEVT Zeus weapon ng
+ARGEVT Zeus death
+ARGEVT Zeus death Omi pos '1473.6 -535.1 104.0'
+ARGLOG Omi t 159.4 pos '1644.4 -580.5  40.0' spd 345.1 yaw 210 mode 2 st 2 gl 15 hp 7 frg 7
+ARGLOG Reap t 159.5 pos '302.3 -990.7 120.0' spd 239.6 yaw 323 mode 2 st 1 gl 8 hp 200 frg 5
+ARGEVT Omi jump
+ARGLOG Omi t 159.9 pos '1522.5 -622.7 101.0' spd  30.1 yaw 181 mode 2 st 2 gl 15 hp 7 frg 7
+ARGLOG Reap t 160.0 pos '390.4 -1118.7 139.1' spd 343.5 yaw 4 mode 2 st 1 gl 8 hp 200 frg 5
+ARGLOG Omi t 160.5 pos '1485.5 -622.1 104.0' spd 303.1 yaw 181 mode 2 st 2 gl 15 hp 7 frg 7
+ARGLOG Reap t 160.5 pos '557.2 -1115.5 120.7' spd 321.0 yaw 4 mode 2 st 1 gl 8 hp 200 frg 5
+ARGEVT Zeus respawn
+ARGEVT Zeus goal weapon_lightning
+ARGLOG Zeus t 160.7 pos '1016.0 -416.0  40.0' spd 0 yaw 253.7 mode 0 st 11 gl 18 hp 100 frg 4
+ARGEVT Zeus routefail
+ARGEVT Zeus goal item_armorInv
+ARGEVT Zeus route 10 start '993.0 -527.0  40.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t 161.0 pos '1319.5 -617.3 168.0' spd 345.0 yaw 129.7 mode 2 st 2 gl 15 hp 7 frg 7
+ARGLOG Reap t 161.0 pos '724.2 -1108.6  58.0' spd 344.0 yaw 323 mode 2 st 1 gl 8 hp 200 frg 5
+ARGLOG Zeus t 161.2 pos '1018.3 -573.5  40.0' spd 401.0 yaw   4.2 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap engage Zeus
+ARGEVT Zeus engage Reap
+ARGLOG Omi t 161.5 pos '1245.9 -462.5 168.0' spd 339.1 yaw 62 mode 2 st 2 gl 15 hp 32 frg 7
+ARGLOG Reap t 161.5 pos '897.7 -1131.7 -40.0' spd 320.1 yaw  12.0 mode 2 st 1 gl 8 hp 200 frg 5
+ARGLOG Zeus t 161.7 pos '994.0 -675.6  40.0' spd 326.2 yaw 283.0 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap route 5 start '321.0 -1807.0  56.0' goal '481.0 -2031.0 168.0'
+ARGLOG Omi t 162.0 pos '1368.7 -348.1 168.0' spd 335.6 yaw 354 mode 2 st 2 gl 15 hp 32 frg 7
+ARGLOG Reap t 162.1 pos '340.5 -1755.5  58.5' spd 300 yaw 53 mode 2 st 1 gl 8 hp 200 frg 5
+ARGLOG Zeus t 162.2 pos '1015.0 -795.6   8.0' spd 330.6 yaw 233 mode 0 st 11 gl 18 hp 100 frg 4
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGEVT Zeus route 12 start '993.0 -815.0   8.0' goal '1729.0 -367.0 168.0'
+ARGLOG Omi t 162.5 pos '1534.3 -346.6 168.0' spd 320.1 yaw 355 mode 2 st 2 gl 15 hp 32 frg 7
+ARGLOG Reap t 162.6 pos '443.0 -1628.4  40.0' spd 320.3 yaw 58 mode 0 st 1 gl 8 hp 199 frg 5
+ARGLOG Zeus t 162.7 pos '984.4 -957.3 -40.0' spd 321.5 yaw 274 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap hazard
+ARGEVT Reap route 7 start '545.0 -1647.0  40.0' goal '481.0 -2031.0 168.0'
+ARGLOG Omi t 163.0 pos '1698.8 -348.5 168.0' spd 320.3 yaw  29.8 mode 1 st 2 gl 15 hp 32 frg 7
+ARGLOG Reap t 163.1 pos '539.1 -1644.9  40.0' spd 351.0 yaw 286.8 mode 2 st 1 gl 8 hp 175 frg 5
+ARGEVT Zeus goal weapon_supernailgun
+ARGEVT Omi goal item_health
+ARGEVT Zeus route 5 start '321.0 -1807.0  56.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t 163.2 pos '371.5 -1743.8  40.0' spd 305.1 yaw 18 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap weapon sg
+ARGEVT Omi route 5 start '1729.0 -367.0 168.0' goal '1761.0 -1135.0  40.0'
+ARGLOG Omi t 163.5 pos '1807.4 -409.1 168.0' spd 324.1 yaw 242.0 mode 2 st 2 gl 16 hp 32 frg 7
+ARGLOG Reap t 163.6 pos '494.8 -1627.2  40.0' spd 428.0 yaw 262.6 mode 2 st 1 gl 8 hp 112 frg 5
+ARGEVT Reap weapon rl
+ARGLOG Zeus t 163.8 pos '489.6 -1813.6  40.0' spd 114.9 yaw 105 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Omi t 164.1 pos '1737.3 -565.3 168.0' spd 321.3 yaw 252 mode 2 st 2 gl 16 hp 32 frg 7
+ARGLOG Reap t 164.1 pos '444.9 -1596.2  40.0' spd 388.1 yaw 249.6 mode 2 st 1 gl 8 hp 88 frg 5
+ARGLOG Zeus t 164.3 pos '328.2 -1797.3  56.0' spd 343.0 yaw 47 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Omi t 164.6 pos '1702.7 -726.1 168.0' spd 320.5 yaw 268 mode 2 st 2 gl 16 hp 32 frg 7
+ARGLOG Reap t 164.6 pos '496.9 -1607.7  40.0' spd 171.8 yaw 153.4 mode 2 st 1 gl 8 hp 88 frg 5
+ARGEVT Zeus route 12 start '225.0 -911.0 136.0' goal '481.0 -2031.0 168.0'
+ARGEVT Reap pursue
+ARGEVT Zeus pursue
+ARGLOG Zeus t 164.8 pos '219.8 -1020.5 112.0' spd 322.5 yaw 297 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Omi t 165.1 pos '1688.7 -890.9 168.0' spd 320.5 yaw 259 mode 2 st 2 gl 16 hp 32 frg 7
+ARGLOG Reap t 165.1 pos '380.7 -1661.9  40.0' spd 333.6 yaw 235 mode 2 st 1 gl 8 hp 49 frg 5
+ARGLOG Zeus t 165.3 pos '287.9 -1170.5 112.0' spd 320.0 yaw 297 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Omi t 165.6 pos '1669.2 -976.0 124.3' spd  16.3 yaw 300 mode 2 st 2 gl 16 hp 32 frg 7
+ARGLOG Reap t 165.7 pos '200.0 -937.9 136.0' spd 300 yaw 280 mode 0 st 1 gl 8 hp 49 frg 5
+ARGEVT Reap route 12 start '225.0 -911.0 136.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t 165.8 pos '232.3 -1289.8 112.0' spd 335.5 yaw  50.6 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Zeus hazard
+ARGLOG Omi t 166.1 pos '1697.0 -1051.9  40.0' spd 320.3 yaw 280 mode 1 st 2 gl 16 hp 32 frg 7
+ARGEVT Omi engage Reap
+ARGLOG Reap t 166.2 pos '158.3 -1028.9 112.0' spd 322.5 yaw 261.3 mode 2 st 1 gl 8 hp 29 frg 5
+ARGEVT Zeus route 13 start ' 97.0 -1295.0 112.0' goal '481.0 -2031.0 168.0'
+ARGLOG Zeus t 166.3 pos '143.6 -1310.7 144.8' spd 321.7 yaw 75 mode 2 st 11 gl 18 hp 38 frg 4
+ARGEVT Omi goal item_health
+ARGEVT Omi route 4 start '1601.0 -1135.0  40.0' goal '929.0 -911.0 -40.0'
+ARGLOG Omi t 166.6 pos '1566.0 -1117.2  40.0' spd 322.5 yaw 182 mode 2 st 2 gl 16 hp 57 frg 7
+ARGEVT Zeus death
+ARGEVT Zeus death Reap pos '241.4 -1307.5 137.7'
+ARGEVT Reap engage Omi
+ARGLOG Reap t 166.7 pos '317.8 -1071.3 128.6' spd 324.5 yaw 269.7 mode 2 st 1 gl 8 hp 21 frg 6
+ARGLOG Omi t 167.1 pos '1401.1 -1115.8   8.0' spd 320.0 yaw 179 mode 2 st 2 gl 16 hp 57 frg 7
+ARGLOG Reap t 167.2 pos '482.4 -1086.6 126.1' spd 320.1 yaw 359 mode 2 st 1 gl 8 hp 21 frg 6
+ARGLOG Omi t 167.7 pos '1236.4 -1110.0 -40.0' spd 320.0 yaw 178 mode 2 st 2 gl 16 hp 57 frg 7
+ARGLOG Reap t 167.7 pos '646.8 -1089.7  83.5' spd 320.0 yaw 360 mode 2 st 1 gl 8 hp 21 frg 6
+ARGEVT Omi weapon ng
+ARGEVT Zeus respawn
+ARGLOG Omi t 168.2 pos '1116.8 -1011.5 -40.0' spd 322.0 yaw 193 mode 1 st 2 gl 16 hp 57 frg 7
+ARGEVT Reap death
+ARGEVT Reap death Omi pos '750.9 -1085.5  22.5'
+ARGEVT Zeus goal weapon_supernailgun
+ARGEVT Zeus engage Omi
+ARGLOG Zeus t 168.2 pos '  0.0 -1088.0 264.0' spd 0 yaw 356 mode 0 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi engage Zeus
+ARGEVT Zeus route 12 start '  1.0 -1103.0 264.0' goal '481.0 -2031.0 168.0'
+ARGEVT Zeus pursue
+ARGEVT Omi pursue
+ARGEVT Omi goal item_health
+ARGLOG Omi t 168.7 pos '960.6 -959.8 -40.0' spd 322.8 yaw 188 mode 1 st 2 gl 17 hp 72 frg 8
+ARGLOG Zeus t 168.7 pos '154.7 -1074.3 251.4' spd 320.0 yaw 4 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi goal 
+ARGLOG Omi t 169.2 pos '796.2 -977.3 -40.0' spd 320.0 yaw 188 mode 1 st 2 gl 18 hp 87 frg 8
+ARGLOG Zeus t 169.3 pos '304.0 -1056.9 112.0' spd  31.5 yaw 4 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Omi hazard
+ARGLOG Omi t 169.7 pos '733.1 -1069.7  -2.2' spd 344.2 yaw 319.2 mode 1 st 2 gl 18 hp 87 frg 8
+ARGEVT Reap respawn
+ARGLOG Zeus t 169.8 pos '304.0 -1051.0 112.0' spd   8.5 yaw 3 mode 2 st 11 gl 18 hp 100 frg 4
+ARGEVT Reap goal weapon_supernailgun
+ARGLOG Reap t 169.8 pos '456.0 -1504.0 256.0' spd 0 yaw 267 mode 0 st 1 gl 8 hp 100 frg 6
+ARGEVT Reap route 3 start '417.0 -1551.0 256.0' goal '481.0 -2031.0 168.0'
+ARGEVT Omi goal item_rockets
+ARGEVT Omi route 3 start '801.0 -1167.0 -40.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 170.2 pos '846.4 -1228.4 -40.0' spd 411.9 yaw 220.0 mode 2 st 2 gl 19 hp 87 frg 8
+ARGLOG Zeus t 170.3 pos '304.0 -1046.5 112.0' spd   8.7 yaw 3 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Reap t 170.3 pos '405.6 -1651.4 232.0' spd 322.1 yaw 253.6 mode 2 st 1 gl 8 hp 100 frg 6
+ARGLOG Omi t 170.7 pos '720.2 -1264.1  22.9' spd 318.2 yaw 213.6 mode 0 st 2 gl 19 hp 87 frg 8
+ARGEVT Omi route 4 start '737.0 -1263.0  -3.0' goal '321.0 -1615.0  40.0'
+ARGLOG Zeus t 170.8 pos '304.0 -1044.5 112.0' spd  37.6 yaw 339 mode 2 st 11 gl 18 hp 100 frg 4
+ARGLOG Reap t 170.8 pos '396.5 -1815.6 198.0' spd 335.7 yaw 279 mode 1 st 1 gl 8 hp 100 frg 6
+ARGEVT Zeus stall
+ARGEVT Zeus stallnode '449.0 -1103.0 128.0'
+ARGEVT Zeus jump
+ARGEVT Omi hazard
+ARGEVT Zeus route 10 start '321.0 -1135.0 151.0' goal '481.0 -2031.0 168.0'
+ARGLOG Omi t 171.3 pos '721.0 -1235.9   8.8' spd 321.6 yaw 271 mode 0 st 2 gl 19 hp 87 frg 8
+ARGEVT Zeus goal 
+ARGLOG Zeus t 171.3 pos '279.4 -1063.2 147.1' spd  69.1 yaw 231.4 mode 1 st 12 gl 18 hp 100 frg 4
+ARGLOG Reap t 171.3 pos '409.5 -1985.4 168.0' spd 366.3 yaw 235.9 mode 1 st 1 gl 8 hp 100 frg 6
+ARGEVT Omi route 4 start '737.0 -1263.0  -3.0' goal '321.0 -1615.0  40.0'
+ARGEVT Reap goal item_weapon
+ARGEVT Reap route 4 start '353.0 -2063.0 152.0' goal '449.0 -2063.0  40.0'
+ARGEVT Reap hazard
+ARGLOG Omi t 171.8 pos '843.8 -1341.3 -21.3' spd 372.7 yaw  76.1 mode 2 st 2 gl 19 hp 87 frg 8
+ARGLOG Zeus t 171.8 pos '267.2 -1145.6 112.0' spd 321.2 yaw 282 mode 1 st 12 gl 18 hp 100 frg 4
+ARGLOG Reap t 171.8 pos '310.3 -2064.0 155.1' spd 318.1 yaw 145.7 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 172.3 pos '865.7 -1201.8 -40.0' spd 324.0 yaw  84.1 mode 2 st 2 gl 19 hp 87 frg 8
+ARGEVT Zeus goal weapon_grenadelauncher
+ARGLOG Zeus t 172.3 pos '298.7 -1296.1 112.4' spd  87.4 yaw 112 mode 0 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 172.3 pos '271.7 -1952.3 120.0' spd 320.2 yaw 340.0 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Zeus route 27 start '225.0 -1231.0 112.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Omi t 172.8 pos '887.0 -1047.1 -84.8' spd 117.1 yaw 333 mode 2 st 2 gl 19 hp 87 frg 8
+ARGLOG Zeus t 172.9 pos '269.5 -1148.1 112.0' spd 323.3 yaw 101.7 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 172.9 pos '430.9 -2001.3 168.0' spd 322.5 yaw 324 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Reap hazard
+ARGEVT Zeus hazard
+ARGEVT Omi hazard
+ARGLOG Omi t 173.3 pos '888.0 -1065.7 -280.0' spd 184.4 yaw 338 mode 2 st 2 gl 19 hp 87 frg 8
+ARGLOG Zeus t 173.4 pos '298.9 -982.9 120.0' spd 195.3 yaw 322 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 173.4 pos '447.8 -2064.0 168.0' spd 319.3 yaw 179.2 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 173.8 pos '888.0 -1119.6 -280.0' spd 199.0 yaw 355 mode 2 st 2 gl 19 hp 87 frg 8
+ARGLOG Zeus t 173.9 pos '342.8 -1105.4 129.1' spd 374.2 yaw 360 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 173.9 pos '344.7 -1952.0 152.0' spd 132.1 yaw  14.7 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Omi hazard
+ARGLOG Omi t 174.4 pos '888.0 -1119.6 -280.0' spd 216.2 yaw 355 mode 2 st 2 gl 19 hp 87 frg 8
+ARGLOG Zeus t 174.4 pos '510.2 -1124.1 136.0' spd 322.2 yaw 17 mode 2 st 12 gl 19 hp 100 frg 4
+ARGEVT Omi stall
+ARGEVT Omi stallnode '1057.0 -1135.0 -24.0'
+ARGEVT Omi jump
+ARGLOG Reap t 174.4 pos '488.4 -2030.9 168.0' spd 384.5 yaw 241.4 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Reap hazard
+ARGEVT Omi route 5 start '801.0 -1039.0 -280.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 174.9 pos '826.4 -1136.0 -250.2' spd 133.4 yaw 165 mode 2 st 3 gl 19 hp 87 frg 8
+ARGLOG Zeus t 174.9 pos '674.3 -1104.0  71.5' spd 331.4 yaw 334 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 174.9 pos '366.2 -2021.5 152.0' spd 393.8 yaw  76.6 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 175.4 pos '705.6 -1112.3 -280.0' spd 320.2 yaw 162 mode 2 st 3 gl 19 hp 87 frg 8
+ARGLOG Zeus t 175.4 pos '845.0 -1135.8 -27.1' spd 336.3 yaw   4.9 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 175.4 pos '465.6 -1974.4 168.0' spd 386.3 yaw 277 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Zeus engage Omi
+ARGEVT Omi engage Zeus
+ARGLOG Omi t 175.9 pos '604.6 -1068.9 -280.0' spd 224.9 yaw  90.1 mode 2 st 3 gl 19 hp 87 frg 8
+ARGLOG Zeus t 176.0 pos '961.4 -1054.3 -32.0' spd 341.6 yaw  82.4 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 176.0 pos '395.4 -2051.7 168.0' spd 363.1 yaw 112.8 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 176.4 pos '600.3 -1052.0 -280.0' spd 114.4 yaw 29 mode 2 st 3 gl 19 hp 87 frg 8
+ARGLOG Zeus t 176.5 pos '921.5 -890.2 -40.0' spd 322.7 yaw 191.2 mode 2 st 12 gl 19 hp 100 frg 4
+ARGEVT Omi pursue
+ARGLOG Reap t 176.5 pos '427.6 -1952.2 168.0' spd 354.3 yaw 307.1 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Zeus pursue
+ARGEVT Zeus route 22 start '929.0 -911.0 -40.0' goal '1217.0 -1103.0 256.0'
+ARGEVT Reap hazard
+ARGLOG Omi t 176.9 pos '752.0 -1042.4 -280.0' spd 320.1 yaw 10 mode 2 st 3 gl 19 hp 87 frg 8
+ARGLOG Zeus t 177.0 pos '774.0 -925.0 -34.4' spd 326.6 yaw 231 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 177.0 pos '450.8 -2055.6 168.0' spd 321.1 yaw 150.8 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Omi route 5 start '801.0 -1039.0 -280.0' goal '321.0 -1615.0  40.0'
+ARGEVT Omi hazard
+ARGLOG Omi t 177.4 pos '886.6 -1051.7 -280.0' spd 186.7 yaw  95.2 mode 2 st 3 gl 19 hp 87 frg 8
+ARGLOG Zeus t 177.5 pos '728.7 -992.0   1.8' spd  75.3 yaw 348.2 mode 2 st 12 gl 19 hp 100 frg 4
+ARGLOG Reap t 177.5 pos '402.7 -1907.2 168.0' spd 427.8 yaw 346.6 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 178.0 pos '768.6 -1068.1 -280.0' spd 292.1 yaw  94.6 mode 2 st 3 gl 19 hp 87 frg 8
+ARGLOG Zeus t 178.0 pos '868.8 -1052.3 -54.9' spd 288.5 yaw 244.6 mode 2 st 12 gl 19 hp 70 frg 4
+ARGLOG Reap t 178.0 pos '499.4 -2000.1 168.0' spd 332.8 yaw 230 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 178.5 pos '768.1 -1042.0 -280.0' spd 351.3 yaw 333.3 mode 2 st 3 gl 19 hp 83 frg 8
+ARGEVT Omi hazard
+ARGLOG Zeus t 178.5 pos '887.6 -1120.4 -231.5' spd 109.0 yaw 141.9 mode 2 st 12 gl 19 hp 40 frg 4
+ARGLOG Reap t 178.5 pos '359.5 -2017.6 152.0' spd 402.9 yaw  70.5 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Zeus death
+ARGEVT Zeus death Omi pos '885.8 -1122.1 -251.5'
+ARGLOG Omi t 179.0 pos '761.5 -1135.9 -280.0' spd 219.7 yaw 197.2 mode 2 st 3 gl 19 hp 83 frg 9
+ARGLOG Reap t 179.0 pos '466.1 -1981.0 168.0' spd 375.6 yaw 277 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 179.5 pos '634.4 -1097.4 -280.0' spd 320.0 yaw 162 mode 2 st 3 gl 19 hp 83 frg 9
+ARGLOG Reap t 179.6 pos '392.9 -2051.7 168.0' spd 363.0 yaw 112.8 mode 1 st 1 gl 9 hp 100 frg 6
+ARGLOG Omi t 180.0 pos '477.9 -1044.8 -272.0' spd 327.2 yaw 164 mode 0 st 3 gl 19 hp 83 frg 9
+ARGLOG Reap t 180.1 pos '424.3 -1952.2 168.0' spd 353.8 yaw 308.0 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Omi hazard
+ARGEVT Zeus respawn
+ARGEVT Zeus goal weapon_grenadelauncher
+ARGLOG Zeus t 180.2 pos '408.0 -1088.0 256.0' spd 0 yaw 0 mode 0 st 12 gl 19 hp 100 frg 4
+ARGEVT Zeus route 5 start '417.0 -1071.0 256.0' goal '1217.0 -1103.0 256.0'
+ARGEVT Zeus engage Reap
+ARGEVT Reap engage Zeus
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 180.5 pos '432.4 -1040.0 -272.0' spd   7.7 yaw 256.3 mode 0 st 3 gl 19 hp 83 frg 9
+ARGLOG Reap t 180.6 pos '506.8 -1978.5 168.0' spd 322.5 yaw 189.2 mode 1 st 1 gl 9 hp 100 frg 6
+ARGEVT Zeus route 5 start '417.0 -1231.0 256.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Zeus t 180.7 pos '487.0 -1212.3 256.0' spd 324.1 yaw 269 mode 2 st 12 gl 19 hp 100 frg 4
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 181.0 pos '432.0 -1040.0 -272.0' spd 0 yaw 256 mode 0 st 3 gl 19 hp 83 frg 9
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Reap t 181.1 pos '502.0 -1832.0 168.0' spd 161.6 yaw 96 mode 1 st 1 gl 9 hp 96 frg 6
+ARGLOG Zeus t 181.2 pos '445.3 -1360.1 256.0' spd 343.6 yaw 274 mode 2 st 12 gl 19 hp 100 frg 4
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 181.6 pos '432.4 -1040.0 -272.0' spd   7.7 yaw 256.3 mode 0 st 3 gl 19 hp 83 frg 9
+ARGEVT Omi stall
+ARGEVT Omi jump
+ARGLOG Reap t 181.6 pos '335.5 -1820.5 182.0' spd 336.9 yaw 69 mode 1 st 1 gl 9 hp 80 frg 6
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Zeus t 181.8 pos '443.7 -1410.0 256.0' spd 324.9 yaw 235.3 mode 2 st 12 gl 19 hp 82 frg 4
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 182.1 pos '447.6 -1037.0 -242.0' spd  49.2 yaw 286.7 mode 0 st 4 gl 19 hp 83 frg 9
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGEVT Zeus pursue
+ARGEVT Reap pursue
+ARGLOG Reap t 182.1 pos '276.4 -951.0 128.0' spd 342.1 yaw 291 mode 1 st 1 gl 9 hp 80 frg 6
+ARGLOG Zeus t 182.3 pos '433.0 -1314.5 256.0' spd 238.3 yaw 236.1 mode 2 st 12 gl 19 hp 64 frg 4
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 182.6 pos '443.5 -1040.0 -272.0' spd  72.3 yaw 255 mode 0 st 4 gl 19 hp 83 frg 9
+ARGLOG Reap t 182.6 pos '311.7 -1104.8 128.6' spd 326.6 yaw 294 mode 1 st 1 gl 9 hp 80 frg 6
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGEVT Reap hazard
+ARGLOG Zeus t 182.8 pos '400.0 -1468.3 256.0' spd 326.5 yaw 255 mode 2 st 12 gl 19 hp 64 frg 4
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 183.1 pos '432.0 -1040.0 -272.0' spd 0 yaw 256 mode 0 st 4 gl 19 hp 83 frg 9
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Reap t 183.1 pos '398.6 -1136.0 156.3' spd 312.0 yaw 327.9 mode 1 st 1 gl 9 hp 80 frg 6
+ARGLOG Zeus t 183.3 pos '400.0 -1639.1 248.0' spd 334.8 yaw 241 mode 0 st 12 gl 19 hp 64 frg 4
+ARGEVT Zeus route 8 start '385.0 -1679.0 232.0' goal '1217.0 -1103.0 256.0'
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 183.6 pos '432.4 -1040.0 -272.0' spd   7.7 yaw 256.3 mode 0 st 4 gl 19 hp 83 frg 9
+ARGLOG Reap t 183.7 pos '561.6 -1119.7 123.0' spd 329.7 yaw 334.0 mode 1 st 1 gl 9 hp 80 frg 6
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGEVT Omi stall
+ARGEVT Omi stallnode '1057.0 -1135.0 -24.0'
+ARGEVT Omi jump
+ARGLOG Zeus t 183.8 pos '345.4 -1807.9 201.8' spd 380.8 yaw 167.7 mode 2 st 12 gl 19 hp 64 frg 4
+ARGEVT Omi route 3 start '449.0 -1039.0 -272.0' goal '321.0 -1615.0  40.0'
+ARGLOG Omi t 184.1 pos '432.0 -1040.0 -234.1' spd 0 yaw 256 mode 0 st 5 gl 19 hp 83 frg 9
+ARGLOG Reap t 184.2 pos '726.3 -1130.1  68.4' spd 417.4 yaw 293.4 mode 1 st 1 gl 9 hp 80 frg 6
+ARGEVT Zeus route 30 start '257.0 -1935.0 128.0' goal '1217.0 -1103.0 256.0'
+ARGLOG Zeus t 184.3 pos '200.0 -907.6 143.8' spd 300 yaw 303.3 mode 0 st 12 gl 19 hp 64 frg 4
+ARGEVT Zeus route 27 start '225.0 -911.0 136.0' goal '1217.0 -1103.0 256.0'
+ARGEVT Omi stall
+ARGEVT Omi jump
+ARGLOG Omi t 184.6 pos '433.7 -1040.0 -243.1' spd  21.1 yaw 292.2 mode 0 st 6 gl 19 hp 83 frg 9
+ARGLOG Reap t 184.7 pos '907.8 -1257.6 -40.0' spd 405.3 yaw 241 mode 1 st 1 gl 9 hp 80 frg 6
+ARGLOG Zeus t 184.8 pos '293.0 -1036.6 112.0' spd 325.1 yaw 337 mode 2 st 12 gl 19 hp 64 frg 4
+ARGEVT Reap hazard
+ARGLOG Omi t 185.2 pos '460.4 -1040.0 -272.0' spd  66.9 yaw 292.2 mode 0 st 6 gl 19 hp 83 frg 9
+ARGEVT Reap engage Omi
+ARGEVT Zeus engage Omi
+ARGEVT Omi engage Reap
+ARGLOG Reap t 185.2 pos '843.8 -1385.0   6.8' spd 376.4 yaw 167.1 mode 1 st 1 gl 9 hp 80 frg 6
+ARGLOG Zeus t 185.4 pos '408.9 -1112.9 134.7' spd 328.2 yaw 356 mode 2 st 12 gl 19 hp 64 frg 4
+ARGLOG Omi t 185.7 pos '1058.6 -1005.2 -32.0' spd 323.3 yaw 236.4 mode 0 st 6 gl 19 hp 83 frg 9
+ARGLOG Reap t 185.7 pos '745.9 -1251.7 -13.7' spd 320.1 yaw  58.9 mode 1 st 1 gl 9 hp 80 frg 6
+ARGLOG Zeus t 185.9 pos '563.2 -1089.1 110.9' spd 359.6 yaw 12 mode 2 st 12 gl 19 hp 64 frg 4
+ARGEVT Reap weapon sg
+ARGEVT Omi goal item_health

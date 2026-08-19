@@ -1,0 +1,68 @@
+# Argus .gitignore — written before any git init, so licensed id data
+# can never reach a repository (hard rule in CLAUDE.md).
+
+# id/Steam licensed data: machine-local only, never commit
+engine/id1/
+maps_local/
+engine/argus/progs/player.mdl
+
+# the whole lab engine is a machine-local convenience install
+engine/*.exe
+engine/*.pak
+engine/*.dll
+engine/argus316/
+engine/qconsole.log
+
+# id-derived coloured model staging (regenerate from LibreQuake for
+# a shippable build; see tools/mdl_skins.py header)
+*.mdl
+
+# build outputs
+lq1/
+tools/argus_mcp/target*/
+backups/
+tools/win/
+
+# engine/session droppings
+**/qconsole.log
+**/config.cfg
+compile.log
+match.log
+*.png
+
+# keep the telemetry record: runs/*.log are plain-text project
+# history and safe to commit (runs/*.png are regenerable plots)
+!runs/*.log
+
+# assistant, agent, and IDE configuration
+.claude/
+.claude
+CLAUDE.md
+claude.md
+CLAUDE*.md
+claude*.md
+*.claude
+.codex/
+.codex
+CODEX.md
+codex.md
+*.codex
+.gemini/
+GEMINI.md
+gemini.md
+.agents/
+AGENTS.md
+agents.md
+.cursor/
+.cursorrules
+.vscode/
+.idea/
+.mcp.json
+.aider*
+.cline/
+.roo/
+.roomodes
+.windsurf/
+.windsurfrules
+.continue/
+

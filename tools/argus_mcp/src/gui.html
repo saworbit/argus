@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Argus lab</title>
+<style>
+  :root {
+    --bg: #141210;
+    --panel: #1e1b18;
+    --ink: #e8dfd0;
+    --muted: #9a8f7e;
+    --line: #3a342c;
+    --accent: #d4531e;
+    --ok: #6aa84f;
+    --bad: #c44;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 "Segoe UI", system-ui, sans-serif; }
+  header { padding: 16px 20px 8px; border-bottom: 1px solid var(--line); }
+  header h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.02em; }
+  header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+  main { display: grid; grid-template-columns: 280px 1fr 320px; gap: 16px; padding: 16px 20px; }
+  @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+  h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  label { display: block; font-size: 12px; color: var(--muted); margin-top: 8px; }
+  input[type=text] { width: 100%; background: #0f0d0b; color: var(--ink); border: 1px solid var(--line);
+    padding: 6px 8px; border-radius: 4px; }
+  button { background: #2a241e; color: var(--ink); border: 1px solid var(--line); padding: 7px 12px;
+    border-radius: 4px; cursor: pointer; margin: 6px 6px 0 0; }
+  button.primary { background: var(--accent); border-color: #a33; color: #fff; }
+  button:disabled { opacity: 0.45; cursor: wait; }
+  .maps { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow: auto; }
+  .maps li { padding: 6px 8px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .maps li:hover, .maps li.on { background: #2a241e; }
+  .maps small { color: var(--muted); display: block; }
+  #drop { border: 1px dashed var(--line); border-radius: 6px; padding: 18px; text-align: center;
+    color: var(--muted); margin-top: 10px; }
+  #drop.over { border-color: var(--accent); color: var(--ink); }
+  #png { max-width: 100%; background: #000; border: 1px solid var(--line); display: none; }
+  pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); max-height: 280px; overflow: auto; }
+  .pill { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); margin-right: 4px; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); }
+  .backs { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+  .backs li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Argus lab</h1>
+  <p>Attach a BSP, generate nav, compile, install. Localhost only. Id maps stay on this machine.</p>
+</header>
+<main>
+  <section>
+    <h2>Paths</h2>
+    <label>Repo root</label>
+    <input id="root" type="text" placeholder="C:/argus">
+    <label>Quake basedir</label>
+    <input id="basedir" type="text" placeholder="C:/argus/engine">
+    <label>Game dir name</label>
+    <input id="game" type="text" placeholder="argus">
+    <button onclick="savePaths()">Use these paths</button>
+    <div id="cfg" style="margin-top:10px;font-size:12px;color:var(--muted)"></div>
+    <h2 style="margin-top:16px">Maps</h2>
+    <ul id="maps" class="maps"></ul>
+    <div id="drop">Drop a .bsp here, or <input id="file" type="file" accept=".bsp"></div>
+  </section>
+  <section>
+    <h2>Selected</h2>
+    <div id="sel">Pick a map.</div>
+    <div style="margin:10px 0">
+      <button class="primary" onclick="act('generate')">Generate nav</button>
+      <button class="primary" onclick="act('compile')">Compile and install</button>
+      <button onclick="act('backup')">Backup only</button>
+    </div>
+    <img id="png" alt="nav graph">
+    <pre id="brief"></pre>
+  </section>
+  <section>
+    <h2>Backups</h2>
+    <ul id="backs" class="backs"></ul>
+    <h2 style="margin-top:16px">Log</h2>
+    <pre id="log">ready.</pre>
+  </section>
+</main>
+<script>
+let selected = null;
+let busy = false;
+
+function log(s) {
+  const el = document.getElementById('log');
+  el.textContent = (new Date()).toLocaleTimeString() + '  ' + s + '\n' + el.textContent;
+}
+function setBusy(v) {
+  busy = v;
+  document.querySelectorAll('button').forEach(b => b.disabled = v);
+}
+
+async function api(path, opt) {
+  const r = await fetch(path, opt);
+  const ct = r.headers.get('content-type') || '';
+  if (ct.includes('application/json')) return r.json();
+  if (!r.ok) throw new Error(await r.text());
+  return r;
+}
+
+async function refresh() {
+  const s = await api('/api/status');
+  document.getElementById('root').value = s.root || '';
+  document.getElementById('basedir').value = s.basedir || '';
+  document.getElementById('game').value = s.game || 'argus';
+  const cfg = document.getElementById('cfg');
+  cfg.innerHTML = (s.ready ? '<span class="ok">lab ready</span>' : '<span class="bad">paths incomplete</span>')
+    + '<br>' + (s.installs || []).map(p => '<div>' + p + '</div>').join('');
+  const ul = document.getElementById('maps');
+  ul.innerHTML = '';
+  (s.maps || []).forEach(m => {
+    const li = document.createElement('li');
+    li.dataset.name = m.name;
+    if (m.name === selected) li.className = 'on';
+    li.innerHTML = '<strong>' + m.name + '</strong><small>'
+      + (m.has_bsp ? 'bsp' : 'pak') + (m.has_nav ? ' · nav' : '')
+      + (m.dispatcher ? ' · dispatcher' : '') + '</small>';
+    li.onclick = () => pick(m.name);
+    ul.appendChild(li);
+  });
+  const backs = document.getElementById('backs');
+  backs.innerHTML = '';
+  (s.backups || []).forEach(b => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span>' + b.id + ' <small>' + b.files + ' files</small></span>';
+    const btn = document.createElement('button');
+    btn.textContent = 'Restore';
+    btn.onclick = () => restore(b.id);
+    li.appendChild(btn);
+    backs.appendChild(li);
+  });
+}
+
+async function pick(name) {
+  selected = name;
+  document.querySelectorAll('.maps li').forEach(li => li.classList.toggle('on', li.dataset.name === name));
+  const box = document.getElementById('sel');
+  const brief = document.getElementById('brief');
+  const img = document.getElementById('png');
+  box.innerHTML = '<strong>' + name + '</strong>';
+  try {
+    const a = await api('/api/map/' + name);
+    brief.textContent = JSON.stringify(a, null, 2);
+    const pills = [];
+    if (a.graph_cuts) pills.push(a.graph_cuts.weak + ' islands');
+    if (a.door_cuts && a.door_cuts.length) pills.push(a.door_cuts.length + ' door cuts');
+    if (a.edicts_est) pills.push(a.edicts_est + ' edicts');
+    box.innerHTML = '<strong>' + name + '</strong> '
+      + pills.map(p => '<span class="pill">' + p + '</span>').join(' ')
+      + '<div style="color:#9a8f7e;margin-top:6px">' + (a.headline || '') + '</div>';
+  } catch (e) {
+    brief.textContent = String(e);
+  }
+  img.style.display = 'none';
+  img.onload = () => { img.style.display = 'block'; };
+  img.onerror = () => { img.style.display = 'none'; };
+  img.src = '/api/png/' + name + '?' + Date.now();
+}
+
+async function savePaths() {
+  const body = {
+    root: document.getElementById('root').value,
+    basedir: document.getElementById('basedir').value,
+    game: document.getElementById('game').value,
+  };
+  const r = await api('/api/config', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  log(r.ok ? 'paths updated' : (r.error || 'path update failed'));
+  await refresh();
+}
+
+async function act(kind) {
+  if (busy) return;
+  if ((kind === 'generate') && !selected) { log('pick a map first'); return; }
+  setBusy(true);
+  log(kind + '…');
+  try {
+    const r = await api('/api/' + kind, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ map: selected }),
+    });
+    log(r.ok ? (kind + ' ok' + (r.id ? ' (' + r.id + ')' : '')) : (kind + ' failed: ' + (r.error || r.stdout_tail || '')));
+    if (r.stdout_tail) log((r.stdout_tail || []).join('\n'));
+    await refresh();
+    if (selected) await pick(selected);
+  } catch (e) {
+    log(String(e));
+  }
+  setBusy(false);
+}
+
+async function restore(id) {
+  if (!confirm('Restore backup ' + id + '? This overwrites current progs and nav QC.')) return;
+  setBusy(true);
+  try {
+    const r = await api('/api/restore', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ id }),
+    });
+    log(r.ok ? 'restored ' + id : 'restore failed: ' + (r.error || ''));
+    await refresh();
+  } catch (e) { log(String(e)); }
+  setBusy(false);
+}
+
+async function upload(file) {
+  if (!file || !file.name.toLowerCase().endsWith('.bsp')) { log('only .bsp files'); return; }
+  setBusy(true);
+  log('attaching ' + file.name);
+  try {
+    const r = await api('/api/attach?name=' + encodeURIComponent(file.name), {
+      method: 'POST',
+      headers: {'Content-Type':'application/octet-stream'},
+      body: await file.arrayBuffer(),
+    });
+    log(r.ok ? 'attached ' + r.map : 'attach failed: ' + (r.error || ''));
+    selected = r.map || selected;
+    await refresh();
+    if (selected) await pick(selected);
+  } catch (e) { log(String(e)); }
+  setBusy(false);
+}
+
+const drop = document.getElementById('drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => {
+  e.preventDefault();
+  drop.classList.remove('over');
+  if (e.dataTransfer.files[0]) upload(e.dataTransfer.files[0]);
+});
+document.getElementById('file').addEventListener('change', e => {
+  if (e.target.files[0]) upload(e.target.files[0]);
+});
+
+refresh().catch(e => log(String(e)));
+</script>
+</body>
+</html>

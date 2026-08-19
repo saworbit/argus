@@ -1,0 +1,9 @@
+Source file: progs.src
+Outputfile: ../lq1/progs.dat
+in function BotLab_Telemetry (line 15),
+botlab.qc:17: error: type mismatch on parm 1 - (string should be float)
+defs.qc:701:    bprint  is defined here
+in function BotLab_Think (line 30),
+botlab.qc:40: error: type mismatch on parm 1 - (string should be float)
+defs.qc:701:    bprint  is defined here
+8 errors, 2 warnings
