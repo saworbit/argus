@@ -38,6 +38,12 @@ match.log
 # curated README media is the one PNG exception
 !docs/media/*.png
 
+# Omicron capture: the WHOLE capture stays machine-local (Shane,
+# 2026-08-20) - sealed zips, models, decompile blobs, author
+# papers, and the research notes too. Nothing under it commits.
+scratch_omicron/
+tools/decompiled_omicron/
+
 # assistant, agent, and IDE configuration
 .claude/
 .claude
