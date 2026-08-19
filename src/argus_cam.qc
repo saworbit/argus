@@ -204,8 +204,9 @@ void(entity client, entity bot) ArgusCam_POV =
 
 void(entity client, entity bot) ArgusCam_SmartChase =
 {
-    local vector want_pos, lead, ideal_look;
+    local vector want_pos, lead, ideal_look, cand;
     local float min_frac, d, target_yaw, diff_yaw, target_pitch, diff_pitch;
+    local float sweep, cy, k;
 
     client.movetype = MOVETYPE_NONE;
     client.solid = SOLID_NOT;
@@ -283,6 +284,46 @@ void(entity client, entity bot) ArgusCam_SmartChase =
     {
         // Smoothly expand back
         client.cam_smooth_dist = client.cam_smooth_dist + (d - client.cam_smooth_dist) * (frametime * 8.0);
+    }
+
+    // 6b. Flyby vantage sweep (QW cl_cam.c's InitFlyby idea): the
+    // pull-in alone collapses to a neck-cam in tight corridors,
+    // because the behind-the-bot axis is the ONLY one it considers.
+    // When the camera stays pinched under 40u for 0.7s, sweep yaw
+    // candidates around the bot (nearest-to-behind first, QW checks
+    // 12; four pairs are enough at our 135u range) and CUT to the
+    // first open one, exactly like the QW autocam repositions.
+    if (client.cam_smooth_dist > 40)
+        client.cam_pinch_time = time;
+    else if (time > client.cam_pinch_time + 0.7)
+    {
+        sweep = 45;
+        while (sweep <= 180)
+        {
+            k = 0 - 1;
+            while (k <= 1)
+            {
+                cy = bot.angles_y + sweep * k;
+                if (k != 0 || sweep == 180)
+                {
+                    makevectors ('0 0 0' + cy * '0 1 0');
+                    cand = (bot.origin + '0 0 26') - v_forward * client.cam_dist;
+                    traceline (bot.origin + '0 0 22', cand, FALSE, bot);
+                    if (trace_fraction == 1)
+                    {
+                        client.cam_angles_y = cy;
+                        client.cam_smooth_dist = client.cam_dist;
+                        client.cam_pinch_time = time;
+                        makevectors (client.cam_angles);
+                        sweep = 999;    // found: break both loops
+                        k = 2;
+                    }
+                }
+                k = k + 2;
+            }
+            if (sweep < 999)
+                sweep = sweep + 45;
+        }
     }
 
     want_pos = (bot.origin + '0 0 22') - (v_forward * client.cam_smooth_dist);
@@ -463,6 +504,9 @@ void(entity client) ArgusDirector_Evaluate =
             if (b.health < 35) score = score + (35 - b.health) * 2;
             // Airborne rocket jump
             if (b.ar_hoprj == 2 || !(b.flags & FL_ONGROUND)) score = score + 40;
+            // Leader bias (QW cl_hightrack): the scoreboard leader is
+            // the default story when the action scores are level
+            score = score + b.frags * 3;
 
             if (score > best_score)
             {

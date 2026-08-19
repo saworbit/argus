@@ -726,6 +726,8 @@ float CAM_MODE_ORBIT     = 5;
 .float  cam_cut_time;           // Last director camera cut timestamp
 .float  cam_eval_time;          // Next director action-scoring evaluation
 .float  cam_orbit_ang;          // Orbital angle
+.float  cam_pinch_time;         // Chase: last time the camera was NOT pinched
+                                // (flyby sweep fires after 0.7s pinched)
 .float  cam_hud_time;           // Next HUD refresh timestamp
 .float  cam_hud_on;             // 1 = HUD overlay visible
 .float  cam_shoulder;           // 1 = right shoulder offset in chase
