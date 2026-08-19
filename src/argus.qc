@@ -2897,20 +2897,51 @@ void() Argus_AI =
                             // to the timeout — abandons 23/35 with
                             // zero completed crossings)
                             self.ar_liftstart = time;
-                            // hold until the far pad is close
+                            // ride it STANDING STILL: the friction
+                            // hold alone needs half a second the 94u
+                            // slab does not give at run speed —
+                            // Romero sprinted the length of the car
+                            // and off its far edge into the bridge
+                            // gap 156 times in one tape (shane v345)
                             to = tp - self.origin;
                             to_z = 0;
-                            if (vlen (to) > 120)
+                            if (vlen (to) > 80)
+                            {
                                 self.ar_liftwait = 1;
+                                self.velocity_x = 0;
+                                self.velocity_y = 0;
+                            }
                         }
                         else
                         {
-                            // on the pad: hold until the car docks
-                            gp = (nx.absmin + nx.absmax) * 0.5;
+                            gp = self.origin;
+                            if (gp_x < nx.absmin_x)  gp_x = nx.absmin_x;
+                            if (gp_x > nx.absmax_x)  gp_x = nx.absmax_x;
+                            if (gp_y < nx.absmin_y)  gp_y = nx.absmin_y;
+                            if (gp_y > nx.absmax_y)  gp_y = nx.absmax_y;
+                            gp_z = self.origin_z;
                             to = gp - self.origin;
                             to_z = 0;
-                            if (vlen (to) > 160)
+                            if (vlen (to) < 48)
+                            {
+                                // car edge a step away: BOARD it.
+                                // Steer at the slab centre, never at
+                                // the far pad — free-running at a
+                                // target 320u across the void is what
+                                // walked riders off the plank
+                                // whenever the hold did not bite
+                                tp = (nx.absmin + nx.absmax) * 0.5;
+                                tp_z = self.origin_z;
+                            }
+                            else
+                            {
+                                // car away: park at the pad and bleed
+                                // speed fast; a fresh hold at 340 u/s
+                                // slides 40u+ on friction alone
                                 self.ar_liftwait = 1;
+                                self.velocity_x = self.velocity_x * 0.5;
+                                self.velocity_y = self.velocity_y * 0.5;
+                            }
                         }
                     }
                     to = tp - self.origin;      // restore for the chain
@@ -2944,12 +2975,16 @@ void() Argus_AI =
                 else
                     self.ar_liftwait = 1;
             }
-            else if (vlen (to) > 340)
+            else if (vlen (to) > 340 && !self.ar_hoptrain)
             {
                 // displaced beyond any legal hop length — a fight (or
                 // knockback, or a teleporter) carried us off the
                 // route, and resuming the beeline from here marches
                 // through whatever wall is in the way. Re-plan.
+                // Exempt the train hop: its far pad legitimately sits
+                // 320-430u out for the whole wait, and the guard was
+                // re-planning every tick of it (the route-2 spam in
+                // the v345 tape).
                 self.ar_node = world;
                 self.ar_pending = 1;
                 self.ar_mode = 0;
