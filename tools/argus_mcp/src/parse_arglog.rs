@@ -195,7 +195,10 @@ pub fn parse_tape(text: &str) -> MatchTape {
         if let Some(caps) = death.captures(line) {
             deaths.push(DeathEvent {
                 victim: caps[1].to_string(),
-                killer: caps[2].to_string(),
+                killer: caps
+                    .get(2)
+                    .map(|m| m.as_str().to_string())
+                    .unwrap_or_else(|| "world".to_string()),
                 pos: Pos {
                     x: caps[3].parse().unwrap_or(0.0),
                     y: caps[4].parse().unwrap_or(0.0),
@@ -241,11 +244,16 @@ pub fn parse_tape(text: &str) -> MatchTape {
     }
 }
 
+// Netnames may contain spaces (the v3.37 homage roster: "Joe Rogan").
+// Anchor on the grammar keywords, never on whitespace-splitting - a
+// \S+ name silently dropped every spaced bot from briefs and A/B
+// verdicts (the analyzer's parsers learnt this on 2026-08-19; this
+// parser caught up the same day).
 fn v1_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         Regex::new(
-            r"(?:BOTLOG|ARGLOG) (\S+) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?",
+            r"(?:BOTLOG|ARGLOG) (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?",
         )
         .expect("v1 regex")
     })
@@ -254,8 +262,10 @@ fn v1_re() -> &'static Regex {
 fn death_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
+        // the killer may be spaced too, and historical rows can carry
+        // an empty killer (nameless crushers pre-v3.21)
         Regex::new(
-            r"ARGEVT (\S+) death (\S+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'",
+            r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'",
         )
         .expect("death regex")
     })
@@ -263,7 +273,15 @@ fn death_re() -> &'static Regex {
 
 fn evt_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| Regex::new(r"ARGEVT (\S+) (\S+)(?:\s+(.*))?").expect("evt regex"))
+    RE.get_or_init(|| {
+        // the verb comes from the closed telemetry vocabulary: a lazy
+        // name followed by \S+ would split "Joe Rogan" into name
+        // "Joe" and verb "Rogan"
+        Regex::new(
+            r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|hazard|engage|pursue|weapon|plan|death)(?:\s+(.*))?$",
+        )
+        .expect("evt regex")
+    })
 }
 
 fn map_re() -> &'static Regex {
@@ -321,6 +339,29 @@ ARGEVT Reap death world pos '10.5 260.2 -360.0'
         assert_eq!(tape.deaths.len(), 1);
         assert_eq!(tape.deaths[0].killer, "world");
         assert!((tape.deaths[0].pos.z + 360.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn spaced_netnames_parse_whole() {
+        let text = "\
+ARGLOG Joe Rogan t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 3 hp 100 frg 2
+ARGLOG Joe Rogan t 2.0 pos '64 0 24' spd 128 yaw 0 mode 2 st 1 gl 4 hp 100 frg 2
+ARGEVT Joe Rogan engage Trent Reznor
+ARGEVT Joe Rogan death Trent Reznor pos '64 0 24'
+";
+        let tape = parse_tape(text);
+        let summary = tape.summary();
+        let jr = summary.bots.iter().find(|b| b.name == "Joe Rogan");
+        assert!(jr.is_some(), "spaced netname must not be dropped");
+        let jr = jr.unwrap();
+        assert_eq!(jr.goals, 4);
+        assert_eq!(jr.deaths, 1);
+        assert_eq!(tape.deaths[0].victim, "Joe Rogan");
+        assert_eq!(tape.deaths[0].killer, "Trent Reznor");
+        assert_eq!(tape.event_counts.get("engage"), Some(&1));
+        let e = tape.events.iter().find(|e| e.verb == "engage").unwrap();
+        assert_eq!(e.bot, "Joe Rogan");
+        assert_eq!(e.rest, "Trent Reznor");
     }
 
     #[test]
