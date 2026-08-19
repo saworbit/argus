@@ -278,7 +278,7 @@ fn evt_re() -> &'static Regex {
         // name followed by \S+ would split "Joe Rogan" into name
         // "Joe" and verb "Rogan"
         Regex::new(
-            r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|hazard|engage|pursue|weapon|plan|death)(?:\s+(.*))?$",
+            r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|hazard|engage|pursue|retreat|weapon|plan|death)(?:\s+(.*))?$",
         )
         .expect("evt regex")
     })

@@ -20,7 +20,7 @@
       ARGEVT <name> spawned|respawn|goal <class>|route <n>|routefail|
              trapped|train|
              abandon|stall|jump|rjump|lift|swim|hazard|engage <name>|
-             pursue|weapon <axe|sg|ssg|ng|sng|gl|rl|lg>|
+             pursue|retreat|weapon <axe|sg|ssg|ng|sng|gl|rl|lg>|
              plan <class> via <class>|
              death <killer> pos <'x y z'>
       (hazard = the brink guard deflected a walk into lava/slime/void,
@@ -159,6 +159,9 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_dodgeyaw;            // missile dodge: committed sidestep
 .float  ar_dodgetime;           // missile dodge: sidestep active until
 .float  ar_sndweap;             // hearing: weapon bits of the last shot heard
+.float  ar_retreating;          // retreat: low-stack disengage active
+.float  ar_coveryaw;            // retreat: committed cover heading
+.float  ar_covertime;           // retreat: re-evaluate cover after this
 .float  ar_respawntime;
 
 .float  ar_wweap;               // utility appetites: how loudly each
@@ -2156,8 +2159,9 @@ void() Argus_DodgeScan =
 float() Argus_Combat =
 {
     local entity e;
-    local vector to, aimpt, err;
+    local vector to, aimpt, err, cvr;
     local float d, want, diff, turn, trackt, errscale, loft;
+    local float cy, ck, cfound, ceff;
 
     Argus_Perceive ();
     e = self.ar_enemy;
@@ -2313,6 +2317,79 @@ float() Argus_Combat =
     // instead; the hazard check below still vetoes charging a brink
     if (self.weapon == IT_AXE)
         self.ar_moveyaw = vectoyaw (to);
+
+    // ---- retreat by GEOMETRY, not speed (cortex DISENGAGE; third
+    // attempt - the two 2026-08-18 backpedal retreats died in the
+    // open and their post-mortems are recorded below this block).
+    // Low stack: move along a heading that keeps floor under it AND
+    // whose destination breaks the enemy's line of sight. Cover is a
+    // wall between us, never distance. Aim is decoupled, so the bot
+    // shoots the whole way; the missile dodge below still outranks
+    // this for a moment, and the lava flip re-checks whatever we
+    // choose.
+    ceff = self.health + self.armorvalue * self.armortype;
+    if (self.ar_retreating)
+    {
+        // hysteresis: stay out until the stack recovers or the fight
+        // is winnable (finish a nearly-dead enemy instead of hiding)
+        if (ceff > 55 || e.health <= 30 || self.super_damage_finished > time)
+            self.ar_retreating = 0;
+    }
+    else if (ceff < 35 && e.health > 30
+             && self.super_damage_finished < time
+             && self.weapon != IT_AXE)
+    {
+        self.ar_retreating = 1;
+        self.ar_covertime = 0;      // pick a cover leg this frame
+        Argus_Event ("retreat");
+    }
+
+    if (self.ar_retreating)
+    {
+        if (time > self.ar_covertime)
+        {
+            // candidate fan away from the enemy, nearest-to-directly-
+            // away first. A candidate must keep floor at 48 AND 90
+            // (a committed leg travels far - the second dead retreat
+            // walked walkway lips), and its 128u destination should
+            // be hidden from the enemy's eyes. First cover wins; a
+            // floor-safe heading with no cover is kept as fallback,
+            // and with neither we stand and fight.
+            want = vectoyaw (self.origin - e.origin);
+            cfound = 0;
+            ck = 0;
+            while (ck < 5 && cfound < 2)
+            {
+                if (ck == 0)        cy = want;
+                else if (ck == 1)   cy = want + 55;
+                else if (ck == 2)   cy = want - 55;
+                else if (ck == 3)   cy = want + 110;
+                else                cy = want - 110;
+                if (!Argus_MoveHazard (cy, 48) && !Argus_MoveHazard (cy, 90))
+                {
+                    if (cfound < 1)
+                    {
+                        self.ar_coveryaw = cy;  // safe fallback
+                        cfound = 1;
+                    }
+                    makevectors ('0 0 0' + cy * '0 1 0');
+                    cvr = self.origin + v_forward * 128 + '0 0 22';
+                    traceline (cvr, e.origin + '0 0 22', TRUE, self);
+                    if (trace_fraction < 1)
+                    {
+                        self.ar_coveryaw = cy;  // real cover
+                        cfound = 2;
+                    }
+                }
+                ck = ck + 1;
+            }
+            if (cfound == 0)
+                self.ar_retreating = 0;         // cornered: fight
+            self.ar_covertime = time + 1.2;
+        }
+        if (self.ar_retreating)
+            self.ar_moveyaw = self.ar_coveryaw;
+    }
 
     // A RETREAT state was tried here twice (2026-08-18, "address the
     // new"): back away at 200-550u while shooting when under 30 hp
