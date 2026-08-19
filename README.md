@@ -112,11 +112,11 @@ argus/
 |   |-- setup_rig.sh           # Automated headless Linux environment setup
 |   `-- argus_mcp/             # Lab MCP (stdio) plus `argus-mcp gui` wizard
 |-- runs/                      # Archive of telemetry logs and trajectory plots
-|-- backups/                   # Dated progs + nav copies from the deploy wizard
-|-- docs/                      # Architectural specifications and design records
-|-- CLAUDE.md                  # Authoritative technical brief and A/B paper trail
-`-- AGENTS.md                  # Operational guide for AI agent pair programming
+|-- backups/                   # Dated progs + nav copies (machine-local, not in repo)
+`-- docs/                      # Architectural specifications and design records
 ```
+
+*(The working tree also carries machine-local lab configuration — agent briefs, MCP wiring, engine installs, and licensed id assets — which is deliberately excluded from this repository.)*
 
 ---
 
@@ -315,7 +315,7 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.18**. Operator guide: [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md). Agent protocol: [`AGENTS.md`](AGENTS.md).
+Current version **0.18**. Operator guide: [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
 The Rust binary in `tools/argus_mcp/` is two faces of the same lab:
 
@@ -346,7 +346,7 @@ Lava deaths in experiment/compare are hull-0 contents (same as `analyze_match.py
 ## Technical constraints and engine quirks
 
 1. **Classname Masquerade**: Bots spawn with `classname = "player"` so standard Quake 1.06 item pickups, triggers, doors, and obituaries accept them without modifying base entity logic.
-2. **Client-Message Shimming**: In [`src/defs.qc`](file:///c:/argus/src/defs.qc), `stuffcmd`, `sprint`, and `centerprint` are intercepted with `if (client.ar_isbot) return;` because native Quake engines crash when client-channel network commands are dispatched to non-network entities.
+2. **Client-Message Shimming**: In [`src/defs.qc`](src/defs.qc), `stuffcmd`, `sprint`, and `centerprint` are intercepted with `if (client.ar_isbot) return;` because native Quake engines crash when client-channel network commands are dispatched to non-network entities.
 3. **Empty Server Telemetry**: Native Quake `bprint` broadcasts are suppressed on dedicated servers without human clients. All Argus telemetry utilizes `dprint` and requires `+developer 1` to be written to `qconsole.log`.
 4. **Protocol 15 and Edict Budget**: Configured in `game/argus/autoexec.cfg` with `sv_protocol 15` and `max_edicts 600`. The navigation generator automatically lowers waypoint node caps if map entity counts approach the allocation ceiling.
 
