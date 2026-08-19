@@ -889,6 +889,46 @@ float() Argus_Waterlevel =
     return 3;
 };
 
+// TRUE when there is solid floor at walking level under 'p': the
+// shallow 48u trace means any hit IS at walking level, and the surface
+// check rejects a floor carrying a liquid film.
+float(vector p) Argus_BridgeSolid =
+{
+    local float c;
+
+    traceline (p + '0 0 4', p - '0 0 48', TRUE, self);
+    if (trace_fraction == 1)
+        return FALSE;
+    c = pointcontents (trace_endpos + '0 0 2');
+    if (c == CONTENT_LAVA || c == CONTENT_SLIME)
+        return FALSE;
+    return TRUE;
+};
+
+// TRUE when the 32x32 hull would still be carried at 'ahead' despite a
+// lava/slime floor under the probe POINT. Decorative grate floors (dm2
+// south-east room: 16u lava channels recessed 28u between 16u solid
+// strips) are narrower than the player bbox, so hull collision bridges
+// them and neither walkmove nor a walking player can ever touch the
+// liquid - but a point probe lands in a channel half the time and read
+// the whole room as a lava field (bots deflected to a dead stop there;
+// Shane shot one standing frozen). The test is OPPOSED SUPPORT: banks
+// on both sides of the point within a bridgeable span, along either
+// axis. A first version accepted any-corner support, which is merely
+// "a hull could hang here" - true at every pool RIM, so bots strolled
+// to the very lip before the veto fired and dm4 lava deaths spiked
+// (ab_dm4_grate: 6 world deaths, several walked in unengaged). A pool
+// edge has support on one side only and stays vetoed at the old
+// conservative distance.
+float(vector ahead) Argus_HazardBridge =
+{
+    if (Argus_BridgeSolid (ahead + '17 0 0') && Argus_BridgeSolid (ahead - '17 0 0'))
+        return TRUE;
+    if (Argus_BridgeSolid (ahead + '0 17 0') && Argus_BridgeSolid (ahead - '0 17 0'))
+        return TRUE;
+    return FALSE;
+};
+
 // TRUE when walking pdist units along myaw would end in lava, slime,
 // or a bottomless drop. Traces down 280u at the probe point: a
 // legitimate one-way drop link (<= 200u onto solid) passes, a lava pit
@@ -897,6 +937,11 @@ float() Argus_Waterlevel =
 // Probe short (32) for the per-frame physics guard, long (48) for
 // steering choices: a long physics probe fires all along dm4's
 // lava-side walkways and stalls bots that were walking safely.
+// A liquid floor point is only a verdict on the POINT: the bbox-corner
+// bridge test above decides whether the hull would actually stand in
+// it. The bottomless branch stays point-based on purpose - a probe
+// inside a wall or over a true void must keep vetoing, that deflection
+// is what turns walls into slides.
 float(float myaw, float pdist) Argus_MoveHazard =
 {
     local vector ahead;
@@ -912,10 +957,12 @@ float(float myaw, float pdist) Argus_MoveHazard =
     if (trace_fraction == 1)
         return TRUE;                // no floor within a survivable drop
     c = pointcontents (trace_endpos + '0 0 2');
-    if (c == CONTENT_LAVA)
+    if (c == CONTENT_LAVA || c == CONTENT_SLIME)
+    {
+        if (Argus_HazardBridge (ahead))
+            return FALSE;
         return TRUE;
-    if (c == CONTENT_SLIME)
-        return TRUE;
+    }
     return FALSE;
 };
 
@@ -998,10 +1045,13 @@ float(vector to) Argus_SafeLine =
         if (trace_fraction == 1)
             return FALSE;
         c = pointcontents (trace_endpos + '0 0 2');
-        if (c == CONTENT_LAVA)
-            return FALSE;
-        if (c == CONTENT_SLIME)
-            return FALSE;
+        if (c == CONTENT_LAVA || c == CONTENT_SLIME)
+        {
+            // same hull-bridge rescue as Argus_MoveHazard: p rides 48
+            // above the floor here, the helper expects origin height
+            if (!Argus_HazardBridge (p - '0 0 24'))
+                return FALSE;
+        }
         i = i + 48;
     }
     return TRUE;
@@ -1311,6 +1361,27 @@ void() Argus_Physics =
             else
             {
                 moveok = walkmove (myaw, spd * frametime);
+                if (!moveok)
+                {
+                    // Engine SV_CheckBottom point-traces the bbox
+                    // quadrants, so a decorative grate floor (dm2
+                    // south-east: 16u channels between strips the
+                    // hull bridges) reads as walking off an edge and
+                    // walkmove refuses every step. The flymove slide
+                    // fallback cannot climb the pattern's 4u strip
+                    // seams (no stair logic airborne), which pinned
+                    // bots at spd 0 on the seam - Shane shot one
+                    // standing frozen. FL_PARTIALGROUND is id's own
+                    // escape hatch: SV_movestep completes the step,
+                    // stairs intact, when CheckBottom dissents. Safe
+                    // here because this heading already passed the
+                    // bridge-aware hazard gate, which is the real
+                    // ledge judge; walls still refuse (allsolid runs
+                    // before the flag check) and keep the slide.
+                    self.flags = self.flags | FL_PARTIALGROUND;
+                    moveok = walkmove (myaw, spd * frametime);
+                    self.flags = self.flags - (self.flags & FL_PARTIALGROUND);
+                }
                 if (!moveok)
                     self.flags = self.flags - (self.flags & FL_ONGROUND);
             }
