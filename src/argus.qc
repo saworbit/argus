@@ -2765,7 +2765,26 @@ void() Argus_PickGoal =
                 }
                 if (v > 0)
                 {
-                    sc = v * 320 / (dist + 160);
+                    // control circuit (2026-08-20, Shane's camera
+                    // review: "they stay in the same area they spawn
+                    // in... seasoned players run circuits"): the
+                    // shared distance curve throttled every major to
+                    // irrelevance past ~800u - a quad at 2400u scored
+                    // 12, losing to any local health box, so bots
+                    // grazed whatever was near. Majors (value 40+:
+                    // RL/LG unowned, RA/YA fresh, mega, powerups, fat
+                    // packs, big heals for the badly hurt) read
+                    // distance at 0.4x so they pull from across the
+                    // map; minor items keep the tight curve and stay
+                    // local errands. The circuit itself emerges: item
+                    // clocks time the arrivals, the claim shelf and
+                    // packmate discount spread the roster across
+                    // control points, denial pressure and gunfire
+                    // investigation turn the commute into contact.
+                    if (v >= 40)
+                        sc = v * 320 / (dist * 0.4 + 160);
+                    else
+                        sc = v * 320 / (dist + 160);
                     // spread the pack: an item a packmate is already
                     // running at is worth less to us
                     b = argus_bots;
