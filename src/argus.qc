@@ -2348,7 +2348,7 @@ float(entity it) Argus_ItemClass =
 // a health box we cannot absorb.
 float(entity it, float cls) Argus_ItemValue =
 {
-    local float v;
+    local float v, vf;
     local string c;
 
     c = it.classname;
@@ -2455,6 +2455,15 @@ float(entity it, float cls) Argus_ItemValue =
               + it.ammo_nails * 0.08 + it.ammo_shells * 0.12;
         if (it.items & (IT_ROCKET_LAUNCHER | IT_LIGHTNING))
             v = v + 15;
+        // a FRESH pack is time-critical loot: the victim is already
+        // respawning and running back for it (Shane reclaimed his
+        // own rocket pack under the killer's nose while the killer
+        // trotted off to a health box). DropBackpack arms SUB_Remove
+        // at time + 120, so remaining lifetime is the pack's age
+        // with no new fields: +30 tapering to 0 over the first 15 s
+        vf = (it.nextthink - time - 105) * 2;
+        if (vf > 0)
+            v = v + vf;
         if (v > 85)
             v = 85;
         return v;
