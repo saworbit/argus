@@ -1760,6 +1760,12 @@ float(entity e) Argus_CanSee =
 {
     if (e == world)
         return FALSE;
+    if (e.cam_active)
+        return FALSE;   // an ArgusCam spectator is a ghost: bots must
+                        // not acquire, track, or shoot the camera
+                        // (Shane's review: bots attacked him in cam
+                        // mode - the masquerade scan sees classname
+                        // "player" and health > 0 either way)
     if (e.health <= 0)
         return FALSE;
     // the ring: an invisible enemy is eyes only, so treat it as unseen
@@ -2683,7 +2689,7 @@ void() Argus_PickGoal =
                     b = find (world, classname, "player");
                     while (b != world)
                     {
-                        if (b != self && b.health > 0
+                        if (b != self && b.health > 0 && !b.cam_active
                             && vlen (b.origin - e.origin) < 300)
                             sc = sc + 12;
                         b = find (b, classname, "player");
@@ -3079,7 +3085,13 @@ void() Argus_AI =
                             gp_z = self.origin_z;
                             to = gp - self.origin;
                             to_z = 0;
-                            if (vlen (to) < 48)
+                            // board within 96, not 48: the t5 dock
+                            // parks the car's near edge 71u from the
+                            // pad node, so a 48u gate never opened
+                            // and bots burned the whole 15 s give-up
+                            // standing beside a docked car (five
+                            // 13-17 s pad statues in the v352 tape)
+                            if (vlen (to) < 96)
                             {
                                 // car edge a step away: BOARD it.
                                 // Steer at the slab centre, never at
@@ -3162,10 +3174,25 @@ void() Argus_AI =
                         self.ar_liftwait = 1;   // no plat near: park
                     else if (self.groundentity == nx)
                     {
-                        // aboard: ride it standing still
-                        self.ar_liftwait = 1;
-                        self.velocity_x = 0;
-                        self.velocity_y = 0;
+                        if (nx.state != STATE_BOTTOM)
+                        {
+                            // aboard and moving: ride standing still
+                            self.ar_liftwait = 1;
+                            self.velocity_x = 0;
+                            self.velocity_y = 0;
+                        }
+                        else
+                        {
+                            // aboard but the slab is SEATED: keep
+                            // walking at its centre. Quake only fires
+                            // touch triggers on movement, so a bot
+                            // standing utterly still on a resting
+                            // plat never summons its own ride - the
+                            // 17 s statue ON the *34 slab in the
+                            // v352 review tape
+                            tp = (nx.absmin + nx.absmax) * 0.5;
+                            tp_z = self.origin_z;
+                        }
                     }
                     else if (nx.state != STATE_BOTTOM)
                     {
