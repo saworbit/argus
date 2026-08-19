@@ -2500,7 +2500,15 @@ void() Argus_PickGoal =
             shelf = 20;
             if (cls == AR_C_POWER)
                 shelf = 45;
-            if (time < e.ar_failtime + shelf)
+            // ar_failtime is 0 until the first routefail, and 0 + shelf
+            // made time < 20 read as "recently failed": EVERY item on
+            // the map was shelved for the first 20 s of EVERY match
+            // (45 s for powerups), so early bots were goalless
+            // wanderers. Latent since the GOAP build; caught when
+            // Shane raced a bot to the RL 15 s into a fresh server
+            // and it showed no interest (first goal event in every
+            // lab tape sits at t 19.8, the shelf expiry, exactly)
+            if (e.ar_failtime && time < e.ar_failtime + shelf)
             {
                 // routefailed recently, for anyone: leave it shelved
             }

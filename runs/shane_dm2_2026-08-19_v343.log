@@ -1,0 +1,208 @@
+LOG started on: 08/19/2026 13:37:30 
+Playing registered version.
+Console initialized.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+Video mode 800x600x24 60Hz (24-bit z-buffer, 0x FSAA) initialized
+GL_VENDOR: NVIDIA Corporation
+GL_RENDERER: NVIDIA GeForce RTX 3070 Ti/PCIe/SSE2
+GL_VERSION: 4.6.0 NVIDIA 610.74
+FOUND: ARB_vertex_buffer_object
+FOUND: ARB_multitexture
+GL_MAX_TEXTURE_UNITS: 4
+FOUND: ARB_texture_env_combine
+FOUND: ARB_texture_env_add
+FOUND: SDL_GL_SetSwapInterval
+FOUND: EXT_texture_filter_anisotropic
+FOUND: ARB_texture_non_power_of_two
+FOUND: GLSL
+Enabled: GLSL gamma
+Enabled: GLSL alias model rendering
+Enabled: EXT_packed_pixels
+FOUND: glGenerateMipmap
+
+Sound Initialization
+SDL audio spec  : 44100 Hz, 1024 samples, 2 channels
+SDL audio driver: wasapi - C32F391 (NVIDIA High Definition Audio), 65536 bytes buffer
+Audio: 16 bit, stereo, 44100 Hz
+CDAudio disabled at compile time
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing quake.rc
+execing default.cfg
+execing config.cfg
+execing autoexec.cfg
+SpawnServer: dm2
+Clearing memory
+Programs occupy 571K.
+trying to open external vis file
+maps/dm2.vis not found, trying argus.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 162 nodes, 538 links
+0 entities inhibited
+ARGUS init on dm2
+ARGEVT Carmack spawned
+ARGEVT Romero spawned
+ARGEVT Joe Rogan spawned
+Server spawned.
+CL_EstablishConnection: connected to local
+3 demo(s) in loop
+Client LOCAL connected
+ARGLOG Joe Rogan t   1.2 pos '2624.0 -488.0  32.0' spd 0 yaw 186.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '2544.0 -32.0 -64.0' spd 0 yaw 203.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '2560.0 -192.0  32.0' spd 0 yaw 129.9 mode 0 st 0 gl 0 hp 100 frg 0
+
+FITZQUAKE 0.85 SERVER (508 CRC)
+Serverinfo packet received.
+
+
+
+Claustrophobopolis
+Using protocol 15
+FindFile: can't find music/track00.ogg
+FindFile: can't find music/track00.opus
+FindFile: can't find music/track00.mp3
+FindFile: can't find music/track00.flac
+FindFile: can't find music/track00.wav
+Couldn't find a cdrip for track 0
+CL_SignonReply: 1
+CL_SignonReply: 2
+ARGEVT Carmack hazard
+CL_SignonReply: 3
+243.5 megabyte data cache
+CL_SignonReply: 4
+ARGEVT Carmack engage Joe Rogan
+ARGEVT Joe Rogan engage Carmack
+ARGLOG Joe Rogan t   1.7 pos '2462.5 -507.5   8.0' spd 321.6 yaw 155.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '2443.6 -77.2 -72.0' spd 225.1 yaw   7.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '2402.5 -144.9  24.0' spd 331.6 yaw 215.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   2.2 pos '2298.7 -512.3   8.0' spd 320.0 yaw  99.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   2.2 pos '2604.9 -53.5 -72.0' spd 339.9 yaw 350.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.2 pos '2241.5 -181.1  24.0' spd 322.5 yaw 260.8 mode 0 st 0 gl 0 hp 96 frg 0
+ARGEVT Romero hazard
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   2.7 pos '2144.5 -506.4   8.0' spd  75.8 yaw  82.8 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Romero t   2.7 pos '2585.6 -75.8 -64.0' spd 219.7 yaw   1.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.7 pos '2220.4 -222.7  24.0' spd 322.4 yaw 249.8 mode 0 st 0 gl 0 hp 96 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   3.2 pos '2284.5 -512.2   8.0' spd 340.3 yaw  96.9 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Romero t   3.2 pos '2611.3  36.2 -72.0' spd 191.3 yaw 239 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   3.2 pos '2184.1 -240.9  24.0' spd 338.5 yaw 297.3 mode 0 st 0 gl 0 hp 96 frg 0
+ARGLOG Joe Rogan t   3.7 pos '2427.9 -424.4   8.0' spd 323.6 yaw 137.8 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Romero t   3.7 pos '2500.3 -76.9 -64.0' spd 215.1 yaw  80.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   3.7 pos '2211.6 -229.4  24.0' spd 329.1 yaw 337.4 mode 0 st 0 gl 0 hp 80 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   4.2 pos '2498.1 -319.2   8.0' spd 209.3 yaw 141.2 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Romero t   4.2 pos '2438.2  15.0 -72.0' spd 336.6 yaw 206.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   4.2 pos '2288.5 -172.0  24.0' spd 301.7 yaw 325.4 mode 0 st 0 gl 0 hp 80 frg 0
+ARGLOG Joe Rogan t   4.7 pos '2389.4 -396.5   8.0' spd 135.5 yaw 143.8 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Romero t   4.7 pos '2313.1 -54.9 -120.0' spd 177.4 yaw 151.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   4.7 pos '2204.6 -289.2  24.0' spd 406.5 yaw 317.5 mode 0 st 0 gl 0 hp 56 frg 0
+ARGEVT Romero hazard
+Joe Rogan: Look at the size of this arena... absolute savagery.
+Romero: Time for some pure deathmatch!
+Carmack: In the information age, the barriers just aren't there.
+ARGLOG Joe Rogan t   5.3 pos '2357.4 -337.9   8.0' spd 344.3 yaw 210.2 mode 0 st 0 gl 0 hp 82 frg 0
+ARGLOG Romero t   5.3 pos '2177.4 -35.5 -90.1' spd 347.7 yaw 278.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   5.3 pos '2151.4 -464.8   8.0' spd 403.9 yaw  17.6 mode 0 st 0 gl 0 hp 40 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   5.8 pos '2387.5 -503.0   8.0' spd 368.9 yaw 178.7 mode 0 st 0 gl 0 hp 64 frg 0
+ARGLOG Romero t   5.8 pos '2183.0 -189.5 -98.5' spd  55.5 yaw  92.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   5.8 pos '2182.8 -431.4   8.0' spd 337.0 yaw 338.6 mode 0 st 0 gl 0 hp 40 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack weapon sg
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t   6.3 pos '2489.6 -433.6   8.0' spd 381.6 yaw 154.9 mode 0 st 0 gl 0 hp 40 frg 0
+ARGLOG Romero t   6.3 pos '2267.3 -122.2 -136.0' spd 435.1 yaw 293.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.3 pos '2220.8 -370.1   8.0' spd 321.3 yaw 336.0 mode 0 st 0 gl 0 hp 40 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   6.8 pos '2492.2 -334.6   8.0' spd 273.0 yaw 216.8 mode 0 st 0 gl 0 hp 40 frg 0
+ARGLOG Romero t   6.8 pos '2231.6 -163.1 -136.0' spd 334.9 yaw 146.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.8 pos '2249.4 -518.2   8.0' spd 110.0 yaw  35.0 mode 0 st 0 gl 0 hp 40 frg 0
+ARGLOG Joe Rogan t   7.3 pos '2504.5 -497.1   8.0' spd 338.5 yaw 165.5 mode 0 st 0 gl 0 hp 40 frg 0
+ARGLOG Romero t   7.3 pos '2168.0 -125.5 -57.0' spd  34.4 yaw 280 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.3 pos '2218.0 -369.0   8.0' spd 352.5 yaw 347.5 mode 0 st 0 gl 0 hp 20 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   7.8 pos '2512.0 -386.1   8.0' spd 320.0 yaw 160.2 mode 0 st 0 gl 0 hp 36 frg 0
+ARGLOG Romero t   7.8 pos '2218.6 -159.9 -136.0' spd 343.3 yaw 279 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.8 pos '2230.2 -356.1   8.0' spd 328.7 yaw 344.4 mode 0 st 0 gl 0 hp 20 frg 0
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t   8.3 pos '2517.7 -370.9  24.0' spd  96.2 yaw 212.5 mode 0 st 0 gl 0 hp 16 frg 0
+ARGLOG Romero t   8.3 pos '2257.6 -164.9 -136.0' spd 307.7 yaw 357.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   8.3 pos '2261.4 -514.2   8.0' spd 145.6 yaw  26.4 mode 0 st 0 gl 0 hp 20 frg 0
+ARGEVT Carmack death Joe Rogan pos '2263.2 -514.2   8.0'
+Carmack chewed on Joe Rogan's boomstick
+ARGLOG Joe Rogan t   8.8 pos '2370.5 -342.9   8.0' spd 359.4 yaw 227 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t   8.8 pos '2245.9  -9.6 -136.0' spd 424.8 yaw  31.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   9.3 pos '2248.5 -453.6   8.0' spd 324.0 yaw 249 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t   9.3 pos '2409.4 -37.4 -72.0' spd 352.0 yaw 288 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan engage player
+ARGLOG Joe Rogan t   9.8 pos '2182.2 -433.8   8.0' spd 338.7 yaw  12.4 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t   9.8 pos '2436.6  16.0 -72.0' spd 176.5 yaw  24.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack respawn
+ARGLOG Carmack t   9.9 pos '2176.0 -2176.0  84.0' spd 0 yaw  50.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  10.3 pos '2211.0 -266.7  24.0' spd 335.2 yaw 326.7 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  10.3 pos '2582.8 -69.6 -64.0' spd 390.1 yaw  85.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.4 pos '2201.8 -2041.9  88.0' spd 320.0 yaw 79 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  10.8 pos '2288.3 -230.3  24.0' spd 220.2 yaw 177.0 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  10.8 pos '2753.6 -72.0 -72.0' spd 280.5 yaw 328.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.9 pos '2225.2 -1880.3  24.0' spd 322.9 yaw 79 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t  11.4 pos '2128.0 -280.2  24.0' spd 386.4 yaw 289.0 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  11.4 pos '2794.8   4.8 -72.0' spd 320.4 yaw 187.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.4 pos '2290.6 -1886.8  24.0' spd 144.7 yaw 124.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  11.9 pos '2230.7 -421.1   8.0' spd 330.5 yaw 345 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  11.9 pos '2677.6 -61.5 -72.0' spd 323.8 yaw 202 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.9 pos '2251.2 -1815.0  24.0' spd 224.5 yaw   1.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t  12.4 pos '2386.9 -476.8   8.0' spd 320.4 yaw 348 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  12.4 pos '2637.0  21.3 -72.0' spd 403.0 yaw 150.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  12.4 pos '2410.7 -1810.8  24.0' spd 320.0 yaw   1.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack engage player
+ARGLOG Joe Rogan t  12.9 pos '2549.6 -507.7  24.0' spd 321.0 yaw 358.8 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  12.9 pos '2659.6 132.8 -72.0' spd 425.2 yaw 313.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Carmack t  12.9 pos '2575.5 -1800.2  24.0' spd 325.7 yaw  97.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  13.4 pos '2588.0 -457.1  32.0' spd 146.7 yaw 331.8 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  13.4 pos '2620.5  70.4 -72.0' spd 326.3 yaw 219.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  13.4 pos '2477.0 -1814.0  24.0' spd 320.9 yaw 107.6 mode 0 st 0 gl 0 hp 100 frg 0
+You got the Rocket Launcher
+ARGLOG Joe Rogan t  13.9 pos '2562.6 -516.6  24.0' spd 324.4 yaw 184.2 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  13.9 pos '2545.8 -61.1 -64.0' spd 152.1 yaw  44.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.0 pos '2487.9 -1831.4  24.0' spd 366.1 yaw  96.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t  14.4 pos '2399.6 -528.0   8.0' spd 320.8 yaw 184.2 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  14.4 pos '2657.3  18.6 -72.0' spd 276.5 yaw 166.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.5 pos '2604.1 -1904.0  43.4' spd  30.4 yaw 109.5 mode 0 st 0 gl 0 hp 21 frg 0
+ARGLOG Joe Rogan t  14.9 pos '2236.9 -527.0   8.0' spd 336.9 yaw 157.0 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  14.9 pos '2592.9  39.0 -72.0' spd 329.5 yaw 297.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  15.0 pos '2510.1 -1901.7  24.0' spd 323.2 yaw  93.2 mode 0 st 0 gl 0 hp 21 frg 0
+player chewed on Carmack's boomstick
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  15.4 pos '2163.7 -516.2   8.0' spd 258.7 yaw  18.9 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  15.4 pos '2630.7 -46.9 -72.0' spd 292.4 yaw 107.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  15.5 pos '2369.2 -1804.3  24.0' spd 452.8 yaw  45.7 mode 0 st 0 gl 0 hp 21 frg 1
+ARGLOG Joe Rogan t  15.9 pos '2324.7 -485.5   8.0' spd 320.3 yaw  18.9 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  15.9 pos '2584.1 109.8 -72.0' spd 320.0 yaw 107.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  16.0 pos '2535.8 -1723.3  24.0' spd 377.2 yaw 301 mode 0 st 0 gl 0 hp 21 frg 1
+ARGLOG Joe Rogan t  16.5 pos '2478.2 -437.1   8.0' spd 320.0 yaw  18.9 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  16.5 pos '2563.7 271.9 -72.0' spd 321.4 yaw 107.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  16.5 pos '2446.1 -1773.1  24.0' spd 321.8 yaw 178 mode 0 st 0 gl 0 hp 21 frg 1
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  17.0 pos '2493.1 -500.1   8.0' spd 250.0 yaw  87.0 mode 0 st 0 gl 0 hp 16 frg 1
+ARGLOG Romero t  17.0 pos '2590.9 245.9 -72.0' spd 320.0 yaw 295.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  17.0 pos '2364.6 -1674.7  24.0' spd 391.2 yaw  24.4 mode 0 st 0 gl 0 hp 21 frg 1
+Sending clc_disconnect
+Shutting down SDL sound
