@@ -3141,22 +3141,63 @@ void() Argus_AI =
                     }
                     if (nx == world || turn > 320)
                         self.ar_liftwait = 1;   // no plat near: park
+                    else if (self.groundentity == nx)
+                    {
+                        // aboard: ride it standing still
+                        self.ar_liftwait = 1;
+                        self.velocity_x = 0;
+                        self.velocity_y = 0;
+                    }
                     else if (nx.state != STATE_BOTTOM)
                     {
+                        // the slab is absent or moving. The danger
+                        // zone is the whole SWEPT COLUMN (footprint
+                        // xy), not the slab's current z: dm2's *31
+                        // rests at TOP and its descending 158u slab
+                        // swept through a bot frozen at the pad -
+                        // plat_crush reversed it off his head every
+                        // cycle and state BOTTOM never came (LIFTDBG
+                        // probe: TOP -> DOWN -> reverse at pz ~100 ->
+                        // TOP, 95 samples, not one seat). The waiting
+                        // bot was the blocker. Clear the column, then
+                        // hold utterly still so it can seat.
                         if (self.origin_x > nx.absmin_x - 4
                             && self.origin_x < nx.absmax_x + 4
                             && self.origin_y > nx.absmin_y - 4
-                            && self.origin_y < nx.absmax_y + 4
-                            && self.origin_z < nx.absmin_z)
+                            && self.origin_y < nx.absmax_y + 4)
                         {
+                            // clear the column by a WALKABLE heading:
+                            // radial, then +-90 off it (the naive
+                            // radial wedged bots against the *31
+                            // ledge wall, and the stall churn that
+                            // followed reset the route every 3 s -
+                            // the platseat1 storm). If every way is
+                            // blocked, stand still where we are:
+                            // stillness fires no touches, and only
+                            // the true swept column blocks a seat.
                             gp = (nx.absmin + nx.absmax) * 0.5;
                             to = self.origin - gp;
                             to_z = 0;
                             if (vlen (to) < 8)
                                 to = '96 0 0';
+                            turn = vectoyaw (to);
+                            if (Argus_MoveHazard (turn, 48))
+                            {
+                                turn = turn + 90;
+                                if (Argus_MoveHazard (turn, 48))
+                                    turn = turn - 180;
+                            }
+                            if (Argus_MoveHazard (turn, 48))
+                            {
+                                self.ar_liftwait = 1;
+                                self.velocity_x = 0;
+                                self.velocity_y = 0;
+                            }
                             else
-                                to = normalize (to) * 96;
-                            tp = self.origin + to;
+                            {
+                                makevectors ('0 0 0' + turn * '0 1 0');
+                                tp = self.origin + v_forward * 96;
+                            }
                         }
                         else
                         {
@@ -3167,6 +3208,8 @@ void() Argus_AI =
                     }
                     else
                     {
+                        // seated: walking into the footprint IS
+                        // boarding - steer at the slab centre
                         tp = (nx.absmin + nx.absmax) * 0.5;
                         tp_z = self.origin_z;
                     }
@@ -3503,7 +3546,7 @@ void() Argus_AI =
     {
         self.ar_nextstall = time + 0.7;
         if (vlen (self.origin - self.ar_lastpos) < 12 && !fighting
-            && !self.ar_liftwait)
+            && !self.ar_liftwait && !self.ar_hoplift)
         {
             self.ar_stalls = self.ar_stalls + 1;
             self.ar_stallrun = self.ar_stallrun + 1;
