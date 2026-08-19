@@ -59,34 +59,44 @@ flowchart TD
 - **Player physics emulation**: Custom friction, ground acceleration, and air acceleration executed per server frame in `StartFrame`.
 - **Decoupled movement and aim headings**: The bot's movement direction (`ar_moveyaw`) is fully decoupled from its facing angle (`angles_y`), enabling circle-strafing during combat.
 - **Apex cornering lookahead**: Slices corners by evaluating line-of-sight to the waypoint after next (`nx`) when within 112 units of the current node, eliminating rigid waypoint pivoting.
-- **Elevator and platform handling**: Recognises `func_plat` boarding pads, locks movement into `ar_liftwait` while riding, and suppresses void-hazard deflection while standing over lift shafts.
+- **Plat-state-aware elevator handling**: Reads the `func_plat` state machine before waiting — steps out from under a raised slab (a moving bot in the shaft volume postpones the descent on every touch), stands motionless so the descent delay can expire, and boards a resting slab so its own approach summons the ride with it aboard.
+- **Train riding**: Boards patrolling `func_train` cars by steering onto the slab itself, zeroes velocity to ride standing still, and walks off at the far dock — bots cross dm2's moving-platform bridge at deck height.
+- **Grate-floor and steep-stair walking**: Retries refused steps under `FL_PARTIALGROUND` (id's own escape hatch for the engine's point-traced ledge guard), so decorative floors with recessed channels and 45-degree strip stairs walk at full run speed instead of pinning the bot.
 
 ### 2. Predictive hazard avoidance
 - **280u brink probes**: `Argus_MoveHazard` casts downward traces 32u–48u ahead along movement vectors, detecting `CONTENT_LAVA`, `CONTENT_SLIME`, or fatal floor drops before the bot steps over the edge.
+- **Hull-bridge discrimination**: A liquid floor under the probe point is only a real hazard if the whole 32x32 hull would stand in it — `Argus_HazardBridge` requires solid banks on both sides within a bridgeable span, so decorative lava channels narrower than the player bbox read as floor while pool rims keep the conservative veto.
+- **Staircase rescue**: A probe buried inside rising geometry re-checks from knee-plus height; a clear window landing on a walkable tread means stairs (walkmove climbs the risers one at a time), while walls and true pits stay vetoed.
 - **Deflection hysteresis**: `Argus_HazardSteer` tests alternate headings in priority fans (+50, -50, +100, -100, 180 degrees) and locks onto `ar_hazardyaw` with angular memory to prevent corner oscillation.
 - **Safe line floor validation**: `Argus_SafeLine` samples floor collision every 48 units along direct item sightlines, preventing bots from plunging into pits to reach visible items.
 
 ### 3. Combat, perception, and humanized aim
-- **Human aim model**: Features configurable reaction latency (`ar_reactbase`), turn tracking rate limits (`ar_aimrate`), and an aim error cone that narrows over continuous tracking duration.
-- **Ballistic compensation**: Applies parabolic loft compensation for Grenade Launcher trajectories and downward pitch adjustments for Rocket Launcher fire from elevated walkways.
+- **Damped-spring aim model**: Second-order yaw tracking with per-skill spring constants — flick, slight overshoot, settle, tremor — plus configurable reaction latency (`ar_reactbase`) and an aim error cone that narrows over continuous tracking duration.
+- **Simulated hearing and investigation**: `W_Attack` broadcasts gunfire to every bot within 1000u (wall-damped); an unengaged bot glances at fresh sounds, and nearby fire pulls it toward the fight instead of past it.
+- **Combat memory and grudges**: A recent foe stays re-acquirable at 360 degrees for 5 seconds (no forgetting mid-dodge), and three consecutive deaths to one player raise a vendetta bounty on them.
+- **Ballistic compensation**: Applies parabolic loft compensation for Grenade Launcher trajectories, downward pitch adjustments for Rocket Launcher fire from elevated walkways, and feet-aim against grounded targets for splash.
 - **Continuous fire button hold**: Automatically asserts `button0 = 1` within 12 degrees of target alignment, ensuring continuous-fire weapon frame chains (Lightning Gun, Super Nailgun) maintain active beams without resetting animations.
 - **Dynamic weapon selection**: Selects optimal weapons based on distance thresholds, owned inventory, waterlevel safety, and remaining ammunition reserves.
 
 ### 4. Goal selection and GOAP planning
 - **Dynamic item utility scoring**: Scores all live trigger items on the map based on personality appetites, missing health/armour deltas, weapon tiers, and distance attenuation (`score = value * 320 / (dist + 160)`).
 - **Pack dispersion**: Items targeted by fellow bots receive an automatic 40% score reduction to spread the squad across the arena.
+- **Loot economy**: Dropped backpacks are valued by their contents (a fat rocket pack outranks most weapons), a fresh kill-drop carries a time-critical urgency bonus while the victim is still respawning, and a kill immediately re-shops the killer's goals — looting your victim is the loop humans run by reflex.
+- **Denial and control loops**: An opponent standing near an item makes taking it sweeter, and an owned Rocket Launcher or Lightning Gun stays worth a refill-and-denial swing past its spawn.
 - **Prerequisite goal planning**: Utilises a lightweight Goal-Oriented Action Planning (GOAP) bitmask (`AR_WS_ARMED`, `AR_WS_STOCKED`, `AR_WS_HEALTHY`, `AR_WS_ARMORED`). If a high-value powerup (Quad/Pent) is selected while unarmed, the planner prepends fetching a weapon first.
 
 ### 5. Multi-map frame-sliced navigation
 - **Sliced BFS router**: Breadth-first graph search slices expansions across server frames (48 node pops per frame via `ANQ_POPS`), avoiding runaway CPU limits.
 - **Route generation stamping**: Next-hop waypoint pointers (`an_next0..3`) are stamped with a route generation counter (`ar_routegen`), invalidating stale pointers if a bot is knocked off course.
-- **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`), rocket-jump links (`an_rjmask`), and elevator links (`an_liftmask`).
+- **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`), rocket-jump links (`an_rjmask`), elevator links (`an_liftmask`), swim-exit links (`an_swimmask`), train rides (`an_trainmask`), and door passages (`an_doormask`).
+- **Door and button handling**: Touch-open doors are walked through (the classname masquerade fires their triggers), button-only doors detour to their button and hold for the slab when the door is near, and shoot-actuated plates are fired at with the bot's own aimed attack.
 
 ### 6. Personalities and scoreboard integration
-- **Personality matrix**:
-  - **Reap**: Aggressive, impatient, weapon-first focus, rapid trigger response, cynical chat.
-  - **Omi**: Tactical, health and armour prioritisation, smooth tracking aim, computational chat.
-  - **Zeus / Ares**: Powerup-focused glory hounds, aggressive rocket jumps, boastful chat.
+- **Personality matrix** (keyed on roster slot, so renaming bots never changes how they play):
+  - **Slot 0 — the flick** (Carmack): Aggressive, impatient, weapon-first focus, rapid trigger response.
+  - **Slot 1 — the smooth operator** (Romero): Tactical, health and armour prioritisation, smooth tracking aim.
+  - **Slots 2–3 — the glory hounds** (Joe Rogan, and the `impulse 100` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
+  - Chat voices are name-keyed on top — the 18-character homage roster below each speak in their own voice.
 - **Scoreboard illusion**: Injects `SVC_UPDATENAME`, `SVC_UPDATECOLORS`, and `SVC_UPDATEFRAGS` into spare client slots (`argus_maxclients - 1 - slot`), displaying full names, colours, and frags on the `TAB` scoreboard.
 
 ---
@@ -221,11 +231,11 @@ Argus includes an extensive 18-character homage roster celebrating Quake history
 
 | Map | File | Waypoints | Key features & Link types |
 |---|---|---|---|
-| **The Bad Place** | `dm4` | 142 nodes | Walkway hazard steering, rocket-jump Quad ledge link, stair drop-links. |
-| **Claustrophobopolis** | `dm2` | 184 nodes | 2 elevator platforms (`func_plat`), 6 prize rocket-jump pads. |
-| **The Abandoned Base** | `dm3` | 176 nodes | Multi-level platform tower, elevator padding, corridor drops. |
+| **The Bad Place** | `dm4` | 145 nodes | Walkway hazard steering, rocket-jump Quad ledge link, stitched pit-escape links, stair drop-links. |
+| **Claustrophobopolis** | `dm2` | 162 nodes | Corridor-sampled graph: 2 elevator platforms, 3 patrolling trains (the upper-deck bridge is ridden), 25 typed door links, prize rocket-jump pads. |
+| **The Abandoned Base** | `dm3` | 190 nodes | Multi-level platform tower, elevator padding, water trench swim-exit links. |
 | **The Dark Zone** | `dm6` | 153 nodes | Multi-tier central arena, teleporter loops, drop-links. |
-| **LibreQuake DM2** | `lqdm2` | 140 nodes | Stand-in testing arena for automated headless validation. |
+| **LibreQuake DM2** | `lqdm2` | 197 nodes | Stand-in testing arena for automated headless validation. |
 
 *Note: On maps without compiled navigation files, bots automatically degrade to line-of-sight seeking and direct combat.*
 
@@ -309,8 +319,9 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 |        st <stalls> gl <goals> hp <health> frg <frags>                             |
 |                                                                                   |
 | ARGEVT <name> spawned | respawn | goal <class> | route <hops> | routefail |       |
-|        abandon | stall | jump | rjump | lift | swim | hazard | engage <enemy> |   |
-|        pursue | weapon <axe|sg|ssg|ng|sng|gl|rl|lg> | plan <want> via <step> |    |
+|        abandon | stall | stallnode '<x y z>' | trapped | jump | rjump | lift |    |
+|        swim | door | train | hazard | engage <enemy> | pursue |                   |
+|        weapon <axe|sg|ssg|ng|sng|gl|rl|lg> | plan <want> via <step> |             |
 |        death <killer> pos '<x y z>'                                               |
 +-----------------------------------------------------------------------------------+
 ```
