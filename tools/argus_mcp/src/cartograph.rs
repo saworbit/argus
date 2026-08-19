@@ -746,7 +746,10 @@ fn atlas_from_bsp(
     control.truncate(12);
 
     let dispatcher_known = dispatcher_knows(cfg, map);
-    let recommended_baseline = recommended_baseline_for(map);
+    let baseline_override = crate::intel::baseline_override_for(cfg, map);
+    let recommended_baseline: Option<&str> = baseline_override
+        .as_deref()
+        .or_else(|| recommended_baseline_for(map));
     let mut implications = map_implications(map);
     if !dispatcher_known {
         implications.push(
@@ -1989,7 +1992,11 @@ mod tests {
         env.insert("ARGUS_ROOT".into(), root.display().to_string());
         let cfg = load_for_reads_from(&env, root).unwrap();
         let atlas = cartograph(&cfg, "dm2").unwrap();
-        assert_eq!(atlas.recommended_baseline.as_deref(), Some("ab_dm2_lava"));
+        // the recommendation is the baselines.json override when the
+        // live runs dir carries one, else the era default
+        let expect = crate::intel::baseline_override_for(&cfg, "dm2")
+            .unwrap_or_else(|| "ab_dm2_lava".to_string());
+        assert_eq!(atlas.recommended_baseline.as_deref(), Some(expect.as_str()));
         assert!(
             !atlas.door_cuts.is_empty(),
             "dm2 button-doors should cut walk links: {:?}",

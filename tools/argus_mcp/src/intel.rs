@@ -425,7 +425,33 @@ fn map_baseline_name(map: Option<&str>) -> Option<&'static str> {
     }
 }
 
+/// runs/baselines.json maps a map name to the run that experiment and
+/// compare gate against, e.g. {"dm4": "ab_dm4_stair"}. The hardcoded
+/// defaults above are era-frozen tapes (ab_dm4_water is v3.20, five
+/// metric boundaries old) that made every modern run read "regressed";
+/// refreshing a baseline is now editing one line in one file instead
+/// of a Rust rebuild.
+pub fn baseline_override_for(cfg: &Config, map: &str) -> Option<String> {
+    let p = cfg.runs.join("baselines.json");
+    let text = std::fs::read_to_string(&p).ok()?;
+    let map_table: std::collections::BTreeMap<String, String> =
+        serde_json::from_str(&text).ok()?;
+    map_table.get(&map.to_ascii_lowercase()).cloned()
+}
+
 fn resolve_baseline(cfg: &Config, map_hint: Option<&str>) -> Result<std::path::PathBuf, String> {
+    if let Some(m) = map_hint {
+        if let Some(name) = baseline_override_for(cfg, m) {
+            match resolve_log(cfg, &name) {
+                Ok(p) => return Ok(p),
+                Err(_) => {
+                    return Err(format!(
+                        "baselines.json names '{name}' for {m} but no such run exists in ARGUS_RUNS"
+                    ))
+                }
+            }
+        }
+    }
     if let Some(name) = map_baseline_name(map_hint) {
         if let Ok(p) = resolve_log(cfg, name) {
             return Ok(p);
@@ -1367,6 +1393,29 @@ ARGEVT Reap hazard
         let latest = resolve_run_ref(&cfg, "latest", None).unwrap();
         assert!(latest.ends_with("mcp_new.log"));
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn baselines_json_overrides_the_era_frozen_default() {
+        let root = std::env::temp_dir().join(format!("argus-base-{}", std::process::id()));
+        let runs = root.join("runs");
+        std::fs::create_dir_all(&runs).unwrap();
+        std::fs::write(
+            runs.join("ab_dm4_fresh.log"),
+            "ARGUS init on dm4\nARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+        )
+        .unwrap();
+        std::fs::write(runs.join("baselines.json"), r#"{"dm4": "ab_dm4_fresh"}"#).unwrap();
+        let mut env = std::collections::HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = crate::config::load_for_reads_from(&env, &root).unwrap();
+        let p = resolve_baseline(&cfg, Some("dm4")).unwrap();
+        assert!(p.display().to_string().ends_with("ab_dm4_fresh.log"));
+        // a named-but-missing baseline is a loud error, not a silent
+        // fall-through to the era-frozen default
+        std::fs::write(runs.join("baselines.json"), r#"{"dm4": "ab_dm4_gone"}"#).unwrap();
+        assert!(resolve_baseline(&cfg, Some("dm4")).is_err());
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     #[test]
