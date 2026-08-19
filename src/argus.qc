@@ -955,7 +955,31 @@ float(float myaw, float pdist) Argus_MoveHazard =
 
     traceline (ahead + '0 0 4', ahead - '0 0 280', TRUE, self);
     if (trace_fraction == 1)
+    {
+        // "no floor" can also mean the probe START is buried in
+        // rising geometry: a stair steeper than ~16u per 32u of run
+        // swallows the probe point and reads as a void. The dm2
+        // rockets pocket's only escape is a 45 degree strip stair
+        // (node 85 east, -160 to -112) - bots were deflected back
+        // into the pocket by this very guard and jittered at its
+        // floor for whole matches. If a knee-plus recheck clears
+        // and lands on a tread at climbable height this is a
+        // STAIRCASE: walkmove takes the risers one at a time. A
+        // wall is still solid at the higher start and keeps its
+        // deflection; a true pit finds nothing in the shallow
+        // window and stays vetoed.
+        if (pointcontents (ahead + '0 0 4') == CONTENT_SOLID)
+        {
+            traceline (ahead + '0 0 26', ahead - '0 0 8', TRUE, self);
+            if (trace_fraction < 1)
+            {
+                c = pointcontents (trace_endpos + '0 0 2');
+                if (c != CONTENT_LAVA && c != CONTENT_SLIME)
+                    return FALSE;
+            }
+        }
         return TRUE;                // no floor within a survivable drop
+    }
     c = pointcontents (trace_endpos + '0 0 2');
     if (c == CONTENT_LAVA || c == CONTENT_SLIME)
     {
@@ -3102,7 +3126,26 @@ void() Argus_AI =
                 if (vlen (to) > 40)
                     want = vectoyaw (to);
                 else
-                    self.ar_liftwait = 1;
+                {
+                    // press by contact. Hold for the slab ONLY when
+                    // the door is near enough to walk through as it
+                    // opens; at a REMOTE button (t6's lives in the
+                    // rockets pocket, 490u from its doors) the hold
+                    // froze bots 8 s facing nothing - Shane fought
+                    // one standing still there twice. Keep pushing
+                    // into the plate instead: contact fires it and
+                    // the state release above does the rest. (A cap
+                    // on the button SEARCH was tried first and
+                    // reverted: shelving every t6 goal re-routed the
+                    // whole roster into the plat *34 shaft fight,
+                    // hazard x35 at '2495 -992' two runs straight.)
+                    gp = (self.ar_door.absmin + self.ar_door.absmax) * 0.5
+                         - self.origin;
+                    if (vlen (gp) < 320)
+                        self.ar_liftwait = 1;
+                    else
+                        want = vectoyaw (to);
+                }
             }
             else
             {
