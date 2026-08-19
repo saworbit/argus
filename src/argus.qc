@@ -155,6 +155,9 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_track;               // when tracking of this target began
 .float  ar_strafedir;
 .float  ar_strafetime;
+.float  ar_dodgecheck;          // missile dodge: next scan time
+.float  ar_dodgeyaw;            // missile dodge: committed sidestep
+.float  ar_dodgetime;           // missile dodge: sidestep active until
 .float  ar_respawntime;
 
 .float  ar_wweap;               // utility appetites: how loudly each
@@ -2045,6 +2048,85 @@ void(float d) Argus_SelectWeapon =
     dprint ("\n");
 };
 
+// Scan for an inbound enemy projectile and commit a perpendicular
+// sidestep (cortex's dodge design). LQ rockets are classname
+// "rocket", not stock's "missile". The 55% commit chance keeps the
+// dodge human: serial rockets still land sometimes at every tier.
+// Spikes are not scanned - a 1000 u/s nail is not human-reactable.
+void() Argus_DodgeScan =
+{
+    local entity m;
+    local vector to;
+    local float d, side;
+
+    m = find (world, classname, "rocket");
+    while (m != world)
+    {
+        if (m.owner != self)
+        {
+            to = self.origin - m.origin;
+            d = vlen (to);
+            if (d > 60 && d < 520)
+            {
+                if (normalize (m.velocity) * normalize (to) > 0.92
+                    && random () < 0.55)
+                {
+                    // sidestep across the shot - but a committed
+                    // 0.3 s step travels ~96u, so BOTH sides get
+                    // probed at 48 and 90, and a bot with lava both
+                    // ways holds the line instead (the first ladder
+                    // took the unchecked fallback side straight off
+                    // the dm4 walkways, lava 5)
+                    side = vectoyaw (m.velocity) + 90;
+                    if (Argus_MoveHazard (side, 48)
+                        || Argus_MoveHazard (side, 90))
+                    {
+                        side = vectoyaw (m.velocity) - 90;
+                        if (Argus_MoveHazard (side, 48)
+                            || Argus_MoveHazard (side, 90))
+                            return;
+                    }
+                    self.ar_dodgeyaw = side;
+                    self.ar_dodgetime = time + 0.3;
+                    return;
+                }
+            }
+        }
+        m = find (m, classname, "rocket");
+    }
+    m = find (world, classname, "grenade");
+    while (m != world)
+    {
+        if (m.owner != self)
+        {
+            to = self.origin - m.origin;
+            d = vlen (to);
+            // a grenade threatens where it lands: shorter window,
+            // looser cone, always step away from its track
+            if (d > 40 && d < 320)
+            {
+                if (normalize (m.velocity) * normalize (to) > 0.8
+                    && random () < 0.55)
+                {
+                    side = vectoyaw (m.velocity) + 90;
+                    if (Argus_MoveHazard (side, 48)
+                        || Argus_MoveHazard (side, 90))
+                    {
+                        side = vectoyaw (m.velocity) - 90;
+                        if (Argus_MoveHazard (side, 48)
+                            || Argus_MoveHazard (side, 90))
+                            return;
+                    }
+                    self.ar_dodgeyaw = side;
+                    self.ar_dodgetime = time + 0.35;
+                    return;
+                }
+            }
+        }
+        m = find (m, classname, "grenade");
+    }
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
@@ -2187,6 +2269,19 @@ float() Argus_Combat =
         self.ar_moveyaw = vectoyaw ('0 0 0' - to);
     else
         self.ar_moveyaw = vectoyaw (to) + 80 * self.ar_strafedir;
+
+    // missile dodge (cortex's design, upgraded from the idea bank):
+    // an inbound enemy rocket or grenade makes the bot sidestep
+    // perpendicular to the shot. Decoupled aim means it keeps
+    // shooting while it steps. Runs before the lava flip below, so
+    // a dodge heading into a brink is vetoed like any other.
+    if (time > self.ar_dodgecheck)
+    {
+        self.ar_dodgecheck = time + 0.15;
+        Argus_DodgeScan ();
+    }
+    if (time < self.ar_dodgetime)
+        self.ar_moveyaw = self.ar_dodgeyaw;
 
     // the axe has no reach: the band logic above backs a dry bot
     // away from melee forever (Shane's review, fix 3). Charge
