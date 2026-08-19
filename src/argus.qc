@@ -158,6 +158,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_dodgecheck;          // missile dodge: next scan time
 .float  ar_dodgeyaw;            // missile dodge: committed sidestep
 .float  ar_dodgetime;           // missile dodge: sidestep active until
+.float  ar_sndweap;             // hearing: weapon bits of the last shot heard
 .float  ar_respawntime;
 
 .float  ar_wweap;               // utility appetites: how loudly each
@@ -1804,6 +1805,10 @@ void(vector spos, entity who) Argus_HearSound =
                     b.ar_sndpos = spos;
                     b.ar_sndtime = time;
                     b.ar_sndent = who;
+                    // weapon-sound classification (mre Predator):
+                    // the listener knows WHAT it heard, and the
+                    // investigation gate scales its appetite by it
+                    b.ar_sndweap = who.weapon;
                 }
             }
         }
@@ -2925,9 +2930,23 @@ void() Argus_AI =
     if (!fighting && ar_opm_ears && self.ar_enemy == world
         && self.ar_sndtime > 0 && time < self.ar_sndtime + 3)
     {
+        // weapon-sound classification (mre Predator): how far a bot
+        // will go to investigate depends on WHAT it heard and how
+        // much it can afford. Heavy gunfire (RL/LG) heard on a thin
+        // stack keeps its distance; a healthy bot hunts the big
+        // fight harder than small-arms chatter.
+        turn = 700;
+        if (self.ar_sndweap == IT_ROCKET_LAUNCHER
+            || self.ar_sndweap == IT_LIGHTNING)
+        {
+            if (self.health + self.armorvalue * self.armortype < 60)
+                turn = 350;
+            else if (self.health > 80)
+                turn = 850;
+        }
         to = self.ar_sndpos - self.origin;
         to_z = 0;
-        if (vlen (to) > 80 && vlen (to) < 700)
+        if (vlen (to) > 80 && vlen (to) < turn)
         {
             want = vectoyaw (to);
             if (!Argus_MoveHazard (want, 48))
