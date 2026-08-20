@@ -3204,7 +3204,12 @@ void() Argus_AI =
         {
             gp = Argus_GoalPoint (self.ar_goal);
             nx = Argus_NearestNode (self.origin);
-            if (Argus_Route_Start (self, nx, Argus_NearestNode (gp)))
+            // shared route cache first (Omicron review): a fresh
+            // flood to the same goal node is adopted for free, no
+            // an_busy contention, no search frames
+            if (Argus_Route_Adopt (self, nx, Argus_NearestNode (gp)))
+                self.ar_laststart = nx;
+            else if (Argus_Route_Start (self, nx, Argus_NearestNode (gp)))
             {
                 self.ar_laststart = nx;
                 self.ar_pending = 0;

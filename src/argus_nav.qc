@@ -35,6 +35,8 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .float  an_ng1;             // pointer is only valid for the route that
 .float  an_ng2;             // wrote it, or bots follow hops from routes
 .float  an_ng3;             // long dead (the cross-map wedge march)
+.entity an_cnext;           // shared route cache: next hop toward
+.float  an_cgen;            // an_cachegoal; valid iff == an_cachegen
 
 entity  anq_head;
 entity  anq_tail;
@@ -42,6 +44,9 @@ float   an_gen;
 float   an_busy;
 entity  an_bot;             // bot whose search is running
 entity  an_goalnode;
+entity  an_cachegoal;       // goal node of the last completed flood
+float   an_cachegen;        // stamps an_cgen along that route
+float   an_cachetime;       // freshness: adoptions stop after 10 s
 
 .float  ar_slot;            // on bots: 0..3 (roster cap 4)
 .entity ar_node;            // on bots: current waypoint target
@@ -475,13 +480,26 @@ void() Argus_Route_Finish =
     an_bot.ar_routegen = an_bot.ar_routegen + 1;
 
     // flip parent chain (goal -> start) into next-hop fields (start -> goal)
+    // - and into the SHARED route cache (Omicron review: their
+    // waypoints cached distances to popular goals so routing became a
+    // free greedy descent for every bot after the first). One cached
+    // route at a time is enough here: the circuit economy converges
+    // the roster on the same few majors, so the next bot wanting this
+    // goal from anywhere on this path adopts it without a search.
+    an_cachegen = an_cachegen + 1;
+    an_cachegoal = an_goalnode;
+    an_cachetime = time;
     cur = an_goalnode;
     hops = 0;
     Argus_SetNext (cur, an_bot, world);         // route ends at goal node
+    cur.an_cnext = world;
+    cur.an_cgen = an_cachegen;
     prev = cur.an_par;
     while (prev != world)
     {
         Argus_SetNext (prev, an_bot, cur);
+        prev.an_cnext = cur;
+        prev.an_cgen = an_cachegen;
         cur = prev;
         prev = cur.an_par;
         hops = hops + 1;
@@ -509,6 +527,78 @@ void() Argus_Route_Finish =
     dprint (vtos(an_goalnode.origin));
     dprint ("\n");
     an_busy = 0;
+};
+
+// adopt the shared cached route: when the last completed flood served
+// the SAME goal node and this bot's start sits on that path (its
+// cache stamp is current), copy the chain into the bot's own slots -
+// zero search frames, no an_busy contention. The walk re-checks the
+// rocket toll per hop, because the original searcher's equipment
+// authorised those links, not ours; any unpayable hop aborts the
+// adoption and the bot falls back to a normal search.
+float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
+{
+    local entity cur, nx;
+    local float hops;
+
+    if (goalnode == world || startnode == world)
+        return FALSE;
+    if (an_cachegoal != goalnode || time > an_cachetime + 10)
+        return FALSE;
+    if (startnode.an_cgen != an_cachegen)
+        return FALSE;
+
+    // verify the chain first: tolls payable, length sane
+    cur = startnode;
+    hops = 0;
+    while (cur != goalnode)
+    {
+        if (cur.an_cgen != an_cachegen)
+            return FALSE;               // stale splice mid-path
+        nx = cur.an_cnext;
+        if (nx == world)
+            return FALSE;
+        if (Argus_LinkIsRocket (cur, nx) && !Argus_BotCanRJ (bot))
+            return FALSE;
+        cur = nx;
+        hops = hops + 1;
+        if (hops > 250)
+            return FALSE;
+    }
+
+    bot.ar_routegen = bot.ar_routegen + 1;
+    cur = startnode;
+    while (cur != goalnode)
+    {
+        Argus_SetNext (cur, bot, cur.an_cnext);
+        cur = cur.an_cnext;
+    }
+    Argus_SetNext (goalnode, bot, world);
+
+    bot.ar_pending = 0;
+    bot.ar_failstreak = 0;
+    bot.ar_node = startnode;
+    bot.ar_hopjump = 0;
+    bot.ar_hoprj = 0;
+    bot.ar_hoplift = 0;
+    bot.ar_hopswim = 0;
+    bot.ar_hoptrain = 0;
+    bot.ar_hopdoor = 0;
+
+    // plain console marker, deliberately NOT an ARGEVT: adoption
+    // emits the same route event as a search, and this line is how
+    // a tape proves the cache actually fired (grep "routecache")
+    dprint ("ARGUS routecache adopt\n");
+    dprint ("ARGEVT ");
+    dprint (bot.netname);
+    dprint (" route ");
+    dprint (ftos (hops));
+    dprint (" start ");
+    dprint (vtos (startnode.origin));
+    dprint (" goal ");
+    dprint (vtos (goalnode.origin));
+    dprint ("\n");
+    return TRUE;
 };
 
 void() Argus_Route_Fail =
