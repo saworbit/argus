@@ -168,6 +168,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_bitemend;            // battle item: commit expires
 .entity ar_bitemlast;           // battle item: last failed grab
 .float  ar_bitemcool;           // battle item: failed grab cools until
+.float  ar_gapjump;             // predictive gap jump: next attempt
 .float  ar_respawntime;
 
 .float  ar_wweap;               // utility appetites: how loudly each
@@ -1186,6 +1187,57 @@ void() Argus_WaterMove =
     }
 };
 
+// predictive gap jump (2026-08-20, the Omicron review, sampling
+// 10.3: at a non-walkable area their bot predicts the jump in 0.1 s
+// steps, collisions included, and jumps only "if it is satisfied
+// with the result"). Argus unrouted modes could only deflect at a
+// brink - the walkway corner tax. This simulates the launch the bot
+// could make RIGHT NOW (its own speed along the blocked heading,
+// jump 270, gravity 800): each 0.1 s segment is traced at chest
+// height; a hit while still rising is a wall and refuses, a hit
+// while falling is the landing and must be a floor-ish plane, above
+// the survivable-drop line, with air (not lava or slime) sitting on
+// it, and far enough out that a hop would not have done. No landing
+// inside 1.2 s refuses too - never jump into the unknown.
+float(float myaw, float spd) Argus_GapJumpOK =
+{
+    local vector dir, p0, p1;
+    local float t, pz;
+
+    if (spd > 330)
+        return FALSE;           // beyond the model; do not extrapolate
+    makevectors ('0 0 0' + myaw * '0 1 0');
+    dir = v_forward;
+    p0 = self.origin;
+    t = 0.1;
+    while (t < 1.25)
+    {
+        p1 = self.origin + dir * (spd * t);
+        p1_z = self.origin_z + 270 * t - 400 * t * t;
+        traceline (p0 + '0 0 24', p1 + '0 0 24', TRUE, self);
+        if (trace_fraction < 1)
+        {
+            if (270 - 800 * t > 0)
+                return FALSE;   // hit while rising: a wall
+            if (trace_plane_normal_z < 0.7)
+                return FALSE;   // steep face, not a landing
+            if (trace_endpos_z < self.origin_z + 24 - 220)
+                return FALSE;   // deeper than a survivable drop
+            pz = pointcontents (trace_endpos + '0 0 12');
+            if (pz == CONTENT_LAVA || pz == CONTENT_SLIME)
+                return FALSE;   // the pool the gap guard saw
+            p1 = trace_endpos - self.origin;
+            p1_z = 0;
+            if (vlen (p1) < 64)
+                return FALSE;   // not a gap, a lip - deflect instead
+            return TRUE;
+        }
+        p0 = p1;
+        t = t + 0.1;
+    }
+    return FALSE;
+};
+
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
@@ -1386,6 +1438,27 @@ void() Argus_Physics =
                 rhoriz = 52;
             if (Argus_MoveHazard (myaw, rhoriz))
             {
+                // predictive gap jump: before surrendering the
+                // heading to the deflection, see if the jump we
+                // could make right now lands dry on the far side.
+                // Unrouted modes only - routed hops have their own
+                // verified links - and never during a typed hop or
+                // door detour. Rate-limited: the arc costs traces.
+                if (self.ar_mode != 2 && spd >= 250
+                    && time > self.ar_gapjump
+                    && !self.ar_hoplift && !self.ar_hoptrain
+                    && !self.ar_hopdoor && !self.ar_hoprj)
+                {
+                    self.ar_gapjump = time + 1;
+                    if (Argus_GapJumpOK (myaw, spd))
+                    {
+                        self.velocity_z = AR_JUMPVEL;
+                        self.flags = self.flags
+                                   - (self.flags & FL_ONGROUND);
+                        Argus_Event ("jump");
+                        return;
+                    }
+                }
                 // deflect along the brink, keeping speed: a dead stop
                 // here reads as a stall and bleeds all momentum.
                 // HazardSteer holds the last safe heading so the
