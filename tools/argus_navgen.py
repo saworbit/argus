@@ -495,6 +495,76 @@ for b in ent_blocks:
           f"(top z {ca[2] + sz:.0f})")
 print(f"trains: {len(trains) // 2} shuttle(s) padded")
 
+# ---- 5d. stair-run seat promotion ----
+# (Omicron review, 2026-08-20): the 1998 bot's hand-made dm3 graph
+# seats stairs one waypoint per 16u step - 236 seats on dm3 against
+# 67-133 on every other map - because stair runs are exactly where
+# coverage-radius decimation goes blind: treads are a thin diagonal
+# band in xyz, the coarse lattice seats the floors above and below,
+# and the run between often carries no seat for links to verify
+# through. Detect maximal rising runs in the fine columns (each step
+# +6..20u per grid column along an axis, total rise 40+) and promote
+# a seat at the bottom, the top, and a long run's midpoint.
+# force_way reuses any seat already within snap range, so open
+# floors absorb these into existing coverage and only bare stair
+# runs spend new seats.
+def _col_z_near(cx, cy, zref, tol):
+    zs = samples.get((cx, cy))
+    if not zs:
+        return None
+    best = None
+    for zz in zs:
+        if abs(zz - zref) <= tol and (best is None
+                                      or abs(zz - zref) < abs(zz - best)):
+            best = zz
+    return best
+
+stair_seats = 0
+stair_runs = 0
+for (scx, scy), szs in sorted(samples.items()):
+    for (dx, dy) in ((1, 0), (0, 1)):
+        for z0 in szs:
+            # a run STARTS with a rise, from a column whose own back
+            # neighbour is not a riser below (true bottom); treads
+            # deeper than one grid column show up as flat steps
+            # between rises, so flats continue a run (two in a row
+            # ends it - that is a landing, not a tread)
+            if _col_z_near(scx - dx, scy - dy, z0 - 13, 7) is not None:
+                continue
+            if _col_z_near(scx + dx, scy + dy, z0 + 13, 7) is None:
+                continue
+            run = [(scx, scy, z0)]
+            zcur = z0
+            nx, ny = scx + dx, scy + dy
+            rises = 0
+            flats = 0
+            while True:
+                zn = _col_z_near(nx, ny, zcur + 13, 7)
+                if zn is not None:
+                    rises += 1
+                    flats = 0
+                else:
+                    zn = _col_z_near(nx, ny, zcur, 5)
+                    if zn is None or flats >= 2:
+                        break
+                    flats += 1
+                run.append((nx, ny, zn))
+                zcur = zn
+                nx, ny = nx + dx, ny + dy
+            while len(run) > 1 and abs(run[-1][2] - run[-2][2]) < 6:
+                run.pop()               # trim trailing flats
+            if rises >= 3 and run[-1][2] - z0 >= 40:
+                stair_runs += 1
+                seats = [run[0], run[-1]]
+                if len(run) >= 9:
+                    seats.append(run[len(run) // 2])
+                for pt in seats:
+                    w = force_way(xs[pt[0]], ys[pt[1]], pt[2] + 24,
+                                  snap=40)
+                    if w is not None:
+                        stair_seats += 1
+print(f"stair runs: {stair_runs} run(s), {stair_seats} seats placed or reused")
+
 # ---- 6. waypoint links via Dijkstra on the fine graph ----
 # links[i][j] = (pathlen, isjump); a link is jump-typed when the best
 # fine path from i to j crosses at least one jump edge

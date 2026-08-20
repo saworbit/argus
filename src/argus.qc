@@ -3039,6 +3039,21 @@ void() Argus_PickGoal =
         pick = near;
     }
 
+    // island discipline (2026-08-20, the dm3 corridor ladder): two
+    // straight routefails from one spot mean the wide menu is not
+    // routable from here - shop the NEAREST live item until a route
+    // completes and clears the streak. Without this, the circuit
+    // pull kept offering far majors on other islands, every pick
+    // failed, and the four-fail trapped rule - written for pits -
+    // suicided bots standing on a 93-node island (trapped 39, frags
+    // -23 in ab_dm3_corridor1). A bot truly in a pit fails the near
+    // item too and still reaches the trapped exit.
+    if (self.ar_failstreak >= 2 && near != world)
+    {
+        final = AR_C_ANY;
+        pick = near;
+    }
+
     // ---- GOAP: prepend unmet preconditions ----
     // A powerup run has ARMED as a precondition: nobody walks to the
     // quad holding a shotgun. The plan keeps the powerup as its end
