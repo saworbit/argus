@@ -201,11 +201,19 @@ for (cx, cy), zs in samples.items():
 # directions 2..5 cells out for a landing floor between 64u below and
 # 40u above, and verify the parabolic arc is clear in hull 1.
 JUMPSPEED, JUMPVEL, GRAV = 280.0, 270.0, 800.0
+# sprint jumps (Shane, 2026-08-21: "the jump to the MH and Red armour
+# over the lava can be done if you shift sprint and time it just
+# right - a high skill bot should just do that as a matter of
+# course"): a second arc model at full run speed for edges the
+# conservative 280 model refuses. These emit as a distinct typed
+# link, the router only hands them to skill 2+ bots, and the runtime
+# demands real sprint speed at the lip before firing.
+SPRINTSPEED = 316.0
 
-def arc_clear(x0, y0, z0, x1, y1, z1):
+def arc_clear(x0, y0, z0, x1, y1, z1, speed=JUMPSPEED):
     dx, dy = x1 - x0, y1 - y0
     dist = (dx*dx + dy*dy) ** 0.5
-    t_total = dist / JUMPSPEED
+    t_total = dist / speed
     if z0 + JUMPVEL*t_total - 0.5*GRAV*t_total*t_total < z1 + 2:
         return False                    # arc arrives below the landing floor
     steps = max(4, int(dist // 16))
@@ -220,13 +228,19 @@ def arc_clear(x0, y0, z0, x1, y1, z1):
     return True
 
 njump = 0
+nsprint = 0
+sprint_edges = []       # (from_nid, to_nid, horiz) for seat promotion
 for (cx, cy), zs in samples.items():
     for zi, z in enumerate(zs):
         for dx, dy in ((1,0),(-1,0),(0,1),(0,-1),(1,1),(1,-1),(-1,1),(-1,-1)):
             nb = samples.get((cx+dx, cy+dy))
             if nb is not None and near(nb, z, STEP) is not None:
                 continue                # walkable: no jump needed
-            for k in range(2, 6):
+            # the normal scan reaches 5 cells; the sprint arc at full
+            # run speed carries ~250u, which at a 16u corridor grid is
+            # 15 cells out - scan the whole physical range and let
+            # arc_clear's physics decide which model closes the gap
+            for k in range(2, int(260 // GRID) + 2):
                 cell = samples.get((cx+dx*k, cy+dy*k))
                 if cell is None:
                     continue
@@ -238,13 +252,36 @@ for (cx, cy), zs in samples.items():
                 if land is None:
                     continue            # floors far below do not block a gap jump
                 j2, z2 = land
-                if arc_clear(xs[cx], ys[cy], z, xs[cx+dx*k], ys[cy+dy*k], z2):
-                    step = (GRID*GRID*(dx*dx + dy*dy)) ** 0.5
+                step = (GRID*GRID*(dx*dx + dy*dy)) ** 0.5
+                if k <= 5 and \
+                        arc_clear(xs[cx], ys[cy], z, xs[cx+dx*k], ys[cy+dy*k], z2):
+                    # the ORIGINAL 5-cell reach: only the sprint model
+                    # earns the extended range - a 280-model jump has
+                    # ~189u of flat range and the extended scan was
+                    # minting 200u+ plain jump links that failed
+                    # exactly like the unmodelled sprints did
                     fine[(cx,cy,zi)].append(((cx+dx*k, cy+dy*k, j2),
                                              step*k*1.5 + 40, 1))
                     njump += 1
+                elif arc_clear(xs[cx], ys[cy], z, xs[cx+dx*k], ys[cy+dy*k],
+                               z2, SPRINTSPEED):
+                    # sprint-only arcs do NOT join the fine graph:
+                    # threading them through Dijkstra either starves
+                    # them (cost budget, straightness ratio) or
+                    # re-types walkable links as skill-gated sprint.
+                    # They emit DIRECTLY as typed links in 7a4, the
+                    # proven rocket-jump pattern - and the pattern is
+                    # the point: trick moves are a family (sprint
+                    # arcs now, grenade jumps next), each an arc
+                    # model plus a typed link plus a toll.
+                    step = (GRID*GRID*(dx*dx + dy*dy)) ** 0.5
+                    if step*k >= 120:
+                        sprint_edges.append(((cx, cy, zi),
+                                             (cx+dx*k, cy+dy*k, j2),
+                                             step*k))
+                    nsprint += 1
                 break                   # nearest level candidate settles this direction
-print(f"jump edges: {njump}")
+print(f"jump edges: {njump} plus {nsprint} sprint-only")
 
 def pos(nid):
     cx, cy, zi = nid
@@ -310,6 +347,13 @@ if len(ent_blocks) + NODE_CAP > 500:
     NODE_CAP = max(60, 500 - len(ent_blocks))
     print(f"edict budget: {len(ent_blocks)} bsp entities, "
           f"node cap lowered to {NODE_CAP}")
+# typed-infrastructure promotions (plat pads, stair seats, sprint
+# lips, RJ pads) may spend the edict headroom past the decimation
+# target: the 200-node ceiling exists for edicts, not for its own
+# sake, and on dm2 the corridor+stair+sprint seat passes consumed
+# it before RJ pads got their turn - every ensure_way then snapped
+# to the same wrong seat and all four RJ links vanished
+PROMO_CAP = max(NODE_CAP, min(500 - len(ent_blocks) - 12, 260))
 
 # ---- 5. decimate to waypoints ----
 allnodes = [ (cx,cy,zi) for (cx,cy),zs in samples.items() for zi in range(len(zs)) ]
@@ -372,7 +416,7 @@ def force_way(x, y, z, snap=48):
         wx, wy, wz = pos(w)
         if ((px-wx)**2 + (py-wy)**2 + (2*(pz-wz))**2) ** 0.5 < snap:
             return i
-    if len(ways) >= NODE_CAP:
+    if len(ways) >= PROMO_CAP:
         return None
     ways.append(nid)
     return len(ways) - 1
@@ -565,6 +609,41 @@ for (scx, scy), szs in sorted(samples.items()):
                         stair_seats += 1
 print(f"stair runs: {stair_runs} run(s), {stair_seats} seats placed or reused")
 
+# ---- 5e. sprint-jump launch and landing seats ----
+# A trick jump is only routable if waypoints stand AT its lip and
+# its landing (the RJ pad-promotion lesson). First collapse the
+# parallel-scan duplicates - a 226u crossing shows up once per
+# 16u-spaced column along the lip - keeping the longest of each
+# cluster, then promote both ends exactly (snap 8: any looser and
+# the seat lands beside the lip, and the runtime beeline launches
+# from the wrong spot).
+sprint_edges.sort(key=lambda e: -e[2])
+_kept_edges = []
+for _sa, _sb, _sd in sprint_edges:
+    ax_, ay_ = xs[_sa[0]], ys[_sa[1]]
+    bx_, by_ = xs[_sb[0]], ys[_sb[1]]
+    dup = False
+    for _ka, _kb, _kd in _kept_edges:
+        kax, kay = xs[_ka[0]], ys[_ka[1]]
+        kbx, kby = xs[_kb[0]], ys[_kb[1]]
+        if (((ax_-kax)**2 + (ay_-kay)**2) ** 0.5 < 64
+                and ((bx_-kbx)**2 + (by_-kby)**2) ** 0.5 < 64):
+            dup = True
+            break
+    if not dup:
+        _kept_edges.append((_sa, _sb, _sd))
+sprint_edges = _kept_edges
+sprint_seats = 0
+for _sa, _sb, _sd in sprint_edges:
+    for pt in (_sa, _sb):
+        w = force_way(xs[pt[0]], ys[pt[1]], samples[(pt[0], pt[1])][pt[2]] + 24,
+                      snap=8)
+        if w is not None:
+            sprint_seats += 1
+if sprint_edges:
+    print(f"sprint seats: {sprint_seats} placed or reused for "
+          f"{len(sprint_edges)} deduped long sprint edge(s)")
+
 # ---- 6. waypoint links via Dijkstra on the fine graph ----
 # links[i][j] = (pathlen, isjump); a link is jump-typed when the best
 # fine path from i to j crosses at least one jump edge
@@ -578,7 +657,12 @@ for i, w in enumerate(ways):
         d, u = heapq.heappop(pq)
         if d > dist.get(u, 1e9) or d > LINK_PATH_MAX: continue
         if u in wset and u != w:
-            # only link if the fine path is nearly straight — bots beeline links
+            # only link if the fine path is nearly straight — bots beeline links.
+            # A sprint-class path carries a +110 lineup tax that the
+            # straightness ratio would misread as crookedness: accept
+            # it when the cost is essentially just the arc (the seats
+            # sit at the lip and the landing), reject winding
+            # walk-then-arc composites the runtime cannot beeline.
             ux, uy, uz = pos(u); wx, wy, wz = pos(w)
             euclid = ((ux-wx)**2 + (uy-wy)**2 + (uz-wz)**2) ** 0.5
             if d <= 1.35 * euclid + 24:
@@ -588,7 +672,11 @@ for i, w in enumerate(ways):
             nd = d + c
             if nd < dist.get(v, 1e9) and nd <= LINK_PATH_MAX:
                 dist[v] = nd
-                jumped[v] = jumped[u] or isj
+                # carry the STRONGEST edge class on the path: 2 =
+                # sprint-only jump outranks 1 = normal jump, so a
+                # link whose fine path needs the full-speed arc is
+                # typed sprint even if it also crosses a plain gap
+                jumped[v] = max(jumped[u], isj)
                 heapq.heappush(pq, (nd, v))
 for i in list(links):
     if len(links[i]) > MAX_LINKS:
@@ -832,7 +920,7 @@ def ensure_way(nid, radius=40):
             best, bd = i, d
     if best is not None and bd < radius:
         return best
-    if len(ways) >= NODE_CAP:
+    if len(ways) >= PROMO_CAP:
         return best
     ways.append(nid)
     return len(ways) - 1
@@ -875,7 +963,10 @@ if not NO_RJ:
         nid, d = closest_nid(o[0], o[1], o[2])
         if nid is None or d > 96:
             continue
-        j = ensure_way(nid, 48)
+        # snap 16, not 48: the arc is re-verified against the SEAT,
+        # and a landing seat offset half a hull sideways aims the
+        # rise-then-drift arc into the ledge underside
+        j = ensure_way(nid, 16)
         if j is not None:
             landings.append((j, cls, o))
     n_promoted = 0
@@ -899,7 +990,12 @@ if not NO_RJ:
             if kept >= 2:
                 break
             before_n = len(ways)
-            i = ensure_way((cx, cy, zi), 40)
+            # snap 4: promote the EXACT sample that passed
+            # rj_feasible. Any looser and the candidate snaps onto a
+            # nearby stair/sprint seat whose position fails the arc
+            # or whose link slots are already full (dm2 lost all four
+            # RJ links to both modes at once)
+            i = ensure_way((cx, cy, zi), 4)
             before = len(rjlinks)
             try_rj(i, j)
             if len(rjlinks) > before:
@@ -945,6 +1041,30 @@ for a in sorted(set(x for x, _ in rjlinks)):
         links.setdefault(a, {})[best_j] = (best_d, 0)
         n_stitch += 1
 print(f"pad walk-ins: {n_stitch} stitch links for promoted launch pads")
+
+# ---- 7a4. sprint-jump typed links (direct emission) ----
+# The rocket-jump pattern, not the Dijkstra one: threading sprint
+# arcs through the fine graph either starved them (cost budget,
+# straightness ratio) or re-typed walkable links as skill-gated
+# sprint. Each deduped long arc becomes exactly one typed link
+# between its promoted seats, re-verified from the seat positions.
+# This is the extensible shape for the whole trick-move family:
+# an arc model, a typed link, and a toll the router checks.
+sprints = []
+for _sa, _sb, _sd in sprint_edges:
+    i = ensure_way(_sa, 8)
+    j = ensure_way(_sb, 8)
+    if i is None or j is None or i == j:
+        continue
+    if (i, j) in sprints or j in links.get(i, {}):
+        continue
+    ax, ay, az = pos(ways[i])
+    bx, by, bz = pos(ways[j])
+    if not arc_clear(ax, ay, az, bx, by, bz, SPRINTSPEED):
+        continue                # seat drifted off the verified sample
+    sprints.append((i, j))
+print(f"sprint links: {len(sprints)} typed "
+      f"({len(sprint_edges)} deduped long arcs)")
 
 # ---- 7d. swim-exit links ----
 # Hull 1 cannot see water (liquids are EMPTY in clip hulls), so a
@@ -1023,6 +1143,7 @@ for _a, _b in rjlinks: typed_out[_a] += 1
 for _a, _b in lifts: typed_out[_a] += 1
 for _a, _b in trains: typed_out[_a] += 1
 for _a, _b in swims: typed_out[_a] += 1
+for _a, _b in sprints: typed_out[_a] += 1
 n_evict = 0
 for _i in list(links):
     room = 8 - typed_out[_i]
@@ -1044,7 +1165,7 @@ nlinks = sum(len(v) for v in links.values())
 # passes, strip its inbound walks so the prune removes it.
 typed_from = set(a for a, _b in teles) | set(a for a, _b in rjlinks) \
     | set(a for a, _b in lifts) | set(a for a, _b in swims) \
-    | set(a for a, _b in trains)
+    | set(a for a, _b in trains) | set(a for a, _b in sprints)
 inbound_walk = collections.defaultdict(list)
 for _i in links:
     for _j in links[_i]:
@@ -1254,6 +1375,9 @@ for a, b in swims:
 for a, b in trains:
     deg[a] += 1
     deg[b] += 1
+for a, b in sprints:
+    deg[a] += 1
+    deg[b] += 1
 keep = [i for i in range(len(ways)) if deg[i]]
 if len(keep) < len(ways):
     remap = {old: new for new, old in enumerate(keep)}
@@ -1266,6 +1390,7 @@ if len(keep) < len(ways):
     lifts = [(remap[a], remap[b]) for a, b in lifts]
     swims = [(remap[a], remap[b]) for a, b in swims]
     trains = [(remap[a], remap[b]) for a, b in trains]
+    sprints = [(remap[a], remap[b]) for a, b in sprints]
     doorlinks = [(remap[a], remap[b]) for a, b in doorlinks
                  if a in remap and b in remap]
 
@@ -1310,6 +1435,8 @@ with open(OUTQC, "w") as f:
                 f.write(f"    Argus_NavLinkDoor (n{i}, n{j});\n")
             else:
                 f.write(f"    Argus_NavLink (n{i}, n{j});\n")
+    for a, b in sprints:
+        f.write(f"    Argus_NavLinkSprint (n{a}, n{b});\n")
     for a, b in teles:
         f.write(f"    Argus_NavLink (n{a}, n{b});    // teleporter\n")
     for a, b in rjlinks:
@@ -1325,7 +1452,7 @@ with open(OUTQC, "w") as f:
         for cpos, cang, ctag in cam_nodes:
             f.write(f"    Argus_AddCamNode ('{cpos[0]:.0f} {cpos[1]:.0f} {cpos[2]:.0f}', '{cang[0]:.0f} {cang[1]:.0f} {cang[2]:.0f}', \"{ctag}\");\n")
     f.write(f'    dprint ("ARGNAV {len(ways)} nodes, '
-            f'{nlinks + len(teles) + len(rjlinks) + len(lifts) + len(swims) + len(trains)} links\\n");\n')
+            f'{nlinks + len(teles) + len(rjlinks) + len(lifts) + len(swims) + len(trains) + len(sprints)} links\\n");\n')
     f.write("};\n")
     if EMIT_DISPATCHER:
         f.write("\nvoid() Argus_Nav_Spawn =\n{\n")
@@ -1337,6 +1464,7 @@ with open(OUTQC + ".json", "w") as jf:
     json.dump({"nodes": [pos(w) for w in ways],
                "links": [[i, j, int(i in links.get(j, {}))] for i in sorted(links) for j in links[i]],
                "jlinks": [[i, j] for i in sorted(links) for j in links[i] if links[i][j][1]],
+               "sprintlinks": sprints,
                "rjlinks": rjlinks,
                "liftlinks": lifts,
                "swimlinks": swims,

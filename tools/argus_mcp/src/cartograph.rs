@@ -69,6 +69,11 @@ pub struct NavOverlay {
     pub lift_links: usize,
     #[serde(default, skip_serializing_if = "is_zero_usize")]
     pub swim_links: usize,
+    /// sprint-only trick jumps: arcs that close only at full run
+    /// speed, skill 3+ at runtime (Shane: "the cartographer should
+    /// show that")
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub sprint_links: usize,
 }
 
 fn is_zero_usize(v: &usize) -> bool {
@@ -1110,6 +1115,7 @@ fn load_nav_graph(cfg: &Config, map: &str) -> Option<NavGraph> {
             rocket_links: v.get("rjlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
             lift_links: v.get("liftlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
             swim_links: v.get("swimlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
+            sprint_links: v.get("sprintlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
         },
         nodes,
         adj,
@@ -2016,6 +2022,7 @@ mod tests {
             rocket_links: 0,
             lift_links: 0,
             swim_links: 0,
+            sprint_links: 0,
         }
     }
 

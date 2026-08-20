@@ -1407,10 +1407,60 @@ void() Argus_Physics =
             // the ledge runs out one step ahead. Checked before the
             // brink guard, which would otherwise deflect away from
             // exactly the gap we mean to cross.
-            if (self.ar_mode == 2 && self.ar_hopjump && spd >= 250)
+            moveok = 1;
+            if (self.ar_hopjump == 2)
             {
-                traceline (self.origin + vh * (32 / spd) + '0 0 4',
-                           self.origin + vh * (32 / spd) - '0 0 40',
+                // a sprint hop only fires ALIGNED: moving within 8
+                // degrees of the line to the landing node, at the
+                // right range for the emitted arcs, at 310+ u/s (the
+                // arc is modelled at 316). The first ladder fired on
+                // any void-ahead while bots clipped ledge edges
+                // diagonally 100u off the seat - two flew into the
+                // SE hall lava on unverified vectors. Misaligned or
+                // slow means no jump: the brink guard deflects, the
+                // bot circles, and lines the run up again. The
+                // timing and the line ARE the trick.
+                moveok = 0;
+                if (spd >= 310 && self.ar_node != world
+                    && self.ar_sprintfrom != world
+                    && vlen (self.origin - self.ar_sprintfrom.origin) < 48)
+                {
+                    // anchored: the arc was verified FROM the seat.
+                    // The third ladder's lava deaths all launched
+                    // 70-160u off it - direction alone is not proof
+                    rto = self.ar_node.origin - self.origin;
+                    rto_z = 0;
+                    if (vlen (rto) > 120 && vlen (rto) < 280)
+                    {
+                        // 15 degrees: the mode-2 advance hands over
+                        // within 48u of the launch seat, which is a
+                        // ~13 degree worst-case line at these arc
+                        // lengths - a proper approach fires, a
+                        // diagonal blow-through still refuses
+                        rhoriz = vectoyaw (rto) - vectoyaw (vh);
+                        while (rhoriz > 180)  rhoriz = rhoriz - 360;
+                        while (rhoriz < -180) rhoriz = rhoriz + 360;
+                        if (fabs (rhoriz) < 15)
+                            moveok = 1;
+                    }
+                }
+            }
+            if (self.ar_mode == 2 && self.ar_hopjump && spd >= 250
+                && moveok)
+            {
+                // launch lookahead: 32u for a plain jump hop, 8u for
+                // a sprint hop. A 209u same-level crossing carries
+                // ~216u of range at full speed - launching 32u early
+                // threw away the whole margin and every skill-3
+                // attempt fell at the halfway line. A human makes
+                // this jump by leaving at the last unit; so does the
+                // bot now.
+                if (self.ar_hopjump == 2)
+                    rhoriz = 8;
+                else
+                    rhoriz = 32;
+                traceline (self.origin + vh * (rhoriz / spd) + '0 0 4',
+                           self.origin + vh * (rhoriz / spd) - '0 0 40',
                            TRUE, self);
                 if (trace_fraction == 1)
                 {
@@ -2463,6 +2513,22 @@ float() Argus_Combat =
     else
         self.ar_moveyaw = vectoyaw (to) + 80 * self.ar_strafedir;
 
+    // high ground (Shane's review, 2026-08-21): an enemy well above
+    // is not fought from underneath - bots ran under the ledge,
+    // which is the worst spot on the map: no shot angle, and the
+    // splash rains straight down. A player steps BACK AND AWAY
+    // until the angle is honest. When the enemy stands 100u+ above
+    // and the horizontal separation is less than ~1.3x the height,
+    // back out with a strafe skew instead of circling in. The lava
+    // flip below still vetoes a hazardous escape heading, and
+    // dodge/retreat keep their higher priority.
+    cvr = e.origin - self.origin;
+    cvr_z = 0;
+    if (e.origin_z - self.origin_z > 100
+        && vlen (cvr) < (e.origin_z - self.origin_z) * 1.3)
+        self.ar_moveyaw = vectoyaw ('0 0 0' - cvr)
+                        + 35 * self.ar_strafedir;
+
     // battle get item (Omicron review): the circle bends toward a
     // worthwhile live item nearby. Dodge, axe charge and retreat all
     // sit later in this chain and override the detour; the lava flip
@@ -3481,6 +3547,21 @@ void() Argus_AI =
                 }
             }
 
+            // sprint approach: the fire gate anchors to the launch
+            // seat, so a bot displaced off it mid-hop must walk BACK
+            // to the seat before running the line - steering at the
+            // landing node from anywhere else can never fire and
+            // churned the lip with deflections (sprint2/3 ladder)
+            if (self.ar_hopjump == 2 && self.ar_sprintfrom != world)
+            {
+                to = self.ar_sprintfrom.origin - self.origin;
+                to_z = 0;
+                if (vlen (to) > 40)
+                    tp = self.ar_sprintfrom.origin;
+                to = tp - self.origin;
+                to_z = 0;
+            }
+
             // 200, not 56: the WAIT_NODE pads sit OUTSIDE the swept
             // column now, 100-160u horizontal from the exit node
             // overhead. At 56 the whole wait-and-give-up block never
@@ -3689,6 +3770,12 @@ void() Argus_AI =
                     self.ar_mode = 1;
                 else if (Argus_LinkIsJump (oldnode, self.ar_node))
                     self.ar_hopjump = 1;
+                else if (Argus_LinkIsSprint (oldnode, self.ar_node))
+                {
+                    self.ar_hopjump = 2;    // sprint arc: full speed
+                                            // demanded at the lip
+                    self.ar_sprintfrom = oldnode;
+                }
                 else if (Argus_LinkIsRocket (oldnode, self.ar_node))
                     self.ar_hoprj = 1;
                 else if (Argus_LinkIsLift (oldnode, self.ar_node))
@@ -3770,6 +3857,7 @@ void() Argus_AI =
                 // lips sit inside the 48u z window)
                 if (nx != world
                     && !Argus_LinkIsJump (self.ar_node, nx)
+                    && !Argus_LinkIsSprint (self.ar_node, nx)
                     && !Argus_LinkIsRocket (self.ar_node, nx)
                     && !Argus_LinkIsLift (self.ar_node, nx)
                     && !Argus_LinkIsSwim (self.ar_node, nx)

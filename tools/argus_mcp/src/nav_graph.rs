@@ -171,6 +171,8 @@ fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
         ("liftlinks", "lift"),
         ("swimlinks", "swim"),
         ("doorlinks", "door"),
+        ("trainlinks", "train"),
+        ("sprintlinks", "sprint"),
     ] {
         if let Some(list) = v.get(key).and_then(|x| x.as_array()) {
             for link in list {

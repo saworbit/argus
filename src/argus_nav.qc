@@ -19,6 +19,8 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .entity an_l4; .entity an_l5; .entity an_l6; .entity an_l7;
 .float  an_nlinks;
 .float  an_jumpmask;        // bit i set = link slot i needs a jump
+.float  an_sprintmask;      // bit i set = link slot i needs a SPRINT
+                            // jump (full-run arc; skill 2+ only)
 .float  an_rjmask;          // bit i set = link slot i needs a rocket jump
 .float  an_liftmask;        // bit i set = link slot i rides a plat
 .float  an_swimmask;        // bit i set = link slot i swims out of water
@@ -66,6 +68,9 @@ float   an_cachetime;       // freshness: adoptions stop after 10 s
 .float  ar_padcooltime;     // on bots: after a mover give-up, refuse
 .vector ar_padcoolpos;      // lift/train hops near that pad until
                             // this expires (the serial re-queue fix)
+.entity ar_sprintfrom;      // on bots: launch seat of the current
+                            // sprint hop - the arc is only verified
+                            // FROM the seat, so fire anchors there
 .float  ar_routegen;        // on bots: increments per completed route
 .entity ar_laststart;       // on bots: start node of the last search
 .entity ar_lastfailnode;    // on bots: start node of the previous fail
@@ -126,6 +131,29 @@ void(entity a, entity b) Argus_NavLinkJump =
     else if (slot == 5) a.an_jumpmask = a.an_jumpmask | 32;
     else if (slot == 6) a.an_jumpmask = a.an_jumpmask | 64;
     else                a.an_jumpmask = a.an_jumpmask | 128;
+};
+
+// a SPRINT jump: the arc only closes at full run speed with the
+// launch timed at the lip (Shane's MH/RA-over-the-lava jump). The
+// router only hands these to skill 2+ bots, and the physics refuses
+// to fire the jump below sprint speed - arriving slow means the
+// brink guard deflects like any other gap.
+void(entity a, entity b) Argus_NavLinkSprint =
+{
+    local float slot;
+
+    slot = a.an_nlinks;
+    if (slot > 7)
+        return;
+    Argus_NavLink (a, b);
+    if (slot == 0)      a.an_sprintmask = a.an_sprintmask | 1;
+    else if (slot == 1) a.an_sprintmask = a.an_sprintmask | 2;
+    else if (slot == 2) a.an_sprintmask = a.an_sprintmask | 4;
+    else if (slot == 3) a.an_sprintmask = a.an_sprintmask | 8;
+    else if (slot == 4) a.an_sprintmask = a.an_sprintmask | 16;
+    else if (slot == 5) a.an_sprintmask = a.an_sprintmask | 32;
+    else if (slot == 6) a.an_sprintmask = a.an_sprintmask | 64;
+    else                a.an_sprintmask = a.an_sprintmask | 128;
 };
 
 // a link the bot must rocket-jump: pay health, ride the blast. The
@@ -374,6 +402,22 @@ float(entity a, entity b) Argus_LinkIsJump =
     return 0;
 };
 
+float(entity a, entity b) Argus_LinkIsSprint =
+{
+    local float i, bit;
+
+    i = 0;
+    bit = 1;
+    while (i < a.an_nlinks)
+    {
+        if (Argus_NavGetLink (a, i) == b)
+            return (a.an_sprintmask & bit);
+        i = i + 1;
+        bit = bit * 2;
+    }
+    return 0;
+};
+
 void(entity n, entity bot, entity val) Argus_SetNext =
 {
     if (bot.ar_slot == 0)      { n.an_next0 = val; n.an_ng0 = bot.ar_routegen; }
@@ -566,6 +610,8 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
             return FALSE;
         if (Argus_LinkIsRocket (cur, nx) && !Argus_BotCanRJ (bot))
             return FALSE;
+        if (Argus_LinkIsSprint (cur, nx) && skill < 3)
+            return FALSE;
         cur = nx;
         hops = hops + 1;
         if (hops > 250)
@@ -651,8 +697,12 @@ void() Argus_Nav_Frame =
             if (nb.an_mark != an_gen)
             {
                 // rocket-jump links exist only for bots equipped to
-                // pay the toll right now
-                if (!Argus_LinkIsRocket (cur, nb) || Argus_BotCanRJ (an_bot))
+                // pay the toll right now; sprint jumps only for
+                // skill 2+ (the full-run arc has no margin - lower
+                // tiers route around, exactly like a mid player who
+                // knows the jump exists and does not attempt it)
+                if ((!Argus_LinkIsRocket (cur, nb) || Argus_BotCanRJ (an_bot))
+                    && (!Argus_LinkIsSprint (cur, nb) || skill >= 3))
                 {
                     nb.an_mark = an_gen;
                     nb.an_par = cur;
