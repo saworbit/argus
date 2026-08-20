@@ -1422,6 +1422,36 @@ void() Argus_Physics =
                 }
             }
 
+            // router-promised DROP (the '2640 -50 120' pin, v366 human
+            // tape: Carmack lost 92 s of one session teetering on this
+            // lip). The steering target sits far BELOW on a legal
+            // sub-200u drop, but a bot arriving at walking pace dies
+            // at the edge: CheckBottom refuses the step, speed never
+            // builds, and the stall recovery jump-cycles in place.
+            // A human just steps off. Commit: when routed at a node
+            // 120u+ below within hop range, the heading passes the
+            // hazard gate, and speed is dead, take one firm step off
+            // the lip and let gravity run the hop.
+            if (self.ar_mode == 2 && self.ar_node != world
+                && spd < 80 && time > self.ar_gapjump
+                && self.ar_node.origin_z < self.origin_z - 120
+                && !self.ar_hoplift && !self.ar_hoptrain
+                && !self.ar_liftwait)
+            {
+                rto = self.ar_node.origin - self.origin;
+                rto_z = 0;
+                if (vlen (rto) < 340
+                    && !Argus_MoveHazard (vectoyaw (rto), 48))
+                {
+                    self.ar_gapjump = time + 1;
+                    makevectors ('0 0 0' + vectoyaw (rto) * '0 1 0');
+                    self.velocity_x = v_forward_x * 240;
+                    self.velocity_y = v_forward_y * 240;
+                    self.flags = self.flags - (self.flags & FL_ONGROUND);
+                    return;
+                }
+            }
+
             // speed-scaled probe distance (the dm4 lava-band session):
             // a fixed 32u at 320+ u/s is a tenth of a second of
             // reaction, and the pit-floor boundary ate full-sprint
