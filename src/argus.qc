@@ -2925,8 +2925,17 @@ void() Argus_PickGoal =
                         && cls != AR_C_POWER
                         && !(cls == AR_C_HEALTH && e.healamount >= 100))
                         v = 0;
-                    else if (e.nextthink - time > dist * 0.0036 + 3)
+                    else if (e.nextthink - time > dist * 0.0036 + 10)
                         v = 0;
+                    else if (e.nextthink - time > dist * 0.0036 + 3)
+                        // pre-positioning (campaign item 4, cortex
+                        // CONTROL_MAJOR "be early, not on time";
+                        // Shane's circuits review x2): a major coming
+                        // up inside 10 s is worth walking to EARLY -
+                        // discounted, so anything live still outranks
+                        // a camp - and the mode-1 loiter below orbits
+                        // the spawn until it pops
+                        v = v * 0.55;
                 }
                 if (v > 0)
                 {
@@ -3704,7 +3713,48 @@ void() Argus_AI =
             tp = gp;
             to = tp - self.origin;
             to_z = 0;
-            if (vlen (to) < 32 && fabs (gp_z - self.origin_z) < 56)
+            if (self.ar_goal.solid == SOLID_NOT && vlen (to) < 150
+                && fabs (gp_z - self.origin_z) < 72)
+            {
+                // EARLY at a clocked major: loiter, do not complete.
+                // The old arrival path counted a pending item as done,
+                // claimed it for 20 s and walked away - right before
+                // it popped. Orbit the spawn at ~90u instead: speed
+                // stays up (no statue for the freeze gate), the lap
+                // crosses the spot as it spawns, and the touch counts
+                // the real pickup. Combat still overrides the whole
+                // block, and the 20 s goal-abandon timer stays the
+                // backstop if the clock was a lie.
+                if (vlen (to) < 8)
+                    to = '90 0 0';
+                if (self.ar_strafedir == 0)
+                    self.ar_strafedir = 1;  // never orbit radially
+                want = vectoyaw (to);
+                if (vlen (to) > 110)
+                    want = want + 55 * self.ar_strafedir;
+                else if (vlen (to) < 60)
+                    want = want + 125 * self.ar_strafedir;
+                else
+                    want = want + 90 * self.ar_strafedir;
+                if (Argus_MoveHazard (want, 48))
+                {
+                    // wall or brink on the lap: run it the other way
+                    self.ar_strafedir = 0 - self.ar_strafedir;
+                    want = vectoyaw (to) + 90 * self.ar_strafedir;
+                    if (Argus_MoveHazard (want, 48))
+                        // BOTH lap directions blocked: this spawn sits
+                        // on a lip (dm4's majors are pit-adjacent, and
+                        // the fall-through here churned the lava
+                        // boundary - world 9, preposition1). Back off
+                        // the spawn instead; the camp resumes from a
+                        // safer stand-off distance next tick.
+                        want = vectoyaw ('0 0 0' - to);
+                }
+                makevectors ('0 0 0' + want * '0 1 0');
+                tp = self.origin + v_forward * 96;
+                havetarget = 1;
+            }
+            else if (vlen (to) < 32 && fabs (gp_z - self.origin_z) < 56)
             {
                 self.ar_goals = self.ar_goals + 1;
                 self.ar_goal.ar_claimer = self;
@@ -4068,6 +4118,29 @@ void() Argus_FrameAll =
 
         self = oself;
         b = b.ar_chain;
+    }
+
+    // human tracks (2026-08-20, Shane: "are you able to see what I
+    // do? and where I go?" - until now, no). Real clients get the
+    // same ARGLOG line as bots at the same cadence, under their own
+    // netname: st/gl/mode read zero, hp and frags are real. Every
+    // parser is name-agnostic, so the review battery, roam and
+    // route tooling see the human as one more track - the reference
+    // circuit to compare bots against. Camera flights are skipped:
+    // a noclip ghost's trail is not play.
+    b = find (world, classname, "player");
+    while (b != world)
+    {
+        if (!b.ar_isbot && (b.flags & FL_CLIENT) && b.health > 0
+            && !b.cam_active && time > b.ar_nextlog)
+        {
+            b.ar_nextlog = time + 0.5;
+            oself = self;
+            self = b;
+            Argus_Telemetry ();
+            self = oself;
+        }
+        b = find (b, classname, "player");
     }
 };
 
