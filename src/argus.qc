@@ -3380,13 +3380,19 @@ void() Argus_AI =
                             gp_z = self.origin_z;
                             to = gp - self.origin;
                             to_z = 0;
-                            // board within 96, not 48: the t5 dock
-                            // parks the car's near edge 71u from the
-                            // pad node, so a 48u gate never opened
-                            // and bots burned the whole 15 s give-up
-                            // standing beside a docked car (five
-                            // 13-17 s pad statues in the v352 tape)
-                            if (vlen (to) < 96)
+                            // board within 120, not 96 or 48: the t5
+                            // dock parks the car's near edge 71u from
+                            // the pad node (the 48 gate never opened,
+                            // five 13-17 s statues in the v352 tape),
+                            // and the WEST dock parks it at 109u (the
+                            // 96 gate never opened there - six 13-19 s
+                            // statues in the v363 tape, zero west-east
+                            // crossings in 588 s; car min corner sits
+                            // AT path_corner t5 '1472 -1064', pad node
+                            // at '1363 -1038'). The walk to the slab
+                            // stays hazard-guarded, so a missed board
+                            // deflects at the deck edge and re-parks
+                            if (vlen (to) < 120)
                             {
                                 // car edge a step away: BOARD it.
                                 // Steer at the slab centre, never at
@@ -3397,11 +3403,20 @@ void() Argus_AI =
                                 tp = (nx.absmin + nx.absmax) * 0.5;
                                 tp_z = self.origin_z;
                             }
-                            else
+                            else if (self.ar_enemy == world)
                             {
                                 // car away: park at the pad and bleed
                                 // speed fast; a fresh hold at 340 u/s
-                                // slides 40u+ on friction alone
+                                // slides 40u+ on friction alone.
+                                // NEVER park while fighting: the
+                                // ar_liftwait hold is physics-level
+                                // and overrode even combat movement -
+                                // Shane rocketed a bot that stood at
+                                // this pad from 81 hp to dead without
+                                // it taking a step (v363 tape, 19 s).
+                                // With no hold, combat strafe/dodge/
+                                // retreat drive; the wait resumes
+                                // when the fight ends.
                                 self.ar_liftwait = 1;
                                 self.velocity_x = self.velocity_x * 0.5;
                                 self.velocity_y = self.velocity_y * 0.5;
@@ -3472,7 +3487,13 @@ void() Argus_AI =
                         dr = find (dr, classname, "plat");
                     }
                     if (nx == world || turn > 320)
-                        self.ar_liftwait = 1;   // no plat near: park
+                    {
+                        // no plat near: park - unless fighting (the
+                        // hold overrides combat movement; a parked
+                        // bot under fire is a free frag, v363 tape)
+                        if (self.ar_enemy == world)
+                            self.ar_liftwait = 1;
+                    }
                     else if (self.groundentity == nx)
                     {
                         if (nx.state != STATE_BOTTOM)
@@ -3536,9 +3557,12 @@ void() Argus_AI =
                             }
                             if (Argus_MoveHazard (turn, 48))
                             {
-                                self.ar_liftwait = 1;
-                                self.velocity_x = 0;
-                                self.velocity_y = 0;
+                                if (self.ar_enemy == world)
+                                {
+                                    self.ar_liftwait = 1;
+                                    self.velocity_x = 0;
+                                    self.velocity_y = 0;
+                                }
                             }
                             else
                             {
@@ -3546,8 +3570,11 @@ void() Argus_AI =
                                 tp = self.origin + v_forward * 96;
                             }
                         }
-                        else
+                        else if (self.ar_enemy == world)
                         {
+                            // outside the footprint, slab moving:
+                            // hold still so it can seat - but never
+                            // while fighting (see the train pad note)
                             self.ar_liftwait = 1;
                             self.velocity_x = 0;
                             self.velocity_y = 0;
