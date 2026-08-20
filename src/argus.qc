@@ -20,7 +20,8 @@
       ARGEVT <name> spawned|respawn|goal <class>|route <n>|routefail|
              trapped|train|
              abandon|stall|jump|rjump|lift|swim|hazard|engage <name>|
-             pursue|retreat|weapon <axe|sg|ssg|ng|sng|gl|rl|lg>|
+             pursue|retreat|grab <class>|
+             weapon <axe|sg|ssg|ng|sng|gl|rl|lg>|
              plan <class> via <class>|
              death <killer> pos <'x y z'>
       (hazard = the brink guard deflected a walk into lava/slime/void,
@@ -162,6 +163,11 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_retreating;          // retreat: low-stack disengage active
 .float  ar_coveryaw;            // retreat: committed cover heading
 .float  ar_covertime;           // retreat: re-evaluate cover after this
+.entity ar_bitem;               // battle item: mid-fight grab target
+.float  ar_bitemscan;           // battle item: next scan time
+.float  ar_bitemend;            // battle item: commit expires
+.entity ar_bitemlast;           // battle item: last failed grab
+.float  ar_bitemcool;           // battle item: failed grab cools until
 .float  ar_respawntime;
 
 .float  ar_wweap;               // utility appetites: how loudly each
@@ -2078,6 +2084,61 @@ void(float d) Argus_SelectWeapon =
 
 // Scan for an inbound enemy projectile and commit a perpendicular
 // sidestep (cortex's dodge design). LQ rockets are classname
+// battle get item (2026-08-20, the Omicron review: their AI tree's
+// battle-get-item leaf grabs a useful nearby item MID-FIGHT and
+// returns to the fray, shooting throughout). Argus combat suspended
+// goals entirely, so a wounded bot strafed past the health box at
+// its feet. Every 0.5 s of combat, findradius sweeps 240u for the
+// best live item worth grabbing NOW (Argus_ItemValue, so a full-
+// health bot ignores health and a shell box only tempts a dry
+// shotgunner); the walk to it must pass Argus_SafeLine exactly like
+// a mode-1 beeline, because grabbing across a lava lip is how the
+// dodge ladder lost bots. The steer commits 1.5 s and sits between
+// strafe and dodge in priority: a dodge or retreat overrides it,
+// plain circling does not. Aim stays decoupled - the bot shoots
+// the whole detour.
+float(entity it) Argus_ItemClass;
+float(entity it, float cls) Argus_ItemValue;
+vector(entity it) Argus_GoalPoint;
+
+void() Argus_BattleItemScan =
+{
+    local entity it, best;
+    local float v, bv;
+
+    best = world;
+    bv = 11;        // grab floor: below this the detour is not worth
+                    // breaking the circle for
+    it = findradius (self.origin, 240);
+    while (it != world)
+    {
+        if ((it.flags & FL_ITEM) && it.solid == SOLID_TRIGGER
+            && !(it == self.ar_bitemlast && time < self.ar_bitemcool))
+        {
+            v = Argus_ItemValue (it, Argus_ItemClass (it));
+            if (v > bv && Argus_SafeLine (Argus_GoalPoint (it)))
+            {
+                best = it;
+                bv = v;
+            }
+        }
+        it = it.chain;
+    }
+    if (best == world || best == self.ar_bitem)
+        return;             // never refresh a running commit: a grab
+                            // gets ONE 1.5 s window, so an item that
+                            // SafeLine likes but walkmove cannot reach
+                            // (the '2448 -80 104' perch pin, bitem1)
+                            // cannot hold the steer forever
+    dprint ("ARGEVT ");
+    dprint (self.netname);
+    dprint (" grab ");
+    dprint (best.classname);
+    dprint ("\n");
+    self.ar_bitem = best;
+    self.ar_bitemend = time + 1.5;
+};
+
 // "rocket", not stock's "missile". The 55% commit chance keeps the
 // dodge human: serial rockets still land sometimes at every tier.
 // Spikes are not scanned - a 1000 u/s nail is not human-reactable.
@@ -2298,6 +2359,37 @@ float() Argus_Combat =
         self.ar_moveyaw = vectoyaw ('0 0 0' - to);
     else
         self.ar_moveyaw = vectoyaw (to) + 80 * self.ar_strafedir;
+
+    // battle get item (Omicron review): the circle bends toward a
+    // worthwhile live item nearby. Dodge, axe charge and retreat all
+    // sit later in this chain and override the detour; the lava flip
+    // below re-checks whatever heading survives.
+    if (!self.ar_retreating)
+    {
+        if (time > self.ar_bitemscan)
+        {
+            self.ar_bitemscan = time + 0.5;
+            Argus_BattleItemScan ();
+        }
+        if (self.ar_bitem != world)
+        {
+            if (self.ar_bitem.solid != SOLID_TRIGGER)
+                self.ar_bitem = world;      // eaten - clean success
+            else if (time > self.ar_bitemend)
+            {
+                // commit lapsed with the item still live: the walk
+                // is not landing (perch, thin wall, crowd). Cool
+                // this item so the scan cannot re-pin us on it.
+                self.ar_bitemlast = self.ar_bitem;
+                self.ar_bitemcool = time + 8;
+                self.ar_bitem = world;
+            }
+            else
+                self.ar_moveyaw =
+                    vectoyaw (Argus_GoalPoint (self.ar_bitem)
+                              - self.origin);
+        }
+    }
 
     // missile dodge (cortex's design, upgraded from the idea bank):
     // an inbound enemy rocket or grenade makes the bot sidestep
