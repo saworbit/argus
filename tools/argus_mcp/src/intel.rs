@@ -38,6 +38,18 @@ pub struct Totals {
     /// "contents" when hull 0 classified the deaths, "z_fallback" otherwise.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub lava_rule: Option<String>,
+    /// statues: 6 s+ at under 20 u/s (the freeze detector, now a gate
+    /// - the west-pad statues rode green verdicts for three tapes)
+    pub freezes: u32,
+    pub freeze_max_sec: f64,
+    /// freezes during which the bot lost 10+ hp: a bot being shot
+    /// while standing still, the worst class a human can witness
+    pub freeze_underfire: u32,
+    /// typed-hop success accounting: lift/train waits vs actual
+    /// boardings (ARGEVT board). A wait storm with zero boards means
+    /// a pad or gate is geometrically broken, not merely slow.
+    pub mover_waits: u32,
+    pub boards: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -305,6 +317,10 @@ fn brief_tape_lava(
         "z_fallback".into()
     });
 
+    let fz = tape.freezes();
+    let freeze_underfire = fz.iter().filter(|f| f.hp_drop >= 10.0).count() as u32;
+    let freeze_max_sec = fz.first().map(|f| f.dur).unwrap_or(0.0);
+
     let ev = |k: &str| *tape.event_counts.get(k).unwrap_or(&0);
     let totals = Totals {
         duration_sec: duration,
@@ -325,11 +341,39 @@ fn brief_tape_lava(
         kd_spread,
         all_frags_positive,
         lava_rule,
+        freezes: fz.len() as u32,
+        freeze_max_sec,
+        freeze_underfire,
+        mover_waits: ev("lift") + ev("train"),
+        boards: ev("board"),
     };
 
     let hotspots = cluster_hotspots(tape, map.as_deref(), hull);
     let mode_share = mode_share(tape);
-    let flags = flags(&totals, &hotspots, map.as_deref());
+    let mut flags = flags(&totals, &hotspots, map.as_deref());
+    if let Some(worst) = fz.first() {
+        flags.push(format!(
+            "{} freeze(s) 6 s+, longest {:.1} s at '{:.0} {:.0} {:.0}' ({})",
+            fz.len(),
+            worst.dur,
+            worst.x,
+            worst.y,
+            worst.z,
+            worst.bot
+        ));
+    }
+    if totals.freeze_underfire > 0 {
+        flags.push(format!(
+            "{} freeze(s) UNDER FIRE - a bot lost 10+ hp standing still",
+            totals.freeze_underfire
+        ));
+    }
+    if totals.mover_waits >= 3 && totals.boards == 0 {
+        flags.push(format!(
+            "{} lift/train waits with ZERO boards - a pad or board gate is broken, not slow",
+            totals.mover_waits
+        ));
+    }
     let kills = killer_matrix(tape);
     let goals = count_event_rest(tape, "goal");
     let weapons = count_event_rest(tape, "weapon");
@@ -600,6 +644,42 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
         },
     });
 
+    // statues are the defect class humans notice first, and it rode
+    // green verdicts for three tapes before the west-pad session:
+    // the review battery saw the freezes but no gate could fail on
+    // them. Fail on any under-fire freeze, on a 10 s+ statue the
+    // baseline does not have, or on the count clearly growing.
+    let fz_pass = b.totals.freeze_underfire == 0
+        && (b.totals.freeze_max_sec < 10.0
+            || b.totals.freeze_max_sec <= a.totals.freeze_max_sec + 2.0)
+        && b.totals.freezes <= a.totals.freezes + 2;
+    gates.push(Gate {
+        name: "freezes".into(),
+        pass: fz_pass,
+        a: a.totals.freeze_max_sec,
+        b: b.totals.freeze_max_sec,
+        note: if b.totals.freeze_underfire > 0 {
+            "a bot took damage while frozen - free frag for a human".into()
+        } else if !fz_pass && b.totals.freeze_max_sec >= 10.0 {
+            format!(
+                "a {:.1} s statue the baseline does not have",
+                b.totals.freeze_max_sec
+            )
+        } else if !fz_pass {
+            format!(
+                "freezes {} vs baseline {}",
+                b.totals.freezes, a.totals.freezes
+            )
+        } else if b.totals.freezes == 0 {
+            "no statues".into()
+        } else {
+            format!(
+                "{} bounded freeze(s), longest {:.1} s",
+                b.totals.freezes, b.totals.freeze_max_sec
+            )
+        },
+    });
+
     let cover_a = a.totals.cover.max(1) as f64;
     let cover_ratio = b.totals.cover as f64 / cover_a;
     gates.push(Gate {
@@ -615,7 +695,11 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     });
 
     let hard_fail = gates.iter().any(|g| {
-        !g.pass && matches!(g.name.as_str(), "lava_deaths" | "stall_parity" | "engagements")
+        !g.pass
+            && matches!(
+                g.name.as_str(),
+                "lava_deaths" | "stall_parity" | "engagements" | "freezes"
+            )
     });
     let any_fail = gates.iter().any(|g| !g.pass);
     let improved = !hard_fail
@@ -711,6 +795,11 @@ pub fn scale_brief_to_duration(mut brief: MatchBrief, target_sec: f64) -> MatchB
     brief.totals.routefails = scale_u32(brief.totals.routefails, k);
     brief.totals.weapons = scale_u32(brief.totals.weapons, k);
     brief.totals.cover = ((brief.totals.cover as f64) * k).round() as usize;
+    brief.totals.freezes = scale_u32(brief.totals.freezes, k);
+    brief.totals.mover_waits = scale_u32(brief.totals.mover_waits, k);
+    brief.totals.boards = scale_u32(brief.totals.boards, k);
+    // freeze_max_sec and freeze_underfire are severities, not rates:
+    // a 15 s statue is a 15 s statue in any match length
     brief
 }
 
@@ -1369,6 +1458,35 @@ ARGEVT Reap hazard
                 report.headline
             );
         }
+    }
+
+    #[test]
+    fn real_v363_tape_catches_the_west_pad_statues_if_present() {
+        // The escaped defect this gate exists for: Shane's 588 s
+        // session had six 12.7-19.4 s statues at the west train pad,
+        // one under fire, zero boards for its 13 train waits - and
+        // every then-existing gate stayed green. This tape must trip
+        // the freeze machinery forever.
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/shane_dm2_2026-08-20_v363.log");
+        if !path.exists() {
+            return;
+        }
+        let brief = brief_path(&path, None).unwrap();
+        assert!(
+            brief.totals.freezes >= 5,
+            "expected the statue cluster, got {}",
+            brief.totals.freezes
+        );
+        assert!(brief.totals.freeze_max_sec >= 14.0);
+        assert!(
+            brief.totals.freeze_underfire >= 1,
+            "Carmack lost 48 hp standing still and must register"
+        );
+        assert!(brief
+            .flags
+            .iter()
+            .any(|f| f.contains("freeze")), "brief must flag the statues");
     }
 
     #[test]

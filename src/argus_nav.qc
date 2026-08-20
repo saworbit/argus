@@ -60,6 +60,9 @@ float   an_cachetime;       // freshness: adoptions stop after 10 s
 .float  ar_hopswim;         // on bots: current hop swims out of water
 .float  ar_hoptrain;        // on bots: current hop rides a func_train
 .float  ar_hopdoor;         // on bots: current hop crosses a door
+.float  ar_boarded;         // on bots: this lift/train hop got aboard
+                            // (ARGEVT board fired; hop-success
+                            // accounting for the wait-vs-board gate)
 .float  ar_routegen;        // on bots: increments per completed route
 .entity ar_laststart;       // on bots: start node of the last search
 .entity ar_lastfailnode;    // on bots: start node of the previous fail

@@ -27,8 +27,8 @@ PAT = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(
 # word ("Joe" + event "Rogan")
 EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|"
                  r"trapped|abandon|stall|stallnode|jump|rjump|lift|swim|"
-                 r"door|train|hazard|engage|pursue|retreat|grab|weapon|"
-                 r"plan|death)\b(.*)")
+                 r"door|train|board|hazard|engage|pursue|retreat|grab|"
+                 r"weapon|plan|death)\b(.*)")
 DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
 
 

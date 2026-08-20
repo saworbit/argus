@@ -71,7 +71,73 @@ pub struct MatchTape {
     pub event_counts: BTreeMap<String, u32>,
 }
 
+/// A statue: 6 s or longer at under 20 u/s inside a 32u circle,
+/// aligned with tools/argus_review.py's freeze detector. `hp_drop`
+/// above zero means the bot took damage while frozen - the class
+/// Shane farmed at the west train pad (v363 tape) while the ship
+/// gates stayed green because nothing measured it.
+#[derive(Debug, Clone, Serialize)]
+pub struct Freeze {
+    pub bot: String,
+    pub t_start: f64,
+    pub dur: f64,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64,
+    pub hp_drop: f64,
+}
+
 impl MatchTape {
+    /// Statue scan over the ARGLOG samples, longest first. A death
+    /// respawns the bot elsewhere, which breaks the position run, so
+    /// a freeze never spans a respawn.
+    pub fn freezes(&self) -> Vec<Freeze> {
+        let mut out = Vec::new();
+        for (name, rec) in &self.samples {
+            let mut i = 0;
+            while i < rec.len() {
+                if rec[i].spd >= 20.0 {
+                    i += 1;
+                    continue;
+                }
+                let (x0, y0) = (rec[i].pos.x, rec[i].pos.y);
+                let hp_first = rec[i].hp.unwrap_or(0.0);
+                let mut hp_min = hp_first;
+                let mut j = i;
+                while j + 1 < rec.len() {
+                    let s = &rec[j + 1];
+                    let dx = s.pos.x - x0;
+                    let dy = s.pos.y - y0;
+                    if s.spd < 20.0 && (dx * dx + dy * dy).sqrt() < 32.0 {
+                        if let Some(h) = s.hp {
+                            if h < hp_min {
+                                hp_min = h;
+                            }
+                        }
+                        j += 1;
+                    } else {
+                        break;
+                    }
+                }
+                let dur = rec[j].t - rec[i].t;
+                if dur >= 6.0 {
+                    out.push(Freeze {
+                        bot: name.clone(),
+                        t_start: rec[i].t,
+                        dur,
+                        x: x0,
+                        y: y0,
+                        z: rec[i].pos.z,
+                        hp_drop: (hp_first - hp_min).max(0.0),
+                    });
+                }
+                i = j + 1;
+            }
+        }
+        out.sort_by(|a, b| b.dur.partial_cmp(&a.dur).unwrap());
+        out
+    }
+
     pub fn summary(&self) -> MatchSummary {
         let mut bots: Vec<BotStats> = self
             .samples
@@ -278,7 +344,7 @@ fn evt_re() -> &'static Regex {
         // name followed by \S+ would split "Joe Rogan" into name
         // "Joe" and verb "Rogan"
         Regex::new(
-            r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|hazard|engage|pursue|retreat|grab|weapon|plan|death)(?:\s+(.*))?$",
+            r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|grab|weapon|plan|death)(?:\s+(.*))?$",
         )
         .expect("evt regex")
     })
@@ -362,6 +428,40 @@ ARGEVT Joe Rogan death Trent Reznor pos '64 0 24'
         let e = tape.events.iter().find(|e| e.verb == "engage").unwrap();
         assert_eq!(e.bot, "Joe Rogan");
         assert_eq!(e.rest, "Trent Reznor");
+    }
+
+    #[test]
+    fn freeze_detector_finds_statues_and_under_fire() {
+        // Carmack stands at one spot for 8 s losing 48 hp (the
+        // west-pad class Shane farmed); Romero pauses only 4 s and
+        // must NOT count; a board event parses as its own verb.
+        let mut text = String::new();
+        let mut t = 0.0;
+        while t <= 8.0 {
+            text.push_str(&format!(
+                "ARGLOG Carmack t {:.1} pos '1363 -1038 344' spd 3 yaw 0 mode 2 st 0 gl 0 hp {} frg 0\n",
+                t,
+                (81.0 - t * 6.0) as i32
+            ));
+            t += 0.5;
+        }
+        let mut t = 0.0;
+        while t <= 4.0 {
+            text.push_str(&format!(
+                "ARGLOG Romero t {:.1} pos '2016 -980 344' spd 5 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n",
+                t
+            ));
+            t += 0.5;
+        }
+        text.push_str("ARGLOG Romero t 4.5 pos '2100 -980 344' spd 300 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n");
+        text.push_str("ARGEVT Romero board\n");
+        let tape = parse_tape(&text);
+        let fz = tape.freezes();
+        assert_eq!(fz.len(), 1, "only the 8 s statue counts");
+        assert_eq!(fz[0].bot, "Carmack");
+        assert!(fz[0].dur >= 7.9);
+        assert!(fz[0].hp_drop >= 40.0, "under-fire drop must register");
+        assert_eq!(tape.event_counts.get("board"), Some(&1));
     }
 
     #[test]

@@ -20,7 +20,7 @@
       ARGEVT <name> spawned|respawn|goal <class>|route <n>|routefail|
              trapped|train|
              abandon|stall|jump|rjump|lift|swim|hazard|engage <name>|
-             pursue|retreat|grab <class>|
+             pursue|retreat|grab <class>|board|
              weapon <axe|sg|ssg|ng|sng|gl|rl|lg>|
              plan <class> via <class>|
              death <killer> pos <'x y z'>
@@ -3335,6 +3335,15 @@ void() Argus_AI =
                     {
                         if (self.groundentity == nx)
                         {
+                            // hop-success accounting (Shane's self-
+                            // testing review): the wait storm at the
+                            // west pad ran three tapes with a 0%
+                            // boarding rate and no metric said so
+                            if (!self.ar_boarded)
+                            {
+                                self.ar_boarded = 1;
+                                Argus_Event ("board");
+                            }
                             // riding = STANDING ON THE CAR, read
                             // straight off groundentity - the engine
                             // maintains it for STEP bots (proven by
@@ -3496,6 +3505,11 @@ void() Argus_AI =
                     }
                     else if (self.groundentity == nx)
                     {
+                        if (!self.ar_boarded)
+                        {
+                            self.ar_boarded = 1;
+                            Argus_Event ("board");
+                        }
                         if (nx.state != STATE_BOTTOM)
                         {
                             // aboard and moving: ride standing still
@@ -3632,6 +3646,7 @@ void() Argus_AI =
                 {
                     self.ar_hoplift = 1;
                     self.ar_liftstart = time;
+                    self.ar_boarded = 0;
                     Argus_Event ("lift");
                 }
                 else if (Argus_LinkIsSwim (oldnode, self.ar_node))
@@ -3640,6 +3655,7 @@ void() Argus_AI =
                 {
                     self.ar_hoptrain = 1;
                     self.ar_liftstart = time;
+                    self.ar_boarded = 0;
                     Argus_Event ("train");
                 }
                 else if (Argus_LinkIsDoor (oldnode, self.ar_node))
