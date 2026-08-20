@@ -347,6 +347,12 @@ void() health_touch =
 	self.model = string_null;
 	self.solid = SOLID_NOT;
 
+	// ARGUS: the mega is a control item; taking it is audible intel.
+	// Small boxes stay quiet - shell-box noise would flood the
+	// one-slot audio memory that gunfire needs.
+	if (self.healtype == 2)
+		Argus_HearSound (self.origin, other);
+
 	// Megahealth = rot down the player's super health
 	if (self.healtype == 2 && !deathmatch_supermode())
 	{
@@ -446,6 +452,8 @@ void() armor_touch =
 
 	self.solid = SOLID_NOT;
 	self.model = string_null;
+
+	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup
 
 	if (deathmatch_item_respawn())
 		self.nextthink = time + 20;
@@ -747,6 +755,11 @@ void() weapon_touch =
 	// remove it in single player, or setup for respawning in deathmatch
 	self.model = string_null;
 	self.solid = SOLID_NOT;
+
+	// ARGUS: a weapon pickup is audible intel (Omicron review: their
+	// bots heard item sounds, not just gunfire) - bots in earshot
+	// note who took the gun and where
+	Argus_HearSound (self.origin, other);
 
 	if (deathmatch && !deathmatch_weapon_stay())
 		self.nextthink = time + 30;
@@ -1489,6 +1502,9 @@ void() powerup_touch =
 	other.items = other.items | self.items;
 	self.model = string_null;
 
+	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup -
+						// everyone hears the quad go
+
 	// do the apropriate action
 	if (self.classname == "item_artifact_envirosuit")
 	{
@@ -1794,6 +1810,8 @@ void() BackpackTouch =
 	// backpack touch sound
 	sound (other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
+
+	Argus_HearSound (self.origin, other);	// ARGUS: looting is audible
 
 	remove(self);
 	self = other;
