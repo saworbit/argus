@@ -63,6 +63,9 @@ float   an_cachetime;       // freshness: adoptions stop after 10 s
 .float  ar_boarded;         // on bots: this lift/train hop got aboard
                             // (ARGEVT board fired; hop-success
                             // accounting for the wait-vs-board gate)
+.float  ar_padcooltime;     // on bots: after a mover give-up, refuse
+.vector ar_padcoolpos;      // lift/train hops near that pad until
+                            // this expires (the serial re-queue fix)
 .float  ar_routegen;        // on bots: increments per completed route
 .entity ar_laststart;       // on bots: start node of the last search
 .entity ar_lastfailnode;    // on bots: start node of the previous fail

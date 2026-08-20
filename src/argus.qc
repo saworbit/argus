@@ -3352,6 +3352,11 @@ void() Argus_AI =
                     self.ar_node = world;
                     self.ar_pending = 0;
                     self.ar_mode = 0;
+                    // the ride never came: cool THIS PAD, not just
+                    // the goal - the next pick otherwise routes back
+                    // through the same crossing and chains waits
+                    self.ar_padcoolpos = self.origin;
+                    self.ar_padcooltime = time + 25;
                     Argus_Event ("abandon");
                 }
                 else
@@ -3492,6 +3497,9 @@ void() Argus_AI =
                 if (time > self.ar_liftstart + 8)
                 {
                     // the lift never came: shelve the errand globally
+                    // AND cool this pad (the *34 32 s episode: three
+                    // chained give-ups because every re-shop routed
+                    // straight back through the same gateway lift)
                     self.ar_hoplift = 0;
                     if (Argus_GoalOK (self.ar_goal))
                     {
@@ -3503,6 +3511,8 @@ void() Argus_AI =
                     self.ar_node = world;
                     self.ar_pending = 0;
                     self.ar_mode = 0;
+                    self.ar_padcoolpos = self.origin;
+                    self.ar_padcooltime = time + 25;
                     Argus_Event ("abandon");
                 }
                 else
@@ -3683,19 +3693,64 @@ void() Argus_AI =
                     self.ar_hoprj = 1;
                 else if (Argus_LinkIsLift (oldnode, self.ar_node))
                 {
-                    self.ar_hoplift = 1;
-                    self.ar_liftstart = time;
-                    self.ar_boarded = 0;
-                    Argus_Event ("lift");
+                    if (time < self.ar_padcooltime
+                        && vlen (self.origin - self.ar_padcoolpos) < 250)
+                    {
+                        // pad cooldown (the *34 32 s episode, v367b
+                        // tape): a give-up here moments ago means the
+                        // mover is pinned - Shane camping the deck
+                        // above kept the slab's descent postponed.
+                        // Every re-shop routed back through the same
+                        // gateway lift and chained statues. Shelve
+                        // this goal from the WALK and shop on.
+                        if (Argus_GoalOK (self.ar_goal))
+                        {
+                            self.ar_goal.ar_claimer = self;
+                            self.ar_goal.ar_claimtime = time;
+                            self.ar_goal.ar_failtime = time;
+                        }
+                        self.ar_goal = world;
+                        self.ar_node = world;
+                        self.ar_pending = 0;
+                        self.ar_mode = 0;
+                        Argus_Event ("abandon");
+                    }
+                    else
+                    {
+                        self.ar_hoplift = 1;
+                        self.ar_liftstart = time;
+                        self.ar_boarded = 0;
+                        Argus_Event ("lift");
+                    }
                 }
                 else if (Argus_LinkIsSwim (oldnode, self.ar_node))
                     self.ar_hopswim = 1;
                 else if (Argus_LinkIsTrain (oldnode, self.ar_node))
                 {
-                    self.ar_hoptrain = 1;
-                    self.ar_liftstart = time;
-                    self.ar_boarded = 0;
-                    Argus_Event ("train");
+                    if (time < self.ar_padcooltime
+                        && vlen (self.origin - self.ar_padcoolpos) < 250)
+                    {
+                        // same cooldown for train pads (the west-dock
+                        // serial re-queue residual, v363)
+                        if (Argus_GoalOK (self.ar_goal))
+                        {
+                            self.ar_goal.ar_claimer = self;
+                            self.ar_goal.ar_claimtime = time;
+                            self.ar_goal.ar_failtime = time;
+                        }
+                        self.ar_goal = world;
+                        self.ar_node = world;
+                        self.ar_pending = 0;
+                        self.ar_mode = 0;
+                        Argus_Event ("abandon");
+                    }
+                    else
+                    {
+                        self.ar_hoptrain = 1;
+                        self.ar_liftstart = time;
+                        self.ar_boarded = 0;
+                        Argus_Event ("train");
+                    }
                 }
                 else if (Argus_LinkIsDoor (oldnode, self.ar_node))
                     self.ar_hopdoor = 1;
