@@ -62,9 +62,12 @@ flowchart TD
 - **Plat-state-aware elevator handling**: Reads the `func_plat` state machine before waiting — steps out from under a raised slab (a moving bot in the shaft volume postpones the descent on every touch), stands motionless so the descent delay can expire, and boards a resting slab so its own approach summons the ride with it aboard.
 - **Train riding**: Boards patrolling `func_train` cars by steering onto the slab itself, zeroes velocity to ride standing still, and walks off at the far dock — bots cross dm2's moving-platform bridge at deck height.
 - **Grate-floor and steep-stair walking**: Retries refused steps under `FL_PARTIALGROUND` (id's own escape hatch for the engine's point-traced ledge guard), so decorative floors with recessed channels and 45-degree strip stairs walk at full run speed instead of pinning the bot.
+- **Predictive gap jumping**: At a vetoed brink in unrouted movement, the bot simulates the jump it could make right now — 0.1 s parabola segments traced for collisions — and takes it only when the landing is a dry floor within survivable range ("only if satisfied with the result", after the 1998 Omicron design).
+- **Router-promised drops**: A routed bot whose next waypoint sits far below on a legal sub-200u drop commits with one firm step off the lip instead of teetering at the edge the engine refuses to walk over.
+- **Combat-yielding mover waits**: Pad-side lift and train holds release the moment an enemy engages — the bot fights with full movement and resumes the wait afterwards, so a queued bot is never a free frag.
 
 ### 2. Predictive hazard avoidance
-- **280u brink probes**: `Argus_MoveHazard` casts downward traces 32u–48u ahead along movement vectors, detecting `CONTENT_LAVA`, `CONTENT_SLIME`, or fatal floor drops before the bot steps over the edge.
+- **280u brink probes**: `Argus_MoveHazard` casts downward traces 32u–52u ahead along movement vectors (probe distance scales with speed, so a sprinting bot sees the pit in time), detecting `CONTENT_LAVA`, `CONTENT_SLIME`, or fatal floor drops before the bot steps over the edge.
 - **Hull-bridge discrimination**: A liquid floor under the probe point is only a real hazard if the whole 32x32 hull would stand in it — `Argus_HazardBridge` requires solid banks on both sides within a bridgeable span, so decorative lava channels narrower than the player bbox read as floor while pool rims keep the conservative veto.
 - **Staircase rescue**: A probe buried inside rising geometry re-checks from knee-plus height; a clear window landing on a walkable tread means stairs (walkmove climbs the risers one at a time), while walls and true pits stay vetoed.
 - **Deflection hysteresis**: `Argus_HazardSteer` tests alternate headings in priority fans (+50, -50, +100, -100, 180 degrees) and locks onto `ar_hazardyaw` with angular memory to prevent corner oscillation.
@@ -77,9 +80,16 @@ flowchart TD
 - **Ballistic compensation**: Applies parabolic loft compensation for Grenade Launcher trajectories, downward pitch adjustments for Rocket Launcher fire from elevated walkways, and feet-aim against grounded targets for splash.
 - **Continuous fire button hold**: Automatically asserts `button0 = 1` within 12 degrees of target alignment, ensuring continuous-fire weapon frame chains (Lightning Gun, Super Nailgun) maintain active beams without resetting animations.
 - **Dynamic weapon selection**: Selects optimal weapons based on distance thresholds, owned inventory, waterlevel safety, and remaining ammunition reserves.
+- **Missile dodging**: Scans for inbound rockets and grenades every 0.15 s and commits to a floor-checked perpendicular sidestep, shooting throughout — serial rockets still land sometimes at every skill tier to stay human.
+- **Retreat by geometry**: A low-stack bot against a healthy enemy fans headings away from the threat and commits to the first whose destination breaks the enemy's line of sight — cover is a wall between us, never distance. Cornered means fight; the bot shoots the whole way out.
+- **Mid-fight item grabs**: Combat sweeps 240u for worthwhile live items every half second and bends the strafe circle toward the best for one short commit — a wounded bot steps onto the health box between rockets instead of strafing past it.
+- **Weapon-sound classification and pickup hearing**: The listener knows *what* it heard — heavy gunfire on a thin health stack keeps its distance while a healthy bot hunts the big fight, and weapon, armour, powerup, megahealth, and backpack pickups are audible intel that starts the denial loop.
 
 ### 4. Goal selection and GOAP planning
 - **Dynamic item utility scoring**: Scores all live trigger items on the map based on personality appetites, missing health/armour deltas, weapon tiers, and distance attenuation (`score = value * 320 / (dist + 160)`).
+- **Control circuits**: Major items (unowned RL/LG, fresh armours, megahealth, powerups, fat packs) read distance at 0.4x, so the far prizes pull from across the map — bots run the arm/deny/hunt rotation between control points instead of grazing whatever is near.
+- **Item respawn clocks and pre-positioning**: A consumed item's respawn timer is readable in pure vanilla QC (`SUB_regen` nextthink), so bots time their arrivals — up to 10 seconds early at a discount — and orbit the spawn point in camping laps until it pops. Be early, not on time.
+- **Island discipline**: Two consecutive route failures from one spot narrow the shopping list to the nearest live item until a route completes, so a bot on a disconnected map region grinds local errands instead of suiciding out.
 - **Pack dispersion**: Items targeted by fellow bots receive an automatic 40% score reduction to spread the squad across the arena.
 - **Loot economy**: Dropped backpacks are valued by their contents (a fat rocket pack outranks most weapons), a fresh kill-drop carries a time-critical urgency bonus while the victim is still respawning, and a kill immediately re-shops the killer's goals — looting your victim is the loop humans run by reflex.
 - **Denial and control loops**: An opponent standing near an item makes taking it sweeter, and an owned Rocket Launcher or Lightning Gun stays worth a refill-and-denial swing past its spawn.
@@ -88,6 +98,8 @@ flowchart TD
 ### 5. Multi-map frame-sliced navigation
 - **Sliced BFS router**: Breadth-first graph search slices expansions across server frames (48 node pops per frame via `ANQ_POPS`), avoiding runaway CPU limits.
 - **Route generation stamping**: Next-hop waypoint pointers (`an_next0..3`) are stamped with a route generation counter (`ar_routegen`), invalidating stale pointers if a bot is knocked off course.
+- **Shared route cache**: A completed route is stamped into shared per-node cache fields; any bot wanting the same goal from a node on that fresh path adopts the chain instantly — no search frames, no router contention — after re-checking the rocket-jump toll per hop.
+- **Corridor sampling and stair-run seats**: The nav compiler samples fine (16u) for connectivity while seating coarse for the edict budget, and detects rising stair runs to promote seats at their bottom, top, and midpoint — the narrow passages and staircases a 32u grid never stands in.
 - **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`), rocket-jump links (`an_rjmask`), elevator links (`an_liftmask`), swim-exit links (`an_swimmask`), train rides (`an_trainmask`), and door passages (`an_doormask`).
 - **Door and button handling**: Touch-open doors are walked through (the classname masquerade fires their triggers), button-only doors detour to their button and hold for the slab when the door is near, and shoot-actuated plates are fired at with the bot's own aimed attack.
 
@@ -232,8 +244,8 @@ Argus includes an extensive 18-character homage roster celebrating Quake history
 | Map | File | Waypoints | Key features & Link types |
 |---|---|---|---|
 | **The Bad Place** | `dm4` | 145 nodes | Walkway hazard steering, rocket-jump Quad ledge link, stitched pit-escape links, stair drop-links. |
-| **Claustrophobopolis** | `dm2` | 162 nodes | Corridor-sampled graph: 2 elevator platforms, 3 patrolling trains (the upper-deck bridge is ridden), 25 typed door links, prize rocket-jump pads. |
-| **The Abandoned Base** | `dm3` | 190 nodes | Multi-level platform tower, elevator padding, water trench swim-exit links. |
+| **Claustrophobopolis** | `dm2` | 165 nodes | Corridor-sampled graph: 2 elevators with outside-the-shaft boarding pads, 3 patrolling trains (the upper-deck bridge is ridden both ways), typed door links, prize rocket-jump pads. |
+| **The Abandoned Base** | `dm3` | 190 nodes | Corridor-sampled with stair-run seats (513 links), multi-level platform tower, elevator padding, water trench swim-exit links. |
 | **The Dark Zone** | `dm6` | 153 nodes | Multi-tier central arena, teleporter loops, drop-links. |
 | **LibreQuake DM2** | `lqdm2` | 197 nodes | Stand-in testing arena for automated headless validation. |
 
@@ -320,11 +332,16 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 |                                                                                   |
 | ARGEVT <name> spawned | respawn | goal <class> | route <hops> | routefail |       |
 |        abandon | stall | stallnode '<x y z>' | trapped | jump | rjump | lift |    |
-|        swim | door | train | hazard | engage <enemy> | pursue |                   |
-|        weapon <axe|sg|ssg|ng|sng|gl|rl|lg> | plan <want> via <step> |             |
-|        death <killer> pos '<x y z>'                                               |
+|        swim | door | train | board | hazard | engage <enemy> | pursue |           |
+|        retreat | grab <class> | weapon <axe|sg|ssg|ng|sng|gl|rl|lg> |             |
+|        plan <want> via <step> | death <killer> pos '<x y z>'                      |
 +-----------------------------------------------------------------------------------+
 ```
+
+Human clients emit the same `ARGLOG` track under their own netname
+(camera flights excluded), so every analysis tool sees the human
+player as one more trajectory — the reference circuit the bots are
+measured against.
 
 ---
 
@@ -352,9 +369,9 @@ argus-mcp gui --port 7420 --no-open
 - `see what=path name=dm4:quad->lg`: Waypoint BFS including walk/drop/jump/tele/rocket/lift/swim.
 - `experiment map=dm4 duration_sec=30 skill=2`: Compile, short match, duration-scaled lite A/B.
 - `compare_runs log_a=baseline log_b=latest`: Unscaled A/B against the shipped tape.
-- `learn_hotspots map=dm4`: Fold stall/lava/hazard cells; writes `src/argus_nav_<map>.costs.json` for the next navgen.
+- `learn_hotspots map=dm4`: Fold stall/lava/hazard cells (kind-aware); writes `src/argus_nav_<map>.costs.json` for the next navgen.
 
-Lava deaths in experiment/compare are hull-0 contents (same as `analyze_match.py`). `z < -300` is only used when the BSP is missing. dm2 baseline is `ab_dm2_lava`.
+Lava deaths in experiment/compare are hull-0 contents (same as `analyze_match.py`); `z < -300` is only used when the BSP is missing. Statue freezes are a hard A/B gate (6 s+ under 20 u/s, with an under-fire measure for damage taken while frozen), and lift/train boarding success is accounted (`mover_waits` vs `boards`) so a broken pad reads as broken rather than slow. A/B baselines are config-driven via `runs/baselines.json`.
 
 ---
 

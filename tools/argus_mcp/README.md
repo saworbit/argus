@@ -421,6 +421,18 @@ Encoded from the project charter, not invented per call:
 - Coverage and average speed should not crater.
 - Routed mode-2 links are walk-verified; hazard deflections belong
   in mode 0/1.
+- Freezes are a HARD gate: the parser runs the statue scan natively
+  (6 s+ under 20 u/s in a 32u circle) with an under-fire measure
+  (hp lost while frozen). Any under-fire freeze, a 10 s+ statue the
+  baseline lacks, or a clearly growing count makes the verdict
+  regressed on its own.
+- Hop success is measured, not assumed: `mover_waits` (lift + train
+  events) versus `boards` (`ARGEVT board`, fired when the bot
+  actually gets aboard). A wait storm with zero boards is flagged
+  as broken, not slow.
+- A/B baselines are config-driven: `runs/baselines.json` maps a map
+  to its baseline run; era defaults are the fallback and a missing
+  named run errors loudly. Refresh the file after each clean ship.
 
 `next_steps` maps failures to code:
 
@@ -433,6 +445,8 @@ Encoded from the project charter, not invented per call:
 | Elevated quad + routefail | `Argus_BotCanRJ` / `ARGEVT rjump` / dm4 pad 142→56 |
 | Quad goaled, zero `rjump` | bot never paid the toll (no RL, dry, hp < 70, or quad) |
 | Almost no routed time | `argus_nav_dispatch.qc` and `argus_nav_<map>.qc` |
+| Freezes / under-fire statue | pad waits in `argus.qc` (`ar_liftwait` holds), the wait give-up clocks |
+| Waits with zero boards | pad geometry vs the board gate (car edge distance), navgen pad placement |
 
 ## Prompts
 
@@ -556,3 +570,4 @@ shell.
 | 0.16 | Cursor `since_line` on `match_status` / `live_snapshot`. mtime cache invalidation. Hull-1 snap + door/plat reach labels. Causal relay hops and secret doors. Inspect BFS walks rocket/lift/swim. Cartograph `generate_nav` registers by default. Experiment baseline is `ab_dm4_water`. |
 | 0.17 | Hull-0 lava in Rust briefs (same as analyze_match.py). Per-map A/B bars. dm2 baseline `ab_dm2_lava`. Cartograph islands, door cuts, corridor misses. `learn_hotspots` writes `argus_nav_<map>.costs.json`; navgen inflates those cells. |
 | 0.18 | `argus-mcp gui`: localhost deploy wizard (attach BSP, nav PNG, compile, install, dated backups + restore). |
+| 0.19 | Spaced netnames parse whole (closed verb vocabulary). Freeze detection as a HARD gate with the under-fire measure. `mover_waits` vs `boards` hop-success accounting. Config-driven baselines (`runs/baselines.json`). Kind-aware `learn_hotspots` (lava cells small and heavy, deflection cells reported but never written). Cartograph `PlatBrief` boardability probes. New verbs: `retreat`, `grab`, `board`; human clients emit ARGLOG tracks. The escaped v363 west-pad tape is a permanent regression test. |
