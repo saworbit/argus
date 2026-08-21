@@ -1170,12 +1170,21 @@ inbound_walk = collections.defaultdict(list)
 for _i in links:
     for _j in links[_i]:
         inbound_walk[_j].append(_i)
+# inbound of ANY type: a teleporter DESTINATION with no walk links
+# slipped between this pass (which demanded walk inbound) and the
+# prune (where the tele reference counts as degree). dm2's t2
+# destination seat shipped with zero outbound links - every bot
+# whose route started there failed the whole goal menu and took the
+# trapped exit on open floor (v369 tape, Carmack -2 in 64 s)
+inbound_typed = collections.defaultdict(int)
+for _a, _b in teles + rjlinks + lifts + swims + trains + sprints:
+    inbound_typed[_b] += 1
 n_escape = 0
 n_trapped = 0
 for i in range(len(ways)):
     if len(links.get(i, {})) > 0 or i in typed_from:
         continue                          # has an outbound already
-    if not inbound_walk[i]:
+    if not inbound_walk[i] and not inbound_typed[i]:
         continue                          # fully isolated: prune's job
     ax, ay, az = pos(ways[i])
     cands = []
@@ -1194,6 +1203,13 @@ for i in range(len(ways)):
             stitched = True
             break
     if not stitched:
+        if inbound_typed[i]:
+            # a typed ARRIVAL (tele destination, ride exit) cannot be
+            # stripped away - the arrival is real geometry. No escape
+            # within reach is a generation-stopping defect: say so.
+            print(f"escape links: typed-arrival node {i} at "
+                  f"{pos(ways[i])} has NO reachable outbound - bots "
+                  f"arriving here are stranded; fix the seat")
         for src in inbound_walk[i]:
             links[src].pop(i, None)
         n_trapped += 1
@@ -1393,6 +1409,56 @@ if len(keep) < len(ways):
     sprints = [(remap[a], remap[b]) for a, b in sprints]
     doorlinks = [(remap[a], remap[b]) for a, b in doorlinks
                  if a in remap and b in remap]
+
+# ---- 7h. directed-reach gate ----
+# The v369 dm2 ship stranded bots on the central floor: the graph
+# LOOKED healthy (one big weak island, typed links all present) but
+# the hall was a directed sink and every route from it failed - the
+# storm shipped because nobody computed directed reach. Never again:
+# BFS over every forward edge from the node nearest each deathmatch
+# spawn and shout when any spawn's reach is poor. This is a REPORT
+# gate, not an auto-fix - a bad number means the graph needs its own
+# session, not a silent band-aid.
+_fwd = collections.defaultdict(list)
+for _i in links:
+    for _j in links[_i]:
+        _fwd[_i].append(_j)
+for _a, _b in teles + rjlinks + lifts + swims + trains + sprints:
+    _fwd[_a].append(_b)
+_spawn_reach = []
+for b in ent_blocks:
+    e = kv(b)
+    if e.get("classname") not in ("info_player_deathmatch", "info_player_start"):
+        continue
+    o = [float(v) for v in e.get("origin", "0 0 0").split()]
+    _best, _bd = None, 1e9
+    for _i, _w in enumerate(ways):
+        _wx, _wy, _wz = pos(_w)
+        _d = ((_wx-o[0])**2 + (_wy-o[1])**2 + (_wz-o[2])**2) ** 0.5
+        if _d < _bd:
+            _best, _bd = _i, _d
+    if _best is None:
+        continue
+    _seen = {_best}
+    _q = [_best]
+    while _q:
+        _u = _q.pop()
+        for _v in _fwd.get(_u, ()):
+            if _v not in _seen:
+                _seen.add(_v)
+                _q.append(_v)
+    _spawn_reach.append((len(_seen), _best, o))
+if _spawn_reach:
+    _spawn_reach.sort()
+    _worst, _wnode, _wspawn = _spawn_reach[0]
+    _pct = 100 * _worst // max(1, len(ways))
+    print(f"directed reach: worst spawn {_pct}% "
+          f"({_worst}/{len(ways)} from n{_wnode} near "
+          f"{_wspawn[0]:.0f} {_wspawn[1]:.0f} {_wspawn[2]:.0f})")
+    if _pct < 60:
+        print("directed reach: WARNING - routes from that spawn will "
+              "fail most goals; bots there take the trapped exit. Do "
+              "NOT ship this graph without a look.")
 
 # ---- 8a0. compute camera vantage nodes ----
 cam_nodes = []
