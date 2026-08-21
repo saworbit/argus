@@ -84,7 +84,10 @@ list (fuzzy decision weights, simulated hearing, personalities,
 pursuit AI, partial rocket jumps) reads as a to-do list for Argus M4
 written twenty-nine years early. Personalities, chat, and the
 prize-only rocket-jump pads have since landed; the rest of that
-list is still open.
+list is still open. The 2026-08-20 local capture of the three
+released zips, ObotDoc, MeQCC and a decompile sketch lives in
+`tools/decompiled_omicron/` (see that README and ARCHITECTURE.md;
+binaries stay gitignored).
 
 ---
 

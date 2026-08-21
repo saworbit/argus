@@ -11,6 +11,7 @@ engine/*.exe
 engine/*.pak
 engine/*.dll
 engine/argus316/
+engine/omicron/
 engine/qconsole.log
 
 # id-derived coloured model staging (regenerate from LibreQuake for
@@ -27,6 +28,7 @@ tools/win/
 # engine/session droppings
 **/qconsole.log
 **/config.cfg
+engine/history.txt
 compile.log
 match.log
 *.png
