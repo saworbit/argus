@@ -72,6 +72,8 @@ entity argus_bots;              // chain of all bots
 entity argus_lastspot;          // spawn point rotation
 float argus_maxclients;         // reserved client slots, counted at worldspawn
 float argus_nextnames;          // next periodic scoreboard rebroadcast
+                                // (argus_omicron lives in defs.qc:
+                                // weapons.qc reads it for impulse 146)
 
 .entity ar_chain;
 .float  ar_clientno;            // fake scoreboard slot
@@ -562,6 +564,71 @@ void(float what) Argus_Chat =
             bprint (PRINT_CHAT, "\x01Tim Willits: Controlling the high ground.\n");
         else
             bprint (PRINT_CHAT, "\x01Tim Willits: Re-routing flanking vector.\n");
+    }
+    // ---- the Omicron homage roster (console "omicron") ----
+    // Written for this tribute. Their bot's own lines stay in their
+    // zip where the licence keeps them; the debt is acknowledged in
+    // the voice, not in the strings.
+    else if (self.netname == "Omicron")
+    {
+        if (what == 0)
+        {
+            if (r < 0.5) bprint (PRINT_CHAT, "\x01Omicron: Omicron bots online. Nineteen ninety-seven never ended.\n");
+            else         bprint (PRINT_CHAT, "\x01Omicron: Waypoint graph loaded. Begin.\n");
+        }
+        else if (what == 1)
+        {
+            if (r < 0.25)      bprint (PRINT_CHAT, "\x01Omicron: Waypoint reached. You did not.\n");
+            else if (r < 0.50) bprint (PRINT_CHAT, "\x01Omicron: Your reachability was overestimated.\n");
+            else if (r < 0.75) bprint (PRINT_CHAT, "\x01Omicron: Predicted, then executed.\n");
+            else               bprint (PRINT_CHAT, "\x01Omicron: Twenty-nine years of practice.\n");
+        }
+        else if (what == 3)
+        {
+            if (r < 0.5) bprint (PRINT_CHAT, "\x01Omicron: The ledger balances.\n");
+            else         bprint (PRINT_CHAT, "\x01Omicron: Correction applied.\n");
+        }
+        else if (what == 4)
+            bprint (PRINT_CHAT, "\x01Omicron: Quad acquired. Recomputing your odds.\n");
+        else
+        {
+            if (r < 0.5) bprint (PRINT_CHAT, "\x01Omicron: Anomaly logged.\n");
+            else         bprint (PRINT_CHAT, "\x01Omicron: Returning to the graph.\n");
+        }
+    }
+    else if (self.netname == "H2SO4")
+    {
+        if (what == 0)
+            bprint (PRINT_CHAT, "\x01H2SO4: H2SO4 in the arena. Bring a beaker.\n");
+        else if (what == 1)
+        {
+            if (r < 0.33)      bprint (PRINT_CHAT, "\x01H2SO4: Dissolved.\n");
+            else if (r < 0.66) bprint (PRINT_CHAT, "\x01H2SO4: pH zero.\n");
+            else               bprint (PRINT_CHAT, "\x01H2SO4: Corrosive contact confirmed.\n");
+        }
+        else if (what == 3)
+            bprint (PRINT_CHAT, "\x01H2SO4: Neutralised.\n");
+        else if (what == 4)
+            bprint (PRINT_CHAT, "\x01H2SO4: Concentration increased fourfold.\n");
+        else
+            bprint (PRINT_CHAT, "\x01H2SO4: Diluted. Temporarily.\n");
+    }
+    else if (self.netname == "Obot")
+    {
+        if (what == 0)
+            bprint (PRINT_CHAT, "\x01Obot: obot active.\n");
+        else if (what == 1)
+        {
+            if (r < 0.33)      bprint (PRINT_CHAT, "\x01Obot: logged.\n");
+            else if (r < 0.66) bprint (PRINT_CHAT, "\x01Obot: as designed.\n");
+            else               bprint (PRINT_CHAT, "\x01Obot: target down.\n");
+        }
+        else if (what == 3)
+            bprint (PRINT_CHAT, "\x01Obot: corrected.\n");
+        else if (what == 4)
+            bprint (PRINT_CHAT, "\x01Obot: quad. proceeding.\n");
+        else
+            bprint (PRINT_CHAT, "\x01Obot: respawn queued.\n");
     }
     else if (self.netname == "Reap")
     {
@@ -4304,6 +4371,14 @@ void() Argus_FrameAll =
     b = find (world, classname, "player");
     while (b != world)
     {
+        // the console verb, Omicron's own way: vanilla QC cannot
+        // register a command, so hand the client an alias once.
+        // Impulse 146 is the number their bot used for it.
+        if (!b.ar_isbot && (b.flags & FL_CLIENT) && !b.ar_aliased)
+        {
+            b.ar_aliased = 1;
+            stuffcmd (b, "alias omicron \"impulse 146\"\n");
+        }
         if (!b.ar_isbot && (b.flags & FL_CLIENT) && b.health > 0
             && !b.cam_active && time > b.ar_nextlog)
         {
@@ -4319,6 +4394,8 @@ void() Argus_FrameAll =
 
 // ---------------------------------------------------------------- spawn
 
+string(float slot) Argus_OmicronName;    // the homage roster, below
+
 void(string bname) Argus_SpawnOne =
 {
     local entity bot, spot;
@@ -4331,6 +4408,8 @@ void(string bname) Argus_SpawnOne =
     bot.ar_isbot = 1;
     bot.netname = bname;
     bot.ar_slot = argus_spawncount;
+    if (argus_omicron)              // homage mode already on: dress
+        bot.netname = Argus_OmicronName (bot.ar_slot);
     // claim scoreboard slots from the top of the real client range;
     // slot 0 is left for the host, and no slot at all beats a slot the
     // client will Host_Error on (svc_updatename > MAX_SCOREBOARD)
@@ -4425,6 +4504,57 @@ void() Argus_Init =
 // 102 remove), wired from ImpulseCommands. The cap is the nav
 // next-hop slot count (4) or the spare scoreboard rows, whichever
 // bites first. Cycles through the homage and legacy roster.
+// ---- the Omicron homage ----
+// Team Omicron's bot (Jan Paul van Waveren and Miklos de Rijk,
+// 1997) is half of this project's lineage; the other half is the
+// Reaper. Their bot registered its console verb by stuffcmd'ing
+// "alias omicron impulse 146" to every client, which is also the
+// only way vanilla QC can own a console word - so Argus uses the
+// same verb and the same impulse number. The mode is a costume:
+// the roster wears the names of the bot, its two authors and its
+// internal name, and the netname-keyed chat gives each of them a
+// voice. The lines here are written for this tribute; none are
+// copied from their progs, whose licence asks that its
+// modifications not be the basis of other public work.
+string(float slot) Argus_OmicronName =
+{
+    if (slot == 0) return "Omicron";
+    if (slot == 1) return "Mr Elusive";
+    if (slot == 2) return "H2SO4";
+    return "Obot";
+};
+
+void(float on) Argus_SetOmicron =
+{
+    local entity b, oself;
+
+    if (argus_omicron == on)
+        return;
+    argus_omicron = on;
+
+    b = argus_bots;
+    while (b != world)
+    {
+        if (on)
+            b.netname = Argus_OmicronName (b.ar_slot);
+        else
+            b.netname = Argus_RosterName (b.ar_slot);
+        oself = self;
+        self = b;
+        Argus_ScoreName ();         // TAB updates now, not in 5 s
+        self = oself;
+        b = b.ar_chain;
+    }
+
+    if (on)
+    {
+        bprint (PRINT_HIGH, "\n  Omicron bots, 1997 - Team Omicron\n");
+        bprint (PRINT_HIGH, "  for Mr Elusive, who taught them to think\n\n");
+    }
+    else
+        bprint (PRINT_HIGH, "\n  the roster returns.\n\n");
+};
+
 void() Argus_AddBot =
 {
     local float cap;

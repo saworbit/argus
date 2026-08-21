@@ -188,6 +188,12 @@ Quake_Shipping_Steam.exe -game argus +deathmatch 1 +map dm4
 | `fraglimit <n>` | Sets match frag limit; game transitions levels upon a bot reaching the target. |
 | `timelimit <n>` | Sets match time limit in minutes. |
 
+> The table is not the whole list. Argus descends from two bots, and
+> the elder of the pair claimed its console word the only way vanilla
+> QuakeC ever could — by handing the client an alias on the way in.
+> Argus hands you the same one, on the same impulse number. Say the
+> ancestor's name in the console and see who answers.
+
 ---
 
 ### 3. Homage bot roster & chat personalities

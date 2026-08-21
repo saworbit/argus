@@ -1501,6 +1501,8 @@ void() ImpulseCommands =
 		Argus_AddBot ();
 	else if (self.impulse == 102)
 		Argus_RemoveBot ();
+	else if (self.impulse == 146)		// ARGUS: console "omicron"
+		Argus_SetOmicron (!argus_omicron);
 	else if (self.impulse >= 210 && self.impulse <= 214)
 		ArgusCam_Impulse (self.impulse);
 	else if (self.impulse >= 220 && self.impulse <= 230)

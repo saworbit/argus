@@ -702,6 +702,8 @@ float intermission_running;                 // ARGUS: moved here from
                     // WaterMove mirror (compiled earlier) can use it
 void() Argus_AddBot;        // ARGUS: roster impulses, defined in
 void() Argus_RemoveBot;     // argus.qc, wired in ImpulseCommands
+void(float on) Argus_SetOmicron;    // ARGUS: the homage costume
+float argus_omicron;                // (console "omicron" / impulse 146)
 void(vector spos, entity who) Argus_HearSound;  // ARGUS: OPM hearing,
                             // defined in argus.qc, called by W_Attack
 

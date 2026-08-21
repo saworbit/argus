@@ -71,6 +71,8 @@ float   an_cachetime;       // freshness: adoptions stop after 10 s
 .entity ar_sprintfrom;      // on bots: launch seat of the current
                             // sprint hop - the arc is only verified
                             // FROM the seat, so fire anchors there
+.float  ar_aliased;         // on real clients: the console alias for
+                            // the homage mode has been handed over
 .float  ar_routegen;        // on bots: increments per completed route
 .entity ar_laststart;       // on bots: start node of the last search
 .entity ar_lastfailnode;    // on bots: start node of the previous fail
