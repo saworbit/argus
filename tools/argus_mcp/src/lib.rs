@@ -4,6 +4,7 @@ pub mod bsp;
 pub mod cartograph;
 pub mod compile;
 pub mod config;
+pub mod demo;
 pub mod diagnose;
 pub mod gui;
 pub mod engine;

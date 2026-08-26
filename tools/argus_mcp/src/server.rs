@@ -1164,6 +1164,22 @@ impl Argus {
                     Err(e) => tool_err(e),
                 }
             }
+            "demo" => {
+                let name = args.name.as_deref().ok_or_else(|| {
+                    McpError::invalid_params(
+                        "name=<demo> (a .dem in runs/demos or the game dir; record one with '+record <name> <map>')",
+                        None,
+                    )
+                })?;
+                let cfg = match cfg_read_or_err() {
+                    Ok(c) => c,
+                    Err(r) => return Ok(r),
+                };
+                match crate::demo::demo_brief(&cfg, name) {
+                    Ok(b) => json_ok(&b),
+                    Err(e) => tool_err(e),
+                }
+            }
             "node" => {
                 let raw = args.name.as_deref().ok_or_else(|| {
                     McpError::invalid_params("name=dm4:56", None)

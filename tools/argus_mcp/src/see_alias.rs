@@ -20,6 +20,7 @@ pub fn normalize_see(what: &str) -> String {
         "timeline" | "events" | "story" => "timeline".into(),
         "around" | "near" | "pos" | "here" => "around".into(),
         "plan" | "goap" | "goalplan" => "plan".into(),
+        "dem" | "demos" | "replay" => "demo".into(),
         "vocab" | "?" => "help".into(),
         other => other.to_string(),
     }
