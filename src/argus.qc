@@ -168,6 +168,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_retreatlock;         // retreat: no re-entry until this (a
                                 // cornered exit means FIGHT, not a
                                 // per-frame re-scan of the same fan)
+.float  ar_shovelog;            // displacement: shove-line log throttle
 .entity ar_bitem;               // battle item: mid-fight grab target
 .float  ar_bitemscan;           // battle item: next scan time
 .float  ar_bitemend;            // battle item: commit expires
@@ -2482,7 +2483,7 @@ void() Argus_DodgeScan =
 float() Argus_Combat =
 {
     local entity e, sup;
-    local vector to, aimpt, err, cvr;
+    local vector to, aimpt, err, cvr, shd, shp;
     local float d, want, diff, turn, trackt, errscale, loft;
     local float cy, ck, cfound, ceff, sy, dy;
 
@@ -2571,10 +2572,47 @@ float() Argus_Combat =
     else if (self.weapon == IT_ROCKET_LAUNCHER)
     {
         if (e.flags & FL_ONGROUND)
+        {
             // foot splash (OPM slice A): a grounded target is aimed
-            // at the floor, not centre mass â€” the splash lands even
+            // at the floor, not centre mass - the splash lands even
             // when the dodge works, and the knockback juggles
             aimpt_z = e.origin_z - 16;
+
+            // offensive displacement (mre Mastermind, 2026-08-26 -
+            // the bot-side version of Shane's own signature move).
+            // When the floor BEHIND the enemy along the shot line
+            // is lava, slime or a void, pull the splash 24u onto
+            // the near side of their feet: the knockback then
+            // shoves them over the brink instead of juggling them
+            // in place. MoveHazard's floor rules: probe 80u past
+            // the enemy at knee height, 280u down, no floor within
+            // a survivable drop or a liquid floor means the pit is
+            // real. Gated to d > 150 so the short aim never walks
+            // the splash back into our own feet. Logged as a plain
+            // "ARGUS <name> shove" console line (throttled 2 s) -
+            // not an ARGEVT, the Rust parser's verb set is closed.
+            if (d > 150)
+            {
+                shd = e.origin - self.origin;
+                shd_z = 0;
+                shd = normalize (shd);
+                shp = e.origin + shd * 80 + '0 0 18';
+                traceline (shp, shp - '0 0 280', TRUE, e);
+                if (trace_fraction == 1
+                    || pointcontents (trace_endpos - '0 0 4') == CONTENT_LAVA
+                    || pointcontents (trace_endpos - '0 0 4') == CONTENT_SLIME)
+                {
+                    aimpt = aimpt - shd * 24;
+                    if (time > self.ar_shovelog)
+                    {
+                        self.ar_shovelog = time + 2;
+                        dprint ("ARGUS ");
+                        dprint (self.netname);
+                        dprint (" shove\n");
+                    }
+                }
+            }
+        }
         else if (e.origin_z < self.origin_z - 64)
             aimpt_z = aimpt_z + (e.origin_z - self.origin_z) * 0.2;
         else if (e.origin_z > self.origin_z + 64)
