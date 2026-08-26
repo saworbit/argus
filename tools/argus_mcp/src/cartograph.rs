@@ -117,6 +117,13 @@ pub struct MapAtlas {
     pub corridor_misses: Vec<CorridorMiss>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub plats: Vec<PlatBrief>,
+    /// Brush AABBs for the tape-side cause tagger; never serialized
+    /// (the human-facing brief stays lean, the in-memory cache keeps
+    /// them).
+    #[serde(skip)]
+    pub door_aabbs: Vec<([f32; 3], [f32; 3])>,
+    #[serde(skip)]
+    pub plat_aabbs: Vec<([f32; 3], [f32; 3])>,
 }
 
 /// Boardability analysis per func_plat (the dm2 *31 forensics turned
@@ -706,6 +713,10 @@ fn atlas_from_bsp(
     let spawn_z = median_spawn_z(&items);
     let doors = model_aabbs(bsp, &items, "door");
     let plats = model_aabbs(bsp, &items, "plat");
+    // kept on the atlas for the tape-side cause tagger (intel):
+    // "stall at x y z" becomes "stall at a door / in a plat column"
+    let door_aabbs = doors.clone();
+    let plat_aabbs = plats.clone();
     let mut control: Vec<ControlItem> = items
         .iter()
         .filter_map(|i| {
@@ -908,6 +919,8 @@ fn atlas_from_bsp(
         door_cuts,
         corridor_misses,
         plats,
+        door_aabbs,
+        plat_aabbs,
     }
 }
 

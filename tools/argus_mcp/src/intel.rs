@@ -89,6 +89,13 @@ pub struct Hotspot {
     pub nearest_item: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nearest_item_dist: Option<f64>,
+    /// Geometric neighbourhood from the atlas: "door", "plat_column"
+    /// or "lava_edge" - the classification every forensics session
+    /// used to reconstruct by hand from raw coordinates ("'2640 -57
+    /// 152', that is the stair-lip class"). Absent when no geometry
+    /// matches or the atlas is unavailable.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cause: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -114,6 +121,26 @@ pub struct MatchBrief {
     pub headline: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub goal_reach: Vec<GoalReach>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nav_coverage: Option<NavCoverage>,
+}
+
+/// How much of the shipped graph the match actually used. Nodes with
+/// no ARGLOG sample within 96u carried no traffic this tape - the
+/// same nodes dark across several tapes are edict-budget dead weight.
+/// typed_links pairs each typed-link family in the graph against its
+/// runtime event count, the dormant-system detector (RJ pads with no
+/// walk-ins rode unnoticed until v3.21; sprint links sit behind their
+/// skill gate today).
+#[derive(Debug, Clone, Serialize)]
+pub struct NavCoverage {
+    pub nodes: usize,
+    pub visited: usize,
+    pub pct: u32,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub never_visited_sample: Vec<u32>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub typed_links: BTreeMap<String, String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -174,6 +201,8 @@ pub struct BriefLite {
     pub goals: BTreeMap<String, u32>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub goal_reach: Vec<GoalReach>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nav_coverage: Option<NavCoverage>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -227,6 +256,7 @@ pub fn brief_lite(b: &MatchBrief) -> BriefLite {
             .collect(),
         goals: b.goals.clone(),
         goal_reach: b.goal_reach.clone(),
+        nav_coverage: b.nav_coverage.clone(),
     }
 }
 
@@ -468,6 +498,7 @@ fn brief_tape_lava(
         next_steps: Vec::new(),
         headline: String::new(),
         goal_reach: Vec::new(),
+        nav_coverage: None,
     };
     brief.next_steps = suggest_next(&brief, None);
     brief.headline = headline_one(&brief.totals, &brief.flags, brief.map.as_deref());
@@ -512,7 +543,8 @@ pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<Matc
     let hull = map.as_deref().and_then(|m| hull0_for_map(cfg, m));
     let mut brief = brief_tape_lava(&tape, map_hint, hull.as_ref());
     attach_nav(cfg, &mut brief);
-    attach_atlas(cfg, &mut brief);
+    attach_coverage(cfg, &tape, &mut brief);
+    attach_atlas(cfg, &mut brief, hull.as_ref());
     brief.next_steps = suggest_next(&brief, None);
     for step in &mut brief.next_steps {
         step.look_at = crate::qc_index::look_at(cfg, &step.look_at);
@@ -1089,7 +1121,7 @@ pub fn attach_nav(cfg: &Config, brief: &mut MatchBrief) {
     }
 }
 
-fn attach_atlas(cfg: &Config, brief: &mut MatchBrief) {
+fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::Hull0>) {
     let Some(map) = brief.map.clone() else {
         return;
     };
@@ -1116,6 +1148,7 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief) {
             h.nearest_item = Some(name);
             h.nearest_item_dist = Some(d);
         }
+        h.cause = hotspot_cause(&atlas.door_aabbs, &atlas.plat_aabbs, hull, h.x, h.y, h.z);
     }
     brief.goal_reach = brief
         .goals
@@ -1131,7 +1164,16 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief) {
             })
         })
         .collect();
-    if brief.goal_reach.iter().any(|g| g.reach == "rocket_jump" || g.reach == "off_graph") {
+    // the tape is ground truth and the atlas is a theory: when the
+    // two disagree, say so instead of letting the labels stand (the
+    // item_eye bug briefed 11 of 12 dm4 control items off_graph on a
+    // map whose tapes route 57% of the time, and nothing shouted)
+    let evidence = reach_evidence_flags(&brief.goal_reach, &brief.events, &brief.mode_share);
+    let contradicted = !evidence.is_empty() && evidence[0].contains("CONTRADICTED");
+    brief.flags.extend(evidence);
+    if !contradicted
+        && brief.goal_reach.iter().any(|g| g.reach == "rocket_jump" || g.reach == "off_graph")
+    {
         brief.flags.push(
             "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop"
                 .into(),
@@ -1150,6 +1192,173 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief) {
             brief.flags.push(line.clone());
         }
     }
+}
+
+/// Classify a hotspot by its geometric neighbourhood: within a door
+/// brush, inside a plat's swept column (the compiled AABB is the TOP
+/// position, so the column extends well below it), or beside lava.
+/// First match wins - a plat over lava is a plat problem first.
+fn hotspot_cause(
+    doors: &[([f32; 3], [f32; 3])],
+    plats: &[([f32; 3], [f32; 3])],
+    hull: Option<&crate::bsp::Hull0>,
+    x: f64,
+    y: f64,
+    z: f64,
+) -> Option<String> {
+    let inside = |mins: [f32; 3], maxs: [f32; 3], pad_xy: f64, pad_dn: f64, pad_up: f64| {
+        x >= mins[0] as f64 - pad_xy
+            && x <= maxs[0] as f64 + pad_xy
+            && y >= mins[1] as f64 - pad_xy
+            && y <= maxs[1] as f64 + pad_xy
+            && z >= mins[2] as f64 - pad_dn
+            && z <= maxs[2] as f64 + pad_up
+    };
+    if doors.iter().any(|(mn, mx)| inside(*mn, *mx, 48.0, 32.0, 48.0)) {
+        return Some("door".into());
+    }
+    if plats.iter().any(|(mn, mx)| inside(*mn, *mx, 64.0, 320.0, 72.0)) {
+        return Some("plat_column".into());
+    }
+    if hull.is_some() {
+        // ring probe one step out and below: the cell sits on a brink
+        // when any neighbour reads lava a body-length down
+        for (dx, dy) in [
+            (64.0, 0.0),
+            (-64.0, 0.0),
+            (0.0, 64.0),
+            (0.0, -64.0),
+            (45.0, 45.0),
+            (45.0, -45.0),
+            (-45.0, 45.0),
+            (-45.0, -45.0),
+        ] {
+            // two depths: a walkway lip sits just above the lava, a
+            // pit-floor cell stands a body-length or more over it
+            if crate::bsp::death_is_lava(hull, x + dx, y + dy, z - 40.0)
+                || crate::bsp::death_is_lava(hull, x + dx, y + dy, z - 104.0)
+            {
+                return Some("lava_edge".into());
+            }
+        }
+    }
+    None
+}
+
+/// Tape-vs-atlas referee, pure so it is testable: the labels claim
+/// reachability, the route/routefail events measure it.
+fn reach_evidence_flags(
+    goal_reach: &[GoalReach],
+    events: &BTreeMap<String, u32>,
+    mode_share: &ModeShare,
+) -> Vec<String> {
+    let off = goal_reach.iter().filter(|g| g.reach == "off_graph").count();
+    let routes = *events.get("route").unwrap_or(&0);
+    let fails = *events.get("routefail").unwrap_or(&0);
+    let mut out = Vec::new();
+    if off >= 3 && routes >= 30 && (fails as f64) < 0.15 * routes as f64 && mode_share.routed >= 0.35
+    {
+        out.push(format!(
+            "atlas reach labels CONTRADICTED by tape evidence: {off} goaled control items read off_graph yet the match routed {:.0}% of the time ({fails} fails in {routes} routes) - suspect the reach classifier or a stale nav cache, not the map; tools/argus_reach.py is the referee",
+            mode_share.routed * 100.0
+        ));
+    } else if off <= 1 && routes >= 20 && fails as f64 > 0.5 * routes as f64 {
+        out.push(format!(
+            "routing collapses ({fails} fails in {routes} routes) despite walkable atlas labels - the runtime graph disagrees with the atlas; run tools/argus_reach.py for the directed-reach numbers"
+        ));
+    }
+    out
+}
+
+/// Graph utilisation from the tape: which nodes carried traffic, and
+/// whether each typed-link family in the graph actually fired.
+pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
+    let Some(map) = brief.map.as_deref() else {
+        return;
+    };
+    let path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return;
+    };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return;
+    };
+    let Some(nodes) = v.get("nodes").and_then(|n| n.as_array()) else {
+        return;
+    };
+    let pts: Vec<(f64, f64, f64)> = nodes
+        .iter()
+        .filter_map(|n| {
+            let a = n.as_array()?;
+            Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?, a.get(2)?.as_f64()?))
+        })
+        .collect();
+    if pts.is_empty() {
+        return;
+    }
+    let mut visited = vec![false; pts.len()];
+    for rec in tape.samples.values() {
+        for s in rec {
+            for (i, p) in pts.iter().enumerate() {
+                if !visited[i] {
+                    let dx = s.pos.x - p.0;
+                    let dy = s.pos.y - p.1;
+                    let dz = s.pos.z - p.2;
+                    if dx * dx + dy * dy + dz * dz < 96.0 * 96.0 {
+                        visited[i] = true;
+                    }
+                }
+            }
+        }
+    }
+    let visited_n = visited.iter().filter(|v| **v).count();
+    let never: Vec<u32> = visited
+        .iter()
+        .enumerate()
+        .filter(|(_, v)| !**v)
+        .map(|(i, _)| i as u32)
+        .take(12)
+        .collect();
+    let mut typed = BTreeMap::new();
+    let mut dormant = Vec::new();
+    for (key, verb) in [
+        ("rjlinks", "rjump"),
+        ("liftlinks", "board"),
+        ("swimlinks", "swim"),
+        ("trainlinks", "train"),
+        ("sprintlinks", ""),
+    ] {
+        let n = v.get(key).and_then(|a| a.as_array()).map(|a| a.len()).unwrap_or(0);
+        if n == 0 {
+            continue;
+        }
+        let fired = if verb.is_empty() {
+            None
+        } else {
+            Some(*brief.events.get(verb).unwrap_or(&0))
+        };
+        let line = match fired {
+            Some(f) => format!("{n} link(s), {f} {verb} event(s)"),
+            None => format!("{n} link(s), no runtime verb yet"),
+        };
+        if fired == Some(0) && brief.totals.duration_sec >= 120.0 {
+            dormant.push(format!("{key} ({n})"));
+        }
+        typed.insert(key.trim_end_matches("links").to_string(), line);
+    }
+    if !dormant.is_empty() {
+        brief.flags.push(format!(
+            "typed links never fired this tape: {} - dormant system or unreachable pads",
+            dormant.join(", ")
+        ));
+    }
+    brief.nav_coverage = Some(NavCoverage {
+        nodes: pts.len(),
+        visited: visited_n,
+        pct: (100 * visited_n / pts.len().max(1)) as u32,
+        never_visited_sample: never,
+        typed_links: typed,
+    });
 }
 
 fn is_lava(d: &DeathEvent, hull: Option<&crate::bsp::Hull0>) -> bool {
@@ -1213,6 +1422,7 @@ fn cluster_hotspots(
                 nearest_dist: None,
                 nearest_item: None,
                 nearest_item_dist: None,
+                cause: None,
             }
         })
         .collect();
@@ -1567,6 +1777,92 @@ ARGEVT Reap hazard
     }
 
     #[test]
+    fn cause_tagger_classifies_doors_plats_and_nothing() {
+        let doors = vec![([100.0f32, 100.0, 0.0], [140.0f32, 200.0, 96.0])];
+        let plats = vec![([500.0f32, 500.0, 200.0], [600.0f32, 600.0, 260.0])];
+        // beside the door brush
+        assert_eq!(
+            hotspot_cause(&doors, &plats, None, 90.0, 150.0, 24.0),
+            Some("door".into())
+        );
+        // deep below the plat's compiled (top) AABB: still the column
+        assert_eq!(
+            hotspot_cause(&doors, &plats, None, 550.0, 550.0, -60.0),
+            Some("plat_column".into())
+        );
+        // open floor far from both, no hull: unclassified
+        assert_eq!(hotspot_cause(&doors, &plats, None, 2000.0, 2000.0, 24.0), None);
+    }
+
+    #[test]
+    fn reach_evidence_referee_judges_both_directions() {
+        let gr = |reach: &str| GoalReach {
+            classname: "x".into(),
+            times: 5,
+            reach: reach.into(),
+            nearest_node: None,
+            band: None,
+        };
+        let mut ev = BTreeMap::new();
+        ev.insert("route".to_string(), 100u32);
+        ev.insert("routefail".to_string(), 5u32);
+        let ms = ModeShare { seeking: 0.3, combat: 0.1, routed: 0.6 };
+        // labels say unreachable, tape routes fine: labels are wrong
+        let flags = reach_evidence_flags(
+            &[gr("off_graph"), gr("off_graph"), gr("off_graph"), gr("walk")],
+            &ev,
+            &ms,
+        );
+        assert!(flags.iter().any(|f| f.contains("CONTRADICTED")), "{flags:?}");
+        // labels say walkable, routing collapses: graph is wrong
+        let mut ev2 = BTreeMap::new();
+        ev2.insert("route".to_string(), 40u32);
+        ev2.insert("routefail".to_string(), 30u32);
+        let flags2 = reach_evidence_flags(&[gr("walk")], &ev2, &ms);
+        assert!(flags2.iter().any(|f| f.contains("routing collapses")), "{flags2:?}");
+        // agreement: silence
+        assert!(reach_evidence_flags(&[gr("walk")], &ev, &ms).is_empty());
+    }
+
+    #[test]
+    fn coverage_marks_visited_nodes_and_flags_dormant_links() {
+        use crate::config::load_for_reads_from;
+        use std::collections::HashMap;
+        use std::fs;
+        let root = std::env::temp_dir().join(format!("argus-mcp-cov-{}", std::process::id()));
+        let src = root.join("src");
+        fs::create_dir_all(&src).unwrap();
+        fs::write(
+            src.join("argus_nav_dmcov.qc.json"),
+            r#"{"nodes":[[0,0,24],[500,500,24],[5000,5000,24]],"links":[],"rjlinks":[[0,1]],"teles":[]}"#,
+        )
+        .unwrap();
+        let mut env = HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = load_for_reads_from(&env, &root).unwrap();
+        let log = "\
+ARGUS init on dmcov
+ARGLOG Reap t 1.0 pos '10.0 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t 130.0 pos '20.0 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Reap spawned
+";
+        let tape = parse_tape(log);
+        let mut brief = brief_text(log, Some("dmcov"));
+        attach_coverage(&cfg, &tape, &mut brief);
+        let cov = brief.nav_coverage.expect("coverage attached");
+        assert_eq!(cov.nodes, 3);
+        assert_eq!(cov.visited, 1, "only the node under the samples");
+        assert_eq!(cov.never_visited_sample, vec![1, 2]);
+        assert!(cov.typed_links.get("rj").unwrap().contains("1 link"));
+        assert!(
+            brief.flags.iter().any(|f| f.contains("never fired")),
+            "rj link with zero rjump events over 120s+ must flag: {:?}",
+            brief.flags
+        );
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
     fn real_v372_tape_splits_human_tracks_out_of_bot_bands_if_present() {
         // The escaped distortion this split exists for: the second
         // 2026-08-26 marvel-test tape briefed Shane's four lava swims
@@ -1596,6 +1892,31 @@ ARGEVT Reap hazard
                 brief.totals.lava_deaths
             );
         }
+
+        // end to end through brief_run with the real tree: coverage
+        // and cause tags ride the same tape when the root is present
+        use crate::config::load_for_reads_from;
+        use std::collections::HashMap;
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        if !root.join("src/argus_nav_dm4.qc.json").exists() {
+            return;
+        }
+        let mut env = HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = load_for_reads_from(&env, &root).unwrap();
+        let full = brief_run(&cfg, "shane_dm4_2026-08-26_v372", None).unwrap();
+        let cov = full.nav_coverage.as_ref().expect("dm4 nav coverage");
+        assert_eq!(cov.nodes, 145);
+        assert!(
+            cov.pct >= 60,
+            "a 335 s 4-track dm4 match paints most of the graph, got {}%",
+            cov.pct
+        );
+        assert!(
+            full.hotspots.iter().any(|h| h.cause.as_deref() == Some("lava_edge")),
+            "dm4 pit hotspots must tag lava_edge: {:?}",
+            full.hotspots.iter().map(|h| (h.x, h.y, h.z, h.cause.clone())).collect::<Vec<_>>()
+        );
     }
 
     #[test]
