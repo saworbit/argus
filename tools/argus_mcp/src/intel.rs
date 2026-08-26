@@ -96,6 +96,13 @@ pub struct Hotspot {
     /// matches or the atlas is unavailable.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cause: Option<String>,
+    /// For routefail/stall clusters: directed reach (percent of the
+    /// graph) from the cluster's nearest node. A routefail cluster
+    /// with low reach is a DIRECTED SINK - the graph's fault, not
+    /// the walking (the v3.69 dm2 storm signature, joined
+    /// automatically instead of by a forensics session).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reach_pct: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -123,6 +130,25 @@ pub struct MatchBrief {
     pub goal_reach: Vec<GoalReach>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub nav_coverage: Option<NavCoverage>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub item_control: Vec<ItemControl>,
+}
+
+/// The item-clock scoreboard: how tightly the roster runs each major
+/// item against its respawn clock. Visit entries (any track entering
+/// 96u of the spawn point) spaced at about the respawn period mean
+/// someone arrives as it pops - the "be early, not on time" economy
+/// (v3.48 clocks + v3.66 pre-positioning) finally has a measure.
+#[derive(Debug, Clone, Serialize)]
+pub struct ItemControl {
+    pub classname: String,
+    pub visits: usize,
+    pub median_gap_sec: f64,
+    pub period_sec: f64,
+    /// median_gap / period: about 1 is a tight clock, well under 1
+    /// means early arrivals lapping the spawn, well over means the
+    /// item sits unclaimed - a control gap on a prize is a flag
+    pub tightness: f64,
 }
 
 /// How much of the shipped graph the match actually used. Nodes with
@@ -203,6 +229,8 @@ pub struct BriefLite {
     pub goal_reach: Vec<GoalReach>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nav_coverage: Option<NavCoverage>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub item_control: Vec<ItemControl>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -257,6 +285,7 @@ pub fn brief_lite(b: &MatchBrief) -> BriefLite {
         goals: b.goals.clone(),
         goal_reach: b.goal_reach.clone(),
         nav_coverage: b.nav_coverage.clone(),
+        item_control: b.item_control.clone(),
     }
 }
 
@@ -499,6 +528,7 @@ fn brief_tape_lava(
         headline: String::new(),
         goal_reach: Vec::new(),
         nav_coverage: None,
+        item_control: Vec::new(),
     };
     brief.next_steps = suggest_next(&brief, None);
     brief.headline = headline_one(&brief.totals, &brief.flags, brief.map.as_deref());
@@ -545,6 +575,7 @@ pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<Matc
     attach_nav(cfg, &mut brief);
     attach_coverage(cfg, &tape, &mut brief);
     attach_atlas(cfg, &mut brief, hull.as_ref());
+    attach_item_control(cfg, &tape, &mut brief);
     brief.next_steps = suggest_next(&brief, None);
     for step in &mut brief.next_steps {
         step.look_at = crate::qc_index::look_at(cfg, &step.look_at);
@@ -1352,6 +1383,68 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
             dormant.join(", ")
         ));
     }
+
+    // the trapped/routefail <-> reach join: a routefail cluster whose
+    // nearest node reaches little of the graph is a DIRECTED SINK -
+    // the v3.69 dm2 storm signature, stamped on the hotspot instead
+    // of costing a forensics session. Forward edges are walk links
+    // plus every typed hop, navgen 7h semantics.
+    let mut fwd: Vec<Vec<usize>> = vec![Vec::new(); pts.len()];
+    for key in ["links", "teles", "rjlinks", "liftlinks", "swimlinks", "trainlinks", "sprintlinks"]
+    {
+        if let Some(arr) = v.get(key).and_then(|a| a.as_array()) {
+            for e in arr {
+                let Some(p) = e.as_array() else { continue };
+                let (Some(a), Some(b)) =
+                    (p.first().and_then(|x| x.as_u64()), p.get(1).and_then(|x| x.as_u64()))
+                else {
+                    continue;
+                };
+                let (a, b) = (a as usize, b as usize);
+                if a < fwd.len() && b < fwd.len() {
+                    fwd[a].push(b);
+                }
+            }
+        }
+    }
+    let reach_of = |start: usize| -> usize {
+        let mut seen = vec![false; fwd.len()];
+        seen[start] = true;
+        let mut q = vec![start];
+        let mut n = 0usize;
+        while let Some(u) = q.pop() {
+            n += 1;
+            for &w in &fwd[u] {
+                if !seen[w] {
+                    seen[w] = true;
+                    q.push(w);
+                }
+            }
+        }
+        n
+    };
+    let mut sink_notes: Vec<String> = Vec::new();
+    for h in &mut brief.hotspots {
+        if h.kind != "routefail" && h.kind != "stall" {
+            continue;
+        }
+        let Some(n) = h.nearest_node else { continue };
+        if h.nearest_dist.unwrap_or(f64::MAX) > 160.0 || (n as usize) >= fwd.len() {
+            continue;
+        }
+        let pct = (100 * reach_of(n as usize) / pts.len().max(1)) as u32;
+        h.reach_pct = Some(pct);
+        if h.kind == "routefail" && pct < 60 && h.count >= 5 {
+            sink_notes.push(format!("n{} at {:.0} {:.0} {:.0} reach {}%", n, h.x, h.y, h.z, pct));
+        }
+    }
+    if !sink_notes.is_empty() {
+        brief.flags.push(format!(
+            "routefail cluster(s) sit in DIRECTED SINKS - the graph's fault, not the walking: {}; tools/argus_reach.py maps the pocket",
+            sink_notes.join("; ")
+        ));
+    }
+
     brief.nav_coverage = Some(NavCoverage {
         nodes: pts.len(),
         visited: visited_n,
@@ -1359,6 +1452,99 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
         never_visited_sample: never,
         typed_links: typed,
     });
+}
+
+/// Stock deathmatch respawn clocks for the classes v3.48 gave item
+/// clocks. Mega is approximate: 20 s after the rot ends, so its
+/// effective cycle depends on the taker's health.
+fn respawn_period(classname: &str) -> Option<f64> {
+    if classname.starts_with("weapon_") {
+        return Some(30.0);
+    }
+    if classname.starts_with("item_armor") {
+        return Some(20.0);
+    }
+    if classname.starts_with("item_artifact_") {
+        return Some(60.0);
+    }
+    if classname == "item_health" {
+        return Some(125.0); // control-list item_health is the mega
+    }
+    None
+}
+
+/// Pure item-clock scorer: visit entries are any track crossing into
+/// 96u of the spawn point; gaps between consecutive entries measured
+/// against the respawn period. Per spawn point, so a map's two RLs
+/// each get a row.
+pub fn item_control_rows(items: &[(String, [f32; 3])], tape: &MatchTape) -> Vec<ItemControl> {
+    let mut out = Vec::new();
+    for (cls, o) in items {
+        let Some(period) = respawn_period(cls) else { continue };
+        let mut entries: Vec<f64> = Vec::new();
+        for rec in tape.samples.values() {
+            let mut inside = false;
+            for s in rec {
+                let dx = s.pos.x - o[0] as f64;
+                let dy = s.pos.y - o[1] as f64;
+                let dz = (s.pos.z - o[2] as f64).abs();
+                let now_in = dx * dx + dy * dy < 96.0 * 96.0 && dz < 80.0;
+                if now_in && !inside {
+                    entries.push(s.t);
+                }
+                inside = now_in;
+            }
+        }
+        if entries.len() < 3 {
+            continue;
+        }
+        entries.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let mut gaps: Vec<f64> = entries.windows(2).map(|w| w[1] - w[0]).collect();
+        gaps.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+        let median = gaps[gaps.len() / 2];
+        out.push(ItemControl {
+            classname: cls.clone(),
+            visits: entries.len(),
+            median_gap_sec: median,
+            period_sec: period,
+            tightness: median / period,
+        });
+    }
+    out.sort_by(|a, b| a.tightness.partial_cmp(&b.tightness).unwrap_or(std::cmp::Ordering::Equal));
+    out
+}
+
+/// Attach the item-clock scoreboard for the atlas's control items,
+/// and flag a top prize that sits unclaimed for multiples of its
+/// clock - a control gap the circuits should be closing.
+pub fn attach_item_control(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
+    let Some(map) = brief.map.clone() else { return };
+    let Ok(atlas) = crate::cartograph::cartograph(cfg, &map) else {
+        return;
+    };
+    let items: Vec<(String, [f32; 3])> = atlas
+        .control
+        .iter()
+        .filter_map(|c| Some((c.classname.clone(), c.origin?)))
+        .collect();
+    brief.item_control = item_control_rows(&items, tape);
+    if brief.totals.duration_sec < 120.0 {
+        return; // short probes make every clock look loose
+    }
+    for row in &brief.item_control {
+        let value = atlas
+            .control
+            .iter()
+            .find(|c| c.classname == row.classname)
+            .map(|c| c.value)
+            .unwrap_or(0);
+        if value >= 85 && row.tightness > 2.5 {
+            brief.flags.push(format!(
+                "prize sits unclaimed: {} median revisit {:.0} s vs its {:.0} s clock - a control gap the circuits should close",
+                row.classname, row.median_gap_sec, row.period_sec
+            ));
+        }
+    }
 }
 
 fn is_lava(d: &DeathEvent, hull: Option<&crate::bsp::Hull0>) -> bool {
@@ -1423,6 +1609,7 @@ fn cluster_hotspots(
                 nearest_item: None,
                 nearest_item_dist: None,
                 cause: None,
+                reach_pct: None,
             }
         })
         .collect();
@@ -1848,6 +2035,23 @@ ARGEVT Reap spawned
 ";
         let tape = parse_tape(log);
         let mut brief = brief_text(log, Some("dmcov"));
+        // a routefail cluster pinned to the disconnected node 2: the
+        // sink join must stamp its reach and shout
+        brief.hotspots.push(Hotspot {
+            kind: "routefail".into(),
+            count: 6,
+            x: 5000.0,
+            y: 5000.0,
+            z: 24.0,
+            known: None,
+            note: None,
+            nearest_node: Some(2),
+            nearest_dist: Some(10.0),
+            nearest_item: None,
+            nearest_item_dist: None,
+            cause: None,
+            reach_pct: None,
+        });
         attach_coverage(&cfg, &tape, &mut brief);
         let cov = brief.nav_coverage.expect("coverage attached");
         assert_eq!(cov.nodes, 3);
@@ -1859,7 +2063,48 @@ ARGEVT Reap spawned
             "rj link with zero rjump events over 120s+ must flag: {:?}",
             brief.flags
         );
+        let rf = brief.hotspots.iter().find(|h| h.kind == "routefail").unwrap();
+        assert_eq!(rf.reach_pct, Some(33), "node 2 reaches only itself in a 3-node graph");
+        assert!(
+            brief.flags.iter().any(|f| f.contains("DIRECTED SINK")),
+            "a big routefail cluster with 33% reach is a sink: {:?}",
+            brief.flags
+        );
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn item_clock_rows_measure_the_circuit() {
+        // one RL spawn, one track lapping it every 30 s: median gap
+        // equals the weapon clock, tightness 1.0
+        let mut log = String::from("ARGUS init on dm4\nARGEVT Reap spawned\n");
+        for k in 0..4 {
+            let t_in = 5.0 + 30.0 * k as f64;
+            log.push_str(&format!(
+                "ARGLOG Reap t {t_in} pos '0.0 0.0 24.0' spd 200 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n"
+            ));
+            log.push_str(&format!(
+                "ARGLOG Reap t {} pos '500.0 0.0 24.0' spd 200 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n",
+                t_in + 15.0
+            ));
+        }
+        let tape = parse_tape(&log);
+        let items = vec![
+            ("weapon_rocketlauncher".to_string(), [0.0f32, 0.0, 24.0]),
+            // two visits only: below the 3-visit floor, no row
+            ("item_armor2".to_string(), [500.0f32, 0.0, 24.0]),
+        ];
+        let rows = item_control_rows(&items[..1], &tape);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].visits, 4);
+        assert!((rows[0].median_gap_sec - 30.0).abs() < 0.01);
+        assert!((rows[0].tightness - 1.0).abs() < 0.01, "tightness {}", rows[0].tightness);
+        // an unknown class has no clock and never rows
+        let none = item_control_rows(
+            &[("misc_fireball".to_string(), [0.0f32, 0.0, 24.0])],
+            &tape,
+        );
+        assert!(none.is_empty());
     }
 
     #[test]
@@ -1916,6 +2161,18 @@ ARGEVT Reap spawned
             full.hotspots.iter().any(|h| h.cause.as_deref() == Some("lava_edge")),
             "dm4 pit hotspots must tag lava_edge: {:?}",
             full.hotspots.iter().map(|h| (h.x, h.y, h.z, h.cause.clone())).collect::<Vec<_>>()
+        );
+        // item clocks: a 335 s 4-track dm4 match laps the RL spawns
+        let rl = full
+            .item_control
+            .iter()
+            .find(|r| r.classname == "weapon_rocketlauncher")
+            .expect("RL control row");
+        assert!(rl.visits >= 5, "RL visits {}", rl.visits);
+        assert!(
+            !full.flags.iter().any(|f| f.contains("DIRECTED SINK")),
+            "dm4 reaches 98% - no sink flag belongs here: {:?}",
+            full.flags
         );
     }
 

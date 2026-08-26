@@ -177,6 +177,7 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
             nearest_item: None,
             nearest_item_dist: None,
             cause: None,
+            reach_pct: None,
         })
         .collect();
     attach_nav(cfg, &mut brief_stub);
