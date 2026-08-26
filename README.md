@@ -133,12 +133,16 @@ argus/
 |-- tools/
 |   |-- argus_navgen.py        # Offline BSP29 navigation compiler (Hull 1 sampler)
 |   |-- analyze_match.py       # Trajectory visualizer and A/B comparative plotter
+|   |-- argus_reach.py         # Directed-reach audit of the shipped nav graphs
+|   |-- harvest_session.py     # Stamps a play session's tape + demo into runs/
 |   |-- pak_extract.py         # Standalone id1 PAK archive reader / extractor
 |   |-- mdl_skins.py           # Palette-remapped player MDL skin injector
 |   |-- setup_rig.sh           # Automated headless Linux environment setup
 |   `-- argus_mcp/             # Lab MCP (stdio) plus `argus-mcp gui` wizard
 |-- runs/                      # Archive of telemetry logs and trajectory plots
+|   `-- demos/                 # Paired .dem recordings (machine-local, not in repo)
 |-- backups/                   # Dated progs + nav copies (machine-local, not in repo)
+|-- CHANGELOG.md               # Distilled build history, v3.1 to current
 `-- docs/                      # Architectural specifications and design records
 ```
 
@@ -347,13 +351,35 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 Human clients emit the same `ARGLOG` track under their own netname
 (camera flights excluded), so every analysis tool sees the human
 player as one more trajectory — the reference circuit the bots are
-measured against.
+measured against. Real-client deaths emit the same detailed
+`ARGEVT death` line as bots, and the parsers split human tracks out
+of the bot quality bands automatically.
+
+### Recording and reading demos
+The 1 Hz telemetry tape is the ruler; a `.dem` recording is the
+microscope. Demos carry full-rate positions for every visible entity
+(25–70 Hz), projectiles in flight, view angles, and the console kill
+feed. A listen session records one automatically by using the
+`record` form of the map command:
+
+```bash
+quakespasm -listen 8 -condebug -game argus +developer 1 +deathmatch 1 +record session dm4
+```
+
+After playing, `python tools/harvest_session.py --tag v373` stamps
+the tape and its demo into `runs/` under one paired stem, and
+`see what=demo name=<stem>` in the lab parses the recording:
+duration, named roster (bot identities resolve from the skin byte),
+per-track sample rates and distances, and the coalesced obituary
+feed. One physical caveat: demos are PVS-culled to the recording
+client's view, so a bot across the map drops to a trickle — the
+telemetry tape remains the full-map record and the A/B gates.
 
 ---
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.18**. Operator guide: [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
+Current version **0.20**. Operator guide: [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
 The Rust binary in `tools/argus_mcp/` is two faces of the same lab:
 
@@ -371,13 +397,16 @@ argus-mcp gui --port 7420 --no-open
 
 ### Key MCP tools
 - `see what=project`: Active tree, maps, and the next call.
-- `see what=map name=dm4`: Cartographer brief (control items, islands, door cuts, corridor misses, edict estimate).
+- `see what=map name=dm4`: Cartographer brief (control items, islands, door cuts, corridor misses, plat boardability, edict estimate).
 - `see what=path name=dm4:quad->lg`: Waypoint BFS including walk/drop/jump/tele/rocket/lift/swim.
+- `see what=demo name=<stem>`: Parse a harvested `.dem` — full-rate named tracks, projectiles, kill feed.
 - `experiment map=dm4 duration_sec=30 skill=2`: Compile, short match, duration-scaled lite A/B.
 - `compare_runs log_a=baseline log_b=latest`: Unscaled A/B against the shipped tape.
 - `learn_hotspots map=dm4`: Fold stall/lava/hazard cells (kind-aware); writes `src/argus_nav_<map>.costs.json` for the next navgen.
 
 Lava deaths in experiment/compare are hull-0 contents (same as `analyze_match.py`); `z < -300` is only used when the BSP is missing. Statue freezes are a hard A/B gate (6 s+ under 20 u/s, with an under-fire measure for damage taken while frozen), and lift/train boarding success is accounted (`mover_waits` vs `boards`) so a broken pad reads as broken rather than slow. A/B baselines are config-driven via `runs/baselines.json`.
+
+Match briefs also cross-examine themselves: every stall/freeze/hazard hotspot carries a geometric `cause` from the atlas (door, plat column, lava edge); routefail clusters carry the directed reach of their nearest node and are flagged as **directed sinks** when the graph, not the walking, is at fault; atlas reach labels are checked against actual routing evidence; graph coverage reports nodes with no traffic and typed-link families that never fired; per-prize item-clock `tightness` measures how tightly the roster runs each respawn clock; human tracks are reported separately from the bot bands; and a tape whose requested map failed to spawn flags itself as describing the wrong map.
 
 ---
 

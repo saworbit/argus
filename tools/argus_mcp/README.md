@@ -123,7 +123,8 @@ Omit `what` (or pass `start` / `orient`) for `project`. Aliases:
 `qc`/`func` → `fn`, `atlas` → `map`, `session` → `last`,
 `bots` → `live`, `route` → `path`, `grep`/`find` → `search`,
 `pickup` → `item`, `events` → `timeline`, `near`/`pos` → `around`,
-`goap`/`goalplan` → `plan`. `see what=help` prints the vocabulary.
+`goap`/`goalplan` → `plan`, `dem`/`replay` → `demo`.
+`see what=help` prints the vocabulary.
 
 Tool errors are JSON `{error, hint}` with a next call.
 
@@ -148,6 +149,7 @@ Tool errors are JSON `{error, hint}` with a next call.
 | `around` | `dm4:200,-900,24` | Nearest node and control at a point |
 | `status` | | Dedicated child: running, pid, elapsed. `since_line` for an incremental tail |
 | `run` | `latest` or `ab_dm4_parity` | Lite brief of a harvested log |
+| `demo` | `shane_dm4_2026-08-27_v373` | Parse a `.dem` from `runs/demos` or the game dir: duration, named roster, full-rate tracks, projectiles, kill feed |
 | `last` | | Session memory: last map, function, run, experiment |
 | `knobs` | | Live cvars vs compile-time constants |
 
@@ -276,6 +278,31 @@ still live only inside the PAKs.
 
 A match brief attaches `goal_reach`: each goaled classname gets the
 cartographer's `reach`.
+
+## Demo ingest
+
+The 1 Hz ARGLOG tape is the ruler and the gates; a `.dem` is the
+microscope. A listen session records one with the map-taking form of
+`record` in the launch command (`+record session dm4` - the bare
+`+record name` form before a map connects records nothing), then
+`python tools/harvest_session.py --tag vNNN` stamps the tape and
+demo into `runs/` under one paired stem, map sniffed from the last
+confirmed SpawnServer.
+
+`see what=demo name=<stem>` parses it: protocol-15 block stream,
+fast-update deltas against baselines, obituary fragments coalesced
+into whole lines. Identity is structural: a real client is entity
+1..maxclients (scoreboard row = entity - 1); a bot's skin byte is
+its roster slot + 1 and its scoreboard row counts down from the
+top, so every player-model track comes back named. Body-queue
+corpses are tagged `body`; missile/grenade tracks are tagged
+`projectile` (note: entity SLOTS recycle, so a projectile track is
+a slot history - split on time gaps for true per-rocket arcs).
+
+Caveats: demos are PVS-culled to the recording client's view (an
+out-of-sight bot drops to a trickle), and the engine truncates
+`qconsole.log` in its working directory on launch - HARVEST BEFORE
+STARTING ANYTHING NEW.
 
 ## Lite vs full
 
@@ -571,3 +598,4 @@ shell.
 | 0.17 | Hull-0 lava in Rust briefs (same as analyze_match.py). Per-map A/B bars. dm2 baseline `ab_dm2_lava`. Cartograph islands, door cuts, corridor misses. `learn_hotspots` writes `argus_nav_<map>.costs.json`; navgen inflates those cells. |
 | 0.18 | `argus-mcp gui`: localhost deploy wizard (attach BSP, nav PNG, compile, install, dated backups + restore). |
 | 0.19 | Spaced netnames parse whole (closed verb vocabulary). Freeze detection as a HARD gate with the under-fire measure. `mover_waits` vs `boards` hop-success accounting. Config-driven baselines (`runs/baselines.json`). Kind-aware `learn_hotspots` (lava cells small and heavy, deflection cells reported but never written). Cartograph `PlatBrief` boardability probes. New verbs: `retreat`, `grab`, `board`; human clients emit ARGLOG tracks. The escaped v363 west-pad tape is a permanent regression test. |
+| 0.20 | The tape and the map argue with each other. Reach classifier fixed (floor-seated item origins traced 2u inside the hull-1 floor: eleven of twelve dm4 control items read off_graph). Human tracks split out of bot bands (`totals.human`); a refused map spawn flags the whole tape (every historical mx_lqdm2 probe had silently run on the start map). Hotspots carry `cause` (door / plat_column / lava_edge) and `reach_pct` (routefail clusters in directed sinks are named). Briefs cross-examine atlas labels against routing evidence, report `nav_coverage` (visited nodes, dormant typed-link families) and `item_control` (per-prize clock tightness). `see what=demo`: protocol-15 .dem parser with named full-rate tracks. Companions: `tools/argus_reach.py`, `tools/harvest_session.py`. |
