@@ -69,6 +69,10 @@ pub struct MatchTape {
     pub deaths: Vec<DeathEvent>,
     pub events: Vec<GameEvent>,
     pub event_counts: BTreeMap<String, u32>,
+    /// Maps the engine REFUSED to spawn ("Couldn't spawn server").
+    /// Non-empty means the tape's match ran somewhere other than what
+    /// was asked for and every metric describes the wrong map.
+    pub failed_spawns: Vec<String>,
 }
 
 /// A statue: 6 s or longer at under 20 u/s inside a 32u circle,
@@ -88,6 +92,35 @@ pub struct Freeze {
 }
 
 impl MatchTape {
+    /// Tracks that are real clients, not bots: every bot emits ARGEVT
+    /// spawned at creation and respawn after each death; a human track
+    /// (ARGLOG rows since v3.66, death lines since v3.72) emits
+    /// neither. Quality bands and gates are statements about the BOT
+    /// build - a human's lava swims and idle spells are review data,
+    /// not defects (the 2026-08-26 v372 tape fired the dm4 lava band
+    /// flag on Shane's own four swims, and its only "statue" was
+    /// Shane standing still for 12.7 s).
+    pub fn human_names(&self) -> HashSet<String> {
+        let bots: HashSet<&str> = self
+            .events
+            .iter()
+            .filter(|e| e.verb == "spawned" || e.verb == "respawn")
+            .map(|e| e.bot.as_str())
+            .collect();
+        // A tape with no spawned/respawn at all (legacy vintage, a
+        // tail slice, a synthetic fixture) cannot support the
+        // discrimination - treat every track as a bot rather than
+        // demote the whole roster to review data.
+        if bots.is_empty() {
+            return HashSet::new();
+        }
+        self.samples
+            .keys()
+            .filter(|n| !bots.contains(n.as_str()))
+            .cloned()
+            .collect()
+    }
+
     /// Statue scan over the ARGLOG samples, longest first. A death
     /// respawns the bot elsewhere, which breaks the position run, so
     /// a freeze never spans a respawn.
@@ -230,13 +263,33 @@ pub fn parse_tape(text: &str) -> MatchTape {
     let mut events = Vec::new();
     let mut event_counts: BTreeMap<String, u32> = BTreeMap::new();
     let mut map = None;
+    let mut pending_map: Option<String> = None;
+    let mut failed_spawns: Vec<String> = Vec::new();
     let mut last_t: BTreeMap<String, f64> = BTreeMap::new();
 
     for line in text.lines() {
-        if map.is_none() {
-            if let Some(caps) = map_re.captures(line) {
-                map = Some(caps[1].to_ascii_lowercase());
+        // A SpawnServer line is a REQUEST, not a fact: when the BSP is
+        // missing the engine prints "Couldn't spawn server maps/x.bsp"
+        // and falls back to the start map, and taking the first
+        // SpawnServer as the tape's map briefed every historical
+        // mx_lqdm2 probe as lqdm2 while the bots actually fought on
+        // start with no nav (found 2026-08-26). A spawn is confirmed
+        // by not being refused before the next request.
+        if let Some(caps) = map_re.captures(line) {
+            if map.is_none() {
+                if let Some(prev) = pending_map.take() {
+                    map = Some(prev);
+                }
+                if map.is_none() {
+                    pending_map = Some(caps[1].to_ascii_lowercase());
+                }
             }
+        } else if let Some(rest) = line.strip_prefix("Couldn't spawn server maps/") {
+            let name = rest.trim_end_matches(".bsp").to_ascii_lowercase();
+            if pending_map.as_deref() == Some(name.as_str()) {
+                pending_map = None;
+            }
+            failed_spawns.push(name);
         }
         if let Some(caps) = v1.captures(line) {
             let name = caps[1].to_string();
@@ -301,12 +354,16 @@ pub fn parse_tape(text: &str) -> MatchTape {
         }
     }
 
+    if map.is_none() {
+        map = pending_map; // last request stood unrefused
+    }
     MatchTape {
         map,
         samples,
         deaths,
         events,
         event_counts,
+        failed_spawns,
     }
 }
 
@@ -391,6 +448,26 @@ mod tests {
         assert_eq!(summary.events.get("hazard"), Some(&1));
         assert_eq!(summary.events.get("engage"), Some(&1));
         assert_eq!(summary.events.get("weapon"), Some(&1));
+    }
+
+    #[test]
+    fn refused_spawn_reports_the_fallback_map() {
+        // the engine, missing lqdm2.bsp, falls back to start - the
+        // tape's map is where the match RAN, and the refusal is kept
+        let text = "\
+SpawnServer: lqdm2
+FindFile: can't find maps/lqdm2.bsp
+Couldn't spawn server maps/lqdm2.bsp
+SpawnServer: start
+ARGLOG Reap t 1.0 pos '0.0 0.0 24.0' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+";
+        let tape = parse_tape(text);
+        assert_eq!(tape.map.as_deref(), Some("start"));
+        assert_eq!(tape.failed_spawns, vec!["lqdm2".to_string()]);
+        // a clean spawn keeps its map and reports no refusals
+        let clean = parse_tape("SpawnServer: dm4\nARGUS init on dm4\n");
+        assert_eq!(clean.map.as_deref(), Some("dm4"));
+        assert!(clean.failed_spawns.is_empty());
     }
 
     #[test]

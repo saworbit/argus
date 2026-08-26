@@ -1158,10 +1158,7 @@ fn snap_reach(
             .take(8)
             .find(|(_, i)| {
                 let n = nodes[*i];
-                hull.line_clear(
-                    [n[0], n[1], n[2] + 22.0],
-                    [origin[0], origin[1], origin[2] + 22.0],
-                )
+                hull.line_clear([n[0], n[1], n[2] + 22.0], item_eye(origin, n[2]))
             })
             .copied()
             .or_else(|| ranked.first().copied())
@@ -1177,6 +1174,25 @@ fn snap_reach(
     };
     let reach = reach_label_full(&snap, n, origin, elevated, hull, doors, plats);
     (snap, reach)
+}
+
+// Entity-lump item origins sit ON the floor while nav nodes sit at
+// player-origin height (floor + 24). In the clip hull everything
+// below floor + 24 is solid, so an eye-trace endpoint at a
+// floor-seated item's origin + 22 starts 2u INSIDE the floor and the
+// trace can never clear - the 2026-08-26 dm4 audit found eleven of
+// twelve control items labelled off_graph, every one with node_dz
+// exactly -24, on a map whose tapes route 57% of the time. Lift a
+// below-node origin to node height before tracing; a floating or
+// above-node origin (the dm4 quad, jump/RJ prizes) keeps its own
+// height so the elevation labels still see the true dz.
+fn item_eye(origin: [f32; 3], node_z: f32) -> [f32; 3] {
+    let z = if node_z - origin[2] >= 16.0 {
+        node_z + 22.0
+    } else {
+        origin[2] + 22.0
+    };
+    [origin[0], origin[1], z]
 }
 
 fn reach_label_full(
@@ -1202,10 +1218,8 @@ fn reach_label_full(
         return "elevator".into();
     }
     if let Some(hull) = hull {
-        if !hull.line_clear(
-            [node[0], node[1], node[2] + 22.0],
-            [origin[0], origin[1], origin[2] + 22.0],
-        ) && s.dz <= 45.0
+        if !hull.line_clear([node[0], node[1], node[2] + 22.0], item_eye(origin, node[2]))
+            && s.dz <= 45.0
         {
             return "off_graph".into();
         }
@@ -1972,6 +1986,32 @@ mod tests {
         assert!(
             atlas.control.iter().any(|c| c.reach == "walk"),
             "expected an on-graph prize, got {:?}",
+            atlas.control
+        );
+        // floor-seated origins must not read off_graph (the item_eye
+        // fix): dm4 routes its whole control set at runtime, so a
+        // majority-off_graph label set means the classifier is wrong,
+        // not the map. The pit RL and the LG are the sentinels - both
+        // are floor-seated (lump origin 24 below their node) and both
+        // were mislabelled before the fix.
+        let off = atlas.control.iter().filter(|c| c.reach == "off_graph").count();
+        assert!(
+            off * 2 < atlas.control.len(),
+            "majority of dm4 control off_graph: {:?}",
+            atlas
+                .control
+                .iter()
+                .map(|c| (c.classname.clone(), c.reach.clone()))
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            atlas
+                .control
+                .iter()
+                .filter(|c| c.classname == "weapon_lightning"
+                    || c.classname == "weapon_rocketlauncher")
+                .all(|c| c.reach == "walk"),
+            "floor-seated prizes must snap walk: {:?}",
             atlas.control
         );
         let node = lookup_node(&cfg, "dm4", 56).unwrap();

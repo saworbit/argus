@@ -50,6 +50,24 @@ pub struct Totals {
     /// a pad or gate is geometrically broken, not merely slow.
     pub mover_waits: u32,
     pub boards: u32,
+    /// Present only when the tape carries human tracks (names with
+    /// ARGLOG rows but no spawned/respawn). Every figure above is
+    /// then BOT-only - bands, gates and flags are statements about
+    /// the build, and a human's lava swims or idle spells are review
+    /// data, not defects. The human's numbers live here instead.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub human: Option<HumanTracks>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct HumanTracks {
+    pub names: Vec<String>,
+    pub deaths: i32,
+    pub world_deaths: i32,
+    pub lava_deaths: i32,
+    /// kills the human scored on players/bots (their frag row is in
+    /// `bots` like any track; this is death-event-derived)
+    pub kills: i32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -280,18 +298,25 @@ fn brief_tape_lava(
         .map(|s| s.to_ascii_lowercase())
         .or_else(|| tape.map.clone());
     let summary = tape.summary();
+    // bands, gates and flags are statements about the BOT build:
+    // every bot-quality figure below excludes human tracks (v3.72's
+    // human death line put Shane's lava swims into the dm4 band flag
+    // and his idle spell into the freeze count). The human rows stay
+    // in `bots` and the kill matrix; their totals go in `human`.
+    let humans = tape.human_names();
+    let bot_rows: Vec<_> = summary.bots.iter().filter(|b| !humans.contains(&b.name)).collect();
     let duration = summary.bots.iter().map(|b| b.dur).fold(0.0, f64::max);
-    let stalls = summary.bots.iter().map(|b| b.stalls).sum();
-    let goals = summary.bots.iter().map(|b| b.goals).sum();
-    let frags = summary.bots.iter().filter_map(|b| b.frags).sum();
-    let deaths = summary.bots.iter().map(|b| b.deaths).sum();
-    let cover = summary.bots.iter().map(|b| b.cover).sum();
-    let avg_speed = if summary.bots.is_empty() {
+    let stalls = bot_rows.iter().map(|b| b.stalls).sum();
+    let goals = bot_rows.iter().map(|b| b.goals).sum();
+    let frags = bot_rows.iter().filter_map(|b| b.frags).sum();
+    let deaths = bot_rows.iter().map(|b| b.deaths).sum();
+    let cover = bot_rows.iter().map(|b| b.cover).sum();
+    let avg_speed = if bot_rows.is_empty() {
         0.0
     } else {
-        summary.bots.iter().map(|b| b.avg).sum::<f64>() / summary.bots.len() as f64
+        bot_rows.iter().map(|b| b.avg).sum::<f64>() / bot_rows.len() as f64
     };
-    let frag_vals: Vec<i32> = summary.bots.iter().filter_map(|b| b.frags).collect();
+    let frag_vals: Vec<i32> = bot_rows.iter().filter_map(|b| b.frags).collect();
     let kd_spread = match (frag_vals.iter().max(), frag_vals.iter().min()) {
         (Some(hi), Some(lo)) => hi - lo,
         _ => 0,
@@ -301,23 +326,59 @@ fn brief_tape_lava(
     let mut lava_deaths = 0;
     let mut world_deaths = 0;
     let mut player_kills = 0;
+    let mut h_deaths = 0;
+    let mut h_world = 0;
+    let mut h_lava = 0;
+    let mut h_kills = 0;
     for d in &tape.deaths {
+        let lava = d.killer.eq_ignore_ascii_case("world")
+            && crate::bsp::death_is_lava(hull, d.pos.x, d.pos.y, d.pos.z);
+        if humans.contains(&d.victim) {
+            h_deaths += 1;
+            if d.killer.eq_ignore_ascii_case("world") {
+                h_world += 1;
+                if lava {
+                    h_lava += 1;
+                }
+            }
+            continue;
+        }
         if d.killer.eq_ignore_ascii_case("world") {
             world_deaths += 1;
-            if crate::bsp::death_is_lava(hull, d.pos.x, d.pos.y, d.pos.z) {
+            if lava {
                 lava_deaths += 1;
             }
         } else {
             player_kills += 1;
+            if humans.contains(&d.killer) {
+                h_kills += 1;
+            }
         }
     }
+    let human = if humans.is_empty() {
+        None
+    } else {
+        let mut names: Vec<String> = humans.iter().cloned().collect();
+        names.sort();
+        Some(HumanTracks {
+            names,
+            deaths: h_deaths,
+            world_deaths: h_world,
+            lava_deaths: h_lava,
+            kills: h_kills,
+        })
+    };
     let lava_rule = Some(if hull.is_some() {
         "contents".into()
     } else {
         "z_fallback".into()
     });
 
-    let fz = tape.freezes();
+    let fz: Vec<_> = tape
+        .freezes()
+        .into_iter()
+        .filter(|f| !humans.contains(&f.bot))
+        .collect();
     let freeze_underfire = fz.iter().filter(|f| f.hp_drop >= 10.0).count() as u32;
     let freeze_max_sec = fz.first().map(|f| f.dur).unwrap_or(0.0);
 
@@ -346,11 +407,27 @@ fn brief_tape_lava(
         freeze_underfire,
         mover_waits: ev("lift") + ev("train"),
         boards: ev("board"),
+        human,
     };
 
     let hotspots = cluster_hotspots(tape, map.as_deref(), hull);
     let mode_share = mode_share(tape);
     let mut flags = flags(&totals, &hotspots, map.as_deref());
+    if !tape.failed_spawns.is_empty() {
+        // every historical mx_lqdm2 probe briefed as lqdm2 while the
+        // engine, missing the BSP, ran the match on the start map
+        // with no nav - and the lab judged gates on it. A refused
+        // spawn makes the whole tape describe the wrong map: say so
+        // first, louder than anything else.
+        flags.insert(
+            0,
+            format!(
+                "WRONG MAP: engine refused to spawn {} (missing BSP?) and fell back to '{}' - every figure in this brief describes the fallback map, judge NOTHING from it",
+                tape.failed_spawns.join(", "),
+                tape.map.as_deref().unwrap_or("unknown"),
+            ),
+        );
+    }
     if let Some(worst) = fz.first() {
         flags.push(format!(
             "{} freeze(s) 6 s+, longest {:.1} s at '{:.0} {:.0} {:.0}' ({})",
@@ -1487,6 +1564,38 @@ ARGEVT Reap hazard
             .flags
             .iter()
             .any(|f| f.contains("freeze")), "brief must flag the statues");
+    }
+
+    #[test]
+    fn real_v372_tape_splits_human_tracks_out_of_bot_bands_if_present() {
+        // The escaped distortion this split exists for: the second
+        // 2026-08-26 marvel-test tape briefed Shane's four lava swims
+        // into the dm4 bot lava band (priority-1 flag) and his 12.7 s
+        // idle spell as the match's one statue. Human tracks are
+        // review data; bands and gates judge the build.
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/shane_dm4_2026-08-26_v372.log");
+        if !path.exists() {
+            return;
+        }
+        let brief = brief_path(&path, None).unwrap();
+        let human = brief.totals.human.as_ref().expect("tape has a human track");
+        assert_eq!(human.names, vec!["player".to_string()]);
+        assert_eq!(human.deaths, 13, "all 13 player deaths in the human block");
+        assert_eq!(human.kills, 14, "player killed bots 14 times");
+        assert_eq!(brief.totals.deaths, 64, "bot deaths exclude the human's 13");
+        assert_eq!(
+            brief.totals.freezes, 0,
+            "the only statue was the human idling; bots froze zero times"
+        );
+        if brief.totals.lava_rule.as_deref() == Some("contents") {
+            assert_eq!(human.world_deaths, 4, "Shane's four lava swims are his");
+            assert!(
+                brief.totals.lava_deaths <= 5,
+                "bot lava must sit in band without the human's swims, got {}",
+                brief.totals.lava_deaths
+            );
+        }
     }
 
     #[test]
