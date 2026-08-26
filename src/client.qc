@@ -1515,6 +1515,27 @@ void(entity targ, entity attacker) ClientObituary =
 
 	deathstring = deathstring2 = string_null;
 
+	// ARGUS human tracks, death line (2026-08-26): real clients emit
+	// the same detailed death event Argus_Die emits for bots, so the
+	// lab's kill matrix and deaths totals see the human. Shane's
+	// marvel-test tape briefed as "player deaths 0" while the engine
+	// obituaries held 21. Bots keep their Argus_Die line; FL_CLIENT
+	// (engine-set on real clients only) plus !ar_isbot prevents the
+	// double emission (the 2026-08-18 bare-death lesson).
+	if ((targ.flags & FL_CLIENT) && !targ.ar_isbot)
+	{
+		dprint ("ARGEVT ");
+		dprint (targ.netname);
+		dprint (" death ");
+		if (attacker != world && attacker.netname != "")
+			dprint (attacker.netname);
+		else
+			dprint ("world");
+		dprint (" pos ");
+		dprint (vtos (targ.origin));
+		dprint ("\n");
+	}
+
 	rnum = random();
 
 	if (targ.deathtype == "selfwater")

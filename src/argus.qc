@@ -165,6 +165,9 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_retreating;          // retreat: low-stack disengage active
 .float  ar_coveryaw;            // retreat: committed cover heading
 .float  ar_covertime;           // retreat: re-evaluate cover after this
+.float  ar_retreatlock;         // retreat: no re-entry until this (a
+                                // cornered exit means FIGHT, not a
+                                // per-frame re-scan of the same fan)
 .entity ar_bitem;               // battle item: mid-fight grab target
 .float  ar_bitemscan;           // battle item: next scan time
 .float  ar_bitemend;            // battle item: commit expires
@@ -2359,6 +2362,45 @@ void() Argus_BattleItemScan =
     self.ar_bitemend = time + 1.5;
 };
 
+// retreat toward supplies (2026-08-26, from the dm4 marvel-test
+// tape: Romero fired 139 retreat entries in 374 s and finished 11
+// and 22. The only self-serve exit from retreat is stack > 55,
+// which needs a pickup - and the battle-item bend above is gated
+// OFF while retreating, so the design could not heal its way out.
+// This scan feeds the cover fan a health/armour heading to try
+// FIRST, under the same floor probes and SafeLine rule as every
+// other candidate; cover toward supplies is the ideal leg, and an
+// open run at a box still loses to any real cover elsewhere).
+// 500u where the battle grab uses 240: the grab is a detour from
+// a fight the bot is winning, this is the way out of one it is not.
+entity() Argus_RetreatSupply =
+{
+    local entity it, best;
+    local float v, bv, cls;
+
+    best = world;
+    bv = 0;
+    it = findradius (self.origin, 500);
+    while (it != world)
+    {
+        if ((it.flags & FL_ITEM) && it.solid == SOLID_TRIGGER)
+        {
+            cls = Argus_ItemClass (it);
+            if (cls == AR_C_HEALTH || cls == AR_C_ARMOR)
+            {
+                v = Argus_ItemValue (it, cls);
+                if (v > bv && Argus_SafeLine (Argus_GoalPoint (it)))
+                {
+                    best = it;
+                    bv = v;
+                }
+            }
+        }
+        it = it.chain;
+    }
+    return best;
+};
+
 // "rocket", not stock's "missile". The 55% commit chance keeps the
 // dodge human: serial rockets still land sometimes at every tier.
 // Spikes are not scanned - a 1000 u/s nail is not human-reactable.
@@ -2439,10 +2481,10 @@ void() Argus_DodgeScan =
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
-    local entity e;
+    local entity e, sup;
     local vector to, aimpt, err, cvr;
     local float d, want, diff, turn, trackt, errscale, loft;
-    local float cy, ck, cfound, ceff;
+    local float cy, ck, cfound, ceff, sy, dy;
 
     Argus_Perceive ();
     e = self.ar_enemy;
@@ -2665,7 +2707,8 @@ float() Argus_Combat =
     }
     else if (ceff < 35 && e.health > 30
              && self.super_damage_finished < time
-             && self.weapon != IT_AXE)
+             && self.weapon != IT_AXE
+             && time > self.ar_retreatlock)
     {
         self.ar_retreating = 1;
         self.ar_covertime = 0;      // pick a cover leg this frame
@@ -2684,14 +2727,34 @@ float() Argus_Combat =
             // floor-safe heading with no cover is kept as fallback,
             // and with neither we stand and fight.
             want = vectoyaw (self.origin - e.origin);
+
+            // supply heading first (Argus_RetreatSupply): the way
+            // to a live health/armour item is candidate zero, so
+            // cover TOWARD supplies beats cover anywhere else and
+            // a floor-safe supply run beats a plain fallback. Never
+            // back toward the enemy: more than 100 degrees off the
+            // away line and the candidate is skipped (sy == want
+            // is the none sentinel - it just duplicates ck 1).
+            sy = want;
+            sup = Argus_RetreatSupply ();
+            if (sup != world)
+            {
+                dy = vectoyaw (Argus_GoalPoint (sup) - self.origin)
+                     - want;
+                while (dy > 180)  dy = dy - 360;
+                while (dy < -180) dy = dy + 360;
+                if (fabs (dy) <= 100)
+                    sy = want + dy;
+            }
             cfound = 0;
             ck = 0;
-            while (ck < 5 && cfound < 2)
+            while (ck < 6 && cfound < 2)
             {
-                if (ck == 0)        cy = want;
-                else if (ck == 1)   cy = want + 55;
-                else if (ck == 2)   cy = want - 55;
-                else if (ck == 3)   cy = want + 110;
+                if (ck == 0)        cy = sy;
+                else if (ck == 1)   cy = want;
+                else if (ck == 2)   cy = want + 55;
+                else if (ck == 3)   cy = want - 55;
+                else if (ck == 4)   cy = want + 110;
                 else                cy = want - 110;
                 if (!Argus_MoveHazard (cy, 48) && !Argus_MoveHazard (cy, 90))
                 {
@@ -2712,7 +2775,15 @@ float() Argus_Combat =
                 ck = ck + 1;
             }
             if (cfound == 0)
-                self.ar_retreating = 0;         // cornered: fight
+            {
+                // cornered: FIGHT. The lockout is the 2026-08-26
+                // churn fix - without it the entry branch re-fired
+                // the fan (and the event) every combat frame at a
+                // hazard-boxed spot like the dm4 pit floor, and
+                // Romero logged 139 retreat entries in one tape
+                self.ar_retreating = 0;
+                self.ar_retreatlock = time + 3;
+            }
             self.ar_covertime = time + 1.2;
         }
         if (self.ar_retreating)
