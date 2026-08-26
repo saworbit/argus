@@ -7,6 +7,27 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.74 (2026-08-27) - the decision tape
+
+Console `scratch1 1` (the vanilla scratch-cvar float pipe, settable
+live through `tune`) makes every goal pick dump its per-class
+utility board as an `ARGDBG` line - "why did it choose that" becomes
+a grep instead of an hour of inference. One cvar read per pick when
+off. Alongside it, the lab grew its idle-hands capabilities:
+`argus-mcp soak` (unattended match loop with gated verdicts and hard
+caps - wall clock, match count, bytes written, stop file) and
+`argus-mcp cycle <map>` (one guarded learning cycle: learn hotspots,
+regen, compile, probe; adopts only on an improved verdict, restores
+byte for byte otherwise - its dm4 trial correctly self-rejected,
+reconfirming that dm4's lava is combat, not routing). Demo analysis
+went from summaries to answers: view angles and POV aim extracted,
+per-player aim statistics (the first measurement separating human
+mouse feel from bot servo feel: mean 80 deg/s vs 128-176), a
+highlight reel with playdemo timestamps (first blood, multikills,
+sprees, quad runs), and full-track JSON export. CI grew the Rust
+suite and a headless LibreQuake stability smoke with the
+directed-reach gate.
+
 ## Lab pipeline (2026-08-26 to 2026-08-27, no QC change)
 
 - Demo ingest: every play session now records a `.dem`

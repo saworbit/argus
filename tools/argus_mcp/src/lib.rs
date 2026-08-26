@@ -26,3 +26,4 @@ pub mod resources;
 pub mod see_alias;
 pub mod server;
 pub mod session;
+pub mod soak;

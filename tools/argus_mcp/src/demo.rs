@@ -93,6 +93,9 @@ pub struct DemoBrief {
     /// scoreboard slot -> netname (svc_updatename)
     pub names: BTreeMap<u8, String>,
     pub tracks: Vec<TrackBrief>,
+    /// timestamped moments worth rewatching (`playdemo <stem>`)
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub highlights: Vec<Highlight>,
     /// last console prints in the stream (obituaries, chat)
     pub prints_tail: Vec<String>,
     pub notes: Vec<String>,
@@ -111,9 +114,11 @@ pub struct TrackBrief {
     pub first: [f32; 3],
     pub last: [f32; 3],
     pub dist: f64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub aim: Option<AimStats>,
 }
 
-/// Full-rate positions for one entity, for analysis callers.
+/// Full-rate positions and view angles for one entity.
 #[derive(Debug, Clone, Serialize)]
 pub struct Track {
     pub entity: u16,
@@ -122,6 +127,41 @@ pub struct Track {
     pub kind: String,
     pub t: Vec<f64>,
     pub pos: Vec<[f32; 3]>,
+    /// entity angles per sample (pitch, yaw) - byte precision from
+    /// the update stream; the RECORDING client's own aim uses the
+    /// full-precision `pov` series instead
+    pub pitch: Vec<f32>,
+    pub yaw: Vec<f32>,
+}
+
+/// The recording client's view angles, full float precision, one per
+/// demo block - the human's exact aim at engine rate.
+#[derive(Debug, Clone, Serialize)]
+pub struct PovAim {
+    pub t: Vec<f64>,
+    pub pitch: Vec<f32>,
+    pub yaw: Vec<f32>,
+}
+
+/// A timestamped moment worth rewatching; cue with
+/// `playdemo <stem>` and skip to `t`.
+#[derive(Debug, Clone, Serialize)]
+pub struct Highlight {
+    pub t: f64,
+    pub kind: String,
+    pub note: String,
+}
+
+/// Mouse-feel statistics from a yaw series: how fast the aim swings,
+/// and how often it flicks. Bots and humans measured identically -
+/// the humanised-aim work finally has its ruler.
+#[derive(Debug, Clone, Serialize)]
+pub struct AimStats {
+    pub samples: usize,
+    pub mean_dps: f64,
+    pub p95_dps: f64,
+    /// swings over 300 deg/s - the flick census
+    pub flicks: usize,
 }
 
 struct Reader<'a> {
@@ -186,7 +226,9 @@ struct EntState {
     model: u16,
     skin: u8,
     pos: [f32; 3],
+    ang: [f32; 2], // pitch, yaw
     base_pos: [f32; 3],
+    base_ang: [f32; 2],
     base_model: u16,
     base_skin: u8,
     /// classification is by history, not final state: a bot that
@@ -202,6 +244,7 @@ struct EntState {
 pub struct Demo {
     pub brief: DemoBrief,
     pub tracks: Vec<Track>,
+    pub pov: PovAim,
 }
 
 pub fn resolve_demo(cfg: &Config, name: &str) -> Result<PathBuf, String> {
@@ -237,11 +280,13 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
     let mut maxclients = 0u8;
     let mut models: Vec<String> = Vec::new();
     let mut names: BTreeMap<u8, String> = BTreeMap::new();
-    let mut prints: Vec<String> = Vec::new();
+    let mut prints: Vec<(f64, String)> = Vec::new();
     let mut print_buf = String::new();
     let mut notes: Vec<String> = Vec::new();
     let mut ents: BTreeMap<u16, EntState> = BTreeMap::new();
-    let mut samples: BTreeMap<u16, (Vec<f64>, Vec<[f32; 3]>)> = BTreeMap::new();
+    #[allow(clippy::type_complexity)]
+    let mut samples: BTreeMap<u16, (Vec<f64>, Vec<[f32; 3]>, Vec<[f32; 2]>)> = BTreeMap::new();
+    let mut pov = PovAim { t: Vec::new(), pitch: Vec::new(), yaw: Vec::new() };
     let mut player_m: Option<u16> = None;
     let mut missile_m: Option<u16> = None;
     let mut grenade_m: Option<u16> = None;
@@ -263,7 +308,12 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
             truncated = true;
             break;
         }
-        p += 12; // POV view angles, 3 x f32
+        // POV view angles, 3 x f32 (pitch, yaw, roll) - the recording
+        // client's exact aim, one per block; stamped with the block's
+        // time after the messages are parsed
+        let pov_pitch = f32::from_le_bytes(data[p..p + 4].try_into().unwrap());
+        let pov_yaw = f32::from_le_bytes(data[p + 4..p + 8].try_into().unwrap());
+        p += 12;
         let len = len as usize;
         if data.len() - p < len {
             truncated = true;
@@ -301,6 +351,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                 // a fresh server frame resets absent fields to the
                 // baseline; we track absolute state per update
                 let mut pos = st.base_pos;
+                let mut ang = st.base_ang;
                 let mut model = st.base_model;
                 let mut skin = st.base_skin;
                 if bits & U_MODEL != 0 {
@@ -322,23 +373,24 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                     pos[0] = need!(r.coord());
                 }
                 if bits & U_ANGLE1 != 0 {
-                    need!(r.angle());
+                    ang[0] = need!(r.angle());
                 }
                 if bits & U_ORIGIN2 != 0 {
                     pos[1] = need!(r.coord());
                 }
                 if bits & U_ANGLE2 != 0 {
-                    need!(r.angle());
+                    ang[1] = need!(r.angle());
                 }
                 if bits & U_ORIGIN3 != 0 {
                     pos[2] = need!(r.coord());
                 }
                 if bits & U_ANGLE3 != 0 {
-                    need!(r.angle());
+                    need!(r.angle()); // roll
                 }
                 st.model = model;
                 st.skin = skin;
                 st.pos = pos;
+                st.ang = ang;
                 if Some(model) == player_m && player_m.is_some() {
                     st.was_player = true;
                     if skin > 0 {
@@ -352,6 +404,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                 let rec = samples.entry(ent).or_default();
                 rec.0.push(cur_time);
                 rec.1.push(pos);
+                rec.2.push(ang);
                 continue;
             }
             match cmd {
@@ -400,10 +453,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                         let line = print_buf[..nl].trim().to_string();
                         print_buf.drain(..=nl);
                         if !line.is_empty() {
-                            prints.push(line);
-                            if prints.len() > 200 {
-                                prints.remove(0);
-                            }
+                            prints.push((cur_time, line));
                         }
                     }
                 }
@@ -411,10 +461,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                     let s = need!(r.string());
                     let s = s.trim().replace('\n', " / ");
                     if !s.is_empty() {
-                        prints.push(s);
-                        if prints.len() > 200 {
-                            prints.remove(0);
-                        }
+                        prints.push((cur_time, s));
                     }
                 }
                 SVC_STUFFTEXT | SVC_FINALE | SVC_CUTSCENE => {
@@ -544,18 +591,23 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                     need!(r.u8()); // colormap
                     let skin = need!(r.u8());
                     let mut pos = [0f32; 3];
+                    let mut ang = [0f32; 2];
                     for (i, item) in pos.iter_mut().enumerate() {
                         *item = need!(r.coord());
-                        need!(r.angle());
-                        let _ = i;
+                        let a = need!(r.angle());
+                        if i < 2 {
+                            ang[i] = a;
+                        }
                     }
                     let st = ents.entry(ent).or_default();
                     st.base_model = model;
                     st.base_skin = skin;
                     st.base_pos = pos;
+                    st.base_ang = ang;
                     st.model = model;
                     st.skin = skin;
                     st.pos = pos;
+                    st.ang = ang;
                 }
                 SVC_TEMP_ENTITY => {
                     let t = need!(r.u8());
@@ -603,11 +655,14 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                 }
             }
         }
+        pov.t.push(cur_time);
+        pov.pitch.push(pov_pitch);
+        pov.yaw.push(pov_yaw);
     }
 
     let duration = cur_time - first_time.unwrap_or(cur_time);
     let mut tracks: Vec<Track> = Vec::new();
-    for (ent, (t, pos)) in &samples {
+    for (ent, (t, pos, ang)) in &samples {
         let st = ents.get(ent).cloned().unwrap_or_default();
         let kind = if st.was_player {
             "player"
@@ -655,6 +710,8 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
             kind: kind.into(),
             t: t.clone(),
             pos: pos.clone(),
+            pitch: ang.iter().map(|a| a[0]).collect(),
+            yaw: ang.iter().map(|a| a[1]).collect(),
         });
     }
     tracks.sort_by_key(|t| (t.kind.clone(), std::cmp::Reverse(t.t.len())));
@@ -671,6 +728,16 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                 let dz = (w[1][2] - w[0][2]) as f64;
                 dist += (dx * dx + dy * dy + dz * dz).sqrt();
             }
+            // the recording client's own aim comes from the POV
+            // series (full float precision at block rate); everyone
+            // else from their byte-precision entity angles
+            let aim = if tr.kind != "player" {
+                None
+            } else if tr.entity >= 1 && tr.entity <= maxclients as u16 && !pov.t.is_empty() {
+                aim_stats(&pov.t, &pov.yaw)
+            } else {
+                aim_stats(&tr.t, &tr.yaw)
+            };
             TrackBrief {
                 entity: tr.entity,
                 name: tr.name.clone(),
@@ -680,9 +747,13 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                 first: tr.pos.first().copied().unwrap_or_default(),
                 last: tr.pos.last().copied().unwrap_or_default(),
                 dist,
+                aim,
             }
         })
         .collect();
+
+    let all_names: Vec<String> = names.values().cloned().collect();
+    let highlights = find_highlights(&prints, &all_names);
 
     let brief = DemoBrief {
         file: path.display().to_string(),
@@ -694,15 +765,165 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
         truncated,
         names,
         tracks: track_briefs,
-        prints_tail: prints.iter().rev().take(20).rev().cloned().collect(),
+        highlights,
+        prints_tail: prints.iter().rev().take(20).rev().map(|(_, s)| s.clone()).collect(),
         notes,
     };
-    Ok(Demo { brief, tracks })
+    Ok(Demo { brief, tracks, pov })
 }
 
+/// Angular-rate statistics over a yaw series. Rates are per adjacent
+/// sample pair (wrapped to the short way round); a flick is an EVENT
+/// (a below-300 to over-300 deg/s transition), not a sample count.
+fn aim_stats(t: &[f64], yaw: &[f32]) -> Option<AimStats> {
+    if t.len() < 10 || t.len() != yaw.len() {
+        return None;
+    }
+    let mut rates = Vec::new();
+    for i in 1..t.len() {
+        let dt = t[i] - t[i - 1];
+        if dt <= 0.0 || dt > 0.5 {
+            continue;
+        }
+        let mut dy = (yaw[i] - yaw[i - 1]) as f64;
+        while dy > 180.0 {
+            dy -= 360.0;
+        }
+        while dy < -180.0 {
+            dy += 360.0;
+        }
+        rates.push(dy.abs() / dt);
+    }
+    if rates.is_empty() {
+        return None;
+    }
+    let mean = rates.iter().sum::<f64>() / rates.len() as f64;
+    let mut sorted = rates.clone();
+    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let p95 = sorted[((sorted.len() - 1) as f64 * 0.95) as usize];
+    let mut flicks = 0usize;
+    let mut hot = false;
+    for r in &rates {
+        if *r >= 300.0 && !hot {
+            flicks += 1;
+        }
+        hot = *r >= 300.0;
+    }
+    Some(AimStats { samples: rates.len(), mean_dps: mean, p95_dps: p95, flicks })
+}
+
+/// Moments worth rewatching, from the timestamped console feed:
+/// first blood, multikills (two kills by one player inside 4 s),
+/// sprees (three kills without dying), quad pickups and carrier
+/// deaths, and environment deaths (the shove economy's receipts).
+fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight> {
+    const KILL_VERBS: [&str; 12] = [
+        " rides ", " was gibbed by ", " was nailed by ", " chewed on ", " ate 2 loads of ",
+        " accepts ", " was blasted by ", " was telefragged by ", " was smashed by ",
+        " was zapped by ", " was crushed by ", " eats ",
+    ];
+    const ENV_DEATHS: [&str; 6] = [
+        " burst into flames", " turned into hot slag", " visits the Volcano God",
+        " fell to his death", " becomes bored with life", " was squished",
+    ];
+    let mut out = Vec::new();
+    let mut kills: Vec<(f64, String)> = Vec::new(); // (t, killer)
+    let mut spree: BTreeMap<String, u32> = BTreeMap::new();
+    let mut first_blood = false;
+    for (t, line) in prints {
+        if line.contains("Quad Damage") {
+            let kind = if line.contains("lost a Quad") { "quad_drop" } else { "quad" };
+            out.push(Highlight { t: *t, kind: kind.into(), note: line.clone() });
+            continue;
+        }
+        let mut named: Vec<&String> =
+            names.iter().filter(|n| line.contains(n.as_str())).collect();
+        // obituaries lead with the victim IN THE LINE - order by
+        // position, not by roster order
+        named.sort_by_key(|n| line.find(n.as_str()).unwrap_or(usize::MAX));
+        if named.is_empty() {
+            continue;
+        }
+        if ENV_DEATHS.iter().any(|v| line.contains(v)) {
+            out.push(Highlight { t: *t, kind: "env_death".into(), note: line.clone() });
+            spree.insert(named[0].clone(), 0);
+            continue;
+        }
+        if !KILL_VERBS.iter().any(|v| line.contains(v)) {
+            continue;
+        }
+        // obituaries lead with the victim; the other name is the killer
+        let victim = named[0].clone();
+        let killer = named.iter().find(|n| ***n != victim).map(|n| (*n).clone());
+        spree.insert(victim.clone(), 0);
+        let Some(killer) = killer else { continue };
+        if !first_blood {
+            first_blood = true;
+            out.push(Highlight { t: *t, kind: "first_blood".into(), note: line.clone() });
+        }
+        if kills.iter().rev().take(3).any(|(kt, kn)| kn == &killer && t - kt <= 4.0) {
+            out.push(Highlight {
+                t: *t,
+                kind: "multikill".into(),
+                note: format!("{killer} again inside 4 s - {line}"),
+            });
+        }
+        let s = spree.entry(killer.clone()).or_insert(0);
+        *s += 1;
+        if *s == 3 {
+            out.push(Highlight {
+                t: *t,
+                kind: "spree".into(),
+                note: format!("{killer} is on a spree (3 without dying)"),
+            });
+        }
+        kills.push((*t, killer));
+    }
+    out.truncate(30);
+    out
+}
+
+/// Write the full track vectors (positions, angles, POV aim) beside
+/// the demo as `<stem>.tracks.json` for offline analysis - the
+/// sprint run-up study's input format.
+pub fn export_tracks(path: &PathBuf, demo: &Demo) -> Result<PathBuf, String> {
+    #[derive(Serialize)]
+    struct Export<'a> {
+        file: &'a str,
+        level: &'a str,
+        duration_sec: f64,
+        tracks: &'a [Track],
+        pov: &'a PovAim,
+    }
+    let out = path.with_extension("tracks.json");
+    let payload = Export {
+        file: &demo.brief.file,
+        level: &demo.brief.level,
+        duration_sec: demo.brief.duration_sec,
+        tracks: &demo.tracks,
+        pov: &demo.pov,
+    };
+    let json = serde_json::to_string(&payload).map_err(|e| e.to_string())?;
+    std::fs::write(&out, json).map_err(|e| format!("{}: {e}", out.display()))?;
+    Ok(out)
+}
+
+/// `name` may carry a directive suffix: `stem:export` also writes
+/// `<stem>.tracks.json` beside the demo (the offline-analysis feed)
+/// and records where in the brief's notes.
 pub fn demo_brief(cfg: &Config, name: &str) -> Result<DemoBrief, String> {
-    let path = resolve_demo(cfg, name)?;
-    Ok(read_demo(&path)?.brief)
+    let (base, export) = match name.strip_suffix(":export") {
+        Some(b) => (b, true),
+        None => (name, false),
+    };
+    let path = resolve_demo(cfg, base)?;
+    let demo = read_demo(&path)?;
+    let mut brief = demo.brief.clone();
+    if export {
+        let out = export_tracks(&path, &demo)?;
+        brief.notes.push(format!("tracks exported: {}", out.display()));
+    }
+    Ok(brief)
 }
 
 #[cfg(test)]
@@ -731,10 +952,23 @@ mod tests {
                 b.level, b.duration_sec, b.blocks, b.truncated, b.names, b.notes
             );
             for t in &b.tracks {
+                let aim = t
+                    .aim
+                    .as_ref()
+                    .map(|a| {
+                        format!(
+                            " aim(mean {:.0} p95 {:.0} dps, {} flicks)",
+                            a.mean_dps, a.p95_dps, a.flicks
+                        )
+                    })
+                    .unwrap_or_default();
                 println!(
-                    "  e{} {:?} {} n={} hz={:.1} dist={:.0}",
+                    "  e{} {:?} {} n={} hz={:.1} dist={:.0}{aim}",
                     t.entity, t.name, t.kind, t.samples, t.hz, t.dist
                 );
+            }
+            for h in &b.highlights {
+                println!("  * t={:.1} [{}] {}", h.t, h.kind, h.note);
             }
             for pr in &b.prints_tail {
                 println!("  | {pr}");

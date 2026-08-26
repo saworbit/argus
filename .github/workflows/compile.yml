@@ -41,3 +41,72 @@ jobs:
           grep -q 'Compile finished.*id format' compile.log || { echo 'COMPILE FAILED: no id-format finish line'; tail -40 compile.log; exit 1; }
           [ -f lq1/progs.dat ] || { echo 'COMPILE FAILED: no progs.dat written'; exit 1; }
           ls -l lq1/progs.dat
+
+      - name: Upload progs.dat for the smoke job
+        uses: actions/upload-artifact@v4
+        with:
+          name: progs
+          path: lq1/progs.dat
+
+  lab:
+    name: lab test suite (rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/argus_mcp/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('tools/argus_mcp/Cargo.lock') }}
+      - name: Run the lab suite
+        # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;
+        # the committed runs/*.log regression tapes run in full
+        run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
+
+  smoke:
+    name: headless stability smoke (LibreQuake)
+    needs: quakec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: progs
+          path: lq1
+      - name: Cache LibreQuake data
+        id: cache-lq
+        uses: actions/cache@v4
+        with:
+          path: lq-data
+          key: libquake-v0.09-beta
+      - name: Fetch LibreQuake (free content, pinned release)
+        if: steps.cache-lq.outputs.cache-hit != 'true'
+        run: |
+          REL=https://github.com/lavenderdotpet/LibreQuake/releases/download/v0.09-beta
+          mkdir -p lq-data
+          curl -sL -o lq-data/lite.zip   $REL/lite.zip
+          curl -sL -o lq-data/server.zip $REL/server.zip
+      - name: Run a botmatch and judge it
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq quakespasm unzip python3
+          unzip -q -o lq-data/lite.zip   -d lq-lite
+          unzip -q -o lq-data/server.zip -d lq-server
+          mkdir -p quake/id1/maps quake/argus maps_local
+          cp lq-lite/lite/id1/pak0.pak lq-lite/lite/id1/pak1.pak quake/id1/
+          cp lq-server/server/maps/*.bsp quake/id1/maps/
+          cp lq-server/server/maps/lqdm2.bsp maps_local/
+          cp lq1/progs.dat game/argus/autoexec.cfg quake/argus/
+          # the stability smoke (mre review item 9): 60 s of bots on
+          # lqdm2, no crash, no runaway, telemetry flowing
+          SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 90 \
+            quakespasm -dedicated 8 -basedir "$PWD/quake" -game argus \
+            +developer 1 +deathmatch 1 +map lqdm2 > smoke.log 2>&1 || true
+          grep -q 'ARGLOG' smoke.log || { echo 'SMOKE FAILED: no telemetry'; tail -40 smoke.log; exit 1; }
+          ! grep -qE 'Host_Error|runaway loop|NULL function' smoke.log || { echo 'SMOKE FAILED: engine error'; grep -nE 'Host_Error|runaway loop|NULL function' smoke.log; exit 1; }
+          grep -c 'ARGLOG' smoke.log
+      - name: Directed-reach gate (free-content map)
+        run: python3 tools/argus_reach.py lqdm2

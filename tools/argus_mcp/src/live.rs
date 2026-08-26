@@ -99,7 +99,7 @@ pub fn validate_tune(line: &str) -> Result<String, String> {
     let re = tune_re();
     if !re.is_match(line) {
         return Err(
-            "not on the live whitelist. Allowed: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map <name>, status, serverinfo. See knobs()."
+            "not on the live whitelist. Allowed: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map <name>, scratch1-4 N (scratch1 1 = ARGDBG decision tape), status, serverinfo. See knobs()."
                 .into(),
         );
     }
@@ -172,8 +172,11 @@ pub fn mode_name(mode: u8) -> &'static str {
 fn tune_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
+        // scratch1-4 are the vanilla QC float pipe (registered for
+        // QC use since 1996): scratch1 1 arms the ARGDBG decision
+        // tape live, and future debug channels ride the other three
         Regex::new(
-            r"(?i)^(skill\s+[0-3]|fraglimit\s+\d{1,3}|timelimit\s+\d{1,3}|developer\s+[01]|deathmatch\s+1|map\s+[A-Za-z0-9_]+|status|serverinfo)$",
+            r"(?i)^(skill\s+[0-3]|fraglimit\s+\d{1,3}|timelimit\s+\d{1,3}|developer\s+[01]|deathmatch\s+1|map\s+[A-Za-z0-9_]+|scratch[1-4]\s+-?\d{1,6}|status|serverinfo)$",
         )
         .expect("tune")
     })

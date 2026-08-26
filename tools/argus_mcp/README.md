@@ -304,6 +304,49 @@ out-of-sight bot drops to a trickle), and the engine truncates
 `qconsole.log` in its working directory on launch - HARVEST BEFORE
 STARTING ANYTHING NEW.
 
+The brief carries analysis, not just inventory: per-player `aim`
+statistics (mean and p95 angular rate, flick count - the recording
+client measured from full-precision POV angles, bots from their
+entity angles), and a `highlights` reel (first blood, multikills,
+sprees, quad pickups and carrier deaths, environment deaths) each
+with a timestamp to jump to under `playdemo`. `see what=demo
+name=<stem>:export` also writes `<stem>.tracks.json` (full t / pos /
+pitch / yaw vectors plus the POV series) for offline studies - the
+sprint run-up forensics input format.
+
+## Idle hands (soak and cycle)
+
+Two CLI modes for the unattended lab. Neither is scheduled by
+anything; they exist for the night the operator feels like it.
+
+`argus-mcp soak` loops matches and gates every tape against the
+shipped baseline, writing `runs/soak_<stamp>.md` as it goes. Hard
+caps, not suggestions: `--hours` (default 4, max 12), `--matches`
+(default 60), `--max-mb` bytes written (default 200; a real night of
+tapes is under 10 MB), and a stop file - create `runs/soak.stop` and
+the loop ends after the current match. `--learn` folds hotspots into
+`costs.json` at the end (write-only; nothing regens automatically).
+
+`argus-mcp cycle <map>` closes the offline learning loop ONCE, with
+a guard: learn hotspots -> regen the nav (reach gate printed) ->
+compile and install the candidate -> 185 s probe -> judge. An
+improved verdict keeps the learned costs and graph in src/ (record
+the new install MD5 in the handoff); anything else restores nav,
+costs and every installed progs.dat byte for byte from the snapshot
+(never by recompiling - fteqcc is not byte-stable). Its first dm4
+trial self-rejected on the lava gate, exactly as the 2026-08-20
+forensics predicted.
+
+## The decision tape (ARGDBG)
+
+Console `scratch1 1` (live via `tune command="scratch1 1"`; the
+scratch cvars are vanilla's QC float pipe) makes every goal pick
+print `ARGDBG <name> pick <class> u <utility> | w <> a <> h <> r <>
+p <> o <> ws <atoms> streak <n>` - the full per-class utility board
+behind the choice. `scratch1 0` silences it. Plain ARGDBG lines,
+outside the closed ARGEVT vocabulary; grep them, they never touch
+briefs or gates.
+
 ## Lite vs full
 
 Default returns from `experiment`, `compare_runs`, `brief_run`,
@@ -598,4 +641,4 @@ shell.
 | 0.17 | Hull-0 lava in Rust briefs (same as analyze_match.py). Per-map A/B bars. dm2 baseline `ab_dm2_lava`. Cartograph islands, door cuts, corridor misses. `learn_hotspots` writes `argus_nav_<map>.costs.json`; navgen inflates those cells. |
 | 0.18 | `argus-mcp gui`: localhost deploy wizard (attach BSP, nav PNG, compile, install, dated backups + restore). |
 | 0.19 | Spaced netnames parse whole (closed verb vocabulary). Freeze detection as a HARD gate with the under-fire measure. `mover_waits` vs `boards` hop-success accounting. Config-driven baselines (`runs/baselines.json`). Kind-aware `learn_hotspots` (lava cells small and heavy, deflection cells reported but never written). Cartograph `PlatBrief` boardability probes. New verbs: `retreat`, `grab`, `board`; human clients emit ARGLOG tracks. The escaped v363 west-pad tape is a permanent regression test. |
-| 0.20 | The tape and the map argue with each other. Reach classifier fixed (floor-seated item origins traced 2u inside the hull-1 floor: eleven of twelve dm4 control items read off_graph). Human tracks split out of bot bands (`totals.human`); a refused map spawn flags the whole tape (every historical mx_lqdm2 probe had silently run on the start map). Hotspots carry `cause` (door / plat_column / lava_edge) and `reach_pct` (routefail clusters in directed sinks are named). Briefs cross-examine atlas labels against routing evidence, report `nav_coverage` (visited nodes, dormant typed-link families) and `item_control` (per-prize clock tightness). `see what=demo`: protocol-15 .dem parser with named full-rate tracks. Companions: `tools/argus_reach.py`, `tools/harvest_session.py`. |
+| 0.20 | The tape and the map argue with each other. Reach classifier fixed (floor-seated item origins traced 2u inside the hull-1 floor: eleven of twelve dm4 control items read off_graph). Human tracks split out of bot bands (`totals.human`); a refused map spawn flags the whole tape (every historical mx_lqdm2 probe had silently run on the start map). Hotspots carry `cause` (door / plat_column / lava_edge) and `reach_pct` (routefail clusters in directed sinks are named). Briefs cross-examine atlas labels against routing evidence, report `nav_coverage` (visited nodes, dormant typed-link families) and `item_control` (per-prize clock tightness). `see what=demo`: protocol-15 .dem parser with named full-rate tracks. Companions: `tools/argus_reach.py`, `tools/harvest_session.py`. Then the analysis layer: demo view angles + POV aim, per-player aim statistics, the highlight reel, `:export` track dumps; `argus-mcp soak` (capped unattended match loop) and `argus-mcp cycle` (guarded learn->regen->probe->adopt/restore); `scratch1-4` on the tune whitelist for the ARGDBG decision tape; CI runs the Rust suite plus a headless LibreQuake stability smoke with the reach gate. |

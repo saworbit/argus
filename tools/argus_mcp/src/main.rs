@@ -11,6 +11,14 @@ async fn main() -> anyhow::Result<()> {
             run_gui(opts).map_err(|e| anyhow::anyhow!(e))?;
             Ok(())
         }
+        Some("soak") => {
+            let opts = argus_mcp::soak::parse_soak_args(args).map_err(|e| anyhow::anyhow!(e))?;
+            argus_mcp::soak::run_soak(opts).await.map_err(|e| anyhow::anyhow!(e))
+        }
+        Some("cycle") => {
+            let map = args.next().ok_or_else(|| anyhow::anyhow!("usage: argus-mcp cycle <map>"))?;
+            argus_mcp::soak::run_cycle(&map).await.map_err(|e| anyhow::anyhow!(e))
+        }
         Some("-h" | "--help" | "help") => {
             print_help();
             Ok(())
@@ -37,6 +45,19 @@ fn print_help() {
          argus-mcp              stdio MCP server (default)\n\
          argus-mcp gui          localhost deploy wizard (127.0.0.1:7420)\n\
          argus-mcp gui --port N\n\
-         argus-mcp gui --no-open\n"
+         argus-mcp gui --no-open\n\
+         argus-mcp soak         unattended match loop with gated verdicts\n\
+           --maps dm4,dm2,dm6   round-robin map list\n\
+           --hours 4            wall clock cap (max 12)\n\
+           --matches 60         match cap (max 500)\n\
+           --duration 185       seconds per match\n\
+           --skill 2\n\
+           --max-mb 200         bytes-written cap (a night is <10 MB)\n\
+           --learn              fold hotspots into costs.json at the end\n\
+           (stop early any time: create runs/soak.stop)\n\
+         argus-mcp cycle <map>  one guarded learning cycle: learn ->\n\
+                                regen -> compile -> probe; adopts only\n\
+                                on an improved verdict, else restores\n\
+                                the snapshot byte for byte\n"
     );
 }

@@ -3353,6 +3353,42 @@ void() Argus_PickGoal =
     self.ar_pending = 0;
     self.ar_mode = 0;
 
+    // the decision tape (2026-08-27, "why did it choose that"): with
+    // console `scratch1 1` (the vanilla float pipe - scratch1-4 are
+    // registered for QC use since 1996, settable live through tune)
+    // every pick dumps its per-class utility board. Plain ARGDBG
+    // line, not ARGEVT: the telemetry verb set stays closed. One
+    // cvar read per pick when off - free.
+    if (cvar ("scratch1") == 1)
+    {
+        dprint ("ARGDBG ");
+        dprint (self.netname);
+        dprint (" pick ");
+        if (pick != world)
+            dprint (pick.classname);
+        else
+            dprint ("none");
+        dprint (" u ");
+        dprint (ftos (bu));
+        dprint (" | w ");
+        dprint (ftos (sw));
+        dprint (" a ");
+        dprint (ftos (sa));
+        dprint (" h ");
+        dprint (ftos (sh));
+        dprint (" r ");
+        dprint (ftos (sr));
+        dprint (" p ");
+        dprint (ftos (sp));
+        dprint (" o ");
+        dprint (ftos (so));
+        dprint (" ws ");
+        dprint (ftos (ws));
+        dprint (" streak ");
+        dprint (ftos (self.ar_failstreak));
+        dprint ("\n");
+    }
+
     if (pick != world)
     {
         if (self.ar_planwant != self.ar_planfinal)
