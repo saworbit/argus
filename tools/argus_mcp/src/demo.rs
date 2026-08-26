@@ -238,6 +238,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
     let mut models: Vec<String> = Vec::new();
     let mut names: BTreeMap<u8, String> = BTreeMap::new();
     let mut prints: Vec<String> = Vec::new();
+    let mut print_buf = String::new();
     let mut notes: Vec<String> = Vec::new();
     let mut ents: BTreeMap<u16, EntState> = BTreeMap::new();
     let mut samples: BTreeMap<u16, (Vec<f64>, Vec<[f32; 3]>)> = BTreeMap::new();
@@ -388,9 +389,27 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                     cur_time = need!(r.f32()) as f64;
                     first_time.get_or_insert(cur_time);
                 }
-                SVC_PRINT | SVC_CENTERPRINT => {
+                SVC_PRINT => {
+                    // stock obituaries arrive as FRAGMENTS ("player",
+                    // " was nailed by ", "Romero\n") that the client
+                    // concatenates until a newline - do the same, and
+                    // strip the \x01 bronze byte chat leads with
                     let s = need!(r.string());
-                    let s = s.trim().to_string();
+                    print_buf.push_str(&s.replace(['\u{1}', '\u{2}'], ""));
+                    while let Some(nl) = print_buf.find('\n') {
+                        let line = print_buf[..nl].trim().to_string();
+                        print_buf.drain(..=nl);
+                        if !line.is_empty() {
+                            prints.push(line);
+                            if prints.len() > 200 {
+                                prints.remove(0);
+                            }
+                        }
+                    }
+                }
+                SVC_CENTERPRINT => {
+                    let s = need!(r.string());
+                    let s = s.trim().replace('\n', " / ");
                     if !s.is_empty() {
                         prints.push(s);
                         if prints.len() > 200 {
@@ -597,6 +616,24 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
         } else {
             continue; // gibs, packs, doors: not tracked in v1
         };
+        // the engine's body queue: a real client's death copies the
+        // corpse to a preallocated low-numbered entity wearing the
+        // player model that never travels anywhere
+        let mut total = 0f64;
+        for w in pos.windows(2) {
+            let dx = (w[1][0] - w[0][0]) as f64;
+            let dy = (w[1][1] - w[0][1]) as f64;
+            total += (dx * dx + dy * dy).sqrt();
+        }
+        let kind = if kind == "player"
+            && st.player_skin == 0
+            && *ent > maxclients as u16
+            && total < 500.0
+        {
+            "body"
+        } else {
+            kind
+        };
         // identity: a real client is entity 1..maxclients and its
         // scoreboard row is entity-1; a bot's skin byte is its ROSTER
         // slot + 1 (v3.15) and its scoreboard row counts down from
@@ -671,6 +708,39 @@ pub fn demo_brief(cfg: &Config, name: &str) -> Result<DemoBrief, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn print_session_demos_if_present() {
+        // ad-hoc reader for harvested session demos (also the bridge
+        // until a restarted client serves see what=demo): parses
+        // every shane_*.dem in runs/demos and prints its brief under
+        // --nocapture. Parse success is the only assertion.
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/demos");
+        let Ok(rd) = std::fs::read_dir(&dir) else { return };
+        for e in rd.flatten() {
+            let p = e.path();
+            let name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+            if !name.starts_with("shane_") || !name.ends_with(".dem") {
+                continue;
+            }
+            let demo = read_demo(&p).unwrap_or_else(|err| panic!("{name}: {err}"));
+            let b = &demo.brief;
+            println!(
+                "{name}: '{}' dur {:.1}s blocks {} truncated {} names {:?} notes {:?}",
+                b.level, b.duration_sec, b.blocks, b.truncated, b.names, b.notes
+            );
+            for t in &b.tracks {
+                println!(
+                    "  e{} {:?} {} n={} hz={:.1} dist={:.0}",
+                    t.entity, t.name, t.kind, t.samples, t.hz, t.dist
+                );
+            }
+            for pr in &b.prints_tail {
+                println!("  | {pr}");
+            }
+        }
+    }
 
     #[test]
     fn real_labtest_demo_if_present() {
