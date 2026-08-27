@@ -7,6 +7,31 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.83 (2026-08-28) - the trapped verdict demands evidence
+
+The match-start suicide came back and the tape convicted a different
+mechanism than the one v3.82 fixed: Carmack spawned at a healthy
+85%-reach spawn and routefailed four DIFFERENT local goals inside
+three seconds - his nearest pickups all sit in pockets the graph
+cannot route into - and the four-fail trapped rule executed him
+without him taking a single step. The rule was written for pit
+floors; it now demands physical evidence. First verdict: probation -
+drop the shopping list and wander four seconds, then shop from new
+ground. Only a second verdict that has not displaced 150 units is a
+real pit and takes the exit. One carve-out its own ladder forced:
+a bot hemmed in by lava or void on two-plus compass headings skips
+probation and exits immediately - on dm4's lava-edged pit floor the
+original verdict was right all along, and the probation wander
+walked bots into the lava instead (lava 12 on the interim ladder,
+back to 6 in band with the carve-out).
+
+dm3: one trapped exit in the whole ladder match (the corridor era
+ran thirty-nine), match opening clean. dm4: improved on all seven
+gates. The deeper cause - the west wing and its neighbours hide
+behind one-way drop lips, so their items poison a spawn bot's
+opening menu - is measured, commented in navgen, and belongs to the
+corridor campaign.
+
 ## v3.82 (2026-08-27) - the vault, the moat, and honest eyes
 
 The v3.81 session reproduced every report on tape, and each decoded

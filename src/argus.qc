@@ -126,6 +126,11 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float  ar_glimpse;             // ring-glimpse clock: one roll per
                                 // second against an invisible enemy
                                 // (Argus_CanSee)
+.vector ar_trappos;             // trapped probation: where the first
+                                // four-fail verdict landed
+.float  ar_traptime;            // trapped probation: when; a second
+                                // verdict within 20 s and 150u is a
+                                // real pit and takes the exit
 
 .vector ar_sndpos;              // OPM: last heard sound position
 .float  ar_sndtime;             // OPM: when it was heard
@@ -3792,18 +3797,55 @@ void() Argus_AI =
             // four straight failures from one node with nobody to fight:
             // trapped (the pit floors are survivable but exitless
             // without gear). Take the deathmatch exit and respawn fresh,
-            // like any human player stuck in a pit would
+            // like any human player stuck in a pit would.
+            // PROBATION FIRST (2026-08-28, "the bot that dies at match
+            // start happened again"): four INSTANT routefails do not
+            // prove a pit - Carmack earned the verdict at a healthy
+            // spawn in three seconds without taking a step, because
+            // his four nearest picks all sat in unreachable pockets
+            // (the entry-stranded class the knit log reports). The
+            // first verdict now WANDERS 4 s instead - a moving bot
+            // re-shops from somewhere else - and only a second
+            // verdict that has not displaced 150u since is a real
+            // pit and takes the exit.
             if (self.ar_failstreak >= 4 && self.ar_enemy == world
                 && self.super_damage_finished < time)
             {
                 self.ar_failstreak = 0;
-                Argus_Event ("trapped");
-                T_Damage (self, self, self, 400);
-                return;
+                // hazard-boxed skips probation: on a lava-edged pit
+                // floor the verdict was right all along, and the
+                // wander just walked bots into the lava instead of
+                // the clean exit (dm4 probation ladder: lava 12)
+                turn = 0;
+                if (Argus_MoveHazard (0, 90))
+                    turn = turn + 1;
+                if (Argus_MoveHazard (90, 90))
+                    turn = turn + 1;
+                if (Argus_MoveHazard (180, 90))
+                    turn = turn + 1;
+                if (Argus_MoveHazard (270, 90))
+                    turn = turn + 1;
+                if (turn >= 2
+                    || (time < self.ar_traptime + 20
+                        && vlen (self.origin - self.ar_trappos) < 150))
+                {
+                    Argus_Event ("trapped");
+                    T_Damage (self, self, self, 400);
+                    return;
+                }
+                self.ar_trappos = self.origin;
+                self.ar_traptime = time;
+                self.ar_mode = 0;
             }
         }
 
-        if (!Argus_GoalOK (self.ar_goal))
+        if (time < self.ar_traptime + 4 && self.ar_goal == world)
+        {
+            // trapped probation: no shopping, just walk. The wander
+            // displaces the bot so the next menu is shopped from new
+            // ground (or proves the pit for the exit above).
+        }
+        else if (!Argus_GoalOK (self.ar_goal))
         {
             // a goal that stopped being an item under our feet was
             // eaten, almost always by us: the touch beats the arrival

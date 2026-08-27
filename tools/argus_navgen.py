@@ -1591,7 +1591,14 @@ def _knit_pass(_toward_main, _use_rj):
                 _ox, _oy, _oz = pos(ways[_o])
                 _h = ((_ox - _mx) ** 2 + (_oy - _my) ** 2) ** 0.5
                 _dz = _mz - _oz            # positive: pocket above
-                if _h <= 320 and abs(_dz) <= 48:
+                # |dz| to 90: stair runs climb that much over a 320
+                # beeline, and beeline_ok refuses dishonest climbs
+                # anyway. (Tried for the dm3 west wing's entry
+                # stranding and did NOT heal it - that wing hides
+                # behind drop lips on every side, one-way by nature;
+                # its entries are corridor-campaign work. Kept
+                # because the wider window is free and honest.)
+                if _h <= 320 and abs(_dz) <= 90:
                     _walkc.append((_h, _m, _o))
                 _dd = _dz if _toward_main else -_dz
                 if STEP < _dd <= DROPMAX and _h <= 240:
