@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 Every entry is a shipped `progs.dat` build, tuned and gated by A/B
 botmatch telemetry before install. Dates are build dates. The full
@@ -6,6 +6,18 @@ paper trail (ladder tapes, metric boundaries, forensics) lives in the
 machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
+
+## v3.78 (2026-08-27) - the trigger finger
+
+The ambush reflex: while chasing a vanished foe, a rocket armed bot
+fires one speculative rocket at the corner they disappeared behind.
+The shot arrives where they were, and sometimes where they still
+are. Once per chase, skill 2 and up, never the last rocket. Its dm4
+ladder is the strongest botmatch on record (104 engagements, 29
+frags, spread 2, zero abandons). The saccade aim measurement was
+also honestly closed out: entity angle statistics cannot isolate
+aim smoothness (byte quantisation plus patrol turns), so that
+verdict belongs to human eyes.
 
 ## v3.74 (2026-08-27) - the decision tape
 
@@ -311,15 +323,3 @@ scoreboard, and 32 lava deaths per match on dm4. All three fixed the
 same day: human-aware perception, dynamic scoreboard slots, and the
 brink hazard guard (lava deaths 32 to 2). Everything since is the
 telemetry loop doing its work.
-
-## v3.78 (2026-08-27) - the trigger finger
-
-The ambush reflex: while chasing a vanished foe, a rocket armed bot
-fires one speculative rocket at the corner they disappeared behind.
-The shot arrives where they were, and sometimes where they still
-are. Once per chase, skill 2 and up, never the last rocket. Its dm4
-ladder is the strongest botmatch on record (104 engagements, 29
-frags, spread 2, zero abandons). The saccade aim measurement was
-also honestly closed out: entity angle statistics cannot isolate
-aim smoothness (byte quantisation plus patrol turns), so that
-verdict belongs to human eyes.
