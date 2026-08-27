@@ -301,6 +301,8 @@ pub fn parse_tape(text: &str) -> MatchTape {
                 *event_counts.entry("routecache_adopt".to_string()).or_insert(0) += 1;
             } else if line.contains(" hunch ") {
                 *event_counts.entry("hunch".to_string()).or_insert(0) += 1;
+            } else if line.ends_with(" prefire") {
+                *event_counts.entry("prefire".to_string()).or_insert(0) += 1;
             }
         }
         if let Some(caps) = v1.captures(line) {

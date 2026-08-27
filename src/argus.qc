@@ -175,6 +175,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_hunchcool;           // hunch: one bet per episode
 .vector ar_aimoff;              // saccade aim: the held error offset
 .float  ar_errtime;             // saccade aim: next error re-roll
+.float  ar_prefired;            // ambush: one corner pre-fire per chase
 .entity ar_bitem;               // battle item: mid-fight grab target
 .float  ar_bitemscan;           // battle item: next scan time
 .float  ar_bitemend;            // battle item: commit expires
@@ -2193,6 +2194,7 @@ void() Argus_Perceive =
         self.ar_seen = time;
         self.ar_lastseen = best.origin;
         self.ar_pursuing = 0;
+        self.ar_prefired = 0;       // a fresh chase earns a fresh shot
         self.ar_react = time + self.ar_reactbase + random () * 0.25;
         self.ar_track = time;
         self.ar_strafedir = 1;
@@ -2601,6 +2603,37 @@ float() Argus_Combat =
                 else if (diff < -turn)  diff = -turn;
                 self.angles_y = self.angles_y + diff;
                 self.ar_moveyaw = self.angles_y;
+                // ambush reflex (2026-08-27, the hunch's trigger
+                // finger): ONE speculative rocket at the vanish
+                // point while chasing it - the shot arrives where
+                // they were, and sometimes where they still are.
+                // Skill 2+, rockets to spare (never the last one),
+                // a clear line, and the refire clock respected.
+                if (!self.ar_prefired && skill >= 2
+                    && self.weapon == IT_ROCKET_LAUNCHER
+                    && self.ammo_rockets >= 2
+                    && time > self.attack_finished
+                    && vlen (self.ar_lastseen - self.origin) > 150)
+                {
+                    traceline (self.origin + '0 0 16',
+                               self.ar_lastseen, TRUE, self);
+                    if (trace_fraction == 1)
+                    {
+                        self.ar_prefired = 1;
+                        to = vectoangles (self.ar_lastseen
+                                          - (self.origin + '0 0 16'));
+                        // vectoangles pitch is up-positive; v_angle
+                        // wants down-positive (the RJ convention)
+                        self.v_angle_x = 0 - to_x;
+                        self.v_angle_y = to_y;
+                        self.v_angle_z = 0;
+                        self.angles_y = to_y;
+                        W_Attack ();
+                        dprint ("ARGUS ");
+                        dprint (self.netname);
+                        dprint (" prefire\n");
+                    }
+                }
                 return TRUE;        // combat still owns the steering
             }
         }
