@@ -874,6 +874,205 @@ pub fn observe(host: &str, port: u16, secs: f32, name: &str) -> Result<ObserveRe
     Ok(report)
 }
 
+#[derive(Serialize)]
+pub struct LinkVerdict {
+    pub a: usize,
+    pub b: usize,
+    pub from: [f32; 3],
+    pub to: [f32; 3],
+    pub h: f32,
+    pub reached: bool,
+    pub closest: f32,
+    pub note: String,
+}
+
+#[derive(Serialize)]
+pub struct ProbeReport {
+    pub map: String,
+    pub probed: usize,
+    pub passed: usize,
+    pub failed: usize,
+    pub teleport_failures: usize,
+    pub failed_links: Vec<LinkVerdict>,
+    pub passed_sample: Vec<String>,
+}
+
+/// EMPIRICAL LINK VERIFICATION - the referee the v3.84 graveyard's
+/// three geometric criteria were approximating. Spawn the lab
+/// engine, connect the puppet, and for each walk link: teleport to
+/// the start (dev impulse 216 reads the scratch cvars; both set
+/// through the console-inject tune path) and WALK the line. A link
+/// the puppet cannot walk is a link no bot can walk - the engine
+/// itself is the judge.
+pub async fn probe_links(
+    cfg: &crate::config::Config,
+    map: &str,
+    limit: usize,
+    skip: usize,
+) -> Result<ProbeReport, String> {
+    let navj = cfg.root.join("src").join(format!("argus_nav_{map}.qc.json"));
+    let nav: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(&navj).map_err(|e| format!("{}: {e}", navj.display()))?,
+    )
+    .map_err(|e| format!("nav json: {e}"))?;
+    let nodes: Vec<[f32; 3]> = nav["nodes"]
+        .as_array()
+        .ok_or("no nodes")?
+        .iter()
+        .map(|n| {
+            let a = n.as_array().unwrap();
+            [
+                a[0].as_f64().unwrap() as f32,
+                a[1].as_f64().unwrap() as f32,
+                a[2].as_f64().unwrap() as f32,
+            ]
+        })
+        .collect();
+    let jump: std::collections::HashSet<(usize, usize)> = nav["jlinks"]
+        .as_array()
+        .map(|v| {
+            v.iter()
+                .map(|e| {
+                    let a = e.as_array().unwrap();
+                    (
+                        a[0].as_u64().unwrap() as usize,
+                        a[1].as_u64().unwrap() as usize,
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let links: Vec<(usize, usize)> = nav["links"]
+        .as_array()
+        .ok_or("no links")?
+        .iter()
+        .map(|e| {
+            let a = e.as_array().unwrap();
+            (
+                a[0].as_u64().unwrap() as usize,
+                a[1].as_u64().unwrap() as usize,
+            )
+        })
+        .filter(|p| !jump.contains(p))
+        .collect();
+    let todo: Vec<(usize, usize)> = links.into_iter().skip(skip).take(limit.min(80)).collect();
+    if todo.is_empty() {
+        return Err("no links in range".into());
+    }
+
+    let secs = (todo.len() as u32) * 9 + 40;
+    let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+    ctrl.start(cfg, map, Some(secs.min(590)), Some("probe_links_run"), None, Some(0))
+        .await
+        .map_err(|e| format!("engine start: {e}"))?;
+    tokio::time::sleep(Duration::from_secs(4)).await;
+
+    let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+    client.pump(Duration::from_secs(3));
+    if client.world.signon < 3 {
+        let _ = ctrl.stop(Duration::from_secs(3)).await;
+        return Err(format!("signon stalled at {}", client.world.signon));
+    }
+
+    let mut report = ProbeReport {
+        map: map.to_string(),
+        probed: 0,
+        passed: 0,
+        failed: 0,
+        teleport_failures: 0,
+        failed_links: Vec::new(),
+        passed_sample: Vec::new(),
+    };
+    for (a, b) in todo {
+        let from = nodes[a];
+        let to = nodes[b];
+        // scratch cvars through the tune inject - ONE line per link
+        // (semicolons parse in the console; rapid separate attaches
+        // dropped every inject after the first link's batch and the
+        // puppet kept landing on the stale coordinates)
+        ctrl.command(&format!(
+            "scratch2 {}; scratch3 {}; scratch4 {}",
+            from[0], from[1], from[2]
+        ))
+        .await
+        .map_err(|e| format!("inject: {e}"))?;
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let mut landed = false;
+        for _ in 0..4 {
+            client.set_impulse(216);
+            client.pump(Duration::from_millis(400));
+            if let Some(p) = client.my_pos() {
+                let d = ((p[0] - from[0]).powi(2) + (p[1] - from[1]).powi(2)).sqrt();
+                if d < 64.0 && (p[2] - from[2]).abs() < 72.0 {
+                    landed = true;
+                    break;
+                }
+            }
+        }
+        report.probed += 1;
+        if !landed {
+            report.teleport_failures += 1;
+            continue;
+        }
+        let h = ((to[0] - from[0]).powi(2) + (to[1] - from[1]).powi(2)).sqrt();
+        let out = client.walk_toward(to, h / 240.0 + 3.0);
+        if out.reached {
+            report.passed += 1;
+            if report.passed_sample.len() < 8 {
+                report.passed_sample.push(format!("n{a}->n{b} h {h:.0}"));
+            }
+        } else {
+            report.failed += 1;
+            report.failed_links.push(LinkVerdict {
+                a,
+                b,
+                from,
+                to,
+                h,
+                reached: false,
+                closest: out.closest,
+                note: format!(
+                    "stopped {} short at ({:.0} {:.0} {:.0})",
+                    out.closest as i32, out.final_pos[0], out.final_pos[1], out.final_pos[2]
+                ),
+            });
+        }
+        if client.world.disconnected {
+            break;
+        }
+    }
+    client.disconnect();
+    let _ = ctrl.stop(Duration::from_secs(3)).await;
+
+    // persist verdicts BY COORDINATE (indices shift per regen, same
+    // as the costs.json convention): navgen drops any link whose
+    // endpoints match a failed pair. Merged, not overwritten - the
+    // verdict file grows across sweeps.
+    let vpath = cfg.root.join("src").join(format!("argus_nav_{map}.probe.json"));
+    let mut doc: serde_json::Value = std::fs::read_to_string(&vpath)
+        .ok()
+        .and_then(|s| serde_json::from_str(&s).ok())
+        .unwrap_or_else(|| serde_json::json!({"failed": [], "passed": []}));
+    let push_pair = |arr: &mut Vec<serde_json::Value>, from: [f32; 3], to: [f32; 3]| {
+        let pair = serde_json::json!([from, to]);
+        if !arr.contains(&pair) {
+            arr.push(pair);
+        }
+    };
+    {
+        let failed = doc["failed"].as_array().cloned().unwrap_or_default();
+        let mut failed = failed;
+        for v in &report.failed_links {
+            push_pair(&mut failed, v.from, v.to);
+        }
+        doc["failed"] = serde_json::Value::Array(failed);
+    }
+    if let Ok(s) = serde_json::to_string_pretty(&doc) {
+        let _ = std::fs::write(&vpath, s);
+    }
+    Ok(report)
+}
+
 #[cfg(test)]
 mod tests {
     /// Live integration: spawn the lab's own dedicated engine, connect

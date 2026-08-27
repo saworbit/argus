@@ -7,6 +7,37 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.86 (2026-08-28) - the puppet grades the graph, and the pinch falls
+
+The link-verification loop closed the same evening the client was
+born, and its first case solved the campaign's worst cell. The
+harness (`argus-mcp probelinks <map> [limit] [skip]`): spawn the
+lab engine, connect the puppet, teleport it to each link's start
+(dev impulse 216 reads the scratch cvars, both driven through the
+console-inject tune path), walk the line, record the verdict by
+endpoint coordinates in `src/argus_nav_<map>.probe.json`.
+
+First sweeps: 22 of 22 ordinary dm3 links walked and passed - and
+the quad-court pit-mouth pair FAILED with the puppet jammed at
+literally '552 240 56', the coordinate every ladder tape had been
+reporting. Plus one conviction nothing had noticed (n68->n78,
+jamming at '552 502').
+
+Then the twist that made the fix right instead of merely honest:
+deleting the convicted links stranded 123 nodes - they were
+LOAD-BEARING, which is exactly why bots jammed on them - and the
+measured voids (80u, 160u) sit squarely in running-jump range. The
+links were not dishonest, they were MISTYPED. navgen's verdict
+pass (7g2c, after every minting stage) now remints a refuted walk
+link whose centre-line void fits the proven jump envelope (the
+dm4 lava crossing clears 192u) as a JUMP link, and only truly
+unjumpable refusals die. Ladder: the '552 240' stall cluster is
+GONE from the hotspot board for the first time since the campaign
+began, jump events doubled (51 to 123 - bots fly the crossing),
+zero deaths to the world, all seven gates through except the
+era-baseline coverage artifact. dm4 probed at parity for the QC
+line (impulse 216, developer-gated).
+
 ## v3.85 + lab 0.22 (2026-08-28) - the lab joins the game
 
 The fourth instrument: the lab now connects to a running server as a

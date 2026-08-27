@@ -31,6 +31,21 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&brief)?);
             Ok(())
         }
+        Some("probelinks") => {
+            // empirical link verification: the puppet walks the graph
+            //   argus-mcp probelinks <map> [limit] [skip]
+            let map = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp probelinks <map> [limit] [skip]"))?;
+            let limit: usize = args.next().and_then(|s| s.parse().ok()).unwrap_or(30);
+            let skip: usize = args.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let report = argus_mcp::netclient::probe_links(&cfg, &map, limit, skip)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            Ok(())
+        }
         Some("client") => {
             // the lab as a real NetQuake client (see netclient.rs):
             //   argus-mcp client observe [secs] [host] [port]

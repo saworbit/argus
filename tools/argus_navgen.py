@@ -1898,6 +1898,84 @@ if _tracefiles:
           f"{len(_sightings)} unmapped transitions seen, minted "
           f"{_mined_w} walk + {_mined_j} jump links")
 
+# ---- 7g2c. engine-verdict prune and remint ----
+# The lab's NetQuake client (netclient.rs) walks links in the REAL
+# engine and records the ones no player can WALK - empirical ground
+# truth, the referee the three failed 2026-08-28 geometric criteria
+# were approximating. Its first sweep convicted the dm3 quad-court
+# pit-mouth pair at the exact ladder-tape coordinates. Verdicts are
+# stored by ENDPOINT COORDINATES (indices shift per regen).
+# A refuted WALK link is not always a dead link: the first two
+# convictions cross a 40u deck opening a human clears without
+# breaking stride - the link was MISTYPED, not dishonest. So the
+# verdict pass remints: a refuted pair whose centre-line void is a
+# short gap (<= 3 samples, one jump arc) becomes a JUMP link - the
+# runtime launches at the lip like the dm4 lava-gap crossing - and
+# only unjumpable refusals die outright. Deleting both dm3 pairs
+# without the remint stranded 123 nodes: the "dishonest" links were
+# load-bearing, which is exactly why bots jammed on them.
+import json as _json
+_probepath = __import__("os").path.join(
+    __import__("os").path.dirname(__import__("os").path.abspath(OUTQC)),
+    f"argus_nav_{MAPNAME}.probe.json")
+if __import__("os").path.exists(_probepath):
+    try:
+        _pdoc = _json.load(open(_probepath))
+    except Exception:
+        _pdoc = {}
+    _pfailed = _pdoc.get("failed", [])
+    _ndrop = 0
+    _nremint = 0
+    for _pf, _pt in _pfailed:
+        for _i in list(links):
+            _ix, _iy, _iz = pos(ways[_i])
+            if abs(_ix - _pf[0]) > 24 or abs(_iy - _pf[1]) > 24 \
+                    or abs(_iz - _pf[2]) > 24:
+                continue
+            for _j in list(links[_i]):
+                if links[_i][_j][1]:
+                    continue              # already jump-typed
+                _jx, _jy, _jz = pos(ways[_j])
+                if abs(_jx - _pt[0]) > 24 or abs(_jy - _pt[1]) > 24 \
+                        or abs(_jz - _pt[2]) > 24:
+                    continue
+                # measure the centre-line void: consecutive samples
+                # with no survivable floor from the walker's height
+                _h = ((_jx - _ix) ** 2 + (_jy - _iy) ** 2) ** 0.5
+                _steps = int(_h // 16) + 1
+                _void = 0
+                _maxvoid = 0
+                for _s in range(1, _steps + 1):
+                    _f = _s / _steps
+                    _cx = _ix + (_jx - _ix) * _f
+                    _cy = _iy + (_jy - _iy) * _f
+                    _ok = False
+                    for _fz in column_floors(_cx, _cy):
+                        if _iz - 24 - _fz <= DROPMAX:
+                            _ok = True
+                            break
+                    if _ok:
+                        _void = 0
+                    else:
+                        _void += 1
+                        _maxvoid = max(_maxvoid, _void)
+                # jump range at speed: the shipped dm4 link clears
+                # a 192u lava gap, so the remint window matches
+                # that proven envelope, not a single stride
+                if 0 < _maxvoid * 16 <= 200 and _h <= 280:
+                    _d = links[_i][_j][0]
+                    links[_i][_j] = (_d, 1)
+                    _nremint += 1
+                    print(f"engine verdict: {_i}->{_j} reminted as "
+                          f"JUMP (void {_maxvoid * 16}u on the line)")
+                else:
+                    del links[_i][_j]
+                    _ndrop += 1
+                    print(f"engine verdict: {_i}->{_j} dropped "
+                          f"(void {_maxvoid * 16}u - not one jump)")
+    print(f"engine-verdict pass: {_nremint} reminted as jump, "
+          f"{_ndrop} dropped ({len(_pfailed)} failed pair(s) on file)")
+
 # ---- 7g3. route-poison prune ----
 # A node that STILL cannot reach the mainland after knitting is route
 # poison: every route starting there fails, and four failures with no

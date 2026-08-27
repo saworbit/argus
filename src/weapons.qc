@@ -1505,6 +1505,18 @@ void() ImpulseCommands =
 		Argus_SetOmicron (!argus_omicron);
 	else if (self.impulse >= 210 && self.impulse <= 214)
 		ArgusCam_Impulse (self.impulse);
+	else if (self.impulse == 216 && cvar ("developer"))
+	{
+		// ARGUS: dev teleport for the lab's puppet client
+		// (netclient.rs probe harness) - place at the point the
+		// scratch cvars carry, then walk a link and OBSERVE.
+		// developer-gated; the scratch pipe is the only external
+		// channel vanilla QC has (the v3.74 decision-tape lesson)
+		setorigin (self, cvar ("scratch2") * '1 0 0'
+		               + cvar ("scratch3") * '0 1 0'
+		               + cvar ("scratch4") * '0 0 1');
+		self.velocity = '0 0 0';
+	}
 	else if (self.impulse >= 220 && self.impulse <= 230)
 		Argus_PlayerChat (self.impulse);
 
