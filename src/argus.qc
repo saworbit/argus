@@ -2137,8 +2137,13 @@ void() Argus_Perceive =
                         // you. 72 pursue events against 15 engages
                         // in the v3.37 human tape was this gate
                         // breaking fights five times each.
+                        // cognition-gated difficulty (2026-08-27):
+                        // a warmup partner genuinely forgets you when
+                        // you break sight - skill scales the THINKING,
+                        // not just the trigger finger
                         if (b == self.ar_lastfoe
-                            && time < self.ar_foetime + 5)
+                            && time < self.ar_foetime + 5
+                            && skill >= 1)
                             ok = 1;
                     }
                 }
@@ -2148,8 +2153,10 @@ void() Argus_Perceive =
                     if (b.super_damage_finished > time)
                         d = d + 600;
                     // vendetta (OPM slice C): the one who keeps
-                    // killing us outranks the shopping list
-                    if (b == self.ar_nemesis && self.ar_nemkills >= 3)
+                    // killing us outranks the shopping list. Not at
+                    // skill 0 - warmup partners hold no grudges
+                    if (b == self.ar_nemesis && self.ar_nemkills >= 3
+                        && skill >= 1)
                         d = d + 600;
                     if (d > bd)
                     {
@@ -2648,11 +2655,16 @@ float() Argus_Combat =
     }
     else if (self.weapon == IT_ROCKET_LAUNCHER)
     {
-        if (e.flags & FL_ONGROUND)
+        if ((e.flags & FL_ONGROUND) && skill >= 1)
         {
             // foot splash (OPM slice A): a grounded target is aimed
             // at the floor, not centre mass - the splash lands even
-            // when the dodge works, and the knockback juggles
+            // when the dodge works, and the knockback juggles. A
+            // SKILLED technique: skill 0 aims centre mass, which
+            // both softens the warmup tier and halved its lava rate
+            // (wild-aim foot rockets at pit edges juggled everyone
+            // into the drink, themselves included - the 2026-08-27
+            // skill-0 probes ran lava 6-7 per 125 s)
             aimpt_z = e.origin_z - 16;
 
             // offensive displacement (mre Mastermind, 2026-08-26 -
@@ -2668,7 +2680,7 @@ float() Argus_Combat =
             // the splash back into our own feet. Logged as a plain
             // "ARGUS <name> shove" console line (throttled 2 s) -
             // not an ARGEVT, the Rust parser's verb set is closed.
-            if (d > 150)
+            if (d > 150 && skill >= 1)
             {
                 shd = e.origin - self.origin;
                 shd_z = 0;
@@ -3318,14 +3330,18 @@ void() Argus_PickGoal =
                         b = b.ar_chain;
                     }
                     // item denial (OPM slice C): an opponent standing
-                    // near this item makes taking it sweeter
-                    b = find (world, classname, "player");
-                    while (b != world)
+                    // near this item makes taking it sweeter. Skill
+                    // 1+ - a warmup partner does not play keep-away
+                    if (skill >= 1)
                     {
-                        if (b != self && b.health > 0 && !b.cam_active
-                            && vlen (b.origin - e.origin) < 300)
-                            sc = sc + 12;
-                        b = find (b, classname, "player");
+                        b = find (world, classname, "player");
+                        while (b != world)
+                        {
+                            if (b != self && b.health > 0 && !b.cam_active
+                                && vlen (b.origin - e.origin) < 300)
+                                sc = sc + 12;
+                            b = find (b, classname, "player");
+                        }
                     }
                     // the hunch (theory of mind): the item we bet a
                     // vanished foe is running for is suddenly very
@@ -3628,7 +3644,9 @@ void() Argus_AI =
     // glances. Bounded 700u, hazard-guarded, route-preserving (the
     // node target survives; steering just borrows the combat
     // override for the moment), and it decays with the sound.
-    if (!fighting && ar_opm_ears && self.ar_enemy == world
+    // cognition gate: a warmup partner glances at noises but never
+    // hunts them - skill 1+ investigates
+    if (!fighting && ar_opm_ears && skill >= 1 && self.ar_enemy == world
         && self.ar_sndtime > 0 && time < self.ar_sndtime + 3)
     {
         // weapon-sound classification (mre Predator): how far a bot

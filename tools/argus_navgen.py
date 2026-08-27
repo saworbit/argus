@@ -1327,6 +1327,43 @@ if not NO_RJ:
             # covering for it in the tape)
             print(f"sink component {sorted(_comp)} holds an item at "
                   f"{_held} - stitching escape, entries kept")
+        # a DOWNWARD sink - a ledge, like the dm4 quad perch {55,56} -
+        # escapes by DROPPING, not by rocket: try beeline-verified
+        # one-way drop links to lower nodes first, and only a
+        # still-trapped component falls through to the RJ stitcher.
+        # (2026-08-27: the hunch multiplied quad-ledge traffic and 26
+        # routefails piled onto n56 in one match; reach from the ledge
+        # was 2 of 145 and had been since the graph shipped - the
+        # up-only stitcher printed "no feasible RJ escape" and moved
+        # on.)
+        _dropped = 0
+        for _m in sorted(_comp):
+            if _dropped >= 2:
+                break
+            _mx, _my, _mz = pos(ways[_m])
+            _used = (len(links.get(_m, {})) + tele_out[_m]
+                     + sum(1 for x, _ in rjlinks if x == _m))
+            if _used >= MAX_LINKS:
+                continue
+            _dc = []
+            for _o in range(len(ways)):
+                if _o in _comp:
+                    continue
+                _ox, _oy, _oz = pos(ways[_o])
+                _h = ((_ox - _mx) ** 2 + (_oy - _my) ** 2) ** 0.5
+                _dz = _mz - _oz
+                if not (STEP < _dz <= DROPMAX) or _h > 240:
+                    continue
+                _dc.append((_h + _dz, _o))
+            for _s, _o in sorted(_dc)[:8]:
+                if beeline_ok(ways[_m], ways[_o]):
+                    links.setdefault(_m, {})[_o] = (_s, 0)
+                    _dropped += 1
+                    print(f"sink {sorted(_comp)}: drop escape {_m}->{_o}")
+                    break
+        if _dropped:
+            n_sinkesc += _dropped
+            continue                      # escaped by drops; no RJ needed
         _cands = []
         for _m in _comp:
             _mx, _my, _mz = pos(ways[_m])
