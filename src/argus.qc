@@ -173,6 +173,8 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
                                 // is running for
 .float  ar_hunttime;            // hunch: bias expires here
 .float  ar_hunchcool;           // hunch: one bet per episode
+.vector ar_aimoff;              // saccade aim: the held error offset
+.float  ar_errtime;             // saccade aim: next error re-roll
 .entity ar_bitem;               // battle item: mid-fight grab target
 .float  ar_bitemscan;           // battle item: next scan time
 .float  ar_bitemend;            // battle item: commit expires
@@ -2622,9 +2624,23 @@ float() Argus_Combat =
     errscale = 1.6 - trackt;
     if (errscale < 0.35)
         errscale = 0.35;
-    err_x = (random () - 0.5) * AR_AIMERR * self.ar_aimerr * (d / 500) * errscale * 2;
-    err_y = (random () - 0.5) * AR_AIMERR * self.ar_aimerr * (d / 500) * errscale * 2;
-    err_z = (random () - 0.5) * AR_AIMERR * self.ar_aimerr * (d / 500) * errscale;
+    // saccade error (2026-08-27): human mis-aim is a STABLE offset
+    // that re-anchors a few times a second, not white noise rolled
+    // every frame - the demo ruler measured bots at 128-176 deg/s
+    // mean angular rate against the human's 71-80, twitchier than
+    // any hand, because the spring chased a target that teleported
+    // 20 times a second. Hold one offset, re-roll it every
+    // 0.25-0.55 s, and the spring tracks a steady point between
+    // saccades; magnitude semantics (personality, distance, track
+    // time) are unchanged.
+    if (time > self.ar_errtime)
+    {
+        self.ar_errtime = time + 0.25 + random () * 0.3;
+        self.ar_aimoff_x = (random () - 0.5) * 2;
+        self.ar_aimoff_y = (random () - 0.5) * 2;
+        self.ar_aimoff_z = random () - 0.5;
+    }
+    err = self.ar_aimoff * (AR_AIMERR * self.ar_aimerr * (d / 500) * errscale);
     aimpt = e.origin + '0 0 12' + err;
 
     // projectile leading (Shane's review): aim where they will be.
@@ -2742,6 +2758,21 @@ float() Argus_Combat =
         if (random () < 0.4)
             self.ar_strafedir = 0 - self.ar_strafedir;
     }
+    // RANGE FIGHTING was tried here (2026-08-27, three-ladder
+    // post-mortem, the retreat family's third graveyard entry):
+    // per-weapon rin/rout bands (RL 240-650, LG 110-440, SSG to
+    // 300) with an LG counter-range at skill 2+, so bots would
+    // steer the FIGHT to their gun's winning band. Both variants
+    // failed on dm4, where fights live at the pit boundary: free
+    // back-offs re-ran the 2026-08-18 dead-retreat numbers (lava
+    // 4->6->7, south boundary hazard clusters lit up, one bot
+    // starved each match), and floor-probed back-offs traded the
+    // lava for boundary stalls (11->16) as bots pinned between
+    // "want out" and "no safe floor". Radial displacement pressure
+    // of any kind fights this map. A real exchange layer needs the
+    // retreat fan's POSITIONING awareness (cover, lateral routes),
+    // not radial force - idea bank, next design. Tapes:
+    // ab_dm4_range1/2/3.
     if (d > 550)
         self.ar_moveyaw = vectoyaw (to);
     else if (d < 130)
