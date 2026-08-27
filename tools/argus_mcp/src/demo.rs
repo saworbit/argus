@@ -822,9 +822,14 @@ fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight>
         " accepts ", " was blasted by ", " was telefragged by ", " was smashed by ",
         " was zapped by ", " was crushed by ", " eats ",
     ];
-    const ENV_DEATHS: [&str; 6] = [
+    const ENV_DEATHS: [&str; 5] = [
         " burst into flames", " turned into hot slag", " visits the Volcano God",
-        " fell to his death", " becomes bored with life", " was squished",
+        " fell to his death", " was squished",
+    ];
+    // stock SELF-kill obituaries (own splash, or the kill command) -
+    // a different story from the environment claiming someone
+    const SUICIDES: [&str; 3] = [
+        " becomes bored with life", " checks if his weapon is loaded", " does a number on himself",
     ];
     let mut out = Vec::new();
     let mut kills: Vec<(f64, String)> = Vec::new(); // (t, killer)
@@ -846,6 +851,11 @@ fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight>
         }
         if ENV_DEATHS.iter().any(|v| line.contains(v)) {
             out.push(Highlight { t: *t, kind: "env_death".into(), note: line.clone() });
+            spree.insert(named[0].clone(), 0);
+            continue;
+        }
+        if SUICIDES.iter().any(|v| line.contains(v)) {
+            out.push(Highlight { t: *t, kind: "suicide".into(), note: line.clone() });
             spree.insert(named[0].clone(), 0);
             continue;
         }
