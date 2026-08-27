@@ -19,6 +19,18 @@ async fn main() -> anyhow::Result<()> {
             let map = args.next().ok_or_else(|| anyhow::anyhow!("usage: argus-mcp cycle <map>"))?;
             argus_mcp::soak::run_cycle(&map).await.map_err(|e| anyhow::anyhow!(e))
         }
+        Some("demo") => {
+            // CLI face of see what=demo, so demos read without an MCP
+            // client (append :export to also write <stem>.tracks.json)
+            let name = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp demo <stem>[:export]"))?;
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let brief =
+                argus_mcp::demo::demo_brief(&cfg, &name).map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&brief)?);
+            Ok(())
+        }
         Some("-h" | "--help" | "help") => {
             print_help();
             Ok(())
@@ -58,6 +70,9 @@ fn print_help() {
          argus-mcp cycle <map>  one guarded learning cycle: learn ->\n\
                                 regen -> compile -> probe; adopts only\n\
                                 on an improved verdict, else restores\n\
-                                the snapshot byte for byte\n"
+                                the snapshot byte for byte\n\
+         argus-mcp demo <stem>[:export]\n\
+                                parse a harvested .dem (append :export\n\
+                                to also write <stem>.tracks.json)\n"
     );
 }

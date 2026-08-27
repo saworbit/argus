@@ -317,6 +317,10 @@ fn win_try_wait(handle: windows_sys::Win32::Foundation::HANDLE) -> Result<Option
 
 #[cfg(windows)]
 fn win_inject(pid: u32, line: &str) -> Result<(), String> {
+    use windows_sys::Win32::Foundation::{CloseHandle, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE};
+    use windows_sys::Win32::Storage::FileSystem::{
+        CreateFileW, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
+    };
     use windows_sys::Win32::System::Console::{
         AttachConsole, FreeConsole, GetStdHandle, SetStdHandle, WriteConsoleInputW, INPUT_RECORD,
         STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
@@ -324,6 +328,12 @@ fn win_inject(pid: u32, line: &str) -> Result<(), String> {
 
     // Save the MCP JSON-RPC pipes, attach to the child's hidden console,
     // type the line, then restore the pipes so stdio MCP stays intact.
+    // The console input buffer must be opened as CONIN$: after
+    // AttachConsole, GetStdHandle(STD_INPUT_HANDLE) still returns this
+    // process's redirected stdin (the JSON-RPC pipe) - writing console
+    // records to it was the "WriteConsoleInputW: invalid handle" failure
+    // that left Windows live-tune broken from 0.15 until the 2026-08-27
+    // stack sweep finally exercised it end to end.
     unsafe {
         let hin = GetStdHandle(STD_INPUT_HANDLE);
         let hout = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -338,7 +348,24 @@ fn win_inject(pid: u32, line: &str) -> Result<(), String> {
                 std::io::Error::last_os_error()
             ));
         }
-        let con_in = GetStdHandle(STD_INPUT_HANDLE);
+        let conin: Vec<u16> = "CONIN$\0".encode_utf16().collect();
+        let con_in = CreateFileW(
+            conin.as_ptr(),
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            std::ptr::null(),
+            OPEN_EXISTING,
+            0,
+            std::ptr::null_mut(),
+        );
+        if con_in == INVALID_HANDLE_VALUE {
+            let err = std::io::Error::last_os_error();
+            let _ = FreeConsole();
+            let _ = SetStdHandle(STD_INPUT_HANDLE, hin);
+            let _ = SetStdHandle(STD_OUTPUT_HANDLE, hout);
+            let _ = SetStdHandle(STD_ERROR_HANDLE, herr);
+            return Err(format!("CreateFileW(CONIN$): {err}"));
+        }
         let mut recs: Vec<INPUT_RECORD> = Vec::new();
         for ch in line.encode_utf16().chain(std::iter::once(b'\r' as u16)) {
             recs.push(key_rec(ch, 1));
@@ -346,6 +373,7 @@ fn win_inject(pid: u32, line: &str) -> Result<(), String> {
         }
         let mut written = 0u32;
         let ok = WriteConsoleInputW(con_in, recs.as_ptr(), recs.len() as u32, &mut written);
+        let _ = CloseHandle(con_in);
         let _ = FreeConsole();
         let _ = SetStdHandle(STD_INPUT_HANDLE, hin);
         let _ = SetStdHandle(STD_OUTPUT_HANDLE, hout);
@@ -403,5 +431,49 @@ mod tests {
         assert!(validate_map("").is_err());
         assert!(validate_map("dm4").is_ok());
         assert!(validate_map("lqdm2").is_ok());
+    }
+
+    /// The live-tune inject, exercised for real: spawn the hidden
+    /// dedicated engine, type `status` into its console via
+    /// AttachConsole + CONIN$, and require the status output in the
+    /// log. This path shipped broken from 0.15 (GetStdHandle after
+    /// AttachConsole returns the MCP's own pipe, not the console -
+    /// "WriteConsoleInputW: invalid handle") and nothing noticed for
+    /// twelve days because nothing ran it. Machine-local: skips
+    /// without the lab engine. Serialised by nature - it binds the
+    /// engine's UDP port, so do not run while a lab match is live.
+    #[tokio::test]
+    async fn windows_console_inject_reaches_the_engine_if_present() {
+        if !cfg!(windows) {
+            return;
+        }
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut env = std::collections::HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let Ok(cfg) = crate::config::load_for_reads_from(&env, &root) else {
+            return;
+        };
+        if !cfg.engine.exists() {
+            return;
+        }
+        let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+        if ctrl
+            .start(&cfg, "dm4", Some(30), Some("probe_inject_test"), None, Some(1))
+            .await
+            .is_err()
+        {
+            return; // engine present but refused (port in use): not this test's fault
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+        let inject = ctrl.command("status").await;
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        let log = ctrl.log_text().unwrap_or_default();
+        let _ = ctrl.stop(std::time::Duration::from_secs(3)).await;
+        inject.expect("console inject must not error");
+        assert!(
+            log.contains("host:") || log.contains("players:"),
+            "status output must reach the log; tail: {}",
+            log.chars().rev().take(400).collect::<String>().chars().rev().collect::<String>()
+        );
     }
 }

@@ -290,6 +290,16 @@ pub fn parse_tape(text: &str) -> MatchTape {
                 pending_map = None;
             }
             failed_spawns.push(name);
+        } else if line.starts_with("ARGUS ") {
+            // plain ARGUS console lines sit OUTSIDE the closed ARGEVT
+            // vocabulary by design (shove since v3.73, routecache
+            // adopt since v3.63) - count them as pseudo-events so the
+            // behaviour is visible in briefs without a grammar change
+            if line.ends_with(" shove") {
+                *event_counts.entry("shove".to_string()).or_insert(0) += 1;
+            } else if line.ends_with("routecache adopt") {
+                *event_counts.entry("routecache_adopt".to_string()).or_insert(0) += 1;
+            }
         }
         if let Some(caps) = v1.captures(line) {
             let name = caps[1].to_string();
@@ -468,6 +478,18 @@ ARGLOG Reap t 1.0 pos '0.0 0.0 24.0' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
         let clean = parse_tape("SpawnServer: dm4\nARGUS init on dm4\n");
         assert_eq!(clean.map.as_deref(), Some("dm4"));
         assert!(clean.failed_spawns.is_empty());
+    }
+
+    #[test]
+    fn plain_argus_lines_count_as_pseudo_events() {
+        let text = "\
+ARGUS Carmack shove\n\
+ARGUS Joe Rogan shove\n\
+ARGUS routecache adopt\n\
+ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
+        let tape = parse_tape(text);
+        assert_eq!(tape.event_counts.get("shove"), Some(&2));
+        assert_eq!(tape.event_counts.get("routecache_adopt"), Some(&1));
     }
 
     #[test]
