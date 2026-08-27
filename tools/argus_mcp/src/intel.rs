@@ -2157,6 +2157,13 @@ ARGEVT Reap spawned
             "a 335 s 4-track dm4 match paints most of the graph, got {}%",
             cov.pct
         );
+        // everything below needs the atlas, and the atlas needs the
+        // BSP - machine-local (licensed id data, never in the repo),
+        // so CI stops here while the committed nav json assertions
+        // above still run everywhere
+        if !root.join("maps_local/dm4.bsp").exists() {
+            return;
+        }
         assert!(
             full.hotspots.iter().any(|h| h.cause.as_deref() == Some("lava_edge")),
             "dm4 pit hotspots must tag lava_edge: {:?}",
