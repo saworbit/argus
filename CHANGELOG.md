@@ -7,6 +7,62 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.80 (2026-08-27) - the dm3 campaign: knitting and the dive
+
+The worst graph in the project is structurally healed. dm3's spawns
+reached 2-21% of the map (bots spawned inside directed sinks and
+suicided out at a frag each - the trapped economy); the modern regen
+plus three new navgen passes take every spawn to 70-83%, ungated
+66-78%, and the 7h reach gate passes on dm3 for the first time.
+
+- **Symmetric closure** (navgen 6b2): the Dijkstra linker's
+  neighbour candidacy was asymmetric - dm3 shipped 55 near-level
+  one-way links, dz 16 steps linked downhill only. Every one-way
+  walk link whose reverse beeline verifies now gets the reverse.
+- **Reachability knitting** (navgen 7g2): the 7g sink stitcher only
+  healed strict sinks; pockets that leak into other dying pockets
+  passed the test and stayed stranded. The general criterion is
+  reachability itself: iterate until every node reaches the largest
+  strongly-connected component and is reached from it, stitching one
+  link per round - walk joins first, then drops, rocket jumps last
+  (they are equipment-gated and invisible to RL-less bots), with
+  ungated connectivity healed before gated.
+- **The dive** (navgen + QC): dm3's deep basin sits 368u below its
+  deck, floored in water, with twenty swim exits and no entry the
+  runtime could execute - the advance gate closed at 220 below and
+  the hazard guard read past-280 as bottomless, so the first knitted
+  graph left bots pinned on the lip above a dark deep level for a
+  whole tape. Three water-gated QC touches: the hazard probe treats
+  a submerged probe-end as a pool, not a void (water breaks any fall
+  in Quake); the advance gate closes on an underwater target at any
+  depth; and a routed bot with an underwater node below it swims
+  DOWN (air-gated at five seconds of margin - the up-only bob had
+  made every submerged goal unreachable). dm4 parity ladder for the
+  QC diff: improved on all seven gates.
+- **Wall-clearance seat shift** (navgen 5a2): a waypoint seated
+  against a wall face makes every arriving bot bury its point probe
+  and deflect-dither at its own steering target; decimation seats
+  with walls inside 24u now shift to a roomier neighbouring sample.
+- **Costs rejected, recorded**: folding the learned stall cells into
+  nav costs inflated 1074 fine edges and amputated arteries (stalls
+  114, engagements 4) - the dm4 learncost lesson repeating on a
+  tighter map. dm3's pinches are load-bearing corridors, not
+  detourable cells.
+
+dm3 ladder headline: routefails 540 to 29, trapped suicides 39 to 2,
+deaths 56 to 9, the frag board positive with spread 0. Honest
+residuals: stalls run above the old baseline (bots now actually walk
+routes instead of routefail-looping at spawn), goal completions are
+low, and two geometry chokes are filed - the quad-court pinch at
+'552 240 56' and the east ditch at '1830 -112 -208'. dm3 is
+structurally sound but not yet human-ready.
+
+Red team: scratch regens with the new navgen beat every shipped
+graph's reach - dm4 100%, dm6 93%, dm2 91%, lqdm2 92% - each
+awaiting its own ladder session before re-ship. Lab: an abandoned
+match could orphan a hung engine on the port (observed live);
+match_ctrl now kills the child on every error path.
+
 ## v3.79 (2026-08-27) - the mind at skill 1
 
 The hunch and the corner pre-fire move from skill 2 down to skill 1,

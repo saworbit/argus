@@ -2197,7 +2197,15 @@ ARGEVT Reap spawned
         let cfg = load_for_reads_from(&env, &root).unwrap();
         let full = brief_run(&cfg, "shane_dm4_2026-08-26_v372", None).unwrap();
         let cov = full.nav_coverage.as_ref().expect("dm4 nav coverage");
-        assert_eq!(cov.nodes, 145);
+        // the graph regenerates as navgen evolves (145 nodes at the
+        // v3.72 tape, 155 since the v3.76 ledge-sink regen): assert
+        // the scale, not the exact count, or this goes stale on every
+        // regen and only fails on machines that carry the tree
+        assert!(
+            (120..=220).contains(&cov.nodes),
+            "dm4 graph node count out of scale: {}",
+            cov.nodes
+        );
         assert!(
             cov.pct >= 60,
             "a 335 s 4-track dm4 match paints most of the graph, got {}%",

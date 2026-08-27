@@ -339,6 +339,13 @@ impl MatchCtrl {
     }
 
     /// Fail fast if the dedicated child dies before the first ARGLOG.
+    ///
+    /// Every error return kills the child first: `running` can read
+    /// false while a hung engine process is still alive (observed
+    /// 2026-08-27, a startup-hung quakespasm survived the "exited
+    /// before ARGLOG" error and held port 26000, failing every later
+    /// match until it was killed by hand). An abandoned match must
+    /// never leave a child behind.
     async fn await_healthy(&mut self, budget: Duration) -> Result<(), String> {
         let deadline = Instant::now() + budget;
         loop {
@@ -349,6 +356,7 @@ impl MatchCtrl {
                 }
                 if let Some(why) = diagnose_log(&text) {
                     if !st.running {
+                        self.kill_live().await;
                         return Err(format_match_fail(
                             st.log_path.as_deref().unwrap_or(""),
                             &text,
@@ -361,6 +369,7 @@ impl MatchCtrl {
                 let text = self.log_text().unwrap_or_default();
                 let why = diagnose_log(&text)
                     .unwrap_or_else(|| "dedicated child exited before ARGLOG".into());
+                self.kill_live().await;
                 return Err(format_match_fail(
                     st.log_path.as_deref().unwrap_or(""),
                     &text,
@@ -375,11 +384,17 @@ impl MatchCtrl {
         }
     }
 
-    pub async fn shutdown(&mut self) {
-        let _ = self.stop(Duration::from_secs(2)).await;
+    /// Kill the live child outright, if any. The error paths use this
+    /// so an abandoned match never orphans an engine on the port.
+    async fn kill_live(&mut self) {
         if let Some(mut live) = self.live.take() {
             let _ = live.child.kill().await;
         }
+    }
+
+    pub async fn shutdown(&mut self) {
+        let _ = self.stop(Duration::from_secs(2)).await;
+        self.kill_live().await;
     }
 }
 

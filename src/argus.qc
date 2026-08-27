@@ -1070,6 +1070,14 @@ float(float myaw, float pdist) Argus_MoveHazard =
                     return FALSE;
             }
         }
+        // a probe end SUBMERGED means the "void" is a deep pool:
+        // water breaks any fall in Quake, so stepping off is as safe
+        // as a stair (dm3's east basin sits 368u below its deck and
+        // this veto kept the whole deep level dark - the knit1 tape).
+        // A surface deeper than the probe still reads empty and
+        // stays vetoed: never fall into the unknown.
+        if (pointcontents (ahead - '0 0 280') == CONTENT_WATER)
+            return FALSE;
         return TRUE;                // no floor within a survivable drop
     }
     c = pointcontents (trace_endpos + '0 0 2');
@@ -1368,7 +1376,20 @@ void() Argus_Physics =
         // in a wadeable pool walks like anyone else. The tread-with-
         // floor case was the residual splash cycle in Shane's third
         // sound playtest â€” lift, break surface, fall, splash, again.
-        if (wl == 3)
+        if (self.ar_mode == 2 && self.ar_node != world
+            && self.ar_node.origin_z < self.origin_z - 40
+            && self.air_finished > time + 5
+            && pointcontents (self.ar_node.origin) == CONTENT_WATER)
+            self.velocity_z = 0 - 120;  // routed DIVE: the node is
+                                    // underwater below us (dm3 basin,
+                                    // LG at -416). Swim DOWN to it -
+                                    // the up-only bob made every
+                                    // submerged goal unreachable and
+                                    // churned stalls at the basin
+                                    // nodes (knit2 tape, n210 x24).
+                                    // Air-gated: 5 s of margin or the
+                                    // drive for air wins below.
+        else if (wl == 3)
             self.velocity_z = 120;  // eyes under: drive for air
         else
             self.velocity_z = 50;   // treading: hold the surface
@@ -4144,8 +4165,15 @@ void() Argus_AI =
             }
             else if (vlen (to) < 48
                      && (fabs (tp_z - self.origin_z) < 48
-                         || (self.origin_z - tp_z > 0 && self.origin_z - tp_z < 220)))
+                         || (self.origin_z - tp_z > 0 && self.origin_z - tp_z < 220)
+                         || (self.origin_z - tp_z >= 220
+                             && pointcontents (tp) == CONTENT_WATER)))
             {
+                // the third clause is the DIVE: a router-promised
+                // water landing any depth below (dm3 basin links).
+                // MoveHazard passes deep-water columns, so the walk
+                // reaches the lip and the v367 lip-drop steps off;
+                // the splash is free and the swim code owns the rest.
                 // the vertical tolerance also accepts standing on the
                 // lip ABOVE a drop-link landing: the z gap can never
                 // close from up here, and demanding it left bots

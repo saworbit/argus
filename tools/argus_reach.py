@@ -136,6 +136,15 @@ def main():
     ok = True
     for m in maps:
         ok = audit(m) and ok
+    if not ok:
+        # exit 1 is a GATE VERDICT for rig scripts and CI, not a
+        # crash: the audit ran to completion and the numbers above
+        # are the finding. Say so, loudly - a chained shell command
+        # otherwise reports "failed" and the verdict reads as a
+        # tool defect (2026-08-27, Shane's report).
+        print("REACH GATE: verdict FAIL (a spawn is under "
+              f"{WARN_PCT}%). The audit itself succeeded; "
+              "exit 1 is the gate speaking.")
     sys.exit(0 if ok else 1)
 
 

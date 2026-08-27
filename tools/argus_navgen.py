@@ -379,6 +379,57 @@ while True:
     r *= 1.15
 print(f"waypoints: {len(ways)} at coverage radius {r:.0f}")
 
+# ---- 5a2. wall-clearance seat shift ----
+# The runtime hazard guard probes 32-52u ahead at POINT resolution
+# while the bot is a 32u-wide box: a waypoint seated against a wall
+# face makes every arriving bot bury its probe in the wall and
+# deflect-dither AT its own steering target (dm3 '541 313 56': 82
+# hazard deflections and a third of the tape's stalls in one cell,
+# the knit3 ladder). When a decimation seat has walls inside 24u and
+# a neighbouring sample at step height has more elbow room, seat
+# there instead. Runs BEFORE the promotions: pads, stair seats and
+# sprint anchors are geometry-anchored and never shifted.
+def _clear_dirs(_x, _y, _z):
+    _n = 0
+    for _dx, _dy in ((24, 0), (-24, 0), (0, 24), (0, -24)):
+        if hull_contents(_x + _dx, _y + _dy, _z + 8) == CONTENTS_EMPTY:
+            _n += 1
+    return _n
+
+
+_wayset = set(ways)
+_shifted = 0
+for _wi in range(len(ways)):
+    _cx, _cy, _zi = ways[_wi]
+    _x, _y, _z = pos(ways[_wi])
+    _c0 = _clear_dirs(_x, _y, _z)
+    if _c0 >= 4:
+        continue
+    _best = None
+    _bestc = _c0
+    for _nb in ((_cx + 1, _cy), (_cx - 1, _cy),
+                (_cx, _cy + 1), (_cx, _cy - 1)):
+        _zs = samples.get(_nb)
+        if not _zs:
+            continue
+        for _nzi in range(len(_zs)):
+            _cand = (_nb[0], _nb[1], _nzi)
+            if _cand in _wayset:
+                continue
+            _px, _py, _pz = pos(_cand)
+            if abs(_pz - _z) > STEP:
+                continue
+            _cc = _clear_dirs(_px, _py, _pz)
+            if _cc > _bestc:
+                _bestc = _cc
+                _best = _cand
+    if _best is not None:
+        _wayset.discard(ways[_wi])
+        _wayset.add(_best)
+        ways[_wi] = _best
+        _shifted += 1
+print(f"wall-clearance shift moved {_shifted} seats")
+
 # ---- 5b. plats: force waypoints at each lift's boarding and exit ----
 # func_plat is compiled at its TOP position; travel is the height key
 # or size_z - 8. Hull sampling cannot climb a lift shaft, so without
@@ -748,6 +799,27 @@ for i in list(links):
             del links[i][j]
             nbad += 1
 print(f"beeline verification pruned {nbad} wall-piercing links")
+
+# ---- 6b2. symmetric closure on climbable one-ways ----
+# The Dijkstra pass links i->j when a fine path exists in that
+# direction, but neighbour candidacy is not symmetric: dm3 shipped 55
+# near-level one-way links (dz 16 steps linked downhill only), and
+# every spurious one-way starves directed reach for no geometric
+# reason. For each one-way walk link whose REVERSE beeline verifies
+# (beeline_ok refuses climbs past STEP, so true drops stay one-way),
+# add the reverse. Jump-tagged links are directional arcs and are
+# never closed.
+nclosed = 0
+for i in list(links):
+    for j in list(links[i]):
+        if links[i][j][1]:
+            continue                      # jump arc: directional
+        if i in links.get(j, {}):
+            continue                      # already two-way
+        if beeline_ok(ways[j], ways[i]):
+            links.setdefault(j, {})[i] = (links[i][j][0], 0)
+            nclosed += 1
+print(f"symmetric closure added {nclosed} reverse links")
 
 # ---- 6c. door-typed walk links ----
 # Hull 1 never contains func_door brushes, so a beeline through a
@@ -1402,6 +1474,215 @@ if not NO_RJ:
                   f"escape - bots knocked in stay trapped")
     if n_sinkesc:
         print(f"sink escapes: {n_sinkesc} RJ links stitched")
+
+# ---- 7g2. reachability knitting ----
+# 7g heals strict sinks (SCCs with zero outgoing edges), but dm3
+# taught the general case: a pocket that leaks into ANOTHER dying
+# pocket passes the sink test and still never reaches the mainland,
+# and one-way drop chains turn a vertical map into a downward DAG
+# where every spawn strands (worst dm3 spawn: 4 of 252 nodes).
+# The honest criterion is reachability itself: iterate until every
+# node can reach the largest SCC (the mainland) and be reached from
+# it, stitching one link per round - a two-way walk join where the
+# separation is flat (fine-sampling gaps between components), a
+# one-way drop where the pocket sits above, a rocket jump only as
+# the last resort (equipment-gated at BFS time, invisible to
+# RL-less bots - the v3.69 lesson). Unhealable pockets are reported
+# and left for the prune or the trapped exit.
+
+def _knit_sccs(_fwd, _n):
+    _index = {}
+    _low = {}
+    _onstk = set()
+    _stk = []
+    _out = []
+    _ctr = [0]
+    for _root in range(_n):
+        if _root in _index:
+            continue
+        _work = [(_root, iter(sorted(_fwd[_root])))]
+        _index[_root] = _low[_root] = _ctr[0]
+        _ctr[0] += 1
+        _stk.append(_root)
+        _onstk.add(_root)
+        while _work:
+            _v, _it = _work[-1]
+            _adv = False
+            for _w in _it:
+                if _w not in _index:
+                    _index[_w] = _low[_w] = _ctr[0]
+                    _ctr[0] += 1
+                    _stk.append(_w)
+                    _onstk.add(_w)
+                    _work.append((_w, iter(sorted(_fwd[_w]))))
+                    _adv = True
+                    break
+                elif _w in _onstk:
+                    _low[_v] = min(_low[_v], _index[_w])
+            if _adv:
+                continue
+            _work.pop()
+            if _work:
+                _low[_work[-1][0]] = min(_low[_work[-1][0]], _low[_v])
+            if _low[_v] == _index[_v]:
+                _c = set()
+                while True:
+                    _w = _stk.pop()
+                    _onstk.discard(_w)
+                    _c.add(_w)
+                    if _w == _v:
+                        break
+                _out.append(_c)
+    return _out
+
+
+def _knit_pass(_toward_main, _use_rj):
+    # _toward_main True stitches ESCAPES (pocket -> mainland-reaching
+    # set); False stitches ENTRIES (mainland-reachable set -> pocket).
+    # _use_rj False runs the pass blind to rocket-jump links entirely
+    # (neither traversing nor stitching them): RJ edges are equipment-
+    # gated at BFS time, so ungated connectivity is the real bar - a
+    # spawn whose only escape is an RJ link strands every RL-less bot
+    # (dm3 n43 measured 5% ungated against 62% gated).
+    _added = 0
+    _frozen = set()
+    _reported = set()
+    for _round in range(96):
+        _fwd = collections.defaultdict(set)
+        for _i in links:
+            for _j in links[_i]:
+                _fwd[_i].add(_j)
+        _typed = teles + lifts + swims + trains
+        if _use_rj:
+            _typed = _typed + rjlinks
+        for _a, _b in _typed:
+            _fwd[_a].add(_b)
+        _rev = collections.defaultdict(set)
+        for _i in _fwd:
+            for _j in _fwd[_i]:
+                _rev[_j].add(_i)
+        _sccs = _knit_sccs(_fwd, len(ways))
+        _main = max(_sccs, key=len)
+        # good = nodes already connected to the mainland in the
+        # direction this pass cares about
+        _walkdir = _rev if _toward_main else _fwd
+        _good = set(_main)
+        _q = list(_main)
+        while _q:
+            _u = _q.pop()
+            for _v in _walkdir[_u]:
+                if _v not in _good:
+                    _good.add(_v)
+                    _q.append(_v)
+        _pockets = [_c for _c in _sccs
+                    if not (_c & _good) and frozenset(_c) not in _frozen]
+        if not _pockets:
+            break
+        _comp = max(_pockets, key=len)
+        _stitched = False
+        # candidate pairs: _m inside the pocket, _o in the good set;
+        # for entries the link runs _o -> _m
+        _walkc = []
+        _dropc = []
+        _rjc = []
+        for _m in _comp:
+            _mx, _my, _mz = pos(ways[_m])
+            for _o in _good:
+                _ox, _oy, _oz = pos(ways[_o])
+                _h = ((_ox - _mx) ** 2 + (_oy - _my) ** 2) ** 0.5
+                _dz = _mz - _oz            # positive: pocket above
+                if _h <= 320 and abs(_dz) <= 48:
+                    _walkc.append((_h, _m, _o))
+                _dd = _dz if _toward_main else -_dz
+                if STEP < _dd <= DROPMAX and _h <= 240:
+                    _dropc.append((_h + _dd, _m, _o, 0))
+                elif DROPMAX < _dd <= 500 and _h <= 96:
+                    # the DIVE: a fall past DROPMAX is legal when it
+                    # lands in water - and since the v3.75-era water
+                    # work the runtime executes it (MoveHazard passes
+                    # deep-water columns, the advance gate closes on
+                    # a submerged target, the lip-drop steps off).
+                    # The first knit1 build minted these while the
+                    # runtime still vetoed them and the whole dm3
+                    # deep level went dark: never emit a link class
+                    # the runtime cannot walk.
+                    _lx, _ly, _lz = ((_ox, _oy, _oz) if _toward_main
+                                     else (_mx, _my, _mz))
+                    if h0_contents(_lx, _ly, _lz) == CONTENTS_WATER:
+                        _dropc.append((_h + _dd + 500, _m, _o, 1))
+                _du = -_dz if _toward_main else _dz
+                if (40 < _du <= 240 and _h <= 260 and not NO_RJ
+                        and _use_rj):
+                    _rjc.append((_du + _h, _m, _o))
+
+        def _src_dst(_m, _o):
+            return (_m, _o) if _toward_main else (_o, _m)
+
+        def _slot_free(_s):
+            _u = (len(links.get(_s, {})) + tele_out[_s]
+                  + sum(1 for x, _ in rjlinks if x == _s))
+            return _u < MAX_LINKS
+
+        for _h, _m, _o in sorted(_walkc)[:48]:
+            _s, _d = _src_dst(_m, _o)
+            if _slot_free(_s) and beeline_ok(ways[_s], ways[_d]):
+                links.setdefault(_s, {})[_d] = (_h, 0)
+                if _slot_free(_d) and beeline_ok(ways[_d], ways[_s]):
+                    links.setdefault(_d, {})[_s] = (_h, 0)
+                print(f"knit walk {_s}->{_d}")
+                _stitched = True
+                break
+        if not _stitched:
+            for _sc, _m, _o, _wet in sorted(_dropc)[:48]:
+                _s, _d = _src_dst(_m, _o)
+                if not _slot_free(_s):
+                    continue
+                if _wet:
+                    # beeline refuses drops past DROPMAX; a dive only
+                    # needs the lip edge clear of solid
+                    _sx, _sy, _sz = pos(ways[_s])
+                    _dx2, _dy2, _dz2 = pos(ways[_d])
+                    if h0_contents((_sx + _dx2) / 2, (_sy + _dy2) / 2,
+                                   _sz + 8) == CONTENTS_SOLID:
+                        continue
+                elif not beeline_ok(ways[_s], ways[_d]):
+                    continue
+                links.setdefault(_s, {})[_d] = (_sc, 0)
+                print(f"knit {'dive' if _wet else 'drop'} {_s}->{_d}")
+                _stitched = True
+                break
+        if not _stitched:
+            for _sc, _m, _o in sorted(_rjc)[:24]:
+                _s, _d = _src_dst(_m, _o)
+                _sx, _sy, _sz = pos(ways[_s])
+                _dx, _dy, _dz2 = pos(ways[_d])
+                if (_slot_free(_s)
+                        and rj_feasible(_sx, _sy, _sz, _dx, _dy, _dz2,
+                                        min_dz=40)):
+                    rjlinks.append((_s, _d))
+                    print(f"knit RJ {_s}->{_d}")
+                    _stitched = True
+                    break
+        if _stitched:
+            _added += 1
+            # a new stitch can make a frozen pocket healable through
+            # the node it just connected: retry everything
+            _frozen.clear()
+        else:
+            _frozen.add(frozenset(_comp))
+            if frozenset(_comp) not in _reported:
+                _reported.add(frozenset(_comp))
+                _dir = "escape" if _toward_main else "entry"
+                print(f"knit: pocket {sorted(_comp)} has no feasible "
+                      f"{_dir} - left stranded")
+    return _added
+
+
+# ungated connectivity first (walk and drop only, RJ edges invisible),
+# then a gated sweep for whatever geometry truly demands a rocket
+_nknit = (_knit_pass(True, False) + _knit_pass(False, False)
+          + _knit_pass(True, True) + _knit_pass(False, True))
+print(f"reachability knitting stitched {_nknit} links")
 
 # ---- 7b. prune isolated waypoints ----
 # A waypoint with no links in either direction (typically a secret alcove
