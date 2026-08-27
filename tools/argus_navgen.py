@@ -1684,6 +1684,59 @@ _nknit = (_knit_pass(True, False) + _knit_pass(False, False)
           + _knit_pass(True, True) + _knit_pass(False, True))
 print(f"reachability knitting stitched {_nknit} links")
 
+# ---- 7g3. route-poison prune ----
+# A node that STILL cannot reach the mainland after knitting is route
+# poison: every route starting there fails, and four failures with no
+# enemy in sight is the trapped suicide - Carmack died at
+# '-784 280 -16' seconds into the first human session on the knitted
+# dm3 graph, spawn-adjacent to an unhealable pocket. Strip those
+# nodes' links so the isolated-waypoint prune removes them: a bot
+# physically standing there routes from the nearest SURVIVING node
+# and simply walks the gap, which beats dying.
+_fwd = collections.defaultdict(set)
+for _i in links:
+    for _j in links[_i]:
+        _fwd[_i].add(_j)
+for _a, _b in teles + rjlinks + lifts + swims + trains:
+    _fwd[_a].add(_b)
+_sccs = _knit_sccs(_fwd, len(ways))
+_main = max(_sccs, key=len) if _sccs else set()
+_rev = collections.defaultdict(set)
+for _i in _fwd:
+    for _j in _fwd[_i]:
+        _rev[_j].add(_i)
+_canreach = set(_main)
+_q = list(_main)
+while _q:
+    _u = _q.pop()
+    for _v in _rev[_u]:
+        if _v not in _canreach:
+            _canreach.add(_v)
+            _q.append(_v)
+_pset = set(range(len(ways))) - _canreach
+if _pset:
+    print(f"route-poison prune: {len(_pset)} stranded nodes stripped "
+          f"{sorted(_pset)}")
+    for _i in list(links):
+        if _i in _pset:
+            del links[_i]
+            continue
+        for _j in list(links[_i]):
+            if _j in _pset:
+                del links[_i][_j]
+    teles[:] = [(a, b) for a, b in teles
+                if a not in _pset and b not in _pset]
+    rjlinks[:] = [(a, b) for a, b in rjlinks
+                  if a not in _pset and b not in _pset]
+    lifts[:] = [(a, b) for a, b in lifts
+                if a not in _pset and b not in _pset]
+    swims[:] = [(a, b) for a, b in swims
+                if a not in _pset and b not in _pset]
+    trains[:] = [(a, b) for a, b in trains
+                 if a not in _pset and b not in _pset]
+    sprints[:] = [(a, b) for a, b in sprints
+                  if a not in _pset and b not in _pset]
+
 # ---- 7b. prune isolated waypoints ----
 # A waypoint with no links in either direction (typically a secret alcove
 # or an in-wall sliver) wastes an edict and, worse, makes every route

@@ -7,6 +7,45 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.82 (2026-08-27) - the vault, the moat, and honest eyes
+
+The v3.81 session reproduced every report on tape, and each decoded
+into a mechanism:
+
+- **The splash on repeat** ("they don't know how to jump out of the
+  water back to land" - exactly right): dm3's east moat is wade-deep
+  water with a bank lip taller than a step. Its seats are not
+  underwater, so no swim links exist there, and the waterjump vault
+  only fired on routed swim hops - bots swam against the bank
+  splashing forever (982 swim events in a two-minute tape). The
+  vault now fires in ANY water when the waist is blocked and the eye
+  is clear, carries forward so the arc actually lands on the bank,
+  and rate-limits so a failed try is not a splash machine-gun. The
+  contents gate keeps lava excluded - which is all the old hop gate
+  was really for.
+- **The bot that dies at match start**: Carmack spawned beside a
+  pocket the knitting had reported unhealable, routefailed his whole
+  goal menu, and took the trapped suicide seconds in. New navgen
+  pass: nodes that still cannot reach the mainland after knitting
+  are route poison and are pruned - a bot standing there routes from
+  the nearest surviving node and simply walks, which beats dying.
+- **Still seen through the ring**: the acquisition gate was honest
+  but tracking aimed at the live origin - a glimpse or a close pass
+  bought three seconds of perfect tracking of a nearly invisible
+  model, and the tape shows the gib with 22 seconds of ring left.
+  Against a ringed target the aim error now triples (a floating
+  pair of eyes is hard to put a rocket on) and lost sight holds the
+  last seen position instead of tracking through walls.
+- One leak caught by its own ladder: the v3.81 air-emergency scan
+  ran in lava too and redirected the only-prayer swim-up sideways
+  (lava 9 on the first dm4 ladder) - contents-gated to water, lava
+  back in band.
+
+Ladders: dm3 improved on all seven gates with stalls at baseline
+parity for the first time in the campaign and an engagement record;
+dm4 in band with the one-tape spread spike filed under Romero's
+boundary watch.
+
 ## v3.81 (2026-08-27) - the ring, the air, and respect for the quad
 
 Three fixes from the first human session on the healed dm3, each a

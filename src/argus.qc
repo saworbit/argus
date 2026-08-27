@@ -1412,8 +1412,13 @@ void() Argus_Physics =
         // eight headings for one whose point 96 ahead has clear
         // water above it and swim hard for the hole. Overrides the
         // goal push: nothing on the shopping list outranks breathing.
-        if (wl == 3 && self.air_finished < time + 4)
+        if (wl == 3 && self.ar_feettype == CONTENT_WATER
+            && self.air_finished < time + 4)
         {
+            // WATER only: in lava the steady swim-up is the only
+            // prayer, and this override redirected it sideways (the
+            // ringhonesty ladder ran lava 9 - same class as the
+            // vault's contents gate)
             traceline (self.origin, self.origin + '0 0 56', TRUE, self);
             if (trace_fraction < 1)
             {
@@ -1456,7 +1461,20 @@ void() Argus_Physics =
         // then 10 across the ladder pair, tapes ab_dm4_scramble1/2).
         // Romero's lava economy is an ENTRY problem - his armour
         // appetite parks him at the boundary - not an escape one.
-        if (self.ar_mode == 2 && self.ar_hopswim && self.ar_node != world)
+        // GENERALISED to any WATER (2026-08-27, the dm3 east moat):
+        // wade-deep pools with a bank lip taller than a step have no
+        // swim links - their seats are not underwater - so the
+        // hop-gated vault never fired and bots swam against the bank
+        // splashing forever (530 swim events in one 120 s tape;
+        // "they don't know how to jump out of the water back to
+        // land"). The contents gate keeps lava/slime excluded, which
+        // is what the hop gate was really for, and the latch stayed
+        // out long ago. Rate-limited on the shared clock so a failed
+        // vault is not a splash machine-gun, and the vault now
+        // CARRIES: 225 up alone rises ~31u and fell straight back
+        // down the same lip - the forward push lands the arc on the
+        // bank like a real waterjump.
+        if (self.ar_feettype == CONTENT_WATER && time > self.ar_gapjump)
         {
             vh = self.origin;
             vh_z = vh_z + 8;
@@ -1466,7 +1484,12 @@ void() Argus_Physics =
                 vh_z = self.origin_z + self.maxs_z - 8;
                 traceline (vh, vh + wishdir * 24, TRUE, self);
                 if (trace_fraction == 1)
+                {
+                    self.ar_gapjump = time + 0.9;
+                    self.velocity_x = wishdir_x * 150;
+                    self.velocity_y = wishdir_y * 150;
                     self.velocity_z = 225;
+                }
             }
         }
         if (!self.ar_swim)
@@ -2759,7 +2782,26 @@ float() Argus_Combat =
         self.ar_aimoff_z = random () - 0.5;
     }
     err = self.ar_aimoff * (AR_AIMERR * self.ar_aimerr * (d / 500) * errscale);
-    aimpt = e.origin + '0 0 12' + err;
+    // ring honesty (v382, Shane gibbed with 22 s of ring left): the
+    // acquisition gate honours the ring but tracking aimed at the
+    // LIVE origin - a glimpse or a close pass bought 3 s of perfect
+    // tracking of a nearly invisible model. Against a ringed target
+    // the error TRIPLES (a floating pair of eyes is a hard thing to
+    // put a rocket on), and while sight is currently lost the aim
+    // holds the last SEEN position instead of tracking through walls.
+    if (e.invisible_finished > time)
+    {
+        err = err * 3;
+        if (time > self.ar_seen + 0.3)
+        {
+            aimpt = self.ar_lastseen + '0 0 12' + err;
+            d = vlen (self.ar_lastseen - self.origin);
+        }
+        else
+            aimpt = e.origin + '0 0 12' + err;
+    }
+    else
+        aimpt = e.origin + '0 0 12' + err;
 
     // projectile leading (Shane's review): aim where they will be.
     // Time of flight = dist over projectile speed â€” rockets and nails
