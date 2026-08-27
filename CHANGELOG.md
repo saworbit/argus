@@ -7,6 +7,19 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.79 (2026-08-27) - the mind at skill 1
+
+The hunch and the corner pre-fire move from skill 2 down to skill 1,
+after a session review caught them firing zero times at the default
+difficulty: the flagship cognition was invisible to the human it was
+built for. Aim stays gentle at skill 1; the thinking does not. Also
+in the record: Romero's chronic bottom-board is now explained (his
+armour appetite parks him at the pit-edge red armour, where the
+knockback economy collects him - ten lava deaths in one tape), and a
+lava-escape scramble was tried and reverted the same hour, defeated
+by geometry: dm4's lava sits eighty units below its lips and a vault
+rises thirty.
+
 ## v3.78 (2026-08-27) - the trigger finger
 
 The ambush reflex: while chasing a vanished foe, a rocket armed bot

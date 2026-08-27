@@ -1387,6 +1387,17 @@ void() Argus_Physics =
         // that drowned bots in lava on dm4 the first time. The gate
         // means this code cannot run there at all: swim links are
         // only generated for CONTENTS_WATER.
+        // A LAVA SCRAMBLE was tried here (2026-08-27, reverted same
+        // hour): the same latch-free vault extended to fire whenever
+        // the bot swam in lava, aimed at the v378 tape's ten Romero
+        // lava deaths. GEOMETRY killed it: dm4's lava surface sits
+        // ~80u below its lips and a 225 vault rises ~31u - the
+        // scramble is physically incapable of saving anyone there
+        // (the human does not escape dm4 lava either), and the
+        // ballistic pops replaced steady swim-up with chaos (lava 6
+        // then 10 across the ladder pair, tapes ab_dm4_scramble1/2).
+        // Romero's lava economy is an ENTRY problem - his armour
+        // appetite parks him at the boundary - not an escape one.
         if (self.ar_mode == 2 && self.ar_hopswim && self.ar_node != world)
         {
             vh = self.origin;
@@ -2395,7 +2406,12 @@ void(entity foe) Argus_Hunch =
     local float v, cls, sc, bsc;
     local vector d;
 
-    if (skill < 2)
+    // skill 1+ since 2026-08-27: the v378 human tape ran the whole
+    // session at the default skill 1 and the hunch never armed -
+    // the flagship cognition was invisible to the human it was
+    // built for. Skill 1 is the calibrated human tier; the mind
+    // belongs in it.
+    if (skill < 1)
         return;
     if (time < self.ar_hunchcool)
         return;
@@ -2609,7 +2625,7 @@ float() Argus_Combat =
                 // they were, and sometimes where they still are.
                 // Skill 2+, rockets to spare (never the last one),
                 // a clear line, and the refire clock respected.
-                if (!self.ar_prefired && skill >= 2
+                if (!self.ar_prefired && skill >= 1
                     && self.weapon == IT_ROCKET_LAUNCHER
                     && self.ammo_rockets >= 2
                     && time > self.attack_finished
