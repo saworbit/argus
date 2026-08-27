@@ -28,6 +28,43 @@ sprees, quad runs), and full-track JSON export. CI grew the Rust
 suite and a headless LibreQuake stability smoke with the
 directed-reach gate.
 
+## v3.75-v3.77 (2026-08-27) - the theory-of-mind block
+
+Three shipped slices and one honest graveyard entry, each on its own
+ladder with red-team probes between:
+
+- **v3.75, the hunch**: when a foe breaks line of sight for good,
+  the bot scores the map AS THEM (the classic QuakeC self-swap makes
+  the utility scorer read the foe's health, guns and ammo), bets on
+  the item they are most likely running for, and biases its own
+  shopping toward the interception point for eight seconds.
+  Engagements jumped by a third; on dm4 the bots' favourite bet is
+  "he is going for the quad", which is simply correct.
+- **v3.76, cognition-gated difficulty**: skill now scales the
+  THINKING, not just the trigger finger. A warmup partner (skill 0)
+  genuinely forgets you when you break sight, holds no grudges,
+  ignores gunfire, never denies items, never shoves, and aims centre
+  mass instead of at your feet - which also halved its lava rate.
+  Red-teaming this slice exposed a graph defect the hunch had
+  amplified: the dm4 quad ledge was a two-node directed sink (reach
+  2 of 145 since the graph shipped), fixed by teaching navgen's sink
+  stitcher that downward sinks escape by beeline-verified DROP
+  links, not rocket jumps. The ledge now reaches 153 of 155.
+- **v3.77, saccade aim**: human mis-aim is a stable offset that
+  re-anchors a few times a second, not white noise rolled every
+  frame. The bots' aim spring now tracks a steady point between
+  saccades; the twitch measurement (bots at 128-176 deg/s against
+  the human's 71-80) awaits its verdict from the next real session
+  demo.
+- **Range fighting: reverted with a post-mortem.** Per-weapon
+  distance bands failed three ladders two different ways on dm4,
+  where fights live at the pit boundary - free back-offs re-ran the
+  2026-08-18 dead-retreat lava numbers, floor-probed back-offs
+  traded lava for boundary stalls. Radial displacement pressure
+  fights this map; a real exchange layer needs positioning
+  awareness. Recorded in the combat code beside the other two
+  retreat graves.
+
 ## Lab 0.21 (2026-08-27, no QC change) - the operational gaps
 
 - Staleness self-awareness: the server detects a newer staged build
