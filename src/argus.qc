@@ -169,6 +169,10 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
                                 // cornered exit means FIGHT, not a
                                 // per-frame re-scan of the same fan)
 .float  ar_shovelog;            // displacement: shove-line log throttle
+.entity ar_huntitem;            // hunch: the item we bet the lost foe
+                                // is running for
+.float  ar_hunttime;            // hunch: bias expires here
+.float  ar_hunchcool;           // hunch: one bet per episode
 .entity ar_bitem;               // battle item: mid-fight grab target
 .float  ar_bitemscan;           // battle item: next scan time
 .float  ar_bitemend;            // battle item: commit expires
@@ -2363,6 +2367,72 @@ void() Argus_BattleItemScan =
     self.ar_bitemend = time + 1.5;
 };
 
+// the hunch (2026-08-27, theory of mind slice 1): when a foe breaks
+// line of sight for good, ask the one question seasoned players ask
+// - "where would I go if I were him?" - by SCORING THE MAP AS HIM.
+// The self-swap makes Argus_ItemValue read the foe's health, guns
+// and ammo instead of ours (the oldest QuakeC idiom there is), each
+// candidate is discounted by distance FROM HIS VANISH POINT, and the
+// winner becomes an 8 s utility bias on our own shopping: we do not
+// abandon our life to chase a ghost, we just find that item suddenly
+// very attractive. Interception emerges from the same scorer that
+// already runs the circuits. Gated to skill 2+ - a warmup partner
+// does not read minds.
+void(entity foe) Argus_Hunch =
+{
+    local entity it, best, oself;
+    local float v, cls, sc, bsc;
+    local vector d;
+
+    if (skill < 2)
+        return;
+    if (time < self.ar_hunchcool)
+        return;
+    if (foe == world || foe.health <= 0 || foe.cam_active)
+        return;
+
+    best = world;
+    bsc = 22;       // below this the bet is not worth a detour
+    it = findradius (self.ar_lastseen, 1200);
+    while (it != world)
+    {
+        if ((it.flags & FL_ITEM)
+            && (it.solid == SOLID_TRIGGER
+                || (it.solid == SOLID_NOT && it.think == SUB_regen
+                    && it.nextthink - time < 10)))
+        {
+            cls = Argus_ItemClass (it);
+            oself = self;
+            self = foe;
+            v = Argus_ItemValue (it, cls);
+            self = oself;
+            if (v > 0)
+            {
+                d = Argus_GoalPoint (it) - self.ar_lastseen;
+                sc = v * 320 / (vlen (d) + 160);
+                if (sc > bsc)
+                {
+                    bsc = sc;
+                    best = it;
+                }
+            }
+        }
+        it = it.chain;
+    }
+    if (best == world)
+        return;
+
+    self.ar_huntitem = best;
+    self.ar_hunttime = time + 8;
+    self.ar_hunchcool = time + 6;
+    self.ar_goal = world;           // re-shop next tick with the bias live
+    dprint ("ARGUS ");
+    dprint (self.netname);
+    dprint (" hunch ");
+    dprint (best.classname);
+    dprint ("\n");
+};
+
 // retreat toward supplies (2026-08-26, from the dm4 marvel-test
 // tape: Romero fired 139 retreat entries in 374 s and finished 11
 // and 22. The only self-serve exit from retreat is stack > 55,
@@ -2524,6 +2594,13 @@ float() Argus_Combat =
                 self.ar_moveyaw = self.angles_y;
                 return TRUE;        // combat still owns the steering
             }
+        }
+        // gave up the chase: place the bet on where they are HEADED
+        // before handing the wheel back to navigation
+        if (self.ar_pursuing)
+        {
+            self.ar_pursuing = 0;
+            Argus_Hunch (e);
         }
         return FALSE;               // gave up: let navigation resume
     }
@@ -3250,6 +3327,12 @@ void() Argus_PickGoal =
                             sc = sc + 12;
                         b = find (b, classname, "player");
                     }
+                    // the hunch (theory of mind): the item we bet a
+                    // vanished foe is running for is suddenly very
+                    // attractive - interception through the same
+                    // scorer, not an override
+                    if (e == self.ar_huntitem && time < self.ar_hunttime)
+                        sc = sc * 1.7;
                     if (cls == AR_C_WEAPON)
                     {
                         if (sc > sw)  { sw = sc;  bw = e; }
