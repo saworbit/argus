@@ -6,7 +6,7 @@ project already judges A/B. Toolchain only: it does not change QuakeC
 or the engine.
 
 Current version: **0.18.0**. Operator guide (this file). Design
-history: `docs/superpowers/specs/2026-08-17-argus-mcp-design.md`.
+history: `docs/specs/2026-08-17-argus-mcp-design.md`.
 Captured external spec and triage: `docs/mcp_quake_dev_spec.md`.
 
 ```
@@ -23,7 +23,7 @@ process locks the exe on Windows (`Access is denied` on
 ## Human deploy wizard
 
 Same binary, not MCP. Design:
-`docs/superpowers/specs/2026-08-18-argus-lab-gui-design.md`.
+`docs/specs/2026-08-18-argus-lab-gui-design.md`.
 
 ```
 argus-mcp gui

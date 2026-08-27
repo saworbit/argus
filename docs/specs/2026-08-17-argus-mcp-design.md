@@ -1,4 +1,4 @@
-﻿# Argus lab MCP server
+# Argus lab MCP server
 
 Date: 2026-08-17
 Status: implemented through 0.18.0. Operator guide
@@ -144,7 +144,7 @@ As of 0.16 the agent-facing loop is:
 - MCP resources `argus://project`, `argus://map/{name}`,
   `argus://fn/{name}`, `argus://path/{spec}`, `argus://search/{needle}`,
   `argus://run/{name}`
-- Extra spec tools stay, descriptions start with "Prefer â€¦"
+- Extra spec tools stay, descriptions start with "Prefer …"
 
 ### `config_check`
 
