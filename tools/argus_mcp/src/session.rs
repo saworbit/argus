@@ -1,8 +1,13 @@
-//! In-process last-seen memory so an LLM can ask "what did I just look at".
+//! Last-seen memory so an LLM can ask "what did I just look at".
+//! Persisted to runs/.lab_session.json since 2026-08-27: restarts
+//! are the NORM in this lab (every staged binary needs one), and an
+//! in-process-only memory amnesia'd on exactly the events it was
+//! most needed after.
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::path::Path;
 
-#[derive(Debug, Clone, Default, Serialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct SessionSeen {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_what: Option<String>,
@@ -18,7 +23,7 @@ pub struct SessionSeen {
     pub last_experiment: Option<ExperimentRecord>,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExperimentRecord {
     pub map: String,
     pub run_name: String,
@@ -64,6 +69,24 @@ impl SessionSeen {
         self.last_experiment = Some(rec);
         self.last_what = Some("experiment".into());
     }
+
+    pub fn load(path: &Path) -> Self {
+        std::fs::read_to_string(path)
+            .ok()
+            .and_then(|t| serde_json::from_str(&t).ok())
+            .unwrap_or_default()
+    }
+
+    pub fn save(&self, path: &Path) {
+        if let Ok(text) = serde_json::to_string_pretty(self) {
+            let _ = std::fs::write(path, text);
+        }
+    }
+}
+
+/// Where the memory lives when a lab root is resolvable.
+pub fn session_path() -> Option<std::path::PathBuf> {
+    crate::config::Config::load_for_reads().ok().map(|c| c.runs.join(".lab_session.json"))
 }
 
 #[cfg(test)]

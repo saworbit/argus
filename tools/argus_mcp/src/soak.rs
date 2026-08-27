@@ -34,6 +34,9 @@ pub struct SoakOpts {
     pub skill: u32,
     pub max_mb: u64,
     pub learn: bool,
+    /// 1 or 2 engines. Two halves the wall clock; each worker owns
+    /// its port (default and 26010).
+    pub parallel: u32,
 }
 
 impl Default for SoakOpts {
@@ -46,6 +49,7 @@ impl Default for SoakOpts {
             skill: 2,
             max_mb: 200,
             learn: false,
+            parallel: 1,
         }
     }
 }
@@ -73,12 +77,16 @@ pub fn parse_soak_args(
                 o.max_mb = val("--max-mb")?.parse().map_err(|e| format!("--max-mb: {e}"))?
             }
             "--learn" => o.learn = true,
+            "--parallel" => {
+                o.parallel = val("--parallel")?.parse().map_err(|e| format!("--parallel: {e}"))?
+            }
             other => return Err(format!("unknown soak flag {other:?}")),
         }
     }
     o.hours = o.hours.clamp(0.1, 12.0);
     o.matches = o.matches.clamp(1, 500);
     o.duration_sec = o.duration_sec.clamp(60, 600);
+    o.parallel = o.parallel.clamp(1, 2);
     Ok(o)
 }
 
@@ -90,93 +98,147 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
     let _ = std::fs::remove_file(&stop_file);
 
     let deadline = Instant::now() + Duration::from_secs_f64(opts.hours * 3600.0);
-    let mut written: u64 = 0;
-    let mut ctrl = MatchCtrl::default();
-    let mut report = std::fs::File::create(&report_path)
+
+    struct Shared {
+        report: std::fs::File,
+        written: u64,
+        counts: std::collections::BTreeMap<String, [u32; 3]>,
+        n: u32,
+        stopped: Option<String>,
+    }
+    impl Shared {
+        fn w(&mut self, line: &str) {
+            println!("{line}");
+            let _ = writeln!(self.report, "{line}");
+        }
+    }
+
+    let report = std::fs::File::create(&report_path)
         .map_err(|e| format!("{}: {e}", report_path.display()))?;
-    let mut w = |line: &str| {
-        println!("{line}");
-        let _ = writeln!(report, "{line}");
-    };
-    w(&format!(
-        "# Soak {stamp}\n\nmaps {:?}, skill {}, {} s/match; caps: {:.1} h, {} matches, {} MB.\nStop early: create {}\n",
-        opts.maps, opts.skill, opts.duration_sec, opts.hours, opts.matches, opts.max_mb,
-        stop_file.display()
+    let shared = std::sync::Arc::new(tokio::sync::Mutex::new(Shared {
+        report,
+        written: 0,
+        counts: Default::default(),
+        n: 0,
+        stopped: None,
+    }));
+    shared.lock().await.w(&format!(
+        "# Soak {stamp}\n\nmaps {:?}, skill {}, {} s/match, {} engine(s); caps: {:.1} h, {} matches, {} MB.\nStop early: create {}\n",
+        opts.maps, opts.skill, opts.duration_sec, opts.parallel, opts.hours, opts.matches,
+        opts.max_mb, stop_file.display()
     ));
 
-    let mut counts = std::collections::BTreeMap::<String, [u32; 3]>::new();
-    let mut n = 0u32;
-    'outer: loop {
-        for map in &opts.maps {
-            if n >= opts.matches {
-                w("\nmatch cap reached.");
-                break 'outer;
-            }
-            if Instant::now() >= deadline {
-                w("\nwall clock cap reached.");
-                break 'outer;
-            }
-            if stop_file.exists() {
-                w("\nsoak.stop found - stopping.");
-                let _ = std::fs::remove_file(&stop_file);
-                break 'outer;
-            }
-            if written > opts.max_mb * 1024 * 1024 {
-                w(&format!("\nbytes-written cap reached ({} MB).", opts.max_mb));
-                break 'outer;
-            }
-            n += 1;
-            let run_name = format!("soak_{stamp}_{n:03}_{map}");
-            let res = ctrl
-                .run(&cfg, map, opts.duration_sec, Some(&run_name), None, Some(opts.skill))
-                .await;
-            match res {
-                Ok(r) => {
-                    written += std::fs::metadata(&r.log_path).map(|m| m.len()).unwrap_or(0);
-                    let verdict = match compare_runs_scaled(&cfg, "baseline", &run_name, Some(map))
-                    {
-                        Ok(rep) => {
-                            let slot = counts.entry(map.clone()).or_default();
-                            match rep.verdict {
-                                Verdict::Improved | Verdict::Parity => slot[0] += 1,
-                                Verdict::Mixed => slot[1] += 1,
-                                Verdict::Regressed => slot[2] += 1,
-                            }
-                            format!("{:?}: {}", rep.verdict, rep.headline)
-                        }
-                        Err(e) => format!("compare failed: {e}"),
+    let opts = std::sync::Arc::new(opts);
+    let cfg = std::sync::Arc::new(cfg);
+    let stamp2 = stamp.clone();
+    let mut workers = Vec::new();
+    for wid in 0..opts.parallel {
+        let shared = shared.clone();
+        let opts = opts.clone();
+        let cfg = cfg.clone();
+        let stop_file = stop_file.clone();
+        let stamp = stamp2.clone();
+        workers.push(tokio::spawn(async move {
+            let mut ctrl = if wid == 0 {
+                MatchCtrl::default()
+            } else {
+                MatchCtrl::on_port(26010 + wid)
+            };
+            loop {
+                // claim the next match under the caps, or stop
+                let (n, map) = {
+                    let mut s = shared.lock().await;
+                    if s.stopped.is_some() {
+                        break;
+                    }
+                    let reason = if s.n >= opts.matches {
+                        Some("match cap reached".to_string())
+                    } else if Instant::now() >= deadline {
+                        Some("wall clock cap reached".to_string())
+                    } else if stop_file.exists() {
+                        let _ = std::fs::remove_file(&stop_file);
+                        Some("soak.stop found".to_string())
+                    } else if s.written > opts.max_mb * 1024 * 1024 {
+                        Some(format!("bytes-written cap reached ({} MB)", opts.max_mb))
+                    } else {
+                        None
                     };
-                    w(&format!("- {n:03} {map}: {} | {verdict}", r.brief.headline));
-                    for f in r.brief.flags.iter().take(3) {
-                        w(&format!("    - {f}"));
+                    if let Some(r) = reason {
+                        s.w(&format!("\n{r}."));
+                        s.stopped = Some(r);
+                        break;
+                    }
+                    s.n += 1;
+                    (s.n, opts.maps[(s.n as usize - 1) % opts.maps.len()].clone())
+                };
+                let run_name = format!("soak_{stamp}_{n:03}_{map}");
+                let res = ctrl
+                    .run(&cfg, &map, opts.duration_sec, Some(&run_name), None, Some(opts.skill))
+                    .await;
+                let mut s = shared.lock().await;
+                match res {
+                    Ok(r) => {
+                        s.written += std::fs::metadata(&r.log_path).map(|m| m.len()).unwrap_or(0);
+                        let verdict =
+                            match compare_runs_scaled(&cfg, "baseline", &run_name, Some(&map)) {
+                                Ok(rep) => {
+                                    let slot = s.counts.entry(map.clone()).or_default();
+                                    match rep.verdict {
+                                        Verdict::Improved | Verdict::Parity => slot[0] += 1,
+                                        Verdict::Mixed => slot[1] += 1,
+                                        Verdict::Regressed => slot[2] += 1,
+                                    }
+                                    format!("{:?}: {}", rep.verdict, rep.headline)
+                                }
+                                Err(e) => format!("compare failed: {e}"),
+                            };
+                        let head = r.brief.headline.clone();
+                        let flags: Vec<String> =
+                            r.brief.flags.iter().take(3).cloned().collect();
+                        s.w(&format!("- {n:03} {map} (e{wid}): {head} | {verdict}"));
+                        for f in flags {
+                            s.w(&format!("    - {f}"));
+                        }
+                    }
+                    Err(e) => {
+                        s.w(&format!("- {n:03} {map} (e{wid}): MATCH FAILED: {e}"));
                     }
                 }
+            }
+            ctrl.shutdown().await;
+        }));
+    }
+    for h in workers {
+        let _ = h.await;
+    }
+
+    let mut s = shared.lock().await;
+    s.w("\n## Verdict counts (ok / mixed / regressed)");
+    let counts = s.counts.clone();
+    for (map, c) in &counts {
+        s.w(&format!("- {map}: {} / {} / {}", c[0], c[1], c[2]));
+    }
+    if opts.learn {
+        s.w("\n## Hotspot folding (--learn)");
+        for map in opts.maps.iter() {
+            match crate::learn::learn_hotspots(&cfg, map, 8) {
+                Ok(rep) => {
+                    let line = format!(
+                        "- {map}: {} cell(s), wrote {:?} - a future nav regen inflates them",
+                        rep.cells.len(),
+                        rep.wrote
+                    );
+                    s.w(&line);
+                }
                 Err(e) => {
-                    w(&format!("- {n:03} {map}: MATCH FAILED: {e}"));
+                    let line = format!("- {map}: learn failed: {e}");
+                    s.w(&line);
                 }
             }
         }
     }
-    ctrl.shutdown().await;
-
-    w("\n## Verdict counts (ok / mixed / regressed)");
-    for (map, c) in &counts {
-        w(&format!("- {map}: {} / {} / {}", c[0], c[1], c[2]));
-    }
-    if opts.learn {
-        w("\n## Hotspot folding (--learn)");
-        for map in &opts.maps {
-            match crate::learn::learn_hotspots(&cfg, map, 8) {
-                Ok(rep) => w(&format!(
-                    "- {map}: {} cell(s), wrote {:?} - a future nav regen inflates them",
-                    rep.cells.len(),
-                    rep.wrote
-                )),
-                Err(e) => w(&format!("- {map}: learn failed: {e}")),
-            }
-        }
-    }
-    w(&format!(
+    let (n, written) = (s.n, s.written);
+    s.w(&format!(
         "\n{} matches, {:.1} MB written. Report: {}",
         n,
         written as f64 / (1024.0 * 1024.0),

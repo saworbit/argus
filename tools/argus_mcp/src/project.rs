@@ -103,9 +103,14 @@ pub fn project_view(cfg: &Config) -> ProjectView {
             });
         }
     }
-    let maps: Vec<String> = list_maps(cfg)
-        .unwrap_or_default()
+    // only maps the lab can actually work with (a BSP on disk or a
+    // nav graph); the fifty pak-only campaign maps used to spend
+    // half this response saying nothing
+    let all = list_maps(cfg).unwrap_or_default();
+    let pak_only = all.iter().filter(|m| m.path.is_none() && !m.has_nav).count();
+    let mut maps: Vec<String> = all
         .into_iter()
+        .filter(|m| m.path.is_some() || m.has_nav)
         .map(|m| {
             format!(
                 "{} ({}{})",
@@ -115,6 +120,9 @@ pub fn project_view(cfg: &Config) -> ProjectView {
             )
         })
         .collect();
+    if pak_only > 0 {
+        maps.push(format!("(+{pak_only} pak-only maps without nav; lab_status lists them)"));
+    }
     let recent_runs: Vec<String> = list_runs(cfg)
         .unwrap_or_default()
         .into_iter()

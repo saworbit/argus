@@ -74,8 +74,12 @@ def main():
     tag = f"_{args.tag}" if args.tag else ""
     stem = f"shane_{mapname}_{stamp}{tag}"
 
+    # MOVE, not copy: leftovers in the launch directories are the
+    # lab's signal that a session is un-harvested (the MCP refuses to
+    # start engines over them), so a harvested session must leave
+    # nothing behind
     dest_log = unique(ROOT / "runs" / f"{stem}.log")
-    moves = [(tape, dest_log, "copy")]
+    moves = [(tape, dest_log, "move")]
 
     demo_dir = ROOT / "runs" / "demos"
     demos = sorted(GAMEDIR.glob("*.dem"),

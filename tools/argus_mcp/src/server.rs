@@ -1,4 +1,4 @@
-use crate::analyze::analyze_match;
+﻿use crate::analyze::analyze_match;
 use crate::cartograph::{
     atlas_brief, cartograph as map_cartograph, inspect_entities, list_maps as map_list,
 };
@@ -46,9 +46,14 @@ pub struct Argus {
 
 impl Argus {
     pub fn new() -> Self {
+        // restarts are the norm here (every staged binary needs one):
+        // the last-seen memory survives them on disk
+        let seen = crate::session::session_path()
+            .map(|p| SessionSeen::load(&p))
+            .unwrap_or_default();
         Self {
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
-            session: Arc::new(Mutex::new(SessionSeen::default())),
+            session: Arc::new(Mutex::new(seen)),
         }
     }
 
@@ -56,8 +61,16 @@ impl Argus {
         self.matches.lock().await.shutdown().await;
     }
 
+    fn persist_session(seen: &SessionSeen) {
+        if let Some(p) = crate::session::session_path() {
+            seen.save(&p);
+        }
+    }
+
     async fn note_see(&self, what: &str, name: Option<&str>) {
-        self.session.lock().await.note_see(what, name);
+        let mut s = self.session.lock().await;
+        s.note_see(what, name);
+        Self::persist_session(&s);
     }
 }
 
@@ -66,7 +79,14 @@ fn json_ok<T: Serialize>(value: &T) -> Result<CallToolResult, McpError> {
 }
 
 fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult, McpError> {
-    let text = serde_json::to_string_pretty(value)
+    let mut v = serde_json::to_value(value)
+        .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+    // a stale server must never hand out an unmarked opinion: the
+    // banner rides every object response for the whole session
+    if let (Some(note), serde_json::Value::Object(map)) = (crate::stale::banner(), &mut v) {
+        map.insert("lab_stale".into(), serde_json::Value::String(note));
+    }
+    let text = serde_json::to_string_pretty(&v)
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
     let mut blocks = vec![ContentBlock::text(text)];
     for p in pngs {
@@ -381,11 +401,90 @@ pub struct SuggestArgs {
     pub map: Option<String>,
 }
 
+#[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
+pub struct BaselineSetArgs {
+    #[schemars(description = "Map short name (dm4)")]
+    pub map: String,
+    #[schemars(description = "Run name in runs/ (ab_dm4_retreatsupply1)")]
+    pub run: String,
+}
+
 #[tool_router]
 impl Argus {
     #[tool(description = "Resolved Argus lab paths and whether each exists. Never errors.")]
     async fn config_check(&self) -> Result<CallToolResult, McpError> {
         json_ok(&Config::report())
+    }
+
+    #[tool(description = "Ship the current source: compile, install to every configured location, and return the MD5 of each install for the handoff record. The last manual step of the loop, made one call.")]
+    async fn ship(&self) -> Result<CallToolResult, McpError> {
+        let cfg = match cfg_or_err() {
+            Ok(c) => c,
+            Err(r) => return Ok(r),
+        };
+        let cfg2 = cfg.clone();
+        let result = match tokio::time::timeout(
+            Duration::from_secs(90),
+            tokio::task::spawn_blocking(move || compile_qc(&cfg2, true)),
+        )
+        .await
+        {
+            Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
+            Err(_) => return tool_err("ship timed out after 90s (fteqcc hung)"),
+        };
+        if !result.ok {
+            return json_ok(&serde_json::json!({
+                "ok": false,
+                "compile": result,
+                "hint": "compile failed; nothing installed"
+            }));
+        }
+        let mut installs = Vec::new();
+        for p in cfg.install_paths() {
+            let md5 = std::fs::read(&p)
+                .map(|b| format!("{:X}", md5::compute(&b)))
+                .unwrap_or_else(|e| format!("unreadable: {e}"));
+            installs.push(serde_json::json!({ "path": p.display().to_string(), "md5": md5 }));
+        }
+        json_ok(&serde_json::json!({
+            "ok": true,
+            "installs": installs,
+            "note": "record the MD5 in the handoff; refresh the baseline with baseline_set after a green ladder"
+        }))
+    }
+
+    #[tool(description = "Point a map's A/B baseline at a run (writes runs/baselines.json). Do this after a clean ship so gates judge against current metric semantics.")]
+    async fn baseline_set(
+        &self,
+        Parameters(args): Parameters<BaselineSetArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let cfg = match cfg_or_err() {
+            Ok(c) => c,
+            Err(r) => return Ok(r),
+        };
+        let run = args.run.trim().trim_end_matches(".log").to_string();
+        if !cfg.runs.join(format!("{run}.log")).exists() {
+            return tool_err(format!("no runs/{run}.log - list_runs to see what exists"));
+        }
+        let path = cfg.runs.join("baselines.json");
+        let mut map: serde_json::Map<String, serde_json::Value> = std::fs::read_to_string(&path)
+            .ok()
+            .and_then(|t| serde_json::from_str(&t).ok())
+            .unwrap_or_default();
+        let old = map.get(&args.map).cloned();
+        map.insert(args.map.clone(), serde_json::Value::String(run.clone()));
+        let text = serde_json::to_string_pretty(&serde_json::Value::Object(map))
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        if let Err(e) = std::fs::write(&path, text) {
+            return tool_err(format!("{}: {e}", path.display()));
+        }
+        json_ok(&serde_json::json!({
+            "ok": true,
+            "map": args.map,
+            "baseline": run,
+            "was": old,
+            "file": path.display().to_string()
+        }))
     }
 
     #[tool(description = "Compile src/ with fteqcc. Success is the Compile finished / id format line, not the exit code.")]
@@ -1347,14 +1446,18 @@ impl Argus {
                 Err(_) => return tool_err("compile_qc timed out after 90s"),
             };
             if !compiled.ok {
-                self.session.lock().await.note_experiment(ExperimentRecord {
-                    map: args.map.clone(),
-                    run_name: String::new(),
-                    duration_sec: dur,
-                    compile_ok: Some(false),
-                    verdict: None,
-                    headline: Some("compile failed".into()),
-                });
+                {
+                    let mut s = self.session.lock().await;
+                    s.note_experiment(ExperimentRecord {
+                        map: args.map.clone(),
+                        run_name: String::new(),
+                        duration_sec: dur,
+                        compile_ok: Some(false),
+                        verdict: None,
+                        headline: Some("compile failed".into()),
+                    });
+                    Self::persist_session(&s);
+                }
                 return json_ok(&serde_json::json!({
                     "ok": false,
                     "stage": "compile",
@@ -1398,14 +1501,18 @@ impl Argus {
             .as_ref()
             .map(|c| c.headline.clone())
             .or_else(|| Some(ran.brief.headline.clone()));
-        self.session.lock().await.note_experiment(ExperimentRecord {
-            map: args.map.clone(),
-            run_name: ran.run_name.clone(),
-            duration_sec: dur,
-            compile_ok: compile_result.as_ref().map(|c| c.ok),
-            verdict: verdict.clone(),
-            headline: headline.clone(),
-        });
+        {
+            let mut s = self.session.lock().await;
+            s.note_experiment(ExperimentRecord {
+                map: args.map.clone(),
+                run_name: ran.run_name.clone(),
+                duration_sec: dur,
+                compile_ok: compile_result.as_ref().map(|c| c.ok),
+                verdict: verdict.clone(),
+                headline: headline.clone(),
+            });
+            Self::persist_session(&s);
+        }
         if want_full(args.detail.as_deref()) {
             return json_ok(&serde_json::json!({
                 "ok": ran.ok,
@@ -1681,8 +1788,8 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
 
 #[tool_handler(
     name = "argus-mcp",
-    version = "0.20.0",
-    instructions = "Argus lab 0.20. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
+    version = "0.21.0",
+    instructions = "Argus lab 0.21. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
 )]
 #[prompt_handler]
 impl ServerHandler for Argus {
@@ -1694,9 +1801,9 @@ impl ServerHandler for Argus {
                 .enable_resources()
                 .build(),
         )
-        .with_server_info(Implementation::new("argus-mcp", "0.20.0"))
+        .with_server_info(Implementation::new("argus-mcp", "0.21.0"))
         .with_instructions(
-            "Argus lab 0.20. Do not invent a fteqcc/quakespasm/python pipeline. \
+            "Argus lab 0.21. Do not invent a fteqcc/quakespasm/python pipeline. \
 First call: see what=project. Then see what=map / path / fn / search. After a QC \
 edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status \
 since_line. Session demos: see what=demo (harvest first with \

@@ -60,9 +60,18 @@ struct LiveMatch {
 pub struct MatchCtrl {
     live: Option<LiveMatch>,
     last: Option<MatchStatus>,
+    /// engine UDP port override, so two controllers can run two
+    /// dedicated children side by side (the 2026-08-18 paired-run
+    /// forensics proved the engines coexist on 26010/26011)
+    port: Option<u32>,
 }
 
 impl MatchCtrl {
+    /// A controller bound to its own engine port, for parallel work.
+    pub fn on_port(port: u32) -> Self {
+        MatchCtrl { port: Some(port), ..Default::default() }
+    }
+
     /// Reap a dead child so the next start is not blocked by a zombie slot.
     pub fn reap(&mut self) {
         let _ = self.status();
@@ -159,6 +168,9 @@ impl MatchCtrl {
             ));
         }
         validate_map(map)?;
+        if let Some(msg) = unharvested_session(cfg) {
+            return Err(msg);
+        }
         if let Some(d) = duration_sec {
             if !(DURATION_MIN..=DURATION_MAX).contains(&d) {
                 return Err(format!(
@@ -188,7 +200,7 @@ impl MatchCtrl {
         std::fs::create_dir_all(&run_dir).map_err(|e| format!("create run dir: {e}"))?;
         let harvested = cfg.runs.join(format!("{name}.log"));
 
-        let child = EngineChild::spawn(cfg, map, slots, skill, &run_dir)?;
+        let child = EngineChild::spawn(cfg, map, slots, skill, &run_dir, self.port)?;
         let stdout = child.stdout_buf();
         self.live = Some(LiveMatch {
             child,
@@ -283,6 +295,7 @@ impl MatchCtrl {
     ) -> Result<MatchRunResult, String> {
         self.start(cfg, map, Some(duration_sec), run_name, dedicated_slots, skill)
             .await?;
+        // (start() runs the un-harvested-session guard)
         if let Err(e) = self.await_healthy(Duration::from_secs(10)).await {
             let _ = self.stop(Duration::from_secs(2)).await;
             return Err(e);
@@ -515,4 +528,39 @@ pub struct RunEntry {
     pub mtime_unix: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub note: Option<String>,
+}
+
+/// The harvest-first ritual, enforced structurally: a play session
+/// leaves qconsole.log in a launch directory and session demos in
+/// the game dir, and the NEXT engine launch truncates the former (a
+/// lab capture once clobbered a session tape this way - it was
+/// already archived, by luck). Since 2026-08-27 the harvester MOVES
+/// its inputs, so any leftover means an un-harvested session and
+/// every match starter refuses until it is harvested or deleted.
+pub fn unharvested_session(cfg: &Config) -> Option<String> {
+    let mut hits: Vec<String> = Vec::new();
+    for p in [cfg.root.join("qconsole.log"), cfg.basedir.join("qconsole.log")] {
+        if let Ok(text) = std::fs::read_to_string(&p) {
+            if text.contains("SpawnServer:") {
+                hits.push(p.display().to_string());
+            }
+        }
+    }
+    let gamedir = cfg.basedir.join(&cfg.game);
+    if let Ok(rd) = std::fs::read_dir(&gamedir) {
+        for e in rd.flatten() {
+            let p = e.path();
+            if p.extension().map(|x| x == "dem").unwrap_or(false) {
+                hits.push(p.display().to_string());
+            }
+        }
+    }
+    if hits.is_empty() {
+        None
+    } else {
+        Some(format!(
+            "un-harvested play session in the launch dirs: {}. Run `python tools/harvest_session.py --tag vNNN` FIRST (a new engine launch truncates qconsole.log), or delete the leftovers if they are worthless.",
+            hits.join(", ")
+        ))
+    }
 }

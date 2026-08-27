@@ -43,18 +43,24 @@ impl EngineChild {
         slots: u32,
         skill: Option<u32>,
         cwd: &Path,
+        port: Option<u32>,
     ) -> Result<Self, String> {
         validate_map(map)?;
         if slots == 0 || slots > 16 {
             return Err("dedicated_slots must be 1..=16".into());
         }
+        if let Some(p) = port {
+            if !(1024..=65535).contains(&p) {
+                return Err("port must be 1024..=65535".into());
+            }
+        }
         #[cfg(windows)]
         {
-            return spawn_windows(cfg, map, slots, skill, cwd);
+            return spawn_windows(cfg, map, slots, skill, cwd, port);
         }
         #[cfg(not(windows))]
         {
-            spawn_unix(cfg, map, slots, skill, cwd)
+            spawn_unix(cfg, map, slots, skill, cwd, port)
         }
     }
 
@@ -155,9 +161,10 @@ fn spawn_unix(
     slots: u32,
     skill: Option<u32>,
     cwd: &Path,
+    port: Option<u32>,
 ) -> Result<EngineChild, String> {
     let mut cmd = Command::new(&cfg.engine);
-    apply_args(&mut cmd, cfg, map, slots, skill);
+    apply_args(&mut cmd, cfg, map, slots, skill, port);
     cmd.current_dir(cwd)
         .kill_on_drop(true)
         .stdin(Stdio::piped())
@@ -181,7 +188,14 @@ fn spawn_unix(
 }
 
 #[cfg(not(windows))]
-fn apply_args(cmd: &mut Command, cfg: &Config, map: &str, slots: u32, skill: Option<u32>) {
+fn apply_args(
+    cmd: &mut Command,
+    cfg: &Config,
+    map: &str,
+    slots: u32,
+    skill: Option<u32>,
+    port: Option<u32>,
+) {
     cmd.arg("-dedicated")
         .arg(slots.to_string())
         .arg("-basedir")
@@ -192,9 +206,11 @@ fn apply_args(cmd: &mut Command, cfg: &Config, map: &str, slots: u32, skill: Opt
         .arg("+developer")
         .arg("1")
         .arg("+deathmatch")
-        .arg("1")
-        .arg("+map")
-        .arg(map);
+        .arg("1");
+    if let Some(p) = port {
+        cmd.arg("-port").arg(p.to_string());
+    }
+    cmd.arg("+map").arg(map);
     if let Some(s) = skill {
         cmd.arg("+skill").arg(s.to_string());
     }
@@ -224,6 +240,7 @@ fn spawn_windows(
     slots: u32,
     skill: Option<u32>,
     cwd: &Path,
+    port: Option<u32>,
 ) -> Result<EngineChild, String> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::System::Threading::{
@@ -232,8 +249,9 @@ fn spawn_windows(
     };
 
     let exe = cfg.engine.display().to_string();
+    let portarg = port.map(|p| format!(" -port {p}")).unwrap_or_default();
     let mut args = format!(
-        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {} -condebug +developer 1 +deathmatch 1 +map {map}",
+        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +deathmatch 1 +map {map}",
         cfg.basedir.display(),
         cfg.game
     );

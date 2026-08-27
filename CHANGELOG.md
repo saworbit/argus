@@ -28,6 +28,27 @@ sprees, quad runs), and full-track JSON export. CI grew the Rust
 suite and a headless LibreQuake stability smoke with the
 directed-reach gate.
 
+## Lab 0.21 (2026-08-27, no QC change) - the operational gaps
+
+- Staleness self-awareness: the server detects a newer staged build
+  at startup, auto-swaps it in for the next restart, and stamps a
+  `lab_stale` banner on every response until then - stale briefs can
+  no longer pose as current ones.
+- Harvest-first, enforced: every match starter refuses to launch
+  over an un-harvested play session (the harvester now moves its
+  inputs, so leftovers are the signal, and the engine can no longer
+  silently truncate an unarchived tape).
+- One-call review: a tape's brief automatically folds in its paired
+  demo - aim statistics, the highlight reel, full-rate tracks.
+- `ship` and `baseline_set` tools close the loop's last manual
+  steps (install everywhere with recorded MD5s; safe baseline
+  pointer updates).
+- `soak --parallel 2` runs two engines on separate ports, halving
+  unattended ladder time.
+- Session memory survives restarts; `see what=project` stops
+  reciting fifty pak-only maps; compares involving human tapes are
+  flagged as review-only.
+
 ## Stack sweep (2026-08-27, no QC change)
 
 - Windows live tune was broken since lab 0.15, not merely

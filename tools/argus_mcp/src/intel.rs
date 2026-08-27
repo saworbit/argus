@@ -132,6 +132,12 @@ pub struct MatchBrief {
     pub nav_coverage: Option<NavCoverage>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub item_control: Vec<ItemControl>,
+    /// The film, cut in: when runs/demos carries a .dem under the
+    /// same stem as the tape, its brief (aim statistics, highlight
+    /// reel, full-rate track summary) rides the match brief - the
+    /// whole "played, review" ritual in one call.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub paired_demo: Option<crate::demo::DemoBrief>,
 }
 
 /// The item-clock scoreboard: how tightly the roster runs each major
@@ -231,6 +237,8 @@ pub struct BriefLite {
     pub nav_coverage: Option<NavCoverage>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub item_control: Vec<ItemControl>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub paired_demo: Option<crate::demo::DemoBrief>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -286,6 +294,7 @@ pub fn brief_lite(b: &MatchBrief) -> BriefLite {
         goal_reach: b.goal_reach.clone(),
         nav_coverage: b.nav_coverage.clone(),
         item_control: b.item_control.clone(),
+        paired_demo: b.paired_demo.clone(),
     }
 }
 
@@ -529,6 +538,7 @@ fn brief_tape_lava(
         goal_reach: Vec::new(),
         nav_coverage: None,
         item_control: Vec::new(),
+        paired_demo: None,
     };
     brief.next_steps = suggest_next(&brief, None);
     brief.headline = headline_one(&brief.totals, &brief.flags, brief.map.as_deref());
@@ -576,6 +586,7 @@ pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<Matc
     attach_coverage(cfg, &tape, &mut brief);
     attach_atlas(cfg, &mut brief, hull.as_ref());
     attach_item_control(cfg, &tape, &mut brief);
+    attach_paired_demo(cfg, &path, &mut brief);
     brief.next_steps = suggest_next(&brief, None);
     for step in &mut brief.next_steps {
         step.look_at = crate::qc_index::look_at(cfg, &step.look_at);
@@ -994,6 +1005,16 @@ fn compare_runs_inner(
     } else {
         compare_briefs(a, b)
     };
+    // human tapes are review-only: gates judge the BOT build against
+    // a botmatch baseline, and a compared human session distorts both
+    // sides of that (totals are bot-only since the split, but pace,
+    // engagement mix and item traffic are all human-shaped)
+    if report.a.totals.human.is_some() || report.b.totals.human.is_some() {
+        report.findings.insert(
+            0,
+            "a compared tape carries HUMAN tracks - human sessions are review material, not gate material; treat this verdict as indicative only".into(),
+        );
+    }
     for step in &mut report.next_steps {
         step.look_at = crate::qc_index::look_at(cfg, &step.look_at);
     }
@@ -1544,6 +1565,31 @@ pub fn attach_item_control(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrie
                 row.classname, row.median_gap_sec, row.period_sec
             ));
         }
+    }
+}
+
+/// Join the tape's paired demo when the harvester left one under
+/// the same stem: aim statistics, the highlight reel and full-rate
+/// track summaries arrive with the brief instead of needing a
+/// second call.
+fn attach_paired_demo(cfg: &Config, log_path: &Path, brief: &mut MatchBrief) {
+    let Some(stem) = log_path.file_stem().map(|s| s.to_string_lossy().into_owned()) else {
+        return;
+    };
+    let dem = cfg.runs.join("demos").join(format!("{stem}.dem"));
+    if !dem.exists() {
+        return;
+    }
+    match crate::demo::read_demo(&dem) {
+        Ok(d) => {
+            brief.flags.push(format!(
+                "paired demo joined: {} highlight(s), {} track(s) - playdemo {stem} and jump to a highlight's t",
+                d.brief.highlights.len(),
+                d.brief.tracks.len()
+            ));
+            brief.paired_demo = Some(d.brief);
+        }
+        Err(e) => brief.flags.push(format!("paired demo present but unreadable: {e}")),
     }
 }
 
@@ -2181,6 +2227,26 @@ ARGEVT Reap spawned
             "dm4 reaches 98% - no sink flag belongs here: {:?}",
             full.flags
         );
+    }
+
+    #[test]
+    fn paired_demo_joins_the_brief_if_present() {
+        // machine-local: needs the harvested v374 session (tape
+        // committed, demo in the gitignored runs/demos)
+        use crate::config::load_for_reads_from;
+        use std::collections::HashMap;
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        if !root.join("runs/demos/shane_dm4_2026-08-27_v374.dem").exists() {
+            return;
+        }
+        let mut env = HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = load_for_reads_from(&env, &root).unwrap();
+        let brief = brief_run(&cfg, "shane_dm4_2026-08-27_v374", None).unwrap();
+        let demo = brief.paired_demo.as_ref().expect("demo joined");
+        assert!(demo.highlights.iter().any(|h| h.kind == "multikill"), "{:?}", demo.highlights);
+        assert!(demo.tracks.iter().any(|t| t.name.as_deref() == Some("player")));
+        assert!(brief.flags.iter().any(|f| f.contains("paired demo joined")));
     }
 
     #[test]

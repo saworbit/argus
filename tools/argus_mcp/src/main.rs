@@ -43,6 +43,9 @@ async fn main() -> anyhow::Result<()> {
 }
 
 async fn run_stdio() -> anyhow::Result<()> {
+    // swap a newer staged build into place for the NEXT restart and
+    // arm the session-wide staleness banner (see stale.rs)
+    let _ = argus_mcp::stale::detect_and_swap();
     let server = Argus::new();
     let running = server.clone().serve(stdio()).await?;
     let _ = running.waiting().await;
@@ -65,6 +68,7 @@ fn print_help() {
            --duration 185       seconds per match\n\
            --skill 2\n\
            --max-mb 200         bytes-written cap (a night is <10 MB)\n\
+           --parallel 2         run two engines (ports default+26011)\n\
            --learn              fold hotspots into costs.json at the end\n\
            (stop early any time: create runs/soak.stop)\n\
          argus-mcp cycle <map>  one guarded learning cycle: learn ->\n\
