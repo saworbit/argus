@@ -1,4 +1,4 @@
-# dm2 lava graph implementation plan (campaign slice 1)
+﻿# dm2 lava graph implementation plan (campaign slice 1)
 
 > EXECUTED COMPLETE 2026-08-18 night, shipped as v3.25
 > (AF6800DC8FFD84565FD309D9BDA019E1). All four tasks green: 29 lava
@@ -29,7 +29,7 @@ data only.
 **Tech stack:** Python 3 (tools/argus_navgen.py, tools/analyze_match.py),
 fteqcc (id format), QuakeSpasm dedicated for the A/B.
 
-**Spec:** docs/superpowers/specs/2026-08-18-dm2-campaign-design.md
+**Spec:** docs/specs/2026-08-18-dm2-campaign-design.md
 
 ## Global constraints
 

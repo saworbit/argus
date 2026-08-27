@@ -93,6 +93,17 @@ entity(vector org) Argus_NavNode =
     return n;
 };
 
+// region class (dm3 musing S4): navgen bakes the reachability
+// condensation - mainland 0, each entry-stranded pocket its own id.
+// The goal picker refuses to shop an item whose region the bot's
+// region provably cannot reach, before any router call: the
+// match-start poison menus become impossible instead of survivable.
+.float  an_region;
+void(entity n, float r) Argus_NavRegion =
+{
+    n.an_region = r;
+};
+
 void(entity a, entity b) Argus_NavLink =
 {
     if (a.an_nlinks == 0)      a.an_l0 = b;

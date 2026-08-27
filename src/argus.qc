@@ -100,6 +100,9 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 
 .entity ar_claimer;             // on items
 .float  ar_claimtime;           // on items
+.float  ar_itemregion;          // on items: reachability region of
+                                // the nearest nav node (S4)
+.float  ar_regionset;           // on items: region stamped once
 .float  ar_failtime;            // on items: last routefail at this goal.
                                 // Global, unlike the claim: a routefail
                                 // is a topology verdict and holds for
@@ -1077,6 +1080,19 @@ float(float myaw, float pdist) Argus_MoveHazard =
                 if (c != CONTENT_LAVA && c != CONTENT_SLIME)
                     return FALSE;
             }
+            // BOX-AWARE RESCUE, tried and REVERTED (2026-08-28, the
+            // gapsclosed ladders): lateral probes 14u either side
+            // were meant to approve wall-adjacent headings so
+            // walkmove could slide past pinches. Both depths failed
+            // honestly - a 280u lateral window let the dm3 pit floor
+            // "support" a razor-shelf heading (44 stalls one cell),
+            // and a step-height window converted dm4's '700 -800'
+            // wall-pin from deflect-dither into wall-PRESSING
+            // (walkway hazards 19-52 a tape, stalls 13-34): the
+            // slide only works at glancing angles, and a probe
+            // rescue cannot know the angle. Wall-pins want geometry
+            // (apex seats) or angle-aware steering, not a wider
+            // guard.
         }
         // a probe end SUBMERGED means the "void" is a deep pool:
         // water breaks any fall in Quake, so stepping off is as safe
@@ -1640,6 +1656,29 @@ void() Argus_Physics =
                 if (trace_fraction == 1)
                 {
                     self.ar_hopjump = 0;
+                    self.velocity_z = AR_JUMPVEL;
+                    self.flags = self.flags - (self.flags & FL_ONGROUND);
+                    Argus_Event ("jump");
+                    return;
+                }
+            }
+
+            // router-promised CLIMB (jump-up links, dm3 musing S3):
+            // the reverse of a one-way drop lip. The gap jump above
+            // launches where the ledge runs out; a climb has no ledge
+            // to run out of - fire when the lip face is close and let
+            // jump 270 (apex ~45u) plus walkmove's step-up finish it.
+            // No speed demand: navgen mints these at rise <= 44 only,
+            // which a standing jump clears by construction.
+            if (self.ar_mode == 2 && self.ar_hopjump == 1
+                && (self.flags & FL_ONGROUND)
+                && self.ar_node != world
+                && self.ar_node.origin_z > self.origin_z + 18)
+            {
+                rto = self.ar_node.origin - self.origin;
+                rto_z = 0;
+                if (vlen (rto) < 72)
+                {
                     self.velocity_z = AR_JUMPVEL;
                     self.flags = self.flags - (self.flags & FL_ONGROUND);
                     Argus_Event ("jump");
@@ -3429,17 +3468,26 @@ string(float cls) Argus_ClassWord =
 
 void() Argus_PickGoal =
 {
-    local entity e, b, pick, near;
+    local entity e, b, pick, near, rnode;
     local entity bw, ba, bh, br, bp, bo;
     local float sw, sa, sh, sr, sp, so;
     local vector gp, d;
     local float dist, neard, shelf, cls, v, sc, ws, u, bu, final;
+    local float breg;
 
     bw = world;  ba = world;  bh = world;
     br = world;  bp = world;  bo = world;
     sw = 0;  sa = 0;  sh = 0;  sr = 0;  sp = 0;  so = 0;
     near = world;
     neard = 99999;
+
+    // region class (dm3 musing S4): which reachability region is
+    // this bot shopping from? Mainland is 0; a bot displaced into a
+    // stranded pocket shops that pocket and the mainland only.
+    breg = 0;
+    rnode = Argus_NearestNode (self.origin);
+    if (rnode != world)
+        breg = rnode.an_region;
 
     e = nextent (world);
     while (e != world)
@@ -3449,6 +3497,24 @@ void() Argus_PickGoal =
                 || (e.solid == SOLID_NOT && e.think == SUB_regen
                     && e.nextthink > time)))
         {
+            // stamp the item's region once, ever (items do not move;
+            // one NearestNode scan per item per map)
+            if (!e.ar_regionset)
+            {
+                e.ar_regionset = 1;
+                rnode = Argus_NearestNode (e.origin);
+                if (rnode != world)
+                    e.ar_itemregion = rnode.an_region;
+            }
+            // a goal in a pocket this bot's region cannot reach is
+            // refused BEFORE the router ever runs: the poison-menu
+            // class (four instant routefails at a healthy spawn,
+            // then the trapped verdict) dies here
+            if (e.ar_itemregion != 0 && e.ar_itemregion != breg)
+            {
+                e = nextent (e);
+                continue;
+            }
             cls = Argus_ItemClass (e);
             // failed goals rest on a shelf; powerups rest longer,
             // because their scores pull from across the map and the
@@ -4320,10 +4386,19 @@ void() Argus_AI =
             }
             else if (vlen (to) < 48
                      && (fabs (tp_z - self.origin_z) < 48
-                         || (self.origin_z - tp_z > 0 && self.origin_z - tp_z < 220)
+                         || (self.origin_z - tp_z > 0
+                             && self.origin_z - tp_z < 220)
                          || (self.origin_z - tp_z >= 220
                              && pointcontents (tp) == CONTENT_WATER)))
             {
+                // arrival radius 48, and it stays 48 (2026-08-28): a
+                // same-level widening to 64 was tried for the dm3
+                // quad-court overshoot loop and dm4's walkway bots
+                // began cutting corners a body early - the '700
+                // -800' lip logged 92 deflections in one tape
+                // (gapsclosed2 dm4). The tight radius IS the
+                // walkway discipline; the pinch needs apex seats,
+                // not a looser gate.
                 // the third clause is the DIVE: a router-promised
                 // water landing any depth below (dm3 basin links).
                 // MoveHazard passes deep-water columns, so the walk

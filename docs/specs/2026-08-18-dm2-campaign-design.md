@@ -1,8 +1,8 @@
-# dm2 campaign design (Claustrophobopolis)
+﻿# dm2 campaign design (Claustrophobopolis)
 
 Date: 2026-08-18
 Status: agreed; slice 1 SHIPPED 2026-08-18 night in v3.25 (plan
-docs/superpowers/plans/2026-08-18-dm2-lava-graph.md, all gates
+docs/plans/2026-08-18-dm2-lava-graph.md, all gates
 green: world deaths 3 to 1, stalls 73 to 46, engages 11 to 55).
 Slice 2 SHIPPED 2026-08-18 late night in v3.33 as pure runtime
 (trace-detect the slab, walk touch-openers, button detour with

@@ -7,6 +7,54 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.84 (2026-08-28) - the dm3 musing delivered, with its graveyard
+
+Five directions from the dm3 challenge musing shipped, and four
+attempts died honestly on their own ladders - the fullest
+red-team block in the project's history:
+
+- **Human-trace link mining** (navgen): every harvested session
+  demo now nominates graph links. Snap the 69 Hz track to the
+  graph, collect transitions no edge covers, verify each with the
+  same referees as any link (beeline for walks, arc clearance for
+  jump-ups), mint what passes. Three dm3 sessions yielded 24 links
+  from 128 sightings - corridors the linker's candidate windows
+  had simply missed, several bidirectional. Every future session
+  on any map feeds it.
+- **Jump-up links** (navgen + runtime): one-way drop lips whose
+  rise a standing jump clears (under ~45u) get their reverse
+  minted as a jump link; the runtime fires beside the lip. Six on
+  dm3 plus one the human trace proved.
+- **Region-aware shopping** (navgen + QC): the reachability
+  condensation is baked into the nav data - mainland zero, each
+  entry-stranded pocket its own id - and the goal picker refuses
+  items in regions the bot provably cannot reach BEFORE any
+  router call. dm3 routefails fell to 17-33 per match, the best
+  figures on record; the match-start poison menus are now
+  impossible rather than merely survivable.
+- **Virtual plat pads** (navgen): when no static floor serves a
+  plat's seated face, a synthetic seat goes ON the slab rest-top -
+  Omicron's 1998 answer, waiting since the lift lab. Dormant on
+  dm3 (real pads found); loaded for dm2's *31.
+- **The graveyard**, recorded in code where each died: a box-aware
+  hazard-probe rescue (both depths - deep laterals approved a
+  razor shelf, step laterals turned dm4's wall-pin into
+  wall-pressing); a +-16 beeline offset cap and two streak
+  criteria (each amputated half of dm3's west wing - steering
+  slack makes walkability GRADED, and no binary line-level rule
+  separates "slides past" from "deflects forever"); and a
+  same-level arrival widening (dm4's walkway bots cut corners a
+  body early, 92 deflections at the '700 -800' lip). The
+  quad-court pit-mouth keeps its tax and its name: it wants APEX
+  SEATS - seat the elbow so routes bend around small voids - the
+  next slice, precisely spec'd by three failures.
+
+Ship ladders: dm4 healthy (stalls 8, engages 90, lava 4); dm3
+structurally strongest ever (routefails 17, all frags positive,
+spread 3, zero lava, lifts boarding) with the pinch as the one
+elevated cell; dm2 and dm6 probes improved. Docs: the specs and
+plans moved from docs/superpowers/ to docs/specs and docs/plans.
+
 ## v3.83 (2026-08-28) - the trapped verdict demands evidence
 
 The match-start suicide came back and the tape convicted a different

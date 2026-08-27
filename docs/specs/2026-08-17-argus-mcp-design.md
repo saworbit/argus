@@ -1,4 +1,4 @@
-# Argus lab MCP server
+﻿# Argus lab MCP server
 
 Date: 2026-08-17
 Status: implemented through 0.18.0. Operator guide
@@ -144,7 +144,7 @@ As of 0.16 the agent-facing loop is:
 - MCP resources `argus://project`, `argus://map/{name}`,
   `argus://fn/{name}`, `argus://path/{spec}`, `argus://search/{needle}`,
   `argus://run/{name}`
-- Extra spec tools stay, descriptions start with "Prefer …"
+- Extra spec tools stay, descriptions start with "Prefer â€¦"
 
 ### `config_check`
 
@@ -488,4 +488,4 @@ inflates those cells and drops lava-crossing walk links.
 `argus-mcp gui` binds `127.0.0.1` and opens a one-page wizard:
 attach BSP, generate nav, show the nav PNG plus the 0.17 brief,
 compile, install, dated backup and restore. Stdio MCP is unchanged.
-See `docs/superpowers/specs/2026-08-18-argus-lab-gui-design.md`.
+See `docs/specs/2026-08-18-argus-lab-gui-design.md`.

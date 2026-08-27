@@ -1,10 +1,10 @@
-# Argus optional SLM sidecar (parked)
+﻿# Argus optional SLM sidecar (parked)
 
 **Date:** 26 August 2026
 **Status:** PARKED. Captured for the record, not scheduled. Shane's call
 after review: "just capture the idea but park it."
 **Repo:** [saworbit/argus](https://github.com/saworbit/argus) (QuakeC bot + Rust lab MCP 0.18)
-**Related:** `tools/argus_mcp/README.md`, `docs/superpowers/specs/2026-08-17-argus-mcp-design.md`, `docs/mcp_quake_dev_spec.md`
+**Related:** `tools/argus_mcp/README.md`, `docs/specs/2026-08-17-argus-mcp-design.md`, `docs/mcp_quake_dev_spec.md`
 
 ---
 
@@ -107,20 +107,20 @@ If those constraints are broken, it is no longer Argus.
 
 ```
                     optional
-                 ┌─────────────┐
-                 │  SLM sidecar│  Phi-4 Mini Q4 (~2.5 GB on disk)
-                 │  (llama.cpp │  default: off
-                 │   / Ollama) │
-                 └──────┬──────┘
-                        │ JSON advice
-                        ▼
- LLM client  ←stdio→  argus-mcp  ←→  fteqcc / navgen / analyze_match
-                        │
-                        │ at most one dedicated child
-                        ▼
+                 â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+                 â”‚  SLM sidecarâ”‚  Phi-4 Mini Q4 (~2.5 GB on disk)
+                 â”‚  (llama.cpp â”‚  default: off
+                 â”‚   / Ollama) â”‚
+                 â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
+                        â”‚ JSON advice
+                        â–¼
+ LLM client  â†stdioâ†’  argus-mcp  â†â†’  fteqcc / navgen / analyze_match
+                        â”‚
+                        â”‚ at most one dedicated child
+                        â–¼
               Quake engine (protocol 15, 600 edicts)
-                        │
-                        ▼
+                        â”‚
+                        â–¼
               Argus QuakeC (GOAP, nav, combat, chat)
 ```
 
@@ -367,7 +367,7 @@ Keep the "one inspect" philosophy. Do not explode the vocabulary.
 | `see what=slm` | all | Status: off / lab / live, model id, last advice, last error |
 | `advise` | lab | Run one subroutine against a snapshot or a named run (`latest:Reap`). Returns JSON advice. Does not touch the match. |
 | `advise_apply` | lab | If kind is `route`/`cost`, write a candidate `*.costs.json` patch or a notes file under `runs/`. Never writes QC by itself. |
-| `advise_live` | live | One-shot: snapshot current child → model → validated suggestion → optional console inject. No-op if `ARGUS_SLM!=live` or no child. |
+| `advise_live` | live | One-shot: snapshot current child â†’ model â†’ validated suggestion â†’ optional console inject. No-op if `ARGUS_SLM!=live` or no child. |
 
 Aliases under `see` are enough for status. `advise` is a real tool because it has side effects in lab mode when `advise_apply` is used.
 

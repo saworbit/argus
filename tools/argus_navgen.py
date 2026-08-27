@@ -499,7 +499,28 @@ def boarding_pad(bm, face_z):
         return None
     return force_way(best[0], best[1], best[2] + 24, snap=32)
 
+def virtual_pad(bm, face_z):
+    """Omicron's 1998 answer (their PLATBOTTOM seats sat ON the slab
+    rest-top at dm2 *31): when no static floor serves the seated
+    face at all, inject a SYNTHETIC sample at the slab centre so the
+    pad exists anyway. The v3.47+ runtime already handles rest-top
+    pads - the lift wait steers at the slab centre when seated and
+    boards by contact - so the only missing piece was ever this
+    seat. Virtual pads bypass PROMO_CAP (three per map at most, and
+    they are the map's designed circulation). Dijkstra cannot link
+    them (no fine-graph presence): section 6b3 stitches their
+    walk-ins by direct clearance."""
+    pcx, pcy = (bm[0] + bm[3]) / 2, (bm[1] + bm[4]) / 2
+    cx = min(range(len(xs)), key=lambda i: abs(xs[i] - pcx))
+    cy = min(range(len(ys)), key=lambda i: abs(ys[i] - pcy))
+    zs = samples.setdefault((cx, cy), [])
+    zs.append(face_z)
+    ways.append((cx, cy, len(zs) - 1))
+    return len(ways) - 1
+
+
 lifts = []
+vpads = []
 for b in ent_blocks:
     e = kv(b)
     if e.get("classname") != "func_plat" or "model" not in e:
@@ -515,13 +536,19 @@ for b in ent_blocks:
             print(f"plat at ({pcx:.0f} {pcy:.0f}): no boarding sample "
                   f"outside the footprint; pad falls back INSIDE the "
                   f"swept column (statue risk - see cartograph plats)")
+    if lo is None:
+        lo = virtual_pad(bm, top_z - height)
+        vpads.append((lo, bm))
+        print(f"plat at ({pcx:.0f} {pcy:.0f}): VIRTUAL pad on the "
+              f"slab rest-top at z {top_z - height:.0f} (the 5b gap, "
+              f"closed per the dm3 musing)")
     hi = force_way(pcx, pcy, top_z + 24)
     if lo is None or hi is None or lo == hi:
         print(f"plat at ({pcx:.0f} {pcy:.0f}) travel {height:.0f}: "
               f"no usable pad (bottom {lo}, top {hi})")
         continue
     lifts.append((lo, hi))
-print(f"plats: {len(lifts)} lift(s) padded")
+print(f"plats: {len(lifts)} lift(s) padded ({len(vpads)} virtual)")
 
 # ---- 5c. train links from func_train ----
 # A func_train patrols its path_corners on its own clock: a MOVING
@@ -751,6 +778,7 @@ def beeline_ok(a, b):
     px, py = -(by-ay) / dist, (bx-ax) / dist    # unit perpendicular
     z = az
     bad = 0
+    wallrun = 0
     for s in range(1, steps + 1):
         f = s / steps
         cx, cy = ax + (bx-ax)*f, ay + (by-ay)*f
@@ -758,6 +786,7 @@ def beeline_ok(a, b):
         # walkmove slides along walls, so a line that clips a corner is
         # still walkable when floor continues just beside it: probe the
         # line first, then perpendicular offsets either side
+        useoff = 0
         for off in (0, 16, -16, 32, -32):
             floors = column_floors(cx + px*off, cy + py*off)
             for fz in floors:                 # climbable step first
@@ -774,6 +803,7 @@ def beeline_ok(a, b):
             if nz is not None and h0_contents(cx + px*off, cy + py*off, nz + 24) in (CONTENTS_LAVA, CONTENTS_SLIME):
                 nz = None
             if nz is not None:
+                useoff = off
                 break
         if nz is None:
             # tolerate brief nicks; sustained wall is a lie
@@ -781,6 +811,18 @@ def beeline_ok(a, b):
             if bad >= 3:
                 return False
             continue
+        # NEGATIVE RESULTS, three of them (2026-08-28, the quad-court
+        # pit-mouth link n68->n248): a +-16 offset cap, an any-offset
+        # streak, and a runtime-veto-simulation streak were each
+        # tried here to kill links whose centre line crosses ground
+        # the brink guard deflects at. All three amputated half the
+        # west wing (121-140 nodes to the poison prune): HazardSteer
+        # makes rim-hugging lines PARTIALLY walkable, so walkability
+        # under steering slack is graded, and a binary line-level
+        # criterion cannot separate "slides past with a wobble" from
+        # "deflect-dances forever". The pit-mouth class needs APEX
+        # SEATS (seat the elbow so routes bend around small voids) -
+        # the corridor-campaign design, filed in the dm3 musing.
         bad = 0
         z = nz
     return abs(z - bz) <= STEP
@@ -820,6 +862,70 @@ for i in list(links):
             links.setdefault(j, {})[i] = (links[i][j][0], 0)
             nclosed += 1
 print(f"symmetric closure added {nclosed} reverse links")
+
+# ---- 6b2b. jump-up links (dm3 musing S3) ----
+# The one-way membrane is made of drop lips. Jump 270 apexes at
+# ~45u: any one-way drop whose rise is jumpable gets its REVERSE
+# minted as a jump-typed link (an_jumpmask - the runtime's climb
+# branch fires beside the lip). Clearance: the line at apex-torso
+# height must be open, and the lip's top edge must not overhang.
+njup = 0
+for i in list(links):
+    for j in list(links[i]):
+        if links[i][j][1]:
+            continue
+        if i in links.get(j, {}):
+            continue
+        ix, iy, iz = pos(ways[i])
+        jx, jy, jz = pos(ways[j])
+        rise = iz - jz                      # climbing back j -> i
+        h = ((ix - jx) ** 2 + (iy - jy) ** 2) ** 0.5
+        if not (STEP < rise <= 44) or h > 180:
+            continue
+        clear = True
+        for f in (0.35, 0.6, 0.85):
+            px = jx + (ix - jx) * f
+            py = jy + (iy - jy) * f
+            if h0_contents(px, py, jz + 76) == CONTENTS_SOLID:
+                clear = False
+                break
+        if clear and h0_contents(ix, iy, iz + 40) != CONTENTS_SOLID:
+            links.setdefault(j, {})[i] = (links[i][j][0], 1)
+            njup += 1
+print(f"jump-up links minted: {njup}")
+
+# ---- 6b3. virtual plat pad walk-ins ----
+# A virtual pad (5b) has no fine-graph presence, so Dijkstra gave it
+# nothing. Stitch direct walk links to nodes at seated-face height
+# with a clear straight line - at rest the slab occupies this space
+# (its compiled position is TOP), so the BSP reads open here and a
+# midpoint clearance check is honest.
+for _vp, _bm in vpads:
+    _vx, _vy, _vz = pos(ways[_vp])
+    _added = 0
+    _cands = []
+    for _o in range(len(ways)):
+        if _o == _vp:
+            continue
+        _ox, _oy, _oz = pos(ways[_o])
+        _h = ((_ox - _vx) ** 2 + (_oy - _vy) ** 2) ** 0.5
+        if abs(_oz - _vz) <= 24 and 20 < _h <= 220:
+            _cands.append((_h, _o))
+    for _h, _o in sorted(_cands)[:4]:
+        _ox, _oy, _oz = pos(ways[_o])
+        _ok = True
+        for _f in (0.3, 0.5, 0.7):
+            if h0_contents(_vx + (_ox - _vx) * _f,
+                           _vy + (_oy - _vy) * _f,
+                           _vz + 30) == CONTENTS_SOLID:
+                _ok = False
+                break
+        if _ok:
+            links.setdefault(_o, {})[_vp] = (_h, 0)
+            links.setdefault(_vp, {})[_o] = (_h, 0)
+            _added += 1
+    print(f"virtual pad n{_vp} ({_vx:.0f} {_vy:.0f} {_vz:.0f}): "
+          f"{_added} walk-in(s)")
 
 # ---- 6c. door-typed walk links ----
 # Hull 1 never contains func_door brushes, so a beeline through a
@@ -1691,6 +1797,107 @@ _nknit = (_knit_pass(True, False) + _knit_pass(False, False)
           + _knit_pass(True, True) + _knit_pass(False, True))
 print(f"reachability knitting stitched {_nknit} links")
 
+# ---- 7g2b. human-trace link mining (dm3 musing S1) ----
+# The sessions are already recorded and harvested; a demo track is a
+# 69 Hz proof of where a human actually walked. Snap every sample of
+# every runs/demos/*<map>*.tracks.json to the graph, collect node
+# transitions the graph has no edge for, and mint the ones that pass
+# the SAME verification as any other link - beeline for walks, the
+# jump-up clearance for climbs. Human-proven is not bot-walkable
+# (the knit1 lip-statue lesson), so nothing is trusted from the
+# trace alone; the trace only NOMINATES. Teleport/knockback
+# artifacts are cut by the segment-length filter and a two-sighting
+# minimum.
+import glob as _glob
+import os as _os
+_tracedir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                          "..", "runs", "demos")
+_tracefiles = sorted(_glob.glob(_os.path.join(
+    _tracedir, f"*{MAPNAME}*.tracks.json")))
+if _tracefiles:
+    import json as _json
+    _cellidx = {}
+    for _i in range(len(ways)):
+        _x, _y, _z = pos(ways[_i])
+        _cellidx.setdefault((int(_x // 128), int(_y // 128)),
+                            []).append(_i)
+
+    def _snap(_x, _y, _z):
+        _best, _bd = -1, 80.0 * 80.0
+        _cx, _cy = int(_x // 128), int(_y // 128)
+        for _gx in (_cx - 1, _cx, _cx + 1):
+            for _gy in (_cy - 1, _cy, _cy + 1):
+                for _i in _cellidx.get((_gx, _gy), ()):
+                    _nx, _ny, _nz = pos(ways[_i])
+                    if abs(_nz - _z) > 56:
+                        continue
+                    _d = (_nx - _x) ** 2 + (_ny - _y) ** 2
+                    if _d < _bd:
+                        _bd = _d
+                        _best = _i
+        return _best
+
+    _sightings = {}
+    for _tf in _tracefiles:
+        try:
+            _doc = _json.load(open(_tf))
+        except Exception:
+            print(f"trace mining: unreadable {_os.path.basename(_tf)}")
+            continue
+        for _tr in _doc.get("tracks", []):
+            if _tr.get("kind") != "player":
+                continue
+            _ts = _tr.get("t", [])
+            _psl = _tr.get("pos", [])
+            _cur = -1
+            _last = None
+            for _t, _p in zip(_ts, _psl):
+                if _last is not None and (
+                        (_p[0] - _last[0]) ** 2
+                        + (_p[1] - _last[1]) ** 2) > 200 * 200:
+                    _cur = -1           # teleport / respawn: break
+                _last = _p
+                _b = _snap(_p[0], _p[1], _p[2])
+                if _b < 0 or _b == _cur:
+                    continue
+                _a = _cur
+                _cur = _b
+                if _a < 0 or _b in links.get(_a, {}):
+                    continue
+                _sightings[(_a, _b)] = _sightings.get((_a, _b), 0) + 1
+    _mined_w = 0
+    _mined_j = 0
+    for (_a, _b), _c in sorted(_sightings.items(),
+                               key=lambda kv: -kv[1]):
+        if _c < 2 or _mined_w + _mined_j >= 24:
+            continue
+        if _b in links.get(_a, {}):
+            continue
+        _ax, _ay, _az = pos(ways[_a])
+        _bx, _by, _bz = pos(ways[_b])
+        _h = ((_bx - _ax) ** 2 + (_by - _ay) ** 2) ** 0.5
+        if _h > 400:
+            continue
+        if beeline_ok(ways[_a], ways[_b]):
+            links.setdefault(_a, {})[_b] = (_h, 0)
+            _mined_w += 1
+            print(f"trace-mined walk {_a}->{_b} (x{_c})")
+        elif STEP < _bz - _az <= 44 and _h <= 180:
+            _clear = True
+            for _f in (0.35, 0.6, 0.85):
+                if h0_contents(_ax + (_bx - _ax) * _f,
+                               _ay + (_by - _ay) * _f,
+                               _az + 76) == CONTENTS_SOLID:
+                    _clear = False
+                    break
+            if _clear:
+                links.setdefault(_a, {})[_b] = (_h, 1)
+                _mined_j += 1
+                print(f"trace-mined jump-up {_a}->{_b} (x{_c})")
+    print(f"trace mining: {len(_tracefiles)} track file(s), "
+          f"{len(_sightings)} unmapped transitions seen, minted "
+          f"{_mined_w} walk + {_mined_j} jump links")
+
 # ---- 7g3. route-poison prune ----
 # A node that STILL cannot reach the mainland after knitting is route
 # poison: every route starting there fails, and four failures with no
@@ -1838,6 +2045,53 @@ if _spawn_reach:
               "fail most goals; bots there take the trapped exit. Do "
               "NOT ship this graph without a look.")
 
+# ---- 8a05. region classes (dm3 musing S4) ----
+# After the poison prune every surviving node can REACH the mainland;
+# what remains split is entry: pockets the mainland cannot route
+# into. Bake that as a per-node region - mainland 0, each stranded
+# pocket its own id - so the runtime can refuse to shop a goal its
+# region provably cannot reach BEFORE any router call. The
+# match-start poison menus (four instant routefails, the trapped
+# probation) become impossible instead of merely survivable.
+_fwd = collections.defaultdict(set)
+for _i in links:
+    for _j in links[_i]:
+        _fwd[_i].add(_j)
+for _a, _b in teles + rjlinks + lifts + swims + trains:
+    _fwd[_a].add(_b)
+_sccs = _knit_sccs(_fwd, len(ways))
+_main = max(_sccs, key=len) if _sccs else set()
+_F = set(_main)
+_q = list(_main)
+while _q:
+    _u = _q.pop()
+    for _v in _fwd[_u]:
+        if _v not in _F:
+            _F.add(_v)
+            _q.append(_v)
+regions = [0] * len(ways)
+_rid = 0
+_und = collections.defaultdict(set)
+for _i in _fwd:
+    for _j in _fwd[_i]:
+        _und[_i].add(_j)
+        _und[_j].add(_i)
+for _i in range(len(ways)):
+    if _i in _F or regions[_i]:
+        continue
+    _rid += 1
+    _q = [_i]
+    regions[_i] = _rid
+    while _q:
+        _u = _q.pop()
+        for _v in _und[_u]:
+            if _v not in _F and not regions[_v]:
+                regions[_v] = _rid
+                _q.append(_v)
+print(f"regions: mainland {len(_F)} nodes, "
+      f"{_rid} stranded pocket(s) covering "
+      f"{len(ways) - len(_F)} nodes")
+
 # ---- 8a0. compute camera vantage nodes ----
 cam_nodes = []
 for i, w in enumerate(ways):
@@ -1891,6 +2145,9 @@ with open(OUTQC, "w") as f:
         f.write(f"    Argus_NavLinkSwim (n{a}, n{b});\n")
     for a, b in trains:
         f.write(f"    Argus_NavLinkTrain (n{a}, n{b});\n")
+    for i, r in enumerate(regions):
+        if r:
+            f.write(f"    Argus_NavRegion (n{i}, {r});\n")
     if cam_nodes:
         f.write("\n    // Camera vantage nodes (Cartographer spectator anchors)\n")
         for cpos, cang, ctag in cam_nodes:
@@ -1914,6 +2171,7 @@ with open(OUTQC + ".json", "w") as jf:
                "swimlinks": swims,
                "trainlinks": trains,
                "doorlinks": doorlinks,
+               "regions": regions,
                "cam_nodes": [{"pos": cpos, "ang": cang, "tag": ctag} for cpos, cang, ctag in cam_nodes],
                "teles": teles}, jf)
 print("wrote", OUTQC, "+ .json")
