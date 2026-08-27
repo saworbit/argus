@@ -28,6 +28,28 @@ sprees, quad runs), and full-track JSON export. CI grew the Rust
 suite and a headless LibreQuake stability smoke with the
 directed-reach gate.
 
+## Stack sweep (2026-08-27, no QC change)
+
+- Windows live tune was broken since lab 0.15, not merely
+  unverified: after `AttachConsole` the inject wrote to the MCP's
+  own redirected pipe instead of the child console. Fixed by opening
+  `CONIN$` explicitly; a live-engine integration test (spawn the
+  hidden dedicated child, inject `status`, require the output in
+  the log) guards it permanently. Live `skill` and `scratch1`
+  tuning on Windows work for the first time.
+- `argus-mcp demo <stem>[:export]` reads demos from the CLI, no MCP
+  client required.
+- The plain `ARGUS shove` and `routecache adopt` console lines
+  count as pseudo-events in briefs (previously invisible to every
+  parser).
+- The highlight reel files stock self-kill obituaries as `suicide`,
+  separate from environment deaths.
+- First demo-driven forensics on the chronic walkway corner: the
+  freeze is a wall-pin at the z -232 / z -184 walkway junction -
+  and it happened entirely outside the recording client's PVS, the
+  demo caveat's first real bite. Filed for an instrumented session
+  rather than fixed blind.
+
 ## Lab pipeline (2026-08-26 to 2026-08-27, no QC change)
 
 - Demo ingest: every play session now records a `.dem`

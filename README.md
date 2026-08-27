@@ -345,6 +345,11 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 |        swim | door | train | board | hazard | engage <enemy> | pursue |           |
 |        retreat | grab <class> | weapon <axe|sg|ssg|ng|sng|gl|rl|lg> |             |
 |        plan <want> via <step> | death <killer> pos '<x y z>'                      |
+|                                                                                   |
+| Side channels (outside the closed ARGEVT vocabulary, counted as                   |
+| pseudo-events by the lab): "ARGUS <name> shove", "ARGUS routecache               |
+| adopt". Debug channel (console `scratch1 1`, never in briefs):                    |
+| ARGDBG <name> pick <class> u <utility> | <per-class scores> ...                   |
 +-----------------------------------------------------------------------------------+
 ```
 
@@ -399,10 +404,13 @@ argus-mcp gui --port 7420 --no-open
 - `see what=project`: Active tree, maps, and the next call.
 - `see what=map name=dm4`: Cartographer brief (control items, islands, door cuts, corridor misses, plat boardability, edict estimate).
 - `see what=path name=dm4:quad->lg`: Waypoint BFS including walk/drop/jump/tele/rocket/lift/swim.
-- `see what=demo name=<stem>`: Parse a harvested `.dem` — full-rate named tracks, projectiles, kill feed.
+- `see what=demo name=<stem>`: Parse a harvested `.dem` — full-rate named tracks, per-player aim statistics, a highlight reel with `playdemo` timestamps, projectiles, kill feed. `:export` writes the full track vectors as JSON. Also available as the CLI verb `argus-mcp demo <stem>`.
 - `experiment map=dm4 duration_sec=30 skill=2`: Compile, short match, duration-scaled lite A/B.
 - `compare_runs log_a=baseline log_b=latest`: Unscaled A/B against the shipped tape.
 - `learn_hotspots map=dm4`: Fold stall/lava/hazard cells (kind-aware); writes `src/argus_nav_<map>.costs.json` for the next navgen.
+- `tune command="skill 3"` — live console injection into the running dedicated child (works on Windows via `AttachConsole` + `CONIN$`, integration-tested). `scratch1 1` arms the **decision tape**: every bot goal pick prints its full per-class utility board as an `ARGDBG` line, so "why did it choose that" is a grep.
+
+Two CLI modes serve the unattended lab, both bounded by hard caps and never scheduled by anything: `argus-mcp soak` (a match loop with gated verdicts and an incremental report; wall-clock, match-count and bytes-written caps, plus a stop file) and `argus-mcp cycle <map>` (one guarded learning pass — fold hotspots, regenerate the nav, compile, probe — that adopts only on an improved verdict and otherwise restores every file byte for byte).
 
 Lava deaths in experiment/compare are hull-0 contents (same as `analyze_match.py`); `z < -300` is only used when the BSP is missing. Statue freezes are a hard A/B gate (6 s+ under 20 u/s, with an under-fire measure for damage taken while frozen), and lift/train boarding success is accounted (`mover_waits` vs `boards`) so a broken pad reads as broken rather than slow. A/B baselines are config-driven via `runs/baselines.json`.
 
