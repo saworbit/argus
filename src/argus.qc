@@ -123,6 +123,9 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
                                 // own bookkeeping; self.watertype
                                 // belongs to the engine, see
                                 // Argus_Waterlevel)
+.float  ar_glimpse;             // ring-glimpse clock: one roll per
+                                // second against an invisible enemy
+                                // (Argus_CanSee)
 
 .vector ar_sndpos;              // OPM: last heard sound position
 .float  ar_sndtime;             // OPM: when it was heard
@@ -1402,6 +1405,40 @@ void() Argus_Physics =
         self.velocity_x = self.velocity_x * 0.8 + wishdir_x * 60;
         self.velocity_y = self.velocity_y * 0.8 + wishdir_y * 60;
         self.flags = self.flags - (self.flags & FL_ONGROUND);
+        // AIR EMERGENCY: the drive-for-air pins under a ceiling and
+        // the bot drowns in place (Romero reached 1 hp submerged in
+        // the v380 dm3 session - "do they understand they can
+        // drown?"). With air nearly out and solid overhead, scan
+        // eight headings for one whose point 96 ahead has clear
+        // water above it and swim hard for the hole. Overrides the
+        // goal push: nothing on the shopping list outranks breathing.
+        if (wl == 3 && self.air_finished < time + 4)
+        {
+            traceline (self.origin, self.origin + '0 0 56', TRUE, self);
+            if (trace_fraction < 1)
+            {
+                moveok = 0;
+                while (moveok < 8)
+                {
+                    myaw = self.ar_moveyaw + moveok * 45;
+                    makevectors ('0 0 0' + myaw * '0 1 0');
+                    vh = self.origin + v_forward * 96;
+                    traceline (self.origin, vh, TRUE, self);
+                    if (trace_fraction == 1)
+                    {
+                        traceline (vh, vh + '0 0 56', TRUE, self);
+                        if (trace_fraction == 1)
+                        {
+                            self.velocity_x = v_forward_x * 130;
+                            self.velocity_y = v_forward_y * 130;
+                            self.velocity_z = 100;
+                            moveok = 99;
+                        }
+                    }
+                    moveok = moveok + 1;
+                }
+            }
+        }
         // waterjump, gated to swim-link hops ONLY: waist blocked,
         // eye clear, vault the lip toward the exit node. No timed
         // latch â€” the latch suspending steering was the mechanism
@@ -2061,6 +2098,17 @@ float(entity e) Argus_CanSee =
     {
         if (vlen (e.origin - self.origin) > 250)
         {
+            // the glimpse must be a CLOCK, not a per-call roll: this
+            // runs several times a second per enemy, and 2% per call
+            // compounded into near-continuous tracking of a ringed
+            // player ("they can see you through the ring?", the v380
+            // dm3 session). One roll per second per bot - a glimpse
+            // is now genuinely rare, and one still buys the 3 s hold.
+            if (time < self.ar_glimpse - 1)
+                self.ar_glimpse = 0;    // clock from a previous life
+            if (time < self.ar_glimpse)
+                return FALSE;
+            self.ar_glimpse = time + 1;
             if (random () > 0.02)
                 return FALSE;
         }
@@ -2926,14 +2974,31 @@ float() Argus_Combat =
     // this for a moment, and the lava flip re-checks whatever we
     // choose.
     ceff = self.health + self.armorvalue * self.armortype;
+    // an enemy carrying a live quad or pent four-times the trade (or
+    // refuses it entirely): the retreat bar doubles against a carrier
+    // ("they don't understand... an opponent having a powerup", v380
+    // dm3 session). Denial targeting is unchanged - the carrier still
+    // draws every gun - but a mid-stack bot breaks line of sight
+    // instead of feeding the run. Both bars fall back the moment the
+    // powerup expires, and holding our own quad still overrides.
     if (self.ar_retreating)
     {
         // hysteresis: stay out until the stack recovers or the fight
         // is winnable (finish a nearly-dead enemy instead of hiding)
-        if (ceff > 55 || e.health <= 30 || self.super_damage_finished > time)
+        if (e.super_damage_finished > time || e.invincible_finished > time)
+        {
+            if (ceff > 90 || e.health <= 30
+                || self.super_damage_finished > time)
+                self.ar_retreating = 0;
+        }
+        else if (ceff > 55 || e.health <= 30
+                 || self.super_damage_finished > time)
             self.ar_retreating = 0;
     }
-    else if (ceff < 35 && e.health > 30
+    else if ((ceff < 35
+              || (ceff < 70 && (e.super_damage_finished > time
+                                || e.invincible_finished > time)))
+             && e.health > 30
              && self.super_damage_finished < time
              && self.weapon != IT_AXE
              && time > self.ar_retreatlock)
@@ -3756,8 +3821,14 @@ void() Argus_AI =
         // stack keeps its distance; a healthy bot hunts the big
         // fight harder than small-arms chatter.
         turn = 700;
-        if (self.ar_sndweap == IT_ROCKET_LAUNCHER
-            || self.ar_sndweap == IT_LIGHTNING)
+        if (self.super_damage_finished > time)
+            turn = 1000;        // quad in hand: thirty seconds to
+                                // SPEND, not to shop - hunt any noise
+                                // at full earshot ("they don't
+                                // understand the powerup", v380 dm3
+                                // session)
+        else if (self.ar_sndweap == IT_ROCKET_LAUNCHER
+                 || self.ar_sndweap == IT_LIGHTNING)
         {
             if (self.health + self.armorvalue * self.armortype < 60)
                 turn = 350;

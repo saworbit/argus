@@ -7,6 +7,37 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.81 (2026-08-27) - the ring, the air, and respect for the quad
+
+Three fixes from the first human session on the healed dm3, each a
+direct answer to a report:
+
+- **"They can see you through the ring?"** They effectively could:
+  the 2% glimpse chance against an invisible enemy was rolled per
+  visibility check, and checks run several times a second, so the
+  odds compounded into near-continuous tracking. The glimpse is now
+  a clock - one roll per second - so a ringed player is genuinely
+  unseen beyond close range. (Stock monsters never honoured the
+  ring at all; Argus's courtesy just became real.)
+- **"Do they understand they can drown?"** They drowned in place:
+  the drive-for-air pins under ceilings and overhangs, and Romero
+  reached 1 hp submerged in the session tape. With air nearly out
+  and solid overhead, a bot now scans eight headings for one with
+  clear water above and swims hard for the hole - nothing on the
+  shopping list outranks breathing.
+- **"They don't understand the powerup."** Two consequences wired
+  in: a bot holding the quad hunts - it investigates any gunfire at
+  full earshot for the whole thirty seconds instead of going
+  shopping - and a bot facing a live quad or pentagram carrier
+  doubles its retreat bar, breaking line of sight at mid stack
+  instead of feeding the run (denial targeting unchanged: the
+  carrier still draws every gun).
+
+Ladders: dm4 improved on all seven gates (engages 90, stalls 8,
+spread 2); dm3 at the era's best engagement figure with the frag
+board positive and zero drownings. The ring fix is human-eyes
+verification - take the ring and watch them lose you.
+
 ## v3.80 (2026-08-27) - the dm3 campaign: knitting and the dive
 
 The worst graph in the project is structurally healed. dm3's spawns
