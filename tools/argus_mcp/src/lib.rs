@@ -14,6 +14,7 @@ pub mod learn;
 pub mod live;
 pub mod match_ctrl;
 pub mod nav_graph;
+pub mod netclient;
 pub mod nav_sync;
 pub mod navgen;
 pub mod qc_index;

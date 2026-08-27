@@ -7,6 +7,31 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.85 + lab 0.22 (2026-08-28) - the lab joins the game
+
+The fourth instrument: the lab now connects to a running server as a
+REAL NetQuake client (`argus-mcp client`). A Rust implementation of
+the 1996 datagram protocol - control handshake, reliable/unreliable
+channels with acks, the full signon dance, the svc vocabulary the
+demo reader already speaks - proven live against the lab engine: it
+connects, spawns, reads the scoreboard, streams the entity world at
+server rate, and WALKS under `clc_move` control (first live test:
+the puppet spawned on dm4's chronic walkway, of all places, and
+moved on command). One discovery paid for the evening: WinQuake
+binds its UDP socket to the hostname-resolved address, not
+loopback - the client now mirrors that lookup.
+
+What this opens, in value order: empirical link verification (drive
+the puppet along minted links and OBSERVE whether the walking works
+- the ground truth three failed v3.84 beeline criteria were
+approximating), live full-rate observation without demo files, the
+say channel (a client legally reads chat, which vanilla QC never
+can), and scoreboard verification from a real client's seat. The
+puppet connects as "labprobe" and v3.85's one QC line makes bots
+treat it as an instrument, not a target - the same courtesy as the
+spectator camera. Engine-gated integration test included; the two
+engine-spawning tests now share a lock (a port race flaked once).
+
 ## v3.84 (2026-08-28) - the dm3 musing delivered, with its graveyard
 
 Five directions from the dm3 challenge musing shipped, and four

@@ -2156,6 +2156,10 @@ float(entity e) Argus_CanSee =
                         // (Shane's review: bots attacked him in cam
                         // mode - the masquerade scan sees classname
                         // "player" and health > 0 either way)
+    if (e.netname == "labprobe")
+        return FALSE;   // the lab's puppet client (netclient.rs): an
+                        // instrument walking the graph, not a
+                        // combatant - same courtesy as the camera
     if (e.health <= 0)
         return FALSE;
     // the ring: an invisible enemy is eyes only, so treat it as unseen

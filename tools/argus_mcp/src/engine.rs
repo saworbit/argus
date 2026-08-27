@@ -13,6 +13,12 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 #[cfg(not(windows))]
 use tokio::process::{Child, ChildStdin, Command};
 
+/// Serialises the engine-gated integration tests: each spawns a real
+/// dedicated engine on the UDP port, and cargo runs tests in
+/// parallel - unserialised, one test's client talks to the other
+/// test's engine (observed as a one-in-a-few flaky failure).
+pub static ENGINE_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 pub struct EngineChild {
     pub pid: u32,
     stdout: Arc<Mutex<String>>,
@@ -465,6 +471,7 @@ mod tests {
         if !cfg!(windows) {
             return;
         }
+        let _gate = crate::engine::ENGINE_TEST_LOCK.lock().unwrap();
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut env = std::collections::HashMap::new();
         env.insert("ARGUS_ROOT".into(), root.display().to_string());
