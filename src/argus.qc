@@ -2054,6 +2054,13 @@ void() Argus_SetSkill =
     else if (self.ar_slot == 1)
     {
         self.ar_wheal = 1.2;        // survives the long game
+        // APPETITE REBALANCE REFUTED (2026-08-28, ab_dm4_romero1):
+        // cutting 1.4 -> 1.15 left his red-armour goals UNCHANGED
+        // (11 -> 13 per 185 s) - the armour class wins this slot's
+        // menu by margin because his other appetites are low (pow
+        // 0.8, no weapon boost), not because of this multiplier.
+        // The dm4 pit-edge exposure (v3.79 forensics) needs the
+        // positioning-aware slice, not a smaller number here.
         self.ar_warmor = 1.4;
         self.ar_wpow = 0.8;
     }
