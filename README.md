@@ -49,6 +49,15 @@ flowchart TD
         Log --> Visualizer[analyze_match.py\nTrajectory & Death Plots]
         Log --> MCP[argus-mcp Server\nScaled A/B Intelligence]
     end
+
+    subgraph Mill ["The Mill (Empirical Graph Verdicts)"]
+        MCP -->|accused link / cell| Puppet[argus-mcp probelinks\nNetQuake puppet client]
+        Puppet -->|walks it in the engine| Engine
+        Puppet -->|refusals by endpoint| Probe[argus_nav_map.probe.json]
+        Puppet -->|proven candidates| Proven[argus_nav_map.proven.json]
+        Probe --> NavGen
+        Proven --> NavGen
+    end
 ```
 
 ---
@@ -64,6 +73,7 @@ flowchart TD
 - **Grate-floor and steep-stair walking**: Retries refused steps under `FL_PARTIALGROUND` (id's own escape hatch for the engine's point-traced ledge guard), so decorative floors with recessed channels and 45-degree strip stairs walk at full run speed instead of pinning the bot.
 - **Predictive gap jumping**: At a vetoed brink in unrouted movement, the bot simulates the jump it could make right now — 0.1 s parabola segments traced for collisions — and takes it only when the landing is a dry floor within survivable range ("only if satisfied with the result", after the 1998 Omicron design).
 - **Router-promised drops**: A routed bot whose next waypoint sits far below on a legal sub-200u drop commits with one firm step off the lip instead of teetering at the edge the engine refuses to walk over.
+- **Sprint-jump run-up discipline**: Trick-jump links that demand full run speed are staged like a human takes them — walk to a validated run-up point behind the launch seat on the extended jump line, charge through the seat at the landing, fire at the last unit of ledge, and hold the flight line against mid-air distractions for the whole arc. Launches print `ARGUS <name> sprintjump`.
 - **Combat-yielding mover waits**: Pad-side lift and train holds release the moment an enemy engages — the bot fights with full movement and resumes the wait afterwards, so a queued bot is never a free frag.
 
 ### 2. Predictive hazard avoidance
@@ -74,7 +84,7 @@ flowchart TD
 - **Safe line floor validation**: `Argus_SafeLine` samples floor collision every 48 units along direct item sightlines, preventing bots from plunging into pits to reach visible items.
 
 ### 3. Combat, perception, and humanized aim
-- **Damped-spring aim model**: Second-order yaw tracking with per-skill spring constants — flick, slight overshoot, settle, tremor — plus configurable reaction latency (`ar_reactbase`) and an aim error cone that narrows over continuous tracking duration.
+- **Damped-spring aim model with saccade glide**: Second-order yaw tracking with per-skill spring constants — flick, slight overshoot, settle, tremor — plus configurable reaction latency (`ar_reactbase`) and an aim error cone that narrows over continuous tracking duration. The held error offset re-rolls every 0.25–0.55 s and *ramps* to its new value over 0.15 s instead of stepping, so the spring never chases a teleporting target — a human wrist drifts between corrections.
 - **Simulated hearing and investigation**: `W_Attack` broadcasts gunfire to every bot within 1000u (wall-damped); an unengaged bot glances at fresh sounds, and nearby fire pulls it toward the fight instead of past it.
 - **Combat memory and grudges**: A recent foe stays re-acquirable at 360 degrees for 5 seconds (no forgetting mid-dodge), and three consecutive deaths to one player raise a vendetta bounty on them.
 - **Ballistic compensation**: Applies parabolic loft compensation for Grenade Launcher trajectories, downward pitch adjustments for Rocket Launcher fire from elevated walkways, and feet-aim against grounded targets for splash.
@@ -84,6 +94,7 @@ flowchart TD
 - **Retreat by geometry**: A low-stack bot against a healthy enemy fans headings away from the threat and commits to the first whose destination breaks the enemy's line of sight — cover is a wall between us, never distance. Cornered means fight; the bot shoots the whole way out.
 - **Mid-fight item grabs**: Combat sweeps 240u for worthwhile live items every half second and bends the strafe circle toward the best for one short commit — a wounded bot steps onto the health box between rockets instead of strafing past it.
 - **Weapon-sound classification and pickup hearing**: The listener knows *what* it heard — heavy gunfire on a thin health stack keeps its distance while a healthy bot hunts the big fight, and weapon, armour, powerup, megahealth, and backpack pickups are audible intel that starts the denial loop.
+- **Theory of mind — the hunch and the ambush reflexes**: When a chase goes cold, the bot scores the map *as its opponent* (their health, their guns) and bets on the item they are running for; during pursuit it pre-fires one speculative rocket at the corner they vanished behind; and after a kill it bets the victim respawns at the nearest deathmatch pad and shops toward it for a short window. Interception emerges from the same utility scorer that runs the circuits.
 
 ### 4. Goal selection and GOAP planning
 - **Dynamic item utility scoring**: Scores all live trigger items on the map based on personality appetites, missing health/armour deltas, weapon tiers, and distance attenuation (`score = value * 320 / (dist + 160)`).
@@ -100,14 +111,15 @@ flowchart TD
 - **Route generation stamping**: Next-hop waypoint pointers (`an_next0..3`) are stamped with a route generation counter (`ar_routegen`), invalidating stale pointers if a bot is knocked off course.
 - **Shared route cache**: A completed route is stamped into shared per-node cache fields; any bot wanting the same goal from a node on that fresh path adopts the chain instantly — no search frames, no router contention — after re-checking the rocket-jump toll per hop.
 - **Corridor sampling and stair-run seats**: The nav compiler samples fine (16u) for connectivity while seating coarse for the edict budget, and detects rising stair runs to promote seats at their bottom, top, and midpoint — the narrow passages and staircases a 32u grid never stands in.
-- **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`), rocket-jump links (`an_rjmask`), elevator links (`an_liftmask`), swim-exit links (`an_swimmask`), train rides (`an_trainmask`), and door passages (`an_doormask`).
+- **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`), rocket-jump links (`an_rjmask`), sprint-jump links (full-run-speed arcs, skill-gated), elevator links (`an_liftmask`), swim-exit and dive links (`an_swimmask`), train rides (`an_trainmask`), and door passages (`an_doormask`).
+- **Engine-verdict graph refinement (the mill)**: The lab's puppet client walks accused links in the real engine; refuted walk links whose centre-line void fits the jump envelope are reminted as jump links, unjumpable refusals die, and candidate entries the puppet *proves* are minted from `argus_nav_<map>.proven.json`. Every chronic stall cell fixed this way stays fixed — the engine testifies, navgen re-types, bots inherit.
 - **Door and button handling**: Touch-open doors are walked through (the classname masquerade fires their triggers), button-only doors detour to their button and hold for the slab when the door is near, and shoot-actuated plates are fired at with the bot's own aimed attack.
 
 ### 6. Personalities and scoreboard integration
 - **Personality matrix** (keyed on roster slot, so renaming bots never changes how they play):
   - **Slot 0 — the flick** (Carmack): Aggressive, impatient, weapon-first focus, rapid trigger response.
   - **Slot 1 — the smooth operator** (Romero): Tactical, health and armour prioritisation, smooth tracking aim.
-  - **Slots 2–3 — the glory hounds** (Joe Rogan, and the `impulse 100` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
+  - **Slots 2–3 — the glory hounds** (Joe Rogan, and Mr Elusive as the `impulse 100` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
   - Chat voices are name-keyed on top — the 18-character homage roster below each speak in their own voice.
 - **Scoreboard illusion**: Injects `SVC_UPDATENAME`, `SVC_UPDATECOLORS`, and `SVC_UPDATEFRAGS` into spare client slots (`argus_maxclients - 1 - slot`), displaying full names, colours, and frags on the `TAB` scoreboard.
 
@@ -123,9 +135,13 @@ argus/
 |       `-- autoexec.cfg       # Enforces sv_protocol 15 and max_edicts 600
 |-- src/                       # Complete QuakeC source code (GPL 1.06 base)
 |   |-- argus.qc               # Bot AI, physics, combat, perception, GOAP
+|   |-- argus_cam.qc           # ArgusCam spectator camera and broadcast director
 |   |-- argus_nav.qc           # Runtime sliced BFS router and link execution
 |   |-- argus_nav_dispatch.qc  # Map navigation dispatch table
 |   |-- argus_nav_<map>.qc     # Per-map compiled waypoint graphs (generated)
+|   |-- argus_nav_<map>.qc.json    # Machine-readable twin of each graph
+|   |-- argus_nav_<map>.probe.json # Puppet-sweep link convictions (by endpoint)
+|   |-- argus_nav_<map>.proven.json# Engine-proven candidate entries (7g2d input)
 |   |-- defs.qc                # Global definitions, bot flags, builtin shims
 |   |-- items.qc               # Item touch modifications (ar_isbot awareness)
 |   |-- combat.qc              # Damage calculations and knockback momentum
@@ -133,12 +149,13 @@ argus/
 |-- tools/
 |   |-- argus_navgen.py        # Offline BSP29 navigation compiler (Hull 1 sampler)
 |   |-- analyze_match.py       # Trajectory visualizer and A/B comparative plotter
+|   |-- argus_review.py        # Tape review battery (summary, deaths, regions, rides)
 |   |-- argus_reach.py         # Directed-reach audit of the shipped nav graphs
 |   |-- harvest_session.py     # Stamps a play session's tape + demo into runs/
 |   |-- pak_extract.py         # Standalone id1 PAK archive reader / extractor
 |   |-- mdl_skins.py           # Palette-remapped player MDL skin injector
 |   |-- setup_rig.sh           # Automated headless Linux environment setup
-|   `-- argus_mcp/             # Lab MCP (stdio) plus `argus-mcp gui` wizard
+|   `-- argus_mcp/             # Lab MCP (stdio), `argus-mcp gui`, puppet client, probelinks
 |-- runs/                      # Archive of telemetry logs and trajectory plots
 |   `-- demos/                 # Paired .dem recordings (machine-local, not in repo)
 |-- backups/                   # Dated progs + nav copies (machine-local, not in repo)
@@ -160,9 +177,17 @@ argus/
 # QuakeSpasm / Ironwail / vkQuake
 quakespasm -game argus +deathmatch 1 +map dm4
 
-# Official 2021 Rerelease (KEX Engine)
-Quake_Shipping_Steam.exe -game argus +deathmatch 1 +map dm4
+# Official 2021 Rerelease (KEX engine) - note the + form: KEX ignores
+# classic -game, but honours the console command from the launch line.
+# The mod folder lives in "Saved Games\Nightdive Studios\Quake\argus".
+quake_x64_steam.exe +game argus +deathmatch 1 +map dm4
 ```
+
+On KEX, bot skins work through a deliberate fallback: the remaster's
+MD5 player model only defines skin 0, so the engine logs
+`Missing skin for progs/player (skin# 1..4). MDL will be enforced`
+and renders the classic colour-baked MDL for exactly the bot skins
+while humans keep the remaster model.
 
 3. Three bots (**Carmack**, **Romero**, and **Joe Rogan**) spawn immediately and begin fighting. Press `TAB` to see their names and scores on the scoreboard.
 
@@ -251,13 +276,18 @@ Argus includes an extensive 18-character homage roster celebrating Quake history
 
 ## Supported maps
 
-| Map | File | Waypoints | Key features & Link types |
-|---|---|---|---|
-| **The Bad Place** | `dm4` | 145 nodes | Walkway hazard steering, rocket-jump Quad ledge link, stitched pit-escape links, stair drop-links. |
-| **Claustrophobopolis** | `dm2` | 165 nodes | Corridor-sampled graph: 2 elevators with outside-the-shaft boarding pads, 3 patrolling trains (the upper-deck bridge is ridden both ways), typed door links, prize rocket-jump pads. |
-| **The Abandoned Base** | `dm3` | 190 nodes | Corridor-sampled with stair-run seats (513 links), multi-level platform tower, elevator padding, water trench swim-exit links. |
-| **The Dark Zone** | `dm6` | 153 nodes | Multi-tier central arena, teleporter loops, drop-links. |
-| **LibreQuake DM2** | `lqdm2` | 197 nodes | Stand-in testing arena for automated headless validation. |
+| Map | File | Waypoints | Directed reach | Key features & Link types |
+|---|---|---|---|---|
+| **The Bad Place** | `dm4` | 155 nodes | 98% | Walkway hazard steering, rocket-jump Quad ledge pads, sprint-jump links in the quad corridor, stitched pit-escape links. |
+| **Claustrophobopolis** | `dm2` | 216 nodes | 99% | Reborn graph: guaranteed control-item seats, jump stitches, 2 elevators with outside-the-shaft boarding pads, 3 patrolling trains (the upper-deck bridge is ridden both ways), typed door links, engine-convicted grate-room links reminted as jumps. |
+| **The Abandoned Base** | `dm3` | 259 nodes | 86% | Corridor-sampled with stair-run seats, multi-level platform tower, water trench swim and dive links, the engine-proven RL-islet entry. The west-wing red armour is the one prize still stranded (its entrance needs corridor-campaign seats). |
+| **The Dark Zone** | `dm6` | 213 nodes | 94% | Reborn graph, teleporter loops, sprint links, full puppet-sweep verdicts on file. |
+| **LibreQuake DM2** | `lqdm2` | 214 nodes | 97% | Reborn on the modern pipeline; the CI stability-smoke arena. |
+
+Every walk link in the dm2/dm3/dm6 rotation has been empirically
+verified by the lab's puppet client walking it in the real engine;
+the standing convictions live in `src/argus_nav_<map>.probe.json`
+and feed each map's next verdict regen.
 
 *Note: On maps without compiled navigation files, bots automatically degrade to line-of-sight seeking and direct combat.*
 
@@ -348,7 +378,9 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 |                                                                                   |
 | Side channels (outside the closed ARGEVT vocabulary, counted as                   |
 | pseudo-events by the lab): "ARGUS <name> shove", "ARGUS routecache               |
-| adopt". Debug channel (console `scratch1 1`, never in briefs):                    |
+| adopt", "ARGUS <name> hunch <class>", "ARGUS <name> prefire",                     |
+| "ARGUS <name> watch spawn", "ARGUS <name> sprintjump".                            |
+| Debug channel (console `scratch1 1`, never in briefs):                            |
 | ARGDBG <name> pick <class> u <utility> | <per-class scores> ...                   |
 +-----------------------------------------------------------------------------------+
 ```
@@ -384,12 +416,15 @@ telemetry tape remains the full-map record and the A/B gates.
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.22**. Operator guide: [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
+Current version **0.23**. Operator guide (with the full lab flow
+charts): [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
-The Rust binary in `tools/argus_mcp/` is two faces of the same lab:
+The Rust binary in `tools/argus_mcp/` is four instruments in one lab:
 
 - **stdio MCP** (`argus-mcp`) for agents: compile, cartograph, headless match, A/B.
 - **localhost GUI** (`argus-mcp gui`) for humans: attach a `.bsp`, generate nav, view the nav PNG, compile, install, restore a dated backup.
+- **puppet client** (`argus-mcp client observe|walk|walkrel|impulse`): a real NetQuake protocol-15 client, invisible to the bots, used for live observation, roster control, and as the engine's own referee.
+- **the mill** (`argus-mcp probelinks <map> [limit] [skip]`): walks every nav link with the puppet in the real engine and persists refusals by endpoint — the empirical verdicts that navgen remints into jump links or prunes on the next regen.
 
 ```bash
 # agent (this is what Grok / Claude should call)

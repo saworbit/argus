@@ -17,9 +17,23 @@ Pipeline:
   7b. lift links from func_plat (boarding/exit pads + vertical hop)
   8. emit argus_nav_<map>.qc + JSON + a debug plot of the graph
      (pass --no-dispatcher; the dispatcher file is hand-maintained)
-  If src/argus_nav_<map>.costs.json exists (from learn_hotspots),
-  fine-edge costs near those cells are inflated and lava-crossing
-  walk links are dropped.
+
+Sidecar files, all optional, all read from the output directory:
+  argus_nav_<map>.costs.json   learn_hotspots cells; fine-edge costs
+                               near them are inflated and
+                               lava-crossing walk links dropped
+  argus_nav_<map>.probe.json   puppet-sweep CONVICTIONS by endpoint
+                               (argus-mcp probelinks); 7g2c remints a
+                               refuted walk link as a jump when its
+                               centre-line void fits the envelope,
+                               and drops the unjumpable
+  argus_nav_<map>.proven.json  engine-PROVEN candidate entries by
+                               endpoint; 7g2d mints them jump-typed
+                               (the referee that overrules beeline)
+  argus_nav_<map>.candidates.json / .splice.json
+                               paper trail of an entry-candidate
+                               probe session (how proven.json was
+                               derived); not consumed by navgen
 
 usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj]
 

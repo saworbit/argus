@@ -80,6 +80,45 @@ baseline). `experiment` is the one-call loop.
 Read-only tools need only `ARGUS_ROOT`. Compile, navgen, and match
 also need the compiler, engine, basedir, and Python.
 
+## How the lab fits together
+
+Four instruments feed one loop. The tape is the ruler, the demo is
+the microscope, the puppet is the referee, and navgen is the pen
+that writes what the referee decided back into the shipped graph.
+
+```mermaid
+flowchart TD
+    subgraph EditLoop ["The A/B loop (every behaviour change)"]
+        Edit[QC edit] --> Exp["experiment map=dm4<br/>compile + match + scaled compare"]
+        Exp --> Gates{"seven gates<br/>lava / stalls / engages / frags<br/>spread / freezes / coverage"}
+        Gates -->|improved or parity, 2 of 3| Ship["ship<br/>compile + install x3 + MD5s"]
+        Gates -->|regressed| Revert["revert + post-mortem comment<br/>(the graveyard convention)"]
+        Ship --> Base["baseline_set<br/>runs/baselines.json"]
+    end
+
+    subgraph HumanLoop ["The human loop (every play session)"]
+        Play["listen session<br/>+record session map"] --> Harvest["harvest_session.py<br/>FIRST, before any launch"]
+        Harvest --> Brief["brief_run / see what=run<br/>paired demo joined"]
+        Brief --> Finding["hotspots with cause + reach_pct<br/>item_control, nav_coverage"]
+    end
+
+    subgraph Mill ["The mill (geometry verdicts)"]
+        Finding --> Accuse["accused link or cell<br/>(named coordinates)"]
+        Accuse --> Puppet["argus-mcp probelinks<br/>the puppet walks it in the engine"]
+        Puppet -->|refused| ProbeJson["argus_nav_map.probe.json<br/>convictions by endpoint"]
+        Puppet -->|walked| ProvenJson["argus_nav_map.proven.json<br/>engine-proven candidates"]
+        ProbeJson --> Regen["navgen 7g2c<br/>remint as jump or drop the link"]
+        ProvenJson --> Regen2["navgen 7g2d<br/>mint proven entries"]
+        Regen --> Ladder["own A/B ladder"] --> Ship
+        Regen2 --> Ladder
+    end
+```
+
+The mill has killed every chronic stall cell it has been pointed at
+(dm3 quad-court, dm2 grate room, dm3 RL islet). Its standing rule:
+the engine testifies, navgen re-types, bots inherit — never knit or
+delete blind.
+
 ## Config
 
 No baked-in machine paths. Required for a full lab:
@@ -317,6 +356,80 @@ with a timestamp to jump to under `playdemo`. `see what=demo
 name=<stem>:export` also writes `<stem>.tracks.json` (full t / pos /
 pitch / yaw vectors plus the POV series) for offline studies - the
 sprint run-up forensics input format.
+
+## The puppet client (netclient)
+
+`netclient.rs` is a real NetQuake protocol-15 client in Rust: the
+CCREQ/CCREP control handshake, a reliable channel with per-packet
+acks, `clc_move` at 20 Hz, and the full signon dance. It connects
+as **labprobe**, a name `Argus_CanSee` refuses on principle - the
+puppet is an instrument, invisible to every bot, the same courtesy
+as the spectator camera.
+
+```
+argus-mcp client observe [secs] [host] [port]   connect, spawn, report the
+                                                live world (roster, my_pos,
+                                                entity flow)
+argus-mcp client walk <x> <y> <z> [secs]        walk toward a point, with
+                                                auto-hop on stagnation
+                                                (clears steps, lips, jumps)
+argus-mcp client walkrel <dx> <dy> [secs]       relative walk from spawn
+argus-mcp client impulse <n> [secs]             fire a player impulse from
+                                                the puppet's seat - 100 adds
+                                                a bot (the headless 4-player
+                                                match), 216 is the dev
+                                                teleport probelinks uses
+```
+
+Windows gotcha, hard-won: WinQuake binds UDP 26000 to the
+hostname-resolved address, not loopback - the client mirrors the
+engine's lookup and locks onto whatever address answers.
+Engine-spawning tests share a lock; a stale engine on 26000 makes
+every connect fail, so kill orphans first.
+
+## The mill (probelinks and the verdict files)
+
+Empirical link verification - the killer app the netclient was
+built for. Per walk link: spawn the lab engine at skill 0, connect
+the puppet, dev-teleport it to the link's start (impulse 216 +
+scratch cvars, one semicolon-joined inject), walk toward the far
+node, judge arrival.
+
+```
+argus-mcp probelinks <map> [limit] [skip]       cap 80 per run; chunk with
+                                                skip. ~2600 links/hour, so a
+                                                full-rotation sweep is an
+                                                evening, not an overnight
+```
+
+Failures persist by ENDPOINT COORDINATES (indices shift per regen)
+in `src/argus_nav_<map>.probe.json`, merged across sweeps. The
+output also counts `teleport_failures` - on teleporter maps the
+puppet can step into a live mouth mid-walk and read as a distant
+failure; triage convictions against the `trigger_teleport` AABBs
+before trusting them (a walk line through a mouth is invalid for
+bots too - `teleport_touch` is class-blind - but it is a different
+defect than a void).
+
+Nav sidecar files, all consumed by `argus_navgen.py` on the next
+regen of that map:
+
+| File | Written by | Consumed by |
+|---|---|---|
+| `argus_nav_<map>.qc.json` | navgen | the whole lab (atlas, reach, probelinks) |
+| `argus_nav_<map>.costs.json` | `learn_hotspots` | fine-edge cost inflation |
+| `argus_nav_<map>.probe.json` | probelinks failures | 7g2c verdict prune/remint |
+| `argus_nav_<map>.proven.json` | candidate probe runs | 7g2d engine-proven entry mint |
+| `argus_nav_<map>.candidates.json` / `.splice.json` | entry-candidate sessions | paper trail of how proven.json was derived |
+
+Sweeping the whole rotation is a chunk loop: a detached driver
+calling `probelinks` with advancing `skip`, honouring
+`runs/soak.stop`, writing its position to
+`runs/probe_soak_state.json`. Monitor the STATE FILE with one-shot
+reads - never `tail -f` a log a PowerShell writer appends to
+(MSYS tail blocks the appends silently, and killing the monitor
+orphans the tail; this manufactured the "orphan handle" mystery
+of 2026-08-28).
 
 ## Idle hands (soak and cycle)
 
@@ -648,4 +761,4 @@ shell.
 | 0.20 | The tape and the map argue with each other. Reach classifier fixed (floor-seated item origins traced 2u inside the hull-1 floor: eleven of twelve dm4 control items read off_graph). Human tracks split out of bot bands (`totals.human`); a refused map spawn flags the whole tape (every historical mx_lqdm2 probe had silently run on the start map). Hotspots carry `cause` (door / plat_column / lava_edge) and `reach_pct` (routefail clusters in directed sinks are named). Briefs cross-examine atlas labels against routing evidence, report `nav_coverage` (visited nodes, dormant typed-link families) and `item_control` (per-prize clock tightness). `see what=demo`: protocol-15 .dem parser with named full-rate tracks. Companions: `tools/argus_reach.py`, `tools/harvest_session.py`. Then the analysis layer: demo view angles + POV aim, per-player aim statistics, the highlight reel, `:export` track dumps; `argus-mcp soak` (capped unattended match loop) and `argus-mcp cycle` (guarded learn->regen->probe->adopt/restore); `scratch1-4` on the tune whitelist for the ARGDBG decision tape; CI runs the Rust suite plus a headless LibreQuake stability smoke with the reach gate. Stack sweep: Windows live tune FIXED (after AttachConsole the console input buffer must be opened as CONIN$ - GetStdHandle returns the MCP's own pipe; the inject had been broken since 0.15 and a live-engine integration test now guards it), `argus-mcp demo` CLI verb, and the plain `ARGUS shove` / `routecache adopt` console lines count as pseudo-events (`shove`, `routecache_adopt`) in briefs. |
 | 0.22 | The lab joins the game: a real NetQuake client (`argus-mcp client observe/walk/walkrel`), the empirical link-verification harness (`argus-mcp probelinks`), engine-verdict files consumed by navgen, orphan-engine kill on failed matches, serialized engine tests. |
 | 0.21 | The operational gaps. STALENESS SELF-AWARENESS: at startup the server detects a newer staged build, auto-swaps it into place for the next restart (Windows allows renaming a running exe), and stamps `lab_stale` on every JSON response for the rest of the session - a stale server can never again hand out an unmarked opinion. HARVEST GUARD: every match starter (MCP tools, soak, cycle) refuses to launch over an un-harvested play session (the harvester now MOVES its inputs, so leftovers are the signal). PAIRED DEMO JOIN: brief_run folds the same-stem .dem into the brief (aim stats, highlight reel, tracks) - the whole "played, review" ritual is one call. `ship` (compile + install everywhere + MD5s) and `baseline_set` (rewrite runs/baselines.json safely) close the loop's last manual steps. `soak --parallel 2` runs two engines on separate ports, halving ladder wall clock. Last-seen session memory persists to runs/.lab_session.json across restarts; `see what=project` stops listing fifty pak-only maps; compare flags any human tape as review-only material. |
-| 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. |
+| 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |

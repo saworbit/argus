@@ -3,9 +3,19 @@
 Status: musing, requested by Shane 2026-08-28 ("do some research,
 analyse the map, and muse on solutions and innovative ways to solve
 the dm3 challenge and make the bot better overall in the process").
-Nothing here is shipped; each direction names its ladder and its
-generalisation value. Evidence gathered this session with the
-cartographer, the reach auditor, and a new demo-mining analysis.
+Each direction names its ladder and its generalisation value.
+Evidence gathered this session with the cartographer, the reach
+auditor, and a new demo-mining analysis.
+
+DELIVERY NOTE (added later the same era): most directions shipped —
+human-trace link mining, jump-up links, regions, and virtual plat
+pads landed in v3.84 (with its graveyard of reverted variants);
+guaranteed control-item seats and jump stitches in v3.87; the
+engine-verdict mill (puppet convictions, 7g2c remints) in v3.86+;
+the engine-proven entry ingest (7g2d) and the RL-islet entry in
+v3.96. The west-wing red armour entrance remains the open corridor-
+campaign item. CHANGELOG.md is the shipped record; this file stays
+as the design reasoning.
 
 ## 1. What dm3 is
 
