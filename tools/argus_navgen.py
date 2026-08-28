@@ -2052,6 +2052,45 @@ if __import__("os").path.exists(_probepath):
     print(f"engine-verdict pass: {_nremint} reminted as jump, "
           f"{_ndrop} dropped ({len(_pfailed)} failed pair(s) on file)")
 
+# ---- 7g2d. engine-PROVEN entry links (GitHub #26) ----
+# The same referee, arguing the other direction: candidate links the
+# puppet WALKED end to end in the real engine, spliced into the json
+# for a probe run and persisted by ENDPOINT COORDINATES in
+# argus_nav_<map>.proven.json. These are lines the geometric referees
+# (beeline, knit) refused but the engine accepts - dm3's RL-islet
+# back door and the west-wing internal staircase were the first set.
+# Minted jump-typed: every proven pair was a climb the puppet's
+# auto-hop cleared, jump links keep their slots at the clamp, and
+# the runtime climb branch fires beside low lips.
+_provenpath = __import__("os").path.join(
+    __import__("os").path.dirname(__import__("os").path.abspath(OUTQC)),
+    f"argus_nav_{MAPNAME}.proven.json")
+if __import__("os").path.exists(_provenpath):
+    try:
+        _pvdoc = _json.load(open(_provenpath))
+    except Exception:
+        _pvdoc = []
+    _npv = 0
+    for _pf, _pt in _pvdoc:
+        _src = _dst = None
+        for _i in range(len(ways)):
+            _ix, _iy, _iz = pos(ways[_i])
+            if abs(_ix - _pf[0]) <= 24 and abs(_iy - _pf[1]) <= 24 \
+                    and abs(_iz - _pf[2]) <= 24:
+                _src = _i
+            if abs(_ix - _pt[0]) <= 24 and abs(_iy - _pt[1]) <= 24 \
+                    and abs(_iz - _pt[2]) <= 24:
+                _dst = _i
+        if _src is None or _dst is None or _src == _dst:
+            continue
+        if _dst in links.get(_src, {}):
+            continue
+        _d = ((_pt[0] - _pf[0]) ** 2 + (_pt[1] - _pf[1]) ** 2) ** 0.5
+        links.setdefault(_src, {})[_dst] = (_d, 1)
+        _npv += 1
+        print(f"engine-proven entry: {_src}->{_dst} minted as JUMP")
+    print(f"engine-proven pass: {_npv} entry link(s) minted")
+
 # ---- 7e2. final slot clamp ----
 # 7e budgets slots BEFORE the late passes, but symmetric closure,
 # knitting, jump stitches and trace mining all add links after it

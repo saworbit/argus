@@ -7,6 +7,34 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.96 (2026-08-28) - the puppet opens the islet's back door
+
+Issue #26, resolved the mill's way. Candidate entry links into
+dm3's entry-stranded pockets were spliced into the nav json and
+walked by the puppet in the real engine: 86 candidates, 43 proven,
+43 refused - every refusal honest (under-floor targets, a parapet
+at x 1424, +64..96 final risers past the auto-hop envelope). Three
+proven entries shipped, spliced surgically into the SHIPPED graph
+(a fresh regen measured 78% reach vs the shipped 85% and was
+abandoned - the accumulated graph is not reproducible from
+scratch): n146->n135 (the RL islet's south-east back door),
+n93/n101->n103 (region 4). Four nodes flip to mainland including
+the RL seat n158 and the islet spawn n125; regions recomputed in
+json and QC. navgen gains the 7g2d engine-proven ingest for the
+next real regen (src/argus_nav_<map>.proven.json holds all 43).
+
+Ladder with a CONTROL: the spliced tapes ran stalls 51/78/67
+against a 47-stall v3.87-era baseline - but the control (pre-splice
+graph, current QC) ran 74, so the elevation is EIGHT BUILDS of
+inherited drift, not the splice; recorded as a dm3 play-quality
+finding (Joe Rogan pinned 36-45 stalls per tape, quad-court and
+n105 '1200 -112 -222' clusters). The splice's own axis is decisive:
+the RL goaled 1x on the control, 12-14x spliced - the islet prize
+is shopped for the first time in graph history. dm3 baseline ->
+ab_dm3_isletentry1. The west-wing RED ARMOUR stays honestly
+stranded: the mill refused every existing-node line into it, so
+its entrance needs corridor-campaign seats on unsampled stairs.
+
 ## v3.95 (2026-08-28) - the tracker sweep
 
 Four tracker issues in one laddered batch, each a filed defect from
