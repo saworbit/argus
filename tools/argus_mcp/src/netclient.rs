@@ -1100,7 +1100,11 @@ mod tests {
         if !cfg!(windows) {
             return;
         }
-        let _gate = crate::engine::ENGINE_TEST_LOCK.lock().unwrap();
+        // recover from poison: a failed engine test elsewhere must not
+        // cascade into this one (each reports on its own merits)
+        let _gate = crate::engine::ENGINE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut env = std::collections::HashMap::new();
         env.insert("ARGUS_ROOT".into(), root.display().to_string());
