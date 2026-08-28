@@ -7,6 +7,37 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.94 (2026-08-28) - the wrist learns to drift
+
+Issue #5, humanisation. Every session demo has read bots at
+126-192 deg/s mean angular rate against the human's 57-80, with
+2-4x the flick count - and the mechanism was the saccade re-roll:
+the held aim offset STEPPED to a new value every 0.25-0.55 s and
+the spring chased the step, a measured 2-4 extra flicks a second.
+The SACCADE GLIDE ramps the old offset into the new one over
+~0.15 s instead. Same magnitude semantics (personality, distance,
+track time - the issue's red line, untouched), same destinations,
+no step input. A human wrist drifts between corrections; it does
+not teleport.
+
+Ladder: improved on all seven gates on BOTH maps - dm4 glide1
+(lava 4 parity, stalls 5 parity, engages 96, frags 31 - steadier
+tracking hits more, the v3.77 lesson repeating), dm2 glide1
+(stalls down 21%, everything else parity). The deg/s and flick
+verdict belongs to the next session demo's bot entity-angle
+stats against the v393b datum (126-192 dps / 224-271 flicks).
+
+Also this block: the Romero pit-edge positioning issue (#13) was
+CLOSED REFUTED after its third grave - the softest possible
+slice (brink-aware strafe-side selection at the existing re-roll)
+failed its ladder twice (lava 5 then 9, engages 84 then 64, the
+'700 -800' corner at 22 deflections). dm4's boundary death
+economy is load-bearing; the reactive 48u flip is the calibrated
+equilibrium. Post-mortem comment above the lava flip. And the
+dm2 puppet sweep (#14) reached 120 of ~1000 links: 20 convictions
+persisted, almost all one family - west-tower descents whose
+targets sit under deck overhangs.
+
 ## v3.93 (2026-08-28) - the sprint jump finally flies
 
 Issue #4, run-up discipline, and the forensics found THREE stacked

@@ -186,6 +186,11 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_hunchcool;           // hunch: one bet per episode
 .vector ar_aimoff;              // saccade aim: the held error offset
 .float  ar_errtime;             // saccade aim: next error re-roll
+.vector ar_aimprev;             // saccade glide: offset before the
+                                // re-roll (GitHub #5 - the jump was
+                                // a step input the spring chased at
+                                // 2-4 flicks a second)
+.float  ar_aimblend;            // saccade glide: re-roll timestamp
 .float  ar_prefired;            // ambush: one corner pre-fire per chase
 .entity ar_bitem;               // battle item: mid-fight grab target
 .float  ar_bitemscan;           // battle item: next scan time
@@ -2915,7 +2920,7 @@ float() Argus_Combat =
     local entity e, sup;
     local vector to, aimpt, err, cvr, shd, shp;
     local float d, want, diff, turn, trackt, errscale, loft;
-    local float cy, ck, cfound, ceff, sy, dy;
+    local float cy, ck, cfound, ceff, sy, dy, sfrac;
 
     Argus_Perceive ();
     e = self.ar_enemy;
@@ -3018,11 +3023,25 @@ float() Argus_Combat =
     if (time > self.ar_errtime)
     {
         self.ar_errtime = time + 0.25 + random () * 0.3;
+        self.ar_aimprev = self.ar_aimoff;
+        self.ar_aimblend = time;
         self.ar_aimoff_x = (random () - 0.5) * 2;
         self.ar_aimoff_y = (random () - 0.5) * 2;
         self.ar_aimoff_z = random () - 0.5;
     }
-    err = self.ar_aimoff * (AR_AIMERR * self.ar_aimerr * (d / 500) * errscale);
+    // saccade GLIDE (GitHub #5, humanisation): the re-roll used to
+    // STEP the offset and the spring chased the step - a measured
+    // 2-4 extra flicks a second that put bots at 126-192 deg/s mean
+    // against the human's 57-80 in every session demo. Ramp the old
+    // offset into the new one over ~0.15 s instead: same magnitude
+    // semantics (personality, distance, track time untouched - the
+    // issue's red line), same destinations, no step input. A human
+    // wrist drifts between corrections; it does not teleport.
+    sfrac = (time - self.ar_aimblend) * 6.7;
+    if (sfrac > 1)
+        sfrac = 1;
+    err = (self.ar_aimprev + (self.ar_aimoff - self.ar_aimprev) * sfrac)
+        * (AR_AIMERR * self.ar_aimerr * (d / 500) * errscale);
     // ring honesty (v382, Shane gibbed with 22 s of ring left): the
     // acquisition gate honours the ring but tracking aimed at the
     // LIVE origin - a glimpse or a close pass bought 3 s of perfect
@@ -3159,6 +3178,19 @@ float() Argus_Combat =
         if (random () < 0.4)
             self.ar_strafedir = 0 - self.ar_strafedir;
     }
+    // PIT-ADJACENT COMBAT FEAR, tried and REVERTED (2026-08-28,
+    // GitHub #13, tapes ab_dm4_pitfear1/2): at the re-roll above,
+    // prefer the strafe side whose heading was brink-free at a 90u
+    // look. Softest possible version - side SELECTION at an
+    // existing decision point, no radial force - and it still
+    // failed the ladder twice: lava 5 then 9 (out of band), engages
+    // 84 then 64, the '700 -800' corner spiked to 22 deflections.
+    // The forward-looking preference systematically rotated
+    // boundary fights and pushed transit along the lip; the
+    // reactive 48u flip below is the calibrated equilibrium. With
+    // the range-fighting and appetite-rebalance graves this makes
+    // THREE refutations on the Romero exposure - a real fix needs
+    // cover-based positioning (idea bank), not boundary steering.
     // RANGE FIGHTING was tried here (2026-08-27, three-ladder
     // post-mortem, the retreat family's third graveyard entry):
     // per-weapon rin/rout bands (RL 240-650, LG 110-440, SSG to
