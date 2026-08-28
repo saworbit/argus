@@ -146,6 +146,10 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .entity ar_nemesis;             // OPM: who keeps killing this bot
 .float  ar_nemkills;            // OPM: consecutive deaths to them;
                                 // 3+ is a vendetta, any kill vents it
+.entity ar_lastkill;            // who this bot most recently killed -
+                                // the vendetta ledger needs the victim,
+                                // and a frag counter cannot name one
+.float  ar_lastkilltime;        // when, so a stale name cannot vent it
 .entity ar_lastfoe;             // combat memory: last engaged enemy
 .float  ar_foetime;             // when we last had them in a fight
 .entity ar_door;                // door slice: closed slab being handled
@@ -269,7 +273,14 @@ void(float what) Argus_Chat =
         return;
     if (what == 2 && random () < 0.5)
         return;
-    if (time < self.ar_nextchat)
+    // The powerup line (4) jumps the queue. Kill and death chat fire
+    // constantly and hold this same 5-9 s throttle, so an artifact
+    // pickup - by far the rarest and most worth announcing - almost
+    // always landed inside somebody else's cooldown and was dropped.
+    // Verified against a live client: three quad pickups in one probe,
+    // not one line survived. Powerups are 30 s apart at best and there
+    // are three on a map, so letting them through cannot spam.
+    if (time < self.ar_nextchat && what != 4)
         return;
     self.ar_nextchat = time + 5 + random () * 4;
 
@@ -2077,6 +2088,11 @@ void() Argus_Die =
         // post-kill spawn watch: the killer (if a bot) bets the
         // victim will come back at the nearest deathmatch spawn.
         // Same shopping-bias shape as the hunch, different trigger.
+        // tell the killer who it just got: frags alone cannot say,
+        // and the vendetta ledger needs the name (see Argus_Frame)
+        self.enemy.ar_lastkill = self;
+        self.enemy.ar_lastkilltime = time;
+
         if (self.enemy.ar_isbot)
             Argus_SpawnWatch (self.enemy, self.origin);
     }
@@ -2445,7 +2461,12 @@ void(vector spos, entity who) Argus_HearSound =
             d = vlen (b.origin - spos);
             if (d < 1000)
             {
-                traceline (b.origin + '0 0 22', spos, TRUE, b);
+                // item pickups pass the item's own origin, which sits
+                // on the floor: an eye-height trace to it clips step
+                // risers and bevels down any flat corridor and charges
+                // a 1.4x wall penalty for an open room. Listen at
+                // chest height, like the gunfire callers already do.
+                traceline (b.origin + '0 0 22', spos + '0 0 16', TRUE, b);
                 if (trace_fraction < 1)
                     d = d * 1.4;
                 if (d < 1000)
@@ -2468,7 +2489,7 @@ void() Argus_Perceive =
 {
     local entity b, best;
     local float d, bd, ok;
-    local vector to;
+    local vector to, fov;
 
     // current enemy: still valid?
     if (self.ar_enemy != world)
@@ -2515,7 +2536,16 @@ void() Argus_Perceive =
                 ok = 1;
                 if (ar_opm_ears && d > 500)
                 {
-                    if (normalize (b.origin - self.origin) * v_forward < 0.2)
+                    // v_forward comes from self.angles, whose pitch is
+                    // always 0, so it lies flat. Normalising the full
+                    // 3D separation then dotting it against a flat
+                    // vector charges the gate for height: an enemy on
+                    // a walkway directly ahead but 400u up fails a
+                    // test they are dead centre of. Flatten first, so
+                    // the gate measures the angle it means to.
+                    fov = b.origin - self.origin;
+                    fov_z = 0;
+                    if (normalize (fov) * v_forward < 0.2)
                     {
                         ok = 0;
                         if (time < self.ar_sndtime + 2.5
@@ -2838,6 +2868,16 @@ void(entity foe) Argus_Hunch =
             if (v > 0)
             {
                 d = Argus_GoalPoint (it) - self.ar_lastseen;
+                // NOTE, and do not "fix" this again without a ladder:
+                // the hunch deliberately reads distance on ONE curve,
+                // unlike Argus_PickGoal's two-tier 0.4x major decay.
+                // Matching PickGoal was tried (GitHub #92) and refuted
+                // by its own ladder - alone on dm4 it ran lava 11 and
+                // stalls 13 against a 4/5 baseline, the worst tape of
+                // that session, because pulling the bet onto far
+                // majors sends bots on long cross-map trips over the
+                // pit. A bet is a detour, not a shopping trip: it
+                // should stay near where the foe actually vanished.
                 sc = v * 320 / (vlen (d) + 160);
                 if (sc > bsc)
                 {
@@ -3093,7 +3133,26 @@ float() Argus_Combat =
             }
         }
         // gave up the chase: place the bet on where they are HEADED
-        // before handing the wheel back to navigation
+        // before handing the wheel back to navigation.
+        //
+        // This used to be gated on ar_pursuing, which is only set when
+        // the straight line to the vanish point passes MoveHazard - so
+        // an enemy who broke sight ACROSS a hazard (over a ledge, down
+        // a shaft, across a lava lip) got no bet at all. That is
+        // exactly the foe worth guessing about: they went somewhere we
+        // could not follow. The hunch is a conclusion about them, not
+        // a reward for having been able to walk after them. Argus_Hunch
+        // carries its own 6 s cooldown, so an unwalkable chase cannot
+        // spam it.
+        // NOTE (GitHub #93): a hazard-blocked chase never sets
+        // ar_pursuing, so an enemy who broke sight across a ledge or a
+        // lava lip gets no bet - which is arguably the foe most worth
+        // guessing about. Calling Argus_Hunch unconditionally here was
+        // tried and parked: it did NOT raise the hunch count (the 6 s
+        // cooldown already bounds it, 32 firings against 43) and its
+        // dm4 tape cost 2 lava deaths against the same build without
+        // it. Real observation, fix that did not pay - wants a
+        // cheaper trigger, not this one.
         if (self.ar_pursuing)
         {
             self.ar_pursuing = 0;
@@ -5360,9 +5419,14 @@ void() Argus_FrameAll =
             // re-picks with the pack scored by its contents.
             self.ar_goal = world;
 
-            if (self.ar_nemkills >= 3)
+            // vendetta discharged: a kill vents the tilt (OPM) - but
+            // only THEIR death does. Any frag used to reset the ledger
+            // and fire the revenge line, so a bot could taunt its
+            // nemesis over the body of an uninvolved third party while
+            // the nemesis was still ahead of it.
+            if (self.ar_nemkills >= 3 && self.ar_lastkill == self.ar_nemesis
+                && time < self.ar_lastkilltime + 1)
             {
-                // vendetta discharged: a kill vents the tilt (OPM)
                 self.ar_nemkills = 0;
                 Argus_Chat (3);
             }

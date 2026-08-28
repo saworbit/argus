@@ -1537,6 +1537,15 @@ void(entity targ, entity attacker) ClientObituary =
 		dprint (" pos ");
 		dprint (vtos (targ.origin));
 		dprint ("\n");
+
+		// and tell the killer whose body this is: Argus_Die stamps
+		// this for bot victims, and without the human half a bot's
+		// vendetta against the player could never be vented.
+		if (attacker != world && attacker.ar_isbot)
+		{
+			attacker.ar_lastkill = targ;
+			attacker.ar_lastkilltime = time;
+		}
 	}
 
 	rnum = random();

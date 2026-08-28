@@ -1473,6 +1473,7 @@ POWERUPS
 
 void() powerup_touch =
 {
+	local entity	stemp;
 
 	if (other.classname != "player")
 		return;
@@ -1504,6 +1505,24 @@ void() powerup_touch =
 
 	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup -
 						// everyone hears the quad go
+
+	// ARGUS: Argus_Chat(4) is the powerup line every persona already
+	// carries and nothing ever called it. Chat runs on self, so swap
+	// the seat; the throttle inside Argus_Chat does the rest.
+	//
+	// QUAD ONLY, and deliberately: every persona's line names it
+	// ("4x damage multiplier unlocked", "QUAD DAMAGE! Let the
+	// slaughter begin!"). The first cut fired on all three artifacts
+	// and a live probe caught Romero bellowing about quad damage over
+	// a Ring of Shadows. Widening this wants new lines, not a wider
+	// trigger.
+	if (other.ar_isbot && self.classname == "item_artifact_super_damage")
+	{
+		stemp = self;
+		self = other;
+		Argus_Chat (4);
+		self = stemp;
+	}
 
 	// do the apropriate action
 	if (self.classname == "item_artifact_envirosuit")
