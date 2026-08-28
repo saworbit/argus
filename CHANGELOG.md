@@ -7,6 +7,21 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.92 (2026-08-28) - lqdm2 reborn: the last map joins the modern era
+
+Issue #12: the LibreQuake stand-in was the one map still on its
+vendored graph (87% reach, never saw seats / stitches / knit /
+slot clamp). Full modern regen: 214 nodes, 22 jump-up links, 8
+knit stitches, a 15-node poisoned pocket stripped, edicts 331 of
+600 - and directed reach 97% from every spawn, gated AND ungated
+(tools/argus_reach.py prints the table). Ladder ab_lqdm2_rebirth1
+improved on all seven gates: routefails 33 to ZERO, stalls 19 to
+5, zero world deaths, zero freezes, spread 3, coverage parity.
+Every map in the rotation now runs a modern graph and the last
+four ladders across the project all ended at zero routefails.
+Progs delta is the nav data only. lqdm2 baseline ->
+ab_lqdm2_rebirth1.
+
 ## v3.91 (2026-08-28) - the spawn watch, and the issue tracker learns to close
 
 The first GitHub-issues sweep. QC side is issue #3, the post-kill
