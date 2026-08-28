@@ -194,6 +194,10 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_bitemcool;           // battle item: failed grab cools until
 .float  ar_gapjump;             // predictive gap jump: next attempt
 .float  ar_respawntime;
+.vector ar_watchpos;            // spawn watch: nearest spawn to the
+                                // victim we just killed
+.float  ar_watchtime;           // spawn watch: bias expires here
+.float  ar_watchcool;           // spawn watch: one bet per episode
 
 .float  ar_wweap;               // utility appetites: how loudly each
 .float  ar_wheal;               // item class calls to this personality
@@ -1823,6 +1827,56 @@ void() Argus_Physics =
     }
 };
 
+// post-kill spawn watch (mre / Omicron ambush reflex): the killer
+// bets the victim respawns at the nearest deathmatch pad and biases
+// shopping toward items there for 8 s. Skill 1+ so default sessions
+// see it. Does not mutate argus_lastspot (that is spawn rotation).
+void(entity killer, vector deathorg) Argus_SpawnWatch =
+{
+    local entity sp, best, oself;
+    local float bd, d;
+
+    if (skill < 1)
+        return;
+    if (killer == world || !killer.ar_isbot)
+        return;
+    if (time < killer.ar_watchcool)
+        return;
+
+    // same-level pads only: a walkway kill whose nearest pad is the
+    // pit floor would park the killer on the lava lip (Romero's
+    // dm4 appetite, inverted). |dz| 96 is a step-plus; lava/slime
+    // seats are refused even if they somehow sit in the lump.
+    best = world;
+    bd = 99999;
+    sp = find (world, classname, "info_player_deathmatch");
+    while (sp != world)
+    {
+        d = vlen (sp.origin - deathorg);
+        if (d < bd
+            && fabs (sp.origin_z - deathorg_z) < 96
+            && pointcontents (sp.origin) != CONTENT_LAVA
+            && pointcontents (sp.origin) != CONTENT_SLIME)
+        {
+            bd = d;
+            best = sp;
+        }
+        sp = find (sp, classname, "info_player_deathmatch");
+    }
+    if (best == world)
+        return;
+
+    killer.ar_watchpos = best.origin;
+    killer.ar_watchtime = time + 8;
+    killer.ar_watchcool = time + 6;
+    oself = self;
+    self = killer;
+    dprint ("ARGUS ");
+    dprint (self.netname);
+    dprint (" watch spawn\n");
+    self = oself;
+};
+
 // ---------------------------------------------------------------- death
 
 void() Argus_Die =
@@ -1860,6 +1914,11 @@ void() Argus_Die =
             self.ar_nemesis = self.enemy;
             self.ar_nemkills = 1;
         }
+        // post-kill spawn watch: the killer (if a bot) bets the
+        // victim will come back at the nearest deathmatch spawn.
+        // Same shopping-bias shape as the hunch, different trigger.
+        if (self.enemy.ar_isbot)
+            Argus_SpawnWatch (self.enemy, self.origin);
     }
 
     self.ar_enemy = world;
@@ -3643,6 +3702,15 @@ void() Argus_PickGoal =
                     // scorer, not an override
                     if (e == self.ar_huntitem && time < self.ar_hunttime)
                         sc = sc * 1.7;
+                    // spawn watch: items near the pad we bet the
+                    // victim will return to. 1.5x so a live hunch
+                    // still outranks it.
+                    if (time < self.ar_watchtime)
+                    {
+                        d = Argus_GoalPoint (e) - self.ar_watchpos;
+                        if (vlen (d) < 500)
+                            sc = sc * 1.5;
+                    }
                     if (cls == AR_C_WEAPON)
                     {
                         if (sc > sw)  { sw = sc;  bw = e; }

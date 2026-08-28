@@ -1441,21 +1441,27 @@ pub fn recommended_baseline_for(map: &str) -> Option<&'static str> {
 }
 
 fn map_implications(map: &str) -> Vec<String> {
+    // Frozen campaign notes that do not go stale when the graph
+    // heals. Live island / door / plat / off_graph lines are pushed
+    // by the atlas walk above - do not bake counts or era verdicts
+    // here (dm2's "31 lava-side waypoints" outlived the lava-graph
+    // slice by ten versions).
     match map {
         "dm4" => vec![
-            "lava pit under the walkways; world deaths at z below -300 are lava".into(),
-            "chronic stall corners at about 200 -900 24 and 700 -800 -200".into(),
-            "quad ledge is a rocket-jump item; prize-only pad is node 142 at 209 -183 -296 onto 56".into(),
+            "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)".into(),
+            "quad ledge is a rocket-jump item; prize-only pads are in the nav".into(),
         ],
         "dm2" => vec![
-            "hull 1 already walks doorways; closed button-only doors stall at runtime".into(),
-            "liquid is mostly lava at z around -40, not water; 31 lava-side waypoints on last nav".into(),
+            "closed button-only doors stall at runtime until the button fires".into(),
             "one shootable button (*30 health 1) opens t18".into(),
+            "liquid is lava (train-side z around -40), not water".into(),
         ],
         "dm3" => vec![
-            "lifts and swim-exit links are compiled in; residual islands are dry corridors".into(),
+            "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands".into(),
         ],
-        "dm6" => vec!["compiled nav exists; debut botmatch was green (no world deaths)".into()],
+        "dm6" => vec![
+            "one shootable secret door plus teleporters; no plats".into(),
+        ],
         "lqdm2" => vec!["LibreQuake stand-in used for the original headless lab matches".into()],
         _ => Vec::new(),
     }
@@ -2124,5 +2130,24 @@ mod tests {
         assert_eq!(cuts[0].walk_links, 1);
         assert_eq!(cuts[0].button.as_deref(), Some("*15"));
         assert_eq!(cuts[0].sample, vec![[0, 1]]);
+    }
+
+    #[test]
+    fn map_implications_do_not_bake_era_counts() {
+        let dm2 = map_implications("dm2");
+        assert!(
+            dm2.iter().all(|s| !s.contains("31 lava")),
+            "frozen lava-waypoint count leaked: {dm2:?}"
+        );
+        let dm3 = map_implications("dm3");
+        assert!(
+            dm3.iter().all(|s| !s.contains("dry corridors")),
+            "stale dry-island note leaked: {dm3:?}"
+        );
+        let dm6 = map_implications("dm6");
+        assert!(
+            dm6.iter().all(|s| !s.contains("debut botmatch")),
+            "stale debut verdict leaked: {dm6:?}"
+        );
     }
 }

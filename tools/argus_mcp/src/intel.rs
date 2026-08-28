@@ -31,6 +31,15 @@ pub struct Totals {
     pub abandons: u32,
     pub routefails: u32,
     pub weapons: u32,
+    /// battle-grabs (ARGEVT grab). Together with weapons this is
+    /// acquisitions: the figure that shows contested-map consumption
+    /// when gl (current-goal touches) looks starved.
+    pub grabs: u32,
+    /// weapon switches plus battle-grabs. gl counts only the goal
+    /// the bot currently holds; a passer-by eating the prize
+    /// invalidates the goalers and gl stays low while everyone is
+    /// still armed. This is the honest "did they take stuff" count.
+    pub acquisitions: u32,
     pub cover: usize,
     pub avg_speed: f64,
     pub kd_spread: i32,
@@ -465,6 +474,8 @@ fn brief_tape_lava(
         abandons: ev("abandon"),
         routefails: ev("routefail"),
         weapons: ev("weapon"),
+        grabs: ev("grab"),
+        acquisitions: ev("weapon") + ev("grab"),
         cover,
         avg_speed,
         kd_spread,
@@ -945,6 +956,8 @@ pub fn scale_brief_to_duration(mut brief: MatchBrief, target_sec: f64) -> MatchB
     brief.totals.abandons = scale_u32(brief.totals.abandons, k);
     brief.totals.routefails = scale_u32(brief.totals.routefails, k);
     brief.totals.weapons = scale_u32(brief.totals.weapons, k);
+    brief.totals.grabs = scale_u32(brief.totals.grabs, k);
+    brief.totals.acquisitions = scale_u32(brief.totals.acquisitions, k);
     brief.totals.cover = ((brief.totals.cover as f64) * k).round() as usize;
     brief.totals.freezes = scale_u32(brief.totals.freezes, k);
     brief.totals.mover_waits = scale_u32(brief.totals.mover_waits, k);
@@ -1085,12 +1098,12 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
             why: "engagements collapsed or never started; historically this was the fire-button bug".into(),
         });
     }
-    if brief.totals.weapons == 0 && brief.totals.duration_sec >= 60.0 {
+    if brief.totals.acquisitions == 0 && brief.totals.duration_sec >= 60.0 {
         steps.push(NextStep {
             priority: 2,
             area: "items".into(),
             look_at: "src/items.qc weapon_touch FL_CLIENT guard (must admit ar_isbot)".into(),
-            why: "no ARGEVT weapon lines; bots may be stuck on spawn shotguns".into(),
+            why: "no weapon switches and no battle-grabs; bots may be stuck on spawn shotguns".into(),
         });
     }
     let quad = *brief.goals.get("item_artifact_super_damage").unwrap_or(&0);

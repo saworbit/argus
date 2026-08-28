@@ -7,6 +7,36 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.91 (2026-08-28) - the spawn watch, and the issue tracker learns to close
+
+The first GitHub-issues sweep. QC side is issue #3, the post-kill
+spawn watch (the ambush reflex mre and Omicron both converged on):
+a bot that scores a kill bets the victim respawns at the nearest
+deathmatch pad to the death spot and biases its shopping 1.5x
+toward items within 500u of that pad for 8 s (6 s cooldown, one
+bet per episode). Same shopping-bias shape as the hunch, different
+trigger; a live hunch (1.7x) still outranks it. Skill 1+ so
+default sessions see it. Pad choice refuses cross-level bets
+(|dz| >= 96) and lava/slime seats, so a walkway kill never parks
+the killer on the pit lip. Plain `ARGUS <name> watch spawn`
+console line, counted as pseudo-event `watch` by the lab.
+
+Ladder: dm4 improved on all seven gates (lava 3, stalls 8 at
+parity, engages 88, frags 27, spread 11, zero freezes,
+ab_dm4_spawnwatch6; spawnwatch5 missed only the stall gate inside
+the noise band). dm2 ran three tapes: mixed (coverage dip, never
+repeated), regressed (stall spike to 51, never repeated), then
+improved on all seven gates with the era-best engages 43, frags
+12, spread 2, coverage 438 (ab_dm2_spawnwatch1-3). No failing
+gate appeared twice; movement bands held everywhere.
+
+Lab side (0.23, its own table): brief `acquisitions` figure (#6),
+the ARGUS_ROOT auto-swap fallback for client-copy binaries (#7),
+cartograph implication strings refreshed with a no-era-counts
+regression test (#8), and the dm4 map-brief timeout (#9) closed
+as not reproducible - warm and cold atlas rebuilds both return in
+under a second on the fixed binary.
+
 ## v3.90 (2026-08-28) - Romero's cell number comes up
 
 Shane's dm2 session (309 s, his first on the reborn graph): every
