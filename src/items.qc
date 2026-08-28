@@ -674,7 +674,7 @@ void() weapon_touch =
 		if (leave && (other.items & IT_SUPER_NAILGUN) )
 			return;
 
-		hadammo = other.ammo_rockets;
+		hadammo = other.ammo_nails;
 		new = IT_SUPER_NAILGUN;
 		other.ammo_nails = other.ammo_nails + 30;
 	}
@@ -684,7 +684,7 @@ void() weapon_touch =
 		if (leave && (other.items & IT_SUPER_SHOTGUN) )
 			return;
 
-		hadammo = other.ammo_rockets;
+		hadammo = other.ammo_shells;
 		new = IT_SUPER_SHOTGUN;
 		other.ammo_shells = other.ammo_shells + 5;
 	}
@@ -714,7 +714,7 @@ void() weapon_touch =
 		if (leave && (other.items & IT_LIGHTNING) )
 			return;
 
-		hadammo = other.ammo_rockets;
+		hadammo = other.ammo_cells;
 		new = IT_LIGHTNING;
 		other.ammo_cells = other.ammo_cells + 15;
 	}

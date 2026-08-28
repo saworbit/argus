@@ -618,7 +618,7 @@ void() PlayerDie =
 	local	string	s;
 	
 	if (deathmatch_drop_quad()) {
-		if (self.super_damage_finished > 0)
+		if (self.super_damage_finished > time)
 		{
 			DropQuad (self.super_damage_finished - time);
 			bprint (PRINT_LOW, self.netname);
@@ -636,7 +636,7 @@ void() PlayerDie =
 	}
 
 	if (deathmatch_drop_ring()) {
-		if (self.invisible_finished > 0)
+		if (self.invisible_finished > time)
 		{
 			DropRing (self.invisible_finished - time);
 			bprint (PRINT_LOW, self.netname);

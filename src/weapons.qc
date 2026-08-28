@@ -728,7 +728,13 @@ void() W_FireGrenade =
 
 	makevectors (self.v_angle);
 
-	if (self.v_angle_x)
+	// ARGUS: aim() snaps onto any DAMAGE_AIM entity in an sv_aim cone and
+	// silently overrides ar_aimerr, the lead and the grenade loft - the
+	// same removal the other five fire routines carry. A bot aiming dead
+	// level has v_angle_x == 0 and used to fall through to autoaim.
+	if (self.ar_isbot)
+		newmis.velocity = v_forward * 600 + v_up * 200;
+	else if (self.v_angle_x)
 		newmis.velocity = v_forward*600 + v_up * 200 + crandom()*v_right*10 + crandom()*v_up*10;
 
 
