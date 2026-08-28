@@ -1205,7 +1205,21 @@ float(vector to) Argus_SafeLine =
         p_z = self.origin_z + (to_z - self.origin_z) * (i / total) + 24;
         traceline (p, p - '0 0 304', TRUE, self);
         if (trace_fraction == 1)
-            return FALSE;
+        {
+            // Same trap Argus_MoveHazard already carries (the v3.43
+            // dm2 strip-stair forensics): a probe START buried in
+            // rising geometry returns fraction 1 with allsolid, which
+            // reads identically to a bottomless void. Sample points
+            // ride 24 above the interpolated line, so a stair steeper
+            // than the interpolation swallows them. A knee-plus
+            // recheck landing on a non-liquid tread is a staircase,
+            // not a pit.
+            if (pointcontents (p) != CONTENT_SOLID)
+                return FALSE;
+            traceline (p + '0 0 26', p - '0 0 8', TRUE, self);
+            if (trace_fraction == 1)
+                return FALSE;
+        }
         c = pointcontents (trace_endpos + '0 0 2');
         if (c == CONTENT_LAVA || c == CONTENT_SLIME)
         {
@@ -2665,6 +2679,26 @@ void(float d) Argus_SelectWeapon =
     else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1
              && d > 180)
         w = IT_ROCKET_LAUNCHER;
+    // Point blank holding the RL and nothing else loaded, the ladder
+    // fell all the way through to the axe - charging an armed opponent
+    // with a hatchet while carrying rockets.
+    //
+    // The first version of this branch opened the whole band below 180
+    // on a stack over 60 and dm2 answered immediately: self-kills went
+    // 0-3 a tape to 6 of 15 deaths, 40% (dm4, open and long-ranged,
+    // never noticed). Splash is 120 less half the separation, so at
+    // 60u the firer eats ~90 - the axe really is better down there.
+    // Floor the band at 120u, where self-damage tops out near 60, and
+    // demand the same 100 effective health Argus_BotCanRJ learned to
+    // demand for exactly this reason.
+    else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1
+             && d > 120
+             && !((self.items & IT_SUPER_NAILGUN) && self.ammo_nails >= 2)
+             && !((self.items & IT_SUPER_SHOTGUN) && self.ammo_shells >= 2)
+             && !((self.items & IT_NAILGUN) && self.ammo_nails >= 1)
+             && !((self.items & IT_SHOTGUN) && self.ammo_shells >= 1)
+             && self.health + self.armorvalue * self.armortype >= 100)
+        w = IT_ROCKET_LAUNCHER;
     else if ((self.items & IT_SUPER_NAILGUN) && self.ammo_nails >= 2)
         w = IT_SUPER_NAILGUN;
     else if ((self.items & IT_GRENADE_LAUNCHER) && self.ammo_rockets >= 1
@@ -2870,6 +2904,27 @@ entity() Argus_RetreatSupply =
 // "rocket", not stock's "missile". The 55% commit chance keeps the
 // dodge human: serial rockets still land sometimes at every tier.
 // Spikes are not scanned - a 1000 u/s nail is not human-reactable.
+// Is there room to actually move that way? A yaw can pass every
+// hazard probe (floor is floor, wall or not) and still be a wall.
+// Chest-height line out to the dodge distance, plus the same line at
+// knee height so a waist-high rail does not read as open.
+float(float myaw) Argus_SideClear =
+{
+    local vector eye, ahead;
+
+    makevectors ('0 0 0' + myaw * '0 1 0');
+    eye = self.origin + '0 0 22';
+    ahead = v_forward * 64;
+    traceline (eye, eye + ahead, TRUE, self);
+    if (trace_fraction < 1)
+        return FALSE;
+    eye = self.origin - '0 0 8';
+    traceline (eye, eye + ahead, TRUE, self);
+    if (trace_fraction < 1)
+        return FALSE;
+    return TRUE;
+};
+
 void() Argus_DodgeScan =
 {
     local entity m;
@@ -2894,13 +2949,21 @@ void() Argus_DodgeScan =
                     // ways holds the line instead (the first ladder
                     // took the unchecked fallback side straight off
                     // the dm4 walkways, lava 5)
+                    // MoveHazard only asks whether there is FLOOR -
+                    // and a wall has excellent floor under it. Dodging
+                    // a rocket into a wall is worse than standing
+                    // still: walkmove refuses, the bot is pinned, and
+                    // the rocket lands on it. Clearance is its own
+                    // test.
                     side = vectoyaw (m.velocity) + 90;
                     if (Argus_MoveHazard (side, 48)
-                        || Argus_MoveHazard (side, 90))
+                        || Argus_MoveHazard (side, 90)
+                        || !Argus_SideClear (side))
                     {
                         side = vectoyaw (m.velocity) - 90;
                         if (Argus_MoveHazard (side, 48)
-                            || Argus_MoveHazard (side, 90))
+                            || Argus_MoveHazard (side, 90)
+                            || !Argus_SideClear (side))
                             return;
                     }
                     self.ar_dodgeyaw = side;
@@ -2925,13 +2988,21 @@ void() Argus_DodgeScan =
                 if (normalize (m.velocity) * normalize (to) > 0.8
                     && random () < 0.55)
                 {
+                    // MoveHazard only asks whether there is FLOOR -
+                    // and a wall has excellent floor under it. Dodging
+                    // a rocket into a wall is worse than standing
+                    // still: walkmove refuses, the bot is pinned, and
+                    // the rocket lands on it. Clearance is its own
+                    // test.
                     side = vectoyaw (m.velocity) + 90;
                     if (Argus_MoveHazard (side, 48)
-                        || Argus_MoveHazard (side, 90))
+                        || Argus_MoveHazard (side, 90)
+                        || !Argus_SideClear (side))
                     {
                         side = vectoyaw (m.velocity) - 90;
                         if (Argus_MoveHazard (side, 48)
-                            || Argus_MoveHazard (side, 90))
+                            || Argus_MoveHazard (side, 90)
+                            || !Argus_SideClear (side))
                             return;
                     }
                     self.ar_dodgeyaw = side;
@@ -3105,6 +3176,18 @@ float() Argus_Combat =
     else if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
         aimpt = aimpt + e.velocity * (d / 1000);
 
+    // A falling enemy carries velocity_z of -400 to -700, and over a
+    // long flight the lead drags the aim point under the floor - the
+    // bot shoots into the ground at its own feet. They cannot fall
+    // past what is holding them up, so clamp the lead to the floor
+    // beneath them (a hit low on a landing target still splashes).
+    if (e.velocity_z < 0 && aimpt_z < e.origin_z)
+    {
+        traceline (e.origin, e.origin - '0 0 512', TRUE, e);
+        if (trace_fraction < 1 && aimpt_z < trace_endpos_z + 12)
+            aimpt_z = trace_endpos_z + 12;
+    }
+
     // ballistic loft / lip compensation. Rockets fly straight; when
     // the target is well below (dm4 walkway to pit) aim down a little
     // so the shot does not kiss the walkway edge. Grenades drop under
@@ -3112,9 +3195,19 @@ float() Argus_Combat =
     // when the target is above.
     if (self.weapon == IT_GRENADE_LAUNCHER)
     {
-        loft = d * d / 2400;
-        if (loft > 96)
-            loft = 96;
+        // W_FireGrenade launches at v_forward*600 + v_up*200, so the
+        // toss already carries the grenade UP before gravity 800 takes
+        // it back. Over a flight t = d/600 the net vertical travel is
+        // 200t - 400t^2, and the aim correction is its negative:
+        //     loft = d*d/900 - d/3
+        // The old d*d/2400 ignored the launch impulse entirely, which
+        // over-lofted inside ~300u (the grenade rises there on its own
+        // and the extra aim sailed it over heads) and, once the 96 cap
+        // bit, under-lofted badly at the top of the band - a 650u toss
+        // drops about 250u and was being handed 96.
+        loft = (d * d / 900) - (d / 3);
+        if (loft < 0)
+            loft = 0;
         if (e.origin_z > self.origin_z + 32)
             loft = loft + (e.origin_z - self.origin_z) * 0.25;
         aimpt_z = aimpt_z + loft;
@@ -3153,7 +3246,16 @@ float() Argus_Combat =
                 shd = normalize (shd);
                 shp = e.origin + shd * 80 + '0 0 18';
                 traceline (shp, shp - '0 0 280', TRUE, e);
-                if (trace_fraction == 1
+                // an enemy backed against a wall buries shp in solid,
+                // and a trace that starts solid returns fraction 1 -
+                // indistinguishable from open air below. Without this
+                // the shove pulled the aim 24u short against every
+                // cornered target, turning kills into near misses.
+                if (pointcontents (shp) == CONTENT_SOLID)
+                {
+                    // wall, not a brink: shoot them, do not shove them
+                }
+                else if (trace_fraction == 1
                     || pointcontents (trace_endpos - '0 0 4') == CONTENT_LAVA
                     || pointcontents (trace_endpos - '0 0 4') == CONTENT_SLIME)
                 {
