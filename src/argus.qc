@@ -5381,10 +5381,15 @@ void(string bname) Argus_SpawnOne =
 string(float idx) Argus_RosterName =
 {
     idx = idx % 18;
+    // indices 0-2 MUST match the Argus_Init literals: Argus_AddBot
+    // names the Nth bot by spawn count, and with "Mr Elusive" at 2
+    // the impulse-100 fourth bot came out as a SECOND "Joe Rogan" -
+    // two tracks under one name, merged telemetry, duplicate TAB row
+    // (found by the puppet-driven 4-player measurement, GitHub #2)
     if (idx == 0) return "Carmack";
     if (idx == 1) return "Romero";
-    if (idx == 2) return "Mr Elusive";
-    if (idx == 3) return "Joe Rogan";
+    if (idx == 2) return "Joe Rogan";
+    if (idx == 3) return "Mr Elusive";
     if (idx == 4) return "Trent Reznor";
     if (idx == 5) return "American McGee";
     if (idx == 6) return "Sarge";

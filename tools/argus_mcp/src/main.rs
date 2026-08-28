@@ -119,6 +119,33 @@ async fn main() -> anyhow::Result<()> {
                     }))
                     .map_err(|e| e.to_string())
                 }
+                "impulse" => {
+                    // fire a player impulse from the puppet's seat -
+                    // the roster interface (100 add bot / 102 remove)
+                    // and the dev teleport (216) all become drivable
+                    // headless. GitHub #2's 4-player measurement was
+                    // the first customer.
+                    let imp: u8 = rest
+                        .first()
+                        .and_then(|s| s.parse().ok())
+                        .ok_or("usage: argus-mcp client impulse <n> [secs]")?;
+                    let secs: f32 = rest.get(1).and_then(|s| s.parse().ok()).unwrap_or(2.0);
+                    let host = rest.get(2).cloned().unwrap_or_else(|| "127.0.0.1".into());
+                    let port: u16 =
+                        rest.get(3).and_then(|s| s.parse().ok()).unwrap_or(26000);
+                    let mut c = argus_mcp::netclient::NetClient::connect(
+                        &host, port, "labprobe",
+                    )?;
+                    c.pump(std::time::Duration::from_secs(3));
+                    c.set_impulse(imp);
+                    c.pump(std::time::Duration::from_secs_f32(secs.max(0.5)));
+                    c.disconnect();
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "impulse": imp,
+                        "sent": true,
+                    }))
+                    .map_err(|e| e.to_string())
+                }
                 other => Err(format!("unknown client subcommand {other:?}")),
             })
             .await?;

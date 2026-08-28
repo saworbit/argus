@@ -7,6 +7,42 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.97 (2026-08-28) - the fourth bot gets his own name, and the tracker empties
+
+The night the last four issues closed without human eyes.
+
+ROSTER FIX (the QC delta): Argus_RosterName had "Mr Elusive" at
+index 2, misaligned with the Argus_Init literals - the impulse-100
+fourth bot spawned as a SECOND "Joe Rogan" (merged telemetry,
+duplicate TAB row), and taking the omicron costume off mis-renamed
+slot 2. Table aligned; the fourth bot is Mr Elusive, whose chat
+voice was already waiting. Found by the first headless 4-player
+match in project history. dm4 sanity probe at parity.
+
+Issue #2 closed by measurement: the netclient gained a
+`client impulse` CLI verb; the puppet joined a live dm3 match and
+fired impulse 100. Four players ran 38 engages/200 s against the
+rock-stable 3-bot band of 8-9 - a 4.2x jump from ONE added
+participant, with stalls FALLING to 36. dm3's thin engage economy
+is population scarcity on a 4x map, not a combat defect
+(ab_dm3_fourbot1).
+
+Issue #11 closed by census: a four-match dm2 soak (~740 s) ran
+ZERO freezes of any class anywhere. The *34 give-up freeze has
+one recorded instance ever, three structural bounds around it,
+and nothing stares at it - including the instruments.
+
+Issue #15 closed by driving the KEX client itself: three
+automated quake_gog.exe sessions with screenshot capture. The mod
+loads (+game argus - KEX ignores classic -game), bots fight and
+gib on screen, obituaries and \x01 bronze chat render, zero
+errors. The skins mechanism is confirmed by the engine's own log:
+"Missing skin for progs/player (skin# 1..4). MDL will be
+enforced" - KEX falls back to the classic colour-baked MDL for
+exactly the bot skins while humans keep the remaster model. The
+one residual pixel (TAB rows in a lobby-hosted MP game) is a
+30-second glance whenever KEX is next launched by hand.
+
 ## v3.96 (2026-08-28) - the puppet opens the islet's back door
 
 Issue #26, resolved the mill's way. Candidate entry links into
