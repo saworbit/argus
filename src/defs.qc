@@ -839,6 +839,10 @@ void(entity client, string s, string s2) centerprint2_bi = #73;
 void(entity client, string s, string s2) centerprint2 = { if (client.ar_isbot) return; centerprint2_bi (client, s, s2); };	// centerprint that concats two strings
 void(entity client, string s, string s2, string s3) centerprint3_bi = #73;
 void(entity client, string s, string s2, string s3) centerprint3 = { if (client.ar_isbot) return; centerprint3_bi (client, s, s2, s3); };	// centerprint that concats three strings
+void(entity client, string s, string s2, string s3, string s4, string s5) centerprint5_bi = #73;
+void(entity client, string s, string s2, string s3, string s4, string s5) centerprint5 = { if (client.ar_isbot) return; centerprint5_bi (client, s, s2, s3, s4, s5); };	// centerprint that concats five strings
+void(entity client, string s, string s2, string s3, string s4, string s5, string s6, string s7) centerprint7_bi = #73;
+void(entity client, string s, string s2, string s3, string s4, string s5, string s6, string s7) centerprint7 = { if (client.ar_isbot) return; centerprint7_bi (client, s, s2, s3, s4, s5, s6, s7); };	// centerprint that concats seven strings
 
 void(vector pos, string samp, float vol, float atten) ambientsound = #74;
 

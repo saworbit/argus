@@ -38,6 +38,10 @@ void(entity client, entity bot) ArgusCam_SyncViewmodel =
     else if (bot.weapon == IT_LIGHTNING)        client.weaponmodel = "progs/v_light.mdl";
     else                                        client.weaponmodel = "";
 
+    // without the frame the spectator's gun sits on frame 0 through
+    // every shot: the muzzle flash and recoil live in weaponframe
+    client.weaponframe = bot.weaponframe;
+
     // Sync health, armor, and ammo for engine HUD status bar
     client.health = bot.health;
     client.armorvalue = bot.armorvalue;
@@ -197,7 +201,17 @@ void(entity client, entity bot) ArgusCam_POV =
     client.solid = SOLID_NOT;
     setorigin (client, bot.origin);
     client.view_ofs = bot.view_ofs;
-    client.angles = bot.v_angle;
+    // Every v_angle write in argus.qc sits in a firing path (rocket-jump
+    // pitch, prefire, combat aim, the shoot button), so out of combat
+    // v_angle keeps whatever the last fight left and the POV view
+    // freezes while the bot runs. Facing lives in angles_y and is
+    // maintained every frame; pitch only exists while aiming.
+    client.angles_y = bot.angles_y;
+    if (bot.ar_enemy != world)
+        client.angles_x = bot.v_angle_x;
+    else
+        client.angles_x = 0;
+    client.angles_z = 0;
     client.fixangle = TRUE;
     ArgusCam_SyncViewmodel (client, bot);
 };
@@ -238,7 +252,13 @@ void(entity client, entity bot) ArgusCam_SmartChase =
     while (diff_yaw < -180) diff_yaw = diff_yaw + 360;
     client.cam_angles_y = client.cam_angles_y + diff_yaw * (frametime * 10.0);
 
-    target_pitch = bot.angles_x * 0.35 + 8; // Gentle top-down elevation
+    // angles_x is 0 on any upright player, so this was a constant 8 and
+    // the camera never tilted. Aim pitch lives in v_angle_x (up is
+    // negative), and only while the bot is actually aiming at someone.
+    if (bot.ar_enemy != world)
+        target_pitch = (0 - bot.v_angle_x) * 0.35 + 8;
+    else
+        target_pitch = 8;
     diff_pitch = target_pitch - client.cam_angles_x;
     client.cam_angles_x = client.cam_angles_x + diff_pitch * (frametime * 8.0);
 
@@ -354,7 +374,13 @@ void(entity client, entity botA, entity botB) ArgusCam_DuelCam =
     perp_x = 0 - duel_vec_y;
     perp_y = duel_vec_x;
     perp_z = 0;
-    perp = normalize (perp);
+    // two bots stacked in a lift shaft share their xy, and
+    // normalize('0 0 0') is '0 0 0' - the camera would collapse into
+    // the middle of both bounding boxes. Any perpendicular will do.
+    if (vlen (perp) < 0.1)
+        perp = '1 0 0';
+    else
+        perp = normalize (perp);
 
     d = duel_dist * 0.85;
     if (d < 180) d = 180;
@@ -457,7 +483,15 @@ void(entity client) ArgusDirector_Evaluate =
         tele = find (world, classname, "trigger_teleport");
         while (tele != world)
         {
-            if (vlen (client.cam_target.origin - (tele.absmin + tele.absmax) * 0.5) < 56)
+            // a 56u sphere about the brush centre misses a wide
+            // trigger entirely - the bot is inside the volume and more
+            // than 56u from its middle. Test the box the engine tests.
+            if (client.cam_target.origin_x > tele.absmin_x - 16
+                && client.cam_target.origin_x < tele.absmax_x + 16
+                && client.cam_target.origin_y > tele.absmin_y - 16
+                && client.cam_target.origin_y < tele.absmax_y + 16
+                && client.cam_target.origin_z > tele.absmin_z - 24
+                && client.cam_target.origin_z < tele.absmax_z + 24)
             {
                 if (tele.target != "")
                 {
@@ -612,10 +646,16 @@ void(entity client) ArgusCam_RenderHUD =
     else if (t.ar_mode == 2)                aname = "ROUTING";
     else                                    aname = "TACTICAL";
 
-    centerprint3 (client,
+    // wname and aname were computed every frame and thrown away: the
+    // spectator saw the camera mode and nothing about the bot it follows
+    centerprint7 (client,
         "ARGUSCAM: ",
         mname,
-        "\n[M1: Mode | M2: Target | 210: Toggle]");
+        "\n",
+        t.netname,
+        "  ",
+        wname,
+        aname);
 };
 
 // ---------------------------------------------------------------- frame dispatcher
