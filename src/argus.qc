@@ -1502,14 +1502,25 @@ void() Argus_Physics =
             traceline (vh, vh + wishdir * 24, TRUE, self);
             if (trace_fraction < 1)
             {
-                vh_z = self.origin_z + self.maxs_z - 8;
-                traceline (vh, vh + wishdir * 24, TRUE, self);
+                // clearance at VAULT-APEX height, not eye height
+                // (2026-08-28, Shane: "they still don't know how to
+                // hop up out of the water"): the dm3 trench banks
+                // rise ~40u above the surface - above a swimmer's
+                // eyes - so the old eye-level trigger could never
+                // fire there. What decides a vault is whether the
+                // lip sits under the APEX, so probe there. The
+                // vault itself is stronger too (290 up, apex ~52,
+                // plus step-up = a ~65u lip; bot swim physics is
+                // its own model by charter, not stock-bounded).
+                // Water only - the lava graves stand.
+                vh_z = self.origin_z + 56;
+                traceline (vh, vh + wishdir * 32, TRUE, self);
                 if (trace_fraction == 1)
                 {
                     self.ar_gapjump = time + 0.9;
-                    self.velocity_x = wishdir_x * 150;
-                    self.velocity_y = wishdir_y * 150;
-                    self.velocity_z = 225;
+                    self.velocity_x = wishdir_x * 170;
+                    self.velocity_y = wishdir_y * 170;
+                    self.velocity_z = 290;
                 }
             }
         }

@@ -7,6 +7,38 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.87 (2026-08-28) - item seats, jump stitches, and the apex vault
+
+Three session reports, three root causes, one ladder:
+
+- **"A bot was stuck in the RL area"** - the dm3 RL platform is a
+  fine-graph ISLET: a 32-64u moat severs it from every neighbour,
+  so decimation never kept a seat there (nearest node 241u away)
+  and a spawn point sits ON the platform. Two navgen answers, both
+  general: GUARANTEED CONTROL-ITEM SEATS (every weapon, armour,
+  powerup and mega promotes its closest sample - the oldest
+  idea-bank entry finally forced into code) and JUMP STITCHES in
+  the knitting pass (a pocket ringed by a short void joins by a
+  jump link when the gap fits the proven envelope - the pattern
+  the puppet's verdicts taught). The RL seat now sits 8u from the
+  weapon; nineteen jump stitches joined pockets that had resisted
+  every criterion; dm3 reach hit 85% on every spawn, 85% UNGATED,
+  poison prune down to one node. Goal completions nearly tripled.
+- **"They still don't know how to hop up out of the water"** - the
+  vault's trigger tested clearance at EYE height, and the trench
+  banks rise ~40u above the surface - above a swimmer's eyes - so
+  it could never fire where it mattered. What decides a vault is
+  whether the lip sits under the JUMP APEX, so the probe moved
+  there, and the vault grew to match (290 up, ~65u lip with the
+  step). Longest submersion fell from 73 seconds to 13; swim
+  churn from 370 events to 18. Lava stays excluded by contents.
+- **"Can they use the lightning gun in the water?"** - verified,
+  and working as designed: zero discharges on the tape (the
+  selector's in-liquid guard holds), and the water kills Shane saw
+  were bots lawfully beaming swimmers FROM DRY LAND - in vanilla
+  Quake only the firer's own submersion discharges, and shafting
+  someone in the pool from the bank is exactly correct play.
+
 ## v3.86 (2026-08-28) - the puppet grades the graph, and the pinch falls
 
 The link-verification loop closed the same evening the client was

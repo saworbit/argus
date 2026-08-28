@@ -519,6 +519,34 @@ def virtual_pad(bm, face_z):
     return len(ways) - 1
 
 
+# ---- 5a3. guaranteed control-item seats ----
+# The idea-bank entry ("guaranteed waypoints at items") made urgent
+# by the dm3 RL platform: decimation left the map's number-two
+# control item 241u from its nearest seat, so bots goalled it,
+# mode-1'd onto the moated platform, and had no route out - Shane
+# watched one pace there for forty seconds. Every weapon, armour,
+# powerup and mega now promotes the closest fine sample to a seat
+# BEFORE link building; the exits then get Dijkstra, knitting and
+# the puppet's verdicts like any other node.
+_nitem = 0
+for _b in ent_blocks:
+    _e = kv(_b)
+    _cls = _e.get("classname", "")
+    _is_ctl = (_cls.startswith("weapon_")
+               or _cls.startswith("item_armor")
+               or _cls.startswith("item_artifact")
+               or (_cls == "item_health"
+                   and int(_e.get("spawnflags", "0") or 0) & 2))
+    if not _is_ctl:
+        continue
+    _o = _e.get("origin")
+    if not _o:
+        continue
+    _ox, _oy, _oz = (float(v) for v in _o.split())
+    if force_way(_ox, _oy, _oz + 24, snap=48) is not None:
+        _nitem += 1
+print(f"control-item seats: {_nitem} guaranteed")
+
 lifts = []
 vpads = []
 for b in ent_blocks:
@@ -1743,6 +1771,49 @@ def _knit_pass(_toward_main, _use_rj):
                 if _slot_free(_d) and beeline_ok(ways[_d], ways[_s]):
                     links.setdefault(_d, {})[_s] = (_h, 0)
                 print(f"knit walk {_s}->{_d}")
+                _stitched = True
+                break
+        if not _stitched:
+            # JUMP stitch (the RL-islet class, taught by the puppet's
+            # verdicts): a same-level pocket ringed by a short void -
+            # the dm3 RL platform sits behind a 32-64u moat - joins
+            # by a jump link when the centre-line void fits the
+            # proven jump envelope and everything else on the line
+            # is honest floor. Mirrors the 7g2c remint criterion.
+            for _h, _m, _o in sorted(_walkc)[:48]:
+                _s, _d = _src_dst(_m, _o)
+                if not _slot_free(_s) or _h > 280:
+                    continue
+                _sx, _sy, _sz = pos(ways[_s])
+                _dx2, _dy2, _dz2 = pos(ways[_d])
+                _steps = int(_h // 16) + 1
+                _void = 0
+                _maxvoid = 0
+                _dry = 0
+                for _st2 in range(1, _steps + 1):
+                    _f = _st2 / _steps
+                    _cx2 = _sx + (_dx2 - _sx) * _f
+                    _cy2 = _sy + (_dy2 - _sy) * _f
+                    _okf = False
+                    for _fz in column_floors(_cx2, _cy2):
+                        if abs(_sz - 24 - _fz) <= 48:
+                            _okf = True
+                            break
+                    if _okf:
+                        _dry += 1
+                        _void = 0
+                    else:
+                        _void += 1
+                        _maxvoid = max(_maxvoid, _void)
+                if not (0 < _maxvoid * 16 <= 200):
+                    continue
+                if _dry < _steps - _maxvoid - 2:
+                    continue              # more than one clean gap
+                if h0_contents((_sx + _dx2) / 2, (_sy + _dy2) / 2,
+                               _sz + 60) == CONTENTS_SOLID:
+                    continue              # no arc clearance
+                links.setdefault(_s, {})[_d] = (_h, 1)
+                print(f"knit jump {_s}->{_d} (void {_maxvoid * 16}u)")
                 _stitched = True
                 break
         if not _stitched:
