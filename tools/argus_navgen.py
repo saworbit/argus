@@ -28,6 +28,11 @@ builds where a hand-maintained argus_nav_dispatch.qc selects per map.
 """
 import re, struct, sys, heapq, collections
 
+if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
+    # operators get the usage docstring, never an IndexError traceback
+    print(__doc__)
+    sys.exit(0 if ("--help" in sys.argv or "-h" in sys.argv) else 1)
+
 BSP, MAPNAME, OUTQC, OUTPNG = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 EMIT_DISPATCHER = "--no-dispatcher" not in sys.argv[5:]
 if "--register" in sys.argv[5:]:

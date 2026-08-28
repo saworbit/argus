@@ -32,6 +32,34 @@ EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|"
 DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
 
 
+def tactical(line):
+    """Plain 'ARGUS <name> <verb>' console lines sit OUTSIDE the closed
+    ARGEVT vocabulary by design (shove v3.73, routecache adopt v3.63,
+    hunch v3.75, prefire v3.78, watch spawn v3.92, sprintjump v3.93).
+    Mirrors the Rust parser's pseudo-event vocabulary (parse_arglog.rs)
+    so the battery counts them too. Returns (name, verb, rest) or None.
+    Endswith tests keep spaced netnames whole - the v3.37 lesson."""
+    s = line.strip()
+    if not s.startswith("ARGUS "):
+        return None
+    body = s[6:]
+    if body == "routecache adopt":
+        return ("", "routecache_adopt", "")
+    if body.endswith(" shove"):
+        return (body[:-6], "shove", "")
+    if body.endswith(" sprintjump"):
+        return (body[:-11], "sprintjump", "")
+    if body.endswith(" prefire"):
+        return (body[:-8], "prefire", "")
+    i = body.find(" hunch ")
+    if i >= 0:
+        return (body[:i], "hunch", body[i + 7:][:70])
+    i = body.find(" watch ")
+    if i >= 0:
+        return (body[:i], "watch", body[i + 7:][:70])
+    return None
+
+
 def parse(log):
     bots, events, deaths = collections.defaultdict(list), [], []
     lineno = 0
@@ -53,6 +81,10 @@ def parse(log):
         m = EVT.search(line)
         if m:
             events.append((lineno, m.group(1), m.group(2), m.group(3).strip()[:70]))
+            continue
+        t = tactical(line)
+        if t:
+            events.append((lineno, t[0], t[1], t[2]))
     return bots, events, deaths
 
 

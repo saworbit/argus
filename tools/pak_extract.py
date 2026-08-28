@@ -31,17 +31,29 @@ def read_directory(path):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("paks", nargs="+")
+    ap = argparse.ArgumentParser(
+        usage="pak_extract.py <pak> [<pak> ...] (--list | --out <dir> <name> [<name> ...])")
+    # one positional bucket, split by extension below: argparse cannot
+    # hold two variable-length positionals around an optional, and the
+    # documented CLI puts the names AFTER --out <dir>
+    ap.add_argument("files", nargs="+",
+                    help="pak files, then names to extract (or use --names)")
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--out")
     ap.add_argument("--names", nargs="*", default=[])
-    args = ap.parse_args()
+    args = ap.parse_intermixed_args()
 
-    wanted = {n.lower() for n in args.names}
+    paks = [f for f in args.files if f.lower().endswith(".pak")]
+    names = [f for f in args.files if not f.lower().endswith(".pak")]
+    if not paks:
+        ap.error("no .pak files given")
+
+    wanted = {n.lower() for n in names} | {n.lower() for n in args.names}
+    if not args.list and not wanted:
+        ap.error("nothing to extract: give names after --out <dir>, or --names")
     found = {}
 
-    for pak in args.paks:
+    for pak in paks:
         for name, ofs, length in read_directory(pak):
             if args.list:
                 print(f"{pak}: {name} ({length} bytes)")
