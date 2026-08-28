@@ -103,6 +103,11 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float  ar_itemregion;          // on items: reachability region of
                                 // the nearest nav node (S4)
 .float  ar_regionset;           // on items: region stamped once
+.entity ar_goalnode;            // on items: the nav node serving this
+                                // goal, stamped once (item positions
+                                // never move; spares an O(N) trace-
+                                // heavy NearestNode sweep per route)
+.float  ar_gnodeset;            // on items: ar_goalnode is stamped
 .float  ar_failtime;            // on items: last routefail at this goal.
                                 // Global, unlike the claim: a routefail
                                 // is a topology verdict and holds for
@@ -1542,6 +1547,26 @@ void() Argus_Physics =
     }
     self.ar_swim = 0;
 
+    // teleporter exit coast: teleport_touch stamps teleport_time =
+    // time + 0.7 and launches down the destination's v_forward at
+    // 300 u/s. Engine physics honours the window for real clients;
+    // bot physics re-derived wishvel on the very next frame and
+    // overwrote the launch, halting the bot on the exit pad. Coast
+    // instead - no friction, no wish - so the launch carries the
+    // bot clear; steering resumes the frame the window expires.
+    // NEVER coast blind over a brink (first ladder ran dm4 lava 6:
+    // a pit-floor exit launches toward the south boundary): while
+    // the launch heading reads safe 48u out, ride it; the moment
+    // the guard vetoes it, or the launch is spent, hand control
+    // straight back to steered physics, guard and all.
+    if (time < self.teleport_time)
+    {
+        vh = self.velocity;
+        vh_z = 0;
+        if (vlen (vh) > 30 && !Argus_MoveHazard (vectoyaw (vh), 48))
+            return;
+    }
+
     if (self.flags & FL_ONGROUND)
     {
         if (self.ar_hoprj == 2)
@@ -2629,8 +2654,13 @@ void(float d) Argus_SelectWeapon =
     local float w;
     local string wn;
 
+    // waterlevel guard mirrors W_FireLightning's own discharge test
+    // (waterlevel > 1): watertype alone reads the ORIGIN contents,
+    // which can sit empty while the bot wades waist-deep - selecting
+    // LG there discharges every cell into the bot's own feet
     if ((self.items & IT_LIGHTNING) && self.ammo_cells >= 1
-        && d < 480 && self.watertype > CONTENT_WATER)
+        && d < 480 && self.watertype > CONTENT_WATER
+        && self.waterlevel <= 1)
         w = IT_LIGHTNING;
     else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1
              && d > 180)
@@ -4041,7 +4071,7 @@ void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
     local float want, diff, turn, havetarget, fighting, sproj;
-    local entity oldnode, nx, dr;
+    local entity oldnode, nx, dr, gn;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
 
@@ -4174,12 +4204,30 @@ void() Argus_AI =
         {
             gp = Argus_GoalPoint (self.ar_goal);
             nx = Argus_NearestNode (self.origin);
+            // goal node resolves ONCE per goal entity, the
+            // ar_itemregion pattern: item positions never move in
+            // deathmatch, and NearestNode is an O(N) sweep with eye
+            // traces - it ran twice per failed adoption here, every
+            // pending frame, for every bot. A world result is not
+            // stamped (a packmate's body can block the eye trace
+            // transiently) so the resolve retries until it lands.
+            if (!self.ar_goal.ar_gnodeset)
+            {
+                gn = Argus_NearestNode (gp);
+                if (gn != world)
+                {
+                    self.ar_goal.ar_gnodeset = 1;
+                    self.ar_goal.ar_goalnode = gn;
+                }
+            }
+            else
+                gn = self.ar_goal.ar_goalnode;
             // shared route cache first (Omicron review): a fresh
             // flood to the same goal node is adopted for free, no
             // an_busy contention, no search frames
-            if (Argus_Route_Adopt (self, nx, Argus_NearestNode (gp)))
+            if (Argus_Route_Adopt (self, nx, gn))
                 self.ar_laststart = nx;
-            else if (Argus_Route_Start (self, nx, Argus_NearestNode (gp)))
+            else if (Argus_Route_Start (self, nx, gn))
             {
                 self.ar_laststart = nx;
                 self.ar_pending = 0;

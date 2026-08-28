@@ -7,6 +7,61 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.95 (2026-08-28) - the tracker sweep
+
+Four tracker issues in one laddered batch, each a filed defect from
+the morning's project review (#16, #17, #18, #23).
+
+Teleporter exit coast (#23): teleport_touch stamps teleport_time =
+time + 0.7 and launches the player at 300 u/s down the destination's
+v_forward. Engine physics honours the window for real clients; bot
+physics re-derived wishvel on the very next frame and overwrote the
+launch, halting the bot on the exit pad. Bots now coast the window -
+no friction, no wish - with one hard lesson from the first ladder:
+an UNGUARDED coast ran dm4 lava 6 (a pit-floor teleporter exit
+launches toward the south lava boundary and the brink guard was
+skipped with everything else). The shipped coast rides the launch
+only while its heading probes safe 48u out; the moment the guard
+vetoes it, or the launch is spent, steered physics takes back over.
+dm6, the teleporter map, improved on the change: stalls 9 to 6,
+hazard deflections 109 to 81 (exits no longer fight the guard at
+the pad).
+
+Goal-node caching (#16): Argus_NearestNode is an O(N) sweep with eye
+traces and ran TWICE per failed route adoption, every pending frame,
+for every bot. The goal's node now stamps once per item entity (the
+ar_itemregion pattern - deathmatch item positions never move):
+ar_goalnode / ar_gnodeset, resolved lazily, with a world result left
+unstamped so a transiently blocked eye trace retries instead of
+poisoning the item forever.
+
+Lightning gun waterlevel guard (#18): the selector's in-liquid test
+read watertype - the ORIGIN contents - which can sit empty while the
+bot wades waist-deep with waterlevel 2, exactly the state where
+W_FireLightning discharges every cell into the firer. The selector
+now also demands waterlevel <= 1, mirroring the discharge test
+itself.
+
+ArgusCam plain text (#17): the camera's sprint strings carried
+Q3-style caret colour codes, which protocol 15 clients render
+literally. All thirteen strings are plain text now.
+
+Ladder: dm4 parity on all seven gates after the coast guard
+(ab_dm4_issuebatch2; the unguarded first run is ab_dm4_issuebatch1,
+kept as the lesson), dm6 improved (ab_dm6_issuebatch1), dm2 improved
+- stalls 22 to 14, routefails 0, boards live (ab_dm2_issuebatch1),
+lqdm2 parity, dm3 45 s probe noise on single-digit counts (its
+engage economy is issue #2, untouched by this batch).
+
+Same session, tooling (no progs delta): argus_review.py now counts
+the plain ARGUS tactical markers (shove, routecache adopt, hunch,
+watch, prefire, sprintjump) exactly like the Rust parser (#25);
+pak_extract.py accepts the documented positional extraction form
+(#24); argus_navgen.py prints usage instead of a traceback when
+called bare or with --help (#21); the MCP test suite recovers from
+a poisoned ENGINE_TEST_LOCK so one engine-test failure cannot
+cascade (#19).
+
 ## v3.94 (2026-08-28) - the wrist learns to drift
 
 Issue #5, humanisation. Every session demo has read bots at

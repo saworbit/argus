@@ -87,7 +87,7 @@ void(entity client) ArgusCam_Init =
         setorigin (client, client.cam_pos);
     }
 
-    sprint (client, PRINT_HIGH, "^2ArgusCam Active^7: AI Director Mode. (Left Click: Cycle Mode, Right Click: Target)\n");
+    sprint (client, PRINT_HIGH, "ArgusCam Active: AI Director Mode. (Left Click: Cycle Mode, Right Click: Target)\n");
 };
 
 void() ArgusCam_Toggle =
@@ -100,7 +100,7 @@ void() ArgusCam_Toggle =
         self.takedamage = DAMAGE_AIM;
         self.view_ofs = '0 0 22';
         W_SetCurrentAmmo ();
-        sprint (self, PRINT_HIGH, "^1ArgusCam Deactivated^7: Returned to player physics.\n");
+        sprint (self, PRINT_HIGH, "ArgusCam Deactivated: Returned to player physics.\n");
     }
     else
     {
@@ -124,17 +124,17 @@ void() ArgusCam_CycleMode =
         self.weaponmodel = "";
 
     if (self.cam_mode == CAM_MODE_POV)
-        sprint (self, PRINT_HIGH, "^3ArgusCam Mode^7: 1st-Person Bot POV\n");
+        sprint (self, PRINT_HIGH, "ArgusCam Mode: 1st-Person Bot POV\n");
     else if (self.cam_mode == CAM_MODE_CHASE)
-        sprint (self, PRINT_HIGH, "^3ArgusCam Mode^7: Smart Chase Cam (Spring Damped)\n");
+        sprint (self, PRINT_HIGH, "ArgusCam Mode: Smart Chase Cam (Spring Damped)\n");
     else if (self.cam_mode == CAM_MODE_DIRECTOR)
-        sprint (self, PRINT_HIGH, "^3ArgusCam Mode^7: AI Broadcast Director (Omniview)\n");
+        sprint (self, PRINT_HIGH, "ArgusCam Mode: AI Broadcast Director (Omniview)\n");
     else if (self.cam_mode == CAM_MODE_DUEL)
-        sprint (self, PRINT_HIGH, "^3ArgusCam Mode^7: Focus / Duel Cam (Midpoint Framing)\n");
+        sprint (self, PRINT_HIGH, "ArgusCam Mode: Focus / Duel Cam (Midpoint Framing)\n");
     else if (self.cam_mode == CAM_MODE_FREELOOK)
-        sprint (self, PRINT_HIGH, "^3ArgusCam Mode^7: FreeLook Flight Drone (6DOF Inertial)\n");
+        sprint (self, PRINT_HIGH, "ArgusCam Mode: FreeLook Flight Drone (6DOF Inertial)\n");
     else if (self.cam_mode == CAM_MODE_ORBIT)
-        sprint (self, PRINT_HIGH, "^3ArgusCam Mode^7: Orbit / Showcase Cam\n");
+        sprint (self, PRINT_HIGH, "ArgusCam Mode: Orbit / Showcase Cam\n");
 };
 
 void() ArgusCam_CycleTarget =
@@ -165,7 +165,7 @@ void() ArgusCam_CycleTarget =
 
     if (b != world)
     {
-        sprint (self, PRINT_HIGH, "^5Tracking Target^7: ");
+        sprint (self, PRINT_HIGH, "Tracking Target: ");
         sprint (self, PRINT_HIGH, b.netname);
         sprint (self, PRINT_HIGH, "\n");
     }
@@ -175,18 +175,18 @@ void() ArgusCam_ToggleShoulder =
 {
     self.cam_shoulder = 1 - self.cam_shoulder;
     if (self.cam_shoulder)
-        sprint (self, PRINT_HIGH, "^3Chase Cam Framing^7: Over-The-Right-Shoulder\n");
+        sprint (self, PRINT_HIGH, "Chase Cam Framing: Over-The-Right-Shoulder\n");
     else
-        sprint (self, PRINT_HIGH, "^3Chase Cam Framing^7: Center Over-Head\n");
+        sprint (self, PRINT_HIGH, "Chase Cam Framing: Center Over-Head\n");
 };
 
 void() ArgusCam_ToggleHUD =
 {
     self.cam_hud_on = 1 - self.cam_hud_on;
     if (self.cam_hud_on)
-        sprint (self, PRINT_HIGH, "^2Broadcast HUD^7: Enabled\n");
+        sprint (self, PRINT_HIGH, "Broadcast HUD: Enabled\n");
     else
-        sprint (self, PRINT_HIGH, "^1Broadcast HUD^7: Disabled\n");
+        sprint (self, PRINT_HIGH, "Broadcast HUD: Disabled\n");
 };
 
 // ---------------------------------------------------------------- modalities
