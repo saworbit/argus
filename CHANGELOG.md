@@ -7,6 +7,43 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.88 (2026-08-28) - the audit answered: dm2 reborn, the lab unstuck
+
+An external review (run from disk while the MCP sat hung) called it
+straight: "the bot itself is in a good place; the lab around it is
+not." Every finding addressed, in its order:
+
+- **Lab unstuck**: both stale argus-mcp processes killed, the 0.22
+  staged binary (netclient + probelinks + auto-hop) swapped live,
+  version strings corrected everywhere (MCP README claimed 0.18,
+  root README 0.20; both now 0.22 with a table row).
+- **Baselines moved at last**: dm3 -> ab_dm3_islet1, dm4 ->
+  ab_dm4_gapsclosed4, dm2 -> ab_dm2_rebirth1. Lab verdicts measure
+  the healed era instead of calling every modern match "regressed"
+  against suicide-economy tapes.
+- **The ninth-link amputation**: the late graph passes added links
+  past the runtime's 8-slot budget and Argus_NavLink silently
+  dropped the overflow (three nodes on dm3, every tape). A final
+  slot clamp now runs after every adder - typed hops own their
+  slots, jump links kept preferentially, and eviction is
+  REDUNDANCY-AWARE (a length-only policy cut the tower spawn's
+  reach from 85% to 74% by evicting a bridge; preferring
+  well-served targets restored it). The json now tells the
+  runtime's truth.
+- **dm2 REBORN**: the project's worst graph regenerated through the
+  full modern pipeline - item seats, jump stitches (16), knitting,
+  poison prune. Worst spawn 4% -> 99%, one stranded node on the
+  whole map. The ladder made history: ZERO routefails in 190
+  seconds on the map that never ran below 68, zero freezes, zero
+  lava. The v3.70 tele-orphan debt is paid.
+- **NE moat-mega looked at, not blind-fixed**: the mega's seat and
+  links are healthy (n161, 25u); the 87 bank deflections are
+  orbit-lap noise around a clocked prize - the documented
+  informational class. Filed as watch.
+- **Puppet auto-hop**: the walk controller taps jump when progress
+  stagnates, so the verifier now clears steps, lips and jump-typed
+  links the way a human holding +jump does.
+
 ## v3.87 (2026-08-28) - item seats, jump stitches, and the apex vault
 
 Three session reports, three root causes, one ladder:

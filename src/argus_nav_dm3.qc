@@ -522,6 +522,7 @@ void() Argus_Nav_Spawn_dm3 =
     n257 = Argus_NavNode ('269 -583 104');
     n258 = Argus_NavNode ('445 -743 56');
 
+    Argus_NavLink (n0, n4);
     Argus_NavLink (n0, n174);
     Argus_NavLink (n0, n182);
     Argus_NavLink (n0, n177);
@@ -529,8 +530,6 @@ void() Argus_Nav_Spawn_dm3 =
     Argus_NavLink (n0, n178);
     Argus_NavLink (n0, n186);
     Argus_NavLink (n0, n180);
-    Argus_NavLink (n0, n188);
-    Argus_NavLink (n0, n4);
     Argus_NavLink (n1, n180);
     Argus_NavLink (n1, n176);
     Argus_NavLink (n1, n189);
@@ -696,15 +695,14 @@ void() Argus_Nav_Spawn_dm3 =
     Argus_NavLink (n55, n254);
     Argus_NavLink (n55, n47);
     Argus_NavLink (n55, n41);
+    Argus_NavLink (n56, n150);
     Argus_NavLink (n56, n207);
-    Argus_NavLink (n56, n210);
     Argus_NavLink (n56, n212);
-    Argus_NavLink (n56, n205);
+    Argus_NavLink (n56, n210);
     Argus_NavLink (n56, n208);
+    Argus_NavLink (n56, n205);
     Argus_NavLink (n56, n213);
     Argus_NavLink (n56, n214);
-    Argus_NavLink (n56, n209);
-    Argus_NavLink (n56, n150);
     Argus_NavLinkJump (n57, n258);
     Argus_NavLink (n58, n73);
     Argus_NavLink (n58, n65);
@@ -878,15 +876,14 @@ void() Argus_Nav_Spawn_dm3 =
     Argus_NavLink (n115, n222);
     Argus_NavLink (n115, n121);
     Argus_NavLink (n115, n232);
-    Argus_NavLink (n116, n220);
-    Argus_NavLink (n116, n230);
+    Argus_NavLink (n116, n97);
     Argus_NavLink (n116, n224);
-    Argus_NavLink (n116, n225);
+    Argus_NavLink (n116, n230);
+    Argus_NavLink (n116, n223);
+    Argus_NavLink (n116, n220);
     Argus_NavLink (n116, n221);
     Argus_NavLink (n116, n235);
-    Argus_NavLink (n116, n231);
-    Argus_NavLink (n116, n223);
-    Argus_NavLink (n116, n97);
+    Argus_NavLink (n116, n225);
     Argus_NavLink (n117, n227);
     Argus_NavLink (n117, n216);
     Argus_NavLink (n117, n228);
@@ -1659,7 +1656,7 @@ void() Argus_Nav_Spawn_dm3 =
     Argus_NavRegion (n257, 2);
 
     // Camera vantage nodes (Cartographer spectator anchors)
-    Argus_AddCamNode ('-947 -7 16', '-15 83 0', "arena_1");
+    Argus_AddCamNode ('-947 -7 16', '-15 84 0', "arena_1");
     Argus_AddCamNode ('-963 409 152', '-15 -78 0', "arena_2");
     Argus_AddCamNode ('-963 665 152', '-15 -33 0', "arena_3");
     Argus_AddCamNode ('-579 505 152', '-15 8 0', "arena_4");

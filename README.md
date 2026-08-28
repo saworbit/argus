@@ -384,7 +384,7 @@ telemetry tape remains the full-map record and the A/B gates.
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.20**. Operator guide: [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
+Current version **0.22**. Operator guide: [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
 The Rust binary in `tools/argus_mcp/` is two faces of the same lab:
 

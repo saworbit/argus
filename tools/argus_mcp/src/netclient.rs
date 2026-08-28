@@ -783,6 +783,7 @@ impl NetClient {
         let end = Instant::now() + Duration::from_secs_f32(secs);
         let mut closest = f32::MAX;
         let mut track: Vec<[f32; 3]> = Vec::new();
+        let mut stuck = 0u32;
         while Instant::now() < end {
             if let Some(p) = self.my_pos() {
                 let dx = target[0] - p[0];
@@ -792,13 +793,27 @@ impl NetClient {
                 if h < closest {
                     closest = h;
                 }
+                // auto-hop: a human holds +jump at ledges and steps
+                // without thinking; when progress stagnates for a few
+                // ticks, tap jump. This is what lets the puppet
+                // verify jump-typed links too - the arc happens at
+                // whatever speed the approach carried.
+                if let Some(prev) = track.last() {
+                    let step = ((p[0] - prev[0]).powi(2) + (p[1] - prev[1]).powi(2)).sqrt();
+                    if step < 8.0 {
+                        stuck += 1;
+                    } else {
+                        stuck = 0;
+                    }
+                }
                 track.push(p);
                 if h < 24.0 && dz < 72.0 {
                     self.set_move(0.0, 0.0, 0, 0, 0);
                     return WalkOutcome { reached: true, closest, final_pos: p, track };
                 }
                 let yaw = dy.atan2(dx).to_degrees();
-                self.set_move(0.0, yaw, 320, 0, 0);
+                let buttons = if stuck >= 4 { 2 } else { 0 };
+                self.set_move(0.0, yaw, 320, 0, buttons);
             }
             self.pump(Duration::from_millis(50));
         }

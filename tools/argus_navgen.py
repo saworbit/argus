@@ -2047,6 +2047,43 @@ if __import__("os").path.exists(_probepath):
     print(f"engine-verdict pass: {_nremint} reminted as jump, "
           f"{_ndrop} dropped ({len(_pfailed)} failed pair(s) on file)")
 
+# ---- 7e2. final slot clamp ----
+# 7e budgets slots BEFORE the late passes, but symmetric closure,
+# knitting, jump stitches and trace mining all add links after it
+# and none of them re-count: dm3 shipped three nodes with NINE walk
+# links, and Argus_NavLink silently drops the ninth at runtime - a
+# real amputated hop behind a dprint nobody reads ("ARGUS navlink
+# overflow" x3 in every islet1-era tape). Clamp here, after every
+# adder and before the poison prune judges the final graph: typed
+# hops (tele/RJ/lift/swim/train/sprint) own their slots, jump-typed
+# walk links are kept preferentially (7e's own policy), longest
+# plain walks evict first.
+_typedout = collections.Counter()
+for _a, _b in teles + rjlinks + lifts + swims + trains + sprints:
+    _typedout[_a] += 1
+_indeg = collections.Counter()
+for _i in links:
+    for _j in links[_i]:
+        _indeg[_j] += 1
+_nclamp = 0
+for _i in list(links):
+    _budget = max(0, 8 - _typedout[_i])
+    if len(links[_i]) <= _budget:
+        continue
+    # keep jump-typed, then links whose TARGET is poorly served
+    # (evicting a well-served target's link costs nothing; evicting
+    # a bridge to a 1-in-link node cut the tower spawn's reach from
+    # 85% to 74% under the first, length-only policy), shortest last
+    _kept = sorted(
+        links[_i].items(),
+        key=lambda kv: (0 if kv[1][1] else 1, -1_000_000 // max(1, _indeg[kv[0]]),
+                        kv[1][0]))
+    _nclamp += len(links[_i]) - _budget
+    links[_i] = dict(_kept[:_budget])
+if _nclamp:
+    print(f"final slot clamp evicted {_nclamp} link(s) past the "
+          f"8-slot runtime budget")
+
 # ---- 7g3. route-poison prune ----
 # A node that STILL cannot reach the mainland after knitting is route
 # poison: every route starting there fails, and four failures with no
