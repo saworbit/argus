@@ -776,7 +776,7 @@ void() Argus_Nav_Spawn_dm2 =
     Argus_NavLink (n76, n75);
     Argus_NavLink (n76, n77);
     Argus_NavLink (n76, n78);
-    Argus_NavLink (n76, n159);
+    Argus_NavLinkJump (n76, n159);
     Argus_NavLink (n77, n78);
     Argus_NavLink (n77, n76);
     Argus_NavLinkJump (n77, n95);
@@ -1159,7 +1159,7 @@ void() Argus_Nav_Spawn_dm2 =
     Argus_NavLink (n158, n198);
     Argus_NavLink (n158, n194);
     Argus_NavLinkJump (n159, n116);
-    Argus_NavLink (n159, n76);
+    Argus_NavLinkJump (n159, n76);
     Argus_NavLinkJump (n159, n81);
     Argus_NavLink (n160, n140);
     Argus_NavLink (n160, n133);

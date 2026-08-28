@@ -7,6 +7,30 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.90 (2026-08-28) - Romero's cell number comes up
+
+Shane's dm2 session (309 s, his first on the reborn graph): every
+movement system live under human play - trains ridden, boards,
+doors, lifts, 221 jumps, a rocket jump - and Shane won 15-10 over
+Carmack. But Romero finished 0-and-9 with 67 stalls, 54 of them in
+ONE cell: '2304 -2176', the SE grate room, steering at a node 128u
+west he could never reach.
+
+The loop that killed the quad-court pinch ran again, start to
+finish, inside an hour: the puppet walked the accused link and
+jammed eight units from Romero's exact cell (convicted BOTH
+directions - a 48u void sits dead on the centre line, snaked
+around by the beeline offsets at mint time); the verdict pass
+reminted both directions as jump links; the ladder came back with
+the grate-room count at ZERO, total stalls 45 to 32, routefails
+still zero, Romero at 5 frags. Third chronic cell down to the same
+mill: engine testifies, navgen re-types, bots inherit.
+
+Also on the session tape: consumption healthy (42 grabs), pursuit
+and retreat firing under human play, world deaths 3 in five
+minutes. The residual bounded freeze class (one 7.7 s give-up wait
+at the *34 armour deck) stands as filed.
+
 ## v3.89 (2026-08-28) - the second audit answered: dm6 reborn, Grok armed
 
 The auditor's follow-up found the last stale copy and set the
