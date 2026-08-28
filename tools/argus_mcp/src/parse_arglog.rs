@@ -303,6 +303,8 @@ pub fn parse_tape(text: &str) -> MatchTape {
                 *event_counts.entry("hunch".to_string()).or_insert(0) += 1;
             } else if line.contains(" watch ") {
                 *event_counts.entry("watch".to_string()).or_insert(0) += 1;
+            } else if line.ends_with(" sprintjump") {
+                *event_counts.entry("sprintjump".to_string()).or_insert(0) += 1;
             } else if line.ends_with(" prefire") {
                 *event_counts.entry("prefire".to_string()).or_insert(0) += 1;
             }
@@ -493,11 +495,13 @@ ARGUS Carmack shove\n\
 ARGUS Joe Rogan shove\n\
 ARGUS routecache adopt\n\
 ARGUS Carmack watch spawn\n\
+ARGUS Joe Rogan sprintjump\n\
 ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         let tape = parse_tape(text);
         assert_eq!(tape.event_counts.get("shove"), Some(&2));
         assert_eq!(tape.event_counts.get("routecache_adopt"), Some(&1));
         assert_eq!(tape.event_counts.get("watch"), Some(&1));
+        assert_eq!(tape.event_counts.get("sprintjump"), Some(&1));
     }
 
     #[test]

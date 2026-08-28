@@ -7,6 +7,53 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.93 (2026-08-28) - the sprint jump finally flies
+
+Issue #4, run-up discipline, and the forensics found THREE stacked
+reasons no sprint link ever fired live:
+
+1. No run-up: the fire gate demands 310+ u/s within 15 degrees of
+   the line INSIDE 48u of the seat, and the seat sits at the lip -
+   a bot that walks to the seat and pivots can never rebuild that.
+   Now the hop stages: a validated run-up point 60-150u behind the
+   seat on the extended jump line (clear chest line, dry floor),
+   walk there, then charge through the seat at the landing.
+2. The 340u displacement guard: during the charge the steering
+   target is the landing, 342-406u out - the guard re-planned every
+   sprint hop at phase-2 start (the runup1 zero-fire tape). Charging
+   sprint hops are exempt to 480, the way train pads earned their
+   exemption in v3.46.
+3. The brink guard: the speed-scaled probe vetoes the gap from
+   39-52u out while the 8u launch lookahead cannot fire until the
+   lip - the guard always won. An ALIGNED charge inside the fire
+   envelope now owns its last 48u, and CheckBottom refusing the
+   step there fires the jump rather than letting the
+   FL_PARTIALGROUND retry walk the bot off the edge.
+
+Then the first live firing died mid-air to a battle-grab bending
+the wish 105 degrees off the flight line (air-accelerate bled 359
+to 50 u/s by the apex). The FLIGHT LATCH holds the launch line for
+the whole arc, whatever combat wants that frame; any grounded frame
+clears it. Overshooting the seat unfired or drifting 48u+ off the
+line drops the hop back to the line-up phase - never a full-speed
+unanchored lip approach.
+
+Every launch prints "ARGUS <name> sprintjump" (pseudo-event
+`sprintjump` in briefs). The router gate drops skill 3 -> 2 with
+the discipline in place (default skill-1 sessions still route
+around, exactly like a mid player who knows the jump exists).
+
+Ladder: dm4 runup3 parity on all seven gates with the FIRST
+COMPLETED SPRINT CROSSING in project history (Carmack, n145->n146,
+386 u/s held through an engage and a grab mid-flight); runup4
+improved on all seven with four launches, two clean completions,
+the failures being mid-air rocket knockback landing survivably in
+the pit. dm2 improved / dm6 parity (their tapes predate the latch;
+zero sprint flights occurred, so the code path is identical).
+dm2/dm6 sprint seats see almost no traffic - the links are
+load-bearing shortcuts (dm2 saves up to 18 hops) that fire when
+routes actually cross them. dm4 baseline -> ab_dm4_runup4.
+
 ## v3.92 (2026-08-28) - lqdm2 reborn: the last map joins the modern era
 
 Issue #12: the LibreQuake stand-in was the one map still on its

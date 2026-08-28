@@ -71,6 +71,13 @@ float   an_cachetime;       // freshness: adoptions stop after 10 s
 .entity ar_sprintfrom;      // on bots: launch seat of the current
                             // sprint hop - the arc is only verified
                             // FROM the seat, so fire anchors there
+.vector ar_sprintrun;       // on bots: run-up point behind the seat
+                            // on the extended jump line (the fire
+                            // demands 310+ u/s ON the line AT the
+                            // seat; a pivot at the seat can never
+                            // deliver that - GitHub #4)
+.float  ar_sprintstate;     // on bots: 0 none, 1 walking to the
+                            // run-up point, 2 charging the line
 .float  ar_aliased;         // on real clients: the console alias for
                             // the homage mode has been handed over
 .float  ar_routegen;        // on bots: increments per completed route
@@ -623,7 +630,7 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
             return FALSE;
         if (Argus_LinkIsRocket (cur, nx) && !Argus_BotCanRJ (bot))
             return FALSE;
-        if (Argus_LinkIsSprint (cur, nx) && skill < 3)
+        if (Argus_LinkIsSprint (cur, nx) && skill < 2)
             return FALSE;
         cur = nx;
         hops = hops + 1;
@@ -713,9 +720,12 @@ void() Argus_Nav_Frame =
                 // pay the toll right now; sprint jumps only for
                 // skill 2+ (the full-run arc has no margin - lower
                 // tiers route around, exactly like a mid player who
-                // knows the jump exists and does not attempt it)
+                // knows the jump exists and does not attempt it).
+                // Gate dropped 3 -> 2 with the run-up discipline
+                // (GitHub #4): the staged approach delivers the
+                // 310+ aligned launch the old walk-up never could.
                 if ((!Argus_LinkIsRocket (cur, nb) || Argus_BotCanRJ (an_bot))
-                    && (!Argus_LinkIsSprint (cur, nb) || skill >= 3))
+                    && (!Argus_LinkIsSprint (cur, nb) || skill >= 2))
                 {
                     nb.an_mark = an_gen;
                     nb.an_par = cur;
