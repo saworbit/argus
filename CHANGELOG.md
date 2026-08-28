@@ -7,6 +7,34 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v3.89 (2026-08-28) - the second audit answered: dm6 reborn, Grok armed
+
+The auditor's follow-up found the last stale copy and set the
+queue; all of it ran:
+
+- **Grok armed**: its MCP config points at ~/.grok/bin, which the
+  auto-swap could never see - the week-old binary renamed aside,
+  0.22 copied to the path its config names. (Grok respawned its
+  server mid-operation, so its next restart completes the arm.)
+- **dm2 consumption: diagnosed, not chased**. The economy is
+  healthy - all three bots acquired the RL during the rebirth tape
+  (8 switch events) and 17 battle-grabs took armour and health.
+  The gl counter counts only CURRENT-GOAL touches by design (the
+  v3.17 metric boundary), so on a contested map the goalers get
+  invalidated mid-route by whoever eats the prize first - the 17
+  same-prize re-picks are honest competition, and the low number
+  is the instrument, not the bot. No code change, per the review.
+- **dm6 reborn**: same recipe as dm2 - 11 guaranteed item seats,
+  five jump stitches, the slot clamp - and the 20-node pocket
+  shattered to 11 nodes in slivers. Reach 86% -> 94%. The ladder
+  (run through the documented no-MCP fallback: direct engine plus
+  argus_review): ZERO routefails (the debut ran 10), stalls 19 ->
+  14, all frags positive at spread 2, 24 goals consumed, no
+  freezes, no world deaths. Every map in the rotation now routes
+  clean or near-clean.
+- Baselines now cover all four maps at modern tapes (dm6 ->
+  ab_dm6_rebirth1 added).
+
 ## v3.88 (2026-08-28) - the audit answered: dm2 reborn, the lab unstuck
 
 An external review (run from disk while the MCP sat hung) called it
