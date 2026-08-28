@@ -44,6 +44,15 @@ pub fn index_argus(cfg: &Config) -> Result<QcIndex, String> {
         "weapons.qc",
         "world.qc",
         "client.qc",
+        // the camera is Argus code and every ArgusCam_* lookup used to
+        // come back empty; the mover/trigger files are the ones the
+        // typed-link work reads constantly.
+        "argus_cam.qc",
+        "doors.qc",
+        "buttons.qc",
+        "plats.qc",
+        "triggers.qc",
+        "player.qc",
     ];
     for name in names {
         let path = cfg.src.join(name);
@@ -160,7 +169,7 @@ fn call_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         let extra = TRACKED_EXTRA.join("|");
-        Regex::new(&format!(r"\b(Argus_\w+|BotLab_\w+|{extra})\s*\(")).expect("call")
+        Regex::new(&format!(r"\b(Argus\w+|BotLab_\w+|{extra})\s*\(")).expect("call")
     })
 }
 
@@ -186,6 +195,13 @@ pub fn qc_search(cfg: &Config, needle: &str, max: usize) -> Result<Vec<QcHit>, S
         "combat.qc",
         "weapons.qc",
         "world.qc",
+        "client.qc",
+        "argus_cam.qc",
+        "doors.qc",
+        "buttons.qc",
+        "plats.qc",
+        "triggers.qc",
+        "player.qc",
     ];
     let mut hits = Vec::new();
     for name in names {
@@ -420,7 +436,10 @@ const TRACKED_EXTRA: &[&str] = &[
 ];
 
 fn keep_fn(name: &str) -> bool {
-    name.starts_with("Argus_") || name.starts_with("BotLab_") || TRACKED_EXTRA.contains(&name)
+    // "ArgusCam_POV".starts_with("Argus_") is false - the camera and the
+    // director sit behind a prefix that never had an underscore, so they
+    // were unindexable even once the file was in the list.
+    name.starts_with("Argus") || name.starts_with("BotLab_") || TRACKED_EXTRA.contains(&name)
 }
 
 fn role_for(name: &str) -> &'static str {
@@ -563,5 +582,31 @@ void() Argus_Bar =
         assert!(body.contains("return;"));
         assert!(!body.contains("Argus_Bar"), "sliced too far: {body}");
         assert!(end < 12);
+    }
+
+    #[test]
+    fn camera_functions_are_indexed() {
+        // #36: argus_cam.qc was missing from index_argus(), so every
+        // `see what=fn name=ArgusCam_*` returned nothing.
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join("src");
+        let cam = root.join("argus_cam.qc");
+        if !cam.is_file() {
+            return; // source tree not present (packaged build)
+        }
+        let mut fns = Vec::new();
+        let mut consts = Vec::new();
+        index_file(&cam, "argus_cam.qc", &mut fns, &mut consts).expect("index argus_cam.qc");
+        assert!(
+            fns.iter().any(|f| f.name == "ArgusCam_POV"),
+            "ArgusCam_POV not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name.starts_with("ArgusDirector_")),
+            "the director is not indexed"
+        );
+        // and the call regex must reach them too (calls/callers)
+        assert!(call_re().is_match("            ArgusCam_POV (self, self.cam_target);"));
     }
 }

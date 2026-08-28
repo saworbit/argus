@@ -242,6 +242,16 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
     })
 }
 
+
+/// True when a run-log filename names this map as a whole token.
+/// Stems are underscore-joined (`ab_dm2_rebirth1.log`,
+/// `soak_2026-08-28_1257_003_dm2.log`), so splitting on `_` and
+/// comparing whole tokens keeps `lqdm2` out of a `dm2` sweep.
+fn log_stem_names_map(file_name: &str, map: &str) -> bool {
+    let stem = file_name.strip_suffix(".log").unwrap_or(file_name);
+    stem.split(['_', '-', '.']).any(|tok| tok == map)
+}
+
 fn pick_logs(cfg: &Config, map: &str, max_logs: usize) -> Result<Vec<std::path::PathBuf>, String> {
     let mut named = Vec::new();
     if cfg.runs.is_dir() {
@@ -256,7 +266,10 @@ fn pick_logs(cfg: &Config, map: &str, max_logs: usize) -> Result<Vec<std::path::
                 .and_then(|s| s.to_str())
                 .unwrap_or("")
                 .to_ascii_lowercase();
-            if name.contains(map) {
+            // "lqdm2".contains("dm2") is true: fresher lqdm2 tapes used
+            // to displace real dm2 logs before the caller could check
+            // the tape's own map name. Match whole stem tokens instead.
+            if log_stem_names_map(&name, map) {
                 let mtime = ent.metadata().and_then(|m| m.modified()).ok();
                 named.push((mtime, p));
             }
@@ -386,5 +399,15 @@ ARGEVT Reap death world pos '14.0 262.0 -358.0'
             serde_json::from_str(&fs::read_to_string(&wrote).unwrap()).unwrap();
         assert!(overlay.cells.iter().any(|c| c.kind == "lava" && c.cost >= 8.0));
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn lqdm2_tapes_do_not_answer_a_dm2_sweep() {
+        // #38: `"lqdm2".contains("dm2")` let fresher lqdm2 tapes fill the
+        // candidate list and starve learn_hotspots of real dm2 logs.
+        assert!(log_stem_names_map("ab_dm2_rebirth1.log", "dm2"));
+        assert!(log_stem_names_map("soak_2026-08-28_1257_003_dm2.log", "dm2"));
+        assert!(!log_stem_names_map("ab_lqdm2_rebirth1.log", "dm2"));
+        assert!(log_stem_names_map("ab_lqdm2_rebirth1.log", "lqdm2"));
     }
 }

@@ -66,6 +66,12 @@ pub struct Route {
     pub lift: u32,
     #[serde(default, skip_serializing_if = "is_zero_u32")]
     pub swim: u32,
+    #[serde(default, skip_serializing_if = "is_zero_u32")]
+    pub train: u32,
+    #[serde(default, skip_serializing_if = "is_zero_u32")]
+    pub sprint: u32,
+    #[serde(default, skip_serializing_if = "is_zero_u32")]
+    pub door: u32,
     pub path: Vec<RouteHop>,
     pub ok: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -310,6 +316,9 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
             rocket: 0,
             lift: 0,
             swim: 0,
+            train: 0,
+            sprint: 0,
+            door: 0,
             path: Vec::new(),
             ok: false,
             note: Some("node out of range".into()),
@@ -330,6 +339,9 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
             rocket: 0,
             lift: 0,
             swim: 0,
+            train: 0,
+            sprint: 0,
+            door: 0,
             path: vec![RouteHop {
                 node: from,
                 origin: g.nodes[from as usize],
@@ -371,6 +383,9 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
             rocket: 0,
             lift: 0,
             swim: 0,
+            train: 0,
+            sprint: 0,
+            door: 0,
             path: Vec::new(),
             ok: false,
             note: Some("no route on the waypoint graph".into()),
@@ -396,7 +411,13 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
     let mut rocket = 0;
     let mut lift = 0;
     let mut swim = 0;
+    let mut train = 0;
+    let mut sprint = 0;
+    let mut door = 0;
     for (node, kind) in chain {
+        // the loader types these three (nav_graph.rs load, "doorlinks" /
+        // "trainlinks" / "sprintlinks"); without their own arms a train
+        // ride read as a plain walk in every route summary.
         match kind.as_str() {
             "drop" => drop += 1,
             "jump" => jump += 1,
@@ -404,6 +425,9 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
             "rocket" => rocket += 1,
             "lift" => lift += 1,
             "swim" => swim += 1,
+            "train" => train += 1,
+            "sprint" => sprint += 1,
+            "door" => door += 1,
             _ => walk += 1,
         }
         path.push(RouteHop {
@@ -426,6 +450,9 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
         rocket,
         lift,
         swim,
+        train,
+        sprint,
+        door,
         path,
         ok: true,
         note: None,
@@ -673,5 +700,26 @@ mod tests {
         assert_eq!(g.cam_nodes.len(), 1);
         assert_eq!(g.cam_nodes[0].tag, "arena_quad");
         assert_eq!(g.cam_nodes[0].pos[2], 140.0);
+    }
+
+    #[test]
+    fn typed_hops_are_not_counted_as_walks() {
+        // #39: train / sprint / door edges fell through `_ => walk`, so
+        // a dm2 east-deck ride briefed as a plain walk.
+        let g = NavGraph {
+            map: "t".into(),
+            nodes: vec![[0.0; 3], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [3.0, 0.0, 0.0]],
+            adj: vec![
+                vec![NavEdge { to: 1, kind: "train".into() }],
+                vec![NavEdge { to: 2, kind: "sprint".into() }],
+                vec![NavEdge { to: 3, kind: "door".into() }],
+                vec![],
+            ],
+            cam_nodes: vec![],
+        };
+        let r = route_nodes(&g, 0, 3);
+        assert!(r.ok);
+        assert_eq!((r.train, r.sprint, r.door), (1, 1, 1));
+        assert_eq!(r.walk, 0, "typed hops leaked into the walk tally");
     }
 }

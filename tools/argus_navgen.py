@@ -1465,7 +1465,7 @@ if not NO_RJ:
     for _i in links:
         for _j in links[_i]:
             _adj[_i].add(_j)
-    for _a, _b in teles + rjlinks + lifts + swims + trains:
+    for _a, _b in teles + rjlinks + lifts + swims + trains + sprints:
         _adj[_a].add(_b)
 
     # iterative Tarjan
@@ -2151,11 +2151,15 @@ if _nclamp:
 # nodes' links so the isolated-waypoint prune removes them: a bot
 # physically standing there routes from the nearest SURVIVING node
 # and simply walks the gap, which beats dying.
+# sprints belong in every reachability graph for the same reason
+# rjlinks do: they are real forward edges the runtime can walk. The
+# prune below DELETES nodes it judges unreachable, so omitting a
+# link class here amputates whatever only that class serves.
 _fwd = collections.defaultdict(set)
 for _i in links:
     for _j in links[_i]:
         _fwd[_i].add(_j)
-for _a, _b in teles + rjlinks + lifts + swims + trains:
+for _a, _b in teles + rjlinks + lifts + swims + trains + sprints:
     _fwd[_a].add(_b)
 _sccs = _knit_sccs(_fwd, len(ways))
 _main = max(_sccs, key=len) if _sccs else set()
@@ -2301,7 +2305,7 @@ _fwd = collections.defaultdict(set)
 for _i in links:
     for _j in links[_i]:
         _fwd[_i].add(_j)
-for _a, _b in teles + rjlinks + lifts + swims + trains:
+for _a, _b in teles + rjlinks + lifts + swims + trains + sprints:
     _fwd[_a].add(_b)
 _sccs = _knit_sccs(_fwd, len(ways))
 _main = max(_sccs, key=len) if _sccs else set()
