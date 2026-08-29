@@ -1,4 +1,4 @@
-﻿/*  argus.qc â€” v3: combat. Movement and navigation from v1/v2, plus:
+﻿/*  argus.qc - v3: combat. Movement and navigation from v1/v2, plus:
 
     * bots are classname "player": items, obituaries, frags and doors all
       treat them as players through the stock 1.06 machinery, untouched
@@ -117,7 +117,7 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 
 // ar_laststart / ar_lastfailnode / ar_failstreak are declared in
 // argus_nav.qc (compile order): a repeat routefail from one start node
-// is a verdict about the BOT (knocked into a pit), not the goal â€”
+// is a verdict about the BOT (knocked into a pit), not the goal -
 // without the streak check, one trapped bot routefails through the
 // whole goal menu and the global shelf starves every other bot for
 // minutes (the bimodal lava matches, 2026-08-18)
@@ -146,6 +146,12 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .entity ar_nemesis;             // OPM: who keeps killing this bot
 .float  ar_nemkills;            // OPM: consecutive deaths to them;
                                 // 3+ is a vendetta, any kill vents it
+.float  ar_rjweapon;            // gun held before a nav rocket jump
+                                // forced the RL, restored on landing
+.entity ar_lastkill;            // who this bot most recently killed -
+                                // the vendetta ledger needs the victim,
+                                // and a frag counter cannot name one
+.float  ar_lastkilltime;        // when, so a stale name cannot vent it
 .entity ar_lastfoe;             // combat memory: last engaged enemy
 .float  ar_foetime;             // when we last had them in a fight
 .entity ar_door;                // door slice: closed slab being handled
@@ -269,7 +275,14 @@ void(float what) Argus_Chat =
         return;
     if (what == 2 && random () < 0.5)
         return;
-    if (time < self.ar_nextchat)
+    // The powerup line (4) jumps the queue. Kill and death chat fire
+    // constantly and hold this same 5-9 s throttle, so an artifact
+    // pickup - by far the rarest and most worth announcing - almost
+    // always landed inside somebody else's cooldown and was dropped.
+    // Verified against a live client: three quad pickups in one probe,
+    // not one line survived. Powerups are 30 s apart at best and there
+    // are three on a map, so letting them through cannot spam.
+    if (time < self.ar_nextchat && what != 4)
         return;
     self.ar_nextchat = time + 5 + random () * 4;
 
@@ -988,7 +1001,7 @@ float() Argus_Waterlevel =
     c = pointcontents (point);
     // NEVER write self.watertype here: the engine runs
     // SV_CheckWaterTransition on STEP entities every frame, judging
-    // transitions by watertype vs the contents at the ORIGIN â€” a QC
+    // transitions by watertype vs the contents at the ORIGIN - a QC
     // write from the FEET made it see a fresh crossing every frame
     // while a bot waded, restarting the splash sound 72 times a
     // second (Shane's fourth sound playtest: "the start of the
@@ -1167,7 +1180,7 @@ float(float want, float pdist) Argus_HazardSteer =
         want = want - 100;
     else
     {
-        // boxed in: reverse out, but never HOLD the reverse â€” it is
+        // boxed in: reverse out, but never HOLD the reverse - it is
         // an escape, not a steer, and a held reverse marches the bot
         // back the way it came at the next corner
         self.ar_hazhold = 0;
@@ -1205,7 +1218,36 @@ float(vector to) Argus_SafeLine =
         p_z = self.origin_z + (to_z - self.origin_z) * (i / total) + 24;
         traceline (p, p - '0 0 304', TRUE, self);
         if (trace_fraction == 1)
-            return FALSE;
+        {
+            // WATER TOLERANCE, tried and REVERTED (GitHub #105).
+            // Argus_MoveHazard treats a submerged probe end as a pool
+            // rather than a void, and mirroring that here - so
+            // battle-grabs, retreat supply and mode-1 seeking could
+            // path to items in the dm3 basin - failed its own ladder
+            // badly: dm3 coverage HALVED (376 -> 193), engages 8 -> 2,
+            // grabs and weapon switches to zero, and two moat-bank
+            // cells at '1787 560 -88' and '1797 560 -88' logged 62 and
+            // 59 deflections as bots queued at the water's edge. The
+            // same build with this one line out ran engages 10 and
+            // hazards 197. MoveHazard can permit water because it is a
+            // per-step guard that keeps steering; SafeLine is an
+            // all-or-nothing verdict on a whole line, and approving a
+            // line INTO water commits the bot to swim for an item it
+            // has no swimming plan to reach.
+            // Same trap Argus_MoveHazard already carries (the v3.43
+            // dm2 strip-stair forensics): a probe START buried in
+            // rising geometry returns fraction 1 with allsolid, which
+            // reads identically to a bottomless void. Sample points
+            // ride 24 above the interpolated line, so a stair steeper
+            // than the interpolation swallows them. A knee-plus
+            // recheck landing on a non-liquid tread is a staircase,
+            // not a pit.
+            if (pointcontents (p) != CONTENT_SOLID)
+                return FALSE;
+            traceline (p + '0 0 26', p - '0 0 8', TRUE, self);
+            if (trace_fraction == 1)
+                return FALSE;
+        }
         c = pointcontents (trace_endpos + '0 0 2');
         if (c == CONTENT_LAVA || c == CONTENT_SLIME)
         {
@@ -1365,7 +1407,7 @@ float(float myaw, float spd) Argus_GapJumpOK =
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
-    local float wl, spd, moveok, myaw, rhoriz, sready;
+    local float wl, spd, moveok, myaw, rhoriz, sready, wdrag;
 
     makevectors ('0 0 0' + self.ar_moveyaw * '0 1 0');
     wishdir = v_forward;
@@ -1402,7 +1444,7 @@ void() Argus_Physics =
         return;
 
     // waterjump note (2026-08-17): a CheckWaterJump mirror was tried
-    // here for the FrikBot-review slice and REVERTED â€” across five
+    // here for the FrikBot-review slice and REVERTED - across five
     // dm4 matches it correlated with off-band lava deaths and stalls
     // (its 2 s ballistic latch suspends steering at the worst edges).
     // Its real target is dm2's pools; re-attempt it inside the dm2
@@ -1413,7 +1455,7 @@ void() Argus_Physics =
         // swim only when actually swimming: a bot STANDING chest-deep
         // in a wadeable pool walks like anyone else. The tread-with-
         // floor case was the residual splash cycle in Shane's third
-        // sound playtest â€” lift, break surface, fall, splash, again.
+        // sound playtest - lift, break surface, fall, splash, again.
         if (self.ar_mode == 2 && self.ar_node != world
             && self.ar_node.origin_z < self.origin_z - 40
             && self.air_finished > time + 5
@@ -1431,14 +1473,31 @@ void() Argus_Physics =
             self.velocity_z = 120;  // eyes under: drive for air
         else
             self.velocity_z = 50;   // treading: hold the surface
-                                    // without vaulting clear of it â€”
+                                    // without vaulting clear of it -
                                     // the 120 bob at waist depth
                                     // skimmed in and out of the
                                     // water and fired the enter/exit
                                     // sound pair at 2 Hz (Shane's
                                     // second with-sound playtest)
-        self.velocity_x = self.velocity_x * 0.8 + wishdir_x * 60;
-        self.velocity_y = self.velocity_y * 0.8 + wishdir_y * 60;
+        // Swim drag was a per-FRAME factor, so the water felt
+        // different on every tick rate. Top speed is not the problem -
+        // 0.8v + 60 settles at 300 u/s whatever the rate, because the
+        // drag scales with the impulse - but the TIME CONSTANT is
+        // frame-counted: 0.70 s to reach speed on a 20 Hz dedicated
+        // server against 0.19 s on a 72 Hz listen host. Every tape in
+        // runs/ was recorded at 20 Hz and every session Shane plays is
+        // a listen server, so bots have been three times more
+        // responsive in his water than in any match we ever judged.
+        //
+        // Same model expressed per second: k = 4/s, target 300 u/s.
+        // At frametime 0.05 this is exactly 0.8 and 60 again, so the
+        // dedicated behaviour - and every baseline measured on it - is
+        // bit-for-bit unchanged.
+        wdrag = 1 - 4 * frametime;
+        if (wdrag < 0)
+            wdrag = 0;
+        self.velocity_x = self.velocity_x * wdrag + wishdir_x * 1200 * frametime;
+        self.velocity_y = self.velocity_y * wdrag + wishdir_y * 1200 * frametime;
         self.flags = self.flags - (self.flags & FL_ONGROUND);
         // AIR EMERGENCY: the drive-for-air pins under a ceiling and
         // the bot drowns in place (Romero reached 1 hp submerged in
@@ -1481,7 +1540,7 @@ void() Argus_Physics =
         }
         // waterjump, gated to swim-link hops ONLY: waist blocked,
         // eye clear, vault the lip toward the exit node. No timed
-        // latch â€” the latch suspending steering was the mechanism
+        // latch - the latch suspending steering was the mechanism
         // that drowned bots in lava on dm4 the first time. The gate
         // means this code cannot run there at all: swim links are
         // only generated for CONTENTS_WATER.
@@ -1570,7 +1629,19 @@ void() Argus_Physics =
     if (self.flags & FL_ONGROUND)
     {
         if (self.ar_hoprj == 2)
+        {
             self.ar_hoprj = 0;          // landed: the blast ride is over
+            // the launch forced the RL into our hands; out of combat
+            // nothing re-picks until the next sighting, so a bot that
+            // was holding the LG landed and kept carrying rockets
+            if (self.ar_rjweapon && self.ar_enemy == world
+                && (self.items & self.ar_rjweapon))
+            {
+                self.weapon = self.ar_rjweapon;
+                W_SetCurrentAmmo ();
+            }
+            self.ar_rjweapon = 0;
+        }
 
         if (self.ar_mode == 2 && self.ar_hoprj == 1)
         {
@@ -1585,6 +1656,8 @@ void() Argus_Physics =
                 rhoriz = vlen (rto);
                 if (rhoriz > 8)
                     self.angles_y = vectoyaw (rto);
+                if (self.weapon != IT_ROCKET_LAUNCHER)
+                    self.ar_rjweapon = self.weapon;
                 self.weapon = IT_ROCKET_LAUNCHER;
                 W_SetCurrentAmmo ();
                 if (rhoriz < 80)
@@ -1850,7 +1923,7 @@ void() Argus_Physics =
                 }
                 // v3.16 slide semantics: a BLOCKED deflection must
                 // unground so engine flymove turns the wall into a
-                // slide â€” staying grounded pinned bots motionless at
+                // slide - staying grounded pinned bots motionless at
                 // brink corners (2026-08-18 forensics: stalls 40-62;
                 // the drift-in worry is not in the v3.16 record,
                 // which held lava at 1-3 for its whole life)
@@ -1928,6 +2001,24 @@ void() Argus_Physics =
 // bets the victim respawns at the nearest deathmatch pad and biases
 // shopping toward items there for 8 s. Skill 1+ so default sessions
 // see it. Does not mutate argus_lastspot (that is spawn rotation).
+// Would SelectSpawnPoint reject this pad right now? It skips any spot
+// with a live player within 84u (client.qc), so a crowded pad is a bad
+// bet however close to the body it sits.
+float(entity sp, float rad) Argus_PadCrowded =
+{
+    local entity b;
+
+    b = find (world, classname, "player");
+    while (b != world)
+    {
+        if (b.health > 0 && !b.cam_active
+            && vlen (b.origin - sp.origin) < rad)
+            return TRUE;
+        b = find (b, classname, "player");
+    }
+    return FALSE;
+};
+
 void(entity killer, vector deathorg) Argus_SpawnWatch =
 {
     local entity sp, best, oself;
@@ -1953,7 +2044,14 @@ void(entity killer, vector deathorg) Argus_SpawnWatch =
         if (d < bd
             && fabs (sp.origin_z - deathorg_z) < 96
             && pointcontents (sp.origin) != CONTENT_LAVA
-            && pointcontents (sp.origin) != CONTENT_SLIME)
+            && pointcontents (sp.origin) != CONTENT_SLIME
+            // SelectSpawnPoint explicitly SKIPS any pad with a player
+            // inside 84u, so the pad the killer is standing on is the
+            // one the engine is least likely to choose. Betting on it
+            // was betting against the spawn code. 100u of margin: the
+            // killer is about to move, and a pad it is merely near is
+            // still a fair guess.
+            && !Argus_PadCrowded (sp, 100))
         {
             bd = d;
             best = sp;
@@ -2030,12 +2128,12 @@ void() Argus_Die =
     // one death line only: the detailed form below. A bare
     // Argus_Event ("death") used to precede it and every parser that
     // counted the death token saw two events per death (Shane's
-    // project review, 2026-08-18) â€” event counts across this
+    // project review, 2026-08-18) - event counts across this
     // boundary halve while analyzer deaths totals are unchanged
     dprint ("ARGEVT ");
     dprint (self.netname);
     dprint (" death ");
-    // a nameless killer (crusher door, missile entity â€” anything
+    // a nameless killer (crusher door, missile entity - anything
     // without a netname) used to print an EMPTY killer field and
     // strict parsers dropped the row (Shane's fix-now list; dm2's
     // crusher was the live case). Nameless killers are "world".
@@ -2048,7 +2146,7 @@ void() Argus_Die =
     dprint ("\n");
 
     // nemesis ledger (OPM slice C): a third straight death to the
-    // same player is a vendetta â€” the affect the source spec wanted,
+    // same player is a vendetta - the affect the source spec wanted,
     // reduced to the one signal deathmatch actually shows
     if (self.enemy != world && self.enemy != self
         && self.enemy.classname == "player")
@@ -2063,6 +2161,11 @@ void() Argus_Die =
         // post-kill spawn watch: the killer (if a bot) bets the
         // victim will come back at the nearest deathmatch spawn.
         // Same shopping-bias shape as the hunch, different trigger.
+        // tell the killer who it just got: frags alone cannot say,
+        // and the vendetta ledger needs the name (see Argus_Frame)
+        self.enemy.ar_lastkill = self;
+        self.enemy.ar_lastkilltime = time;
+
         if (self.enemy.ar_isbot)
             Argus_SpawnWatch (self.enemy, self.origin);
     }
@@ -2143,7 +2246,7 @@ void() Argus_SetSkill =
     // spring gains: k = omega^2, c = 2*zeta*omega with zeta ~0.8
     // (slight overshoot). The source spec's k 18-32 confused omega
     // with k and aimed like molasses (springaim1/2 ladder: engages
-    // 49-56, deaths 24-25 â€” fights that never ended). omega 9-20
+    // 49-56, deaths 24-25 - fights that never ended). omega 9-20
     // rad/s settles in 0.2-0.45 s, a human flick-and-correct.
     if (s == 0)
     { self.ar_aimerr = 2.2; self.ar_reactbase = 0.65; self.ar_aimrate = 170;
@@ -2161,7 +2264,7 @@ void() Argus_SetSkill =
     // personalities key on ROSTER SLOT, not netname (v3.37): Shane
     // renamed the roster and every bot silently fell into the
     // wild-aim else branch. Slot 0 = the flick, 1 = the smooth
-    // operator, 2 and 3 = the glory hounds. Names are labels only â€”
+    // operator, 2 and 3 = the glory hounds. Names are labels only -
     // rename freely (one word!), the play styles stay put.
     if (self.ar_slot == 0)
     {
@@ -2268,10 +2371,57 @@ void() Argus_BaseStats =
 entity() Argus_SpawnSpot =
 {
     local entity spot;
+    local float count, pick;
 
-    spot = find (argus_lastspot, classname, "info_player_deathmatch");
-    if (spot == world)
+    // A shared global pointer walked the lump in order, so bot spawns
+    // marched a fixed cycle a human could stand on and farm. Mirror
+    // SelectSpawnPoint instead: count the pads, pick one at random,
+    // and prefer pads with nobody standing on them (the engine's own
+    // 84u rule) so a bot does not respawn into a camper's crosshair.
+    count = 0;
+    spot = find (world, classname, "info_player_deathmatch");
+    while (spot != world)
+    {
+        if (!Argus_PadCrowded (spot, 84))
+            count = count + 1;
+        spot = find (spot, classname, "info_player_deathmatch");
+    }
+    if (count < 1)
+    {
+        // every pad crowded: fall back to any pad at all, at random
         spot = find (world, classname, "info_player_deathmatch");
+        while (spot != world)
+        {
+            count = count + 1;
+            spot = find (spot, classname, "info_player_deathmatch");
+        }
+        if (count < 1)
+            return world;
+        pick = floor (random () * count);
+        spot = find (world, classname, "info_player_deathmatch");
+        while (spot != world && pick > 0)
+        {
+            pick = pick - 1;
+            spot = find (spot, classname, "info_player_deathmatch");
+        }
+        argus_lastspot = spot;
+        return spot;
+    }
+    pick = floor (random () * count);
+    spot = find (world, classname, "info_player_deathmatch");
+    while (spot != world)
+    {
+        if (!Argus_PadCrowded (spot, 84))
+        {
+            if (pick <= 0)
+            {
+                argus_lastspot = spot;
+                return spot;
+            }
+            pick = pick - 1;
+        }
+        spot = find (spot, classname, "info_player_deathmatch");
+    }
     argus_lastspot = spot;
     return spot;
 };
@@ -2295,7 +2445,7 @@ void() Argus_Respawn =
     self.ar_moveyaw = self.angles_y;
     // the stock spawn rites: fog, and telefrag whoever is standing
     // here (their absence let a bot respawn inside a human and lock
-    // both solid â€” found by the fifth playtest)
+    // both solid - found by the fifth playtest)
     spawn_tfog (self.origin);
     spawn_tdeath (self.origin, self);
     Argus_BaseStats ();
@@ -2345,7 +2495,13 @@ void(entity d) Argus_TakeDoor =
     b = find (world, target, d.targetname);
     while (b != world)
     {
-        if (b.classname == "func_button")
+        // a door wired to a pressure trigger had no activator at all
+        // by this search, so the goal was shelved as a false route
+        // failure. A trigger brush opens the same way a touch button
+        // does - by walking into it - so it serves as a target.
+        if (b.classname == "func_button"
+            || b.classname == "trigger_multiple"
+            || b.classname == "trigger_once")
         {
             p = (b.absmin + b.absmax) * 0.5;
             dist = vlen (p - self.origin);
@@ -2415,7 +2571,7 @@ float(entity e) Argus_CanSee =
 
 // OPM slice B: gunfire is the tactical sound. Every live bot in
 // earshot records it in a one-slot audio memory; a wall between damps
-// the radius by 1.4x (an eye trace, not real propagation â€” the right
+// the radius by 1.4x (an eye trace, not real propagation - the right
 // lie at deathmatch scale). Called from W_Attack for every player,
 // human or bot, so bots hear Shane the way he hears them.
 void(vector spos, entity who) Argus_HearSound =
@@ -2431,7 +2587,12 @@ void(vector spos, entity who) Argus_HearSound =
             d = vlen (b.origin - spos);
             if (d < 1000)
             {
-                traceline (b.origin + '0 0 22', spos, TRUE, b);
+                // item pickups pass the item's own origin, which sits
+                // on the floor: an eye-height trace to it clips step
+                // risers and bevels down any flat corridor and charges
+                // a 1.4x wall penalty for an open room. Listen at
+                // chest height, like the gunfire callers already do.
+                traceline (b.origin + '0 0 22', spos + '0 0 16', TRUE, b);
                 if (trace_fraction < 1)
                     d = d * 1.4;
                 if (d < 1000)
@@ -2454,7 +2615,7 @@ void() Argus_Perceive =
 {
     local entity b, best;
     local float d, bd, ok;
-    local vector to;
+    local vector to, fov;
 
     // current enemy: still valid?
     if (self.ar_enemy != world)
@@ -2496,12 +2657,21 @@ void() Argus_Perceive =
                 // soft FOV (OPM slice B): a NEW target beyond 500u
                 // must be roughly in front (about 155 degrees with
                 // peripheral) or freshly heard nearby. Close range
-                // stays free â€” peripheral vision and footsteps.
+                // stays free - peripheral vision and footsteps.
                 // Tracking of the current enemy is unaffected.
                 ok = 1;
                 if (ar_opm_ears && d > 500)
                 {
-                    if (normalize (b.origin - self.origin) * v_forward < 0.2)
+                    // v_forward comes from self.angles, whose pitch is
+                    // always 0, so it lies flat. Normalising the full
+                    // 3D separation then dotting it against a flat
+                    // vector charges the gate for height: an enemy on
+                    // a walkway directly ahead but 400u up fails a
+                    // test they are dead centre of. Flatten first, so
+                    // the gate measures the angle it means to.
+                    fov = b.origin - self.origin;
+                    fov_z = 0;
+                    if (normalize (fov) * v_forward < 0.2)
                     {
                         ok = 0;
                         if (time < self.ar_sndtime + 2.5
@@ -2509,7 +2679,7 @@ void() Argus_Perceive =
                             ok = 1;
                         // combat memory (the "getting dumber" fix):
                         // a recent foe is re-acquirable at 360
-                        // degrees â€” you do not forget who you were
+                        // degrees - you do not forget who you were
                         // just fighting because they stepped behind
                         // you. 72 pursue events against 15 engages
                         // in the v3.37 human tape was this gate
@@ -2551,7 +2721,7 @@ void() Argus_Perceive =
 
     // glance at a fresh noise when nothing is in sight: facing only,
     // movement untouched (facing is decoupled), so the worst case is
-    // looking the wrong way â€” and the FOV gate then admits whoever
+    // looking the wrong way - and the FOV gate then admits whoever
     // fired, which closes the hear-turn-see loop
     if (ar_opm_ears && best == world && self.ar_enemy == world
         && self.ar_sndtime > 0 && time < self.ar_sndtime + 2.0)
@@ -2559,7 +2729,20 @@ void() Argus_Perceive =
         to = self.ar_sndpos - self.origin;
         to_z = 0;
         if (vlen (to) > 40)
-            self.angles_y = vectoyaw (to);
+        {
+            // a glance is a head turn, not a snap: this used to slam
+            // the yaw up to 180 degrees in one frame, which every
+            // other facing path (combat spring, saccade glide, pursuit
+            // turn) is careful not to do - and POV spectating shows it
+            local float gdiff, gturn;
+            gdiff = vectoyaw (to) - self.angles_y;
+            while (gdiff > 180)  gdiff = gdiff - 360;
+            while (gdiff < -180) gdiff = gdiff + 360;
+            gturn = self.ar_aimrate * frametime;
+            if (gdiff > gturn)        gdiff = gturn;
+            else if (gdiff < 0 - gturn) gdiff = 0 - gturn;
+            self.angles_y = self.angles_y + gdiff;
+        }
     }
 
     if (best != world)
@@ -2589,8 +2772,26 @@ void() Argus_Perceive =
 // ordinary kills, no glow, and rings that never turned a bot into eyes.
 void() Argus_CheckPowerups =
 {
+    // three-second expiry cues (#32). Stock CheckPowerups plays these
+    // for clients and Argus_CheckPowerups never did, so nobody nearby
+    // could hear an opponent's quad or pentagram about to lapse - a
+    // real audible tell, and one the human is entitled to. The
+    // client-only halves (stuffcmd "bf", sprint) stay out; invisible_
+    // time / invincible_time / super_time are the same one-shot
+    // latches stock uses so the cue plays once.
     if (self.invisible_finished)
     {
+        if (self.invisible_finished < time + 3 && self.invisible_time == 1)
+        {
+            self.invisible_time = time + 1;
+            sound (self, CHAN_AUTO, "items/inv2.wav", 1, ATTN_NORM);
+        }
+        else if (self.invisible_time && self.invisible_time < time
+                 && self.invisible_finished > time)
+        {
+            self.invisible_time = time + 1;
+            sound (self, CHAN_AUTO, "items/inv3.wav", 1, ATTN_NORM);
+        }
         if (self.invisible_finished < time)
         {
             self.items = self.items - (self.items & IT_INVISIBILITY);
@@ -2612,6 +2813,11 @@ void() Argus_CheckPowerups =
 
     if (self.invincible_finished)
     {
+        if (self.invincible_finished < time + 3 && self.invincible_time == 1)
+        {
+            self.invincible_time = 0;
+            sound (self, CHAN_AUTO, "items/protect2.wav", 1, ATTN_NORM);
+        }
         if (self.invincible_finished < time)
         {
             self.items = self.items - (self.items & IT_INVULNERABILITY);
@@ -2626,6 +2832,11 @@ void() Argus_CheckPowerups =
 
     if (self.super_damage_finished)
     {
+        if (self.super_damage_finished < time + 3 && self.super_time == 1)
+        {
+            self.super_time = 0;
+            sound (self, CHAN_AUTO, "items/damage2.wav", 1, ATTN_NORM);
+        }
         if (self.super_damage_finished < time)
         {
             self.items = self.items - (self.items & IT_QUAD);
@@ -2638,6 +2849,12 @@ void() Argus_CheckPowerups =
             self.effects = self.effects - (self.effects & EF_DIMLIGHT);
     }
 
+    if (self.radsuit_finished && self.radsuit_finished < time + 3
+        && self.rad_time == 1)
+    {
+        self.rad_time = 0;
+        sound (self, CHAN_AUTO, "items/suit2.wav", 1, ATTN_NORM);
+    }
     if (self.radsuit_finished && self.radsuit_finished < time)
     {
         self.items = self.items - (self.items & IT_SUIT);
@@ -2664,6 +2881,26 @@ void(float d) Argus_SelectWeapon =
         w = IT_LIGHTNING;
     else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1
              && d > 180)
+        w = IT_ROCKET_LAUNCHER;
+    // Point blank holding the RL and nothing else loaded, the ladder
+    // fell all the way through to the axe - charging an armed opponent
+    // with a hatchet while carrying rockets.
+    //
+    // The first version of this branch opened the whole band below 180
+    // on a stack over 60 and dm2 answered immediately: self-kills went
+    // 0-3 a tape to 6 of 15 deaths, 40% (dm4, open and long-ranged,
+    // never noticed). Splash is 120 less half the separation, so at
+    // 60u the firer eats ~90 - the axe really is better down there.
+    // Floor the band at 120u, where self-damage tops out near 60, and
+    // demand the same 100 effective health Argus_BotCanRJ learned to
+    // demand for exactly this reason.
+    else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1
+             && d > 120
+             && !((self.items & IT_SUPER_NAILGUN) && self.ammo_nails >= 2)
+             && !((self.items & IT_SUPER_SHOTGUN) && self.ammo_shells >= 2)
+             && !((self.items & IT_NAILGUN) && self.ammo_nails >= 1)
+             && !((self.items & IT_SHOTGUN) && self.ammo_shells >= 1)
+             && self.health + self.armorvalue * self.armortype >= 100)
         w = IT_ROCKET_LAUNCHER;
     else if ((self.items & IT_SUPER_NAILGUN) && self.ammo_nails >= 2)
         w = IT_SUPER_NAILGUN;
@@ -2804,6 +3041,16 @@ void(entity foe) Argus_Hunch =
             if (v > 0)
             {
                 d = Argus_GoalPoint (it) - self.ar_lastseen;
+                // NOTE, and do not "fix" this again without a ladder:
+                // the hunch deliberately reads distance on ONE curve,
+                // unlike Argus_PickGoal's two-tier 0.4x major decay.
+                // Matching PickGoal was tried (GitHub #92) and refuted
+                // by its own ladder - alone on dm4 it ran lava 11 and
+                // stalls 13 against a 4/5 baseline, the worst tape of
+                // that session, because pulling the bet onto far
+                // majors sends bots on long cross-map trips over the
+                // pit. A bet is a detour, not a shopping trip: it
+                // should stay near where the foe actually vanished.
                 sc = v * 320 / (vlen (d) + 160);
                 if (sc > bsc)
                 {
@@ -2870,6 +3117,27 @@ entity() Argus_RetreatSupply =
 // "rocket", not stock's "missile". The 55% commit chance keeps the
 // dodge human: serial rockets still land sometimes at every tier.
 // Spikes are not scanned - a 1000 u/s nail is not human-reactable.
+// Is there room to actually move that way? A yaw can pass every
+// hazard probe (floor is floor, wall or not) and still be a wall.
+// Chest-height line out to the dodge distance, plus the same line at
+// knee height so a waist-high rail does not read as open.
+float(float myaw) Argus_SideClear =
+{
+    local vector eye, ahead;
+
+    makevectors ('0 0 0' + myaw * '0 1 0');
+    eye = self.origin + '0 0 22';
+    ahead = v_forward * 64;
+    traceline (eye, eye + ahead, TRUE, self);
+    if (trace_fraction < 1)
+        return FALSE;
+    eye = self.origin - '0 0 8';
+    traceline (eye, eye + ahead, TRUE, self);
+    if (trace_fraction < 1)
+        return FALSE;
+    return TRUE;
+};
+
 void() Argus_DodgeScan =
 {
     local entity m;
@@ -2894,13 +3162,21 @@ void() Argus_DodgeScan =
                     // ways holds the line instead (the first ladder
                     // took the unchecked fallback side straight off
                     // the dm4 walkways, lava 5)
+                    // MoveHazard only asks whether there is FLOOR -
+                    // and a wall has excellent floor under it. Dodging
+                    // a rocket into a wall is worse than standing
+                    // still: walkmove refuses, the bot is pinned, and
+                    // the rocket lands on it. Clearance is its own
+                    // test.
                     side = vectoyaw (m.velocity) + 90;
                     if (Argus_MoveHazard (side, 48)
-                        || Argus_MoveHazard (side, 90))
+                        || Argus_MoveHazard (side, 90)
+                        || !Argus_SideClear (side))
                     {
                         side = vectoyaw (m.velocity) - 90;
                         if (Argus_MoveHazard (side, 48)
-                            || Argus_MoveHazard (side, 90))
+                            || Argus_MoveHazard (side, 90)
+                            || !Argus_SideClear (side))
                             return;
                     }
                     self.ar_dodgeyaw = side;
@@ -2925,13 +3201,21 @@ void() Argus_DodgeScan =
                 if (normalize (m.velocity) * normalize (to) > 0.8
                     && random () < 0.55)
                 {
+                    // MoveHazard only asks whether there is FLOOR -
+                    // and a wall has excellent floor under it. Dodging
+                    // a rocket into a wall is worse than standing
+                    // still: walkmove refuses, the bot is pinned, and
+                    // the rocket lands on it. Clearance is its own
+                    // test.
                     side = vectoyaw (m.velocity) + 90;
                     if (Argus_MoveHazard (side, 48)
-                        || Argus_MoveHazard (side, 90))
+                        || Argus_MoveHazard (side, 90)
+                        || !Argus_SideClear (side))
                     {
                         side = vectoyaw (m.velocity) - 90;
                         if (Argus_MoveHazard (side, 48)
-                            || Argus_MoveHazard (side, 90))
+                            || Argus_MoveHazard (side, 90)
+                            || !Argus_SideClear (side))
                             return;
                     }
                     self.ar_dodgeyaw = side;
@@ -2963,7 +3247,7 @@ float() Argus_Combat =
     {
         self.button0 = 0;
         // pursue the corner they vanished behind instead of snapping
-        // back to the shopping list â€” goal routes pass teleporter
+        // back to the shopping list - goal routes pass teleporter
         // mouths, and resuming them mid-fight read as "fleeing into
         // the teleporter" (ninth playtest: 9 of 17 tele trips were
         // mid-combat)
@@ -2982,7 +3266,13 @@ float() Argus_Combat =
                 diff = want - self.angles_y;
                 while (diff > 180)  diff = diff - 360;
                 while (diff < -180) diff = diff + 360;
-                turn = AR_TURNRATE * frametime;
+                // ar_aimrate is the skill-scaled head speed (170 at
+                // skill 0 up to 300 at skill 3, +30 for the smooth
+                // operator slot) and nothing read it - a warmup bot
+                // whipped round corners exactly as fast as skill 3.
+                // Movement yaw keeps AR_TURNRATE: that is how fast a
+                // body can change direction, not how fast eyes move.
+                turn = self.ar_aimrate * frametime;
                 if (diff > turn)        diff = turn;
                 else if (diff < -turn)  diff = -turn;
                 self.angles_y = self.angles_y + diff;
@@ -3022,7 +3312,26 @@ float() Argus_Combat =
             }
         }
         // gave up the chase: place the bet on where they are HEADED
-        // before handing the wheel back to navigation
+        // before handing the wheel back to navigation.
+        //
+        // This used to be gated on ar_pursuing, which is only set when
+        // the straight line to the vanish point passes MoveHazard - so
+        // an enemy who broke sight ACROSS a hazard (over a ledge, down
+        // a shaft, across a lava lip) got no bet at all. That is
+        // exactly the foe worth guessing about: they went somewhere we
+        // could not follow. The hunch is a conclusion about them, not
+        // a reward for having been able to walk after them. Argus_Hunch
+        // carries its own 6 s cooldown, so an unwalkable chase cannot
+        // spam it.
+        // NOTE (GitHub #93): a hazard-blocked chase never sets
+        // ar_pursuing, so an enemy who broke sight across a ledge or a
+        // lava lip gets no bet - which is arguably the foe most worth
+        // guessing about. Calling Argus_Hunch unconditionally here was
+        // tried and parked: it did NOT raise the hunch count (the 6 s
+        // cooldown already bounds it, 32 firings against 43) and its
+        // dm4 tape cost 2 lava deaths against the same build without
+        // it. Real observation, fix that did not pay - wants a
+        // cheaper trigger, not this one.
         if (self.ar_pursuing)
         {
             self.ar_pursuing = 0;
@@ -3094,7 +3403,7 @@ float() Argus_Combat =
         aimpt = e.origin + '0 0 12' + err;
 
     // projectile leading (Shane's review): aim where they will be.
-    // Time of flight = dist over projectile speed â€” rockets and nails
+    // Time of flight = dist over projectile speed - rockets and nails
     // 1000 u/s, grenades a ~600 u/s toss. Hitscan (SG/SSG/LG) and the
     // axe lead nothing. One step, not an iterated solution: close
     // enough at DM ranges, and the error model still rides on top.
@@ -3105,6 +3414,18 @@ float() Argus_Combat =
     else if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
         aimpt = aimpt + e.velocity * (d / 1000);
 
+    // A falling enemy carries velocity_z of -400 to -700, and over a
+    // long flight the lead drags the aim point under the floor - the
+    // bot shoots into the ground at its own feet. They cannot fall
+    // past what is holding them up, so clamp the lead to the floor
+    // beneath them (a hit low on a landing target still splashes).
+    if (e.velocity_z < 0 && aimpt_z < e.origin_z)
+    {
+        traceline (e.origin, e.origin - '0 0 512', TRUE, e);
+        if (trace_fraction < 1 && aimpt_z < trace_endpos_z + 12)
+            aimpt_z = trace_endpos_z + 12;
+    }
+
     // ballistic loft / lip compensation. Rockets fly straight; when
     // the target is well below (dm4 walkway to pit) aim down a little
     // so the shot does not kiss the walkway edge. Grenades drop under
@@ -3112,9 +3433,19 @@ float() Argus_Combat =
     // when the target is above.
     if (self.weapon == IT_GRENADE_LAUNCHER)
     {
-        loft = d * d / 2400;
-        if (loft > 96)
-            loft = 96;
+        // W_FireGrenade launches at v_forward*600 + v_up*200, so the
+        // toss already carries the grenade UP before gravity 800 takes
+        // it back. Over a flight t = d/600 the net vertical travel is
+        // 200t - 400t^2, and the aim correction is its negative:
+        //     loft = d*d/900 - d/3
+        // The old d*d/2400 ignored the launch impulse entirely, which
+        // over-lofted inside ~300u (the grenade rises there on its own
+        // and the extra aim sailed it over heads) and, once the 96 cap
+        // bit, under-lofted badly at the top of the band - a 650u toss
+        // drops about 250u and was being handed 96.
+        loft = (d * d / 900) - (d / 3);
+        if (loft < 0)
+            loft = 0;
         if (e.origin_z > self.origin_z + 32)
             loft = loft + (e.origin_z - self.origin_z) * 0.25;
         aimpt_z = aimpt_z + loft;
@@ -3153,7 +3484,16 @@ float() Argus_Combat =
                 shd = normalize (shd);
                 shp = e.origin + shd * 80 + '0 0 18';
                 traceline (shp, shp - '0 0 280', TRUE, e);
-                if (trace_fraction == 1
+                // an enemy backed against a wall buries shp in solid,
+                // and a trace that starts solid returns fraction 1 -
+                // indistinguishable from open air below. Without this
+                // the shove pulled the aim 24u short against every
+                // cornered target, turning kills into near misses.
+                if (pointcontents (shp) == CONTENT_SOLID)
+                {
+                    // wall, not a brink: shoot them, do not shove them
+                }
+                else if (trace_fraction == 1
                     || pointcontents (trace_endpos - '0 0 4') == CONTENT_LAVA
                     || pointcontents (trace_endpos - '0 0 4') == CONTENT_SLIME)
                 {
@@ -3179,7 +3519,7 @@ float() Argus_Combat =
     while (diff > 180)  diff = diff - 360;
     while (diff < -180) diff = diff + 360;
     // damped-spring mouse model (OPM slice A): a human aim is a
-    // neuromotor spring, not a constant-rate servo â€” fast flick,
+    // neuromotor spring, not a constant-rate servo - fast flick,
     // slight overshoot, settle, micro-tremor. Explicit Euler is
     // stable at these gains (k*dt^2 well under 1 at 20 Hz worst
     // case); velocity clamped to a fast human flick.
@@ -3435,7 +3775,7 @@ float() Argus_Combat =
     // the ranged version backed bots blind over walkway lips (lava
     // 3 -> 7; the combat hazard fallback is itself "back off", so a
     // retreating bot on a walkway has no safe answer). A real
-    // retreat needs positioning-aware escape headings â€” idea bank,
+    // retreat needs positioning-aware escape headings - idea bank,
     // with the fake-retreat/corner-ambush state machine. Tapes:
     // ab_dm4_retreat.log, ab_dm4_retreat2.log.
 
@@ -3603,7 +3943,7 @@ float(entity it, float cls) Argus_ItemValue =
             if (self.items & IT_ROCKET_LAUNCHER)
             {
                 // weapon control (Shane's review): an owned RL is
-                // still worth a loop â€” the pickup refills rockets
+                // still worth a loop - the pickup refills rockets
                 // and every visit is one the enemy never gets
                 v = 10 + (15 - self.ammo_rockets) * 1.5;
                 if (v < 10)  v = 10;
@@ -3678,6 +4018,16 @@ float(entity it, float cls) Argus_ItemValue =
         if (c == "item_armorInv")     v = 160;
         else if (c == "item_armor2")  v = 90;
         else                          v = 30;
+        // armour_touch REPLACES rather than adds, so a lower tier is a
+        // downgrade in absorption even when the points look better:
+        // red at 37 units is 29.6 points and green is 30, so a nearly
+        // spent red jacket used to score green as an upgrade and swap
+        // 80% absorption for 30%. Never shop below the tier we wear.
+        if (self.armortype >= 0.8 && c != "item_armorInv")
+            return 0;
+        if (self.armortype >= 0.6 && c != "item_armorInv"
+            && c != "item_armor2")
+            return 0;
         v = v - self.armortype * self.armorvalue;
         if (v <= 0)  return 0;
         return v * 0.55;
@@ -3692,12 +4042,36 @@ float(entity it, float cls) Argus_ItemValue =
     if (it.touch == BackpackTouch)
     {
         // pack dominance (Shane's review): a dropped pack is worth
-        // its contents, not a flat nibble â€” the fat rocket pack by
+        // its contents, not a flat nibble - the fat rocket pack by
         // the RL is the map's real prize, and looting your victim
         // is the loop humans run by reflex
-        v = 12 + it.ammo_rockets * 0.9 + it.ammo_cells * 0.35
-              + it.ammo_nails * 0.08 + it.ammo_shells * 0.12;
-        if (it.items & (IT_ROCKET_LAUNCHER | IT_LIGHTNING))
+        // value what we can actually ABSORB, not what the pack holds
+        // (#89): a full bot was being pulled off its circuit by a
+        // 40-rocket pack worth exactly zero rockets to it.
+        vf = it.ammo_rockets;
+        if (vf > 100 - self.ammo_rockets)  vf = 100 - self.ammo_rockets;
+        if (vf < 0)  vf = 0;
+        v = 12 + vf * 0.9;
+        vf = it.ammo_cells;
+        if (vf > 100 - self.ammo_cells)    vf = 100 - self.ammo_cells;
+        if (vf < 0)  vf = 0;
+        v = v + vf * 0.35;
+        vf = it.ammo_nails;
+        if (vf > 200 - self.ammo_nails)    vf = 200 - self.ammo_nails;
+        if (vf < 0)  vf = 0;
+        v = v + vf * 0.08;
+        vf = it.ammo_shells;
+        if (vf > 100 - self.ammo_shells)   vf = 100 - self.ammo_shells;
+        if (vf < 0)  vf = 0;
+        v = v + vf * 0.12;
+        // a pack carrying a gun we do not own is a WEAPON pickup that
+        // happens to be lying on the floor (#88): the flat +15 valued
+        // a free rocket launcher at less than a shotgun.
+        if ((it.items & IT_ROCKET_LAUNCHER) && !(self.items & IT_ROCKET_LAUNCHER))
+            v = v + 60;
+        else if ((it.items & IT_LIGHTNING) && !(self.items & IT_LIGHTNING))
+            v = v + 52;
+        else if (it.items & (IT_ROCKET_LAUNCHER | IT_LIGHTNING))
             v = v + 15;
         // a FRESH pack is time-critical loot: the victim is already
         // respawning and running back for it (Shane reclaimed his
@@ -3728,6 +4102,7 @@ string(float cls) Argus_ClassWord =
 void() Argus_PickGoal =
 {
     local entity e, b, pick, near, rnode;
+    local entity dn1, dn2, dn3, dn4, dn5, dn6;
     local entity bw, ba, bh, br, bp, bo;
     local float sw, sa, sh, sr, sp, so;
     local vector gp, d;
@@ -3739,6 +4114,31 @@ void() Argus_PickGoal =
     sw = 0;  sa = 0;  sh = 0;  sr = 0;  sp = 0;  so = 0;
     near = world;
     neard = 99999;
+
+    // item denial (#48): gather the live opponents ONCE. This used to
+    // run a full find() chain per candidate item - on a 60-item map
+    // that is 60 walks of the whole edict array for one goal pick.
+    // Six slots covers the 4-bot roster plus humans; beyond that the
+    // extra bodies simply do not add denial pressure.
+    dn1 = world;  dn2 = world;  dn3 = world;
+    dn4 = world;  dn5 = world;  dn6 = world;
+    if (skill >= 1)
+    {
+        b = find (world, classname, "player");
+        while (b != world)
+        {
+            if (b != self && b.health > 0 && !b.cam_active)
+            {
+                if (dn1 == world)       dn1 = b;
+                else if (dn2 == world)  dn2 = b;
+                else if (dn3 == world)  dn3 = b;
+                else if (dn4 == world)  dn4 = b;
+                else if (dn5 == world)  dn5 = b;
+                else if (dn6 == world)  dn6 = b;
+            }
+            b = find (b, classname, "player");
+        }
+    }
 
     // region class (dm3 musing S4): which reachability region is
     // this bot shopping from? Mainland is 0; a bot displaced into a
@@ -3870,16 +4270,25 @@ void() Argus_PickGoal =
                     // item denial (OPM slice C): an opponent standing
                     // near this item makes taking it sweeter. Skill
                     // 1+ - a warmup partner does not play keep-away
+                    // find() walks the whole edict array, and this
+                    // ran once per candidate ITEM - 50-80 full sweeps
+                    // of 600 edicts for a single goal pick. The
+                    // players were gathered once before the loop
+                    // (dn1..dn6); only the distance test stays here.
                     if (skill >= 1)
                     {
-                        b = find (world, classname, "player");
-                        while (b != world)
-                        {
-                            if (b != self && b.health > 0 && !b.cam_active
-                                && vlen (b.origin - e.origin) < 300)
-                                sc = sc + 12;
-                            b = find (b, classname, "player");
-                        }
+                        if (dn1 != world && vlen (dn1.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn2 != world && vlen (dn2.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn3 != world && vlen (dn3.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn4 != world && vlen (dn4.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn5 != world && vlen (dn5.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn6 != world && vlen (dn6.origin - e.origin) < 300)
+                            sc = sc + 12;
                     }
                     // the hunch (theory of mind): the item we bet a
                     // vanished foe is running for is suddenly very
@@ -4193,11 +4602,24 @@ void() Argus_AI =
         }
         else if (time > self.ar_goalstart + 20)
         {
-            self.ar_goal.ar_claimer = self;
-            self.ar_goal.ar_claimtime = time;
-            self.ar_goal = world;
-            Argus_Event ("abandon");
-            Argus_PickGoal ();
+            // A fight on the way to a goal is not a failure to reach
+            // it. The clock used to run through the duel, so a long
+            // engagement en route to the quad expired the errand,
+            // stamped the claim shelf and locked the bot out of its
+            // own prize for up to 45 s - while standing next to it.
+            // Push the deadline along for as long as combat owns the
+            // steering; the goal is only abandoned for time actually
+            // spent walking.
+            if (self.ar_enemy != world)
+                self.ar_goalstart = time - 15;
+            else
+            {
+                self.ar_goal.ar_claimer = self;
+                self.ar_goal.ar_claimtime = time;
+                self.ar_goal = world;
+                Argus_Event ("abandon");
+                Argus_PickGoal ();
+            }
         }
 
         if (self.ar_pending && Argus_GoalOK (self.ar_goal))
@@ -4241,7 +4663,7 @@ void() Argus_AI =
     // investigation (v3.41, the second half of the hearing slice):
     // fresh gunfire PULLS an unengaged bot toward it instead of just
     // turning its head. The "getting dumber" feel was traffic
-    // dilution â€” corridor mode and doors opened the whole map, bots
+    // dilution - corridor mode and doors opened the whole map, bots
     // commute far-flung errands, and a human blazing away drew only
     // glances. Bounded 700u, hazard-guarded, route-preserving (the
     // node target survives; steering just borrows the combat
@@ -4318,7 +4740,7 @@ void() Argus_AI =
             to_z = 0;
 
             // train ride (dm2 slice 4): the car patrols on its own
-            // clock â€” no trigger to press. This block only decides
+            // clock - no trigger to press. This block only decides
             // HOLDING (the liftwait friction-hold); the ordinary
             // steering below does all the walking, so boarding and
             // stepping off are just walks that happen when the hold
@@ -4392,12 +4814,12 @@ void() Argus_AI =
                             // riding IS progress: the give-up clock
                             // only counts pad-waiting (the first
                             // reland ladder lost riders mid-bridge
-                            // to the timeout â€” abandons 23/35 with
+                            // to the timeout - abandons 23/35 with
                             // zero completed crossings)
                             self.ar_liftstart = time;
                             // ride it STANDING STILL: the friction
                             // hold alone needs half a second the 94u
-                            // slab does not give at run speed â€”
+                            // slab does not give at run speed -
                             // Romero sprinted the length of the car
                             // and off its far edge into the bridge
                             // gap 156 times in one tape (shane v345)
@@ -4436,7 +4858,7 @@ void() Argus_AI =
                             {
                                 // car edge a step away: BOARD it.
                                 // Steer at the slab centre, never at
-                                // the far pad â€” free-running at a
+                                // the far pad - free-running at a
                                 // target 320u across the void is what
                                 // walked riders off the plank
                                 // whenever the hold did not bite
@@ -4539,7 +4961,7 @@ void() Argus_AI =
                 // lift hop, standing over the boarding pad with the
                 // exit node overhead: park and let the plat do the
                 // vertical part (relanded after the 2026-08-18
-                // forensics exonerated it â€” bisect1 failed without
+                // forensics exonerated it - bisect1 failed without
                 // this code present)
                 if (time > self.ar_liftstart + 8)
                 {
@@ -4704,7 +5126,7 @@ void() Argus_AI =
             else if (vlen (to) > 340 && !self.ar_hoptrain
                      && !(self.ar_hopjump == 2 && vlen (to) < 480))
             {
-                // displaced beyond any legal hop length â€” a fight (or
+                // displaced beyond any legal hop length - a fight (or
                 // knockback, or a teleporter) carried us off the
                 // route, and resuming the beeline from here marches
                 // through whatever wall is in the way. Re-plan.
@@ -4843,7 +5265,7 @@ void() Argus_AI =
                 // typed hops must go through the arrival gate, which
                 // sets their flags: cutting the corner onto a rocket,
                 // lift or swim link left the bot walking at a node it
-                // cannot walk to (Shane's correctness list â€” swim
+                // cannot walk to (Shane's correctness list - swim
                 // lips sit inside the 48u z window)
                 if (nx != world
                     && !Argus_LinkIsJump (self.ar_node, nx)
@@ -4961,7 +5383,7 @@ void() Argus_AI =
         want = vectoyaw (tp - self.origin);
 
         // typed door handling (dm2 slice 2). func_door renames itself
-        // "door" at spawn â€” matching "func_door" never fired. Touch-
+        // "door" at spawn - matching "func_door" never fired. Touch-
         // open: walk in. Button-only: detour and hold for STATE_TOP.
         // Shoot plate (*30 / t18) is slice 3; we still walk to it.
         if (self.ar_door == world)
@@ -5055,9 +5477,9 @@ void() Argus_AI =
         }
 
         // direct (unrouted) seeking across a hazard: curve around the
-        // brink toward the goal first â€” items sitting just past a pit
+        // brink toward the goal first - items sitting just past a pit
         // lip (dm4's big-room RL by the mega) were being abandoned
-        // from every pit-side approach â€” and give the goal up only
+        // from every pit-side approach - and give the goal up only
         // when no side is safe. Routed mode 2 is left alone: its
         // links are walk-verified and its drops land on solid.
         if (self.ar_mode != 2 && Argus_MoveHazard (want, 48))
@@ -5107,7 +5529,7 @@ void() Argus_AI =
             self.angles_y = self.ar_moveyaw;
 
             // corner pre-aim (OPM slice C): while routed with nobody
-            // in sight, look at the node AFTER the steering target â€”
+            // in sight, look at the node AFTER the steering target -
             // players look through the corner they are about to
             // round, not down their own velocity. Facing only.
             if (self.ar_mode == 2 && self.ar_enemy == world
@@ -5258,9 +5680,14 @@ void() Argus_FrameAll =
             // re-picks with the pack scored by its contents.
             self.ar_goal = world;
 
-            if (self.ar_nemkills >= 3)
+            // vendetta discharged: a kill vents the tilt (OPM) - but
+            // only THEIR death does. Any frag used to reset the ledger
+            // and fire the revenge line, so a bot could taunt its
+            // nemesis over the body of an uninvolved third party while
+            // the nemesis was still ahead of it.
+            if (self.ar_nemkills >= 3 && self.ar_lastkill == self.ar_nemesis
+                && time < self.ar_lastkilltime + 1)
             {
-                // vendetta discharged: a kill vents the tilt (OPM)
                 self.ar_nemkills = 0;
                 Argus_Chat (3);
             }
@@ -5512,7 +5939,7 @@ void() Argus_RemoveBot =
     }
     if (b.ar_clientno >= 0 && b.ar_clientno >= Argus_HumanCount ())
     {
-        // blank the scoreboard row before the entity goes away â€” but
+        // blank the scoreboard row before the entity goes away - but
         // never a slot a human has since occupied (Shane's
         // correctness list: five humans plus impulse 102 used to
         // erase the fifth human's TAB row)

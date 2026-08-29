@@ -1,4 +1,4 @@
-/*  argus_nav.qc — runtime navigation for Argus. Pure vanilla QuakeC.
+/*  argus_nav.qc - runtime navigation for Argus. Pure vanilla QuakeC.
 
     Nodes are invisible entities spawned by generated per-map files
     (argus_nav_<map>.qc via argus_nav_dispatch.qc). Links are directed:
@@ -124,7 +124,7 @@ void(entity a, entity b) Argus_NavLink =
     else
     {
         // navgen budgets 8 slots per node; a 9th call means the
-        // generator and this runtime disagree — say so instead of
+        // generator and this runtime disagree - say so instead of
         // silently dropping the link (lqdm2 n126 lost its
         // teleporter this way; Shane's fix-now list)
         dprint ("ARGUS navlink overflow\n");
@@ -266,7 +266,7 @@ void(entity a, entity b) Argus_NavLinkDoor =
 
 // a link that swims out of water: from an underwater waypoint to a
 // dry waypoint at the surface lip. The physics waterjump only fires
-// on these hops — and navgen only emits them for CONTENTS_WATER, so
+// on these hops - and navgen only emits them for CONTENTS_WATER, so
 // dm4's lava can never see a vault (the regression that killed the
 // first waterjump).
 void(entity a, entity b) Argus_NavLinkSwim =
@@ -328,6 +328,10 @@ float(entity bot) Argus_BotCanRJ =
     // (armour-absorbed) capacity. Bisected 2026-08-18 against the
     // bimodal lava storms and acquitted: those were the trapped-bot
     // routefail shelf contagion, not this bar.
+    // invulnerability zeroes self-splash in T_Damage, so the health
+    // toll simply does not apply while the pentagram is lit
+    if (bot.invincible_finished > time)
+        return TRUE;
     if (bot.health + bot.armorvalue * bot.armortype < 100)
         return FALSE;
     // quad multiplies the self-splash: a point-blank floor rocket
@@ -491,7 +495,13 @@ entity(vector p) Argus_NearestNode =
             bd = dist;
             best = n;
         }
-        if (dist < bdv)
+        // the visible-preference below only accepts bdv <= bd*2+100,
+        // and bd only ever decreases, so a node outside that window
+        // now can never come back inside it - tracing it is pure
+        // waste. Matters most where it hurt: standing somewhere with
+        // no visible node at all, bdv stays at its initial 999999 and
+        // EVERY node in the graph used to fire a full BSP traceline.
+        if (dist < bdv && dist <= bd * 2 + 100)
         {
             traceline (eye, n.origin + '0 0 8', TRUE, self);
             if (trace_fraction == 1)
@@ -686,7 +696,7 @@ void() Argus_Route_Fail =
 void() Argus_Nav_Frame =
 {
     local entity cur, nb;
-    local float pops, i;
+    local float pops, i, bit;
 
     if (!an_busy)
         return;
@@ -711,11 +721,17 @@ void() Argus_Nav_Frame =
         }
 
         i = 0;
+        bit = 1;
         while (i < cur.an_nlinks)
         {
             nb = Argus_NavGetLink (cur, i);
             if (nb.an_mark != an_gen)
             {
+                // i IS the link slot, so the typed masks can be read
+                // directly. Argus_LinkIsRocket/IsSprint each re-walk
+                // cur's whole link list to rediscover it - two extra
+                // loops and up to 16 builtin calls per expanded node,
+                // in the hot router loop.
                 // rocket-jump links exist only for bots equipped to
                 // pay the toll right now; sprint jumps only for
                 // skill 2+ (the full-run arc has no margin - lower
@@ -724,8 +740,8 @@ void() Argus_Nav_Frame =
                 // Gate dropped 3 -> 2 with the run-up discipline
                 // (GitHub #4): the staged approach delivers the
                 // 310+ aligned launch the old walk-up never could.
-                if ((!Argus_LinkIsRocket (cur, nb) || Argus_BotCanRJ (an_bot))
-                    && (!Argus_LinkIsSprint (cur, nb) || skill >= 2))
+                if ((!(cur.an_rjmask & bit) || Argus_BotCanRJ (an_bot))
+                    && (!(cur.an_sprintmask & bit) || skill >= 2))
                 {
                     nb.an_mark = an_gen;
                     nb.an_par = cur;
@@ -738,6 +754,7 @@ void() Argus_Nav_Frame =
                 }
             }
             i = i + 1;
+            bit = bit * 2;
         }
         pops = pops + 1;
     }

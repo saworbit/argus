@@ -704,6 +704,8 @@ void() Argus_AddBot;        // ARGUS: roster impulses, defined in
 void() Argus_RemoveBot;     // argus.qc, wired in ImpulseCommands
 void(float on) Argus_SetOmicron;    // ARGUS: the homage costume
 float argus_omicron;                // (console "omicron" / impulse 146)
+void(float what) Argus_Chat;    // ARGUS: bot chat, defined in argus.qc
+                                // and called from powerup_touch (4)
 void(vector spos, entity who) Argus_HearSound;  // ARGUS: OPM hearing,
                             // defined in argus.qc, called by W_Attack
 
@@ -833,12 +835,16 @@ void(entity client, string s) centerprint = { if (client.ar_isbot) return; cente
 // the multi-string forms need the SAME bot guard: key doors, rune
 // pickups and trigger_counter all reach them with a bot as the
 // client, and the engine hard-errors client messages to non-clients
-// (Shane's correctness list — same crash class as the original
+// (Shane's correctness list - same crash class as the original
 // stuffcmd shim)
 void(entity client, string s, string s2) centerprint2_bi = #73;
 void(entity client, string s, string s2) centerprint2 = { if (client.ar_isbot) return; centerprint2_bi (client, s, s2); };	// centerprint that concats two strings
 void(entity client, string s, string s2, string s3) centerprint3_bi = #73;
 void(entity client, string s, string s2, string s3) centerprint3 = { if (client.ar_isbot) return; centerprint3_bi (client, s, s2, s3); };	// centerprint that concats three strings
+void(entity client, string s, string s2, string s3, string s4, string s5) centerprint5_bi = #73;
+void(entity client, string s, string s2, string s3, string s4, string s5) centerprint5 = { if (client.ar_isbot) return; centerprint5_bi (client, s, s2, s3, s4, s5); };	// centerprint that concats five strings
+void(entity client, string s, string s2, string s3, string s4, string s5, string s6, string s7) centerprint7_bi = #73;
+void(entity client, string s, string s2, string s3, string s4, string s5, string s6, string s7) centerprint7 = { if (client.ar_isbot) return; centerprint7_bi (client, s, s2, s3, s4, s5, s6, s7); };	// centerprint that concats seven strings
 
 void(vector pos, string samp, float vol, float atten) ambientsound = #74;
 

@@ -34,6 +34,12 @@ def session_map(text):
     for line in text.splitlines():
         m = re.match(r"SpawnServer: (\w+)", line)
         if m:
+            # the previous pending spawn was never refused, so it ran:
+            # bank it before starting the next one. Without this a
+            # session that played dm4 and then tried to load a map
+            # that does not exist archived as "unknown".
+            if pending:
+                confirmed = pending
             pending = m.group(1).lower()
             continue
         if line.startswith("Couldn't spawn server maps/"):

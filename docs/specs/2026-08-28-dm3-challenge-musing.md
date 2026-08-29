@@ -7,7 +7,7 @@ Each direction names its ladder and its generalisation value.
 Evidence gathered this session with the cartographer, the reach
 auditor, and a new demo-mining analysis.
 
-DELIVERY NOTE (added later the same era): most directions shipped —
+DELIVERY NOTE (added later the same era): most directions shipped -
 human-trace link mining, jump-up links, regions, and virtual plat
 pads landed in v3.84 (with its graveyard of reverted variants);
 guaranteed control-item seats and jump stitches in v3.87; the

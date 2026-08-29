@@ -7,6 +7,90 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v4.05 (2026-08-29) - the tracker batches
+
+Eighty issues arrived overnight in two waves and all eighty are
+answered. Six shipped builds, each on its own ladder; seven changes
+were implemented, laddered and reverted with post-mortems in the
+code. Progs `16474B95C015A897872CE1494907EE36`.
+
+**v3.98 base files.** `W_FireGrenade` was the sixth fire routine and
+the only one still falling through to `aim()` - a bot aiming dead
+level has `v_angle_x == 0` and took the autoaim branch, losing
+`ar_aimerr`, the lead and the loft. The quad else-branch in
+`CheckPowerups` stripped `EF_DIMLIGHT` every frame while a pentagram
+was lit, so the invulnerable glow was lost for its whole duration
+(the bot path had carried the guard since v3.6). Plus the
+`trigger_hurt` frag penalty, entity identity in the rocket-jump
+multiplier, the three miscopied `hadammo` pools, a zero-direction
+knockback guard, and `> time` on the powerup timestamps.
+
+**v3.99 camera.** The HUD computed the tracked bot's weapon and
+affect state every frame and threw both away; `centerprint5`/`7`
+are id's own declarations against builtin `#73`. POV froze on a
+stale combat angle (every `v_angle` write sits in a firing path).
+Smart Chase read `angles_x`, which is 0 on any upright player, so
+its pitch was a constant. The viewmodel never got `weaponframe`.
+Two bots stacked in a lift shaft collapsed the duel camera into
+their bounding boxes. The teleporter cut-ahead tested a sphere
+against a brush.
+
+**v4.00 combat.** A traceline that *starts* in solid returns
+fraction 1, so both `Argus_SafeLine` and the offensive shove read
+solid ground as a void - the shove pulled aim 24u short of every
+cornered target. Projectile lead dragged the aim point under the
+floor chasing a falling enemy. The grenade loft ignored
+`W_FireGrenade`'s own `v_up * 200`. Dodges sidestepped into walls,
+because `MoveHazard` only asks whether there is floor and a wall has
+excellent floor. Point-blank with only an RL, the selector fell
+through to the axe - re-cut at 120u and 100 effective health after
+the first version sent dm2 self-kills to 40% of deaths.
+
+**v4.01 perception.** The FOV gate normalised in 3D and dotted
+against a flat `v_forward`, charging enemies for vertical
+separation. The ears traced to floor-level item origins. Any frag
+vented a nemesis vendetta; the killer now learns who it got, from
+`ClientObituary` as well, without which a vendetta against the human
+could never vent. `Argus_Chat(4)` existed and was never called.
+
+**v4.02 interpreter.** `Argus_PickGoal` walked the whole edict array
+once per candidate item. The router re-derived a link slot it
+already had, twice per expanded node. `Argus_NearestNode` traced
+nodes that could not win. Plus: combat no longer burns the goal
+clock, powerup expiry cues play for bots, a pentagram lets a bot
+rocket-jump freely, the gun comes back after a navigation jump, and
+trigger-operated doors have activators.
+
+**v4.03 economy.** Backpack ammo is valued by what the bot can
+absorb and an unowned heavy weapon in a pack is priced as a weapon.
+Both spawn systems now apply the engine's own 84u crowding rule -
+the post-kill watch had been betting on the pad `SelectSpawnPoint`
+is *least* likely to choose, and bot spawns had marched a learnable
+cycle through the entity lump.
+
+**v4.04.** `ar_aimrate` was written at every skill tier and read
+nowhere, so warmup bots turned corners as fast as skill 3. Armour
+below the tier already worn scores zero (`armor_touch` replaces
+rather than adds). Auditory glances are rate-limited instead of
+snapping 180 degrees in a frame. Five camera modes assigned
+`vectoangles()` straight to `client.angles`, framing every director
+cut vertically backwards.
+
+**v4.05.** Swim drag was a per-frame factor. Top speed was never
+affected - `0.8v + 60` settles at 300 u/s at any tick rate - but the
+time constant was frame-counted: 0.70 s to reach speed at 20 Hz
+against 0.19 s at 72 Hz. Every tape in `runs/` is dedicated at
+20 Hz and every played session is a listen server, so bots were
+~3.5x more responsive in Shane's water than in any judged match.
+Now expressed per second and bit-identical at 0.05.
+
+**Lab.** The camera was unindexable in three layers at once (both
+file lists, `keep_fn`'s `"Argus_"` prefix, and the call regex).
+Cartograph called dm3's plats unboardable while dm3 rode them every
+tape. Train, sprint and door hops briefed as plain walks. `lqdm2`
+tapes answered `dm2` sweeps. `line_clear` sampled a 1200u trace in
+20 steps. Respawns counted as travel. 92 tests.
+
 ## v3.97 (2026-08-28) - the fourth bot gets his own name, and the tracker empties
 
 The night the last four issues closed without human eyes.

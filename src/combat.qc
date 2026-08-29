@@ -195,11 +195,19 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 	if ( (inflictor != world) && (targ.movetype == MOVETYPE_WALK || targ.ar_isbot) )
 	{
 		dir = targ.origin - (inflictor.absmin + inflictor.absmax) * 0.5;
+		// an inflictor centred exactly on the target normalises to
+		// '0 0 0' and the impulse vanishes; lift instead of dropping it
+		if (dir == '0 0 0')
+			dir = '0 0 1';
 		dir = normalize(dir);
 		targ.velocity = targ.velocity + dir*damage*8;
 
 		rj = deathmatch_rocket_jump_multiplier();
-		if ( (rj > 1) & ((attacker.classname == "player") & (targ.classname == "player")) & ( attacker.netname == targ.netname)) 
+		// self-boost only: name equality made two same-named players
+		// boost each other. (Unreachable on NetQuake - the multiplier
+		// reads a QW infokey and returns 0 here - but wrong is wrong.)
+		if (rj > 1 && attacker == targ
+			&& (attacker.classname == "player" || attacker.ar_isbot))
 			targ.velocity = targ.velocity + dir * damage * rj;
 	}
 

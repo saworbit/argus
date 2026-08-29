@@ -95,9 +95,13 @@ impl ClipHull {
 
     /// Stepped point sample. Good enough for item-to-node snaps.
     pub fn line_clear(&self, a: [f32; 3], b: [f32; 3]) -> bool {
-        const STEPS: i32 = 20;
-        for i in 0..=STEPS {
-            let t = i as f32 / STEPS as f32;
+        // Fixed 20 samples spread a 1200u line 60u apart, wide enough to
+        // step straight over a 16u wall and call it clear. Sample at
+        // worst every 16u so no standard brush fits between two points.
+        let dist = ((b[0] - a[0]).powi(2) + (b[1] - a[1]).powi(2) + (b[2] - a[2]).powi(2)).sqrt();
+        let steps = ((dist / 16.0).ceil() as i32).clamp(20, 512);
+        for i in 0..=steps {
+            let t = i as f32 / steps as f32;
             let p = [
                 a[0] + (b[0] - a[0]) * t,
                 a[1] + (b[1] - a[1]) * t,

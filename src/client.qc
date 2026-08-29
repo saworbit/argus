@@ -1349,7 +1349,10 @@ void() CheckPowerups =
 #endif
 		}
 
-		else
+		// the pentagram block above lit EF_DIMLIGHT too, so a bare else
+		// stripped the invulnerable glow every frame once quad lapsed.
+		// Argus_CheckPowerups has carried this guard since v3.6.
+		else if (self.invincible_finished <= time)
 		{
 			self.effects = self.effects - (self.effects & EF_DIMLIGHT);
 #ifdef __QW__ // EF_BLUE is not supported in NQ
@@ -1534,6 +1537,15 @@ void(entity targ, entity attacker) ClientObituary =
 		dprint (" pos ");
 		dprint (vtos (targ.origin));
 		dprint ("\n");
+
+		// and tell the killer whose body this is: Argus_Die stamps
+		// this for bot victims, and without the human half a bot's
+		// vendetta against the player could never be vented.
+		if (attacker != world && attacker.ar_isbot)
+		{
+			attacker.ar_lastkill = targ;
+			attacker.ar_lastkilltime = time;
+		}
 	}
 
 	rnum = random();
@@ -1578,6 +1590,12 @@ void(entity targ, entity attacker) ClientObituary =
 
 		if (attacker.classname == "trigger_hurt")
 		{
+			// every other self-inflicted death in this function takes
+			// the frag (water discharge, squish, the plain suicide
+			// tail); the hazard brushes were the one exit that did not.
+			targ.frags = targ.frags - 1;
+			logfrag (targ, targ);
+
 			// Custom death messages for trigger_hurt
 			if (attacker.dmg == 666000) {
 				bprint(PRINT_MEDIUM, targ.netname);
@@ -1747,7 +1765,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_AXE_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_AXE_QA;
 						deathstring2 = LOC_DEATH_AXE_QB;
 					}
@@ -1765,7 +1783,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_SHOTGUN_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_SHOTGUN_QA;
 						deathstring2 = LOC_DEATH_SHOTGUN_QB;
 					}
@@ -1783,7 +1801,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_SUPER_SHOTGUN_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_SUPER_SHOTGUN_QA;
 						deathstring2 = LOC_DEATH_SUPER_SHOTGUN_QB;
 					}
@@ -1801,7 +1819,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_NAILGUN_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_NAILGUN_QA;
 						deathstring2 = LOC_DEATH_NAILGUN_QB;
 					}
@@ -1819,7 +1837,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_SUPER_NAILGUN_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_SUPER_NAILGUN_QA;
 						deathstring2 = LOC_DEATH_SUPER_NAILGUN_QB;
 					}
@@ -1837,7 +1855,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_GRENADE_LAUNCHER_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_GRENADE_LAUNCHER_QA;
 						deathstring2 = LOC_DEATH_GRENADE_LAUNCHER_QB;
 					}
@@ -1864,7 +1882,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_ROCKET_LAUNCHER_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_ROCKET_LAUNCHER_Q1A;
 						deathstring2 = LOC_DEATH_ROCKET_LAUNCHER_Q1B;
 					}
@@ -1878,7 +1896,7 @@ void(entity targ, entity attacker) ClientObituary =
 					}
 #else
 					if (targ.health < -40) {
-						if (attacker.super_damage_finished > 0) {
+						if (attacker.super_damage_finished > time) {
 							rnum = random();
 							if (rnum < 0.3) {
 								deathstring = LOC_DEATH_ROCKET_LAUNCHER_Q1A;
@@ -1913,7 +1931,7 @@ void(entity targ, entity attacker) ClientObituary =
 					deathstring2 = LOC_DEATH_LIGHTNING_1B;
 
 #ifdef __LIBREQUAKE__
-					if (attacker.super_damage_finished > 0) {
+					if (attacker.super_damage_finished > time) {
 						deathstring = LOC_DEATH_LIGHTNING_QA;
 						deathstring2 = LOC_DEATH_LIGHTNING_QB;
 					}

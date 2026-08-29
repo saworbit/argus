@@ -237,7 +237,25 @@ impl NetClient {
         // localhost, also try the hostname-resolved address.
         let mut hosts: Vec<String> = vec![host.to_string()];
         if host == "127.0.0.1" || host.eq_ignore_ascii_case("localhost") {
-            if let Ok(name) = std::env::var("COMPUTERNAME") {
+            // COMPUTERNAME is the Windows spelling; Unix rigs and CI
+            // containers carry HOSTNAME instead, and without it the
+            // hostname-adapter retry never runs off Windows.
+            let hostname = std::env::var("COMPUTERNAME")
+                .or_else(|_| std::env::var("HOSTNAME"))
+                .or_else(|_| {
+                    std::process::Command::new("hostname")
+                        .output()
+                        .map_err(|_| std::env::VarError::NotPresent)
+                        .and_then(|o| {
+                            let s = String::from_utf8_lossy(&o.stdout).trim().to_string();
+                            if s.is_empty() {
+                                Err(std::env::VarError::NotPresent)
+                            } else {
+                                Ok(s)
+                            }
+                        })
+                });
+            if let Ok(name) = hostname {
                 use std::net::ToSocketAddrs;
                 if let Ok(addrs) = (name.as_str(), port).to_socket_addrs() {
                     for a in addrs {

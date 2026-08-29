@@ -329,7 +329,7 @@ void() W_FireShotgun =
 	
 	// ARGUS: the aim() builtin snaps onto any DAMAGE_AIM entity in a
 	// ~22 degree cone (sv_aim), which silently undoes the bot skill
-	// model, projectile leading, and the rocket-jump pitch — bots fire
+	// model, projectile leading, and the rocket-jump pitch - bots fire
 	// down their own v_angle instead (same lesson as W_FireLightning)
 	if (self.ar_isbot)
 	{
@@ -485,7 +485,7 @@ void() W_FireRocket =
 
 	// set missile speed
 	makevectors (self.v_angle);
-	// ARGUS: no autoaim for bots (see W_FireShotgun) — autoaim here
+	// ARGUS: no autoaim for bots (see W_FireShotgun) - autoaim here
 	// also hijacked rocket-jump launches toward nearby enemies
 	if (self.ar_isbot)
 		newmis.velocity = v_forward;
@@ -728,7 +728,13 @@ void() W_FireGrenade =
 
 	makevectors (self.v_angle);
 
-	if (self.v_angle_x)
+	// ARGUS: aim() snaps onto any DAMAGE_AIM entity in an sv_aim cone and
+	// silently overrides ar_aimerr, the lead and the grenade loft - the
+	// same removal the other five fire routines carry. A bot aiming dead
+	// level has v_angle_x == 0 and used to fall through to autoaim.
+	if (self.ar_isbot)
+		newmis.velocity = v_forward * 600 + v_up * 200;
+	else if (self.v_angle_x)
 		newmis.velocity = v_forward*600 + v_up * 200 + crandom()*v_right*10 + crandom()*v_up*10;
 
 
@@ -798,7 +804,7 @@ void() W_FireSuperSpikes =
 		self.currentammo = self.ammo_nails = self.ammo_nails - 2;
 
 	// ARGUS: no autoaim for bots (see W_FireShotgun); v_forward is
-	// fresh — W_FireSpikes ran makevectors before dispatching here
+	// fresh - W_FireSpikes ran makevectors before dispatching here
 	if (self.ar_isbot)
 		dir = v_forward;
 	else

@@ -1113,7 +1113,7 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
             area: "nav".into(),
             look_at: "src/argus.qc Argus_BotCanRJ / ARGEVT rjump (dm4 rocket-jump pad 142->56)".into(),
             why: format!(
-                "quad goalled {quad} times with {} routefails; pad exists — check rjump events and the RL/health toll",
+                "quad goalled {quad} times with {} routefails; pad exists - check rjump events and the RL/health toll",
                 brief.totals.routefails
             ),
         });
@@ -1249,7 +1249,7 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
         && !brief.next_steps.iter().any(|s| s.look_at.contains("rocket-jump"))
     {
         brief.flags.push(
-            "bots are goaling elevated quad; dm4 pad is 142->56 — look for ARGEVT rjump, not a stall loop".into(),
+            "bots are goaling elevated quad; dm4 pad is 142->56 - look for ARGEVT rjump, not a stall loop".into(),
         );
     }
     for line in atlas.implications.iter().take(2) {

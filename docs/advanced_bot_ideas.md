@@ -5,8 +5,8 @@ Quake1_Advanced_Bot_Design.md ("capture this as roadmap and ideas"),
 alongside the KINETIC spec (see kinetic_ideas.md). This one is closer
 to Argus's world: it keeps intelligence in QuakeC and builds on
 QuakeSpasm. Its central bet, though, is "prefer engine primitives over
-being clever inside pure classic QuakeC" — checkextension-gated
-builtins, raised limits, file I/O — which is precisely what the Argus
+being clever inside pure classic QuakeC" - checkextension-gated
+builtins, raised limits, file I/O - which is precisely what the Argus
 charter rules out. Triage first, then the document as received.
 
 ## Triage against the Argus hard constraints
@@ -25,7 +25,7 @@ charter rules out. Triage first, then the document as received.
 - Danger/glory/usage link costs, reframed offline (sections 5.1, 7):
   vanilla QC cannot persist files, but the Argus rig already
   persists everything that matters: telemetry logs. The learning loop
-  becomes offline reinforcement — analyze_match extracts death
+  becomes offline reinforcement - analyze_match extracts death
   positions, stall clusters and traversal counts per link, and navgen
   bakes adjusted link costs into the next generated argus_nav_<map>.qc.
   The bot learns between builds instead of between frames, which is
@@ -34,7 +34,7 @@ charter rules out. Triage first, then the document as received.
 - Runtime session-local learning (lite): nav nodes are entities, so
   per-node danger floats updated on deaths are storable today. The
   current router is unweighted BFS; making it cost-aware is a real
-  change (frame-sliced Dijkstra) — park until offline reinforcement
+  change (frame-sliced Dijkstra) - park until offline reinforcement
   proves insufficient.
 - Rocket-jump records with landing/impulse/damage metadata (sections
   4.4, 5.1): landed as prize-only typed pads (same conclusion as
@@ -45,7 +45,7 @@ charter rules out. Triage first, then the document as received.
   cooperative play: QC-sized ideas for the personality milestone.
 - Node placement guarantees (section 7, Cartographer step 4):
   guaranteed nodes at items, teleporters, buttons and platform
-  endpoints is a direct, cheap navgen improvement — today's decimation
+  endpoints is a direct, cheap navgen improvement - today's decimation
   can drop waypoints near items; pinning them helps goal routing.
 
 ### Already covered by Argus
@@ -72,7 +72,7 @@ file I/O, drawline/drawsphere, checkextension detection. Also the
 the KINETIC bucket 3: if ever opened, it is a second deliverable
 beside the vanilla progs.dat, which remains canonical. Worth noting
 the capture's own observation that QuakeSpasm never added these
-builtins because faithfulness was the point — that is also Argus's
+builtins because faithfulness was the point - that is also Argus's
 point.
 
 ### Historical notes worth keeping
@@ -93,7 +93,7 @@ binaries stay gitignored).
 
 ## Captured document (verbatim)
 
-# Quake 1 Advanced Deathmatch Bot System – Complete Design Document
+# Quake 1 Advanced Deathmatch Bot System - Complete Design Document
 
 **Project Goal**: Build a modern, learning-capable Deathmatch bot for Quake 1 that surpasses the classic Omicron bots. The bot should dynamically learn maps, discover rocket jumps naturally, move smoothly without jitter, navigate corners intelligently (apex turns), persist knowledge across sessions, and support cooperative play (Zeus-style).
 
@@ -138,12 +138,12 @@ This document consolidates **every major topic, decision, design, and pseudocode
 
 ## 2. High-Level Goals for the New System
 
-1. **Dynamic map learning** – Bot explores, builds, and refines its own navigation data. Can save/load per-map knowledge.
-2. **Natural rocket-jump discovery** – Give the bot the mechanical ability; let it figure out useful trajectories through simulation and reinforcement rather than scripted nodes.
-3. **Smooth, human-like movement** – Eliminate jitter, proper acceleration/deceleration, wall sliding, step handling, and knockback respect.
-4. **Intelligent cornering** – Apex turns instead of getting stuck on geometry.
-5. **Persistent learning** – Danger, success ("glory"), and usage influence future path costs.
-6. **Hierarchical planning** – Fast long-range decisions + detailed local movement.
+1. **Dynamic map learning** - Bot explores, builds, and refines its own navigation data. Can save/load per-map knowledge.
+2. **Natural rocket-jump discovery** - Give the bot the mechanical ability; let it figure out useful trajectories through simulation and reinforcement rather than scripted nodes.
+3. **Smooth, human-like movement** - Eliminate jitter, proper acceleration/deceleration, wall sliding, step handling, and knockback respect.
+4. **Intelligent cornering** - Apex turns instead of getting stuck on geometry.
+5. **Persistent learning** - Danger, success ("glory"), and usage influence future path costs.
+6. **Hierarchical planning** - Fast long-range decisions + detailed local movement.
 7. **Strong debugging & visualisation** tools.
 8. **Optional offline pre-processing** ("Quake Cartographer") so the bot is not completely blank on first load of a map.
 9. Stay as compatible as practical with classic QuakeC while extending the engine where necessary.
@@ -156,7 +156,7 @@ This document consolidates **every major topic, decision, design, and pseudocode
 
 **Reasons**:
 - Already modernised (cross-platform, better input, resolution, bug fixes).
-- Conservative philosophy – stays faithful to original architecture and QuakeC VM.
+- Conservative philosophy - stays faithful to original architecture and QuakeC VM.
 - Far less time wasted fighting 1999-era build systems and platform issues.
 - Easy to add the extensions we need.
 
@@ -171,7 +171,7 @@ Its design philosophy prioritises fidelity and compatibility with existing mods 
 
 ---
 
-## 4. BotCore – Engine Extensions
+## 4. BotCore - Engine Extensions
 
 A coherent set of engine additions collectively called **BotCore**. All features should be detectable via `checkextension`.
 
@@ -182,8 +182,8 @@ A coherent set of engine additions collectively called **BotCore**. All features
 
 ### 4.2 Better Traces & Movement Prediction
 
-- `tracebox` – player-hull sized traces (solves "fits through bars" false positives).
-- `trymove(entity, wishvel, flags)` – non-destructive movement test that returns outcome flags (`MOVE_OK`, `MOVE_BLOCKED`, `MOVE_STEPPED`, `MOVE_FELL`, etc.).
+- `tracebox` - player-hull sized traces (solves "fits through bars" false positives).
+- `trymove(entity, wishvel, flags)` - non-destructive movement test that returns outcome flags (`MOVE_OK`, `MOVE_BLOCKED`, `MOVE_STEPPED`, `MOVE_FELL`, etc.).
 
 **Pseudocode (TryMove)**:
 ```c
@@ -205,7 +205,7 @@ int PF_trymove(void) {
 
 ### 4.4 Trajectory Simulation (Rocket-Jump Discovery)
 
-- `simtrajectory(...)` – short-horizon physics simulation.
+- `simtrajectory(...)` - short-horizon physics simulation.
 - Inputs: start origin/velocity, rocket offset & speed, jump impulse, duration, flags (gravity, collide, apply rocket force).
 - Outputs: final position & velocity (via globals).
 - Enables the bot to test "what if I rocket-jump right now?" without risking the real entity.
@@ -252,7 +252,7 @@ void PF_simtrajectory(...) {
 
 ## 5. Navigation Data Structures & Learning
 
-### 5.1 Preferred Layout – Array-Based Mesh
+### 5.1 Preferred Layout - Array-Based Mesh
 
 Because limits are raised, store the bulk of data in parallel arrays rather than one entity per node.
 
@@ -265,7 +265,7 @@ Because limits are raised, store the bulk of data in parallel arrays rather than
 
 **Links**:
 - `nav_link_from[]`, `nav_link_to[]`
-- `nav_link_type[]` – `WALK`, `JUMP`, `DROP`, `PLATFORM`, `TELEPORT`, `ROCKETJUMP`, ...
+- `nav_link_type[]` - `WALK`, `JUMP`, `DROP`, `PLATFORM`, `TELEPORT`, `ROCKETJUMP`, ...
 - `nav_link_cost[]` (base)
 - `nav_link_usage[]`, `nav_link_danger[]`, `nav_link_glory[]`
 - Extra data for rocket-jump links (landing spot, impulse used, etc.)
@@ -312,7 +312,7 @@ Standard A* using the learning-aware `Nav_LinkCost`. Open set can start as a sim
 Core temporary arrays:
 - `astar_g[]`, `astar_f[]`, `astar_parent[]`, `astar_closed[]`, open set array.
 
-### 6.2 Jump Point Search (JPS) – Exploration
+### 6.2 Jump Point Search (JPS) - Exploration
 
 Classic JPS is excellent on uniform-cost grids but does **not** map cleanly onto our irregular 3D graph with heterogeneous link types and changing costs.
 
@@ -331,13 +331,13 @@ Full classic JPS is not recommended as a primary algorithm here.
 **Level 1**: Much smaller set of **key nodes**.
 
 **Key node categories / flags**:
-- `KEY_ITEM` – near weapons, armour, health
+- `KEY_ITEM` - near weapons, armour, health
 - `KEY_TELEPORT`
-- `KEY_ROCKETJUMP` – proven takeoff/landing pads
-- `KEY_JUNCTION` – high connectivity
+- `KEY_ROCKETJUMP` - proven takeoff/landing pads
+- `KEY_JUNCTION` - high connectivity
 - `KEY_PLATFORM`
-- `KEY_LEARNED` – promoted by usage/glory
-- `KEY_DANGEROUS` – high sustained danger (usually avoided or heavily penalised)
+- `KEY_LEARNED` - promoted by usage/glory
+- `KEY_DANGEROUS` - high sustained danger (usually avoided or heavily penalised)
 
 **Promotion rules** (periodic rebuild):
 - Always include static important locations (items, teleporters...).
@@ -365,7 +365,7 @@ float nav_key_flags[MAX_KEY_NODES];
 
 ---
 
-## 7. Quake Cartographer – Offline BSP Pre-processor
+## 7. Quake Cartographer - Offline BSP Pre-processor
 
 External tool that ingests a `.bsp` and produces a high-quality initial `.nav` seed file.
 
@@ -397,15 +397,15 @@ The live bot loads this seed, then continues to learn, reinforce, and discover o
 - `bot_nav_debug_path`
 
 **Visual language**:
-- Ordinary nodes – small dark grey spheres
-- Key Item – bright green
-- Key Teleport – cyan
-- Key Rocket-Jump – orange/gold, larger + vertical spike
-- Key Junction/Learned – yellow
-- Key Dangerous – red (optionally pulsing)
-- Abstract key links – thick light-blue/white lines
-- Current hierarchical path – thick magenta
-- Detailed underlying links (when enabled) – thin dark grey
+- Ordinary nodes - small dark grey spheres
+- Key Item - bright green
+- Key Teleport - cyan
+- Key Rocket-Jump - orange/gold, larger + vertical spike
+- Key Junction/Learned - yellow
+- Key Dangerous - red (optionally pulsing)
+- Abstract key links - thick light-blue/white lines
+- Current hierarchical path - thick magenta
+- Detailed underlying links (when enabled) - thin dark grey
 
 Drawing is performed with the `drawline` / `drawsphere` builtins and only when the relevant cvars are enabled.
 
@@ -492,7 +492,7 @@ void() Bot_Think = {
 
 ---
 
-## 12. Quick Reference – Key Builtins & Concepts
+## 12. Quick Reference - Key Builtins & Concepts
 
 | Feature                    | Purpose                                      | Priority |
 |---------------------------|----------------------------------------------|----------|

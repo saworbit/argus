@@ -74,6 +74,12 @@ pub struct NavOverlay {
     /// show that")
     #[serde(default, skip_serializing_if = "is_zero_usize")]
     pub sprint_links: usize,
+    /// horizontal mover rides (dm2's east-deck train)
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub train_links: usize,
+    /// walk links a door brush stands in
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub door_links: usize,
 }
 
 fn is_zero_usize(v: &usize) -> bool {
@@ -138,6 +144,11 @@ pub struct PlatBrief {
     pub raised_face_z: f32,
     pub centre: [f32; 2],
     pub boardable: bool,
+    /// A lift link in the shipped graph lands on this plat: navgen has
+    /// already seated it (ordinary pad or 5b virtual pad) and the
+    /// runtime rides it. Static hull 0 alone cannot see that.
+    #[serde(default)]
+    pub nav_served: bool,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub warnings: Vec<String>,
 }
@@ -857,7 +868,7 @@ fn atlas_from_bsp(
         ));
     }
 
-    let plats = analyze_plats(&items, bsp);
+    let plats = analyze_plats(&items, bsp, graph.as_ref());
     for p in &plats {
         for w in &p.warnings {
             implications.push(format!("plat {}: {w}", p.model));
@@ -927,7 +938,37 @@ fn atlas_from_bsp(
 /// Static plat boardability: seated-face height, a boarding-floor ring
 /// probe outside the footprint, and a ledge-inside-the-swept-column
 /// probe (the *31 statue class, found the hard way on 2026-08-19).
-fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29) -> Vec<PlatBrief> {
+
+/// True when the shipped graph carries a lift link with an endpoint over
+/// this plat's footprint. navgen seats boarding pads outside the swept
+/// column (v3.56) and rest-top virtual pads inside it (v3.84), so check
+/// a generous xy margin and ignore z: the two ends of a lift link are by
+/// definition the two heights the slab serves.
+fn plat_has_lift_link(g: &NavGraph, mins: [f32; 3], maxs: [f32; 3]) -> bool {
+    const MARGIN: f32 = 96.0;
+    let over = |n: &[f32; 3]| {
+        n[0] >= mins[0] - MARGIN
+            && n[0] <= maxs[0] + MARGIN
+            && n[1] >= mins[1] - MARGIN
+            && n[1] <= maxs[1] + MARGIN
+    };
+    for (from, edges) in g.adj.iter().enumerate() {
+        for (to, kind) in edges {
+            if kind != "lift" {
+                continue;
+            }
+            let (Some(a), Some(b)) = (g.nodes.get(from), g.nodes.get(*to as usize)) else {
+                continue;
+            };
+            if over(a) || over(b) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29, graph: Option<&NavGraph>) -> Vec<PlatBrief> {
     let Some(hull) = bsp.hull0.as_ref() else {
         return Vec::new();
     };
@@ -971,8 +1012,15 @@ fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29) -> Vec<PlatBrief> {
             }
         }
 
+        // A lift link whose endpoints straddle this footprint is navgen
+        // saying it already seated the plat - dm3 rides its three plats
+        // every tape while hull 0 alone still called them unboardable.
+        let nav_served = graph
+            .map(|g| plat_has_lift_link(g, m.mins, m.maxs))
+            .unwrap_or(false);
+
         let mut warnings = Vec::new();
-        if !boardable {
+        if !boardable && !nav_served {
             warnings.push(format!(
                 "no static floor within a step of the seated face (z {seated:.0}) beside the footprint - the runtime cannot walk aboard; needs a virtual pad on the slab rest-top (navgen 5b gap)"
             ));
@@ -1032,6 +1080,7 @@ fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29) -> Vec<PlatBrief> {
             raised_face_z: m.maxs[2],
             centre: [cx, cy],
             boardable,
+            nav_served,
             warnings,
         });
     }
@@ -1052,8 +1101,11 @@ struct NodeSnap {
 }
 
 fn load_nav_graph(cfg: &Config, map: &str) -> Option<NavGraph> {
-    let path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
-    let text = std::fs::read_to_string(&path).ok()?;
+    load_nav_graph_at(&cfg.src.join(format!("argus_nav_{map}.qc.json")))
+}
+
+fn load_nav_graph_at(path: &std::path::Path) -> Option<NavGraph> {
+    let text = std::fs::read_to_string(path).ok()?;
     let v: serde_json::Value = serde_json::from_str(&text).ok()?;
     let nodes: Vec<[f32; 3]> = v
         .get("nodes")?
@@ -1098,6 +1150,8 @@ fn load_nav_graph(cfg: &Config, map: &str) -> Option<NavGraph> {
         ("liftlinks", "lift"),
         ("swimlinks", "swim"),
         ("doorlinks", "door"),
+        ("trainlinks", "train"),
+        ("sprintlinks", "sprint"),
     ] {
         if let Some(list) = v.get(key).and_then(|x| x.as_array()) {
             for link in list {
@@ -1129,6 +1183,8 @@ fn load_nav_graph(cfg: &Config, map: &str) -> Option<NavGraph> {
             lift_links: v.get("liftlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
             swim_links: v.get("swimlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
             sprint_links: v.get("sprintlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
+            train_links: v.get("trainlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
+            door_links: v.get("doorlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
         },
         nodes,
         adj,
@@ -1833,7 +1889,7 @@ mod tests {
             })
             .collect();
         assert_eq!(items.len(), 2, "dm2 carries two plats");
-        let plats = analyze_plats(&items, &bsp);
+        let plats = analyze_plats(&items, &bsp, None);
         assert_eq!(plats.len(), 2);
         let p31 = plats.iter().find(|p| p.model == "*31").expect("*31 analyzed");
         assert!(
@@ -2082,6 +2138,8 @@ mod tests {
             lift_links: 0,
             swim_links: 0,
             sprint_links: 0,
+            train_links: 0,
+            door_links: 0,
         }
     }
 
@@ -2149,5 +2207,51 @@ mod tests {
             dm6.iter().all(|s| !s.contains("debut botmatch")),
             "stale debut verdict leaked: {dm6:?}"
         );
+    }
+
+    /// #29: dm3 rides its three plats in every tape (liftlinks are in
+    /// the shipped graph), yet static hull 0 alone briefed two of them
+    /// as "the runtime cannot walk aboard". Machine-local like its
+    /// dm2 neighbour above.
+    #[test]
+    fn dm3_nav_served_plats_stop_warning_unboardable() {
+        let p = std::path::Path::new("C:/argus/maps_local/dm3.bsp");
+        let jf = std::path::Path::new("C:/argus/src/argus_nav_dm3.qc.json");
+        if !p.exists() || !jf.exists() {
+            return;
+        }
+        let bsp = crate::bsp::read_bsp29(p).unwrap();
+        let ents = parse_entities(&bsp.entities);
+        let items: Vec<AtlasItem> = ents
+            .iter()
+            .filter(|e| e.get("classname").map(|c| c.as_str()) == Some("func_plat"))
+            .map(|e| AtlasItem {
+                classname: "func_plat".into(),
+                kind: "plat".into(),
+                origin: None,
+                target: e.get("target").cloned(),
+                targetname: e.get("targetname").cloned(),
+                model: e.get("model").cloned(),
+                spawnflags: 0,
+                health: None,
+            })
+            .collect();
+        let bare = analyze_plats(&items, &bsp, None);
+        assert!(
+            bare.iter()
+                .any(|p| p.warnings.iter().any(|w| w.contains("cannot walk aboard"))),
+            "expected the pre-fix false warning on raw geometry"
+        );
+        let g = load_nav_graph_at(jf).expect("dm3 nav graph");
+        assert!(g.overlay.lift_links >= 1, "dm3 ships lift links");
+        let served = analyze_plats(&items, &bsp, Some(&g));
+        for pl in &served {
+            assert!(
+                !pl.warnings.iter().any(|w| w.contains("cannot walk aboard")),
+                "plat {} still briefed unboardable with lift links present",
+                pl.model
+            );
+        }
+        assert!(served.iter().any(|pl| pl.nav_served));
     }
 }
