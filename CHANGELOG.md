@@ -7,6 +7,38 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v4.06 (2026-08-29) - the quad line the session review caught
+
+A 302 s human session on dm4 reviewed against v4.05. The build held:
+zero engine errors, zero bot freezes, stalls 7 (about 4 per 185 s),
+all frags positive, 137 engages, 151 acquisitions, 94% of nav nodes
+visited, and bots killed the human ten times across all three slots.
+
+One real defect, and it was in the previous entry's own work. The
+powerup chat added in v4.01 fires from `powerup_touch`, the PEDESTAL
+handler. Both bot quad acquisitions that match came through
+`q_touch`, the DROPPED-quad handler - the human took the pedestal
+quad, died, and the bots looted the drop - so the line never fired
+once in five minutes. The same call now sits in `q_touch`, which is
+the commoner case in a real match and the better moment for it:
+taking the quad off somebody's corpse. Chat-only, no gameplay path
+touched; `q_touch`'s previously unused `stemp` local is now used, so
+the compile drops from 7 warnings to 6.
+
+Two alarming-looking flags investigated and dismissed, recorded so
+they are not re-chased. "rjlinks never fired" is a property of that
+match, not a regression: rocket jumps fire 1 to 6 times in every
+botmatch tape of the era including the shipped build, and five
+routes in this tape had the quad node as their goal. And 139 swim
+events against the 3 to 6 of any lab tape is a pre-existing
+lab-versus-listen divergence (48 and 71 on listen tapes before any
+of this work), clustering at the pit floor where knocked-in bots
+land in water - it tracks how often the human shoves bots into the
+pit, and bot time down there was 2.0% against 1.7% and 1.3% on the
+two earlier listen tapes.
+
+Progs `1A8436C946AF7D8DD6FB409A1A2D388B`.
+
 ## v4.05 (2026-08-29) - the tracker batches
 
 Eighty issues arrived overnight in two waves and all eighty are

@@ -86,6 +86,20 @@ local string    s;
 	bprint (PRINT_LOW, s);
 	bprint (PRINT_LOW, " seconds remaining!\n");
 
+	// ARGUS: the same powerup line powerup_touch fires. This is the
+	// DROPPED quad, and the v405 session showed it is the common
+	// case in a real match - a human takes the pedestal quad, dies,
+	// and the bots loot the drop, so every bot quad that session
+	// came through here and the line never fired once. Taking the
+	// quad off someone's corpse is the moment most worth announcing.
+	if (other.ar_isbot)
+	{
+		stemp = self;
+		self = other;
+		Argus_Chat (4);
+		self = stemp;
+	}
+
 	activator = other;
 	SUB_UseTargets();                               // fire all targets / killtargets
 };
