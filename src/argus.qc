@@ -1219,6 +1219,21 @@ float(vector to) Argus_SafeLine =
         traceline (p, p - '0 0 304', TRUE, self);
         if (trace_fraction == 1)
         {
+            // WATER TOLERANCE, tried and REVERTED (GitHub #105).
+            // Argus_MoveHazard treats a submerged probe end as a pool
+            // rather than a void, and mirroring that here - so
+            // battle-grabs, retreat supply and mode-1 seeking could
+            // path to items in the dm3 basin - failed its own ladder
+            // badly: dm3 coverage HALVED (376 -> 193), engages 8 -> 2,
+            // grabs and weapon switches to zero, and two moat-bank
+            // cells at '1787 560 -88' and '1797 560 -88' logged 62 and
+            // 59 deflections as bots queued at the water's edge. The
+            // same build with this one line out ran engages 10 and
+            // hazards 197. MoveHazard can permit water because it is a
+            // per-step guard that keeps steering; SafeLine is an
+            // all-or-nothing verdict on a whole line, and approving a
+            // line INTO water commits the bot to swim for an item it
+            // has no swimming plan to reach.
             // Same trap Argus_MoveHazard already carries (the v3.43
             // dm2 strip-stair forensics): a probe START buried in
             // rising geometry returns fraction 1 with allsolid, which
@@ -1392,7 +1407,7 @@ float(float myaw, float spd) Argus_GapJumpOK =
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
-    local float wl, spd, moveok, myaw, rhoriz, sready;
+    local float wl, spd, moveok, myaw, rhoriz, sready, wdrag;
 
     makevectors ('0 0 0' + self.ar_moveyaw * '0 1 0');
     wishdir = v_forward;
@@ -1464,8 +1479,25 @@ void() Argus_Physics =
                                     // water and fired the enter/exit
                                     // sound pair at 2 Hz (Shane's
                                     // second with-sound playtest)
-        self.velocity_x = self.velocity_x * 0.8 + wishdir_x * 60;
-        self.velocity_y = self.velocity_y * 0.8 + wishdir_y * 60;
+        // Swim drag was a per-FRAME factor, so the water felt
+        // different on every tick rate. Top speed is not the problem -
+        // 0.8v + 60 settles at 300 u/s whatever the rate, because the
+        // drag scales with the impulse - but the TIME CONSTANT is
+        // frame-counted: 0.70 s to reach speed on a 20 Hz dedicated
+        // server against 0.19 s on a 72 Hz listen host. Every tape in
+        // runs/ was recorded at 20 Hz and every session Shane plays is
+        // a listen server, so bots have been three times more
+        // responsive in his water than in any match we ever judged.
+        //
+        // Same model expressed per second: k = 4/s, target 300 u/s.
+        // At frametime 0.05 this is exactly 0.8 and 60 again, so the
+        // dedicated behaviour - and every baseline measured on it - is
+        // bit-for-bit unchanged.
+        wdrag = 1 - 4 * frametime;
+        if (wdrag < 0)
+            wdrag = 0;
+        self.velocity_x = self.velocity_x * wdrag + wishdir_x * 1200 * frametime;
+        self.velocity_y = self.velocity_y * wdrag + wishdir_y * 1200 * frametime;
         self.flags = self.flags - (self.flags & FL_ONGROUND);
         // AIR EMERGENCY: the drive-for-air pins under a ceiling and
         // the bot drowns in place (Romero reached 1 hp submerged in
