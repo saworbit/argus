@@ -1969,6 +1969,24 @@ void() Argus_Physics =
 // bets the victim respawns at the nearest deathmatch pad and biases
 // shopping toward items there for 8 s. Skill 1+ so default sessions
 // see it. Does not mutate argus_lastspot (that is spawn rotation).
+// Would SelectSpawnPoint reject this pad right now? It skips any spot
+// with a live player within 84u (client.qc), so a crowded pad is a bad
+// bet however close to the body it sits.
+float(entity sp, float rad) Argus_PadCrowded =
+{
+    local entity b;
+
+    b = find (world, classname, "player");
+    while (b != world)
+    {
+        if (b.health > 0 && !b.cam_active
+            && vlen (b.origin - sp.origin) < rad)
+            return TRUE;
+        b = find (b, classname, "player");
+    }
+    return FALSE;
+};
+
 void(entity killer, vector deathorg) Argus_SpawnWatch =
 {
     local entity sp, best, oself;
@@ -1994,7 +2012,14 @@ void(entity killer, vector deathorg) Argus_SpawnWatch =
         if (d < bd
             && fabs (sp.origin_z - deathorg_z) < 96
             && pointcontents (sp.origin) != CONTENT_LAVA
-            && pointcontents (sp.origin) != CONTENT_SLIME)
+            && pointcontents (sp.origin) != CONTENT_SLIME
+            // SelectSpawnPoint explicitly SKIPS any pad with a player
+            // inside 84u, so the pad the killer is standing on is the
+            // one the engine is least likely to choose. Betting on it
+            // was betting against the spawn code. 100u of margin: the
+            // killer is about to move, and a pad it is merely near is
+            // still a fair guess.
+            && !Argus_PadCrowded (sp, 100))
         {
             bd = d;
             best = sp;
@@ -2314,10 +2339,57 @@ void() Argus_BaseStats =
 entity() Argus_SpawnSpot =
 {
     local entity spot;
+    local float count, pick;
 
-    spot = find (argus_lastspot, classname, "info_player_deathmatch");
-    if (spot == world)
+    // A shared global pointer walked the lump in order, so bot spawns
+    // marched a fixed cycle a human could stand on and farm. Mirror
+    // SelectSpawnPoint instead: count the pads, pick one at random,
+    // and prefer pads with nobody standing on them (the engine's own
+    // 84u rule) so a bot does not respawn into a camper's crosshair.
+    count = 0;
+    spot = find (world, classname, "info_player_deathmatch");
+    while (spot != world)
+    {
+        if (!Argus_PadCrowded (spot, 84))
+            count = count + 1;
+        spot = find (spot, classname, "info_player_deathmatch");
+    }
+    if (count < 1)
+    {
+        // every pad crowded: fall back to any pad at all, at random
         spot = find (world, classname, "info_player_deathmatch");
+        while (spot != world)
+        {
+            count = count + 1;
+            spot = find (spot, classname, "info_player_deathmatch");
+        }
+        if (count < 1)
+            return world;
+        pick = floor (random () * count);
+        spot = find (world, classname, "info_player_deathmatch");
+        while (spot != world && pick > 0)
+        {
+            pick = pick - 1;
+            spot = find (spot, classname, "info_player_deathmatch");
+        }
+        argus_lastspot = spot;
+        return spot;
+    }
+    pick = floor (random () * count);
+    spot = find (world, classname, "info_player_deathmatch");
+    while (spot != world)
+    {
+        if (!Argus_PadCrowded (spot, 84))
+        {
+            if (pick <= 0)
+            {
+                argus_lastspot = spot;
+                return spot;
+            }
+            pick = pick - 1;
+        }
+        spot = find (spot, classname, "info_player_deathmatch");
+    }
     argus_lastspot = spot;
     return spot;
 };
@@ -3912,9 +3984,33 @@ float(entity it, float cls) Argus_ItemValue =
         // its contents, not a flat nibble â€” the fat rocket pack by
         // the RL is the map's real prize, and looting your victim
         // is the loop humans run by reflex
-        v = 12 + it.ammo_rockets * 0.9 + it.ammo_cells * 0.35
-              + it.ammo_nails * 0.08 + it.ammo_shells * 0.12;
-        if (it.items & (IT_ROCKET_LAUNCHER | IT_LIGHTNING))
+        // value what we can actually ABSORB, not what the pack holds
+        // (#89): a full bot was being pulled off its circuit by a
+        // 40-rocket pack worth exactly zero rockets to it.
+        vf = it.ammo_rockets;
+        if (vf > 100 - self.ammo_rockets)  vf = 100 - self.ammo_rockets;
+        if (vf < 0)  vf = 0;
+        v = 12 + vf * 0.9;
+        vf = it.ammo_cells;
+        if (vf > 100 - self.ammo_cells)    vf = 100 - self.ammo_cells;
+        if (vf < 0)  vf = 0;
+        v = v + vf * 0.35;
+        vf = it.ammo_nails;
+        if (vf > 200 - self.ammo_nails)    vf = 200 - self.ammo_nails;
+        if (vf < 0)  vf = 0;
+        v = v + vf * 0.08;
+        vf = it.ammo_shells;
+        if (vf > 100 - self.ammo_shells)   vf = 100 - self.ammo_shells;
+        if (vf < 0)  vf = 0;
+        v = v + vf * 0.12;
+        // a pack carrying a gun we do not own is a WEAPON pickup that
+        // happens to be lying on the floor (#88): the flat +15 valued
+        // a free rocket launcher at less than a shotgun.
+        if ((it.items & IT_ROCKET_LAUNCHER) && !(self.items & IT_ROCKET_LAUNCHER))
+            v = v + 60;
+        else if ((it.items & IT_LIGHTNING) && !(self.items & IT_LIGHTNING))
+            v = v + 52;
+        else if (it.items & (IT_ROCKET_LAUNCHER | IT_LIGHTNING))
             v = v + 15;
         // a FRESH pack is time-critical loot: the victim is already
         // respawning and running back for it (Shane reclaimed his
