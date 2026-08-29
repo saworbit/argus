@@ -146,6 +146,8 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .entity ar_nemesis;             // OPM: who keeps killing this bot
 .float  ar_nemkills;            // OPM: consecutive deaths to them;
                                 // 3+ is a vendetta, any kill vents it
+.float  ar_rjweapon;            // gun held before a nav rocket jump
+                                // forced the RL, restored on landing
 .entity ar_lastkill;            // who this bot most recently killed -
                                 // the vendetta ledger needs the victim,
                                 // and a frag counter cannot name one
@@ -1595,7 +1597,19 @@ void() Argus_Physics =
     if (self.flags & FL_ONGROUND)
     {
         if (self.ar_hoprj == 2)
+        {
             self.ar_hoprj = 0;          // landed: the blast ride is over
+            // the launch forced the RL into our hands; out of combat
+            // nothing re-picks until the next sighting, so a bot that
+            // was holding the LG landed and kept carrying rockets
+            if (self.ar_rjweapon && self.ar_enemy == world
+                && (self.items & self.ar_rjweapon))
+            {
+                self.weapon = self.ar_rjweapon;
+                W_SetCurrentAmmo ();
+            }
+            self.ar_rjweapon = 0;
+        }
 
         if (self.ar_mode == 2 && self.ar_hoprj == 1)
         {
@@ -1610,6 +1624,8 @@ void() Argus_Physics =
                 rhoriz = vlen (rto);
                 if (rhoriz > 8)
                     self.angles_y = vectoyaw (rto);
+                if (self.weapon != IT_ROCKET_LAUNCHER)
+                    self.ar_rjweapon = self.weapon;
                 self.weapon = IT_ROCKET_LAUNCHER;
                 W_SetCurrentAmmo ();
                 if (rhoriz < 80)
@@ -2375,7 +2391,13 @@ void(entity d) Argus_TakeDoor =
     b = find (world, target, d.targetname);
     while (b != world)
     {
-        if (b.classname == "func_button")
+        // a door wired to a pressure trigger had no activator at all
+        // by this search, so the goal was shelved as a false route
+        // failure. A trigger brush opens the same way a touch button
+        // does - by walking into it - so it serves as a target.
+        if (b.classname == "func_button"
+            || b.classname == "trigger_multiple"
+            || b.classname == "trigger_once")
         {
             p = (b.absmin + b.absmax) * 0.5;
             dist = vlen (p - self.origin);
@@ -2633,8 +2655,26 @@ void() Argus_Perceive =
 // ordinary kills, no glow, and rings that never turned a bot into eyes.
 void() Argus_CheckPowerups =
 {
+    // three-second expiry cues (#32). Stock CheckPowerups plays these
+    // for clients and Argus_CheckPowerups never did, so nobody nearby
+    // could hear an opponent's quad or pentagram about to lapse - a
+    // real audible tell, and one the human is entitled to. The
+    // client-only halves (stuffcmd "bf", sprint) stay out; invisible_
+    // time / invincible_time / super_time are the same one-shot
+    // latches stock uses so the cue plays once.
     if (self.invisible_finished)
     {
+        if (self.invisible_finished < time + 3 && self.invisible_time == 1)
+        {
+            self.invisible_time = time + 1;
+            sound (self, CHAN_AUTO, "items/inv2.wav", 1, ATTN_NORM);
+        }
+        else if (self.invisible_time && self.invisible_time < time
+                 && self.invisible_finished > time)
+        {
+            self.invisible_time = time + 1;
+            sound (self, CHAN_AUTO, "items/inv3.wav", 1, ATTN_NORM);
+        }
         if (self.invisible_finished < time)
         {
             self.items = self.items - (self.items & IT_INVISIBILITY);
@@ -2656,6 +2696,11 @@ void() Argus_CheckPowerups =
 
     if (self.invincible_finished)
     {
+        if (self.invincible_finished < time + 3 && self.invincible_time == 1)
+        {
+            self.invincible_time = 0;
+            sound (self, CHAN_AUTO, "items/protect2.wav", 1, ATTN_NORM);
+        }
         if (self.invincible_finished < time)
         {
             self.items = self.items - (self.items & IT_INVULNERABILITY);
@@ -2670,6 +2715,11 @@ void() Argus_CheckPowerups =
 
     if (self.super_damage_finished)
     {
+        if (self.super_damage_finished < time + 3 && self.super_time == 1)
+        {
+            self.super_time = 0;
+            sound (self, CHAN_AUTO, "items/damage2.wav", 1, ATTN_NORM);
+        }
         if (self.super_damage_finished < time)
         {
             self.items = self.items - (self.items & IT_QUAD);
@@ -2682,6 +2732,12 @@ void() Argus_CheckPowerups =
             self.effects = self.effects - (self.effects & EF_DIMLIGHT);
     }
 
+    if (self.radsuit_finished && self.radsuit_finished < time + 3
+        && self.rad_time == 1)
+    {
+        self.rad_time = 0;
+        sound (self, CHAN_AUTO, "items/suit2.wav", 1, ATTN_NORM);
+    }
     if (self.radsuit_finished && self.radsuit_finished < time)
     {
         self.items = self.items - (self.items & IT_SUIT);
@@ -3889,6 +3945,7 @@ string(float cls) Argus_ClassWord =
 void() Argus_PickGoal =
 {
     local entity e, b, pick, near, rnode;
+    local entity dn1, dn2, dn3, dn4, dn5, dn6;
     local entity bw, ba, bh, br, bp, bo;
     local float sw, sa, sh, sr, sp, so;
     local vector gp, d;
@@ -3900,6 +3957,31 @@ void() Argus_PickGoal =
     sw = 0;  sa = 0;  sh = 0;  sr = 0;  sp = 0;  so = 0;
     near = world;
     neard = 99999;
+
+    // item denial (#48): gather the live opponents ONCE. This used to
+    // run a full find() chain per candidate item - on a 60-item map
+    // that is 60 walks of the whole edict array for one goal pick.
+    // Six slots covers the 4-bot roster plus humans; beyond that the
+    // extra bodies simply do not add denial pressure.
+    dn1 = world;  dn2 = world;  dn3 = world;
+    dn4 = world;  dn5 = world;  dn6 = world;
+    if (skill >= 1)
+    {
+        b = find (world, classname, "player");
+        while (b != world)
+        {
+            if (b != self && b.health > 0 && !b.cam_active)
+            {
+                if (dn1 == world)       dn1 = b;
+                else if (dn2 == world)  dn2 = b;
+                else if (dn3 == world)  dn3 = b;
+                else if (dn4 == world)  dn4 = b;
+                else if (dn5 == world)  dn5 = b;
+                else if (dn6 == world)  dn6 = b;
+            }
+            b = find (b, classname, "player");
+        }
+    }
 
     // region class (dm3 musing S4): which reachability region is
     // this bot shopping from? Mainland is 0; a bot displaced into a
@@ -4031,16 +4113,25 @@ void() Argus_PickGoal =
                     // item denial (OPM slice C): an opponent standing
                     // near this item makes taking it sweeter. Skill
                     // 1+ - a warmup partner does not play keep-away
+                    // find() walks the whole edict array, and this
+                    // ran once per candidate ITEM - 50-80 full sweeps
+                    // of 600 edicts for a single goal pick. The
+                    // players were gathered once before the loop
+                    // (dn1..dn6); only the distance test stays here.
                     if (skill >= 1)
                     {
-                        b = find (world, classname, "player");
-                        while (b != world)
-                        {
-                            if (b != self && b.health > 0 && !b.cam_active
-                                && vlen (b.origin - e.origin) < 300)
-                                sc = sc + 12;
-                            b = find (b, classname, "player");
-                        }
+                        if (dn1 != world && vlen (dn1.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn2 != world && vlen (dn2.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn3 != world && vlen (dn3.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn4 != world && vlen (dn4.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn5 != world && vlen (dn5.origin - e.origin) < 300)
+                            sc = sc + 12;
+                        if (dn6 != world && vlen (dn6.origin - e.origin) < 300)
+                            sc = sc + 12;
                     }
                     // the hunch (theory of mind): the item we bet a
                     // vanished foe is running for is suddenly very
@@ -4354,11 +4445,24 @@ void() Argus_AI =
         }
         else if (time > self.ar_goalstart + 20)
         {
-            self.ar_goal.ar_claimer = self;
-            self.ar_goal.ar_claimtime = time;
-            self.ar_goal = world;
-            Argus_Event ("abandon");
-            Argus_PickGoal ();
+            // A fight on the way to a goal is not a failure to reach
+            // it. The clock used to run through the duel, so a long
+            // engagement en route to the quad expired the errand,
+            // stamped the claim shelf and locked the bot out of its
+            // own prize for up to 45 s - while standing next to it.
+            // Push the deadline along for as long as combat owns the
+            // steering; the goal is only abandoned for time actually
+            // spent walking.
+            if (self.ar_enemy != world)
+                self.ar_goalstart = time - 15;
+            else
+            {
+                self.ar_goal.ar_claimer = self;
+                self.ar_goal.ar_claimtime = time;
+                self.ar_goal = world;
+                Argus_Event ("abandon");
+                Argus_PickGoal ();
+            }
         }
 
         if (self.ar_pending && Argus_GoalOK (self.ar_goal))
