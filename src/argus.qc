@@ -146,6 +146,9 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .entity ar_nemesis;             // OPM: who keeps killing this bot
 .float  ar_nemkills;            // OPM: consecutive deaths to them;
                                 // 3+ is a vendetta, any kill vents it
+.float  ar_tremtime;            // next aim-tremor injection: the shake
+                                // runs on a 20 Hz clock so its noise
+                                // power does not scale with tick rate
 .float  ar_rjweapon;            // gun held before a nav rocket jump
                                 // forced the RL, restored on landing
 .entity ar_lastkill;            // who this bot most recently killed -
@@ -1483,21 +1486,27 @@ void() Argus_Physics =
         // different on every tick rate. Top speed is not the problem -
         // 0.8v + 60 settles at 300 u/s whatever the rate, because the
         // drag scales with the impulse - but the TIME CONSTANT is
-        // frame-counted: 0.70 s to reach speed on a 20 Hz dedicated
-        // server against 0.19 s on a 72 Hz listen host. Every tape in
-        // runs/ was recorded at 20 Hz and every session Shane plays is
-        // a listen server, so bots have been three times more
-        // responsive in his water than in any match we ever judged.
+        // frame-counted, and the two rates that matter are far apart.
         //
-        // Same model expressed per second: k = 4/s, target 300 u/s.
-        // At frametime 0.05 this is exactly 0.8 and 60 again, so the
-        // dedicated behaviour - and every baseline measured on it - is
-        // bit-for-bit unchanged.
-        wdrag = 1 - 4 * frametime;
+        // MEASURED, do not assume (2026-08-29): the dedicated lab runs
+        // at frametime 0.1, which is id's host_frametime CLAMP, not
+        // sys_ticrate - roughly 10 frames a second of real time. A
+        // listen server runs about 72. So every tape in runs/ was
+        // recorded at 0.1 while every session Shane plays is ~0.0139,
+        // a factor of seven.
+        //
+        // Same model expressed per second: k = 2/s toward 300 u/s.
+        // At frametime 0.1 that is exactly 0.8 and 60 again, so the
+        // lab behaviour - and every baseline measured on it - is
+        // unchanged, and the listen server now matches it. (The first
+        // cut of this used k = 4 and 600*2, calibrated against an
+        // ASSUMED 0.05; it silently changed lab swim drag from 0.8 to
+        // 0.6. Measure the rate before you calibrate to it.)
+        wdrag = 1 - 2 * frametime;
         if (wdrag < 0)
             wdrag = 0;
-        self.velocity_x = self.velocity_x * wdrag + wishdir_x * 1200 * frametime;
-        self.velocity_y = self.velocity_y * wdrag + wishdir_y * 1200 * frametime;
+        self.velocity_x = self.velocity_x * wdrag + wishdir_x * 600 * frametime;
+        self.velocity_y = self.velocity_y * wdrag + wishdir_y * 600 * frametime;
         self.flags = self.flags - (self.flags & FL_ONGROUND);
         // AIR EMERGENCY: the drive-for-air pins under a ceiling and
         // the bot drowns in place (Romero reached 1 hp submerged in
@@ -3533,6 +3542,28 @@ float() Argus_Combat =
     turn = 0.3;                              // tremor, degrees
     if (self.health < 40)
         turn = 0.8;                          // adrenaline shake
+    // TREMOR ON A FIXED CLOCK, not once per frame (the #98 class,
+    // found by the 2026-08-29 per-frame audit). The shake is
+    // injected noise, so its power per SECOND scaled with tick rate:
+    // 10 injections a second on the lab's measured 0.1 frametime
+    // against ~72 on a listen server, which is roughly 2.7x the
+    // steady-state jitter for the same nominal 0.3 degrees. The
+    // clock pins the injection rate to the lab's, and the frametime
+    // guard means the branch cannot even be entered there - inert by
+    // construction rather than by argument. Magnitude semantics are
+    // untouched, and the effect is small: 0.3 degrees is about 2.6
+    // units at 500u range against a 32-unit-wide target.
+    // Gated on the HOST being faster than the calibration rate, so
+    // at 20 Hz this branch is never entered and the code is exactly
+    // what every tape was tuned against - inert by construction
+    // rather than by argument.
+    if (frametime < 0.09)
+    {
+        if (time < self.ar_tremtime)
+            turn = 0;
+        else
+            self.ar_tremtime = time + 0.095;
+    }
     self.angles_y = self.angles_y + self.ar_aimvel * frametime
                   + (random () - 0.5) * turn;
     // remaining error feeds the trigger gate below (the old limiter

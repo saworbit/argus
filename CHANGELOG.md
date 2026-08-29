@@ -7,6 +7,54 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v4.07 (2026-08-29) - the lab runs at 10 Hz, and a correction
+
+Following the v405 session review's own recommendation: audit bot
+physics for per-frame constants that should be scaled by `frametime`.
+The audit mostly VALIDATED the code, found one small defect, and
+caught a mistake in the previous entry.
+
+**Measured, not assumed.** A one-off `FTDBG` dprint of `frametime` in
+a live lab match reports **0.1** in every sample, sustained, while the
+server keeps real time (26.4 s of game time in a 25 s match). 0.1 is
+not `sys_ticrate`, it is id's `host_frametime` clamp, so the headless
+dedicated child runs at roughly ten frames a second. A listen server
+runs near 72. That is a factor of **seven** between the rig every tape
+is recorded on and the rig every session is played on.
+
+**The correction.** v4.05's swim fix keyed on an assumed 0.05 and
+claimed to be bit-identical to the lab. It was not: at 0.1 it changed
+swim drag from 0.8 to 0.6 per frame. Re-derived against the measured
+rate (`k = 2`, impulse `600 * frametime`) it now reproduces 0.8 and 60
+exactly at 0.1, so the lab calibration is genuinely preserved and the
+listen server matches it. The terminal 300 u/s was correct throughout.
+
+**The new defect.** The aim tremor was injected once per frame with no
+frametime scaling, so its noise power scaled with tick rate: about
+2.7x the steady-state jitter on a listen server. It now runs on a
+fixed clock, guarded so the branch cannot be entered at the lab rate.
+The magnitude is small (0.3 degrees is about 2.6 units at 500u against
+a 32-unit target); this is correctness, not difficulty.
+
+**Audited and clean:** `Argus_Friction`, `Argus_Accelerate`,
+`Argus_AirAccelerate` (faithful NQ replication, all frametime scaled),
+the saccade glide and its re-roll clocks, the stall detector, drowning
+escalation, and every turn-rate limiter.
+
+**Found and deliberately NOT changed:** the damped-spring aim clamp.
+`turn = 1 - damping_c * frametime` is floored at 0.1 so slow rigs do
+not ring, and at frametime 0.1 that floor is hit at every skill tier
+while at 72 Hz it is never hit. Per 0.1 s of wall time the spring
+retains about 0.26 against 0.10 at skill 1, the default tier - so bot
+aim is measurably less damped in a played session than in any tape.
+That is a difficulty change to make deliberately with a human-play
+ladder, not a bug to silently correct.
+
+Ladder: dm4 IMPROVED on all seven gates, lava back to 4 at baseline
+with frags 23 and stalls 4; dm3 movement improved (stalls -22%,
+hazards -17%, goals +33%) with its chronic frag-board noise unchanged.
+Progs `2CE5C1A999A4F8DF7B6CA382F5664955`.
+
 ## v4.06 (2026-08-29) - the quad line the session review caught
 
 A 302 s human session on dm4 reviewed against v4.05. The build held:
@@ -110,11 +158,8 @@ cut vertically backwards.
 
 **v4.05.** Swim drag was a per-frame factor. Top speed was never
 affected - `0.8v + 60` settles at 300 u/s at any tick rate - but the
-time constant was frame-counted: 0.70 s to reach speed at 20 Hz
-against 0.19 s at 72 Hz. Every tape in `runs/` is dedicated at
-20 Hz and every played session is a listen server, so bots were
-~3.5x more responsive in Shane's water than in any judged match.
-Now expressed per second and bit-identical at 0.05.
+time constant was frame-counted. See v4.07: the reference rate this
+shipped against was assumed rather than measured, and was wrong.
 
 **Lab.** The camera was unindexable in three layers at once (both
 file lists, `keep_fn`'s `"Argus_"` prefix, and the call regex).
