@@ -1,4 +1,4 @@
-/*  argus_nav.qc — runtime navigation for Argus. Pure vanilla QuakeC.
+/*  argus_nav.qc - runtime navigation for Argus. Pure vanilla QuakeC.
 
     Nodes are invisible entities spawned by generated per-map files
     (argus_nav_<map>.qc via argus_nav_dispatch.qc). Links are directed:
@@ -124,7 +124,7 @@ void(entity a, entity b) Argus_NavLink =
     else
     {
         // navgen budgets 8 slots per node; a 9th call means the
-        // generator and this runtime disagree — say so instead of
+        // generator and this runtime disagree - say so instead of
         // silently dropping the link (lqdm2 n126 lost its
         // teleporter this way; Shane's fix-now list)
         dprint ("ARGUS navlink overflow\n");
@@ -266,7 +266,7 @@ void(entity a, entity b) Argus_NavLinkDoor =
 
 // a link that swims out of water: from an underwater waypoint to a
 // dry waypoint at the surface lip. The physics waterjump only fires
-// on these hops — and navgen only emits them for CONTENTS_WATER, so
+// on these hops - and navgen only emits them for CONTENTS_WATER, so
 // dm4's lava can never see a vault (the regression that killed the
 // first waterjump).
 void(entity a, entity b) Argus_NavLinkSwim =

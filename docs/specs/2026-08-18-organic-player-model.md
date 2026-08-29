@@ -1,7 +1,7 @@
 # Organic player model (OPM) triage and adoption record
 
 Date: 2026-08-18 (late night)
-Status: SHIPPED 2026-08-18 late night — slice A in v3.27 (spring
+Status: SHIPPED 2026-08-18 late night - slice A in v3.27 (spring
 gains corrected from the source spec's omega/k confusion, see
 below), slice B in v3.28 (2-of-3), slice C in v3.29 (best ladder of
 the run). All three in all three installs as v3.29

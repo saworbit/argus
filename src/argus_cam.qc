@@ -1,4 +1,4 @@
-/*  argus_cam.qc — Intelligent spectator camera and AI broadcast director for Argus.
+/*  argus_cam.qc - Intelligent spectator camera and AI broadcast director for Argus.
     Pure vanilla QuakeC, NetQuake protocol 15 compliant.
 
     Modes:

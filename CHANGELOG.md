@@ -89,7 +89,7 @@ file lists, `keep_fn`'s `"Argus_"` prefix, and the call regex).
 Cartograph called dm3's plats unboardable while dm3 rode them every
 tape. Train, sprint and door hops briefed as plain walks. `lqdm2`
 tapes answered `dm2` sweeps. `line_clear` sampled a 1200u trace in
-20 steps. Respawns counted as travel. 91 tests.
+20 steps. Respawns counted as travel. 92 tests.
 
 ## v3.97 (2026-08-28) - the fourth bot gets his own name, and the tracker empties
 

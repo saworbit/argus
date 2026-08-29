@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""argus_navgen.py — offline navigation compiler for Argus.
+"""argus_navgen.py - offline navigation compiler for Argus.
 
 Pipeline:
   1. parse BSP29: planes, clipnodes, models, entities
   2. classify points against HULL 1 (the player hull) so "empty" means
-     "a player standing here fits" — collision-accurate walkability for free
+     "a player standing here fits" - collision-accurate walkability for free
   3. sample standable origins on a 32u column grid
   4. build a directed fine graph: walk edges (|dz| <= 18, both ways),
      drop edges (19..200 down, one way)
@@ -61,7 +61,7 @@ GRID = 32
 if "--grid" in sys.argv[5:]:
     # a 32u-aligned grid can straddle narrow passages entirely (no
     # column of the grid stands inside them), severing yards that
-    # are walkably connected — dm3's six dry islands (campaign queue
+    # are walkably connected - dm3's six dry islands (campaign queue
     # item 1). 16 quadruples sampling cost; use for maps that
     # shatter at 32.
     GRID = int(sys.argv[sys.argv.index("--grid") + 1])
@@ -601,7 +601,7 @@ print(f"plats: {len(lifts)} lift(s) padded ({len(vpads)} virtual)")
 # A func_train patrols its path_corners on its own clock: a MOVING
 # bmodel, in neither static hull, so the bridge it forms is invisible
 # to sampling (dm2's t4/t5 car at z 304 IS the west-to-east upper
-# deck connection — the GL's 9-node pocket). Pad static floor at both
+# deck connection - the GL's 9-node pocket). Pad static floor at both
 # endpoint approaches (probe outward past each side of the parked
 # car) and emit a typed ride link EACH WAY; the runtime parks on the
 # pad, boards when the car docks, holds while carried, walks off at
@@ -782,7 +782,7 @@ for i, w in enumerate(ways):
         d, u = heapq.heappop(pq)
         if d > dist.get(u, 1e9) or d > LINK_PATH_MAX: continue
         if u in wset and u != w:
-            # only link if the fine path is nearly straight — bots beeline links.
+            # only link if the fine path is nearly straight - bots beeline links.
             # A sprint-class path carries a +110 lineup tax that the
             # straightness ratio would misread as crookedness: accept
             # it when the cost is essentially just the arc (the seats
@@ -811,7 +811,7 @@ for i in list(links):
 # The straightness ratio only approximates "beeline-walkable", and the
 # runtime executes links as beelines. A link whose fine path climbs a
 # staircase can pass the ratio while its straight line pierces the
-# stairwell wall — bots then wedge against it for minutes (dm4 node
+# stairwell wall - bots then wedge against it for minutes (dm4 node
 # 122 -> 107 was the found case). Walk each link's actual line through
 # hull 1: floor continuity, step-ups <= STEP, drops only forward.
 # Jump links are exempt; their arc was verified in hull 1 already.
@@ -1236,7 +1236,7 @@ else:
 # ensure_way promotes launch pads AFTER Dijkstra, so a promoted pad
 # had no walk links at all: nothing ever routed ONTO it, and the RJ
 # links were reachable only when a bot happened to stand there (zero
-# rjump events in the v3.20 dm4 tape — Shane's fix-now list). Stitch
+# rjump events in the v3.20 dm4 tape - Shane's fix-now list). Stitch
 # every launch pad into the walk graph via its nearest
 # beeline-verified neighbour, both directions when both survive.
 inbound = set()
@@ -1321,17 +1321,17 @@ for i, w in enumerate(ways):
             continue                      # dry exits only
         if not (surf - 12 <= vz <= surf + 44):
             continue                      # lip beyond a waterjump
-        # the horizontal leg is SWUM, not jumped — the vault only
+        # the horizontal leg is SWUM, not jumped - the vault only
         # covers the final lip, so range is about keeping the runtime
         # beeline sane, not about jump physics
         horiz = ((vx - wx) ** 2 + (vy - wy) ** 2) ** 0.5
         if horiz > 320:
             continue
         # step the swim path in hull 0: every sample just under the
-        # surface must be water or empty — a lip behind a pillar
+        # surface must be water or empty - a lip behind a pillar
         # used to emit anyway (Shane's correctness list). Stop 48u
         # short of the exit: the bank wall AT the lip is expected
-        # (it is what the waterjump vaults) — checking into it
+        # (it is what the waterjump vaults) - checking into it
         # rejected every legitimate exit on the first pass
         span = horiz - 48
         if span > 24:
@@ -1344,7 +1344,7 @@ for i, w in enumerate(ways):
                 if h0_contents(px_, py_, surf - 8) not in (CONTENTS_WATER, -1):
                     # solid just under the surface: a submerged ridge
                     # a swimmer passes over, unless it is solid above
-                    # the surface too — then it is a pillar or wall
+                    # the surface too - then it is a pillar or wall
                     if h0_contents(px_, py_, surf + 16) != -1:
                         clear = False
                         break
@@ -1359,7 +1359,7 @@ print(f"swim-exit links: {len(swims)} from {n_swimnodes} underwater waypoints")
 # a node has 8 link slots and the runtime's Argus_NavLink drops the
 # 9th: typed links (teleporter, RJ, lift, swim) are emitted after
 # walks and were falling off exactly on the best-connected nodes
-# (lqdm2 n126 lost its teleporter — Shane's fix-now list). Evict the
+# (lqdm2 n126 lost its teleporter - Shane's fix-now list). Evict the
 # LONGEST plain walk links to guarantee room; jump-typed links are
 # kept preferentially.
 typed_out = collections.Counter()
@@ -1385,7 +1385,7 @@ nlinks = sum(len(v) for v in links.values())
 # the isolated-node prune keeps anything with degree > 0, but a node
 # with ONLY inbound links is a trap: Argus_NearestNode can pick it as
 # a route START and BFS fails on the spot (dm3 n30, the west-yard
-# routefail hotspot — Shane's correctness list). Stitch an outbound
+# routefail hotspot - Shane's correctness list). Stitch an outbound
 # escape to the nearest beeline-verified neighbour; if nothing
 # passes, strip its inbound walks so the prune removes it.
 typed_from = set(a for a, _b in teles) | set(a for a, _b in rjlinks) \
@@ -1449,14 +1449,14 @@ if n_escape or n_trapped:
 # so a bot knocked in abandons in a spiral until the lava edge gets
 # it. Find sink components (SCC with no link of any type leaving),
 # stitch a rocket-jump escape to the rim (min rise 40, not the
-# shortcut-guard 100 — the map itself makes RL-less occupants doomed
+# shortcut-guard 100 - the map itself makes RL-less occupants doomed
 # there). Walk entries into the sink are KEPT: a first draft stripped
 # them to stop dive-in-blast-out BFS shortcuts, and the strip
 # amputated rim nodes whose only outbound led into the pit,
 # recreating the very inbound-only traps 7f exists to catch (the
 # sinkfix2 ladder match, abandon clusters at dm4 n3/n4). The RJ
 # escape is equipment-gated at BFS time anyway, so a pit transit
-# costs a rocket and ~100 effective health — rare and survivable
+# costs a rocket and ~100 effective health - rare and survivable
 # where the amputation was a stall storm. A sink holding an item is
 # left alone and reported: deliberate entry needs weighted costing
 # (parked).
@@ -2363,7 +2363,7 @@ for i, w in enumerate(ways):
 
 # ---- 8a. emit QC ----
 with open(OUTQC, "w") as f:
-    f.write("/* generated by argus_navgen.py — do not edit */\n\n")
+    f.write("/* generated by argus_navgen.py - do not edit */\n\n")
     f.write(f"void() Argus_Nav_Spawn_{MAPNAME} =\n{{\n")
     for i, w in enumerate(ways):
         f.write(f"    local entity n{i};\n")
@@ -2509,7 +2509,7 @@ for a, b in rjlinks:
 wx = [pos(w)[0] for w in ways]; wy = [pos(w)[1] for w in ways]
 ax.scatter(wx, wy, s=16, c="#1e6bd9", zorder=3)
 ax.set_aspect("equal"); ax.set_xticks([]); ax.set_yticks([])
-ax.set_title(f"Argus nav graph — {MAPNAME}: {len(ways)} nodes, {nlinks} links "
+ax.set_title(f"Argus nav graph - {MAPNAME}: {len(ways)} nodes, {nlinks} links "
              f"({oneway} one-way, orange; {njlinks} jump, red dotted; "
              f"{len(rjlinks)} rocket-jump, magenta dash-dot), "
              f"{len(teles)} teleporter", fontsize=11)

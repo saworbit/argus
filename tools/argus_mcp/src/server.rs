@@ -1788,7 +1788,7 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
 
 #[tool_handler(
     name = "argus-mcp",
-    version = "0.23.0",
+    version = "0.24.0",
     instructions = "Argus lab 0.23. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
 )]
 #[prompt_handler]
@@ -1801,7 +1801,7 @@ impl ServerHandler for Argus {
                 .enable_resources()
                 .build(),
         )
-        .with_server_info(Implementation::new("argus-mcp", "0.23.0"))
+        .with_server_info(Implementation::new("argus-mcp", "0.24.0"))
         .with_instructions(
             "Argus lab 0.23. Do not invent a fteqcc/quakespasm/python pipeline. \
 First call: see what=project. Then see what=map / path / fn / search. After a QC \

@@ -1,11 +1,11 @@
 #!/bin/bash
-# setup_rig.sh — rebuilds the headless Quake botmatch rig from nothing.
+# setup_rig.sh - rebuilds the headless Quake botmatch rig from nothing.
 # Tested on Ubuntu 24.04 (Claude sandbox). Run from tools/ inside the
 # argus repo; the QC tree comes from ../src. Total time: a few minutes.
 #
 # Revised 2026-08-18 (Shane's project review): the old script copied
 # two loose QC files over a pristine LibreQuake qcsrc checkout and
-# injected worldspawn/StartFrame hooks by hand — with stale BotLab_*
+# injected worldspawn/StartFrame hooks by hand - with stale BotLab_*
 # function names that no longer compile, and none of the vendored
 # base-file touches (defs shim, weapon_touch guard, knockback,
 # W_FireLightning makevectors). ../src vendors all of that now, so
@@ -22,7 +22,7 @@
 #   * apt fteqcc (svn3400) is too old for LibreQuake QC; build modern fteqcc from fteqw git
 #   * LibreQuake repo tree has map/QC sources only; compiled BSPs + paks come from release zips
 #   * QuakeSpasm dedicated still wants gfx.wad; the lite paks satisfy this
-#   * NQ bprint writes to connected clients only — INVISIBLE on an empty dedicated
+#   * NQ bprint writes to connected clients only - INVISIBLE on an empty dedicated
 #     server. Use dprint for telemetry and run with +developer 1
 #   * QuakeSpasm buffers stdout when not a tty; wrap with stdbuf -oL
 #   * LibreQuake defs.qc declares bprint QW-style: bprint(level, string)
@@ -65,7 +65,7 @@ rm -rf argus-src && cp -r "$HERE/../src" argus-src
 echo "== compile =="
 mkdir -p lq1
 rm -f lq1/progs.dat
-# fteqcc exits 0 even when the output write fails — trust the
+# fteqcc exits 0 even when the output write fails - trust the
 # "Compile finished ... (id format)" line AND a fresh progs.dat,
 # never the exit code (the old pipe swallowed failures with
 # || true and shipped whatever stale progs.dat was lying around)

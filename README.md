@@ -1,10 +1,10 @@
-# Argus — Vanilla QuakeC deathmatch bot and telemetry laboratory
+# Argus - Vanilla QuakeC deathmatch bot and telemetry laboratory
 
 [![compile](https://github.com/saworbit/argus/actions/workflows/compile.yml/badge.svg)](https://github.com/saworbit/argus/actions/workflows/compile.yml)
 
 Argus is an advanced deathmatch bot for Quake 1 built in pure vanilla QuakeC. It runs on classic NetQuake protocol 15 with a strict 600-edict ceiling, requires zero engine extensions or file I/O, and is compatible with any standard Quake engine (QuakeSpasm, Ironwail, vkQuake, FTEQW, DarkPlaces, or the official 2021 rerelease).
 
-The bot combines the spiritual lineage of the **Reaper Bot** (1996) and **Omicron Bot** (1997) with a modern, closed-loop telemetry and analysis pipeline. Every subsystem — from movement physics and hazard avoidance to Goal-Oriented Action Planning (GOAP) and humanized aim tracking — is tuned from empirical match telemetry.
+The bot combines the spiritual lineage of the **Reaper Bot** (1996) and **Omicron Bot** (1997) with a modern, closed-loop telemetry and analysis pipeline. Every subsystem - from movement physics and hazard avoidance to Goal-Oriented Action Planning (GOAP) and humanized aim tracking - is tuned from empirical match telemetry.
 
 ![Argus navigation graph for dm2 (Claustrophobopolis): waypoints, walk and drop links, typed jump / rocket-jump / lift / door / train links over the BSP wireframe](docs/media/nav_dm2.png)
 
@@ -68,59 +68,64 @@ flowchart TD
 - **Player physics emulation**: Custom friction, ground acceleration, and air acceleration executed per server frame in `StartFrame`.
 - **Decoupled movement and aim headings**: The bot's movement direction (`ar_moveyaw`) is fully decoupled from its facing angle (`angles_y`), enabling circle-strafing during combat.
 - **Apex cornering lookahead**: Slices corners by evaluating line-of-sight to the waypoint after next (`nx`) when within 112 units of the current node, eliminating rigid waypoint pivoting.
-- **Plat-state-aware elevator handling**: Reads the `func_plat` state machine before waiting — steps out from under a raised slab (a moving bot in the shaft volume postpones the descent on every touch), stands motionless so the descent delay can expire, and boards a resting slab so its own approach summons the ride with it aboard.
-- **Train riding**: Boards patrolling `func_train` cars by steering onto the slab itself, zeroes velocity to ride standing still, and walks off at the far dock — bots cross dm2's moving-platform bridge at deck height.
+- **Plat-state-aware elevator handling**: Reads the `func_plat` state machine before waiting - steps out from under a raised slab (a moving bot in the shaft volume postpones the descent on every touch), stands motionless so the descent delay can expire, and boards a resting slab so its own approach summons the ride with it aboard.
+- **Train riding**: Boards patrolling `func_train` cars by steering onto the slab itself, zeroes velocity to ride standing still, and walks off at the far dock - bots cross dm2's moving-platform bridge at deck height.
 - **Grate-floor and steep-stair walking**: Retries refused steps under `FL_PARTIALGROUND` (id's own escape hatch for the engine's point-traced ledge guard), so decorative floors with recessed channels and 45-degree strip stairs walk at full run speed instead of pinning the bot.
-- **Predictive gap jumping**: At a vetoed brink in unrouted movement, the bot simulates the jump it could make right now — 0.1 s parabola segments traced for collisions — and takes it only when the landing is a dry floor within survivable range ("only if satisfied with the result", after the 1998 Omicron design).
+- **Predictive gap jumping**: At a vetoed brink in unrouted movement, the bot simulates the jump it could make right now - 0.1 s parabola segments traced for collisions - and takes it only when the landing is a dry floor within survivable range ("only if satisfied with the result", after the 1998 Omicron design).
 - **Router-promised drops**: A routed bot whose next waypoint sits far below on a legal sub-200u drop commits with one firm step off the lip instead of teetering at the edge the engine refuses to walk over.
-- **Sprint-jump run-up discipline**: Trick-jump links that demand full run speed are staged like a human takes them — walk to a validated run-up point behind the launch seat on the extended jump line, charge through the seat at the landing, fire at the last unit of ledge, and hold the flight line against mid-air distractions for the whole arc. Launches print `ARGUS <name> sprintjump`.
-- **Combat-yielding mover waits**: Pad-side lift and train holds release the moment an enemy engages — the bot fights with full movement and resumes the wait afterwards, so a queued bot is never a free frag.
+- **Sprint-jump run-up discipline**: Trick-jump links that demand full run speed are staged like a human takes them - walk to a validated run-up point behind the launch seat on the extended jump line, charge through the seat at the landing, fire at the last unit of ledge, and hold the flight line against mid-air distractions for the whole arc. Launches print `ARGUS <name> sprintjump`.
+- **Frame-rate-independent swimming**: Swim drag and thrust are expressed per second rather than per frame. Terminal speed was never the issue (the drag scales with the impulse, so it settles at 300 u/s on any tick rate) but the *time constant* was frame-counted - 0.70 s to reach speed on a 20 Hz dedicated server against 0.19 s on a 72 Hz listen host, which meant bots swam more responsively in played sessions than in any recorded match. The model is now identical at both.
+- **Combat-yielding mover waits**: Pad-side lift and train holds release the moment an enemy engages - the bot fights with full movement and resumes the wait afterwards, so a queued bot is never a free frag.
 
 ### 2. Predictive hazard avoidance
-- **280u brink probes**: `Argus_MoveHazard` casts downward traces 32u–52u ahead along movement vectors (probe distance scales with speed, so a sprinting bot sees the pit in time), detecting `CONTENT_LAVA`, `CONTENT_SLIME`, or fatal floor drops before the bot steps over the edge.
-- **Hull-bridge discrimination**: A liquid floor under the probe point is only a real hazard if the whole 32x32 hull would stand in it — `Argus_HazardBridge` requires solid banks on both sides within a bridgeable span, so decorative lava channels narrower than the player bbox read as floor while pool rims keep the conservative veto.
+- **280u brink probes**: `Argus_MoveHazard` casts downward traces 32u-52u ahead along movement vectors (probe distance scales with speed, so a sprinting bot sees the pit in time), detecting `CONTENT_LAVA`, `CONTENT_SLIME`, or fatal floor drops before the bot steps over the edge.
+- **Hull-bridge discrimination**: A liquid floor under the probe point is only a real hazard if the whole 32x32 hull would stand in it - `Argus_HazardBridge` requires solid banks on both sides within a bridgeable span, so decorative lava channels narrower than the player bbox read as floor while pool rims keep the conservative veto.
 - **Staircase rescue**: A probe buried inside rising geometry re-checks from knee-plus height; a clear window landing on a walkable tread means stairs (walkmove climbs the risers one at a time), while walls and true pits stay vetoed.
 - **Deflection hysteresis**: `Argus_HazardSteer` tests alternate headings in priority fans (+50, -50, +100, -100, 180 degrees) and locks onto `ar_hazardyaw` with angular memory to prevent corner oscillation.
-- **Safe line floor validation**: `Argus_SafeLine` samples floor collision every 48 units along direct item sightlines, preventing bots from plunging into pits to reach visible items.
+- **Safe line floor validation**: `Argus_SafeLine` samples floor collision every 48 units along direct item sightlines, preventing bots from plunging into pits to reach visible items. It shares the staircase rescue above, because a downward trace that *starts* inside solid geometry returns the same result as one that finds nothing at all - rising ground and a bottomless void are indistinguishable unless you test for it explicitly.
 
 ### 3. Combat, perception, and humanized aim
-- **Damped-spring aim model with saccade glide**: Second-order yaw tracking with per-skill spring constants — flick, slight overshoot, settle, tremor — plus configurable reaction latency (`ar_reactbase`) and an aim error cone that narrows over continuous tracking duration. The held error offset re-rolls every 0.25–0.55 s and *ramps* to its new value over 0.15 s instead of stepping, so the spring never chases a teleporting target — a human wrist drifts between corrections.
-- **Simulated hearing and investigation**: `W_Attack` broadcasts gunfire to every bot within 1000u (wall-damped); an unengaged bot glances at fresh sounds, and nearby fire pulls it toward the fight instead of past it.
-- **Combat memory and grudges**: A recent foe stays re-acquirable at 360 degrees for 5 seconds (no forgetting mid-dodge), and three consecutive deaths to one player raise a vendetta bounty on them.
-- **Ballistic compensation**: Applies parabolic loft compensation for Grenade Launcher trajectories, downward pitch adjustments for Rocket Launcher fire from elevated walkways, and feet-aim against grounded targets for splash.
+- **Damped-spring aim model with saccade glide**: Second-order yaw tracking with per-skill spring constants - flick, slight overshoot, settle, tremor - plus configurable reaction latency (`ar_reactbase`) and an aim error cone that narrows over continuous tracking duration. The held error offset re-rolls every 0.25-0.55 s and *ramps* to its new value over 0.15 s instead of stepping, so the spring never chases a teleporting target - a human wrist drifts between corrections.
+- **Simulated hearing and investigation**: `W_Attack` broadcasts gunfire to every bot within 1000u (wall-damped, listened for at chest height so flat corridors are not mistaken for walls); an unengaged bot glances at fresh sounds - as a rate-limited head turn, not a one-frame snap - and nearby fire pulls it toward the fight instead of past it.
+- **Horizontal field of view**: The soft FOV gate on new distant targets measures *bearing*, projecting the target onto the horizontal plane first. Normalising in three dimensions and dotting against a flat forward vector charges the target for its height, which blinds a bot to an opponent standing on a walkway directly in front of it.
+- **Combat memory and grudges**: A recent foe stays re-acquirable at 360 degrees for 5 seconds (no forgetting mid-dodge), and three consecutive deaths to one player raise a vendetta bounty on them. The grudge is vented only by killing *that* player - the bot tracks who it actually killed, from the human obituary path as well as its own, so it cannot taunt its nemesis over an uninvolved third party's body.
+- **Ballistic compensation**: Grenade loft is derived from the launcher rather than tuned by hand - `W_FireGrenade` throws at `v_forward * 600 + v_up * 200`, so over a flight `t = d/600` the net vertical travel is `200t - 400t^2` and the aim correction is its negative, `d*d/900 - d/3`. Rocket fire from elevated walkways pitches down so the shot clears the lip, projectile lead is clamped to the floor beneath a falling target (a full vertical lead aims through the world), and grounded targets are shot at the feet for splash.
 - **Continuous fire button hold**: Automatically asserts `button0 = 1` within 12 degrees of target alignment, ensuring continuous-fire weapon frame chains (Lightning Gun, Super Nailgun) maintain active beams without resetting animations.
-- **Dynamic weapon selection**: Selects optimal weapons based on distance thresholds, owned inventory, waterlevel safety, and remaining ammunition reserves.
-- **Missile dodging**: Scans for inbound rockets and grenades every 0.15 s and commits to a floor-checked perpendicular sidestep, shooting throughout — serial rockets still land sometimes at every skill tier to stay human.
-- **Retreat by geometry**: A low-stack bot against a healthy enemy fans headings away from the threat and commits to the first whose destination breaks the enemy's line of sight — cover is a wall between us, never distance. Cornered means fight; the bot shoots the whole way out.
-- **Mid-fight item grabs**: Combat sweeps 240u for worthwhile live items every half second and bends the strafe circle toward the best for one short commit — a wounded bot steps onto the health box between rockets instead of strafing past it.
-- **Weapon-sound classification and pickup hearing**: The listener knows *what* it heard — heavy gunfire on a thin health stack keeps its distance while a healthy bot hunts the big fight, and weapon, armour, powerup, megahealth, and backpack pickups are audible intel that starts the denial loop.
-- **Theory of mind — the hunch and the ambush reflexes**: When a chase goes cold, the bot scores the map *as its opponent* (their health, their guns) and bets on the item they are running for; during pursuit it pre-fires one speculative rocket at the corner they vanished behind; and after a kill it bets the victim respawns at the nearest deathmatch pad and shops toward it for a short window. Interception emerges from the same utility scorer that runs the circuits.
+- **Dynamic weapon selection**: Selects optimal weapons based on distance thresholds, owned inventory, waterlevel safety, and remaining ammunition reserves. Holding nothing but a loaded Rocket Launcher at close range, a bot fires it from 120u out on a stack of 100 or more rather than charging with the axe - and below that distance it really does take the axe, because splash is `120 - dist/2` and the trade stops paying.
+- **Missile dodging**: Scans for inbound rockets and grenades every 0.15 s and commits to a perpendicular sidestep that is checked for both floor *and* clearance, shooting throughout. Floor alone is not enough: a wall has excellent floor under it, and dodging into one pins the bot exactly where the rocket is going. Serial rockets still land sometimes at every skill tier to stay human.
+- **Retreat by geometry**: A low-stack bot against a healthy enemy fans headings away from the threat and commits to the first whose destination breaks the enemy's line of sight - cover is a wall between us, never distance. Cornered means fight; the bot shoots the whole way out.
+- **Mid-fight item grabs**: Combat sweeps 240u for worthwhile live items every half second and bends the strafe circle toward the best for one short commit - a wounded bot steps onto the health box between rockets instead of strafing past it.
+- **Weapon-sound classification and pickup hearing**: The listener knows *what* it heard - heavy gunfire on a thin health stack keeps its distance while a healthy bot hunts the big fight, and weapon, armour, powerup, megahealth, and backpack pickups are audible intel that starts the denial loop.
+- **Theory of mind - the hunch and the ambush reflexes**: When a chase goes cold, the bot scores the map *as its opponent* (their health, their guns) and bets on the item they are running for; during pursuit it pre-fires one speculative rocket at the corner they vanished behind; and after a kill it bets on where the victim will respawn and shops toward it for a short window. That last bet now respects the engine's own spawn rule - `SelectSpawnPoint` skips any pad with a player within 84 units, so the pad nearest the body (where the killer is standing) is the one it is *least* likely to pick. Interception emerges from the same utility scorer that runs the circuits.
 
 ### 4. Goal selection and GOAP planning
 - **Dynamic item utility scoring**: Scores all live trigger items on the map based on personality appetites, missing health/armour deltas, weapon tiers, and distance attenuation (`score = value * 320 / (dist + 160)`).
-- **Control circuits**: Major items (unowned RL/LG, fresh armours, megahealth, powerups, fat packs) read distance at 0.4x, so the far prizes pull from across the map — bots run the arm/deny/hunt rotation between control points instead of grazing whatever is near.
-- **Item respawn clocks and pre-positioning**: A consumed item's respawn timer is readable in pure vanilla QC (`SUB_regen` nextthink), so bots time their arrivals — up to 10 seconds early at a discount — and orbit the spawn point in camping laps until it pops. Be early, not on time.
+- **Control circuits**: Major items (unowned RL/LG, fresh armours, megahealth, powerups, fat packs) read distance at 0.4x, so the far prizes pull from across the map - bots run the arm/deny/hunt rotation between control points instead of grazing whatever is near.
+- **Item respawn clocks and pre-positioning**: A consumed item's respawn timer is readable in pure vanilla QC (`SUB_regen` nextthink), so bots time their arrivals - up to 10 seconds early at a discount - and orbit the spawn point in camping laps until it pops. Be early, not on time.
 - **Island discipline**: Two consecutive route failures from one spot narrow the shopping list to the nearest live item until a route completes, so a bot on a disconnected map region grinds local errands instead of suiciding out.
 - **Pack dispersion**: Items targeted by fellow bots receive an automatic 40% score reduction to spread the squad across the arena.
-- **Loot economy**: Dropped backpacks are valued by their contents (a fat rocket pack outranks most weapons), a fresh kill-drop carries a time-critical urgency bonus while the victim is still respawning, and a kill immediately re-shops the killer's goals — looting your victim is the loop humans run by reflex.
+- **Loot economy**: Dropped backpacks are valued by what the bot can actually *absorb* (a 40-rocket pack is worth nothing to a bot already at 100) and a pack carrying a gun the bot does not own is priced as the weapon it is, not as a garnish. A fresh kill-drop carries a time-critical urgency bonus while the victim is still respawning, and a kill immediately re-shops the killer's goals - looting your victim is the loop humans run by reflex.
+- **Armour tiers, not armour points**: `armor_touch` replaces rather than accumulates, so a lower tier is a downgrade in absorption even when the arithmetic looks positive - red armour worn down to 37 units is 29.6 effective points against green's 30. Bots refuse to shop below the tier they are wearing instead of trading 80% absorption for 30%.
 - **Denial and control loops**: An opponent standing near an item makes taking it sweeter, and an owned Rocket Launcher or Lightning Gun stays worth a refill-and-denial swing past its spawn.
 - **Prerequisite goal planning**: Utilises a lightweight Goal-Oriented Action Planning (GOAP) bitmask (`AR_WS_ARMED`, `AR_WS_STOCKED`, `AR_WS_HEALTHY`, `AR_WS_ARMORED`). If a high-value powerup (Quad/Pent) is selected while unarmed, the planner prepends fetching a weapon first.
 
 ### 5. Multi-map frame-sliced navigation
 - **Sliced BFS router**: Breadth-first graph search slices expansions across server frames (48 node pops per frame via `ANQ_POPS`), avoiding runaway CPU limits.
 - **Route generation stamping**: Next-hop waypoint pointers (`an_next0..3`) are stamped with a route generation counter (`ar_routegen`), invalidating stale pointers if a bot is knocked off course.
-- **Shared route cache**: A completed route is stamped into shared per-node cache fields; any bot wanting the same goal from a node on that fresh path adopts the chain instantly — no search frames, no router contention — after re-checking the rocket-jump toll per hop.
-- **Corridor sampling and stair-run seats**: The nav compiler samples fine (16u) for connectivity while seating coarse for the edict budget, and detects rising stair runs to promote seats at their bottom, top, and midpoint — the narrow passages and staircases a 32u grid never stands in.
+- **Shared route cache**: A completed route is stamped into shared per-node cache fields; any bot wanting the same goal from a node on that fresh path adopts the chain instantly - no search frames, no router contention - after re-checking the rocket-jump toll per hop.
+- **Corridor sampling and stair-run seats**: The nav compiler samples fine (16u) for connectivity while seating coarse for the edict budget, and detects rising stair runs to promote seats at their bottom, top, and midpoint - the narrow passages and staircases a 32u grid never stands in.
 - **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`), rocket-jump links (`an_rjmask`), sprint-jump links (full-run-speed arcs, skill-gated), elevator links (`an_liftmask`), swim-exit and dive links (`an_swimmask`), train rides (`an_trainmask`), and door passages (`an_doormask`).
-- **Engine-verdict graph refinement (the mill)**: The lab's puppet client walks accused links in the real engine; refuted walk links whose centre-line void fits the jump envelope are reminted as jump links, unjumpable refusals die, and candidate entries the puppet *proves* are minted from `argus_nav_<map>.proven.json`. Every chronic stall cell fixed this way stays fixed — the engine testifies, navgen re-types, bots inherit.
+- **Engine-verdict graph refinement (the mill)**: The lab's puppet client walks accused links in the real engine; refuted walk links whose centre-line void fits the jump envelope are reminted as jump links, unjumpable refusals die, and candidate entries the puppet *proves* are minted from `argus_nav_<map>.proven.json`. Every chronic stall cell fixed this way stays fixed - the engine testifies, navgen re-types, bots inherit.
 - **Door and button handling**: Touch-open doors are walked through (the classname masquerade fires their triggers), button-only doors detour to their button and hold for the slab when the door is near, and shoot-actuated plates are fired at with the bot's own aimed attack.
 
 ### 6. Personalities and scoreboard integration
 - **Personality matrix** (keyed on roster slot, so renaming bots never changes how they play):
-  - **Slot 0 — the flick** (Carmack): Aggressive, impatient, weapon-first focus, rapid trigger response.
-  - **Slot 1 — the smooth operator** (Romero): Tactical, health and armour prioritisation, smooth tracking aim.
-  - **Slots 2–3 — the glory hounds** (Joe Rogan, and Mr Elusive as the `impulse 100` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
-  - Chat voices are name-keyed on top — the 18-character homage roster below each speak in their own voice.
+  - **Slot 0 - the flick** (Carmack): Aggressive, impatient, weapon-first focus, rapid trigger response.
+  - **Slot 1 - the smooth operator** (Romero): Tactical, health and armour prioritisation, smooth tracking aim.
+  - **Slots 2-3 - the glory hounds** (Joe Rogan, and Mr Elusive as the `impulse 100` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
+  - Chat voices are name-keyed on top - the 18-character homage roster below each speak in their own voice.
+- **Skill scales the neck as well as the trigger**: `ar_aimrate` (170 deg/s at skill 0 rising to 300 at skill 3, with a personality offset) drives pursuit corner turns and auditory glances, not just aim tracking - a warmup bot looks around more slowly than a skill 3 bot, rather than merely shooting worse.
+- **Audible powerup tells**: Bots play the stock three-second expiry cues for quad, pentagram, ring and biosuit, so a player fighting a powered-up opponent can hear the multiplier about to lapse. Information the code had and the human did not.
 - **Scoreboard illusion**: Injects `SVC_UPDATENAME`, `SVC_UPDATECOLORS`, and `SVC_UPDATEFRAGS` into spare client slots (`argus_maxclients - 1 - slot`), displaying full names, colours, and frags on the `TAB` scoreboard.
 
 ---
@@ -163,7 +168,7 @@ argus/
 `-- docs/                      # Architectural specifications and design records
 ```
 
-*(The working tree also carries machine-local lab configuration — agent briefs, MCP wiring, engine installs, and licensed id assets — which is deliberately excluded from this repository.)*
+*(The working tree also carries machine-local lab configuration - agent briefs, MCP wiring, engine installs, and licensed id assets - which is deliberately excluded from this repository.)*
 
 ---
 
@@ -219,7 +224,7 @@ while humans keep the remaster model.
 
 > The table is not the whole list. Argus descends from two bots, and
 > the elder of the pair claimed its console word the only way vanilla
-> QuakeC ever could — by handing the client an alias on the way in.
+> QuakeC ever could - by handing the client an alias on the way in.
 > Argus hands you the same one, on the same impulse number. Say the
 > ancestor's name in the console and see who answers.
 
@@ -265,9 +270,11 @@ Argus includes an extensive 18-character homage roster celebrating Quake history
 
 * **Critically Damped Anti-Clip**: 5-Ray pentagonal collision probing (center, top $+14\text{z}$, bottom $-10\text{z}$, left $-12\text{y}$, right $+12\text{y}$) that pulls inward instantaneously to eliminate wall clipping and smoothly expands outward once clear.
 * **Kill Cam Auto-Focus**: The AI Director automatically switches focus to the killer upon target death to capture victory celebrations and powerup claims.
-* **Teleporter Cut-Ahead**: Detects when a tracked bot approaches a `trigger_teleport` and pre-positions the camera at the exit arch for seamless broadcast TV cuts.
+* **Teleporter Cut-Ahead**: Detects when a tracked bot enters a `trigger_teleport` volume - testing the brush bounds the engine tests, not a radius around its centre, which a wide trigger defeats - and pre-positions the camera at the exit arch for seamless broadcast TV cuts.
 * **Cartographer Vantage Anchors**: Utilises pre-calculated elevated arena nodes emitted by `tools/argus_navgen.py` to frame multi-level combat arenas.
-* **Full HUD & Viewmodel Mirroring**: Mode 0 renders the target bot's active weapon viewmodel and synchronises health, armour, and ammo counts to the engine's native status bar.
+* **Full HUD & Viewmodel Mirroring**: Mode 0 renders the target bot's active weapon viewmodel - including its firing animation frames - and synchronises health, armour, and ammo counts to the engine's native status bar. The broadcast HUD names the tracked bot, its weapon, and its behavioural state (`QUAD SPREE`, `PANICKED`, `COMBAT`, `ROUTING`, `TACTICAL`).
+* **Correct view pitch**: Camera look vectors flip the sign that `vectoangles()` returns, because the builtin reports upward elevation as positive pitch while the view-angle protocol wants up negative. Every framing mode applies it, so cuts are not composed upside down vertically.
+* **Live POV facing**: First-person mode takes yaw from the bot's continuously-maintained facing and pitch only while it is actually aiming at something, rather than from an aim angle that goes stale the moment a fight ends.
 * **Debounced Mouse Navigation**: Left Click (`button0`) cycles modes, Right Click (`button2`) cycles targets, and holding `Shift` activates turbo flight ($1400\text{u/s}$) in FreeLook mode.
 
 
@@ -334,7 +341,7 @@ cp ../lq1/progs.dat ../game/argus/progs.dat
 ### Visualising navigation graphs
 The generated PNG output (`runs/nav_<map>.png`) provides an immediate visual health check:
 - **Green lines**: Bidirectional walkable connections.
-- **Orange lines**: One-way drops (19–200 units).
+- **Orange lines**: One-way drops (19-200 units).
 - **Red dotted lines**: Gap jump links (parabolic trajectory verified).
 - **Magenta dash-dot lines**: Rocket-jump links.
 - **Cyan lines**: Elevator / plat links.
@@ -387,7 +394,7 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 
 Human clients emit the same `ARGLOG` track under their own netname
 (camera flights excluded), so every analysis tool sees the human
-player as one more trajectory — the reference circuit the bots are
+player as one more trajectory - the reference circuit the bots are
 measured against. Real-client deaths emit the same detailed
 `ARGEVT death` line as bots, and the parsers split human tracks out
 of the bot quality bands automatically.
@@ -395,7 +402,7 @@ of the bot quality bands automatically.
 ### Recording and reading demos
 The 1 Hz telemetry tape is the ruler; a `.dem` recording is the
 microscope. Demos carry full-rate positions for every visible entity
-(25–70 Hz), projectiles in flight, view angles, and the console kill
+(25-70 Hz), projectiles in flight, view angles, and the console kill
 feed. A listen session records one automatically by using the
 `record` form of the map command:
 
@@ -409,14 +416,14 @@ the tape and its demo into `runs/` under one paired stem, and
 duration, named roster (bot identities resolve from the skin byte),
 per-track sample rates and distances, and the coalesced obituary
 feed. One physical caveat: demos are PVS-culled to the recording
-client's view, so a bot across the map drops to a trickle — the
+client's view, so a bot across the map drops to a trickle - the
 telemetry tape remains the full-map record and the A/B gates.
 
 ---
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.23**. Operator guide (with the full lab flow
+Current version **0.24**. Operator guide (with the full lab flow
 charts): [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
 The Rust binary in `tools/argus_mcp/` is four instruments in one lab:
@@ -424,7 +431,7 @@ The Rust binary in `tools/argus_mcp/` is four instruments in one lab:
 - **stdio MCP** (`argus-mcp`) for agents: compile, cartograph, headless match, A/B.
 - **localhost GUI** (`argus-mcp gui`) for humans: attach a `.bsp`, generate nav, view the nav PNG, compile, install, restore a dated backup.
 - **puppet client** (`argus-mcp client observe|walk|walkrel|impulse`): a real NetQuake protocol-15 client, invisible to the bots, used for live observation, roster control, and as the engine's own referee.
-- **the mill** (`argus-mcp probelinks <map> [limit] [skip]`): walks every nav link with the puppet in the real engine and persists refusals by endpoint — the empirical verdicts that navgen remints into jump links or prunes on the next regen.
+- **the mill** (`argus-mcp probelinks <map> [limit] [skip]`): walks every nav link with the puppet in the real engine and persists refusals by endpoint - the empirical verdicts that navgen remints into jump links or prunes on the next regen.
 
 ```bash
 # agent (this is what Grok / Claude should call)
@@ -439,13 +446,13 @@ argus-mcp gui --port 7420 --no-open
 - `see what=project`: Active tree, maps, and the next call.
 - `see what=map name=dm4`: Cartographer brief (control items, islands, door cuts, corridor misses, plat boardability, edict estimate).
 - `see what=path name=dm4:quad->lg`: Waypoint BFS including walk/drop/jump/tele/rocket/lift/swim.
-- `see what=demo name=<stem>`: Parse a harvested `.dem` — full-rate named tracks, per-player aim statistics, a highlight reel with `playdemo` timestamps, projectiles, kill feed. `:export` writes the full track vectors as JSON. Also available as the CLI verb `argus-mcp demo <stem>`.
+- `see what=demo name=<stem>`: Parse a harvested `.dem` - full-rate named tracks, per-player aim statistics, a highlight reel with `playdemo` timestamps, projectiles, kill feed. `:export` writes the full track vectors as JSON. Also available as the CLI verb `argus-mcp demo <stem>`.
 - `experiment map=dm4 duration_sec=30 skill=2`: Compile, short match, duration-scaled lite A/B.
 - `compare_runs log_a=baseline log_b=latest`: Unscaled A/B against the shipped tape.
 - `learn_hotspots map=dm4`: Fold stall/lava/hazard cells (kind-aware); writes `src/argus_nav_<map>.costs.json` for the next navgen.
-- `tune command="skill 3"` — live console injection into the running dedicated child (works on Windows via `AttachConsole` + `CONIN$`, integration-tested). `scratch1 1` arms the **decision tape**: every bot goal pick prints its full per-class utility board as an `ARGDBG` line, so "why did it choose that" is a grep.
+- `tune command="skill 3"` - live console injection into the running dedicated child (works on Windows via `AttachConsole` + `CONIN$`, integration-tested). `scratch1 1` arms the **decision tape**: every bot goal pick prints its full per-class utility board as an `ARGDBG` line, so "why did it choose that" is a grep.
 
-Two CLI modes serve the unattended lab, both bounded by hard caps and never scheduled by anything: `argus-mcp soak` (a match loop with gated verdicts and an incremental report; wall-clock, match-count and bytes-written caps, plus a stop file) and `argus-mcp cycle <map>` (one guarded learning pass — fold hotspots, regenerate the nav, compile, probe — that adopts only on an improved verdict and otherwise restores every file byte for byte).
+Two CLI modes serve the unattended lab, both bounded by hard caps and never scheduled by anything: `argus-mcp soak` (a match loop with gated verdicts and an incremental report; wall-clock, match-count and bytes-written caps, plus a stop file) and `argus-mcp cycle <map>` (one guarded learning pass - fold hotspots, regenerate the nav, compile, probe - that adopts only on an improved verdict and otherwise restores every file byte for byte).
 
 Lava deaths in experiment/compare are hull-0 contents (same as `analyze_match.py`); `z < -300` is only used when the BSP is missing. Statue freezes are a hard A/B gate (6 s+ under 20 u/s, with an under-fire measure for damage taken while frozen), and lift/train boarding success is accounted (`mover_waits` vs `boards`) so a broken pad reads as broken rather than slow. A/B baselines are config-driven via `runs/baselines.json`.
 
@@ -459,6 +466,9 @@ Match briefs also cross-examine themselves: every stall/freeze/hazard hotspot ca
 2. **Client-Message Shimming**: In [`src/defs.qc`](src/defs.qc), `stuffcmd`, `sprint`, and `centerprint` are intercepted with `if (client.ar_isbot) return;` because native Quake engines crash when client-channel network commands are dispatched to non-network entities.
 3. **Empty Server Telemetry**: Native Quake `bprint` broadcasts are suppressed on dedicated servers without human clients. All Argus telemetry utilizes `dprint` and requires `+developer 1` to be written to `qconsole.log`.
 4. **Protocol 15 and Edict Budget**: Configured in `game/argus/autoexec.cfg` with `sv_protocol 15` and `max_edicts 600`. The navigation generator automatically lowers waypoint node caps if map entity counts approach the allocation ceiling.
+5. **Traces That Start In Solid**: A `traceline` beginning inside geometry returns `trace_fraction == 1` (with `trace_allsolid`), which is byte-identical to finding nothing at all. Every "is there floor here" probe must distinguish the two explicitly or it will read rising ground as a bottomless pit - and, in the other direction, `CanDamage` returning TRUE on such a trace is why rocket splash does *not* silently fail against a wall-adjacent target.
+6. **Per-Frame Constants Are Tick-Rate Bugs**: Physics written as `v = v * k + impulse` per frame behaves differently on a 20 Hz dedicated server than on a 72 Hz listen host. Terminal values usually survive (the drag scales with the impulse) but time constants do not, so behaviour tuned in the lab can differ from behaviour in a played session. Express drag and thrust per second against `frametime`.
+7. **`vectoangles()` Pitch Sign**: The builtin reports upward elevation as *positive* pitch; the view-angle protocol (`v_angle`, a spectator's `angles`) wants up as *negative*. Every conversion needs the flip, or the resulting view is vertically inverted.
 
 ---
 

@@ -835,7 +835,7 @@ void(entity client, string s) centerprint = { if (client.ar_isbot) return; cente
 // the multi-string forms need the SAME bot guard: key doors, rune
 // pickups and trigger_counter all reach them with a bot as the
 // client, and the engine hard-errors client messages to non-clients
-// (Shane's correctness list — same crash class as the original
+// (Shane's correctness list - same crash class as the original
 // stuffcmd shim)
 void(entity client, string s, string s2) centerprint2_bi = #73;
 void(entity client, string s, string s2) centerprint2 = { if (client.ar_isbot) return; centerprint2_bi (client, s, s2); };	// centerprint that concats two strings
