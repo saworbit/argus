@@ -179,12 +179,27 @@ impl MatchTape {
                 let first = rec.first().unwrap();
                 let last = rec.last().unwrap();
                 let dur = last.t - first.t;
+                // A death and respawn puts two consecutive 1 Hz samples
+                // at opposite ends of the map, and summing that step
+                // credited the bot with thousands of units it never
+                // walked - inflating both distance and avg speed by
+                // roughly one map width per death. Nothing in Quake
+                // moves a player 700 u/s under its own power (run 320,
+                // a rocket-jump launch well under 700), so a segment
+                // implying more than that is a teleport, not travel.
                 let dist = rec
                     .windows(2)
                     .map(|w| {
                         let dx = w[1].pos.x - w[0].pos.x;
                         let dy = w[1].pos.y - w[0].pos.y;
-                        (dx * dx + dy * dy).sqrt()
+                        let dz = w[1].pos.z - w[0].pos.z;
+                        let d = (dx * dx + dy * dy).sqrt();
+                        let dt = (w[1].t - w[0].t).abs();
+                        if dt > 0.0 && (d.max(dz.abs()) / dt) > 700.0 {
+                            0.0
+                        } else {
+                            d
+                        }
                     })
                     .sum::<f64>();
                 let cover = rec
@@ -586,5 +601,27 @@ ARGEVT Reap death world pos '10 20 -360'
         assert_eq!(tape.deaths.len(), 1);
         assert_eq!(tape.event_counts.get("death"), Some(&1));
         assert_eq!(tape.events.iter().filter(|e| e.verb == "death").count(), 1);
+    }
+
+    #[test]
+    fn a_respawn_does_not_count_as_travel() {
+        // #101: consecutive 1 Hz samples either side of a death sit at
+        // opposite ends of the map; summing that step credited the bot
+        // with a map width of phantom distance per death.
+        let tape = "ARGLOG Reap t   1.0 pos '0 0 0' spd 320 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   2.0 pos '100 0 0' spd 320 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Reap death world pos '100 0 0'
+ARGLOG Reap t   3.0 pos '2100 0 0' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Reap t   4.0 pos '2200 0 0' spd 320 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0
+";
+        let s = parse_arglog(tape);
+        let bot = s.bots.iter().find(|b| b.name == "Reap").expect("Reap");
+        // 100 + (skipped 2000) + 100
+        assert!(
+            bot.dist < 400.0,
+            "respawn jump leaked into travel distance: {}",
+            bot.dist
+        );
+        assert!(bot.dist >= 200.0, "real travel was dropped: {}", bot.dist);
     }
 }

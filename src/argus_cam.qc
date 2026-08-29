@@ -355,6 +355,7 @@ void(entity client, entity bot) ArgusCam_SmartChase =
 
     setorigin (client, client.cam_pos);
     client.angles = vectoangles (ideal_look - client.cam_pos);
+    client.angles_x = 0 - client.angles_x;   // QC pitch convention
     client.fixangle = TRUE;
 };
 
@@ -400,6 +401,7 @@ void(entity client, entity botA, entity botB) ArgusCam_DuelCam =
     client.cam_pos = client.cam_pos + (want_pos - client.cam_pos) * (frametime * 10.0);
     setorigin (client, client.cam_pos);
     client.angles = vectoangles (mid - client.cam_pos);
+    client.angles_x = 0 - client.angles_x;   // QC pitch convention
     client.fixangle = TRUE;
 };
 
@@ -427,6 +429,7 @@ void(entity client, entity bot) ArgusCam_OrbitCam =
     client.cam_pos = client.cam_pos + (want_pos - client.cam_pos) * (frametime * 12.0);
     setorigin (client, client.cam_pos);
     client.angles = vectoangles (ideal_look - client.cam_pos);
+    client.angles_x = 0 - client.angles_x;   // QC pitch convention
     client.fixangle = TRUE;
 };
 
@@ -503,6 +506,7 @@ void(entity client) ArgusDirector_Evaluate =
                         client.cam_pos = best_node.origin + v_forward * 120 + '0 0 24';
                         setorigin (client, client.cam_pos);
                         client.angles = vectoangles (best_node.origin - client.cam_pos);
+                        client.angles_x = 0 - client.angles_x;   // QC pitch convention
                         client.fixangle = TRUE;
                         client.cam_cut_time = time + 1.0;
                         return;
@@ -592,6 +596,7 @@ void(entity client) ArgusDirector_Evaluate =
             client.cam_pos = client.cam_pos + (best_node.origin - client.cam_pos) * (frametime * 8.0);
             setorigin (client, client.cam_pos);
             client.angles = vectoangles (mid - client.cam_pos);
+            client.angles_x = 0 - client.angles_x;   // QC pitch convention
             client.fixangle = TRUE;
             return;
         }

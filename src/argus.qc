@@ -2697,7 +2697,20 @@ void() Argus_Perceive =
         to = self.ar_sndpos - self.origin;
         to_z = 0;
         if (vlen (to) > 40)
-            self.angles_y = vectoyaw (to);
+        {
+            // a glance is a head turn, not a snap: this used to slam
+            // the yaw up to 180 degrees in one frame, which every
+            // other facing path (combat spring, saccade glide, pursuit
+            // turn) is careful not to do - and POV spectating shows it
+            local float gdiff, gturn;
+            gdiff = vectoyaw (to) - self.angles_y;
+            while (gdiff > 180)  gdiff = gdiff - 360;
+            while (gdiff < -180) gdiff = gdiff + 360;
+            gturn = self.ar_aimrate * frametime;
+            if (gdiff > gturn)        gdiff = gturn;
+            else if (gdiff < 0 - gturn) gdiff = 0 - gturn;
+            self.angles_y = self.angles_y + gdiff;
+        }
     }
 
     if (best != world)
@@ -3221,7 +3234,13 @@ float() Argus_Combat =
                 diff = want - self.angles_y;
                 while (diff > 180)  diff = diff - 360;
                 while (diff < -180) diff = diff + 360;
-                turn = AR_TURNRATE * frametime;
+                // ar_aimrate is the skill-scaled head speed (170 at
+                // skill 0 up to 300 at skill 3, +30 for the smooth
+                // operator slot) and nothing read it - a warmup bot
+                // whipped round corners exactly as fast as skill 3.
+                // Movement yaw keeps AR_TURNRATE: that is how fast a
+                // body can change direction, not how fast eyes move.
+                turn = self.ar_aimrate * frametime;
                 if (diff > turn)        diff = turn;
                 else if (diff < -turn)  diff = -turn;
                 self.angles_y = self.angles_y + diff;
@@ -3967,6 +3986,16 @@ float(entity it, float cls) Argus_ItemValue =
         if (c == "item_armorInv")     v = 160;
         else if (c == "item_armor2")  v = 90;
         else                          v = 30;
+        // armour_touch REPLACES rather than adds, so a lower tier is a
+        // downgrade in absorption even when the points look better:
+        // red at 37 units is 29.6 points and green is 30, so a nearly
+        // spent red jacket used to score green as an upgrade and swap
+        // 80% absorption for 30%. Never shop below the tier we wear.
+        if (self.armortype >= 0.8 && c != "item_armorInv")
+            return 0;
+        if (self.armortype >= 0.6 && c != "item_armorInv"
+            && c != "item_armor2")
+            return 0;
         v = v - self.armortype * self.armorvalue;
         if (v <= 0)  return 0;
         return v * 0.55;
