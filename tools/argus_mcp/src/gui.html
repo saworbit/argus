@@ -29,9 +29,26 @@
   input[type=text] { width: 100%; background: #0f0d0b; color: var(--ink); border: 1px solid var(--line);
     padding: 6px 8px; border-radius: 4px; }
   button { background: #2a241e; color: var(--ink); border: 1px solid var(--line); padding: 7px 12px;
-    border-radius: 4px; cursor: pointer; margin: 6px 6px 0 0; }
+    border-radius: 4px; cursor: pointer; margin: 6px 6px 0 0; font-size: 13px; }
   button.primary { background: var(--accent); border-color: #a33; color: #fff; }
   button:disabled { opacity: 0.45; cursor: wait; }
+  .tool-btn { background: #2a241e; color: var(--ink); border: 1px solid var(--line); padding: 4px 8px;
+    border-radius: 4px; font-size: 11px; cursor: pointer; margin: 0; transition: background 0.15s; }
+  .tool-btn:hover { background: #3a342c; }
+  .tool-btn.active { background: var(--accent); border-color: #a33; color: #fff; }
+  .color-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+  .link-pill { cursor: pointer; transition: transform 0.1s; user-select: none; font-size: 11px; }
+  .link-pill:hover { transform: scale(1.05); filter: brightness(1.2); }
+  .link-walk { background: #14532d; color: #86efac; border-color: #22c55e; }
+  .link-drop { background: #365314; color: #bef264; border-color: #84cc16; }
+  .link-jump { background: #1e3a8a; color: #93c5fd; border-color: #3b82f6; }
+  .link-rocket, .link-rj { background: #7c2d12; color: #fdba74; border-color: #f97316; }
+  .link-lift, .link-train { background: #581c87; color: #d8b4fe; border-color: #a855f7; }
+  .link-door { background: #713f12; color: #fde047; border-color: #eab308; }
+  .link-swim { background: #164e63; color: #67e8f9; border-color: #06b6d4; }
+  .link-sprint { background: #831843; color: #f9a8d4; border-color: #ec4899; }
+  .link-tele { background: #701a75; color: #f0abfc; border-color: #d946ef; }
+  .link-refusal { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
   .maps { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow: auto; }
   .maps li { padding: 6px 8px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .maps li:hover, .maps li.on { background: #2a241e; }
@@ -39,7 +56,7 @@
   #drop { border: 1px dashed var(--line); border-radius: 6px; padding: 18px; text-align: center;
     color: var(--muted); margin-top: 10px; }
   #drop.over { border-color: var(--accent); color: var(--ink); }
-  #png { max-width: 100%; background: #000; border: 1px solid var(--line); display: none; }
+  #png { max-width: 100%; background: #000; border: 1px solid var(--line); display: none; border-radius: 6px; }
   pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); max-height: 280px; overflow: auto; }
   .pill { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); margin-right: 4px; }
   .ok { color: var(--ok); } .bad { color: var(--bad); }
@@ -77,8 +94,79 @@
       <button onclick="act('backup')">Backup only</button>
     </div>
     <pre id="gatecard" style="display:none;margin:10px 0;padding:12px;background:#0d1117;color:#58a6ff;border-radius:6px;font-family:monospace;font-size:12px;line-height:1.4;border:1px solid #30363d;white-space:pre;overflow-x:auto"></pre>
-    <img id="png" alt="nav graph">
-    <pre id="brief"></pre>
+    
+    <!-- View switcher & Interactive Canvas -->
+    <div id="view-tabs" style="display:flex;gap:6px;margin:8px 0;">
+      <button id="tab-canvas" class="tool-btn active" onclick="switchView('canvas')">Interactive Canvas</button>
+      <button id="tab-png" class="tool-btn" onclick="switchView('png')">Static PNG</button>
+    </div>
+    
+    <div id="canvas-wrap" style="position:relative;width:100%;height:460px;background:#0d0b09;border:1px solid var(--line);border-radius:6px;overflow:hidden;">
+      <canvas id="navcanvas" style="width:100%;height:100%;display:block;cursor:grab;"></canvas>
+      
+      <!-- Floating Toolbar -->
+      <div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;background:rgba(20,18,16,0.88);backdrop-filter:blur(4px);padding:4px 6px;border-radius:6px;border:1px solid var(--line);z-index:5;">
+        <button class="tool-btn" onclick="zoomIn()" title="Zoom In">➕</button>
+        <button class="tool-btn" onclick="zoomOut()" title="Zoom Out">➖</button>
+        <button class="tool-btn" onclick="fitView()" title="Fit / Reset View">⟲ Fit</button>
+        <button id="tog-links" class="tool-btn active" onclick="toggleLayer('links')">Links</button>
+        <button id="tog-refusals" class="tool-btn active" onclick="toggleLayer('refusals')">⚠️ Refusals</button>
+        <button id="tog-hotspots" class="tool-btn active" onclick="toggleLayer('hotspots')">🔥 Hotspots</button>
+        <button id="tog-legend" class="tool-btn" onclick="toggleLayer('legend')">Legend</button>
+      </div>
+      
+      <!-- Legend Box -->
+      <div id="legend-box" style="position:absolute;bottom:8px;left:8px;background:rgba(20,18,16,0.94);padding:8px 12px;border-radius:6px;border:1px solid var(--line);font-size:11px;display:none;z-index:5;">
+        <div style="font-weight:600;margin-bottom:4px;color:var(--ink)">Link Types</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">
+          <span><span class="color-dot" style="background:#4ade80"></span> Walk</span>
+          <span><span class="color-dot" style="background:#a3e635"></span> Drop</span>
+          <span><span class="color-dot" style="background:#60a5fa"></span> Jump</span>
+          <span><span class="color-dot" style="background:#fb923c"></span> Rocket Jump</span>
+          <span><span class="color-dot" style="background:#c084fc"></span> Lift / Train</span>
+          <span><span class="color-dot" style="background:#facc15"></span> Door</span>
+          <span><span class="color-dot" style="background:#22d3ee"></span> Swim</span>
+          <span><span class="color-dot" style="background:#f472b6"></span> Sprint</span>
+          <span><span class="color-dot" style="background:#e879f9"></span> Teleport</span>
+          <span><span class="color-dot" style="background:#ef4444"></span> Refusal / Fail</span>
+        </div>
+      </div>
+      
+      <!-- Tooltip & Empty state -->
+      <div id="canvas-tooltip" style="position:absolute;pointer-events:none;background:rgba(15,13,11,0.92);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;border:1px solid var(--line);display:none;white-space:nowrap;z-index:10;"></div>
+      <div id="canvas-empty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:var(--muted);font-size:13px;">No navigation graph generated yet.</div>
+    </div>
+    
+    <!-- Node Inspector Sidecard -->
+    <div id="inspector-card" style="display:none;background:#181512;border:1px solid var(--accent);border-radius:6px;padding:12px;margin-top:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:8px;">
+        <div>
+          <strong id="insp-title" style="font-size:15px;color:var(--ink)">Node #0</strong>
+          <span id="insp-band" class="pill" style="margin-left:6px">mid</span>
+        </div>
+        <button style="margin:0;padding:2px 8px;font-size:12px;" onclick="closeInspector()">✕ Close</button>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:8px;">
+        <div><span style="color:var(--muted)">Origin (XYZ):</span> <strong id="insp-origin">0, 0, 0</strong></div>
+        <div><span style="color:var(--muted)">Degree:</span> <strong id="insp-degree">0 out / 0 in</strong></div>
+        <div><span style="color:var(--muted)">Probe Refusals:</span> <span id="insp-refusals" class="pill ok">0 refusals</span></div>
+        <div><span style="color:var(--muted)">Cost Multiplier:</span> <span id="insp-cost" class="pill">1.0x (normal)</span></div>
+      </div>
+      <div id="insp-control-box" style="margin-bottom:8px;font-size:12px;">
+        <span style="color:var(--muted)">Nearby control:</span> <span id="insp-control">none</span>
+      </div>
+      <div style="font-size:12px;margin-top:8px;">
+        <div style="color:var(--muted);margin-bottom:4px;font-weight:600">Outbound Links:</div>
+        <div id="insp-out" style="display:flex;flex-wrap:wrap;gap:4px;max-height:80px;overflow-y:auto;"></div>
+      </div>
+      <div style="font-size:12px;margin-top:8px;">
+        <div style="color:var(--muted);margin-bottom:4px;font-weight:600">Inbound Links:</div>
+        <div id="insp-in" style="display:flex;flex-wrap:wrap;gap:4px;max-height:80px;overflow-y:auto;"></div>
+      </div>
+    </div>
+    
+    <img id="png" alt="nav graph" style="margin-top:10px;">
+    <pre id="brief" style="margin-top:10px;"></pre>
   </section>
   <section>
     <h2>Backups</h2>
@@ -90,6 +178,25 @@
 <script>
 let selected = null;
 let busy = false;
+
+// Nav canvas state
+let navData = null;
+let selectedNode = null;
+let hoveredNode = null;
+let viewScale = 1.0;
+let viewOffsetX = 0;
+let viewOffsetY = 0;
+let currentView = 'canvas';
+const layers = {
+  links: true,
+  refusals: true,
+  hotspots: true,
+  legend: false,
+};
+
+const canvas = document.getElementById('navcanvas');
+const ctx = canvas.getContext('2d');
+let dpr = window.devicePixelRatio || 1;
 
 function log(s) {
   const el = document.getElementById('log');
@@ -161,11 +268,419 @@ async function pick(name) {
   } catch (e) {
     brief.textContent = String(e);
   }
+
+  // Load interactive nav graph
+  try {
+    const nav = await api('/api/nav/' + name);
+    if (nav.ok) {
+      navData = nav;
+      selectedNode = null;
+      document.getElementById('inspector-card').style.display = 'none';
+      resizeCanvas();
+      fitView();
+    } else {
+      navData = null;
+      render();
+    }
+  } catch (e) {
+    navData = null;
+    render();
+  }
+
   img.style.display = 'none';
-  img.onload = () => { img.style.display = 'block'; };
+  img.onload = () => { if (currentView === 'png') img.style.display = 'block'; };
   img.onerror = () => { img.style.display = 'none'; };
   img.src = '/api/png/' + name + '?' + Date.now();
 }
+
+// Canvas & Navigation Visualizer
+function switchView(mode) {
+  currentView = mode;
+  document.getElementById('tab-canvas').classList.toggle('active', mode === 'canvas');
+  document.getElementById('tab-png').classList.toggle('active', mode === 'png');
+  document.getElementById('canvas-wrap').style.display = mode === 'canvas' ? 'block' : 'none';
+  document.getElementById('png').style.display = mode === 'png' ? 'block' : 'none';
+  if (mode === 'canvas') {
+    resizeCanvas();
+    render();
+  }
+}
+
+function getLinkColor(kind) {
+  switch (kind) {
+    case 'walk': return '#4ade80';
+    case 'drop': return '#a3e635';
+    case 'jump': return '#60a5fa';
+    case 'rocket': case 'rj': return '#fb923c';
+    case 'lift': case 'train': return '#c084fc';
+    case 'door': return '#facc15';
+    case 'swim': return '#22d3ee';
+    case 'sprint': return '#f472b6';
+    case 'tele': return '#e879f9';
+    default: return '#94a3b8';
+  }
+}
+
+function resizeCanvas() {
+  const wrap = document.getElementById('canvas-wrap');
+  if (!wrap) return;
+  const rect = wrap.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return;
+  dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.floor(rect.width * dpr);
+  canvas.height = Math.floor(rect.height * dpr);
+}
+window.addEventListener('resize', () => { resizeCanvas(); render(); });
+
+function worldToCanvas(wx, wy) {
+  if (!navData || !navData.bounds) return [0, 0];
+  const cx = (wx - navData.bounds.min_x) * viewScale + viewOffsetX;
+  const cy = (navData.bounds.max_y - wy) * viewScale + viewOffsetY;
+  return [cx, cy];
+}
+
+function fitView() {
+  if (!navData || !navData.bounds) return;
+  resizeCanvas();
+  const pad = 36 * dpr;
+  const bw = navData.bounds.max_x - navData.bounds.min_x || 1;
+  const bh = navData.bounds.max_y - navData.bounds.min_y || 1;
+  const scaleX = (canvas.width - pad * 2) / bw;
+  const scaleY = (canvas.height - pad * 2) / bh;
+  viewScale = Math.min(scaleX, scaleY);
+  viewOffsetX = pad + ((canvas.width - pad * 2) - bw * viewScale) / 2;
+  viewOffsetY = pad + ((canvas.height - pad * 2) - bh * viewScale) / 2;
+  render();
+}
+
+function zoomIn() {
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  viewOffsetX = cx - (cx - viewOffsetX) * 1.3;
+  viewOffsetY = cy - (cy - viewOffsetY) * 1.3;
+  viewScale *= 1.3;
+  render();
+}
+
+function zoomOut() {
+  const cx = canvas.width / 2;
+  const cy = canvas.height / 2;
+  viewOffsetX = cx - (cx - viewOffsetX) * 0.77;
+  viewOffsetY = cy - (cy - viewOffsetY) * 0.77;
+  viewScale *= 0.77;
+  render();
+}
+
+function toggleLayer(name) {
+  layers[name] = !layers[name];
+  const btn = document.getElementById('tog-' + name);
+  if (btn) btn.classList.toggle('active', layers[name]);
+  if (name === 'legend') {
+    document.getElementById('legend-box').style.display = layers.legend ? 'block' : 'none';
+  }
+  render();
+}
+
+function render() {
+  if (!navData || !navData.nodes || navData.nodes.length === 0) {
+    document.getElementById('canvas-empty').style.display = 'flex';
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+  document.getElementById('canvas-empty').style.display = 'none';
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Subtle background grid
+  const gridSize = 128 * viewScale;
+  if (gridSize > 16) {
+    ctx.strokeStyle = '#1a1714';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let x = (viewOffsetX % gridSize); x < canvas.width; x += gridSize) {
+      ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+    }
+    for (let y = (viewOffsetY % gridSize); y < canvas.height; y += gridSize) {
+      ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+    }
+    ctx.stroke();
+  }
+
+  // 1. Hotspots Layer
+  if (layers.hotspots && navData.hotspots) {
+    for (const h of navData.hotspots) {
+      const [hx, hy] = worldToCanvas(h.x, h.y);
+      const rad = Math.max(12 * dpr, (h.radius || 64) * viewScale);
+      const grad = ctx.createRadialGradient(hx, hy, 0, hx, hy, rad);
+      if (h.kind === 'lava') {
+        grad.addColorStop(0, 'rgba(239, 68, 68, 0.45)');
+        grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+      } else if (h.kind === 'stall') {
+        grad.addColorStop(0, 'rgba(245, 158, 11, 0.40)');
+        grad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+      } else {
+        grad.addColorStop(0, 'rgba(234, 179, 8, 0.35)');
+        grad.addColorStop(1, 'rgba(234, 179, 8, 0)');
+      }
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(hx, hy, rad, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hotspot badge
+      ctx.fillStyle = h.kind === 'lava' ? '#fca5a5' : '#fde68a';
+      ctx.font = `${Math.max(10, 10 * dpr)}px sans-serif`;
+      ctx.fillText(`🔥 ${h.kind} (${h.count})`, hx - 20 * dpr, hy - rad - 2);
+    }
+  }
+
+  // 2. Refusal Overlay Layer
+  if (layers.refusals && navData.refusals) {
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2 * dpr;
+    ctx.setLineDash([5 * dpr, 4 * dpr]);
+    for (const ref of navData.refusals) {
+      const [x1, y1] = worldToCanvas(ref.from[0], ref.from[1]);
+      const [x2, y2] = worldToCanvas(ref.to[0], ref.to[1]);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+
+      const sz = 4 * dpr;
+      ctx.beginPath();
+      ctx.moveTo(x2 - sz, y2 - sz); ctx.lineTo(x2 + sz, y2 + sz);
+      ctx.moveTo(x2 + sz, y2 - sz); ctx.lineTo(x2 - sz, y2 + sz);
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+  }
+
+  // 3. Links Layer
+  if (layers.links && navData.links) {
+    for (const link of navData.links) {
+      const fromN = navData.nodes[link.from];
+      const toN = navData.nodes[link.to];
+      if (!fromN || !toN) continue;
+      const [x1, y1] = worldToCanvas(fromN.pos[0], fromN.pos[1]);
+      const [x2, y2] = worldToCanvas(toN.pos[0], toN.pos[1]);
+
+      const isConnected = selectedNode && (selectedNode.id === link.from || selectedNode.id === link.to);
+      ctx.strokeStyle = isConnected ? '#ffffff' : getLinkColor(link.kind);
+      ctx.lineWidth = isConnected ? 2.8 * dpr : 1.4 * dpr;
+      ctx.globalAlpha = isConnected ? 1.0 : 0.65;
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.globalAlpha = 1.0;
+    }
+  }
+
+  // 4. Nodes Layer
+  if (navData.nodes) {
+    for (const n of navData.nodes) {
+      const [nx, ny] = worldToCanvas(n.pos[0], n.pos[1]);
+      const isSelected = selectedNode && selectedNode.id === n.id;
+      const isHovered = hoveredNode && hoveredNode.id === n.id;
+
+      let r = 4.2 * dpr;
+      let color = '#94a3b8';
+      if (n.refusals > 0) color = '#ef4444';
+      else if (n.cost_mult > 1.0) color = '#f97316';
+      else if (n.nearby_control && n.nearby_control.length > 0) color = '#fbbf24';
+
+      if (isSelected) {
+        ctx.strokeStyle = '#d4531e';
+        ctx.lineWidth = 2.5 * dpr;
+        ctx.beginPath();
+        ctx.arc(nx, ny, r + 5 * dpr, 0, Math.PI * 2);
+        ctx.stroke();
+        r += 1.5 * dpr;
+      } else if (isHovered) {
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5 * dpr;
+        ctx.beginPath();
+        ctx.arc(nx, ny, r + 3.5 * dpr, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(nx, ny, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#141210';
+      ctx.lineWidth = 1 * dpr;
+      ctx.stroke();
+
+      if (isSelected || isHovered || viewScale > 1.2) {
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `bold ${Math.max(10, 10 * dpr)}px monospace`;
+        ctx.fillText(String(n.id), nx + r + 3 * dpr, ny + 3 * dpr);
+      }
+    }
+  }
+}
+
+// Node Inspector Sidecard
+function populateInspector(node) {
+  const card = document.getElementById('inspector-card');
+  card.style.display = 'block';
+
+  document.getElementById('insp-title').textContent = `Node #${node.id}`;
+  document.getElementById('insp-band').textContent = `Band: ${node.band}`;
+  document.getElementById('insp-origin').textContent = `${node.pos[0].toFixed(1)}, ${node.pos[1].toFixed(1)}, ${node.pos[2].toFixed(1)}`;
+  document.getElementById('insp-degree').textContent = `${node.out.length} out / ${node.inn.length} in`;
+
+  const refEl = document.getElementById('insp-refusals');
+  if (node.refusals > 0) {
+    refEl.className = 'pill bad';
+    refEl.textContent = `⚠️ ${node.refusals} probe refusals`;
+  } else {
+    refEl.className = 'pill ok';
+    refEl.textContent = '✅ 0 refusals';
+  }
+
+  const costEl = document.getElementById('insp-cost');
+  if (node.cost_mult > 1.0) {
+    costEl.className = 'pill bad';
+    costEl.textContent = `🔥 ${node.cost_mult.toFixed(1)}x (${node.cost_kind || 'inflated'})`;
+  } else {
+    costEl.className = 'pill ok';
+    costEl.textContent = '1.0x (normal)';
+  }
+
+  const ctrlEl = document.getElementById('insp-control');
+  if (node.nearby_control && node.nearby_control.length > 0) {
+    ctrlEl.innerHTML = node.nearby_control.map(c => `<span class="pill" style="color:#fbbf24;border-color:#d97706">${c}</span>`).join(' ');
+  } else {
+    ctrlEl.textContent = 'none';
+  }
+
+  const outEl = document.getElementById('insp-out');
+  if (node.out.length > 0) {
+    outEl.innerHTML = node.out.map(e => `<span class="pill link-pill link-${e.kind}" onclick="selectNodeById(${e.to})">→ Node #${e.to} <small>(${e.kind})</small></span>`).join(' ');
+  } else {
+    outEl.innerHTML = '<span style="color:var(--muted)">none</span>';
+  }
+
+  const inEl = document.getElementById('insp-in');
+  if (node.inn.length > 0) {
+    inEl.innerHTML = node.inn.map(e => `<span class="pill link-pill link-${e.kind}" onclick="selectNodeById(${e.from})">← Node #${e.from} <small>(${e.kind})</small></span>`).join(' ');
+  } else {
+    inEl.innerHTML = '<span style="color:var(--muted)">none</span>';
+  }
+}
+
+function closeInspector() {
+  document.getElementById('inspector-card').style.display = 'none';
+  selectedNode = null;
+  render();
+}
+
+function selectNodeById(id) {
+  if (!navData || !navData.nodes) return;
+  const target = navData.nodes.find(n => n.id === id);
+  if (target) {
+    selectedNode = target;
+    populateInspector(target);
+    const [cx, cy] = worldToCanvas(target.pos[0], target.pos[1]);
+    viewOffsetX += (canvas.width / 2 - cx);
+    viewOffsetY += (canvas.height / 2 - cy);
+    render();
+  }
+}
+
+// Canvas Mouse Interactions
+function findNodeAt(clientX, clientY) {
+  if (!navData || !navData.nodes) return null;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (clientX - rect.left) * dpr;
+  const my = (clientY - rect.top) * dpr;
+  let closest = null;
+  let bestDist = 14 * dpr;
+  for (const n of navData.nodes) {
+    const [cx, cy] = worldToCanvas(n.pos[0], n.pos[1]);
+    const d = Math.hypot(cx - mx, cy - my);
+    if (d < bestDist) {
+      bestDist = d;
+      closest = n;
+    }
+  }
+  return closest;
+}
+
+let isDragging = false;
+let startX = 0, startY = 0;
+let dragMoved = false;
+
+canvas.addEventListener('mousedown', e => {
+  isDragging = true;
+  dragMoved = false;
+  startX = e.clientX;
+  startY = e.clientY;
+  canvas.style.cursor = 'grabbing';
+});
+
+window.addEventListener('mousemove', e => {
+  if (isDragging) {
+    const dx = (e.clientX - startX) * dpr;
+    const dy = (e.clientY - startY) * dpr;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragMoved = true;
+    viewOffsetX += dx;
+    viewOffsetY += dy;
+    startX = e.clientX;
+    startY = e.clientY;
+    render();
+  } else {
+    const rect = canvas.getBoundingClientRect();
+    if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+      const node = findNodeAt(e.clientX, e.clientY);
+      const tt = document.getElementById('canvas-tooltip');
+      if (node !== hoveredNode) {
+        hoveredNode = node;
+        render();
+      }
+      if (node) {
+        canvas.style.cursor = 'pointer';
+        tt.style.display = 'block';
+        tt.style.left = (e.clientX - rect.left + 12) + 'px';
+        tt.style.top = (e.clientY - rect.top + 12) + 'px';
+        tt.textContent = `Node #${node.id} (${node.pos[0].toFixed(0)}, ${node.pos[1].toFixed(0)}, ${node.pos[2].toFixed(0)})`;
+      } else {
+        canvas.style.cursor = 'grab';
+        tt.style.display = 'none';
+      }
+    }
+  }
+});
+
+window.addEventListener('mouseup', e => {
+  if (!isDragging) return;
+  isDragging = false;
+  canvas.style.cursor = 'grab';
+  if (!dragMoved) {
+    const node = findNodeAt(e.clientX, e.clientY);
+    if (node) {
+      selectedNode = node;
+      populateInspector(node);
+      render();
+    }
+  }
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * dpr;
+  const my = (e.clientY - rect.top) * dpr;
+  const zoom = e.deltaY < 0 ? 1.15 : 0.87;
+  viewOffsetX = mx - (mx - viewOffsetX) * zoom;
+  viewOffsetY = my - (my - viewOffsetY) * zoom;
+  viewScale *= zoom;
+  render();
+}, { passive: false });
 
 async function savePaths() {
   const body = {
