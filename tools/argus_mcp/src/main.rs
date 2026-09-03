@@ -177,6 +177,124 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", res.map_err(|e| anyhow::anyhow!(e))?);
             Ok(())
         }
+        Some("compile") => {
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+                println!(
+                    "usage: argus-mcp compile [options]\n\
+                     \n\
+                     Compile QuakeC progs.dat with fteqcc, with timestamp verification.\n\
+                     \n\
+                     Options:\n\
+                       --install       Install progs.dat to basedir/game and lq1\n\
+                       --backup        Create backup snapshot before compiling"
+                );
+                return Ok(());
+            }
+            let install = sub_args.iter().any(|a| a == "--install" || a == "-i");
+            let backup = sub_args.iter().any(|a| a == "--backup" || a == "-b");
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            if backup {
+                let snap = argus_mcp::backup::take_backup(&cfg);
+                if snap.ok {
+                    println!("Backup written to: {}", snap.path);
+                } else {
+                    eprintln!("Warning: backup failed: {:?}", snap.error);
+                }
+            }
+            let res = argus_mcp::compile::compile_qc(&cfg, install);
+            if res.ok {
+                println!("Compile OK! (progs.dat: {} bytes)", res.progs_bytes.unwrap_or(0));
+                for p in &res.installed_to {
+                    println!("  Installed to: {p}");
+                }
+                if res.new_warnings > 0 {
+                    println!("  Warnings: {}", res.new_warnings);
+                }
+                Ok(())
+            } else {
+                eprintln!("Compile FAILED ({} errors):", res.new_errors);
+                for line in &res.raw_tail {
+                    eprintln!("  {line}");
+                }
+                std::process::exit(1);
+            }
+        }
+        Some("nav") => {
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.is_empty() || sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+                println!(
+                    "usage: argus-mcp nav <map> [options]\n\
+                     \n\
+                     Generate navigation graph for a BSP map.\n\
+                     \n\
+                     Options:\n\
+                       --register     Register map in progs.src and argus_nav_dispatch.qc\n\
+                       --no-register  Generate nav without registering dispatcher"
+                );
+                return Ok(());
+            }
+            let map = &sub_args[0];
+            argus_mcp::engine::validate_map(map).map_err(|e| anyhow::anyhow!(e))?;
+            let register = !sub_args.iter().any(|a| a == "--no-register");
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let res = argus_mcp::navgen::nav_generate(&cfg, map, map, None, None, register).map_err(|e| anyhow::anyhow!(e))?;
+            if res.ok {
+                println!("Nav generation OK for {map}!");
+                println!("  QC:  {}", res.out_qc);
+                println!("  PNG: {}", res.out_png);
+                Ok(())
+            } else {
+                eprintln!("Nav generation failed for {map}:");
+                for line in &res.stdout_tail {
+                    eprintln!("  {line}");
+                }
+                std::process::exit(1);
+            }
+        }
+        Some("analyze") => {
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.is_empty() || sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+                println!(
+                    "usage: argus-mcp analyze <log_path> [options]\n\
+                     \n\
+                     Analyze match telemetry log and generate brief/charts."
+                );
+                return Ok(());
+            }
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            run_python_script(&cfg, "tools/analyze_match.py", &sub_args)
+        }
+        Some("harvest") => {
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+                println!(
+                    "usage: argus-mcp harvest [options]\n\
+                     \n\
+                     Harvest human listen server session and demos into runs/.\n\
+                     \n\
+                     Options:\n\
+                       --tag <name>   Tag label for the harvested run (e.g. v398)\n\
+                       --dry-run      Inspect session without moving files"
+                );
+                return Ok(());
+            }
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            run_python_script(&cfg, "tools/harvest_session.py", &sub_args)
+        }
+        Some("reach") => {
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+                println!(
+                    "usage: argus-mcp reach [map]\n\
+                     \n\
+                     Inspect directed item reachability for shipped navigation graphs."
+                );
+                return Ok(());
+            }
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            run_python_script(&cfg, "tools/argus_reach.py", &sub_args)
+        }
         Some("-h" | "--help" | "help") => {
             print_help();
             Ok(())
@@ -186,6 +304,27 @@ async fn main() -> anyhow::Result<()> {
         }
         None => run_stdio().await,
     }
+}
+
+fn run_python_script(
+    cfg: &argus_mcp::config::Config,
+    script_rel: &str,
+    args: &[String],
+) -> anyhow::Result<()> {
+    let script = cfg.root.join(script_rel);
+    if !script.exists() {
+        anyhow::bail!("Script not found: {}", script.display());
+    }
+    let status = std::process::Command::new(&cfg.python)
+        .arg(&script)
+        .args(args)
+        .current_dir(&cfg.root)
+        .status()
+        .map_err(|e| anyhow::anyhow!("Failed to execute python: {e}"))?;
+    if !status.success() {
+        std::process::exit(status.code().unwrap_or(1));
+    }
+    Ok(())
 }
 
 fn print_soak_help() {
@@ -268,6 +407,16 @@ fn print_help() {
          argus-mcp client walkrel <dx> <dy> [secs]\n\
                                 puppet walk relative to current spawn\n\
          argus-mcp client impulse <n> [secs]\n\
-                                fire an impulse from puppet client (e.g. 100=bot, 210=cam)\n"
+                                fire an impulse from puppet client (e.g. 100=bot, 210=cam)\n\
+         argus-mcp compile [--install] [--backup]\n\
+                                compile QuakeC progs.dat with fteqcc\n\
+         argus-mcp nav <map> [--register]\n\
+                                generate navigation graph for a BSP map\n\
+         argus-mcp analyze <log_path> [options]\n\
+                                analyze match telemetry log and generate brief\n\
+         argus-mcp harvest [--tag <name>]\n\
+                                harvest listen server session and demos\n\
+         argus-mcp reach [map]\n\
+                                verify directed reach of shipped graphs\n"
     );
 }

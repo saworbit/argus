@@ -54,6 +54,24 @@ files back. `backups/` is gitignored.
 Agents keep using `see` / `experiment`. The GUI only buttons the
 same functions.
 
+## Developer CLI subcommands
+
+The `argus-mcp` binary also acts as a unified CLI runner for the developer toolchain:
+
+```
+argus-mcp compile [--install] [--backup]
+argus-mcp nav <map> [--register]
+argus-mcp analyze <log_path> [options]
+argus-mcp harvest [--tag <name>]
+argus-mcp reach [map]
+```
+
+- `compile`: Compiles QuakeC `progs.dat` via `fteqcc` with timestamp verification and optional backup creation and installation.
+- `nav`: Runs `argus_navgen.py` to generate waypoint navigation graphs (`src/argus_nav_<map>.qc`) and minimap PNGs (`runs/nav_<map>.png`).
+- `analyze`: Runs `analyze_match.py` to parse telemetry logs into briefs, stats, and plots.
+- `harvest`: Runs `harvest_session.py` to archive listen server logs and paired demos into `runs/`.
+- `reach`: Runs `argus_reach.py` to audit directed item reachability for shipped navigation graphs.
+
 ## What it is for
 
 An agent should not invent a shell pipeline from CLAUDE.md. The
