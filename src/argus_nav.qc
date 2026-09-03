@@ -299,21 +299,24 @@ entity(entity n, float i) Argus_NavGetLink =
     return n.an_l7;
 };
 
+// returns 1-hot bit for link a -> b (1, 2, 4..128), or 0 if not linked
+float(entity a, entity b) Argus_NavGetLinkBit =
+{
+    if (a.an_l0 == b) return 1;
+    if (a.an_l1 == b) return 2;
+    if (a.an_l2 == b) return 4;
+    if (a.an_l3 == b) return 8;
+    if (a.an_l4 == b) return 16;
+    if (a.an_l5 == b) return 32;
+    if (a.an_l6 == b) return 64;
+    if (a.an_l7 == b) return 128;
+    return 0;
+};
+
 // nonzero when the link a -> b is rocket-jump-typed
 float(entity a, entity b) Argus_LinkIsRocket =
 {
-    local float i, bit;
-
-    i = 0;
-    bit = 1;
-    while (i < a.an_nlinks)
-    {
-        if (Argus_NavGetLink (a, i) == b)
-            return (a.an_rjmask & bit);
-        i = i + 1;
-        bit = bit * 2;
-    }
-    return 0;
+    return (a.an_rjmask & Argus_NavGetLinkBit (a, b));
 };
 
 // can this bot pay for a rocket jump right now?
@@ -344,102 +347,46 @@ float(entity bot) Argus_BotCanRJ =
 // nonzero when the link a -> b is swim-typed
 float(entity a, entity b) Argus_LinkIsSwim =
 {
-    local float i, bit;
-
-    i = 0;
-    bit = 1;
-    while (i < a.an_nlinks)
-    {
-        if (Argus_NavGetLink (a, i) == b)
-            return (a.an_swimmask & bit);
-        i = i + 1;
-        bit = bit * 2;
-    }
-    return 0;
+    return (a.an_swimmask & Argus_NavGetLinkBit (a, b));
 };
 
 // nonzero when the link a -> b is train-typed
 float(entity a, entity b) Argus_LinkIsTrain =
 {
-    local float i, bit;
-
-    i = 0;
-    bit = 1;
-    while (i < a.an_nlinks)
-    {
-        if (Argus_NavGetLink (a, i) == b)
-            return (a.an_trainmask & bit);
-        i = i + 1;
-        bit = bit * 2;
-    }
-    return 0;
+    return (a.an_trainmask & Argus_NavGetLinkBit (a, b));
 };
 
 // nonzero when the link a -> b is door-typed
 float(entity a, entity b) Argus_LinkIsDoor =
 {
-    local float i, bit;
-
-    i = 0;
-    bit = 1;
-    while (i < a.an_nlinks)
-    {
-        if (Argus_NavGetLink (a, i) == b)
-            return (a.an_doormask & bit);
-        i = i + 1;
-        bit = bit * 2;
-    }
-    return 0;
+    return (a.an_doormask & Argus_NavGetLinkBit (a, b));
 };
 
 // nonzero when the link a -> b is lift-typed
 float(entity a, entity b) Argus_LinkIsLift =
 {
-    local float i, bit;
-
-    i = 0;
-    bit = 1;
-    while (i < a.an_nlinks)
-    {
-        if (Argus_NavGetLink (a, i) == b)
-            return (a.an_liftmask & bit);
-        i = i + 1;
-        bit = bit * 2;
-    }
-    return 0;
+    return (a.an_liftmask & Argus_NavGetLinkBit (a, b));
 };
 
 // nonzero when the link a -> b is jump-typed
 float(entity a, entity b) Argus_LinkIsJump =
 {
-    local float i, bit;
-
-    i = 0;
-    bit = 1;
-    while (i < a.an_nlinks)
-    {
-        if (Argus_NavGetLink (a, i) == b)
-            return (a.an_jumpmask & bit);
-        i = i + 1;
-        bit = bit * 2;
-    }
-    return 0;
+    return (a.an_jumpmask & Argus_NavGetLinkBit (a, b));
 };
 
 float(entity a, entity b) Argus_LinkIsSprint =
 {
-    local float i, bit;
+    return (a.an_sprintmask & Argus_NavGetLinkBit (a, b));
+};
 
-    i = 0;
-    bit = 1;
-    while (i < a.an_nlinks)
-    {
-        if (Argus_NavGetLink (a, i) == b)
-            return (a.an_sprintmask & bit);
-        i = i + 1;
-        bit = bit * 2;
-    }
-    return 0;
+// nonzero when the link a -> b carries any special movement type
+float(entity a, entity b) Argus_LinkIsTyped =
+{
+    local float bit;
+    bit = Argus_NavGetLinkBit (a, b);
+    if (!bit)
+        return 0;
+    return ((a.an_jumpmask | a.an_sprintmask | a.an_rjmask | a.an_liftmask | a.an_swimmask | a.an_trainmask | a.an_doormask) & bit);
 };
 
 void(entity n, entity bot, entity val) Argus_SetNext =
@@ -619,7 +566,7 @@ void() Argus_Route_Finish =
 float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
 {
     local entity cur, nx;
-    local float hops;
+    local float hops, bit;
 
     if (goalnode == world || startnode == world)
         return FALSE;
@@ -638,9 +585,10 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
         nx = cur.an_cnext;
         if (nx == world)
             return FALSE;
-        if (Argus_LinkIsRocket (cur, nx) && !Argus_BotCanRJ (bot))
+        bit = Argus_NavGetLinkBit (cur, nx);
+        if ((cur.an_rjmask & bit) && !Argus_BotCanRJ (bot))
             return FALSE;
-        if (Argus_LinkIsSprint (cur, nx) && skill < 2)
+        if ((cur.an_sprintmask & bit) && skill < 2)
             return FALSE;
         cur = nx;
         hops = hops + 1;
