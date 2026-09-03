@@ -897,10 +897,12 @@ float (entity e, float healamount, float ignore) T_Heal; // health function
 float(entity targ, entity inflictor) CanDamage;
 
 //
-// Argus item chain (#145): fast O(items) goal traversal
+// Argus item chain (#145) & pickup claim mutex (#177)
 //
 .entity		ar_nextitem;
 .float		ar_initemchain;
 entity		argus_itemchain;
+.entity		ar_claimer;
+.float		ar_claimtime;
 void(entity it) Argus_ItemChain_Add;
 void(entity it) Argus_ItemChain_Remove;

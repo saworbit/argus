@@ -373,6 +373,8 @@ void() health_touch =
 
 	self.model = string_null;
 	self.solid = SOLID_NOT;
+	self.ar_claimer = world;
+	self.ar_claimtime = 0;
 
 	// ARGUS: the mega is a control item; taking it is audible intel.
 	// Small boxes stay quiet - shell-box noise would flood the
@@ -479,6 +481,8 @@ void() armor_touch =
 
 	self.solid = SOLID_NOT;
 	self.model = string_null;
+	self.ar_claimer = world;
+	self.ar_claimtime = 0;
 
 	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup
 
@@ -1529,6 +1533,8 @@ void() powerup_touch =
 	self.solid = SOLID_NOT;
 	other.items = other.items | self.items;
 	self.model = string_null;
+	self.ar_claimer = world;
+	self.ar_claimtime = 0;
 
 	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup -
 						// everyone hears the quad go
