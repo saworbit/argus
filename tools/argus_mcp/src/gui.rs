@@ -296,6 +296,7 @@ fn route(req: &Request) -> Response {
         ("POST", "/api/backup") => do_backup(),
         ("POST", "/api/generate") => do_generate(&req.body),
         ("POST", "/api/compile") => do_compile(),
+        ("POST", "/api/compare") => do_compare(&req.body),
         ("POST", "/api/restore") => do_restore(&req.body),
         ("GET", _) => text(404, "not found"),
         _ => text(405, "method not allowed"),
@@ -509,6 +510,43 @@ fn do_compile() -> Response {
 }
 
 #[derive(Deserialize)]
+struct CompareBody {
+    map: Option<String>,
+    log_a: Option<String>,
+    log_b: Option<String>,
+}
+
+fn do_compare(body: &[u8]) -> Response {
+    let parsed: CompareBody = match serde_json::from_slice(body) {
+        Ok(v) => v,
+        Err(_) => CompareBody {
+            map: None,
+            log_a: None,
+            log_b: None,
+        },
+    };
+    let Ok(cfg) = cfg_read() else {
+        return json_ok(&json!({"ok": false, "error": "lab paths incomplete"}));
+    };
+    let log_a = parsed.log_a.as_deref().unwrap_or("baseline");
+    let log_b = parsed.log_b.as_deref().unwrap_or("latest");
+    let map = parsed.map.as_deref();
+    match crate::intel::compare_runs_scaled(&cfg, log_a, log_b, map) {
+        Ok(report) => {
+            let lite = crate::intel::compare_lite(&report);
+            json_ok(&json!({
+                "ok": true,
+                "gate_card": report.gate_card,
+                "verdict": report.verdict,
+                "headline": report.headline,
+                "compare": lite,
+            }))
+        }
+        Err(e) => json_ok(&json!({"ok": false, "error": e})),
+    }
+}
+
+#[derive(Deserialize)]
 struct RestoreBody {
     id: String,
 }
@@ -575,6 +613,20 @@ mod tests {
         let page = String::from_utf8_lossy(&r.body);
         assert!(page.contains("Argus lab"));
         assert!(page.contains("Drop a .bsp"));
+    }
+
+    #[test]
+    fn gui_page_has_compare_gate_elements() {
+        let req = Request {
+            method: "GET".into(),
+            path: "/".into(),
+            query: HashMap::new(),
+            body: Vec::new(),
+        };
+        let r = route(&req);
+        let page = String::from_utf8_lossy(&r.body);
+        assert!(page.contains("A/B quality gates"));
+        assert!(page.contains("id=\"gatecard\""));
     }
 
     #[test]

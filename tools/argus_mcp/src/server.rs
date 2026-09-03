@@ -1533,6 +1533,7 @@ impl Argus {
             "log": ran.log_path,
             "elapsed_sec": ran.elapsed_sec,
             "compare": compare.as_ref().map(compare_lite),
+            "gate_card": compare.as_ref().map(|c| c.gate_card.clone()),
             "match": brief_lite(&ran.brief),
             "next": next,
         }))
