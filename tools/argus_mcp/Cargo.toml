@@ -1,4 +1,4 @@
-﻿[package]
+[package]
 name = "argus-mcp"
 version = "0.24.0"
 edition = "2021"
@@ -7,7 +7,7 @@ publish = false
 
 [dependencies]
 anyhow = "1"
-base64 = "0.22"
+base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 md5 = "0.7"
 regex = "1"
