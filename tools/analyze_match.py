@@ -5,14 +5,22 @@ contents at the death position (z < -300 is the no-BSP fallback only).
 usage:
   analyze_match.py map.bsp logA [logB] out.png [nav.json]"""
 import re, struct, sys
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 args = sys.argv[1:]
+if "-h" in args or "--help" in args:
+    print(__doc__.strip())
+    sys.exit(0)
+
+if len(args) < 3:
+    print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
+    sys.exit(1)
+
 NAV = None
 if args[-1].endswith(".json"):
     NAV = args[-1]; args = args[:-1]
+if len(args) < 3:
+    print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
+    sys.exit(1)
 BSP, LOGA = args[0], args[1]
 LOGB = args[2] if len(args) > 3 else None
 OUT = args[-1]
@@ -170,6 +178,13 @@ contents = bsp_contents_classifier(BSP)
 ba, fa, da = parse(LOGA); sa = stats(ba, fa, da, contents)
 print("[%s] fmt=%s" % (LOGA, fa))
 for n, s in sa.items(): print(" ", n, s)
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except ImportError:
+    raise SystemExit("analyze_match.py requires matplotlib to generate plots: pip install matplotlib")
 
 if LOGB:
     bb, fb, db = parse(LOGB); sb = stats(bb, fb, db, contents)
