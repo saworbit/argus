@@ -422,9 +422,63 @@ entity(entity n, entity bot) Argus_GetNext =
 
 entity(vector p) Argus_NearestNode =
 {
-    local entity n, best, bestv;
+    local entity n, cand, best, bestv;
     local vector d, eye;
-    local float dist, bd, bdv;
+    local float dist, bd, bdv, i;
+
+    // Local neighbor fast-path (#146):
+    // Continuous locomotion rarely jumps across the map. If the calling
+    // bot has an active ar_node and p is near self.origin, probe ar_node
+    // and its 1-hop connected neighbors first before scanning the whole map.
+    if (self.ar_node != world && vlen (self.origin - p) < 64)
+    {
+        best = world;
+        bd = 999999;
+        eye = p + '0 0 22';
+
+        n = self.ar_node;
+        d = n.origin - p;
+        d_z = d_z * 2;
+        dist = vlen (d);
+        if (dist < 200)
+        {
+            traceline (eye, n.origin + '0 0 8', TRUE, self);
+            if (trace_fraction == 1)
+            {
+                best = n;
+                bd = dist;
+                if (dist < 120)
+                    return n;
+            }
+        }
+
+        i = 0;
+        while (i < n.an_nlinks)
+        {
+            cand = Argus_NavGetLink (n, i);
+            if (cand != world)
+            {
+                d = cand.origin - p;
+                d_z = d_z * 2;
+                dist = vlen (d);
+                if (dist < bd && dist < 200)
+                {
+                    traceline (eye, cand.origin + '0 0 8', TRUE, self);
+                    if (trace_fraction == 1)
+                    {
+                        best = cand;
+                        bd = dist;
+                        if (dist < 120)
+                            return cand;
+                    }
+                }
+            }
+            i = i + 1;
+        }
+
+        if (best != world)
+            return best;
+    }
 
     best = world;
     bestv = world;
