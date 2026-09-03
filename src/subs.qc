@@ -17,7 +17,48 @@
     See file, 'COPYING', for details.
 */
 
-void() SUB_Remove = {remove(self);};
+void(entity it) Argus_ItemChain_Add =
+{
+	if (it.ar_initemchain)
+		return;
+	it.ar_initemchain = 1;
+	it.ar_nextitem = argus_itemchain;
+	argus_itemchain = it;
+};
+
+void(entity it) Argus_ItemChain_Remove =
+{
+	local entity prev, cur;
+	if (!it.ar_initemchain)
+		return;
+	it.ar_initemchain = 0;
+	if (argus_itemchain == it)
+	{
+		argus_itemchain = it.ar_nextitem;
+		it.ar_nextitem = world;
+		return;
+	}
+	prev = argus_itemchain;
+	while (prev != world)
+	{
+		cur = prev.ar_nextitem;
+		if (cur == it)
+		{
+			prev.ar_nextitem = it.ar_nextitem;
+			it.ar_nextitem = world;
+			return;
+		}
+		prev = cur;
+	}
+	it.ar_nextitem = world;
+};
+
+void() SUB_Remove =
+{
+	if (self.ar_initemchain)
+		Argus_ItemChain_Remove(self);
+	remove(self);
+};
 void() SUB_Null = {};
 
 //pitch (angles_x) is inverted in quake due to a bug

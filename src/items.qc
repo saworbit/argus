@@ -63,6 +63,7 @@ local string    s;
 	sound (other, CHAN_VOICE, self.noise, 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
 	self.solid = SOLID_NOT;
+	Argus_ItemChain_Remove (self);
 	other.items = other.items | IT_QUAD;
 	self.model = string_null;
 		if (deathmatch == 4)
@@ -130,6 +131,7 @@ void(float timeleft) DropQuad =
 	item.touch = q_touch;
 	item.nextthink = time + timeleft;    // remove it with the time left on it
 	item.think = SUB_Remove;
+	Argus_ItemChain_Add (item);
 
 #ifdef __QW__ // EF_BLUE is not supported in NQ
 	item.effects = EF_BLUE;
@@ -155,6 +157,7 @@ local string    s;
 	sound (other, CHAN_VOICE, self.noise, 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
 	self.solid = SOLID_NOT;
+	Argus_ItemChain_Remove (self);
 	other.items = other.items | IT_INVISIBILITY;
 	self.model = string_null;
 
@@ -198,6 +201,7 @@ void(float timeleft) DropRing =
 	item.touch = r_touch;
 	item.nextthink = time + timeleft;    // remove after 30 seconds
 	item.think = SUB_Remove;
+	Argus_ItemChain_Add (item);
 };
 
 /*============
@@ -226,6 +230,7 @@ void() PlaceItem =
 
 		return;
 	}
+	Argus_ItemChain_Add (self);
 };
 
 /*============
@@ -1854,6 +1859,7 @@ void() BackpackTouch =
 
 	Argus_HearSound (self.origin, other);	// ARGUS: looting is audible
 
+	Argus_ItemChain_Remove (self);
 	remove(self);
 	self = other;
 
@@ -1929,4 +1935,5 @@ void() DropBackpack =
 
 	item.nextthink = time + 120;    // remove after 2 minutes
 	item.think = SUB_Remove;
+	Argus_ItemChain_Add (item);
 };
