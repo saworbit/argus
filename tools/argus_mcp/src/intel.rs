@@ -216,6 +216,7 @@ pub struct Gate {
 pub struct CompareReport {
     pub verdict: Verdict,
     pub headline: String,
+    pub gate_card: String,
     pub gates: Vec<Gate>,
     pub findings: Vec<String>,
     pub next_steps: Vec<NextStep>,
@@ -265,9 +266,10 @@ pub struct BotLite {
 pub struct CompareLite {
     pub verdict: Verdict,
     pub headline: String,
+    pub gate_card: String,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub scaled: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scale_note: Option<String>,
     pub gates: Vec<Gate>,
     pub findings: Vec<String>,
@@ -311,6 +313,7 @@ pub fn compare_lite(r: &CompareReport) -> CompareLite {
     CompareLite {
         verdict: r.verdict,
         headline: r.headline.clone(),
+        gate_card: r.gate_card.clone(),
         scaled: r.scaled,
         scale_note: r.scale_note.clone(),
         gates: r.gates.clone(),
@@ -727,6 +730,133 @@ fn bars_for(map: Option<&str>) -> MapBars {
     }
 }
 
+pub fn format_gate_card(
+    map: Option<&str>,
+    verdict: Verdict,
+    gates: &[Gate],
+    a_totals: &Totals,
+    b_totals: &Totals,
+    scaled: bool,
+) -> String {
+    let map_name = map.unwrap_or("unknown");
+    let scale_tag = if scaled { " (scaled)" } else { "" };
+    let title = format!("ARGUS A/B QUALITY GATES: {map_name} (baseline vs candidate){scale_tag}");
+
+    let mut out = String::new();
+    out.push_str("┌─────────────────────────────────────────────────────────────┐\n");
+    out.push_str(&format!("│ {:<59} │\n", title));
+    out.push_str("├──────────────────────────┬────────┬──────────────┬──────────┤\n");
+    out.push_str("│ Metric                   │ Status │ Delta        │ Verdict  │\n");
+    out.push_str("├──────────────────────────┼────────┼──────────────┼──────────┤\n");
+
+    let mut add_row = |name: &str, status: &str, delta: &str, verd: &str| {
+        out.push_str(&format!(
+            "│ {:<24} │   {}   │ {:<12} │ {:<8} │\n",
+            name, status, delta, verd
+        ));
+    };
+
+    // 1. Lava deaths
+    if let Some(g) = gates.iter().find(|x| x.name == "lava_deaths") {
+        let status = if g.pass { "🟢" } else { "🔴" };
+        let delta = format!("{:.0} vs {:.0}", g.a, g.b);
+        let verd = if g.pass { "PASS" } else { "FAIL" };
+        add_row("Lava/Slime Deaths", status, &delta, verd);
+    }
+
+    // 2. Nav Stalls
+    if let Some(g) = gates.iter().find(|x| x.name == "stall_parity") {
+        let status = if g.pass { "🟢" } else { "🔴" };
+        let delta = if g.a > 0.0 {
+            format!("{:+.1}%", ((g.b - g.a) / g.a) * 100.0)
+        } else {
+            format!("{:.0} vs {:.0}", g.a, g.b)
+        };
+        let verd = if g.pass { "PASS" } else { "FAIL" };
+        add_row("Nav Stalls", status, &delta, verd);
+    }
+
+    // 3. Weapon Engages
+    if let Some(g) = gates.iter().find(|x| x.name == "engagements") {
+        let status = if g.pass { "🟢" } else { "🔴" };
+        let delta = if g.a > 0.0 {
+            format!("{:+.1}%", ((g.b - g.a) / g.a) * 100.0)
+        } else {
+            format!("{:.0} vs {:.0}", g.a, g.b)
+        };
+        let verd = if g.pass { "PASS" } else { "FAIL" };
+        add_row("Weapon Engages", status, &delta, verd);
+    }
+
+    // 4. Goal Pickups (gl)
+    {
+        let ga = a_totals.goals as f64;
+        let gb = b_totals.goals as f64;
+        let delta = if ga > 0.0 {
+            format!("{:+.1}%", ((gb - ga) / ga) * 100.0)
+        } else {
+            format!("{:.0} vs {:.0}", ga, gb)
+        };
+        let (status, verd) = if gb >= ga {
+            ("🟢", "PASS")
+        } else if gb >= ga * 0.75 {
+            ("🟡", "WARN")
+        } else {
+            ("🔴", "FAIL")
+        };
+        add_row("Goal Pickups (gl)", status, &delta, verd);
+    }
+
+    // 5. Frag Spread Balance
+    if let Some(g) = gates.iter().find(|x| x.name == "frags_positive") {
+        let status = if g.pass { "🟢" } else { "🔴" };
+        let delta = format!("{:.0} vs {:.0}", g.a, g.b);
+        let verd = if g.pass { "PASS" } else { "FAIL" };
+        add_row("Frag Spread Balance", status, &delta, verd);
+    }
+
+    // 6. K/D Spread Tightness
+    if let Some(g) = gates.iter().find(|x| x.name == "kd_spread") {
+        let status = if g.pass { "🟢" } else { "🔴" };
+        let delta = format!("{:.0} vs {:.0}", g.a, g.b);
+        let verd = if g.pass { "PASS" } else { "FAIL" };
+        add_row("K/D Spread Tightness", status, &delta, verd);
+    }
+
+    // 7. Freezes
+    if let Some(g) = gates.iter().find(|x| x.name == "freezes") {
+        let status = if g.pass { "🟢" } else { "🔴" };
+        let delta = format!("{:.1}s vs {:.1}s", g.a, g.b);
+        let verd = if g.pass { "PASS" } else { "FAIL" };
+        add_row("Freeze Stalls/Statues", status, &delta, verd);
+    }
+
+    // 8. Coverage
+    if let Some(g) = gates.iter().find(|x| x.name == "coverage") {
+        let status = if g.pass { "🟢" } else { "🔴" };
+        let delta = if g.a > 0.0 {
+            format!("{:.0} vs {:.0}", g.a, g.b)
+        } else {
+            "n/a".into()
+        };
+        let verd = if g.pass { "PASS" } else { "FAIL" };
+        add_row("Navigation Coverage", status, &delta, verd);
+    }
+
+    out.push_str("├──────────────────────────┴────────┴──────────────┴──────────┤\n");
+    let (icon, tag) = match verdict {
+        Verdict::Improved =>  ("🟢", "APPROVED FOR RELEASE (IMPROVED)"),
+        Verdict::Parity =>    ("🟢", "APPROVED FOR RELEASE (PARITY)"),
+        Verdict::Mixed =>     ("🟡", "CAUTION (MIXED QUALITY GATES)"),
+        Verdict::Regressed => ("🔴", "REJECTED (QUALITY GATES FAILED)"),
+    };
+    let overall = format!("OVERALL VERDICT:  {icon} {tag}");
+    out.push_str(&format!("│ {:<58} │\n", overall));
+    out.push_str("└─────────────────────────────────────────────────────────────┘\n");
+
+    out
+}
+
 pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     let mut gates = Vec::new();
     let bars = bars_for(b.map.as_deref().or(a.map.as_deref()));
@@ -918,9 +1048,19 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
         b.totals.frags
     );
 
+    let gate_card = format_gate_card(
+        b.map.as_deref().or(a.map.as_deref()),
+        verdict,
+        &gates,
+        &a.totals,
+        &b.totals,
+        false,
+    );
+
     CompareReport {
         verdict,
         headline,
+        gate_card,
         gates,
         findings,
         next_steps,
@@ -979,6 +1119,14 @@ pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
         report.scale_note = Some(format!(
             "baseline counts scaled from {da:.0}s to {db:.0}s so a short experiment is comparable"
         ));
+        report.gate_card = format_gate_card(
+            report.b.map.as_deref().or(report.a.map.as_deref()),
+            report.verdict,
+            &report.gates,
+            &report.a.totals,
+            &report.b.totals,
+            true,
+        );
         report
     } else {
         compare_briefs(a, b)
@@ -2333,5 +2481,21 @@ ARGEVT Reap death world pos '1937.0 -1650.0 -35.0'
         let counted = brief_tape_lava(&parse_tape(log), Some("dm2"), bsp.hull0.as_ref());
         assert_eq!(counted.totals.lava_deaths, 1);
         assert_eq!(counted.totals.lava_rule.as_deref(), Some("contents"));
+    }
+
+    #[test]
+    fn gate_card_formatting_renders_card() {
+        let a = brief_text(&log_a(), None);
+        let b = brief_text(&log_lava(), None);
+        let report = compare_briefs(a.clone(), b.clone());
+        assert!(report.gate_card.contains("ARGUS A/B QUALITY GATES"));
+        assert!(report.gate_card.contains("Lava/Slime Deaths"));
+        assert!(report.gate_card.contains("Nav Stalls"));
+        assert!(report.gate_card.contains("🔴"));
+        assert!(report.gate_card.contains("REJECTED"));
+
+        let parity = compare_briefs(a.clone(), a);
+        assert!(parity.gate_card.contains("🟢"));
+        assert!(parity.gate_card.contains("APPROVED FOR RELEASE"));
     }
 }

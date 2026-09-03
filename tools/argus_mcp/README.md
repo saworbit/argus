@@ -38,6 +38,7 @@ browser. One page:
 - drop a `.bsp` into `maps_local/` (BSP29 check; simple names only)
 - **Generate nav** (`nav_generate` with `--register`)
 - **Compile and install** (backup first, then `compile_qc`)
+- **A/B quality gates** (evaluates candidate runs against baseline and renders visual gate cards)
 - **Backup only** / **Restore**
 
 After generate it shows `runs/nav_<map>.png` and the 0.17
