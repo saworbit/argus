@@ -126,7 +126,7 @@ flowchart TD
 - **Personality matrix** (keyed on roster slot, so renaming bots never changes how they play):
   - **Slot 0 - the flick** (Carmack): Aggressive, impatient, weapon-first focus, rapid trigger response.
   - **Slot 1 - the smooth operator** (Romero): Tactical, health and armour prioritisation, smooth tracking aim.
-  - **Slots 2-3 - the glory hounds** (Joe Rogan, and Mr Elusive as the `impulse 100` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
+  - **Slots 2-3 - the glory hounds** (Joe Rogan, and Mr Elusive as the `impulse 101` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
   - Chat voices are name-keyed on top - the 18-character homage roster below each speak in their own voice.
 - **Skill scales the neck as well as the trigger**: `ar_aimrate` (170 deg/s at skill 0 rising to 300 at skill 3, with a personality offset) drives pursuit corner turns and auditory glances, not just aim tracking - a warmup bot looks around more slowly than a skill 3 bot, rather than merely shooting worse.
 - **Audible powerup tells**: Bots play the stock three-second expiry cues for quad, pentagram, ring and biosuit, so a player fighting a powered-up opponent can hear the multiplier about to lapse. Information the code had and the human did not.

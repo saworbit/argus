@@ -1,4 +1,4 @@
-﻿# Changelog
+# Changelog
 
 Every entry is a shipped `progs.dat` build, tuned and gated by A/B
 botmatch telemetry before install. Dates are build dates. The full
@@ -6,6 +6,22 @@ paper trail (ladder tapes, metric boundaries, forensics) lives in the
 machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
+
+## v4.08 (2026-09-03) - navigation caching, item chain, and roster control
+
+A performance, navigation accuracy, and player-experience milestone addressing bot goal selection latency, lift/button stand-pad precision, friendly collision clearance, and runtime bot management.
+
+**1-hop spatial neighbor caching in `Argus_NearestNode` (#146).** During continuous locomotion, a bot rarely teleports across the arena. `Argus_NearestNode` now probes `self.ar_node` and its 1-hop connected neighbors (`an_l0`..`an_l7`) first, exiting immediately when within 120u with line-of-sight. The global O(N) full-map waypoint sweep is bypassed in >95% of frames and runs only on fresh spawns, falls, or rocket knockbacks (>200u).
+
+**Static control-item entity chain in QuakeC (#145).** Replaced the 500+ global edict iteration in `Argus_PickGoal` with a linked list `argus_itemchain` maintained via `Argus_ItemChain_Add` and `Argus_ItemChain_Remove` in `subs.qc`. `PlaceItem`, `DropQuad`, `DropRing`, and `DropBackpack` link items into the chain; touch handlers and `SUB_Remove` unlink them. Cuts interpreter loops by >90% per bot think tick.
+
+**Stand-pad floor targeting & pickup claim mutex (#177).** Lifts, buttons, and doors are brush entities whose bounding-box midpoints often sit inside solid geometry or float in mid-air. `Argus_GoalPoint` now casts a downward floor traceline for non-point entities, directing bots to clear stand-pads (+24u waist) rather than brush geometric centers. Lifts on dm2 and buttons on dm6 cleared without edge stalls. High-value pickups (Megahealth, 100+ Armor, Quad, Pentagram) enforce a 3-second claim reservation mutex so two bots do not fight over the exact same pickup point. `Argus_BodyBlockCheck` clears 48u client collisions by sidestepping perpendicular and suppressing fire (`button0 = 0`).
+
+**In-game bot roster menu & skill cycler (#147).** Runtime bot management wired to impulses: `impulse 100` displays an interactive on-screen `centerprint` menu; `impulse 101` adds a bot; `impulse 102` removes a bot; `impulse 103` cycles difficulty skill (0..3) with `localcmd` and instant centerprint feedback; `impulse 104` toggles ArgusCam AI Director; `impulse 105` displays match statistics and bot scorecards. Guarded by `Argus_ClientCanControlRoster` to protect dedicated multiplayer servers.
+
+**Visual A/B quality gate cards & CLI wrappers (#148, #150).** High-contrast Unicode box-drawing gate cards with aligned status badges (`🟢 PASS`, `🟡 WARN`, `🔴 FAIL`) in CLI and localhost GUI. Unified developer CLI runner subcommands: `compile`, `nav`, `analyze`, `harvest`, `reach`.
+
+**Engine process lifecycle and safety (#151-#155).** Engine child process termination on drop via Windows `TerminateProcess` and Unix `kill_on_drop`, match identity timer safeguards, 90s compiler timeout, and atomic binary swap.
 
 ## v4.07 (2026-08-29) - the lab runs at 10 Hz, and a correction
 
