@@ -56,6 +56,27 @@ class TestToolsCLI(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
         self.assertIn("REACH GATE: verdict FAIL", res.stdout)
 
+    def test_argus_review_freeze_detector(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_review
+        # 1 Hz samples over 6s (Issue #156):
+        # Bot1 drifts 25 u in x over 6s (25 < 32 u circle): freeze in Euclidean metric!
+        # (Under old 24 u box metric this was falsely rejected because dx > 24).
+        bot1_recs = [
+            {"t": float(i), "x": 100.0 + (i * 25.0 / 6.0), "y": 200.0, "z": 0.0, "spd": 4.0, "mode": 2, "line": i + 1}
+            for i in range(7)
+        ]
+        # Bot2 drifts 35 u in x over 6s (35 > 32 u circle): not a freeze.
+        bot2_recs = [
+            {"t": float(i), "x": 100.0 + (i * 35.0 / 6.0), "y": 200.0, "z": 0.0, "spd": 5.0, "mode": 2, "line": i + 10}
+            for i in range(7)
+        ]
+        bots = {"Bot1": bot1_recs, "Bot2": bot2_recs}
+        fz = argus_review.freezes(bots)
+        self.assertEqual(len(fz), 1)
+        self.assertEqual(fz[0][0], "Bot1")
+        self.assertAlmostEqual(fz[0][3], 6.0)
+
 
 if __name__ == "__main__":
     unittest.main()

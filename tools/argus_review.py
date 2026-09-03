@@ -15,9 +15,10 @@ usage:
                                              crossings, bridge falls
                                              (dm2 geometry)
 
-The freeze detector flags any bot below 20 u/s within a 24u cell for
+The freeze detector flags any bot below 20 u/s within a 32 u radius for
 6+ seconds - the signature of every stuck-bot defect found so far
 (grate pin, pocket jitter hold, dead-lift statue, door-button wait).
+Aligned with MatchTape::freezes in the Rust lab parser.
 """
 import re, sys, collections
 
@@ -95,8 +96,8 @@ def freezes(bots):
         while i < len(recs):
             j = i
             while (j + 1 < len(recs) and recs[j+1]["spd"] < 20
-                   and abs(recs[j+1]["x"] - recs[i]["x"]) < 24
-                   and abs(recs[j+1]["y"] - recs[i]["y"]) < 24):
+                   and ((recs[j+1]["x"] - recs[i]["x"]) ** 2
+                        + (recs[j+1]["y"] - recs[i]["y"]) ** 2) < 32.0 ** 2):
                 j += 1
             dur = recs[j]["t"] - recs[i]["t"]
             if dur >= 6.0:

@@ -31,14 +31,31 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 cd "$HERE"
 
 echo "== packages =="
-DEBIAN_FRONTEND=noninteractive apt-get install -y -qq quakespasm unzip build-essential zlib1g-dev >/dev/null
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+    if command -v sudo >/dev/null 2>&1; then
+        SUDO="sudo"
+    else
+        echo "Error: root privileges or sudo required to install packages" >&2
+        exit 1
+    fi
+fi
+DEBIAN_FRONTEND=noninteractive $SUDO apt-get update -qq
+DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq quakespasm unzip build-essential zlib1g-dev python3
 
 echo "== modern fteqcc =="
 if [ ! -x fteqw/engine/release/fteqcc ]; then
-    git clone -q --depth 1 https://github.com/fte-team/fteqw.git
-    make -C fteqw/engine qcc-rel >/dev/null 2>&1
+    [ -d fteqw ] || git clone -q --depth 1 https://github.com/fte-team/fteqw.git
+    if ! make -C fteqw/engine qcc-rel; then
+        echo "Error: failed to build modern fteqcc from fteqw/engine" >&2
+        exit 1
+    fi
 fi
 QCC="$HERE/fteqw/engine/release/fteqcc"
+if [ ! -x "$QCC" ]; then
+    echo "Error: fteqcc binary not found at $QCC" >&2
+    exit 1
+fi
 
 echo "== game data (LibreQuake, free content) =="
 REL=https://github.com/lavenderdotpet/LibreQuake/releases/download/v0.09-beta
