@@ -1,0 +1,39 @@
+# Set default behavior to automatically normalize line endings
+* text=auto
+
+# Source code files
+*.qc text
+*.src text
+*.rs text
+*.py text
+*.c text
+*.h text
+
+# Configuration and documentation
+*.md text
+*.txt text
+*.json text
+*.toml text
+*.yml text
+*.yaml text
+*.cfg text
+
+# Shell scripts must always use LF line endings
+*.sh text eol=lf
+
+# Windows batch files must always use CRLF line endings
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets - do not attempt line ending conversion or text diffing
+*.dat binary
+*.pak binary
+*.bsp binary
+*.mdl binary
+*.png binary
+*.dem binary
+*.zip binary
+*.exe binary
+*.dll binary
+*.so binary
+*.dylib binary
