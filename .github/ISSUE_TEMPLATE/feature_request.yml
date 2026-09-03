@@ -1,0 +1,49 @@
+name: Feature Request
+description: Suggest a new bot personality, AI mechanic, weapon tactic, or lab tool.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        We welcome ideas for improving the Argus bot and telemetry laboratory!
+        Please note that core bot code must remain **vanilla QuakeC (NetQuake protocol 15, max 600 edicts, no engine extensions)**.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - "Bot AI & Tactics"
+        - "Bot Personalities / Homage Roster"
+        - "Navigation & Physics Simulation"
+        - "Telemetry & Visualization"
+        - "Lab MCP Server & GUI"
+        - "Tooling & Navgen"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement / Motivation
+      description: Is your feature request related to a problem or limitation?
+      placeholder: "I noticed bots struggle when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe what you would like to see happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative approaches or solutions you evaluated?
+    validations:
+      required: false

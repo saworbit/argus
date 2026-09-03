@@ -1,0 +1,81 @@
+name: Bug Report
+description: Report unexpected bot behavior, physics glitches, engine crashes, or tooling errors.
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve Argus! Please provide as much detail as possible to help us reproduce and fix the issue.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Component Area
+      description: Which part of Argus is experiencing an issue?
+      options:
+        - "Bot AI / Decision Making"
+        - "Movement / Physics / Hazards"
+        - "Combat / Aim Tracking"
+        - "Navigation Graph / Routefinding"
+        - "Engine Compatibility / Crashes"
+        - "MCP Server / GUI Wizard (argus-mcp)"
+        - "Telemetry / Python Tooling (analyze_match.py / navgen)"
+        - "Build / Compilation (fteqcc)"
+    validations:
+      required: true
+
+  - type: input
+    id: engine
+    attributes:
+      label: Quake Engine & Version
+      description: e.g. QuakeSpasm 0.96.0, Ironwail 0.8.0, vkQuake 1.31, FTEQW, DarkPlaces, Quake 2021 Re-release (Kex), or NetQuake dedicated.
+      placeholder: "e.g. Ironwail 0.8.2 (Windows 64-bit)"
+    validations:
+      required: true
+
+  - type: input
+    id: map
+    attributes:
+      label: Map Name
+      description: Which map did this happen on? (e.g. dm2, dm3, dm4, dm6, lqdm2, custom BSP).
+      placeholder: "e.g. dm4"
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: How can someone reproduce this behavior?
+      placeholder: |
+        1. Launch: quakespasm -game argus +deathmatch 1 +map dm4
+        2. Wait for bot 'Carmack' to navigate near ...
+        3. Observe bot behavior ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Console / Telemetry Log
+      description: Paste relevant snippets of `qconsole.log` (especially `ARGLOG` or `Host_Error` messages when running with `-condebug +developer 1`).
+      render: text
+    validations:
+      required: false

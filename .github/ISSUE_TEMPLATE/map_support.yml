@@ -1,0 +1,37 @@
+name: Map Navigation & Support
+description: Request navigation graph support or report pathfinding/routing issues for a specific map.
+title: "[Map]: "
+labels: ["maps", "navigation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `lqdm2`.
+        You can also generate navigation graphs for any `.bsp` using `tools/argus_navgen.py` or the `argus-mcp gui` wizard.
+
+  - type: input
+    id: map_name
+    attributes:
+      label: Map Name / BSP
+      placeholder: "e.g. cpm3a, ztndm1, aerowalk, dm1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: map_source
+    attributes:
+      label: Map Source
+      options:
+        - "Stock id Quake Map (id1)"
+        - "LibreQuake Map"
+        - "Custom / Community Deathmatch Map"
+    validations:
+      required: true
+
+  - type: textarea
+    id: details
+    attributes:
+      label: Map Navigation Details / Issues
+      description: Describe what tricky geometry exists on the map (e.g. rocket-jump ledges, teleporters, moving elevators, liquid hazard pits) or what routing improvements are needed.
+    validations:
+      required: true

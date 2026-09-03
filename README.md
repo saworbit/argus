@@ -1,6 +1,9 @@
 # Argus - Vanilla QuakeC deathmatch bot and telemetry laboratory
 
 [![compile](https://github.com/saworbit/argus/actions/workflows/compile.yml/badge.svg)](https://github.com/saworbit/argus/actions/workflows/compile.yml)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
 
 Argus is an advanced deathmatch bot for Quake 1 built in pure vanilla QuakeC. It runs on classic NetQuake protocol 15 with a strict 600-edict ceiling, requires zero engine extensions or file I/O, and is compatible with any standard Quake engine (QuakeSpasm, Ironwail, vkQuake, FTEQW, DarkPlaces, or the official 2021 rerelease).
 
@@ -469,6 +472,17 @@ Match briefs also cross-examine themselves: every stall/freeze/hazard hotspot ca
 5. **Traces That Start In Solid**: A `traceline` beginning inside geometry returns `trace_fraction == 1` (with `trace_allsolid`), which is byte-identical to finding nothing at all. Every "is there floor here" probe must distinguish the two explicitly or it will read rising ground as a bottomless pit - and, in the other direction, `CanDamage` returning TRUE on such a trace is why rocket splash does *not* silently fail against a wall-adjacent target.
 6. **Per-Frame Constants Are Tick-Rate Bugs**: Physics written as `v = v * k + impulse` per frame behaves differently at different tick rates. Terminal values usually survive (the drag scales with the impulse) but time constants do not, so behaviour tuned in one place can differ from behaviour in another. Express drag and thrust per second against `frametime` - and **measure the rate before calibrating to it**. The headless lab server here runs at `frametime 0.1`, which is id's `host_frametime` clamp rather than `sys_ticrate`, roughly ten frames a second, while a listen server runs near 72: a factor of seven between where the bot is measured and where it is played.
 7. **`vectoangles()` Pitch Sign**: The builtin reports upward elevation as *positive* pitch; the view-angle protocol (`v_angle`, a spectator's `angles`) wants up as *negative*. Every conversion needs the flip, or the resulting view is vertically inverted.
+
+---
+
+## Community and contributing
+
+Contributions and feedback are warmly welcome! Whether you are interested in bot AI, map navigation, physics tuning, or telemetry tooling:
+
+- Check out the **[Contributing Guide](CONTRIBUTING.md)** for setup instructions, QuakeC constraints, and engineering guidelines.
+- Review our **[Code of Conduct](CODE_OF_CONDUCT.md)** for community standards.
+- Need help or troubleshooting tips? See **[Support](SUPPORT.md)**.
+- For security questions or vulnerability reports, refer to the **[Security Policy](SECURITY.md)**.
 
 ---
 
