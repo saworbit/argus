@@ -644,8 +644,8 @@ pub fn unharvested_session(cfg: &Config) -> Option<String> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn harvest_preserves_existing_tape_when_new_body_empty_or_tapeless() {
+    #[tokio::test]
+    async fn harvest_preserves_existing_tape_when_new_body_empty_or_tapeless() {
         let tmp = std::env::temp_dir().join(format!("argus-harvest-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(&tmp).unwrap();

@@ -466,9 +466,14 @@ impl EngineChild {
         }
         #[cfg(not(windows))]
         {
+            let child = tokio::process::Command::new("sleep")
+                .arg("10")
+                .kill_on_drop(true)
+                .spawn()
+                .unwrap();
             Self {
                 inner: Inner::Tokio {
-                    child: tokio::process::Command::new("sleep").arg("10").spawn().unwrap(),
+                    child,
                     stdin: None,
                 },
                 pid: 0,
