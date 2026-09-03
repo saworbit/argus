@@ -751,6 +751,42 @@ void(float imp) ArgusCam_Impulse;
 void(vector org, vector ang, string tag) Argus_AddCamNode;
 void(float topic) Argus_PlayerChat;
 
+// ============================================================================
+// ARGUS CO-OP COMPANION AI (#173-#176)
+// ============================================================================
+float GOAL_NONE           = 0;
+float GOAL_ESCORT         = 1;
+float GOAL_COVER          = 2;
+float GOAL_ENGAGE         = 3;
+float GOAL_INTERACT       = 4;
+float GOAL_FETCH          = 5;
+float GOAL_REVIVE_SUPPORT = 6;
+float GOAL_RETREAT        = 7;
+
+.float  ar_goal_kind0, ar_goal_kind1, ar_goal_kind2, ar_goal_kind3;
+.entity ar_goal_subj0, ar_goal_subj1, ar_goal_subj2, ar_goal_subj3;
+.vector ar_goal_anch0, ar_goal_anch1, ar_goal_anch2, ar_goal_anch3;
+.float  ar_goal_prio0, ar_goal_prio1, ar_goal_prio2, ar_goal_prio3;
+.float  ar_goal_time0, ar_goal_time1, ar_goal_time2, ar_goal_time3;
+.float  ar_goal_flag0, ar_goal_flag1, ar_goal_flag2, ar_goal_flag3;
+.float  ar_goal_count;          // 0..4
+.entity ar_teammate;            // Companion teammate entity
+.float  ar_coop_cover_end;      // Covering fire timeout
+.vector ar_coop_cover_spot;     // Position holding cover
+
+void(float gkind, entity gsubj, vector ganch, float gprio, float gtimeout, float gflags) Argus_GoalPush;
+void() Argus_GoalPop;
+float() Argus_GoalTopKind;
+entity() Argus_GoalTopSubj;
+vector() Argus_GoalTopAnchor;
+float() Argus_GoalTopPrio;
+void() Argus_GoalTickTimeouts;
+void() Argus_CoopThink;
+void() Argus_ActEscort;
+entity() Argus_CoopFindThreat;
+entity() Argus_CoopFindTeammate;
+float(entity shooter, entity victim, entity ally) Argus_SplashSafe;
+
 void(entity client, string s) stuffcmd = { if (client.ar_isbot) return; stuffcmd_bi (client, s); };
 entity(vector org, float rad) findradius = #22;
 

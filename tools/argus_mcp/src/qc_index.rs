@@ -451,12 +451,15 @@ fn role_for(name: &str) -> &'static str {
         || name.contains("Weapon")
         || name.contains("Pain")
         || name.contains("Aim")
+        || name.contains("SplashSafe")
     {
         "combat"
     } else if name.contains("Nav")
         || name.contains("Route")
         || name.contains("Goal")
         || name.contains("Pick")
+        || name.contains("Escort")
+        || name.contains("Coop")
     {
         "nav"
     } else if name.contains("Spawn")
@@ -608,5 +611,31 @@ void() Argus_Bar =
         );
         // and the call regex must reach them too (calls/callers)
         assert!(call_re().is_match("            ArgusCam_POV (self, self.cam_target);"));
+    }
+
+    #[test]
+    fn coop_functions_are_indexed() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../..")
+            .join("src");
+        let argus = root.join("argus.qc");
+        if !argus.is_file() {
+            return;
+        }
+        let mut fns = Vec::new();
+        let mut consts = Vec::new();
+        index_file(&argus, "argus.qc", &mut fns, &mut consts).expect("index argus.qc");
+        assert!(
+            fns.iter().any(|f| f.name == "Argus_GoalPush"),
+            "Argus_GoalPush not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name == "Argus_ActEscort"),
+            "Argus_ActEscort not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name == "Argus_SplashSafe"),
+            "Argus_SplashSafe not indexed"
+        );
     }
 }
