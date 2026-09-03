@@ -1,0 +1,30 @@
+# Configuration for automatic release notes generation
+# https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+
+changelog:
+  categories:
+    - title: "🤖 Bot AI, Tactics & Combat"
+      labels:
+        - "ai"
+        - "combat"
+    - title: "🏃 Locomotion & Physics Simulation"
+      labels:
+        - "physics"
+    - title: "🗺️ Navigation & Map Support"
+      labels:
+        - "navigation"
+        - "maps"
+    - title: "🔬 Lab MCP Server, GUI & Telemetry"
+      labels:
+        - "rust-mcp"
+        - "tooling"
+    - title: "🐛 Bug Fixes & Engine Compatibility"
+      labels:
+        - "bug"
+    - title: "🛠️ Dependency Updates & CI"
+      labels:
+        - "dependencies"
+        - "github_actions"
+    - title: "📝 Documentation & Community"
+      labels:
+        - "documentation"

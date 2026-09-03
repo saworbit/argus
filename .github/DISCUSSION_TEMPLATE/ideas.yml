@@ -1,0 +1,21 @@
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea for Argus? Share your thoughts on bot personalities, movement tactics, combat logic, or lab tooling!
+  - type: textarea
+    id: idea
+    attributes:
+      label: What is your idea?
+      description: Describe the bot behavior, mechanic, or tool feature you would love to see.
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: How should it work in practice?
+      description: Share any technical thoughts, impulse codes, or gameplay considerations.
+    validations:
+      required: false

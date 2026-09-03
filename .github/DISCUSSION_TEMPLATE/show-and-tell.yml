@@ -1,0 +1,13 @@
+title: "[Show & Tell]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Show off your Argus matches, spectator camera recordings, custom map navigation graphs, or fun deathmatch moments!
+  - type: textarea
+    id: description
+    attributes:
+      label: What did you make or discover?
+      description: Tell us about the match, screenshot, video, demo tape, or custom nav graph.
+    validations:
+      required: true

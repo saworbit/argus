@@ -71,8 +71,12 @@ quakespasm -game argus +deathmatch 1 +map dm4
 
 ---
 
-## Where to Ask Questions
+## Where to Ask Questions & Connect
 
+- **[GitHub Discussions](https://github.com/saworbit/argus/discussions)**: The best place for general chat, questions, bot behavior discussion, sharing custom map navs, or showing match highlight clips.
+  - [Q&A](https://github.com/saworbit/argus/discussions/categories/q-a): Get help with setups, Quake engines, and commands.
+  - [Ideas](https://github.com/saworbit/argus/discussions/categories/ideas): Propose bot tactics, Easter eggs, and new features.
+  - [Show and tell](https://github.com/saworbit/argus/discussions/categories/show-and-tell): Share demos, screenshots, and custom navigation graphs.
 - **Bug Reports & Glitches**: If you found a bug or unexpected engine crash, open a [Bug Report](https://github.com/saworbit/argus/issues/new?template=bug_report.yml).
-- **Feature & AI Ideas**: Have an idea for a bot tactic or tool? Open a [Feature Request](https://github.com/saworbit/argus/issues/new?template=feature_request.yml).
+- **Feature & AI Ideas**: Want to file a formal enhancement issue? Open a [Feature Request](https://github.com/saworbit/argus/issues/new?template=feature_request.yml).
 - **Map Navigation Requests**: Need help generating navigation for a custom deathmatch map? Open a [Map Support Issue](https://github.com/saworbit/argus/issues/new?template=map_support.yml).
