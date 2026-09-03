@@ -1,4 +1,4 @@
-﻿//! Unattended lab shifts, built to sit idle.
+//! Unattended lab shifts, built to sit idle.
 //!
 //! `argus-mcp soak` runs matches in a loop while nobody watches -
 //! gates every tape against the shipped baseline and writes a
@@ -255,6 +255,7 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
 /// snapshot (never by recompiling - fteqcc is not byte-stable and a
 /// recompile would silently drift the recorded ship MD5).
 pub async fn run_cycle(map: &str) -> Result<(), String> {
+    crate::engine::validate_map(map)?;
     let cfg = Config::load().map_err(|e| format!("{e:?}"))?;
     let stamp = chrono_lite_stamp();
     let snap = cfg.runs.join(format!("cycle_{stamp}_{map}_snapshot"));

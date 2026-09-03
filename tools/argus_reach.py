@@ -85,12 +85,12 @@ def reach_from(start, fwd):
     return len(seen)
 
 
-def audit(mapname):
+def audit(mapname, explicit=False):
     bsp = ROOT / "maps_local" / f"{mapname}.bsp"
     navj = ROOT / "src" / f"argus_nav_{mapname}.qc.json"
     if not bsp.exists() or not navj.exists():
         print(f"{mapname}: skipped (need {bsp.name} and {navj.name})")
-        return True
+        return False if explicit else None
     nodes, walk, free, gated = load_graph(navj)
     fwd_all = [list(n) for n in walk]
     for a, b in free + gated:
@@ -129,13 +129,25 @@ def audit(mapname):
 
 
 def main():
+    if "-h" in sys.argv or "--help" in sys.argv:
+        print(__doc__.strip())
+        sys.exit(0)
+    explicit_maps = bool(sys.argv[1:])
     maps = sys.argv[1:]
     if not maps:
         maps = sorted(p.stem.replace("argus_nav_", "").replace(".qc", "")
                       for p in (ROOT / "src").glob("argus_nav_*.qc.json"))
     ok = True
+    audited = 0
     for m in maps:
-        ok = audit(m) and ok
+        res = audit(m, explicit=explicit_maps)
+        if res is None:
+            continue
+        audited += 1
+        ok = res and ok
+    if audited == 0:
+        print("REACH GATE: verdict FAIL (no maps audited).")
+        sys.exit(1)
     if not ok:
         # exit 1 is a GATE VERDICT for rig scripts and CI, not a
         # crash: the audit ran to completion and the numbers above

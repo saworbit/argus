@@ -12,11 +12,21 @@ async fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Some("soak") => {
-            let opts = argus_mcp::soak::parse_soak_args(args).map_err(|e| anyhow::anyhow!(e))?;
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+                print_soak_help();
+                return Ok(());
+            }
+            let opts = argus_mcp::soak::parse_soak_args(sub_args.into_iter()).map_err(|e| anyhow::anyhow!(e))?;
             argus_mcp::soak::run_soak(opts).await.map_err(|e| anyhow::anyhow!(e))
         }
         Some("cycle") => {
             let map = args.next().ok_or_else(|| anyhow::anyhow!("usage: argus-mcp cycle <map>"))?;
+            if map == "-h" || map == "--help" || map == "help" {
+                println!("usage: argus-mcp cycle <map>\n\nOne guarded learning cycle: learn -> regen -> compile -> probe.");
+                return Ok(());
+            }
+            argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
             argus_mcp::soak::run_cycle(&map).await.map_err(|e| anyhow::anyhow!(e))
         }
         Some("demo") => {
@@ -25,6 +35,10 @@ async fn main() -> anyhow::Result<()> {
             let name = args
                 .next()
                 .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp demo <stem>[:export]"))?;
+            if name == "-h" || name == "--help" || name == "help" {
+                println!("usage: argus-mcp demo <stem>[:export]\n\nParse a harvested .dem (append :export to also write <stem>.tracks.json).");
+                return Ok(());
+            }
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let brief =
                 argus_mcp::demo::demo_brief(&cfg, &name).map_err(|e| anyhow::anyhow!(e))?;
@@ -37,6 +51,11 @@ async fn main() -> anyhow::Result<()> {
             let map = args
                 .next()
                 .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp probelinks <map> [limit] [skip]"))?;
+            if map == "-h" || map == "--help" || map == "help" {
+                println!("usage: argus-mcp probelinks <map> [limit] [skip]\n\nEmpirical link verification: puppet walks navigation graph links.");
+                return Ok(());
+            }
+            argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
             let limit: usize = args.next().and_then(|s| s.parse().ok()).unwrap_or(30);
             let skip: usize = args.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
@@ -51,6 +70,10 @@ async fn main() -> anyhow::Result<()> {
             //   argus-mcp client observe [secs] [host] [port]
             //   argus-mcp client walk <x> <y> <z> [secs] [host] [port]
             let sub = args.next().unwrap_or_else(|| "observe".into());
+            if sub == "-h" || sub == "--help" || sub == "help" {
+                print_client_help();
+                return Ok(());
+            }
             let rest: Vec<String> = args.collect();
             let res = tokio::task::spawn_blocking(move || match sub.as_str() {
                 "observe" => {
@@ -146,7 +169,9 @@ async fn main() -> anyhow::Result<()> {
                     }))
                     .map_err(|e| e.to_string())
                 }
-                other => Err(format!("unknown client subcommand {other:?}")),
+                other => Err(format!(
+                    "unknown client subcommand {other:?}; try: observe, walk, walkrel, impulse"
+                )),
             })
             .await?;
             println!("{}", res.map_err(|e| anyhow::anyhow!(e))?);
@@ -161,6 +186,37 @@ async fn main() -> anyhow::Result<()> {
         }
         None => run_stdio().await,
     }
+}
+
+fn print_soak_help() {
+    println!(
+        "usage: argus-mcp soak [options]\n\
+         \n\
+         Unattended match loop with gated verdicts.\n\
+         \n\
+         Options:\n\
+           --maps <list>      Comma-separated map list (default: dm4,dm2,dm6)\n\
+           --hours <n>        Wall clock cap in hours (default: 4.0, max: 12.0)\n\
+           --matches <n>      Match cap (default: 60, max: 500)\n\
+           --duration <sec>   Seconds per match (default: 185, 60..=600)\n\
+           --skill <0..3>     Bot skill (default: 2)\n\
+           --max-mb <n>       Max bytes written (default: 200)\n\
+           --parallel <1|2>   Run one or two engine workers (default: 1)\n\
+           --learn            Fold learned hotspots into costs.json\n\
+           (Stop early any time by creating runs/soak.stop)"
+    );
+}
+
+fn print_client_help() {
+    println!(
+        "usage: argus-mcp client <subcommand> [args...]\n\
+         \n\
+         Puppet NetQuake client commands:\n\
+           observe [secs] [host] [port]           Observe world and print state\n\
+           walk <x> <y> <z> [secs] [host] [port]  Walk puppet toward target coords\n\
+           walkrel <dx> <dy> [secs]               Walk puppet relative to spawn\n\
+           impulse <n> [secs] [host] [port]       Fire impulse (100=add bot, 210=cam)"
+    );
 }
 
 async fn run_stdio() -> anyhow::Result<()> {
@@ -199,13 +255,19 @@ fn print_help() {
          argus-mcp demo <stem>[:export]\n\
                                 parse a harvested .dem (append :export\n\
                                 to also write <stem>.tracks.json)\n\
+         argus-mcp probelinks <map> [limit] [skip]\n\
+                                empirical link verification: puppet walks\n\
+                                navigation graph links in the real engine\n\
          argus-mcp client observe [secs] [host] [port]\n\
                                 connect as a real NetQuake client and\n\
                                 report the live world (default\n\
                                 127.0.0.1:26000)\n\
          argus-mcp client walk <x> <y> <z> [secs]\n\
                                 puppet walk toward a point; reports\n\
-                                closest approach - the empirical\n\
-                                link-verification primitive\n"
+                                closest approach\n\
+         argus-mcp client walkrel <dx> <dy> [secs]\n\
+                                puppet walk relative to current spawn\n\
+         argus-mcp client impulse <n> [secs]\n\
+                                fire an impulse from puppet client (e.g. 100=bot, 210=cam)\n"
     );
 }
