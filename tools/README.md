@@ -50,7 +50,7 @@ Tape review battery for automated playtest inspections and stuck-bot forensics.
   python tools/argus_review.py --help
   ```
 - **Commands**:
-  - `summary`: Event totals, first goal acquisition, per-bot combat stats, and freeze detection (velocity $< 20\text{ u/s}$ inside $24\text{ u}$ box for $6+\text{ s}$).
+  - `summary`: Event totals, first goal acquisition, per-bot combat stats, and freeze detection (velocity $< 20\text{ u/s}$ within $32\text{ u}$ Euclidean radius for $6+\text{ s}$, aligned with `MatchTape::freezes` in Rust lab parser).
   - `deaths`: Chronological list of deaths with the victim's preceding 14 telemetry samples.
   - `region`: Trace bot trajectories and interleaved events strictly within bounding coordinates.
   - `rides`: Train and lift transition audit, deck crossings, and bridge fall tracking (dm2 geometry).
@@ -103,3 +103,13 @@ Unit test runner validating command-line interfaces, exit codes, and error forma
   ```bash
   python tools/test_tools_cli.py
   ```
+
+---
+
+### 8. `setup_rig.sh`
+Automated Linux test rig environment bootstrap script (Ubuntu/Debian). Builds `fteqcc` from upstream source, fetches LibreQuake free assets, sets up the QuakeSpasm headless harness, and runs a baseline smoke test.
+- **Usage**:
+  ```bash
+  ./tools/setup_rig.sh
+  ```
+- **Requirements**: Supports root or non-root execution via `sudo`.

@@ -100,6 +100,8 @@ local string    s;
 		self = stemp;
 	}
 
+	Argus_HearSound (self.origin, other);
+
 	activator = other;
 	SUB_UseTargets();                               // fire all targets / killtargets
 };
@@ -110,6 +112,8 @@ void(float timeleft) DropQuad =
 	local entity    item;
 
 	item = spawn();
+	item.classname = "item_artifact_super_damage";
+	item.items = IT_QUAD;
 	item.origin = self.origin;
 	
 	item.velocity_z = 300;
@@ -164,6 +168,8 @@ local string    s;
 	bprint (PRINT_LOW, " seconds remaining!\n");
       
 
+	Argus_HearSound (self.origin, other);
+
 	activator = other;
 	SUB_UseTargets();                               // fire all targets / killtargets
 };
@@ -174,6 +180,8 @@ void(float timeleft) DropRing =
 	local entity    item;
 
 	item = spawn();
+	item.classname = "item_artifact_invisibility";
+	item.items = IT_INVISIBILITY;
 	item.origin = self.origin;
 	
 	item.velocity_z = 300;
