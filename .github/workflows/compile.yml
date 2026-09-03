@@ -17,11 +17,11 @@ jobs:
     name: fteqcc compile (id format)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Cache fteqcc
         id: cache-fteqcc
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: fteqw/engine/release/fteqcc
           key: fteqcc-${{ runner.os }}-v1
@@ -50,7 +50,7 @@ jobs:
           ls -l lq1/progs.dat
 
       - name: Upload progs.dat for the smoke job
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: progs
           path: lq1/progs.dat
@@ -59,9 +59,9 @@ jobs:
     name: lab test suite (rust)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Cache cargo
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: |
             ~/.cargo/registry
@@ -78,14 +78,14 @@ jobs:
     needs: quakec
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
         with:
           name: progs
           path: lq1
       - name: Cache LibreQuake data
         id: cache-lq
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: lq-data
           key: libquake-v0.09-beta
