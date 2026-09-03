@@ -10,9 +10,20 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
 args = sys.argv[1:]
+if "-h" in args or "--help" in args:
+    print(__doc__.strip())
+    sys.exit(0)
+
+if len(args) < 3:
+    print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
+    sys.exit(1)
+
 NAV = None
 if args[-1].endswith(".json"):
     NAV = args[-1]; args = args[:-1]
+if len(args) < 3:
+    print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
+    sys.exit(1)
 BSP, LOGA = args[0], args[1]
 LOGB = args[2] if len(args) > 3 else None
 OUT = args[-1]

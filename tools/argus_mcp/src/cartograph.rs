@@ -1868,11 +1868,12 @@ mod tests {
     /// geometry behind the 2026-08-19/20 statue forensics.
     #[test]
     fn dm2_plat_31_flags_the_ledge_in_its_column() {
-        let p = std::path::Path::new("C:/argus/maps_local/dm2.bsp");
+        let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../maps_local/dm2.bsp");
         if !p.exists() {
             return;
         }
-        let bsp = crate::bsp::read_bsp29(p).unwrap();
+        let bsp = crate::bsp::read_bsp29(&p).unwrap();
         let ents = parse_entities(&bsp.entities);
         let items: Vec<AtlasItem> = ents
             .iter()
@@ -2215,12 +2216,14 @@ mod tests {
     /// dm2 neighbour above.
     #[test]
     fn dm3_nav_served_plats_stop_warning_unboardable() {
-        let p = std::path::Path::new("C:/argus/maps_local/dm3.bsp");
-        let jf = std::path::Path::new("C:/argus/src/argus_nav_dm3.qc.json");
+        let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../maps_local/dm3.bsp");
+        let jf = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../src/argus_nav_dm3.qc.json");
         if !p.exists() || !jf.exists() {
             return;
         }
-        let bsp = crate::bsp::read_bsp29(p).unwrap();
+        let bsp = crate::bsp::read_bsp29(&p).unwrap();
         let ents = parse_entities(&bsp.entities);
         let items: Vec<AtlasItem> = ents
             .iter()
@@ -2242,7 +2245,7 @@ mod tests {
                 .any(|p| p.warnings.iter().any(|w| w.contains("cannot walk aboard"))),
             "expected the pre-fix false warning on raw geometry"
         );
-        let g = load_nav_graph_at(jf).expect("dm3 nav graph");
+        let g = load_nav_graph_at(&jf).expect("dm3 nav graph");
         assert!(g.overlay.lift_links >= 1, "dm3 ships lift links");
         let served = analyze_plats(&items, &bsp, Some(&g));
         for pl in &served {

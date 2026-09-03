@@ -73,6 +73,9 @@ jobs:
         # the committed runs/*.log regression tapes run in full
         run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
 
+      - name: Run Python developer CLI tests
+        run: python3 tools/test_tools_cli.py
+
   smoke:
     name: headless stability smoke (LibreQuake)
     needs: quakec

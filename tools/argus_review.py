@@ -196,13 +196,25 @@ def cmd_rides(log):
 
 if __name__ == "__main__":
     cmd = sys.argv[1] if len(sys.argv) > 1 else "help"
-    if cmd == "summary":
-        cmd_summary(sys.argv[2])
-    elif cmd == "deaths":
-        cmd_deaths(sys.argv[2])
+    if cmd in ("-h", "--help", "help"):
+        print(__doc__.strip())
+        sys.exit(0)
+
+    if cmd in ("summary", "deaths", "rides"):
+        if len(sys.argv) < 3:
+            print(f"error: {cmd} requires <log>\n\n{__doc__.strip()}", file=sys.stderr)
+            sys.exit(1)
+        if cmd == "summary":
+            cmd_summary(sys.argv[2])
+        elif cmd == "deaths":
+            cmd_deaths(sys.argv[2])
+        elif cmd == "rides":
+            cmd_rides(sys.argv[2])
     elif cmd == "region":
+        if len(sys.argv) < 8:
+            print(f"error: region requires <log> <bot|all> <x0> <x1> <y0> <y1>\n\n{__doc__.strip()}", file=sys.stderr)
+            sys.exit(1)
         cmd_region(sys.argv[2], sys.argv[3], *map(float, sys.argv[4:8]))
-    elif cmd == "rides":
-        cmd_rides(sys.argv[2])
     else:
-        print(__doc__)
+        print(f"unknown command: {cmd}\n\n{__doc__.strip()}", file=sys.stderr)
+        sys.exit(1)
