@@ -105,10 +105,12 @@ void() ArgusCam_Toggle =
         self.view_ofs = '0 0 22';
         W_SetCurrentAmmo ();
         sprint (self, PRINT_HIGH, "ArgusCam Deactivated: Returned to player physics.\n");
+        centerprint (self, "ArgusCam: AI Spectator Director Inactive");
     }
     else
     {
         ArgusCam_Init (self);
+        centerprint (self, "ArgusCam: AI Spectator Director Active");
     }
 };
 
