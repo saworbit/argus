@@ -1,6 +1,7 @@
 # Argus - Vanilla QuakeC deathmatch bot and telemetry laboratory
 
 [![compile](https://github.com/saworbit/argus/actions/workflows/compile.yml/badge.svg)](https://github.com/saworbit/argus/actions/workflows/compile.yml)
+[![Discussions](https://img.shields.io/badge/GitHub-Discussions-brightgreen?logo=github)](https://github.com/saworbit/argus/discussions)
 [![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](LICENSE)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
@@ -477,8 +478,9 @@ Match briefs also cross-examine themselves: every stall/freeze/hazard hotspot ca
 
 ## Community and contributing
 
-Contributions and feedback are warmly welcome! Whether you are interested in bot AI, map navigation, physics tuning, or telemetry tooling:
+Contributions, discussions, and match feedback are warmly welcome! Whether you are interested in bot AI, map navigation, physics tuning, or telemetry tooling:
 
+- Join our **[GitHub Discussions](https://github.com/saworbit/argus/discussions)** for general chat, Q&A, feature ideas, and match clips.
 - Check out the **[Contributing Guide](CONTRIBUTING.md)** for setup instructions, QuakeC constraints, and engineering guidelines.
 - Review our **[Code of Conduct](CODE_OF_CONDUCT.md)** for community standards.
 - Need help or troubleshooting tips? See **[Support](SUPPORT.md)**.

@@ -1,0 +1,21 @@
+title: "[Q&A]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question about running Argus, configuring Quake source ports, or compiling navigation graphs? Ask away!
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What would you like help with?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context / Environment
+      description: What engine port (QuakeSpasm, Ironwail, vkQuake, Kex rerelease), operating system, or map are you using?
+    validations:
+      required: false

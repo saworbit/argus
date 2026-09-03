@@ -123,6 +123,9 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 
 ## Submitting Pull Requests
 
+> [!TIP]
+> **Brainstorming a new feature or tactic?** Before writing code, feel free to open a thread in [GitHub Discussions (Ideas)](https://github.com/saworbit/argus/discussions/categories/ideas) to discuss the approach and telemetry implications with the community.
+
 1. **Fork and Branch**: Create a feature branch from `main` (e.g. `feature/stair-climbing` or `fix/dm3-lift-wait`).
 2. **Compile & Test**:
    - Ensure QuakeC compiles cleanly with `fteqcc` (producing an id-format output).
