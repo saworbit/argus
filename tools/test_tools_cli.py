@@ -77,6 +77,25 @@ class TestToolsCLI(unittest.TestCase):
         self.assertEqual(fz[0][0], "Bot1")
         self.assertAlmostEqual(fz[0][3], 6.0)
 
+    def test_argus_mcp_cli_subcommands(self):
+        bin_names = ["argus-mcp.exe", "argus-mcp"]
+        mcp_bin = None
+        for profile in ("debug", "release"):
+            for name in bin_names:
+                p = ROOT / "tools" / "argus_mcp" / "target" / profile / name
+                if p.is_file():
+                    mcp_bin = p
+                    break
+            if mcp_bin:
+                break
+        if not mcp_bin:
+            self.skipTest("argus-mcp binary not built")
+
+        for cmd in ("--help", "compile -h", "reach -h", "harvest -h", "analyze -h", "nav -h"):
+            args = cmd.split()
+            res = subprocess.run([str(mcp_bin), *args], capture_output=True, text=True, cwd=str(ROOT))
+            self.assertEqual(res.returncode, 0, f"failed on {cmd}: {res.stderr}")
+
 
 if __name__ == "__main__":
     unittest.main()
