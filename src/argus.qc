@@ -98,8 +98,6 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float  ar_hazhold;             // 1 = ar_hazardyaw is live (0 is a legal yaw)
 .float  ar_moveyaw;             // movement heading (may differ from facing)
 
-.entity ar_claimer;             // on items
-.float  ar_claimtime;           // on items
 .float  ar_itemregion;          // on items: reachability region of
                                 // the nearest nav node (S4)
 .float  ar_regionset;           // on items: region stamped once
@@ -3237,6 +3235,45 @@ void() Argus_DodgeScan =
     }
 };
 
+// body-block clearance (#177): if within 48u of another client
+// and the other is jumping or firing, sidestep first, shoot second
+void() Argus_BodyBlockCheck =
+{
+    local entity cl;
+    local vector to;
+    local float side;
+
+    cl = find (world, classname, "player");
+    while (cl != world)
+    {
+        if (cl != self && cl.health > 0 && !cl.cam_active)
+        {
+            to = self.origin - cl.origin;
+            if (vlen (to) < 48)
+            {
+                // other is jumping or actively firing: clear the line
+                if (!(cl.flags & FL_ONGROUND) || cl.button0 || time < cl.attack_finished)
+                {
+                    side = vectoyaw (to) + 90;
+                    if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
+                    {
+                        side = vectoyaw (to) - 90;
+                        if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
+                            return;
+                    }
+                    self.ar_dodgeyaw = side;
+                    self.ar_dodgetime = time + 0.25;
+                    self.ar_moveyaw = side;
+                    // sidestep first, shoot second: suppress fire while clearing
+                    self.button0 = 0;
+                    return;
+                }
+            }
+        }
+        cl = find (cl, classname, "player");
+    }
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
@@ -3865,9 +3902,40 @@ float(entity it) Argus_GoalOK =
     return FALSE;
 };
 
+// Stand-pad floor targeting (#177): path to clear floor cells for lifts,
+// buttons, and doors rather than brush bounding-box centers
 vector(entity it) Argus_GoalPoint =
 {
-    return (it.absmin + it.absmax) * 0.5;
+    local vector center, floorpt;
+    center = (it.absmin + it.absmax) * 0.5;
+
+    // Items, monsters, and players already have floor-tested origins
+    if (it.flags & (FL_ITEM | FL_MONSTER | FL_CLIENT))
+        return center;
+
+    // For lifts, buttons, and doors: trace down from above the center to find the
+    // actual clear floor cell (stand-pad) rather than the brush center
+    traceline (center + '0 0 16', center - '0 0 256', TRUE, it);
+    if (trace_fraction < 1 && !trace_allsolid)
+    {
+        floorpt = trace_endpos;
+        floorpt_z = floorpt_z + 24; // bot waist height for clean LOS / pathing
+        return floorpt;
+    }
+    return center;
+};
+
+// Pickup claim mutex (#177): high-value DM items
+float(entity it) Argus_IsHighValueItem =
+{
+    local string c;
+    c = it.classname;
+    if (c == "item_artifact_super_damage")          return TRUE; // Quad
+    if (c == "item_artifact_invulnerability")       return TRUE; // Pentagram
+    if (c == "item_health" && it.healamount >= 100) return TRUE; // Megahealth
+    if (c == "item_armorInv" || c == "item_armor2") return TRUE; // Red/Yellow Armor
+    if (c == "item_armor1")                         return TRUE; // Green Armor (100)
+    return FALSE;
 };
 
 // ---- utility and GOAP goal layer ----
@@ -4227,6 +4295,13 @@ void() Argus_PickGoal =
             {
                 // routefailed recently, for anyone: leave it shelved
             }
+            else if (Argus_IsHighValueItem (e)
+                     && e.ar_claimer != world && e.ar_claimer != self
+                     && e.ar_claimer.health > 0 && time < e.ar_claimtime + 3.0)
+            {
+                // pickup claim mutex (#177): another live bot has claimed
+                // this high-value prize; do not compete and oscillate
+            }
             else if (!(e.ar_claimer == self && time < e.ar_claimtime + shelf))
             {
                 gp = Argus_GoalPoint (e);
@@ -4439,6 +4514,13 @@ void() Argus_PickGoal =
     self.ar_node = world;
     self.ar_pending = 0;
     self.ar_mode = 0;
+
+    // pickup claim mutex (#177): reserve high-value prizes
+    if (pick != world && Argus_IsHighValueItem (pick))
+    {
+        pick.ar_claimer = self;
+        pick.ar_claimtime = time;
+    }
 
     // the decision tape (2026-08-27, "why did it choose that"): with
     // console `scratch1 1` (the vanilla float pipe - scratch1-4 are
@@ -4692,6 +4774,10 @@ void() Argus_AI =
     // ---- combat overrides steering when an enemy is engaged ----
     fighting = Argus_Combat ();
 
+    // body-block clearance (#177): if within 48u of another client
+    // and the other is jumping or firing, sidestep first, shoot second
+    Argus_BodyBlockCheck ();
+
     // investigation (v3.41, the second half of the hearing slice):
     // fresh gunfire PULLS an unengaged bot toward it instead of just
     // turning its head. The "getting dumber" feel was traffic
@@ -4894,7 +4980,7 @@ void() Argus_AI =
                                 // target 320u across the void is what
                                 // walked riders off the plank
                                 // whenever the hold did not bite
-                                tp = (nx.absmin + nx.absmax) * 0.5;
+                                tp = Argus_GoalPoint (nx);
                                 tp_z = self.origin_z;
                             }
                             else if (self.ar_enemy == world)
@@ -5076,7 +5162,7 @@ void() Argus_AI =
                             // plat never summons its own ride - the
                             // 17 s statue ON the *34 slab in the
                             // v352 review tape
-                            tp = (nx.absmin + nx.absmax) * 0.5;
+                            tp = Argus_GoalPoint (nx);
                             tp_z = self.origin_z;
                         }
                     }
@@ -5107,7 +5193,7 @@ void() Argus_AI =
                             // blocked, stand still where we are:
                             // stillness fires no touches, and only
                             // the true swept column blocks a seat.
-                            gp = (nx.absmin + nx.absmax) * 0.5;
+                            gp = Argus_GoalPoint (nx);
                             to = self.origin - gp;
                             to_z = 0;
                             if (vlen (to) < 8)
@@ -5148,7 +5234,7 @@ void() Argus_AI =
                     {
                         // seated: walking into the footprint IS
                         // boarding - steer at the slab centre
-                        tp = (nx.absmin + nx.absmax) * 0.5;
+                        tp = Argus_GoalPoint (nx);
                         tp_z = self.origin_z;
                     }
                     to = tp - self.origin;
@@ -5444,7 +5530,7 @@ void() Argus_AI =
             }
             else if (self.ar_doorbtn != world && self.ar_doorbtn.health > 0)
             {
-                gp = (self.ar_doorbtn.absmin + self.ar_doorbtn.absmax) * 0.5;
+                gp = Argus_GoalPoint (self.ar_doorbtn);
                 to = gp - self.origin;
                 to_z = 0;
                 want = vectoyaw (to);
@@ -5469,8 +5555,7 @@ void() Argus_AI =
             }
             else if (self.ar_doorbtn != world)
             {
-                to = (self.ar_doorbtn.absmin + self.ar_doorbtn.absmax) * 0.5
-                     - self.origin;
+                to = Argus_GoalPoint (self.ar_doorbtn) - self.origin;
                 to_z = 0;
                 if (vlen (to) > 40)
                     want = vectoyaw (to);
