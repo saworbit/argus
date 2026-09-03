@@ -1,4 +1,4 @@
-﻿/*  argus.qc - v3: combat. Movement and navigation from v1/v2, plus:
+/*  argus.qc - v3: combat. Movement and navigation from v1/v2, plus:
 
     * bots are classname "player": items, obituaries, frags and doors all
       treat them as players through the stock 1.06 machinery, untouched
@@ -4510,7 +4510,7 @@ void() Argus_PickGoal =
 void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
-    local float want, diff, turn, havetarget, fighting, sproj;
+    local float want, diff, turn, havetarget, fighting, sproj, linkbit;
     local entity oldnode, nx, dr, gn;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
@@ -5210,80 +5210,84 @@ void() Argus_AI =
                 self.ar_hopdoor = 0;
                 if (self.ar_node == world)
                     self.ar_mode = 1;
-                else if (Argus_LinkIsJump (oldnode, self.ar_node))
-                    self.ar_hopjump = 1;
-                else if (Argus_LinkIsSprint (oldnode, self.ar_node))
+                else
                 {
-                    self.ar_hopjump = 2;    // sprint arc: full speed
-                                            // demanded at the lip
-                    self.ar_sprintfrom = oldnode;
-                    Argus_SprintRunup ();   // stage the line (GitHub #4)
-                }
-                else if (Argus_LinkIsRocket (oldnode, self.ar_node))
-                    self.ar_hoprj = 1;
-                else if (Argus_LinkIsLift (oldnode, self.ar_node))
-                {
-                    if (time < self.ar_padcooltime
-                        && vlen (self.origin - self.ar_padcoolpos) < 250)
+                    linkbit = Argus_NavGetLinkBit (oldnode, self.ar_node);
+                    if (oldnode.an_jumpmask & linkbit)
+                        self.ar_hopjump = 1;
+                    else if (oldnode.an_sprintmask & linkbit)
                     {
-                        // pad cooldown (the *34 32 s episode, v367b
-                        // tape): a give-up here moments ago means the
-                        // mover is pinned - Shane camping the deck
-                        // above kept the slab's descent postponed.
-                        // Every re-shop routed back through the same
-                        // gateway lift and chained statues. Shelve
-                        // this goal from the WALK and shop on.
-                        if (Argus_GoalOK (self.ar_goal))
+                        self.ar_hopjump = 2;    // sprint arc: full speed
+                                                // demanded at the lip
+                        self.ar_sprintfrom = oldnode;
+                        Argus_SprintRunup ();   // stage the line (GitHub #4)
+                    }
+                    else if (oldnode.an_rjmask & linkbit)
+                        self.ar_hoprj = 1;
+                    else if (oldnode.an_liftmask & linkbit)
+                    {
+                        if (time < self.ar_padcooltime
+                            && vlen (self.origin - self.ar_padcoolpos) < 250)
                         {
-                            self.ar_goal.ar_claimer = self;
-                            self.ar_goal.ar_claimtime = time;
-                            self.ar_goal.ar_failtime = time;
+                            // pad cooldown (the *34 32 s episode, v367b
+                            // tape): a give-up here moments ago means the
+                            // mover is pinned - Shane camping the deck
+                            // above kept the slab's descent postponed.
+                            // Every re-shop routed back through the same
+                            // gateway lift and chained statues. Shelve
+                            // this goal from the WALK and shop on.
+                            if (Argus_GoalOK (self.ar_goal))
+                            {
+                                self.ar_goal.ar_claimer = self;
+                                self.ar_goal.ar_claimtime = time;
+                                self.ar_goal.ar_failtime = time;
+                            }
+                            self.ar_goal = world;
+                            self.ar_node = world;
+                            self.ar_pending = 0;
+                            self.ar_mode = 0;
+                            Argus_Event ("abandon");
                         }
-                        self.ar_goal = world;
-                        self.ar_node = world;
-                        self.ar_pending = 0;
-                        self.ar_mode = 0;
-                        Argus_Event ("abandon");
-                    }
-                    else
-                    {
-                        self.ar_hoplift = 1;
-                        self.ar_liftstart = time;
-                        self.ar_boarded = 0;
-                        Argus_Event ("lift");
-                    }
-                }
-                else if (Argus_LinkIsSwim (oldnode, self.ar_node))
-                    self.ar_hopswim = 1;
-                else if (Argus_LinkIsTrain (oldnode, self.ar_node))
-                {
-                    if (time < self.ar_padcooltime
-                        && vlen (self.origin - self.ar_padcoolpos) < 250)
-                    {
-                        // same cooldown for train pads (the west-dock
-                        // serial re-queue residual, v363)
-                        if (Argus_GoalOK (self.ar_goal))
+                        else
                         {
-                            self.ar_goal.ar_claimer = self;
-                            self.ar_goal.ar_claimtime = time;
-                            self.ar_goal.ar_failtime = time;
+                            self.ar_hoplift = 1;
+                            self.ar_liftstart = time;
+                            self.ar_boarded = 0;
+                            Argus_Event ("lift");
                         }
-                        self.ar_goal = world;
-                        self.ar_node = world;
-                        self.ar_pending = 0;
-                        self.ar_mode = 0;
-                        Argus_Event ("abandon");
                     }
-                    else
+                    else if (oldnode.an_swimmask & linkbit)
+                        self.ar_hopswim = 1;
+                    else if (oldnode.an_trainmask & linkbit)
                     {
-                        self.ar_hoptrain = 1;
-                        self.ar_liftstart = time;
-                        self.ar_boarded = 0;
-                        Argus_Event ("train");
+                        if (time < self.ar_padcooltime
+                            && vlen (self.origin - self.ar_padcoolpos) < 250)
+                        {
+                            // same cooldown for train pads (the west-dock
+                            // serial re-queue residual, v363)
+                            if (Argus_GoalOK (self.ar_goal))
+                            {
+                                self.ar_goal.ar_claimer = self;
+                                self.ar_goal.ar_claimtime = time;
+                                self.ar_goal.ar_failtime = time;
+                            }
+                            self.ar_goal = world;
+                            self.ar_node = world;
+                            self.ar_pending = 0;
+                            self.ar_mode = 0;
+                            Argus_Event ("abandon");
+                        }
+                        else
+                        {
+                            self.ar_hoptrain = 1;
+                            self.ar_liftstart = time;
+                            self.ar_boarded = 0;
+                            Argus_Event ("train");
+                        }
                     }
+                    else if (oldnode.an_doormask & linkbit)
+                        self.ar_hopdoor = 1;
                 }
-                else if (Argus_LinkIsDoor (oldnode, self.ar_node))
-                    self.ar_hopdoor = 1;
             }
             else if (!self.ar_hopjump && vlen (to) < 112)
             {
@@ -5299,13 +5303,7 @@ void() Argus_AI =
                 // cannot walk to (Shane's correctness list - swim
                 // lips sit inside the 48u z window)
                 if (nx != world
-                    && !Argus_LinkIsJump (self.ar_node, nx)
-                    && !Argus_LinkIsSprint (self.ar_node, nx)
-                    && !Argus_LinkIsRocket (self.ar_node, nx)
-                    && !Argus_LinkIsLift (self.ar_node, nx)
-                    && !Argus_LinkIsSwim (self.ar_node, nx)
-                    && !Argus_LinkIsTrain (self.ar_node, nx)
-                    && !Argus_LinkIsDoor (self.ar_node, nx)
+                    && !Argus_LinkIsTyped (self.ar_node, nx)
                     && fabs (nx.origin_z - self.origin_z) < 48)
                 {
                     if (!Argus_MoveHazard (vectoyaw (nx.origin - self.origin), 48))
