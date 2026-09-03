@@ -4179,13 +4179,14 @@ void() Argus_PickGoal =
     if (rnode != world)
         breg = rnode.an_region;
 
-    e = nextent (world);
+    // Issue #145: fast O(items) traversal along argus_itemchain rather than
+    // scanning the entire 500+ global edict array on every bot think
+    e = argus_itemchain;
     while (e != world)
     {
-        if ((e.flags & FL_ITEM)
-            && (e.solid == SOLID_TRIGGER
-                || (e.solid == SOLID_NOT && e.think == SUB_regen
-                    && e.nextthink > time)))
+        if (e.solid == SOLID_TRIGGER
+            || (e.solid == SOLID_NOT && e.think == SUB_regen
+                && e.nextthink > time))
         {
             // stamp the item's region once, ever (items do not move;
             // one NearestNode scan per item per map)
@@ -4202,7 +4203,7 @@ void() Argus_PickGoal =
             // then the trapped verdict) dies here
             if (e.ar_itemregion != 0 && e.ar_itemregion != breg)
             {
-                e = nextent (e);
+                e = e.ar_nextitem;
                 continue;
             }
             cls = Argus_ItemClass (e);
@@ -4363,7 +4364,7 @@ void() Argus_PickGoal =
                 }
             }
         }
-        e = nextent (e);
+        e = e.ar_nextitem;
     }
 
     // ---- utility over end states, personality-weighted, with the
