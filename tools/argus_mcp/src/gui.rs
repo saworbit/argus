@@ -5,9 +5,10 @@ use crate::bsp::parse_bsp29;
 use crate::cartograph::{atlas_brief, cartograph, list_maps};
 use crate::compile::compile_qc;
 use crate::config::Config;
+use crate::nav_graph::load_nav;
 use crate::navgen::nav_generate;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::collections::HashMap;
 use std::io::{Read, Write};
@@ -289,6 +290,7 @@ fn route(req: &Request) -> Response {
     match (req.method.as_str(), req.path.as_str()) {
         ("GET", "/") => html(PAGE),
         ("GET", "/api/status") => json_ok(&status_payload()),
+        (m, p) if m == "GET" && p.starts_with("/api/nav/") => map_nav_graph(&p["/api/nav/".len()..]),
         (m, p) if m == "GET" && p.starts_with("/api/map/") => map_brief(&p["/api/map/".len()..]),
         (m, p) if m == "GET" && p.starts_with("/api/png/") => map_png(&p["/api/png/".len()..]),
         ("POST", "/api/config") => set_config(&req.body),
@@ -371,6 +373,201 @@ fn map_brief(name: &str) -> Response {
     };
     match cartograph(&cfg, &map) {
         Ok(atlas) => json_ok(&atlas_brief(&atlas)),
+        Err(e) => json_ok(&json!({"ok": false, "error": e})),
+    }
+}
+
+#[derive(Deserialize, Default)]
+struct ProbeJson {
+    #[serde(default)]
+    failed: Vec<[[f32; 3]; 2]>,
+}
+
+#[derive(Deserialize, Default)]
+struct CostsJson {
+    #[serde(default)]
+    cells: Vec<CostCellJson>,
+}
+
+#[derive(Deserialize, Serialize, Clone)]
+struct CostCellJson {
+    kind: String,
+    x: f32,
+    y: f32,
+    z: f32,
+    count: u32,
+    radius: f32,
+    cost: f32,
+}
+
+fn map_nav_graph(name: &str) -> Response {
+    let Some(map) = safe_map_name(name) else {
+        return text(400, "bad map name");
+    };
+    let Ok(cfg) = cfg_read() else {
+        return text(400, "ARGUS_ROOT missing");
+    };
+    match load_nav(&cfg, &map) {
+        Ok(g) => {
+            let probe_path = cfg.src.join(format!("argus_nav_{map}.probe.json"));
+            let probe_data: ProbeJson = std::fs::read_to_string(&probe_path)
+                .ok()
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or_default();
+
+            let cost_path = crate::learn::cost_path(&cfg, &map);
+            let cost_data: CostsJson = std::fs::read_to_string(&cost_path)
+                .ok()
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or_default();
+
+            let atlas = cartograph(&cfg, &map).ok();
+            let mut in_edges: Vec<Vec<serde_json::Value>> = vec![Vec::new(); g.nodes.len()];
+            for (from, edges) in g.adj.iter().enumerate() {
+                for e in edges {
+                    if (e.to as usize) < in_edges.len() {
+                        in_edges[e.to as usize].push(json!({
+                            "from": from,
+                            "kind": e.kind,
+                        }));
+                    }
+                }
+            }
+
+            let mut min_x = f32::MAX;
+            let mut min_y = f32::MAX;
+            let mut min_z = f32::MAX;
+            let mut max_x = f32::MIN;
+            let mut max_y = f32::MIN;
+            let mut max_z = f32::MIN;
+
+            for pos in &g.nodes {
+                min_x = min_x.min(pos[0]);
+                min_y = min_y.min(pos[1]);
+                min_z = min_z.min(pos[2]);
+                max_x = max_x.max(pos[0]);
+                max_y = max_y.max(pos[1]);
+                max_z = max_z.max(pos[2]);
+            }
+
+            let mut all_links = Vec::new();
+            for (from, edges) in g.adj.iter().enumerate() {
+                for e in edges {
+                    all_links.push(json!({
+                        "from": from,
+                        "to": e.to,
+                        "kind": e.kind,
+                    }));
+                }
+            }
+
+            let nodes = g
+                .nodes
+                .iter()
+                .enumerate()
+                .map(|(id, pos)| {
+                    let mut refusals = 0;
+                    for pair in &probe_data.failed {
+                        let d1 = (pair[0][0] - pos[0])
+                            .hypot(pair[0][1] - pos[1])
+                            .hypot(pair[0][2] - pos[2]);
+                        let d2 = (pair[1][0] - pos[0])
+                            .hypot(pair[1][1] - pos[1])
+                            .hypot(pair[1][2] - pos[2]);
+                        if d1 < 32.0 || d2 < 32.0 {
+                            refusals += 1;
+                        }
+                    }
+
+                    let mut cost_mult: f32 = 1.0;
+                    let mut cost_kind: Option<String> = None;
+                    for c in &cost_data.cells {
+                        let d = (c.x - pos[0]).hypot(c.y - pos[1]).hypot(c.z - pos[2]);
+                        if d <= c.radius && c.cost > cost_mult {
+                            cost_mult = c.cost;
+                            cost_kind = Some(c.kind.clone());
+                        }
+                    }
+
+                    let nearby: Vec<String> = atlas
+                        .as_ref()
+                        .map(|a| {
+                            a.control
+                                .iter()
+                                .filter(|c| c.nearest_node == Some(id as u32))
+                                .map(|c| format!("{} ({})", c.classname, c.reach))
+                                .collect()
+                        })
+                        .unwrap_or_default();
+
+                    let out = g.adj[id]
+                        .iter()
+                        .map(|e| {
+                            json!({
+                                "to": e.to,
+                                "kind": e.kind,
+                            })
+                        })
+                        .collect::<Vec<_>>();
+
+                    json!({
+                        "id": id,
+                        "pos": pos,
+                        "band": crate::cartograph::band_label(&map, pos[2]),
+                        "nearby_control": nearby,
+                        "out": out,
+                        "inn": &in_edges[id],
+                        "refusals": refusals,
+                        "cost_mult": cost_mult,
+                        "cost_kind": cost_kind,
+                    })
+                })
+                .collect::<Vec<_>>();
+
+            let refusals_list = probe_data
+                .failed
+                .iter()
+                .map(|pair| {
+                    json!({
+                        "from": pair[0],
+                        "to": pair[1],
+                    })
+                })
+                .collect::<Vec<_>>();
+
+            let hotspots_list = cost_data
+                .cells
+                .iter()
+                .map(|c| {
+                    json!({
+                        "kind": c.kind,
+                        "x": c.x,
+                        "y": c.y,
+                        "z": c.z,
+                        "count": c.count,
+                        "radius": c.radius,
+                        "cost": c.cost,
+                    })
+                })
+                .collect::<Vec<_>>();
+
+            json_ok(&json!({
+                "ok": true,
+                "map": map,
+                "bounds": {
+                    "min_x": min_x,
+                    "min_y": min_y,
+                    "min_z": min_z,
+                    "max_x": max_x,
+                    "max_y": max_y,
+                    "max_z": max_z,
+                },
+                "nodes": nodes,
+                "links": all_links,
+                "refusals": refusals_list,
+                "hotspots": hotspots_list,
+            }))
+        }
         Err(e) => json_ok(&json!({"ok": false, "error": e})),
     }
 }
@@ -646,5 +843,51 @@ mod tests {
         stop.store(true, Ordering::Relaxed);
         let port = handle.join().unwrap().unwrap();
         assert!(port > 0);
+    }
+
+    #[test]
+    fn nav_route_for_dm4() {
+        let req = Request {
+            method: "GET".into(),
+            path: "/api/nav/dm4".into(),
+            query: HashMap::new(),
+            body: Vec::new(),
+        };
+        let r = route(&req);
+        assert_eq!(r.status, 200);
+        let val: serde_json::Value = serde_json::from_slice(&r.body).unwrap();
+        assert_eq!(val["ok"], true);
+        assert_eq!(val["map"], "dm4");
+        assert!(val["nodes"].as_array().unwrap().len() > 100);
+        assert!(val["links"].as_array().unwrap().len() > 100);
+        assert!(val["bounds"]["min_x"].is_number());
+    }
+
+    #[test]
+    fn nav_route_bad_map_name() {
+        let req = Request {
+            method: "GET".into(),
+            path: "/api/nav/../bad".into(),
+            query: HashMap::new(),
+            body: Vec::new(),
+        };
+        let r = route(&req);
+        assert_eq!(r.status, 400);
+    }
+
+    #[test]
+    fn gui_page_has_interactive_canvas_and_inspector() {
+        let req = Request {
+            method: "GET".into(),
+            path: "/".into(),
+            query: HashMap::new(),
+            body: Vec::new(),
+        };
+        let r = route(&req);
+        let page = String::from_utf8_lossy(&r.body);
+        assert!(page.contains("id=\"navcanvas\""));
+        assert!(page.contains("id=\"inspector-card\""));
+        assert!(page.contains("id=\"tog-hotspots\""));
+        assert!(page.contains("id=\"tog-refusals\""));
     }
 }
