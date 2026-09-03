@@ -261,6 +261,29 @@ impl MatchCtrl {
         Ok(self.status())
     }
 
+    pub async fn stop_matching(
+        &mut self,
+        run_name: Option<&str>,
+        pid: Option<u32>,
+        timeout: Duration,
+    ) -> Result<MatchStatus, String> {
+        if let Some(live) = &self.live {
+            if let Some(r) = run_name {
+                if live.run_name != r {
+                    return Ok(self.status());
+                }
+            }
+            if let Some(p) = pid {
+                if live.child.id() != p {
+                    return Ok(self.status());
+                }
+            }
+        } else {
+            return Ok(self.status());
+        }
+        self.stop(timeout).await
+    }
+
     pub fn log_text(&self) -> Option<String> {
         if let Some(live) = &self.live {
             let q = live.run_dir.join("qconsole.log");
@@ -389,6 +412,24 @@ impl MatchCtrl {
     async fn kill_live(&mut self) {
         if let Some(mut live) = self.live.take() {
             let _ = live.child.kill().await;
+            let harvested = harvest(&live);
+            let elapsed = live.started.elapsed().as_secs();
+            let mut snap = MatchStatus {
+                running: false,
+                run_name: Some(live.run_name.clone()),
+                map: Some(live.map.clone()),
+                pid: None,
+                elapsed_sec: Some(elapsed),
+                remaining_sec: None,
+                log_path: Some(harvested),
+                recent_lines: Vec::new(),
+                next_line: 0,
+                exit_code: live.last_exit.or(Some(1)),
+                live_headline: None,
+                next_steps: None,
+            };
+            decorate_status(&mut snap);
+            self.last = Some(snap);
         }
     }
 
@@ -405,11 +446,7 @@ fn format_match_fail(log_path: &str, text: &str, why: &str) -> String {
     } else {
         format!(" tail: {}", tail.join(" | "))
     };
-    format!(
-        "match produced no ARGLOG ({} is {} bytes). {why}.{tail_s}",
-        log_path,
-        text.len()
-    )
+    format!("{why}; tape at {log_path}.{tail_s}")
 }
 
 fn read_log_retry(path: &str, attempts: u32) -> String {
@@ -425,15 +462,11 @@ fn read_log_retry(path: &str, attempts: u32) -> String {
 }
 
 fn decorate_status(st: &mut MatchStatus) {
-    let Some(p) = st.log_path.as_deref() else {
+    let Some(path_s) = &st.log_path else {
         return;
     };
-    let path = PathBuf::from(p);
-    let mut text = if path.is_file() {
-        std::fs::read_to_string(&path).ok()
-    } else {
-        None
-    };
+    let path = PathBuf::from(path_s);
+    let mut text = std::fs::read_to_string(&path).ok();
     if text.as_ref().map(|t| t.trim().is_empty()).unwrap_or(true) {
         if let (Some(parent), Some(stem)) = (path.parent(), path.file_stem()) {
             let q = parent.join(stem).join("qconsole.log");
@@ -469,7 +502,34 @@ fn harvest(live: &LiveMatch) -> String {
             }
         }
     }
-    let _ = std::fs::write(&live.harvested, &body);
+
+    let existing_has_tape = if live.harvested.is_file() {
+        std::fs::read_to_string(&live.harvested)
+            .map(|t| log_has_tape(&t))
+            .unwrap_or(false)
+    } else {
+        false
+    };
+
+    let new_has_tape = log_has_tape(&body);
+
+    // If an existing log already has a valid tape and the new body does not,
+    // do not clobber the valid tape! Preserve the existing good tape.
+    if existing_has_tape && !new_has_tape {
+        if !body.trim().is_empty() {
+            let fail_path = live.run_dir.join("failed_harvest.log");
+            let _ = std::fs::write(&fail_path, &body);
+        }
+        return live.harvested.display().to_string();
+    }
+
+    // Do not write an empty body if the harvested file doesn't need to be created empty
+    if !body.trim().is_empty() || !live.harvested.exists() {
+        if let Err(e) = std::fs::write(&live.harvested, &body) {
+            eprintln!("failed to write harvest log {}: {e}", live.harvested.display());
+        }
+    }
+
     live.harvested.display().to_string()
 }
 
@@ -577,5 +637,113 @@ pub fn unharvested_session(cfg: &Config) -> Option<String> {
             "un-harvested play session in the launch dirs: {}. Run `python tools/harvest_session.py --tag vNNN` FIRST (a new engine launch truncates qconsole.log), or delete the leftovers if they are worthless.",
             hits.join(", ")
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn harvest_preserves_existing_tape_when_new_body_empty_or_tapeless() {
+        let tmp = std::env::temp_dir().join(format!("argus-harvest-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(&tmp).unwrap();
+
+        let harvested_path = tmp.join("exp_dm4.log");
+        let valid_tape = "Quake 1.09\nARGLOG 100 0.1 1.0\nARGEVT 1.0 \"bot1 goal quad\"\nARGEVT 20.0 match_end\n";
+        std::fs::write(&harvested_path, valid_tape).unwrap();
+
+        let run_dir = tmp.join("exp_dm4");
+        std::fs::create_dir_all(&run_dir).unwrap();
+        std::fs::write(run_dir.join("qconsole.log"), "Engine crashed or empty output\n").unwrap();
+
+        let live = LiveMatch {
+            child: EngineChild::mock(),
+            run_name: "exp_dm4".into(),
+            map: "dm4".into(),
+            run_dir: run_dir.clone(),
+            harvested: harvested_path.clone(),
+            started: Instant::now(),
+            duration: None,
+            stdout: Arc::new(Mutex::new(String::new())),
+            last_exit: None,
+        };
+
+        let result_path = harvest(&live);
+        assert_eq!(result_path, harvested_path.display().to_string());
+
+        // Verify the valid tape was preserved intact
+        let content = std::fs::read_to_string(&harvested_path).unwrap();
+        assert_eq!(content, valid_tape, "harvest must NOT overwrite valid ARGLOG tape with empty/failed output");
+
+        // Verify failure was saved aside
+        let fail_path = run_dir.join("failed_harvest.log");
+        assert!(fail_path.is_file(), "failed output should be saved to failed_harvest.log");
+
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
+    #[tokio::test]
+    async fn stop_matching_filters_by_run_name_and_pid() {
+        let tmp = std::env::temp_dir().join(format!("argus-stop-match-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(tmp.join("exp_dm4")).unwrap();
+
+        let run_dir = tmp.join("exp_dm4");
+        let harvested = tmp.join("exp_dm4.log");
+
+        #[cfg(windows)]
+        let child = {
+            let mut cmd = std::process::Command::new("powershell");
+            cmd.args(["-NoProfile", "-Command", "Start-Sleep -Seconds 10"]);
+            let child = cmd.spawn().expect("spawn powershell");
+            let pid = child.id();
+            const SYNCHRONIZE: u32 = 0x00100000;
+            let handle = unsafe {
+                windows_sys::Win32::System::Threading::OpenProcess(
+                    windows_sys::Win32::System::Threading::PROCESS_TERMINATE
+                        | windows_sys::Win32::System::Threading::PROCESS_QUERY_LIMITED_INFORMATION
+                        | SYNCHRONIZE,
+                    0,
+                    pid,
+                )
+            };
+            EngineChild::from_raw(handle, pid)
+        };
+
+        #[cfg(not(windows))]
+        let child = EngineChild::mock();
+
+        let live_pid = child.id();
+        let mut ctrl = MatchCtrl::default();
+        ctrl.live = Some(LiveMatch {
+            child,
+            run_name: "exp_dm4".into(),
+            map: "dm4".into(),
+            run_dir,
+            harvested,
+            started: Instant::now(),
+            duration: None,
+            stdout: Arc::new(Mutex::new(String::new())),
+            last_exit: None,
+        });
+
+        // Mismatched run_name does not stop
+        let st1 = ctrl.stop_matching(Some("exp_other"), None, Duration::from_millis(50)).await.unwrap();
+        assert!(st1.running, "mismatched run_name must not stop live match");
+        assert!(ctrl.live.is_some());
+
+        // Mismatched pid does not stop
+        let st2 = ctrl.stop_matching(None, Some(live_pid + 1000), Duration::from_millis(50)).await.unwrap();
+        assert!(st2.running, "mismatched pid must not stop live match");
+        assert!(ctrl.live.is_some());
+
+        // Matching run_name stops the match
+        let st3 = ctrl.stop_matching(Some("exp_dm4"), None, Duration::from_millis(500)).await.unwrap();
+        assert!(!st3.running, "matching run_name must stop the match");
+        assert!(ctrl.live.is_none());
+
+        let _ = std::fs::remove_dir_all(&tmp);
     }
 }

@@ -134,6 +134,7 @@ impl Drop for EngineChild {
         {
             let Inner::Win { handle } = &mut self.inner;
             if !handle.0.is_null() {
+                let _ = win_kill(handle.0);
                 unsafe {
                     windows_sys::Win32::Foundation::CloseHandle(handle.0);
                 }
@@ -314,6 +315,9 @@ fn spawn_windows(
 
 #[cfg(windows)]
 fn win_try_wait(handle: windows_sys::Win32::Foundation::HANDLE) -> Result<Option<i32>, String> {
+    if handle.is_null() {
+        return Ok(Some(0));
+    }
     use windows_sys::Win32::Foundation::{WAIT_OBJECT_0, WAIT_TIMEOUT};
     use windows_sys::Win32::System::Threading::{GetExitCodeProcess, WaitForSingleObject};
     const STILL_ACTIVE: u32 = 259;
@@ -434,6 +438,9 @@ fn key_rec(ch: u16, down: i32) -> windows_sys::Win32::System::Console::INPUT_REC
 
 #[cfg(windows)]
 fn win_kill(handle: windows_sys::Win32::Foundation::HANDLE) -> Result<(), String> {
+    if handle.is_null() {
+        return Ok(());
+    }
     let ok = unsafe { windows_sys::Win32::System::Threading::TerminateProcess(handle, 1) };
     if ok == 0 {
         return Err(format!(
@@ -442,6 +449,49 @@ fn win_kill(handle: windows_sys::Win32::Foundation::HANDLE) -> Result<(), String
         ));
     }
     Ok(())
+}
+
+#[cfg(test)]
+impl EngineChild {
+    pub(crate) fn mock() -> Self {
+        #[cfg(windows)]
+        {
+            Self {
+                inner: Inner::Win {
+                    handle: SendHandle(std::ptr::null_mut()),
+                },
+                pid: 0,
+                stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+            }
+        }
+        #[cfg(not(windows))]
+        {
+            let child = tokio::process::Command::new("sleep")
+                .arg("10")
+                .kill_on_drop(true)
+                .spawn()
+                .unwrap();
+            Self {
+                inner: Inner::Tokio {
+                    child,
+                    stdin: None,
+                },
+                pid: 0,
+                stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    pub(crate) fn from_raw(handle: windows_sys::Win32::Foundation::HANDLE, pid: u32) -> Self {
+        Self {
+            inner: Inner::Win {
+                handle: SendHandle(handle),
+            },
+            pid,
+            stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -455,6 +505,54 @@ mod tests {
         assert!(validate_map("").is_err());
         assert!(validate_map("dm4").is_ok());
         assert!(validate_map("lqdm2").is_ok());
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn engine_child_drop_terminates_process() {
+        let mut cmd = std::process::Command::new("powershell");
+        cmd.args(["-NoProfile", "-Command", "Start-Sleep -Seconds 10"]);
+        let child = cmd.spawn().expect("spawn powershell");
+        let pid = child.id();
+
+        let handle = unsafe {
+            windows_sys::Win32::System::Threading::OpenProcess(
+                windows_sys::Win32::System::Threading::PROCESS_TERMINATE
+                    | windows_sys::Win32::System::Threading::PROCESS_QUERY_LIMITED_INFORMATION,
+                0,
+                pid,
+            )
+        };
+        assert!(!handle.is_null());
+
+        // Wrap into EngineChild and drop it
+        {
+            let _ec = EngineChild {
+                inner: Inner::Win {
+                    handle: SendHandle(handle),
+                },
+                pid,
+                stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+            };
+            // _ec drops here, which must invoke win_kill and CloseHandle
+        }
+
+        std::thread::sleep(std::time::Duration::from_millis(200));
+        let check_handle = unsafe {
+            windows_sys::Win32::System::Threading::OpenProcess(
+                windows_sys::Win32::System::Threading::PROCESS_QUERY_LIMITED_INFORMATION,
+                0,
+                pid,
+            )
+        };
+        if !check_handle.is_null() {
+            let mut exit_code: u32 = 0;
+            unsafe {
+                windows_sys::Win32::System::Threading::GetExitCodeProcess(check_handle, &mut exit_code);
+                windows_sys::Win32::Foundation::CloseHandle(check_handle);
+            }
+            assert_ne!(exit_code, 259, "process should have been terminated on drop");
+        }
     }
 
     /// The live-tune inject, exercised for real: spawn the hidden

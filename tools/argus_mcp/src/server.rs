@@ -1,4 +1,4 @@
-﻿use crate::analyze::analyze_match;
+use crate::analyze::analyze_match;
 use crate::cartograph::{
     atlas_brief, cartograph as map_cartograph, inspect_entities, list_maps as map_list,
 };
@@ -807,10 +807,12 @@ impl Argus {
             Ok(st) => {
                 if let Some(d) = args.duration_sec {
                     let matches = self.matches.clone();
+                    let run_name = st.run_name.clone();
+                    let pid = st.pid;
                     tokio::spawn(async move {
                         tokio::time::sleep(Duration::from_secs(d as u64)).await;
                         let mut g = matches.lock().await;
-                        let _ = g.stop(Duration::from_secs(5)).await;
+                        let _ = g.stop_matching(run_name.as_deref(), pid, Duration::from_secs(5)).await;
                     });
                 }
                 json_ok(&st)
