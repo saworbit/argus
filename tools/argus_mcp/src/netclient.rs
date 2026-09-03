@@ -1000,7 +1000,13 @@ pub async fn probe_links(
         .map_err(|e| format!("engine start: {e}"))?;
     tokio::time::sleep(Duration::from_secs(4)).await;
 
-    let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+    let mut client = match NetClient::connect("127.0.0.1", 26000, "labprobe") {
+        Ok(c) => c,
+        Err(e) => {
+            let _ = ctrl.stop(Duration::from_secs(3)).await;
+            return Err(e);
+        }
+    };
     client.pump(Duration::from_secs(3));
     if client.world.signon < 3 {
         let _ = ctrl.stop(Duration::from_secs(3)).await;
@@ -1023,12 +1029,15 @@ pub async fn probe_links(
         // (semicolons parse in the console; rapid separate attaches
         // dropped every inject after the first link's batch and the
         // puppet kept landing on the stale coordinates)
-        ctrl.command(&format!(
+        if let Err(e) = ctrl.command(&format!(
             "scratch2 {}; scratch3 {}; scratch4 {}",
             from[0], from[1], from[2]
         ))
         .await
-        .map_err(|e| format!("inject: {e}"))?;
+        {
+            let _ = ctrl.stop(Duration::from_secs(3)).await;
+            return Err(format!("inject: {e}"));
+        }
         tokio::time::sleep(Duration::from_millis(200)).await;
         let mut landed = false;
         for _ in 0..4 {

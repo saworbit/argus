@@ -128,6 +128,13 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
         opts.max_mb, stop_file.display()
     ));
 
+    let (cancel_tx, cancel_rx) = tokio::sync::watch::channel(false);
+    tokio::spawn(async move {
+        if tokio::signal::ctrl_c().await.is_ok() {
+            let _ = cancel_tx.send(true);
+        }
+    });
+
     let opts = std::sync::Arc::new(opts);
     let cfg = std::sync::Arc::new(cfg);
     let stamp2 = stamp.clone();
@@ -138,6 +145,7 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
         let cfg = cfg.clone();
         let stop_file = stop_file.clone();
         let stamp = stamp2.clone();
+        let mut cancel_rx = cancel_rx.clone();
         workers.push(tokio::spawn(async move {
             let mut ctrl = if wid == 0 {
                 MatchCtrl::default()
@@ -148,7 +156,11 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
                 // claim the next match under the caps, or stop
                 let (n, map) = {
                     let mut s = shared.lock().await;
-                    if s.stopped.is_some() {
+                    if *cancel_rx.borrow() || s.stopped.is_some() {
+                        if *cancel_rx.borrow() && s.stopped.is_none() {
+                            s.w("\nCtrl+C received, stopping soak.");
+                            s.stopped = Some("Ctrl+C received".to_string());
+                        }
                         break;
                     }
                     let reason = if s.n >= opts.matches {
@@ -172,9 +184,18 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
                     (s.n, opts.maps[(s.n as usize - 1) % opts.maps.len()].clone())
                 };
                 let run_name = format!("soak_{stamp}_{n:03}_{map}");
-                let res = ctrl
-                    .run(&cfg, &map, opts.duration_sec, Some(&run_name), None, Some(opts.skill))
-                    .await;
+                let res = tokio::select! {
+                    r = ctrl.run(&cfg, &map, opts.duration_sec, Some(&run_name), None, Some(opts.skill)) => r,
+                    _ = cancel_rx.changed() => {
+                        let mut s = shared.lock().await;
+                        if s.stopped.is_none() {
+                            s.w("\nCtrl+C received, stopping live match.");
+                            s.stopped = Some("Ctrl+C received".to_string());
+                        }
+                        ctrl.shutdown().await;
+                        break;
+                    }
+                };
                 let mut s = shared.lock().await;
                 match res {
                     Ok(r) => {
@@ -325,7 +346,15 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
     // 5. probe and judge
     let run_name = format!("cycle_{stamp}_{map}");
     let mut ctrl = MatchCtrl::default();
-    let probe = ctrl.run(&cfg, map, 185, Some(&run_name), None, Some(2)).await;
+    let probe = tokio::select! {
+        res = ctrl.run(&cfg, map, 185, Some(&run_name), None, Some(2)) => res,
+        _ = tokio::signal::ctrl_c() => {
+            println!("Ctrl+C received, shutting down engine and restoring snapshot...");
+            ctrl.shutdown().await;
+            restore(&saved);
+            return Err("interrupted by Ctrl+C, snapshot restored".into());
+        }
+    };
     ctrl.shutdown().await;
     let probe = match probe {
         Ok(p) => p,

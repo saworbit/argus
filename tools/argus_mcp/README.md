@@ -576,12 +576,20 @@ stdio pipe under `CREATE_NEW_CONSOLE`, so matches could die at
 `WriteConsoleInputW` (stdio pipes are saved and restored so MCP JSON-RPC
 is not stolen). If inject fails, pass `skill` on `experiment` /
 `match_start`. `match_stop` sends `quit` the same way, then kills.
+Engine children are bound to an explicit process handle and terminated
+on drop or Ctrl+C signal to prevent orphan engine processes.
 
 A match that produces no `ARGLOG` / `ARGEVT` is an error with a
-diagnosis and log tail, not `ok: true` on a spawn-crash log. The
-runner fails fast if the child dies before the first tape line.
-`start` reaps a dead child so a zombie slot does not block the next
-run. `experiment` stops a leftover live match first.
+diagnosis and log tail, not `ok: true` on a spawn-crash log. Harvest
+safeguards preserve any existing valid `ARGLOG` tape if a subsequent
+match aborts or crashes without writing a tape. The runner fails fast
+if the child dies before the first tape line. `start` reaps a dead child
+so a zombie slot does not block the next run, and match timers verify
+match identity (`run_name` / `pid`) before stopping to avoid killing
+newer matches. `compile_qc` unlinks old `progs.dat`, bounds `fteqcc`
+execution to a 90s timeout with process tree termination, and verifies
+the compilation timestamp before allowing file installation. `experiment`
+stops a leftover live match first.
 
 **Not live (edit QC, then test):**
 

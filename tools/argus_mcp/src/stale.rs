@@ -101,12 +101,7 @@ pub fn detect_and_swap() -> Option<String> {
         if staged_m <= live_m {
             return None;
         }
-        // newer staged build: rename the running image aside and put
-        // the staged bytes on the served path
-        let prev = exe.with_extension("prev.exe");
-        let _ = std::fs::remove_file(&prev);
-        let swapped = std::fs::rename(&exe, &prev).is_ok()
-            && std::fs::copy(&staged, &exe).is_ok();
+        let swapped = safe_swap(&exe, &staged);
         Some(if swapped {
             "STALE BINARY: this session still runs the previous build (its briefs lack the newest lab features). The staged build has been swapped into place automatically - restart the MCP client to arm it.".to_string()
         } else {
@@ -114,6 +109,39 @@ pub fn detect_and_swap() -> Option<String> {
         })
     })
     .clone()
+}
+
+/// Atomically swap the staged binary into the live exe path.
+/// Uses a temporary sibling file and rollback so a failed copy/rename
+/// never leaves the live executable deleted or missing.
+pub fn safe_swap(exe: &Path, staged: &Path) -> bool {
+    let tmp = exe.with_extension("staged_tmp.exe");
+    let prev = exe.with_extension("prev.exe");
+
+    let _ = std::fs::remove_file(&tmp);
+    let _ = std::fs::remove_file(&prev);
+
+    // Step 1: Copy staged bytes to a temporary sibling next to the live exe.
+    // If copy fails (e.g. disk full, permission denied), live exe remains untouched.
+    if std::fs::copy(staged, &tmp).is_err() {
+        return false;
+    }
+
+    // Step 2: Rename running exe to prev.
+    if std::fs::rename(exe, &prev).is_err() {
+        let _ = std::fs::remove_file(&tmp);
+        return false;
+    }
+
+    // Step 3: Rename temporary sibling to exe.
+    if std::fs::rename(&tmp, exe).is_err() {
+        // Rollback: restore prev to exe and clean up tmp
+        let _ = std::fs::rename(&prev, exe);
+        let _ = std::fs::remove_file(&tmp);
+        return false;
+    }
+
+    true
 }
 
 /// The cached banner for response stamping.
@@ -175,6 +203,29 @@ mod tests {
         );
         let found = staged_twin_for(&exe, Some(&tmp)).expect("root twin");
         assert_eq!(found, staged);
+        let _ = fs::remove_dir_all(&tmp);
+    }
+
+    #[test]
+    fn safe_swap_updates_exe_and_preserves_on_failure() {
+        let tmp = std::env::temp_dir().join(format!("argus-safe-swap-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&tmp);
+        fs::create_dir_all(&tmp).unwrap();
+
+        let exe = tmp.join("argus-mcp.exe");
+        let staged = tmp.join("staged-mcp.exe");
+        fs::write(&exe, b"old_binary").unwrap();
+        fs::write(&staged, b"new_binary").unwrap();
+
+        // 1. Successful swap
+        assert!(safe_swap(&exe, &staged));
+        assert_eq!(fs::read(&exe).unwrap(), b"new_binary");
+
+        // 2. Staged does not exist -> swap fails, live exe remains intact
+        let missing_staged = tmp.join("does_not_exist.exe");
+        assert!(!safe_swap(&exe, &missing_staged));
+        assert_eq!(fs::read(&exe).unwrap(), b"new_binary");
+
         let _ = fs::remove_dir_all(&tmp);
     }
 }
