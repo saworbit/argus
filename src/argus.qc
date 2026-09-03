@@ -2618,6 +2618,55 @@ void(vector spos, entity who) Argus_HearSound =
     }
 };
 
+// ============================================================================
+// CO-OP ALLY SAFETY & THREAT SCANNING (#173)
+// ============================================================================
+
+float(entity shooter, entity victim, entity ally) Argus_SplashSafe =
+{
+    local float d;
+    if (ally == world)
+        return TRUE;
+    if (ally.health <= 0)
+        return TRUE;
+    if (shooter.weapon != IT_ROCKET_LAUNCHER && shooter.weapon != IT_GRENADE_LAUNCHER)
+        return TRUE;
+    // Splash too close to ally
+    d = vlen (victim.origin - ally.origin);
+    if (d < 160)
+        return FALSE;
+    // Muzzle blast too close to ally
+    d = vlen (shooter.origin - ally.origin);
+    if (d < 128)
+        return FALSE;
+    return TRUE;
+};
+
+entity() Argus_CoopFindThreat =
+{
+    local entity m, best;
+    local float d, bd;
+
+    best = world;
+    bd = 99999;
+
+    m = findradius (self.origin, 1500);
+    while (m != world)
+    {
+        if ((m.flags & FL_MONSTER) && m.health > 0 && m.takedamage == DAMAGE_AIM)
+        {
+            d = vlen (m.origin - self.origin);
+            if (d < bd && Argus_CanSee (m))
+            {
+                best = m;
+                bd = d;
+            }
+        }
+        m = m.chain;
+    }
+    return best;
+};
+
 void() Argus_Perceive =
 {
     local entity b, best;
@@ -2643,6 +2692,29 @@ void() Argus_Perceive =
             self.ar_enemy = world;
         if (self.ar_enemy != world)
             return;
+    }
+
+    if (coop > 0)
+    {
+        best = Argus_CoopFindThreat ();
+        if (best != world)
+        {
+            self.ar_enemy = best;
+            self.ar_seen = time;
+            self.ar_lastseen = best.origin;
+            self.ar_pursuing = 0;
+            self.ar_prefired = 0;
+            self.ar_react = time + self.ar_reactbase + random () * 0.25;
+            self.ar_track = time;
+            self.ar_strafedir = 1;
+            if (random () < 0.5)
+                self.ar_strafedir = -1;
+            self.ar_strafetime = time;
+            dprint ("ARGEVT ");
+            dprint (self.netname);
+            dprint (" engage monster\n");
+        }
+        return;
     }
 
     // acquire the best visible player, bots and humans alike (both
@@ -3866,6 +3938,28 @@ float() Argus_Combat =
     // nothing else (the flashes read as a powerup glow from outside).
     if (time > self.ar_react && diff < 12 && diff > -12)
     {
+        if (coop > 0)
+        {
+            if (!Argus_SplashSafe (self, e, self.ar_teammate))
+            {
+                // Ally near target: switch to hitscan/nails or hold fire
+                if (self.items & IT_LIGHTNING && self.ammo_cells >= 1)
+                    self.weapon = IT_LIGHTNING;
+                else if (self.items & IT_SUPER_SHOTGUN && self.ammo_shells >= 2)
+                    self.weapon = IT_SUPER_SHOTGUN;
+                else if (self.items & IT_SHOTGUN && self.ammo_shells >= 1)
+                    self.weapon = IT_SHOTGUN;
+                else if (self.items & IT_SUPER_NAILGUN && self.ammo_nails >= 2)
+                    self.weapon = IT_SUPER_NAILGUN;
+                else if (self.items & IT_NAILGUN && self.ammo_nails >= 1)
+                    self.weapon = IT_NAILGUN;
+                else
+                {
+                    self.button0 = 0;
+                    return TRUE;
+                }
+            }
+        }
         self.v_angle = vectoangles (aimpt - (self.origin + '0 0 22'));
         self.v_angle_x = 0 - self.v_angle_x;    // QC pitch convention
         self.v_angle_y = self.angles_y;
@@ -4590,6 +4684,361 @@ void() Argus_PickGoal =
     }
 };
 
+// ============================================================================
+// CO-OP 4-SLOT LIFO GOAL STACK & ESCORT ANNULUS (#173)
+// ============================================================================
+
+float() Argus_GoalTopKind =
+{
+    if (self.ar_goal_count == 1) return self.ar_goal_kind0;
+    if (self.ar_goal_count == 2) return self.ar_goal_kind1;
+    if (self.ar_goal_count == 3) return self.ar_goal_kind2;
+    if (self.ar_goal_count == 4) return self.ar_goal_kind3;
+    return GOAL_NONE;
+};
+
+entity() Argus_GoalTopSubj =
+{
+    if (self.ar_goal_count == 1) return self.ar_goal_subj0;
+    if (self.ar_goal_count == 2) return self.ar_goal_subj1;
+    if (self.ar_goal_count == 3) return self.ar_goal_subj2;
+    if (self.ar_goal_count == 4) return self.ar_goal_subj3;
+    return world;
+};
+
+vector() Argus_GoalTopAnchor =
+{
+    if (self.ar_goal_count == 1) return self.ar_goal_anch0;
+    if (self.ar_goal_count == 2) return self.ar_goal_anch1;
+    if (self.ar_goal_count == 3) return self.ar_goal_anch2;
+    if (self.ar_goal_count == 4) return self.ar_goal_anch3;
+    return '0 0 0';
+};
+
+float() Argus_GoalTopPrio =
+{
+    if (self.ar_goal_count == 1) return self.ar_goal_prio0;
+    if (self.ar_goal_count == 2) return self.ar_goal_prio1;
+    if (self.ar_goal_count == 3) return self.ar_goal_prio2;
+    if (self.ar_goal_count == 4) return self.ar_goal_prio3;
+    return 0;
+};
+
+void() Argus_GoalPop =
+{
+    if (self.ar_goal_count > 0)
+    {
+        self.ar_goal_count = self.ar_goal_count - 1;
+        dprint ("ARGEVT ");
+        dprint (self.netname);
+        dprint (" goal_pop\n");
+    }
+};
+
+void(float gkind, entity gsubj, vector ganch, float gprio, float gtimeout, float gflags) Argus_GoalPush =
+{
+    // If top goal matches kind and subject, refresh timeout and anchor
+    if (self.ar_goal_count > 0)
+    {
+        if (Argus_GoalTopKind () == gkind && Argus_GoalTopSubj () == gsubj)
+        {
+            if (self.ar_goal_count == 1) { self.ar_goal_time0 = gtimeout; self.ar_goal_anch0 = ganch; }
+            else if (self.ar_goal_count == 2) { self.ar_goal_time1 = gtimeout; self.ar_goal_anch1 = ganch; }
+            else if (self.ar_goal_count == 3) { self.ar_goal_time2 = gtimeout; self.ar_goal_anch2 = ganch; }
+            else if (self.ar_goal_count == 4) { self.ar_goal_time3 = gtimeout; self.ar_goal_anch3 = ganch; }
+            return;
+        }
+    }
+
+    // Capacity limit: shift bottom item out if full
+    if (self.ar_goal_count >= 4)
+    {
+        self.ar_goal_kind0 = self.ar_goal_kind1;
+        self.ar_goal_subj0 = self.ar_goal_subj1;
+        self.ar_goal_anch0 = self.ar_goal_anch1;
+        self.ar_goal_prio0 = self.ar_goal_prio1;
+        self.ar_goal_time0 = self.ar_goal_time1;
+        self.ar_goal_flag0 = self.ar_goal_flag1;
+
+        self.ar_goal_kind1 = self.ar_goal_kind2;
+        self.ar_goal_subj1 = self.ar_goal_subj2;
+        self.ar_goal_anch1 = self.ar_goal_anch2;
+        self.ar_goal_prio1 = self.ar_goal_prio2;
+        self.ar_goal_time1 = self.ar_goal_time2;
+        self.ar_goal_flag1 = self.ar_goal_flag2;
+
+        self.ar_goal_kind2 = self.ar_goal_kind3;
+        self.ar_goal_subj2 = self.ar_goal_subj3;
+        self.ar_goal_anch2 = self.ar_goal_anch3;
+        self.ar_goal_prio2 = self.ar_goal_prio3;
+        self.ar_goal_time2 = self.ar_goal_time3;
+        self.ar_goal_flag2 = self.ar_goal_flag3;
+
+        self.ar_goal_count = 3;
+    }
+
+    if (self.ar_goal_count == 0)
+    {
+        self.ar_goal_kind0 = gkind;
+        self.ar_goal_subj0 = gsubj;
+        self.ar_goal_anch0 = ganch;
+        self.ar_goal_prio0 = gprio;
+        self.ar_goal_time0 = gtimeout;
+        self.ar_goal_flag0 = gflags;
+    }
+    else if (self.ar_goal_count == 1)
+    {
+        self.ar_goal_kind1 = gkind;
+        self.ar_goal_subj1 = gsubj;
+        self.ar_goal_anch1 = ganch;
+        self.ar_goal_prio1 = gprio;
+        self.ar_goal_time1 = gtimeout;
+        self.ar_goal_flag1 = gflags;
+    }
+    else if (self.ar_goal_count == 2)
+    {
+        self.ar_goal_kind2 = gkind;
+        self.ar_goal_subj2 = gsubj;
+        self.ar_goal_anch2 = ganch;
+        self.ar_goal_prio2 = gprio;
+        self.ar_goal_time2 = gtimeout;
+        self.ar_goal_flag2 = gflags;
+    }
+    else if (self.ar_goal_count == 3)
+    {
+        self.ar_goal_kind3 = gkind;
+        self.ar_goal_subj3 = gsubj;
+        self.ar_goal_anch3 = ganch;
+        self.ar_goal_prio3 = gprio;
+        self.ar_goal_time3 = gtimeout;
+        self.ar_goal_flag3 = gflags;
+    }
+    self.ar_goal_count = self.ar_goal_count + 1;
+
+    dprint ("ARGEVT ");
+    dprint (self.netname);
+    dprint (" goal_push ");
+    dprint (ftos (gkind));
+    dprint ("\n");
+};
+
+void() Argus_GoalTickTimeouts =
+{
+    local float expire;
+    if (self.ar_goal_count <= 0)
+        return;
+    expire = 0;
+    if (self.ar_goal_count == 1 && time > self.ar_goal_time0) expire = 1;
+    else if (self.ar_goal_count == 2 && time > self.ar_goal_time1) expire = 1;
+    else if (self.ar_goal_count == 3 && time > self.ar_goal_time2) expire = 1;
+    else if (self.ar_goal_count == 4 && time > self.ar_goal_time3) expire = 1;
+
+    if (expire)
+        Argus_GoalPop ();
+};
+
+entity() Argus_CoopFindTeammate =
+{
+    local entity p, best_human, best_bot;
+    local float d, bhd, bbd;
+
+    best_human = world;
+    best_bot = world;
+    bhd = 99999;
+    bbd = 99999;
+
+    p = find (world, classname, "player");
+    while (p != world)
+    {
+        if (p != self)
+        {
+            d = vlen (p.origin - self.origin);
+            if (!p.ar_isbot)
+            {
+                if (p.health > 0 && d < bhd)
+                {
+                    best_human = p;
+                    bhd = d;
+                }
+                else if (best_human == world)
+                {
+                    best_human = p;
+                }
+            }
+            else
+            {
+                if (p.health > 0 && d < bbd)
+                {
+                    best_bot = p;
+                    bbd = d;
+                }
+            }
+        }
+        p = find (p, classname, "player");
+    }
+
+    if (best_human != world)
+        return best_human;
+    return best_bot;
+};
+
+void() Argus_ActEscort =
+{
+    local vector p, to, target_pos, fwd, rt;
+    local float dist, want;
+
+    if (self.ar_teammate == world)
+        return;
+
+    p = self.ar_teammate.origin;
+    dist = vlen (self.origin - p);
+
+    makevectors (self.ar_teammate.v_angle);
+    fwd = v_forward;
+    fwd_z = 0;
+    fwd = normalize (fwd);
+    rt = v_right;
+    rt_z = 0;
+    rt = normalize (rt);
+
+    if (dist > 320)
+    {
+        // Far (>320u): path to 192u behind teammate view direction
+        target_pos = p - fwd * 192;
+        to = target_pos - self.origin;
+        to_z = 0;
+        if (vlen (to) > 48)
+        {
+            want = vectoyaw (to);
+            if (!Argus_MoveHazard (want, 48))
+            {
+                self.ar_moveyaw = want;
+                self.angles_y = want;
+            }
+            else
+            {
+                want = vectoyaw (p - self.origin);
+                if (!Argus_MoveHazard (want, 48))
+                    self.ar_moveyaw = want;
+            }
+        }
+    }
+    else if (dist > 128)
+    {
+        // Sweet spot (128-320u): match pace and face forward
+        if (vlen (self.ar_teammate.velocity) > 60)
+        {
+            self.ar_moveyaw = vectoyaw (self.ar_teammate.velocity);
+            self.angles_y = self.ar_teammate.angles_y;
+        }
+        else
+        {
+            self.angles_y = self.ar_teammate.angles_y;
+            self.ar_moveyaw = self.ar_teammate.angles_y;
+        }
+    }
+    else
+    {
+        // Too close (<128u): sidestep off teammate forward line to clear doors/jumps
+        to = self.origin - p;
+        to_z = 0;
+        if ((rt * to) >= 0)
+            want = vectoyaw (rt);
+        else
+            want = vectoyaw ('0 0 0' - rt);
+
+        if (!Argus_MoveHazard (want, 48))
+            self.ar_moveyaw = want;
+        else if (!Argus_MoveHazard (want + 180, 48))
+            self.ar_moveyaw = want + 180;
+    }
+};
+
+void() Argus_CoopThink =
+{
+    local entity threat, tmate;
+    local float topk;
+
+    self.ar_teammate = Argus_CoopFindTeammate ();
+    tmate = self.ar_teammate;
+
+    // 1. Critical Health Retreat
+    if (self.health + self.armortype * self.armorvalue < 35 && self.health > 0)
+    {
+        if (Argus_GoalTopKind () != GOAL_RETREAT)
+            Argus_GoalPush (GOAL_RETREAT, tmate, self.origin, 90, time + 3.0, 0);
+    }
+    else if (Argus_GoalTopKind () == GOAL_RETREAT)
+    {
+        if (self.health + self.armortype * self.armorvalue > 50)
+            Argus_GoalPop ();
+    }
+
+    // 2. Threat Scan & Combat Interrupt
+    threat = Argus_CoopFindThreat ();
+    if (threat != world && threat.health > 0)
+    {
+        self.ar_enemy = threat;
+        self.ar_seen = time;
+        self.ar_lastseen = threat.origin;
+        if (Argus_GoalTopKind () != GOAL_ENGAGE)
+            Argus_GoalPush (GOAL_ENGAGE, threat, threat.origin, 80, time + 8.0, 0);
+    }
+    else if (Argus_GoalTopKind () == GOAL_ENGAGE)
+    {
+        if (self.ar_enemy == world || self.ar_enemy.health <= 0)
+        {
+            self.ar_enemy = world;
+            Argus_GoalPop ();
+        }
+    }
+
+    // 3. Teammate Revive / Guard Support
+    if (tmate != world && tmate.health <= 0)
+    {
+        if (Argus_GoalTopKind () != GOAL_REVIVE_SUPPORT)
+            Argus_GoalPush (GOAL_REVIVE_SUPPORT, tmate, tmate.origin, 65, time + 15.0, 0);
+    }
+    else if (Argus_GoalTopKind () == GOAL_REVIVE_SUPPORT)
+    {
+        if (tmate != world && tmate.health > 0)
+            Argus_GoalPop ();
+    }
+
+    // 4. Default to Escort if stack empty
+    if (self.ar_goal_count == 0)
+    {
+        Argus_GoalPush (GOAL_ESCORT, tmate, self.origin, 10, time + 9999, 0);
+    }
+
+    // 5. Expire timeouts
+    Argus_GoalTickTimeouts ();
+
+    // 6. Act based on current top goal
+    topk = Argus_GoalTopKind ();
+    if (topk == GOAL_ESCORT)
+    {
+        Argus_ActEscort ();
+    }
+    else if (topk == GOAL_COVER)
+    {
+        if (time < self.ar_coop_cover_end)
+            self.ar_moveyaw = vectoyaw (self.ar_coop_cover_spot - self.origin);
+        else
+            Argus_GoalPop ();
+    }
+    else if (topk == GOAL_REVIVE_SUPPORT)
+    {
+        if (vlen (self.origin - Argus_GoalTopAnchor ()) > 96)
+            self.ar_moveyaw = vectoyaw (Argus_GoalTopAnchor () - self.origin);
+        else
+        {
+            self.angles_y = self.angles_y + 45 * frametime;
+            self.ar_moveyaw = self.angles_y;
+        }
+    }
+};
+
 void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
@@ -4597,6 +5046,17 @@ void() Argus_AI =
     local entity oldnode, nx, dr, gn;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
+
+    if (coop > 0)
+    {
+        Argus_CoopThink ();
+        if (self.ar_enemy != world && self.ar_enemy.health > 0)
+            fighting = Argus_Combat ();
+        else
+            fighting = 0;
+        Argus_BodyBlockCheck ();
+        return;
+    }
 
     if (self.ar_mode == 0 && !self.ar_pending && self.ar_node != world)
         self.ar_mode = 2;
