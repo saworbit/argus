@@ -5,9 +5,6 @@ contents at the death position (z < -300 is the no-BSP fallback only).
 usage:
   analyze_match.py map.bsp logA [logB] out.png [nav.json]"""
 import re, struct, sys
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
 args = sys.argv[1:]
 if "-h" in args or "--help" in args:
@@ -181,6 +178,13 @@ contents = bsp_contents_classifier(BSP)
 ba, fa, da = parse(LOGA); sa = stats(ba, fa, da, contents)
 print("[%s] fmt=%s" % (LOGA, fa))
 for n, s in sa.items(): print(" ", n, s)
+
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+except ImportError:
+    raise SystemExit("analyze_match.py requires matplotlib to generate plots: pip install matplotlib")
 
 if LOGB:
     bb, fb, db = parse(LOGB); sb = stats(bb, fb, db, contents)
