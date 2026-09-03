@@ -144,7 +144,7 @@ async fn main() -> anyhow::Result<()> {
                 }
                 "impulse" => {
                     // fire a player impulse from the puppet's seat -
-                    // the roster interface (100 add bot / 102 remove)
+                    // the roster interface (101 add bot / 102 remove / 100 menu)
                     // and the dev teleport (216) all become drivable
                     // headless. GitHub #2's 4-player measurement was
                     // the first customer.
@@ -354,7 +354,7 @@ fn print_client_help() {
            observe [secs] [host] [port]           Observe world and print state\n\
            walk <x> <y> <z> [secs] [host] [port]  Walk puppet toward target coords\n\
            walkrel <dx> <dy> [secs]               Walk puppet relative to spawn\n\
-           impulse <n> [secs] [host] [port]       Fire impulse (100=add bot, 210=cam)"
+           impulse <n> [secs] [host] [port]       Fire impulse (101=add bot, 100=menu, 210=cam)"
     );
 }
 
@@ -407,7 +407,7 @@ fn print_help() {
          argus-mcp client walkrel <dx> <dy> [secs]\n\
                                 puppet walk relative to current spawn\n\
          argus-mcp client impulse <n> [secs]\n\
-                                fire an impulse from puppet client (e.g. 100=bot, 210=cam)\n\
+                                fire an impulse from puppet client (e.g. 101=bot, 100=menu, 210=cam)\n\
          argus-mcp compile [--install] [--backup]\n\
                                 compile QuakeC progs.dat with fteqcc\n\
          argus-mcp nav <map> [--register]\n\

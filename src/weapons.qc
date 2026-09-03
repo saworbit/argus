@@ -1502,11 +1502,19 @@ void() ImpulseCommands =
 	if (self.impulse >= 1 && self.impulse <= 8)
 		W_ChangeWeapon (self.impulse);
 
-	// ARGUS: runtime bot roster, FrikBot impulse convention
+	// ARGUS: runtime bot roster & menu (#147)
 	if (self.impulse == 100)
+		Argus_BotMenu ();
+	else if (self.impulse == 101)
 		Argus_AddBot ();
 	else if (self.impulse == 102)
 		Argus_RemoveBot ();
+	else if (self.impulse == 103)
+		Argus_CycleSkill ();
+	else if (self.impulse == 104)
+		ArgusCam_Toggle ();
+	else if (self.impulse == 105)
+		Argus_MatchStats ();
 	else if (self.impulse == 146)		// ARGUS: console "omicron"
 		Argus_SetOmicron (!argus_omicron);
 	else if (self.impulse >= 210 && self.impulse <= 214)

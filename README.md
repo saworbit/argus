@@ -221,8 +221,12 @@ while humans keep the remaster model.
 | `impulse 230` | **Chat Easter Egg**: Speak to Stevie "Killcreek" Case (*Lightning Gun shaft precision*). |
 | `impulse 225` | **Chat Easter Egg**: Arena Shout (*"Good game everyone!"*). |
 | `skill 0` to `skill 3` | Adjusts bot difficulty dial (reaction delay, aim error, tracking rate) on next respawn. |
-| `impulse 100` | Adds an extra bot from the homage roster (up to 4 bots total). |
+| `impulse 100` | Opens interactive in-game bot roster control menu. |
+| `impulse 101` | Adds an extra bot from the homage roster (up to 4 bots total). |
 | `impulse 102` | Removes the most recently spawned bot from the arena. |
+| `impulse 103` | Cycles bot difficulty skill (0..3: Easy, Normal, Medium, Hard). |
+| `impulse 104` | Toggles ArgusCam AI spectator director. |
+| `impulse 105` | Displays match statistics and bot scorecards. |
 | `fraglimit <n>` | Sets match frag limit; game transitions levels upon a bot reaching the target. |
 | `timelimit <n>` | Sets match time limit in minutes. |
 

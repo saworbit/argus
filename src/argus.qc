@@ -6025,10 +6025,38 @@ void(float on) Argus_SetOmicron =
         bprint (PRINT_HIGH, "\n  the roster returns.\n\n");
 };
 
+// Multiplayer roster safety (#147):
+// Non-admin clients in dedicated multiplayer cannot disrupt server rosters
+float() Argus_ClientCanControlRoster =
+{
+    if (!deathmatch)
+        return TRUE;
+    if (cvar ("developer"))
+        return TRUE;
+    if (self == find (world, classname, "player"))
+        return TRUE;
+    if (serverflags & 64)
+        return TRUE;
+    return FALSE;
+};
+
+// In-game bot roster menu (#147)
+void() Argus_BotMenu =
+{
+    centerprint (self, "=== Argus Bot Control ===\n\nimpulse 101: Add Bot\nimpulse 102: Remove Bot\nimpulse 103: Cycle Bot Skill\nimpulse 104: Toggle ArgusCam Director\nimpulse 105: Match Statistics\n");
+    sprint (self, PRINT_HIGH, "Argus Menu: 101 Add, 102 Remove, 103 Skill, 104 Cam, 105 Stats\n");
+};
+
 void() Argus_AddBot =
 {
-    local float cap;
+    local float cap, slot;
     local string bname;
+
+    if (!Argus_ClientCanControlRoster ())
+    {
+        sprint (self, PRINT_HIGH, "Argus: Server roster control restricted to admin\n");
+        return;
+    }
 
     cap = argus_maxclients - 1;
     if (cap > 4)
@@ -6036,22 +6064,36 @@ void() Argus_AddBot =
     if (argus_spawncount >= cap)
     {
         sprint (self, PRINT_HIGH, "no free bot slots\n");
+        centerprint (self, "Argus: No free bot slots");
         return;
     }
-    bname = Argus_RosterName (argus_spawncount);
+    slot = argus_spawncount;
+    bname = Argus_RosterName (slot);
     Argus_SpawnOne (bname);
+    centerprint5 (self, "Argus: Added ", bname, " [Slot ", ftos (slot), "]");
 };
 
 void() Argus_RemoveBot =
 {
     local entity b;
+    local string bname;
+    local float slot;
+
+    if (!Argus_ClientCanControlRoster ())
+    {
+        sprint (self, PRINT_HIGH, "Argus: Server roster control restricted to admin\n");
+        return;
+    }
 
     b = argus_bots;
     if (b == world)
     {
         sprint (self, PRINT_HIGH, "no bots to remove\n");
+        centerprint (self, "Argus: No bots to remove");
         return;
     }
+    bname = b.netname;
+    slot = argus_spawncount - 1;
     if (b.ar_clientno >= 0 && b.ar_clientno >= Argus_HumanCount ())
     {
         // blank the scoreboard row before the entity goes away - but
@@ -6072,4 +6114,73 @@ void() Argus_RemoveBot =
     argus_bots = b.ar_chain;
     argus_spawncount = argus_spawncount - 1;
     remove (b);
+    centerprint5 (self, "Argus: Removed ", bname, " [Slot ", ftos (slot), "]");
+};
+
+void() Argus_CycleSkill =
+{
+    if (!Argus_ClientCanControlRoster ())
+    {
+        sprint (self, PRINT_HIGH, "Argus: Server roster control restricted to admin\n");
+        return;
+    }
+
+    skill = skill + 1;
+    if (skill > 3)
+        skill = 0;
+
+    if (skill == 0)
+    {
+        localcmd ("skill 0\n");
+        centerprint (self, "Argus: Skill set to 0 (Easy - Novice)");
+    }
+    else if (skill == 1)
+    {
+        localcmd ("skill 1\n");
+        centerprint (self, "Argus: Skill set to 1 (Normal - Warrior)");
+    }
+    else if (skill == 2)
+    {
+        localcmd ("skill 2\n");
+        centerprint (self, "Argus: Skill set to 2 (Medium - Tactician)");
+    }
+    else
+    {
+        localcmd ("skill 3\n");
+        centerprint (self, "Argus: Skill set to 3 (Hard - Nightmare)");
+    }
+};
+
+void() Argus_MatchStats =
+{
+    local entity b;
+    local float nb;
+
+    nb = argus_spawncount;
+    sprint (self, PRINT_HIGH, "\n=== Argus Match Statistics ===\n");
+    sprint (self, PRINT_HIGH, "Active Bots: ");
+    sprint (self, PRINT_HIGH, ftos (nb));
+    sprint (self, PRINT_HIGH, " / Humans: ");
+    sprint (self, PRINT_HIGH, ftos (Argus_HumanCount ()));
+    sprint (self, PRINT_HIGH, "\nMatch Time: ");
+    sprint (self, PRINT_HIGH, ftos (rint (time)));
+    sprint (self, PRINT_HIGH, "s | Skill: ");
+    sprint (self, PRINT_HIGH, ftos (skill));
+    sprint (self, PRINT_HIGH, "\n");
+
+    b = argus_bots;
+    while (b != world)
+    {
+        sprint (self, PRINT_HIGH, "  ");
+        sprint (self, PRINT_HIGH, b.netname);
+        sprint (self, PRINT_HIGH, " - Frags: ");
+        sprint (self, PRINT_HIGH, ftos (b.frags));
+        sprint (self, PRINT_HIGH, ", Health: ");
+        sprint (self, PRINT_HIGH, ftos (rint (b.health)));
+        sprint (self, PRINT_HIGH, "\n");
+        b = b.ar_chain;
+    }
+    sprint (self, PRINT_HIGH, "==============================\n\n");
+
+    centerprint5 (self, "Argus Match Stats\n\nActive Bots: ", ftos (nb), "\nMatch Time: ", ftos (rint (time)), "s");
 };
