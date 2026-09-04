@@ -64,7 +64,15 @@ if "--grid" in sys.argv[5:]:
     # are walkably connected - dm3's six dry islands (campaign queue
     # item 1). 16 quadruples sampling cost; use for maps that
     # shatter at 32.
-    GRID = int(sys.argv[sys.argv.index("--grid") + 1])
+    grid_idx = sys.argv.index("--grid")
+    if grid_idx + 1 >= len(sys.argv):
+        print("error: --grid requires an integer argument", file=sys.stderr)
+        sys.exit(1)
+    try:
+        GRID = int(sys.argv[grid_idx + 1])
+    except ValueError:
+        print(f"error: --grid argument must be an integer, got '{sys.argv[grid_idx + 1]}'", file=sys.stderr)
+        sys.exit(1)
 CORRIDOR = "--corridor" in sys.argv[5:]
 if CORRIDOR:
     # corridor mode proper (campaign item 1's designed answer):

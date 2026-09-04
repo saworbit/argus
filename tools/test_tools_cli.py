@@ -56,6 +56,26 @@ class TestToolsCLI(unittest.TestCase):
         self.assertEqual(res.returncode, 1)
         self.assertIn("REACH GATE: verdict FAIL", res.stdout)
 
+    def test_argus_navgen_grid_validation(self):
+        res_missing = self.run_tool("argus_navgen.py", "dummy.bsp", "dm4", "out.qc", "out.png", "--grid")
+        self.assertEqual(res_missing.returncode, 1)
+        self.assertIn("error: --grid requires an integer argument", res_missing.stderr)
+
+        res_invalid = self.run_tool("argus_navgen.py", "dummy.bsp", "dm4", "out.qc", "out.png", "--grid", "notanint")
+        self.assertEqual(res_invalid.returncode, 1)
+        self.assertIn("error: --grid argument must be an integer", res_invalid.stderr)
+
+    def test_argus_reach_empty_spawns(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_reach
+        orig_spawns = argus_reach.bsp_spawns
+        try:
+            argus_reach.bsp_spawns = lambda path: []
+            res = argus_reach.audit("dm2")
+            self.assertFalse(res)
+        finally:
+            argus_reach.bsp_spawns = orig_spawns
+
     def test_argus_review_freeze_detector(self):
         sys.path.insert(0, str(ROOT / "tools"))
         import argus_review

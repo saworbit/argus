@@ -110,6 +110,9 @@ def audit(mapname, explicit=False):
     rows.sort()
     print(f"{mapname}: {n} nodes, {len(spawns)} spawns "
           f"(gated edges: {len(gated)})")
+    if not rows:
+        print("  no spawn points found in BSP")
+        return False
     ok = True
     for r_all, r_un, node, o in rows:
         pa = 100 * r_all // max(1, n)
