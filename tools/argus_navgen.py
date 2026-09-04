@@ -375,10 +375,39 @@ ent_blocks = re.findall(r"\{(.*?)\}", ents_txt, re.S)
 def kv(block):
     return dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
 bmodels = [struct.unpack_from("<9f7i", md, i * 64) for i in range(len(md)//64)]
+
+def spawns_an_edict(block):
+    """Does this entity still exist after its spawn function runs?
+
+    The budget below is about RUNTIME edicts, and several classes free
+    themselves the moment they spawn. An untargeted `light` is the big
+    one: misc.qc's light() removes it as an inert light, and id's maps
+    are full of them - e1m8 carries 283, more than half its lump. Also
+    info_null (removed outright) and trigger_setskill (removed in
+    deathmatch).
+
+    Counting them made the cap collapse on every SP map: e1m5 read 536
+    entities where only 341 survive, so the cap fell to its floor of
+    60, the decimation radius ballooned to 405u, links could not
+    verify across that spacing and the prune ate the graph down to 3
+    usable nodes. Episode 1 was unusable for exactly this reason.
+    """
+    d = kv("{" + block + "}") if False else dict(
+        re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
+    c = d.get("classname", "")
+    if c == "light" and not d.get("targetname"):
+        return False
+    if c == "info_null":
+        return False
+    return True
+
+live_ents = [b for b in ent_blocks if spawns_an_edict(b)]
 NODE_CAP = MAX_NODES
-if len(ent_blocks) + NODE_CAP > 500:
-    NODE_CAP = max(60, 500 - len(ent_blocks))
-    print(f"edict budget: {len(ent_blocks)} bsp entities, "
+if len(live_ents) + NODE_CAP > 500:
+    NODE_CAP = max(60, 500 - len(live_ents))
+    print(f"edict budget: {len(live_ents)} live bsp entities "
+          f"({len(ent_blocks)} in the lump, "
+          f"{len(ent_blocks) - len(live_ents)} freed at spawn), "
           f"node cap lowered to {NODE_CAP}")
 # typed-infrastructure promotions (plat pads, stair seats, sprint
 # lips, RJ pads) may spend the edict headroom past the decimation
@@ -386,7 +415,7 @@ if len(ent_blocks) + NODE_CAP > 500:
 # sake, and on dm2 the corridor+stair+sprint seat passes consumed
 # it before RJ pads got their turn - every ensure_way then snapped
 # to the same wrong seat and all four RJ links vanished
-PROMO_CAP = max(NODE_CAP, min(500 - len(ent_blocks) - 12, 260))
+PROMO_CAP = max(NODE_CAP, min(500 - len(live_ents) - 12, 260))
 
 # ---- 5. decimate to waypoints ----
 allnodes = [ (cx,cy,zi) for (cx,cy),zs in samples.items() for zi in range(len(zs)) ]
@@ -2543,9 +2572,12 @@ with open(OUTQC + ".json", "w") as jf:
                "cam_nodes": [{"pos": cpos, "ang": cang, "tag": ctag} for cpos, cang, ctag in cam_nodes],
                "teles": teles}, jf)
 print("wrote", OUTQC, "+ .json")
-nents = len(ent_blocks)
+# live entities only, same rule as the budget above: an untargeted
+# light and an info_null are gone before the first frame
+nents = len(live_ents)
 edicts = len(ways) + nents
-print(f"edict estimate: {edicts} (waypoints {len(ways)} + entities {nents})")
+print(f"edict estimate: {edicts} (waypoints {len(ways)} + live entities "
+      f"{nents} of {len(ent_blocks)} in the lump)")
 if edicts > 500:
     print(f"WARNING: edict estimate {edicts} exceeds 500; vanilla max_edicts is 600")
 
