@@ -141,25 +141,40 @@ pub fn restore_backup(cfg: &Config, id: &str) -> Result<BackupResult, String> {
     }
     let man = read_manifest(&dir).ok_or("backup has no manifest.json")?;
     let mut restored = 0u32;
+    // A `?` on each copy used to abandon the restore midway with no
+    // rollback and no account of what had already landed. Try them all
+    // and report what failed.
+    let mut failed: Vec<String> = Vec::new();
     for f in &man.files {
         let rel = safe_rel(&f.rel).ok_or_else(|| format!("unsafe path in manifest: {}", f.rel))?;
         let src = dir.join(&rel);
         if !src.is_file() {
+            failed.push(format!("{}: missing from the backup", f.rel));
             continue;
         }
         let dest = restore_dest(cfg, &f.restore_to, &rel)?;
         if let Some(parent) = dest.parent() {
             let _ = fs::create_dir_all(parent);
         }
-        fs::copy(&src, &dest).map_err(|e| format!("restore {}: {e}", dest.display()))?;
-        restored += 1;
+        match fs::copy(&src, &dest) {
+            Ok(_) => restored += 1,
+            Err(e) => failed.push(format!("{}: {e}", dest.display())),
+        }
     }
     Ok(BackupResult {
-        ok: true,
+        ok: failed.is_empty(),
         id,
         path: dir.display().to_string(),
         files: restored as usize,
-        error: None,
+        error: if failed.is_empty() {
+            None
+        } else {
+            Some(format!(
+                "restored {restored} of {}, failed: {}",
+                man.files.len(),
+                failed.join("; ")
+            ))
+        },
     })
 }
 
@@ -175,8 +190,23 @@ fn backup_sources(cfg: &Config) -> Vec<(PathBuf, String)> {
             "src/argus_nav_dispatch.qc".into(),
         ),
     ];
-    for dest in cfg.install_paths() {
-        out.push((dest.clone(), rel_under(&cfg.root, &dest)));
+    // Key install paths by INDEX when they sit outside the root.
+    // rel_under falls back to the bare file name, so with a basedir
+    // outside the repo the lab install and the rerelease copy both
+    // keyed as "progs.dat" and the dedup below silently dropped one -
+    // missing from the backup and from every later restore, with
+    // ok: true reported.
+    for (i, dest) in cfg.install_paths().into_iter().enumerate() {
+        let key = match dest.strip_prefix(&cfg.root) {
+            Ok(p) => p.to_string_lossy().replace('\\', "/"),
+            Err(_) => format!(
+                "install{i}/{}",
+                dest.file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("progs.dat")
+            ),
+        };
+        out.push((dest, key));
     }
     if let Ok(rd) = fs::read_dir(&cfg.src) {
         for ent in rd.flatten() {
@@ -292,5 +322,52 @@ mod tests {
         assert!(safe_backup_id("../x").is_none());
         assert!(safe_rel("../etc/passwd").is_none());
         let _ = fs::remove_dir_all(&root);
+    }
+
+    // #215: rel_under falls back to the bare file name for any path
+    // outside the root, so two out-of-tree installs both keyed as
+    // "progs.dat" and the dedup dropped one - missing from the backup
+    // and from every later restore, with ok: true reported.
+    #[test]
+    fn two_installs_outside_the_root_both_survive() {
+        let base = std::env::temp_dir().join(format!("argus-bak2-{}", std::process::id()));
+        let root = base.join("repo");
+        let outside = base.join("steam");
+        fs::create_dir_all(root.join("src")).unwrap();
+        fs::create_dir_all(root.join("lq1")).unwrap();
+        fs::create_dir_all(outside.join("argus")).unwrap();
+        fs::write(root.join("lq1/progs.dat"), b"PROGS").unwrap();
+        fs::write(outside.join("argus/progs.dat"), b"OUTSIDE").unwrap();
+        let mut env = HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        env.insert("ARGUS_BASEDIR".into(), outside.display().to_string());
+        let cfg = load_for_reads_from(&env, &root).unwrap();
+
+        let keys: Vec<String> = backup_sources(&cfg).into_iter().map(|(_, k)| k).collect();
+        let mut uniq = keys.clone();
+        uniq.sort();
+        uniq.dedup();
+        assert_eq!(keys.len(), uniq.len(), "duplicate manifest keys: {keys:?}");
+
+        let outside_keys: Vec<&String> = keys
+            .iter()
+            .filter(|k| k.starts_with("install"))
+            .collect();
+        assert!(
+            !outside_keys.is_empty(),
+            "an out-of-tree install must get an indexed key, got {keys:?}"
+        );
+
+        let taken = take_backup(&cfg);
+        assert!(taken.ok, "{taken:?}");
+        fs::write(outside.join("argus/progs.dat"), b"CLOBBERED").unwrap();
+        let r = restore_backup(&cfg, &taken.id).unwrap();
+        assert!(r.ok, "{r:?}");
+        assert_eq!(
+            fs::read(outside.join("argus/progs.dat")).unwrap(),
+            b"OUTSIDE",
+            "the out-of-tree install must come back"
+        );
+        let _ = fs::remove_dir_all(&base);
     }
 }

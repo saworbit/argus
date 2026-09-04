@@ -707,7 +707,7 @@ fn atlas_from_bsp(
     }
     if items.iter().any(|i| i.classname == "item_artifact_super_damage") {
         notes.push(
-            "quad is on this map; hold it via prize-only rocket-jump pads when navgen emitted them (dm4: 142->56)"
+            "quad is on this map; hold it via prize-only rocket-jump pads when navgen emitted them (dm4: 150->149, 151->149, 152->99, 153->99)"
                 .into(),
         );
     }
