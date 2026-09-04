@@ -5138,8 +5138,15 @@ entity() Argus_CoopFindTeammate =
         if (p != self)
         {
             d = vlen (p.origin - self.origin);
-            if (!p.ar_isbot)
+            if (!p.ar_isbot && !p.ar_disconnected)
             {
+                // the dead-human fallback below is deliberate: a downed
+                // teammate is still your teammate, and GOAL_REVIVE_SUPPORT
+                // wants to know. A DISCONNECTED body also reads health 0
+                // though, so without the ar_disconnected test the bot
+                // adopted someone who had left and spent the rest of the
+                // map guarding their corpse - seen on an e1m2 session,
+                // goal_push 6 with the companion 2800u away and gone.
                 if (p.health > 0 && d < bhd)
                 {
                     best_human = p;
