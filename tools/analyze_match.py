@@ -113,8 +113,16 @@ def stats(bots, fmt, deaths=(), contents=None):
     out = {}
     for n, r in bots.items():
         dur = r[-1]["t"] - r[0]["t"]
-        dist = sum(((r[i]["x"]-r[i-1]["x"])**2 + (r[i]["y"]-r[i-1]["y"])**2) ** 0.5
-                   for i in range(1, len(r)))
+        # a 1 Hz segment implying over 700 u/s is a respawn teleport,
+        # not travel. The Rust parser has dropped these since #101 and
+        # the two toolchains disagreed by about a map width per death.
+        dist = 0.0
+        for i in range(1, len(r)):
+            seg = ((r[i]["x"]-r[i-1]["x"])**2 + (r[i]["y"]-r[i-1]["y"])**2) ** 0.5
+            dt = r[i]["t"] - r[i-1]["t"]
+            if dt > 0 and seg / dt > 700:
+                continue
+            dist += seg
         cells = {(int(p["x"] // 64), int(p["y"] // 64)) for p in r}
         s = dict(dur=dur, dist=dist, avg=dist / dur if dur else 0, cover=len(cells))
         if fmt == "v1":

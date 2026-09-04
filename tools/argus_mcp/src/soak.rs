@@ -278,6 +278,14 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
 pub async fn run_cycle(map: &str) -> Result<(), String> {
     crate::engine::validate_map(map)?;
     let cfg = Config::load().map_err(|e| format!("{e:?}"))?;
+    // resolve the baseline first. Step 6 used to be the first place
+    // that asked for it, and a `?` there returned with the candidate
+    // build already installed everywhere and the regen already in
+    // src/, against a doc comment promising reject restores byte for
+    // byte. Any map outside baselines.json (e1m1, anything new) hits
+    // this.
+    crate::intel::resolve_run_ref(&cfg, "baseline", Some(map))
+        .map_err(|e| format!("no baseline for {map}, refusing to start a cycle: {e}"))?;
     let stamp = chrono_lite_stamp();
     let snap = cfg.runs.join(format!("cycle_{stamp}_{map}_snapshot"));
     std::fs::create_dir_all(&snap).map_err(|e| e.to_string())?;
@@ -363,7 +371,13 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
             return Err(format!("probe failed, snapshot restored: {e}"));
         }
     };
-    let repcmp = compare_runs_scaled(&cfg, "baseline", &run_name, Some(map))?;
+    let repcmp = match compare_runs_scaled(&cfg, "baseline", &run_name, Some(map)) {
+        Ok(r) => r,
+        Err(e) => {
+            restore(&saved);
+            return Err(format!("verdict step failed, snapshot restored: {e}"));
+        }
+    };
     println!("probe: {}", probe.brief.headline);
     println!("verdict: {:?}: {}", repcmp.verdict, repcmp.headline);
 

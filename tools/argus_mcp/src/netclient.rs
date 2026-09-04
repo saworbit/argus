@@ -1135,18 +1135,26 @@ mod tests {
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut env = std::collections::HashMap::new();
         env.insert("ARGUS_ROOT".into(), root.display().to_string());
-        let Ok(cfg) = crate::config::load_for_reads_from(&env, &root) else {
+        let Ok(mut cfg) = crate::config::load_for_reads_from(&env, &root) else {
             return;
         };
         if !cfg.engine.exists() {
+            eprintln!("SKIPPED {}: no ARGUS_ENGINE on this box", "probe_netclient_test");
             return;
         }
+        // a temp runs/ so the probe tape never lands in the real one:
+        // resolve_latest picks the newest runs/*.log, and a 7 s test
+        // tape became what "latest" meant for the next compare
+        let tmp_runs = std::env::temp_dir().join(format!("argus-{}-{}", "probe_netclient_test", std::process::id()));
+        let _ = std::fs::create_dir_all(&tmp_runs);
+        cfg.runs = tmp_runs.clone();
         let mut ctrl = crate::match_ctrl::MatchCtrl::default();
         if ctrl
             .start(&cfg, "dm4", Some(40), Some("probe_netclient_test"), None, Some(1), None)
             .await
             .is_err()
         {
+            eprintln!("SKIPPED probe_netclient_test: engine refused to start (port in use?)");
             return; // port busy: not this test's fault
         }
         tokio::time::sleep(std::time::Duration::from_secs(4)).await;
