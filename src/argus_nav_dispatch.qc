@@ -16,4 +16,6 @@ void() Argus_Nav_Spawn =
         Argus_Nav_Spawn_dm4 ();
     else if (mapname == "dm6")
         Argus_Nav_Spawn_dm6 ();
+    else if (mapname == "e1m1")
+        Argus_Nav_Spawn_e1m1 ();
 };
