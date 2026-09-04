@@ -3,8 +3,7 @@
 
 use crate::config::Config;
 use std::path::Path;
-use std::sync::Arc;
-use tokio::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[cfg(not(windows))]
 use std::process::Stdio;
@@ -230,20 +229,75 @@ fn apply_args(
 }
 
 #[cfg(not(windows))]
+/// Drain the child's stdout forever. Quake's console is full of high
+/// bit bytes (bronze chat, coloured names, map messages), and
+/// `next_line` returns Err(InvalidData) on one: the old loop ended
+/// there, nothing drained the pipe, and the engine blocked in
+/// Sys_Printf once the next 64 KB filled. On Linux this buffer is the
+/// only tape source, so that froze the match and lost the tape. Read
+/// bytes, convert lossily, and keep draining past an error.
 fn pump<T: tokio::io::AsyncRead + Unpin + Send + 'static>(
     stream: Option<T>,
     buf: Arc<Mutex<String>>,
 ) {
     if let Some(out) = stream {
         tokio::spawn(async move {
-            let mut lines = BufReader::new(out).lines();
-            while let Ok(Some(line)) = lines.next_line().await {
-                let mut g = buf.lock().await;
-                g.push_str(&line);
-                g.push('\n');
+            let mut rdr = BufReader::new(out);
+            let mut line = Vec::new();
+            loop {
+                line.clear();
+                match rdr.read_until(b'\n', &mut line).await {
+                    Ok(0) => break,
+                    Ok(_) => {
+                        while matches!(line.last(), Some(b'\n') | Some(b'\r')) {
+                            line.pop();
+                        }
+                        if let Ok(mut g) = buf.lock() {
+                            g.push_str(&String::from_utf8_lossy(&line));
+                            g.push('\n');
+                        }
+                    }
+                    // an error on the pipe is not a reason to stop
+                    // draining it; only EOF is
+                    Err(_) => continue,
+                }
             }
         });
     }
+}
+
+
+/// A hard kill of the MCP server (the client does not close stdio, it
+/// terminates the process) never runs Drop, so the dedicated engine
+/// survived and held UDP 26000 against the next server. Every engine
+/// is assigned to one process-wide Job Object created with
+/// KILL_ON_JOB_CLOSE: when this process dies for any reason its
+/// handles close, the job closes, and Windows takes the engine with
+/// it.
+#[cfg(windows)]
+fn engine_job() -> windows_sys::Win32::Foundation::HANDLE {
+    use std::sync::OnceLock;
+    use windows_sys::Win32::System::JobObjects::{
+        CreateJobObjectW, SetInformationJobObject,
+        JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    };
+    static JOB: OnceLock<SendHandle> = OnceLock::new();
+    JOB.get_or_init(|| unsafe {
+        let h = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+        if !h.is_null() {
+            let mut info: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+            info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            SetInformationJobObject(
+                h,
+                JobObjectExtendedLimitInformation,
+                &info as *const _ as *const std::ffi::c_void,
+                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            );
+        }
+        SendHandle(h)
+    })
+    .0
 }
 
 #[cfg(windows)]
@@ -315,6 +369,10 @@ fn spawn_windows(
     }
     unsafe {
         windows_sys::Win32::Foundation::CloseHandle(pi.hThread);
+        let job = engine_job();
+        if !job.is_null() {
+            windows_sys::Win32::System::JobObjects::AssignProcessToJobObject(job, pi.hProcess);
+        }
     }
     Ok(EngineChild {
         pid: pi.dwProcessId,
@@ -473,7 +531,7 @@ impl EngineChild {
                     handle: SendHandle(std::ptr::null_mut()),
                 },
                 pid: 0,
-                stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+                stdout: std::sync::Arc::new(std::sync::Mutex::new(String::new())),
             }
         }
         #[cfg(not(windows))]
@@ -489,7 +547,7 @@ impl EngineChild {
                     stdin: None,
                 },
                 pid: 0,
-                stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+                stdout: std::sync::Arc::new(std::sync::Mutex::new(String::new())),
             }
         }
     }
@@ -501,8 +559,38 @@ impl EngineChild {
                 handle: SendHandle(handle),
             },
             pid,
-            stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+            stdout: std::sync::Arc::new(std::sync::Mutex::new(String::new())),
         }
+    }
+}
+
+/// Kill an engine by pid without owning its EngineChild. shutdown and
+/// match_stop need this because match_run holds the MatchCtrl mutex for
+/// the whole match and the child is behind it.
+pub fn kill_pid(pid: u32) -> bool {
+    if pid == 0 {
+        return false;
+    }
+    #[cfg(windows)]
+    unsafe {
+        use windows_sys::Win32::Foundation::CloseHandle;
+        use windows_sys::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
+        let h = OpenProcess(PROCESS_TERMINATE, 0, pid);
+        if h.is_null() {
+            return false;
+        }
+        let ok = TerminateProcess(h, 1) != 0;
+        CloseHandle(h);
+        ok
+    }
+    #[cfg(not(windows))]
+    {
+        std::process::Command::new("kill")
+            .arg("-9")
+            .arg(pid.to_string())
+            .status()
+            .map(|s| s.success())
+            .unwrap_or(false)
     }
 }
 
@@ -544,7 +632,7 @@ mod tests {
                     handle: SendHandle(handle),
                 },
                 pid,
-                stdout: std::sync::Arc::new(tokio::sync::Mutex::new(String::new())),
+                stdout: std::sync::Arc::new(std::sync::Mutex::new(String::new())),
             };
             // _ec drops here, which must invoke win_kill and CloseHandle
         }
@@ -589,18 +677,26 @@ mod tests {
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut env = std::collections::HashMap::new();
         env.insert("ARGUS_ROOT".into(), root.display().to_string());
-        let Ok(cfg) = crate::config::load_for_reads_from(&env, &root) else {
+        let Ok(mut cfg) = crate::config::load_for_reads_from(&env, &root) else {
             return;
         };
         if !cfg.engine.exists() {
+            eprintln!("SKIPPED {}: no ARGUS_ENGINE on this box", "probe_inject_test");
             return;
         }
+        // a temp runs/ so the probe tape never lands in the real one:
+        // resolve_latest picks the newest runs/*.log, and a 7 s test
+        // tape became what "latest" meant for the next compare
+        let tmp_runs = std::env::temp_dir().join(format!("argus-{}-{}", "probe_inject_test", std::process::id()));
+        let _ = std::fs::create_dir_all(&tmp_runs);
+        cfg.runs = tmp_runs.clone();
         let mut ctrl = crate::match_ctrl::MatchCtrl::default();
         if ctrl
             .start(&cfg, "dm4", Some(30), Some("probe_inject_test"), None, Some(1), None)
             .await
             .is_err()
         {
+            eprintln!("SKIPPED probe_inject_test: engine refused to start (port in use?)");
             return; // engine present but refused (port in use): not this test's fault
         }
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
