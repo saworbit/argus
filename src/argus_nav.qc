@@ -424,9 +424,38 @@ entity(entity n, entity bot) Argus_GetNext =
 
 entity(vector p) Argus_NearestNode =
 {
-    local entity n, cand, best, bestv;
+    local entity n, cand, best, bestv, bestany;
     local vector d, eye;
-    local float dist, bd, bdv, i;
+    local float dist, bd, bdv, bda, i, inwater, ceil;
+
+    // A SWIMMER CANNOT REACH A NODE HIGH ABOVE THE WATER. Nothing used
+    // to say so, and on e1m2 that pinned a companion in one cell for a
+    // whole session: floating at z 171 in the flooded court, the
+    // nearest node by distance was the platform seat 137u overhead
+    // (WATDBG "nodez 308"), whose lip stands 108 to 120u above the
+    // surface - three times what the water vault's 320 up can clear.
+    // The bot swam at it for 128 s. The routed dive could not save it
+    // either: that fires only when the node is BELOW, and this one is
+    // above, so the vertical drive fell through to the surface tread.
+    // The pool floor seats it could actually have used sit 79u down
+    // and lead, through eight swim-exit links, to 167 of the map's
+    // 198 nodes.
+    //
+    // So when the query point is in water, a node more than a vault
+    // above it is not a candidate. Position-based, not bot-based, so
+    // it applies to a start node without touching a dry goal's node.
+    // bestany keeps the unfiltered pick: a pool whose every node is
+    // out of reach should still route badly rather than not at all.
+    // A swimmer's reachable set is what it can swim to: nodes at or
+    // below the query point. Anything above needs the lip to be within
+    // the vault, and a hard height cut is the wrong instrument - a
+    // ceiling of 64 still let e1m2 start a 20-hop route from a seat 61u
+    // up (ARGEVT route 20 from '1585 1185 208'), which the bot then
+    // stalled under 228 times. So this is a PREFERENCE, not a cut: an
+    // at-or-below candidate always beats one above, and a node above is
+    // taken only when nothing below exists.
+    inwater = (pointcontents (p) == CONTENT_WATER);
+    ceil = p_z + 8;
 
     // Local neighbor fast-path (#146):
     // Continuous locomotion rarely jumps across the map. If the calling
@@ -442,7 +471,7 @@ entity(vector p) Argus_NearestNode =
         d = n.origin - p;
         d_z = d_z * 2;
         dist = vlen (d);
-        if (dist < 200)
+        if (dist < 200 && !(inwater && n.origin_z > ceil))
         {
             traceline (eye, n.origin + '0 0 8', TRUE, self);
             if (trace_fraction == 1)
@@ -484,8 +513,10 @@ entity(vector p) Argus_NearestNode =
 
     best = world;
     bestv = world;
+    bestany = world;
     bd = 999999;
     bdv = 999999;
+    bda = 999999;
     eye = p + '0 0 22';
     n = find (world, classname, "argus_node");
     while (n != world)
@@ -493,6 +524,16 @@ entity(vector p) Argus_NearestNode =
         d = n.origin - p;
         d_z = d_z * 2;
         dist = vlen (d);
+        if (dist < bda)
+        {
+            bda = dist;
+            bestany = n;
+        }
+        if (inwater && n.origin_z > ceil)
+        {
+            n = find (n, classname, "argus_node");
+            continue;       // out of a swimmer's reach
+        }
         if (dist < bd)
         {
             bd = dist;
@@ -522,7 +563,10 @@ entity(vector p) Argus_NearestNode =
     // them), and the bot then beelined the whole way into a wall
     if (bestv != world && bdv <= bd * 2 + 100)
         return bestv;
-    return best;
+    if (best != world)
+        return best;
+    return bestany;     // every node was out of reach; route badly
+                        // rather than not at all
 };
 
 // ---------------------------------------------------------------- search

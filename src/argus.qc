@@ -6433,6 +6433,37 @@ void() Argus_AI =
                 self.ar_pending = 1;
                 self.ar_mode = 0;
             }
+            else if (self.waterlevel >= 2
+                     && self.ar_feettype == CONTENT_WATER
+                     && tp_z > self.origin_z + 64
+                     && !self.ar_hopswim && !self.ar_hoplift
+                     && !self.ar_hoptrain && !self.ar_hopjump
+                     && !self.ar_hoprj)
+            {
+                // DISPLACED VERTICALLY, INTO WATER. `to` is flattened
+                // above, so a steering node directly overhead reads
+                // zero horizontal distance and the 340 guard never
+                // sees it. On e1m2 a companion fell off the z 308
+                // platform into the flooded court and kept steering at
+                // the seat it had been walking to, 137u over its head,
+                // behind a lip 108-120u above the surface that no
+                // vault reaches. It swam at that node for a whole
+                // session: 622 swim events, two routes, pinned inside
+                // one cell.
+                //
+                // 64 is the water vault's reach (320 up under gravity
+                // 800 apexes at 64). Above that a swimmer is not
+                // getting there, so treat it as displacement and
+                // re-plan - Argus_NearestNode is swim-aware now and
+                // will start the new route from a pool seat, which on
+                // e1m2 reaches 167 of 198 nodes through the swim-exit
+                // links. Every typed hop is exempt: a swim exit,
+                // a lift and a train all legitimately target a node
+                // above, and the e1m2 swim links rise 112u.
+                self.ar_node = world;
+                self.ar_pending = 1;
+                self.ar_mode = 0;
+            }
             else if (vlen (to) < 48
                      && (fabs (tp_z - self.origin_z) < 48
                          || (self.origin_z - tp_z > 0
