@@ -903,7 +903,11 @@ float() Argus_HumanCount =
     p = find (world, classname, "player");
     while (p != world)
     {
-        if (p.flags & FL_CLIENT)
+        // a disconnected client's body keeps FL_CLIENT until the engine
+        // reuses the slot. Counting it made the exit guard refuse
+        // forever after anyone left, stranding a solo run that had ever
+        // had a connection.
+        if ((p.flags & FL_CLIENT) && !p.ar_disconnected)
             n = n + 1;
         p = find (p, classname, "player");
     }
@@ -1038,6 +1042,21 @@ float(vector p) Argus_BridgeSolid =
     return TRUE;
 };
 
+// TRUE when 'p' sits over dry, walkable solid ground with no drop > max_drop.
+// Rejects drops over ledges/bridges and any liquid surfaces (water/slime/lava).
+float(vector p, float max_drop) Argus_WalkFloorOK =
+{
+    local float c;
+
+    traceline (p + '0 0 16', p - '0 0 1' * (max_drop + 16), TRUE, self);
+    if (trace_fraction == 1 || trace_allsolid)
+        return FALSE;
+    c = pointcontents (trace_endpos + '0 0 2');
+    if (c == CONTENT_LAVA || c == CONTENT_SLIME || c == CONTENT_WATER)
+        return FALSE;
+    return TRUE;
+};
+
 // TRUE when the 32x32 hull would still be carried at 'ahead' despite a
 // lava/slime floor under the probe POINT. Decorative grate floors (dm2
 // south-east room: 16u lava channels recessed 28u between 16u solid
@@ -1130,6 +1149,8 @@ float(float myaw, float pdist) Argus_MoveHazard =
         // this veto kept the whole deep level dark - the knit1 tape).
         // A surface deeper than the probe still reads empty and
         // stays vetoed: never fall into the unknown.
+        if (coop > 0 && self.ar_feettype != CONTENT_WATER)
+            return TRUE;            // In co-op, companion on dry land must not fall off bridges into water
         if (pointcontents (ahead - '0 0 280') == CONTENT_WATER)
             return FALSE;
         return TRUE;                // no floor within a survivable drop
@@ -1600,9 +1621,30 @@ void() Argus_Physics =
                 if (trace_fraction == 1)
                 {
                     self.ar_gapjump = time + 0.9;
-                    self.velocity_x = wishdir_x * 170;
-                    self.velocity_y = wishdir_y * 170;
-                    self.velocity_z = 290;
+                    // the stronger vault and the forced unground are
+                    // co-op water work (the dm3 trench banks). Left
+                    // loose they also fire in deathmatch, where dm4's
+                    // pit floor is water, and a bot launched out of the
+                    // pit at 320 up with no ground flag can arrive at
+                    // the walkway lip and wedge: measured as a 15 s
+                    // statue pinned to a tenth of a unit at
+                    // '439.9 -356.3 -107.2' while its yaw thrashed and
+                    // stall recovery re-routed it six times. Every
+                    // ladder in runs/ was recorded at 170/290, so
+                    // deathmatch keeps that.
+                    if (coop > 0)
+                    {
+                        self.velocity_x = wishdir_x * 200;
+                        self.velocity_y = wishdir_y * 200;
+                        self.velocity_z = 320;
+                        self.flags = self.flags - (self.flags & FL_ONGROUND);
+                    }
+                    else
+                    {
+                        self.velocity_x = wishdir_x * 170;
+                        self.velocity_y = wishdir_y * 170;
+                        self.velocity_z = 290;
+                    }
                 }
             }
         }
@@ -1700,6 +1742,32 @@ void() Argus_Physics =
             self.flags = self.flags - (self.flags & FL_ONGROUND);
             Argus_Event ("jump");
             return;
+        }
+
+        // Water-vault for wading bots standing on pool floor:
+        // A bot wading in water with FL_ONGROUND cannot step up banks > 18u via walkmove.
+        // If waist is blocked by the bank lip and apex is clear, leap up onto the dry bank!
+        if (coop > 0 && self.ar_feettype == CONTENT_WATER
+                && time > self.ar_gapjump && vlen (wishdir) > 0.1)
+        {
+            vh = self.origin;
+            vh_z = vh_z + 8;
+            traceline (vh, vh + wishdir * 24, TRUE, self);
+            if (trace_fraction < 1)
+            {
+                vh_z = self.origin_z + 56;
+                traceline (vh, vh + wishdir * 32, TRUE, self);
+                if (trace_fraction == 1)
+                {
+                    self.ar_gapjump = time + 0.9;
+                    self.velocity_x = wishdir_x * 200;
+                    self.velocity_y = wishdir_y * 200;
+                    self.velocity_z = 320;
+                    self.flags = self.flags - (self.flags & FL_ONGROUND);
+                    Argus_Event ("jump");
+                    return;
+                }
+            }
         }
 
         if (self.ar_liftwait)
@@ -2388,6 +2456,47 @@ entity() Argus_SpawnSpot =
     local entity spot;
     local float count, pick;
 
+    if (coop > 0)
+    {
+        count = 0;
+        spot = find (world, classname, "info_player_coop");
+        while (spot != world)
+        {
+            if (!Argus_PadCrowded (spot, 84))
+                count = count + 1;
+            spot = find (spot, classname, "info_player_coop");
+        }
+        if (count > 0)
+        {
+            pick = floor (random () * count);
+            spot = find (world, classname, "info_player_coop");
+            while (spot != world)
+            {
+                if (!Argus_PadCrowded (spot, 84))
+                {
+                    if (pick <= 0)
+                    {
+                        argus_lastspot = spot;
+                        return spot;
+                    }
+                    pick = pick - 1;
+                }
+                spot = find (spot, classname, "info_player_coop");
+            }
+        }
+        spot = find (world, classname, "info_player_start");
+        if (spot != world && !Argus_PadCrowded (spot, 84))
+        {
+            argus_lastspot = spot;
+            return spot;
+        }
+        if (spot != world)
+        {
+            argus_lastspot = spot;
+            return spot;
+        }
+    }
+
     // A shared global pointer walked the lump in order, so bot spawns
     // marched a fixed cycle a human could stand on and farm. Mirror
     // SelectSpawnPoint instead: count the pads, pick one at random,
@@ -2661,10 +2770,10 @@ float(entity shooter, entity victim, entity ally) Argus_SplashSafe =
 entity() Argus_CoopFindThreat =
 {
     local entity m, best;
-    local float d, bd;
+    local float d, score, best_score;
 
     best = world;
-    bd = 99999;
+    best_score = 99999;
 
     m = findradius (self.origin, 1500);
     while (m != world)
@@ -2672,10 +2781,16 @@ entity() Argus_CoopFindThreat =
         if ((m.flags & FL_MONSTER) && m.health > 0 && m.takedamage == DAMAGE_AIM)
         {
             d = vlen (m.origin - self.origin);
-            if (d < bd && Argus_CanSee (m))
+            score = d;
+            if (self.ar_teammate != world && m.enemy == self.ar_teammate)
+                score = score * 0.5;
+            else if (m.enemy == self)
+                score = score * 0.7;
+
+            if (score < best_score && Argus_CanSee (m))
             {
                 best = m;
-                bd = d;
+                best_score = score;
             }
         }
         m = m.chain;
@@ -3337,10 +3452,23 @@ void() Argus_BodyBlockCheck =
         if (cl != self && cl.health > 0 && !cl.cam_active)
         {
             to = self.origin - cl.origin;
+            to_z = 0;
             if (vlen (to) < 48)
             {
-                // other is jumping or actively firing: clear the line
-                if (!(cl.flags & FL_ONGROUND) || cl.button0 || time < cl.attack_finished)
+                // Unconditional anti-embed: if bounding boxes overlap (<36u),
+                // nudge bot away immediately so the player is NEVER stuck solid!
+                if (vlen (to) < 36)
+                {
+                    if (vlen (to) < 6)
+                        to = '32 0 0';
+                    else
+                        to = normalize (to) * 36;
+                    setorigin (self, cl.origin + to);
+                }
+
+                // other is jumping, actively firing, or human teammate in coop: clear the line
+                if (!(cl.flags & FL_ONGROUND) || cl.button0 || time < cl.attack_finished
+                    || (coop > 0 && cl == self.ar_teammate))
                 {
                     side = vectoyaw (to) + 90;
                     if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
@@ -3977,11 +4105,12 @@ float() Argus_Combat =
             }
 
             // Shared-target hold fire / Kill-steal suppression (#174):
-            // 300-500ms delay when teammate has point-blank line of sight to target.
-            // Finishing tagged/weak monsters (<25 hp) is allowed.
+            // 300-500ms delay when teammate is actively shooting with point-blank line of sight.
+            // Finishing tagged/weak monsters (<25 hp) and rescuing teammate from melee (<100u) is prioritized.
             if (self.ar_teammate != world && self.ar_teammate.health > 0 && e.health >= 25)
             {
-                if (vlen (e.origin - self.ar_teammate.origin) < 300)
+                if (self.ar_teammate.button0 && vlen (e.origin - self.ar_teammate.origin) < 300
+                    && vlen (e.origin - self.ar_teammate.origin) > 100)
                 {
                     traceline (self.ar_teammate.origin + '0 0 16', e.origin + '0 0 16', TRUE, self.ar_teammate);
                     if (trace_ent == e || trace_fraction == 1)
@@ -4020,6 +4149,15 @@ float(entity it) Argus_GoalOK =
         return FALSE;
     if (it.solid == SOLID_TRIGGER)
         return TRUE;
+    if (coop > 0)
+    {
+        if (it.classname == "player" && it.health > 0)
+            return TRUE;
+        if (it.classname == "door")
+            return TRUE;
+        if (it.classname == "button")
+            return TRUE;
+    }
     // item clocks (campaign item 4; triple-converged with mre's
     // timer awareness and cortex's CONTROL_MAJOR "be early, not on
     // time"): a picked-up item is not gone, it is a SUB_regen think
@@ -5029,16 +5167,47 @@ entity() Argus_CoopFindTeammate =
     return best_bot;
 };
 
-void() Argus_ActEscort =
+float() Argus_ActEscort =
 {
-    local vector p, to, target_pos, fwd, rt;
-    local float dist, want;
+    local vector p, to, target_pos, fwd, rt, cand;
+    local float dist, want, los, d;
 
-    if (self.ar_teammate == world)
-        return;
+    if (self.ar_teammate == world || self.ar_teammate.health <= 0)
+    {
+        self.ar_escform = 0;
+        return FALSE;
+    }
 
     p = self.ar_teammate.origin;
     dist = vlen (self.origin - p);
+
+    // Line of sight check to human teammate
+    traceline (self.origin + '0 0 22', p + '0 0 22', TRUE, self);
+    los = (trace_fraction == 1);
+
+    // If far (>320u) or line-of-sight is blocked (around corner/door),
+    // route to teammate via the navigation graph!
+    if (dist > 320 || !los)
+    {
+        if (self.ar_goal != self.ar_teammate)
+        {
+            self.ar_goal = self.ar_teammate;
+            self.ar_pending = 1;
+            self.ar_mode = 0;
+            self.ar_node = world;
+        }
+        self.ar_liftwait = 0;
+        // routing to the teammate from range: the formation latch has
+        // to be re-earned when we arrive, or a stale one would make
+        // the bot think it is already in position
+        self.ar_escform = 0;
+        return FALSE;
+    }
+
+    // Teammate is within 320u and in direct line-of-sight:
+    // Close escort formation! We don't need distant nodes.
+    self.ar_node = world;
+    self.ar_mode = 0;
 
     makevectors (self.ar_teammate.v_angle);
     fwd = v_forward;
@@ -5048,57 +5217,210 @@ void() Argus_ActEscort =
     rt_z = 0;
     rt = normalize (rt);
 
-    if (dist > 320)
+    if (dist < 72)
     {
-        // Far (>320u): path to 192u behind teammate view direction
-        target_pos = p - fwd * 192;
-        to = target_pos - self.origin;
+        // Too close (<72u): back off or sidestep to give player breathing room
+        to = self.origin - p;
         to_z = 0;
-        if (vlen (to) > 48)
-        {
-            want = vectoyaw (to);
-            if (!Argus_MoveHazard (want, 48))
-            {
-                self.ar_moveyaw = want;
-                self.angles_y = want;
-            }
-            else
-            {
-                want = vectoyaw (p - self.origin);
-                if (!Argus_MoveHazard (want, 48))
-                    self.ar_moveyaw = want;
-            }
-        }
+        want = vectoyaw (to);
+        if (Argus_MoveHazard (want, 48))
+            want = Argus_HazardSteer (want, 48);
+
+        self.ar_moveyaw = want;
+        self.angles_y = self.ar_teammate.angles_y;
+        self.ar_liftwait = 0;
+        return TRUE;
     }
-    else if (dist > 128)
+
+    // Flank formation: prefer trailing flank (right side first, then left, then behind)
+    cand = p - fwd * 96 + rt * 80;
+    traceline (p + '0 0 16', cand + '0 0 16', TRUE, self.ar_teammate);
+    if (trace_fraction == 1 && Argus_WalkFloorOK (cand, 32) && !Argus_MoveHazard (vectoyaw (cand - self.origin), 32))
+        target_pos = cand;
+    else
     {
-        // Sweet spot (128-320u): match pace and face forward
-        if (vlen (self.ar_teammate.velocity) > 60)
-        {
-            self.ar_moveyaw = vectoyaw (self.ar_teammate.velocity);
-            self.angles_y = self.ar_teammate.angles_y;
-        }
+        cand = p - fwd * 96 - rt * 80;
+        traceline (p + '0 0 16', cand + '0 0 16', TRUE, self.ar_teammate);
+        if (trace_fraction == 1 && Argus_WalkFloorOK (cand, 32) && !Argus_MoveHazard (vectoyaw (cand - self.origin), 32))
+            target_pos = cand;
         else
+            target_pos = p - fwd * 88;
+    }
+
+    to = target_pos - self.origin;
+    to_z = 0;
+    d = vlen (to);
+
+    // ONE steering source: the formation spot. The old code had two,
+    // and that was the oscillation.
+    //
+    // While it judged itself "in formation" with a moving player it
+    // steered along vectoyaw(teammate.velocity) - the player's heading
+    // - and Argus_Physics has no speed scalar, so the bot ran at a
+    // flat 320 regardless of how fast the player was actually going.
+    // A player walking at 200, or one pressing into geometry with
+    // velocity but no displacement, was outrun every frame: the bot
+    // shot past the spot, fell out of formation, turned 180, walked
+    // back, re-entered, and sprinted off again. On tape that is a yaw
+    // flipping 90/270 with the bot swinging 90u back and forth and the
+    // stall count climbing while the player stands still. Widening the
+    // band does not help, the swing just grows to match it, which is
+    // how I found this.
+    //
+    // The spot already moves with the player, so tracking it IS pace
+    // matching. Hold inside a dead zone and let the moving spot pull
+    // the bot along; the hold has hysteresis so arriving does not
+    // instantly re-trigger a walk.
+    if (self.ar_escform)
+    {
+        if (d > 48)
+            self.ar_escform = 0;
+    }
+    else if (d <= 24)
+        self.ar_escform = 1;
+
+    if (!self.ar_escform)
+    {
+        want = vectoyaw (to);
+        if (Argus_MoveHazard (want, 32))
+            want = Argus_HazardSteer (want, 32);
+        self.ar_moveyaw = want;
+        // face where we are going while closing, face with the player
+        // once we are settled
+        self.angles_y = want;
+        self.ar_liftwait = 0;
+
+        if (target_pos_z > self.origin_z + 18 && (self.flags & FL_ONGROUND)
+                && time > self.ar_nextjump)
         {
-            self.angles_y = self.ar_teammate.angles_y;
-            self.ar_moveyaw = self.ar_teammate.angles_y;
+            self.ar_jump = 1;
+            self.ar_nextjump = time + 0.8;
         }
     }
     else
     {
-        // Too close (<128u): sidestep off teammate forward line to clear doors/jumps
-        to = self.origin - p;
-        to_z = 0;
-        if ((rt * to) >= 0)
-            want = vectoyaw (rt);
-        else
-            want = vectoyaw ('0 0 0' - rt);
-
-        if (!Argus_MoveHazard (want, 48))
-            self.ar_moveyaw = want;
-        else if (!Argus_MoveHazard (want + 180, 48))
-            self.ar_moveyaw = want + 180;
+        // settled in formation: stand with the player and watch out.
+        // The spot travels with them, so the dead zone opens again on
+        // its own as soon as they actually move.
+        self.ar_liftwait = 1;
+        self.velocity_x = self.velocity_x * 0.5;
+        self.velocity_y = self.velocity_y * 0.5;
+        self.angles_y = self.ar_teammate.angles_y;
+        self.ar_moveyaw = self.angles_y;
     }
+    return TRUE;
+};
+
+// ============================================================================
+// CO-OP SAFE CATCHUP RESCUE WARP (#176)
+// ============================================================================
+// Performs a multi-point verified search around human teammate to find a safe,
+// non-embedded, dry, reachable ground location. NEVER teleports inside player!
+float() Argus_CoopSafeWarp =
+{
+    local vector p, fwd, rt, cand, best_pos;
+    local float i, found, c;
+    local entity n;
+
+    if (self.ar_teammate == world || self.ar_teammate.health <= 0)
+        return FALSE;
+
+    p = self.ar_teammate.origin;
+    makevectors (self.ar_teammate.v_angle);
+    fwd = v_forward;
+    fwd_z = 0;
+    fwd = normalize (fwd);
+    rt = v_right;
+    rt_z = 0;
+    rt = normalize (rt);
+
+    found = FALSE;
+    best_pos = '0 0 0';
+
+    i = 0;
+    while (i < 8 && !found)
+    {
+        if (i == 0)
+            cand = p - fwd * 88;
+        else if (i == 1)
+            cand = p - fwd * 80 + rt * 64;
+        else if (i == 2)
+            cand = p - fwd * 80 - rt * 64;
+        else if (i == 3)
+            cand = p + rt * 72;
+        else if (i == 4)
+            cand = p - rt * 72;
+        else if (i == 5)
+            cand = p + fwd * 72 + rt * 56;
+        else if (i == 6)
+            cand = p + fwd * 72 - rt * 56;
+        else if (i == 7)
+        {
+            n = Argus_NearestNode (p);
+            if (n != world && vlen (n.origin - p) >= 64 && vlen (n.origin - p) < 400)
+                cand = n.origin;
+            else
+                cand = '0 0 0';
+        }
+
+        if (cand != '0 0 0')
+        {
+            // Floor probe: must be solid ground within 48u drop, not liquid
+            traceline (cand + '0 0 16', cand - '0 0 48', TRUE, self);
+            if (trace_fraction < 1 && !trace_allsolid)
+            {
+                c = pointcontents (trace_endpos + '0 0 2');
+                if (c != CONTENT_LAVA && c != CONTENT_SLIME && c != CONTENT_WATER)
+                {
+                    cand_z = trace_endpos_z + 24;
+
+                    // Ensure minimum safe distance from player (never spawn inside player!)
+                    if (vlen (cand - p) >= 56)
+                    {
+                        // Check player-to-spot clearance
+                        traceline (p + '0 0 16', cand + '0 0 16', TRUE, self.ar_teammate);
+                        if (trace_fraction == 1)
+                        {
+                            // Check bounding box clearance (center, head, feet, 4 corners)
+                            if (pointcontents (cand) == CONTENT_EMPTY
+                                && pointcontents (cand + '0 0 28') == CONTENT_EMPTY
+                                && pointcontents (cand - '0 0 20') == CONTENT_EMPTY
+                                && pointcontents (cand + '15 15 0') == CONTENT_EMPTY
+                                && pointcontents (cand + '-15 15 0') == CONTENT_EMPTY
+                                && pointcontents (cand + '15 -15 0') == CONTENT_EMPTY
+                                && pointcontents (cand + '-15 -15 0') == CONTENT_EMPTY
+                                && pointcontents (cand + '15 15 28') == CONTENT_EMPTY
+                                && pointcontents (cand + '-15 15 28') == CONTENT_EMPTY
+                                && pointcontents (cand + '15 -15 28') == CONTENT_EMPTY
+                                && pointcontents (cand + '-15 -15 28') == CONTENT_EMPTY)
+                            {
+                                best_pos = cand;
+                                found = TRUE;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        i = i + 1;
+    }
+
+    if (!found)
+        return FALSE;
+
+    spawn_tfog (self.origin);
+    setorigin (self, best_pos);
+    spawn_tfog (best_pos);
+    self.velocity = '0 0 0';
+    self.ar_failstreak = 0;
+    self.ar_goal = self.ar_teammate;
+    self.ar_node = world;
+    self.ar_mode = 0;
+    self.ar_pending = 0;
+    dprint ("ARGEVT ");
+    dprint (self.netname);
+    dprint (" coop catchup warp\n");
+    return TRUE;
 };
 
 // ============================================================================
@@ -5258,17 +5580,30 @@ void() Argus_CoopThink =
             Argus_GoalPop ();
     }
 
-    // 4. Default goal if stack is empty
-    if (self.ar_goal_count == 0)
+    // 4. Objective seek, then the escort default.
+    //
+    // The key seek used to live in the ELSE of "is there a teammate",
+    // so it only ran with no human in the game. With a human present -
+    // every real co-op game - the bot pushed GOAL_ESCORT with a 9999 s
+    // timeout, which never expires and never pops, so the stack was
+    // never empty again and nothing else was ever considered. The
+    // companion escorted and did nothing else for the whole map: no
+    // key, no door, no progress. The two door-handler calls to
+    // Argus_CoopCommitKey could not save it either, because they only
+    // fire once the bot is already walking into a keyed door and
+    // nothing was ever routing it to one.
+    //
+    // The stack is LIFO, so a key fetch pushes ON TOP of escort and
+    // escort resumes underneath when the fetch completes or times out.
+    // Seek whenever escort is the best we have.
+    if (self.ar_goal_count == 0 || Argus_GoalTopKind () == GOAL_ESCORT)
     {
-        if (tmate != world)
+        // throttled: this walks the edict list, and CoopThink runs on
+        // the 0.2 s AI tick for every bot (the #48 lesson)
+        if (time > self.ar_coop_seektime)
         {
-            Argus_GoalPush (GOAL_ESCORT, tmate, self.origin, 10, time + 9999, 0);
-        }
-        else
-        {
-            // Solo co-op mode (#175): seek locked doors / keys or level exit
             local entity door_ent;
+            self.ar_coop_seektime = time + 1.0;
             door_ent = find (world, classname, "door");
             while (door_ent != world)
             {
@@ -5280,22 +5615,52 @@ void() Argus_CoopThink =
                 else
                     door_ent = find (door_ent, classname, "door");
             }
+
+            // Nothing left to unlock and nobody human in the game:
+            // finish the level. This is the only way a solo campaign
+            // run can reach the win the harness reads as "win exit" -
+            // PickGoal walks the item chain and the exit is not an
+            // item, so until now a solo bot could only ever stumble
+            // into it. With a human present we never do this: they
+            // drive progression and escort already follows them out.
+            //
+            // No new goal kind needed. GOAL_FETCH already accepts any
+            // SOLID_TRIGGER, Argus_GoalOK already passes one, and
+            // UseStandPoint already finds a floor with line of sight
+            // to a brush rather than pathing into its bbox centre.
+            if (Argus_GoalTopKind () != GOAL_FETCH && Argus_HumanCount () == 0)
+            {
+                local entity xit;
+                xit = find (world, classname, "trigger_changelevel");
+                if (xit != world && xit.solid == SOLID_TRIGGER)
+                    Argus_GoalPush (GOAL_FETCH, xit, UseStandPoint (xit),
+                                    70, time + 60.0, 0);
+            }
         }
     }
+
+    if (self.ar_goal_count == 0 && tmate != world)
+        Argus_GoalPush (GOAL_ESCORT, tmate, self.origin, 10, time + 9999, 0);
 
     // 5. Expire timeouts
     Argus_GoalTickTimeouts ();
 
     // 6. Act based on current top goal
+    // 6. Act based on current top goal
     topk = Argus_GoalTopKind ();
+    self.ar_coop_local = 0;
     if (topk == GOAL_ESCORT)
     {
-        Argus_ActEscort ();
+        if (Argus_ActEscort ())
+            self.ar_coop_local = 1;
     }
     else if (topk == GOAL_COVER)
     {
         if (time < self.ar_coop_cover_end)
+        {
             self.ar_moveyaw = vectoyaw (self.ar_coop_cover_spot - self.origin);
+            self.ar_coop_local = 1;
+        }
         else
             Argus_GoalPop ();
     }
@@ -5304,26 +5669,36 @@ void() Argus_CoopThink =
         local vector corg;
         corg = Argus_GoalTopAnchor ();
         if (vlen (self.origin - corg) > 128)
-            self.ar_moveyaw = vectoyaw (corg - self.origin);
+        {
+            if (self.ar_goal != tmate)
+            {
+                self.ar_goal = tmate;
+                self.ar_pending = 1;
+                self.ar_mode = 0;
+                self.ar_node = world;
+            }
+        }
         else
         {
             // Perimeter guard: hold perimeter around fallen teammate, 360-degree scan
             self.angles_y = self.angles_y + 90 * frametime;
             self.ar_moveyaw = self.angles_y;
+            self.ar_coop_local = 1;
         }
     }
     else if (topk == GOAL_FETCH)
     {
         local entity fitem;
-        local vector fanchor;
         fitem = Argus_GoalTopSubj ();
-        fanchor = Argus_GoalTopAnchor ();
         if (fitem != world && fitem.solid == SOLID_TRIGGER)
         {
-            if (vlen (self.origin - fanchor) > 48)
-                self.ar_moveyaw = vectoyaw (fanchor - self.origin);
-            else
-                self.ar_moveyaw = vectoyaw (fitem.origin - self.origin);
+            if (self.ar_goal != fitem)
+            {
+                self.ar_goal = fitem;
+                self.ar_pending = 1;
+                self.ar_mode = 0;
+                self.ar_node = world;
+            }
         }
         else
             Argus_GoalPop ();
@@ -5331,15 +5706,16 @@ void() Argus_CoopThink =
     else if (topk == GOAL_INTERACT)
     {
         local entity idoor;
-        local vector idoorpad;
         idoor = Argus_GoalTopSubj ();
-        idoorpad = Argus_GoalTopAnchor ();
         if (idoor != world && (self.items & idoor.items) == idoor.items)
         {
-            if (vlen (self.origin - idoorpad) > 48)
-                self.ar_moveyaw = vectoyaw (idoorpad - self.origin);
-            else
-                self.ar_moveyaw = vectoyaw (idoor.origin - self.origin);
+            if (self.ar_goal != idoor)
+            {
+                self.ar_goal = idoor;
+                self.ar_pending = 1;
+                self.ar_mode = 0;
+                self.ar_node = world;
+            }
             if (idoor.state != STATE_BOTTOM && idoor.state != STATE_DOWN)
                 Argus_GoalPop ();
         }
@@ -5359,12 +5735,6 @@ void() Argus_AI =
     if (coop > 0)
     {
         Argus_CoopThink ();
-        if (self.ar_enemy != world && self.ar_enemy.health > 0)
-            fighting = Argus_Combat ();
-        else
-            fighting = 0;
-        Argus_BodyBlockCheck ();
-        return;
     }
 
     if (self.ar_mode == 0 && !self.ar_pending && self.ar_node != world)
@@ -5455,6 +5825,18 @@ void() Argus_AI =
                     || (time < self.ar_traptime + 20
                         && vlen (self.origin - self.ar_trappos) < 150))
                 {
+                    if (coop > 0)
+                    {
+                        if (Argus_CoopSafeWarp ())
+                            return;
+                        self.ar_failstreak = 0;
+                        self.ar_trappos = self.origin;
+                        self.ar_traptime = time;
+                        self.ar_goal = world;
+                        self.ar_node = world;
+                        self.ar_mode = 0;
+                        return;
+                    }
                     Argus_Event ("trapped");
                     T_Damage (self, self, self, 400);
                     return;
@@ -5465,7 +5847,20 @@ void() Argus_AI =
             }
         }
 
-        if (time < self.ar_traptime + 4 && self.ar_goal == world)
+        if (coop > 0)
+        {
+            if (self.ar_goal == self.ar_teammate && self.ar_teammate != world)
+            {
+                gn = Argus_NearestNode (self.ar_teammate.origin);
+                if (gn != world && gn != self.ar_goal.ar_goalnode)
+                {
+                    self.ar_goal.ar_goalnode = gn;
+                    self.ar_goal.ar_gnodeset = 1;
+                    self.ar_pending = 1;
+                }
+            }
+        }
+        else if (time < self.ar_traptime + 4 && self.ar_goal == world)
         {
             // trapped probation: no shopping, just walk. The wander
             // displaces the bot so the next menu is shopped from new
@@ -6263,6 +6658,10 @@ void() Argus_AI =
             }
         }
     }
+    else if (coop > 0 && self.ar_coop_local)
+    {
+        // Close escort formation: Argus_ActEscort handles wishvel and facing
+    }
     else if (havetarget)
     {
         want = vectoyaw (tp - self.origin);
@@ -6739,8 +7138,11 @@ void() Argus_Init =
     // treatment on Shane's next rebuild; until then spaced names are
     // invisible to it (v3.36 tape: all of Joe Rogan's lines dropped).
     Argus_SpawnOne ("Carmack");
-    Argus_SpawnOne ("Romero");
-    Argus_SpawnOne ("Joe Rogan");
+    if (!coop)
+    {
+        Argus_SpawnOne ("Romero");
+        Argus_SpawnOne ("Joe Rogan");
+    }
 
     remove (self);
 };

@@ -366,6 +366,30 @@ void() changelevel_touch =
 	if (other.classname != "player")
 		return;
 
+	// ARGUS: bots masquerade as classname "player", so this trigger has
+	// always fired for them exactly as it does for a human - a bot
+	// brushing the exit ends the level for everybody. noexit is 0 by
+	// default and every map in the DM rotation carries a
+	// trigger_changelevel, so a bot could end a live match, and a co-op
+	// companion could yank the humans to the next map.
+	//
+	// Ending the level is the most irreversible shared decision there
+	// is, and it belongs to the humans: the same deference the co-op
+	// layer already applies to splash near an ally, item claims and
+	// body-blocking. Deathmatch ends on frags or the clock, never on a
+	// bot. With nobody human in the game a bot may finish the level
+	// itself, which is how a solo campaign run reaches its win.
+	//
+	// Checked before the noexit branch on purpose: a bot that wanders
+	// over the exit on a noexit server should be ignored, not gibbed.
+	if (other.ar_isbot)
+	{
+		if (deathmatch)
+			return;
+		if (Argus_HumanCount () > 0)
+			return;
+	}
+
 #ifdef __QW__ // noexit cvar is not supported in QW
 	if ((cvar("samelevel") == 2) || ((cvar("samelevel") == 3) && (mapname != "start")))
 	{
@@ -1483,6 +1507,10 @@ called when a player connects to a server
 ============*/
 void() ClientConnect =
 {
+	// this edict may be a slot whose previous occupant left; it is a
+	// live client again
+	self.ar_disconnected = 0;
+
 	bprint (PRINT_HIGH, self.netname);
 	bprint (PRINT_HIGH, LOC_CLIENT_JOIN);
 	bprint (PRINT_HIGH, "\n");
@@ -1520,12 +1548,18 @@ void() ClientDisconnect =
 	// health positive, FL_CLIENT and DAMAGE_AIM set. Every bot scan
 	// filters on health > 0, so bots acquired it, rocketed it, and
 	// took a frag off a dead slot through Killed and DropBackpack,
-	// while the human count and spawn crowding still counted it.
-	// set_suicide_frame returns early for an already-gibbed body, so
-	// deadflag is set here rather than relied on.
+	// while spawn crowding still counted it. set_suicide_frame returns
+	// early for an already-gibbed body, so deadflag is set here rather
+	// than relied on.
 	self.health = 0;
 	self.takedamage = DAMAGE_NO;
 	self.deadflag = DEAD_DEAD;
+	// and mark it explicitly for the head count: FL_CLIENT stays set
+	// until the engine reuses the slot, and deadflag cannot tell this
+	// apart from a live player waiting to respawn, so Argus_HumanCount
+	// would keep counting someone who left and the exit guard would
+	// refuse forever.
+	self.ar_disconnected = 1;
 };
 
 /*===========

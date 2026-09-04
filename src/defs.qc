@@ -810,10 +810,12 @@ vector() Argus_GoalTopAnchor;
 float() Argus_GoalTopPrio;
 void() Argus_GoalTickTimeouts;
 void() Argus_CoopThink;
-void() Argus_ActEscort;
+float() Argus_ActEscort;
 entity() Argus_CoopFindThreat;
 entity() Argus_CoopFindTeammate;
 float(entity shooter, entity victim, entity ally) Argus_SplashSafe;
+float(vector p, float max_drop) Argus_WalkFloorOK;
+float() Argus_CoopSafeWarp;
 
 void(entity client, string s) stuffcmd = { if (client.ar_isbot) return; stuffcmd_bi (client, s); };
 entity(vector org, float rad) findradius = #22;
@@ -990,5 +992,9 @@ void(entity door) Argus_CoopCommitKey;
 .float		ar_steal_count;		// Item/kill steals against fairness rules (#176)
 .float		ar_block_count;		// Body-blocking incidents inside player AABB (#176)
 .float		ar_coop_statstime;	// Next telemetry dump timestamp (#176)
+.float		ar_disconnected;	// human left; the body outlives the client
+.float		ar_escform;		// 1 = holding escort formation (hysteresis)
+.float		ar_coop_seektime;	// Next objective (key/door) seek, throttled
+.float		ar_coop_local;		// Flag: local escort steering handled heading this frame
 
 
