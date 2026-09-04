@@ -1831,6 +1831,13 @@ void() BackpackTouch =
 		else
 			sound (other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 		stuffcmd (other, "bf\n");
+		// unlink BEFORE the remove: ED_Free keeps ar_nextitem, and when
+		// the edict is reused ED_ClearEdict zeroes it, cutting the item
+		// chain at that point so every static item behind this pack
+		// vanishes from Argus_PickGoal. If the reused edict is chained
+		// again the add makes it point at itself and the PickGoal walk
+		// never terminates, which is a runaway loop and a dead server.
+		Argus_ItemChain_Remove (self);
 		ReleaseClaim (self);
 		remove(self);
 

@@ -6961,5 +6961,13 @@ void() Argus_MatchStats =
     }
     sprint (self, PRINT_HIGH, "==============================\n\n");
 
-    centerprint5 (self, "Argus Match Stats\n\nActive Bots: ", ftos (nb), "\nMatch Time: ", ftos (rint (time)), "s");
+    // ONE ftos per print. Original NetQuake PF_ftos writes into a
+    // single static pr_string_temp, so two ftos arguments in the same
+    // call both point at the same buffer and both fields showed the
+    // time. QuakeSpasm rotates temp buffers and hid it. A second
+    // centerprint cannot carry the rest, it would just overwrite this
+    // one, and the console block above already prints every field one
+    // ftos at a time.
+    centerprint3 (self, "Argus Match Stats\n\nActive Bots: ", ftos (nb),
+                  "\n\nFull stats in console");
 };
