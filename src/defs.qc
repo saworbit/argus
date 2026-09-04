@@ -954,3 +954,7 @@ void(entity item) ReleaseClaim;
 float(entity item) Argus_TryClaim;
 void(entity item) Argus_ReleaseClaim;
 vector(entity it) Argus_GoalPoint;
+vector(entity ent) UseStandPoint;
+float(entity e) Argus_IsDoor;
+float(entity from, entity to, entity bot) Argus_LinkBlockedByKeyDoor;
+void(entity door) Argus_CoopCommitKey;

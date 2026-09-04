@@ -610,6 +610,18 @@ void() Argus_Route_Finish =
     an_busy = 0;
 };
 
+/// Check if a link crosses a closed keyed door that the bot lacks the key for (#175)
+float(entity from, entity to, entity bot) Argus_LinkBlockedByKeyDoor =
+{
+    traceline (from.origin + '0 0 24', to.origin + '0 0 24', FALSE, world);
+    if (trace_ent != world && Argus_IsDoor (trace_ent))
+    {
+        if (trace_ent.items && !(bot.items & trace_ent.items))
+            return TRUE;
+    }
+    return FALSE;
+};
+
 // adopt the shared cached route: when the last completed flood served
 // the SAME goal node and this bot's start sits on that path (its
 // cache stamp is current), copy the chain into the bot's own slots -
@@ -643,6 +655,8 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
         if ((cur.an_rjmask & bit) && !Argus_BotCanRJ (bot))
             return FALSE;
         if ((cur.an_sprintmask & bit) && skill < 2)
+            return FALSE;
+        if (Argus_LinkBlockedByKeyDoor (cur, nx, bot))
             return FALSE;
         cur = nx;
         hops = hops + 1;
@@ -745,14 +759,18 @@ void() Argus_Nav_Frame =
                 if ((!(cur.an_rjmask & bit) || Argus_BotCanRJ (an_bot))
                     && (!(cur.an_sprintmask & bit) || skill >= 2))
                 {
-                    nb.an_mark = an_gen;
-                    nb.an_par = cur;
-                    nb.an_qnext = world;
-                    if (anq_tail == world)
-                        anq_head = nb;
-                    else
-                        anq_tail.an_qnext = nb;
-                    anq_tail = nb;
+                    // Ripple edge gate (#175): links across closed keyed doors are blocked until key is held
+                    if (!Argus_LinkBlockedByKeyDoor (cur, nb, an_bot))
+                    {
+                        nb.an_mark = an_gen;
+                        nb.an_par = cur;
+                        nb.an_qnext = world;
+                        if (anq_tail == world)
+                            anq_head = nb;
+                        else
+                            anq_tail.an_qnext = nb;
+                        anq_tail = nb;
+                    }
                 }
             }
             i = i + 1;
