@@ -35,7 +35,7 @@ pub struct SoakOpts {
     pub max_mb: u64,
     pub learn: bool,
     /// 1 or 2 engines. Two halves the wall clock; each worker owns
-    /// its port (default and 26010).
+    /// its port: worker 0 the default, worker N the port 26010 + N.
     pub parallel: u32,
 }
 

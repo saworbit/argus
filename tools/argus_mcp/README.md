@@ -75,8 +75,9 @@ argus-mcp reach [map]
 
 ## What it is for
 
-An agent should not invent a shell pipeline from CLAUDE.md. The
-repo file `AGENTS.md` is the session protocol. The loop is:
+An agent should not invent a shell pipeline of its own. This file is
+the session protocol; a clone has no `AGENTS.md` or `CLAUDE.md`, both
+are gitignored. The loop is:
 
 1. `see what=project` (or open `argus://project`) for the tree, maps,
    and the next call.
@@ -229,8 +230,8 @@ tool call:
 | `argus://path/{spec}` | `see what=path name={spec}` |
 | `argus://search/{needle}` | `see what=search name={needle}` |
 
-`see what=last` is in-process only. It resets when the MCP process
-restarts.
+`see what=last` persists to `runs/.lab_session.json`, so it survives a
+restart (0.21).
 
 ## Deeper inspect
 
@@ -519,7 +520,7 @@ carries `scaled` and `scale_note` when that happens.
 | Tool | Needs | Does |
 |------|-------|------|
 | `config_check` | nothing | Resolved paths, exists or not |
-| `compile_qc` | full lab | fteqcc from `src/`. Success is the `Compile finished` / `id format` line, not the exit code. Copies `progs.dat` to `game/argus` and the basedir game dir. Splits known LibreQuake warning noise from new errors. |
+| `compile_qc` | full lab | fteqcc from `src/`. Success is the `Compile finished` / `id format` line, not the exit code. Copies `progs.dat` to every install path: `game/argus`, the basedir game dir, and the rerelease Saved Games copy when it exists. Splits known LibreQuake warning noise from new errors. |
 | `match_run` | full lab | Timed dedicated match, harvest `runs/<name>.log`, return a full brief |
 | `match_start` / `match_command` / `match_status` / `match_stop` | full lab | Same single child, interactive. Status includes a live headline once ARGLOG appears. `match_status since_line=N` returns only new lines plus `next_line`. |
 | `analyze_match` | full lab | Existing plotter plus brief and, if two logs, a compare |
@@ -596,7 +597,7 @@ stdio pipe under `CREATE_NEW_CONSOLE`, so matches could die at
 is not stolen). If inject fails, pass `skill` on `experiment` /
 `match_start`. `match_stop` sends `quit` the same way, then kills.
 Engine children are bound to an explicit process handle and terminated
-on drop or Ctrl+C signal to prevent orphan engine processes.
+on drop, and on Ctrl+C in `soak` and `cycle`, which install a handler. The stdio server does not, so a hard kill relies on the Windows job object instead.
 
 A match that produces no `ARGLOG` / `ARGEVT` is an error with a
 diagnosis and log tail, not `ok: true` on a spawn-crash log. Harvest
