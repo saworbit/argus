@@ -197,6 +197,67 @@ for _k in list(samples.keys()):
 if _n_liquid:
     print(f"lava/slime seats dropped: {_n_liquid}")
 
+# ---- 4c. seats the engine itself refuses to stand on ----
+# hull 1 is the PLAYER CLIP hull, so its floor reaches half a player
+# width PAST every real ledge. The sampler reads that as standable
+# ground. On e1m6 it seated n93 at '-207 305 24', 14u beyond a lip
+# whose world floor is 304u below, with lava at -128 (issue #249).
+# The engine disagrees: SV_movestep calls SV_CheckBottom, which
+# point-traces the box corners against the WORLD, so walkmove refuses
+# the step, and Argus_MoveHazard refuses it too. A bot routed onto
+# such a seat cannot arrive and cannot give up. That one seat cost a
+# co-op companion its whole session: 213 stalls and 215 jumps in
+# 175 s, three goals, mode 0 on 310 of 327 samples.
+#
+# So apply the engine's own test rather than a guess at one. Same
+# constants and same order as SV_CheckBottom: corners solid just
+# under the feet is the fast accept, otherwise the midpoint must find
+# floor within 2 * STEP and every corner must sit within STEP of it.
+# Only the world is consulted, which is what the engine does too.
+def _floor_under(x, y, z, maxdrop):
+    d = 0.0
+    while d <= maxdrop:
+        if h0_contents(x, y, z - d) == CONTENTS_SOLID:
+            return z - d
+        d += 2.0
+    return None
+
+def check_bottom(x, y, oz):
+    """SV_CheckBottom for a player box whose origin sits at oz."""
+    fz = oz - 24                       # mins[2] of the player box
+    cs = ((x - 16, y - 16), (x + 16, y - 16),
+          (x - 16, y + 16), (x + 16, y + 16))
+    ok = True
+    for cx, cy in cs:
+        if h0_contents(cx, cy, fz - 1) != CONTENTS_SOLID:
+            ok = False
+            break
+    if ok:
+        return True
+    mid = _floor_under(x, y, fz, 2 * STEP)
+    if mid is None:
+        return False
+    for cx, cy in cs:
+        c = _floor_under(cx, cy, fz, 2 * STEP)
+        if c is None or c < mid - STEP:
+            return False
+    return True
+
+_n_lip = 0
+for _k in list(samples.keys()):
+    _keep = []
+    for _z in samples[_k]:
+        if check_bottom(xs[_k[0]], ys[_k[1]], _z):
+            _keep.append(_z)
+        else:
+            _n_lip += 1
+    if _keep:
+        samples[_k] = _keep
+    else:
+        del samples[_k]
+if _n_lip:
+    print(f"lip-overhang seats dropped: {_n_lip}")
+
 # ---- 4. fine directed graph ----
 # node id = (cx, cy, zi)
 fine = collections.defaultdict(list)   # id -> [(id2, cost)]
