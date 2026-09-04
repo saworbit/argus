@@ -741,6 +741,29 @@ float CAM_MODE_ORBIT     = 5;
 .float  cam_btn_debounce;       // Mouse button debounce timer
 .string cam_tag;                // Tag on vantage nodes
 
+// The POV camera writes the watched bot's health, armour, ammo and
+// items into the spectating client every frame so the engine status
+// bar reads right. Nothing put them back, so a human left the camera
+// carrying the bot's guns, or at whatever health the bot was on, and
+// standing wherever the camera stopped. These hold the client's own
+// state for the length of the flight.
+.float  cam_sv_health;
+.float  cam_sv_armorvalue;
+.float  cam_sv_armortype;
+.float  cam_sv_currentammo;
+.float  cam_sv_shells;
+.float  cam_sv_nails;
+.float  cam_sv_rockets;
+.float  cam_sv_cells;
+.float  cam_sv_items;
+.float  cam_sv_weapon;
+.vector cam_sv_origin;
+.vector cam_sv_angles;
+
+// argus_cam.qc compiles before client.qc and the camera exit runs the
+// spawn telefrag rite
+void(vector org, entity death_owner) spawn_tdeath;
+
 void() ArgusCam_Frame;
 void() ArgusCam_Toggle;
 void() ArgusCam_CycleMode;
