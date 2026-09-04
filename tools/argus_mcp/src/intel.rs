@@ -583,7 +583,7 @@ pub fn brief_path(path: &Path, map_hint: Option<&str>) -> Result<MatchBrief, Str
     Ok(brief_tape(&tape, map_hint))
 }
 
-fn hull0_for_map(cfg: &Config, map: &str) -> Option<crate::bsp::Hull0> {
+pub fn hull0_for_map(cfg: &Config, map: &str) -> Option<crate::bsp::Hull0> {
     let (path, _) = crate::cartograph::ingest_bsp(cfg, map).ok()?;
     crate::bsp::read_bsp29(&path).ok()?.hull0
 }
@@ -676,12 +676,29 @@ fn resolve_baseline(cfg: &Config, map_hint: Option<&str>) -> Result<std::path::P
             return Ok(p);
         }
     }
-    for candidate in ["ab_dm4_parity", "ab_dm4_B3", "ab_dm4_A"] {
-        if let Ok(p) = resolve_log(cfg, candidate) {
-            return Ok(p);
+    // Only dm4 may fall through to the historical parity tapes. Every
+    // other map used to land here too, so a dm2 or e1m1 candidate was
+    // judged against a dm4 tape with no warning.
+    match map_hint {
+        None => {
+            return Err(
+                "compare against 'baseline' needs a map: pass map=, or a candidate log whose                  header names one, so baselines.json can be consulted"
+                    .into(),
+            )
         }
+        Some(m) if m.eq_ignore_ascii_case("dm4") => {
+            for candidate in ["ab_dm4_parity", "ab_dm4_B3", "ab_dm4_A"] {
+                if let Ok(p) = resolve_log(cfg, candidate) {
+                    return Ok(p);
+                }
+            }
+        }
+        Some(_) => {}
     }
-    Err("no shipped baseline log in ARGUS_RUNS (tried ab_dm4_parity)".into())
+    Err(format!(
+        "no baseline for {} - add it to runs/baselines.json",
+        map_hint.unwrap_or("?")
+    ))
 }
 
 fn resolve_latest(cfg: &Config) -> Result<std::path::PathBuf, String> {
@@ -857,6 +874,10 @@ pub fn format_gate_card(
     out
 }
 
+/// Coverage saturates, so it only tells you anything between tapes long
+/// enough to have saturated.
+const COVER_GATE_MIN_SEC: f64 = 120.0;
+
 pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     let mut gates = Vec::new();
     let bars = bars_for(b.map.as_deref().or(a.map.as_deref()));
@@ -880,11 +901,15 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
         },
     });
 
+    // an absolute floor like lava and freezes have. Scaling a 185 s
+    // baseline down to a 30 s experiment leaves 1 or 2 stalls, where
+    // one stall of ordinary noise is a 100% "regression".
+    let stall_floor = a.totals.stalls.max(3) + 2;
     let stall_a = a.totals.stalls.max(1) as f64;
     let stall_ratio = b.totals.stalls as f64 / stall_a;
     gates.push(Gate {
         name: "stall_parity".into(),
-        pass: stall_ratio <= bars.stall_ratio,
+        pass: stall_ratio <= bars.stall_ratio || b.totals.stalls <= stall_floor,
         a: a.totals.stalls as f64,
         b: b.totals.stalls as f64,
         note: if stall_ratio > 1.25 {
@@ -900,7 +925,10 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     let eng_ratio = b.totals.engages as f64 / eng_a;
     gates.push(Gate {
         name: "engagements".into(),
-        pass: eng_ratio >= bars.engage_ratio,
+        // same max(1) trap as the stall gate: with a zero-engage
+        // baseline the ratio is fabricated and every candidate reads
+        // as a collapse. There is nothing to collapse from.
+        pass: eng_ratio >= bars.engage_ratio || a.totals.engages == 0,
         a: a.totals.engages as f64,
         b: b.totals.engages as f64,
         note: if eng_ratio < bars.engage_ratio {
@@ -974,12 +1002,19 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
 
     let cover_a = a.totals.cover.max(1) as f64;
     let cover_ratio = b.totals.cover as f64 / cover_a;
+    // coverage is a saturating total, so it only compares between tapes
+    // long enough to have saturated. A 30 s experiment legitimately sees
+    // a third of what a 185 s tape sees; gating that is noise.
+    let cover_gated = b.totals.duration_sec >= COVER_GATE_MIN_SEC
+        && a.totals.duration_sec >= COVER_GATE_MIN_SEC;
     gates.push(Gate {
         name: "coverage".into(),
-        pass: cover_ratio >= 0.80,
+        pass: !cover_gated || cover_ratio >= 0.80,
         a: a.totals.cover as f64,
         b: b.totals.cover as f64,
-        note: if cover_ratio < 0.80 {
+        note: if !cover_gated {
+            format!("not gated below {COVER_GATE_MIN_SEC:.0} s of tape")
+        } else if cover_ratio < 0.80 {
             "map coverage dropped".into()
         } else {
             "coverage at parity".into()
@@ -996,7 +1031,7 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     let any_fail = gates.iter().any(|g| !g.pass);
     let improved = !hard_fail
         && ((b.totals.lava_deaths < a.totals.lava_deaths)
-            || (b.totals.stalls as f64) < stall_a * 0.85
+            || (a.totals.stalls > 0 && (b.totals.stalls as f64) < stall_a * 0.85)
             || eng_ratio > 1.15
             || (b.totals.frags > a.totals.frags && b.totals.all_frags_positive));
 
@@ -1098,7 +1133,9 @@ pub fn scale_brief_to_duration(mut brief: MatchBrief, target_sec: f64) -> MatchB
     brief.totals.weapons = scale_u32(brief.totals.weapons, k);
     brief.totals.grabs = scale_u32(brief.totals.grabs, k);
     brief.totals.acquisitions = scale_u32(brief.totals.acquisitions, k);
-    brief.totals.cover = ((brief.totals.cover as f64) * k).round() as usize;
+    // cover is NOT scaled: it saturates. A bot has seen most of the map
+    // inside the first minute or two, so scaling a 185 s figure of 446
+    // cells down to 72 made the coverage gate impossible to fail.
     brief.totals.freezes = scale_u32(brief.totals.freezes, k);
     brief.totals.mover_waits = scale_u32(brief.totals.mover_waits, k);
     brief.totals.boards = scale_u32(brief.totals.boards, k);
@@ -1159,8 +1196,12 @@ fn compare_runs_inner(
     map_hint: Option<&str>,
     scale: bool,
 ) -> Result<CompareReport, String> {
-    let a = brief_run(cfg, log_a, map_hint)?;
+    // brief the candidate FIRST when no map was named: its header
+    // carries the map, and without it "baseline" resolved to dm4 and
+    // the gates ran on dm4 bars whatever the candidate actually was.
     let b = brief_run(cfg, log_b, map_hint)?;
+    let hint_owned = map_hint.map(str::to_string).or_else(|| b.map.clone());
+    let a = brief_run(cfg, log_a, hint_owned.as_deref())?;
     let mut report = if scale {
         compare_briefs_scaled(a, b)
     } else {
@@ -2440,6 +2481,78 @@ ARGEVT Reap spawned
         let latest = resolve_run_ref(&cfg, "latest", None).unwrap();
         assert!(latest.ends_with("mcp_new.log"));
         let _ = fs::remove_dir_all(&root);
+    }
+
+    // #211: with no map= the baseline used to resolve to a dm4 tape
+    // whatever the candidate was, and an unknown map fell through to
+    // ab_dm4_parity in silence.
+    #[test]
+    fn baseline_without_a_map_is_an_error_not_a_dm4_tape() {
+        let root = std::env::temp_dir().join(format!("argus-nohint-{}", std::process::id()));
+        let runs = root.join("runs");
+        std::fs::create_dir_all(&runs).unwrap();
+        std::fs::write(runs.join("ab_dm4_parity.log"), log_a()).unwrap();
+        let mut env = std::collections::HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = crate::config::load_for_reads_from(&env, &root).unwrap();
+        assert!(resolve_baseline(&cfg, None).is_err());
+        assert!(resolve_baseline(&cfg, Some("e1m1")).is_err());
+        assert!(resolve_baseline(&cfg, Some("dm4")).is_ok());
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    // #211: the candidate's own header supplies the map when none is passed.
+    #[test]
+    fn compare_with_no_map_takes_the_hint_from_the_candidate() {
+        let root = std::env::temp_dir().join(format!("argus-hint-{}", std::process::id()));
+        let runs = root.join("runs");
+        std::fs::create_dir_all(&runs).unwrap();
+        let dm2 = log_a().replace("init on dm4", "init on dm2");
+        std::fs::write(runs.join("cand_dm2.log"), &dm2).unwrap();
+        std::fs::write(runs.join("base_dm2.log"), &dm2).unwrap();
+        std::fs::write(runs.join("ab_dm4_parity.log"), log_a()).unwrap();
+        std::fs::write(runs.join("baselines.json"), r#"{"dm2": "base_dm2"}"#).unwrap();
+        let mut env = std::collections::HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = crate::config::load_for_reads_from(&env, &root).unwrap();
+        let rep = compare_runs(&cfg, "baseline", "cand_dm2", None).unwrap();
+        assert_eq!(rep.a.map.as_deref(), Some("dm2"));
+        assert_eq!(rep.b.map.as_deref(), Some("dm2"));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    // #216: identical clean tapes are parity, and a couple of stalls on a
+    // short tape is noise, not a hard fail.
+    #[test]
+    fn short_tape_stall_gate_has_a_floor() {
+        let clean = "ARGUS init on dm4
+ARGLOG Reap t 1.0 pos '0.0 0.0 24.0' spd 0 yaw 0 mode 2 st 0 gl 0 hp 100 frg 1
+ARGLOG Reap t 30.0 pos '64.0 0.0 24.0' spd 200 yaw 0 mode 2 st 0 gl 8 hp 90 frg 4
+";
+        let a = brief_text(clean, Some("dm4"));
+        let b = brief_text(clean, Some("dm4"));
+        let rep = compare_briefs(a, b);
+        assert_eq!(rep.verdict, Verdict::Parity, "two zero-stall tapes are parity");
+
+        let two = clean.replace("st 0 gl 8", "st 2 gl 8");
+        let a = brief_text(clean, Some("dm4"));
+        let b = brief_text(&two, Some("dm4"));
+        let rep = compare_briefs(a, b);
+        let g = rep.gates.iter().find(|g| g.name == "stall_parity").unwrap();
+        assert!(g.pass, "2 stalls against a 0-stall baseline is inside the floor");
+    }
+
+    // #216: coverage saturates. Scaling it made the gate unfailable.
+    #[test]
+    fn coverage_is_not_scaled_and_not_gated_on_short_tapes() {
+        let a = brief_text(&log_a(), Some("dm4"));
+        let cover = a.totals.cover;
+        let scaled = scale_brief_to_duration(a, 30.0);
+        assert_eq!(scaled.totals.cover, cover, "cover must survive scaling");
+        let b = brief_text(&log_a(), Some("dm4"));
+        let rep = compare_briefs(scaled, b);
+        let g = rep.gates.iter().find(|g| g.name == "coverage").unwrap();
+        assert!(g.note.contains("not gated"));
     }
 
     #[test]
