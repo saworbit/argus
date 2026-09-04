@@ -12,6 +12,10 @@ engine/*.pak
 engine/*.dll
 engine/argus316/
 engine/omicron/
+# scratch mod dirs: lab runs need a -game dir under engine/, and a
+# git add -A has twice swept one into a commit. Only argus/ ships.
+engine/*/
+!engine/argus/
 engine/qconsole.log
 
 # id-derived coloured model staging (regenerate from LibreQuake for
