@@ -305,8 +305,7 @@ fn write_response(stream: &mut TcpStream, resp: &Response) -> Result<(), String>
 /// progs.dat. A page on any other origin could reach them as a simple
 /// cross-site request: text/plain body, no preflight, no token. Require
 /// a same-origin Host, no cross-origin Origin, and real JSON.
-fn post_allowed(req: &Request) -> Result<(), Response> {
-    let port = GUI_PORT.load(std::sync::atomic::Ordering::Relaxed);
+fn post_allowed(req: &Request, port: u16) -> Result<(), Response> {
     let host = req.headers.get("host").map(|s| s.as_str()).unwrap_or("");
     let want_a = format!("127.0.0.1:{port}");
     let want_b = format!("localhost:{port}");
@@ -340,8 +339,16 @@ fn post_allowed(req: &Request) -> Result<(), Response> {
 }
 
 fn route(req: &Request) -> Response {
+    route_at(req, GUI_PORT.load(std::sync::atomic::Ordering::Relaxed))
+}
+
+/// The bound port is passed in rather than read from a global: the POST
+/// guard is a security check and should not depend on hidden process
+/// state, and the lib tests run concurrently in one process, which made
+/// a global-reading version flake.
+fn route_at(req: &Request, port: u16) -> Response {
     if req.method == "POST" {
-        if let Err(r) = post_allowed(req) {
+        if let Err(r) = post_allowed(req, port) {
             return r;
         }
     }
@@ -888,13 +895,16 @@ mod tests {
         for (k, v) in headers {
             h.insert(k.to_string(), v.to_string());
         }
-        route(&Request {
-            method: "POST".into(),
-            path: path.into(),
-            query: HashMap::new(),
-            body: b"{}".to_vec(),
-            headers: h,
-        })
+        route_at(
+            &Request {
+                method: "POST".into(),
+                path: path.into(),
+                query: HashMap::new(),
+                body: b"{}".to_vec(),
+                headers: h,
+            },
+            7420,
+        )
     }
 
     // #214: these endpoints rewrite the source tree and every installed
@@ -902,7 +912,6 @@ mod tests {
     // cross-site request: text/plain body, no preflight, no token.
     #[test]
     fn post_endpoints_refuse_other_origins() {
-        GUI_PORT.store(7420, std::sync::atomic::Ordering::Relaxed);
         let ok_headers = [
             ("host", "127.0.0.1:7420"),
             ("content-type", "application/json"),

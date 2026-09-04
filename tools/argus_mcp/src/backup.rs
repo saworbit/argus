@@ -358,16 +358,42 @@ mod tests {
             "an out-of-tree install must get an indexed key, got {keys:?}"
         );
 
+        // take_backup only READS the install paths, so it is safe here.
+        // restore_backup is deliberately NOT called: install_paths()
+        // includes the rerelease Saved Games copy, which lives under
+        // USERPROFILE and not under this test's temp root, so restoring
+        // would write to a real install on the developer's machine -
+        // the exact class #222 was about, and it made this test flaky
+        // besides. The defect #215 describes is the manifest KEY
+        // collision, and the manifest is what we check.
         let taken = take_backup(&cfg);
         assert!(taken.ok, "{taken:?}");
-        fs::write(outside.join("argus/progs.dat"), b"CLOBBERED").unwrap();
-        let r = restore_backup(&cfg, &taken.id).unwrap();
-        assert!(r.ok, "{r:?}");
-        assert_eq!(
-            fs::read(outside.join("argus/progs.dat")).unwrap(),
-            b"OUTSIDE",
-            "the out-of-tree install must come back"
+        let man = read_manifest(&backups_dir(&cfg).join(&taken.id))
+            .expect("manifest written");
+        let progs: Vec<&BackupFile> = man
+            .files
+            .iter()
+            .filter(|f| f.rel.ends_with("progs.dat"))
+            .collect();
+        let mut rels: Vec<&str> = progs.iter().map(|f| f.rel.as_str()).collect();
+        rels.sort();
+        let uniq = {
+            let mut r = rels.clone();
+            r.dedup();
+            r.len()
+        };
+        assert_eq!(rels.len(), uniq, "progs.dat entries collided: {rels:?}");
+        assert!(
+            progs.iter().any(|f| f.restore_to.contains("steam")),
+            "the out-of-tree install must be in the manifest, got {rels:?}"
         );
+        for f in &progs {
+            assert!(
+                backups_dir(&cfg).join(&taken.id).join(&f.rel).is_file(),
+                "manifest names {} but no file was copied",
+                f.rel
+            );
+        }
         let _ = fs::remove_dir_all(&base);
     }
 }
