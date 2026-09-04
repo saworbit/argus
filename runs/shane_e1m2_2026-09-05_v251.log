@@ -1,0 +1,1267 @@
+LOG started on: 09/05/2026 09:12:04 
+Playing registered version.
+Console initialized.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+Video mode 800x600x24 60Hz (24-bit z-buffer, 0x FSAA) initialized
+GL_VENDOR: NVIDIA Corporation
+GL_RENDERER: NVIDIA GeForce RTX 3070 Ti/PCIe/SSE2
+GL_VERSION: 4.6.0 NVIDIA 610.74
+FOUND: ARB_vertex_buffer_object
+FOUND: ARB_multitexture
+GL_MAX_TEXTURE_UNITS: 4
+FOUND: ARB_texture_env_combine
+FOUND: ARB_texture_env_add
+FOUND: SDL_GL_SetSwapInterval
+FOUND: EXT_texture_filter_anisotropic
+FOUND: ARB_texture_non_power_of_two
+FOUND: GLSL
+Enabled: GLSL gamma
+Enabled: GLSL alias model rendering
+Enabled: EXT_packed_pixels
+FOUND: glGenerateMipmap
+
+Sound Initialization
+SDL audio spec  : 44100 Hz, 1024 samples, 2 channels
+SDL audio driver: wasapi - C32F391 (NVIDIA High Definition Audio), 65536 bytes buffer
+Audio: 16 bit, stereo, 44100 Hz
+CDAudio disabled at compile time
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing quake.rc
+execing default.cfg
+execing config.cfg
+execing autoexec.cfg
+SpawnServer: e1m2
+Clearing memory
+Programs occupy 857K.
+Mod_LoadTexinfo: 1 texture(s) missing from BSP file
+trying to open external vis file
+maps/e1m2.vis not found, trying argus.vis
+external vis not found
+Loaded external entity file maps/e1m2@0caa.ent
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 198 nodes, 535 links
+52 entities inhibited
+ARGUS init on e1m2
+ARGEVT Carmack spawned
+Server spawned.
+CL_EstablishConnection: connected to local
+recording to C:\argus\engine/argus/session.dem.
+3 demo(s) in loop
+Client LOCAL connected
+ARGEVT Carmack goal_push 3
+ARGLOG Carmack t   1.2 pos '1496.0 1560.0 264.0' spd 0 yaw 315.9 mode 0 st 0 gl 0 hp 100 frg 0
+
+FITZQUAKE 0.85 SERVER (56868 CRC)
+Serverinfo packet received.
+
+
+
+Castle of the Damned
+Using protocol 15
+FindFile: can't find music/track08.ogg
+FindFile: can't find music/track08.opus
+FindFile: can't find music/track08.mp3
+FindFile: can't find music/track08.flac
+FindFile: can't find music/track08.wav
+Couldn't find a cdrip for track 8
+CL_SignonReply: 1
+CL_SignonReply: 2
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGLOG player t   1.4 pos '1608.0 1664.0 265.0' spd 0 yaw 270 mode 0 st 0 gl 0 hp 100 frg 0
+CL_SignonReply: 3
+242.4 megabyte data cache
+CL_SignonReply: 4
+ARGLOG Carmack t   1.7 pos '1551.2 1408.4 232.0' spd 257.3 yaw 289.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   1.9 pos '1608.0 1664.0 264.0' spd 0 yaw -78.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.2 pos '1551.0 1415.4 232.0' spd  33.6 yaw 290.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   2.4 pos '1608.0 1664.0 264.0' spd 0 yaw -87.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.7 pos '1547.7 1377.8 216.0' spd 320.4 yaw 263.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   2.9 pos '1582.8 1609.5 264.0' spd 334.2 yaw -92.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack grab 
+ARGLOG Carmack t   3.2 pos '1539.3 1299.9 200.0' spd 320.0 yaw 255.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   3.4 pos '1486.9 1536.2 264.0' spd  83.1 yaw -91.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   3.7 pos '1594.2 1255.4 200.0' spd 223.8 yaw 219.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   4.0 pos '1479.3 1530.8 264.0' spd 0 yaw -87.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   4.2 pos '1633.3 1247.0 200.0' spd 233.6 yaw 197.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   4.5 pos '1479.3 1530.8 264.0' spd 0 yaw -85.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   4.7 pos '1631.2 1246.5 200.0' spd 297.9 yaw 187.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   5.0 pos '1479.3 1530.8 264.0' spd 0 yaw -84.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 5
+ARGEVT Carmack goal key
+Carmack: Compiling level geometry. Latency target: 0 ms.
+ARGEVT Carmack route 20 start '1585.0 1185.0 208.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t   5.2 pos '1586.0 1252.3 200.0' spd 372.9 yaw 129.1 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGLOG player t   5.5 pos '1479.3 1530.8 264.0' spd 0 yaw -84.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack route 21 start '1489.0 1249.0 204.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t   5.7 pos '1480.0 1391.4 216.0' spd 331.2 yaw 90 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   6.0 pos '1479.3 1530.8 264.0' spd 0 yaw -84.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.2 pos '1529.7 1491.2 264.0' spd 320.0 yaw 277 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   6.5 pos '1587.2 1510.6 264.0' spd  82.0 yaw -92.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.8 pos '1693.1 1545.0 264.0' spd 467.9 yaw 126.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGEVT Carmack route 22 start '1745.0 1569.0 264.0' goal '945.0 -639.0 440.0'
+ARGLOG player t   7.0 pos '1503.1 1542.0 264.0' spd 226.8 yaw -61.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.3 pos '1543.0 1565.9 264.0' spd 330.6 yaw 300 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   7.5 pos '1459.7 1575.5 264.0' spd 0 yaw  -9.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.8 pos '1516.5 1397.2 232.0' spd 483.7 yaw  20.5 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   8.0 pos '1459.7 1575.5 264.0' spd 0 yaw  23.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   8.3 pos '1533.1 1462.9 264.0' spd 324.3 yaw 128 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t   8.5 pos '1459.7 1575.5 264.0' spd 0 yaw -98.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   8.8 pos '1562.5 1629.5 272.0' spd 444.7 yaw 289 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG player t   9.0 pos '1459.7 1575.5 264.0' spd 0 yaw -113.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   9.3 pos '1648.0 1669.6 264.0' spd  26.0 yaw 271 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGLOG player t   9.5 pos '1459.7 1575.5 264.0' spd 0 yaw -25.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   9.8 pos '1648.0 1678.9 264.0' spd   6.4 yaw 271 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  10.0 pos '1459.7 1575.5 264.0' spd 0 yaw  23.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.3 pos '1748.3 1678.1 264.0' spd 225.0 yaw 252 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  10.5 pos '1459.7 1575.5 264.0' spd 0 yaw  23.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.8 pos '1741.4 1553.9 271.7' spd 320.1 yaw 248 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  11.0 pos '1459.7 1575.5 264.0' spd 0 yaw -26.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.3 pos '1654.9 1410.8 253.3' spd 322.5 yaw 261 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  11.6 pos '1459.7 1575.5 264.0' spd 0 yaw -59.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.8 pos '1591.1 1257.0 200.0' spd 326.2 yaw 258 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  12.1 pos '1476.4 1512.0 264.0' spd 199.6 yaw -80.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  12.3 pos '1579.8 1094.5 200.2' spd 321.5 yaw 249 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  12.6 pos '1491.9 1412.0 243.8' spd 200.1 yaw -90 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  12.9 pos '1546.6 952.0 200.0' spd 139.0 yaw 246 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  13.1 pos '1501.0 1311.2 200.0' spd 199.9 yaw -92.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+ARGLOG Carmack t  13.4 pos '1474.9 866.9 236.7' spd 129.6 yaw 217 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGLOG player t  13.6 pos '1498.9 1208.7 204.0' spd 199.5 yaw -94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  13.9 pos '1440.0 832.0 216.0' spd 0 yaw 216 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  14.1 pos '1491.6 1107.9 204.0' spd 199.8 yaw -95.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.4 pos '1440.0 832.0 216.0' spd 0 yaw 216 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  14.6 pos '1495.6 1000.0 204.0' spd 322.3 yaw -113.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.9 pos '1440.0 832.0 216.0' spd 0 yaw 216 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG player t  15.1 pos '1545.7 862.5 216.0' spd 203.9 yaw -137.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1393.0 609.0 280.0'
+ARGEVT Carmack jump
+ARGUS routecache adopt
+ARGEVT Carmack route 18 start '1489.0 801.0 232.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t  15.4 pos '1442.1 826.5 257.6' spd  34.6 yaw 215 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  15.6 pos '1536.0 704.1 264.0' spd 328.7 yaw 147.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  15.9 pos '1440.0 773.9 248.0' spd 329.9 yaw 207 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  16.1 pos '1451.1 608.0 264.0' spd  94.9 yaw 108.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  16.4 pos '1390.6 646.0 280.0' spd 131.5 yaw 223 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  16.6 pos '1331.9 608.8 296.0' spd 203.3 yaw 164.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack engage monster
+ARGLOG Carmack t  16.9 pos '1239.3 656.6 312.0' spd 347.3 yaw 239.6 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  17.1 pos '1228.6 648.3 312.0' spd 343.9 yaw -175.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  17.4 pos '1088.8 570.1 312.0' spd 361.6 yaw 238.0 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGEVT Carmack pursue
+ARGLOG player t  17.6 pos '1133.7 766.4 312.0' spd 356.4 yaw -126.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGUS Carmack hunch item_key1
+ARGLOG Carmack t  17.9 pos '986.5 545.1 312.0' spd 255.4 yaw 354.1 mode 0 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack pursue
+ARGEVT Carmack route 16 start '1009.0 545.0 312.0' goal '945.0 -639.0 440.0'
+ARGLOG player t  18.1 pos '1017.6 747.7 312.0' spd 187.0 yaw -80.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  18.4 pos '1118.1 493.2 308.0' spd 232.5 yaw 232.1 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  18.6 pos '1085.5 745.6 312.0' spd  14.7 yaw -92.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Carmack t  18.9 pos '1167.0 376.7 308.0' spd  72.6 yaw 194.5 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack pursue
+ARGLOG player t  19.1 pos '1085.9 745.6 312.0' spd 0 yaw -88.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_push 3
+ARGLOG Carmack t  19.5 pos '1046.4 413.4 308.0' spd 186.6 yaw 194.0 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  19.7 pos '1086.0 742.6 312.0' spd 109.4 yaw -87.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_pop
+ARGLOG Carmack t  20.0 pos '1014.8 405.6 261.7' spd  38.6 yaw 279 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  20.2 pos '1114.4 641.7 312.0' spd 239.8 yaw -88.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG Carmack t  20.5 pos '1040.3 386.5 171.7' spd 108.2 yaw   8.6 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  20.7 pos '1142.6 539.0 312.0' spd 193.5 yaw -104.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  21.0 pos '1095.8 374.5 172.7' spd 118.1 yaw 76 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  21.2 pos '1128.2 468.4 308.0' spd 289.7 yaw -126.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGLOG Carmack t  21.5 pos '1152.0 375.1 308.0' spd 0 yaw  36.5 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  21.7 pos '1129.8 407.1 308.0' spd  27.9 yaw -109.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  22.0 pos '1152.0 375.8 308.0' spd  32.0 yaw  41.8 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG player t  22.2 pos '1108.4 434.2 308.0' spd 199.7 yaw -57.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  22.5 pos '1233.0 432.0 270.3' spd  30.5 yaw 249 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  22.7 pos '1081.1 473.1 308.0' spd 0 yaw -19.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG Carmack t  23.0 pos '1207.2 421.6 173.0' spd 105.6 yaw 251 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  23.2 pos '1095.5 445.3 308.0' spd 211.5 yaw -95.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  23.5 pos '1159.2 386.0 172.8' spd 128.9 yaw 157.9 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  23.7 pos '1098.0 313.2 308.0' spd 320.1 yaw -95.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  24.0 pos '1101.2 348.0 172.5' spd 145.6 yaw 265 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  24.2 pos '1105.8 152.0 308.0' spd 320.0 yaw -84.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+You got 5 shells
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  24.5 pos '1056.3 297.9 172.3' spd 113.8 yaw 284 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  24.7 pos '1112.4  84.5 308.0' spd  11.7 yaw -78.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  25.0 pos '1060.3 234.4 172.5' spd 133.3 yaw 290 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  25.2 pos '1115.1  50.6 308.0' spd 313.2 yaw -70.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGEVT Carmack swim
+ARGLOG Carmack t  25.5 pos '1070.1 161.6 172.8' spd 155.4 yaw 285 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  25.7 pos '1054.0 -92.0 320.0' spd 318.0 yaw  -8.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  26.0 pos '1083.2  79.8 171.8' spd 170.8 yaw 256 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  26.2 pos '957.7 -142.9 320.0' spd 101.9 yaw  -4.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  26.5 pos '1079.8  32.3 172.7' spd  44.4 yaw 124.1 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  26.7 pos '930.9 -208.1 320.0' spd 231.3 yaw  15.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  27.0 pos '1055.3  50.6 172.1' spd  72.6 yaw 93 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  27.2 pos '880.2 -216.0 320.0' spd  24.5 yaw  14.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  27.6 pos '1029.0  79.8 173.0' spd  64.5 yaw 221.3 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  27.7 pos '852.0 -89.5 361.7' spd 150.7 yaw  -7.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  28.1 pos '993.2  70.8 171.4' spd  81.3 yaw 238 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  28.2 pos '797.6 -146.6 320.0' spd 343.3 yaw   8.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  28.6 pos '949.2  45.8 172.8' spd 113.1 yaw 355 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  28.7 pos '784.9 -216.0 320.0' spd 0 yaw  18.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  29.1 pos '894.7  46.0 172.8' spd 135.5 yaw 356 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  29.3 pos '841.5 -203.2 320.0' spd 334.4 yaw  15.5 mode 0 st 0 gl 0 hp 63 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break 0 steal 0 block 0
+ARGEVT Carmack swim
+ARGLOG Carmack t  29.6 pos '906.1  95.7 172.4' spd 132.4 yaw 295.8 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  29.8 pos '921.8 -48.2 362.2' spd 346.6 yaw  -9.8 mode 0 st 0 gl 0 hp 63 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  30.1 pos '971.0  68.9 172.0' spd 140.4 yaw 247 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  30.3 pos '996.1 -84.9 320.0' spd 323.5 yaw -19.7 mode 0 st 0 gl 0 hp 63 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  30.6 pos '982.7  32.8 172.5' spd  53.6 yaw 0 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+You got 2 rockets
+ARGLOG player t  30.8 pos '1084.5 -216.0 320.0' spd 324.9 yaw  49.2 mode 0 st 0 gl 0 hp 63 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  31.1 pos '961.2  57.5 172.9' spd  74.7 yaw  63.5 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  31.3 pos '1247.2 -216.0 320.0' spd 331.4 yaw  43.6 mode 0 st 0 gl 0 hp 63 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+You receieve 15 health
+ARGEVT Carmack swim
+ARGLOG Carmack t  31.6 pos '984.0  88.5 172.9' spd  13.2 yaw 296 mode 2 st 1 gl 0 hp 100 frg 0
+You receieve 15 health
+ARGEVT Carmack swim
+ARGLOG player t  31.8 pos '1411.7 -202.7 320.0' spd 305.8 yaw  94.2 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  32.1 pos '985.1  63.5 173.2' spd  72.1 yaw 298 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  32.3 pos '1447.7 -181.1 320.0' spd 106.0 yaw  95.6 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  32.6 pos '1007.1  32.0 172.2' spd 100.5 yaw 0 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  32.8 pos '1427.0 -39.1 320.0' spd 320.0 yaw  99.8 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  33.1 pos '1056.0  47.6 173.1' spd 103.1 yaw 94 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  33.3 pos '1408.0 122.3 320.0' spd 320.1 yaw 151.9 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break   0.8 steal 0 block 0
+ARGEVT Carmack swim
+You got the Double-barrelled Shotgun
+ARGLOG Carmack t  33.6 pos '1091.0  85.4 171.6' spd 126.3 yaw 174.3 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  33.8 pos '1394.1 267.7 320.0' spd 150.5 yaw -178.6 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  34.1 pos '1056.0 135.5 173.2' spd 100.0 yaw 280 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  34.3 pos '1391.6 292.1 320.0' spd 105.7 yaw -170.2 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  34.6 pos '1055.0 192.7 172.6' spd 126.5 yaw 277 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  34.8 pos '1415.1 144.0 320.0' spd 320.7 yaw -175.8 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  35.1 pos '1048.3 263.2 172.3' spd 149.4 yaw 277 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  35.3 pos '1424.2  71.4 320.0' spd  16.7 yaw -175.8 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  35.6 pos '987.9 270.1 172.9' spd 186.6 yaw 290 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  35.8 pos '1424.2  70.9 320.0' spd 0 yaw -175.8 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  36.2 pos '1049.5 212.0 172.1' spd 207.8 yaw 278 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  36.3 pos '1430.0 -60.0 320.0' spd 315.8 yaw -171.6 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  36.7 pos '1047.1 294.2 172.5' spd 236.2 yaw 276 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  36.8 pos '1293.2 -139.3 320.0' spd 341.8 yaw 164.5 mode 0 st 0 gl 0 hp 93 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  37.2 pos '995.5 207.0 172.2' spd 237.2 yaw 307 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  37.3 pos '1268.2 -165.9 320.0' spd 159.0 yaw 164.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break   1.2 steal 0 block 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  37.7 pos '1005.3 152.5 172.6' spd  46.1 yaw 300 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  37.9 pos '1316.0 -104.5 320.0' spd 151.2 yaw 173.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  38.2 pos '1035.2 160.7 172.5' spd  71.1 yaw 312 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  38.4 pos '1227.9 -62.2 320.0' spd 202.8 yaw -180 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  38.7 pos '1075.1 155.7 172.0' spd  87.0 yaw 305 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  38.9 pos '1139.0 -83.4 320.0' spd  78.7 yaw 170.2 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  39.2 pos '1121.4 133.8 173.2' spd 111.2 yaw 273 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  39.4 pos '1126.9 -113.3 320.0' spd 146.1 yaw 167.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  39.7 pos '1151.9  95.0 171.8' spd  88.0 yaw 264 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  39.9 pos '1122.9 -137.7 320.0' spd 0 yaw 163.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  40.2 pos '1149.6  42.8 172.7' spd 113.2 yaw 188 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  40.4 pos '1157.5 -148.2 320.0' spd  34.1 yaw 163.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  40.7 pos '1124.6  38.5 172.2' spd  66.7 yaw 110 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  40.9 pos '1073.9 -129.2 320.0' spd 307.0 yaw 161.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  41.2 pos '1093.3  63.1 172.9' spd  95.8 yaw 109.5 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  41.4 pos '999.4 -153.1 320.0' spd  27.7 yaw 151.9 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break   1.2 steal 0 block 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  41.7 pos '1056.0  90.9 172.4' spd  30.4 yaw 260 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  41.9 pos '975.8 -128.1 320.0' spd 236.4 yaw 132.2 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  42.3 pos '1055.6  64.7 173.0' spd  67.4 yaw 259 mode 2 st 1 gl 0 hp 100 frg 0
+You got 5 shells
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  42.4 pos '917.3 -69.7 320.0' spd 242.6 yaw -173.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+You got 5 shells
+ARGEVT Carmack swim
+ARGLOG Carmack t  42.8 pos '1046.9  32.0 172.3' spd  37.6 yaw 166.9 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  42.9 pos '800.6 -125.8 320.0' spd 236.1 yaw 122.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  43.3 pos '1024.9  44.4 172.7' spd  63.9 yaw  95.3 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  43.4 pos '853.1 -153.1 320.0' spd 263.1 yaw  95.6 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  43.8 pos '995.5  69.9 172.7' spd  87.7 yaw 223 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  43.9 pos '1009.4 -208.4 320.0' spd 339.6 yaw  85.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  44.3 pos '950.3  78.1 172.3' spd  95.6 yaw 233 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  44.4 pos '1143.3 -146.3 320.0' spd 274.1 yaw  91.4 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+You got 5 shells
+ARGEVT Carmack swim
+ARGLOG Carmack t  44.8 pos '899.0  69.5 173.1' spd 107.9 yaw 277.1 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  44.9 pos '1107.3 -24.0 315.3' spd 241.5 yaw 115.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  45.3 pos '894.2  32.0 172.5' spd  38.4 yaw 0 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  45.4 pos '1107.5  48.6 308.0' spd 322.0 yaw 160.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack coop_stats break   1.2 steal 0 block 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  45.8 pos '918.2  40.3 172.7' spd  64.0 yaw 349.5 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  46.0 pos '1088.0 172.8 308.0' spd 222.7 yaw 167.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  46.3 pos '956.1  46.8 171.5' spd  86.3 yaw 324 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  46.5 pos '1093.7 216.5 308.0' spd 0 yaw 170.2 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  46.8 pos '1008.6  44.0 172.6' spd 112.8 yaw 351 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  47.0 pos '1093.6 216.8 308.0' spd 0 yaw -161.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  47.3 pos '1062.2  61.5 172.6' spd 112.5 yaw 96 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  47.5 pos '1093.6 216.8 308.0' spd 0 yaw 147.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  47.8 pos '1064.0 116.2 172.9' spd 142.4 yaw 277 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  48.0 pos '1093.6 216.8 308.0' spd 0 yaw 147.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  48.3 pos '1055.6 181.6 171.7' spd 137.6 yaw 277 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  48.5 pos '1111.2 263.7 308.0' spd  39.5 yaw -158.9 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  48.8 pos '1050.6 258.4 173.0' spd 159.5 yaw 276 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  49.0 pos '1112.0 265.8 308.0' spd 0 yaw -142.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  49.3 pos '990.3 278.5 171.9' spd 193.8 yaw 320.9 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break   1.2 steal 0 block 0
+ARGLOG player t  49.5 pos '1112.0 265.8 308.0' spd 0 yaw -123.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  49.9 pos '1023.1 189.3 172.9' spd 194.5 yaw 40 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  50.0 pos '1112.0 265.8 308.0' spd 0 yaw -32.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 5
+ARGEVT Carmack goal key
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  50.4 pos '1114.6 162.0 171.8' spd 195.4 yaw 91 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  50.5 pos '1112.0 265.8 308.0' spd 0 yaw  14.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  50.9 pos '1189.4 218.1 172.8' spd 194.3 yaw 148 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  51.0 pos '1112.0 265.8 308.0' spd 0 yaw  15.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  51.4 pos '1177.2 304.0 172.4' spd  97.5 yaw 249 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  51.5 pos '1112.0 265.8 308.0' spd 0 yaw  60.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  51.9 pos '1121.6 301.4 172.9' spd 121.9 yaw 260 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  52.0 pos '1112.0 265.8 308.0' spd 0 yaw  46.4 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  52.4 pos '984.5 196.8 297.5' spd 448.4 yaw 300 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  52.5 pos '1112.0 265.8 308.0' spd 0 yaw  85.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGLOG Carmack t  52.9 pos '920.2  32.0 168.6' spd  66.2 yaw 328 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  53.0 pos '1112.0 265.8 308.0' spd 0 yaw -63.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  53.4 pos '976.7  32.0 173.2' spd 130.4 yaw 321 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break   1.2 steal 0 block 0
+ARGLOG player t  53.5 pos '1112.0 265.8 308.0' spd 0 yaw -109.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  53.9 pos '1049.3  32.1 172.3' spd 153.7 yaw 307 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  54.1 pos '1112.0 265.8 308.0' spd 0 yaw -146.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  54.4 pos '1127.8  44.8 172.8' spd 172.1 yaw 284 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  54.6 pos '1091.1 194.2 308.0' spd 200.4 yaw -94.2 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  54.9 pos '1101.9 100.7 308.0' spd 117.1 yaw 242 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG player t  55.1 pos '1087.4 125.6 308.0' spd 160.3 yaw -83.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  55.4 pos '1182.3 163.1 308.0' spd 133.0 yaw 237 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG player t  55.6 pos '1090.4  19.1 309.7' spd 325.4 yaw -39.4 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  55.9 pos '1233.7 145.7 200.6' spd  75.6 yaw 230 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  56.1 pos '1107.1 -143.5 320.0' spd 218.0 yaw  59.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  56.4 pos '1251.5  98.9 172.0' spd 115.2 yaw 224 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  56.6 pos '1252.3 -163.3 320.0' spd 328.9 yaw 105.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  56.9 pos '1256.4  33.9 172.5' spd 138.9 yaw 216 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  57.1 pos '1405.4 -194.5 320.0' spd 234.3 yaw 128.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGLOG Carmack t  57.4 pos '1213.2  32.0 219.1' spd 176.0 yaw 220 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break   1.2 steal 0 block 0
+ARGLOG player t  57.6 pos '1448.0 -192.6 320.0' spd 0 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  58.0 pos '1178.1  32.0 179.4' spd  38.5 yaw 224 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG player t  58.1 pos '1448.0 -192.6 320.0' spd 0 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  58.5 pos '1160.0  32.0 172.3' spd  18.1 yaw 227 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  58.6 pos '1448.0 -192.6 320.0' spd 0 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  59.0 pos '1167.3  32.0 172.7' spd  35.8 yaw 226 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1169.0 -127.0 320.0'
+ARGEVT Carmack swim
+ARGLOG player t  59.1 pos '1448.0 -192.6 320.0' spd 0 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack route 17 start '1137.0 161.0  92.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack swim
+ARGLOG Carmack t  59.5 pos '1150.2  34.5 150.9' spd 110.6 yaw 24 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG player t  59.6 pos '1448.0 -192.6 320.0' spd 0 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  60.0 pos '1127.1  96.3 132.4' spd 147.0 yaw 336 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG player t  60.1 pos '1448.0 -192.6 320.0' spd 0 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  60.5 pos '1152.0 140.3 132.1' spd  50.2 yaw 317 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG player t  60.7 pos '1448.0 -190.3 320.0' spd  90.4 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  61.0 pos '1152.0 151.6 131.3' spd   1.5 yaw 314 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG player t  61.2 pos '1448.0 -44.2 320.0' spd 201.8 yaw 119.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack coop_stats break   1.2 steal 0 block 0
+ARGLOG Carmack t  61.5 pos '1152.0 146.4 132.0' spd  16.6 yaw 315 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG player t  61.7 pos '1425.4  -3.6 320.0' spd 284.0 yaw 120.9 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1361.0 129.0  92.0'
+ARGUS routecache adopt
+ARGEVT Carmack route 17 start '1137.0 161.0  92.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t  62.0 pos '1152.0 137.4 131.2' spd  18.0 yaw 318 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG player t  62.2 pos '1448.0 157.1 320.0' spd 320.0 yaw 149.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  62.5 pos '1152.0 130.7 130.3' spd   8.4 yaw 320 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1361.0 129.0  92.0'
+ARGLOG player t  62.7 pos '1448.0 329.2 320.0' spd 322.9 yaw -158.9 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  63.0 pos '1149.4  97.0 161.3' spd 149.5 yaw 236.0 mode 0 st 4 gl 0 hp 100 frg 0
+ARGLOG player t  63.2 pos '1457.5 432.0 320.0' spd  54.7 yaw -139.2 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  63.5 pos '1108.1  32.0 172.4' spd 107.4 yaw 179.0 mode 0 st 4 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  63.7 pos '1461.7 432.0 320.0' spd 0 yaw -137.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  64.1 pos '1047.4  32.2 172.7' spd 128.8 yaw 179.0 mode 0 st 4 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack route 17 start '1009.0  33.0  92.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack swim
+ARGLOG player t  64.2 pos '1461.7 432.0 320.0' spd 0 yaw -116.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  64.6 pos '978.4  59.4 127.5' spd 185.4 yaw 123 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG player t  64.7 pos '1439.8 382.4 320.0' spd 199.0 yaw -113.9 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  65.1 pos '930.7 160.1 130.8' spd 249.8 yaw 154 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG player t  65.2 pos '1448.6 357.3 320.0' spd 219.1 yaw -59.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack coop_stats break   3.5 steal 0 block 0
+ARGLOG Carmack t  65.6 pos '861.8 277.4 130.1' spd 279.2 yaw 170 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG player t  65.7 pos '1513.0 428.8 320.0' spd  54.2 yaw -64.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  66.1 pos '760.0 354.7 132.5' spd  76.9 yaw 181 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG player t  66.2 pos '1515.9 431.7 320.0' spd  26.3 yaw -54.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  66.6 pos '760.0 364.0 132.6' spd  23.2 yaw 182 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG player t  66.7 pos '1433.3 369.9 320.0' spd  88.2 yaw -19.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '593.0 321.0  92.0'
+ARGUS routecache adopt
+ARGEVT Carmack route 15 start '785.0 353.0  92.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t  67.1 pos '758.8 337.1 132.2' spd  84.6 yaw 177 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  67.3 pos '1456.8 392.1 320.0' spd 320.6 yaw -18.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  67.6 pos '689.1 313.6 131.4' spd 206.0 yaw 216 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  67.8 pos '1597.8 423.9 316.3' spd 331.1 yaw -52.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  68.1 pos '566.7 330.4 131.0' spd 266.5 yaw 237 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  68.3 pos '1736.3 394.5 312.0' spd 161.3 yaw -78.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  68.6 pos '435.8 329.4 136.8' spd 223.6 yaw 270 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  68.8 pos '1807.5 377.4 312.0' spd 107.2 yaw -101.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  69.1 pos '384.5 240.4 139.5' spd 221.5 yaw 282 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  69.3 pos '1789.2 377.1 312.0' spd 283.4 yaw -70.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack coop_stats break   7.5 steal 0 block 0
+ARGLOG Carmack t  69.7 pos '404.6 115.0 164.0' spd 270.7 yaw 277 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  69.8 pos '1710.8 404.7 312.0' spd  40.0 yaw -50.6 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack swim
+ARGLOG Carmack t  70.2 pos '434.1 -25.0 194.6' spd 323.0 yaw 270 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+ARGLOG player t  70.3 pos '1712.5 409.0 312.0' spd 186.4 yaw -49.2 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack door
+ARGLOG Carmack t  70.7 pos '442.7 -119.2 254.0' spd 134.7 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  70.8 pos '1769.4 457.5 312.0' spd 0 yaw -77.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  71.2 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  71.3 pos '1774.3 432.8 312.0' spd 200.0 yaw -78.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  71.7 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  71.8 pos '1788.7 377.2 312.0' spd 161.3 yaw -106.9 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  72.2 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  72.3 pos '1753.2 404.9 312.0' spd 200.1 yaw -164.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  72.7 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  72.8 pos '1631.1 419.9 312.0' spd 234.2 yaw -142.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  73.2 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  73.3 pos '1548.1 350.3 320.0' spd 205.6 yaw -102.7 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack coop_stats break  11.5 steal 0 block 0
+ARGLOG Carmack t  73.7 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+You got 20 shells
+ARGLOG player t  73.9 pos '1524.7 252.5 320.0' spd 135.4 yaw -73.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  74.2 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  74.4 pos '1522.8 277.7 320.0' spd 333.0 yaw  21.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  74.7 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  74.9 pos '1545.2 432.5 320.0' spd 277.9 yaw -21.1 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  75.2 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  75.4 pos '1670.1 433.8 312.0' spd 212.5 yaw -46.4 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  75.7 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  75.9 pos '1748.3 351.6 312.0' spd 312.3 yaw -84.4 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  76.3 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  76.4 pos '1800.1 248.2 312.0' spd 202.2 yaw -92.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  76.8 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  76.9 pos '1804.7 147.9 312.0' spd 200.5 yaw -81.6 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  77.3 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  77.4 pos '1766.1  10.3 312.0' spd 320.0 yaw -33.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack coop_stats break  15.5 steal 0 block 0
+ARGLOG Carmack t  77.8 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  77.9 pos '1834.6 -92.4 312.0' spd 208.4 yaw  -5.6 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  78.3 pos '442.7 -119.2 254.0' spd 0 yaw 267 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack abandon
+ARGLOG player t  78.4 pos '1899.4 -123.5 312.0' spd 292.3 yaw -47.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack route 10 start '433.0 -127.0 259.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack door
+ARGEVT Carmack hazard
+ARGLOG Carmack t  78.8 pos '488.0 -44.0 226.9' spd  30.6 yaw 276.8 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  78.9 pos '2032.9 -141.5 312.0' spd 111.5 yaw -78.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  79.3 pos '469.3 -84.4 232.0' spd 320.2 yaw 243 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  79.4 pos '2048.7 -144.8 312.0' spd 0 yaw -97.0 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  79.8 pos '449.7 -121.1 255.2' spd  60.1 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  79.9 pos '2042.3 -199.7 312.0' spd 199.8 yaw -95.6 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  80.3 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  80.4 pos '2076.8 -322.8 312.0' spd 143.7 yaw -157.5 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  80.8 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  81.0 pos '2041.0 -354.0 312.0' spd 133.3 yaw -174.4 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  81.3 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  81.5 pos '2019.9 -358.0 312.0' spd 0 yaw -174.4 mode 0 st 0 gl 0 hp 85 frg 0
+ARGEVT Carmack coop_stats break  19.5 steal 0 block 0
+ARGLOG Carmack t  81.8 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  82.0 pos '1960.4 -363.7 312.0' spd 199.9 yaw -175.8 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t  82.3 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  82.5 pos '1858.1 -362.1 312.0' spd 200.1 yaw -177.2 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Carmack t  82.9 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  83.0 pos '1757.6 -366.2 312.0' spd 200.1 yaw -174.4 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Carmack t  83.4 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  83.5 pos '1657.4 -375.0 312.0' spd 219.6 yaw -174.4 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Carmack t  83.9 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  84.0 pos '1541.4 -332.7 312.0' spd 207.3 yaw -164.5 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Carmack t  84.4 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  84.5 pos '1440.5 -348.6 312.0' spd 200.4 yaw -161.7 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Carmack t  84.9 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  85.0 pos '1342.1 -378.4 312.0' spd 200.1 yaw -160.3 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Carmack t  85.4 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  85.5 pos '1249.8 -411.5 312.0' spd 200.3 yaw -156.1 mode 0 st 0 gl 0 hp 48 frg 0
+ARGEVT Carmack coop_stats break  23.5 steal 0 block 0
+ARGLOG Carmack t  85.9 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  86.0 pos '1106.9 -369.0 312.0' spd 186.6 yaw -81.6 mode 0 st 0 gl 0 hp 48 frg 0
+ARGLOG Carmack t  86.4 pos '449.7 -121.1 255.2' spd 0 yaw 265 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack abandon
+ARGLOG player t  86.5 pos '1079.7 -356.2 312.0' spd 185.5 yaw -71.7 mode 0 st 0 gl 0 hp 48 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 10 start '433.0 -127.0 259.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack hazard
+ARGEVT Carmack jump
+ARGLOG Carmack t  86.9 pos '488.0   1.5 276.6' spd 324.9 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  87.0 pos '1121.8 -372.8 312.0' spd 295.8 yaw -109.7 mode 0 st 0 gl 0 hp 48 frg 0
+You got 2 rockets
+ARGLOG Carmack t  87.4 pos '395.0 100.6 195.5' spd 355.3 yaw 276 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  87.6 pos '1053.5 -467.7 312.0' spd 207.6 yaw -81.6 mode 0 st 0 gl 0 hp 48 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t  88.0 pos '390.3  28.7 172.3' spd 160.7 yaw 278 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t  88.1 pos '1073.7 -571.9 312.0' spd 218.1 yaw -29.5 mode 0 st 0 gl 0 hp 48 frg 0
+You got 40 shells
+ARGEVT Carmack jump
+ARGEVT Carmack door
+ARGLOG Carmack t  88.5 pos '424.7 -105.0 245.1' spd 320.2 yaw 279 mode 2 st 5 gl 0 hp 100 frg 0
+You receieve 25 health
+ARGLOG player t  88.6 pos '1154.4 -701.7 312.0' spd 326.0 yaw  26.7 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  89.0 pos '428.5 -117.8 253.1' spd  28.4 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  89.1 pos '1225.3 -744.0 312.0' spd  19.2 yaw  22.5 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  89.5 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break  27.6 steal 0 block 0
+ARGLOG player t  89.6 pos '1200.8 -744.0 312.0' spd 200.4 yaw   4.2 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  90.0 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  90.1 pos '1144.1 -709.0 312.0' spd 203.5 yaw 0 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  90.5 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  90.6 pos '1246.2 -703.4 312.0' spd 200.1 yaw  -2.8 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  91.0 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  91.1 pos '1347.3 -712.2 312.0' spd 200.2 yaw  -2.8 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  91.5 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  91.6 pos '1396.9 -716.5 312.0' spd 0 yaw  -7.0 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  92.0 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  92.1 pos '1405.1 -649.3 312.0' spd  88.0 yaw  -5.6 mode 0 st 0 gl 0 hp 73 frg 0
+You got 5 shells
+ARGLOG Carmack t  92.5 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  92.7 pos '1482.5 -704.8 312.0' spd 191.1 yaw  -7.0 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  93.0 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  93.2 pos '1574.6 -695.8 344.0' spd 330.3 yaw  61.9 mode 0 st 0 gl 0 hp 73 frg 0
+You got 5 shells
+ARGLOG Carmack t  93.6 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break  31.6 steal 0 block 0
+ARGLOG player t  93.7 pos '1581.1 -752.0 357.5' spd 321.1 yaw  95.6 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  94.1 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  94.2 pos '1440.9 -749.4 312.0' spd 297.9 yaw  60.5 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  94.6 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  94.7 pos '1357.2 -715.7 312.0' spd  40.8 yaw  43.6 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  95.1 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 5
+ARGEVT Carmack goal key
+ARGLOG player t  95.2 pos '1355.0 -714.7 312.0' spd 0 yaw 102.7 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  95.6 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  95.7 pos '1355.0 -714.7 312.0' spd 0 yaw  98.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  96.1 pos '428.5 -117.8 253.1' spd 0 yaw 272 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  96.2 pos '1315.0 -727.4 312.0' spd  85.1 yaw  80.2 mode 0 st 0 gl 0 hp 73 frg 0
+ARGEVT Carmack abandon
+ARGEVT Carmack route 10 start '433.0 -127.0 259.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack door
+ARGEVT Carmack hazard
+ARGLOG Carmack t  96.6 pos '467.5 -79.1 228.7' spd 371.5 yaw 352.6 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  96.7 pos '1319.8 -673.2 312.0' spd 125.2 yaw  84.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  97.1 pos '472.3 -109.3 247.7' spd 335.3 yaw 230 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  97.2 pos '1328.3 -654.9 347.9' spd  48.7 yaw  84.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGEVT Carmack coop_stats break  35.6 steal 0 block 0
+ARGLOG Carmack t  97.6 pos '462.1 -131.4 261.6' spd  44.6 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  97.7 pos '1345.5 -637.4 350.9' spd  94.9 yaw  88.6 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  98.1 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  98.2 pos '1352.1 -621.1 372.0' spd  10.4 yaw  91.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  98.6 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  98.7 pos '1351.9 -607.3 408.8' spd  30.1 yaw  95.6 mode 0 st 0 gl 0 hp 73 frg 0
+You got 150 armor
+ARGLOG Carmack t  99.1 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  99.3 pos '1345.9 -526.7 427.8' spd 199.2 yaw  91.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t  99.6 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t  99.8 pos '1338.3 -426.0 405.8' spd 199.2 yaw 143.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 100.2 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 100.3 pos '1293.7 -336.4 312.0' spd 257.4 yaw -150.5 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 100.7 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 100.8 pos '1189.9 -371.3 312.0' spd 208.6 yaw -116.7 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 101.2 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 101.3 pos '1132.7 -455.6 312.0' spd 202.9 yaw -108.3 mode 0 st 0 gl 0 hp 73 frg 0
+ARGEVT Carmack coop_stats break  39.6 steal 0 block 0
+ARGLOG Carmack t 101.7 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 101.8 pos '1086.0 -588.9 312.0' spd 339.2 yaw -21.1 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 102.2 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 102.3 pos '1141.1 -708.0 312.0' spd 218.5 yaw   1.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 102.7 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 102.8 pos '1242.8 -723.4 312.0' spd 200.5 yaw   4.2 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 103.2 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 103.3 pos '1342.9 -719.0 312.0' spd 200.0 yaw   4.2 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 103.7 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 103.8 pos '1445.7 -711.9 312.0' spd 200.7 yaw  -1.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 104.2 pos '462.1 -131.4 261.6' spd 0 yaw 260 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 104.3 pos '1563.2 -698.6 328.0' spd 320.8 yaw -29.5 mode 0 st 0 gl 0 hp 73 frg 0
+ARGEVT Carmack abandon
+ARGEVT Carmack hazard
+ARGUS routecache adopt
+ARGEVT Carmack route 10 start '433.0 -127.0 259.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t 104.7 pos '487.2 -85.7 232.8' spd 353.2 yaw 255 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+ARGLOG player t 104.8 pos '1728.1 -721.3 360.0' spd 294.2 yaw -133.6 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 105.2 pos '474.2  86.2 264.3' spd 355.4 yaw 264 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 105.3 pos '1697.9 -863.9 408.0' spd 273.8 yaw -178.6 mode 0 st 0 gl 0 hp 73 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack coop_stats break  43.6 steal 0 block 0
+ARGLOG Carmack t 105.7 pos '385.7  73.1 172.7' spd 155.3 yaw 278 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack swim
+ARGLOG player t 105.8 pos '1596.3 -905.2 424.0' spd 204.4 yaw 171.6 mode 0 st 0 gl 0 hp 73 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Carmack t 106.2 pos '401.0 -16.4 189.2' spd 320.1 yaw 277 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+ARGLOG player t 106.4 pos '1520.1 -903.5 440.0' spd  46.0 yaw -161.7 mode 0 st 0 gl 0 hp 73 frg 0
+ARGEVT Carmack door
+ARGLOG Carmack t 106.7 pos '430.8 -118.3 253.4' spd 159.9 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 106.9 pos '1486.4 -912.1 440.0' spd 258.9 yaw -161.7 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 107.2 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 107.4 pos '1348.4 -824.2 440.0' spd 325.8 yaw -116.7 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Carmack t 107.7 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 107.9 pos '1283.8 -816.0 440.0' spd 323.0 yaw -98.4 mode 0 st 0 gl 0 hp 73 frg 0
+You receieve 15 health
+ARGLOG Carmack t 108.3 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 108.4 pos '1122.6 -816.0 440.0' spd 320.3 yaw -92.8 mode 0 st 0 gl 0 hp 88 frg 0
+You receieve 15 health
+ARGLOG Carmack t 108.8 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 108.9 pos '1205.1 -819.4 440.0' spd 307.1 yaw -108.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 109.3 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 109.4 pos '1232.8 -902.5 440.0' spd 200.8 yaw -133.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break  47.6 steal 0 block 0
+ARGLOG Carmack t 109.8 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 109.9 pos '1262.0 -892.7 440.0' spd 200.5 yaw -142.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 110.3 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 110.4 pos '1346.1 -827.7 440.0' spd 200.1 yaw -150.5 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Carmack t 110.8 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 110.9 pos '1453.7 -856.3 440.0' spd 202.8 yaw 171.6 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Carmack t 111.3 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 111.4 pos '1541.4 -876.8 440.0' spd  92.2 yaw -180 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Carmack t 111.8 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 111.9 pos '1503.9 -871.9 440.0' spd  88.1 yaw 174.4 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Carmack t 112.3 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 112.4 pos '1564.1 -883.3 439.5' spd 118.1 yaw 164.5 mode 0 st 0 gl 0 hp 89 frg 0
+ARGLOG Carmack t 112.8 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 112.9 pos '1599.5 -891.6 424.0' spd 0 yaw 161.7 mode 0 st 0 gl 0 hp 89 frg 0
+ARGLOG Carmack t 113.3 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 113.4 pos '1674.8 -909.6 411.5' spd 206.4 yaw -175.8 mode 0 st 0 gl 0 hp 89 frg 0
+ARGEVT Carmack coop_stats break  51.6 steal 0 block 0
+ARGLOG Carmack t 113.8 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 113.9 pos '1687.5 -912.1 408.0' spd 178.7 yaw 178.6 mode 0 st 0 gl 0 hp 89 frg 0
+ARGLOG Carmack t 114.3 pos '430.8 -118.3 253.4' spd 0 yaw 271 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack abandon
+ARGLOG player t 114.4 pos '1597.7 -905.7 424.0' spd 206.8 yaw -161.7 mode 0 st 0 gl 0 hp 89 frg 0
+ARGEVT Carmack route 10 start '433.0 -127.0 259.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack door
+ARGEVT Carmack hazard
+ARGLOG Carmack t 114.8 pos '485.7 -41.2 204.8' spd 131.3 yaw 298.1 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 115.0 pos '1536.7 -912.0 440.0' spd   7.3 yaw -154.7 mode 0 st 0 gl 0 hp 89 frg 0
+ARGEVT Carmack door
+ARGEVT Carmack door
+ARGEVT Carmack door
+ARGEVT Carmack door
+ARGEVT Carmack door
+ARGLOG Carmack t 115.3 pos '445.1 -165.3 283.0' spd 325.5 yaw 305 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 115.5 pos '1465.4 -938.3 440.0' spd 273.3 yaw -115.3 mode 0 st 0 gl 0 hp 89 frg 0
+ARGLOG Carmack t 115.8 pos '483.1 -224.0 336.3' spd  46.5 yaw 305 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 116.0 pos '1380.7 -1033.5 448.0' spd 252.6 yaw -68.9 mode 0 st 0 gl 0 hp 89 frg 0
+ARGLOG Carmack t 116.3 pos '435.5 -267.9 324.0' spd 375.0 yaw 293 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 116.5 pos '1415.6 -1160.1 440.0' spd 272.2 yaw -177.2 mode 0 st 0 gl 0 hp 89 frg 0
+ARGLOG Carmack t 116.9 pos '538.4 -418.3 320.0' spd 350.5 yaw 275 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 117.0 pos '1314.9 -1191.7 440.0' spd 199.8 yaw -180 mode 0 st 0 gl 0 hp 89 frg 0
+You got 25 nails
+ARGEVT Carmack jump
+ARGEVT Carmack engage monster
+ARGLOG Carmack t 117.4 pos '594.5 -584.6 368.6' spd 351.0 yaw 272.9 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 117.5 pos '1278.8 -1192.0 440.0' spd 171.1 yaw -167.3 mode 0 st 0 gl 0 hp 89 frg 0
+ARGEVT Carmack coop_stats break  55.6 steal 0 block 0
+ARGLOG Carmack t 117.9 pos '547.3 -603.5 376.0' spd  86.5 yaw 278.8 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 118.0 pos '1158.2 -1192.0 440.0' spd 325.8 yaw 132.2 mode 0 st 0 gl 0 hp 89 frg 0
+You receieve 15 health
+ARGLOG Carmack t 118.4 pos '550.6 -639.9 392.0' spd 205.9 yaw 268.5 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 118.5 pos '1055.8 -1156.6 440.0' spd 268.3 yaw  84.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 118.9 pos '570.7 -678.7 408.0' spd 320.6 yaw 268.7 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_push 3
+ARGLOG player t 119.0 pos '1147.3 -1085.2 448.0' spd 181.2 yaw 140.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 119.4 pos '584.7 -717.0 432.0' spd 297.9 yaw 265.6 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 119.5 pos '1097.4 -955.2 440.0' spd 298.0 yaw 177.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 119.9 pos '622.2 -751.5 432.0' spd  62.8 yaw 264.9 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 120.0 pos '1006.0 -909.8 440.0' spd 216.9 yaw -149.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 120.4 pos '526.2 -787.5 432.0' spd 189.0 yaw 279.6 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 120.5 pos '915.4 -951.4 440.0' spd 125.5 yaw -133.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack grab 
+ARGLOG Carmack t 120.9 pos '559.6 -935.0 432.0' spd 321.7 yaw 173.6 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 121.0 pos '931.8 -991.9 440.0' spd 202.0 yaw -144.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 121.4 pos '563.0 -1092.5 432.0' spd 320.7 yaw 210.9 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 121.5 pos '874.7 -966.9 440.0' spd 220.5 yaw  97.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break  57.7 steal 0 block 0
+ARGLOG Carmack t 121.9 pos '569.4 -1255.7 432.0' spd 273.4 yaw 156.8 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG player t 122.0 pos '902.9 -860.9 440.0' spd 224.7 yaw  87.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 122.4 pos '626.8 -1125.7 432.0' spd 340.6 yaw 184.5 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 122.5 pos '885.5 -754.9 440.0' spd 203.9 yaw  88.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 122.9 pos '563.6 -967.2 432.0' spd 338.8 yaw 227.0 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 123.0 pos '909.1 -649.2 440.0' spd 224.1 yaw  92.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 5 start '561.0 -959.0 432.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t 123.4 pos '586.4 -857.5 432.0' spd 379.8 yaw 205.9 mode 2 st 5 gl 0 hp 100 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 6 start '561.0 -735.0 432.0' goal '945.0 -639.0 440.0'
+ARGLOG player t 123.6 pos '895.0 -548.0 432.0' spd 199.9 yaw  94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 123.9 pos '587.7 -795.4 432.0' spd 327.0 yaw 235.9 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG player t 124.1 pos '888.7 -447.7 432.0' spd 200.0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Carmack t 124.4 pos '630.1 -943.6 432.0' spd 323.8 yaw 186.8 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT player checkpoint silver_key
+You got silver key
+ARGLOG player t 124.6 pos '887.2 -346.9 465.7' spd 199.9 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 3
+ARGLOG Carmack t 124.9 pos '567.8 -985.5 432.0' spd 300.9 yaw 259.7 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 125.1 pos '886.6 -288.0 464.0' spd 0 yaw -92.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Carmack t 125.4 pos '610.9 -1093.9 432.0' spd 197.1 yaw 195.7 mode 2 st 5 gl 0 hp 84 frg 0
+ARGEVT Carmack goal_pop
+ARGLOG player t 125.6 pos '886.4 -289.8 464.0' spd  85.6 yaw -95.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break  59.2 steal 0 block 0
+ARGEVT Carmack goal_push 3
+ARGEVT Carmack grab 
+ARGLOG Carmack t 126.0 pos '628.8 -1195.4 432.0' spd 101.4 yaw  78.4 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 126.1 pos '882.8 -381.0 441.2' spd 186.6 yaw -94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack route 4 start '529.0 -1183.0 432.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t 126.5 pos '594.4 -1065.6 432.0' spd 310.0 yaw 163.2 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 126.6 pos '880.7 -482.0 432.0' spd 199.7 yaw -91.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack pursue
+ARGEVT Carmack hazard
+ARGLOG Carmack t 127.0 pos '550.8 -956.5 432.0' spd 369.5 yaw 225 mode 2 st 5 gl 0 hp 84 frg 0
+ARGUS Carmack hunch item_artifact_super_damage
+ARGLOG player t 127.1 pos '878.5 -583.1 432.0' spd 199.9 yaw -90 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack pursue
+ARGLOG Carmack t 127.5 pos '631.9 -1040.8 432.0' spd 336.6 yaw 313.0 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 127.6 pos '879.5 -684.6 440.0' spd 199.9 yaw -88.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 128.0 pos '640.5 -1204.0 432.0' spd 325.6 yaw 353.6 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 128.1 pos '846.5 -792.9 440.0' spd 239.2 yaw -87.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Carmack t 128.5 pos '639.0 -1178.1 432.0' spd 322.6 yaw  15.3 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 128.6 pos '807.1 -900.7 440.0' spd 207.5 yaw -83.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 129.0 pos '541.1 -1103.0 432.0' spd 150.8 yaw 108.0 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 129.1 pos '867.7 -988.1 440.0' spd  94.3 yaw -85.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Carmack t 129.5 pos '630.8 -1008.2 432.0' spd 329.2 yaw 135.1 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 129.6 pos '877.2 -1044.6 440.0' spd 125.0 yaw -84.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack coop_stats break  60.5 steal 0 block 0
+ARGLOG Carmack t 130.0 pos '625.2 -885.6 432.0' spd 148.6 yaw 192.8 mode 2 st 5 gl 0 hp 84 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack route 5 start '561.0 -959.0 432.0' goal '945.0 -639.0 440.0'
+ARGLOG player t 130.1 pos '877.4 -1064.1 440.0' spd 0 yaw -97.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 130.5 pos '603.6 -1019.1 432.0' spd 324.7 yaw 270.4 mode 2 st 5 gl 0 hp 84 frg 0
+ARGLOG player t 130.6 pos '872.7 -1073.9 440.0' spd 189.8 yaw -116.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 131.0 pos '648.5 -1185.3 432.0' spd 384.9 yaw 333.2 mode 2 st 5 gl 0 hp 84 frg 0
+You got 5 shells
+ARGLOG player t 131.1 pos '834.9 -1201.5 432.0' spd 272.8 yaw 171.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_push 7
+ARGEVT Carmack retreat
+ARGLOG Carmack t 131.5 pos '752.7 -1232.4 432.0' spd 441.2 yaw  31.1 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 131.6 pos '807.9 -1251.2 432.0' spd 0 yaw -174.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 132.0 pos '591.2 -1178.2 432.0' spd 321.8 yaw 338.8 mode 2 st 5 gl 0 hp 28 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 4 start '529.0 -1183.0 432.0' goal '945.0 -639.0 440.0'
+ARGLOG player t 132.1 pos '883.3 -1267.5 432.0' spd  79.5 yaw 167.3 mode 0 st 0 gl 0 hp 91 frg 0
+ARGLOG Carmack t 132.5 pos '428.2 -1173.1 432.0' spd 320.0 yaw 346.8 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 132.7 pos '930.2 -1219.7 432.0' spd 305.2 yaw 165.9 mode 0 st 0 gl 0 hp 87 frg 0
+ARGEVT Carmack route 5 start '369.0 -1247.0 432.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack hazard
+ARGLOG Carmack t 133.0 pos '338.5 -1074.1 432.0' spd 320.5 yaw 353.8 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 133.2 pos '968.0 -1162.2 432.0' spd 0 yaw 167.3 mode 0 st 0 gl 0 hp 81 frg 0
+ARGEVT Carmack pursue
+ARGLOG Carmack t 133.6 pos '401.9 -960.4 432.0' spd 341.9 yaw 340 mode 2 st 5 gl 0 hp 28 frg 0
+ARGUS Carmack hunch item_artifact_super_damage
+ARGEVT Carmack coop_stats break  61.6 steal 0 block 4
+ARGLOG player t 133.7 pos '968.0 -1162.2 432.0' spd 0 yaw -140.6 mode 0 st 0 gl 0 hp 81 frg 0
+ARGEVT Carmack pursue
+ARGLOG Carmack t 134.1 pos '461.2 -845.6 432.0' spd 340.4 yaw  58.6 mode 2 st 5 gl 0 hp 28 frg 0
+ARGEVT Carmack hazard
+ARGLOG player t 134.2 pos '882.7 -1185.1 432.0' spd 321.5 yaw 154.7 mode 0 st 0 gl 0 hp 81 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 7
+ARGLOG Carmack t 134.6 pos '564.0 -792.4 432.0' spd 354.4 yaw 317 mode 0 st 5 gl 0 hp 28 frg 0
+ARGEVT Carmack route 6 start '561.0 -735.0 432.0' goal '945.0 -639.0 440.0'
+ARGLOG player t 134.7 pos '743.3 -1256.1 432.0' spd 235.6 yaw 135 mode 0 st 0 gl 0 hp 81 frg 0
+ARGLOG Carmack t 135.1 pos '634.8 -919.7 432.0' spd 158.9 yaw 256.9 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 135.2 pos '635.7 -1238.8 432.0' spd 137.7 yaw  98.4 mode 0 st 0 gl 0 hp 81 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 5 start '561.0 -959.0 432.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t 135.6 pos '622.3 -791.0 432.0' spd 320.0 yaw 270.0 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 135.7 pos '614.3 -1237.9 432.0' spd  61.6 yaw  91.4 mode 0 st 0 gl 0 hp 77 frg 0
+ARGLOG Carmack t 136.1 pos '611.1 -630.8 392.0' spd 320.0 yaw 269.9 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 136.2 pos '637.9 -1242.5 432.0' spd 320.0 yaw  91.4 mode 0 st 0 gl 0 hp 77 frg 0
+ARGEVT Carmack route 7 start '561.0 -575.0 360.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t 136.6 pos '601.7 -469.4 320.0' spd 320.0 yaw 278.8 mode 2 st 5 gl 0 hp 28 frg 0
+ARGEVT Carmack pursue
+ARGLOG player t 136.7 pos '719.1 -1240.4 432.0' spd  28.9 yaw  97.0 mode 0 st 0 gl 0 hp 77 frg 0
+ARGLOG Carmack t 137.1 pos '609.2 -569.9 360.0' spd 320.0 yaw 273 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 137.2 pos '688.3 -1247.0 432.0' spd 332.2 yaw 108.3 mode 0 st 0 gl 0 hp 77 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 7
+ARGLOG Carmack t 137.6 pos '613.1 -588.4 360.0' spd 320.0 yaw 269.3 mode 0 st 5 gl 0 hp 28 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 7 start '561.0 -575.0 360.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack coop_stats break  64.3 steal 0 block 4
+ARGLOG player t 137.7 pos '599.7 -1194.2 432.0' spd  77.5 yaw 101.3 mode 0 st 0 gl 0 hp 74 frg 0
+ARGEVT Carmack jump
+ARGLOG Carmack t 138.1 pos '609.8 -426.5 371.4' spd 320.0 yaw 264.8 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 138.2 pos '489.1 -1179.7 432.0' spd 154.8 yaw 142.0 mode 0 st 0 gl 0 hp 74 frg 0
+ARGEVT Carmack pursue
+ARGLOG Carmack t 138.6 pos '606.4 -266.4 320.0' spd 248.9 yaw 263 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 138.7 pos '462.7 -1173.2 432.0' spd  65.4 yaw 102.7 mode 0 st 0 gl 0 hp 74 frg 0
+ARGLOG Carmack t 139.1 pos '588.3 -384.8 320.0' spd 320.0 yaw 264 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 139.2 pos '377.2 -1089.6 432.0' spd 219.6 yaw  74.5 mode 0 st 0 gl 0 hp 74 frg 0
+ARGEVT Carmack jump
+ARGLOG Carmack t 139.6 pos '571.2 -546.2 357.9' spd 320.0 yaw 264 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 139.7 pos '384.2 -974.3 432.0' spd 325.9 yaw  46.4 mode 0 st 0 gl 0 hp 74 frg 0
+You receieve 15 health
+ARGLOG Carmack t 140.1 pos '545.3 -621.9 376.0' spd 322.2 yaw 265 mode 2 st 5 gl 0 hp 28 frg 0
+You receieve 15 health
+ARGLOG player t 140.3 pos '381.5 -811.8 432.0' spd 294.5 yaw  -4.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 7
+ARGLOG Carmack t 140.6 pos '529.3 -781.5 432.0' spd 219.2 yaw 244.2 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 140.8 pos '440.2 -770.7 432.0' spd 243.5 yaw -30.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Carmack t 141.2 pos '610.4 -704.7 424.0' spd 132.2 yaw 219.0 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 141.3 pos '453.3 -876.4 432.0' spd  79.4 yaw  40.8 mode 0 st 0 gl 0 hp 91 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 7 start '561.0 -575.0 360.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t 141.7 pos '608.3 -549.0 344.0' spd 353.3 yaw 247.1 mode 2 st 5 gl 0 hp 28 frg 0
+ARGEVT Carmack coop_stats break  66.3 steal 0 block 4
+ARGLOG player t 141.8 pos '523.7 -829.3 432.0' spd 209.7 yaw  70.3 mode 0 st 0 gl 0 hp 85 frg 0
+ARGLOG Carmack t 142.2 pos '533.9 -440.9 320.0' spd 328.7 yaw 267.2 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 142.3 pos '560.3 -757.3 432.0' spd 198.8 yaw  83.0 mode 0 st 0 gl 0 hp 77 frg 0
+ARGEVT Carmack pursue
+ARGLOG Carmack t 142.7 pos '370.0 -436.7 320.0' spd 320.1 yaw 301 mode 0 st 5 gl 0 hp 28 frg 0
+ARGEVT Carmack route 10 start '305.0 -447.0 320.0' goal '945.0 -639.0 440.0'
+ARGLOG player t 142.8 pos '572.9 -657.0 408.0' spd 166.4 yaw  91.4 mode 0 st 0 gl 0 hp 77 frg 0
+ARGUS Carmack hunch item_artifact_super_damage
+ARGEVT Carmack hazard
+ARGEVT Carmack pursue
+ARGLOG Carmack t 143.2 pos '381.1 -430.2 320.0' spd 329.3 yaw  61.0 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 143.3 pos '579.6 -582.2 373.6' spd 132.2 yaw  99.8 mode 0 st 0 gl 0 hp 77 frg 0
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 7
+ARGUS routecache adopt
+ARGEVT Carmack route 9 start '433.0 -287.0 320.0' goal '945.0 -639.0 440.0'
+ARGLOG Carmack t 143.7 pos '328.8 -282.7 320.0' spd 328.2 yaw 312.2 mode 2 st 5 gl 0 hp 28 frg 0
+ARGLOG player t 143.8 pos '584.2 -531.2 344.0' spd  46.2 yaw 133.6 mode 0 st 0 gl 0 hp 77 frg 0
+ARGEVT Carmack route 11 start '113.0 -383.0 352.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 1
+ARGEVT Carmack route 4 start '113.0 -383.0 352.0' goal '561.0 -575.0 360.0'
+ARGLOG Carmack t 144.2 pos '192.0 -267.1 328.0' spd  55.9 yaw 328.3 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 144.3 pos '624.0 -501.0 339.2' spd 239.9 yaw 137.8 mode 0 st 0 gl 0 hp 68 frg 0
+ARGEVT Carmack route 3 start '113.0 -383.0 352.0' goal '593.0 -383.0 320.0'
+ARGEVT Carmack hazard
+ARGLOG Carmack t 144.7 pos '131.3 -328.0 320.0' spd 321.4 yaw 346.7 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 144.8 pos '634.7 -403.0 320.0' spd 200.0 yaw  94.2 mode 0 st 0 gl 0 hp 59 frg 0
+ARGLOG Carmack t 145.2 pos '121.3 -480.7 320.0' spd 172.5 yaw  13.7 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 145.3 pos '619.3 -303.7 320.0' spd 199.7 yaw 102.7 mode 0 st 0 gl 0 hp 59 frg 0
+ARGEVT Carmack route 4 start '113.0 -383.0 352.0' goal '561.0 -159.0 320.0'
+ARGEVT Carmack coop_stats break  66.9 steal 0 block 4
+ARGEVT Carmack hazard
+ARGLOG Carmack t 145.7 pos '129.8 -482.6 320.0' spd 134.3 yaw  26.8 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 145.8 pos '548.7 -171.6 320.0' spd 341.2 yaw  25.3 mode 0 st 0 gl 0 hp 58 frg 0
+You got 20 shells
+ARGEVT Carmack pursue
+ARGLOG Carmack t 146.2 pos '149.4 -348.7 320.0' spd 371.7 yaw 16 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 146.3 pos '539.4 -48.0 320.0' spd 0 yaw -77.3 mode 0 st 0 gl 0 hp 58 frg 0
+ARGLOG Carmack t 146.7 pos '297.0 -272.8 320.0' spd 322.4 yaw 9 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 146.8 pos '556.2 -124.9 320.0' spd 320.2 yaw -125.2 mode 0 st 0 gl 0 hp 58 frg 0
+ARGLOG Carmack t 147.2 pos '455.5 -266.7 324.0' spd  93.7 yaw  10.6 mode 0 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 147.3 pos '586.8 -274.4 320.0' spd 175.2 yaw -165.9 mode 0 st 0 gl 0 hp 57 frg 0
+ARGEVT Carmack route 1 start '433.0 -287.0 320.0' goal '593.0 -383.0 320.0'
+ARGEVT Carmack hazard
+ARGEVT Carmack pursue
+ARGLOG Carmack t 147.7 pos '397.0 -147.3 271.7' spd 286.3 yaw 328 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 147.8 pos '562.7 -366.7 320.0' spd 325.8 yaw 171.6 mode 0 st 0 gl 0 hp 57 frg 0
+ARGLOG Carmack t 148.2 pos '483.5 -114.3 250.9' spd  31.2 yaw 293 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 148.3 pos '482.4 -457.5 320.0' spd  84.7 yaw  88.6 mode 0 st 0 gl 0 hp 57 frg 0
+ARGEVT Carmack pursue
+ARGEVT Carmack hazard
+ARGLOG Carmack t 148.8 pos '488.0 -211.3 315.9' spd 191.9 yaw 330 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 148.9 pos '474.3 -402.5 320.0' spd 199.6 yaw  91.4 mode 0 st 0 gl 0 hp 57 frg 0
+ARGEVT Carmack route 1 start '433.0 -127.0 259.0' goal '433.0 -287.0 320.0'
+ARGLOG Carmack t 149.3 pos '488.0 -224.0 320.1' spd 0 yaw 336 mode 2 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 149.4 pos '435.6 -304.2 320.0' spd 127.2 yaw  85.8 mode 0 st 0 gl 0 hp 57 frg 0
+ARGEVT Carmack coop_stats break  67.3 steal 0 block 4
+ARGEVT Carmack hazard
+ARGLOG Carmack t 149.8 pos '488.0 -224.0 320.0' spd 0 yaw 225.0 mode 0 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 149.9 pos '409.8 -300.7 320.0' spd  37.3 yaw  83.0 mode 0 st 0 gl 0 hp 51 frg 0
+ARGLOG Carmack t 150.3 pos '488.0 -224.0 320.0' spd 0 yaw 227.9 mode 0 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 150.4 pos '371.1 -358.5 320.0' spd 200.1 yaw  59.1 mode 0 st 0 gl 0 hp 28 frg 0
+ARGEVT Carmack pursue
+ARGEVT Carmack route 2 start '433.0 -127.0 259.0' goal '305.0 -447.0 320.0'
+ARGEVT Carmack hazard
+ARGLOG Carmack t 150.8 pos '488.0 -224.0 320.0' spd 0 yaw 228.4 mode 0 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 150.9 pos '349.6 -390.3 320.0' spd 0 yaw  59.1 mode 0 st 0 gl 0 hp 28 frg 0
+ARGEVT Carmack jump
+ARGLOG Carmack t 151.3 pos '399.8 -183.1 338.6' spd  31.0 yaw 254.1 mode 0 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 151.4 pos '350.7 -391.0 320.0' spd 102.9 yaw  59.1 mode 0 st 0 gl 0 hp 28 frg 0
+ARGLOG Carmack t 151.8 pos '416.5 -187.4 296.9' spd 165.8 yaw 270.2 mode 0 st 5 gl 0 hp 53 frg 0
+ARGEVT Carmack jump
+ARGLOG player t 151.9 pos '427.4 -431.8 320.0' spd  53.1 yaw  85.8 mode 0 st 0 gl 0 hp 28 frg 0
+ARGLOG Carmack t 152.3 pos '465.2 -183.9 335.6' spd  30.0 yaw 263.8 mode 0 st 5 gl 0 hp 53 frg 0
+ARGLOG player t 152.4 pos '426.4 -462.6 320.0' spd  69.7 yaw  85.8 mode 0 st 0 gl 0 hp 4 frg 0
+ARGEVT player death Carmack pos '425.4 -469.1 320.0'
+player chewed on Carmack's boomstick
+ARGEVT Carmack goal_push 6
+ARGLOG Carmack t 152.8 pos '397.8 -193.0 300.5' spd 338.1 yaw 274.2 mode 0 st 5 gl 0 hp 53 frg 1
+ARGEVT Carmack hazard
+ARGLOG Carmack t 153.3 pos '466.5 -345.3 320.0' spd 323.0 yaw 274.2 mode 0 st 5 gl 0 hp 53 frg 1
+ARGLOG Carmack t 153.8 pos '516.1 -496.0 328.0' spd 188.7 yaw 318.5 mode 0 st 5 gl 0 hp 53 frg 1
+ARGEVT Carmack coop_stats break  67.4 steal 0 block 4
+ARGEVT Carmack goal_pop
+ARGEVT Carmack goal_push 5
+ARGEVT Carmack goal key
+ARGLOG player t 154.2 pos '1392.0 1664.0 264.8' spd 0 yaw -90 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack route 7 start '561.0 -575.0 360.0' goal '945.0 -639.0 440.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t 154.3 pos '591.8 -510.0 335.1' spd 269.0 yaw 263 mode 2 st 5 gl 0 hp 53 frg 1
+ARGLOG player t 154.7 pos '1392.0 1664.0 264.0' spd 0 yaw -90 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 154.8 pos '477.1 -454.1 354.7' spd 292.9 yaw 287 mode 2 st 5 gl 0 hp 53 frg 1
+ARGEVT Carmack hazard
+ARGLOG player t 155.2 pos '1392.9 1650.2 264.0' spd 200.3 yaw -81.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 155.3 pos '479.8 -496.0 320.0' spd 382.7 yaw 289 mode 2 st 5 gl 0 hp 53 frg 1
+ARGEVT Carmack jump
+ARGLOG player t 155.7 pos '1489.7 1565.6 264.0' spd 164.5 yaw -94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 155.8 pos '624.0 -565.1 371.6' spd 204.6 yaw 261 mode 2 st 5 gl 0 hp 53 frg 1
+ARGLOG player t 156.2 pos '1513.7 1548.6 264.0' spd 0 yaw -94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 156.3 pos '589.0 -672.6 408.0' spd 327.3 yaw 264 mode 2 st 5 gl 0 hp 53 frg 1
+ARGLOG player t 156.7 pos '1513.7 1548.6 264.0' spd 0 yaw -94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 156.8 pos '564.9 -832.2 432.0' spd 320.5 yaw 265 mode 2 st 5 gl 0 hp 53 frg 1
+ARGLOG player t 157.2 pos '1513.7 1548.6 264.0' spd 0 yaw -94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 157.3 pos '552.9 -992.4 432.0' spd 320.1 yaw 304 mode 2 st 5 gl 0 hp 53 frg 1
+ARGLOG player t 157.7 pos '1513.7 1548.6 264.0' spd 0 yaw -94.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t 157.9 pos '560.6 -1162.9 432.0' spd 382.0 yaw 357 mode 2 st 5 gl 0 hp 53 frg 1
+ARGEVT Carmack coop_stats break  71.4 steal 0 block 4
+Completed demo
+Sending clc_disconnect
+Shutting down SDL sound
