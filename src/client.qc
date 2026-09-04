@@ -1486,6 +1486,18 @@ void() ClientDisconnect =
 	bprint (PRINT_HIGH, "\n");
 	sound (self, CHAN_BODY, "player/tornoff2.wav", 1, ATTN_NONE);
 	set_suicide_frame ();
+
+	// ARGUS: the body outlives the client until the engine reuses the
+	// slot, and it still reads as a live player - classname "player",
+	// health positive, FL_CLIENT and DAMAGE_AIM set. Every bot scan
+	// filters on health > 0, so bots acquired it, rocketed it, and
+	// took a frag off a dead slot through Killed and DropBackpack,
+	// while the human count and spawn crowding still counted it.
+	// set_suicide_frame returns early for an already-gibbed body, so
+	// deadflag is set here rather than relied on.
+	self.health = 0;
+	self.takedamage = DAMAGE_NO;
+	self.deadflag = DEAD_DEAD;
 };
 
 /*===========
