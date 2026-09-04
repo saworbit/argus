@@ -433,6 +433,8 @@ const TRACKED_EXTRA: &[&str] = &[
     "CheckPowerups",
     "WaterMove",
     "PlayerPostThink",
+    "TryClaim",
+    "ReleaseClaim",
 ];
 
 fn keep_fn(name: &str) -> bool {
@@ -460,6 +462,7 @@ fn role_for(name: &str) -> &'static str {
         || name.contains("Pick")
         || name.contains("Escort")
         || name.contains("Coop")
+        || name.contains("Claim")
     {
         "nav"
     } else if name.contains("Spawn")
@@ -636,6 +639,22 @@ void() Argus_Bar =
         assert!(
             fns.iter().any(|f| f.name == "Argus_SplashSafe"),
             "Argus_SplashSafe not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name == "TryClaim"),
+            "TryClaim not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name == "ReleaseClaim"),
+            "ReleaseClaim not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name == "Argus_TryClaim"),
+            "Argus_TryClaim not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name == "Argus_ReleaseClaim"),
+            "Argus_ReleaseClaim not indexed"
         );
     }
 }

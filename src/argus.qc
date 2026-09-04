@@ -2177,6 +2177,12 @@ void() Argus_Die =
             Argus_SpawnWatch (self.enemy, self.origin);
     }
 
+    if (self.ar_goal != world)
+    {
+        if (self.ar_goal.claimed_by == self)
+            ReleaseClaim (self.ar_goal);
+    }
+
     self.ar_enemy = world;
     self.ar_goal = world;
     self.ar_node = world;
@@ -3959,6 +3965,27 @@ float() Argus_Combat =
                     return TRUE;
                 }
             }
+
+            // Shared-target hold fire / Kill-steal suppression (#174):
+            // 300-500ms delay when teammate has point-blank line of sight to target.
+            // Finishing tagged/weak monsters (<25 hp) is allowed.
+            if (self.ar_teammate != world && self.ar_teammate.health > 0 && e.health >= 25)
+            {
+                if (vlen (e.origin - self.ar_teammate.origin) < 300)
+                {
+                    traceline (self.ar_teammate.origin + '0 0 16', e.origin + '0 0 16', TRUE, self.ar_teammate);
+                    if (trace_ent == e || trace_fraction == 1)
+                    {
+                        if (self.ar_killdelay == 0 || time > self.ar_killdelay + 1.0)
+                            self.ar_killdelay = time + 0.4;
+                        if (time < self.ar_killdelay)
+                        {
+                            self.button0 = 0;
+                            return TRUE;
+                        }
+                    }
+                }
+            }
         }
         self.v_angle = vectoangles (aimpt - (self.origin + '0 0 22'));
         self.v_angle_x = 0 - self.v_angle_x;    // QC pitch convention
@@ -4030,6 +4057,38 @@ float(entity it) Argus_IsHighValueItem =
     if (c == "item_armorInv" || c == "item_armor2") return TRUE; // Red/Yellow Armor
     if (c == "item_armor1")                         return TRUE; // Green Armor (100)
     return FALSE;
+};
+
+// ============================================================================
+// ITEM CLAIM MUTEX (#174)
+// ============================================================================
+float(entity item) TryClaim =
+{
+    if (item.claimed_by && item.claimed_by != self && item.claimed_by.health > 0 && time < item.claim_time + 3.0)
+        return FALSE;
+    item.claimed_by = self;
+    item.claim_time = time;
+    item.ar_claimer = self;
+    item.ar_claimtime = time;
+    return TRUE;
+};
+
+void(entity item) ReleaseClaim =
+{
+    item.claimed_by = world;
+    item.claim_time = 0;
+    item.ar_claimer = world;
+    item.ar_claimtime = 0;
+};
+
+float(entity item) Argus_TryClaim =
+{
+    return TryClaim (item);
+};
+
+void(entity item) Argus_ReleaseClaim =
+{
+    ReleaseClaim (item);
 };
 
 // ---- utility and GOAP goal layer ----
@@ -4131,6 +4190,24 @@ float(entity it, float cls) Argus_ItemValue =
     c = it.classname;
     if (cls == AR_C_WEAPON)
     {
+        if (coop > 0 && self.ar_teammate != world && self.ar_teammate.health > 0)
+        {
+            local float wbit;
+            wbit = 0;
+            if (c == "weapon_supershotgun")        wbit = IT_SUPER_SHOTGUN;
+            else if (c == "weapon_nailgun")        wbit = IT_NAILGUN;
+            else if (c == "weapon_supernailgun")    wbit = IT_SUPER_NAILGUN;
+            else if (c == "weapon_grenadelauncher") wbit = IT_GRENADE_LAUNCHER;
+            else if (c == "weapon_rocketlauncher")  wbit = IT_ROCKET_LAUNCHER;
+            else if (c == "weapon_lightning")       wbit = IT_LIGHTNING;
+
+            if (wbit)
+            {
+                // Teammate has first claim if they don't own it and are within 512u
+                if (!(self.ar_teammate.items & wbit) && vlen (it.origin - self.ar_teammate.origin) <= 512)
+                    return 0;
+            }
+        }
         if (c == "weapon_rocketlauncher")
         {
             if (self.items & IT_ROCKET_LAUNCHER)
@@ -4200,6 +4277,13 @@ float(entity it, float cls) Argus_ItemValue =
     }
     if (cls == AR_C_HEALTH)
     {
+        if (coop > 0 && self.ar_teammate != world && self.ar_teammate.health > 0)
+        {
+            // Fairness: skip Megahealth / 100s if teammate is below 50 HP and in range (<600u)
+            if (it.healamount >= 100 && self.ar_teammate.health < 50
+                && vlen (it.origin - self.ar_teammate.origin) < 600)
+                return 0;
+        }
         if (it.healamount >= 100)
             return 45 + (self.max_health - self.health) * 0.5;
         v = (self.max_health - self.health) * 0.9;
@@ -4234,6 +4318,14 @@ float(entity it, float cls) Argus_ItemValue =
     }
     if (it.touch == BackpackTouch)
     {
+        if (coop > 0)
+        {
+            // Co-op fairness: never target a teammate's dropped backpack (#174)
+            if (it.ar_owner && it.ar_owner.classname == "player")
+                return 0;
+            if (it.owner && it.owner.classname == "player")
+                return 0;
+        }
         // pack dominance (Shane's review): a dropped pack is worth
         // its contents, not a flat nibble - the fat rocket pack by
         // the RL is the map's real prize, and looting your victim
@@ -4389,14 +4481,13 @@ void() Argus_PickGoal =
             {
                 // routefailed recently, for anyone: leave it shelved
             }
-            else if (Argus_IsHighValueItem (e)
-                     && e.ar_claimer != world && e.ar_claimer != self
-                     && e.ar_claimer.health > 0 && time < e.ar_claimtime + 3.0)
+            else if (e.claimed_by != world && e.claimed_by != self
+                     && e.claimed_by.health > 0 && time < e.claim_time + 3.0)
             {
-                // pickup claim mutex (#177): another live bot has claimed
-                // this high-value prize; do not compete and oscillate
+                // pickup claim mutex (#174, #177): another live agent has claimed
+                // this item; do not compete and oscillate
             }
-            else if (!(e.ar_claimer == self && time < e.ar_claimtime + shelf))
+            else if (!(e.claimed_by == self && time < e.claim_time + shelf))
             {
                 gp = Argus_GoalPoint (e);
                 d = gp - self.origin;
@@ -4609,11 +4700,10 @@ void() Argus_PickGoal =
     self.ar_pending = 0;
     self.ar_mode = 0;
 
-    // pickup claim mutex (#177): reserve high-value prizes
-    if (pick != world && Argus_IsHighValueItem (pick))
+    // pickup claim mutex (#174, #177): reserve chosen item
+    if (pick != world)
     {
-        pick.ar_claimer = self;
-        pick.ar_claimtime = time;
+        TryClaim (pick);
     }
 
     // the decision tape (2026-08-27, "why did it choose that"): with
@@ -5029,11 +5119,14 @@ void() Argus_CoopThink =
     }
     else if (topk == GOAL_REVIVE_SUPPORT)
     {
-        if (vlen (self.origin - Argus_GoalTopAnchor ()) > 96)
-            self.ar_moveyaw = vectoyaw (Argus_GoalTopAnchor () - self.origin);
+        local vector corg;
+        corg = Argus_GoalTopAnchor ();
+        if (vlen (self.origin - corg) > 128)
+            self.ar_moveyaw = vectoyaw (corg - self.origin);
         else
         {
-            self.angles_y = self.angles_y + 45 * frametime;
+            // Perimeter guard: hold perimeter around fallen teammate, 360-degree scan
+            self.angles_y = self.angles_y + 90 * frametime;
             self.ar_moveyaw = self.angles_y;
         }
     }

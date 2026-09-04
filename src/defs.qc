@@ -936,12 +936,21 @@ float (entity e, float healamount, float ignore) T_Heal; // health function
 float(entity targ, entity inflictor) CanDamage;
 
 //
-// Argus item chain (#145) & pickup claim mutex (#177)
+// Argus item chain (#145) & pickup claim mutex (#174, #177)
 //
 .entity		ar_nextitem;
 .float		ar_initemchain;
 entity		argus_itemchain;
 .entity		ar_claimer;
 .float		ar_claimtime;
+.entity		claimed_by;		// Item claim mutex holder (#174)
+.float		claim_time;		// Item claim mutex timestamp (#174)
+.float		ar_killdelay;	// Shared-target kill-steal suppression delay (#174)
+.entity		ar_owner;		// Dropped backpack / item original owner entity (#174)
 void(entity it) Argus_ItemChain_Add;
 void(entity it) Argus_ItemChain_Remove;
+float(entity item) TryClaim;
+void(entity item) ReleaseClaim;
+float(entity item) Argus_TryClaim;
+void(entity item) Argus_ReleaseClaim;
+vector(entity it) Argus_GoalPoint;
