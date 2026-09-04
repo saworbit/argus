@@ -180,6 +180,8 @@ pub struct DoorCut {
     pub button: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub actuator: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
     pub walk_links: u32,
     pub sample: Vec<[u32; 2]>,
 }
@@ -832,10 +834,18 @@ fn atlas_from_bsp(
             let raw = i.model.as_deref()?.strip_prefix('*')?;
             let idx: usize = raw.parse().ok()?;
             let m = bsp.models.get(idx)?;
+            let mut door_items = 0u32;
+            if i.spawnflags & 16 != 0 {
+                door_items |= 131072; // IT_KEY1: silver key (DOOR_SILVER_KEY = 16)
+            }
+            if i.spawnflags & 8 != 0 {
+                door_items |= 262144; // IT_KEY2: gold key (DOOR_GOLD_KEY = 8)
+            }
             Some(DoorMeta {
                 door: i.model.clone().unwrap_or_default(),
                 classname: i.classname.clone(),
                 targetname: i.targetname.clone(),
+                items: door_items,
                 mins: m.mins,
                 maxs: m.maxs,
             })
@@ -852,6 +862,14 @@ fn atlas_from_bsp(
             door_cuts.len(),
             n
         ));
+        let keyed_cuts: Vec<_> = door_cuts.iter().filter_map(|d| d.key.as_deref()).collect();
+        if !keyed_cuts.is_empty() {
+            implications.push(format!(
+                "{} keyed door cut(s) ({}); bots commit to fetch key before traversing",
+                keyed_cuts.len(),
+                keyed_cuts.join(", ")
+            ));
+        }
     }
 
     let corridor_misses = graph
@@ -1579,6 +1597,7 @@ struct DoorMeta {
     door: String,
     classname: String,
     targetname: Option<String>,
+    items: u32,
     mins: [f32; 3],
     maxs: [f32; 3],
 }
@@ -1765,12 +1784,20 @@ fn find_door_cuts(g: &NavGraph, doors: &[DoorMeta], causality: &[CausalLink]) ->
                 })
             })
             .unwrap_or((None, None));
+        let key = if (d.items & 131072 != 0) || (d.items & 16 != 0) {
+            Some("silver".to_string())
+        } else if (d.items & 262144 != 0) || (d.items & 8 != 0) {
+            Some("gold".to_string())
+        } else {
+            None
+        };
         out.push(DoorCut {
             door: d.door.clone(),
             classname: d.classname.clone(),
             targetname: d.targetname.clone(),
             button,
             actuator,
+            key,
             walk_links,
             sample,
         });
@@ -2172,6 +2199,7 @@ mod tests {
             door: "*12".into(),
             classname: "func_door".into(),
             targetname: Some("t6".into()),
+            items: 0,
             mins: [20.0, -16.0, -16.0],
             maxs: [40.0, 16.0, 16.0],
         }];
@@ -2188,7 +2216,28 @@ mod tests {
         assert_eq!(cuts.len(), 1);
         assert_eq!(cuts[0].walk_links, 1);
         assert_eq!(cuts[0].button.as_deref(), Some("*15"));
+        assert_eq!(cuts[0].key, None);
         assert_eq!(cuts[0].sample, vec![[0, 1]]);
+    }
+
+    #[test]
+    fn door_keyed_cut_records_key_requirement() {
+        let g = NavGraph {
+            overlay: dummy_overlay(2),
+            nodes: vec![[0.0, 0.0, 0.0], [64.0, 0.0, 0.0]],
+            adj: vec![vec![(1, "walk".into())], vec![]],
+        };
+        let doors = [DoorMeta {
+            door: "*13".into(),
+            classname: "func_door".into(),
+            targetname: None,
+            items: 131072, // IT_KEY1: silver key
+            mins: [20.0, -16.0, -16.0],
+            maxs: [40.0, 16.0, 16.0],
+        }];
+        let cuts = find_door_cuts(&g, &doors, &[]);
+        assert_eq!(cuts.len(), 1);
+        assert_eq!(cuts[0].key.as_deref(), Some("silver"));
     }
 
     #[test]

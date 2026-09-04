@@ -2501,6 +2501,14 @@ void(entity d) Argus_TakeDoor =
     self.ar_door = d;
     self.ar_doortime = time + 8;
     self.ar_doorbtn = world;
+
+    // Check if door requires a key (#175)
+    if (d.items && !(self.items & d.items))
+    {
+        Argus_CoopCommitKey (d);
+        return;
+    }
+
     if (d.targetname == "")
         return;                 // touch-open: walk in, masquerade fires it
     best = world;
@@ -4023,27 +4031,69 @@ float(entity it) Argus_GoalOK =
     return FALSE;
 };
 
-// Stand-pad floor targeting (#177): path to clear floor cells for lifts,
-// buttons, and doors rather than brush bounding-box centers
-vector(entity it) Argus_GoalPoint =
+// ============================================================================
+// STAND-PAD TARGETING (#175)
+// ============================================================================
+// Compute a reachable clear floor position (stand-pad) with direct line of
+// sight to the trigger / button / door brush, preventing bots from pathing
+// directly into brush bounding-box centers or wall-embedded origins.
+vector(entity ent) UseStandPoint =
 {
-    local vector center, floorpt;
-    center = (it.absmin + it.absmax) * 0.5;
+    local vector center, p, cand;
+    local float d;
 
-    // Items, monsters, and players already have floor-tested origins
-    if (it.flags & (FL_ITEM | FL_MONSTER | FL_CLIENT))
+    if (ent == world)
+        return '0 0 0';
+
+    center = (ent.absmin + ent.absmax) * 0.5;
+
+    // Items, monsters, and players already have floor-tested walkable origins
+    if (ent.flags & (FL_ITEM | FL_MONSTER | FL_CLIENT))
         return center;
 
-    // For lifts, buttons, and doors: trace down from above the center to find the
-    // actual clear floor cell (stand-pad) rather than the brush center
-    traceline (center + '0 0 16', center - '0 0 256', TRUE, it);
-    if (trace_fraction < 1 && !trace_allsolid)
+    // First attempt: trace vertically down from brush center to find floor
+    traceline (center + '0 0 16', center - '0 0 256', TRUE, ent);
+    if (trace_fraction < 1 && !trace_allsolid && pointcontents (trace_endpos + '0 0 24') == CONTENT_EMPTY)
     {
-        floorpt = trace_endpos;
-        floorpt_z = floorpt_z + 24; // bot waist height for clean LOS / pathing
-        return floorpt;
+        cand = trace_endpos + '0 0 24';
+        traceline (cand, center, TRUE, world);
+        if (trace_fraction == 1 || trace_ent == ent)
+            return cand;
     }
+
+    // Brush center is embedded or obscured. Search cardinal offsets (+-36u) in open air
+    // and project down to find clear stand-pad with line-of-sight to the brush:
+    d = 0;
+    while (d < 4)
+    {
+        if (d == 0)      p = center + '36 0 16';
+        else if (d == 1) p = center + '-36 0 16';
+        else if (d == 2) p = center + '0 36 16';
+        else             p = center + '0 -36 16';
+
+        if (pointcontents (p) == CONTENT_EMPTY)
+        {
+            traceline (p, p - '0 0 256', TRUE, ent);
+            if (trace_fraction < 1 && !trace_allsolid)
+            {
+                cand = trace_endpos + '0 0 24';
+                if (pointcontents (cand) == CONTENT_EMPTY)
+                {
+                    traceline (cand, center, TRUE, world);
+                    if (trace_fraction == 1 || trace_ent == ent)
+                        return cand;
+                }
+            }
+        }
+        d = d + 1;
+    }
+
     return center;
+};
+
+vector(entity it) Argus_GoalPoint =
+{
+    return UseStandPoint (it);
 };
 
 // Pickup claim mutex (#177): high-value DM items
@@ -4051,6 +4101,7 @@ float(entity it) Argus_IsHighValueItem =
 {
     local string c;
     c = it.classname;
+    if (c == "item_key1" || c == "item_key2")       return TRUE; // Keys (#175)
     if (c == "item_artifact_super_damage")          return TRUE; // Quad
     if (c == "item_artifact_invulnerability")       return TRUE; // Pentagram
     if (c == "item_health" && it.healamount >= 100) return TRUE; // Megahealth
@@ -4370,6 +4421,14 @@ float(entity it, float cls) Argus_ItemValue =
         if (v > 85)
             v = 85;
         return v;
+    }
+    if (c == "item_key1" || c == "item_key2")
+    {
+        if (self.items & it.items)
+            return 0; // already carry this key
+        if (self.ar_teammate != world && (self.ar_teammate.items & it.items))
+            return 0; // teammate already carries key
+        return 95; // high priority mission objective (#175)
     }
     return 22;      // oddments: mixed loot, always tempting
 };
@@ -5044,6 +5103,60 @@ void() Argus_ActEscort =
     }
 };
 
+// ============================================================================
+// CO-OP KEY RIPPLE COMMITMENT (#175)
+// ============================================================================
+void(entity door) Argus_CoopCommitKey =
+{
+    local entity k;
+    local float needed_key;
+
+    if (door == world || !door.items)
+        return;
+
+    needed_key = door.items;
+
+    // 1. If this bot already has the key, we don't need to fetch it
+    if ((self.items & needed_key) == needed_key)
+        return;
+
+    // 2. If teammate already has the key, single carrier rule: let teammate open it
+    if (self.ar_teammate != world && (self.ar_teammate.items & needed_key) == needed_key)
+        return;
+
+    // 3. If already on a GOAL_FETCH for this key, keep committing
+    if (Argus_GoalTopKind () == GOAL_FETCH)
+    {
+        k = Argus_GoalTopSubj ();
+        if (k != world && (k.items & needed_key))
+            return;
+    }
+
+    // 4. Find the key on the map
+    k = world;
+    if (needed_key & IT_KEY1)
+        k = find (world, classname, "item_key1");
+    else if (needed_key & IT_KEY2)
+        k = find (world, classname, "item_key2");
+
+    if (k == world || k.solid != SOLID_TRIGGER)
+    {
+        dprint ("ARGUS coop key fail: NO_RIPPLE / KEY_UNCLAIMED\n");
+        return;
+    }
+
+    // 5. Single carrier claim check
+    if (k.claimed_by != world && k.claimed_by != self && time < k.claim_time + 3.0)
+        return;
+
+    // 6. Commit to the key!
+    TryClaim (k);
+    Argus_GoalPush (GOAL_FETCH, k, UseStandPoint (k), 75, time + 45.0, 0);
+    dprint ("ARGEVT ");
+    dprint (self.netname);
+    dprint (" goal key\n");
+};
+
 void() Argus_CoopThink =
 {
     local entity threat, tmate;
@@ -5068,11 +5181,35 @@ void() Argus_CoopThink =
     threat = Argus_CoopFindThreat ();
     if (threat != world && threat.health > 0)
     {
-        self.ar_enemy = threat;
-        self.ar_seen = time;
-        self.ar_lastseen = threat.origin;
-        if (Argus_GoalTopKind () != GOAL_ENGAGE)
-            Argus_GoalPush (GOAL_ENGAGE, threat, threat.origin, 80, time + 8.0, 0);
+        // Sticky key commitment (#175): do not abandon key run for distant gunfire
+        local float is_key_fetch;
+        is_key_fetch = 0;
+        if (Argus_GoalTopKind () == GOAL_FETCH)
+        {
+            if (Argus_GoalTopSubj() != world && (Argus_GoalTopSubj().items & (IT_KEY1 | IT_KEY2)))
+                is_key_fetch = 1;
+        }
+
+        if (is_key_fetch)
+        {
+            // Only interrupt if threat is in close proximity (<256u) or directly firing at bot
+            if (vlen (threat.origin - self.origin) < 256 || threat.enemy == self)
+            {
+                self.ar_enemy = threat;
+                self.ar_seen = time;
+                self.ar_lastseen = threat.origin;
+                if (Argus_GoalTopKind () != GOAL_ENGAGE)
+                    Argus_GoalPush (GOAL_ENGAGE, threat, threat.origin, 80, time + 6.0, 0);
+            }
+        }
+        else
+        {
+            self.ar_enemy = threat;
+            self.ar_seen = time;
+            self.ar_lastseen = threat.origin;
+            if (Argus_GoalTopKind () != GOAL_ENGAGE)
+                Argus_GoalPush (GOAL_ENGAGE, threat, threat.origin, 80, time + 8.0, 0);
+        }
     }
     else if (Argus_GoalTopKind () == GOAL_ENGAGE)
     {
@@ -5095,10 +5232,29 @@ void() Argus_CoopThink =
             Argus_GoalPop ();
     }
 
-    // 4. Default to Escort if stack empty
+    // 4. Default goal if stack is empty
     if (self.ar_goal_count == 0)
     {
-        Argus_GoalPush (GOAL_ESCORT, tmate, self.origin, 10, time + 9999, 0);
+        if (tmate != world)
+        {
+            Argus_GoalPush (GOAL_ESCORT, tmate, self.origin, 10, time + 9999, 0);
+        }
+        else
+        {
+            // Solo co-op mode (#175): seek locked doors / keys or level exit
+            local entity door_ent;
+            door_ent = find (world, classname, "door");
+            while (door_ent != world)
+            {
+                if (door_ent.items && !(self.items & door_ent.items))
+                {
+                    Argus_CoopCommitKey (door_ent);
+                    door_ent = world; // break
+                }
+                else
+                    door_ent = find (door_ent, classname, "door");
+            }
+        }
     }
 
     // 5. Expire timeouts
@@ -5129,6 +5285,40 @@ void() Argus_CoopThink =
             self.angles_y = self.angles_y + 90 * frametime;
             self.ar_moveyaw = self.angles_y;
         }
+    }
+    else if (topk == GOAL_FETCH)
+    {
+        local entity fitem;
+        local vector fanchor;
+        fitem = Argus_GoalTopSubj ();
+        fanchor = Argus_GoalTopAnchor ();
+        if (fitem != world && fitem.solid == SOLID_TRIGGER)
+        {
+            if (vlen (self.origin - fanchor) > 48)
+                self.ar_moveyaw = vectoyaw (fanchor - self.origin);
+            else
+                self.ar_moveyaw = vectoyaw (fitem.origin - self.origin);
+        }
+        else
+            Argus_GoalPop ();
+    }
+    else if (topk == GOAL_INTERACT)
+    {
+        local entity idoor;
+        local vector idoorpad;
+        idoor = Argus_GoalTopSubj ();
+        idoorpad = Argus_GoalTopAnchor ();
+        if (idoor != world && (self.items & idoor.items) == idoor.items)
+        {
+            if (vlen (self.origin - idoorpad) > 48)
+                self.ar_moveyaw = vectoyaw (idoorpad - self.origin);
+            else
+                self.ar_moveyaw = vectoyaw (idoor.origin - self.origin);
+            if (idoor.state != STATE_BOTTOM && idoor.state != STATE_DOWN)
+                Argus_GoalPop ();
+        }
+        else
+            Argus_GoalPop ();
     }
 };
 
@@ -6068,6 +6258,14 @@ void() Argus_AI =
             {
                 self.ar_door = world;       // moving or open: walk on
                 self.ar_doorbtn = world;
+            }
+            else if (self.ar_door.items && !(self.items & self.ar_door.items))
+            {
+                // Closed keyed door and key not held (#175):
+                // Halt! Never walk into a closed locked door brush.
+                self.ar_liftwait = 1;
+                havetarget = 0;
+                Argus_CoopCommitKey (self.ar_door);
             }
             else if (time > self.ar_doortime)
             {

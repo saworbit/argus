@@ -435,6 +435,7 @@ const TRACKED_EXTRA: &[&str] = &[
     "PlayerPostThink",
     "TryClaim",
     "ReleaseClaim",
+    "UseStandPoint",
 ];
 
 fn keep_fn(name: &str) -> bool {
@@ -463,6 +464,7 @@ fn role_for(name: &str) -> &'static str {
         || name.contains("Escort")
         || name.contains("Coop")
         || name.contains("Claim")
+        || name.contains("StandPoint")
     {
         "nav"
     } else if name.contains("Spawn")
@@ -489,7 +491,7 @@ fn role_for(name: &str) -> &'static str {
 fn fn_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"^(void|float|string|entity)\s*\([^)]*\)\s+(\w+)\s*(=|;)")
+        Regex::new(r"^(void|float|vector|string|entity)\s*\([^)]*\)\s+(\w+)\s*(=|;)")
             .expect("fn")
     })
 }
@@ -656,5 +658,23 @@ void() Argus_Bar =
             fns.iter().any(|f| f.name == "Argus_ReleaseClaim"),
             "Argus_ReleaseClaim not indexed"
         );
+        assert!(
+            fns.iter().any(|f| f.name == "UseStandPoint"),
+            "UseStandPoint not indexed"
+        );
+        assert!(
+            fns.iter().any(|f| f.name == "Argus_CoopCommitKey"),
+            "Argus_CoopCommitKey not indexed"
+        );
+        let nav = root.join("argus_nav.qc");
+        if nav.is_file() {
+            let mut nav_fns = Vec::new();
+            let mut nav_consts = Vec::new();
+            index_file(&nav, "argus_nav.qc", &mut nav_fns, &mut nav_consts).expect("index argus_nav.qc");
+            assert!(
+                nav_fns.iter().any(|f| f.name == "Argus_LinkBlockedByKeyDoor"),
+                "Argus_LinkBlockedByKeyDoor not indexed"
+            );
+        }
     }
 }
