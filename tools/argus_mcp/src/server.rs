@@ -358,6 +358,20 @@ pub struct ExperimentArgs {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct CampaignExperimentArgs {
+    #[schemars(description = "Campaign map name, e.g. start, e1m1, e1m2... e1m7.")]
+    pub map: String,
+    #[schemars(description = "Wall-clock seconds, 10-300. Default 60.")]
+    pub duration_sec: Option<u32>,
+    #[schemars(description = "Seat mode: 'solo' (default) or 'companion'.")]
+    pub seat: Option<String>,
+    pub skill: Option<u32>,
+    #[schemars(description = "Compile first. Default true.")]
+    pub compile: Option<bool>,
+    pub run_name: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct MatrixArgs {
     #[schemars(description = "Maps to probe. Default dm2,dm3,dm4,dm6,lqdm2.")]
     pub maps: Option<Vec<String>>,
@@ -577,6 +591,7 @@ impl Argus {
                 Some(&format!("sim_{}", args.map_name)),
                 None,
                 None,
+                None,
             )
             .await
         {
@@ -767,6 +782,7 @@ impl Argus {
                 args.run_name.as_deref(),
                 args.dedicated_slots,
                 args.skill,
+                None,
             )
             .await
         {
@@ -801,6 +817,7 @@ impl Argus {
                 args.run_name.as_deref(),
                 args.dedicated_slots,
                 args.skill,
+                None,
             )
             .await
         {
@@ -1489,6 +1506,7 @@ impl Argus {
                 Some(&run_name),
                 None,
                 args.skill,
+                None,
             )
             .await
         {
@@ -1536,6 +1554,139 @@ impl Argus {
             "gate_card": compare.as_ref().map(|c| c.gate_card.clone()),
             "match": brief_lite(&ran.brief),
             "next": next,
+        }))
+    }
+
+    #[tool(description = "Run a campaign/co-op experiment and evaluate against win/checkpoint triggers and fail taxonomy (#176).")]
+    async fn campaign_experiment(
+        &self,
+        Parameters(args): Parameters<CampaignExperimentArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let dur = args.duration_sec.unwrap_or(60);
+        if !(10..=300).contains(&dur) {
+            return Err(McpError::invalid_params(
+                "campaign duration_sec must be 10..=300",
+                None,
+            ));
+        }
+        let seat = args.seat.as_deref().unwrap_or("solo");
+        if seat != "solo" && seat != "companion" {
+            return Err(McpError::invalid_params(
+                "seat must be 'solo' or 'companion'",
+                None,
+            ));
+        }
+        if let Some(s) = args.skill {
+            if s > 3 {
+                return Err(McpError::invalid_params("skill must be 0..3", None));
+            }
+        }
+        let cfg = match cfg_or_err() {
+            Ok(c) => c,
+            Err(r) => return Ok(r),
+        };
+        let mut compile_result = None;
+        if args.compile.unwrap_or(true) {
+            let cfg_c = cfg.clone();
+            let compiled = match tokio::time::timeout(
+                Duration::from_secs(90),
+                tokio::task::spawn_blocking(move || compile_qc(&cfg_c, true)),
+            )
+            .await
+            {
+                Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
+                Err(_) => return tool_err("compile_qc timed out after 90s"),
+            };
+            if !compiled.ok {
+                return json_ok(&serde_json::json!({
+                    "ok": false,
+                    "stage": "compile",
+                    "compile": compiled,
+                    "next": "see what=fn name=<the error> and fix QC",
+                }));
+            }
+            compile_result = Some(compiled);
+        }
+        let run_name = args
+            .run_name
+            .clone()
+            .unwrap_or_else(|| format!("campaign_{}_{}", args.map, seat));
+        {
+            let mut g = self.matches.lock().await;
+            g.reap();
+            if g.status().running {
+                let _ = g.stop(Duration::from_secs(3)).await;
+            }
+        }
+        let mut g = self.matches.lock().await;
+
+        let stop_puppet = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let puppet_thread = if seat == "companion" {
+            let stop_clone = std::sync::Arc::clone(&stop_puppet);
+            Some(std::thread::spawn(move || {
+                std::thread::sleep(Duration::from_millis(1500));
+                if let Ok(mut puppet) = crate::netclient::NetClient::connect("127.0.0.1", 26000, "puppet") {
+                    while !stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
+                        puppet.pump(Duration::from_millis(100));
+                    }
+                    puppet.disconnect();
+                }
+            }))
+        } else {
+            None
+        };
+
+        let ran = match g
+            .run(
+                &cfg,
+                &args.map,
+                dur,
+                Some(&run_name),
+                None,
+                args.skill,
+                Some(true),
+            )
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                if let Some(th) = puppet_thread {
+                    stop_puppet.store(true, std::sync::atomic::Ordering::Relaxed);
+                    let _ = th.join();
+                }
+                return tool_err(e);
+            }
+        };
+        drop(g);
+
+        if let Some(th) = puppet_thread {
+            stop_puppet.store(true, std::sync::atomic::Ordering::Relaxed);
+            let _ = th.join();
+        }
+
+        let log_content = match std::fs::read_to_string(&ran.log_path) {
+            Ok(c) => c,
+            Err(e) => return tool_err(format!("failed to read log {}: {}", ran.log_path, e)),
+        };
+        let report = crate::campaign::evaluate_campaign_log(
+            &log_content,
+            &args.map,
+            seat,
+            &ran.log_path,
+            ran.elapsed_sec,
+        );
+        json_ok(&serde_json::json!({
+            "ok": report.ok,
+            "verdict": report.verdict,
+            "fail_reason": report.fail_reason,
+            "checkpoints": report.checkpoints,
+            "escort_break_s": report.escort_break_s,
+            "steal_events": report.steal_events,
+            "block_events": report.block_events,
+            "elapsed_sec": report.elapsed_sec,
+            "log_path": report.log_path,
+            "summary_line": report.summary_line,
+            "compile_ok": compile_result.as_ref().map(|c| c.ok),
         }))
     }
 
@@ -1606,6 +1757,7 @@ impl Argus {
                     Some(&format!("mx_{map}")),
                     None,
                     args.skill,
+                    None,
                 )
                 .await;
             drop(g);
@@ -1682,6 +1834,7 @@ impl Argus {
                 Some(&format!("probe_{}", args.map)),
                 None,
                 args.skill,
+                None,
             )
             .await
         {

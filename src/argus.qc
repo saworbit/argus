@@ -5165,6 +5165,34 @@ void() Argus_CoopThink =
     self.ar_teammate = Argus_CoopFindTeammate ();
     tmate = self.ar_teammate;
 
+    // Co-op telemetry counters (#176)
+    if (tmate != world && !tmate.ar_isbot && tmate.health > 0)
+    {
+        if (vlen (self.origin - tmate.origin) > 512)
+            self.ar_escort_break = self.ar_escort_break + frametime;
+
+        // Check body blocking during player jump or interaction
+        if (vlen (self.origin - tmate.origin) < 48)
+        {
+            if (tmate.button2 || tmate.button0 || tmate.velocity_z > 50)
+                self.ar_block_count = self.ar_block_count + 1;
+        }
+
+        if (time > self.ar_coop_statstime)
+        {
+            self.ar_coop_statstime = time + 4.0;
+            dprint ("ARGEVT ");
+            dprint (self.netname);
+            dprint (" coop_stats break ");
+            dprint (ftos (self.ar_escort_break));
+            dprint (" steal ");
+            dprint (ftos (self.ar_steal_count));
+            dprint (" block ");
+            dprint (ftos (self.ar_block_count));
+            dprint ("\n");
+        }
+    }
+
     // 1. Critical Health Retreat
     if (self.health + self.armortype * self.armorvalue < 35 && self.health > 0)
     {

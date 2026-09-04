@@ -1,6 +1,7 @@
 pub mod analyze;
 pub mod backup;
 pub mod bsp;
+pub mod campaign;
 pub mod cartograph;
 pub mod compile;
 pub mod config;

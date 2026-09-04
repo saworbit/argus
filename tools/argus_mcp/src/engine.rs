@@ -50,6 +50,7 @@ impl EngineChild {
         skill: Option<u32>,
         cwd: &Path,
         port: Option<u32>,
+        coop: bool,
     ) -> Result<Self, String> {
         validate_map(map)?;
         if slots == 0 || slots > 16 {
@@ -62,11 +63,11 @@ impl EngineChild {
         }
         #[cfg(windows)]
         {
-            return spawn_windows(cfg, map, slots, skill, cwd, port);
+            return spawn_windows(cfg, map, slots, skill, cwd, port, coop);
         }
         #[cfg(not(windows))]
         {
-            spawn_unix(cfg, map, slots, skill, cwd, port)
+            spawn_unix(cfg, map, slots, skill, cwd, port, coop)
         }
     }
 
@@ -169,9 +170,10 @@ fn spawn_unix(
     skill: Option<u32>,
     cwd: &Path,
     port: Option<u32>,
+    coop: bool,
 ) -> Result<EngineChild, String> {
     let mut cmd = Command::new(&cfg.engine);
-    apply_args(&mut cmd, cfg, map, slots, skill, port);
+    apply_args(&mut cmd, cfg, map, slots, skill, port, coop);
     cmd.current_dir(cwd)
         .kill_on_drop(true)
         .stdin(Stdio::piped())
@@ -202,6 +204,7 @@ fn apply_args(
     slots: u32,
     skill: Option<u32>,
     port: Option<u32>,
+    coop: bool,
 ) {
     cmd.arg("-dedicated")
         .arg(slots.to_string())
@@ -211,9 +214,12 @@ fn apply_args(
         .arg(&cfg.game)
         .arg("-condebug")
         .arg("+developer")
-        .arg("1")
-        .arg("+deathmatch")
         .arg("1");
+    if coop {
+        cmd.arg("+coop").arg("1").arg("+deathmatch").arg("0");
+    } else {
+        cmd.arg("+deathmatch").arg("1");
+    }
     if let Some(p) = port {
         cmd.arg("-port").arg(p.to_string());
     }
@@ -248,6 +254,7 @@ fn spawn_windows(
     skill: Option<u32>,
     cwd: &Path,
     port: Option<u32>,
+    coop: bool,
 ) -> Result<EngineChild, String> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::System::Threading::{
@@ -257,8 +264,13 @@ fn spawn_windows(
 
     let exe = cfg.engine.display().to_string();
     let portarg = port.map(|p| format!(" -port {p}")).unwrap_or_default();
+    let mode_arg = if coop {
+        "+coop 1 +deathmatch 0"
+    } else {
+        "+deathmatch 1"
+    };
     let mut args = format!(
-        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +deathmatch 1 +map {map}",
+        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 {mode_arg} +map {map}",
         cfg.basedir.display(),
         cfg.game
     );
@@ -585,7 +597,7 @@ mod tests {
         }
         let mut ctrl = crate::match_ctrl::MatchCtrl::default();
         if ctrl
-            .start(&cfg, "dm4", Some(30), Some("probe_inject_test"), None, Some(1))
+            .start(&cfg, "dm4", Some(30), Some("probe_inject_test"), None, Some(1), None)
             .await
             .is_err()
         {

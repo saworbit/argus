@@ -995,7 +995,7 @@ pub async fn probe_links(
 
     let secs = (todo.len() as u32) * 9 + 40;
     let mut ctrl = crate::match_ctrl::MatchCtrl::default();
-    ctrl.start(cfg, map, Some(secs.min(590)), Some("probe_links_run"), None, Some(0))
+    ctrl.start(cfg, map, Some(secs.min(590)), Some("probe_links_run"), None, Some(0), None)
         .await
         .map_err(|e| format!("engine start: {e}"))?;
     tokio::time::sleep(Duration::from_secs(4)).await;
@@ -1143,7 +1143,7 @@ mod tests {
         }
         let mut ctrl = crate::match_ctrl::MatchCtrl::default();
         if ctrl
-            .start(&cfg, "dm4", Some(40), Some("probe_netclient_test"), None, Some(1))
+            .start(&cfg, "dm4", Some(40), Some("probe_netclient_test"), None, Some(1), None)
             .await
             .is_err()
         {

@@ -281,6 +281,19 @@ void() door_touch =
 		return;
 	}
 
+	if (self.items & IT_KEY1)
+	{
+		dprint ("ARGEVT ");
+		dprint (other.netname);
+		dprint (" checkpoint silver_door\n");
+	}
+	else if (self.items & IT_KEY2)
+	{
+		dprint ("ARGEVT ");
+		dprint (other.netname);
+		dprint (" checkpoint gold_door\n");
+	}
+
 	other.items = other.items - self.items;
 	self.touch = __NULL__;
 

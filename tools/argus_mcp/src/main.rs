@@ -295,6 +295,131 @@ async fn main() -> anyhow::Result<()> {
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             run_python_script(&cfg, "tools/argus_reach.py", &sub_args)
         }
+        Some("campaign") => {
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.is_empty() || sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+                println!(
+                    "usage: argus-mcp campaign <map> [options]\n\
+                     \n\
+                     Run campaign/co-op experiment and evaluate against win/checkpoint triggers and fail taxonomy.\n\
+                     \n\
+                     Options:\n\
+                       --seat <solo|companion>  Seat mode (default: solo)\n\
+                       --duration <sec>         Wall-clock seconds (default: 60, 10..=300)\n\
+                       --skill <0..3>           Bot skill (default: 2)\n\
+                       --no-compile             Skip QuakeC compilation\n\
+                       --json                   Output only JSON report"
+                );
+                return Ok(());
+            }
+            let map = &sub_args[0];
+            argus_mcp::engine::validate_map(map).map_err(|e| anyhow::anyhow!(e))?;
+            let mut seat = "solo".to_string();
+            let mut duration: u32 = 60;
+            let mut skill: Option<u32> = None;
+            let mut compile = true;
+            let mut json_only = false;
+
+            let mut idx = 1;
+            while idx < sub_args.len() {
+                match sub_args[idx].as_str() {
+                    "--seat" => {
+                        idx += 1;
+                        if idx < sub_args.len() {
+                            seat = sub_args[idx].clone();
+                        }
+                    }
+                    "--duration" => {
+                        idx += 1;
+                        if idx < sub_args.len() {
+                            duration = sub_args[idx].parse().unwrap_or(60);
+                        }
+                    }
+                    "--skill" => {
+                        idx += 1;
+                        if idx < sub_args.len() {
+                            skill = sub_args[idx].parse().ok();
+                        }
+                    }
+                    "--no-compile" => {
+                        compile = false;
+                    }
+                    "--json" => {
+                        json_only = true;
+                    }
+                    _ => {}
+                }
+                idx += 1;
+            }
+
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            if compile {
+                println!("Compiling QuakeC progs.dat...");
+                let cres = argus_mcp::compile::compile_qc(&cfg, true);
+                if !cres.ok {
+                    eprintln!("QuakeC compilation failed!");
+                    std::process::exit(1);
+                }
+            }
+
+            println!("Running campaign match on {map} (seat={seat}, duration={duration}s)...");
+            let mut mc = argus_mcp::match_ctrl::MatchCtrl::default();
+            let run_name = format!("campaign_{}_{}", map, seat);
+
+            let stop_puppet = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+            let puppet_thread = if seat == "companion" {
+                let stop_clone = std::sync::Arc::clone(&stop_puppet);
+                Some(std::thread::spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(1500));
+                    if let Ok(mut puppet) = argus_mcp::netclient::NetClient::connect("127.0.0.1", 26000, "puppet") {
+                        while !stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
+                            puppet.pump(std::time::Duration::from_millis(100));
+                        }
+                        puppet.disconnect();
+                    }
+                }))
+            } else {
+                None
+            };
+
+            let ran = mc.run(
+                &cfg,
+                map,
+                duration,
+                Some(&run_name),
+                None,
+                skill,
+                Some(true),
+            ).await;
+
+            if let Some(th) = puppet_thread {
+                stop_puppet.store(true, std::sync::atomic::Ordering::Relaxed);
+                let _ = th.join();
+            }
+
+            let ran = ran.map_err(|e| anyhow::anyhow!(e))?;
+
+            let log_text = std::fs::read_to_string(&ran.log_path)
+                .map_err(|e| anyhow::anyhow!("failed to read log {}: {}", ran.log_path, e))?;
+            let report = argus_mcp::campaign::evaluate_campaign_log(
+                &log_text,
+                map,
+                &seat,
+                &ran.log_path,
+                ran.elapsed_sec,
+            );
+
+            if json_only {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                println!("{}", report.summary_line);
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            }
+            if !report.ok {
+                std::process::exit(1);
+            }
+            Ok(())
+        }
         Some("-h" | "--help" | "help") => {
             print_help();
             Ok(())
@@ -417,6 +542,8 @@ fn print_help() {
          argus-mcp harvest [--tag <name>]\n\
                                 harvest listen server session and demos\n\
          argus-mcp reach [map]\n\
-                                verify directed reach of shipped graphs\n"
+                                verify directed reach of shipped graphs\n\
+         argus-mcp campaign <map> [options]\n\
+                                run campaign lab experiment and evaluate against win/checkpoint triggers and fail taxonomy\n"
     );
 }

@@ -404,7 +404,10 @@ void() lightning_use =
 			boss_shockb1();
 
 		else if (self.health == 0)
+		{
+			dprint ("ARGEVT Chthon defeat\n");
 			boss_shockc1();
+		}
 	}	
 };
 
