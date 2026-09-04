@@ -1674,6 +1674,7 @@ impl Argus {
             seat,
             &ran.log_path,
             ran.elapsed_sec,
+            crate::intel::hull0_for_map(&cfg, &args.map).as_ref(),
         );
         json_ok(&serde_json::json!({
             "ok": report.ok,

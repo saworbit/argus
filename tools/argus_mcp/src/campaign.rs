@@ -60,6 +60,7 @@ pub fn evaluate_campaign_log(
     seat: &str,
     log_path: &str,
     elapsed_sec: u64,
+    hull: Option<&crate::bsp::Hull0>,
 ) -> CampaignReport {
     let tape = parse_tape(text);
     let mut checkpoints = Vec::new();
@@ -140,18 +141,15 @@ pub fn evaluate_campaign_log(
         }
     }
 
-    // Count direct steal events if logged individually
-    for evt in &tape.events {
-        if evt.verb == "steal" {
-            steal_events += 1;
-        }
-    }
+    // "steal" is not a verb in the ARGEVT grammar - the QC only ever
+    // prints it as a field of coop_stats, which the loop above reads.
+    // The old per-event count here could never match anything.
 
     // 3. Evaluate fail taxonomy if not won
     let fail_reason = if has_win {
         None
     } else {
-        Some(determine_fail_reason(text, &tape, map, &checkpoints))
+        Some(determine_fail_reason(text, &tape, map, &checkpoints, hull))
     };
 
     let ok = has_win;
@@ -209,6 +207,7 @@ fn determine_fail_reason(
     tape: &crate::parse_arglog::MatchTape,
     map: &str,
     checkpoints: &[String],
+    hull: Option<&crate::bsp::Hull0>,
 ) -> CampaignFailReason {
     let lower = text.to_ascii_lowercase();
 
@@ -222,10 +221,17 @@ fn determine_fail_reason(
     }
 
     // 2. LAVA_DEATH_LOOP
+    // Argus_Die and ClientObituary print "world" for every nameless
+    // killer, so no killer string ever says lava. Classify by hull 0
+    // contents at the death position exactly as intel does, with the
+    // z rule surviving only as the no-BSP fallback inside
+    // death_is_lava. The old z < -300 literal was dm4's pit depth and
+    // sits below every campaign map's lava.
     let mut hazard_deaths = 0usize;
     for d in &tape.deaths {
-        let k = d.killer.to_ascii_lowercase();
-        if k.contains("lava") || k.contains("slime") || (k == "world" && d.pos.z < -300.0) {
+        if d.killer.eq_ignore_ascii_case("world")
+            && crate::bsp::death_is_lava(hull, d.pos.x, d.pos.y, d.pos.z)
+        {
             hazard_deaths += 1;
         }
     }
@@ -292,7 +298,7 @@ ARGEVT Ranger checkpoint silver_door
 ARGEVT Ranger win exit
 ARGEVT Ranger coop_stats break 4.5 steal 0 block 1
 "#;
-        let report = evaluate_campaign_log(text, "e1m1", "solo", "runs/test.log", 34);
+        let report = evaluate_campaign_log(text, "e1m1", "solo", "runs/test.log", 34, None);
         assert!(report.ok);
         assert_eq!(report.verdict, "PASS");
         assert_eq!(report.fail_reason, None);
@@ -309,7 +315,7 @@ ARGEVT Ranger coop_stats break 4.5 steal 0 block 1
 ARGEVT Ranger spawned
 Host_Error: ED_Alloc: no free edicts
 "#;
-        let report = evaluate_campaign_log(text, "e1m2", "solo", "runs/test.log", 12);
+        let report = evaluate_campaign_log(text, "e1m2", "solo", "runs/test.log", 12, None);
         assert!(!report.ok);
         assert_eq!(report.fail_reason, Some(CampaignFailReason::EdictOverflow));
         assert!(report.summary_line.contains("FAIL: EDICT_OVERFLOW"));
@@ -319,14 +325,32 @@ Host_Error: ED_Alloc: no free edicts
     fn classifies_lava_death_loop() {
         let text = r#"
 ARGEVT Ranger spawned
-ARGEVT Ranger death lava pos '100 200 -350'
+ARGEVT Ranger death world pos '100 200 -350'
 ARGEVT Ranger respawn
-ARGEVT Ranger death lava pos '100 200 -350'
+ARGEVT Ranger death world pos '100 200 -350'
 "#;
-        let report = evaluate_campaign_log(text, "e1m3", "solo", "runs/test.log", 20);
+        let report = evaluate_campaign_log(text, "e1m3", "solo", "runs/test.log", 20, None);
         assert!(!report.ok);
         assert_eq!(report.fail_reason, Some(CampaignFailReason::LavaDeathLoop));
         assert!(report.summary_line.contains("FAIL: LAVA_DEATH_LOOP"));
+    }
+
+    // #217: the QC prints "world" for every nameless killer, so no
+    // death line ever says lava. With no BSP death_is_lava falls back
+    // to the z rule, which is what this exercises; on a real campaign
+    // map the hull 0 contents decide.
+    #[test]
+    fn lava_loop_is_classified_from_a_world_killer() {
+        let text = "ARGEVT Ranger spawned
+ARGEVT Ranger death world pos '100 200 -350'
+ARGEVT Ranger respawn
+ARGEVT Ranger death world pos '100 200 -350'
+";
+        let report = evaluate_campaign_log(text, "e1m1", "solo", "runs/test.log", 20, None);
+        assert!(!report.ok);
+        // e1m1 is a key map, so KEY_UNCLAIMED would win if the lava
+        // branch stayed unreachable
+        assert_eq!(report.fail_reason, Some(CampaignFailReason::LavaDeathLoop));
     }
 
     #[test]
@@ -335,7 +359,7 @@ ARGEVT Ranger death lava pos '100 200 -350'
 ARGEVT Ranger spawned
 ARGUS coop key fail: NO_RIPPLE / KEY_UNCLAIMED
 "#;
-        let report = evaluate_campaign_log(text, "e1m1", "solo", "runs/test.log", 30);
+        let report = evaluate_campaign_log(text, "e1m1", "solo", "runs/test.log", 30, None);
         assert!(!report.ok);
         // NO_RIPPLE is checked before KEY_UNCLAIMED
         assert!(report.fail_reason.is_some());
@@ -347,7 +371,7 @@ ARGUS coop key fail: NO_RIPPLE / KEY_UNCLAIMED
 ARGEVT Ranger spawned
 ARGUS no_ripple for door *12
 "#;
-        let report = evaluate_campaign_log(text, "e1m5", "companion", "runs/test.log", 45);
+        let report = evaluate_campaign_log(text, "e1m5", "companion", "runs/test.log", 45, None);
         assert!(!report.ok);
         assert_eq!(report.fail_reason, Some(CampaignFailReason::NoRipple));
         assert!(report.summary_line.contains("FAIL: NO_RIPPLE"));
@@ -361,7 +385,7 @@ ARGLOG Ranger t 0.0 pos '10 10 24' spd 0.0 yaw 0.0 mode 0 st 0 gl 0 hp 100 frg 0
 ARGLOG Ranger t 3.0 pos '10 10 24' spd 0.0 yaw 0.0 mode 0 st 0 gl 0 hp 100 frg 0
 ARGLOG Ranger t 8.0 pos '10 10 24' spd 0.0 yaw 0.0 mode 0 st 0 gl 0 hp 100 frg 0
 "#;
-        let report = evaluate_campaign_log(text, "start", "solo", "runs/test.log", 60);
+        let report = evaluate_campaign_log(text, "start", "solo", "runs/test.log", 60, None);
         assert!(!report.ok);
         assert_eq!(report.fail_reason, Some(CampaignFailReason::StuckTimeout));
         assert!(report.summary_line.contains("FAIL: STUCK_TIMEOUT"));

@@ -407,6 +407,7 @@ async fn main() -> anyhow::Result<()> {
                 &seat,
                 &ran.log_path,
                 ran.elapsed_sec,
+                argus_mcp::intel::hull0_for_map(&cfg, map).as_ref(),
             );
 
             if json_only {

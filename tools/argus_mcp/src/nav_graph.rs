@@ -119,6 +119,23 @@ pub fn load_nav(cfg: &Config, map: &str) -> Result<NavGraph, String> {
     Ok(graph)
 }
 
+/// navgen writes the third element of a `links` entry as reciprocity
+/// (1 when the reverse link also exists), not as a kind. Reading it as
+/// walk-or-drop briefed every one-way link as a drop: the 7f escape
+/// stitches, one-direction knit walks, trace-mined walks and every
+/// reverse the slot clamp evicted. dm4 alone carries 81 one-way links
+/// at the same level. Derive the kind from node height with the
+/// runtime's own step rule instead.
+const NAV_STEP: f32 = 18.0;
+
+fn link_kind(from: [f32; 3], to: [f32; 3]) -> &'static str {
+    if from[2] - to[2] > NAV_STEP {
+        "drop"
+    } else {
+        "walk"
+    }
+}
+
 fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
     let nodes_v = v.get("nodes").and_then(|n| n.as_array()).ok_or("nav json missing nodes")?;
     let nodes: Vec<[f32; 3]> = nodes_v
@@ -142,9 +159,8 @@ fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
             let a = link.as_array().ok_or("bad link")?;
             let from = a.first().and_then(|x| x.as_u64()).ok_or("bad link from")? as usize;
             let to = a.get(1).and_then(|x| x.as_u64()).ok_or("bad link to")? as usize;
-            let walk = a.get(2).and_then(|x| x.as_u64()).unwrap_or(1);
             if from < n && to < n {
-                let kind = if walk == 0 { "drop" } else { "walk" };
+                let kind = link_kind(nodes[from], nodes[to]);
                 push_edge(&mut adj[from], to as u32, kind);
             }
         }
@@ -640,6 +656,59 @@ mod tests {
         let b = parse_path_ref("dm4:quad->lg").unwrap();
         assert!(matches!(b.from, End::Item(_)));
         assert!(parse_path_ref("56-72").is_none());
+    }
+
+    // #218: element 2 of a links entry is reciprocity. Reading it as a
+    // kind briefed all 206 of dm4's one-way links as drops, 81 of them
+    // at the same height.
+    #[test]
+    fn one_way_level_link_is_a_walk_not_a_drop() {
+        let v: serde_json::Value = serde_json::from_str(
+            r#"{"nodes":[[0,0,24],[100,0,24],[200,0,-120]],
+                "links":[[0,1,0],[1,2,0],[2,1,1],[1,2,1]]}"#,
+        )
+        .unwrap();
+        let g = parse_graph("t", &v).unwrap();
+        let kind = |from: usize, to: u32| {
+            g.adj[from]
+                .iter()
+                .find(|e| e.to == to)
+                .map(|e| e.kind.clone())
+                .unwrap()
+        };
+        // one-way, same height: a walk, whatever the reciprocity flag says
+        assert_eq!(kind(0, 1), "walk");
+        // 144 below: a real drop, and its reverse is still a walk (a climb
+        // the graph believes in, not a drop)
+        assert_eq!(kind(1, 2), "drop");
+        assert_eq!(kind(2, 1), "walk");
+    }
+
+    // The shipped dm4 graph: 206 one-way links, 81 of them level. Before
+    // the fix every one of the 206 briefed as a drop.
+    #[test]
+    fn shipped_dm4_level_one_way_links_are_walks() {
+        let p = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../src/argus_nav_dm4.qc.json");
+        let text = std::fs::read_to_string(&p).expect("shipped dm4 nav json is tracked");
+        let v: serde_json::Value = serde_json::from_str(&text).unwrap();
+        let g = parse_graph("dm4", &v).unwrap();
+        let mut level_walks = 0;
+        for (from, edges) in g.adj.iter().enumerate() {
+            for e in edges {
+                let dz = g.nodes[from][2] - g.nodes[e.to as usize][2];
+                // typed hops (jump, lift, swim, rocket, ...) legitimately
+                // overwrite the kind afterwards; a plain link at the same
+                // height must never read as a drop
+                if dz.abs() <= 18.0 {
+                    assert_ne!(e.kind, "drop", "level link {from}->{} briefed as a drop", e.to);
+                    if e.kind == "walk" {
+                        level_walks += 1;
+                    }
+                }
+            }
+        }
+        assert!(level_walks > 100, "expected the bulk of dm4 to be level walks");
     }
 
     #[test]
