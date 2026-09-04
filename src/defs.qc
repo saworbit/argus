@@ -995,6 +995,7 @@ void(entity door) Argus_CoopCommitKey;
 .float		ar_disconnected;	// human left; the body outlives the client
 .float		ar_escform;		// 1 = holding escort formation (hysteresis)
 .float		ar_coop_seektime;	// Next objective (key/door) seek, throttled
+.float		ar_fetchcool;		// Rest after a co-op FETCH routefail
 .float		ar_coop_local;		// Flag: local escort steering handled heading this frame
 
 

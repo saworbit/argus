@@ -5699,7 +5699,13 @@ void() Argus_CoopThink =
         fitem = Argus_GoalTopSubj ();
         if (fitem != world && fitem.solid == SOLID_TRIGGER)
         {
-            if (self.ar_goal != fitem)
+            // Resting after a routefail (see the stamp in Argus_AI).
+            // Leaving ar_goal clear is deliberate: the caller runs
+            // Argus_PickGoal whenever the goal is world, so the bot
+            // shops normally for the 20 s instead of standing still,
+            // and the objective is retried afterwards rather than
+            // abandoned. The goal stays on the stack throughout.
+            if (time >= self.ar_fetchcool && self.ar_goal != fitem)
             {
                 self.ar_goal = fitem;
                 self.ar_pending = 1;
@@ -5795,6 +5801,24 @@ void() Argus_AI =
                 }
                 self.ar_lastfailnode = self.ar_laststart;
             }
+            // AN UNROUTABLE OBJECTIVE MUST REST LIKE ANY OTHER GOAL.
+            // The item shelf above cannot cover this one: it is only
+            // stamped when the failure comes from a DIFFERENT area,
+            // and a bot hammering one objective mills inside a single
+            // patch, so it takes the failstreak branch every time and
+            // the shelf is never set. Meanwhile the co-op FETCH branch
+            // re-adopts its subject the moment ar_goal is cleared, so
+            // the pair loops at think rate. On e1m6 that ran 400
+            // routefails in 175 s against four goal pushes, for a gold
+            // key behind a rising door no bot can open.
+            //
+            // Per-bot, not the global item shelf: this is a verdict
+            // about one bot's ability to route there, and shelving a
+            // co-op objective for everyone is how one stuck bot
+            // starves a whole team. Same 20 s the item shelf uses.
+            if (Argus_GoalTopKind () == GOAL_FETCH
+                && Argus_GoalTopSubj () == self.ar_goal)
+                self.ar_fetchcool = time + 20;
             self.ar_goal = world;
 
             // four straight failures from one node with nobody to fight:
