@@ -148,10 +148,17 @@ async fn main() -> anyhow::Result<()> {
                     // and the dev teleport (216) all become drivable
                     // headless. GitHub #2's 4-player measurement was
                     // the first customer.
-                    let imp: u8 = rest
+                    // a comma list fires several from ONE seat, which is
+                    // what a toggle needs: two separate invocations are
+                    // two different players. "impulse 210,210" is the
+                    // spectator camera round trip.
+                    let imps: Vec<u8> = rest
                         .first()
-                        .and_then(|s| s.parse().ok())
-                        .ok_or("usage: argus-mcp client impulse <n> [secs]")?;
+                        .map(|s| s.split(',').filter_map(|t| t.trim().parse().ok()).collect())
+                        .unwrap_or_default();
+                    if imps.is_empty() {
+                        return Err("usage: argus-mcp client impulse <n>[,<n>...] [secs]".into());
+                    }
                     let secs: f32 = rest.get(1).and_then(|s| s.parse().ok()).unwrap_or(2.0);
                     let host = rest.get(2).cloned().unwrap_or_else(|| "127.0.0.1".into());
                     let port: u16 =
@@ -160,11 +167,13 @@ async fn main() -> anyhow::Result<()> {
                         &host, port, "labprobe",
                     )?;
                     c.pump(std::time::Duration::from_secs(3));
-                    c.set_impulse(imp);
-                    c.pump(std::time::Duration::from_secs_f32(secs.max(0.5)));
+                    for imp in &imps {
+                        c.set_impulse(*imp);
+                        c.pump(std::time::Duration::from_secs_f32(secs.max(0.5)));
+                    }
                     c.disconnect();
                     serde_json::to_string_pretty(&serde_json::json!({
-                        "impulse": imp,
+                        "impulses": imps,
                         "sent": true,
                     }))
                     .map_err(|e| e.to_string())
