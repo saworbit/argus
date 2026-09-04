@@ -155,6 +155,7 @@ impl MatchCtrl {
         run_name: Option<&str>,
         dedicated_slots: Option<u32>,
         skill: Option<u32>,
+        coop: Option<bool>,
     ) -> Result<MatchStatus, String> {
         self.reap();
         if self.live.is_some() {
@@ -200,7 +201,15 @@ impl MatchCtrl {
         std::fs::create_dir_all(&run_dir).map_err(|e| format!("create run dir: {e}"))?;
         let harvested = cfg.runs.join(format!("{name}.log"));
 
-        let child = EngineChild::spawn(cfg, map, slots, skill, &run_dir, self.port)?;
+        let child = EngineChild::spawn(
+            cfg,
+            map,
+            slots,
+            skill,
+            &run_dir,
+            self.port,
+            coop.unwrap_or(false),
+        )?;
         let stdout = child.stdout_buf();
         self.live = Some(LiveMatch {
             child,
@@ -315,8 +324,9 @@ impl MatchCtrl {
         run_name: Option<&str>,
         dedicated_slots: Option<u32>,
         skill: Option<u32>,
+        coop: Option<bool>,
     ) -> Result<MatchRunResult, String> {
-        self.start(cfg, map, Some(duration_sec), run_name, dedicated_slots, skill)
+        self.start(cfg, map, Some(duration_sec), run_name, dedicated_slots, skill, coop)
             .await?;
         // (start() runs the un-harvested-session guard)
         if let Err(e) = self.await_healthy(Duration::from_secs(10)).await {

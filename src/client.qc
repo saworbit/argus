@@ -368,6 +368,9 @@ void() changelevel_touch =
 		bprint (PRINT_HIGH, other.netname);
 		bprint (PRINT_HIGH, LOC_CLIENT_EXIT_LEVEL);
 		bprint (PRINT_HIGH, "\n");
+		dprint ("ARGEVT ");
+		dprint (other.netname);
+		dprint (" win exit\n");
 	}
 
 	nextmap = self.map;

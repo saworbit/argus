@@ -185,7 +185,7 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
                 };
                 let run_name = format!("soak_{stamp}_{n:03}_{map}");
                 let res = tokio::select! {
-                    r = ctrl.run(&cfg, &map, opts.duration_sec, Some(&run_name), None, Some(opts.skill)) => r,
+                    r = ctrl.run(&cfg, &map, opts.duration_sec, Some(&run_name), None, Some(opts.skill), None) => r,
                     _ = cancel_rx.changed() => {
                         let mut s = shared.lock().await;
                         if s.stopped.is_none() {
@@ -347,7 +347,7 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
     let run_name = format!("cycle_{stamp}_{map}");
     let mut ctrl = MatchCtrl::default();
     let probe = tokio::select! {
-        res = ctrl.run(&cfg, map, 185, Some(&run_name), None, Some(2)) => res,
+        res = ctrl.run(&cfg, map, 185, Some(&run_name), None, Some(2), None) => res,
         _ = tokio::signal::ctrl_c() => {
             println!("Ctrl+C received, shutting down engine and restoring snapshot...");
             ctrl.shutdown().await;

@@ -958,3 +958,9 @@ vector(entity ent) UseStandPoint;
 float(entity e) Argus_IsDoor;
 float(entity from, entity to, entity bot) Argus_LinkBlockedByKeyDoor;
 void(entity door) Argus_CoopCommitKey;
+.float		ar_escort_break;	// Accumulated seconds spent >512u from human teammate (#176)
+.float		ar_steal_count;		// Item/kill steals against fairness rules (#176)
+.float		ar_block_count;		// Body-blocking incidents inside player AABB (#176)
+.float		ar_coop_statstime;	// Next telemetry dump timestamp (#176)
+
+

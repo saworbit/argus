@@ -1314,6 +1314,20 @@ void() key_touch =
 
 	ReleaseClaim (self);
 
+	// Checkpoint telemetry (#176)
+	if (self.items & IT_KEY2)
+	{
+		dprint ("ARGEVT ");
+		dprint (other.netname);
+		dprint (" checkpoint gold_key\n");
+	}
+	else if (self.items & IT_KEY1)
+	{
+		dprint ("ARGEVT ");
+		dprint (other.netname);
+		dprint (" checkpoint silver_key\n");
+	}
+
 	// When bot carries a key, deliver directly to locked door without roaming
 	if (other.ar_isbot)
 	{
