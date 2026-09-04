@@ -8,7 +8,7 @@ use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::Mutex;
+use std::sync::Mutex;
 
 pub const DURATION_MIN: u32 = 10;
 pub const DURATION_MAX: u32 = 600;
@@ -79,6 +79,28 @@ impl MatchCtrl {
 
     pub fn status(&mut self) -> MatchStatus {
         self.status_since(None)
+    }
+
+    /// Cheap liveness probe: the process and the clock, nothing else.
+    /// The wait loops used to call status(), which re-reads the whole
+    /// growing qconsole.log and runs a full parse_arglog plus intel
+    /// brief through decorate_status, two or three times a second for
+    /// the length of the match. Nothing in those loops looked at the
+    /// brief. A client asking for match_status still gets one.
+    pub fn poll(&mut self) -> (bool, u64) {
+        match self.live.as_mut() {
+            Some(live) => {
+                let elapsed = live.started.elapsed().as_secs();
+                match live.child.try_wait() {
+                    Ok(Some(code)) => {
+                        live.last_exit = Some(code);
+                        (false, elapsed)
+                    }
+                    _ => (true, elapsed),
+                }
+            }
+            None => (false, 0),
+        }
     }
 
     pub fn status_since(&mut self, since_line: Option<u32>) -> MatchStatus {
@@ -211,6 +233,7 @@ impl MatchCtrl {
             coop.unwrap_or(false),
         )?;
         let stdout = child.stdout_buf();
+        register_live(child.id());
         self.live = Some(LiveMatch {
             child,
             run_name: name,
@@ -234,6 +257,7 @@ impl MatchCtrl {
         if self.live.is_none() {
             return Ok(self.status());
         }
+        clear_live();
         if let Some(live) = self.live.as_mut() {
             if live.child.has_stdin() {
                 let _ = live.child.write_line("quit").await;
@@ -303,7 +327,7 @@ impl MatchCtrl {
                     }
                 }
             }
-            return live.stdout.try_lock().ok().map(|g| g.clone());
+            return live.stdout.lock().ok().map(|g| g.clone());
         }
         if let Some(st) = &self.last {
             if let Some(p) = &st.log_path {
@@ -326,6 +350,31 @@ impl MatchCtrl {
         skill: Option<u32>,
         coop: Option<bool>,
     ) -> Result<MatchRunResult, String> {
+        self.begin(cfg, map, duration_sec, run_name, dedicated_slots, skill, coop)
+            .await?;
+        let limit = duration_sec as u64;
+        loop {
+            let (running, elapsed) = self.poll();
+            if !running || elapsed >= limit || live_cancelled() {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(400)).await;
+        }
+        self.finish(cfg, map).await
+    }
+
+    /// Start a match and return once it is healthy. Split out of run()
+    /// so a caller can release the MatchCtrl mutex while the match runs.
+    pub async fn begin(
+        &mut self,
+        cfg: &Config,
+        map: &str,
+        duration_sec: u32,
+        run_name: Option<&str>,
+        dedicated_slots: Option<u32>,
+        skill: Option<u32>,
+        coop: Option<bool>,
+    ) -> Result<(), String> {
         self.start(cfg, map, Some(duration_sec), run_name, dedicated_slots, skill, coop)
             .await?;
         // (start() runs the un-harvested-session guard)
@@ -333,17 +382,11 @@ impl MatchCtrl {
             let _ = self.stop(Duration::from_secs(2)).await;
             return Err(e);
         }
-        let limit = Duration::from_secs(duration_sec as u64);
-        loop {
-            let st = self.status();
-            if !st.running {
-                break;
-            }
-            if st.elapsed_sec.unwrap_or(0) >= limit.as_secs() {
-                break;
-            }
-            tokio::time::sleep(Duration::from_millis(400)).await;
-        }
+        Ok(())
+    }
+
+    /// Stop the live match and build its result.
+    pub async fn finish(&mut self, cfg: &Config, map: &str) -> Result<MatchRunResult, String> {
         let st = self.stop(Duration::from_secs(5)).await?;
         // qconsole.log can lag a tick after TerminateProcess
         tokio::time::sleep(Duration::from_millis(250)).await;
@@ -382,29 +425,30 @@ impl MatchCtrl {
     async fn await_healthy(&mut self, budget: Duration) -> Result<(), String> {
         let deadline = Instant::now() + budget;
         loop {
-            let st = self.status();
+            let (running, _) = self.poll();
+            let live_log = self.live.as_ref().map(|l| l.harvested.display().to_string());
             if let Some(text) = self.log_text() {
                 if log_has_tape(&text) {
                     return Ok(());
                 }
                 if let Some(why) = diagnose_log(&text) {
-                    if !st.running {
+                    if !running {
                         self.kill_live().await;
                         return Err(format_match_fail(
-                            st.log_path.as_deref().unwrap_or(""),
+                            live_log.as_deref().unwrap_or(""),
                             &text,
                             &why,
                         ));
                     }
                 }
             }
-            if !st.running {
+            if !running {
                 let text = self.log_text().unwrap_or_default();
                 let why = diagnose_log(&text)
                     .unwrap_or_else(|| "dedicated child exited before ARGLOG".into());
                 self.kill_live().await;
                 return Err(format_match_fail(
-                    st.log_path.as_deref().unwrap_or(""),
+                    live_log.as_deref().unwrap_or(""),
                     &text,
                     &why,
                 ));
@@ -413,6 +457,9 @@ impl MatchCtrl {
                 // still running, no tape yet: let the timed run continue
                 return Ok(());
             }
+            if live_cancelled() {
+                return Err("match cancelled".into());
+            }
             tokio::time::sleep(Duration::from_millis(200)).await;
         }
     }
@@ -420,6 +467,7 @@ impl MatchCtrl {
     /// Kill the live child outright, if any. The error paths use this
     /// so an abandoned match never orphans an engine on the port.
     async fn kill_live(&mut self) {
+        clear_live();
         if let Some(mut live) = self.live.take() {
             let _ = live.child.kill().await;
             let harvested = harvest(&live);
@@ -498,6 +546,43 @@ fn decorate_status(st: &mut MatchStatus) {
     }
 }
 
+/// The live child's pid and a cancel flag, reachable WITHOUT the
+/// MatchCtrl mutex. match_run, experiment and matrix_experiment hold
+/// that mutex for the whole match (up to 600 s), so shutdown and
+/// match_stop used to queue behind it: a client that closed stdio mid
+/// match left the engine holding UDP 26000 against the next server.
+/// At most one match is live by design, so one slot is enough.
+static LIVE_PID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
+static LIVE_CANCEL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+fn register_live(pid: u32) {
+    LIVE_CANCEL.store(false, std::sync::atomic::Ordering::SeqCst);
+    LIVE_PID.store(pid, std::sync::atomic::Ordering::SeqCst);
+}
+
+fn clear_live() {
+    LIVE_PID.store(0, std::sync::atomic::Ordering::SeqCst);
+    LIVE_CANCEL.store(false, std::sync::atomic::Ordering::SeqCst);
+}
+
+/// True while a caller has asked the live match to end early.
+pub fn live_cancelled() -> bool {
+    LIVE_CANCEL.load(std::sync::atomic::Ordering::SeqCst)
+}
+
+/// Ask the live match to end and kill its engine now, without taking
+/// the MatchCtrl mutex. Returns the pid it killed, if any. The owner
+/// still runs its own stop path and tidies up.
+pub fn cancel_live() -> Option<u32> {
+    LIVE_CANCEL.store(true, std::sync::atomic::Ordering::SeqCst);
+    let pid = LIVE_PID.swap(0, std::sync::atomic::Ordering::SeqCst);
+    if pid != 0 && crate::engine::kill_pid(pid) {
+        Some(pid)
+    } else {
+        None
+    }
+}
+
 fn harvest(live: &LiveMatch) -> String {
     let qconsole = live.run_dir.join("qconsole.log");
     let mut body = if qconsole.exists() {
@@ -505,8 +590,12 @@ fn harvest(live: &LiveMatch) -> String {
     } else {
         String::new()
     };
+    // a real lock, not try_lock: a failed try left body empty and the
+    // write below then created an empty runs/<name>.log while the
+    // caller dropped self.live and the buffer with it. On Linux that
+    // buffer is the only copy of the tape.
     if body.trim().is_empty() {
-        if let Ok(g) = live.stdout.try_lock() {
+        if let Ok(g) = live.stdout.lock() {
             if !g.is_empty() {
                 body = g.clone();
             }
@@ -547,7 +636,7 @@ fn recent_lines_since(live: &LiveMatch, since_line: Option<u32>) -> (Vec<String>
     let qconsole = live.run_dir.join("qconsole.log");
     let mut text = std::fs::read_to_string(&qconsole).unwrap_or_default();
     if text.trim().is_empty() {
-        if let Ok(g) = live.stdout.try_lock() {
+        if let Ok(g) = live.stdout.lock() {
             text = g.clone();
         }
     }
@@ -654,6 +743,48 @@ pub fn unharvested_session(cfg: &Config) -> Option<String> {
 mod tests {
     use super::*;
 
+    // #212: shutdown and match_stop must be able to reach the engine
+    // while match_run holds the MatchCtrl mutex.
+    #[test]
+    fn cancel_live_is_reachable_without_the_mutex() {
+        clear_live();
+        assert!(!live_cancelled());
+        assert_eq!(cancel_live(), None, "nothing live, nothing to kill");
+        assert!(live_cancelled(), "the flag is set even with no child");
+        // starting a match clears the flag again
+        register_live(0);
+        assert!(!live_cancelled());
+        clear_live();
+    }
+
+    // #223: harvest took the stdout buffer with try_lock, and a failed
+    // try wrote an empty runs/<name>.log while the caller dropped the
+    // buffer. On Linux that buffer is the only copy of the tape.
+    #[tokio::test]
+    async fn harvest_reads_the_stdout_buffer_when_there_is_no_qconsole() {
+        let tmp = std::env::temp_dir().join(format!("argus-harvest-buf-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        let run_dir = tmp.join("run");
+        std::fs::create_dir_all(&run_dir).unwrap();
+        let tape = "Quake 1.09
+ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+";
+        let live = LiveMatch {
+            child: EngineChild::mock(),
+            run_name: "buf".into(),
+            map: "dm4".into(),
+            run_dir,
+            harvested: tmp.join("buf.log"),
+            started: Instant::now(),
+            duration: None,
+            stdout: Arc::new(std::sync::Mutex::new(tape.to_string())),
+            last_exit: None,
+        };
+        let out = harvest(&live);
+        assert_eq!(std::fs::read_to_string(&out).unwrap(), tape);
+        let _ = std::fs::remove_dir_all(&tmp);
+    }
+
     #[tokio::test]
     async fn harvest_preserves_existing_tape_when_new_body_empty_or_tapeless() {
         let tmp = std::env::temp_dir().join(format!("argus-harvest-test-{}", std::process::id()));
@@ -676,7 +807,7 @@ mod tests {
             harvested: harvested_path.clone(),
             started: Instant::now(),
             duration: None,
-            stdout: Arc::new(Mutex::new(String::new())),
+            stdout: Arc::new(std::sync::Mutex::new(String::new())),
             last_exit: None,
         };
 
@@ -735,7 +866,7 @@ mod tests {
             harvested,
             started: Instant::now(),
             duration: None,
-            stdout: Arc::new(Mutex::new(String::new())),
+            stdout: Arc::new(std::sync::Mutex::new(String::new())),
             last_exit: None,
         });
 
