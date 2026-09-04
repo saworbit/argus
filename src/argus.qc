@@ -79,7 +79,9 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float  ar_clientno;            // fake scoreboard slot
 .float  ar_lastfrags;
 
-.entity ar_goal;
+// .entity ar_goal moved to defs.qc: argus_nav.qc compiles first and
+// Route_Finish has to compare the finished flood's errand against the
+// bot's current one
 .float  ar_goalstart;
 .float  ar_stallrun;
 .float  ar_mode;                // 0 wander, 1 direct, 2 routed
@@ -4096,31 +4098,27 @@ vector(entity it) Argus_GoalPoint =
     return UseStandPoint (it);
 };
 
-// Pickup claim mutex (#177): high-value DM items
-float(entity it) Argus_IsHighValueItem =
-{
-    local string c;
-    c = it.classname;
-    if (c == "item_key1" || c == "item_key2")       return TRUE; // Keys (#175)
-    if (c == "item_artifact_super_damage")          return TRUE; // Quad
-    if (c == "item_artifact_invulnerability")       return TRUE; // Pentagram
-    if (c == "item_health" && it.healamount >= 100) return TRUE; // Megahealth
-    if (c == "item_armorInv" || c == "item_armor2") return TRUE; // Red/Yellow Armor
-    if (c == "item_armor1")                         return TRUE; // Green Armor (100)
-    return FALSE;
-};
-
+// Argus_IsHighValueItem deleted: it was never called. The mutex has
+// applied to every item since #174 and every ladder since was measured
+// that way, so narrowing it to prizes is a separate behaviour question,
+// not part of untangling the two shelves.
 // ============================================================================
 // ITEM CLAIM MUTEX (#174)
 // ============================================================================
 float(entity item) TryClaim =
 {
+    // TWO SHELVES, kept apart. claimed_by / claim_time is the 3 s
+    // pickup mutex: do not have three bots converge on one quad.
+    // ar_claimer / ar_claimtime is the 20 s (45 s for powerups) ABANDON
+    // shelf: I gave up on this, leave it alone for a while. Writing
+    // both here meant every pick self-shelved its own goal, so any
+    // re-shop inside the window - the hunch, the kill re-pick, trapped
+    // probation, a mover give-up - dropped the item the bot was
+    // heading for straight off its own menu.
     if (item.claimed_by && item.claimed_by != self && item.claimed_by.health > 0 && time < item.claim_time + 3.0)
         return FALSE;
     item.claimed_by = self;
     item.claim_time = time;
-    item.ar_claimer = self;
-    item.ar_claimtime = time;
     return TRUE;
 };
 
@@ -4546,7 +4544,7 @@ void() Argus_PickGoal =
                 // pickup claim mutex (#174, #177): another live agent has claimed
                 // this item; do not compete and oscillate
             }
-            else if (!(e.claimed_by == self && time < e.claim_time + shelf))
+            else if (!(e.ar_claimer == self && time < e.ar_claimtime + shelf))
             {
                 gp = Argus_GoalPoint (e);
                 d = gp - self.origin;
