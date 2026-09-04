@@ -763,6 +763,11 @@ float GOAL_FETCH          = 5;
 float GOAL_REVIVE_SUPPORT = 6;
 float GOAL_RETREAT        = 7;
 
+// the bot's current errand. Declared here rather than in argus.qc
+// because argus_nav.qc compiles before it and Route_Finish must know
+// whether the errand changed while its flood was in flight.
+.entity ar_goal;
+
 .float  ar_goal_kind0, ar_goal_kind1, ar_goal_kind2, ar_goal_kind3;
 .entity ar_goal_subj0, ar_goal_subj1, ar_goal_subj2, ar_goal_subj3;
 .vector ar_goal_anch0, ar_goal_anch1, ar_goal_anch2, ar_goal_anch3;

@@ -49,6 +49,7 @@ entity  an_goalnode;
 entity  an_cachegoal;       // goal node of the last completed flood
 float   an_cachegen;        // stamps an_cgen along that route
 float   an_cachetime;       // freshness: adoptions stop after 10 s
+float   an_keydoors;        // 0 unknown, 1 none on this map, 2 at least one
 
 .float  ar_slot;            // on bots: 0..3 (roster cap 4)
 .entity ar_node;            // on bots: current waypoint target
@@ -81,6 +82,7 @@ float   an_cachetime;       // freshness: adoptions stop after 10 s
 .float  ar_aliased;         // on real clients: the console alias for
                             // the homage mode has been handed over
 .float  ar_routegen;        // on bots: increments per completed route
+.entity ar_routegoal;      // on bots: the goal the in-flight flood is for
 .entity ar_laststart;       // on bots: start node of the last search
 .entity ar_lastfailnode;    // on bots: start node of the previous fail
 .float  ar_failstreak;      // on bots: consecutive fails from that node
@@ -536,6 +538,12 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Start =
     an_bot = bot;
     an_goalnode = goalnode;
     an_gen = an_gen + 1;
+    // remember WHICH errand this flood is for. A flood spans about half
+    // a second at the lab's frametime, and PickGoal can change ar_goal
+    // inside that window (the hunch, the kill re-pick, trapped
+    // probation): Finish then installed the old goal's route and the
+    // bot walked the wrong errand until a stall re-armed it.
+    bot.ar_routegoal = bot.ar_goal;
 
     startnode.an_mark = an_gen;
     startnode.an_par = world;
@@ -553,6 +561,15 @@ void() Argus_Route_Finish =
     if (an_bot.health <= 0)
     {
         an_busy = 0;            // the bot died while we searched
+        return;
+    }
+
+    // the errand changed under us: throw the result away and re-arm the
+    // request so the next tick routes to what the bot actually wants
+    if (an_bot.ar_goal != an_bot.ar_routegoal)
+    {
+        an_bot.ar_pending = 1;
+        an_busy = 0;
         return;
     }
 
@@ -610,10 +627,51 @@ void() Argus_Route_Finish =
     an_busy = 0;
 };
 
+// Does this map have any keyed door at all? Answered once and cached.
+// func_door renames to "door" at spawn, which is the trap #175's own
+// handler fell into.
+float() Argus_MapHasKeyDoor =
+{
+    local entity d;
+    if (an_keydoors)
+        return an_keydoors - 1;
+    an_keydoors = 1;
+    d = find (world, classname, "door");
+    while (d != world)
+    {
+        if (d.items)
+        {
+            an_keydoors = 2;
+            return TRUE;
+        }
+        d = find (d, classname, "door");
+    }
+    d = find (world, classname, "func_door_secret");
+    while (d != world)
+    {
+        if (d.items)
+        {
+            an_keydoors = 2;
+            return TRUE;
+        }
+        d = find (d, classname, "func_door_secret");
+    }
+    return FALSE;
+};
+
 /// Check if a link crosses a closed keyed door that the bot lacks the key for (#175)
 float(entity from, entity to, entity bot) Argus_LinkBlockedByKeyDoor =
 {
-    traceline (from.origin + '0 0 24', to.origin + '0 0 24', FALSE, world);
+    // The router expands up to 48 nodes a frame with 8 links each, so
+    // this used to be up to 384 tracelines per server frame per search
+    // on every map, including the whole DM rotation, which has no keyed
+    // door at all. #52 took the redundant builtins out of this loop;
+    // this put eight per node back in.
+    if (!Argus_MapHasKeyDoor ())
+        return FALSE;
+    // nomonsters: a player standing in the doorway used to come back as
+    // trace_ent, and Argus_IsDoor was then asked about a player
+    traceline (from.origin + '0 0 24', to.origin + '0 0 24', TRUE, world);
     if (trace_ent != world && Argus_IsDoor (trace_ent))
     {
         if (trace_ent.items && !(bot.items & trace_ent.items))
@@ -656,7 +714,7 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
             return FALSE;
         if ((cur.an_sprintmask & bit) && skill < 2)
             return FALSE;
-        if (Argus_LinkBlockedByKeyDoor (cur, nx, bot))
+        if ((cur.an_doormask & bit) && Argus_LinkBlockedByKeyDoor (cur, nx, bot))
             return FALSE;
         cur = nx;
         hops = hops + 1;
@@ -759,8 +817,12 @@ void() Argus_Nav_Frame =
                 if ((!(cur.an_rjmask & bit) || Argus_BotCanRJ (an_bot))
                     && (!(cur.an_sprintmask & bit) || skill >= 2))
                 {
-                    // Ripple edge gate (#175): links across closed keyed doors are blocked until key is held
-                    if (!Argus_LinkBlockedByKeyDoor (cur, nb, an_bot))
+                    // Ripple edge gate (#175): links across closed keyed
+                    // doors are blocked until the key is held. The slot
+                    // bit is already in hand, so an untagged link never
+                    // pays for the trace.
+                    if (!(cur.an_doormask & bit)
+                        || !Argus_LinkBlockedByKeyDoor (cur, nb, an_bot))
                     {
                         nb.an_mark = an_gen;
                         nb.an_par = cur;

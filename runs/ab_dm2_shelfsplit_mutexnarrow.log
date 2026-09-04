@@ -1,0 +1,2066 @@
+LOG started on: 09/04/2026 19:00:04 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm2
+Clearing memory
+Programs occupy 690K.
+trying to open external vis file
+maps/dm2.vis not found, trying argustest.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 216 nodes, 1075 links
+0 entities inhibited
+ARGUS init on dm2
+ARGEVT Carmack spawned
+ARGEVT Romero spawned
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '2624.0 -488.0  32.0' spd 0 yaw 177.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '2704.0 -2048.0 128.0' spd 0 yaw 317.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '2560.0 -192.0  32.0' spd 0 yaw 209.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGEVT Joe Rogan engage Carmack
+ARGEVT Joe Rogan grab item_armorInv
+ARGEVT Carmack engage Joe Rogan
+ARGLOG Joe Rogan t   1.7 pos '2474.5 -444.8   8.0' spd 303.6 yaw  98.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '2771.5 -2026.1 120.0' spd 323.8 yaw  97.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '2450.3 -239.5  24.0' spd  90.5 yaw 259.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   2.2 pos '2346.7 -528.0   8.0' spd 190.3 yaw  80.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   2.2 pos '2833.5 -1984.5 120.0' spd 231.5 yaw 180.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.2 pos '2384.9 -235.6  24.0' spd 320.4 yaw 247.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   2.7 pos '2302.4 -509.1   8.0' spd 136.2 yaw 105.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   2.7 pos '2701.1 -1985.4 120.0' spd 109.5 yaw  12.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.7 pos '2217.8 -247.1  24.0' spd 329.2 yaw 289.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   3.3 pos '2288.8 -528.0   8.0' spd 292.8 yaw 125.4 mode 0 st 0 gl 0 hp 82 frg 0
+ARGLOG Romero t   3.3 pos '2849.6 -1971.6 120.0' spd 133.4 yaw 206.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   3.3 pos '2169.8 -245.1  24.0' spd 334.2 yaw 282.3 mode 0 st 0 gl 0 hp 76 frg 0
+ARGLOG Joe Rogan t   3.8 pos '2138.5 -502.2   8.0' spd 108.0 yaw  50.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGLOG Romero t   3.8 pos '2724.2 -2058.0 128.0' spd 320.2 yaw 206.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   3.8 pos '2338.5 -233.3  24.0' spd 341.5 yaw 236.0 mode 0 st 0 gl 0 hp 76 frg 0
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Romero goal item_armorInv
+ARGEVT Carmack goal item_armorInv
+ARGEVT Carmack grab item_health
+ARGEVT Joe Rogan route 10 start '2297.0 -495.0   8.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t   4.3 pos '2288.3 -528.0   8.0' spd 291.2 yaw  59.3 mode 2 st 0 gl 0 hp 64 frg 0
+ARGLOG Romero t   4.3 pos '2742.5 -1981.8 120.0' spd 371.9 yaw 125.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Carmack t   4.3 pos '2476.0 -215.9  24.0' spd 305.1 yaw 246.6 mode 0 st 0 gl 0 hp 76 frg 0
+ARGEVT Romero route 8 start '2777.0 -1999.0 120.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Carmack route 6 start '2521.0 -191.0  32.0' goal '2393.0 -655.0  56.0'
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGUS Carmack hunch item_armorInv
+ARGLOG Joe Rogan t   4.8 pos '2263.3 -386.7   8.0' spd 362.2 yaw 39 mode 2 st 0 gl 0 hp 64 frg 0
+ARGLOG Romero t   4.8 pos '2672.3 -2090.4 128.0' spd 320.6 yaw 215 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   4.8 pos '2523.5 -232.4  32.0' spd 175.7 yaw  79.1 mode 2 st 0 gl 0 hp 76 frg 0
+ARGEVT Carmack goal item_armorInv
+ARGUS routecache adopt
+ARGEVT Carmack route 6 start '2521.0 -191.0  32.0' goal '2393.0 -655.0  56.0'
+ARGEVT Carmack pursue
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   5.3 pos '2399.3 -321.5   8.0' spd 320.0 yaw  71.1 mode 2 st 0 gl 0 hp 64 frg 0
+ARGLOG Romero t   5.3 pos '2693.5 -2255.3 120.0' spd 341.8 yaw 177 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   5.3 pos '2426.0 -144.0  24.0' spd 326.9 yaw 201.9 mode 2 st 0 gl 0 hp 76 frg 0
+ARGEVT Romero hazard
+ARGEVT Carmack weapon sg
+ARGLOG Joe Rogan t   5.8 pos '2547.7 -346.3  24.0' spd 201.9 yaw  93.7 mode 2 st 0 gl 0 hp 64 frg 0
+ARGLOG Romero t   5.8 pos '2586.1 -2290.4 120.0' spd 320.1 yaw 170 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack pursue
+ARGLOG Carmack t   5.8 pos '2542.1 -210.5  32.0' spd 326.8 yaw 274.6 mode 2 st 0 gl 0 hp 76 frg 0
+ARGEVT Joe Rogan pursue
+ARGUS Joe Rogan hunch item_armorInv
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Carmack pursue
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack grab item_health
+ARGEVT Joe Rogan route 10 start '2473.0 -319.0   8.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t   6.4 pos '2440.4 -374.7   8.0' spd 466.8 yaw 141.9 mode 2 st 0 gl 0 hp 40 frg 0
+ARGLOG Romero t   6.4 pos '2429.8 -2237.9 120.0' spd 323.9 yaw 167 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.4 pos '2427.1 -227.8  24.0' spd 152.1 yaw 271.6 mode 2 st 0 gl 0 hp 76 frg 0
+ARGEVT Romero jump
+ARGEVT Carmack grab item_spikes
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   6.9 pos '2259.3 -362.9   8.0' spd 348.9 yaw  30.6 mode 2 st 0 gl 0 hp 40 frg 0
+ARGLOG Romero t   6.9 pos '2288.0 -2220.4 149.2' spd  38.3 yaw 123 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.9 pos '2558.0 -185.8  32.0' spd 368.7 yaw 212.7 mode 2 st 0 gl 0 hp 76 frg 0
+ARGEVT Carmack pursue
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack grab item_health
+ARGEVT Joe Rogan route 9 start '2233.0 -223.0  24.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan retreat
+ARGLOG Joe Rogan t   7.4 pos '2258.8 -215.5  24.0' spd 360.3 yaw   0.0 mode 2 st 0 gl 0 hp 20 frg 0
+ARGLOG Romero t   7.4 pos '2280.0 -2184.7  88.0' spd  95.1 yaw 126 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.4 pos '2450.4 -225.6  24.0' spd 177.4 yaw 175.3 mode 2 st 0 gl 0 hp 76 frg 0
+ARGLOG Joe Rogan t   7.9 pos '2132.6 -297.1  24.0' spd 349.3 yaw  18.0 mode 2 st 0 gl 0 hp 20 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t   7.9 pos '2280.0 -2172.3  88.0' spd   5.8 yaw 128 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.9 pos '2549.5 -172.7  32.0' spd 165.7 yaw 192.6 mode 2 st 0 gl 0 hp 68 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack pursue
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan route 10 start '2169.0 -351.0  24.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t   8.4 pos '2152.9 -379.7   8.0' spd 263.9 yaw 27 mode 2 st 0 gl 0 hp 20 frg 0
+ARGLOG Romero t   8.4 pos '2280.0 -2170.2  88.0' spd  88.1 yaw 164.4 mode 0 st 1 gl 0 hp 100 frg 0
+ARGLOG Carmack t   8.4 pos '2482.7 -152.2  24.0' spd 346.4 yaw 203 mode 2 st 0 gl 0 hp 68 frg 0
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGLOG Joe Rogan t   8.9 pos '2308.7 -323.1   8.0' spd 320.6 yaw 31 mode 2 st 0 gl 0 hp 20 frg 0
+ARGLOG Romero t   8.9 pos '2280.0 -2248.7  89.6' spd 310.8 yaw 118 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Carmack t   8.9 pos '2323.4 -199.5  24.0' spd 320.6 yaw 208 mode 2 st 0 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t   9.4 pos '2436.1 -350.9   8.0' spd 324.5 yaw 124.7 mode 2 st 0 gl 0 hp 20 frg 0
+ARGLOG Romero t   9.4 pos '2280.0 -2211.0  88.0' spd 312.8 yaw 122 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Carmack t   9.4 pos '2182.4 -265.5  24.0' spd 149.8 yaw 283.0 mode 2 st 0 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan death Carmack pos '2441.8 -402.2   8.0'
+ARGUS Carmack watch spawn
+ARGEVT Carmack goal item_armorInv
+ARGEVT Carmack route 5 start '2233.0 -223.0  24.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t  10.0 pos '2280.0 -2183.8  88.0' spd 0 yaw 126 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.0 pos '2311.9 -188.6  24.0' spd 386.7 yaw 306 mode 2 st 0 gl 0 hp 68 frg 1
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  10.5 pos '2280.0 -2177.2  89.6' spd  29.3 yaw 143 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.5 pos '2438.0 -240.0  24.0' spd 172.0 yaw 271 mode 2 st 0 gl 0 hp 68 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Carmack hazard
+ARGLOG Romero t  11.0 pos '2280.0 -2246.8  88.0' spd 311.9 yaw 118 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.0 pos '2438.1 -240.0  24.0' spd 127.3 yaw 271 mode 2 st 0 gl 0 hp 68 frg 1
+ARGEVT Joe Rogan respawn
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Joe Rogan t  11.1 pos '2248.0 -16.0 -136.0' spd 0 yaw 343.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan route 7 start '2233.0 -31.0 -136.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  11.5 pos '2280.0 -2188.2  88.0' spd 242.8 yaw 126 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.5 pos '2431.7 -240.0  24.0' spd  11.4 yaw 274 mode 2 st 0 gl 0 hp 68 frg 1
+ARGEVT Joe Rogan route 7 start '2329.0 -79.0 -104.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t  11.7 pos '2288.0 -99.8 -98.0' spd 182.8 yaw 235 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  12.0 pos '2280.0 -2165.5  88.0' spd  14.5 yaw 130 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  12.0 pos '2435.7 -240.0  24.0' spd   5.8 yaw 272 mode 2 st 0 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  12.2 pos '2249.5 -208.0 -136.0' spd 226.0 yaw 21 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  12.5 pos '2280.0 -2170.8  96.0' spd   8.7 yaw 199.3 mode 0 st 3 gl 0 hp 100 frg 0
+ARGLOG Carmack t  12.5 pos '2437.6 -240.0  24.0' spd   2.9 yaw 242 mode 2 st 0 gl 0 hp 68 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  12.7 pos '2184.3 -113.3 -100.4' spd 351.9 yaw 8 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGEVT Carmack hazard
+ARGLOG Romero t  13.1 pos '2280.0 -2269.3  88.0' spd 247.3 yaw 116 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Carmack t  13.1 pos '2358.2 -240.0  24.0' spd 104.1 yaw 257 mode 2 st 0 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  13.2 pos '2311.6   1.9 -120.0' spd 320.0 yaw 325 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan route 6 start '2361.0 -47.0 -88.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  13.6 pos '2280.0 -2182.9  88.0' spd 250.4 yaw 127 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Carmack t  13.6 pos '2362.3 -240.0  24.0' spd  22.0 yaw 256 mode 2 st 0 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  13.7 pos '2474.9 -80.0 -72.0' spd 389.0 yaw 4 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2329.0 -351.0   8.0'
+ARGEVT Carmack jump
+ARGEVT Carmack route 6 start '2361.0 -175.0  24.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t  14.1 pos '2280.0 -2166.2  88.0' spd  14.2 yaw 130 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.1 pos '2353.7 -240.0  53.1' spd   2.8 yaw 258 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  14.2 pos '2599.9 -57.9 -72.0' spd 320 yaw 2 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  14.6 pos '2280.0 -2171.1  88.0' spd   5.8 yaw 129 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.6 pos '2335.0 -237.0  53.9' spd 172.4 yaw 267 mode 2 st 1 gl 0 hp 68 frg 1
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Joe Rogan t  14.8 pos '2765.0 -44.0 -72.0' spd 320.1 yaw 212 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Romero t  15.1 pos '2280.0 -2231.6  88.0' spd 217.9 yaw 120 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG Carmack t  15.1 pos '2269.4 -126.3  24.0' spd 401.9 yaw 285 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  15.3 pos '1326.2 -1024.0 352.0' spd 300 yaw 65 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan route 3 start '1289.0 -959.0 344.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  15.6 pos '2280.0 -2175.8  88.0' spd 153.0 yaw 128 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG Carmack t  15.6 pos '2409.9 -33.0  88.0' spd 325.8 yaw 0 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  15.8 pos '1339.6 -1015.9 344.0' spd 307.4 yaw 76 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack route 6 start '2585.0 -15.0 120.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t  16.1 pos '2280.0 -2166.1  88.0' spd  14.2 yaw 130 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG Carmack t  16.1 pos '2573.8 -24.4 120.0' spd 320.1 yaw 359 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  16.3 pos '1386.4 -912.0 344.0' spd  11.4 yaw 80 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  16.7 pos '2280.0 -2171.0  88.0' spd   5.7 yaw 129 mode 2 st 4 gl 0 hp 100 frg 0
+ARGLOG Carmack t  16.7 pos '2640.0 -26.2 120.0' spd   5.7 yaw 358 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  16.8 pos '1381.2 -912.0 344.0' spd   8.7 yaw 79 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGLOG Romero t  17.2 pos '2280.0 -2209.0  96.0' spd 294.8 yaw 123 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG Carmack t  17.2 pos '2640.0 -27.8 120.0' spd   3.0 yaw 359 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  17.3 pos '1377.8 -912.0 344.0' spd   5.8 yaw 79 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan stall
+ARGEVT Joe Rogan stallnode '1369.0 -703.0 344.0'
+ARGEVT Joe Rogan jump
+ARGEVT Joe Rogan route 3 start '1289.0 -959.0 344.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  17.7 pos '2280.0 -2235.0  88.0' spd 272.1 yaw 120 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG Carmack t  17.7 pos '2640.0 -29.3 120.0' spd   2.8 yaw 0 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  17.8 pos '1383.1 -912.0 379.2' spd  17.1 yaw 79 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan stall
+ARGEVT Joe Rogan stallnode '1369.0 -703.0 344.0'
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  18.2 pos '2280.0 -2162.9  88.0' spd  17.1 yaw 130 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG Carmack t  18.2 pos '2633.0 -147.1 120.0' spd 324.5 yaw 258 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  18.3 pos '1388.3 -915.1 378.4' spd  30.5 yaw 329.6 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Romero t  18.7 pos '2280.0 -2169.4  88.0' spd   8.7 yaw 129 mode 2 st 5 gl 0 hp 100 frg 0
+ARGLOG Carmack t  18.7 pos '2585.5 -304.8 120.0' spd 321.6 yaw 261 mode 2 st 1 gl 0 hp 68 frg 1
+ARGEVT Joe Rogan stall
+ARGLOG Joe Rogan t  18.9 pos '1376.3 -912.0 344.0' spd 126.1 yaw 315.4 mode 0 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Romero t  19.2 pos '2280.0 -2181.2  88.0' spd 109.3 yaw 177 mode 2 st 6 gl 0 hp 100 frg 0
+ARGLOG Carmack t  19.2 pos '2560.0 -467.6 149.0' spd 316.1 yaw 229 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  19.4 pos '1350.7 -951.0 366.2' spd  93.4 yaw 315.4 mode 0 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Romero t  19.7 pos '2280.0 -2211.8  88.0' spd 184.9 yaw 122 mode 2 st 6 gl 0 hp 100 frg 0
+ARGLOG Carmack t  19.7 pos '2554.7 -528.0 142.1' spd  24.3 yaw 219 mode 2 st 1 gl 0 hp 68 frg 1
+ARGEVT Joe Rogan route 19 start '1401.0 -1055.0 344.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Joe Rogan t  19.9 pos '1423.3 -978.4 344.0' spd 201.6 yaw 110 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  20.3 pos '2280.0 -2163.2  88.0' spd  17.4 yaw 130 mode 2 st 6 gl 0 hp 100 frg 0
+ARGLOG Carmack t  20.3 pos '2557.0 -528.0 136.0' spd 0 yaw 218 mode 2 st 1 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  20.4 pos '1381.0 -1074.0 344.0' spd 334.1 yaw 99 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2393.0 -543.0  56.0'
+ARGEVT Carmack jump
+ARGEVT Carmack route 3 start '2553.0 -495.0 147.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t  20.8 pos '2280.0 -2169.6  88.0' spd   8.7 yaw 129 mode 2 st 6 gl 0 hp 100 frg 0
+ARGLOG Carmack t  20.8 pos '2545.5 -528.0 174.0' spd  40.3 yaw 220 mode 2 st 2 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  20.9 pos '1279.5 -937.4 344.0' spd 333.0 yaw 88 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2393.0 -543.0  56.0'
+ARGEVT Carmack jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Romero t  21.3 pos '2280.0 -2174.5  89.6' spd  27.0 yaw 181 mode 2 st 7 gl 0 hp 100 frg 0
+ARGLOG Carmack t  21.3 pos '2559.2 -525.8 165.1' spd 30 yaw  44.6 mode 0 st 3 gl 0 hp 68 frg 1
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  21.4 pos '1299.2 -772.9 344.0' spd 320.7 yaw 92 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero jump
+ARGLOG Romero t  21.8 pos '2280.0 -2274.6  88.0' spd  31.8 yaw 116 mode 2 st 7 gl 0 hp 100 frg 0
+ARGLOG Carmack t  21.8 pos '2570.2 -515.0 124.5' spd 30 yaw  44.6 mode 0 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  21.9 pos '1320.2 -591.2 312.3' spd 325.4 yaw 14 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Romero t  22.3 pos '2280.0 -2162.8  88.0' spd 144.5 yaw 130 mode 2 st 7 gl 0 hp 100 frg 0
+ARGLOG Carmack t  22.3 pos '2635.6 -517.4 120.0' spd 323.9 yaw 265.2 mode 0 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  22.5 pos '1355.7 -424.0 184.0' spd 395.8 yaw 344 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGEVT Carmack route 9 start '2601.0 -623.0 120.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  22.8 pos '2280.0 -2167.4  88.0' spd  11.4 yaw 129 mode 2 st 7 gl 0 hp 100 frg 0
+ARGLOG Carmack t  22.8 pos '2620.2 -684.1 120.0' spd 363.7 yaw 101 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  23.0 pos '1390.0 -493.9 184.0' spd 352.3 yaw 352 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  23.3 pos '2280.0 -2171.7  96.0' spd   5.8 yaw 198.6 mode 0 st 8 gl 0 hp 100 frg 0
+ARGLOG Carmack t  23.3 pos '2576.0 -673.4 120.0' spd 320.9 yaw 94 mode 2 st 3 gl 0 hp 68 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  23.5 pos '1532.6 -580.4 184.0' spd 327.9 yaw 2 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  23.9 pos '2280.0 -2238.8  88.0' spd  29.4 yaw 119 mode 2 st 8 gl 0 hp 100 frg 0
+ARGLOG Carmack t  23.9 pos '2575.2 -507.4 120.0' spd 321.0 yaw 80 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  24.0 pos '1584.0 -680.7 184.0' spd 155.8 yaw 15 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero abandon
+ARGEVT Romero goal item_health
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGEVT Romero hazard
+ARGLOG Romero t  24.4 pos '2280.0 -2167.2  88.0' spd  23.3 yaw 184 mode 2 st 8 gl 0 hp 100 frg 0
+ARGLOG Carmack t  24.4 pos '2581.8 -341.5 120.0' spd 321.4 yaw 77 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  24.5 pos '1574.8 -600.4 184.0' spd 344.9 yaw 5 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  24.9 pos '2280.0 -2270.5  88.0' spd   4.2 yaw 116 mode 2 st 8 gl 0 hp 100 frg 0
+ARGLOG Carmack t  24.9 pos '2621.9 -181.5 120.0' spd 320.1 yaw 25 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  25.0 pos '1651.5 -503.9 124.1' spd 222.7 yaw 352 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  25.4 pos '2280.0 -2161.6  88.0' spd 135.7 yaw 130 mode 2 st 8 gl 0 hp 100 frg 0
+ARGLOG Carmack t  25.4 pos '2640.0 -12.5 120.0' spd 333.0 yaw 216 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  25.6 pos '1771.7 -491.4  24.0' spd 338.9 yaw 346 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  25.9 pos '2280.0 -2167.4  88.0' spd  11.6 yaw 129 mode 2 st 8 gl 0 hp 100 frg 0
+ARGLOG Carmack t  25.9 pos '2640.0  -4.6 120.0' spd  90.8 yaw 216 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  26.1 pos '1879.6 -560.0  72.0' spd 320 yaw 51 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGUS routecache adopt
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Romero t  26.4 pos '2280.0 -2168.0  88.0' spd  16.2 yaw 184 mode 2 st 9 gl 0 hp 100 frg 0
+ARGLOG Carmack t  26.4 pos '2640.0 -40.1 120.0' spd  14.4 yaw 215 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  26.6 pos '2027.5 -487.4 104.0' spd 391.8 yaw 90 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  26.9 pos '2280.0 -2266.1  88.0' spd   6.6 yaw 116 mode 2 st 9 gl 0 hp 100 frg 0
+ARGLOG Carmack t  26.9 pos '2640.0 -41.6 120.0' spd   3.0 yaw 215 mode 2 st 3 gl 0 hp 68 frg 1
+ARGLOG Joe Rogan t  27.1 pos '2013.7 -310.7  72.0' spd 346.6 yaw 353 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Carmack engage Joe Rogan
+ARGEVT Carmack grab item_health
+ARGLOG Romero t  27.5 pos '2280.0 -2162.6  88.0' spd 129.1 yaw 130 mode 2 st 9 gl 0 hp 100 frg 0
+ARGLOG Carmack t  27.5 pos '2604.6 -106.0 120.0' spd 320 yaw 188.5 mode 2 st 3 gl 0 hp 68 frg 1
+ARGEVT Joe Rogan engage Carmack
+ARGLOG Joe Rogan t  27.6 pos '2153.2 -232.6  24.0' spd 369.5 yaw   8.6 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Carmack grab item_spikes
+ARGEVT Carmack route 7 start '2521.0 -207.0 120.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  28.0 pos '2280.0 -2167.4  88.0' spd  11.8 yaw 129 mode 2 st 9 gl 0 hp 100 frg 0
+ARGLOG Carmack t  28.0 pos '2563.4 -268.8 120.0' spd 334.7 yaw 191.0 mode 2 st 3 gl 0 hp 100 frg 1
+ARGLOG Joe Rogan t  28.1 pos '2247.8 -373.4   8.0' spd 321.0 yaw   4.9 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Romero t  28.5 pos '2280.0 -2171.4  89.7' spd   2.0 yaw 182 mode 2 st 10 gl 0 hp 100 frg 0
+ARGLOG Carmack t  28.5 pos '2590.6 -331.1 120.0' spd  63.2 yaw 202.0 mode 2 st 3 gl 0 hp 92 frg 1
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t  28.6 pos '2322.7 -515.8   8.0' spd 299.1 yaw 34 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGEVT Carmack pursue
+ARGLOG Romero t  29.0 pos '2280.0 -2238.5  89.5' spd 290.3 yaw 119 mode 2 st 10 gl 0 hp 100 frg 0
+ARGLOG Carmack t  29.0 pos '2604.3 -345.2 120.0' spd 154.0 yaw 210 mode 2 st 3 gl 0 hp 92 frg 1
+ARGLOG Joe Rogan t  29.2 pos '2480.8 -452.6   8.0' spd 323.8 yaw 48 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGUS Joe Rogan hunch item_armorInv
+ARGLOG Romero t  29.5 pos '2280.0 -2218.7  88.0' spd 295.5 yaw 121 mode 2 st 10 gl 0 hp 100 frg 0
+ARGLOG Carmack t  29.5 pos '2560.0 -455.7 120.0' spd 247.6 yaw 192 mode 2 st 3 gl 0 hp 92 frg 1
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Joe Rogan t  29.7 pos '2591.9 -344.9  24.0' spd 413.0 yaw 296.4 mode 0 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan route 9 start '2601.0 -383.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGEVT Carmack route 8 start '2553.0 -495.0 147.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  30.0 pos '2280.0 -2163.9  88.0' spd  17.1 yaw 130 mode 2 st 10 gl 0 hp 100 frg 0
+ARGLOG Carmack t  30.0 pos '2560.0 -519.7 120.0' spd   7.7 yaw 177 mode 2 st 3 gl 0 hp 92 frg 1
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t  30.2 pos '2487.0 -381.1   8.0' spd 329.9 yaw 148.9 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  30.5 pos '2280.0 -2169.9  96.0' spd   8.5 yaw 166.7 mode 0 st 11 gl 0 hp 100 frg 0
+ARGLOG Carmack t  30.5 pos '2605.9 -460.6 120.0' spd 322.0 yaw 142.6 mode 2 st 3 gl 0 hp 92 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  30.7 pos '2384.0 -304.0   8.0' spd 103.2 yaw  35.0 mode 2 st 3 gl 0 hp 94 frg 0
+ARGEVT Carmack pursue
+ARGLOG Romero t  31.1 pos '2280.0 -2233.1  88.0' spd 347.7 yaw 120 mode 2 st 11 gl 0 hp 100 frg 0
+ARGLOG Carmack t  31.1 pos '2563.1 -342.2 120.0' spd 342.2 yaw 184 mode 2 st 3 gl 0 hp 92 frg 1
+ARGLOG Joe Rogan t  31.2 pos '2534.3 -364.0  24.0' spd 351.7 yaw 279 mode 2 st 3 gl 0 hp 94 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  31.6 pos '2280.0 -2200.4  88.0' spd 262.1 yaw 124 mode 2 st 11 gl 0 hp 100 frg 0
+ARGLOG Carmack t  31.6 pos '2560.0 -341.7 120.0' spd  14.2 yaw 185 mode 2 st 3 gl 0 hp 92 frg 1
+ARGLOG Joe Rogan t  31.7 pos '2540.5 -528.0  48.0' spd 150.5 yaw 281 mode 2 st 3 gl 0 hp 94 frg 0
+ARGLOG Romero t  32.1 pos '2280.0 -2164.8  88.0' spd  17.4 yaw 130 mode 2 st 11 gl 0 hp 100 frg 0
+ARGLOG Carmack t  32.1 pos '2560.0 -347.1 120.0' spd   8.7 yaw 182 mode 2 st 3 gl 0 hp 92 frg 1
+ARGLOG Joe Rogan t  32.2 pos '2525.4 -464.9  24.0' spd 371.7 yaw 282 mode 2 st 3 gl 0 hp 94 frg 0
+ARGEVT Joe Rogan grab item_armorInv
+ARGLOG Romero t  32.6 pos '2280.0 -2170.4  88.0' spd   8.7 yaw 129 mode 2 st 11 gl 0 hp 100 frg 0
+ARGLOG Carmack t  32.6 pos '2583.3 -381.6 120.0' spd 320.3 yaw 220.3 mode 2 st 3 gl 0 hp 92 frg 1
+ARGEVT Joe Rogan hazard
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGUS routecache adopt
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  32.8 pos '2361.7 -528.0   8.0' spd 225.0 yaw  18.6 mode 2 st 3 gl 0 hp 86 frg 0
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGEVT Romero hazard
+ARGLOG Romero t  33.1 pos '2280.0 -2185.6  88.0' spd 107.9 yaw 175 mode 2 st 12 gl 0 hp 100 frg 0
+ARGLOG Carmack t  33.1 pos '2579.3 -515.3 120.0' spd 359.1 yaw 174 mode 0 st 3 gl 0 hp 92 frg 1
+ARGEVT Romero jump
+ARGLOG Joe Rogan t  33.3 pos '2392.5 -497.4   8.0' spd 163.0 yaw 350.9 mode 2 st 3 gl 0 hp 77 frg 0
+ARGEVT Carmack route 8 start '2553.0 -495.0 147.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  33.6 pos '2280.0 -2271.3  88.0' spd 142.8 yaw 116 mode 2 st 12 gl 0 hp 100 frg 0
+ARGLOG Carmack t  33.6 pos '2547.8 -391.0 160.8' spd 307.0 yaw 209.3 mode 2 st 3 gl 0 hp 92 frg 1
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  33.8 pos '2303.5 -519.7   8.0' spd 232.2 yaw  28.6 mode 2 st 3 gl 0 hp 77 frg 0
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGLOG Romero t  34.2 pos '2280.0 -2161.0  88.0' spd  19.9 yaw 131 mode 2 st 12 gl 0 hp 100 frg 0
+ARGLOG Carmack t  34.2 pos '2563.5 -445.5 120.0' spd 320.1 yaw 194.7 mode 2 st 3 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  34.3 pos '2375.5 -486.3   8.0' spd 275.5 yaw   5.2 mode 2 st 3 gl 0 hp 68 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 8 start '2553.0 -495.0 147.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  34.7 pos '2280.0 -2168.7  88.0' spd  11.6 yaw 129 mode 2 st 12 gl 0 hp 100 frg 0
+ARGLOG Carmack t  34.7 pos '2589.2 -416.8 120.0' spd 320.0 yaw 162.9 mode 2 st 3 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan grab weapon_nailgun
+ARGLOG Joe Rogan t  34.8 pos '2422.4 -326.9   8.0' spd 320.4 yaw 354.1 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Romero t  35.2 pos '2280.0 -2174.5  88.0' spd  89.7 yaw 181 mode 2 st 13 gl 0 hp 100 frg 0
+ARGLOG Carmack t  35.2 pos '2560.0 -318.5 126.4' spd   3.4 yaw 211 mode 2 st 3 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  35.3 pos '2562.8 -374.1  24.0' spd 350.6 yaw 266 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  35.7 pos '2280.0 -2254.1  88.0' spd 173.3 yaw 117 mode 2 st 13 gl 0 hp 100 frg 0
+ARGLOG Carmack t  35.7 pos '2560.0 -403.8 120.0' spd 212.6 yaw 186 mode 2 st 3 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  35.9 pos '2562.5 -384.0  24.0' spd 332.9 yaw 266 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  36.2 pos '2280.0 -2161.0  88.0' spd  19.9 yaw 131 mode 2 st 13 gl 0 hp 100 frg 0
+ARGLOG Carmack t  36.2 pos '2560.0 -433.1 120.0' spd  14.2 yaw 175 mode 2 st 3 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan jump
+ARGUS Joe Rogan hunch item_armorInv
+ARGLOG Joe Rogan t  36.4 pos '2512.0 -443.7  19.9' spd 333.0 yaw 312.6 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Joe Rogan route 7 start '2553.0 -495.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Romero t  36.7 pos '2280.0 -2168.7  88.0' spd  11.4 yaw 129 mode 2 st 13 gl 0 hp 100 frg 0
+ARGLOG Carmack t  36.7 pos '2560.0 -427.5 120.0' spd   8.5 yaw 177 mode 2 st 3 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  36.9 pos '2518.0 -528.0  24.0' spd  33.6 yaw   1.3 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGUS Carmack hunch item_armorInv
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2633.0 -143.0 120.0'
+ARGEVT Carmack jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGEVT Joe Rogan jump
+ARGEVT Carmack route 8 start '2553.0 -495.0 147.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  37.2 pos '2280.0 -2177.0  88.0' spd  96.1 yaw 179 mode 2 st 14 gl 0 hp 100 frg 0
+ARGLOG Carmack t  37.2 pos '2566.1 -429.2 157.7' spd  41.5 yaw 259.0 mode 2 st 4 gl 0 hp 80 frg 1
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  37.4 pos '2640.0 -448.0  35.0' spd 0 yaw 166.4 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero jump
+ARGLOG Romero t  37.8 pos '2280.0 -2268.1  88.0' spd 262.8 yaw 116 mode 2 st 14 gl 0 hp 100 frg 0
+ARGLOG Carmack t  37.8 pos '2600.2 -457.2 120.0' spd 309.4 yaw 83 mode 2 st 4 gl 0 hp 80 frg 1
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  37.9 pos '2510.0 -516.9   8.0' spd 391.4 yaw 287 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGUS routecache adopt
+ARGEVT Carmack route 8 start '2553.0 -495.0 147.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  38.3 pos '2280.0 -2190.5  88.0' spd 273.7 yaw 125 mode 2 st 14 gl 0 hp 100 frg 0
+ARGLOG Carmack t  38.3 pos '2623.4 -453.0 120.0' spd 325.4 yaw 88 mode 2 st 4 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  38.4 pos '2496.5 -527.6  37.6' spd  33.4 yaw 291 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  38.8 pos '2280.0 -2165.4  88.0' spd  14.5 yaw 130 mode 2 st 14 gl 0 hp 100 frg 0
+ARGLOG Carmack t  38.8 pos '2600.7 -289.2 120.0' spd 322.6 yaw 78 mode 2 st 4 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  38.9 pos '2580.8 -479.5  48.0' spd 320.2 yaw 271 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  39.3 pos '2280.0 -2169.5  89.5' spd  10.4 yaw 158 mode 0 st 15 gl 0 hp 100 frg 0
+ARGLOG Carmack t  39.3 pos '2634.2 -125.9 120.0' spd 320.0 yaw 16 mode 2 st 4 gl 0 hp 80 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  39.5 pos '2549.8 -465.8  24.0' spd 366.2 yaw 277 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  39.8 pos '2280.0 -2260.2  88.0' spd 225.9 yaw 117 mode 2 st 15 gl 0 hp 100 frg 0
+ARGLOG Carmack t  39.8 pos '2640.0   8.9 120.0' spd  57.1 yaw 216 mode 2 st 4 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  40.0 pos '2512.0 -527.7  61.9' spd   3.3 yaw 287 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  40.3 pos '2280.0 -2177.1  88.0' spd 208.0 yaw 128 mode 2 st 15 gl 0 hp 100 frg 0
+ARGLOG Carmack t  40.3 pos '2640.0 -19.1 120.0' spd  70.3 yaw 215 mode 2 st 4 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t  40.5 pos '2563.9 -487.6  35.7' spd 321.1 yaw 275 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  40.9 pos '2280.0 -2166.2  88.0' spd  14.2 yaw 130 mode 2 st 15 gl 0 hp 100 frg 0
+ARGLOG Carmack t  40.9 pos '2640.0 -34.3 120.0' spd   5.7 yaw 215 mode 2 st 4 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  41.0 pos '2609.8 -506.6  32.0' spd 352.8 yaw 265 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2905.0 -47.0 -72.0'
+ARGEVT Carmack jump
+ARGUS routecache adopt
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Romero t  41.4 pos '2280.0 -2171.3  96.0' spd   8.7 yaw 165.7 mode 0 st 16 gl 0 hp 100 frg 0
+ARGLOG Carmack t  41.4 pos '2640.0 -37.3 131.7' spd   5.8 yaw 341.7 mode 0 st 5 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  41.5 pos '2436.5 -463.4  61.7' spd 380.3 yaw 297 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Carmack route 6 start '2585.0 -15.0 120.0' goal '1465.0 -687.0 184.0'
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGLOG Romero t  41.9 pos '2280.0 -2208.7  96.0' spd 292.3 yaw 123 mode 2 st 16 gl 0 hp 100 frg 0
+ARGLOG Carmack t  41.9 pos '2638.2 -54.5 133.3' spd  48.6 yaw 176.9 mode 2 st 5 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  42.0 pos '2514.3 -355.6  24.0' spd 101.7 yaw 280 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  42.4 pos '2280.0 -2248.5  88.0' spd 256.8 yaw 118 mode 2 st 16 gl 0 hp 100 frg 0
+ARGLOG Carmack t  42.4 pos '2587.1  16.0 120.0' spd 149.2 yaw 349 mode 2 st 5 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  42.6 pos '2518.1 -502.0  36.9' spd 355.1 yaw 285 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  42.9 pos '2280.0 -2162.1  88.0' spd  19.9 yaw 130 mode 2 st 16 gl 0 hp 100 frg 0
+ARGLOG Carmack t  42.9 pos '2640.0 -72.4 120.0' spd 242.3 yaw 214 mode 2 st 5 gl 0 hp 80 frg 1
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  43.1 pos '2566.2 -496.2  24.0' spd 290.5 yaw 274 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  43.4 pos '2280.0 -2169.0  88.0' spd   8.7 yaw 129 mode 2 st 16 gl 0 hp 100 frg 0
+ARGLOG Carmack t  43.4 pos '2640.0 -164.4 120.0' spd 159.2 yaw 211 mode 2 st 5 gl 0 hp 80 frg 1
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Joe Rogan t  43.6 pos '2394.7 -466.8  62.0' spd 361.2 yaw 303 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Romero t  43.9 pos '2280.0 -2198.8  88.0' spd 292.5 yaw 124 mode 2 st 17 gl 0 hp 100 frg 0
+ARGLOG Carmack t  43.9 pos '2640.0 -237.5 120.0' spd 131.0 yaw 209 mode 2 st 5 gl 0 hp 80 frg 1
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  44.1 pos '2440.8 -520.7   8.0' spd 320.1 yaw 301 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Carmack route 6 start '2633.0 -143.0 120.0' goal '1465.0 -687.0 184.0'
+ARGEVT Romero abandon
+ARGEVT Romero goal item_armorInv
+ARGLOG Romero t  44.5 pos '2280.0 -2229.3  88.0' spd 261.4 yaw 158 mode 0 st 17 gl 0 hp 100 frg 0
+ARGLOG Carmack t  44.5 pos '2625.2 -200.9 120.0' spd 352.6 yaw 81 mode 2 st 5 gl 0 hp 80 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  44.6 pos '2518.6 -487.2  45.9' spd  77.8 yaw 284 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  45.0 pos '2280.0 -2163.0  88.0' spd  17.4 yaw 130 mode 2 st 17 gl 0 hp 100 frg 0
+ARGLOG Carmack t  45.0 pos '2640.0 -35.6 120.0' spd 270.2 yaw 215 mode 2 st 5 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t  45.1 pos '2536.3 -522.4  35.9' spd 376.6 yaw 282 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  45.5 pos '2280.0 -2169.5  88.0' spd   8.7 yaw 129 mode 2 st 17 gl 0 hp 100 frg 0
+ARGLOG Carmack t  45.5 pos '2640.0 -13.8 120.0' spd  26.3 yaw 215 mode 2 st 5 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  45.6 pos '2475.0 -528.0  36.8' spd  32.2 yaw 295 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGUS routecache adopt
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Joe Rogan jump
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGLOG Romero t  46.0 pos '2280.0 -2207.8  96.0' spd 291.8 yaw 123 mode 2 st 18 gl 0 hp 100 frg 0
+ARGLOG Carmack t  46.0 pos '2640.0 -22.8 120.0' spd  14.2 yaw 215 mode 2 st 5 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  46.2 pos '2514.4 -487.9  45.7' spd 125.1 yaw 285 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2905.0 -47.0 -72.0'
+ARGEVT Carmack jump
+ARGLOG Romero t  46.5 pos '2280.0 -2236.0  88.0' spd 263.8 yaw 119 mode 2 st 18 gl 0 hp 100 frg 0
+ARGLOG Carmack t  46.5 pos '2640.0 -30.5 149.1' spd  31.3 yaw 306.4 mode 0 st 6 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  46.7 pos '2543.7 -503.4  24.0' spd 370.9 yaw 279 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Carmack route 6 start '2585.0 -15.0 120.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  47.0 pos '2280.0 -2163.0  88.0' spd  17.4 yaw 130 mode 2 st 18 gl 0 hp 100 frg 0
+ARGLOG Carmack t  47.0 pos '2633.9 -50.3 120.0' spd  61.2 yaw 144 mode 2 st 6 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  47.2 pos '2481.7 -527.9  53.8' spd  32.4 yaw 294 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  47.6 pos '2280.0 -2169.5  88.0' spd   8.9 yaw 129 mode 2 st 18 gl 0 hp 100 frg 0
+ARGLOG Carmack t  47.6 pos '2606.5  16.0 120.0' spd 320.6 yaw 349 mode 2 st 6 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  47.7 pos '2555.3 -495.8  48.0' spd 307.1 yaw 277 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Joe Rogan hazard
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Romero t  48.1 pos '2280.0 -2181.0  88.0' spd 106.2 yaw 177 mode 2 st 19 gl 0 hp 100 frg 0
+ARGLOG Carmack t  48.1 pos '2640.0 -76.6 120.0' spd 112.1 yaw 214 mode 2 st 6 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  48.2 pos '2535.1 -454.4  24.0' spd 332.8 yaw 280 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  48.6 pos '2280.0 -2210.3  88.0' spd 180.9 yaw 123 mode 2 st 19 gl 0 hp 100 frg 0
+ARGLOG Carmack t  48.6 pos '2640.0 -75.0 120.0' spd  17.1 yaw 214 mode 2 st 6 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  48.7 pos '2413.9 -527.9  46.0' spd  30.0 yaw 306 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  49.1 pos '2280.0 -2163.3  88.0' spd  17.4 yaw 130 mode 2 st 19 gl 0 hp 100 frg 0
+ARGLOG Carmack t  49.1 pos '2640.0 -67.9 120.0' spd  11.6 yaw 214 mode 2 st 6 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  49.3 pos '2479.9 -514.5   8.0' spd 320.0 yaw 293 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2905.0 -47.0 -72.0'
+ARGEVT Carmack jump
+ARGEVT Carmack route 6 start '2585.0 -15.0 120.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  49.6 pos '2280.0 -2169.7  88.0' spd   8.5 yaw 129 mode 2 st 19 gl 0 hp 100 frg 0
+ARGLOG Carmack t  49.6 pos '2640.0 -72.3 157.9' spd  32.4 yaw 248.8 mode 2 st 7 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  49.8 pos '2639.8 -473.3  32.0' spd 321.4 yaw 260 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  50.1 pos '2280.0 -2174.6  89.6' spd  27.0 yaw 181 mode 2 st 20 gl 0 hp 100 frg 0
+ARGLOG Carmack t  50.1 pos '2589.5 -47.3 120.0' spd 344.2 yaw 0 mode 2 st 7 gl 0 hp 80 frg 1
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  50.3 pos '2485.6 -458.6  45.9' spd 333.2 yaw 288 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero jump
+ARGLOG Romero t  50.6 pos '2280.0 -2275.2  88.0' spd  32.1 yaw 116 mode 2 st 20 gl 0 hp 100 frg 0
+ARGLOG Carmack t  50.6 pos '2640.0  -1.4 120.0' spd 205.7 yaw 216 mode 2 st 7 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  50.8 pos '2510.2 -514.2   8.0' spd 321.6 yaw 287 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  51.2 pos '2280.0 -2162.9  88.0' spd 150.5 yaw 130 mode 2 st 20 gl 0 hp 100 frg 0
+ARGLOG Carmack t  51.2 pos '2640.0 -71.6 120.0' spd  14.5 yaw 214 mode 2 st 7 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  51.3 pos '2624.6 -450.7  32.0' spd 308.4 yaw 263 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  51.7 pos '2280.0 -2167.4  88.0' spd  11.4 yaw 129 mode 2 st 20 gl 0 hp 100 frg 0
+ARGLOG Carmack t  51.7 pos '2640.0 -65.4 120.0' spd  11.4 yaw 214 mode 2 st 7 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t  51.8 pos '2494.6 -528.0  29.3' spd  48.8 yaw 291 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2905.0 -47.0 -72.0'
+ARGEVT Carmack jump
+ARGLOG Romero t  52.2 pos '2280.0 -2171.7  96.0' spd   5.7 yaw 198.3 mode 0 st 21 gl 0 hp 100 frg 0
+ARGLOG Carmack t  52.2 pos '2640.0 -61.0 131.7' spd   8.5 yaw 346.7 mode 0 st 8 gl 0 hp 80 frg 1
+ARGUS routecache adopt
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  52.3 pos '2510.9 -527.2  10.4' spd  35.2 yaw 288 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Carmack route 6 start '2585.0 -15.0 120.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  52.7 pos '2280.0 -2236.8  88.0' spd  25.0 yaw 119 mode 2 st 21 gl 0 hp 100 frg 0
+ARGLOG Carmack t  52.7 pos '2638.5 -75.9 133.5' spd  46.3 yaw 182.2 mode 2 st 8 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  52.8 pos '2621.9 -448.0  35.2' spd 249.3 yaw 264 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  53.2 pos '2280.0 -2164.3  88.0' spd  79.4 yaw 130 mode 2 st 21 gl 0 hp 100 frg 0
+ARGLOG Carmack t  53.2 pos '2584.9  16.0 120.0' spd 135.6 yaw 349 mode 2 st 8 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  53.4 pos '2499.4 -493.9   8.0' spd 405.6 yaw 288 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  53.7 pos '2280.0 -2167.8  88.0' spd  11.8 yaw 129 mode 2 st 21 gl 0 hp 100 frg 0
+ARGLOG Carmack t  53.7 pos '2640.0 -74.8 120.0' spd 244.9 yaw 214 mode 2 st 8 gl 0 hp 80 frg 1
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  53.9 pos '2473.9 -523.3  29.8' spd  96.2 yaw 295 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  54.2 pos '2280.0 -2171.9  88.0' spd   5.7 yaw 128 mode 2 st 21 gl 0 hp 100 frg 0
+ARGLOG Carmack t  54.2 pos '2640.0 -68.0 120.0' spd  11.4 yaw 214 mode 2 st 8 gl 0 hp 80 frg 1
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  54.4 pos '2585.3 -484.8  45.7' spd 320.8 yaw 270 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGLOG Romero t  54.8 pos '2280.0 -2239.9  89.6' spd 295.6 yaw 119 mode 2 st 22 gl 0 hp 100 frg 0
+ARGLOG Carmack t  54.8 pos '2640.0 -62.9 120.0' spd   8.5 yaw 214 mode 2 st 8 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  54.9 pos '2514.1 -462.8  24.0' spd 369.0 yaw 284 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2905.0 -47.0 -72.0'
+ARGEVT Carmack jump
+ARGLOG Romero t  55.3 pos '2280.0 -2208.9  88.0' spd 290.7 yaw 123 mode 2 st 22 gl 0 hp 100 frg 0
+ARGLOG Carmack t  55.3 pos '2640.0 -64.1 157.7' spd  32.6 yaw 279.8 mode 0 st 9 gl 0 hp 80 frg 1
+ARGEVT Carmack route 6 start '2585.0 -15.0 120.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t  55.4 pos '2449.6 -527.9  42.9' spd  31.2 yaw 300 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  55.8 pos '2280.0 -2164.8  88.0' spd  17.7 yaw 130 mode 2 st 22 gl 0 hp 100 frg 0
+ARGLOG Carmack t  55.8 pos '2613.3 -66.6 120.0' spd 301.4 yaw 118 mode 2 st 9 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t  55.9 pos '2512.0 -504.5  29.5' spd 100.6 yaw 286 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  56.3 pos '2280.0 -2170.5  88.0' spd   8.7 yaw 129 mode 2 st 22 gl 0 hp 100 frg 0
+ARGLOG Carmack t  56.3 pos '2640.0  12.3 120.0' spd  58.8 yaw 348 mode 2 st 9 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  56.5 pos '2549.5 -470.8  24.0' spd 197.1 yaw 277 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack hazard
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Joe Rogan jump
+ARGEVT Joe Rogan abandon
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_nailgun
+ARGEVT Joe Rogan route 4 start '2553.0 -495.0  24.0' goal '2473.0 -191.0  24.0'
+ARGLOG Romero t  56.8 pos '2280.0 -2205.6  88.0' spd 262.9 yaw 123 mode 2 st 23 gl 0 hp 100 frg 0
+ARGLOG Carmack t  56.8 pos '2640.0 -72.6 120.0' spd  14.5 yaw 214 mode 2 st 9 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  57.0 pos '2482.5 -528.0  62.9' spd  30.0 yaw 25 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Carmack abandon
+ARGEVT Carmack goal item_armorInv
+ARGLOG Romero t  57.3 pos '2280.0 -2191.8  88.0' spd 184.6 yaw 125 mode 2 st 23 gl 0 hp 100 frg 0
+ARGLOG Carmack t  57.3 pos '2640.0 -68.6 120.0' spd  36.4 yaw 330.7 mode 0 st 9 gl 0 hp 80 frg 1
+ARGEVT Carmack route 6 start '2585.0 -15.0 120.0' goal '2393.0 -655.0  56.0'
+ARGLOG Joe Rogan t  57.5 pos '2518.4 -515.8  24.0' spd 306.9 yaw 78 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  57.9 pos '2280.0 -2165.2  88.0' spd  14.5 yaw 130 mode 2 st 23 gl 0 hp 100 frg 0
+ARGLOG Carmack t  57.9 pos '2624.5 -194.1 120.0' spd 322.8 yaw 257 mode 2 st 9 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  58.0 pos '2570.1 -448.0  32.0' spd 293.7 yaw 99 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  58.4 pos '2280.0 -2170.6  88.0' spd   8.7 yaw 129 mode 2 st 23 gl 0 hp 100 frg 0
+ARGLOG Carmack t  58.4 pos '2577.1 -352.3 120.0' spd 320.7 yaw 261 mode 2 st 9 gl 0 hp 80 frg 1
+ARGEVT Joe Rogan engage Carmack
+ARGLOG Joe Rogan t  58.5 pos '2417.6 -505.6   8.0' spd 204.5 yaw  42.0 mode 2 st 3 gl 0 hp 68 frg 0
+ARGEVT Carmack engage Joe Rogan
+ARGEVT Carmack grab item_health
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Romero t  58.9 pos '2280.0 -2184.6  88.0' spd 164.1 yaw 175 mode 2 st 24 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Carmack t  58.9 pos '2548.1 -323.5 159.8' spd 321.2 yaw 202.9 mode 2 st 9 gl 0 hp 80 frg 1
+ARGEVT Romero jump
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  59.0 pos '2345.0 -402.8   8.0' spd 323.4 yaw  26.6 mode 2 st 3 gl 0 hp 68 frg 0
+ARGLOG Romero t  59.4 pos '2280.0 -2260.7  88.0' spd 170.9 yaw 117 mode 2 st 24 gl 0 hp 100 frg 0
+ARGLOG Carmack t  59.4 pos '2609.9 -215.9 120.0' spd 376.3 yaw 199.6 mode 2 st 9 gl 0 hp 80 frg 1
+ARGLOG Joe Rogan t  59.6 pos '2344.6 -360.3   8.0' spd 322.3 yaw  37.5 mode 2 st 3 gl 0 hp 65 frg 0
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGLOG Romero t  59.9 pos '2280.0 -2161.0  88.0' spd  19.9 yaw 131 mode 2 st 24 gl 0 hp 100 frg 0
+ARGLOG Carmack t  59.9 pos '2414.0 -190.1  88.3' spd 375.7 yaw 239 mode 2 st 9 gl 0 hp 100 frg 1
+ARGLOG Joe Rogan t  60.1 pos '2507.6 -357.8   8.0' spd 326.8 yaw 36 mode 2 st 3 gl 0 hp 65 frg 0
+ARGUS Carmack hunch item_artifact_super_damage
+ARGUS Joe Rogan hunch item_armorInv
+ARGEVT Carmack plan powerup via weapon
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGEVT Carmack pursue
+ARGLOG Romero t  60.4 pos '2280.0 -2168.5  88.0' spd  11.4 yaw 129 mode 2 st 24 gl 0 hp 100 frg 0
+ARGLOG Carmack t  60.4 pos '2230.0 -211.7  24.0' spd 330.2 yaw 168.3 mode 0 st 9 gl 0 hp 100 frg 1
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Carmack route 10 start '2233.0 -223.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t  60.6 pos '2540.3 -339.0  24.0' spd 331.6 yaw 178.6 mode 0 st 3 gl 0 hp 65 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Joe Rogan route 10 start '2473.0 -319.0   8.0' goal '1465.0 -687.0 184.0'
+ARGEVT Carmack grab item_spikes
+ARGLOG Romero t  60.9 pos '2280.0 -2173.8  89.7' spd  27.0 yaw 198.0 mode 0 st 25 gl 0 hp 100 frg 0
+ARGLOG Carmack t  60.9 pos '2066.3 -239.1  24.0' spd 320.7 yaw 327.5 mode 2 st 9 gl 0 hp 100 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  61.1 pos '2369.6 -364.5   8.0' spd 347.1 yaw 160.0 mode 2 st 3 gl 0 hp 65 frg 0
+ARGEVT Carmack route 11 start '1929.0 -223.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGLOG Romero t  61.5 pos '2280.0 -2226.7  88.0' spd 117.7 yaw 120 mode 2 st 25 gl 0 hp 100 frg 0
+ARGLOG Carmack t  61.5 pos '1954.7 -218.2  24.0' spd 176.6 yaw 345 mode 2 st 9 gl 0 hp 100 frg 1
+ARGLOG Joe Rogan t  61.6 pos '2228.0 -411.2   8.0' spd 344.1 yaw 133 mode 2 st 3 gl 0 hp 65 frg 0
+ARGEVT Joe Rogan route 10 start '2169.0 -351.0  24.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  62.0 pos '2280.0 -2162.0  88.0' spd   8.0 yaw 130 mode 2 st 25 gl 0 hp 100 frg 0
+ARGLOG Carmack t  62.0 pos '2116.4 -240.0  24.0' spd 329.4 yaw 304.6 mode 2 st 9 gl 0 hp 100 frg 1
+ARGLOG Joe Rogan t  62.1 pos '2136.4 -363.5  24.0' spd 239.3 yaw  84.7 mode 2 st 3 gl 0 hp 65 frg 0
+ARGLOG Romero t  62.5 pos '2280.0 -2169.1  88.0' spd   8.5 yaw 129 mode 2 st 25 gl 0 hp 100 frg 0
+ARGLOG Carmack t  62.5 pos '2150.1 -205.5  24.0' spd 328.5 yaw 317.5 mode 2 st 9 gl 0 hp 100 frg 1
+ARGLOG Joe Rogan t  62.6 pos '2316.5 -381.0   8.0' spd 386.1 yaw 139.1 mode 2 st 3 gl 0 hp 53 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  63.0 pos '2280.0 -2172.7  96.0' spd   5.7 yaw 198.6 mode 0 st 26 gl 0 hp 100 frg 0
+ARGLOG Carmack t  63.0 pos '2175.8 -145.8  24.0' spd 321.7 yaw 310.4 mode 2 st 9 gl 0 hp 100 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  63.2 pos '2346.0 -346.2   8.0' spd 322.5 yaw 121.0 mode 2 st 3 gl 0 hp 53 frg 0
+ARGEVT Carmack pursue
+ARGEVT Joe Rogan pursue
+ARGEVT Romero hazard
+ARGEVT Romero jump
+ARGLOG Romero t  63.5 pos '2280.0 -2266.8  88.0' spd 239.7 yaw 116 mode 2 st 26 gl 0 hp 100 frg 0
+ARGLOG Carmack t  63.5 pos '2255.5 -164.1  24.0' spd 243.5 yaw 242.2 mode 2 st 9 gl 0 hp 76 frg 1
+ARGLOG Joe Rogan t  63.7 pos '2186.0 -307.2  24.0' spd 334.6 yaw  88.7 mode 2 st 3 gl 0 hp 50 frg 0
+ARGLOG Romero t  64.0 pos '2280.0 -2180.9  88.0' spd 239.6 yaw 127 mode 2 st 26 gl 0 hp 100 frg 0
+ARGEVT Carmack grab item_health
+ARGLOG Carmack t  64.0 pos '2088.3 -173.7  24.0' spd 483.8 yaw 341.2 mode 2 st 9 gl 0 hp 52 frg 1
+ARGLOG Joe Rogan t  64.2 pos '2264.4 -224.3  24.0' spd 350.5 yaw 163.9 mode 2 st 3 gl 0 hp 47 frg 0
+ARGEVT Carmack route 11 start '2041.0 -159.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  64.5 pos '2280.0 -2166.2  88.0' spd  14.5 yaw 130 mode 2 st 26 gl 0 hp 100 frg 0
+ARGLOG Carmack t  64.5 pos '1947.0 -57.9  24.0' spd 353.5 yaw 352.7 mode 2 st 9 gl 0 hp 77 frg 1
+ARGEVT Romero abandon
+ARGEVT Romero goal item_health
+ARGEVT Carmack weapon sg
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  64.7 pos '2295.1 -144.0  24.0' spd 0 yaw 171.5 mode 2 st 3 gl 0 hp 44 frg 0
+ARGEVT Romero hazard
+ARGLOG Romero t  65.1 pos '2280.0 -2184.8  88.0' spd 104.7 yaw 175 mode 2 st 26 gl 0 hp 100 frg 0
+ARGLOG Carmack t  65.1 pos '1929.5 -174.4  24.0' spd  98.5 yaw 359.6 mode 2 st 9 gl 0 hp 73 frg 1
+ARGEVT Romero jump
+ARGLOG Joe Rogan t  65.2 pos '2278.1 -121.4  24.0' spd 307.3 yaw 187.1 mode 2 st 3 gl 0 hp 41 frg 0
+ARGLOG Romero t  65.6 pos '2280.0 -2271.9  88.0' spd 125.9 yaw 116 mode 2 st 26 gl 0 hp 100 frg 0
+ARGLOG Carmack t  65.6 pos '1943.8 -27.1  24.0' spd 320.0 yaw   6.5 mode 0 st 9 gl 0 hp 73 frg 1
+ARGLOG Joe Rogan t  65.7 pos '2229.0 -24.7  24.0' spd 264.2 yaw 180.8 mode 2 st 3 gl 0 hp 41 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack route 12 start '1929.0 -63.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Romero t  66.1 pos '2280.0 -2164.6  88.0' spd  81.4 yaw 185 mode 2 st 27 gl 0 hp 100 frg 0
+ARGLOG Carmack t  66.1 pos '1967.3 -121.2  24.0' spd 316.5 yaw 347.6 mode 2 st 9 gl 0 hp 65 frg 1
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  66.2 pos '2196.2 -186.0  24.0' spd 320.6 yaw 173.6 mode 2 st 3 gl 0 hp 37 frg 0
+ARGEVT Romero jump
+ARGLOG Romero t  66.6 pos '2280.0 -2259.1  88.0' spd 237.8 yaw 117 mode 2 st 27 gl 0 hp 100 frg 0
+ARGLOG Carmack t  66.6 pos '1965.4 -240.0  24.0' spd  17.4 yaw 342.0 mode 2 st 9 gl 0 hp 65 frg 1
+ARGLOG Joe Rogan t  66.8 pos '2180.5 -355.6   8.0' spd 337.5 yaw 141.1 mode 0 st 3 gl 0 hp 28 frg 0
+ARGEVT Joe Rogan route 10 start '2169.0 -351.0  24.0' goal '1465.0 -687.0 184.0'
+ARGEVT Carmack pursue
+ARGEVT Joe Rogan pursue
+ARGUS Joe Rogan hunch item_artifact_super_damage
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Romero t  67.1 pos '2280.0 -2185.4  88.0' spd 243.2 yaw 126 mode 2 st 27 gl 0 hp 100 frg 0
+ARGLOG Carmack t  67.1 pos '2073.4 -212.4  24.0' spd 327.9 yaw 341 mode 2 st 9 gl 0 hp 65 frg 1
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan route 11 start '2153.0 -479.0   8.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan grab item_health
+ARGLOG Joe Rogan t  67.3 pos '2175.0 -454.5   8.0' spd 210.9 yaw  74.2 mode 2 st 3 gl 0 hp 28 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  67.6 pos '2280.0 -2165.5  88.0' spd  14.2 yaw 130 mode 2 st 27 gl 0 hp 100 frg 0
+ARGLOG Carmack t  67.6 pos '2237.8 -236.4  24.0' spd 322.6 yaw 258.8 mode 2 st 9 gl 0 hp 65 frg 1
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  67.8 pos '2153.9 -518.0   8.0' spd 197.7 yaw  77.0 mode 2 st 3 gl 0 hp 25 frg 0
+ARGEVT Joe Rogan retreat
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  68.1 pos '2280.0 -2169.4  89.6' spd  10.4 yaw 158 mode 0 st 28 gl 0 hp 100 frg 0
+ARGLOG Carmack t  68.1 pos '2143.9 -234.0  24.0' spd 102.7 yaw 290.9 mode 2 st 9 gl 0 hp 65 frg 1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  68.3 pos '2290.0 -524.8   8.0' spd 320.1 yaw 104.4 mode 2 st 3 gl 0 hp 16 frg 0
+ARGLOG Romero t  68.7 pos '2280.0 -2262.5  88.0' spd 235.9 yaw 117 mode 2 st 28 gl 0 hp 100 frg 0
+ARGLOG Carmack t  68.7 pos '2288.3 -198.2  24.0' spd 320.0 yaw 292.9 mode 2 st 9 gl 0 hp 65 frg 1
+ARGLOG Joe Rogan t  68.8 pos '2455.8 -524.0   8.0' spd 320.1 yaw 106.1 mode 0 st 3 gl 0 hp 3 frg 0
+ARGEVT Joe Rogan death Carmack pos '2472.4 -522.8   8.0'
+ARGUS Carmack watch spawn
+ARGEVT Carmack goal item_armorInv
+ARGEVT Carmack route 6 start '2361.0 -175.0  24.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t  69.2 pos '2280.0 -2177.3  88.0' spd 214.9 yaw 128 mode 2 st 28 gl 0 hp 100 frg 0
+ARGLOG Carmack t  69.2 pos '2454.5 -216.6  24.0' spd 402.2 yaw 257.5 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Carmack hazard
+ARGLOG Romero t  69.7 pos '2280.0 -2166.2  88.0' spd  14.2 yaw 130 mode 2 st 28 gl 0 hp 100 frg 0
+ARGLOG Carmack t  69.7 pos '2444.9 -237.3  24.0' spd 345.1 yaw 226.0 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  70.2 pos '2280.0 -2171.3  96.0' spd   8.5 yaw 165.7 mode 0 st 29 gl 0 hp 100 frg 0
+ARGLOG Carmack t  70.2 pos '2281.3 -240.0  24.0' spd 351.9 yaw 294 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGEVT Joe Rogan respawn
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Joe Rogan t  70.4 pos '2048.0 -1352.0 136.0' spd 0 yaw 163.7 mode 0 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGEVT Joe Rogan route 20 start '1977.0 -1343.0 136.0' goal '1465.0 -687.0 184.0'
+ARGEVT Romero jump
+ARGLOG Romero t  70.7 pos '2280.0 -2208.7  96.0' spd 291.9 yaw 123 mode 2 st 29 gl 0 hp 100 frg 0
+ARGLOG Carmack t  70.7 pos '2186.8 -372.5   8.0' spd 359.8 yaw 309 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t  70.9 pos '1947.4 -1232.0 147.9' spd  69.1 yaw 72 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  71.2 pos '2280.0 -2243.3  88.0' spd 269.7 yaw 119 mode 2 st 29 gl 0 hp 100 frg 0
+ARGLOG Carmack t  71.2 pos '2296.7 -506.4   8.0' spd 378.6 yaw  40.1 mode 2 st 9 gl 0 hp 65 frg 2
+ARGLOG Joe Rogan t  71.5 pos '1965.0 -1232.0 136.4' spd  36.3 yaw 76 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  71.8 pos '2280.0 -2164.6  88.0' spd  35.5 yaw 130 mode 2 st 29 gl 0 hp 100 frg 0
+ARGLOG Carmack t  71.8 pos '2321.8 -361.3   8.0' spd 395.1 yaw 330 mode 2 st 9 gl 0 hp 65 frg 2
+ARGLOG Joe Rogan t  72.0 pos '2049.4 -1128.5 200.0' spd 335.2 yaw 126 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  72.3 pos '2280.0 -2172.8  88.0' spd   6.1 yaw 128 mode 2 st 29 gl 0 hp 100 frg 0
+ARGLOG Carmack t  72.3 pos '2267.8 -499.3   8.0' spd 417.9 yaw 341 mode 2 st 9 gl 0 hp 65 frg 2
+ARGLOG Joe Rogan t  72.5 pos '2015.7 -940.7 176.6' spd 343.5 yaw 171.3 mode 0 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan route 18 start '2025.0 -1119.0 200.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  72.8 pos '2280.0 -2174.6  88.0' spd   2.9 yaw 128 mode 2 st 29 gl 0 hp 100 frg 0
+ARGLOG Carmack t  72.8 pos '2434.8 -520.7   8.0' spd 320.6 yaw 12 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  73.0 pos '2000.0 -855.7  32.0' spd  68.3 yaw 142.7 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Romero t  73.4 pos '2280.0 -2174.6  88.0' spd  30.1 yaw 181 mode 2 st 30 gl 0 hp 100 frg 0
+ARGLOG Carmack t  73.4 pos '2603.5 -521.9  32.0' spd 387.4 yaw 213 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t  73.6 pos '2065.6 -848.0  32.0' spd 332.9 yaw 255 mode 2 st 3 gl 0 hp 100 frg 0
+ARGLOG Romero t  73.9 pos '2280.0 -2265.8  88.0' spd 102.4 yaw 116 mode 2 st 30 gl 0 hp 100 frg 0
+ARGLOG Carmack t  73.9 pos '2578.1 -528.0  32.0' spd 320.7 yaw 215 mode 2 st 9 gl 0 hp 65 frg 2
+ARGLOG Joe Rogan t  74.1 pos '2096.3 -997.5  32.0' spd 331.0 yaw 174 mode 2 st 3 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  74.4 pos '2280.0 -2160.0  88.0' spd 0 yaw 131 mode 2 st 30 gl 0 hp 100 frg 0
+ARGLOG Carmack t  74.4 pos '2411.3 -528.0   8.0' spd 343.8 yaw 229.0 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  74.6 pos '1698.2 -1004.7 -24.9' spd 301.5 yaw 74 mode 2 st 3 gl 0 hp 96 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Romero t  74.9 pos '2280.0 -2168.1  88.0' spd  11.6 yaw 129 mode 2 st 30 gl 0 hp 100 frg 0
+ARGLOG Carmack t  74.9 pos '2297.6 -522.4   8.0' spd 124.1 yaw 306 mode 2 st 9 gl 0 hp 65 frg 2
+ARGLOG Joe Rogan t  75.1 pos '1758.8 -1094.4 -38.1' spd 200.5 yaw 88 mode 2 st 3 gl 0 hp 76 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Romero t  75.4 pos '2280.0 -2170.7  89.7' spd  12.9 yaw 158 mode 0 st 31 gl 0 hp 100 frg 0
+ARGLOG Carmack t  75.4 pos '2307.7 -528.0   8.0' spd 314.4 yaw 304 mode 2 st 9 gl 0 hp 65 frg 2
+ARGUS routecache adopt
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  75.6 pos '1848.9 -1087.6 -33.5' spd  83.5 yaw 103 mode 2 st 3 gl 0 hp 60 frg 0
+ARGEVT Romero hazard
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan swim
+ARGLOG Romero t  75.9 pos '2280.0 -2192.0  88.0' spd 130.1 yaw 125 mode 2 st 31 gl 0 hp 100 frg 0
+ARGEVT Romero jump
+ARGLOG Carmack t  75.9 pos '2438.2 -528.0   8.0' spd 184.9 yaw 251 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  76.1 pos '1896.5 -1040.4 -33.1' spd 115.9 yaw 113 mode 2 st 3 gl 0 hp 44 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Romero t  76.4 pos '2280.0 -2250.8  88.0' spd 196.4 yaw 118 mode 2 st 31 gl 0 hp 100 frg 0
+ARGLOG Carmack t  76.4 pos '2512.0 -528.0   8.0' spd 0 yaw 227 mode 2 st 9 gl 0 hp 65 frg 2
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  76.7 pos '1936.0 -991.4 -32.9' spd  79.9 yaw 124 mode 2 st 3 gl 0 hp 28 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2393.0 -655.0  56.0'
+ARGEVT Carmack jump
+ARGEVT Joe Rogan swim
+ARGEVT Carmack route 1 start '2393.0 -543.0  56.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t  77.0 pos '2280.0 -2161.1  88.0' spd  20.3 yaw 131 mode 2 st 31 gl 0 hp 100 frg 0
+ARGLOG Carmack t  77.0 pos '2359.2 -528.0  45.7' spd 316.8 yaw 285 mode 2 st 10 gl 0 hp 65 frg 2
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  77.2 pos '1936.0 -972.0 -32.6' spd   3.0 yaw 127 mode 2 st 3 gl 0 hp 4 frg 0
+ARGEVT Joe Rogan death world pos '1936.0 -972.7 -31.7'
+ARGEVT Carmack hazard
+ARGLOG Romero t  77.5 pos '2280.0 -2168.6  88.0' spd  11.6 yaw 129 mode 2 st 31 gl 0 hp 100 frg 0
+ARGLOG Carmack t  77.5 pos '2330.2 -528.0   8.0' spd 214.2 yaw 297 mode 2 st 10 gl 0 hp 65 frg 2
+ARGLOG Romero t  78.0 pos '2280.0 -2172.3  88.0' spd   5.8 yaw 128 mode 2 st 31 gl 0 hp 100 frg 0
+ARGLOG Carmack t  78.0 pos '2442.8 -528.0   8.0' spd 197.6 yaw 249 mode 2 st 10 gl 0 hp 65 frg 2
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGEVT Carmack hazard
+ARGLOG Romero t  78.5 pos '2280.0 -2163.6  88.0' spd  11.6 yaw 186 mode 2 st 32 gl 0 hp 100 frg 0
+ARGLOG Carmack t  78.5 pos '2512.0 -528.0   8.0' spd 0 yaw 227 mode 2 st 10 gl 0 hp 65 frg 2
+ARGEVT Joe Rogan respawn
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Joe Rogan t  78.9 pos '2560.0 -192.0  32.0' spd 0 yaw 196.6 mode 0 st 3 gl 0 hp 100 frg -1
+ARGEVT Joe Rogan route 10 start '2521.0 -191.0  32.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t  79.0 pos '2280.0 -2254.7  88.0' spd  93.0 yaw 117 mode 2 st 32 gl 0 hp 100 frg 0
+ARGLOG Carmack t  79.0 pos '2378.8 -528.0   8.0' spd 156.1 yaw 277 mode 2 st 10 gl 0 hp 65 frg 2
+ARGEVT Carmack engage Joe Rogan
+ARGEVT Carmack grab item_armorInv
+ARGEVT Joe Rogan engage Carmack
+ARGLOG Joe Rogan t  79.4 pos '2434.4 -228.8  24.0' spd 148.4 yaw 244.1 mode 2 st 3 gl 0 hp 100 frg -1
+ARGEVT Carmack hazard
+ARGLOG Romero t  79.5 pos '2280.0 -2160.0  88.0' spd 0 yaw 131 mode 2 st 32 gl 0 hp 100 frg 0
+ARGLOG Carmack t  79.5 pos '2288.0 -525.3   8.0' spd  88.2 yaw 161.3 mode 2 st 10 gl 0 hp 65 frg 2
+ARGLOG Joe Rogan t  79.9 pos '2325.5 -207.1  24.0' spd 321.6 yaw 255.7 mode 2 st 3 gl 0 hp 100 frg -1
+ARGLOG Romero t  80.1 pos '2280.0 -2168.0  88.0' spd  11.4 yaw 129 mode 2 st 32 gl 0 hp 100 frg 0
+ARGLOG Carmack t  80.1 pos '2238.6 -519.3   8.0' spd  58.9 yaw 180.3 mode 2 st 10 gl 0 hp 65 frg 2
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGLOG Joe Rogan t  80.4 pos '2347.9 -232.9  24.0' spd 320.8 yaw 250.0 mode 2 st 3 gl 0 hp 100 frg -1
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGEVT Carmack pursue
+ARGEVT Joe Rogan pursue
+ARGLOG Romero t  80.6 pos '2280.0 -2171.4  88.0' spd  32.5 yaw 182 mode 2 st 33 gl 0 hp 100 frg 0
+ARGLOG Carmack t  80.6 pos '2219.6 -522.2   8.0' spd 226.6 yaw 173.1 mode 2 st 10 gl 0 hp 65 frg 2
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  80.9 pos '2368.2 -240.0  24.0' spd 244.5 yaw 245 mode 2 st 3 gl 0 hp 100 frg -1
+ARGEVT Joe Rogan hazard
+ARGUS Joe Rogan hunch item_armorInv
+ARGLOG Romero t  81.1 pos '2280.0 -2266.0  88.0' spd 102.4 yaw 116 mode 2 st 33 gl 0 hp 100 frg 0
+ARGLOG Carmack t  81.1 pos '2128.0 -440.0   8.0' spd 120.6 yaw 229.8 mode 0 st 10 gl 0 hp 65 frg 2
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan route 9 start '2361.0 -175.0  24.0' goal '1465.0 -687.0 184.0'
+ARGEVT Carmack route 4 start '2153.0 -479.0   8.0' goal '2393.0 -655.0  56.0'
+ARGLOG Joe Rogan t  81.4 pos '2318.5 -148.3  24.0' spd 136.6 yaw 215.8 mode 2 st 3 gl 0 hp 100 frg -1
+ARGLOG Romero t  81.6 pos '2280.0 -2160.0  88.0' spd 0 yaw 131 mode 2 st 33 gl 0 hp 100 frg 0
+ARGLOG Carmack t  81.6 pos '2210.3 -513.6   8.0' spd 345.7 yaw 331.4 mode 0 st 10 gl 0 hp 65 frg 2
+ARGUS routecache adopt
+ARGEVT Carmack route 3 start '2297.0 -495.0   8.0' goal '2393.0 -655.0  56.0'
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack pursue
+ARGLOG Joe Rogan t  82.0 pos '2265.6 -195.8  24.0' spd 365.2 yaw 251 mode 2 st 3 gl 0 hp 100 frg -1
+ARGLOG Romero t  82.1 pos '2280.0 -2168.0  88.0' spd  11.8 yaw 129 mode 2 st 33 gl 0 hp 100 frg 0
+ARGLOG Carmack t  82.1 pos '2378.2 -523.2   8.0' spd 387.4 yaw  23.4 mode 2 st 10 gl 0 hp 49 frg 2
+ARGEVT Carmack abandon
+ARGLOG Joe Rogan t  82.5 pos '2155.3 -324.5  24.0' spd 326.9 yaw 329.6 mode 2 st 3 gl 0 hp 100 frg -1
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack goal item_health
+ARGLOG Romero t  82.6 pos '2280.0 -2170.6  89.6' spd  12.9 yaw 158 mode 0 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  82.6 pos '2511.4 -460.5   8.0' spd 369.1 yaw 181.4 mode 0 st 10 gl 0 hp 37 frg 2
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan route 10 start '2169.0 -351.0  24.0' goal '1465.0 -687.0 184.0'
+ARGEVT Romero hazard
+ARGEVT Carmack route 6 start '2553.0 -495.0  24.0' goal '2025.0 -559.0 104.0'
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2377.0 -1999.0 120.0'
+ARGLOG Joe Rogan t  83.0 pos '2135.6 -485.2   8.0' spd 322.7 yaw 353.9 mode 2 st 3 gl 0 hp 91 frg -1
+ARGLOG Romero t  83.2 pos '2280.0 -2175.4  88.0' spd 180.6 yaw 179 mode 2 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  83.2 pos '2571.0 -478.7  24.0' spd 320.1 yaw 170.5 mode 2 st 10 gl 0 hp 37 frg 2
+ARGEVT Romero jump
+ARGLOG Joe Rogan t  83.5 pos '2170.4 -393.8   8.0' spd 323.1 yaw 345.8 mode 2 st 3 gl 0 hp 82 frg -1
+ARGLOG Romero t  83.7 pos '2280.0 -2268.9  88.0' spd 175.5 yaw 116 mode 2 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  83.7 pos '2534.3 -472.7  24.0' spd 151.3 yaw 136.2 mode 2 st 10 gl 0 hp 37 frg 2
+ARGLOG Joe Rogan t  84.0 pos '2244.9 -243.2  24.0' spd 335.1 yaw 321.9 mode 2 st 3 gl 0 hp 64 frg -1
+ARGLOG Romero t  84.2 pos '2280.0 -2175.2  88.0' spd 211.9 yaw 128 mode 2 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  84.2 pos '2499.9 -465.4   8.0' spd 325.9 yaw 111.1 mode 2 st 10 gl 0 hp 37 frg 2
+ARGLOG Joe Rogan t  84.5 pos '2382.5 -145.1  24.0' spd 341.1 yaw 275.1 mode 2 st 3 gl 0 hp 55 frg -1
+ARGEVT Joe Rogan grab item_health
+ARGLOG Romero t  84.7 pos '2280.0 -2166.2  88.0' spd  14.5 yaw 130 mode 2 st 34 gl 0 hp 100 frg 0
+ARGEVT Carmack retreat
+ARGLOG Carmack t  84.7 pos '2362.1 -465.3   8.0' spd 371.2 yaw  55.5 mode 2 st 10 gl 0 hp 21 frg 2
+ARGEVT Romero abandon
+ARGEVT Romero goal item_armorInv
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Romero hazard
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  85.1 pos '2542.7 -194.4  32.0' spd 339.3 yaw 250.7 mode 0 st 3 gl 0 hp 55 frg -1
+ARGEVT Carmack pursue
+ARGLOG Romero t  85.2 pos '2280.0 -2267.2  88.0' spd 173.7 yaw 116 mode 2 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  85.2 pos '2447.7 -523.3   8.0' spd 316.1 yaw  74.2 mode 2 st 10 gl 0 hp 21 frg 2
+ARGEVT Joe Rogan route 10 start '2521.0 -191.0  32.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t  85.6 pos '2439.8 -215.3  24.0' spd 334.5 yaw 214.3 mode 2 st 3 gl 0 hp 55 frg -1
+ARGLOG Romero t  85.7 pos '2280.0 -2174.3  88.0' spd 203.4 yaw 128 mode 2 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  85.7 pos '2504.4 -388.5   8.0' spd 154.9 yaw 125.4 mode 2 st 10 gl 0 hp 21 frg 2
+ARGLOG Joe Rogan t  86.1 pos '2499.0 -223.3  24.0' spd 321.8 yaw 256.8 mode 2 st 3 gl 0 hp 55 frg -1
+ARGEVT Carmack pursue
+ARGLOG Romero t  86.2 pos '2280.0 -2166.2  88.0' spd  14.2 yaw 130 mode 2 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  86.2 pos '2417.8 -365.1   8.0' spd 265.8 yaw  86.5 mode 2 st 10 gl 0 hp 9 frg 2
+ARGUS routecache adopt
+ARGEVT Joe Rogan route 10 start '2521.0 -191.0  32.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan hazard
+ARGUS Carmack hunch item_armorInv
+ARGEVT Carmack goal item_health
+ARGEVT Carmack route 5 start '2473.0 -319.0   8.0' goal '2521.0 -207.0 120.0'
+ARGLOG Joe Rogan t  86.6 pos '2500.0 -240.0  32.0' spd 325.9 yaw 235.5 mode 2 st 3 gl 0 hp 55 frg -1
+ARGEVT Carmack pursue
+ARGLOG Romero t  86.7 pos '2280.0 -2171.1  88.0' spd   5.7 yaw 129 mode 2 st 34 gl 0 hp 100 frg 0
+ARGLOG Carmack t  86.7 pos '2432.5 -391.7   8.0' spd 356.9 yaw 343.1 mode 2 st 10 gl 0 hp 9 frg 2
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGEVT Carmack death Joe Rogan pos '2441.9 -429.4   8.0'
+ARGUS Joe Rogan watch spawn
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Joe Rogan goal 
+ARGLOG Joe Rogan t  87.1 pos '2466.6 -221.9  24.0' spd 218.2 yaw 153.6 mode 0 st 3 gl 0 hp 55 frg 0
+ARGEVT Joe Rogan route 3 start '2473.0 -191.0  24.0' goal '2425.0 -447.0   8.0'
+ARGLOG Romero t  87.3 pos '2280.0 -2212.6  88.0' spd 280.4 yaw 122 mode 2 st 35 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  87.6 pos '2300.1 -235.0  24.0' spd 319.7 yaw 318.4 mode 2 st 3 gl 0 hp 55 frg 0
+ARGLOG Romero t  87.8 pos '2280.0 -2194.5  88.0' spd 212.1 yaw 125 mode 2 st 35 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t  88.1 pos '2252.4 -262.9  24.0' spd 267.6 yaw 314 mode 2 st 3 gl 0 hp 55 frg 0
+ARGLOG Romero t  88.3 pos '2280.0 -2163.9  88.0' spd  17.4 yaw 130 mode 2 st 35 gl 0 hp 100 frg 0
+ARGEVT Carmack respawn
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGLOG Carmack t  88.5 pos '2704.0 -2048.0 128.0' spd 0 yaw 253.4 mode 0 st 10 gl 0 hp 100 frg 2
+ARGEVT Carmack route 7 start '2713.0 -2111.0 120.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Joe Rogan t  88.7 pos '2367.3 -377.1   8.0' spd 329.7 yaw 355 mode 1 st 3 gl 0 hp 55 frg 0
+ARGLOG Romero t  88.8 pos '2280.0 -2169.8  88.0' spd   8.5 yaw 129 mode 2 st 35 gl 0 hp 100 frg 0
+ARGEVT Romero engage Carmack
+ARGEVT Carmack engage Romero
+ARGEVT Carmack grab weapon_supershotgun
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Carmack t  89.0 pos '2701.6 -2203.1 120.0' spd 327.0 yaw 175.8 mode 2 st 10 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan route 10 start '2425.0 -447.0   8.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t  89.2 pos '2512.0 -397.5   8.0' spd  29.9 yaw 293 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Romero t  89.3 pos '2280.0 -2160.0  88.0' spd 0 yaw 347.4 mode 2 st 35 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGEVT Joe Rogan jump
+ARGEVT Carmack hazard
+ARGEVT Romero jump
+ARGLOG Carmack t  89.5 pos '2719.0 -2338.6 120.0' spd 132.5 yaw 155.8 mode 2 st 10 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t  89.7 pos '2549.2 -528.0  41.6' spd 112.3 yaw 88 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Romero t  89.8 pos '2280.0 -2219.8  88.0' spd  17.0 yaw 354.6 mode 2 st 35 gl 0 hp 92 frg 0
+ARGLOG Carmack t  90.0 pos '2762.1 -2177.0 120.0' spd 327.3 yaw 186.1 mode 2 st 10 gl 0 hp 84 frg 2
+ARGLOG Joe Rogan t  90.2 pos '2511.3 -449.2   8.0' spd 327.4 yaw 66 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  90.4 pos '2280.0 -2235.4  88.0' spd  96.4 yaw  19.4 mode 2 st 35 gl 0 hp 88 frg 0
+ARGEVT Romero hazard
+ARGLOG Carmack t  90.6 pos '2717.3 -2016.3 128.0' spd 323.2 yaw 209.6 mode 0 st 10 gl 0 hp 84 frg 2
+ARGEVT Carmack pursue
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  90.7 pos '2389.1 -528.0  37.3' spd  39.7 yaw 47 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack route 7 start '2713.0 -2111.0 120.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Romero t  90.9 pos '2280.0 -2161.7  88.0' spd 114.9 yaw 186 mode 2 st 35 gl 0 hp 88 frg 0
+ARGLOG Carmack t  91.1 pos '2672.0 -2115.2 125.9' spd 344.5 yaw 256.6 mode 2 st 10 gl 0 hp 84 frg 2
+ARGEVT Carmack pursue
+ARGLOG Joe Rogan t  91.2 pos '2486.3 -511.3   8.0' spd 320.1 yaw 67 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  91.4 pos '2280.0 -2163.7  88.0' spd  17.1 yaw 345.6 mode 2 st 35 gl 0 hp 88 frg 0
+ARGLOG Carmack t  91.6 pos '2659.9 -2283.3 120.0' spd 333.3 yaw 159.1 mode 2 st 10 gl 0 hp 80 frg 2
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  91.8 pos '2640.0 -469.0  32.0' spd 180.7 yaw 126 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  91.9 pos '2280.0 -2167.6  88.0' spd  66.4 yaw 348.2 mode 2 st 35 gl 0 hp 88 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Carmack t  92.1 pos '2668.2 -2204.1 120.0' spd 320.9 yaw 169.1 mode 2 st 10 gl 0 hp 80 frg 2
+ARGLOG Joe Rogan t  92.3 pos '2469.9 -496.9  60.2' spd 339.7 yaw 60 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Romero t  92.5 pos '2280.0 -2174.5  88.0' spd   3.4 yaw 356.4 mode 2 st 35 gl 0 hp 76 frg 0
+ARGLOG Carmack t  92.7 pos '2664.0 -2253.7 120.0' spd 328.3 yaw 167.1 mode 2 st 10 gl 0 hp 80 frg 2
+ARGLOG Joe Rogan t  92.9 pos '2493.2 -517.3   8.0' spd 320.0 yaw 70 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Romero hazard
+ARGLOG Romero t  93.1 pos '2280.0 -2163.8  88.0' spd  53.8 yaw 346.4 mode 2 st 35 gl 0 hp 60 frg 0
+ARGLOG Carmack t  93.2 pos '2685.0 -2194.2 120.0' spd 323.6 yaw 176.1 mode 2 st 10 gl 0 hp 68 frg 2
+ARGLOG Joe Rogan t  93.4 pos '2537.8 -464.5  24.0' spd 127.8 yaw 82 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  93.6 pos '2280.0 -2164.7  88.0' spd  33.9 yaw  10.5 mode 2 st 35 gl 0 hp 60 frg 0
+ARGEVT Joe Rogan jump
+ARGEVT Carmack hazard
+ARGLOG Carmack t  93.8 pos '2675.3 -2061.8 128.0' spd 168.3 yaw 258.2 mode 2 st 10 gl 0 hp 68 frg 2
+ARGLOG Joe Rogan t  94.0 pos '2433.5 -528.0  61.6' spd 294.3 yaw 55 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Romero t  94.2 pos '2280.0 -2189.5  88.0' spd  14.1 yaw  39.1 mode 2 st 35 gl 0 hp 60 frg 0
+ARGLOG Carmack t  94.4 pos '2665.7 -2245.8 120.0' spd 329.0 yaw 177.4 mode 2 st 10 gl 0 hp 60 frg 2
+ARGLOG Joe Rogan t  94.5 pos '2512.0 -495.7   9.9' spd  99.1 yaw 74 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  94.7 pos '2280.0 -2175.3  88.0' spd  10.3 yaw 357.4 mode 2 st 35 gl 0 hp 56 frg 0
+ARGLOG Carmack t  94.9 pos '2664.0 -2212.1 120.0' spd 324.0 yaw 172.1 mode 2 st 10 gl 0 hp 60 frg 2
+ARGLOG Joe Rogan t  95.1 pos '2540.9 -461.3  30.9' spd  99.2 yaw 83 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero hazard
+ARGLOG Romero t  95.3 pos '2280.0 -2171.0  88.0' spd  25.0 yaw 339.5 mode 2 st 35 gl 0 hp 44 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan jump
+ARGLOG Carmack t  95.5 pos '2688.1 -2239.4 120.0' spd 322.6 yaw 168.9 mode 2 st 10 gl 0 hp 40 frg 2
+ARGLOG Joe Rogan t  95.7 pos '2446.0 -523.9  60.3' spd 369.7 yaw 58 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero retreat
+ARGLOG Romero t  95.8 pos '2280.0 -2160.5  88.0' spd   3.4 yaw   2.6 mode 2 st 35 gl 0 hp 32 frg 0
+ARGLOG Carmack t  96.0 pos '2683.8 -2061.7 128.0' spd 323.8 yaw 192.0 mode 2 st 10 gl 0 hp 40 frg 2
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  96.2 pos '2362.6 -442.1   8.0' spd 342.1 yaw 25 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack pursue
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2153.0 -2175.0  88.0'
+ARGEVT Romero jump
+ARGUS Carmack hunch item_armorInv
+ARGLOG Romero t  96.4 pos '2280.0 -2166.4  96.0' spd  17.3 yaw 204.8 mode 0 st 36 gl 0 hp 32 frg 0
+ARGEVT Romero route 4 start '2281.0 -2239.0  88.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Carmack goal item_health
+ARGEVT Carmack route 8 start '2777.0 -1999.0 120.0' goal '2377.0 -1999.0 120.0'
+ARGEVT Joe Rogan jump
+ARGEVT Romero hazard
+ARGLOG Carmack t  96.6 pos '2684.9 -1968.0 120.0' spd  31.1 yaw  46.4 mode 2 st 10 gl 0 hp 40 frg 2
+ARGLOG Joe Rogan t  96.8 pos '2545.8 -468.0  39.8' spd 328.6 yaw 86 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack pursue
+ARGLOG Romero t  97.0 pos '2280.0 -2277.3  88.0' spd 129.2 yaw 141.6 mode 2 st 36 gl 0 hp 32 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t  97.1 pos '2833.5 -2010.3 120.0' spd 360.1 yaw 275.7 mode 2 st 10 gl 0 hp 40 frg 2
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  97.3 pos '2548.3 -509.9  24.0' spd 359.1 yaw 88 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  97.5 pos '2280.0 -2163.5  88.0' spd 160.7 yaw 186 mode 2 st 36 gl 0 hp 32 frg 0
+ARGLOG Carmack t  97.7 pos '2711.3 -2070.8 128.0' spd 321.0 yaw 192 mode 2 st 10 gl 0 hp 40 frg 2
+ARGLOG Joe Rogan t  97.9 pos '2490.3 -361.4  48.1' spd 324.2 yaw 9 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Romero t  98.1 pos '2280.0 -2168.7  88.0' spd  10.4 yaw 273.2 mode 2 st 36 gl 0 hp 32 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t  98.3 pos '2666.2 -2227.8 120.0' spd 322.7 yaw 169.3 mode 2 st 10 gl 0 hp 40 frg 2
+ARGLOG Joe Rogan t  98.4 pos '2635.6 -384.0  24.0' spd 150.4 yaw 158 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Romero t  98.6 pos '2280.0 -2174.4  88.0' spd  10.4 yaw 338.2 mode 2 st 36 gl 0 hp 20 frg 0
+ARGLOG Carmack t  98.8 pos '2660.7 -2256.0 120.0' spd  36.2 yaw 166.3 mode 2 st 10 gl 0 hp 40 frg 2
+ARGLOG Joe Rogan t  99.0 pos '2525.4 -384.0  24.0' spd   6.1 yaw 284 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t  99.2 pos '2280.0 -2179.0  88.0' spd  10.4 yaw 359.7 mode 2 st 36 gl 0 hp 8 frg 0
+ARGLOG Carmack t  99.4 pos '2666.5 -2160.0 120.0' spd  45.4 yaw 181.2 mode 2 st 10 gl 0 hp 32 frg 2
+ARGLOG Joe Rogan t  99.6 pos '2627.6 -379.8  24.0' spd 120.5 yaw 158 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero death Carmack pos '2280.0 -2182.9  88.0'
+ARGUS Carmack watch spawn
+ARGEVT Carmack goal item_armorInv
+ARGEVT Carmack route 6 start '2713.0 -2319.0 120.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Carmack t  99.9 pos '2728.5 -2184.0 120.0' spd 389.5 yaw 127.8 mode 2 st 10 gl 0 hp 32 frg 3
+ARGLOG Joe Rogan t 100.1 pos '2512.9 -383.0  24.0' spd 192 yaw 290 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan jump
+ARGLOG Carmack t 100.5 pos '2664.0 -2189.1 120.0' spd 223.5 yaw 188 mode 2 st 10 gl 0 hp 32 frg 3
+ARGLOG Joe Rogan t 100.7 pos '2523.9 -528.0  44.0' spd  95.8 yaw 80 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t 101.0 pos '2664.0 -2247.0 120.0' spd  37.9 yaw 178 mode 2 st 10 gl 0 hp 32 frg 3
+ARGEVT Joe Rogan jump
+ARGEVT Romero respawn
+ARGEVT Romero goal item_armor2
+ARGLOG Romero t 101.2 pos '2560.0 -192.0  32.0' spd 0 yaw 160.5 mode 0 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 101.2 pos '2495.4 -467.6  48.2' spd 368.7 yaw 63 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero route 6 start '2521.0 -191.0  32.0' goal '2777.0 -15.0 -72.0'
+ARGEVT Joe Rogan engage Romero
+ARGEVT Romero engage Joe Rogan
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2457.0 -2239.0 120.0'
+ARGLOG Carmack t 101.6 pos '2664.0 -2242.4 120.0' spd   3.5 yaw 308.3 mode 0 st 11 gl 0 hp 32 frg 3
+ARGEVT Carmack jump
+ARGLOG Romero t 101.7 pos '2513.8 -178.9  32.0' spd 323.0 yaw 216.4 mode 2 st 36 gl 0 hp 100 frg 0
+ARGEVT Carmack route 6 start '2617.0 -2207.0 152.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Joe Rogan t 101.8 pos '2373.8 -319.3   8.0' spd 345.2 yaw  20.5 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero pursue
+ARGEVT Carmack hazard
+ARGLOG Carmack t 102.1 pos '2642.9 -2241.0 152.0' spd 326.2 yaw 179 mode 2 st 11 gl 0 hp 32 frg 3
+ARGEVT Joe Rogan pursue
+ARGLOG Romero t 102.3 pos '2472.0 -210.7  24.0' spd 350.9 yaw 226.0 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 102.3 pos '2491.9 -368.7   8.0' spd 354.5 yaw 77 mode 2 st 3 gl 1 hp 55 frg 0
+ARGUS Joe Rogan hunch item_armorInv
+ARGEVT Joe Rogan goal item_armorInv
+ARGEVT Romero hazard
+ARGEVT Joe Rogan route 3 start '2473.0 -319.0   8.0' goal '2393.0 -655.0  56.0'
+ARGEVT Joe Rogan pursue
+ARGLOG Carmack t 102.7 pos '2505.2 -2344.1 120.0' spd 357.0 yaw 154 mode 2 st 11 gl 0 hp 32 frg 3
+ARGLOG Romero t 102.8 pos '2369.6 -236.0  24.0' spd  77.4 yaw 276.6 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 102.9 pos '2442.0 -405.9   8.0' spd 351.9 yaw 138.9 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack jump
+ARGLOG Carmack t 103.2 pos '2399.6 -2190.1 156.2' spd 323.9 yaw 176 mode 2 st 11 gl 0 hp 32 frg 3
+ARGLOG Romero t 103.4 pos '2534.7 -201.9  32.0' spd 320.2 yaw 301.9 mode 0 st 36 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 103.4 pos '2576.5 -362.2  24.0' spd 320.0 yaw  93.0 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero pursue
+ARGEVT Joe Rogan hazard
+ARGUS Romero hunch item_armorInv
+ARGEVT Romero hazard
+ARGEVT Romero goal item_armor2
+ARGEVT Romero route 6 start '2521.0 -191.0  32.0' goal '2777.0 -15.0 -72.0'
+ARGEVT Romero pursue
+ARGLOG Carmack t 103.8 pos '2288.0 -2117.1  60.8' spd  30.0 yaw 204 mode 2 st 11 gl 0 hp 32 frg 3
+ARGEVT Carmack swim
+ARGLOG Romero t 103.9 pos '2532.1 -158.6  32.0' spd 341.0 yaw 150.0 mode 2 st 36 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 104.0 pos '2453.2 -318.7   8.0' spd 358.7 yaw 217.9 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack death world pos '2288.0 -2144.1  35.5'
+ARGLOG Romero t 104.5 pos '2356.8 -164.7  24.0' spd 343.4 yaw 328.9 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 104.5 pos '2530.4 -337.0  24.0' spd 352.6 yaw 154.5 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan grab item_health
+ARGEVT Romero pursue
+ARGEVT Romero hazard
+ARGEVT Joe Rogan pursue
+ARGLOG Romero t 105.0 pos '2412.8 -240.0  24.0' spd 358.5 yaw 288 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 105.1 pos '2495.5 -317.7   8.0' spd 341.3 yaw 141.5 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan hazard
+ARGEVT Romero pursue
+ARGLOG Romero t 105.6 pos '2426.9 -240.0  24.0' spd 348.2 yaw 247.2 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 105.6 pos '2366.9 -304.0   8.0' spd  44.6 yaw 79 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack respawn
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGLOG Carmack t 105.7 pos '2544.0 -32.0 -64.0' spd 0 yaw 199.5 mode 0 st 11 gl 0 hp 100 frg 2
+ARGEVT Carmack route 6 start '2489.0 -31.0 -72.0' goal '1465.0 -687.0 184.0'
+ARGEVT Carmack hazard
+ARGLOG Romero t 106.1 pos '2395.6 -144.0  24.0' spd 295.1 yaw 284.1 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 106.2 pos '2433.4 -333.6   8.0' spd  71.0 yaw  76.8 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Carmack t 106.3 pos '2462.8 -80.0 -72.0' spd 280.9 yaw 4 mode 2 st 11 gl 0 hp 100 frg 2
+ARGEVT Romero pursue
+ARGLOG Romero t 106.7 pos '2552.9 -212.6  32.0' spd 318.1 yaw 223 mode 0 st 36 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 106.8 pos '2417.1 -362.1   8.0' spd 320.2 yaw  35.8 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Carmack t 106.8 pos '2642.6 -60.5 -72.0' spd 345.1 yaw 315.8 mode 2 st 11 gl 0 hp 100 frg 2
+ARGEVT Romero pursue
+ARGEVT Romero route 6 start '2521.0 -191.0  32.0' goal '2777.0 -15.0 -72.0'
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 107.2 pos '2401.2 -240.0  24.0' spd  84.0 yaw 284 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 107.3 pos '2588.9 -319.8  24.0' spd 322.8 yaw 317.2 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Joe Rogan pursue
+ARGLOG Carmack t 107.4 pos '2688.0 -72.8 -72.0' spd  29.1 yaw 213 mode 2 st 11 gl 0 hp 100 frg 2
+ARGLOG Romero t 107.8 pos '2417.1 -240.0  24.0' spd 138.1 yaw 275 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 107.9 pos '2632.2 -335.4  24.0' spd 324.6 yaw  74.0 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Carmack t 107.9 pos '2688.0 -71.7 -72.0' spd  21.1 yaw 346.2 mode 2 st 11 gl 0 hp 100 frg 2
+ARGLOG Romero t 108.4 pos '2429.6 -240.0  24.0' spd  10.4 yaw 267 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 108.4 pos '2471.4 -320.2   8.0' spd 361.2 yaw 253.5 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2905.0 -47.0 -72.0'
+ARGEVT Carmack jump
+ARGEVT Joe Rogan grab item_health
+ARGLOG Carmack t 108.5 pos '2688.0 -70.8 -58.1' spd  24.6 yaw 346.5 mode 0 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack route 5 start '2649.0 -47.0 -72.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t 108.9 pos '2509.2 -144.0  24.0' spd 341.2 yaw 256.5 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 109.0 pos '2472.0 -306.3   8.0' spd  95.3 yaw  55.1 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero pursue
+ARGLOG Carmack t 109.0 pos '2685.1 -80.0 -72.0' spd  29.9 yaw 8 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack door
+ARGEVT Joe Rogan pursue
+ARGEVT Romero hazard
+ARGEVT Romero route 6 start '2521.0 -191.0  32.0' goal '2777.0 -15.0 -72.0'
+ARGEVT Romero pursue
+ARGLOG Romero t 109.5 pos '2465.2 -240.0  24.0' spd 189.1 yaw 263.9 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 109.5 pos '2484.4 -393.8   8.0' spd 345.9 yaw 211.8 mode 2 st 3 gl 1 hp 55 frg 0
+ARGEVT Romero weapon sg
+ARGLOG Carmack t 109.6 pos '2511.8 -78.7 -64.0' spd 321.2 yaw 170.6 mode 0 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack route 6 start '2489.0 -31.0 -72.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan hazard
+ARGEVT Romero pursue
+ARGLOG Romero t 110.0 pos '2570.9 -190.2  32.0' spd 161.9 yaw 242 mode 2 st 36 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t 110.1 pos '2443.4 -304.0   8.0' spd 313.3 yaw 171.7 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Carmack t 110.2 pos '2324.9 -62.4 -81.2' spd 378.9 yaw 248 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan pursue
+ARGUS Romero hunch item_armorInv
+ARGEVT Romero goal item_armorInv
+ARGUS Joe Rogan hunch item_armorInv
+ARGEVT Romero hazard
+ARGEVT Romero route 6 start '2521.0 -191.0  32.0' goal '2393.0 -655.0  56.0'
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Joe Rogan pursue
+ARGEVT Romero pursue
+ARGUS routecache adopt
+ARGEVT Romero route 6 start '2521.0 -191.0  32.0' goal '2393.0 -655.0  56.0'
+ARGEVT Joe Rogan route 9 start '2329.0 -351.0   8.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Romero t 110.6 pos '2574.5 -155.1  32.0' spd 328.8 yaw 123.1 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 110.7 pos '2264.9 -313.3   8.0' spd 273.6 yaw 106.0 mode 2 st 3 gl 1 hp 55 frg 0
+ARGLOG Carmack t 110.7 pos '2204.0 -156.8 -129.9' spd 351.7 yaw 305 mode 0 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack route 8 start '2249.0 -191.0 -136.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan retreat
+ARGEVT Carmack hazard
+ARGLOG Romero t 111.2 pos '2460.2 -220.8  24.0' spd 222.1 yaw 195.6 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 111.2 pos '2150.6 -304.4  24.0' spd 330.8 yaw  28.9 mode 2 st 3 gl 1 hp 31 frg 0
+ARGLOG Carmack t 111.3 pos '2278.4 -197.1 -136.0' spd 201.0 yaw 244 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Romero pursue
+ARGEVT Joe Rogan pursue
+ARGLOG Romero t 111.7 pos '2304.9 -149.2  24.0' spd 331.5 yaw 243.8 mode 2 st 36 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t 111.8 pos '2135.6 -476.1   8.0' spd 325.7 yaw  90.2 mode 2 st 3 gl 1 hp 23 frg 0
+ARGLOG Carmack t 111.8 pos '2197.6 -143.7 -120.0' spd 320.6 yaw 144.2 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 112.3 pos '2128.4 -151.1  24.0' spd 357.5 yaw 289.1 mode 2 st 36 gl 0 hp 73 frg 0
+ARGLOG Joe Rogan t 112.3 pos '2245.8 -476.7   8.0' spd 320.0 yaw 133.7 mode 0 st 3 gl 1 hp 15 frg 0
+ARGLOG Carmack t 112.3 pos '2179.8 -57.8 -93.6' spd  54.9 yaw 262 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Romero grab item_spikes
+ARGEVT Joe Rogan route 8 start '2297.0 -495.0   8.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Romero t 112.8 pos '1961.0 -218.2  24.0' spd 321.4 yaw 343.7 mode 2 st 36 gl 0 hp 73 frg 0
+ARGLOG Joe Rogan t 112.9 pos '2406.3 -405.2   8.0' spd 320.0 yaw 155.5 mode 2 st 3 gl 1 hp 15 frg 0
+ARGLOG Carmack t 112.9 pos '2218.7 -165.3 -136.0' spd 362.7 yaw 302.9 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Romero grab item_health
+ARGEVT Carmack hazard
+ARGLOG Romero t 113.4 pos '1970.1 -58.3  24.0' spd 323.2 yaw 339.8 mode 2 st 36 gl 0 hp 98 frg 0
+ARGLOG Joe Rogan t 113.4 pos '2531.6 -317.5  24.0' spd 150.9 yaw 140.2 mode 2 st 3 gl 1 hp 15 frg 0
+ARGEVT Romero pursue
+ARGLOG Carmack t 113.4 pos '2240.0 -208.6 -136.0' spd  89.0 yaw 157 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan pursue
+ARGLOG Romero t 113.9 pos '2129.8 -108.0  24.0' spd 321.4 yaw 320 mode 2 st 36 gl 0 hp 98 frg 0
+ARGLOG Joe Rogan t 114.0 pos '2386.1 -312.6   8.0' spd 320.9 yaw 159 mode 2 st 3 gl 1 hp 15 frg 0
+ARGLOG Carmack t 114.0 pos '2223.0 -34.6 -109.2' spd 393.0 yaw  37.4 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan pursue
+ARGLOG Romero t 114.5 pos '2212.0 -198.0  24.0' spd 201.6 yaw 260.1 mode 2 st 36 gl 0 hp 98 frg 0
+ARGEVT Joe Rogan death Romero pos '2218.0 -351.8   8.0'
+ARGUS Romero watch spawn
+ARGLOG Carmack t 114.6 pos '2235.7  14.2 -136.0' spd 326.7 yaw 215.9 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Romero goal item_armorInv
+ARGEVT Romero route 5 start '2233.0 -223.0  24.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t 115.1 pos '2166.8 -332.9  24.0' spd 384.4 yaw 7 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 115.1 pos '2195.1 -141.6 -116.5' spd 323.8 yaw 287 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Romero hazard
+ARGLOG Romero t 115.6 pos '2361.4 -304.0   8.0' spd 342.1 yaw  66.8 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 115.7 pos '2280.0 -208.0 -136.0' spd 187.3 yaw 23 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan respawn
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGLOG Joe Rogan t 116.1 pos '2576.0 -1328.0  24.0' spd 0 yaw 256 mode 0 st 3 gl 1 hp 100 frg 0
+ARGEVT Joe Rogan route 2 start '2585.0 -1375.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Romero t 116.2 pos '2334.6 -307.8   8.0' spd 320.9 yaw 189 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 116.2 pos '2287.3 -130.7 -136.0' spd 320.1 yaw 259 mode 2 st 12 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 116.7 pos '2513.9 -1487.9  24.0' spd 321.4 yaw 260 mode 2 st 3 gl 1 hp 100 frg 0
+ARGLOG Romero t 116.7 pos '2252.7 -450.2   8.0' spd 404.5 yaw 358.2 mode 2 st 36 gl 0 hp 98 frg 1
+ARGEVT Carmack hazard
+ARGLOG Carmack t 116.8 pos '2278.2 -188.8 -136.0' spd 316.9 yaw 335.7 mode 2 st 12 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 117.2 pos '2484.7 -1664.1  24.0' spd 320.1 yaw 221.3 mode 1 st 3 gl 1 hp 100 frg 0
+ARGLOG Romero t 117.3 pos '2375.1 -356.4   8.0' spd 422.2 yaw 164 mode 2 st 36 gl 0 hp 98 frg 1
+ARGEVT Joe Rogan goal item_armorInv
+ARGLOG Carmack t 117.3 pos '2261.1 -215.7 -136.0' spd 194.3 yaw 23 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan route 5 start '2473.0 -1711.0  24.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Romero route 5 start '2169.0 -351.0  24.0' goal '2393.0 -655.0  56.0'
+ARGLOG Joe Rogan t 117.8 pos '2391.6 -1820.1  24.0' spd 340.1 yaw 220 mode 2 st 3 gl 2 hp 100 frg 0
+ARGLOG Romero t 117.8 pos '2217.9 -375.9   8.0' spd 333.1 yaw 304 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 117.9 pos '2320.5 -45.3 -104.0' spd 411.0 yaw 338.1 mode 2 st 12 gl 0 hp 100 frg 2
+ARGUS routecache adopt
+ARGEVT Romero route 4 start '2153.0 -479.0   8.0' goal '2393.0 -655.0  56.0'
+ARGEVT Carmack hazard
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t 118.3 pos '2233.9 -1902.8  24.0' spd 321.3 yaw 235 mode 2 st 3 gl 2 hp 100 frg 0
+ARGLOG Romero t 118.4 pos '2263.3 -514.1   8.0' spd 320.2 yaw 348 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 118.4 pos '2510.3 -74.3 -64.0' spd 322.9 yaw 3 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan jump
+ARGEVT Joe Rogan door
+ARGLOG Joe Rogan t 118.9 pos '2128.0 -2020.2  93.5' spd 249.3 yaw 358.4 mode 2 st 3 gl 2 hp 100 frg 0
+ARGLOG Romero t 118.9 pos '2442.0 -505.4   8.0' spd 320.0 yaw 218 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 119.0 pos '2695.7 -61.7 -72.0' spd 378.1 yaw 278.1 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t 119.4 pos '2224.0 -2072.2 119.9' spd   5.7 yaw 12 mode 2 st 3 gl 2 hp 100 frg 0
+ARGEVT Romero jump
+ARGLOG Romero t 119.5 pos '2613.8 -528.0  45.9' spd 208.3 yaw 210 mode 2 st 36 gl 0 hp 98 frg 1
+ARGEVT Carmack hazard
+ARGLOG Carmack t 119.6 pos '2640.3 -67.4 -72.0' spd 352.8 yaw 216 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t 120.0 pos '2224.0 -2055.0 112.3' spd  45.4 yaw 10 mode 2 st 3 gl 2 hp 100 frg 0
+ARGLOG Romero t 120.1 pos '2533.4 -528.0  24.0' spd 320.6 yaw 223 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 120.1 pos '2449.3 -80.0 -72.0' spd 325.1 yaw 159 mode 0 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack route 6 start '2489.0 -31.0 -72.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 120.6 pos '2224.0 -2013.5  88.0' spd 188.1 yaw 4 mode 2 st 3 gl 2 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Romero t 120.6 pos '2351.2 -525.3   8.0' spd 302.6 yaw 288 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 120.7 pos '2287.9  16.0 -120.0' spd 363.8 yaw 218.2 mode 0 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack route 7 start '2233.0 -31.0 -136.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t 121.1 pos '2224.0 -1896.0  37.8' spd 131.8 yaw 348 mode 2 st 3 gl 2 hp 100 frg 0
+ARGLOG Romero t 121.2 pos '2262.2 -512.8   8.0' spd 137.8 yaw 313 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 121.2 pos '2207.0 -116.7 -134.4' spd 373.8 yaw 8 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack hazard
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t 121.7 pos '2365.6 -1895.5  24.0' spd 321.0 yaw 342 mode 2 st 3 gl 2 hp 100 frg 0
+ARGLOG Romero t 121.7 pos '2422.1 -528.0   8.0' spd 291.2 yaw 258 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 121.8 pos '2333.4 -43.5 -104.0' spd 379.5 yaw 0 mode 2 st 12 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 122.2 pos '2551.3 -1904.0  24.0' spd 352.3 yaw 313 mode 2 st 3 gl 2 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 122.3 pos '2500.1 -527.6   8.0' spd 195.2 yaw 230 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 122.4 pos '2514.8 -18.3 -64.0' spd 321.9 yaw 356 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t 122.8 pos '2535.1 -1904.0  24.0' spd 132.2 yaw 319 mode 2 st 3 gl 2 hp 100 frg 0
+ARGLOG Romero t 122.9 pos '2335.4 -526.4   8.0' spd 214.9 yaw 295 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 122.9 pos '2693.5 -43.0 -72.0' spd 320.7 yaw 214 mode 2 st 12 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 123.3 pos '2558.6 -1904.0  24.0' spd 348.5 yaw 310 mode 2 st 3 gl 2 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 123.4 pos '2249.4 -523.4   8.0' spd 137.6 yaw 318 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 123.5 pos '1298.3 -1024.0 360.0' spd 300 yaw  19.8 mode 0 st 12 gl 0 hp 100 frg 2
+ARGUS routecache adopt
+ARGEVT Carmack route 3 start '1289.0 -959.0 344.0' goal '1465.0 -687.0 184.0'
+ARGLOG Joe Rogan t 123.9 pos '2547.0 -1892.2  24.0' spd 111.8 yaw 310 mode 2 st 3 gl 2 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Romero t 124.0 pos '2394.1 -528.0   8.0' spd 329.1 yaw 270 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 124.0 pos '1335.2 -1024.0 352.0' spd 300 yaw 76 mode 2 st 12 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 124.5 pos '2577.9 -1902.5  24.0' spd 232.9 yaw 300 mode 2 st 3 gl 2 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack hazard
+ARGLOG Romero t 124.5 pos '2501.5 -528.0   8.0' spd 154.1 yaw 230 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 124.6 pos '1378.3 -912.0 344.0' spd  51.0 yaw 79 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan stall
+ARGEVT Joe Rogan stallnode '2473.0 -1999.0 120.0'
+ARGEVT Joe Rogan jump
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t 125.0 pos '2608.0 -1899.4  60.2' spd  58.6 yaw 225.0 mode 0 st 4 gl 2 hp 100 frg 0
+ARGEVT Joe Rogan route 5 start '2553.0 -1871.0  24.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Romero t 125.1 pos '2379.6 -528.0   8.0' spd 262.0 yaw 277 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 125.1 pos '1372.5 -760.9 344.0' spd 320.0 yaw 70 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 125.6 pos '2573.5 -1904.0  24.0' spd 179.6 yaw 303 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 125.6 pos '2274.4 -524.3   8.0' spd 146.6 yaw 313 mode 2 st 36 gl 0 hp 98 frg 1
+ARGLOG Carmack t 125.7 pos '1376.0 -576.6 298.2' spd 335.9 yaw 309 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack abandon
+ARGEVT Carmack plan powerup via weapon
+ARGEVT Carmack goal weapon_grenadelauncher
+ARGEVT Carmack route 4 start '1369.0 -703.0 344.0' goal '2057.0 -943.0 344.0'
+ARGLOG Joe Rogan t 126.1 pos '2497.3 -1904.0  24.0' spd 121.9 yaw 328 mode 2 st 4 gl 2 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2393.0 -655.0  56.0'
+ARGEVT Romero jump
+ARGLOG Romero t 126.2 pos '2327.6 -528.0  21.4' spd 352.0 yaw 299 mode 0 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 126.3 pos '1446.2 -535.5 184.0' spd 379.5 yaw 250 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Romero route 1 start '2393.0 -543.0  56.0' goal '2393.0 -655.0  56.0'
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t 126.7 pos '2587.3 -1901.4  24.0' spd 321.1 yaw 294 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 126.7 pos '2483.9 -528.0   8.0' spd  95.2 yaw 235 mode 2 st 37 gl 0 hp 98 frg 1
+ARGEVT Romero hazard
+ARGEVT Carmack jump
+ARGEVT Joe Rogan abandon
+ARGLOG Carmack t 126.8 pos '1443.9 -720.0 197.9' spd  59.4 yaw 238 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan goal item_artifact_super_damage
+ARGEVT Joe Rogan route 15 start '2553.0 -1871.0  24.0' goal '1913.0 -719.0 184.0'
+ARGLOG Joe Rogan t 127.2 pos '2535.4 -1769.5  24.0' spd 327.9 yaw 98 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 127.3 pos '2395.7 -527.2   8.0' spd 342.0 yaw 269 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 127.4 pos '1440.0 -709.5 184.0' spd  37.8 yaw 239 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 127.8 pos '2505.0 -1595.4  24.0' spd 320.0 yaw 99 mode 2 st 4 gl 2 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Romero t 127.9 pos '2284.7 -524.6   8.0' spd 152.3 yaw 310 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 127.9 pos '1440.0 -645.6 220.3' spd  23.4 yaw 245 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t 128.3 pos '2479.4 -1420.3  24.0' spd 320.1 yaw 87 mode 2 st 4 gl 2 hp 100 frg 0
+ARGEVT Romero abandon
+ARGLOG Romero t 128.4 pos '2308.0 -528.0   8.0' spd 352.0 yaw 100 mode 0 st 37 gl 0 hp 98 frg 1
+ARGEVT Carmack jump
+ARGUS routecache adopt
+ARGEVT Joe Rogan route 12 start '2457.0 -1311.0  24.0' goal '1913.0 -719.0 184.0'
+ARGLOG Carmack t 128.5 pos '1449.6 -720.0 197.5' spd  78.8 yaw 237 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Romero goal item_armor2
+ARGEVT Romero route 12 start '2297.0 -495.0   8.0' goal '2057.0 -943.0  32.0'
+ARGLOG Joe Rogan t 128.9 pos '2448.4 -1243.5  24.0' spd 320.2 yaw 80 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 129.0 pos '2208.7 -423.4   8.0' spd 415.8 yaw 254 mode 0 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 129.0 pos '1440.0 -706.4 184.0' spd  31.0 yaw 240 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack hazard
+ARGEVT Romero route 13 start '2153.0 -479.0   8.0' goal '2057.0 -943.0  32.0'
+ARGEVT Romero hazard
+ARGEVT Joe Rogan lift
+ARGLOG Joe Rogan t 129.5 pos '2458.1 -1065.3  24.0' spd 324.2 yaw 106 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 129.5 pos '2208.6 -528.0   8.0' spd 327.9 yaw 85 mode 2 st 37 gl 0 hp 98 frg 1
+ARGEVT Joe Rogan board
+ARGLOG Carmack t 129.6 pos '1440.0 -685.2 184.0' spd 349.1 yaw 242 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 130.0 pos '2481.9 -962.8  97.4' spd 198.4 yaw 127 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 130.1 pos '2307.2 -399.1   8.0' spd 406.0 yaw 112 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 130.1 pos '1440.0 -709.5 196.3' spd  37.8 yaw 239 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan door
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t 130.6 pos '2501.0 -884.5 120.0' spd  60.9 yaw 248.3 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 130.6 pos '2214.6 -238.2  24.0' spd 331.5 yaw 49 mode 2 st 37 gl 0 hp 98 frg 1
+ARGEVT Carmack jump
+ARGLOG Carmack t 130.7 pos '1440.0 -690.1 197.7' spd 269.7 yaw 241 mode 2 st 12 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 131.1 pos '2501.0 -884.5 120.0' spd 0 yaw 270 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 131.2 pos '2233.7 -59.3  24.0' spd 320.3 yaw 10 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 131.3 pos '1440.0 -709.4 184.0' spd  37.8 yaw 239 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 131.7 pos '2449.1 -986.5 120.0' spd 108.6 yaw 104 mode 2 st 4 gl 2 hp 100 frg 0
+ARGEVT Romero jump
+ARGLOG Romero t 131.8 pos '2352.0 -12.4  69.5' spd 130.2 yaw 354 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 131.8 pos '1440.0 -644.5 219.9' spd  23.9 yaw 245 mode 2 st 12 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 132.2 pos '2428.6 -816.0 120.0' spd  50.1 yaw 97 mode 2 st 4 gl 2 hp 100 frg 0
+ARGEVT Carmack jump
+ARGLOG Romero t 132.3 pos '2393.0 -63.2  88.0' spd 160.7 yaw 3 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 132.4 pos '1440.0 -719.5 208.3' spd   7.3 yaw 238 mode 2 st 12 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 132.8 pos '2445.7 -816.0 120.0' spd  30.6 yaw 100 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 132.9 pos '2558.9   5.9 120.0' spd 341.2 yaw 352 mode 2 st 37 gl 0 hp 98 frg 1
+ARGEVT Carmack hazard
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1369.0 -703.0 344.0'
+ARGLOG Carmack t 132.9 pos '1443.9 -692.5 184.0' spd 199.8 yaw 479.9 mode 0 st 13 gl 0 hp 100 frg 2
+ARGEVT Carmack jump
+ARGEVT Carmack route 7 start '1465.0 -687.0 184.0' goal '2057.0 -943.0 344.0'
+ARGLOG Joe Rogan t 133.4 pos '2486.7 -786.8 120.0' spd 129.2 yaw 111 mode 2 st 4 gl 2 hp 100 frg 0
+ARGLOG Romero t 133.4 pos '2640.0 -42.7 120.0' spd  38.2 yaw 215 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 133.5 pos '1442.0 -680.9 197.0' spd  46.5 yaw 151 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan stall
+ARGEVT Joe Rogan stallnode '2377.0 -703.0  56.0'
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t 133.9 pos '2443.5 -818.5 156.3' spd  41.0 yaw 167 mode 0 st 5 gl 2 hp 100 frg 0
+ARGLOG Romero t 134.0 pos '2640.0 -43.5 120.0' spd 0 yaw 215 mode 2 st 37 gl 0 hp 98 frg 1
+ARGLOG Carmack t 134.0 pos '1463.6 -569.6 184.0' spd 324.6 yaw 224 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan route 9 start '2393.0 -847.0 120.0' goal '1913.0 -719.0 184.0'
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2905.0 -47.0 -72.0'
+ARGEVT Romero jump
+ARGLOG Joe Rogan t 134.5 pos '2398.6 -816.0 120.0' spd 185.6 yaw 91 mode 2 st 5 gl 2 hp 100 frg 0
+ARGLOG Romero t 134.5 pos '2640.0 -47.6 156.1' spd  32.4 yaw 282.2 mode 0 st 38 gl 0 hp 98 frg 1
+ARGEVT Carmack lift
+ARGLOG Carmack t 134.6 pos '1288.0 -560.0 184.0' spd 343.6 yaw 271 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Romero route 8 start '2585.0 -15.0 120.0' goal '2057.0 -943.0  32.0'
+ARGEVT Carmack board
+ARGEVT Joe Rogan door
+ARGLOG Joe Rogan t 135.0 pos '2360.2 -693.0  56.0' spd 322.5 yaw 69 mode 2 st 5 gl 2 hp 100 frg 0
+ARGLOG Romero t 135.1 pos '2583.9 -59.7 120.0' spd 337.0 yaw 222.4 mode 2 st 38 gl 0 hp 98 frg 1
+ARGLOG Carmack t 135.2 pos '1285.9 -638.9 247.7' spd 0 yaw 271 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t 135.6 pos '2389.2 -533.0  56.0' spd 321.9 yaw 140 mode 2 st 5 gl 2 hp 100 frg 0
+ARGLOG Romero t 135.6 pos '2533.5 -219.4 120.0' spd 321.6 yaw 24 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 135.7 pos '1293.2 -688.0 330.3' spd  23.8 yaw 287 mode 2 st 13 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 136.1 pos '2308.4 -354.1   8.0' spd 353.8 yaw 143 mode 2 st 5 gl 2 hp 100 frg 0
+ARGEVT Romero engage Joe Rogan
+ARGEVT Romero grab item_spikes
+ARGLOG Romero t 136.2 pos '2602.2 -358.4 120.0' spd 175.3 yaw 175.6 mode 2 st 38 gl 0 hp 100 frg 1
+ARGEVT Joe Rogan engage Romero
+ARGLOG Carmack t 136.3 pos '1293.2 -857.3 344.0' spd 320.0 yaw 343 mode 2 st 13 gl 0 hp 100 frg 2
+ARGLOG Joe Rogan t 136.7 pos '2253.6 -468.1   8.0' spd 332.1 yaw  28.1 mode 0 st 5 gl 2 hp 100 frg 0
+ARGLOG Romero t 136.8 pos '2606.7 -335.5 120.0' spd 211.7 yaw 222.6 mode 2 st 38 gl 0 hp 100 frg 1
+ARGEVT Carmack train
+ARGLOG Carmack t 136.8 pos '1366.1 -1022.4 344.0' spd 323.1 yaw 6 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan route 7 start '2297.0 -495.0   8.0' goal '1913.0 -719.0 184.0'
+ARGLOG Joe Rogan t 137.3 pos '2254.5 -398.7   8.0' spd 326.9 yaw 348.1 mode 2 st 5 gl 2 hp 100 frg 0
+ARGLOG Romero t 137.3 pos '2626.0 -411.4 120.0' spd 189.9 yaw 152.2 mode 0 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 137.4 pos '1381.3 -1037.1 344.0' spd 0 yaw 7 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Romero route 9 start '2553.0 -351.0 147.0' goal '2057.0 -943.0  32.0'
+ARGLOG Joe Rogan t 137.8 pos '2285.8 -383.8   8.0' spd 320.1 yaw 347.1 mode 2 st 5 gl 2 hp 100 frg 0
+ARGLOG Romero t 137.9 pos '2613.9 -369.4 120.0' spd 321.2 yaw 207.0 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 137.9 pos '1393.2 -1037.1 344.0' spd 195.2 yaw 8 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Carmack hazard
+ARGEVT Romero pursue
+ARGEVT Joe Rogan route 7 start '2297.0 -495.0   8.0' goal '1913.0 -719.0 184.0'
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 138.4 pos '2345.5 -484.4   8.0' spd 286.2 yaw   9.8 mode 2 st 5 gl 2 hp 100 frg 0
+ARGEVT Carmack route 2 start '1401.0 -1055.0 344.0' goal '2057.0 -943.0 344.0'
+ARGLOG Romero t 138.4 pos '2560.0 -510.5 120.0' spd  47.4 yaw 155 mode 0 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 138.5 pos '1566.4 -1036.4 344.0' spd 334.0 yaw 0 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan weapon sg
+ARGEVT Romero route 10 start '2553.0 -495.0 147.0' goal '2057.0 -943.0  32.0'
+ARGEVT Joe Rogan weapon rl
+ARGLOG Joe Rogan t 138.9 pos '2384.9 -391.5   8.0' spd 347.1 yaw   7.6 mode 2 st 5 gl 2 hp 95 frg 0
+ARGLOG Romero t 139.0 pos '2551.3 -408.5 151.3' spd 178.2 yaw 157.2 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 139.0 pos '1548.1 -1033.6 344.0' spd 327.0 yaw 0 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan grab weapon_nailgun
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan weapon sg
+ARGLOG Joe Rogan t 139.5 pos '2350.5 -314.1   8.0' spd 176.2 yaw 320.1 mode 2 st 5 gl 2 hp 92 frg 0
+ARGUS routecache adopt
+ARGEVT Romero route 10 start '2553.0 -495.0 147.0' goal '2057.0 -943.0  32.0'
+ARGLOG Romero t 139.5 pos '2581.5 -505.6 129.6' spd 164.5 yaw 124.9 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 139.6 pos '1602.5 -1047.7 344.0' spd 120.2 yaw 1 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Romero pursue
+ARGLOG Joe Rogan t 140.0 pos '2410.1 -344.6   8.0' spd 320.4 yaw 310 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 140.1 pos '2585.6 -379.8 120.0' spd 342.4 yaw 164 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 140.2 pos '1651.9 -1027.6 344.0' spd 161.0 yaw 358 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Carmack hazard
+ARGUS Joe Rogan hunch item_artifact_super_damage
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_nailgun
+ARGLOG Joe Rogan t 140.6 pos '2530.0 -477.1  24.0' spd 340.0 yaw 357.0 mode 0 st 5 gl 2 hp 91 frg 0
+ARGEVT Joe Rogan route 4 start '2553.0 -495.0  24.0' goal '2473.0 -191.0  24.0'
+ARGEVT Joe Rogan jump
+ARGLOG Romero t 140.6 pos '2560.0 -307.3 120.0' spd  54.4 yaw 182 mode 2 st 38 gl 0 hp 100 frg 1
+ARGEVT Romero hazard
+ARGLOG Carmack t 140.7 pos '1706.0 -1006.7 344.0' spd 142.4 yaw 350 mode 2 st 13 gl 0 hp 100 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 141.1 pos '2589.6 -528.0  32.0' spd 332.0 yaw 186.2 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 141.2 pos '2560.0 -327.2 120.0' spd  13.8 yaw 176 mode 2 st 38 gl 0 hp 100 frg 1
+ARGEVT Carmack hazard
+ARGLOG Carmack t 141.3 pos '1760.4 -1014.3 344.0' spd 284.8 yaw 105.3 mode 0 st 13 gl 0 hp 100 frg 2
+ARGEVT Carmack route 1 start '1881.0 -1039.0 344.0' goal '2057.0 -943.0 344.0'
+ARGEVT Joe Rogan jump
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 141.7 pos '2422.3 -434.8  44.2' spd 378.7 yaw  36.0 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 141.8 pos '2560.0 -338.4 120.0' spd 104.3 yaw 173 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 141.8 pos '2005.6 -986.8 344.0' spd 330.0 yaw 45 mode 1 st 13 gl 0 hp 100 frg 2
+ARGEVT Romero grab item_health
+ARGEVT Carmack goal item_artifact_super_damage
+ARGEVT Carmack route 9 start '2057.0 -943.0 344.0' goal '1913.0 -719.0 184.0'
+ARGLOG Joe Rogan t 142.3 pos '2456.6 -394.5   8.0' spd 322.6 yaw  50.1 mode 2 st 5 gl 2 hp 91 frg 0
+ARGEVT Carmack hazard
+ARGLOG Romero t 142.3 pos '2586.0 -244.1 120.0' spd 236.2 yaw 259.1 mode 2 st 38 gl 0 hp 100 frg 1
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan hazard
+ARGEVT Romero pursue
+ARGLOG Carmack t 142.4 pos '2063.2 -912.0 344.0' spd 309.9 yaw 260 mode 2 st 13 gl 1 hp 200 frg 2
+ARGLOG Joe Rogan t 142.8 pos '2612.0 -348.2  24.0' spd 404.7 yaw 289.0 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 142.9 pos '2560.0 -382.0 120.0' spd 123.6 yaw 171 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 142.9 pos '1941.8 -1029.7 344.0' spd 373.5 yaw 292 mode 2 st 13 gl 1 hp 200 frg 2
+ARGLOG Joe Rogan t 143.4 pos '2518.3 -384.0  24.0' spd 138.8 yaw 288 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 143.4 pos '2560.0 -368.4 120.0' spd  30.8 yaw 176 mode 2 st 38 gl 0 hp 100 frg 1
+ARGEVT Romero hazard
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t 143.5 pos '2018.6 -1136.0 344.0' spd  65.7 yaw 87 mode 2 st 13 gl 1 hp 200 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Joe Rogan jump
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 143.9 pos '2512.0 -513.2  44.2' spd 333.9 yaw 357.0 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 144.0 pos '2560.0 -372.4 120.0' spd  38.7 yaw 175 mode 2 st 38 gl 0 hp 100 frg 1
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGLOG Carmack t 144.0 pos '2010.9 -1136.0 344.0' spd   6.8 yaw 322.7 mode 0 st 14 gl 1 hp 200 frg 2
+ARGEVT Carmack jump
+ARGUS routecache adopt
+ARGEVT Carmack route 8 start '2009.0 -1103.0 344.0' goal '1913.0 -719.0 184.0'
+ARGLOG Joe Rogan t 144.5 pos '2549.8 -460.3  24.0' spd 323.4 yaw  40.3 mode 2 st 5 gl 2 hp 91 frg 0
+ARGEVT Joe Rogan jump
+ARGUS Romero hunch item_artifact_super_damage
+ARGLOG Romero t 144.5 pos '2560.0 -381.0 120.0' spd   2.9 yaw 186.4 mode 2 st 38 gl 0 hp 100 frg 1
+ARGLOG Carmack t 144.6 pos '1993.5 -1136.0 357.0' spd  46.1 yaw 77 mode 2 st 14 gl 1 hp 200 frg 2
+ARGEVT Romero goal item_armor2
+ARGEVT Romero stall
+ARGEVT Romero jump
+ARGEVT Romero route 3 start '2553.0 -351.0 147.0' goal '2777.0 -15.0 -72.0'
+ARGLOG Joe Rogan t 145.0 pos '2608.1 -502.7  32.0' spd 360.4 yaw 109 mode 2 st 5 gl 2 hp 91 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 145.1 pos '2554.8 -375.4 151.2' spd  40.3 yaw 73 mode 2 st 39 gl 0 hp 100 frg 1
+ARGLOG Carmack t 145.2 pos '2011.7 -1136.0 344.0' spd   6.9 yaw 84 mode 2 st 14 gl 1 hp 200 frg 2
+ARGEVT Joe Rogan jump
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 145.6 pos '2434.0 -475.8  44.1' spd 337.8 yaw 46 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 145.6 pos '2604.6 -248.0 120.0' spd 320.2 yaw 77 mode 2 st 39 gl 0 hp 100 frg 1
+ARGLOG Carmack t 145.7 pos '2007.4 -1136.0 375.5' spd  26.7 yaw 211.4 mode 0 st 15 gl 1 hp 200 frg 2
+ARGEVT Carmack route 8 start '2009.0 -1103.0 344.0' goal '1913.0 -719.0 184.0'
+ARGLOG Joe Rogan t 146.1 pos '2494.9 -378.5   8.0' spd 370.3 yaw 25 mode 2 st 5 gl 2 hp 91 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 146.2 pos '2640.0 -77.8 120.0' spd 323.0 yaw  59.8 mode 2 st 39 gl 0 hp 100 frg 1
+ARGLOG Carmack t 146.3 pos '1991.7 -1136.0 344.0' spd  37.6 yaw 77 mode 2 st 15 gl 1 hp 200 frg 2
+ARGLOG Joe Rogan t 146.7 pos '2622.7 -378.9  24.0' spd 164.0 yaw 158 mode 2 st 5 gl 2 hp 91 frg 0
+ARGLOG Romero t 146.7 pos '2640.0   6.1 120.0' spd  63.9 yaw 352 mode 2 st 39 gl 0 hp 100 frg 1
+ARGLOG Carmack t 146.8 pos '2011.7 -1136.0 344.0' spd  10.4 yaw 84 mode 2 st 15 gl 1 hp 200 frg 2
+ARGEVT Joe Rogan stall
+ARGEVT Joe Rogan stallnode '2553.0 -495.0 147.0'
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t 147.2 pos '2490.2 -384.0  38.7' spd 202.7 yaw 197.6 mode 0 st 6 gl 2 hp 91 frg 0
+ARGEVT Joe Rogan route 4 start '2473.0 -319.0   8.0' goal '2473.0 -191.0  24.0'
+ARGLOG Romero t 147.3 pos '2640.0 -11.3 120.0' spd   3.5 yaw 359 mode 2 st 39 gl 0 hp 100 frg 1
+ARGLOG Carmack t 147.4 pos '2010.0 -1136.0 344.0' spd 0 yaw 84 mode 2 st 15 gl 1 hp 199 frg 2
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2777.0 -15.0 -72.0'
+ARGEVT Romero jump
+ARGEVT Romero engage Joe Rogan
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGEVT Joe Rogan engage Romero
+ARGLOG Joe Rogan t 147.8 pos '2336.4 -354.1   8.0' spd 336.1 yaw  50.5 mode 2 st 6 gl 2 hp 91 frg 0
+ARGLOG Romero t 147.9 pos '2638.4 -14.4 156.2' spd  34.5 yaw 220.6 mode 0 st 40 gl 0 hp 100 frg 1
+ARGEVT Romero route 2 start '2585.0 -15.0 120.0' goal '2777.0 -15.0 -72.0'
+ARGLOG Carmack t 147.9 pos '2007.9 -1136.0 375.7' spd  25.0 yaw 210.5 mode 0 st 16 gl 1 hp 198 frg 2
+ARGEVT Carmack route 8 start '2009.0 -1103.0 344.0' goal '1913.0 -719.0 184.0'
+ARGEVT Romero pursue
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 148.3 pos '2235.2 -268.7  24.0' spd 332.0 yaw  85.8 mode 2 st 6 gl 2 hp 91 frg 0
+ARGLOG Romero t 148.4 pos '2605.9 -67.3 120.0' spd 320.2 yaw 227 mode 2 st 40 gl 0 hp 100 frg 1
+ARGLOG Carmack t 148.5 pos '1994.6 -1136.0 344.0' spd  53.8 yaw 78 mode 2 st 16 gl 1 hp 198 frg 2
+ARGEVT Joe Rogan grab item_rockets
+ARGLOG Joe Rogan t 148.9 pos '2251.5 -80.7  24.0' spd 384.0 yaw 334.2 mode 2 st 6 gl 2 hp 91 frg 0
+ARGLOG Romero t 149.0 pos '2492.1 -228.1 117.0' spd 326.8 yaw 219 mode 2 st 40 gl 0 hp 100 frg 1
+ARGLOG Carmack t 149.0 pos '2011.0 -1136.0 344.0' spd   7.0 yaw 84 mode 2 st 16 gl 1 hp 197 frg 2
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Joe Rogan route 11 start '2297.0 -79.0  40.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Joe Rogan t 149.5 pos '2251.6 -95.5  24.0' spd  75.4 yaw 333.6 mode 2 st 6 gl 2 hp 91 frg 0
+ARGLOG Romero t 149.5 pos '2421.0 -167.5  24.0' spd 331.8 yaw 156.6 mode 2 st 40 gl 0 hp 100 frg 1
+ARGLOG Carmack t 149.6 pos '2009.9 -1136.0 344.0' spd 0 yaw 84 mode 2 st 16 gl 1 hp 197 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Romero pursue
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 150.0 pos '2271.8 -110.6  24.0' spd  52.7 yaw 323.2 mode 2 st 6 gl 2 hp 91 frg 0
+ARGLOG Romero t 150.1 pos '2362.1 -203.9  24.0' spd 322.9 yaw 140.4 mode 2 st 40 gl 0 hp 100 frg 1
+ARGLOG Carmack t 150.1 pos '2007.7 -1136.0 375.8' spd  25.4 yaw 210.2 mode 0 st 17 gl 1 hp 196 frg 2
+ARGEVT Carmack route 8 start '2009.0 -1103.0 344.0' goal '1913.0 -719.0 184.0'
+ARGEVT Romero route 5 start '2233.0 -223.0  24.0' goal '2777.0 -15.0 -72.0'
+ARGLOG Joe Rogan t 150.6 pos '2350.0 -78.8  56.0' spd 362.4 yaw 230.0 mode 2 st 6 gl 2 hp 90 frg 0
+ARGLOG Romero t 150.6 pos '2194.4 -211.1  24.0' spd 356.1 yaw  13.0 mode 2 st 40 gl 0 hp 96 frg 1
+ARGLOG Carmack t 150.7 pos '1994.2 -1136.0 344.0' spd  53.8 yaw 78 mode 2 st 17 gl 1 hp 196 frg 2
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 151.1 pos '2474.8 -211.8  24.0' spd 373.7 yaw 157.4 mode 2 st 6 gl 2 hp 90 frg 0
+ARGLOG Romero t 151.2 pos '2161.5 -32.6  24.0' spd 339.5 yaw 302.3 mode 2 st 40 gl 0 hp 96 frg 1
+ARGLOG Carmack t 151.2 pos '2011.4 -1136.0 344.0' spd   7.0 yaw 84 mode 2 st 17 gl 1 hp 195 frg 2
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t 151.7 pos '2391.4 -175.1  24.0' spd 320.8 yaw 158.2 mode 2 st 6 gl 2 hp 89 frg 0
+ARGLOG Romero t 151.7 pos '2070.0 -17.7  24.0' spd 358.1 yaw 352.3 mode 2 st 40 gl 0 hp 72 frg 1
+ARGEVT Romero grab item_spikes
+ARGLOG Carmack t 151.8 pos '2010.1 -1136.0 344.0' spd 0 yaw 84 mode 2 st 17 gl 1 hp 195 frg 2
+ARGEVT Romero pursue
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 152.2 pos '2424.9 -144.0  24.0' spd  36.6 yaw 177.8 mode 2 st 6 gl 2 hp 89 frg 0
+ARGLOG Romero t 152.3 pos '2023.5 -181.7  24.0' spd 356.7 yaw  16.8 mode 2 st 40 gl 0 hp 72 frg 1
+ARGLOG Carmack t 152.4 pos '2008.0 -1136.0 375.4' spd  24.9 yaw 211.1 mode 0 st 18 gl 1 hp 194 frg 2
+ARGEVT Carmack route 8 start '2009.0 -1103.0 344.0' goal '1913.0 -719.0 184.0'
+ARGEVT Romero hazard
+ARGEVT Romero route 6 start '1929.0 -223.0  24.0' goal '2777.0 -15.0 -72.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 152.8 pos '2326.7 -156.4  24.0' spd 286.6 yaw 203.1 mode 2 st 6 gl 2 hp 89 frg 0
+ARGLOG Romero t 152.8 pos '2001.7 -301.2  56.0' spd 320.3 yaw   0.2 mode 2 st 40 gl 0 hp 64 frg 1
+ARGEVT Romero grab item_health
+ARGLOG Carmack t 152.9 pos '1992.1 -1136.0 344.0' spd  36.4 yaw 77 mode 2 st 18 gl 1 hp 193 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Romero pursue
+ARGUS Romero hunch item_rockets
+ARGEVT Joe Rogan route 10 start '2233.0 -223.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGLOG Joe Rogan t 153.3 pos '2215.1 -188.1  24.0' spd 353.3 yaw 204 mode 2 st 6 gl 2 hp 89 frg 0
+ARGEVT Romero pursue
+ARGLOG Romero t 153.4 pos '2041.7 -452.3 104.0' spd 238.0 yaw 161.2 mode 2 st 40 gl 0 hp 89 frg 1
+ARGLOG Carmack t 153.5 pos '2011.4 -1136.0 344.0' spd   6.8 yaw 84 mode 2 st 18 gl 1 hp 193 frg 2
+ARGEVT Romero goal item_armorInv
+ARGEVT Romero hazard
+ARGEVT Romero route 7 start '1993.0 -415.0 104.0' goal '2393.0 -655.0  56.0'
+ARGLOG Joe Rogan t 153.9 pos '2036.0 -227.1  24.0' spd 320.6 yaw 271.0 mode 2 st 6 gl 2 hp 89 frg 0
+ARGLOG Romero t 154.0 pos '2042.1 -495.1 104.0' spd  80.3 yaw 115.4 mode 2 st 40 gl 0 hp 100 frg 1
+ARGLOG Carmack t 154.0 pos '2009.9 -1136.0 344.0' spd 0 yaw 84 mode 2 st 18 gl 1 hp 192 frg 2
+ARGEVT Romero grab item_artifact_super_damage
+ARGEVT Joe Rogan grab item_health
+ARGEVT Joe Rogan route 11 start '1929.0 -223.0  24.0' goal '2473.0 -1711.0  24.0'
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 154.5 pos '2020.7 -213.0  24.0' spd 346.7 yaw 263.2 mode 2 st 6 gl 2 hp 87 frg 0
+ARGLOG Romero t 154.5 pos '1924.6 -552.6  88.0' spd 105.6 yaw  84.0 mode 2 st 40 gl 0 hp 84 frg 1
+ARGLOG Carmack t 154.6 pos '2007.7 -1136.0 375.9' spd  25.1 yaw 210.5 mode 0 st 19 gl 1 hp 192 frg 2
+ARGEVT Carmack route 8 start '2009.0 -1103.0 344.0' goal '1913.0 -719.0 184.0'
+ARGEVT Romero grab item_health
+ARGEVT Romero pursue
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 155.0 pos '1978.9 -54.4  24.0' spd 127.7 yaw 264 mode 2 st 6 gl 2 hp 100 frg 0
+ARGLOG Romero t 155.1 pos '1924.1 -476.8  88.0' spd 320.9 yaw 61 mode 2 st 40 gl 0 hp 84 frg 1
+ARGEVT Romero hazard
+ARGEVT Romero pursue
+ARGLOG Carmack t 155.1 pos '1994.7 -1136.0 344.0' spd  55.6 yaw 78 mode 2 st 19 gl 1 hp 191 frg 2
+ARGEVT Romero grab item_artifact_super_damage
+ARGLOG Joe Rogan t 155.6 pos '2058.9 -172.8  24.0' spd 321.0 yaw 260.0 mode 2 st 6 gl 2 hp 100 frg 0
+ARGLOG Romero t 155.6 pos '1977.5 -543.9 104.0' spd 125.7 yaw  53.6 mode 2 st 40 gl 0 hp 64 frg 1
+ARGLOG Carmack t 155.7 pos '2011.2 -1136.0 344.0' spd   6.7 yaw 84 mode 2 st 19 gl 1 hp 191 frg 2
+ARGEVT Romero pursue
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 156.1 pos '2218.2 -249.9  24.0' spd 324.0 yaw 232 mode 2 st 6 gl 2 hp 99 frg 0
+ARGLOG Romero t 156.2 pos '2001.5 -502.0 104.0' spd 320.6 yaw 73 mode 2 st 40 gl 0 hp 64 frg 1
+ARGLOG Carmack t 156.2 pos '2009.9 -1136.0 344.0' spd 0 yaw 84 mode 2 st 19 gl 1 hp 190 frg 2
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGUS Joe Rogan hunch item_artifact_super_damage
+ARGLOG Joe Rogan t 156.7 pos '2145.6 -414.3   8.0' spd 322.8 yaw 344.5 mode 2 st 6 gl 2 hp 99 frg 0
+ARGLOG Romero t 156.7 pos '2057.5 -332.1  72.0' spd 320.1 yaw 75 mode 2 st 40 gl 0 hp 64 frg 1
+ARGEVT Joe Rogan pursue
+ARGLOG Carmack t 156.8 pos '2007.7 -1136.0 375.8' spd  25.0 yaw 211.1 mode 0 st 20 gl 1 hp 190 frg 2
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGUS routecache adopt
+ARGEVT Carmack route 8 start '2009.0 -1103.0 344.0' goal '1913.0 -719.0 184.0'
+ARGEVT Joe Rogan route 11 start '2153.0 -479.0   8.0' goal '1465.0 -687.0 184.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 157.2 pos '2268.1 -528.0   8.0' spd 319.6 yaw 210.4 mode 2 st 6 gl 2 hp 99 frg 0
+ARGLOG Romero t 157.3 pos '2083.1 -156.7  24.0' spd 378.2 yaw 292.1 mode 2 st 40 gl 0 hp 64 frg 1
+ARGEVT Romero weapon sg
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGLOG Carmack t 157.4 pos '1998.2 -1136.0 344.0' spd  65.6 yaw 261.8 mode 0 st 21 gl 1 hp 189 frg 2
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 157.8 pos '2157.0 -512.8   8.0' spd 148.4 yaw  87.3 mode 2 st 6 gl 2 hp 95 frg 0
+ARGLOG Romero t 157.8 pos '2254.7 -100.4  24.0' spd 328.6 yaw 261.9 mode 2 st 40 gl 0 hp 64 frg 1
+ARGLOG Carmack t 157.9 pos '2034.3 -1136.0 357.9' spd  65.6 yaw 318.3 mode 0 st 21 gl 1 hp 188 frg 2
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan grab item_armorInv
+ARGLOG Joe Rogan t 158.3 pos '2336.2 -499.5   8.0' spd 351.0 yaw 113.6 mode 2 st 6 gl 2 hp 91 frg 0
+ARGLOG Romero t 158.4 pos '2152.5 -140.9  24.0' spd 327.8 yaw 299.7 mode 2 st 40 gl 0 hp 64 frg 1
+ARGLOG Carmack t 158.5 pos '2068.7 -1042.8 344.0' spd 322.6 yaw  73.9 mode 0 st 21 gl 1 hp 188 frg 2
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 158.9 pos '2446.1 -528.0   8.0' spd 209.3 yaw 129.8 mode 2 st 6 gl 2 hp 91 frg 0
+ARGEVT Carmack goal item_armorInv
+ARGLOG Romero t 159.0 pos '2134.5 -141.8  24.0' spd 320.1 yaw 317.5 mode 2 st 40 gl 0 hp 52 frg 1
+ARGLOG Carmack t 159.0 pos '2096.0 -951.7 344.0' spd 289.5 yaw 330.3 mode 0 st 21 gl 1 hp 187 frg 2
+ARGEVT Carmack route 16 start '2057.0 -943.0 344.0' goal '2393.0 -655.0  56.0'
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t 159.4 pos '2504.3 -500.7   8.0' spd  62.6 yaw 116.2 mode 0 st 6 gl 2 hp 91 frg 0
+ARGEVT Joe Rogan route 9 start '2553.0 -495.0  24.0' goal '1465.0 -687.0 184.0'
+ARGLOG Romero t 159.5 pos '2289.9 -52.5  40.0' spd 322.3 yaw 295.9 mode 2 st 40 gl 0 hp 48 frg 1
+ARGLOG Carmack t 159.6 pos '2096.0 -940.0 344.0' spd 299.1 yaw 310.5 mode 2 st 21 gl 1 hp 187 frg 2
+ARGLOG Joe Rogan t 160.0 pos '2375.6 -524.2   8.0' spd 322.9 yaw  76.0 mode 2 st 6 gl 2 hp 88 frg 0
+ARGLOG Romero t 160.1 pos '2467.0 -28.0 120.0' spd 328.3 yaw 255.7 mode 2 st 40 gl 0 hp 48 frg 1
+ARGLOG Carmack t 160.1 pos '2060.4 -1121.2 344.0' spd 381.1 yaw 237 mode 2 st 21 gl 1 hp 186 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack hazard
+ARGEVT Romero route 6 start '2585.0 -15.0 120.0' goal '2393.0 -655.0  56.0'
+ARGLOG Joe Rogan t 160.6 pos '2250.4 -420.8   8.0' spd 348.7 yaw 66 mode 2 st 6 gl 2 hp 88 frg 0
+ARGEVT Romero grab item_health
+ARGEVT Romero pursue
+ARGLOG Romero t 160.6 pos '2613.0 -119.6 120.0' spd 313.2 yaw 231 mode 2 st 40 gl 0 hp 48 frg 1
+ARGLOG Carmack t 160.7 pos '1998.2 -1136.0 344.0' spd 318.6 yaw 79 mode 2 st 21 gl 1 hp 186 frg 2
+ARGEVT Joe Rogan hazard
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 161.1 pos '2357.2 -330.9   8.0' spd 329.8 yaw   9.1 mode 2 st 6 gl 2 hp 88 frg 0
+ARGLOG Romero t 161.2 pos '2565.8 -306.8 120.0' spd 320.4 yaw 188.6 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 161.2 pos '2004.2 -1136.0 344.0' spd  72.6 yaw 81 mode 2 st 21 gl 1 hp 185 frg 2
+ARGEVT Romero jump
+ARGLOG Joe Rogan t 161.7 pos '2406.1 -445.1   8.0' spd 337.8 yaw 351.5 mode 2 st 6 gl 2 hp 88 frg 0
+ARGLOG Romero t 161.7 pos '2578.9 -486.1 151.7' spd 323.9 yaw 176.3 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 161.8 pos '2008.3 -1136.0 344.0' spd   6.8 yaw 83 mode 2 st 21 gl 1 hp 185 frg 2
+ARGLOG Joe Rogan t 162.2 pos '2403.6 -452.7   8.0' spd 321.7 yaw 332.9 mode 2 st 6 gl 2 hp 88 frg 0
+ARGLOG Romero t 162.3 pos '2609.7 -543.6 120.0' spd 321.0 yaw 145.8 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Joe Rogan pursue
+ARGEVT Romero pursue
+ARGLOG Carmack t 162.4 pos '2009.2 -1136.0 344.0' spd 0 yaw 83 mode 2 st 21 gl 1 hp 184 frg 2
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGEVT Romero jump
+ARGEVT Joe Rogan jump
+ARGUS Joe Rogan hunch item_armorInv
+ARGLOG Joe Rogan t 162.8 pos '2555.6 -476.8  37.5' spd 336.9 yaw 300.6 mode 2 st 6 gl 2 hp 88 frg 0
+ARGEVT Carmack route 15 start '2009.0 -1103.0 344.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t 162.9 pos '2544.0 -464.1 194.2' spd  41.8 yaw 196 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 162.9 pos '2017.5 -1136.0 379.8' spd  34.2 yaw 87 mode 2 st 22 gl 1 hp 183 frg 2
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_grenadelauncher
+ARGEVT Joe Rogan route 9 start '2553.0 -495.0  24.0' goal '2057.0 -943.0 344.0'
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGLOG Joe Rogan t 163.4 pos '2522.2 -454.7  24.0' spd 366.9 yaw 215.5 mode 2 st 6 gl 2 hp 88 frg 0
+ARGLOG Romero t 163.4 pos '2551.0 -469.2 152.2' spd  99.4 yaw 182.6 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 163.5 pos '2013.6 -1136.0 375.7' spd  10.4 yaw 300.8 mode 0 st 23 gl 1 hp 183 frg 2
+ARGEVT Joe Rogan weapon axe
+ARGLOG Joe Rogan t 163.9 pos '2395.8 -440.2   8.0' spd 339.0 yaw  34.8 mode 2 st 6 gl 2 hp 84 frg 0
+ARGEVT Romero grab item_health
+ARGLOG Romero t 164.0 pos '2552.2 -329.3 148.9' spd 310.5 yaw 210.7 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 164.0 pos '2048.7 -1136.0 344.0' spd 197.4 yaw 300.8 mode 0 st 23 gl 1 hp 182 frg 2
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t 164.5 pos '2530.3 -319.0  24.0' spd 320.9 yaw   7.3 mode 2 st 6 gl 2 hp 80 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Romero pursue
+ARGLOG Romero t 164.5 pos '2557.0 -304.0 136.0' spd 0 yaw 207.1 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 164.6 pos '2047.1 -1136.0 344.0' spd 221.8 yaw 248.5 mode 0 st 23 gl 1 hp 182 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack goal weapon_nailgun
+ARGLOG Joe Rogan t 165.0 pos '2612.3 -371.8  24.0' spd 320.5 yaw 262.6 mode 2 st 6 gl 2 hp 80 frg 0
+ARGEVT Carmack route 12 start '2009.0 -1103.0 344.0' goal '2473.0 -191.0  24.0'
+ARGLOG Romero t 165.1 pos '2554.4 -404.7 143.1' spd 189.4 yaw 166 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 165.2 pos '2038.7 -1035.8 344.0' spd 359.4 yaw   2.5 mode 2 st 23 gl 1 hp 181 frg 2
+ARGEVT Joe Rogan pursue
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t 165.5 pos '2509.5 -460.7  21.7' spd 362.5 yaw 334.2 mode 2 st 6 gl 2 hp 80 frg 0
+ARGLOG Romero t 165.7 pos '2558.5 -400.3 136.0' spd 105.4 yaw 169 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 165.7 pos '2068.4 -1136.0 344.0' spd 251.6 yaw 106 mode 2 st 23 gl 1 hp 181 frg 2
+ARGLOG Joe Rogan t 166.1 pos '2545.5 -516.5  24.0' spd 206.2 yaw 86 mode 2 st 6 gl 2 hp 80 frg 0
+ARGLOG Romero t 166.2 pos '2554.1 -356.6 143.7' spd  56.3 yaw 193 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Joe Rogan jump
+ARGLOG Carmack t 166.3 pos '2011.8 -1136.0 344.0' spd  10.4 yaw 84 mode 2 st 23 gl 1 hp 180 frg 2
+ARGLOG Joe Rogan t 166.6 pos '2546.8 -448.5  24.0' spd  37.5 yaw 245.4 mode 2 st 6 gl 2 hp 80 frg 0
+ARGUS Romero hunch item_armorInv
+ARGLOG Romero t 166.8 pos '2553.9 -384.9 144.4' spd  37.5 yaw 221.5 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t 166.8 pos '2009.9 -1136.0 344.0' spd 0 yaw 84 mode 2 st 23 gl 1 hp 179 frg 2
+ARGEVT Romero goal item_armorInv
+ARGEVT Romero route 4 start '2553.0 -351.0 147.0' goal '2393.0 -655.0  56.0'
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t 167.2 pos '2563.6 -528.0  48.0' spd 282.0 yaw 93 mode 2 st 6 gl 2 hp 80 frg 0
+ARGEVT Carmack route 12 start '2009.0 -1103.0 344.0' goal '2473.0 -191.0  24.0'
+ARGLOG Romero t 167.3 pos '2559.6 -525.3 136.0' spd 336.6 yaw 218 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Romero jump
+ARGLOG Carmack t 167.4 pos '2019.3 -1136.0 379.7' spd  44.1 yaw 87 mode 2 st 24 gl 1 hp 179 frg 2
+ARGLOG Joe Rogan t 167.8 pos '2530.9 -455.8  24.0' spd 405.6 yaw 78 mode 2 st 6 gl 2 hp 80 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGEVT Joe Rogan jump
+ARGLOG Romero t 167.9 pos '2546.4 -528.0 164.3' spd  47.2 yaw 220 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Joe Rogan engage Romero
+ARGEVT Joe Rogan grab item_armorInv
+ARGEVT Romero engage Joe Rogan
+ARGLOG Carmack t 167.9 pos '2011.8 -1136.0 375.9' spd  16.9 yaw 298.3 mode 0 st 25 gl 1 hp 178 frg 2
+ARGLOG Joe Rogan t 168.3 pos '2470.5 -527.8  38.7' spd  32.3 yaw  24.7 mode 2 st 6 gl 2 hp 80 frg 0
+ARGLOG Romero t 168.4 pos '2562.3 -412.8 120.0' spd 363.2 yaw 226.3 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 168.5 pos '2043.7 -1136.0 344.0' spd 183.4 yaw 298.3 mode 0 st 25 gl 1 hp 178 frg 2
+ARGEVT Romero pursue
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan jump
+ARGLOG Joe Rogan t 168.9 pos '2567.2 -451.4  45.0' spd 340.0 yaw 297.6 mode 2 st 6 gl 2 hp 80 frg 0
+ARGLOG Romero t 169.0 pos '2560.0 -487.1 120.0' spd 364.6 yaw 204 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Romero hazard
+ARGLOG Carmack t 169.1 pos '2040.3 -1089.1 344.0' spd 320.1 yaw 141.4 mode 0 st 25 gl 1 hp 177 frg 2
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack goal item_armorInv
+ARGLOG Joe Rogan t 169.4 pos '2532.4 -513.3  24.0' spd 355.1 yaw 119.4 mode 2 st 6 gl 2 hp 80 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t 169.6 pos '2560.0 -528.0 120.0' spd   3.5 yaw 179 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Carmack route 25 start '2009.0 -1103.0 344.0' goal '2473.0 -1999.0 120.0'
+ARGEVT Joe Rogan pursue
+ARGLOG Carmack t 169.6 pos '1926.1 -1061.4 344.0' spd 371.8 yaw 302 mode 2 st 25 gl 1 hp 177 frg 2
+ARGLOG Joe Rogan t 170.0 pos '2410.3 -367.7  46.9' spd 360.4 yaw 348.3 mode 2 st 6 gl 2 hp 80 frg 0
+ARGLOG Romero t 170.1 pos '2560.0 -527.8 120.0' spd   3.4 yaw 134.1 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 170.2 pos '2027.4 -1136.0 344.0' spd 123.5 yaw 90 mode 2 st 25 gl 1 hp 176 frg 2
+ARGLOG Joe Rogan t 170.5 pos '2555.8 -369.2  24.0' spd 350.8 yaw  16.8 mode 2 st 6 gl 2 hp 80 frg 0
+ARGEVT Romero pursue
+ARGLOG Romero t 170.7 pos '2585.7 -455.9 120.0' spd 331.7 yaw 141 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t 170.7 pos '2006.1 -1136.0 344.0' spd  13.6 yaw 82 mode 2 st 25 gl 1 hp 176 frg 2
+ARGEVT Joe Rogan pursue
+ARGUS Joe Rogan hunch item_armorInv
+ARGLOG Joe Rogan t 171.1 pos '2637.3 -371.7  24.0' spd  69.3 yaw  70.2 mode 2 st 6 gl 2 hp 80 frg 0
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_grenadelauncher
+ARGLOG Romero t 171.2 pos '2560.0 -316.6 120.0' spd 187.9 yaw 185 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 171.3 pos '2009.2 -1136.0 344.0' spd 0 yaw 83 mode 2 st 25 gl 1 hp 175 frg 2
+ARGEVT Joe Rogan route 11 start '2601.0 -383.0  24.0' goal '2057.0 -943.0 344.0'
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 171.7 pos '2501.5 -360.2   8.0' spd 341.5 yaw 144.8 mode 2 st 6 gl 2 hp 80 frg 0
+ARGLOG Romero t 171.8 pos '2560.0 -318.9 120.0' spd  30.6 yaw 184 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Carmack route 25 start '2009.0 -1103.0 344.0' goal '2473.0 -1999.0 120.0'
+ARGLOG Carmack t 171.8 pos '2018.3 -1136.0 379.8' spd  44.1 yaw 87 mode 2 st 26 gl 1 hp 174 frg 2
+ARGLOG Joe Rogan t 172.2 pos '2474.3 -343.5   8.0' spd 329.6 yaw 315.1 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGLOG Romero t 172.3 pos '2550.2 -465.5 154.2' spd 308.4 yaw 111.8 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t 172.4 pos '2018.6 -1136.0 375.7' spd  30.1 yaw 355.5 mode 0 st 27 gl 1 hp 174 frg 2
+ARGEVT Romero pursue
+ARGLOG Joe Rogan t 172.8 pos '2625.7 -384.0  24.0' spd 180.8 yaw 237 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Joe Rogan pursue
+ARGLOG Romero t 172.9 pos '2558.9 -513.0 136.0' spd  56.7 yaw 116 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 173.0 pos '2063.4 -1136.0 344.0' spd 319.9 yaw 355.5 mode 0 st 27 gl 1 hp 173 frg 2
+ARGLOG Joe Rogan t 173.3 pos '2520.5 -384.0  24.0' spd  97.1 yaw 287 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 173.4 pos '2559.8 -343.4 136.0' spd 332.6 yaw 180.6 mode 2 st 40 gl 0 hp 59 frg 1
+ARGUS Romero hunch item_armorInv
+ARGLOG Carmack t 173.5 pos '2015.3 -1136.0 344.0' spd 177.0 yaw 335.0 mode 0 st 27 gl 1 hp 173 frg 2
+ARGEVT Romero goal item_armorInv
+ARGEVT Romero pursue
+ARGEVT Romero route 4 start '2553.0 -351.0 147.0' goal '2393.0 -655.0  56.0'
+ARGEVT Carmack goal weapon_supershotgun
+ARGEVT Joe Rogan pursue
+ARGLOG Joe Rogan t 173.9 pos '2630.4 -384.0  24.0' spd 182.4 yaw 227.2 mode 2 st 6 gl 2 hp 74 frg 0
+ARGLOG Romero t 174.0 pos '2554.6 -325.0 142.6' spd 148.8 yaw 193 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Carmack route 26 start '2009.0 -1103.0 344.0' goal '2713.0 -2319.0 120.0'
+ARGLOG Carmack t 174.1 pos '2083.2 -1136.0 344.0' spd 132.6 yaw 221 mode 2 st 27 gl 1 hp 172 frg 2
+ARGLOG Joe Rogan t 174.4 pos '2524.4 -384.0  24.0' spd  25.4 yaw 285 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 174.6 pos '2554.5 -360.5 142.8' spd  29.5 yaw 168 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Carmack hazard
+ARGLOG Carmack t 174.6 pos '2004.6 -1136.0 344.0' spd  81.9 yaw 81 mode 2 st 27 gl 1 hp 172 frg 2
+ARGLOG Joe Rogan t 175.0 pos '2626.1 -379.8  24.0' spd 121.1 yaw 238 mode 2 st 6 gl 2 hp 74 frg 0
+ARGLOG Romero t 175.1 pos '2560.2 -401.3 120.0' spd 267.4 yaw 266 mode 2 st 40 gl 0 hp 59 frg 1
+ARGEVT Romero jump
+ARGLOG Carmack t 175.2 pos '2009.0 -1136.0 344.0' spd   3.4 yaw 83 mode 2 st 27 gl 1 hp 171 frg 2
+ARGLOG Joe Rogan t 175.5 pos '2535.5 -384.0  24.0' spd 176.9 yaw 279 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Romero t 175.7 pos '2560.9 -528.0 143.6' spd  30.2 yaw 218 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 175.7 pos '2009.0 -1136.0 344.0' spd 0 yaw 83 mode 2 st 27 gl 1 hp 171 frg 2
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGUS routecache adopt
+ARGEVT Carmack route 26 start '2009.0 -1103.0 344.0' goal '2713.0 -2319.0 120.0'
+ARGLOG Joe Rogan t 176.1 pos '2605.8 -379.5  24.0' spd 263.9 yaw 246 mode 2 st 6 gl 2 hp 74 frg 0
+ARGLOG Romero t 176.2 pos '2557.0 -528.0 136.0' spd 0 yaw 218 mode 2 st 40 gl 0 hp 59 frg 1
+ARGLOG Carmack t 176.3 pos '2011.9 -1136.0 380.3' spd   7.9 yaw 84 mode 2 st 28 gl 1 hp 170 frg 2
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2393.0 -543.0  56.0'
+ARGEVT Romero jump
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 176.7 pos '2547.9 -383.1  24.0' spd 263.4 yaw 273 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '2009.0 -1199.0 168.0'
+ARGEVT Carmack jump
+ARGLOG Romero t 176.8 pos '2550.7 -528.0 172.2' spd  41.2 yaw 265.4 mode 0 st 41 gl 0 hp 59 frg 1
+ARGEVT Romero route 3 start '2553.0 -495.0 147.0' goal '2393.0 -655.0  56.0'
+ARGLOG Carmack t 176.8 pos '2008.3 -1136.0 375.8' spd  26.1 yaw 252.1 mode 0 st 29 gl 1 hp 169 frg 2
+ARGLOG Joe Rogan t 177.2 pos '2581.8 -384.0  24.0' spd 345.4 yaw 256 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Romero stall
+ARGEVT Romero stallnode '2393.0 -543.0  56.0'
+ARGEVT Romero jump
+ARGLOG Romero t 177.3 pos '2557.0 -528.0 149.7' spd 0 yaw  97.9 mode 0 st 42 gl 0 hp 59 frg 1
+ARGLOG Carmack t 177.4 pos '1977.4 -1100.9 344.0' spd 320.6 yaw 103.9 mode 0 st 29 gl 1 hp 169 frg 2
+ARGLOG Joe Rogan t 177.8 pos '2512.0 -434.5   8.0' spd 326.9 yaw 305 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t 177.9 pos '2557.0 -511.5 136.0' spd  78.8 yaw  97.9 mode 0 st 42 gl 0 hp 59 frg 1
+ARGLOG Carmack t 177.9 pos '1944.0 -927.9 344.0' spd 324.8 yaw 305.1 mode 0 st 29 gl 1 hp 168 frg 2
+ARGEVT Carmack goal item_armorInv
+ARGLOG Joe Rogan t 178.3 pos '2573.2 -516.2  24.0' spd 222.2 yaw 149.2 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Joe Rogan plan powerup via weapon
+ARGEVT Joe Rogan goal weapon_nailgun
+ARGEVT Carmack route 16 start '1945.0 -943.0 344.0' goal '2393.0 -655.0  56.0'
+ARGLOG Romero t 178.4 pos '2547.7 -342.1 160.9' spd 320.0 yaw  97.9 mode 0 st 42 gl 0 hp 59 frg 1
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan hazard
+ARGLOG Carmack t 178.5 pos '2072.7 -1013.7 344.0' spd 387.4 yaw 188 mode 2 st 29 gl 1 hp 168 frg 2
+ARGEVT Joe Rogan route 4 start '2553.0 -495.0  24.0' goal '2473.0 -191.0  24.0'
+ARGEVT Romero goal item_health
+ARGLOG Joe Rogan t 178.9 pos '2491.1 -362.7   8.0' spd 410.8 yaw 296 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Romero hazard
+ARGLOG Romero t 179.0 pos '2624.8 -287.5 120.0' spd 320.4 yaw  40.6 mode 1 st 42 gl 0 hp 59 frg 1
+ARGLOG Carmack t 179.1 pos '1999.8 -914.0 344.0' spd 410.4 yaw 194 mode 2 st 29 gl 1 hp 167 frg 2
+ARGLOG Joe Rogan t 179.4 pos '2583.5 -378.4  24.0' spd 434.3 yaw 256 mode 2 st 6 gl 2 hp 74 frg 0
+ARGEVT Carmack train
+ARGLOG Romero t 179.6 pos '2580.0 -216.3 120.0' spd 336.6 yaw 175.5 mode 1 st 42 gl 0 hp 84 frg 1
+ARGLOG Carmack t 179.6 pos '1907.3 -1047.2 344.0' spd  71.7 yaw 171 mode 2 st 29 gl 1 hp 167 frg 2
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t 180.0 pos '2567.3 -384.0  24.0' spd 275.8 yaw 263 mode 2 st 6 gl 2 hp 74 frg 0
+ARGLOG Romero t 180.1 pos '2390.0 -146.5  56.5' spd 315.5 yaw  37.0 mode 1 st 42 gl 0 hp 84 frg 1
