@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """CLI regression tests for developer scripts in tools/."""
+import json
+import shutil
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -66,15 +69,38 @@ class TestToolsCLI(unittest.TestCase):
         self.assertIn("error: --grid argument must be an integer", res_invalid.stderr)
 
     def test_argus_reach_empty_spawns(self):
+        # #113's fix is "no spawns in the BSP is a FAIL, not a pass".
+        # This test used to call audit("dm2") against the real tree,
+        # which returns None on any runner without maps_local (it is
+        # gitignored licensed data), and assertFalse(None) passes - so
+        # CI never ran the branch it names. Build the inputs instead.
         sys.path.insert(0, str(ROOT / "tools"))
         import argus_reach
+        tmp = Path(tempfile.mkdtemp(prefix="argus-reach-"))
+        (tmp / "maps_local").mkdir()
+        (tmp / "src").mkdir()
+        (tmp / "maps_local" / "fixture.bsp").write_bytes(b"not a real bsp")
+        (tmp / "src" / "argus_nav_fixture.qc.json").write_text(json.dumps({
+            "nodes": [[0, 0, 24], [64, 0, 24], [128, 0, 24]],
+            "links": [[0, 1, 1], [1, 0, 1], [1, 2, 1], [2, 1, 1]],
+        }))
         orig_spawns = argus_reach.bsp_spawns
+        orig_root = argus_reach.ROOT
         try:
+            argus_reach.ROOT = tmp
+            # a BSP with no deathmatch spawn at all is the #113 case
             argus_reach.bsp_spawns = lambda path: []
-            res = argus_reach.audit("dm2")
-            self.assertFalse(res)
+            self.assertIs(argus_reach.audit("fixture"), False)
+            # and with a spawn present the same graph passes, so the
+            # False above is the empty-spawn branch and not the skip
+            argus_reach.bsp_spawns = lambda path: [(0, 0, 24)]
+            self.assertIs(argus_reach.audit("fixture"), True)
+            # a map with no BSP still skips, returning None
+            self.assertIsNone(argus_reach.audit("absent"))
         finally:
             argus_reach.bsp_spawns = orig_spawns
+            argus_reach.ROOT = orig_root
+            shutil.rmtree(tmp, ignore_errors=True)
 
     def test_argus_review_freeze_detector(self):
         sys.path.insert(0, str(ROOT / "tools"))
