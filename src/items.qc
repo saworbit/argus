@@ -27,6 +27,7 @@ void() SUB_regen =
 	self.solid = SOLID_TRIGGER;	// allow it to be touched again
 	sound (self, CHAN_VOICE, "items/itembk2.wav", 1, ATTN_NORM);	// play respawn sound
 	setorigin (self, self.origin);
+	ReleaseClaim (self);
 };
 
 
@@ -346,6 +347,14 @@ void() health_touch =
 	if (other.classname != "player")
 		return;
 
+	if (coop > 0 && other.ar_isbot && other.ar_teammate != world && other.ar_teammate.health > 0)
+	{
+		// Fairness: bot skips Megahealth if teammate is < 50 HP and within range (<600u)
+		if (self.healtype == 2 && other.ar_teammate.health < 50
+			&& vlen (self.origin - other.ar_teammate.origin) < 600)
+			return;
+	}
+
 	if (self.healtype == 2) // Megahealth?  Ignore max_health...
 	{
 		if (other.health >= 250)
@@ -373,8 +382,7 @@ void() health_touch =
 
 	self.model = string_null;
 	self.solid = SOLID_NOT;
-	self.ar_claimer = world;
-	self.ar_claimtime = 0;
+	ReleaseClaim (self);
 
 	// ARGUS: the mega is a control item; taking it is audible intel.
 	// Small boxes stay quiet - shell-box noise would flood the
@@ -481,8 +489,7 @@ void() armor_touch =
 
 	self.solid = SOLID_NOT;
 	self.model = string_null;
-	self.ar_claimer = world;
-	self.ar_claimtime = 0;
+	ReleaseClaim (self);
 
 	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup
 
@@ -753,6 +760,13 @@ void() weapon_touch =
 	else
 		objerror ("weapon_touch: unknown classname");
 
+	if (coop > 0 && other.ar_isbot && other.ar_teammate != world && other.ar_teammate.health > 0)
+	{
+		// In co-op, human has first claim if weapon does not stay, teammate lacks it and is within 512u
+		if (!leave && !(other.ar_teammate.items & new) && vlen (self.origin - other.ar_teammate.origin) <= 512)
+			return;
+	}
+
 	sprint (other, PRINT_LOW, LOC_ITEM_PICKUP_NORMAL);
 	sprint (other, PRINT_LOW, "the ");
 	sprint (other, PRINT_LOW, self.netname);
@@ -786,6 +800,7 @@ void() weapon_touch =
 	// remove it in single player, or setup for respawning in deathmatch
 	self.model = string_null;
 	self.solid = SOLID_NOT;
+	ReleaseClaim (self);
 
 	// ARGUS: a weapon pickup is audible intel (Omicron review: their
 	// bots heard item sounds, not just gunfire) - bots in earshot
@@ -1017,6 +1032,7 @@ void() ammo_touch =
 	// remove it in single player, or setup for respawning in deathmatch
 	self.model = string_null;
 	self.solid = SOLID_NOT;
+	ReleaseClaim (self);
 
 	if (deathmatch_item_respawn())
 	{
@@ -1254,6 +1270,9 @@ KEYS
 
 void() key_touch =
 {
+	local entity d;
+	local vector dpad;
+
 	if (other.classname != "player")
 		return;
 
@@ -1262,6 +1281,22 @@ void() key_touch =
 
 	if (other.items & self.items)
 		return;
+
+	// Co-op fairness: key rules (#174)
+	if (coop > 0 && other.ar_isbot)
+	{
+		if (other.ar_teammate != world)
+		{
+			// Exactly one carrier: if teammate already has this key, bot does not touch
+			if (other.ar_teammate.items & self.items)
+				return;
+
+			// Bot fetches key only if teammate is fighting (has enemy) or down (health <= 0) or far away (>512u)
+			if (other.ar_teammate.health > 0 && other.ar_teammate.enemy == world
+				&& vlen (self.origin - other.ar_teammate.origin) <= 512)
+				return;
+		}
+	}
 
 	sprint (other, PRINT_LOW, LOC_ITEM_PICKUP_NORMAL);
 	sprint (other, PRINT_LOW, self.netname);
@@ -1275,6 +1310,32 @@ void() key_touch =
 	{
 		self.solid = SOLID_NOT;
 		self.model = string_null;
+	}
+
+	ReleaseClaim (self);
+
+	// When bot carries a key, deliver directly to locked door without roaming
+	if (other.ar_isbot)
+	{
+		d = find (world, classname, "door");
+		while (d != world)
+		{
+			if (d.items & self.items)
+			{
+				dpad = Argus_GoalPoint (d);
+				other.ar_goal_count = 0;
+				other.ar_goal_subj0 = d;
+				other.ar_goal_anch0 = dpad;
+				other.ar_goal_kind0 = GOAL_INTERACT;
+				other.ar_goal_prio0 = 70;
+				other.ar_goal_time0 = time + 30.0;
+				other.ar_goal_flag0 = 0;
+				other.ar_goal_count = 1;
+				d = world; // break
+			}
+			else
+				d = find (d, classname, "door");
+		}
 	}
 
 	activator = other;
@@ -1533,8 +1594,7 @@ void() powerup_touch =
 	self.solid = SOLID_NOT;
 	other.items = other.items | self.items;
 	self.model = string_null;
-	self.ar_claimer = world;
-	self.ar_claimtime = 0;
+	ReleaseClaim (self);
 
 	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup -
 						// everyone hears the quad go
@@ -1733,6 +1793,15 @@ void() BackpackTouch =
 	if (other.health <= 0)
 		return;
 
+	// In co-op, companion bot never loots a player's dropped backpack (#174)
+	if (coop > 0 && other.ar_isbot)
+	{
+		if (self.ar_owner && self.ar_owner.classname == "player")
+			return;
+		if (self.owner && self.owner.classname == "player")
+			return;
+	}
+
 	acount = 0;
  	sprint (other, PRINT_LOW, LOC_ITEM_PICKUP_NORMAL);
 
@@ -1748,6 +1817,7 @@ void() BackpackTouch =
 		else
 			sound (other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 		stuffcmd (other, "bf\n");
+		ReleaseClaim (self);
 		remove(self);
 
 		if (other.health > 299)
@@ -1866,6 +1936,7 @@ void() BackpackTouch =
 	Argus_HearSound (self.origin, other);	// ARGUS: looting is audible
 
 	Argus_ItemChain_Remove (self);
+	ReleaseClaim (self);
 	remove(self);
 	self = other;
 
@@ -1938,6 +2009,8 @@ void() DropBackpack =
 	setmodel (item, "progs/backpack.mdl");
 	setsize (item, '-16 -16 0', '16 16 56');
 	item.touch = BackpackTouch;
+	item.owner = self;
+	item.ar_owner = self;
 
 	item.nextthink = time + 120;    // remove after 2 minutes
 	item.think = SUB_Remove;
