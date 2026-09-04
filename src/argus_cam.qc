@@ -647,11 +647,11 @@ void(entity client) ArgusCam_RenderHUD =
     else                                    wname = "AXE";
 
     // Affect state indicator
-    if (t.super_damage_finished > time)     aname = "QUAD SPREE";
-    else if (t.health < 30)                 aname = "PANICKED";
-    else if (t.ar_enemy != world)           aname = "COMBAT";
-    else if (t.ar_mode == 2)                aname = "ROUTING";
-    else                                    aname = "TACTICAL";
+    if (t.super_damage_finished > time)     aname = " QUAD SPREE";
+    else if (t.health < 30)                 aname = " PANICKED";
+    else if (t.ar_enemy != world)           aname = " COMBAT";
+    else if (t.ar_mode == 2)                aname = " ROUTING";
+    else                                    aname = " TACTICAL";
 
     // wname and aname were computed every frame and thrown away: the
     // spectator saw the camera mode and nothing about the bot it follows
