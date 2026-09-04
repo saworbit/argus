@@ -41,7 +41,11 @@ if [ "$(id -u)" -ne 0 ]; then
     fi
 fi
 DEBIAN_FRONTEND=noninteractive $SUDO apt-get update -qq
-DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq quakespasm unzip build-essential zlib1g-dev python3
+# python3-matplotlib: analyze_match.py at the end of this script
+# raises SystemExit without it, and under set -euo pipefail that
+# killed the run after the match had already been played, so the
+# promised match_traj.png never appeared and "done." never printed
+DEBIAN_FRONTEND=noninteractive $SUDO apt-get install -y -qq quakespasm unzip build-essential zlib1g-dev python3 python3-matplotlib
 
 echo "== modern fteqcc =="
 if [ ! -x fteqw/engine/release/fteqcc ]; then
@@ -59,8 +63,10 @@ fi
 
 echo "== game data (LibreQuake, free content) =="
 REL=https://github.com/lavenderdotpet/LibreQuake/releases/download/v0.09-beta
-[ -f lq-lite.zip ]   || curl -sL -o lq-lite.zip   $REL/lite.zip
-[ -f lq-server.zip ] || curl -sL -o lq-server.zip $REL/server.zip
+# -f so a 404 is an error instead of an HTML body written into the zip:
+# the [ -f ] guard then keeps the poisoned file forever
+[ -f lq-lite.zip ]   || curl -fsSL -o lq-lite.zip   $REL/lite.zip
+[ -f lq-server.zip ] || curl -fsSL -o lq-server.zip $REL/server.zip
 unzip -q -o lq-lite.zip -d lq-lite
 unzip -q -o lq-server.zip -d lq-server
 mkdir -p quake/id1/maps quake/argus

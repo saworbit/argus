@@ -707,7 +707,7 @@ fn atlas_from_bsp(
     }
     if items.iter().any(|i| i.classname == "item_artifact_super_damage") {
         notes.push(
-            "quad is on this map; hold it via prize-only rocket-jump pads when navgen emitted them (dm4: 142->56)"
+            "quad is on this map; hold it via prize-only rocket-jump pads when navgen emitted them (dm4: 150->149, 151->149, 152->99, 153->99)"
                 .into(),
         );
     }
@@ -1152,9 +1152,13 @@ fn load_nav_graph_at(path: &std::path::Path) -> Option<NavGraph> {
             let Some(to) = a.get(1).and_then(|x| x.as_u64()).map(|x| x as usize) else {
                 continue;
             };
-            let walk = a.get(2).and_then(|x| x.as_u64()).unwrap_or(1);
             if from < n && to < n {
-                let kind = if walk == 0 { "drop" } else { "walk" };
+                // see nav_graph::link_kind: element 2 is reciprocity
+                let kind = if nodes[from][2] - nodes[to][2] > 18.0 {
+                    "drop"
+                } else {
+                    "walk"
+                };
                 if !adj[from].iter().any(|(t, _)| *t == to as u32) {
                     adj[from].push((to as u32, kind.into()));
                 }

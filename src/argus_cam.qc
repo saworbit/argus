@@ -60,6 +60,26 @@ void(entity client) ArgusCam_Init =
 {
     local entity b;
 
+    // snapshot the client's own state before the POV sync starts
+    // overwriting it. Guarded so a second Init (CycleMode calls it when
+    // the camera is off) cannot snapshot a bot's borrowed inventory
+    // over the human's real one.
+    if (!client.cam_active)
+    {
+        client.cam_sv_health = client.health;
+        client.cam_sv_armorvalue = client.armorvalue;
+        client.cam_sv_armortype = client.armortype;
+        client.cam_sv_currentammo = client.currentammo;
+        client.cam_sv_shells = client.ammo_shells;
+        client.cam_sv_nails = client.ammo_nails;
+        client.cam_sv_rockets = client.ammo_rockets;
+        client.cam_sv_cells = client.ammo_cells;
+        client.cam_sv_items = client.items;
+        client.cam_sv_weapon = client.weapon;
+        client.cam_sv_origin = client.origin;
+        client.cam_sv_angles = client.v_angle;
+    }
+
     client.cam_active = 1;
     client.cam_mode = CAM_MODE_DIRECTOR;
     client.cam_dist = 135;
@@ -99,11 +119,43 @@ void() ArgusCam_Toggle =
     if (self.cam_active)
     {
         self.cam_active = 0;
+
+        // give the human back what the POV sync borrowed. Without this
+        // a spectator left with the watched bot's guns, ammo, armour
+        // and health, and in coop the borrowed inventory rode into the
+        // next map through SetChangeParms.
+        self.health = self.cam_sv_health;
+        self.armorvalue = self.cam_sv_armorvalue;
+        self.armortype = self.cam_sv_armortype;
+        self.currentammo = self.cam_sv_currentammo;
+        self.ammo_shells = self.cam_sv_shells;
+        self.ammo_nails = self.cam_sv_nails;
+        self.ammo_rockets = self.cam_sv_rockets;
+        self.ammo_cells = self.cam_sv_cells;
+        self.items = self.cam_sv_items;
+        self.weapon = self.cam_sv_weapon;
+
+        // and put them back where they left, not wherever the camera
+        // stopped flying. In POV the camera origin IS the bot's origin,
+        // so returning solid there means two players in one box.
+        setorigin (self, self.cam_sv_origin);
+        self.angles = self.cam_sv_angles;
+        self.angles_z = 0;
+        self.v_angle = self.cam_sv_angles;
+        self.fixangle = TRUE;
+        self.velocity = '0 0 0';
+
         self.movetype = MOVETYPE_WALK;
         self.solid = SOLID_SLIDEBOX;
         self.takedamage = DAMAGE_AIM;
         self.view_ofs = '0 0 22';
+        self.weaponmodel = "";
+        self.weaponframe = 0;
         W_SetCurrentAmmo ();
+
+        // somebody may have moved into the spot while we were flying:
+        // the same rite a spawning player runs
+        spawn_tdeath (self.origin, self);
         sprint (self, PRINT_HIGH, "ArgusCam Deactivated: Returned to player physics.\n");
         centerprint (self, "ArgusCam: AI Spectator Director Inactive");
     }

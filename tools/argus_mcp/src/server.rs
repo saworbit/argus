@@ -42,6 +42,11 @@ use tokio::sync::Mutex;
 pub struct Argus {
     pub matches: Arc<Mutex<MatchCtrl>>,
     pub session: Arc<Mutex<SessionSeen>>,
+    /// Serialises whole matches WITHOUT blocking the read paths. The
+    /// `matches` mutex used to do both jobs, so match_status,
+    /// match_stop, tune, live_snapshot, see what=live and shutdown all
+    /// queued behind a running match_run. Only the run paths take this.
+    pub run_gate: Arc<Mutex<()>>,
 }
 
 impl Argus {
@@ -53,12 +58,63 @@ impl Argus {
             .unwrap_or_default();
         Self {
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
+            run_gate: Arc::new(Mutex::new(())),
             session: Arc::new(Mutex::new(seen)),
         }
     }
 
+
+    /// Drive a match WITHOUT holding the MatchCtrl mutex for its whole
+    /// length. The lock is taken to start it, released while it runs
+    /// and taken again to stop it, so match_status, match_stop, tune,
+    /// live_snapshot and see what=live stay answerable during a
+    /// match_run and shutdown can reach the engine.
+    async fn drive_match(
+        &self,
+        cfg: &crate::config::Config,
+        map: &str,
+        duration_sec: u32,
+        run_name: Option<&str>,
+        slots: Option<u32>,
+        skill: Option<u32>,
+        coop: Option<bool>,
+    ) -> Result<crate::match_ctrl::MatchRunResult, String> {
+        let _one_at_a_time = self.run_gate.lock().await;
+        {
+            let mut g = self.matches.lock().await;
+            g.begin(cfg, map, duration_sec, run_name, slots, skill, coop)
+                .await?;
+        }
+        let limit = duration_sec as u64;
+        loop {
+            let (running, elapsed) = {
+                let mut g = self.matches.lock().await;
+                g.poll()
+            };
+            if !running || elapsed >= limit || crate::match_ctrl::live_cancelled() {
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+        }
+        let mut g = self.matches.lock().await;
+        g.finish(cfg, map).await
+    }
+
     pub async fn shutdown(&self) {
-        self.matches.lock().await.shutdown().await;
+        // kill the engine first and without the lock. A client that
+        // closes stdio mid match leaves match_run holding the mutex,
+        // and the old lock-then-shutdown queued behind it until the
+        // match ended, or never, if the client killed us outright.
+        crate::match_ctrl::cancel_live();
+        match tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            self.matches.lock(),
+        )
+        .await
+        {
+            Ok(mut g) => g.shutdown().await,
+            Err(_) => {}
+        }
     }
 
     fn persist_session(seen: &SessionSeen) {
@@ -582,9 +638,8 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
-        let mut g = self.matches.lock().await;
-        match g
-            .run(
+        match self
+            .drive_match(
                 &cfg,
                 &args.map_name,
                 dur,
@@ -773,9 +828,8 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
-        let mut g = self.matches.lock().await;
-        match g
-            .run(
+        match self
+            .drive_match(
                 &cfg,
                 &args.map,
                 args.duration_sec,
@@ -864,13 +918,29 @@ impl Argus {
         &self,
         Parameters(args): Parameters<MatchStopArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let mut g = self.matches.lock().await;
-        match g
-            .stop(Duration::from_secs(args.timeout_sec.unwrap_or(5) as u64))
-            .await
+        // the owner of a match_run holds the mutex until its match ends,
+        // so ask the live child to stop first, without the lock. The
+        // owner's own stop path then tidies up and returns.
+        let killed = crate::match_ctrl::cancel_live();
+        match tokio::time::timeout(
+            Duration::from_secs(args.timeout_sec.unwrap_or(5) as u64 + 5),
+            self.matches.lock(),
+        )
+        .await
         {
-            Ok(st) => json_ok(&st),
-            Err(e) => tool_err(e),
+            Ok(mut g) => match g
+                .stop(Duration::from_secs(args.timeout_sec.unwrap_or(5) as u64))
+                .await
+            {
+                Ok(st) => json_ok(&st),
+                Err(e) => tool_err(e),
+            },
+            Err(_) => json_ok(&serde_json::json!({
+                "ok": true,
+                "running": false,
+                "note": "engine killed; the match_run holding the lock is finishing its own harvest",
+                "killed_pid": killed,
+            })),
         }
     }
 
@@ -1497,23 +1567,13 @@ impl Argus {
                 let _ = g.stop(Duration::from_secs(3)).await;
             }
         }
-        let mut g = self.matches.lock().await;
-        let ran = match g
-            .run(
-                &cfg,
-                &args.map,
-                dur,
-                Some(&run_name),
-                None,
-                args.skill,
-                None,
-            )
+        let ran = match self
+            .drive_match(&cfg, &args.map, dur, Some(&run_name), None, args.skill, None)
             .await
         {
             Ok(r) => r,
             Err(e) => return tool_err(e),
         };
-        drop(g);
         let baseline = args.baseline.as_deref().unwrap_or("baseline");
         let compare = intel_compare_scaled(&cfg, baseline, &ran.log_path, Some(&args.map)).ok();
         let verdict = compare.as_ref().map(|c| format!("{:?}", c.verdict).to_ascii_lowercase());
@@ -1618,8 +1678,6 @@ impl Argus {
                 let _ = g.stop(Duration::from_secs(3)).await;
             }
         }
-        let mut g = self.matches.lock().await;
-
         let stop_puppet = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let puppet_thread = if seat == "companion" {
             let stop_clone = std::sync::Arc::clone(&stop_puppet);
@@ -1636,8 +1694,8 @@ impl Argus {
             None
         };
 
-        let ran = match g
-            .run(
+        let ran = match self
+            .drive_match(
                 &cfg,
                 &args.map,
                 dur,
@@ -1657,7 +1715,6 @@ impl Argus {
                 return tool_err(e);
             }
         };
-        drop(g);
 
         if let Some(th) = puppet_thread {
             stop_puppet.store(true, std::sync::atomic::Ordering::Relaxed);
@@ -1674,6 +1731,7 @@ impl Argus {
             seat,
             &ran.log_path,
             ran.elapsed_sec,
+            crate::intel::hull0_for_map(&cfg, &args.map).as_ref(),
         );
         json_ok(&serde_json::json!({
             "ok": report.ok,
@@ -1748,19 +1806,9 @@ impl Argus {
                     let _ = g.stop(Duration::from_secs(3)).await;
                 }
             }
-            let mut g = self.matches.lock().await;
-            let ran = g
-                .run(
-                    &cfg,
-                    map,
-                    dur,
-                    Some(&format!("mx_{map}")),
-                    None,
-                    args.skill,
-                    None,
-                )
+            let ran = self
+                .drive_match(&cfg, map, dur, Some(&format!("mx_{map}")), None, args.skill, None)
                 .await;
-            drop(g);
             match ran {
                 Ok(r) => {
                     let cmp = intel_compare_scaled(&cfg, "baseline", &r.log_path, Some(map)).ok();
@@ -1825,9 +1873,8 @@ impl Argus {
             }
             compile_result = Some(compiled);
         }
-        let mut g = self.matches.lock().await;
-        match g
-            .run(
+        match self
+            .drive_match(
                 &cfg,
                 &args.map,
                 dur,
@@ -1924,7 +1971,7 @@ impl Argus {
         let view = project_view(&cfg);
         let session = self.session.lock().await.clone();
         let body = format!(
-            "You are in the Argus lab. Follow AGENTS.md. Do not invent a shell pipeline. First call is already see what=project. Use see / experiment / tune.\n\n{}\n\nSession last-seen:\n{}\n\nQuality bars:\n{}",
+            "You are in the Argus lab. Follow tools/argus_mcp/README.md. Do not invent a shell pipeline. First call is already see what=project. Use see / experiment / tune.\n\n{}\n\nSession last-seen:\n{}\n\nQuality bars:\n{}",
             serde_json::to_string_pretty(&view).unwrap_or_default(),
             serde_json::to_string_pretty(&session).unwrap_or_default(),
             QUALITY_BARS
@@ -1945,7 +1992,7 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
 #[tool_handler(
     name = "argus-mcp",
     version = "0.24.0",
-    instructions = "Argus lab 0.23. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
+    instructions = "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
 )]
 #[prompt_handler]
 impl ServerHandler for Argus {
@@ -1959,7 +2006,7 @@ impl ServerHandler for Argus {
         )
         .with_server_info(Implementation::new("argus-mcp", "0.24.0"))
         .with_instructions(
-            "Argus lab 0.23. Do not invent a fteqcc/quakespasm/python pipeline. \
+            "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. \
 First call: see what=project. Then see what=map / path / fn / search. After a QC \
 edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status \
 since_line. Session demos: see what=demo (harvest first with \

@@ -51,6 +51,23 @@ void() info_intermission =
 
 void() SetChangeParms =
 {
+	// a level change while the spectator camera is up would carry the
+	// watched bot's health, armour, ammo and items into the next map.
+	// Take the human's own state back first.
+	if (self.cam_active)
+	{
+		self.cam_active = 0;
+		self.health = self.cam_sv_health;
+		self.armorvalue = self.cam_sv_armorvalue;
+		self.armortype = self.cam_sv_armortype;
+		self.ammo_shells = self.cam_sv_shells;
+		self.ammo_nails = self.cam_sv_nails;
+		self.ammo_rockets = self.cam_sv_rockets;
+		self.ammo_cells = self.cam_sv_cells;
+		self.items = self.cam_sv_items;
+		self.weapon = self.cam_sv_weapon;
+	}
+
 	if (self.health <= 0)
 	{
 		SetNewParms ();
@@ -1162,8 +1179,19 @@ void() PlayerPreThink =
 	// ARGUSCAM: Spectator camera and AI director
 	if (self.cam_active)
 	{
-		ArgusCam_Frame ();
-		return;
+		// impulses first. ImpulseCommands is only reached from
+		// W_WeaponFrame, PostThink returns before that while the
+		// camera is on, and ArgusCam_Frame only reads button0 and
+		// button2 - so once the camera was on, 210 could not turn it
+		// off again and every other impulse was dead too. The only
+		// way out was a map change or a reconnect.
+		if (self.impulse)
+			ImpulseCommands ();
+		if (self.cam_active)
+		{
+			ArgusCam_Frame ();
+			return;
+		}
 	}
 
 	if (self.view_ofs == '0 0 0')
@@ -1486,6 +1514,18 @@ void() ClientDisconnect =
 	bprint (PRINT_HIGH, "\n");
 	sound (self, CHAN_BODY, "player/tornoff2.wav", 1, ATTN_NONE);
 	set_suicide_frame ();
+
+	// ARGUS: the body outlives the client until the engine reuses the
+	// slot, and it still reads as a live player - classname "player",
+	// health positive, FL_CLIENT and DAMAGE_AIM set. Every bot scan
+	// filters on health > 0, so bots acquired it, rocketed it, and
+	// took a frag off a dead slot through Killed and DropBackpack,
+	// while the human count and spawn crowding still counted it.
+	// set_suicide_frame returns early for an already-gibbed body, so
+	// deadflag is set here rather than relied on.
+	self.health = 0;
+	self.takedamage = DAMAGE_NO;
+	self.deadflag = DEAD_DEAD;
 };
 
 /*===========

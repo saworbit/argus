@@ -20,6 +20,18 @@ engine/qconsole.log
 
 # build outputs (root only: src/lq1/ is QC source and must commit)
 /lq1/
+
+# setup_rig.sh droppings: a second QC tree, the fteqcc checkout, the
+# extracted game data and the rig's own quake dir. Only compile.log,
+# match.log and *.png were covered, and /lq1/ is root anchored, so a
+# git add -A after a rig run staged about 100 MB of LibreQuake data.
+tools/argus-src/
+tools/fteqw/
+tools/quake/
+tools/lq-lite/
+tools/lq-server/
+tools/lq-*.zip
+tools/lq1/
 __pycache__/
 tools/argus_mcp/target*/
 backups/

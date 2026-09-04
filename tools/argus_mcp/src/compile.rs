@@ -28,7 +28,18 @@ pub fn compile_qc_dir(cfg: &Config, src: &std::path::Path, install: bool) -> Com
     compile_qc(&tmp, install)
 }
 
+/// One compile at a time. compile_qc unlinks cfg.progs before it spawns
+/// fteqcc and installs from it afterwards, and rmcp runs tool calls
+/// concurrently: two overlapping compiles ran two fteqccs in the same
+/// src/, and the second's unlink could delete the first's freshly
+/// written progs.dat between the write and the install copy. Either a
+/// spurious "no progs.dat written" or the wrong bytes installed under a
+/// green report, both silent. Covers the CLI paths (ship, cycle, soak)
+/// too, since they all land here.
+static COMPILE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
+    let _serialised = COMPILE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
     if let Err(e) = fs::create_dir_all(cfg.root.join("lq1")) {
         return CompileResult {
             ok: false,
@@ -225,26 +236,9 @@ fn finish(cfg: &Config, install: bool, report: FteqccReport) -> CompileResult {
     }
 }
 
-pub fn should_not_copy_on_failure(report: &FteqccReport) -> bool {
-    !report.ok
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::parse_fteqcc::parse_fteqcc;
     use std::fs;
-    use std::path::PathBuf;
-
-    #[test]
-    fn failure_report_means_no_install() {
-        let text = fs::read_to_string(
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/compile_fail.txt"),
-        )
-        .unwrap();
-        let report = parse_fteqcc(&text);
-        assert!(!report.ok);
-        assert!(super::should_not_copy_on_failure(&report));
-    }
 
     #[test]
     fn unwritten_progs_fails_and_never_installs() {

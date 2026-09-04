@@ -333,6 +333,10 @@ void() SUB_UseTargets =
 			if (!t)
 				return;
 
+			// killtarget is the other remove() that bypasses the
+			// unlink. An item behind a killtarget cuts the chain
+			// the same way a deathmatch 4 pack did.
+			Argus_ItemChain_Remove (t);
 			remove (t);
 		} while ( 1 );
 	}

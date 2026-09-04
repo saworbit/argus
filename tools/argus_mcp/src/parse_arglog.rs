@@ -434,7 +434,7 @@ fn evt_re() -> &'static Regex {
         // name followed by \S+ would split "Joe Rogan" into name
         // "Joe" and verb "Rogan"
         Regex::new(
-            r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|grab|weapon|plan|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
+            r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|grab|weapon|plan|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
         )
         .expect("evt regex")
     })
@@ -451,6 +451,19 @@ fn map_re() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    // #229: goal_push and goal_pop must not be eaten by the goal arm.
+    #[test]
+    fn goal_stack_verbs_parse() {
+        let tape = parse_tape(
+            "ARGEVT Carmack goal_push 1
+ARGEVT Carmack goal_pop 1
+ARGEVT Carmack goal item_shells
+",
+        );
+        let verbs: Vec<&str> = tape.events.iter().map(|e| e.verb.as_str()).collect();
+        assert_eq!(verbs, vec!["goal_push", "goal_pop", "goal"]);
+    }
     use std::fs;
     use std::path::PathBuf;
 

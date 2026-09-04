@@ -26,10 +26,13 @@ PAT = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(
 # the event keyword must be matched from the closed vocabulary: a lazy
 # (.+?) name followed by \w+ would split a spaced netname at its last
 # word ("Joe" + event "Rogan")
-EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal|route|routefail|"
+# goal_push and goal_pop come before goal, or the alternation matches
+# "goal" and leaves "_push 1" in the rest
+EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|"
+                 r"route|routefail|"
                  r"trapped|abandon|stall|stallnode|jump|rjump|lift|swim|"
                  r"door|train|board|hazard|engage|pursue|retreat|grab|"
-                 r"weapon|plan|death)\b(.*)")
+                 r"weapon|plan|death|checkpoint|win|coop_stats)\b(.*)")
 DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
 
 

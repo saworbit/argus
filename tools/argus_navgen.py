@@ -85,6 +85,7 @@ if CORRIDOR:
     GRID = 16
 STEP = 18          # max walkable step up/down
 DROPMAX = 200      # max safe intentional drop
+JUMPREACH = 190    # flat range of the conservative 280 u/s jump model
 WAYPOINT_R = 100   # decimation coverage radius
 LINK_PATH_MAX = 340
 MAX_NODES = 200
@@ -280,13 +281,18 @@ for (cx, cy), zs in samples.items():
                     continue            # floors far below do not block a gap jump
                 j2, z2 = land
                 step = (GRID*GRID*(dx*dx + dy*dy)) ** 0.5
-                if k <= 5 and \
+                if step * k <= JUMPREACH and \
                         arc_clear(xs[cx], ys[cy], z, xs[cx+dx*k], ys[cy+dy*k], z2):
-                    # the ORIGINAL 5-cell reach: only the sprint model
-                    # earns the extended range - a 280-model jump has
-                    # ~189u of flat range and the extended scan was
-                    # minting 200u+ plain jump links that failed
-                    # exactly like the unmodelled sprints did
+                    # the original reach is a DISTANCE, not a cell
+                    # count: a 280-model jump has about 189u of flat
+                    # range, which the comment always described in
+                    # units. As a k <= 5 test it read 160u on axis and
+                    # 226u diagonally at GRID 32, but only 80u and
+                    # 113u under --corridor at GRID 16 - so dm2 and
+                    # dm3, the corridor maps, turned every gap over
+                    # 80u into a skill-gated sprint link or nothing,
+                    # while 7g2c remint and the knit jump stitch
+                    # accept voids to 200u on those same maps.
                     fine[(cx,cy,zi)].append(((cx+dx*k, cy+dy*k, j2),
                                              step*k*1.5 + 40, 1))
                     njump += 1
@@ -1360,6 +1366,15 @@ for i, w in enumerate(ways):
                 continue
         exits.append((horiz, i, j))
     for horiz, a, b in sorted(exits)[:2]:  # two nearest lips per node
+        # dedupe like try_rj and the sprint pass already do. A typed
+        # link the walk graph already carries is dead weight the BFS
+        # never reaches through, and 7e/7e2 reserve a slot for it, so a
+        # duplicate can evict an honest walk link to make room for an
+        # edge that already exists. Shipped dm3 has both Argus_NavLink
+        # and Argus_NavLinkSwim for 233->231, 233->221, 223->221 and
+        # 242->240.
+        if b in links.get(a, {}):
+            continue
         swims.append((a, b))
 print(f"swim-exit links: {len(swims)} from {n_swimnodes} underwater waypoints")
 
@@ -1868,6 +1883,7 @@ def _knit_pass(_toward_main, _use_rj):
                 _sx, _sy, _sz = pos(ways[_s])
                 _dx, _dy, _dz2 = pos(ways[_d])
                 if (_slot_free(_s)
+                        and _d not in links.get(_s, {})
                         and rj_feasible(_sx, _sy, _sz, _dx, _dy, _dz2,
                                         min_dz=40)):
                     rjlinks.append((_s, _d))
@@ -1910,8 +1926,17 @@ import glob as _glob
 import os as _os
 _tracedir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
                           "..", "runs", "demos")
-_tracefiles = sorted(_glob.glob(_os.path.join(
-    _tracedir, f"*{MAPNAME}*.tracks.json")))
+# match the map token EXACTLY: a substring glob meant a dm2 regen would
+# ingest *lqdm2*.tracks.json and snap foreign coordinates onto the dm2
+# graph. Session stems are <who>_<map>_<date><tag>, so the token is
+# always delimited.
+import re as _re
+_tok = _re.compile(r"(?:^|[^0-9a-z])" + _re.escape(MAPNAME) + r"(?:[^0-9a-z]|$)")
+_tracefiles = sorted(
+    _f for _f in _glob.glob(_os.path.join(_tracedir, "*.tracks.json"))
+    if _tok.search(_os.path.basename(_f)[:-len(".tracks.json")].lower()))
+trace_inputs = [_os.path.basename(_f) for _f in _tracefiles]
+mined_pairs = []
 if _tracefiles:
     import json as _json
     _cellidx = {}
@@ -1979,6 +2004,7 @@ if _tracefiles:
         if beeline_ok(ways[_a], ways[_b]):
             links.setdefault(_a, {})[_b] = (_h, 0)
             _mined_w += 1
+            mined_pairs.append([[_ax, _ay, _az], [_bx, _by, _bz], 0])
             print(f"trace-mined walk {_a}->{_b} (x{_c})")
         elif STEP < _bz - _az <= 44 and _h <= 180:
             _clear = True
@@ -1991,10 +2017,70 @@ if _tracefiles:
             if _clear:
                 links.setdefault(_a, {})[_b] = (_h, 1)
                 _mined_j += 1
+                mined_pairs.append([[_ax, _ay, _az], [_bx, _by, _bz], 1])
                 print(f"trace-mined jump-up {_a}->{_b} (x{_c})")
     print(f"trace mining: {len(_tracefiles)} track file(s), "
           f"{len(_sightings)} unmapped transitions seen, minted "
           f"{_mined_w} walk + {_mined_j} jump links")
+
+# ---- 7g2b2. the mined sidecar ----
+# runs/demos/ is gitignored and the track files run to megabytes, so a
+# clone regenerating dm3 got a different graph than the shipped one and
+# had no way to tell why (the "fresh regen 78% vs shipped 85%" finding).
+# The DISTILLED nominations are small and text, so they go in
+# src/argus_nav_<map>.mined.json by endpoint coordinates, the same
+# convention as probe.json and proven.json, merged across runs. On a
+# machine with no track files that sidecar nominates instead, and the
+# same referees (beeline_ok, the jump clearance probe) still decide.
+_minedpath = _os.path.join(
+    _os.path.dirname(_os.path.abspath(OUTQC)),
+    f"argus_nav_{MAPNAME}.mined.json")
+import json as _mjson
+_minedoc = {"inputs": [], "links": []}
+if _os.path.exists(_minedpath):
+    try:
+        _minedoc = _mjson.load(open(_minedpath))
+    except Exception:
+        _minedoc = {"inputs": [], "links": []}
+
+if _tracefiles:
+    # merge this run's nominations into the sidecar
+    _seen = {(tuple(_l[0]), tuple(_l[1])) for _l in _minedoc.get("links", [])}
+    for _l in mined_pairs:
+        if (tuple(_l[0]), tuple(_l[1])) not in _seen:
+            _minedoc.setdefault("links", []).append(_l)
+            _seen.add((tuple(_l[0]), tuple(_l[1])))
+    _minedoc["inputs"] = sorted(set(_minedoc.get("inputs", [])) | set(trace_inputs))
+    _minedoc["links"].sort()
+    with open(_minedpath, "w") as _mf:
+        _mjson.dump(_minedoc, _mf, indent=1)
+    print(f"mined sidecar: {len(_minedoc['links'])} link(s) from "
+          f"{len(_minedoc['inputs'])} track file(s) -> {_minedpath}")
+elif _minedoc.get("links"):
+    # no demos here: re-nominate from the sidecar so a clone reproduces
+    # the shipped graph. Every pair is still refereed.
+    _rn = 0
+    for _l in _minedoc["links"]:
+        _pf, _pt, _kind = _l[0], _l[1], (_l[2] if len(_l) > 2 else 0)
+        _src = _dst = None
+        for _i in range(len(ways)):
+            _ix, _iy, _iz = pos(ways[_i])
+            if abs(_ix - _pf[0]) <= 24 and abs(_iy - _pf[1]) <= 24                     and abs(_iz - _pf[2]) <= 24:
+                _src = _i
+            if abs(_ix - _pt[0]) <= 24 and abs(_iy - _pt[1]) <= 24                     and abs(_iz - _pt[2]) <= 24:
+                _dst = _i
+        if _src is None or _dst is None or _src == _dst:
+            continue
+        if _dst in links.get(_src, {}):
+            continue
+        _h = ((_pt[0] - _pf[0]) ** 2 + (_pt[1] - _pf[1]) ** 2) ** 0.5
+        if _kind == 0 and not beeline_ok(ways[_src], ways[_dst]):
+            continue
+        links.setdefault(_src, {})[_dst] = (_h, _kind)
+        _rn += 1
+    print(f"mined sidecar: re-nominated {_rn} of {len(_minedoc['links'])} "
+          f"link(s) (no track files on this machine)")
+    trace_inputs = list(_minedoc.get("inputs", []))
 
 # ---- 7g2c. engine-verdict prune and remint ----
 # The lab's NetQuake client (netclient.rs) walks links in the REAL
@@ -2112,6 +2198,25 @@ if __import__("os").path.exists(_provenpath):
         _npv += 1
         print(f"engine-proven entry: {_src}->{_dst} minted as JUMP")
     print(f"engine-proven pass: {_npv} entry link(s) minted")
+
+# ---- 7e1b. typed-link dedupe sweep ----
+# Emit-time dedupe is not enough on its own: the late passes (symmetric
+# closure, knitting, jump stitches, trace mining) add WALK links after
+# the typed emitters have run, so a pair can end up carrying both. The
+# runtime BFS reaches the target through the walk slot first, the typed
+# slot is dead weight, and the clamp below reserves a slot for it - so a
+# duplicate can evict an honest walk link to make room for an edge that
+# already exists. Sweep them all here, after every adder.
+def _dedupe_typed(pairs, label):
+    _keep = [(a, b) for a, b in pairs if b not in links.get(a, {})]
+    _drop = len(pairs) - len(_keep)
+    if _drop:
+        print(f"typed dedupe: dropped {_drop} {label} link(s) the walk graph already has")
+    return _keep
+
+swims = _dedupe_typed(swims, "swim")
+rjlinks = _dedupe_typed(rjlinks, "rocket")
+sprints = _dedupe_typed(sprints, "sprint")
 
 # ---- 7e2. final slot clamp ----
 # 7e budgets slots BEFORE the late passes, but symmetric closure,
@@ -2419,8 +2524,14 @@ with open(OUTQC, "w") as f:
 import json
 with open(OUTQC + ".json", "w") as jf:
     json.dump({"nodes": [pos(w) for w in ways],
-               "links": [[i, j, int(i in links.get(j, {}))] for i in sorted(links) for j in links[i]],
-               "jlinks": [[i, j] for i in sorted(links) for j in links[i] if links[i][j][1]],
+               # sorted so the json is CANONICAL: the passes that add
+               # links late (closure, knit, trace mining, the mined
+               # sidecar) insert in different orders on different
+               # machines, and a graph that is identical as a set still
+               # diffed. The .qc emission order is deliberately left
+               # alone - it is what assigns runtime link slots.
+               "links": [[i, j, int(i in links.get(j, {}))] for i in sorted(links) for j in sorted(links[i])],
+               "jlinks": [[i, j] for i in sorted(links) for j in sorted(links[i]) if links[i][j][1]],
                "sprintlinks": sprints,
                "rjlinks": rjlinks,
                "liftlinks": lifts,
@@ -2428,6 +2539,7 @@ with open(OUTQC + ".json", "w") as jf:
                "trainlinks": trains,
                "doorlinks": doorlinks,
                "regions": regions,
+               "trace_inputs": trace_inputs,
                "cam_nodes": [{"pos": cpos, "ang": cang, "tag": ctag} for cpos, cang, ctag in cam_nodes],
                "teles": teles}, jf)
 print("wrote", OUTQC, "+ .json")

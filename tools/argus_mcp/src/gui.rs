@@ -59,6 +59,11 @@ where
     opts
 }
 
+/// The port actually bound, so the POST guard can check the Host header
+/// against it. serve_gui falls back to an ephemeral port when the
+/// requested one is busy, so opts.port is not it.
+static GUI_PORT: std::sync::atomic::AtomicU16 = std::sync::atomic::AtomicU16::new(0);
+
 /// Bind 127.0.0.1 and serve until `stop` is set (or forever if None).
 pub fn serve_gui(opts: GuiOpts, stop: Option<Arc<AtomicBool>>) -> Result<u16, String> {
     let addr = format!("127.0.0.1:{}", opts.port);
@@ -72,6 +77,7 @@ pub fn serve_gui(opts: GuiOpts, stop: Option<Arc<AtomicBool>>) -> Result<u16, St
         .local_addr()
         .map_err(|e| format!("local_addr: {e}"))?
         .port();
+    GUI_PORT.store(port, std::sync::atomic::Ordering::Relaxed);
     let url = format!("http://127.0.0.1:{port}/");
     eprintln!("Argus lab GUI on {url} (localhost only)");
     if opts.open_browser {
@@ -117,6 +123,7 @@ struct Request {
     path: String,
     query: HashMap<String, String>,
     body: Vec<u8>,
+    headers: HashMap<String, String>,
 }
 
 fn handle_conn(mut stream: TcpStream) -> Result<(), String> {
@@ -179,6 +186,7 @@ fn read_request(stream: &mut TcpStream) -> Result<Request, String> {
         path,
         query,
         body,
+        headers,
     })
 }
 
@@ -211,11 +219,17 @@ fn url_decode(s: &str) -> String {
                 out.push(b' ');
                 i += 1;
             }
-            b'%' if i + 2 < b.len() => {
-                let hex = &s[i + 1..i + 3];
-                if let Ok(v) = u8::from_str_radix(hex, 16) {
-                    out.push(v);
-                }
+            // slice by BYTE index only when those two bytes really are
+            // hex digits: a percent followed by a multibyte character
+            // used to slice mid-codepoint and panic the connection
+            // thread
+            b'%' if i + 2 < b.len()
+                && b[i + 1].is_ascii_hexdigit()
+                && b[i + 2].is_ascii_hexdigit() =>
+            {
+                let hi = (b[i + 1] as char).to_digit(16).unwrap_or(0) as u8;
+                let lo = (b[i + 2] as char).to_digit(16).unwrap_or(0) as u8;
+                out.push(hi * 16 + lo);
                 i += 3;
             }
             c => {
@@ -286,7 +300,51 @@ fn write_response(stream: &mut TcpStream, resp: &Response) -> Result<(), String>
     Ok(())
 }
 
+/// The wizard is meant to be left running while the user browses, and
+/// these POST endpoints rewrite the source tree and every installed
+/// progs.dat. A page on any other origin could reach them as a simple
+/// cross-site request: text/plain body, no preflight, no token. Require
+/// a same-origin Host, no cross-origin Origin, and real JSON.
+fn post_allowed(req: &Request) -> Result<(), Response> {
+    let port = GUI_PORT.load(std::sync::atomic::Ordering::Relaxed);
+    let host = req.headers.get("host").map(|s| s.as_str()).unwrap_or("");
+    let want_a = format!("127.0.0.1:{port}");
+    let want_b = format!("localhost:{port}");
+    if host != want_a && host != want_b {
+        return Err(text(403, "bad Host header"));
+    }
+    if let Some(origin) = req.headers.get("origin") {
+        let o = origin.trim_end_matches('/');
+        if o != format!("http://{want_a}") && o != format!("http://{want_b}") {
+            return Err(text(403, "cross-origin request refused"));
+        }
+    }
+    let ctype = req
+        .headers
+        .get("content-type")
+        .map(|s| s.as_str())
+        .unwrap_or("");
+    // a simple cross-site fetch can only send text/plain,
+    // x-www-form-urlencoded or multipart/form-data; anything else needs
+    // a preflight, which the Origin check above then refuses. /api/attach
+    // uploads a BSP as octet-stream.
+    if !ctype.starts_with("application/json")
+        && !ctype.starts_with("application/octet-stream")
+    {
+        return Err(text(
+            415,
+            "POST needs Content-Type: application/json or application/octet-stream",
+        ));
+    }
+    Ok(())
+}
+
 fn route(req: &Request) -> Response {
+    if req.method == "POST" {
+        if let Err(r) = post_allowed(req) {
+            return r;
+        }
+    }
     match (req.method.as_str(), req.path.as_str()) {
         ("GET", "/") => html(PAGE),
         ("GET", "/api/status") => json_ok(&status_payload()),
@@ -305,17 +363,45 @@ fn route(req: &Request) -> Response {
     }
 }
 
+/// Overrides the wizard has been given, held here rather than pushed
+/// into the process environment. set_var from a connection thread while
+/// other request threads walk std::env::vars() is the unsynchronised
+/// setenv race, and it mutated the whole process for every other caller
+/// besides.
+static OVERRIDES: std::sync::Mutex<Option<HashMap<String, String>>> =
+    std::sync::Mutex::new(None);
+
+fn set_override(key: &str, value: String) {
+    let mut g = OVERRIDES.lock().unwrap_or_else(|e| e.into_inner());
+    g.get_or_insert_with(HashMap::new).insert(key.into(), value);
+}
+
+fn merged_env() -> HashMap<String, String> {
+    let mut env: HashMap<String, String> = std::env::vars().collect();
+    if let Ok(g) = OVERRIDES.lock() {
+        if let Some(over) = g.as_ref() {
+            for (k, v) in over {
+                env.insert(k.clone(), v.clone());
+            }
+        }
+    }
+    env
+}
+
 fn cfg_read() -> Result<Config, String> {
-    Config::load_for_reads().map_err(|e| e.to_string())
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    crate::config::load_for_reads_from(&merged_env(), &cwd).map_err(|e| e.to_string())
 }
 
 fn cfg_full() -> Result<Config, String> {
-    Config::load().map_err(|e| e.to_string())
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    crate::config::load_from(&merged_env(), &cwd).map_err(|e| e.to_string())
 }
 
 fn status_payload() -> serde_json::Value {
-    let report = Config::report();
-    let cfg = Config::load_for_reads().ok();
+    let cwd = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
+    let report = crate::config::report_from(&merged_env(), &cwd);
+    let cfg = cfg_read().ok();
     let maps = cfg
         .as_ref()
         .and_then(|c| list_maps(c).ok())
@@ -608,19 +694,19 @@ fn set_config(body: &[u8]) -> Response {
         if !Path::new(&r).is_dir() {
             return json_ok(&json!({"ok": false, "error": "root is not a directory"}));
         }
-        std::env::set_var("ARGUS_ROOT", r);
+        set_override("ARGUS_ROOT", r);
     }
     if let Some(b) = parsed.basedir.filter(|s| !s.is_empty()) {
         if !Path::new(&b).is_dir() {
             return json_ok(&json!({"ok": false, "error": "basedir is not a directory"}));
         }
-        std::env::set_var("ARGUS_BASEDIR", b);
+        set_override("ARGUS_BASEDIR", b);
     }
     if let Some(g) = parsed.game.filter(|s| !s.is_empty()) {
         if safe_map_name(&g).is_none() {
             return json_ok(&json!({"ok": false, "error": "bad game name"}));
         }
-        std::env::set_var("ARGUS_GAME", g);
+        set_override("ARGUS_GAME", g);
     }
     json_ok(&json!({"ok": true, "status": status_payload()}))
 }
@@ -797,6 +883,74 @@ mod tests {
         assert!(safe_map_name("").is_none());
     }
 
+    fn post(path: &str, headers: &[(&str, &str)]) -> Response {
+        let mut h = HashMap::new();
+        for (k, v) in headers {
+            h.insert(k.to_string(), v.to_string());
+        }
+        route(&Request {
+            method: "POST".into(),
+            path: path.into(),
+            query: HashMap::new(),
+            body: b"{}".to_vec(),
+            headers: h,
+        })
+    }
+
+    // #214: these endpoints rewrite the source tree and every installed
+    // progs.dat. A page on any other origin could reach them as a simple
+    // cross-site request: text/plain body, no preflight, no token.
+    #[test]
+    fn post_endpoints_refuse_other_origins() {
+        GUI_PORT.store(7420, std::sync::atomic::Ordering::Relaxed);
+        let ok_headers = [
+            ("host", "127.0.0.1:7420"),
+            ("content-type", "application/json"),
+        ];
+        assert_eq!(
+            post(
+                "/api/restore",
+                &[("host", "127.0.0.1:7420"), ("content-type", "text/plain")]
+            )
+            .status,
+            415
+        );
+        assert_eq!(
+            post(
+                "/api/restore",
+                &[
+                    ("host", "127.0.0.1:7420"),
+                    ("content-type", "application/json"),
+                    ("origin", "http://evil.example"),
+                ],
+            )
+            .status,
+            403
+        );
+        // DNS rebinding: resolves to us, but the Host says someone else
+        assert_eq!(
+            post(
+                "/api/restore",
+                &[("host", "evil.example"), ("content-type", "application/json")]
+            )
+            .status,
+            403
+        );
+        // and the wizard's own request is not blocked by the guard
+        assert_ne!(post("/api/restore", &ok_headers).status, 403);
+        assert_ne!(post("/api/restore", &ok_headers).status, 415);
+    }
+
+    // #214: a percent escape followed by a multibyte character used to
+    // slice mid-codepoint and panic the connection thread
+    #[test]
+    fn url_decode_survives_a_bad_escape() {
+        assert_eq!(url_decode("dm%34"), "dm4");
+        assert_eq!(url_decode("%\u{e9}x"), "%\u{e9}x");
+        assert_eq!(url_decode("a%zz"), "a%zz");
+        assert_eq!(url_decode("%"), "%");
+    }
+
     #[test]
     fn homepage_and_status_route() {
         let req = Request {
@@ -804,6 +958,7 @@ mod tests {
             path: "/".into(),
             query: HashMap::new(),
             body: Vec::new(),
+            headers: HashMap::new(),
         };
         let r = route(&req);
         assert_eq!(r.status, 200);
@@ -819,6 +974,7 @@ mod tests {
             path: "/".into(),
             query: HashMap::new(),
             body: Vec::new(),
+            headers: HashMap::new(),
         };
         let r = route(&req);
         let page = String::from_utf8_lossy(&r.body);
@@ -852,6 +1008,7 @@ mod tests {
             path: "/api/nav/dm4".into(),
             query: HashMap::new(),
             body: Vec::new(),
+            headers: HashMap::new(),
         };
         let r = route(&req);
         assert_eq!(r.status, 200);
@@ -870,6 +1027,7 @@ mod tests {
             path: "/api/nav/../bad".into(),
             query: HashMap::new(),
             body: Vec::new(),
+            headers: HashMap::new(),
         };
         let r = route(&req);
         assert_eq!(r.status, 400);
@@ -882,6 +1040,7 @@ mod tests {
             path: "/".into(),
             query: HashMap::new(),
             body: Vec::new(),
+            headers: HashMap::new(),
         };
         let r = route(&req);
         let page = String::from_utf8_lossy(&r.body);
