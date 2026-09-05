@@ -161,6 +161,8 @@ argus/
 |   |-- argus_review.py        # Tape review battery (summary, deaths, regions, rides)
 |   |-- argus_reach.py         # Directed-reach audit of the shipped nav graphs
 |   |-- harvest_session.py     # Stamps a play session's tape + demo into runs/
+|   |-- argus_pointfile.py     # Nav overlays drawn in-world via the engine's pointfile
+|   |-- argus_edicts.py        # Reads an `edicts` dump: live bot state, no recompile
 |   |-- pak_extract.py         # Standalone id1 PAK archive reader / extractor
 |   |-- mdl_skins.py           # Palette-remapped player MDL skin injector
 |   |-- setup_rig.sh           # Automated headless Linux environment setup
@@ -426,6 +428,44 @@ per-track sample rates and distances, and the coalesced obituary
 feed. One physical caveat: demos are PVS-culled to the recording
 client's view, so a bot across the map drops to a trickle - the
 telemetry tape remains the full-map record and the A/B gates.
+
+### Seeing the graph, and seeing inside a bot
+Two instruments that need no engine changes, because the engine has
+carried both since 1996.
+
+**The nav graph in the world.** `pointfile` is the client command
+mappers used to walk a leak out to the void, and its file format is
+one `x y z` per line, so anything can write it. A top-down plot
+cannot show a waypoint hanging over lava, or a door seat that stops
+short of the trigger it waits on; standing in the level looking at
+particles can.
+
+```bash
+python tools/argus_pointfile.py e1m2 --what swim   # then type: pointfile
+```
+
+Modes are `nodes`, `links`, `swim`, `water`, and `tape` (the freeze
+cells from a session log). Colour is `(-index & 15)` so it cycles and
+cannot carry meaning, the particle pool bounds what shows at once
+(`-particles 16384`), and the command is client side, so this needs a
+listen game.
+
+**Live bot state.** `ED_PrintEdicts` walks the progs field
+definitions, so `edicts` dumps every entity with its non-default
+fields, `ar_node` and `ar_goal` and `ar_liftwait` included. It is on
+the lab's tune whitelist, so it can be injected into a running match,
+and `--make-cfg` arms a delayed dump for `+exec` when there is no
+injection channel.
+
+```bash
+python tools/argus_edicts.py --make-cfg 45 --repeat 4   # dumps at 45, 90, 135, 180s
+python tools/argus_edicts.py runs/<tape>.log --dump 1   # read the one that landed
+```
+
+The dump is lossy under load: a 236 edict dump lost four headers to
+the console, so counts are approximate and field values are not. A
+free edict prints `FREE` and no fields, which is how the reader tells
+a genuinely free slot from a header that never arrived.
 
 ---
 
