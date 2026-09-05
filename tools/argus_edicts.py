@@ -43,7 +43,7 @@ STUCK = ["netname", "classname", "origin", "velocity", "health",
          "ar_padcooltime", "ar_goal_count", "ar_swim", "waterlevel"]
 
 
-def parse(text):
+def parse(text, which=None):
     """last dump in the file -> {index: {field: value}}
 
     The server keeps printing while it dumps, so ARGLOG and ARGEVT
@@ -57,7 +57,10 @@ def parse(text):
         starts = [m.start() for m in re.finditer(r"^EDICT \d+:", text, re.M)]
         if not starts:
             return {}
-    body = text[starts[-1]:]
+    if which is None or which >= len(starts):
+        which = len(starts) - 1
+    end = starts[which + 1] if which + 1 < len(starts) else len(text)
+    body = text[starts[which]:end]
     out, cur = {}, None
     for line in body.splitlines():
         h = HEAD.match(line)
@@ -99,6 +102,13 @@ def main():
     ap.add_argument("--edict", type=int)
     ap.add_argument("--field")
     ap.add_argument("--all", action="store_true")
+    ap.add_argument("--dump", type=int, metavar="N",
+                    help="which dump to read when a log holds several, "
+                         "0 based. Default is the last.")
+    ap.add_argument("--repeat", type=int, default=1, metavar="N",
+                    help="with --make-cfg, take N dumps that far apart. A "
+                         "stochastic freeze needs several throws to be caught "
+                         "in one.")
     ap.add_argument("--make-cfg", type=float, metavar="SECS",
                     help="write engine/argus/edump.cfg: wait this long, then "
                          "dump. Run the engine with +exec edump.cfg when you "
@@ -113,14 +123,18 @@ def main():
         # where every ar_ field still holds its default.
         n = max(1, int(a.make_cfg * 10))
         f = ROOT / "engine" / "argus" / "edump.cfg"
-        f.write_text("wait\n" * n + "edicts\n")
-        print(f"wrote {f}  ({n} waits, about {n/10:.0f}s in)")
+        body = ("wait\n" * n + "edicts\n") * max(1, a.repeat)
+        f.write_text(body)
+        at = ", ".join(f"{(i+1)*n/10:.0f}s" for i in range(max(1, a.repeat)))
+        print(f"wrote {f}  ({max(1, a.repeat)} dump(s) at about {at})")
         print("then: quakespasm ... +map <map> +exec edump.cfg   (needs -condebug)")
         return
 
     if not a.log:
         sys.exit("give a log to read, or --make-cfg SECS to arm a dump")
-    eds = parse(Path(a.log).read_text(errors="replace"))
+    text = Path(a.log).read_text(errors="replace")
+    ndumps = len(re.findall(r"^EDICT 0:", text, re.M)) or 1
+    eds = parse(text, a.dump)
     lost = eds.pop("lost", 0)
     if not eds:
         sys.exit("no edicts dump in that log. Inject `edicts` during a match "
@@ -129,6 +143,9 @@ def main():
     used = {i: f for i, f in eds.items() if "FREE" not in f}
     print(f"{len(eds)} edicts dumped, {len(used)} in use, {len(eds)-len(used)} free "
           f"(the lab ceiling is max_edicts 600)")
+    if ndumps > 1:
+        print(f"log holds {ndumps} dumps; reading "
+              f"{'the last' if a.dump is None else f'#{a.dump}'}")
     if lost:
         print(f"note: {lost} edict header(s) missing from the log. A dump this "
               f"size outruns the console, so counts are approximate.")
