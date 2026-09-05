@@ -5373,6 +5373,90 @@ float() Argus_ActEscort =
 // ============================================================================
 // Performs a multi-point verified search around human teammate to find a safe,
 // non-embedded, dry, reachable ground location. NEVER teleports inside player!
+// EMBEDDED IN THE WORLD. A bot whose origin is inside solid cannot
+// walkmove in any direction, so it stands still until the match ends
+// with no hold flag set to explain it. Two dm2 tapes caught it: Joe
+// Rogan for 45 s at '2556 -414 24', reading SOLID in hull 0 at both
+// origin and eye height while every bot moving normally in the same
+// dumps read EMPTY at both (#257, diagnosed with the edict dump).
+// Knockback is the likely delivery: he was on 22 health.
+//
+// pointcontents reads hull 0, which is exactly the test that
+// separated him from the walkers. It cannot see a hull 1 wedge, where
+// the world is empty but the player box does not fit, and that is a
+// different bug with a different victim in the same pair of tapes.
+//
+// Recovery is the catchup warp's pattern. The destination is a nav
+// node, because navgen seats those at hull 1 standable origins, so a
+// node is by construction a place a player fits. Nearest by distance
+// ONLY: Argus_NearestNode prefers nodes it can see, and a traceline
+// that STARTS in solid returns fraction 1, so from in here every node
+// in the map would look visible and it could hand back one across the
+// level.
+float() Argus_Unstick =
+{
+    local entity n, best;
+    local float d, bd;
+
+    if (pointcontents (self.origin) != CONTENT_SOLID)
+    {
+        self.ar_stucktime = 0;
+        return FALSE;
+    }
+
+    // BEING INSIDE SOLID FOR AN INSTANT IS NORMAL. The first cut of
+    // this fired on contents plus a low speed, and dm4 promptly
+    // teleported Romero 192 units down into the pit while he was
+    // running the walkway at 320 u/s: a bot clips a thin edge mid
+    // step and reads solid for a tick, and instantaneous velocity at
+    // an apex is not evidence of anything. Being inside solid and
+    // NOT HAVING MOVED is the real signature, because a bot that is
+    // genuinely embedded never gets out on its own.
+    if (self.ar_stucktime == 0
+        || vlen (self.origin - self.ar_stuckpos) > 32)
+    {
+        self.ar_stucktime = time;
+        self.ar_stuckpos = self.origin;
+        return FALSE;
+    }
+    if (time < self.ar_stucktime + 3)
+        return FALSE;
+
+    best = world;
+    bd = 999999;
+    n = find (world, classname, "argus_node");
+    while (n != world)
+    {
+        d = vlen (n.origin - self.origin);
+        if (d < bd && pointcontents (n.origin) != CONTENT_SOLID)
+        {
+            bd = d;
+            best = n;
+        }
+        n = find (n, classname, "argus_node");
+    }
+    if (best == world)
+        return FALSE;
+
+    spawn_tfog (self.origin);
+    setorigin (self, best.origin);
+    spawn_tfog (best.origin);
+    self.velocity = '0 0 0';
+    self.ar_node = world;
+    self.ar_pending = 0;
+    self.ar_mode = 0;
+    self.ar_failstreak = 0;
+    self.ar_stucktime = 0;
+    // plain console line: the ARGEVT verb set is closed, so this rides
+    // beside shove and routecache adopt and gets grepped the same way
+    dprint ("ARGUS ");
+    dprint (self.netname);
+    dprint (" unstick ");
+    dprint (vtos (best.origin));
+    dprint ("\n");
+    return TRUE;
+};
+
 float() Argus_CoopSafeWarp =
 {
     local vector p, fwd, rt, cand, best_pos;
@@ -5812,6 +5896,11 @@ void() Argus_AI =
     if (time > self.ar_nextai)
     {
         self.ar_nextai = time + 0.2;
+
+        // before anything else: if we are inside the world, nothing
+        // below can help, because every steering decision ends in a
+        // walkmove that cannot succeed from in there
+        Argus_Unstick ();
 
         // introductions, once the host has had time to connect
         if (!self.ar_greeted && time > 5)
