@@ -175,8 +175,15 @@ fn tune_re() -> &'static Regex {
         // scratch1-4 are the vanilla QC float pipe (registered for
         // QC use since 1996): scratch1 1 arms the ARGDBG decision
         // tape live, and future debug channels ride the other three
+        //
+        // edicts / edict / edictcount are read-only server dumps.
+        // ED_PrintEdicts walks the progs field definitions, so the
+        // dump carries our own ar_* fields, which is every value a
+        // forensics session has had to add a dprint and recompile to
+        // read. All three only print, so they are as safe to inject
+        // as status.
         Regex::new(
-            r"(?i)^(skill\s+[0-3]|fraglimit\s+\d{1,3}|timelimit\s+\d{1,3}|developer\s+[01]|deathmatch\s+1|map\s+[A-Za-z0-9_]+|scratch[1-4]\s+-?\d{1,6}|status|serverinfo)$",
+            r"(?i)^(skill\s+[0-3]|fraglimit\s+\d{1,3}|timelimit\s+\d{1,3}|developer\s+[01]|deathmatch\s+1|map\s+[A-Za-z0-9_]+|scratch[1-4]\s+-?\d{1,6}|status|serverinfo|edicts|edictcount|edict\s+\d{1,4})$",
         )
         .expect("tune")
     })
@@ -191,6 +198,10 @@ mod tests {
         assert!(validate_tune("skill 3").is_ok());
         assert!(validate_tune("map dm4").is_ok());
         assert!(validate_tune("fraglimit 20").is_ok());
+        assert!(validate_tune("edicts").is_ok());
+        assert!(validate_tune("edict 42").is_ok());
+        assert!(validate_tune("edictcount").is_ok());
+        assert!(validate_tune("edict all").is_err());
         assert!(validate_tune("give all").is_err());
         assert!(validate_tune("quit").is_err());
         assert!(validate_tune("skill 9").is_err());
