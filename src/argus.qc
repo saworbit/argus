@@ -7119,7 +7119,19 @@ void() Argus_AI =
                 // wander for a moment before re-planning: immediate
                 // re-goaling kept steering wedged bots straight back
                 // into the same corner (the displaced-off-a-hop trap)
-                self.ar_nextai = time + 1.5;
+                //
+                // ONLY IF WE ARE NOT ALREADY WAITING. Re-arming this
+                // unconditionally is a livelock: a bot stalling more
+                // often than every 1.5 s pushes its own AI tick out of
+                // reach forever, so it never re-picks a goal and never
+                // routes, and the wander that is supposed to free it
+                // is the very thing keeping it blind. #257 caught one
+                // on dm2, stalled 38 times in 28 s on broken ground
+                // with ar_goalstart frozen at 13.9 the whole time,
+                // motionless for 65 s. The deferral is meant to be one
+                // pause, not a renewable one.
+                if (time > self.ar_nextai)
+                    self.ar_nextai = time + 1.5;
             }
         }
         else if (vlen (self.origin - self.ar_lastpos) >= 12)
