@@ -476,6 +476,26 @@ forensics predicted.
 
 ## The decision tape (ARGDBG)
 
+### The edict dump
+
+`tune command="edicts"` makes the server print every edict with all
+its non-default fields, ours included: `ar_node`, `ar_goal`,
+`ar_mode`, `ar_door`, `ar_liftwait`, `ar_failstreak`. That is the
+state a forensics session used to add a dprint and recompile to read.
+`edict <n>` prints one, `edictcount` just the totals. All three only
+print, so they are as safe to inject as `status`.
+
+`tools/argus_edicts.py` reads the result back: edict pressure against
+the 600 ceiling, per-bot state ordered for "why is this stuck",
+`--field` to compare one value across bots, `--dump N` when a log
+holds several, and `--make-cfg SECS --repeat N` to arm dumps for
+`+exec` when there is no injection channel. A stochastic freeze will
+not sit still for one dump.
+
+Caveat: the dump is lossy under load. A 236 edict dump lost four
+`EDICT` headers to the console. Field values survive; counts do not,
+and the reader says so.
+
 Console `scratch1 1` (live via `tune command="scratch1 1"`; the
 scratch cvars are vanilla's QC float pipe) makes every goal pick
 print `ARGDBG <name> pick <class> u <utility> | w <> a <> h <> r <>
@@ -541,7 +561,7 @@ carries `scaled` and `scale_note` when that happens.
 | `qc_read` | `ARGUS_ROOT` | Full source of one Argus function, with line numbers |
 | `learn_hotspots` | `ARGUS_ROOT` | Fold stall/lava/hazard cells across logs. Writes `src/argus_nav_<map>.costs.json` for the next navgen; does not write QC. |
 | `knobs` | nothing | Live cvars vs compile-time constants |
-| `tune` | live match | Whitelisted console: skill, fraglimit, map. Unix stdin; Windows AttachConsole inject. |
+| `tune` | live match | Whitelisted console: skill, fraglimit, map, scratch1-4, and the read-only `edicts` / `edict <n>` / `edictcount` dumps. Unix stdin; Windows AttachConsole inject. |
 | `live_snapshot` | live or last match | Last ARGLOG row per bot. `since_line` for incremental. |
 | `match_status` | live match | Running, pid, elapsed, log lines. `since_line` returns only new lines plus `next_line`. |
 | `probe` | full lab | Prefer `experiment`. Compile + short match + lite brief, no A/B. Duration 10-120 s. |

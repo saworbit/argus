@@ -7,6 +7,114 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
+
+A day driven by three human co-op sessions on e1m2. Each one produced a
+defect, each defect produced a fix, and two of the fixes were built on
+instruments the engine has carried since 1996 and the lab had never used.
+
+**Navigation: waypoints past a ledge lip (#250).** navgen samples hull 1,
+the player clip hull, whose floor reaches half a player width past every
+real ledge. On e1m6 it seated n93 fourteen units out over a 304 unit drop
+with lava at -128. The engine never agreed: `SV_movestep` calls
+`SV_CheckBottom`, which point traces the box corners against the world, so
+`walkmove` refuses the step and the hazard guard refuses it too. A bot
+routed there can neither arrive nor give up, and a co-op companion spent a
+whole session at that lip: 213 stalls and 215 jumps in 175 s. Section 4c
+now runs the engine's own test with the same constants and order. e1m6
+regenerated: 536 lip overhang samples dropped, 198 nodes to 188, worst
+spawn reach 85 to 95 per cent, seats over a 96 unit void 32 to 0. Other
+graphs are not regenerated; dry runs confirm the rule does not fragment
+them (dm4 98 per cent, dm6 95, e1m1 99).
+
+**An unroutable co-op objective stops hammering the router (#251).** The
+`GOAL_FETCH` branch re-adopts its subject the moment `ar_goal` is cleared,
+and the routefail handler clears `ar_goal` on every failure, so the pair
+retried at think rate: 400 routefails in 175 s against four goal pushes.
+The item shelf could not cover it, because `ar_failtime` is only stamped
+when the failure comes from a different area and a bot hammering one
+objective never leaves its patch. A routefail on the current fetch subject
+now rests that bot 20 s, per bot rather than on the global shelf, with
+`ar_goal` left clear so `Argus_PickGoal` runs and the bot shops meanwhile.
+e1m6 routefails 400 and 377 to 8 and 9, coverage 6 and 9 cells to 23 and
+22, busiest cell 57 per cent to under 10.
+
+**Door contact is an overlap, not a radius (#253).** The handler decided it
+was touching its opener when the opener's centre was within 40 units,
+flattened in z, and then stood still to be touched. An opener is a brush.
+e1m2's t120 door is fired by a trigger 110 wide and 6 thick, so a bot 38
+units from that centre still had its box stopping 18 units short of the
+volume. It froze waiting for a touch, and the engine only fires touch on
+movement, so the touch could never arrive: the v3.43 lift statue in a new
+place, five times and 35 s of a 157 s session. `Argus_TouchingBox` compares
+`absmin`/`absmax` against the opener's, the same boxes `SV_LinkEdict` uses,
+with 2 units of slack so a solid button pressed against still counts. On
+e1m1, the only map whose botmatch drives the door path hard, freezes 6 and
+6 became 2 and 4 and the worst freeze 13.4 s and 16.9 s became 8.2 s and
+8.8 s, which is the give-up cap finally bounding it.
+
+**A companion stops killing its team mate (#260).** Two sessions, two
+deaths, two mechanisms. `Argus_Pain` fights back against "any live player,
+human or bot" with no co-op test, and in co-op that branch can only ever
+fire on a team mate, because monsters do not carry classname "player": the
+tape shows both parties taking exactly 24 damage within one second of each
+other. Separately, a bot with a monster for an enemy fires at its last
+known position during the sight loss hold, and a human crossing that line
+takes it. Two guards, both gated on `coop`: no retaliation against a team
+mate, and a trace along the shot with fire held when a team mate is what it
+reaches. Splash is not covered. Verified in play: the human shot Carmack
+dead and he never shot back, four engage events all `engage monster`.
+`Argus_Perceive` already returned before its player scan whenever co-op was
+on, so a guard written there first was removed as dead code.
+
+**A bot embedded in the world gets out (#262).** A bot whose origin is
+inside solid cannot `walkmove` in any direction, so it stands still until
+the match ends with no hold flag to explain it. `pointcontents` reads
+hull 0, which is the test that separated a frozen bot from five moving ones
+in the same dumps. Recovery follows the catchup warp: fog, `setorigin` to
+the nearest nav node (seated at hull 1 standable origins by construction,
+so a node is somewhere a player fits), zero velocity, clear the route
+state. Nearest by distance only, deliberately not `Argus_NearestNode`,
+because a traceline starting in solid returns fraction 1 and from in there
+every node on the map looks visible. The first cut keyed on contents plus a
+low instantaneous speed and teleported a healthy bot 192 units into the dm4
+pit while it ran at 320 u/s; being inside solid AND not having moved is the
+real signature, so it now needs three seconds without displacing 32 units.
+Verified recovering a real one on dm4: embedded at t 33.3, warped out at
+t 36.3, running at 306 u/s by t 37.2.
+
+**A stalling bot stops deferring its own thinking (#263).** Stall recovery
+pushes `ar_nextai` out 1.5 s so the bot wanders before re-planning, and it
+re-armed that deferral on every stall. A bot stalling more often than every
+1.5 s therefore pushes its own AI tick permanently out of reach: it never
+re-picks a goal, never routes, and the wander meant to free it is the thing
+keeping it blind. Romero on dm2 sat motionless for 65 s with `ar_goalstart`
+frozen at 13.9 across two dumps 28 s apart while `ar_stalls` went 15 to 53.
+Only defer if not already waiting. dm2 goals 78, 86, 89 became 100, 96, 91,
+with every fix tape beating every control tape, and the worst freeze 22.3 s
+became 8.2 s.
+
+**Swim node selection (#248), and its correction.** `Argus_NearestNode`
+prefers a node at or below a query point that is in water. The supporting
+ladder was later found invalid: the "before" tape carried a stationary
+netclient puppet as a second client, and in co-op the companion escorts its
+team mate, so it was parked by the puppet rather than by the water. Matched
+configurations put the arms at 52 against 55 cells. The logic hole is real
+and the change does no measured harm, but the headline improvement was a
+configuration artifact. Recorded so nobody cites it.
+
+**Instruments.** `tools/argus_pointfile.py` writes the engine's `.pts`
+overlay so the nav graph, its swim exits, or a tape's freeze cells can be
+drawn in the world and walked to. `tools/argus_edicts.py` reads an `edicts`
+dump, which walks the progs field definitions and therefore carries
+`ar_node`, `ar_goal`, `ar_liftwait` and the rest; `edicts`, `edict <n>` and
+`edictcount` joined the lab's tune whitelist so they can be injected into a
+running match. Both freezes above were named by that dump in one command
+each, where every earlier forensics session added a dprint and recompiled.
+Rejected with measurements: `host_timescale` runs 2.9x but drops
+engagements per game minute from 23.4 to 7.0, `sys_ticrate` does nothing,
+and savegames are refused outright in multiplayer.
+
 ## v4.08 (2026-09-03) - navigation caching, item chain, and roster control
 
 A performance, navigation accuracy, and player-experience milestone addressing bot goal selection latency, lift/button stand-pad precision, friendly collision clearance, and runtime bot management.
