@@ -2603,6 +2603,21 @@ float(entity e) Argus_IsDoor =
     return FALSE;
 };
 
+// Does our box touch this brush entity's box? The engine keeps
+// absmin/absmax on both, so this is the same test SV_LinkEdict uses
+// to decide a touch, and 2 units of slack covers a solid button the
+// bot presses against rather than enters.
+float(entity b) Argus_TouchingBox =
+{
+    if (self.absmin_x > b.absmax_x + 2) return FALSE;
+    if (self.absmax_x < b.absmin_x - 2) return FALSE;
+    if (self.absmin_y > b.absmax_y + 2) return FALSE;
+    if (self.absmax_y < b.absmin_y - 2) return FALSE;
+    if (self.absmin_z > b.absmax_z + 2) return FALSE;
+    if (self.absmax_z < b.absmin_z - 2) return FALSE;
+    return TRUE;
+};
+
 void(entity d) Argus_TakeDoor =
 {
     local entity b, best;
@@ -6795,7 +6810,25 @@ void() Argus_AI =
             {
                 to = Argus_GoalPoint (self.ar_doorbtn) - self.origin;
                 to_z = 0;
-                if (vlen (to) > 40)
+                // CONTACT IS AN OVERLAP, NOT A RADIUS. This asked
+                // whether the opener's CENTRE was within 40 units,
+                // flattened in z, and then stood still to be touched.
+                // An opener is a brush, not a point. e1m2's t120 door
+                // is fired by a trigger 110 wide and 6 thick: standing
+                // at '442 -119 254' put the bot 38 units from its
+                // centre, inside the radius, while its box still
+                // stopped 18 units short of the volume. It froze
+                // waiting for a touch, and the engine only fires touch
+                // on MOVEMENT, so the touch could never come. Eight
+                // seconds to the give-up, re-route, straight back:
+                // five times and 35 s of Shane's 157 s session, the
+                // same deadlock as the v3.43 lift statue.
+                //
+                // Overlap instead. When it is false the bot keeps
+                // walking in, which is what fires the trigger; by the
+                // time it is true the movement that got us here has
+                // already fired it, so the hold below is safe.
+                if (!Argus_TouchingBox (self.ar_doorbtn))
                     want = vectoyaw (to);
                 else
                 {
