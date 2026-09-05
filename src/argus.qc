@@ -2290,6 +2290,20 @@ void() Argus_Die =
     self.takedamage = DAMAGE_NO;
 };
 
+// IN CO-OP EVERY PLAYER IS ON THE SAME SIDE. Monsters do not carry
+// classname "player", so anything this returns TRUE for is a
+// teammate, human or bot. The masquerade cuts both ways: it is what
+// lets bots use the stock item and door code, and it is also why
+// every "find a player" scan in here has to be told about allies.
+float(entity e) Argus_IsAlly =
+{
+    if (coop <= 0)
+        return FALSE;
+    if (e == world || e == self)
+        return FALSE;
+    return (e.classname == "player");
+};
+
 void(entity attacker, float dmg) Argus_Pain =
 {
     // flinch: tracking restarts, aim error widens for a moment
@@ -2301,8 +2315,15 @@ void(entity attacker, float dmg) Argus_Pain =
         self.flags = self.flags - (self.flags & FL_ONGROUND);
     // fight back if hit from behind by someone new: any live player,
     // human or bot (world excluded: lava damage is not an attacker)
+    // ...but never against a team mate. Shane shot Carmack on e1m2,
+    // this branch made him the enemy, and Carmack shot him dead
+    // eighteen seconds into the session. Both took exactly 24 damage
+    // within a second of each other, which is what an exchange looks
+    // like. In co-op the only attacker that can reach this test IS a
+    // team mate, because monsters are not classname "player".
     if (attacker.classname == "player" && attacker.health > 0
-        && attacker != self && self.ar_enemy == world)
+        && attacker != self && self.ar_enemy == world
+        && !Argus_IsAlly (attacker))
     {
         self.ar_enemy = attacker;
         self.ar_seen = time;
@@ -4144,11 +4165,25 @@ float() Argus_Combat =
         self.v_angle = vectoangles (aimpt - (self.origin + '0 0 22'));
         self.v_angle_x = 0 - self.v_angle_x;    // QC pitch convention
         self.v_angle_y = self.angles_y;
-        self.button0 = 1;
-        if (time > self.attack_finished)
+        // HOLD FIRE THROUGH A TEAM MATE. Not targeting them is not
+        // enough: the first e1m2 death was a bot with a monster for an
+        // enemy, firing at its last known position during the
+        // sight-loss hold while Shane crossed the line. Two shotgun
+        // hits, and the kill credited to Carmack. One trace along the
+        // shot we are about to take, and if a team mate is what it
+        // reaches, wait. Splash is not covered here: a rocket landing
+        // beside a team mate still hurts them.
+        traceline (self.origin + '0 0 22', aimpt, FALSE, self);
+        if (Argus_IsAlly (trace_ent))
+            self.button0 = 0;
+        else
         {
-            SuperDamageSound ();
-            W_Attack ();
+            self.button0 = 1;
+            if (time > self.attack_finished)
+            {
+                SuperDamageSound ();
+                W_Attack ();
+            }
         }
     }
     else
