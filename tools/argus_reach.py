@@ -31,6 +31,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 WARN_PCT = 60
+# A deathmatch spawn further than this from any waypoint is a hole in
+# the graph, not a routing question (#275).
+SPAWN_MAX_U = 200
+
+
+def dist(a, b):
+    return ((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2
+            + (a[2] - b[2]) ** 2) ** 0.5
 
 
 def bsp_spawns(path):
@@ -117,10 +125,13 @@ def audit(mapname, explicit=False):
     for r_all, r_un, node, o in rows:
         pa = 100 * r_all // max(1, n)
         pu = 100 * r_un // max(1, n)
+        d = dist(nodes[node], o)
         mark = ""
         if pa < WARN_PCT:
             mark = "  << WARNING under 60%"
             ok = False
+        elif d > SPAWN_MAX_U:
+            mark = f"  << {d:.0f}u from any waypoint"
         elif pa - pu >= 20:
             mark = "  << gated-edge dependent"
         print(f"  spawn {o[0]:6.0f} {o[1]:6.0f} {o[2]:5.0f}  n{node:<4} "
@@ -128,6 +139,34 @@ def audit(mapname, explicit=False):
     worst = rows[0]
     print(f"  worst spawn: {100 * worst[0] // max(1, n)}% all, "
           f"{100 * worst[1] // max(1, n)}% ungated")
+
+    # DOES THE GRAPH COVER THE MAP (#275)?
+    #
+    # Everything above measures connectivity AMONG THE NODES THAT
+    # EXIST, and that is precisely the property a too-small graph
+    # preserves perfectly. A graph of one room scores 100%. e1m5
+    # shipped 38 nodes covering one corner, with four of five spawns
+    # outside the graph's bounding box by up to 1595 units, and this
+    # tool passed it at 89% worst spawn.
+    #
+    # Distance from a spawn to its nearest waypoint cannot be faked
+    # that way: it is a statement about the map, not about the graph's
+    # internal structure. Four spawns resolving to the same node is
+    # the same finding said another way.
+    far = [(dist(nodes[b], o), o) for _, _, b, o in rows]
+    worst_d, worst_o = max(far)
+    snapped = len({b for _, _, b, _ in rows})
+    if worst_d > SPAWN_MAX_U:
+        n_far = sum(1 for d, _ in far if d > SPAWN_MAX_U)
+        print(f"  COVERAGE: {n_far} of {len(far)} spawns are over "
+              f"{SPAWN_MAX_U}u from any waypoint, worst {worst_d:.0f}u at "
+              f"{worst_o[0]:.0f} {worst_o[1]:.0f} {worst_o[2]:.0f}")
+        print("  A bot spawning there snaps to a node across the level. "
+              "The reach percentages above cannot see this.")
+        ok = False
+    elif snapped < len(rows):
+        print(f"  COVERAGE: {len(rows)} spawns resolve to only {snapped} "
+              "distinct node(s) - thin cover around the spawn points")
     return ok
 
 
@@ -158,7 +197,8 @@ def main():
         # otherwise reports "failed" and the verdict reads as a
         # tool defect (2026-08-27, Shane's report).
         print("REACH GATE: verdict FAIL (a spawn is under "
-              f"{WARN_PCT}%). The audit itself succeeded; "
+              f"{WARN_PCT}% reach, or over {SPAWN_MAX_U}u from any "
+              "waypoint). The audit itself succeeded; "
               "exit 1 is the gate speaking.")
     sys.exit(0 if ok else 1)
 
