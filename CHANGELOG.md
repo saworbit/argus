@@ -29,7 +29,10 @@ The stall detector runs later, with the flag back, and already skips
 every duel is excluded for free. A throwaway probe build confirmed the
 split: on dm2 a bot reached an 8.0 second window with zero stalls, which
 is the bounded lift-wait give-up and is correctly ignored. The console
-line now names which class fired.
+line now names which class fired, and a later dm2 tape caught the real
+thing: `ARGUS Romero unstick pinned '2633.0 -143.0 120.0'`, at the NE
+stair lip that this project has on record losing a bot 92 seconds. The
+freeze was bounded at 11.3 seconds.
 
 **Rescue destinations have to fit, and must not be occupied (#268).**
 The same function sampled `pointcontents` at one point of a nav node and
@@ -64,6 +67,32 @@ Ladder: dm4 improved on all seven gates (lava 4 parity, stalls 6, engages
 because its shipped baseline is many builds old: two candidate tapes ran
 stalls 47 and 23 against a control of 40, and lava 2 and 8 against 4, so
 both bracket it. The stale baseline accounted for the rest.
+
+**Two telemetry lines no parser could read (#269, #278).** The co-op
+catchup warp announced itself with an `ARGEVT` prefix and the verb
+`coop`, which was never in the parser's closed vocabulary, so the regex
+found no match at any split point and the line was dropped in silence. A
+`setorigin` that teleports a companion across the level is the single
+most consequential thing a co-op bot does to itself, and it appeared in
+no brief, no total and no gate. It is a plain `ARGUS` line now, the way
+`shove`, `unstick`, `watch` and `sprintjump` already do it, and the
+parser counts it. It counts `unstick` too, which had the same gap since
+#262: both rescue teleports are now visible, which is what makes a build
+that warps ten times a match instead of once look like the movement
+regression it is rather than a coverage improvement.
+
+Backpack goals emitted `ARGEVT <name> goal ` with nothing after the verb,
+7 per cent of one dm2 tape's goal telemetry. `DropBackpack` never assigns
+a classname, which is why `Argus_ItemValue` identifies packs by touch, and
+the goal line never got the same treatment. It falls back to `backpack`
+now, so the per-class goal map can show pack shopping for the first time:
+a 90 second dm2 tape reports `backpack: 2`. The v3.45 fresh-pack bonus has
+finally got an instrument that can see it being chosen.
+
+A test now asserts that every `ARGEVT` verb the QC emits parses, across
+both emission forms, and names the file when one does not. Reverting the
+`coop` line makes it fail with exactly that verb. A sweep of the whole
+tree found no others.
 
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 

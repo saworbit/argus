@@ -5021,7 +5021,24 @@ void() Argus_PickGoal =
         dprint ("ARGEVT ");
         dprint (self.netname);
         dprint (" goal ");
-        dprint (pick.classname);
+        // A dropped backpack has no classname. DropBackpack never
+        // assigns one, which is why Argus_ItemValue identifies packs
+        // by touch rather than by class, and the telemetry never got
+        // the same treatment: 7% of one dm2 tape's goal lines were
+        // "ARGEVT <name> goal " with nothing after the verb (#269).
+        // That breaks the documented grammar and makes pack shopping
+        // structurally invisible to the per-class goal map, so the
+        // v3.45 fresh-pack bonus had no instrument that could ever
+        // show it being chosen.
+        if (pick.classname == "")
+        {
+            if (pick.touch == BackpackTouch)
+                dprint ("backpack");
+            else
+                dprint ("unknown");
+        }
+        else
+            dprint (pick.classname);
         dprint ("\n");
 
         gp = Argus_GoalPoint (pick);
@@ -5702,7 +5719,14 @@ float() Argus_CoopSafeWarp =
     self.ar_node = world;
     self.ar_mode = 0;
     self.ar_pending = 0;
-    dprint ("ARGEVT ");
+    // Plain console line, not ARGEVT (#278). This used the ARGEVT
+    // prefix with a verb, "coop", that was never in the parser's
+    // closed vocabulary, so the regex matched nothing and every
+    // rescue teleport was dropped silently: no brief, no total, no
+    // gate. The sanctioned way to add an event without touching the
+    // grammar is the plain form, the way shove, unstick, watch and
+    // sprintjump all do it.
+    dprint ("ARGUS ");
     dprint (self.netname);
     dprint (" coop catchup warp\n");
     return TRUE;
