@@ -2639,6 +2639,20 @@ float(entity b) Argus_TouchingBox =
     return TRUE;
 };
 
+// A door that just timed out is shelved briefly, so the give-up
+// cannot immediately re-arm itself (#270). The shelf only applies
+// while the door is still locked against this bot: the moment it
+// holds the key the door is ordinary furniture again and there is
+// nothing to wait on, so it must not be held off by a stale stamp.
+float(entity d) Argus_DoorShelved =
+{
+    if (!d.items)
+        return FALSE;
+    if (self.items & d.items)
+        return FALSE;
+    return (time < d.ar_failtime + 20);
+};
+
 void(entity d) Argus_TakeDoor =
 {
     local entity b, best;
@@ -2652,6 +2666,12 @@ void(entity d) Argus_TakeDoor =
     // Check if door requires a key (#175)
     if (d.items && !(self.items & d.items))
     {
+        // Fetching a key is a real errand, so 8 seconds is too short
+        // a leash for a keyed door. It is still a leash (#270): the
+        // keyed branch used to sit above the give-up in the chain, so
+        // it could never time out at all and a bot with no key stood
+        // at the slab until the match ended.
+        self.ar_doortime = time + 25;
         Argus_CoopCommitKey (d);
         return;
     }
@@ -4246,10 +4266,26 @@ float(entity it) Argus_GoalOK =
 // Compute a reachable clear floor position (stand-pad) with direct line of
 // sight to the trigger / button / door brush, preventing bots from pathing
 // directly into brush bounding-box centers or wall-embedded origins.
+// ar_standok reports whether the last UseStandPoint result was
+// validated or guessed (#277). It is read like trace_fraction: check
+// it straight after the call, before anything else calls back in.
+//
+// The function's own comment says it exists to prevent bots pathing
+// into brush bounding box centres, and four of its five exits honour
+// that. The fifth returns the centre, through the same bare vector as
+// a success, so no caller could tell a validated floor position from
+// the exact value the function exists to avoid. A bot walking at an
+// unreachable point looks identical to a bot walking at a reachable
+// one until it fails to arrive, and nothing in the telemetry names the
+// cause, so it gets diagnosed as a navigation or door problem.
+float ar_standok;
+
 vector(entity ent) UseStandPoint =
 {
     local vector center, p, cand;
     local float d;
+
+    ar_standok = FALSE;
 
     if (ent == world)
         return '0 0 0';
@@ -4258,7 +4294,10 @@ vector(entity ent) UseStandPoint =
 
     // Items, monsters, and players already have floor-tested walkable origins
     if (ent.flags & (FL_ITEM | FL_MONSTER | FL_CLIENT))
+    {
+        ar_standok = TRUE;
         return center;
+    }
 
     // First attempt: trace vertically down from brush center to find floor
     traceline (center + '0 0 16', center - '0 0 256', TRUE, ent);
@@ -4267,7 +4306,10 @@ vector(entity ent) UseStandPoint =
         cand = trace_endpos + '0 0 24';
         traceline (cand, center, TRUE, world);
         if (trace_fraction == 1 || trace_ent == ent)
+        {
+            ar_standok = TRUE;
             return cand;
+        }
     }
 
     // Brush center is embedded or obscured. Search cardinal offsets (+-36u) in open air
@@ -4290,13 +4332,19 @@ vector(entity ent) UseStandPoint =
                 {
                     traceline (cand, center, TRUE, world);
                     if (trace_fraction == 1 || trace_ent == ent)
+                    {
+                        ar_standok = TRUE;
                         return cand;
+                    }
                 }
             }
         }
         d = d + 1;
     }
 
+    // Every validated option failed. The centre is a guess, and it is
+    // the guess this function exists to avoid, so say so rather than
+    // hand it back looking like an answer.
     return center;
 };
 
@@ -5935,15 +5983,32 @@ void() Argus_CoopThink =
             //
             // No new goal kind needed. GOAL_FETCH already accepts any
             // SOLID_TRIGGER, Argus_GoalOK already passes one, and
-            // UseStandPoint already finds a floor with line of sight
+            // UseStandPoint usually finds a floor with line of sight
             // to a brush rather than pathing into its bbox centre.
+            //
+            // Usually, not always (#277). When every validated option
+            // fails it hands back the brush centre, which for a
+            // trigger_changelevel is a point inside the arch, and a
+            // 60 second deadline then parks the bot pushing at it for
+            // a minute with no way to tell that is what is happening.
+            // ar_standok separates the two: a validated point keeps
+            // the full errand, a guess gets a short leash so the bot
+            // tries, fails and gets on with the match.
             if (Argus_GoalTopKind () != GOAL_FETCH && Argus_HumanCount () == 0)
             {
                 local entity xit;
+                local vector xp;
                 xit = find (world, classname, "trigger_changelevel");
                 if (xit != world && xit.solid == SOLID_TRIGGER)
-                    Argus_GoalPush (GOAL_FETCH, xit, UseStandPoint (xit),
-                                    70, time + 60.0, 0);
+                {
+                    xp = UseStandPoint (xit);
+                    if (ar_standok)
+                        Argus_GoalPush (GOAL_FETCH, xit, xp, 70,
+                                        time + 60.0, 0);
+                    else
+                        Argus_GoalPush (GOAL_FETCH, xit, xp, 70,
+                                        time + 15.0, 0);
+                }
             }
         }
     }
@@ -7043,7 +7108,8 @@ void() Argus_AI =
         {
             traceline (self.origin + '0 0 22', tp + '0 0 22', FALSE, self);
             if (trace_fraction < 1 && Argus_IsDoor (trace_ent)
-                && (self.ar_hopdoor || vlen (trace_endpos - self.origin) < 240))
+                && (self.ar_hopdoor || vlen (trace_endpos - self.origin) < 240)
+                && !Argus_DoorShelved (trace_ent))
                 Argus_TakeDoor (trace_ent);
         }
         if (self.ar_door != world)
@@ -7053,6 +7119,37 @@ void() Argus_AI =
                 self.ar_door = world;       // moving or open: walk on
                 self.ar_doorbtn = world;
             }
+            // THE GIVE-UP COMES FIRST (#270). It used to sit below the
+            // keyed test, so a keyed door never reached it: ar_door
+            // stayed set, the next frame matched the same branch, and
+            // ar_liftwait went back on. ar_liftwait is the physics
+            // level hold, friction only and no wish, and havetarget 0
+            // removes steering, so the bot was a statue with no exit
+            // condition. Argus_CoopCommitKey does not rescue it
+            // either: five of its six paths return without touching
+            // ar_door, and the worst of those is the intended design -
+            // "team mate already has the key, let them open it" is
+            // implemented as standing still in front of the door
+            // forever, so a companion could not even follow the human
+            // who was carrying it. Keyed doors get 25 seconds from
+            // Argus_TakeDoor rather than 8, because fetching a key is
+            // a real errand, but they do get a deadline.
+            else if (time > self.ar_doortime)
+            {
+                if (Argus_GoalOK (self.ar_goal))
+                    self.ar_goal.ar_failtime = time;
+                // Shelve the DOOR as well, or the give-up is a
+                // re-arm: ar_door is cleared here, the detection
+                // traceline above runs again next frame, the bot is
+                // still standing in front of the same slab, and it
+                // takes another full deadline. Shelving only the goal
+                // is not enough, because the next goal can route
+                // through the same door.
+                self.ar_door.ar_failtime = time;
+                self.ar_door = world;
+                self.ar_doorbtn = world;
+                havetarget = 0;
+            }
             else if (self.ar_door.items && !(self.items & self.ar_door.items))
             {
                 // Closed keyed door and key not held (#175):
@@ -7060,14 +7157,6 @@ void() Argus_AI =
                 self.ar_liftwait = 1;
                 havetarget = 0;
                 Argus_CoopCommitKey (self.ar_door);
-            }
-            else if (time > self.ar_doortime)
-            {
-                if (Argus_GoalOK (self.ar_goal))
-                    self.ar_goal.ar_failtime = time;
-                self.ar_door = world;
-                self.ar_doorbtn = world;
-                havetarget = 0;
             }
             else if (self.ar_door.targetname == "")
             {
