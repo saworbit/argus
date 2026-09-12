@@ -573,6 +573,30 @@ pub fn parse_entities(text: &str) -> Vec<BTreeMap<String, String>> {
     out
 }
 
+/// Does this entity still exist after its spawn function runs?
+///
+/// The mirror of `spawns_an_edict` in tools/argus_navgen.py, and it
+/// exists because the two tools were answering the same question two
+/// different ways and disagreeing by most of the number (#280). An
+/// untargeted `light` is removed by misc.qc's light() as an inert
+/// light, and id's maps are full of them: 35 to 57 per cent of the
+/// lump across the e1m rotation, 283 of e1m8's 495. info_null is
+/// removed outright.
+///
+/// Counting them made cartograph report e1m1 at 592 of 600 edicts,
+/// eight spare, when the live figure is nearer 403 and the map has
+/// about 197 to spare. A reader acting on that would decline to
+/// regenerate a graph that badly needed it.
+pub fn spawns_an_edict(classname: &str, targetname: Option<&str>) -> bool {
+    if classname == "light" && targetname.is_none() {
+        return false;
+    }
+    if classname == "info_null" {
+        return false;
+    }
+    true
+}
+
 pub fn classify(classname: &str) -> &'static str {
     if classname.starts_with("info_player") {
         "spawn"
@@ -640,6 +664,9 @@ fn atlas_from_bsp(
             *counts.entry(kind.clone()).or_insert(0) += 1;
         }
         *counts.entry("entities".into()).or_insert(0) += 1;
+        if spawns_an_edict(&classname, e.get("targetname").map(|s| s.as_str())) {
+            *counts.entry("live_entities".into()).or_insert(0) += 1;
+        }
         let origin = parse_origin(e.get("origin").map(|s| s.as_str()));
         if classname == "info_teleport_destination" {
             if let (Some(name), Some(o)) = (e.get("targetname"), origin) {
@@ -854,6 +881,58 @@ fn atlas_from_bsp(
         }
     }
 
+    // DOES THE GRAPH DESCRIBE THE MAP (#275). Every other nav check
+    // measures connectivity, and connectivity is exactly the property
+    // a too-small graph preserves perfectly: islands, components,
+    // directed reach and sink detection are all questions about the
+    // nodes that exist, and none of them can notice the ones that do
+    // not. A graph of one room scores 100 per cent. e1m5 shipped 38
+    // nodes covering one corner with four of five spawns outside the
+    // bounding box, and both instruments called it healthy.
+    //
+    // This matters now rather than in theory, because the e1m rotation
+    // is entity heavy and navgen lowers the waypoint cap to respect
+    // the edict ceiling, so "too few nodes to describe the map" is a
+    // normal outcome of a correct rule.
+    if let Some(g) = graph.as_ref() {
+        let nearest = |p: [f32; 3]| -> f32 {
+            g.nodes
+                .iter()
+                .map(|n| {
+                    let dx = n[0] - p[0];
+                    let dy = n[1] - p[1];
+                    let dz = n[2] - p[2];
+                    (dx * dx + dy * dy + dz * dz).sqrt()
+                })
+                .fold(f32::INFINITY, f32::min)
+        };
+        let spawn_d: Vec<f32> = items
+            .iter()
+            .filter(|i| i.kind == "spawn")
+            .filter_map(|i| i.origin)
+            .map(nearest)
+            .filter(|d| d.is_finite())
+            .collect();
+        if let Some(worst) = spawn_d.iter().cloned().fold(None::<f32>, |a, b| {
+            Some(a.map(|v| v.max(b)).unwrap_or(b))
+        }) {
+            let orphans = spawn_d.iter().filter(|d| **d > 200.0).count();
+            if worst > 200.0 {
+                implications.push(format!(
+                    "GRAPH DOES NOT COVER THIS MAP: {orphans} of {} spawn(s) are further                      than 200 u from any waypoint, worst {worst:.0} u. A bot spawning                      there snaps to a node across the level. Reach and island scores                      cannot see this - they only measure the nodes that exist",
+                    spawn_d.len()
+                ));
+            }
+        }
+        let off = control.iter().filter(|c| c.reach == "off_graph").count();
+        if off > 0 && off * 2 >= control.len() {
+            implications.push(format!(
+                "{off} of {} control items are off_graph, which is most of them; that is                  a missing-nodes problem, not an item-placement one",
+                control.len()
+            ));
+        }
+    }
+
     let door_meta: Vec<DoorMeta> = items
         .iter()
         .filter(|i| i.kind == "door")
@@ -934,11 +1013,21 @@ fn atlas_from_bsp(
         recommended_baseline.unwrap_or("baseline")
     );
     let wp = graph.as_ref().map(|g| g.nodes.len() as u32).unwrap_or(0);
-    let ents = counts.get("entities").copied().unwrap_or(0) as u32;
+    let lump = counts.get("entities").copied().unwrap_or(0) as u32;
+    let ents = counts
+        .get("live_entities")
+        .copied()
+        .map(|v| v as u32)
+        .unwrap_or(lump);
+    let freed = lump.saturating_sub(ents);
     let edicts_est = ents + wp;
-    let edicts_note = if edicts_est > 500 {
+    // navgen budgets against 500, deliberately leaving 100 for bodies,
+    // missiles and temp entities; the engine's hard ceiling is 600.
+    // Those are different questions and the note used to present one
+    // number against the other without saying which (#280).
+    let edicts_note = if edicts_est > 450 {
         Some(format!(
-            "edict estimate {edicts_est} (entities {ents} + waypoints {wp}); vanilla max_edicts is 600, keep a margin"
+            "edict estimate {edicts_est} (live entities {ents} + waypoints {wp};              {freed} of {lump} lump entities free themselves at spawn). navgen budgets              against 500, leaving 100 for bodies, missiles and temp entities; the              engine's hard ceiling is 600"
         ))
     } else {
         None
@@ -2183,6 +2272,54 @@ mod tests {
         assert!(cuts.weak >= 1);
         assert_eq!(cuts.largest_weak, cuts.islands.first().map(|i| i.nodes).unwrap_or(0));
         assert!(atlas.headline.contains("islands"));
+    }
+
+    // #280: the edict estimate counted the raw entity lump while
+    // navgen counted live entities, so the two tools disagreed by
+    // most of the number on every SP map. e1m5 has 536 in the lump
+    // and 212 untargeted lights.
+    //
+    // #275: and the graph itself covers one corner of that level,
+    // which every connectivity measure passes perfectly, because
+    // connectivity is a question about the nodes that exist.
+    #[test]
+    fn real_e1m5_if_present_counts_live_edicts_and_sees_the_coverage_hole() {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../maps_local/e1m5.bsp");
+        if !path.exists() {
+            return;
+        }
+        let root = path.parent().unwrap().parent().unwrap();
+        let mut env = HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = load_for_reads_from(&env, root).unwrap();
+        let atlas = cartograph(&cfg, "e1m5").unwrap();
+
+        let lump = atlas.counts.get("entities").copied().unwrap_or(0);
+        let live = atlas.counts.get("live_entities").copied().unwrap_or(0);
+        assert!(lump > 400, "e1m5 lump should be large, got {lump}");
+        assert!(
+            live < lump,
+            "untargeted lights must not count as runtime edicts: {live} vs {lump}"
+        );
+        // roughly 40% of this lump frees itself; the old estimate was
+        // the whole thing
+        assert!(
+            (live as f64) < (lump as f64) * 0.8,
+            "expected most of the difference to be lights: {live} of {lump}"
+        );
+
+        // the coverage hole is the point of #275, and no existing
+        // measure could state it
+        let cover = atlas
+            .implications
+            .iter()
+            .find(|i| i.contains("GRAPH DOES NOT COVER THIS MAP"))
+            .expect("e1m5's graph covers one corner and that must be said");
+        assert!(
+            cover.contains("spawn"),
+            "the finding should name the spawns: {cover}"
+        );
     }
 
     #[test]

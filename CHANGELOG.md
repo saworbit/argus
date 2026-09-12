@@ -183,6 +183,44 @@ row, and `matrix_experiment` turns that into `compare: null` with no
 gates and no next steps. Verified live on e1m1 and e1m5. The issue was
 filed against a stale running binary, which is its own recurring problem.
 
+**The nav instruments can finally see a graph that does not cover its
+map (#275, #280).** Every existing nav check measures connectivity, and
+connectivity is exactly the property a too-small graph preserves
+perfectly. Islands, strongly connected components, directed reach, sink
+detection: all of them ask about the relationships between nodes that
+exist, and none can notice the ones that do not. A graph of one room
+scores 100 per cent. e1m5 ships 38 nodes covering one corner of the
+level, with four of five deathmatch spawns outside the graph's bounding
+box, and both `argus_reach` and cartograph called it healthy at 89 per
+cent worst spawn.
+
+Distance from a spawn to its nearest waypoint cannot be faked that way,
+because it is a statement about the map rather than about the graph's
+internal structure. `argus_reach` measures it now and fails the gate past
+200 units, and it reports the give-away the old output already contained
+without noticing: several spawns resolving to the same node. On e1m5 it
+reads "7 of 10 spawns are over 200u from any waypoint, worst 1595u" and
+exits 1 where it used to exit 0. It also caught two spawns on e1m8 at 606
+and 488 units. dm4, dm2, dm6 and lqdm2 all still pass, so CI's own
+lqdm2 gate is unaffected. Cartograph raises the same finding as an
+implication, plus one for a map where most control items are off graph,
+which reads identically today whether one item is off or eight.
+
+The edict estimate counted the raw entity lump while navgen counted live
+entities, so two tools in the same lab disagreed by most of the number on
+every single player map. An untargeted `light` is removed by misc.qc's
+`light()` the moment it spawns, and id's maps are full of them: 181 of
+e1m1's 369, 195 of e1m5's 536, 308 of e1m8's 495. Cartograph reported
+e1m1 at "592 of 600, keep a margin", eight edicts spare, when the live
+figure is nearer 400. A reader acting on that would decline to
+regenerate a graph that badly needed one, which is exactly what happened
+when #274 was first diagnosed. Cartograph uses navgen's rule now, from a
+single shared definition rather than two implementations that had already
+drifted, and the note says how many entities free themselves and which
+ceiling it is talking about: navgen budgets against 500, leaving 100 for
+bodies, missiles and temp entities, while the engine's hard limit is 600.
+Those were always two different questions presented as one metric.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
