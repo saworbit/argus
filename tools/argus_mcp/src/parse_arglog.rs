@@ -322,6 +322,16 @@ pub fn parse_tape(text: &str) -> MatchTape {
                 *event_counts.entry("sprintjump".to_string()).or_insert(0) += 1;
             } else if line.ends_with(" prefire") {
                 *event_counts.entry("prefire".to_string()).or_insert(0) += 1;
+            } else if line.ends_with(" coop catchup warp") {
+                // a rescue teleport across the level to the team mate,
+                // and the single most consequential thing a co-op bot
+                // does to itself. It used to be emitted with an ARGEVT
+                // prefix and a verb the vocabulary never had, so it
+                // matched nothing and was dropped (#278)
+                *event_counts.entry("coop_warp".to_string()).or_insert(0) += 1;
+            } else if line.contains(" unstick ") {
+                // the other rescue teleport, plain since #262
+                *event_counts.entry("unstick".to_string()).or_insert(0) += 1;
             }
         }
         if let Some(caps) = v1.captures(line) {
@@ -524,12 +534,118 @@ ARGUS Joe Rogan shove\n\
 ARGUS routecache adopt\n\
 ARGUS Carmack watch spawn\n\
 ARGUS Joe Rogan sprintjump\n\
+ARGUS Carmack coop catchup warp\n\
+ARGUS Joe Rogan unstick pinned '2526.7 -40.9 -66.0'\n\
 ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         let tape = parse_tape(text);
         assert_eq!(tape.event_counts.get("shove"), Some(&2));
         assert_eq!(tape.event_counts.get("routecache_adopt"), Some(&1));
         assert_eq!(tape.event_counts.get("watch"), Some(&1));
         assert_eq!(tape.event_counts.get("sprintjump"), Some(&1));
+        // both rescue teleports are countable (#278)
+        assert_eq!(tape.event_counts.get("coop_warp"), Some(&1));
+        assert_eq!(tape.event_counts.get("unstick"), Some(&1));
+    }
+
+    // Every ARGEVT verb the QC actually emits has to be in the
+    // parser's closed alternation. #278 was a verb, "coop", that was
+    // never registered: the regex found no match at any split point
+    // and the line was dropped silently, so a rescue teleport across
+    // the level appeared in no brief, no total and no gate. Nothing
+    // checked the two lists against each other. This does.
+    //
+    // Two emission forms exist. Argus_Event ("verb") takes the verb as
+    // its argument, and the direct form prints "ARGEVT ", the netname,
+    // then a literal that starts with a space and carries the verb.
+    #[test]
+    fn every_argevt_verb_the_qc_emits_is_known_to_the_parser() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("..")
+            .join("..")
+            .join("src");
+        let dir = match std::fs::read_dir(&root) {
+            Ok(d) => d,
+            // the QC tree is not beside the crate in every checkout
+            Err(_) => return,
+        };
+
+        let ev_open = "Argus_Event (\"";
+        let ev_direct = "dprint (\"ARGEVT \");";
+        let lit_open = "dprint (\" ";
+
+        let mut verbs: Vec<(String, String)> = Vec::new();
+        for entry in dir.flatten() {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) != Some("qc") {
+                continue;
+            }
+            let src = match std::fs::read_to_string(&path) {
+                Ok(s) => s,
+                Err(_) => continue,
+            };
+            let file = path
+                .file_name()
+                .and_then(|f| f.to_str())
+                .unwrap_or("?")
+                .to_string();
+
+            // form 1: Argus_Event ("verb")
+            for (i, _) in src.match_indices(ev_open) {
+                let rest = &src[i + ev_open.len()..];
+                if let Some(end) = rest.find('"') {
+                    if let Some(v) = rest[..end].split_whitespace().next() {
+                        verbs.push((v.to_string(), file.clone()));
+                    }
+                }
+            }
+
+            // form 2: dprint ("ARGEVT "); then the first literal that
+            // begins with a space. Argus_Event's own " " separator is
+            // skipped, because its verb arrives via form 1.
+            for (i, _) in src.match_indices(ev_direct) {
+                let stop = std::cmp::min(i + 400, src.len());
+                let window = &src[i..stop];
+                for (j, _) in window.match_indices(lit_open) {
+                    let rest = &window[j + lit_open.len()..];
+                    if let Some(end) = rest.find('"') {
+                        // the verb literal may carry the line
+                        // ending with it, as in " goal_pop\\n"
+                        let lit = &rest[..end];
+                        if let Some(v) = lit
+                            .split(|c: char| c.is_whitespace() || c == '\\')
+                            .find(|t| !t.is_empty())
+                        {
+                            verbs.push((v.to_string(), file.clone()));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        assert!(
+            !verbs.is_empty(),
+            "found no ARGEVT emissions at all - the scan is broken, not the QC"
+        );
+
+        let re = evt_re();
+        let unknown: Vec<String> = verbs
+            .iter()
+            .filter(|(v, _)| {
+                let line = format!("ARGEVT Joe Rogan {} rest", v);
+                match re.captures(&line) {
+                    Some(c) => &c[2] != v.as_str(),
+                    None => true,
+                }
+            })
+            .map(|(v, f)| format!("{} (in {})", v, f))
+            .collect();
+
+        assert!(
+            unknown.is_empty(),
+            "QC emits ARGEVT verbs the parser cannot read: {:?}. Either add the verb to evt_re's alternation, minding the goal_push|goal_pop|goal ordering so a longer verb is not shadowed, or emit a plain ARGUS line and count it as a pseudo-event.",
+            unknown
+        );
     }
 
     #[test]
