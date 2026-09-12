@@ -706,10 +706,37 @@ fn atlas_from_bsp(
         notes.push("no info_player* spawn points in the entity lump".into());
     }
     if items.iter().any(|i| i.classname == "item_artifact_super_damage") {
-        notes.push(
-            "quad is on this map; hold it via prize-only rocket-jump pads when navgen emitted them (dm4: 150->149, 151->149, 152->99, 153->99)"
-                .into(),
-        );
+        // Say what THIS map's graph holds (#276). This used to print
+        // dm4's pad node indices on every map that has a quad, which
+        // is wrong twice over: node numbers only mean anything inside
+        // one graph and the tree already records that they shift on
+        // every regen, which is why probe verdicts are persisted by
+        // coordinate; and the numbers had drifted from the nav data
+        // they claimed to describe, because no test can compare a
+        // prose string against a graph. The map's own rocket link
+        // count is in hand here, so use it, and say the opposite when
+        // there are none rather than advise something the graph
+        // cannot support.
+        let rj = graph
+            .as_ref()
+            .map(|g| {
+                g.adj
+                    .iter()
+                    .flatten()
+                    .filter(|(_, kind)| kind == "rocket")
+                    .count()
+            })
+            .unwrap_or(0);
+        if rj > 0 {
+            notes.push(format!(
+                "quad is on this map and its graph carries {rj} rocket-jump link(s);                  hold it via those pads - look for ARGEVT rjump, not a stall loop"
+            ));
+        } else {
+            notes.push(
+                "quad is on this map but its graph carries NO rocket-jump links, so a                  bot can only reach it on foot; if it sits above walkable ground that                  is a nav gap, not a combat one"
+                    .into(),
+            );
+        }
     }
     if nav.is_none() {
         notes.push(format!(
@@ -2078,6 +2105,31 @@ mod tests {
         let cfg = load_for_reads_from(&env, root).unwrap();
         let atlas = cartograph(&cfg, "dm4").unwrap();
         assert_eq!(atlas.version, 29);
+
+        // The quad note describes THIS map's graph, not dm4's node
+        // indices printed everywhere (#276). dm4 does carry rocket
+        // links, so it should say so with a count, and no note
+        // anywhere may carry a bare node index, which is meaningless
+        // outside one graph and drifts on every regen.
+        let quad_note = atlas
+            .notes
+            .iter()
+            .find(|n| n.contains("quad is on this map"))
+            .expect("dm4 has a quad");
+        assert!(
+            quad_note.contains("rocket-jump link"),
+            "expected a computed link count: {quad_note}"
+        );
+        assert!(
+            !quad_note.contains("150->149") && !quad_note.contains("n149"),
+            "no hardcoded node indices: {quad_note}"
+        );
+        for n in &atlas.notes {
+            assert!(
+                !n.contains("n149") && !n.contains("n99)"),
+                "a note still carries another map's node numbers: {n}"
+            );
+        }
         assert!(atlas.counts.get("spawn").copied().unwrap_or(0) >= 4);
         assert!(atlas.items.iter().any(|i| i.classname.starts_with("weapon_")));
         assert!(!atlas.teleports.is_empty());

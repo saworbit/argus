@@ -59,6 +59,20 @@ pub struct Totals {
     /// a pad or gate is geometrically broken, not merely slow.
     pub mover_waits: u32,
     pub boards: u32,
+    /// Longest stretch a bot spent getting nowhere, at any speed
+    /// (#272). Stalls and freezes both need low speed, so a bot
+    /// oscillating inside a 220 unit box at 355 u/s scores zero on
+    /// both while losing seven per cent of its match. Informational,
+    /// not a gate: a fight or an item orbit looks the same.
+    #[serde(default, skip_serializing_if = "crate::intel::is_zero_f64")]
+    pub confine_max_sec: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confine_note: Option<String>,
+    /// Closest any two bots came to each other all tape (#279). Zero
+    /// engagements on a map where nobody got within 900 units is a
+    /// navigation result, not a dead fire path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub closest_approach: Option<f64>,
     /// Present only when the tape carries human tracks (names with
     /// ARGLOG rows but no spawned/respawn). Every figure above is
     /// then BOT-only - bands, gates and flags are statements about
@@ -226,6 +240,13 @@ pub struct CompareReport {
     pub scaled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scale_note: Option<String>,
+    /// Which run "baseline" actually resolved to (#273). Every gate
+    /// in this report is a statement about that tape, and a baseline
+    /// many builds old quietly turns ordinary drift into a verdict.
+    /// Naming it is the difference between reading a regression and
+    /// chasing one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub baseline_run: Option<String>,
 }
 
 /// LLM-sized brief: no per-event maps, no every bot sample field.
@@ -267,6 +288,9 @@ pub struct CompareLite {
     pub verdict: Verdict,
     pub headline: String,
     pub gate_card: String,
+    /// the run every gate here is measured against (#273)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub baseline_run: Option<String>,
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub scaled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -314,6 +338,7 @@ pub fn compare_lite(r: &CompareReport) -> CompareLite {
         verdict: r.verdict,
         headline: r.headline.clone(),
         gate_card: r.gate_card.clone(),
+        baseline_run: r.baseline_run.clone(),
         scaled: r.scaled,
         scale_note: r.scale_note.clone(),
         gates: r.gates.clone(),
@@ -461,6 +486,14 @@ fn brief_tape_lava(
         .collect();
     let freeze_underfire = fz.iter().filter(|f| f.hp_drop >= 10.0).count() as u32;
     let freeze_max_sec = fz.first().map(|f| f.dur).unwrap_or(0.0);
+    // 220 units and 5 seconds: wide enough that a corridor fight or a
+    // pre-position orbit is not reported every tape, tight enough to
+    // catch the dm2 oscillation that started this (#272).
+    let cf: Vec<_> = tape
+        .confinements(220.0, 5.0)
+        .into_iter()
+        .filter(|c| !humans.contains(&c.bot))
+        .collect();
 
     let ev = |k: &str| *tape.event_counts.get(k).unwrap_or(&0);
     let totals = Totals {
@@ -489,6 +522,14 @@ fn brief_tape_lava(
         freeze_underfire,
         mover_waits: ev("lift") + ev("train"),
         boards: ev("board"),
+        confine_max_sec: cf.first().map(|c| c.dur).unwrap_or(0.0),
+        confine_note: cf.first().map(|c| {
+            format!(
+                "{} spent {:.1}s inside a 220u box at {:.0} u/s around ({:.0}, {:.0})",
+                c.bot, c.dur, c.avg_spd, c.x, c.y
+            )
+        }),
+        closest_approach: tape.closest_approach(),
         human,
     };
 
@@ -719,6 +760,10 @@ fn resolve_latest(cfg: &Config) -> Result<std::path::PathBuf, String> {
     }
     best.map(|(_, p)| p)
         .ok_or_else(|| "no logs in ARGUS_RUNS".into())
+}
+
+pub fn is_zero_f64(v: &f64) -> bool {
+    *v == 0.0
 }
 
 struct MapBars {
@@ -1103,6 +1148,7 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
         b,
         scaled: false,
         scale_note: None,
+        baseline_run: None,
     }
 }
 
@@ -1201,6 +1247,13 @@ fn compare_runs_inner(
     // the gates ran on dm4 bars whatever the candidate actually was.
     let b = brief_run(cfg, log_b, map_hint)?;
     let hint_owned = map_hint.map(str::to_string).or_else(|| b.map.clone());
+    let base_name = resolve_run_ref(cfg, log_a, hint_owned.as_deref())
+        .ok()
+        .and_then(|p| {
+            p.file_stem()
+                .and_then(|s| s.to_str())
+                .map(|s| s.to_string())
+        });
     let a = brief_run(cfg, log_a, hint_owned.as_deref())?;
     let mut report = if scale {
         compare_briefs_scaled(a, b)
@@ -1217,6 +1270,7 @@ fn compare_runs_inner(
             "a compared tape carries HUMAN tracks - human sessions are review material, not gate material; treat this verdict as indicative only".into(),
         );
     }
+    report.baseline_run = base_name;
     for step in &mut report.next_steps {
         step.look_at = crate::qc_index::look_at(cfg, &step.look_at);
     }
@@ -1280,12 +1334,45 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
         .map(|g| g.iter().any(|x| x.name == "engagements" && !x.pass))
         .unwrap_or(false);
     if engage_fail || (brief.totals.engages == 0 && brief.totals.duration_sec >= 30.0) {
-        steps.push(NextStep {
-            priority: 1,
-            area: "combat".into(),
-            look_at: "src/argus.qc perception find() / button0 hold / W_FireLightning".into(),
-            why: "engagements collapsed or never started; historically this was the fire-button bug".into(),
-        });
+        // Ask whether there was anything to shoot at before blaming
+        // the fire path (#279). One e1m1 tape returned this step at
+        // priority 1, naming three combat call sites, on a match
+        // where no two bots came within 939 units of each other all
+        // game. Perception range and the fire button were irrelevant;
+        // the bots were each stuck in their own pocket and zero
+        // engagements was a navigation result. "Historically this was
+        // the fire-button bug" is a prior, not a finding about the
+        // tape in hand, and the engagement gate is one of seven, so
+        // this advice attaches to most movement regressions.
+        let never_met = brief
+            .totals
+            .closest_approach
+            .map(|d| d > 600.0)
+            .unwrap_or(false);
+        if never_met {
+            let d = brief.totals.closest_approach.unwrap_or(0.0);
+            steps.push(NextStep {
+                priority: 1,
+                area: "nav".into(),
+                look_at: "nav coverage, stall hotspots and the graph for this map".into(),
+                why: format!(
+                    "no two bots came within {d:.0} u all tape, so there was nothing to                      perceive and nothing to shoot: this is a navigation result, not a                      combat one. Check coverage and the stall hotspots before the fire path"
+                ),
+            });
+        } else {
+            steps.push(NextStep {
+                priority: 1,
+                area: "combat".into(),
+                look_at: "src/argus.qc perception find() / button0 hold / W_FireLightning".into(),
+                why: match brief.totals.closest_approach {
+                    Some(d) => format!(
+                        "engagements collapsed or never started and bots did get within                          {d:.0} u of each other, so they had targets; historically this                          was the fire-button bug"
+                    ),
+                    None => "engagements collapsed or never started; historically this was                              the fire-button bug"
+                        .into(),
+                },
+            });
+        }
     }
     if brief.totals.acquisitions == 0 && brief.totals.duration_sec >= 60.0 {
         steps.push(NextStep {
@@ -1300,7 +1387,7 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
         steps.push(NextStep {
             priority: 3,
             area: "nav".into(),
-            look_at: "src/argus.qc Argus_BotCanRJ / ARGEVT rjump (dm4 rocket-jump pads land on n149 and n99)".into(),
+            look_at: "src/argus.qc Argus_BotCanRJ / ARGEVT rjump".into(),
             why: format!(
                 "quad goalled {quad} times with {} routefails; pad exists - check rjump events and the RL/health toll",
                 brief.totals.routefails
@@ -1438,7 +1525,11 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
         && !brief.next_steps.iter().any(|s| s.look_at.contains("rocket-jump"))
     {
         brief.flags.push(
-            "bots are goaling elevated quad; dm4 pads land on n149 and n99 - look for ARGEVT rjump, not a stall loop".into(),
+            // no node numbers here (#276): they belong to one graph,
+            // they shift on every regen, and this string was printing
+            // dm4's on dm2 and e1m5 briefs. The actionable half is
+            // the last clause, which loses nothing by being general.
+            "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop".into(),
         );
     }
     for line in atlas.implications.iter().take(2) {
@@ -2153,6 +2244,65 @@ ARGEVT Reap hazard
         let lite = compare_lite(&scaled);
         assert_eq!(lite.verdict, scaled.verdict);
         assert!(lite.scale_note.is_some());
+    }
+
+    // The tape that motivated #279: e1m1, zero engagements, and the
+    // brief's priority 1 step named three combat call sites. No two
+    // bots came within 939 units of each other all match, so the
+    // right answer was navigation.
+    #[test]
+    fn real_e1m1_inert_tape_blames_nav_not_the_fire_path_if_present() {
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+
+        // The tape from the issue: zero engagements, and the bots
+        // never came near each other. Closest approach is 1396 u.
+        let apart = root.join("vibe_e1m1_long.log");
+        if apart.exists() {
+            if let Ok(brief) = brief_path(&apart, Some("e1m1")) {
+                assert_eq!(brief.totals.engages, 0, "this tape is the inert one");
+                let d = brief
+                    .totals
+                    .closest_approach
+                    .expect("two bot tracks give an approach");
+                assert!(d > 600.0, "bots were far apart all tape, got {d}");
+                assert!(
+                    !brief
+                        .next_steps
+                        .iter()
+                        .any(|s| s.area == "combat" && s.look_at.contains("W_FireLightning")),
+                    "must not send the reader to the fire path when nobody had a target"
+                );
+                assert!(
+                    brief
+                        .next_steps
+                        .iter()
+                        .any(|s| s.area == "nav" && s.why.contains("nothing to shoot")),
+                    "expected the navigation step instead: {:?}",
+                    brief.next_steps
+                );
+            }
+        }
+
+        // And the other direction, so the check cannot simply always
+        // blame nav. A longer e1m1 tape has the bots passing within
+        // 79 u and still never engaging, which IS a combat question,
+        // and the step has to stay pointed at the fire path there.
+        let met = root.join("ab_e1m1_unstick1.log");
+        if met.exists() {
+            if let Ok(brief) = brief_path(&met, Some("e1m1")) {
+                assert_eq!(brief.totals.engages, 0);
+                let d = brief.totals.closest_approach.expect("three tracks");
+                assert!(d < 600.0, "these bots did meet, got {d}");
+                assert!(
+                    brief
+                        .next_steps
+                        .iter()
+                        .any(|s| s.area == "combat" && s.look_at.contains("W_FireLightning")),
+                    "bots that met and did not fight is a combat finding: {:?}",
+                    brief.next_steps
+                );
+            }
+        }
     }
 
     #[test]
