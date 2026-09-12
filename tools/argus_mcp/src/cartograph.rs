@@ -2309,16 +2309,23 @@ mod tests {
             "expected most of the difference to be lights: {live} of {lump}"
         );
 
-        // the coverage hole is the point of #275, and no existing
-        // measure could state it
-        let cover = atlas
-            .implications
-            .iter()
-            .find(|i| i.contains("GRAPH DOES NOT COVER THIS MAP"))
-            .expect("e1m5's graph covers one corner and that must be said");
+        // e1m5's graph used to cover one corner of the level, with
+        // four of five spawns outside its own bounding box, and this
+        // test asserted the resulting complaint. #274 regenerated it,
+        // so the assertion is inverted: the map must now be clean, and
+        // this is what stops it silently reverting to the stale file.
         assert!(
-            cover.contains("spawn"),
-            "the finding should name the spawns: {cover}"
+            !atlas
+                .implications
+                .iter()
+                .any(|i| i.contains("GRAPH DOES NOT COVER THIS MAP")),
+            "e1m5 was regenerated and must cover its own map now: {:?}",
+            atlas.implications
+        );
+        let nodes = atlas.nav.as_ref().map(|n| n.nodes).unwrap_or(0);
+        assert!(
+            nodes > 100,
+            "the regenerated graph is 155 nodes; {nodes} means the stale 38-node file is back"
         );
     }
 

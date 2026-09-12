@@ -83,6 +83,12 @@ pub struct MatchTape {
     /// Non-empty means the tape's match ran somewhere other than what
     /// was asked for and every metric describes the wrong map.
     pub failed_spawns: Vec<String>,
+    /// How many levels this file spans (#266). More than one and only
+    /// the busiest segment was parsed: `time` and every counter field
+    /// restart at a level change, so nothing may be aggregated across
+    /// them.
+    pub segments: u32,
+    pub segment_note: Option<String>,
 }
 
 /// A statue: 6 s or longer at under 20 u/s inside a 32u circle,
@@ -390,7 +396,86 @@ pub fn parse_tape_path(path: &std::path::Path) -> std::io::Result<MatchTape> {
     Ok(parse_tape(&text))
 }
 
+/// Split a log on level changes and return the busiest segment.
+///
+/// The engine restarts `time` at a level change, and a tape that spans
+/// one is not one match (#266). A co-op session on e1m2 that exits to
+/// e1m3 briefed as a 1.5 second match at 12,326 u/s: duration came
+/// from the short trailing segment while distance was summed over the
+/// whole file, counter fields like `st` and `gl` reset and the brief
+/// read the last value, so totals.stalls said 0 while events.stall
+/// counted 40 and a hotspot showed 37 hits at one cell. The tape
+/// contradicted itself inside one JSON object, and every
+/// geometry-joined field was computed against the wrong level's graph.
+///
+/// The existing wrong-map guard could not catch it, because that one
+/// only fires on "Couldn't spawn server" and both spawns here
+/// succeeded. It was a deathmatch-only assumption, and reaching an
+/// exit is the normal end of a co-op session.
+///
+/// Briefing the busiest segment and saying so is the honest reading:
+/// on that tape it is 133 seconds of e1m2 against 3 seconds of e1m3.
+fn split_segments(text: &str) -> Vec<&str> {
+    let map_re = map_re();
+    let mut cuts: Vec<usize> = Vec::new();
+    let mut seen_samples = false;
+    let mut pos = 0usize;
+    for line in text.lines() {
+        let start = pos;
+        pos += line.len() + 1;
+        if line.starts_with("ARGLOG ") {
+            seen_samples = true;
+            continue;
+        }
+        // Only a SpawnServer that follows actual play is a level
+        // change. The first one is just the match starting, and a
+        // refused spawn is handled by the failed_spawns guard.
+        if seen_samples && map_re.is_match(line) && line.contains("SpawnServer") {
+            cuts.push(start);
+            seen_samples = false;
+        }
+    }
+    if cuts.is_empty() {
+        return vec![text];
+    }
+    let mut out = Vec::new();
+    let mut prev = 0usize;
+    for c in cuts {
+        out.push(&text[prev..c]);
+        prev = c;
+    }
+    out.push(&text[prev..]);
+    out
+}
+
+fn arglog_lines(seg: &str) -> usize {
+    seg.lines().filter(|l| l.starts_with("ARGLOG ")).count()
+}
+
 pub fn parse_tape(text: &str) -> MatchTape {
+    let segs = split_segments(text);
+    if segs.len() > 1 {
+        let total = segs.len();
+        let (idx, best) = segs
+            .iter()
+            .enumerate()
+            .max_by_key(|(_, s)| arglog_lines(s))
+            .map(|(i, s)| (i, *s))
+            .unwrap();
+        let mut tape = parse_one(best);
+        tape.segments = total as u32;
+        tape.segment_note = Some(format!(
+            "tape spans {total} levels; briefed segment {} of {total} ({} sample rows, map {}). Counters and time restart at a level change, so figures are NOT aggregated across them",
+            idx + 1,
+            arglog_lines(best),
+            tape.map.as_deref().unwrap_or("?")
+        ));
+        return tape;
+    }
+    parse_one(text)
+}
+
+fn parse_one(text: &str) -> MatchTape {
     let v1 = v1_re();
     let death = death_re();
     let evt = evt_re();
@@ -530,6 +615,8 @@ pub fn parse_tape(text: &str) -> MatchTape {
         events,
         event_counts,
         failed_spawns,
+        segments: 1,
+        segment_note: None,
     }
 }
 

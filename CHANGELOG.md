@@ -273,6 +273,27 @@ the v3.65 board accounting doing its job on infrastructure this graph has
 only just acquired, and it wants its own look at the boarding gate rather
 than a nav change. e1m5's baseline is now `ab_e1m5_regen2`.
 
+**A tape that spans a level change is no longer briefed as one match
+(#266).** The engine restarts `time` at a level change, so a co-op
+session that plays 133 seconds of e1m2, exits, and records 3 more on
+e1m3 was briefed as a 1.5 second match at 12,326 u/s. Three things broke
+at once: duration came from the short trailing segment while distance was
+summed over the whole file, counter fields like `st` and `gl` reset so
+`totals.stalls` read 0 while `events.stall` counted 40, and every
+geometry-joined field was computed against one level's graph for a tape
+that held two. The existing wrong-map guard could not catch it, because
+that one only fires on a refused spawn and both spawns here succeeded: it
+was a deathmatch-only assumption, and reaching an exit is the normal end
+of a co-op session.
+
+The parser splits on level changes now and briefs the busiest segment,
+saying so in a flag at the top. That tape reads 133.4 seconds of e1m2 at
+117 u/s with `totals.stalls` 40 against `events.stall` 40, so the brief
+no longer contradicts itself inside one object. A second, independent
+guard flags any average speed over 400 u/s as a parsing defect rather
+than printing it, because a Quake player caps near 320 and that is worth
+catching however it happens.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a

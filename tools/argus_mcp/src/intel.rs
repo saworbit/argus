@@ -551,6 +551,25 @@ fn brief_tape_lava(
             ),
         );
     }
+    if let Some(note) = &tape.segment_note {
+        // A tape that spans a level change is not one match, and the
+        // wrong-map guard above cannot see it because both spawns
+        // succeeded (#266). Say which segment was read, first.
+        flags.insert(0, format!("LEVEL CHANGE: {note}"));
+    }
+    // A Quake player caps near 320 u/s. Anything far past that is a
+    // parsing defect rather than a fast bot, and the level-change tape
+    // printed 12,326 before anyone noticed. Cheap, independent of the
+    // cause, and worth keeping whatever else changes.
+    if totals.avg_speed > 400.0 {
+        flags.insert(
+            0,
+            format!(
+                "IMPOSSIBLE SPEED: average {:.0} u/s, and a Quake player caps near 320.                  This is a parsing defect, not a fast bot - judge NOTHING from this brief",
+                totals.avg_speed
+            ),
+        );
+    }
     if let Some(worst) = fz.first() {
         flags.push(format!(
             "{} freeze(s) 6 s+, longest {:.1} s at '{:.0} {:.0} {:.0}' ({})",
@@ -2303,6 +2322,63 @@ ARGEVT Reap hazard
                 );
             }
         }
+    }
+
+    // #266: a co-op session that plays 133 s of e1m2, exits, and
+    // records 3 s on e1m3 briefed as a 1.5 second match at 12,326
+    // u/s, with totals.stalls 0 while events.stall counted 40.
+    #[test]
+    fn real_level_change_tape_is_not_briefed_as_one_match_if_present() {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/shane_e1m3_2026-09-05_v409.log");
+        if !path.exists() {
+            return;
+        }
+        let brief = brief_path(&path, None).unwrap();
+
+        // the long segment is the one worth reading, and it is e1m2
+        assert_eq!(brief.map.as_deref(), Some("e1m2"));
+        assert!(
+            brief.totals.duration_sec > 100.0,
+            "must read the 133 s segment, not the 1.5 s one: got {}",
+            brief.totals.duration_sec
+        );
+        assert!(
+            brief.totals.avg_speed < 400.0,
+            "12,326 u/s was the symptom: got {}",
+            brief.totals.avg_speed
+        );
+        // the tape used to contradict itself: totals 0, events 40
+        let ev_stalls = *brief.events.get("stall").unwrap_or(&0) as i32;
+        if ev_stalls > 0 {
+            assert!(
+                brief.totals.stalls > 0,
+                "totals.stalls {} cannot be zero while {ev_stalls} stall events exist",
+                brief.totals.stalls
+            );
+        }
+        assert!(
+            brief.flags.iter().any(|f| f.starts_with("LEVEL CHANGE:")),
+            "the reader has to be told: {:?}",
+            brief.flags
+        );
+    }
+
+    // and a single-level tape must not be labelled
+    #[test]
+    fn an_ordinary_tape_raises_no_level_change_flag_if_present() {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/ab_dm4_parity.log");
+        if !path.exists() {
+            return;
+        }
+        let brief = brief_path(&path, None).unwrap();
+        assert!(
+            !brief.flags.iter().any(|f| f.starts_with("LEVEL CHANGE:")),
+            "single-level tape must not be flagged: {:?}",
+            brief.flags
+        );
+        assert!(brief.totals.avg_speed < 400.0);
     }
 
     #[test]
