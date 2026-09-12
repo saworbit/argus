@@ -47,6 +47,16 @@ pub struct Sample {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct Confinement {
+    pub bot: String,
+    pub t_start: f64,
+    pub dur: f64,
+    pub x: f64,
+    pub y: f64,
+    pub avg_spd: f64,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct DeathEvent {
     pub victim: String,
     pub killer: String,
@@ -169,6 +179,119 @@ impl MatchTape {
         }
         out.sort_by(|a, b| b.dur.partial_cmp(&a.dur).unwrap());
         out
+    }
+
+    /// Confinement scan (#272). The freeze detector needs low speed
+    /// and the stall detector needs low speed, so a bot can oscillate
+    /// inside a small box at full run speed and leave no trace in any
+    /// gate. One dm2 tape has a bot spending 13 seconds of 185 inside
+    /// a 220 unit box averaging 355 u/s, in mode 2, not fighting: the
+    /// route succeeded and the walking failed, and the only residue
+    /// was nine hazard deflections, which the lab deliberately reads
+    /// as the guard WORKING. Seven per cent of that bot's match
+    /// disappeared with every gate green.
+    ///
+    /// So this one ignores speed entirely and asks the honest
+    /// question instead: how long did the bot fail to get anywhere.
+    /// A freeze at 0 u/s and an oscillation at 355 u/s are the same
+    /// family and this reports both. Legitimate fights and item
+    /// orbits also sit still in a box, so it is informational and not
+    /// a gate.
+    pub fn confinements(&self, box_u: f64, min_sec: f64) -> Vec<Confinement> {
+        let mut out = Vec::new();
+        for (name, rec) in &self.samples {
+            let mut i = 0;
+            while i < rec.len() {
+                // grow the longest run whose whole span fits the box
+                let (mut lo_x, mut hi_x) = (rec[i].pos.x, rec[i].pos.x);
+                let (mut lo_y, mut hi_y) = (rec[i].pos.y, rec[i].pos.y);
+                let mut j = i;
+                let mut spd_sum = rec[i].spd;
+                while j + 1 < rec.len() {
+                    let s = &rec[j + 1];
+                    let nlo_x = lo_x.min(s.pos.x);
+                    let nhi_x = hi_x.max(s.pos.x);
+                    let nlo_y = lo_y.min(s.pos.y);
+                    let nhi_y = hi_y.max(s.pos.y);
+                    if nhi_x - nlo_x > box_u || nhi_y - nlo_y > box_u {
+                        break;
+                    }
+                    lo_x = nlo_x;
+                    hi_x = nhi_x;
+                    lo_y = nlo_y;
+                    hi_y = nhi_y;
+                    spd_sum += s.spd;
+                    j += 1;
+                }
+                let dur = rec[j].t - rec[i].t;
+                if dur >= min_sec && j > i {
+                    out.push(Confinement {
+                        bot: name.clone(),
+                        t_start: rec[i].t,
+                        dur,
+                        x: (lo_x + hi_x) * 0.5,
+                        y: (lo_y + hi_y) * 0.5,
+                        avg_spd: spd_sum / ((j - i + 1) as f64),
+                    });
+                }
+                i = j + 1;
+            }
+        }
+        out.sort_by(|a, b| b.dur.partial_cmp(&a.dur).unwrap());
+        out
+    }
+
+    /// Closest that any two bots ever came to each other (#279). Zero
+    /// engagements gets diagnosed as a dead fire path, and on one
+    /// e1m1 tape the bots never came within 939 units of each other
+    /// all match: perception range and the fire button were
+    /// irrelevant, because there was nothing to perceive. The brief
+    /// already holds every track, so this is a few lines over data in
+    /// hand, and it is worth reporting unconditionally - "closest
+    /// approach 939 u" on a map where bots are meant to fight is a
+    /// finding on its own.
+    ///
+    /// Samples are compared at matching timestamps, rounded to the
+    /// tape's 1 Hz grid, so two bots that pass the same spot a minute
+    /// apart are not counted as having met.
+    pub fn closest_approach(&self) -> Option<f64> {
+        let humans = self.human_names();
+        let tracks: Vec<&Vec<Sample>> = self
+            .samples
+            .iter()
+            .filter(|(n, _)| !humans.contains(n.as_str()))
+            .map(|(_, r)| r)
+            .collect();
+        if tracks.len() < 2 {
+            return None;
+        }
+        let mut best: Option<f64> = None;
+        for a in 0..tracks.len() {
+            for b in (a + 1)..tracks.len() {
+                let mut i = 0;
+                let mut j = 0;
+                while i < tracks[a].len() && j < tracks[b].len() {
+                    let sa = &tracks[a][i];
+                    let sb = &tracks[b][j];
+                    let dt = sa.t - sb.t;
+                    if dt.abs() <= 0.6 {
+                        let dx = sa.pos.x - sb.pos.x;
+                        let dy = sa.pos.y - sb.pos.y;
+                        let dz = sa.pos.z - sb.pos.z;
+                        let d = (dx * dx + dy * dy + dz * dz).sqrt();
+                        if best.map(|v| d < v).unwrap_or(true) {
+                            best = Some(d);
+                        }
+                    }
+                    if dt < 0.0 {
+                        i += 1;
+                    } else {
+                        j += 1;
+                    }
+                }
+            }
+        }
+        best
     }
 
     pub fn summary(&self) -> MatchSummary {
@@ -557,6 +680,96 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
     // Two emission forms exist. Argus_Event ("verb") takes the verb as
     // its argument, and the direct form prints "ARGEVT ", the netname,
     // then a literal that starts with a space and carries the verb.
+
+    // #272: a bot oscillating at speed leaves no trace in the stall
+    // or freeze detectors, because both need low speed. Confinement
+    // ignores speed and asks whether the bot got anywhere.
+    #[test]
+    fn confinement_sees_a_fast_bot_going_nowhere() {
+        let mut text = String::new();
+        // 12 seconds shuttling inside a ~200u box at ~350 u/s
+        let mut t = 1.0;
+        while t < 13.0 {
+            let x = if (t * 2.0) as i32 % 2 == 0 { 1500.0 } else { 1680.0 };
+            text.push_str(&format!(
+                "ARGLOG Carmack t {t:.1} pos '{x:.1} -1300.0 32.0' spd 355 yaw 0 mode 2 st 4 gl 0 hp 100 frg 0\n"
+            ));
+            t += 0.5;
+        }
+        let tape = parse_tape(&text);
+        // the stall and freeze detectors see nothing here
+        assert!(tape.freezes().is_empty(), "freeze detector should not fire at 355 u/s");
+        let cf = tape.confinements(220.0, 5.0);
+        assert!(!cf.is_empty(), "confinement should catch it");
+        assert!(cf[0].dur >= 10.0, "expected a long window, got {}", cf[0].dur);
+        assert!(cf[0].avg_spd > 300.0, "and it should report the real speed");
+
+        // a bot actually crossing the map is not confined
+        let mut t = 1.0;
+        let mut moving = String::new();
+        let mut x = 0.0;
+        while t < 13.0 {
+            moving.push_str(&format!(
+                "ARGLOG Romero t {t:.1} pos '{x:.1} 0.0 24.0' spd 320 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n"
+            ));
+            x += 160.0;
+            t += 0.5;
+        }
+        let tape2 = parse_tape(&moving);
+        assert!(
+            tape2.confinements(220.0, 5.0).is_empty(),
+            "a bot travelling should never read as confined"
+        );
+    }
+
+    // #279: zero engagements was diagnosed as a dead fire path on a
+    // tape where no two bots came within 939 units of each other.
+    #[test]
+    fn closest_approach_separates_no_targets_from_no_shooting() {
+        // two bots in their own corners of the map
+        let mut apart = String::new();
+        let mut t = 1.0;
+        while t < 8.0 {
+            apart.push_str(&format!(
+                "ARGEVT Carmack spawned\nARGLOG Carmack t {t:.1} pos '0.0 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n"
+            ));
+            apart.push_str(&format!(
+                "ARGEVT Romero spawned\nARGLOG Romero t {t:.1} pos '2000.0 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n"
+            ));
+            t += 1.0;
+        }
+        let tape = parse_tape(&apart);
+        let d = tape.closest_approach().expect("two tracks give an answer");
+        assert!((d - 2000.0).abs() < 1.0, "expected 2000, got {d}");
+
+        // and two that meet
+        let mut near = String::new();
+        let mut t = 1.0;
+        let mut x = 2000.0;
+        while t < 8.0 {
+            near.push_str(&format!(
+                "ARGEVT Carmack spawned\nARGLOG Carmack t {t:.1} pos '0.0 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n"
+            ));
+            near.push_str(&format!(
+                "ARGEVT Romero spawned\nARGLOG Romero t {t:.1} pos '{x:.1} 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n"
+            ));
+            x -= 300.0;
+            t += 1.0;
+        }
+        let tape2 = parse_tape(&near);
+        let d2 = tape2.closest_approach().expect("two tracks give an answer");
+        assert!(d2 < 400.0, "bots that converge should read close, got {d2}");
+
+        // passing the same spot a minute apart is not a meeting
+        let ships = "ARGEVT Carmack spawned\nARGLOG Carmack t 1.0 pos '0.0 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n\
+ARGEVT Romero spawned\nARGLOG Romero t 60.0 pos '0.0 0.0 24.0' spd 100 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n";
+        assert_eq!(
+            parse_tape(ships).closest_approach(),
+            None,
+            "tracks that never share a timestamp have no approach"
+        );
+    }
+
     #[test]
     fn every_argevt_verb_the_qc_emits_is_known_to_the_parser() {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))

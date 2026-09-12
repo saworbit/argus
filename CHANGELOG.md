@@ -135,6 +135,54 @@ change alters the non-keyed door path at all, which is why it is parity:
 the reorder only moves a test that is false for an unkeyed door, and the
 new shelf returns immediately for one.
 
+**The lab stops asserting things it has not checked (#272, #273, #276,
+#279).** Four ways the advice layer spoke with more confidence than its
+evidence supported.
+
+Zero engagements was diagnosed as a dead fire path, at priority 1,
+naming three combat call sites, without ever asking whether the bots
+were near each other. On the e1m1 tape that prompted this, no two bots
+came within 1396 units all match: there was nothing to perceive and
+nothing to shoot, and the answer was navigation. The brief already holds
+every track, so closest approach is a few lines over data in hand. It is
+reported unconditionally now, and the step it feeds points at nav when
+the bots never met and at the fire path when they did. Both directions
+are covered by tests against real tapes, because a longer e1m1 tape has
+them passing within 79 units and still not fighting, which genuinely is
+a combat question.
+
+Stalls need low speed and freezes need low speed, so a bot can oscillate
+inside a 220 unit box at 355 u/s and score zero on both while losing
+seven per cent of its match. The only residue is hazard deflections,
+which the lab deliberately reads as the guard working. `confine_max_sec`
+ignores speed and asks the honest question instead: how long did the bot
+fail to get anywhere. A 0 u/s freeze and a 355 u/s oscillation are the
+same family and this reports both. Informational, not a gate, because a
+fight or an item orbit looks the same.
+
+dm4's rocket-jump pad node indices were printed on every map with a quad,
+including dm2 and e1m5. Node numbers only mean something inside one graph
+and the tree already records that they shift on every regen, which is why
+probe verdicts are persisted by coordinate. They had also drifted from
+the nav data they claimed to describe, because no test can compare a
+prose string to a graph. The note is computed from the map's own rocket
+link count now, and says the opposite when there are none rather than
+advising something the graph cannot support.
+
+Compare output names the run it resolved as the baseline. Every gate in a
+report is a statement about that one tape, and a baseline many builds old
+turns ordinary drift into a verdict: this session lost time to exactly
+that on dm2, where the shipped baseline predates seventeen builds and a
+control run on main was needed to tell a real regression from a stale
+comparison. Baselines added for e1m1 and e1m2, the maps the co-op work
+runs on.
+
+One correction to #273: refusing a verdict when a map has no baseline was
+already true in the tree. `resolve_baseline` errors for any map without a
+row, and `matrix_experiment` turns that into `compare: null` with no
+gates and no next steps. Verified live on e1m1 and e1m5. The issue was
+filed against a stale running binary, which is its own recurring problem.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
