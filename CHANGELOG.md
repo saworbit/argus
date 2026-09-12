@@ -221,6 +221,58 @@ ceiling it is talking about: navgen budgets against 500, leaving 100 for
 bodies, missiles and temp entities, while the engine's hard limit is 600.
 Those were always two different questions presented as one metric.
 
+**e1m5 gets a graph of its level (#274).** The shipped
+`argus_nav_e1m5.qc` was an artifact of the collapsed-cap era that
+`spawns_an_edict` fixed: 38 nodes in a 1056 by 1216 box on a full sized
+map, zero door links on a map with 23 doors, and four of five deathmatch
+spawns outside the graph's own bounding box. Every other e1m map was
+regenerated after that fix and this one was missed. A regeneration today
+produces 155 nodes spanning the whole level, and the item distances tell
+the story better than the node count:
+
+```
+                          shipped   regen
+weapon_rocketlauncher       516u      30u
+item_artifact_super_damage 1005u      44u
+item_health (mega)         1611u      34u
+item_armor2                1213u      17u
+weapon_supernailgun         922u      29u
+weapon_grenadelauncher      794u      29u
+item_armor1                 583u      42u
+```
+
+Those are the eight the issue listed as `off_graph`. Every spawn now
+resolves to its own node, none further than 200 units, so the new
+coverage gate passes it where it failed the old graph at 1595 units. The
+graph gains 36 door links, 6 train links, 2 lift links and a swim link
+where it had none of the first three. Edict estimate 496 of 600.
+
+Ladder, one control on the shipped graph and two candidate tapes,
+because the project's own rule is two tapes or a control:
+
+```
+                 control   regen1   regen2
+engages                6        5       20
+frags                 -1       -1       +6  (all positive only here)
+stalls                30       36       17
+acquisitions           3       17       20
+coverage             218      301      328
+routefails             7        0        0
+freezes                9       12       10   (all bounded, ~7 s, same cell)
+quad goal selections   0        4        4
+```
+
+Consumption, coverage and routefails improve decisively and in the same
+direction on both candidate tapes. Engagement and frags swing hard, which
+is this map's variance, but never below the control on aggregate. Freezes
+are flat within noise and sit on a cell the control has too.
+
+One new residual, and it is new only because the links did not exist
+before: the second tape flags 4 lift/train waits with zero boards. That is
+the v3.65 board accounting doing its job on infrastructure this graph has
+only just acquired, and it wants its own look at the boarding gate rather
+than a nav change. e1m5's baseline is now `ab_e1m5_regen2`.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
