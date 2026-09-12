@@ -1377,6 +1377,30 @@ void() Argus_WaterMove =
     }
 };
 
+// Live gravity, not the 800 every prediction used to assume (#282).
+//
+// world.qc sets sv_gravity 100 on e1m8, Ziggurat Vertigo, exactly as
+// stock id does, and the engine applies it to bots for real: they are
+// MOVETYPE_STEP, so SV_Physics_Step uses the live value. A bot there
+// genuinely jumps 364 units while every prediction it made said 45,
+// because 270^2/(2*100) is 364 and 270^2/(2*800) is 45. A factor of
+// eight, on the one map whose whole design is floating.
+//
+// READ, never cached. worldspawn sets the cvar AFTER Argus_Nav_Spawn
+// runs, so a value latched at init would hold the PREVIOUS level's
+// gravity. cvar() is a stock builtin, the tree already reads scratch1
+// and developer through it, and the call sites here are a handful a
+// second at most.
+float() Argus_Gravity =
+{
+    local float g;
+
+    g = cvar ("sv_gravity");
+    if (g < 1)
+        return 800;             // cvar missing: stock default
+    return g;
+};
+
 // predictive gap jump (2026-08-20, the Omicron review, sampling
 // 10.3: at a non-walkable area their bot predicts the jump in 0.1 s
 // steps, collisions included, and jumps only "if it is satisfied
@@ -1392,22 +1416,32 @@ void() Argus_WaterMove =
 float(float myaw, float spd) Argus_GapJumpOK =
 {
     local vector dir, p0, p1;
-    local float t, pz;
+    local float t, pz, g, tmax;
 
     if (spd > 330)
         return FALSE;           // beyond the model; do not extrapolate
+    // The whole simulation is gravity's (#282). The window has to
+    // move with it too: a 270 launch is back at launch height after
+    // 2*270/g seconds, which is 0.675 s at 800 and 5.4 s at 100, so a
+    // fixed 1.25 s window would cut the flight off while still rising
+    // and refuse every low-gravity gap as "no landing". Capped at 3 s
+    // so the trace count stays bounded.
+    g = Argus_Gravity ();
+    tmax = 1.25 * (800 / g);
+    if (tmax > 3)
+        tmax = 3;
     makevectors ('0 0 0' + myaw * '0 1 0');
     dir = v_forward;
     p0 = self.origin;
     t = 0.1;
-    while (t < 1.25)
+    while (t < tmax)
     {
         p1 = self.origin + dir * (spd * t);
-        p1_z = self.origin_z + 270 * t - 400 * t * t;
+        p1_z = self.origin_z + AR_JUMPVEL * t - 0.5 * g * t * t;
         traceline (p0 + '0 0 24', p1 + '0 0 24', TRUE, self);
         if (trace_fraction < 1)
         {
-            if (270 - 800 * t > 0)
+            if (AR_JUMPVEL - g * t > 0)
                 return FALSE;   // hit while rising: a wall
             if (trace_plane_normal_z < 0.7)
                 return FALSE;   // steep face, not a landing
@@ -1700,12 +1734,19 @@ void() Argus_Physics =
             // for pads almost under the ledge. dm4 quad pads sit
             // ~180u out and need a shallower blast so the knockback
             // carries inward.
+            //
+            // The bands are calibrated at gravity 800, and horizontal
+            // range for a given blast goes as vx/g, so the SAME pad
+            // needs eight times less horizontal push at gravity 100
+            // (#282). Comparing rhoriz*g/800 puts every map on the
+            // 800 scale the numbers were measured on: on e1m8 a pad
+            // 180u out reads 22 and correctly takes the near branch.
             if (Argus_BotCanRJ (self) && self.ar_node != world)
             {
                 rto = self.ar_node.origin - self.origin;
                 rto_z = 0;
-                rhoriz = vlen (rto);
-                if (rhoriz > 8)
+                rhoriz = vlen (rto) * Argus_Gravity () / 800;
+                if (vlen (rto) > 8)
                     self.angles_y = vectoyaw (rto);
                 if (self.weapon != IT_ROCKET_LAUNCHER)
                     self.ar_rjweapon = self.weapon;
@@ -3771,16 +3812,20 @@ float() Argus_Combat =
     if (self.weapon == IT_GRENADE_LAUNCHER)
     {
         // W_FireGrenade launches at v_forward*600 + v_up*200, so the
-        // toss already carries the grenade UP before gravity 800 takes
-        // it back. Over a flight t = d/600 the net vertical travel is
-        // 200t - 400t^2, and the aim correction is its negative:
-        //     loft = d*d/900 - d/3
-        // The old d*d/2400 ignored the launch impulse entirely, which
-        // over-lofted inside ~300u (the grenade rises there on its own
-        // and the extra aim sailed it over heads) and, once the 96 cap
-        // bit, under-lofted badly at the top of the band - a 650u toss
-        // drops about 250u and was being handed 96.
-        loft = (d * d / 900) - (d / 3);
+        // toss already carries the grenade UP before gravity takes it
+        // back. Over a flight t = d/600 the net vertical travel is
+        // 200t - 0.5*g*t^2, and the aim correction is its negative:
+        //     loft = g*d*d/720000 - d/3
+        // which is the old d*d/900 - d/3 exactly at g 800, so no
+        // baseline moves. The old d*d/2400 before that ignored the
+        // launch impulse entirely, over-lofting inside ~300u and
+        // under-lofting badly at the top of the band once the 96 cap
+        // bit.
+        //
+        // The 800 was hidden in the 900 (#282). On e1m8 at gravity
+        // 100 the drop over the same flight is an eighth, so every
+        // grenade was being lofted about eight times too high.
+        loft = (Argus_Gravity () * d * d / 720000) - (d / 3);
         if (loft < 0)
             loft = 0;
         if (e.origin_z > self.origin_z + 32)
@@ -6831,7 +6876,7 @@ void() Argus_AI =
             }
             else if (self.waterlevel >= 2
                      && self.ar_feettype == CONTENT_WATER
-                     && tp_z > self.origin_z + 64
+                     && tp_z > self.origin_z + (320 * 320 / (2 * Argus_Gravity ()))
                      && !self.ar_hopswim && !self.ar_hoplift
                      && !self.ar_hoptrain && !self.ar_hopjump
                      && !self.ar_hoprj)
@@ -6847,8 +6892,12 @@ void() Argus_AI =
                 // session: 622 swim events, two routes, pinned inside
                 // one cell.
                 //
-                // 64 is the water vault's reach (320 up under gravity
-                // 800 apexes at 64). Above that a swimmer is not
+                // The bar is the water vault's reach, and that is a
+                // gravity question (#282): 320 up apexes at 64 under
+                // gravity 800 and at 512 under e1m8's 100. A fixed 64
+                // would re-plan a low-gravity swimmer away from a
+                // node it could reach in one hop.
+                // Above the reach a swimmer is not
                 // getting there, so treat it as displacement and
                 // re-plan - Argus_NearestNode is swim-aware now and
                 // will start the new route from a pool seat, which on

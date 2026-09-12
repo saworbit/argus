@@ -73,6 +73,33 @@ if "--grid" in sys.argv[5:]:
     except ValueError:
         print(f"error: --grid argument must be an integer, got '{sys.argv[grid_idx + 1]}'", file=sys.stderr)
         sys.exit(1)
+# GRAVITY (#282). world.qc sets sv_gravity 100 on e1m8, Ziggurat
+# Vertigo, exactly as stock id does, and the engine applies it to bots
+# for real because they are MOVETYPE_STEP. Every arc in this file used
+# to assume 800, so the jump apex was modelled at 45u where the bot
+# actually reaches 364, and e1m8 shipped with 7 of its 12 control
+# items off graph at heights a low-gravity jump clears easily.
+#
+# The rule is applied automatically rather than left to the operator,
+# because this is exactly how the bug shipped: a regen that has to
+# remember a flag is a regen that will one day forget it. --gravity
+# still overrides, for experiments.
+GRAVITY = 100.0 if MAPNAME.lower() in ("e1m8", "lq_e1m8") else 800.0
+if "--gravity" in sys.argv[5:]:
+    g_idx = sys.argv.index("--gravity")
+    if g_idx + 1 >= len(sys.argv):
+        print("error: --gravity requires a number", file=sys.stderr)
+        sys.exit(1)
+    try:
+        GRAVITY = float(sys.argv[g_idx + 1])
+    except ValueError:
+        print(f"error: --gravity argument must be a number, got "
+              f"'{sys.argv[g_idx + 1]}'", file=sys.stderr)
+        sys.exit(1)
+if GRAVITY < 1:
+    print("error: --gravity must be positive", file=sys.stderr)
+    sys.exit(1)
+
 CORRIDOR = "--corridor" in sys.argv[5:]
 if CORRIDOR:
     # corridor mode proper (campaign item 1's designed answer):
@@ -85,7 +112,11 @@ if CORRIDOR:
     GRID = 16
 STEP = 18          # max walkable step up/down
 DROPMAX = 200      # max safe intentional drop
-JUMPREACH = 190    # flat range of the conservative 280 u/s jump model
+# flat range of the conservative 280 u/s jump model: the launch is
+# back at launch height after 2*JUMPVEL/g seconds, so the range is
+# speed * that. 190 at gravity 800, and it has to move with gravity
+# (#282) or a low-gravity map refuses jumps it can trivially make.
+# Computed below, once GRAVITY and the arc constants are known.
 WAYPOINT_R = 100   # decimation coverage radius
 LINK_PATH_MAX = 340
 MAX_NODES = 200
@@ -289,7 +320,26 @@ for (cx, cy), zs in samples.items():
 # ledge. From every sample whose neighbour cell is not walkable, scan 8
 # directions 2..5 cells out for a landing floor between 64u below and
 # 40u above, and verify the parabolic arc is clear in hull 1.
-JUMPSPEED, JUMPVEL, GRAV = 280.0, 270.0, 800.0
+JUMPSPEED, JUMPVEL, GRAV = 280.0, 270.0, GRAVITY
+JUMPREACH = JUMPSPEED * (2 * JUMPVEL / GRAV)
+# How far ABOVE the launch a jump can land. This is the apex wearing a
+# different hat: JUMPVEL^2/(2g) is 45.6 at gravity 800 and the scan
+# has always used 40, which is 88 per cent of it.
+#
+# It is deliberately NOT scaled with gravity, and that is a measured
+# decision rather than an oversight (#282). Scaling it gives 320 on
+# e1m8, which the physics permits - the apex there is 364 - but which
+# the runtime cannot reliably fly: landing 320 up means arriving
+# within 44 units of the apex after a 5.4 second flight, with the
+# horizontal control that whole time far outside anything ever tuned.
+# The ladder was unambiguous. An e1m8 regen with JUMPUP 320 fired 72
+# jumps and 58 stalls against the shipped graph's 45 and 38, and its
+# match collapsed to 1 engagement and 65 routefails against 12 and 25.
+#
+# Raising this is gated on the runtime being shown to fly a climb that
+# steep, which is its own piece of work. Emitting links the runtime
+# cannot walk is the mistake the lift statue taught.
+JUMPUP = 40.0
 # sprint jumps (Shane, 2026-08-21: "the jump to the MH and Red armour
 # over the lava can be done if you shift sprint and time it just
 # right - a high skill bot should just do that as a matter of
@@ -335,7 +385,7 @@ for (cx, cy), zs in samples.items():
                     continue
                 land = None
                 for j2, z2 in enumerate(cell):
-                    if -64 <= z2 - z <= 40:
+                    if -64 <= z2 - z <= JUMPUP:
                         land = (j2, z2)
                         break
                 if land is None:
@@ -1183,7 +1233,7 @@ print(f"teleporter links: {len(teles)}")
 # apex must see the landing. Emitted as Argus_NavLinkRocket; the
 # runtime only routes them for bots holding RL, rockets and health.
 RJ_VZ = 650.0
-RJ_APEX = (RJ_VZ * RJ_VZ) / (2 * 800.0)
+RJ_APEX = (RJ_VZ * RJ_VZ) / (2 * GRAVITY)
 
 def rj_feasible(ax, ay, az, bx, by, bz, min_dz=100):
     dz = bz - az
@@ -1195,10 +1245,22 @@ def rj_feasible(ax, ay, az, bx, by, bz, min_dz=100):
     # Horizontal cap 230: dm4 quad pads with
     # open sky sit ~180-220u out; the runtime aims toward the landing
     # (not 85-down) so the blast carries that far.
-    if dz <= min_dz or dz > 240:
+    #
+    # The rise cap is the apex written down a second time (#282): 240
+    # is RJ_APEX - 24 at gravity 800, and the explicit apex test below
+    # already enforces exactly that, so this line was redundant there
+    # and wrong everywhere else. On e1m8 at gravity 100 the apex is
+    # 2112u, and the whole upper half of that map sits 240 to 624
+    # above the nearest waypoint - reachable by blast, and refused by
+    # a constant that had the old gravity baked into it.
+    if dz <= min_dz or dz > RJ_APEX - 24:
         return False
     horiz = ((bx-ax)**2 + (by-ay)**2) ** 0.5
-    if horiz > 260:
+    # Horizontal reach for a blast goes as vx/g, so the same rocket
+    # carries eight times further on e1m8 (#282). 260 at gravity 800,
+    # and the arc clearance below still has to pass, so this only
+    # widens what is offered rather than what is accepted.
+    if horiz > 260 * (800.0 / GRAVITY):
         return False
     if dz + 24 > RJ_APEX:
         return False
@@ -2637,6 +2699,13 @@ print("wrote", OUTQC, "+ .json")
 # light and an info_null are gone before the first frame
 nents = len(live_ents)
 edicts = len(ways) + nents
+if GRAVITY != 800.0:
+    # Say it. A graph modelled at a different gravity is a different
+    # graph, and the bug this fixes was silent precisely because
+    # nothing ever printed the number (#282).
+    print(f"gravity: modelled at {GRAVITY:.0f} (jump apex "
+          f"{JUMPVEL*JUMPVEL/(2*GRAVITY):.0f}u, reach {JUMPREACH:.0f}u, "
+          f"jump-up ceiling {JUMPUP:.0f}u, RJ apex {RJ_APEX:.0f}u)")
 print(f"edict estimate: {edicts} (waypoints {len(ways)} + live entities "
       f"{nents} of {len(ent_blocks)} in the lump)")
 if edicts > 500:

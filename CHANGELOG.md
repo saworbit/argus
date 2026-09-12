@@ -294,6 +294,60 @@ guard flags any average speed over 400 u/s as a parsing defect rather
 than printing it, because a Quake player caps near 320 and that is worth
 catching however it happens.
 
+**Ballistic predictions read the live gravity (#282).** `world.qc` sets
+`sv_gravity` 100 on e1m8, Ziggurat Vertigo, exactly as stock id does,
+and the engine applies it to bots for real because they are
+`MOVETYPE_STEP`. Every prediction Argus made assumed 800, so a bot there
+planned for a 45 unit jump it could actually make at 364: a factor of
+eight, on the one map whose whole design is floating.
+
+`Argus_Gravity` reads the cvar rather than caching it, because worldspawn
+sets it after `Argus_Nav_Spawn` runs and anything latched at init would
+hold the previous level's value. Five sites use it: the gap jump
+simulation, which also scales its own time window because a 270 launch
+is airborne for 5.4 seconds at gravity 100 and a fixed 1.25 second window
+cut the flight off while still rising; the grenade loft, whose 800 was
+hidden inside the constant 900; the rocket jump pitch bands, since
+horizontal reach for a blast goes as vx/g so the same pad needs eight
+times less push; and the water vault reach, where 320 up apexes at 64
+under gravity 800 and 512 under 100. Every one reduces to its old
+constant exactly at 800.
+
+navgen is gravity aware the same way, and applies `world.qc`'s own rule
+automatically rather than leaving it to a flag, because a regen that has
+to remember a flag is a regen that will one day forget it. `--gravity`
+overrides for experiments, and a regen now prints the gravity it modelled.
+A fresh dm4 regen is byte identical to one from before this change, so no
+shipped graph can move.
+
+Ladder, two tapes a side. On e1m8 against a control on main: stalls 38 to
+22 and 26, acquisitions 10 to 14 and 17, frags -1 to +4 and +2, lava 4 to
+0 and 4. The mechanism is visible in the jump counts, 45 down to 29 and
+33: the honest arc refuses gap jumps the 800 model approved, and the
+stalls those failed jumps were costing go with them. dm4 is at parity or
+better, lava 9 then 2 against a baseline of 4, which is this map's
+documented swing and cannot be otherwise, since every formula is
+arithmetically identical at 800.
+
+**What this does not fix, measured rather than assumed.** The issue
+predicted the seven off-graph control items on e1m8 would become
+reachable. They do not, and gravity was never what refused them. navgen
+seats 191 waypoints there spanning z -344 to +416, and the route-poison
+prune strips 123 of them because the upper half of that map is a set of
+mutually stranded pockets with no feasible escape by any modelled move.
+The shipped graph, a fresh regen on main and a fresh regen with correct
+gravity all span z -752 to -296 for that reason. Connecting e1m8's upper
+level is a fragmentation campaign, not a constant.
+
+The e1m8 regen is therefore **not shipped**. It laddered decisively worse
+than the shipped graph: 1 engagement against 12, 65 routefails against 25,
+coverage 198 against 248. The reason is recorded in navgen beside
+`JUMPUP`, which is deliberately held at its tuned value instead of being
+scaled: gravity 100 permits a 320 unit climb, but landing one means
+arriving within 44 units of the apex after a 5.4 second flight, and the
+regen that tried it fired 72 jumps and 58 stalls. Emitting links the
+runtime cannot walk is the mistake the lift statue taught.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
