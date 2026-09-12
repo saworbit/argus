@@ -94,6 +94,47 @@ both emission forms, and names the file when one does not. Reverting the
 `coop` line makes it fail with exactly that verb. A sweep of the whole
 tree found no others.
 
+**A bot at a locked door it has no key for now gives up (#270).** The
+keyed test sat above the give-up in the else-if chain, so a keyed door
+could never reach the timeout: `ar_door` stayed set, the next frame
+matched the same branch, and `ar_liftwait` went back on. That is the
+physics level hold, friction only and no wish, with steering removed, so
+the bot was a statue with no exit condition. `Argus_CoopCommitKey` does
+not rescue it, because five of its six paths return without touching
+`ar_door`, and the worst of those is the intended design: "team mate
+already has the key, let them open it" was implemented as standing still
+in front of the door forever, so in the normal co-op sequence, where the
+human picks up the silver key, the companion froze at the door and could
+not even follow the person carrying it. The give-up is tested first now,
+and keyed doors get 25 seconds from `Argus_TakeDoor` rather than 8,
+because fetching a key is a real errand. The give-up also shelves the
+door for 20 seconds while it is still locked against that bot, or
+clearing `ar_door` would simply let the detection traceline re-take the
+same slab next frame and re-arm the whole deadline.
+
+This path is co-op only in practice. A probe build instrumenting the
+keyed branch recorded zero entries across a 120 second e1m2 botmatch,
+because the router already refuses links a key door blocks, so nothing
+steers a deathmatch bot into one. It is unverified in play and stays that
+way until #259 lets co-op be driven headless.
+
+**UseStandPoint says when it is guessing (#277).** Four of its five exits
+return a validated floor position with line of sight to the brush. The
+fifth returns the brush bounding box centre, which for a `func_door`,
+`func_button` or `trigger_changelevel` is a point inside the brush, and
+it returned it through the same bare vector as a success so no caller
+could tell. `ar_standok` is set beside the result and read like
+`trace_fraction`. The caller that pays for it is the solo campaign level
+exit, which pushed a 60 second `GOAL_FETCH` at whatever came back: a
+guess now gets 15 seconds instead, so the bot tries, fails and gets on
+with the match rather than pushing at the inside of an arch for a minute.
+
+Ladder: e1m1, the door-heavy map, at parity with its control (stalls 68
+against 67, hazards 273 against 260, no freezes either side). Neither
+change alters the non-keyed door path at all, which is why it is parity:
+the reorder only moves a test that is false for an unkeyed door, and the
+new shelf returns immediately for one.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
