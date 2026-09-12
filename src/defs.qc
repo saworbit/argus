@@ -985,6 +985,11 @@ float(entity item) Argus_TryClaim;
 void(entity item) Argus_ReleaseClaim;
 vector(entity it) Argus_GoalPoint;
 vector(entity ent) UseStandPoint;
+// Placement clearance, defined in argus.qc beside the catchup warp.
+// Prototyped here because Argus_BodyBlockCheck sits above them (#267).
+float(vector p) Argus_BoxClear;
+float(vector p, float rad) Argus_SpotCrowded;
+
 float(entity e) Argus_IsDoor;
 float(entity from, entity to, entity bot) Argus_LinkBlockedByKeyDoor;
 void(entity door) Argus_CoopCommitKey;
@@ -996,8 +1001,9 @@ void(entity door) Argus_CoopCommitKey;
 .float		ar_escform;		// 1 = holding escort formation (hysteresis)
 .float		ar_coop_seektime;	// Next objective (key/door) seek, throttled
 .float		ar_fetchcool;		// Rest after a co-op FETCH routefail
-.float		ar_stucktime;		// First tick seen inside world solid
+.float		ar_stucktime;		// First tick of the current not-moving window
 .vector		ar_stuckpos;		// Where that was, to prove we have not moved
+.float		ar_stuckstalls;		// ar_stalls when that window opened (#271)
 .float		ar_coop_local;		// Flag: local escort steering handled heading this frame
 
 

@@ -7,6 +7,64 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## Unreleased
+
+**A pinned bot is stuck too, and being embedded was only half of it
+(#271).** `Argus_Unstick` shipped in #262 against one signature: origin
+inside world solid. A dm2 tape has Joe Rogan at exactly
+'2526.7 -40.9 -66.0' at spd 0 for 91 seconds of a 185 second match, not
+inside solid at all, just pinned against geometry six units proud of a
+node floor. Nothing could reach him: `pointcontents` reads hull 0 so it
+cannot see a hull 1 wedge and cannot see bmodels in any hull, routefails
+were 0 so the trapped rule could not fire, and stall recovery ran 73
+times without freeing him. There are two signatures now and both require
+that the bot has not moved, which was always the part doing the work:
+embedded keeps its 3 seconds, pinned needs 6 seconds plus at least four
+stalls inside the window. The stall count is the only honest
+discriminator available here, because this runs on the AI tick and
+`Argus_AI` clears `ar_liftwait` at the top of every frame for the ride
+branch to re-earn, so a hold flag read from this function is always 0.
+The stall detector runs later, with the flag back, and already skips
+`ar_liftwait`, `ar_hoplift` and fighting, so every designed hold and
+every duel is excluded for free. A throwaway probe build confirmed the
+split: on dm2 a bot reached an 8.0 second window with zero stalls, which
+is the bounded lift-wait give-up and is correctly ignored. The console
+line now names which class fired.
+
+**Rescue destinations have to fit, and must not be occupied (#268).**
+The same function sampled `pointcontents` at one point of a nav node and
+warped. One point says nothing about a 32x32x56 hull and nothing about
+bmodels, and nav nodes are the highest traffic points on a map by
+construction, so the nearest free-looking node is a fair bet for where
+somebody is standing. Landing on one leaves two players interpenetrating,
+which is the bug the function exists to cure, and in co-op one of the two
+is a human who cannot unstick themselves. Candidates now pass the eleven
+point box test the catchup warp has always used and an occupancy check,
+and the arrival telefrags like every other arrival in the tree. Not in
+co-op: the occupancy check already keeps the spot clear and the only body
+it could plausibly find there is the team mate. An embedded bot falls back
+to the old looser geometry test if nothing passes, because it is in a
+worse place than any waypoint, but the occupancy rule is never relaxed.
+
+**The anti-embed nudge stops teleporting bots through walls and between
+floors (#267).** `Argus_BodyBlockCheck` flattens the separation vector to
+test horizontal distance, then built its destination as
+`cl.origin + to`, which inherits the other player's height. A bot on the
+dm4 walkway at z -232 directly above someone on the pit floor near z -380
+read a horizontal distance near zero and warped 150 units down, and the
+one underneath warped up into the walkway solid. It now keeps its own z
+and verifies the spot before committing, because `setorigin` does not
+collide and 36 units along the separation vector goes through the wall in
+any corridor, which is the common case in co-op where the companion
+escorts through doorways. If the spot does not fit the bot does not move
+and the sidestep below resolves it against real collision.
+
+Ladder: dm4 improved on all seven gates (lava 4 parity, stalls 6, engages
+85, frags 25, spread 4, no freezes). dm2 needed a control on main to read,
+because its shipped baseline is many builds old: two candidate tapes ran
+stalls 47 and 23 against a control of 40, and lava 2 and 8 against 4, so
+both bracket it. The stale baseline accounted for the rest.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
