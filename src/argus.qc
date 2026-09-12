@@ -3479,7 +3479,7 @@ void() Argus_DodgeScan =
 void() Argus_BodyBlockCheck =
 {
     local entity cl;
-    local vector to;
+    local vector to, cand;
     local float side;
 
     cl = find (world, classname, "player");
@@ -3491,15 +3491,34 @@ void() Argus_BodyBlockCheck =
             to_z = 0;
             if (vlen (to) < 48)
             {
-                // Unconditional anti-embed: if bounding boxes overlap (<36u),
-                // nudge bot away immediately so the player is NEVER stuck solid!
+                // Anti-embed nudge: if bounding boxes overlap (<36u),
+                // step the bot clear so the player is never stuck solid.
+                //
+                // TWO THINGS THIS USED TO GET WRONG (#267). to_z is
+                // zeroed, so the gate is a horizontal test with no
+                // bound on vertical separation, and the destination
+                // used to be cl.origin + to, which inherits the OTHER
+                // player's height: a bot on the dm4 walkway at z -232
+                // directly above someone on the pit floor near z -380
+                // read a horizontal distance near zero and warped 150
+                // units down, and the one underneath warped up into
+                // the walkway solid. Keep our own z. Then verify,
+                // because setorigin does not collide and 36 units
+                // along the separation vector goes through the wall in
+                // any corridor, which is the common case in co-op
+                // where the companion escorts through doorways. If the
+                // spot does not fit we do not move at all and the
+                // sidestep below resolves it against real collision.
                 if (vlen (to) < 36)
                 {
                     if (vlen (to) < 6)
                         to = '32 0 0';
                     else
                         to = normalize (to) * 36;
-                    setorigin (self, cl.origin + to);
+                    cand = cl.origin + to;
+                    cand_z = self.origin_z;
+                    if (Argus_BoxClear (cand))
+                        setorigin (self, cand);
                 }
 
                 // other is jumping, actively firing, or human teammate in coop: clear the line
@@ -5369,6 +5388,50 @@ float() Argus_ActEscort =
 };
 
 // ============================================================================
+// PLACEMENT CLEARANCE (shared: #176, #268, #267)
+// ============================================================================
+// setorigin does not collide. It places the entity and relinks, so
+// anything that moves a bot by hand has to prove the destination fits
+// first. These two are that proof, in one place, because the tree had
+// the rigour in the catchup warp and nowhere else.
+//
+// Eleven points: centre, head, feet, and the four box corners at two
+// heights. That is the same set the catchup warp has always used.
+float(vector p) Argus_BoxClear =
+{
+    if (pointcontents (p) != CONTENT_EMPTY)                  return FALSE;
+    if (pointcontents (p + '0 0 28') != CONTENT_EMPTY)       return FALSE;
+    if (pointcontents (p - '0 0 20') != CONTENT_EMPTY)       return FALSE;
+    if (pointcontents (p + '15 15 0') != CONTENT_EMPTY)      return FALSE;
+    if (pointcontents (p + '-15 15 0') != CONTENT_EMPTY)     return FALSE;
+    if (pointcontents (p + '15 -15 0') != CONTENT_EMPTY)     return FALSE;
+    if (pointcontents (p + '-15 -15 0') != CONTENT_EMPTY)    return FALSE;
+    if (pointcontents (p + '15 15 28') != CONTENT_EMPTY)     return FALSE;
+    if (pointcontents (p + '-15 15 28') != CONTENT_EMPTY)    return FALSE;
+    if (pointcontents (p + '15 -15 28') != CONTENT_EMPTY)    return FALSE;
+    if (pointcontents (p + '-15 -15 28') != CONTENT_EMPTY)   return FALSE;
+    return TRUE;
+};
+
+// Argus_PadCrowded's rule against a bare point, and it skips self.
+// A bot being rescued is standing next to the spot it is being
+// rescued from, so counting itself would reject every candidate.
+float(vector p, float rad) Argus_SpotCrowded =
+{
+    local entity b;
+
+    b = find (world, classname, "player");
+    while (b != world)
+    {
+        if (b != self && b.health > 0 && !b.cam_active
+            && vlen (b.origin - p) < rad)
+            return TRUE;
+        b = find (b, classname, "player");
+    }
+    return FALSE;
+};
+
+// ============================================================================
 // CO-OP SAFE CATCHUP RESCUE WARP (#176)
 // ============================================================================
 // Performs a multi-point verified search around human teammate to find a safe,
@@ -5393,47 +5456,127 @@ float() Argus_ActEscort =
 // that STARTS in solid returns fraction 1, so from in here every node
 // in the map would look visible and it could hand back one across the
 // level.
+//
+// PINNED IS A BIGGER CLASS THAN EMBEDDED (#271). A dm2 tape has Joe
+// Rogan at exactly '2526.7 -40.9 -66.0', spd 0, for 91 seconds of a
+// 185 second match, and none of this fired: he was not inside solid,
+// he was standing 6 units proud of node 126's floor and pinned
+// against geometry. pointcontents reads hull 0 and cannot see a hull
+// 1 wedge at all, and it cannot see bmodels in any hull, so a bot
+// wedged under a door or a plat reads EMPTY however thoroughly it is
+// stuck. Neither could anything else reach him: routefails were 0 so
+// the trapped rule could not fire, and stall recovery ran 73 times
+// without freeing him.
+//
+// So there are two signatures now, and both of them require that the
+// bot HAS NOT MOVED, which is the part that was always doing the
+// work:
+//
+//   embedded  origin reads SOLID, 3 s. Unchanged.
+//   pinned    not in solid, 6 s, and the stall detector fired at
+//             least four times inside that window.
+//
+// The stall count is what keeps the pinned signature honest, and it
+// is the ONLY thing that can: this runs on the 0.2 s AI tick, and
+// Argus_AI clears ar_liftwait at the top of every frame for the ride
+// branch to re-earn further down, so a hold flag read from here is
+// always 0 and testing one is dead code. The stall detector runs
+// later in the frame, after the flag is back, and it already skips
+// ar_liftwait, ar_hoplift and fighting. So a bot standing still on
+// purpose contributes no stalls and its window can never mature -
+// every designed hold, lift pad, train dock, door button and key
+// wait, is excluded for free, and so is a duel in a corner. What is
+// left is a bot that is trying to walk, whose walkmove keeps
+// failing, and who is not getting anywhere. That is the definition.
 float() Argus_Unstick =
 {
     local entity n, best;
-    local float d, bd;
+    local float d, bd, embedded, mind;
 
-    if (pointcontents (self.origin) != CONTENT_SOLID)
-    {
-        self.ar_stucktime = 0;
-        return FALSE;
-    }
+    embedded = (pointcontents (self.origin) == CONTENT_SOLID);
 
     // BEING INSIDE SOLID FOR AN INSTANT IS NORMAL. The first cut of
     // this fired on contents plus a low speed, and dm4 promptly
     // teleported Romero 192 units down into the pit while he was
     // running the walkway at 320 u/s: a bot clips a thin edge mid
     // step and reads solid for a tick, and instantaneous velocity at
-    // an apex is not evidence of anything. Being inside solid and
-    // NOT HAVING MOVED is the real signature, because a bot that is
-    // genuinely embedded never gets out on its own.
+    // an apex is not evidence of anything. NOT HAVING MOVED is the
+    // real signature, because a bot that is genuinely stuck never
+    // gets out on its own.
     if (self.ar_stucktime == 0
         || vlen (self.origin - self.ar_stuckpos) > 32)
     {
         self.ar_stucktime = time;
         self.ar_stuckpos = self.origin;
+        self.ar_stuckstalls = self.ar_stalls;
         return FALSE;
     }
-    if (time < self.ar_stucktime + 3)
+
+    if (embedded)
+    {
+        if (time < self.ar_stucktime + 3)
+            return FALSE;
+        mind = 0;
+    }
+    else if (self.ar_stalls - self.ar_stuckstalls >= 4
+             && time > self.ar_stucktime + 6)
+    {
+        // Pinned, not embedded: the node has to be somewhere else.
+        // Joe Rogan's nearest node was 6 units away and warping onto
+        // it would have changed nothing.
+        mind = 64;
+    }
+    else
         return FALSE;
 
+    // DESTINATION HAS TO FIT (#268). The first cut sampled
+    // pointcontents at the node origin and warped. One point says
+    // nothing about a 32x32x56 hull and nothing about bmodels, and
+    // nav nodes are the highest traffic points on the map by
+    // construction, so the nearest free-looking node is a fair bet
+    // for where somebody is standing. Landing on them leaves two
+    // players interpenetrating, which is the bug this function
+    // exists to cure, and in co-op one of the two is a human who
+    // cannot unstick themselves. Same box test the catchup warp
+    // uses, same occupancy rule as every spawn, and spawn_tdeath
+    // after the move so that if something is there anyway the engine
+    // resolves it the way it resolves every other arrival.
     best = world;
     bd = 999999;
     n = find (world, classname, "argus_node");
     while (n != world)
     {
         d = vlen (n.origin - self.origin);
-        if (d < bd && pointcontents (n.origin) != CONTENT_SOLID)
+        if (d < bd && d >= mind
+            && Argus_BoxClear (n.origin)
+            && !Argus_SpotCrowded (n.origin, 64))
         {
             bd = d;
             best = n;
         }
         n = find (n, classname, "argus_node");
+    }
+
+    // An embedded bot is in a worse place than any waypoint, so it
+    // never goes without a destination just because the box test was
+    // strict. The occupancy rule is NOT relaxed with it: landing on
+    // another player is the failure this is guarding against, and a
+    // point sample of the geometry is the softer half.
+    if (best == world && embedded)
+    {
+        bd = 999999;
+        n = find (world, classname, "argus_node");
+        while (n != world)
+        {
+            d = vlen (n.origin - self.origin);
+            if (d < bd && pointcontents (n.origin) != CONTENT_SOLID
+                && !Argus_SpotCrowded (n.origin, 64))
+            {
+                bd = d;
+                best = n;
+            }
+            n = find (n, classname, "argus_node");
+        }
     }
     if (best == world)
         return FALSE;
@@ -5441,6 +5584,14 @@ float() Argus_Unstick =
     spawn_tfog (self.origin);
     setorigin (self, best.origin);
     spawn_tfog (best.origin);
+    // Telefrag the way every other arrival does, so a racing occupant
+    // is resolved by the engine rather than left interpenetrating.
+    // NOT in co-op: the occupancy check above already keeps the spot
+    // clear, and the only body it could plausibly find there is the
+    // human team mate. Gibbing your partner because the companion got
+    // wedged is a worse outcome than the overlap it prevents.
+    if (coop <= 0)
+        spawn_tdeath (best.origin, self);
     self.velocity = '0 0 0';
     self.ar_node = world;
     self.ar_pending = 0;
@@ -5451,7 +5602,10 @@ float() Argus_Unstick =
     // beside shove and routecache adopt and gets grepped the same way
     dprint ("ARGUS ");
     dprint (self.netname);
-    dprint (" unstick ");
+    if (embedded)
+        dprint (" unstick embedded ");
+    else
+        dprint (" unstick pinned ");
     dprint (vtos (best.origin));
     dprint ("\n");
     return TRUE;
@@ -5523,17 +5677,7 @@ float() Argus_CoopSafeWarp =
                         if (trace_fraction == 1)
                         {
                             // Check bounding box clearance (center, head, feet, 4 corners)
-                            if (pointcontents (cand) == CONTENT_EMPTY
-                                && pointcontents (cand + '0 0 28') == CONTENT_EMPTY
-                                && pointcontents (cand - '0 0 20') == CONTENT_EMPTY
-                                && pointcontents (cand + '15 15 0') == CONTENT_EMPTY
-                                && pointcontents (cand + '-15 15 0') == CONTENT_EMPTY
-                                && pointcontents (cand + '15 -15 0') == CONTENT_EMPTY
-                                && pointcontents (cand + '-15 -15 0') == CONTENT_EMPTY
-                                && pointcontents (cand + '15 15 28') == CONTENT_EMPTY
-                                && pointcontents (cand + '-15 15 28') == CONTENT_EMPTY
-                                && pointcontents (cand + '15 -15 28') == CONTENT_EMPTY
-                                && pointcontents (cand + '-15 -15 28') == CONTENT_EMPTY)
+                            if (Argus_BoxClear (cand))
                             {
                                 best_pos = cand;
                                 found = TRUE;
