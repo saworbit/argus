@@ -467,6 +467,31 @@ injecting them through this channel would do nothing. They remain worth
 typing on a listen server, which is a human's console rather than the
 lab's.
 
+**The lab puppet can pull the trigger (#259).** `clc_move` already
+carried the button bits and `set_move` already took pitch and yaw, so the
+protocol half was done; what was missing was a seat a bot will react to
+and a verb to drive it.
+
+`argus-mcp client attack [secs] [yaw] [pitch]` holds the attack button.
+With no yaw given it tracks the nearest player each tick and closes the
+range, because a stray shot exercises nothing and the first pass proved
+it: 45 seconds and 787 tracked ticks standing still landed on nobody,
+since the spawn weapon is a shotgun and its spread is a miss across dm4.
+
+The visibility opt-in needed no QC change at all. `Argus_CanSee` refuses
+the exact netname `labprobe`, so the link-probe puppet stays an
+instrument, and connecting as `labfoe` is a valid target to every bot.
+The name is the flag.
+
+Proven end to end on a live dedicated server rather than asserted. Bots
+acquire it (`ARGEVT Romero engage labfoe`), kill it, and - the half that
+matters - it kills them: `Joe Rogan chewed on labfoe's boomstick`, with
+`ARGEVT Joe Rogan death labfoe` in the server tape beside 5
+`engage labfoe` and 22 pursue events. Everything that begins with "the
+bot takes damage from a player" is now exercisable headless: `Argus_Pain`
+retaliation, the vendetta ledger, retreat entry thresholds, the pain
+flinch on aim, knockback response and the shove economy.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
