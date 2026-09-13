@@ -82,6 +82,16 @@ different statements. What the e1m7 pair does show is the wrong box
 being expensive: routefails 11 and 28 with the compiled box, 1 and 4
 with the shut box, on otherwise identical graphs.
 
+AND THE COUNTER THE FIRST FIX ADDED POINTS AT THE NEXT THING. Over a
+whole run e1m2 refuses 68 seat requests that found a sample, and e1m5
+refuses 42. Every other map in the rotation refuses none. Those two
+carry the biggest entity lumps, 296 and 341 live entities, and
+`PROMO_CAP` is `500 - lump - 12`, so they are the maps where the
+sampler cannot have the seats it asks for. That is worth knowing
+before anyone tries e1m2 again: its regen is not competing with the
+shipped graph on equal terms, it is building under a budget the
+shipped graph was built under too but with more passes now asking.
+
 CORRECTION TO THE ISSUE I FILED: the door link count itself was not a
 defect. e1m2's shipped graph seats three nodes inside door brushes and
 every link radiating from one counts as a crossing; the regen seats
