@@ -9,6 +9,76 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**Do not draw a link through where the door will be standing (#309).**
+A sliding door does not leave the world when it opens. It slides
+beside the hole it was filling, keeping its own lip inside that hole
+because `doors.qc` travels size minus lip, and it can come to rest on
+the very line the graph draws through the doorway. e1m2's silver key
+pair is the found case: shut across x 881 to 951, open across x 943 to
+1013, and the n84 to n90 walk link crossing the frame at x 948, which
+is inside both. The runtime learned to steer through the doorway
+rather than at the node beyond it in #303, and that covers the
+symptom, but it spends a frame of steering every time and it cannot
+make a link honest.
+
+NEITHER HULL CARRIES THE SLAB. Hull 1 has no `func_door` brushes at
+all, so the sampler reads the doorway and the recess alike as clean
+floor, and hull 0 only has the compiled position. It is geometry
+nothing downstream can see unless it is handed over, which is the
+same shape as the hull-0 liquid classification: navgen works the
+parked box out once, before link building, and `beeline_ok`'s pass in
+6b refuses to draw a line through it. A link that crosses where the
+slab will stand is a lie exactly when a bot wants to use it, because
+a door is open when you are walking through it.
+
+DOOR_START_OPEN, which the report in #303 had backwards. `doors.qc`
+sets `pos2 = pos1 + movedir * (|movedir . size| - lip)` and then SWAPS
+them for a START_OPEN door, so such a door is compiled at its OPEN
+position and its shut one is a travel away. Seven doors across the
+rotation are built that way - dm2 three, e1m7 two, e1m1 and e1m2 one
+each - and the report called the hole a parked slab for every one of
+them. That maths lives in one function now, and both the veto and the
+report read it.
+
+Two things measured and not kept, recorded so nobody re-runs them. A
+waypoint promoted at the centre of each opening, so Dijkstra would
+stop there and cross the frame in the middle: it reaches zero parked
+links on every door map, and so does the veto on its own at the same
+worst-spawn reach, and on e1m1 it forced a seat onto the t15 doorway
+at '1096 1024 -247' on the lip of the teleporter drop, where its
+ladder came back with 83 hazard deflections and 17 stalls in that one
+cell and coverage 391 down to 272 (that tape is not committed: the run
+name collided with a tape from #303 and overwrote it, and the #303 one
+was restored rather than the variant kept). And splitting the parked box into
+the lip inside its own opening plus whatever part covers sampled
+floor, on the grounds that a slab retracting fully into a 14 unit wall
+blocks nothing: true, and worth nothing, because e1m6, e1m1, e1m2 and
+e1m5 come out node for node identical either way.
+
+The shipped graphs, measured against their own BSPs with the
+START_OPEN correction applied, and what a regen on this navgen does to
+them. Only e1m1 is regenerated here; the rest is the pre-flight for
+the per-map campaign in #308, so those regens land on a known figure
+rather than discovering this one at a time:
+
+```
+        parked links   after a regen      worst spawn reach
+e1m6      38 of 212        0 of 174        95% -> 95%
+e1m2      13 of  64        0 of  31        95% -> 97%
+e1m7      67 of  69        0               92% -> (regen pending)
+e1m5       6 of  36        0 of  30        92% -> 92%
+dm2        4 of  28        0 of  12        99% -> 95%
+e1m1       5 of  64        0 of  59        99% -> 99%
+e1m8       0 of  16        0                 -
+```
+
+LADDER, e1m1 twice against the tape from the build before it, since
+that is the only graph this changes and the QC is untouched. Improved
+then parity, no gate failing either time: engages 17 to 25 and 17,
+coverage 391 to 415 and 412, hazard deflections 171 to 135 and 147,
+stalls 41 to 40 and 36, acquisitions 5 to 18 and 16, freezes 0 and 1
+bounded, every bot positive both times.
+
 **Some platforms are wearing door clothing (#281, #119).** e1m1 played
 an empty match: zero engagements, zero weapon pickups and zero deaths
 in over two minutes, with half the graph never visited. The map is a
