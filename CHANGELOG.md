@@ -391,6 +391,31 @@ recorded `mover_waits` 0, meaning the changed code never executed in
 either. dm3 is where lifts actually fire, and it came back at stall
 parity with engagements up and every wait boarding.
 
+**One link slot per pair (#249).** Every typed link builder calls
+`Argus_NavLink` itself and then sets its own mask, and navgen emitted the
+walk graph and then each typed list unconditionally. A pair appearing in
+both was therefore emitted twice and consumed TWO of a node's eight link
+slots for a single destination, with one slot masked walk and the other
+masked train, swim or rocket, so which one the router picked came down to
+slot order. dm3 ships 5 such pairs and e1m5 6. No node overflows today,
+but both maps carry nodes sitting exactly on the 8 cap, where a wasted
+slot means the clamp evicted a real link to make room for a duplicate.
+
+The walk pass keeps its slots and the typed passes skip what it already
+emitted, deliberately in that order: reordering would reshuffle slot
+assignment on every map, and in each observed case the survivor is the
+link Dijkstra verified and the cheaper one to execute, a jump any bot can
+take rather than a rocket hop gated on RL, rockets and health. A regen
+now reports how many it skipped, and a fresh dm4 regen stays byte
+identical because dm4 has none.
+
+The shipped graphs keep their duplicates until their next regen. An e1m5
+regen carrying only this change differs by exactly the six lines and
+nothing else, and it was laddered and not shipped: one tape came back
+down on engagements and coverage, and e1m5's own baseline swung 5 to 20
+engagements on identical code across the two #288 tapes, so a single tape
+cannot settle it and six freed slots do not justify the noise.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
