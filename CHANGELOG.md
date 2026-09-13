@@ -511,6 +511,30 @@ Verified both ways rather than by eye, since the drawing itself needs a
 listen game: the human overlay returns 2270 points on a real co-op
 session tape and zero on a botmatch, with a note saying why.
 
+**Route against trajectory (#254 item 1).** The forensic that issue calls
+"the one that would have shortened every wedge hunt in the project".
+`--what route` draws what the router planned and `--what trail` draws
+where the bot actually went, with `--bot NAME` to pick one track. They
+are separate files by necessity: particle colour is `(-index & 15)` and
+cannot be chosen, so intent and reality are flipped between rather than
+overlaid.
+
+Route events carry the hop count plus start and goal but not the hops,
+so the path is rebuilt by BFS over the same link classes the router
+walks. That rebuild is checked against the router's own hop count on
+every route, which is what makes it trustworthy rather than decorative:
+on e1m1 all 79 agree exactly.
+
+The check earned its keep immediately. dm2 came back with 27 of 182
+disagreeing, and the cause is that the router refuses rocket links to a
+bot that cannot pay and sprint links below skill 3, while a naive
+rebuild takes those shortcuts anyway. Excluding the gated classes is now
+the default and lifts dm2 to 164 of 182; `--gated` includes them. The
+residual is inherent, since the router's path depends on what the bot
+was carrying and the tape does not record that, so the note says a few
+disagreements are expected and that most of them disagreeing is the
+signal worth acting on.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
