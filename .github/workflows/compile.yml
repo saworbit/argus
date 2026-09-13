@@ -97,8 +97,10 @@ jobs:
         run: |
           REL=https://github.com/lavenderdotpet/LibreQuake/releases/download/v0.09-beta
           mkdir -p lq-data
-          curl -sL -o lq-data/lite.zip   $REL/lite.zip
-          curl -sL -o lq-data/server.zip $REL/server.zip
+          # -f or a 404 writes the HTML error body into the zip and
+          # the cache key then keeps the poisoned file forever (#221)
+          curl -fsSL -o lq-data/lite.zip   $REL/lite.zip
+          curl -fsSL -o lq-data/server.zip $REL/server.zip
       - name: Run a botmatch and judge it
         run: |
           sudo apt-get update -qq
