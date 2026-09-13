@@ -794,6 +794,63 @@ impl NetClient {
         self.world.ents.get(&self.world.my_ent).map(|e| e.pos)
     }
 
+    /// Hold the attack button while tracking the nearest other player
+    /// (#259). Aim control matters as much as fire here: firing down a
+    /// fixed yaw only produces stray shots, and the cases worth
+    /// testing - Argus_Pain retaliation, the vendetta ledger, retreat
+    /// entry, the pain flinch, knockback, the shove economy - all
+    /// begin with a bot actually taking damage from a player.
+    ///
+    /// Returns how many ticks it had a target, so a run that hit
+    /// nothing can be told from a run that never saw anybody.
+    pub fn attack_nearest(&mut self, secs: f32) -> (u32, u32) {
+        let end = Instant::now() + Duration::from_secs_f32(secs);
+        let (mut ticks, mut tracked) = (0u32, 0u32);
+        while Instant::now() < end {
+            ticks += 1;
+            let me = self.my_pos();
+            let mut best: Option<(f32, [f32; 3])> = None;
+            if let Some(me) = me {
+                for (id, e) in &self.world.ents {
+                    if *id == self.world.my_ent
+                        || Some(e.model) != self.world.player_model
+                        || e.updates == 0
+                    {
+                        continue;
+                    }
+                    let d = [e.pos[0] - me[0], e.pos[1] - me[1], e.pos[2] - me[2]];
+                    let len = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).sqrt();
+                    if best.map(|(b, _)| len < b).unwrap_or(true) {
+                        best = Some((len, d));
+                    }
+                }
+            }
+            if let Some((len, d)) = best {
+                tracked += 1;
+                let yaw = d[1].atan2(d[0]).to_degrees();
+                // the view protocol wants UP negative, the same flip
+                // argus.qc applies at every one of its conversions
+                let flat = (d[0] * d[0] + d[1] * d[1]).sqrt().max(1.0);
+                let pitch = -(d[2].atan2(flat).to_degrees());
+                // CLOSE THE RANGE. Standing still and firing at a
+                // target across dm4 lands nothing: the spawn weapon
+                // is a shotgun and its spread is a miss at that
+                // distance, which is why a first pass held fire for
+                // 45 s over 787 tracked ticks and never touched a
+                // bot. Forward is along our own yaw and the yaw is
+                // already on the target, so this walks in.
+                let fwd = if len > 200.0 { 320 } else { 0 };
+                self.set_move(pitch, yaw, fwd, 0, 1);
+            } else {
+                self.set_move(0.0, 0.0, 0, 0, 1);
+            }
+            self.pump(Duration::from_millis(50));
+        }
+        self.set_move(0.0, 0.0, 0, 0, 0);
+        self.pump(Duration::from_millis(200));
+        (ticks, tracked)
+    }
+
     /// Steer toward a point by resending the standing move each tick;
     /// returns the closest approach. The controller is deliberately
     /// dumb - a straight-line walk at run speed IS the experiment.
@@ -872,37 +929,46 @@ pub struct ObserveReport {
 }
 
 /// Connect, complete the signon dance, observe for `secs`, report.
+impl NetClient {
+    /// The world as this client currently sees it. Split out of
+    /// `observe` so any verb can report what it was looking at when it
+    /// finished, not just the one that exists to look (#259).
+    pub fn snapshot(&self) -> ObserveReport {
+        let players = self
+            .world
+            .ents
+            .values()
+            .filter(|e| Some(e.model) == self.world.player_model && e.updates > 0)
+            .count();
+        ObserveReport {
+            level: self.world.level.clone(),
+            protocol: self.world.protocol,
+            maxclients: self.world.maxclients,
+            signon: self.world.signon,
+            my_ent: self.world.my_ent,
+            my_pos: self.my_pos(),
+            names: self.world.names.clone(),
+            player_ents: players,
+            total_ents: self.world.ents.len(),
+            time: self.world.time,
+            last_prints: self
+                .world
+                .prints
+                .iter()
+                .rev()
+                .take(12)
+                .rev()
+                .map(|(t, s)| format!("{t:.1} {s}"))
+                .collect(),
+            unknown_svc: self.world.unknown_svc.clone(),
+        }
+    }
+}
+
 pub fn observe(host: &str, port: u16, secs: f32, name: &str) -> Result<ObserveReport, String> {
     let mut c = NetClient::connect(host, port, name)?;
     c.pump(Duration::from_secs_f32(secs.max(2.0)));
-    let players = c
-        .world
-        .ents
-        .values()
-        .filter(|e| Some(e.model) == c.world.player_model && e.updates > 0)
-        .count();
-    let report = ObserveReport {
-        level: c.world.level.clone(),
-        protocol: c.world.protocol,
-        maxclients: c.world.maxclients,
-        signon: c.world.signon,
-        my_ent: c.world.my_ent,
-        my_pos: c.my_pos(),
-        names: c.world.names.clone(),
-        player_ents: players,
-        total_ents: c.world.ents.len(),
-        time: c.world.time,
-        last_prints: c
-            .world
-            .prints
-            .iter()
-            .rev()
-            .take(12)
-            .rev()
-            .map(|(t, s)| format!("{t:.1} {s}"))
-            .collect(),
-        unknown_svc: c.world.unknown_svc.clone(),
-    };
+    let report = c.snapshot();
     c.disconnect();
     Ok(report)
 }

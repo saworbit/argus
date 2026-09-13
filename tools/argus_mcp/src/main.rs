@@ -142,6 +142,73 @@ async fn main() -> anyhow::Result<()> {
                     }))
                     .map_err(|e| e.to_string())
                 }
+                "attack" => {
+                    // FIRE FROM THE PUPPET'S SEAT (#259). clc_move
+                    // already carries the button bits and set_move
+                    // already takes pitch and yaw, so the protocol
+                    // work was done; what was missing was a seat that
+                    // a bot will react to and a verb to drive it.
+                    //
+                    // The name IS the opt-in. Argus_CanSee refuses the
+                    // exact netname "labprobe" so the link-probe
+                    // puppet stays an instrument rather than a target,
+                    // which is right for a sweep and wrong for this.
+                    // Connecting as "labfoe" is visible to every bot
+                    // and needs no QC change at all.
+                    //
+                    // This is what unblocks "the bot takes damage from
+                    // a player": Argus_Pain retaliation, the vendetta
+                    // ledger, retreat entry, the pain flinch on aim,
+                    // knockback response and the shove economy were
+                    // none of them exercisable headless before.
+                    let secs: f32 = rest.first().and_then(|s| s.parse().ok()).unwrap_or(6.0);
+                    let yaw: f32 = rest.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+                    let pitch: f32 = rest.get(2).and_then(|s| s.parse().ok()).unwrap_or(0.0);
+                    let host = rest.get(3).cloned().unwrap_or_else(|| "127.0.0.1".into());
+                    let port: u16 = rest.get(4).and_then(|s| s.parse().ok()).unwrap_or(26000);
+                    let mut c =
+                        argus_mcp::netclient::NetClient::connect(&host, port, "labfoe")?;
+                    c.pump(std::time::Duration::from_secs(3));
+                    let start = c.my_pos();
+                    // BUTTON_ATTACK is bit 1; bit 2 is jump, which the
+                    // walk auto-hop already uses. With no yaw given we
+                    // TRACK the nearest player instead of firing down
+                    // a fixed heading, because a stray shot exercises
+                    // nothing: every case worth testing starts with a
+                    // bot actually taking damage.
+                    let (ticks, tracked) = if rest.len() > 1 {
+                        c.set_move(pitch, yaw, 0, 0, 1);
+                        c.pump(std::time::Duration::from_secs_f32(secs.max(0.5)));
+                        c.set_move(pitch, yaw, 0, 0, 0);
+                        c.pump(std::time::Duration::from_secs_f32(0.5));
+                        (0, 0)
+                    } else {
+                        c.attack_nearest(secs.max(0.5))
+                    };
+                    let end = c.my_pos();
+                    let report = c.snapshot();
+                    c.disconnect();
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "name": "labfoe",
+                        "note": "visible to bots: Argus_CanSee only refuses \"labprobe\"",
+                        "held_attack_secs": secs,
+                        "aim": if rest.len() > 1 {
+                            serde_json::json!({ "mode": "fixed", "yaw": yaw, "pitch": pitch })
+                        } else {
+                            serde_json::json!({
+                                "mode": "track nearest player",
+                                "ticks": ticks,
+                                "ticks_with_a_target": tracked,
+                            })
+                        },
+                        "start_pos": start,
+                        "final_pos": end,
+                        "level": report.level,
+                        "roster": report.names,
+                        "last_prints": report.last_prints,
+                    }))
+                    .map_err(|e| e.to_string())
+                }
                 "impulse" => {
                     // fire a player impulse from the puppet's seat -
                     // the roster interface (101 add bot / 102 remove / 100 menu)
@@ -179,7 +246,7 @@ async fn main() -> anyhow::Result<()> {
                     .map_err(|e| e.to_string())
                 }
                 other => Err(format!(
-                    "unknown client subcommand {other:?}; try: observe, walk, walkrel, impulse"
+                    "unknown client subcommand {other:?}; try: observe, walk, walkrel, impulse, attack"
                 )),
             })
             .await?;
@@ -540,6 +607,8 @@ fn print_help() {
                                 puppet walk toward a point; reports\n\
                                 closest approach\n\
          argus-mcp client walkrel <dx> <dy> [secs]\n\
+         argus-mcp client attack [secs] [yaw] [pitch]\n\
+              connects as labfoe, which bots CAN see, and holds fire\n\
                                 puppet walk relative to current spawn\n\
          argus-mcp client impulse <n> [secs]\n\
                                 fire an impulse from puppet client (e.g. 101=bot, 100=menu, 210=cam)\n\
