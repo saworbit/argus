@@ -643,7 +643,7 @@ def force_way(x, y, z, snap=48, infra=False):
     """Waypoint index for (x,y,z): reuse one within snap units, else
     promote the closest fine sample. None when nothing ever stood
     within 120u (no world floor there), or when the promotion budget
-    is gone - and those are different failures, so the caller is told
+    is gone, and those are different failures, so the caller is told
     which. infra=True draws on INFRA_RESERVE when the cap is spent
     (#319): a mover pad is the map's designed circulation, not an
     optional seat, and losing one costs a level transition."""
@@ -946,7 +946,7 @@ def _door_shut_box(_e, _mn, _mx):
     because doors.qc swaps pos1 and pos2 and the brush is built at its
     open position (#309 got this backwards for seven doors before the
     arithmetic was checked). 6c typed its links against the compiled
-    box regardless, so on e1m7 - whose four doors are all START_OPEN -
+    box regardless, so on e1m7, whose four doors are all START_OPEN,
     every door link it drew was a link through the PARKED slab, which
     is the thing #309 vetoes rather than types. Sliding doors have the
     pair worked out already; vertical ones only need the same swap.
