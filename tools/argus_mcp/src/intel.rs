@@ -51,6 +51,12 @@ pub struct Totals {
     /// - the west-pad statues rode green verdicts for three tapes)
     pub freezes: u32,
     pub freeze_max_sec: f64,
+    /// Total seconds lost to statues (#257). A count alone reads a
+    /// tape where one bot did nothing for 76 per cent of the match as
+    /// "1 freeze", beside a tape with five short ones. Duration is
+    /// the thing that matters and the count was hiding it.
+    #[serde(default, skip_serializing_if = "crate::intel::is_zero_f64")]
+    pub freeze_total_sec: f64,
     /// freezes during which the bot lost 10+ hp: a bot being shot
     /// while standing still, the worst class a human can witness
     pub freeze_underfire: u32,
@@ -519,6 +525,7 @@ fn brief_tape_lava(
         lava_rule,
         freezes: fz.len() as u32,
         freeze_max_sec,
+        freeze_total_sec: fz.iter().map(|f| f.dur).sum(),
         freeze_underfire,
         mover_waits: ev("lift") + ev("train"),
         boards: ev("board"),
@@ -1033,10 +1040,18 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     // the review battery saw the freezes but no gate could fail on
     // them. Fail on any under-fire freeze, on a 10 s+ statue the
     // baseline does not have, or on the count clearly growing.
+    // Duration counts as well as the count and the worst case (#257).
+    // A tape where one bot stood still for 144 of 190 seconds scored
+    // "1 freeze" and sailed past a gate that a tape with five short
+    // ones would have failed. Total frozen time is the figure that
+    // actually describes what a watcher sees, so a candidate that
+    // loses 30 s more than its baseline fails whatever the count did.
     let fz_pass = b.totals.freeze_underfire == 0
         && (b.totals.freeze_max_sec < 10.0
             || b.totals.freeze_max_sec <= a.totals.freeze_max_sec + 2.0)
-        && b.totals.freezes <= a.totals.freezes + 2;
+        && b.totals.freezes <= a.totals.freezes + 2
+        && (b.totals.freeze_total_sec < 30.0
+            || b.totals.freeze_total_sec <= a.totals.freeze_total_sec + 30.0);
     gates.push(Gate {
         name: "freezes".into(),
         pass: fz_pass,
@@ -1044,6 +1059,14 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
         b: b.totals.freeze_max_sec,
         note: if b.totals.freeze_underfire > 0 {
             "a bot took damage while frozen - free frag for a human".into()
+        } else if !fz_pass
+            && b.totals.freeze_total_sec > a.totals.freeze_total_sec + 30.0
+            && b.totals.freeze_max_sec < 10.0
+        {
+            format!(
+                "{:.0} s lost to statues against the baseline's {:.0} s, across {} freeze(s)",
+                b.totals.freeze_total_sec, a.totals.freeze_total_sec, b.totals.freezes
+            )
         } else if !fz_pass && b.totals.freeze_max_sec >= 10.0 {
             format!(
                 "a {:.1} s statue the baseline does not have",
@@ -2379,6 +2402,46 @@ ARGEVT Reap hazard
             brief.flags
         );
         assert!(brief.totals.avg_speed < 400.0);
+    }
+
+    // #257: a tape where one bot stood still for most of the match
+    // scored "1 freeze" and passed, because the gate weighed count
+    // and worst case but never total time lost.
+    #[test]
+    fn freeze_gate_fails_on_total_time_even_when_the_count_is_low() {
+        let mut a = brief_text(&log_a(), None);
+        let mut b = brief_text(&log_a(), None);
+        // baseline: nothing frozen
+        a.totals.freezes = 0;
+        a.totals.freeze_max_sec = 0.0;
+        a.totals.freeze_total_sec = 0.0;
+        // candidate: ONE freeze, but it ate most of the match. Under
+        // the old rule this passed: count within +2, and the worst
+        // case only fails at 10 s... which this exceeds, so use a
+        // shape the old rule provably let through instead - several
+        // sub-10 s freezes that add up.
+        b.totals.freezes = 1;
+        b.totals.freeze_max_sec = 9.0;
+        b.totals.freeze_total_sec = 9.0;
+        let r = compare_briefs(a.clone(), b.clone());
+        let g = r.gates.iter().find(|g| g.name == "freezes").unwrap();
+        assert!(g.pass, "9 s in one freeze is not a gate failure");
+
+        // now the same count and worst case, but 80 s lost in total
+        b.totals.freezes = 1;
+        b.totals.freeze_max_sec = 9.0;
+        b.totals.freeze_total_sec = 80.0;
+        let r2 = compare_briefs(a.clone(), b.clone());
+        let g2 = r2.gates.iter().find(|g| g.name == "freezes").unwrap();
+        assert!(
+            !g2.pass,
+            "80 s lost to statues must fail even at one freeze under 10 s"
+        );
+        assert!(
+            g2.note.contains("lost to statues"),
+            "the note should say what failed: {}",
+            g2.note
+        );
     }
 
     #[test]
