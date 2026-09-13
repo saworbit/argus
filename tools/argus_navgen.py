@@ -2295,6 +2295,23 @@ def _knit_pass(_toward_main, _use_rj):
                         _maxvoid = max(_maxvoid, _void)
                 if not (0 < _maxvoid * 16 <= 200):
                     continue
+                # A JUMP CANNOT CLIMB MORE THAN A JUMP CLIMBS. Section
+                # 4b has always bounded a jump EDGE by `-64 <= dz <=
+                # JUMPUP`, and this stitch never checked the rise at
+                # all: it bounded the horizontal span and the void and
+                # let the landing sit anywhere. dm2's n0 is the found
+                # case, and it is the worst shape the defect has -
+                # n0's ONLY link was a stitched jump climbing 48 over
+                # a 160u void, so a bot that routed onto it had no
+                # other way off. In a 414 s human session Carmack
+                # stalled 165 times at '1263 -952 186' steering at
+                # that landing, 175 of the tape's 224 stalls, in one
+                # cell. The audit found 39 of these across eleven
+                # graphs. JUMPUP moves with gravity (#282), so this
+                # reads the same constant the edge scan does rather
+                # than a second opinion about the same arc.
+                if _dz2 - _sz > JUMPUP:
+                    continue
                 if _dry < _steps - _maxvoid - 2:
                     continue              # more than one clean gap
                 if h0_contents((_sx + _dx2) / 2, (_sy + _dy2) / 2,
@@ -2626,8 +2643,12 @@ if __import__("os").path.exists(_probepath):
                         _maxvoid = max(_maxvoid, _void)
                 # jump range at speed: the shipped dm4 link clears
                 # a 192u lava gap, so the remint window matches
-                # that proven envelope, not a single stride
-                if 0 < _maxvoid * 16 <= 200 and _h <= 280:
+                # that proven envelope, not a single stride - bounded
+                # by the same rise ceiling as a jump edge and the knit
+                # stitch, because a refuted walk link that climbs more
+                # than a jump climbs is not a jump either
+                if 0 < _maxvoid * 16 <= 200 and _h <= 280 \
+                        and _jz - _iz <= JUMPUP:
                     _d = links[_i][_j][0]
                     links[_i][_j] = (_d, 1)
                     _nremint += 1

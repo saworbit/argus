@@ -1710,7 +1710,6 @@ void() Argus_Nav_Spawn_lqdm2 =
     Argus_NavLink (n181, n183);
     Argus_NavLink (n181, n182);
     Argus_NavLinkJump (n181, n179);
-    Argus_NavLinkJump (n181, n178);
     Argus_NavLink (n182, n180);
     Argus_NavLink (n182, n177);
     Argus_NavLink (n182, n181);
