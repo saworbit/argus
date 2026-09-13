@@ -9,6 +9,58 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The guard that never fired, and the field it was reading (#256).**
+The e1m2 co-op companion pins in water and swims in a circle for the
+rest of the match, on every build measured including current main.
+#248 shipped a guard for exactly this: a swimmer whose steering node
+stands more than a water vault above it has been displaced, so re-plan.
+The guard has never once fired.
+
+It tests `self.waterlevel`, and for a bot that field belongs to the
+engine. `SV_CheckWaterTransition` runs at the end of every
+`MOVETYPE_STEP` entity's physics and leaves a flat 1 in it for a body
+in liquid. `Argus_Physics` computes the honest 0 to 3 depth from three
+`pointcontents` at feet, origin and eyes, but `FrameAll` calls
+`Argus_AI` BEFORE it, so a test on the AI tick reads the engine's
+number from the end of the previous server frame and never sees a 2.
+A probe printing one line per second while wet returned 44 samples in
+water with the feet correctly reading `CONTENT_WATER` and waterlevel
+reading 1 in every one, while the steering node sat at
+`'1041 257 308'` above a bot floating at z 171 - the same seat #248's
+own commit message names. The cure is the one `ar_feettype` already
+uses: QC keeps its own copy in `ar_wetlevel`, written where the depth
+is computed, and the guard reads that.
+
+Two conditions had to be added once the rule ran for real, and each
+was paid for by a tape. Ground under the feet means the bot can walk,
+so without that test the guard fires at every pool bank a route
+crosses and e1m2 deathmatch came back at coverage 410 to 426 against a
+control band of 494 to 563, with an abandon loop where bots used to
+wade out. And the adrift clock resets on GROUND alone: two versions
+keyed it on depth, one under waist height and one on dry feet, and the
+swim bob defeated both by crossing the surface several times a second,
+which is the same flicker the issue's swim event count is measuring.
+Co-op tapes on those versions sat in the flooded court for the whole
+match with 730 and 691 swim events.
+
+LADDER. e1m2 co-op, six paired 185 s runs against current main: the
+control pinned in four of six, the fix in none. Swim events 11735
+against 736. Worst tape 26 cells against 95. That is the bimodality in
+the issue closing: every tape on the fix works the map.
+
+  dm3   improved, all seven gates: engages 8 to 17, routefails 45 to
+        26, coverage 376 to 392, every bot positive
+  dm4   improved, all seven gates: frags 14 to 27, spread 5 to 3, lava
+        6 and in band
+  e1m2  deathmatch, two tapes: one parity on all seven, one with
+        coverage 440 against a control band of 494 to 563. Watch it.
+
+RECORDED, NOT FIXED: the lightning selector's wade test (#18) reads
+`self.waterlevel <= 1` in `Argus_SelectWeapon`, which also runs on the
+AI tick, so it has been answering on the engine's number in exactly
+the waist-deep case it was written to refuse. That is a combat change
+and wants its own ladder.
+
 **An open door is still a brush.** Hull 1 carries no `func_door`
 brushes, so the sampler reads a whole doorway as clean floor and navgen
 mints a beeline through it wherever the two waypoints happen to sit.

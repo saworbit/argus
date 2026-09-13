@@ -160,6 +160,9 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .entity ar_door;                // door slice: closed slab being handled
 .entity ar_doorbtn;             // door slice: its touch button
 .float  ar_doortime;            // door slice: give-up deadline
+.float  ar_wetlevel;            // QC's own 0-3 depth: the engine owns
+                                // self.waterlevel and leaves 1 in it
+.float  ar_wetdwell;            // time we were last NOT afloat
 float ar_opm_ears;              // OPM slice B ladder switch: hearing
                                 // consumers (FOV gate + glance) are
                                 // inert until slice B's own A/B;
@@ -1476,6 +1479,25 @@ void() Argus_Physics =
     // would make the first lightning shot discharge all cells into
     // the bot's own feet (W_FireLightning checks waterlevel > 1).
     self.waterlevel = wl;
+    // and QC keeps its own copy, for the same reason ar_feettype
+    // exists. The engine rewrites self.waterlevel at the end of this
+    // bot's physics and leaves a flat 1 there, so anything reading it
+    // on the next AI tick - which runs BEFORE this function - gets
+    // the engine's number and never sees a depth of 2 or 3.
+    self.ar_wetlevel = wl;
+    // The adrift clock resets on GROUND and on nothing else. Depth
+    // cannot drive it: the swim bob crosses the surface several times
+    // a second - that flicker IS the swim event count #256 measures -
+    // so a clock keyed on waterlevel is reset forever by the very
+    // bobbing it exists to see through. Two versions proved it, one
+    // resetting under waist depth and one on dry feet, and a co-op
+    // tape on each sat in the flooded court for the whole match with
+    // 691 and 730 swim events. Ground is the honest signal: a bot
+    // standing on something can walk, a bot with nothing under it is
+    // adrift, and a jump is airborne for well under the three seconds
+    // the guard waits.
+    if (self.flags & FL_ONGROUND)
+        self.ar_wetdwell = time;
 
     Argus_WaterMove ();
     if (self.health <= 0)
@@ -6987,8 +7009,10 @@ void() Argus_AI =
                 self.ar_pending = 1;
                 self.ar_mode = 0;
             }
-            else if (self.waterlevel >= 2
+            else if (self.ar_wetlevel >= 2
                      && self.ar_feettype == CONTENT_WATER
+                     && !(self.flags & FL_ONGROUND)
+                     && time > self.ar_wetdwell + 3
                      && tp_z > self.origin_z + (320 * 320 / (2 * Argus_Gravity ()))
                      && !self.ar_hopswim && !self.ar_hoplift
                      && !self.ar_hoptrain && !self.ar_hopjump
@@ -7010,6 +7034,36 @@ void() Argus_AI =
                 // gravity 800 and at 512 under e1m8's 100. A fixed 64
                 // would re-plan a low-gravity swimmer away from a
                 // node it could reach in one hop.
+                // READ OUR OWN DEPTH, NOT THE ENGINE'S FIELD. This
+                // guard shipped testing self.waterlevel and has
+                // therefore never once fired. The engine owns that
+                // field for a MOVETYPE_STEP entity:
+                // SV_CheckWaterTransition runs at the end of the
+                // bot's physics and leaves a flat 1 in it for a body
+                // in liquid, and FrameAll calls Argus_AI BEFORE
+                // Argus_Physics, so the number read here is the
+                // engine's, from the end of the previous server
+                // frame, and it never reaches 2. Measured on an e1m2
+                // co-op probe: 44 samples with the feet reading
+                // CONTENT_WATER and waterlevel reading 1 in every
+                // one, while the steering node stood at
+                // '1041 257 308' over a bot floating at z 171, the
+                // same seat this guard was written for (#256). The
+                // same trap is live in the lightning selector's wade
+                // test (#18); that one is a combat change and wants
+                // its own ladder, so it is recorded and left alone.
+                //
+                // ADRIFT, not passing through. Two conditions had to
+                // be added once the rule ran for real, because on its
+                // own it fires at every pool a bot crosses: a node on
+                // the far rim is legitimately more than a vault above
+                // a bot in the water below it, and e1m2 deathmatch
+                // came back at coverage 410 to 426 against a control
+                // band of 494 to 563, with an abandon loop where bots
+                // used to wade out. Ground under the feet means the
+                // bot can walk. Three seconds with nothing under it
+                // means it fell in: a crossing clears in well under
+                // that, and the co-op pin lasts whole matches.
                 // Above the reach a swimmer is not
                 // getting there, so treat it as displacement and
                 // re-plan - Argus_NearestNode is swim-aware now and
