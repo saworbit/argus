@@ -9,6 +9,65 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**Some platforms are wearing door clothing (#281, #119).** e1m1 played
+an empty match: zero engagements, zero weapon pickups and zero deaths
+in over two minutes, with half the graph never visited. The map is a
+chain, and the link nobody modelled is `func_door *3`, a 126 by 126
+slab with `angle -2` that drops 230 units when either of its two
+buttons is pressed. Its closed top face IS the start area's floor, and
+riding it down is the only way out of that section. navgen models
+`func_plat` and reads `func_door` only for door AABB typing, so the
+slab was invisible to it and the crossing came out as ordinary walk
+links over a hole no hull can see. The puppet convicted both of them,
+stopping at the exact cells the bots pinned in, and dropping them
+without replacing them takes that spawn's reach from 100 per cent to
+5, because they are the section's only connection to the map.
+
+navgen now treats a big vertical `func_door` as what it is: pads at
+both faces and a lift link EACH WAY, because a mover carries you in
+both directions and it is the actuator, not the graph, that decides
+which way it is going. The size bar keeps bars, gates and rising
+grates out of the class - a slab under 64 units on either axis is not
+a floor a 32-wide body stands on, and travel under 48 is served by a
+step or a jump-up already. At runtime the lift wait learned two
+things. It fires for a hop that goes DOWN, which it never had to
+before because every lift link navgen could emit ran bottom to top. And
+it rides a door: board whenever the slab's own top face is within a
+step of our feet, which is direction-agnostic and needs nobody to know
+which way the slab travels, and anywhere else ask the door handler for
+the button, which is the thing it has been finding and pressing since
+v3.33. That is the runtime half of #119 - press that, then cross here.
+
+A SLIDE IS NOT A TELEPORT, and that is the second half of why e1m1 lay
+about its geometry. `beeline_ok` probes 32 units either side of a
+link's line, because walkmove slides along walls and a line that clips
+a corner is still walkable when floor continues just beside it. As a
+grade for a link the fine graph already found, that is right, and
+three attempts to narrow it are in the graveyard. As the ONLY referee
+for a knit stitch, which by construction invents a link across ground
+nothing walked, it is not: on e1m1 it reset its own bad-sample streak
+by finding the ledge on the FAR SIDE of an eight unit wall. A knit
+walk stitch now needs honest floor under every step of its own centre
+line. The jump stitch below it still takes the short-void cases, and
+it gained one bound it was missing: a jump that ends no lower than it
+started cannot outrun the model's flat range, which is what refused
+e1m1's replacement 275 unit hop across a 160 unit void.
+
+e1m1 regenerated: 237 nodes, worst spawn reach 98 per cent against a
+graph whose reach only read 100 because of the two lies, and three
+stranded single nodes stripped honestly.
+
+LADDER. e1m1 improved on all seven gates twice: stalls 68 to 45 and
+32, engages 0 to 24 and 16, kills 0 to 10 and 8, frags -2 to 7 and 8
+with every bot positive, coverage 178 to 376 and 238, lava 2 to 3 and
+0, boards 4 to 7 and 9, abandons 22 to 12. dm3, the other lift map,
+improved as well: stalls 51 to 25, engages 8 to 22, frags 1 to 5, no
+freezes. dm2 read regressed and then mixed, and a control tape on
+byte-identical shipped code reproduced every failing gate and was
+worse on two of them - stalls 51, goal pickups 4, Romero on 0 frags,
+lava 5 - so those gates belong to that map's documented variance and
+its stale baseline, not to this change.
+
 **The lightning wade test reads our depth now too (#18).** The
 selector refuses the LG when the bot is deep enough that
 `W_FireLightning` would discharge every cell into its own feet, and it
