@@ -5811,7 +5811,7 @@ float(vector p, float rad) Argus_SpotCrowded =
 float() Argus_Unstick =
 {
     local entity n, best;
-    local float d, bd, embedded, mind;
+    local float d, bd, embedded, mind, fightpin;
 
     embedded = (pointcontents (self.origin) == CONTENT_SOLID);
 
@@ -5845,6 +5845,36 @@ float() Argus_Unstick =
         // Joe Rogan's nearest node was 6 units away and warping onto
         // it would have changed nothing.
         mind = 64;
+    }
+    else if (self.ar_enemy != world && self.ar_enemy.health > 0
+             && !self.ar_hoplift && !self.ar_hoptrain
+             && time > self.ar_stucktime + 8)
+    {
+        // PINNED WHILE FIGHTING, which the branch above structurally
+        // cannot see (#322). The stall detector is the only thing
+        // that feeds ar_stalls and it is gated on `!fighting`, so a
+        // bot with an enemy stops counting stalls entirely and can
+        // never reach the four this needs. The two cancel exactly
+        // where it matters most: Carmack held '2372 16 72' for 19.7
+        // seconds at 26 health in a human dm2 session with his stall
+        // count frozen at 6, turning on the spot in front of Shane.
+        //
+        // The stall count was only ever a proxy for "this is not a
+        // designed wait", because Argus_AI clears ar_liftwait at the
+        // top of every frame and a hold flag read from in here is
+        // always 0 (#271). Combat is not a designed wait: every
+        // pad-side hold has yielded to a live enemy since v3.64, so
+        // the proxy is not needed here. The hop flags ARE readable on
+        // this tick and are tested anyway, because the aboard-a-mover
+        // holds deliberately do not yield and a bot riding a slab is
+        // held still on purpose.
+        //
+        // Eight seconds rather than six: nothing corroborates this
+        // one, and a bot that is genuinely fighting covers 32 units
+        // in a fraction of a second, so the extra two cost a wedged
+        // bot little and cost a strafing one everything.
+        mind = 64;
+        fightpin = 1;
     }
     else
         return FALSE;
@@ -5924,6 +5954,8 @@ float() Argus_Unstick =
     dprint (self.netname);
     if (embedded)
         dprint (" unstick embedded ");
+    else if (fightpin)
+        dprint (" unstick fightpin ");
     else
         dprint (" unstick pinned ");
     dprint (vtos (best.origin));
