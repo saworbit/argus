@@ -492,6 +492,25 @@ bot takes damage from a player" is now exercisable headless: `Argus_Pain`
 retaliation, the vendetta ledger, retreat entry thresholds, the pain
 flinch on aim, knockback response and the shove economy.
 
+**Three more pointfile overlays (#254).** `argus_pointfile.py` gains the
+items from that list that are computable offline:
+
+- `--what jump|door|lift|train|rocket|sprint|tele` draws one typed link
+  family at a time, which makes a map's movement vocabulary legible:
+  which crossings are jumps, which are rides, which need a door open.
+- `--what fails` draws the cells where routefail, abandon, hazard,
+  trapped and stall events fired. ARGEVT carries no position for most
+  verbs, so the position is the emitting bot's nearest ARGLOG sample in
+  time, accurate to half a second. That is good enough to stand in the
+  right room, which is the point of drawing these rather than counting
+  them.
+- `--what human` draws the human's own trail. Human tracks have been in
+  the tape since v3.66 and nobody has ever seen one.
+
+Verified both ways rather than by eye, since the drawing itself needs a
+listen game: the human overlay returns 2270 points on a real co-op
+session tape and zero on a botmatch, with a note saying why.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a

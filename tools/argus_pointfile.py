@@ -13,7 +13,8 @@ stops 18 units short of the trigger it is waiting on. Standing in the
 level looking at the dots does.
 
 Usage:
-  argus_pointfile.py <map> [--what nodes|links|swim|water|tape]
+  argus_pointfile.py <map> [--what nodes|links|swim|water|tape|fails|human|
+                                  jump|door|lift|train|rocket|sprint|tele]
                            [--tape runs/<log>] [--step 12] [--max 8000]
 
 Then in a LISTEN game (the command is client side, a dedicated server
@@ -79,11 +80,84 @@ def tape_points(tape):
     return out
 
 
+# typed links, one family at a time (#254 item 7). Cheap, and it
+# makes a map's movement vocabulary legible: which crossings are
+# jumps, which are rides, which need a door open.
+TYPED = {
+    "jump": "jlinks",
+    "door": "doorlinks",
+    "lift": "liftlinks",
+    "train": "trainlinks",
+    "rocket": "rjlinks",
+    "sprint": "sprintlinks",
+    "tele": "teles",
+}
+
+
+def event_points(tape, verbs):
+    """Positions where a named event fired (#254 item 3).
+
+    ARGEVT carries no position for most verbs, so the position is the
+    emitting bot's nearest ARGLOG sample in time. That is accurate to
+    half a second, which at run speed is about 160 units - good enough
+    to stand in the right room, which is the whole point of drawing
+    these rather than counting them.
+    """
+    LOG = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
+                     r"(-?[\d.]+)\s+(-?[\d.]+)'")
+    EVT = re.compile(r"ARGEVT (.+?) (\w+)")
+    track, hits = {}, []
+    for line in Path(tape).read_text(errors="replace").splitlines():
+        m = LOG.search(line)
+        if m:
+            track[m.group(1)] = (float(m.group(3)), float(m.group(4)),
+                                 float(m.group(5)))
+            continue
+        m = EVT.search(line)
+        if m and m.group(2) in verbs:
+            pos = track.get(m.group(1))
+            if pos:
+                hits.append(pos)
+    return hits
+
+
+def human_points(tape, step):
+    """The human's own trail (#254 item 2).
+
+    Human tracks have been in the tape since v3.66 and nobody has ever
+    seen one. A human is a name with ARGLOG rows but no spawned or
+    respawn event, the same rule the Rust parser uses.
+    """
+    LOG = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
+                     r"(-?[\d.]+)\s+(-?[\d.]+)'")
+    SPAWN = re.compile(r"ARGEVT (.+?) (?:spawned|respawn)\b")
+    text = Path(tape).read_text(errors="replace")
+    bots = set(SPAWN.findall(text))
+    per = {}
+    for line in text.splitlines():
+        m = LOG.search(line)
+        if m and m.group(1) not in bots:
+            per.setdefault(m.group(1), []).append(
+                (float(m.group(2)), (float(m.group(3)), float(m.group(4)),
+                                     float(m.group(5)))))
+    if not per:
+        print("note: no human track in this tape (every name spawns)")
+    pts = []
+    for name in per:
+        rows = [p for _, p in sorted(per[name])]
+        for a, b in zip(rows, rows[1:]):
+            d = sum((b[i] - a[i]) ** 2 for i in range(3)) ** 0.5
+            if d < 700:        # a respawn is a teleport, not travel
+                pts += lerp(a, b, step)
+    return pts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("map")
     ap.add_argument("--what", default="nodes",
-                    choices=["nodes", "links", "swim", "water", "tape"])
+                    choices=["nodes", "links", "swim", "water", "tape",
+                             "fails", "human"] + sorted(TYPED))
     ap.add_argument("--tape")
     ap.add_argument("--step", type=float, default=12.0)
     ap.add_argument("--max", type=int, default=8000)
@@ -111,6 +185,24 @@ def main():
         if not a.tape:
             sys.exit("--what tape needs --tape runs/<log>")
         pts = tape_points(a.tape)
+    elif a.what == "fails":
+        if not a.tape:
+            sys.exit("--what fails needs --tape runs/<log>")
+        pts = event_points(a.tape, {"routefail", "abandon", "hazard",
+                                    "trapped", "stall"})
+        if not pts:
+            print(f"note: no failure events in {a.tape}")
+    elif a.what == "human":
+        if not a.tape:
+            sys.exit("--what human needs --tape runs/<log>")
+        pts = human_points(a.tape, a.step)
+    elif a.what in TYPED:
+        key = TYPED[a.what]
+        links = d.get(key, [])
+        if not links:
+            print(f"note: {a.map} has no {a.what} links")
+        for L in links:
+            pts += lerp(nodes[L[0]], nodes[L[1]], a.step)
 
     if len(pts) > a.max:
         keep = len(pts) / a.max
