@@ -2694,6 +2694,61 @@ float(entity d) Argus_DoorShelved =
     return (time < d.ar_failtime + 20);
 };
 
+// A DOOR THAT IS OPEN IS STILL A BRUSH. It does not vanish, it
+// slides beside the hole it was filling, and half the time it parks
+// on the very line the nav graph draws through the doorway. Hull 1
+// carries no func_door brushes, so navgen samples the whole doorway
+// as clean floor and mints a beeline through it that can sit well
+// off centre: on e1m2 the silver key pair's east half is shut across
+// x 881 to 951 and open across x 943 to 1013, and the n84 to n90
+// walk link crosses the frame at x 948. Fifteen of e1m2's 64 door
+// links are drawn through a slab's open position, and so are four of
+// dm2's 28, five of e1m1's 48 and six of e1m5's 36.
+//
+// The cure is to steer through the DOORWAY and not at the node
+// beyond it. absmin and absmax follow the slab wherever it has slid
+// to, and pos1 is where it sits when shut, so the difference walks
+// the box back onto the hole. The thin axis of that box is the wall
+// it lives in, so stepping out along it puts the aim point clear of
+// the frame on the side we are heading for.
+vector(entity d) Argus_DoorAxis =
+{
+    local vector sz;
+
+    sz = d.absmax - d.absmin;
+    if (sz_x < sz_y)
+        return '1 0 0';
+    return '0 1 0';
+};
+
+vector(entity d) Argus_DoorShut =
+{
+    return (d.absmin + d.absmax) * 0.5 + d.pos1 - d.origin;
+};
+
+vector(entity d, vector far) Argus_DoorWay =
+{
+    local vector c, n;
+
+    c = Argus_DoorShut (d);
+    n = Argus_DoorAxis (d);
+    if ((far - c) * n < 0)
+        n = '0 0 0' - n;
+    c_z = far_z;
+    return c + n * 48;
+};
+
+// Are we out the far side of the frame yet? Same side of the wall
+// plane as the thing we are walking to.
+float(entity d, vector far) Argus_DoorPast =
+{
+    local vector c, n;
+
+    c = Argus_DoorShut (d);
+    n = Argus_DoorAxis (d);
+    return (((self.origin - c) * n) * ((far - c) * n)) > 0;
+};
+
 void(entity d) Argus_TakeDoor =
 {
     local entity b, best;
@@ -7223,7 +7278,23 @@ void() Argus_AI =
         {
             if (self.ar_door.state != STATE_BOTTOM)
             {
-                self.ar_door = world;       // moving or open: walk on
+                // Moving or open, which is NOT the same as gone. The
+                // slab has slid beside the hole it was filling and
+                // can be parked on the walk link itself, so aim
+                // through the doorway rather than at the node beyond
+                // it. One frame is enough: the trace above re-takes
+                // the door on every frame the slab is still on the
+                // line, so the aim lasts exactly as long as the
+                // obstruction does and not a tick longer.
+                if (!Argus_DoorPast (self.ar_door, tp))
+                {
+                    gp = Argus_DoorWay (self.ar_door, tp);
+                    to = gp - self.origin;
+                    to_z = 0;
+                    if (vlen (to) > 16)
+                        want = vectoyaw (to);
+                }
+                self.ar_door = world;
                 self.ar_doorbtn = world;
             }
             // THE GIVE-UP COMES FIRST (#270). It used to sit below the

@@ -9,6 +9,58 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**An open door is still a brush.** Hull 1 carries no `func_door`
+brushes, so the sampler reads a whole doorway as clean floor and navgen
+mints a beeline through it wherever the two waypoints happen to sit.
+That line can run well off centre, and a sliding door does not leave the
+world when it opens: it parks beside the hole it was filling. On e1m2
+the silver key pair's east half is shut across x 881 to 951 and open
+across x 943 to 1013, and the n84 to n90 walk link crosses the frame at
+x 948, dead inside the slab's open position. Fifteen of e1m2's 64 door
+links are drawn through an open slab, and so are four of dm2's 28, five
+of e1m1's 48 and six of e1m5's 36.
+
+The co-op companion pays for it on every e1m2 tape. On the four tapes on
+file that doorway holds 21 to 42 per cent of every position sample of
+the whole match, and a fresh probe on current main has the bot pressed
+against the open slab's south face at '936 -1064 440' with `ar_door` set
+and the door hop live. The lab puppet walked the same link clean and
+reported it healthy, which is not a contradiction: both halves of that
+pair carry spawnflags 2048, the engine strips those entities in
+deathmatch, and `probelinks` runs a deathmatch server. The link is
+honest in the mode it was verified in and a lie in the mode the
+companion plays.
+
+The cure is one aim point. A door hop steers through the DOORWAY now
+rather than at the node beyond it. `absmin` and `absmax` follow the slab
+wherever it has slid to and `pos1` is where it sits when shut, so the
+difference walks the box back onto the hole it fills, and the thin axis
+of that box is the wall it lives in. The steer lasts one frame by
+design: the trace that takes the door runs again on every frame the slab
+is still on the line, so the aim holds itself exactly as long as the
+obstruction does, and `Argus_DoorPast` refuses it the moment the bot is
+out the far side. A first cut held the aim across frames and kept
+`ar_door` until the bot was through; e1m2 came back with coverage 563 to
+335 and engagements 30 to 8, because holding a door drags a bot to every
+frame it traces on a map with 26 of them. The one-frame version is the
+shipped one.
+
+Navgen reports the same geometry: it models each door's open position
+from its angle, size and lip and names every door link drawn through it.
+That is the gate that would have caught this, and it prints on every
+regen.
+
+LADDER, 185 s each against the shipped baselines. dm2 parity on all
+seven gates. e1m1 improved, with engagements 0 to 4 and the first seven
+item grabs that map has recorded. e1m2 parity on six, with stalls 31 to
+40 against a control that runs 31 to 50 on identical code, so the stall
+gate is reading that map's own noise. Co-op is harder to measure than it
+should be, because the water pin of #256 eats roughly two thirds of
+e1m2's co-op tapes before they reach the door at all: of six paired
+runs, four pinned in water on both arms equally. The pair that got
+through read the doorway at 37 per cent of samples on main and 27 on the
+fix.
+
 **A pinned bot is stuck too, and being embedded was only half of it
 (#271).** `Argus_Unstick` shipped in #262 against one signature: origin
 inside world solid. A dm2 tape has Joe Rogan at exactly
