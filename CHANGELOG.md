@@ -9,6 +9,65 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The seat campaign: nine graphs regenerated past the filter, two
+refused (#308).** `SV_CheckBottom` is the test the engine itself
+consults in `SV_movestep` before it accepts a walk, and a waypoint
+that fails it is one a walking bot cannot arrive at the way the router
+assumes. The #250 filter landed on 2026-09-05 and almost every graph
+in the tree predates it, so between a fifth and a half of each one was
+made of seats the engine refuses. The `FL_PARTIALGROUND` retry from
+v3.42 rescues enough of them that this stayed invisible for a week.
+
+One map at a time, each with its own ladder, as the issue asks. Six
+shipped, two refused:
+
+```
+          bad seats        worst spawn reach        verdict
+dm4       48 of 155 -> 0    98/95 -> 98/98          two tapes
+dm6       58 of 213 -> 0    94    -> 95             three tapes
+dm2       49 of 216 -> 0    99/93 -> 96/95          two tapes
+dm3       58 of 259 -> 0    86    -> 98             two tapes
+lqdm2     49 of 214 -> 0    -     -> 99             two tapes
+e1m7      68 of 179 -> 0    92    -> 88             two + two controls
+e1m1       0 of 238         99                      already done
+e1m2      39 of 198         95/86                   REFUSED
+e1m8      60 of 127         -                       REFUSED
+```
+
+dm3 is the largest structural gain in the tree's history on that map:
+worst spawn reach 86 per cent to 98, stalls 51 to 28 and 15, engages
+8 to 19 and 23, routefails 45 to 30 and 12. Worth reading against
+v3.96, which measured a fresh dm3 regen at 78 per cent against the
+accumulated graph's 85 and hand-spliced three entry links because of
+it. Several campaigns of navgen work separate those two numbers.
+
+THE TWO REFUSALS ARE THE POINT OF THE ISSUE'S WARNING, which is that a
+regen has to be judged on a tape rather than assumed to be an
+improvement. Both fresh graphs have a clean seat audit and one of them
+has BETTER reach, and both play worse.
+
+e1m2 fails four gates on both its tapes - stalls 31 to 71 and 42,
+engages 30 to 4 and 18, coverage 563 to 343 and 411, goal pickups 13
+to 3 and 5 - and both tapes pile into the same two cells, which the
+brief tags `cause: door`: '1040 -500 172' and '1520 -575 170'. The
+second of those is already on the watch list as a pre-existing
+door-cause stall cell on that map, and reseating a doorway is exactly
+the change that would make it worse.
+
+e1m8 needs no second tape. The fresh graph reports 100 per cent reach
+with SIXTEEN FEWER NODES, which is the tell rather than the result,
+and its top hotspot is 121 hazard deflections at '956 -150 24' whose
+nearest node is 398 units away. Routefails 29 to 108, engages 37 to 9,
+frags 13 to -4, and a 19 second statue the control does not have.
+
+METHOD NOTE worth keeping. e1m7 has no baseline and is not in the
+rotation, so it got four tapes: two controls on the shipped graph as
+well as two candidates. After the first pair the regen looked like it
+had moved lava 3 to 4 and 8, which is the gate this tree treats most
+seriously - and the second control came back at 9. The shipped band is
+3 to 9 and the regen sits inside it. A map with no history needs a
+control band before a candidate means anything.
+
 **The mode is part of the verdict, and a shut door is not one
 (#310).** `probelinks` started its server with `+deathmatch 1` and the
 CLI had no way to ask for anything else. The engine strips every
