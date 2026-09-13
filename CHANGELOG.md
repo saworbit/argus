@@ -9,6 +9,77 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The router refuses a climb a jump cannot make (#317).** #316 stopped
+navgen minting a jump link that climbs further than a jump climbs, but
+only a regen applies a mint-time rule, and the two maps carrying the
+most of them had both refused their regen on their own tapes. So the
+refusal moved to the router, where it costs nothing to apply and
+covers every graph in the tree at once.
+
+The bar is the apex rather than navgen's constant, and that difference
+is the whole reason this works on both halves of the issue. navgen's
+`JUMPUP` is deliberately not scaled with gravity (#282), because the
+runtime cannot fly a 320 unit climb even where e1m8's physics allows
+one. `AR_JUMPVEL^2 / 2g` is a different statement: not "this is hard"
+but "this is impossible". At standard gravity it is 46, and e1m2's
+seven links ask for 44 to 88. On e1m8, where gravity is 100, it is
+364, and that map's one flagged link asks for 41.
+
+```
+map     jump links   over apex   apex   what the refusal costs
+e1m2        13           6        46    7 nodes, worst spawn 95% -> 92%
+e1m6        16           3        46    9 nodes, 95% -> 90%
+e1m5        10           3        46    2 nodes, 92% -> 91%
+dm3         22           1        46    nothing
+e1m8        28           0       364    nothing
+dm2         19           0        46    nothing
+```
+
+So e1m8's row of the issue was a false positive of the constant, and
+the check that would have "fixed" it would have stranded a five node
+pocket holding the rocket launcher approach and taken that map from
+100 per cent reach to 96.
+
+REFUSING AT THE SEARCH, NOT AT THE HOP. The climb branch in physics
+already carries a comment saying navgen only mints these at rise 44 or
+less, so the obvious place looks like the jump itself. It is the wrong
+place: a bot that declines the jump is still standing at the lip with
+a route that says climb, which is the dm2 pin #316 was about. Refused
+at the search, BFS routes around it or returns nothing, and the goal
+shelves through the path that already exists. The route cache carries
+the same refusal, because an adopter must not walk a chain the
+searcher could not have been given.
+
+THE COST IS VISIBLE AND IS THE SAME TRADE #316 MADE: routefails on
+e1m2 go from 0 to 18 and 19, because a route that used to end in a
+bot walking at an impossible ledge now ends in a re-shop.
+
+E1M6 IS WHERE THE DEFECT WAS CAUGHT IN THE ACT, on a map the issue did
+not name. Its n59 at '-495 145 104' is entered by a link that climbs
+80, and in the two control tapes bots stalled steering at it 1 and 7
+times, 7 of that tape's 11 steering targets. Both candidate tapes
+record zero. That is the first direct measurement of this class since
+the dm2 session that started it.
+
+Ladder. e1m2 three tapes against a same-build control (stalls 46,
+engages 16, coverage 561): improved, regressed, improved, with stalls
+35 / 67 / 32, engages 23 / 10 / 23 and goal pickups 11 / 8 / 16
+against 5. No gate fails twice. e1m6 two controls and two candidates:
+stalls 54 and 49 against 78 and 54, engages 33 and 49 against 19 and
+43. dm2 and e1m8 carry no over-apex links and are inert by
+construction; both were taped anyway and both are inside their own
+spread, which on e1m8 means a control tape today that ran 0 engages
+against the candidates' 12 and 9.
+
+THE REGEN ROUTE WAS TRIED FIRST AND REFUSED AGAIN. e1m2 regenerated on
+current navgen is a good looking graph: zero bad seats against 39,
+zero over-ceiling links, worst spawn reach 96 per cent against 95. It
+failed two tapes on coverage, routefails and stalls, piling into the
+same two door-cause cells as the #308 refusal, with door events 44 to
+8 and the map's only lift link lost to a pad the current pad placer
+will not seat. The jump ceiling was not what made that regen bad. Its
+tapes are committed beside the ladder.
+
 **The seat campaign: nine graphs regenerated past the filter, two
 refused (#308).** `SV_CheckBottom` is the test the engine itself
 consults in `SV_movestep` before it accepts a walk, and a waypoint
