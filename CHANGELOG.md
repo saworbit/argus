@@ -9,6 +9,34 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The lightning wade test reads our depth now too (#18).** The
+selector refuses the LG when the bot is deep enough that
+`W_FireLightning` would discharge every cell into its own feet, and it
+was mirroring that test against `self.waterlevel`. That field belongs
+to the engine for a bot, and `Argus_SelectWeapon` runs on the AI tick,
+which `FrameAll` calls before `Argus_Physics`: the number it read was
+whatever `SV_CheckWaterTransition` left at the end of the previous
+server frame, a flat 1 for any body in liquid and never a 2. The test
+was answering yes in exactly the case it was written to refuse. It
+reads `ar_wetlevel` now, which is the same honest 0 to 3 depth the
+discharge test itself sees, because the weapon frame runs as a think
+inside `SV_Physics` after `Argus_Physics` has written it. The
+`watertype` half stays as the second condition: it is engine owned and
+correct, and it covers the frame before a freshly spawned bot has run
+any physics at all.
+
+LADDER, and the useful half of it is one map. dm4 is the only map in
+the rotation that exercises this branch: e1m2 has no lightning gun at
+all, and dm3 and dm6 each carry one that no bot selected in any tape
+on either arm. On dm4 the effect is visible and is the intended one -
+lightning selections fall from 10 to 4 and 7 per tape while lightning
+pickups stay at 10, so bots acquire it as before and stop choosing it
+while submerged. First dm4 tape improved on all seven gates (stalls 5
+to 1, frags 14 to 28); the second passed six with stalls at 11 against
+a baseline 5, which is the top of that map's own 1 to 11 band this
+session. dm3 and dm6 each wobbled on the same stall gate with the
+branch provably never running, which is what those maps do.
+
 **The rest of the pointfile overlays, and one of them found something
 (#254).** Four audits join the drawing tool, all of them questions that
 a top-down plot cannot answer and a number cannot either.

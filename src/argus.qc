@@ -3255,13 +3255,24 @@ void(float d) Argus_SelectWeapon =
     local float w;
     local string wn;
 
-    // waterlevel guard mirrors W_FireLightning's own discharge test
-    // (waterlevel > 1): watertype alone reads the ORIGIN contents,
-    // which can sit empty while the bot wades waist-deep - selecting
-    // LG there discharges every cell into the bot's own feet
+    // The depth guard mirrors W_FireLightning's own discharge test
+    // (waterlevel > 1), and it has to read OUR depth to do that.
+    // This function runs on the AI tick, and FrameAll calls Argus_AI
+    // before Argus_Physics, so self.waterlevel here is whatever
+    // SV_CheckWaterTransition left at the end of the previous server
+    // frame - a flat 1 for any body in liquid, never a 2 (#256). The
+    // test was answering yes in exactly the case it was written to
+    // refuse. ar_wetlevel is the honest 0 to 3 depth QC computes for
+    // itself, and it is the same number the discharge test will read,
+    // because the weapon frame runs as a think inside SV_Physics
+    // after Argus_Physics has written it.
+    //
+    // watertype stays as the second half. It is engine owned and
+    // correct, and it covers the frame before a freshly spawned bot
+    // has run any physics at all, when ar_wetlevel is still zero.
     if ((self.items & IT_LIGHTNING) && self.ammo_cells >= 1
         && d < 480 && self.watertype > CONTENT_WATER
-        && self.waterlevel <= 1)
+        && self.ar_wetlevel <= 1)
         w = IT_LIGHTNING;
     else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1
              && d > 180)
