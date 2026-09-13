@@ -2174,19 +2174,22 @@ def _knit_pass(_toward_main, _use_rj):
                     continue
                 _sx, _sy, _sz = pos(ways[_s])
                 _dx2, _dy2, _dz2 = pos(ways[_d])
-                # A FLAT JUMP CANNOT OUTRUN THE MODEL'S FLAT RANGE.
-                # 280 was the cap when this stitch only ever saw the
-                # dm3 RL islet's 32-64u moat; now that a refused walk
-                # stitch falls through to here (#281) it sees long
-                # ones, and e1m1 minted a 275u hop across a 160u void
-                # at one level - a link arc_clear refuses outright,
-                # because the parabola is 95 units under the landing
-                # by the time it gets there. A jump that ends no lower
-                # than it started is bounded by JUMPREACH; one that
-                # ends below keeps the old cap, since falling buys
-                # range the flat figure does not describe.
-                if _dz2 >= _sz - STEP and _h > JUMPREACH:
-                    continue
+                # NO LENGTH CAP BEYOND THE 280 ABOVE, and the reason
+                # is a regression this nearly shipped. A first cut
+                # refused a flat stitch longer than JUMPREACH, on the
+                # grounds that a level jump cannot outrun the model's
+                # flat range. That bounds the wrong quantity: the
+                # criterion below bounds the VOID, and a 250u stitch
+                # over a 48u gap is a walk with one hop in it, which
+                # is exactly what a jump-typed link means - the
+                # runtime fires at the lip, not at the far node. The
+                # length cap cut e1m6's load-bearing stitches and took
+                # its worst spawn reach from 95 per cent to 43, on a
+                # map whose graph is otherwise reproducible. The void
+                # envelope stays at the empirical 200 it shares with
+                # the 7g2c remint; tightening it to JUMPREACH's 189
+                # was measured too, and cost e1m6 47 points on its own
+                # because several of those stitches sit at a 192u void.
                 _steps = int(_h // 16) + 1
                 _void = 0
                 _maxvoid = 0
