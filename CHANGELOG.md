@@ -9,6 +9,81 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The seat budget, measured instead of assumed, and what it did not
+fix.** e1m2 refuses 68 seat requests a run that found a sample and had
+no budget left, and e1m5 refuses 42, while every other map in the
+rotation refuses none. Two reasons, one of them simply wrong
+arithmetic.
+
+A MAKESTATIC ENTITY IS NOT AN EDICT. `light_globe`,
+`light_torch_small_walltorch`, the three `light_flame_*` classes and
+`func_illusionary` set a model and hand themselves to builtin 69,
+which copies them into the static list and frees the edict, so a wall
+torch costs a precache and nothing else. The budget counted all of
+them. MEASURED, not reasoned: an `edicts` dump of a live e1m2 shows
+`light_flame_small_yellow` at 16 in the lump and 0 in the world, in
+deathmatch AND in co-op. e1m2 carries 24 of these, e1m5 22, lqdm2 22,
+e1m6 16, dm6 15, e1m7 6.
+
+AND THE BUDGET NOW SAYS WHAT IT IS MADE OF. It was a flat 500, which
+is the 600 ceiling with a hundred held back for reasons nobody had
+written down. Injecting `edictcount` into live matches says what the
+hundred covers:
+
+```
+                             model      measured peak num_edicts
+dm2   215 nodes,  88 ents      303      335
+e1m2  198 nodes, 272 ents      470      447 deathmatch, 442 co-op
+e1m2  253 nodes, 272 ents      525      502 deathmatch, 497 co-op
+```
+
+On dm2, where the entity count is honest, everything the model cannot
+see - the world, eight client slots, three bots, and every rocket, gib
+and backpack alive at once in a 31-engagement match - came to 32
+edicts. Fifteen samples across two minutes never moved it, because the
+engine reuses freed edicts and `num_edicts` IS the peak. So the budget
+is `600 - 60 - 9`: the ceiling, a reserve of double what was measured,
+and the world plus maxclients. Caps move: e1m2 200 to 259, e1m5 159 to
+212, e1m6 203 to 260, everything else was already at the 260 density
+ceiling.
+
+MONSTERS AND `spawnflags 2048` ARE DELIBERATELY STILL COUNTED, though
+every monster spawn in this tree removes itself in deathmatch and the
+engine frees the 2048 entities there. e1m2 alone would gain 53 more
+seats. It is played in co-op as well, where both are real, and the
+budget has to hold in the worse mode.
+
+THEN THE POINT OF THE EXERCISE FAILED, AND THAT IS THE RESULT. e1m2
+regenerated under the corrected budget is a 253 node graph against
+198, with zero bad seats, zero over-ceiling jump links, worst spawn
+reach 97 per cent, its lift link, 37 door links and 48 door events a
+tape against the shipped graph's 44. Three tapes against three
+same-build controls:
+
+```
+                stalls   engages   coverage   goal pickups
+control            35        23        540         11
+control            67        10        359          8
+control            32        23        479         16
+budget             53        26        427          3
+budget             59        25        412          5
+budget             45        18        469         14
+median control     35        23        479         11
+median budget      53        25        427          5
+```
+
+Engagements hold and everything else is worse, goal pickups by half.
+So the 68 refused seats were not a deficit: e1m2 plays better without
+them. That is the fourth time this map has refused its regen, now with
+the budget, the door typing, the plat pad and the jump ceiling all
+fixed, and it is the strongest evidence yet that whatever is wrong
+with an e1m2 regen is not in the list of things anyone has named.
+
+No nav data ships. The budget change is verified for SAFETY by
+measurement - the densest e1m2 anyone can now generate runs at 502 of
+600 in deathmatch and 497 in co-op - and its effect on quality is a
+question for each map's own ladder, which is where it belongs.
+
 **Four navgen defects behind one refused regen (#319).** e1m2 had
 refused its regen twice, in #308 and again in #318, and the tool was
 blamed for two of it: a graph with half the door links and no lift.

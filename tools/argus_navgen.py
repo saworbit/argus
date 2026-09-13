@@ -503,6 +503,22 @@ def spawns_an_edict(block):
     60, the decimation radius ballooned to 405u, links could not
     verify across that spacing and the prune ate the graph down to 3
     usable nodes. Episode 1 was unusable for exactly this reason.
+
+    A MAKESTATIC ENTITY IS NOT AN EDICT EITHER (#319 follow-on). The
+    six classes below set a model and hand themselves to builtin #69,
+    which copies them into the static list and frees the edict, so a
+    wall torch costs a precache and nothing else. e1m2 carries 24 of
+    them, e1m5 22, lqdm2 22, dm6 15, e1m6 16, e1m7 6, and counting
+    them is what put e1m2's budget 24 seats under the truth. MEASURED
+    rather than reasoned: an `edicts` dump of a live e1m2 shows
+    light_flame_small_yellow at 16 in the lump and 0 in the world, in
+    deathmatch AND in co-op.
+
+    NOT included, deliberately: monsters, which every spawn function
+    in this tree removes in deathmatch, and the spawnflags 2048
+    entities the engine frees there. e1m2 alone would gain 53 more
+    seats from those two, and it is played in co-op as well, where
+    they are real. The budget has to hold in the worse mode.
     """
     d = kv("{" + block + "}") if False else dict(
         re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
@@ -511,12 +527,35 @@ def spawns_an_edict(block):
         return False
     if c == "info_null":
         return False
+    if c in ("light_globe", "light_torch_small_walltorch",
+             "light_flame_large_yellow", "light_flame_small_yellow",
+             "light_flame_small_white", "func_illusionary"):
+        return False
     return True
 
 live_ents = [b for b in ent_blocks if spawns_an_edict(b)]
+# THE BUDGET SAYS WHAT IT IS MADE OF NOW, and the parts are measured
+# rather than guessed (#319 follow-on). It used to be a flat 500,
+# which is the 600 ceiling with a hundred held back for reasons
+# nobody had written down. Injecting `edictcount` into live matches
+# says what the hundred is really covering:
+#
+#   dm2   215 nodes + 88 entities        peak num_edicts 335
+#   e1m2  198 nodes + 272 entities       peak 447 deathmatch, 442 co-op
+#
+# so on dm2, where the entity count is honest, everything the model
+# does not see (the world, eight client slots, three bots, and every
+# rocket, gib and backpack alive at once in a 31-engagement match)
+# came to 32 edicts. Fifteen samples across two minutes never moved
+# it: the engine reuses freed edicts, so num_edicts IS the peak.
+# Sixty is that doubled.
+EDICT_CEILING = 600         # game/argus/autoexec.cfg, and the charter
+RUNTIME_RESERVE = 60        # measured 32 on a busy dm2, doubled
+CLIENT_SLOTS = 9            # world plus maxclients 8
+EDICT_BUDGET = EDICT_CEILING - RUNTIME_RESERVE - CLIENT_SLOTS
 NODE_CAP = MAX_NODES
-if len(live_ents) + NODE_CAP > 500:
-    NODE_CAP = max(60, 500 - len(live_ents))
+if len(live_ents) + NODE_CAP > EDICT_BUDGET:
+    NODE_CAP = max(60, EDICT_BUDGET - len(live_ents))
     print(f"edict budget: {len(live_ents)} live bsp entities "
           f"({len(ent_blocks)} in the lump, "
           f"{len(ent_blocks) - len(live_ents)} freed at spawn), "
@@ -527,7 +566,7 @@ if len(live_ents) + NODE_CAP > 500:
 # sake, and on dm2 the corridor+stair+sprint seat passes consumed
 # it before RJ pads got their turn - every ensure_way then snapped
 # to the same wrong seat and all four RJ links vanished
-PROMO_CAP = max(NODE_CAP, min(500 - len(live_ents) - 12, 260))
+PROMO_CAP = max(NODE_CAP, min(EDICT_BUDGET - len(live_ents), 260))
 # AND THE SAME THING HAPPENED AGAIN, to e1m2's only plat (#319). The
 # cap was 200, decimation seated 196, and the item, stair and sprint
 # passes took the last four before the lift asked for its exit pad,
@@ -3218,8 +3257,12 @@ if starved_seats:
           f"a sample and had no budget left (cap {PROMO_CAP}, infrastructure reserve {infra_spent} of {INFRA_RESERVE} spent)")
 print(f"edict estimate: {edicts} (waypoints {len(ways)} + live entities "
       f"{nents} of {len(ent_blocks)} in the lump)")
-if edicts > 500:
-    print(f"WARNING: edict estimate {edicts} exceeds 500; vanilla max_edicts is 600")
+if edicts + CLIENT_SLOTS + RUNTIME_RESERVE > EDICT_CEILING:
+    # the bar moves with the budget it is checking, or the tool warns
+    # about its own design (#319 follow-on)
+    print(f"WARNING: edict estimate {edicts} plus {CLIENT_SLOTS} client "
+          f"slots and a {RUNTIME_RESERVE} reserve passes the "
+          f"{EDICT_CEILING} ceiling")
 
 # ---- 8a2. --register: wire the map into the build ----
 # Generating nav used to take four disconnected manual steps (navgen,
