@@ -3776,6 +3776,7 @@ float() Argus_Combat =
     local vector to, aimpt, err, cvr, shd, shp;
     local float d, want, diff, turn, trackt, errscale, loft;
     local float cy, ck, cfound, ceff, sy, dy, sfrac;
+    local float flight;         // projectile time of flight, seconds
 
     Argus_Perceive ();
     e = self.ar_enemy;
@@ -3948,19 +3949,54 @@ float() Argus_Combat =
     // 1000 u/s, grenades a ~600 u/s toss. Hitscan (SG/SSG/LG) and the
     // axe lead nothing. One step, not an iterated solution: close
     // enough at DM ranges, and the error model still rides on top.
+    flight = 0;
     if (self.weapon == IT_ROCKET_LAUNCHER)
-        aimpt = aimpt + e.velocity * (d / 1000);
+        flight = d / 1000;
     else if (self.weapon == IT_GRENADE_LAUNCHER)
-        aimpt = aimpt + e.velocity * (d / 600);
+        flight = d / 600;
     else if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
-        aimpt = aimpt + e.velocity * (d / 1000);
+        flight = d / 1000;
+    if (flight > 0)
+    {
+        aimpt = aimpt + e.velocity * flight;
+
+        // AN AIRBORNE TARGET IS NOT TRAVELLING IN A STRAIGHT LINE
+        // (#117). The lead above is linear, and a body with nothing
+        // under it is under constant downward acceleration, so over
+        // the flight it falls 0.5*g*t*t short of where the straight
+        // line puts it. At gravity 800 and a rocket at 400 units
+        // that is 64, which is more than the whole 56 unit player
+        // hull: the shot sails over a jumping target's head, and
+        // over one knocked into the air by somebody else's rocket,
+        // which is where half of this map's air time comes from.
+        // Same arithmetic as the grenade loft, which was derived
+        // from W_FireGrenade's own launch impulse rather than
+        // guessed; this is the target's half of it.
+        //
+        // Live gravity, never 800: e1m8 runs 100 and the term would
+        // be eight times too big there. Swimmers and flyers are
+        // exempt because neither is falling - a body at waterlevel 2
+        // or more is held by the water, and a scrag in co-op is
+        // MOVETYPE_FLY.
+        if (!(e.flags & FL_ONGROUND) && e.waterlevel < 2
+            && e.movetype != MOVETYPE_FLY
+            && e.movetype != MOVETYPE_NOCLIP)
+            aimpt_z = aimpt_z - 0.5 * Argus_Gravity () * flight * flight;
+    }
 
     // A falling enemy carries velocity_z of -400 to -700, and over a
     // long flight the lead drags the aim point under the floor - the
     // bot shoots into the ground at its own feet. They cannot fall
     // past what is holding them up, so clamp the lead to the floor
     // beneath them (a hit low on a landing target still splashes).
-    if (e.velocity_z < 0 && aimpt_z < e.origin_z)
+    // The test is AIRBORNE and not merely descending, because the
+    // gravity term above can put the aim point under the floor for a
+    // target that is still on the way up: a body rising at 100 with
+    // an 800 unit rocket flight is 176 units lower than the straight
+    // line says, and the clamp is what turns that into a splash at
+    // its feet when it lands instead of a shot into the ground.
+    if ((e.velocity_z < 0 || !(e.flags & FL_ONGROUND))
+        && aimpt_z < e.origin_z)
     {
         traceline (e.origin, e.origin - '0 0 512', TRUE, e);
         if (trace_fraction < 1 && aimpt_z < trace_endpos_z + 12)
