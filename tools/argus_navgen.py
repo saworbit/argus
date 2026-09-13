@@ -1169,6 +1169,81 @@ if door_boxes:
                 doorlinks.append((i, j))
 print(f"door links: {len(doorlinks)} (from {len(door_boxes)} door brush(es))")
 
+# AN OPEN DOOR IS STILL A BRUSH. It does not leave the world when it
+# opens, it slides beside the hole it was filling, and it can park on
+# the very line this pass has just typed. On e1m2 the silver key
+# pair's east half is shut across x 881 to 951 and open across
+# x 943 to 1013, and the n84 to n90 link crosses the frame at x 948:
+# the companion walked into the parked slab for a fifth of every
+# co-op tape. Hull 1 carries no door brushes at either position, so
+# nothing in the sampler can see this. The runtime now steers through
+# the doorway rather than at the node beyond it, so this is a report
+# and not a cut - but a map with a lot of them is a map to look at.
+import math as _dmath
+
+
+def _door_open_box(_e, mn, mx):
+    _a = float(_e.get("angle", "0") or 0)
+    if _a == -1 or _a == -2:
+        return None                 # straight up or down: it clears
+    _r = _dmath.radians(_a)
+    _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
+    _size = (mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2])
+    _lip = float(_e.get("lip", "8") or 8)
+    _travel = abs(sum(_d[k] * _size[k] for k in range(3))) - _lip
+    if _travel <= 0:
+        return None
+    return (tuple(mn[k] + _d[k] * _travel for k in range(3)),
+            tuple(mx[k] + _d[k] * _travel for k in range(3)))
+
+
+def _seg_hits_open(a, b, mn, mx):
+    # the player box: 16 either side, feet 24 under the seat, and a
+    # slab whose top comes to rest within a step of the floor is
+    # walked over rather than walked into
+    lo = (mn[0] - 16.0, mn[1] - 16.0, mn[2] - 32.0)
+    hi = (mx[0] + 16.0, mx[1] + 16.0, mx[2] + 6.0)
+    t0, t1 = 0.0, 1.0
+    for k in range(3):
+        d = b[k] - a[k]
+        if abs(d) < 1e-9:
+            if a[k] < lo[k] or a[k] > hi[k]:
+                return False
+            continue
+        u, v = (lo[k] - a[k]) / d, (hi[k] - a[k]) / d
+        if u > v:
+            u, v = v, u
+        t0, t1 = max(t0, u), min(t1, v)
+        if t0 > t1:
+            return False
+    return True
+
+
+door_open = []
+for _b in ent_blocks:
+    _e = kv(_b)
+    if _e.get("classname") != "func_door" or "model" not in _e:
+        continue
+    try:
+        _bm = bmodels[int(_e["model"].lstrip("*"))]
+    except (ValueError, IndexError):
+        continue
+    _ob = _door_open_box(_e, (_bm[0], _bm[1], _bm[2]), (_bm[3], _bm[4], _bm[5]))
+    if _ob:
+        door_open.append((_e.get("model"), _ob))
+
+_parked = 0
+for _i, _j in doorlinks:
+    _a = pos(ways[_i])
+    _b2 = pos(ways[_j])
+    for _mdl, (_mn, _mx) in door_open:
+        if _seg_hits_open(_a, _b2, _mn, _mx):
+            _parked += 1
+            print(f"  door {_mdl} parks on link n{_i}->n{_j} when open")
+            break
+if _parked:
+    print(f"door links drawn through an OPEN slab: {_parked} of {len(doorlinks)}")
+
 _nlava = 0
 if COST_CELLS:
     for i in list(links):
