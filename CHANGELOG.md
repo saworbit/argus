@@ -449,6 +449,24 @@ after       136 ms     52 ms     52 ms
 which is the issue's own "time it with and without the cache warm; it
 barely moves" turned into a warm path roughly three times faster.
 
+**The rest of the engine's debug shelf (#255).** The headline adopt,
+`edicts`, shipped in #261 and named both dm2 freezes in one command each.
+The smaller items on that list are on the tune whitelist now:
+`profile` and `serverprofile`, which print QC execution counts and are
+read-only in the same way the edict dumps are, and the two server-side
+toggles worth having on a lab child - `notarget`, so a co-op look
+measures the bot rather than the bestiary, and `sv_freezenonclients`,
+which holds everything but the clients still so a stuck bot can be walked
+around and inspected. All four were confirmed present in the lab engine
+binary before being whitelisted, and each has a knob entry saying what it
+is for.
+
+`viewpos` and `setpos` are deliberately left off. Both act on a local
+player and every lab match is `-dedicated`, where there is none, so
+injecting them through this channel would do nothing. They remain worth
+typing on a listen server, which is a human's console rather than the
+lab's.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a

@@ -369,7 +369,7 @@ pub struct QcFindArgs {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct TuneArgs {
-    #[schemars(description = "Whitelisted console line: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map NAME, scratch1-4 N (scratch1 1 arms the ARGDBG decision tape), status, serverinfo")]
+    #[schemars(description = "Whitelisted console line: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map NAME, scratch1-4 N (scratch1 1 arms the ARGDBG decision tape), status, serverinfo, edicts, edict N, edictcount, profile, serverprofile, notarget, sv_freezenonclients 0|1")]
     pub command: String,
 }
 
