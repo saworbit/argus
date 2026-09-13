@@ -47,19 +47,26 @@ async fn main() -> anyhow::Result<()> {
         }
         Some("probelinks") => {
             // empirical link verification: the puppet walks the graph
-            //   argus-mcp probelinks <map> [limit] [skip]
-            let map = args
+            //   argus-mcp probelinks <map> [limit] [skip] [--coop]
+            // The mode is part of the verdict (#310): deathmatch
+            // strips every spawnflags 2048 entity, doors included, so
+            // a link verified there can still be a lie in co-op.
+            let rest: Vec<String> = args.collect();
+            let coop = rest.iter().any(|a| a == "--coop");
+            let mut pos = rest.iter().filter(|a| !a.starts_with("--"));
+            let map = pos
                 .next()
-                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp probelinks <map> [limit] [skip]"))?;
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop]"))?;
             if map == "-h" || map == "--help" || map == "help" {
-                println!("usage: argus-mcp probelinks <map> [limit] [skip]\n\nEmpirical link verification: puppet walks navigation graph links.");
+                println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.");
                 return Ok(());
             }
             argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
-            let limit: usize = args.next().and_then(|s| s.parse().ok()).unwrap_or(30);
-            let skip: usize = args.next().and_then(|s| s.parse().ok()).unwrap_or(0);
+            let limit: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(30);
+            let skip: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            let report = argus_mcp::netclient::probe_links(&cfg, &map, limit, skip)
+            let report = argus_mcp::netclient::probe_links(&cfg, &map, limit, skip, coop)
                 .await
                 .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&report)?);
@@ -596,7 +603,7 @@ fn print_help() {
          argus-mcp demo <stem>[:export]\n\
                                 parse a harvested .dem (append :export\n\
                                 to also write <stem>.tracks.json)\n\
-         argus-mcp probelinks <map> [limit] [skip]\n\
+         argus-mcp probelinks <map> [limit] [skip] [--coop]\n\
                                 empirical link verification: puppet walks\n\
                                 navigation graph links in the real engine\n\
          argus-mcp client observe [secs] [host] [port]\n\

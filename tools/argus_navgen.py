@@ -2554,8 +2554,30 @@ if __import__("os").path.exists(_probepath):
     except Exception:
         _pdoc = {}
     _pfailed = _pdoc.get("failed", [])
+    # WHICH MODE TESTED THIS (#310). The puppet ran +deathmatch 1 with
+    # no way to ask for anything else until now, and the engine strips
+    # every spawnflags 2048 entity there - doors included, on exactly
+    # the maps a co-op companion walks. A link can be honest in the
+    # mode the verifier ran and a lie in the mode the bot plays, so a
+    # regen says out loud which sweeps stand behind these verdicts
+    # rather than letting "no convictions" read as "verified".
+    _pmodes = _pdoc.get("modes", {})
+    if _pmodes:
+        _mdesc = ", ".join(
+            f"{_k} {len(_v.get('failed', []))} of {_v.get('swept', 0)}"
+            for _k, _v in sorted(_pmodes.items()))
+        print(f"engine verdicts: {_mdesc}")
+        if "coop" not in _pmodes:
+            print("  no co-op sweep has run on this map: deathmatch "
+                  "strips spawnflags 2048 doors, so these verdicts do "
+                  "not cover the co-op graph")
+    elif _pfailed:
+        print(f"engine verdicts: {len(_pfailed)} unlabelled (pre-#310, "
+              f"deathmatch by construction)")
     _ndrop = 0
     _nremint = 0
+    _nskipdoor = 0
+    _doorset_verdict = set(doorlinks)
     for _pf, _pt in _pfailed:
         for _i in list(links):
             _ix, _iy, _iz = pos(ways[_i])
@@ -2568,6 +2590,19 @@ if __import__("os").path.exists(_probepath):
                 _jx, _jy, _jz = pos(ways[_j])
                 if abs(_jx - _pt[0]) > 24 or abs(_jy - _pt[1]) > 24 \
                         or abs(_jz - _pt[2]) > 24:
+                    continue
+                if (_i, _j) in _doorset_verdict:
+                    # A CLOSED DOOR IS A VERDICT ON THE DOOR (#310).
+                    # The puppet walks and does not press buttons, so
+                    # it stops at any shut slab and the link goes down
+                    # as unwalkable - while a bot standing there calls
+                    # Argus_TakeDoor, finds the actuator and presses
+                    # it, which is what typing the link was for. dm2's
+                    # committed file carries nine of these. The sweep
+                    # no longer creates them; this refuses the ones
+                    # already on disk, which is where they would
+                    # otherwise prune or re-type nine honest links.
+                    _nskipdoor += 1
                     continue
                 # measure the centre-line void: consecutive samples
                 # with no survivable floor from the walker's height
@@ -2604,7 +2639,8 @@ if __import__("os").path.exists(_probepath):
                     print(f"engine verdict: {_i}->{_j} dropped "
                           f"(void {_maxvoid * 16}u - not one jump)")
     print(f"engine-verdict pass: {_nremint} reminted as jump, "
-          f"{_ndrop} dropped ({len(_pfailed)} failed pair(s) on file)")
+          f"{_ndrop} dropped, {_nskipdoor} refused as door links "
+          f"({len(_pfailed)} failed pair(s) on file)")
 
 # ---- 7g2d. engine-PROVEN entry links (GitHub #26) ----
 # The same referee, arguing the other direction: candidate links the

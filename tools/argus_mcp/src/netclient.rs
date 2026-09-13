@@ -994,6 +994,13 @@ pub struct ProbeReport {
     pub teleport_failures: usize,
     pub failed_links: Vec<LinkVerdict>,
     pub passed_sample: Vec<String>,
+    /// which mode the engine ran, because that decides which entities
+    /// existed to be walked into (#310)
+    pub mode: String,
+    /// door-typed links in this window that were not walked at all:
+    /// the puppet cannot press a button, so a shut slab would be
+    /// written down as a bad link
+    pub door_skipped: usize,
 }
 
 /// EMPIRICAL LINK VERIFICATION - the referee the v3.84 graveyard's
@@ -1003,11 +1010,23 @@ pub struct ProbeReport {
 /// through the console-inject tune path) and WALK the line. A link
 /// the puppet cannot walk is a link no bot can walk - the engine
 /// itself is the judge.
+///
+/// THE MODE IS PART OF THE VERDICT (#310). This ran `+deathmatch 1`
+/// with no way to ask for anything else, and the engine strips every
+/// entity with spawnflags 2048 in deathmatch - on the episode maps
+/// that is a lot of the furniture, doors included, and those are the
+/// maps a co-op companion actually walks. Every one of e1m8's sixteen
+/// door links crosses a door that does not exist on the server doing
+/// the verifying: the puppet walks an empty frame and the link
+/// passes. So a link can be honest in the mode the verifier ran and a
+/// lie in the mode the bot plays, and the 164 convictions already on
+/// file are deathmatch verdicts rather than verdicts.
 pub async fn probe_links(
     cfg: &crate::config::Config,
     map: &str,
     limit: usize,
     skip: usize,
+    coop: bool,
 ) -> Result<ProbeReport, String> {
     let navj = cfg.root.join("src").join(format!("argus_nav_{map}.qc.json"));
     let nav: serde_json::Value = serde_json::from_str(
@@ -1041,6 +1060,30 @@ pub async fn probe_links(
                 .collect()
         })
         .unwrap_or_default();
+    // A CLOSED DOOR IS A VERDICT ON THE DOOR, NOT ON THE LINK. The
+    // puppet walks; it does not press buttons, so it stops at any
+    // slab that is shut and the link is written down as unwalkable.
+    // A bot in that doorway calls Argus_TakeDoor, finds the actuator
+    // and presses it, which is the whole point of typing the link.
+    // dm2's committed verdicts already carry nine of these false
+    // convictions, and they would prune or re-type nine honest door
+    // links on its next regen. Skip the class in both modes: it is
+    // unverified either way, and it stays that way until the puppet
+    // can work a button.
+    let doorlinks: std::collections::HashSet<(usize, usize)> = nav["doorlinks"]
+        .as_array()
+        .map(|v| {
+            v.iter()
+                .map(|e| {
+                    let a = e.as_array().unwrap();
+                    (
+                        a[0].as_u64().unwrap() as usize,
+                        a[1].as_u64().unwrap() as usize,
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default();
     let links: Vec<(usize, usize)> = nav["links"]
         .as_array()
         .ok_or("no links")?
@@ -1054,14 +1097,28 @@ pub async fn probe_links(
         })
         .filter(|p| !jump.contains(p))
         .collect();
-    let todo: Vec<(usize, usize)> = links.into_iter().skip(skip).take(limit.min(80)).collect();
+    let window: Vec<(usize, usize)> = links.into_iter().skip(skip).take(limit.min(80)).collect();
+    let door_skipped = window.iter().filter(|p| doorlinks.contains(p)).count();
+    let todo: Vec<(usize, usize)> = window
+        .into_iter()
+        .filter(|p| !doorlinks.contains(p))
+        .collect();
     if todo.is_empty() {
         return Err("no links in range".into());
     }
 
+    let mode = if coop { "coop" } else { "deathmatch" };
     let secs = (todo.len() as u32) * 9 + 40;
     let mut ctrl = crate::match_ctrl::MatchCtrl::default();
-    ctrl.start(cfg, map, Some(secs.min(590)), Some("probe_links_run"), None, Some(0), None)
+    ctrl.start(
+        cfg,
+        map,
+        Some(secs.min(590)),
+        Some("probe_links_run"),
+        None,
+        Some(0),
+        Some(coop),
+    )
         .await
         .map_err(|e| format!("engine start: {e}"))?;
     tokio::time::sleep(Duration::from_secs(4)).await;
@@ -1081,6 +1138,8 @@ pub async fn probe_links(
 
     let mut report = ProbeReport {
         map: map.to_string(),
+        mode: mode.to_string(),
+        door_skipped,
         probed: 0,
         passed: 0,
         failed: 0,
@@ -1156,33 +1215,164 @@ pub async fn probe_links(
     // as the costs.json convention): navgen drops any link whose
     // endpoints match a failed pair. Merged, not overwritten - the
     // verdict file grows across sweeps.
+    //
+    // `failed` stays the flat union of every mode, because that is
+    // what navgen consumes and what five committed files already
+    // hold; `modes` records which sweep convicted what, so a co-op
+    // sweep no longer dissolves into a deathmatch one and neither is
+    // readable afterwards (#310). A file with no `modes` block
+    // predates this and is stamped deathmatch on first write, which
+    // is true: nothing else could run.
     let vpath = cfg.root.join("src").join(format!("argus_nav_{map}.probe.json"));
-    let mut doc: serde_json::Value = std::fs::read_to_string(&vpath)
+    let doc: serde_json::Value = std::fs::read_to_string(&vpath)
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
         .unwrap_or_else(|| serde_json::json!({"failed": [], "passed": []}));
-    let push_pair = |arr: &mut Vec<serde_json::Value>, from: [f32; 3], to: [f32; 3]| {
-        let pair = serde_json::json!([from, to]);
-        if !arr.contains(&pair) {
-            arr.push(pair);
-        }
-    };
-    {
-        let failed = doc["failed"].as_array().cloned().unwrap_or_default();
-        let mut failed = failed;
-        for v in &report.failed_links {
-            push_pair(&mut failed, v.from, v.to);
-        }
-        doc["failed"] = serde_json::Value::Array(failed);
-    }
+    let doc = merge_verdicts(doc, mode, &report);
     if let Ok(s) = serde_json::to_string_pretty(&doc) {
         let _ = std::fs::write(&vpath, s);
     }
     Ok(report)
 }
 
+/// Fold one sweep's convictions into a verdict file.
+///
+/// `failed` stays the flat union of every mode, because that is what
+/// navgen's 7g2c consumes and what five committed files already hold.
+/// `modes` records which sweep convicted what, so a co-op sweep no
+/// longer dissolves into a deathmatch one and leaves neither readable
+/// (#310). A file with no `modes` block predates this and is stamped
+/// deathmatch on first write, which is true rather than a guess:
+/// nothing else could run.
+pub fn merge_verdicts(
+    mut doc: serde_json::Value,
+    mode: &str,
+    report: &ProbeReport,
+) -> serde_json::Value {
+    let push_pair = |arr: &mut Vec<serde_json::Value>, from: [f32; 3], to: [f32; 3]| {
+        let pair = serde_json::json!([from, to]);
+        if !arr.contains(&pair) {
+            arr.push(pair);
+        }
+    };
+    let legacy: Vec<serde_json::Value> = doc["failed"].as_array().cloned().unwrap_or_default();
+    if doc.get("modes").is_none() {
+        doc["modes"] = if legacy.is_empty() {
+            serde_json::json!({})
+        } else {
+            serde_json::json!({
+                "deathmatch": {
+                    "failed": legacy.clone(),
+                    "swept": legacy.len(),
+                    "note": "stamped on migration: every sweep before #310 ran +deathmatch 1",
+                }
+            })
+        };
+    }
+    let mut failed = legacy;
+    for v in &report.failed_links {
+        push_pair(&mut failed, v.from, v.to);
+    }
+    doc["failed"] = serde_json::Value::Array(failed);
+
+    let mut mine: Vec<serde_json::Value> = doc["modes"][mode]["failed"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    for v in &report.failed_links {
+        push_pair(&mut mine, v.from, v.to);
+    }
+    let swept = doc["modes"][mode]["swept"].as_u64().unwrap_or(0) + report.probed as u64;
+    doc["modes"][mode] = serde_json::json!({
+        "failed": mine,
+        "swept": swept,
+        "last_probed": report.probed,
+        "last_passed": report.passed,
+    });
+    doc
+}
+
 #[cfg(test)]
 mod tests {
+    use super::{merge_verdicts, LinkVerdict, ProbeReport};
+
+    fn report_with(mode: &str, pairs: &[([f32; 3], [f32; 3])]) -> ProbeReport {
+        ProbeReport {
+            map: "e1m8".into(),
+            probed: pairs.len(),
+            passed: 0,
+            failed: pairs.len(),
+            teleport_failures: 0,
+            failed_links: pairs
+                .iter()
+                .map(|(a, b)| LinkVerdict {
+                    a: 0,
+                    b: 1,
+                    from: *a,
+                    to: *b,
+                    h: 100.0,
+                    reached: false,
+                    closest: 40.0,
+                    note: String::new(),
+                })
+                .collect(),
+            passed_sample: Vec::new(),
+            mode: mode.into(),
+            door_skipped: 0,
+        }
+    }
+
+    /// A co-op sweep must not dissolve into a deathmatch one (#310).
+    /// The union stays in `failed`, which is what navgen consumes, and
+    /// each mode keeps its own list so the file is still readable
+    /// afterwards. A legacy file - flat `failed`, no `modes` - is
+    /// stamped deathmatch, because that is the only mode that could
+    /// have produced it.
+    #[test]
+    fn a_coop_sweep_keeps_its_verdicts_separate_from_the_deathmatch_ones() {
+        let legacy = serde_json::json!({
+            "failed": [[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]],
+            "passed": []
+        });
+        let doc = merge_verdicts(
+            legacy,
+            "coop",
+            &report_with("coop", &[([7.0, 8.0, 9.0], [10.0, 11.0, 12.0])]),
+        );
+
+        // the union navgen reads carries both
+        assert_eq!(doc["failed"].as_array().unwrap().len(), 2);
+        // the old flat list was deathmatch and is now labelled so
+        let dm = doc["modes"]["deathmatch"]["failed"].as_array().unwrap();
+        assert_eq!(dm.len(), 1);
+        assert_eq!(dm[0][0][0].as_f64().unwrap(), 1.0);
+        // and the new sweep is its own
+        let co = doc["modes"]["coop"]["failed"].as_array().unwrap();
+        assert_eq!(co.len(), 1);
+        assert_eq!(co[0][0][0].as_f64().unwrap(), 7.0);
+        assert_eq!(doc["modes"]["coop"]["swept"].as_u64().unwrap(), 1);
+    }
+
+    /// Sweeping the same mode twice accumulates rather than replaces,
+    /// and does not double-count a pair it already convicted.
+    #[test]
+    fn a_second_sweep_of_one_mode_accumulates_without_duplicating() {
+        let mut doc = serde_json::json!({"failed": [], "passed": []});
+        let pair = ([1.0, 1.0, 1.0], [2.0, 2.0, 2.0]);
+        doc = merge_verdicts(doc, "deathmatch", &report_with("deathmatch", &[pair]));
+        doc = merge_verdicts(
+            doc,
+            "deathmatch",
+            &report_with("deathmatch", &[pair, ([3.0, 3.0, 3.0], [4.0, 4.0, 4.0])]),
+        );
+        assert_eq!(doc["failed"].as_array().unwrap().len(), 2);
+        assert_eq!(
+            doc["modes"]["deathmatch"]["failed"].as_array().unwrap().len(),
+            2
+        );
+        assert_eq!(doc["modes"]["deathmatch"]["swept"].as_u64().unwrap(), 3);
+    }
+
     /// Live integration: spawn the lab's own dedicated engine, connect
     /// as a real client, complete the signon dance, and require the
     /// world to flow - level name, roster names, our own entity

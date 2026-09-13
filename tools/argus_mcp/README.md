@@ -416,7 +416,7 @@ scratch cvars, one semicolon-joined inject), walk toward the far
 node, judge arrival.
 
 ```
-argus-mcp probelinks <map> [limit] [skip]       cap 80 per run; chunk with
+argus-mcp probelinks <map> [limit] [skip] [--coop]  cap 80 per run; chunk with
                                                 skip. ~2600 links/hour, so a
                                                 full-rotation sweep is an
                                                 evening, not an overnight
@@ -438,7 +438,7 @@ regen of that map:
 |---|---|---|
 | `argus_nav_<map>.qc.json` | navgen | the whole lab (atlas, reach, probelinks) |
 | `argus_nav_<map>.costs.json` | `learn_hotspots` | fine-edge cost inflation |
-| `argus_nav_<map>.probe.json` | probelinks failures | 7g2c verdict prune/remint |
+| `argus_nav_<map>.probe.json` | probelinks failures, per mode | 7g2c verdict prune/remint |
 | `argus_nav_<map>.proven.json` | candidate probe runs | 7g2d engine-proven entry mint |
 | `argus_nav_<map>.candidates.json` / `.splice.json` | entry-candidate sessions | paper trail of how proven.json was derived |
 
