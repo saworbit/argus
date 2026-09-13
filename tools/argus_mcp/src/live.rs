@@ -75,6 +75,34 @@ pub fn knobs() -> Vec<Knob> {
             note: "Must stay 1 for ARGLOG/ARGEVT (dprint).".into(),
         },
         Knob {
+            name: "edicts / edict <n> / edictcount".into(),
+            kind: "console".into(),
+            live: true,
+            when: "immediate".into(),
+            note: "Read-only dump of every edict with its non-default fields, ar_* included. The forensics instrument.".into(),
+        },
+        Knob {
+            name: "profile / serverprofile".into(),
+            kind: "console".into(),
+            live: true,
+            when: "immediate".into(),
+            note: "Read-only QC execution counts. Nothing has ever measured where progs time goes.".into(),
+        },
+        Knob {
+            name: "notarget".into(),
+            kind: "console".into(),
+            live: true,
+            when: "immediate".into(),
+            note: "Monsters ignore players: isolates bot behaviour from the bestiary in a co-op look.".into(),
+        },
+        Knob {
+            name: "sv_freezenonclients".into(),
+            kind: "cvar".into(),
+            live: true,
+            when: "immediate".into(),
+            note: "Freezes everything but clients, so a stuck bot can be walked around and inspected.".into(),
+        },
+        Knob {
             name: "AR_JUMPVEL / AR_AIMRATE / AR_*".into(),
             kind: "qc constant".into(),
             live: false,
@@ -99,7 +127,7 @@ pub fn validate_tune(line: &str) -> Result<String, String> {
     let re = tune_re();
     if !re.is_match(line) {
         return Err(
-            "not on the live whitelist. Allowed: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map <name>, scratch1-4 N (scratch1 1 = ARGDBG decision tape), status, serverinfo. See knobs()."
+            "not on the live whitelist. Allowed: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map <name>, scratch1-4 N (scratch1 1 = ARGDBG decision tape), status, serverinfo, edicts, edict <n>, edictcount, profile, serverprofile, notarget, sv_freezenonclients 0|1. See knobs()."
                 .into(),
         );
     }
@@ -182,8 +210,23 @@ fn tune_re() -> &'static Regex {
         // forensics session has had to add a dprint and recompile to
         // read. All three only print, so they are as safe to inject
         // as status.
+        //
+        // profile / serverprofile print QC execution counts, and are
+        // read-only in the same way (#255). notarget and
+        // sv_freezenonclients are the two server-side debug toggles
+        // worth having on a lab child: notarget takes monsters out of
+        // the picture so a co-op look measures the bot rather than
+        // the bestiary, and sv_freezenonclients holds everything but
+        // the clients still so a stuck bot can be walked around and
+        // inspected. All four confirmed present in the lab engine.
+        //
+        // viewpos and setpos are deliberately NOT here. Both act on a
+        // local player and every lab match is -dedicated, where there
+        // is none, so injecting them through this channel would do
+        // nothing. They are worth typing on a listen server, which is
+        // a human's console rather than this one.
         Regex::new(
-            r"(?i)^(skill\s+[0-3]|fraglimit\s+\d{1,3}|timelimit\s+\d{1,3}|developer\s+[01]|deathmatch\s+1|map\s+[A-Za-z0-9_]+|scratch[1-4]\s+-?\d{1,6}|status|serverinfo|edicts|edictcount|edict\s+\d{1,4})$",
+            r"(?i)^(skill\s+[0-3]|fraglimit\s+\d{1,3}|timelimit\s+\d{1,3}|developer\s+[01]|deathmatch\s+1|map\s+[A-Za-z0-9_]+|scratch[1-4]\s+-?\d{1,6}|status|serverinfo|edicts|edictcount|edict\s+\d{1,4}|profile|serverprofile|notarget|sv_freezenonclients\s+[01])$",
         )
         .expect("tune")
     })
@@ -201,6 +244,19 @@ mod tests {
         assert!(validate_tune("edicts").is_ok());
         assert!(validate_tune("edict 42").is_ok());
         assert!(validate_tune("edictcount").is_ok());
+        // the engine debug verbs adopted in #255: read-only
+        // dumps and the two server-side toggles
+        assert!(validate_tune("profile").is_ok());
+        assert!(validate_tune("serverprofile").is_ok());
+        assert!(validate_tune("notarget").is_ok());
+        assert!(validate_tune("sv_freezenonclients 1").is_ok());
+        assert!(validate_tune("sv_freezenonclients 0").is_ok());
+        // and the two that need a local player, which a
+        // dedicated child does not have, stay off it
+        assert!(validate_tune("viewpos").is_err());
+        assert!(validate_tune("setpos 0 0 0").is_err());
+        assert!(validate_tune("sv_freezenonclients 2").is_err());
+
         assert!(validate_tune("edict all").is_err());
         assert!(validate_tune("give all").is_err());
         assert!(validate_tune("quit").is_err());
