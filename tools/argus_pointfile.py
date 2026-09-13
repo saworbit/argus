@@ -14,8 +14,21 @@ level looking at the dots does.
 
 Usage:
   argus_pointfile.py <map> [--what nodes|links|swim|water|tape|fails|human|
-                                  route|trail|jump|door|lift|train|rocket|
-                                  sprint|tele] [--bot NAME]
+                                  route|trail|badseats|surface|diff|probe|
+                                  jump|door|lift|train|rocket|sprint|tele]
+                           [--bot NAME] [--against other.qc.json]
+                           [--pad [--colour 0-15]]
+
+  --what badseats draws the seats the engine's own SV_CheckBottom
+  refuses, which is the test navgen gained in #250. Every graph in the
+  tree predates that filter and carries 39 to 63 of them; a fresh
+  regen of the same map draws none.
+  --what surface draws each swim exit with the water surface between
+  its submerged seat and the lip, and prints the climb in units.
+  --what diff draws the nodes a regen added and removed, matched by
+  position because indices shift on every generation.
+  --what probe draws the links the puppet refused, from
+  src/argus_nav_<map>.probe.json.
 
   --what route draws what the router PLANNED, --what trail draws where
   the bot actually went. Run both for one bot and flip between them:
@@ -28,12 +41,15 @@ has no renderer):
   pointfile
 
 Limits worth knowing. Colour is (-index & 15), so it cycles every 16
-points and cannot be given meaning; use one --what at a time instead.
+points and cannot be asked for. --pad buys one colour for a whole
+overlay by burying fifteen filler points in solid geometry before each
+real one, which costs sixteen points per drawn point; without it, use
+one --what at a time instead.
 The particle pool caps how much shows at once, so raise it with
 -particles 16384 on the command line. Points are static and client
 side: they never touch the server, the bots, or a match.
 """
-import argparse, json, re, sys
+import argparse, json, re, struct, sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -89,6 +105,235 @@ def tape_points(tape):
 # typed links, one family at a time (#254 item 7). Cheap, and it
 # makes a map's movement vocabulary legible: which crossings are
 # jumps, which are rides, which need a door open.
+# ---------------------------------------------------------------- bsp
+# Two of these overlays are geometry questions, not graph questions:
+# whether a seat would pass the engine's own SV_CheckBottom, and where
+# a water surface actually sits relative to the lip a swimmer has to
+# climb. Both need the BSP, and both read it exactly the way navgen
+# does, because the point of drawing them is to see what navgen saw.
+CONTENTS_SOLID = -2
+CONTENTS_WATER = -3
+STEP = 18.0
+
+
+class Bsp:
+    def __init__(self, path):
+        self.d = Path(path).read_bytes()
+        if struct.unpack_from("<i", self.d, 0)[0] != 29:
+            sys.exit(f"{path} is not a BSP29 file")
+        self.lumps = [struct.unpack_from("<ii", self.d, 4 + i * 8)
+                      for i in range(15)]
+        pl = self._lump(1)
+        self.planes = [struct.unpack_from("<ffff", pl, i * 20)[:4]
+                       for i in range(len(pl) // 20)]
+        nd = self._lump(5)
+        self.nodes = [struct.unpack_from("<ihh", nd, i * 24)
+                      for i in range(len(nd) // 24)]
+        lf = self._lump(10)
+        self.leaves = [struct.unpack_from("<2i6h2H4B", lf, i * 28)
+                       for i in range(len(lf) // 28)]
+        md = self._lump(14)
+        m0 = struct.unpack_from("<9f7i", md, 0)
+        self.head0 = m0[9]
+
+    def _lump(self, i):
+        o, l = self.lumps[i]
+        return self.d[o:o + l]
+
+    def contents(self, x, y, z):
+        n = self.head0
+        while n >= 0:
+            node = self.nodes[n]
+            nx, ny, nz, dd = self.planes[node[0]]
+            n = node[1] if (nx * x + ny * y + nz * z - dd) >= 0 else node[2]
+        return self.leaves[-1 - n][0]
+
+    def floor_under(self, x, y, z, maxdrop):
+        d = 0.0
+        while d <= maxdrop:
+            if self.contents(x, y, z - d) == CONTENTS_SOLID:
+                return z - d
+            d += 2.0
+        return None
+
+    def check_bottom(self, x, y, oz):
+        """SV_CheckBottom for a player box whose origin sits at oz.
+
+        Same test navgen runs before it seats a waypoint (#250). A
+        seat that fails it is one the engine will refuse to walk onto,
+        which is how e1m6 shipped a node 14 units past a lava lip.
+        """
+        fz = oz - 24
+        cs = ((x - 16, y - 16), (x + 16, y - 16),
+              (x - 16, y + 16), (x + 16, y + 16))
+        if all(self.contents(cx, cy, fz - 1) == CONTENTS_SOLID
+               for cx, cy in cs):
+            return True
+        mid = self.floor_under(x, y, fz, 2 * STEP)
+        if mid is None:
+            return False
+        for cx, cy in cs:
+            c = self.floor_under(cx, cy, fz, 2 * STEP)
+            if c is None or c < mid - STEP:
+                return False
+        return True
+
+    def water_top(self, x, y, z):
+        """The surface above a point known to be in water."""
+        top = z
+        while top < z + 512 and self.contents(x, y, top + 8) == CONTENTS_WATER:
+            top += 8
+        return top
+
+
+def find_bsp(mapname):
+    for d in (ROOT / "maps_local", ROOT / "engine" / "argus" / "maps"):
+        p = d / f"{mapname}.bsp"
+        if p.exists():
+            return p
+    return None
+
+
+def badseat_points(mapname, nodes):
+    """Seats the engine's own floor test would refuse (#254 item 4)."""
+    p = find_bsp(mapname)
+    if p is None:
+        sys.exit(f"--what badseats needs maps_local/{mapname}.bsp")
+    b = Bsp(p)
+    out = []
+    for i, n in enumerate(nodes):
+        if not b.check_bottom(n[0], n[1], n[2]):
+            print(f"  n{i} at '{n[0]:.0f} {n[1]:.0f} {n[2]:.0f}' fails CheckBottom")
+            out.append(tuple(n))
+    print(f"bad seats: {len(out)} of {len(nodes)}")
+    return out
+
+
+def surface_points(mapname, d, nodes, step):
+    """Swim exits against the water surface (#254 item 5).
+
+    Three things per link, because the question is always the same
+    one: how far is the lip above the water. The submerged seat, the
+    dry seat it exits to, and the column of surface points between
+    them at the height the water actually stops.
+    """
+    p = find_bsp(mapname)
+    if p is None:
+        sys.exit(f"--what surface needs maps_local/{mapname}.bsp")
+    b = Bsp(p)
+    sl = d.get("swimlinks", [])
+    if not sl:
+        print(f"note: {mapname} has no swim links")
+    out = []
+    for L in sl:
+        a, c = nodes[L[0]], nodes[L[1]]
+        out.append(tuple(a))
+        out.append(tuple(c))
+        if b.contents(a[0], a[1], a[2]) != CONTENTS_WATER:
+            print(f"  n{L[0]} is not in water; skipping its surface")
+            continue
+        top = b.water_top(a[0], a[1], a[2])
+        print(f"  n{L[0]} -> n{L[1]}: surface {top:.0f}, lip {c[2]:.0f}, "
+              f"climb {c[2] - top:.0f}")
+        for q in lerp((a[0], a[1], top), (c[0], c[1], top), step):
+            out.append(q)
+    return out
+
+
+def diff_points(d, nodes, other):
+    """Nodes a regen added or removed (#254 item 6).
+
+    Node indices shift on every regen, so the comparison is by
+    position, the same convention the probe verdicts use.
+    """
+    o = json.loads(Path(other).read_text())
+    old = [w["origin"] if isinstance(w, dict) else w for w in o["nodes"]]
+    keep = {(round(n[0]), round(n[1]), round(n[2])) for n in old}
+    now = {(round(n[0]), round(n[1]), round(n[2])) for n in nodes}
+    added = [n for n in nodes
+             if (round(n[0]), round(n[1]), round(n[2])) not in keep]
+    gone = [n for n in old
+            if (round(n[0]), round(n[1]), round(n[2])) not in now]
+    print(f"added {len(added)}, removed {len(gone)}, kept {len(now) - len(added)}")
+    for n in gone:
+        print(f"  removed '{n[0]:.0f} {n[1]:.0f} {n[2]:.0f}'")
+    return [tuple(n) for n in added] + [tuple(n) for n in gone]
+
+
+def probe_points(mapname, step):
+    """Links the puppet refused (#254 item 8)."""
+    p = ROOT / "src" / f"argus_nav_{mapname}.probe.json"
+    if not p.exists():
+        sys.exit(f"no probe verdicts for {mapname}: {p}")
+    v = json.loads(p.read_text())
+    fails = v.get("failed") or []
+    if not fails:
+        print(f"note: {mapname} has no refuted links on file")
+    # verdicts are stored by ENDPOINT COORDINATES, not indices, because
+    # indices shift on every regen: each entry is [[from], [to]]
+    out = []
+    for f in fails:
+        if len(f) != 2:
+            continue
+        a, b2 = f[0], f[1]
+        print(f"  refused '{a[0]:.0f} {a[1]:.0f} {a[2]:.0f}' -> "
+              f"'{b2[0]:.0f} {b2[1]:.0f} {b2[2]:.0f}'")
+        out += lerp(a, b2, step)
+    print(f"probe convictions: {len(fails)}")
+    return out
+
+
+def solid_point(mapname):
+    """Somewhere inside the world's solid, for filler points to hide in."""
+    p = find_bsp(mapname)
+    if p is None:
+        sys.exit(f"--pad needs maps_local/{mapname}.bsp to hide its filler")
+    b = Bsp(p)
+    lf = b._lump(14)
+    mn = struct.unpack_from("<3f", lf, 0)
+    mx = struct.unpack_from("<3f", lf, 12)
+    step = 64.0
+    z = mn[2] + 8
+    while z < mx[2]:
+        y = mn[1] + 8
+        while y < mx[1]:
+            x = mn[0] + 8
+            while x < mx[0]:
+                if b.contents(x, y, z) == CONTENTS_SOLID:
+                    return (x, y, z)
+                x += step
+            y += step
+        z += step
+    sys.exit(f"{mapname}: found no solid point to hide filler in")
+
+
+def pad_colour(pts, mapname, colour):
+    """Put every drawn point on one colour (#254, the padding trick).
+
+    The engine colours static particle N as (-N & 15), which cycles
+    and cannot be asked for. The INDEX is ours though: emit fifteen
+    filler points buried in solid before each real one and every real
+    point lands on the same entry in the cycle. Costs sixteen points
+    per drawn point, so halve --max and raise -particles to match.
+
+    The arithmetic is checkable here; whether the colour that comes
+    out is the one you wanted needs a listen client and human eyes,
+    which is true of this whole tool.
+    """
+    hide = solid_point(mapname)
+    want = (16 - (colour & 15)) & 15
+    out = []
+    for q in pts:
+        while len(out) % 16 != want:
+            out.append(hide)
+        out.append(q)
+    print(f"padded to colour {colour & 15}: {len(pts)} drawn points, "
+          f"{len(out) - len(pts)} hidden at "
+          f"'{hide[0]:.0f} {hide[1]:.0f} {hide[2]:.0f}' "
+          f"(pass -particles {max(8192, len(out) * 2)})")
+    return out
+
+
 TYPED = {
     "jump": "jlinks",
     "door": "doorlinks",
@@ -291,7 +536,8 @@ def main():
     ap.add_argument("map")
     ap.add_argument("--what", default="nodes",
                     choices=["nodes", "links", "swim", "water", "tape",
-                             "fails", "human", "route", "trail"]
+                             "fails", "human", "route", "trail",
+                             "badseats", "surface", "diff", "probe"]
                             + sorted(TYPED))
     ap.add_argument("--tape")
     ap.add_argument("--bot", help="restrict route/trail to one track")
@@ -299,6 +545,14 @@ def main():
                     help="let rebuilt routes use rocket and sprint links")
     ap.add_argument("--step", type=float, default=12.0)
     ap.add_argument("--max", type=int, default=8000)
+    ap.add_argument("--against",
+                    help="--what diff: the other graph's .qc.json")
+    ap.add_argument("--colour", type=int, default=4,
+                    help="--pad: which entry of the 16 colour cycle to "
+                         "land every drawn point on")
+    ap.add_argument("--pad", action="store_true",
+                    help="pad the sequence so every drawn point lands on "
+                         "one colour (see the note in the module header)")
     ap.add_argument("--out", default=str(ROOT / "engine" / "argus" / "maps"))
     a = ap.parse_args()
 
@@ -342,6 +596,16 @@ def main():
         if not a.tape:
             sys.exit("--what trail needs --tape runs/<log>")
         pts = trail_points(a.tape, a.step, a.bot)
+    elif a.what == "badseats":
+        pts = badseat_points(a.map, nodes)
+    elif a.what == "surface":
+        pts = surface_points(a.map, d, nodes, a.step)
+    elif a.what == "diff":
+        if not a.against:
+            sys.exit("--what diff needs --against src/argus_nav_<map>.qc.json")
+        pts = diff_points(d, nodes, a.against)
+    elif a.what == "probe":
+        pts = probe_points(a.map, a.step)
     elif a.what in TYPED:
         key = TYPED[a.what]
         links = d.get(key, [])
@@ -355,6 +619,9 @@ def main():
         pts = [p for i, p in enumerate(pts) if int(i / keep) != int((i - 1) / keep)]
         print(f"thinned to {len(pts)} points (raise --max, and pass "
               f"-particles {max(8192, len(pts) * 2)} to the engine)")
+
+    if a.pad:
+        pts = pad_colour(pts, a.map, a.colour)
 
     outdir = Path(a.out)
     outdir.mkdir(parents=True, exist_ok=True)

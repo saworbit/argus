@@ -9,6 +9,47 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The rest of the pointfile overlays, and one of them found something
+(#254).** Four audits join the drawing tool, all of them questions that
+a top-down plot cannot answer and a number cannot either.
+
+`--what badseats` runs the engine's own `SV_CheckBottom` against every
+shipped seat, which is the test navgen gained in #250. It found that
+every graph in the tree predates that filter: e1m2 carries 39 of them,
+dm4 48, dm2 49, dm3 58, e1m1 63, between a quarter and a third of each
+graph. A fresh regen of e1m2 through current navgen draws none, which
+is both the instrument validating itself and the finding: those seats
+are the class that put a waypoint 14 units past a lava lip on e1m6,
+and they are still in every shipped graph until each map's next regen.
+
+`--what surface` draws each swim exit with the water surface between
+the submerged seat and the lip, and prints the climb in units, which
+is the measurement that cost most of a session to get by hand.
+`--what diff --against <other>.qc.json` draws the nodes a regen added
+and removed, matched by position because indices shift every
+generation. `--what probe` draws the links the puppet refused, read
+from `argus_nav_<map>.probe.json`.
+
+The colour trick works. `--pad --colour N` buries fifteen filler
+points in solid geometry before each drawn point so every drawn point
+lands on the same entry of the `(-index & 15)` cycle; the file is
+checkable and every drawn point in a padded dm2 overlay lands on the
+colour asked for. Whether that colour looks the way you expected still
+needs a listen client, which is true of the whole tool.
+
+THE PORTAL SPIKE, measured rather than argued, and the answer is no.
+Portal space is three to ten times the size of the waypoint graph
+(436 leaves on dm4 against 155 nodes, 1505 on e1m2 against 198), only
+a third to a half of the open leaves have anywhere a player can
+actually stand (33 per cent on dm2, 45 on dm4, 49 on e1m2, 57 on dm3),
+and 56 to 75 per cent of the standable ones already hold a nav node.
+The uncovered remainder is mostly leaf subdivision inside rooms the
+graph already covers rather than rooms the sampler misses. So the
+payoff is unproven while the cost is real: `.prt` is not in the
+shipped BSP, so leaf adjacency would have to be rebuilt by clipping
+each leaf's planes against its siblings, and a walkability filter
+would then throw away half of what that produced.
+
 **The guard that never fired, and the field it was reading (#256).**
 The e1m2 co-op companion pins in water and swims in a circle for the
 rest of the match, on every build measured including current main.
