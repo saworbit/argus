@@ -424,6 +424,31 @@ afterwards. Both fetches use `-f` now. A failed compile in the rig script
 also prints the last 40 lines of `compile.log` instead of one verdict
 sentence with no evidence.
 
+**The brief hot path stops re-reading everything (#228).** `cartograph`
+called `read_bsp29` before it consulted `ATLAS_CACHE`, so the cache only
+ever saved `atlas_from_bsp` and the planes, nodes, leaves and clipnodes
+of a 1 to 2 MB file were re-parsed on every call. `brief_run` calls
+`cartograph` twice and `hull0_for_map` parsed the same file a third
+time. Separately, `look_at` rebuilt the whole 15 file QC index on every
+call, and `brief_run` calls it once per next step.
+
+The cache check now comes first, nothing there needing the parsed BSP;
+a parsed BSP is shared by mtime behind an `Arc` so `hull0_for_map` costs
+a pointer clone; and the QC index is built once per process and rebuilt
+only when one of its files changes.
+
+Measured on the same 185 s dm4 tape, three consecutive `brief_run` calls
+in one process:
+
+```
+            first     second    third
+before      189 ms    154 ms    150 ms
+after       136 ms     52 ms     52 ms
+```
+
+which is the issue's own "time it with and without the cache warm; it
+barely moves" turned into a warm path roughly three times faster.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a

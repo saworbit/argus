@@ -343,7 +343,12 @@ pub fn inspect_entities(
 pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
     let key = bsp.trim().to_ascii_lowercase();
     let (path, ingested_from) = ingest_bsp(cfg, bsp)?;
-    let raw = read_bsp29(&path)?;
+    // THE CACHE CHECK COMES BEFORE THE PARSE (#228). read_bsp29 ran
+    // first, so the cache only ever saved atlas_from_bsp and the
+    // planes, nodes, leaves and clipnodes of a 1 to 2 MB file were
+    // re-parsed on every call - and brief_run calls this twice, via
+    // attach_atlas and attach_item_control. Nothing here needs the
+    // parsed BSP: the stamps come from the paths.
     let map = path
         .file_stem()
         .and_then(|s| s.to_str())
@@ -358,6 +363,7 @@ pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
             }
         }
     }
+    let raw = read_bsp29_cached(&path)?;
     let atlas = atlas_from_bsp(&map, &path, &ingested_from, &raw, cfg);
     if let Ok(mut cache) = ATLAS_CACHE.lock() {
         let entry = CachedAtlas {
@@ -368,6 +374,30 @@ pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
         cache.insert(map, entry);
     }
     Ok(atlas)
+}
+
+/// Parse a BSP once per mtime and share it (#228). `hull0_for_map`
+/// parses independently of `cartograph`, so a single `brief_run` read
+/// the same file three times. The entry is an Arc so a hit costs a
+/// pointer clone rather than a copy of every lump.
+static BSP_CACHE: std::sync::Mutex<
+    Option<(std::path::PathBuf, Option<std::time::SystemTime>, std::sync::Arc<Bsp29>)>,
+> = std::sync::Mutex::new(None);
+
+pub fn read_bsp29_cached(path: &std::path::Path) -> Result<std::sync::Arc<Bsp29>, String> {
+    let stamp = std::fs::metadata(path).and_then(|m| m.modified()).ok();
+    if let Ok(guard) = BSP_CACHE.lock() {
+        if let Some((p, st, raw)) = guard.as_ref() {
+            if p == path && *st == stamp && stamp.is_some() {
+                return Ok(raw.clone());
+            }
+        }
+    }
+    let raw = std::sync::Arc::new(read_bsp29(path)?);
+    if let Ok(mut guard) = BSP_CACHE.lock() {
+        *guard = Some((path.to_path_buf(), stamp, raw.clone()));
+    }
+    Ok(raw)
 }
 
 #[derive(Clone)]
