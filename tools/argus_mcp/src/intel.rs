@@ -651,8 +651,10 @@ pub fn brief_path(path: &Path, map_hint: Option<&str>) -> Result<MatchBrief, Str
 }
 
 pub fn hull0_for_map(cfg: &Config, map: &str) -> Option<crate::bsp::Hull0> {
+    // the third parse of the same file in one brief_run (#228); the
+    // shared mtime cache turns it into a pointer clone
     let (path, _) = crate::cartograph::ingest_bsp(cfg, map).ok()?;
-    crate::bsp::read_bsp29(&path).ok()?.hull0
+    crate::cartograph::read_bsp29_cached(&path).ok()?.hull0.clone()
 }
 
 pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<MatchBrief, String> {

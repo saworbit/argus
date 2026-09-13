@@ -31,10 +31,8 @@ pub struct QcIndex {
     pub constants: Vec<QcConst>,
 }
 
-pub fn index_argus(cfg: &Config) -> Result<QcIndex, String> {
-    let mut functions = Vec::new();
-    let mut constants = Vec::new();
-    let names = [
+/// The file list, lifted out so the cache below can stamp it (#228).
+const INDEX_FILES: [&str; 15] = [
         "argus.qc",
         "argus_nav.qc",
         "argus_nav_dispatch.qc",
@@ -53,8 +51,42 @@ pub fn index_argus(cfg: &Config) -> Result<QcIndex, String> {
         "plats.qc",
         "triggers.qc",
         "player.qc",
-    ];
-    for name in names {
+];
+
+/// Built once per process and rebuilt only when one of those files
+/// changes (#228). `look_at` calls this, and `brief_run` and
+/// `compare_runs_inner` call `look_at` once per next step, so a single
+/// brief re-indexed a 300 KB `argus.qc` several times over.
+static INDEX_CACHE: std::sync::Mutex<Option<(Vec<Option<std::time::SystemTime>>, QcIndex)>> =
+    std::sync::Mutex::new(None);
+
+pub fn index_argus(cfg: &Config) -> Result<QcIndex, String> {
+    let stamps: Vec<Option<std::time::SystemTime>> = INDEX_FILES
+        .iter()
+        .map(|n| {
+            std::fs::metadata(cfg.src.join(n))
+                .and_then(|m| m.modified())
+                .ok()
+        })
+        .collect();
+    if let Ok(guard) = INDEX_CACHE.lock() {
+        if let Some((cached, idx)) = guard.as_ref() {
+            if *cached == stamps {
+                return Ok(idx.clone());
+            }
+        }
+    }
+    let idx = index_argus_uncached(cfg)?;
+    if let Ok(mut guard) = INDEX_CACHE.lock() {
+        *guard = Some((stamps, idx.clone()));
+    }
+    Ok(idx)
+}
+
+fn index_argus_uncached(cfg: &Config) -> Result<QcIndex, String> {
+    let mut functions = Vec::new();
+    let mut constants = Vec::new();
+    for name in INDEX_FILES {
         let path = cfg.src.join(name);
         if !path.is_file() {
             continue;
