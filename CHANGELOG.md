@@ -9,6 +9,85 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**Four navgen defects behind one refused regen (#319).** e1m2 had
+refused its regen twice, in #308 and again in #318, and the tool was
+blamed for two of it: a graph with half the door links and no lift.
+Both were real. Neither was the reason the regen failed, and the
+digging turned up two more.
+
+THE PLAT PAD WAS NOT MISSING, THE BUDGET WAS. `PROMO_CAP` was 200,
+decimation seated 196, and the item, stair and sprint passes took the
+last four before the lift asked for its exit pad. `force_way` then
+returned None and the pass printed "no usable pad", which reads as a
+statement about the map. The sample that pad wanted was sitting 91
+units away, well inside the 120 the search allows. This is the second
+time the cap has eaten typed infrastructure: v3.69 records it killing
+all four of dm2's rocket-jump pads the same way. Infrastructure now
+has a reserve of eight seats past the cap, spends it out loud, and an
+ordinary starved seat is counted rather than silent. e1m2's lift link
+is back, `n198 -> n199`, 1201 33 92 up to 1361 33 320.
+
+A DOOR THAT SLIDES UP INTO A CEILING IS NOT A PLATFORM. The #281
+mover class takes any big vertical `func_door` with 48 units of
+travel, and e1m2 has two 126x118 doors of that shape whose open top
+face is in the ceiling. The pass seated pads there anyway, by snapping
+47 units to the nearest sample or inventing a virtual one, then minted
+a lift link each way into a hole - and after the fix above it was
+spending the reserve to do it. A mover now needs real floor within a
+step of BOTH faces. e1m1's *3 qualifies twice over, which is why it
+was the found case: its closed top is the start area's floor and its
+open position is the pit floor. e1m1 regenerates unchanged, e1m6's
+*51 is correctly left as a door.
+
+NINE SAMPLES CANNOT DECIDE WHETHER A SEGMENT MEETS A BOX. The door
+test walked nine fixed points along each link, so its probe spacing
+was the link's own length: a 300 unit link steps 37 units at a time
+past a slab 30 wide. Replaced with an exact slab test, which has no
+density to tune and is cheaper than the nine it replaces.
+
+AND IT WAS TESTING AGAINST THE WRONG BOX, which is the one that
+mattered. A `DOOR_START_OPEN` door is compiled where it stands when
+OPEN, so on a map whose doors all carry that flag every door link
+navgen drew was a link through the PARKED slab, which #309 vetoes
+rather than types. e1m7 is that map. It ships 0 door links from 5 door
+brushes today; with the compiled box it types 15, all of them wrong,
+and with the shut box it types 30 honest ones.
+
+```
+door links          shipped   compiled box   shut box
+e1m1                    59             59         53
+e1m2                    64             33         31
+e1m6                   212            181        167
+e1m7                     0             15         30
+```
+
+Typing also moved to the end of the pipeline. 6c runs before knitting,
+closure, jump-up links and the verdict remint, so links those passes
+mint cross their doorways untyped; the retype runs over the final
+graph and replaces rather than extends, so an evicted link cannot
+leave a stale entry.
+
+NO NAV DATA SHIPS WITH THIS. Both regens it enables were built and
+laddered and both were refused. e1m2, on three tapes against a
+same-build control, ran engages 6 / 12 / 6 against 23 / 10 / 23, which
+fails that gate twice; its graph is honest in every static number
+(zero bad seats against 39, zero over-ceiling jump links, worst spawn
+reach 97 per cent against 95, and the lift back) and it still plays
+worse. e1m7's regen differs from its shipped graph in exactly one
+field, 0 door links becoming 30, and two of its three tapes flag an
+under-fire freeze at '24 61 8' that no shipped-graph tape shows.
+
+So the tool is fixed and its output is still refused, and those are
+different statements. What the e1m7 pair does show is the wrong box
+being expensive: routefails 11 and 28 with the compiled box, 1 and 4
+with the shut box, on otherwise identical graphs.
+
+CORRECTION TO THE ISSUE I FILED: the door link count itself was not a
+defect. e1m2's shipped graph seats three nodes inside door brushes and
+every link radiating from one counts as a crossing; the regen seats
+one. Fewer typed links, same reachability. The defects were underneath
+the count, not in it.
+
 **The router refuses a climb a jump cannot make (#317).** #316 stopped
 navgen minting a jump link that climbs further than a jump climbs, but
 only a regen applies a mint-time rule, and the two maps carrying the
