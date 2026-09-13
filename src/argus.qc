@@ -1404,6 +1404,17 @@ float() Argus_Gravity =
     return g;
 };
 
+// How far a standing jump climbs on this map. navgen carries the same
+// number as JUMPUP and deliberately does not scale it with gravity
+// (#282: the runtime cannot fly a 320 unit climb even where e1m8's
+// physics permits one), so the two are not the same bar and should not
+// be. This one is the honest ceiling: above it the climb is not hard,
+// it is impossible, and the router refuses the link (#317).
+float() Argus_JumpApex =
+{
+    return AR_JUMPVEL * AR_JUMPVEL / (2 * Argus_Gravity ());
+};
+
 // predictive gap jump (2026-08-20, the Omicron review, sampling
 // 10.3: at a non-walkable area their bot predicts the jump in 0.1 s
 // steps, collisions included, and jumps only "if it is satisfied

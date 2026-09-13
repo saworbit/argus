@@ -50,6 +50,9 @@ entity  an_cachegoal;       // goal node of the last completed flood
 float   an_cachegen;        // stamps an_cgen along that route
 float   an_cachetime;       // freshness: adoptions stop after 10 s
 float   an_keydoors;        // 0 unknown, 1 none on this map, 2 at least one
+float   an_apex;            // how far a standing jump climbs right now
+                            // (jumpvel^2 / 2g), refreshed once per
+                            // search rather than per expanded link
 
 .float  ar_slot;            // on bots: 0..3 (roster cap 4)
 .entity ar_node;            // on bots: current waypoint target
@@ -582,6 +585,7 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Start =
     an_bot = bot;
     an_goalnode = goalnode;
     an_gen = an_gen + 1;
+    an_apex = Argus_JumpApex ();
     // remember WHICH errand this flood is for. A flood spans about half
     // a second at the lab's frametime, and PickGoal can change ar_goal
     // inside that window (the hunch, the kill re-pick, trapped
@@ -758,6 +762,14 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
             return FALSE;
         if ((cur.an_sprintmask & bit) && skill < 2)
             return FALSE;
+        // the same impossible-climb refusal as the search (#317). A
+        // cached chain was verified for whoever searched it, and this
+        // toll is about the map rather than the bot, but an adopter
+        // that skipped it would walk a chain the searcher could not
+        // have been given.
+        if ((cur.an_jumpmask & bit)
+            && nx.origin_z - cur.origin_z > Argus_JumpApex ())
+            return FALSE;
         if ((cur.an_doormask & bit) && Argus_LinkBlockedByKeyDoor (cur, nx, bot))
             return FALSE;
         cur = nx;
@@ -858,8 +870,27 @@ void() Argus_Nav_Frame =
                 // Gate dropped 3 -> 2 with the run-up discipline
                 // (GitHub #4): the staged approach delivers the
                 // 310+ aligned launch the old walk-up never could.
+                // A JUMP CANNOT CLIMB MORE THAN A JUMP CLIMBS (#317).
+                // navgen has refused to mint one since #316, but a
+                // shipped graph minted before that still carries them
+                // and only a regen applies the new rule, which e1m2
+                // and e1m8 both refused on their own tapes. So the
+                // router refuses them instead, the same way it refuses
+                // a rocket link the bot cannot pay for. The bar is the
+                // apex rather than navgen's constant, because gravity
+                // is a map property: e1m2's seven links ask for 48 to
+                // 88 against an apex of 46 and are impossible, while
+                // e1m8's one asks for 41 against an apex of 364 and is
+                // trivial. Refusing at the search, not at the hop, is
+                // what makes the difference land: BFS routes around it
+                // or routefails, and the goal shelves through the path
+                // that already exists. Refusing at the hop would leave
+                // the bot at the lip with the route still telling it to
+                // climb, which is the dm2 n0 pin the ceiling was for.
                 if ((!(cur.an_rjmask & bit) || Argus_BotCanRJ (an_bot))
-                    && (!(cur.an_sprintmask & bit) || skill >= 2))
+                    && (!(cur.an_sprintmask & bit) || skill >= 2)
+                    && (!(cur.an_jumpmask & bit)
+                        || nb.origin_z - cur.origin_z <= an_apex))
                 {
                     // Ripple edge gate (#175): links across closed keyed
                     // doors are blocked until the key is held. The slot
