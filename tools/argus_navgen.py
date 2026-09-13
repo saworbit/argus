@@ -41,6 +41,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
 builds where a hand-maintained argus_nav_dispatch.qc selects per map.
 """
 import re, struct, sys, heapq, collections
+import math as _dmath
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -818,6 +819,114 @@ for b in ent_blocks:
           f"(faces {lo_face:.0f} / {hi_face:.0f})")
 print(f"door movers: {doorlifts} ridden like plats")
 
+# ---- 5b3. where a sliding door parks when it opens ----
+# AN OPEN DOOR IS STILL A BRUSH (#309). It does not leave the world
+# when it opens, it slides beside the hole it was filling - keeping
+# its own lip inside that hole, because doors.qc travels size minus
+# lip - and it can come to rest on the very line the graph draws
+# through the doorway. e1m2's silver key pair is the found case: shut
+# across x 881 to 951, open across x 943 to 1013, and the n84 to n90
+# walk link crossing the frame at x 948, which is inside both.
+#
+# NEITHER HULL CARRIES IT. Hull 1 has no func_door brushes at all, so
+# the sampler reads the doorway and the recess alike as clean floor,
+# and hull 0 only has the compiled position. This is geometry nothing
+# downstream can see unless it is handed over, the same shape as the
+# hull-0 liquid classification: work it out once, here, and let link
+# minting in 6b refuse to draw through it. The runtime steer from
+# #303 still catches whatever a shipped graph already carries, but it
+# spends a frame of steering each time and it cannot make a link
+# honest.
+#
+# DOOR_START_OPEN, which the #303 report had backwards. doors.qc sets
+# pos2 = pos1 + movedir * (|movedir . size| - lip) and then SWAPS them
+# for a START_OPEN door, so such a door is COMPILED at its open
+# position and its shut one is a travel away. Seven doors across the
+# rotation are built that way (dm2 3, e1m7 2, e1m1 1, e1m2 1) and the
+# report called the hole a parked slab for every one of them.
+#
+# Two things measured and NOT kept, both because they changed nothing
+# the veto below does not already do:
+#   - a waypoint promoted at the centre of each opening, so Dijkstra
+#     would stop there and cross the frame in the middle. It reaches 0
+#     parked on every door map, and so does the veto alone, at the
+#     same worst-spawn reach; on e1m1 it also forced a seat onto the
+#     t15 doorway at '1096 1024 -247', on the lip of the teleporter
+#     drop, and the ladder came back with 83 hazard deflections and 17
+#     stalls in that one cell and coverage 391 down to 272.
+#   - splitting the parked box into the lip inside its own opening
+#     plus whatever part of it covers sampled floor, on the grounds
+#     that a slab which retracts fully into a 14 unit wall blocks
+#     nothing. True, and worth nothing: e1m6, e1m1, e1m2 and e1m5 all
+#     come out node for node identical either way.
+
+
+def _door_travel_boxes(_e, _mn, _mx):
+    """(shut, open) world boxes for a sliding func_door, or None.
+
+    Vertical movers return None. A slab that goes straight up or down
+    leaves the doorway rather than parking in it, and since 5b2 a big
+    one is modelled as a platform anyway.
+    """
+    _a = (_e.get("angle", "0") or "0").strip()
+    if _a in ("-1", "-2"):
+        return None
+    try:
+        _yaw = float(_a)
+    except ValueError:
+        return None
+    _r = _dmath.radians(_yaw)
+    _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
+    _size = (_mx[0] - _mn[0], _mx[1] - _mn[1], _mx[2] - _mn[2])
+    _travel = abs(sum(_d[k] * _size[k] for k in range(3))) \
+        - float(_e.get("lip", "8") or 8)
+    if _travel <= 0:
+        return None
+    _moved = (tuple(_mn[k] + _d[k] * _travel for k in range(3)),
+              tuple(_mx[k] + _d[k] * _travel for k in range(3)))
+    _here = (tuple(_mn), tuple(_mx))
+    if int(float(_e.get("spawnflags", "0") or 0)) & 1:   # DOOR_START_OPEN
+        return (_moved, _here)
+    return (_here, _moved)
+
+
+def _seg_hits_open(a, b, mn, mx):
+    # the player box against a parked slab: 16 either side, feet 24
+    # under the seat, and a slab whose top comes to rest within a step
+    # of the floor is walked over rather than walked into
+    lo = (mn[0] - 16.0, mn[1] - 16.0, mn[2] - 32.0)
+    hi = (mx[0] + 16.0, mx[1] + 16.0, mx[2] + 6.0)
+    t0, t1 = 0.0, 1.0
+    for k in range(3):
+        d = b[k] - a[k]
+        if abs(d) < 1e-9:
+            if a[k] < lo[k] or a[k] > hi[k]:
+                return False
+            continue
+        u, v = (lo[k] - a[k]) / d, (hi[k] - a[k]) / d
+        if u > v:
+            u, v = v, u
+        t0, t1 = max(t0, u), min(t1, v)
+        if t0 > t1:
+            return False
+    return True
+
+
+door_open = []
+for _b in ent_blocks:
+    _e = kv(_b)
+    if _e.get("classname") != "func_door" or "model" not in _e:
+        continue
+    try:
+        _bm = bmodels[int(_e["model"].lstrip("*"))]
+    except (ValueError, IndexError):
+        continue
+    _tb = _door_travel_boxes(_e, (_bm[0], _bm[1], _bm[2]),
+                             (_bm[3], _bm[4], _bm[5]))
+    if _tb:
+        door_open.append((_e.get("model"), _tb[1]))
+print(f"sliding doors: {len(door_open)} parked slab(s) to keep links off")
+
 # ---- 5c. train links from func_train ----
 # A func_train patrols its path_corners on its own clock: a MOVING
 # bmodel, in neither static hull, so the bridge it forms is invisible
@@ -1096,9 +1205,36 @@ def beeline_ok(a, b):
     return abs(z - bz) <= STEP
 
 VERBOSE = "--verbose" in sys.argv[5:]
+
+
+def _open_slab_blocks(a, b):
+    """Does a parked slab stand on this link's line?
+
+    The open position of a sliding door is world geometry that
+    NEITHER hull carries, so the sampler reads the recess it retreats
+    into as clean floor and nothing downstream can see the slab
+    (#309). It is solid at exactly the moment a bot wants to use the
+    link, because a door is open when you are walking through it, so
+    a line that passes through it is a lie half the time. beeline_ok
+    is where a line is judged walkable, so this is judged beside it.
+    """
+    return any(_seg_hits_open(a, b, mn, mx) for _mdl, (mn, mx) in door_open)
+
+
 nbad = 0
+nslab = 0
 for i in list(links):
     for j in list(links[i]):
+        if not links[i][j][1] and _open_slab_blocks(pos(ways[i]), pos(ways[j])):
+            if VERBOSE:
+                px = pos(ways[i])
+                qx = pos(ways[j])
+                print(f"  open slab {i}->{j}: "
+                      f"({px[0]:.0f},{px[1]:.0f},{px[2]:.0f}) -> "
+                      f"({qx[0]:.0f},{qx[1]:.0f},{qx[2]:.0f})")
+            del links[i][j]
+            nslab += 1
+            continue
         if not links[i][j][1] and not beeline_ok(ways[i], ways[j]):
             if VERBOSE:
                 px = pos(ways[i])
@@ -1108,7 +1244,8 @@ for i in list(links):
                       f"({qx[0]:.0f},{qx[1]:.0f},{qx[2]:.0f})")
             del links[i][j]
             nbad += 1
-print(f"beeline verification pruned {nbad} wall-piercing links")
+print(f"beeline verification pruned {nbad} wall-piercing links "
+      f"and {nslab} an open slab parks on")
 
 # ---- 6b2. symmetric closure on climbable one-ways ----
 # The Dijkstra pass links i->j when a fine path exists in that
@@ -1246,59 +1383,6 @@ print(f"door links: {len(doorlinks)} (from {len(door_boxes)} door brush(es))")
 # nothing in the sampler can see this. The runtime now steers through
 # the doorway rather than at the node beyond it, so this is a report
 # and not a cut - but a map with a lot of them is a map to look at.
-import math as _dmath
-
-
-def _door_open_box(_e, mn, mx):
-    _a = float(_e.get("angle", "0") or 0)
-    if _a == -1 or _a == -2:
-        return None                 # straight up or down: it clears
-    _r = _dmath.radians(_a)
-    _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
-    _size = (mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2])
-    _lip = float(_e.get("lip", "8") or 8)
-    _travel = abs(sum(_d[k] * _size[k] for k in range(3))) - _lip
-    if _travel <= 0:
-        return None
-    return (tuple(mn[k] + _d[k] * _travel for k in range(3)),
-            tuple(mx[k] + _d[k] * _travel for k in range(3)))
-
-
-def _seg_hits_open(a, b, mn, mx):
-    # the player box: 16 either side, feet 24 under the seat, and a
-    # slab whose top comes to rest within a step of the floor is
-    # walked over rather than walked into
-    lo = (mn[0] - 16.0, mn[1] - 16.0, mn[2] - 32.0)
-    hi = (mx[0] + 16.0, mx[1] + 16.0, mx[2] + 6.0)
-    t0, t1 = 0.0, 1.0
-    for k in range(3):
-        d = b[k] - a[k]
-        if abs(d) < 1e-9:
-            if a[k] < lo[k] or a[k] > hi[k]:
-                return False
-            continue
-        u, v = (lo[k] - a[k]) / d, (hi[k] - a[k]) / d
-        if u > v:
-            u, v = v, u
-        t0, t1 = max(t0, u), min(t1, v)
-        if t0 > t1:
-            return False
-    return True
-
-
-door_open = []
-for _b in ent_blocks:
-    _e = kv(_b)
-    if _e.get("classname") != "func_door" or "model" not in _e:
-        continue
-    try:
-        _bm = bmodels[int(_e["model"].lstrip("*"))]
-    except (ValueError, IndexError):
-        continue
-    _ob = _door_open_box(_e, (_bm[0], _bm[1], _bm[2]), (_bm[3], _bm[4], _bm[5]))
-    if _ob:
-        door_open.append((_e.get("model"), _ob))
-
 _parked = 0
 for _i, _j in doorlinks:
     _a = pos(ways[_i])
