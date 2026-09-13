@@ -9,6 +9,59 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**A bot pinned while fighting can be unstuck now (#322).**
+`Argus_Unstick` has two signatures. Embedded fires on hull 0 reading
+solid; pinned fires on four stalls and six seconds without moving,
+which is how #271 caught a wedge that is not inside anything. The
+second one keys on `ar_stalls`, and the only thing that feeds
+`ar_stalls` is a detector gated on `!fighting`. So a bot with an enemy
+stops counting stalls entirely and can never reach four, for any
+length of time, and the two cancel exactly where it matters most.
+
+Found in a human session, `shane_dm2_2026-09-14`: Carmack held
+`'2372 16 72'` for 19.7 seconds at 26 health, turning on the spot
+through yaw 158, 310, 224, 205, 230 and 324 while the position never
+moved, with `engage player`, `retreat` and `pursue` in the window and
+his stall count frozen at 6. Four were needed. The same tape holds
+three more bot freezes over six seconds.
+
+A third branch: a live enemy, no mover hop in progress, and eight
+seconds without moving 32 units. The stall count was only ever a proxy
+for "this is not a designed wait", because `Argus_AI` clears
+`ar_liftwait` at the top of every frame and a hold flag read from in
+there is always 0. Combat is not a designed wait either - every
+pad-side hold has yielded to a live enemy since v3.64 - so the proxy
+is not needed here, and the hop flags, which ARE readable on this
+tick, are tested instead, because the aboard-a-mover holds
+deliberately do not yield. Eight seconds rather than six because
+nothing corroborates this one. The console marker splits three ways
+now: `unstick embedded`, `unstick pinned`, `unstick fightpin`.
+
+PROVED REACHABLE RATHER THAN ASSUMED. A probe build with the window at
+one second fired it once in a 60 second dm2 match, `ARGUS Romero
+unstick fightpin '2433 -183 24'`, which is both the proof the branch
+runs and the measure of how rare it is: one firing in 180 bot-seconds
+at a bar eight times lower than the shipped one. At eight seconds it
+did not fire once across four full tapes.
+
+That is also the shape of the ladder, and it is worth being plain
+about. Four tapes, two maps, zero firings in all four, so every
+difference in them is variance by construction rather than by
+argument:
+
+```
+                      stalls   engages   coverage   goals
+dm2 controls          41/97/17  48/17/48  435/367/422  9/9/6
+dm2 fightpin1/2       41/28     36/31     482/423      11/5
+dm4 baseline           6        84        345          18
+dm4 fightpin1/2        6/20     78/47     348/321      19/10
+```
+
+Both maps inside their own bands, no gate failing twice. A guard that
+only fires on a rare condition cannot be shown to help in a botmatch,
+and the honest version of that is to show it costs nothing and to
+prove separately that it runs.
+
 **The seat budget, measured instead of assumed, and what it did not
 fix.** e1m2 refuses 68 seat requests a run that found a sample and had
 no budget left, and e1m5 refuses 42, while every other map in the
