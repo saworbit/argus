@@ -14,7 +14,13 @@ level looking at the dots does.
 
 Usage:
   argus_pointfile.py <map> [--what nodes|links|swim|water|tape|fails|human|
-                                  jump|door|lift|train|rocket|sprint|tele]
+                                  route|trail|jump|door|lift|train|rocket|
+                                  sprint|tele] [--bot NAME]
+
+  --what route draws what the router PLANNED, --what trail draws where
+  the bot actually went. Run both for one bot and flip between them:
+  intent and reality cannot share a file, because particle colour is
+  (-index & 15) and cannot be chosen.
                            [--tape runs/<log>] [--step 12] [--max 8000]
 
 Then in a LISTEN game (the command is client side, a dedicated server
@@ -152,13 +158,145 @@ def human_points(tape, step):
     return pts
 
 
+# The router refuses rocket links to a bot that cannot pay for one and
+# sprint links below skill 3, so a reconstruction that always allows
+# them finds shortcuts the bot was never offered. Measured on dm2:
+# including them matches the router's own hop count on 155 of 182
+# routes, excluding them on 164. Pass --gated to include them.
+GATED = ("rjlinks", "sprintlinks")
+
+
+def _adj(d, gated=False):
+    """Forward edges over the link classes the router can walk.
+
+    The router is a BFS over these, so reconstructing with the same
+    set reproduces the path it would have produced. Route events carry
+    the hop COUNT plus start and goal positions but not the hops
+    themselves, so the path has to be rebuilt rather than read.
+    """
+    n = len(d["nodes"])
+    adj = [[] for _ in range(n)]
+    keys = ("links", "jlinks", "doorlinks", "liftlinks", "trainlinks",
+            "swimlinks", "teles") + (GATED if gated else ())
+    for key in keys:
+        for L in d.get(key, []):
+            a, b = L[0], L[1]
+            if 0 <= a < n and 0 <= b < n:
+                adj[a].append(b)
+    return adj
+
+
+def _nearest(nodes, p):
+    best, bd = None, 1e18
+    for i, q in enumerate(nodes):
+        dd = (q[0]-p[0])**2 + (q[1]-p[1])**2 + (q[2]-p[2])**2
+        if dd < bd:
+            bd, best = dd, i
+    return best, bd ** 0.5
+
+
+def route_points(tape, d, nodes, step, only=None, gated=False):
+    """Planned routes, rebuilt hop by hop (#254 item 1).
+
+    Draw this and then --what trail for the same bot: intent and
+    reality, in the level, one file each. They cannot share a file
+    because particle colour is (-index & 15) and cannot be chosen.
+    """
+    from collections import deque
+    adj = _adj(d, gated)
+    pat = re.compile(r"ARGEVT (.+?) route (\d+) start '\s*(-?[\d.]+)\s+"
+                     r"(-?[\d.]+)\s+(-?[\d.]+)' goal '\s*(-?[\d.]+)\s+"
+                     r"(-?[\d.]+)\s+(-?[\d.]+)'")
+    pts, drawn, missed, mismatched = [], 0, 0, []
+    for line in Path(tape).read_text(errors="replace").splitlines():
+        m = pat.search(line)
+        if not m:
+            continue
+        if only and m.group(1) != only:
+            continue
+        s, sd = _nearest(nodes, (float(m.group(3)), float(m.group(4)),
+                                 float(m.group(5))))
+        g, gd = _nearest(nodes, (float(m.group(6)), float(m.group(7)),
+                                 float(m.group(8))))
+        if s is None or g is None or sd > 64 or gd > 64:
+            missed += 1
+            continue
+        prev, q = {s: None}, deque([s])
+        while q:
+            cur = q.popleft()
+            if cur == g:
+                break
+            for nx in adj[cur]:
+                if nx not in prev:
+                    prev[nx] = cur
+                    q.append(nx)
+        if g not in prev:
+            missed += 1
+            continue
+        path, cur = [], g
+        while cur is not None:
+            path.append(nodes[cur])
+            cur = prev[cur]
+        path.reverse()
+        # SELF-CHECK. The route event carries the router's own hop
+        # count, so a rebuild that disagrees means this link set has
+        # drifted from the router's and the drawing is a lie. On e1m1
+        # 79 of 79 agree exactly.
+        if len(path) - 1 != int(m.group(2)):
+            mismatched.append((int(m.group(2)), len(path) - 1))
+        for a, b in zip(path, path[1:]):
+            pts += lerp(a, b, step)
+        drawn += 1
+    print(f"rebuilt {drawn} planned route(s)"
+          + (f", {missed} unresolvable against this graph" if missed else ""))
+    if mismatched:
+        # Some disagreement is expected and is not drift: the router's
+        # path depends on what the bot was carrying at the time, and
+        # the tape does not record that. A LARGE share disagreeing is
+        # the signal worth acting on.
+        print(f"note: {len(mismatched)} of {drawn} rebuilt path(s) differ "
+              f"from the router's own hop count, e.g. reported "
+              f"{mismatched[0][0]} rebuilt {mismatched[0][1]}. Expect a few: "
+              f"equipment gating decides which links a given bot was "
+              f"offered. Most of them differing means this link set has "
+              f"drifted from the router's.")
+    return pts
+
+
+def trail_points(tape, step, only=None):
+    """One track's actual path (#254 item 1's other half)."""
+    LOG = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
+                     r"(-?[\d.]+)\s+(-?[\d.]+)'")
+    per = {}
+    for line in Path(tape).read_text(errors="replace").splitlines():
+        m = LOG.search(line)
+        if m and (not only or m.group(1) == only):
+            per.setdefault(m.group(1), []).append(
+                (float(m.group(2)), (float(m.group(3)), float(m.group(4)),
+                                     float(m.group(5)))))
+    if not per:
+        print(f"note: no track named {only!r} in this tape" if only
+              else "note: no ARGLOG rows in this tape")
+    pts = []
+    for name in per:
+        rows = [p for _, p in sorted(per[name])]
+        for a, b in zip(rows, rows[1:]):
+            if sum((b[i]-a[i])**2 for i in range(3)) ** 0.5 < 700:
+                pts += lerp(a, b, step)
+    return pts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("map")
     ap.add_argument("--what", default="nodes",
                     choices=["nodes", "links", "swim", "water", "tape",
-                             "fails", "human"] + sorted(TYPED))
+                             "fails", "human", "route", "trail"]
+                            + sorted(TYPED))
     ap.add_argument("--tape")
+    ap.add_argument("--bot", help="restrict route/trail to one track")
+    ap.add_argument("--gated", action="store_true",
+                    help="let rebuilt routes use rocket and sprint links")
     ap.add_argument("--step", type=float, default=12.0)
     ap.add_argument("--max", type=int, default=8000)
     ap.add_argument("--out", default=str(ROOT / "engine" / "argus" / "maps"))
@@ -196,6 +334,14 @@ def main():
         if not a.tape:
             sys.exit("--what human needs --tape runs/<log>")
         pts = human_points(a.tape, a.step)
+    elif a.what == "route":
+        if not a.tape:
+            sys.exit("--what route needs --tape runs/<log>")
+        pts = route_points(a.tape, d, nodes, a.step, a.bot, a.gated)
+    elif a.what == "trail":
+        if not a.tape:
+            sys.exit("--what trail needs --tape runs/<log>")
+        pts = trail_points(a.tape, a.step, a.bot)
     elif a.what in TYPED:
         key = TYPED[a.what]
         links = d.get(key, [])
