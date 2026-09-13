@@ -528,6 +528,18 @@ if len(live_ents) + NODE_CAP > 500:
 # it before RJ pads got their turn - every ensure_way then snapped
 # to the same wrong seat and all four RJ links vanished
 PROMO_CAP = max(NODE_CAP, min(500 - len(live_ents) - 12, 260))
+# AND THE SAME THING HAPPENED AGAIN, to e1m2's only plat (#319). The
+# cap was 200, decimation seated 196, and the item, stair and sprint
+# passes took the last four before the lift asked for its exit pad,
+# so force_way returned None and the pass reported "no usable pad",
+# which reads as a statement about the map. It is not: the sample the
+# pad wanted was sitting 91 units away, well inside the 120 the search
+# allows. A missing plat pad costs a whole level transition and an
+# extra seat costs one edict of six hundred, so infrastructure gets a
+# small reserve of its own past the cap, and says when it spends one.
+INFRA_RESERVE = 8
+infra_spent = 0
+starved_seats = 0
 
 # ---- 5. decimate to waypoints ----
 allnodes = [ (cx,cy,zi) for (cx,cy),zs in samples.items() for zi in range(len(zs)) ]
@@ -627,10 +639,15 @@ def closest_nid(x, y, z):
                 best, bd = (cx, cy, zi), d
     return best, bd ** 0.5
 
-def force_way(x, y, z, snap=48):
+def force_way(x, y, z, snap=48, infra=False):
     """Waypoint index for (x,y,z): reuse one within snap units, else
     promote the closest fine sample. None when nothing ever stood
-    within 120u (no world floor there)."""
+    within 120u (no world floor there), or when the promotion budget
+    is gone - and those are different failures, so the caller is told
+    which. infra=True draws on INFRA_RESERVE when the cap is spent
+    (#319): a mover pad is the map's designed circulation, not an
+    optional seat, and losing one costs a level transition."""
+    global infra_spent
     nid, d = closest_nid(x, y, z)
     if nid is None or d > 120:
         return None
@@ -642,7 +659,19 @@ def force_way(x, y, z, snap=48):
         if ((px-wx)**2 + (py-wy)**2 + (2*(pz-wz))**2) ** 0.5 < snap:
             return i
     if len(ways) >= PROMO_CAP:
-        return None
+        global starved_seats
+        starved_seats = starved_seats + 1
+        if not infra or infra_spent >= INFRA_RESERVE:
+            if infra:
+                print(f"  INFRASTRUCTURE seat at ({x:.0f} {y:.0f} "
+                      f"{z:.0f}) had a sample {d:.0f}u away and the "
+                      f"reserve is spent ({infra_spent} of "
+                      f"{INFRA_RESERVE}, cap {PROMO_CAP})")
+            return None
+        infra_spent = infra_spent + 1
+        print(f"  infrastructure seat at ({x:.0f} {y:.0f} {z:.0f}) "
+              f"spends reserve {infra_spent} of {INFRA_RESERVE} "
+              f"(cap {PROMO_CAP} already full)")
     ways.append(nid)
     return len(ways) - 1
 
@@ -671,7 +700,7 @@ def boarding_pad(bm, face_z):
                     best, bestd = (x, y, zz), d
     if best is None:
         return None
-    return force_way(best[0], best[1], best[2] + 24, snap=32)
+    return force_way(best[0], best[1], best[2] + 24, snap=32, infra=True)
 
 def virtual_pad(bm, face_z):
     """Omicron's 1998 answer (their PLATBOTTOM seats sat ON the slab
@@ -733,7 +762,7 @@ for b in ent_blocks:
     pcx, pcy = (bm[0] + bm[3]) / 2, (bm[1] + bm[4]) / 2
     lo = boarding_pad(bm, top_z - height)
     if lo is None:
-        lo = force_way(pcx, pcy, top_z - height + 24)
+        lo = force_way(pcx, pcy, top_z - height + 24, infra=True)
         if lo is not None:
             print(f"plat at ({pcx:.0f} {pcy:.0f}): no boarding sample "
                   f"outside the footprint; pad falls back INSIDE the "
@@ -744,13 +773,15 @@ for b in ent_blocks:
         print(f"plat at ({pcx:.0f} {pcy:.0f}): VIRTUAL pad on the "
               f"slab rest-top at z {top_z - height:.0f} (the 5b gap, "
               f"closed per the dm3 musing)")
-    hi = force_way(pcx, pcy, top_z + 24)
+    hi = force_way(pcx, pcy, top_z + 24, infra=True)
     if lo is None or hi is None or lo == hi:
         print(f"plat at ({pcx:.0f} {pcy:.0f}) travel {height:.0f}: "
               f"no usable pad (bottom {lo}, top {hi})")
         continue
     lifts.append((lo, hi))
 print(f"plats: {len(lifts)} lift(s) padded ({len(vpads)} virtual)")
+if starved_seats:
+    print(f"promotion budget: {starved_seats} seat request(s) found a sample and had no budget left (cap {PROMO_CAP})")
 
 # ---- 5b2. vertical func_door movers: platforms in door clothing ----
 # A func_door with angle -1 or -2 travels straight up or down, and a
@@ -798,14 +829,32 @@ for b in ent_blocks:
     hi_face = bm[5] if (e.get("angle") or "").strip() == "-2" else bm[5] + travel
     lo_face = hi_face - travel
     pcx, pcy = (bm[0] + bm[3]) / 2, (bm[1] + bm[4]) / 2
+    # BOTH FACES NEED REAL FLOOR, and that is the whole difference
+    # between a platform and a door that happens to slide upward
+    # (#319). e1m1's *3 qualifies twice over: its closed top IS the
+    # start area's floor and its open position is the pit floor. e1m2
+    # has two 126x118 doors of the same shape whose open top face is
+    # in the ceiling, and the old code seated pads there anyway, by
+    # snapping 47 units to whatever sample was nearest or inventing a
+    # virtual one. That mints a lift link into a hole and spends seats
+    # the map's real plat then cannot have. A face with nothing to
+    # stand on within a step means this is a door, so leave it to the
+    # door handler and say so.
+    def _face_seat(face):
+        nid, _d = closest_nid(pcx, pcy, face + 24)
+        if nid is None or abs(pos(nid)[2] - (face + 24)) > STEP:
+            return None
+        return nid
+    if _face_seat(lo_face) is None or _face_seat(hi_face) is None:
+        print(f"door mover {e.get('model')} at ({pcx:.0f} {pcy:.0f}) "
+              f"travel {travel:.0f}: no floor at both faces "
+              f"({lo_face:.0f} / {hi_face:.0f}); it is a door")
+        continue
     pads = []
     for face in (lo_face, hi_face):
         w = boarding_pad(bm, face)
         if w is None:
-            w = force_way(pcx, pcy, face + 24)
-        if w is None:
-            w = virtual_pad(bm, face)
-            vpads.append((w, bm))
+            w = force_way(pcx, pcy, face + 24, infra=True)
         pads.append(w)
     if pads[0] is None or pads[1] is None or pads[0] == pads[1]:
         print(f"door mover at ({pcx:.0f} {pcy:.0f}) travel {travel:.0f}: "
@@ -890,6 +939,33 @@ def _door_travel_boxes(_e, _mn, _mx):
     return (_here, _moved)
 
 
+def _door_shut_box(_e, _mn, _mx):
+    """Where the slab stands when the door is SHUT.
+
+    The compiled AABB is not that box whenever DOOR_START_OPEN is set,
+    because doors.qc swaps pos1 and pos2 and the brush is built at its
+    open position (#309 got this backwards for seven doors before the
+    arithmetic was checked). 6c typed its links against the compiled
+    box regardless, so on e1m7 - whose four doors are all START_OPEN -
+    every door link it drew was a link through the PARKED slab, which
+    is the thing #309 vetoes rather than types. Sliding doors have the
+    pair worked out already; vertical ones only need the same swap.
+    """
+    _tb = _door_travel_boxes(_e, _mn, _mx)
+    if _tb is not None:
+        return _tb[0]
+    _a = (_e.get("angle", "0") or "0").strip()
+    if _a not in ("-1", "-2"):
+        return (tuple(_mn), tuple(_mx))
+    if not int(float(_e.get("spawnflags", "0") or 0)) & 1:
+        return (tuple(_mn), tuple(_mx))
+    _travel = (_mx[2] - _mn[2]) - float(_e.get("lip", "8") or 8)
+    if _travel <= 0:
+        return (tuple(_mn), tuple(_mx))
+    _dz = -_travel if _a == "-1" else _travel
+    return ((_mn[0], _mn[1], _mn[2] + _dz), (_mx[0], _mx[1], _mx[2] + _dz))
+
+
 def _seg_hits_open(a, b, mn, mx):
     # the player box against a parked slab: 16 either side, feet 24
     # under the seat, and a slab whose top comes to rest within a step
@@ -958,7 +1034,7 @@ def _train_pad(corner, sx, sy, sz):
               (cx, corner[1] - 40), (cx, corner[1] + sy + 40),
               (cx, cy))
     for px_, py_ in probes:
-        w = force_way(px_, py_, top + 24, 64)
+        w = force_way(px_, py_, top + 24, 64, infra=True)
         if w is not None:
             wx, wy, wz = pos(ways[w])
             if abs(wz - (top + 24)) < 72:
@@ -1337,15 +1413,36 @@ for _vp, _bm in vpads:
 # doorway is a legal walk. At runtime the slab is solid until opened.
 # Tag those hops so the bot can press the button instead of pinning.
 def _seg_hits_aabb(ax, ay, az, bx, by, bz, mn, mx, pad=8.0):
-    mins = (mn[0] - pad, mn[1] - pad, mn[2] - pad)
-    maxs = (mx[0] + pad, mx[1] + pad, mx[2] + pad)
-    for s in range(9):
-        f = s / 8.0
-        p = (ax + (bx - ax) * f, ay + (by - ay) * f, az + (bz - az) * f)
-        if (mins[0] <= p[0] <= maxs[0] and mins[1] <= p[1] <= maxs[1]
-                and mins[2] <= p[2] <= maxs[2]):
-            return True
-    return False
+    """Does the segment touch the padded box at all?
+
+    NINE SAMPLES CANNOT ANSWER THIS (#319). A door slab is thin, a
+    walk link is not, and a fixed sample count spaces its probes by
+    the link's length: a 300 unit link steps 37 units at a time past
+    a box 30 wide, so it crosses the doorway and goes untyped, and a
+    bot then walks into a shut slab with no ar_hopdoor set. e1m2's
+    shipped graph carries ten of those today and its regen two. The
+    slab test is exact, has no density to tune, and is cheaper than
+    the nine it replaces.
+    """
+    lo = (mn[0] - pad, mn[1] - pad, mn[2] - pad)
+    hi = (mx[0] + pad, mx[1] + pad, mx[2] + pad)
+    a = (ax, ay, az)
+    d = (bx - ax, by - ay, bz - az)
+    t0, t1 = 0.0, 1.0
+    for k in range(3):
+        if abs(d[k]) < 1e-9:
+            if a[k] < lo[k] or a[k] > hi[k]:
+                return False
+            continue
+        s0 = (lo[k] - a[k]) / d[k]
+        s1 = (hi[k] - a[k]) / d[k]
+        if s0 > s1:
+            s0, s1 = s1, s0
+        t0 = max(t0, s0)
+        t1 = min(t1, s1)
+        if t0 > t1:
+            return False
+    return True
 
 door_boxes = []
 for _b in ent_blocks:
@@ -1358,7 +1455,11 @@ for _b in ent_blocks:
         _bm = bmodels[int(_e["model"].lstrip("*"))]
     except (ValueError, IndexError):
         continue
-    door_boxes.append(((_bm[0], _bm[1], _bm[2]), (_bm[3], _bm[4], _bm[5])))
+    # the SHUT box, not the compiled one (#319): a door link means
+    # this crossing can be blocked by a door, and a DOOR_START_OPEN
+    # door is compiled where it stands when OPEN
+    door_boxes.append(_door_shut_box(
+        _e, (_bm[0], _bm[1], _bm[2]), (_bm[3], _bm[4], _bm[5])))
 
 doorlinks = []
 if door_boxes:
@@ -2858,6 +2959,31 @@ if len(keep) < len(ways):
     sprints = [(remap[a], remap[b]) for a, b in sprints]
     doorlinks = [(remap[a], remap[b]) for a, b in doorlinks
                  if a in remap and b in remap]
+
+# ---- 7f2. retype the doors, now that the links have stopped moving ----
+# 6c runs before knitting, symmetric closure, jump-up links and the
+# engine-verdict remint, so every link those passes mint crosses its
+# doorways untyped (#319). e1m2's shipped graph carries eleven of
+# them and its regen nine: a bot routed over one walks into a shut
+# slab with ar_hopdoor clear, and only the runtime's own 240u trace
+# saves it. 6c still has to run where it does, because 7g2c reads the
+# set to refuse a door link the puppet convicted; this is the same
+# test over the final graph, and it replaces rather than extends,
+# so a link the slot clamp evicted cannot leave a stale entry behind.
+if door_boxes:
+    _before = len(doorlinks)
+    doorlinks = []
+    for i in sorted(links):
+        for j in sorted(links[i]):
+            if links[i][j][1]:
+                continue
+            ax, ay, az = pos(ways[i])
+            bx, by, bz = pos(ways[j])
+            if any(_seg_hits_aabb(ax, ay, az, bx, by, bz, mn, mx)
+                   for mn, mx in door_boxes):
+                doorlinks.append((i, j))
+    print(f"door retype over the final graph: {len(doorlinks)} door "
+          f"links ({_before} before the late passes were counted)")
 
 # ---- 7h. directed-reach gate ----
 # The v369 dm2 ship stranded bots on the central floor: the graph
