@@ -444,11 +444,23 @@ particles can.
 python tools/argus_pointfile.py e1m2 --what swim   # then type: pointfile
 ```
 
-Modes are `nodes`, `links`, `swim`, `water`, and `tape` (the freeze
-cells from a session log). Colour is `(-index & 15)` so it cycles and
-cannot carry meaning, the particle pool bounds what shows at once
-(`-particles 16384`), and the command is client side, so this needs a
-listen game.
+Modes: `nodes`, `links`, `swim`, `water`, `tape` (a log's freeze
+cells), `fails` (routefail, abandon and hazard cells), `human` (the
+recording client's own trail), `route` and `trail` (what the router
+planned against where the bot went), one per typed link family
+(`jump`, `door`, `lift`, `train`, `rocket`, `sprint`, `tele`), and
+four audits: `badseats` draws the seats the engine's own
+`SV_CheckBottom` refuses, `surface` draws each swim exit against the
+water surface and prints the climb, `diff --against <other.qc.json>`
+draws what a regen added and removed, and `probe` draws the links the
+lab puppet refused.
+
+Colour is `(-index & 15)`, so it cycles and cannot be asked for;
+`--pad --colour N` buys one colour for a whole overlay by burying
+fifteen filler points in solid geometry before each drawn one, at
+sixteen points per point. The particle pool bounds what shows at once
+(`-particles 16384`), and the command is client side, so all of this
+needs a listen game.
 
 **Live bot state.** `ED_PrintEdicts` walks the progs field
 definitions, so `edicts` dumps every entity with its non-default
