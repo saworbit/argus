@@ -780,8 +780,6 @@ for b in ent_blocks:
         continue
     lifts.append((lo, hi))
 print(f"plats: {len(lifts)} lift(s) padded ({len(vpads)} virtual)")
-if starved_seats:
-    print(f"promotion budget: {starved_seats} seat request(s) found a sample and had no budget left (cap {PROMO_CAP})")
 
 # ---- 5b2. vertical func_door movers: platforms in door clothing ----
 # A func_door with angle -1 or -2 travels straight up or down, and a
@@ -3213,6 +3211,11 @@ if GRAVITY != 800.0:
     print(f"gravity: modelled at {GRAVITY:.0f} (jump apex "
           f"{JUMPVEL*JUMPVEL/(2*GRAVITY):.0f}u, reach {JUMPREACH:.0f}u, "
           f"jump-up ceiling {JUMPUP:.0f}u, RJ apex {RJ_APEX:.0f}u)")
+if starved_seats:
+    # the cap is a budget, not a statement about the map, and a
+    # pass that quietly lost a seat to it should say so (#319)
+    print(f"promotion budget: {starved_seats} seat request(s) found "
+          f"a sample and had no budget left (cap {PROMO_CAP}, infrastructure reserve {infra_spent} of {INFRA_RESERVE} spent)")
 print(f"edict estimate: {edicts} (waypoints {len(ways)} + live entities "
       f"{nents} of {len(ent_blocks)} in the lump)")
 if edicts > 500:
