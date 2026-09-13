@@ -711,6 +711,11 @@ void(float what) Argus_Chat;    // ARGUS: bot chat, defined in argus.qc
                                 // and called from powerup_touch (4)
 void(vector spos, entity who) Argus_HearSound;  // ARGUS: OPM hearing,
                             // defined in argus.qc, called by W_Attack
+float() Argus_JumpApex;     // ARGUS: how far a jump climbs at this
+                            // map's gravity. Defined in argus.qc,
+                            // which compiles after argus_nav.qc, and
+                            // the router needs it to refuse a jump
+                            // link that climbs past it (#317)
 
 // ARGUSCAM: Spectator camera & AI director
 float CAM_MODE_POV       = 0;
