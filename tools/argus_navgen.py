@@ -2637,27 +2637,54 @@ with open(OUTQC, "w") as f:
         x, y, z = pos(w)
         f.write(f"    n{i} = Argus_NavNode ('{x:.0f} {y:.0f} {z:.0f}');\n")
     f.write("\n")
+    # ONE LINK PER PAIR (#249). Every builder below calls
+    # Argus_NavLink itself and then sets its own type mask, so a pair
+    # that appears in `links` AND in one of the typed lists was
+    # emitted twice and consumed TWO of the node's eight link slots
+    # for one destination - one slot masked walk and the other masked
+    # train, swim or rocket, so which the router picked depended on
+    # slot order. dm3 ships 5 such pairs and e1m5 6. No node
+    # overflows today, but both maps carry nodes sitting exactly on
+    # the 8 cap, where a wasted slot means the 7e2 clamp evicted a
+    # real link to make room for a duplicate.
+    #
+    # The walk pass keeps its slots and the typed passes skip what it
+    # already emitted, deliberately in that order. Reordering would
+    # reshuffle slot assignment on every map, and in each observed
+    # case the survivor is the link Dijkstra verified and the cheaper
+    # one to execute: a jump any bot can take rather than a rocket
+    # hop gated on RL, rockets and effective health.
+    _emitted = set()
+    _dupes = 0
+
+    def emit(kind, a, b, suffix=""):
+        if (a, b) in _emitted:
+            return False
+        _emitted.add((a, b))
+        f.write(f"    {kind} (n{a}, n{b});{suffix}\n")
+        return True
+
     _doorset = set(doorlinks)
     for i in sorted(links):
         for j in links[i]:
             if links[i][j][1]:
-                f.write(f"    Argus_NavLinkJump (n{i}, n{j});\n")
+                emit("Argus_NavLinkJump", i, j)
             elif (i, j) in _doorset:
-                f.write(f"    Argus_NavLinkDoor (n{i}, n{j});\n")
+                emit("Argus_NavLinkDoor", i, j)
             else:
-                f.write(f"    Argus_NavLink (n{i}, n{j});\n")
+                emit("Argus_NavLink", i, j)
     for a, b in sprints:
-        f.write(f"    Argus_NavLinkSprint (n{a}, n{b});\n")
+        _dupes += not emit("Argus_NavLinkSprint", a, b)
     for a, b in teles:
-        f.write(f"    Argus_NavLink (n{a}, n{b});    // teleporter\n")
+        _dupes += not emit("Argus_NavLink", a, b, "    // teleporter")
     for a, b in rjlinks:
-        f.write(f"    Argus_NavLinkRocket (n{a}, n{b});\n")
+        _dupes += not emit("Argus_NavLinkRocket", a, b)
     for a, b in lifts:
-        f.write(f"    Argus_NavLinkLift (n{a}, n{b});\n")
+        _dupes += not emit("Argus_NavLinkLift", a, b)
     for a, b in swims:
-        f.write(f"    Argus_NavLinkSwim (n{a}, n{b});\n")
+        _dupes += not emit("Argus_NavLinkSwim", a, b)
     for a, b in trains:
-        f.write(f"    Argus_NavLinkTrain (n{a}, n{b});\n")
+        _dupes += not emit("Argus_NavLinkTrain", a, b)
     for i, r in enumerate(regions):
         if r:
             f.write(f"    Argus_NavRegion (n{i}, {r});\n")
@@ -2699,6 +2726,9 @@ print("wrote", OUTQC, "+ .json")
 # light and an info_null are gone before the first frame
 nents = len(live_ents)
 edicts = len(ways) + nents
+if _dupes:
+    print(f"link dedupe: {_dupes} typed link(s) already emitted as a walk "
+          f"link - one slot per pair, not two (#249)")
 if GRAVITY != 800.0:
     # Say it. A graph modelled at a different gravity is a different
     # graph, and the bug this fixes was silent precisely because
