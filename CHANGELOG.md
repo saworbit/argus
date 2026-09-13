@@ -9,6 +9,41 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The mode is part of the verdict, and a shut door is not one
+(#310).** `probelinks` started its server with `+deathmatch 1` and the
+CLI had no way to ask for anything else. The engine strips every
+entity with `spawnflags 2048` in deathmatch, doors included, and those
+are the maps a co-op companion actually walks: every one of e1m8's
+sixteen door links crosses a door that does not exist on the server
+doing the verifying. So a link can be honest in the mode the verifier
+ran and a lie in the mode the bot plays. The sweep takes `--coop` now,
+threaded down to the argument `MatchCtrl::start` already had, and the
+verdict file stamps which mode convicted what: `failed` stays the flat
+union that navgen consumes, `modes` records each sweep, and a file
+with no `modes` block is stamped deathmatch on first write, which is
+true rather than a guess because nothing else could run.
+
+The modes disagree, measured on the same 25 links of e1m8 twice:
+co-op convicts `n5 -> n2` and deathmatch convicts `n7 -> n98`, and
+each passes the other's. A regen now says which sweeps stand behind
+its verdicts, so "no convictions" stops reading as "verified".
+
+A SHUT DOOR IS A VERDICT ON THE DOOR, NOT ON THE LINK, and that one
+was not in the issue. The puppet walks; it does not press buttons, so
+it stops at any slab that happens to be closed and the link goes down
+as unwalkable - while a bot standing in that doorway calls
+`Argus_TakeDoor`, finds the actuator and presses it, which is the
+whole point of typing the link. The first co-op sweep of that e1m8
+window convicted seven links, four of them doors. dm2's committed
+verdict file already carries the same error from the deathmatch mill:
+its regen refuses five of them now rather than pruning or re-typing
+five honest door links. The sweep skips the class in both modes and
+reports the count, and navgen refuses any conviction that lands on a
+door link, which covers the files already on disk.
+
+Door links are therefore unverified in both modes, and stay that way
+until the puppet can work a button.
+
 **Do not draw a link through where the door will be standing (#309).**
 A sliding door does not leave the world when it opens. It slides
 beside the hole it was filling, keeping its own lip inside that hole
