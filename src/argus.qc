@@ -6546,7 +6546,25 @@ void() Argus_AI =
                             // reland ladder lost riders mid-bridge
                             // to the timeout - abandons 23/35 with
                             // zero completed crossings)
-                            self.ar_liftstart = time;
+                            //
+                            // ONLY WHILE THE CAR IS ACTUALLY MOVING
+                            // (#257). Standing on a train was treated
+                            // as progress unconditionally, so a bot
+                            // aboard a car that is parked - docked at
+                            // a corner, sitting out its wait, or
+                            // stopped at the end of its path - reset
+                            // the clock every frame and the 15 s
+                            // give-up could never mature. The hold is
+                            // stall-suppressed and removes steering,
+                            // so the bot emits nothing at all: dm2
+                            // has one at 87 s that begins the instant
+                            // ARGEVT train fires and a 322u rise puts
+                            // the bot on the east deck, and another
+                            // at 144 s, the two longest freezes on
+                            // record. A parked car is not a ride, and
+                            // fifteen seconds of one is enough.
+                            if (nx.velocity != '0 0 0')
+                                self.ar_liftstart = time;
                             // ride it STANDING STILL: the friction
                             // hold alone needs half a second the 94u
                             // slab does not give at run speed -
@@ -6686,19 +6704,59 @@ void() Argus_AI =
             // engaged from the new pads, and with the stall detector
             // suppressed for lift hops the result was an unbounded
             // statue (82 s at the *34 base, ab_dm2_waitnode2).
-            if (self.ar_hoplift && vlen (to) < 200 && tp_z > self.origin_z + 40)
+            // THE DEADLINE IS NOT PART OF THE GEOMETRY (#257). The
+            // give-up below used to live inside the positional gate,
+            // so a bot carrying ar_hoplift while it was NOT over the
+            // pad, or whose exit node was no longer overhead, never
+            // reached it - and ar_hoplift suppresses the stall
+            // detector, so such a bot emits nothing at all and stands
+            // there in silence. v3.56 hit this exact shape and
+            // treated it by widening the gate 56 to 200, which moved
+            // the boundary without removing it. A hop flag is a
+            // deadline wherever the bot happens to be standing, so
+            // the clock is tested first and the parking second.
+            //
+            // TWO deadlines, not one, and the difference is what the
+            // first cut got wrong. ar_liftstart is stamped when the
+            // hop is PLANNED, at the mode-2 advance, so it already
+            // includes the walk to the pad; hoisting the 8 s bound
+            // gave up on bots that were still legitimately walking
+            // there, cooled the pad for 25 s behind them and shelved
+            // the goal. dm2 came back with mover_waits 0, boards 0
+            // and stalls 74 against 34 - the lifts stopped being used
+            // at all. 8 s is the bar for waiting AT the pad and stays
+            // in the parking branch; this outer one only has to catch
+            // a flag nothing will ever clear, so it is generous.
+            if (self.ar_hoplift && time > self.ar_liftstart + 20)
             {
-                // lift hop, standing over the boarding pad with the
-                // exit node overhead: park and let the plat do the
-                // vertical part (relanded after the 2026-08-18
-                // forensics exonerated it - bisect1 failed without
-                // this code present)
-                if (time > self.ar_liftstart + 8)
                 {
                     // the lift never came: shelve the errand globally
                     // AND cool this pad (the *34 32 s episode: three
                     // chained give-ups because every re-shop routed
                     // straight back through the same gateway lift)
+                    self.ar_hoplift = 0;
+                    if (Argus_GoalOK (self.ar_goal))
+                    {
+                        self.ar_goal.ar_claimer = self;
+                        self.ar_goal.ar_claimtime = time;
+                        self.ar_goal.ar_failtime = time;
+                    }
+                    self.ar_goal = world;
+                    self.ar_node = world;
+                    self.ar_pending = 0;
+                    self.ar_mode = 0;
+                    self.ar_padcoolpos = self.origin;
+                    self.ar_padcooltime = time + 25;
+                    Argus_Event ("abandon");
+                }
+            }
+            else if (self.ar_hoplift && vlen (to) < 200
+                     && tp_z > self.origin_z + 40)
+            {
+                if (time > self.ar_liftstart + 8)
+                {
+                    // waiting AT the pad and the lift never came:
+                    // shelve the errand globally and cool this pad
                     self.ar_hoplift = 0;
                     if (Argus_GoalOK (self.ar_goal))
                     {

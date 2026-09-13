@@ -348,6 +348,49 @@ arriving within 44 units of the apex after a 5.4 second flight, and the
 regen that tried it fired 72 jumps and 58 stalls. Emitting links the
 runtime cannot walk is the mistake the lift statue taught.
 
+**Two physics-level holds with no way out (#257).** Both of the longest
+freezes on record are a bot standing still with `ar_liftwait` set, which
+suppresses the stall detector and removes steering, so the bot emits
+nothing at all while it does it. 144 s of a 190 s match in one tape,
+87 s in another.
+
+The train ride hold treated standing on a car as progress
+unconditionally, resetting its 15 second give-up every frame. A bot
+aboard a car that is parked - docked at a corner, sitting out its wait,
+or stopped at the end of its path - therefore held forever. The 87 s
+freeze begins the instant `ARGEVT train` fires and a 322 unit rise puts
+the bot on dm2's east deck, which is that mechanism exactly. Riding is
+progress only while the car is moving now.
+
+The lift give-up lived inside the positional gate that decides whether to
+park, so a bot carrying `ar_hoplift` while it was not over the pad never
+reached its own deadline. v3.56 hit this shape and treated it by widening
+the gate from 56 to 200, which moved the boundary without removing it.
+The clock is tested first now and the parking second.
+
+That split matters more than it looks, and the first cut got it wrong.
+`ar_liftstart` is stamped when the hop is planned, so it already includes
+the walk to the pad: hoisting the 8 second bound gave up on bots still
+legitimately walking there, cooled the pad behind them for 25 seconds and
+shelved the goal. dm2 came back with `mover_waits` 0, `boards` 0 and
+stalls 74 against 34, the lifts simply stopped being used. There are two
+deadlines now, 8 seconds for waiting at the pad and 20 for carrying the
+flag at all, and dm3 boards 3 of 3 lift waits against a baseline of none.
+
+**The freeze gate weighs duration (#257).** A tape where one bot stood
+still for three quarters of the match scored "1 freeze" and passed, next
+to a tape with five short ones that would have failed. `freeze_total_sec`
+is in the totals and in the gate, so losing 30 seconds more than the
+baseline fails whatever the count says.
+
+Honest limit on the ladder: neither hold can be reproduced on demand
+headless, and dm2 is currently too noisy to judge movement on. A control
+on main reads 66 stalls there against a baseline of 34, with one chronic
+grate-room cell contributing 42 to 48 of them, and both candidate tapes
+recorded `mover_waits` 0, meaning the changed code never executed in
+either. dm3 is where lifts actually fire, and it came back at stall
+parity with engagements up and every wait boarding.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a
