@@ -416,6 +416,14 @@ down on engagements and coverage, and e1m5's own baseline swung 5 to 20
 engagements on identical code across the two #288 tapes, so a single tape
 cannot settle it and six freed slots do not justify the noise.
 
+**The rig's CI download fails on a 404 (#221).** `setup_rig.sh` had
+already gained `python3-matplotlib`, `curl -fsSL` and its gitignore
+entries; the CI workflow had not, so a missing release still wrote the
+HTML error body into `lite.zip` and the cache key kept the poisoned file
+afterwards. Both fetches use `-f` now. A failed compile in the rig script
+also prints the last 40 lines of `compile.log` instead of one verdict
+sentence with no evidence.
+
 ## v4.09 (2026-09-05) - the co-op session, and two freezes named by the engine's own dump
 
 A day driven by three human co-op sessions on e1m2. Each one produced a

@@ -93,7 +93,14 @@ rm -f lq1/progs.dat
 # never the exit code (the old pipe swallowed failures with
 # || true and shipped whatever stale progs.dat was lying around)
 (cd argus-src && "$QCC" 2>&1 | tee ../compile.log | grep -E 'error|Writing|Compile finished') || true
-grep -q 'Compile finished.*id format' compile.log || { echo 'COMPILE FAILED (no id-format finish line)'; exit 1; }
+grep -q 'Compile finished.*id format' compile.log || {
+    # show the log rather than only the verdict: the grep above
+    # prints error lines but a compile that dies for another reason
+    # left the operator with one sentence and no evidence (#221)
+    echo 'COMPILE FAILED (no id-format finish line); last 40 lines:'
+    tail -40 compile.log
+    exit 1
+}
 [ -f lq1/progs.dat ] || { echo 'COMPILE FAILED (no progs.dat written)'; exit 1; }
 cp lq1/progs.dat quake/argus/
 # enforce 1996 constraints on every match: protocol 15, vanilla edict ceiling
