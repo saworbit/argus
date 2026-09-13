@@ -48,19 +48,34 @@ for a knit stitch, which by construction invents a link across ground
 nothing walked, it is not: on e1m1 it reset its own bad-sample streak
 by finding the ledge on the FAR SIDE of an eight unit wall. A knit
 walk stitch now needs honest floor under every step of its own centre
-line. The jump stitch below it still takes the short-void cases, and
-it gained one bound it was missing: a jump that ends no lower than it
-started cannot outrun the model's flat range, which is what refused
-e1m1's replacement 275 unit hop across a 160 unit void.
+line. The jump stitch below it still takes the short-void cases, on
+the same 200 unit void envelope it has always had.
 
-e1m1 regenerated: 237 nodes, worst spawn reach 98 per cent against a
-graph whose reach only read 100 because of the two lies, and three
-stranded single nodes stripped honestly.
+A LENGTH CAP ON THAT JUMP STITCH WAS TRIED AND REVERTED, and it is
+worth recording because it nearly shipped. The first cut refused a
+flat stitch longer than the jump model's flat range, on the grounds
+that a level jump cannot outrun it. That bounds the wrong quantity:
+the criterion beside it bounds the VOID, and a 250 unit stitch over a
+48 unit gap is a walk with one hop in it, which is what a jump-typed
+link means - the runtime fires at the lip, not at the far node. On
+e1m1 it looked harmless, one dead-end node fewer. On e1m6 it cut the
+load-bearing stitches and took worst spawn reach from 95 per cent to
+43, on a map whose graph is otherwise reproducible from scratch.
+Tightening the void envelope to the same figure was measured too, and
+cost e1m6 47 points on its own, because several of those stitches sit
+at a 192 unit void.
 
-LADDER. e1m1 improved on all seven gates twice: stalls 68 to 45 and
-32, engages 0 to 24 and 16, kills 0 to 10 and 8, frags -2 to 7 and 8
-with every bot positive, coverage 178 to 376 and 238, lava 2 to 3 and
-0, boards 4 to 7 and 9, abandons 22 to 12. dm3, the other lift map,
+e1m1 regenerated: 238 nodes, worst spawn reach 99 per cent against a
+graph whose reach only read 100 because of the two lies, one stranded
+node stripped honestly, and zero seats that the engine's own bottom
+test refuses (#308's audit reads 0 of 238 against 63 of 223).
+
+LADDER. e1m1 improved on all seven gates three times: stalls 68 to 45,
+32 and 41, engages 0 to 24, 16 and 17, kills 0 to 10, 8 and 9, frags
+-2 to 7, 8 and 8 with every bot positive, coverage 178 to 376, 238 and
+391, lava 2 to 3, 0 and 1, boards 4 to 7, 9 and 7. The third tape is
+the shipped graph, after the length cap came back out. dm3, the other
+lift map,
 improved as well: stalls 51 to 25, engages 8 to 22, frags 1 to 5, no
 freezes. dm2 read regressed and then mixed, and a control tape on
 byte-identical shipped code reproduced every failing gate and was
