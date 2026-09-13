@@ -751,6 +751,73 @@ for b in ent_blocks:
     lifts.append((lo, hi))
 print(f"plats: {len(lifts)} lift(s) padded ({len(vpads)} virtual)")
 
+# ---- 5b2. vertical func_door movers: platforms in door clothing ----
+# A func_door with angle -1 or -2 travels straight up or down, and a
+# big one is a PLATFORM, not a door: its top face is floor at two
+# heights and riding it is the only way between them. e1m1's *3 is
+# the found case (GitHub #281) - a 126x126 slab whose closed top IS
+# the start area's floor and whose open position is the pit 230
+# below, with two func_buttons wired to it. Neither hull carries a
+# submodel, so the crossing was minted as an ordinary walk link over
+# a hole the sampler could not see; the puppet convicted both such
+# links, and dropping them without replacing them takes that spawn's
+# reach from 100 per cent to 5, because they are the section's only
+# connection to the map.
+#
+# Pads at BOTH faces and a lift link EACH WAY, because a mover
+# carries you in both directions and it is the actuator, not the
+# graph, that decides which way it is going. The runtime presses the
+# button through the door handler it has had since v3.33; this pass
+# only has to say that the traversal exists and where you stand for
+# it. That is the navgen half of #119.
+#
+# The gates keep bars, gates and rising grates out of the class: a
+# slab narrower than 64 units on either axis is not a floor a 32-wide
+# player stands on, and travel under 48 is served by a step or a
+# jump-up link already.
+MOVER_MIN_FACE = 64
+MOVER_MIN_TRAVEL = 48
+doorlifts = 0
+for b in ent_blocks:
+    e = kv(b)
+    if e.get("classname") != "func_door" or "model" not in e:
+        continue
+    if (e.get("angle") or "").strip() not in ("-1", "-2"):
+        continue
+    bm = bmodels[int(e["model"].lstrip("*"))]
+    if bm[3] - bm[0] < MOVER_MIN_FACE or bm[4] - bm[1] < MOVER_MIN_FACE:
+        continue
+    # doors.qc: lip defaults to 8 and pos2 = pos1 + movedir * (size -
+    # lip). DOOR_START_OPEN swaps pos1 and pos2, which moves the slab
+    # but not the pair of heights its top face visits, so the two
+    # faces below are right either way.
+    travel = (bm[5] - bm[2]) - float(e.get("lip", 8) or 8)
+    if travel < MOVER_MIN_TRAVEL:
+        continue
+    hi_face = bm[5] if (e.get("angle") or "").strip() == "-2" else bm[5] + travel
+    lo_face = hi_face - travel
+    pcx, pcy = (bm[0] + bm[3]) / 2, (bm[1] + bm[4]) / 2
+    pads = []
+    for face in (lo_face, hi_face):
+        w = boarding_pad(bm, face)
+        if w is None:
+            w = force_way(pcx, pcy, face + 24)
+        if w is None:
+            w = virtual_pad(bm, face)
+            vpads.append((w, bm))
+        pads.append(w)
+    if pads[0] is None or pads[1] is None or pads[0] == pads[1]:
+        print(f"door mover at ({pcx:.0f} {pcy:.0f}) travel {travel:.0f}: "
+              f"no usable pad pair (low {pads[0]}, high {pads[1]})")
+        continue
+    lifts.append((pads[0], pads[1]))
+    lifts.append((pads[1], pads[0]))
+    doorlifts += 1
+    print(f"door mover {e.get('model')} at ({pcx:.0f} {pcy:.0f}) "
+          f"travel {travel:.0f}: pads {pads[0]} <-> {pads[1]} "
+          f"(faces {lo_face:.0f} / {hi_face:.0f})")
+print(f"door movers: {doorlifts} ridden like plats")
+
 # ---- 5c. train links from func_train ----
 # A func_train patrols its path_corners on its own clock: a MOVING
 # bmodel, in neither static hull, so the bridge it forms is invisible
@@ -1939,6 +2006,58 @@ def _knit_sccs(_fwd, _n):
     return _out
 
 
+def _centre_void(_s, _d):
+    """Longest run of samples on this link's straight line with no
+    floor the walker could step down to or drop onto, probing the
+    CENTRE LINE only.
+
+    beeline_ok deliberately probes 32 units either side of the line,
+    because walkmove slides along walls and a line that clips a corner
+    is still walkable when floor continues just beside it. That slack
+    is right for grading a link the fine graph already found, and
+    wrong as the only referee for a knit stitch, which by construction
+    invents a link across ground nothing walked. On e1m1 it reset the
+    bad-sample streak by finding the ledge on the FAR SIDE of an 8
+    unit wall: the stitch (241 769 24) -> (81 545 24) crosses 136
+    units of nothing and a full-height wall at y 656, and it is the
+    link the puppet convicted and the bots pinned on for a third of
+    every tape (#281). A slide is not a teleport, so a walk stitch now
+    has to have honest floor under every step of its own line; the
+    jump stitch below still takes the short-void cases, with its arc
+    clearance test to refuse the ones with a wall in them.
+    """
+    _ax, _ay, _az = pos(ways[_s])
+    _bx, _by, _bz = pos(ways[_d])
+    _dist = ((_bx - _ax) ** 2 + (_by - _ay) ** 2) ** 0.5
+    if _dist < 1:
+        return 0
+    _steps = int(_dist // 16) + 1
+    _z = _az
+    _run = 0
+    _worst = 0
+    for _st in range(1, _steps + 1):
+        _f = _st / _steps
+        _cx = _ax + (_bx - _ax) * _f
+        _cy = _ay + (_by - _ay) * _f
+        _nz = None
+        for _fz in column_floors(_cx, _cy):
+            if -STEP <= _z - _fz <= STEP:
+                _nz = _fz
+                break
+        if _nz is None:
+            for _fz in column_floors(_cx, _cy):
+                if STEP < _z - _fz <= DROPMAX:
+                    _nz = _fz
+                    break
+        if _nz is None:
+            _run += 1
+            _worst = max(_worst, _run)
+        else:
+            _run = 0
+            _z = _nz
+    return _worst
+
+
 def _knit_pass(_toward_main, _use_rj):
     # _toward_main True stitches ESCAPES (pocket -> mainland-reaching
     # set); False stitches ENTRIES (mainland-reachable set -> pocket).
@@ -2035,9 +2154,9 @@ def _knit_pass(_toward_main, _use_rj):
 
         for _h, _m, _o in sorted(_walkc)[:48]:
             _s, _d = _src_dst(_m, _o)
-            if _slot_free(_s) and beeline_ok(ways[_s], ways[_d]):
+            if _slot_free(_s) and _centre_void(_s, _d) == 0                     and beeline_ok(ways[_s], ways[_d]):
                 links.setdefault(_s, {})[_d] = (_h, 0)
-                if _slot_free(_d) and beeline_ok(ways[_d], ways[_s]):
+                if _slot_free(_d) and _centre_void(_d, _s) == 0                         and beeline_ok(ways[_d], ways[_s]):
                     links.setdefault(_d, {})[_s] = (_h, 0)
                 print(f"knit walk {_s}->{_d}")
                 _stitched = True
@@ -2055,6 +2174,19 @@ def _knit_pass(_toward_main, _use_rj):
                     continue
                 _sx, _sy, _sz = pos(ways[_s])
                 _dx2, _dy2, _dz2 = pos(ways[_d])
+                # A FLAT JUMP CANNOT OUTRUN THE MODEL'S FLAT RANGE.
+                # 280 was the cap when this stitch only ever saw the
+                # dm3 RL islet's 32-64u moat; now that a refused walk
+                # stitch falls through to here (#281) it sees long
+                # ones, and e1m1 minted a 275u hop across a 160u void
+                # at one level - a link arc_clear refuses outright,
+                # because the parabola is 95 units under the landing
+                # by the time it gets there. A jump that ends no lower
+                # than it started is bounded by JUMPREACH; one that
+                # ends below keeps the old cap, since falling buys
+                # range the flat figure does not describe.
+                if _dz2 >= _sz - STEP and _h > JUMPREACH:
+                    continue
                 _steps = int(_h // 16) + 1
                 _void = 0
                 _maxvoid = 0

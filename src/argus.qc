@@ -2687,6 +2687,81 @@ float(entity e) Argus_IsDoor =
     return FALSE;
 };
 
+// A MOVER YOU CAN RIDE, WHICHEVER CLASS IT WAS BUILT FROM. A
+// func_plat and a func_door that travels straight up or down do the
+// same job, and Quake's own maps use both for it: e1m1's *3 is a
+// 126x126 slab that drops 230 units, and it is the only way out of
+// the start area, which is why that map played an empty match for
+// two minutes (#281). The difference is who starts them. A plat
+// summons itself when somebody steps in its trigger; a door with a
+// targetname waits for its button, and pressing that button first is
+// the prerequisite the router could not express (#119).
+//
+// The size bar is the player hull: a slab under 64 units on either
+// axis is a bar, a gate or a rising grate, not a floor a 32-wide
+// body stands on. pos1 and pos2 come straight from doors.qc and
+// survive DOOR_START_OPEN, so they are the honest test for vertical.
+float(entity e) Argus_IsRideable =
+{
+    if (e == world)
+        return FALSE;
+    if (e.classname == "plat")
+        return TRUE;
+    if (e.classname != "door")
+        return FALSE;
+    if (e.pos1_x != e.pos2_x || e.pos1_y != e.pos2_y)
+        return FALSE;
+    if (e.pos1_z == e.pos2_z)
+        return FALSE;
+    if (e.absmax_x - e.absmin_x < 64)
+        return FALSE;
+    if (e.absmax_y - e.absmin_y < 64)
+        return FALSE;
+    return TRUE;
+};
+
+// Nearest rideable mover, measured flat like the plat search always
+// did: a slab overhead or underfoot is still the one we want.
+entity(float r) Argus_NearestMover =
+{
+    local entity m, best;
+    local float bd, d;
+    local vector c;
+
+    best = world;
+    bd = r;
+    m = find (world, classname, "plat");
+    while (m != world)
+    {
+        c = (m.absmin + m.absmax) * 0.5;
+        c_z = self.origin_z;
+        d = vlen (c - self.origin);
+        if (d < bd)
+        {
+            bd = d;
+            best = m;
+        }
+        m = find (m, classname, "plat");
+    }
+    m = find (world, classname, "door");
+    while (m != world)
+    {
+        if (Argus_IsRideable (m))
+        {
+            c = (m.absmin + m.absmax) * 0.5;
+            c_z = self.origin_z;
+            d = vlen (c - self.origin);
+            if (d < bd)
+            {
+                bd = d;
+                best = m;
+            }
+        }
+        m = find (m, classname, "door");
+    }
+    return best;
+};
+
 // Does our box touch this brush entity's box? The engine keeps
 // absmin/absmax on both, so this is the same test SV_LinkEdict uses
 // to decide a touch, and 2 units of slack covers a solid button the
@@ -6241,6 +6316,7 @@ void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
     local float want, diff, turn, havetarget, fighting, sproj, linkbit;
+    local float mface;          // a ridden mover's top face vs our feet
     local entity oldnode, nx, dr, gn;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
@@ -6839,8 +6915,17 @@ void() Argus_AI =
                 }
             }
             else if (self.ar_hoplift && vlen (to) < 200
-                     && tp_z > self.origin_z + 40)
+                     && (tp_z > self.origin_z + 40
+                         || tp_z < self.origin_z - 40))
             {
+                // BOTH DIRECTIONS. The gate used to demand the exit
+                // node overhead, because every lift link navgen could
+                // emit ran bottom to top: a plat comes to its caller,
+                // so the one-way link was enough and the ride down
+                // was a walk-off. A door mover goes where its button
+                // sends it, and on e1m1 the useful direction is DOWN
+                // - the start area's floor IS the slab, and dropping
+                // 230 units on it is the only way out (#281).
                 if (time > self.ar_liftstart + 8)
                 {
                     // waiting AT the pad and the lift never came:
@@ -6875,21 +6960,126 @@ void() Argus_AI =
                     // descent delay can expire. Resting: walk ONTO
                     // the slab - the approach itself summons the
                     // ride with us aboard.
+                    nx = Argus_NearestMover (320);
                     turn = 99999;
-                    nx = world;
-                    dr = find (world, classname, "plat");
-                    while (dr != world)
+                    if (nx != world)
                     {
-                        gp = (dr.absmin + dr.absmax) * 0.5;
+                        gp = (nx.absmin + nx.absmax) * 0.5;
                         gp_z = self.origin_z;
-                        if (vlen (gp - self.origin) < turn)
-                        {
-                            turn = vlen (gp - self.origin);
-                            nx = dr;
-                        }
-                        dr = find (dr, classname, "plat");
+                        turn = vlen (gp - self.origin);
                     }
-                    if (nx == world || turn > 320)
+                    if (nx != world && nx.classname == "door")
+                    {
+                        // A RIDDEN DOOR, WHOSE BUTTON IS ITS CALL
+                        // PLATE. The plat branch below can afford to
+                        // park and wait because a plat answers a
+                        // touch; a targeted door answers nothing and
+                        // waiting at one is a statue with no exit.
+                        // So the rule here is the slab's own top
+                        // face: within a step of our feet it is
+                        // floor, walk onto it; anywhere else the
+                        // door has to be called, which is what the
+                        // door handler has done since v3.33. That is
+                        // the runtime half of #119 - "press that,
+                        // then cross here" - and it is deliberately
+                        // direction-agnostic, because the face tells
+                        // us whether this is the end we board from
+                        // without anyone having to know which way
+                        // the slab travels.
+                        mface = nx.absmax_z - (self.origin_z - 24);
+                        if (self.groundentity == nx)
+                        {
+                            if (!self.ar_boarded)
+                            {
+                                self.ar_boarded = 1;
+                                Argus_Event ("board");
+                            }
+                            if (nx.state == STATE_UP
+                                || nx.state == STATE_DOWN)
+                            {
+                                // carried: ride it standing still
+                                self.ar_liftwait = 1;
+                                self.velocity_x = 0;
+                                self.velocity_y = 0;
+                            }
+                            else if (fabs (tp_z - self.origin_z) > 48
+                                     && nx.targetname != ""
+                                     && self.ar_door == world
+                                     && !Argus_DoorShelved (nx))
+                                Argus_TakeDoor (nx);
+                        }
+                        else if (mface < 18 && mface > -18)
+                        {
+                            // the face is a step away: walking on IS
+                            // boarding
+                            tp = Argus_GoalPoint (nx);
+                            tp_z = self.origin_z;
+                        }
+                        else if (nx.state == STATE_UP
+                                 || nx.state == STATE_DOWN)
+                        {
+                            // on its way and we are not on it: stand
+                            // clear so it can finish, unless we are
+                            // in its path (dmg 10 on e1m1's, and a
+                            // blocked door reverses) - never while
+                            // fighting, the v363 pad lesson
+                            if (self.origin_x > nx.absmin_x - 4
+                                && self.origin_x < nx.absmax_x + 4
+                                && self.origin_y > nx.absmin_y - 4
+                                && self.origin_y < nx.absmax_y + 4)
+                            {
+                                gp = Argus_GoalPoint (nx);
+                                to = self.origin - gp;
+                                to_z = 0;
+                                if (vlen (to) < 8)
+                                    to = '96 0 0';
+                                turn = vectoyaw (to);
+                                if (Argus_MoveHazard (turn, 48))
+                                {
+                                    turn = turn + 90;
+                                    if (Argus_MoveHazard (turn, 48))
+                                        turn = turn - 180;
+                                }
+                                if (Argus_MoveHazard (turn, 48))
+                                {
+                                    // boxed in: stillness fires no
+                                    // touches and only the true swept
+                                    // column blocks the slab
+                                    if (self.ar_enemy == world)
+                                    {
+                                        self.ar_liftwait = 1;
+                                        self.velocity_x = 0;
+                                        self.velocity_y = 0;
+                                    }
+                                }
+                                else
+                                {
+                                    makevectors ('0 0 0' + turn * '0 1 0');
+                                    tp = self.origin + v_forward * 96;
+                                    tp_z = self.origin_z;
+                                }
+                            }
+                            else if (self.ar_enemy == world)
+                            {
+                                self.ar_liftwait = 1;
+                                self.velocity_x = 0;
+                                self.velocity_y = 0;
+                            }
+                        }
+                        else if (nx.targetname == "")
+                        {
+                            // touch-open and parked out of reach:
+                            // walk into it, the masquerade fires it
+                            tp = Argus_GoalPoint (nx);
+                            tp_z = self.origin_z;
+                        }
+                        else if (self.ar_door == world
+                                 && !Argus_DoorShelved (nx))
+                            Argus_TakeDoor (nx);
+                        to = tp - self.origin;
+                        to_z = 0;
+                    }
+                    else if (nx == world || turn > 320)
                     {
                         // no plat near: park - unless fighting (the
                         // hold overrides combat movement; a parked
