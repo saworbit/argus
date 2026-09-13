@@ -246,6 +246,38 @@ byte-identical shipped code reproduced every failing gate and was
 worse on two of them - stalls 51, goal pickups 4, Romero on 0 frags,
 lava 5 - so those gates belong to that map's documented variance and
 its stale baseline, not to this change.
+**A body in the air is not travelling in a straight line (#117).** The
+projectile lead has always been linear - target velocity times time of
+flight - and it is correct for a body standing on something. For one
+in the air it is not, because that body is under constant downward
+acceleration and lands 0.5*g*t*t short of where the straight line puts
+it. At gravity 800 and a rocket at 400 units that is 64, which is more
+than the whole 56 unit player hull: the shot sails clean over the head
+of a jumping target, and over one that somebody else's rocket has just
+put in the air, which is where most of dm4's air time comes from. The
+term is now subtracted, with live gravity rather than an assumed 800,
+because e1m8 runs 100 and the correction would be eight times too big
+there. Swimmers and flyers are exempt: a body at waterlevel 2 or more
+is held up by the water and a scrag is MOVETYPE_FLY, and neither is
+falling.
+
+The floor clamp underneath it - the one that stops a long lead on a
+falling target dragging the aim point under the world - now tests
+AIRBORNE rather than merely descending. It had to: a target rising at
+100 with an 800 unit rocket flight is 176 units lower than the
+straight line says, and the clamp is what turns that into a splash at
+its feet when it lands rather than a shot into the ground. That is
+the issue's second bullet, and it was already in the tree under a
+condition that could not see the case.
+
+LADDER, two maps and three tapes. dm4 twice: frags 14 to 34 and 28,
+kills 31 to 36 and 36, engages 95 to 98 and 105, coverage at parity,
+lava 1 and 6 against a band of 2 to 7, and no gate failed twice -
+stalls read 14 and then 4, K/D spread 5 and then 9. dm2 came back at
+parity with every bot positive and spread 2. Goal pickups read lower
+on every tape and the reason is in the same briefs: deaths and
+battle-grabs both rose, so the errand counter moved into the
+mid-combat grab counter while total acquisitions held.
 
 **The lightning wade test reads our depth now too (#18).** The
 selector refuses the LG when the bot is deep enough that
