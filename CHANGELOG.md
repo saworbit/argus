@@ -9,6 +9,55 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**A shootable door cannot be opened by walking into it, and fixing
+that costs more than the defect (#325).** Recorded as a refusal with
+its tapes, because the diagnosis is solid and all three cures failed.
+
+`Argus_TakeDoor` treats a door with no targetname as touch-open. id's
+own `LinkDoors` refuses a trigger_field to a door with health, a
+targetname or items, and a `func_door_secret` never reaches LinkDoors
+at all: `secret_touch` only centerprints, and `fd_secret` hands a
+secret with no targetname health 10000, DAMAGE_YES and `th_pain`
+`fd_secret_use`. So no targetname is exactly id's condition for "this
+one opens when it is shot", and it is the condition Argus reads as
+"walk in". Both classes set classname "door" at spawn, so health with
+takedamage is the only runtime discriminator, and it is the right one.
+
+Eight secrets in the rotation have no targetname; four carry
+door-typed links, fourteen of them: e1m1 `*13` and `*14`, e1m2 `*48`,
+e1m5 `*50`. No `func_door` in the rotation carries health, so the
+other half of the class is inert here.
+
+THE MEASUREMENT IS WHY IT DID NOT SHIP. Instrumented tapes on e1m1:
+612 of 683 door traces in 120 seconds hit one of those secrets, and
+every one of the 610 takes reported `ar_hopdoor` 0 while routed, so
+the router never types these particular hops as door crossings. Three
+cures, three answers:
+
+- fire whenever the slab is taken: 610 firings, coverage 415 to 316,
+  engages 25 to 20 (`ab_e1m1_shootsecret1`).
+- gate on `ar_hopdoor`: zero firings in 305 seconds
+  (`ab_e1m1_shootsecret2`).
+- fire only after the same slab has blocked the bot for two seconds:
+  zero firings in 185 seconds (`ab_e1m1_shootsecret3`), because
+  `Argus_DoorPast` clears and re-takes the door constantly. The bots
+  are crossing a sight line while walking past, not standing blocked.
+
+So the slab is in front of bots 612 times a tape and never actually
+stops one for two seconds. The defect is real in the code and costs
+nothing in play on the maps that carry it.
+
+CORRECTION TO METHOD, which cost four void probes: `experiment` with
+`compile=false` runs whatever progs is already installed, so hand
+compiling to `lq1/` and then probing proves nothing. Those four tapes
+were deleted rather than committed. And e1m1's configured baseline is
+from 2026-09-13: five tapes of the current build land at coverage 220
+to 317 against its 415, so that gate has been measuring era drift, not
+any candidate.
+
+No QC ships. Instrument probes kept as `probe_e1m1_tracewhat` and
+`probe_e1m5_tracewhat2`.
+
 **A committed tape is evidence, and match_run stops writing over one
 (#328).** `match_run` takes a `run_name` and writes
 `runs/<name>.log`. A name that collided with a tape already in git
