@@ -784,22 +784,28 @@ pub fn unharvested_session(cfg: &Config) -> Option<String> {
 /// answer must not stop the lab, and the harvest guard beside it has
 /// the same shape: refuse with a named way forward, never wedge.
 pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
-    let rel = format!("runs/{name}.log");
-    if !cfg.runs.join(format!("{name}.log")).is_file() {
+    // ASK ABOUT THE FILE WE ARE ACTUALLY ABOUT TO WRITE. ARGUS_RUNS can
+    // point anywhere, so "runs/<name>.log" is only the tape's path when
+    // nobody set it; git takes an absolute path and resolves it against
+    // the repo itself, and refuses one that lies outside, which is the
+    // fail-open answer we want anyway.
+    let tape = cfg.runs.join(format!("{name}.log"));
+    if !tape.is_file() {
         return None;
     }
     let out = std::process::Command::new("git")
         .arg("-C")
         .arg(&cfg.root)
         .args(["ls-files", "--error-unmatch", "--"])
-        .arg(&rel)
+        .arg(&tape)
         .output()
         .ok()?;
     if !out.status.success() {
         return None;
     }
     Some(format!(
-        "run_name \"{name}\" would write over {rel}, which is committed. A committed tape is evidence and this path used to replace one silently (#328). Pick a name that is free, or delete the committed tape first if it really is worthless."
+        "run_name \"{name}\" would write over {}, which is committed. A committed tape is evidence and this path used to replace one silently (#328). Pick a name that is free, or delete the committed tape first if it really is worthless.",
+        tape.display()
     ))
 }
 
@@ -814,10 +820,14 @@ mod tests {
     static GIT_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
     fn tmp_cfg(tag: &str) -> crate::config::Config {
+        tmp_cfg_runs(tag, "runs")
+    }
+
+    fn tmp_cfg_runs(tag: &str, runs: &str) -> crate::config::Config {
         let tmp = std::env::temp_dir()
             .join(format!("argus-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&tmp);
-        std::fs::create_dir_all(tmp.join("runs")).unwrap();
+        std::fs::create_dir_all(tmp.join(runs)).unwrap();
         crate::config::Config {
             root: tmp.clone(),
             src: tmp.join("src"),
@@ -828,7 +838,7 @@ mod tests {
             python: tmp.join("python.exe"),
             game: "id1".into(),
             maps: tmp.join("maps"),
-            runs: tmp.join("runs"),
+            runs: tmp.join(runs),
         }
     }
 
@@ -938,6 +948,34 @@ mod tests {
             .await
             .expect_err("the exemption must not carry over");
         assert!(err.contains("committed"), "{err}");
+        let _ = std::fs::remove_dir_all(&cfg.root);
+    }
+
+    // ARGUS_RUNS can point anywhere, so the tape is not always at
+    // <root>/runs/<name>.log. Asking git about that assumed path asks
+    // about the wrong file, or about nothing.
+    #[test]
+    fn the_guard_asks_about_the_tape_it_would_write() {
+        let cfg = tmp_cfg_runs("tape-elsewhere", "tapes");
+        if !git(&cfg.root, &["init", "-q"]) {
+            return;
+        }
+        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
+        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        // the real tape, in the configured runs dir
+        std::fs::write(cfg.runs.join("ab_dm4_moved.log"), "tape
+").unwrap();
+        // a decoy at the path the guard used to assume, left uncommitted
+        std::fs::create_dir_all(cfg.root.join("runs")).unwrap();
+        std::fs::write(cfg.root.join("runs/ab_dm4_moved.log"), "decoy
+").unwrap();
+        assert!(git(&cfg.root, &["add", "tapes/ab_dm4_moved.log"]));
+        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+
+        let refused = committed_tape(&cfg, "ab_dm4_moved")
+            .expect("the committed tape is the one in ARGUS_RUNS");
+        assert!(refused.contains("ab_dm4_moved"), "{refused}");
         let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
