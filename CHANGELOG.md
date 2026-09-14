@@ -9,6 +9,52 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**The door-typing debt: the cheapest map in the queue was worked and
+refused (#324).** #320 fixed three defects in how navgen types a door
+link, and all three only reach a map through a regen, so every shipped
+graph still carries links that cross a door and are typed as nothing.
+Re-measured against the shut box rather than the compiled one, which
+moves the numbers in the issue:
+
+```
+map     typed   crossings   untyped   wrongly typed
+e1m7        0          30        30          0
+e1m6      212         200        12         24
+dm2        12          14         3          1
+e1m1       59          53         1          7
+e1m5       36          37         1          0
+e1m2       64          62         0          2
+e1m8       16          16         0          0
+```
+
+dm2 is the cheapest entry and the cleanest possible experiment: its
+regen differs from the shipped graph in EXACTLY the door typing, one
+link dropped and three added, every node and every other link
+identical. Three tapes, and the tree's own gate rejects it: stalls 32
+to 42, and an under-fire freeze in two of the three where the two
+nearest controls had none.
+
+THE REFUSAL IS HONEST BUT IT IS NOT CLEAN, and the reason is worth
+keeping. Two of the three freezes sit at `'2003 -1104 344'` and
+`'1992 -1108 344'`, which is #323's deck cell, 380 units from the
+nearest door and nothing to do with this change. dm2's own history
+runs 0 to 4 freezes a tape across every era, and the control that
+happened to be picked ran zero twice. So the gate fails on its own
+terms and the cause is probably elsewhere, which is exactly the
+situation the two-tape rule exists to stop being argued away. No nav
+data ships and the debt stays.
+
+The real debt is e1m7 with 30 of 30 and e1m6 with 12, and neither map
+has a regen that passes: e1m7 was refused this week on an under-fire
+freeze at `'24 61 8'` in two tapes of three, and e1m6 has no baseline
+at all.
+
+  ONE TAPE OF THE THREE IS MISSING and it is the one that failed
+  hardest. `ab_dm2_doortype2` collided with a committed tape of that
+  name from the v3.35 era and overwrote it; restoring the committed
+  one destroyed the candidate. Its numbers are in the refusal above.
+  Second time this week, so it is filed as #328.
+
 **navgen says which sidecars a run can see (#323).** The four sidecar
 files - costs, probe, proven, mined - are read from the directory the
 QC is written to. So a regen written to a scratch path silently builds
