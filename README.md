@@ -337,6 +337,16 @@ flowchart LR
 python tools/argus_navgen.py maps/dm1.bsp dm1 src/argus_nav_dm1.qc runs/nav_dm1.png --no-dispatcher
 ```
 
+   To correct the door typing of a graph that already ships, without
+   regenerating it, pass `--retype-doors` instead. It reads the `.qc`
+   and its `.qc.json`, recomputes which links a shut door blocks, and
+   writes both back with that one field changed and every node, link,
+   seat and region left exactly as it was:
+
+```bash
+python tools/argus_navgen.py maps/dm1.bsp dm1 src/argus_nav_dm1.qc unused.png --retype-doors
+```
+
 3. Register the new map in `src/argus_nav_dispatch.qc`:
 ```c
 else if (mapname == "dm1")

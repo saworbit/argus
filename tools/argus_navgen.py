@@ -36,9 +36,16 @@ Sidecar files, all optional, all read from the output directory:
                                derived); not consumed by navgen
 
 usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj]
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
 
 --no-dispatcher emits only Argus_Nav_Spawn_<mapname>, for multi-map
 builds where a hand-maintained argus_nav_dispatch.qc selects per map.
+
+--retype-doors is the one mode that does not generate a graph. It
+reads the shipped out.qc and out.qc.json, recomputes which links a
+shut door blocks, and writes both back with the door typing corrected
+and every other field untouched. No sampling, no decimation, no
+linking, no knitting, no plot. Section 2c.
 """
 import re, struct, sys, heapq, collections
 import math as _dmath
@@ -50,6 +57,10 @@ if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
 
 BSP, MAPNAME, OUTQC, OUTPNG = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 EMIT_DISPATCHER = "--no-dispatcher" not in sys.argv[5:]
+# --retype-doors corrects the door typing of a graph that already
+# ships and changes nothing else about it. Section 2c does the whole
+# of it and exits before sampling.
+RETYPE_DOORS = "--retype-doors" in sys.argv[5:]
 if "--register" in sys.argv[5:]:
     # --register wires the map into the shared argus_nav_dispatch.qc,
     # so emitting a second Argus_Nav_Spawn in the per-map file would
@@ -142,6 +153,332 @@ mins, maxs = m0[0:3], m0[3:6]
 HULL1 = m0[10]  # headnode[1]
 # entities
 ents_txt = lump(0).split(b"\0")[0].decode("ascii", "replace")
+
+# ---- 2b. the entity lump, and the door geometry that reads it ----
+# These sit ahead of sampling because --retype-doors (2c) needs the
+# door boxes and nothing else at all: it reads a shipped graph,
+# recomputes the typing against this map's doors and re-emits, so the
+# whole pipeline below has to stay unrun. The edict budget in 4c, the
+# parked-slab veto in 5b3 and the typing pass in 6c are the other
+# callers, each in its own place further down.
+ent_blocks = re.findall(r"\{(.*?)\}", ents_txt, re.S)
+def kv(block):
+    return dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
+bmodels = [struct.unpack_from("<9f7i", md, i * 64) for i in range(len(md)//64)]
+
+def _door_travel_boxes(_e, _mn, _mx):
+    """(shut, open) world boxes for a sliding func_door, or None.
+
+    Vertical movers return None. A slab that goes straight up or down
+    leaves the doorway rather than parking in it, and since 5b2 a big
+    one is modelled as a platform anyway.
+    """
+    _a = (_e.get("angle", "0") or "0").strip()
+    if _a in ("-1", "-2"):
+        return None
+    try:
+        _yaw = float(_a)
+    except ValueError:
+        return None
+    _r = _dmath.radians(_yaw)
+    _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
+    _size = (_mx[0] - _mn[0], _mx[1] - _mn[1], _mx[2] - _mn[2])
+    _travel = abs(sum(_d[k] * _size[k] for k in range(3))) \
+        - float(_e.get("lip", "8") or 8)
+    if _travel <= 0:
+        return None
+    _moved = (tuple(_mn[k] + _d[k] * _travel for k in range(3)),
+              tuple(_mx[k] + _d[k] * _travel for k in range(3)))
+    _here = (tuple(_mn), tuple(_mx))
+    if int(float(_e.get("spawnflags", "0") or 0)) & 1:   # DOOR_START_OPEN
+        return (_moved, _here)
+    return (_here, _moved)
+
+
+def _door_shut_box(_e, _mn, _mx):
+    """Where the slab stands when the door is SHUT.
+
+    The compiled AABB is not that box whenever DOOR_START_OPEN is set,
+    because doors.qc swaps pos1 and pos2 and the brush is built at its
+    open position (#309 got this backwards for seven doors before the
+    arithmetic was checked). 6c typed its links against the compiled
+    box regardless, so on e1m7, whose four doors are all START_OPEN,
+    every door link it drew was a link through the PARKED slab, which
+    is the thing #309 vetoes rather than types. Sliding doors have the
+    pair worked out already; vertical ones only need the same swap.
+
+    A SECRET DOOR IS NOT A func_door AND ITS SPAWNFLAGS ARE NOT THE
+    SAME BITS (#330). doors.qc builds a func_door_secret at its closed
+    position, always - there is no START_OPEN for one - and its bit 1
+    is SECRET_OPEN_ONCE, which means it stays open once opened, not
+    that it starts open. Reading it as a func_door's flag swapped the
+    box a travel away from the wall the door is actually in, and the
+    two stage sidestep it really performs is not a travel this file
+    models anyway. Eight links across e1m1 and e1m2 lost a door type
+    they had earned, and e1m8's secret would have lost one at its next
+    regen. The compiled box stands.
+    """
+    if _e.get("classname") == "func_door_secret":
+        return (tuple(_mn), tuple(_mx))
+    _tb = _door_travel_boxes(_e, _mn, _mx)
+    if _tb is not None:
+        return _tb[0]
+    _a = (_e.get("angle", "0") or "0").strip()
+    if _a not in ("-1", "-2"):
+        return (tuple(_mn), tuple(_mx))
+    if not int(float(_e.get("spawnflags", "0") or 0)) & 1:
+        return (tuple(_mn), tuple(_mx))
+    _travel = (_mx[2] - _mn[2]) - float(_e.get("lip", "8") or 8)
+    if _travel <= 0:
+        return (tuple(_mn), tuple(_mx))
+    # subs.qc SetMovedir reads angle -1 as UP and -2 as DOWN, and the
+    # shut box is the compiled one plus movedir times travel, exactly
+    # as the sliding pair above computes it. This branch had the two
+    # angles the wrong way round (#330), so every vertical START_OPEN
+    # door in the rotation - e1m1 five, e1m7 two, e1m5 and e1m6 one
+    # each - was tested against a slab reflected to the far side of
+    # its own doorway.
+    _dz = _travel if _a == "-1" else -_travel
+    return ((_mn[0], _mn[1], _mn[2] + _dz), (_mx[0], _mx[1], _mx[2] + _dz))
+
+
+def _seg_hits_open(a, b, mn, mx):
+    # the player box against a parked slab: 16 either side, feet 24
+    # under the seat, and a slab whose top comes to rest within a step
+    # of the floor is walked over rather than walked into
+    lo = (mn[0] - 16.0, mn[1] - 16.0, mn[2] - 32.0)
+    hi = (mx[0] + 16.0, mx[1] + 16.0, mx[2] + 6.0)
+    t0, t1 = 0.0, 1.0
+    for k in range(3):
+        d = b[k] - a[k]
+        if abs(d) < 1e-9:
+            if a[k] < lo[k] or a[k] > hi[k]:
+                return False
+            continue
+        u, v = (lo[k] - a[k]) / d, (hi[k] - a[k]) / d
+        if u > v:
+            u, v = v, u
+        t0, t1 = max(t0, u), min(t1, v)
+        if t0 > t1:
+            return False
+    return True
+
+
+def _seg_hits_aabb(ax, ay, az, bx, by, bz, mn, mx, pad=8.0):
+    """Does the segment touch the padded box at all?
+
+    NINE SAMPLES CANNOT ANSWER THIS (#319). A door slab is thin, a
+    walk link is not, and a fixed sample count spaces its probes by
+    the link's length: a 300 unit link steps 37 units at a time past
+    a box 30 wide, so it crosses the doorway and goes untyped, and a
+    bot then walks into a shut slab with no ar_hopdoor set. e1m2's
+    shipped graph carries ten of those today and its regen two. The
+    slab test is exact, has no density to tune, and is cheaper than
+    the nine it replaces.
+    """
+    lo = (mn[0] - pad, mn[1] - pad, mn[2] - pad)
+    hi = (mx[0] + pad, mx[1] + pad, mx[2] + pad)
+    a = (ax, ay, az)
+    d = (bx - ax, by - ay, bz - az)
+    t0, t1 = 0.0, 1.0
+    for k in range(3):
+        if abs(d[k]) < 1e-9:
+            if a[k] < lo[k] or a[k] > hi[k]:
+                return False
+            continue
+        s0 = (lo[k] - a[k]) / d[k]
+        s1 = (hi[k] - a[k]) / d[k]
+        if s0 > s1:
+            s0, s1 = s1, s0
+        t0 = max(t0, s0)
+        t1 = min(t1, s1)
+        if t0 > t1:
+            return False
+    return True
+
+
+def _door_entities():
+    """Every door brush in the lump, with the box it was compiled in."""
+    for _b in ent_blocks:
+        _e = kv(_b)
+        if _e.get("classname") not in ("func_door", "func_door_secret"):
+            continue
+        if "model" not in _e:
+            continue
+        try:
+            _bm = bmodels[int(_e["model"].lstrip("*"))]
+        except (ValueError, IndexError):
+            continue
+        yield _e, (_bm[0], _bm[1], _bm[2]), (_bm[3], _bm[4], _bm[5])
+
+
+def _shut_boxes():
+    """Every door's box where it stands when SHUT.
+
+    That is the box a walk link can be blocked by, which is what a
+    door link means.
+    """
+    return [_door_shut_box(_e, _mn, _mx) for _e, _mn, _mx in _door_entities()]
+
+
+def _open_boxes():
+    """Every sliding door's box where it PARKS when open, model and all.
+
+    The model key rides along so a report can name the door that sits
+    on a link. Vertical movers are not in here, because 5b3 does not
+    model a parked box for them.
+    """
+    _out = []
+    for _e, _mn, _mx in _door_entities():
+        if _e.get("classname") != "func_door":
+            continue
+        _tb = _door_travel_boxes(_e, _mn, _mx)
+        if _tb:
+            _out.append((_e.get("model"), _tb[1]))
+    return _out
+
+
+# ---- 2c. --retype-doors: the door typing, and nothing else ----
+# #320 fixed three defects in how a link is typed as a door and left
+# every shipped graph carrying the old answers. Collecting them meant
+# a full regen per map, which reseats, relinks, re-decimates and
+# re-knits everything, so a three link correction arrived wrapped in a
+# whole new graph and had to clear a ladder built for whole new
+# graphs. Three of the four maps carrying real debt have their regens
+# refused for reasons that have nothing to do with doors: e1m2 four
+# times (#325), dm2 on its own gates (#324), e1m7 on an under-fire
+# freeze at '24 61 8'.
+#
+# This mode reads the shipped .qc and .qc.json, recomputes the typing
+# against this map's doors with the current shut-box test, and writes
+# both files back with one field different.
+#
+# WHICH FILE IS THE AUTHORITY ON WHAT. The .qc owns link ORDER,
+# because emission order is what assigns runtime link slots, so its
+# lines are rewritten in place rather than regenerated and a link
+# keeps the slot it has while only its verb changes. The .qc also
+# owns which pairs exist, since every walk link in the graph is a
+# line in it. The .json owns node POSITION, because the .qc rounds to
+# whole units and 6c types against the float; the two are checked
+# node for node before anything is written, so a mismatched pair
+# refuses rather than rewriting the wrong graph.
+#
+# The parked-slab class (#309) needs no pass of its own. A link that
+# crosses only the open box is a link the shut box does not touch, so
+# the same recompute drops its type; the count is reported below.
+# Untyping is all this mode can do about one, mind: refusing to MINT
+# it is 6b's job and only a regen runs 6b, which is also why the
+# vertical START_OPEN hole in that veto is filed as #331 rather than
+# patched here.
+#
+# This is not a way to dodge a ladder. dm2's regen in #324 happened to
+# differ from shipped in only the door typing and still lost its
+# gates. It is a way to make the ladder honest about what it judges.
+if RETYPE_DOORS:
+    import json as _rj
+    import os as _ros
+    _qcpath, _jspath = OUTQC, OUTQC + ".json"
+    if not (_ros.path.exists(_qcpath) and _ros.path.exists(_jspath)):
+        print(f"retype: {_qcpath} and its .json have to exist already - "
+              f"this mode corrects a shipped graph, it does not make one",
+              file=sys.stderr)
+        sys.exit(1)
+    with open(_qcpath, encoding="ascii", newline="") as _f:
+        _qclines = _f.read().splitlines(keepends=True)
+    with open(_jspath, encoding="ascii") as _f:
+        _js = _rj.load(_f)
+    _nodes = [tuple(_p) for _p in _js["nodes"]]
+
+    _seen = [_m for _l in _qclines
+             for _m in [re.match(
+                 r"\s*n(\d+) = Argus_NavNode \('(\S+) (\S+) (\S+)'\);", _l)]
+             if _m]
+    _bad = len(_seen) != len(_nodes)
+    if not _bad:
+        for _k, _m in enumerate(_seen):
+            _p = _nodes[_k]
+            if int(_m.group(1)) != _k or [_m.group(2), _m.group(3),
+                                          _m.group(4)] != [f"{_p[0]:.0f}",
+                                                           f"{_p[1]:.0f}",
+                                                           f"{_p[2]:.0f}"]:
+                _bad = True
+                print(f"retype: n{_k} reads {_m.group(2)} {_m.group(3)} "
+                      f"{_m.group(4)} in the qc and "
+                      f"{_p[0]:.0f} {_p[1]:.0f} {_p[2]:.0f} in the json",
+                      file=sys.stderr)
+                break
+    if _bad:
+        print(f"retype: {_qcpath} and {_jspath} are not the same graph "
+              f"({len(_seen)} nodes against {len(_nodes)}); refusing",
+              file=sys.stderr)
+        sys.exit(1)
+
+    _shut, _open = _shut_boxes(), _open_boxes()
+    _built = [(_mn, _mx) for _e, _mn, _mx in _door_entities()]
+    print(f"{MAPNAME}: {len(_nodes)} nodes, {len(_shut)} door brush(es), "
+          f"{len(_open)} parked slab(s)")
+
+    # a plain walk link is `Argus_NavLink (nA, nB);` with nothing after
+    # it. The teleporter pass emits the same verb with a trailing
+    # comment for pairs the walk graph does not hold, and a regen never
+    # types those, so the suffix is the discriminator. Every other verb
+    # (Jump, Sprint, Rocket, Lift, Swim, Train) fails the match
+    # outright, which is the same set 6c and 7f2 skip.
+    _link = re.compile(r"^(\s*)Argus_NavLink(Door)? \(n(\d+), n(\d+)\);(.*)$")
+    _door, _typed, _untyped, _parkedonly, _builtonly = [], 0, 0, 0, 0
+    for _n, _raw in enumerate(_qclines):
+        _body = _raw.rstrip("\r\n")
+        _m = _link.match(_body)
+        if not _m or _m.group(5).strip():
+            continue
+        _i, _j = int(_m.group(3)), int(_m.group(4))
+        _was = _m.group(2) == "Door"
+        (_ax, _ay, _az), (_bx, _by, _bz) = _nodes[_i], _nodes[_j]
+        _is = any(_seg_hits_aabb(_ax, _ay, _az, _bx, _by, _bz, _mn, _mx)
+                  for _mn, _mx in _shut)
+        if _is:
+            _door.append((_i, _j))
+            if not _was:
+                _typed += 1
+        elif _was:
+            _untyped += 1
+            if any(_seg_hits_aabb(_ax, _ay, _az, _bx, _by, _bz, _mn, _mx)
+                   for _mn, _mx in _built):
+                _builtonly += 1
+            if any(_seg_hits_open((_ax, _ay, _az), (_bx, _by, _bz), _mn, _mx)
+                   for _mdl, (_mn, _mx) in _open):
+                _parkedonly += 1
+        _verb = "Argus_NavLinkDoor" if _is else "Argus_NavLink"
+        _qclines[_n] = (f"{_m.group(1)}{_verb} (n{_i}, n{_j});"
+                        f"{_raw[len(_body):]}")
+
+    _parked = 0
+    for _i, _j in _door:
+        for _mdl, (_mn, _mx) in _open:
+            if _seg_hits_open(_nodes[_i], _nodes[_j], _mn, _mx):
+                _parked += 1
+                print(f"  door {_mdl} parks on link n{_i}->n{_j} when open")
+                break
+
+    _js["doorlinks"] = [[_i, _j] for _i, _j in sorted(_door)]
+    with open(_qcpath, "w", encoding="ascii", newline="") as _f:
+        _f.write("".join(_qclines))
+    with open(_jspath, "w", encoding="ascii", newline="") as _f:
+        _rj.dump(_js, _f)
+    print(f"door retype: {len(_door)} door links, {_typed} newly typed, "
+          f"{_untyped} untyped")
+    if _untyped:
+        # both counts are about the same mistake from two sides: a link
+        # typed against the box the brush was BUILT in, on a door that
+        # does not stand there when shut
+        print(f"  of those {_untyped}: {_builtonly} cross the box the door "
+              f"is compiled in, {_parkedonly} cross a slab where it parks")
+    if _parked:
+        print(f"door links drawn through an OPEN slab: {_parked} of "
+              f"{len(_door)}")
+    print(f"wrote {_qcpath} + .json; nodes, links, seats, regions and "
+          f"every typed list other than doorlinks are untouched")
+    sys.exit(0)
 
 def hull_contents(x, y, z, node=None):
     n = HULL1 if node is None else node
@@ -497,10 +834,7 @@ if COST_CELLS:
 # waypoint nodes: cap waypoints so bsp entities + nodes stay under 500
 # (Shane's project review: a 350-entity map plus a 200-node graph
 # would Host_Error at spawn)
-ent_blocks = re.findall(r"\{(.*?)\}", ents_txt, re.S)
-def kv(block):
-    return dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
-bmodels = [struct.unpack_from("<9f7i", md, i * 64) for i in range(len(md)//64)]
+# ent_blocks, kv and bmodels are parsed in 2b, ahead of sampling.
 
 def spawns_an_edict(block):
     """Does this entity still exist after its spawn function runs?
@@ -961,97 +1295,10 @@ print(f"door movers: {doorlifts} ridden like plats")
 #     come out node for node identical either way.
 
 
-def _door_travel_boxes(_e, _mn, _mx):
-    """(shut, open) world boxes for a sliding func_door, or None.
-
-    Vertical movers return None. A slab that goes straight up or down
-    leaves the doorway rather than parking in it, and since 5b2 a big
-    one is modelled as a platform anyway.
-    """
-    _a = (_e.get("angle", "0") or "0").strip()
-    if _a in ("-1", "-2"):
-        return None
-    try:
-        _yaw = float(_a)
-    except ValueError:
-        return None
-    _r = _dmath.radians(_yaw)
-    _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
-    _size = (_mx[0] - _mn[0], _mx[1] - _mn[1], _mx[2] - _mn[2])
-    _travel = abs(sum(_d[k] * _size[k] for k in range(3))) \
-        - float(_e.get("lip", "8") or 8)
-    if _travel <= 0:
-        return None
-    _moved = (tuple(_mn[k] + _d[k] * _travel for k in range(3)),
-              tuple(_mx[k] + _d[k] * _travel for k in range(3)))
-    _here = (tuple(_mn), tuple(_mx))
-    if int(float(_e.get("spawnflags", "0") or 0)) & 1:   # DOOR_START_OPEN
-        return (_moved, _here)
-    return (_here, _moved)
-
-
-def _door_shut_box(_e, _mn, _mx):
-    """Where the slab stands when the door is SHUT.
-
-    The compiled AABB is not that box whenever DOOR_START_OPEN is set,
-    because doors.qc swaps pos1 and pos2 and the brush is built at its
-    open position (#309 got this backwards for seven doors before the
-    arithmetic was checked). 6c typed its links against the compiled
-    box regardless, so on e1m7, whose four doors are all START_OPEN,
-    every door link it drew was a link through the PARKED slab, which
-    is the thing #309 vetoes rather than types. Sliding doors have the
-    pair worked out already; vertical ones only need the same swap.
-    """
-    _tb = _door_travel_boxes(_e, _mn, _mx)
-    if _tb is not None:
-        return _tb[0]
-    _a = (_e.get("angle", "0") or "0").strip()
-    if _a not in ("-1", "-2"):
-        return (tuple(_mn), tuple(_mx))
-    if not int(float(_e.get("spawnflags", "0") or 0)) & 1:
-        return (tuple(_mn), tuple(_mx))
-    _travel = (_mx[2] - _mn[2]) - float(_e.get("lip", "8") or 8)
-    if _travel <= 0:
-        return (tuple(_mn), tuple(_mx))
-    _dz = -_travel if _a == "-1" else _travel
-    return ((_mn[0], _mn[1], _mn[2] + _dz), (_mx[0], _mx[1], _mx[2] + _dz))
-
-
-def _seg_hits_open(a, b, mn, mx):
-    # the player box against a parked slab: 16 either side, feet 24
-    # under the seat, and a slab whose top comes to rest within a step
-    # of the floor is walked over rather than walked into
-    lo = (mn[0] - 16.0, mn[1] - 16.0, mn[2] - 32.0)
-    hi = (mx[0] + 16.0, mx[1] + 16.0, mx[2] + 6.0)
-    t0, t1 = 0.0, 1.0
-    for k in range(3):
-        d = b[k] - a[k]
-        if abs(d) < 1e-9:
-            if a[k] < lo[k] or a[k] > hi[k]:
-                return False
-            continue
-        u, v = (lo[k] - a[k]) / d, (hi[k] - a[k]) / d
-        if u > v:
-            u, v = v, u
-        t0, t1 = max(t0, u), min(t1, v)
-        if t0 > t1:
-            return False
-    return True
-
-
-door_open = []
-for _b in ent_blocks:
-    _e = kv(_b)
-    if _e.get("classname") != "func_door" or "model" not in _e:
-        continue
-    try:
-        _bm = bmodels[int(_e["model"].lstrip("*"))]
-    except (ValueError, IndexError):
-        continue
-    _tb = _door_travel_boxes(_e, (_bm[0], _bm[1], _bm[2]),
-                             (_bm[3], _bm[4], _bm[5]))
-    if _tb:
-        door_open.append((_e.get("model"), _tb[1]))
+# The three functions that work these boxes out live in 2b, ahead of
+# sampling: --retype-doors reads a shipped graph and re-emits it, so
+# it needs the door geometry and none of the pipeline between.
+door_open = _open_boxes()
 print(f"sliding doors: {len(door_open)} parked slab(s) to keep links off")
 
 # ---- 5c. train links from func_train ----
@@ -1463,54 +1710,13 @@ for _vp, _bm in vpads:
 # Hull 1 never contains func_door brushes, so a beeline through a
 # doorway is a legal walk. At runtime the slab is solid until opened.
 # Tag those hops so the bot can press the button instead of pinning.
-def _seg_hits_aabb(ax, ay, az, bx, by, bz, mn, mx, pad=8.0):
-    """Does the segment touch the padded box at all?
-
-    NINE SAMPLES CANNOT ANSWER THIS (#319). A door slab is thin, a
-    walk link is not, and a fixed sample count spaces its probes by
-    the link's length: a 300 unit link steps 37 units at a time past
-    a box 30 wide, so it crosses the doorway and goes untyped, and a
-    bot then walks into a shut slab with no ar_hopdoor set. e1m2's
-    shipped graph carries ten of those today and its regen two. The
-    slab test is exact, has no density to tune, and is cheaper than
-    the nine it replaces.
-    """
-    lo = (mn[0] - pad, mn[1] - pad, mn[2] - pad)
-    hi = (mx[0] + pad, mx[1] + pad, mx[2] + pad)
-    a = (ax, ay, az)
-    d = (bx - ax, by - ay, bz - az)
-    t0, t1 = 0.0, 1.0
-    for k in range(3):
-        if abs(d[k]) < 1e-9:
-            if a[k] < lo[k] or a[k] > hi[k]:
-                return False
-            continue
-        s0 = (lo[k] - a[k]) / d[k]
-        s1 = (hi[k] - a[k]) / d[k]
-        if s0 > s1:
-            s0, s1 = s1, s0
-        t0 = max(t0, s0)
-        t1 = min(t1, s1)
-        if t0 > t1:
-            return False
-    return True
-
-door_boxes = []
-for _b in ent_blocks:
-    _e = kv(_b)
-    if _e.get("classname") not in ("func_door", "func_door_secret"):
-        continue
-    if "model" not in _e:
-        continue
-    try:
-        _bm = bmodels[int(_e["model"].lstrip("*"))]
-    except (ValueError, IndexError):
-        continue
-    # the SHUT box, not the compiled one (#319): a door link means
-    # this crossing can be blocked by a door, and a DOOR_START_OPEN
-    # door is compiled where it stands when OPEN
-    door_boxes.append(_door_shut_box(
-        _e, (_bm[0], _bm[1], _bm[2]), (_bm[3], _bm[4], _bm[5])))
+# The slab test itself is _seg_hits_aabb, up in 2b with the rest of
+# the door geometry, because --retype-doors needs it before any of
+# this has run.
+# the SHUT box, not the compiled one (#319): a door link means this
+# crossing can be blocked by a door, and a DOOR_START_OPEN door is
+# compiled where it stands when OPEN
+door_boxes = _shut_boxes()
 
 doorlinks = []
 if door_boxes:
