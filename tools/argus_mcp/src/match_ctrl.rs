@@ -64,12 +64,28 @@ pub struct MatchCtrl {
     /// dedicated children side by side (the 2026-08-18 paired-run
     /// forensics proved the engines coexist on 26010/26011)
     port: Option<u32>,
+    /// one shot permission to refresh a committed tape, taken and
+    /// cleared by the next start() (#328)
+    refresh_committed: bool,
 }
 
 impl MatchCtrl {
     /// A controller bound to its own engine port, for parallel work.
     pub fn on_port(port: u32) -> Self {
         MatchCtrl { port: Some(port), ..Default::default() }
+    }
+
+    /// Let the NEXT start() write over a committed tape.
+    ///
+    /// Only a rolling probe should call this. The matrix writes
+    /// mx_<map>.log every run on purpose and five of those tapes are
+    /// committed, so the guard below would refuse the lab's own loop
+    /// without a way to say "this one is meant to be refreshed". It is
+    /// one shot and start() clears it, so the exemption cannot leak
+    /// into the next match, and the run_gate serialises match runs so
+    /// nothing else can take it.
+    pub fn refresh_committed_tape(&mut self) {
+        self.refresh_committed = true;
     }
 
     /// Reap a dead child so the next start is not blocked by a zombie slot.
@@ -218,6 +234,12 @@ impl MatchCtrl {
             }
             None => default_run_name(),
         };
+        let refresh = std::mem::take(&mut self.refresh_committed);
+        if !refresh {
+            if let Some(msg) = committed_tape(cfg, &name) {
+                return Err(msg);
+            }
+        }
         let slots = dedicated_slots.unwrap_or(8);
         let run_dir = cfg.runs.join(&name);
         std::fs::create_dir_all(&run_dir).map_err(|e| format!("create run dir: {e}"))?;
@@ -739,9 +761,234 @@ pub fn unharvested_session(cfg: &Config) -> Option<String> {
     }
 }
 
+/// Refuse to write over a tape that is already committed (#328).
+///
+/// `runs/` is the paper trail and everything else in this project
+/// treats a committed tape as evidence. This is the one path that
+/// wrote over one: match_run takes a run_name, writes
+/// `runs/<name>.log`, and a name that collided with an old tape
+/// replaced it in place with no warning. The only sign was a modified
+/// file in `git status`, which reads exactly like a tape you just
+/// made. It happened twice in one week: ab_e1m1_doorway1 was caught
+/// and restored, and ab_dm2_doortype2 was caught too late, so the
+/// ladder tape it destroyed survives only in a session transcript.
+///
+/// TRACKED BY GIT IS THE TEST, not "the file is there". The matrix
+/// probe writes mx_<map>.log every run by design and five of those
+/// are committed, so refusing every collision would refuse the lab's
+/// own loop. A rolling probe says so with refresh_committed_tape()
+/// and nothing else can.
+///
+/// IT FAILS OPEN. No git on PATH, or not a checkout, means nothing is
+/// known about the tape and the match proceeds. A guard that cannot
+/// answer must not stop the lab, and the harvest guard beside it has
+/// the same shape: refuse with a named way forward, never wedge.
+pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
+    // ASK ABOUT THE FILE WE ARE ACTUALLY ABOUT TO WRITE. ARGUS_RUNS can
+    // point anywhere, so "runs/<name>.log" is only the tape's path when
+    // nobody set it; git takes an absolute path and resolves it against
+    // the repo itself, and refuses one that lies outside, which is the
+    // fail-open answer we want anyway.
+    let tape = cfg.runs.join(format!("{name}.log"));
+    if !tape.is_file() {
+        return None;
+    }
+    let out = std::process::Command::new("git")
+        .arg("-C")
+        .arg(&cfg.root)
+        .args(["ls-files", "--error-unmatch", "--"])
+        .arg(&tape)
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    Some(format!(
+        "run_name \"{name}\" would write over {}, which is committed. A committed tape is evidence and this path used to replace one silently (#328). Pick a name that is free, or delete the committed tape first if it really is worthless.",
+        tape.display()
+    ))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Serialises the two tests that build a throwaway git repo.
+    /// Run in parallel on Windows they contend badly enough to take
+    /// four times as long and to fail a `git add` outright, which is
+    /// the same class as ENGINE_TEST_LOCK next door.
+    static GIT_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn tmp_cfg(tag: &str) -> crate::config::Config {
+        tmp_cfg_runs(tag, "runs")
+    }
+
+    fn tmp_cfg_runs(tag: &str, runs: &str) -> crate::config::Config {
+        let tmp = std::env::temp_dir()
+            .join(format!("argus-{tag}-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&tmp);
+        std::fs::create_dir_all(tmp.join(runs)).unwrap();
+        crate::config::Config {
+            root: tmp.clone(),
+            src: tmp.join("src"),
+            progs: tmp.join("lq1/progs.dat"),
+            fteqcc: tmp.join("fteqcc.exe"),
+            engine: tmp.join("engine.exe"),
+            basedir: tmp.join("basedir"),
+            python: tmp.join("python.exe"),
+            game: "id1".into(),
+            maps: tmp.join("maps"),
+            runs: tmp.join(runs),
+        }
+    }
+
+    fn git(root: &std::path::Path, args: &[&str]) -> bool {
+        match std::process::Command::new("git")
+            .arg("-C")
+            .arg(root)
+            .args(args)
+            .output()
+        {
+            Ok(o) if o.status.success() => true,
+            Ok(o) => {
+                eprintln!(
+                    "git {args:?} in {}: {}{}",
+                    root.display(),
+                    String::from_utf8_lossy(&o.stdout),
+                    String::from_utf8_lossy(&o.stderr)
+                );
+                false
+            }
+            Err(e) => {
+                eprintln!("git {args:?}: {e}");
+                false
+            }
+        }
+    }
+
+    // #328: match_run wrote over a committed tape in place, twice in
+    // one week, and the second one destroyed ladder evidence. A
+    // committed tape is refused; an uncommitted one is still scratch.
+    #[test]
+    fn a_committed_tape_is_refused_and_a_scratch_one_is_not() {
+        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+        let cfg = tmp_cfg("committed-tape");
+        if !git(&cfg.root, &["init", "-q"]) {
+            return; // no git on this host, and the guard fails open
+        }
+        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
+        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        std::fs::write(cfg.runs.join("ab_dm2_doortype2.log"), "tape
+").unwrap();
+        std::fs::write(cfg.runs.join("scratch1.log"), "tape
+").unwrap();
+        assert!(git(&cfg.root, &["add", "runs/ab_dm2_doortype2.log"]));
+        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+
+        let refused = committed_tape(&cfg, "ab_dm2_doortype2")
+            .expect("a committed tape must be refused");
+        assert!(refused.contains("ab_dm2_doortype2"), "{refused}");
+        assert!(refused.contains("committed"), "{refused}");
+        assert_eq!(
+            committed_tape(&cfg, "scratch1"),
+            None,
+            "an uncommitted tape is scratch and stays overwritable"
+        );
+        assert_eq!(
+            committed_tape(&cfg, "never_run"),
+            None,
+            "no file, nothing to write over"
+        );
+        let _ = std::fs::remove_dir_all(&cfg.root);
+    }
+
+    // the helper is only worth having if start() actually asks it, and
+    // it has to ask BEFORE the engine is spawned. No engine binary
+    // exists in this temp config, so a guard that fired late would
+    // come back as a spawn failure instead.
+    #[tokio::test]
+    async fn start_refuses_before_it_spawns_anything() {
+        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+        let cfg = tmp_cfg("start-committed-tape");
+        if !git(&cfg.root, &["init", "-q"]) {
+            return;
+        }
+        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
+        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        std::fs::write(cfg.runs.join("ab_dm4_evidence.log"), "tape
+").unwrap();
+        assert!(git(&cfg.root, &["add", "runs/ab_dm4_evidence.log"]));
+        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+
+        let mut ctrl = MatchCtrl::default();
+        let err = ctrl
+            .start(&cfg, "dm4", Some(30), Some("ab_dm4_evidence"), None, None, None)
+            .await
+            .expect_err("a committed tape must stop the match");
+        assert!(err.contains("committed"), "{err}");
+        assert!(
+            !cfg.runs.join("ab_dm4_evidence").exists(),
+            "the run dir must not be created either"
+        );
+
+        // the rolling probe exemption gets past it, far enough to fail
+        // on the missing engine instead
+        ctrl.refresh_committed_tape();
+        let err = ctrl
+            .start(&cfg, "dm4", Some(30), Some("ab_dm4_evidence"), None, None, None)
+            .await
+            .expect_err("no engine binary in a temp config");
+        assert!(!err.contains("committed"), "{err}");
+
+        // and it was ONE shot. start() consumed it, so the next match
+        // is guarded again and the matrix cannot leave the door open
+        // behind it.
+        let err = ctrl
+            .start(&cfg, "dm4", Some(30), Some("ab_dm4_evidence"), None, None, None)
+            .await
+            .expect_err("the exemption must not carry over");
+        assert!(err.contains("committed"), "{err}");
+        let _ = std::fs::remove_dir_all(&cfg.root);
+    }
+
+    // ARGUS_RUNS can point anywhere, so the tape is not always at
+    // <root>/runs/<name>.log. Asking git about that assumed path asks
+    // about the wrong file, or about nothing.
+    #[test]
+    fn the_guard_asks_about_the_tape_it_would_write() {
+        let cfg = tmp_cfg_runs("tape-elsewhere", "tapes");
+        if !git(&cfg.root, &["init", "-q"]) {
+            return;
+        }
+        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
+        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
+        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        // the real tape, in the configured runs dir
+        std::fs::write(cfg.runs.join("ab_dm4_moved.log"), "tape
+").unwrap();
+        // a decoy at the path the guard used to assume, left uncommitted
+        std::fs::create_dir_all(cfg.root.join("runs")).unwrap();
+        std::fs::write(cfg.root.join("runs/ab_dm4_moved.log"), "decoy
+").unwrap();
+        assert!(git(&cfg.root, &["add", "tapes/ab_dm4_moved.log"]));
+        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+
+        let refused = committed_tape(&cfg, "ab_dm4_moved")
+            .expect("the committed tape is the one in ARGUS_RUNS");
+        assert!(refused.contains("ab_dm4_moved"), "{refused}");
+        let _ = std::fs::remove_dir_all(&cfg.root);
+    }
+
+    // the guard must never wedge the lab: outside a checkout there is
+    // nothing to ask git about, so the match proceeds
+    #[test]
+    fn the_guard_fails_open_outside_a_checkout() {
+        let cfg = tmp_cfg("tape-no-repo");
+        std::fs::write(cfg.runs.join("loose.log"), "tape
+").unwrap();
+        assert_eq!(committed_tape(&cfg, "loose"), None);
+        let _ = std::fs::remove_dir_all(&cfg.root);
+    }
 
     // #212: shutdown and match_stop must be able to reach the engine
     // while match_run holds the MatchCtrl mutex.
