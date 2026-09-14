@@ -439,7 +439,21 @@ def pos(nid):
 # drop the eventual walk link: unweighted runtime BFS would still
 # take a costly hop if it exists.
 import os as _os
-_cost_path = _os.path.join(_os.path.dirname(_os.path.abspath(OUTQC)),
+# SAY WHICH SIDECARS THIS RUN CAN SEE (#323). They are read from the
+# OUTPUT directory, so a regen written to a scratch path silently
+# builds without the map's convictions while one written into src/
+# builds with them, and the two graphs are then not comparable. That
+# cost a wasted dm2 regen and, before it was noticed, three e1m2
+# candidates judged against a shipped graph that had a verdict they
+# did not. One line at the top makes the difference impossible to
+# miss.
+_side_dir = _os.path.dirname(_os.path.abspath(OUTQC))
+_side_found = [_n for _n in ("costs", "probe", "proven", "mined")
+               if _os.path.isfile(_os.path.join(
+                   _side_dir, f"argus_nav_{MAPNAME}.{_n}.json"))]
+print(f"sidecars from {_side_dir}: "
+      + (", ".join(_side_found) if _side_found else "none found"))
+_cost_path = _os.path.join(_side_dir,
                            f"argus_nav_{MAPNAME}.costs.json")
 COST_CELLS = []
 if _os.path.isfile(_cost_path):

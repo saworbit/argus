@@ -9,6 +9,21 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**navgen says which sidecars a run can see (#323).** The four sidecar
+files - costs, probe, proven, mined - are read from the directory the
+QC is written to. So a regen written to a scratch path silently builds
+WITHOUT the map's convictions while one written into `src/` builds
+with them, and the two graphs are then not comparable even though the
+command looks identical. One line at the top of every run now names
+the directory and lists what was found there.
+
+It cost a wasted dm2 regen to notice, and worse, it means three of
+this week's e1m2 candidates were judged against a shipped graph that
+carried one puppet conviction they did not. One conviction against
+198 nodes is unlikely to have flipped three ladders, but the method
+was wrong and the number is on the record now rather than in nobody's
+head.
+
 **A bot pinned while fighting can be unstuck now (#322).**
 `Argus_Unstick` has two signatures. Embedded fires on hull 0 reading
 solid; pinned fires on four stalls and six seconds without moving,
