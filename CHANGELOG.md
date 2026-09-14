@@ -9,6 +9,39 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**A committed tape is evidence, and match_run stops writing over one
+(#328).** `match_run` takes a `run_name` and writes
+`runs/<name>.log`. A name that collided with a tape already in git
+replaced it in place, with no warning, and the only sign was a
+modified file in `git status`, which reads exactly like a tape you
+just made. It happened twice in one week. `ab_e1m1_doorway1` was
+caught and restored during #303. `ab_dm2_doortype2` was caught too
+late, so the ladder tape it destroyed survives only in a session
+transcript, and a refusal recorded without its tape is a refusal
+nobody can re-read.
+
+`MatchCtrl::start` now refuses such a name before the engine spawns,
+in the same place as the un-harvested-session guard it mirrors, and
+the message names both ways forward.
+
+TRACKED BY GIT IS THE TEST, not whether the file is there. The matrix
+probe writes `mx_<map>.log` on every run by design and five of those
+tapes are committed, so refusing every collision would refuse the
+lab's own loop. A rolling probe says so with
+`refresh_committed_tape()`, which is one shot and cleared by the
+`start` that uses it, so the exemption cannot leak into the next
+match. `matrix_experiment` is the only caller.
+
+AND IT FAILS OPEN. No git on PATH, or not a checkout, means nothing
+is known about the tape and the match proceeds. A guard that cannot
+answer must not wedge the lab.
+
+`harvest_session.py` was checked and needed nothing: it already
+auto-suffixes a colliding stem, so `match_run` really was the only
+path in the tree that wrote over committed evidence.
+
+Lab MCP 0.25.0.
+
 **A vertical door that starts open parks in its own doorway, and
 navgen now keeps links off it (#331).** 5b3's parked-slab veto only
 modelled doors that slide sideways. A plain vertical door was left out
