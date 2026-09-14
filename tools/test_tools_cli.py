@@ -271,6 +271,33 @@ class TestToolsCLI(unittest.TestCase):
         js = json.loads((tmp / "nav.qc.json").read_text())
         self.assertEqual(js["doorlinks"], [[0, 1]])
 
+    def test_argus_navgen_models_a_vertical_start_open_parked_slab(self):
+        # #331: a vertical door that starts open is the one vertical
+        # case that parks IN its doorway. doors.qc swaps pos1 and pos2,
+        # so it sits a travel clear at spawn and the first trigger puts
+        # the slab back in the box it was compiled in. Seat the graph
+        # at z 60, where both the shut box (56..120) and the parked one
+        # (0..64) reach, so the same link is typed and reported.
+        nodes = [[p[0], p[1], 60.0] for p in self.DOOR_FIXTURE_NODES]
+        tmp = self.door_fixture(spawnflags=1, angle="-1", nodes=nodes)
+        res = self.retype(tmp)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("1 parked slab(s)", res.stdout)
+        self.assertIn("door *1 parks on link n0->n1 when open", res.stdout)
+
+    def test_argus_navgen_leaves_a_plain_vertical_door_unparked(self):
+        # the other half of the filter, and the reason it is a filter
+        # rather than a blanket change: a vertical door WITHOUT
+        # START_OPEN travels out of the doorway when it opens, so it
+        # has no parked box and 5b3 must keep saying so. Same fixture,
+        # same seats, spawnflags 0.
+        nodes = [[p[0], p[1], 60.0] for p in self.DOOR_FIXTURE_NODES]
+        tmp = self.door_fixture(spawnflags=0, angle="-1", nodes=nodes)
+        res = self.retype(tmp)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("0 parked slab(s)", res.stdout)
+        self.assertNotIn("parks on link", res.stdout)
+
     def test_argus_navgen_retype_doors_reads_a_secret_door(self):
         # a func_door_secret is built shut and its bit 1 is
         # SECRET_OPEN_ONCE, not START_OPEN (#330). Read as a

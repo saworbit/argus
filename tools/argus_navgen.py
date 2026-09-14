@@ -167,21 +167,50 @@ def kv(block):
 bmodels = [struct.unpack_from("<9f7i", md, i * 64) for i in range(len(md)//64)]
 
 def _door_travel_boxes(_e, _mn, _mx):
-    """(shut, open) world boxes for a sliding func_door, or None.
+    """(shut, open) world boxes for a travelling func_door, or None.
 
-    Vertical movers return None. A slab that goes straight up or down
-    leaves the doorway rather than parking in it, and since 5b2 a big
-    one is modelled as a platform anyway.
+    A PLAIN VERTICAL DOOR RETURNS None and that reasoning still holds:
+    a slab that goes straight up or down leaves the doorway rather
+    than parking in it, and since 5b2 a big one is modelled as a
+    platform anyway.
+
+    A VERTICAL ONE WITH DOOR_START_OPEN IS THE OPPOSITE CASE (#331).
+    doors.qc swaps pos1 and pos2 for START_OPEN, so the door sits a
+    travel away at spawn and the first thing that triggers it moves
+    the slab back INTO the box it was compiled in. For a vertical door
+    that box is the doorway itself, which is exactly the parked slab
+    5b3 exists to keep links off - the slab is out of the way until
+    somebody opens the door and then it fills the hole. Thirteen link
+    pairs across the shipped rotation cross one today, e1m6's *40 and
+    e1m1's *15 owning all of them; 5b3 has the breakdown.
+
+    No vertical START_OPEN door in the rotation is wide enough for
+    5b2, so none of them is a platform as well; e1m1's *3, which is,
+    is not START_OPEN and is untouched by this.
+
+    A func_door_secret never reaches the travel arithmetic. It is
+    built shut, its bit 1 is SECRET_OPEN_ONCE rather than START_OPEN,
+    and reading one as the other is the defect #330 fixed a layer up.
+    Refusing it here as well means no future caller can repeat it.
     """
+    if _e.get("classname") == "func_door_secret":
+        return None
     _a = (_e.get("angle", "0") or "0").strip()
     if _a in ("-1", "-2"):
-        return None
-    try:
-        _yaw = float(_a)
-    except ValueError:
-        return None
-    _r = _dmath.radians(_yaw)
-    _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
+        if not int(float(_e.get("spawnflags", "0") or 0)) & 1:
+            return None
+        # subs.qc SetMovedir: -1 is UP, -2 is DOWN. The arithmetic
+        # below is then the same one the sliding branch runs, and it
+        # has to be, because _door_shut_box takes its shut box from
+        # this pair now and --retype-doors must answer identically.
+        _d = (0.0, 0.0, 1.0 if _a == "-1" else -1.0)
+    else:
+        try:
+            _yaw = float(_a)
+        except ValueError:
+            return None
+        _r = _dmath.radians(_yaw)
+        _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
     _size = (_mx[0] - _mn[0], _mx[1] - _mn[1], _mx[2] - _mn[2])
     _travel = abs(sum(_d[k] * _size[k] for k in range(3))) \
         - float(_e.get("lip", "8") or 8)
@@ -216,30 +245,24 @@ def _door_shut_box(_e, _mn, _mx):
     two stage sidestep it really performs is not a travel this file
     models anyway. Eight links across e1m1 and e1m2 lost a door type
     they had earned, and e1m8's secret would have lost one at its next
-    regen. The compiled box stands.
+    regen. The compiled box stands, and the refusal that keeps it
+    standing lives in _door_travel_boxes so that every caller gets it.
+
+    ONE ARITHMETIC, NOT TWO (#331). This used to work the vertical
+    START_OPEN swap out for itself, and got the two angles the wrong
+    way round doing it - subs.qc SetMovedir reads -1 as UP and -2 as
+    DOWN, so every vertical START_OPEN door in the rotation was tested
+    against a slab reflected to the far side of its own doorway. Now
+    that _door_travel_boxes answers for those doors too, the pair it
+    returns is the only place the travel is computed and the shut box
+    is just its first half. Anything with no travel model - a secret,
+    a plain vertical door, an angle that will not parse - is shut
+    where it was compiled.
     """
-    if _e.get("classname") == "func_door_secret":
-        return (tuple(_mn), tuple(_mx))
     _tb = _door_travel_boxes(_e, _mn, _mx)
     if _tb is not None:
         return _tb[0]
-    _a = (_e.get("angle", "0") or "0").strip()
-    if _a not in ("-1", "-2"):
-        return (tuple(_mn), tuple(_mx))
-    if not int(float(_e.get("spawnflags", "0") or 0)) & 1:
-        return (tuple(_mn), tuple(_mx))
-    _travel = (_mx[2] - _mn[2]) - float(_e.get("lip", "8") or 8)
-    if _travel <= 0:
-        return (tuple(_mn), tuple(_mx))
-    # subs.qc SetMovedir reads angle -1 as UP and -2 as DOWN, and the
-    # shut box is the compiled one plus movedir times travel, exactly
-    # as the sliding pair above computes it. This branch had the two
-    # angles the wrong way round (#330), so every vertical START_OPEN
-    # door in the rotation - e1m1 five, e1m7 two, e1m5 and e1m6 one
-    # each - was tested against a slab reflected to the far side of
-    # its own doorway.
-    _dz = _travel if _a == "-1" else -_travel
-    return ((_mn[0], _mn[1], _mn[2] + _dz), (_mx[0], _mx[1], _mx[2] + _dz))
+    return (tuple(_mn), tuple(_mx))
 
 
 def _seg_hits_open(a, b, mn, mx):
@@ -322,11 +345,12 @@ def _shut_boxes():
 
 
 def _open_boxes():
-    """Every sliding door's box where it PARKS when open, model and all.
+    """Every door's box where it PARKS when open, model and all.
 
     The model key rides along so a report can name the door that sits
-    on a link. Vertical movers are not in here, because 5b3 does not
-    model a parked box for them.
+    on a link. A plain vertical door is not in here: it leaves the
+    doorway when it opens. A vertical START_OPEN one is, because it
+    does the reverse and parks in the hole (#331).
     """
     _out = []
     for _e, _mn, _mx in _door_entities():
@@ -1253,7 +1277,7 @@ for b in ent_blocks:
           f"(faces {lo_face:.0f} / {hi_face:.0f})")
 print(f"door movers: {doorlifts} ridden like plats")
 
-# ---- 5b3. where a sliding door parks when it opens ----
+# ---- 5b3. where a door parks when it opens ----
 # AN OPEN DOOR IS STILL A BRUSH (#309). It does not leave the world
 # when it opens, it slides beside the hole it was filling - keeping
 # its own lip inside that hole, because doors.qc travels size minus
@@ -1275,9 +1299,24 @@ print(f"door movers: {doorlifts} ridden like plats")
 # DOOR_START_OPEN, which the #303 report had backwards. doors.qc sets
 # pos2 = pos1 + movedir * (|movedir . size| - lip) and then SWAPS them
 # for a START_OPEN door, so such a door is COMPILED at its open
-# position and its shut one is a travel away. Seven doors across the
-# rotation are built that way (dm2 3, e1m7 2, e1m1 1, e1m2 1) and the
-# report called the hole a parked slab for every one of them.
+# position and its shut one is a travel away. Seven SLIDING doors
+# across the rotation are built that way (dm2 3, e1m7 2, e1m1 1,
+# e1m2 1) and the report called the hole a parked slab for every one
+# of them.
+#
+# AND NINE MORE ARE VERTICAL (#331). A plain vertical door was left
+# out of this pass on the grounds that a slab going straight up or
+# down leaves the doorway rather than parking in it, which is true
+# and is the wrong way round for a START_OPEN one. That door sits a
+# travel clear at spawn and the first thing that triggers it puts the
+# slab back in the hole it was compiled in, so its parked box is the
+# doorway. e1m1 has five, e1m7 two, e1m5 and e1m6 one each. Only two
+# of the nine stand anywhere a graph reaches. Measured against the
+# shipped graphs: e1m6's *40 has ten link pairs crossing the box it
+# parks in, one a plain walk and nine already typed as doors by the
+# bank of shut slabs sharing that volume, and e1m1's *15 has three,
+# all plain walks. The other seven cost nothing today and would cost
+# something the moment a seat lands near one.
 #
 # Two things measured and NOT kept, both because they changed nothing
 # the veto below does not already do:
@@ -1299,7 +1338,7 @@ print(f"door movers: {doorlifts} ridden like plats")
 # sampling: --retype-doors reads a shipped graph and re-emits it, so
 # it needs the door geometry and none of the pipeline between.
 door_open = _open_boxes()
-print(f"sliding doors: {len(door_open)} parked slab(s) to keep links off")
+print(f"doors: {len(door_open)} parked slab(s) to keep links off")
 
 # ---- 5c. train links from func_train ----
 # A func_train patrols its path_corners on its own clock: a MOVING
@@ -1584,7 +1623,7 @@ VERBOSE = "--verbose" in sys.argv[5:]
 def _open_slab_blocks(a, b):
     """Does a parked slab stand on this link's line?
 
-    The open position of a sliding door is world geometry that
+    The open position of a door is world geometry that
     NEITHER hull carries, so the sampler reads the recess it retreats
     into as clean floor and nothing downstream can see the slab
     (#309). It is solid at exactly the moment a bot wants to use the
