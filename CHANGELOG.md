@@ -9,6 +9,95 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**navgen corrects door typing without regenerating the graph (#330).**
+`--retype-doors` reads a shipped `argus_nav_<map>.qc` and its json,
+recomputes which links a shut door blocks, and writes both back with
+the typing corrected and nothing else touched. No sampling, no
+decimation, no linking, no knitting, no plot. dm2 takes 0.2 seconds
+against 37 for a regen, and its whole diff is three verbs.
+
+The point is the unit of change, not the clock. #320's typing fixes
+only reach a map through a regen, and a regen reseats, relinks,
+re-decimates and re-knits everything, so a three link correction
+arrived wrapped in a whole new graph and had to clear a ladder built
+for whole new graphs. Three of the four maps carrying debt have their
+regens refused for reasons that have nothing to do with doors.
+
+WHICH FILE IS THE AUTHORITY ON WHAT. The `.qc` owns link order,
+because emission order is what assigns runtime link slots: its lines
+are rewritten in place, so a link keeps the slot it has and only its
+verb changes. The json owns node position, because the `.qc` rounds to
+whole units and the typing test measures floats. The two are checked
+node for node before anything is written, so a mismatched pair refuses
+rather than rewriting the wrong graph.
+
+PROVEN AGAINST THE GENERATOR, which is the only claim worth making: a
+full regen of dm2 and of e1m7, retyped, comes back byte identical in
+both files, so the mode and the pipeline's own 7f2 agree. The refactor
+it needed - the entity lump and the door geometry move ahead of
+sampling, since nothing else in the file may run - leaves a dm2 regen
+byte identical to the same regen before it, stdout included.
+
+**Two defects in the shut-box test, both found by building that mode
+(#330).** Both live in `_door_shut_box`, both arrived with #319, and
+neither has reached nav data, because every regen since has been
+refused for other reasons.
+
+- A `func_door_secret` was read as a `func_door`. doors.qc builds a
+  secret door at its closed position, always, and its bit 1 is
+  SECRET_OPEN_ONCE, which means it stays open once opened, not that it
+  starts open. Read as a func_door's DOOR_START_OPEN it swapped the
+  box a travel away from the wall the door is actually in, and the two
+  stage sidestep a secret really performs is not a travel this file
+  models anyway. Six links on e1m1 and two on e1m2 lost a door type
+  they had earned.
+- The vertical branch had the two angles the wrong way round. subs.qc
+  SetMovedir reads angle -1 as UP and -2 as DOWN; the code had it
+  backwards, so every vertical START_OPEN door was tested against a
+  slab reflected to the far side of its own doorway. e1m1 carries
+  five, e1m7 two, e1m5 and e1m6 one each.
+
+AND THE DEBT TABLE BELOW IS WRONG, because it was counted against both
+of those and from the json rather than from the `.qc`. Those two
+disagree on three maps - dm2 12 against 11, e1m1 59 against 58, e1m6
+212 against 202 - because a pair 6c typed and a later pass reminted as
+a jump emits as a jump link while 6c's list keeps the stale entry. The
+runtime never had a doormask on any of them. 7f2 cannot produce one,
+and a retype clears them. What the shipped graphs actually carry, what
+a retype makes of them, and the whole of the real debt:
+
+```
+map     door verbs   after   newly typed   untyped
+e1m6           202     200            12        14
+dm2             11      14             3         0
+e1m5            36      37             1         0
+e1m1            58      58             0         0
+e1m2            64      64             0         0
+e1m7             0       0             0         0
+e1m8            16      16             0         0
+```
+
+e1m7 was the headline item at 30 of 30 and needs nothing at all: every
+one of the 30 was measured against the reflected slab. e1m1's seven
+were six secret-door crossings and one reflected vertical. The real
+debt is 26 links on e1m6, three on dm2 and one on e1m5. Collecting it
+is still #324's job, one map at a time with its own tape, and e1m1,
+e1m2 and e1m8 move in the json only, so their progs would not change
+at all.
+
+ONE MORE THING THE MODE FOUND AND CANNOT FIX, filed as #331: a
+vertical door with DOOR_START_OPEN parks in the box it was compiled
+in, which is the doorway, and 5b3's veto only models doors that slide
+sideways. Fifteen links across e1m6 and e1m1 cross one. Untyping is
+all a retype can do about that. Refusing to mint it is 6b's job, and
+only a regen runs 6b.
+
+The CLI fixtures for this are BUILT, not borrowed. A retype needs a
+BSP only for its entity lump and its model boxes, so twelve lines of
+struct is a whole map as far as it is concerned, and the seven new
+tests run on any machine instead of skipping wherever `maps_local` is
+absent - which is the lesson already recorded one method above them.
+
 **The door-typing debt: the cheapest map in the queue was worked and
 refused (#324).** #320 fixed three defects in how navgen types a door
 link, and all three only reach a map through a regen, so every shipped
@@ -26,6 +115,11 @@ e1m5       36          37         1          0
 e1m2       64          62         0          2
 e1m8       16          16         0          0
 ```
+
+CORRECTED BY THE #330 ENTRY ABOVE: this table was counted from the
+json and against a shut-box test carrying two defects. The real debt
+is 26 links on e1m6, three on dm2 and one on e1m5, and e1m7 needs
+nothing.
 
 dm2 is the cheapest entry and the cleanest possible experiment: its
 regen differs from the shipped graph in EXACTLY the door typing, one
