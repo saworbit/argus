@@ -9,6 +9,45 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**A vertical door that starts open parks in its own doorway, and
+navgen now keeps links off it (#331).** 5b3's parked-slab veto only
+modelled doors that slide sideways. A plain vertical door was left out
+on the grounds that a slab going straight up or down leaves the
+doorway rather than parking in it, which is true, and is the wrong way
+round for a DOOR_START_OPEN one. doors.qc swaps pos1 and pos2 for that
+flag, so the door sits a travel clear at spawn and the first thing
+that triggers it puts the slab back in the box it was compiled in. For
+a vertical door that box is the doorway.
+
+Nine such doors are in the rotation: e1m1 five, e1m7 two, e1m5 and
+e1m6 one each. Two of the nine stand where a graph reaches, and
+between them they carry thirteen link pairs through the box they park
+in - e1m6's `*40` ten, one a plain walk and nine typed as doors by the
+bank of shut slabs sharing that volume, and e1m1's `*15` three, all
+plain walks. The runtime steer from #303 catches every one of them
+frame by frame, so this was never a freeze; it is a link the graph
+should not mint.
+
+The fix is one filter in `_door_travel_boxes`, which now answers for a
+vertical START_OPEN door with the compiled box as its open half. 5b3
+and 6b needed no changes at all. Two pieces of tidying came with it:
+the vertical shut-box arithmetic, which used to be worked out twice
+and was wrong the second time until #330, now lives in one place; and
+the refusal that keeps a `func_door_secret` out of the travel model
+moved there too, so no future caller can repeat #330's mistake.
+
+MEASURED, because a mint-time change reaches a map only through a
+regen and a regen has to be worth running. `--retype-doors` comes back
+byte identical on all eleven maps, so the shut box did not move and
+#330's guarantee holds. Regenerating e1m1 and e1m6 against the same
+tool without the fix and with it: the same node count, the same worst
+spawn reach (97 and 95 per cent), the same stranded pockets and the
+same edict estimate, with six and fourteen more links vetoed. The
+dishonest links go and nothing pays for them.
+
+No nav data ships. Each map collects this at its next regen, e1m6
+first, since it owns ten of the thirteen.
+
 **navgen corrects door typing without regenerating the graph (#330).**
 `--retype-doors` reads a shipped `argus_nav_<map>.qc` and its json,
 recomputes which links a shut door blocks, and writes both back with
