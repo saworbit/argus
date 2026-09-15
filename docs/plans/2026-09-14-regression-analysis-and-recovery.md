@@ -753,13 +753,17 @@ Every arm below ran at the played tick rate, 185 s, on the same
 engine, judged with `compare_band` against the tape counts shown.
 
 ```
-arm                              n     stalls        engages     freezes
-v4.07 QC + 216-node old graph    4   54 [46-82]    24 [19-33]    0
-v4.08 QC + 216-node old graph    n   PLACEHOLDER_V408
-v4.09 QC + 216-node old graph    n   PLACEHOLDER_V409
-v4.17 QC + 216-node old graph    4   46 [27-95]    26 [19-36]    1 [0-2]
-v4.17 QC + 215-node new graph    3   77 [65-86]    20 [17-25]    0 [0-1]
+arm                              n     stalls        engages     vs v4.07
+v4.07 QC + 216-node old graph    4   54 [46-82]    24 [19-33]    control
+v4.08 QC + 216-node old graph    4   52 [25-55]    34 [29-45]    parity
+v4.09 QC + 216-node old graph    4   65 [43-129]   38 [19-41]    parity
+v4.17 QC + 216-node old graph    4   46 [27-95]    26 [19-36]    parity
+v4.17 QC + 215-node new graph    6   64 [31-86]    24 [17-40]    (graph arm)
 ```
+
+The graph arm is judged against the old-graph arm on the same QC, six
+tapes against four: **parity**, a candidate median of 64 inside a
+control band of 23 to 97.
 
 **Task 1.1, the QC bisect: not convicted.** The whole span from v4.07
 to v4.17 on one graph moves the stall median from 54 to 46 and the
@@ -777,51 +781,64 @@ what it is.
 That verdict is worth dwelling on, because after two tapes the old
 graph was reading 27 and 47 against the new graph's 65 to 86 and the
 obvious conclusion was "the regen did it". The third old-graph tape
-came back at 95. **The band is the only reason that conclusion was not
+came back at 95, and the fifth and sixth new-graph tapes came back at
+31 and 37. **The band is the only reason that conclusion was not
 shipped**, which is the whole argument for phase 0 in one experiment.
+
+The v4.09 arm made the same point from the other side: at three tapes
+it read REGRESSED (stalls 43, 129, 86) and its fourth tape returned it
+to parity. Three tapes is not enough on this map, and four is barely.
 
 ### What the tapes found instead
 
 **dm2 has always been this bad, on both graphs and at both rates.** At
-the played rate the shipped build runs 23 stalls a minute on dm2, and
-25 a minute on the PREVIOUS graph. Shane's last three dm2 sessions
-read 21.6, 32.5 and 21.9. There was no September cliff in the game.
+the played rate the shipped build runs about 21 stalls a minute on
+dm2, and 25 a minute on the PREVIOUS graph. Shane's last three dm2
+sessions read 21.6, 32.5 and 21.9. There was no September cliff in the
+game.
 
-I first wrote here that the 19 Hz lab "read 11 to 16 for the same
-builds", and therefore that the rate was hiding the problem. **That
-was a selective reading of historical tapes and it is wrong.** Run as
-a controlled experiment, the same progs and the same graph at both
-rates, three and four tapes:
+I wrote two wrong things here before arriving at that. First, that the
+19 Hz lab "read 11 to 16 for the same builds", which was a selective
+reading of historical tapes. Then, having run a controlled experiment
+at four tapes a side, that the rate moved engagement, coverage and
+deflections. The fifth and sixth control tapes dissolved the second
+claim as thoroughly as the controlled run dissolved the first.
 
 ```
-dm2, shipped v4.17, 185 s tapes      70 Hz (n=4)      19 Hz (n=3)    z
-stalls                               71 [64-86]       74 [17-79]   +0.35
-engagements                          22 [17-25]       31 [27-43]   -2.12
-coverage, cells                     430 [348-442]    463 [454-505]  -2.12
-hazard deflections                  244 [226-260]    203 [195-214]  +2.12
+dm2, shipped v4.17, 185 s tapes, 6 at the played rate against 3 at 19 Hz
+
+rate-INDEPENDENT (counts of things that happened, not of frames)
+  stalls         64 [31-86]      74 [17-79]     z +0.00   overlap
+  engagements    24 [17-40]      31 [27-43]     z -1.29   overlap
+  coverage      439 [348-560]   463 [454-505]   z -0.77   overlap
+  goal pickups   96 [90-111]    101 [100-104]   z -0.77   overlap
+  bot deaths     12 [4-19]       15 [11-16]     z -0.39   overlap
+  average speed 208 [194-254]   210 [203-258]   z -0.52   overlap
+  routed share   77 [75-81]      78 [71-78]     z +0.26   overlap
+  routefails     15 [12-20]      14 [9-17]      z +0.65   overlap
+
+INFLATED BY FRAME RATE BY CONSTRUCTION (throttled one a second per bot)
+  hazard        244 [226-260]   203 [195-214]   z +2.32   disjoint
 ```
 
-**The tick rate does not touch stalls.** It does touch three other
-things, and there the ranges do not overlap at all (z of 2.12 is the
-most this sample size can produce). The hazard event is throttled to
-one a second per bot, so 244 against 203 is 44 per cent of bot-seconds
-spent deflecting against 37: the per-frame brink guard is markedly
-more active at the played rate, bots are more timid, they cover less
-ground and they meet each other 30 per cent less often.
+**Every metric that counts something that happened overlaps**, stalls
+at z 0.00 exactly. The one disjoint metric is the hazard deflection
+count, and that event is throttled to one a second per bot, so a 3.7x
+frame rate raises the chance of at least one deflection landing inside
+any given second whether or not the bot behaves differently. It is a
+measurement artifact, and reading it as timidity was the same mistake
+in a new coat.
 
-**That is a better finding than the one I was reaching for.** It is
-exactly the per-frame-constant class part 5 of this document listed as
-an audit item, it is a guard nobody has ever calibrated at the rate it
-is played at, and it is a mechanism for this document's own paradox:
-the lab's bot-only engagement count rose 50 per cent across a month of
-builds while the rate under human play stayed flat at 27 to 33. Some
-of that rise was the lab counting encounters a played session would
-never have had.
+**The tick pin is still right, for a reason that is arithmetic rather
+than statistical.** The aim spring's integrator genuinely behaves
+differently at the two rates, and that is a derivation from the code.
+What these tapes add is that dm2's MOVEMENT numbers are insensitive to
+it: the old tapes' movement figures were not lies, they were recorded
+on a rig whose AIM was a different bot.
 
 dm4's played-rate band (5, 8, 11 stalls) sits on its 19 Hz history of
 mean 8.0 over 53 tapes, so nothing here says dm4's month of clean
-tapes was a lie. Whether dm4's engagement count moves with the rate
-the way dm2's does is NOT measured; that wants a dm4 rate control.
+tapes was a lie either.
 
 **The new graph did not add stalls, it concentrated them.** Total load
 is in band, but the composition is not:
