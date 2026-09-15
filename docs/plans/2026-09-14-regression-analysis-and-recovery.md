@@ -431,6 +431,20 @@ expressible again. `experiment` runs three by default.
 no ARGEVT death line, so it is invisible to every kill matrix and to
 the threat ratio phase 2 turns on. One kill in 302 s on the v405 tape.
 
+### fteqcc is byte-stable, and the record says it is not
+
+Recompiling the shipped v4.17 source with the lab's own fteqcc
+produces a progs.dat that differs from the installed one in **exactly
+one byte**: the build date fteqcc stamps into its header comment
+("2026/09/15" against "2026/09/14"). The compiled code is identical.
+
+This matters twice. It means a freshly built control is a valid
+control, so a ladder does not need to re-run the shipped binary's
+tapes to compare against them. And it retires the v3.74 note that a
+rejected cycle must restore installed progs "never by recompile -
+fteqcc is not byte-stable", which cost that machinery a snapshot
+directory it did not need.
+
 ### The aim spring, measured before phase 2 touches it
 
 Task 2.1 asked for the 71 Hz constants to be re-fitted so the settle
