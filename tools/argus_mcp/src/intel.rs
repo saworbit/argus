@@ -179,6 +179,34 @@ pub struct MatchBrief {
     /// whole "played, review" ritual in one call.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub paired_demo: Option<crate::demo::DemoBrief>,
+    /// Present only on a tape with human tracks: the row the player
+    /// would recognise. Lab gates measure the build against other
+    /// builds; this measures the game against the last time it was
+    /// played, which is the only question Shane ever asks.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub human_scorecard: Option<HumanScorecard>,
+}
+
+/// One session, scored on what the player sees. Rates are per minute
+/// of tape so sessions of different lengths compare directly.
+#[derive(Debug, Clone, Serialize)]
+pub struct HumanScorecard {
+    pub minutes: f64,
+    /// how often the bots killed the player, per minute
+    pub bot_kills_human_pm: f64,
+    /// how often the player killed a bot, per minute
+    pub human_kills_pm: f64,
+    /// the ratio the skill tiers are calibrated on: at skill 1 the
+    /// bots should sit at 0.6 to 0.8 of the player's rate (he wins,
+    /// narrowly), at skill 2 about parity
+    pub threat_ratio: f64,
+    pub stall_pm: f64,
+    pub routefail_pm: f64,
+    pub freezes: u32,
+    pub freeze_max_sec: f64,
+    /// unstick teleports. A bot vanishing and reappearing is a visible
+    /// failure the scorecard must show, never a fix. The target is 0.
+    pub unstick_warps: u32,
 }
 
 /// The item-clock scoreboard: how tightly the roster runs each major
@@ -640,10 +668,40 @@ fn brief_tape_lava(
         nav_coverage: None,
         item_control: Vec::new(),
         paired_demo: None,
+        human_scorecard: None,
     };
+    brief.human_scorecard = human_scorecard(tape, &brief.totals);
     brief.next_steps = suggest_next(&brief, None);
     brief.headline = headline_one(&brief.totals, &brief.flags, brief.map.as_deref());
     brief
+}
+
+/// Score a session the way the player experienced it.
+///
+/// Returns None on a botmatch tape: every figure here is about a human
+/// being in the game, and a lab tape has none. Rates are per minute so
+/// a 131 s session and a 465 s one compare directly.
+fn human_scorecard(tape: &MatchTape, totals: &Totals) -> Option<HumanScorecard> {
+    let h = totals.human.as_ref()?;
+    let minutes = (totals.duration_sec / 60.0).max(1.0 / 60.0);
+    let bot_kills_human = h.deaths - h.world_deaths;
+    let per_min = |n: f64| (n / minutes * 10.0).round() / 10.0;
+    let ratio = if h.kills > 0 {
+        (bot_kills_human as f64 / h.kills as f64 * 100.0).round() / 100.0
+    } else {
+        0.0
+    };
+    Some(HumanScorecard {
+        minutes: (minutes * 10.0).round() / 10.0,
+        bot_kills_human_pm: per_min(bot_kills_human.max(0) as f64),
+        human_kills_pm: per_min(h.kills.max(0) as f64),
+        threat_ratio: ratio,
+        stall_pm: per_min(totals.stalls as f64),
+        routefail_pm: per_min(totals.routefails as f64),
+        freezes: totals.freezes,
+        freeze_max_sec: totals.freeze_max_sec,
+        unstick_warps: *tape.event_counts.get("unstick").unwrap_or(&0),
+    })
 }
 
 pub fn brief_text(text: &str, map_hint: Option<&str>) -> MatchBrief {
@@ -3024,6 +3082,43 @@ ARGEVT Reap spawned
     /// found. The old OR rule read nine of them as "improved", five as
     /// "regressed" and none as parity: a coin flip, and the instrument
     /// that shipped sixty builds. A null change must read parity.
+    /// The row the player would recognise, from the last human dm4
+    /// tape on record: Shane went 18 and 11 and the bots killed him
+    /// ten times in 302 seconds.
+    #[test]
+    fn a_human_tape_carries_a_scorecard_if_present() {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/shane_dm4_2026-08-29_v405.log");
+        if !path.exists() {
+            return;
+        }
+        let b = brief_path(&path, None).unwrap();
+        let sc = b.human_scorecard.expect("human tape carries a scorecard");
+        assert!((sc.minutes - 5.0).abs() < 0.3, "minutes {}", sc.minutes);
+        assert!(
+            (sc.bot_kills_human_pm - 2.0).abs() < 0.2,
+            "bots killed him 10 times in 5 minutes, got {}",
+            sc.bot_kills_human_pm
+        );
+        // 17, not the 18 the engine obituaries carry: the telefrag at
+        // t 153 printed an obituary and no ARGEVT death line. Filed;
+        // the scorecard reports what the telemetry says.
+        assert!(
+            (sc.human_kills_pm - 3.4).abs() < 0.2,
+            "he killed 17 by telemetry in 5 minutes, got {}",
+            sc.human_kills_pm
+        );
+        assert!(sc.threat_ratio > 0.5 && sc.threat_ratio < 0.6, "{}", sc.threat_ratio);
+        assert_eq!(sc.unstick_warps, 0, "no warps on that tape");
+
+        // a botmatch has no player, so no scorecard
+        let lab = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/ab_dm2_corridor1.log");
+        if lab.exists() {
+            assert!(brief_path(&lab, None).unwrap().human_scorecard.is_none());
+        }
+    }
+
     #[test]
     fn same_build_pairs_read_parity_if_present() {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
