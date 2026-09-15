@@ -2275,6 +2275,29 @@ void() Argus_SprintRunup =
 
 // ---------------------------------------------------------------- death
 
+// Who actually gets the frag. Normally the attacker, but a telefrag
+// names a teledeath trigger whose netname is empty, so the death line
+// used to read "world" while the engine obituary correctly credited
+// the fragger from attacker.owner (ClientObituary does exactly this
+// for all three teledeath classes). One kill in Shane's v4.05 tape
+// was lost that way: the obituaries gave him 18 and the death lines
+// 17, and every kill matrix, player_kills total and threat ratio is
+// built from the death lines (#337). Anything else without a netname
+// - a crusher door, a missile entity - is still "world".
+string(entity killer) Argus_KillerName =
+{
+    local entity k;
+
+    k = killer;
+    if (k.classname == "teledeath" || k.classname == "teledeath2"
+        || k.classname == "teledeath3")
+        k = k.owner;
+
+    if (k != world && k.netname != "")
+        return k.netname;
+    return "world";
+};
+
 void() Argus_Die =
 {
     // one death line only: the detailed form below. A bare
@@ -2289,10 +2312,7 @@ void() Argus_Die =
     // without a netname) used to print an EMPTY killer field and
     // strict parsers dropped the row (Shane's fix-now list; dm2's
     // crusher was the live case). Nameless killers are "world".
-    if (self.enemy != world && self.enemy.netname != "")
-        dprint (self.enemy.netname);
-    else
-        dprint ("world");
+    dprint (Argus_KillerName (self.enemy));
     dprint (" pos ");
     dprint (vtos(self.origin));
     dprint ("\n");
