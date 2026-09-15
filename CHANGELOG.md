@@ -26,41 +26,54 @@ v4.09 note that "sys_ticrate does nothing to the dedicated tick", and
 the v4.07 "frametime 0.1", which was `ftos` printing a 0.05 s frame to
 one decimal.
 
-**THE TICK RATE CHANGES WHAT BOTS DO, BUT NOT WHAT THIS ENTRY FIRST
-SAID IT DID.** The first version claimed the played rate reproduced
-Shane's dm2 stall rate where 19 Hz "read 11 to 16", and that figure
-was a selective reading of historical tapes. Run as a controlled
-experiment instead, the same progs and the same graph at both rates:
+**THE TICK RATE DOES NOT MEASURABLY CHANGE dm2 BOT BEHAVIOUR**, and
+this entry said otherwise twice before arriving here. The first
+version claimed the played rate reproduced Shane's dm2 stall rate
+where 19 Hz "read 11 to 16"; that was a selective reading of
+historical tapes. The second claimed the rate moved engagement,
+coverage and deflections; that rested on four tapes a side and the
+fifth and sixth control tapes dissolved it.
+
+Run as a controlled experiment, same progs and same graph:
 
 ```
-dm2, shipped v4.17, 185 s tapes      70 Hz (n=4)      19 Hz (n=3)    z
-stalls                               71 [64-86]       74 [17-79]   +0.35
-engagements                          22 [17-25]       31 [27-43]   -2.12
-coverage, cells                     430 [348-442]    463 [454-505]  -2.12
-hazard deflections                  244 [226-260]    203 [195-214]  +2.12
+dm2, shipped v4.17, 185 s tapes, 6 at the played rate against 3 at 19 Hz
+
+rate-INDEPENDENT (counts of things that happened, not of frames)
+  stalls         64 [31-86]      74 [17-79]     z +0.00   overlap
+  engagements    24 [17-40]      31 [27-43]     z -1.29   overlap
+  coverage      439 [348-560]   463 [454-505]   z -0.77   overlap
+  goal pickups   96 [90-111]    101 [100-104]   z -0.77   overlap
+  bot deaths     12 [4-19]       15 [11-16]     z -0.39   overlap
+  average speed 208 [194-254]   210 [203-258]   z -0.52   overlap
+  routed share   77 [75-81]      78 [71-78]     z +0.26   overlap
+  routefails     15 [12-20]      14 [9-17]      z +0.65   overlap
+
+INFLATED BY FRAME RATE BY CONSTRUCTION (throttled one a second per bot)
+  hazard        244 [226-260]   203 [195-214]   z +2.32   disjoint
 ```
 
-**Stalls are unaffected by the tick rate.** dm2 runs about 23 a minute
-at either, which is the range Shane reports (21.6, 32.5, 21.9), so the
-map's stall problem is real, old, and not something the old rig was
-hiding.
+Every metric that counts something that HAPPENED overlaps, with
+stalls at z 0.00 exactly. The one disjoint metric is the hazard
+deflection count, and that event is throttled to one a second per
+bot, so a 3.7x frame rate raises the chance of at least one
+deflection landing inside any given second whether or not the bot
+behaves differently. It is a measurement artifact and must not be
+read as timidity.
 
-**Engagements, coverage and hazard deflections are affected, and the
-ranges do not overlap.** The hazard event is throttled to one a second
-per bot, so 244 against 203 means bots spent 44 per cent of their
-bot-seconds deflecting at the played rate against 37 per cent: the
-per-frame brink guard is more active at 71 Hz, bots are more timid,
-cover less ground and meet each other 30 per cent less often. That is
-the per-frame-constant class the plan's own audit item predicted, it
-is a guard nobody has ever calibrated at the rate it is played at, and
-**it is a mechanism for the plan's central paradox** - the lab's
-bot-only engagement count rose 50 per cent over a month while the rate
-under human play stayed flat.
+**THE TICK PIN IS STILL RIGHT, FOR A REASON THAT IS ARITHMETIC AND NOT
+STATISTICAL.** The aim spring's integrator genuinely behaves
+differently at the two rates - 97 per cent of the aim error in one
+frame at 19 Hz and skill 2, and no settling at all at 14.5 Hz and
+skill 3 - and that is a derivation from the code rather than a
+p-value. What these tapes add is that dm2's MOVEMENT numbers are
+insensitive to the rate, which is worth knowing in its own right: the
+old tapes' movement figures were not lies, they were just recorded on
+a rig whose aim was a different bot.
 
-And 31 per cent of those dm2 stalls, 70 of 228 across three tapes, sit
-in one cell at `2048 -1152 320`: #323's west deck, whose only walk-out
-is a 192 unit drop across a pit. The next two are #324's door cluster
-and the chronic SE grate room.
+dm2 runs about 21 to 24 stalls a minute at either rate, which is the
+range Shane reports (21.6, 32.5, 21.9). The map's stall problem is
+real, old, and was never being hidden by the rig.
 
 **THE VERDICT RULE WAS A COIN FLIP.** Run over the sixteen pairs of
 byte-identical builds in `runs/`, the old OR rule returned nine
