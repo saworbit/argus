@@ -9,6 +9,62 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**TWO QC CHANGES, NEITHER INSTALLED.** The tree is ahead of the
+installs on purpose: both are laddered green, and both change how bots
+behave against a HUMAN in ways no botmatch can size. The installed
+progs is still v4.17's 544D463AE34CD2EEE264B3BC3A92ADC3.
+
+**THE AIM SPRING BEHAVED DIFFERENTLY ON EVERY RIG, AND NOT SLIGHTLY.**
+`turn = 1 - damping_c * frametime` goes negative at every tier above
+skill 0 and was floored at 0.1, which does not damp the spring, it
+replaces it: `aimvel` becomes almost entirely `k * dt * error`. At
+skill 2 and 19 Hz that is 0.97 of the aim error in a single frame.
+Settle time for a 30 degree flick to within 3 degrees:
+
+```
+tier       71 Hz (played)   19 Hz (lab)   14.5 Hz (lab)
+skill 0        0.27 s          0.26 s        0.28 s
+skill 1        0.20 s          0.10 s     ONE FRAME
+skill 2        0.14 s       ONE FRAME        0.21 s
+skill 3        0.11 s          0.05 s     NEVER SETTLES
+```
+
+Every lab tape since v3.27 was recorded in the middle column and every
+session Shane played ran the left one. The fix is the integrator and
+not the constants: sub-step at 0.02 s, which is ONE step whenever the
+frame is at or under 20 ms (the lab's mean is 14.25 ms, counted with
+`host_speeds`) and three steps at 19 Hz. Re-fitting the played
+constants to match the lab, as the recovery plan asked, would
+reproduce that snap-aim in play: a difficulty change dressed as a bug
+fix, and it was declined.
+
+Laddered both ways. At the played rate, parity on dm4 (three tapes)
+and on dm2 (five). At about 14 Hz and skill 3, where the old
+integrator provably sits in a limit cycle, two tapes a side are
+DISJOINT on both metrics: engagements 61 and 68 against 85 and 115,
+bot deaths 21 and 26 against 42 and 47.
+
+THE dm2 ARM IS THE SESSION'S CLEAREST LESSON ABOUT THIS LAB. At three
+candidate tapes it read 21, 22, 43 and the verdict was IMPROVED on two
+gates against six controls. That could not be explained - the change
+is arithmetically identical on a 14 ms frame - so more tapes were run
+rather than shipping it. The fourth came back at 54, the fifth at 56,
+and the verdict is parity.
+
+**A BOT STOPPED SHOOTING WHEN SHOT AT POINT BLANK.**
+`Argus_BodyBlockCheck` releases `button0` whenever any live player
+within 48 horizontal units is airborne or firing. In co-op that is the
+defect #177 was filed for, a companion shooting through its team
+mate's back; in deathmatch the same line fires when an ENEMY shoots at
+you. Gated to `coop > 0`; the sidestep and the anti-embed nudge stay
+in both modes. Instrumented first (`ARGUS <name> bodyblock`, throttled
+two seconds a bot): eight firings in a 120 s dm4 botmatch, about four
+per cent of the windows, WHICH IS ALSO THE LIMIT OF WHAT A LADDER CAN
+SAY. Three dm4 tapes read parity on all four gates. The human test
+stands outstanding: stand on a bot while firing and see whether it
+shoots back.
+
+
 **THE LAB HAS BEEN RUNNING A DIFFERENT GAME FROM THE ONE ANYONE PLAYS,
 and its verdict could not tell a change from nothing.** Phase 0 of the
 regression recovery plan
