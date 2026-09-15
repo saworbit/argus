@@ -1077,7 +1077,7 @@ const COVER_GATE_MIN_SEC: f64 = 120.0;
 /// `k` is the multiplicative half-width at one tape a side and `abs`
 /// the absolute floor that keeps small counts honest: one stall
 /// becoming eleven is an 1100 per cent "regression" and happened on
-/// identical code. These settings read 15 of the 16 null pairs as
+/// identical code. These settings read 13 of the 16 null pairs as
 /// parity, where the old OR rule read 0 as parity and 9 as
 /// improvements.
 ///
@@ -1104,6 +1104,17 @@ fn metric_of(t: &Totals, name: &str) -> f64 {
         "lava_deaths" => t.lava_deaths as f64,
         "freezes" => t.freezes as f64,
         _ => 0.0,
+    }
+}
+
+/// A median of an even count lands on a half. Printing it to zero
+/// decimals turned "0.5 freezes against 0" into "0 vs 0", which read
+/// as a tie while it was quietly blocking an improvement verdict.
+fn trim(v: f64) -> String {
+    if (v - v.round()).abs() < 1e-9 {
+        format!("{v:.0}")
+    } else {
+        format!("{v:.1}")
     }
 }
 
@@ -1192,6 +1203,20 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
         } else {
             (dmed < lo, dmed > hi)
         };
+        // "not worse than the control median" is the anti-trade rule:
+        // a change that halves stalls by doubling lava has not
+        // improved.
+        //
+        // TRIED AND REVERTED (2026-09-15): relaxing this to "worse by
+        // more than the metric's absolute floor", so that half a
+        // freeze could not block a real improvement. It took the null
+        // pairs from 15 parities to 12, and the two that flipped to
+        // "improved" were ab_dm4_fightpin1 vs 2 (stalls 20 to 6) and
+        // ab_dm2_apexgate1 vs 2 (97 to 17), both byte-identical
+        // builds. The strict rule is what stops a lucky tape reading
+        // as a result. The honest fix for the half-freeze was the
+        // report, not the rule: print medians that are not whole
+        // numbers as they are, and say which gate blocked.
         let worse = if spec.lower_is_better { dmed > cmed } else { dmed < cmed };
         if worse {
             worse_than_median = true;
@@ -1248,8 +1273,8 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
     }
     for g in &band_gates {
         findings.push(format!(
-            "{}: candidate median {:.0} against a control band of {:.0} to {:.0} (control median {:.0}), {}",
-            g.name, g.candidate_median, g.lo, g.hi, g.control_median, g.call
+            "{}: candidate median {} against a control band of {:.0} to {:.0} (control median {}), {}",
+            g.name, trim(g.candidate_median), g.lo, g.hi, trim(g.control_median), g.call
         ));
         // At one tape a side the fitted null spread is wide enough to
         // push the lower edge to zero, so no result can beat the band
@@ -3194,6 +3219,12 @@ ARGEVT Reap spawned
         if seen == 0 {
             return;
         }
+        // 13, measured. The three that still get through are
+        // ab_dm4_airlead1 vs 2 and ab_dm4_lgwade1 vs 2 (regressed,
+        // stalls 1 to 11 on identical code) and ab_dm2_apexgate1 vs 2
+        // (improved, stalls 97 to 17). The instrument has known
+        // residual error; it is not an oracle. The old OR rule read
+        // ZERO of the sixteen as parity and nine as improvements.
         assert!(
             parity >= 13,
             "only {parity} of {seen} null pairs read parity: {verdicts:?}"
