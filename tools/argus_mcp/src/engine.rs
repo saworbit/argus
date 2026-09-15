@@ -215,6 +215,17 @@ fn spawn_unix(
 /// See docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 pub const PLAYED_TICRATE: &str = "0.0139";
 
+/// The tick rate this launch will use.
+///
+/// `PLAYED_TICRATE` unless `ARGUS_TICRATE` overrides it, which exists
+/// for one job: measuring what the rate itself does to a build, by
+/// running the same progs at the old 0.05 and comparing. It is not a
+/// setting anyone should leave on - every brief states the class it
+/// actually ran at, and `compare_band` voids a verdict across two.
+pub fn ticrate() -> String {
+    std::env::var("ARGUS_TICRATE").unwrap_or_else(|_| PLAYED_TICRATE.to_string())
+}
+
 #[cfg(not(windows))]
 fn apply_args(
     cmd: &mut Command,
@@ -235,7 +246,7 @@ fn apply_args(
         .arg("+developer")
         .arg("1")
         .arg("+sys_ticrate")
-        .arg(PLAYED_TICRATE);
+        .arg(ticrate());
     if coop {
         cmd.arg("+coop").arg("1").arg("+deathmatch").arg("0");
     } else {
@@ -342,8 +353,9 @@ fn windows_args(
     } else {
         "+deathmatch 1"
     };
+    let tick = ticrate();
     let mut args = format!(
-        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +sys_ticrate {PLAYED_TICRATE} {mode_arg} +map {map}",
+        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +sys_ticrate {tick} {mode_arg} +map {map}",
         cfg.basedir.display(),
         cfg.game
     );
