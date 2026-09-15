@@ -9,6 +9,52 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**dm2's THREE UNTYPED DOOR CROSSINGS ARE TYPED** (#324). A regen of dm2
+on the current tree reproduces the shipped 215-node graph in every byte
+except three walk links that become door links:
+
+```
+n0   1185 -919 152  ->  n1    1281 -983  32
+n91  2177 -919 152  ->  n67   2049 -983  32
+n116 2369 -567  56  ->  n140  2465 -503   8
+```
+
+Same nodes, same links, same order, same emission slots. #320 fixed how
+navgen types a door link and #330 fixed the shut-box test, but neither
+reaches a map that is not regenerated, so these three have crossed a
+shut door and said nothing since they were minted. A bot routed over
+one gets no `ar_hopdoor`, so the advance never knows a door is on the
+line and the apex cornering will cut onto it. The v3.33 runtime trace
+handler still catches the slab at 240 units, which is why it was never
+fatal.
+
+The `doorlinks` array in the json also drops `201 -> 183`. That pair is
+a jump link, which the .qc never carried a doormask for, so nothing in
+the runtime changes there. Count door typing from the .qc, not the json.
+
+FIVE TAPES A SIDE, against a control arm built from the same QC and the
+shipped graph, dm2 at the played rate. Parity on all eight gates:
+
+```
+              stalls  engages  lava  freezes  coverage  goals
+control (5)     46      27       1      1       363      10
+candidate (5)   44      33       0      1       414      16
+```
+
+Two of the three links end at nodes that lead dm2's stall board, and
+the targeted cells moved the way the mechanism predicts: stall events
+naming one of the six endpoints ran 49 across the control arm and 24
+across the candidate, on 289 stallnodes against 195. That is a
+direction, not a proof. This map splits its own six-tape band into two
+halves of three and returns REJECTED on byte-identical code, which is
+the reason the ladder ran five a side.
+
+dm2's baseline band now points at the five candidate tapes.
+
+Still open on #324: e1m5 carries one untyped crossing and e1m6 twelve,
+and both maps point at 19 Hz baselines, so a ladder on either correctly
+reads VOID until they are re-baselined at the played rate.
+
 **A TELEFRAG NAMED THE WRONG KILLER ON THE DEATH LINE** (#337). The
 attacker on a telefrag is a `teledeath` trigger, which carries no
 netname, so `Argus_Die` and `ClientObituary` both fell through to
