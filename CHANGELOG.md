@@ -9,6 +9,68 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE LAB HAS BEEN RUNNING A DIFFERENT GAME FROM THE ONE ANYONE PLAYS,
+and its verdict could not tell a change from nothing.** Phase 0 of the
+regression recovery plan
+(`docs/plans/2026-09-14-regression-analysis-and-recovery.md`). Lab
+only: no QC, no nav data, no bot behaviour change.
+
+`sys_ticrate` gates Quake's dedicated main loop. The engine default of
+0.05 ran every tape in `runs/` at about 19 Hz while every human
+session is a listen server at about 71 Hz, nearly a factor of four on
+every per-frame constant in bot physics and on the aim spring's
+integrator. Measured on dm4 with the telemetry-cadence estimator: the
+default reads a mean ARGLOG gap of 0.5134, `+sys_ticrate 0.0139` reads
+0.5074, and every human tape reads 0.506 to 0.509. This refutes the
+v4.09 note that "sys_ticrate does nothing to the dedicated tick", and
+the v4.07 "frametime 0.1", which was `ftos` printing a 0.05 s frame to
+one decimal.
+
+**THE PLAYED-RATE LAB REPRODUCES WHAT SHANE SEES.** Three dm2 tapes on
+the shipped v4.17 progs read 65, 77 and 86 stalls, which is 21 to 28 a
+minute. His last three dm2 sessions read 21.6, 32.5 and 21.9. The same
+builds at 19 Hz read 11 to 16. dm4, by contrast, is rate-insensitive:
+5, 8 and 11 stalls against a 19 Hz history of 8.0 mean over 53 tapes.
+Whatever is wrong with dm2 was invisible to the old rig.
+
+And 31 per cent of those dm2 stalls, 70 of 228 across three tapes, sit
+in one cell at `2048 -1152 320`: #323's west deck, whose only walk-out
+is a 192 unit drop across a pit. The next two are #324's door cluster
+and the chronic SE grate room.
+
+**THE VERDICT RULE WAS A COIN FLIP.** Run over the sixteen pairs of
+byte-identical builds in `runs/`, the old OR rule returned nine
+"improved", five "regressed", two "mixed" and zero parity.
+`compare_band` returns parity on fifteen of the sixteen. Its band is
+fitted to those pairs rather than guessed; one tape a side, on
+identical code, this lab produces a stall ratio from 0.18x to 11.0x,
+engages 0.45 to 2.82, world deaths 0 to 4x and freezes 0 to 3.
+Coverage (0.70 to 1.19) and goal pickups (0.82 to 1.27) are the ONLY
+metrics here with enough signal to read a change off a single pair.
+
+At one tape a side the stall band's floor is zero, so an improvement
+cannot be expressed at all, only a regression or parity. Every
+"improved on all seven gates" in this file rests on an instrument that
+could not have said anything else. The band narrows as the square root
+of the tape count, so `experiment` now runs three candidate matches by
+default and judges them against the map's whole baseline band.
+
+Also: every brief carries `tick_gap_mean` and `tick_class`, and
+compare voids a verdict across two classes; the human scorecard
+(`tools/argus_longi.py`, `tools/argus_tick.py`) is a lab surface, with
+unstick warps on the card because a bot vanishing is a visible failure
+and not a fix; `argus-mcp match` drives a named match from the CLI;
+dm2 and dm4 are re-baselined as three-tape bands at the played rate.
+
+Filed while working: #337, a telefrag emits an engine obituary and no
+ARGEVT death line, so it is invisible to every kill matrix.
+
+Recorded: fteqcc IS byte-stable here. A recompile of the shipped v4.17
+source differs in exactly one byte, the build date in its header
+comment, which retires the v3.74 note that a rejected cycle must never
+restore by recompile.
+
+
 **A shootable door cannot be opened by walking into it, and fixing
 that costs more than the defect (#325).** Recorded as a refusal with
 its tapes, because the diagnosis is solid and all three cures failed.
