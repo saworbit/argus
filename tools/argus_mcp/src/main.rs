@@ -128,6 +128,49 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             println!("{}", serde_json::to_string_pretty(&res)?);
             Ok(())
         }
+        Some("compare") => {
+            // Judge a band from the CLI, so a ladder can be decided
+            // without an MCP client:
+            //   argus-mcp compare <cand,cand,...> [<ctrl,ctrl,...>]
+            // With no controls the map's baseline band is used.
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty() || rest.iter().any(|a| a == "-h" || a == "--help") {
+                println!("usage: argus-mcp compare <candidate[,candidate...]> [control[,control...]]
+
+Judge candidate tapes against control tapes as bands. With no controls, the map's baseline band from runs/baselines.json is used.");
+                return Ok(());
+            }
+            let split = |s: &str| -> Vec<String> {
+                s.split(',').map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect()
+            };
+            let cands = split(&rest[0]);
+            let ctrls = rest.get(1).map(|s| split(s)).unwrap_or_default();
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let report = if ctrls.is_empty() {
+                argus_mcp::intel::compare_runs_band(&cfg, &cands, None)
+                    .map_err(|e| anyhow::anyhow!(e))?
+            } else {
+                let mut cb = Vec::new();
+                for c in &cands {
+                    cb.push(argus_mcp::intel::brief_run(&cfg, c, None).map_err(|e| anyhow::anyhow!(e))?);
+                }
+                let map = cb[0].map.clone();
+                let mut kb = Vec::new();
+                for c in &ctrls {
+                    kb.push(
+                        argus_mcp::intel::brief_run(&cfg, c, map.as_deref())
+                            .map_err(|e| anyhow::anyhow!(e))?,
+                    );
+                }
+                argus_mcp::intel::compare_band(&cb, &kb)
+            };
+            println!("{}", report.gate_card);
+            println!("{}", report.headline);
+            for f in &report.findings {
+                println!("  - {f}");
+            }
+            Ok(())
+        }
         Some("client") => {
             // the lab as a real NetQuake client (see netclient.rs):
             //   argus-mcp client observe [secs] [host] [port]
