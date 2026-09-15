@@ -5,7 +5,7 @@ maps, runs headless matches, and briefs the result the way this
 project already judges A/B. Toolchain only: it does not change QuakeC
 or the engine.
 
-Current version: **0.25.0**. Operator guide (this file). Design
+Current version: **0.26.0**. Operator guide (this file). Design
 history: `docs/specs/2026-08-17-argus-mcp-design.md`.
 Captured external spec and triage: `docs/mcp_quake_dev_spec.md`.
 
@@ -640,6 +640,93 @@ stops a leftover live match first.
   `see what=fn name=Argus_SetSkill` → edit →
   `experiment map=dm4 duration_sec=30 skill=2`.
 
+## The tick rate, and why a verdict can be void
+
+Every lab match runs `+sys_ticrate 0.0139`, which is about 70 frames a
+second. It is not a preference. `sys_ticrate` gates Quake's dedicated
+main loop, the engine default of 0.05 runs a dedicated server at about
+19 Hz, and every session a human plays is a listen server at about
+71 Hz. Nearly a factor of four sits on every per-frame constant in bot
+physics and on the aim spring's integrator, so a tape recorded at the
+old default and a played session were never the same game.
+
+Every brief now says which game it recorded. `totals.tick_gap_mean` is
+the mean gap between one bot's telemetry rows, which pins the frame
+period because `Argus_Telemetry` fires on the first frame after
+`time + 0.5`; `totals.tick_class` names the regime:
+
+| class | rate | what it is |
+|---|---|---|
+| `listen` | about 71 Hz | what Shane plays, and what the lab runs now |
+| `dedicated_fast` | about 19 Hz | the lab before 2026-09-15, 1 ms Windows timer |
+| `dedicated_slow` | about 14 to 15 Hz | the same lab on a coarse-timer day |
+
+Of the 635 readable tapes in `runs/`, 438 are fast, 124 slow and 73
+listen. **Compare refuses to judge across two classes**: the verdict
+is forced to Mixed, a finding names the cause and the gate card
+carries a `Server tick rate ... VOID` row. Any comparison against a
+baseline recorded before this change reads VOID until that map is
+re-baselined, which is correct.
+
+`ARGUS_TICRATE` overrides the default for one job only: running the
+same progs at both rates to measure what the rate itself does.
+
+## Bands, not one tape against one tape
+
+The verdict rule that shipped sixty builds read a coin flip as a
+release. Run over the sixteen pairs of byte-identical builds in
+`runs/`, it returned nine "improved", five "regressed", two "mixed"
+and **zero parity**. `compare_band` returns parity on fifteen of the
+sixteen.
+
+The band is fitted to those pairs. One tape a side, on identical code,
+this lab produces:
+
+| metric | null ratio range | judge on one pair? |
+|---|---|---|
+| stalls | 0.18x to 11.0x | no |
+| engages | 0.45 to 2.82 | no |
+| world deaths | 0 to 4x | no |
+| freezes | 0 to 3 | no |
+| coverage | 0.70 to 1.19 | yes |
+| goal pickups | 0.82 to 1.27 | yes |
+
+Coverage and goal pickups are the only two metrics here with enough
+signal to read a change off a single pair. Remember that before
+quoting a stall count at anyone.
+
+The rule: regressed if the candidate median leaves the band on any
+hard gate; improved only if it beats the whole band on one gate and is
+no worse than the control median on every gate; parity otherwise. The
+band narrows as the square root of the tape count, so `experiment`
+runs three candidate matches by default (`repeats`, 1 to 5) and judges
+them against the map's whole baseline band. `runs/baselines.json`
+accepts a list of run names as well as a single one.
+
+**At one tape a side an improvement cannot be expressed**, only a
+regression or parity: the stall band's floor is zero there. The
+finding says so and names the cure. Every "improved on all seven
+gates" recorded before this rests on an instrument that could not have
+said anything else.
+
+## The human scorecard
+
+`tools/argus_longi.py` writes one row per tape of what the player
+sees: kills each way, stalls, freezes, routefails, unstick warps and
+the movement bestiary. `--append <tsv>` accumulates a scorecard
+without duplicating a tape, and `harvest_session.py` appends every
+harvested session to `runs/human_scorecard.tsv`.
+
+A brief on a tape with human tracks carries `human_scorecard`:
+`bot_kills_human_pm`, `human_kills_pm`, the `threat_ratio` the skill
+tiers are calibrated on, `stall_pm`, `routefail_pm`, `freezes`,
+`freeze_max_sec` and `unstick_warps`. Warps are on the card because a
+bot vanishing and reappearing is a visible failure, never a fix; the
+target is zero.
+
+`tools/argus_tick.py` reports the rate of any tape or of the whole
+archive (`--all`).
+
 ## Quality bars
 
 Encoded from the project charter, not invented per call:
@@ -810,5 +897,6 @@ shell.
 | 0.22 | The lab joins the game: a real NetQuake client (`argus-mcp client observe/walk/walkrel`), the empirical link-verification harness (`argus-mcp probelinks`), engine-verdict files consumed by navgen, orphan-engine kill on failed matches, serialized engine tests. |
 | 0.21 | The operational gaps. STALENESS SELF-AWARENESS: at startup the server detects a newer staged build, auto-swaps it into place for the next restart (Windows allows renaming a running exe), and stamps `lab_stale` on every JSON response for the rest of the session - a stale server can never again hand out an unmarked opinion. HARVEST GUARD: every match starter (MCP tools, soak, cycle) refuses to launch over an un-harvested play session (the harvester now MOVES its inputs, so leftovers are the signal). PAIRED DEMO JOIN: brief_run folds the same-stem .dem into the brief (aim stats, highlight reel, tracks) - the whole "played, review" ritual is one call. `ship` (compile + install everywhere + MD5s) and `baseline_set` (rewrite runs/baselines.json safely) close the loop's last manual steps. `soak --parallel 2` runs two engines on separate ports, halving ladder wall clock. Last-seen session memory persists to runs/.lab_session.json across restarts; `see what=project` stops listing fifty pak-only maps; compare flags any human tape as review-only material. |
 | 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |
+| 0.26 | The instrument learns to see what the player sees (the recovery plan, phase 0). EVERY MATCH RUNS AT THE PLAYED TICK RATE: `+sys_ticrate 0.0139`, because `sys_ticrate` gates the dedicated main loop and the engine default ran every tape in `runs/` at about 19 Hz against the 71 Hz of every human session. Measured on dm4: default mean ARGLOG gap 0.5134, flagged 0.5074, human tapes 0.506 to 0.509. This refutes the v4.09 note that sys_ticrate does nothing to the dedicated tick and the v4.07 "frametime 0.1", which was `ftos` printing a 0.05 s frame to one decimal. Briefs carry `tick_gap_mean` and `tick_class`, and compare REFUSES a verdict across two classes. THE VERDICT STOPS BEING A COIN FLIP: `compare_band` judges candidate medians against a control band fitted to the sixteen null pairs (which the old OR rule read as nine improvements and zero parities, and which now read fifteen parities); `experiment` gains `repeats`, default 3; `baselines.json` takes a list. THE HUMAN SCORECARD becomes a lab surface: `tools/argus_longi.py` and `tools/argus_tick.py` join the tree, `harvest_session.py` appends to `runs/human_scorecard.tsv`, and a brief on a human tape carries `human_scorecard` including unstick warps. Also `argus-mcp match <map> [duration] [name] [--port N]`, so a ladder can be driven without an MCP client and two engines can run at once. |
 | 0.25 | A committed tape is evidence (GitHub #328). `match_run` takes a `run_name` and writes `runs/<name>.log`; a name that collided with a tape already in git overwrote it in place, with no warning and nothing to notice by but a modified file in `git status`. It happened twice in one week, and the second time the ladder tape it destroyed survived only in a session transcript. `MatchCtrl::start` now refuses such a name before the engine spawns, beside the harvest guard it mirrors. TRACKED BY GIT IS THE TEST, not "the file is there": the matrix probe rewrites `mx_<map>.log` every run by design and five of those are committed, so it asks for a one-shot exemption that `start` consumes. IT FAILS OPEN - no git, or not a checkout, and the match proceeds, because a guard that cannot answer must not wedge the lab. |
 | 0.24 | The tracker batches (GitHub #29-#40, #101-#103). THE CAMERA WAS UNINDEXABLE IN THREE LAYERS: `argus_cam.qc` was missing from `index_argus` AND from `qc_search`'s separate list, `keep_fn` kept only names starting `"Argus_"` (which `"ArgusCam_POV"` does not), and the call regex had the same hole - so `see what=fn name=ArgusCam_*` and calls/callers could never see the camera or the director. All four fixed, plus the mover/trigger/player base files in both lists. Cartograph plats cross-reference the shipped graph (`nav_served`): dm3 rides its three plats every tape while static hull 0 alone briefed two of them "cannot walk aboard". Typed hops stop briefing as walks - `train`/`sprint`/`door` get their own `Route` arms and fields, and `load_nav_graph` finally loads `trainlinks`/`sprintlinks` into the adjacency used for island detection and graph cuts (`train_links` and `door_links` join the overlay). `pick_logs` matches whole stem tokens, so `lqdm2` tapes stop answering a `dm2` sweep and starving `learn_hotspots`. `line_clear` samples every 16u instead of splitting any length into 20 steps (a 1200u trace stepped 60u and walked over 16u walls). The netclient hostname retry falls back `COMPUTERNAME` -> `HOSTNAME` -> `hostname`, so it works off Windows. Travel distance ignores respawn teleports (any segment implying over 700 u/s), which had been adding about one map width per death to `dist` and `avg_speed` - A METRIC BOUNDARY: speed and distance are not comparable across this change. `harvest_session` banks a confirmed map before the next spawn attempt, so a session that played and then tried a missing map no longer archives as `unknown`. 92 tests. |

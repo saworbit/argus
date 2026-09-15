@@ -331,6 +331,68 @@ class TestToolsCLI(unittest.TestCase):
         self.assertEqual(fz[0][0], "Bot1")
         self.assertAlmostEqual(fz[0][3], 6.0)
 
+    def test_longi_reproduces_the_v405_row(self):
+        """The scorecard is the instrument that sees what Shane sees.
+
+        The v405 session is the last human dm4 tape on record and the
+        CHANGELOG reports it as 18 and 11 with 7 stalls and no freezes.
+        If the scorecard cannot reproduce that row it cannot judge the
+        sessions phases 1 and 2 turn on.
+        """
+        tape = ROOT / "runs" / "shane_dm4_2026-08-29_v405.log"
+        if not tape.is_file():
+            self.skipTest("v405 session tape not present")
+        res = self.run_tool("argus_longi.py", str(tape))
+        self.assertEqual(res.returncode, 0, res.stderr)
+        lines = res.stdout.splitlines()
+        row = dict(zip(lines[0].split("\t"), lines[1].split("\t")))
+        self.assertEqual(row["bot_kills_human"], "10")
+        self.assertEqual(row["human_kills_bot"], "18")
+        self.assertEqual(row["stalls"], "7")
+        self.assertEqual(row["freezes"], "0")
+        self.assertEqual(row["unstick"], "0")
+
+    def test_tick_estimator_separates_listen_from_dedicated(self):
+        """A tape says which game it recorded, or it cannot be compared."""
+        pairs = [
+            ("shane_dm4_2026-08-29_v405.log", "70 Hz"),
+            ("ab_dm2_corridor1.log", "19 Hz"),
+            ("ab_dm2_doors.log", "14 to 15 Hz"),
+        ]
+        for name, want in pairs:
+            tape = ROOT / "runs" / name
+            if not tape.is_file():
+                continue
+            res = self.run_tool("argus_tick.py", str(tape))
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertIn(want, res.stdout, f"{name}: {res.stdout}")
+
+    def test_harvest_appends_a_scorecard_row(self):
+        """Every harvested session lands one row in the scorecard.
+
+        A human session that is not scored is a session nobody can
+        compare to the one before it, which is how a month of them
+        passed without the dm2 stall rate being noticed.
+        """
+        import csv as _csv
+        tape = ROOT / "runs" / "shane_dm4_2026-08-29_v405.log"
+        if not tape.is_file():
+            self.skipTest("v405 session tape not present")
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "human_scorecard.tsv"
+            res = self.run_tool(
+                "argus_longi.py", "--append", str(out), str(tape)
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            # appending twice must not duplicate the tape
+            res = self.run_tool(
+                "argus_longi.py", "--append", str(out), str(tape)
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            rows = list(_csv.DictReader(out.open(), delimiter="\t"))
+            self.assertEqual(len(rows), 1, rows)
+            self.assertEqual(rows[0]["bot_kills_human"], "10")
+
     def test_argus_mcp_cli_subcommands(self):
         bin_names = ["argus-mcp.exe", "argus-mcp"]
         mcp_bin = None

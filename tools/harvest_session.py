@@ -109,6 +109,21 @@ def main():
                 shutil.copy2(str(src), str(dst))
     if not moves:
         print("nothing to harvest")
+
+    # Score the session on what the player saw, and keep the row. The
+    # lab's own gates never moved while the dm2 stall rate under human
+    # play tripled across a month, because nothing scored a session
+    # against the one before it.
+    if not args.dry_run and dest_log.exists():
+        card = ROOT / "runs" / "human_scorecard.tsv"
+        try:
+            sys.path.insert(0, str(ROOT / "tools"))
+            import argus_longi
+            n = argus_longi.append_rows(str(card), [argus_longi.analyse(str(dest_log))])
+            print(f"scorecard: {n} row(s) -> {card}")
+        except Exception as e:  # a scorecard failure must not lose a tape
+            print(f"scorecard skipped: {e}")
+
     print(f"map={mapname} stem={dest_log.stem}")
     return 0
 

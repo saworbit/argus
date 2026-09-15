@@ -367,6 +367,45 @@ impl MatchTape {
         }
     }
 
+    /// The mean gap between one bot's consecutive telemetry rows, which
+    /// pins the server's frame period without any per-frame print.
+    ///
+    /// `Argus_Telemetry` fires on the first frame after
+    /// `ar_nextlog = time + 0.5`, so the true gap is `n * dt` with
+    /// `n = floor(0.5 / dt) + 1` - never less than 0.5. The `t` field
+    /// prints to one decimal, so the gaps that reach a tape are a
+    /// two-point mixture of 0.5 and 0.6 and the MEAN carries the rate
+    /// in the fraction of 0.6s: 7 per cent at 70 Hz, 15 per cent at
+    /// 19 Hz, 32 per cent at 14.5 Hz. A median would read 0.5 for all
+    /// three.
+    ///
+    /// Gaps under 0.45 are dropped because no honest gap can be that
+    /// short: they are respawn resets of `ar_nextlog`, and on one
+    /// four-bot tape 566 of them dragged the mean to 0.4877, below the
+    /// arithmetic floor. Gaps over 0.75 are a bot that stopped logging
+    /// (a level change, a death mid-write).
+    ///
+    /// Calibrated 2026-09-15 against live probes on dm4; see
+    /// docs/plans/2026-09-14-regression-analysis-and-recovery.md.
+    pub fn tick_gap_mean(&self) -> Option<f64> {
+        let mut n = 0usize;
+        let mut sum = 0.0;
+        for rows in self.samples.values() {
+            for w in rows.windows(2) {
+                let d = w[1].t - w[0].t;
+                if (0.45..0.75).contains(&d) {
+                    sum += d;
+                    n += 1;
+                }
+            }
+        }
+        if n < 20 {
+            None
+        } else {
+            Some(sum / n as f64)
+        }
+    }
+
     pub fn last_pos(&self, bot: &str) -> Option<Pos> {
         self.samples.get(bot).and_then(|s| s.last()).map(|s| s.pos)
     }
@@ -379,6 +418,26 @@ impl MatchTape {
                 .or(s.last())
                 .map(|sm| sm.pos)
         })
+    }
+}
+
+/// Name the regime a tape ran in from its telemetry cadence.
+///
+/// "listen" is the game Shane plays (about 71 Hz). The two dedicated
+/// classes are the lab before 2026-09-15: "dedicated_fast" is about
+/// 19 Hz (the 1 ms Windows timer) and "dedicated_slow" about 14 to
+/// 15 Hz (the 15.6 ms coarse timer), and which one a given day
+/// produced was never anyone's choice. 438 of the archive's 635
+/// readable tapes are fast, 124 slow, 73 listen.
+pub fn tick_class(gap: f64) -> &'static str {
+    if gap < 0.5105 {
+        "listen"
+    } else if gap < 0.522 {
+        "dedicated_fast"
+    } else if gap < 0.56 {
+        "dedicated_slow"
+    } else {
+        "slower_than_12hz"
     }
 }
 

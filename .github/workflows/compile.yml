@@ -116,7 +116,7 @@ jobs:
           # lqdm2, no crash, no runaway, telemetry flowing
           SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy timeout 90 \
             quakespasm -dedicated 8 -basedir "$PWD/quake" -game argus \
-            +developer 1 +deathmatch 1 +map lqdm2 > smoke.log 2>&1 || true
+            +developer 1 +sys_ticrate 0.0139 +deathmatch 1 +map lqdm2 > smoke.log 2>&1 || true
           grep -q 'ARGLOG' smoke.log || { echo 'SMOKE FAILED: no telemetry'; tail -40 smoke.log; exit 1; }
           ! grep -qE 'Host_Error|runaway loop|NULL function' smoke.log || { echo 'SMOKE FAILED: engine error'; grep -nE 'Host_Error|runaway loop|NULL function' smoke.log; exit 1; }
           grep -c 'ARGLOG' smoke.log
