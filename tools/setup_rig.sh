@@ -106,11 +106,16 @@ cp lq1/progs.dat quake/argus/
 # enforce 1996 constraints on every match: protocol 15, vanilla edict ceiling
 printf 'sv_protocol 15\nmax_edicts 600\n' > quake/argus/autoexec.cfg
 
+# sys_ticrate gates the dedicated main loop, so the engine default of
+# 0.05 runs a rig at about 19 Hz while every played session is a
+# listen server at about 71 Hz. Pin the played rate or the tape and
+# the game are not the same game (2026-09-15; see
+# docs/plans/2026-09-14-regression-analysis-and-recovery.md).
 echo "== 120 s headless botmatch on lqdm2 =="
 SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
 timeout 120 stdbuf -oL -eL /usr/games/quakespasm -dedicated 8 \
     -basedir "$HERE/quake" -game argus \
-    +developer 1 +deathmatch 1 +map lqdm2 > match.log 2>&1 || true
+    +developer 1 +sys_ticrate 0.0139 +deathmatch 1 +map lqdm2 > match.log 2>&1 || true
 # grammar is ARGLOG since the v3 era (BOTLOG died with the first
 # milestones; counting it reported zero telemetry on healthy matches)
 echo "telemetry records: $(grep -c ARGLOG match.log)"

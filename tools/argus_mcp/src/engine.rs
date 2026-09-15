@@ -195,6 +195,26 @@ fn spawn_unix(
     })
 }
 
+/// The dedicated server's frame period, in seconds.
+///
+/// Quake's dedicated main loop sleeps until `sys_ticrate` has elapsed
+/// before it calls `Host_Frame`, so this cvar gates the entire server
+/// tick. The engine default of 0.05 ran every lab tape at about 19 Hz
+/// while every human session is a listen server at about 71 Hz - a
+/// factor of nearly four on every per-frame constant in bot physics
+/// and on the aim spring's integrator, which is why a tape and a
+/// played session were never the same game. Measured on dm4,
+/// 2026-09-15, with the telemetry-cadence estimator
+/// (`tools/argus_tick.py`): the default reads a mean ARGLOG gap of
+/// 0.5134 (about 19 Hz) and this value reads 0.5080, inside the
+/// 0.506 to 0.509 band every human tape sits in.
+///
+/// This refutes the v4.09 note that "sys_ticrate does nothing to the
+/// dedicated tick"; it does everything to it.
+///
+/// See docs/plans/2026-09-14-regression-analysis-and-recovery.md.
+pub const PLAYED_TICRATE: &str = "0.0139";
+
 #[cfg(not(windows))]
 fn apply_args(
     cmd: &mut Command,
@@ -213,7 +233,9 @@ fn apply_args(
         .arg(&cfg.game)
         .arg("-condebug")
         .arg("+developer")
-        .arg("1");
+        .arg("1")
+        .arg("+sys_ticrate")
+        .arg(PLAYED_TICRATE);
     if coop {
         cmd.arg("+coop").arg("1").arg("+deathmatch").arg("0");
     } else {
@@ -301,6 +323,40 @@ fn engine_job() -> windows_sys::Win32::Foundation::HANDLE {
 }
 
 #[cfg(windows)]
+/// Build the dedicated engine's command line. Split out of
+/// `spawn_windows` so a test can assert on it without spawning a
+/// process: the tick-rate flag is the one argument the whole lab's
+/// comparability rests on.
+fn windows_args(
+    cfg: &Config,
+    map: &str,
+    slots: u32,
+    skill: Option<u32>,
+    port: Option<u32>,
+    coop: bool,
+) -> Result<String, String> {
+    let exe = cfg.engine.display().to_string();
+    let portarg = port.map(|p| format!(" -port {p}")).unwrap_or_default();
+    let mode_arg = if coop {
+        "+coop 1 +deathmatch 0"
+    } else {
+        "+deathmatch 1"
+    };
+    let mut args = format!(
+        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +sys_ticrate {PLAYED_TICRATE} {mode_arg} +map {map}",
+        cfg.basedir.display(),
+        cfg.game
+    );
+    if let Some(s) = skill {
+        if s > 3 {
+            return Err("skill must be 0..3".into());
+        }
+        args.push_str(&format!(" +skill {s}"));
+    }
+    Ok(args)
+}
+
+#[cfg(windows)]
 fn spawn_windows(
     cfg: &Config,
     map: &str,
@@ -316,24 +372,7 @@ fn spawn_windows(
         STARTF_USESHOWWINDOW, STARTUPINFOW,
     };
 
-    let exe = cfg.engine.display().to_string();
-    let portarg = port.map(|p| format!(" -port {p}")).unwrap_or_default();
-    let mode_arg = if coop {
-        "+coop 1 +deathmatch 0"
-    } else {
-        "+deathmatch 1"
-    };
-    let mut args = format!(
-        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 {mode_arg} +map {map}",
-        cfg.basedir.display(),
-        cfg.game
-    );
-    if let Some(s) = skill {
-        if s > 3 {
-            return Err("skill must be 0..3".into());
-        }
-        args.push_str(&format!(" +skill {s}"));
-    }
+    let args = windows_args(cfg, map, slots, skill, port, coop)?;
 
     let mut cmd_wide: Vec<u16> = args.encode_utf16().chain(std::iter::once(0)).collect();
     let cwd_wide: Vec<u16> = cwd.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
@@ -597,6 +636,50 @@ pub fn kill_pid(pid: u32) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn tick_cfg() -> Config {
+        let tmp = std::env::temp_dir().join("argus-tick-args");
+        Config {
+            root: tmp.clone(),
+            src: tmp.join("src"),
+            progs: tmp.join("lq1/progs.dat"),
+            fteqcc: tmp.join("fteqcc.exe"),
+            engine: tmp.join("engine.exe"),
+            basedir: tmp.join("basedir"),
+            python: tmp.join("python.exe"),
+            game: "argus".into(),
+            maps: tmp.join("maps"),
+            runs: tmp.join("runs"),
+        }
+    }
+
+    /// The whole lab is only comparable to a played session if it runs
+    /// the same tick. Both spawn paths carry the flag, always.
+    #[test]
+    #[cfg(not(windows))]
+    fn every_unix_launch_pins_the_played_tick_rate() {
+        let cfg = tick_cfg();
+        let mut cmd = Command::new("x");
+        apply_args(&mut cmd, &cfg, "dm4", 8, None, None, false);
+        let joined: Vec<String> = cmd
+            .as_std()
+            .get_args()
+            .map(|a| a.to_string_lossy().into_owned())
+            .collect();
+        let joined = joined.join(" ");
+        assert!(joined.contains("+sys_ticrate 0.0139"), "{joined}");
+    }
+
+    #[test]
+    #[cfg(windows)]
+    fn every_windows_launch_pins_the_played_tick_rate() {
+        let cfg = tick_cfg();
+        let args = windows_args(&cfg, "dm4", 8, None, None, false).expect("args");
+        assert!(args.contains("+sys_ticrate 0.0139"), "{args}");
+        let coop = windows_args(&cfg, "e1m2", 4, Some(1), Some(26011), true).expect("args");
+        assert!(coop.contains("+sys_ticrate 0.0139"), "{coop}");
+        assert!(coop.contains("-port 26011") && coop.contains("+coop 1"), "{coop}");
+    }
 
     #[test]
     fn rejects_path_maps() {
