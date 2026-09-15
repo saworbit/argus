@@ -434,7 +434,7 @@ void() Argus_Nav_Spawn_dm2 =
     n213 = Argus_NavNode ('1601 -1303 40');
     n214 = Argus_NavNode ('1793 -1303 40');
 
-    Argus_NavLink (n0, n1);
+    Argus_NavLinkDoor (n0, n1);
     Argus_NavLink (n1, n2);
     Argus_NavLink (n1, n14);
     Argus_NavLink (n2, n1);
@@ -816,7 +816,7 @@ void() Argus_Nav_Spawn_dm2 =
     Argus_NavLink (n89, n101);
     Argus_NavLink (n89, n109);
     Argus_NavLink (n90, n81);
-    Argus_NavLink (n91, n67);
+    Argus_NavLinkDoor (n91, n67);
     Argus_NavLink (n92, n76);
     Argus_NavLink (n92, n86);
     Argus_NavLink (n92, n104);
@@ -967,7 +967,7 @@ void() Argus_Nav_Spawn_dm2 =
     Argus_NavLink (n115, n134);
     Argus_NavLink (n115, n137);
     Argus_NavLink (n115, n113);
-    Argus_NavLink (n116, n140);
+    Argus_NavLinkDoor (n116, n140);
     Argus_NavLink (n117, n125);
     Argus_NavLink (n117, n143);
     Argus_NavLink (n117, n103);

@@ -298,7 +298,7 @@ Argus includes an extensive 18-character homage roster celebrating Quake history
 | Map | File | Waypoints | Directed reach | Key features & Link types |
 |---|---|---|---|---|
 | **The Bad Place** | `dm4` | 155 nodes | 98% | Walkway hazard steering, rocket-jump Quad ledge pads, sprint-jump links in the quad corridor, stitched pit-escape links. |
-| **Claustrophobopolis** | `dm2` | 216 nodes | 99% | Reborn graph: guaranteed control-item seats, jump stitches, 2 elevators with outside-the-shaft boarding pads, 3 patrolling trains (the upper-deck bridge is ridden both ways), typed door links, engine-convicted grate-room links reminted as jumps. |
+| **Claustrophobopolis** | `dm2` | 215 nodes | 96% | Reborn graph: guaranteed control-item seats, jump stitches, 2 elevators with outside-the-shaft boarding pads, 3 patrolling trains (the upper-deck bridge is ridden both ways), typed door links, engine-convicted grate-room links reminted as jumps. |
 | **The Abandoned Base** | `dm3` | 259 nodes | 86% | Corridor-sampled with stair-run seats, multi-level platform tower, water trench swim and dive links, the engine-proven RL-islet entry. The west-wing red armour is the one prize still stranded (its entrance needs corridor-campaign seats). |
 | **The Dark Zone** | `dm6` | 213 nodes | 94% | Reborn graph, teleporter loops, sprint links, full puppet-sweep verdicts on file. |
 | **LibreQuake DM2** | `lqdm2` | 214 nodes | 97% | Reborn on the modern pipeline; the CI stability-smoke arena. |
