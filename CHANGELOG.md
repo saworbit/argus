@@ -26,12 +26,36 @@ v4.09 note that "sys_ticrate does nothing to the dedicated tick", and
 the v4.07 "frametime 0.1", which was `ftos` printing a 0.05 s frame to
 one decimal.
 
-**THE PLAYED-RATE LAB REPRODUCES WHAT SHANE SEES.** Three dm2 tapes on
-the shipped v4.17 progs read 65, 77 and 86 stalls, which is 21 to 28 a
-minute. His last three dm2 sessions read 21.6, 32.5 and 21.9. The same
-builds at 19 Hz read 11 to 16. dm4, by contrast, is rate-insensitive:
-5, 8 and 11 stalls against a 19 Hz history of 8.0 mean over 53 tapes.
-Whatever is wrong with dm2 was invisible to the old rig.
+**THE TICK RATE CHANGES WHAT BOTS DO, BUT NOT WHAT THIS ENTRY FIRST
+SAID IT DID.** The first version claimed the played rate reproduced
+Shane's dm2 stall rate where 19 Hz "read 11 to 16", and that figure
+was a selective reading of historical tapes. Run as a controlled
+experiment instead, the same progs and the same graph at both rates:
+
+```
+dm2, shipped v4.17, 185 s tapes      70 Hz (n=4)      19 Hz (n=3)    z
+stalls                               71 [64-86]       74 [17-79]   +0.35
+engagements                          22 [17-25]       31 [27-43]   -2.12
+coverage, cells                     430 [348-442]    463 [454-505]  -2.12
+hazard deflections                  244 [226-260]    203 [195-214]  +2.12
+```
+
+**Stalls are unaffected by the tick rate.** dm2 runs about 23 a minute
+at either, which is the range Shane reports (21.6, 32.5, 21.9), so the
+map's stall problem is real, old, and not something the old rig was
+hiding.
+
+**Engagements, coverage and hazard deflections are affected, and the
+ranges do not overlap.** The hazard event is throttled to one a second
+per bot, so 244 against 203 means bots spent 44 per cent of their
+bot-seconds deflecting at the played rate against 37 per cent: the
+per-frame brink guard is more active at 71 Hz, bots are more timid,
+cover less ground and meet each other 30 per cent less often. That is
+the per-frame-constant class the plan's own audit item predicted, it
+is a guard nobody has ever calibrated at the rate it is played at, and
+**it is a mechanism for the plan's central paradox** - the lab's
+bot-only engagement count rose 50 per cent over a month while the rate
+under human play stayed flat.
 
 And 31 per cent of those dm2 stalls, 70 of 228 across three tapes, sit
 in one cell at `2048 -1152 320`: #323's west deck, whose only walk-out

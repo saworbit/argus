@@ -782,18 +782,46 @@ shipped**, which is the whole argument for phase 0 in one experiment.
 
 ### What the tapes found instead
 
-**dm2 has always been this bad; the lab could not see it.** At the
-played rate the shipped build runs 21 to 28 stalls a minute on dm2,
-and 25 a minute on the PREVIOUS graph too. Shane's last three dm2
-sessions read 21.6, 32.5 and 21.9. The 19 Hz lab read 11 to 16 for the
-same builds. There was no September cliff in the game; there was a
-September cliff in what the instrument reported, and the human tapes
-had been telling the truth the whole time.
+**dm2 has always been this bad, on both graphs and at both rates.** At
+the played rate the shipped build runs 23 stalls a minute on dm2, and
+25 a minute on the PREVIOUS graph. Shane's last three dm2 sessions
+read 21.6, 32.5 and 21.9. There was no September cliff in the game.
 
-**dm4 is not affected.** Its played-rate band (5, 8, 11 stalls) sits
-exactly on its 19 Hz history of mean 8.0 over 53 tapes. Whatever makes
-dm2 rate-sensitive does not touch dm4, so dm4's month of clean tapes
-was not a lie.
+I first wrote here that the 19 Hz lab "read 11 to 16 for the same
+builds", and therefore that the rate was hiding the problem. **That
+was a selective reading of historical tapes and it is wrong.** Run as
+a controlled experiment, the same progs and the same graph at both
+rates, three and four tapes:
+
+```
+dm2, shipped v4.17, 185 s tapes      70 Hz (n=4)      19 Hz (n=3)    z
+stalls                               71 [64-86]       74 [17-79]   +0.35
+engagements                          22 [17-25]       31 [27-43]   -2.12
+coverage, cells                     430 [348-442]    463 [454-505]  -2.12
+hazard deflections                  244 [226-260]    203 [195-214]  +2.12
+```
+
+**The tick rate does not touch stalls.** It does touch three other
+things, and there the ranges do not overlap at all (z of 2.12 is the
+most this sample size can produce). The hazard event is throttled to
+one a second per bot, so 244 against 203 is 44 per cent of bot-seconds
+spent deflecting against 37: the per-frame brink guard is markedly
+more active at the played rate, bots are more timid, they cover less
+ground and they meet each other 30 per cent less often.
+
+**That is a better finding than the one I was reaching for.** It is
+exactly the per-frame-constant class part 5 of this document listed as
+an audit item, it is a guard nobody has ever calibrated at the rate it
+is played at, and it is a mechanism for this document's own paradox:
+the lab's bot-only engagement count rose 50 per cent across a month of
+builds while the rate under human play stayed flat at 27 to 33. Some
+of that rise was the lab counting encounters a played session would
+never have had.
+
+dm4's played-rate band (5, 8, 11 stalls) sits on its 19 Hz history of
+mean 8.0 over 53 tapes, so nothing here says dm4's month of clean
+tapes was a lie. Whether dm4's engagement count moves with the rate
+the way dm2's does is NOT measured; that wants a dm4 rate control.
 
 **The new graph did not add stalls, it concentrated them.** Total load
 is in band, but the composition is not:
