@@ -86,6 +86,18 @@ pub struct Totals {
     /// data, not defects. The human's numbers live here instead.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub human: Option<HumanTracks>,
+    /// Mean gap between a bot's telemetry rows. The server's frame
+    /// period falls out of it (parse_arglog::tick_gap_mean), and with
+    /// it the only question that decides whether two tapes describe
+    /// the same game.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tick_gap_mean: Option<f64>,
+    /// "listen" (about 71 Hz, what Shane plays), "dedicated_fast"
+    /// (about 19 Hz) or "dedicated_slow" (about 14 to 15 Hz). Every
+    /// per-frame constant in bot physics and the whole aim spring
+    /// integrate differently in each.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tick_class: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -502,8 +514,12 @@ fn brief_tape_lava(
         .collect();
 
     let ev = |k: &str| *tape.event_counts.get(k).unwrap_or(&0);
+    let tick_gap_mean = tape.tick_gap_mean();
+    let tick_class = tick_gap_mean.map(|g| crate::parse_arglog::tick_class(g).to_string());
     let totals = Totals {
         duration_sec: duration,
+        tick_gap_mean,
+        tick_class,
         stalls,
         goals,
         frags,
@@ -933,6 +949,22 @@ pub fn format_gate_card(
         add_row("Navigation Coverage", status, &delta, verd);
     }
 
+    // The tick rate is not a gate, it is the precondition for every
+    // gate above: a 19 Hz tape and a 71 Hz tape are two different
+    // games. Say it on the card so nobody reads a verdict without it.
+    {
+        let cls = |t: &Totals| t.tick_class.clone().unwrap_or_else(|| "unknown".into());
+        let (ca, cb) = (cls(a_totals), cls(b_totals));
+        let status = if ca == cb { "\u{1F7E2}" } else { "\u{1F534}" };
+        let delta = if ca == cb {
+            format!("both {ca}")
+        } else {
+            format!("{ca} vs {cb}")
+        };
+        let verd = if ca == cb { "SAME" } else { "VOID" };
+        add_row("Server tick rate", status, &delta, verd);
+    }
+
     out.push_str("├──────────────────────────┴────────┴──────────────┴──────────┤\n");
     let (icon, tag) = match verdict {
         Verdict::Improved =>  ("🟢", "APPROVED FOR RELEASE (IMPROVED)"),
@@ -1124,7 +1156,23 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
             || eng_ratio > 1.15
             || (b.totals.frags > a.totals.frags && b.totals.all_frags_positive));
 
-    let verdict = if hard_fail {
+    // Two tapes at different server frame rates are two different
+    // games: bot physics, the swim drag, the tremor clock and the
+    // whole aim spring integrate differently in each, so no gate
+    // between them means anything. 438 of the archive's tapes are
+    // 19 Hz, 124 are 14.5 Hz and every human session is 71 Hz, and
+    // nothing before 2026-09-15 ever said which.
+    let cross_rate = match (
+        a.totals.tick_class.as_deref(),
+        b.totals.tick_class.as_deref(),
+    ) {
+        (Some(x), Some(y)) if x != y => Some((x.to_string(), y.to_string())),
+        _ => None,
+    };
+
+    let verdict = if cross_rate.is_some() {
+        Verdict::Mixed
+    } else if hard_fail {
         Verdict::Regressed
     } else if any_fail {
         Verdict::Mixed
@@ -1135,6 +1183,11 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     };
 
     let mut findings = Vec::new();
+    if let Some((x, y)) = &cross_rate {
+        findings.push(format!(
+            "the two tapes ran at different tick rates ({x} vs {y});              the verdict is not valid. Re-run the baseline at the              played rate (see task 0.5 of the recovery plan)."
+        ));
+    }
     for g in &gates {
         if !g.pass {
             findings.push(format!("{}: {}", g.name, g.note));
@@ -2644,6 +2697,61 @@ ARGEVT Reap spawned
             &tape,
         );
         assert!(none.is_empty());
+    }
+
+    #[test]
+    fn tick_class_separates_a_human_tape_from_a_lab_tape_if_present() {
+        // The lab and the game were never the same game: every human
+        // session is a listen server at about 71 Hz and every lab tape
+        // before 2026-09-15 was dedicated at 19 or 14.5 Hz. A brief
+        // that does not say which is a brief that cannot be compared.
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let cases = [
+            ("shane_dm4_2026-08-29_v405.log", "listen", 0.5071),
+            ("ab_dm2_corridor1.log", "dedicated_fast", 0.5150),
+            ("ab_dm2_doors.log", "dedicated_slow", 0.5464),
+        ];
+        for (name, class, gap) in cases {
+            let path = dir.join(name);
+            if !path.exists() {
+                continue;
+            }
+            let b = brief_path(&path, None).unwrap();
+            assert_eq!(
+                b.totals.tick_class.as_deref(),
+                Some(class),
+                "{name} should read {class}"
+            );
+            let got = b.totals.tick_gap_mean.expect("gap");
+            assert!((got - gap).abs() < 0.0015, "{name} gap {got} wanted {gap}");
+        }
+    }
+
+    #[test]
+    fn compare_refuses_a_verdict_across_tick_rates_if_present() {
+        // A 19 Hz tape and a 70 Hz tape are two different games. The
+        // old rule would happily call one an improvement on the other.
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let (a, b) = (dir.join("ab_dm2_corridor1.log"), dir.join("ab_dm2_doors.log"));
+        if !a.exists() || !b.exists() {
+            return;
+        }
+        let rep = compare_briefs(
+            brief_path(&a, None).unwrap(),
+            brief_path(&b, None).unwrap(),
+        );
+        assert_eq!(rep.verdict, Verdict::Mixed, "cross-rate verdicts are void");
+        assert!(
+            rep.findings.iter().any(|f| f.contains("tick rate")),
+            "findings must name the cause: {:?}",
+            rep.findings
+        );
+        assert!(
+            rep.gate_card.contains("Server tick rate") && rep.gate_card.contains("VOID"),
+            "the card must show the void row:
+{}",
+            rep.gate_card
+        );
     }
 
     #[test]
