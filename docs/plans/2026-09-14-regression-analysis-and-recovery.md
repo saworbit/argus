@@ -787,7 +787,23 @@ shipped**, which is the whole argument for phase 0 in one experiment.
 
 The v4.09 arm made the same point from the other side: at three tapes
 it read REGRESSED (stalls 43, 129, 86) and its fourth tape returned it
-to parity. Three tapes is not enough on this map, and four is barely.
+to parity.
+
+Five times in one session a conclusion looked decisive and the next
+tape withdrew it:
+
+| arm | looked like | the next tape said |
+|---|---|---|
+| dm2 old graph, 2 tapes | 27, 47: "the regen did it" | third: 95 |
+| v4.09, 3 tapes | 43, 129, 86: regressed | fourth: parity |
+| new-graph band, 4 tapes | 64 to 86: a stable control | fifth and sixth: 31, 37 |
+| aim spring dm2, 3 tapes | 21, 22, 43: improved against six controls | fourth: 54, inside the band |
+| the tick estimator | inverted to 39.5 Hz | `host_speeds`: 70.2 Hz |
+
+**Three tapes is not enough on this map and four is barely.** The last
+row is the same error in a different medium: an arithmetic identity
+with more than one root, read as a measurement. When a result looks
+decisive here, the correct next action is another tape, not a commit.
 
 ### What the tapes found instead
 
