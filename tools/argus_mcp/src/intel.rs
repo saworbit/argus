@@ -258,6 +258,10 @@ pub struct CompareReport {
     pub scaled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scale_note: Option<String>,
+    /// The banded gates the verdict actually rests on: per metric, the
+    /// control median, the candidate median and the band between them.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub band: Vec<BandGate>,
     /// Which run "baseline" actually resolved to (#273). Every gate
     /// in this report is a statement about that tape, and a baseline
     /// many builds old quietly turns ordinary drift into a verdict.
@@ -725,12 +729,31 @@ fn map_baseline_name(map: Option<&str>) -> Option<&'static str> {
 /// metric boundaries old) that made every modern run read "regressed";
 /// refreshing a baseline is now editing one line in one file instead
 /// of a Rust rebuild.
-pub fn baseline_override_for(cfg: &Config, map: &str) -> Option<String> {
+/// Every tape a map's baseline names. A value in `baselines.json` may
+/// be one run name (the old form) or a list of them, which is the
+/// band a candidate is judged against: three tapes narrow every gate
+/// by 42 per cent against one (see `compare_band`).
+pub fn baseline_band_for(cfg: &Config, map: &str) -> Vec<String> {
     let p = cfg.runs.join("baselines.json");
-    let text = std::fs::read_to_string(&p).ok()?;
-    let map_table: std::collections::BTreeMap<String, String> =
-        serde_json::from_str(&text).ok()?;
-    map_table.get(&map.to_ascii_lowercase()).cloned()
+    let Ok(text) = std::fs::read_to_string(&p) else {
+        return Vec::new();
+    };
+    let Ok(table) = serde_json::from_str::<std::collections::BTreeMap<String, serde_json::Value>>(&text)
+    else {
+        return Vec::new();
+    };
+    match table.get(&map.to_ascii_lowercase()) {
+        Some(serde_json::Value::String(one)) => vec![one.clone()],
+        Some(serde_json::Value::Array(many)) => many
+            .iter()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect(),
+        _ => Vec::new(),
+    }
+}
+
+pub fn baseline_override_for(cfg: &Config, map: &str) -> Option<String> {
+    baseline_band_for(cfg, map).into_iter().next()
 }
 
 fn resolve_baseline(cfg: &Config, map_hint: Option<&str>) -> Result<std::path::PathBuf, String> {
@@ -983,7 +1006,268 @@ pub fn format_gate_card(
 /// enough to have saturated.
 const COVER_GATE_MIN_SEC: f64 = 120.0;
 
+/// A metric's band: what a run of the SAME build produces on this map.
+///
+/// The half-widths are fitted, not guessed. The sixteen pairs of
+/// byte-identical builds in `runs/` (the recovery plan's table 1.4)
+/// give, one tape against one tape, a stall ratio from 0.18 to 11.0,
+/// engagements 0.45 to 2.82, world deaths 0 to 4x and freezes 0 to 3.
+/// Coverage (0.70 to 1.19) and goal pickups (0.82 to 1.27) are the
+/// only metrics with enough signal to judge on a single pair, which is
+/// worth knowing and is why they are reported rather than gated.
+///
+/// `k` is the multiplicative half-width at one tape a side and `abs`
+/// the absolute floor that keeps small counts honest: one stall
+/// becoming eleven is an 1100 per cent "regression" and happened on
+/// identical code. These settings read 15 of the 16 null pairs as
+/// parity, where the old OR rule read 0 as parity and 9 as
+/// improvements.
+///
+/// See docs/plans/2026-09-14-regression-analysis-and-recovery.md.
+struct BandSpec {
+    name: &'static str,
+    /// true when a bigger number is worse (stalls, lava, freezes)
+    lower_is_better: bool,
+    k: f64,
+    abs: f64,
+}
+
+const BAND_SPECS: [BandSpec; 4] = [
+    BandSpec { name: "stall_parity", lower_is_better: true, k: 1.00, abs: 4.0 },
+    BandSpec { name: "engagements", lower_is_better: false, k: 0.55, abs: 4.0 },
+    BandSpec { name: "lava_deaths", lower_is_better: true, k: 1.50, abs: 3.0 },
+    BandSpec { name: "freezes", lower_is_better: true, k: 1.00, abs: 2.0 },
+];
+
+fn metric_of(t: &Totals, name: &str) -> f64 {
+    match name {
+        "stall_parity" => t.stalls as f64,
+        "engagements" => t.engages as f64,
+        "lava_deaths" => t.lava_deaths as f64,
+        "freezes" => t.freezes as f64,
+        _ => 0.0,
+    }
+}
+
+fn median(vals: &[f64]) -> f64 {
+    if vals.is_empty() {
+        return 0.0;
+    }
+    let mut v = vals.to_vec();
+    v.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    let n = v.len();
+    if n % 2 == 1 {
+        v[n / 2]
+    } else {
+        (v[n / 2 - 1] + v[n / 2]) / 2.0
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct BandGate {
+    pub name: String,
+    pub control_median: f64,
+    pub candidate_median: f64,
+    pub lo: f64,
+    pub hi: f64,
+    /// "improved", "in band" or "regressed"
+    pub call: String,
+}
+
+/// Judge candidate tapes against control tapes as bands, never one
+/// tape against one tape.
+///
+/// The rule, from the recovery plan:
+///   - regressed if the candidate median falls outside the band on any
+///     hard gate;
+///   - improved only if it beats the whole band on at least one gate
+///     AND is no worse than the control median on every hard gate;
+///   - parity otherwise, which is what a null change must read.
+///
+/// The band is the controls' own min and max, widened by the fitted
+/// null spread above. The widening shrinks as tapes accumulate on
+/// either side, `k * sqrt((1/n_cand + 1/n_ctl) / 2)`, which is 1.0 at
+/// one tape a side (where it was calibrated) and 0.58 at three a side.
+/// That is the whole argument for running repeats: three tapes each
+/// way narrows every band by 42 per cent.
+pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> CompareReport {
+    assert!(
+        !candidates.is_empty() && !controls.is_empty(),
+        "compare_band needs at least one tape on each side"
+    );
+    // representative tapes carry the existing diagnostics: the gate
+    // card, the hotspots and the next steps still describe a real
+    // match rather than an average that never happened.
+    let rep_ctl = representative(controls);
+    let rep_cand = representative(candidates);
+    let mut report = compare_gates(rep_ctl, rep_cand);
+
+    let n_c = candidates.len() as f64;
+    let n_k = controls.len() as f64;
+    let shrink = ((1.0 / n_c + 1.0 / n_k) / 2.0).sqrt();
+
+    let mut band_gates = Vec::new();
+    let mut regressed: Vec<&str> = Vec::new();
+    let mut beat_the_band: Vec<&str> = Vec::new();
+    let mut worse_than_median = false;
+
+    for spec in BAND_SPECS.iter() {
+        let cv: Vec<f64> = controls.iter().map(|b| metric_of(&b.totals, spec.name)).collect();
+        let dv: Vec<f64> = candidates.iter().map(|b| metric_of(&b.totals, spec.name)).collect();
+        let cmed = median(&cv);
+        let dmed = median(&dv);
+        let cmin = cv.iter().cloned().fold(f64::INFINITY, f64::min);
+        let cmax = cv.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let kk = spec.k * shrink;
+        let abs = spec.abs * shrink;
+        let lo = (cmin.min(cmed * (1.0 - kk)) - abs).max(0.0);
+        let hi = cmax.max(cmed * (1.0 + kk)) + abs;
+
+        let (is_reg, is_imp) = if spec.lower_is_better {
+            (dmed > hi, dmed < lo)
+        } else {
+            (dmed < lo, dmed > hi)
+        };
+        let worse = if spec.lower_is_better { dmed > cmed } else { dmed < cmed };
+        if worse {
+            worse_than_median = true;
+        }
+        if is_reg {
+            regressed.push(spec.name);
+        }
+        if is_imp {
+            beat_the_band.push(spec.name);
+        }
+        band_gates.push(BandGate {
+            name: spec.name.into(),
+            control_median: cmed,
+            candidate_median: dmed,
+            lo,
+            hi,
+            call: if is_reg {
+                "regressed".into()
+            } else if is_imp {
+                "improved".into()
+            } else {
+                "in band".into()
+            },
+        });
+    }
+
+    // Two tapes at different server frame rates are two different
+    // games (see the note in compare_gates): one mixed class voids it.
+    let classes: std::collections::BTreeSet<String> = candidates
+        .iter()
+        .chain(controls.iter())
+        .filter_map(|b| b.totals.tick_class.clone())
+        .collect();
+    let cross_rate = classes.len() > 1;
+
+    let verdict = if cross_rate {
+        Verdict::Mixed
+    } else if !regressed.is_empty() {
+        Verdict::Regressed
+    } else if !beat_the_band.is_empty() && !worse_than_median {
+        Verdict::Improved
+    } else {
+        Verdict::Parity
+    };
+
+    let mut findings = Vec::new();
+    if cross_rate {
+        let list: Vec<&str> = classes.iter().map(|s| s.as_str()).collect();
+        findings.push(format!(
+            "the tapes ran at different tick rates ({}); the verdict is not valid. \
+             Re-baseline at the played rate (task 0.5 of the recovery plan).",
+            list.join(" and ")
+        ));
+    }
+    for g in &band_gates {
+        findings.push(format!(
+            "{}: candidate median {:.0} against a control band of {:.0} to {:.0} (control median {:.0}), {}",
+            g.name, g.candidate_median, g.lo, g.hi, g.control_median, g.call
+        ));
+        // At one tape a side the fitted null spread is wide enough to
+        // push the lower edge to zero, so no result can beat the band
+        // and "improved" is unreachable on that metric. That is the
+        // honest answer, not a bug: a metric whose same-build ratio
+        // runs 0.18 to 11.0 cannot be shown to have improved by one
+        // match. Run repeats; the band narrows as the square root.
+        if g.lo <= 0.0 && g.call != "regressed" {
+            findings.push(format!(
+                "{}: no improvement can be demonstrated at {} control tape(s) - the band's floor is zero. Run repeats.",
+                g.name,
+                controls.len()
+            ));
+        }
+    }
+    findings.push(format!(
+        "{} candidate tape(s) against {} control tape(s); the band carries {:.2} of the one-tape null spread",
+        candidates.len(),
+        controls.len(),
+        shrink
+    ));
+    // the diagnostics compare_gates found are still worth reading,
+    // they are simply no longer the verdict
+    findings.extend(
+        report
+            .findings
+            .iter()
+            .filter(|f| f.starts_with("hotspot "))
+            .cloned(),
+    );
+
+    let headline = format!(
+        "{:?}: stalls {:.0} to {:.0}, engages {:.0} to {:.0}, lava {:.0} to {:.0}, freezes {:.0} to {:.0} (medians, {} control vs {} candidate tapes)",
+        verdict,
+        band_gates[0].control_median,
+        band_gates[0].candidate_median,
+        band_gates[1].control_median,
+        band_gates[1].candidate_median,
+        band_gates[2].control_median,
+        band_gates[2].candidate_median,
+        band_gates[3].control_median,
+        band_gates[3].candidate_median,
+        controls.len(),
+        candidates.len(),
+    );
+
+    report.verdict = verdict;
+    report.findings = findings;
+    report.headline = headline;
+    report.band = band_gates;
+    report.gate_card = format_gate_card(
+        report.b.map.as_deref().or(report.a.map.as_deref()),
+        verdict,
+        &report.gates,
+        &report.a.totals,
+        &report.b.totals,
+        report.scaled,
+    );
+    report
+}
+
+/// The tape whose stall count is the median: a real match to show,
+/// rather than an average of matches that never happened.
+fn representative(briefs: &[MatchBrief]) -> MatchBrief {
+    let mut idx: Vec<usize> = (0..briefs.len()).collect();
+    idx.sort_by_key(|&i| briefs[i].totals.stalls);
+    briefs[idx[idx.len() / 2]].clone()
+}
+
+/// One tape against one tape. Kept for every existing caller, and it
+/// is now exactly `compare_band` with a single tape a side, so the
+/// band widens to the full measured null spread and a null change
+/// reads parity instead of a coin flip.
 pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
+    compare_band(&[b], &[a])
+}
+
+/// One tape against one tape, with every diagnostic gate the lab has
+/// ever grown. This builds the gates and the card; it does NOT decide
+/// the verdict any more - `band_verdict` does, because a single pair
+/// of tapes cannot tell a change from nothing (see `compare_band`).
+fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
     let mut gates = Vec::new();
     let bars = bars_for(b.map.as_deref().or(a.map.as_deref()));
 
@@ -1246,6 +1530,7 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
         scaled: false,
         scale_note: None,
         baseline_run: None,
+        band: Vec::new(),
     }
 }
 
@@ -1323,6 +1608,42 @@ pub fn compare_runs(
 }
 
 /// Same as compare_runs, but scale counts when the two tapes have different lengths.
+/// Compare one or more candidate tapes against the map's whole
+/// baseline band. Falls back to the single resolved baseline when
+/// `baselines.json` still names one tape.
+pub fn compare_runs_band(
+    cfg: &Config,
+    candidate_logs: &[String],
+    map_hint: Option<&str>,
+) -> Result<CompareReport, String> {
+    if candidate_logs.is_empty() {
+        return Err("compare_runs_band needs at least one candidate tape".into());
+    }
+    let mut cands = Vec::new();
+    for l in candidate_logs {
+        cands.push(brief_run(cfg, l, map_hint)?);
+    }
+    let map = map_hint
+        .map(str::to_string)
+        .or_else(|| cands[0].map.clone());
+    let names = map
+        .as_deref()
+        .map(|m| baseline_band_for(cfg, m))
+        .unwrap_or_default();
+    let mut ctrls = Vec::new();
+    for n in &names {
+        if let Ok(b) = brief_run(cfg, n, map.as_deref()) {
+            ctrls.push(b);
+        }
+    }
+    if ctrls.is_empty() {
+        ctrls.push(brief_run(cfg, "baseline", map.as_deref())?);
+    }
+    let mut rep = compare_band(&cands, &ctrls);
+    rep.baseline_run = names.first().cloned();
+    Ok(rep)
+}
+
 pub fn compare_runs_scaled(
     cfg: &Config,
     log_a: &str,
@@ -2697,6 +3018,109 @@ ARGEVT Reap spawned
             &tape,
         );
         assert!(none.is_empty());
+    }
+
+    /// The sixteen pairs of byte-identical builds the recovery plan
+    /// found. The old OR rule read nine of them as "improved", five as
+    /// "regressed" and none as parity: a coin flip, and the instrument
+    /// that shipped sixty builds. A null change must read parity.
+    #[test]
+    fn same_build_pairs_read_parity_if_present() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let pairs = [
+            ("ab_dm4_tremorclock1", "ab_dm4_tremorclock2"),
+            ("ab_dm4_tremorclock2", "ab_dm4_tremorclock3"),
+            ("ab_dm4_fightpin1", "ab_dm4_fightpin2"),
+            ("ab_dm4_seatregen1", "ab_dm4_seatregen2"),
+            ("ab_dm4_airlead1", "ab_dm4_airlead2"),
+            ("ab_dm4_gravity1", "ab_dm4_gravity2"),
+            ("ab_dm4_lgwade1", "ab_dm4_lgwade2"),
+            ("ctl_dm4_shelfsplit1", "ctl_dm4_shelfsplit2"),
+            ("ab_dm2_apexgate1", "ab_dm2_apexgate2"),
+            ("ab_dm2_fightpin1", "ab_dm2_fightpin2"),
+            ("ab_dm2_jumpceiling1", "ab_dm2_jumpceiling2"),
+            ("ab_dm2_decklink1", "ab_dm2_decklink2"),
+            ("ab_dm2_seatregen1", "ab_dm2_seatregen2"),
+            ("ab_dm2_mover1", "ab_dm2_mover2"),
+            ("ab_dm2_holds1", "ab_dm2_holds2"),
+            ("ab_dm2_unstick1", "ab_dm2_unstick2"),
+        ];
+        let mut seen = 0;
+        let mut parity = 0;
+        let mut verdicts = Vec::new();
+        for (a, b) in pairs {
+            let (pa, pb) = (dir.join(format!("{a}.log")), dir.join(format!("{b}.log")));
+            if !pa.exists() || !pb.exists() {
+                continue;
+            }
+            seen += 1;
+            let r = compare_band(
+                &[brief_path(&pb, None).unwrap()],
+                &[brief_path(&pa, None).unwrap()],
+            );
+            if r.verdict == Verdict::Parity {
+                parity += 1;
+            } else {
+                verdicts.push(format!("{a} vs {b}: {:?}", r.verdict));
+            }
+        }
+        if seen == 0 {
+            return;
+        }
+        assert!(
+            parity >= 13,
+            "only {parity} of {seen} null pairs read parity: {verdicts:?}"
+        );
+    }
+
+    /// The band must still be able to say yes. Three tapes a side
+    /// narrow it by 42 per cent, which is the entire reason `repeats`
+    /// exists: a real halving of stalls then reads as an improvement
+    /// where one tape against one tape can only ever read parity.
+    #[test]
+    fn repeats_make_an_improvement_expressible() {
+        let base = brief_text(&log_a(), None);
+        let mk = |stalls: i32| {
+            let mut b = base.clone();
+            b.totals.stalls = stalls;
+            b.totals.engages = 60;
+            b.totals.lava_deaths = 2;
+            b.totals.freezes = 0;
+            b
+        };
+        let controls = [mk(40), mk(45), mk(50)];
+        let candidates = [mk(10), mk(12), mk(11)];
+        let r = compare_band(&candidates, &controls);
+        assert_eq!(r.verdict, Verdict::Improved, "{}", r.headline);
+
+        // the same halving, one tape a side, cannot be called
+        let one = compare_band(&[mk(11)], &[mk(45)]);
+        assert_eq!(one.verdict, Verdict::Parity, "{}", one.headline);
+        assert!(
+            one.findings.iter().any(|f| f.contains("Run repeats")),
+            "a band that cannot express an improvement must say so: {:?}",
+            one.findings
+        );
+    }
+
+    /// The band must still convict. A dm2 arm at the September tail
+    /// (100 stalls) against a late-August control (33) is a real
+    /// regression and must read as one.
+    #[test]
+    fn the_band_still_convicts_a_real_stall_regression_if_present() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let (ctl, bad) = (
+            dir.join("ab_dm2_seatregen1.log"),
+            dir.join("ab_dm2_holds2.log"),
+        );
+        if !ctl.exists() || !bad.exists() {
+            return;
+        }
+        let r = compare_band(
+            &[brief_path(&bad, None).unwrap()],
+            &[brief_path(&ctl, None).unwrap()],
+        );
+        assert_eq!(r.verdict, Verdict::Regressed, "{}", r.headline);
     }
 
     #[test]

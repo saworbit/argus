@@ -411,6 +411,10 @@ pub struct ExperimentArgs {
     pub run_name: Option<String>,
     #[schemars(description = "brief (default) or full (compile + match + both briefs)")]
     pub detail: Option<String>,
+    #[schemars(
+        description = "Candidate matches to run, 1-5. Default 3. One tape cannot tell a change from nothing on this instrument: same-build dm2 stalls run 17 to 100 and dm4 1 to 20. Three narrow every band by 42 per cent."
+    )]
+    pub repeats: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1567,15 +1571,39 @@ impl Argus {
                 let _ = g.stop(Duration::from_secs(3)).await;
             }
         }
-        let ran = match self
-            .drive_match(&cfg, &args.map, dur, Some(&run_name), None, args.skill, None)
-            .await
-        {
-            Ok(r) => r,
-            Err(e) => return tool_err(e),
+        let repeats = args.repeats.unwrap_or(3).clamp(1, 5);
+        let mut runs = Vec::new();
+        for i in 0..repeats {
+            // one tape per name, so every tape in the band survives on
+            // disk and the verdict can be re-derived later
+            let name = if repeats == 1 {
+                run_name.clone()
+            } else {
+                format!("{run_name}{}", i + 1)
+            };
+            match self
+                .drive_match(&cfg, &args.map, dur, Some(&name), None, args.skill, None)
+                .await
+            {
+                Ok(r) => runs.push(r),
+                Err(e) => {
+                    if runs.is_empty() {
+                        return tool_err(e);
+                    }
+                    break;
+                }
+            }
+        }
+        let ran = runs.last().cloned().expect("at least one match ran");
+        let logs: Vec<String> = runs.iter().map(|r| r.log_path.clone()).collect();
+        let compare = match args.baseline.as_deref() {
+            // an explicit baseline is still one named tape against the
+            // candidates; "baseline" resolves the map's whole band
+            Some(b) if b != "baseline" => {
+                intel_compare_scaled(&cfg, b, &ran.log_path, Some(&args.map)).ok()
+            }
+            _ => crate::intel::compare_runs_band(&cfg, &logs, Some(&args.map)).ok(),
         };
-        let baseline = args.baseline.as_deref().unwrap_or("baseline");
-        let compare = intel_compare_scaled(&cfg, baseline, &ran.log_path, Some(&args.map)).ok();
         let verdict = compare.as_ref().map(|c| format!("{:?}", c.verdict).to_ascii_lowercase());
         let headline = compare
             .as_ref()
@@ -1609,6 +1637,8 @@ impl Argus {
             "ok": ran.ok,
             "compile_ok": compile_result.as_ref().map(|c| c.ok),
             "log": ran.log_path,
+            "logs": logs,
+            "repeats": runs.len(),
             "elapsed_sec": ran.elapsed_sec,
             "compare": compare.as_ref().map(compare_lite),
             "gate_card": compare.as_ref().map(|c| c.gate_card.clone()),
