@@ -4158,10 +4158,15 @@ float() Argus_Combat =
     // A sub-step of at most 0.02 s keeps 1 - c*h positive and k*h^2
     // near 0.17 at every tier and every rate, so the floor is now
     // unreachable and the tiers mean what Argus_SetSkill says they
-    // mean (omega 10.5 to 23.7 rad/s, zeta 0.80). At the played rate
-    // this is ONE step and therefore bit-identical to the build
-    // before it: the game does not change, the slow rigs stop being a
-    // different game. See
+    // mean (omega 10.5 to 23.7 rad/s, zeta 0.80).
+    //
+    // WHENEVER frametime IS AT OR UNDER 0.02 THIS IS ONE STEP and so
+    // arithmetically identical to the build before it, which is the
+    // common case at the played rate: a 71 Hz server frames at about
+    // 0.0145. A LONGER frame is integrated more finely instead, and
+    // that is the point rather than a side effect - a hitch on a busy
+    // listen server used to be exactly where the old damping factor
+    // went negative. See
     // docs/plans/2026-09-14-regression-analysis-and-recovery.md.
     sub = floor (frametime / 0.02) + 1;
     // Host_FilterTime clamps host_frametime at 0.1 on every id-derived
