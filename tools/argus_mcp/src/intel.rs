@@ -3158,8 +3158,10 @@ ARGEVT Reap spawned
             sc.bot_kills_human_pm
         );
         // 17, not the 18 the engine obituaries carry: the telefrag at
-        // t 153 printed an obituary and no ARGEVT death line. Filed;
-        // the scorecard reports what the telemetry says.
+        // t 153 wrote its death line as "death world", because the
+        // attacker is a nameless teledeath trigger (#337). The QC now
+        // resolves that through the trigger's owner, so a tape recorded
+        // after the fix reads 18 here; this one predates it.
         assert!(
             (sc.human_kills_pm - 3.4).abs() < 0.2,
             "he killed 17 by telemetry in 5 minutes, got {}",

@@ -431,6 +431,11 @@ expressible again. `experiment` runs three by default.
 no ARGEVT death line, so it is invisible to every kill matrix and to
 the threat ratio phase 2 turns on. One kill in 302 s on the v405 tape.
 
+*Corrected 2026-09-16:* the death line is emitted. It reads `death
+world`, because the attacker on a telefrag is a `teledeath` trigger with
+no netname. Fixed by resolving the killer through the trigger owner,
+which is what the engine obituary always did.
+
 ### fteqcc is byte-stable, and the record says it is not
 
 Recompiling the shipped v4.17 source with the lab's own fteqcc

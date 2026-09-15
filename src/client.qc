@@ -1607,10 +1607,7 @@ void(entity targ, entity attacker) ClientObituary =
 		dprint ("ARGEVT ");
 		dprint (targ.netname);
 		dprint (" death ");
-		if (attacker != world && attacker.netname != "")
-			dprint (attacker.netname);
-		else
-			dprint ("world");
+		dprint (Argus_KillerName (attacker));
 		dprint (" pos ");
 		dprint (vtos (targ.origin));
 		dprint ("\n");

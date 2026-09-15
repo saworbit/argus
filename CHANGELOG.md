@@ -7,6 +7,30 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## Unreleased
+
+**A TELEFRAG NAMED THE WRONG KILLER ON THE DEATH LINE** (#337). The
+attacker on a telefrag is a `teledeath` trigger, which carries no
+netname, so `Argus_Die` and `ClientObituary` both fell through to
+their nameless-killer fallback and wrote `death world`. The engine
+obituary had the fragger the whole time, from `attacker.owner`, which
+is why Shane's v4.05 tape read 18 obituary kills against 17 attributed
+death lines. Both emitters now resolve the killer through a shared
+`Argus_KillerName`, which follows `.owner` for all three teledeath
+classes and leaves every other nameless killer as `world`.
+
+Verified against a probe build that forces a telefrag every three
+seconds. Same map, same probe, thirteen telefrags a side: the control
+wrote `Romero death world` thirteen times, the fix wrote `Romero death
+Joe Rogan`. Nothing else in the tape moved, and no gameplay path
+changed, so no ladder was run.
+
+METRIC BOUNDARY: a telefrag now appears in the kill matrix against the
+player who caused it rather than against `world`. Tapes recorded
+before this undercount the fragger and overcount world deaths by the
+number of telefrags they contain, which is small (one in 302 s on the
+v4.05 human tape, none in a 180 s dm6 botmatch).
+
 ## v4.19 (2026-09-16) - the link that was never crossed
 
 Progs v4.19 MD5 4A691E3CFCADE7EF2CA476955B44CBA7 x4. Nav data and lab
