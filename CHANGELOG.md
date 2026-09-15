@@ -7,12 +7,25 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
-## Unreleased
+## v4.18 (2026-09-16) - the two changes a botmatch could not size
 
-**TWO QC CHANGES, NEITHER INSTALLED.** The tree is ahead of the
-installs on purpose: both are laddered green, and both change how bots
-behave against a HUMAN in ways no botmatch can size. The installed
-progs is still v4.17's 544D463AE34CD2EEE264B3BC3A92ADC3.
+Progs v4.18 MD5 DE6E4B629B408F1EAE8E0274A1C1B66B x4 (lq1, game,
+engine, rerelease).
+
+**BOTH CHANGES WERE HELD BACK ON PURPOSE AND THEN INSTALLED ON SHANE'S
+CALL.** Each is laddered green, and each changes how bots behave
+against a HUMAN in a way no botmatch can size: one makes the aim
+spring behave the same on every rig, the other makes a bot keep
+shooting while it is shot at point blank. A botmatch can show that
+neither breaks anything, which both did, and it cannot show whether
+the game got harder. That is what the next human session is for.
+
+Shipped against v4.17's 544D463AE34CD2EEE264B3BC3A92ADC3, which is
+kept in `backups/` so a revert is byte exact rather than a recompile.
+Smoke tested on dm4 at the played tick rate: clean, 332 telemetry
+rows, no engine errors, and the body-block marker fired 5 times in
+60 s, which reproduces the 8 in 120 s the instrumented ladder
+measured.
 
 **THE AIM SPRING BEHAVED DIFFERENTLY ON EVERY RIG, AND NOT SLIGHTLY.**
 `turn = 1 - damping_c * frametime` goes negative at every tier above
