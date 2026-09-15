@@ -7,6 +7,53 @@ machine-local project brief; this is the distilled record. Lab
 tooling (the Rust MCP server) versions independently; its own table
 is in `tools/argus_mcp/README.md`.
 
+## v4.19 (2026-09-16) - the link that was never crossed
+
+Progs v4.19 MD5 4A691E3CFCADE7EF2CA476955B44CBA7 x4. Nav data and lab
+tooling; no QC logic changed.
+
+**dm4's n124 to n95 JUMP LINK WAS NEVER CROSSED IN THAT DIRECTION, AND
+IT WAS THE MAP'S BIGGEST MEASURED COST** (#350). Across 30 tapes, 611
+samples stand at n124 and NOT ONE reaches n95; the reverse crosses 25
+times. Bots arriving at n124 were routed over a hop the runtime cannot
+execute, dithered against the brink guard at a locked yaw, and fell
+into the pit in 12 per cent of samples. The cell was the most frequent
+confine on the map, ahead of the documented walkway corner.
+
+THE PUPPET CONVICTED IT, WITH ITS OWN CONTROL. Jump links had NEVER
+been swept: they live in their own `jlinks` array, never appear in
+`links`, and `probe_links` filtered the class out, which is how this
+survived every verification pass the project has run. `probelinks
+--jumps` sweeps them now. On dm4, **16 of 18 pass and the two failures
+are this pair**, so the hop works elsewhere and jams here. A jump
+sweep deliberately does NOT write the verdict file, because navgen's
+7g2c reads `failed` as "remint this WALK link as a jump", and these
+are already jumps.
+
+ONE DIRECTION REMOVED, the reverse kept because it demonstrably works
+in play. Directed reachability is unchanged at 135 of 137 and n124
+still reaches n95, in 9 hops rather than 1 - which is itself the
+finding, since two nodes 181 units apart being 9 walk-hops apart means
+there is real geometry between them.
+
+Four tapes a side against v4.18 on the same nav, dm4 at the played
+rate. Inside the cell:
+
+```
+                  stalls        hazards        longest hold
+shipped nav    11, 0, 0, 15   104, 13, 1, 64  85.0s 12.1 0.5 65.7
+link removed    0, 1, 0,  0     0,  2, 0,  1   0.5s  2.6 2.6  2.5
+```
+
+The control is bimodal: when routing happens to use the link a bot
+loses up to 85 SECONDS, and when it does not the cell is quiet. That
+is why the map's stall figure has always swung so hard. Map-wide,
+stalls 12 to 6.5, freezes 0.5 to 0, under-fire freezes 0.5 to 0,
+average speed 236 to 247, goals 110 to 126, engagements 72 to 80, all
+four hard gates passed. Frag spread widened, 3.5 to 7.5, on more total
+frags per tape (median 15.5 to 21) with every bot positive in every
+tape: more combat to distribute, not a starved bot.
+
 ## v4.18 (2026-09-16) - the two changes a botmatch could not size
 
 Progs v4.18 MD5 DE6E4B629B408F1EAE8E0274A1C1B66B x4 (lq1, game,
