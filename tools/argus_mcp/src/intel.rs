@@ -1149,10 +1149,16 @@ pub struct BandGate {
 /// That is the whole argument for running repeats: three tapes each
 /// way narrows every band by 42 per cent.
 pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> CompareReport {
-    assert!(
-        !candidates.is_empty() && !controls.is_empty(),
-        "compare_band needs at least one tape on each side"
-    );
+    // never panic in a server path: an empty side is a caller bug, but
+    // a wedged tool call is worse than a useless report
+    if candidates.is_empty() || controls.is_empty() {
+        let mut empty = MatchBrief::empty();
+        empty.headline = "compare_band needs at least one tape on each side".into();
+        let mut rep = compare_gates(empty.clone(), empty);
+        rep.verdict = Verdict::Mixed;
+        rep.findings = vec!["compare_band was given no tapes on one side".into()];
+        return rep;
+    }
     // representative tapes carry the existing diagnostics: the gate
     // card, the hotspots and the next steps still describe a real
     // match rather than an average that never happened.
@@ -1259,6 +1265,25 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
             ));
         }
     }
+    if !beat_the_band.is_empty() && worse_than_median {
+        let blocked: Vec<&str> = band_gates
+            .iter()
+            .zip(BAND_SPECS.iter())
+            .filter(|(g, sp)| {
+                if sp.lower_is_better {
+                    g.candidate_median > g.control_median
+                } else {
+                    g.candidate_median < g.control_median
+                }
+            })
+            .map(|(g, _)| g.name.as_str())
+            .collect();
+        findings.push(format!(
+            "beat the band on {} but reads parity, not improved: worse than the control median on {}",
+            beat_the_band.join(", "),
+            blocked.join(", ")
+        ));
+    }
     findings.push(format!(
         "{} candidate tape(s) against {} control tape(s); the band carries {:.2} of the one-tape null spread",
         candidates.len(),
@@ -1303,6 +1328,13 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
         report.scaled,
     );
     report
+}
+
+impl MatchBrief {
+    /// An empty brief, for the one path that must answer without data.
+    pub fn empty() -> MatchBrief {
+        brief_text("", None)
+    }
 }
 
 /// The tape whose stall count is the median: a real match to show,

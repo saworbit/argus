@@ -785,7 +785,11 @@ mod tests {
         let tmp_runs = std::env::temp_dir().join(format!("argus-{}-{}", "probe_inject_test", std::process::id()));
         let _ = std::fs::create_dir_all(&tmp_runs);
         cfg.runs = tmp_runs.clone();
-        let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+        // its own port: the default 26000 belongs to whatever ladder is
+        // running, and an engine that binds a busy port starts happily
+        // and then answers nothing, so this test failed as a port race
+        // rather than as a statement about console injection
+        let mut ctrl = crate::match_ctrl::MatchCtrl::on_port(26019);
         if ctrl
             .start(&cfg, "dm4", Some(30), Some("probe_inject_test"), None, Some(1), None)
             .await
