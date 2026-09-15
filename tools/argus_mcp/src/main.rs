@@ -72,6 +72,54 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
+        Some("match") => {
+            // One named lab match, without an MCP client. Every ladder
+            // in the recovery plan needs dozens of named tapes and the
+            // running server's exe is locked on Windows, so the loop
+            // cannot wait for a client restart:
+            //   argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--coop] [--slots N]
+            let rest: Vec<String> = args.collect();
+            if rest.iter().any(|a| a == "-h" || a == "--help" || a == "help") || rest.is_empty() {
+                println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--coop]
+
+Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.");
+                return Ok(());
+            }
+            let flag = |name: &str| -> Option<String> {
+                rest.iter().position(|a| a == name).and_then(|i| rest.get(i + 1).cloned())
+            };
+            let coop = rest.iter().any(|a| a == "--coop");
+            let skill: Option<u32> = flag("--skill").and_then(|s| s.parse().ok());
+            let slots: Option<u32> = flag("--slots").and_then(|s| s.parse().ok());
+            let flagged: std::collections::HashSet<usize> = rest
+                .iter()
+                .enumerate()
+                .filter(|(_, a)| a.starts_with("--"))
+                .flat_map(|(i, a)| if a == "--coop" { vec![i] } else { vec![i, i + 1] })
+                .collect();
+            let pos: Vec<&String> = rest
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !flagged.contains(i))
+                .map(|(_, a)| a)
+                .collect();
+            let map = pos
+                .first()
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp match <map> [duration_sec] [run_name]"))?
+                .clone();
+            argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
+            let duration: u32 = pos.get(1).and_then(|s| s.parse().ok()).unwrap_or(185);
+            let run_name = pos.get(2).map(|s| s.to_string());
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::default();
+            let res = ctrl
+                .run(&cfg, &map, duration, run_name.as_deref(), slots, skill, Some(coop))
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&res)?);
+            Ok(())
+        }
         Some("client") => {
             // the lab as a real NetQuake client (see netclient.rs):
             //   argus-mcp client observe [secs] [host] [port]
