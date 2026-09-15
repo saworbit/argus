@@ -41,7 +41,8 @@ and the chronic SE grate room.
 **THE VERDICT RULE WAS A COIN FLIP.** Run over the sixteen pairs of
 byte-identical builds in `runs/`, the old OR rule returned nine
 "improved", five "regressed", two "mixed" and zero parity.
-`compare_band` returns parity on fifteen of the sixteen. Its band is
+`compare_band` returns parity on thirteen of the sixteen, one
+"improved" and two "regressed". Its band is
 fitted to those pairs rather than guessed; one tape a side, on
 identical code, this lab produces a stall ratio from 0.18x to 11.0x,
 engages 0.45 to 2.82, world deaths 0 to 4x and freezes 0 to 3.
