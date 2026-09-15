@@ -80,7 +80,7 @@ async fn main() -> anyhow::Result<()> {
             //   argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--coop] [--slots N]
             let rest: Vec<String> = args.collect();
             if rest.iter().any(|a| a == "-h" || a == "--help" || a == "help") || rest.is_empty() {
-                println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--coop]
+                println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--port N] [--coop]
 
 Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.");
                 return Ok(());
@@ -112,7 +112,15 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             let duration: u32 = pos.get(1).and_then(|s| s.parse().ok()).unwrap_or(185);
             let run_name = pos.get(2).map(|s| s.to_string());
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::default();
+            // a second engine on its own port halves a ladder's wall
+            // clock; check the tapes still read the listen tick class
+            // before trusting a parallel run, because a loaded box
+            // drops the dedicated loop into the slow regime
+            let port: Option<u32> = flag("--port").and_then(|s| s.parse().ok());
+            let mut ctrl = match port {
+                Some(p) => argus_mcp::match_ctrl::MatchCtrl::on_port(p),
+                None => argus_mcp::match_ctrl::MatchCtrl::default(),
+            };
             let res = ctrl
                 .run(&cfg, &map, duration, run_name.as_deref(), slots, skill, Some(coop))
                 .await

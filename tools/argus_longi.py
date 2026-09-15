@@ -143,7 +143,11 @@ def analyse(path):
             obit[(vk, 'lava')] += 1
     t0 = min((s[0]['t'] for s in bots.values() if s), default=0)
     t1 = max((s[-1]['t'] for s in bots.values() if s), default=0)
-    dur = max(t1 - t0, 1)
+    # A tape shorter than 10 s has no rates worth printing: the
+    # 2026-09-05 e1m3 session spans 0.3 s and reported 1412 stalls
+    # a minute, which is one stall. Floor the divisor so a stub
+    # tape reads as a stub and not as a catastrophe.
+    dur = max(t1 - t0, 10)
     fz = []
     cells = set()
     spd = []
