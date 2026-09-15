@@ -3810,6 +3810,7 @@ float() Argus_Combat =
     local entity e, sup;
     local vector to, aimpt, err, cvr, shd, shp;
     local float d, want, diff, turn, trackt, errscale, loft;
+    local float sub, h, trem;
     local float cy, ck, cfound, ceff, sy, dy, sfrac;
     local float flight;         // projectile time of flight, seconds
 
@@ -4136,19 +4137,65 @@ float() Argus_Combat =
     while (diff < -180) diff = diff + 360;
     // damped-spring mouse model (OPM slice A): a human aim is a
     // neuromotor spring, not a constant-rate servo - fast flick,
-    // slight overshoot, settle, micro-tremor. Explicit Euler is
-    // stable at these gains (k*dt^2 well under 1 at 20 Hz worst
-    // case); velocity clamped to a fast human flick.
-    turn = 1 - self.ar_damping_c * frametime;
-    if (turn < 0.1)
-        turn = 0.1;             // 20 Hz rigs must not ring
-    self.ar_aimvel = self.ar_aimvel * turn
-                   + diff * self.ar_spring_k * frametime;
-    if (self.ar_aimvel > 720)  self.ar_aimvel = 720;
-    if (self.ar_aimvel < -720) self.ar_aimvel = -720;
-    turn = 0.3;                              // tremor, degrees
+    // slight overshoot, settle, micro-tremor.
+    //
+    // SUB-STEPPED, so the same constants describe the same bot on
+    // every rig (2026-09-15). The old single step used
+    // turn = 1 - c * frametime floored at 0.1, and that floor was not
+    // a safety net, it was a different controller:
+    //
+    //   rate      skill 1 settle   skill 2 settle   skill 3
+    //   71 Hz          0.20 s          0.14 s        0.11 s
+    //   19 Hz          0.10 s        ONE FRAME       0.05 s
+    //   14.5 Hz     ONE FRAME          0.21 s        never settles
+    //
+    // At 19 Hz, k * dt^2 reaches 0.97 at skill 2, so the bot moved 97
+    // per cent of its aim error in a single frame: a snap-aim, not a
+    // spring. Every lab tape since v3.27 was recorded on that, and
+    // every session Shane played ran the honest spring at 71 Hz. The
+    // lab has been measuring a deadlier bot than the one he fights.
+    //
+    // A sub-step of at most 0.02 s keeps 1 - c*h positive and k*h^2
+    // near 0.17 at every tier and every rate, so the floor is now
+    // unreachable and the tiers mean what Argus_SetSkill says they
+    // mean (omega 10.5 to 23.7 rad/s, zeta 0.80).
+    //
+    // WHENEVER frametime IS AT OR UNDER 0.02 THIS IS ONE STEP and so
+    // arithmetically identical to the build before it, which is the
+    // common case at the played rate: a 71 Hz server frames at about
+    // 0.0145. A LONGER frame is integrated more finely instead, and
+    // that is the point rather than a side effect - a hitch on a busy
+    // listen server used to be exactly where the old damping factor
+    // went negative. See
+    // docs/plans/2026-09-14-regression-analysis-and-recovery.md.
+    sub = floor (frametime / 0.02) + 1;
+    // Host_FilterTime clamps host_frametime at 0.1 on every id-derived
+    // engine, so this is 6 at worst and the cap can never bind. It is
+    // here because the charter says any NetQuake engine, and a loop
+    // whose count comes from the engine wants a bound it owns.
+    if (sub > 8)
+        sub = 8;
+    h = frametime / sub;
+    while (sub > 0)
+    {
+        turn = 1 - self.ar_damping_c * h;
+        if (turn < 0.1)
+            turn = 0.1;         // unreachable at h <= 0.02; kept as a floor
+        self.ar_aimvel = self.ar_aimvel * turn
+                       + diff * self.ar_spring_k * h;
+        if (self.ar_aimvel > 720)  self.ar_aimvel = 720;
+        if (self.ar_aimvel < -720) self.ar_aimvel = -720;
+        self.angles_y = self.angles_y + self.ar_aimvel * h;
+        // a sub-step that cannot see the angle it just moved is not a
+        // sub-step: re-derive the error every time round
+        diff = want - self.angles_y;
+        while (diff > 180)  diff = diff - 360;
+        while (diff < -180) diff = diff + 360;
+        sub = sub - 1;
+    }
+    trem = 0.3;                              // tremor, degrees
     if (self.health < 40)
-        turn = 0.8;                          // adrenaline shake
+        trem = 0.8;                          // adrenaline shake
     // TREMOR ON A FIXED CLOCK, not once per frame (the #98 class,
     // found by the 2026-08-29 per-frame audit). The shake is
     // injected noise, so its power per SECOND scaled with tick rate:
@@ -4167,12 +4214,13 @@ float() Argus_Combat =
     if (frametime < 0.09)
     {
         if (time < self.ar_tremtime)
-            turn = 0;
+            trem = 0;
         else
             self.ar_tremtime = time + 0.095;
     }
-    self.angles_y = self.angles_y + self.ar_aimvel * frametime
-                  + (random () - 0.5) * turn;
+    // the spring above already moved the angle; only the tremor is
+    // left to add here
+    self.angles_y = self.angles_y + (random () - 0.5) * trem;
     // remaining error feeds the trigger gate below (the old limiter
     // reused the clamped step for this; the spring must not)
     diff = want - self.angles_y;
