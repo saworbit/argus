@@ -18,6 +18,15 @@ Calibrated 2026-09-14 against two probes with host_speeds counting frames:
   dedicated, +sys_ticrate 0.0139      69.4 frames/s   mean gap 0.5053
   every human listen session          about 71 Hz     mean gap 0.506 to 0.509
 
+THE MEAN GAP CLASSIFIES; IT DOES NOT INVERT. n * dt = gap with
+n = floor(0.5 / dt) + 1 has several solutions - a gap of 0.5062 fits
+n = 20 at 39.5 Hz and n = 35 at 69 Hz equally well - so do not compute
+a frame rate from it. The three class boundaries below are empirical
+anchors measured against known launches, which is what makes them
+safe. Measured directly with host_speeds on 2026-09-15, counting
+frames against the telemetry's own game-time span: the played-rate
+lab runs 70.2 frames per second of game time, mean frametime 14.25 ms.
+
 Two lab clusters exist in runs/: 0.5145 to 0.5155 (about 19 Hz, a 1 ms
 Windows timer) and 0.535 to 0.555 (about 14 to 15 Hz, the 15.6 ms timer:
 four sleeps of 15.6 ms plus the frame's own work). No tape in the archive

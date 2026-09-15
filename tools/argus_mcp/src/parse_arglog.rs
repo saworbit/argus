@@ -385,6 +385,15 @@ impl MatchTape {
     /// arithmetic floor. Gaps over 0.75 are a bot that stopped logging
     /// (a level change, a death mid-write).
     ///
+    /// THE MEAN CLASSIFIES; IT DOES NOT INVERT. `n * dt = gap` with
+    /// `n = floor(0.5 / dt) + 1` has several solutions - 0.5062 fits
+    /// n = 20 at 39.5 Hz and n = 35 at 69 Hz alike - so never compute
+    /// a frame rate from this. The class boundaries are empirical
+    /// anchors measured against known launches, which is what makes
+    /// them safe. Counted directly with host_speeds against the
+    /// telemetry's own game-time span, the played-rate lab runs 70.2
+    /// frames a second, mean frametime 14.25 ms.
+    ///
     /// Calibrated 2026-09-15 against live probes on dm4; see
     /// docs/plans/2026-09-14-regression-analysis-and-recovery.md.
     pub fn tick_gap_mean(&self) -> Option<f64> {
