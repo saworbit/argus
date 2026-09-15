@@ -744,6 +744,97 @@ git commit -m "Baseline every map as a band at the played rate"
 
 ---
 
+### Phase 1 as built (2026-09-15): there is no September regression to remove
+
+The bisect and the graph comparison both came back **parity**, and the
+thing they found instead is more useful than a culprit.
+
+Every arm below ran at the played tick rate, 185 s, on the same
+engine, judged with `compare_band` against the tape counts shown.
+
+```
+arm                              n     stalls        engages     freezes
+v4.07 QC + 216-node old graph    4   54 [46-82]    24 [19-33]    0
+v4.08 QC + 216-node old graph    n   PLACEHOLDER_V408
+v4.09 QC + 216-node old graph    n   PLACEHOLDER_V409
+v4.17 QC + 216-node old graph    4   46 [27-95]    26 [19-36]    1 [0-2]
+v4.17 QC + 215-node new graph    3   77 [65-86]    20 [17-25]    0 [0-1]
+```
+
+**Task 1.1, the QC bisect: not convicted.** The whole span from v4.07
+to v4.17 on one graph moves the stall median from 54 to 46 and the
+engagement median from 24 to 26. The 3 September batch does not raise
+dm2 stalls, so task 1.2 does not run. The plan's decision rule (an arm
+whose median exceeds v4.07's maximum, or a 20 s freeze v4.07 lacks)
+fires on nothing.
+
+**Task 1.3, the graph: not convicted either.** New graph against old
+on identical QC reads **Parity**: the candidate median of 77 sits
+inside the control band of 19 to 97. The old graph's own four tapes
+ran 27, 47, 95 and one more, which is the width that makes the verdict
+what it is.
+
+That verdict is worth dwelling on, because after two tapes the old
+graph was reading 27 and 47 against the new graph's 65 to 86 and the
+obvious conclusion was "the regen did it". The third old-graph tape
+came back at 95. **The band is the only reason that conclusion was not
+shipped**, which is the whole argument for phase 0 in one experiment.
+
+### What the tapes found instead
+
+**dm2 has always been this bad; the lab could not see it.** At the
+played rate the shipped build runs 21 to 28 stalls a minute on dm2,
+and 25 a minute on the PREVIOUS graph too. Shane's last three dm2
+sessions read 21.6, 32.5 and 21.9. The 19 Hz lab read 11 to 16 for the
+same builds. There was no September cliff in the game; there was a
+September cliff in what the instrument reported, and the human tapes
+had been telling the truth the whole time.
+
+**dm4 is not affected.** Its played-rate band (5, 8, 11 stalls) sits
+exactly on its 19 Hz history of mean 8.0 over 53 tapes. Whatever makes
+dm2 rate-sensitive does not touch dm4, so dm4's month of clean tapes
+was not a lie.
+
+**The new graph did not add stalls, it concentrated them.** Total load
+is in band, but the composition is not:
+
+```
+graph                 stalls/tape   top cell                     share
+new (shipped, 215n)        76       2048 -1152  (west deck)       32%
+old (216n), v4.17 QC       56       2176 -2176  (SE grate room)   40%
+old (216n), v4.07 QC       59       2304 -2176  (SE grate room)   17%
+```
+
+The west deck cell does not appear in either old-graph arm's top four.
+It arrived with #308, and 71 of its stall events name node
+`2049 -1207 152` exactly: #323, reproduced without a human in the
+game. The old graph's deck node drops 176 units over 96 to reach the
+level below; the new one drops 192 over 101, with a sideways component
+the old line did not have.
+
+A single cell holding a third of a map's stalls is what a player
+notices, even when the total is in band. **So the action is to fix the
+cell, not to revert the graph**, and #323 already names the cure:
+n65 to n66, 144 down over 32 horizontal, additive rather than the
+deletion that cost three gates last time.
+
+### What this changes about the plan
+
+Part 2 of this document ranked "the 3 September batch and the patch
+cascade after it" second among the explanations. On this evidence it
+explains nothing about dm2 stalls, and the ranking should read:
+
+1. The instrument. It was measuring a different game at a rate nobody
+   plays, with a verdict rule that read noise as improvement.
+2. dm2's own geometry, unchanged for weeks and never measured where it
+   hurts: the west deck (#323), the door cluster (#324) and the SE
+   grate room.
+3. Combat calibration, still untested against a human since 29 August.
+
+The September guards (#262, #263, #271, #292, #322) are not convicted
+by this, but neither are they vindicated: they were laddered on the
+old instrument. They cost nothing measurable here.
+
 ### Phase 1: find and remove the September regressions
 
 #### Task 1.1: bisect the dm2 shift across v4.07, v4.08 and v4.09 on one graph
