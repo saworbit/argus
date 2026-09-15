@@ -1027,6 +1027,7 @@ pub async fn probe_links(
     limit: usize,
     skip: usize,
     coop: bool,
+    jumps_only: bool,
 ) -> Result<ProbeReport, String> {
     let navj = cfg.root.join("src").join(format!("argus_nav_{map}.qc.json"));
     let nav: serde_json::Value = serde_json::from_str(
@@ -1097,6 +1098,21 @@ pub async fn probe_links(
         })
         .filter(|p| !jump.contains(p))
         .collect();
+    // JUMP LINKS WERE NEVER SWEPT, WHICH IS HOW #350 SURVIVED EVERY
+    // VERIFICATION PASS. They live in their own `jlinks` array and
+    // never appear in `links`, so the filter above is belt and braces
+    // and the class was simply invisible to the referee. --jumps
+    // sweeps that class instead, and a whole-map sweep carries its own
+    // control: if the puppet clears the other jump links on the map
+    // and jams on one, the verdict is about the link and not about the
+    // puppet's hop.
+    let links: Vec<(usize, usize)> = if jumps_only {
+        let mut v: Vec<(usize, usize)> = jump.iter().copied().collect();
+        v.sort();
+        v
+    } else {
+        links
+    };
     let window: Vec<(usize, usize)> = links.into_iter().skip(skip).take(limit.min(80)).collect();
     let door_skipped = window.iter().filter(|p| doorlinks.contains(p)).count();
     let todo: Vec<(usize, usize)> = window
@@ -1223,6 +1239,14 @@ pub async fn probe_links(
     // readable afterwards (#310). A file with no `modes` block
     // predates this and is stamped deathmatch on first write, which
     // is true: nothing else could run.
+    // A JUMP SWEEP DOES NOT WRITE THE VERDICT FILE. navgen's 7g2c
+    // consumes `failed` as "this WALK link is a lie, remint it as a
+    // jump or drop it", and a jump link convicted here is already a
+    // jump: feeding it in would ask 7g2c to remint something that
+    // needs removing. Read the report, decide deliberately.
+    if jumps_only {
+        return Ok(report);
+    }
     let vpath = cfg.root.join("src").join(format!("argus_nav_{map}.probe.json"));
     let doc: serde_json::Value = std::fs::read_to_string(&vpath)
         .ok()

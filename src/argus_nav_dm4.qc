@@ -955,7 +955,6 @@ void() Argus_Nav_Spawn_dm4 =
     Argus_NavLink (n124, n112);
     Argus_NavLink (n124, n116);
     Argus_NavLink (n124, n117);
-    Argus_NavLinkJump (n124, n95);
     Argus_NavLink (n125, n104);
     Argus_NavLink (n125, n103);
     Argus_NavLink (n125, n124);
