@@ -197,6 +197,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
                                 // cornered exit means FIGHT, not a
                                 // per-frame re-scan of the same fan)
 .float  ar_shovelog;            // displacement: shove-line log throttle
+.float  ar_blocklog;            // body-block marker throttle (2 s)
 .entity ar_huntitem;            // hunch: the item we bet the lost foe
                                 // is running for
 .float  ar_hunttime;            // hunch: bias expires here
@@ -3770,8 +3771,31 @@ void() Argus_BodyBlockCheck =
                     self.ar_dodgeyaw = side;
                     self.ar_dodgetime = time + 0.25;
                     self.ar_moveyaw = side;
-                    // sidestep first, shoot second: suppress fire while clearing
-                    self.button0 = 0;
+                    // SIDESTEP IN BOTH MODES, HOLD FIRE ONLY IN CO-OP
+                    // (2026-09-15). The trigger release is the whole
+                    // point in co-op: a companion that keeps firing
+                    // through its team mate's back is the defect #177
+                    // was filed for. In deathmatch the same line fires
+                    // whenever ANY live player within 48 units is
+                    // airborne or shooting, which at point-blank range
+                    // is most of a duel, and it makes the bot stop
+                    // shooting exactly when it is being shot. Nothing
+                    // was ever measured about it: the batch that
+                    // landed it on 3 September was verified by 30 s
+                    // probes and no human tape has been taken on dm4
+                    // since 29 August.
+                    //
+                    // The sidestep stays in both, because clearing a
+                    // body you are wedged against is right either way.
+                    if (coop > 0)
+                        self.button0 = 0;
+                    if (time > self.ar_blocklog)
+                    {
+                        self.ar_blocklog = time + 2;
+                        dprint ("ARGUS ");
+                        dprint (self.netname);
+                        dprint (" bodyblock\n");
+                    }
                     return;
                 }
             }
