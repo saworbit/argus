@@ -96,6 +96,7 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float  ar_swim;
 .float  ar_nextjump;
 .float  ar_nexthazlog;          // throttle for hazard telemetry events
+.float  ar_nextwslog;           // wall slide: marker throttle, 1/s
 .float  ar_hazardyaw;           // last safe deflection heading
 .float  ar_hazhold;             // 1 = ar_hazardyaw is live (0 is a legal yaw)
 .float  ar_moveyaw;             // movement heading (may differ from facing)
@@ -1479,6 +1480,110 @@ float(float myaw, float spd) Argus_GapJumpOK =
     return FALSE;
 };
 
+// wall slide on a blocked ground step (2026-09-16, GitHub #380).
+// Stock SV_FlyMove clips the velocity into every plane it hits and
+// continues the move along the clipped vector, which is what lets a
+// player slide along a wall at speed instead of stopping dead. The
+// bot GROUND path never had that step. A blocked walkmove ungrounded
+// instead, so the engine's own flymove would do the sliding (v3.17,
+// and that stays below as the fallback), and two things came with it:
+// the bot left the ground to solve a ground problem, taking a
+// different friction and acceleration regime into the air, which on
+// a ledge is how a slide becomes a fall; and the velocity was never
+// projected onto the wall, so Argus_Accelerate could not sustain the
+// wish vector along it. That projection is the whole of the
+// diagonal-wall speed a player collects: acceleration continues
+// while the velocity's projection onto the wish direction is under
+// wishspeed, so pressed at 45 degrees into a wall 0.707 v = 320
+// settles at 452 u/s rather than 320.
+//
+// THE PROBE IS A FAN ACROSS THE BBOX FRONT, and that is the whole
+// difference between this working and not. The first cut traced one
+// line from the origin and found a wall in 3 per cent of blocked
+// steps: walkmove moves a 32-wide box and a wall that stops the box
+// is usually met by a corner, which a centre line misses entirely.
+// Measured on dm2, 120 s, three bots: 4947 blocked steps, 4810 of
+// them reading "no wall". The same tape with the three waist traces
+// finds a wall in two thirds of them and slides 1489 times. A knee
+// trace covers the sliver between walkmove's 18 unit step-up and the
+// origin at floor plus 24, and it only runs when the cheap three
+// miss. A traceline whose start is inside solid returns fraction 1,
+// byte-identical to finding nothing (the v3.43 lesson), so that is
+// ruled out before a miss is believed.
+//
+// The clipped heading is NEW, so it goes through the brink guard like
+// any other heading: sliding along a wall beside the dm4 pit is
+// exactly how this could feed the lava it is meant to avoid.
+float(float myaw, float spd, float probe) Argus_WallSlide =
+{
+    local vector vh, n, fwd, side, a;
+    local float back, cspd, cyaw, reach, i;
+
+    makevectors ('0 0 0' + myaw * '0 1 0');
+    fwd = v_forward;
+    side = v_right;
+    reach = 18 + spd * frametime;
+    n = '0 0 0';
+    i = 0;
+    while (i < 4)
+    {
+        a = self.origin;
+        if (i == 1)
+            a = a + side * 15;
+        if (i == 2)
+            a = a - side * 15;
+        if (i == 3)
+            a = a - '0 0 16';
+        traceline (a, a + fwd * reach, FALSE, self);
+        if (trace_fraction < 1 && !trace_allsolid && !trace_startsolid
+            && trace_plane_normal_z < 0.7
+            && trace_plane_normal_z > -0.7)
+        {
+            n = trace_plane_normal;
+            i = 9;              // a wall, not a floor or a ceiling
+        }
+        else
+            i = i + 1;
+    }
+    if (i != 9)
+        return FALSE;           // no wall on the line: not our case
+
+    n_z = 0;
+    n = normalize (n);
+    vh = self.velocity;
+    vh_z = 0;
+    back = vh * n;
+    if (back >= 0)
+        return FALSE;           // already moving out of the plane
+
+    vh = vh - n * back;         // stock ClipVelocity, overbounce 1
+    cspd = vlen (vh);
+    if (cspd < 20)
+        return FALSE;           // head on: stock stops here too, and
+                                // the unground escape is the better
+                                // answer for a bot that is pinned
+
+    cyaw = vectoyaw (vh);
+    if (Argus_MoveHazard (cyaw, probe))
+        return FALSE;           // the slide runs at a brink
+
+    self.velocity_x = vh_x;
+    self.velocity_y = vh_y;
+    if (!walkmove (cyaw, cspd * frametime))
+        return FALSE;
+    // throttled like the hazard deflection beside it, and for the
+    // same reason: this fires about twelve times a second across a
+    // roster and a line per firing would be most of the tape.
+    if (time > self.ar_nextwslog)
+    {
+        self.ar_nextwslog = time + 1;
+        dprint ("ARGUS ");
+        dprint (self.netname);
+        dprint (" wallslide\n");
+    }
+    return TRUE;
+};
+
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
@@ -2082,6 +2187,13 @@ void() Argus_Physics =
                 // the drift-in worry is not in the v3.16 record,
                 // which held lava at 1-3 for its whole life)
                 moveok = walkmove (myaw, spd * frametime);
+                // clip into the wall and try again before leaving the
+                // ground, which is what stock does and what makes a
+                // deflection along a brink a slide rather than a fall
+                // (#380). Nothing that succeeds today changes: this
+                // only sits between the failure and the unground.
+                if (!moveok)
+                    moveok = Argus_WallSlide (myaw, spd, rhoriz);
                 if (!moveok)
                     self.flags = self.flags - (self.flags & FL_ONGROUND);
             }
@@ -2127,6 +2239,13 @@ void() Argus_Physics =
                     moveok = walkmove (myaw, spd * frametime);
                     self.flags = self.flags - (self.flags & FL_PARTIALGROUND);
                 }
+                // the PARTIALGROUND retry above answers a FLOOR
+                // dissent; a wall is the other way a step is blocked
+                // and it has no answer here but the unground. Clip
+                // and retry first (#380). Runs second on purpose, so
+                // the grate-floor behaviour is untouched.
+                if (!moveok)
+                    moveok = Argus_WallSlide (myaw, spd, rhoriz);
                 if (!moveok)
                     self.flags = self.flags - (self.flags & FL_ONGROUND);
             }
