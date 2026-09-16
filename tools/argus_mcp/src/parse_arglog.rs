@@ -116,6 +116,27 @@ impl MatchTape {
     /// not defects (the 2026-08-26 v372 tape fired the dm4 lava band
     /// flag on Shane's own four swims, and its only "statue" was
     /// Shane standing still for 12.7 s).
+    /// Every track that is neither a bot nor a person.
+    ///
+    /// THE PUPPET IS AN INSTRUMENT. The lab netclient emits ARGLOG
+    /// rows and never spawns, so the human rule below read it as a
+    /// person: every tape it connected to briefed as a human
+    /// session, `compare` flagged those review-only, and two
+    /// committed BASELINES said a human had played in them
+    /// (`band_dm4_2`, `band_dm2_3`). `Argus_CanSee` has refused
+    /// this netname since v3.85 for the same reason.
+    ///
+    /// It must come out of BOTH sides, not be moved to the other
+    /// one. Counting the puppet as a bot puts a zero-frag,
+    /// near-zero-coverage track into `cover`, `avg_speed`,
+    /// `kd_spread` and `all_frags_positive`, which is a gate.
+    ///
+    /// `unconnected` is the engine's own placeholder netname for a
+    /// client slot mid-handshake, and is never a person either.
+    pub fn instrument_names(&self) -> HashSet<String> {
+        self.samples.keys().filter(|n| is_instrument(n)).cloned().collect()
+    }
+
     pub fn human_names(&self) -> HashSet<String> {
         let bots: HashSet<&str> = self
             .events
@@ -133,6 +154,7 @@ impl MatchTape {
         self.samples
             .keys()
             .filter(|n| !bots.contains(n.as_str()))
+            .filter(|n| !is_instrument(n))
             .cloned()
             .collect()
     }
@@ -265,7 +287,7 @@ impl MatchTape {
         let tracks: Vec<&Vec<Sample>> = self
             .samples
             .iter()
-            .filter(|(n, _)| !humans.contains(n.as_str()))
+            .filter(|(n, _)| !humans.contains(n.as_str()) && !is_instrument(n))
             .map(|(_, r)| r)
             .collect();
         if tracks.len() < 2 {
@@ -457,6 +479,13 @@ pub fn parse_arglog(text: &str) -> MatchSummary {
 pub fn parse_arglog_path(path: &std::path::Path) -> std::io::Result<MatchSummary> {
     let text = std::fs::read_to_string(path)?;
     Ok(parse_arglog(&text))
+}
+
+/// The lab netclient, and the engine placeholder for a client slot
+/// that has not finished connecting. Neither is a combatant and
+/// neither belongs in a bot total or a human one.
+pub fn is_instrument(name: &str) -> bool {
+    name == "labprobe" || name == "unconnected"
 }
 
 pub fn parse_tape_path(path: &std::path::Path) -> std::io::Result<MatchTape> {
@@ -808,6 +837,30 @@ ARGLOG Reap t 1.0 pos '0.0 0.0 24.0' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
         let clean = parse_tape("SpawnServer: dm4\nARGUS init on dm4\n");
         assert_eq!(clean.map.as_deref(), Some("dm4"));
         assert!(clean.failed_spawns.is_empty());
+    }
+
+    /// The lab puppet is an instrument and belongs in NEITHER
+    /// total. It emits ARGLOG rows and never spawns, so the human
+    /// rule claimed it: every tape it connected to briefed as a
+    /// human session, and two committed baselines said a human had
+    /// played in them. Taking it out of the human set is only half
+    /// the fix, because that moves it into the bot set instead.
+    #[test]
+    fn the_puppet_is_neither_a_bot_nor_a_human() {
+        let text = "\
+ARGEVT Carmack spawned\n\
+ARGLOG Carmack t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n\
+ARGLOG Carmack t 2.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 3 gl 1 hp 100 frg 2\n\
+ARGLOG labprobe t 1.0 pos '9 9 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n\
+ARGLOG labprobe t 2.0 pos '9 9 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n\
+ARGLOG unconnected t 1.0 pos '5 5 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
+        let tape = parse_tape(text);
+        let humans = tape.human_names();
+        assert!(humans.is_empty(), "the puppet read as a human: {humans:?}");
+        let inst = tape.instrument_names();
+        assert!(inst.contains("labprobe"), "{inst:?}");
+        assert!(inst.contains("unconnected"), "{inst:?}");
+        assert!(!inst.contains("Carmack"), "{inst:?}");
     }
 
     #[test]

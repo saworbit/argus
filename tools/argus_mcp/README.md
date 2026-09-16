@@ -5,7 +5,7 @@ maps, runs headless matches, and briefs the result the way this
 project already judges A/B. Toolchain only: it does not change QuakeC
 or the engine.
 
-Current version: **0.27.0**. Operator guide (this file). Design
+Current version: **0.28.0**. Operator guide (this file). Design
 history: `docs/specs/2026-08-17-argus-mcp-design.md`.
 Captured external spec and triage: `docs/mcp_quake_dev_spec.md`.
 
@@ -713,6 +713,77 @@ finding says so and names the cure. Every "improved on all seven
 gates" recorded before this rests on an instrument that could not have
 said anything else.
 
+## Asking the corpus a question
+
+Everything else in the lab is per run: brief one tape, compare two,
+band a handful. `corpus` asks the whole thing at once, and returns
+CSV because every answer here is a table.
+
+```
+corpus  what=tapes   map=dm2 kind=bot metric=stalls group_by=month
+corpus  what=cells   map=dm4 limit=20
+corpus  what=changes map=dm2 tick_class=listen
+corpus  what=bisect  map=dm4 metric=lava_deaths since=2026-08-15
+```
+
+and from a shell, with the same filters as flags:
+
+```
+argus-mcp corpus --map dm2 --kind bot --metric stalls --group-by month
+argus-mcp corpus --rebuild --write        # re-parse every tape, persist
+argus-mcp history --map dm2 --tick listen
+argus-mcp history --bisect stalls --map dm2 --since 2026-08-20
+```
+
+**The index** is `runs/tape_index.tsv`, one row per tape: run, map,
+the start time from the tape's own header, tick class, kind and
+every headline metric. It is a CACHE, not a source of truth - a tape
+it does not name is parsed on demand and appended - so nothing
+re-parses 752 tapes on an ordinary call. A full rebuild takes about
+forty seconds; a query off the cache takes sixty milliseconds.
+
+The start time comes from `LOG started on:` inside the file rather
+than the file mtime, because a fresh clone stamps every file with
+the checkout time and would flatten the whole time axis this exists
+to provide.
+
+**Change points.** `what=changes` finds however many steps a series
+has, dates each one, names the tape it starts at, and gives it a
+permutation p. Binary segmentation with a permutation-calibrated
+max-t statistic, minimum segment five tapes, p below 0.01. It
+reproduces the record: dm4 lava 12.3 to 4.4 at `ab_dm4_B3` is the
+2026-08-14 hazard fix, dm4 stalls 35.3 to 8.0 at `ab_dm4_bisect3` is
+the two-author forensics, e1m1 engages 1.1 to 17.8 at
+`ab_e1m1_mover1` is #281.
+
+Every row carries the commonest tick class either side. **A step
+where those differ is a rate change before it is a regression**, and
+that is the first mistake available here. Restrict to one class to
+be sure. It also cannot tell a behaviour change from a metric
+boundary, and this project has eight recorded boundaries: three of
+the goal steps it finds are counters changing meaning, not bots.
+
+**Bisection with a noisy oracle.** `git bisect` assumes an oracle:
+each answer permanently discards half the range, so one unlucky tape
+sends the search into the wrong half and it never comes back. Phase
+1 came three tapes from convicting the wrong arm. `what=bisect`
+keeps a posterior over where the change is, updates it with each
+noisy answer, samples at the posterior median, and reports a
+credible interval - so "localised to within two builds" is a
+statement with a confidence rather than a judgement call. When it
+cannot settle it says so and names the date to spend the next tapes
+at, which is the question that actually costs time in a bisect.
+
+Two limits, both real:
+
+- **It assumes one change point.** Pointed at a series with three it
+  wanders and says so. Run `what=changes` first and bisect one
+  segment between two of its steps.
+- **A position is queried at most once.** Re-querying the median is
+  the algorithm, but from a fixed corpus it would feed the same
+  tapes in twice and manufacture confidence. Re-querying means
+  running fresh tapes.
+
 ## What the instrument can see, and when to stop
 
 `argus-mcp measure` answers two questions the lab could always have
@@ -984,6 +1055,7 @@ shell.
 | 0.22 | The lab joins the game: a real NetQuake client (`argus-mcp client observe/walk/walkrel`), the empirical link-verification harness (`argus-mcp probelinks`), engine-verdict files consumed by navgen, orphan-engine kill on failed matches, serialized engine tests. |
 | 0.21 | The operational gaps. STALENESS SELF-AWARENESS: at startup the server detects a newer staged build, auto-swaps it into place for the next restart (Windows allows renaming a running exe), and stamps `lab_stale` on every JSON response for the rest of the session - a stale server can never again hand out an unmarked opinion. HARVEST GUARD: every match starter (MCP tools, soak, cycle) refuses to launch over an un-harvested play session (the harvester now MOVES its inputs, so leftovers are the signal). PAIRED DEMO JOIN: brief_run folds the same-stem .dem into the brief (aim stats, highlight reel, tracks) - the whole "played, review" ritual is one call. `ship` (compile + install everywhere + MD5s) and `baseline_set` (rewrite runs/baselines.json safely) close the loop's last manual steps. `soak --parallel 2` runs two engines on separate ports, halving ladder wall clock. Last-seen session memory persists to runs/.lab_session.json across restarts; `see what=project` stops listing fifty pak-only maps; compare flags any human tape as review-only material. |
 | 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |
+| 0.28 | The corpus becomes something you can ask a question of (GitHub #372, #378, #386). `corpus` is one tool with a `what` selector, like `see`: `tapes` filters and aggregates an index of every committed tape, `cells` does the same for hotspot cells, `changes` runs change point detection over the dated series, `bisect` localises one step with a noisy oracle. It returns CSV, which is about half the tokens of the same table as JSON. The index is `runs/tape_index.tsv`, a cache rather than a source of truth: a tape it does not name is parsed on demand, and nothing re-parses 752 tapes on an ordinary call. **SQLITE WAS CONSIDERED AND REFUSED**: the corpus is a few hundred rows of a fixed schema, and a named filter-and-aggregate surface costs an agent less than discovering a schema and writing SQL against it. The detector reproduces the record: dm4 lava stepping 12.3 to 4.4 at `ab_dm4_B3` is the 2026-08-14 hazard fix, e1m1 engages 1.1 to 17.8 at `ab_e1m1_mover1` is #281, and it dates the September dm2 stall rise that `CLAUDE.md` calls "not bisected" to 2026-08-29 at `ab_dm2_v403_control` - while flagging on the row that the tick class differs either side, so it must not be read as code without a single-class re-run. **TWO PARSER DEFECTS THE INDEX FOUND**: the lab puppet emits ARGLOG rows and never spawns, so the human split read it as a person and every tape it connected to briefed as a human session, two committed baselines included; and human ARGLOG tracks only exist from v3.66, so 46 of 73 harvested sessions were sitting in the bot series. Both fixed, and no tape's numbers move - verified by diffing the whole index across the change. `docs/specs/2026-09-16-corpus-change-points.md`. 182 tests. |
 | 0.27 | The verdict gets an interval, a stopping rule and a pre-registered primary (GitHub #375, #376, #377). `argus-mcp measure` writes `docs/specs/2026-09-16-lab-measurement-limits.md`: the pooled within-arm sigma per map and metric over every committed same-build arm, and the smallest effect detectable at 3, 5 and 10 tapes a side. It says in print what the handoff said in prose - dm2 stalls at three tapes a side cannot see anything smaller than a 119 per cent change, and coverage at 9 per cent CV is the only metric worth reading off a small ladder. It also measures what four gates cost: each convicts a byte-identical pair 0 to 12 per cent of the time and the verdict as a whole convicts 19 per cent of the time, so `experiment` and `compare` take `primary`, the metric the change was predicted to move, and only that gate convicts. Every compare now carries a `stats` block: interquartile mean rather than median, a stratified bootstrap interval on the improvement (absent below two tapes a side, where resampling one observation is not an interval), a probability of improvement, and an SPRT call of accept, reject, continue or abandon with its bound derived from the detection limit. **Continue is the answer the lab could never give.** Validated on the null corpus: zero accepts across 58 decisions from ten same-build arms split in half, and the sixteen null pairs still read thirteen parities. 163 tests. |
 | 0.26 | The instrument learns to see what the player sees (the recovery plan, phase 0). EVERY MATCH RUNS AT THE PLAYED TICK RATE: `+sys_ticrate 0.0139`, because `sys_ticrate` gates the dedicated main loop and the engine default ran every tape in `runs/` at about 19 Hz against the 71 Hz of every human session. Measured on dm4: default mean ARGLOG gap 0.5134, flagged 0.5074, human tapes 0.506 to 0.509. This refutes the v4.09 note that sys_ticrate does nothing to the dedicated tick and the v4.07 "frametime 0.1", which was `ftos` printing a 0.05 s frame to one decimal. Briefs carry `tick_gap_mean` and `tick_class`, and compare REFUSES a verdict across two classes. THE VERDICT STOPS BEING A COIN FLIP: `compare_band` judges candidate medians against a control band fitted to the sixteen null pairs (which the old OR rule read as nine improvements and zero parities, and which now read thirteen parities, one improvement and two regressions); `experiment` gains `repeats`, default 3; `baselines.json` takes a list. THE HUMAN SCORECARD becomes a lab surface: `tools/argus_longi.py` and `tools/argus_tick.py` join the tree, `harvest_session.py` appends to `runs/human_scorecard.tsv`, and a brief on a human tape carries `human_scorecard` including unstick warps. Also `argus-mcp match <map> [duration] [name] [--port N]`, so a ladder can be driven without an MCP client and two engines can run at once. |
 | 0.25 | A committed tape is evidence (GitHub #328). `match_run` takes a `run_name` and writes `runs/<name>.log`; a name that collided with a tape already in git overwrote it in place, with no warning and nothing to notice by but a modified file in `git status`. It happened twice in one week, and the second time the ladder tape it destroyed survived only in a session transcript. `MatchCtrl::start` now refuses such a name before the engine spawns, beside the harvest guard it mirrors. TRACKED BY GIT IS THE TEST, not "the file is there": the matrix probe rewrites `mx_<map>.log` every run by design and five of those are committed, so it asks for a one-shot exemption that `start` consumes. IT FAILS OPEN - no git, or not a checkout, and the match proceeds, because a guard that cannot answer must not wedge the lab. |

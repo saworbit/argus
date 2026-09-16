@@ -478,7 +478,15 @@ fn brief_tape_lava(
     // and his idle spell into the freeze count). The human rows stay
     // in `bots` and the kill matrix; their totals go in `human`.
     let humans = tape.human_names();
-    let bot_rows: Vec<_> = summary.bots.iter().filter(|b| !humans.contains(&b.name)).collect();
+    // An instrument is NEITHER a bot nor a human, and has to come
+    // out of both sides at every site that splits them. Excluding
+    // it from one only moves it to the other: the first cut of
+    // this took the puppet out of the human tracks and put its
+    // deaths into the bot world-death count and its standing still
+    // into the bot freeze count, on eight tapes.
+    let instruments = tape.instrument_names();
+    let is_bot = |n: &str| !humans.contains(n) && !instruments.contains(n);
+    let bot_rows: Vec<_> = summary.bots.iter().filter(|b| is_bot(&b.name)).collect();
     let duration = summary.bots.iter().map(|b| b.dur).fold(0.0, f64::max);
     let stalls = bot_rows.iter().map(|b| b.stalls).sum();
     let goals = bot_rows.iter().map(|b| b.goals).sum();
@@ -507,6 +515,9 @@ fn brief_tape_lava(
     for d in &tape.deaths {
         let lava = d.killer.eq_ignore_ascii_case("world")
             && crate::bsp::death_is_lava(hull, d.pos.x, d.pos.y, d.pos.z);
+        if instruments.contains(&d.victim) {
+            continue;
+        }
         if humans.contains(&d.victim) {
             h_deaths += 1;
             if d.killer.eq_ignore_ascii_case("world") {
@@ -551,7 +562,7 @@ fn brief_tape_lava(
     let fz: Vec<_> = tape
         .freezes()
         .into_iter()
-        .filter(|f| !humans.contains(&f.bot))
+        .filter(|f| is_bot(&f.bot))
         .collect();
     let freeze_underfire = fz.iter().filter(|f| f.hp_drop >= 10.0).count() as u32;
     let freeze_max_sec = fz.first().map(|f| f.dur).unwrap_or(0.0);
@@ -561,7 +572,7 @@ fn brief_tape_lava(
     let cf: Vec<_> = tape
         .confinements(220.0, 5.0)
         .into_iter()
-        .filter(|c| !humans.contains(&c.bot))
+        .filter(|c| is_bot(&c.bot))
         .collect();
 
     let ev = |k: &str| *tape.event_counts.get(k).unwrap_or(&0);
@@ -3403,6 +3414,25 @@ ARGEVT Reap spawned
         if lab.exists() {
             assert!(brief_path(&lab, None).unwrap().human_scorecard.is_none());
         }
+    }
+
+    /// And the brief must not count it on either side. A tape the
+    /// puppet connected to is a botmatch, its bot totals are the
+    /// bots only, and nothing about it is review-only.
+    /// `band_dm4_2` and `band_dm2_3` are committed baselines that
+    /// briefed as human sessions until this.
+    #[test]
+    fn a_puppet_tape_is_a_botmatch_if_present() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let p = dir.join("band_dm4_2.log");
+        if !p.exists() {
+            return;
+        }
+        let b = brief_path(&p, None).unwrap();
+        assert!(b.totals.human.is_none(), "the puppet briefed as a human");
+        // three bots, and the puppet is not a fourth
+        assert!(b.totals.cover > 300, "cover {}", b.totals.cover);
+        assert!(b.totals.engages > 40, "engages {}", b.totals.engages);
     }
 
     #[test]
