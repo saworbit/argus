@@ -198,6 +198,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
                                 // per-frame re-scan of the same fan)
 .float  ar_shovelog;            // displacement: shove-line log throttle
 .float  ar_blocklog;            // body-block marker throttle (2 s)
+.float  ar_leadlog;             // lead-clip marker throttle (2 s)
 .entity ar_huntitem;            // hunch: the item we bet the lost foe
                                 // is running for
 .float  ar_hunttime;            // hunch: bias expires here
@@ -3824,6 +3825,26 @@ void() Argus_BodyBlockCheck =
     }
 };
 
+// IS THIS AIM POINT ACTUALLY IN THE ROOM (#363)? Two tests, because
+// neither is enough on its own. pointcontents reads hull 0, so it
+// sees world brushes and is blind to a door or a plat, both of which
+// are bmodels. A traceline sees bmodels and is blind to a start
+// inside solid: the trace-semantics rule this tree has paid for
+// twice says such a trace returns fraction 1, byte-identical to
+// finding nothing, and an embedded bot is exactly the state
+// Argus_Unstick exists for. nomonsters is TRUE, so the line clips
+// against SOLID_BSP only and a player standing between us is not a
+// wall.
+float(vector src, vector tg) Argus_AimBlocked =
+{
+    if (pointcontents (tg) == CONTENT_SOLID)
+        return TRUE;
+    traceline (src, tg, TRUE, self);
+    if (trace_fraction < 1)
+        return TRUE;
+    return FALSE;
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
@@ -3833,6 +3854,7 @@ float() Argus_Combat =
     local float sub, h, trem;
     local float cy, ck, cfound, ceff, sy, dy, sfrac;
     local float flight;         // projectile time of flight, seconds
+    local vector preaim, ldv, src;  // #363: the lead, on its own
 
     Argus_Perceive ();
     e = self.ar_enemy;
@@ -4014,6 +4036,7 @@ float() Argus_Combat =
         flight = d / 1000;
     if (flight > 0)
     {
+        preaim = aimpt;
         aimpt = aimpt + e.velocity * flight;
 
         // AN AIRBORNE TARGET IS NOT TRAVELLING IN A STRAIGHT LINE
@@ -4038,6 +4061,59 @@ float() Argus_Combat =
             && e.movetype != MOVETYPE_FLY
             && e.movetype != MOVETYPE_NOCLIP)
             aimpt_z = aimpt_z - 0.5 * Argus_Gravity () * flight * flight;
+
+        // THE LEAD POINT WAS NEVER CHECKED AGAINST GEOMETRY
+        // (#363). The lead sits ahead of the target along its
+        // velocity, so whenever a target strafes toward a
+        // pillar or a doorway edge the aim point crosses into
+        // the wall BEFORE the target does. The rocket then
+        // goes into the near wall, and a near wall splashes
+        // the firer: dm2 already priced that lesson when
+        // opening the point-blank RL band took self-kills to
+        // 40 per cent of all deaths there.
+        //
+        // Reaper's answer, and it is the right size: halve the
+        // lead, test again, halve again, and fire unled rather
+        // than into masonry. Rocket launcher only, because
+        // that is where splash makes a wall hit expensive and
+        // because it is the only led weapon that flies
+        // straight - a grenade is lofted deliberately over
+        // geometry a few lines below, so tracing its aim point
+        // would answer a question nobody asked.
+        //
+        // Skill 1 and up, like every cognition gate since
+        // v3.76: a warmup bot may keep the honest miss.
+        if (self.weapon == IT_ROCKET_LAUNCHER && skill >= 1)
+        {
+            ldv = aimpt - preaim;
+            // A lead shorter than half a player hull cannot put
+            // the aim point off the target, so there is nothing
+            // to give back. Skipping those keeps the trace off
+            // the hot path for a standing target and keeps the
+            // marker honest: leadclip counts leads actually
+            // surrendered, not every blocked aim point.
+            if (vlen (ldv) > 16)
+            {
+                // W_FireRocket spawns at origin + v_forward*8 +
+                // '0 0 16'. The 8 lies along the shot line, so
+                // leaving it out needs no makevectors and errs
+                // toward calling a marginal shot blocked.
+                src = self.origin + '0 0 16';
+                if (Argus_AimBlocked (src, aimpt))
+                {
+                    aimpt = aimpt - ldv * 0.5;
+                    if (Argus_AimBlocked (src, aimpt))
+                        aimpt = aimpt - ldv * 0.5;
+                    if (time > self.ar_leadlog)
+                    {
+                        self.ar_leadlog = time + 2;
+                        dprint ("ARGUS ");
+                        dprint (self.netname);
+                        dprint (" leadclip\n");
+                    }
+                }
+            }
+        }
     }
 
     // A falling enemy carries velocity_z of -400 to -700, and over a

@@ -598,6 +598,12 @@ fn parse_one(text: &str) -> MatchTape {
                 *event_counts.entry("sprintjump".to_string()).or_insert(0) += 1;
             } else if line.ends_with(" prefire") {
                 *event_counts.entry("prefire".to_string()).or_insert(0) += 1;
+            } else if line.ends_with(" leadclip") {
+                // the rocket lead surrendered because the led aim
+                // point was inside geometry (#363). Throttled at
+                // one a bot every 2 s, so this is a floor on how
+                // often the branch fires, never a count of shots.
+                *event_counts.entry("leadclip".to_string()).or_insert(0) += 1;
             } else if line.ends_with(" coop catchup warp") {
                 // a rescue teleport across the level to the team mate,
                 // and the single most consequential thing a co-op bot
@@ -812,6 +818,7 @@ ARGUS Joe Rogan shove\n\
 ARGUS routecache adopt\n\
 ARGUS Carmack watch spawn\n\
 ARGUS Joe Rogan sprintjump\n\
+ARGUS Carmack leadclip\n\
 ARGUS Carmack coop catchup warp\n\
 ARGUS Joe Rogan unstick pinned '2526.7 -40.9 -66.0'\n\
 ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
@@ -820,6 +827,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         assert_eq!(tape.event_counts.get("routecache_adopt"), Some(&1));
         assert_eq!(tape.event_counts.get("watch"), Some(&1));
         assert_eq!(tape.event_counts.get("sprintjump"), Some(&1));
+        assert_eq!(tape.event_counts.get("leadclip"), Some(&1));
         // both rescue teleports are countable (#278)
         assert_eq!(tape.event_counts.get("coop_warp"), Some(&1));
         assert_eq!(tape.event_counts.get("unstick"), Some(&1));
