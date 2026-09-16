@@ -654,6 +654,44 @@ fn harvest(live: &LiveMatch) -> String {
     live.harvested.display().to_string()
 }
 
+/// The response budget for a live tail, in bytes.
+///
+/// RECORD COUNT IS THE WRONG UNIT when records vary in size, and
+/// telemetry lines vary by five times: `ARGEVT Reap jump` is
+/// sixteen characters and an ARGLOG sample is over a hundred. The
+/// old cut was a flat eighty lines, so the same call returned
+/// anywhere between 1.5 and 8 KB depending on what the match
+/// happened to be doing, and a busy match returned the most.
+/// Cutting on size instead makes the cost of a poll predictable.
+///
+/// About 1500 tokens at four characters a token, which is a tail
+/// worth reading and not a transcript.
+const TAIL_BUDGET_BYTES: usize = 6000;
+/// A ceiling as well, so a quiet match does not return a thousand
+/// one-word lines just because they are small.
+const TAIL_MAX_LINES: usize = 120;
+
+/// Take lines from `start` until the byte budget is spent, and
+/// report where the cursor now is.
+///
+/// Always returns at least one line when one exists: a budget that
+/// can return nothing is a poll loop that never advances.
+fn take_budgeted(all: &[&str], start: usize) -> (Vec<String>, u32) {
+    let mut out = Vec::new();
+    let mut used = 0usize;
+    let mut i = start;
+    while i < all.len() && out.len() < TAIL_MAX_LINES {
+        let cost = all[i].len() + 1;
+        if used + cost > TAIL_BUDGET_BYTES && !out.is_empty() {
+            break;
+        }
+        used += cost;
+        out.push(all[i].to_string());
+        i += 1;
+    }
+    (out, i as u32)
+}
+
 fn recent_lines_since(live: &LiveMatch, since_line: Option<u32>) -> (Vec<String>, u32) {
     let qconsole = live.run_dir.join("qconsole.log");
     let mut text = std::fs::read_to_string(&qconsole).unwrap_or_default();
@@ -665,21 +703,22 @@ fn recent_lines_since(live: &LiveMatch, since_line: Option<u32>) -> (Vec<String>
     let all: Vec<&str> = text.lines().collect();
     let total = all.len() as u32;
     match since_line {
+        // the opening call is the TAIL, so it walks backwards from
+        // the end until the budget is spent rather than forwards
         None | Some(0) => {
-            let start = all.len().saturating_sub(40);
-            (
-                all[start..].iter().map(|s| (*s).to_string()).collect(),
-                total,
-            )
+            let mut start = all.len();
+            let mut used = 0usize;
+            while start > 0 && all.len() - start < TAIL_MAX_LINES {
+                let cost = all[start - 1].len() + 1;
+                if used + cost > TAIL_BUDGET_BYTES && start < all.len() {
+                    break;
+                }
+                used += cost;
+                start -= 1;
+            }
+            (all[start..].iter().map(|s| (*s).to_string()).collect(), total)
         }
-        Some(n) => {
-            let start = (n as usize).min(all.len());
-            let end = (start + 80).min(all.len());
-            (
-                all[start..end].iter().map(|s| (*s).to_string()).collect(),
-                end as u32,
-            )
-        }
+        Some(n) => take_budgeted(&all, (n as usize).min(all.len())),
     }
 }
 
@@ -811,6 +850,69 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    use super::{take_budgeted, TAIL_BUDGET_BYTES, TAIL_MAX_LINES};
+
+    /// A poll has a CEILING on what it costs, whatever the match is
+    /// doing. Eighty long lines were six times eighty short ones,
+    /// which is the failure Datadog documented and the reason this
+    /// paginates on size.
+    ///
+    /// Note what is and is not claimed: the budget BOUNDS the cost,
+    /// it does not equalise it. A quiet match still returns less,
+    /// because it hits the line ceiling first and there is no
+    /// reason to pad it.
+    #[test]
+    fn a_tail_has_a_ceiling_whatever_the_lines_look_like() {
+        let short: Vec<String> = (0..400).map(|_| "ARGEVT Reap jump".to_string()).collect();
+        let long: Vec<String> = (0..400)
+            .map(|i| {
+                format!(
+                    "ARGLOG Joe Rogan t {i}.0 pos '2624.0 -488.0 32.0' spd 320.4 yaw 177.6 mode 2 st 7 gl 1 hp 100 frg 5"
+                )
+            })
+            .collect();
+        let sr: Vec<&str> = short.iter().map(|s| s.as_str()).collect();
+        let lr: Vec<&str> = long.iter().map(|s| s.as_str()).collect();
+        let (a, _) = take_budgeted(&sr, 0);
+        let (b, _) = take_budgeted(&lr, 0);
+        let bytes = |v: &Vec<String>| v.iter().map(|s| s.len() + 1).sum::<usize>();
+        assert!(bytes(&a) <= TAIL_BUDGET_BYTES, "short tail {}", bytes(&a));
+        assert!(bytes(&b) <= TAIL_BUDGET_BYTES, "long tail {}", bytes(&b));
+        // and the busy match, which used to return the MOST, is the
+        // one the budget actually cuts: eighty of those lines would
+        // have been over eight thousand bytes
+        let old_cut: usize = lr[..80].iter().map(|s| s.len() + 1).sum();
+        assert!(old_cut > TAIL_BUDGET_BYTES, "the fixture is not long enough: {old_cut}");
+        assert!(bytes(&b) < old_cut, "{} vs {old_cut}", bytes(&b));
+        // the record counts differ because the records do; holding
+        // the COUNT constant is what made the cost vary
+        assert!(a.len() > b.len(), "{} vs {}", a.len(), b.len());
+    }
+
+    /// The cursor must always advance, or a poll loop spins.
+    #[test]
+    fn one_enormous_line_still_advances_the_cursor() {
+        let huge = "x".repeat(TAIL_BUDGET_BYTES * 3);
+        let all = vec![huge.as_str(), "after"];
+        let (lines, next) = take_budgeted(&all, 0);
+        assert_eq!(lines.len(), 1);
+        assert_eq!(next, 1);
+        let (rest, end) = take_budgeted(&all, next as usize);
+        assert_eq!(rest, vec!["after".to_string()]);
+        assert_eq!(end, 2);
+    }
+
+    /// And a quiet match does not return everything just because
+    /// the lines are small.
+    #[test]
+    fn the_line_ceiling_still_applies() {
+        let tiny: Vec<String> = (0..1000).map(|_| "ok".to_string()).collect();
+        let tr: Vec<&str> = tiny.iter().map(|s| s.as_str()).collect();
+        let (lines, next) = take_budgeted(&tr, 0);
+        assert_eq!(lines.len(), TAIL_MAX_LINES);
+        assert_eq!(next as usize, TAIL_MAX_LINES);
+    }
+
     use super::*;
 
     /// Serialises the two tests that build a throwaway git repo.

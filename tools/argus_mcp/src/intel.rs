@@ -420,6 +420,166 @@ pub fn compare_lite(r: &CompareReport) -> CompareLite {
     }
 }
 
+/// Does the caller want CSV instead of JSON?
+pub fn want_csv(format: Option<&str>) -> bool {
+    format.map(|f| f.eq_ignore_ascii_case("csv")).unwrap_or(false)
+}
+
+/// A brief as text: scalars as `key,value`, then one CSV table per
+/// tabular section.
+///
+/// Every large part of a brief is a table - the per-bot rows, the
+/// hotspots, the kill matrix, the goal and weapon counts - and a
+/// table as JSON repeats every field name on every row. CSV names
+/// them once. Measured on a real dm4 tape it is about half the
+/// bytes, which is the Datadog finding and the reason this exists.
+///
+/// JSON stays the default. An agent that wants to index into one
+/// field should not have to parse a table, and the lite brief is
+/// already small; this is for the full one and for the sections
+/// that are genuinely rows.
+pub fn brief_csv(b: &MatchBrief) -> String {
+    let mut s = String::new();
+    s.push_str(&format!("# {}\n", b.headline));
+    if let Some(m) = &b.map {
+        s.push_str(&format!("map,{m}\n"));
+    }
+    let t = &b.totals;
+    s.push_str("key,value\n");
+    for (k, v) in [
+        ("duration_sec", format!("{:.1}", t.duration_sec)),
+        ("stalls", t.stalls.to_string()),
+        ("engages", t.engages.to_string()),
+        ("lava_deaths", t.lava_deaths.to_string()),
+        ("world_deaths", t.world_deaths.to_string()),
+        ("freezes", t.freezes.to_string()),
+        ("freeze_underfire", t.freeze_underfire.to_string()),
+        ("cover", t.cover.to_string()),
+        ("goals", t.goals.to_string()),
+        ("frags", t.frags.to_string()),
+        ("deaths", t.deaths.to_string()),
+        ("routefails", t.routefails.to_string()),
+        ("hazards", t.hazards.to_string()),
+        ("kd_spread", t.kd_spread.to_string()),
+        ("avg_speed", format!("{:.1}", t.avg_speed)),
+        ("tick_class", t.tick_class.clone().unwrap_or_default()),
+    ] {
+        s.push_str(&format!("{k},{v}\n"));
+    }
+    if !b.bots.is_empty() {
+        s.push_str("\nbot,frags,deaths,goals,stalls,cover,avg_speed\n");
+        for r in &b.bots {
+            s.push_str(&format!(
+                "{},{},{},{},{},{},{:.1}\n",
+                r.name,
+                r.frags.map(|f| f.to_string()).unwrap_or_default(),
+                r.deaths,
+                r.goals,
+                r.stalls,
+                r.cover,
+                r.avg
+            ));
+        }
+    }
+    if !b.hotspots.is_empty() {
+        s.push_str("\nkind,x,y,z,count,cause\n");
+        for h in &b.hotspots {
+            s.push_str(&format!(
+                "{},{:.0},{:.0},{:.0},{},{}\n",
+                h.kind,
+                h.x,
+                h.y,
+                h.z,
+                h.count,
+                h.cause.clone().unwrap_or_default()
+            ));
+        }
+    }
+    if !b.kills.is_empty() {
+        s.push_str("\nkiller_victim,n\n");
+        for (k, v) in &b.kills {
+            s.push_str(&format!("{k},{v}\n"));
+        }
+    }
+    if !b.goals.is_empty() {
+        s.push_str("\ngoal_class,n\n");
+        for (k, v) in &b.goals {
+            s.push_str(&format!("{k},{v}\n"));
+        }
+    }
+    if !b.events.is_empty() {
+        s.push_str("\nevent,n\n");
+        for (k, v) in &b.events {
+            s.push_str(&format!("{k},{v}\n"));
+        }
+    }
+    for f in &b.flags {
+        s.push_str(&format!("# flag: {f}\n"));
+    }
+    for n in &b.next_steps {
+        s.push_str(&format!("# next[{}] {}: {}\n", n.priority, n.area, n.why));
+    }
+    s
+}
+
+/// A compare as text: the verdict and the findings, then the two
+/// totals side by side and the banded gates as rows.
+pub fn compare_csv(r: &CompareReport) -> String {
+    let mut s = String::new();
+    s.push_str(&format!("# {}\n", r.headline));
+    if let Some(b) = &r.baseline_run {
+        s.push_str(&format!("# baseline_run: {b}\n"));
+    }
+    for f in &r.findings {
+        s.push_str(&format!("# {f}\n"));
+    }
+    if !r.band.is_empty() {
+        s.push_str("\ngate,control_median,candidate_median,lo,hi,call\n");
+        for g in &r.band {
+            s.push_str(&format!(
+                "{},{},{},{:.1},{:.1},{}\n",
+                g.name, g.control_median, g.candidate_median, g.lo, g.hi, g.call
+            ));
+        }
+    }
+    if !r.stats.is_empty() {
+        s.push_str("\nmetric,control_iqm,candidate_iqm,ci_lo,ci_hi,p_improve,sprt,bound\n");
+        for m in &r.stats {
+            let (lo, hi) = match m.ci {
+                Some(c) => (format!("{:.2}", c.lo), format!("{:.2}", c.hi)),
+                None => (String::new(), String::new()),
+            };
+            s.push_str(&format!(
+                "{},{:.2},{:.2},{},{},{:.2},{:?},{:.1}\n",
+                m.name,
+                m.control_iqm,
+                m.candidate_iqm,
+                lo,
+                hi,
+                m.prob_improvement,
+                m.sprt,
+                m.sprt_bound
+            ));
+        }
+    }
+    s.push_str("\nmetric,baseline,candidate\n");
+    let a = &r.a.totals;
+    let b = &r.b.totals;
+    for (k, x, y) in [
+        ("stalls", a.stalls.to_string(), b.stalls.to_string()),
+        ("engages", a.engages.to_string(), b.engages.to_string()),
+        ("lava_deaths", a.lava_deaths.to_string(), b.lava_deaths.to_string()),
+        ("freezes", a.freezes.to_string(), b.freezes.to_string()),
+        ("cover", a.cover.to_string(), b.cover.to_string()),
+        ("goals", a.goals.to_string(), b.goals.to_string()),
+        ("frags", a.frags.to_string(), b.frags.to_string()),
+        ("kd_spread", a.kd_spread.to_string(), b.kd_spread.to_string()),
+    ] {
+        s.push_str(&format!("{k},{x},{y}\n"));
+    }
+    s
+}
+
 pub fn want_full(detail: Option<&str>) -> bool {
     detail
         .map(|d| d.eq_ignore_ascii_case("full"))
@@ -3433,6 +3593,62 @@ ARGEVT Reap spawned
         // three bots, and the puppet is not a fourth
         assert!(b.totals.cover > 300, "cover {}", b.totals.cover);
         assert!(b.totals.engages > 40, "engages {}", b.totals.engages);
+    }
+
+    /// THE CLAIM IS A MEASUREMENT, NOT A SLOGAN. "CSV is about half
+    /// the tokens" is the reason `format=csv` exists, so it is
+    /// measured on a real tape rather than asserted. Bytes stand in
+    /// for tokens: both formats are ASCII over the same values, and
+    /// the difference is entirely repeated field names.
+    #[test]
+    fn csv_is_materially_smaller_than_json_on_a_real_tape() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let p = dir.join("ab_dm4_deadlink1.log");
+        if !p.exists() {
+            return;
+        }
+        let b = brief_path(&p, None).unwrap();
+        // COMPACT json is the conservative comparison. The server
+        // actually sends to_string_pretty, which is larger again, so
+        // the saving in practice is bigger than this asserts.
+        let json = serde_json::to_string(&b).unwrap();
+        let pretty = serde_json::to_string_pretty(&b).unwrap();
+        let csv = brief_csv(&b);
+        // Measured 2026-09-16 on this tape: 1765 against 3464 compact,
+        // which is 51 per cent. "About half" is the honest phrase and
+        // it is what the docs say; a bar at 55 leaves room for a tape
+        // with more hotspots without leaving room for a regression.
+        assert!(
+            csv.len() * 100 < json.len() * 55,
+            "csv {} bytes against compact json {} ({} pretty)",
+            csv.len(),
+            json.len(),
+            pretty.len()
+        );
+        // and it still carries what a reader came for
+        assert!(csv.contains("stalls,"), "{csv}");
+        assert!(csv.contains("bot,frags,deaths"), "no per-bot table");
+        assert!(csv.contains("kind,x,y,z,count,cause"), "no hotspot table");
+    }
+
+    /// And the compare view keeps the numbers a verdict rests on.
+    #[test]
+    fn compare_csv_carries_the_band_and_the_stats() {
+        let base = brief_text(&log_a(), None);
+        let mk = |stalls: i32| {
+            let mut b = base.clone();
+            b.totals.stalls = stalls;
+            b.totals.engages = 60;
+            b.totals.duration_sec = 185.0;
+            b
+        };
+        let r = compare_band(&[mk(10), mk(11), mk(9)], &[mk(40), mk(42), mk(38)]);
+        let csv = compare_csv(&r);
+        assert!(csv.contains("gate,control_median,candidate_median"), "{csv}");
+        assert!(csv.contains("metric,control_iqm,candidate_iqm"), "{csv}");
+        assert!(csv.contains("stall_parity,"), "{csv}");
+        // the verdict itself is the first line, as a comment
+        assert!(csv.starts_with("# "), "{csv}");
     }
 
     #[test]

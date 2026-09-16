@@ -5,7 +5,7 @@ maps, runs headless matches, and briefs the result the way this
 project already judges A/B. Toolchain only: it does not change QuakeC
 or the engine.
 
-Current version: **0.28.0**. Operator guide (this file). Design
+Current version: **0.29.0**. Operator guide (this file). Design
 history: `docs/specs/2026-08-17-argus-mcp-design.md`.
 Captured external spec and triage: `docs/mcp_quake_dev_spec.md`.
 
@@ -713,6 +713,50 @@ finding says so and names the cure. Every "improved on all seven
 gates" recorded before this rests on an instrument that could not have
 said anything else.
 
+## What a response costs
+
+Format is a token cost, and every large part of these answers is a
+table. A table as JSON repeats every field name on every row; CSV
+names them once.
+
+```
+brief_run     log=latest format=csv
+compare_runs  log_b=latest format=csv
+corpus        what=tapes map=dm2          # always CSV
+```
+
+Measured on `ab_dm4_deadlink1`: a brief is **1765 bytes as CSV**
+against **3464 as compact JSON**, and more again against the pretty
+JSON the server actually sends. About half, which is the phrase the
+test asserts against rather than a slogan. JSON stays the default:
+an agent that wants to index into one field should not have to
+parse a table.
+
+**The live tail paginates on size.** `since_line` is still the
+cursor, but the cut is a 6 KB budget with a 120 line ceiling rather
+than a flat eighty lines. Record count is the wrong unit when
+records vary, and telemetry lines vary by five times: `ARGEVT Reap
+jump` is sixteen characters and an ARGLOG sample is over a hundred,
+so the old cut returned anywhere between 1.5 and 8 KB and a busy
+match returned the most. It always returns at least one line, because
+a budget that can return nothing is a poll loop that never advances.
+
+**The tool surface has a price on it.** Every exposed tool is paid
+for on every request through its schema, called or not. Measured
+2026-09-16: **39 tools, 18,816 bytes, about 4,700 tokens per
+request**, and the suite holds a bound just above that so adding a
+tool is a decision rather than a drift.
+
+That measurement refused the last part of the issue. Retiring the
+three parked extras (`bot_simulate_match` 619 bytes,
+`bot_capture_pov_frame` 334, `rcon_exec` 253) saves 1,206 bytes, six
+per cent, and breaks the table in `docs/mcp_quake_dev_spec.md` that
+records them as shipped. Meanwhile 581 of those bytes were sitting in
+the schema of `corpus`, which was the single most expensive tool in
+the server, written one version earlier to save tokens, and which
+explained each of its views twice. The cheaper saving was in the
+newest code, not the oldest.
+
 ## Asking the corpus a question
 
 Everything else in the lab is per run: brief one tape, compare two,
@@ -1055,6 +1099,7 @@ shell.
 | 0.22 | The lab joins the game: a real NetQuake client (`argus-mcp client observe/walk/walkrel`), the empirical link-verification harness (`argus-mcp probelinks`), engine-verdict files consumed by navgen, orphan-engine kill on failed matches, serialized engine tests. |
 | 0.21 | The operational gaps. STALENESS SELF-AWARENESS: at startup the server detects a newer staged build, auto-swaps it into place for the next restart (Windows allows renaming a running exe), and stamps `lab_stale` on every JSON response for the rest of the session - a stale server can never again hand out an unmarked opinion. HARVEST GUARD: every match starter (MCP tools, soak, cycle) refuses to launch over an un-harvested play session (the harvester now MOVES its inputs, so leftovers are the signal). PAIRED DEMO JOIN: brief_run folds the same-stem .dem into the brief (aim stats, highlight reel, tracks) - the whole "played, review" ritual is one call. `ship` (compile + install everywhere + MD5s) and `baseline_set` (rewrite runs/baselines.json safely) close the loop's last manual steps. `soak --parallel 2` runs two engines on separate ports, halving ladder wall clock. Last-seen session memory persists to runs/.lab_session.json across restarts; `see what=project` stops listing fifty pak-only maps; compare flags any human tape as review-only material. |
 | 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |
+| 0.29 | Response shaping, measured (GitHub #371). `brief_run` and `compare_runs` take `format=csv`: measured on a real dm4 tape a brief is 1765 bytes as CSV against 3464 as compact JSON, and more again against the pretty JSON the server actually sends. JSON stays the default. **The live tail paginates on SIZE, not line count**: telemetry lines vary by five times, so the old flat eighty-line cut returned between 1.5 and 8 KB depending on what the match happened to be doing, and a busy match returned the most. 6 KB budget, 120 line ceiling, `since_line` still the cursor, and always at least one line so a poll loop cannot stall. **THE TOOL SURFACE NOW HAS A PRICE ON IT**: 39 tools, 18,816 bytes, about 4,700 tokens on every request, with a bound in the suite so adding a tool is a decision rather than a drift. That measurement REFUSED the third part of the issue: retiring the three parked extras would save 1,206 bytes, 6 per cent, and break a documented spec capture, while 581 of those bytes were available by trimming the schema of `corpus` itself - which was the most expensive tool in the server, written one version earlier to save tokens. |
 | 0.28 | The corpus becomes something you can ask a question of (GitHub #372, #378, #386). `corpus` is one tool with a `what` selector, like `see`: `tapes` filters and aggregates an index of every committed tape, `cells` does the same for hotspot cells, `changes` runs change point detection over the dated series, `bisect` localises one step with a noisy oracle. It returns CSV, which is about half the tokens of the same table as JSON. The index is `runs/tape_index.tsv`, a cache rather than a source of truth: a tape it does not name is parsed on demand, and nothing re-parses 752 tapes on an ordinary call. **SQLITE WAS CONSIDERED AND REFUSED**: the corpus is a few hundred rows of a fixed schema, and a named filter-and-aggregate surface costs an agent less than discovering a schema and writing SQL against it. The detector reproduces the record: dm4 lava stepping 12.3 to 4.4 at `ab_dm4_B3` is the 2026-08-14 hazard fix, e1m1 engages 1.1 to 17.8 at `ab_e1m1_mover1` is #281, and it dates the September dm2 stall rise that `CLAUDE.md` calls "not bisected" to 2026-08-29 at `ab_dm2_v403_control` - while flagging on the row that the tick class differs either side, so it must not be read as code without a single-class re-run. **TWO PARSER DEFECTS THE INDEX FOUND**: the lab puppet emits ARGLOG rows and never spawns, so the human split read it as a person and every tape it connected to briefed as a human session, two committed baselines included; and human ARGLOG tracks only exist from v3.66, so 46 of 73 harvested sessions were sitting in the bot series. Both fixed, and no tape's numbers move - verified by diffing the whole index across the change. `docs/specs/2026-09-16-corpus-change-points.md`. 182 tests. |
 | 0.27 | The verdict gets an interval, a stopping rule and a pre-registered primary (GitHub #375, #376, #377). `argus-mcp measure` writes `docs/specs/2026-09-16-lab-measurement-limits.md`: the pooled within-arm sigma per map and metric over every committed same-build arm, and the smallest effect detectable at 3, 5 and 10 tapes a side. It says in print what the handoff said in prose - dm2 stalls at three tapes a side cannot see anything smaller than a 119 per cent change, and coverage at 9 per cent CV is the only metric worth reading off a small ladder. It also measures what four gates cost: each convicts a byte-identical pair 0 to 12 per cent of the time and the verdict as a whole convicts 19 per cent of the time, so `experiment` and `compare` take `primary`, the metric the change was predicted to move, and only that gate convicts. Every compare now carries a `stats` block: interquartile mean rather than median, a stratified bootstrap interval on the improvement (absent below two tapes a side, where resampling one observation is not an interval), a probability of improvement, and an SPRT call of accept, reject, continue or abandon with its bound derived from the detection limit. **Continue is the answer the lab could never give.** Validated on the null corpus: zero accepts across 58 decisions from ten same-build arms split in half, and the sixteen null pairs still read thirteen parities. 163 tests. |
 | 0.26 | The instrument learns to see what the player sees (the recovery plan, phase 0). EVERY MATCH RUNS AT THE PLAYED TICK RATE: `+sys_ticrate 0.0139`, because `sys_ticrate` gates the dedicated main loop and the engine default ran every tape in `runs/` at about 19 Hz against the 71 Hz of every human session. Measured on dm4: default mean ARGLOG gap 0.5134, flagged 0.5074, human tapes 0.506 to 0.509. This refutes the v4.09 note that sys_ticrate does nothing to the dedicated tick and the v4.07 "frametime 0.1", which was `ftos` printing a 0.05 s frame to one decimal. Briefs carry `tick_gap_mean` and `tick_class`, and compare REFUSES a verdict across two classes. THE VERDICT STOPS BEING A COIN FLIP: `compare_band` judges candidate medians against a control band fitted to the sixteen null pairs (which the old OR rule read as nine improvements and zero parities, and which now read thirteen parities, one improvement and two regressions); `experiment` gains `repeats`, default 3; `baselines.json` takes a list. THE HUMAN SCORECARD becomes a lab surface: `tools/argus_longi.py` and `tools/argus_tick.py` join the tree, `harvest_session.py` appends to `runs/human_scorecard.tsv`, and a brief on a human tape carries `human_scorecard` including unstick warps. Also `argus-mcp match <map> [duration] [name] [--port N]`, so a ladder can be driven without an MCP client and two engines can run at once. |
