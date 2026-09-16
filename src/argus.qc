@@ -97,6 +97,10 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float  ar_nextjump;
 .float  ar_nexthazlog;          // throttle for hazard telemetry events
 .float  ar_nextwslog;           // wall slide: marker throttle, 1/s
+.float  ar_hopair;              // airborne on a typed hop: air control
+                                // steers the flight at ar_node
+.float  ar_nextairlog;          // air control: marker throttle, 1/s
+.entity ar_jumpfrom;            // plain jump hop: the link source seat
 .float  ar_hazardyaw;           // last safe deflection heading
 .float  ar_hazhold;             // 1 = ar_hazardyaw is live (0 is a legal yaw)
 .float  ar_moveyaw;             // movement heading (may differ from facing)
@@ -1587,7 +1591,7 @@ float(float myaw, float spd, float probe) Argus_WallSlide =
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
-    local float wl, spd, moveok, myaw, rhoriz, sready, wdrag;
+    local float wl, spd, moveok, myaw, rhoriz, sready, wdrag, hopok, ljyaw;
 
     makevectors ('0 0 0' + self.ar_moveyaw * '0 1 0');
     wishdir = v_forward;
@@ -1854,6 +1858,7 @@ void() Argus_Physics =
 
     if (self.flags & FL_ONGROUND)
     {
+        self.ar_hopair = 0;             // grounded: air control is done
         if (self.ar_hoprj == 2)
         {
             self.ar_hoprj = 0;          // landed: the blast ride is over
@@ -1907,6 +1912,7 @@ void() Argus_Physics =
                 self.button0 = 0;
                 W_Attack ();
                 self.ar_hoprj = 2;
+                self.ar_hopair = 1;     // air control flies it (#357)
                 Argus_Event ("rjump");
                 return;
             }
@@ -2043,28 +2049,91 @@ void() Argus_Physics =
                            TRUE, self);
                 if (trace_fraction == 1)
                 {
-                    if (self.ar_hopjump == 2)
+                    hopok = 1;
+                    ljyaw = myaw;
+                    if (self.ar_hopjump == 1 && self.ar_node != world)
                     {
-                        // plain console line, greppable like shove /
-                        // watch: the sprint family spent two builds
-                        // as edicts that never fired, and 1 Hz rows
-                        // cannot prove a launch (GitHub #4)
-                        dprint ("ARGUS ");
-                        dprint (self.netname);
-                        dprint (" sprintjump\n");
-                        // flight latch: the arc has no margin, so
-                        // the air frames hold the launch line. The
-                        // first live firing died to a battle-grab
-                        // committing MID-FLIGHT - air-accelerate
-                        // fought the jump down from 359 to 50 u/s
-                        // and fed the gap (runup2 tape).
-                        self.ar_sprintstate = 3;
+                        // ANCHOR AND AIM, the two things a sprint hop
+                        // has had since v3.69 and a plain one never
+                        // did (#365, and the launch half of #356).
+                        //
+                        // The fire site triggers on one condition: a
+                        // jump hop is armed and the ledge runs out one
+                        // step ahead at 250 or more. Nothing tied that
+                        // to the link. A bot crossing ANY lip at speed
+                        // while a jump hop happened to be armed fired
+                        // a typed launch there, aimed along whatever
+                        // the velocity was doing. Measured on dm4: of
+                        // 53 launches in 120 s, 52 were nowhere near
+                        // the link's own seat, and every one of those
+                        // was 45 to 75 degrees off the line to its own
+                        // landing node. With the anchor in, 52 of them
+                        // stop happening and 17 real launches remain.
+                        //
+                        // So: launch from within 96 units of the seat
+                        // the link was minted from, and launch ON the
+                        // line to the landing rather than on the drift,
+                        // turning up to 60 degrees to get there. That is
+                        // Reaper facing the ideal yaw before it commits,
+                        // and it is the v3.69 sprint discipline made
+                        // general instead of special. Beyond either bar
+                        // the bot is not taking this link right now:
+                        // refuse, and the brink guard below deflects and
+                        // brings it round again.
+                        //
+                        // A REFUSAL FALLS THROUGH, it does not
+                        // return. Returning from here runs no
+                        // guard, no deflection and no walkmove,
+                        // so the bot stops dead at the lip and
+                        // refuses again next frame: 1662 times in
+                        // a 90 s dm4 tape, when it was written
+                        // that way.
+                        rto = self.ar_node.origin - self.origin;
+                        rto_z = 0;
+                        hopok = 0;
+                        if (vlen (rto) > 16 && self.ar_jumpfrom != world
+                            && vlen (self.origin - self.ar_jumpfrom.origin) < 96)
+                        {
+                            wdrag = vectoyaw (rto) - myaw;
+                            while (wdrag > 180)  wdrag = wdrag - 360;
+                            while (wdrag < -180) wdrag = wdrag + 360;
+                            if (fabs (wdrag) <= 60)
+                            {
+                                ljyaw = vectoyaw (rto);
+                                makevectors ('0 0 0' + ljyaw * '0 1 0');
+                                self.velocity_x = v_forward_x * spd;
+                                self.velocity_y = v_forward_y * spd;
+                                // air control owns the flight from here
+                                self.ar_hopair = 1;
+                                hopok = 1;
+                            }
+                        }
                     }
-                    self.ar_hopjump = 0;
-                    self.velocity_z = AR_JUMPVEL;
-                    self.flags = self.flags - (self.flags & FL_ONGROUND);
-                    Argus_Event ("jump");
-                    return;
+                    if (hopok)
+                    {
+                        if (self.ar_hopjump == 2)
+                        {
+                            // plain console line, greppable like shove /
+                            // watch: the sprint family spent two builds
+                            // as edicts that never fired, and 1 Hz rows
+                            // cannot prove a launch (GitHub #4)
+                            dprint ("ARGUS ");
+                            dprint (self.netname);
+                            dprint (" sprintjump\n");
+                            // flight latch: the arc has no margin, so
+                            // the air frames hold the launch line. The
+                            // first live firing died to a battle-grab
+                            // committing MID-FLIGHT - air-accelerate
+                            // fought the jump down from 359 to 50 u/s
+                            // and fed the gap (runup2 tape).
+                            self.ar_sprintstate = 3;
+                        }
+                        self.ar_hopjump = 0;
+                        self.velocity_z = AR_JUMPVEL;
+                        self.flags = self.flags - (self.flags & FL_ONGROUND);
+                        Argus_Event ("jump");
+                        return;
+                    }
                 }
             }
 
@@ -2265,6 +2334,42 @@ void() Argus_Physics =
             vh_z = 0;
             if (vlen (vh) > 30)
                 wishdir = normalize (vh);
+        }
+        else if (self.ar_hopair && self.ar_node != world)
+        {
+            // steer the flight at the landing (#357). Quake 3 hands
+            // every weapon jump and walk-off to BotAirControl for
+            // exactly this; Argus fired and then rode, with the wish
+            // pointed wherever ordinary steering happened to point.
+            //
+            // The magnitude is not small and this tree measured it the
+            // hard way: air acceleration obeying a bent wish took the
+            // first live sprint firing from 359 u/s to 50 at the apex.
+            // The sprint answer was to freeze the heading, which is
+            // the right emergency fix for an arc with no margin. On a
+            // plain jump or a rocket jump the same force is available
+            // and is currently spent at random. Spent along the arc it
+            // is the margin those links do not otherwise have.
+            vh = self.ar_node.origin - self.origin;
+            vh_z = 0;
+            if (vlen (vh) > 16)
+            {
+                vh = normalize (vh);
+                // never air-control into geometry: a correction that
+                // ends against a wall trades a near miss for a pin
+                traceline (self.origin, self.origin + vh * 48, FALSE, self);
+                if (trace_fraction == 1)
+                {
+                    wishdir = vh;
+                    if (time > self.ar_nextairlog)
+                    {
+                        self.ar_nextairlog = time + 1;
+                        dprint ("ARGUS ");
+                        dprint (self.netname);
+                        dprint (" aircontrol\n");
+                    }
+                }
+            }
         }
         Argus_AirAccelerate (wishdir, AR_MAXSPEED);
     }
@@ -7694,7 +7799,10 @@ void() Argus_AI =
                 {
                     linkbit = Argus_NavGetLinkBit (oldnode, self.ar_node);
                     if (oldnode.an_jumpmask & linkbit)
+                    {
                         self.ar_hopjump = 1;
+                        self.ar_jumpfrom = oldnode;
+                    }
                     else if (oldnode.an_sprintmask & linkbit)
                     {
                         self.ar_hopjump = 2;    // sprint arc: full speed

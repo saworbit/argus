@@ -9,6 +9,53 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**A TYPED JUMP NOW LAUNCHES FROM ITS OWN SEAT, ON ITS OWN LINE, AND
+STEERS THE FLIGHT** (#357, and the launch half of #365). The sprint
+hop has had a launch discipline since v3.69: anchored within 48 units
+of the seat the arc was verified from, aligned within 15 degrees of
+the line, and above 310 u/s. A plain jump hop had none of it. It fired
+on one condition, that a jump hop was armed and the ledge ran out one
+step ahead at 250 or more, and it flew along whatever the velocity
+happened to be doing.
+
+MEASURED, ON dm4, 120 SECONDS: of 53 typed launches, **52 were nowhere
+near the link's own seat**, and every one of those was 45 to 75 degrees
+off the line to its own landing node. A bot crossing any lip at speed
+with a jump hop armed fired a typed launch there. Now the launch needs
+to be within 96 units of the source node, and it turns onto the line to
+the landing, up to 60 degrees, before it goes. Reaper faces the ideal
+yaw before it commits, for the same reason. Beyond either bar the bot
+is not taking that link right now: the launch refuses, falls through to
+the brink guard, deflects, and comes round again.
+
+AND THE FLIGHT IS STEERED. Quake 3 hands every weapon jump and walk-off
+to `BotAirControl`; Argus fired and then rode. While airborne on a plain
+jump or a rocket jump the wish direction now points at the landing node,
+so `Argus_AirAccelerate` spends its 30 u/s budget along the arc instead
+of wherever ordinary steering happened to point. Two guards: a
+correction that ends against a wall is refused, and the control is
+released on grounding. The sprint flight latch is untouched, because an
+arc with no margin wants its heading frozen and that is already the
+right answer for it. Marker `ARGUS <name> aircontrol`, throttled.
+
+LADDERED ON BOTH MAPS WITH JUMP TRAFFIC, parity on every gate. dm4
+three tapes against four: stalls 6.5 to 5, engages 80.5 to 79, lava 3.5
+to 3 with the sequential test rejecting any effect of 3 or more,
+freezes 0 to 0, coverage 358 to 375. dm2 five a side: stalls 44 to 44,
+engages 33 to 26, lava 0 to 0, freezes 1 to 1. **The anchor does not
+starve the jump family**, which was the risk: jump events hold at a
+median of 27 on dm4 and 94 on dm2, unchanged either side. Air control
+fires 6 to 14 times a tape on dm4 and 1 to 4 on dm2.
+
+REFUSED IN THE SAME PASS: the runtime arc check (#356). It was built,
+it found four defects in itself, and it still refused 16 of 17 anchored
+and aimed launches on a map whose links the puppet sweep says are
+crossable. A jump-disabling change resting on a model that disagrees
+with the engine does not ship. The four defects and the one remaining
+question are on the issue, and the anchor lands in this build makes the
+next attempt much cheaper, because it was the anchor rather than the
+arc that was doing the damage.
+
 **THE GROUND PATH LEARNS TO SLIDE ALONG A WALL** (#380). A masquerade
 parity gap of the v3.6 family, and the last piece of the stock player
 movement model the bots did not have. Stock `SV_FlyMove` clips the
