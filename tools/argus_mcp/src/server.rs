@@ -415,6 +415,10 @@ pub struct ExperimentArgs {
         description = "Candidate matches to run, 1-5. Default 3. One tape cannot tell a change from nothing on this instrument: same-build dm2 stalls run 17 to 100 and dm4 1 to 20. Three narrow every band by 42 per cent."
     )]
     pub repeats: Option<u32>,
+    #[schemars(
+        description = "PRE-REGISTER the metric this change is expected to move, before the tapes exist: stall_parity | engagements | lava_deaths | freezes. Only that gate can convict; the rest are computed and flagged. Four gates convict a change that does not exist 19 per cent of the time against 0 to 12 per cent each, measured over sixteen byte-identical pairs."
+    )]
+    pub primary: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1602,7 +1606,13 @@ impl Argus {
             Some(b) if b != "baseline" => {
                 intel_compare_scaled(&cfg, b, &ran.log_path, Some(&args.map)).ok()
             }
-            _ => crate::intel::compare_runs_band(&cfg, &logs, Some(&args.map)).ok(),
+            _ => crate::intel::compare_runs_band(
+                &cfg,
+                &logs,
+                Some(&args.map),
+                args.primary.as_deref(),
+            )
+            .ok(),
         };
         let verdict = compare.as_ref().map(|c| format!("{:?}", c.verdict).to_ascii_lowercase());
         let headline = compare
@@ -2027,7 +2037,7 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
 
 #[tool_handler(
     name = "argus-mcp",
-    version = "0.26.0",
+    version = "0.27.0",
     instructions = "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
 )]
 #[prompt_handler]
@@ -2040,7 +2050,7 @@ impl ServerHandler for Argus {
                 .enable_resources()
                 .build(),
         )
-        .with_server_info(Implementation::new("argus-mcp", "0.26.0"))
+        .with_server_info(Implementation::new("argus-mcp", "0.27.0"))
         .with_instructions(
             "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. \
 First call: see what=project. Then see what=map / path / fn / search. After a QC \

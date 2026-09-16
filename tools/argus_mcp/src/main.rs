@@ -129,6 +129,45 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             println!("{}", serde_json::to_string_pretty(&res)?);
             Ok(())
         }
+        Some("measure") => {
+            // What this instrument can see, over the tapes already
+            // committed. Read-only: no engine, no QC.
+            //   argus-mcp measure [--write <path>]
+            let rest: Vec<String> = args.collect();
+            if rest.iter().any(|a| a == "-h" || a == "--help") {
+                println!("usage: argus-mcp measure [--write <path>]
+
+The detection limit per map and metric, from every committed same-build arm,
+and what running four gates costs measured over the null corpus. Read-only.
+--write puts the table in a file instead of stdout.");
+                return Ok(());
+            }
+            let out = rest
+                .iter()
+                .position(|a| a == "--write")
+                .and_then(|i| rest.get(i + 1))
+                .cloned();
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let limits = argus_mcp::measure::limits(&cfg);
+            if limits.is_empty() {
+                return Err(anyhow::anyhow!(
+                    "no same-build arms found under ARGUS_RUNS; nothing to measure"
+                ));
+            }
+            let audit = argus_mcp::measure::gate_audit(&cfg);
+            let sprt = argus_mcp::measure::sprt_audit(&cfg);
+            let stamp = chrono::Local::now().format("%Y-%m-%d").to_string();
+            let text = argus_mcp::measure::render(&limits, &audit, &sprt, &stamp);
+            match out {
+                Some(path) => {
+                    std::fs::write(&path, &text)?;
+                    println!("wrote {path}");
+                }
+                None => println!("{text}"),
+            }
+            Ok(())
+        }
+
         Some("compare") => {
             // Judge a band from the CLI, so a ladder can be decided
             // without an MCP client:
@@ -136,19 +175,43 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             // With no controls the map's baseline band is used.
             let rest: Vec<String> = args.collect();
             if rest.is_empty() || rest.iter().any(|a| a == "-h" || a == "--help") {
-                println!("usage: argus-mcp compare <candidate[,candidate...]> [control[,control...]]
+                println!("usage: argus-mcp compare <candidate[,candidate...]> [control[,control...]] [--primary <metric>]
 
-Judge candidate tapes against control tapes as bands. With no controls, the map's baseline band from runs/baselines.json is used.");
+Judge candidate tapes against control tapes as bands. With no controls, the map's baseline band from runs/baselines.json is used.
+--primary names the metric the change was predicted to move: only that gate convicts, the rest flag.
+  stall_parity | engagements | lava_deaths | freezes");
                 return Ok(());
             }
             let split = |s: &str| -> Vec<String> {
                 s.split(',').map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect()
             };
-            let cands = split(&rest[0]);
-            let ctrls = rest.get(1).map(|s| split(s)).unwrap_or_default();
+            // the metric this change was pre-registered to move: with
+            // it, only that gate convicts and the rest flag (#377)
+            let primary = rest
+                .iter()
+                .position(|a| a == "--primary")
+                .and_then(|i| rest.get(i + 1))
+                .cloned();
+            let positional: Vec<String> = {
+                let mut v = Vec::new();
+                let mut it = rest.iter();
+                while let Some(a) = it.next() {
+                    if a == "--primary" {
+                        it.next();
+                        continue;
+                    }
+                    v.push(a.clone());
+                }
+                v
+            };
+            if positional.is_empty() {
+                return Err(anyhow::anyhow!("usage: argus-mcp compare <cand,...> [<ctrl,...>] [--primary <metric>]"));
+            }
+            let cands = split(&positional[0]);
+            let ctrls = positional.get(1).map(|s| split(s)).unwrap_or_default();
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let report = if ctrls.is_empty() {
-                argus_mcp::intel::compare_runs_band(&cfg, &cands, None)
+                argus_mcp::intel::compare_runs_band(&cfg, &cands, None, primary.as_deref())
                     .map_err(|e| anyhow::anyhow!(e))?
             } else {
                 let mut cb = Vec::new();
@@ -163,7 +226,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                             .map_err(|e| anyhow::anyhow!(e))?,
                     );
                 }
-                argus_mcp::intel::compare_band(&cb, &kb)
+                argus_mcp::intel::compare_band_primary(&cb, &kb, primary.as_deref())
             };
             println!("{}", report.gate_card);
             println!("{}", report.headline);
