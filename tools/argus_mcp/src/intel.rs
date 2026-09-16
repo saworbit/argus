@@ -297,6 +297,16 @@ pub struct CompareReport {
     /// chasing one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub baseline_run: Option<String>,
+    /// IQM, a bootstrap interval, a probability of improvement and a
+    /// sequential-test call per gate. The band says whether to
+    /// convict; this says how big the effect is and whether enough
+    /// tapes have been run to say so at all.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stats: Vec<MetricStat>,
+    /// the metric this change was pre-registered to move. When set,
+    /// only that gate can convict and the rest flag (#377).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<String>,
 }
 
 /// LLM-sized brief: no per-event maps, no every bot sample field.
@@ -348,6 +358,13 @@ pub struct CompareLite {
     pub gates: Vec<Gate>,
     pub findings: Vec<String>,
     pub next_steps: Vec<NextStep>,
+    /// IQM, interval, probability of improvement and the
+    /// sequential-test call per gate. The lite view carries these
+    /// because they are the numbers worth quoting.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub stats: Vec<MetricStat>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub primary: Option<String>,
     pub baseline: Totals,
     pub candidate: Totals,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -394,6 +411,8 @@ pub fn compare_lite(r: &CompareReport) -> CompareLite {
         gates: r.gates.clone(),
         findings: r.findings.clone(),
         next_steps: r.next_steps.clone(),
+        stats: r.stats.clone(),
+        primary: r.primary.clone(),
         baseline: r.a.totals.clone(),
         candidate: r.b.totals.clone(),
         candidate_flags: r.b.flags.clone(),
@@ -810,6 +829,44 @@ pub fn baseline_band_for(cfg: &Config, map: &str) -> Vec<String> {
     }
 }
 
+/// Every band in `baselines.json`, as (map, tapes).
+///
+/// A band is a set of tapes from ONE build on ONE map, which makes it
+/// a same-build arm and therefore a measurement of the instrument's
+/// own noise. `measure` reads them for exactly that, and reading the
+/// file keeps the detection-limit table current as maps are
+/// re-baselined instead of freezing a list in the source.
+pub fn all_baseline_bands(cfg: &Config) -> Vec<(String, Vec<String>)> {
+    all_baseline_bands_in(&cfg.runs)
+}
+
+/// The same, from a runs directory alone, so the corpus analysis
+/// and its tests run without a configured lab.
+pub fn all_baseline_bands_in(runs: &Path) -> Vec<(String, Vec<String>)> {
+    let p = runs.join("baselines.json");
+    let Ok(text) = std::fs::read_to_string(&p) else {
+        return Vec::new();
+    };
+    let Ok(table) =
+        serde_json::from_str::<std::collections::BTreeMap<String, serde_json::Value>>(&text)
+    else {
+        return Vec::new();
+    };
+    table
+        .into_iter()
+        .map(|(map, v)| {
+            let runs = match v {
+                serde_json::Value::String(one) => vec![one],
+                serde_json::Value::Array(many) => {
+                    many.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()
+                }
+                _ => Vec::new(),
+            };
+            (map, runs)
+        })
+        .collect()
+}
+
 pub fn baseline_override_for(cfg: &Config, map: &str) -> Option<String> {
     baseline_band_for(cfg, map).into_iter().next()
 }
@@ -1143,6 +1200,37 @@ pub struct BandGate {
     pub call: String,
 }
 
+/// The interval estimate beside the band call.
+///
+/// The band answers "is this outside what the same build does", which
+/// is a yes or no. These answer "how much, and how sure", which is
+/// what anyone quoting a result actually needs. IQM over the median
+/// because three or four tapes are too few to throw most of away; an
+/// interval because a min-max range does not narrow as evidence
+/// accumulates; a probability because it has a direction where a
+/// three-way label does not.
+///
+/// Sign convention throughout: POSITIVE MEANS THE CANDIDATE IS
+/// BETTER, whichever way the metric runs.
+#[derive(Debug, Clone, Serialize)]
+pub struct MetricStat {
+    pub name: String,
+    pub control_iqm: f64,
+    pub candidate_iqm: f64,
+    /// 95 per cent stratified bootstrap interval on the improvement.
+    /// Absent below two tapes a side, where resampling one observation
+    /// returns that observation and the "interval" would be a point.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub ci: Option<crate::stats::Interval>,
+    /// chance a candidate tape beats a control tape; 0.5 is a coin flip
+    pub prob_improvement: f64,
+    pub sprt: crate::stats::SprtCall,
+    /// the effect the sequential test is powered for, in the metric's units
+    pub sprt_bound: f64,
+    pub sprt_llr: f64,
+    pub note: String,
+}
+
 /// Judge candidate tapes against control tapes as bands, never one
 /// tape against one tape.
 ///
@@ -1160,6 +1248,34 @@ pub struct BandGate {
 /// That is the whole argument for running repeats: three tapes each
 /// way narrows every band by 42 per cent.
 pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> CompareReport {
+    compare_band_primary(candidates, controls, None)
+}
+
+/// The same judgement with a PRE-REGISTERED primary metric.
+///
+/// Four gates each with their own chance to convict is not one test.
+/// Measured over the sixteen null pairs, one tape a side, each gate
+/// convicts a change that does not exist 0 to 12 per cent of the time
+/// and the verdict as a whole convicts 19 per cent of the time - the
+/// any-gate row is always the largest in the table, and it is the one
+/// that decided sixty builds. See
+/// docs/specs/2026-09-16-lab-measurement-limits.md.
+///
+/// The fix is not a correction factor, it is saying in advance which
+/// gate the change is expected to move. With `primary` set, only that
+/// metric can convict; the others are computed, reported and flagged,
+/// and cannot turn a null into a finding. It also stops the habit the
+/// corpus shows repeatedly, of deciding which gate to believe after
+/// the tapes are in: a change predicted to affect lava has no
+/// business being convicted by an engagement count.
+///
+/// The hard gates are unaffected. A freeze under fire or an engine
+/// error is not a statistical question and never was.
+pub fn compare_band_primary(
+    candidates: &[MatchBrief],
+    controls: &[MatchBrief],
+    primary: Option<&str>,
+) -> CompareReport {
     // never panic in a server path: an empty side is a caller bug, but
     // a wedged tool call is worse than a useless report
     if candidates.is_empty() || controls.is_empty() {
@@ -1182,9 +1298,22 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
     let shrink = ((1.0 / n_c + 1.0 / n_k) / 2.0).sqrt();
 
     let mut band_gates = Vec::new();
+    let mut metric_stats: Vec<MetricStat> = Vec::new();
     let mut regressed: Vec<&str> = Vec::new();
     let mut beat_the_band: Vec<&str> = Vec::new();
     let mut worse_than_median = false;
+
+    // the map is the bootstrap's stratum and the key to the
+    // measured sigma; every tape in a compare is one map today, and
+    // stratifying now is what makes a cross-map compare correct
+    // when one arrives
+    let map = controls
+        .first()
+        .and_then(|b| b.map.clone())
+        .or_else(|| candidates.first().and_then(|b| b.map.clone()));
+    // a primary nobody registered is not a primary; a misspelt one
+    // must not silently disable every gate
+    let primary = primary.filter(|p| BAND_SPECS.iter().any(|s| s.name == *p));
 
     for spec in BAND_SPECS.iter() {
         let cv: Vec<f64> = controls.iter().map(|b| metric_of(&b.totals, spec.name)).collect();
@@ -1218,15 +1347,57 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
         // report, not the rule: print medians that are not whole
         // numbers as they are, and say which gate blocked.
         let worse = if spec.lower_is_better { dmed > cmed } else { dmed < cmed };
-        if worse {
+        // With a pre-registered primary, only that metric decides.
+        // The rest are still computed and still printed; they
+        // simply stop being four extra chances to convict a null.
+        let convicts = primary.map(|p| p == spec.name).unwrap_or(true);
+        if worse && convicts {
             worse_than_median = true;
         }
-        if is_reg {
+        if is_reg && convicts {
             regressed.push(spec.name);
         }
-        if is_imp {
+        if is_imp && convicts {
             beat_the_band.push(spec.name);
         }
+
+        // the interval estimate beside the call
+        let smap = map.clone().unwrap_or_else(|| "map".to_string());
+        let cs: Vec<crate::stats::Sample> =
+            cv.iter().map(|v| crate::stats::Sample::new(&smap, *v)).collect();
+        let ds: Vec<crate::stats::Sample> =
+            dv.iter().map(|v| crate::stats::Sample::new(&smap, *v)).collect();
+        let ci = crate::stats::bootstrap_diff_ci(&ds, &cs, spec.lower_is_better, 0.05);
+        let pimp = crate::stats::prob_improvement(&dv, &cv, spec.lower_is_better);
+        // the corpus sigma beats the arms' own: three tapes
+        // estimate a standard deviation terribly, and the whole
+        // point of the sequential test is not to be fooled by a
+        // small sample
+        let (sigma, src) = match crate::measure::sigma_for(map.as_deref(), spec.name) {
+            Some(s) => (s, "corpus"),
+            None => (crate::stats::pooled_sd(&[cv.clone(), dv.clone()]), "these arms"),
+        };
+        let bound = crate::measure::ship_bound(sigma);
+        let sp = crate::stats::sprt(
+            spec.name,
+            &dv,
+            &cv,
+            spec.lower_is_better,
+            bound,
+            sigma,
+            src,
+        );
+        metric_stats.push(MetricStat {
+            name: spec.name.into(),
+            control_iqm: crate::stats::iqm(&cv),
+            candidate_iqm: crate::stats::iqm(&dv),
+            ci,
+            prob_improvement: pimp,
+            sprt: sp.call,
+            sprt_bound: sp.bound,
+            sprt_llr: sp.llr,
+            note: sp.note.clone(),
+        });
         band_gates.push(BandGate {
             name: spec.name.into(),
             control_median: cmed,
@@ -1289,6 +1460,53 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
                 controls.len()
             ));
         }
+        // the interval and the stopping rule, which is the half the
+        // band cannot express: an improvement is an interval that
+        // clears zero, and "run another tape" is an answer
+        if let Some(st) = metric_stats.iter().find(|m| m.name == g.name) {
+            let interval = match st.ci {
+                Some(ci) => format!(
+                    "improvement 95% CI {:+.1} to {:+.1} ({})",
+                    ci.lo,
+                    ci.hi,
+                    if ci.lo > 0.0 {
+                        "clears zero"
+                    } else if ci.hi < 0.0 {
+                        "entirely worse"
+                    } else {
+                        "covers zero"
+                    }
+                ),
+                None => "no interval below two tapes a side".to_string(),
+            };
+            findings.push(format!(
+                "{}: IQM {} to {}, {}, P(improve) {:.2}; sprt {:?} at a bound of {:.1} - {}",
+                st.name,
+                trim(st.control_iqm),
+                trim(st.candidate_iqm),
+                interval,
+                st.prob_improvement,
+                st.sprt,
+                st.sprt_bound,
+                st.note,
+            ));
+        }
+    }
+    if let Some(p) = primary {
+        findings.insert(
+            0,
+            format!(
+                "primary metric pre-registered as {p}: only it can convict, the other gates flag. \
+                 Four gates convict a null 19 per cent of the time against 0 to 12 per cent each \
+                 (docs/specs/2026-09-16-lab-measurement-limits.md)."
+            ),
+        );
+    } else {
+        findings.push(
+            "no primary metric was pre-registered, so all four gates could convict: that is a \
+             19 per cent false positive rate on the null corpus. Pass primary=<metric> next time."
+                .into(),
+        );
     }
     if !beat_the_band.is_empty() && worse_than_median {
         let blocked: Vec<&str> = band_gates
@@ -1344,6 +1562,8 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
     report.findings = findings;
     report.headline = headline;
     report.band = band_gates;
+    report.stats = metric_stats;
+    report.primary = primary.map(|p| p.to_string());
     report.gate_card = format_gate_card(
         report.b.map.as_deref().or(report.a.map.as_deref()),
         verdict,
@@ -1646,6 +1866,8 @@ fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
         scale_note: None,
         baseline_run: None,
         band: Vec::new(),
+        stats: Vec::new(),
+        primary: None,
     }
 }
 
@@ -1726,10 +1948,15 @@ pub fn compare_runs(
 /// Compare one or more candidate tapes against the map's whole
 /// baseline band. Falls back to the single resolved baseline when
 /// `baselines.json` still names one tape.
+/// `primary` is the metric the change was PRE-REGISTERED to move.
+/// Naming it before the tapes are in is what stops four gates each
+/// taking a free shot at a null (#377); leave it None and every gate
+/// can still convict, which the report now says out loud.
 pub fn compare_runs_band(
     cfg: &Config,
     candidate_logs: &[String],
     map_hint: Option<&str>,
+    primary: Option<&str>,
 ) -> Result<CompareReport, String> {
     if candidate_logs.is_empty() {
         return Err("compare_runs_band needs at least one candidate tape".into());
@@ -1754,7 +1981,7 @@ pub fn compare_runs_band(
     if ctrls.is_empty() {
         ctrls.push(brief_run(cfg, "baseline", map.as_deref())?);
     }
-    let mut rep = compare_band(&cands, &ctrls);
+    let mut rep = compare_band_primary(&cands, &ctrls, primary);
     rep.baseline_run = names.first().cloned();
     Ok(rep)
 }
@@ -3181,24 +3408,9 @@ ARGEVT Reap spawned
     #[test]
     fn same_build_pairs_read_parity_if_present() {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
-        let pairs = [
-            ("ab_dm4_tremorclock1", "ab_dm4_tremorclock2"),
-            ("ab_dm4_tremorclock2", "ab_dm4_tremorclock3"),
-            ("ab_dm4_fightpin1", "ab_dm4_fightpin2"),
-            ("ab_dm4_seatregen1", "ab_dm4_seatregen2"),
-            ("ab_dm4_airlead1", "ab_dm4_airlead2"),
-            ("ab_dm4_gravity1", "ab_dm4_gravity2"),
-            ("ab_dm4_lgwade1", "ab_dm4_lgwade2"),
-            ("ctl_dm4_shelfsplit1", "ctl_dm4_shelfsplit2"),
-            ("ab_dm2_apexgate1", "ab_dm2_apexgate2"),
-            ("ab_dm2_fightpin1", "ab_dm2_fightpin2"),
-            ("ab_dm2_jumpceiling1", "ab_dm2_jumpceiling2"),
-            ("ab_dm2_decklink1", "ab_dm2_decklink2"),
-            ("ab_dm2_seatregen1", "ab_dm2_seatregen2"),
-            ("ab_dm2_mover1", "ab_dm2_mover2"),
-            ("ab_dm2_holds1", "ab_dm2_holds2"),
-            ("ab_dm2_unstick1", "ab_dm2_unstick2"),
-        ];
+        // one list, in measure.rs, so the validation set and the
+        // corpus analysis cannot drift apart
+        let pairs = crate::measure::NULL_PAIRS;
         let mut seen = 0;
         let mut parity = 0;
         let mut verdicts = Vec::new();
@@ -3231,6 +3443,118 @@ ARGEVT Reap spawned
             parity >= 13,
             "only {parity} of {seen} null pairs read parity: {verdicts:?}"
         );
+    }
+
+    /// THE NEW ESTIMATORS FACE THE SAME BAR AS THE BAND. An
+    /// estimator that finds an effect in code that has none is
+    /// disqualified whatever else it improves, and this is the corpus
+    /// that disqualifies it: sixteen pairs of byte-identical builds,
+    /// one tape a side.
+    ///
+    /// The sequential test must never say "accept" on any of them.
+    /// The arithmetic says it cannot: at one tape a side the standard
+    /// error of the difference is sigma * sqrt(2), the bound is
+    /// 1.77 * sigma, and crossing +2.944 needs the observed effect to
+    /// reach about 4.2 sigma. That is the point of deriving the bound
+    /// from the detection limit rather than picking one.
+    #[test]
+    fn the_sequential_test_never_accepts_a_null_pair() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let mut seen = 0;
+        let mut accepted = Vec::new();
+        for (a, b) in crate::measure::NULL_PAIRS {
+            let (pa, pb) = (dir.join(format!("{a}.log")), dir.join(format!("{b}.log")));
+            if !pa.exists() || !pb.exists() {
+                continue;
+            }
+            seen += 1;
+            let r = compare_band(
+                &[brief_path(&pb, None).unwrap()],
+                &[brief_path(&pa, None).unwrap()],
+            );
+            for st in &r.stats {
+                if st.sprt == crate::stats::SprtCall::Accept {
+                    accepted.push(format!("{a} vs {b}: {} llr {:.2}", st.name, st.sprt_llr));
+                }
+                // and it must not pretend to an interval it cannot have
+                assert!(st.ci.is_none(), "{a} vs {b}: {} got an interval at one tape a side", st.name);
+            }
+        }
+        if seen == 0 {
+            return;
+        }
+        assert!(accepted.is_empty(), "sprt accepted a null: {accepted:?}");
+    }
+
+    /// And it must say "continue" rather than "reject" on them, which
+    /// is the honest answer and the one the lab has never been able to
+    /// give. One tape a side cannot rule an effect out either.
+    #[test]
+    fn the_sequential_test_asks_for_more_tapes_on_a_null_pair() {
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
+        let (a, b) = crate::measure::NULL_PAIRS[0];
+        let (pa, pb) = (dir.join(format!("{a}.log")), dir.join(format!("{b}.log")));
+        if !pa.exists() || !pb.exists() {
+            return;
+        }
+        let r = compare_band(
+            &[brief_path(&pb, None).unwrap()],
+            &[brief_path(&pa, None).unwrap()],
+        );
+        assert!(!r.stats.is_empty(), "no stats block");
+        assert!(
+            r.stats.iter().all(|s| s.sprt == crate::stats::SprtCall::Continue),
+            "{:?}",
+            r.stats.iter().map(|s| (s.name.clone(), s.sprt)).collect::<Vec<_>>()
+        );
+        // and the report says so in words, not only in a struct
+        assert!(
+            r.findings.iter().any(|f| f.contains("P(improve)")),
+            "the interval and the probability never reached the findings"
+        );
+    }
+
+    /// A pre-registered primary stops the other three gates from
+    /// convicting. Four gates convict a null 19 per cent of the time
+    /// against 0 to 12 per cent each, measured; this is the fix.
+    #[test]
+    fn a_pre_registered_primary_keeps_the_other_gates_from_convicting() {
+        let base = brief_text(&log_a(), None);
+        let mk = |stalls: i32, lava: i32| {
+            let mut b = base.clone();
+            b.totals.stalls = stalls;
+            b.totals.engages = 60;
+            b.totals.lava_deaths = lava;
+            b.totals.freezes = 0;
+            b.totals.duration_sec = 185.0;
+            b
+        };
+        // lava is what moved, badly, and stalls did not budge
+        let ctl: Vec<MatchBrief> = [10, 11, 9, 10].iter().map(|s| mk(*s, 1)).collect();
+        let cand: Vec<MatchBrief> = [10, 11, 9, 10].iter().map(|s| mk(*s, 40)).collect();
+
+        // with everything able to convict, it is a regression
+        let open = compare_band(&cand, &ctl);
+        assert_eq!(open.verdict, Verdict::Regressed, "{}", open.headline);
+
+        // pre-register stalls and lava can only flag, because this
+        // change was never predicted to touch it
+        let pinned = compare_band_primary(&cand, &ctl, Some("stall_parity"));
+        assert_eq!(pinned.verdict, Verdict::Parity, "{}", pinned.headline);
+        assert_eq!(pinned.primary.as_deref(), Some("stall_parity"));
+        // the flag is still printed: demoted, not hidden
+        assert!(
+            pinned.band.iter().any(|g| g.name == "lava_deaths" && g.call == "regressed"),
+            "the demoted gate stopped being reported"
+        );
+        // pre-register the gate that did move and it convicts again
+        let right = compare_band_primary(&cand, &ctl, Some("lava_deaths"));
+        assert_eq!(right.verdict, Verdict::Regressed, "{}", right.headline);
+
+        // a misspelt primary must not silently disarm every gate
+        let typo = compare_band_primary(&cand, &ctl, Some("lava"));
+        assert_eq!(typo.verdict, Verdict::Regressed, "{}", typo.headline);
+        assert!(typo.primary.is_none());
     }
 
     /// The band must still be able to say yes. Three tapes a side

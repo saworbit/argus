@@ -9,6 +9,119 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE VERDICT GETS AN INTERVAL, A STOPPING RULE AND A PRE-REGISTERED
+PRIMARY** (#375, #376, #377). Lab only: no QC, no nav data, no bot
+behaves differently. MCP 0.27.
+
+WHAT THIS INSTRUMENT CAN SEE, MEASURED RATHER THAN ARGUED.
+`argus-mcp measure` pools the within-arm standard deviation across
+every committed same-build arm - one build, one map, so the spread is
+the instrument and nothing else - and turns it into the smallest
+effect detectable at 3, 5 and 10 tapes a side. 84 tapes in 27 arms.
+The table is `docs/specs/2026-09-16-lab-measurement-limits.md`:
+
+```
+map   metric     CV     MDE at 3 a side
+dm2   stalls     52%    56, which is 119 per cent of the mean
+dm2   coverage    9%    79, which is 20 per cent
+dm4   stalls     73%    14, which is 168 per cent
+dm4   coverage    7%    51, which is 15 per cent
+dm4   freezes   261%    not measurable as a rate at any n on this list
+```
+
+That is this file's own prose turned into numbers. dm2 stalls at three
+tapes a side cannot detect anything short of a doubling, and a great
+many historical stall verdicts were unearned in both directions. The
+handoff's "coverage and goal pickups are the only metrics with enough
+signal" is now a measurement with a figure beside it.
+
+WHAT FOUR GATES COST. A verdict that convicts on any of four is not
+one test. Over the sixteen null pairs each gate convicts a change that
+does not exist 0 to 12 per cent of the time and the verdict as a whole
+convicts 19 per cent of the time. The any-gate row is always the
+largest in the table, and it is the rule that shipped sixty builds.
+
+The fix is saying in advance which gate the change is expected to
+move. `experiment` and `argus-mcp compare` take `primary`; only that
+gate convicts and the rest are computed, printed and flagged. It drops
+the false positive rate from 19 per cent to about 6, and it ends the
+habit the corpus shows repeatedly of deciding which gate to believe
+AFTER the tapes are in. `ab_dm2_apexgate1` against `2` is the worked
+example: two byte-identical builds that the band calls improved on
+engagements, and that read parity the moment anything else is
+pre-registered.
+
+EVERY COMPARE NOW CARRIES A `stats` BLOCK, one entry per gate, with
+positive always meaning the candidate is better.
+
+- Interquartile mean rather than median. Three or four tapes are too
+  few to throw most of away, and the mean belongs to whichever tape
+  had a bot fall in the pit.
+- A 95 per cent stratified bootstrap interval on the improvement,
+  stratified by map. An interval that clears zero is what an
+  improvement actually is; the band could only ever say "outside what
+  the same build does". It is ABSENT below two tapes a side, because
+  resampling one observation returns that observation and the
+  interval would be a point of width zero. Saying so beats printing
+  it.
+- Probability of improvement: the chance a candidate tape beats a
+  control tape, 0.5 being a coin flip. A number with a direction.
+- An SPRT call of accept, reject, continue or abandon, with its bound
+  derived from the detection limit at five tapes a side, so the
+  stopping rule and the instrument agree about what is visible.
+
+CONTINUE IS THE ANSWER THE LAB COULD NEVER GIVE. The old rule had to
+return improved, regressed or parity whatever the evidence was, and
+looking after every tape to decide whether to run another is peeking,
+which inflates a fixed-horizon test's error rate. A sequential test is
+built to be peeked at. `abandon` fires at a ten tape cap so a marginal
+change is dropped rather than ground out forever.
+
+VALIDATED ON THE NULL CORPUS, which is the bar any estimator here has
+to clear. Ten same-build arms of four or more tapes, each split in
+half - two arms differing by nothing but the match - give 58
+decisions: **zero accepts**, 20 rejects, 38 continues. The sixteen
+null pairs still read thirteen parities, and at one tape a side the
+sequential test says continue on every metric of every one of them,
+which is correct: one tape cannot rule an effect in OR out.
+
+Read back over #363's own ladder, eight dm4 tapes against four, the
+new block says something the band could not: stalls IQM 5 to 4.5,
+improvement interval -6.2 to +7.5, P(improve) 0.52, sprt REJECT at a
+bound of 10.6 - no effect of shippable size and no reason to run more
+tapes. "Parity" said less than that.
+
+HOW MANY TAPES A NULL COSTS, fed one at a time the way a ladder is
+actually run: 20 of those 58 reached a decision at a mean of 1.9
+tapes a side and 38 did not. Read the ceiling before the mean. These
+splits offer a median of two tapes a side, because most committed
+arms are four or five tapes long, so the undecided rows are mostly
+arms that ran out of tapes and the mean is conditional on deciding at
+all. It says the ones that decided decided early, not that a null
+costs two tapes. The report says so in those words.
+
+DELIBERATELY NOT BUILT, so the next person does not look for them.
+Performance profiles, which #376 lists alongside the rest: the whole
+distribution of the ratio across runs is a plot, and the probability
+of improvement is its single-number summary, which is what a text
+brief can carry. And the verdict is still the band's. The new
+estimators are reported beside it rather than replacing it, because
+the band is fitted to the null corpus and load bearing, and an
+estimator swap is a separate change that has to clear the same bar on
+its own.
+
+ALSO NOT DONE: `primary` is opt-in. Making it mandatory would break
+every existing caller and every exploratory compare, so a compare
+without one now says out loud that all four gates could convict and
+what that costs. The residual is real: an agent that ignores the line
+still gets the 19 per cent rule.
+
+The corpus analysis takes a runs directory rather than a configured
+lab, so its tests run on a bare checkout. A validation set that skips
+itself on CI is not a validation set. The baked sigmas carry a drift
+test: if the corpus moves more than a factor of two from them the
+suite fails and says to rerun `measure`. 163 tests.
+
 **e1m5 AND e1m6 DOOR CROSSINGS ARE TYPED, AND #324 IS PAID OFF** (#324).
 `--retype-doors` against the shipped graphs, which is the mode that
 reads a .qc and its json and rewrites one field in place. e1m5 gains a
