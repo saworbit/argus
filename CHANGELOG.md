@@ -9,6 +9,63 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE ROCKET LEAD POINT IS TRACED BEFORE IT IS USED** (#363). Argus has
+led rockets and nails since v3.19 and nothing ever asked whether the
+led aim point was in the room. The lead sits ahead of the target along
+its velocity, so a target strafing toward a pillar or a doorway edge
+puts the aim point inside the geometry BEFORE the target reaches it,
+and the rocket goes into the near wall. A near wall splashes the
+firer, which dm2 has already priced: opening the point-blank RL band
+took self-kills to 40 per cent of all deaths on that map.
+
+Reaper's answer, and it is the right size. Halve the lead, test again,
+halve again, and fire unled rather than into masonry. Rocket launcher
+only: splash is where a wall hit is expensive, and the RL is the only
+led weapon that flies straight, since the grenade is deliberately
+lofted over geometry a few lines further down. Skill 1 and up, like
+every cognition gate since v3.76, so a warmup bot keeps the honest
+miss. A lead shorter than half a player hull is skipped, which keeps
+the trace off the hot path against a standing target.
+
+TWO TESTS, NOT ONE. `pointcontents` reads hull 0, so it sees world
+brushes and is blind to a door or a plat. A traceline sees those and
+is blind to a start inside solid, which returns fraction 1 and is
+byte-identical to finding nothing - the trace-semantics rule this tree
+has paid for twice, and an embedded bot is the exact state
+`Argus_Unstick` exists for. `Argus_AimBlocked` takes both.
+
+REACHABLE, AND THAT IS THE FIRST CLAIM. The marker fires 4 to 22 times
+a tape on dm2 and 15 to 44 on dm4, throttled to one a bot every two
+seconds, so those are floors rather than counts. All three bots fire
+it. The parser counts it as pseudo-event `leadclip`.
+
+LADDERED BOTH MAPS. dm2 five tapes against the committed five-tape
+band, dm4 eight against eight - four from #388's candidate arm and
+four fresh control tapes built from this branch's own base. Parity on
+every gate:
+
+```
+            stalls   engages   lava   freezes   goals
+dm2 control    44       33       0       1        7
+dm2 cand       42       35       0       1        8
+dm4 control     6       86       4       0       14.5
+dm4 cand        4       87.5     3       0       16.5
+```
+
+RECORDED RATHER THAN BURIED: two of the eight dm4 candidate tapes
+carry an under-fire freeze and none of the eight control tapes does.
+All four candidate freezes and the one control freeze sit at z -296,
+the pit floor, which is the documented class, and the v4.18 ship
+ladder produced them on byte-identical code at one tape in four. There
+is no mechanism: the clip moves an aim point, and facing is decoupled
+from movement through `ar_moveyaw`. Not convicted, worth a look if it
+repeats.
+
+dm4's baseline band now points at `ab_dm4_deadlink1-4` instead of
+`band_dm4_1-3`. The old band predates #388, which removed a dm4 nav
+link, so every dm4 verdict since has been read against a graph the map
+no longer has.
+
 **dm2's THREE UNTYPED DOOR CROSSINGS ARE TYPED** (#324). A regen of dm2
 on the current tree reproduces the shipped 215-node graph in every byte
 except three walk links that become door links:
