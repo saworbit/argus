@@ -346,28 +346,34 @@ pub struct BriefArgs {
     pub map: Option<String>,
     #[schemars(description = "brief (default) or full")]
     pub detail: Option<String>,
+    #[schemars(description = "json (default) or csv. The per-bot rows, hotspots, kill matrix and event counts are tables, and a table as CSV is about half the tokens.")]
+    pub format: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+/// EVERY FIELD HERE IS PAID FOR ON EVERY REQUEST, whether or not
+/// this tool is called, so the descriptions say what a caller cannot
+/// guess and nothing else. Measured: this tool was 2126 bytes of a
+/// 19,397 byte surface, the most expensive schema in the server and
+/// more than the three parked extras put together, because it
+/// explained each view twice. The prose belongs in the tool
+/// description and the operator guide.
 pub struct CorpusArgs {
-    #[schemars(
-        description = "tapes (default) | cells | changes | bisect. tapes filters and aggregates the tape index; cells does the same for hotspot cells; changes runs change point detection over the dated series; bisect localises one step with a noisy oracle."
-    )]
+    #[schemars(description = "tapes (default) | cells | changes | bisect")]
     pub what: Option<String>,
-    #[schemars(description = "dm2, dm4, e1m6 ... Default every map.")]
     pub map: Option<String>,
-    #[schemars(description = "bot (default for changes/bisect) or human. A human tape is review-only and must never be averaged into a bot series.")]
+    #[schemars(description = "bot (default) or human. Never average a human tape into a bot series.")]
     pub kind: Option<String>,
-    #[schemars(description = "listen | dedicated_fast | dedicated_slow. Restricting a series to ONE class is how to be sure a step is not the server frame rate.")]
+    #[schemars(description = "listen | dedicated_fast | dedicated_slow. One class at a time is how to be sure a step is not the frame rate.")]
     pub tick_class: Option<String>,
-    #[schemars(description = "substring of the run name, which is how an arm is named: ab_dm4_leadclip, band_e1m6, shane_dm2")]
+    #[schemars(description = "substring of the run name, eg ab_dm4_leadclip")]
     pub run_like: Option<String>,
     #[schemars(description = "YYYY-MM-DD")]
     pub since: Option<String>,
     #[schemars(description = "YYYY-MM-DD")]
     pub until: Option<String>,
     #[schemars(
-        description = "stalls|engages|lava_deaths|world_deaths|freezes|freeze_underfire|cover|goals|frags|deaths|routefails|hazards|grabs|weapons|boards|kd_spread|avg_speed|duration_sec. With it the answer is n, IQM, median, mean, sd, CV, min and max per group; without it, the matching tapes."
+        description = "stalls|engages|lava_deaths|world_deaths|freezes|freeze_underfire|cover|goals|frags|deaths|routefails|hazards|grabs|weapons|boards|kd_spread|avg_speed. Without one, the matching tapes."
     )]
     pub metric: Option<String>,
     #[schemars(description = "map|month|day|tick_class|kind|run")]
@@ -377,7 +383,6 @@ pub struct CorpusArgs {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct CompareArgs {
-
     #[schemars(description = "Baseline: path, run name, or 'baseline'/'shipped'. Default baseline.")]
     pub log_a: Option<String>,
     #[schemars(description = "Candidate: path, run name, or 'latest'")]
@@ -385,6 +390,8 @@ pub struct CompareArgs {
     pub map: Option<String>,
     #[schemars(description = "brief (default, verdict+gates) or full (both MatchBriefs)")]
     pub detail: Option<String>,
+    #[schemars(description = "json (default) or csv. Every large part of this answer is a table, and a table as CSV is about half the tokens of the same table as JSON.")]
+    pub format: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1038,7 +1045,9 @@ impl Argus {
         };
         match intel_brief(&cfg, &args.log, args.map.as_deref()) {
             Ok(r) => {
-                if want_full(args.detail.as_deref()) {
+                if crate::intel::want_csv(args.format.as_deref()) {
+                    csv_ok(crate::intel::brief_csv(&r))
+                } else if want_full(args.detail.as_deref()) {
                     json_ok(&r)
                 } else {
                     json_ok(&brief_lite(&r))
@@ -1060,7 +1069,9 @@ impl Argus {
         let log_a = args.log_a.as_deref().unwrap_or("baseline");
         match intel_compare(&cfg, log_a, &args.log_b, args.map.as_deref()) {
             Ok(r) => {
-                if want_full(args.detail.as_deref()) {
+                if crate::intel::want_csv(args.format.as_deref()) {
+                    csv_ok(crate::intel::compare_csv(&r))
+                } else if want_full(args.detail.as_deref()) {
                     json_ok(&r)
                 } else {
                     json_ok(&compare_lite(&r))
@@ -1071,7 +1082,7 @@ impl Argus {
     }
 
     #[tool(
-        description = "Ask the whole tape corpus a question instead of briefing one tape at a time. Returns CSV, which is about half the tokens of the same table as JSON. what=tapes filters and aggregates 750+ indexed tapes; what=cells does the same for hotspot cells; what=changes runs change point detection over the dated series and returns every step with a permutation p and the tick class either side; what=bisect localises one step with a noisy oracle and names the date to spend the next tapes at. Read-only over committed data."
+        description = "Ask the 750+ tape corpus a question instead of briefing one tape at a time. CSV out. tapes: filter and aggregate (n, IQM, median, mean, sd, CV, min, max). cells: the same for hotspot cells. changes: every dated step in the series, with a permutation p and the tick class either side. bisect: localise one step with a noisy oracle, and name where to spend the next tapes. Read-only."
     )]
     async fn corpus(
         &self,
@@ -2230,7 +2241,7 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
 
 #[tool_handler(
     name = "argus-mcp",
-    version = "0.28.0",
+    version = "0.29.0",
     instructions = "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
 )]
 #[prompt_handler]
@@ -2243,7 +2254,7 @@ impl ServerHandler for Argus {
                 .enable_resources()
                 .build(),
         )
-        .with_server_info(Implementation::new("argus-mcp", "0.28.0"))
+        .with_server_info(Implementation::new("argus-mcp", "0.29.0"))
         .with_instructions(
             "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. \
 First call: see what=project. Then see what=map / path / fn / search. After a QC \
@@ -2284,5 +2295,48 @@ cause/reach_pct/item_control fields. Prefer native tools over extras.",
             ))),
             Err(e) => Err(McpError::resource_not_found(e, None)),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// WHAT THE TOOL SURFACE COSTS, measured rather than argued.
+    ///
+    /// Every exposed tool is paid for on every request through its
+    /// schema, whether or not it is ever called. This prints the bill
+    /// and fails if the surface grows past a bound, so adding a tool is
+    /// a decision someone makes on purpose rather than a drift.
+    ///
+    /// Bytes stand in for tokens: the payload is ASCII JSON, so the
+    /// ratio is roughly four to one throughout and the comparison
+    /// between tools is exact either way.
+    #[test]
+    fn the_tool_surface_has_a_measured_price() {
+        let router = Argus::tool_router();
+        let tools = router.list_all();
+        assert!(tools.len() > 20, "only {} tools", tools.len());
+        let mut rows: Vec<(usize, String)> = tools
+            .iter()
+            .map(|t| {
+                let n = serde_json::to_string(t).map(|s| s.len()).unwrap_or(0);
+                (n, t.name.to_string())
+            })
+            .collect();
+        rows.sort_by(|a, b| b.0.cmp(&a.0));
+        let total: usize = rows.iter().map(|(n, _)| n).sum();
+        eprintln!("tool surface: {} tools, {total} bytes", rows.len());
+        for (n, name) in rows.iter().take(10) {
+            eprintln!("  {n:6}  {name}");
+        }
+        // If this fails, the question is whether the new tool earns its
+        // rent, not whether to raise the bound.
+        // 18,816 bytes over 39 tools, measured 2026-09-16, which is
+        // about 4,700 tokens on EVERY request. The bound sits just
+        // above that on purpose: a bound three times the actual is
+        // not a bound. If this fails, the question is whether the new
+        // tool earns its rent, not whether to raise the number.
+        assert!(total < 22_000, "the tool surface costs {total} bytes");
     }
 }
