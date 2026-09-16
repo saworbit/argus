@@ -5,7 +5,7 @@ maps, runs headless matches, and briefs the result the way this
 project already judges A/B. Toolchain only: it does not change QuakeC
 or the engine.
 
-Current version: **0.26.0**. Operator guide (this file). Design
+Current version: **0.27.0**. Operator guide (this file). Design
 history: `docs/specs/2026-08-17-argus-mcp-design.md`.
 Captured external spec and triage: `docs/mcp_quake_dev_spec.md`.
 
@@ -65,6 +65,7 @@ argus-mcp nav <map> [--register]
 argus-mcp analyze <log_path> [options]
 argus-mcp harvest [--tag <name>]
 argus-mcp reach [map]
+argus-mcp measure [--write <path>]
 ```
 
 - `compile`: Compiles QuakeC `progs.dat` via `fteqcc` with timestamp verification and optional backup creation and installation.
@@ -72,6 +73,7 @@ argus-mcp reach [map]
 - `analyze`: Runs `analyze_match.py` to parse telemetry logs into briefs, stats, and plots.
 - `harvest`: Runs `harvest_session.py` to archive listen server logs and paired demos into `runs/`.
 - `reach`: Runs `argus_reach.py` to audit directed item reachability for shipped navigation graphs.
+- `measure`: The detection limit per map and metric over every committed same-build arm, and what four gates cost measured on the null corpus. Read-only. Writes `docs/specs/2026-09-16-lab-measurement-limits.md`.
 
 ## What it is for
 
@@ -551,7 +553,7 @@ carries `scaled` and `scale_note` when that happens.
 | Tool | Needs | Does |
 |------|-------|------|
 | `see` | `ARGUS_ROOT` | One inspect. See the table above. |
-| `experiment` | full lab | Compile + short match + **duration-scaled lite** A/B. `detail=full` dumps both tapes. Duration 10-185 s, default 30. |
+| `experiment` | full lab | Compile + short match + **duration-scaled lite** A/B. `detail=full` dumps both tapes. Duration 10-185 s, default 30. `primary=<metric>` pre-registers the gate this change was predicted to move; only it convicts. |
 | `matrix_experiment` | full lab | One compile, then a short probe on each of dm2/dm3/dm4/dm6/lqdm2 (default 20 s). |
 | `brief_run` | `ARGUS_ROOT` | Lite brief of one log. `detail=full` for the whole tape. |
 | `compare_runs` | `ARGUS_ROOT` | Unscaled lite A/B. `detail=full` for both briefs. Default `log_a` is `baseline`. |
@@ -710,6 +712,89 @@ regression or parity: the stall band's floor is zero there. The
 finding says so and names the cure. Every "improved on all seven
 gates" recorded before this rests on an instrument that could not have
 said anything else.
+
+## What the instrument can see, and when to stop
+
+`argus-mcp measure` answers two questions the lab could always have
+answered and never had. It is read-only analysis over the tapes in
+`runs/`: no engine, no QC, nothing to revert. The committed output is
+`docs/specs/2026-09-16-lab-measurement-limits.md`; regenerate it after
+a harvest that adds a same-build arm.
+
+```
+argus-mcp measure [--write <path>]
+```
+
+**The detection limit.** A same-build ARM is a set of tapes from one
+build on one map, so its spread is the instrument and nothing else.
+Pooled across every committed arm, that gives a sigma per map and
+metric, and from a sigma and a tape count the smallest detectable
+effect is arithmetic. Measured 2026-09-16 over 84 tapes:
+
+| map | metric | CV | MDE at 3 tapes a side |
+|---|---|---|---|
+| dm2 | stalls | 52% | 56, which is 119% of the mean |
+| dm2 | coverage | 9% | 79, which is 20% |
+| dm4 | stalls | 73% | 14, which is 168% |
+| dm4 | coverage | 7% | 51, which is 15% |
+| dm4 | freezes | 261% | unmeasurable as a rate |
+
+That is the prose table above turned into numbers. dm2 stalls at three
+tapes a side cannot detect anything smaller than a doubling, and a
+great many historical stall verdicts were unearned in both directions.
+
+**What four gates cost.** A verdict that convicts on any of four gates
+is not one test. Over the sixteen null pairs each gate convicts a
+change that does not exist 0 to 12 per cent of the time and the
+verdict as a whole convicts 19 per cent of the time. The any-gate row
+is always the largest in the table.
+
+The fix is not a correction factor, it is saying in advance which gate
+the change is expected to move. `experiment` and the `compare` CLI
+take `primary`:
+
+```
+experiment  map=dm4 primary=lava_deaths
+argus-mcp compare cand1,cand2,cand3 ctl1,ctl2,ctl3 --primary stall_parity
+```
+
+Only the named gate convicts; the rest are computed, printed and
+flagged. It also stops the habit of deciding which gate to believe
+after the tapes are in: a change predicted to affect lava has no
+business being convicted by an engagement count. Pre-registering drops
+the false positive rate from 19 per cent to about 6.
+
+**The stats block.** Every compare now carries one entry per gate
+beside the band call. Positive always means the candidate is better.
+
+- **IQM** rather than a median. Three or four tapes are too few to
+  throw most of away, and the mean is at the mercy of the one tape
+  where a bot fell in the pit.
+- **A stratified bootstrap interval on the improvement**, 95 per cent,
+  stratified by map. An interval that clears zero is what an
+  improvement actually is, and the band could never produce one. It is
+  ABSENT below two tapes a side, because resampling a single
+  observation returns that observation and the interval would be a
+  point of width zero.
+- **Probability of improvement**: the chance a candidate tape beats a
+  control tape. 0.5 is a coin flip. A number with a direction, which a
+  three-way label is not.
+- **An SPRT call**: `accept`, `reject`, `continue` or `abandon`, with
+  the bound derived from the detection limit at five tapes a side, so
+  the stopping rule and the instrument agree about what is visible.
+
+**`continue` is the answer the lab could never give.** The old rule
+had to return improved, regressed or parity whatever the evidence was,
+and looking after every tape to decide whether to run another is
+peeking, which inflates a fixed-horizon test's false positive rate. A
+sequential test is built to be peeked at. `abandon` fires at a ten
+tape cap so a marginal change is dropped rather than ground out.
+
+Validated on the null corpus, which is the bar any estimator here has
+to clear: zero accepts across 58 decisions from ten same-build arms
+split in half, and the sixteen null pairs still read thirteen
+parities. An estimator that finds an effect in code that has none is
+disqualified whatever else it improves.
 
 ## The human scorecard
 
@@ -899,6 +984,7 @@ shell.
 | 0.22 | The lab joins the game: a real NetQuake client (`argus-mcp client observe/walk/walkrel`), the empirical link-verification harness (`argus-mcp probelinks`), engine-verdict files consumed by navgen, orphan-engine kill on failed matches, serialized engine tests. |
 | 0.21 | The operational gaps. STALENESS SELF-AWARENESS: at startup the server detects a newer staged build, auto-swaps it into place for the next restart (Windows allows renaming a running exe), and stamps `lab_stale` on every JSON response for the rest of the session - a stale server can never again hand out an unmarked opinion. HARVEST GUARD: every match starter (MCP tools, soak, cycle) refuses to launch over an un-harvested play session (the harvester now MOVES its inputs, so leftovers are the signal). PAIRED DEMO JOIN: brief_run folds the same-stem .dem into the brief (aim stats, highlight reel, tracks) - the whole "played, review" ritual is one call. `ship` (compile + install everywhere + MD5s) and `baseline_set` (rewrite runs/baselines.json safely) close the loop's last manual steps. `soak --parallel 2` runs two engines on separate ports, halving ladder wall clock. Last-seen session memory persists to runs/.lab_session.json across restarts; `see what=project` stops listing fifty pak-only maps; compare flags any human tape as review-only material. |
 | 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |
+| 0.27 | The verdict gets an interval, a stopping rule and a pre-registered primary (GitHub #375, #376, #377). `argus-mcp measure` writes `docs/specs/2026-09-16-lab-measurement-limits.md`: the pooled within-arm sigma per map and metric over every committed same-build arm, and the smallest effect detectable at 3, 5 and 10 tapes a side. It says in print what the handoff said in prose - dm2 stalls at three tapes a side cannot see anything smaller than a 119 per cent change, and coverage at 9 per cent CV is the only metric worth reading off a small ladder. It also measures what four gates cost: each convicts a byte-identical pair 0 to 12 per cent of the time and the verdict as a whole convicts 19 per cent of the time, so `experiment` and `compare` take `primary`, the metric the change was predicted to move, and only that gate convicts. Every compare now carries a `stats` block: interquartile mean rather than median, a stratified bootstrap interval on the improvement (absent below two tapes a side, where resampling one observation is not an interval), a probability of improvement, and an SPRT call of accept, reject, continue or abandon with its bound derived from the detection limit. **Continue is the answer the lab could never give.** Validated on the null corpus: zero accepts across 58 decisions from ten same-build arms split in half, and the sixteen null pairs still read thirteen parities. 163 tests. |
 | 0.26 | The instrument learns to see what the player sees (the recovery plan, phase 0). EVERY MATCH RUNS AT THE PLAYED TICK RATE: `+sys_ticrate 0.0139`, because `sys_ticrate` gates the dedicated main loop and the engine default ran every tape in `runs/` at about 19 Hz against the 71 Hz of every human session. Measured on dm4: default mean ARGLOG gap 0.5134, flagged 0.5074, human tapes 0.506 to 0.509. This refutes the v4.09 note that sys_ticrate does nothing to the dedicated tick and the v4.07 "frametime 0.1", which was `ftos` printing a 0.05 s frame to one decimal. Briefs carry `tick_gap_mean` and `tick_class`, and compare REFUSES a verdict across two classes. THE VERDICT STOPS BEING A COIN FLIP: `compare_band` judges candidate medians against a control band fitted to the sixteen null pairs (which the old OR rule read as nine improvements and zero parities, and which now read thirteen parities, one improvement and two regressions); `experiment` gains `repeats`, default 3; `baselines.json` takes a list. THE HUMAN SCORECARD becomes a lab surface: `tools/argus_longi.py` and `tools/argus_tick.py` join the tree, `harvest_session.py` appends to `runs/human_scorecard.tsv`, and a brief on a human tape carries `human_scorecard` including unstick warps. Also `argus-mcp match <map> [duration] [name] [--port N]`, so a ladder can be driven without an MCP client and two engines can run at once. |
 | 0.25 | A committed tape is evidence (GitHub #328). `match_run` takes a `run_name` and writes `runs/<name>.log`; a name that collided with a tape already in git overwrote it in place, with no warning and nothing to notice by but a modified file in `git status`. It happened twice in one week, and the second time the ladder tape it destroyed survived only in a session transcript. `MatchCtrl::start` now refuses such a name before the engine spawns, beside the harvest guard it mirrors. TRACKED BY GIT IS THE TEST, not "the file is there": the matrix probe rewrites `mx_<map>.log` every run by design and five of those are committed, so it asks for a one-shot exemption that `start` consumes. IT FAILS OPEN - no git, or not a checkout, and the match proceeds, because a guard that cannot answer must not wedge the lab. |
 | 0.24 | The tracker batches (GitHub #29-#40, #101-#103). THE CAMERA WAS UNINDEXABLE IN THREE LAYERS: `argus_cam.qc` was missing from `index_argus` AND from `qc_search`'s separate list, `keep_fn` kept only names starting `"Argus_"` (which `"ArgusCam_POV"` does not), and the call regex had the same hole - so `see what=fn name=ArgusCam_*` and calls/callers could never see the camera or the director. All four fixed, plus the mover/trigger/player base files in both lists. Cartograph plats cross-reference the shipped graph (`nav_served`): dm3 rides its three plats every tape while static hull 0 alone briefed two of them "cannot walk aboard". Typed hops stop briefing as walks - `train`/`sprint`/`door` get their own `Route` arms and fields, and `load_nav_graph` finally loads `trainlinks`/`sprintlinks` into the adjacency used for island detection and graph cuts (`train_links` and `door_links` join the overlay). `pick_logs` matches whole stem tokens, so `lqdm2` tapes stop answering a `dm2` sweep and starving `learn_hotspots`. `line_clear` samples every 16u instead of splitting any length into 20 steps (a 1200u trace stepped 60u and walked over 16u walls). The netclient hostname retry falls back `COMPUTERNAME` -> `HOSTNAME` -> `hostname`, so it works off Windows. Travel distance ignores respawn teleports (any segment implying over 700 u/s), which had been adding about one map width per death to `dist` and `avg_speed` - A METRIC BOUNDARY: speed and distance are not comparable across this change. `harvest_session` banks a confirmed map before the next spawn attempt, so a session that played and then tried a missing map no longer archives as `unknown`. 92 tests. |
