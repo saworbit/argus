@@ -9,6 +9,59 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**e1m5 AND e1m6 DOOR CROSSINGS ARE TYPED, AND #324 IS PAID OFF** (#324).
+`--retype-doors` against the shipped graphs, which is the mode that
+reads a .qc and its json and rewrites one field in place. e1m5 gains a
+single door verb, `n79 -279 2505 424 -> n93 -151 2537 344`. e1m6
+changes 26: twelve links newly typed and fourteen that were typed
+against the compiled box rather than the shut one and are now plain
+walks, for 202 door verbs down to 200. Nodes, links, order and every
+other typed list are untouched on both maps.
+
+Fourteen e1m6 crossings stay untyped on purpose. All fourteen cross a
+vertical DOOR_START_OPEN slab, which parks back in the hole it was
+compiled in, and a retype can only untype those. Refusing to mint one
+is 6b's job and only a regen runs 6b (#331).
+
+BOTH MAPS WERE RE-BASELINED FIRST, because both pointed at 19 Hz tapes
+and a ladder on either correctly read VOID. e1m5 now carries a
+five-tape band and e1m6 a four-tape one, all at the played rate. That
+is task 0.5 of the recovery plan for two of its seven maps.
+
+```
+                stalls  engages  cover  goals
+e1m5 control (5)   15      22     254     6
+e1m5 cand    (4)   37      15.5   315     6
+e1m6 control (4)   65.5    22.5   238     4
+e1m6 cand    (7)   55      24     238     3
+```
+
+In band on all four hard gates on both maps. e1m5's stall median is
+the one figure that looks bad, and it is one tape: 40 of the arm's 41
+stallnodes at `448 2240 256` come from `ab_e1m5_doorverb2`, no control
+tape has any there, and the cell is 750 units from either end of the
+only link that changed. Across the whole arm exactly ONE stallnode
+lands within 200 units of the retyped link, against none in the
+control. e1m5 is also bimodal on a cell at `-173 324`, where a bot
+spends a third of the match: two of five control tapes and one of four
+candidates.
+
+METRIC BOUNDARY (2026-09-16, door events): `ARGEVT door` is throttled
+to one a second per bot, like the hazard deflection, and door counts
+are NOT comparable across this change. It was never once per door. An
+open slab on the line is re-taken every frame by design - the aim
+through the doorway is meant to last exactly as long as the
+obstruction - so `ar_door` was cleared and set again at the frame rate
+and the counter was counting frames. One newly typed link on a busy
+e1m5 route took a tape from 23 door events to 2234 with the bots
+moving at 270 units a second through the whole burst. Every door
+figure quoted in this file before today is a frame count.
+
+Recorded while working: one e1m5 tape came back classified
+`dedicated_fast` on a gap of 0.5114 where every other tape this
+session read 0.506. The verdict voided itself, correctly. It was
+discarded rather than committed.
+
 **THE ROCKET LEAD POINT IS TRACED BEFORE IT IS USED** (#363). Argus has
 led rockets and nails since v3.19 and nothing ever asked whether the
 led aim point was in the room. The lead sits ahead of the target along
