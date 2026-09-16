@@ -9,6 +9,54 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE GROUND PATH LEARNS TO SLIDE ALONG A WALL** (#380). A masquerade
+parity gap of the v3.6 family, and the last piece of the stock player
+movement model the bots did not have. Stock `SV_FlyMove` clips the
+velocity into every plane it hits and continues along the clipped
+vector; the bot ground path had no equivalent, and a blocked walkmove
+ungrounded so the engine's flymove would do the sliding instead. On a
+blocked step the horizontal velocity is now projected into the
+blocking plane and the move retried along it. Only then, if that
+fails too, does the bot unground. Nothing that succeeds today
+changes: the new step sits between the failure and the unground, and
+runs after the `FL_PARTIALGROUND` retry so the grate-floor behaviour
+is untouched.
+
+THE PROBE IS THE WHOLE STORY. The first cut traced one line forward
+from the origin and was measured before it was believed: on dm2, 120
+seconds, three bots, it was reached on 4947 blocked steps and found a
+wall on 137 of them. walkmove moves a 32-wide box and a wall that
+stops the box is usually met by a corner, which a centre line misses.
+A fan across the front of the bbox, three traces at waist height plus
+a knee trace for the sliver between walkmove's 18 unit step-up and
+the origin at floor plus 24, finds a wall in two thirds of blocked
+steps and **slides 1489 times in the same 120 seconds**. The knee
+trace only runs when the cheap three miss.
+
+LADDERED ON BOTH CHRONIC-CELL MAPS, parity on every gate.
+dm4 three tapes against a four-tape band: stalls 6.5 to 6, engages
+80.5 to 88 (95 per cent CI +2 to +20, the only interval that clears
+zero), lava 3.5 to 4 with the sequential test rejecting any effect of
+3 or more, freezes 0 to 0. dm2 five tapes a side: stalls 44 to 57,
+engages 33 to 33, lava 0 to 0, freezes 1 to 1, every interval
+covering zero. The frame rate does not move. `tick_gap_mean` is
+0.506 on every tape either side, which is the measurement that
+settles the cost of up to four traces on a blocked step.
+
+AND THE ISSUE'S OWN PREDICTIONS ARE REFUSED. It named the two chronic
+cells and average speed as the judge. The cells do not move: dm4's
+walkway corner runs 4, 6, 8, 8 deflections across the control tapes
+and 8, 5, 4 across the candidates, and dm2's south-east grate room
+runs 0 to 10 stalls on control tapes and 0 to 13 on candidates, which
+is the same spread the control produces on byte-identical code.
+Average speed moves on dm4 only, IQM 214.2 to 222.2 with all three
+candidate tapes above the control median, and is flat on dm2, 182.8
+to 185.6 inside a CV of 9 per cent. A bot spends very little of its
+time pressed diagonally into a wall, so the speed bonus is real and
+small rather than the 41 per cent the geometry allows. This ships as
+what it is: a correctness restoration at parity, in the shape the
+body block shipped in.
+
 **RESPONSE SHAPING, AND A PRICE ON THE TOOL SURFACE** (#371). Lab
 only: no QC, no nav data, no bot behaves differently. MCP 0.29.
 
