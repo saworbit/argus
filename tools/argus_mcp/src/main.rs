@@ -129,6 +129,174 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             println!("{}", serde_json::to_string_pretty(&res)?);
             Ok(())
         }
+        Some("corpus") => {
+            // Ask the whole corpus a question instead of briefing one
+            // tape at a time. Read-only.
+            let rest: Vec<String> = args.collect();
+            if rest.iter().any(|a| a == "-h" || a == "--help") {
+                print_corpus_help();
+                return Ok(());
+            }
+            let opt = |name: &str| -> Option<String> {
+                rest.iter().position(|a| a == name).and_then(|i| rest.get(i + 1)).cloned()
+            };
+            let flag = |name: &str| rest.iter().any(|a| a == name);
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let runs = cfg.runs.clone();
+
+            if flag("--cells") {
+                let rows = argus_mcp::corpus::cells(&runs, opt("--map").as_deref());
+                println!("run,map,started,kind,x,y,z,count,cause");
+                let lim = opt("--limit").and_then(|v| v.parse().ok()).unwrap_or(usize::MAX);
+                for c in rows.iter().take(lim) {
+                    println!(
+                        "{},{},{},{},{:.0},{:.0},{:.0},{:.0},{}",
+                        c.run, c.map, c.started, c.kind, c.x, c.y, c.z, c.count, c.cause
+                    );
+                }
+                return Ok(());
+            }
+
+            let (rows, st) = argus_mcp::corpus::index(&runs, flag("--rebuild"));
+            if flag("--write") || flag("--rebuild") {
+                let p = argus_mcp::corpus::write_index(&runs, &rows)?;
+                eprintln!(
+                    "{} tapes indexed ({} cached, {} parsed, {} unreadable) -> {}",
+                    st.rows,
+                    st.from_cache,
+                    st.parsed,
+                    st.dropped,
+                    p.display()
+                );
+            }
+            let q = argus_mcp::corpus::Query {
+                map: opt("--map"),
+                kind: opt("--kind"),
+                tick_class: opt("--tick"),
+                run_like: opt("--run"),
+                since: opt("--since"),
+                until: opt("--until"),
+                metric: opt("--metric"),
+                group_by: opt("--group-by"),
+                limit: opt("--limit").and_then(|v| v.parse().ok()),
+            };
+            match argus_mcp::corpus::query(&rows, &q) {
+                Ok(a) => print!("{}", argus_mcp::corpus::to_csv(&a)),
+                Err(e) => return Err(anyhow::anyhow!(e)),
+            }
+            Ok(())
+        }
+        Some("history") => {
+            // Change points over the corpus, and probabilistic
+            // bisection to localise one. Read-only.
+            let rest: Vec<String> = args.collect();
+            if rest.iter().any(|a| a == "-h" || a == "--help") {
+                print_history_help();
+                return Ok(());
+            }
+            let opt = |name: &str| -> Option<String> {
+                rest.iter().position(|a| a == name).and_then(|i| rest.get(i + 1)).cloned()
+            };
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let (rows, _) = argus_mcp::corpus::index(&cfg.runs, false);
+            let kind = opt("--kind").unwrap_or_else(|| "bot".into());
+            // one class at a time is how to be certain a step is not
+            // the server frame rate wearing a regression costume
+            let tick = opt("--tick");
+            // A bisect assumes ONE step. A series with three cannot
+            // be localised and says so; the composition the issues
+            // describe is to run the detector first and then point
+            // the bisect at one segment between two of its steps.
+            let since = opt("--since");
+            let until = opt("--until");
+            let metrics: Vec<String> = match opt("--metric") {
+                Some(m) => vec![m],
+                None => ["stalls", "engages", "lava_deaths", "cover", "goals"]
+                    .iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            };
+            let maps: Vec<String> = match opt("--map") {
+                Some(m) => vec![m],
+                None => {
+                    let mut m: Vec<String> = rows
+                        .iter()
+                        .filter(|r| r.kind == kind)
+                        .map(|r| r.map.clone())
+                        .filter(|m| !m.is_empty())
+                        .collect();
+                    m.sort();
+                    m.dedup();
+                    m
+                }
+            };
+            let series = |map: &str| -> Vec<argus_mcp::corpus::TapeRow> {
+                let mut v: Vec<argus_mcp::corpus::TapeRow> = rows
+                    .iter()
+                    .filter(|r| {
+                        r.map.eq_ignore_ascii_case(map)
+                            && r.kind == kind
+                            && !r.started.is_empty()
+                            && r.duration_sec > 0.0
+                            && tick.as_ref().map(|t| &r.tick_class == t).unwrap_or(true)
+                            && since.as_ref().map(|d| r.started >= *d).unwrap_or(true)
+                            && until.as_ref().map(|d| r.started <= *d).unwrap_or(true)
+                    })
+                    .cloned()
+                    .collect();
+                v.sort_by(|a, b| a.started.cmp(&b.started));
+                v
+            };
+
+            if let Some(m) = opt("--bisect") {
+                let map = maps.first().cloned().unwrap_or_else(|| "dm2".into());
+                let v = series(&map);
+                let win = opt("--window").and_then(|v| v.parse().ok()).unwrap_or(10);
+                let out = argus_mcp::history::bisect(&v, &m, &map, win);
+                println!("map,metric,queries,at,date,run,lo,hi,width,settled");
+                println!(
+                    "{},{},{},{},{},{},{},{},{},{}",
+                    out.map,
+                    out.metric,
+                    out.queries,
+                    out.at,
+                    out.date,
+                    out.run,
+                    out.lo_date,
+                    out.hi_date,
+                    out.interval_width,
+                    out.settled
+                );
+                for n in &out.notes {
+                    println!("# {n}");
+                }
+                return Ok(());
+            }
+
+            println!("map,metric,date,run,n_before,n_after,before,after,p,tick_before,tick_after");
+            for map in &maps {
+                let v = series(map);
+                for metric in &metrics {
+                    for st in argus_mcp::history::change_points(&v, metric) {
+                        println!(
+                            "{},{},{},{},{},{},{:.1},{:.1},{:.3},{},{}",
+                            map,
+                            metric,
+                            st.date,
+                            st.run,
+                            st.before_n,
+                            st.after_n,
+                            st.before,
+                            st.after,
+                            st.p,
+                            st.before_tick,
+                            st.after_tick
+                        );
+                    }
+                }
+            }
+            Ok(())
+        }
         Some("measure") => {
             // What this instrument can see, over the tapes already
             // committed. Read-only: no engine, no QC.
@@ -697,6 +865,49 @@ fn run_python_script(
         std::process::exit(status.code().unwrap_or(1));
     }
     Ok(())
+}
+
+fn print_history_help() {
+    println!(
+        "usage: argus-mcp history [--map M] [--metric M] [--kind bot|human]
+       argus-mcp history --bisect <metric> --map <map>
+
+Change points over the tape corpus: every dated step in every metric on every
+map, with a permutation p. Read-only, CSV out.
+
+--bisect localises one step with a noisy oracle (probabilistic bisection) and
+names the date to spend the next tapes at when it cannot settle.
+
+examples
+  argus-mcp history --map dm2 --metric stalls
+  argus-mcp history --kind human
+  argus-mcp history --map dm2 --tick listen
+  argus-mcp history --bisect stalls --map dm2 --since 2026-08-20",
+    );
+}
+
+fn print_corpus_help() {
+    println!(
+        "usage: argus-mcp corpus [filters] [--metric M [--group-by G]] [--write|--rebuild]
+
+Ask the whole tape corpus a question. Read-only, CSV out.
+
+filters   --map dm4  --kind bot|human  --tick listen|dedicated_fast
+          --run <substring of the run name>  --since YYYY-MM-DD  --until YYYY-MM-DD
+aggregate --metric stalls|engages|lava_deaths|world_deaths|freezes|freeze_underfire|
+                   cover|goals|frags|deaths|routefails|hazards|grabs|weapons|boards|
+                   kd_spread|avg_speed|duration_sec
+          --group-by map|month|day|tick_class|kind|run
+other     --limit N   --cells (hotspot cells instead of tapes)
+          --write (persist the index)  --rebuild (re-parse every tape, then write)
+
+Without --metric it returns the matching tapes. With one it returns n, IQM,
+median, mean, sd, CV, min and max per group.
+
+examples
+  argus-mcp corpus --map dm2 --kind bot --metric stalls --group-by month
+  argus-mcp corpus --run ab_dm4_leadclip --metric engages",
+    );
 }
 
 fn print_soak_help() {

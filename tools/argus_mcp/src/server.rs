@@ -153,7 +153,20 @@ fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult
     Ok(CallToolResult::success(blocks))
 }
 
+/// CSV rather than JSON, because every one of these answers is a
+/// table and a table costs about half the tokens as CSV. The
+/// stale banner still rides along, as a comment line, because a
+/// stale server must never hand out an unmarked opinion.
+fn csv_ok(body: String) -> Result<CallToolResult, McpError> {
+    let text = match crate::stale::banner() {
+        Some(note) => format!("# lab_stale: {note}\n{body}"),
+        None => body,
+    };
+    Ok(CallToolResult::success(vec![ContentBlock::text(text)]))
+}
+
 fn png_block(path: &str) -> Option<ContentBlock> {
+
     let bytes = std::fs::read(path).ok()?;
     if bytes.is_empty() || bytes.len() > 1_500_000 {
         return None;
@@ -336,7 +349,35 @@ pub struct BriefArgs {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct CorpusArgs {
+    #[schemars(
+        description = "tapes (default) | cells | changes | bisect. tapes filters and aggregates the tape index; cells does the same for hotspot cells; changes runs change point detection over the dated series; bisect localises one step with a noisy oracle."
+    )]
+    pub what: Option<String>,
+    #[schemars(description = "dm2, dm4, e1m6 ... Default every map.")]
+    pub map: Option<String>,
+    #[schemars(description = "bot (default for changes/bisect) or human. A human tape is review-only and must never be averaged into a bot series.")]
+    pub kind: Option<String>,
+    #[schemars(description = "listen | dedicated_fast | dedicated_slow. Restricting a series to ONE class is how to be sure a step is not the server frame rate.")]
+    pub tick_class: Option<String>,
+    #[schemars(description = "substring of the run name, which is how an arm is named: ab_dm4_leadclip, band_e1m6, shane_dm2")]
+    pub run_like: Option<String>,
+    #[schemars(description = "YYYY-MM-DD")]
+    pub since: Option<String>,
+    #[schemars(description = "YYYY-MM-DD")]
+    pub until: Option<String>,
+    #[schemars(
+        description = "stalls|engages|lava_deaths|world_deaths|freezes|freeze_underfire|cover|goals|frags|deaths|routefails|hazards|grabs|weapons|boards|kd_spread|avg_speed|duration_sec. With it the answer is n, IQM, median, mean, sd, CV, min and max per group; without it, the matching tapes."
+    )]
+    pub metric: Option<String>,
+    #[schemars(description = "map|month|day|tick_class|kind|run")]
+    pub group_by: Option<String>,
+    pub limit: Option<u32>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct CompareArgs {
+
     #[schemars(description = "Baseline: path, run name, or 'baseline'/'shipped'. Default baseline.")]
     pub log_a: Option<String>,
     #[schemars(description = "Candidate: path, run name, or 'latest'")]
@@ -1029,7 +1070,159 @@ impl Argus {
         }
     }
 
+    #[tool(
+        description = "Ask the whole tape corpus a question instead of briefing one tape at a time. Returns CSV, which is about half the tokens of the same table as JSON. what=tapes filters and aggregates 750+ indexed tapes; what=cells does the same for hotspot cells; what=changes runs change point detection over the dated series and returns every step with a permutation p and the tick class either side; what=bisect localises one step with a noisy oracle and names the date to spend the next tapes at. Read-only over committed data."
+    )]
+    async fn corpus(
+        &self,
+        Parameters(args): Parameters<CorpusArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let cfg = match cfg_read_or_err() {
+            Ok(c) => c,
+            Err(r) => return Ok(r),
+        };
+        let what = args.what.as_deref().unwrap_or("tapes").to_ascii_lowercase();
+        let limit = args.limit.map(|v| v as usize);
+
+        if what == "cells" {
+            let rows = crate::corpus::cells(&cfg.runs, args.map.as_deref());
+            let mut out = String::from("run,map,started,kind,x,y,z,count,cause\n");
+            for c in rows.iter().take(limit.unwrap_or(200)) {
+                out.push_str(&format!(
+                    "{},{},{},{},{:.0},{:.0},{:.0},{:.0},{}\n",
+                    c.run, c.map, c.started, c.kind, c.x, c.y, c.z, c.count, c.cause
+                ));
+            }
+            return csv_ok(out);
+        }
+
+        let (rows, _) = crate::corpus::index(&cfg.runs, false);
+        if what == "tapes" {
+            let q = crate::corpus::Query {
+                map: args.map.clone(),
+                kind: args.kind.clone(),
+                tick_class: args.tick_class.clone(),
+                run_like: args.run_like.clone(),
+                since: args.since.clone(),
+                until: args.until.clone(),
+                metric: args.metric.clone(),
+                group_by: args.group_by.clone(),
+                limit,
+            };
+            return match crate::corpus::query(&rows, &q) {
+                Ok(a) => csv_ok(crate::corpus::to_csv(&a)),
+                Err(e) => tool_err(e),
+            };
+        }
+
+        // changes and bisect are both series questions, so they
+        // share the filtering: one map, one kind, optionally one
+        // tick class, sorted by the tape's own start time.
+        let kind = args.kind.clone().unwrap_or_else(|| "bot".into());
+        let series = |map: &str| -> Vec<crate::corpus::TapeRow> {
+            let mut v: Vec<crate::corpus::TapeRow> = rows
+                .iter()
+                .filter(|r| {
+                    r.map.eq_ignore_ascii_case(map)
+                        && r.kind == kind
+                        && !r.started.is_empty()
+                        && r.duration_sec > 0.0
+                        && args
+                            .tick_class
+                            .as_ref()
+                            .map(|t| &r.tick_class == t)
+                            .unwrap_or(true)
+                        && args.since.as_ref().map(|d| r.started >= *d).unwrap_or(true)
+                        && args.until.as_ref().map(|d| r.started <= *d).unwrap_or(true)
+                })
+                .cloned()
+                .collect();
+            v.sort_by(|a, b| a.started.cmp(&b.started));
+            v
+        };
+        let maps: Vec<String> = match args.map.clone() {
+            Some(m) => vec![m],
+            None => {
+                let mut m: Vec<String> = rows
+                    .iter()
+                    .filter(|r| r.kind == kind && !r.map.is_empty())
+                    .map(|r| r.map.clone())
+                    .collect();
+                m.sort();
+                m.dedup();
+                m
+            }
+        };
+
+        if what == "bisect" {
+            let Some(metric) = args.metric.as_deref() else {
+                return tool_err("bisect needs a metric to localise a step in");
+            };
+            let map = match maps.first() {
+                Some(m) => m.clone(),
+                None => return tool_err("no tapes match those filters"),
+            };
+            let out = crate::history::bisect(&series(&map), metric, &map, 5);
+            let mut csv = String::from("map,metric,queries,at,date,run,lo,hi,width,settled\n");
+            csv.push_str(&format!(
+                "{},{},{},{},{},{},{},{},{},{}\n",
+                out.map,
+                out.metric,
+                out.queries,
+                out.at,
+                out.date,
+                out.run,
+                out.lo_date,
+                out.hi_date,
+                out.interval_width,
+                out.settled
+            ));
+            for n in &out.notes {
+                csv.push_str(&format!("# {n}\n"));
+            }
+            return csv_ok(csv);
+        }
+
+        if what != "changes" {
+            return tool_err(format!(
+                "no such corpus view '{what}'. Try tapes, cells, changes or bisect."
+            ));
+        }
+        let metrics: Vec<String> = match args.metric.clone() {
+            Some(m) => vec![m],
+            None => ["stalls", "engages", "lava_deaths", "cover", "goals"]
+                .iter()
+                .map(|s| s.to_string())
+                .collect(),
+        };
+        let mut csv =
+            String::from("map,metric,date,run,n_before,n_after,before,after,p,tick_before,tick_after\n");
+        for map in &maps {
+            let v = series(map);
+            for metric in &metrics {
+                for st in crate::history::change_points(&v, metric) {
+                    csv.push_str(&format!(
+                        "{},{},{},{},{},{},{:.1},{:.1},{:.3},{},{}\n",
+                        map,
+                        metric,
+                        st.date,
+                        st.run,
+                        st.before_n,
+                        st.after_n,
+                        st.before,
+                        st.after,
+                        st.p,
+                        st.before_tick,
+                        st.after_tick
+                    ));
+                }
+            }
+        }
+        csv_ok(csv)
+    }
+
     #[tool(description = "Concrete next places to look in the QC given a log or an A/B pair. Prefer this after compare_runs.")]
+
     async fn suggest_next(
         &self,
         Parameters(args): Parameters<SuggestArgs>,
@@ -2037,7 +2230,7 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
 
 #[tool_handler(
     name = "argus-mcp",
-    version = "0.27.0",
+    version = "0.28.0",
     instructions = "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
 )]
 #[prompt_handler]
@@ -2050,7 +2243,7 @@ impl ServerHandler for Argus {
                 .enable_resources()
                 .build(),
         )
-        .with_server_info(Implementation::new("argus-mcp", "0.27.0"))
+        .with_server_info(Implementation::new("argus-mcp", "0.28.0"))
         .with_instructions(
             "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. \
 First call: see what=project. Then see what=map / path / fn / search. After a QC \
