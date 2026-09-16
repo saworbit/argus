@@ -9,6 +9,118 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE CORPUS BECOMES SOMETHING YOU CAN ASK A QUESTION OF** (#372, #378,
+#386). Lab only: no QC, no nav data, no bot behaves differently. MCP
+0.28.
+
+Everything else in this lab is per run. Every cross-tape conclusion in
+the record was produced by hand or by a one-off script and then pasted
+into the brief as prose: the nine-session human band, the tick-rate
+table, the five-arm phase 1 table, the sixteen null pairs, the ratio
+ranges at one tape a side. Each of those is a query over a corpus that
+has been sitting in `runs/` the whole time.
+
+`corpus` is one tool with a `what` selector, in the shape `see`
+already uses. `tapes` filters and aggregates an index of every
+committed tape; `cells` does the same for hotspot cells; `changes`
+runs change point detection over the dated series; `bisect` localises
+one step with a noisy oracle. It answers in CSV, which is about half
+the tokens of the same table as JSON.
+
+SQLITE WAS CONSIDERED AND REFUSED. The issue suggested it and it is
+the obvious store, but the corpus is a few hundred rows of a fixed
+schema, a full scan is microseconds, and the part worth having was "a
+query, not thirty parameters". A named filter-and-aggregate surface
+gets that without asking an agent to discover a schema and then write
+SQL against it, which costs more tokens than it saves at this size.
+
+`runs/tape_index.tsv` is a CACHE, not a source of truth: a tape it
+does not name is parsed on demand and appended. A full rebuild is
+about forty seconds; a query off the cache is sixty milliseconds. The
+time axis comes from `LOG started on:` inside each tape rather than
+the file mtime, because a fresh clone stamps every file with the
+checkout time and would flatten the axis the whole thing exists for.
+
+THE DETECTOR REPRODUCES THE RECORD, which is how you know it works.
+Twenty five steps across the bot corpus and nearly every one is an
+event already written down, with the tape that shipped it named:
+
+```
+dm4  lava_deaths  ab_dm4_B3           12.3 -> 4.4    the 2026-08-14 hazard fix
+dm4  stalls       ab_dm4_bisect3      35.3 -> 8.0    the two-author forensics
+dm4  stalls       ab_dm4_routegen2    48.5 -> 27.5   the wedge hunt
+dm4  engages      ab_dm4_v317c        61.3 -> 78.9   v3.17
+e1m1 engages      ab_e1m1_mover1       1.1 -> 17.8   #281, e1m1 stopped being empty
+e1m1 cover        ab_e1m1_mover1     165.0 -> 338.2  the same tape
+dm4  stalls*      shane_dm4_..._v311  32.2 -> 8.8    v3.11, found in HUMAN tapes alone
+```
+
+AND IT DATES THE ONE THAT WAS NEVER BISECTED. This file records the
+September dm2 stall rise as "the September dm2 ladder mean is 52
+against late August's 36 with a 60 to 199 tail. Not bisected." The
+step is at 2026-08-29 10:37, at `ab_dm2_v403_control`, 29.2 to 44.6,
+p 0.001.
+
+IT IS ALSO CONFOUNDED, AND THE TOOL SAYS SO ON THE ROW. Every step
+carries the commonest tick class either side, and that one reads
+`dedicated_fast` before and `listen` after. Restricted to either class
+alone the step does not appear. That does not prove it is the rate,
+and it does not prove it is code. It proves the question was never
+clean, which is exactly what those two columns are for.
+
+A DETECTOR OVER A CORPUS WITH EIGHT METRIC BOUNDARIES IN IT FINDS THE
+BOUNDARIES. Three of the goal steps are counters changing meaning, not
+bots changing behaviour: `ab_dm4_deathanim` is the GOAP boundary where
+goal completions started counting the touch, and `ab_dm4_preposition1`
+is where they stopped counting an arrival at a pending item. Both are
+recorded in this file as boundaries. Useful when auditing the
+instrument, a trap when hunting a regression, and the detector cannot
+tell them apart.
+
+BISECTION WITH A NOISY ORACLE. `git bisect` assumes an oracle: each
+answer permanently discards half the range, so one unlucky tape sends
+the search into the wrong half and it never comes back. Phase 1 came
+three tapes from convicting the wrong arm. `what=bisect` keeps a
+posterior over where the change is, updates it with each noisy answer
+and samples at the posterior median, so a bad tape shifts the
+posterior instead of cutting off the truth. Against the second dm4
+lava step it lands within a couple of hours of the detector's date,
+does NOT settle, and names where to spend the next tapes. On a 2.8 to
+4.8 effect against a measured sigma of 1.7 that is the correct amount
+of confidence.
+
+TWO PARSER DEFECTS THE INDEX FOUND ON ITS WAY, both older than it.
+
+**The lab puppet read as a human.** The netclient emits `ARGLOG` rows
+and never spawns, and the human-track split reads any such track as a
+person. So every tape the puppet connected to briefed as a human
+session, `compare` flagged those review-only, and two committed
+BASELINES said a human had played in them: `band_dm4_2` and
+`band_dm2_3`. `Argus_CanSee` has refused the netname `labprobe` since
+v3.85 for exactly this reason. The engine's own `unconnected`
+placeholder goes with it.
+
+IT HAD TO COME OUT OF BOTH SIDES, and the first cut only took it out
+of one. Excluding the puppet from the human tracks put its deaths into
+the bot world-death count and its standing still into the bot freeze
+count, on eight tapes. An instrument is neither, at every site that
+splits them.
+
+**Half the human sessions read as botmatches.** Human `ARGLOG` tracks
+only exist from v3.66, so 46 of the 73 harvested sessions are human
+matches with no human in their telemetry, and they were sitting in the
+bot series. Their bots were fighting a person, which moves every
+metric they recorded. The index tags a session by the harvester's
+naming as well as by the telemetry.
+
+NO TAPE'S NUMBERS MOVE, verified rather than asserted: the whole index
+was built before and after the parser change and diffed row by row.
+Sixteen tapes change their `kind`, which is the fix, and zero change a
+metric. 182 tests.
+
+`docs/specs/2026-09-16-corpus-change-points.md` carries the full table
+and the reading.
+
 **THE VERDICT GETS AN INTERVAL, A STOPPING RULE AND A PRE-REGISTERED
 PRIMARY** (#375, #376, #377). Lab only: no QC, no nav data, no bot
 behaves differently. MCP 0.27.

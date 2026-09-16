@@ -496,7 +496,7 @@ a genuinely free slot from a header that never arrived.
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.27**. Operator guide (with the full lab flow
+Current version **0.28**. Operator guide (with the full lab flow
 charts): [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
 The Rust binary in `tools/argus_mcp/` is four instruments in one lab:
@@ -506,6 +506,7 @@ The Rust binary in `tools/argus_mcp/` is four instruments in one lab:
 - **puppet client** (`argus-mcp client observe|walk|walkrel|impulse`): a real NetQuake protocol-15 client, invisible to the bots, used for live observation, roster control, and as the engine's own referee.
 - **the mill** (`argus-mcp probelinks <map> [limit] [skip]`): walks every nav link with the puppet in the real engine and persists refusals by endpoint - the empirical verdicts that navgen remints into jump links or prunes on the next regen.
 - **the measuring stick** (`argus-mcp measure`): what this instrument can and cannot see, over the tapes already committed. The pooled within-arm sigma per map and metric, the smallest effect detectable at 3, 5 and 10 tapes a side, and what running four gates costs on sixteen pairs of byte-identical builds. Read-only; the committed table is [`docs/specs/2026-09-16-lab-measurement-limits.md`](docs/specs/2026-09-16-lab-measurement-limits.md).
+- **the corpus** (`argus-mcp corpus`, `argus-mcp history`): 752 tapes as one table you can filter, aggregate and run change point detection over, instead of briefing them one at a time. It dates every step in every metric on every map, and localises one with a noisy oracle when a plain bisect cannot. [`docs/specs/2026-09-16-corpus-change-points.md`](docs/specs/2026-09-16-corpus-change-points.md).
 
 ```bash
 # agent (this is what Grok / Claude should call)
