@@ -49,6 +49,8 @@ These five names are **extra** MCP tools. They do not replace
 | `rcon_exec` | Whitelisted stdin plus log tail. | `tune` |
 | `bot_capture_pov_frame` | Parked POV hook; PNG substitutes. | `analyze_match` |
 
+All five are still shipped. Retiring the three parked ones was considered under GitHub #371 and refused on the measurement: they cost 1,206 bytes of an 18,816 byte tool surface, six per cent, and the same saving was available by trimming the schema of a tool written this week. A schema that answers "no, and here is why" is worth 334 bytes when the alternative is an agent inventing a screenshot pipeline.
+
 Feedback tiers as implemented:
 
 1. Static: `compile_qc` structured diagnostics (`quake_compile_qc` extra).

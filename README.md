@@ -496,7 +496,7 @@ a genuinely free slot from a header that never arrived.
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.28**. Operator guide (with the full lab flow
+Current version **0.29**. Operator guide (with the full lab flow
 charts): [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
 The Rust binary in `tools/argus_mcp/` is four instruments in one lab:

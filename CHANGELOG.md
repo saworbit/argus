@@ -9,6 +9,56 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**RESPONSE SHAPING, AND A PRICE ON THE TOOL SURFACE** (#371). Lab
+only: no QC, no nav data, no bot behaves differently. MCP 0.29.
+
+CSV WHERE THE ANSWER IS A TABLE. `brief_run` and `compare_runs` take
+`format=csv`. Every large part of a brief is rows - the per-bot table,
+the hotspots, the kill matrix, the event counts - and a table as JSON
+repeats every field name on every row. Measured on
+`ab_dm4_deadlink1`: **1765 bytes as CSV against 3464 as compact JSON**,
+and more again against the pretty JSON the server actually sends. The
+test asserts the measurement rather than the slogan: the first cut
+asserted "under half" and the real number is 51 per cent, so the bar
+is 55 and the phrase everywhere is "about half". JSON stays the
+default, because an agent that wants one field should not have to
+parse a table.
+
+THE LIVE TAIL PAGINATES ON SIZE. `since_line` is still the cursor and
+the cut is now a 6 KB budget with a 120 line ceiling. Record count is
+the wrong unit when records vary, and telemetry lines vary by five
+times: `ARGEVT Reap jump` is sixteen characters and an ARGLOG sample
+is over a hundred, so a flat eighty-line cut returned between 1.5 and
+8 KB depending on what the match happened to be doing - and a busy
+match, the one you are polling because something is happening,
+returned the most. It always returns at least one line, because a
+budget that can return nothing is a poll loop that never advances.
+
+THE TOOL SURFACE NOW HAS A PRICE ON IT, and the suite holds a bound.
+Every exposed tool is paid for on every request through its schema,
+called or not. **39 tools, 18,816 bytes, about 4,700 tokens a
+request.** The bound sits just above that on purpose; a bound three
+times the actual is not a bound.
+
+AND THE MEASUREMENT REFUSED THE THIRD PART OF THE ISSUE, which asked
+to retire the parked extras. They cost `bot_simulate_match` 619 bytes,
+`bot_capture_pov_frame` 334 and `rcon_exec` 253: 1,206 bytes, six per
+cent, against breaking the table in `docs/mcp_quake_dev_spec.md` that
+records all five as shipped. Two of the three work. The third answers
+"no, and here is why, use these instead", which is worth 334 bytes
+when the alternative is an agent inventing a screenshot pipeline.
+
+Meanwhile **581 of those bytes were sitting in `corpus`**, the tool
+added one version earlier to save tokens, which was the single most
+expensive schema in the server because it explained each of its views
+twice. Trimming it saved more than retiring `rcon_exec` and
+`bot_capture_pov_frame` together. The cheaper saving was in the newest
+code rather than the oldest, which is not where the issue pointed and
+is why it is worth measuring before cutting. The refusal is recorded
+on the spec document so its table stays honest.
+
+188 tests.
+
 **THE CORPUS BECOMES SOMETHING YOU CAN ASK A QUESTION OF** (#372, #378,
 #386). Lab only: no QC, no nav data, no bot behaves differently. MCP
 0.28.
