@@ -547,7 +547,7 @@ void() Argus_Nav_Spawn_e1m5 =
     Argus_NavLink (n77, n76);
     Argus_NavLink (n77, n84);
     Argus_NavLink (n78, n61);
-    Argus_NavLink (n79, n93);
+    Argus_NavLinkDoor (n79, n93);
     Argus_NavLink (n80, n71);
     Argus_NavLink (n80, n95);
     Argus_NavLink (n81, n96);

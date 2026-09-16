@@ -199,6 +199,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_shovelog;            // displacement: shove-line log throttle
 .float  ar_blocklog;            // body-block marker throttle (2 s)
 .float  ar_leadlog;             // lead-clip marker throttle (2 s)
+.float  ar_doorlog;             // ARGEVT door throttle (1 s per bot)
 .entity ar_huntitem;            // hunch: the item we bet the lost foe
                                 // is running for
 .float  ar_hunttime;            // hunch: bias expires here
@@ -2933,8 +2934,19 @@ void(entity d) Argus_TakeDoor =
         b = find (b, target, d.targetname);
     }
     self.ar_doorbtn = best;
-    if (best != world)
+    // THROTTLED 1 s PER BOT, like the hazard deflection, because
+    // this is not once per door. An OPEN slab on the line is
+    // re-taken on every frame by design (the aim through the
+    // doorway is meant to last exactly as long as the
+    // obstruction), so ar_door is cleared and set again at the
+    // frame rate and the counter was counting FRAMES. One typed
+    // link on a busy e1m5 route took the tape from 23 door
+    // events to 2234 without a bot behaving differently.
+    if (best != world && time > self.ar_doorlog)
+    {
+        self.ar_doorlog = time + 1;
         Argus_Event ("door");
+    }
 };
 
 // ---------------------------------------------------------------- combat
