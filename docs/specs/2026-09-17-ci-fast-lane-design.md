@@ -106,15 +106,29 @@ tools/argus_ci.py, one committed battery, about a second locally. Three
 hard checks, each tied to a recorded defect, AND ALL THREE VERIFIED
 PASSING ON THE TREE AS IT STANDS on 2026-09-17.
 
-ship - the binary and the paper trail agree.
+ship - the binary and the paper trail agree, where a paper trail exists.
 
-- game/argus/progs.dat and engine/argus/progs.dat byte-identical.
+- game/argus/progs.dat and engine/argus/progs.dat byte-identical. BOTH
+  ARE TRACKED, so this half runs everywhere, including CI, and it is
+  also the half that catches the primary hazard: a ladder leaving an
+  experimental build installed in engine/argus.
 - Their MD5 equals the single MD5 in CLAUDE.md's current
-  "## State at handoff" block. Verified: that block parses to exactly
-  one hash, E0A63B4D52ECB517BB6D6F814642CBA7, and both files match it.
-- Catches an experimental build left installed by a ladder, and a
-  handoff hash drifting from the binary, which the v4.18 note records
-  happening.
+  "## State at handoff" block, when CLAUDE.md exists. Verified on
+  Shane's machine: that block parses to exactly one hash,
+  E0A63B4D52ECB517BB6D6F814642CBA7, and both files match it.
+  CORRECTION, found only by running CI, after this passed locally
+  and three reviews: CLAUDE.md IS NOT IN THE REPOSITORY.
+  .gitignore's `**/claude*.md` keeps it deliberately machine-local, so
+  a CI checkout has never contained it and never will - this half of
+  the check is LOCAL-ONLY BY CONSTRUCTION. On a tree without
+  CLAUDE.md the tool skips the hash comparison and reports it plainly
+  (exit 0, "handoff hash not checked, CLAUDE.md is machine-local")
+  rather than failing on an absent file it can never satisfy in CI. A
+  CLAUDE.md that is present and still malformed, or present and
+  disagreeing with the binary, keeps failing exactly as designed.
+- Catches an experimental build left installed by a ladder, and (on a
+  machine that has CLAUDE.md) a handoff hash drifting from the
+  binary, which the v4.18 note records happening.
 - RUNS UNCONDITIONALLY, and needs no diff gate. The first cut of this
   design gated it on progs.dat or CLAUDE.md being in the diff, to
   avoid firing on a QC PR whose binary is legitimately stale, since

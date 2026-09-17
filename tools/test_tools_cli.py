@@ -418,9 +418,38 @@ class TestToolsCLI(unittest.TestCase):
         self.assertIn("Argus repo invariant battery", res.stdout)
 
     def test_argus_ci_ship_passes_on_the_tree(self):
+        # CLAUDE.md is gitignored (machine-local), so this tree holds
+        # it locally but a CI checkout never does. Pass either way:
+        # the full "ship: ok" when CLAUDE.md is present, the partial
+        # "handoff hash not checked" wording when it is not. Either
+        # way returncode must be 0 - that is the claim that matters.
         res = self.run_tool("argus_ci.py", "ship")
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
-        self.assertIn("ship: ok", res.stdout)
+        self.assertTrue(
+            "ship: ok" in res.stdout or "handoff hash not checked" in res.stdout,
+            res.stdout + res.stderr)
+
+    def test_argus_ci_ship_passes_without_claude_md(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            for p in ("game", "engine"):
+                (root / p / "argus" / "progs.dat").write_bytes(b"aaaa")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("handoff hash not checked", res.stdout)
+
+    def test_argus_ci_ship_catches_a_mismatched_pair_without_claude_md(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            (root / "game" / "argus" / "progs.dat").write_bytes(b"aaaa")
+            (root / "engine" / "argus" / "progs.dat").write_bytes(b"bbbb")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("differ", res.stdout)
 
     def test_argus_ci_ship_catches_a_mismatched_pair(self):
         with tempfile.TemporaryDirectory() as td:

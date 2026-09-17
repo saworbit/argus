@@ -51,6 +51,18 @@ def check_ship(root, **_kw):
     engine/argus - the hazard argus_bis, argus_bb, argus_bb2 and
     argus_ctl exist to route around - and a handoff hash drifting from
     the binary, which the v4.18 note records happening.
+
+    The two halves have different reach. The byte-identical comparison
+    reads only the two tracked progs.dat files, so it runs anywhere,
+    including CI. The handoff-hash comparison also needs CLAUDE.md,
+    which is machine-local (.gitignore's **/claude*.md) and has never
+    existed in a CI checkout - found only by running CI, after this
+    passed locally and three reviews. On a tree without CLAUDE.md the
+    hash half is skipped outright rather than reported as a failure:
+    an absent file is expected here, not a defect. A CLAUDE.md that
+    IS present and still malformed, or present and disagreeing with
+    the binary, keeps failing exactly as before - that machine has the
+    paper trail and it is wrong.
     """
     a = root / "game" / "argus" / "progs.dat"
     b = root / "engine" / "argus" / "progs.dat"
@@ -64,6 +76,10 @@ def check_ship(root, **_kw):
         return ["ship: game/argus/progs.dat (%s) and "
                 "engine/argus/progs.dat (%s) differ - an experimental "
                 "build is probably still installed" % (ha, hb)]
+    if not (root / "CLAUDE.md").is_file():
+        return PartialOk(
+            "ship: ok (progs.dat pair matches; handoff hash not checked, "
+            "CLAUDE.md is machine-local)")
     claimed = handoff_md5(root)
     if claimed is None:
         return ["ship: CLAUDE.md's handoff section does not hold exactly "
@@ -135,6 +151,19 @@ class Skipped(list):
     def __init__(self, reason):
         super().__init__()
         self.reason = reason
+
+
+class PartialOk(list):
+    """A check passed, but only part of it could run here.
+
+    Still an empty list (a genuine pass, not a failure), but main()
+    prints the check's own wording instead of the generic "<name>: ok"
+    line, so a reader is told plainly which half ran rather than
+    mistaking a narrower check for the full one.
+    """
+    def __init__(self, message):
+        super().__init__()
+        self.message = message
 
 
 def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
@@ -249,6 +278,8 @@ def main(argv=None):
                  commit_msg=args.commit_msg)
         if isinstance(got, Skipped):
             print("%s: skipped (%s)" % (name, got.reason))
+        elif isinstance(got, PartialOk):
+            print(got.message)
         elif got:
             fails.extend(got)
         else:

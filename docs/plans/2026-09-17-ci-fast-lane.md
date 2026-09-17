@@ -45,6 +45,22 @@ keeps with `argus_reach.py`, `argus_review.py` and
 
 ### Task 1: The tool skeleton and the ship check
 
+CORRECTION (2026-09-17, found only by running CI, after this plan's
+own local pass and three reviews missed it): `CLAUDE.md` is NOT a
+repository file. `.gitignore`'s `**/claude*.md` keeps it deliberately
+machine-local, so a CI checkout has never contained it and never
+will. The `ship` check has two halves with different reach - the
+`game/argus/progs.dat` versus `engine/argus/progs.dat` byte-identical
+comparison, which reads only tracked files and so runs everywhere
+including CI, and the handoff-hash comparison against `CLAUDE.md`,
+which is local-only by construction. The steps below are kept as
+originally written for the paper trail; the shape they actually
+shipped in makes `check_ship` skip the hash comparison and exit 0
+when `CLAUDE.md` is absent, reporting that plainly instead of
+treating the absence as the malformed-file failure. A `CLAUDE.md`
+that is present and still malformed, or present and disagreeing with
+the binary, still fails exactly as this task designed it to.
+
 **Files:**
 - Create: `tools/argus_ci.py`
 - Test: `tools/test_tools_cli.py` (append to `TestToolsCLI`)
@@ -959,6 +975,20 @@ git commit -m "Record what the CI split actually did on two probe PRs"
 
 ## Notes for the implementer
 
+- **`CLAUDE.md` is gitignored and machine-local, not a repository
+  file, and this plan's own text treated it as if it were checked
+  out in CI.** Found only by running CI, after the check passed
+  locally and three reviews. The `ship` check's two halves have
+  different reach: the `progs.dat` byte-identical comparison reads
+  two tracked files and runs everywhere including CI; the
+  handoff-hash comparison also needs `CLAUDE.md`, which
+  `.gitignore`'s `**/claude*.md` keeps off every CI checkout by
+  design, so that half is local-only by construction. `check_ship`
+  must skip the hash comparison and exit 0 when `CLAUDE.md` is
+  absent, reporting the skip plainly rather than failing the
+  malformed-file case on a file that was never going to be there. A
+  present-but-malformed or present-but-disagreeing `CLAUDE.md` still
+  fails, on any machine that has it.
 - **The `ship` check runs unconditionally, and that is a deliberate
   simplification of the spec.** The spec proposed gating it on
   `progs.dat` or CLAUDE.md being in the diff, to avoid firing on a QC
