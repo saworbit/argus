@@ -135,7 +135,8 @@ class TestToolsCLI(unittest.TestCase):
         return "\r\n".join(out) + "\r\n"
 
     def door_fixture(self, spawnflags=0, jsonnodes=None, nodes=None,
-                     classname="func_door", angle="0"):
+                     classname="func_door", angle="0", collision_gap=False,
+                     landing_step=False):
         """A one-door map, its graph, and the temp dir holding them.
 
         The door brush is built across x 0..64, y -32..32, z 0..64. At
@@ -159,8 +160,47 @@ class TestToolsCLI(unittest.TestCase):
         models += struct.pack("<9f7i", 0.0, -32.0, 0.0,
                               64.0, 32.0, 64.0, 0.0, 0.0, 0.0,
                               0, 0, 0, 0, 0, 0, 0)
+        planes = clipnodes = h0nodes = leaves = b""
+        if collision_gap:
+            # Infinite floor with a 64u gap at x 64..128. Both hull 1
+            # and hull 0 use the same three-plane tree: above z=0 is
+            # empty; below is solid except between the two x planes.
+            plane_rows = [
+                struct.pack("<ffffi", 0.0, 0.0, 1.0, 0.0, 2),
+                struct.pack("<ffffi", 1.0, 0.0, 0.0, 64.0, 0),
+                struct.pack("<ffffi", 1.0, 0.0, 0.0, 128.0, 0),
+                # Hull 1 expands the z=0 floor to player-origin z=24.
+                struct.pack("<ffffi", 0.0, 0.0, 1.0, 24.0, 2),
+            ]
+            if landing_step:
+                # The far bank is 16u higher. Separate hull-0 and
+                # hull-1 z planes make its actual standable origin 40,
+                # not the linearly interpolated height of the link.
+                plane_rows.extend((
+                    struct.pack("<ffffi", 0.0, 0.0, 1.0, 16.0, 2),
+                    struct.pack("<ffffi", 0.0, 0.0, 1.0, 40.0, 2),
+                ))
+                h0tree = ((4, -1, 1), (2, -2, 2),
+                          (0, -1, 3), (1, -1, -2))
+                h1tree = ((5, -1, 1), (2, -2, 2),
+                          (3, -1, 3), (1, -1, -2))
+            else:
+                h0tree = ((0, -1, 1), (1, 2, -2), (2, -2, -1))
+                h1tree = ((3, -1, 1), (1, 2, -2), (2, -2, -1))
+            planes = b"".join(plane_rows)
+            clipnodes = b"".join(struct.pack("<ihh", *row) for row in h1tree)
+            h0nodes = b"".join(
+                struct.pack("<i8h2H", p, c0, c1,
+                            -512, -512, -64, 512, 512, 512, 0, 0)
+                for p, c0, c1 in h0tree)
+            leaves = b"".join(
+                struct.pack("<2i6h2H4B", content, -1,
+                            -512, -512, -64, 512, 512, 512,
+                            0, 0, 0, 0, 0, 0)
+                for content in (-1, -2))
         table, blob, base = [(0, 0)] * 15, b"", 4 + 15 * 8
-        for idx, payload in ((0, ents), (1, b""), (9, b""), (14, models)):
+        for idx, payload in ((0, ents), (1, planes), (5, h0nodes),
+                             (9, clipnodes), (10, leaves), (14, models)):
             table[idx] = (base + len(blob), len(payload))
             blob += payload
         (tmp / "fixture.bsp").write_bytes(
@@ -184,10 +224,102 @@ class TestToolsCLI(unittest.TestCase):
                              "fixture", str(tmp / qc), str(tmp / "out.png"),
                              "--retype-doors")
 
+    def reprofile(self, tmp, qc="nav.qc"):
+        return self.run_tool("argus_navgen.py", str(tmp / "fixture.bsp"),
+                             "fixture", str(tmp / qc), str(tmp / "out.png"),
+                             "--reprofile-jumps")
+
     def test_argus_navgen_retype_doors_is_in_the_usage(self):
         res = self.run_tool("argus_navgen.py", "--help")
         self.assertEqual(res.returncode, 0)
         self.assertIn("--retype-doors", res.stdout)
+
+    def test_argus_navgen_reprofile_jumps_is_in_the_usage(self):
+        res = self.run_tool("argus_navgen.py", "--help")
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("--reprofile-jumps", res.stdout)
+
+    def test_argus_navgen_reprofile_jumps_needs_a_shipped_graph(self):
+        tmp = self.door_fixture()
+        res = self.reprofile(tmp, qc="absent.qc")
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("have to exist already", res.stderr)
+
+    def test_argus_navgen_reprofile_jumps_refuses_a_mismatched_graph(self):
+        tmp = self.door_fixture(jsonnodes=self.DOOR_FIXTURE_NODES[:5])
+        before = (tmp / "nav.qc").read_bytes()
+        res = self.reprofile(tmp)
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("not the same graph", res.stderr)
+        self.assertEqual((tmp / "nav.qc").read_bytes(), before)
+
+    def test_argus_navgen_reprofile_jumps_preserves_topology(self):
+        # A vertical auto-hop has no horizontal runway to query, so the
+        # fixture only needs the entity/model lumps used by the door tests.
+        # That keeps this CI-owned and independent of licensed map BSPs.
+        nodes = [list(p) for p in self.DOOR_FIXTURE_NODES]
+        nodes[0] = [0.0, 0.0, 24.0]
+        nodes[1] = [0.0, 0.0, 64.0]
+        tmp = self.door_fixture(nodes=nodes)
+        before = json.loads((tmp / "nav.qc.json").read_text())
+        res = self.reprofile(tmp)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("1 direct/fallback link(s); topology untouched",
+                      res.stdout)
+
+        qc = (tmp / "nav.qc").read_text(encoding="ascii")
+        self.assertIn("Argus_NavLinkJump (n1, n0, 0);", qc)
+        after = json.loads((tmp / "nav.qc.json").read_text())
+        self.assertEqual(after["jumpapproach"], [[1, 0, 0.0, 0.0, 0.0]])
+        self.assertEqual({k: v for k, v in after.items()
+                          if k != "jumpapproach"}, before)
+
+    def test_argus_navgen_reprofile_jumps_profiles_the_physical_gap(self):
+        nodes = [list(p) for p in self.DOOR_FIXTURE_NODES]
+        # The typed link is n1 -> n0. Its waypoints are 128u apart, but
+        # the physical void in the fixture is only x 64..128.
+        nodes[1] = [32.0, 0.0, 24.0]
+        nodes[0] = [160.0, 0.0, 24.0]
+        tmp = self.door_fixture(nodes=nodes, collision_gap=True)
+        res = self.reprofile(tmp)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("1 staged gap(s), 0 direct/fallback link(s)",
+                      res.stdout)
+
+        row = json.loads((tmp / "nav.qc.json").read_text())["jumpapproach"][0]
+        self.assertEqual(row[:2], [1, 0])
+        self.assertGreater(row[2], 0)
+        self.assertLessEqual(row[2], 280)
+        self.assertGreaterEqual(row[4], 2)
+        margins = []
+        for speed in range(int(row[2]) - 5, int(row[2]) + 16):
+            t = 112.0 / speed
+            margins.append(270.0 * t - 400.0 * t * t)
+        self.assertAlmostEqual(row[4], min(margins), places=1)
+        qc = (tmp / "nav.qc").read_text(encoding="ascii")
+        self.assertIn(f"Argus_NavLinkJump (n1, n0, {row[2]:.0f});", qc)
+
+    def test_argus_navgen_reprofile_uses_the_standable_landing_height(self):
+        nodes = [list(p) for p in self.DOOR_FIXTURE_NODES]
+        nodes[1] = [32.0, 0.0, 24.0]
+        nodes[0] = [160.0, 0.0, 40.0]
+        tmp = self.door_fixture(nodes=nodes, collision_gap=True,
+                                landing_step=True)
+        res = self.reprofile(tmp)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        row = json.loads((tmp / "nav.qc.json").read_text())["jumpapproach"][0]
+        self.assertGreater(row[2], 0)
+
+        # Runtime launches 32u before the player hull loses support,
+        # at x=32/z=24, and first regains support at x=144/z=40. The
+        # stored margin is
+        # the worst of the complete accepted speed window against
+        # those physical origins, not the coarse link's interpolated z.
+        margins = []
+        for speed in range(int(row[2]) - 5, int(row[2]) + 16):
+            t = 112.0 / speed
+            margins.append(24.0 + 270.0 * t - 400.0 * t * t - 40.0)
+        self.assertAlmostEqual(row[4], min(margins), places=1)
 
     def test_argus_navgen_retype_doors_needs_a_shipped_graph(self):
         tmp = self.door_fixture()
@@ -594,7 +726,7 @@ class TestToolsCLI(unittest.TestCase):
             self._nav_qc(td, "argus_nav_toy.qc", """
     n0 = Argus_NavNode ('0 0 0');
     n1 = Argus_NavNode ('64 0 0');
-    Argus_NavLink (n0, n1);
+    Argus_NavLinkJump (n0, n1, 220);
     Argus_NavLink (n1, n0);
 """)
             res = self.run_tool("argus_ci.py", "nav", "--root", td)
