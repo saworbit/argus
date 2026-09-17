@@ -102,6 +102,39 @@ def read_changes(changed_files=None, base=None):
     return out
 
 
+# --------------------------------------------------------------- tapes
+
+# Ladder tapes and session tapes are evidence. mx_* are matrix probes
+# and probe_* are diagnostic probes: both are overwritten by design,
+# and together they account for 21 of the 22 modifications in the seven
+# weeks to 2026-09-17. The 22nd, e768bbd, is why the escape hatch
+# exists.
+PROTECTED_TAPE = re.compile(r"^runs/(ab|shane)_.*\.log$")
+TAPE_ESCAPE = "[tape-rewrite]"
+
+
+def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
+    """No committed ladder or session tape may be modified or deleted.
+
+    Guards #328, where a run-name collision overwrote a committed tape
+    twice in one week and destroyed the evidence it held.
+    """
+    if TAPE_ESCAPE in (commit_msg or ""):
+        return []
+    fails = []
+    for status, path in read_changes(changed_files, base):
+        if status not in ("M", "D"):
+            continue
+        if not PROTECTED_TAPE.match(path):
+            continue
+        verb = "modified" if status == "M" else "deleted"
+        fails.append(
+            "tapes: %s was %s - committed ladder and session tapes are "
+            "append-once evidence (#328). If this is deliberate, put %s "
+            "in the commit message." % (path, verb, TAPE_ESCAPE))
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
@@ -131,7 +164,7 @@ def main(argv=None):
     return 1 if fails else 0
 
 
-CHECKS = {"ship": check_ship}
+CHECKS = {"ship": check_ship, "tapes": check_tapes}
 
 
 if __name__ == "__main__":

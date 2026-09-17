@@ -450,6 +450,58 @@ class TestToolsCLI(unittest.TestCase):
             self.assertEqual(res.returncode, 1)
             self.assertIn("handoff claims", res.stdout)
 
+    def _changed_file(self, root, lines):
+        p = Path(root) / "changed.txt"
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return str(p)
+
+    def test_argus_ci_tapes_allows_additions(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, [
+                "A\truns/ab_dm4_newladder1.log",
+                "A\truns/shane_dm2_2026-09-17.log",
+            ])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+            self.assertIn("tapes: ok", res.stdout)
+
+    def test_argus_ci_tapes_exempts_mx_and_probe(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, [
+                "M\truns/mx_dm2.log",
+                "M\truns/probe_dm2.log",
+            ])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_tapes_rejects_an_overwritten_ladder_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["M\truns/ab_dm2_doortype2.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("ab_dm2_doortype2.log", res.stdout)
+            self.assertIn("append-once", res.stdout)
+
+    def test_argus_ci_tapes_rejects_a_deleted_session_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["D\truns/shane_dm4_2026-08-29_v405.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("deleted", res.stdout)
+
+    def test_argus_ci_tapes_accepts_the_github_status_words(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["modified\truns/ab_dm2_doortype2.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+
+    def test_argus_ci_tapes_escape_hatch(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["M\truns/ab_dm4_unstick.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf,
+                                "--commit-msg", "Re-run the ladder [tape-rewrite]")
+            self.assertEqual(res.returncode, 0, res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
