@@ -4,6 +4,14 @@ on:
   push:
     branches: [main]
   pull_request:
+    # main stays UNFILTERED on purpose. PRs here merge minutes apart,
+    # so a merge commit's tree is not always the PR head's tree, and
+    # main is the branch every install is cut from.
+    paths:
+      - 'src/**'
+      - 'game/**'
+      - 'tools/argus_reach.py'
+      - '.github/workflows/compile.yml'
 
 permissions:
   contents: read
@@ -24,16 +32,21 @@ jobs:
         uses: actions/cache@v6
         with:
           path: fteqw/engine/release/fteqcc
-          key: fteqcc-${{ runner.os }}-v1
+          # the SHA is IN the key on purpose: before this, a fixed key
+          # meant the compiler was whatever landed in the cache first,
+          # and an eviction moved it with nothing said
+          key: fteqcc-${{ runner.os }}-f937b9d88f71fc4429db5fe56c6a98d922711b2e
 
       - name: Build fteqcc from fteqw git
         if: steps.cache-fteqcc.outputs.cache-hit != 'true'
         run: |
           # apt's fteqcc is years too old for this tree (setup_rig.sh
-          # gotcha list); build the modern one from source
+          # gotcha list); build the modern one from source, pinned to
+          # the commit the lab rig ships from
           sudo apt-get update -qq
           sudo apt-get install -y -qq build-essential zlib1g-dev
-          git clone -q --depth 1 https://github.com/fte-team/fteqw.git
+          git clone -q https://github.com/fte-team/fteqw.git
+          git -C fteqw checkout -q f937b9d88f71fc4429db5fe56c6a98d922711b2e
           make -C fteqw/engine qcc-rel
 
       - name: Compile QuakeC
@@ -54,27 +67,6 @@ jobs:
         with:
           name: progs
           path: lq1/progs.dat
-
-  lab:
-    name: lab test suite (rust)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - name: Cache cargo
-        uses: actions/cache@v6
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            tools/argus_mcp/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('tools/argus_mcp/Cargo.lock') }}
-      - name: Run the lab suite
-        # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;
-        # the committed runs/*.log regression tapes run in full
-        run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
-
-      - name: Run Python developer CLI tests
-        run: python3 tools/test_tools_cli.py
 
   smoke:
     name: headless stability smoke (LibreQuake)
@@ -122,3 +114,27 @@ jobs:
           grep -c 'ARGLOG' smoke.log
       - name: Directed-reach gate (free-content map)
         run: python3 tools/argus_reach.py lqdm2
+
+      - name: Report the smoke tape (advisory, never fails)
+        if: always()
+        run: |
+          # the job already runs a real 90 s botmatch and then throws
+          # everything away except "did it crash". This reads it with
+          # the lab's own battery. ADVISORY ON PURPOSE: all five
+          # committed lqdm2 tapes read zero freezes, but they predate
+          # the tick pin, so CI has no baseline at the rate it runs
+          # until these accumulate
+          {
+            echo '## lqdm2 smoke tape'
+            echo '```'
+            python3 tools/argus_review.py summary smoke.log 2>&1 | head -40 || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the smoke tape
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: smoke-tape
+          path: smoke.log
+          if-no-files-found: warn

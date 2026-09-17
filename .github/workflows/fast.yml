@@ -1,0 +1,67 @@
+name: fast
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  invariants:
+    name: repo invariants
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Collect the changed-file list
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # fetch-depth 0 against a 198 MB .git would cost more than
+          # this whole job; one compare call fetches no history at all
+          : > changed.txt
+          : > commit_msgs.txt
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            gh api --paginate \
+              "repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+              --jq '.files[] | if .status == "renamed" then "\(.status)\t\(.previous_filename)\t\(.filename)" else "\(.status)\t\(.filename)" end' > changed.txt
+            gh api --paginate \
+              "repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+              --jq '.commits[].commit.message' > commit_msgs.txt
+          fi
+          wc -l < changed.txt
+
+      - name: Run the invariant battery
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          python3 tools/argus_ci.py all \
+            --changed-files changed.txt \
+            --commit-msg "$PR_TITLE $(cat commit_msgs.txt)"
+
+  lab:
+    name: lab test suite (rust)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Cache cargo
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/argus_mcp/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('tools/argus_mcp/Cargo.lock') }}
+      - name: Run the lab suite
+        # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;
+        # the committed runs/*.log regression tapes run in full
+        run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
+
+      - name: Run Python developer CLI tests
+        run: python3 tools/test_tools_cli.py

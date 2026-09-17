@@ -412,6 +412,243 @@ class TestToolsCLI(unittest.TestCase):
             res = subprocess.run([str(mcp_bin), *args], capture_output=True, text=True, cwd=str(ROOT))
             self.assertEqual(res.returncode, 0, f"failed on {cmd}: {res.stderr}")
 
+    def test_argus_ci_help(self):
+        res = self.run_tool("argus_ci.py", "--help")
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("Argus repo invariant battery", res.stdout)
+
+    def test_argus_ci_ship_passes_on_the_tree(self):
+        # CLAUDE.md is gitignored (machine-local), so this tree holds
+        # it locally but a CI checkout never does. Pass either way:
+        # the full "ship: ok" when CLAUDE.md is present, the partial
+        # "handoff hash not checked" wording when it is not. Either
+        # way returncode must be 0 - that is the claim that matters.
+        res = self.run_tool("argus_ci.py", "ship")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertTrue(
+            "ship: ok" in res.stdout or "handoff hash not checked" in res.stdout,
+            res.stdout + res.stderr)
+
+    def test_argus_ci_ship_passes_without_claude_md(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            for p in ("game", "engine"):
+                (root / p / "argus" / "progs.dat").write_bytes(b"aaaa")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("handoff hash not checked", res.stdout)
+
+    def test_argus_ci_ship_catches_a_mismatched_pair_without_claude_md(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            (root / "game" / "argus" / "progs.dat").write_bytes(b"aaaa")
+            (root / "engine" / "argus" / "progs.dat").write_bytes(b"bbbb")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("differ", res.stdout)
+
+    def test_argus_ci_ship_catches_a_mismatched_pair(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            (root / "game" / "argus" / "progs.dat").write_bytes(b"aaaa")
+            (root / "engine" / "argus" / "progs.dat").write_bytes(b"bbbb")
+            (root / "CLAUDE.md").write_text(
+                "## State at handoff (test)\n\nMD5 "
+                "74B87337454200D4D33F80C4663DC5E5\n", encoding="utf-8")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("differ", res.stdout)
+
+    def test_argus_ci_ship_catches_a_stale_handoff_hash(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            for p in ("game", "engine"):
+                (root / p / "argus" / "progs.dat").write_bytes(b"aaaa")
+            (root / "CLAUDE.md").write_text(
+                "## State at handoff (test)\n\nMD5 "
+                "00000000000000000000000000000000\n", encoding="utf-8")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("handoff claims", res.stdout)
+
+    def _changed_file(self, root, lines):
+        p = Path(root) / "changed.txt"
+        p.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        return str(p)
+
+    def test_argus_ci_tapes_allows_additions(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, [
+                "A\truns/ab_dm4_newladder1.log",
+                "A\truns/shane_dm2_2026-09-17.log",
+            ])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+            self.assertIn("tapes: ok", res.stdout)
+
+    def test_argus_ci_tapes_exempts_mx_and_probe(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, [
+                "M\truns/mx_dm2.log",
+                "M\truns/probe_dm2.log",
+            ])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_tapes_rejects_an_overwritten_ladder_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["M\truns/ab_dm2_doortype2.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("ab_dm2_doortype2.log", res.stdout)
+            self.assertIn("append-once", res.stdout)
+
+    def test_argus_ci_tapes_rejects_a_deleted_session_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["D\truns/shane_dm4_2026-08-29_v405.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("deleted", res.stdout)
+
+    def test_argus_ci_tapes_accepts_the_github_status_words(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["modified\truns/ab_dm2_doortype2.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+
+    def test_argus_ci_tapes_escape_hatch(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["M\truns/ab_dm4_unstick.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf,
+                                "--commit-msg", "Re-run the ladder [tape-rewrite]")
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_tapes_escape_hatch_via_combined_title_and_commits(self):
+        # fast.yml now builds --commit-msg from "$PR_TITLE $(cat
+        # commit_msgs.txt)" - the escape token has to work from either
+        # half of that combined string, not just a bare commit message.
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["M\truns/ab_dm4_unstick.log"])
+            res = self.run_tool(
+                "argus_ci.py", "tapes", "--changed-files", cf,
+                "--commit-msg",
+                "Fix the corner case\nRe-run the ladder [tape-rewrite]")
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_tapes_empty_changed_file_list_is_skipped(self):
+        # A push to main gives fast.yml an empty changed.txt and no
+        # --base - there is no changed-file information to check, and
+        # "ok" here would be the vacuous pass #328 slipped through on.
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, [])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+            tapes_line = next(
+                line for line in res.stdout.splitlines()
+                if line.startswith("tapes"))
+            self.assertIn("skipped", tapes_line)
+            self.assertNotIn("ok", tapes_line)
+
+    def test_argus_ci_tapes_bad_base_ref_fails_loudly(self):
+        # A missing ref, a shallow clone, or git not on PATH must fail
+        # the check, not silently pass as "ok" - this is the local
+        # pre-push path the tool exists to serve.
+        res = self.run_tool("argus_ci.py", "tapes", "--base", "no/such/ref")
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn("no/such/ref", res.stdout)
+
+    def test_argus_ci_tapes_rejects_a_renamed_ladder_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["R100\truns/ab_dm2_doortype2.log\truns/ab_renamed.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("ab_dm2_doortype2.log", res.stdout)
+            self.assertIn("was renamed", res.stdout)
+
+    def test_argus_ci_tapes_allows_a_renamed_exempt_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["R100\truns/mx_dm2.log\truns/mx_dm2_old.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def _nav_qc(self, root, name, body):
+        d = Path(root) / "src"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / name).write_text(body, encoding="utf-8")
+
+    def test_argus_ci_nav_passes_on_the_tree(self):
+        res = self.run_tool("argus_ci.py", "nav")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("nav: ok", res.stdout)
+
+    def test_argus_ci_nav_accepts_a_healthy_graph(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc", """
+    n0 = Argus_NavNode ('0 0 0');
+    n1 = Argus_NavNode ('64 0 0');
+    Argus_NavLink (n0, n1);
+    Argus_NavLink (n1, n0);
+""")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_nav_catches_an_over_budget_node(self):
+        links = "\n".join("    Argus_NavLink (n0, n%d);" % i
+                          for i in range(1, 11))
+        nodes = "\n".join("    n%d = Argus_NavNode ('%d 0 0');" % (i, i * 64)
+                          for i in range(0, 11))
+        back = "\n".join("    Argus_NavLink (n%d, n0);" % i
+                         for i in range(1, 11))
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc",
+                         nodes + "\n" + links + "\n" + back + "\n")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("8-slot", res.stdout)
+
+    def test_argus_ci_nav_catches_a_no_exit_orphan(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc", """
+    n0 = Argus_NavNode ('0 0 0');
+    n1 = Argus_NavNode ('64 0 0');
+    n2 = Argus_NavNode ('128 0 0');
+    Argus_NavLink (n0, n1);
+    Argus_NavLink (n1, n0);
+    Argus_NavLink (n1, n2);
+""")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("no outbound edge", res.stdout)
+
+    def test_argus_ci_nav_counts_typed_links_as_exits(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc", """
+    n0 = Argus_NavNode ('0 0 0');
+    n1 = Argus_NavNode ('64 0 0');
+    n2 = Argus_NavNode ('128 0 0');
+    Argus_NavLink (n0, n1);
+    Argus_NavLink (n1, n0);
+    Argus_NavLink (n1, n2);
+    Argus_NavLinkRocket (n2, n0);
+""")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_nav_skips_the_dispatcher(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_dispatch.qc",
+                         "void() Argus_NavLoad = { };\n")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
