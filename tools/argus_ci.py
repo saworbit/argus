@@ -134,7 +134,7 @@ def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
         elif status == "D":
             verb = "deleted"
         else:  # status == "R"
-            verb = "renamed away from"
+            verb = "renamed"
         fails.append(
             "tapes: %s was %s - committed ladder and session tapes are "
             "append-once evidence (#328). If this is deliberate, put %s "

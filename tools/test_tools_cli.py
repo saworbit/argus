@@ -508,7 +508,7 @@ class TestToolsCLI(unittest.TestCase):
             res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
             self.assertEqual(res.returncode, 1)
             self.assertIn("ab_dm2_doortype2.log", res.stdout)
-            self.assertIn("renamed away from", res.stdout)
+            self.assertIn("was renamed", res.stdout)
 
     def test_argus_ci_tapes_allows_a_renamed_exempt_tape(self):
         with tempfile.TemporaryDirectory() as td:
