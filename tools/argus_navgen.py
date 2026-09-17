@@ -37,15 +37,21 @@ Sidecar files, all optional, all read from the output directory:
 
 usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj]
        argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --reprofile-jumps
 
 --no-dispatcher emits only Argus_Nav_Spawn_<mapname>, for multi-map
 builds where a hand-maintained argus_nav_dispatch.qc selects per map.
 
---retype-doors is the one mode that does not generate a graph. It
+--retype-doors is a topology-preserving mode. It does not generate a graph. It
 reads the shipped out.qc and out.qc.json, recomputes which links a
 shut door blocks, and writes both back with the door typing corrected
 and every other field untouched. No sampling, no decimation, no
 linking, no knitting, no plot. Section 2c.
+
+--reprofile-jumps preserves the shipped graph too. It derives an
+approach speed, landing runway and arc margin for each existing jump
+link, adds the speed argument to its QC builder call, records all three
+values in JSON, and changes no node, link, type, slot or sidecar.
 """
 import re, struct, sys, heapq, collections
 import math as _dmath
@@ -61,6 +67,7 @@ EMIT_DISPATCHER = "--no-dispatcher" not in sys.argv[5:]
 # ships and changes nothing else about it. Section 2c does the whole
 # of it and exits before sampling.
 RETYPE_DOORS = "--retype-doors" in sys.argv[5:]
+REPROFILE_JUMPS = "--reprofile-jumps" in sys.argv[5:]
 if "--register" in sys.argv[5:]:
     # --register wires the map into the shared argus_nav_dispatch.qc,
     # so emitting a second Argus_Nav_Spawn in the per-map file would
@@ -557,6 +564,287 @@ def water_surface_z(x, y, z):
         top += 8
     return top
 
+
+# Shared by full generation and topology-preserving jump reprofile.
+JUMPSPEED, JUMPVEL, GRAV = 280.0, 270.0, GRAVITY
+
+
+def _floor_under(x, y, z, maxdrop):
+    d = 0.0
+    while d <= maxdrop:
+        if h0_contents(x, y, z - d) == CONTENTS_SOLID:
+            return z - d
+        d += 2.0
+    return None
+
+
+def check_bottom(x, y, oz):
+    """SV_CheckBottom for a player box whose origin sits at oz."""
+    fz = oz - 24                       # mins[2] of the player box
+    cs = ((x - 16, y - 16), (x + 16, y - 16),
+          (x - 16, y + 16), (x + 16, y + 16))
+    ok = True
+    for cx, cy in cs:
+        if h0_contents(cx, cy, fz - 1) != CONTENTS_SOLID:
+            ok = False
+            break
+    if ok:
+        return True
+    mid = _floor_under(x, y, fz, 2 * STEP)
+    if mid is None:
+        return False
+    for cx, cy in cs:
+        c = _floor_under(cx, cy, fz, 2 * STEP)
+        if c is None or c < mid - STEP:
+            return False
+    return True
+
+
+_standable_cache = {}
+
+
+def _standable_origin(x, y, guess_z):
+    """Actual hull-1 player origin on a nearby floor, or None.
+
+    check_bottom deliberately accepts a floor as much as two steps
+    below the queried origin. That is right for engine movement, but a
+    jump arc needs the physical takeoff and landing heights. Resolve
+    the closest hull-1 empty/solid boundary instead of carrying the
+    coarse link's interpolated z into the ballistic calculation.
+    """
+    _key = (round(x, 4), round(y, 4))
+    if _key not in _standable_cache:
+        _standable_cache[_key] = column_floors(x, y)
+    _floors = _standable_cache[_key]
+    if not _floors:
+        return None
+    _z = min(_floors, key=lambda _f: abs(_f - guess_z))
+    if abs(_z - guess_z) > 2 * STEP:
+        return None
+    if hull_contents(x, y, _z) != CONTENTS_EMPTY:
+        return None
+    if not check_bottom(x, y, _z):
+        return None
+    return float(_z)
+
+
+def _landing_runway_points(_landing, _dir):
+    _bx, _by, _bz = _landing
+    _dx, _dy = _dir
+    _runway = 0.0
+    for _d in range(8, 129, 8):
+        _x, _y = _bx + _dx * _d, _by + _dy * _d
+        if h0_contents(_x, _y, _bz) != CONTENTS_EMPTY:
+            break
+        if not check_bottom(_x, _y, _bz):
+            break
+        _runway = float(_d)
+    return _runway
+
+
+def _jump_gap_points(_src, _dst):
+    """Return the actual takeoff and landing around the first void.
+
+    A coarse typed link is not itself an arc. It can be a long walk
+    containing one short gap, and runtime fires when its 32u lookahead
+    sees that gap. Profile that physical flight rather than the two
+    waypoint endpoints.
+    """
+    _ax, _ay, _az = _src
+    _bx, _by, _bz = _dst
+    _h = ((_bx - _ax) ** 2 + (_by - _ay) ** 2) ** 0.5
+    if _h < 1 or _bz - _az > STEP:
+        return None                # vertical climb/auto-hop
+    _steps = max(2, int(_dmath.ceil(_h / 8.0)))
+    _runs = []
+    _stands = []
+    _start = None
+    for _s in range(_steps + 1):
+        _f = _s / _steps
+        _x = _ax + (_bx - _ax) * _f
+        _y = _ay + (_by - _ay) * _f
+        _z = _az + (_bz - _az) * _f
+        _stand = _standable_origin(_x, _y, _z)
+        _stands.append(_stand)
+        _supported = _stand is not None
+        if not _supported and _start is None:
+            _start = _s
+        elif _supported and _start is not None:
+            _runs.append((_start, _s - 1))
+            _start = None
+    if _start is not None:
+        _runs.append((_start, _steps))
+    # A profile needs engine-valid ground on both sides. If this link's
+    # only void reaches an endpoint, keep the old direct launch gate.
+    _runs = [(_s, _e) for _s, _e in _runs if _s > 0 and _e < _steps]
+    if not _runs:
+        return None
+    # Runtime fires at the first void it reaches, so profiling a later,
+    # longer run would describe a different jump than the one executed.
+    _s, _e = _runs[0]
+    _edge0 = (_s - 1) / _steps
+    _edge1 = (_e + 1) / _steps
+    # Runtime fires when 32u ahead has no floor. Model the bot origin
+    # at that point, not at the source waypoint.
+    _launch_d = max(0.0, _edge0 * _h - 32.0)
+    _land_d = _edge1 * _h
+    _ux, _uy = (_bx - _ax) / _h, (_by - _ay) / _h
+    _lf = _launch_d / _h
+    _ef = _land_d / _h
+    _lx = _ax + (_bx - _ax) * _lf
+    _ly = _ay + (_by - _ay) * _lf
+    _lz_guess = _az + (_bz - _az) * _lf
+    _lz = _standable_origin(_lx, _ly, _lz_guess)
+    if _lz is None:
+        return None
+    _launch = (_lx, _ly, _lz)
+    _landing = (_ax + (_bx - _ax) * _ef,
+                _ay + (_by - _ay) * _ef,
+                _stands[_e + 1])
+    return _launch, _landing, (_ux, _uy), _land_d - _launch_d
+
+
+def _arc_clear_points(_src, _dst, _speed):
+    _ax, _ay, _az = _src
+    _bx, _by, _bz = _dst
+    _dx, _dy = _bx - _ax, _by - _ay
+    _dist = (_dx*_dx + _dy*_dy) ** 0.5
+    if _speed <= 0 or _dist < 1:
+        return False
+    if (hull_contents(_ax, _ay, _az) != CONTENTS_EMPTY
+            or hull_contents(_bx, _by, _bz) != CONTENTS_EMPTY):
+        return False
+    _total = _dist / _speed
+    if _az + JUMPVEL*_total - 0.5*GRAV*_total*_total < _bz + 2:
+        return False
+    _steps = max(4, int(_dist // 16))
+    for _s in range(1, _steps):
+        _f = _s / _steps
+        _t = _total * _f
+        _z = _az + JUMPVEL*_t - 0.5*GRAV*_t*_t
+        if hull_contents(_ax + _dx*_f, _ay + _dy*_f, _z) != CONTENTS_EMPTY:
+            return False
+        if hull_contents(_ax + _dx*_f, _ay + _dy*_f,
+                         _z + 20) != CONTENTS_EMPTY:
+            return False
+    return True
+
+
+def _jump_approach_points(_src, _dst):
+    _gap = _jump_gap_points(_src, _dst)
+    if _gap is None:
+        return 0.0, 0.0, 0.0
+    _launch, _landing, _dir, _flight = _gap
+    _runway = _landing_runway_points(_landing, _dir)
+    _dz = _landing[2] - _launch[2]
+    _disc = JUMPVEL*JUMPVEL - 2*GRAV*_dz
+    if _disc <= 0:
+        return 0.0, _runway, 0.0
+    _tland = (JUMPVEL + _dmath.sqrt(_disc)) / GRAV
+    _required = _flight / _tland
+    _cushion = max(4.0, min(18.0, _runway / (2 * _tland)))
+    _first = max(40.0, _dmath.ceil((_required + _cushion) / 5) * 5)
+    for _speed in range(int(_first), int(JUMPSPEED) + 1, 5):
+        _margins = []
+        # Runtime deliberately tolerates acceleration quantisation. A
+        # profile is safe only when every whole speed in that complete
+        # target-5 .. target+15 launch window passes the same hull and
+        # margin checks as the nominal target.
+        for _actual in range(_speed - 5, _speed + 16):
+            _t = _flight / _actual
+            _margin = (_launch[2] + JUMPVEL*_t - 0.5*GRAV*_t*_t
+                       - _landing[2])
+            if (_margin < 2
+                    or not _arc_clear_points(_launch, _landing, _actual)):
+                break
+            _margins.append(_margin)
+        else:
+            return float(_speed), _runway, min(_margins)
+    # No changed trajectory is certified. Preserve the former direct
+    # 250+ launch instead of inventing a speed for an engine-proven link.
+    return 0.0, _runway, 0.0
+
+
+if REPROFILE_JUMPS:
+    import json as _rj
+    import os as _ros
+    _qcpath, _jspath = OUTQC, OUTQC + ".json"
+    if not (_ros.path.exists(_qcpath) and _ros.path.exists(_jspath)):
+        print(f"reprofile: {_qcpath} and its .json have to exist already - "
+              f"this mode annotates a shipped graph, it does not make one",
+              file=sys.stderr)
+        sys.exit(1)
+    with open(_qcpath, encoding="ascii", newline="") as _f:
+        _qclines = _f.read().splitlines(keepends=True)
+    with open(_jspath, encoding="ascii") as _f:
+        _js = _rj.load(_f)
+    _nodes = [tuple(_p) for _p in _js["nodes"]]
+    _jlinks = {tuple(_p) for _p in _js.get("jlinks", [])}
+
+    _node_rows = [_m for _l in _qclines
+                  for _m in [re.match(
+                      r"\s*n(\d+) = Argus_NavNode \('(\S+) (\S+) (\S+)'\);", _l)]
+                  if _m]
+    _bad = len(_node_rows) != len(_nodes)
+    if not _bad:
+        for _k, _m in enumerate(_node_rows):
+            _p = _nodes[_k]
+            if int(_m.group(1)) != _k or [_m.group(2), _m.group(3),
+                                          _m.group(4)] != [f"{_p[0]:.0f}",
+                                                           f"{_p[1]:.0f}",
+                                                           f"{_p[2]:.0f}"]:
+                _bad = True
+                break
+    if _bad:
+        print(f"reprofile: {_qcpath} and {_jspath} are not the same graph; "
+              f"refusing", file=sys.stderr)
+        sys.exit(1)
+
+    _profiles = {(_a, _b): _jump_approach_points(_nodes[_a], _nodes[_b])
+                 for _a, _b in _jlinks}
+    _link_re = re.compile(
+        r"^(\s*)Argus_NavLinkJump \(n(\d+), n(\d+)"
+        r"(?:,\s*[-+0-9.]+)?\);(?:\s*//.*)?$")
+    _seen = set()
+    for _n, _raw in enumerate(_qclines):
+        _body = _raw.rstrip("\r\n")
+        _m = _link_re.match(_body)
+        if not _m:
+            continue
+        _pair = (int(_m.group(2)), int(_m.group(3)))
+        if _pair not in _profiles:
+            print(f"reprofile: QC jump n{_pair[0]}->n{_pair[1]} is absent "
+                  f"from JSON; refusing", file=sys.stderr)
+            sys.exit(1)
+        _speed, _runway, _margin = _profiles[_pair]
+        _ending = _raw[len(_body):]
+        _qclines[_n] = (
+            f"{_m.group(1)}Argus_NavLinkJump (n{_pair[0]}, n{_pair[1]}, "
+            f"{_speed:.0f});    // approach {_speed:.0f}, landing "
+            f"{_runway:.0f}, arc {_margin:.0f}{_ending}")
+        _seen.add(_pair)
+    if _seen != _jlinks:
+        _missing = sorted(_jlinks - _seen)
+        print(f"reprofile: JSON jump links missing from QC: {_missing}; "
+              f"refusing", file=sys.stderr)
+        sys.exit(1)
+
+    _js["jumpapproach"] = [
+        [_a, _b, round(_profiles[(_a, _b)][0], 1),
+         round(_profiles[(_a, _b)][1], 1),
+         round(_profiles[(_a, _b)][2], 1)]
+        for _a, _b in sorted(_jlinks)]
+    with open(_qcpath, "w", encoding="ascii", newline="") as _f:
+        _f.write("".join(_qclines))
+    with open(_jspath, "w", encoding="ascii", newline="") as _f:
+        _rj.dump(_js, _f)
+    _staged = sum(1 for _v in _profiles.values() if _v[0] > 0)
+    print(f"jump reprofile: {_staged} staged gap(s), "
+          f"{len(_profiles) - _staged} direct/fallback link(s); "
+          f"topology untouched")
+    print(f"wrote {_qcpath} + .json")
+    sys.exit(0)
+
 samples = {}   # (cx,cy) -> list of z
 xs = [mins[0] + GRID/2 + i * GRID for i in range(int((maxs[0]-mins[0]) // GRID) + 1)]
 ys = [mins[1] + GRID/2 + i * GRID for i in range(int((maxs[1]-mins[1]) // GRID) + 1)]
@@ -607,35 +895,6 @@ if _n_liquid:
 # under the feet is the fast accept, otherwise the midpoint must find
 # floor within 2 * STEP and every corner must sit within STEP of it.
 # Only the world is consulted, which is what the engine does too.
-def _floor_under(x, y, z, maxdrop):
-    d = 0.0
-    while d <= maxdrop:
-        if h0_contents(x, y, z - d) == CONTENTS_SOLID:
-            return z - d
-        d += 2.0
-    return None
-
-def check_bottom(x, y, oz):
-    """SV_CheckBottom for a player box whose origin sits at oz."""
-    fz = oz - 24                       # mins[2] of the player box
-    cs = ((x - 16, y - 16), (x + 16, y - 16),
-          (x - 16, y + 16), (x + 16, y + 16))
-    ok = True
-    for cx, cy in cs:
-        if h0_contents(cx, cy, fz - 1) != CONTENTS_SOLID:
-            ok = False
-            break
-    if ok:
-        return True
-    mid = _floor_under(x, y, fz, 2 * STEP)
-    if mid is None:
-        return False
-    for cx, cy in cs:
-        c = _floor_under(cx, cy, fz, 2 * STEP)
-        if c is None or c < mid - STEP:
-            return False
-    return True
-
 _n_lip = 0
 for _k in list(samples.keys()):
     _keep = []
@@ -682,7 +941,6 @@ for (cx, cy), zs in samples.items():
 # ledge. From every sample whose neighbour cell is not walkable, scan 8
 # directions 2..5 cells out for a landing floor between 64u below and
 # 40u above, and verify the parabolic arc is clear in hull 1.
-JUMPSPEED, JUMPVEL, GRAV = 280.0, 270.0, GRAVITY
 JUMPREACH = JUMPSPEED * (2 * JUMPVEL / GRAV)
 # How far ABOVE the launch a jump can land. This is the apex wearing a
 # different hat: JUMPVEL^2/(2g) is 45.6 at gravity 800 and the scan
@@ -712,21 +970,8 @@ JUMPUP = 40.0
 SPRINTSPEED = 316.0
 
 def arc_clear(x0, y0, z0, x1, y1, z1, speed=JUMPSPEED):
-    dx, dy = x1 - x0, y1 - y0
-    dist = (dx*dx + dy*dy) ** 0.5
-    t_total = dist / speed
-    if z0 + JUMPVEL*t_total - 0.5*GRAV*t_total*t_total < z1 + 2:
-        return False                    # arc arrives below the landing floor
-    steps = max(4, int(dist // 16))
-    for s in range(1, steps):
-        f = s / steps
-        t = t_total * f
-        zt = z0 + JUMPVEL*t - 0.5*GRAV*t*t
-        if hull_contents(x0 + dx*f, y0 + dy*f, zt) != CONTENTS_EMPTY:
-            return False
-        if hull_contents(x0 + dx*f, y0 + dy*f, zt + 20) != CONTENTS_EMPTY:
-            return False                # head room along the arc
-    return True
+    return _arc_clear_points((x0, y0, z0), (x1, y1, z1), speed)
+
 
 njump = 0
 nsprint = 0
@@ -3378,6 +3623,42 @@ print(f"regions: mainland {len(_F)} nodes, "
       f"{_rid} stranded pocket(s) covering "
       f"{len(ways) - len(_F)} nodes")
 
+# ---- 8a0. jump approach profiles ----
+# A jump link used to carry only a type bit. Runtime therefore used one
+# 250 u/s launch floor for every gap, even though navgen verified the
+# arc at 280 and already has the collision hull needed to describe the
+# landing. Bake the missing part of the promise here: the slowest clear
+# arc with a little speed margin, bounded by the dry runway beyond the
+# landing. Jump-up and engine-proven auto-hop links have no centre-line
+# void and deliberately keep speed zero, which means no staged run-up.
+def _landing_runway(_a, _b):
+    return _landing_runway_points(pos(ways[_a]), pos(ways[_b]))
+
+
+def _jump_void(_a, _b):
+    """Longest loss of support at the link's own height.
+
+    _centre_void is a walkability test, so a survivable floor 200 units
+    below ends its void. For a jump approach that lower ledge is still
+    empty space. Follow the source-to-landing height instead and count
+    only floor a runner could stay on without jumping.
+    """
+    return _jump_void_points(pos(ways[_a]), pos(ways[_b]))
+
+
+def _jump_approach(_a, _b):
+    return _jump_approach_points(pos(ways[_a]), pos(ways[_b]))
+
+
+jump_approach = {}
+for _i in sorted(links):
+    for _j in sorted(links[_i]):
+        if links[_i][_j][1]:
+            jump_approach[(_i, _j)] = _jump_approach(_i, _j)
+_staged = sum(1 for _v in jump_approach.values() if _v[0] > 0)
+print(f"jump approaches: {_staged} staged gap(s), "
+      f"{len(jump_approach) - _staged} direct/fallback link(s)")
+
 # ---- 8a0. compute camera vantage nodes ----
 cam_nodes = []
 for i, w in enumerate(ways):
@@ -3430,18 +3711,21 @@ with open(OUTQC, "w") as f:
     _emitted = set()
     _dupes = 0
 
-    def emit(kind, a, b, suffix=""):
+    def emit(kind, a, b, suffix="", extra=""):
         if (a, b) in _emitted:
             return False
         _emitted.add((a, b))
-        f.write(f"    {kind} (n{a}, n{b});{suffix}\n")
+        f.write(f"    {kind} (n{a}, n{b}{extra});{suffix}\n")
         return True
 
     _doorset = set(doorlinks)
     for i in sorted(links):
         for j in links[i]:
             if links[i][j][1]:
-                emit("Argus_NavLinkJump", i, j)
+                _speed, _runway, _margin = jump_approach[(i, j)]
+                emit("Argus_NavLinkJump", i, j,
+                     f"    // approach {_speed:.0f}, landing {_runway:.0f}, arc {_margin:.0f}",
+                     f", {_speed:.0f}")
             elif (i, j) in _doorset:
                 emit("Argus_NavLinkDoor", i, j)
             else:
@@ -3484,6 +3768,11 @@ with open(OUTQC + ".json", "w") as jf:
                # alone - it is what assigns runtime link slots.
                "links": [[i, j, int(i in links.get(j, {}))] for i in sorted(links) for j in sorted(links[i])],
                "jlinks": [[i, j] for i in sorted(links) for j in sorted(links[i]) if links[i][j][1]],
+               "jumpapproach": [[i, j, round(jump_approach[(i, j)][0], 1),
+                                  round(jump_approach[(i, j)][1], 1),
+                                  round(jump_approach[(i, j)][2], 1)]
+                                 for i in sorted(links) for j in sorted(links[i])
+                                 if links[i][j][1]],
                "sprintlinks": sprints,
                "rjlinks": rjlinks,
                "liftlinks": lifts,

@@ -1971,8 +1971,23 @@ void() Argus_Physics =
             self.ar_sprintstate = 0;    // sprint flight ends on any
                                         // grounded frame
 
+        if (self.ar_sprintstate == -1)
+        {
+            // A typed link is armed at its launch seat. Kill the
+            // incoming run before asking the bot to walk backward;
+            // otherwise momentum carries it over the lip before the
+            // reversed wish can win (#365).
+            self.velocity_x = 0;
+            self.velocity_y = 0;
+            self.ar_sprintstate = 1;
+        }
+
         Argus_Friction ();
-        Argus_Accelerate (wishdir, AR_MAXSPEED);
+        wdrag = AR_MAXSPEED;
+        if (self.ar_hopjump == 1 && self.ar_sprintstate == 2
+            && self.ar_hopspeed > 0)
+            wdrag = self.ar_hopspeed;
+        Argus_Accelerate (wishdir, wdrag);
 
         vh = self.velocity;
         vh_z = 0;
@@ -2030,8 +2045,13 @@ void() Argus_Physics =
                     }
                 }
             }
-            if (self.ar_mode == 2 && self.ar_hopjump && spd >= 250
-                && moveok)
+            if (self.ar_mode == 2 && self.ar_hopjump && moveok
+                && ((self.ar_hopjump == 2 && spd >= 310)
+                    || (self.ar_hopjump == 1
+                        && ((self.ar_hopspeed > 0
+                             && spd >= self.ar_hopspeed - 5
+                             && spd <= self.ar_hopspeed + 15)
+                            || (self.ar_hopspeed <= 0 && spd >= 250)))))
             {
                 // launch lookahead: 32u for a plain jump hop, 8u for
                 // a sprint hop. A 209u same-level crossing carries
@@ -2128,7 +2148,22 @@ void() Argus_Physics =
                             // and fed the gap (runup2 tape).
                             self.ar_sprintstate = 3;
                         }
+                        else
+                        {
+                            // Exact launch speed target for the tape:
+                            // this is how a slow-gait link proves it did
+                            // not fall through to the old 250 floor.
+                            dprint ("ARGUS ");
+                            dprint (self.netname);
+                            dprint (" jumpapproach ");
+                            dprint (ftos (self.ar_hopspeed));
+                            dprint (" actual ");
+                            dprint (ftos (spd));
+                            dprint ("\n");
+                            self.ar_sprintstate = 0;
+                        }
                         self.ar_hopjump = 0;
+                        self.ar_hopspeed = 0;
                         self.velocity_z = AR_JUMPVEL;
                         self.flags = self.flags - (self.flags & FL_ONGROUND);
                         Argus_Event ("jump");
@@ -2282,6 +2317,7 @@ void() Argus_Physics =
                     dprint (" sprintjump\n");
                     self.ar_sprintstate = 3;    // flight latch, as above
                     self.ar_hopjump = 0;
+                    self.ar_hopspeed = 0;
                     self.velocity_z = AR_JUMPVEL;
                     self.flags = self.flags - (self.flags & FL_ONGROUND);
                     Argus_Event ("jump");
@@ -2450,36 +2486,46 @@ void(entity killer, vector deathorg) Argus_SpawnWatch =
     self = oself;
 };
 
-// sprint run-up (GitHub #4): the fire gate demands 310+ u/s within
-// 15 degrees of the line INSIDE 48u of the seat, and the seat sits
-// at the lip - a bot that walks to the seat and pivots can never
-// rebuild that before the ledge ends (the v3.69 probes never
-// completed the SE crossing). Stage the approach instead: pick a
+// Typed-jump run-up (#365, generalising GitHub #4). The launch seat is
+// at the lip, so a bot that arrives there slow or displaced cannot
+// build the nav-baked approach speed before the floor ends. Pick a
 // point behind the seat on the extended jump line, walk there at
-// leisure, then charge through the seat at the landing. Candidate
-// distances shrink until the point has a clear chest-height line
-// from the seat and dry floor under it; nothing valid degenerates
-// to charging from the seat (the old behaviour, still better than
-// a bad point hanging over the moat).
-void() Argus_SprintRunup =
+// leisure, then charge through the seat at the landing. Faster arcs
+// get more runway. Candidates shrink until the line is clear and the
+// floor is dry; nothing valid degenerates to charging from the seat.
+void(entity seat, float target) Argus_JumpRunup =
 {
-    local vector dir, p;
-    local float d;
+    local vector dir, p, q;
+    local float d, k, lineok, dryrun;
 
-    self.ar_sprintrun = self.ar_sprintfrom.origin;
+    self.ar_sprintrun = seat.origin;
     self.ar_sprintstate = 2;            // degenerate: charge from seat
     if (self.ar_node == world)
         return;
-    dir = self.ar_sprintfrom.origin - self.ar_node.origin;
+    dir = seat.origin - self.ar_node.origin;
     dir_z = 0;
     dir = normalize (dir);
-    d = 150;
+    d = 60 + target * 0.3;
+    if (d > 150)
+        d = 150;
     while (d > 60)
     {
-        p = self.ar_sprintfrom.origin + dir * d;
-        traceline (self.ar_sprintfrom.origin + '0 0 16', p + '0 0 16',
+        p = seat.origin + dir * d;
+        traceline (seat.origin + '0 0 16', p + '0 0 16',
                    TRUE, self);
-        if (trace_fraction == 1)
+        lineok = (trace_fraction == 1);
+        dryrun = lineok;
+        k = 16;
+        while (dryrun && k < d)
+        {
+            q = seat.origin + dir * k;
+            traceline (q + '0 0 16', q - '0 0 40', TRUE, self);
+            if (trace_fraction == 1
+                || pointcontents (trace_endpos + '0 0 4') != CONTENT_EMPTY)
+                dryrun = 0;
+            k = k + 16;
+        }
+        if (dryrun)
         {
             traceline (p + '0 0 16', p - '0 0 40', TRUE, self);
             // the floor must be near seat level AND dry: the down
@@ -2491,7 +2537,7 @@ void() Argus_SprintRunup =
             {
                 self.ar_sprintrun = p;
                 self.ar_sprintrun_z = trace_endpos_z + 24;
-                self.ar_sprintstate = 1;
+                self.ar_sprintstate = -1;
                 return;
             }
         }
@@ -2580,6 +2626,8 @@ void() Argus_Die =
     self.ar_pending = 0;
     self.ar_mode = 0;
     self.ar_hopjump = 0;
+    self.ar_hopspeed = 0;
+    self.ar_sprintstate = 0;
     self.ar_hoprj = 0;
     self.ar_hoptrain = 0;
     self.ar_hopdoor = 0;
@@ -6800,7 +6848,7 @@ void() Argus_AI =
     local vector gp, tp, to, sdir;
     local float want, diff, turn, havetarget, fighting, sproj, linkbit;
     local float mface;          // a ridden mover's top face vs our feet
-    local entity oldnode, nx, dr, gn;
+    local entity oldnode, nx, dr, gn, jseat;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
 
@@ -7285,24 +7333,28 @@ void() Argus_AI =
                 }
             }
 
-            // sprint approach (GitHub #4, run-up discipline): the
-            // fire gate anchors to the launch seat AND demands full
-            // speed on the line, which a pivot at the seat can never
-            // deliver. Two phases: walk to the run-up point behind
-            // the seat (1), then charge through the seat at the
-            // landing (2). A bot displaced far off the line drops
-            // back to phase 1 and lines up again - steering at the
-            // landing from anywhere else can never fire and churned
-            // the lip with deflections (sprint2/3 ladder).
-            if (self.ar_hopjump == 2 && self.ar_sprintfrom != world)
+            // typed-jump approach (#365): the fire gate anchors to the
+            // launch seat and demands the speed navgen derived from
+            // the real arc and landing runway. Two phases: walk to the
+            // run-up point behind the seat (1), then charge through the
+            // seat at the landing (2). Sprint links use the same state
+            // at their fixed 316 u/s target. A bot displaced past or
+            // off the line goes back to phase 1 instead of attacking
+            // the landing from a vector that cannot fire.
+            jseat = world;
+            if (self.ar_hopjump == 2)
+                jseat = self.ar_sprintfrom;
+            else if (self.ar_hopjump == 1)
+                jseat = self.ar_jumpfrom;
+            if (self.ar_hopjump && self.ar_sprintstate && jseat != world)
             {
                 // where does the bot sit along the jump line?
                 // (sproj: signed distance past the seat toward the
                 // landing; negative = behind the seat, run-up side)
-                sdir = self.ar_node.origin - self.ar_sprintfrom.origin;
+                sdir = self.ar_node.origin - jseat.origin;
                 sdir_z = 0;
                 sdir = normalize (sdir);
-                sproj = (self.origin - self.ar_sprintfrom.origin) * sdir;
+                sproj = (self.origin - jseat.origin) * sdir;
                 if (self.ar_sprintstate == 2)
                 {
                     if (sproj > 56)
@@ -7320,21 +7372,30 @@ void() Argus_AI =
                         // lateral drift off the line (combat shove,
                         // a deflection upstream): the anchored fire
                         // can never pass from here - line up again
-                        to = (self.origin - self.ar_sprintfrom.origin)
+                        to = (self.origin - jseat.origin)
                            - sdir * sproj;
                         to_z = 0;
                         if (vlen (to) > 48)
                             self.ar_sprintstate = 1;
                     }
                 }
-                if (self.ar_sprintstate == 1)
+                if (self.ar_sprintstate == -1)
+                    tp = self.ar_sprintrun;
+                else if (self.ar_sprintstate == 1)
                 {
                     to = self.ar_sprintrun - self.origin;
                     to_z = 0;
                     if (vlen (to) > 36)
                         tp = self.ar_sprintrun;
                     else
+                    {
                         self.ar_sprintstate = 2;    // lined up: charge
+                        dprint ("ARGUS ");
+                        dprint (self.netname);
+                        dprint (" jumpcharge ");
+                        dprint (ftos (self.ar_hopspeed));
+                        dprint ("\n");
+                    }
                 }
                 // phase 2 leaves tp at the landing node: the wish
                 // heading runs the line through the seat, and the
@@ -7673,7 +7734,8 @@ void() Argus_AI =
                 }
             }
             else if (vlen (to) > 340 && !self.ar_hoptrain
-                     && !(self.ar_hopjump == 2 && vlen (to) < 480))
+                     && !(self.ar_hopjump && self.ar_sprintstate == 2
+                          && vlen (to) < 480))
             {
                 // displaced beyond any legal hop length - a fight (or
                 // knockback, or a teleporter) carried us off the
@@ -7788,6 +7850,8 @@ void() Argus_AI =
                 oldnode = self.ar_node;
                 self.ar_node = Argus_GetNext (self.ar_node, self);
                 self.ar_hopjump = 0;
+                self.ar_hopspeed = 0;
+                self.ar_sprintstate = 0;
                 self.ar_hoprj = 0;
                 self.ar_hoplift = 0;
                 self.ar_hopswim = 0;
@@ -7802,13 +7866,34 @@ void() Argus_AI =
                     {
                         self.ar_hopjump = 1;
                         self.ar_jumpfrom = oldnode;
+                        self.ar_hopspeed = Argus_NavGetJumpSpeed (oldnode, self.ar_node);
+                        if (self.ar_hopspeed > 0)
+                        {
+                            dprint ("ARGUS ");
+                            dprint (self.netname);
+                            dprint (" jumpstage ");
+                            dprint (ftos (self.ar_hopspeed));
+                            dprint ("\n");
+                            Argus_JumpRunup (oldnode, self.ar_hopspeed);
+                            if (self.ar_sprintstate == 2)
+                            {
+                                dprint ("ARGUS ");
+                                dprint (self.netname);
+                                dprint (" jumpcharge ");
+                                dprint (ftos (self.ar_hopspeed));
+                                dprint ("\n");
+                            }
+                        }
+                        else
+                            self.ar_sprintstate = 0; // climb/auto-hop
                     }
                     else if (oldnode.an_sprintmask & linkbit)
                     {
                         self.ar_hopjump = 2;    // sprint arc: full speed
                                                 // demanded at the lip
                         self.ar_sprintfrom = oldnode;
-                        Argus_SprintRunup ();   // stage the line (GitHub #4)
+                        self.ar_hopspeed = 316;
+                        Argus_JumpRunup (oldnode, 316);
                     }
                     else if (oldnode.an_rjmask & linkbit)
                         self.ar_hoprj = 1;
@@ -7906,6 +7991,9 @@ void() Argus_AI =
             if (self.ar_mode == 2 && self.ar_node != world)
             {
                 tp = self.ar_node.origin;
+                if (self.ar_hopjump && self.ar_sprintstate
+                    && self.ar_sprintstate < 2)
+                    tp = self.ar_sprintrun;
                 havetarget = 1;
             }
         }

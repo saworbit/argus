@@ -217,7 +217,8 @@ NAV_VERBS = ("Argus_NavLinkJump", "Argus_NavLinkSprint",
              "Argus_NavLinkSwim", "Argus_NavLinkTrain",
              "Argus_NavLinkDoor", "Argus_NavLink")
 NAV_LINK_RE = re.compile(
-    r"\b(" + "|".join(NAV_VERBS) + r")\s*\(\s*n(\d+)\s*,\s*n(\d+)\s*\)")
+    r"\b(" + "|".join(NAV_VERBS)
+    + r")\s*\(\s*n(\d+)\s*,\s*n(\d+)(?:\s*,\s*[-+0-9.]+)?\s*\)")
 NAV_NODE_RE = re.compile(r"\bArgus_NavNode\s*\(")
 NAV_SLOTS = 8
 

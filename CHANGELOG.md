@@ -9,6 +9,51 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**EACH PLAIN JUMP LINK NOW CARRIES THE SPEED OF ITS OWN APPROACH**
+(#365). The graph already knew that one link crossed a short gap, one
+needed a full arc, and another was only a climb, but runtime threw that
+knowledge away and used the same 250 u/s launch floor for all of them.
+Navgen now identifies the first physical unsupported span inside the
+coarse link, resolves its actual standable takeoff and landing origins,
+derives a target speed from that span and the descending jump root, and
+adds a bounded cushion from the dry landing runway. Every whole-speed
+point in the runtime's target-5 through target+15 launch window must
+keep at least two units of arc margin and pass player-hull collision
+sampling before navgen records the target, worst margin and runway.
+Links it cannot certify keep the old direct gate. The original link's
+collision verdict still belongs to the engine-proven graph. This does
+not recreate the refused point-trace simulator from #356 in runtime.
+
+The sprint run-up is now the typed-jump run-up. A positive-speed plain
+link walks back to a validated point on the extended jump line, charges
+through its launch seat with acceleration capped at the link target,
+and fires inside a -5/+15 u/s window. A zero-speed climb or auto-hop
+keeps the old direct 250 u/s gate. Launches expose the contract as
+`ARGUS <name> jumpapproach <target> actual <speed>`; sprint links retain
+their 316 u/s target and existing flight latch.
+
+ALL ELEVEN SHIPPED GRAPHS WERE REPROFILED WITHOUT A REGEN: 183 jump
+links, 37 certified staged gaps and 146 climb, auto-hop or fallback
+links. The new
+`--reprofile-jumps` mode refuses mismatched QC/JSON pairs, rewrites only
+the existing jump calls and `jumpapproach` metadata, and exits before
+full-map sampling. Nodes, links, link types, slots, regions, trace
+inputs, camera nodes and teleporters compare unchanged against HEAD on
+all eleven maps.
+
+THE EVIDENCE BOUNDARY IS RECORDED. The first three 45 s control and
+candidate tapes on both dm4 and dm2 stayed inside their control bands,
+but two candidate tapes were classified at a different tick rate, so
+the lab correctly voided a formal A/B verdict. Random goal play did not
+reliably select and complete a positive-speed link. A developer-only
+directed override then exercised the final state machine at 135 u/s:
+dm4 launched at 142.1 and 138.0 u/s, and dm2 walked to a run-up,
+charged, and launched at 137.9 u/s. The override is inactive unless
+explicitly enabled through the developer and scratch cvars.
+The remaining deterministic evidence is the topology-preserving
+reprofile suite, positive-gap fixture, nav invariant suite, and a clean
+vanilla-QC compile.
+
 **A TYPED JUMP NOW LAUNCHES FROM ITS OWN SEAT, ON ITS OWN LINE, AND
 STEERS THE FLIGHT** (#357, and the launch half of #365). The sprint
 hop has had a launch discipline since v3.69: anchored within 48 units
@@ -47,14 +92,14 @@ starve the jump family**, which was the risk: jump events hold at a
 median of 27 on dm4 and 94 on dm2, unchanged either side. Air control
 fires 6 to 14 times a tape on dm4 and 1 to 4 on dm2.
 
-REFUSED IN THE SAME PASS: the runtime arc check (#356). It was built,
-it found four defects in itself, and it still refused 16 of 17 anchored
-and aimed launches on a map whose links the puppet sweep says are
-crossable. A jump-disabling change resting on a model that disagrees
-with the engine does not ship. The four defects and the one remaining
-question are on the issue, and the anchor lands in this build makes the
-next attempt much cheaper, because it was the anchor rather than the
-arc that was doing the damage.
+CLOSED NOT PLANNED IN THE SAME PASS: the runtime arc check (#356). It
+was built, found four defects in itself, and still refused 16 of 17
+anchored and aimed launches on a map whose links the engine crossed 16
+of 18 times. Quake 3 can ask the engine for a client bounding-box trace;
+this vanilla QuakeC path has point traces. Another runtime fan would be
+another approximation allowed to disable engine-proven links. Collision
+truth therefore stays in the graph mill, while #365 carries the useful
+approach data into runtime without a second collision referee.
 
 **THE GROUND PATH LEARNS TO SLIDE ALONG A WALL** (#380). A masquerade
 parity gap of the v3.6 family, and the last piece of the stock player

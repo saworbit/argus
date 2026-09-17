@@ -987,7 +987,7 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavLink (n82, n208);
     Argus_NavLink (n82, n85);
     Argus_NavLink (n82, n212);
-    Argus_NavLinkJump (n82, n108);
+    Argus_NavLinkJump (n82, n108, 90);    // approach 90, landing 88, arc 26
     Argus_NavLink (n82, n73);
     Argus_NavLink (n82, n97);
     Argus_NavLink (n83, n216);
@@ -1170,8 +1170,8 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavLink (n108, n106);
     Argus_NavLink (n108, n96);
     Argus_NavLink (n108, n118);
-    Argus_NavLinkJump (n108, n109);
-    Argus_NavLinkJump (n108, n82);
+    Argus_NavLinkJump (n108, n109, 70);    // approach 70, landing 128, arc 51
+    Argus_NavLinkJump (n108, n82, 105);    // approach 105, landing 88, arc 27
     Argus_NavLink (n109, n97);
     Argus_NavLink (n109, n106);
     Argus_NavLink (n109, n123);
@@ -1422,7 +1422,7 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavLink (n142, n171);
     Argus_NavLink (n143, n210);
     Argus_NavLink (n143, n153);
-    Argus_NavLinkJump (n143, n141);
+    Argus_NavLinkJump (n143, n141, 105);    // approach 105, landing 128, arc 49
     Argus_NavLink (n143, n167);
     Argus_NavLink (n143, n227);
     Argus_NavLink (n144, n199);
@@ -1665,10 +1665,10 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavLink (n179, n229);
     Argus_NavLink (n180, n14);
     Argus_NavLink (n180, n182);
-    Argus_NavLinkJump (n180, n15);
+    Argus_NavLinkJump (n180, n15, 85);    // approach 85, landing 128, arc 57
     Argus_NavLink (n180, n5);
     Argus_NavLink (n180, n4);
-    Argus_NavLinkJump (n180, n38);
+    Argus_NavLinkJump (n180, n38, 140);    // approach 140, landing 128, arc 73
     Argus_NavLink (n181, n32);
     Argus_NavLink (n181, n37);
     Argus_NavLink (n181, n182);

@@ -19,6 +19,14 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .entity an_l4; .entity an_l5; .entity an_l6; .entity an_l7;
 .float  an_nlinks;
 .float  an_jumpmask;        // bit i set = link slot i needs a jump
+.float  an_jspeed0;         // target approach speed for jump slot i;
+.float  an_jspeed1;         // zero means a climb, auto-hop or safe
+.float  an_jspeed2;         // fallback with no staged run-up
+.float  an_jspeed3;
+.float  an_jspeed4;
+.float  an_jspeed5;
+.float  an_jspeed6;
+.float  an_jspeed7;
 .float  an_sprintmask;      // bit i set = link slot i needs a SPRINT
                             // jump (full-run arc; skill 2+ only)
 .float  an_rjmask;          // bit i set = link slot i needs a rocket jump
@@ -59,6 +67,7 @@ float   an_apex;            // how far a standing jump climbs right now
 .float  ar_pending;         // on bots: waiting for router
 .float  ar_routefail;
 .float  ar_hopjump;         // on bots: current hop crosses a jump link
+.float  ar_hopspeed;        // nav-baked approach speed for that jump
 .float  ar_hoprj;           // on bots: 1 = rocket-jump armed, 2 = airborne
 .float  ar_hoplift;         // on bots: current hop rides a plat
 .float  ar_liftwait;        // on bots: parked on the plat this frame
@@ -80,8 +89,8 @@ float   an_apex;            // how far a standing jump climbs right now
                             // demands 310+ u/s ON the line AT the
                             // seat; a pivot at the seat can never
                             // deliver that - GitHub #4)
-.float  ar_sprintstate;     // on bots: 0 none, 1 walking to the
-                            // run-up point, 2 charging the line
+.float  ar_sprintstate;     // on bots: -1 brake, 0 none, 1 walking
+                            // to run-up, 2 charge, 3 flight latch
 .float  ar_aliased;         // on real clients: the console alias for
                             // the homage mode has been handed over
 .float  ar_routegen;        // on bots: increments per completed route
@@ -140,7 +149,7 @@ void(entity a, entity b) Argus_NavLink =
 
 // a link the bot must jump across (gap too wide to walk, verified by
 // the nav compiler's trajectory check)
-void(entity a, entity b) Argus_NavLinkJump =
+void(entity a, entity b, float speed) Argus_NavLinkJump =
 {
     local float slot;
 
@@ -156,6 +165,14 @@ void(entity a, entity b) Argus_NavLinkJump =
     else if (slot == 5) a.an_jumpmask = a.an_jumpmask | 32;
     else if (slot == 6) a.an_jumpmask = a.an_jumpmask | 64;
     else                a.an_jumpmask = a.an_jumpmask | 128;
+    if (slot == 0)      a.an_jspeed0 = speed;
+    else if (slot == 1) a.an_jspeed1 = speed;
+    else if (slot == 2) a.an_jspeed2 = speed;
+    else if (slot == 3) a.an_jspeed3 = speed;
+    else if (slot == 4) a.an_jspeed4 = speed;
+    else if (slot == 5) a.an_jspeed5 = speed;
+    else if (slot == 6) a.an_jspeed6 = speed;
+    else                a.an_jspeed7 = speed;
 };
 
 // a SPRINT jump: the arc only closes at full run speed with the
@@ -377,6 +394,28 @@ float(entity a, entity b) Argus_LinkIsLift =
 float(entity a, entity b) Argus_LinkIsJump =
 {
     return (a.an_jumpmask & Argus_NavGetLinkBit (a, b));
+};
+
+// Navgen derives this from the real jump arc and the dry runway beyond
+// the landing. Zero is deliberate: climbs and auto-hops need no staged
+// approach, while an uncertified changed arc keeps the old direct gate.
+float(entity a, entity b) Argus_NavGetJumpSpeed =
+{
+    // Directed lab proof for #365. scratch1 365 opts in; scratch2 is
+    // the requested speed. Normal play and every ordinary lab tape
+    // read the nav-baked value below.
+    if (cvar ("developer") && cvar ("scratch1") == 365
+        && cvar ("scratch2") > 0)
+        return cvar ("scratch2");
+    if (a.an_l0 == b) return a.an_jspeed0;
+    if (a.an_l1 == b) return a.an_jspeed1;
+    if (a.an_l2 == b) return a.an_jspeed2;
+    if (a.an_l3 == b) return a.an_jspeed3;
+    if (a.an_l4 == b) return a.an_jspeed4;
+    if (a.an_l5 == b) return a.an_jspeed5;
+    if (a.an_l6 == b) return a.an_jspeed6;
+    if (a.an_l7 == b) return a.an_jspeed7;
+    return 0;
 };
 
 float(entity a, entity b) Argus_LinkIsSprint =
@@ -657,6 +696,8 @@ void() Argus_Route_Finish =
     an_bot.ar_failstreak = 0;                    // routes work from here
     an_bot.ar_node = cur;                        // = start node; AI flips to mode 2
     an_bot.ar_hopjump = 0;                       // reaching the start node is a walk
+    an_bot.ar_hopspeed = 0;
+    an_bot.ar_sprintstate = 0;
     an_bot.ar_hoprj = 0;
     an_bot.ar_hoplift = 0;
     an_bot.ar_hopswim = 0;
@@ -791,6 +832,8 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
     bot.ar_failstreak = 0;
     bot.ar_node = startnode;
     bot.ar_hopjump = 0;
+    bot.ar_hopspeed = 0;
+    bot.ar_sprintstate = 0;
     bot.ar_hoprj = 0;
     bot.ar_hoplift = 0;
     bot.ar_hopswim = 0;
