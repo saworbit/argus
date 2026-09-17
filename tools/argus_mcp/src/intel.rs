@@ -23,6 +23,9 @@ pub struct Totals {
     pub goals: i32,
     pub frags: i32,
     pub deaths: i32,
+    /// Bot deaths landed by someone other than the player the victim was
+    /// visibly fighting at the time (#383).
+    pub third_party_deaths: i32,
     pub player_kills: i32,
     pub world_deaths: i32,
     pub lava_deaths: i32,
@@ -458,6 +461,7 @@ pub fn brief_csv(b: &MatchBrief) -> String {
         ("goals", t.goals.to_string()),
         ("frags", t.frags.to_string()),
         ("deaths", t.deaths.to_string()),
+        ("third_party_deaths", t.third_party_deaths.to_string()),
         ("routefails", t.routefails.to_string()),
         ("hazards", t.hazards.to_string()),
         ("kd_spread", t.kd_spread.to_string()),
@@ -568,6 +572,11 @@ pub fn compare_csv(r: &CompareReport) -> String {
     for (k, x, y) in [
         ("stalls", a.stalls.to_string(), b.stalls.to_string()),
         ("engages", a.engages.to_string(), b.engages.to_string()),
+        (
+            "third_party_deaths",
+            a.third_party_deaths.to_string(),
+            b.third_party_deaths.to_string(),
+        ),
         ("lava_deaths", a.lava_deaths.to_string(), b.lava_deaths.to_string()),
         ("freezes", a.freezes.to_string(), b.freezes.to_string()),
         ("cover", a.cover.to_string(), b.cover.to_string()),
@@ -668,6 +677,7 @@ fn brief_tape_lava(
     let mut lava_deaths = 0;
     let mut world_deaths = 0;
     let mut player_kills = 0;
+    let mut third_party_deaths = 0;
     let mut h_deaths = 0;
     let mut h_world = 0;
     let mut h_lava = 0;
@@ -687,6 +697,9 @@ fn brief_tape_lava(
                 }
             }
             continue;
+        }
+        if d.third_party {
+            third_party_deaths += 1;
         }
         if d.killer.eq_ignore_ascii_case("world") {
             world_deaths += 1;
@@ -746,6 +759,7 @@ fn brief_tape_lava(
         goals,
         frags,
         deaths,
+        third_party_deaths,
         player_kills,
         world_deaths,
         lava_deaths,
@@ -2059,6 +2073,7 @@ pub fn scale_brief_to_duration(mut brief: MatchBrief, target_sec: f64) -> MatchB
     brief.totals.goals = scale_i32(brief.totals.goals, k);
     brief.totals.frags = scale_i32(brief.totals.frags, k);
     brief.totals.deaths = scale_i32(brief.totals.deaths, k);
+    brief.totals.third_party_deaths = scale_i32(brief.totals.third_party_deaths, k);
     brief.totals.player_kills = scale_i32(brief.totals.player_kills, k);
     brief.totals.world_deaths = scale_i32(brief.totals.world_deaths, k);
     brief.totals.lava_deaths = scale_i32(brief.totals.lava_deaths, k);
@@ -2966,11 +2981,12 @@ fn flags(totals: &Totals, hotspots: &[Hotspot], map: Option<&str>) -> Vec<String
 fn headline_one(totals: &Totals, flags: &[String], map: Option<&str>) -> String {
     let map = map.unwrap_or("unknown-map");
     let mut s = format!(
-        "{map} {dur:.0}s: {frags} frags, {deaths} deaths ({lava} lava), {stalls} stalls, {goals} goals, {eng} engages, {haz} hazards, spread {spread}",
+        "{map} {dur:.0}s: {frags} frags, {deaths} deaths ({lava} lava, {third} third-party), {stalls} stalls, {goals} goals, {eng} engages, {haz} hazards, spread {spread}",
         dur = totals.duration_sec,
         frags = totals.frags,
         deaths = totals.deaths,
         lava = totals.lava_deaths,
+        third = totals.third_party_deaths,
         stalls = totals.stalls,
         goals = totals.goals,
         eng = totals.engages,
@@ -3124,6 +3140,17 @@ ARGEVT Reap hazard
             b.next_steps
         );
         assert!(b.kills.keys().any(|k| k.starts_with("world>")));
+    }
+
+    #[test]
+    fn brief_surfaces_third_party_deaths() {
+        let log = log_a().replace(
+            "ARGEVT Reap death Omi pos '64.0 0.0 24.0'",
+            "ARGEVT Reap death Omi pos '64.0 0.0 24.0' thirdparty",
+        );
+        let b = brief_text(&log, None);
+        assert_eq!(b.totals.third_party_deaths, 1);
+        assert!(b.headline.contains("1 third-party"));
     }
 
     #[test]

@@ -9,6 +9,68 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**COMBAT NOW READS THE FIGHT IT IS ACTUALLY IN** (#360, #361, #362,
+#383). Reaper's effective-stack range signal returns as a bounded comfort
+band: weak bots yield the splash preference and take a wider circle tangent,
+stacked bots press, and Quad compresses the band. The signal never creates
+radial backpedal, and the established Rocket Launcher self-damage and
+Lightning Gun liquid gates remain hard boundaries. At cognition skill 0.5+
+the last visibly held enemy weapon is classified as melee, direct fire,
+splash, or beam and shapes circle angle, high-ground back-out and ordinary
+retreat hysteresis. Quad/Pent opponents still use the established fixed 70/90
+retreat bars regardless of weapon.
+
+TARGET MOTION IS NOW PART OF HUMAN ERROR, NOT PERFECT INFORMATION. Observed
+displacement is sampled on the existing 0.25-0.55 second saccade clock,
+normalized to a fixed 0.05 second horizon, capped against teleports, scaled by
+the aim-specific skill value, and held through the same 0.15 second glide.
+Stationary targets add exactly zero and consume no extra random draw. Sight
+loss glides the held offset to zero without sampling the hidden target, while
+reacquisition clears both glide endpoints so a new target inherits nothing.
+That keeps dedicated and played-rate sessions on the same magnitude scale
+without turning movement into per-frame aim noise.
+
+KILLZONE'S SECONDARY THREAT IS A SOFT POSITIONING PREFERENCE. The nearest
+other visible player can win a tie between otherwise legal strafe/back-out
+headings, or between primary-covered retreat headings. It never enters missile
+dodge/body-clearance legality and never makes secondary cover mandatory. Plain
+`ARGUS threatmove` and `ARGUS crossfire` markers expose the decision branches.
+Bot death rows append `thirdparty` only when another player lands the kill
+inside the active visible-fight window; the Rust tape parser carries that into
+`third_party_deaths`, including compact CSV/headline output, while old rows
+remain valid.
+
+MATCHED EVIDENCE USED THE PRE-CHANGE BINARY FROM THE LAB BACKUP. These tapes
+predate the final target-lifetime and telemetry fixes, so they establish the
+candidate's safety envelope rather than final branch counts. On dm4,
+185-second control/candidate tapes were release-gate parity: engagements
+97 to 83 stayed in band, lava deaths improved 5 to 2, stalls were 10 to 12,
+K/D spread stayed 10, and both arms recorded one freeze. Self-splash deaths
+moved from 3 to 1. On dm2, matched 90-second tapes were parity: engagements
+18 to 24, stalls 11 to 11, zero world/lava deaths and zero freezes in both
+arms; self-splash moved from 0 to 2. The two-map aggregate stayed 3 to 3, so
+the stack policy redistributed self-splash without increasing it.
+
+THE EXACT SHIPPED BINARY THEN RAN CLEAN TWO-MAP SMOKES. On hash
+BC538F4359114EE3C76CCDED7A4EB15B, 45-second dm4 and dm2 tapes had no VM,
+edict, protocol or stray-client errors. dm4 recorded 20 range, 2 high-ground
+and 6 retreat threat decisions, one world/lava death and 2 stalls; dm2
+recorded 9 range and 3 retreat decisions, zero world/lava deaths and 10
+stalls. Neither short tape happened to take a crossfire or third-party-death
+branch; the matched candidate tapes had exercised both, while the final
+purple review verified their fallback and attribution paths directly.
+
+PLAYED-RATE CALIBRATION USED THE SAME BINARY AND THE OPT-IN `scratch1 362`
+trace. A 35-second dedicated run produced 58 samples and a hidden local
+listen-server run produced 96. Moving samples had mean normalized target
+steps 10.08u versus 9.37u and mean held offsets 9.39u versus 8.13u; maximum
+offset-to-step gain was 1.63 versus 1.72, inside the skill-2 bound in both.
+All 62 stationary samples produced exact zero and neither run breached the
+40u normalized-step cap. A loss-edge interpolation check at old-glide
+fractions 0, 0.5 and 1 produced zero discontinuity in all three cases. Modern
+FTEQCC compiled with the six pre-existing warnings, all 190 Rust unit tests
+plus both integration tests passed, and all 52 Python project tests passed.
+
 **ONE CONTINUOUS SKILL NOW BELONGS TO EACH BOT** (#358, #381, #359).
 The stock `skill` cvar remains the roster baseline, but every bot now stores
 its own effective 0..3 value. The four shipped integer rows are exact anchor
