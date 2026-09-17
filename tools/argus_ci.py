@@ -81,16 +81,25 @@ _STATUS = {"added": "A", "modified": "M", "removed": "D",
            "renamed": "R", "copied": "C", "changed": "M"}
 
 
-def read_changes(changed_files=None, base=None):
+class GitDiffError(Exception):
+    """git diff itself failed; the caller turns this into a hard failure."""
+
+
+def read_changes(changed_files=None, base=None, root=None):
     """[(status_letter, path)] for the diff under test."""
     if changed_files:
         text = Path(changed_files).read_text(encoding="utf-8",
                                              errors="replace")
     else:
         ref = base or "origin/main"
-        text = subprocess.run(
+        proc = subprocess.run(
             ["git", "diff", "--name-status", "%s...HEAD" % ref],
-            capture_output=True, text=True, cwd=str(ROOT)).stdout
+            capture_output=True, text=True, cwd=str(root or ROOT))
+        if proc.returncode != 0:
+            raise GitDiffError(
+                "tapes: git diff against %s failed - %s"
+                % (ref, proc.stderr.strip() or "no stderr"))
+        text = proc.stdout
     out = []
     for line in text.splitlines():
         parts = [p for p in line.split("\t") if p]
@@ -115,6 +124,19 @@ PROTECTED_TAPE = re.compile(r"^runs/(ab|shane)_.*\.log$")
 TAPE_ESCAPE = "[tape-rewrite]"
 
 
+class Skipped(list):
+    """A check ran with nothing to check, which is not a clean pass.
+
+    Still a list (empty, so still falsy for "no failures"), but main()
+    recognises the type and prints a "skipped" line instead of "ok" -
+    a vacuous pass would be false confidence, and this stays honest
+    about it while still keeping the return protocol a plain list.
+    """
+    def __init__(self, reason):
+        super().__init__()
+        self.reason = reason
+
+
 def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
     """No committed ladder or session tape may be modified, deleted, or renamed.
 
@@ -123,8 +145,19 @@ def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
     """
     if TAPE_ESCAPE in (commit_msg or ""):
         return []
+    try:
+        changes = read_changes(changed_files, base, root)
+    except GitDiffError as exc:
+        return [str(exc)]
+    if changed_files is not None and not changes and base is None:
+        # A push to main (not a pull request) gives fast.yml an empty
+        # changed.txt and no --base to fall back on: there is no
+        # changed-file information to check against, and "ok" here
+        # would be a vacuous pass on exactly the class of push #328
+        # was. Skip honestly instead of claiming a clean result.
+        return Skipped("no changed-file list")
     fails = []
-    for status, path in read_changes(changed_files, base):
+    for status, path in changes:
         if status not in ("M", "D", "R"):
             continue
         if not PROTECTED_TAPE.match(path):
@@ -138,7 +171,8 @@ def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
         fails.append(
             "tapes: %s was %s - committed ladder and session tapes are "
             "append-once evidence (#328). If this is deliberate, put %s "
-            "in the commit message." % (path, verb, TAPE_ESCAPE))
+            "in the commit message or the pull request title."
+            % (path, verb, TAPE_ESCAPE))
     return fails
 
 
@@ -213,7 +247,9 @@ def main(argv=None):
         fn = CHECKS[name]
         got = fn(root, changed_files=args.changed_files, base=args.base,
                  commit_msg=args.commit_msg)
-        if got:
+        if isinstance(got, Skipped):
+            print("%s: skipped (%s)" % (name, got.reason))
+        elif got:
             fails.extend(got)
         else:
             print("%s: ok" % name)

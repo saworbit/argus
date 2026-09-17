@@ -502,6 +502,40 @@ class TestToolsCLI(unittest.TestCase):
                                 "--commit-msg", "Re-run the ladder [tape-rewrite]")
             self.assertEqual(res.returncode, 0, res.stdout)
 
+    def test_argus_ci_tapes_escape_hatch_via_combined_title_and_commits(self):
+        # fast.yml now builds --commit-msg from "$PR_TITLE $(cat
+        # commit_msgs.txt)" - the escape token has to work from either
+        # half of that combined string, not just a bare commit message.
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["M\truns/ab_dm4_unstick.log"])
+            res = self.run_tool(
+                "argus_ci.py", "tapes", "--changed-files", cf,
+                "--commit-msg",
+                "Fix the corner case\nRe-run the ladder [tape-rewrite]")
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_tapes_empty_changed_file_list_is_skipped(self):
+        # A push to main gives fast.yml an empty changed.txt and no
+        # --base - there is no changed-file information to check, and
+        # "ok" here would be the vacuous pass #328 slipped through on.
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, [])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+            tapes_line = next(
+                line for line in res.stdout.splitlines()
+                if line.startswith("tapes"))
+            self.assertIn("skipped", tapes_line)
+            self.assertNotIn("ok", tapes_line)
+
+    def test_argus_ci_tapes_bad_base_ref_fails_loudly(self):
+        # A missing ref, a shallow clone, or git not on PATH must fail
+        # the check, not silently pass as "ok" - this is the local
+        # pre-push path the tool exists to serve.
+        res = self.run_tool("argus_ci.py", "tapes", "--base", "no/such/ref")
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn("no/such/ref", res.stdout)
+
     def test_argus_ci_tapes_rejects_a_renamed_ladder_tape(self):
         with tempfile.TemporaryDirectory() as td:
             cf = self._changed_file(td, ["R100\truns/ab_dm2_doortype2.log\truns/ab_renamed.log"])

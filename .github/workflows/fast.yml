@@ -26,10 +26,14 @@ jobs:
           # fetch-depth 0 against a 198 MB .git would cost more than
           # this whole job; one compare call fetches no history at all
           : > changed.txt
+          : > commit_msgs.txt
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             gh api --paginate \
               "repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
               --jq '.files[] | if .status == "renamed" then "\(.status)\t\(.previous_filename)\t\(.filename)" else "\(.status)\t\(.filename)" end' > changed.txt
+            gh api --paginate \
+              "repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+              --jq '.commits[].commit.message' > commit_msgs.txt
           fi
           wc -l < changed.txt
 
@@ -39,7 +43,7 @@ jobs:
         run: |
           python3 tools/argus_ci.py all \
             --changed-files changed.txt \
-            --commit-msg "$PR_TITLE"
+            --commit-msg "$PR_TITLE $(cat commit_msgs.txt)"
 
   lab:
     name: lab test suite (rust)
