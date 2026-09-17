@@ -412,6 +412,44 @@ class TestToolsCLI(unittest.TestCase):
             res = subprocess.run([str(mcp_bin), *args], capture_output=True, text=True, cwd=str(ROOT))
             self.assertEqual(res.returncode, 0, f"failed on {cmd}: {res.stderr}")
 
+    def test_argus_ci_help(self):
+        res = self.run_tool("argus_ci.py", "--help")
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("Argus repo invariant battery", res.stdout)
+
+    def test_argus_ci_ship_passes_on_the_tree(self):
+        res = self.run_tool("argus_ci.py", "ship")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("ship: ok", res.stdout)
+
+    def test_argus_ci_ship_catches_a_mismatched_pair(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            (root / "game" / "argus" / "progs.dat").write_bytes(b"aaaa")
+            (root / "engine" / "argus" / "progs.dat").write_bytes(b"bbbb")
+            (root / "CLAUDE.md").write_text(
+                "## State at handoff (test)\n\nMD5 "
+                "74B87337454200D4D33F80C4663DC5E5\n", encoding="utf-8")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("differ", res.stdout)
+
+    def test_argus_ci_ship_catches_a_stale_handoff_hash(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "game" / "argus").mkdir(parents=True)
+            (root / "engine" / "argus").mkdir(parents=True)
+            for p in ("game", "engine"):
+                (root / p / "argus" / "progs.dat").write_bytes(b"aaaa")
+            (root / "CLAUDE.md").write_text(
+                "## State at handoff (test)\n\nMD5 "
+                "00000000000000000000000000000000\n", encoding="utf-8")
+            res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("handoff claims", res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
