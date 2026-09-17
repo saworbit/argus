@@ -217,15 +217,20 @@ THIS IS HOW THE FREEZE GATE EARNS PROMOTION rather than being guessed
 at. The five committed lqdm2 tapes that read zero freezes all predate
 the tick pin. Ten green CI tapes at sys_ticrate 0.0139 is a baseline at
 the rate CI actually runs, and at that point the assertion can go hard
-on evidence. The nav report rides the same channel, carrying the 26
-no-entry nodes the audit found in the .qc (e1m2 8, e1m5 7, e1m1 4,
-dm2 3, e1m6 3, dm6 1): seats a bot can leave but no route can reach.
-The json agrees with the .qc node for node here, unlike the no-exit
-case. Wasted edicts and
-unreachable goals, and a quality observation rather than a correctness
-one, so it reports and does not gate. This project's record on acting
-against a nav observation without a ladder is bad enough to make that
-distinction load-bearing.
+on evidence.
+
+A nav report was designed for the same advisory channel, and the
+measurement behind it is worth keeping even though the reporting
+itself did not make this change. The audit found 26 no-entry nodes in
+the .qc (e1m2 8, e1m5 7, e1m1 4, dm2 3, e1m6 3, dm6 1): seats a bot can
+leave but no route can reach. The json agrees with the .qc node for
+node here, unlike the no-exit case. Wasted edicts and unreachable
+goals are a quality observation rather than a correctness one, so any
+future report would surface and not gate - this project's record on
+acting against a nav observation without a ladder is bad enough to
+make that distinction load-bearing. EMITTING THIS INTO THE JOB SUMMARY
+IS NOT PART OF THIS CHANGE. The counts above are recorded here as the
+evidence, and the report itself stays a follow-up.
 
 ### Part 4, the toolchain pin
 
