@@ -8778,3 +8778,5 @@ void() Argus_MatchStats =
     centerprint3 (self, "Argus Match Stats\n\nActive Bots: ", ftos (nb),
                   "\n\nFull stats in console");
 };
+
+// probe: task 6 path-filter verification, not for merge
