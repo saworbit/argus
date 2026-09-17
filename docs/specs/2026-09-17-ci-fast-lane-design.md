@@ -216,6 +216,16 @@ from one "gh api repos/{owner}/{repo}/compare/{base}...{head}" call,
 which fetches no history at all; the tool falls back to
 "git diff --name-status" when run locally.
 
+AND THE LIST IS ASSERTED NON-EMPTY ON A PULL REQUEST, which closes the
+last vacuous-pass hole in this design. With no list to work from the
+tapes check reports "skipped" rather than "ok", which is the honest
+answer on a push to main where there genuinely is nothing to compare.
+On a pull request it is not honest, it is a miss: a PR always changes
+at least one file, so an empty list means the compare call gave us
+nothing, and the run would go green having checked no tape at all. The
+workflow now fails loudly in exactly that case. The skip survives only
+where it is correct, on the push-to-main path.
+
 Fallout worth having: dependabot's cargo bumps touch only
 tools/argus_mcp/**, so they stop running a QuakeC compile and a 90 s
 botmatch to validate a Rust dependency. No special-casing, it falls out
