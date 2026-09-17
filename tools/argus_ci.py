@@ -98,7 +98,9 @@ def read_changes(changed_files=None, base=None):
             continue
         status = parts[0].strip()
         status = _STATUS.get(status.lower(), status[:1].upper())
-        out.append((status, parts[-1].strip()))
+        # For renames, preserve the old path (what was destroyed)
+        path = parts[1].strip() if status == "R" and len(parts) >= 3 else parts[-1].strip()
+        out.append((status, path))
     return out
 
 
@@ -114,7 +116,7 @@ TAPE_ESCAPE = "[tape-rewrite]"
 
 
 def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
-    """No committed ladder or session tape may be modified or deleted.
+    """No committed ladder or session tape may be modified, deleted, or renamed.
 
     Guards #328, where a run-name collision overwrote a committed tape
     twice in one week and destroyed the evidence it held.
@@ -123,11 +125,16 @@ def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
         return []
     fails = []
     for status, path in read_changes(changed_files, base):
-        if status not in ("M", "D"):
+        if status not in ("M", "D", "R"):
             continue
         if not PROTECTED_TAPE.match(path):
             continue
-        verb = "modified" if status == "M" else "deleted"
+        if status == "M":
+            verb = "modified"
+        elif status == "D":
+            verb = "deleted"
+        else:  # status == "R"
+            verb = "renamed away from"
         fails.append(
             "tapes: %s was %s - committed ladder and session tapes are "
             "append-once evidence (#328). If this is deliberate, put %s "

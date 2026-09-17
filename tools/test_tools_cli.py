@@ -502,6 +502,20 @@ class TestToolsCLI(unittest.TestCase):
                                 "--commit-msg", "Re-run the ladder [tape-rewrite]")
             self.assertEqual(res.returncode, 0, res.stdout)
 
+    def test_argus_ci_tapes_rejects_a_renamed_ladder_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["R100\truns/ab_dm2_doortype2.log\truns/ab_renamed.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("ab_dm2_doortype2.log", res.stdout)
+            self.assertIn("renamed away from", res.stdout)
+
+    def test_argus_ci_tapes_allows_a_renamed_exempt_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            cf = self._changed_file(td, ["R100\truns/mx_dm2.log\truns/mx_dm2_old.log"])
+            res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
