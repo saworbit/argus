@@ -692,6 +692,15 @@ string(string s) precache_model		= #20;
 void(entity client, string s) stuffcmd_bi = #21;
 .float ar_isbot;    // ARGUS: bots are classname "player" but not clients;
                     // client-channel builtins must never reach them
+.float ar_skill;    // ARGUS: effective continuous per-bot skill (0..3)
+.float ar_skilloff; // manual roster-slot offset from the global skill
+.float ar_skilldrift; // opt-in adaptive offset from human results
+.float ar_skillresults; // human kill/death samples used to anneal drift
+.float ar_fireready; // humanised trigger: next permitted press
+.float ar_fireburst; // continuous-gun burst ends at this time
+.float ar_fireweapon; // weapon whose player-frame fire chain is active
+float argus_skilldrift; // opt-in Reaper-style human matchup adjustment
+float argus_skilldriftactive; // current human-DM eligibility, for retunes
 float modelindex_eyes, modelindex_player;   // ARGUS: moved here from
                     // client.qc so bot code (compiled earlier) can
                     // initialise modelindex_player at bot spawn
@@ -704,6 +713,10 @@ void() Argus_BotMenu;       // ARGUS: in-game bot roster menu (#147)
 void() Argus_AddBot;        // ARGUS: roster impulses, defined in
 void() Argus_RemoveBot;     // argus.qc, wired in ImpulseCommands
 void() Argus_CycleSkill;    // ARGUS: cycle bot difficulty (0..3)
+void() Argus_RetuneAll;     // ARGUS: apply current skill layers live
+void(float slot) Argus_CycleBotSkill; // ARGUS: cycle one slot's offset
+void() Argus_ToggleSkillDrift; // ARGUS: opt-in human matchup adjustment
+void(entity bot, float won) Argus_SkillResult; // ARGUS: human result
 void() Argus_MatchStats;    // ARGUS: display match statistics
 void(float on) Argus_SetOmicron;    // ARGUS: the homage costume
 float argus_omicron;                // (console "omicron" / impulse 146)

@@ -98,7 +98,7 @@ flowchart TD
 - **Horizontal field of view**: The soft FOV gate on new distant targets measures *bearing*, projecting the target onto the horizontal plane first. Normalising in three dimensions and dotting against a flat forward vector charges the target for its height, which blinds a bot to an opponent standing on a walkway directly in front of it.
 - **Combat memory and grudges**: A recent foe stays re-acquirable at 360 degrees for 5 seconds (no forgetting mid-dodge), and three consecutive deaths to one player raise a vendetta bounty on them. The grudge is vented only by killing *that* player - the bot tracks who it actually killed, from the human obituary path as well as its own, so it cannot taunt its nemesis over an uninvolved third party's body.
 - **Ballistic compensation**: Grenade loft is derived from the launcher rather than tuned by hand - `W_FireGrenade` throws at `v_forward * 600 + v_up * 200`, so over a flight `t = d/600` the net vertical travel is `200t - 400t^2` and the aim correction is its negative, `d*d/900 - d/3`. Rocket fire from elevated walkways pitches down so the shot clears the lip, projectile lead is clamped to the floor beneath a falling target (a full vertical lead aims through the world), and grounded targets are shot at the feet for splash. The rocket lead is also traced before it is used: a target strafing toward a pillar puts the lead point inside the wall before the target gets there, so the bot halves the lead, tests again, halves again, and fires unled rather than into masonry (`ARGUS <name> leadclip`).
-- **Continuous fire button hold**: Automatically asserts `button0 = 1` within 12 degrees of target alignment, ensuring continuous-fire weapon frame chains (Lightning Gun, Super Nailgun) maintain active beams without resetting animations.
+- **Human trigger cadence**: Discrete weapons release between shots and add a small skill-scaled delay after the stock refire clock. Lightning and nailguns fire in bounded bursts with short releases; `button0` stays held inside each burst so the stock continuous-fire frame chains cannot abort before dealing damage.
 - **Dynamic weapon selection**: Selects optimal weapons based on distance thresholds, owned inventory, waterlevel safety, and remaining ammunition reserves. Holding nothing but a loaded Rocket Launcher at close range, a bot fires it from 120u out on a stack of 100 or more rather than charging with the axe - and below that distance it really does take the axe, because splash is `120 - dist/2` and the trade stops paying.
 - **Missile dodging**: Scans for inbound rockets and grenades every 0.15 s and commits to a perpendicular sidestep that is checked for both floor *and* clearance, shooting throughout. Floor alone is not enough: a wall has excellent floor under it, and dodging into one pins the bot exactly where the rocket is going. Serial rockets still land sometimes at every skill tier to stay human.
 - **Retreat by geometry**: A low-stack bot against a healthy enemy fans headings away from the threat and commits to the first whose destination breaks the enemy's line of sight - cover is a wall between us, never distance. Cornered means fight; the bot shoots the whole way out.
@@ -133,6 +133,8 @@ flowchart TD
   - **Slots 2-3 - the glory hounds** (Joe Rogan, and Mr Elusive as the `impulse 101` fourth bot): Powerup-focused, aggressive rocket jumps, wildest aim.
   - Chat voices are name-keyed on top - the 18-character homage roster below each speak in their own voice.
 - **Skill scales the neck as well as the trigger**: `ar_aimrate` (170 deg/s at skill 0 rising to 300 at skill 3, with a personality offset) drives pursuit corner turns and auditory glances, not just aim tracking - a warmup bot looks around more slowly than a skill 3 bot, rather than merely shooting worse.
+- **Continuous per-bot skill**: The four shipped 0/1/2/3 aim rows are exact anchor points on a continuous 0..3 scale. Reaction, error, tracking and spring gains interpolate between them, while prediction, splash, memory, denial, hunches and prefire unlock in one ordered ladder. Each roster slot also carries a live -1..+1 offset, so one match can mix warmup partners and harder opponents.
+- **Opt-in adaptive match skill**: At global skill 1, `impulse 110` enables Reaper-style per-bot adjustment against connected humans only. Losing to the player raises that bot's skill and beating the player lowers it; the random step anneals as results accumulate. It is off by default, excluded from botmatches and co-op, and resetting the toggle clears every adaptive offset.
 - **Audible powerup tells**: Bots play the stock three-second expiry cues for quad, pentagram, ring and biosuit, so a player fighting a powered-up opponent can hear the multiplier about to lapse. Information the code had and the human did not.
 - **Scoreboard illusion**: Injects `SVC_UPDATENAME`, `SVC_UPDATECOLORS`, and `SVC_UPDATEFRAGS` into spare client slots (`argus_maxclients - 1 - slot`), displaying full names, colours, and frags on the `TAB` scoreboard.
 
@@ -226,15 +228,21 @@ while humans keep the remaster model.
 | `impulse 229` | **Chat Easter Egg**: Speak to Gabe Newell (*Steam summer sale & engine polish*). |
 | `impulse 230` | **Chat Easter Egg**: Speak to Stevie "Killcreek" Case (*Lightning Gun shaft precision*). |
 | `impulse 225` | **Chat Easter Egg**: Arena Shout (*"Good game everyone!"*). |
-| `skill 0` to `skill 3` | Adjusts bot difficulty dial (reaction delay, aim error, tracking rate) on next respawn. |
+| `skill 0` to `skill 3` | Sets the continuous roster baseline (fractional values such as `1.5` are valid); console changes apply on next respawn. |
 | `impulse 100` | Opens interactive in-game bot roster control menu. |
 | `impulse 101` | Adds an extra bot from the homage roster (up to 4 bots total). |
 | `impulse 102` | Removes the most recently spawned bot from the arena. |
-| `impulse 103` | Cycles bot difficulty skill (0..3: Easy, Normal, Medium, Hard). |
+| `impulse 103` | Cycles global bot skill (0..3) and retunes active bots immediately. |
 | `impulse 104` | Toggles ArgusCam AI spectator director. |
 | `impulse 105` | Displays match statistics and bot scorecards. |
+| `impulse 106` to `impulse 109` | Cycles the live skill offset for roster slots 0 to 3 through `0, +0.5, +1, -1, -0.5`. |
+| `impulse 110` | Toggles adaptive per-bot skill for human deathmatches at global skill 1 (off by default). |
 | `fraglimit <n>` | Sets match frag limit; game transitions levels upon a bot reaching the target. |
 | `timelimit <n>` | Sets match time limit in minutes. |
+
+Roster and skill impulses are local in single-player. Multiplayer operators
+must opt in from the server console with `scratch1 147`; `developer 1` only
+enables telemetry and does not grant control to connected clients.
 
 > The table is not the whole list. Argus descends from two bots, and
 > the elder of the pair claimed its console word the only way vanilla
@@ -413,7 +421,8 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 | "ARGUS <name> watch spawn", "ARGUS <name> sprintjump",                            |
 | "ARGUS <name> jumpstage <target>", "ARGUS <name> jumpcharge <target>",            |
 | "ARGUS <name> jumpapproach <target> actual <speed>",                               |
-| "ARGUS <name> leadclip".                                                          |
+| "ARGUS <name> leadclip", "ARGUS <name> skillset <skill>",                        |
+| "ARGUS <name> skilldrift <skill>".                                                |
 | Debug channel (console `scratch1 1`, never in briefs):                            |
 | ARGDBG <name> pick <class> u <utility> | <per-class scores> ...                   |
 +-----------------------------------------------------------------------------------+

@@ -128,7 +128,7 @@ const Z_POWER: f64 = 0.841_621;
 /// at n tapes a side, with 5 per cent false positives and 80 per cent
 /// power.
 ///
-///     mde = (z_alpha + z_power) * sigma * sqrt(2 / n)
+/// `mde = (z_alpha + z_power) * sigma * sqrt(2 / n)`
 ///
 /// It is the standard two-sample expression and it is the whole answer
 /// to "how many tapes does this need": the count enters as a square

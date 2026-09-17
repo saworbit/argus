@@ -1619,6 +1619,16 @@ void(entity targ, entity attacker) ClientObituary =
 		{
 			attacker.ar_lastkill = targ;
 			attacker.ar_lastkilltime = time;
+			Argus_SkillResult (attacker, TRUE);
+		}
+		else if ((attacker.classname == "teledeath"
+			|| attacker.classname == "teledeath2"
+			|| attacker.classname == "teledeath3")
+			&& attacker.owner.ar_isbot)
+		{
+			attacker.owner.ar_lastkill = targ;
+			attacker.owner.ar_lastkilltime = time;
+			Argus_SkillResult (attacker.owner, TRUE);
 		}
 	}
 
