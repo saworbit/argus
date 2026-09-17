@@ -115,10 +115,15 @@ ship - the binary and the paper trail agree.
 - Catches an experimental build left installed by a ladder, and a
   handoff hash drifting from the binary, which the v4.18 note records
   happening.
-- Runs when either progs.dat or CLAUDE.md is in the diff, and always on
-  main. It deliberately does NOT run on every QC PR, because the
-  shipped workflow is a QC PR followed by a separate install PR (#399
-  then #400) and the binary is legitimately stale in between.
+- RUNS UNCONDITIONALLY, and needs no diff gate. The first cut of this
+  design gated it on progs.dat or CLAUDE.md being in the diff, to
+  avoid firing on a QC PR whose binary is legitimately stale, since
+  the shipped workflow is a QC PR then a separate install PR (#399
+  then #400). The gate is unnecessary: the check reads only committed
+  files, so on a QC-only PR neither binary nor CLAUDE.md has moved,
+  they still agree, and it passes. A gate could only ever have
+  suppressed a true finding. It fires exactly when one of the three
+  files moves without the others, which is the defect.
 
 tapes - evidence is append-once.
 
