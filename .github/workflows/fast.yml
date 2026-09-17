@@ -34,6 +34,16 @@ jobs:
             gh api --paginate \
               "repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
               --jq '.commits[].commit.message' > commit_msgs.txt
+            # a pull request always changes at least one file, so an
+            # empty list here means the compare call gave us nothing
+            # rather than that there is nothing to check. Left alone,
+            # the tapes check would report "skipped" and the run would
+            # go green having checked no tape at all - the vacuous pass
+            # this whole guard family exists to prevent
+            if [ ! -s changed.txt ]; then
+              echo "::error::the compare API returned no changed files for this pull request, so the tapes check would have passed without checking anything"
+              exit 1
+            fi
           fi
           wc -l < changed.txt
 
