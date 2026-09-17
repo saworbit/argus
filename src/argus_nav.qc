@@ -801,7 +801,7 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
         bit = Argus_NavGetLinkBit (cur, nx);
         if ((cur.an_rjmask & bit) && !Argus_BotCanRJ (bot))
             return FALSE;
-        if ((cur.an_sprintmask & bit) && skill < 2)
+        if ((cur.an_sprintmask & bit) && bot.ar_skill < 2)
             return FALSE;
         // the same impossible-climb refusal as the search (#317). A
         // cached chain was verified for whoever searched it, and this
@@ -931,7 +931,7 @@ void() Argus_Nav_Frame =
                 // the bot at the lip with the route still telling it to
                 // climb, which is the dm2 n0 pin the ceiling was for.
                 if ((!(cur.an_rjmask & bit) || Argus_BotCanRJ (an_bot))
-                    && (!(cur.an_sprintmask & bit) || skill >= 2)
+                    && (!(cur.an_sprintmask & bit) || an_bot.ar_skill >= 2)
                     && (!(cur.an_jumpmask & bit)
                         || nb.origin_z - cur.origin_z <= an_apex))
                 {

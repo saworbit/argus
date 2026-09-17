@@ -1515,6 +1515,10 @@ void() ImpulseCommands =
 		ArgusCam_Toggle ();
 	else if (self.impulse == 105)
 		Argus_MatchStats ();
+	else if (self.impulse >= 106 && self.impulse <= 109)
+		Argus_CycleBotSkill (self.impulse - 106);
+	else if (self.impulse == 110)
+		Argus_ToggleSkillDrift ();
 	else if (self.impulse == 146)		// ARGUS: console "omicron"
 		Argus_SetOmicron (!argus_omicron);
 	else if (self.impulse >= 210 && self.impulse <= 214)

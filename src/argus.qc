@@ -40,6 +40,18 @@ float AR_TURNRATE    = 320;     // deg/s body turn
 float AR_AIMRATE     = 260;     // deg/s aim tracking
 float AR_AIMERR      = 34;      // aim error in units at 500u, fresh target
 
+// Continuous combat-capability ladder (#381). These thresholds all sit
+// below the established skill-1 human tier, so the four integer tiers keep
+// their shipped behaviour while fractional and per-bot skill has visible
+// meaning. The order follows Quake 3's character model: first prediction,
+// then spatial shots, memory/awareness, denial, and finally anticipation.
+float AR_SKILL_LEAD      = 0.20;
+float AR_SKILL_SPLASH    = 0.35;
+float AR_SKILL_MEMORY    = 0.50;
+float AR_SKILL_DENIAL    = 0.65;
+float AR_SKILL_HUNCH     = 0.80;
+float AR_SKILL_PREFIRE   = 1.00;
+
 // goal planner: item classes the utility scorer ranks, and the
 // world-state atoms the GOAP layer plans over
 float AR_C_ANY     = 0;         // backpacks and oddments
@@ -2436,9 +2448,9 @@ float(entity sp, float rad) Argus_PadCrowded =
 void(entity killer, vector deathorg) Argus_SpawnWatch =
 {
     local entity sp, best, oself;
-    local float bd, d;
+    local float bd, d, cool;
 
-    if (skill < 1)
+    if (killer.ar_skill < AR_SKILL_PREFIRE)
         return;
     if (killer == world || !killer.ar_isbot)
         return;
@@ -2477,7 +2489,12 @@ void(entity killer, vector deathorg) Argus_SpawnWatch =
 
     killer.ar_watchpos = best.origin;
     killer.ar_watchtime = time + 8;
-    killer.ar_watchcool = time + 6;
+    // Above the default tier, adaptive strength first buys another
+    // prediction opportunity sooner. Skill 1 remains exactly six seconds.
+    cool = 7.25 - killer.ar_skill * 1.25;
+    if (cool < 3.5)
+        cool = 3.5;
+    killer.ar_watchcool = time + cool;
     oself = self;
     self = killer;
     dprint ("ARGUS ");
@@ -2572,6 +2589,8 @@ string(entity killer) Argus_KillerName =
 
 void() Argus_Die =
 {
+    local entity k;
+
     // one death line only: the detailed form below. A bare
     // Argus_Event ("death") used to precede it and every parser that
     // counted the death token saw two events per death (Shane's
@@ -2588,6 +2607,16 @@ void() Argus_Die =
     dprint (" pos ");
     dprint (vtos(self.origin));
     dprint ("\n");
+
+    // Attribute telefrags to their owner before feeding the optional
+    // per-bot equaliser. World, suicide and bot-on-bot deaths do not move it.
+    k = self.enemy;
+    if (k.classname == "teledeath" || k.classname == "teledeath2"
+        || k.classname == "teledeath3")
+        k = k.owner;
+    if (k != world && k != self && k.classname == "player"
+        && !k.ar_isbot)
+        Argus_SkillResult (self, FALSE);
 
     // nemesis ledger (OPM slice C): a third straight death to the
     // same player is a vendetta - the affect the source spec wanted,
@@ -2701,38 +2730,105 @@ void(entity attacker, float dmg) Argus_Pain =
     }
 };
 
-// The difficulty dial (first slice of the Omicron soul). Reads the
-// stock skill cvar via the skill global at every spawn, so "skill 0"
-// through "skill 3" in the console retunes bots from their next
-// respawn. Skill 2 is the tuning that dominated the eighth playtest;
-// the deathmatch default of skill 1 sits a notch below it. Per-bot
-// personality offsets ride on top: Reap hunts (quick), Omi aims
-// (precise but deliberate), Zeus storms (fastest trigger, wildest aim).
+// The difficulty dial (first slice of the Omicron soul). The stock skill
+// cvar remains the roster baseline; each bot adds a live manual offset and,
+// when explicitly enabled, an adaptive human-match offset. Reaper accepted
+// fractional 0..3 skill and Frogbot preserved different skills per bot;
+// interpolate the four shipped rows so both properties have real meaning.
+// Integer inputs are exact: existing 0/1/2/3 baselines do not move.
+float() Argus_SkillDriftEligible =
+{
+    if (!argus_skilldrift || skill != 1 || !deathmatch || coop > 0)
+        return FALSE;
+    if (Argus_HumanCount () < 1)
+        return FALSE;
+    return TRUE;
+};
+
 void() Argus_SetSkill =
 {
-    local float s;
+    local float s, a, f, oldskill;
 
-    s = skill;
+    oldskill = self.ar_skill;
+    s = skill + self.ar_skilloff;
+    if (Argus_SkillDriftEligible ())
+        s = s + self.ar_skilldrift;
     if (s < 0) s = 0;
     if (s > 3) s = 3;
+    self.ar_skill = s;
+
+    // Sprint links are a skill-2 capability. A live retune that crosses
+    // that boundary must not inherit a route (or half-built BFS parent
+    // chain) chosen under the other rules. Re-plan from the current seat;
+    // otherwise lowering a bot could still execute an already-armed sprint.
+    if ((oldskill < 2 && s >= 2) || (oldskill >= 2 && s < 2))
+    {
+        if (self.ar_goal != world && self.ar_goal.claimed_by == self)
+            ReleaseClaim (self.ar_goal);
+        self.ar_goal = world;
+        self.ar_routegen = self.ar_routegen + 1;
+        if (an_busy && an_bot == self)
+            an_busy = 0;
+        self.ar_pending = 0;
+        self.ar_mode = 0;
+        self.ar_node = world;
+        self.ar_hopjump = 0;
+        self.ar_hopspeed = 0;
+        self.ar_sprintstate = 0;
+        self.ar_hoprj = 0;
+        self.ar_hoplift = 0;
+        self.ar_hopswim = 0;
+        self.ar_hoptrain = 0;
+        self.ar_hopdoor = 0;
+    }
+
+    // Upward adaptive movement buys the full cognition/cadence value but
+    // only 35 per cent of its raw aim gain. A bot that is losing should
+    // think and act more often before it simply becomes a deadlier turret.
+    // Manual offsets are explicit operator intent and affect both in full.
+    a = skill + self.ar_skilloff;
+    if (Argus_SkillDriftEligible ())
+    {
+        if (self.ar_skilldrift > 0)
+            a = a + self.ar_skilldrift * 0.35;
+        else
+            a = a + self.ar_skilldrift;
+    }
+    if (a < 0) a = 0;
+    if (a > 3) a = 3;
 
     // spring gains: k = omega^2, c = 2*zeta*omega with zeta ~0.8
     // (slight overshoot). The source spec's k 18-32 confused omega
     // with k and aimed like molasses (springaim1/2 ladder: engages
     // 49-56, deaths 24-25 - fights that never ended). omega 9-20
     // rad/s settles in 0.2-0.45 s, a human flick-and-correct.
-    if (s == 0)
-    { self.ar_aimerr = 2.2; self.ar_reactbase = 0.65; self.ar_aimrate = 170;
-      self.ar_spring_k = 110; self.ar_damping_c = 16.8; }
-    else if (s == 1)
-    { self.ar_aimerr = 1.6; self.ar_reactbase = 0.48; self.ar_aimrate = 210;
-      self.ar_spring_k = 200; self.ar_damping_c = 22.6; }
-    else if (s == 2)
-    { self.ar_aimerr = 1.0; self.ar_reactbase = 0.30; self.ar_aimrate = 260;
-      self.ar_spring_k = 360; self.ar_damping_c = 30.4; }
+    if (a < 1)
+    {
+        f = a;
+        self.ar_aimerr = 2.2 + (1.6 - 2.2) * f;
+        self.ar_reactbase = 0.65 + (0.48 - 0.65) * f;
+        self.ar_aimrate = 170 + (210 - 170) * f;
+        self.ar_spring_k = 110 + (200 - 110) * f;
+        self.ar_damping_c = 16.8 + (22.6 - 16.8) * f;
+    }
+    else if (a < 2)
+    {
+        f = a - 1;
+        self.ar_aimerr = 1.6 + (1.0 - 1.6) * f;
+        self.ar_reactbase = 0.48 + (0.30 - 0.48) * f;
+        self.ar_aimrate = 210 + (260 - 210) * f;
+        self.ar_spring_k = 200 + (360 - 200) * f;
+        self.ar_damping_c = 22.6 + (30.4 - 22.6) * f;
+    }
     else
-    { self.ar_aimerr = 0.7; self.ar_reactbase = 0.22; self.ar_aimrate = 300;
-      self.ar_spring_k = 560; self.ar_damping_c = 37.9; }
+    {
+        f = a - 2;
+        self.ar_aimerr = 1.0 + (0.7 - 1.0) * f;
+        self.ar_reactbase = 0.30 + (0.22 - 0.30) * f;
+        self.ar_aimrate = 260 + (300 - 260) * f;
+        self.ar_spring_k = 360 + (560 - 360) * f;
+        self.ar_damping_c = 30.4 + (37.9 - 30.4) * f;
+    }
 
     // personalities key on ROSTER SLOT, not netname (v3.37): Shane
     // renamed the roster and every bot silently fell into the
@@ -2794,6 +2890,51 @@ void() Argus_SetSkill =
     }
 };
 
+// Reaper's skill-1 equaliser, made opt-in (#359). Only human deathmatch
+// results can move it; pure botmatches are excluded by construction. A loss
+// raises this bot, a win lowers it, and the random adjustment anneals as the
+// matchup gathers evidence. Manual per-slot offsets remain a separate layer.
+void(entity bot, float won) Argus_SkillResult =
+{
+    local float adj, base;
+    local entity oself;
+
+    if (!Argus_SkillDriftEligible ())
+        return;
+    if (bot == world || !bot.ar_isbot)
+        return;
+
+    if (bot.ar_skillresults < 3)
+        adj = 0.8;
+    else if (bot.ar_skillresults < 8)
+        adj = 0.4;
+    else
+        adj = 0.15;
+
+    if (won)
+        bot.ar_skilldrift = bot.ar_skilldrift - adj * random ();
+    else
+        bot.ar_skilldrift = bot.ar_skilldrift + adj * random ();
+    bot.ar_skillresults = bot.ar_skillresults + 1;
+
+    base = skill + bot.ar_skilloff;
+    if (base + bot.ar_skilldrift < 0)
+        bot.ar_skilldrift = 0 - base;
+    if (base + bot.ar_skilldrift > 3)
+        bot.ar_skilldrift = 3 - base;
+
+    oself = self;
+    self = bot;
+    Argus_SetSkill ();
+    self = oself;
+
+    dprint ("ARGUS ");
+    dprint (bot.netname);
+    dprint (" skilldrift ");
+    dprint (ftos (bot.ar_skill));
+    dprint ("\n");
+};
+
 void() Argus_BaseStats =
 {
     Argus_SetSkill ();
@@ -2836,6 +2977,9 @@ void() Argus_BaseStats =
     self.weapon = IT_SHOTGUN;
     self.attack_finished = time;
     self.button0 = 0;
+    self.ar_fireready = time;
+    self.ar_fireburst = 0;
+    self.ar_fireweapon = 0;
     self.th_die = Argus_Die;
     self.th_pain = Argus_Pain;
     W_SetCurrentAmmo ();
@@ -3450,7 +3594,8 @@ void() Argus_Perceive =
                     if (normalize (fov) * v_forward < 0.2)
                     {
                         ok = 0;
-                        if (time < self.ar_sndtime + 2.5
+                        if (time < self.ar_sndtime + 2
+                                             + self.ar_skill * 0.5
                             && vlen (b.origin - self.ar_sndpos) < 300)
                             ok = 1;
                         // combat memory (the "getting dumber" fix):
@@ -3465,8 +3610,9 @@ void() Argus_Perceive =
                         // you break sight - skill scales the THINKING,
                         // not just the trigger finger
                         if (b == self.ar_lastfoe
-                            && time < self.ar_foetime + 5
-                            && skill >= 1)
+                            && time < self.ar_foetime + 4.25
+                                                       + self.ar_skill * 0.75
+                            && self.ar_skill >= AR_SKILL_MEMORY)
                             ok = 1;
                     }
                 }
@@ -3479,7 +3625,7 @@ void() Argus_Perceive =
                     // killing us outranks the shopping list. Not at
                     // skill 0 - warmup partners hold no grudges
                     if (b == self.ar_nemesis && self.ar_nemkills >= 3
-                        && skill >= 1)
+                        && self.ar_skill >= AR_SKILL_MEMORY)
                         d = d + 600;
                     if (d > bd)
                     {
@@ -3706,6 +3852,18 @@ void(float d) Argus_SelectWeapon =
     if (w == self.weapon)
         return;
 
+    // Nail and lightning attacks live in a player animation think chain.
+    // Changing self.weapon alone does not replace that chain, so it can keep
+    // firing the old gun while the trigger code reasons about the new one.
+    // End it synchronously before installing a different weapon (#381).
+    if (self.ar_fireweapon)
+    {
+        self.button0 = 0;
+        self.ar_fireburst = 0;
+        self.ar_fireweapon = 0;
+        self.ar_fireready = time + 0.2;
+        player_run ();
+    }
     self.weapon = w;
     W_SetCurrentAmmo ();
 
@@ -3790,12 +3948,12 @@ void() Argus_BattleItemScan =
 // winner becomes an 8 s utility bias on our own shopping: we do not
 // abandon our life to chase a ghost, we just find that item suddenly
 // very attractive. Interception emerges from the same scorer that
-// already runs the circuits. Gated to skill 2+ - a warmup partner
-// does not read minds.
+// already runs the circuits. Gated late in the continuous capability
+// ladder - a warmup partner does not read minds.
 void(entity foe) Argus_Hunch =
 {
     local entity it, best, oself;
-    local float v, cls, sc, bsc;
+    local float v, cls, sc, bsc, cool;
     local vector d;
 
     // skill 1+ since 2026-08-27: the v378 human tape ran the whole
@@ -3803,7 +3961,7 @@ void(entity foe) Argus_Hunch =
     // the flagship cognition was invisible to the human it was
     // built for. Skill 1 is the calibrated human tier; the mind
     // belongs in it.
-    if (skill < 1)
+    if (self.ar_skill < AR_SKILL_HUNCH)
         return;
     if (time < self.ar_hunchcool)
         return;
@@ -3853,7 +4011,10 @@ void(entity foe) Argus_Hunch =
 
     self.ar_huntitem = best;
     self.ar_hunttime = time + 8;
-    self.ar_hunchcool = time + 6;
+    cool = 7.25 - self.ar_skill * 1.25;
+    if (cool < 3.5)
+        cool = 3.5;
+    self.ar_hunchcool = time + cool;
     self.ar_goal = world;           // re-shop next tick with the bias live
     dprint ("ARGUS ");
     dprint (self.netname);
@@ -4129,6 +4290,71 @@ float(vector src, vector tg) Argus_AimBlocked =
     return FALSE;
 };
 
+// Human trigger cadence (#381). Discrete weapons release between shots and
+// add a small skill-scaled delay after the stock refire clock. Nailguns and
+// lightning must keep button0 held while their player-frame chains run, so
+// they fire in bursts separated by short releases instead of being pulsed
+// every frame (which would abort the chain before it dealt damage).
+float() Argus_TriggerReady =
+{
+    local float pause;
+
+    // Coop's ally-safe substitution and stock weapon paths can also replace
+    // self.weapon without passing through Argus_SelectWeapon.
+    if (self.ar_fireweapon && self.ar_fireweapon != self.weapon)
+    {
+        self.button0 = 0;
+        self.ar_fireburst = 0;
+        self.ar_fireweapon = 0;
+        self.ar_fireready = time + 0.2;
+        player_run ();
+        return FALSE;
+    }
+
+    if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN
+        || self.weapon == IT_LIGHTNING)
+    {
+        if (self.ar_fireburst > 0)
+        {
+            if (time < self.ar_fireburst)
+                return TRUE;
+            self.button0 = 0;
+            self.ar_fireburst = 0;
+            self.ar_fireweapon = 0;
+            player_run ();
+            pause = 0.18 - self.ar_skill * 0.03 + random () * 0.10;
+            if (pause < 0.04)
+                pause = 0.04;
+            self.ar_fireready = time + pause;
+            return FALSE;
+        }
+        if (time < self.ar_fireready)
+            return FALSE;
+        self.ar_fireburst = time + 0.35 + self.ar_skill * 0.20
+                          + random () * 0.25;
+        return TRUE;
+    }
+
+    if (time < self.ar_fireready)
+        return FALSE;
+    return TRUE;
+};
+
+void() Argus_TriggerFired =
+{
+    local float pause;
+
+    if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN
+        || self.weapon == IT_LIGHTNING)
+    {
+        self.ar_fireweapon = self.weapon;
+        return;
+    }
+    self.ar_fireweapon = 0;
+    pause = (3 - self.ar_skill) * 0.035 + random () * 0.06;
+    self.ar_fireready = self.attack_finished + pause;
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
@@ -4185,9 +4411,9 @@ float() Argus_Combat =
                 // finger): ONE speculative rocket at the vanish
                 // point while chasing it - the shot arrives where
                 // they were, and sometimes where they still are.
-                // Skill 2+, rockets to spare (never the last one),
+                // Top of the sub-skill-1 ladder, rockets to spare (never the last one),
                 // a clear line, and the refire clock respected.
-                if (!self.ar_prefired && skill >= 1
+                if (!self.ar_prefired && self.ar_skill >= AR_SKILL_PREFIRE
                     && self.weapon == IT_ROCKET_LAUNCHER
                     && self.ammo_rockets >= 2
                     && time > self.attack_finished
@@ -4312,12 +4538,15 @@ float() Argus_Combat =
     // axe lead nothing. One step, not an iterated solution: close
     // enough at DM ranges, and the error model still rides on top.
     flight = 0;
-    if (self.weapon == IT_ROCKET_LAUNCHER)
-        flight = d / 1000;
-    else if (self.weapon == IT_GRENADE_LAUNCHER)
-        flight = d / 600;
-    else if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
-        flight = d / 1000;
+    if (self.ar_skill >= AR_SKILL_LEAD)
+    {
+        if (self.weapon == IT_ROCKET_LAUNCHER)
+            flight = d / 1000;
+        else if (self.weapon == IT_GRENADE_LAUNCHER)
+            flight = d / 600;
+        else if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
+            flight = d / 1000;
+    }
     if (flight > 0)
     {
         preaim = aimpt;
@@ -4367,7 +4596,8 @@ float() Argus_Combat =
         //
         // Skill 1 and up, like every cognition gate since
         // v3.76: a warmup bot may keep the honest miss.
-        if (self.weapon == IT_ROCKET_LAUNCHER && skill >= 1)
+        if (self.weapon == IT_ROCKET_LAUNCHER
+            && self.ar_skill >= AR_SKILL_LEAD)
         {
             ldv = aimpt - preaim;
             // A lead shorter than half a player hull cannot put
@@ -4449,7 +4679,8 @@ float() Argus_Combat =
     }
     else if (self.weapon == IT_ROCKET_LAUNCHER)
     {
-        if ((e.flags & FL_ONGROUND) && skill >= 1)
+        if ((e.flags & FL_ONGROUND)
+            && self.ar_skill >= AR_SKILL_SPLASH)
         {
             // foot splash (OPM slice A): a grounded target is aimed
             // at the floor, not centre mass - the splash lands even
@@ -4474,7 +4705,7 @@ float() Argus_Combat =
             // the splash back into our own feet. Logged as a plain
             // "ARGUS <name> shove" console line (throttled 2 s) -
             // not an ARGEVT, the Rust parser's verb set is closed.
-            if (d > 150 && skill >= 1)
+            if (d > 150 && self.ar_skill >= AR_SKILL_DENIAL)
             {
                 shd = e.origin - self.origin;
                 shd_z = 0;
@@ -4884,6 +5115,20 @@ float() Argus_Combat =
                     self.button0 = 0;
                     return TRUE;
                 }
+
+                // This substitution intentionally bypasses the ordinary
+                // selector. Cancel an old nail/lightning frame chain now;
+                // otherwise it can fire the former gun under the new state.
+                if (self.ar_fireweapon
+                    && self.ar_fireweapon != self.weapon)
+                {
+                    self.button0 = 0;
+                    self.ar_fireburst = 0;
+                    self.ar_fireweapon = 0;
+                    self.ar_fireready = time + 0.2;
+                    player_run ();
+                    W_SetCurrentAmmo ();
+                }
             }
 
             // Shared-target hold fire / Kill-steal suppression (#174):
@@ -4922,6 +5167,8 @@ float() Argus_Combat =
         traceline (self.origin + '0 0 22', aimpt, FALSE, self);
         if (Argus_IsAlly (trace_ent))
             self.button0 = 0;
+        else if (!Argus_TriggerReady ())
+            self.button0 = 0;
         else
         {
             self.button0 = 1;
@@ -4929,6 +5176,7 @@ float() Argus_Combat =
             {
                 SuperDamageSound ();
                 W_Attack ();
+                Argus_TriggerFired ();
             }
         }
     }
@@ -5426,7 +5674,7 @@ void() Argus_PickGoal =
     // extra bodies simply do not add denial pressure.
     dn1 = world;  dn2 = world;  dn3 = world;
     dn4 = world;  dn5 = world;  dn6 = world;
-    if (skill >= 1)
+    if (self.ar_skill >= AR_SKILL_DENIAL)
     {
         b = find (world, classname, "player");
         while (b != world)
@@ -5586,7 +5834,7 @@ void() Argus_PickGoal =
                     // of 600 edicts for a single goal pick. The
                     // players were gathered once before the loop
                     // (dn1..dn6); only the distance test stays here.
-                    if (skill >= 1)
+                    if (self.ar_skill >= AR_SKILL_DENIAL)
                     {
                         if (dn1 != world && vlen (dn1.origin - e.origin) < 300)
                             sc = sc + 12;
@@ -7095,8 +7343,10 @@ void() Argus_AI =
     // override for the moment), and it decays with the sound.
     // cognition gate: a warmup partner glances at noises but never
     // hunts them - skill 1+ investigates
-    if (!fighting && ar_opm_ears && skill >= 1 && self.ar_enemy == world
-        && self.ar_sndtime > 0 && time < self.ar_sndtime + 3)
+    if (!fighting && ar_opm_ears
+        && self.ar_skill >= AR_SKILL_MEMORY && self.ar_enemy == world
+        && self.ar_sndtime > 0
+        && time < self.ar_sndtime + 2.5 + self.ar_skill * 0.5)
     {
         // weapon-sound classification (mre Predator): how far a bot
         // will go to investigate depends on WHAT it heard and how
@@ -8415,7 +8665,7 @@ void() Argus_AI =
 void() Argus_FrameAll =
 {
     local entity b, oself;
-    local float refresh;
+    local float refresh, driftactive;
 
     // freeze with everyone else at match end; stock CheckRules also
     // only watches human frags, so a bot reaching the fraglimit has
@@ -8428,6 +8678,18 @@ void() Argus_FrameAll =
     // fresh from the cvar; fraglimit is tested per bot below)
     if (timelimit > 0 && time >= timelimit)
         NextLevel ();
+
+    // Eligibility can disappear without an impulse (the last human leaves,
+    // deathmatch/co-op changes, or the skill cvar moves off 1). Retune on
+    // that edge so a stored adaptive offset is numerically inert in the
+    // very first bot-only frame, and restore it when an eligible human
+    // session resumes.
+    driftactive = Argus_SkillDriftEligible ();
+    if (driftactive != argus_skilldriftactive)
+    {
+        argus_skilldriftactive = driftactive;
+        Argus_RetuneAll ();
+    }
 
     Argus_Nav_Frame ();
 
@@ -8699,26 +8961,120 @@ void(float on) Argus_SetOmicron =
         bprint (PRINT_HIGH, "\n  the roster returns.\n\n");
 };
 
-// Multiplayer roster safety (#147):
-// Non-admin clients in dedicated multiplayer cannot disrupt server rosters
+// Multiplayer roster safety (#147): QuakeC cannot distinguish a listen host
+// from the first remote client without engine extensions. Therefore every
+// multiplayer server requires an explicit server-side Argus admin switch;
+// developer logging is not authentication. Plain single-player remains local.
 float() Argus_ClientCanControlRoster =
 {
-    if (!deathmatch)
+    if (!deathmatch && !coop)
         return TRUE;
-    if (cvar ("developer"))
-        return TRUE;
-    if (self == find (world, classname, "player"))
-        return TRUE;
-    if (serverflags & 64)
+    // scratch1 is a stock, server-console cvar: remote clients cannot write it.
+    if (cvar ("scratch1") == 147)
         return TRUE;
     return FALSE;
+};
+
+void() Argus_RetuneAll =
+{
+    local entity b, oself;
+
+    oself = self;
+    b = argus_bots;
+    while (b != world)
+    {
+        self = b;
+        Argus_SetSkill ();
+        b = b.ar_chain;
+    }
+    self = oself;
+};
+
+// One impulse per roster slot (#358). Each press advances the offset through
+// 0, +0.5, +1, -1, -0.5 and back to 0; the effective skill is applied now,
+// not deferred until the next death. Missing slots are reported, not stored.
+void(float slot) Argus_CycleBotSkill =
+{
+    local entity b, oself;
+
+    if (!Argus_ClientCanControlRoster ())
+    {
+        sprint (self, PRINT_HIGH, "Argus: Server roster control restricted to admin\n");
+        return;
+    }
+
+    b = argus_bots;
+    while (b != world && b.ar_slot != slot)
+        b = b.ar_chain;
+    if (b == world)
+    {
+        sprint (self, PRINT_HIGH, "Argus: No active bot in slot ");
+        sprint (self, PRINT_HIGH, ftos (slot));
+        sprint (self, PRINT_HIGH, "\n");
+        return;
+    }
+
+    b.ar_skilloff = b.ar_skilloff + 0.5;
+    if (b.ar_skilloff > 1)
+        b.ar_skilloff = -1;
+    oself = self;
+    self = b;
+    Argus_SetSkill ();
+    self = oself;
+
+    sprint (self, PRINT_HIGH, "Argus: ");
+    sprint (self, PRINT_HIGH, b.netname);
+    sprint (self, PRINT_HIGH, " skill offset ");
+    sprint (self, PRINT_HIGH, ftos (b.ar_skilloff));
+    sprint (self, PRINT_HIGH, ", effective ");
+    sprint (self, PRINT_HIGH, ftos (b.ar_skill));
+    sprint (self, PRINT_HIGH, "\n");
+    dprint ("ARGUS ");
+    dprint (b.netname);
+    dprint (" skillset ");
+    dprint (ftos (b.ar_skill));
+    dprint ("\n");
+    centerprint (self, "Argus: Per-bot skill changed\nSee console for value");
+};
+
+void() Argus_ToggleSkillDrift =
+{
+    local entity b;
+
+    if (!Argus_ClientCanControlRoster ())
+    {
+        sprint (self, PRINT_HIGH, "Argus: Server roster control restricted to admin\n");
+        return;
+    }
+
+    argus_skilldrift = !argus_skilldrift;
+    argus_skilldriftactive = Argus_SkillDriftEligible ();
+    b = argus_bots;
+    while (b != world)
+    {
+        b.ar_skilldrift = 0;
+        b.ar_skillresults = 0;
+        b = b.ar_chain;
+    }
+    Argus_RetuneAll ();
+
+    if (argus_skilldrift)
+    {
+        sprint (self, PRINT_HIGH, "Argus: Adaptive per-bot skill ON (active only at global skill 1 with a human)\n");
+        centerprint (self, "Argus: Adaptive skill ON");
+    }
+    else
+    {
+        sprint (self, PRINT_HIGH, "Argus: Adaptive per-bot skill OFF\n");
+        centerprint (self, "Argus: Adaptive skill OFF");
+    }
 };
 
 // In-game bot roster menu (#147)
 void() Argus_BotMenu =
 {
-    centerprint (self, "=== Argus Bot Control ===\n\nimpulse 101: Add Bot\nimpulse 102: Remove Bot\nimpulse 103: Cycle Bot Skill\nimpulse 104: Toggle ArgusCam Director\nimpulse 105: Match Statistics\n");
-    sprint (self, PRINT_HIGH, "Argus Menu: 101 Add, 102 Remove, 103 Skill, 104 Cam, 105 Stats\n");
+    centerprint (self, "=== Argus Bot Control ===\n\n101 Add / 102 Remove\n103 Global Skill / 104 Camera\n105 Stats\n106-109 Slot Skill\n110 Adaptive Skill\n");
+    sprint (self, PRINT_HIGH, "Argus Menu: 101 Add, 102 Remove, 103 Global Skill, 104 Cam, 105 Stats, 106-109 Slot Skill, 110 Adaptive Skill\n");
 };
 
 void() Argus_AddBot =
@@ -8799,8 +9155,16 @@ void() Argus_CycleSkill =
         return;
     }
 
-    skill = skill + 1;
-    if (skill > 3)
+    // Fractional console baselines are valid now. Advance to the next
+    // integer tier rather than turning 1.5 into a transient 2.5 while the
+    // localcmd below promises (and only later installs) skill 3.
+    if (skill < 1)
+        skill = 1;
+    else if (skill < 2)
+        skill = 2;
+    else if (skill < 3)
+        skill = 3;
+    else
         skill = 0;
 
     if (skill == 0)
@@ -8823,6 +9187,7 @@ void() Argus_CycleSkill =
         localcmd ("skill 3\n");
         centerprint (self, "Argus: Skill set to 3 (Hard - Nightmare)");
     }
+    Argus_RetuneAll ();
 };
 
 void() Argus_MatchStats =
@@ -8851,6 +9216,13 @@ void() Argus_MatchStats =
         sprint (self, PRINT_HIGH, ftos (b.frags));
         sprint (self, PRINT_HIGH, ", Health: ");
         sprint (self, PRINT_HIGH, ftos (rint (b.health)));
+        sprint (self, PRINT_HIGH, ", Skill: ");
+        sprint (self, PRINT_HIGH, ftos (b.ar_skill));
+        sprint (self, PRINT_HIGH, " (offset ");
+        sprint (self, PRINT_HIGH, ftos (b.ar_skilloff));
+        sprint (self, PRINT_HIGH, ", drift ");
+        sprint (self, PRINT_HIGH, ftos (b.ar_skilldrift));
+        sprint (self, PRINT_HIGH, ")");
         sprint (self, PRINT_HIGH, "\n");
         b = b.ar_chain;
     }

@@ -9,6 +9,48 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**ONE CONTINUOUS SKILL NOW BELONGS TO EACH BOT** (#358, #381, #359).
+The stock `skill` cvar remains the roster baseline, but every bot now stores
+its own effective 0..3 value. The four shipped integer rows are exact anchor
+points and aim error, reaction time, tracking rate and spring gains interpolate
+between them, so `skill 1.4` is no longer treated as skill 3. Live impulses
+106 through 109 cycle a -1..+1 offset for roster slots 0 through 3, apply it
+without a respawn, and the match card prints each effective value.
+
+THE COMBAT GATES USE THAT SAME VALUE. Projectile lead, foot splash, combat
+memory, item denial, hunches and speculative prefire form one ordered ladder
+instead of reading the global cvar independently. Sprint-link eligibility is
+per bot too. Discrete weapons now release the trigger between shots and add a
+small skill-scaled delay beyond the stock refire clock; nailguns and lightning
+use bounded bursts so releasing `button0` never aborts their damage frame
+chains. This follows Quake 3's characteristic thresholds without changing the
+capabilities present at the established integer skill-1 tier.
+
+REAPER'S SKILL-1 EQUALISER RETURNS AS AN EXPLICIT OPT-IN. `impulse 110`
+enables it only for deathmatches with a connected human and only at the
+default global skill. A player kill raises the defeated bot; a bot kill lowers
+that bot. Random steps anneal from 0.8 to 0.4 to 0.15 as results accumulate,
+clamp the effective value to 0..3, and emit
+`ARGUS <name> skilldrift <skill>`. Bot-only matches and co-op can never move
+the dial, and disabling or re-enabling the option clears adaptive history.
+
+LIVE PROOF USED THE FINAL BUILD. A real protocol-15 client drove impulse 106,
+which logged Carmack at effective skill 1.5, then enabled adaptation and fought
+the roster. Joe Rogan's human kill moved him independently to skill 0.7. The
+same session forced Carmack from lightning to super shotgun and then recorded
+his buckshot kill, followed later by a nailgun-to-rocket switch and rocket kill:
+the former continuous-fire animation no longer blocks or impersonates the new
+weapon. A remote client could not retune the roster, including after seven
+attempts to raise the old `serverflags` bit through impulse 11; the same command
+worked after the operator explicitly armed `scratch1 147`. Final-binary dm4 and
+dm2 botmatches ran for 65 seconds without a VM or protocol error: dm4 recorded
+1 stall, 11 deaths and 2 lava deaths; dm2 recorded 17 stalls, 5 deaths and no
+lava deaths. These short two-map tapes are smoke evidence, not a formal
+full-length A/B verdict.
+Lab-only hygiene found by the verification pass: the MDE formula in
+`stats.rs` is prose, not runnable Rust, so it is now inline code instead of a
+doctest and the full Cargo suite can run through documentation tests.
+
 **EACH PLAIN JUMP LINK NOW CARRIES THE SPEED OF ITS OWN APPROACH**
 (#365). The graph already knew that one link crossed a short gap, one
 needed a full arc, and another was only a climb, but runtime threw that
