@@ -142,6 +142,57 @@ def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
     return fails
 
 
+# ----------------------------------------------------------------- nav
+
+# READ THE .qc, NEVER THE .json. The runtime compiles the .qc and the
+# two files do not agree: the json's `links` array keeps entries for
+# pairs a later navgen pass reminted under a typed verb, so reading it
+# makes e1m2, e1m5 and e1m6 look like they carry degree-zero nodes when
+# they do not. #330 reached the same conclusion from the other side.
+NAV_VERBS = ("Argus_NavLinkJump", "Argus_NavLinkSprint",
+             "Argus_NavLinkRocket", "Argus_NavLinkLift",
+             "Argus_NavLinkSwim", "Argus_NavLinkTrain",
+             "Argus_NavLinkDoor", "Argus_NavLink")
+NAV_LINK_RE = re.compile(
+    r"\b(" + "|".join(NAV_VERBS) + r")\s*\(\s*n(\d+)\s*,\s*n(\d+)\s*\)")
+NAV_NODE_RE = re.compile(r"\bArgus_NavNode\s*\(")
+NAV_SLOTS = 8
+
+
+def check_nav(root, **_kw):
+    """Every committed graph obeys the two limits the runtime enforces.
+
+    Guards v3.88, where links past the 8-slot budget were dropped
+    silently at load with only a dprint to say so, and v3.70, where
+    n150 carried inbound teleporter links and no exit of any kind, so
+    every route starting there died instantly.
+    """
+    fails = []
+    for p in sorted((root / "src").glob("argus_nav_*.qc")):
+        if p.name == "argus_nav_dispatch.qc":
+            continue
+        text = p.read_text(encoding="utf-8", errors="replace")
+        nodes = len(NAV_NODE_RE.findall(text))
+        if nodes == 0:
+            continue
+        out = collections.Counter()
+        for _verb, src, _dst in NAV_LINK_RE.findall(text):
+            out[int(src)] += 1
+        over = sorted(i for i, c in out.items() if c > NAV_SLOTS)
+        if over:
+            fails.append(
+                "nav: %s nodes %s exceed the %d-slot runtime budget - "
+                "Argus_NavLink drops the surplus silently (v3.88)"
+                % (p.name, over[:8], NAV_SLOTS))
+        orphans = [i for i in range(nodes) if i not in out]
+        if orphans:
+            fails.append(
+                "nav: %s nodes %s have no outbound edge of any type - "
+                "every route starting there dies instantly (v3.70)"
+                % (p.name, orphans[:8]))
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
@@ -171,7 +222,7 @@ def main(argv=None):
     return 1 if fails else 0
 
 
-CHECKS = {"ship": check_ship, "tapes": check_tapes}
+CHECKS = {"ship": check_ship, "tapes": check_tapes, "nav": check_nav}
 
 
 if __name__ == "__main__":

@@ -516,6 +516,76 @@ class TestToolsCLI(unittest.TestCase):
             res = self.run_tool("argus_ci.py", "tapes", "--changed-files", cf)
             self.assertEqual(res.returncode, 0, res.stdout)
 
+    def _nav_qc(self, root, name, body):
+        d = Path(root) / "src"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / name).write_text(body, encoding="utf-8")
+
+    def test_argus_ci_nav_passes_on_the_tree(self):
+        res = self.run_tool("argus_ci.py", "nav")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("nav: ok", res.stdout)
+
+    def test_argus_ci_nav_accepts_a_healthy_graph(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc", """
+    n0 = Argus_NavNode ('0 0 0');
+    n1 = Argus_NavNode ('64 0 0');
+    Argus_NavLink (n0, n1);
+    Argus_NavLink (n1, n0);
+""")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_nav_catches_an_over_budget_node(self):
+        links = "\n".join("    Argus_NavLink (n0, n%d);" % i
+                          for i in range(1, 11))
+        nodes = "\n".join("    n%d = Argus_NavNode ('%d 0 0');" % (i, i * 64)
+                          for i in range(0, 11))
+        back = "\n".join("    Argus_NavLink (n%d, n0);" % i
+                         for i in range(1, 11))
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc",
+                         nodes + "\n" + links + "\n" + back + "\n")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("8-slot", res.stdout)
+
+    def test_argus_ci_nav_catches_a_no_exit_orphan(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc", """
+    n0 = Argus_NavNode ('0 0 0');
+    n1 = Argus_NavNode ('64 0 0');
+    n2 = Argus_NavNode ('128 0 0');
+    Argus_NavLink (n0, n1);
+    Argus_NavLink (n1, n0);
+    Argus_NavLink (n1, n2);
+""")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 1)
+            self.assertIn("no outbound edge", res.stdout)
+
+    def test_argus_ci_nav_counts_typed_links_as_exits(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_toy.qc", """
+    n0 = Argus_NavNode ('0 0 0');
+    n1 = Argus_NavNode ('64 0 0');
+    n2 = Argus_NavNode ('128 0 0');
+    Argus_NavLink (n0, n1);
+    Argus_NavLink (n1, n0);
+    Argus_NavLink (n1, n2);
+    Argus_NavLinkRocket (n2, n0);
+""")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
+    def test_argus_ci_nav_skips_the_dispatcher(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._nav_qc(td, "argus_nav_dispatch.qc",
+                         "void() Argus_NavLoad = { };\n")
+            res = self.run_tool("argus_ci.py", "nav", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()
