@@ -34,10 +34,12 @@ jobs:
           wc -l < changed.txt
 
       - name: Run the invariant battery
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           python3 tools/argus_ci.py all \
             --changed-files changed.txt \
-            --commit-msg "${{ github.event.pull_request.title }}"
+            --commit-msg "$PR_TITLE"
 
   lab:
     name: lab test suite (rust)
