@@ -61,6 +61,9 @@ pub struct DeathEvent {
     pub victim: String,
     pub killer: String,
     pub pos: Pos,
+    /// Another player killed the bot while it was visibly fighting its
+    /// current primary target (#383). Historical rows simply leave it false.
+    pub third_party: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -633,6 +636,40 @@ fn parse_one(text: &str) -> MatchTape {
                 // one a bot every 2 s, so this is a floor on how
                 // often the branch fires, never a count of shots.
                 *event_counts.entry("leadclip".to_string()).or_insert(0) += 1;
+            } else if line.contains(" threatmove ") {
+                // One-per-weapon-class proof that the context-aware range,
+                // high-ground or retreat consumer actually ran (#361).
+                *event_counts.entry("threatmove".to_string()).or_insert(0) += 1;
+                if line.contains(" threatmove range ") {
+                    *event_counts
+                        .entry("threatmove_range".to_string())
+                        .or_insert(0) += 1;
+                } else if line.contains(" threatmove high ") {
+                    *event_counts
+                        .entry("threatmove_high".to_string())
+                        .or_insert(0) += 1;
+                } else if line.contains(" threatmove retreat ") {
+                    *event_counts
+                        .entry("threatmove_retreat".to_string())
+                        .or_insert(0) += 1;
+                }
+            } else if line.contains(" crossfire ") {
+                // Secondary-threat preferences fire only at committed
+                // strafe/backout/retreat clocks (#383).
+                *event_counts.entry("crossfire".to_string()).or_insert(0) += 1;
+                if line.ends_with(" crossfire strafe") {
+                    *event_counts
+                        .entry("crossfire_strafe".to_string())
+                        .or_insert(0) += 1;
+                } else if line.ends_with(" crossfire backout") {
+                    *event_counts
+                        .entry("crossfire_backout".to_string())
+                        .or_insert(0) += 1;
+                } else if line.ends_with(" crossfire retreat") {
+                    *event_counts
+                        .entry("crossfire_retreat".to_string())
+                        .or_insert(0) += 1;
+                }
             } else if line.ends_with(" coop catchup warp") {
                 // a rescue teleport across the level to the team mate,
                 // and the single most consequential thing a co-op bot
@@ -666,6 +703,7 @@ fn parse_one(text: &str) -> MatchTape {
             continue;
         }
         if let Some(caps) = death.captures(line) {
+            let third_party = caps.get(6).is_some();
             deaths.push(DeathEvent {
                 victim: caps[1].to_string(),
                 killer: caps
@@ -677,7 +715,13 @@ fn parse_one(text: &str) -> MatchTape {
                     y: caps[4].parse().unwrap_or(0.0),
                     z: caps[5].parse().unwrap_or(0.0),
                 },
+                third_party,
             });
+            if third_party {
+                *event_counts
+                    .entry("thirdparty_death".to_string())
+                    .or_insert(0) += 1;
+            }
         }
         if let Some(caps) = evt.captures(line) {
             let bot = caps[1].to_string();
@@ -744,7 +788,7 @@ fn death_re() -> &'static Regex {
         // the killer may be spaced too, and historical rows can carry
         // an empty killer (nameless crushers pre-v3.21)
         Regex::new(
-            r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'",
+            r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'( thirdparty)?$",
         )
         .expect("death regex")
     })
@@ -872,6 +916,9 @@ ARGUS routecache adopt\n\
 ARGUS Carmack watch spawn\n\
 ARGUS Joe Rogan sprintjump\n\
 ARGUS Carmack leadclip\n\
+ARGUS Carmack threatmove range 3\n\
+ARGUS Carmack crossfire strafe\n\
+ARGUS Joe Rogan crossfire retreat\n\
 ARGUS Carmack coop catchup warp\n\
 ARGUS Joe Rogan unstick pinned '2526.7 -40.9 -66.0'\n\
 ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
@@ -881,6 +928,11 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         assert_eq!(tape.event_counts.get("watch"), Some(&1));
         assert_eq!(tape.event_counts.get("sprintjump"), Some(&1));
         assert_eq!(tape.event_counts.get("leadclip"), Some(&1));
+        assert_eq!(tape.event_counts.get("threatmove"), Some(&1));
+        assert_eq!(tape.event_counts.get("threatmove_range"), Some(&1));
+        assert_eq!(tape.event_counts.get("crossfire"), Some(&2));
+        assert_eq!(tape.event_counts.get("crossfire_strafe"), Some(&1));
+        assert_eq!(tape.event_counts.get("crossfire_retreat"), Some(&1));
         // both rescue teleports are countable (#278)
         assert_eq!(tape.event_counts.get("coop_warp"), Some(&1));
         assert_eq!(tape.event_counts.get("unstick"), Some(&1));
@@ -1088,7 +1140,17 @@ ARGEVT Reap death world pos '10.5 260.2 -360.0'
         assert_eq!(tape.map.as_deref(), Some("dm4"));
         assert_eq!(tape.deaths.len(), 1);
         assert_eq!(tape.deaths[0].killer, "world");
+        assert!(!tape.deaths[0].third_party);
         assert!((tape.deaths[0].pos.z + 360.0).abs() < 0.01);
+    }
+
+    #[test]
+    fn timestamp_prefixed_legacy_death_still_parses() {
+        let text = "[12:34:56] ARGEVT Reap death world pos '10 20 -360'\n";
+        let tape = parse_tape(text);
+        assert_eq!(tape.deaths.len(), 1);
+        assert_eq!(tape.deaths[0].victim, "Reap");
+        assert!(!tape.deaths[0].third_party);
     }
 
     #[test]
@@ -1097,7 +1159,7 @@ ARGEVT Reap death world pos '10.5 260.2 -360.0'
 ARGLOG Joe Rogan t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 3 hp 100 frg 2
 ARGLOG Joe Rogan t 2.0 pos '64 0 24' spd 128 yaw 0 mode 2 st 1 gl 4 hp 100 frg 2
 ARGEVT Joe Rogan engage Trent Reznor
-ARGEVT Joe Rogan death Trent Reznor pos '64 0 24'
+ARGEVT Joe Rogan death Trent Reznor pos '64 0 24' thirdparty
 ";
         let tape = parse_tape(text);
         let summary = tape.summary();
@@ -1108,6 +1170,8 @@ ARGEVT Joe Rogan death Trent Reznor pos '64 0 24'
         assert_eq!(jr.deaths, 1);
         assert_eq!(tape.deaths[0].victim, "Joe Rogan");
         assert_eq!(tape.deaths[0].killer, "Trent Reznor");
+        assert!(tape.deaths[0].third_party);
+        assert_eq!(tape.event_counts.get("thirdparty_death"), Some(&1));
         assert_eq!(tape.event_counts.get("engage"), Some(&1));
         let e = tape.events.iter().find(|e| e.verb == "engage").unwrap();
         assert_eq!(e.bot, "Joe Rogan");
