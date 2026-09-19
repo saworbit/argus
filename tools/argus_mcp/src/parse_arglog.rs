@@ -636,6 +636,19 @@ fn parse_one(text: &str) -> MatchTape {
                 // one a bot every 2 s, so this is a floor on how
                 // often the branch fires, never a count of shots.
                 *event_counts.entry("leadclip".to_string()).or_insert(0) += 1;
+            } else if line.contains(" hazardpass ") {
+                // Actual protected liquid entry, throttled per bot (#364),
+                // rather than a count of speculative probes or wet frames.
+                *event_counts.entry("hazardpass".to_string()).or_insert(0) += 1;
+                if line.contains(" hazardpass suit ") {
+                    *event_counts
+                        .entry("hazardpass_suit".to_string())
+                        .or_insert(0) += 1;
+                } else if line.contains(" hazardpass pent ") {
+                    *event_counts
+                        .entry("hazardpass_pent".to_string())
+                        .or_insert(0) += 1;
+                }
             } else if line.contains(" threatmove ") {
                 // One-per-weapon-class proof that the context-aware range,
                 // high-ground or retreat consumer actually ran (#361).
@@ -916,6 +929,8 @@ ARGUS routecache adopt\n\
 ARGUS Carmack watch spawn\n\
 ARGUS Joe Rogan sprintjump\n\
 ARGUS Carmack leadclip\n\
+ARGUS Carmack hazardpass suit slime\n\
+ARGUS Joe Rogan hazardpass pent lava\n\
 ARGUS Carmack threatmove range 3\n\
 ARGUS Carmack crossfire strafe\n\
 ARGUS Joe Rogan crossfire retreat\n\
@@ -928,6 +943,9 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         assert_eq!(tape.event_counts.get("watch"), Some(&1));
         assert_eq!(tape.event_counts.get("sprintjump"), Some(&1));
         assert_eq!(tape.event_counts.get("leadclip"), Some(&1));
+        assert_eq!(tape.event_counts.get("hazardpass"), Some(&2));
+        assert_eq!(tape.event_counts.get("hazardpass_suit"), Some(&1));
+        assert_eq!(tape.event_counts.get("hazardpass_pent"), Some(&1));
         assert_eq!(tape.event_counts.get("threatmove"), Some(&1));
         assert_eq!(tape.event_counts.get("threatmove_range"), Some(&1));
         assert_eq!(tape.event_counts.get("crossfire"), Some(&2));

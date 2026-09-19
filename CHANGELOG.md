@@ -9,6 +9,27 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**PROTECTIVE POWERUPS NOW OPEN ONLY THE STEP THEY ACTUALLY PROTECT** (#364).
+A biosuit with more than three seconds left may admit a slime step; a live
+Pentagram may admit slime or lava. The gate checks both the inventory bit and
+the real expiry timer, keeps Quad carriers out of lava, and requires the
+liquid-covered floor to be within one normal step of current support. Deep
+pools stay refused because protection could expire before the bot finds an
+exit. Only the final movement step can open. `Argus_SafeLine`, route planning
+and speculative hazard steering remain strict. A throttled `hazardpass` event
+records actual liquid entry.
+
+DIRECTED ENGINE PROOF covered all six field cases: live suit returned
+slime-only protection, live Pentagram returned both liquids, the exact
+three-second boundary and each half-state returned neither, and Pentagram
+plus Quad still refused lava. Three no-powerup dm4 tapes
+`hazard364_verify_dm41` through `hazard364_verify_dm43` pre-registered lava
+deaths as the only convicting metric and received release parity against four
+matching-rate controls. The median was one lava death inside the zero-to-eight
+control band, and no `hazardpass` marker fired. A no-powerup dm6 tape also
+emitted no marker and recorded no lava death. The compiled binary is
+FA4D050B8029B15A63B444A82B2EF60D in all three installs.
+
 **COMBAT NOW READS THE FIGHT IT IS ACTUALLY IN** (#360, #361, #362,
 #383). Reaper's effective-stack range signal returns as a bounded comfort
 band: weak bots yield the splash preference and take a wider circle tangent,

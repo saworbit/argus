@@ -87,6 +87,7 @@ flowchart TD
 
 ### 2. Predictive hazard avoidance
 - **280u brink probes**: `Argus_MoveHazard` casts downward traces 32u-52u ahead along movement vectors (probe distance scales with speed, so a sprinting bot sees the pit in time), detecting `CONTENT_LAVA`, `CONTENT_SLIME`, or fatal floor drops before the bot steps over the edge.
+- **Protection-aware steps**: A bot carrying a live biosuit may step into slime, while a live Pentagram may also enter lava, when more than three seconds of protection remain. Only the final per-step movement guard can open, and the liquid-covered floor must be within one normal 18-unit step of current support. Deep pools remain refused because protection could expire before the bot finds an exit. Quad carriers still refuse lava. `Argus_SafeLine` and speculative steering probes remain conservative, so protection cannot make the planner commit a whole route through liquid. Actual liquid entry prints the throttled marker `ARGUS <name> hazardpass <suit|pent> <lava|slime>`.
 - **Hull-bridge discrimination**: A liquid floor under the probe point is only a real hazard if the whole 32x32 hull would stand in it - `Argus_HazardBridge` requires solid banks on both sides within a bridgeable span, so decorative lava channels narrower than the player bbox read as floor while pool rims keep the conservative veto.
 - **Staircase rescue**: A probe buried inside rising geometry re-checks from knee-plus height; a clear window landing on a walkable tread means stairs (walkmove climbs the risers one at a time), while walls and true pits stay vetoed.
 - **Deflection hysteresis**: `Argus_HazardSteer` tests alternate headings in priority fans (+50, -50, +100, -100, 180 degrees) and locks onto `ar_hazardyaw` with angular memory to prevent corner oscillation.
@@ -424,9 +425,10 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 | "ARGUS <name> watch spawn", "ARGUS <name> sprintjump",                            |
 | "ARGUS <name> jumpstage <target>", "ARGUS <name> jumpcharge <target>",            |
 | "ARGUS <name> jumpapproach <target> actual <speed>",                               |
-| "ARGUS <name> leadclip", "ARGUS <name> skillset <skill>",                        |
-| "ARGUS <name> skilldrift <skill>", "ARGUS <name> threatmove                      |
-| <range|high|retreat> <class>", "ARGUS <name> crossfire                           |
+| "ARGUS <name> leadclip", "ARGUS <name> hazardpass <suit|pent>                     |
+| <lava|slime>", "ARGUS <name> skillset <skill>",                                   |
+| "ARGUS <name> skilldrift <skill>", "ARGUS <name> threatmove                       |
+| <range|high|retreat> <class>", "ARGUS <name> crossfire                            |
 | <strafe|backout|retreat>".                                                        |
 | Debug channel (console `scratch1 1`, never in briefs):                            |
 | ARGDBG <name> pick <class> u <utility> | <per-class scores> ...                   |
