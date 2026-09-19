@@ -9,6 +9,23 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**NAV GRAPHS NOW CARRY STATIC EXPOSURE AND COVER DATA** (#368).
+Navgen traces every waypoint pair through the exact BSP world tree, counts the
+other nodes visible from each point, and finds the nearest hidden node reachable
+through ordinary walk links. The generated QC and JSON store the exposure rank,
+hidden target, and first hop. Retreat steering tries that hop only after live
+line-of-sight and hazard checks, then falls back to the established heading fan.
+Cartograph map briefs and node inspection surface the new annotations. A
+topology-preserving `--reanalyze-tactics` mode refreshed all eleven shipped
+graphs without changing a node, link, movement type, region, or trace input.
+
+The implementation follows the Source SDK navigation pattern of doing expensive
+static visibility and hiding analysis offline while treating it as tactical
+guidance, not a live player-visibility guarantee. Exact-length dm4 and dm2 tape
+sets kept the preregistered engagement metric in band, with stalls, goals,
+freezes, and coverage also at parity or better. The lab excluded faster-rate
+tapes from the listen-rate verdict under its existing tick-class guard.
+
 **BOTS SHARE SHORT-LIVED ROUTE WARNINGS FOR PLACES THAT JUST FAILED** (#366).
 Two consecutive stalls, non-player deaths, stuck movers and timed-out doors add
 one of four expiring avoid spots. Shopping floods, cached routes and active

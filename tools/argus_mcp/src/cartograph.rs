@@ -80,10 +80,25 @@ pub struct NavOverlay {
     /// walk links a door brush stands in
     #[serde(default, skip_serializing_if = "is_zero_usize")]
     pub door_links: usize,
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub exposure_min: usize,
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub exposure_max: usize,
+    #[serde(default, skip_serializing_if = "is_zero_usize")]
+    pub cover_nodes: usize,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub high_exposure: Vec<ExposureNode>,
 }
 
 fn is_zero_usize(v: &usize) -> bool {
     *v == 0
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ExposureNode {
+    pub node: u32,
+    pub origin: [f32; 3],
+    pub visible_nodes: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1340,6 +1355,42 @@ fn load_nav_graph_at(path: &std::path::Path) -> Option<NavGraph> {
             }
         }
     }
+    let exposure: Vec<usize> = v
+        .get("exposure")
+        .and_then(|x| x.as_array())
+        .map(|rows| {
+            (0..n)
+                .map(|i| rows.get(i).and_then(|x| x.as_u64()).unwrap_or(0) as usize)
+                .collect()
+        })
+        .unwrap_or_else(|| vec![0; n]);
+    let mut ranked: Vec<usize> = (0..n).collect();
+    ranked.sort_by_key(|i| (std::cmp::Reverse(exposure[*i]), *i));
+    let high_exposure = ranked
+        .into_iter()
+        .filter(|i| exposure[*i] > 0)
+        .take(5)
+        .map(|i| ExposureNode {
+            node: i as u32,
+            origin: nodes[i],
+            visible_nodes: exposure[i],
+        })
+        .collect();
+    let cover_nodes = v
+        .get("cover_targets")
+        .and_then(|x| x.as_array())
+        .map(|rows| {
+            rows.iter()
+                .filter(|row| {
+                    row.as_array()
+                        .and_then(|a| a.first())
+                        .and_then(|x| x.as_i64())
+                        .map(|x| x >= 0)
+                        .unwrap_or(false)
+                })
+                .count()
+        })
+        .unwrap_or(0);
     Some(NavGraph {
         overlay: NavOverlay {
             json_path: path.display().to_string(),
@@ -1353,6 +1404,10 @@ fn load_nav_graph_at(path: &std::path::Path) -> Option<NavGraph> {
             sprint_links: v.get("sprintlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
             train_links: v.get("trainlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
             door_links: v.get("doorlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
+            exposure_min: exposure.iter().copied().min().unwrap_or(0),
+            exposure_max: exposure.iter().copied().max().unwrap_or(0),
+            cover_nodes,
+            high_exposure,
         },
         nodes,
         adj,
@@ -2398,6 +2453,10 @@ mod tests {
             sprint_links: 0,
             train_links: 0,
             door_links: 0,
+            exposure_min: 0,
+            exposure_max: 0,
+            cover_nodes: 0,
+            high_exposure: vec![],
         }
     }
 
@@ -2487,6 +2546,16 @@ mod tests {
             dm6.iter().all(|s| !s.contains("debut botmatch")),
             "stale debut verdict leaked: {dm6:?}"
         );
+    }
+
+    #[test]
+    fn shipped_dm4_surfaces_tactical_annotations() {
+        let jf = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../src/argus_nav_dm4.qc.json");
+        let g = load_nav_graph_at(&jf).expect("dm4 nav graph");
+        assert!(g.overlay.exposure_max > g.overlay.exposure_min);
+        assert!(g.overlay.cover_nodes > 0);
+        assert!(!g.overlay.high_exposure.is_empty());
     }
 
     /// #29: dm3 rides its three plats in every tape (liftlinks are in

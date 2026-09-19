@@ -63,6 +63,7 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
 - **Usage**:
   ```bash
   python tools/argus_navgen.py <map.bsp> <mapname> <out.qc> <out.png> [--no-dispatcher] [--no-rj] [--grid <n>] [--register]
+  python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --reanalyze-tactics
   python tools/argus_navgen.py --help
   ```
 - **Options**:
@@ -70,6 +71,7 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   - `--no-rj`: Suppress rocket-jump link exploration.
   - `--grid <n>`: Override base waypoint sampling grid spacing.
   - `--register`: Wire the generated file into `src/progs.src` and update `src/argus_nav_dispatch.qc`.
+  - `--reanalyze-tactics`: Recompute static exposure and nearest hidden ordinary-walk targets in an existing shipped QC/JSON pair without changing graph topology or typed movement data.
 
 ---
 

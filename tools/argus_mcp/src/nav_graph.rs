@@ -27,6 +27,8 @@ pub struct NavGraph {
     pub nodes: Vec<[f32; 3]>,
     pub adj: Vec<Vec<NavEdge>>,
     pub cam_nodes: Vec<CamNode>,
+    pub exposure: Vec<u32>,
+    pub cover_targets: Vec<Option<(u32, u32)>>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -39,6 +41,11 @@ pub struct NodeDeep {
     pub out: Vec<NavEdge>,
     pub inn: Vec<NavEdge>,
     pub degree: usize,
+    pub exposure: u32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cover_target: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cover_hop: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -207,6 +214,33 @@ fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
             }
         }
     }
+    let exposure = v
+        .get("exposure")
+        .and_then(|x| x.as_array())
+        .map(|rows| {
+            (0..n)
+                .map(|i| rows.get(i).and_then(|x| x.as_u64()).unwrap_or(0) as u32)
+                .collect()
+        })
+        .unwrap_or_else(|| vec![0; n]);
+    let cover_targets = v
+        .get("cover_targets")
+        .and_then(|x| x.as_array())
+        .map(|rows| {
+            (0..n)
+                .map(|i| {
+                    let row = rows.get(i)?.as_array()?;
+                    let target = row.first()?.as_i64()?;
+                    let hop = row.get(1)?.as_i64()?;
+                    if target >= 0 && hop >= 0 && target < n as i64 && hop < n as i64 {
+                        Some((target as u32, hop as u32))
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        })
+        .unwrap_or_else(|| vec![None; n]);
     let mut cam_nodes = Vec::new();
     if let Some(cams) = v.get("cam_nodes").and_then(|x| x.as_array()) {
         for cam in cams {
@@ -238,6 +272,8 @@ fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
         nodes,
         adj,
         cam_nodes,
+        exposure,
+        cover_targets,
     })
 }
 
@@ -300,6 +336,9 @@ pub fn node_deep(cfg: &Config, map: &str, id: u32) -> Result<NodeDeep, String> {
         out: g.adj[i].clone(),
         inn,
         degree: g.adj[i].len(),
+        exposure: g.exposure.get(i).copied().unwrap_or(0),
+        cover_target: g.cover_targets.get(i).and_then(|v| v.map(|x| x.0)),
+        cover_hop: g.cover_targets.get(i).and_then(|v| v.map(|x| x.1)),
     })
 }
 
@@ -728,6 +767,8 @@ mod tests {
                 vec![],
             ],
             cam_nodes: vec![],
+            exposure: vec![0; 3],
+            cover_targets: vec![None; 3],
         };
         let r = route_nodes(&g, 0, 2);
         assert!(r.ok);
@@ -772,6 +813,19 @@ mod tests {
     }
 
     #[test]
+    fn parses_tactical_node_annotations() {
+        let v = serde_json::json!({
+            "nodes": [[0,0,0],[100,0,0]],
+            "links": [[0,1,1]],
+            "exposure": [1, 0],
+            "cover_targets": [[1,1],[-1,-1]]
+        });
+        let g = parse_graph("dm4", &v).unwrap();
+        assert_eq!(g.exposure, vec![1, 0]);
+        assert_eq!(g.cover_targets, vec![Some((1, 1)), None]);
+    }
+
+    #[test]
     fn typed_hops_are_not_counted_as_walks() {
         // #39: train / sprint / door edges fell through `_ => walk`, so
         // a dm2 east-deck ride briefed as a plain walk.
@@ -785,6 +839,8 @@ mod tests {
                 vec![],
             ],
             cam_nodes: vec![],
+            exposure: vec![0; 4],
+            cover_targets: vec![None; 4],
         };
         let r = route_nodes(&g, 0, 3);
         assert!(r.ok);

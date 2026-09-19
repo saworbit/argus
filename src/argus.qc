@@ -226,6 +226,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_retreatclass;        // weapon class pinned for this retreat
 .float  ar_coveryaw;            // retreat: committed cover heading
 .float  ar_covertime;           // retreat: re-evaluate cover after this
+.float  ar_coverlog;            // throttle baked-cover telemetry
 .float  ar_retreatlock;         // retreat: no re-entry until this (a
                                 // cornered exit means FIGHT, not a
                                 // per-frame re-scan of the same fan)
@@ -4785,7 +4786,7 @@ void() Argus_TriggerFired =
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
-    local entity e, sup;
+    local entity e, sup, cnode, ctarget, chop;
     local vector to, aimpt, err, cvr, shd, shp, motstep, moterr;
     local float d, want, diff, turn, trackt, errscale, loft;
     local float sub, h, trem;
@@ -5645,10 +5646,11 @@ float() Argus_Combat =
             // and with neither we stand and fight.
             want = vectoyaw (self.origin - e.origin);
 
-            // supply heading first (Argus_RetreatSupply): the way
-            // to a live health/armour item is candidate zero, so
-            // cover TOWARD supplies beats cover anywhere else and
-            // a floor-safe supply run beats a plain fallback. Never
+            // The graph's static cover hop is tried before this fan.
+            // Inside the fallback, the way to a live health/armour item
+            // is candidate zero, so cover TOWARD supplies beats the other
+            // fan headings and a floor-safe supply run beats their plain
+            // fallbacks. Never
             // back toward the enemy: more than 100 degrees off the
             // away line and the candidate is skipped (sy == want
             // is the none sentinel - it just duplicates ck 1).
@@ -5663,10 +5665,55 @@ float() Argus_Combat =
                 if (fabs (dy) <= 100)
                     sy = want + dy;
             }
-            cfound = 0;
             required = 2;
             if (self.ar_secondary != world)
                 required = 3;
+
+            // Prefer the graph's nearest static hiding place when it still
+            // hides us from the actual threat. The baked target is only a
+            // point-level approximation, so the live trace is the authority.
+            // Its first hop is always an ordinary walk link; typed movement,
+            // doors and deliberate drops stay with the full router.
+            cfound = 0;
+            cnode = Argus_NearestNode (self.origin);
+            if (cnode != world && cnode.an_cover != world
+                && cnode.an_coverhop != world)
+            {
+                ctarget = cnode.an_cover;
+                chop = cnode.an_coverhop;
+                cy = vectoyaw (chop.origin - self.origin);
+                dy = cy - want;
+                while (dy > 180)  dy = dy - 360;
+                while (dy < -180) dy = dy + 360;
+                if (fabs (dy) <= 110
+                    && !Argus_MoveHazard (cy, 48)
+                    && !Argus_MoveHazard (cy, 90))
+                {
+                    traceline (ctarget.origin + '0 0 22',
+                               e.origin + '0 0 22', TRUE, self);
+                    if (trace_fraction < 1)
+                    {
+                        self.ar_coveryaw = cy;
+                        cfound = 2;
+                        if (self.ar_secondary != world)
+                        {
+                            traceline (ctarget.origin + '0 0 22',
+                                       self.ar_secondary.origin + '0 0 22',
+                                       TRUE, self);
+                            if (trace_fraction < 1)
+                            {
+                                cfound = 3;
+                                Argus_CrossfireLog ("retreat");
+                            }
+                        }
+                        if (time > self.ar_coverlog)
+                        {
+                            self.ar_coverlog = time + 4;
+                            Argus_Event ("coverroute");
+                        }
+                    }
+                }
+            }
             ck = 0;
             while (ck < 6 && cfound < required)
             {
