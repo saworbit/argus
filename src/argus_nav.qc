@@ -66,6 +66,15 @@ float   an_apex;            // how far a standing jump climbs right now
                             // (jumpvel^2 / 2g), refreshed once per
                             // search rather than per expanded link
 
+// Four shared, expiring places the router should not walk through. Quake 3
+// keeps avoid spots in each bot's move state; Argus shares the small table so
+// one bot's mover timeout or repeated stall teaches the whole roster without
+// spending twelve fields on every edict in a 600-edict vanilla progs.
+vector  an_avoidpos0; float an_avoidrad0; float an_avoiduntil0;
+vector  an_avoidpos1; float an_avoidrad1; float an_avoiduntil1;
+vector  an_avoidpos2; float an_avoidrad2; float an_avoiduntil2;
+vector  an_avoidpos3; float an_avoidrad3; float an_avoiduntil3;
+
 .float  ar_slot;            // on bots: 0..3 (roster cap 4)
 .entity ar_node;            // on bots: current waypoint target
 .float  ar_pending;         // on bots: waiting for router
@@ -105,6 +114,159 @@ float   an_apex;            // how far a standing jump climbs right now
 .float  ar_failstreak;      // on bots: consecutive fails from that node
                             // (the trapped-bot detector; see argus.qc
                             // routefail handling for the story)
+
+// ---------------------------------------------------------------- avoid spots
+
+void() Argus_AvoidClear =
+{
+    an_avoiduntil0 = 0;
+    an_avoiduntil1 = 0;
+    an_avoiduntil2 = 0;
+    an_avoiduntil3 = 0;
+};
+
+void(vector org, float radius, float lifetime) Argus_AvoidAdd =
+{
+    local float slot, oldest;
+
+    // Reuse an expired slot first. With all four live, replace the one that
+    // expires soonest; a fresh observation must not be dropped just because
+    // four older observations overlap.
+    if (an_avoiduntil0 <= time) slot = 0;
+    else if (an_avoiduntil1 <= time) slot = 1;
+    else if (an_avoiduntil2 <= time) slot = 2;
+    else if (an_avoiduntil3 <= time) slot = 3;
+    else
+    {
+        slot = 0;
+        oldest = an_avoiduntil0;
+        if (an_avoiduntil1 < oldest) { slot = 1; oldest = an_avoiduntil1; }
+        if (an_avoiduntil2 < oldest) { slot = 2; oldest = an_avoiduntil2; }
+        if (an_avoiduntil3 < oldest) { slot = 3; }
+    }
+
+    if (slot == 0)
+    {
+        an_avoidpos0 = org;
+        an_avoidrad0 = radius;
+        an_avoiduntil0 = time + lifetime;
+    }
+    else if (slot == 1)
+    {
+        an_avoidpos1 = org;
+        an_avoidrad1 = radius;
+        an_avoiduntil1 = time + lifetime;
+    }
+    else if (slot == 2)
+    {
+        an_avoidpos2 = org;
+        an_avoidrad2 = radius;
+        an_avoiduntil2 = time + lifetime;
+    }
+    else
+    {
+        an_avoidpos3 = org;
+        an_avoidrad3 = radius;
+        an_avoiduntil3 = time + lifetime;
+    }
+};
+
+float(vector spot, vector from, vector to, float radius, float between) Argus_AvoidOne =
+{
+    local vector line, off;
+    local float len2, along, dist2, from2;
+
+    line = to - from;
+    off = spot - from;
+    from2 = off * off;
+    if (between)
+    {
+        len2 = line * line;
+        if (len2 > 0.01)
+        {
+            along = (off * line) / len2;
+            if (along < 0) along = 0;
+            else if (along > 1) along = 1;
+            off = spot - (from + line * along);
+        }
+        dist2 = off * off;
+    }
+    else
+    {
+        off = spot - to;
+        dist2 = off * off;
+    }
+
+    // Starting inside a mark must not trap the bot. Reject only a segment
+    // that comes closer to the spot, matching Quake 3's planned-line test.
+    return (dist2 < radius * radius && from2 > dist2 + 0.01);
+};
+
+float(vector from, vector to, float between) Argus_AvoidLine =
+{
+    if (an_avoiduntil0 > time
+        && Argus_AvoidOne (an_avoidpos0, from, to, an_avoidrad0, between))
+        return TRUE;
+    if (an_avoiduntil1 > time
+        && Argus_AvoidOne (an_avoidpos1, from, to, an_avoidrad1, between))
+        return TRUE;
+    if (an_avoiduntil2 > time
+        && Argus_AvoidOne (an_avoidpos2, from, to, an_avoidrad2, between))
+        return TRUE;
+    if (an_avoiduntil3 > time
+        && Argus_AvoidOne (an_avoidpos3, from, to, an_avoidrad3, between))
+        return TRUE;
+    return FALSE;
+};
+
+float(entity from, entity to, float bit) Argus_LinkAvoided =
+{
+    local vector delta;
+
+    if (an_avoiduntil0 <= time && an_avoiduntil1 <= time
+        && an_avoiduntil2 <= time && an_avoiduntil3 <= time)
+        return FALSE;
+    delta = to.origin - from.origin;
+    // Airborne and mover links cannot be redirected part way. A steep plain
+    // descent is a drop. For those, only reject a destination that moves into
+    // the spot.
+    if ((from.an_jumpmask & bit) || (from.an_sprintmask & bit)
+        || (from.an_rjmask & bit) || (from.an_liftmask & bit)
+        || (from.an_trainmask & bit)
+        || delta_z < -64)
+        return Argus_AvoidLine (from.origin, to.origin, FALSE);
+
+    if (!Argus_AvoidLine (from.origin, to.origin, TRUE))
+        return FALSE;
+    // Teleporter links are deliberately plain links in the shipped data, so
+    // no runtime mask distinguishes the five short teleports from long walks.
+    // Pay for a world-only trace only after the cheap line test says a spot
+    // would reject the link. A blocked chord is not a walk segment; test its
+    // destination like Quake 3 tests a teleport instead.
+    traceline (from.origin + '0 0 8', to.origin + '0 0 8', TRUE, from);
+    if (trace_fraction < 1)
+        return Argus_AvoidLine (from.origin, to.origin, FALSE);
+    return TRUE;
+};
+
+float(entity bot, vector to) Argus_CurrentPathAvoided =
+{
+    local vector delta;
+
+    if (an_avoiduntil0 <= time && an_avoiduntil1 <= time
+        && an_avoiduntil2 <= time && an_avoiduntil3 <= time)
+        return FALSE;
+    delta = to - bot.origin;
+    if (bot.ar_hopjump || bot.ar_hoprj || bot.ar_hoplift
+        || bot.ar_hoptrain || delta_z < -64)
+        return Argus_AvoidLine (bot.origin, to, FALSE);
+    if (!Argus_AvoidLine (bot.origin, to, TRUE))
+        return FALSE;
+    traceline (bot.origin + '0 0 22', to + '0 0 8', TRUE, bot);
+    if (trace_fraction < 1)
+        return Argus_AvoidLine (bot.origin, to, FALSE);
+    return TRUE;
+};
 
 // ---------------------------------------------------------------- builders
 
@@ -680,7 +842,7 @@ float(entity bot, entity startnode) Argus_Shop_Start =
 void() Argus_Route_Finish =
 {
     local entity cur, prev;
-    local float hops;
+    local float hops, bit;
 
     if (an_bot.health <= 0)
     {
@@ -719,6 +881,15 @@ void() Argus_Route_Finish =
     prev = cur.an_par;
     while (prev != world)
     {
+        // A shared spot may have been added while this frame-sliced flood was
+        // running. Never install a now-stale parent chain through it.
+        bit = Argus_NavGetLinkBit (prev, cur);
+        if (Argus_LinkAvoided (prev, cur, bit))
+        {
+            an_bot.ar_pending = 1;
+            an_busy = 0;
+            return;
+        }
         Argus_SetNext (prev, an_bot, cur);
         prev.an_cnext = cur;
         prev.an_cgen = an_cachegen;
@@ -893,6 +1064,8 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
             return FALSE;
         if ((cur.an_doormask & bit) && Argus_LinkBlockedByKeyDoor (cur, nx, bot))
             return FALSE;
+        if (Argus_LinkAvoided (cur, nx, bit))
+            return FALSE;
         cur = nx;
         hops = hops + 1;
         if (hops > 250)
@@ -1024,7 +1197,8 @@ void() Argus_Nav_Frame =
                 if ((!(cur.an_rjmask & bit) || Argus_BotCanRJ (an_bot))
                     && (!(cur.an_sprintmask & bit) || an_bot.ar_skill >= 2)
                     && (!(cur.an_jumpmask & bit)
-                        || nb.origin_z - cur.origin_z <= an_apex))
+                        || nb.origin_z - cur.origin_z <= an_apex)
+                    && !Argus_LinkAvoided (cur, nb, bit))
                 {
                     // Ripple edge gate (#175): links across closed keyed
                     // doors are blocked until the key is held. The slot

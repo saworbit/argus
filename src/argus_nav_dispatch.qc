@@ -6,6 +6,7 @@
 
 void() Argus_Nav_Spawn =
 {
+    Argus_AvoidClear ();
     if (mapname == "lqdm2")
         Argus_Nav_Spawn_lqdm2 ();
     else if (mapname == "dm2")

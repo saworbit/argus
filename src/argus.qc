@@ -2813,6 +2813,12 @@ void() Argus_Die =
         || k.classname == "teledeath3")
         k = k.owner;
 
+    // A crusher, fall or other world kill is evidence about the place, not
+    // about the item the bot happened to want. Share a short route mark so
+    // the next bot does not repeat it immediately.
+    if (deathmatch && (k == world || k.classname != "player"))
+        Argus_AvoidAdd (self.origin, 128, 10);
+
     // one death line only: the detailed form below. A bare
     // Argus_Event ("death") used to precede it and every parser that
     // counted the death token saw two events per death (Shane's
@@ -6734,7 +6740,8 @@ void() Argus_PickGoal =
         if (vlen (gp - self.origin) < 300)
         {
             traceline (self.origin + '0 0 22', gp, TRUE, self);
-            if (trace_fraction == 1 && Argus_SafeLine (gp))
+            if (trace_fraction == 1 && Argus_SafeLine (gp)
+                && !Argus_AvoidLine (self.origin, gp, TRUE))
             {
                 self.ar_mode = 1;
                 return;
@@ -8107,7 +8114,8 @@ void() Argus_AI =
         if (self.ar_mode == 2 && vlen (gp - self.origin) < 200)
         {
             traceline (self.origin + '0 0 22', gp, TRUE, self);
-            if (trace_fraction == 1 && Argus_SafeLine (gp))
+            if (trace_fraction == 1 && Argus_SafeLine (gp)
+                && !Argus_AvoidLine (self.origin, gp, TRUE))
             {
                 // the SafeLine gate keeps the routed descent: a goal
                 // visible across a brink stays on its drop links
@@ -8115,6 +8123,17 @@ void() Argus_AI =
                 self.ar_mode = 1;
                 self.ar_node = world;
             }
+        }
+
+        if (self.ar_mode == 2 && self.ar_node != world
+            && Argus_CurrentPathAvoided (self, self.ar_node.origin))
+        {
+            // A spot can appear after this route was built. Re-plan before
+            // walking into it; airborne and mover hops only test whether
+            // their destination gets closer because they cannot turn midway.
+            self.ar_node = world;
+            self.ar_pending = 1;
+            self.ar_mode = 0;
         }
 
         if (self.ar_mode == 2 && self.ar_node != world)
@@ -8150,6 +8169,7 @@ void() Argus_AI =
                     // through the same crossing and chains waits
                     self.ar_padcoolpos = self.origin;
                     self.ar_padcooltime = time + 25;
+                    Argus_AvoidAdd (self.origin, 250, 25);
                     Argus_Event ("abandon");
                 }
                 else
@@ -8414,6 +8434,7 @@ void() Argus_AI =
                     self.ar_mode = 0;
                     self.ar_padcoolpos = self.origin;
                     self.ar_padcooltime = time + 25;
+                    Argus_AvoidAdd (self.origin, 250, 25);
                     Argus_Event ("abandon");
                 }
             }
@@ -8446,6 +8467,7 @@ void() Argus_AI =
                     self.ar_mode = 0;
                     self.ar_padcoolpos = self.origin;
                     self.ar_padcooltime = time + 25;
+                    Argus_AvoidAdd (self.origin, 250, 25);
                     Argus_Event ("abandon");
                 }
                 else
@@ -9112,6 +9134,8 @@ void() Argus_AI =
                 // is not enough, because the next goal can route
                 // through the same door.
                 self.ar_door.ar_failtime = time;
+                Argus_AvoidAdd ((self.ar_door.absmin + self.ar_door.absmax) * 0.5,
+                                96, 20);
                 self.ar_door = world;
                 self.ar_doorbtn = world;
                 havetarget = 0;
@@ -9329,6 +9353,11 @@ void() Argus_AI =
             }
             else
             {
+                // Two consecutive stalls say this is a place problem rather
+                // than a missed frame. The next shopping flood routes around
+                // it instead of choosing another item through the same cell.
+                if (!self.ar_pending && Argus_GoalOK (self.ar_goal))
+                    Argus_AvoidAdd (self.origin, 144, 12);
                 if (Argus_GoalOK (self.ar_goal))
                 {
                     self.ar_goal.ar_claimer = self;

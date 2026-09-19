@@ -9,6 +9,18 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**BOTS SHARE SHORT-LIVED ROUTE WARNINGS FOR PLACES THAT JUST FAILED** (#366).
+Two consecutive stalls, non-player deaths, stuck movers and timed-out doors add
+one of four expiring avoid spots. Shopping floods, cached routes and active
+walk paths reject segments that move closer to a live spot, while jump, drop,
+teleport and mover links only reject unsafe destinations because they cannot
+turn midway. A bot already inside a mark can always move away. Exact main-build
+controls across three 30-second tapes per map put median dm2 stalls from 9 to 3
+and dm4 stalls from 1 to 0; median goals held at 1 and 4 respectively, coverage
+rose on both maps, and neither map produced a freeze. The chronic dm2 hold at
+`(1424,-988,47)` fell from 16 stalls in its control tape to 3 in the matching
+candidate tape.
+
 **ITEM GOALS NOW USE THE GRAPH PATH THE BOT WILL WALK** (#355).
 Before shopping, one frame-sliced, bot-specific flood visits the reachable
 graph using the router's jump, rocket-jump, sprint and keyed-door gates.
