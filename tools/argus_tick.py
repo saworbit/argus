@@ -16,6 +16,7 @@ Calibrated 2026-09-14 against two probes with host_speeds counting frames:
 
   dedicated, default sys_ticrate      19.3 frames/s   mean gap 0.5154
   dedicated, +sys_ticrate 0.0139      69.4 frames/s   mean gap 0.5053
+  played-rate runner jitter           same launch     mean gap up to 0.5128
   every human listen session          about 71 Hz     mean gap 0.506 to 0.509
 
 THE MEAN GAP CLASSIFIES; IT DOES NOT INVERT. n * dt = gap with
@@ -32,7 +33,9 @@ Windows timer) and 0.535 to 0.555 (about 14 to 15 Hz, the 15.6 ms timer:
 four sleeps of 15.6 ms plus the frame's own work). No tape in the archive
 reads 0.6, which is what a true 0.1 s frametime would produce; the v4.07
 "frametime 0.1" finding was ftos rounding a 0.05 to 0.07 frame to one
-decimal. Written for docs/plans/2026-09-14-regression-analysis-and-recovery.md.
+decimal. The played-rate cutoff is 0.5135, leaving a 1 ms margin below
+the legacy cluster so repeated runs do not cross classes on sampling jitter.
+Written for docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 """
 import re, sys, os, glob, statistics as st
 
@@ -61,7 +64,7 @@ def estimate(path):
 
 
 def classify(mean_gap):
-    if mean_gap < 0.5105:
+    if mean_gap < 0.5135:
         return 'about 70 Hz (listen rate)'
     if mean_gap < 0.522:
         return 'about 19 Hz (dedicated, 1 ms timer)'
