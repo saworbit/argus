@@ -36,15 +36,17 @@ browser. One page:
 - path strip (repo root, Quake basedir, game dir) for this process
 - map list from `list_maps` (bsp / pak / nav / dispatcher flags)
 - drop a `.bsp` into `maps_local/` (BSP29 check; simple names only)
-- **Generate nav** (`nav_generate` with `--register`)
+- **Generate nav** (first registration waits for current reach and mill evidence)
 - **Compile and install** (backup first, then `compile_qc`)
 - **A/B quality gates** (evaluates candidate runs against baseline and renders visual gate cards)
 - **Backup only** / **Restore**
 
-After generate it shows the full edict-budget verdict,
+After generate it shows the full edict-budget and playability verdicts,
 `runs/nav_<map>.png`, and the 0.17 cartographer brief (islands, door
 cuts, corridor misses, edicts). An over-budget run stops before
-registration.
+registration. A new map without current reach and engine evidence is
+labelled `experimental`; generation still writes its QC, JSON, and PNG so the
+mill can inspect it.
 Id maps stay on this machine; the wizard will not pack them.
 
 Compile always writes `$ARGUS_ROOT/backups/<YYYYMMDD-HHMMSS>/`:
@@ -63,7 +65,7 @@ The `argus-mcp` binary also acts as a unified CLI runner for the developer toolc
 
 ```
 argus-mcp compile [--install] [--backup]
-argus-mcp nav <map> [--register]
+argus-mcp nav <map> [--register|--no-register]
 argus-mcp analyze <log_path> [options]
 argus-mcp harvest [--tag <name>]
 argus-mcp reach [map]
@@ -71,7 +73,7 @@ argus-mcp measure [--write <path>]
 ```
 
 - `compile`: Compiles QuakeC `progs.dat` via `fteqcc` with timestamp verification and optional backup creation and installation.
-- `nav`: Runs `argus_navgen.py` to generate waypoint navigation graphs (`src/argus_nav_<map>.qc`) and minimap PNGs (`runs/nav_<map>.png`).
+- `nav`: Runs `argus_navgen.py` to generate waypoint navigation graphs (`src/argus_nav_<map>.qc`) and minimap PNGs (`runs/nav_<map>.png`). First registration requires the current graph to pass reach and the mill.
 - `analyze`: Runs `analyze_match.py` to parse telemetry logs into briefs, stats, and plots.
 - `harvest`: Runs `harvest_session.py` to archive listen server logs and paired demos into `runs/`.
 - `reach`: Runs `argus_reach.py` to audit directed item reachability for shipped navigation graphs.
@@ -337,7 +339,9 @@ still live only inside the PAKs.
 
 `generate_nav=true` on `cartograph` also runs `argus_navgen.py`
 (`--no-dispatcher`, and `--register` by default so `progs.src` and
-`argus_nav_dispatch.qc` are wired). Pass `register=false` to skip.
+`argus_nav_dispatch.qc` are wired after the first-registration gate passes).
+Pass `register=false` to generate an experimental graph before its reach and
+mill passes.
 
 A match brief attaches `goal_reach`: each goaled classname gets the
 cartographer's `reach`.
@@ -420,11 +424,16 @@ scratch cvars, one semicolon-joined inject), walk toward the far
 node, judge arrival.
 
 ```
-argus-mcp probelinks <map> [limit] [skip] [--coop]  cap 80 per run; chunk with
+argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]
+                                                cap 80 per run; chunk with
                                                 skip. ~2600 links/hour, so a
                                                 full-rotation sweep is an
                                                 evening, not an overnight
 ```
+
+The default pass covers ordinary walk and drop links. `--jumps` covers the
+generated jump subset. A community BSP found only in `ARGUS_MAPS` is copied
+into the game directory for the pass and removed when the engine stops.
 
 Failures persist by ENDPOINT COORDINATES (indices shift per regen)
 in `src/argus_nav_<map>.probe.json`, merged across sweeps. The
@@ -435,6 +444,13 @@ before trusting them (a walk line through a mouth is invalid for
 bots too - `teleport_touch` is class-blind - but it is a different
 defect than a void).
 
+Each pass also records the MD5 of the exact graph it walked. First
+registration accepts only matching deathmatch evidence for ordinary links and,
+when the graph has them, generated jumps. A refused jump is stored separately
+from walk convictions, removed on the next regen, and drawn as a dark red
+dashed line with crossed endpoints in the debug PNG. Because that changes the
+graph digest, run the short passes once more before registration.
+
 Nav sidecar files, all consumed by `argus_navgen.py` on the next
 regen of that map:
 
@@ -442,7 +458,7 @@ regen of that map:
 |---|---|---|
 | `argus_nav_<map>.qc.json` | navgen | the whole lab (atlas, reach, probelinks) |
 | `argus_nav_<map>.costs.json` | `learn_hotspots` | fine-edge cost inflation |
-| `argus_nav_<map>.probe.json` | probelinks failures, per mode | 7g2c verdict prune/remint |
+| `argus_nav_<map>.probe.json` | probelinks failures and graph-specific pass evidence | 7g2c verdict prune/remint plus first-registration gate |
 | `argus_nav_<map>.proven.json` | candidate probe runs | 7g2d engine-proven entry mint |
 | `argus_nav_<map>.candidates.json` / `.splice.json` | entry-candidate sessions | paper trail of how proven.json was derived |
 
@@ -536,7 +552,7 @@ carries `scaled` and `scale_note` when that happens.
 | `cartograph` | `ARGUS_ROOT` | Ingest a BSP. Default **brief**. `detail=full` for every entity. `generate_nav=true` also compiles nav and registers it. |
 | `cartograph_all` | `ARGUS_ROOT` | Atlas every on-disk BSP in `ARGUS_MAPS` |
 | `list_maps` | `ARGUS_ROOT` | Maps on disk and in id1 PAKs |
-| `nav_generate` | full lab | Compile a per-map waypoint QC + PNG and return its `ok`, `tight`, or `over-budget` edict verdict. Over-budget graphs are not registered. |
+| `nav_generate` | full lab | Compile a per-map waypoint QC + PNG and return edict and playability verdicts. Over-budget graphs and first-time maps without current reach and mill evidence are not registered. |
 | `nav_sync_dispatch` | `ARGUS_ROOT` | Register new `argus_nav_<map>.qc` in the dispatcher and `progs.src` |
 
 ### Lab loop

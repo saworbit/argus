@@ -4,6 +4,40 @@ use crate::config::Config;
 use serde::Serialize;
 use std::fs;
 
+fn require_playable_first_registration(cfg: &Config, map: &str) -> Result<(), String> {
+    let bsp = cfg.maps.join(format!("{map}.bsp"));
+    let graph = cfg.src.join(format!("argus_nav_{map}.qc.json"));
+    if !bsp.is_file() || !graph.is_file() {
+        return Err(format!(
+            "{map} is experimental: need {} and {} before registration",
+            bsp.display(),
+            graph.display()
+        ));
+    }
+    let script = cfg.root.join("tools").join("argus_mapgate.py");
+    if !script.is_file() || !cfg.python.is_file() {
+        return Err(format!(
+            "{map} is experimental: the playability gate needs ARGUS_PYTHON"
+        ));
+    }
+    let output = std::process::Command::new(&cfg.python)
+        .arg(script)
+        .arg(&bsp)
+        .arg(&graph)
+        .output()
+        .map_err(|e| format!("{map} playability gate: {e}"))?;
+    if output.status.success() {
+        return Ok(());
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let reason = stdout
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .collect::<Vec<_>>()
+        .join("; ");
+    Err(format!("{map} is experimental: {reason}"))
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct NavSyncReport {
     pub ok: bool,
@@ -50,14 +84,19 @@ pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
     for map in &maps {
         let branch = format!("mapname == \"{map}\"");
         let spawn = format!("Argus_Nav_Spawn_{map}");
-        if disp.contains(&branch) {
+        let has_branch = disp.contains(&branch);
+        let qc_line = format!("argus_nav_{map}.qc");
+        let has_qc = progs.contains(&qc_line);
+        if !(has_branch && has_qc) {
+            require_playable_first_registration(cfg, map)?;
+        }
+        if has_branch {
             already.push(map.clone());
         } else {
             disp = insert_dispatch_branch(&disp, map, &spawn)?;
             added_dispatch.push(map.clone());
         }
-        let qc_line = format!("argus_nav_{map}.qc");
-        if !progs.contains(&qc_line) {
+        if !has_qc {
             progs = insert_progs_line(&progs, &qc_line)?;
             added_progs.push(map.clone());
         }
@@ -134,5 +173,38 @@ mod tests {
         let src = "argus_nav_dm4.qc\nargus_nav_dispatch.qc\nargus.qc\n";
         let out = insert_progs_line(src, "argus_nav_e1m1.qc").unwrap();
         assert!(out.contains("argus_nav_e1m1.qc\nargus_nav_dispatch.qc"));
+    }
+
+    #[test]
+    fn sync_does_not_bypass_the_first_registration_gate() {
+        let temp = std::env::temp_dir().join(format!("argus-nav-sync-gate-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&temp);
+        let src = temp.join("src");
+        let maps = temp.join("maps");
+        fs::create_dir_all(&src).unwrap();
+        fs::create_dir_all(&maps).unwrap();
+        fs::write(src.join("argus_nav_newmap.qc"), "fixture").unwrap();
+        fs::write(
+            src.join("argus_nav_newmap.qc.json"),
+            r#"{"nodes": [], "links": []}"#,
+        )
+        .unwrap();
+        fs::write(
+            src.join("argus_nav_dispatch.qc"),
+            "void() Argus_Nav_Spawn =\n{\n};\n",
+        )
+        .unwrap();
+        fs::write(src.join("progs.src"), "argus_nav_dispatch.qc\n").unwrap();
+        let mut cfg = Config::load_for_reads().expect("repo config");
+        cfg.src = src.clone();
+        cfg.maps = maps;
+
+        let err = nav_sync_dispatch(&cfg).unwrap_err();
+
+        assert!(err.contains("newmap is experimental"), "{err}");
+        assert!(!fs::read_to_string(src.join("progs.src"))
+            .unwrap()
+            .contains("argus_nav_newmap.qc"));
+        let _ = fs::remove_dir_all(&temp);
     }
 }

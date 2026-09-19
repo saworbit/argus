@@ -10,6 +10,8 @@ pub struct NavgenResult {
     pub out_png: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub edict_budget: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub playability_gate: Option<String>,
     pub stdout_tail: Vec<String>,
 }
 
@@ -75,13 +77,14 @@ pub fn nav_generate(
         out_qc: out_qc.display().to_string(),
         out_png: out_png.display().to_string(),
         edict_budget: edict_budget_line(&text),
+        playability_gate: playability_gate_line(&text),
         stdout_tail: tail_lines(&text, 40),
     })
 }
 
 #[cfg(test)]
 mod tests {
-    use super::edict_budget_line;
+    use super::{edict_budget_line, playability_gate_line};
 
     #[test]
     fn extracts_the_generator_edict_verdict_for_the_gui() {
@@ -91,4 +94,20 @@ mod tests {
             Some("edict budget: status tight; waypoints 260; live bsp entities 252 of 300; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 581 of 600; slack 19")
         );
     }
+
+    #[test]
+    fn extracts_the_registration_playability_verdict_for_the_gui() {
+        let output = "wrote map.qc\nplayability gate: status experimental; spawns 4; deathmatch pickups 18; graph md5 abc123\nregister: skipped because reach and mill evidence are incomplete\n";
+        assert_eq!(
+            playability_gate_line(output).as_deref(),
+            Some("playability gate: status experimental; spawns 4; deathmatch pickups 18; graph md5 abc123")
+        );
+    }
+}
+
+fn playability_gate_line(output: &str) -> Option<String> {
+    output
+        .lines()
+        .find(|line| line.starts_with("playability gate: status "))
+        .map(str::to_owned)
 }

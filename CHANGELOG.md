@@ -9,6 +9,14 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**NEW MAPS MUST PASS REACH AND THE ENGINE MILL BEFORE REGISTRATION** (#417).
+The add-a-map path now checks every deathmatch spawn against every live pickup
+and requires graph-specific walk/drop and jump probe evidence before it changes
+`progs.src` or the dispatcher. Probe verdicts name the exact graph they walked,
+community BSPs are staged into the engine only for the probe, and refused jump
+links remain visible in the generated JSON and debug PNG. The CLI and GUI show
+the same `playable` or `experimental` verdict.
+
 **NAVGEN REFUSES OVER-BUDGET GRAPHS** (#420). Every generation now reports
 waypoints, live BSP entities, world and client slots, the measured runtime
 reserve, total use, slack, and an `ok`, `tight`, or `over-budget` verdict.

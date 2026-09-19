@@ -1003,6 +1003,7 @@ mod tests {
         let r = route(&req);
         let page = String::from_utf8_lossy(&r.body);
         assert!(page.contains("r.edict_budget"));
+        assert!(page.contains("r.playability_gate"));
         assert!(page.contains("id=\"gatecard\""));
     }
 
