@@ -71,25 +71,6 @@ float AR_C_HEALTH  = 3;
 float AR_C_ARMOR   = 4;
 float AR_C_POWER   = 5;
 
-// One reverse multi-source flood per item class. The completed fields are
-// shared by every bot; a partial rebuild is never read.
-float AR_DFIELD_POPS = 24;
-float AR_DFIELD_SEEDS = 8;
-float an_dfgen;
-float an_dfclass;
-float an_dfnextclass;
-float an_dfactive;
-float an_dfphase;
-float an_dfdone0;
-float an_dfdone1;
-float an_dfdone2;
-float an_dfdone3;
-float an_dfdone4;
-float an_dfdone5;
-entity an_dfitem;
-entity an_dfhead;
-entity an_dftail;
-
 float AR_WS_ARMED   = 1;        // a real gun with ammo in it
 float AR_WS_STOCKED = 2;        // comfortable ammo for that gun
 float AR_WS_HEALTHY = 4;        // health >= 75
@@ -6318,329 +6299,14 @@ string(float cls) Argus_ClassWord =
     return "loot";
 };
 
-float(entity n, float cls) Argus_DFieldStamp =
-{
-    if (cls == AR_C_WEAPON) return n.an_dfstamp1;
-    if (cls == AR_C_AMMO)   return n.an_dfstamp2;
-    if (cls == AR_C_HEALTH) return n.an_dfstamp3;
-    if (cls == AR_C_ARMOR)  return n.an_dfstamp4;
-    if (cls == AR_C_POWER)  return n.an_dfstamp5;
-    return n.an_dfstamp0;
-};
-
-float(entity n, float cls) Argus_DFieldDist =
-{
-    if (cls == AR_C_WEAPON) return n.an_dfdist1;
-    if (cls == AR_C_AMMO)   return n.an_dfdist2;
-    if (cls == AR_C_HEALTH) return n.an_dfdist3;
-    if (cls == AR_C_ARMOR)  return n.an_dfdist4;
-    if (cls == AR_C_POWER)  return n.an_dfdist5;
-    return n.an_dfdist0;
-};
-
-float(entity n, float cls) Argus_DFieldSlot =
-{
-    if (cls == AR_C_WEAPON) return n.an_dfslot1;
-    if (cls == AR_C_AMMO)   return n.an_dfslot2;
-    if (cls == AR_C_HEALTH) return n.an_dfslot3;
-    if (cls == AR_C_ARMOR)  return n.an_dfslot4;
-    if (cls == AR_C_POWER)  return n.an_dfslot5;
-    return n.an_dfslot0;
-};
-
-entity(entity n, float cls) Argus_DFieldGoal =
-{
-    if (cls == AR_C_WEAPON) return n.an_dfgoal1;
-    if (cls == AR_C_AMMO)   return n.an_dfgoal2;
-    if (cls == AR_C_HEALTH) return n.an_dfgoal3;
-    if (cls == AR_C_ARMOR)  return n.an_dfgoal4;
-    if (cls == AR_C_POWER)  return n.an_dfgoal5;
-    return n.an_dfgoal0;
-};
-
-float(float cls) Argus_DFieldDone =
-{
-    if (cls == AR_C_WEAPON) return an_dfdone1;
-    if (cls == AR_C_AMMO)   return an_dfdone2;
-    if (cls == AR_C_HEALTH) return an_dfdone3;
-    if (cls == AR_C_ARMOR)  return an_dfdone4;
-    if (cls == AR_C_POWER)  return an_dfdone5;
-    return an_dfdone0;
-};
-
-void(entity n, float cls, float stamp, float dist, entity goal, float slot) Argus_DFieldSet =
-{
-    if (cls == AR_C_WEAPON)
-    {
-        n.an_dfstamp1 = stamp; n.an_dfdist1 = dist;
-        n.an_dfgoal1 = goal; n.an_dfslot1 = slot;
-    }
-    else if (cls == AR_C_AMMO)
-    {
-        n.an_dfstamp2 = stamp; n.an_dfdist2 = dist;
-        n.an_dfgoal2 = goal; n.an_dfslot2 = slot;
-    }
-    else if (cls == AR_C_HEALTH)
-    {
-        n.an_dfstamp3 = stamp; n.an_dfdist3 = dist;
-        n.an_dfgoal3 = goal; n.an_dfslot3 = slot;
-    }
-    else if (cls == AR_C_ARMOR)
-    {
-        n.an_dfstamp4 = stamp; n.an_dfdist4 = dist;
-        n.an_dfgoal4 = goal; n.an_dfslot4 = slot;
-    }
-    else if (cls == AR_C_POWER)
-    {
-        n.an_dfstamp5 = stamp; n.an_dfdist5 = dist;
-        n.an_dfgoal5 = goal; n.an_dfslot5 = slot;
-    }
-    else
-    {
-        n.an_dfstamp0 = stamp; n.an_dfdist0 = dist;
-        n.an_dfgoal0 = goal; n.an_dfslot0 = slot;
-    }
-};
-
-void() Argus_DFieldComplete =
-{
-    if (an_dfclass == AR_C_WEAPON)      an_dfdone1 = an_dfgen;
-    else if (an_dfclass == AR_C_AMMO)   an_dfdone2 = an_dfgen;
-    else if (an_dfclass == AR_C_HEALTH) an_dfdone3 = an_dfgen;
-    else if (an_dfclass == AR_C_ARMOR)  an_dfdone4 = an_dfgen;
-    else if (an_dfclass == AR_C_POWER)  an_dfdone5 = an_dfgen;
-    else                                an_dfdone0 = an_dfgen;
-
-    an_dfnextclass = an_dfclass + 1;
-    if (an_dfnextclass > AR_C_POWER)
-        an_dfnextclass = AR_C_ANY;
-    an_dfactive = 0;
-};
-
-void(float cls) Argus_DFieldStart =
-{
-    an_dfgen = an_dfgen + 1;
-    an_dfclass = cls;
-    an_dfitem = argus_itemchain;
-    an_dfhead = world;
-    an_dftail = world;
-    an_dfphase = 1;            // seed live items, then reverse-flood
-    an_dfactive = 1;
-};
-
-// Build one item class at a time and cap both phases. At the lab's 0.1
-// frametime a 244-node graph completes without placing a full graph walk in
-// one server frame. Readers accept only the last completed generation.
-void() Argus_DFieldFrame =
-{
-    local entity e, n, cur, pred, goal;
-    local float ops, i, slot, dist;
-
-    if (time < 1)
-        return;
-    if (!an_dfactive)
-        Argus_DFieldStart (an_dfnextclass);
-
-    ops = 0;
-    if (an_dfphase == 1)
-    {
-        while (an_dfitem != world && ops < AR_DFIELD_SEEDS)
-        {
-            e = an_dfitem;
-            an_dfitem = e.ar_nextitem;
-            if (e.solid == SOLID_TRIGGER
-                && Argus_ItemClass (e) == an_dfclass)
-            {
-                if (!e.ar_gnodeset)
-                {
-                    n = Argus_NearestNode (Argus_GoalPoint (e));
-                    if (n != world)
-                    {
-                        e.ar_gnodeset = 1;
-                        e.ar_goalnode = n;
-                    }
-                }
-                else
-                    n = e.ar_goalnode;
-
-                if (n != world && n.an_dfmark != an_dfgen)
-                {
-                    n.an_dfmark = an_dfgen;
-                    Argus_DFieldSet (n, an_dfclass, an_dfgen, 1, e, 0);
-                    n.an_dfqnext = world;
-                    if (an_dftail == world)
-                        an_dfhead = n;
-                    else
-                        an_dftail.an_dfqnext = n;
-                    an_dftail = n;
-                }
-            }
-            ops = ops + 1;
-        }
-        if (an_dfitem != world)
-            return;
-        an_dfphase = 2;
-        if (an_dfhead == world)
-        {
-            Argus_DFieldComplete ();
-            return;
-        }
-    }
-
-    ops = 0;
-    while (ops < AR_DFIELD_POPS)
-    {
-        if (an_dfhead == world)
-        {
-            Argus_DFieldComplete ();
-            return;
-        }
-        cur = an_dfhead;
-        an_dfhead = cur.an_dfqnext;
-        if (an_dfhead == world)
-            an_dftail = world;
-
-        goal = Argus_DFieldGoal (cur, an_dfclass);
-        dist = Argus_DFieldDist (cur, an_dfclass);
-        i = 0;
-        while (i < cur.an_nreverse)
-        {
-            pred = Argus_NavGetReverse (cur, i);
-            if (pred.an_dfmark != an_dfgen)
-            {
-                slot = Argus_NavGetLinkSlot (pred, cur);
-                if (slot >= 0)
-                {
-                    pred.an_dfmark = an_dfgen;
-                    Argus_DFieldSet (pred, an_dfclass, an_dfgen,
-                                     dist + 1, goal, slot);
-                    pred.an_dfqnext = world;
-                    if (an_dftail == world)
-                        an_dfhead = pred;
-                    else
-                        an_dftail.an_dfqnext = pred;
-                    an_dftail = pred;
-                }
-            }
-            i = i + 1;
-        }
-        ops = ops + 1;
-    }
-};
-
-// Return one-based hop distance only when this exact live item owns the
-// completed class field at the node. Other items keep the shipped distance
-// curve and router, preserving the per-item value model.
-float(entity n, entity goal, float cls) Argus_DFieldDistance =
-{
-    local float done;
-
-    if (n == world || goal == world || goal.solid != SOLID_TRIGGER)
-        return 0;
-    if (!goal.ar_gnodeset || goal.ar_goalnode == world)
-        return 0;
-    done = Argus_DFieldDone (cls);
-    if (!done || Argus_DFieldStamp (n, cls) != done)
-        return 0;
-    if (Argus_DFieldGoal (n, cls) != goal)
-        return 0;
-    return Argus_DFieldDist (n, cls);
-};
-
-// Install a completed field chain without starting a per-bot flood. Typed
-// link tolls are checked for this bot first. If any one is illegal, the
-// ordinary router remains the exact fallback and can find another path.
-float(entity bot, entity startnode, entity goal) Argus_DFieldAdopt =
-{
-    local entity cur, nx, goalnode;
-    local float cls, done, hops, slot, bit, dist;
-
-    if (startnode == world || goal == world || goal.solid != SOLID_TRIGGER)
-        return FALSE;
-    if (!goal.ar_gnodeset || goal.ar_goalnode == world)
-        return FALSE;
-    cls = Argus_ItemClass (goal);
-    done = Argus_DFieldDone (cls);
-    if (!done || Argus_DFieldStamp (startnode, cls) != done
-        || Argus_DFieldGoal (startnode, cls) != goal)
-        return FALSE;
-
-    goalnode = goal.ar_goalnode;
-    cur = startnode;
-    hops = 0;
-    while (cur != goalnode)
-    {
-        if (Argus_DFieldStamp (cur, cls) != done
-            || Argus_DFieldGoal (cur, cls) != goal)
-            return FALSE;
-        dist = Argus_DFieldDist (cur, cls);
-        slot = Argus_DFieldSlot (cur, cls);
-        nx = Argus_NavGetLink (cur, slot);
-        if (nx == world || Argus_DFieldStamp (nx, cls) != done
-            || Argus_DFieldGoal (nx, cls) != goal
-            || Argus_DFieldDist (nx, cls) != dist - 1)
-            return FALSE;
-        bit = Argus_NavGetLinkBit (cur, nx);
-        if ((cur.an_rjmask & bit) && !Argus_BotCanRJ (bot))
-            return FALSE;
-        if ((cur.an_sprintmask & bit) && bot.ar_skill < 2)
-            return FALSE;
-        if ((cur.an_jumpmask & bit)
-            && nx.origin_z - cur.origin_z > Argus_JumpApex ())
-            return FALSE;
-        if ((cur.an_doormask & bit)
-            && Argus_LinkBlockedByKeyDoor (cur, nx, bot))
-            return FALSE;
-        cur = nx;
-        hops = hops + 1;
-        if (hops > 250)
-            return FALSE;
-    }
-
-    bot.ar_routegen = bot.ar_routegen + 1;
-    cur = startnode;
-    while (cur != goalnode)
-    {
-        slot = Argus_DFieldSlot (cur, cls);
-        nx = Argus_NavGetLink (cur, slot);
-        Argus_SetNext (cur, bot, nx);
-        cur = nx;
-    }
-    Argus_SetNext (goalnode, bot, world);
-
-    bot.ar_pending = 0;
-    bot.ar_failstreak = 0;
-    bot.ar_node = startnode;
-    bot.ar_hopjump = 0;
-    bot.ar_hopspeed = 0;
-    bot.ar_sprintstate = 0;
-    bot.ar_hoprj = 0;
-    bot.ar_hoplift = 0;
-    bot.ar_hopswim = 0;
-    bot.ar_hoptrain = 0;
-    bot.ar_hopdoor = 0;
-
-    dprint ("ARGUS routefield adopt\n");
-    dprint ("ARGEVT ");
-    dprint (bot.netname);
-    dprint (" route ");
-    dprint (ftos (hops));
-    dprint (" start ");
-    dprint (vtos (startnode.origin));
-    dprint (" goal ");
-    dprint (vtos (goalnode.origin));
-    dprint ("\n");
-    return TRUE;
-};
-
 void() Argus_PickGoal =
 {
-    local entity e, b, pick, near, rnode, startnode;
+    local entity e, b, pick, near, rnode;
     local entity dn1, dn2, dn3, dn4, dn5, dn6;
     local entity bw, ba, bh, br, bp, bo;
     local float sw, sa, sh, sr, sp, so;
     local vector gp, d;
-    local float dist, routedist, neard, shelf, cls, v, sc, ws, u, bu, final;
+    local float dist, neard, shelf, cls, v, sc, ws, u, bu, final;
     local float breg;
 
     bw = world;  ba = world;  bh = world;
@@ -6681,7 +6347,6 @@ void() Argus_PickGoal =
     rnode = Argus_NearestNode (self.origin);
     if (rnode != world)
         breg = rnode.an_region;
-    startnode = rnode;
 
     // Issue #145: fast O(items) traversal along argus_itemchain rather than
     // scanning the entire 500+ global edict array on every bot think
@@ -6743,15 +6408,6 @@ void() Argus_PickGoal =
                 d = gp - self.origin;
                 d_z = d_z * 2;
                 dist = vlen (d);
-                // The nearest live item of each class has an honest
-                // graph distance. Per-item value stays authoritative;
-                // uncovered items retain the shipped crow-flight
-                // fallback instead of being collapsed into their class.
-                routedist = Argus_DFieldDistance (startnode, e, cls);
-                if (routedist > 0)
-                    dist = (routedist - 1) * 96
-                           + vlen (self.origin - startnode.origin)
-                           + vlen (gp - e.ar_goalnode.origin);
                 if (dist < neard && e.solid == SOLID_TRIGGER)
                 {
                     near = e;       // value-blind fallback target
@@ -8328,14 +7984,10 @@ void() Argus_AI =
             }
             else
                 gn = self.ar_goal.ar_goalnode;
-            // The per-class field covers the nearest live item without
-            // taking an_busy. A bot-specific toll or an uncovered item
-            // falls through to the exact shipped cache/search path.
-            if (Argus_DFieldAdopt (self, nx, self.ar_goal))
-                self.ar_laststart = nx;
-            // shared route cache next (Omicron review): a fresh flood
-            // to the same goal node is adopted for free
-            else if (Argus_Route_Adopt (self, nx, gn))
+            // shared route cache first (Omicron review): a fresh
+            // flood to the same goal node is adopted for free, no
+            // an_busy contention, no search frames
+            if (Argus_Route_Adopt (self, nx, gn))
                 self.ar_laststart = nx;
             else if (Argus_Route_Start (self, nx, gn))
             {
@@ -9710,7 +9362,6 @@ void() Argus_FrameAll =
         Argus_RetuneAll ();
     }
 
-    Argus_DFieldFrame ();
     Argus_Nav_Frame ();
 
     // rebroadcast names and frags every few seconds so clients that

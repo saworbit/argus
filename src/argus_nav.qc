@@ -18,11 +18,6 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .entity an_l0; .entity an_l1; .entity an_l2; .entity an_l3;
 .entity an_l4; .entity an_l5; .entity an_l6; .entity an_l7;
 .float  an_nlinks;
-.entity an_r0; .entity an_r1; .entity an_r2; .entity an_r3;
-.entity an_r4; .entity an_r5; .entity an_r6; .entity an_r7;
-.entity an_r8; .entity an_r9; .entity an_r10; .entity an_r11;
-.entity an_r12; .entity an_r13; .entity an_r14; .entity an_r15;
-.float  an_nreverse;          // incoming links for reverse distance floods
 .float  an_jumpmask;        // bit i set = link slot i needs a jump
 .float  an_jspeed0;         // target approach speed for jump slot i;
 .float  an_jspeed1;         // zero means a climb, auto-hop or safe
@@ -52,16 +47,6 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .float  an_ng3;             // long dead (the cross-map wedge march)
 .entity an_cnext;           // shared route cache: next hop toward
 .float  an_cgen;            // an_cachegoal; valid iff == an_cachegen
-.entity an_dfqnext;         // queue link for the shared distance-field build
-.float  an_dfmark;          // build generation; one class builds at a time
-.entity an_dfgoal0; .entity an_dfgoal1; .entity an_dfgoal2;
-.entity an_dfgoal3; .entity an_dfgoal4; .entity an_dfgoal5;
-.float  an_dfdist0; .float an_dfdist1; .float an_dfdist2;
-.float  an_dfdist3; .float an_dfdist4; .float an_dfdist5;
-.float  an_dfslot0; .float an_dfslot1; .float an_dfslot2;
-.float  an_dfslot3; .float an_dfslot4; .float an_dfslot5;
-.float  an_dfstamp0; .float an_dfstamp1; .float an_dfstamp2;
-.float  an_dfstamp3; .float an_dfstamp4; .float an_dfstamp5;
 
 entity  anq_head;
 entity  anq_tail;
@@ -140,35 +125,6 @@ void(entity n, float r) Argus_NavRegion =
     n.an_region = r;
 };
 
-void(entity n, entity predecessor) Argus_NavReverseLink =
-{
-    if (n.an_nreverse == 0)       n.an_r0 = predecessor;
-    else if (n.an_nreverse == 1)  n.an_r1 = predecessor;
-    else if (n.an_nreverse == 2)  n.an_r2 = predecessor;
-    else if (n.an_nreverse == 3)  n.an_r3 = predecessor;
-    else if (n.an_nreverse == 4)  n.an_r4 = predecessor;
-    else if (n.an_nreverse == 5)  n.an_r5 = predecessor;
-    else if (n.an_nreverse == 6)  n.an_r6 = predecessor;
-    else if (n.an_nreverse == 7)  n.an_r7 = predecessor;
-    else if (n.an_nreverse == 8)  n.an_r8 = predecessor;
-    else if (n.an_nreverse == 9)  n.an_r9 = predecessor;
-    else if (n.an_nreverse == 10) n.an_r10 = predecessor;
-    else if (n.an_nreverse == 11) n.an_r11 = predecessor;
-    else if (n.an_nreverse == 12) n.an_r12 = predecessor;
-    else if (n.an_nreverse == 13) n.an_r13 = predecessor;
-    else if (n.an_nreverse == 14) n.an_r14 = predecessor;
-    else if (n.an_nreverse == 15) n.an_r15 = predecessor;
-    else
-    {
-        // The shipped graphs peak at sixteen incoming links. Keep an
-        // overflow observable and let the ordinary router cover the
-        // omitted branch instead of corrupting the field.
-        dprint ("ARGUS navreverse overflow\n");
-        return;
-    }
-    n.an_nreverse = n.an_nreverse + 1;
-};
-
 void(entity a, entity b) Argus_NavLink =
 {
     if (a.an_nlinks == 0)      a.an_l0 = b;
@@ -189,7 +145,6 @@ void(entity a, entity b) Argus_NavLink =
         return;
     }
     a.an_nlinks = a.an_nlinks + 1;
-    Argus_NavReverseLink (b, a);
 };
 
 // a link the bot must jump across (gap too wide to walk, verified by
@@ -364,41 +319,6 @@ entity(entity n, float i) Argus_NavGetLink =
     if (i == 5) return n.an_l5;
     if (i == 6) return n.an_l6;
     return n.an_l7;
-};
-
-entity(entity n, float i) Argus_NavGetReverse =
-{
-    if (i == 0)  return n.an_r0;
-    if (i == 1)  return n.an_r1;
-    if (i == 2)  return n.an_r2;
-    if (i == 3)  return n.an_r3;
-    if (i == 4)  return n.an_r4;
-    if (i == 5)  return n.an_r5;
-    if (i == 6)  return n.an_r6;
-    if (i == 7)  return n.an_r7;
-    if (i == 8)  return n.an_r8;
-    if (i == 9)  return n.an_r9;
-    if (i == 10) return n.an_r10;
-    if (i == 11) return n.an_r11;
-    if (i == 12) return n.an_r12;
-    if (i == 13) return n.an_r13;
-    if (i == 14) return n.an_r14;
-    return n.an_r15;
-};
-
-// Zero-based outgoing slot for a -> b. The field stores slots rather than
-// entity pointers, so a map restart cannot leave a next-hop pointer alive.
-float(entity a, entity b) Argus_NavGetLinkSlot =
-{
-    if (a.an_l0 == b) return 0;
-    if (a.an_l1 == b) return 1;
-    if (a.an_l2 == b) return 2;
-    if (a.an_l3 == b) return 3;
-    if (a.an_l4 == b) return 4;
-    if (a.an_l5 == b) return 5;
-    if (a.an_l6 == b) return 6;
-    if (a.an_l7 == b) return 7;
-    return -1;
 };
 
 // returns 1-hot bit for link a -> b (1, 2, 4..128), or 0 if not linked
