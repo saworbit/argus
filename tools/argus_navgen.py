@@ -15,7 +15,8 @@ Pipeline:
       (quad/pent/ring/mega/LG/RL, horiz to 260u, at most two per
       landing; --no-rj skips pads)
   7b. lift links from func_plat (boarding/exit pads + vertical hop)
-  8. emit argus_nav_<map>.qc + JSON + a debug plot of the graph
+  8. analyze static node visibility, exposure and nearest walk cover
+  9. emit argus_nav_<map>.qc + JSON + a debug plot of the graph
      (pass --no-dispatcher; the dispatcher file is hand-maintained)
 
 Sidecar files, all optional, all read from the output directory:
@@ -38,6 +39,7 @@ Sidecar files, all optional, all read from the output directory:
 usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj]
        argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reprofile-jumps
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
 
 --no-dispatcher emits only Argus_Nav_Spawn_<mapname>, for multi-map
 builds where a hand-maintained argus_nav_dispatch.qc selects per map.
@@ -52,9 +54,15 @@ linking, no knitting, no plot. Section 2c.
 approach speed, landing runway and arc margin for each existing jump
 link, adds the speed argument to its QC builder call, records all three
 values in JSON, and changes no node, link, type, slot or sidecar.
+
+--reanalyze-tactics preserves the shipped graph too. It recomputes static
+node exposure and the nearest hidden ordinary-walk target, writes those
+annotations to QC and JSON, and changes no topology or typed movement data.
 """
 import re, struct, sys, heapq, collections
 import math as _dmath
+
+from argus_nav_tactics import compute_tactics
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -68,6 +76,7 @@ EMIT_DISPATCHER = "--no-dispatcher" not in sys.argv[5:]
 # of it and exits before sampling.
 RETYPE_DOORS = "--retype-doors" in sys.argv[5:]
 REPROFILE_JUMPS = "--reprofile-jumps" in sys.argv[5:]
+REANALYZE_TACTICS = "--reanalyze-tactics" in sys.argv[5:]
 if "--register" in sys.argv[5:]:
     # --register wires the map into the shared argus_nav_dispatch.qc,
     # so emitting a second Argus_Nav_Spawn in the per-map file would
@@ -557,6 +566,115 @@ def h0_contents(x, y, z):
         nx, ny, nz, d = planes[node[0]]
         n = node[1] if (nx * x + ny * y + nz * z - d) >= 0 else node[2]
     return h0leaves[-1 - n][0]
+
+
+def h0_line_clear(a, b, node=None):
+    """Exact point segment test against the world BSP tree."""
+    n = HULL0 if node is None else node
+    if n < 0:
+        return h0leaves[-1 - n][0] != CONTENTS_SOLID
+    plane = planes[h0nodes[n][0]]
+    da = plane[0]*a[0] + plane[1]*a[1] + plane[2]*a[2] - plane[3]
+    db = plane[0]*b[0] + plane[1]*b[1] + plane[2]*b[2] - plane[3]
+    if da >= 0 and db >= 0:
+        return h0_line_clear(a, b, h0nodes[n][1])
+    if da < 0 and db < 0:
+        return h0_line_clear(a, b, h0nodes[n][2])
+    frac = da / (da - db)
+    mid = tuple(a[i] + (b[i] - a[i]) * frac for i in range(3))
+    near = h0nodes[n][1] if da >= 0 else h0nodes[n][2]
+    far = h0nodes[n][2] if da >= 0 else h0nodes[n][1]
+    return h0_line_clear(a, mid, near) and h0_line_clear(mid, b, far)
+
+
+if REANALYZE_TACTICS:
+    import json as _tj
+    import os as _tos
+    _qcpath, _jspath = OUTQC, OUTQC + ".json"
+    if not (_tos.path.exists(_qcpath) and _tos.path.exists(_jspath)):
+        print("error: --reanalyze-tactics needs shipped QC and JSON to "
+              "exist already", file=sys.stderr)
+        sys.exit(1)
+    with open(_jspath, encoding="utf-8") as _tf:
+        _tdoc = _tj.load(_tf)
+    _tnodes = [tuple(_p) for _p in _tdoc.get("nodes", [])]
+    if not _tnodes:
+        print("error: shipped nav JSON has no nodes", file=sys.stderr)
+        sys.exit(1)
+
+    def _tvisible(_a, _b):
+        _ax, _ay, _az = _tnodes[_a]
+        _bx, _by, _bz = _tnodes[_b]
+        _az += 22.0
+        _bz += 22.0
+        if (h0_contents(_ax, _ay, _az) == CONTENTS_SOLID
+                or h0_contents(_bx, _by, _bz) == CONTENTS_SOLID):
+            return False
+        return h0_line_clear((_ax, _ay, _az), (_bx, _by, _bz))
+
+    _tvis = [[False] * len(_tnodes) for _ in _tnodes]
+    for _i in range(len(_tnodes)):
+        _tvis[_i][_i] = _tvisible(_i, _i)
+        for _j in range(_i + 1, len(_tnodes)):
+            _seen = _tvisible(_i, _j)
+            _tvis[_i][_j] = _seen
+            _tvis[_j][_i] = _seen
+
+    _blocked_pairs = set()
+    for _key in ("jlinks", "doorlinks", "teles", "sprintlinks",
+                 "rjlinks", "liftlinks", "swimlinks", "trainlinks"):
+        _blocked_pairs.update(tuple(_p) for _p in _tdoc.get(_key, []))
+    _twalks = [[] for _ in _tnodes]
+    for _row in _tdoc.get("links", []):
+        _a, _b = int(_row[0]), int(_row[1])
+        if (_a, _b) in _blocked_pairs:
+            continue
+        if _tnodes[_a][2] - _tnodes[_b][2] > STEP:
+            continue
+        _twalks[_a].append(_b)
+    _texposure, _tcover = compute_tactics(_tnodes, _twalks, _tvis)
+
+    _raw = open(_qcpath, "rb").read()
+    _newline = "\r\n" if b"\r\n" in _raw else "\n"
+    _qlines = _raw.decode("ascii").splitlines()
+    _qlines = [
+        _line for _line in _qlines
+        if "Argus_NavTactics (" not in _line
+        and "Static tactical annotations:" not in _line
+    ]
+    _insert = next((i for i, _line in enumerate(_qlines)
+                    if "// Camera vantage nodes" in _line
+                    or "dprint (\"ARGNAV " in _line), None)
+    if _insert is None:
+        print("error: shipped QC has no nav spawn tail", file=sys.stderr)
+        sys.exit(1)
+    _tlines = [
+        "    // Static tactical annotations: exposure, hidden target, first walk hop"
+    ]
+    for _i, (_target, _hop) in enumerate(_tcover):
+        _target_qc = f"n{_target}" if _target >= 0 else "world"
+        _hop_qc = f"n{_hop}" if _hop >= 0 else "world"
+        _tlines.append(
+            f"    Argus_NavTactics (n{_i}, {_texposure[_i]}, "
+            f"{_target_qc}, {_hop_qc});")
+    _qlines[_insert:_insert] = [""] + _tlines
+    with open(_qcpath, "wb") as _qf:
+        _qf.write((_newline.join(_qlines) + _newline).encode("ascii"))
+
+    _tdoc["exposure"] = _texposure
+    _tdoc["cover_targets"] = _tcover
+    with open(_jspath, "w", encoding="utf-8") as _tf:
+        _tj.dump(_tdoc, _tf)
+    _covered = sum(1 for _target, _hop in _tcover if _target >= 0)
+    _top = sorted(range(len(_tnodes)),
+                  key=lambda _n: (-_texposure[_n], _n))[:5]
+    print(f"tactics: exposure {min(_texposure)}..{max(_texposure)}; "
+          f"cover {_covered}/{len(_tnodes)} nodes; topology untouched")
+    print("  open nodes: " + ", ".join(
+        f"n{_n} {tuple(round(_v, 1) for _v in _tnodes[_n])}={_texposure[_n]}"
+        for _n in _top))
+    print(f"wrote {_qcpath} + .json")
+    sys.exit(0)
 
 def water_surface_z(x, y, z):
     top = z
@@ -3623,7 +3741,59 @@ print(f"regions: mainland {len(_F)} nodes, "
       f"{_rid} stranded pocket(s) covering "
       f"{len(ways) - len(_F)} nodes")
 
-# ---- 8a0. jump approach profiles ----
+# ---- 8a0. static tactical annotations ----
+# Source nav analysis stores expensive, static geometry facts on the graph.
+# Do the same here rather than asking four bots to rediscover the same walls
+# every combat decision. This is a rank and a hint, not player visibility:
+# nodes are points, so runtime still verifies the chosen cover against the
+# live threat before using it.
+def _node_visible(_a, _b):
+    _ax, _ay, _az = pos(ways[_a])
+    _bx, _by, _bz = pos(ways[_b])
+    _az += 22.0
+    _bz += 22.0
+    # A point trace beginning in solid can report a clear fraction in the
+    # engine. Reject embedded endpoints explicitly before sampling the chord.
+    if (h0_contents(_ax, _ay, _az) == CONTENTS_SOLID
+            or h0_contents(_bx, _by, _bz) == CONTENTS_SOLID):
+        return False
+    return h0_line_clear((_ax, _ay, _az), (_bx, _by, _bz))
+
+
+node_visibility = [[False] * len(ways) for _ in ways]
+for _i in range(len(ways)):
+    node_visibility[_i][_i] = _node_visible(_i, _i)
+    for _j in range(_i + 1, len(ways)):
+        _seen = _node_visible(_i, _j)
+        node_visibility[_i][_j] = _seen
+        node_visibility[_j][_i] = _seen
+
+# Combat steering can follow an ordinary walk hop. Typed jumps, movers,
+# teleports, doors, swims and deliberate drops need the routed state machine,
+# so they cannot be smuggled into this lightweight hint.
+_door_pairs = set(doorlinks)
+_tele_pairs = set(teles)
+cover_walks = [[] for _ in ways]
+for _i in sorted(links):
+    for _j in sorted(links[_i]):
+        _dz = pos(ways[_i])[2] - pos(ways[_j])[2]
+        if (not links[_i][_j][1] and _dz <= STEP
+                and (_i, _j) not in _door_pairs
+                and (_i, _j) not in _tele_pairs):
+            cover_walks[_i].append(_j)
+
+exposure, cover_targets = compute_tactics(
+    [pos(_w) for _w in ways], cover_walks, node_visibility)
+_covered = sum(1 for _target, _hop in cover_targets if _target >= 0)
+_top_exposure = sorted(range(len(ways)), key=lambda _n: (-exposure[_n], _n))[:5]
+print(f"tactics: exposure {min(exposure) if exposure else 0}.."
+      f"{max(exposure) if exposure else 0}; cover {_covered}/{len(ways)} nodes")
+if _top_exposure:
+    print("  open nodes: " + ", ".join(
+        f"n{_n} {tuple(round(_v, 1) for _v in pos(ways[_n]))}={exposure[_n]}"
+        for _n in _top_exposure))
+
+# ---- 8a1. jump approach profiles ----
 # A jump link used to carry only a type bit. Runtime therefore used one
 # 250 u/s launch floor for every gap, even though navgen verified the
 # arc at 280 and already has the collision hull needed to describe the
@@ -3659,7 +3829,7 @@ _staged = sum(1 for _v in jump_approach.values() if _v[0] > 0)
 print(f"jump approaches: {_staged} staged gap(s), "
       f"{len(jump_approach) - _staged} direct/fallback link(s)")
 
-# ---- 8a0. compute camera vantage nodes ----
+# ---- 8a2. compute camera vantage nodes ----
 cam_nodes = []
 for i, w in enumerate(ways):
     x, y, z = pos(w)
@@ -3745,6 +3915,12 @@ with open(OUTQC, "w") as f:
     for i, r in enumerate(regions):
         if r:
             f.write(f"    Argus_NavRegion (n{i}, {r});\n")
+    f.write("\n    // Static tactical annotations: exposure, hidden target, first walk hop\n")
+    for i, (target, hop) in enumerate(cover_targets):
+        target_qc = f"n{target}" if target >= 0 else "world"
+        hop_qc = f"n{hop}" if hop >= 0 else "world"
+        f.write(f"    Argus_NavTactics (n{i}, {exposure[i]}, "
+                f"{target_qc}, {hop_qc});\n")
     if cam_nodes:
         f.write("\n    // Camera vantage nodes (Cartographer spectator anchors)\n")
         for cpos, cang, ctag in cam_nodes:
@@ -3780,6 +3956,8 @@ with open(OUTQC + ".json", "w") as jf:
                "trainlinks": trains,
                "doorlinks": doorlinks,
                "regions": regions,
+               "exposure": exposure,
+               "cover_targets": cover_targets,
                "trace_inputs": trace_inputs,
                "cam_nodes": [{"pos": cpos, "ang": cang, "tag": ctag} for cpos, cang, ctag in cam_nodes],
                "teles": teles}, jf)

@@ -229,6 +229,11 @@ class TestToolsCLI(unittest.TestCase):
                              "fixture", str(tmp / qc), str(tmp / "out.png"),
                              "--reprofile-jumps")
 
+    def reanalyze_tactics(self, tmp, qc="nav.qc"):
+        return self.run_tool("argus_navgen.py", str(tmp / "fixture.bsp"),
+                             "fixture", str(tmp / qc), str(tmp / "out.png"),
+                             "--reanalyze-tactics")
+
     def test_argus_navgen_retype_doors_is_in_the_usage(self):
         res = self.run_tool("argus_navgen.py", "--help")
         self.assertEqual(res.returncode, 0)
@@ -238,6 +243,26 @@ class TestToolsCLI(unittest.TestCase):
         res = self.run_tool("argus_navgen.py", "--help")
         self.assertEqual(res.returncode, 0)
         self.assertIn("--reprofile-jumps", res.stdout)
+
+    def test_argus_navgen_reanalyze_tactics_is_in_the_usage(self):
+        res = self.run_tool("argus_navgen.py", "--help")
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("--reanalyze-tactics", res.stdout)
+
+    def test_argus_navgen_reanalyze_tactics_preserves_topology(self):
+        tmp = self.door_fixture(collision_gap=True)
+        before = json.loads((tmp / "nav.qc.json").read_text())
+        res = self.reanalyze_tactics(tmp)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("topology untouched", res.stdout)
+        after = json.loads((tmp / "nav.qc.json").read_text())
+        self.assertEqual(after["exposure"], [5] * 6)
+        self.assertEqual(after["cover_targets"], [[-1, -1]] * 6)
+        self.assertEqual({k: v for k, v in after.items()
+                          if k not in ("exposure", "cover_targets")}, before)
+        qc = (tmp / "nav.qc").read_text(encoding="ascii")
+        self.assertEqual(qc.count("Argus_NavTactics ("), 6)
+        self.assertIn("Argus_NavTactics (n0, 5, world, world);", qc)
 
     def test_argus_navgen_reprofile_jumps_needs_a_shipped_graph(self):
         tmp = self.door_fixture()

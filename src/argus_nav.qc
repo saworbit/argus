@@ -36,6 +36,9 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .float  an_doormask;        // bit i set = link slot i crosses a door
 .float  an_mark;            // generation stamp
 .float  an_dist;            // walked graph distance from the shopping root
+.float  an_exposure;        // other nav nodes visible through static world
+.entity an_cover;           // nearest walk-reachable node hidden from here
+.entity an_coverhop;        // first plain-walk hop toward an_cover
 .entity an_par;             // BFS parent (shared; one search at a time)
 .entity an_qnext;           // BFS queue linkage
 .entity an_next0;           // next hop toward goal, bot slot 0
@@ -292,6 +295,16 @@ entity(vector org) Argus_NavNode =
 void(entity n, float r) Argus_NavRegion =
 {
     n.an_region = r;
+};
+
+// Static tactical data from navgen. Exposure is a ranking, not a visibility
+// verdict. The cover target is similarly only a candidate: combat verifies it
+// against the live threat before following its first ordinary walk hop.
+void(entity n, float exposure, entity cover, entity hop) Argus_NavTactics =
+{
+    n.an_exposure = exposure;
+    n.an_cover = cover;
+    n.an_coverhop = hop;
 };
 
 void(entity a, entity b) Argus_NavLink =
