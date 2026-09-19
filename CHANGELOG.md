@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**LAB TICK CLASSIFICATION NOW TOLERATES PLAYED-RATE SAMPLING JITTER** (#412).
+The listen-rate cutoff moved from 0.5105 to 0.5135 seconds, above repeated
+same-runner measurements and below the calibrated 0.5145-second legacy
+dedicated cluster. Matching Rust and Python regression tests cover values on
+both sides of the old cutoff and retain the older 19 Hz classification.
+
 **NAV GRAPHS NOW CARRY STATIC EXPOSURE AND COVER DATA** (#368).
 Navgen traces every waypoint pair through the exact BSP world tree, counts the
 other nodes visible from each point, and finds the nearest hidden node reachable

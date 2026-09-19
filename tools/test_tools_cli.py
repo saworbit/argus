@@ -524,6 +524,27 @@ class TestToolsCLI(unittest.TestCase):
             self.assertEqual(res.returncode, 0, res.stderr)
             self.assertIn(want, res.stdout, f"{name}: {res.stdout}")
 
+    def test_tick_estimator_tolerates_played_rate_jitter(self):
+        """Sampling jitter around the old cutoff does not change class."""
+        with tempfile.TemporaryDirectory() as td:
+            tape = Path(td) / "same_runner.log"
+            t = 1.0
+            lines = []
+            # 13 long gaps among 100 gives 0.513, below the calibrated
+            # 0.5145 legacy dedicated cluster but above the old cutoff.
+            for i in range(101):
+                lines.append(
+                    f"ARGLOG Reap t {t:.1f} pos '0 0 24' spd 0 "
+                    "yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n"
+                )
+                if i < 100:
+                    t += 0.6 if i < 13 else 0.5
+            tape.write_text("".join(lines))
+
+            res = self.run_tool("argus_tick.py", str(tape))
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertIn("70 Hz", res.stdout)
+
     def test_harvest_appends_a_scorecard_row(self):
         """Every harvested session lands one row in the scorecard.
 

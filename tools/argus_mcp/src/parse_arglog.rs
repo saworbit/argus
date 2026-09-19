@@ -463,8 +463,13 @@ impl MatchTape {
 /// 15 Hz (the 15.6 ms coarse timer), and which one a given day
 /// produced was never anyone's choice. 438 of the archive's 635
 /// readable tapes are fast, 124 slow, 73 listen.
+///
+/// The played-rate cutoff leaves a 1 ms margin below the calibrated
+/// legacy cluster at 0.5145. Repeated runs of the same played-rate
+/// launcher reach 0.51282, so the old 0.5105 boundary classified
+/// ordinary sampling jitter as a different engine regime (#412).
 pub fn tick_class(gap: f64) -> &'static str {
-    if gap < 0.5105 {
+    if gap < 0.5135 {
         "listen"
     } else if gap < 0.522 {
         "dedicated_fast"
@@ -831,6 +836,18 @@ fn map_re() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn played_rate_jitter_stays_in_one_tick_class() {
+        // #412: these came from repeated invocations of the same
+        // played-rate runner. The old 0.5105 boundary split them.
+        for gap in [0.50947, 0.51049, 0.51051, 0.51282] {
+            assert_eq!(tick_class(gap), "listen", "gap {gap}");
+        }
+
+        // The calibrated legacy dedicated cluster starts at 0.5145.
+        assert_eq!(tick_class(0.5150), "dedicated_fast");
+    }
 
     // #229: goal_push and goal_pop must not be eaten by the goal arm.
     #[test]

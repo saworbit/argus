@@ -581,8 +581,8 @@ fn tick_class_separates_a_human_tape_from_a_lab_tape() {
     let lab = parse_file("runs/ab_dm4_tremorclock1.log");
     assert_eq!(human.totals.tick_class, "listen");
     assert_eq!(lab.totals.tick_class, "dedicated_fast");
-    assert!(human.totals.tick_gap_mean < 0.5105);
-    assert!(lab.totals.tick_gap_mean > 0.5105 && lab.totals.tick_gap_mean < 0.522);
+    assert!(human.totals.tick_gap_mean < 0.5135);
+    assert!(lab.totals.tick_gap_mean > 0.5135 && lab.totals.tick_gap_mean < 0.522);
 }
 ```
 
@@ -594,7 +594,7 @@ Expected: FAIL, fields missing.
 - [ ] **Step 3: implement the estimator**
 
 Per bot, collect consecutive ARGLOG `t` gaps in (0.3, 1.0), take the
-mean. Class thresholds: under 0.5105 listen, under 0.522 dedicated_fast,
+mean. Class thresholds: under 0.5135 listen, under 0.522 dedicated_fast,
 otherwise dedicated_slow. In `compare_briefs`, when the two classes
 differ, push a finding "tapes ran at different tick rates (a vs b); the
 verdict is not valid" and set the verdict to `Mixed`.
