@@ -622,6 +622,8 @@ fn parse_one(text: &str) -> MatchTape {
                 *event_counts.entry("shove".to_string()).or_insert(0) += 1;
             } else if line.ends_with("routecache adopt") {
                 *event_counts.entry("routecache_adopt".to_string()).or_insert(0) += 1;
+            } else if line.ends_with("routefield adopt") {
+                *event_counts.entry("routefield_adopt".to_string()).or_insert(0) += 1;
             } else if line.contains(" hunch ") {
                 *event_counts.entry("hunch".to_string()).or_insert(0) += 1;
             } else if line.contains(" watch ") {
@@ -926,6 +928,7 @@ ARGLOG unconnected t 1.0 pos '5 5 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\
 ARGUS Carmack shove\n\
 ARGUS Joe Rogan shove\n\
 ARGUS routecache adopt\n\
+ARGUS routefield adopt\n\
 ARGUS Carmack watch spawn\n\
 ARGUS Joe Rogan sprintjump\n\
 ARGUS Carmack leadclip\n\
@@ -940,6 +943,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         let tape = parse_tape(text);
         assert_eq!(tape.event_counts.get("shove"), Some(&2));
         assert_eq!(tape.event_counts.get("routecache_adopt"), Some(&1));
+        assert_eq!(tape.event_counts.get("routefield_adopt"), Some(&1));
         assert_eq!(tape.event_counts.get("watch"), Some(&1));
         assert_eq!(tape.event_counts.get("sprintjump"), Some(&1));
         assert_eq!(tape.event_counts.get("leadclip"), Some(&1));
