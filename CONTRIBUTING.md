@@ -104,6 +104,10 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
    python tools/argus_navgen.py mymap.bsp mymap src/argus_nav_mymap.qc nav_mymap.png --no-dispatcher --register
    ```
    * `--register` updates `src/argus_nav_dispatch.qc` and `src/progs.src` automatically.
+   * Check the final `edict budget` verdict. It includes the graph, live BSP
+     entities, engine slots, four bots, and dynamic-entity reserve. An
+     `over-budget` graph exits before registration; `tight` has fewer than 20
+     edicts beyond the measured reserve.
 3. Verify reachability:
    ```bash
    python tools/argus_reach.py mymap

@@ -8,7 +8,16 @@ pub struct NavgenResult {
     pub ok: bool,
     pub out_qc: String,
     pub out_png: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub edict_budget: Option<String>,
     pub stdout_tail: Vec<String>,
+}
+
+fn edict_budget_line(output: &str) -> Option<String> {
+    output
+        .lines()
+        .find(|line| line.starts_with("edict budget: status "))
+        .map(str::to_owned)
 }
 
 pub fn nav_generate(
@@ -65,6 +74,21 @@ pub fn nav_generate(
         ok: output.status.success(),
         out_qc: out_qc.display().to_string(),
         out_png: out_png.display().to_string(),
+        edict_budget: edict_budget_line(&text),
         stdout_tail: tail_lines(&text, 40),
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::edict_budget_line;
+
+    #[test]
+    fn extracts_the_generator_edict_verdict_for_the_gui() {
+        let output = "wrote map.qc\nedict budget: status tight; waypoints 260; live bsp entities 252 of 300; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 581 of 600; slack 19\nregister: done\n";
+        assert_eq!(
+            edict_budget_line(output).as_deref(),
+            Some("edict budget: status tight; waypoints 260; live bsp entities 252 of 300; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 581 of 600; slack 19")
+        );
+    }
 }

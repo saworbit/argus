@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**NAVGEN REFUSES OVER-BUDGET GRAPHS** (#420). Every generation now reports
+waypoints, live BSP entities, world and client slots, the measured runtime
+reserve, total use, slack, and an `ok`, `tight`, or `over-budget` verdict.
+Over-budget output exits before `--register` can change the build. The MCP and
+GUI surface the same verdict.
+
 **LAB TICK CLASSIFICATION NOW TOLERATES PLAYED-RATE SAMPLING JITTER** (#412).
 The listen-rate cutoff moved from 0.5105 to 0.5135 seconds, above repeated
 same-runner measurements and below the calibrated 0.5145-second legacy

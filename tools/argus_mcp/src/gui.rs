@@ -992,6 +992,21 @@ mod tests {
     }
 
     #[test]
+    fn gui_page_surfaces_the_navgen_edict_verdict() {
+        let req = Request {
+            method: "GET".into(),
+            path: "/".into(),
+            query: HashMap::new(),
+            body: Vec::new(),
+            headers: HashMap::new(),
+        };
+        let r = route(&req);
+        let page = String::from_utf8_lossy(&r.body);
+        assert!(page.contains("r.edict_budget"));
+        assert!(page.contains("id=\"gatecard\""));
+    }
+
+    #[test]
     fn gui_binds_localhost() {
         let stop = Arc::new(AtomicBool::new(false));
         let stop2 = stop.clone();

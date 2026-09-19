@@ -62,6 +62,12 @@ annotations to QC and JSON, and changes no topology or typed movement data.
 import re, struct, sys, heapq, collections
 import math as _dmath
 
+from argus_nav_budget import (
+    EDICT_CEILING,
+    RUNTIME_RESERVE,
+    WORLD_AND_CLIENT_SLOTS,
+    assess_edict_budget,
+)
 from argus_nav_tactics import compute_tactics
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
@@ -1284,10 +1290,10 @@ live_ents = [b for b in ent_blocks if spawns_an_edict(b)]
 # came to 32 edicts. Fifteen samples across two minutes never moved
 # it: the engine reuses freed edicts, so num_edicts IS the peak.
 # Sixty is that doubled.
-EDICT_CEILING = 600         # game/argus/autoexec.cfg, and the charter
-RUNTIME_RESERVE = 60        # measured 32 on a busy dm2, doubled
-CLIENT_SLOTS = 9            # world plus maxclients 8
-EDICT_BUDGET = EDICT_CEILING - RUNTIME_RESERVE - CLIENT_SLOTS
+# These constants live in argus_nav_budget.py so generation, its tests,
+# and the final registration verdict cannot disagree.
+EDICT_BUDGET = (EDICT_CEILING - RUNTIME_RESERVE
+                - WORLD_AND_CLIENT_SLOTS)
 NODE_CAP = MAX_NODES
 if len(live_ents) + NODE_CAP > EDICT_BUDGET:
     NODE_CAP = max(60, EDICT_BUDGET - len(live_ents))
@@ -3981,14 +3987,16 @@ if starved_seats:
     # pass that quietly lost a seat to it should say so (#319)
     print(f"promotion budget: {starved_seats} seat request(s) found "
           f"a sample and had no budget left (cap {PROMO_CAP}, infrastructure reserve {infra_spent} of {INFRA_RESERVE} spent)")
-print(f"edict estimate: {edicts} (waypoints {len(ways)} + live entities "
-      f"{nents} of {len(ent_blocks)} in the lump)")
-if edicts + CLIENT_SLOTS + RUNTIME_RESERVE > EDICT_CEILING:
-    # the bar moves with the budget it is checking, or the tool warns
-    # about its own design (#319 follow-on)
-    print(f"WARNING: edict estimate {edicts} plus {CLIENT_SLOTS} client "
-          f"slots and a {RUNTIME_RESERVE} reserve passes the "
-          f"{EDICT_CEILING} ceiling")
+edict_budget = assess_edict_budget(len(ways), nents, len(ent_blocks))
+print(edict_budget.line())
+if edict_budget.status == "tight":
+    print("WARNING: tight edict budget; less than 20 edicts remain after "
+          "the measured runtime reserve")
+if not edict_budget.can_register:
+    if "--register" in sys.argv[5:]:
+        print("register: skipped because the graph is over-budget")
+    print("error: graph exceeds the 600-edict ceiling", file=sys.stderr)
+    sys.exit(1)
 
 # ---- 8a2. --register: wire the map into the build ----
 # Generating nav used to take four disconnected manual steps (navgen,

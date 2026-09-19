@@ -68,6 +68,30 @@ class TestToolsCLI(unittest.TestCase):
         self.assertEqual(res_invalid.returncode, 1)
         self.assertIn("error: --grid argument must be an integer", res_invalid.stderr)
 
+    def test_navgen_edict_budget_names_slack_and_blocks_overflow(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from argus_nav_budget import assess_edict_budget
+
+        safe = assess_edict_budget(200, 88, 120)
+        self.assertEqual(safe.status, "ok")
+        self.assertEqual(safe.slack, 243)
+        self.assertTrue(safe.can_register)
+        self.assertIn("waypoints 200", safe.line())
+        self.assertIn("live bsp entities 88 of 120", safe.line())
+        self.assertIn("world and client slots 9", safe.line())
+        self.assertIn("runtime reserve 60 for four bots", safe.line())
+        self.assertIn("slack 243", safe.line())
+
+        tight = assess_edict_budget(260, 252, 300)
+        self.assertEqual(tight.status, "tight")
+        self.assertEqual(tight.slack, 19)
+        self.assertTrue(tight.can_register)
+
+        overflow = assess_edict_budget(260, 272, 300)
+        self.assertEqual(overflow.status, "over-budget")
+        self.assertEqual(overflow.slack, -1)
+        self.assertFalse(overflow.can_register)
+
     def test_argus_reach_empty_spawns(self):
         # #113's fix is "no spawns in the BSP is a FAIL, not a pass".
         # This test used to call audit("dm2") against the real tree,
@@ -136,7 +160,7 @@ class TestToolsCLI(unittest.TestCase):
 
     def door_fixture(self, spawnflags=0, jsonnodes=None, nodes=None,
                      classname="func_door", angle="0", collision_gap=False,
-                     landing_step=False):
+                     landing_step=False, extra_entities=0):
         """A one-door map, its graph, and the temp dir holding them.
 
         The door brush is built across x 0..64, y -32..32, z 0..64. At
@@ -153,6 +177,11 @@ class TestToolsCLI(unittest.TestCase):
             '{\n"classname" "worldspawn"\n}\n'
             f'{{\n"classname" "{classname}"\n"model" "*1"\n'
             f'"angle" "{angle}"\n"lip" "8"\n"spawnflags" "{spawnflags}"\n}}\n'
+            + ''.join(
+                '{\n"classname" "info_player_deathmatch"\n'
+                '"origin" "0 0 24"\n}\n'
+                for _ in range(extra_entities)
+            )
         ).encode("ascii") + b"\0"
         models = struct.pack("<9f7i", -512.0, -512.0, -64.0,
                              512.0, 512.0, 512.0, 0.0, 0.0, 0.0,
@@ -238,6 +267,30 @@ class TestToolsCLI(unittest.TestCase):
         res = self.run_tool("argus_navgen.py", "--help")
         self.assertEqual(res.returncode, 0)
         self.assertIn("--retype-doors", res.stdout)
+
+    def test_argus_navgen_does_not_register_an_over_budget_graph(self):
+        # The BSP and runtime reserve fit on their own. The generated
+        # waypoint set is what pushes this fixture over 600.
+        tmp = self.door_fixture(collision_gap=True, extra_entities=500)
+        src = tmp / "src"
+        src.mkdir()
+        progs = src / "progs.src"
+        dispatcher = src / "argus_nav_dispatch.qc"
+        progs.write_text("progs.dat\nargus_nav_dispatch.qc\n")
+        dispatcher.write_text("void() Argus_Nav_Spawn =\n{\n};\n")
+
+        res = self.run_tool(
+            "argus_navgen.py", str(tmp / "fixture.bsp"), "fixture",
+            str(src / "argus_nav_fixture.qc"), str(tmp / "out.png"),
+            "--register",
+        )
+
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("edict budget: status over-budget", res.stdout)
+        self.assertIn("register: skipped because the graph is over-budget",
+                      res.stdout)
+        self.assertNotIn("argus_nav_fixture.qc\n", progs.read_text())
+        self.assertNotIn('mapname == "fixture"', dispatcher.read_text())
 
     def test_argus_navgen_reprofile_jumps_is_in_the_usage(self):
         res = self.run_tool("argus_navgen.py", "--help")

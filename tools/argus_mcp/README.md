@@ -41,8 +41,10 @@ browser. One page:
 - **A/B quality gates** (evaluates candidate runs against baseline and renders visual gate cards)
 - **Backup only** / **Restore**
 
-After generate it shows `runs/nav_<map>.png` and the 0.17
-cartographer brief (islands, door cuts, corridor misses, edicts).
+After generate it shows the full edict-budget verdict,
+`runs/nav_<map>.png`, and the 0.17 cartographer brief (islands, door
+cuts, corridor misses, edicts). An over-budget run stops before
+registration.
 Id maps stay on this machine; the wizard will not pack them.
 
 Compile always writes `$ARGUS_ROOT/backups/<YYYYMMDD-HHMMSS>/`:
@@ -534,7 +536,7 @@ carries `scaled` and `scale_note` when that happens.
 | `cartograph` | `ARGUS_ROOT` | Ingest a BSP. Default **brief**. `detail=full` for every entity. `generate_nav=true` also compiles nav and registers it. |
 | `cartograph_all` | `ARGUS_ROOT` | Atlas every on-disk BSP in `ARGUS_MAPS` |
 | `list_maps` | `ARGUS_ROOT` | Maps on disk and in id1 PAKs |
-| `nav_generate` | full lab | Compile a per-map waypoint QC + PNG (PNG also returned as an image block) |
+| `nav_generate` | full lab | Compile a per-map waypoint QC + PNG and return its `ok`, `tight`, or `over-budget` edict verdict. Over-budget graphs are not registered. |
 | `nav_sync_dispatch` | `ARGUS_ROOT` | Register new `argus_nav_<map>.qc` in the dispatcher and `progs.src` |
 
 ### Lab loop
