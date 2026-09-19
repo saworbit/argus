@@ -35,6 +35,7 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .float  an_trainmask;       // bit i set = link slot i rides a func_train
 .float  an_doormask;        // bit i set = link slot i crosses a door
 .float  an_mark;            // generation stamp
+.float  an_dist;            // walked graph distance from the shopping root
 .entity an_par;             // BFS parent (shared; one search at a time)
 .entity an_qnext;           // BFS queue linkage
 .entity an_next0;           // next hop toward goal, bot slot 0
@@ -52,8 +53,11 @@ entity  anq_head;
 entity  anq_tail;
 float   an_gen;
 float   an_busy;
+float   an_shop;            // active flood scores every reachable item
+float   an_shopready;       // PickGoal may read an_mark/an_dist/an_par
 entity  an_bot;             // bot whose search is running
 entity  an_goalnode;
+entity  an_startnode;
 entity  an_cachegoal;       // goal node of the last completed flood
 float   an_cachegen;        // stamps an_cgen along that route
 float   an_cachetime;       // freshness: adoptions stop after 10 s
@@ -65,6 +69,7 @@ float   an_apex;            // how far a standing jump climbs right now
 .float  ar_slot;            // on bots: 0..3 (roster cap 4)
 .entity ar_node;            // on bots: current waypoint target
 .float  ar_pending;         // on bots: waiting for router
+.float  ar_shopping;        // on bots: waiting for a full scoring flood
 .float  ar_routefail;
 .float  ar_hopjump;         // on bots: current hop crosses a jump link
 .float  ar_hopspeed;        // nav-baked approach speed for that jump
@@ -102,6 +107,8 @@ float   an_apex;            // how far a standing jump climbs right now
                             // routefail handling for the story)
 
 // ---------------------------------------------------------------- builders
+
+void() Argus_PickGoal;
 
 entity(vector org) Argus_NavNode =
 {
@@ -621,6 +628,7 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Start =
         return FALSE;
 
     an_busy = 1;
+    an_shop = 0;
     an_bot = bot;
     an_goalnode = goalnode;
     an_gen = an_gen + 1;
@@ -633,6 +641,35 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Start =
     bot.ar_routegoal = bot.ar_goal;
 
     startnode.an_mark = an_gen;
+    startnode.an_dist = 0;
+    startnode.an_par = world;
+    startnode.an_qnext = world;
+    anq_head = startnode;
+    anq_tail = startnode;
+    return TRUE;
+};
+
+// One forward flood answers every item-distance query for one shopping
+// decision. It uses the same bot-specific link tolls as the route search;
+// the chosen item's parent chain is then reused as the route itself.
+float(entity bot, entity startnode) Argus_Shop_Start =
+{
+    if (an_busy)
+        return FALSE;
+    if (startnode == world)
+        return FALSE;
+
+    an_busy = 1;
+    an_shop = 1;
+    an_bot = bot;
+    an_startnode = startnode;
+    an_goalnode = world;
+    an_gen = an_gen + 1;
+    an_apex = Argus_JumpApex ();
+    bot.ar_shopping = 1;
+
+    startnode.an_mark = an_gen;
+    startnode.an_dist = 0;
     startnode.an_par = world;
     startnode.an_qnext = world;
     anq_head = startnode;
@@ -713,6 +750,49 @@ void() Argus_Route_Finish =
     dprint (" goal ");
     dprint (vtos(an_goalnode.origin));
     dprint ("\n");
+    an_busy = 0;
+};
+
+void() Argus_Shop_Finish =
+{
+    local entity oself, goalnode;
+
+    if (an_bot.health <= 0 || an_bot.ar_goal != world)
+    {
+        an_bot.ar_shopping = 0;
+        an_shop = 0;
+        an_busy = 0;
+        return;
+    }
+
+    // Score while this flood's marks, distances and parents are intact.
+    // PickGoal knows an_shopready means every candidate is comparable.
+    an_shopready = 1;
+    oself = self;
+    self = an_bot;
+    Argus_PickGoal ();
+    self = oself;
+    an_shopready = 0;
+    an_bot.ar_shopping = 0;
+
+    // A nearby visible item may have entered direct mode. Otherwise the
+    // selected reachable node already has the parent chain Route_Finish
+    // expects, so no second search or cache lookup is needed.
+    if (an_bot.ar_pending && an_bot.ar_goal != world
+        && an_goalnode != world)
+    {
+        goalnode = an_goalnode;
+        if (goalnode != world && goalnode.an_mark == an_gen)
+        {
+            an_goalnode = goalnode;
+            an_bot.ar_routegoal = an_bot.ar_goal;
+            an_shop = 0;
+            Argus_Route_Finish ();
+            return;
+        }
+    }
+
+    an_shop = 0;
     an_busy = 0;
 };
 
@@ -874,12 +954,23 @@ void() Argus_Nav_Frame =
     if (!an_busy)
         return;
 
+    if (an_shop && (an_bot.health <= 0 || an_bot.ar_goal != world))
+    {
+        an_bot.ar_shopping = 0;
+        an_shop = 0;
+        an_busy = 0;
+        return;
+    }
+
     pops = 0;
     while (pops < ANQ_POPS)
     {
         if (anq_head == world)
         {
-            Argus_Route_Fail ();
+            if (an_shop)
+                Argus_Shop_Finish ();
+            else
+                Argus_Route_Fail ();
             return;
         }
         cur = anq_head;
@@ -887,7 +978,7 @@ void() Argus_Nav_Frame =
         if (anq_head == world)
             anq_tail = world;
 
-        if (cur == an_goalnode)
+        if (!an_shop && cur == an_goalnode)
         {
             Argus_Route_Finish ();
             return;
@@ -943,6 +1034,7 @@ void() Argus_Nav_Frame =
                         || !Argus_LinkBlockedByKeyDoor (cur, nb, an_bot))
                     {
                         nb.an_mark = an_gen;
+                        nb.an_dist = cur.an_dist + vlen (nb.origin - cur.origin);
                         nb.an_par = cur;
                         nb.an_qnext = world;
                         if (anq_tail == world)

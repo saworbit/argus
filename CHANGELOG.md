@@ -9,6 +9,34 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**ITEM GOALS NOW USE THE GRAPH PATH THE BOT WILL WALK** (#355).
+Before shopping, one frame-sliced, bot-specific flood visits the reachable
+graph using the router's jump, rocket-jump, sprint and keyed-door gates.
+`Argus_PickGoal` measures every item from that one route tree, including the
+bot-to-start and goal-node-to-item offsets, and refuses unreachable items
+before they enter the menu. The winning parent chain becomes the route, so
+selection and execution cannot disagree and no second search is needed. The
+existing 0.4x major-item circuit factor stays in place.
+
+THE CACHE SHAPE IN #354 WAS TESTED AND REJECTED. A nearest-item field for
+each broad item class gave one item a route distance while its sibling items
+still used crow-flight distance. That made the score space inconsistent and
+does not match Quake 3's per-item travel-time query. Against exact main-build
+controls, the prototype reduced dm2 completed goals from 8/4 to 4/3 and
+coverage from 347/367 to 296/311. The shipped design keeps one comparable
+distance space for every item instead.
+
+FINAL FULL-LENGTH TAPES USED EXACT MAIN-BUILD CONTROLS AT THE SAME LISTEN
+RATE. On dm2, goals moved 8 to 10, engagements 25 to 32 and coverage 347 to
+341; stalls 9 to 21 and lava deaths 0 to 2 remained inside the measured
+control bands, with zero freezes and route failures down from 8 to 1. On dm3,
+goals moved 0 to 3, engagements 17 to 18 and coverage 272 to 291; stalls 13
+to 15 stayed in band, with zero lava deaths, freezes and route failures.
+Three additional 30-second tapes on each map exercised the final
+router-contention cleanup without a VM error, lava death or freeze. Modern
+FTEQCC compiled with the six pre-existing warnings and installed matching
+E77BCB3A4DC3C3E97F73DE2088BC60D9 binaries in all three locations.
+
 **PROTECTIVE POWERUPS NOW OPEN ONLY THE STEP THEY ACTUALLY PROTECT** (#364).
 A biosuit with more than three seconds left may admit a slime step; a live
 Pentagram may admit slime or lava. The gate checks both the inventory bit and
