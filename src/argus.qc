@@ -6301,7 +6301,7 @@ string(float cls) Argus_ClassWord =
 
 void() Argus_PickGoal =
 {
-    local entity e, b, pick, near, rnode;
+    local entity e, b, pick, near, rnode, startnode;
     local entity dn1, dn2, dn3, dn4, dn5, dn6;
     local entity bw, ba, bh, br, bp, bo;
     local float sw, sa, sh, sr, sp, so;
@@ -6314,6 +6314,25 @@ void() Argus_PickGoal =
     sw = 0;  sa = 0;  sh = 0;  sr = 0;  sp = 0;  so = 0;
     near = world;
     neard = 99999;
+
+    // Goal scoring needs one distance space for every candidate. Start one
+    // bounded bot-specific graph flood, then re-enter from Shop_Finish while
+    // its distances and parent tree are still intact.
+    if (!an_shopready)
+    {
+        if (self.ar_shopping)
+            return;
+        self.ar_goal = world;
+        self.ar_pending = 0;
+        self.ar_node = world;
+        self.ar_mode = 0;
+        startnode = Argus_NearestNode (self.origin);
+        Argus_Shop_Start (self, startnode);
+        return;
+    }
+    startnode = an_startnode;
+    if (startnode == world)
+        return;
 
     // item denial (#48): gather the live opponents ONCE. This used to
     // run a full find() chain per candidate item - on a 60-item map
@@ -6344,9 +6363,7 @@ void() Argus_PickGoal =
     // this bot shopping from? Mainland is 0; a bot displaced into a
     // stranded pocket shops that pocket and the mainland only.
     breg = 0;
-    rnode = Argus_NearestNode (self.origin);
-    if (rnode != world)
-        breg = rnode.an_region;
+    breg = startnode.an_region;
 
     // Issue #145: fast O(items) traversal along argus_itemchain rather than
     // scanning the entire 500+ global edict array on every bot think
@@ -6357,20 +6374,39 @@ void() Argus_PickGoal =
             || (e.solid == SOLID_NOT && e.think == SUB_regen
                 && e.nextthink > time))
         {
-            // stamp the item's region once, ever (items do not move;
-            // one NearestNode scan per item per map)
-            if (!e.ar_regionset)
+            // Resolve each candidate onto the graph once. The same node
+            // supplies its reachability region and this flood's graph-path
+            // distance, so the scorer never compares route distance for one
+            // item with crow-flight distance for another.
+            if (!e.ar_gnodeset)
+            {
+                rnode = Argus_NearestNode (Argus_GoalPoint (e));
+                if (rnode != world)
+                {
+                    e.ar_gnodeset = 1;
+                    e.ar_goalnode = rnode;
+                }
+            }
+            else
+                rnode = e.ar_goalnode;
+            if (!e.ar_regionset && rnode != world)
             {
                 e.ar_regionset = 1;
-                rnode = Argus_NearestNode (e.origin);
-                if (rnode != world)
-                    e.ar_itemregion = rnode.an_region;
+                e.ar_itemregion = rnode.an_region;
             }
             // a goal in a pocket this bot's region cannot reach is
             // refused BEFORE the router ever runs: the poison-menu
             // class (four instant routefails at a healthy spawn,
             // then the trapped verdict) dies here
             if (e.ar_itemregion != 0 && e.ar_itemregion != breg)
+            {
+                e = e.ar_nextitem;
+                continue;
+            }
+            // The completed flood is also the reachability verdict. An
+            // unreachable item never enters the menu and never needs a
+            // routefail shelf to teach the same fact later.
+            if (rnode == world || rnode.an_mark != an_gen)
             {
                 e = e.ar_nextitem;
                 continue;
@@ -6405,9 +6441,9 @@ void() Argus_PickGoal =
             else if (!(e.ar_claimer == self && time < e.ar_claimtime + shelf))
             {
                 gp = Argus_GoalPoint (e);
-                d = gp - self.origin;
-                d_z = d_z * 2;
-                dist = vlen (d);
+                dist = rnode.an_dist
+                       + vlen (self.origin - startnode.origin)
+                       + vlen (gp - rnode.origin);
                 if (dist < neard && e.solid == SOLID_TRIGGER)
                 {
                     near = e;       // value-blind fallback target
@@ -6610,6 +6646,8 @@ void() Argus_PickGoal =
     }
 
     self.ar_goal = pick;
+    if (an_shopready && pick != world)
+        an_goalnode = pick.ar_goalnode;
     self.ar_goalstart = time;
     self.ar_node = world;
     self.ar_pending = 0;
