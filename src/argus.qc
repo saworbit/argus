@@ -232,6 +232,12 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_shovelog;            // displacement: shove-line log throttle
 .float  ar_blocklog;            // body-block marker throttle (2 s)
 .float  ar_leadlog;             // lead-clip marker throttle (2 s)
+.float  ar_hazardenter;         // pending protected entry deadline
+.float  ar_hazardliquid;        // CONTENT_LAVA or CONTENT_SLIME
+.float  ar_hazardprotect;       // 1 suit, 2 pent; marker label
+.float  ar_hazardpasslog;       // protected-entry marker throttle
+.float  ar_hazardprooflog;      // last directed proof case reported
+.float  ar_hazardproofcase;     // finite fixture case already applied
 .float  ar_doorlog;             // ARGEVT door throttle (1 s per bot)
 .entity ar_huntitem;            // hunch: the item we bet the lost foe
                                 // is running for
@@ -1126,6 +1132,173 @@ float(vector ahead) Argus_HazardBridge =
     return FALSE;
 };
 
+// Permanent, developer-gated field fixture for directed #364 lab proof.
+// scratch2: 1 live suit, 2 live Pent, 3 suit at exactly the 3 s boundary,
+// 4 suit timer only, 5 suit bit only, 6 live Pent plus Quad. Normal play never
+// enters it. Each case is applied once with a finite 120 s lifetime, never
+// refreshed per frame, so a proof still exercises the stock expiry path.
+void() Argus_HazardProofSetup =
+{
+    local float proof;
+
+    if (!cvar ("developer") || cvar ("scratch1") != 364)
+        return;
+    proof = cvar ("scratch2");
+    if (proof == self.ar_hazardproofcase)
+        return;
+    self.ar_hazardproofcase = proof;
+    self.items = self.items - (self.items & IT_SUIT);
+    self.items = self.items - (self.items & IT_INVULNERABILITY);
+    self.items = self.items - (self.items & IT_QUAD);
+    self.radsuit_finished = 0;
+    self.invincible_finished = 0;
+    self.super_damage_finished = 0;
+    if (proof == 1)
+    {
+        self.items = self.items | IT_SUIT;
+        self.radsuit_finished = time + 120;
+    }
+    else if (proof == 2)
+    {
+        self.items = self.items | IT_INVULNERABILITY;
+        self.invincible_finished = time + 120;
+    }
+    else if (proof == 3)
+    {
+        self.items = self.items | IT_SUIT;
+        self.radsuit_finished = time + 3;
+    }
+    else if (proof == 4)
+        self.radsuit_finished = time + 120;
+    else if (proof == 5)
+        self.items = self.items | IT_SUIT;
+    else if (proof == 6)
+    {
+        self.items = self.items | IT_INVULNERABILITY | IT_QUAD;
+        self.invincible_finished = time + 120;
+        self.super_damage_finished = time + 120;
+    }
+};
+
+// Return the live protection that may permit one guarded step onto lava/slime:
+// 1 for biosuit, 2 for pentagram, 0 for none. More than three seconds of
+// remaining time is the entry margin. Quad still refuses lava because
+// preserving its run is worth more than opening a hazardous shortcut. A suit
+// only slows lava damage, so it authorizes slime only; Pent is total protection
+// and may authorize either liquid.
+float(float c) Argus_HazardProtection =
+{
+    if (c == CONTENT_LAVA && (self.items & IT_QUAD)
+        && self.super_damage_finished > time)
+        return 0;
+    if ((self.items & IT_INVULNERABILITY)
+        && self.invincible_finished > time + 3)
+        return 2;
+    if (c == CONTENT_SLIME && (self.items & IT_SUIT)
+        && self.radsuit_finished > time + 3)
+        return 1;
+    return 0;
+};
+
+// Report the exact field-level decision once when a directed proof case
+// changes. This stays on the ARGDBG channel and never enters match metrics.
+void() Argus_HazardProofMark =
+{
+    local float proof, slime, lava;
+
+    if (!cvar ("developer") || cvar ("scratch1") != 364)
+        return;
+    proof = cvar ("scratch2");
+    if (!proof)
+    {
+        self.ar_hazardprooflog = 0;
+        return;
+    }
+    if (proof == self.ar_hazardprooflog)
+        return;
+    self.ar_hazardprooflog = proof;
+    slime = Argus_HazardProtection (CONTENT_SLIME);
+    lava = Argus_HazardProtection (CONTENT_LAVA);
+    dprint ("ARGDBG ");
+    dprint (self.netname);
+    dprint (" hazardproof ");
+    dprint (ftos (proof));
+    dprint (" slime ");
+    dprint (ftos (slime));
+    dprint (" lava ");
+    dprint (ftos (lava));
+    dprint ("\n");
+};
+
+// The final movement path may open one step which the conservative point-floor
+// guard refused. The liquid-covered floor must be no more than one Quake step
+// below current support. This excludes deep pools whose protection could
+// expire before the bot finds an exit. SafeLine and every speculative steering
+// probe stay strict.
+float(float myaw, float pdist) Argus_ProtectedHazardStep =
+{
+    local vector ahead;
+    local float c, floorz, protection;
+
+    makevectors ('0 0 0' + myaw * '0 1 0');
+    ahead = self.origin + v_forward * pdist;
+    traceline (ahead + '0 0 4', ahead - '0 0 280', TRUE, self);
+    if (trace_fraction == 1 || trace_allsolid)
+        return FALSE;
+    c = pointcontents (trace_endpos + '0 0 2');
+    if (c != CONTENT_LAVA && c != CONTENT_SLIME)
+        return FALSE;
+    floorz = trace_endpos_z;
+    if (Argus_HazardBridge (ahead))
+        return FALSE;
+    if (fabs (floorz - (self.origin_z - 24)) > 18)
+        return FALSE;
+    protection = Argus_HazardProtection (c);
+    if (!protection)
+        return FALSE;
+    self.ar_hazardliquid = c;
+    self.ar_hazardprotect = protection;
+    self.ar_hazardenter = time + 1;
+    return TRUE;
+};
+
+void() Argus_HazardCommitClear =
+{
+    self.ar_hazardenter = 0;
+    self.ar_hazardliquid = 0;
+    self.ar_hazardprotect = 0;
+};
+
+// Count only a real wet frame, never a speculative or failed step.
+void() Argus_HazardEntryMark =
+{
+    if (!self.ar_hazardenter)
+        return;
+    if (time < self.teleport_time)
+    {
+        Argus_HazardCommitClear ();
+        return;
+    }
+    if (self.ar_feettype == self.ar_hazardliquid)
+    {
+        if (time > self.ar_hazardpasslog)
+        {
+            self.ar_hazardpasslog = time + 2;
+            dprint ("ARGUS ");
+            dprint (self.netname);
+            dprint (" hazardpass ");
+            if (self.ar_hazardprotect == 2) dprint ("pent ");
+            else                            dprint ("suit ");
+            if (self.ar_hazardliquid == CONTENT_LAVA) dprint ("lava\n");
+            else                                         dprint ("slime\n");
+        }
+        Argus_HazardCommitClear ();
+        return;
+    }
+    if (time > self.ar_hazardenter)
+        Argus_HazardCommitClear ();
+};
+
 // TRUE when walking pdist units along myaw would end in lava, slime,
 // or a bottomless drop. Traces down 280u at the probe point: a
 // legitimate one-way drop link (<= 200u onto solid) passes, a lava pit
@@ -1626,6 +1799,7 @@ void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
     local float wl, spd, moveok, myaw, rhoriz, sready, wdrag, hopok, ljyaw;
+    local float protectedstep;
 
     makevectors ('0 0 0' + self.ar_moveyaw * '0 1 0');
     wishdir = v_forward;
@@ -1656,9 +1830,12 @@ void() Argus_Physics =
     if (self.flags & FL_ONGROUND)
         self.ar_wetdwell = time;
 
+    Argus_HazardProofSetup ();
+    Argus_HazardProofMark ();
     Argus_WaterMove ();
     if (self.health <= 0)
         return;
+    Argus_HazardEntryMark ();
 
     // landing thump and falling damage, as PlayerPostThink does it
     if (self.jump_flag < -300 && (self.flags & FL_ONGROUND) && self.health > 0)
@@ -2282,7 +2459,15 @@ void() Argus_Physics =
             // exactly as strict as the fire gate: anchored to the
             // seat the arc was verified from, on the line, at arc
             // speed. Everything else keeps the guard.
-            if (Argus_MoveHazard (myaw, rhoriz) && !sready)
+            moveok = Argus_MoveHazard (myaw, rhoriz);
+            protectedstep = FALSE;
+            if (moveok && !sready
+                && Argus_ProtectedHazardStep (myaw, rhoriz))
+            {
+                moveok = FALSE;
+                protectedstep = TRUE;
+            }
+            if (moveok && !sready)
             {
                 // predictive gap jump: before surrendering the
                 // heading to the deflection, see if the jump we
@@ -2384,9 +2569,17 @@ void() Argus_Physics =
                 // and retry first (#380). Runs second on purpose, so
                 // the grate-floor behaviour is untouched.
                 if (!moveok)
+                {
+                    if (protectedstep)
+                        Argus_HazardCommitClear ();
                     moveok = Argus_WallSlide (myaw, spd, rhoriz);
+                }
                 if (!moveok)
+                {
+                    if (protectedstep)
+                        Argus_HazardCommitClear ();
                     self.flags = self.flags - (self.flags & FL_ONGROUND);
+                }
             }
         }
     }
@@ -2697,6 +2890,7 @@ void() Argus_Die =
     self.ar_hoptrain = 0;
     self.ar_hopdoor = 0;
     self.ar_hazhold = 0;
+    Argus_HazardCommitClear ();
     self.ar_aimvel = 0;         // no ghost flick on respawn
     self.ar_threatclass = AR_THREAT_UNKNOWN;
     self.ar_threatlog = 0;
@@ -3002,6 +3196,7 @@ void() Argus_BaseStats =
     self.dmgtime = 0;
     self.jump_flag = 0;
     self.ar_hazhold = 0;
+    Argus_HazardCommitClear ();
     self.deathtype = "";
     self.effects = 0;
     self.super_damage_finished = 0;
