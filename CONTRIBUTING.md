@@ -101,9 +101,8 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 1. Extract the `.bsp` file (e.g. `mymap.bsp`).
 2. Run the navigation generator:
    ```bash
-   python tools/argus_navgen.py mymap.bsp mymap src/argus_nav_mymap.qc nav_mymap.png --no-dispatcher --register
+   python tools/argus_navgen.py mymap.bsp mymap src/argus_nav_mymap.qc nav_mymap.png --no-dispatcher
    ```
-   * `--register` updates `src/argus_nav_dispatch.qc` and `src/progs.src` automatically.
    * Check the final `edict budget` verdict. It includes the graph, live BSP
      entities, engine slots, four bots, and dynamic-entity reserve. An
      `over-budget` graph exits before registration; `tight` has fewer than 20
@@ -112,7 +111,23 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
    ```bash
    python tools/argus_reach.py mymap
    ```
-4. Recompile with `fteqcc`.
+4. Run short engine passes over ordinary links and generated jumps:
+   ```bash
+   argus-mcp probelinks mymap 30 0
+   argus-mcp probelinks mymap 30 0 --jumps
+   ```
+   The jump pass is only required when the generated JSON contains `jlinks`.
+   For a community map in `maps_local/`, the mill stages the BSP into the game
+   directory for the pass and removes that temporary copy afterwards.
+5. Generate again and request registration:
+   ```bash
+   python tools/argus_navgen.py mymap.bsp mymap src/argus_nav_mymap.qc nav_mymap.png --no-dispatcher --register
+   ```
+   First registration changes `src/progs.src` and
+   `src/argus_nav_dispatch.qc` only when the verdict is `playable`. A refused
+   link changes the graph, so repeat reach and the short mill passes against
+   that new graph until its digest matches and the verdict is playable.
+6. Recompile with `fteqcc`.
 
 ---
 

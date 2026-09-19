@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """CLI regression tests for developer scripts in tools/."""
+import hashlib
 import json
 import shutil
 import subprocess
@@ -160,7 +161,7 @@ class TestToolsCLI(unittest.TestCase):
 
     def door_fixture(self, spawnflags=0, jsonnodes=None, nodes=None,
                      classname="func_door", angle="0", collision_gap=False,
-                     landing_step=False, extra_entities=0):
+                     landing_step=False, extra_entities=0, extra_items=0):
         """A one-door map, its graph, and the temp dir holding them.
 
         The door brush is built across x 0..64, y -32..32, z 0..64. At
@@ -181,6 +182,11 @@ class TestToolsCLI(unittest.TestCase):
                 '{\n"classname" "info_player_deathmatch"\n'
                 '"origin" "0 0 24"\n}\n'
                 for _ in range(extra_entities)
+            )
+            + ''.join(
+                '{\n"classname" "weapon_rocketlauncher"\n'
+                '"origin" "128 0 24"\n}\n'
+                for _ in range(extra_items)
             )
         ).encode("ascii") + b"\0"
         models = struct.pack("<9f7i", -512.0, -512.0, -64.0,
@@ -291,6 +297,114 @@ class TestToolsCLI(unittest.TestCase):
                       res.stdout)
         self.assertNotIn("argus_nav_fixture.qc\n", progs.read_text())
         self.assertNotIn('mapname == "fixture"', dispatcher.read_text())
+
+    def test_argus_navgen_does_not_first_register_without_a_playability_verdict(self):
+        tmp = self.door_fixture(collision_gap=True)
+        src = tmp / "src"
+        src.mkdir()
+        progs = src / "progs.src"
+        dispatcher = src / "argus_nav_dispatch.qc"
+        progs.write_text("progs.dat\nargus_nav_dispatch.qc\n")
+        dispatcher.write_text("void() Argus_Nav_Spawn =\n{\n};\n")
+
+        res = self.run_tool(
+            "argus_navgen.py", str(tmp / "fixture.bsp"), "fixture",
+            str(src / "argus_nav_fixture.qc"), str(tmp / "out.png"),
+            "--register",
+        )
+
+        self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+        self.assertIn("playability gate: status experimental", res.stdout)
+        self.assertIn("register: skipped because reach and mill evidence are incomplete",
+                      res.stdout)
+        self.assertNotIn("argus_nav_fixture.qc\n", progs.read_text())
+        self.assertNotIn('mapname == "fixture"', dispatcher.read_text())
+
+    def test_argus_navgen_removes_a_refused_jump_and_records_the_png_overlay(self):
+        tmp = self.door_fixture(collision_gap=True)
+        src = tmp / "src"
+        src.mkdir()
+        qc = src / "argus_nav_fixture.qc"
+        png = tmp / "out.png"
+        args = (
+            "argus_navgen.py", str(tmp / "fixture.bsp"), "fixture",
+            str(qc), str(png), "--no-dispatcher",
+        )
+        first = self.run_tool(*args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        before = json.loads((Path(str(qc) + ".json")).read_text())
+        self.assertTrue(before["jlinks"], "fixture must generate a jump")
+        a, b = before["jlinks"][0]
+        refused = {
+            "kind": "jump",
+            "from": before["nodes"][a],
+            "to": before["nodes"][b],
+        }
+        (src / "argus_nav_fixture.probe.json").write_text(json.dumps({
+            "failed": [],
+            "typed_failed": [refused],
+        }))
+
+        second = self.run_tool(*args)
+
+        self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+        self.assertIn("typed engine verdict: jump", second.stdout)
+        after = json.loads((Path(str(qc) + ".json")).read_text())
+        self.assertNotIn([a, b], after["jlinks"])
+        self.assertIn(refused, after["probe_rejected"])
+        if "debug plot skipped" in second.stdout:
+            self.assertFalse(png.exists())
+        else:
+            self.assertTrue(png.is_file())
+            self.assertGreater(png.stat().st_size, 0)
+
+    def test_argus_navgen_first_registers_after_current_reach_and_mill_evidence(self):
+        tmp = self.door_fixture(
+            collision_gap=True, extra_entities=1, extra_items=1,
+        )
+        src = tmp / "src"
+        src.mkdir()
+        qc = src / "argus_nav_fixture.qc"
+        png = tmp / "out.png"
+        args = (
+            "argus_navgen.py", str(tmp / "fixture.bsp"), "fixture",
+            str(qc), str(png), "--no-dispatcher",
+        )
+        first = self.run_tool(*args)
+        self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+        graph_path = Path(str(qc) + ".json")
+        digest = hashlib.md5(
+            graph_path.read_bytes(), usedforsecurity=False,
+        ).hexdigest()
+        (src / "argus_nav_fixture.probe.json").write_text(json.dumps({
+            "failed": [],
+            "verification": {
+                "graph_md5": digest,
+                "deathmatch": {
+                    "walk": {
+                        "swept": 1, "passed": 1, "failed": 0,
+                        "teleport_failures": 0,
+                    },
+                    "jump": {
+                        "swept": 1, "passed": 1, "failed": 0,
+                        "teleport_failures": 0,
+                    },
+                },
+            },
+        }))
+        progs = src / "progs.src"
+        dispatcher = src / "argus_nav_dispatch.qc"
+        progs.write_text("progs.dat\nargus_nav_dispatch.qc\n")
+        dispatcher.write_text("void() Argus_Nav_Spawn =\n{\n};\n")
+
+        registered = self.run_tool(*args, "--register")
+
+        self.assertEqual(
+            registered.returncode, 0, registered.stdout + registered.stderr,
+        )
+        self.assertIn("playability gate: status playable", registered.stdout)
+        self.assertIn("argus_nav_fixture.qc\n", progs.read_text())
+        self.assertIn('mapname == "fixture"', dispatcher.read_text())
 
     def test_argus_navgen_reprofile_jumps_is_in_the_usage(self):
         res = self.run_tool("argus_navgen.py", "--help")

@@ -288,7 +288,7 @@ pub struct NavArgs {
     pub map: String,
     pub out_qc: Option<String>,
     pub out_png: Option<String>,
-    #[schemars(description = "Also pass --register: idempotently wire the map into progs.src and argus_nav_dispatch.qc (recompile still manual)")]
+    #[schemars(description = "Also pass --register: first registration requires current reach and mill evidence before wiring progs.src and argus_nav_dispatch.qc")]
     pub register: Option<bool>,
 }
 
@@ -402,7 +402,7 @@ pub struct CartographArgs {
     #[schemars(description = "Also run argus_navgen.py after ingest")]
     pub generate_nav: Option<bool>,
     #[serde(default)]
-    #[schemars(description = "With generate_nav: also --register into progs.src and the dispatcher")]
+    #[schemars(description = "With generate_nav: request registration; a new map stays experimental until current reach and mill evidence pass")]
     pub register: Option<bool>,
     #[serde(default)]
     #[schemars(description = "brief (default, LLM-sized) or full (every entity)")]
@@ -835,7 +835,7 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Generate a per-map nav QC file via argus_navgen.py. Always passes --no-dispatcher; register=true also wires progs.src and the dispatcher.")]
+    #[tool(description = "Generate a per-map nav QC file via argus_navgen.py. Always passes --no-dispatcher; register=true wires a first-time map only after current reach and mill evidence pass.")]
     async fn nav_generate(
         &self,
         Parameters(args): Parameters<NavArgs>,
@@ -857,9 +857,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Register argus_nav_<map>.qc files in argus_nav_dispatch.qc and progs.src. Does not generate nav.")]
+    #[tool(description = "Register argus_nav_<map>.qc files in argus_nav_dispatch.qc and progs.src. A first-time map must have a current playable verdict.")]
     async fn nav_sync_dispatch(&self) -> Result<CallToolResult, McpError> {
-        let cfg = match cfg_read_or_err() {
+        let cfg = match cfg_or_err() {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };

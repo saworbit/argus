@@ -44,6 +44,10 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
 --no-dispatcher emits only Argus_Nav_Spawn_<mapname>, for multi-map
 builds where a hand-maintained argus_nav_dispatch.qc selects per map.
 
+--register wires a first-time map into the build only after the generated
+graph passes the spawn-to-pickup reach gate and its graph digest has matching
+deathmatch mill passes for ordinary and generated jump links.
+
 --retype-doors is a topology-preserving mode. It does not generate a graph. It
 reads the shipped out.qc and out.qc.json, recomputes which links a
 shut door blocks, and writes both back with the door typing corrected
@@ -69,6 +73,7 @@ from argus_nav_budget import (
     assess_edict_budget,
 )
 from argus_nav_tactics import compute_tactics
+from argus_mapgate import assess_playability
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -3331,6 +3336,7 @@ import json as _json
 _probepath = __import__("os").path.join(
     __import__("os").path.dirname(__import__("os").path.abspath(OUTQC)),
     f"argus_nav_{MAPNAME}.probe.json")
+_probe_rejected = []
 if __import__("os").path.exists(_probepath):
     try:
         _pdoc = _json.load(open(_probepath))
@@ -3428,6 +3434,38 @@ if __import__("os").path.exists(_probepath):
     print(f"engine-verdict pass: {_nremint} reminted as jump, "
           f"{_ndrop} dropped, {_nskipdoor} refused as door links "
           f"({len(_pfailed)} failed pair(s) on file)")
+    # A jump conviction is already typed, so feeding it through the
+    # walk remint above would preserve the failed promise. Remove it
+    # outright and keep the endpoints in the generated artefact so
+    # the debug PNG can show what the engine refused.
+    for _typed in _pdoc.get("typed_failed", []):
+        if _typed.get("kind") != "jump":
+            continue
+        _pf, _pt = _typed.get("from", []), _typed.get("to", [])
+        if len(_pf) != 3 or len(_pt) != 3:
+            continue
+        _matched = False
+        for _i in list(links):
+            _ix, _iy, _iz = pos(ways[_i])
+            if abs(_ix - _pf[0]) > 24 or abs(_iy - _pf[1]) > 24 \
+                    or abs(_iz - _pf[2]) > 24:
+                continue
+            for _j in list(links[_i]):
+                if not links[_i][_j][1]:
+                    continue
+                _jx, _jy, _jz = pos(ways[_j])
+                if abs(_jx - _pt[0]) > 24 or abs(_jy - _pt[1]) > 24 \
+                        or abs(_jz - _pt[2]) > 24:
+                    continue
+                del links[_i][_j]
+                _probe_rejected.append({
+                    "kind": "jump", "from": _pf, "to": _pt,
+                })
+                print(f"typed engine verdict: jump {_i}->{_j} dropped")
+                _matched = True
+                break
+            if _matched:
+                break
 
 # ---- 7g2d. engine-PROVEN entry links (GitHub #26) ----
 # The same referee, arguing the other direction: candidate links the
@@ -3964,6 +4002,7 @@ with open(OUTQC + ".json", "w") as jf:
                "regions": regions,
                "exposure": exposure,
                "cover_targets": cover_targets,
+               "probe_rejected": _probe_rejected,
                "trace_inputs": trace_inputs,
                "cam_nodes": [{"pos": cpos, "ang": cang, "tag": ctag} for cpos, cang, ctag in cam_nodes],
                "teles": teles}, jf)
@@ -4004,6 +4043,7 @@ if not edict_budget.can_register:
 # bots silently degrade to line-of-sight seeking (Shane's project
 # review). --register does the two file edits here, idempotently; the
 # compile stays yours.
+_register_gate_failed = False
 if "--register" in sys.argv[5:]:
     import os
     srcdir = os.path.dirname(os.path.abspath(OUTQC))
@@ -4015,7 +4055,20 @@ if "--register" in sys.argv[5:]:
               "the output; skipped")
     else:
         t = open(ps).read()
-        if qcname in t:
+        _registered_qc = qcname in t
+        _registered_map = f'"{MAPNAME}"' in open(dp).read()
+        if not (_registered_qc and _registered_map):
+            _playability = assess_playability(BSP, OUTQC + ".json")
+            print(_playability.line())
+            for _reason in _playability.reasons:
+                print(f"  {_reason}")
+            if not _playability.playable:
+                print("register: skipped because reach and mill evidence "
+                      "are incomplete")
+                _register_gate_failed = True
+        if _register_gate_failed:
+            pass
+        elif _registered_qc:
             print(f"register: {qcname} already in progs.src")
         elif "argus_nav_dispatch.qc" not in t:
             print("register: no argus_nav_dispatch.qc line in progs.src; skipped")
@@ -4024,7 +4077,9 @@ if "--register" in sys.argv[5:]:
                 "argus_nav_dispatch.qc", f"{qcname}\nargus_nav_dispatch.qc", 1))
             print(f"register: added {qcname} to progs.src")
         t = open(dp).read()
-        if f'"{MAPNAME}"' in t:
+        if _register_gate_failed:
+            pass
+        elif f'"{MAPNAME}"' in t:
             print(f"register: dispatcher already routes {MAPNAME}")
         else:
             i = t.rfind("};")
@@ -4049,7 +4104,7 @@ try:
 except ImportError:
     print(f"debug plot skipped: matplotlib not available in this python "
           f"(nav QC and json are written and valid)")
-    sys.exit(0)
+    sys.exit(1 if _register_gate_failed else 0)
 vo, vl = lumps[3]; eo, el = lumps[12]
 verts = [struct.unpack_from("<fff", data, vo + i*12) for i in range(vl // 12)]
 edges = [struct.unpack_from("<HH", data, eo + i*4) for i in range(el // 4)]
@@ -4075,6 +4130,13 @@ for a, b in teles:
 for a, b in rjlinks:
     x1, y1, _ = pos(ways[a]); x2, y2, _ = pos(ways[b])
     ax.plot([x1, x2], [y1, y2], color="#e377c2", lw=1.8, ls="-.", zorder=2)
+for rejected in _probe_rejected:
+    x1, y1, _ = rejected["from"]
+    x2, y2, _ = rejected["to"]
+    ax.plot([x1, x2], [y1, y2], color="#7f0000", lw=2.0, ls="--",
+            alpha=0.9, zorder=4)
+    ax.scatter([x1, x2], [y1, y2], s=34, marker="x", c="#7f0000",
+               zorder=5)
 wx = [pos(w)[0] for w in ways]; wy = [pos(w)[1] for w in ways]
 ax.scatter(wx, wy, s=16, c="#1e6bd9", zorder=3)
 ax.set_aspect("equal"); ax.set_xticks([]); ax.set_yticks([])
@@ -4084,3 +4146,5 @@ ax.set_title(f"Argus nav graph - {MAPNAME}: {len(ways)} nodes, {nlinks} links "
              f"{len(teles)} teleporter", fontsize=11)
 plt.tight_layout(); plt.savefig(OUTPNG, dpi=130)
 print("wrote", OUTPNG)
+if _register_gate_failed:
+    sys.exit(1)

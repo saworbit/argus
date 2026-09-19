@@ -47,7 +47,7 @@ async fn main() -> anyhow::Result<()> {
         }
         Some("probelinks") => {
             // empirical link verification: the puppet walks the graph
-            //   argus-mcp probelinks <map> [limit] [skip] [--coop]
+            //   argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]
             // The mode is part of the verdict (#310): deathmatch
             // strips every spawnflags 2048 entity, doors included, so
             // a link verified there can still be a lie in co-op.
@@ -60,7 +60,7 @@ async fn main() -> anyhow::Result<()> {
                 .cloned()
                 .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]"))?;
             if map == "-h" || map == "--help" || map == "help" {
-                println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.");
+                println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.\n--jumps verifies generated jump links instead of ordinary walk/drop links.");
                 return Ok(());
             }
             argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
@@ -643,7 +643,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                      Generate navigation graph for a BSP map.\n\
                      \n\
                      Options:\n\
-                       --register     Register map in progs.src and argus_nav_dispatch.qc\n\
+                       --register     Register only after current reach and mill evidence pass\n\
                        --no-register  Generate nav without registering dispatcher"
                 );
                 return Ok(());
@@ -657,6 +657,9 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 println!("Nav generation OK for {map}!");
                 if let Some(budget) = &res.edict_budget {
                     println!("  {budget}");
+                }
+                if let Some(gate) = &res.playability_gate {
+                    println!("  {gate}");
                 }
                 println!("  QC:  {}", res.out_qc);
                 println!("  PNG: {}", res.out_png);
@@ -980,7 +983,7 @@ fn print_help() {
          argus-mcp demo <stem>[:export]\n\
                                 parse a harvested .dem (append :export\n\
                                 to also write <stem>.tracks.json)\n\
-         argus-mcp probelinks <map> [limit] [skip] [--coop]\n\
+         argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]\n\
                                 empirical link verification: puppet walks\n\
                                 navigation graph links in the real engine\n\
          argus-mcp client observe [secs] [host] [port]\n\
@@ -999,7 +1002,8 @@ fn print_help() {
          argus-mcp compile [--install] [--backup]\n\
                                 compile QuakeC progs.dat with fteqcc\n\
          argus-mcp nav <map> [--register]\n\
-                                generate navigation graph for a BSP map\n\
+                                generate navigation graph; first registration\n\
+                                needs current reach and mill evidence\n\
          argus-mcp analyze <log_path> [options]\n\
                                 analyze match telemetry log and generate brief\n\
          argus-mcp harvest [--tag <name>]\n\

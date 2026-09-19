@@ -988,6 +988,10 @@ pub struct LinkVerdict {
 #[derive(Serialize)]
 pub struct ProbeReport {
     pub map: String,
+    /// Digest of the exact generated graph this sweep walked.
+    pub graph_md5: String,
+    /// The declared subset: ordinary walk/drop links or jump links.
+    pub probe_kind: String,
     pub probed: usize,
     pub passed: usize,
     pub failed: usize,
@@ -1001,6 +1005,46 @@ pub struct ProbeReport {
     /// the puppet cannot press a button, so a shut slab would be
     /// written down as a bad link
     pub door_skipped: usize,
+}
+
+struct StagedProbeMap(Option<std::path::PathBuf>);
+
+impl Drop for StagedProbeMap {
+    fn drop(&mut self) {
+        if let Some(path) = self.0.take() {
+            let _ = std::fs::remove_file(path);
+        }
+    }
+}
+
+fn stage_map_for_probe(cfg: &crate::config::Config, map: &str) -> Result<StagedProbeMap, String> {
+    let file = format!("{map}.bsp");
+    let game_map = cfg.basedir.join(&cfg.game).join("maps").join(&file);
+    let id1_map = cfg.basedir.join("id1").join("maps").join(&file);
+    if game_map.is_file() || id1_map.is_file() {
+        return Ok(StagedProbeMap(None));
+    }
+    for dir in [cfg.basedir.join(&cfg.game), cfg.basedir.join("id1")] {
+        for name in ["pak0.pak", "pak1.pak", "PAK0.PAK", "PAK1.PAK"] {
+            let pak = dir.join(name);
+            if crate::bsp::pak_list_maps(&pak)
+                .map(|maps| maps.iter().any(|entry| entry.eq_ignore_ascii_case(&file)))
+                .unwrap_or(false)
+            {
+                return Ok(StagedProbeMap(None));
+            }
+        }
+    }
+    let source = cfg.maps.join(&file);
+    if !source.is_file() {
+        return Err(format!(
+            "{file} is not installed under the engine and is missing from ARGUS_MAPS"
+        ));
+    }
+    let parent = game_map.parent().ok_or("invalid game maps path")?;
+    std::fs::create_dir_all(parent).map_err(|e| format!("create {}: {e}", parent.display()))?;
+    std::fs::copy(&source, &game_map).map_err(|e| format!("stage {}: {e}", game_map.display()))?;
+    Ok(StagedProbeMap(Some(game_map)))
 }
 
 /// EMPIRICAL LINK VERIFICATION - the referee the v3.84 graveyard's
@@ -1029,11 +1073,14 @@ pub async fn probe_links(
     coop: bool,
     jumps_only: bool,
 ) -> Result<ProbeReport, String> {
-    let navj = cfg.root.join("src").join(format!("argus_nav_{map}.qc.json"));
-    let nav: serde_json::Value = serde_json::from_str(
-        &std::fs::read_to_string(&navj).map_err(|e| format!("{}: {e}", navj.display()))?,
-    )
-    .map_err(|e| format!("nav json: {e}"))?;
+    let navj = cfg
+        .root
+        .join("src")
+        .join(format!("argus_nav_{map}.qc.json"));
+    let nav_bytes = std::fs::read(&navj).map_err(|e| format!("{}: {e}", navj.display()))?;
+    let graph_md5 = format!("{:x}", md5::compute(&nav_bytes));
+    let nav: serde_json::Value =
+        serde_json::from_slice(&nav_bytes).map_err(|e| format!("nav json: {e}"))?;
     let nodes: Vec<[f32; 3]> = nav["nodes"]
         .as_array()
         .ok_or("no nodes")?
@@ -1125,6 +1172,7 @@ pub async fn probe_links(
 
     let mode = if coop { "coop" } else { "deathmatch" };
     let secs = (todo.len() as u32) * 9 + 40;
+    let _staged_map = stage_map_for_probe(cfg, map)?;
     let mut ctrl = crate::match_ctrl::MatchCtrl::default();
     ctrl.start(
         cfg,
@@ -1154,6 +1202,8 @@ pub async fn probe_links(
 
     let mut report = ProbeReport {
         map: map.to_string(),
+        graph_md5,
+        probe_kind: if jumps_only { "jump" } else { "walk" }.to_string(),
         mode: mode.to_string(),
         door_skipped,
         probed: 0,
@@ -1239,15 +1289,10 @@ pub async fn probe_links(
     // readable afterwards (#310). A file with no `modes` block
     // predates this and is stamped deathmatch on first write, which
     // is true: nothing else could run.
-    // A JUMP SWEEP DOES NOT WRITE THE VERDICT FILE. navgen's 7g2c
-    // consumes `failed` as "this WALK link is a lie, remint it as a
-    // jump or drop it", and a jump link convicted here is already a
-    // jump: feeding it in would ask 7g2c to remint something that
-    // needs removing. Read the report, decide deliberately.
-    if jumps_only {
-        return Ok(report);
-    }
-    let vpath = cfg.root.join("src").join(format!("argus_nav_{map}.probe.json"));
+    let vpath = cfg
+        .root
+        .join("src")
+        .join(format!("argus_nav_{map}.probe.json"));
     let doc: serde_json::Value = std::fs::read_to_string(&vpath)
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
@@ -1279,50 +1324,89 @@ pub fn merge_verdicts(
             arr.push(pair);
         }
     };
-    let legacy: Vec<serde_json::Value> = doc["failed"].as_array().cloned().unwrap_or_default();
-    if doc.get("modes").is_none() {
-        doc["modes"] = if legacy.is_empty() {
-            serde_json::json!({})
-        } else {
-            serde_json::json!({
-                "deathmatch": {
-                    "failed": legacy.clone(),
-                    "swept": legacy.len(),
-                    "note": "stamped on migration: every sweep before #310 ran +deathmatch 1",
-                }
-            })
-        };
-    }
-    let mut failed = legacy;
-    for v in &report.failed_links {
-        push_pair(&mut failed, v.from, v.to);
-    }
-    doc["failed"] = serde_json::Value::Array(failed);
+    if report.probe_kind == "jump" {
+        let mut typed: Vec<serde_json::Value> =
+            doc["typed_failed"].as_array().cloned().unwrap_or_default();
+        for verdict in &report.failed_links {
+            let entry = serde_json::json!({
+                "kind": "jump",
+                "from": verdict.from,
+                "to": verdict.to,
+            });
+            if !typed.contains(&entry) {
+                typed.push(entry);
+            }
+        }
+        doc["typed_failed"] = serde_json::Value::Array(typed);
+    } else {
+        let legacy: Vec<serde_json::Value> = doc["failed"].as_array().cloned().unwrap_or_default();
+        if doc.get("modes").is_none() {
+            doc["modes"] = if legacy.is_empty() {
+                serde_json::json!({})
+            } else {
+                serde_json::json!({
+                    "deathmatch": {
+                        "failed": legacy.clone(),
+                        "swept": legacy.len(),
+                        "note": "stamped on migration: every sweep before #310 ran +deathmatch 1",
+                    }
+                })
+            };
+        }
+        let mut failed = legacy;
+        for verdict in &report.failed_links {
+            push_pair(&mut failed, verdict.from, verdict.to);
+        }
+        doc["failed"] = serde_json::Value::Array(failed);
 
-    let mut mine: Vec<serde_json::Value> = doc["modes"][mode]["failed"]
-        .as_array()
-        .cloned()
-        .unwrap_or_default();
-    for v in &report.failed_links {
-        push_pair(&mut mine, v.from, v.to);
+        let mut mine: Vec<serde_json::Value> = doc["modes"][mode]["failed"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
+        for verdict in &report.failed_links {
+            push_pair(&mut mine, verdict.from, verdict.to);
+        }
+        let swept = doc["modes"][mode]["swept"].as_u64().unwrap_or(0) + report.probed as u64;
+        doc["modes"][mode] = serde_json::json!({
+            "failed": mine,
+            "swept": swept,
+            "last_probed": report.probed,
+            "last_passed": report.passed,
+        });
     }
-    let swept = doc["modes"][mode]["swept"].as_u64().unwrap_or(0) + report.probed as u64;
-    doc["modes"][mode] = serde_json::json!({
-        "failed": mine,
+
+    // Registration evidence is graph-specific. Convictions remain
+    // coordinate-based across regens, but a pass over an earlier graph
+    // cannot make a later graph playable.
+    if doc["verification"]["graph_md5"].as_str() != Some(report.graph_md5.as_str()) {
+        doc["verification"] = serde_json::json!({
+            "graph_md5": report.graph_md5,
+        });
+    }
+    let prior = &doc["verification"][mode][&report.probe_kind];
+    let swept = prior["swept"].as_u64().unwrap_or(0) + report.probed as u64;
+    let passed = prior["passed"].as_u64().unwrap_or(0) + report.passed as u64;
+    let failed = prior["failed"].as_u64().unwrap_or(0) + report.failed as u64;
+    let teleport_failures =
+        prior["teleport_failures"].as_u64().unwrap_or(0) + report.teleport_failures as u64;
+    doc["verification"][mode][&report.probe_kind] = serde_json::json!({
         "swept": swept,
-        "last_probed": report.probed,
-        "last_passed": report.passed,
+        "passed": passed,
+        "failed": failed,
+        "teleport_failures": teleport_failures,
     });
     doc
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{merge_verdicts, LinkVerdict, ProbeReport};
+    use super::{merge_verdicts, stage_map_for_probe, LinkVerdict, ProbeReport};
 
     fn report_with(mode: &str, pairs: &[([f32; 3], [f32; 3])]) -> ProbeReport {
         ProbeReport {
             map: "e1m8".into(),
+            graph_md5: "fixture-hash".into(),
+            probe_kind: "walk".into(),
             probed: pairs.len(),
             passed: 0,
             failed: pairs.len(),
@@ -1395,6 +1479,89 @@ mod tests {
             2
         );
         assert_eq!(doc["modes"]["deathmatch"]["swept"].as_u64().unwrap(), 3);
+    }
+
+    #[test]
+    fn a_jump_refusal_is_persisted_without_becoming_a_walk_conviction() {
+        let mut report = report_with("deathmatch", &[([1.0, 1.0, 1.0], [2.0, 2.0, 2.0])]);
+        report.probe_kind = "jump".into();
+        let doc = merge_verdicts(
+            serde_json::json!({"failed": [], "passed": []}),
+            "deathmatch",
+            &report,
+        );
+
+        assert!(doc["failed"].as_array().unwrap().is_empty());
+        assert_eq!(doc["typed_failed"][0]["kind"], "jump");
+        assert_eq!(doc["verification"]["graph_md5"], "fixture-hash");
+        assert_eq!(doc["verification"]["deathmatch"]["jump"]["swept"], 1);
+    }
+
+    #[test]
+    fn a_local_community_map_is_staged_only_for_the_probe() {
+        let root = std::env::temp_dir().join(format!("argus-probe-map-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let maps = root.join("maps_local");
+        let basedir = root.join("engine");
+        std::fs::create_dir_all(&maps).unwrap();
+        std::fs::create_dir_all(basedir.join("argus")).unwrap();
+        std::fs::write(maps.join("community.bsp"), b"fixture").unwrap();
+        let cfg = crate::config::Config {
+            root: root.clone(),
+            fteqcc: root.join("fteqcc"),
+            engine: root.join("engine.exe"),
+            basedir: basedir.clone(),
+            python: root.join("python"),
+            game: "argus".into(),
+            src: root.join("src"),
+            runs: root.join("runs"),
+            progs: root.join("progs.dat"),
+            maps,
+        };
+
+        let staged = stage_map_for_probe(&cfg, "community").unwrap();
+        let dest = basedir.join("argus/maps/community.bsp");
+        assert!(dest.is_file());
+        drop(staged);
+        assert!(
+            !dest.exists(),
+            "temporary map must be removed after the mill pass"
+        );
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn a_map_inside_the_base_pak_needs_no_staging_copy() {
+        let root = std::env::temp_dir().join(format!("argus-probe-pak-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let basedir = root.join("engine");
+        let id1 = basedir.join("id1");
+        std::fs::create_dir_all(&id1).unwrap();
+        let mut pak = b"PACK".to_vec();
+        pak.extend_from_slice(&12i32.to_le_bytes());
+        pak.extend_from_slice(&64i32.to_le_bytes());
+        let mut entry = [0u8; 64];
+        entry[..12].copy_from_slice(b"maps/dm4.bsp");
+        pak.extend_from_slice(&entry);
+        std::fs::write(id1.join("pak0.pak"), pak).unwrap();
+        let cfg = crate::config::Config {
+            root: root.clone(),
+            fteqcc: root.join("fteqcc"),
+            engine: root.join("engine.exe"),
+            basedir: basedir.clone(),
+            python: root.join("python"),
+            game: "argus".into(),
+            src: root.join("src"),
+            runs: root.join("runs"),
+            progs: root.join("progs.dat"),
+            maps: root.join("maps_local"),
+        };
+
+        let staged = stage_map_for_probe(&cfg, "dm4").unwrap();
+
+        assert!(staged.0.is_none());
+        assert!(!basedir.join("argus/maps/dm4.bsp").exists());
+        let _ = std::fs::remove_dir_all(&root);
     }
 
     /// Live integration: spawn the lab's own dedicated engine, connect

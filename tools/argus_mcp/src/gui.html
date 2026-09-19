@@ -715,6 +715,11 @@ async function act(kind) {
       gc.textContent = r.edict_budget;
       gc.style.display = 'block';
     }
+    if (r.playability_gate) {
+      const gc = document.getElementById('gatecard');
+      gc.textContent = r.playability_gate;
+      gc.style.display = 'block';
+    }
     if (r.stdout_tail) log((r.stdout_tail || []).join('\n'));
     await refresh();
     if (selected && kind !== 'compare') await pick(selected);
