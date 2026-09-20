@@ -19,6 +19,20 @@ Point the client at this installed binary so startup is not a cargo build and
 `cargo clean` cannot delete the configured server. Rerun the install command to
 update it, then restart the client.
 
+For a config saved before the stable install was documented, run this after
+the install:
+
+```
+python tools/migrate_mcp_config.py
+```
+
+The command checks the known Codex, Grok and project config paths. Pass one or
+more TOML or JSON paths to check only those files. It changes only the `argus`
+entry when its command exactly ends in the retired
+`tools/argus_mcp/target/release/argus-mcp` path, refuses an absent installed
+binary, reparses the saved file to verify every other setting, and tells you to
+restart the client. Existing environment and timeout values stay unchanged.
+
 The running process locks the exe on Windows. To build an update without
 stopping the client, stage it instead:
 
