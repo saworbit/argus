@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**LONG LAB CALLS NOW REPORT THEIR REAL STAGES THROUGH MCP PROGRESS** (#469,
+part of #370). `match_run`, `experiment`, `campaign_experiment` and
+`matrix_experiment` honor a caller-supplied progress token. Compile, engine
+run and analysis stages are monotonic; active matches report elapsed time
+against their requested duration. Calls without a token are unchanged, and a
+client that drops or rejects a notification cannot fail the underlying tool.
+
 **THE TWO CORE BRIEFING TOOLS NOW HAVE TRUTHFUL STRUCTURED OUTPUT** (#466,
 part of #370). `brief_run` and `compare_runs` advertise one stable
 `{format, detail, data}` envelope across brief JSON, full JSON and CSV table
