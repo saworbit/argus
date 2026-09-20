@@ -25,9 +25,9 @@ use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolResult, CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock,
-    Implementation, ListResourceTemplatesResult, ListResourcesResult, PaginatedRequestParams,
-    PromptMessage, ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Reference,
-    Role, ServerCapabilities, ServerInfo, ToolAnnotations,
+    Implementation, JsonObject, ListResourceTemplatesResult, ListResourcesResult,
+    PaginatedRequestParams, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
+    ReadResourceResult, Reference, Role, ServerCapabilities, ServerInfo, ToolAnnotations,
 };
 use rmcp::service::{RequestContext, RoleServer};
 use rmcp::ErrorData as McpError;
@@ -218,7 +218,7 @@ fn json_ok<T: Serialize>(value: &T) -> Result<CallToolResult, McpError> {
     json_ok_pngs(value, &[])
 }
 
-fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult, McpError> {
+fn json_value<T: Serialize>(value: &T) -> Result<serde_json::Value, McpError> {
     let mut v =
         serde_json::to_value(value).map_err(|e| McpError::internal_error(e.to_string(), None))?;
     // a stale server must never hand out an unmarked opinion: the
@@ -226,6 +226,11 @@ fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult
     if let (Some(note), serde_json::Value::Object(map)) = (crate::stale::banner(), &mut v) {
         map.insert("lab_stale".into(), serde_json::Value::String(note));
     }
+    Ok(v)
+}
+
+fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult, McpError> {
+    let v = json_value(value)?;
     let text = serde_json::to_string_pretty(&v)
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
     let mut blocks = vec![ContentBlock::text(text)];
@@ -237,15 +242,62 @@ fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult
     Ok(CallToolResult::success(blocks))
 }
 
+fn report_output_schema() -> Arc<JsonObject> {
+    let serde_json::Value::Object(schema) = serde_json::json!({
+        "type": "object",
+        "required": ["format", "detail", "data"],
+        "properties": {
+            "format": {"type": "string", "enum": ["json", "csv"]},
+            "detail": {"type": "string", "enum": ["brief", "full", "table"]},
+            "data": {}
+        },
+        "additionalProperties": false
+    }) else {
+        unreachable!("the report output schema is an object")
+    };
+    Arc::new(schema)
+}
+
+fn report_json_ok<T: Serialize>(
+    value: &T,
+    detail: &'static str,
+) -> Result<CallToolResult, McpError> {
+    let value = json_value(value)?;
+    let text = serde_json::to_string_pretty(&value)
+        .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+    let mut result = CallToolResult::success(vec![ContentBlock::text(text)]);
+    result.structured_content = Some(serde_json::json!({
+        "format": "json",
+        "detail": detail,
+        "data": value,
+    }));
+    Ok(result)
+}
+
+fn csv_text(body: String) -> String {
+    match crate::stale::banner() {
+        Some(note) => format!("# lab_stale: {note}\n{body}"),
+        None => body,
+    }
+}
+
+fn report_csv_ok(body: String) -> Result<CallToolResult, McpError> {
+    let text = csv_text(body);
+    let mut result = CallToolResult::success(vec![ContentBlock::text(text.clone())]);
+    result.structured_content = Some(serde_json::json!({
+        "format": "csv",
+        "detail": "table",
+        "data": text,
+    }));
+    Ok(result)
+}
+
 /// CSV rather than JSON, because every one of these answers is a
 /// table and a table costs about half the tokens as CSV. The
 /// stale banner still rides along, as a comment line, because a
 /// stale server must never hand out an unmarked opinion.
 fn csv_ok(body: String) -> Result<CallToolResult, McpError> {
-    let text = match crate::stale::banner() {
-        Some(note) => format!("# lab_stale: {note}\n{body}"),
-        None => body,
-    };
+    let text = csv_text(body);
     Ok(CallToolResult::success(vec![ContentBlock::text(text)]))
 }
 
@@ -1227,7 +1279,8 @@ impl Argus {
     }
 
     #[tool(
-        description = "Brief a harvested log (or see what=run). Default is lite: headline, totals, flags, next_steps."
+        description = "Brief a harvested log (or see what=run). Default is lite: headline, totals, flags, next_steps.",
+        output_schema = report_output_schema()
     )]
     async fn brief_run(
         &self,
@@ -1240,11 +1293,11 @@ impl Argus {
         match intel_brief(&cfg, &args.log, args.map.as_deref()) {
             Ok(r) => {
                 if crate::intel::want_csv(args.format.as_deref()) {
-                    csv_ok(crate::intel::brief_csv(&r))
+                    report_csv_ok(crate::intel::brief_csv(&r))
                 } else if want_full(args.detail.as_deref()) {
-                    json_ok(&r)
+                    report_json_ok(&r, "full")
                 } else {
-                    json_ok(&brief_lite(&r))
+                    report_json_ok(&brief_lite(&r), "brief")
                 }
             }
             Err(e) => tool_err(e),
@@ -1252,7 +1305,8 @@ impl Argus {
     }
 
     #[tool(
-        description = "A/B two logs. Default is verdict+gates (not two full briefs). detail=full for both tapes."
+        description = "A/B two logs. Default is verdict+gates (not two full briefs). detail=full for both tapes.",
+        output_schema = report_output_schema()
     )]
     async fn compare_runs(
         &self,
@@ -1266,11 +1320,11 @@ impl Argus {
         match intel_compare(&cfg, log_a, &args.log_b, args.map.as_deref()) {
             Ok(r) => {
                 if crate::intel::want_csv(args.format.as_deref()) {
-                    csv_ok(crate::intel::compare_csv(&r))
+                    report_csv_ok(crate::intel::compare_csv(&r))
                 } else if want_full(args.detail.as_deref()) {
-                    json_ok(&r)
+                    report_json_ok(&r, "full")
                 } else {
-                    json_ok(&compare_lite(&r))
+                    report_json_ok(&compare_lite(&r), "brief")
                 }
             }
             Err(e) => tool_err(e),
@@ -2762,6 +2816,15 @@ mod tests {
         }
     }
 
+    fn result_text(result: &CallToolResult) -> &str {
+        result
+            .content
+            .first()
+            .and_then(ContentBlock::as_text)
+            .map(|text| text.text.as_str())
+            .expect("one text result")
+    }
+
     #[test]
     fn server_metadata_uses_package_version() {
         let info = Argus::new().get_info();
@@ -3035,9 +3098,9 @@ mod tests {
         }
         // If this fails, the question is whether the new tool earns its
         // rent, not whether to raise the bound.
-        // 24,715 bytes over 40 tools, measured 2026-09-21 after every
-        // route gained its explicit five-field MCP safety contract.
-        // That is about 6,200 tokens on EVERY request. The bound sits
+        // 25,181 bytes over 40 tools, measured 2026-09-21 after the two
+        // core briefing routes gained their report-envelope output schemas.
+        // That is about 6,300 tokens on EVERY request. The bound sits
         // just above the measured surface on purpose: a bound three
         // times the actual is not a bound. If this fails, the question
         // is whether the metadata or tool earns its rent, not whether
@@ -3084,5 +3147,69 @@ mod tests {
 
         let see = tools.iter().find(|tool| tool.name == "see").unwrap();
         assert_eq!(see.annotations.as_ref().unwrap().read_only_hint, Some(true));
+    }
+
+    #[test]
+    fn briefing_tools_publish_the_report_envelope_schema() {
+        let tools = Argus::annotated_tool_router().list_all();
+        for name in ["brief_run", "compare_runs"] {
+            let tool = tools.iter().find(|tool| tool.name == name).unwrap();
+            let schema = tool
+                .output_schema
+                .as_ref()
+                .unwrap_or_else(|| panic!("{name} has no output schema"));
+            assert_eq!(schema.get("type"), Some(&serde_json::json!("object")));
+            assert_eq!(
+                schema.get("required"),
+                Some(&serde_json::json!(["format", "detail", "data"]))
+            );
+            assert_eq!(
+                schema.get("additionalProperties"),
+                Some(&serde_json::json!(false))
+            );
+            let properties = schema["properties"].as_object().unwrap();
+            assert_eq!(
+                properties["format"]["enum"],
+                serde_json::json!(["json", "csv"])
+            );
+            assert_eq!(
+                properties["detail"]["enum"],
+                serde_json::json!(["brief", "full", "table"])
+            );
+        }
+    }
+
+    #[test]
+    fn report_helpers_keep_text_and_structured_data_in_lockstep() {
+        for detail in ["brief", "full"] {
+            let result = report_json_ok(&serde_json::json!({"answer": 42}), detail).unwrap();
+            let text_value: serde_json::Value = serde_json::from_str(result_text(&result)).unwrap();
+            assert_eq!(
+                result.structured_content,
+                Some(serde_json::json!({
+                    "format": "json",
+                    "detail": detail,
+                    "data": text_value,
+                }))
+            );
+            assert_eq!(result.is_error, Some(false));
+        }
+
+        let newline = char::from(10).to_string();
+        let csv = ["name,value", "argus,42", ""].join(&newline);
+        let result = report_csv_ok(csv).unwrap();
+        let text = result_text(&result);
+        assert_eq!(
+            result.structured_content,
+            Some(serde_json::json!({
+                "format": "csv",
+                "detail": "table",
+                "data": text,
+            }))
+        );
+
+        let error = tool_err("fixture failure").unwrap();
+        assert_eq!(error.is_error, Some(true));
+        assert!(error.structured_content.is_none());
     }
 }

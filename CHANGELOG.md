@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE TWO CORE BRIEFING TOOLS NOW HAVE TRUTHFUL STRUCTURED OUTPUT** (#466,
+part of #370). `brief_run` and `compare_runs` advertise one stable
+`{format, detail, data}` envelope across brief JSON, full JSON and CSV table
+modes. Their existing text content remains byte-for-byte available to older
+clients; structured JSON contains the same parsed value and structured CSV the
+same exact text. Tool errors remain errors rather than successful envelopes.
+
 **MCP COMPLETION NOW COVERS THE NAME-BEARING PROMPTS AND RESOURCES** (#465,
 part of #370). The server advertises `completion/complete` and prefix-completes
 maps, extensionless run names, baseline aliases, validation primaries and

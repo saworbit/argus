@@ -584,6 +584,14 @@ from the selected map in completion context. The protocol does not define
 completion for arbitrary tool arguments, so the tools retain their existing
 validation rather than claiming autocomplete they cannot serve.
 
+`brief_run` and `compare_runs` advertise a stable MCP `outputSchema` and
+return the same information in `structuredContent` as
+`{format, detail, data}`. JSON uses detail `brief` or `full` and carries
+the exact value rendered by the existing text block; CSV uses detail `table`
+and carries the exact CSV text. The text channel is unchanged for clients that
+do not consume structured output, and tool-level failures are not wrapped as
+successful data.
+
 `compare_runs` is unscaled: it expects two tapes of similar length.
 `experiment` duration-scales the baseline counts to the candidate
 duration so a 30 s probe is not judged as an engagement collapse
