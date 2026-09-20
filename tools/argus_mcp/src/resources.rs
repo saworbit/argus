@@ -131,6 +131,15 @@ pub fn read_uri(
     cfg: Option<&Config>,
     session: &SessionSeen,
 ) -> Result<Vec<ResourceContents>, String> {
+    read_uri_with_live(uri, cfg, session, None)
+}
+
+pub fn read_uri_with_live(
+    uri: &str,
+    cfg: Option<&Config>,
+    session: &SessionSeen,
+    live: Option<crate::match_ctrl::MatchStatus>,
+) -> Result<Vec<ResourceContents>, String> {
     let uri = uri.trim();
     match uri {
         "argus://project" => {
@@ -139,7 +148,7 @@ pub fn read_uri(
         }
         "argus://lab" => {
             let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://lab")?;
-            Ok(vec![json_text(uri, &lab_status(cfg, None))])
+            Ok(vec![json_text(uri, &lab_status(cfg, live))])
         }
         "argus://knobs" => Ok(vec![json_text(uri, &knobs())]),
         "argus://last" => Ok(vec![json_text(uri, session)]),

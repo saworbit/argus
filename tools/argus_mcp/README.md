@@ -599,6 +599,13 @@ active matches advance by elapsed seconds against the requested duration.
 Progress delivery is best-effort and never changes the synchronous result.
 Clients without progress support keep the existing call and polling behavior.
 
+`argus://last` and `argus://lab` are live subscription resources. The server
+accepts both current `subscriptions/listen` filters and legacy
+`resources/subscribe` calls, then emits `notifications/resources/updated`
+only when the resource's serialized value changes. `argus://lab` reads include
+the current match status. Explicit resource reads, `match_status`, and
+`since_line` polling remain supported fallbacks.
+
 `compare_runs` is unscaled: it expects two tapes of similar length.
 `experiment` duration-scales the baseline counts to the candidate
 duration so a 30 s probe is not judged as an engagement collapse

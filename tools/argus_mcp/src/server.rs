@@ -27,10 +27,11 @@ use rmcp::model::{
     CallToolResult, CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock,
     Implementation, JsonObject, ListResourceTemplatesResult, ListResourcesResult,
     PaginatedRequestParams, ProgressNotificationParam, PromptMessage, ReadResourceRequestParams,
-    ReadResourceResponse, ReadResourceResult, Reference, RequestMetaObject, Role,
-    ServerCapabilities, ServerInfo, ToolAnnotations,
+    ReadResourceResponse, ReadResourceResult, Reference, RequestMetaObject,
+    ResourceUpdatedNotificationParam, Role, ServerCapabilities, ServerInfo, SubscribeRequestParams,
+    SubscriptionFilter, ToolAnnotations, UnsubscribeRequestParams,
 };
-use rmcp::service::{RequestContext, RoleServer};
+use rmcp::service::{RequestContext, RoleServer, SubscriptionContext};
 use rmcp::ErrorData as McpError;
 use rmcp::{
     prompt, prompt_handler, prompt_router, schemars, tool, tool_handler, tool_router, Peer,
@@ -38,6 +39,7 @@ use rmcp::{
 };
 use serde::Deserialize;
 use serde::Serialize;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -111,6 +113,7 @@ pub struct Argus {
     /// match_stop, tune, live_snapshot, see what=live and shutdown all
     /// queued behind a running match_run. Only the run paths take this.
     pub run_gate: Arc<Mutex<()>>,
+    legacy_subscriptions: Arc<Mutex<HashMap<String, tokio::task::AbortHandle>>>,
 }
 
 #[derive(Clone)]
@@ -170,6 +173,7 @@ impl Argus {
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
             run_gate: Arc::new(Mutex::new(())),
             session: Arc::new(Mutex::new(seen)),
+            legacy_subscriptions: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -291,6 +295,47 @@ impl Argus {
         s.note_see(what, name);
         Self::persist_session(&s);
     }
+
+    async fn live_resource_snapshot(&self, uris: &[String]) -> BTreeMap<String, String> {
+        let mut snapshot = BTreeMap::new();
+        if uris.iter().any(|uri| uri == "argus://last") {
+            let session = self.session.lock().await.clone();
+            if let Ok(value) = serde_json::to_string(&session) {
+                snapshot.insert("argus://last".into(), value);
+            }
+        }
+        if uris.iter().any(|uri| uri == "argus://lab") {
+            if let Some(cfg) = Config::load_for_reads()
+                .ok()
+                .filter(|cfg| cfg.root.exists())
+            {
+                let live = {
+                    let mut matches = self.matches.lock().await;
+                    matches.reap();
+                    matches.status()
+                };
+                if let Ok(value) = serde_json::to_string(&build_lab(&cfg, Some(live))) {
+                    snapshot.insert("argus://lab".into(), value);
+                }
+            }
+        }
+        snapshot
+    }
+}
+
+const LIVE_RESOURCE_URIS: [&str; 2] = ["argus://last", "argus://lab"];
+
+fn changed_resource_uris(
+    previous: &mut BTreeMap<String, String>,
+    current: BTreeMap<String, String>,
+) -> Vec<String> {
+    let changed = current
+        .iter()
+        .filter(|(uri, value)| previous.get(*uri) != Some(*value))
+        .map(|(uri, _)| uri.clone())
+        .collect();
+    *previous = current;
+    changed
 }
 
 fn json_ok<T: Serialize>(value: &T) -> Result<CallToolResult, McpError> {
@@ -2911,6 +2956,7 @@ impl ServerHandler for Argus {
                 .enable_tools()
                 .enable_prompts()
                 .enable_resources()
+                .enable_resources_subscribe()
                 .enable_completions()
                 .build(),
         )
@@ -2941,6 +2987,97 @@ impl ServerHandler for Argus {
         Ok(crate::resources::list_static(cfg.as_ref()))
     }
 
+    fn accepted_subscription_filter(
+        &self,
+        requested: &SubscriptionFilter,
+    ) -> Option<SubscriptionFilter> {
+        let supported = SubscriptionFilter::builder()
+            .resource_subscriptions(LIVE_RESOURCE_URIS)
+            .build();
+        Some(requested.intersection(&supported))
+    }
+
+    async fn listen(&self, context: SubscriptionContext) -> Result<(), McpError> {
+        let uris = context
+            .accepted()
+            .resource_subscriptions
+            .clone()
+            .unwrap_or_default();
+        if uris.is_empty() {
+            context.cancelled().await;
+            return Ok(());
+        }
+        let mut previous = self.live_resource_snapshot(&uris).await;
+        let mut interval = tokio::time::interval(Duration::from_secs(1));
+        loop {
+            tokio::select! {
+                _ = context.cancelled() => return Ok(()),
+                _ = interval.tick() => {
+                    let current = self.live_resource_snapshot(&uris).await;
+                    for uri in changed_resource_uris(&mut previous, current) {
+                        if context.sink().notify_resource_updated(uri).await.is_err() {
+                            return Ok(());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[allow(deprecated)]
+    async fn subscribe(
+        &self,
+        request: SubscribeRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        if !LIVE_RESOURCE_URIS.contains(&request.uri.as_str()) {
+            return Err(McpError::resource_not_found(
+                format!("{} is not a live resource", request.uri),
+                None,
+            ));
+        }
+        let key = request.uri;
+        let uri = key.clone();
+        let uris = vec![uri.clone()];
+        let server = self.clone();
+        let peer = context.peer.clone();
+        let task = tokio::spawn(async move {
+            let mut previous = server.live_resource_snapshot(&uris).await;
+            let mut interval = tokio::time::interval(Duration::from_secs(1));
+            loop {
+                interval.tick().await;
+                let current = server.live_resource_snapshot(&uris).await;
+                if changed_resource_uris(&mut previous, current).is_empty() {
+                    continue;
+                }
+                if peer
+                    .notify_resource_updated(ResourceUpdatedNotificationParam::new(uri.clone()))
+                    .await
+                    .is_err()
+                {
+                    break;
+                }
+            }
+        });
+        let mut subscriptions = self.legacy_subscriptions.lock().await;
+        if let Some(old) = subscriptions.insert(key, task.abort_handle()) {
+            old.abort();
+        }
+        Ok(())
+    }
+
+    #[allow(deprecated)]
+    async fn unsubscribe(
+        &self,
+        request: UnsubscribeRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        if let Some(task) = self.legacy_subscriptions.lock().await.remove(&request.uri) {
+            task.abort();
+        }
+        Ok(())
+    }
+
     async fn list_resource_templates(
         &self,
         _request: Option<PaginatedRequestParams>,
@@ -2955,8 +3092,15 @@ impl ServerHandler for Argus {
         _context: RequestContext<RoleServer>,
     ) -> Result<ReadResourceResponse, McpError> {
         let cfg = Config::load_for_reads().ok();
+        let live = if request.uri == "argus://lab" {
+            let mut matches = self.matches.lock().await;
+            matches.reap();
+            Some(matches.status())
+        } else {
+            None
+        };
         let session = self.session.lock().await.clone();
-        match crate::resources::read_uri(&request.uri, cfg.as_ref(), &session) {
+        match crate::resources::read_uri_with_live(&request.uri, cfg.as_ref(), &session, live) {
             Ok(contents) => Ok(ReadResourceResponse::Complete(ReadResourceResult::new(
                 contents,
             ))),
@@ -3028,6 +3172,50 @@ mod tests {
             "instructions advertise a different lab version: {instructions}"
         );
         assert!(info.capabilities.completions.is_some());
+        assert_eq!(
+            info.capabilities
+                .resources
+                .and_then(|resources| resources.subscribe),
+            Some(true)
+        );
+    }
+
+    #[test]
+    fn live_subscription_filter_accepts_only_live_resources() {
+        let requested = SubscriptionFilter::builder()
+            .resource_subscriptions([
+                "argus://last",
+                "argus://lab",
+                "argus://project",
+                "argus://run/latest",
+            ])
+            .build();
+        let accepted = Argus::new()
+            .accepted_subscription_filter(&requested)
+            .unwrap();
+        assert_eq!(
+            accepted.resource_subscriptions.unwrap(),
+            ["argus://last", "argus://lab"]
+        );
+    }
+
+    #[test]
+    fn resource_change_detection_is_quiet_until_values_move() {
+        let mut previous = BTreeMap::from([
+            ("argus://lab".into(), "ready".into()),
+            ("argus://last".into(), "dm4".into()),
+        ]);
+        let unchanged = previous.clone();
+        assert!(changed_resource_uris(&mut previous, unchanged).is_empty());
+
+        let current = BTreeMap::from([
+            ("argus://lab".into(), "running".into()),
+            ("argus://last".into(), "dm4".into()),
+        ]);
+        assert_eq!(
+            changed_resource_uris(&mut previous, current),
+            ["argus://lab"]
+        );
     }
 
     fn completion_cfg(root: &Path) -> Config {
