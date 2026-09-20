@@ -1150,6 +1150,11 @@ status, stdout and stderr rather than only an assertion label. Git output calls
 also retry the Windows process-loader failure `0xc0000142`; ordinary Git errors
 are returned immediately.
 
+Graph-history reads apply the same narrow policy to their persistent
+`git cat-file --batch` child: a loader failure starts a fresh child and replays
+the whole batch, while malformed, truncated, or ordinarily failed batches
+return an explicit error with status and stderr instead of partial history.
+
 All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
 `ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
 runner has had a separate compatibility pass.
