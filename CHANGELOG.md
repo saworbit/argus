@@ -9,6 +9,11 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**CI NOW RUNS THE CURRENT MCP CLI TEST INSTEAD OF SKIPPING IT** (#433).
+The lab job builds the checkout's `argus-mcp` binary before the Python CLI
+suite, and that suite fails in CI if the source binary is missing. The stable
+installed-binary smoke remains optional.
+
 **THE PYTHON CLI TEST NO LONGER RUNS A STALE LAB INSTALL** (#431). Source CLI
 coverage now uses only the current checkout build, while the stable install has
 its own startup smoke test.

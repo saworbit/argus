@@ -74,6 +74,8 @@ The lab suite includes regression tests against committed match tapes, parsing t
 ```bash
 cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
 cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
+cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp
+ARGUS_REQUIRE_SOURCE_MCP=1 python3 tools/test_tools_cli.py
 ```
 
 ### Running a Headless Smoke Match

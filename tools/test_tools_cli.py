@@ -2,6 +2,7 @@
 """CLI regression tests for developer scripts in tools/."""
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -780,6 +781,8 @@ class TestToolsCLI(unittest.TestCase):
     def test_argus_mcp_cli_subcommands(self):
         mcp_bin = find_argus_mcp_binary()
         if not mcp_bin:
+            if os.environ.get("ARGUS_REQUIRE_SOURCE_MCP") == "1":
+                self.fail("argus-mcp source binary not built")
             self.skipTest("argus-mcp source binary not built")
 
         for cmd in ("--help", "compile -h", "reach -h", "harvest -h", "analyze -h", "nav -h"):
