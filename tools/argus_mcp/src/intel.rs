@@ -1581,7 +1581,19 @@ pub fn compare_band_primary(
         empty.headline = "compare_band needs at least one tape on each side".into();
         let mut rep = compare_gates(empty.clone(), empty);
         rep.verdict = Verdict::Mixed;
+        rep.headline = "Mixed: compare_band needs at least one tape on each side".into();
         rep.findings = vec!["compare_band was given no tapes on one side".into()];
+        rep.primary = primary
+            .filter(|p| BAND_SPECS.iter().any(|s| s.name == *p))
+            .map(str::to_string);
+        rep.gate_card = format_gate_card(
+            rep.b.map.as_deref().or(rep.a.map.as_deref()),
+            rep.verdict,
+            &rep.gates,
+            &rep.a.totals,
+            &rep.b.totals,
+            false,
+        );
         return rep;
     }
     // representative tapes carry the existing diagnostics: the gate
@@ -2200,7 +2212,6 @@ fn invalid_duration_report(error: String, primary: Option<&str>) -> CompareRepor
     report.verdict = Verdict::Mixed;
     report.headline = "Mixed: invalid tape duration".into();
     report.findings = vec![error];
-    report.primary = primary.map(str::to_string);
     report.gate_card = format_gate_card(
         report.b.map.as_deref().or(report.a.map.as_deref()),
         report.verdict,
@@ -2267,7 +2278,7 @@ pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
         let mut report = compare_briefs(a2, b);
         report.scaled = true;
         report.scale_note = Some(format!(
-            "baseline counts scaled from {da:.0}s to {db:.0}s so a short experiment is comparable"
+            "baseline counts scaled from {da:.0}s to {db:.0}s so the tapes are comparable"
         ));
         report.gate_card = format_gate_card(
             report.b.map.as_deref().or(report.a.map.as_deref()),
@@ -3487,9 +3498,11 @@ ARGEVT Reap hazard
         let mut valid_control = MatchBrief::empty();
         valid_control.totals.duration_sec = 180.0;
         valid_control.totals.engages = 180;
+        valid_control.totals.stalls = 10;
 
         let mut invalid_control = valid_control.clone();
         invalid_control.totals.duration_sec = 0.0;
+        invalid_control.totals.stalls = 0;
 
         let report = compare_band_primary_scaled(
             &[candidate.clone(), candidate],
@@ -3506,6 +3519,33 @@ ARGEVT Reap hazard
             "{:?}",
             report.findings
         );
+    }
+
+    #[test]
+    fn scaled_compare_rejects_an_invalid_duration() {
+        let mut baseline = MatchBrief::empty();
+        baseline.totals.duration_sec = f64::NAN;
+        let mut candidate = MatchBrief::empty();
+        candidate.totals.duration_sec = 30.0;
+
+        let report = compare_briefs_scaled(baseline, candidate);
+
+        assert_eq!(report.verdict, Verdict::Mixed);
+        assert!(report.headline.starts_with("Mixed:"), "{}", report.headline);
+        assert!(report.gate_card.contains("CAUTION (MIXED"));
+    }
+
+    #[test]
+    fn scaled_band_empty_arm_is_mixed_everywhere() {
+        let mut control = MatchBrief::empty();
+        control.totals.duration_sec = 180.0;
+
+        let report = compare_band_primary_scaled(&[], &[control], Some("engagements"));
+
+        assert_eq!(report.verdict, Verdict::Mixed);
+        assert!(report.headline.starts_with("Mixed:"), "{}", report.headline);
+        assert!(report.gate_card.contains("CAUTION (MIXED"));
+        assert!(!report.gate_card.contains("APPROVED FOR RELEASE"));
     }
 
     #[test]
