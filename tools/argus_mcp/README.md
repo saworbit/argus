@@ -1139,6 +1139,12 @@ tapes and briefs; parsing a whole-line prefix must preserve the map, contain no
 future sample or event, and never exceed the full brief's additive totals. The
 fixtures need no engine, BSP or machine-local run.
 
+Git-backed Rust fixtures share one crate-wide lock. Their temporary repositories
+are collision-proof and self-cleaning, and a failed fixture command reports Git
+status, stdout and stderr rather than only an assertion label. Git output calls
+also retry the Windows process-loader failure `0xc0000142`; ordinary Git errors
+are returned immediately.
+
 All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
 `ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
 runner has had a separate compatibility pass.
