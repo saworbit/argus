@@ -395,13 +395,12 @@ pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
 /// parses independently of `cartograph`, so a single `brief_run` read
 /// the same file three times. The entry is an Arc so a hit costs a
 /// pointer clone rather than a copy of every lump.
-static BSP_CACHE: std::sync::Mutex<
-    Option<(
-        std::path::PathBuf,
-        Option<std::time::SystemTime>,
-        std::sync::Arc<Bsp29>,
-    )>,
-> = std::sync::Mutex::new(None);
+type BspCacheEntry = (
+    std::path::PathBuf,
+    Option<std::time::SystemTime>,
+    std::sync::Arc<Bsp29>,
+);
+static BSP_CACHE: std::sync::Mutex<Option<BspCacheEntry>> = std::sync::Mutex::new(None);
 
 pub fn read_bsp29_cached(path: &std::path::Path) -> Result<std::sync::Arc<Bsp29>, String> {
     let stamp = std::fs::metadata(path).and_then(|m| m.modified()).ok();
@@ -885,7 +884,7 @@ fn atlas_from_bsp(
             })
         })
         .collect();
-    control.sort_by(|a, b| b.value.cmp(&a.value));
+    control.sort_by_key(|item| std::cmp::Reverse(item.value));
     control.truncate(12);
 
     let dispatcher_known = dispatcher_knows(cfg, map);
@@ -1138,7 +1137,6 @@ fn atlas_from_bsp(
 /// Static plat boardability: seated-face height, a boarding-floor ring
 /// probe outside the footprint, and a ledge-inside-the-swept-column
 /// probe (the *31 statue class, found the hard way on 2026-08-19).
-
 /// True when the shipped graph carries a lift link with an endpoint over
 /// this plat's footprint. navgen seats boarding pads outside the swept
 /// column (v3.56) and rest-top virtual pads inside it (v3.84), so check
@@ -1720,7 +1718,7 @@ fn height_bands(map: &str, nodes: &[[f32; 3]]) -> Vec<HeightBand> {
             }
         })
         .collect();
-    bands.sort_by(|a, b| b.nodes.cmp(&a.nodes));
+    bands.sort_by_key(|band| std::cmp::Reverse(band.nodes));
     bands
 }
 
@@ -1872,7 +1870,7 @@ fn undirected(g: &NavGraph) -> Vec<Vec<u32>> {
         for (to, _) in edges {
             let j = *to as usize;
             if j < n {
-                if !u[i].contains(&(*to)) {
+                if !u[i].contains(to) {
                     u[i].push(*to);
                 }
                 if !u[j].contains(&(i as u32)) {

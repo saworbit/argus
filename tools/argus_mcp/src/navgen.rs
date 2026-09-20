@@ -22,6 +22,13 @@ fn edict_budget_line(output: &str) -> Option<String> {
         .map(str::to_owned)
 }
 
+fn playability_gate_line(output: &str) -> Option<String> {
+    output
+        .lines()
+        .find(|line| line.starts_with("playability gate: status "))
+        .map(str::to_owned)
+}
+
 pub fn nav_generate(
     cfg: &Config,
     bsp: &str,
@@ -106,11 +113,4 @@ mod tests {
             Some("playability gate: status experimental; spawns 4; deathmatch pickups 18; graph md5 abc123")
         );
     }
-}
-
-fn playability_gate_line(output: &str) -> Option<String> {
-    output
-        .lines()
-        .find(|line| line.starts_with("playability gate: status "))
-        .map(str::to_owned)
 }

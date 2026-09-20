@@ -102,7 +102,7 @@ fn recommend(
         }
         return "no harvested logs; match_run map=dm4 duration_sec=185".into();
     }
-    format!("see what=project, or experiment after a QC edit, or compare_runs log_b=latest")
+    "see what=project, or experiment after a QC edit, or compare_runs log_b=latest".to_string()
 }
 
 pub fn cartograph_all(cfg: &Config) -> Result<Vec<AtlasBrief>, String> {

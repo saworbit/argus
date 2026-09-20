@@ -134,11 +134,7 @@ fn insert_dispatch_branch(src: &str, map: &str, spawn: &str) -> Result<String, S
     let Some(idx) = src.rfind(needle) else {
         return Err("argus_nav_dispatch.qc: no closing };".into());
     };
-    let indent = if src.contains("else if") {
-        "    "
-    } else {
-        "    "
-    };
+    let indent = "    ";
     let branch = format!("{indent}else if (mapname == \"{map}\")\n{indent}    {spawn} ();\n");
     let mut out = String::new();
     out.push_str(&src[..idx]);

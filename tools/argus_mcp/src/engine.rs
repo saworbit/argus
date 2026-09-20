@@ -65,7 +65,7 @@ impl EngineChild {
         }
         #[cfg(windows)]
         {
-            return spawn_windows(cfg, map, slots, skill, cwd, port, coop);
+            spawn_windows(cfg, map, slots, skill, cwd, port, coop)
         }
         #[cfg(not(windows))]
         {
@@ -716,6 +716,9 @@ mod tests {
 
     #[test]
     #[cfg(windows)]
+    // The raw process is deliberately transferred to EngineChild by PID and
+    // native handle; EngineChild's Drop is the behavior this test exercises.
+    #[allow(clippy::zombie_processes)]
     fn engine_child_drop_terminates_process() {
         let mut cmd = std::process::Command::new("powershell");
         cmd.args(["-NoProfile", "-Command", "Start-Sleep -Seconds 10"]);
@@ -778,6 +781,9 @@ mod tests {
     /// without the lab engine. Serialised by nature - it binds the
     /// engine's UDP port, so do not run while a lab match is live.
     #[tokio::test]
+    // The process-global lock intentionally spans the live-engine awaits so
+    // no other integration test can bind or inject into the same engine.
+    #[allow(clippy::await_holding_lock)]
     async fn windows_console_inject_reaches_the_engine_if_present() {
         if !cfg!(windows) {
             return;
@@ -794,10 +800,7 @@ mod tests {
             return;
         };
         if !cfg.engine.exists() {
-            eprintln!(
-                "SKIPPED {}: no ARGUS_ENGINE on this box",
-                "probe_inject_test"
-            );
+            eprintln!("SKIPPED probe_inject_test: no ARGUS_ENGINE on this box");
             return;
         }
         // a temp runs/ so the probe tape never lands in the real one:

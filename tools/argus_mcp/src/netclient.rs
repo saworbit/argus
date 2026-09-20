@@ -1583,6 +1583,9 @@ mod tests {
     /// moving through svc updates. Machine-local: skips without the
     /// engine. Binds the engine port: never run during a live match.
     #[tokio::test]
+    // The process-global lock intentionally spans the live-engine awaits so
+    // this test owns the shared UDP port for the complete observation.
+    #[allow(clippy::await_holding_lock)]
     async fn netclient_connects_and_sees_the_world_if_engine_present() {
         if !cfg!(windows) {
             return;
@@ -1599,10 +1602,7 @@ mod tests {
             return;
         };
         if !cfg.engine.exists() {
-            eprintln!(
-                "SKIPPED {}: no ARGUS_ENGINE on this box",
-                "probe_netclient_test"
-            );
+            eprintln!("SKIPPED probe_netclient_test: no ARGUS_ENGINE on this box");
             return;
         }
         // a temp runs/ so the probe tape never lands in the real one:

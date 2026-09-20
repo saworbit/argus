@@ -188,6 +188,9 @@ impl MatchCtrl {
         })
     }
 
+    // These arguments mirror the public match tool one-for-one. A separate
+    // options object would only move the same plumbing between two layers.
+    #[allow(clippy::too_many_arguments)]
     pub async fn start(
         &mut self,
         cfg: &Config,
@@ -288,31 +291,27 @@ impl MatchCtrl {
             }
         }
         let deadline = Instant::now() + timeout;
-        loop {
-            if let Some(live) = self.live.as_mut() {
-                match live.child.try_wait() {
-                    Ok(Some(code)) => {
-                        live.last_exit = Some(code);
-                        break;
-                    }
-                    Ok(None) if Instant::now() >= deadline => {
-                        let _ = live.child.kill().await;
-                        // one more wait so harvest sees a settled log
-                        tokio::time::sleep(Duration::from_millis(200)).await;
-                        if let Ok(Some(code)) = live.child.try_wait() {
-                            live.last_exit = Some(code);
-                        } else {
-                            live.last_exit = Some(1);
-                        }
-                        break;
-                    }
-                    Ok(None) => {
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                    }
-                    Err(e) => return Err(e),
+        while let Some(live) = self.live.as_mut() {
+            match live.child.try_wait() {
+                Ok(Some(code)) => {
+                    live.last_exit = Some(code);
+                    break;
                 }
-            } else {
-                break;
+                Ok(None) if Instant::now() >= deadline => {
+                    let _ = live.child.kill().await;
+                    // one more wait so harvest sees a settled log
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    if let Ok(Some(code)) = live.child.try_wait() {
+                        live.last_exit = Some(code);
+                    } else {
+                        live.last_exit = Some(1);
+                    }
+                    break;
+                }
+                Ok(None) => {
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+                Err(e) => return Err(e),
             }
         }
         Ok(self.status())
@@ -364,6 +363,8 @@ impl MatchCtrl {
         None
     }
 
+    // See start(): these are the match tool's fields, carried unchanged.
+    #[allow(clippy::too_many_arguments)]
     pub async fn run(
         &mut self,
         cfg: &Config,
@@ -397,6 +398,8 @@ impl MatchCtrl {
 
     /// Start a match and return once it is healthy. Split out of run()
     /// so a caller can release the MatchCtrl mutex while the match runs.
+    // See start(): these are the match tool's fields, carried unchanged.
+    #[allow(clippy::too_many_arguments)]
     pub async fn begin(
         &mut self,
         cfg: &Config,
@@ -777,7 +780,7 @@ pub fn list_runs(cfg: &Config) -> Result<Vec<RunEntry>, String> {
             note,
         });
     }
-    entries.sort_by(|a, b| b.mtime_unix.cmp(&a.mtime_unix));
+    entries.sort_by_key(|entry| std::cmp::Reverse(entry.mtime_unix));
     Ok(entries)
 }
 
@@ -1048,6 +1051,9 @@ mod tests {
     // exists in this temp config, so a guard that fired late would
     // come back as a spawn failure instead.
     #[tokio::test]
+    // The Git lock deliberately spans start().await so parallel tests cannot
+    // mutate repository state between the guard's checks.
+    #[allow(clippy::await_holding_lock)]
     async fn start_refuses_before_it_spawns_anything() {
         let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
         let cfg = tmp_cfg("start-committed-tape");
@@ -1264,6 +1270,9 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
     }
 
     #[tokio::test]
+    // On Windows the spawned process is transferred by PID and native handle
+    // into EngineChild, whose stop/drop path owns its remaining lifecycle.
+    #[allow(clippy::zombie_processes)]
     async fn stop_matching_filters_by_run_name_and_pid() {
         let tmp =
             std::env::temp_dir().join(format!("argus-stop-match-test-{}", std::process::id()));
@@ -1296,18 +1305,20 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
         let child = EngineChild::mock();
 
         let live_pid = child.id();
-        let mut ctrl = MatchCtrl::default();
-        ctrl.live = Some(LiveMatch {
-            child,
-            run_name: "exp_dm4".into(),
-            map: "dm4".into(),
-            run_dir,
-            harvested,
-            started: Instant::now(),
-            duration: None,
-            stdout: Arc::new(std::sync::Mutex::new(String::new())),
-            last_exit: None,
-        });
+        let mut ctrl = MatchCtrl {
+            live: Some(LiveMatch {
+                child,
+                run_name: "exp_dm4".into(),
+                map: "dm4".into(),
+                run_dir,
+                harvested,
+                started: Instant::now(),
+                duration: None,
+                stdout: Arc::new(std::sync::Mutex::new(String::new())),
+                last_exit: None,
+            }),
+            ..Default::default()
+        };
 
         // Mismatched run_name does not stop
         let st1 = ctrl

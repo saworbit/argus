@@ -82,6 +82,9 @@ impl Argus {
     /// and taken again to stop it, so match_status, match_stop, tune,
     /// live_snapshot and see what=live stay answerable during a
     /// match_run and shutdown can reach the engine.
+    // This is the lock-safe adapter for the public match tool fields. Keeping
+    // them explicit makes it harder for start and finish to disagree.
+    #[allow(clippy::too_many_arguments)]
     async fn drive_match(
         &self,
         cfg: &crate::config::Config,
@@ -119,9 +122,10 @@ impl Argus {
         // and the old lock-then-shutdown queued behind it until the
         // match ended, or never, if the client killed us outright.
         crate::match_ctrl::cancel_live();
-        match tokio::time::timeout(std::time::Duration::from_secs(10), self.matches.lock()).await {
-            Ok(mut g) => g.shutdown().await,
-            Err(_) => {}
+        if let Ok(mut g) =
+            tokio::time::timeout(std::time::Duration::from_secs(10), self.matches.lock()).await
+        {
+            g.shutdown().await;
         }
     }
 
@@ -466,6 +470,12 @@ pub struct SeeArgs {
         description = "For status/live: return log lines after this 0-based count. 0 or omit = last 40."
     )]
     pub since_line: Option<u32>,
+}
+
+impl Default for Argus {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -2501,7 +2511,7 @@ mod tests {
                 (n, t.name.to_string())
             })
             .collect();
-        rows.sort_by(|a, b| b.0.cmp(&a.0));
+        rows.sort_by_key(|row| std::cmp::Reverse(row.0));
         let total: usize = rows.iter().map(|(n, _)| n).sum();
         eprintln!("tool surface: {} tools, {total} bytes", rows.len());
         for (n, name) in rows.iter().take(10) {

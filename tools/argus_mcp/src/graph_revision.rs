@@ -656,7 +656,10 @@ pub fn diff(
 mod tests {
     use super::*;
     use std::fs;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static NEXT_REPO: AtomicU64 = AtomicU64::new(0);
 
     fn graph(kind: &str, extra: bool) -> String {
         let typed = if kind == "jump" {
@@ -700,9 +703,10 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
+        let sequence = NEXT_REPO.fetch_add(1, Ordering::Relaxed);
         let root = std::env::temp_dir().join(format!(
-            "argus-graph-revision-{}-{stamp}",
-            std::process::id()
+            "argus-graph-revision-{}-{stamp}-{sequence}",
+            std::process::id(),
         ));
         fs::create_dir_all(root.join("src")).unwrap();
         run(&root, &["init", "-q"]);
