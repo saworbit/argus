@@ -424,6 +424,11 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 ));
             }
             let cands = split(&positional[0]);
+            if cands.is_empty() {
+                return Err(anyhow::anyhow!(
+                    "candidate list must not be empty\nusage: argus-mcp compare <cand,...> [<ctrl,...>] [--primary <metric>]"
+                ));
+            }
             let ctrls = positional.get(1).map(|s| split(s)).unwrap_or_default();
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let report = if ctrls.is_empty() {

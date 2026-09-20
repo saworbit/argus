@@ -800,6 +800,23 @@ class TestToolsCLI(unittest.TestCase):
             res = subprocess.run([str(mcp_bin), *args], capture_output=True, text=True, cwd=str(ROOT))
             self.assertEqual(res.returncode, 0, f"failed on {cmd}: {res.stderr}")
 
+    def test_argus_mcp_compare_rejects_an_empty_candidate_list(self):
+        mcp_bin = find_argus_mcp_binary()
+        if not mcp_bin:
+            if os.environ.get("ARGUS_REQUIRE_SOURCE_MCP") == "1":
+                self.fail("argus-mcp source binary not built")
+            self.skipTest("argus-mcp source binary not built")
+
+        res = subprocess.run(
+            [str(mcp_bin), "compare", ",", "control"],
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
+        )
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("candidate list must not be empty", res.stderr)
+        self.assertNotIn("panicked", res.stderr)
+
     def test_installed_argus_mcp_starts(self):
         mcp_bin = find_argus_mcp_binary(installed=True)
         if not mcp_bin:
