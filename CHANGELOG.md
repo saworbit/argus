@@ -9,6 +9,14 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**GIT-BACKED RUST FIXTURES NO LONGER RACE ACROSS MODULES** (#457). The
+`graph_revision` and committed-tape tests now share one crate-wide Git lock
+instead of independently serializing only part of the fixture work. Every
+fixture repository has a process-, time- and sequence-unique directory with
+drop cleanup, and a failed Git command preserves its status, stdout and stderr.
+Stress testing identified the actual transient as Windows status `0xc0000142`
+(DLL initialization failed), so Git output calls retry that loader failure only.
+
 **THE TAPE PARSER NOW HAS METAMORPHIC ORACLES** (#454, part of #387).
 Representative current ARGLOG and timestamp-prefixed ARGEVT input must produce
 byte-identical parsed tapes and briefs on replay. A whole-line prefix must keep

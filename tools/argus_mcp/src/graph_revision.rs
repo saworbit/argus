@@ -124,12 +124,9 @@ fn digest(bytes: &[u8]) -> String {
 }
 
 fn git(root: &Path, args: &[&str]) -> Option<Vec<u8>> {
-    let out = Command::new("git")
-        .arg("-C")
-        .arg(root)
-        .args(args)
-        .output()
-        .ok()?;
+    let mut command = Command::new("git");
+    command.arg("-C").arg(root).args(args);
+    let out = crate::child_process::output_with_windows_loader_retry(&mut command).ok()?;
     out.status.success().then_some(out.stdout)
 }
 
@@ -655,11 +652,8 @@ pub fn diff(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::{git_test_lock, run_git, TestDir};
     use std::fs;
-    use std::sync::atomic::{AtomicU64, Ordering};
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    static NEXT_REPO: AtomicU64 = AtomicU64::new(0);
 
     fn graph(kind: &str, extra: bool) -> String {
         let typed = if kind == "jump" {
@@ -688,63 +682,47 @@ mod tests {
         }
     }
 
-    fn run(root: &Path, args: &[&str]) {
-        let status = Command::new("git")
-            .arg("-C")
-            .arg(root)
-            .args(args)
-            .status()
-            .unwrap();
-        assert!(status.success(), "git {args:?}");
-    }
-
-    fn repo() -> (std::path::PathBuf, Config) {
-        let stamp = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_nanos();
-        let sequence = NEXT_REPO.fetch_add(1, Ordering::Relaxed);
-        let root = std::env::temp_dir().join(format!(
-            "argus-graph-revision-{}-{stamp}-{sequence}",
-            std::process::id(),
-        ));
-        fs::create_dir_all(root.join("src")).unwrap();
-        run(&root, &["init", "-q"]);
-        run(&root, &["config", "user.name", "Argus test"]);
-        run(
-            &root,
+    fn repo() -> (TestDir, Config) {
+        let root = TestDir::new("graph-revision").unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        run_git(root.path(), &["init", "-q"]).unwrap();
+        run_git(root.path(), &["config", "user.name", "Argus test"]).unwrap();
+        run_git(
+            root.path(),
             &["config", "user.email", "argus-test@example.invalid"],
-        );
-        let path = root.join("src/argus_nav_dm4.qc.json");
+        )
+        .unwrap();
+        let path = root.path().join("src/argus_nav_dm4.qc.json");
         fs::write(&path, graph("walk", false)).unwrap();
-        run(&root, &["add", "."]);
-        run(&root, &["commit", "-q", "-m", "first"]);
+        run_git(root.path(), &["add", "."]).unwrap();
+        run_git(root.path(), &["commit", "-q", "-m", "first"]).unwrap();
         fs::write(&path, graph("jump", true)).unwrap();
         fs::write(
-            root.join("src/argus_nav_dm4.probe.json"),
+            root.path().join("src/argus_nav_dm4.probe.json"),
             r#"{"failed":[[[0,0,20],[1,0,0]]],"passed":[]}"#,
         )
         .unwrap();
-        run(&root, &["add", "."]);
-        run(&root, &["commit", "-q", "-m", "second"]);
-        let c = cfg(&root);
+        run_git(root.path(), &["add", "."]).unwrap();
+        run_git(root.path(), &["commit", "-q", "-m", "second"]).unwrap();
+        let c = cfg(root.path());
         (root, c)
     }
 
     #[test]
     fn listed_revision_ids_round_trip() {
-        let (root, cfg) = repo();
+        let _gate = git_test_lock();
+        let (_root, cfg) = repo();
         let revisions = list_revisions(&cfg, "dm4").unwrap();
         assert_eq!(revisions.len(), 2);
         for summary in revisions {
             let loaded = get_revision(&cfg, &summary.id).unwrap();
             assert_eq!(loaded.summary.graph_md5, summary.graph_md5);
         }
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
     fn shipped_dm4_revision_round_trips_if_present() {
+        let _gate = git_test_lock();
         let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         if !root.join("src/argus_nav_dm4.qc.json").exists() {
             return;
@@ -759,7 +737,8 @@ mod tests {
 
     #[test]
     fn diff_only_names_links_from_either_json_and_types_changes() {
-        let (root, cfg) = repo();
+        let _gate = git_test_lock();
+        let (_root, cfg) = repo();
         let revisions = list_revisions(&cfg, "dm4").unwrap();
         let newest = &revisions[0].id;
         let oldest = &revisions[1].id;
@@ -778,12 +757,12 @@ mod tests {
         assert!(got.added.iter().all(|l| known.contains(&l.id)));
         assert!(got.removed.iter().all(|l| known.contains(&l.id)));
         assert!(got.type_changed.iter().all(|l| known.contains(&l.id)));
-        fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
     fn link_absent_from_both_revisions_fails_closed() {
-        let (root, cfg) = repo();
+        let _gate = git_test_lock();
+        let (_root, cfg) = repo();
         let revisions = list_revisions(&cfg, "dm4").unwrap();
         let err = diff(
             &cfg,
@@ -793,6 +772,5 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.contains("absent from both"));
-        fs::remove_dir_all(root).unwrap();
     }
 }

@@ -3,6 +3,7 @@ pub mod backup;
 pub mod bsp;
 pub mod campaign;
 pub mod cartograph;
+pub(crate) mod child_process;
 pub mod compile;
 pub mod config;
 pub mod corpus;
@@ -35,3 +36,6 @@ pub mod soak;
 pub mod stale;
 pub mod stats;
 pub mod tape_view;
+
+#[cfg(test)]
+pub(crate) mod test_support;

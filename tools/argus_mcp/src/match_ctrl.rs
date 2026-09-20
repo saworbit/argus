@@ -864,13 +864,13 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
     if !tape.is_file() {
         return None;
     }
-    let out = std::process::Command::new("git")
+    let mut command = std::process::Command::new("git");
+    command
         .arg("-C")
         .arg(&cfg.root)
         .args(["ls-files", "--error-unmatch", "--"])
-        .arg(&tape)
-        .output()
-        .ok()?;
+        .arg(&tape);
+    let out = crate::child_process::output_with_windows_loader_retry(&mut command).ok()?;
     if !out.status.success() {
         return None;
     }
@@ -883,6 +883,7 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::{take_budgeted, TAIL_BUDGET_BYTES, TAIL_MAX_LINES};
+    use crate::test_support::{git_test_lock, run_git, TestDir};
 
     /// A poll has a CEILING on what it costs, whatever the match is
     /// doing. Eighty long lines were six times eighty short ones,
@@ -950,21 +951,15 @@ mod tests {
 
     use super::*;
 
-    /// Serialises the two tests that build a throwaway git repo.
-    /// Run in parallel on Windows they contend badly enough to take
-    /// four times as long and to fail a `git add` outright, which is
-    /// the same class as ENGINE_TEST_LOCK next door.
-    static GIT_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-    fn tmp_cfg(tag: &str) -> crate::config::Config {
+    fn tmp_cfg(tag: &str) -> (TestDir, crate::config::Config) {
         tmp_cfg_runs(tag, "runs")
     }
 
-    fn tmp_cfg_runs(tag: &str, runs: &str) -> crate::config::Config {
-        let tmp = std::env::temp_dir().join(format!("argus-{tag}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&tmp);
+    fn tmp_cfg_runs(tag: &str, runs: &str) -> (TestDir, crate::config::Config) {
+        let guard = TestDir::new(tag).unwrap();
+        let tmp = guard.path().to_path_buf();
         std::fs::create_dir_all(tmp.join(runs)).unwrap();
-        crate::config::Config {
+        let cfg = crate::config::Config {
             root: tmp.clone(),
             src: tmp.join("src"),
             progs: tmp.join("lq1/progs.dat"),
@@ -975,31 +970,8 @@ mod tests {
             game: "id1".into(),
             maps: tmp.join("maps"),
             runs: tmp.join(runs),
-        }
-    }
-
-    fn git(root: &std::path::Path, args: &[&str]) -> bool {
-        match std::process::Command::new("git")
-            .arg("-C")
-            .arg(root)
-            .args(args)
-            .output()
-        {
-            Ok(o) if o.status.success() => true,
-            Ok(o) => {
-                eprintln!(
-                    "git {args:?} in {}: {}{}",
-                    root.display(),
-                    String::from_utf8_lossy(&o.stdout),
-                    String::from_utf8_lossy(&o.stderr)
-                );
-                false
-            }
-            Err(e) => {
-                eprintln!("git {args:?}: {e}");
-                false
-            }
-        }
+        };
+        (guard, cfg)
     }
 
     // #328: match_run wrote over a committed tape in place, twice in
@@ -1007,13 +979,14 @@ mod tests {
     // committed tape is refused; an uncommitted one is still scratch.
     #[test]
     fn a_committed_tape_is_refused_and_a_scratch_one_is_not() {
-        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-        let cfg = tmp_cfg("committed-tape");
-        if !git(&cfg.root, &["init", "-q"]) {
+        let _gate = git_test_lock();
+        let (_tmp, cfg) = tmp_cfg("committed-tape");
+        if let Err(error) = run_git(&cfg.root, &["init", "-q"]) {
+            eprintln!("{error}");
             return; // no git on this host, and the guard fails open
         }
-        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
-        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        run_git(&cfg.root, &["config", "user.email", "t@example.com"]).unwrap();
+        run_git(&cfg.root, &["config", "user.name", "t"]).unwrap();
         std::fs::write(
             cfg.runs.join("ab_dm2_doortype2.log"),
             "tape
@@ -1026,8 +999,8 @@ mod tests {
 ",
         )
         .unwrap();
-        assert!(git(&cfg.root, &["add", "runs/ab_dm2_doortype2.log"]));
-        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+        run_git(&cfg.root, &["add", "runs/ab_dm2_doortype2.log"]).unwrap();
+        run_git(&cfg.root, &["commit", "-q", "-m", "tape"]).unwrap();
 
         let refused =
             committed_tape(&cfg, "ab_dm2_doortype2").expect("a committed tape must be refused");
@@ -1043,7 +1016,6 @@ mod tests {
             None,
             "no file, nothing to write over"
         );
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // the helper is only worth having if start() actually asks it, and
@@ -1055,21 +1027,22 @@ mod tests {
     // mutate repository state between the guard's checks.
     #[allow(clippy::await_holding_lock)]
     async fn start_refuses_before_it_spawns_anything() {
-        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-        let cfg = tmp_cfg("start-committed-tape");
-        if !git(&cfg.root, &["init", "-q"]) {
+        let _gate = git_test_lock();
+        let (_tmp, cfg) = tmp_cfg("start-committed-tape");
+        if let Err(error) = run_git(&cfg.root, &["init", "-q"]) {
+            eprintln!("{error}");
             return;
         }
-        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
-        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        run_git(&cfg.root, &["config", "user.email", "t@example.com"]).unwrap();
+        run_git(&cfg.root, &["config", "user.name", "t"]).unwrap();
         std::fs::write(
             cfg.runs.join("ab_dm4_evidence.log"),
             "tape
 ",
         )
         .unwrap();
-        assert!(git(&cfg.root, &["add", "runs/ab_dm4_evidence.log"]));
-        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+        run_git(&cfg.root, &["add", "runs/ab_dm4_evidence.log"]).unwrap();
+        run_git(&cfg.root, &["commit", "-q", "-m", "tape"]).unwrap();
 
         let mut ctrl = MatchCtrl::default();
         let err = ctrl
@@ -1123,7 +1096,6 @@ mod tests {
             .await
             .expect_err("the exemption must not carry over");
         assert!(err.contains("committed"), "{err}");
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // ARGUS_RUNS can point anywhere, so the tape is not always at
@@ -1131,13 +1103,14 @@ mod tests {
     // about the wrong file, or about nothing.
     #[test]
     fn the_guard_asks_about_the_tape_it_would_write() {
-        let cfg = tmp_cfg_runs("tape-elsewhere", "tapes");
-        if !git(&cfg.root, &["init", "-q"]) {
+        let _gate = git_test_lock();
+        let (_tmp, cfg) = tmp_cfg_runs("tape-elsewhere", "tapes");
+        if let Err(error) = run_git(&cfg.root, &["init", "-q"]) {
+            eprintln!("{error}");
             return;
         }
-        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
-        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        run_git(&cfg.root, &["config", "user.email", "t@example.com"]).unwrap();
+        run_git(&cfg.root, &["config", "user.name", "t"]).unwrap();
         // the real tape, in the configured runs dir
         std::fs::write(
             cfg.runs.join("ab_dm4_moved.log"),
@@ -1153,20 +1126,19 @@ mod tests {
 ",
         )
         .unwrap();
-        assert!(git(&cfg.root, &["add", "tapes/ab_dm4_moved.log"]));
-        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+        run_git(&cfg.root, &["add", "tapes/ab_dm4_moved.log"]).unwrap();
+        run_git(&cfg.root, &["commit", "-q", "-m", "tape"]).unwrap();
 
         let refused = committed_tape(&cfg, "ab_dm4_moved")
             .expect("the committed tape is the one in ARGUS_RUNS");
         assert!(refused.contains("ab_dm4_moved"), "{refused}");
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // the guard must never wedge the lab: outside a checkout there is
     // nothing to ask git about, so the match proceeds
     #[test]
     fn the_guard_fails_open_outside_a_checkout() {
-        let cfg = tmp_cfg("tape-no-repo");
+        let (_tmp, cfg) = tmp_cfg("tape-no-repo");
         std::fs::write(
             cfg.runs.join("loose.log"),
             "tape
@@ -1174,7 +1146,6 @@ mod tests {
         )
         .unwrap();
         assert_eq!(committed_tape(&cfg, "loose"), None);
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // #212: shutdown and match_stop must be able to reach the engine
