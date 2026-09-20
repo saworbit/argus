@@ -1137,6 +1137,12 @@ All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
 `ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
 runner has had a separate compatibility pass.
 
+Every advertised MCP tool carries explicit safety hints. Inspection and
+analysis tools are read-only and idempotent; tools that can write, compile,
+install, launch or control a match are conservatively destructive and
+non-idempotent. All tools operate inside the configured local lab rather than
+an open external world.
+
 Parser, config, cartographer, nav-graph BFS, QC search/calls, session,
 resources, project view, and A/B tests do not need Quake. A mini BSP29
 is synthesised in-process.
