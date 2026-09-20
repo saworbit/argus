@@ -11,14 +11,23 @@ Captured external spec and triage: `docs/mcp_quake_dev_spec.md`.
 
 ```
 cargo test --manifest-path tools/argus_mcp/Cargo.toml
-cargo build --release --manifest-path tools/argus_mcp/Cargo.toml
+cargo install --locked --path tools/argus_mcp --root tools/argus_mcp/install
 ```
 
-Binary: `tools/argus_mcp/target/release/argus-mcp` (`.exe` on
-Windows). Point the client at the release binary so startup is not a
-cargo build. Restart the client after every rebuild. The running
-process locks the exe on Windows (`Access is denied` on
-`argus-mcp.exe`). Do not commit `target/`.
+Binary: `tools/argus_mcp/install/bin/argus-mcp` (`.exe` on Windows).
+Point the client at this installed binary so startup is not a cargo build and
+`cargo clean` cannot delete the configured server. Rerun the install command to
+update it, then restart the client.
+
+The running process locks the exe on Windows. To build an update without
+stopping the client, stage it instead:
+
+```
+cargo build --release --manifest-path tools/argus_mcp/Cargo.toml --target-dir tools/argus_mcp/target-stage
+```
+
+On the next client restart, the installed binary uses `ARGUS_ROOT` to find the
+stage and swaps it into place. Do not commit `target*/` or `install/`.
 
 ## Human deploy wizard
 
@@ -1001,7 +1010,7 @@ Grok (`.grok/config.toml`):
 
 ```toml
 [mcp_servers.argus]
-command = "C:/path/to/argus-mcp.exe"
+command = "C:/argus/tools/argus_mcp/install/bin/argus-mcp.exe"
 startup_timeout_sec = 15
 tool_timeout_sec = 700
 tool_timeouts = { match_run = 700, compile_qc = 120, nav_generate = 180, cartograph = 60, experiment = 400, probe = 180, bot_simulate_match = 400 }
@@ -1010,7 +1019,7 @@ tool_timeouts = { match_run = 700, compile_qc = 120, nav_generate = 180, cartogr
 Set the five `ARGUS_*` keys in the env block or in
 `tools/argus_mcp.toml`. `match_run` at 600 s plus harvest needs a
 client tool timeout above that (700 s). `experiment` at 185 s plus
-compile wants about 400 s. Restart the MCP client after rebuilding
+compile wants about 400 s. Restart the MCP client after installing or staging
 the binary.
 
 Claude-compatible (`.mcp.json`) uses the same command and an `env`

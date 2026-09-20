@@ -9,6 +9,10 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**CARGO CLEAN NO LONGER REMOVES THE CONFIGURED LAB SERVER** (#429). The client
+example now uses Cargo's installed binary outside `target`, while locked Windows
+updates keep using the existing staged swap.
+
 **THE LAB CRATE IS BACK UNDER RUSTFMT** (#424). Existing Rust sources are
 formatted consistently, and CI now rejects new formatting drift.
 
