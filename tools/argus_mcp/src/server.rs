@@ -26,13 +26,15 @@ use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolResult, CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock,
     Implementation, JsonObject, ListResourceTemplatesResult, ListResourcesResult,
-    PaginatedRequestParams, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
-    ReadResourceResult, Reference, Role, ServerCapabilities, ServerInfo, ToolAnnotations,
+    PaginatedRequestParams, ProgressNotificationParam, PromptMessage, ReadResourceRequestParams,
+    ReadResourceResponse, ReadResourceResult, Reference, RequestMetaObject, Role,
+    ServerCapabilities, ServerInfo, ToolAnnotations,
 };
 use rmcp::service::{RequestContext, RoleServer};
 use rmcp::ErrorData as McpError;
 use rmcp::{
-    prompt, prompt_handler, prompt_router, schemars, tool, tool_handler, tool_router, ServerHandler,
+    prompt, prompt_handler, prompt_router, schemars, tool, tool_handler, tool_router, Peer,
+    ServerHandler,
 };
 use serde::Deserialize;
 use serde::Serialize;
@@ -111,6 +113,52 @@ pub struct Argus {
     pub run_gate: Arc<Mutex<()>>,
 }
 
+#[derive(Clone)]
+struct ProgressReporter {
+    token: Option<rmcp::model::ProgressToken>,
+    peer: Peer<RoleServer>,
+}
+
+impl ProgressReporter {
+    fn new(meta: RequestMetaObject, peer: Peer<RoleServer>) -> Self {
+        Self {
+            token: meta.get_progress_token(),
+            peer,
+        }
+    }
+
+    async fn send(&self, progress: f64, total: f64, message: impl Into<String>) {
+        let Some(notification) =
+            progress_notification(self.token.as_ref(), progress, total, message.into())
+        else {
+            return;
+        };
+        let _ = self.peer.notify_progress(notification).await;
+    }
+}
+
+fn progress_notification(
+    token: Option<&rmcp::model::ProgressToken>,
+    progress: f64,
+    total: f64,
+    message: String,
+) -> Option<ProgressNotificationParam> {
+    token.map(|token| {
+        ProgressNotificationParam::new(token.clone(), progress)
+            .with_total(total)
+            .with_message(message)
+    })
+}
+
+#[derive(Clone)]
+struct MatchProgress {
+    reporter: ProgressReporter,
+    start: f64,
+    span: f64,
+    total: f64,
+    label: String,
+}
+
 impl Argus {
     pub fn new() -> Self {
         // restarts are the norm here (every staged binary needs one):
@@ -166,14 +214,21 @@ impl Argus {
         slots: Option<u32>,
         skill: Option<u32>,
         coop: Option<bool>,
+        progress: Option<MatchProgress>,
     ) -> Result<crate::match_ctrl::MatchRunResult, String> {
         let _one_at_a_time = self.run_gate.lock().await;
+        if let Some(p) = &progress {
+            p.reporter
+                .send(p.start, p.total, format!("starting {}", p.label))
+                .await;
+        }
         {
             let mut g = self.matches.lock().await;
             g.begin(cfg, map, duration_sec, run_name, slots, skill, coop)
                 .await?;
         }
         let limit = duration_sec as u64;
+        let mut last_reported = u64::MAX;
         loop {
             let (running, elapsed) = {
                 let mut g = self.matches.lock().await;
@@ -182,10 +237,34 @@ impl Argus {
             if !running || elapsed >= limit || crate::match_ctrl::live_cancelled() {
                 break;
             }
+            if elapsed != last_reported {
+                if let Some(p) = &progress {
+                    let fraction = if limit == 0 {
+                        1.0
+                    } else {
+                        (elapsed as f64 / limit as f64).clamp(0.0, 1.0)
+                    };
+                    p.reporter
+                        .send(
+                            p.start + p.span * fraction,
+                            p.total,
+                            format!("{}: {elapsed}/{limit}s", p.label),
+                        )
+                        .await;
+                }
+                last_reported = elapsed;
+            }
             tokio::time::sleep(std::time::Duration::from_millis(400)).await;
         }
         let mut g = self.matches.lock().await;
-        g.finish(cfg, map).await
+        let result = g.finish(cfg, map).await;
+        drop(g);
+        if let Some(p) = &progress {
+            p.reporter
+                .send(p.start + p.span, p.total, format!("finished {}", p.label))
+                .await;
+        }
+        result
     }
 
     pub async fn shutdown(&self) {
@@ -923,6 +1002,7 @@ impl Argus {
                 None,
                 None,
                 None,
+                None,
             )
             .await
         {
@@ -1109,6 +1189,8 @@ impl Argus {
     async fn match_run(
         &self,
         Parameters(args): Parameters<MatchRunArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         if !(DURATION_MIN..=DURATION_MAX).contains(&args.duration_sec) {
             return Err(McpError::invalid_params(
@@ -1120,6 +1202,7 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        let progress = ProgressReporter::new(meta, peer);
         match self
             .drive_match(
                 &cfg,
@@ -1129,6 +1212,13 @@ impl Argus {
                 args.dedicated_slots,
                 args.skill,
                 None,
+                Some(MatchProgress {
+                    reporter: progress,
+                    start: 0.0,
+                    span: 1.0,
+                    total: 1.0,
+                    label: format!("{} match", args.map),
+                }),
             )
             .await
         {
@@ -2021,6 +2111,8 @@ impl Argus {
     async fn experiment(
         &self,
         Parameters(args): Parameters<ExperimentArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(30);
         if !(10..=185).contains(&dur) {
@@ -2038,8 +2130,14 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        let progress = ProgressReporter::new(meta, peer);
+        let repeats = args.repeats.unwrap_or(3).clamp(1, 5);
+        let compile_units = u32::from(args.compile.unwrap_or(true));
+        let total = f64::from(compile_units + repeats + 1);
+        progress.send(0.0, total, "preparing experiment").await;
         let mut compile_result = None;
         if args.compile.unwrap_or(true) {
+            progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
             let compiled = match tokio::time::timeout(
                 Duration::from_secs(90),
@@ -2071,6 +2169,7 @@ impl Argus {
                 }));
             }
             compile_result = Some(compiled);
+            progress.send(1.0, total, "compile complete").await;
         }
         let run_name = args
             .run_name
@@ -2083,7 +2182,6 @@ impl Argus {
                 let _ = g.stop(Duration::from_secs(3)).await;
             }
         }
-        let repeats = args.repeats.unwrap_or(3).clamp(1, 5);
         let mut runs = Vec::new();
         for i in 0..repeats {
             // one tape per name, so every tape in the band survives on
@@ -2093,8 +2191,24 @@ impl Argus {
             } else {
                 format!("{run_name}{}", i + 1)
             };
+            let start = f64::from(compile_units + i);
             match self
-                .drive_match(&cfg, &args.map, dur, Some(&name), None, args.skill, None)
+                .drive_match(
+                    &cfg,
+                    &args.map,
+                    dur,
+                    Some(&name),
+                    None,
+                    args.skill,
+                    None,
+                    Some(MatchProgress {
+                        reporter: progress.clone(),
+                        start,
+                        span: 1.0,
+                        total,
+                        label: format!("{} tape {}/{}", args.map, i + 1, repeats),
+                    }),
+                )
                 .await
             {
                 Ok(r) => runs.push(r),
@@ -2108,6 +2222,13 @@ impl Argus {
         }
         let ran = runs.last().cloned().expect("at least one match ran");
         let logs: Vec<String> = runs.iter().map(|r| r.log_path.clone()).collect();
+        progress
+            .send(
+                f64::from(compile_units + repeats),
+                total,
+                "comparing experiment tapes",
+            )
+            .await;
         let compare = match args.baseline.as_deref() {
             // an explicit baseline is still one named tape against the
             // candidates; "baseline" resolves the map's whole band
@@ -2141,6 +2262,7 @@ impl Argus {
             });
             Self::persist_session(&s);
         }
+        progress.send(total, total, "experiment complete").await;
         if want_full(args.detail.as_deref()) {
             return json_ok(&serde_json::json!({
                 "ok": ran.ok,
@@ -2173,6 +2295,8 @@ impl Argus {
     async fn campaign_experiment(
         &self,
         Parameters(args): Parameters<CampaignExperimentArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(60);
         if !(10..=300).contains(&dur) {
@@ -2197,8 +2321,13 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        let progress = ProgressReporter::new(meta, peer);
+        let compile_units = u32::from(args.compile.unwrap_or(true));
+        let total = f64::from(compile_units + 2);
+        progress.send(0.0, total, "preparing campaign").await;
         let mut compile_result = None;
         if args.compile.unwrap_or(true) {
+            progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
             let compiled = match tokio::time::timeout(
                 Duration::from_secs(90),
@@ -2218,6 +2347,7 @@ impl Argus {
                 }));
             }
             compile_result = Some(compiled);
+            progress.send(1.0, total, "compile complete").await;
         }
         let run_name = args
             .run_name
@@ -2257,6 +2387,13 @@ impl Argus {
                 None,
                 args.skill,
                 Some(true),
+                Some(MatchProgress {
+                    reporter: progress.clone(),
+                    start: f64::from(compile_units),
+                    span: 1.0,
+                    total,
+                    label: format!("{} campaign", args.map),
+                }),
             )
             .await
         {
@@ -2279,6 +2416,13 @@ impl Argus {
             Ok(c) => c,
             Err(e) => return tool_err(format!("failed to read log {}: {}", ran.log_path, e)),
         };
+        progress
+            .send(
+                f64::from(compile_units + 1),
+                total,
+                "evaluating campaign log",
+            )
+            .await;
         let report = crate::campaign::evaluate_campaign_log(
             &log_content,
             &args.map,
@@ -2287,6 +2431,7 @@ impl Argus {
             ran.elapsed_sec,
             crate::intel::hull0_for_map(&cfg, &args.map).as_ref(),
         );
+        progress.send(total, total, "campaign complete").await;
         json_ok(&serde_json::json!({
             "ok": report.ok,
             "verdict": report.verdict,
@@ -2308,6 +2453,8 @@ impl Argus {
     async fn matrix_experiment(
         &self,
         Parameters(args): Parameters<MatrixArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(20);
         if !(10..=60).contains(&dur) {
@@ -2332,8 +2479,13 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        let progress = ProgressReporter::new(meta, peer);
+        let compile_units = usize::from(args.compile.unwrap_or(true));
+        let total = (compile_units + maps.len() + 1) as f64;
+        progress.send(0.0, total, "preparing map matrix").await;
         let mut compile_ok = None;
         if args.compile.unwrap_or(true) {
+            progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
             let compiled = match tokio::time::timeout(
                 Duration::from_secs(90),
@@ -2352,9 +2504,10 @@ impl Argus {
                 }));
             }
             compile_ok = Some(true);
+            progress.send(1.0, total, "compile complete").await;
         }
         let mut results = Vec::new();
-        for map in &maps {
+        for (index, map) in maps.iter().enumerate() {
             {
                 let mut g = self.matches.lock().await;
                 g.reap();
@@ -2377,6 +2530,13 @@ impl Argus {
                     None,
                     args.skill,
                     None,
+                    Some(MatchProgress {
+                        reporter: progress.clone(),
+                        start: (compile_units + index) as f64,
+                        span: 1.0,
+                        total,
+                        label: format!("{map} matrix match"),
+                    }),
                 )
                 .await;
             match ran {
@@ -2399,6 +2559,10 @@ impl Argus {
                 }
             }
         }
+        progress
+            .send(total - 1.0, total, "summarizing map matrix")
+            .await;
+        progress.send(total, total, "map matrix complete").await;
         json_ok(&serde_json::json!({
             "ok": results.iter().all(|r| r.get("ok").and_then(|v| v.as_bool()).unwrap_or(false)),
             "compile_ok": compile_ok,
@@ -2453,6 +2617,7 @@ impl Argus {
                 Some(&format!("probe_{}", args.map)),
                 None,
                 args.skill,
+                None,
                 None,
             )
             .await
@@ -2814,6 +2979,32 @@ mod tests {
             ContentBlock::Text(text) => &text.text,
             other => panic!("expected text prompt, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn progress_notifications_are_opt_in_and_keep_stage_values() {
+        assert!(progress_notification(None, 1.0, 3.0, "compile".into()).is_none());
+
+        let token = rmcp::model::ProgressToken(rmcp::model::NumberOrString::String("run-7".into()));
+        let stages = [
+            (0.0, "compile"),
+            (1.0, "match"),
+            (2.5, "analyze"),
+            (3.0, "done"),
+        ];
+        let notifications: Vec<_> = stages
+            .iter()
+            .map(|(value, message)| {
+                progress_notification(Some(&token), *value, 3.0, (*message).into()).unwrap()
+            })
+            .collect();
+
+        assert!(notifications
+            .windows(2)
+            .all(|pair| pair[0].progress <= pair[1].progress));
+        assert!(notifications.iter().all(|item| item.total == Some(3.0)));
+        assert_eq!(notifications[2].message.as_deref(), Some("analyze"));
+        assert_eq!(notifications[3].progress_token, token);
     }
 
     fn result_text(result: &CallToolResult) -> &str {

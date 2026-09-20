@@ -592,6 +592,13 @@ and carries the exact CSV text. The text channel is unchanged for clients that
 do not consume structured output, and tool-level failures are not wrapped as
 successful data.
 
+Long-running `match_run`, `experiment`, `campaign_experiment`, and
+`matrix_experiment` calls honor the MCP request progress token when a client
+supplies one. Notifications name the compile, match, and analysis stage;
+active matches advance by elapsed seconds against the requested duration.
+Progress delivery is best-effort and never changes the synchronous result.
+Clients without progress support keep the existing call and polling behavior.
+
 `compare_runs` is unscaled: it expects two tapes of similar length.
 `experiment` duration-scales the baseline counts to the candidate
 duration so a 30 s probe is not judged as an engagement collapse
