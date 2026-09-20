@@ -3127,7 +3127,7 @@ fn cluster_hotspots(
             }
         })
         .collect();
-    out.sort_by(|a, b| b.count.cmp(&a.count));
+    out.sort_by_key(|spot| std::cmp::Reverse(spot.count));
     out.truncate(12);
     out
 }
@@ -4001,7 +4001,7 @@ ARGEVT Reap spawned
             ));
         }
         let tape = parse_tape(&log);
-        let items = vec![
+        let items = [
             ("weapon_rocketlauncher".to_string(), [0.0f32, 0.0, 24.0]),
             // two visits only: below the 3-visit floor, no row
             ("item_armor2".to_string(), [500.0f32, 0.0, 24.0]),

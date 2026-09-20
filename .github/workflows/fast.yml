@@ -67,9 +67,12 @@ jobs:
             ~/.cargo/registry
             ~/.cargo/git
             tools/argus_mcp/target
-          key: cargo-${{ runner.os }}-${{ hashFiles('tools/argus_mcp/Cargo.lock') }}
+          key: cargo-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'tools/argus_mcp/Cargo.lock') }}
       - name: Check Rust formatting
         run: cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
+
+      - name: Run strict Clippy
+        run: cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
 
       - name: Run the lab suite
         # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;

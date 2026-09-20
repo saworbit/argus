@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**STRICT CLIPPY IS NOW A REAL LAB PREFLIGHT** (#446). The existing Rust lint
+backlog is clear, the repository pins Rust 1.95 with Clippy and rustfmt, and the
+fast workflow rejects warnings across every library, binary and test target.
+Intentional allowances stay local to match plumbing and serialized process
+tests, with the reason beside each one. The full parallel preflight also found
+and fixed graph-revision fixtures colliding under Windows' coarse clock.
+
 **THE MILL NOW SPEAKS IN GRAPH REVISIONS AND PROBE VERDICTS** (#419). Nav
 JSON revisions have stable content-hash ids, typed links, generator inputs and
 Git provenance through MCP resources. The read-only `mill` tool compares two

@@ -83,25 +83,22 @@ pub fn evaluate_campaign_log(
                 checkpoints.push("chthon_defeated".into());
             }
         }
-        if line.contains("checkpoint gold_key") {
-            if !checkpoints.contains(&"gold_key".to_string()) {
-                checkpoints.push("gold_key".into());
-            }
+        if line.contains("checkpoint gold_key") && !checkpoints.contains(&"gold_key".to_string()) {
+            checkpoints.push("gold_key".into());
         }
-        if line.contains("checkpoint silver_key") {
-            if !checkpoints.contains(&"silver_key".to_string()) {
-                checkpoints.push("silver_key".into());
-            }
+        if line.contains("checkpoint silver_key")
+            && !checkpoints.contains(&"silver_key".to_string())
+        {
+            checkpoints.push("silver_key".into());
         }
-        if line.contains("checkpoint silver_door") {
-            if !checkpoints.contains(&"silver_door".to_string()) {
-                checkpoints.push("silver_door".into());
-            }
+        if line.contains("checkpoint silver_door")
+            && !checkpoints.contains(&"silver_door".to_string())
+        {
+            checkpoints.push("silver_door".into());
         }
-        if line.contains("checkpoint gold_door") {
-            if !checkpoints.contains(&"gold_door".to_string()) {
-                checkpoints.push("gold_door".into());
-            }
+        if line.contains("checkpoint gold_door") && !checkpoints.contains(&"gold_door".to_string())
+        {
+            checkpoints.push("gold_door".into());
         }
     }
 

@@ -16,7 +16,7 @@
 
 use serde::Serialize;
 use std::collections::BTreeMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use crate::config::Config;
 
@@ -947,7 +947,7 @@ fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight>
 /// Write the full track vectors (positions, angles, POV aim) beside
 /// the demo as `<stem>.tracks.json` for offline analysis - the
 /// sprint run-up study's input format.
-pub fn export_tracks(path: &PathBuf, demo: &Demo) -> Result<PathBuf, String> {
+pub fn export_tracks(path: &Path, demo: &Demo) -> Result<PathBuf, String> {
     #[derive(Serialize)]
     struct Export<'a> {
         file: &'a str,

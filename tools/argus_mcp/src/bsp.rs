@@ -339,10 +339,8 @@ pub fn pak_find(pak: &Path, basename: &str) -> Result<Option<Vec<u8>>, String> {
             .next()
             .unwrap_or(&name)
             .to_ascii_lowercase();
-        if base == want {
-            if ofs + length <= data.len() {
-                found = Some(data[ofs..ofs + length].to_vec());
-            }
+        if base == want && ofs + length <= data.len() {
+            found = Some(data[ofs..ofs + length].to_vec());
         }
         i += 64;
     }

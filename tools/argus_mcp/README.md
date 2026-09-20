@@ -1120,7 +1120,14 @@ matrix_experiment  duration_sec=20
 
 ## Tests
 
-`cargo test --manifest-path tools/argus_mcp/Cargo.toml`
+```text
+cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
+cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path tools/argus_mcp/Cargo.toml
+```
+
+The repository pins Rust 1.95 with the `clippy` and `rustfmt` components, and
+the fast workflow runs all three commands.
 
 Parser, config, cartographer, nav-graph BFS, QC search/calls, session,
 resources, project view, and A/B tests do not need Quake. A mini BSP29
