@@ -1133,6 +1133,12 @@ The repository invariant battery also reads committed Git blob metadata for
 LF-designated text. This catches CRLF blobs written through an API even when a
 checkout has already normalized the worktree copy.
 
+The tape parser has two pure metamorphic oracles. Replaying representative
+current ARGLOG and timestamp-prefixed ARGEVT input must serialize to identical
+tapes and briefs; parsing a whole-line prefix must preserve the map, contain no
+future sample or event, and never exceed the full brief's additive totals. The
+fixtures need no engine, BSP or machine-local run.
+
 All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
 `ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
 runner has had a separate compatibility pass.
