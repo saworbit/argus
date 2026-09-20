@@ -1139,6 +1139,11 @@ tapes and briefs; parsing a whole-line prefix must preserve the map, contain no
 future sample or event, and never exceed the full brief's additive totals. The
 fixtures need no engine, BSP or machine-local run.
 
+The parsed navigation graph has a per-node metamorphic oracle for every route
+edge family. Adding a link may only enlarge each source node's reachable set;
+removing it may only shrink that set. A separate equal-aggregate fixture keeps
+the test from collapsing those sets into one blind reach percentage.
+
 Git-backed Rust fixtures share one crate-wide lock. Their temporary repositories
 are collision-proof and self-cleaning, and a failed fixture command reports Git
 status, stdout and stderr rather than only an assertion label. Git output calls

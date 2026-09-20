@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**NAV LINK EDITS NOW HAVE A PER-NODE METAMORPHIC ORACLE** (#458, part of
+#387). Adding any parsed walk, jump, teleport, rocket, lift, swim, door, train
+or sprint link must preserve every source node's reachable destination set;
+removing one must not create a destination. An equal-aggregate counterexample
+guards the reason for comparing sets instead of one reach percentage.
+
 **GIT-BACKED RUST FIXTURES NO LONGER RACE ACROSS MODULES** (#457). The
 `graph_revision` and committed-tape tests now share one crate-wide Git lock
 instead of independently serializing only part of the fixture work. Every
