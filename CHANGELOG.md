@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**BOTS REMEMBER ONE WASTED CROSSING INTO THE NEXT LIFE** (#418). A death on a
+long routed item run opens a short next-life refusal window. A nearby fight or
+materially nearer live stack can keep the bot local, and `ARGEVT lifeveto`
+records the decision once. Reaching the item, direct pickups, and expired
+memories do not block later goals.
+
 **CI NOW RUNS THE CURRENT MCP CLI TEST INSTEAD OF SKIPPING IT** (#433).
 The lab job builds the checkout's `argus-mcp` binary before the Python CLI
 suite, and that suite fails in CI if the source binary is missing. The stable

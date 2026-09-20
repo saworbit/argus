@@ -78,6 +78,16 @@ class TestToolsCLI(unittest.TestCase):
         res_none = self.run_tool("argus_review.py")
         self.assertEqual(res_none.returncode, 0)
 
+    def test_python_tape_readers_share_the_closed_event_vocabulary(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_longi
+        import argus_review
+
+        for verb in ("coverroute", "lifeveto"):
+            line = f"ARGEVT Joe Rogan {verb}"
+            self.assertEqual(argus_review.EVT.match(line).group(2), verb)
+            self.assertEqual(argus_longi.EVT.match(line).group(2), verb)
+
     def test_argus_review_missing_log(self):
         for cmd in ("summary", "deaths", "rides"):
             res = self.run_tool("argus_review.py", cmd)

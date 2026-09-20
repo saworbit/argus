@@ -821,7 +821,7 @@ fn evt_re() -> &'static Regex {
         // name followed by \S+ would split "Joe Rogan" into name
         // "Joe" and verb "Rogan"
         Regex::new(
-            r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|grab|weapon|plan|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
+            r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
         )
         .expect("evt regex")
     })
@@ -1173,6 +1173,12 @@ ARGEVT Romero spawned\nARGLOG Romero t 60.0 pos '0.0 0.0 24.0' spd 100 yaw 0 mod
             "QC emits ARGEVT verbs the parser cannot read: {:?}. Either add the verb to evt_re's alternation, minding the goal_push|goal_pop|goal ordering so a longer verb is not shadowed, or emit a plain ARGUS line and count it as a pseudo-event.",
             unknown
         );
+    }
+
+    #[test]
+    fn life_veto_marker_is_counted_for_spaced_names() {
+        let tape = parse_tape("ARGEVT Joe Rogan lifeveto\n");
+        assert_eq!(tape.event_counts.get("lifeveto"), Some(&1));
     }
 
     #[test]

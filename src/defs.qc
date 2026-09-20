@@ -808,6 +808,9 @@ float GOAL_RETREAT        = 7;
 // because argus_nav.qc compiles before it and Route_Finish must know
 // whether the errand changed while its flood was in flight.
 .entity ar_goal;
+.entity ar_lastlifegoal;        // routed item this bot died walking toward
+.float  ar_lastlifeuntil;       // short next-life refusal window
+.float  ar_lastlifevetoed;      // marker is emitted once per failed life
 
 .float  ar_goal_kind0, ar_goal_kind1, ar_goal_kind2, ar_goal_kind3;
 .entity ar_goal_subj0, ar_goal_subj1, ar_goal_subj2, ar_goal_subj3;
@@ -1001,6 +1004,7 @@ float(entity item) TryClaim;
 void(entity item) ReleaseClaim;
 float(entity item) Argus_TryClaim;
 void(entity item) Argus_ReleaseClaim;
+float(entity item) Argus_ItemClass;
 vector(entity it) Argus_GoalPoint;
 vector(entity ent) UseStandPoint;
 // Placement clearance, defined in argus.qc beside the catchup warp.
