@@ -1471,6 +1471,69 @@ pub fn compare_band(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Compa
     compare_band_primary(candidates, controls, None)
 }
 
+/// Compare a band after normalising every tape to the candidate median
+/// duration. Experiment candidates are usually 30 seconds while the shipped
+/// control bands are full matches, so raw count metrics are not comparable.
+pub fn compare_band_primary_scaled(
+    candidates: &[MatchBrief],
+    controls: &[MatchBrief],
+    primary: Option<&str>,
+) -> CompareReport {
+    if candidates.is_empty() || controls.is_empty() {
+        return compare_band_primary(candidates, controls, primary);
+    }
+    let candidate_duration = median(
+        &candidates
+            .iter()
+            .map(|b| b.totals.duration_sec)
+            .collect::<Vec<_>>(),
+    );
+    let arms_scaled = candidate_duration > 1.0
+        && candidates
+            .iter()
+            .chain(controls.iter())
+            .any(|b| (b.totals.duration_sec - candidate_duration).abs() > f64::EPSILON);
+    let scaled_candidates: Vec<MatchBrief> = candidates
+        .iter()
+        .cloned()
+        .map(|b| {
+            if candidate_duration > 1.0 {
+                scale_brief_to_duration(b, candidate_duration)
+            } else {
+                b
+            }
+        })
+        .collect();
+    let scaled_controls: Vec<MatchBrief> = controls
+        .iter()
+        .cloned()
+        .map(|b| {
+            if candidate_duration > 1.0 {
+                scale_brief_to_duration(b, candidate_duration)
+            } else {
+                b
+            }
+        })
+        .collect();
+    let mut report = compare_band_primary(&scaled_candidates, &scaled_controls, primary);
+    if arms_scaled {
+        report.scaled = true;
+        report.scale_note = Some(format!(
+            "band counts scaled to the {:.0}s candidate median so the tapes are comparable",
+            candidate_duration
+        ));
+        report.gate_card = format_gate_card(
+            report.b.map.as_deref().or(report.a.map.as_deref()),
+            report.verdict,
+            &report.gates,
+            &report.a.totals,
+            &report.b.totals,
+            true,
+        );
+    }
+    report
+}
+
 /// The same judgement with a PRE-REGISTERED primary metric.
 ///
 /// Four gates each with their own chance to convict is not one test.
@@ -1512,7 +1575,6 @@ pub fn compare_band_primary(
     let rep_ctl = representative(controls);
     let rep_cand = representative(candidates);
     let mut report = compare_gates(rep_ctl, rep_cand);
-
     let n_c = candidates.len() as f64;
     let n_k = controls.len() as f64;
     let shrink = ((1.0 / n_c + 1.0 / n_k) / 2.0).sqrt();
@@ -2211,7 +2273,7 @@ pub fn compare_runs_band(
     if ctrls.is_empty() {
         ctrls.push(brief_run(cfg, "baseline", map.as_deref())?);
     }
-    let mut rep = compare_band_primary(&cands, &ctrls, primary);
+    let mut rep = compare_band_primary_scaled(&cands, &ctrls, primary);
     rep.baseline_run = names.first().cloned();
     Ok(rep)
 }
@@ -3325,6 +3387,76 @@ ARGEVT Reap hazard
         let lite = compare_lite(&scaled);
         assert_eq!(lite.verdict, scaled.verdict);
         assert!(lite.scale_note.is_some());
+    }
+
+    // #435: experiment bands are full matches, while the default candidate
+    // is 30 seconds. Equal per-minute rates must not become a regression.
+    #[test]
+    fn band_scales_full_match_controls_to_the_candidate_duration() {
+        let mut candidate = MatchBrief::empty();
+        candidate.map = Some("dm4".into());
+        candidate.totals.duration_sec = 30.0;
+        candidate.totals.engages = 30;
+        candidate.totals.cover = 100;
+
+        let mut control = MatchBrief::empty();
+        control.map = Some("dm4".into());
+        control.totals.duration_sec = 180.0;
+        control.totals.engages = 180;
+        control.totals.cover = 400;
+
+        let report = compare_band_primary_scaled(
+            &[candidate.clone(), candidate.clone(), candidate],
+            &[control.clone(), control.clone(), control],
+            Some("engagements"),
+        );
+
+        assert_eq!(report.verdict, Verdict::Parity, "{}", report.headline);
+        let engagements = report
+            .band
+            .iter()
+            .find(|g| g.name == "engagements")
+            .unwrap();
+        assert_eq!(engagements.control_median, 30.0);
+        assert_eq!(engagements.candidate_median, 30.0);
+        assert!(report.scaled);
+        assert!(report.scale_note.is_some());
+        assert_eq!(report.a.totals.cover, 400, "coverage must not be scaled");
+        let coverage = report.gates.iter().find(|g| g.name == "coverage").unwrap();
+        assert!(coverage.note.contains("not gated"), "{}", coverage.note);
+    }
+
+    #[test]
+    fn scaled_band_normalises_mixed_candidate_durations() {
+        let candidates: Vec<MatchBrief> = [(30.0, 30), (60.0, 60), (90.0, 90), (120.0, 120)]
+            .into_iter()
+            .map(|(duration, engages)| {
+                let mut brief = MatchBrief::empty();
+                brief.map = Some("dm4".into());
+                brief.totals.duration_sec = duration;
+                brief.totals.engages = engages;
+                brief
+            })
+            .collect();
+        let controls: Vec<MatchBrief> = [180, 180, 180, 180]
+            .into_iter()
+            .map(|engages| {
+                let mut brief = MatchBrief::empty();
+                brief.map = Some("dm4".into());
+                brief.totals.duration_sec = 180.0;
+                brief.totals.engages = engages;
+                brief
+            })
+            .collect();
+
+        let report = compare_band_primary_scaled(&candidates, &controls, Some("engagements"));
+        let stat = report
+            .stats
+            .iter()
+            .find(|s| s.name == "engagements")
+            .unwrap();
+        let interval = stat.ci.as_ref().unwrap();
+        assert_eq!((interval.lo, interval.hi), (0.0, 0.0));
     }
 
     // The tape that motivated #279: e1m1, zero engagements, and the

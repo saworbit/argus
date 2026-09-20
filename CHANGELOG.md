@@ -9,6 +9,11 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**BASELINE BANDS NOW COMPARE EQUAL-LENGTH COUNTS** (#435). Experiment and
+explicit CLI band comparisons normalize both arms to the candidate median
+duration before judging count metrics. Coverage remains unscaled and stays
+ungated on short tapes.
+
 **BOTS REMEMBER ONE WASTED CROSSING INTO THE NEXT LIFE** (#418). A death on a
 long routed item run opens a short next-life refusal window. A nearby fight or
 materially nearer live stack can keep the bot local, and `ARGEVT lifeveto`
