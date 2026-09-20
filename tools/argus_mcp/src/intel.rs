@@ -1482,55 +1482,70 @@ pub fn compare_band_primary_scaled(
     if candidates.is_empty() || controls.is_empty() {
         return compare_band_primary(candidates, controls, primary);
     }
+    for (arm, briefs) in [("candidate", candidates), ("control", controls)] {
+        for (index, brief) in briefs.iter().enumerate() {
+            if let Err(error) = validate_duration(
+                brief.totals.duration_sec,
+                &format!("{arm} tape {}", index + 1),
+            ) {
+                return invalid_duration_report(error, primary);
+            }
+        }
+    }
     let candidate_duration = median(
         &candidates
             .iter()
             .map(|b| b.totals.duration_sec)
             .collect::<Vec<_>>(),
     );
-    let arms_scaled = candidate_duration > 1.0
-        && candidates
-            .iter()
-            .chain(controls.iter())
-            .any(|b| (b.totals.duration_sec - candidate_duration).abs() > f64::EPSILON);
-    let scaled_candidates: Vec<MatchBrief> = candidates
+    let arms_scaled = candidates
+        .iter()
+        .chain(controls.iter())
+        .any(|b| (b.totals.duration_sec - candidate_duration).abs() > f64::EPSILON);
+    let coverage_eligible = candidates
+        .iter()
+        .chain(controls.iter())
+        .all(|b| b.totals.duration_sec >= COVER_GATE_MIN_SEC);
+    let scaled_candidates: Vec<MatchBrief> = match candidates
         .iter()
         .cloned()
-        .map(|b| {
-            if candidate_duration > 1.0 {
-                scale_brief_to_duration(b, candidate_duration)
-            } else {
-                b
-            }
-        })
-        .collect();
-    let scaled_controls: Vec<MatchBrief> = controls
+        .map(|b| scale_brief_to_duration(b, candidate_duration))
+        .collect::<Result<_, _>>()
+    {
+        Ok(briefs) => briefs,
+        Err(error) => return invalid_duration_report(error, primary),
+    };
+    let scaled_controls: Vec<MatchBrief> = match controls
         .iter()
         .cloned()
-        .map(|b| {
-            if candidate_duration > 1.0 {
-                scale_brief_to_duration(b, candidate_duration)
-            } else {
-                b
-            }
-        })
-        .collect();
+        .map(|b| scale_brief_to_duration(b, candidate_duration))
+        .collect::<Result<_, _>>()
+    {
+        Ok(briefs) => briefs,
+        Err(error) => return invalid_duration_report(error, primary),
+    };
     let mut report = compare_band_primary(&scaled_candidates, &scaled_controls, primary);
+    if !coverage_eligible {
+        if let Some(coverage) = report.gates.iter_mut().find(|g| g.name == "coverage") {
+            coverage.pass = true;
+            coverage.note = format!("not gated below {COVER_GATE_MIN_SEC:.0} s of tape");
+        }
+    }
     if arms_scaled {
         report.scaled = true;
         report.scale_note = Some(format!(
             "band counts scaled to the {:.0}s candidate median so the tapes are comparable",
             candidate_duration
         ));
-        report.gate_card = format_gate_card(
-            report.b.map.as_deref().or(report.a.map.as_deref()),
-            report.verdict,
-            &report.gates,
-            &report.a.totals,
-            &report.b.totals,
-            true,
-        );
     }
+    report.gate_card = format_gate_card(
+        report.b.map.as_deref().or(report.a.map.as_deref()),
+        report.verdict,
+        &report.gates,
+        &report.a.totals,
+        &report.b.totals,
+        report.scaled,
+    );
     report
 }
 
@@ -2170,11 +2185,43 @@ fn scale_u32(v: u32, k: f64) -> u32 {
     (v as f64 * k).round() as u32
 }
 
-/// Scale count totals to a target duration. Rates (speed, K/D spread) stay put.
-pub fn scale_brief_to_duration(mut brief: MatchBrief, target_sec: f64) -> MatchBrief {
-    let src = brief.totals.duration_sec.max(1.0);
+fn validate_duration(duration_sec: f64, label: &str) -> Result<(), String> {
+    if duration_sec.is_finite() && duration_sec > 1.0 {
+        Ok(())
+    } else {
+        Err(format!(
+            "{label} has invalid duration {duration_sec:?}; expected a finite value greater than 1 second"
+        ))
+    }
+}
+
+fn invalid_duration_report(error: String, primary: Option<&str>) -> CompareReport {
+    let mut report = compare_band_primary(&[], &[], primary);
+    report.verdict = Verdict::Mixed;
+    report.headline = "Mixed: invalid tape duration".into();
+    report.findings = vec![error];
+    report.primary = primary.map(str::to_string);
+    report.gate_card = format_gate_card(
+        report.b.map.as_deref().or(report.a.map.as_deref()),
+        report.verdict,
+        &report.gates,
+        &report.a.totals,
+        &report.b.totals,
+        false,
+    );
+    report
+}
+
+/// Scale count totals to a target duration. Rates and the observed source
+/// duration stay put so non-rate gates retain their provenance.
+pub fn scale_brief_to_duration(
+    mut brief: MatchBrief,
+    target_sec: f64,
+) -> Result<MatchBrief, String> {
+    let src = brief.totals.duration_sec;
+    validate_duration(src, "source tape")?;
+    validate_duration(target_sec, "normalization target")?;
     let k = target_sec / src;
-    brief.totals.duration_sec = target_sec;
     brief.totals.stalls = scale_i32(brief.totals.stalls, k);
     brief.totals.goals = scale_i32(brief.totals.goals, k);
     brief.totals.frags = scale_i32(brief.totals.frags, k);
@@ -2198,7 +2245,7 @@ pub fn scale_brief_to_duration(mut brief: MatchBrief, target_sec: f64) -> MatchB
     brief.totals.boards = scale_u32(brief.totals.boards, k);
     // freeze_max_sec and freeze_underfire are severities, not rates:
     // a 15 s statue is a 15 s statue in any match length
-    brief
+    Ok(brief)
 }
 
 /// Compare two briefs. When durations differ by more than 20%, scale A to B
@@ -2206,8 +2253,17 @@ pub fn scale_brief_to_duration(mut brief: MatchBrief, target_sec: f64) -> MatchB
 pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
     let da = a.totals.duration_sec;
     let db = b.totals.duration_sec;
-    if da > 1.0 && db > 1.0 && ((da / db) - 1.0).abs() > 0.20 {
-        let a2 = scale_brief_to_duration(a, db);
+    if let Err(error) = validate_duration(da, "baseline tape") {
+        return invalid_duration_report(error, None);
+    }
+    if let Err(error) = validate_duration(db, "candidate tape") {
+        return invalid_duration_report(error, None);
+    }
+    if ((da / db) - 1.0).abs() > 0.20 {
+        let a2 = match scale_brief_to_duration(a, db) {
+            Ok(brief) => brief,
+            Err(error) => return invalid_duration_report(error, None),
+        };
         let mut report = compare_briefs(a2, b);
         report.scaled = true;
         report.scale_note = Some(format!(
@@ -3389,6 +3445,88 @@ ARGEVT Reap hazard
         assert!(lite.scale_note.is_some());
     }
 
+    // #440: scaling a short control up must not make its saturating coverage
+    // total eligible for a long-tape gate.
+    #[test]
+    fn scaled_compare_keeps_short_control_coverage_ungated() {
+        let mut control = MatchBrief::empty();
+        control.map = Some("dm4".into());
+        control.totals.duration_sec = 30.0;
+        control.totals.engages = 30;
+        control.totals.cover = 400;
+
+        let mut candidate = MatchBrief::empty();
+        candidate.map = Some("dm4".into());
+        candidate.totals.duration_sec = 180.0;
+        candidate.totals.engages = 180;
+        candidate.totals.cover = 100;
+
+        let report = compare_briefs_scaled(control, candidate);
+        let engagements = report
+            .gates
+            .iter()
+            .find(|g| g.name == "engagements")
+            .unwrap();
+        let coverage = report.gates.iter().find(|g| g.name == "coverage").unwrap();
+
+        assert!(engagements.pass, "counts still normalize: {engagements:?}");
+        assert!(coverage.pass, "short source must not gate: {coverage:?}");
+        assert!(coverage.note.contains("not gated"), "{}", coverage.note);
+        assert_eq!(report.a.totals.duration_sec, 30.0);
+        assert_eq!(report.b.totals.duration_sec, 180.0);
+    }
+
+    // #440: every source brief is validated, not only the representatives or
+    // the candidate median used for normalization.
+    #[test]
+    fn scaled_band_rejects_invalid_duration_in_any_brief() {
+        let mut candidate = MatchBrief::empty();
+        candidate.totals.duration_sec = 30.0;
+        candidate.totals.engages = 30;
+
+        let mut valid_control = MatchBrief::empty();
+        valid_control.totals.duration_sec = 180.0;
+        valid_control.totals.engages = 180;
+
+        let mut invalid_control = valid_control.clone();
+        invalid_control.totals.duration_sec = 0.0;
+
+        let report = compare_band_primary_scaled(
+            &[candidate.clone(), candidate],
+            &[valid_control, invalid_control],
+            Some("engagements"),
+        );
+
+        assert_eq!(report.verdict, Verdict::Mixed);
+        assert!(
+            report
+                .findings
+                .iter()
+                .any(|f| f.contains("invalid duration")),
+            "{:?}",
+            report.findings
+        );
+    }
+
+    #[test]
+    fn scaling_rejects_invalid_source_and_target_durations() {
+        let mut valid = MatchBrief::empty();
+        valid.totals.duration_sec = 30.0;
+
+        for invalid in [0.0, 1.0, -1.0, f64::NAN, f64::INFINITY] {
+            let mut bad_source = valid.clone();
+            bad_source.totals.duration_sec = invalid;
+            assert!(
+                scale_brief_to_duration(bad_source, 60.0).is_err(),
+                "source {invalid:?} must be rejected"
+            );
+            assert!(
+                scale_brief_to_duration(valid.clone(), invalid).is_err(),
+                "target {invalid:?} must be rejected"
+            );
+        }
+    }
+
     // #435: experiment bands are full matches, while the default candidate
     // is 30 seconds. Equal per-minute rates must not become a regression.
     #[test]
@@ -4450,7 +4588,7 @@ ARGLOG Reap t 30.0 pos '64.0 0.0 24.0' spd 200 yaw 0 mode 2 st 0 gl 8 hp 90 frg 
     fn coverage_is_not_scaled_and_not_gated_on_short_tapes() {
         let a = brief_text(&log_a(), Some("dm4"));
         let cover = a.totals.cover;
-        let scaled = scale_brief_to_duration(a, 30.0);
+        let scaled = scale_brief_to_duration(a, 30.0).unwrap();
         assert_eq!(scaled.totals.cover, cover, "cover must survive scaling");
         let b = brief_text(&log_a(), Some("dm4"));
         let rep = compare_briefs(scaled, b);

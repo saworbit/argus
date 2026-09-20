@@ -9,6 +9,11 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**SCALED VERDICTS KEEP THE SOURCE TAPE DURATION** (#440). Count metrics still
+normalize to the candidate median, but coverage now reads every original tape
+length and stays ungated if any source was short. Non-finite durations and
+durations at or below one second return a clear Mixed verdict.
+
 **BASELINE BANDS NOW COMPARE EQUAL-LENGTH COUNTS** (#435). Experiment and
 explicit CLI band comparisons normalize both arms to the candidate median
 duration before judging count metrics. Coverage remains unscaled and stays

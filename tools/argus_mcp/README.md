@@ -548,8 +548,10 @@ every hotspot). Prompts (`orient`, `review_run`, `review_ab`,
 `experiment` duration-scales the baseline counts to the candidate
 duration so a 30 s probe is not judged as an engagement collapse
 against the 185 s shipped tape (`ab_dm4_water`, falling back to
-`ab_dm4_parity`). The lite compare
-carries `scaled` and `scale_note` when that happens.
+`ab_dm4_parity`). Scaling preserves each tape's observed duration, so
+coverage stays ungated if any source tape was shorter than 120 seconds.
+Invalid durations return a Mixed verdict instead of normalizing malformed
+counts. The lite compare carries `scaled` and `scale_note` when scaling happens.
 
 ## Tools
 
