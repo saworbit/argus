@@ -31,6 +31,12 @@ class TestToolsCLI(unittest.TestCase):
         res_short = self.run_tool("analyze_match.py", "-h")
         self.assertEqual(res_short.returncode, 0)
 
+    def test_mcp_example_uses_the_stable_install(self):
+        config = json.loads((ROOT / ".mcp.json.example").read_text(encoding="utf-8"))
+        command = config["mcpServers"]["argus"]["command"].replace("\\", "/")
+        self.assertIn("/tools/argus_mcp/install/bin/argus-mcp", command)
+        self.assertNotIn("/target/", command)
+
     def test_argus_review_help(self):
         res = self.run_tool("argus_review.py", "--help")
         self.assertEqual(res.returncode, 0)
@@ -742,9 +748,14 @@ class TestToolsCLI(unittest.TestCase):
     def test_argus_mcp_cli_subcommands(self):
         bin_names = ["argus-mcp.exe", "argus-mcp"]
         mcp_bin = None
-        for profile in ("debug", "release"):
+        search_dirs = [
+            ROOT / "tools" / "argus_mcp" / "install" / "bin",
+            ROOT / "tools" / "argus_mcp" / "target" / "debug",
+            ROOT / "tools" / "argus_mcp" / "target" / "release",
+        ]
+        for directory in search_dirs:
             for name in bin_names:
-                p = ROOT / "tools" / "argus_mcp" / "target" / profile / name
+                p = directory / name
                 if p.is_file():
                     mcp_bin = p
                     break
