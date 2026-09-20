@@ -9,6 +9,9 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**COMPARE NOW REJECTS AN EMPTY CANDIDATE LIST** (#441). The CLI returns a
+clear usage error instead of indexing an empty parsed list and panicking.
+
 **SCALED VERDICTS KEEP THE SOURCE TAPE DURATION** (#440). Count metrics still
 normalize to the candidate median, but coverage now reads every original tape
 length and stays ungated if any source was short. Non-finite durations and
