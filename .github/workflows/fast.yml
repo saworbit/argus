@@ -15,7 +15,8 @@ concurrency:
 jobs:
   invariants:
     name: repo invariants
-    runs-on: ubuntu-latest
+    # Keep the blocking gate stable across ubuntu-latest image migrations (#450).
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
 
@@ -57,7 +58,8 @@ jobs:
 
   lab:
     name: lab test suite (rust)
-    runs-on: ubuntu-latest
+    # Match the invariant job's explicit base image.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v7
       - name: Cache cargo

@@ -1133,6 +1133,10 @@ The repository invariant battery also reads committed Git blob metadata for
 LF-designated text. This catches CRLF blobs written through an API even when a
 checkout has already normalized the worktree copy.
 
+All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
+`ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
+runner has had a separate compatibility pass.
+
 Parser, config, cartographer, nav-graph BFS, QC search/calls, session,
 resources, project view, and A/B tests do not need Quake. A mini BSP29
 is synthesised in-process.

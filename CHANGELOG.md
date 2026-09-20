@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**CI NO LONGER MOVES TO A NEW UBUNTU IMAGE WITHOUT A DECISION** (#450). The
+repository invariants, Rust lab, FTEQCC compile and headless LibreQuake smoke
+now pin Ubuntu 24.04 instead of following `ubuntu-latest` onto Ubuntu 26 on
+October 19, 2026. A regression test keeps all four blocking jobs explicit, and
+the pin has a documented April 2027 review date.
+
 **DIRECT BLOB WRITES CAN NO LONGER HIDE CRLF FROM THE REPOSITORY** (#448).
 Text files declare an explicit LF policy, while Windows batch and command files
 retain CRLF checkouts. The invariant battery reads Git's committed-blob EOL
