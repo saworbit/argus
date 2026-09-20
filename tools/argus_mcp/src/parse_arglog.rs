@@ -34,7 +34,7 @@ pub struct MatchSummary {
     pub events: BTreeMap<String, u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Sample {
     pub t: f64,
     pub pos: Pos,
@@ -66,7 +66,7 @@ pub struct DeathEvent {
     pub third_party: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GameEvent {
     pub bot: String,
     pub verb: String,
@@ -75,7 +75,7 @@ pub struct GameEvent {
     pub pos: Option<Pos>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MatchTape {
     pub map: Option<String>,
     pub samples: BTreeMap<String, Vec<Sample>>,
@@ -837,6 +837,95 @@ fn map_re() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const METAMORPHIC_TAPE: &str = "\
+SpawnServer: dm4
+ARGUS init on dm4
+[00:00:01] ARGEVT Reap spawned
+ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+[00:00:02] ARGEVT Reap goal item_rockets
+ARGLOG Reap t 2.0 pos '64 0 24' spd 128 yaw 0 mode 2 st 1 gl 1 hp 90 frg 0
+[00:00:03] ARGEVT Reap engage Omi
+ARGLOG Reap t 3.0 pos '128 0 24' spd 160 yaw 0 mode 1 st 1 gl 1 hp 70 frg 1
+[00:00:04] ARGEVT Reap death Omi pos '128 0 24'
+[00:00:04] ARGEVT Reap respawn
+ARGLOG Reap t 4.0 pos '512 64 24' spd 0 yaw 90 mode 0 st 1 gl 1 hp 100 frg 1
+";
+
+    #[test]
+    fn parser_and_brief_replay_are_byte_stable() {
+        let first = parse_tape(METAMORPHIC_TAPE);
+        let second = parse_tape(METAMORPHIC_TAPE);
+
+        let first_tape = serde_json::to_vec(&first).expect("serialize first tape");
+        let second_tape = serde_json::to_vec(&second).expect("serialize second tape");
+        assert_eq!(first_tape, second_tape, "the parser changed on replay");
+
+        let first_brief = crate::intel::brief_tape(&first, None);
+        let second_brief = crate::intel::brief_tape(&first, None);
+        assert_eq!(
+            serde_json::to_vec(&first_brief).expect("serialize first brief"),
+            serde_json::to_vec(&second_brief).expect("serialize second brief"),
+            "the brief changed on replay"
+        );
+    }
+
+    #[test]
+    fn whole_line_prefix_never_invents_later_match_state() {
+        let prefix = METAMORPHIC_TAPE
+            .lines()
+            .take(7)
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
+        let partial = parse_tape(&prefix);
+        let full = parse_tape(METAMORPHIC_TAPE);
+        let cutoff = 2.0;
+
+        assert_eq!(partial.map, full.map);
+        assert!(partial.deaths.len() <= full.deaths.len());
+        assert!(partial.events.len() <= full.events.len());
+        for (verb, count) in &partial.event_counts {
+            assert!(
+                count <= full.event_counts.get(verb).unwrap_or(&0),
+                "prefix counted more {verb} events than the full tape"
+            );
+        }
+        for (bot, samples) in &partial.samples {
+            let full_samples = full
+                .samples
+                .get(bot)
+                .expect("prefix bot exists in full tape");
+            assert!(samples.len() <= full_samples.len());
+            assert!(
+                samples.iter().all(|sample| sample.t <= cutoff),
+                "prefix contains a sample after its final line"
+            );
+        }
+        assert!(
+            partial
+                .events
+                .iter()
+                .all(|event| event.t.is_none_or(|t| t <= cutoff)),
+            "prefix contains an event associated with a later sample"
+        );
+
+        let partial_brief = crate::intel::brief_tape(&partial, None);
+        let full_brief = crate::intel::brief_tape(&full, None);
+        assert!(partial_brief.totals.duration_sec <= full_brief.totals.duration_sec);
+        assert!(partial_brief.totals.deaths <= full_brief.totals.deaths);
+        assert!(partial_brief.totals.third_party_deaths <= full_brief.totals.third_party_deaths);
+        assert!(partial_brief.totals.player_kills <= full_brief.totals.player_kills);
+        assert!(partial_brief.totals.world_deaths <= full_brief.totals.world_deaths);
+        assert!(partial_brief.totals.lava_deaths <= full_brief.totals.lava_deaths);
+        assert!(partial_brief.totals.engages <= full_brief.totals.engages);
+        assert!(partial_brief.totals.hazards <= full_brief.totals.hazards);
+        assert!(partial_brief.totals.abandons <= full_brief.totals.abandons);
+        assert!(partial_brief.totals.routefails <= full_brief.totals.routefails);
+        assert!(partial_brief.totals.weapons <= full_brief.totals.weapons);
+        assert!(partial_brief.totals.grabs <= full_brief.totals.grabs);
+        assert!(partial_brief.totals.acquisitions <= full_brief.totals.acquisitions);
+    }
 
     #[test]
     fn played_rate_jitter_stays_in_one_tick_class() {

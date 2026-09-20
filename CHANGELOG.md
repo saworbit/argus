@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE TAPE PARSER NOW HAS METAMORPHIC ORACLES** (#454, part of #387).
+Representative current ARGLOG and timestamp-prefixed ARGEVT input must produce
+byte-identical parsed tapes and briefs on replay. A whole-line prefix must keep
+the same map, never gain a future sample or event, and never exceed the full
+tape's additive event, death or duration totals. These checks are pure and run
+without an engine, BSP or machine-local tape.
+
 **MCP CLIENTS CAN NOW SEE WHICH LAB TOOLS CHANGE STATE** (#453, part of #370).
 Every advertised tool has an explicit read-only, destructive, idempotent and
 open-world contract. Inspection and analysis calls are read-only; compile,
