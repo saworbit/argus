@@ -9,6 +9,10 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE HUMAN SCORECARD TEST NOW CLOSES ITS INPUT FILE** (#423).
+Python development mode no longer reports a `ResourceWarning` after the
+duplicate append check.
+
 **NEW MAPS MUST PASS REACH AND THE ENGINE MILL BEFORE REGISTRATION** (#417).
 The add-a-map path now checks every deathmatch spawn against every live pickup
 and requires graph-specific walk/drop and jump probe evidence before it changes
