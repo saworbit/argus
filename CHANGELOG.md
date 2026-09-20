@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**LIVE MCP RESOURCES CAN NOW REPLACE A POLLING LOOP** (#470, part of #370).
+The server advertises resource subscriptions for `argus://last` and
+`argus://lab`, supports both the current long-lived subscription request and
+legacy `resources/subscribe`, and sends updates only when the serialized value
+changes. The lab resource now includes current match status when read through
+the server. Explicit reads and `since_line` polling remain available.
+
 **LONG LAB CALLS NOW REPORT THEIR REAL STAGES THROUGH MCP PROGRESS** (#469,
 part of #370). `match_run`, `experiment`, `campaign_experiment` and
 `matrix_experiment` honor a caller-supplied progress token. Compile, engine
