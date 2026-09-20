@@ -9,6 +9,14 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**TWO MCP PROMPTS PUT THE LAB'S SAFETY RITUALS ON THE WIRE** (#463, part
+of #370). `harvest_before_play` supplies the exact tagged harvester command
+before any engine can truncate `qconsole.log`; `validate_change` requires a
+controlled A/B on at least two maps and three tapes per arm on dm2, with a
+pre-registered primary, trusted `next_steps`, and explicit metric boundaries.
+Both prompts are text-only and load no config, launch no engine, and mutate no
+project state. Router metadata and prompt-body tests pin those contracts.
+
 **GRAPH HISTORY FAILS CLOSED THROUGH WINDOWS GIT LOADER TRANSIENTS** (#461).
 The persistent `git cat-file --batch` reader now retains process status and
 stderr, rejects truncated or malformed protocol output instead of returning a

@@ -492,6 +492,24 @@ pub struct CompareArgs {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct HarvestPromptArgs {
+    #[schemars(
+        description = "Archive tag such as vNNN; letters, digits, underscore, dash and dot"
+    )]
+    pub tag: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ValidateChangePromptArgs {
+    #[schemars(description = "Short description of the change under test")]
+    pub change: String,
+    #[schemars(description = "Comma-separated map plan; use at least two maps (default dm2,dm4)")]
+    pub maps: Option<String>,
+    #[schemars(description = "Pre-registered metric the change is expected to move")]
+    pub primary: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct CartographArgs {
     #[schemars(
         description = "BSP path, short name (dm4), or maps/dm4.bsp. Ingests from ARGUS_MAPS or extracts from id1 PAK0/PAK1."
@@ -2467,6 +2485,47 @@ impl Argus {
     }
 
     #[prompt(
+        name = "harvest_before_play",
+        description = "Preserve a human play session before any new engine launch truncates qconsole.log"
+    )]
+    async fn harvest_before_play(
+        &self,
+        Parameters(args): Parameters<HarvestPromptArgs>,
+    ) -> Result<Vec<PromptMessage>, McpError> {
+        if !crate::paths::valid_run_name(&args.tag) {
+            return Err(McpError::invalid_params(
+                "tag must contain only letters, digits, underscore, dash or dot",
+                None,
+            ));
+        }
+        let body = format!(
+            "Preserve the current human session before doing anything that starts an engine. Run exactly:\n\npython tools/harvest_session.py --tag {}\n\nDo this first: every new engine launch truncates qconsole.log. Confirm the harvester succeeds before using experiment, matrix_experiment, match_start, match_run, probe, soak, cycle, gui, or another engine launcher. Then review the harvested run with brief_run or see what=demo; human tracks are review data, never bot bands or gates.",
+            args.tag
+        );
+        Ok(vec![PromptMessage::new_text(Role::User, body)])
+    }
+
+    #[prompt(
+        name = "validate_change",
+        description = "Plan a controlled multi-map Argus A/B with enough tapes and valid metric boundaries"
+    )]
+    async fn validate_change(
+        &self,
+        Parameters(args): Parameters<ValidateChangePromptArgs>,
+    ) -> Result<Vec<PromptMessage>, McpError> {
+        let maps = args.maps.as_deref().unwrap_or("dm2,dm4");
+        let primary = args
+            .primary
+            .as_deref()
+            .unwrap_or("choose before running tapes");
+        let body = format!(
+            "Validate this Argus change: {}\nRequested map context: {maps}\nPre-registered primary: {primary}\n\nUse a controlled A/B on at least two maps; one tape never settles a movement question. On dm2 collect at least three candidate tapes and three matching control tapes per arm (experiment map=dm2 repeats=3 primary=<metric> is the candidate-side minimum). Keep code, skill, duration, tick class, and map fixed within each comparison, record the tree state, and use a second map such as dm4 before deciding. Use experiment or matrix_experiment to collect evidence and compare_runs for existing arms. Trust each experiment/compare next_steps and its computed verdict; do not re-parse ARGLOG. Respect the metric boundaries in CLAUDE.md: never compare goal, engagement, raw death-event, distance, or speed counts across a boundary. Human tapes are review-only and never enter bot bands or gates.",
+            args.change
+        );
+        Ok(vec![PromptMessage::new_text(Role::User, body)])
+    }
+
+    #[prompt(
         name = "orient",
         description = "Orient an LLM on the Argus tree, live vs compile knobs, and how to test"
     )]
@@ -2546,6 +2605,13 @@ impl ServerHandler for Argus {
 mod tests {
     use super::*;
 
+    fn prompt_text(messages: &[PromptMessage]) -> &str {
+        match &messages.first().expect("one prompt message").content {
+            ContentBlock::Text(text) => &text.text,
+            other => panic!("expected text prompt, got {other:?}"),
+        }
+    }
+
     #[test]
     fn server_metadata_uses_package_version() {
         let info = Argus::new().get_info();
@@ -2557,6 +2623,104 @@ mod tests {
             instructions.starts_with(&format!("Argus lab {}.", env!("CARGO_PKG_VERSION"))),
             "instructions advertise a different lab version: {instructions}"
         );
+    }
+
+    #[test]
+    fn safety_prompts_publish_concise_metadata() {
+        let prompts = Argus::prompt_router().list_all();
+        let names: Vec<_> = prompts.iter().map(|prompt| prompt.name.as_str()).collect();
+        assert_eq!(
+            names,
+            [
+                "harvest_before_play",
+                "orient",
+                "review_ab",
+                "review_map",
+                "review_run",
+                "validate_change",
+            ]
+        );
+
+        let harvest = prompts
+            .iter()
+            .find(|prompt| prompt.name == "harvest_before_play")
+            .unwrap();
+        let harvest_args = harvest.arguments.as_ref().unwrap();
+        assert!(harvest
+            .description
+            .as_deref()
+            .unwrap()
+            .contains("before any new engine launch"));
+        assert_eq!(harvest_args.len(), 1);
+        assert_eq!(harvest_args[0].name, "tag");
+        assert_eq!(harvest_args[0].required, Some(true));
+        assert!(harvest_args[0]
+            .description
+            .as_deref()
+            .unwrap()
+            .contains("vNNN"));
+
+        let validate = prompts
+            .iter()
+            .find(|prompt| prompt.name == "validate_change")
+            .unwrap();
+        let validate_args = validate.arguments.as_ref().unwrap();
+        assert!(validate
+            .description
+            .as_deref()
+            .unwrap()
+            .contains("multi-map"));
+        assert_eq!(
+            validate_args
+                .iter()
+                .map(|argument| argument.name.as_str())
+                .collect::<Vec<_>>(),
+            ["change", "maps", "primary"]
+        );
+        assert_eq!(validate_args[0].required, Some(true));
+        assert_eq!(validate_args[1].required, Some(false));
+        assert_eq!(validate_args[2].required, Some(false));
+    }
+
+    #[tokio::test]
+    async fn safety_prompt_bodies_preserve_the_lab_invariants() {
+        let server = Argus::new();
+        let harvest = server
+            .harvest_before_play(Parameters(HarvestPromptArgs { tag: "vNNN".into() }))
+            .await
+            .unwrap();
+        let harvest = prompt_text(&harvest);
+        assert!(harvest.contains("python tools/harvest_session.py --tag vNNN"));
+        assert!(harvest.contains("before doing anything that starts an engine"));
+        assert!(harvest.contains("every new engine launch truncates qconsole.log"));
+
+        let validate = server
+            .validate_change(Parameters(ValidateChangePromptArgs {
+                change: "movement tuning".into(),
+                maps: Some("dm2,dm4".into()),
+                primary: Some("stall_parity".into()),
+            }))
+            .await
+            .unwrap();
+        let validate = prompt_text(&validate);
+        assert!(validate.contains("at least two maps"));
+        assert!(
+            validate.contains("at least three candidate tapes and three matching control tapes")
+        );
+        assert!(validate.contains("Trust each experiment/compare next_steps"));
+        assert!(validate.contains("Respect the metric boundaries in CLAUDE.md"));
+        assert!(validate.contains("Human tapes are review-only"));
+    }
+
+    #[tokio::test]
+    async fn harvest_prompt_rejects_a_command_shaped_tag() {
+        let error = Argus::new()
+            .harvest_before_play(Parameters(HarvestPromptArgs {
+                tag: "v1\nmap dm4".into(),
+            }))
+            .await
+            .unwrap_err();
+        assert!(error.message.contains("tag must contain only"));
     }
 
     /// WHAT THE TOOL SURFACE COSTS, measured rather than argued.
