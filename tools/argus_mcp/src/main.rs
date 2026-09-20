@@ -445,7 +445,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                             .map_err(|e| anyhow::anyhow!(e))?,
                     );
                 }
-                argus_mcp::intel::compare_band_primary(&cb, &kb, primary.as_deref())
+                argus_mcp::intel::compare_band_primary_scaled(&cb, &kb, primary.as_deref())
             };
             println!("{}", report.gate_card);
             println!("{}", report.headline);
