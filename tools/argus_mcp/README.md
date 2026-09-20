@@ -567,8 +567,14 @@ gates (when comparing), hotspots (first five), bot frag lines, and
 `next_steps`. That is what you act on.
 
 Pass `detail=full` for the whole `MatchBrief` pair (events, weapons,
-every hotspot). Prompts (`orient`, `review_run`, `review_ab`,
-`review_map`) also embed the lite JSON.
+every hotspot). Review prompts (`orient`, `review_run`, `review_ab`,
+`review_map`) also embed the lite JSON. Two text-only procedure prompts expose
+the lab's safety rules without reading config or changing state:
+`harvest_before_play tag=vNNN` returns the exact harvester-first sequence, and
+`validate_change` accepts a change description plus optional `maps` and
+`primary` context for a controlled multi-map A/B. The latter requires at least
+two maps, at least three tapes per arm on dm2, trusted `next_steps`, and valid
+metric boundaries.
 
 `compare_runs` is unscaled: it expects two tapes of similar length.
 `experiment` duration-scales the baseline counts to the candidate
