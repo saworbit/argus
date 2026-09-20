@@ -9,6 +9,10 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE PYTHON CLI TEST NO LONGER RUNS A STALE LAB INSTALL** (#431). Source CLI
+coverage now uses only the current checkout build, while the stable install has
+its own startup smoke test.
+
 **CARGO CLEAN NO LONGER REMOVES THE CONFIGURED LAB SERVER** (#429). The client
 example now uses Cargo's installed binary outside `target`, while locked Windows
 updates keep using the existing staged swap.

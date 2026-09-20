@@ -12,6 +12,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def find_argus_mcp_binary(root=ROOT, *, installed=False):
+    if installed:
+        search_dirs = [root / "tools" / "argus_mcp" / "install" / "bin"]
+    else:
+        search_dirs = [
+            root / "tools" / "argus_mcp" / "target" / "debug",
+            root / "tools" / "argus_mcp" / "target" / "release",
+        ]
+    for directory in search_dirs:
+        for name in ("argus-mcp.exe", "argus-mcp"):
+            path = directory / name
+            if path.is_file():
+                return path
+    return None
+
+
 class TestToolsCLI(unittest.TestCase):
     def run_tool(self, script_name, *args):
         path = ROOT / "tools" / script_name
@@ -36,6 +52,22 @@ class TestToolsCLI(unittest.TestCase):
         command = config["mcpServers"]["argus"]["command"].replace("\\", "/")
         self.assertIn("/tools/argus_mcp/install/bin/argus-mcp", command)
         self.assertNotIn("/target/", command)
+
+    def test_mcp_binary_discovery_separates_source_and_install(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / "tools" / "argus_mcp" / "target" / "debug" / "argus-mcp"
+            installed = root / "tools" / "argus_mcp" / "install" / "bin" / "argus-mcp"
+            source.parent.mkdir(parents=True)
+            installed.parent.mkdir(parents=True)
+            source.touch()
+            installed.touch()
+
+            self.assertEqual(find_argus_mcp_binary(root), source)
+            self.assertEqual(find_argus_mcp_binary(root, installed=True), installed)
+
+            source.unlink()
+            self.assertIsNone(find_argus_mcp_binary(root))
 
     def test_argus_review_help(self):
         res = self.run_tool("argus_review.py", "--help")
@@ -746,28 +778,22 @@ class TestToolsCLI(unittest.TestCase):
             self.assertEqual(rows[0]["bot_kills_human"], "10")
 
     def test_argus_mcp_cli_subcommands(self):
-        bin_names = ["argus-mcp.exe", "argus-mcp"]
-        mcp_bin = None
-        search_dirs = [
-            ROOT / "tools" / "argus_mcp" / "install" / "bin",
-            ROOT / "tools" / "argus_mcp" / "target" / "debug",
-            ROOT / "tools" / "argus_mcp" / "target" / "release",
-        ]
-        for directory in search_dirs:
-            for name in bin_names:
-                p = directory / name
-                if p.is_file():
-                    mcp_bin = p
-                    break
-            if mcp_bin:
-                break
+        mcp_bin = find_argus_mcp_binary()
         if not mcp_bin:
-            self.skipTest("argus-mcp binary not built")
+            self.skipTest("argus-mcp source binary not built")
 
         for cmd in ("--help", "compile -h", "reach -h", "harvest -h", "analyze -h", "nav -h"):
             args = cmd.split()
             res = subprocess.run([str(mcp_bin), *args], capture_output=True, text=True, cwd=str(ROOT))
             self.assertEqual(res.returncode, 0, f"failed on {cmd}: {res.stderr}")
+
+    def test_installed_argus_mcp_starts(self):
+        mcp_bin = find_argus_mcp_binary(installed=True)
+        if not mcp_bin:
+            self.skipTest("argus-mcp stable install not present")
+
+        res = subprocess.run([str(mcp_bin), "--help"], capture_output=True, text=True, cwd=str(ROOT))
+        self.assertEqual(res.returncode, 0, res.stderr)
 
     def test_argus_ci_help(self):
         res = self.run_tool("argus_ci.py", "--help")
