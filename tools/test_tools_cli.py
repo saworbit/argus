@@ -734,7 +734,8 @@ class TestToolsCLI(unittest.TestCase):
                 "argus_longi.py", "--append", str(out), str(tape)
             )
             self.assertEqual(res.returncode, 0, res.stderr)
-            rows = list(_csv.DictReader(out.open(), delimiter="\t"))
+            with out.open() as scorecard:
+                rows = list(_csv.DictReader(scorecard, delimiter="\t"))
             self.assertEqual(len(rows), 1, rows)
             self.assertEqual(rows[0]["bot_kills_human"], "10")
 
