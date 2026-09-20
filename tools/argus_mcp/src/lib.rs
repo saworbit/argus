@@ -9,6 +9,7 @@ pub mod corpus;
 pub mod demo;
 pub mod diagnose;
 pub mod engine;
+pub mod graph_revision;
 pub mod gui;
 pub mod history;
 pub mod intel;

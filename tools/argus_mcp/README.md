@@ -258,9 +258,21 @@ tool call:
 | `argus://const/{name}` | `see what=const name={name}` |
 | `argus://path/{spec}` | `see what=path name={spec}` |
 | `argus://search/{needle}` | `see what=search name={needle}` |
+| `argus://graph-revisions/{map}` | Content-hash ids for current and committed nav JSON |
+| `argus://graph/{map}/{hash}` | One exact `GraphRevision` with typed coordinate links |
+| `argus://probe-verdicts/{map}/{hash}` | `ProbeVerdict` evidence beside that revision |
 
 `see what=last` persists to `runs/.lab_session.json`, so it survives a
 restart (0.21).
+
+Graph ids are `map@md5`. The hash names the JSON bytes, while `commit` and
+`committed_at` retain Git provenance. `mill what=revisions map=dm4` lists
+them; `mill what=diff revision_a=dm4@... revision_b=dm4@...` reports added,
+removed and type-changed links. Link ids use endpoint coordinates so node
+renumbering does not fabricate a change. Passing `link=` narrows the result
+and fails if that id occurs in neither graph. The resources and tool wrap the
+existing `.qc.json`, `.probe.json`, `.proven.json`, `.costs.json` and
+`.mined.json` files plus their Git history; they write nothing.
 
 ## Deeper inspect
 
@@ -786,7 +798,7 @@ a budget that can return nothing is a poll loop that never advances.
 
 **The tool surface has a price on it.** Every exposed tool is paid
 for on every request through its schema, called or not. Measured
-2026-09-16: **39 tools, 18,816 bytes, about 4,700 tokens per
+2026-09-20: **40 tools, 19,707 bytes, about 4,930 tokens per
 request**, and the suite holds a bound just above that so adding a
 tool is a decision rather than a drift.
 
@@ -1128,6 +1140,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
+| 0.30 | Typed mill artefacts (GitHub #419). `GraphRevision` resources use content-hash ids and keep the producing commit, date, trace inputs and sidecar hashes. `ProbeVerdict` resources wrap probe and proven sidecars. The read-only `mill` tool lists history and diffs two revisions by coordinate link id, including added, removed and type-changed links plus matching convictions. A link absent from both sources is an error. Historical bytes come from Git, so there is no new on-disk format. Tape collections remain the `corpus` surface from 0.28 rather than a duplicate type. 214 tests. |
 | 0.10 | Extra spec tools beside the native set. Cartographer briefs. `see` / `probe` / `tune`. |
 | 0.11 | `see what=project`, `experiment`, session last-seen, MCP resources, `orient` prompt. |
 | 0.12 | Lite defaults. `lab_status` no longer cartographs every map. Atlas cache. Windows `CREATE_NEW_CONSOLE`. Honest no-ARGLOG error. Extra tools defer to native names. |

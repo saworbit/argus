@@ -101,6 +101,18 @@ pub fn list_templates() -> ListResourceTemplatesResult {
             .with_title("QC search")
             .with_description("Grep Argus QuakeC.")
             .with_mime_type("application/json"),
+        ResourceTemplate::new("argus://graph-revisions/{map}", "graph-revisions")
+            .with_title("Graph revisions")
+            .with_description("Content-hash ids for committed nav JSON revisions.")
+            .with_mime_type("application/json"),
+        ResourceTemplate::new("argus://graph/{map}/{hash}", "graph")
+            .with_title("Graph revision")
+            .with_description("Typed links from one exact nav JSON revision.")
+            .with_mime_type("application/json"),
+        ResourceTemplate::new("argus://probe-verdicts/{map}/{hash}", "probe-verdicts")
+            .with_title("Probe verdicts")
+            .with_description("Walk and typed-link evidence recorded beside a graph revision.")
+            .with_mime_type("application/json"),
     ];
     ListResourceTemplatesResult::with_all_items(tmpls)
 }
@@ -134,6 +146,28 @@ pub fn read_uri(
         "argus://quality" => Ok(vec![plain_text(uri, QUALITY_BARS)]),
         "argus://help" => Ok(vec![json_text(uri, &see_vocab())]),
         other => {
+            if let Some(map) = other.strip_prefix("argus://graph-revisions/") {
+                let cfg = cfg.ok_or("ARGUS_ROOT is required for graph revisions")?;
+                let revisions = crate::graph_revision::list_revisions(cfg, map)?;
+                return Ok(vec![json_text(uri, &revisions)]);
+            }
+            if let Some(spec) = other.strip_prefix("argus://graph/") {
+                let cfg = cfg.ok_or("ARGUS_ROOT is required for graph revisions")?;
+                let (map, hash) = spec
+                    .split_once('/')
+                    .ok_or("graph resource must be argus://graph/{map}/{hash}")?;
+                let revision = crate::graph_revision::get_revision(cfg, &format!("{map}@{hash}"))?;
+                return Ok(vec![json_text(uri, &revision)]);
+            }
+            if let Some(spec) = other.strip_prefix("argus://probe-verdicts/") {
+                let cfg = cfg.ok_or("ARGUS_ROOT is required for probe verdicts")?;
+                let (map, hash) = spec
+                    .split_once('/')
+                    .ok_or("verdict resource must be argus://probe-verdicts/{map}/{hash}")?;
+                let verdicts =
+                    crate::graph_revision::probe_verdicts(cfg, &format!("{map}@{hash}"))?;
+                return Ok(vec![json_text(uri, &verdicts)]);
+            }
             if let Some(name) = other.strip_prefix("argus://map/") {
                 let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://map")?;
                 let atlas = cartograph(cfg, name)?;
@@ -188,6 +222,19 @@ mod tests {
         assert!(uris.contains(&"argus://project"));
         assert!(uris.contains(&"argus://knobs"));
         assert!(uris.contains(&"argus://last"));
+    }
+
+    #[test]
+    fn lists_graph_resource_templates() {
+        let listed = list_templates();
+        let uris: Vec<_> = listed
+            .resource_templates
+            .iter()
+            .map(|r| r.uri_template.as_str())
+            .collect();
+        assert!(uris.contains(&"argus://graph-revisions/{map}"));
+        assert!(uris.contains(&"argus://graph/{map}/{hash}"));
+        assert!(uris.contains(&"argus://probe-verdicts/{map}/{hash}"));
     }
 
     #[test]
