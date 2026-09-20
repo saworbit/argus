@@ -48,7 +48,10 @@ pub fn nav_generate(
 
     let script = cfg.navgen_script();
     if !script.exists() {
-        return Err(format!("ARGUS_ROOT tools/argus_navgen.py missing: {}", script.display()));
+        return Err(format!(
+            "ARGUS_ROOT tools/argus_navgen.py missing: {}",
+            script.display()
+        ));
     }
 
     let mut cmd = Command::new(&cfg.python);

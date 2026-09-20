@@ -285,9 +285,8 @@ impl NetClient {
                         }
                         match buf[4] {
                             CCREP_ACCEPT if n >= 9 => {
-                                game_port = i32::from_le_bytes(
-                                    buf[5..9].try_into().unwrap(),
-                                ) as u16;
+                                game_port =
+                                    i32::from_le_bytes(buf[5..9].try_into().unwrap()) as u16;
                                 game_host = from.ip().to_string();
                                 break 'outer;
                             }
@@ -411,8 +410,7 @@ impl NetClient {
                 }
                 _ => {}
             }
-            if self.world.signon >= 2 && self.last_move.elapsed() > Duration::from_millis(50)
-            {
+            if self.world.signon >= 2 && self.last_move.elapsed() > Duration::from_millis(50) {
                 self.send_move_now();
                 self.last_move = Instant::now();
             }
@@ -542,8 +540,7 @@ impl NetClient {
                 continue;
             }
             match cmd {
-                0 | SVC_KILLEDMONSTER | SVC_FOUNDSECRET | SVC_INTERMISSION
-                | SVC_SELLSCREEN => {}
+                0 | SVC_KILLEDMONSTER | SVC_FOUNDSECRET | SVC_INTERMISSION | SVC_SELLSCREEN => {}
                 SVC_DISCONNECT => {
                     self.world.disconnected = true;
                     return;
@@ -577,7 +574,9 @@ impl NetClient {
                 }
                 SVC_PRINT => {
                     let s = need!(r.string());
-                    self.world.print_buf.push_str(&s.replace(['\u{1}', '\u{2}'], ""));
+                    self.world
+                        .print_buf
+                        .push_str(&s.replace(['\u{1}', '\u{2}'], ""));
                     while let Some(nl) = self.world.print_buf.find('\n') {
                         let line = self.world.print_buf[..nl].trim().to_string();
                         self.world.print_buf.drain(..=nl);
@@ -884,7 +883,12 @@ impl NetClient {
                 track.push(p);
                 if h < 24.0 && dz < 72.0 {
                     self.set_move(0.0, 0.0, 0, 0, 0);
-                    return WalkOutcome { reached: true, closest, final_pos: p, track };
+                    return WalkOutcome {
+                        reached: true,
+                        closest,
+                        final_pos: p,
+                        track,
+                    };
                 }
                 let yaw = dy.atan2(dx).to_degrees();
                 let buttons = if stuck >= 4 { 2 } else { 0 };
@@ -894,7 +898,12 @@ impl NetClient {
         }
         let fp = self.my_pos().unwrap_or_default();
         self.set_move(0.0, 0.0, 0, 0, 0);
-        WalkOutcome { reached: false, closest, final_pos: fp, track }
+        WalkOutcome {
+            reached: false,
+            closest,
+            final_pos: fp,
+            track,
+        }
     }
 
     pub fn disconnect(mut self) {
@@ -1183,8 +1192,8 @@ pub async fn probe_links(
         Some(0),
         Some(coop),
     )
-        .await
-        .map_err(|e| format!("engine start: {e}"))?;
+    .await
+    .map_err(|e| format!("engine start: {e}"))?;
     tokio::time::sleep(Duration::from_secs(4)).await;
 
     let mut client = match NetClient::connect("127.0.0.1", 26000, "labprobe") {
@@ -1220,11 +1229,12 @@ pub async fn probe_links(
         // (semicolons parse in the console; rapid separate attaches
         // dropped every inject after the first link's batch and the
         // puppet kept landing on the stale coordinates)
-        if let Err(e) = ctrl.command(&format!(
-            "scratch2 {}; scratch3 {}; scratch4 {}",
-            from[0], from[1], from[2]
-        ))
-        .await
+        if let Err(e) = ctrl
+            .command(&format!(
+                "scratch2 {}; scratch3 {}; scratch4 {}",
+                from[0], from[1], from[2]
+            ))
+            .await
         {
             let _ = ctrl.stop(Duration::from_secs(3)).await;
             return Err(format!("inject: {e}"));
@@ -1475,7 +1485,10 @@ mod tests {
         );
         assert_eq!(doc["failed"].as_array().unwrap().len(), 2);
         assert_eq!(
-            doc["modes"]["deathmatch"]["failed"].as_array().unwrap().len(),
+            doc["modes"]["deathmatch"]["failed"]
+                .as_array()
+                .unwrap()
+                .len(),
             2
         );
         assert_eq!(doc["modes"]["deathmatch"]["swept"].as_u64().unwrap(), 3);
@@ -1586,18 +1599,33 @@ mod tests {
             return;
         };
         if !cfg.engine.exists() {
-            eprintln!("SKIPPED {}: no ARGUS_ENGINE on this box", "probe_netclient_test");
+            eprintln!(
+                "SKIPPED {}: no ARGUS_ENGINE on this box",
+                "probe_netclient_test"
+            );
             return;
         }
         // a temp runs/ so the probe tape never lands in the real one:
         // resolve_latest picks the newest runs/*.log, and a 7 s test
         // tape became what "latest" meant for the next compare
-        let tmp_runs = std::env::temp_dir().join(format!("argus-{}-{}", "probe_netclient_test", std::process::id()));
+        let tmp_runs = std::env::temp_dir().join(format!(
+            "argus-{}-{}",
+            "probe_netclient_test",
+            std::process::id()
+        ));
         let _ = std::fs::create_dir_all(&tmp_runs);
         cfg.runs = tmp_runs.clone();
         let mut ctrl = crate::match_ctrl::MatchCtrl::default();
         if ctrl
-            .start(&cfg, "dm4", Some(40), Some("probe_netclient_test"), None, Some(1), None)
+            .start(
+                &cfg,
+                "dm4",
+                Some(40),
+                Some("probe_netclient_test"),
+                None,
+                Some(1),
+                None,
+            )
             .await
             .is_err()
         {
@@ -1613,7 +1641,11 @@ mod tests {
         let _ = ctrl.stop(std::time::Duration::from_secs(3)).await;
         let report = report.expect("client must connect to the lab engine");
         assert_eq!(report.protocol, 15, "lab matches are protocol 15");
-        assert!(report.signon >= 3, "signon dance must complete, got {}", report.signon);
+        assert!(
+            report.signon >= 3,
+            "signon dance must complete, got {}",
+            report.signon
+        );
         assert!(
             !report.names.is_empty(),
             "scoreboard names must arrive (bots write fake slots)"

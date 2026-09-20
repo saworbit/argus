@@ -181,10 +181,7 @@ pub fn restore_backup(cfg: &Config, id: &str) -> Result<BackupResult, String> {
 fn backup_sources(cfg: &Config) -> Vec<(PathBuf, String)> {
     let mut out = vec![
         (cfg.progs.clone(), rel_under(&cfg.root, &cfg.progs)),
-        (
-            cfg.src.join("progs.src"),
-            "src/progs.src".into(),
-        ),
+        (cfg.src.join("progs.src"), "src/progs.src".into()),
         (
             cfg.src.join("argus_nav_dispatch.qc"),
             "src/argus_nav_dispatch.qc".into(),
@@ -349,10 +346,7 @@ mod tests {
         uniq.dedup();
         assert_eq!(keys.len(), uniq.len(), "duplicate manifest keys: {keys:?}");
 
-        let outside_keys: Vec<&String> = keys
-            .iter()
-            .filter(|k| k.starts_with("install"))
-            .collect();
+        let outside_keys: Vec<&String> = keys.iter().filter(|k| k.starts_with("install")).collect();
         assert!(
             !outside_keys.is_empty(),
             "an out-of-tree install must get an indexed key, got {keys:?}"
@@ -368,8 +362,7 @@ mod tests {
         // collision, and the manifest is what we check.
         let taken = take_backup(&cfg);
         assert!(taken.ok, "{taken:?}");
-        let man = read_manifest(&backups_dir(&cfg).join(&taken.id))
-            .expect("manifest written");
+        let man = read_manifest(&backups_dir(&cfg).join(&taken.id)).expect("manifest written");
         let progs: Vec<&BackupFile> = man
             .files
             .iter()

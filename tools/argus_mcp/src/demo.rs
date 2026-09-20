@@ -286,7 +286,11 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
     let mut ents: BTreeMap<u16, EntState> = BTreeMap::new();
     #[allow(clippy::type_complexity)]
     let mut samples: BTreeMap<u16, (Vec<f64>, Vec<[f32; 3]>, Vec<[f32; 2]>)> = BTreeMap::new();
-    let mut pov = PovAim { t: Vec::new(), pitch: Vec::new(), yaw: Vec::new() };
+    let mut pov = PovAim {
+        t: Vec::new(),
+        pitch: Vec::new(),
+        yaw: Vec::new(),
+    };
     let mut player_m: Option<u16> = None;
     let mut missile_m: Option<u16> = None;
     let mut grenade_m: Option<u16> = None;
@@ -396,9 +400,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                     if skin > 0 {
                         st.player_skin = skin;
                     }
-                } else if (Some(model) == missile_m || Some(model) == grenade_m)
-                    && model != 0
-                {
+                } else if (Some(model) == missile_m || Some(model) == grenade_m) && model != 0 {
                     st.was_projectile = true;
                 }
                 let rec = samples.entry(ent).or_default();
@@ -650,7 +652,9 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                     need!(r.u8());
                 }
                 other => {
-                    notes.push(format!("unknown svc {other} in block {blocks}; block skipped"));
+                    notes.push(format!(
+                        "unknown svc {other} in block {blocks}; block skipped"
+                    ));
                     break;
                 }
             }
@@ -680,15 +684,13 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
             let dy = (w[1][1] - w[0][1]) as f64;
             total += (dx * dx + dy * dy).sqrt();
         }
-        let kind = if kind == "player"
-            && st.player_skin == 0
-            && *ent > maxclients as u16
-            && total < 500.0
-        {
-            "body"
-        } else {
-            kind
-        };
+        let kind =
+            if kind == "player" && st.player_skin == 0 && *ent > maxclients as u16 && total < 500.0
+            {
+                "body"
+            } else {
+                kind
+            };
         // identity: a real client is entity 1..maxclients and its
         // scoreboard row is entity-1; a bot's skin byte is its ROSTER
         // slot + 1 (v3.15) and its scoreboard row counts down from
@@ -766,7 +768,13 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
         names,
         tracks: track_briefs,
         highlights,
-        prints_tail: prints.iter().rev().take(20).rev().map(|(_, s)| s.clone()).collect(),
+        prints_tail: prints
+            .iter()
+            .rev()
+            .take(20)
+            .rev()
+            .map(|(_, s)| s.clone())
+            .collect(),
         notes,
     };
     Ok(Demo { brief, tracks, pov })
@@ -809,7 +817,12 @@ fn aim_stats(t: &[f64], yaw: &[f32]) -> Option<AimStats> {
         }
         hot = *r >= 300.0;
     }
-    Some(AimStats { samples: rates.len(), mean_dps: mean, p95_dps: p95, flicks })
+    Some(AimStats {
+        samples: rates.len(),
+        mean_dps: mean,
+        p95_dps: p95,
+        flicks,
+    })
 }
 
 /// Moments worth rewatching, from the timestamped console feed:
@@ -818,18 +831,32 @@ fn aim_stats(t: &[f64], yaw: &[f32]) -> Option<AimStats> {
 /// deaths, and environment deaths (the shove economy's receipts).
 fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight> {
     const KILL_VERBS: [&str; 12] = [
-        " rides ", " was gibbed by ", " was nailed by ", " chewed on ", " ate 2 loads of ",
-        " accepts ", " was blasted by ", " was telefragged by ", " was smashed by ",
-        " was zapped by ", " was crushed by ", " eats ",
+        " rides ",
+        " was gibbed by ",
+        " was nailed by ",
+        " chewed on ",
+        " ate 2 loads of ",
+        " accepts ",
+        " was blasted by ",
+        " was telefragged by ",
+        " was smashed by ",
+        " was zapped by ",
+        " was crushed by ",
+        " eats ",
     ];
     const ENV_DEATHS: [&str; 5] = [
-        " burst into flames", " turned into hot slag", " visits the Volcano God",
-        " fell to his death", " was squished",
+        " burst into flames",
+        " turned into hot slag",
+        " visits the Volcano God",
+        " fell to his death",
+        " was squished",
     ];
     // stock SELF-kill obituaries (own splash, or the kill command) -
     // a different story from the environment claiming someone
     const SUICIDES: [&str; 3] = [
-        " becomes bored with life", " checks if his weapon is loaded", " does a number on himself",
+        " becomes bored with life",
+        " checks if his weapon is loaded",
+        " does a number on himself",
     ];
     let mut out = Vec::new();
     let mut kills: Vec<(f64, String)> = Vec::new(); // (t, killer)
@@ -837,12 +864,19 @@ fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight>
     let mut first_blood = false;
     for (t, line) in prints {
         if line.contains("Quad Damage") {
-            let kind = if line.contains("lost a Quad") { "quad_drop" } else { "quad" };
-            out.push(Highlight { t: *t, kind: kind.into(), note: line.clone() });
+            let kind = if line.contains("lost a Quad") {
+                "quad_drop"
+            } else {
+                "quad"
+            };
+            out.push(Highlight {
+                t: *t,
+                kind: kind.into(),
+                note: line.clone(),
+            });
             continue;
         }
-        let mut named: Vec<&String> =
-            names.iter().filter(|n| line.contains(n.as_str())).collect();
+        let mut named: Vec<&String> = names.iter().filter(|n| line.contains(n.as_str())).collect();
         // obituaries lead with the victim IN THE LINE - order by
         // position, not by roster order
         named.sort_by_key(|n| line.find(n.as_str()).unwrap_or(usize::MAX));
@@ -850,12 +884,20 @@ fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight>
             continue;
         }
         if ENV_DEATHS.iter().any(|v| line.contains(v)) {
-            out.push(Highlight { t: *t, kind: "env_death".into(), note: line.clone() });
+            out.push(Highlight {
+                t: *t,
+                kind: "env_death".into(),
+                note: line.clone(),
+            });
             spree.insert(named[0].clone(), 0);
             continue;
         }
         if SUICIDES.iter().any(|v| line.contains(v)) {
-            out.push(Highlight { t: *t, kind: "suicide".into(), note: line.clone() });
+            out.push(Highlight {
+                t: *t,
+                kind: "suicide".into(),
+                note: line.clone(),
+            });
             spree.insert(named[0].clone(), 0);
             continue;
         }
@@ -869,9 +911,18 @@ fn find_highlights(prints: &[(f64, String)], names: &[String]) -> Vec<Highlight>
         let Some(killer) = killer else { continue };
         if !first_blood {
             first_blood = true;
-            out.push(Highlight { t: *t, kind: "first_blood".into(), note: line.clone() });
+            out.push(Highlight {
+                t: *t,
+                kind: "first_blood".into(),
+                note: line.clone(),
+            });
         }
-        if kills.iter().rev().take(3).any(|(kt, kn)| kn == &killer && t - kt <= 4.0) {
+        if kills
+            .iter()
+            .rev()
+            .take(3)
+            .any(|(kt, kn)| kn == &killer && t - kt <= 4.0)
+        {
             out.push(Highlight {
                 t: *t,
                 kind: "multikill".into(),
@@ -931,7 +982,9 @@ pub fn demo_brief(cfg: &Config, name: &str) -> Result<DemoBrief, String> {
     let mut brief = demo.brief.clone();
     if export {
         let out = export_tracks(&path, &demo)?;
-        brief.notes.push(format!("tracks exported: {}", out.display()));
+        brief
+            .notes
+            .push(format!("tracks exported: {}", out.display()));
     }
     Ok(brief)
 }
@@ -946,12 +999,17 @@ mod tests {
         // until a restarted client serves see what=demo): parses
         // every shane_*.dem in runs/demos and prints its brief under
         // --nocapture. Parse success is the only assertion.
-        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../runs/demos");
-        let Ok(rd) = std::fs::read_dir(&dir) else { return };
+        let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs/demos");
+        let Ok(rd) = std::fs::read_dir(&dir) else {
+            return;
+        };
         for e in rd.flatten() {
             let p = e.path();
-            let name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+            let name = p
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .to_string();
             if !name.starts_with("shane_") || !name.ends_with(".dem") {
                 continue;
             }
@@ -1004,14 +1062,21 @@ mod tests {
             b.protocol, b.level, b.duration_sec, b.blocks, b.truncated, b.notes, b.names
         );
         for t in &b.tracks {
-            println!("  e{} {:?} {} n={} hz={:.1} dist={:.0}", t.entity, t.name, t.kind, t.samples, t.hz, t.dist);
+            println!(
+                "  e{} {:?} {} n={} hz={:.1} dist={:.0}",
+                t.entity, t.name, t.kind, t.samples, t.hz, t.dist
+            );
         }
         assert_eq!(b.protocol, 15, "lab matches are protocol 15");
         // a killed engine usually tears mid-block, but a tear exactly
         // on a block boundary is legal - truncation is reported, not
         // asserted
         assert!(b.duration_sec > 20.0, "duration {}", b.duration_sec);
-        assert!(b.names.values().any(|n| n == "Carmack"), "roster: {:?}", b.names);
+        assert!(
+            b.names.values().any(|n| n == "Carmack"),
+            "roster: {:?}",
+            b.names
+        );
         let players: Vec<_> = b.tracks.iter().filter(|t| t.kind == "player").collect();
         assert!(players.len() >= 3, "player tracks: {:?}", b.tracks);
         let named = players.iter().filter(|t| t.name.is_some()).count();

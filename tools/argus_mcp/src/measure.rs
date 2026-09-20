@@ -64,13 +64,37 @@ pub const NULL_PAIRS: [(&str, &str); 16] = [
 /// shipped it.
 const LADDER_ARMS: &[(&str, &[&str])] = &[
     // the v4.18 ship ladder, four a side on byte-identical bytes
-    ("dm4", &["ab_dm4_shipctl1", "ab_dm4_shipctl2", "ab_dm4_shipctl3", "ab_dm4_shipctl4"]),
-    ("dm4", &["ab_dm4_shipnew1", "ab_dm4_shipnew2", "ab_dm4_shipnew3", "ab_dm4_shipnew4"]),
+    (
+        "dm4",
+        &[
+            "ab_dm4_shipctl1",
+            "ab_dm4_shipctl2",
+            "ab_dm4_shipctl3",
+            "ab_dm4_shipctl4",
+        ],
+    ),
+    (
+        "dm4",
+        &[
+            "ab_dm4_shipnew1",
+            "ab_dm4_shipnew2",
+            "ab_dm4_shipnew3",
+            "ab_dm4_shipnew4",
+        ],
+    ),
     // phase 0's played-rate re-baseline, superseded as a baseline by
     // the #388 arm but still a same-build arm
     ("dm4", &["band_dm4_1", "band_dm4_2", "band_dm4_3"]),
     // #363's control and candidate arms
-    ("dm4", &["ab_dm4_leadctl1", "ab_dm4_leadctl2", "ab_dm4_leadctl3", "ab_dm4_leadctl4"]),
+    (
+        "dm4",
+        &[
+            "ab_dm4_leadctl1",
+            "ab_dm4_leadctl2",
+            "ab_dm4_leadctl3",
+            "ab_dm4_leadctl4",
+        ],
+    ),
     (
         "dm4",
         &[
@@ -99,7 +123,12 @@ const LADDER_ARMS: &[(&str, &[&str])] = &[
     ),
     (
         "e1m5",
-        &["ab_e1m5_doorverb1", "ab_e1m5_doorverb2", "ab_e1m5_doorverb3", "ab_e1m5_doorverb4"],
+        &[
+            "ab_e1m5_doorverb1",
+            "ab_e1m5_doorverb2",
+            "ab_e1m5_doorverb3",
+            "ab_e1m5_doorverb4",
+        ],
     ),
 ];
 
@@ -236,7 +265,10 @@ fn arms_in(runs_dir: &Path) -> Vec<(String, Vec<MatchBrief>)> {
         }
     }
     for (map, runs) in LADDER_ARMS {
-        out.push((map.to_string(), runs.iter().map(|s| s.to_string()).collect()));
+        out.push((
+            map.to_string(),
+            runs.iter().map(|s| s.to_string()).collect(),
+        ));
     }
     for (a, b) in NULL_PAIRS {
         // the map comes from the tape, so a renamed map cannot desync
@@ -247,7 +279,11 @@ fn arms_in(runs_dir: &Path) -> Vec<(String, Vec<MatchBrief>)> {
     for (map, runs) in out {
         let mut briefs = Vec::new();
         for r in &runs {
-            let hint = if map.is_empty() { None } else { Some(map.as_str()) };
+            let hint = if map.is_empty() {
+                None
+            } else {
+                Some(map.as_str())
+            };
             if let Ok(b) = brief_path(&runs_dir.join(format!("{r}.log")), hint) {
                 briefs.push(b);
             }
@@ -259,8 +295,10 @@ fn arms_in(runs_dir: &Path) -> Vec<(String, Vec<MatchBrief>)> {
         let m = briefs[0].map.clone().unwrap_or_else(|| map.clone());
         // a mixed-rate arm is two different games and its spread is not
         // the instrument's (the tick-class rule)
-        let classes: std::collections::BTreeSet<String> =
-            briefs.iter().filter_map(|b| b.totals.tick_class.clone()).collect();
+        let classes: std::collections::BTreeSet<String> = briefs
+            .iter()
+            .filter_map(|b| b.totals.tick_class.clone())
+            .collect();
         if classes.len() > 1 {
             continue;
         }
@@ -291,8 +329,7 @@ pub fn limits_in(runs_dir: &Path) -> Vec<Limit> {
                 .iter()
                 .map(|(_, bs)| bs.iter().map(|b| metric_value(b, metric)).collect())
                 .collect();
-            let usable: Vec<Vec<f64>> =
-                arm_vals.iter().filter(|a| a.len() >= 2).cloned().collect();
+            let usable: Vec<Vec<f64>> = arm_vals.iter().filter(|a| a.len() >= 2).cloned().collect();
             if usable.is_empty() {
                 continue;
             }
@@ -368,10 +405,19 @@ pub fn gate_audit_in(runs_dir: &Path) -> GateAudit {
                 .filter(|g| g.call != "in band")
                 .map(|g| format!("{} {}", g.name, g.call))
                 .collect();
-            detail.push(format!("{a} vs {b}: {:?} on {}", r.verdict, names.join(", ")));
+            detail.push(format!(
+                "{a} vs {b}: {:?} on {}",
+                r.verdict,
+                names.join(", ")
+            ));
         }
     }
-    GateAudit { pairs_seen: seen, per_gate: per.into_iter().collect(), any_gate: any, detail }
+    GateAudit {
+        pairs_seen: seen,
+        per_gate: per.into_iter().collect(),
+        any_gate: any,
+        detail,
+    }
 }
 
 /// What the sequential test does on a change that does not exist.
@@ -438,9 +484,23 @@ pub fn sprt_audit_in(runs_dir: &Path) -> SprtAudit {
             let Some(sigma) = sigma_for(Some(&map), metric) else {
                 continue;
             };
-            let a: Vec<f64> = briefs[..half].iter().map(|b| metric_value(b, metric)).collect();
-            let b: Vec<f64> = briefs[half..].iter().map(|b| metric_value(b, metric)).collect();
-            let r = stats::sprt(metric, &b, &a, lower_is_better, ship_bound(sigma), sigma, "corpus");
+            let a: Vec<f64> = briefs[..half]
+                .iter()
+                .map(|b| metric_value(b, metric))
+                .collect();
+            let b: Vec<f64> = briefs[half..]
+                .iter()
+                .map(|b| metric_value(b, metric))
+                .collect();
+            let r = stats::sprt(
+                metric,
+                &b,
+                &a,
+                lower_is_better,
+                ship_bound(sigma),
+                sigma,
+                "corpus",
+            );
             out.decisions += 1;
             match r.call {
                 stats::SprtCall::Accept => {
@@ -562,7 +622,11 @@ pub fn render(limits: &[Limit], audit: &GateAudit, sprt: &SprtAudit, stamp: &str
             name,
             n,
             audit.pairs_seen,
-            pct(if audit.pairs_seen > 0 { *n as f64 / audit.pairs_seen as f64 } else { 0.0 })
+            pct(if audit.pairs_seen > 0 {
+                *n as f64 / audit.pairs_seen as f64
+            } else {
+                0.0
+            })
         ));
     }
     s.push_str(&format!(
@@ -662,7 +726,17 @@ mod tests {
         let b = MatchBrief::empty();
         // both spellings, because the band gate and the table disagree
         // on two of them and a silent 0.0 would be a table of zeroes
-        for n in ["stalls", "stall_parity", "engages", "engagements", "lava_deaths", "freezes", "cover", "coverage", "goals"] {
+        for n in [
+            "stalls",
+            "stall_parity",
+            "engages",
+            "engagements",
+            "lava_deaths",
+            "freezes",
+            "cover",
+            "coverage",
+            "goals",
+        ] {
             let _ = metric_value(&b, n);
         }
         // and an unknown name must not quietly read as zero data
@@ -738,8 +812,15 @@ mod tests {
         if dm4.is_empty() {
             return;
         }
-        let stalls = dm4.iter().find(|l| l.metric == "stalls").expect("dm4 stalls row");
-        assert!(stalls.arms >= 2, "dm4 stalls came from {} arms", stalls.arms);
+        let stalls = dm4
+            .iter()
+            .find(|l| l.metric == "stalls")
+            .expect("dm4 stalls row");
+        assert!(
+            stalls.arms >= 2,
+            "dm4 stalls came from {} arms",
+            stalls.arms
+        );
         assert!(stalls.sigma > 0.0, "dm4 stalls sigma {}", stalls.sigma);
         // the MDE must fall with tapes, always
         assert!(stalls.mde3 > stalls.mde5 && stalls.mde5 > stalls.mde10);

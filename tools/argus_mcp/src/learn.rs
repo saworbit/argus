@@ -151,13 +151,7 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
             "stall" => 6,
             _ => 4,
         };
-        budgeted.extend(
-            learned
-                .iter()
-                .filter(|c| c.kind == kind)
-                .take(cap)
-                .cloned(),
-        );
+        budgeted.extend(learned.iter().filter(|c| c.kind == kind).take(cap).cloned());
     }
     let mut learned = budgeted;
 
@@ -241,7 +235,6 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
         wrote,
     })
 }
-
 
 /// True when a run-log filename names this map as a whole token.
 /// Stems are underscore-joined (`ab_dm2_rebirth1.log`,
@@ -342,7 +335,9 @@ mod tests {
         // a tape where hazard chatter dwarfs the lava deaths - the
         // shape that amputated the dm4 pit floor on 2026-08-19
         let mut tape = String::from("ARGUS init on dm4\n");
-        tape.push_str("ARGLOG Reap t 1.0 pos '200 -230 -296' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n");
+        tape.push_str(
+            "ARGLOG Reap t 1.0 pos '200 -230 -296' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+        );
         for _ in 0..60 {
             tape.push_str("ARGEVT Reap hazard\n");
         }
@@ -354,7 +349,10 @@ mod tests {
         let cfg = load_for_reads_from(&env, &root).unwrap();
         let report = learn_hotspots(&cfg, "dm4", 5).unwrap();
         // the hazard cluster is REPORTED (top count) ...
-        assert!(report.cells.iter().any(|c| c.kind == "hazard" && c.count >= 60));
+        assert!(report
+            .cells
+            .iter()
+            .any(|c| c.kind == "hazard" && c.count >= 60));
         // ... and the lava cell is not crowded out of the report
         assert!(report.cells.iter().any(|c| c.kind == "lava"));
         // but the OVERLAY carries only the death cells, tight radius
@@ -392,12 +390,18 @@ ARGEVT Reap death world pos '14.0 262.0 -358.0'
         let cfg = load_for_reads_from(&env, &root).unwrap();
         let report = learn_hotspots(&cfg, "dm4", 5).unwrap();
         assert_eq!(report.map, "dm4");
-        assert!(report.cells.iter().any(|c| c.kind == "lava" && c.count >= 2));
+        assert!(report
+            .cells
+            .iter()
+            .any(|c| c.kind == "lava" && c.count >= 2));
         let wrote = report.wrote.expect("should write costs overlay");
         assert!(wrote.ends_with("argus_nav_dm4.costs.json"));
         let overlay: CostOverlay =
             serde_json::from_str(&fs::read_to_string(&wrote).unwrap()).unwrap();
-        assert!(overlay.cells.iter().any(|c| c.kind == "lava" && c.cost >= 8.0));
+        assert!(overlay
+            .cells
+            .iter()
+            .any(|c| c.kind == "lava" && c.cost >= 8.0));
         let _ = fs::remove_dir_all(&root);
     }
 
@@ -406,7 +410,10 @@ ARGEVT Reap death world pos '14.0 262.0 -358.0'
         // #38: `"lqdm2".contains("dm2")` let fresher lqdm2 tapes fill the
         // candidate list and starve learn_hotspots of real dm2 logs.
         assert!(log_stem_names_map("ab_dm2_rebirth1.log", "dm2"));
-        assert!(log_stem_names_map("soak_2026-08-28_1257_003_dm2.log", "dm2"));
+        assert!(log_stem_names_map(
+            "soak_2026-08-28_1257_003_dm2.log",
+            "dm2"
+        ));
         assert!(!log_stem_names_map("ab_lqdm2_rebirth1.log", "dm2"));
         assert!(log_stem_names_map("ab_lqdm2_rebirth1.log", "lqdm2"));
     }

@@ -343,7 +343,12 @@ pub fn index(runs_dir: &Path, rebuild: bool) -> (Vec<TapeRow>, IndexStatus) {
             .collect()
     };
     let mut rows = Vec::new();
-    let mut st = IndexStatus { rows: 0, from_cache: 0, parsed: 0, dropped: 0 };
+    let mut st = IndexStatus {
+        rows: 0,
+        from_cache: 0,
+        parsed: 0,
+        dropped: 0,
+    };
     for (run, path) in tape_files(runs_dir) {
         if let Some(r) = cached.get(&run) {
             st.from_cache += 1;
@@ -368,7 +373,9 @@ pub fn index(runs_dir: &Path, rebuild: bool) -> (Vec<TapeRow>, IndexStatus) {
 pub fn cells(runs_dir: &Path, map: Option<&str>) -> Vec<CellRow> {
     let mut out = Vec::new();
     for (run, path) in tape_files(runs_dir) {
-        let Ok(b) = brief_path(&path, None) else { continue };
+        let Ok(b) = brief_path(&path, None) else {
+            continue;
+        };
         let m = b.map.clone().unwrap_or_default();
         if let Some(want) = map {
             if !m.eq_ignore_ascii_case(want) {
@@ -376,7 +383,11 @@ pub fn cells(runs_dir: &Path, map: Option<&str>) -> Vec<CellRow> {
             }
         }
         let started = started_of(&path);
-        let kind = if b.totals.human.is_some() { "human" } else { "bot" };
+        let kind = if b.totals.human.is_some() {
+            "human"
+        } else {
+            "bot"
+        };
         for h in &b.hotspots {
             out.push(CellRow {
                 run: run.clone(),
@@ -434,7 +445,9 @@ pub struct Query {
 impl Query {
     fn keeps(&self, r: &TapeRow) -> bool {
         let eq = |want: &Option<String>, have: &str| -> bool {
-            want.as_ref().map(|w| have.eq_ignore_ascii_case(w)).unwrap_or(true)
+            want.as_ref()
+                .map(|w| have.eq_ignore_ascii_case(w))
+                .unwrap_or(true)
         };
         eq(&self.map, &r.map)
             && eq(&self.kind, &r.kind)
@@ -491,7 +504,11 @@ pub fn query(rows: &[TapeRow], q: &Query) -> Result<Answer, String> {
         }
         return Ok(Answer::Rows(out));
     };
-    if rows.first().map(|r| r.metric(metric).is_none()).unwrap_or(false) {
+    if rows
+        .first()
+        .map(|r| r.metric(metric).is_none())
+        .unwrap_or(false)
+    {
         return Err(format!(
             "no metric called '{metric}'. Try one of: stalls, engages, lava_deaths, \
              world_deaths, freezes, freeze_underfire, cover, goals, frags, deaths, \
@@ -507,7 +524,11 @@ pub fn query(rows: &[TapeRow], q: &Query) -> Result<Answer, String> {
             continue;
         }
         let Some(v) = r.metric(metric) else { continue };
-        let key = if group_by.is_empty() { "all".to_string() } else { r.field(group_by) };
+        let key = if group_by.is_empty() {
+            "all".to_string()
+        } else {
+            r.field(group_by)
+        };
         buckets.entry(key).or_default().push(v);
     }
     let mut groups: Vec<Agg> = buckets
@@ -531,7 +552,11 @@ pub fn query(rows: &[TapeRow], q: &Query) -> Result<Answer, String> {
     if let Some(n) = q.limit {
         groups.truncate(n);
     }
-    Ok(Answer::Aggregates { metric: metric.to_string(), groups, skipped_empty })
+    Ok(Answer::Aggregates {
+        metric: metric.to_string(),
+        groups,
+        skipped_empty,
+    })
 }
 
 /// CSV, because it is about half the tokens of the same table as JSON
@@ -539,7 +564,11 @@ pub fn query(rows: &[TapeRow], q: &Query) -> Result<Answer, String> {
 pub fn to_csv(a: &Answer) -> String {
     let mut s = String::new();
     match a {
-        Answer::Aggregates { metric, groups, skipped_empty } => {
+        Answer::Aggregates {
+            metric,
+            groups,
+            skipped_empty,
+        } => {
             let note = if *skipped_empty > 0 {
                 format!(", {skipped_empty} empty tape(s) left out")
             } else {
@@ -627,7 +656,10 @@ mod tests {
             Answer::Rows(r) => assert_eq!(r.len(), 3),
             _ => panic!("no metric means rows"),
         }
-        let q = Query { map: Some("dm2".into()), ..Default::default() };
+        let q = Query {
+            map: Some("dm2".into()),
+            ..Default::default()
+        };
         match query(&rows, &q).unwrap() {
             Answer::Rows(r) => assert_eq!(r.len(), 2),
             _ => panic!(),
@@ -641,7 +673,10 @@ mod tests {
             Answer::Rows(r) => assert_eq!(r.len(), 1),
             _ => panic!(),
         }
-        let q = Query { run_like: Some("band_".into()), ..Default::default() };
+        let q = Query {
+            run_like: Some("band_".into()),
+            ..Default::default()
+        };
         match query(&rows, &q).unwrap() {
             Answer::Rows(r) => assert_eq!(r[0].run, "band_dm2_two"),
             _ => panic!(),
@@ -670,7 +705,10 @@ mod tests {
             _ => panic!("a metric means aggregates"),
         }
         // an error an agent can act on, not "invalid field"
-        let bad = Query { metric: Some("stahls".into()), ..Default::default() };
+        let bad = Query {
+            metric: Some("stahls".into()),
+            ..Default::default()
+        };
         let e = query(&rows, &bad).unwrap_err();
         assert!(e.contains("stalls"), "{e}");
     }
@@ -737,8 +775,7 @@ mod tests {
             return;
         }
         assert!(st.rows > 400, "only {} tapes indexed", st.rows);
-        let maps: std::collections::BTreeSet<&str> =
-            rows.iter().map(|r| r.map.as_str()).collect();
+        let maps: std::collections::BTreeSet<&str> = rows.iter().map(|r| r.map.as_str()).collect();
         for m in ["dm2", "dm3", "dm4", "dm6"] {
             assert!(maps.contains(m), "{m} missing from the index");
         }

@@ -75,8 +75,8 @@ pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
     let mut already = Vec::new();
 
     let disp_path = cfg.src.join("argus_nav_dispatch.qc");
-    let mut disp = fs::read_to_string(&disp_path)
-        .map_err(|e| format!("{}: {e}", disp_path.display()))?;
+    let mut disp =
+        fs::read_to_string(&disp_path).map_err(|e| format!("{}: {e}", disp_path.display()))?;
     let progs_path = cfg.src.join("progs.src");
     let mut progs =
         fs::read_to_string(&progs_path).map_err(|e| format!("{}: {e}", progs_path.display()))?;
@@ -134,7 +134,11 @@ fn insert_dispatch_branch(src: &str, map: &str, spawn: &str) -> Result<String, S
     let Some(idx) = src.rfind(needle) else {
         return Err("argus_nav_dispatch.qc: no closing };".into());
     };
-    let indent = if src.contains("else if") { "    " } else { "    " };
+    let indent = if src.contains("else if") {
+        "    "
+    } else {
+        "    "
+    };
     let branch = format!("{indent}else if (mapname == \"{map}\")\n{indent}    {spawn} ();\n");
     let mut out = String::new();
     out.push_str(&src[..idx]);

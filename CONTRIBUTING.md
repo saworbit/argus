@@ -72,6 +72,7 @@ To update the playable game mod package, copy `lq1/progs.dat` to `game/argus/pro
 The lab suite includes regression tests against committed match tapes, parsing tools, and MCP protocols:
 
 ```bash
+cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
 cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
 ```
 

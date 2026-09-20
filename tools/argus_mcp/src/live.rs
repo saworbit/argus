@@ -158,18 +158,13 @@ pub fn snapshot_tape(tape: &MatchTape) -> Vec<BotLive> {
     let mut out = Vec::new();
     for (name, rec) in &tape.samples {
         let Some(last) = rec.last() else { continue };
-        let last_event = tape
-            .events
-            .iter()
-            .rev()
-            .find(|e| e.bot == *name)
-            .map(|e| {
-                if e.rest.is_empty() {
-                    e.verb.clone()
-                } else {
-                    format!("{} {}", e.verb, e.rest)
-                }
-            });
+        let last_event = tape.events.iter().rev().find(|e| e.bot == *name).map(|e| {
+            if e.rest.is_empty() {
+                e.verb.clone()
+            } else {
+                format!("{} {}", e.verb, e.rest)
+            }
+        });
         out.push(BotLive {
             name: name.clone(),
             t: last.t,

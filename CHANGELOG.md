@@ -9,6 +9,9 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE LAB CRATE IS BACK UNDER RUSTFMT** (#424). Existing Rust sources are
+formatted consistently, and CI now rejects new formatting drift.
+
 **THE LAB ADVERTISES ITS CARGO PACKAGE VERSION** (#426). Server metadata and
 instructions now read the version set in `Cargo.toml`, and project docs point to
 that single source instead of copying a current version number.

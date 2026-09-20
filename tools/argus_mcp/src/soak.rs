@@ -54,31 +54,49 @@ impl Default for SoakOpts {
     }
 }
 
-pub fn parse_soak_args(
-    mut args: impl Iterator<Item = String>,
-) -> Result<SoakOpts, String> {
+pub fn parse_soak_args(mut args: impl Iterator<Item = String>) -> Result<SoakOpts, String> {
     let mut o = SoakOpts::default();
     while let Some(a) = args.next() {
         let mut val = |what: &str| -> Result<String, String> {
             args.next().ok_or(format!("{what} needs a value"))
         };
         match a.as_str() {
-            "--maps" => o.maps = val("--maps")?.split(',').map(|s| s.trim().to_string()).collect(),
-            "--hours" => o.hours = val("--hours")?.parse().map_err(|e| format!("--hours: {e}"))?,
+            "--maps" => {
+                o.maps = val("--maps")?
+                    .split(',')
+                    .map(|s| s.trim().to_string())
+                    .collect()
+            }
+            "--hours" => {
+                o.hours = val("--hours")?
+                    .parse()
+                    .map_err(|e| format!("--hours: {e}"))?
+            }
             "--matches" => {
-                o.matches = val("--matches")?.parse().map_err(|e| format!("--matches: {e}"))?
+                o.matches = val("--matches")?
+                    .parse()
+                    .map_err(|e| format!("--matches: {e}"))?
             }
             "--duration" => {
-                o.duration_sec =
-                    val("--duration")?.parse().map_err(|e| format!("--duration: {e}"))?
+                o.duration_sec = val("--duration")?
+                    .parse()
+                    .map_err(|e| format!("--duration: {e}"))?
             }
-            "--skill" => o.skill = val("--skill")?.parse().map_err(|e| format!("--skill: {e}"))?,
+            "--skill" => {
+                o.skill = val("--skill")?
+                    .parse()
+                    .map_err(|e| format!("--skill: {e}"))?
+            }
             "--max-mb" => {
-                o.max_mb = val("--max-mb")?.parse().map_err(|e| format!("--max-mb: {e}"))?
+                o.max_mb = val("--max-mb")?
+                    .parse()
+                    .map_err(|e| format!("--max-mb: {e}"))?
             }
             "--learn" => o.learn = true,
             "--parallel" => {
-                o.parallel = val("--parallel")?.parse().map_err(|e| format!("--parallel: {e}"))?
+                o.parallel = val("--parallel")?
+                    .parse()
+                    .map_err(|e| format!("--parallel: {e}"))?
             }
             other => return Err(format!("unknown soak flag {other:?}")),
         }
@@ -303,7 +321,9 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
     {
         let dst = snap.join(format!(
             "{i}_{}",
-            p.file_name().map(|f| f.to_string_lossy().into_owned()).unwrap_or_default()
+            p.file_name()
+                .map(|f| f.to_string_lossy().into_owned())
+                .unwrap_or_default()
         ));
         let existed = p.exists();
         if existed {
@@ -323,9 +343,16 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
 
     // 2. learn
     let rep = crate::learn::learn_hotspots(&cfg, map, 8)?;
-    println!("learned {} cell(s) for {map} ({:?})", rep.cells.len(), rep.wrote);
+    println!(
+        "learned {} cell(s) for {map} ({:?})",
+        rep.cells.len(),
+        rep.wrote
+    );
     if rep.wrote.is_none() {
-        println!("nothing learned - cycle is a no-op, snapshot kept at {}", snap.display());
+        println!(
+            "nothing learned - cycle is a no-op, snapshot kept at {}",
+            snap.display()
+        );
         return Ok(());
     }
 
@@ -334,7 +361,10 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
     let gen = crate::navgen::nav_generate(&cfg, &bsp, map, None, None, false)?;
     if !gen.ok {
         restore(&saved);
-        return Err(format!("navgen failed, snapshot restored: {:?}", gen.stdout_tail));
+        return Err(format!(
+            "navgen failed, snapshot restored: {:?}",
+            gen.stdout_tail
+        ));
     }
     for line in &gen.stdout_tail {
         if line.contains("directed reach") || line.contains("WARNING") {
@@ -403,11 +433,18 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
 /// yyyy-mm-dd_hhmm without a chrono dependency.
 fn chrono_lite_stamp() -> String {
     use std::time::{SystemTime, UNIX_EPOCH};
-    let secs = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_secs();
+    let secs = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
     let days = secs / 86400;
     let (mut y, mut rem) = (1970i64, days as i64);
     loop {
-        let len = if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) { 366 } else { 365 };
+        let len = if y % 4 == 0 && (y % 100 != 0 || y % 400 == 0) {
+            366
+        } else {
+            365
+        };
         if rem < len {
             break;
         }
@@ -415,12 +452,31 @@ fn chrono_lite_stamp() -> String {
         y += 1;
     }
     let leap = y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
-    let ml = [31, if leap { 29 } else { 28 }, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+    let ml = [
+        31,
+        if leap { 29 } else { 28 },
+        31,
+        30,
+        31,
+        30,
+        31,
+        31,
+        30,
+        31,
+        30,
+        31,
+    ];
     let mut m = 0usize;
     while rem >= ml[m] {
         rem -= ml[m];
         m += 1;
     }
     let tod = secs % 86400;
-    format!("{y}-{:02}-{:02}_{:02}{:02}", m + 1, rem + 1, tod / 3600, (tod % 3600) / 60)
+    format!(
+        "{y}-{:02}-{:02}_{:02}{:02}",
+        m + 1,
+        rem + 1,
+        tod / 3600,
+        (tod % 3600) / 60
+    )
 }

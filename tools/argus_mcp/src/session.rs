@@ -86,7 +86,9 @@ impl SessionSeen {
 
 /// Where the memory lives when a lab root is resolvable.
 pub fn session_path() -> Option<std::path::PathBuf> {
-    crate::config::Config::load_for_reads().ok().map(|c| c.runs.join(".lab_session.json"))
+    crate::config::Config::load_for_reads()
+        .ok()
+        .map(|c| c.runs.join(".lab_session.json"))
 }
 
 #[cfg(test)]

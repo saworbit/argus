@@ -396,7 +396,11 @@ pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
 /// the same file three times. The entry is an Arc so a hit costs a
 /// pointer clone rather than a copy of every lump.
 static BSP_CACHE: std::sync::Mutex<
-    Option<(std::path::PathBuf, Option<std::time::SystemTime>, std::sync::Arc<Bsp29>)>,
+    Option<(
+        std::path::PathBuf,
+        Option<std::time::SystemTime>,
+        std::sync::Arc<Bsp29>,
+    )>,
 > = std::sync::Mutex::new(None);
 
 pub fn read_bsp29_cached(path: &std::path::Path) -> Result<std::sync::Arc<Bsp29>, String> {
@@ -430,7 +434,10 @@ fn file_stamp(path: &Path) -> (PathBuf, Option<SystemTime>) {
     )
 }
 
-fn stamps_fresh(cached: &[(PathBuf, Option<SystemTime>)], now: &[(PathBuf, Option<SystemTime>)]) -> bool {
+fn stamps_fresh(
+    cached: &[(PathBuf, Option<SystemTime>)],
+    now: &[(PathBuf, Option<SystemTime>)],
+) -> bool {
     if cached.len() != now.len() {
         return false;
     }
@@ -440,10 +447,9 @@ fn stamps_fresh(cached: &[(PathBuf, Option<SystemTime>)], now: &[(PathBuf, Optio
 pub fn lookup_node(cfg: &Config, map: &str, node: u32) -> Result<NodeView, String> {
     let atlas = cartograph(cfg, map)?;
     let path = cfg.src.join(format!("argus_nav_{}.qc.json", atlas.map));
-    let text = std::fs::read_to_string(&path)
-        .map_err(|_| format!("no nav JSON for {}", atlas.map))?;
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| format!("nav json: {e}"))?;
+    let text =
+        std::fs::read_to_string(&path).map_err(|_| format!("no nav JSON for {}", atlas.map))?;
+    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("nav json: {e}"))?;
     let nodes = v
         .get("nodes")
         .and_then(|n| n.as_array())
@@ -544,7 +550,10 @@ pub fn list_maps(cfg: &Config) -> Result<Vec<MapSource>, String> {
         if let Ok(rd) = std::fs::read_dir(&cfg.maps) {
             for ent in rd.flatten() {
                 let p = ent.path();
-                if p.extension().and_then(|s| s.to_str()).map(|s| s.eq_ignore_ascii_case("bsp")) != Some(true)
+                if p.extension()
+                    .and_then(|s| s.to_str())
+                    .map(|s| s.eq_ignore_ascii_case("bsp"))
+                    != Some(true)
                 {
                     continue;
                 }
@@ -566,7 +575,10 @@ pub fn list_maps(cfg: &Config) -> Result<Vec<MapSource>, String> {
     for pak in candidate_paks(cfg) {
         if let Ok(maps) = pak_list_maps(&pak) {
             for base in maps {
-                let name = base.trim_end_matches(".bsp").trim_end_matches(".BSP").to_string();
+                let name = base
+                    .trim_end_matches(".bsp")
+                    .trim_end_matches(".BSP")
+                    .to_string();
                 if out.iter().any(|m| m.name.eq_ignore_ascii_case(&name)) {
                     continue;
                 }
@@ -777,7 +789,10 @@ fn atlas_from_bsp(
     if counts.get("spawn").copied().unwrap_or(0) == 0 {
         notes.push("no info_player* spawn points in the entity lump".into());
     }
-    if items.iter().any(|i| i.classname == "item_artifact_super_damage") {
+    if items
+        .iter()
+        .any(|i| i.classname == "item_artifact_super_damage")
+    {
         // Say what THIS map's graph holds (#276). This used to print
         // dm4's pad node indices on every map that has a quad, which
         // is wrong twice over: node numbers only mean anything inside
@@ -893,10 +908,14 @@ fn atlas_from_bsp(
         );
     }
     if control.iter().any(|c| c.reach == "off_graph") {
-        implications.push("a control item is off the waypoint graph; bots will routefail or LOS-seek it".into());
+        implications.push(
+            "a control item is off the waypoint graph; bots will routefail or LOS-seek it".into(),
+        );
     }
     if causality.iter().any(|c| c.actuator == "shoot") {
-        implications.push("shootable button on this map; bots need a weapon and a purpose to fire it".into());
+        implications.push(
+            "shootable button on this map; bots need a weapon and a purpose to fire it".into(),
+        );
     }
 
     let (graph_cuts, node_island) = graph
@@ -958,9 +977,11 @@ fn atlas_from_bsp(
             .map(nearest)
             .filter(|d| d.is_finite())
             .collect();
-        if let Some(worst) = spawn_d.iter().cloned().fold(None::<f32>, |a, b| {
-            Some(a.map(|v| v.max(b)).unwrap_or(b))
-        }) {
+        if let Some(worst) = spawn_d
+            .iter()
+            .cloned()
+            .fold(None::<f32>, |a, b| Some(a.map(|v| v.max(b)).unwrap_or(b)))
+        {
             let orphans = spawn_d.iter().filter(|d| **d > 200.0).count();
             if worst > 200.0 {
                 implications.push(format!(
@@ -1181,10 +1202,8 @@ fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29, graph: Option<&NavGraph>) -> 
         ];
         let mut boardable = false;
         for (x, y) in ring {
-            let open =
-                hull.contents_at([x, y, seated + 30.0]) != crate::bsp::CONTENTS_SOLID;
-            let floor =
-                hull.contents_at([x, y, seated - 6.0]) == crate::bsp::CONTENTS_SOLID;
+            let open = hull.contents_at([x, y, seated + 30.0]) != crate::bsp::CONTENTS_SOLID;
+            let floor = hull.contents_at([x, y, seated - 6.0]) == crate::bsp::CONTENTS_SOLID;
             if open && floor {
                 boardable = true;
                 break;
@@ -1236,10 +1255,8 @@ fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29, graph: Option<&NavGraph>) -> 
                     if h + 56.0 > m.maxs[2] {
                         continue;
                     }
-                    let floor =
-                        hull.contents_at([x, y, h - 6.0]) == crate::bsp::CONTENTS_SOLID;
-                    let room =
-                        hull.contents_at([x, y, h + 30.0]) != crate::bsp::CONTENTS_SOLID;
+                    let floor = hull.contents_at([x, y, h - 6.0]) == crate::bsp::CONTENTS_SOLID;
+                    let room = hull.contents_at([x, y, h + 30.0]) != crate::bsp::CONTENTS_SOLID;
                     if floor && room {
                         ledge = true;
                     }
@@ -1395,15 +1412,51 @@ fn load_nav_graph_at(path: &std::path::Path) -> Option<NavGraph> {
         overlay: NavOverlay {
             json_path: path.display().to_string(),
             nodes: nodes.len(),
-            links: v.get("links").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            jump_links: v.get("jlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            tele_links: v.get("teles").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            rocket_links: v.get("rjlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            lift_links: v.get("liftlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            swim_links: v.get("swimlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            sprint_links: v.get("sprintlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            train_links: v.get("trainlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
-            door_links: v.get("doorlinks").and_then(|n| n.as_array()).map(|a| a.len()).unwrap_or(0),
+            links: v
+                .get("links")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            jump_links: v
+                .get("jlinks")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            tele_links: v
+                .get("teles")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            rocket_links: v
+                .get("rjlinks")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            lift_links: v
+                .get("liftlinks")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            swim_links: v
+                .get("swimlinks")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            sprint_links: v
+                .get("sprintlinks")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            train_links: v
+                .get("trainlinks")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
+            door_links: v
+                .get("doorlinks")
+                .and_then(|n| n.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0),
             exposure_min: exposure.iter().copied().min().unwrap_or(0),
             exposure_max: exposure.iter().copied().max().unwrap_or(0),
             cover_nodes,
@@ -1499,7 +1552,10 @@ fn reach_label_full(
     if s.dist > 192.0 {
         return "off_graph".into();
     }
-    if doors.iter().any(|(mn, mx)| segment_hits_aabb(*mn, *mx, node, origin)) {
+    if doors
+        .iter()
+        .any(|(mn, mx)| segment_hits_aabb(*mn, *mx, node, origin))
+    {
         return "blocked_by_door".into();
     }
     if s.dz > 40.0
@@ -1510,8 +1566,10 @@ fn reach_label_full(
         return "elevator".into();
     }
     if let Some(hull) = hull {
-        if !hull.line_clear([node[0], node[1], node[2] + 22.0], item_eye(origin, node[2]))
-            && s.dz <= 45.0
+        if !hull.line_clear(
+            [node[0], node[1], node[2] + 22.0],
+            item_eye(origin, node[2]),
+        ) && s.dz <= 45.0
         {
             return "off_graph".into();
         }
@@ -1929,10 +1987,7 @@ fn graph_cuts(g: &NavGraph, control: &[ControlItem]) -> (GraphCuts, Vec<u32>) {
                 })
                 .map(|c| c.classname.clone())
                 .collect();
-            let sample = comp
-                .first()
-                .and_then(|n| g.nodes.get(*n as usize))
-                .copied();
+            let sample = comp.first().and_then(|n| g.nodes.get(*n as usize)).copied();
             IslandBrief {
                 id: id as u32,
                 nodes: comp.len(),
@@ -1981,12 +2036,10 @@ fn find_door_cuts(g: &NavGraph, doors: &[DoorMeta], causality: &[CausalLink]) ->
             .targetname
             .as_deref()
             .and_then(|tn| {
-                causality.iter().find(|c| c.to_name == tn).map(|c| {
-                    (
-                        Some(c.from_target.clone()),
-                        Some(c.actuator.clone()),
-                    )
-                })
+                causality
+                    .iter()
+                    .find(|c| c.to_name == tn)
+                    .map(|c| (Some(c.from_target.clone()), Some(c.actuator.clone())))
             })
             .unwrap_or((None, None));
         let key = if (d.items & 131072 != 0) || (d.items & 16 != 0) {
@@ -2040,7 +2093,10 @@ fn find_corridor_misses(
             if hull.contents_at(floor) != crate::bsp::CONTENTS_SOLID {
                 continue;
             }
-            if doors.iter().any(|(mn, mx)| point_near_aabb(p, *mn, *mx, 8.0)) {
+            if doors
+                .iter()
+                .any(|(mn, mx)| point_near_aabb(p, *mn, *mx, 8.0))
+            {
                 continue;
             }
             let near = g.nodes.iter().any(|o| {
@@ -2100,8 +2156,8 @@ mod tests {
     /// geometry behind the 2026-08-19/20 statue forensics.
     #[test]
     fn dm2_plat_31_flags_the_ledge_in_its_column() {
-        let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../maps_local/dm2.bsp");
+        let p =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../maps_local/dm2.bsp");
         if !p.exists() {
             return;
         }
@@ -2124,7 +2180,10 @@ mod tests {
         assert_eq!(items.len(), 2, "dm2 carries two plats");
         let plats = analyze_plats(&items, &bsp, None);
         assert_eq!(plats.len(), 2);
-        let p31 = plats.iter().find(|p| p.model == "*31").expect("*31 analyzed");
+        let p31 = plats
+            .iter()
+            .find(|p| p.model == "*31")
+            .expect("*31 analyzed");
         assert!(
             p31.warnings.iter().any(|w| w.contains("swept column")),
             "*31 must be flagged for the ledge in its column, got {:?}",
@@ -2202,11 +2261,15 @@ mod tests {
     #[test]
     fn classifies_and_links() {
         let parsed = parse_entities(ents());
-        assert!(parsed.iter().any(|e| e["classname"] == "weapon_rocketlauncher"));
+        assert!(parsed
+            .iter()
+            .any(|e| e["classname"] == "weapon_rocketlauncher"));
         assert_eq!(classify("weapon_lightning"), "weapon");
         assert_eq!(classify("info_player_deathmatch"), "spawn");
         assert_eq!(classify("item_artifact_invulnerability"), "powerup");
-        let mega = parsed.iter().find(|e| e.get("spawnflags").map(|s| s.as_str()) == Some("2"));
+        let mega = parsed
+            .iter()
+            .find(|e| e.get("spawnflags").map(|s| s.as_str()) == Some("2"));
         assert!(mega.is_some());
         assert_eq!(item_value("item_health", 2).unwrap().1, "megahealth");
         assert!(item_value("item_health", 0).is_none());
@@ -2250,7 +2313,10 @@ mod tests {
                 .all(|c| c.classname != "weapon_supershotgun"),
             "2048 not-in-deathmatch should not be control"
         );
-        assert!(atlas.items.iter().any(|i| i.classname == "item_artifact_super_damage"));
+        assert!(atlas
+            .items
+            .iter()
+            .any(|i| i.classname == "item_artifact_super_damage"));
         assert!(
             atlas
                 .control
@@ -2262,14 +2328,17 @@ mod tests {
         assert!(atlas.headline.contains("dmtest"));
         assert!(atlas.recipe.contains("match_run"));
         let brief = atlas_brief(&atlas);
-        assert!(brief.control.iter().any(|c| c.reach == "rocket_jump" || c.elevated));
+        assert!(brief
+            .control
+            .iter()
+            .any(|c| c.reach == "rocket_jump" || c.elevated));
         let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
     fn real_dm4_if_present() {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../maps_local/dm4.bsp");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../maps_local/dm4.bsp");
         if !path.exists() {
             return;
         }
@@ -2305,9 +2374,15 @@ mod tests {
             );
         }
         assert!(atlas.counts.get("spawn").copied().unwrap_or(0) >= 4);
-        assert!(atlas.items.iter().any(|i| i.classname.starts_with("weapon_")));
+        assert!(atlas
+            .items
+            .iter()
+            .any(|i| i.classname.starts_with("weapon_")));
         assert!(!atlas.teleports.is_empty());
-        assert!(atlas.nav.is_some(), "dm4 nav JSON should exist in this tree");
+        assert!(
+            atlas.nav.is_some(),
+            "dm4 nav JSON should exist in this tree"
+        );
         assert!(atlas.dispatcher_known);
         assert!(atlas.headline.contains("dm4"));
         assert!(atlas
@@ -2327,7 +2402,11 @@ mod tests {
         // not the map. The pit RL and the LG are the sentinels - both
         // are floor-seated (lump origin 24 below their node) and both
         // were mislabelled before the fix.
-        let off = atlas.control.iter().filter(|c| c.reach == "off_graph").count();
+        let off = atlas
+            .control
+            .iter()
+            .filter(|c| c.reach == "off_graph")
+            .count();
         assert!(
             off * 2 < atlas.control.len(),
             "majority of dm4 control off_graph: {:?}",
@@ -2341,8 +2420,9 @@ mod tests {
             atlas
                 .control
                 .iter()
-                .filter(|c| c.classname == "weapon_lightning"
-                    || c.classname == "weapon_rocketlauncher")
+                .filter(
+                    |c| c.classname == "weapon_lightning" || c.classname == "weapon_rocketlauncher"
+                )
                 .all(|c| c.reach == "walk"),
             "floor-seated prizes must snap walk: {:?}",
             atlas.control
@@ -2355,7 +2435,10 @@ mod tests {
         assert!(!insp.items.is_empty());
         let cuts = atlas.graph_cuts.expect("dm4 nav should yield graph_cuts");
         assert!(cuts.weak >= 1);
-        assert_eq!(cuts.largest_weak, cuts.islands.first().map(|i| i.nodes).unwrap_or(0));
+        assert_eq!(
+            cuts.largest_weak,
+            cuts.islands.first().map(|i| i.nodes).unwrap_or(0)
+        );
         assert!(atlas.headline.contains("islands"));
     }
 
@@ -2369,8 +2452,8 @@ mod tests {
     // connectivity is a question about the nodes that exist.
     #[test]
     fn real_e1m5_if_present_counts_live_edicts_and_sees_the_coverage_hole() {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../maps_local/e1m5.bsp");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../maps_local/e1m5.bsp");
         if !path.exists() {
             return;
         }
@@ -2416,8 +2499,8 @@ mod tests {
 
     #[test]
     fn real_dm2_if_present_reports_door_cuts() {
-        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../maps_local/dm2.bsp");
+        let path =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../maps_local/dm2.bsp");
         if !path.exists() {
             return;
         }
@@ -2465,11 +2548,7 @@ mod tests {
         let g = NavGraph {
             overlay: dummy_overlay(3),
             nodes: vec![[0.0, 0.0, 0.0], [32.0, 0.0, 0.0], [400.0, 0.0, 0.0]],
-            adj: vec![
-                vec![(1, "walk".into())],
-                vec![(0, "walk".into())],
-                vec![],
-            ],
+            adj: vec![vec![(1, "walk".into())], vec![(0, "walk".into())], vec![]],
         };
         let (cuts, map) = graph_cuts(&g, &[]);
         assert_eq!(cuts.weak, 2);
@@ -2564,8 +2643,8 @@ mod tests {
     /// dm2 neighbour above.
     #[test]
     fn dm3_nav_served_plats_stop_warning_unboardable() {
-        let p = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("../../maps_local/dm3.bsp");
+        let p =
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../maps_local/dm3.bsp");
         let jf = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../src/argus_nav_dm3.qc.json");
         if !p.exists() || !jf.exists() {

@@ -7,8 +7,8 @@ use crate::paths::{default_run_name, valid_run_name};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 pub const DURATION_MIN: u32 = 10;
 pub const DURATION_MAX: u32 = 600;
@@ -72,7 +72,10 @@ pub struct MatchCtrl {
 impl MatchCtrl {
     /// A controller bound to its own engine port, for parallel work.
     pub fn on_port(port: u32) -> Self {
-        MatchCtrl { port: Some(port), ..Default::default() }
+        MatchCtrl {
+            port: Some(port),
+            ..Default::default()
+        }
     }
 
     /// Let the NEXT start() write over a committed tape.
@@ -226,8 +229,7 @@ impl MatchCtrl {
             Some(n) => {
                 if !valid_run_name(n) {
                     return Err(
-                        "run_name must match [A-Za-z0-9._-]+ and contain no path separators"
-                            .into(),
+                        "run_name must match [A-Za-z0-9._-]+ and contain no path separators".into(),
                     );
                 }
                 n.to_string()
@@ -372,8 +374,16 @@ impl MatchCtrl {
         skill: Option<u32>,
         coop: Option<bool>,
     ) -> Result<MatchRunResult, String> {
-        self.begin(cfg, map, duration_sec, run_name, dedicated_slots, skill, coop)
-            .await?;
+        self.begin(
+            cfg,
+            map,
+            duration_sec,
+            run_name,
+            dedicated_slots,
+            skill,
+            coop,
+        )
+        .await?;
         let limit = duration_sec as u64;
         loop {
             let (running, elapsed) = self.poll();
@@ -397,8 +407,16 @@ impl MatchCtrl {
         skill: Option<u32>,
         coop: Option<bool>,
     ) -> Result<(), String> {
-        self.start(cfg, map, Some(duration_sec), run_name, dedicated_slots, skill, coop)
-            .await?;
+        self.start(
+            cfg,
+            map,
+            Some(duration_sec),
+            run_name,
+            dedicated_slots,
+            skill,
+            coop,
+        )
+        .await?;
         // (start() runs the un-harvested-session guard)
         if let Err(e) = self.await_healthy(Duration::from_secs(10)).await {
             let _ = self.stop(Duration::from_secs(2)).await;
@@ -420,8 +438,7 @@ impl MatchCtrl {
             }
         }
         if !log_has_tape(&text) {
-            let why = diagnose_log(&text)
-                .unwrap_or_else(|| "server may have died at spawn".into());
+            let why = diagnose_log(&text).unwrap_or_else(|| "server may have died at spawn".into());
             return Err(format_match_fail(&log_path, &text, &why));
         }
         Ok(MatchRunResult {
@@ -448,7 +465,10 @@ impl MatchCtrl {
         let deadline = Instant::now() + budget;
         loop {
             let (running, _) = self.poll();
-            let live_log = self.live.as_ref().map(|l| l.harvested.display().to_string());
+            let live_log = self
+                .live
+                .as_ref()
+                .map(|l| l.harvested.display().to_string());
             if let Some(text) = self.log_text() {
                 if log_has_tape(&text) {
                     return Ok(());
@@ -647,7 +667,10 @@ fn harvest(live: &LiveMatch) -> String {
     // Do not write an empty body if the harvested file doesn't need to be created empty
     if !body.trim().is_empty() || !live.harvested.exists() {
         if let Err(e) = std::fs::write(&live.harvested, &body) {
-            eprintln!("failed to write harvest log {}: {e}", live.harvested.display());
+            eprintln!(
+                "failed to write harvest log {}: {e}",
+                live.harvested.display()
+            );
         }
     }
 
@@ -716,7 +739,10 @@ fn recent_lines_since(live: &LiveMatch, since_line: Option<u32>) -> (Vec<String>
                 used += cost;
                 start -= 1;
             }
-            (all[start..].iter().map(|s| (*s).to_string()).collect(), total)
+            (
+                all[start..].iter().map(|s| (*s).to_string()).collect(),
+                total,
+            )
         }
         Some(n) => take_budgeted(&all, (n as usize).min(all.len())),
     }
@@ -774,7 +800,10 @@ pub struct RunEntry {
 /// every match starter refuses until it is harvested or deleted.
 pub fn unharvested_session(cfg: &Config) -> Option<String> {
     let mut hits: Vec<String> = Vec::new();
-    for p in [cfg.root.join("qconsole.log"), cfg.basedir.join("qconsole.log")] {
+    for p in [
+        cfg.root.join("qconsole.log"),
+        cfg.basedir.join("qconsole.log"),
+    ] {
         if let Ok(text) = std::fs::read_to_string(&p) {
             if text.contains("SpawnServer:") {
                 hits.push(p.display().to_string());
@@ -882,7 +911,10 @@ mod tests {
         // one the budget actually cuts: eighty of those lines would
         // have been over eight thousand bytes
         let old_cut: usize = lr[..80].iter().map(|s| s.len() + 1).sum();
-        assert!(old_cut > TAIL_BUDGET_BYTES, "the fixture is not long enough: {old_cut}");
+        assert!(
+            old_cut > TAIL_BUDGET_BYTES,
+            "the fixture is not long enough: {old_cut}"
+        );
         assert!(bytes(&b) < old_cut, "{} vs {old_cut}", bytes(&b));
         // the record counts differ because the records do; holding
         // the COUNT constant is what made the cost vary
@@ -926,8 +958,7 @@ mod tests {
     }
 
     fn tmp_cfg_runs(tag: &str, runs: &str) -> crate::config::Config {
-        let tmp = std::env::temp_dir()
-            .join(format!("argus-{tag}-{}", std::process::id()));
+        let tmp = std::env::temp_dir().join(format!("argus-{tag}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(tmp.join(runs)).unwrap();
         crate::config::Config {
@@ -980,15 +1011,23 @@ mod tests {
         }
         let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
         let _ = git(&cfg.root, &["config", "user.name", "t"]);
-        std::fs::write(cfg.runs.join("ab_dm2_doortype2.log"), "tape
-").unwrap();
-        std::fs::write(cfg.runs.join("scratch1.log"), "tape
-").unwrap();
+        std::fs::write(
+            cfg.runs.join("ab_dm2_doortype2.log"),
+            "tape
+",
+        )
+        .unwrap();
+        std::fs::write(
+            cfg.runs.join("scratch1.log"),
+            "tape
+",
+        )
+        .unwrap();
         assert!(git(&cfg.root, &["add", "runs/ab_dm2_doortype2.log"]));
         assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
 
-        let refused = committed_tape(&cfg, "ab_dm2_doortype2")
-            .expect("a committed tape must be refused");
+        let refused =
+            committed_tape(&cfg, "ab_dm2_doortype2").expect("a committed tape must be refused");
         assert!(refused.contains("ab_dm2_doortype2"), "{refused}");
         assert!(refused.contains("committed"), "{refused}");
         assert_eq!(
@@ -1017,14 +1056,26 @@ mod tests {
         }
         let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
         let _ = git(&cfg.root, &["config", "user.name", "t"]);
-        std::fs::write(cfg.runs.join("ab_dm4_evidence.log"), "tape
-").unwrap();
+        std::fs::write(
+            cfg.runs.join("ab_dm4_evidence.log"),
+            "tape
+",
+        )
+        .unwrap();
         assert!(git(&cfg.root, &["add", "runs/ab_dm4_evidence.log"]));
         assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
 
         let mut ctrl = MatchCtrl::default();
         let err = ctrl
-            .start(&cfg, "dm4", Some(30), Some("ab_dm4_evidence"), None, None, None)
+            .start(
+                &cfg,
+                "dm4",
+                Some(30),
+                Some("ab_dm4_evidence"),
+                None,
+                None,
+                None,
+            )
             .await
             .expect_err("a committed tape must stop the match");
         assert!(err.contains("committed"), "{err}");
@@ -1037,7 +1088,15 @@ mod tests {
         // on the missing engine instead
         ctrl.refresh_committed_tape();
         let err = ctrl
-            .start(&cfg, "dm4", Some(30), Some("ab_dm4_evidence"), None, None, None)
+            .start(
+                &cfg,
+                "dm4",
+                Some(30),
+                Some("ab_dm4_evidence"),
+                None,
+                None,
+                None,
+            )
             .await
             .expect_err("no engine binary in a temp config");
         assert!(!err.contains("committed"), "{err}");
@@ -1046,7 +1105,15 @@ mod tests {
         // is guarded again and the matrix cannot leave the door open
         // behind it.
         let err = ctrl
-            .start(&cfg, "dm4", Some(30), Some("ab_dm4_evidence"), None, None, None)
+            .start(
+                &cfg,
+                "dm4",
+                Some(30),
+                Some("ab_dm4_evidence"),
+                None,
+                None,
+                None,
+            )
             .await
             .expect_err("the exemption must not carry over");
         assert!(err.contains("committed"), "{err}");
@@ -1066,12 +1133,20 @@ mod tests {
         let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
         let _ = git(&cfg.root, &["config", "user.name", "t"]);
         // the real tape, in the configured runs dir
-        std::fs::write(cfg.runs.join("ab_dm4_moved.log"), "tape
-").unwrap();
+        std::fs::write(
+            cfg.runs.join("ab_dm4_moved.log"),
+            "tape
+",
+        )
+        .unwrap();
         // a decoy at the path the guard used to assume, left uncommitted
         std::fs::create_dir_all(cfg.root.join("runs")).unwrap();
-        std::fs::write(cfg.root.join("runs/ab_dm4_moved.log"), "decoy
-").unwrap();
+        std::fs::write(
+            cfg.root.join("runs/ab_dm4_moved.log"),
+            "decoy
+",
+        )
+        .unwrap();
         assert!(git(&cfg.root, &["add", "tapes/ab_dm4_moved.log"]));
         assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
 
@@ -1086,8 +1161,12 @@ mod tests {
     #[test]
     fn the_guard_fails_open_outside_a_checkout() {
         let cfg = tmp_cfg("tape-no-repo");
-        std::fs::write(cfg.runs.join("loose.log"), "tape
-").unwrap();
+        std::fs::write(
+            cfg.runs.join("loose.log"),
+            "tape
+",
+        )
+        .unwrap();
         assert_eq!(committed_tape(&cfg, "loose"), None);
         let _ = std::fs::remove_dir_all(&cfg.root);
     }
@@ -1146,7 +1225,11 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
 
         let run_dir = tmp.join("exp_dm4");
         std::fs::create_dir_all(&run_dir).unwrap();
-        std::fs::write(run_dir.join("qconsole.log"), "Engine crashed or empty output\n").unwrap();
+        std::fs::write(
+            run_dir.join("qconsole.log"),
+            "Engine crashed or empty output\n",
+        )
+        .unwrap();
 
         let live = LiveMatch {
             child: EngineChild::mock(),
@@ -1165,18 +1248,25 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
 
         // Verify the valid tape was preserved intact
         let content = std::fs::read_to_string(&harvested_path).unwrap();
-        assert_eq!(content, valid_tape, "harvest must NOT overwrite valid ARGLOG tape with empty/failed output");
+        assert_eq!(
+            content, valid_tape,
+            "harvest must NOT overwrite valid ARGLOG tape with empty/failed output"
+        );
 
         // Verify failure was saved aside
         let fail_path = run_dir.join("failed_harvest.log");
-        assert!(fail_path.is_file(), "failed output should be saved to failed_harvest.log");
+        assert!(
+            fail_path.is_file(),
+            "failed output should be saved to failed_harvest.log"
+        );
 
         let _ = std::fs::remove_dir_all(&tmp);
     }
 
     #[tokio::test]
     async fn stop_matching_filters_by_run_name_and_pid() {
-        let tmp = std::env::temp_dir().join(format!("argus-stop-match-test-{}", std::process::id()));
+        let tmp =
+            std::env::temp_dir().join(format!("argus-stop-match-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&tmp);
         std::fs::create_dir_all(tmp.join("exp_dm4")).unwrap();
 
@@ -1220,17 +1310,26 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
         });
 
         // Mismatched run_name does not stop
-        let st1 = ctrl.stop_matching(Some("exp_other"), None, Duration::from_millis(50)).await.unwrap();
+        let st1 = ctrl
+            .stop_matching(Some("exp_other"), None, Duration::from_millis(50))
+            .await
+            .unwrap();
         assert!(st1.running, "mismatched run_name must not stop live match");
         assert!(ctrl.live.is_some());
 
         // Mismatched pid does not stop
-        let st2 = ctrl.stop_matching(None, Some(live_pid + 1000), Duration::from_millis(50)).await.unwrap();
+        let st2 = ctrl
+            .stop_matching(None, Some(live_pid + 1000), Duration::from_millis(50))
+            .await
+            .unwrap();
         assert!(st2.running, "mismatched pid must not stop live match");
         assert!(ctrl.live.is_some());
 
         // Matching run_name stops the match
-        let st3 = ctrl.stop_matching(Some("exp_dm4"), None, Duration::from_millis(500)).await.unwrap();
+        let st3 = ctrl
+            .stop_matching(Some("exp_dm4"), None, Duration::from_millis(500))
+            .await
+            .unwrap();
         assert!(!st3.running, "matching run_name must stop the match");
         assert!(ctrl.live.is_none());
 

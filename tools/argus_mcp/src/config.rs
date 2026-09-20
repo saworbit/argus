@@ -114,7 +114,8 @@ pub fn load_for_reads_from(
         .unwrap_or_else(|| "argus".into());
     let src = optional_path(&merged, "ARGUS_SRC").unwrap_or_else(|| root.join("src"));
     let runs = optional_path(&merged, "ARGUS_RUNS").unwrap_or_else(|| root.join("runs"));
-    let progs = optional_path(&merged, "ARGUS_PROGS").unwrap_or_else(|| root.join("lq1").join("progs.dat"));
+    let progs =
+        optional_path(&merged, "ARGUS_PROGS").unwrap_or_else(|| root.join("lq1").join("progs.dat"));
     let maps = optional_path(&merged, "ARGUS_MAPS").unwrap_or_else(|| root.join("maps_local"));
     Ok(Config {
         root: root.clone(),
@@ -145,7 +146,8 @@ pub fn load_from(env: &HashMap<String, String>, cwd: &Path) -> Result<Config, Co
         .unwrap_or_else(|| "argus".into());
     let src = optional_path(&merged, "ARGUS_SRC").unwrap_or_else(|| root.join("src"));
     let runs = optional_path(&merged, "ARGUS_RUNS").unwrap_or_else(|| root.join("runs"));
-    let progs = optional_path(&merged, "ARGUS_PROGS").unwrap_or_else(|| root.join("lq1").join("progs.dat"));
+    let progs =
+        optional_path(&merged, "ARGUS_PROGS").unwrap_or_else(|| root.join("lq1").join("progs.dat"));
     let maps = optional_path(&merged, "ARGUS_MAPS").unwrap_or_else(|| root.join("maps_local"));
 
     Ok(Config {
@@ -281,7 +283,12 @@ fn find_root(start: &Path) -> Option<PathBuf> {
         std::env::current_dir().ok()?.join(start)
     };
     for _ in 0..8 {
-        if cur.join("game").join("argus").join("autoexec.cfg").is_file() {
+        if cur
+            .join("game")
+            .join("argus")
+            .join("autoexec.cfg")
+            .is_file()
+        {
             return Some(cur);
         }
         if !cur.pop() {
@@ -355,7 +362,10 @@ fn flatten_toml(table: &toml::Table, out: &mut HashMap<String, String>) {
     }
 }
 
-fn required_path(merged: &HashMap<String, String>, key: &'static str) -> Result<PathBuf, ConfigError> {
+fn required_path(
+    merged: &HashMap<String, String>,
+    key: &'static str,
+) -> Result<PathBuf, ConfigError> {
     let raw = merged
         .get(key)
         .cloned()
@@ -504,7 +514,10 @@ mod tests {
         let empty = tmpdir();
         let report = report_from(&HashMap::new(), &empty);
         assert!(!report.complete);
-        assert!(report.entries.iter().any(|e| e.key == "ARGUS_ROOT" && e.value.is_none()));
+        assert!(report
+            .entries
+            .iter()
+            .any(|e| e.key == "ARGUS_ROOT" && e.value.is_none()));
         let _ = fs::remove_dir_all(&empty);
     }
 

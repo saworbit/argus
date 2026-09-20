@@ -54,8 +54,11 @@ pub fn lab_status(cfg: &Config, live: Option<MatchStatus>) -> LabStatus {
             }
         })
         .collect();
-    let recent_runs: Vec<crate::match_ctrl::RunEntry> =
-        list_runs(cfg).unwrap_or_default().into_iter().take(8).collect();
+    let recent_runs: Vec<crate::match_ctrl::RunEntry> = list_runs(cfg)
+        .unwrap_or_default()
+        .into_iter()
+        .take(8)
+        .collect();
     let recommend = recommend(ready, &maps, &recent_runs, live.as_ref());
     LabStatus {
         ready,
@@ -81,7 +84,8 @@ fn recommend(
     live: Option<&MatchStatus>,
 ) -> String {
     if live.map(|s| s.running).unwrap_or(false) {
-        return "a match is live; see what=live or see what=status, or tune command=\"skill 3\"".into();
+        return "a match is live; see what=live or see what=status, or tune command=\"skill 3\""
+            .into();
     }
     if !ready {
         return "config is incomplete; run config_check and set the missing ARGUS_* keys".into();
@@ -98,9 +102,7 @@ fn recommend(
         }
         return "no harvested logs; match_run map=dm4 duration_sec=185".into();
     }
-    format!(
-        "see what=project, or experiment after a QC edit, or compare_runs log_b=latest"
-    )
+    format!("see what=project, or experiment after a QC edit, or compare_runs log_b=latest")
 }
 
 pub fn cartograph_all(cfg: &Config) -> Result<Vec<AtlasBrief>, String> {
@@ -114,7 +116,9 @@ pub fn cartograph_all(cfg: &Config) -> Result<Vec<AtlasBrief>, String> {
         }
     }
     if out.is_empty() {
-        return Err("no on-disk BSPs to cartograph (extract with cartograph bsp=<name> first)".into());
+        return Err(
+            "no on-disk BSPs to cartograph (extract with cartograph bsp=<name> first)".into(),
+        );
     }
     Ok(out)
 }
