@@ -21,11 +21,12 @@ use crate::qc_index::{index_argus, qc_file_slice, qc_find, qc_read, qc_search};
 use crate::see_alias::normalize_see;
 use crate::session::{ExperimentRecord, SessionSeen};
 use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, timeline};
+use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolResult, ContentBlock, Implementation, ListResourceTemplatesResult, ListResourcesResult,
     PaginatedRequestParams, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
-    ReadResourceResult, Role, ServerCapabilities, ServerInfo,
+    ReadResourceResult, Role, ServerCapabilities, ServerInfo, ToolAnnotations,
 };
 use rmcp::service::{RequestContext, RoleServer};
 use rmcp::ErrorData as McpError;
@@ -40,6 +41,52 @@ use tokio::sync::Mutex;
 
 const SERVER_NAME: &str = env!("CARGO_PKG_NAME");
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const READ_ONLY_TOOLS: &[&str] = &[
+    "bot_capture_pov_frame",
+    "brief_run",
+    "bsp_inspect_entities",
+    "cartograph_all",
+    "compare_runs",
+    "config_check",
+    "corpus",
+    "lab_status",
+    "list_maps",
+    "list_runs",
+    "live_snapshot",
+    "match_status",
+    "mill",
+    "knobs",
+    "qc_find",
+    "qc_index",
+    "qc_read",
+    "quality_bars",
+    "see",
+    "suggest_next",
+];
+
+const MUTATING_TOOLS: &[&str] = &[
+    "analyze_match",
+    "baseline_set",
+    "bot_simulate_match",
+    "campaign_experiment",
+    "cartograph",
+    "compile_qc",
+    "experiment",
+    "learn_hotspots",
+    "match_command",
+    "match_run",
+    "match_start",
+    "match_stop",
+    "matrix_experiment",
+    "nav_generate",
+    "nav_sync_dispatch",
+    "probe",
+    "quake_compile_qc",
+    "rcon_exec",
+    "ship",
+    "tune",
+];
 
 fn server_instructions() -> String {
     format!(
@@ -75,6 +122,30 @@ impl Argus {
             run_gate: Arc::new(Mutex::new(())),
             session: Arc::new(Mutex::new(seen)),
         }
+    }
+
+    /// Attach one explicit safety contract to every generated route. Keeping
+    /// the partition here makes the whole tool surface reviewable at once and
+    /// makes a newly added, unclassified tool fail immediately in tests and at
+    /// startup instead of inheriting the protocol's destructive defaults.
+    fn annotated_tool_router() -> ToolRouter<Self> {
+        let mut router = Self::tool_router();
+        for (name, route) in &mut router.map {
+            let read_only = READ_ONLY_TOOLS.contains(&name.as_ref());
+            let mutating = MUTATING_TOOLS.contains(&name.as_ref());
+            assert_ne!(
+                read_only, mutating,
+                "MCP tool {name} must appear in exactly one safety class"
+            );
+            route.attr.annotations = Some(ToolAnnotations::from_raw(
+                Some(name.to_string()),
+                Some(read_only),
+                Some(mutating),
+                Some(read_only),
+                Some(false),
+            ));
+        }
+        router
     }
 
     /// Drive a match WITHOUT holding the MatchCtrl mutex for its whole
@@ -1559,8 +1630,7 @@ impl Argus {
     }
 
     #[tool(
-        description = "One inspect call. what=help|project|lab|map|recipe|node|fn|const|live|bot|status|run|last|knobs. Use this before inventing a pipeline.",
-        annotations(title = "see", read_only_hint = true)
+        description = "One inspect call. what=help|project|lab|map|recipe|node|fn|const|live|bot|status|run|last|knobs. Use this before inventing a pipeline."
     )]
     async fn see(&self, Parameters(args): Parameters<SeeArgs>) -> Result<CallToolResult, McpError> {
         let what = normalize_see(&args.what);
@@ -2424,7 +2494,7 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
     Some((map, id))
 }
 
-#[tool_handler]
+#[tool_handler(router = Self::annotated_tool_router())]
 #[prompt_handler]
 impl ServerHandler for Argus {
     fn get_info(&self) -> ServerInfo {
@@ -2501,7 +2571,7 @@ mod tests {
     /// between tools is exact either way.
     #[test]
     fn the_tool_surface_has_a_measured_price() {
-        let router = Argus::tool_router();
+        let router = Argus::annotated_tool_router();
         let tools = router.list_all();
         assert!(tools.len() > 20, "only {} tools", tools.len());
         let mut rows: Vec<(usize, String)> = tools
@@ -2519,11 +2589,54 @@ mod tests {
         }
         // If this fails, the question is whether the new tool earns its
         // rent, not whether to raise the bound.
-        // 18,816 bytes over 39 tools, measured 2026-09-16, which is
-        // about 4,700 tokens on EVERY request. The bound sits just
-        // above that on purpose: a bound three times the actual is
-        // not a bound. If this fails, the question is whether the new
-        // tool earns its rent, not whether to raise the number.
-        assert!(total < 22_000, "the tool surface costs {total} bytes");
+        // 24,715 bytes over 40 tools, measured 2026-09-21 after every
+        // route gained its explicit five-field MCP safety contract.
+        // That is about 6,200 tokens on EVERY request. The bound sits
+        // just above the measured surface on purpose: a bound three
+        // times the actual is not a bound. If this fails, the question
+        // is whether the metadata or tool earns its rent, not whether
+        // to raise the number.
+        assert!(total < 25_500, "the tool surface costs {total} bytes");
+    }
+
+    #[test]
+    fn every_tool_publishes_an_explicit_safety_contract() {
+        let router = Argus::annotated_tool_router();
+        let tools = router.list_all();
+
+        assert_eq!(tools.len(), READ_ONLY_TOOLS.len() + MUTATING_TOOLS.len());
+        for tool in &tools {
+            let annotations = tool
+                .annotations
+                .as_ref()
+                .unwrap_or_else(|| panic!("{} has no safety annotations", tool.name));
+            let read_only = READ_ONLY_TOOLS.contains(&tool.name.as_ref());
+            assert_eq!(annotations.title.as_deref(), Some(tool.name.as_ref()));
+            assert_eq!(annotations.read_only_hint, Some(read_only), "{}", tool.name);
+            assert_eq!(
+                annotations.destructive_hint,
+                Some(!read_only),
+                "{}",
+                tool.name
+            );
+            assert_eq!(
+                annotations.idempotent_hint,
+                Some(read_only),
+                "{}",
+                tool.name
+            );
+            assert_eq!(annotations.open_world_hint, Some(false), "{}", tool.name);
+        }
+
+        for name in ["ship", "baseline_set", "match_start", "match_stop", "tune"] {
+            let tool = tools.iter().find(|tool| tool.name == name).unwrap();
+            let annotations = tool.annotations.as_ref().unwrap();
+            assert_eq!(annotations.read_only_hint, Some(false), "{name}");
+            assert_eq!(annotations.destructive_hint, Some(true), "{name}");
+            assert_eq!(annotations.idempotent_hint, Some(false), "{name}");
+        }
+
+        let see = tools.iter().find(|tool| tool.name == "see").unwrap();
+        assert_eq!(see.annotations.as_ref().unwrap().read_only_hint, Some(true));
     }
 }

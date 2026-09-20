@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**MCP CLIENTS CAN NOW SEE WHICH LAB TOOLS CHANGE STATE** (#453, part of #370).
+Every advertised tool has an explicit read-only, destructive, idempotent and
+open-world contract. Inspection and analysis calls are read-only; compile,
+install, navigation writes and live-match controls are conservatively marked
+destructive. A router-level test makes a new unclassified tool fail closed.
+
 **CI NO LONGER MOVES TO A NEW UBUNTU IMAGE WITHOUT A DECISION** (#450). The
 repository invariants, Rust lab, FTEQCC compile and headless LibreQuake smoke
 now pin Ubuntu 24.04 instead of following `ubuntu-latest` onto Ubuntu 26 on
