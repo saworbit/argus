@@ -936,6 +936,15 @@ tool_timeout_sec = 700
         self.assertEqual(res.returncode, 0)
         self.assertIn("Argus repo invariant battery", res.stdout)
 
+    def test_ci_uses_an_explicit_ubuntu_runner(self):
+        workflows = [
+            ROOT / ".github" / "workflows" / "fast.yml",
+            ROOT / ".github" / "workflows" / "compile.yml",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8") for path in workflows)
+        self.assertNotIn("runs-on: ubuntu-latest", text)
+        self.assertEqual(text.count("runs-on: ubuntu-24.04"), 4)
+
     def test_argus_ci_ship_passes_on_the_tree(self):
         # CLAUDE.md is gitignored (machine-local), so this tree holds
         # it locally but a CI checkout never does. Pass either way:
