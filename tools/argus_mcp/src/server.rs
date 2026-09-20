@@ -24,9 +24,10 @@ use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, tim
 use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
-    CallToolResult, ContentBlock, Implementation, ListResourceTemplatesResult, ListResourcesResult,
-    PaginatedRequestParams, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
-    ReadResourceResult, Role, ServerCapabilities, ServerInfo, ToolAnnotations,
+    CallToolResult, CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock,
+    Implementation, ListResourceTemplatesResult, ListResourcesResult, PaginatedRequestParams,
+    PromptMessage, ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Reference,
+    Role, ServerCapabilities, ServerInfo, ToolAnnotations,
 };
 use rmcp::service::{RequestContext, RoleServer};
 use rmcp::ErrorData as McpError;
@@ -2553,6 +2554,135 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
     Some((map, id))
 }
 
+#[derive(Debug, PartialEq)]
+enum CompletionSource {
+    Maps,
+    MapList,
+    Runs(&'static [&'static str]),
+    Primary,
+    GraphHashes(Option<String>),
+}
+
+fn completion_source(request: &CompleteRequestParams) -> Option<CompletionSource> {
+    let argument = request.argument.name.as_str();
+    match &request.r#ref {
+        Reference::Prompt(prompt) => match (prompt.name.as_str(), argument) {
+            ("review_run", "log") => Some(CompletionSource::Runs(&[])),
+            ("review_ab", "log_a") => Some(CompletionSource::Runs(&["baseline", "shipped"])),
+            ("review_ab", "log_b") => Some(CompletionSource::Runs(&["latest"])),
+            ("review_ab", "map") | ("review_map", "bsp") => Some(CompletionSource::Maps),
+            ("validate_change", "maps") => Some(CompletionSource::MapList),
+            ("validate_change", "primary") => Some(CompletionSource::Primary),
+            _ => None,
+        },
+        Reference::Resource(resource) => match (resource.uri.as_str(), argument) {
+            ("argus://map/{name}", "name")
+            | ("argus://graph-revisions/{map}", "map")
+            | ("argus://graph/{map}/{hash}", "map")
+            | ("argus://probe-verdicts/{map}/{hash}", "map") => Some(CompletionSource::Maps),
+            ("argus://run/{name}", "name") => Some(CompletionSource::Runs(&["latest"])),
+            ("argus://graph/{map}/{hash}", "hash")
+            | ("argus://probe-verdicts/{map}/{hash}", "hash") => {
+                let map = request
+                    .context
+                    .as_ref()
+                    .and_then(|context| context.get_argument("map"))
+                    .cloned();
+                Some(CompletionSource::GraphHashes(map))
+            }
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn filter_completion_values(
+    mut values: Vec<String>,
+    partial: &str,
+    comma_separated: bool,
+) -> CompletionInfo {
+    values.sort_by_key(|value| value.to_ascii_lowercase());
+    values.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+
+    let (prefix, needle, prior): (String, &str, Vec<String>) = if comma_separated {
+        match partial.rsplit_once(',') {
+            Some((head, tail)) => (
+                format!("{head},"),
+                tail.trim(),
+                head.split(',')
+                    .map(|value| value.trim().to_ascii_lowercase())
+                    .collect(),
+            ),
+            None => (String::new(), partial.trim(), Vec::new()),
+        }
+    } else {
+        (String::new(), partial, Vec::new())
+    };
+    let needle = needle.to_ascii_lowercase();
+    let mut matches: Vec<String> = values
+        .into_iter()
+        .filter(|value| value.to_ascii_lowercase().starts_with(&needle))
+        .filter(|value| !prior.iter().any(|seen| value.eq_ignore_ascii_case(seen)))
+        .map(|value| format!("{prefix}{value}"))
+        .collect();
+    let total = matches.len();
+    matches.truncate(CompletionInfo::MAX_VALUES);
+    CompletionInfo::with_pagination(
+        matches,
+        Some(total as u32),
+        total > CompletionInfo::MAX_VALUES,
+    )
+    .expect("completion values are capped to the protocol limit")
+}
+
+fn completion_values(request: &CompleteRequestParams, cfg: Option<&Config>) -> CompletionInfo {
+    let Some(source) = completion_source(request) else {
+        return CompletionInfo::default();
+    };
+    let comma_separated = source == CompletionSource::MapList;
+    let values = match source {
+        CompletionSource::Maps | CompletionSource::MapList => cfg
+            .and_then(|cfg| map_list(cfg).ok())
+            .unwrap_or_default()
+            .into_iter()
+            .map(|map| map.name)
+            .collect(),
+        CompletionSource::Runs(aliases) => {
+            let mut values: Vec<String> = aliases.iter().map(|value| (*value).into()).collect();
+            values.extend(
+                cfg.and_then(|cfg| list_runs(cfg).ok())
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|run| {
+                        run.name
+                            .strip_suffix(".log")
+                            .unwrap_or(&run.name)
+                            .to_string()
+                    }),
+            );
+            values
+        }
+        CompletionSource::Primary => ["engagements", "freezes", "lava_deaths", "stall_parity"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        CompletionSource::GraphHashes(map) => match (cfg, map) {
+            (Some(cfg), Some(map)) => crate::graph_revision::list_revisions(cfg, &map)
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|revision| {
+                    revision
+                        .id
+                        .split_once('@')
+                        .map(|(_, hash)| hash.to_string())
+                })
+                .collect(),
+            _ => Vec::new(),
+        },
+    };
+    filter_completion_values(values, &request.argument.value, comma_separated)
+}
+
 #[tool_handler(router = Self::annotated_tool_router())]
 #[prompt_handler]
 impl ServerHandler for Argus {
@@ -2562,10 +2692,25 @@ impl ServerHandler for Argus {
                 .enable_tools()
                 .enable_prompts()
                 .enable_resources()
+                .enable_completions()
                 .build(),
         )
         .with_server_info(Implementation::new(SERVER_NAME, SERVER_VERSION))
         .with_instructions(server_instructions())
+    }
+
+    async fn complete(
+        &self,
+        request: CompleteRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<CompleteResult, McpError> {
+        let cfg = Config::load_for_reads()
+            .ok()
+            .filter(|cfg| cfg.root.exists());
+        Ok(CompleteResult::new(completion_values(
+            &request,
+            cfg.as_ref(),
+        )))
     }
 
     async fn list_resources(
@@ -2604,6 +2749,11 @@ impl ServerHandler for Argus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::{git_test_lock, run_git, TestDir};
+    use rmcp::model::{ArgumentInfo, CompletionContext};
+    use std::collections::HashMap;
+    use std::fs;
+    use std::path::Path;
 
     fn prompt_text(messages: &[PromptMessage]) -> &str {
         match &messages.first().expect("one prompt message").content {
@@ -2622,6 +2772,138 @@ mod tests {
         assert!(
             instructions.starts_with(&format!("Argus lab {}.", env!("CARGO_PKG_VERSION"))),
             "instructions advertise a different lab version: {instructions}"
+        );
+        assert!(info.capabilities.completions.is_some());
+    }
+
+    fn completion_cfg(root: &Path) -> Config {
+        Config {
+            root: root.into(),
+            fteqcc: Default::default(),
+            engine: Default::default(),
+            basedir: root.into(),
+            python: Default::default(),
+            game: "argus".into(),
+            src: root.join("src"),
+            runs: root.join("runs"),
+            progs: root.join("progs.dat"),
+            maps: root.join("maps"),
+        }
+    }
+
+    #[test]
+    fn completion_routes_and_filters_prompt_names() {
+        let root = TestDir::new("server-completion").unwrap();
+        fs::create_dir_all(root.path().join("maps")).unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::write(root.path().join("maps/dm4.bsp"), []).unwrap();
+        fs::write(root.path().join("maps/dm2.bsp"), []).unwrap();
+        fs::write(root.path().join("runs/ab_dm4_alpha.log"), "").unwrap();
+        fs::write(root.path().join("runs/other.log"), "").unwrap();
+        let cfg = completion_cfg(root.path());
+
+        let maps = CompleteRequestParams::new(
+            Reference::for_prompt("review_map"),
+            ArgumentInfo::new("bsp", "dm"),
+        );
+        assert_eq!(completion_values(&maps, Some(&cfg)).values, ["dm2", "dm4"]);
+
+        let runs = CompleteRequestParams::new(
+            Reference::for_prompt("review_ab"),
+            ArgumentInfo::new("log_a", "ab_"),
+        );
+        assert_eq!(
+            completion_values(&runs, Some(&cfg)).values,
+            ["ab_dm4_alpha"]
+        );
+        let baseline = CompleteRequestParams::new(
+            Reference::for_prompt("review_ab"),
+            ArgumentInfo::new("log_a", "b"),
+        );
+        assert_eq!(
+            completion_values(&baseline, Some(&cfg)).values,
+            ["baseline"]
+        );
+
+        let list = CompleteRequestParams::new(
+            Reference::for_prompt("validate_change"),
+            ArgumentInfo::new("maps", "dm2,d"),
+        );
+        assert_eq!(
+            completion_values(&list, Some(&cfg)).values,
+            ["dm2,dm4"],
+            "a comma-separated completion preserves prior maps and omits duplicates"
+        );
+
+        let unknown = CompleteRequestParams::new(
+            Reference::for_prompt("orient"),
+            ArgumentInfo::new("map", "dm"),
+        );
+        assert!(completion_values(&unknown, Some(&cfg)).values.is_empty());
+    }
+
+    #[test]
+    fn completion_routes_resource_names_and_contextual_hashes() {
+        let _gate = git_test_lock();
+        let root = TestDir::new("server-completion-revision").unwrap();
+        fs::create_dir_all(root.path().join("maps")).unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::write(root.path().join("maps/dm4.bsp"), []).unwrap();
+        fs::write(
+            root.path().join("src/argus_nav_dm4.qc.json"),
+            r#"{"nodes":[[0,0,0]],"links":[],"trace_inputs":[]}"#,
+        )
+        .unwrap();
+        run_git(root.path(), &["init", "-q"]).unwrap();
+        run_git(root.path(), &["config", "user.name", "Argus test"]).unwrap();
+        run_git(
+            root.path(),
+            &["config", "user.email", "argus-test@example.invalid"],
+        )
+        .unwrap();
+        run_git(root.path(), &["add", "."]).unwrap();
+        run_git(root.path(), &["commit", "-q", "-m", "graph"]).unwrap();
+        let cfg = completion_cfg(root.path());
+
+        let map = CompleteRequestParams::new(
+            Reference::for_resource("argus://graph/{map}/{hash}"),
+            ArgumentInfo::new("map", "dm"),
+        );
+        assert_eq!(completion_values(&map, Some(&cfg)).values, ["dm4"]);
+
+        let mut context = HashMap::new();
+        context.insert("map".into(), "dm4".into());
+        let hash = CompleteRequestParams::new(
+            Reference::for_resource("argus://graph/{map}/{hash}"),
+            ArgumentInfo::new("hash", ""),
+        )
+        .with_context(CompletionContext::with_arguments(context));
+        let hashes = completion_values(&hash, Some(&cfg)).values;
+        assert_eq!(hashes.len(), 1);
+        assert_eq!(hashes[0].len(), 32);
+        assert!(hashes[0].bytes().all(|byte| byte.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn completion_is_sorted_deduplicated_and_protocol_bounded() {
+        let mut values: Vec<String> = (0..105).map(|n| format!("value{n:03}")).collect();
+        values.push("VALUE000".into());
+        let completion = filter_completion_values(values, "value", false);
+        assert_eq!(completion.values.len(), CompletionInfo::MAX_VALUES);
+        assert_eq!(completion.total, Some(105));
+        assert_eq!(completion.has_more, Some(true));
+        assert!(completion.values.windows(2).all(|pair| pair[0] < pair[1]));
+
+        let primary = CompleteRequestParams::new(
+            Reference::for_prompt("validate_change"),
+            ArgumentInfo::new("primary", "la"),
+        );
+        assert_eq!(
+            completion_values(&primary, None).values,
+            ["lava_deaths"],
+            "static completions do not require lab config"
         );
     }
 
