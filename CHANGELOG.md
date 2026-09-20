@@ -9,6 +9,10 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE LAB ADVERTISES ITS CARGO PACKAGE VERSION** (#426). Server metadata and
+instructions now read the version set in `Cargo.toml`, and project docs point to
+that single source instead of copying a current version number.
+
 **THE HUMAN SCORECARD TEST NOW CLOSES ITS INPUT FILE** (#423).
 Python development mode no longer reports a `ResourceWarning` after the
 duplicate append check.
