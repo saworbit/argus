@@ -38,6 +38,20 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 
+const SERVER_NAME: &str = env!("CARGO_PKG_NAME");
+const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+fn server_instructions() -> String {
+    format!(
+        "Argus lab {SERVER_VERSION}. Do not invent a fteqcc/quakespasm/python pipeline. \
+First call: see what=project. Then see what=map / path / fn / search. After a QC \
+edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status \
+since_line. Session demos: see what=demo (harvest first with \
+tools/harvest_session.py). Trust next_steps and the brief's \
+cause/reach_pct/item_control fields. Prefer native tools over extras."
+    )
+}
+
 #[derive(Clone)]
 pub struct Argus {
     pub matches: Arc<Mutex<MatchCtrl>>,
@@ -2239,11 +2253,7 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
     Some((map, id))
 }
 
-#[tool_handler(
-    name = "argus-mcp",
-    version = "0.29.0",
-    instructions = "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. First call: see what=project. Then see what=map / path / fn / search. After a QC edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status since_line. Session demos: see what=demo (harvest first with tools/harvest_session.py). Human deploy wizard: argus-mcp gui. Trust next_steps and the brief's cause/reach_pct/item_control fields. Prefer native tools over extras."
-)]
+#[tool_handler]
 #[prompt_handler]
 impl ServerHandler for Argus {
     fn get_info(&self) -> ServerInfo {
@@ -2254,15 +2264,8 @@ impl ServerHandler for Argus {
                 .enable_resources()
                 .build(),
         )
-        .with_server_info(Implementation::new("argus-mcp", "0.29.0"))
-        .with_instructions(
-            "Argus lab 0.24. Do not invent a fteqcc/quakespasm/python pipeline. \
-First call: see what=project. Then see what=map / path / fn / search. After a QC \
-edit: experiment or matrix_experiment. Live: tune. Incremental logs: match_status \
-since_line. Session demos: see what=demo (harvest first with \
-tools/harvest_session.py). Trust next_steps and the brief's \
-cause/reach_pct/item_control fields. Prefer native tools over extras.",
-        )
+        .with_server_info(Implementation::new(SERVER_NAME, SERVER_VERSION))
+        .with_instructions(server_instructions())
     }
 
     async fn list_resources(
@@ -2301,6 +2304,19 @@ cause/reach_pct/item_control fields. Prefer native tools over extras.",
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn server_metadata_uses_package_version() {
+        let info = Argus::new().get_info();
+        let instructions = info.instructions.expect("server instructions");
+
+        assert_eq!(info.server_info.name, env!("CARGO_PKG_NAME"));
+        assert_eq!(info.server_info.version, env!("CARGO_PKG_VERSION"));
+        assert!(
+            instructions.starts_with(&format!("Argus lab {}.", env!("CARGO_PKG_VERSION"))),
+            "instructions advertise a different lab version: {instructions}"
+        );
+    }
 
     /// WHAT THE TOOL SURFACE COSTS, measured rather than argued.
     ///

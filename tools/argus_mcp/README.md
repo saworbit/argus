@@ -5,8 +5,8 @@ maps, runs headless matches, and briefs the result the way this
 project already judges A/B. Toolchain only: it does not change QuakeC
 or the engine.
 
-Current version: **0.29.0**. Operator guide (this file). Design
-history: `docs/specs/2026-08-17-argus-mcp-design.md`.
+Current version: see `Cargo.toml`, the source of truth. Operator guide
+(this file). Design history: `docs/specs/2026-08-17-argus-mcp-design.md`.
 Captured external spec and triage: `docs/mcp_quake_dev_spec.md`.
 
 ```
