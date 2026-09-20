@@ -998,6 +998,60 @@ tool_timeout_sec = 700
             self.assertEqual(res.returncode, 1)
             self.assertIn("handoff claims", res.stdout)
 
+    def _raw_index_blob(self, root, path, content):
+        blob = subprocess.run(
+            ["git", "hash-object", "-w", "--stdin"],
+            input=content, capture_output=True, cwd=str(root), check=True,
+        ).stdout.decode().strip()
+        subprocess.run(
+            ["git", "update-index", "--add", "--cacheinfo",
+             "100644", blob, path],
+            capture_output=True, cwd=str(root), check=True,
+        )
+
+    def _eol_repo(self, root):
+        subprocess.run(
+            ["git", "init", "-q"], capture_output=True,
+            cwd=str(root), check=True,
+        )
+        (root / ".gitattributes").write_text(
+            "* text=auto eol=lf\n*.bat text eol=crlf\n"
+            "*.cmd text eol=crlf\n",
+            encoding="utf-8", newline="\n",
+        )
+        subprocess.run(
+            ["git", "add", ".gitattributes"], capture_output=True,
+            cwd=str(root), check=True,
+        )
+
+    def test_argus_ci_eol_passes_on_the_tree(self):
+        res = self.run_tool("argus_ci.py", "eol")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("eol: ok", res.stdout)
+
+    def test_argus_ci_eol_rejects_an_api_style_crlf_blob(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._eol_repo(root)
+            self._raw_index_blob(root, "bad.txt", b"one\r\ntwo\r\n")
+
+            res = self.run_tool("argus_ci.py", "eol", "--root", td)
+
+            self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+            self.assertIn("bad.txt", res.stdout)
+            self.assertIn("stored with CRLF in Git", res.stdout)
+
+    def test_argus_ci_eol_keeps_windows_script_crlf_policy(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._eol_repo(root)
+            self._raw_index_blob(root, "keep.cmd", b"@echo off\r\n")
+
+            res = self.run_tool("argus_ci.py", "eol", "--root", td)
+
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("eol: ok", res.stdout)
+
     def _changed_file(self, root, lines):
         p = Path(root) / "changed.txt"
         p.write_text("\n".join(lines) + "\n", encoding="utf-8")
