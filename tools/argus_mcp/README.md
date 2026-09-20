@@ -576,6 +576,14 @@ the lab's safety rules without reading config or changing state:
 two maps, at least three tapes per arm on dm2, trusted `next_steps`, and valid
 metric boundaries.
 
+The server also advertises MCP completions for supported prompt arguments and
+resource-template variables. Review prompts complete map, extensionless run
+and baseline names; `validate_change` completes maps and primary metrics;
+typed map/run/graph resources complete their names, with graph hashes derived
+from the selected map in completion context. The protocol does not define
+completion for arbitrary tool arguments, so the tools retain their existing
+validation rather than claiming autocomplete they cannot serve.
+
 `compare_runs` is unscaled: it expects two tapes of similar length.
 `experiment` duration-scales the baseline counts to the candidate
 duration so a 30 s probe is not judged as an engagement collapse

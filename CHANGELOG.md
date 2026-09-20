@@ -9,6 +9,14 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**MCP COMPLETION NOW COVERS THE NAME-BEARING PROMPTS AND RESOURCES** (#465,
+part of #370). The server advertises `completion/complete` and prefix-completes
+maps, extensionless run names, baseline aliases, validation primaries and
+contextual graph hashes for the prompt arguments and resource-template
+variables the protocol actually supports. Results are sorted, deduplicated and
+capped at 100; missing read config and unknown argument routes return an empty
+completion. Tool arguments remain explicitly outside this protocol feature.
+
 **TWO MCP PROMPTS PUT THE LAB'S SAFETY RITUALS ON THE WIRE** (#463, part
 of #370). `harvest_before_play` supplies the exact tagged harvester command
 before any engine can truncate `qconsole.log`; `validate_change` requires a
