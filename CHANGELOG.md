@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**DIRECT BLOB WRITES CAN NO LONGER HIDE CRLF FROM THE REPOSITORY** (#448).
+Text files declare an explicit LF policy, while Windows batch and command files
+retain CRLF checkouts. The invariant battery reads Git's committed-blob EOL
+metadata, so an API upload cannot look clean merely because checkout normalized
+the worktree. Four blobs found by the new check were normalized without content
+changes.
+
 **STRICT CLIPPY IS NOW A REAL LAB PREFLIGHT** (#446). The existing Rust lint
 backlog is clear, the repository pins Rust 1.95 with Clippy and rustfmt, and the
 fast workflow rejects warnings across every library, binary and test target.

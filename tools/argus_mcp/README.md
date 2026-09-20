@@ -1129,6 +1129,10 @@ cargo test --manifest-path tools/argus_mcp/Cargo.toml
 The repository pins Rust 1.95 with the `clippy` and `rustfmt` components, and
 the fast workflow runs all three commands.
 
+The repository invariant battery also reads committed Git blob metadata for
+LF-designated text. This catches CRLF blobs written through an API even when a
+checkout has already normalized the worktree copy.
+
 Parser, config, cartographer, nav-graph BFS, QC search/calls, session,
 resources, project view, and A/B tests do not need Quake. A mini BSP29
 is synthesised in-process.
