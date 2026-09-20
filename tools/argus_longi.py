@@ -22,7 +22,7 @@ in docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 import re, sys, os, collections, math, glob
 
 PAT = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?")
-EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|grab|weapon|plan|death|checkpoint|win|coop_stats)\b(.*)")
+EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|death|checkpoint|win|coop_stats)\b(.*)")
 DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
 PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin)|shove|hunch|prefire|watch spawn|sprintjump)\b")
 WORLD_PHRASES = ["tries to put the pin back in", "becomes bored with life", "discharges into", "heats up the water",

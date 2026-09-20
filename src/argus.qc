@@ -2879,6 +2879,22 @@ void() Argus_Die =
             Argus_SpawnWatch (self.enemy, self.origin);
     }
 
+    // Keep one small account of the life that just ended. Only a named
+    // map item on an actual long routed walk qualifies. A direct pickup,
+    // a dropped backpack and a goal reached before the killing blow do not.
+    self.ar_lastlifegoal = world;
+    self.ar_lastlifeuntil = 0;
+    self.ar_lastlifevetoed = 0;
+    if (deathmatch && coop <= 0
+        && self.ar_goal != world
+        && Argus_ItemClass (self.ar_goal) != AR_C_ANY
+        && (self.ar_pending || self.ar_mode == 2)
+        && vlen (Argus_GoalPoint (self.ar_goal) - self.origin) >= 600)
+    {
+        self.ar_lastlifegoal = self.ar_goal;
+        self.ar_lastlifeuntil = time + 10;
+    }
+
     if (self.ar_goal != world)
     {
         if (self.ar_goal.claimed_by == self)
@@ -4325,7 +4341,6 @@ void(float d, float closeband) Argus_SelectWeapon =
 // strafe and dodge in priority: a dodge or retreat overrides it,
 // plain circling does not. Aim stays decoupled - the bot shoots
 // the whole detour.
-float(entity it) Argus_ItemClass;
 float(entity it, float cls) Argus_ItemValue;
 vector(entity it) Argus_GoalPoint;
 
@@ -6354,19 +6369,21 @@ string(float cls) Argus_ClassWord =
 
 void() Argus_PickGoal =
 {
-    local entity e, b, pick, near, rnode, startnode;
+    local entity e, b, pick, near, lifenear, rnode, startnode;
     local entity dn1, dn2, dn3, dn4, dn5, dn6;
     local entity bw, ba, bh, br, bp, bo;
     local float sw, sa, sh, sr, sp, so;
     local vector gp, d;
-    local float dist, neard, shelf, cls, v, sc, ws, u, bu, final;
-    local float breg;
+    local float dist, neard, lifedist, shelf, cls, v, sc, ws, u, bu, final;
+    local float breg, lifefight;
 
     bw = world;  ba = world;  bh = world;
     br = world;  bp = world;  bo = world;
     sw = 0;  sa = 0;  sh = 0;  sr = 0;  sp = 0;  so = 0;
     near = world;
     neard = 99999;
+    lifenear = world;
+    lifedist = 99999;
 
     // Goal scoring needs one distance space for every candidate. Start one
     // bounded bot-specific graph flood, then re-enter from Shop_Finish while
@@ -6386,6 +6403,16 @@ void() Argus_PickGoal =
     startnode = an_startnode;
     if (startnode == world)
         return;
+
+    if (self.ar_lastlifegoal != world && time >= self.ar_lastlifeuntil)
+    {
+        self.ar_lastlifegoal = world;
+        self.ar_lastlifeuntil = 0;
+        self.ar_lastlifevetoed = 0;
+    }
+    lifefight = self.ar_lastlifegoal != world
+                && time < self.ar_lastlifeuntil
+                && self.ar_enemy != world && time <= self.ar_seen + 0.4;
 
     // item denial (#48): gather the live opponents ONCE. This used to
     // run a full find() chain per candidate item - on a 60-item map
@@ -6497,7 +6524,8 @@ void() Argus_PickGoal =
                 dist = rnode.an_dist
                        + vlen (self.origin - startnode.origin)
                        + vlen (gp - rnode.origin);
-                if (dist < neard && e.solid == SOLID_TRIGGER)
+                if (dist < neard && e.solid == SOLID_TRIGGER
+                    && !(lifefight && e == self.ar_lastlifegoal))
                 {
                     near = e;       // value-blind fallback target
                     neard = dist;   // (live items only: patrolling to
@@ -6531,6 +6559,18 @@ void() Argus_PickGoal =
                         // a camp - and the mode-1 loiter below orbits
                         // the spawn until it pops
                         v = v * 0.55;
+                }
+                // The last-life account may prefer a materially nearer
+                // stack, not arbitrary nearby ammo. Keep that alternative
+                // separate from the value-blind patrol fallback.
+                if (v > 0 && e.solid == SOLID_TRIGGER
+                    && e != self.ar_lastlifegoal
+                    && (cls == AR_C_WEAPON || cls == AR_C_HEALTH
+                        || cls == AR_C_ARMOR)
+                    && dist < lifedist)
+                {
+                    lifenear = e;
+                    lifedist = dist;
                 }
                 if (v > 0)
                 {
@@ -6684,6 +6724,40 @@ void() Argus_PickGoal =
     {
         final = AR_C_ANY;
         pick = near;
+    }
+
+    // One failed life may refuse the same long crossing on the next.
+    // A live fight vetoes it outright; without a fight, a materially nearer
+    // live stack is enough. The memory expires, and it never invents a goal.
+    if (pick != world && pick == self.ar_lastlifegoal
+        && time < self.ar_lastlifeuntil && pick.ar_goalnode != world)
+    {
+        dist = pick.ar_goalnode.an_dist
+               + vlen (self.origin - startnode.origin)
+               + vlen (Argus_GoalPoint (pick) - pick.ar_goalnode.origin);
+        b = world;
+        if (lifefight)
+            b = near;
+        else if (lifenear != world && lifedist + 400 < dist)
+            b = lifenear;
+        if (dist >= 600 && (lifefight || b != world))
+        {
+            if (b != world)
+            {
+                pick = b;
+                final = Argus_ItemClass (b);
+            }
+            else
+            {
+                pick = world;
+                final = AR_C_ANY;
+            }
+            if (!self.ar_lastlifevetoed)
+            {
+                self.ar_lastlifevetoed = 1;
+                Argus_Event ("lifeveto");
+            }
+        }
     }
 
     // ---- GOAP: prepend unmet preconditions ----
@@ -8091,6 +8165,32 @@ void() Argus_AI =
 
     // ---- combat overrides steering when an enemy is engaged ----
     fighting = Argus_Combat ();
+
+    // Goal selection happens before combat acquires a fresh target. If this
+    // life already started the crossing that killed the last one, stop it as
+    // soon as the nearby fight becomes real and shop again with that context.
+    if (fighting && self.ar_goal != world
+        && self.ar_goal == self.ar_lastlifegoal
+        && time < self.ar_lastlifeuntil
+        && time <= self.ar_seen + 0.4
+        && vlen (Argus_GoalPoint (self.ar_goal) - self.origin) >= 600)
+    {
+        if (self.ar_goal.claimed_by == self)
+            ReleaseClaim (self.ar_goal);
+        if (!self.ar_lastlifevetoed)
+        {
+            self.ar_lastlifevetoed = 1;
+            Argus_Event ("lifeveto");
+        }
+        self.ar_goal = world;
+        self.ar_node = world;
+        self.ar_pending = 0;
+        self.ar_mode = 0;
+        self.ar_routegen = self.ar_routegen + 1;
+        if (an_busy && an_bot == self)
+            an_busy = 0;
+        Argus_PickGoal ();
+    }
 
     // body-block clearance (#177): if within 48u of another client
     // and the other is jumping or firing, sidestep first, shoot second

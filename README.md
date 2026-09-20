@@ -418,7 +418,8 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 | ARGEVT <name> spawned | respawn | goal <class> | route <hops> | routefail |       |
 |        abandon | stall | stallnode '<x y z>' | trapped | jump | rjump | lift |    |
 |        swim | door | train | board | hazard | engage <enemy> | pursue |           |
-|        retreat | coverroute | grab <class> | weapon <axe|sg|ssg|ng|sng|gl|rl|lg> |  |
+|        retreat | coverroute | lifeveto | grab <class> |                            |
+|        weapon <axe|sg|ssg|ng|sng|gl|rl|lg> |                                      |
 |        plan <want> via <step> | death <killer> pos '<x y z>' [thirdparty]         |
 |                                                                                   |
 | Side channels (outside the closed ARGEVT vocabulary, counted as                   |
