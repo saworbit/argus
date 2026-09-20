@@ -130,15 +130,21 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
         }
     }
 
-    let out_bytes = stdout_reader.and_then(|h| h.join().ok()).unwrap_or_default();
-    let err_bytes = stderr_reader.and_then(|h| h.join().ok()).unwrap_or_default();
+    let out_bytes = stdout_reader
+        .and_then(|h| h.join().ok())
+        .unwrap_or_default();
+    let err_bytes = stderr_reader
+        .and_then(|h| h.join().ok())
+        .unwrap_or_default();
 
     if timed_out {
         return CompileResult {
             ok: false,
             success_line: None,
             diagnostics: Vec::new(),
-            raw_tail: vec!["compile_qc timed out after 90s (fteqcc hung or src/ is huge)".to_string()],
+            raw_tail: vec![
+                "compile_qc timed out after 90s (fteqcc hung or src/ is huge)".to_string(),
+            ],
             progs_bytes: None,
             installed_to: Vec::new(),
             new_errors: 1,
@@ -167,7 +173,9 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
         };
         if !freshly_written {
             report.ok = false;
-            report.raw_tail.push("fteqcc reported success line but progs.dat was not written".into());
+            report
+                .raw_tail
+                .push("fteqcc reported success line but progs.dat was not written".into());
         }
     }
     finish(cfg, install, report)

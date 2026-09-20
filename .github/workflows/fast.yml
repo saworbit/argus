@@ -68,6 +68,9 @@ jobs:
             ~/.cargo/git
             tools/argus_mcp/target
           key: cargo-${{ runner.os }}-${{ hashFiles('tools/argus_mcp/Cargo.lock') }}
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
+
       - name: Run the lab suite
         # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;
         # the committed runs/*.log regression tapes run in full

@@ -3,24 +3,24 @@ use crate::cartograph::{
     atlas_brief, cartograph as map_cartograph, inspect_entities, list_maps as map_list,
 };
 use crate::compile::compile_qc;
-use crate::config::Config;
 use crate::compile::compile_qc_dir;
+use crate::config::Config;
 use crate::intel::{
     brief_lite, brief_run as intel_brief, compare_lite, compare_runs as intel_compare,
     compare_runs_scaled as intel_compare_scaled, sim_report, want_full, QUALITY_BARS,
 };
-use crate::live::{knobs, snapshot, validate_tune};
 use crate::lab::{cartograph_all as all_atlases, lab_status as build_lab};
 use crate::learn::learn_hotspots;
+use crate::live::{knobs, snapshot, validate_tune};
 use crate::match_ctrl::{list_runs, MatchCtrl, DURATION_MAX, DURATION_MIN};
-use crate::project::{project_view, see_vocab};
-use crate::see_alias::normalize_see;
 use crate::nav_graph::{around_point, item_view, node_deep, route_ref};
-use crate::qc_index::{index_argus, qc_file_slice, qc_find, qc_read, qc_search};
 use crate::nav_sync::nav_sync_dispatch;
-use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, timeline};
 use crate::navgen::nav_generate;
+use crate::project::{project_view, see_vocab};
+use crate::qc_index::{index_argus, qc_file_slice, qc_find, qc_read, qc_search};
+use crate::see_alias::normalize_see;
 use crate::session::{ExperimentRecord, SessionSeen};
+use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, timeline};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolResult, ContentBlock, Implementation, ListResourceTemplatesResult, ListResourcesResult,
@@ -77,7 +77,6 @@ impl Argus {
         }
     }
 
-
     /// Drive a match WITHOUT holding the MatchCtrl mutex for its whole
     /// length. The lock is taken to start it, released while it runs
     /// and taken again to stop it, so match_status, match_stop, tune,
@@ -120,12 +119,7 @@ impl Argus {
         // and the old lock-then-shutdown queued behind it until the
         // match ended, or never, if the client killed us outright.
         crate::match_ctrl::cancel_live();
-        match tokio::time::timeout(
-            std::time::Duration::from_secs(10),
-            self.matches.lock(),
-        )
-        .await
-        {
+        match tokio::time::timeout(std::time::Duration::from_secs(10), self.matches.lock()).await {
             Ok(mut g) => g.shutdown().await,
             Err(_) => {}
         }
@@ -149,8 +143,8 @@ fn json_ok<T: Serialize>(value: &T) -> Result<CallToolResult, McpError> {
 }
 
 fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult, McpError> {
-    let mut v = serde_json::to_value(value)
-        .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+    let mut v =
+        serde_json::to_value(value).map_err(|e| McpError::internal_error(e.to_string(), None))?;
     // a stale server must never hand out an unmarked opinion: the
     // banner rides every object response for the whole session
     if let (Some(note), serde_json::Value::Object(map)) = (crate::stale::banner(), &mut v) {
@@ -180,7 +174,6 @@ fn csv_ok(body: String) -> Result<CallToolResult, McpError> {
 }
 
 fn png_block(path: &str) -> Option<ContentBlock> {
-
     let bytes = std::fs::read(path).ok()?;
     if bytes.is_empty() || bytes.len() > 1_500_000 {
         return None;
@@ -202,7 +195,8 @@ fn tool_err(msg: impl Into<String>) -> Result<CallToolResult, McpError> {
 fn hint_for(error: &str) -> String {
     let e = error.to_ascii_lowercase();
     if e.contains("argus_") && (e.contains("missing") || e.contains("does not exist")) {
-        return "config_check, then set the named ARGUS_* key in env or tools/argus_mcp.toml".into();
+        return "config_check, then set the named ARGUS_* key in env or tools/argus_mcp.toml"
+            .into();
     }
     if e.contains("no arglog") || e.contains("piped stdin") || e.contains("console events") {
         return "see what=last for the log tail. On Windows this build uses CREATE_NEW_CONSOLE without inheriting the MCP pipe. Pass skill= on experiment.".into();
@@ -263,7 +257,9 @@ pub struct CompileArgs {
 pub struct SpecCompileArgs {
     #[schemars(description = "Ignored; ARGUS_SRC is used. Accepted for spec compatibility.")]
     pub source_directory: Option<String>,
-    #[schemars(description = "Ignored; id-format output is required. Accepted for spec compatibility.")]
+    #[schemars(
+        description = "Ignored; id-format output is required. Accepted for spec compatibility."
+    )]
     pub optimization_level: Option<String>,
 }
 
@@ -302,7 +298,9 @@ pub struct NavArgs {
     pub map: String,
     pub out_qc: Option<String>,
     pub out_png: Option<String>,
-    #[schemars(description = "Also pass --register: first registration requires current reach and mill evidence before wiring progs.src and argus_nav_dispatch.qc")]
+    #[schemars(
+        description = "Also pass --register: first registration requires current reach and mill evidence before wiring progs.src and argus_nav_dispatch.qc"
+    )]
     pub register: Option<bool>,
 }
 
@@ -360,7 +358,9 @@ pub struct BriefArgs {
     pub map: Option<String>,
     #[schemars(description = "brief (default) or full")]
     pub detail: Option<String>,
-    #[schemars(description = "json (default) or csv. The per-bot rows, hotspots, kill matrix and event counts are tables, and a table as CSV is about half the tokens.")]
+    #[schemars(
+        description = "json (default) or csv. The per-bot rows, hotspots, kill matrix and event counts are tables, and a table as CSV is about half the tokens."
+    )]
     pub format: Option<String>,
 }
 
@@ -376,9 +376,13 @@ pub struct CorpusArgs {
     #[schemars(description = "tapes (default) | cells | changes | bisect")]
     pub what: Option<String>,
     pub map: Option<String>,
-    #[schemars(description = "bot (default) or human. Never average a human tape into a bot series.")]
+    #[schemars(
+        description = "bot (default) or human. Never average a human tape into a bot series."
+    )]
     pub kind: Option<String>,
-    #[schemars(description = "listen | dedicated_fast | dedicated_slow. One class at a time is how to be sure a step is not the frame rate.")]
+    #[schemars(
+        description = "listen | dedicated_fast | dedicated_slow. One class at a time is how to be sure a step is not the frame rate."
+    )]
     pub tick_class: Option<String>,
     #[schemars(description = "substring of the run name, eg ab_dm4_leadclip")]
     pub run_like: Option<String>,
@@ -397,26 +401,34 @@ pub struct CorpusArgs {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct CompareArgs {
-    #[schemars(description = "Baseline: path, run name, or 'baseline'/'shipped'. Default baseline.")]
+    #[schemars(
+        description = "Baseline: path, run name, or 'baseline'/'shipped'. Default baseline."
+    )]
     pub log_a: Option<String>,
     #[schemars(description = "Candidate: path, run name, or 'latest'")]
     pub log_b: String,
     pub map: Option<String>,
     #[schemars(description = "brief (default, verdict+gates) or full (both MatchBriefs)")]
     pub detail: Option<String>,
-    #[schemars(description = "json (default) or csv. Every large part of this answer is a table, and a table as CSV is about half the tokens of the same table as JSON.")]
+    #[schemars(
+        description = "json (default) or csv. Every large part of this answer is a table, and a table as CSV is about half the tokens of the same table as JSON."
+    )]
     pub format: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct CartographArgs {
-    #[schemars(description = "BSP path, short name (dm4), or maps/dm4.bsp. Ingests from ARGUS_MAPS or extracts from id1 PAK0/PAK1.")]
+    #[schemars(
+        description = "BSP path, short name (dm4), or maps/dm4.bsp. Ingests from ARGUS_MAPS or extracts from id1 PAK0/PAK1."
+    )]
     pub bsp: String,
     #[serde(default)]
     #[schemars(description = "Also run argus_navgen.py after ingest")]
     pub generate_nav: Option<bool>,
     #[serde(default)]
-    #[schemars(description = "With generate_nav: request registration; a new map stays experimental until current reach and mill evidence pass")]
+    #[schemars(
+        description = "With generate_nav: request registration; a new map stays experimental until current reach and mill evidence pass"
+    )]
     pub register: Option<bool>,
     #[serde(default)]
     #[schemars(description = "brief (default, LLM-sized) or full (every entity)")]
@@ -431,20 +443,28 @@ pub struct QcFindArgs {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct TuneArgs {
-    #[schemars(description = "Whitelisted console line: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map NAME, scratch1-4 N (scratch1 1 arms the ARGDBG decision tape), status, serverinfo, edicts, edict N, edictcount, profile, serverprofile, notarget, sv_freezenonclients 0|1")]
+    #[schemars(
+        description = "Whitelisted console line: skill 0-3, fraglimit N, timelimit N, developer 0|1, deathmatch 1, map NAME, scratch1-4 N (scratch1 1 arms the ARGDBG decision tape), status, serverinfo, edicts, edict N, edictcount, profile, serverprofile, notarget, sv_freezenonclients 0|1"
+    )]
     pub command: String,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct SeeArgs {
     #[serde(default)]
-    #[schemars(description = "What to open: help|project|lab|map|recipe|node|path|item|fn|file|search|const|live|bot|timeline|around|plan|status|run|last|knobs. Empty defaults to project.")]
+    #[schemars(
+        description = "What to open: help|project|lab|map|recipe|node|path|item|fn|file|search|const|live|bot|timeline|around|plan|status|run|last|knobs. Empty defaults to project."
+    )]
     pub what: String,
-    #[schemars(description = "Name: bot (Reap), function (Argus_MoveHazard), const (AR_JUMPVEL), map (dm4), node (dm4:56), run (latest)")]
+    #[schemars(
+        description = "Name: bot (Reap), function (Argus_MoveHazard), const (AR_JUMPVEL), map (dm4), node (dm4:56), run (latest)"
+    )]
     pub name: Option<String>,
     #[schemars(description = "For map: brief (default) or full")]
     pub detail: Option<String>,
-    #[schemars(description = "For status/live: return log lines after this 0-based count. 0 or omit = last 40.")]
+    #[schemars(
+        description = "For status/live: return log lines after this 0-based count. 0 or omit = last 40."
+    )]
     pub since_line: Option<u32>,
 }
 
@@ -463,7 +483,9 @@ pub struct LiveSnapshotArgs {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct ExperimentArgs {
     pub map: String,
-    #[schemars(description = "Wall-clock seconds, 10-185. Default 30. Compare is duration-scaled against the shipped baseline.")]
+    #[schemars(
+        description = "Wall-clock seconds, 10-185. Default 30. Compare is duration-scaled against the shipped baseline."
+    )]
     pub duration_sec: Option<u32>,
     #[schemars(description = "Compile first. Default true.")]
     pub compile: Option<bool>,
@@ -556,7 +578,9 @@ impl Argus {
         json_ok(&Config::report())
     }
 
-    #[tool(description = "Ship the current source: compile, install to every configured location, and return the MD5 of each install for the handoff record. The last manual step of the loop, made one call.")]
+    #[tool(
+        description = "Ship the current source: compile, install to every configured location, and return the MD5 of each install for the handoff record. The last manual step of the loop, made one call."
+    )]
     async fn ship(&self) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_or_err() {
             Ok(c) => c,
@@ -593,7 +617,9 @@ impl Argus {
         }))
     }
 
-    #[tool(description = "Point a map's A/B baseline at a run (writes runs/baselines.json). Do this after a clean ship so gates judge against current metric semantics.")]
+    #[tool(
+        description = "Point a map's A/B baseline at a run (writes runs/baselines.json). Do this after a clean ship so gates judge against current metric semantics."
+    )]
     async fn baseline_set(
         &self,
         Parameters(args): Parameters<BaselineSetArgs>,
@@ -627,7 +653,9 @@ impl Argus {
         }))
     }
 
-    #[tool(description = "Compile src/ with fteqcc. Success is the Compile finished / id format line, not the exit code.")]
+    #[tool(
+        description = "Compile src/ with fteqcc. Success is the Compile finished / id format line, not the exit code."
+    )]
     async fn compile_qc(
         &self,
         Parameters(args): Parameters<CompileArgs>,
@@ -643,12 +671,17 @@ impl Argus {
         .await
         {
             Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
-            Err(_) => return tool_err("compile_qc timed out after 90s (fteqcc hung or src/ is huge)"),
+            Err(_) => {
+                return tool_err("compile_qc timed out after 90s (fteqcc hung or src/ is huge)")
+            }
         };
         json_ok(&result)
     }
 
-    #[tool(name = "quake_compile_qc", description = "Prefer compile_qc. Extra: compile an optional source_directory. Installs only if that dir is ARGUS_SRC.")]
+    #[tool(
+        name = "quake_compile_qc",
+        description = "Prefer compile_qc. Extra: compile an optional source_directory. Installs only if that dir is ARGUS_SRC."
+    )]
     async fn quake_compile_qc(
         &self,
         Parameters(args): Parameters<SpecCompileArgs>,
@@ -677,7 +710,10 @@ impl Argus {
         }))
     }
 
-    #[tool(name = "bsp_inspect_entities", description = "Prefer see what=map. Extra: raw entity lump + filter_classname.")]
+    #[tool(
+        name = "bsp_inspect_entities",
+        description = "Prefer see what=map. Extra: raw entity lump + filter_classname."
+    )]
     async fn bsp_inspect_entities(
         &self,
         Parameters(args): Parameters<SpecInspectArgs>,
@@ -692,7 +728,10 @@ impl Argus {
         }
     }
 
-    #[tool(name = "bot_simulate_match", description = "Prefer experiment. Extra: batch K/D report. time_dilation is not applied.")]
+    #[tool(
+        name = "bot_simulate_match",
+        description = "Prefer experiment. Extra: batch K/D report. time_dilation is not applied."
+    )]
     async fn bot_simulate_match(
         &self,
         Parameters(args): Parameters<SpecSimulateArgs>,
@@ -735,7 +774,10 @@ impl Argus {
         }
     }
 
-    #[tool(name = "rcon_exec", description = "Prefer tune. Extra: whitelist stdin + log tail. Not UDP RCON.")]
+    #[tool(
+        name = "rcon_exec",
+        description = "Prefer tune. Extra: whitelist stdin + log tail. Not UDP RCON."
+    )]
     async fn rcon_exec(
         &self,
         Parameters(args): Parameters<SpecRconArgs>,
@@ -760,7 +802,10 @@ impl Argus {
         }
     }
 
-    #[tool(name = "bot_capture_pov_frame", description = "Prefer analyze_match. Extra: parked POV; returns nav/traj PNG paths.")]
+    #[tool(
+        name = "bot_capture_pov_frame",
+        description = "Prefer analyze_match. Extra: parked POV; returns nav/traj PNG paths."
+    )]
     async fn bot_capture_pov_frame(
         &self,
         Parameters(args): Parameters<SpecPovArgs>,
@@ -784,7 +829,9 @@ impl Argus {
         }))
     }
 
-    #[tool(description = "Map cartographer. Default detail=brief: control items snapped to nav (walk/jump/rocket_jump/off_graph), height bands, match recipe. detail=full adds every entity. Ingests path, short name, or id1 PAK.")]
+    #[tool(
+        description = "Map cartographer. Default detail=brief: control items snapped to nav (walk/jump/rocket_jump/off_graph), height bands, match recipe. detail=full adds every entity. Ingests path, short name, or id1 PAK."
+    )]
     async fn cartograph(
         &self,
         Parameters(args): Parameters<CartographArgs>,
@@ -837,7 +884,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "List maps the cartographer can ingest: *.bsp in ARGUS_MAPS plus map names inside id1 PAK files.")]
+    #[tool(
+        description = "List maps the cartographer can ingest: *.bsp in ARGUS_MAPS plus map names inside id1 PAK files."
+    )]
     async fn list_maps(&self) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_read_or_err() {
             Ok(c) => c,
@@ -849,7 +898,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Generate a per-map nav QC file via argus_navgen.py. Always passes --no-dispatcher; register=true wires a first-time map only after current reach and mill evidence pass.")]
+    #[tool(
+        description = "Generate a per-map nav QC file via argus_navgen.py. Always passes --no-dispatcher; register=true wires a first-time map only after current reach and mill evidence pass."
+    )]
     async fn nav_generate(
         &self,
         Parameters(args): Parameters<NavArgs>,
@@ -871,7 +922,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Register argus_nav_<map>.qc files in argus_nav_dispatch.qc and progs.src. A first-time map must have a current playable verdict.")]
+    #[tool(
+        description = "Register argus_nav_<map>.qc files in argus_nav_dispatch.qc and progs.src. A first-time map must have a current playable verdict."
+    )]
     async fn nav_sync_dispatch(&self) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_or_err() {
             Ok(c) => c,
@@ -883,7 +936,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Run a timed dedicated match, harvest runs/<name>.log, return ARGLOG/ARGEVT metrics.")]
+    #[tool(
+        description = "Run a timed dedicated match, harvest runs/<name>.log, return ARGLOG/ARGEVT metrics."
+    )]
     async fn match_run(
         &self,
         Parameters(args): Parameters<MatchRunArgs>,
@@ -915,7 +970,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Start a dedicated match and return once the process is up. At most one live match.")]
+    #[tool(
+        description = "Start a dedicated match and return once the process is up. At most one live match."
+    )]
     async fn match_start(
         &self,
         Parameters(args): Parameters<MatchStartArgs>,
@@ -953,7 +1010,9 @@ impl Argus {
                     tokio::spawn(async move {
                         tokio::time::sleep(Duration::from_secs(d as u64)).await;
                         let mut g = matches.lock().await;
-                        let _ = g.stop_matching(run_name.as_deref(), pid, Duration::from_secs(5)).await;
+                        let _ = g
+                            .stop_matching(run_name.as_deref(), pid, Duration::from_secs(5))
+                            .await;
                     });
                 }
                 json_ok(&st)
@@ -974,7 +1033,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Live match status: running, pid, elapsed, log lines. Pass since_line for incremental tails.")]
+    #[tool(
+        description = "Live match status: running, pid, elapsed, log lines. Pass since_line for incremental tails."
+    )]
     async fn match_status(
         &self,
         Parameters(args): Parameters<MatchStatusArgs>,
@@ -1036,7 +1097,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "List top-level *.log files in ARGUS_RUNS, newest first. Known baselines carry a note.")]
+    #[tool(
+        description = "List top-level *.log files in ARGUS_RUNS, newest first. Known baselines carry a note."
+    )]
     async fn list_runs(&self) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_read_or_err() {
             Ok(c) => c,
@@ -1048,7 +1111,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Brief a harvested log (or see what=run). Default is lite: headline, totals, flags, next_steps.")]
+    #[tool(
+        description = "Brief a harvested log (or see what=run). Default is lite: headline, totals, flags, next_steps."
+    )]
     async fn brief_run(
         &self,
         Parameters(args): Parameters<BriefArgs>,
@@ -1071,7 +1136,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "A/B two logs. Default is verdict+gates (not two full briefs). detail=full for both tapes.")]
+    #[tool(
+        description = "A/B two logs. Default is verdict+gates (not two full briefs). detail=full for both tapes."
+    )]
     async fn compare_runs(
         &self,
         Parameters(args): Parameters<CompareArgs>,
@@ -1220,8 +1287,9 @@ impl Argus {
                 .map(|s| s.to_string())
                 .collect(),
         };
-        let mut csv =
-            String::from("map,metric,date,run,n_before,n_after,before,after,p,tick_before,tick_after\n");
+        let mut csv = String::from(
+            "map,metric,date,run,n_before,n_after,before,after,p,tick_before,tick_after\n",
+        );
         for map in &maps {
             let v = series(map);
             for metric in &metrics {
@@ -1246,7 +1314,9 @@ impl Argus {
         csv_ok(csv)
     }
 
-    #[tool(description = "Concrete next places to look in the QC given a log or an A/B pair. Prefer this after compare_runs.")]
+    #[tool(
+        description = "Concrete next places to look in the QC given a log or an A/B pair. Prefer this after compare_runs."
+    )]
 
     async fn suggest_next(
         &self,
@@ -1272,7 +1342,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Lab dashboard: config readiness, maps (BSP/nav/dispatcher), recent runs, live match, and the next recommended tool call.")]
+    #[tool(
+        description = "Lab dashboard: config readiness, maps (BSP/nav/dispatcher), recent runs, live match, and the next recommended tool call."
+    )]
     async fn lab_status(&self) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_read_or_err() {
             Ok(c) => c,
@@ -1290,7 +1362,9 @@ impl Argus {
         json_ok(&build_lab(&cfg, live))
     }
 
-    #[tool(description = "Cartograph every on-disk BSP in ARGUS_MAPS. PAK-only names are skipped until ingested.")]
+    #[tool(
+        description = "Cartograph every on-disk BSP in ARGUS_MAPS. PAK-only names are skipped until ingested."
+    )]
     async fn cartograph_all(&self) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_read_or_err() {
             Ok(c) => c,
@@ -1302,7 +1376,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Find Argus QuakeC functions by name, role (hazard/combat/nav/lifecycle), or comment text.")]
+    #[tool(
+        description = "Find Argus QuakeC functions by name, role (hazard/combat/nav/lifecycle), or comment text."
+    )]
     async fn qc_find(
         &self,
         Parameters(args): Parameters<QcFindArgs>,
@@ -1332,7 +1408,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Learn stall/lava/hazard cells across harvested logs. Writes src/argus_nav_<map>.costs.json for navgen; does not write QuakeC.")]
+    #[tool(
+        description = "Learn stall/lava/hazard cells across harvested logs. Writes src/argus_nav_<map>.costs.json for navgen; does not write QuakeC."
+    )]
     async fn learn_hotspots(
         &self,
         Parameters(args): Parameters<LearnArgs>,
@@ -1347,12 +1425,16 @@ impl Argus {
         }
     }
 
-    #[tool(description = "What an LLM can change live vs what needs compile. skill is live (next respawn); AR_* constants are not.")]
+    #[tool(
+        description = "What an LLM can change live vs what needs compile. skill is live (next respawn); AR_* constants are not."
+    )]
     async fn knobs(&self) -> Result<CallToolResult, McpError> {
         json_ok(&knobs())
     }
 
-    #[tool(description = "Send a whitelisted console cvar/command to the live dedicated server. skill 0-3 applies at next bot respawn. Not a free shell.")]
+    #[tool(
+        description = "Send a whitelisted console cvar/command to the live dedicated server. skill 0-3 applies at next bot respawn. Not a free shell."
+    )]
     async fn tune(
         &self,
         Parameters(args): Parameters<TuneArgs>,
@@ -1376,7 +1458,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Last ARGLOG sample per bot from the live match, or the last harvested match if none is running.")]
+    #[tool(
+        description = "Last ARGLOG sample per bot from the live match, or the last harvested match if none is running."
+    )]
     async fn live_snapshot(
         &self,
         Parameters(args): Parameters<LiveSnapshotArgs>,
@@ -1395,7 +1479,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Read one Argus QuakeC function with file:line and full source. Preferred way to see into the bot.")]
+    #[tool(
+        description = "Read one Argus QuakeC function with file:line and full source. Preferred way to see into the bot."
+    )]
     async fn qc_read(
         &self,
         Parameters(args): Parameters<QcReadArgs>,
@@ -1414,10 +1500,7 @@ impl Argus {
         description = "One inspect call. what=help|project|lab|map|recipe|node|fn|const|live|bot|status|run|last|knobs. Use this before inventing a pipeline.",
         annotations(title = "see", read_only_hint = true)
     )]
-    async fn see(
-        &self,
-        Parameters(args): Parameters<SeeArgs>,
-    ) -> Result<CallToolResult, McpError> {
+    async fn see(&self, Parameters(args): Parameters<SeeArgs>) -> Result<CallToolResult, McpError> {
         let what = normalize_see(&args.what);
         self.note_see(&what, args.name.as_deref()).await;
         match what.as_str() {
@@ -1727,7 +1810,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "After a QC edit: compile + short match + duration-scaled A/B. Default return is lite (verdict, gates, next).")]
+    #[tool(
+        description = "After a QC edit: compile + short match + duration-scaled A/B. Default return is lite (verdict, gates, next)."
+    )]
     async fn experiment(
         &self,
         Parameters(args): Parameters<ExperimentArgs>,
@@ -1832,7 +1917,9 @@ impl Argus {
             )
             .ok(),
         };
-        let verdict = compare.as_ref().map(|c| format!("{:?}", c.verdict).to_ascii_lowercase());
+        let verdict = compare
+            .as_ref()
+            .map(|c| format!("{:?}", c.verdict).to_ascii_lowercase());
         let headline = compare
             .as_ref()
             .map(|c| c.headline.clone())
@@ -1875,7 +1962,9 @@ impl Argus {
         }))
     }
 
-    #[tool(description = "Run a campaign/co-op experiment and evaluate against win/checkpoint triggers and fail taxonomy (#176).")]
+    #[tool(
+        description = "Run a campaign/co-op experiment and evaluate against win/checkpoint triggers and fail taxonomy (#176)."
+    )]
     async fn campaign_experiment(
         &self,
         Parameters(args): Parameters<CampaignExperimentArgs>,
@@ -1941,7 +2030,9 @@ impl Argus {
             let stop_clone = std::sync::Arc::clone(&stop_puppet);
             Some(std::thread::spawn(move || {
                 std::thread::sleep(Duration::from_millis(1500));
-                if let Ok(mut puppet) = crate::netclient::NetClient::connect("127.0.0.1", 26000, "puppet") {
+                if let Ok(mut puppet) =
+                    crate::netclient::NetClient::connect("127.0.0.1", 26000, "puppet")
+                {
                     while !stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
                         puppet.pump(Duration::from_millis(100));
                     }
@@ -2006,7 +2097,9 @@ impl Argus {
         }))
     }
 
-    #[tool(description = "Short experiment on several maps after one compile. Default dm2,dm3,dm4,dm6,lqdm2 at 20s each.")]
+    #[tool(
+        description = "Short experiment on several maps after one compile. Default dm2,dm3,dm4,dm6,lqdm2 at 20s each."
+    )]
     async fn matrix_experiment(
         &self,
         Parameters(args): Parameters<MatrixArgs>,
@@ -2071,7 +2164,15 @@ impl Argus {
                 g.refresh_committed_tape();
             }
             let ran = self
-                .drive_match(&cfg, map, dur, Some(&format!("mx_{map}")), None, args.skill, None)
+                .drive_match(
+                    &cfg,
+                    map,
+                    dur,
+                    Some(&format!("mx_{map}")),
+                    None,
+                    args.skill,
+                    None,
+                )
                 .await;
             match ran {
                 Ok(r) => {
@@ -2101,7 +2202,9 @@ impl Argus {
         }))
     }
 
-    #[tool(description = "Prefer experiment. Short compile+match+brief with no A/B. duration 10-120s.")]
+    #[tool(
+        description = "Prefer experiment. Short compile+match+brief with no A/B. duration 10-120s."
+    )]
     async fn probe(
         &self,
         Parameters(args): Parameters<ProbeArgs>,
@@ -2159,7 +2262,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "The Argus A/B quality bars this server uses when briefing and comparing runs.")]
+    #[tool(
+        description = "The Argus A/B quality bars this server uses when briefing and comparing runs."
+    )]
     async fn quality_bars(&self) -> Result<CallToolResult, McpError> {
         Ok(CallToolResult::success(vec![ContentBlock::text(
             QUALITY_BARS,
@@ -2177,7 +2282,8 @@ impl Argus {
         &self,
         Parameters(args): Parameters<BriefArgs>,
     ) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg = Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
+        let cfg =
+            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
         let brief = intel_brief(&cfg, &args.log, args.map.as_deref())
             .map_err(|e| McpError::invalid_params(e, None))?;
         let body = format!(
@@ -2196,7 +2302,8 @@ impl Argus {
         &self,
         Parameters(args): Parameters<CompareArgs>,
     ) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg = Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
+        let cfg =
+            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
         let log_a = args.log_a.as_deref().unwrap_or("baseline");
         let report = intel_compare(&cfg, log_a, &args.log_b, args.map.as_deref())
             .map_err(|e| McpError::invalid_params(e, None))?;
@@ -2216,9 +2323,10 @@ impl Argus {
         &self,
         Parameters(args): Parameters<MapArgs>,
     ) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg = Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
-        let atlas = map_cartograph(&cfg, &args.bsp)
-            .map_err(|e| McpError::invalid_params(e, None))?;
+        let cfg =
+            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
+        let atlas =
+            map_cartograph(&cfg, &args.bsp).map_err(|e| McpError::invalid_params(e, None))?;
         let body = format!(
             "Review this Argus map brief. Trust reach (walk/jump/rocket_jump/off_graph) and the recipe. Do not invent a nav story that contradicts nearest_node.\n\n{}",
             serde_json::to_string_pretty(&atlas_brief(&atlas)).unwrap_or_default()
@@ -2231,7 +2339,8 @@ impl Argus {
         description = "Orient an LLM on the Argus tree, live vs compile knobs, and how to test"
     )]
     async fn orient(&self) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg = Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
+        let cfg =
+            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
         let view = project_view(&cfg);
         let session = self.session.lock().await.clone();
         let body = format!(

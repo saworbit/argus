@@ -1,6 +1,6 @@
 //! Waypoint graph from navgen JSON: links, jumps, teles, BFS routes.
 
-use crate::cartograph::{cartograph, item_value, band_label, ControlItem};
+use crate::cartograph::{band_label, cartograph, item_value, ControlItem};
 use crate::config::Config;
 use serde::Serialize;
 use std::collections::{BTreeMap, VecDeque};
@@ -110,8 +110,7 @@ pub fn load_nav(cfg: &Config, map: &str) -> Result<NavGraph, String> {
     }
     let text = std::fs::read_to_string(&path)
         .map_err(|_| format!("no nav JSON for {map} ({})", path.display()))?;
-    let v: serde_json::Value =
-        serde_json::from_str(&text).map_err(|e| format!("nav json: {e}"))?;
+    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("nav json: {e}"))?;
     let graph = parse_graph(&map, &v)?;
     if let Ok(mut c) = GRAPH_CACHE.lock() {
         c.insert(
@@ -144,7 +143,10 @@ fn link_kind(from: [f32; 3], to: [f32; 3]) -> &'static str {
 }
 
 fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
-    let nodes_v = v.get("nodes").and_then(|n| n.as_array()).ok_or("nav json missing nodes")?;
+    let nodes_v = v
+        .get("nodes")
+        .and_then(|n| n.as_array())
+        .ok_or("nav json missing nodes")?;
     let nodes: Vec<[f32; 3]> = nodes_v
         .iter()
         .filter_map(|n| {
@@ -515,9 +517,8 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
 }
 
 pub fn route_ref(cfg: &Config, raw: &str) -> Result<Route, String> {
-    let spec = parse_path_ref(raw).ok_or_else(|| {
-        "name=dm4:56-72 or dm4:56->72 or dm4:quad->lg".to_string()
-    })?;
+    let spec = parse_path_ref(raw)
+        .ok_or_else(|| "name=dm4:56-72 or dm4:56->72 or dm4:quad->lg".to_string())?;
     let g = load_nav(cfg, &spec.map)?;
     let atlas = cartograph(cfg, &spec.map).ok();
     let from = resolve_end(&g, atlas.as_ref().map(|a| a.control.as_slice()), &spec.from)?;
@@ -544,7 +545,11 @@ struct Resolved {
     label: String,
 }
 
-fn resolve_end(g: &NavGraph, control: Option<&[ControlItem]>, end: &End) -> Result<Resolved, String> {
+fn resolve_end(
+    g: &NavGraph,
+    control: Option<&[ControlItem]>,
+    end: &End,
+) -> Result<Resolved, String> {
     match end {
         End::Node(id) => {
             if *id as usize >= g.nodes.len() {
@@ -559,9 +564,9 @@ fn resolve_end(g: &NavGraph, control: Option<&[ControlItem]>, end: &End) -> Resu
             let control = control.ok_or("no atlas to resolve item")?;
             let item = resolve_item(control, token)
                 .ok_or_else(|| format!("no control item matching {token}"))?;
-            let id = item.nearest_node.ok_or_else(|| {
-                format!("{} is off-graph ({})", item.classname, item.reach)
-            })?;
+            let id = item
+                .nearest_node
+                .ok_or_else(|| format!("{} is off-graph ({})", item.classname, item.reach))?;
             Ok(Resolved {
                 id,
                 label: format!("{}@n{id}", item.classname),
@@ -650,7 +655,9 @@ pub fn item_view(cfg: &Config, raw: &str) -> Result<serde_json::Value, String> {
     let item = resolve_item(&atlas.control, token)
         .cloned()
         .ok_or_else(|| format!("no control item matching {token} on {map}"))?;
-    let node = item.nearest_node.and_then(|id| node_deep(cfg, map, id).ok());
+    let node = item
+        .nearest_node
+        .and_then(|id| node_deep(cfg, map, id).ok());
     Ok(serde_json::json!({
         "map": atlas.map,
         "item": item,
@@ -740,14 +747,21 @@ mod tests {
                 // overwrite the kind afterwards; a plain link at the same
                 // height must never read as a drop
                 if dz.abs() <= 18.0 {
-                    assert_ne!(e.kind, "drop", "level link {from}->{} briefed as a drop", e.to);
+                    assert_ne!(
+                        e.kind, "drop",
+                        "level link {from}->{} briefed as a drop",
+                        e.to
+                    );
                     if e.kind == "walk" {
                         level_walks += 1;
                     }
                 }
             }
         }
-        assert!(level_walks > 100, "expected the bulk of dm4 to be level walks");
+        assert!(
+            level_walks > 100,
+            "expected the bulk of dm4 to be level walks"
+        );
     }
 
     #[test]
@@ -833,9 +847,18 @@ mod tests {
             map: "t".into(),
             nodes: vec![[0.0; 3], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [3.0, 0.0, 0.0]],
             adj: vec![
-                vec![NavEdge { to: 1, kind: "train".into() }],
-                vec![NavEdge { to: 2, kind: "sprint".into() }],
-                vec![NavEdge { to: 3, kind: "door".into() }],
+                vec![NavEdge {
+                    to: 1,
+                    kind: "train".into(),
+                }],
+                vec![NavEdge {
+                    to: 2,
+                    kind: "sprint".into(),
+                }],
+                vec![NavEdge {
+                    to: 3,
+                    kind: "door".into(),
+                }],
                 vec![],
             ],
             cam_nodes: vec![],

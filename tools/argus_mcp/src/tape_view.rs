@@ -58,7 +58,12 @@ pub fn bot_deep(cfg: &Config, text: &str, name: &str) -> Result<BotDeep, String>
         .deaths
         .iter()
         .filter(|d| d.victim.eq_ignore_ascii_case(name))
-        .map(|d| format!("{} @ {:.0} {:.0} {:.0}", d.killer, d.pos.x, d.pos.y, d.pos.z))
+        .map(|d| {
+            format!(
+                "{} @ {:.0} {:.0} {:.0}",
+                d.killer, d.pos.x, d.pos.y, d.pos.z
+            )
+        })
         .collect();
     let mut nearest_node = None;
     let mut nearest_dist = None;
@@ -226,7 +231,10 @@ mod tests {
     fn splits_log_and_bot() {
         assert_eq!(split_tape_bot("Reap"), ("Reap", None));
         assert_eq!(split_tape_bot("latest:Omi"), ("Omi", Some("latest")));
-        assert_eq!(split_tape_bot("ab_dm4_parity:Zeus"), ("Zeus", Some("ab_dm4_parity")));
+        assert_eq!(
+            split_tape_bot("ab_dm4_parity:Zeus"),
+            ("Zeus", Some("ab_dm4_parity"))
+        );
     }
 
     #[test]

@@ -157,7 +157,10 @@ pub fn parse_bsp29(data: &[u8]) -> Result<Bsp29, String> {
 
     let (eo, el) = lumps[0];
     let ent_bytes = lump(data, eo, el)?;
-    let end = ent_bytes.iter().position(|&b| b == 0).unwrap_or(ent_bytes.len());
+    let end = ent_bytes
+        .iter()
+        .position(|&b| b == 0)
+        .unwrap_or(ent_bytes.len());
     let entities = String::from_utf8_lossy(&ent_bytes[..end]).into_owned();
 
     let (mo, ml) = lumps[14];
@@ -165,16 +168,8 @@ pub fn parse_bsp29(data: &[u8]) -> Result<Bsp29, String> {
     let mut models = Vec::new();
     let mut i = 0;
     while i + MODEL_SIZE <= md.len() {
-        let mins = [
-            f32_le(md, i),
-            f32_le(md, i + 4),
-            f32_le(md, i + 8),
-        ];
-        let maxs = [
-            f32_le(md, i + 12),
-            f32_le(md, i + 16),
-            f32_le(md, i + 20),
-        ];
+        let mins = [f32_le(md, i), f32_le(md, i + 4), f32_le(md, i + 8)];
+        let maxs = [f32_le(md, i + 12), f32_le(md, i + 16), f32_le(md, i + 20)];
         models.push(BModel { mins, maxs });
         i += MODEL_SIZE;
     }
@@ -309,7 +304,10 @@ fn lump(data: &[u8], off: u32, len: u32) -> Result<&[u8], String> {
     let start = off as usize;
     let end = start.saturating_add(len as usize);
     if end > data.len() {
-        return Err(format!("lump out of range ({start}..{end} of {})", data.len()));
+        return Err(format!(
+            "lump out of range ({start}..{end} of {})",
+            data.len()
+        ));
     }
     Ok(&data[start..end])
 }
@@ -336,7 +334,11 @@ pub fn pak_find(pak: &Path, basename: &str) -> Result<Option<Vec<u8>>, String> {
         let name = String::from_utf8_lossy(&raw[..nlen]).replace('\\', "/");
         let ofs = i32::from_le_bytes(data[i + 56..i + 60].try_into().unwrap()) as usize;
         let length = i32::from_le_bytes(data[i + 60..i + 64].try_into().unwrap()) as usize;
-        let base = name.rsplit('/').next().unwrap_or(&name).to_ascii_lowercase();
+        let base = name
+            .rsplit('/')
+            .next()
+            .unwrap_or(&name)
+            .to_ascii_lowercase();
         if base == want {
             if ofs + length <= data.len() {
                 found = Some(data[ofs..ofs + length].to_vec());

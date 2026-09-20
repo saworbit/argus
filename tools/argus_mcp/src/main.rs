@@ -13,21 +13,31 @@ async fn main() -> anyhow::Result<()> {
         }
         Some("soak") => {
             let sub_args: Vec<String> = args.collect();
-            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+            if sub_args
+                .iter()
+                .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
                 print_soak_help();
                 return Ok(());
             }
-            let opts = argus_mcp::soak::parse_soak_args(sub_args.into_iter()).map_err(|e| anyhow::anyhow!(e))?;
-            argus_mcp::soak::run_soak(opts).await.map_err(|e| anyhow::anyhow!(e))
+            let opts = argus_mcp::soak::parse_soak_args(sub_args.into_iter())
+                .map_err(|e| anyhow::anyhow!(e))?;
+            argus_mcp::soak::run_soak(opts)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))
         }
         Some("cycle") => {
-            let map = args.next().ok_or_else(|| anyhow::anyhow!("usage: argus-mcp cycle <map>"))?;
+            let map = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp cycle <map>"))?;
             if map == "-h" || map == "--help" || map == "help" {
                 println!("usage: argus-mcp cycle <map>\n\nOne guarded learning cycle: learn -> regen -> compile -> probe.");
                 return Ok(());
             }
             argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
-            argus_mcp::soak::run_cycle(&map).await.map_err(|e| anyhow::anyhow!(e))
+            argus_mcp::soak::run_cycle(&map)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))
         }
         Some("demo") => {
             // CLI face of see what=demo, so demos read without an MCP
@@ -40,8 +50,7 @@ async fn main() -> anyhow::Result<()> {
                 return Ok(());
             }
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            let brief =
-                argus_mcp::demo::demo_brief(&cfg, &name).map_err(|e| anyhow::anyhow!(e))?;
+            let brief = argus_mcp::demo::demo_brief(&cfg, &name).map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&brief)?);
             Ok(())
         }
@@ -55,10 +64,11 @@ async fn main() -> anyhow::Result<()> {
             let coop = rest.iter().any(|a| a == "--coop");
             let jumps_only = rest.iter().any(|a| a == "--jumps");
             let mut pos = rest.iter().filter(|a| !a.starts_with("--"));
-            let map = pos
-                .next()
-                .cloned()
-                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]"))?;
+            let map = pos.next().cloned().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]"
+                )
+            })?;
             if map == "-h" || map == "--help" || map == "help" {
                 println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.\n--jumps verifies generated jump links instead of ordinary walk/drop links.");
                 return Ok(());
@@ -67,9 +77,10 @@ async fn main() -> anyhow::Result<()> {
             let limit: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(30);
             let skip: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            let report = argus_mcp::netclient::probe_links(&cfg, &map, limit, skip, coop, jumps_only)
-                .await
-                .map_err(|e| anyhow::anyhow!(e))?;
+            let report =
+                argus_mcp::netclient::probe_links(&cfg, &map, limit, skip, coop, jumps_only)
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
@@ -80,14 +91,20 @@ async fn main() -> anyhow::Result<()> {
             // cannot wait for a client restart:
             //   argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--coop] [--slots N]
             let rest: Vec<String> = args.collect();
-            if rest.iter().any(|a| a == "-h" || a == "--help" || a == "help") || rest.is_empty() {
+            if rest
+                .iter()
+                .any(|a| a == "-h" || a == "--help" || a == "help")
+                || rest.is_empty()
+            {
                 println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--port N] [--coop]
 
 Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.");
                 return Ok(());
             }
             let flag = |name: &str| -> Option<String> {
-                rest.iter().position(|a| a == name).and_then(|i| rest.get(i + 1).cloned())
+                rest.iter()
+                    .position(|a| a == name)
+                    .and_then(|i| rest.get(i + 1).cloned())
             };
             let coop = rest.iter().any(|a| a == "--coop");
             let skill: Option<u32> = flag("--skill").and_then(|s| s.parse().ok());
@@ -96,7 +113,13 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
                 .iter()
                 .enumerate()
                 .filter(|(_, a)| a.starts_with("--"))
-                .flat_map(|(i, a)| if a == "--coop" { vec![i] } else { vec![i, i + 1] })
+                .flat_map(|(i, a)| {
+                    if a == "--coop" {
+                        vec![i]
+                    } else {
+                        vec![i, i + 1]
+                    }
+                })
                 .collect();
             let pos: Vec<&String> = rest
                 .iter()
@@ -107,7 +130,9 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             let map = pos
                 .first()
                 .cloned()
-                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp match <map> [duration_sec] [run_name]"))?
+                .ok_or_else(|| {
+                    anyhow::anyhow!("usage: argus-mcp match <map> [duration_sec] [run_name]")
+                })?
                 .clone();
             argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
             let duration: u32 = pos.get(1).and_then(|s| s.parse().ok()).unwrap_or(185);
@@ -123,7 +148,15 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
                 None => argus_mcp::match_ctrl::MatchCtrl::default(),
             };
             let res = ctrl
-                .run(&cfg, &map, duration, run_name.as_deref(), slots, skill, Some(coop))
+                .run(
+                    &cfg,
+                    &map,
+                    duration,
+                    run_name.as_deref(),
+                    slots,
+                    skill,
+                    Some(coop),
+                )
                 .await
                 .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&res)?);
@@ -138,7 +171,10 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
                 return Ok(());
             }
             let opt = |name: &str| -> Option<String> {
-                rest.iter().position(|a| a == name).and_then(|i| rest.get(i + 1)).cloned()
+                rest.iter()
+                    .position(|a| a == name)
+                    .and_then(|i| rest.get(i + 1))
+                    .cloned()
             };
             let flag = |name: &str| rest.iter().any(|a| a == name);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
@@ -147,7 +183,9 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             if flag("--cells") {
                 let rows = argus_mcp::corpus::cells(&runs, opt("--map").as_deref());
                 println!("run,map,started,kind,x,y,z,count,cause");
-                let lim = opt("--limit").and_then(|v| v.parse().ok()).unwrap_or(usize::MAX);
+                let lim = opt("--limit")
+                    .and_then(|v| v.parse().ok())
+                    .unwrap_or(usize::MAX);
                 for c in rows.iter().take(lim) {
                     println!(
                         "{},{},{},{},{:.0},{:.0},{:.0},{:.0},{}",
@@ -195,7 +233,10 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
                 return Ok(());
             }
             let opt = |name: &str| -> Option<String> {
-                rest.iter().position(|a| a == name).and_then(|i| rest.get(i + 1)).cloned()
+                rest.iter()
+                    .position(|a| a == name)
+                    .and_then(|i| rest.get(i + 1))
+                    .cloned()
             };
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let (rows, _) = argus_mcp::corpus::index(&cfg.runs, false);
@@ -303,11 +344,13 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             //   argus-mcp measure [--write <path>]
             let rest: Vec<String> = args.collect();
             if rest.iter().any(|a| a == "-h" || a == "--help") {
-                println!("usage: argus-mcp measure [--write <path>]
+                println!(
+                    "usage: argus-mcp measure [--write <path>]
 
 The detection limit per map and metric, from every committed same-build arm,
 and what running four gates costs measured over the null corpus. Read-only.
---write puts the table in a file instead of stdout.");
+--write puts the table in a file instead of stdout."
+                );
                 return Ok(());
             }
             let out = rest
@@ -351,7 +394,10 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 return Ok(());
             }
             let split = |s: &str| -> Vec<String> {
-                s.split(',').map(|x| x.trim().to_string()).filter(|x| !x.is_empty()).collect()
+                s.split(',')
+                    .map(|x| x.trim().to_string())
+                    .filter(|x| !x.is_empty())
+                    .collect()
             };
             // the metric this change was pre-registered to move: with
             // it, only that gate convicts and the rest flag (#377)
@@ -373,7 +419,9 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 v
             };
             if positional.is_empty() {
-                return Err(anyhow::anyhow!("usage: argus-mcp compare <cand,...> [<ctrl,...>] [--primary <metric>]"));
+                return Err(anyhow::anyhow!(
+                    "usage: argus-mcp compare <cand,...> [<ctrl,...>] [--primary <metric>]"
+                ));
             }
             let cands = split(&positional[0]);
             let ctrls = positional.get(1).map(|s| split(s)).unwrap_or_default();
@@ -384,7 +432,10 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             } else {
                 let mut cb = Vec::new();
                 for c in &cands {
-                    cb.push(argus_mcp::intel::brief_run(&cfg, c, None).map_err(|e| anyhow::anyhow!(e))?);
+                    cb.push(
+                        argus_mcp::intel::brief_run(&cfg, c, None)
+                            .map_err(|e| anyhow::anyhow!(e))?,
+                    );
                 }
                 let map = cb[0].map.clone();
                 let mut kb = Vec::new();
@@ -593,7 +644,10 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
         }
         Some("compile") => {
             let sub_args: Vec<String> = args.collect();
-            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+            if sub_args
+                .iter()
+                .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
                 println!(
                     "usage: argus-mcp compile [options]\n\
                      \n\
@@ -618,7 +672,10 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             }
             let res = argus_mcp::compile::compile_qc(&cfg, install);
             if res.ok {
-                println!("Compile OK! (progs.dat: {} bytes)", res.progs_bytes.unwrap_or(0));
+                println!(
+                    "Compile OK! (progs.dat: {} bytes)",
+                    res.progs_bytes.unwrap_or(0)
+                );
                 for p in &res.installed_to {
                     println!("  Installed to: {p}");
                 }
@@ -636,7 +693,11 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
         }
         Some("nav") => {
             let sub_args: Vec<String> = args.collect();
-            if sub_args.is_empty() || sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+            if sub_args.is_empty()
+                || sub_args
+                    .iter()
+                    .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
                 println!(
                     "usage: argus-mcp nav <map> [options]\n\
                      \n\
@@ -652,7 +713,8 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             argus_mcp::engine::validate_map(map).map_err(|e| anyhow::anyhow!(e))?;
             let register = !sub_args.iter().any(|a| a == "--no-register");
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            let res = argus_mcp::navgen::nav_generate(&cfg, map, map, None, None, register).map_err(|e| anyhow::anyhow!(e))?;
+            let res = argus_mcp::navgen::nav_generate(&cfg, map, map, None, None, register)
+                .map_err(|e| anyhow::anyhow!(e))?;
             if res.ok {
                 println!("Nav generation OK for {map}!");
                 if let Some(budget) = &res.edict_budget {
@@ -674,7 +736,11 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
         }
         Some("analyze") => {
             let sub_args: Vec<String> = args.collect();
-            if sub_args.is_empty() || sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+            if sub_args.is_empty()
+                || sub_args
+                    .iter()
+                    .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
                 println!(
                     "usage: argus-mcp analyze <log_path> [options]\n\
                      \n\
@@ -687,7 +753,10 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
         }
         Some("harvest") => {
             let sub_args: Vec<String> = args.collect();
-            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+            if sub_args
+                .iter()
+                .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
                 println!(
                     "usage: argus-mcp harvest [options]\n\
                      \n\
@@ -704,7 +773,10 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
         }
         Some("reach") => {
             let sub_args: Vec<String> = args.collect();
-            if sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+            if sub_args
+                .iter()
+                .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
                 println!(
                     "usage: argus-mcp reach [map]\n\
                      \n\
@@ -717,7 +789,11 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
         }
         Some("campaign") => {
             let sub_args: Vec<String> = args.collect();
-            if sub_args.is_empty() || sub_args.iter().any(|a| a == "-h" || a == "--help" || a == "help") {
+            if sub_args.is_empty()
+                || sub_args
+                    .iter()
+                    .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
                 println!(
                     "usage: argus-mcp campaign <map> [options]\n\
                      \n\
@@ -791,7 +867,9 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 let stop_clone = std::sync::Arc::clone(&stop_puppet);
                 Some(std::thread::spawn(move || {
                     std::thread::sleep(std::time::Duration::from_millis(1500));
-                    if let Ok(mut puppet) = argus_mcp::netclient::NetClient::connect("127.0.0.1", 26000, "puppet") {
+                    if let Ok(mut puppet) =
+                        argus_mcp::netclient::NetClient::connect("127.0.0.1", 26000, "puppet")
+                    {
                         while !stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
                             puppet.pump(std::time::Duration::from_millis(100));
                         }
@@ -802,15 +880,17 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 None
             };
 
-            let ran = mc.run(
-                &cfg,
-                map,
-                duration,
-                Some(&run_name),
-                None,
-                skill,
-                Some(true),
-            ).await;
+            let ran = mc
+                .run(
+                    &cfg,
+                    map,
+                    duration,
+                    Some(&run_name),
+                    None,
+                    skill,
+                    Some(true),
+                )
+                .await;
 
             if let Some(th) = puppet_thread {
                 stop_puppet.store(true, std::sync::atomic::Ordering::Relaxed);

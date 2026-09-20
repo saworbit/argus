@@ -137,7 +137,11 @@ impl MatchTape {
     /// `unconnected` is the engine's own placeholder netname for a
     /// client slot mid-handshake, and is never a person either.
     pub fn instrument_names(&self) -> HashSet<String> {
-        self.samples.keys().filter(|n| is_instrument(n)).cloned().collect()
+        self.samples
+            .keys()
+            .filter(|n| is_instrument(n))
+            .cloned()
+            .collect()
     }
 
     pub fn human_names(&self) -> HashSet<String> {
@@ -366,11 +370,7 @@ impl MatchTape {
                     })
                     .collect::<HashSet<_>>()
                     .len();
-                let deaths = self
-                    .deaths
-                    .iter()
-                    .filter(|d| d.victim == *name)
-                    .count() as i32;
+                let deaths = self.deaths.iter().filter(|d| d.victim == *name).count() as i32;
                 BotStats {
                     name: name.clone(),
                     dur,
@@ -626,7 +626,9 @@ fn parse_one(text: &str) -> MatchTape {
             if line.ends_with(" shove") {
                 *event_counts.entry("shove".to_string()).or_insert(0) += 1;
             } else if line.ends_with("routecache adopt") {
-                *event_counts.entry("routecache_adopt".to_string()).or_insert(0) += 1;
+                *event_counts
+                    .entry("routecache_adopt".to_string())
+                    .or_insert(0) += 1;
             } else if line.contains(" hunch ") {
                 *event_counts.entry("hunch".to_string()).or_insert(0) += 1;
             } else if line.contains(" watch ") {
@@ -744,7 +746,10 @@ fn parse_one(text: &str) -> MatchTape {
         if let Some(caps) = evt.captures(line) {
             let bot = caps[1].to_string();
             let verb = caps[2].to_string();
-            let rest = caps.get(3).map(|m| m.as_str().trim().to_string()).unwrap_or_default();
+            let rest = caps
+                .get(3)
+                .map(|m| m.as_str().trim().to_string())
+                .unwrap_or_default();
             // Argus_Die logs a bare "death" then "death <killer> pos ...".
             // Count only the detailed line.
             if verb == "death" && rest.is_empty() {
@@ -753,12 +758,9 @@ fn parse_one(text: &str) -> MatchTape {
             *event_counts.entry(verb.clone()).or_insert(0) += 1;
             let t = last_t.get(&bot).copied();
             let pos = t.and_then(|tt| {
-                samples.get(&bot).and_then(|s| {
-                    s.iter()
-                        .rev()
-                        .find(|sm| sm.t <= tt + 0.05)
-                        .map(|sm| sm.pos)
-                })
+                samples
+                    .get(&bot)
+                    .and_then(|s| s.iter().rev().find(|sm| sm.t <= tt + 0.05).map(|sm| sm.pos))
             });
             events.push(GameEvent {
                 bot,
@@ -828,8 +830,7 @@ fn evt_re() -> &'static Regex {
 fn map_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"(?i)(?:SpawnServer:\s+|ARGUS init on\s+)([A-Za-z0-9_]+)")
-            .expect("map regex")
+        Regex::new(r"(?i)(?:SpawnServer:\s+|ARGUS init on\s+)([A-Za-z0-9_]+)").expect("map regex")
     })
 }
 
@@ -866,8 +867,7 @@ ARGEVT Carmack goal item_shells
 
     #[test]
     fn fixture_yields_known_metrics() {
-        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .join("tests/fixtures/snippet.log");
+        let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/snippet.log");
         let text = fs::read_to_string(path).unwrap();
         let summary = parse_arglog(&text);
 
@@ -993,7 +993,11 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         // 12 seconds shuttling inside a ~200u box at ~350 u/s
         let mut t = 1.0;
         while t < 13.0 {
-            let x = if (t * 2.0) as i32 % 2 == 0 { 1500.0 } else { 1680.0 };
+            let x = if (t * 2.0) as i32 % 2 == 0 {
+                1500.0
+            } else {
+                1680.0
+            };
             text.push_str(&format!(
                 "ARGLOG Carmack t {t:.1} pos '{x:.1} -1300.0 32.0' spd 355 yaw 0 mode 2 st 4 gl 0 hp 100 frg 0\n"
             ));
@@ -1001,10 +1005,17 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         }
         let tape = parse_tape(&text);
         // the stall and freeze detectors see nothing here
-        assert!(tape.freezes().is_empty(), "freeze detector should not fire at 355 u/s");
+        assert!(
+            tape.freezes().is_empty(),
+            "freeze detector should not fire at 355 u/s"
+        );
         let cf = tape.confinements(220.0, 5.0);
         assert!(!cf.is_empty(), "confinement should catch it");
-        assert!(cf[0].dur >= 10.0, "expected a long window, got {}", cf[0].dur);
+        assert!(
+            cf[0].dur >= 10.0,
+            "expected a long window, got {}",
+            cf[0].dur
+        );
         assert!(cf[0].avg_spd > 300.0, "and it should report the real speed");
 
         // a bot actually crossing the map is not confined
@@ -1236,7 +1247,9 @@ ARGEVT Joe Rogan death Trent Reznor pos '64 0 24' thirdparty
             ));
             t += 0.5;
         }
-        text.push_str("ARGLOG Romero t 4.5 pos '2100 -980 344' spd 300 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n");
+        text.push_str(
+            "ARGLOG Romero t 4.5 pos '2100 -980 344' spd 300 yaw 0 mode 2 st 0 gl 0 hp 100 frg 0\n",
+        );
         text.push_str("ARGEVT Romero board\n");
         let tape = parse_tape(&text);
         let fz = tape.freezes();

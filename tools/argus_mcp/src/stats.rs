@@ -155,7 +155,10 @@ pub struct Sample {
 
 impl Sample {
     pub fn new(stratum: &str, value: f64) -> Sample {
-        Sample { stratum: stratum.to_string(), value }
+        Sample {
+            stratum: stratum.to_string(),
+            value,
+        }
     }
 }
 
@@ -205,7 +208,12 @@ fn strata_of(s: &[Sample]) -> Vec<Vec<f64>> {
     keys.sort();
     keys.dedup();
     keys.iter()
-        .map(|k| s.iter().filter(|x| &x.stratum == k).map(|x| x.value).collect())
+        .map(|k| {
+            s.iter()
+                .filter(|x| &x.stratum == k)
+                .map(|x| x.value)
+                .collect()
+        })
         .collect()
 }
 
@@ -260,7 +268,10 @@ pub fn bootstrap_diff_ci(
     diffs.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
     let lo_i = ((alpha / 2.0) * BOOT_ITERS as f64).floor() as usize;
     let hi_i = (((1.0 - alpha / 2.0) * BOOT_ITERS as f64).ceil() as usize).min(BOOT_ITERS - 1);
-    Some(Interval { lo: diffs[lo_i], hi: diffs[hi_i] })
+    Some(Interval {
+        lo: diffs[lo_i],
+        hi: diffs[hi_i],
+    })
 }
 
 /// Probability that a candidate tape drawn at random beats a control
@@ -473,10 +484,14 @@ mod tests {
 
     #[test]
     fn a_bootstrap_interval_clears_zero_on_a_real_separation() {
-        let cand: Vec<Sample> =
-            [3.0, 4.0, 2.0, 5.0, 3.0].iter().map(|v| Sample::new("dm2", *v)).collect();
-        let ctl: Vec<Sample> =
-            [40.0, 44.0, 38.0, 46.0, 41.0].iter().map(|v| Sample::new("dm2", *v)).collect();
+        let cand: Vec<Sample> = [3.0, 4.0, 2.0, 5.0, 3.0]
+            .iter()
+            .map(|v| Sample::new("dm2", *v))
+            .collect();
+        let ctl: Vec<Sample> = [40.0, 44.0, 38.0, 46.0, 41.0]
+            .iter()
+            .map(|v| Sample::new("dm2", *v))
+            .collect();
         // lower is better, so the candidate wins and the interval is
         // entirely positive
         let ci = bootstrap_diff_ci(&cand, &ctl, true, 0.05).expect("five tapes a side");
@@ -485,10 +500,14 @@ mod tests {
 
     #[test]
     fn a_bootstrap_is_reproducible() {
-        let a: Vec<Sample> =
-            [12.0, 15.0, 9.0, 20.0].iter().map(|v| Sample::new("dm4", *v)).collect();
-        let b: Vec<Sample> =
-            [8.0, 11.0, 7.0, 14.0].iter().map(|v| Sample::new("dm4", *v)).collect();
+        let a: Vec<Sample> = [12.0, 15.0, 9.0, 20.0]
+            .iter()
+            .map(|v| Sample::new("dm4", *v))
+            .collect();
+        let b: Vec<Sample> = [8.0, 11.0, 7.0, 14.0]
+            .iter()
+            .map(|v| Sample::new("dm4", *v))
+            .collect();
         let one = bootstrap_diff_ci(&a, &b, false, 0.05).unwrap();
         let two = bootstrap_diff_ci(&a, &b, false, 0.05).unwrap();
         assert_eq!(one.lo, two.lo);
@@ -515,7 +534,10 @@ mod tests {
         for _ in 0..50 {
             let r = resample(&groups, &mut rng);
             assert_eq!(r.len(), 4);
-            assert!(r.iter().any(|v| *v > 50.0), "e1m6 dropped out of a resample");
+            assert!(
+                r.iter().any(|v| *v > 50.0),
+                "e1m6 dropped out of a resample"
+            );
         }
     }
 
@@ -561,7 +583,15 @@ mod tests {
     fn sprt_says_continue_before_it_says_anything_else() {
         // a half-sized effect on two tapes a side is exactly the case
         // the lab currently answers with a verdict and should not
-        let marginal = sprt("stalls", &[35.0, 36.0], &[40.0, 41.0], true, 10.0, 12.0, "test");
+        let marginal = sprt(
+            "stalls",
+            &[35.0, 36.0],
+            &[40.0, 41.0],
+            true,
+            10.0,
+            12.0,
+            "test",
+        );
         assert_eq!(marginal.call, SprtCall::Continue, "{marginal:?}");
         assert!(marginal.note.contains("run another"));
     }

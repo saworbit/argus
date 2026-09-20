@@ -26,7 +26,10 @@ pub struct EngineChild {
 
 enum Inner {
     #[cfg(not(windows))]
-    Tokio { child: Child, stdin: Option<ChildStdin> },
+    Tokio {
+        child: Child,
+        stdin: Option<ChildStdin>,
+    },
     #[cfg(windows)]
     Win { handle: SendHandle },
 }
@@ -111,7 +114,10 @@ impl EngineChild {
                     .write_all(format!("{line}\n").as_bytes())
                     .await
                     .map_err(|e| format!("write console: {e}"))?;
-                stdin.flush().await.map_err(|e| format!("flush console: {e}"))
+                stdin
+                    .flush()
+                    .await
+                    .map_err(|e| format!("flush console: {e}"))
             }
             #[cfg(windows)]
             Inner::Win { .. } => win_inject(self.pid, line),
@@ -299,7 +305,6 @@ fn pump<T: tokio::io::AsyncRead + Unpin + Send + 'static>(
     }
 }
 
-
 /// A hard kill of the MCP server (the client does not close stdio, it
 /// terminates the process) never runs Drop, so the dedicated engine
 /// survived and held UDP 26000 against the next server. Every engine
@@ -311,9 +316,8 @@ fn pump<T: tokio::io::AsyncRead + Unpin + Send + 'static>(
 fn engine_job() -> windows_sys::Win32::Foundation::HANDLE {
     use std::sync::OnceLock;
     use windows_sys::Win32::System::JobObjects::{
-        CreateJobObjectW, SetInformationJobObject,
-        JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
-        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+        CreateJobObjectW, JobObjectExtendedLimitInformation, SetInformationJobObject,
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
     };
     static JOB: OnceLock<SendHandle> = OnceLock::new();
     JOB.get_or_init(|| unsafe {
@@ -387,7 +391,11 @@ fn spawn_windows(
     let args = windows_args(cfg, map, slots, skill, port, coop)?;
 
     let mut cmd_wide: Vec<u16> = args.encode_utf16().chain(std::iter::once(0)).collect();
-    let cwd_wide: Vec<u16> = cwd.as_os_str().encode_wide().chain(std::iter::once(0)).collect();
+    let cwd_wide: Vec<u16> = cwd
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
 
     let mut si: STARTUPINFOW = unsafe { std::mem::zeroed() };
     si.cb = std::mem::size_of::<STARTUPINFOW>() as u32;
@@ -466,7 +474,9 @@ fn win_try_wait(handle: windows_sys::Win32::Foundation::HANDLE) -> Result<Option
 
 #[cfg(windows)]
 fn win_inject(pid: u32, line: &str) -> Result<(), String> {
-    use windows_sys::Win32::Foundation::{CloseHandle, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE};
+    use windows_sys::Win32::Foundation::{
+        CloseHandle, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE,
+    };
     use windows_sys::Win32::Storage::FileSystem::{
         CreateFileW, FILE_SHARE_READ, FILE_SHARE_WRITE, OPEN_EXISTING,
     };
@@ -593,10 +603,7 @@ impl EngineChild {
                 .spawn()
                 .unwrap();
             Self {
-                inner: Inner::Tokio {
-                    child,
-                    stdin: None,
-                },
+                inner: Inner::Tokio { child, stdin: None },
                 pid: 0,
                 stdout: std::sync::Arc::new(std::sync::Mutex::new(String::new())),
             }
@@ -625,7 +632,9 @@ pub fn kill_pid(pid: u32) -> bool {
     #[cfg(windows)]
     unsafe {
         use windows_sys::Win32::Foundation::CloseHandle;
-        use windows_sys::Win32::System::Threading::{OpenProcess, TerminateProcess, PROCESS_TERMINATE};
+        use windows_sys::Win32::System::Threading::{
+            OpenProcess, TerminateProcess, PROCESS_TERMINATE,
+        };
         let h = OpenProcess(PROCESS_TERMINATE, 0, pid);
         if h.is_null() {
             return false;
@@ -690,7 +699,10 @@ mod tests {
         assert!(args.contains("+sys_ticrate 0.0139"), "{args}");
         let coop = windows_args(&cfg, "e1m2", 4, Some(1), Some(26011), true).expect("args");
         assert!(coop.contains("+sys_ticrate 0.0139"), "{coop}");
-        assert!(coop.contains("-port 26011") && coop.contains("+coop 1"), "{coop}");
+        assert!(
+            coop.contains("-port 26011") && coop.contains("+coop 1"),
+            "{coop}"
+        );
     }
 
     #[test]
@@ -743,10 +755,16 @@ mod tests {
         if !check_handle.is_null() {
             let mut exit_code: u32 = 0;
             unsafe {
-                windows_sys::Win32::System::Threading::GetExitCodeProcess(check_handle, &mut exit_code);
+                windows_sys::Win32::System::Threading::GetExitCodeProcess(
+                    check_handle,
+                    &mut exit_code,
+                );
                 windows_sys::Win32::Foundation::CloseHandle(check_handle);
             }
-            assert_ne!(exit_code, 259, "process should have been terminated on drop");
+            assert_ne!(
+                exit_code, 259,
+                "process should have been terminated on drop"
+            );
         }
     }
 
@@ -776,13 +794,20 @@ mod tests {
             return;
         };
         if !cfg.engine.exists() {
-            eprintln!("SKIPPED {}: no ARGUS_ENGINE on this box", "probe_inject_test");
+            eprintln!(
+                "SKIPPED {}: no ARGUS_ENGINE on this box",
+                "probe_inject_test"
+            );
             return;
         }
         // a temp runs/ so the probe tape never lands in the real one:
         // resolve_latest picks the newest runs/*.log, and a 7 s test
         // tape became what "latest" meant for the next compare
-        let tmp_runs = std::env::temp_dir().join(format!("argus-{}-{}", "probe_inject_test", std::process::id()));
+        let tmp_runs = std::env::temp_dir().join(format!(
+            "argus-{}-{}",
+            "probe_inject_test",
+            std::process::id()
+        ));
         let _ = std::fs::create_dir_all(&tmp_runs);
         cfg.runs = tmp_runs.clone();
         // its own port: the default 26000 belongs to whatever ladder is
@@ -791,7 +816,15 @@ mod tests {
         // rather than as a statement about console injection
         let mut ctrl = crate::match_ctrl::MatchCtrl::on_port(26019);
         if ctrl
-            .start(&cfg, "dm4", Some(30), Some("probe_inject_test"), None, Some(1), None)
+            .start(
+                &cfg,
+                "dm4",
+                Some(30),
+                Some("probe_inject_test"),
+                None,
+                Some(1),
+                None,
+            )
             .await
             .is_err()
         {
@@ -807,7 +840,13 @@ mod tests {
         assert!(
             log.contains("host:") || log.contains("players:"),
             "status output must reach the log; tail: {}",
-            log.chars().rev().take(400).collect::<String>().chars().rev().collect::<String>()
+            log.chars()
+                .rev()
+                .take(400)
+                .collect::<String>()
+                .chars()
+                .rev()
+                .collect::<String>()
         );
     }
 }

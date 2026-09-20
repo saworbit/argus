@@ -18,7 +18,9 @@ Windows spawn must not inherit the MCP stdio pipe."
         return Some("map not found. cartograph or list_maps, then extract from id1 PAK.".into());
     }
     if lower.contains("couldn't load") && (lower.contains("pak") || lower.contains("id1")) {
-        return Some("id1 PAK missing under ARGUS_BASEDIR. Copy licensed pak0/pak1 into basedir/id1.".into());
+        return Some(
+            "id1 PAK missing under ARGUS_BASEDIR. Copy licensed pak0/pak1 into basedir/id1.".into(),
+        );
     }
     if text.contains("QUAKE ERROR") || text.contains("Host_Error") || text.contains("Sys_Error") {
         let line = text

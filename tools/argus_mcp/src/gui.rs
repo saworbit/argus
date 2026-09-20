@@ -295,7 +295,9 @@ fn write_response(stream: &mut TcpStream, resp: &Response) -> Result<(), String>
         resp.content_type,
         resp.body.len()
     );
-    stream.write_all(head.as_bytes()).map_err(|e| e.to_string())?;
+    stream
+        .write_all(head.as_bytes())
+        .map_err(|e| e.to_string())?;
     stream.write_all(&resp.body).map_err(|e| e.to_string())?;
     Ok(())
 }
@@ -327,9 +329,7 @@ fn post_allowed(req: &Request, port: u16) -> Result<(), Response> {
     // x-www-form-urlencoded or multipart/form-data; anything else needs
     // a preflight, which the Origin check above then refuses. /api/attach
     // uploads a BSP as octet-stream.
-    if !ctype.starts_with("application/json")
-        && !ctype.starts_with("application/octet-stream")
-    {
+    if !ctype.starts_with("application/json") && !ctype.starts_with("application/octet-stream") {
         return Err(text(
             415,
             "POST needs Content-Type: application/json or application/octet-stream",
@@ -355,7 +355,9 @@ fn route_at(req: &Request, port: u16) -> Response {
     match (req.method.as_str(), req.path.as_str()) {
         ("GET", "/") => html(PAGE),
         ("GET", "/api/status") => json_ok(&status_payload()),
-        (m, p) if m == "GET" && p.starts_with("/api/nav/") => map_nav_graph(&p["/api/nav/".len()..]),
+        (m, p) if m == "GET" && p.starts_with("/api/nav/") => {
+            map_nav_graph(&p["/api/nav/".len()..])
+        }
         (m, p) if m == "GET" && p.starts_with("/api/map/") => map_brief(&p["/api/map/".len()..]),
         (m, p) if m == "GET" && p.starts_with("/api/png/") => map_png(&p["/api/png/".len()..]),
         ("POST", "/api/config") => set_config(&req.body),
@@ -375,8 +377,7 @@ fn route_at(req: &Request, port: u16) -> Response {
 /// other request threads walk std::env::vars() is the unsynchronised
 /// setenv race, and it mutated the whole process for every other caller
 /// besides.
-static OVERRIDES: std::sync::Mutex<Option<HashMap<String, String>>> =
-    std::sync::Mutex::new(None);
+static OVERRIDES: std::sync::Mutex<Option<HashMap<String, String>>> = std::sync::Mutex::new(None);
 
 fn set_override(key: &str, value: String) {
     let mut g = OVERRIDES.lock().unwrap_or_else(|e| e.into_inner());
@@ -940,7 +941,10 @@ mod tests {
         assert_eq!(
             post(
                 "/api/restore",
-                &[("host", "evil.example"), ("content-type", "application/json")]
+                &[
+                    ("host", "evil.example"),
+                    ("content-type", "application/json")
+                ]
             )
             .status,
             403

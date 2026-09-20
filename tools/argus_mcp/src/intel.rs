@@ -425,7 +425,9 @@ pub fn compare_lite(r: &CompareReport) -> CompareLite {
 
 /// Does the caller want CSV instead of JSON?
 pub fn want_csv(format: Option<&str>) -> bool {
-    format.map(|f| f.eq_ignore_ascii_case("csv")).unwrap_or(false)
+    format
+        .map(|f| f.eq_ignore_ascii_case("csv"))
+        .unwrap_or(false)
 }
 
 /// A brief as text: scalars as `key,value`, then one CSV table per
@@ -577,12 +579,20 @@ pub fn compare_csv(r: &CompareReport) -> String {
             a.third_party_deaths.to_string(),
             b.third_party_deaths.to_string(),
         ),
-        ("lava_deaths", a.lava_deaths.to_string(), b.lava_deaths.to_string()),
+        (
+            "lava_deaths",
+            a.lava_deaths.to_string(),
+            b.lava_deaths.to_string(),
+        ),
         ("freezes", a.freezes.to_string(), b.freezes.to_string()),
         ("cover", a.cover.to_string(), b.cover.to_string()),
         ("goals", a.goals.to_string(), b.goals.to_string()),
         ("frags", a.frags.to_string(), b.frags.to_string()),
-        ("kd_spread", a.kd_spread.to_string(), b.kd_spread.to_string()),
+        (
+            "kd_spread",
+            a.kd_spread.to_string(),
+            b.kd_spread.to_string(),
+        ),
     ] {
         s.push_str(&format!("{k},{x},{y}\n"));
     }
@@ -936,7 +946,10 @@ pub fn hull0_for_map(cfg: &Config, map: &str) -> Option<crate::bsp::Hull0> {
     // the third parse of the same file in one brief_run (#228); the
     // shared mtime cache turns it into a pointer clone
     let (path, _) = crate::cartograph::ingest_bsp(cfg, map).ok()?;
-    crate::cartograph::read_bsp29_cached(&path).ok()?.hull0.clone()
+    crate::cartograph::read_bsp29_cached(&path)
+        .ok()?
+        .hull0
+        .clone()
 }
 
 pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<MatchBrief, String> {
@@ -1000,7 +1013,8 @@ pub fn baseline_band_for(cfg: &Config, map: &str) -> Vec<String> {
     let Ok(text) = std::fs::read_to_string(&p) else {
         return Vec::new();
     };
-    let Ok(table) = serde_json::from_str::<std::collections::BTreeMap<String, serde_json::Value>>(&text)
+    let Ok(table) =
+        serde_json::from_str::<std::collections::BTreeMap<String, serde_json::Value>>(&text)
     else {
         return Vec::new();
     };
@@ -1042,9 +1056,10 @@ pub fn all_baseline_bands_in(runs: &Path) -> Vec<(String, Vec<String>)> {
         .map(|(map, v)| {
             let runs = match v {
                 serde_json::Value::String(one) => vec![one],
-                serde_json::Value::Array(many) => {
-                    many.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()
-                }
+                serde_json::Value::Array(many) => many
+                    .iter()
+                    .filter_map(|x| x.as_str().map(str::to_string))
+                    .collect(),
                 _ => Vec::new(),
             };
             (map, runs)
@@ -1290,9 +1305,9 @@ pub fn format_gate_card(
 
     out.push_str("├──────────────────────────┴────────┴──────────────┴──────────┤\n");
     let (icon, tag) = match verdict {
-        Verdict::Improved =>  ("🟢", "APPROVED FOR RELEASE (IMPROVED)"),
-        Verdict::Parity =>    ("🟢", "APPROVED FOR RELEASE (PARITY)"),
-        Verdict::Mixed =>     ("🟡", "CAUTION (MIXED QUALITY GATES)"),
+        Verdict::Improved => ("🟢", "APPROVED FOR RELEASE (IMPROVED)"),
+        Verdict::Parity => ("🟢", "APPROVED FOR RELEASE (PARITY)"),
+        Verdict::Mixed => ("🟡", "CAUTION (MIXED QUALITY GATES)"),
         Verdict::Regressed => ("🔴", "REJECTED (QUALITY GATES FAILED)"),
     };
     let overall = format!("OVERALL VERDICT:  {icon} {tag}");
@@ -1333,10 +1348,30 @@ struct BandSpec {
 }
 
 const BAND_SPECS: [BandSpec; 4] = [
-    BandSpec { name: "stall_parity", lower_is_better: true, k: 1.00, abs: 4.0 },
-    BandSpec { name: "engagements", lower_is_better: false, k: 0.55, abs: 4.0 },
-    BandSpec { name: "lava_deaths", lower_is_better: true, k: 1.50, abs: 3.0 },
-    BandSpec { name: "freezes", lower_is_better: true, k: 1.00, abs: 2.0 },
+    BandSpec {
+        name: "stall_parity",
+        lower_is_better: true,
+        k: 1.00,
+        abs: 4.0,
+    },
+    BandSpec {
+        name: "engagements",
+        lower_is_better: false,
+        k: 0.55,
+        abs: 4.0,
+    },
+    BandSpec {
+        name: "lava_deaths",
+        lower_is_better: true,
+        k: 1.50,
+        abs: 3.0,
+    },
+    BandSpec {
+        name: "freezes",
+        lower_is_better: true,
+        k: 1.00,
+        abs: 2.0,
+    },
 ];
 
 fn metric_of(t: &Totals, name: &str) -> f64 {
@@ -1501,8 +1536,14 @@ pub fn compare_band_primary(
     let primary = primary.filter(|p| BAND_SPECS.iter().any(|s| s.name == *p));
 
     for spec in BAND_SPECS.iter() {
-        let cv: Vec<f64> = controls.iter().map(|b| metric_of(&b.totals, spec.name)).collect();
-        let dv: Vec<f64> = candidates.iter().map(|b| metric_of(&b.totals, spec.name)).collect();
+        let cv: Vec<f64> = controls
+            .iter()
+            .map(|b| metric_of(&b.totals, spec.name))
+            .collect();
+        let dv: Vec<f64> = candidates
+            .iter()
+            .map(|b| metric_of(&b.totals, spec.name))
+            .collect();
         let cmed = median(&cv);
         let dmed = median(&dv);
         let cmin = cv.iter().cloned().fold(f64::INFINITY, f64::min);
@@ -1531,7 +1572,11 @@ pub fn compare_band_primary(
         // as a result. The honest fix for the half-freeze was the
         // report, not the rule: print medians that are not whole
         // numbers as they are, and say which gate blocked.
-        let worse = if spec.lower_is_better { dmed > cmed } else { dmed < cmed };
+        let worse = if spec.lower_is_better {
+            dmed > cmed
+        } else {
+            dmed < cmed
+        };
         // With a pre-registered primary, only that metric decides.
         // The rest are still computed and still printed; they
         // simply stop being four extra chances to convict a null.
@@ -1548,10 +1593,14 @@ pub fn compare_band_primary(
 
         // the interval estimate beside the call
         let smap = map.clone().unwrap_or_else(|| "map".to_string());
-        let cs: Vec<crate::stats::Sample> =
-            cv.iter().map(|v| crate::stats::Sample::new(&smap, *v)).collect();
-        let ds: Vec<crate::stats::Sample> =
-            dv.iter().map(|v| crate::stats::Sample::new(&smap, *v)).collect();
+        let cs: Vec<crate::stats::Sample> = cv
+            .iter()
+            .map(|v| crate::stats::Sample::new(&smap, *v))
+            .collect();
+        let ds: Vec<crate::stats::Sample> = dv
+            .iter()
+            .map(|v| crate::stats::Sample::new(&smap, *v))
+            .collect();
         let ci = crate::stats::bootstrap_diff_ci(&ds, &cs, spec.lower_is_better, 0.05);
         let pimp = crate::stats::prob_improvement(&dv, &cv, spec.lower_is_better);
         // the corpus sigma beats the arms' own: three tapes
@@ -1560,18 +1609,13 @@ pub fn compare_band_primary(
         // small sample
         let (sigma, src) = match crate::measure::sigma_for(map.as_deref(), spec.name) {
             Some(s) => (s, "corpus"),
-            None => (crate::stats::pooled_sd(&[cv.clone(), dv.clone()]), "these arms"),
+            None => (
+                crate::stats::pooled_sd(&[cv.clone(), dv.clone()]),
+                "these arms",
+            ),
         };
         let bound = crate::measure::ship_bound(sigma);
-        let sp = crate::stats::sprt(
-            spec.name,
-            &dv,
-            &cv,
-            spec.lower_is_better,
-            bound,
-            sigma,
-            src,
-        );
+        let sp = crate::stats::sprt(spec.name, &dv, &cv, spec.lower_is_better, bound, sigma, src);
         metric_stats.push(MetricStat {
             name: spec.name.into(),
             control_iqm: crate::stats::iqm(&cv),
@@ -1930,8 +1974,8 @@ fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
     // coverage is a saturating total, so it only compares between tapes
     // long enough to have saturated. A 30 s experiment legitimately sees
     // a third of what a 185 s tape sees; gating that is noise.
-    let cover_gated = b.totals.duration_sec >= COVER_GATE_MIN_SEC
-        && a.totals.duration_sec >= COVER_GATE_MIN_SEC;
+    let cover_gated =
+        b.totals.duration_sec >= COVER_GATE_MIN_SEC && a.totals.duration_sec >= COVER_GATE_MIN_SEC;
     gates.push(Gate {
         name: "coverage".into(),
         pass: !cover_gated || cover_ratio >= 0.80,
@@ -2325,7 +2369,8 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
             priority: 2,
             area: "items".into(),
             look_at: "src/items.qc weapon_touch FL_CLIENT guard (must admit ar_isbot)".into(),
-            why: "no weapon switches and no battle-grabs; bots may be stuck on spawn shotguns".into(),
+            why: "no weapon switches and no battle-grabs; bots may be stuck on spawn shotguns"
+                .into(),
         });
     }
     let quad = *brief.goals.get("item_artifact_super_damage").unwrap_or(&0);
@@ -2355,7 +2400,9 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
             ),
         });
     }
-    if !brief.totals.all_frags_positive && brief.totals.lava_deaths == 0 && brief.totals.duration_sec >= 60.0
+    if !brief.totals.all_frags_positive
+        && brief.totals.lava_deaths == 0
+        && brief.totals.duration_sec >= 60.0
     {
         steps.push(NextStep {
             priority: 3,
@@ -2387,7 +2434,11 @@ pub fn attach_nav(cfg: &Config, brief: &mut MatchBrief) {
         .iter()
         .filter_map(|n| {
             let a = n.as_array()?;
-            Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?, a.get(2)?.as_f64()?))
+            Some((
+                a.first()?.as_f64()?,
+                a.get(1)?.as_f64()?,
+                a.get(2)?.as_f64()?,
+            ))
         })
         .collect();
     if pts.is_empty() {
@@ -2417,11 +2468,12 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
     };
     for h in &mut brief.hotspots {
         let mut best: Option<(String, f64)> = None;
-        for item in atlas
-            .items
-            .iter()
-            .filter(|i| matches!(i.kind.as_str(), "weapon" | "armor" | "health" | "powerup" | "ammo"))
-        {
+        for item in atlas.items.iter().filter(|i| {
+            matches!(
+                i.kind.as_str(),
+                "weapon" | "armor" | "health" | "powerup" | "ammo"
+            )
+        }) {
             let Some(o) = item.origin else { continue };
             let d = ((h.x - o[0] as f64).powi(2)
                 + (h.y - o[1] as f64).powi(2)
@@ -2459,16 +2511,25 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
     let contradicted = !evidence.is_empty() && evidence[0].contains("CONTRADICTED");
     brief.flags.extend(evidence);
     if !contradicted
-        && brief.goal_reach.iter().any(|g| g.reach == "rocket_jump" || g.reach == "off_graph")
+        && brief
+            .goal_reach
+            .iter()
+            .any(|g| g.reach == "rocket_jump" || g.reach == "off_graph")
     {
         brief.flags.push(
             "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop"
                 .into(),
         );
     }
-    if atlas.control.iter().any(|c| c.elevated && c.classname.contains("super_damage"))
+    if atlas
+        .control
+        .iter()
+        .any(|c| c.elevated && c.classname.contains("super_damage"))
         && *brief.goals.get("item_artifact_super_damage").unwrap_or(&0) >= 2
-        && !brief.next_steps.iter().any(|s| s.look_at.contains("rocket-jump"))
+        && !brief
+            .next_steps
+            .iter()
+            .any(|s| s.look_at.contains("rocket-jump"))
     {
         brief.flags.push(
             // no node numbers here (#276): they belong to one graph,
@@ -2505,10 +2566,16 @@ fn hotspot_cause(
             && z >= mins[2] as f64 - pad_dn
             && z <= maxs[2] as f64 + pad_up
     };
-    if doors.iter().any(|(mn, mx)| inside(*mn, *mx, 48.0, 32.0, 48.0)) {
+    if doors
+        .iter()
+        .any(|(mn, mx)| inside(*mn, *mx, 48.0, 32.0, 48.0))
+    {
         return Some("door".into());
     }
-    if plats.iter().any(|(mn, mx)| inside(*mn, *mx, 64.0, 320.0, 72.0)) {
+    if plats
+        .iter()
+        .any(|(mn, mx)| inside(*mn, *mx, 64.0, 320.0, 72.0))
+    {
         return Some("plat_column".into());
     }
     if hull.is_some() {
@@ -2547,7 +2614,10 @@ fn reach_evidence_flags(
     let routes = *events.get("route").unwrap_or(&0);
     let fails = *events.get("routefail").unwrap_or(&0);
     let mut out = Vec::new();
-    if off >= 3 && routes >= 30 && (fails as f64) < 0.15 * routes as f64 && mode_share.routed >= 0.35
+    if off >= 3
+        && routes >= 30
+        && (fails as f64) < 0.15 * routes as f64
+        && mode_share.routed >= 0.35
     {
         out.push(format!(
             "atlas reach labels CONTRADICTED by tape evidence: {off} goaled control items read off_graph yet the match routed {:.0}% of the time ({fails} fails in {routes} routes) - suspect the reach classifier or a stale nav cache, not the map; tools/argus_reach.py is the referee",
@@ -2581,7 +2651,11 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
         .iter()
         .filter_map(|n| {
             let a = n.as_array()?;
-            Some((a.first()?.as_f64()?, a.get(1)?.as_f64()?, a.get(2)?.as_f64()?))
+            Some((
+                a.first()?.as_f64()?,
+                a.get(1)?.as_f64()?,
+                a.get(2)?.as_f64()?,
+            ))
         })
         .collect();
     if pts.is_empty() {
@@ -2619,7 +2693,11 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
         ("trainlinks", "train"),
         ("sprintlinks", ""),
     ] {
-        let n = v.get(key).and_then(|a| a.as_array()).map(|a| a.len()).unwrap_or(0);
+        let n = v
+            .get(key)
+            .and_then(|a| a.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0);
         if n == 0 {
             continue;
         }
@@ -2650,14 +2728,22 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
     // of costing a forensics session. Forward edges are walk links
     // plus every typed hop, navgen 7h semantics.
     let mut fwd: Vec<Vec<usize>> = vec![Vec::new(); pts.len()];
-    for key in ["links", "teles", "rjlinks", "liftlinks", "swimlinks", "trainlinks", "sprintlinks"]
-    {
+    for key in [
+        "links",
+        "teles",
+        "rjlinks",
+        "liftlinks",
+        "swimlinks",
+        "trainlinks",
+        "sprintlinks",
+    ] {
         if let Some(arr) = v.get(key).and_then(|a| a.as_array()) {
             for e in arr {
                 let Some(p) = e.as_array() else { continue };
-                let (Some(a), Some(b)) =
-                    (p.first().and_then(|x| x.as_u64()), p.get(1).and_then(|x| x.as_u64()))
-                else {
+                let (Some(a), Some(b)) = (
+                    p.first().and_then(|x| x.as_u64()),
+                    p.get(1).and_then(|x| x.as_u64()),
+                ) else {
                     continue;
                 };
                 let (a, b) = (a as usize, b as usize);
@@ -2695,7 +2781,10 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
         let pct = (100 * reach_of(n as usize) / pts.len().max(1)) as u32;
         h.reach_pct = Some(pct);
         if h.kind == "routefail" && pct < 60 && h.count >= 5 {
-            sink_notes.push(format!("n{} at {:.0} {:.0} {:.0} reach {}%", n, h.x, h.y, h.z, pct));
+            sink_notes.push(format!(
+                "n{} at {:.0} {:.0} {:.0} reach {}%",
+                n, h.x, h.y, h.z, pct
+            ));
         }
     }
     if !sink_notes.is_empty() {
@@ -2740,7 +2829,9 @@ fn respawn_period(classname: &str) -> Option<f64> {
 pub fn item_control_rows(items: &[(String, [f32; 3])], tape: &MatchTape) -> Vec<ItemControl> {
     let mut out = Vec::new();
     for (cls, o) in items {
-        let Some(period) = respawn_period(cls) else { continue };
+        let Some(period) = respawn_period(cls) else {
+            continue;
+        };
         let mut entries: Vec<f64> = Vec::new();
         for rec in tape.samples.values() {
             let mut inside = false;
@@ -2770,7 +2861,11 @@ pub fn item_control_rows(items: &[(String, [f32; 3])], tape: &MatchTape) -> Vec<
             tightness: median / period,
         });
     }
-    out.sort_by(|a, b| a.tightness.partial_cmp(&b.tightness).unwrap_or(std::cmp::Ordering::Equal));
+    out.sort_by(|a, b| {
+        a.tightness
+            .partial_cmp(&b.tightness)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
     out
 }
 
@@ -2812,7 +2907,10 @@ pub fn attach_item_control(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrie
 /// track summaries arrive with the brief instead of needing a
 /// second call.
 fn attach_paired_demo(cfg: &Config, log_path: &Path, brief: &mut MatchBrief) {
-    let Some(stem) = log_path.file_stem().map(|s| s.to_string_lossy().into_owned()) else {
+    let Some(stem) = log_path
+        .file_stem()
+        .map(|s| s.to_string_lossy().into_owned())
+    else {
         return;
     };
     let dem = cfg.runs.join("demos").join(format!("{stem}.dem"));
@@ -2828,7 +2926,9 @@ fn attach_paired_demo(cfg: &Config, log_path: &Path, brief: &mut MatchBrief) {
             ));
             brief.paired_demo = Some(d.brief);
         }
-        Err(e) => brief.flags.push(format!("paired demo present but unreadable: {e}")),
+        Err(e) => brief
+            .flags
+            .push(format!("paired demo present but unreadable: {e}")),
     }
 }
 
@@ -2951,7 +3051,9 @@ fn flags(totals: &Totals, hotspots: &[Hotspot], map: Option<&str>) -> Vec<String
         ));
     }
     if map == Some("dm4") && totals.lava_deaths >= 8 && totals.duration_sec >= 120.0 {
-        f.push("dm4 lava deaths look pre-hazard-guard (was 32/185s before the 2026-08-14 fix)".into());
+        f.push(
+            "dm4 lava deaths look pre-hazard-guard (was 32/185s before the 2026-08-14 fix)".into(),
+        );
     }
     if !totals.all_frags_positive && totals.duration_sec >= 60.0 {
         f.push("not every bot finished with a positive frag count".into());
@@ -3027,9 +3129,16 @@ pub fn sim_report(brief: &MatchBrief) -> SimReport {
         nav_errors.push(format!("{} routefail events", brief.totals.routefails));
     }
     if brief.totals.stalls > 0 {
-        nav_errors.push(format!("{} stall counters (last ARGLOG)", brief.totals.stalls));
+        nav_errors.push(format!(
+            "{} stall counters (last ARGLOG)",
+            brief.totals.stalls
+        ));
     }
-    for h in brief.hotspots.iter().filter(|h| h.kind == "stall" || h.kind == "lava") {
+    for h in brief
+        .hotspots
+        .iter()
+        .filter(|h| h.kind == "stall" || h.kind == "lava")
+    {
         nav_errors.push(format!(
             "{} x{} at {:.0} {:.0} {:.0}",
             h.kind, h.count, h.x, h.y, h.z
@@ -3102,7 +3211,8 @@ ARGLOG Omi t 10.0 pos '100.0 64.0 24.0' spd 200 yaw 0 mode 2 st 5 gl 8 hp 80 frg
 ARGEVT Reap engage Omi
 ARGEVT Omi engage Reap
 ARGEVT Reap death Omi pos '64.0 0.0 24.0'
-".into()
+"
+        .into()
     }
 
     fn log_lava() -> String {
@@ -3119,7 +3229,8 @@ ARGEVT Reap death world pos '10.0 255.0 -362.0'
 ARGEVT Reap death world pos '11.0 256.0 -361.0'
 ARGEVT Reap hazard
 ARGEVT Reap hazard
-".into()
+"
+        .into()
     }
 
     #[test]
@@ -3130,7 +3241,9 @@ ARGEVT Reap hazard
         assert_eq!(b.totals.world_deaths, 4);
         assert!(b.flags.iter().any(|f| f.contains("lava")));
         assert!(
-            b.hotspots.iter().any(|h| h.known.as_deref() == Some("walkway_200_-900")),
+            b.hotspots
+                .iter()
+                .any(|h| h.known.as_deref() == Some("walkway_200_-900")),
             "hotspots: {:?}",
             b.hotspots
         );
@@ -3159,8 +3272,14 @@ ARGEVT Reap hazard
         let b = brief_text(&log_lava(), None);
         let report = compare_briefs(a, b);
         assert_eq!(report.verdict, Verdict::Regressed);
-        assert!(report.gates.iter().any(|g| g.name == "lava_deaths" && !g.pass));
-        assert!(report.gates.iter().any(|g| g.name == "stall_parity" && !g.pass));
+        assert!(report
+            .gates
+            .iter()
+            .any(|g| g.name == "lava_deaths" && !g.pass));
+        assert!(report
+            .gates
+            .iter()
+            .any(|g| g.name == "stall_parity" && !g.pass));
     }
 
     #[test]
@@ -3197,7 +3316,11 @@ ARGEVT Reap hazard
             .iter()
             .find(|g| g.name == "engagements")
             .unwrap();
-        assert!(eng.pass, "scaled engagements should pass: {:?}", scaled.gates);
+        assert!(
+            eng.pass,
+            "scaled engagements should pass: {:?}",
+            scaled.gates
+        );
         assert_ne!(scaled.verdict, Verdict::Regressed);
         let lite = compare_lite(&scaled);
         assert_eq!(lite.verdict, scaled.verdict);
@@ -3410,10 +3533,10 @@ ARGEVT Reap hazard
             brief.totals.freeze_underfire >= 1,
             "Carmack lost 48 hp standing still and must register"
         );
-        assert!(brief
-            .flags
-            .iter()
-            .any(|f| f.contains("freeze")), "brief must flag the statues");
+        assert!(
+            brief.flags.iter().any(|f| f.contains("freeze")),
+            "brief must flag the statues"
+        );
     }
 
     #[test]
@@ -3431,7 +3554,10 @@ ARGEVT Reap hazard
             Some("plat_column".into())
         );
         // open floor far from both, no hull: unclassified
-        assert_eq!(hotspot_cause(&doors, &plats, None, 2000.0, 2000.0, 24.0), None);
+        assert_eq!(
+            hotspot_cause(&doors, &plats, None, 2000.0, 2000.0, 24.0),
+            None
+        );
     }
 
     #[test]
@@ -3446,20 +3572,35 @@ ARGEVT Reap hazard
         let mut ev = BTreeMap::new();
         ev.insert("route".to_string(), 100u32);
         ev.insert("routefail".to_string(), 5u32);
-        let ms = ModeShare { seeking: 0.3, combat: 0.1, routed: 0.6 };
+        let ms = ModeShare {
+            seeking: 0.3,
+            combat: 0.1,
+            routed: 0.6,
+        };
         // labels say unreachable, tape routes fine: labels are wrong
         let flags = reach_evidence_flags(
-            &[gr("off_graph"), gr("off_graph"), gr("off_graph"), gr("walk")],
+            &[
+                gr("off_graph"),
+                gr("off_graph"),
+                gr("off_graph"),
+                gr("walk"),
+            ],
             &ev,
             &ms,
         );
-        assert!(flags.iter().any(|f| f.contains("CONTRADICTED")), "{flags:?}");
+        assert!(
+            flags.iter().any(|f| f.contains("CONTRADICTED")),
+            "{flags:?}"
+        );
         // labels say walkable, routing collapses: graph is wrong
         let mut ev2 = BTreeMap::new();
         ev2.insert("route".to_string(), 40u32);
         ev2.insert("routefail".to_string(), 30u32);
         let flags2 = reach_evidence_flags(&[gr("walk")], &ev2, &ms);
-        assert!(flags2.iter().any(|f| f.contains("routing collapses")), "{flags2:?}");
+        assert!(
+            flags2.iter().any(|f| f.contains("routing collapses")),
+            "{flags2:?}"
+        );
         // agreement: silence
         assert!(reach_evidence_flags(&[gr("walk")], &ev, &ms).is_empty());
     }
@@ -3516,8 +3657,16 @@ ARGEVT Reap spawned
             "rj link with zero rjump events over 120s+ must flag: {:?}",
             brief.flags
         );
-        let rf = brief.hotspots.iter().find(|h| h.kind == "routefail").unwrap();
-        assert_eq!(rf.reach_pct, Some(33), "node 2 reaches only itself in a 3-node graph");
+        let rf = brief
+            .hotspots
+            .iter()
+            .find(|h| h.kind == "routefail")
+            .unwrap();
+        assert_eq!(
+            rf.reach_pct,
+            Some(33),
+            "node 2 reaches only itself in a 3-node graph"
+        );
         assert!(
             brief.flags.iter().any(|f| f.contains("DIRECTED SINK")),
             "a big routefail cluster with 33% reach is a sink: {:?}",
@@ -3551,12 +3700,13 @@ ARGEVT Reap spawned
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].visits, 4);
         assert!((rows[0].median_gap_sec - 30.0).abs() < 0.01);
-        assert!((rows[0].tightness - 1.0).abs() < 0.01, "tightness {}", rows[0].tightness);
-        // an unknown class has no clock and never rows
-        let none = item_control_rows(
-            &[("misc_fireball".to_string(), [0.0f32, 0.0, 24.0])],
-            &tape,
+        assert!(
+            (rows[0].tightness - 1.0).abs() < 0.01,
+            "tightness {}",
+            rows[0].tightness
         );
+        // an unknown class has no clock and never rows
+        let none = item_control_rows(&[("misc_fireball".to_string(), [0.0f32, 0.0, 24.0])], &tape);
         assert!(none.is_empty());
     }
 
@@ -3592,7 +3742,11 @@ ARGEVT Reap spawned
             "he killed 17 by telemetry in 5 minutes, got {}",
             sc.human_kills_pm
         );
-        assert!(sc.threat_ratio > 0.5 && sc.threat_ratio < 0.6, "{}", sc.threat_ratio);
+        assert!(
+            sc.threat_ratio > 0.5 && sc.threat_ratio < 0.6,
+            "{}",
+            sc.threat_ratio
+        );
         assert_eq!(sc.unstick_warps, 0, "no warps on that tape");
 
         // a botmatch has no player, so no scorecard
@@ -3671,7 +3825,10 @@ ARGEVT Reap spawned
         };
         let r = compare_band(&[mk(10), mk(11), mk(9)], &[mk(40), mk(42), mk(38)]);
         let csv = compare_csv(&r);
-        assert!(csv.contains("gate,control_median,candidate_median"), "{csv}");
+        assert!(
+            csv.contains("gate,control_median,candidate_median"),
+            "{csv}"
+        );
         assert!(csv.contains("metric,control_iqm,candidate_iqm"), "{csv}");
         assert!(csv.contains("stall_parity,"), "{csv}");
         // the verdict itself is the first line, as a comment
@@ -3750,7 +3907,11 @@ ARGEVT Reap spawned
                     accepted.push(format!("{a} vs {b}: {} llr {:.2}", st.name, st.sprt_llr));
                 }
                 // and it must not pretend to an interval it cannot have
-                assert!(st.ci.is_none(), "{a} vs {b}: {} got an interval at one tape a side", st.name);
+                assert!(
+                    st.ci.is_none(),
+                    "{a} vs {b}: {} got an interval at one tape a side",
+                    st.name
+                );
             }
         }
         if seen == 0 {
@@ -3776,9 +3937,14 @@ ARGEVT Reap spawned
         );
         assert!(!r.stats.is_empty(), "no stats block");
         assert!(
-            r.stats.iter().all(|s| s.sprt == crate::stats::SprtCall::Continue),
+            r.stats
+                .iter()
+                .all(|s| s.sprt == crate::stats::SprtCall::Continue),
             "{:?}",
-            r.stats.iter().map(|s| (s.name.clone(), s.sprt)).collect::<Vec<_>>()
+            r.stats
+                .iter()
+                .map(|s| (s.name.clone(), s.sprt))
+                .collect::<Vec<_>>()
         );
         // and the report says so in words, not only in a struct
         assert!(
@@ -3817,7 +3983,10 @@ ARGEVT Reap spawned
         assert_eq!(pinned.primary.as_deref(), Some("stall_parity"));
         // the flag is still printed: demoted, not hidden
         assert!(
-            pinned.band.iter().any(|g| g.name == "lava_deaths" && g.call == "regressed"),
+            pinned
+                .band
+                .iter()
+                .any(|g| g.name == "lava_deaths" && g.call == "regressed"),
             "the demoted gate stopped being reported"
         );
         // pre-register the gate that did move and it convicts again
@@ -3913,14 +4082,14 @@ ARGEVT Reap spawned
         // A 19 Hz tape and a 70 Hz tape are two different games. The
         // old rule would happily call one an improvement on the other.
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
-        let (a, b) = (dir.join("ab_dm2_corridor1.log"), dir.join("ab_dm2_doors.log"));
+        let (a, b) = (
+            dir.join("ab_dm2_corridor1.log"),
+            dir.join("ab_dm2_doors.log"),
+        );
         if !a.exists() || !b.exists() {
             return;
         }
-        let rep = compare_briefs(
-            brief_path(&a, None).unwrap(),
-            brief_path(&b, None).unwrap(),
-        );
+        let rep = compare_briefs(brief_path(&a, None).unwrap(), brief_path(&b, None).unwrap());
         assert_eq!(rep.verdict, Verdict::Mixed, "cross-rate verdicts are void");
         assert!(
             rep.findings.iter().any(|f| f.contains("tick rate")),
@@ -4001,9 +4170,14 @@ ARGEVT Reap spawned
             return;
         }
         assert!(
-            full.hotspots.iter().any(|h| h.cause.as_deref() == Some("lava_edge")),
+            full.hotspots
+                .iter()
+                .any(|h| h.cause.as_deref() == Some("lava_edge")),
             "dm4 pit hotspots must tag lava_edge: {:?}",
-            full.hotspots.iter().map(|h| (h.x, h.y, h.z, h.cause.clone())).collect::<Vec<_>>()
+            full.hotspots
+                .iter()
+                .map(|h| (h.x, h.y, h.z, h.cause.clone()))
+                .collect::<Vec<_>>()
         );
         // item clocks: a 335 s 4-track dm4 match laps the RL spawns
         let rl = full
@@ -4026,7 +4200,10 @@ ARGEVT Reap spawned
         use crate::config::load_for_reads_from;
         use std::collections::HashMap;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-        if !root.join("runs/demos/shane_dm4_2026-08-27_v374.dem").exists() {
+        if !root
+            .join("runs/demos/shane_dm4_2026-08-27_v374.dem")
+            .exists()
+        {
             return;
         }
         let mut env = HashMap::new();
@@ -4034,8 +4211,15 @@ ARGEVT Reap spawned
         let cfg = load_for_reads_from(&env, &root).unwrap();
         let brief = brief_run(&cfg, "shane_dm4_2026-08-27_v374", None).unwrap();
         let demo = brief.paired_demo.as_ref().expect("demo joined");
-        assert!(demo.highlights.iter().any(|h| h.kind == "multikill"), "{:?}", demo.highlights);
-        assert!(demo.tracks.iter().any(|t| t.name.as_deref() == Some("player")));
+        assert!(
+            demo.highlights.iter().any(|h| h.kind == "multikill"),
+            "{:?}",
+            demo.highlights
+        );
+        assert!(demo
+            .tracks
+            .iter()
+            .any(|t| t.name.as_deref() == Some("player")));
         assert!(brief.flags.iter().any(|f| f.contains("paired demo joined")));
     }
 
@@ -4112,14 +4296,21 @@ ARGLOG Reap t 30.0 pos '64.0 0.0 24.0' spd 200 yaw 0 mode 2 st 0 gl 8 hp 90 frg 
         let a = brief_text(clean, Some("dm4"));
         let b = brief_text(clean, Some("dm4"));
         let rep = compare_briefs(a, b);
-        assert_eq!(rep.verdict, Verdict::Parity, "two zero-stall tapes are parity");
+        assert_eq!(
+            rep.verdict,
+            Verdict::Parity,
+            "two zero-stall tapes are parity"
+        );
 
         let two = clean.replace("st 0 gl 8", "st 2 gl 8");
         let a = brief_text(clean, Some("dm4"));
         let b = brief_text(&two, Some("dm4"));
         let rep = compare_briefs(a, b);
         let g = rep.gates.iter().find(|g| g.name == "stall_parity").unwrap();
-        assert!(g.pass, "2 stalls against a 0-stall baseline is inside the floor");
+        assert!(
+            g.pass,
+            "2 stalls against a 0-stall baseline is inside the floor"
+        );
     }
 
     // #216: coverage saturates. Scaling it made the gate unfailable.
@@ -4166,7 +4357,10 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
 ARGEVT Reap death world pos '1937.0 -1650.0 -35.0'
 ";
         let fallback = brief_text(log, Some("dm2"));
-        assert_eq!(fallback.totals.lava_deaths, 0, "z < -300 must not fire at z -35");
+        assert_eq!(
+            fallback.totals.lava_deaths, 0,
+            "z < -300 must not fire at z -35"
+        );
         assert_eq!(fallback.totals.lava_rule.as_deref(), Some("z_fallback"));
 
         let raw = crate::bsp::write_halfspace_bsp();

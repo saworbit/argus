@@ -224,7 +224,10 @@ impl Pba {
     /// Flat prior: the change is equally likely anywhere.
     pub fn new(n: usize) -> Pba {
         let m = if n == 0 { 1 } else { n };
-        Pba { mass: vec![1.0 / m as f64; m], queries: 0 }
+        Pba {
+            mass: vec![1.0 / m as f64; m],
+            queries: 0,
+        }
     }
 
     /// Fold in one noisy answer.
@@ -370,7 +373,8 @@ pub fn bisect(rows: &[TapeRow], metric: &str, map: &str, window: usize) -> Bisec
     let late = stats::iqm(&v[n - window..]);
     let early = stats::iqm(&v[..window]);
     if (late - early).abs() < 1e-9 {
-        out.notes.push("the two ends are level; there is nothing to localise".into());
+        out.notes
+            .push("the two ends are level; there is nothing to localise".into());
         return out;
     }
 
@@ -472,7 +476,11 @@ mod tests {
         let rows = series("dm2", &v);
         let steps = change_points(&rows, "stalls");
         assert_eq!(steps.len(), 1, "{steps:?}");
-        assert!((steps[0].at as i64 - 30).abs() <= 2, "found at {}", steps[0].at);
+        assert!(
+            (steps[0].at as i64 - 30).abs() <= 2,
+            "found at {}",
+            steps[0].at
+        );
         assert!(steps[0].before < 15.0 && steps[0].after > 38.0, "{steps:?}");
         assert!(steps[0].p <= ALPHA, "p {}", steps[0].p);
         assert_eq!(steps[0].run, rows[steps[0].at].run);
@@ -512,7 +520,10 @@ mod tests {
             q.update(30, true, 0.8);
         }
         q.update(30, false, 0.8); // the liar
-        assert!(q.next_query() >= 30, "one bad answer moved the median below the truth");
+        assert!(
+            q.next_query() >= 30,
+            "one bad answer moved the median below the truth"
+        );
         // and a hard bisect would have discarded the truth outright
         assert!(q.mass[35] > 0.0);
     }
@@ -529,7 +540,11 @@ mod tests {
         }
         let (lo, hi) = p.interval(0.9);
         assert!(hi - lo < hi0 - lo0, "the interval did not narrow");
-        assert!(p.next_query() >= 20 && p.next_query() <= 60, "{}", p.next_query());
+        assert!(
+            p.next_query() >= 20 && p.next_query() <= 60,
+            "{}",
+            p.next_query()
+        );
     }
 
     #[test]
@@ -552,7 +567,11 @@ mod tests {
         let rows = series("dm2", &v);
         let out = bisect(&rows, "stalls", "dm2", 5);
         assert!(out.queries > 0, "{out:?}");
-        assert!((out.at as i64 - 30).abs() <= 6, "localised at {} of 60", out.at);
+        assert!(
+            (out.at as i64 - 30).abs() <= 6,
+            "localised at {} of 60",
+            out.at
+        );
     }
 
     #[test]

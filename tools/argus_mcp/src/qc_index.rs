@@ -33,24 +33,24 @@ pub struct QcIndex {
 
 /// The file list, lifted out so the cache below can stamp it (#228).
 const INDEX_FILES: [&str; 15] = [
-        "argus.qc",
-        "argus_nav.qc",
-        "argus_nav_dispatch.qc",
-        "defs.qc",
-        "items.qc",
-        "combat.qc",
-        "weapons.qc",
-        "world.qc",
-        "client.qc",
-        // the camera is Argus code and every ArgusCam_* lookup used to
-        // come back empty; the mover/trigger files are the ones the
-        // typed-link work reads constantly.
-        "argus_cam.qc",
-        "doors.qc",
-        "buttons.qc",
-        "plats.qc",
-        "triggers.qc",
-        "player.qc",
+    "argus.qc",
+    "argus_nav.qc",
+    "argus_nav_dispatch.qc",
+    "defs.qc",
+    "items.qc",
+    "combat.qc",
+    "weapons.qc",
+    "world.qc",
+    "client.qc",
+    // the camera is Argus code and every ArgusCam_* lookup used to
+    // come back empty; the mover/trigger files are the ones the
+    // typed-link work reads constantly.
+    "argus_cam.qc",
+    "doors.qc",
+    "buttons.qc",
+    "plats.qc",
+    "triggers.qc",
+    "player.qc",
 ];
 
 /// Built once per process and rebuilt only when one of those files
@@ -270,7 +270,10 @@ pub struct QcFileSlice {
 
 pub fn qc_file_slice(cfg: &Config, spec: &str) -> Result<QcFileSlice, String> {
     let spec = spec.trim().trim_start_matches("src/");
-    let (name, range) = spec.split_once(':').map(|(n, r)| (n, Some(r))).unwrap_or((spec, None));
+    let (name, range) = spec
+        .split_once(':')
+        .map(|(n, r)| (n, Some(r)))
+        .unwrap_or((spec, None));
     if name.is_empty() || name.contains("..") || name.contains('/') || name.contains('\\') {
         return Err("name=argus.qc or argus.qc:120-180".into());
     }
@@ -394,12 +397,7 @@ fn index_file(
     Ok(())
 }
 
-fn index_text(
-    display: &str,
-    text: &str,
-    functions: &mut Vec<QcFn>,
-    constants: &mut Vec<QcConst>,
-) {
+fn index_text(display: &str, text: &str, functions: &mut Vec<QcFn>, constants: &mut Vec<QcConst>) {
     let fn_re = fn_re();
     let c_re = const_re();
     let lines: Vec<&str> = text.lines().collect();
@@ -449,11 +447,7 @@ fn preceding_blurb(lines: &[&str], idx: usize) -> String {
         }
     }
     comments.reverse();
-    comments
-        .into_iter()
-        .take(2)
-        .collect::<Vec<_>>()
-        .join(" ")
+    comments.into_iter().take(2).collect::<Vec<_>>().join(" ")
 }
 
 const TRACKED_EXTRA: &[&str] = &[
@@ -506,10 +500,7 @@ fn role_for(name: &str) -> &'static str {
         || name.contains("BaseStats")
     {
         "lifecycle"
-    } else if name.contains("Physics")
-        || name.contains("Friction")
-        || name.contains("Accel")
-    {
+    } else if name.contains("Physics") || name.contains("Friction") || name.contains("Accel") {
         "physics"
     } else if name.contains("Skill") || name.contains("Chat") {
         "personality"
@@ -523,8 +514,7 @@ fn role_for(name: &str) -> &'static str {
 fn fn_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"^(void|float|vector|string|entity)\s*\([^)]*\)\s+(\w+)\s*(=|;)")
-            .expect("fn")
+        Regex::new(r"^(void|float|vector|string|entity)\s*\([^)]*\)\s+(\w+)\s*(=|;)").expect("fn")
     })
 }
 
@@ -543,7 +533,10 @@ mod tests {
         let end = brace_span(src);
         let taken = &src[..=end];
         assert!(taken.contains("void() F"));
-        assert!(!taken.contains("void() G"), "slicer walked into the next function:\n{taken}");
+        assert!(
+            !taken.contains("void() G"),
+            "slicer walked into the next function:\n{taken}"
+        );
     }
 
     #[test]
@@ -562,12 +555,16 @@ void() Argus_Perceive =
         let mut fns = Vec::new();
         let mut cs = Vec::new();
         index_text("argus.qc", src, &mut fns, &mut cs);
-        assert!(cs.iter().any(|c| c.name == "AR_JUMPVEL" && c.value.contains("270")));
+        assert!(cs
+            .iter()
+            .any(|c| c.name == "AR_JUMPVEL" && c.value.contains("270")));
         let hz = fns.iter().find(|f| f.name == "Argus_MoveHazard").unwrap();
         assert_eq!(hz.role, "hazard");
         assert!(!hz.proto);
         assert!(hz.blurb.to_ascii_lowercase().contains("lava"));
-        assert!(fns.iter().any(|f| f.name == "Argus_Perceive" && f.role == "combat"));
+        assert!(fns
+            .iter()
+            .any(|f| f.name == "Argus_Perceive" && f.role == "combat"));
     }
 
     #[test]
@@ -581,7 +578,10 @@ void() Argus_Perceive =
         env.insert("ARGUS_ROOT".into(), root.display().to_string());
         let cfg = crate::config::load_for_reads_from(&env, root).unwrap();
         let idx = index_argus(&cfg).unwrap();
-        assert!(idx.functions.iter().any(|f| f.name == "Argus_MoveHazard" && !f.proto));
+        assert!(idx
+            .functions
+            .iter()
+            .any(|f| f.name == "Argus_MoveHazard" && !f.proto));
         assert!(idx.constants.iter().any(|c| c.name == "AR_JUMPVEL"));
         let hits = qc_find(&idx, "hazard");
         assert!(hits.iter().any(|f| f.name == "Argus_MoveHazard"));
@@ -702,9 +702,12 @@ void() Argus_Bar =
         if nav.is_file() {
             let mut nav_fns = Vec::new();
             let mut nav_consts = Vec::new();
-            index_file(&nav, "argus_nav.qc", &mut nav_fns, &mut nav_consts).expect("index argus_nav.qc");
+            index_file(&nav, "argus_nav.qc", &mut nav_fns, &mut nav_consts)
+                .expect("index argus_nav.qc");
             assert!(
-                nav_fns.iter().any(|f| f.name == "Argus_LinkBlockedByKeyDoor"),
+                nav_fns
+                    .iter()
+                    .any(|f| f.name == "Argus_LinkBlockedByKeyDoor"),
                 "Argus_LinkBlockedByKeyDoor not indexed"
             );
         }

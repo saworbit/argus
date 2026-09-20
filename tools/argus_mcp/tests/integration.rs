@@ -4,9 +4,15 @@ use argus_mcp::compile::compile_qc;
 use argus_mcp::config::Config;
 
 fn lab_configured() -> bool {
-    ["ARGUS_ROOT", "ARGUS_FTEQCC", "ARGUS_ENGINE", "ARGUS_BASEDIR", "ARGUS_PYTHON"]
-        .iter()
-        .all(|k| std::env::var(k).map(|v| !v.is_empty()).unwrap_or(false))
+    [
+        "ARGUS_ROOT",
+        "ARGUS_FTEQCC",
+        "ARGUS_ENGINE",
+        "ARGUS_BASEDIR",
+        "ARGUS_PYTHON",
+    ]
+    .iter()
+    .all(|k| std::env::var(k).map(|v| !v.is_empty()).unwrap_or(false))
 }
 
 #[test]

@@ -306,7 +306,9 @@ ARGEVT Ranger coop_stats break 4.5 steal 0 block 1
         assert_eq!(report.escort_break_s, 4.5);
         assert_eq!(report.steal_events, 0);
         assert_eq!(report.block_events, 1);
-        assert!(report.summary_line.contains("[E1M1][SOLO] PASS: exit reached in 34s"));
+        assert!(report
+            .summary_line
+            .contains("[E1M1][SOLO] PASS: exit reached in 34s"));
     }
 
     #[test]

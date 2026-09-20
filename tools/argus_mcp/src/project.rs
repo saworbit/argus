@@ -85,13 +85,22 @@ pub fn project_view(cfg: &Config) -> ProjectView {
     let files: &[(&str, &str)] = &[
         ("argus.qc", "physics, hazard, combat, skill, spawn, die"),
         ("argus_nav.qc", "router, jump links, BFS"),
-        ("argus_nav_dispatch.qc", "per-map spawn dispatcher (hand-maintained)"),
-        ("defs.qc", "client-builtin shim, modelindex, intermission globals"),
+        (
+            "argus_nav_dispatch.qc",
+            "per-map spawn dispatcher (hand-maintained)",
+        ),
+        (
+            "defs.qc",
+            "client-builtin shim, modelindex, intermission globals",
+        ),
         ("items.qc", "weapon_touch FL_CLIENT guard admits ar_isbot"),
         ("combat.qc", "T_Damage knockback admits ar_isbot"),
         ("weapons.qc", "W_FireLightning makevectors"),
         ("world.qc", "worldspawn + StartFrame hooks"),
-        ("client.qc", "stock player path; declarations moved to defs.qc"),
+        (
+            "client.qc",
+            "stock player path; declarations moved to defs.qc",
+        ),
     ];
     for (name, hint) in files {
         let p = cfg.src.join(name);
@@ -107,7 +116,10 @@ pub fn project_view(cfg: &Config) -> ProjectView {
     // nav graph); the fifty pak-only campaign maps used to spend
     // half this response saying nothing
     let all = list_maps(cfg).unwrap_or_default();
-    let pak_only = all.iter().filter(|m| m.path.is_none() && !m.has_nav).count();
+    let pak_only = all
+        .iter()
+        .filter(|m| m.path.is_none() && !m.has_nav)
+        .count();
     let mut maps: Vec<String> = all
         .into_iter()
         .filter(|m| m.path.is_some() || m.has_nav)
@@ -121,7 +133,9 @@ pub fn project_view(cfg: &Config) -> ProjectView {
         })
         .collect();
     if pak_only > 0 {
-        maps.push(format!("(+{pak_only} pak-only maps without nav; lab_status lists them)"));
+        maps.push(format!(
+            "(+{pak_only} pak-only maps without nav; lab_status lists them)"
+        ));
     }
     let recent_runs: Vec<String> = list_runs(cfg)
         .unwrap_or_default()
@@ -145,7 +159,10 @@ pub fn project_view(cfg: &Config) -> ProjectView {
         .collect();
     let ready = missing.is_empty() && cfg.require_ready().is_ok();
     let next = if !missing.is_empty() {
-        format!("config incomplete; set {} then config_check", missing.join(", "))
+        format!(
+            "config incomplete; set {} then config_check",
+            missing.join(", ")
+        )
     } else if maps.iter().any(|m| m.starts_with("dm4")) {
         "see what=map name=dm4, or after a QC edit: experiment map=dm4 duration_sec=30".into()
     } else {
@@ -174,7 +191,10 @@ mod tests {
     fn vocab_covers_project_and_last() {
         let v = see_vocab();
         let see = v.get("see").unwrap();
-        for key in ["project", "last", "run", "status", "fn", "map", "live", "knobs", "path", "search", "timeline", "plan"] {
+        for key in [
+            "project", "last", "run", "status", "fn", "map", "live", "knobs", "path", "search",
+            "timeline", "plan",
+        ] {
             assert!(see.get(key).is_some(), "missing see.{key}");
         }
         let res = v.get("resources").unwrap().as_array().unwrap();
