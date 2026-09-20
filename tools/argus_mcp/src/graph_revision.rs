@@ -11,6 +11,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::thread;
 
 const NAV_STEP: f64 = 18.0;
 const SIDECARS: &[&str] = &["probe", "proven", "costs", "mined"];
@@ -130,70 +131,159 @@ fn git(root: &Path, args: &[&str]) -> Option<Vec<u8>> {
     out.status.success().then_some(out.stdout)
 }
 
-fn git_batch(root: &Path, specs: &[String]) -> BTreeMap<String, Vec<u8>> {
+#[derive(Debug)]
+struct GitBatchError {
+    code: Option<i32>,
+    message: String,
+}
+
+fn read_git_batch<R: BufRead>(
+    reader: &mut R,
+    specs: &[String],
+) -> Result<BTreeMap<String, Vec<u8>>, String> {
     let mut out = BTreeMap::new();
-    let Ok(mut child) = Command::new("git")
+    for spec in specs {
+        let mut header = String::new();
+        let count = reader
+            .read_line(&mut header)
+            .map_err(|e| format!("could not read response for {spec}: {e}"))?;
+        if count == 0 {
+            return Err(format!(
+                "git cat-file --batch ended before responding to {spec}"
+            ));
+        }
+        if !header.ends_with('\n') {
+            return Err(format!(
+                "git cat-file --batch returned a truncated header for {spec}: {header:?}"
+            ));
+        }
+        let header = header.strip_suffix('\n').unwrap_or(&header);
+        let header = header.strip_suffix('\r').unwrap_or(header);
+        let fields: Vec<_> = header.split_whitespace().collect();
+        if fields.len() == 2 && fields[1] == "missing" {
+            continue;
+        }
+        if fields.len() != 3 || fields[1] != "blob" {
+            return Err(format!(
+                "git cat-file --batch returned malformed header for {spec}: {header:?}"
+            ));
+        }
+        let size = fields[2].parse::<usize>().map_err(|_| {
+            format!("git cat-file --batch returned invalid size for {spec}: {header:?}")
+        })?;
+        let mut bytes = vec![0; size];
+        reader
+            .read_exact(&mut bytes)
+            .map_err(|e| format!("could not read {size}-byte object for {spec}: {e}"))?;
+        let mut newline = [0u8; 1];
+        reader
+            .read_exact(&mut newline)
+            .map_err(|e| format!("could not read object terminator for {spec}: {e}"))?;
+        if newline[0] != b'\n' {
+            return Err(format!(
+                "git cat-file --batch returned an invalid object terminator for {spec}"
+            ));
+        }
+        out.insert(spec.clone(), bytes);
+    }
+    Ok(out)
+}
+
+fn git_batch_once(
+    root: &Path,
+    specs: &[String],
+) -> Result<BTreeMap<String, Vec<u8>>, GitBatchError> {
+    let mut child = Command::new("git")
         .arg("-C")
         .arg(root)
         .args(["cat-file", "--batch"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
-        .stderr(Stdio::null())
+        .stderr(Stdio::piped())
         .spawn()
-    else {
-        return out;
-    };
-    let Some(mut stdin) = child.stdin.take() else {
-        let _ = child.kill();
-        let _ = child.wait();
-        return out;
-    };
-    for spec in specs {
-        if writeln!(stdin, "{spec}").is_err() {
-            let _ = child.kill();
-            let _ = child.wait();
-            return out;
+        .map_err(|e| GitBatchError {
+            code: None,
+            message: format!("could not start git cat-file --batch: {e}"),
+        })?;
+    let mut stdin = child.stdin.take().expect("piped git stdin");
+    let stdout = child.stdout.take().expect("piped git stdout");
+    let mut stderr = child.stderr.take().expect("piped git stderr");
+    let requests = specs.to_vec();
+    let writer = thread::spawn(move || -> Result<(), String> {
+        for spec in requests {
+            writeln!(stdin, "{spec}")
+                .map_err(|e| format!("could not write request for {spec}: {e}"))?;
         }
-    }
-    drop(stdin);
-    let Some(stdout) = child.stdout.take() else {
-        let _ = child.kill();
-        let _ = child.wait();
-        return out;
-    };
+        Ok(())
+    });
+    let stderr_reader = thread::spawn(move || {
+        let mut bytes = Vec::new();
+        let result = stderr.read_to_end(&mut bytes);
+        (result, bytes)
+    });
     let mut reader = BufReader::new(stdout);
-    for spec in specs {
-        let mut header = String::new();
-        if reader
-            .read_line(&mut header)
-            .ok()
-            .filter(|n| *n > 0)
-            .is_none()
-        {
-            break;
-        }
-        if header.trim_end().ends_with(" missing") {
-            continue;
-        }
-        let Some(size) = header
-            .split_whitespace()
-            .last()
-            .and_then(|n| n.parse::<usize>().ok())
-        else {
-            break;
-        };
-        let mut bytes = vec![0; size];
-        if reader.read_exact(&mut bytes).is_err() {
-            break;
-        }
-        let mut newline = [0u8; 1];
-        if reader.read_exact(&mut newline).is_err() {
-            break;
-        }
-        out.insert(spec.clone(), bytes);
+    let parsed = read_git_batch(&mut reader, specs);
+    if parsed.is_err() {
+        let _ = child.kill();
     }
-    let _ = child.wait();
-    out
+    let status = child.wait().map_err(|e| GitBatchError {
+        code: None,
+        message: format!("could not wait for git cat-file --batch: {e}"),
+    })?;
+    let write_result = writer.join().map_err(|_| GitBatchError {
+        code: status.code(),
+        message: "git cat-file --batch request writer panicked".into(),
+    })?;
+    let (stderr_result, stderr_bytes) = stderr_reader.join().map_err(|_| GitBatchError {
+        code: status.code(),
+        message: "git cat-file --batch stderr reader panicked".into(),
+    })?;
+    let stderr_text = String::from_utf8_lossy(&stderr_bytes).trim().to_string();
+    let protocol_error = parsed.as_ref().err();
+    let write_error = write_result.as_ref().err();
+    if !status.success() {
+        let mut message = format!("git cat-file --batch exited with {status}");
+        if !stderr_text.is_empty() {
+            message.push_str(&format!(": {stderr_text}"));
+        }
+        if let Some(error) = protocol_error {
+            message.push_str(&format!("; protocol: {error}"));
+        }
+        if let Some(error) = write_error {
+            message.push_str(&format!("; input: {error}"));
+        }
+        return Err(GitBatchError {
+            code: status.code(),
+            message,
+        });
+    }
+    stderr_result.map_err(|e| GitBatchError {
+        code: status.code(),
+        message: format!("could not read git cat-file --batch stderr: {e}"),
+    })?;
+    write_result.map_err(|message| GitBatchError {
+        code: status.code(),
+        message,
+    })?;
+    parsed.map_err(|message| GitBatchError {
+        code: status.code(),
+        message,
+    })
+}
+
+fn git_batch(root: &Path, specs: &[String]) -> Result<BTreeMap<String, Vec<u8>>, String> {
+    for attempt in 0..4 {
+        match git_batch_once(root, specs) {
+            Ok(objects) => return Ok(objects),
+            Err(error) => {
+                match crate::child_process::windows_loader_retry_delay(error.code, attempt) {
+                    Some(delay) => thread::sleep(delay),
+                    None => return Err(error.message),
+                }
+            }
+        }
+    }
+    unreachable!("the bounded process retry loop always returns")
 }
 
 fn history_sources(cfg: &Config, map: &str) -> Result<Vec<Source>, String> {
@@ -239,7 +329,7 @@ fn history_sources(cfg: &Config, map: &str) -> Result<Vec<Source>, String> {
                     .map(|kind| format!("{commit}:src/argus_nav_{map}.{kind}.json")),
             );
         }
-        let objects = git_batch(&cfg.root, &specs);
+        let objects = git_batch(&cfg.root, &specs)?;
         for (commit, committed_at) in commits {
             let graph_spec = format!("{commit}:{rel}");
             let Some(bytes) = objects.get(&graph_spec).cloned() else {
@@ -665,6 +755,39 @@ mod tests {
         format!(
             r#"{{"nodes":[[0,0,20],[1,0,0]],"links":[[0,1,0]{extra_link}]{typed},"trace_inputs":["one.tracks.json"]}}"#
         )
+    }
+
+    #[test]
+    fn git_batch_parser_accepts_blobs_and_missing_objects() {
+        let specs = vec!["one:path".to_string(), "two:path".to_string()];
+        let mut input = &b"0123456789abcdef blob 3\nabc\ntwo:path missing\n"[..];
+        let objects = read_git_batch(&mut input, &specs).unwrap();
+        assert_eq!(objects.len(), 1);
+        assert_eq!(objects["one:path"], b"abc");
+    }
+
+    #[test]
+    fn git_batch_parser_rejects_partial_or_malformed_output() {
+        let specs = vec!["one:path".to_string()];
+        let mut short = &b"0123456789abcdef blob 3\nab"[..];
+        assert!(read_git_batch(&mut short, &specs)
+            .unwrap_err()
+            .contains("3-byte object"));
+
+        let mut malformed = &b"not-a-batch-header\n"[..];
+        assert!(read_git_batch(&mut malformed, &specs)
+            .unwrap_err()
+            .contains("malformed header"));
+
+        let mut ended = &b""[..];
+        assert!(read_git_batch(&mut ended, &specs)
+            .unwrap_err()
+            .contains("ended before responding"));
+
+        let mut truncated = &b"one:path missing"[..];
+        assert!(read_git_batch(&mut truncated, &specs)
+            .unwrap_err()
+            .contains("truncated header"));
     }
 
     fn cfg(root: &Path) -> Config {

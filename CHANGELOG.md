@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**GRAPH HISTORY FAILS CLOSED THROUGH WINDOWS GIT LOADER TRANSIENTS** (#461).
+The persistent `git cat-file --batch` reader now retains process status and
+stderr, rejects truncated or malformed protocol output instead of returning a
+partial revision set, and replays the complete request only for Windows loader
+status `0xc0000142`. Missing objects remain ordinary sparse-history entries;
+all other Git and protocol failures return immediately.
+
 **NAV LINK EDITS NOW HAVE A PER-NODE METAMORPHIC ORACLE** (#458, part of
 #387). Adding any parsed walk, jump, teleport, rocket, lift, swim, door, train
 or sprint link must preserve every source node's reachable destination set;
