@@ -9,6 +9,14 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE MILL NOW SPEAKS IN GRAPH REVISIONS AND PROBE VERDICTS** (#419). Nav
+JSON revisions have stable content-hash ids, typed links, generator inputs and
+Git provenance through MCP resources. The read-only `mill` tool compares two
+revisions and reports only added, removed or type-changed links that exist in
+at least one source graph, with matching probe evidence. Asking about a link
+absent from both graphs fails closed. Git history supplies old bytes, so this
+adds no graph or verdict format.
+
 **OLD MCP CONFIGS CAN MOVE TO THE STABLE INSTALL SAFELY** (#437). A migration
 command updates only an Argus entry with the retired Cargo release path,
 verifies the installed binary and preserves the existing environment and

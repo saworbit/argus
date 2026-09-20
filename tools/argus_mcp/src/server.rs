@@ -468,6 +468,21 @@ pub struct SeeArgs {
     pub since_line: Option<u32>,
 }
 
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct MillArgs {
+    #[serde(default)]
+    #[schemars(description = "revisions (default) | diff")]
+    pub what: String,
+    #[schemars(description = "Map short name for revisions, e.g. dm4")]
+    pub map: Option<String>,
+    #[schemars(description = "Older map@content-hash id for diff")]
+    pub revision_a: Option<String>,
+    #[schemars(description = "Newer map@content-hash id for diff")]
+    pub revision_b: Option<String>,
+    #[schemars(description = "Optional coordinate link id; absent from both fails closed")]
+    pub link: Option<String>,
+}
+
 #[derive(Debug, Default, Deserialize, schemars::JsonSchema)]
 pub struct MatchStatusArgs {
     #[schemars(description = "Return only lines after this 0-based count. Omit for last 40.")]
@@ -1312,6 +1327,43 @@ impl Argus {
             }
         }
         csv_ok(csv)
+    }
+
+    #[tool(
+        description = "Read graph history or diff two exact nav JSON revisions. Diff output contains only links present in at least one source graph, with matching probe convictions. Read-only."
+    )]
+    async fn mill(
+        &self,
+        Parameters(args): Parameters<MillArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let cfg = match cfg_read_or_err() {
+            Ok(c) => c,
+            Err(r) => return Ok(r),
+        };
+        match args.what.trim().to_ascii_lowercase().as_str() {
+            "" | "revisions" => {
+                let Some(map) = args.map.as_deref() else {
+                    return tool_err("mill revisions needs map=dm4");
+                };
+                match crate::graph_revision::list_revisions(&cfg, map) {
+                    Ok(r) => json_ok(&r),
+                    Err(e) => tool_err(e),
+                }
+            }
+            "diff" => {
+                let Some(a) = args.revision_a.as_deref() else {
+                    return tool_err("mill diff needs revision_a=map@content-hash");
+                };
+                let Some(b) = args.revision_b.as_deref() else {
+                    return tool_err("mill diff needs revision_b=map@content-hash");
+                };
+                match crate::graph_revision::diff(&cfg, a, b, args.link.as_deref()) {
+                    Ok(r) => json_ok(&r),
+                    Err(e) => tool_err(e),
+                }
+            }
+            other => tool_err(format!("unknown mill view {other}; use revisions or diff")),
+        }
     }
 
     #[tool(
