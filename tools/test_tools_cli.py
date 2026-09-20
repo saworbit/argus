@@ -54,6 +54,112 @@ class TestToolsCLI(unittest.TestCase):
         self.assertIn("/tools/argus_mcp/install/bin/argus-mcp", command)
         self.assertNotIn("/target/", command)
 
+    def test_mcp_config_migration_preserves_json_settings(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            installed = root / "tools" / "argus_mcp" / "install" / "bin" / "argus-mcp.exe"
+            installed.parent.mkdir(parents=True)
+            installed.touch()
+            path = root / ".mcp.json"
+            old_command = str(root / "tools/argus_mcp/target/release/argus-mcp.exe")
+            before = {
+                "mcpServers": {
+                    "argus": {
+                        "command": old_command,
+                        "env": {"ARGUS_ROOT": "C:/argus", "KEEP": "yes"},
+                        "startup_timeout_sec": 15,
+                        "tool_timeout_sec": 700,
+                    },
+                    "other": {"command": old_command},
+                }
+            }
+            path.write_text(json.dumps(before, indent=4), encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 0, res.stderr)
+            after = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                Path(after["mcpServers"]["argus"]["command"]),
+                installed,
+            )
+            self.assertEqual(after["mcpServers"]["argus"]["env"], before["mcpServers"]["argus"]["env"])
+            self.assertEqual(after["mcpServers"]["argus"]["startup_timeout_sec"], 15)
+            self.assertEqual(after["mcpServers"]["argus"]["tool_timeout_sec"], 700)
+            self.assertEqual(after["mcpServers"]["other"], before["mcpServers"]["other"])
+            self.assertIn("restart the MCP client", res.stdout)
+
+    def test_mcp_config_migration_preserves_toml_settings_and_comments(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            installed = root / "tools" / "argus_mcp" / "install" / "bin" / "argus-mcp.exe"
+            installed.parent.mkdir(parents=True)
+            installed.touch()
+            path = root / "config.toml"
+            old_command = (root / "tools/argus_mcp/target/release/argus-mcp.exe").as_posix()
+            before = f"""# keep this comment
+[mcp_servers.argus]
+command = "{old_command}"
+startup_timeout_sec = 15
+tool_timeout_sec = 700
+tool_timeouts = {{ match_run = 700, compile_qc = 120 }}
+
+[mcp_servers.argus.env]
+ARGUS_ROOT = "C:/argus"
+KEEP = "yes"
+
+[mcp_servers.other]
+command = "leave-me-alone"
+"""
+            path.write_text(before, encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 0, res.stderr)
+            after = path.read_text(encoding="utf-8")
+            self.assertIn("# keep this comment", after)
+            self.assertIn(installed.as_posix(), after)
+            self.assertNotIn(old_command, after)
+            for unchanged in (
+                "startup_timeout_sec = 15",
+                "tool_timeout_sec = 700",
+                "tool_timeouts = { match_run = 700, compile_qc = 120 }",
+                'ARGUS_ROOT = "C:/argus"',
+                'KEEP = "yes"',
+                'command = "leave-me-alone"',
+            ):
+                self.assertIn(unchanged, after)
+
+    def test_mcp_config_migration_refuses_a_near_match(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "config.toml"
+            before = """[mcp_servers.argus]
+command = "C:/argus/tools/argus_mcp/target/debug/argus-mcp.exe"
+tool_timeout_sec = 700
+"""
+            path.write_text(before, encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertEqual(path.read_text(encoding="utf-8"), before)
+            self.assertIn("unchanged", res.stdout)
+
+    def test_mcp_config_migration_refuses_a_missing_stable_binary(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "config.toml"
+            before = f"""[mcp_servers.argus]
+command = "{(Path(td) / 'tools/argus_mcp/target/release/argus-mcp.exe').as_posix()}"
+tool_timeout_sec = 700
+"""
+            path.write_text(before, encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 1)
+            self.assertEqual(path.read_text(encoding="utf-8"), before)
+            self.assertIn("stable installed binary not found", res.stderr)
+
     def test_mcp_binary_discovery_separates_source_and_install(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

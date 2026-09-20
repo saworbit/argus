@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**OLD MCP CONFIGS CAN MOVE TO THE STABLE INSTALL SAFELY** (#437). A migration
+command updates only an Argus entry with the retired Cargo release path,
+verifies the installed binary and preserves the existing environment and
+timeouts. It handles Codex and Grok TOML plus Claude-compatible JSON, then
+states that the client must restart.
+
 **COMPARE NOW REJECTS AN EMPTY CANDIDATE LIST** (#441). The CLI returns a
 clear usage error instead of indexing an empty parsed list and panicking.
 
