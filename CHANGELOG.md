@@ -9,6 +9,15 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**NEGOTIATED `match_run` CALLS ARE NOW CANCELLATION-SAFE MCP TASKS** (#483,
+part of #479). A client that declares SEP-2663 Task support receives a durable
+Task handle for `match_run`; older clients keep the original synchronous tool
+result and progress notifications. Task status follows queueing, startup,
+active play, and finalization. `tasks/cancel` records intent while queued and
+stops only the engine child owned by that run, then waits for harvesting and
+finalization before the Task settles as cancelled. Match Tasks have no hard
+TTL because aborting their future could strand a live child.
+
 **THE LAB NOW OWNS THE FULL SEP-2663 TASK LIFECYCLE** (#482, part of #479).
 The MCP server advertises Tasks, stores durable task state, and implements
 `tasks/get`, `tasks/update`, and cooperative `tasks/cancel`. Shutdown stops and

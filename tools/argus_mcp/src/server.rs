@@ -25,17 +25,17 @@ use rmcp::handler::server::tool::{ToolCallContext, ToolRouter};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, CallToolResult, CancelTaskParams,
-    CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock, ElicitRequestParams,
-    ElicitResult, ElicitationAction, ElicitationSchema, EnumSchema, GetTaskParams, GetTaskResult,
-    Implementation, JsonObject, ListResourceTemplatesResult, ListResourcesResult, ListToolsResult,
-    PaginatedRequestParams, PrimitiveSchemaDefinition, ProgressNotificationParam, PromptMessage,
-    ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Reference,
-    RequestMetaObject, ResourceUpdatedNotificationParam, Role, ServerCapabilities, ServerInfo,
-    SubscribeRequestParams, SubscriptionFilter, ToolAnnotations, UnsubscribeRequestParams,
-    UpdateTaskParams,
+    CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock, CreateTaskResult,
+    ElicitRequestParams, ElicitResult, ElicitationAction, ElicitationSchema, EnumSchema,
+    GetTaskParams, GetTaskResult, Implementation, JsonObject, ListResourceTemplatesResult,
+    ListResourcesResult, ListToolsResult, PaginatedRequestParams, PrimitiveSchemaDefinition,
+    ProgressNotificationParam, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
+    ReadResourceResult, Reference, RequestMetaObject, ResourceUpdatedNotificationParam, Role,
+    ServerCapabilities, ServerInfo, SubscribeRequestParams, SubscriptionFilter, ToolAnnotations,
+    UnsubscribeRequestParams, UpdateTaskParams,
 };
 use rmcp::service::{ElicitationMode, RequestContext, RoleServer, SubscriptionContext};
-use rmcp::task_manager::TaskManager;
+use rmcp::task_manager::{TaskContext, TaskExit, TaskManager, TaskOptions};
 use rmcp::ErrorData as McpError;
 use rmcp::{
     prompt, prompt_handler, prompt_router, schemars, tool, tool_router, Peer, ServerHandler,
@@ -227,6 +227,7 @@ impl Argus {
         coop: Option<bool>,
         progress: Option<MatchProgress>,
         cancellation: Option<RunCancellation>,
+        task_context: Option<TaskContext>,
     ) -> Result<crate::match_ctrl::MatchRunResult, String> {
         let _one_at_a_time = self.run_gate.lock().await;
         if cancellation
@@ -234,6 +235,9 @@ impl Argus {
             .is_some_and(RunCancellation::is_requested)
         {
             return Err("match cancelled before startup".into());
+        }
+        if let Some(context) = &task_context {
+            context.set_status_message(format!("starting {map}"));
         }
         if let Some(p) = &progress {
             p.reporter
@@ -247,6 +251,9 @@ impl Argus {
         }
         if let Some(cancel) = &cancellation {
             let _ = cancel.claim_live();
+        }
+        if let Some(context) = &task_context {
+            context.set_status_message(format!("running {map}: 0/{duration_sec}s"));
         }
         let limit = duration_sec as u64;
         let mut last_reported = u64::MAX;
@@ -265,6 +272,9 @@ impl Argus {
                 break;
             }
             if elapsed != last_reported {
+                if let Some(context) = &task_context {
+                    context.set_status_message(format!("running {map}: {elapsed}/{duration_sec}s"));
+                }
                 if let Some(p) = &progress {
                     let fraction = if limit == 0 {
                         1.0
@@ -283,6 +293,9 @@ impl Argus {
             }
             tokio::time::sleep(std::time::Duration::from_millis(400)).await;
         }
+        if let Some(context) = &task_context {
+            context.set_status_message(format!("finalizing {map}"));
+        }
         let mut g = self.matches.lock().await;
         let result = g.finish(cfg, map).await;
         drop(g);
@@ -292,6 +305,88 @@ impl Argus {
                 .await;
         }
         result
+    }
+
+    async fn run_match_call(
+        &self,
+        args: &MatchRunArgs,
+        progress: Option<MatchProgress>,
+        cancellation: Option<RunCancellation>,
+        task_context: Option<TaskContext>,
+        config_override: Option<Config>,
+    ) -> Result<CallToolResult, McpError> {
+        if !(DURATION_MIN..=DURATION_MAX).contains(&args.duration_sec) {
+            return Err(McpError::invalid_params(
+                format!("duration_sec must be {DURATION_MIN}..={DURATION_MAX}"),
+                None,
+            ));
+        }
+        let cfg = match config_override {
+            Some(cfg) => cfg,
+            None => match cfg_or_err() {
+                Ok(cfg) => cfg,
+                Err(result) => return Ok(result),
+            },
+        };
+        match self
+            .drive_match(
+                &cfg,
+                &args.map,
+                args.duration_sec,
+                args.run_name.as_deref(),
+                args.dedicated_slots,
+                args.skill,
+                None,
+                progress,
+                cancellation,
+                task_context,
+            )
+            .await
+        {
+            Ok(result) => json_ok(&result),
+            Err(error) => tool_err(error),
+        }
+    }
+
+    fn spawn_match_task(
+        &self,
+        args: MatchRunArgs,
+        config_override: Option<Config>,
+    ) -> rmcp::model::Task {
+        let server = self.clone();
+        let cancellation = RunCancellation::new();
+        self.tasks.spawn(
+            TaskOptions::new()
+                // A TTL expiry aborts its future. Match tasks instead remain
+                // cooperatively cancellable so their engine cleanup always runs.
+                .with_ttl_ms(None)
+                .with_status_message("waiting for the match slot"),
+            move |context| {
+                Box::pin(async move {
+                    let watch_context = context.clone();
+                    let watch_cancellation = cancellation.clone();
+                    let watcher = tokio::spawn(async move {
+                        watch_context.cancelled().await;
+                        let _ = watch_cancellation.request();
+                    });
+                    let result = server
+                        .run_match_call(
+                            &args,
+                            None,
+                            Some(cancellation),
+                            Some(context.clone()),
+                            config_override,
+                        )
+                        .await;
+                    watcher.abort();
+                    if context.is_cancel_requested() {
+                        Err(TaskExit::Cancelled)
+                    } else {
+                        result.map_err(TaskExit::Error)
+                    }
+                })
+            },
+        )
     }
 
     pub async fn shutdown(&self) {
@@ -1138,6 +1233,7 @@ impl Argus {
                 None,
                 None,
                 None,
+                None,
             )
             .await
         {
@@ -1327,40 +1423,21 @@ impl Argus {
         meta: RequestMetaObject,
         peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
-        if !(DURATION_MIN..=DURATION_MAX).contains(&args.duration_sec) {
-            return Err(McpError::invalid_params(
-                format!("duration_sec must be {DURATION_MIN}..={DURATION_MAX}"),
-                None,
-            ));
-        }
-        let cfg = match cfg_or_err() {
-            Ok(c) => c,
-            Err(r) => return Ok(r),
-        };
         let progress = ProgressReporter::new(meta, peer);
-        match self
-            .drive_match(
-                &cfg,
-                &args.map,
-                args.duration_sec,
-                args.run_name.as_deref(),
-                args.dedicated_slots,
-                args.skill,
-                None,
-                Some(MatchProgress {
-                    reporter: progress,
-                    start: 0.0,
-                    span: 1.0,
-                    total: 1.0,
-                    label: format!("{} match", args.map),
-                }),
-                None,
-            )
-            .await
-        {
-            Ok(r) => json_ok(&r),
-            Err(e) => tool_err(e),
-        }
+        self.run_match_call(
+            &args,
+            Some(MatchProgress {
+                reporter: progress,
+                start: 0.0,
+                span: 1.0,
+                total: 1.0,
+                label: format!("{} match", args.map),
+            }),
+            None,
+            None,
+            None,
+        )
+        .await
     }
 
     #[tool(
@@ -2354,6 +2431,7 @@ impl Argus {
                         label: format!("{} tape {}/{}", args.map, i + 1, repeats),
                     }),
                     None,
+                    None,
                 )
                 .await
             {
@@ -2541,6 +2619,7 @@ impl Argus {
                     label: format!("{} campaign", args.map),
                 }),
                 None,
+                None,
             )
             .await
         {
@@ -2685,6 +2764,7 @@ impl Argus {
                         label: format!("{map} matrix match"),
                     }),
                     None,
+                    None,
                 )
                 .await;
             match ran {
@@ -2765,6 +2845,7 @@ impl Argus {
                 Some(&format!("probe_{}", args.map)),
                 None,
                 args.skill,
+                None,
                 None,
                 None,
                 None,
@@ -3083,6 +3164,24 @@ impl ServerHandler for Argus {
         request: CallToolRequestParams,
         context: RequestContext<RoleServer>,
     ) -> Result<CallToolResponse, McpError> {
+        if request.name == "match_run"
+            && context
+                .client_capabilities()
+                .is_some_and(|capabilities| capabilities.supports_tasks())
+        {
+            let args: MatchRunArgs = serde_json::from_value(serde_json::Value::Object(
+                request.arguments.clone().unwrap_or_default(),
+            ))
+            .map_err(|error| McpError::invalid_params(error.to_string(), None))?;
+            if !(DURATION_MIN..=DURATION_MAX).contains(&args.duration_sec) {
+                return Err(McpError::invalid_params(
+                    format!("duration_sec must be {DURATION_MIN}..={DURATION_MAX}"),
+                    None,
+                ));
+            }
+            let task = self.spawn_match_task(args, None);
+            return Ok(CallToolResponse::Task(CreateTaskResult::new(task)));
+        }
         let call = ToolCallContext::new(self, request, context);
         self.tool_router.call(call).await
     }
@@ -3460,12 +3559,56 @@ mod tests {
                 None,
                 None,
                 Some(cancel),
+                None,
             )
             .await
             .unwrap_err();
 
         assert_eq!(error, "match cancelled before startup");
         assert!(!server.matches.lock().await.status().running);
+    }
+
+    #[tokio::test]
+    async fn cancelled_match_task_settles_only_after_leaving_the_run_gate() {
+        use rmcp::model::TaskPayload;
+
+        let root = TestDir::new("server-task-cancel").unwrap();
+        let server = Argus::new();
+        let gate = server.run_gate.lock().await;
+        let task = server.spawn_match_task(
+            MatchRunArgs {
+                map: "dm4".into(),
+                duration_sec: DURATION_MIN,
+                run_name: Some("task_cancelled".into()),
+                dedicated_slots: None,
+                skill: None,
+            },
+            Some(completion_cfg(root.path())),
+        );
+
+        server.tasks.cancel_task(&task.task_id).unwrap();
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        assert!(
+            !server
+                .tasks
+                .get_task(&task.task_id)
+                .unwrap()
+                .status()
+                .is_terminal(),
+            "the task must not settle while its run still owns cleanup work"
+        );
+        drop(gate);
+
+        let terminal = loop {
+            let state = server.tasks.get_task(&task.task_id).unwrap();
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::task::yield_now().await;
+        };
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        assert!(!server.matches.lock().await.status().running);
+        server.shutdown().await;
     }
 
     #[test]
