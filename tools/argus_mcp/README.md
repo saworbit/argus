@@ -606,6 +606,13 @@ only when the resource's serialized value changes. `argus://lab` reads include
 the current match status. Explicit resource reads, `match_status`, and
 `since_line` polling remain supported fallbacks.
 
+`compare_runs` uses form elicitation for one genuinely ambiguous case: the
+caller omits both `log_a` and `map`, and the candidate tape contains no map.
+The offered values are restricted to configured baseline bands with tapes on
+disk. Explicit arguments and ordinary candidate-map inference never prompt.
+Clients without form elicitation, plus decline, cancel, malformed response,
+or timeout paths, receive the same error as before; the server never guesses.
+
 `compare_runs` is unscaled: it expects two tapes of similar length.
 `experiment` duration-scales the baseline counts to the candidate
 duration so a 30 s probe is not judged as an engagement collapse

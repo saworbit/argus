@@ -25,13 +25,14 @@ use rmcp::handler::server::tool::ToolRouter;
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
     CallToolResult, CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock,
+    ElicitRequestParams, ElicitResult, ElicitationAction, ElicitationSchema, EnumSchema,
     Implementation, JsonObject, ListResourceTemplatesResult, ListResourcesResult,
-    PaginatedRequestParams, ProgressNotificationParam, PromptMessage, ReadResourceRequestParams,
-    ReadResourceResponse, ReadResourceResult, Reference, RequestMetaObject,
-    ResourceUpdatedNotificationParam, Role, ServerCapabilities, ServerInfo, SubscribeRequestParams,
-    SubscriptionFilter, ToolAnnotations, UnsubscribeRequestParams,
+    PaginatedRequestParams, PrimitiveSchemaDefinition, ProgressNotificationParam, PromptMessage,
+    ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Reference,
+    RequestMetaObject, ResourceUpdatedNotificationParam, Role, ServerCapabilities, ServerInfo,
+    SubscribeRequestParams, SubscriptionFilter, ToolAnnotations, UnsubscribeRequestParams,
 };
-use rmcp::service::{RequestContext, RoleServer, SubscriptionContext};
+use rmcp::service::{ElicitationMode, RequestContext, RoleServer, SubscriptionContext};
 use rmcp::ErrorData as McpError;
 use rmcp::{
     prompt, prompt_handler, prompt_router, schemars, tool, tool_handler, tool_router, Peer,
@@ -336,6 +337,69 @@ fn changed_resource_uris(
         .collect();
     *previous = current;
     changed
+}
+
+fn configured_baseline_maps(cfg: &Config) -> Vec<String> {
+    let mut maps: Vec<String> = crate::intel::all_baseline_bands(cfg)
+        .into_iter()
+        .filter(|(_, runs)| {
+            runs.iter()
+                .any(|run| crate::paths::resolve_log(cfg, run).is_ok())
+        })
+        .map(|(map, _)| map)
+        .collect();
+    maps.sort_by_key(|map| map.to_ascii_lowercase());
+    maps.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+    maps
+}
+
+fn accepted_elicited_map(result: ElicitResult, offered: &[String]) -> Option<String> {
+    if result.action != ElicitationAction::Accept {
+        return None;
+    }
+    let content = result.content?;
+    let selected = content.get("map")?.as_str()?.trim();
+    offered
+        .iter()
+        .find(|map| map.eq_ignore_ascii_case(selected))
+        .cloned()
+}
+
+async fn elicit_baseline_map(peer: &Peer<RoleServer>, offered: &[String]) -> Option<String> {
+    if offered.is_empty()
+        || !peer
+            .supported_elicitation_modes()
+            .contains(&ElicitationMode::Form)
+    {
+        return None;
+    }
+    let schema = baseline_elicitation_schema(offered)?;
+    let result = peer
+        .create_elicitation_with_timeout(
+            ElicitRequestParams::FormElicitationParams {
+                meta: None,
+                message: "The candidate tape does not identify a map. Choose the configured baseline map to compare against.".into(),
+                requested_schema: schema,
+            },
+            Some(Duration::from_secs(30)),
+        )
+        .await
+        .ok()?;
+    accepted_elicited_map(result, offered)
+}
+
+fn baseline_elicitation_schema(offered: &[String]) -> Option<ElicitationSchema> {
+    if offered.is_empty() {
+        return None;
+    }
+    let options = EnumSchema::builder(offered.to_vec())
+        .title("Baseline map")
+        .description("Map whose configured baseline band should be used")
+        .build();
+    ElicitationSchema::builder()
+        .required_property("map", PrimitiveSchemaDefinition::Enum(options))
+        .build()
+        .ok()
 }
 
 fn json_ok<T: Serialize>(value: &T) -> Result<CallToolResult, McpError> {
@@ -1446,13 +1510,22 @@ impl Argus {
     async fn compare_runs(
         &self,
         Parameters(args): Parameters<CompareArgs>,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_read_or_err() {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        let mut map = args.map.clone();
+        if args.log_a.is_none()
+            && map.is_none()
+            && matches!(crate::intel::run_map(&cfg, &args.log_b), Ok(None))
+        {
+            let offered = configured_baseline_maps(&cfg);
+            map = elicit_baseline_map(&peer, &offered).await;
+        }
         let log_a = args.log_a.as_deref().unwrap_or("baseline");
-        match intel_compare(&cfg, log_a, &args.log_b, args.map.as_deref()) {
+        match intel_compare(&cfg, log_a, &args.log_b, map.as_deref()) {
             Ok(r) => {
                 if crate::intel::want_csv(args.format.as_deref()) {
                     report_csv_ok(crate::intel::compare_csv(&r))
@@ -3216,6 +3289,50 @@ mod tests {
             changed_resource_uris(&mut previous, current),
             ["argus://lab"]
         );
+    }
+
+    #[test]
+    fn baseline_elicitation_offers_only_usable_configured_maps() {
+        let root = TestDir::new("server-elicitation").unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::write(root.path().join("runs/base_dm4.log"), "").unwrap();
+        fs::write(
+            root.path().join("runs/baselines.json"),
+            r#"{"dm2":["missing"],"dm4":["base_dm4"]}"#,
+        )
+        .unwrap();
+        let offered = configured_baseline_maps(&completion_cfg(root.path()));
+        assert_eq!(offered, ["dm4"]);
+
+        let schema = serde_json::to_value(baseline_elicitation_schema(&offered).unwrap()).unwrap();
+        assert_eq!(
+            schema["properties"]["map"]["enum"],
+            serde_json::json!(["dm4"])
+        );
+        assert!(baseline_elicitation_schema(&[]).is_none());
+    }
+
+    #[test]
+    fn elicited_baseline_map_accepts_only_a_valid_accept_action() {
+        let offered = vec!["dm2".into(), "dm4".into()];
+        let accepted = ElicitResult::new(ElicitationAction::Accept)
+            .with_content(serde_json::json!({"map": "DM4"}));
+        assert_eq!(
+            accepted_elicited_map(accepted, &offered).as_deref(),
+            Some("dm4")
+        );
+
+        for result in [
+            ElicitResult::new(ElicitationAction::Decline),
+            ElicitResult::new(ElicitationAction::Cancel),
+            ElicitResult::new(ElicitationAction::Accept)
+                .with_content(serde_json::json!({"map": "e1m1"})),
+            ElicitResult::new(ElicitationAction::Accept)
+                .with_content(serde_json::json!({"wrong": "dm4"})),
+        ] {
+            assert!(accepted_elicited_map(result, &offered).is_none());
+        }
     }
 
     fn completion_cfg(root: &Path) -> Config {

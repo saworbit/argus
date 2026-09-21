@@ -972,6 +972,14 @@ pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<Matc
     Ok(brief)
 }
 
+/// Read only the map named by a run. This is the cheap preflight used before
+/// deciding whether default-baseline selection is genuinely ambiguous.
+pub fn run_map(cfg: &Config, log: &str) -> Result<Option<String>, String> {
+    let path = resolve_run_ref(cfg, log, None)?;
+    let tape = parse_tape_path(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+    Ok(tape.map)
+}
+
 pub fn resolve_run_ref(
     cfg: &Config,
     spec: &str,

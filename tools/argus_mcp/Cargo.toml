@@ -11,7 +11,7 @@ base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 md5 = "0.8"
 regex = "1"
-rmcp = { version = "3.1", features = ["server", "macros", "schemars", "transport-io"] }
+rmcp = { version = "3.1", features = ["server", "macros", "schemars", "transport-io", "elicitation"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
