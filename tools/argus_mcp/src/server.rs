@@ -404,6 +404,13 @@ impl Argus {
         // Task futures may own match cleanup, so abort them only after the
         // live child has been stopped and MatchCtrl has finalized it.
         self.tasks.shutdown();
+        // TaskManager abort is cooperative with Tokio scheduling: wait until
+        // the aborted future has actually dropped its run-gate guard before
+        // reporting shutdown complete.
+        if let Ok(guard) = tokio::time::timeout(Duration::from_secs(2), self.run_gate.lock()).await
+        {
+            drop(guard);
+        }
     }
 
     fn persist_session(seen: &SessionSeen) {
@@ -3383,6 +3390,8 @@ impl ServerHandler for Argus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::FakeEngineControl;
+    use crate::match_ctrl::{live_state, live_test_lock_async};
     use crate::test_support::{git_test_lock, run_git, TestDir};
     use rmcp::model::{
         ArgumentInfo, ClientCapabilities, ClientInfo, CompletionContext, ResultType, TaskPayload,
@@ -3434,6 +3443,54 @@ mod tests {
             .expect("one text result")
     }
 
+    const FAKE_TAPE: &str = "ARGUS init on dm4\nARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
+
+    fn fake_match_server(root: &Path, controls: Vec<FakeEngineControl>) -> Argus {
+        fs::create_dir_all(root.join("runs")).unwrap();
+        fs::create_dir_all(root.join("src")).unwrap();
+        let mut server = Argus::new();
+        server.task_match_config = Some(completion_cfg(root));
+        server.matches = Arc::new(Mutex::new(MatchCtrl::with_fake_engines(controls)));
+        server
+    }
+
+    fn fake_match_args(run_name: &str) -> MatchRunArgs {
+        MatchRunArgs {
+            map: "dm4".into(),
+            duration_sec: DURATION_MIN,
+            run_name: Some(run_name.into()),
+            dedicated_slots: None,
+            skill: None,
+        }
+    }
+
+    async fn wait_for_live_match(server: &Argus) {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                if server.matches.lock().await.status().running {
+                    return;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("fake match never became live");
+    }
+
+    async fn wait_for_terminal_task(server: &Argus, task_id: &str) -> rmcp::model::DetailedTask {
+        tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                let task = server.tasks.get_task(task_id).unwrap();
+                if task.status().is_terminal() {
+                    return task;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("fake match task never settled")
+    }
+
     #[test]
     fn server_metadata_uses_package_version() {
         let info = Argus::new().get_info();
@@ -3460,6 +3517,7 @@ mod tests {
         use rmcp::model::{TaskPayload, TaskStatus};
         use rmcp::task_manager::{TaskExit, TaskOptions};
 
+        let _serial = live_test_lock_async().await;
         let server = Argus::new();
         let release = Arc::new(tokio::sync::Notify::new());
         let wait = release.clone();
@@ -3574,6 +3632,7 @@ mod tests {
 
     #[tokio::test]
     async fn cancelled_match_task_settles_only_after_leaving_the_run_gate() {
+        let _serial = live_test_lock_async().await;
         let root = TestDir::new("server-task-cancel").unwrap();
         let server = Argus::new();
         let gate = server.run_gate.lock().await;
@@ -3736,6 +3795,177 @@ mod tests {
             .await
             .expect("legacy transport did not close")
             .unwrap();
+    }
+
+    #[tokio::test]
+    async fn negotiated_match_task_completes_with_the_synchronous_result_shape() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-complete").unwrap();
+        let control = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![control.clone()]);
+        let (server_transport, client_transport) = tokio::io::duplex(65_536);
+        let service_server = server.clone();
+        let server_handle = tokio::spawn(async move {
+            let service = service_server.serve(server_transport).await.unwrap();
+            service.waiting().await.unwrap();
+        });
+        let client = ClientInfo::new(
+            ClientCapabilities::builder().enable_tasks().build(),
+            Implementation::new("argus-task-complete-test", "1"),
+        )
+        .serve(client_transport)
+        .await
+        .unwrap();
+        let response = client
+            .call_tool_once(
+                CallToolRequestParams::new("match_run").with_arguments(
+                    serde_json::from_value(serde_json::json!({
+                        "map": "dm4",
+                        "duration_sec": DURATION_MIN,
+                        "run_name": "transport_completed"
+                    }))
+                    .unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
+        let created = match response {
+            CallToolResponse::Task(created) => created,
+            other => panic!("Task-capable client received {other:?}"),
+        };
+        wait_for_live_match(&server).await;
+        assert_ne!(live_state().0, 0);
+        control.complete();
+
+        let terminal = loop {
+            let task = client
+                .peer()
+                .get_task(GetTaskParams::new(created.task.task_id.clone()))
+                .await
+                .unwrap()
+                .task;
+            if task.status().is_terminal() {
+                break task;
+            }
+            tokio::task::yield_now().await;
+        };
+        let TaskPayload::Completed { result } = terminal.payload else {
+            panic!("expected completed Task, got {terminal:?}");
+        };
+        let task_result: CallToolResult =
+            serde_json::from_value(serde_json::Value::Object(result)).unwrap();
+        assert_ne!(task_result.is_error, Some(true));
+        let data: serde_json::Value = serde_json::from_str(result_text(&task_result)).unwrap();
+        assert_eq!(data["ok"], true);
+        assert_eq!(data["run_name"], "transport_completed");
+        assert_eq!(data["map"], "dm4");
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+
+        client.cancel().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(2), server_handle)
+            .await
+            .expect("completion transport did not close")
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn active_task_cancel_reaps_its_child_and_cannot_kill_its_successor() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-active-cancel").unwrap();
+        let first = FakeEngineControl::new(FAKE_TAPE);
+        let second = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![first.clone(), second.clone()]);
+        let first_task = server.spawn_match_task(
+            fake_match_args("active_cancelled"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        assert_ne!(live_state().1, 0, "Task must claim the live child");
+        server.tasks.cancel_task(&first_task.task_id).unwrap();
+        let terminal = wait_for_terminal_task(&server, &first_task.task_id).await;
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        assert!(first.was_killed());
+        assert_eq!(live_state(), (0, 0, false));
+
+        let successor = server.spawn_match_task(
+            fake_match_args("active_successor"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        server.tasks.cancel_task(&first_task.task_id).unwrap();
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        assert!(
+            second.is_running(),
+            "late cancellation killed the successor"
+        );
+        second.complete();
+        let terminal = wait_for_terminal_task(&server, &successor.task_id).await;
+        assert!(matches!(terminal.payload, TaskPayload::Completed { .. }));
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+    }
+
+    #[tokio::test]
+    async fn cancellation_during_finalization_preserves_cleanup_and_shutdown_reaps_active_tasks() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-finalize-cancel").unwrap();
+        let finalizing = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![finalizing.clone()]);
+        let task = server.spawn_match_task(
+            fake_match_args("finalize_cancelled"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        finalizing.complete();
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !finalizing.quit_requested() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("finalization never sent quit");
+        server.tasks.cancel_task(&task.task_id).unwrap();
+        let terminal = wait_for_terminal_task(&server, &task.task_id).await;
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        assert!(!finalizing.was_killed());
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+
+        let root = TestDir::new("server-task-shutdown-race").unwrap();
+        let active = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![active.clone()]);
+        let task = server.spawn_match_task(
+            fake_match_args("shutdown_active"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        server.shutdown().await;
+        assert!(active.was_killed());
+        assert!(server.tasks.get_task(&task.task_id).is_err());
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+    }
+
+    #[tokio::test]
+    async fn match_task_keeps_a_tool_error_as_a_completed_result() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-tool-error").unwrap();
+        let server = fake_match_server(root.path(), Vec::new());
+        let task = server.spawn_match_task(
+            fake_match_args("spawn_error"),
+            server.task_match_config.clone(),
+        );
+        let terminal = wait_for_terminal_task(&server, &task.task_id).await;
+        let TaskPayload::Completed { result } = terminal.payload else {
+            panic!("tool error became a protocol failure: {terminal:?}");
+        };
+        let result: CallToolResult =
+            serde_json::from_value(serde_json::Value::Object(result)).unwrap();
+        assert_eq!(result.is_error, Some(true));
+        assert!(result_text(&result).contains("test engine queue is empty"));
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
     }
 
     #[test]

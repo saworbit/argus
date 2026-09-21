@@ -32,6 +32,76 @@ enum Inner {
     },
     #[cfg(windows)]
     Win { handle: SendHandle },
+    #[cfg(test)]
+    Fake { control: FakeEngineControl },
+}
+
+#[cfg(test)]
+struct FakeEngineState {
+    running: std::sync::atomic::AtomicBool,
+    killed: std::sync::atomic::AtomicBool,
+    quit_requested: std::sync::atomic::AtomicBool,
+    stdout: Arc<Mutex<String>>,
+}
+
+#[cfg(test)]
+#[derive(Clone)]
+pub(crate) struct FakeEngineControl {
+    pid: u32,
+    state: Arc<FakeEngineState>,
+}
+
+#[cfg(test)]
+impl FakeEngineControl {
+    pub(crate) fn new(output: impl Into<String>) -> Self {
+        static NEXT_FAKE_PID: std::sync::atomic::AtomicU32 =
+            std::sync::atomic::AtomicU32::new(4_000_000);
+        Self {
+            pid: NEXT_FAKE_PID.fetch_add(1, std::sync::atomic::Ordering::SeqCst),
+            state: Arc::new(FakeEngineState {
+                running: std::sync::atomic::AtomicBool::new(true),
+                killed: std::sync::atomic::AtomicBool::new(false),
+                quit_requested: std::sync::atomic::AtomicBool::new(false),
+                stdout: Arc::new(Mutex::new(output.into())),
+            }),
+        }
+    }
+
+    pub(crate) fn complete(&self) {
+        self.state
+            .running
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    pub(crate) fn is_running(&self) -> bool {
+        self.state.running.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub(crate) fn was_killed(&self) -> bool {
+        self.state.killed.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub(crate) fn quit_requested(&self) -> bool {
+        self.state
+            .quit_requested
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    fn kill(&self) {
+        self.state
+            .killed
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        self.complete();
+    }
+}
+
+#[cfg(test)]
+fn fake_engines() -> &'static Mutex<std::collections::HashMap<u32, std::sync::Weak<FakeEngineState>>>
+{
+    static ENGINES: std::sync::OnceLock<
+        Mutex<std::collections::HashMap<u32, std::sync::Weak<FakeEngineState>>>,
+    > = std::sync::OnceLock::new();
+    ENGINES.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
 }
 
 /// Process handle. Used only under MatchCtrl's mutex.
@@ -90,6 +160,8 @@ impl EngineChild {
                 .map_err(|e| format!("wait: {e}")),
             #[cfg(windows)]
             Inner::Win { handle } => win_try_wait(handle.0),
+            #[cfg(test)]
+            Inner::Fake { control } => Ok((!control.is_running()).then_some(0)),
         }
     }
 
@@ -99,6 +171,11 @@ impl EngineChild {
             Inner::Tokio { child, .. } => child.kill().await.map_err(|e| format!("kill: {e}")),
             #[cfg(windows)]
             Inner::Win { handle } => win_kill(handle.0),
+            #[cfg(test)]
+            Inner::Fake { control } => {
+                control.kill();
+                Ok(())
+            }
         }
     }
 
@@ -121,6 +198,17 @@ impl EngineChild {
             }
             #[cfg(windows)]
             Inner::Win { .. } => win_inject(self.pid, line),
+            #[cfg(test)]
+            Inner::Fake { control } => {
+                if line == "quit" {
+                    control
+                        .state
+                        .quit_requested
+                        .store(true, std::sync::atomic::Ordering::SeqCst);
+                    control.complete();
+                }
+                Ok(())
+            }
         }
     }
 
@@ -130,6 +218,8 @@ impl EngineChild {
             Inner::Tokio { stdin, .. } => stdin.is_some(),
             #[cfg(windows)]
             Inner::Win { .. } => true,
+            #[cfg(test)]
+            Inner::Fake { .. } => true,
         }
     }
 }
@@ -138,14 +228,26 @@ impl Drop for EngineChild {
     fn drop(&mut self) {
         #[cfg(windows)]
         {
-            let Inner::Win { handle } = &mut self.inner;
-            if !handle.0.is_null() {
-                let _ = win_kill(handle.0);
-                unsafe {
-                    windows_sys::Win32::Foundation::CloseHandle(handle.0);
+            match &mut self.inner {
+                Inner::Win { handle } => {
+                    if !handle.0.is_null() {
+                        let _ = win_kill(handle.0);
+                        unsafe {
+                            windows_sys::Win32::Foundation::CloseHandle(handle.0);
+                        }
+                        handle.0 = std::ptr::null_mut();
+                    }
                 }
-                handle.0 = std::ptr::null_mut();
+                #[cfg(test)]
+                Inner::Fake { .. } => {}
             }
+        }
+        #[cfg(test)]
+        if matches!(self.inner, Inner::Fake { .. }) {
+            fake_engines()
+                .lock()
+                .expect("fake engine registry lock poisoned")
+                .remove(&self.pid);
         }
     }
 }
@@ -610,6 +712,18 @@ impl EngineChild {
         }
     }
 
+    pub(crate) fn fake(control: FakeEngineControl) -> Self {
+        fake_engines()
+            .lock()
+            .expect("fake engine registry lock poisoned")
+            .insert(control.pid, Arc::downgrade(&control.state));
+        Self {
+            pid: control.pid,
+            stdout: control.state.stdout.clone(),
+            inner: Inner::Fake { control },
+        }
+    }
+
     #[cfg(windows)]
     pub(crate) fn from_raw(handle: windows_sys::Win32::Foundation::HANDLE, pid: u32) -> Self {
         Self {
@@ -628,6 +742,21 @@ impl EngineChild {
 pub fn kill_pid(pid: u32) -> bool {
     if pid == 0 {
         return false;
+    }
+    #[cfg(test)]
+    if let Some(state) = fake_engines()
+        .lock()
+        .expect("fake engine registry lock poisoned")
+        .get(&pid)
+        .and_then(std::sync::Weak::upgrade)
+    {
+        state
+            .killed
+            .store(true, std::sync::atomic::Ordering::SeqCst);
+        state
+            .running
+            .store(false, std::sync::atomic::Ordering::SeqCst);
+        return true;
     }
     #[cfg(windows)]
     unsafe {
