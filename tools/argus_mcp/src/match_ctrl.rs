@@ -68,9 +68,21 @@ pub struct MatchCtrl {
     /// one shot permission to refresh a committed tape, taken and
     /// cleared by the next start() (#328)
     refresh_committed: bool,
+    #[cfg(test)]
+    fake_engines: Option<std::collections::VecDeque<crate::engine::FakeEngineControl>>,
 }
 
 impl MatchCtrl {
+    #[cfg(test)]
+    pub(crate) fn with_fake_engines(
+        controls: impl IntoIterator<Item = crate::engine::FakeEngineControl>,
+    ) -> Self {
+        Self {
+            fake_engines: Some(controls.into_iter().collect()),
+            ..Self::default()
+        }
+    }
+
     /// A controller bound to its own engine port, for parallel work.
     pub fn on_port(port: u32) -> Self {
         MatchCtrl {
@@ -252,6 +264,22 @@ impl MatchCtrl {
         std::fs::create_dir_all(&run_dir).map_err(|e| format!("create run dir: {e}"))?;
         let harvested = cfg.runs.join(format!("{name}.log"));
 
+        #[cfg(test)]
+        let child = match self.fake_engines.as_mut() {
+            Some(engines) => {
+                EngineChild::fake(engines.pop_front().ok_or("test engine queue is empty")?)
+            }
+            None => EngineChild::spawn(
+                cfg,
+                map,
+                slots,
+                skill,
+                &run_dir,
+                self.port,
+                coop.unwrap_or(false),
+            )?,
+        };
+        #[cfg(not(test))]
         let child = EngineChild::spawn(
             cfg,
             map,
@@ -670,6 +698,31 @@ fn clear_live() {
     LIVE_CANCEL.store(false, Ordering::SeqCst);
 }
 
+#[cfg(test)]
+fn live_test_mutex() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: std::sync::OnceLock<tokio::sync::Mutex<()>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+}
+
+#[cfg(test)]
+pub(crate) fn live_test_lock() -> tokio::sync::MutexGuard<'static, ()> {
+    live_test_mutex().blocking_lock()
+}
+
+#[cfg(test)]
+pub(crate) async fn live_test_lock_async() -> tokio::sync::MutexGuard<'static, ()> {
+    live_test_mutex().lock().await
+}
+
+#[cfg(test)]
+pub(crate) fn live_state() -> (u32, u64, bool) {
+    (
+        LIVE_PID.load(Ordering::SeqCst),
+        LIVE_OWNER.load(Ordering::SeqCst),
+        LIVE_CANCEL.load(Ordering::SeqCst),
+    )
+}
+
 /// True while a caller has asked the live match to end early.
 pub fn live_cancelled() -> bool {
     LIVE_CANCEL.load(Ordering::SeqCst)
@@ -958,17 +1011,11 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::{
-        cancel_live, clear_live, live_cancelled, register_live, take_budgeted, take_owned_live_pid,
-        RunCancellation, LIVE_OWNER, LIVE_PID, TAIL_BUDGET_BYTES, TAIL_MAX_LINES,
+        cancel_live, clear_live, live_cancelled, live_test_lock, register_live, take_budgeted,
+        take_owned_live_pid, RunCancellation, LIVE_OWNER, LIVE_PID, TAIL_BUDGET_BYTES,
+        TAIL_MAX_LINES,
     };
     use crate::test_support::{git_test_lock, run_git, TestDir};
-
-    fn live_test_lock() -> std::sync::MutexGuard<'static, ()> {
-        static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
-        LOCK.get_or_init(|| std::sync::Mutex::new(()))
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner())
-    }
 
     /// A poll has a CEILING on what it costs, whatever the match is
     /// doing. Eighty long lines were six times eighty short ones,

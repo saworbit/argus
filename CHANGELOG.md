@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**MATCH TASKS NOW HAVE A CHILD-CONTROLLING LIFECYCLE HARNESS** (#491).
+A deterministic fake engine drives negotiated completion, active and late
+cancellation, finalization, tool errors, successors, and shutdown without
+launching Quake or writing a committed tape. The shutdown path now waits for
+an aborted Task to release `run_gate` before it returns.
+
 **COMPLETED MATCH TASKS NO LONGER ACCUMULATE UNTIL SERVER RESTART** (#490).
 Argus now separates the client-visible Task lifetime from rmcp's active-future
 deadline. A running match is never hard-aborted by TTL, terminal results remain
