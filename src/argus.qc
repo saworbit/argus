@@ -105,6 +105,9 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 // Route_Finish has to compare the finished flood's errand against the
 // bot's current one
 .float  ar_goalstart;
+.entity ar_taskgoal;            // developer-only fixed-task marker (#384)
+.float  ar_taskstart;           // game time when the trial began
+.float  ar_taskdeadline;        // hard cleanup ceiling; harness may stop sooner
 .float  ar_stallrun;
 .float  ar_mode;                // 0 wander, 1 direct, 2 routed
 .float  ar_nextai;
@@ -7926,6 +7929,82 @@ void() Argus_CoopThink =
     }
 };
 
+// External fixed-task control, driven by the lab puppet's impulses 217-219.
+// scratch1 3841 places the selected bot at scratch2/3/4; 3842 assigns a
+// synthetic goal at those coordinates; 3840 cancels. The two-step protocol
+// lets three stock scratch coordinate cvars carry both endpoints without an
+// engine extension or file input.
+void(entity bot) Argus_TaskClear =
+{
+    local entity marker;
+
+    marker = bot.ar_taskgoal;
+    bot.ar_taskgoal = world;
+    if (bot.ar_goal == marker)
+        bot.ar_goal = world;
+    bot.ar_node = world;
+    bot.ar_pending = 0;
+    bot.ar_mode = 0;
+    if (an_busy && an_bot == bot)
+        an_busy = 0;
+    if (marker != world)
+        remove (marker);
+};
+
+void(float slot) Argus_TaskControl =
+{
+    local entity bot, marker;
+    local float mode;
+    local vector point;
+
+    if (!cvar ("developer"))
+        return;
+    mode = cvar ("scratch1");
+    if (mode != 3840 && mode != 3841 && mode != 3842)
+        return;
+
+    bot = argus_bots;
+    while (bot != world && bot.ar_slot != slot)
+        bot = bot.ar_chain;
+    if (bot == world)
+        return;
+
+    point = cvar ("scratch2") * '1 0 0'
+          + cvar ("scratch3") * '0 1 0'
+          + cvar ("scratch4") * '0 0 1';
+
+    if (mode == 3840)
+    {
+        Argus_TaskClear (bot);
+        return;
+    }
+    if (mode == 3841)
+    {
+        Argus_TaskClear (bot);
+        setorigin (bot, point);
+        bot.velocity = '0 0 0';
+        bot.ar_lastpos = point;
+        bot.ar_nextstall = time + 2;
+        return;
+    }
+
+    Argus_TaskClear (bot);
+    marker = spawn ();
+    marker.classname = "argus_task_goal";
+    marker.solid = SOLID_TRIGGER;
+    marker.flags = FL_ITEM;
+    setsize (marker, '-8 -8 -8', '8 8 8');
+    setorigin (marker, point);
+    bot.ar_taskgoal = marker;
+    bot.ar_taskstart = time;
+    bot.ar_taskdeadline = time + 60;
+    bot.ar_goal = marker;
+    bot.ar_goalstart = time + 3600; // ordinary 20 s abandon must not own a task
+    bot.ar_pending = 1;
+    bot.ar_mode = 0;
+    bot.ar_node = world;
+};
+
 void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
@@ -7934,6 +8013,34 @@ void() Argus_AI =
     local entity oldnode, nx, dr, gn, jseat;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
+
+    // FIXED NAVIGATION TASKS (#384). The external harness places one bot and
+    // assigns one synthetic goal through Argus_TaskControl. Completion is
+    // observed here before ordinary arrival handling can clear ar_goal. This
+    // path is unreachable unless developer mode and scratch1 explicitly arm
+    // it, so shipped play has no new branch.
+    if (self.ar_taskgoal != world)
+    {
+        if (vlen (self.origin - self.ar_taskgoal.origin) < 32
+            && fabs (self.origin_z - self.ar_taskgoal.origin_z) < 56)
+        {
+            bprint (PRINT_HIGH, "ARGTASK ");
+            bprint (PRINT_HIGH, ftos (self.ar_slot));
+            bprint (PRINT_HIGH, " complete ");
+            bprint (PRINT_HIGH, ftos (time - self.ar_taskstart));
+            bprint (PRINT_HIGH, "\n");
+            Argus_TaskClear (self);
+        }
+        else if (time >= self.ar_taskdeadline)
+        {
+            bprint (PRINT_HIGH, "ARGTASK ");
+            bprint (PRINT_HIGH, ftos (self.ar_slot));
+            bprint (PRINT_HIGH, " timeout ");
+            bprint (PRINT_HIGH, ftos (time - self.ar_taskstart));
+            bprint (PRINT_HIGH, "\n");
+            Argus_TaskClear (self);
+        }
+    }
 
     if (coop > 0)
     {
@@ -8164,7 +8271,17 @@ void() Argus_AI =
     }
 
     // ---- combat overrides steering when an enemy is engaged ----
-    fighting = Argus_Combat ();
+    // A navigation benchmark holds the opponent fixed by taking combat out of
+    // this bot's steering. The puppet remains connected as the observer, but
+    // cannot turn a route trial into a duel merely by being visible.
+    if (self.ar_taskgoal != world)
+    {
+        self.ar_enemy = world;
+        self.button0 = 0;
+        fighting = FALSE;
+    }
+    else
+        fighting = Argus_Combat ();
 
     // Goal selection happens before combat acquires a fresh target. If this
     // life already started the crossing that killed the last one, stop it as

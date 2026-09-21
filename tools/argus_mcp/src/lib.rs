@@ -1,5 +1,6 @@
 pub mod analyze;
 pub mod backup;
+pub mod benchmark;
 pub mod bsp;
 pub mod campaign;
 pub mod cartograph;

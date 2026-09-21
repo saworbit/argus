@@ -84,6 +84,50 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
+        Some("benchmark") => {
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty()
+                || rest
+                    .iter()
+                    .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
+                println!("usage: argus-mcp benchmark <suite.json> [limit] [--no-compile]\n\nRun fixed navigation tasks with a real Argus bot. The suite pins its navigation graph and keeps train and held-out scores separate.");
+                return Ok(());
+            }
+            let no_compile = rest.iter().any(|a| a == "--no-compile");
+            let mut pos = rest.iter().filter(|a| !a.starts_with("--"));
+            let suite_path = std::path::PathBuf::from(pos.next().expect("checked above"));
+            let limit = pos
+                .next()
+                .map(|value| {
+                    value
+                        .parse::<usize>()
+                        .map_err(|_| anyhow::anyhow!("benchmark limit must be an integer"))
+                })
+                .transpose()?;
+            if pos.next().is_some() {
+                return Err(anyhow::anyhow!(
+                    "usage: argus-mcp benchmark <suite.json> [limit] [--no-compile]"
+                ));
+            }
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let suite =
+                argus_mcp::benchmark::load_suite(&suite_path).map_err(|e| anyhow::anyhow!(e))?;
+            if !no_compile {
+                let compiled = argus_mcp::compile::compile_qc(&cfg, true);
+                if !compiled.ok {
+                    return Err(anyhow::anyhow!(
+                        "QuakeC compile failed: {}",
+                        serde_json::to_string(&compiled)?
+                    ));
+                }
+            }
+            let report = argus_mcp::benchmark::run_suite(&cfg, &suite, limit)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            Ok(())
+        }
         Some("match") => {
             // One named lab match, without an MCP client. Every ladder
             // in the recovery plan needs dozens of named tapes and the
@@ -1071,6 +1115,9 @@ fn print_help() {
          argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]\n\
                                 empirical link verification: puppet walks\n\
                                 navigation graph links in the real engine\n\
+         argus-mcp benchmark <suite.json> [limit] [--no-compile]\n\
+                                run fixed, graph-pinned navigation tasks;\n\
+                                reports train and held-out scores separately\n\
          argus-mcp client observe [secs] [host] [port]\n\
                                 connect as a real NetQuake client and\n\
                                 report the live world (default\n\

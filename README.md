@@ -130,6 +130,7 @@ flowchart TD
 - **Static exposure and cover annotations**: The nav compiler runs exact BSP-tree point traces between nodes, ranks each node by how much of the graph it can see, and finds the nearest hidden target reachable by ordinary walk links. Cartograph surfaces the range, the most exposed nodes, and each inspected node's cover target. Runtime treats the result as a hint and verifies it against the live threat.
 - **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`) with per-link approach speeds, rocket-jump links (`an_rjmask`), sprint-jump links (full-run-speed arcs, skill-gated), elevator links (`an_liftmask`), swim-exit and dive links (`an_swimmask`), train rides (`an_trainmask`), and door passages (`an_doormask`).
 - **Engine-verdict graph refinement (the mill)**: The lab's puppet client walks accused links in the real engine; refuted walk links whose centre-line void fits the jump envelope are reminted as jump links, unjumpable refusals die, and candidate entries the puppet *proves* are minted from `argus_nav_<map>.proven.json`. Every chronic stall cell fixed this way stays fixed - the engine testifies, navgen re-types, bots inherit.
+- **Graph-pinned fixed navigation tasks**: `argus-mcp benchmark benchmarks/dm4_navigation.json` places a real bot at declared starts and measures synthetic-goal completion with fixed skill and no opponents. Manifests pin the graph MD5 and keep train and held-out routes separate, giving tuning an absolute yardstick alongside noisy free-running matches.
 - **Door and button handling**: Touch-open doors are walked through (the classname masquerade fires their triggers), button-only doors detour to their button and hold for the slab when the door is near, and shoot-actuated plates are fired at with the bot's own aimed attack.
 
 ### 6. Personalities and scoreboard integration
@@ -178,7 +179,7 @@ argus/
 |   |-- pak_extract.py         # Standalone id1 PAK archive reader / extractor
 |   |-- mdl_skins.py           # Palette-remapped player MDL skin injector
 |   |-- setup_rig.sh           # Automated headless Linux environment setup
-|   `-- argus_mcp/             # Lab MCP (stdio), `argus-mcp gui`, puppet client, probelinks
+|   `-- argus_mcp/             # Lab MCP (stdio), GUI, puppet, probelinks, fixed benchmarks
 |-- runs/                      # Archive of telemetry logs and trajectory plots
 |   `-- demos/                 # Paired .dem recordings (machine-local, not in repo)
 |-- backups/                   # Dated progs + nav copies (machine-local, not in repo)

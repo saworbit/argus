@@ -1535,6 +1535,15 @@ void() ImpulseCommands =
 		               + cvar ("scratch4") * '0 0 1');
 		self.velocity = '0 0 0';
 	}
+	else if (self.impulse >= 217 && self.impulse <= 219
+	         && cvar ("developer"))
+	{
+		// Developer-only fixed navigation tasks (#384). The puppet chooses
+		// bot slot 0..2 with impulses 217..219; Argus_TaskControl reads the
+		// operation and point from scratch1..4. No remote client can arm the
+		// path without the server console setting developer and scratch1.
+		Argus_TaskControl (self.impulse - 217);
+	}
 	else if (self.impulse >= 220 && self.impulse <= 230)
 		Argus_PlayerChat (self.impulse);
 
