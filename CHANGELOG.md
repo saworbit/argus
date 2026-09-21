@@ -9,6 +9,14 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**A LATE RUN CANCELLATION CANNOT KILL ITS SUCCESSOR** (#481, part of #479).
+Each cancellable run now has an opaque owner identity which claims the live PID
+only after engine startup. A waiting or stale owner can record cancellation but
+cannot touch another child; cancellation received during startup is applied as
+soon as that run claims its PID. Natural exit, stop and finalization clear the
+owner before the serialized run gate admits another match. The existing global
+`match_stop` and shutdown path remains available.
+
 **TOOL DISPATCH IS NOW EXPLICIT BEFORE TASK RESPONSES LAND** (#480, part of
 #479). `Argus` stores the same fully annotated tool router and delegates
 ordinary `tools/call` requests through `ToolCallContext`; `list_tools` reads
