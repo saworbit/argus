@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**HUMANNESS MEASUREMENTS RESPECT LEVEL BOUNDARIES** (#495). Mixed-map
+console sessions now contribute only their dominant telemetry segment, matching
+the brief parser's established rule. Spawn roles, positions, cells and dwell
+windows cannot leak across the game-time reset, and the ignored segment count
+is reported.
+
 **HUMANNESS HAS A MAP-MATCHED MOVEMENT DISTANCE** (#369). The new
 `tools/argus_humanness.py` compares bot track distributions with same-map
 human `ARGLOG` references across speed, pauses, direction changes, roaming

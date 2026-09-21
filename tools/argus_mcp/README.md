@@ -1063,6 +1063,11 @@ shared telemetry stream avoids the
 demo recorder's entity-angle precision and PVS-culling confounds. Lower is
 closer to the human reference, but the score is evidence, not a quality gate:
 
+If one console log spans a level change, the reader follows the brief parser's
+rule from #266: it scores only the map segment with the greatest telemetry
+span, reports the ignored segment count on stderr, and never carries roles or
+movement windows across the boundary.
+
 ```
 python tools/argus_humanness.py --human
 python tools/argus_humanness.py --reference "runs/shane_*.log" runs/candidate.log
