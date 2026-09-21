@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**COMPLETED MATCH TASKS NO LONGER ACCUMULATE UNTIL SERVER RESTART** (#490).
+Argus now separates the client-visible Task lifetime from rmcp's active-future
+deadline. A running match is never hard-aborted by TTL, terminal results remain
+pollable through the advertised 30 minute window and a 10 minute completion
+grace, and the retained payload is then evicted.
+
 **THE NEGOTIATED MATCH TASK LIFECYCLE IS PROVED OVER A REAL MCP TRANSPORT**
 (#484, part of #479). In-memory client/server coverage now initializes both
 Task-capable and legacy clients, verifies `match_run` response negotiation,

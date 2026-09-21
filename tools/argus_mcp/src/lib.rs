@@ -36,6 +36,7 @@ pub mod soak;
 pub mod stale;
 pub mod stats;
 pub mod tape_view;
+pub mod task_store;
 
 #[cfg(test)]
 pub(crate) mod test_support;
