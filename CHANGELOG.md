@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE NEGOTIATED MATCH TASK LIFECYCLE IS PROVED OVER A REAL MCP TRANSPORT**
+(#484, part of #479). In-memory client/server coverage now initializes both
+Task-capable and legacy clients, verifies `match_run` response negotiation,
+polls `tasks/get`, cancels through `tasks/cancel`, and observes terminal
+cleanup without launching an engine. The operator guide documents the wire
+lifecycle, status phases, cancellation guarantee, and synchronous fallback.
+
 **NEGOTIATED `match_run` CALLS ARE NOW CANCELLATION-SAFE MCP TASKS** (#483,
 part of #479). A client that declares SEP-2663 Task support receives a durable
 Task handle for `match_run`; older clients keep the original synchronous tool

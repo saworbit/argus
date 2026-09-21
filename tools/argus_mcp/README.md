@@ -609,6 +609,19 @@ active matches advance by elapsed seconds against the requested duration.
 Progress delivery is best-effort and never changes the synchronous result.
 Clients without progress support keep the existing call and polling behavior.
 
+The server also implements the SEP-2663 Tasks extension for `match_run`.
+Clients that declare Task support receive a `CreateTaskResult`, poll the handle
+with `tasks/get`, and may request cooperative cancellation with `tasks/cancel`.
+The status message identifies whether the run is waiting for the serialized
+match slot, starting, playing, or finalizing. Cancellation does not report a
+terminal state until the owned engine child has stopped and its tape cleanup
+has finished. A client that does not declare Task support receives the same
+synchronous `match_run` result and progress notifications as before. Other
+tools remain synchronous. Match Tasks deliberately advertise no hard TTL:
+hard-aborting a future could orphan its engine child, so terminal records are
+retained until server shutdown. `match_status` and the owner-independent
+`match_stop` remain available to every client as the operational fallback.
+
 `argus://last` and `argus://lab` are live subscription resources. The server
 accepts both current `subscriptions/listen` filters and legacy
 `resources/subscribe` calls, then emits `notifications/resources/updated`

@@ -111,6 +111,9 @@ cause/reach_pct/item_control fields. Prefer native tools over extras."
 pub struct Argus {
     tool_router: ToolRouter<Argus>,
     tasks: TaskManager,
+    /// Test and embedded-harness override. Normal server construction always
+    /// loads the lab configuration at execution time.
+    task_match_config: Option<Config>,
     pub matches: Arc<Mutex<MatchCtrl>>,
     pub session: Arc<Mutex<SessionSeen>>,
     /// Serialises whole matches WITHOUT blocking the read paths. The
@@ -177,6 +180,7 @@ impl Argus {
         Self {
             tool_router: Self::annotated_tool_router(),
             tasks: TaskManager::new(),
+            task_match_config: None,
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
             run_gate: Arc::new(Mutex::new(())),
             session: Arc::new(Mutex::new(seen)),
@@ -3179,7 +3183,7 @@ impl ServerHandler for Argus {
                     None,
                 ));
             }
-            let task = self.spawn_match_task(args, None);
+            let task = self.spawn_match_task(args, self.task_match_config.clone());
             return Ok(CallToolResponse::Task(CreateTaskResult::new(task)));
         }
         let call = ToolCallContext::new(self, request, context);
@@ -3383,7 +3387,10 @@ impl ServerHandler for Argus {
 mod tests {
     use super::*;
     use crate::test_support::{git_test_lock, run_git, TestDir};
-    use rmcp::model::{ArgumentInfo, CompletionContext};
+    use rmcp::model::{
+        ArgumentInfo, ClientCapabilities, ClientInfo, CompletionContext, ResultType, TaskPayload,
+    };
+    use rmcp::ServiceExt;
     use std::collections::HashMap;
     use std::fs;
     use std::path::Path;
@@ -3570,8 +3577,6 @@ mod tests {
 
     #[tokio::test]
     async fn cancelled_match_task_settles_only_after_leaving_the_run_gate() {
-        use rmcp::model::TaskPayload;
-
         let root = TestDir::new("server-task-cancel").unwrap();
         let server = Argus::new();
         let gate = server.run_gate.lock().await;
@@ -3609,6 +3614,128 @@ mod tests {
         assert!(matches!(terminal.payload, TaskPayload::Cancelled));
         assert!(!server.matches.lock().await.status().running);
         server.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn mcp_transport_negotiates_polls_and_cancels_match_tasks() {
+        let root = TestDir::new("server-task-transport").unwrap();
+        let mut server = Argus::new();
+        server.task_match_config = Some(completion_cfg(root.path()));
+        let gate = server.run_gate.clone().lock_owned().await;
+        let task_store = server.tasks.clone();
+        let (server_transport, client_transport) = tokio::io::duplex(65_536);
+        let service_server = server.clone();
+        let server_handle = tokio::spawn(async move {
+            let service = service_server.serve(server_transport).await.unwrap();
+            service.waiting().await.unwrap();
+        });
+        let client = ClientInfo::new(
+            ClientCapabilities::builder().enable_tasks().build(),
+            Implementation::new("argus-task-test", "1"),
+        )
+        .serve(client_transport)
+        .await
+        .unwrap();
+
+        let response = client
+            .call_tool_once(
+                CallToolRequestParams::new("match_run").with_arguments(
+                    serde_json::from_value(serde_json::json!({
+                        "map": "dm4",
+                        "duration_sec": DURATION_MIN,
+                        "run_name": "transport_cancelled"
+                    }))
+                    .unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
+        let created = match response {
+            CallToolResponse::Task(created) => created,
+            other => panic!("Task-capable client received {other:?}"),
+        };
+        assert_eq!(created.result_type, ResultType::TASK);
+        assert_eq!(created.task.poll_interval_ms, Some(1_000));
+        assert_eq!(created.task.ttl_ms, None);
+        let task_id = created.task.task_id.clone();
+        let working = client
+            .peer()
+            .get_task(GetTaskParams::new(task_id.clone()))
+            .await
+            .unwrap();
+        assert!(!working.task.status().is_terminal());
+        assert!(client
+            .peer()
+            .get_task(GetTaskParams::new("missing-task"))
+            .await
+            .is_err());
+        assert!(client
+            .peer()
+            .cancel_task(CancelTaskParams::new("missing-task"))
+            .await
+            .is_err());
+
+        client
+            .peer()
+            .cancel_task(CancelTaskParams::new(task_id.clone()))
+            .await
+            .unwrap();
+        assert!(!task_store
+            .get_task(&task_id)
+            .unwrap()
+            .status()
+            .is_terminal());
+        drop(gate);
+
+        let terminal = loop {
+            let state = client
+                .peer()
+                .get_task(GetTaskParams::new(task_id.clone()))
+                .await
+                .unwrap()
+                .task;
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        };
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        client.cancel().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(2), server_handle)
+            .await
+            .expect("Task-capable transport did not close")
+            .unwrap();
+
+        let (server_transport, client_transport) = tokio::io::duplex(65_536);
+        let server_handle = tokio::spawn(async move {
+            let service = Argus::new().serve(server_transport).await.unwrap();
+            service.waiting().await.unwrap();
+        });
+        let legacy = ClientInfo::new(
+            ClientCapabilities::default(),
+            Implementation::new("argus-legacy-test", "1"),
+        )
+        .serve(client_transport)
+        .await
+        .unwrap();
+        let response = legacy
+            .call_tool_once(
+                CallToolRequestParams::new("match_run").with_arguments(
+                    serde_json::from_value(serde_json::json!({
+                        "map": "../invalid",
+                        "duration_sec": DURATION_MIN
+                    }))
+                    .unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
+        assert!(matches!(response, CallToolResponse::Complete(_)));
+        legacy.cancel().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(2), server_handle)
+            .await
+            .expect("legacy transport did not close")
+            .unwrap();
     }
 
     #[test]
