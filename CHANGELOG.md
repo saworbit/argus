@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**FIXED NAVIGATION TASKS GIVE TUNING AN ABSOLUTE YARDSTICK** (#384). The
+`argus-mcp benchmark` runner places a real bot at manifest-declared starts and
+measures synthetic-goal completion through the NetQuake puppet, with graph-MD5
+pinning, fixed skill and separate train/held-out summaries. The developer-only
+QuakeC task controls are inert outside the explicit scratch/impulse protocol.
+
 **HUMANNESS MEASUREMENTS RESPECT LEVEL BOUNDARIES** (#495). Mixed-map
 console sessions now contribute only their dominant telemetry segment, matching
 the brief parser's established rule. Spawn roles, positions, cells and dwell

@@ -1046,7 +1046,8 @@ tool_timeout_sec = 700
                 self.fail("argus-mcp source binary not built")
             self.skipTest("argus-mcp source binary not built")
 
-        for cmd in ("--help", "compile -h", "reach -h", "harvest -h", "analyze -h", "nav -h"):
+        for cmd in ("--help", "compile -h", "reach -h", "harvest -h",
+                    "analyze -h", "nav -h", "benchmark -h"):
             args = cmd.split()
             res = subprocess.run([str(mcp_bin), *args], capture_output=True, text=True, cwd=str(ROOT))
             self.assertEqual(res.returncode, 0, f"failed on {cmd}: {res.stderr}")

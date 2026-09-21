@@ -458,6 +458,26 @@ engine's lookup and locks onto whatever address answers.
 Engine-spawning tests share a lock; a stale engine on 26000 makes
 every connect fail, so kill orphans first.
 
+## Fixed navigation benchmark
+
+The benchmark is the low-variance complement to free-running matches. It
+places one real Argus bot at a declared nav coordinate, assigns a synthetic
+goal, and observes completion through the NetQuake puppet. The other bots are
+removed and the task bot ignores the observer, so combat and spawn luck cannot
+change the route trial.
+
+```
+argus-mcp benchmark benchmarks/dm4_navigation.json [limit] [--no-compile]
+```
+
+Suites are JSON manifests containing a map, skill, start/goal coordinates,
+budgets, and `train` or `heldout` labels. Each suite pins the MD5 of its nav
+JSON: a regenerated graph invalidates the yardstick until its routes are
+reviewed deliberately. Reports preserve individual results and summarize
+completion rate plus median game time for all, train, and held-out tasks.
+Compilation and installation happen by default; `--no-compile` deliberately
+measures the currently installed build.
+
 ## The mill (probelinks and the verdict files)
 
 Empirical link verification - the killer app the netclient was

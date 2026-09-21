@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "name": "dm4_navigation_v1",
+  "map": "dm4",
+  "graph_md5": "624a60f0e062f8d5dda4390475077f9a",
+  "skill": 2,
+  "tasks": [
+    {
+      "name": "pit_green_to_mega",
+      "start": [689.0, 73.0, -296.0],
+      "goal": [-47.0, 585.0, -296.0],
+      "budget_sec": 20.0,
+      "split": "train"
+    },
+    {
+      "name": "pit_east_to_green",
+      "start": [81.0, 425.0, -296.0],
+      "goal": [689.0, 73.0, -296.0],
+      "budget_sec": 20.0,
+      "split": "train"
+    },
+    {
+      "name": "lower_west_to_gallery",
+      "start": [-239.0, -599.0, -72.0],
+      "goal": [273.0, -1207.0, -24.0],
+      "budget_sec": 25.0,
+      "split": "heldout"
+    },
+    {
+      "name": "pit_center_to_east",
+      "start": [625.0, -23.0, -296.0],
+      "goal": [81.0, 425.0, -296.0],
+      "budget_sec": 20.0,
+      "split": "heldout"
+    }
+  ]
+}
