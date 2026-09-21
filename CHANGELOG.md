@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**DIRECT TOOL VALUES NOW HAVE PROTOCOL-NATIVE CATALOGS** (#472, part of
+#370). Read-only `argus://catalog/maps`, `/runs`, and `/baselines` resources
+expose exact map names, extensionless run names, valid aliases, and configured
+map-to-baseline bands in one stable `{kind, aliases, values}` envelope. Values
+are deterministic and come from the same lab sources as the tools; missing
+read configuration is an error rather than a partial invented catalog.
+
 **A MAPLESS DEFAULT BASELINE CAN ASK INSTEAD OF GUESSING** (#471, part of
 #370). `compare_runs` still infers the candidate map normally and never
 prompts for explicit `map` or `log_a`. Only an omitted default baseline plus a
