@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**TOOL DISPATCH IS NOW EXPLICIT BEFORE TASK RESPONSES LAND** (#480, part of
+#479). `Argus` stores the same fully annotated tool router and delegates
+ordinary `tools/call` requests through `ToolCallContext`; `list_tools` reads
+that exact router. This is a wire-compatible refactor: no Task capability is
+advertised yet and every existing tool result, injected request field, safety
+annotation and error path stays on the ordinary synchronous route.
+
 **QC SYMBOL RESOURCES NOW COMPLETE FROM THE INDEX THAT READS THEM** (#473,
 follow-up to #465 and part of #370). `argus://fn/{name}` completes concrete
 function names and `argus://const/{name}` completes constants from the current
