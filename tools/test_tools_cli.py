@@ -859,6 +859,51 @@ tool_timeout_sec = 700
             self.assertEqual(parsed["humans"], {})
             self.assertEqual(parsed["bots"], {})
 
+    def test_humanness_reader_selects_one_dominant_map_segment(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        with tempfile.TemporaryDirectory() as td:
+            tape = Path(td) / "two_maps.log"
+            lines = ["ARGUS init on dm4\n", "ARGEVT OldBot spawned\n"]
+            for i in range(20):
+                lines.append(
+                    f"ARGLOG OldBot t {i}.0 pos '{i * 64} 0 24' spd 64 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n"
+                )
+            lines.extend(("ARGUS init on dm2\n", "ARGEVT Reap spawned\n"))
+            for i in range(40):
+                lines.extend(
+                    (
+                        f"ARGLOG Reap t {i}.0 pos '{i * 64} 0 24' spd 64 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG Shane t {i}.0 pos '0 {i * 64} 24' spd 64 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    )
+                )
+            tape.write_text("".join(lines), encoding="utf-8")
+
+            parsed = argus_humanness.read_tape(tape)
+            self.assertEqual(parsed["map"], "dm2")
+            self.assertEqual(parsed["segments"], 2)
+            self.assertEqual(parsed["ignored_segments"], 1)
+            self.assertEqual(set(parsed["bots"]), {"Reap"})
+            self.assertEqual(set(parsed["humans"]), {"Shane"})
+            self.assertNotIn("OldBot", parsed["bots"])
+
+    def test_humanness_uses_the_real_mixed_session_dominant_segment(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        tape = ROOT / "runs" / "shane_e1m3_2026-09-05_v409.log"
+        if not tape.is_file():
+            self.skipTest("mixed e1m2/e1m3 session not present")
+        parsed = argus_humanness.read_tape(tape)
+        self.assertEqual(parsed["map"], "e1m2")
+        self.assertEqual(parsed["segments"], 2)
+        self.assertEqual(parsed["ignored_segments"], 1)
+        self.assertEqual(len(parsed["humans"]), 1)
+        self.assertIsNotNone(
+            argus_humanness.track_metrics(next(iter(parsed["humans"].values())))
+        )
+
     def test_humanness_distance_is_zero_for_equal_distributions(self):
         sys.path.insert(0, str(ROOT / "tools"))
         import argus_humanness

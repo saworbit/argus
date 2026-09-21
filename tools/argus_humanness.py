@@ -75,35 +75,64 @@ def percentile(values, q):
 
 def read_tape(path):
     """Return map and role-separated tracks from one telemetry tape."""
+    with open(path, encoding="utf-8", errors="replace") as tape:
+        lines = list(tape)
+
+    boundaries = [index for index, line in enumerate(lines) if MAP.search(line)]
+    if len(boundaries) <= 1:
+        segments = [lines]
+    else:
+        segments = [
+            lines[start : boundaries[index + 1] if index + 1 < len(boundaries) else None]
+            for index, start in enumerate(boundaries)
+        ]
+
+    parsed = [_read_segment(segment) for segment in segments]
+    selected = max(
+        parsed,
+        key=lambda segment: (segment["span"], segment["samples"]),
+    )
+    selected.update(
+        {
+            "file": os.path.basename(path),
+            "path": str(path),
+            "segments": len(parsed),
+            "ignored_segments": len(parsed) - 1,
+        }
+    )
+    return selected
+
+
+def _read_segment(lines):
+    """Parse one map episode; role evidence never crosses this boundary."""
     tracks = defaultdict(list)
     spawned = set()
     map_names = set()
     fallback_map = None
-    with open(path, encoding="utf-8", errors="replace") as tape:
-        for line in tape:
-            match = MAP.search(line)
+    for line in lines:
+        match = MAP.search(line)
+        if match:
+            map_names.add(match.group(1).lower())
+        elif fallback_map is None:
+            match = MAP_FALLBACK.search(line)
             if match:
-                map_names.add(match.group(1).lower())
-            elif fallback_map is None:
-                match = MAP_FALLBACK.search(line)
-                if match:
-                    fallback_map = match.group(1).lower()
-            match = SPAWN.search(line)
-            if match:
-                spawned.add(match.group(1))
-            match = SAMPLE.search(line)
-            if match:
-                name, t, x, y, z, speed, yaw = match.groups()
-                tracks[name].append(
-                    {
-                        "t": float(t),
-                        "x": float(x),
-                        "y": float(y),
-                        "z": float(z),
-                        "speed": max(0.0, float(speed)),
-                        "yaw": float(yaw),
-                    }
-                )
+                fallback_map = match.group(1).lower()
+        match = SPAWN.search(line)
+        if match:
+            spawned.add(match.group(1))
+        match = SAMPLE.search(line)
+        if match:
+            name, t, x, y, z, speed, yaw = match.groups()
+            tracks[name].append(
+                {
+                    "t": float(t),
+                    "x": float(x),
+                    "y": float(y),
+                    "z": float(z),
+                    "speed": max(0.0, float(speed)),
+                    "yaw": float(yaw),
+                }
+            )
     for samples in tracks.values():
         samples.sort(key=lambda sample: sample["t"])
     # Match the Rust parser: without any spawn evidence, a legacy or sliced
@@ -118,9 +147,8 @@ def read_tape(path):
         for name, samples in tracks.items()
         if name in spawned and name not in INSTRUMENTS
     }
+    spans = [samples[-1]["t"] - samples[0]["t"] for samples in tracks.values() if len(samples) > 1]
     return {
-        "file": os.path.basename(path),
-        "path": str(path),
         # A multi-map console log cannot support one map-matched distance.
         "map": (
             next(iter(map_names))
@@ -129,6 +157,8 @@ def read_tape(path):
         ),
         "humans": humans,
         "bots": bots,
+        "span": max(spans, default=0.0),
+        "samples": sum(len(samples) for samples in tracks.values()),
     }
 
 
@@ -362,8 +392,23 @@ def main(argv=None):
 
     rows = []
     skipped = []
+    noted = set()
+    for tape in reference_tapes:
+        if tape["ignored_segments"]:
+            noted.add(tape["path"])
+            print(
+                f"{tape['file']}: selected dominant {tape['map']} segment; "
+                f"ignored {tape['ignored_segments']} other map segment(s)",
+                file=sys.stderr,
+            )
     for path in candidate_paths:
         tape = read_tape(path)
+        if tape["ignored_segments"] and tape["path"] not in noted:
+            print(
+                f"{tape['file']}: selected dominant {tape['map']} segment; "
+                f"ignored {tape['ignored_segments']} other map segment(s)",
+                file=sys.stderr,
+            )
         row = score_tape(tape, reference, counts)
         if row is None:
             skipped.append(tape["file"])
