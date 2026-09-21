@@ -252,6 +252,9 @@ tool call:
 | `argus://last` | `see what=last` |
 | `argus://quality` | `quality_bars` |
 | `argus://help` | `see what=help` |
+| `argus://catalog/maps` | Exact map names accepted by direct tool arguments |
+| `argus://catalog/runs` | Extensionless run names plus the `latest` alias |
+| `argus://catalog/baselines` | Configured map-to-band relationships plus `baseline` / `shipped` aliases |
 | `argus://map/{name}` | `see what=map name={name}` |
 | `argus://fn/{name}` | `see what=fn name={name}` |
 | `argus://run/{name}` | `see what=run name={name}` |
@@ -261,6 +264,11 @@ tool call:
 | `argus://graph-revisions/{map}` | Content-hash ids for current and committed nav JSON |
 | `argus://graph/{map}/{hash}` | One exact `GraphRevision` with typed coordinate links |
 | `argus://probe-verdicts/{map}/{hash}` | `ProbeVerdict` evidence beside that revision |
+
+The three catalogs use the stable JSON envelope
+`{kind, aliases, values}`. Map and run values are sorted by name; baseline
+values preserve each configured map-to-band relationship. They are the
+discovery path for direct tool arguments, which MCP completion does not cover.
 
 `see what=last` persists to `runs/.lab_session.json`, so it survives a
 restart (0.21).
