@@ -478,6 +478,26 @@ completion rate plus median game time for all, train, and held-out tasks.
 Compilation and installation happen by default; `--no-compile` deliberately
 measures the currently installed build.
 
+## Counterbalanced within-match A/B
+
+For a QuakeC behaviour change that can be gated per bot, both arms can share
+one world instead of paying the variance of two unrelated matches:
+
+```
+argus-mcp within-ab dm4 60 [--skill 2] [--run PREFIX] [--no-compile]
+```
+
+The runner adds a fourth bot, assigns two control and two candidate bodies,
+then repeats the match with the assignment swapped across roster slots. That
+counterbalance is mandatory because each slot has a different personality.
+The report gives per-arm bot means, paired candidate-minus-control deltas, and
+a two-arm Bradley-Terry log-strength estimate from cross-arm kills. An interval
+covering zero is inconclusive, not parity.
+
+Candidate code opts in by testing `self.ar_abarm`; absent such a gate both
+arms are identical and the pair measures the instrument's null error. This is
+not valid for nav graphs or any other world-level change shared by both arms.
+
 ## The mill (probelinks and the verdict files)
 
 Empirical link verification - the killer app the netclient was

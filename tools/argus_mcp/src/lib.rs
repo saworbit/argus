@@ -38,6 +38,7 @@ pub mod stale;
 pub mod stats;
 pub mod tape_view;
 pub mod task_store;
+pub mod within_ab;
 
 #[cfg(test)]
 pub(crate) mod test_support;

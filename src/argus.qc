@@ -108,6 +108,7 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .entity ar_taskgoal;            // developer-only fixed-task marker (#384)
 .float  ar_taskstart;           // game time when the trial began
 .float  ar_taskdeadline;        // hard cleanup ceiling; harness may stop sooner
+.float  ar_abarm;               // 0 control, 1 candidate in a paired lab match
 .float  ar_stallrun;
 .float  ar_mode;                // 0 wander, 1 direct, 2 routed
 .float  ar_nextai;
@@ -8003,6 +8004,38 @@ void(float slot) Argus_TaskControl =
     bot.ar_pending = 1;
     bot.ar_mode = 0;
     bot.ar_node = world;
+};
+
+// Assign both experimental arms inside one match (#374). scratch4 is a bit
+// mask over roster slots; impulse 214 snapshots it into each bot and emits the
+// assignment into the tape. A candidate code path opts in explicitly by
+// testing self.ar_abarm. With no such test, both arms are byte-identical: the
+// null experiment used to measure the instrument's own error bar.
+void() Argus_ABControl =
+{
+    local entity bot, oself;
+    local float mask, bit;
+
+    if (!cvar ("developer"))
+        return;
+    mask = floor (cvar ("scratch4"));
+    bot = argus_bots;
+    while (bot != world)
+    {
+        bit = 1;
+        if (bot.ar_slot == 1) bit = 2;
+        else if (bot.ar_slot == 2) bit = 4;
+        else if (bot.ar_slot == 3) bit = 8;
+        bot.ar_abarm = floor (mask / bit) - floor (mask / (bit * 2)) * 2;
+        oself = self;
+        self = bot;
+        if (bot.ar_abarm)
+            Argus_Event ("arm candidate");
+        else
+            Argus_Event ("arm control");
+        self = oself;
+        bot = bot.ar_chain;
+    }
 };
 
 void() Argus_AI =
