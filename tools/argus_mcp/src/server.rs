@@ -24,16 +24,18 @@ use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, tim
 use rmcp::handler::server::tool::{ToolCallContext, ToolRouter};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
-    CallToolRequestParams, CallToolResponse, CallToolResult, CompleteRequestParams, CompleteResult,
-    CompletionInfo, ContentBlock, ElicitRequestParams, ElicitResult, ElicitationAction,
-    ElicitationSchema, EnumSchema, Implementation, JsonObject, ListResourceTemplatesResult,
-    ListResourcesResult, ListToolsResult, PaginatedRequestParams, PrimitiveSchemaDefinition,
-    ProgressNotificationParam, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
-    ReadResourceResult, Reference, RequestMetaObject, ResourceUpdatedNotificationParam, Role,
-    ServerCapabilities, ServerInfo, SubscribeRequestParams, SubscriptionFilter, ToolAnnotations,
-    UnsubscribeRequestParams,
+    CallToolRequestParams, CallToolResponse, CallToolResult, CancelTaskParams,
+    CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock, ElicitRequestParams,
+    ElicitResult, ElicitationAction, ElicitationSchema, EnumSchema, GetTaskParams, GetTaskResult,
+    Implementation, JsonObject, ListResourceTemplatesResult, ListResourcesResult, ListToolsResult,
+    PaginatedRequestParams, PrimitiveSchemaDefinition, ProgressNotificationParam, PromptMessage,
+    ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Reference,
+    RequestMetaObject, ResourceUpdatedNotificationParam, Role, ServerCapabilities, ServerInfo,
+    SubscribeRequestParams, SubscriptionFilter, ToolAnnotations, UnsubscribeRequestParams,
+    UpdateTaskParams,
 };
 use rmcp::service::{ElicitationMode, RequestContext, RoleServer, SubscriptionContext};
+use rmcp::task_manager::TaskManager;
 use rmcp::ErrorData as McpError;
 use rmcp::{
     prompt, prompt_handler, prompt_router, schemars, tool, tool_router, Peer, ServerHandler,
@@ -108,6 +110,7 @@ cause/reach_pct/item_control fields. Prefer native tools over extras."
 #[derive(Clone)]
 pub struct Argus {
     tool_router: ToolRouter<Argus>,
+    tasks: TaskManager,
     pub matches: Arc<Mutex<MatchCtrl>>,
     pub session: Arc<Mutex<SessionSeen>>,
     /// Serialises whole matches WITHOUT blocking the read paths. The
@@ -173,6 +176,7 @@ impl Argus {
             .unwrap_or_default();
         Self {
             tool_router: Self::annotated_tool_router(),
+            tasks: TaskManager::new(),
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
             run_gate: Arc::new(Mutex::new(())),
             session: Arc::new(Mutex::new(seen)),
@@ -301,6 +305,9 @@ impl Argus {
         {
             g.shutdown().await;
         }
+        // Task futures may own match cleanup, so abort them only after the
+        // live child has been stopped and MatchCtrl has finalized it.
+        self.tasks.shutdown();
     }
 
     fn persist_session(seen: &SessionSeen) {
@@ -3088,6 +3095,31 @@ impl ServerHandler for Argus {
         Ok(ListToolsResult::with_all_items(self.tool_router.list_all()))
     }
 
+    async fn get_task(
+        &self,
+        request: GetTaskParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<GetTaskResult, McpError> {
+        Ok(GetTaskResult::new(self.tasks.get_task(&request.task_id)?))
+    }
+
+    async fn update_task(
+        &self,
+        request: UpdateTaskParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        self.tasks
+            .update_task(&request.task_id, request.input_responses)
+    }
+
+    async fn cancel_task(
+        &self,
+        request: CancelTaskParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        self.tasks.cancel_task(&request.task_id)
+    }
+
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(
             ServerCapabilities::builder()
@@ -3096,6 +3128,7 @@ impl ServerHandler for Argus {
                 .enable_resources()
                 .enable_resources_subscribe()
                 .enable_completions()
+                .enable_tasks()
                 .build(),
         )
         .with_server_info(Implementation::new(SERVER_NAME, SERVER_VERSION))
@@ -3310,16 +3343,65 @@ mod tests {
             "instructions advertise a different lab version: {instructions}"
         );
         assert!(info.capabilities.completions.is_some());
-        assert!(
-            !info.capabilities.supports_tasks(),
-            "the explicit dispatcher must not advertise Tasks before handlers exist"
-        );
+        assert!(info.capabilities.supports_tasks());
         assert_eq!(
             info.capabilities
                 .resources
                 .and_then(|resources| resources.subscribe),
             Some(true)
         );
+    }
+
+    #[tokio::test]
+    async fn task_store_tracks_completion_and_cooperative_cancellation() {
+        use rmcp::model::{TaskPayload, TaskStatus};
+        use rmcp::task_manager::{TaskExit, TaskOptions};
+
+        let server = Argus::new();
+        let release = Arc::new(tokio::sync::Notify::new());
+        let wait = release.clone();
+        let completed = server.tasks.spawn(
+            TaskOptions::new().with_status_message("waiting for test release"),
+            move |_context| {
+                Box::pin(async move {
+                    wait.notified().await;
+                    Ok(CallToolResult::success(vec![ContentBlock::text("done")]))
+                })
+            },
+        );
+        assert_eq!(
+            server.tasks.get_task(&completed.task_id).unwrap().status(),
+            TaskStatus::Working
+        );
+        release.notify_one();
+        let completed = loop {
+            let state = server.tasks.get_task(&completed.task_id).unwrap();
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::task::yield_now().await;
+        };
+        assert!(matches!(completed.payload, TaskPayload::Completed { .. }));
+
+        let cancelled = server.tasks.spawn(TaskOptions::new(), move |context| {
+            Box::pin(async move {
+                context.cancelled().await;
+                Err(TaskExit::Cancelled)
+            })
+        });
+        server.tasks.cancel_task(&cancelled.task_id).unwrap();
+        let cancelled = loop {
+            let state = server.tasks.get_task(&cancelled.task_id).unwrap();
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::task::yield_now().await;
+        };
+        assert!(matches!(cancelled.payload, TaskPayload::Cancelled));
+
+        assert!(server.tasks.get_task("missing-task").is_err());
+        assert!(server.tasks.cancel_task("missing-task").is_err());
+        server.shutdown().await;
     }
 
     #[test]

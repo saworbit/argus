@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**THE LAB NOW OWNS THE FULL SEP-2663 TASK LIFECYCLE** (#482, part of #479).
+The MCP server advertises Tasks, stores durable task state, and implements
+`tasks/get`, `tasks/update`, and cooperative `tasks/cancel`. Shutdown stops and
+finalizes any live engine child before aborting remaining task futures. No lab
+tool is task-backed yet, so every existing `tools/call` response remains
+synchronous until its lifecycle is explicitly adapted.
+
 **A LATE RUN CANCELLATION CANNOT KILL ITS SUCCESSOR** (#481, part of #479).
 Each cancellable run now has an opaque owner identity which claims the live PID
 only after engine startup. A waiting or stale owner can record cancellation but
