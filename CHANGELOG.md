@@ -9,6 +9,12 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**CONTROL AND CANDIDATE BOTS CAN SHARE A COUNTERBALANCED MATCH** (#374).
+`argus-mcp within-ab` runs two tapes with four bots, two per arm, then swaps
+the slot mask so personality cannot masquerade as treatment effect. Reports
+keep per-bot movement/economy metrics and cross-arm Bradley-Terry strength;
+the ungated null mode measures the instrument before a candidate trusts it.
+
 **FIXED NAVIGATION TASKS GIVE TUNING AN ABSOLUTE YARDSTICK** (#384). The
 `argus-mcp benchmark` runner places a real bot at manifest-declared starts and
 measures synthetic-goal completion through the NetQuake puppet, with graph-MD5

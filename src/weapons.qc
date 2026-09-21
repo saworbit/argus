@@ -1523,6 +1523,11 @@ void() ImpulseCommands =
 		Argus_SetOmicron (!argus_omicron);
 	else if (self.impulse >= 210 && self.impulse <= 214)
 		ArgusCam_Impulse (self.impulse);
+	else if (self.impulse == 215 && cvar ("developer"))
+	{
+		// Snapshot scratch4's slot bitmask and write every arm to the tape.
+		Argus_ABControl ();
+	}
 	else if (self.impulse == 216 && cvar ("developer"))
 	{
 		// ARGUS: dev teleport for the lab's puppet client

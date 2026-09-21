@@ -720,6 +720,7 @@ void(entity bot, float won) Argus_SkillResult; // ARGUS: human result
 void() Argus_MatchStats;    // ARGUS: display match statistics
 void(float on) Argus_SetOmicron;    // ARGUS: the homage costume
 void(float slot) Argus_TaskControl; // ARGUS: developer fixed-task harness
+void() Argus_ABControl;          // ARGUS: counterbalanced within-match arms
 float argus_omicron;                // (console "omicron" / impulse 146)
 void(float what) Argus_Chat;    // ARGUS: bot chat, defined in argus.qc
                                 // and called from powerup_touch (4)

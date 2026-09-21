@@ -128,6 +128,78 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
+        Some("within-ab") => {
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty()
+                || rest
+                    .iter()
+                    .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
+                println!("usage: argus-mcp within-ab <map> [duration_sec] [--skill N] [--run PREFIX] [--no-compile]\n\nRun two within-match A/B tapes. Four bots share each match; candidate masks 5 and 10 swap the arms across personality slots.");
+                return Ok(());
+            }
+            let mut positional = Vec::new();
+            let mut skill = 2u32;
+            let mut prefix = None;
+            let mut no_compile = false;
+            let mut index = 0usize;
+            while index < rest.len() {
+                match rest[index].as_str() {
+                    "--no-compile" => no_compile = true,
+                    "--skill" => {
+                        index += 1;
+                        skill = rest
+                            .get(index)
+                            .ok_or_else(|| anyhow::anyhow!("--skill needs 0..3"))?
+                            .parse()
+                            .map_err(|_| anyhow::anyhow!("--skill needs 0..3"))?;
+                    }
+                    "--run" => {
+                        index += 1;
+                        prefix = Some(
+                            rest.get(index)
+                                .ok_or_else(|| anyhow::anyhow!("--run needs a prefix"))?
+                                .clone(),
+                        );
+                    }
+                    value if value.starts_with("--") => {
+                        return Err(anyhow::anyhow!("unknown within-ab option: {value}"));
+                    }
+                    value => positional.push(value.to_string()),
+                }
+                index += 1;
+            }
+            let map = positional
+                .first()
+                .ok_or_else(|| anyhow::anyhow!("within-ab needs a map"))?;
+            let duration = positional
+                .get(1)
+                .map(|value| value.parse::<u32>())
+                .transpose()
+                .map_err(|_| anyhow::anyhow!("duration_sec must be an integer"))?
+                .unwrap_or(60);
+            if positional.len() > 2 {
+                return Err(anyhow::anyhow!(
+                    "usage: argus-mcp within-ab <map> [duration_sec] [options]"
+                ));
+            }
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            if !no_compile {
+                let compiled = argus_mcp::compile::compile_qc(&cfg, true);
+                if !compiled.ok {
+                    return Err(anyhow::anyhow!(
+                        "QuakeC compile failed: {}",
+                        serde_json::to_string(&compiled)?
+                    ));
+                }
+            }
+            let report =
+                argus_mcp::within_ab::run_pair(&cfg, map, duration, skill, prefix.as_deref())
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            Ok(())
+        }
         Some("match") => {
             // One named lab match, without an MCP client. Every ladder
             // in the recovery plan needs dozens of named tapes and the
@@ -1118,6 +1190,9 @@ fn print_help() {
          argus-mcp benchmark <suite.json> [limit] [--no-compile]\n\
                                 run fixed, graph-pinned navigation tasks;\n\
                                 reports train and held-out scores separately\n\
+         argus-mcp within-ab <map> [duration_sec] [options]\n\
+                                run counterbalanced control/candidate arms\n\
+                                inside two shared matches\n\
          argus-mcp client observe [secs] [host] [port]\n\
                                 connect as a real NetQuake client and\n\
                                 report the live world (default\n\
