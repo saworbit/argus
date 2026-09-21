@@ -2,6 +2,7 @@
 """CLI regression tests for developer scripts in tools/."""
 import hashlib
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -830,6 +831,105 @@ tool_timeout_sec = 700
         self.assertEqual(row["stalls"], "7")
         self.assertEqual(row["freezes"], "0")
         self.assertEqual(row["unstick"], "0")
+
+    def test_humanness_reader_uses_the_rust_role_rule(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        with tempfile.TemporaryDirectory() as td:
+            tape = Path(td) / "roles.log"
+            lines = ["ARGUS init on dm4\n", "ARGEVT Reap spawned\n"]
+            for i in range(20):
+                lines.extend(
+                    (
+                        f"ARGLOG Reap t {i}.0 pos '{i * 64} 0 24' spd 64 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG Shane t {i}.0 pos '0 {i * 64} 24' spd 64 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG labprobe t {i}.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    )
+                )
+            tape.write_text("".join(lines), encoding="utf-8")
+            parsed = argus_humanness.read_tape(tape)
+            self.assertEqual(parsed["map"], "dm4")
+            self.assertEqual(set(parsed["bots"]), {"Reap"})
+            self.assertEqual(set(parsed["humans"]), {"Shane"})
+
+            # A tail slice without spawn evidence cannot label every track human.
+            tape.write_text("".join(line for line in lines if "ARGEVT" not in line), encoding="utf-8")
+            parsed = argus_humanness.read_tape(tape)
+            self.assertEqual(parsed["humans"], {})
+            self.assertEqual(parsed["bots"], {})
+
+    def test_humanness_distance_is_zero_for_equal_distributions(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        self.assertAlmostEqual(
+            argus_humanness.normalized_wasserstein([1, 2, 4], [1, 2, 4]),
+            0.0,
+        )
+        self.assertGreater(
+            argus_humanness.normalized_wasserstein([10, 20, 40], [1, 2, 4]),
+            1.0,
+        )
+
+    def test_humanness_cli_reports_map_matched_movement_distance(self):
+        def tape(path, human_scale, bot_scale):
+            lines = ["ARGUS init on dm4\n", "ARGEVT Reap spawned\n"]
+            for i in range(40):
+                hx = i * human_scale
+                bx = i * bot_scale
+                lines.extend(
+                    (
+                        f"ARGLOG Shane t {i}.0 pos '{hx} {i % 4 * 64} 24' spd {human_scale} yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG Reap t {i}.0 pos '{bx} {i % 4 * 64} 24' spd {bot_scale} yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    )
+                )
+            path.write_text("".join(lines), encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            references = []
+            for index, scale in enumerate((58, 64, 70)):
+                path = root / f"human_{index}.log"
+                tape(path, scale, scale)
+                references.append(path)
+            candidate = root / "candidate.log"
+            tape(candidate, 64, 64)
+            res = self.run_tool(
+                "argus_humanness.py",
+                "--reference",
+                str(root / "human_*.log"),
+                str(candidate),
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            lines = res.stdout.splitlines()
+            row = dict(zip(lines[0].split("\t"), lines[1].split("\t")))
+            self.assertEqual(row["map"], "dm4")
+            self.assertEqual(row["bot_tracks"], "1")
+            self.assertEqual(row["human_reference_tracks"], "3")
+            self.assertLess(float(row["distance"]), 1.0)
+
+    def test_humanness_scores_a_real_tape_against_the_archive(self):
+        tape = ROOT / "runs" / "ab_dm4_B3.log"
+        if not tape.is_file():
+            self.skipTest("dm4 candidate tape not present")
+        res = self.run_tool("argus_humanness.py", str(tape))
+        self.assertEqual(res.returncode, 0, res.stderr)
+        lines = res.stdout.splitlines()
+        row = dict(zip(lines[0].split("\t"), lines[1].split("\t")))
+        self.assertEqual(row["map"], "dm4")
+        self.assertEqual(row["bot_tracks"], "3")
+        self.assertGreaterEqual(int(row["human_reference_tracks"]), 3)
+        self.assertGreater(float(row["distance"]), 0.0)
+        for feature in (
+            "speed_median",
+            "pause_fraction",
+            "direction_changes_pm",
+            "cells_pm",
+            "gyration",
+            "local_dwell_fraction",
+        ):
+            self.assertTrue(math.isfinite(float(row[feature])), feature)
 
     def test_tick_estimator_separates_listen_from_dedicated(self):
         """A tape says which game it recorded, or it cannot be compared."""
