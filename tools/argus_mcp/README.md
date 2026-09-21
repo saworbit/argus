@@ -1052,6 +1052,22 @@ target is zero.
 `tools/argus_tick.py` reports the rate of any tape or of the whole
 archive (`--all`).
 
+`tools/argus_humanness.py` turns the trustworthy movement half of that
+archive into a descriptive distance. It builds a separate human reference
+for each map from ordinary `ARGLOG` tracks, then compares bot-track
+distributions for speed, pauses, direction changes, cells per minute,
+gyration and 30-second local dwell inside a 1024-unit neighbourhood. The
+distance uses human interquartile spread with practical-effect floors, so a
+nearly constant reference feature cannot dominate the combined score. The
+shared telemetry stream avoids the
+demo recorder's entity-angle precision and PVS-culling confounds. Lower is
+closer to the human reference, but the score is evidence, not a quality gate:
+
+```
+python tools/argus_humanness.py --human
+python tools/argus_humanness.py --reference "runs/shane_*.log" runs/candidate.log
+```
+
 ## Quality bars
 
 Encoded from the project charter, not invented per call:

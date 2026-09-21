@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**HUMANNESS HAS A MAP-MATCHED MOVEMENT DISTANCE** (#369). The new
+`tools/argus_humanness.py` compares bot track distributions with same-map
+human `ARGLOG` references across speed, pauses, direction changes, roaming
+and local dwell. It intentionally excludes demo aim streams whose differing
+precision and PVS visibility would let a classifier learn the recorder
+instead of believable behaviour.
+
 **MATCH TASKS NOW HAVE A CHILD-CONTROLLING LIFECYCLE HARNESS** (#491).
 A deterministic fake engine drives negotiated completion, active and late
 cancellation, finalization, tool errors, successors, and shutdown without
