@@ -21,22 +21,22 @@ use crate::qc_index::{index_argus, qc_file_slice, qc_find, qc_read, qc_search};
 use crate::see_alias::normalize_see;
 use crate::session::{ExperimentRecord, SessionSeen};
 use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, timeline};
-use rmcp::handler::server::tool::ToolRouter;
+use rmcp::handler::server::tool::{ToolCallContext, ToolRouter};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
-    CallToolResult, CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock,
-    ElicitRequestParams, ElicitResult, ElicitationAction, ElicitationSchema, EnumSchema,
-    Implementation, JsonObject, ListResourceTemplatesResult, ListResourcesResult,
-    PaginatedRequestParams, PrimitiveSchemaDefinition, ProgressNotificationParam, PromptMessage,
-    ReadResourceRequestParams, ReadResourceResponse, ReadResourceResult, Reference,
-    RequestMetaObject, ResourceUpdatedNotificationParam, Role, ServerCapabilities, ServerInfo,
-    SubscribeRequestParams, SubscriptionFilter, ToolAnnotations, UnsubscribeRequestParams,
+    CallToolRequestParams, CallToolResponse, CallToolResult, CompleteRequestParams, CompleteResult,
+    CompletionInfo, ContentBlock, ElicitRequestParams, ElicitResult, ElicitationAction,
+    ElicitationSchema, EnumSchema, Implementation, JsonObject, ListResourceTemplatesResult,
+    ListResourcesResult, ListToolsResult, PaginatedRequestParams, PrimitiveSchemaDefinition,
+    ProgressNotificationParam, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
+    ReadResourceResult, Reference, RequestMetaObject, ResourceUpdatedNotificationParam, Role,
+    ServerCapabilities, ServerInfo, SubscribeRequestParams, SubscriptionFilter, ToolAnnotations,
+    UnsubscribeRequestParams,
 };
 use rmcp::service::{ElicitationMode, RequestContext, RoleServer, SubscriptionContext};
 use rmcp::ErrorData as McpError;
 use rmcp::{
-    prompt, prompt_handler, prompt_router, schemars, tool, tool_handler, tool_router, Peer,
-    ServerHandler,
+    prompt, prompt_handler, prompt_router, schemars, tool, tool_router, Peer, ServerHandler,
 };
 use serde::Deserialize;
 use serde::Serialize;
@@ -107,6 +107,7 @@ cause/reach_pct/item_control fields. Prefer native tools over extras."
 
 #[derive(Clone)]
 pub struct Argus {
+    tool_router: ToolRouter<Argus>,
     pub matches: Arc<Mutex<MatchCtrl>>,
     pub session: Arc<Mutex<SessionSeen>>,
     /// Serialises whole matches WITHOUT blocking the read paths. The
@@ -171,6 +172,7 @@ impl Argus {
             .map(|p| SessionSeen::load(&p))
             .unwrap_or_default();
         Self {
+            tool_router: Self::annotated_tool_router(),
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
             run_gate: Arc::new(Mutex::new(())),
             session: Arc::new(Mutex::new(seen)),
@@ -3045,9 +3047,25 @@ fn completion_values(request: &CompleteRequestParams, cfg: Option<&Config>) -> C
     filter_completion_values(values, &request.argument.value, comma_separated)
 }
 
-#[tool_handler(router = Self::annotated_tool_router())]
 #[prompt_handler]
 impl ServerHandler for Argus {
+    async fn call_tool(
+        &self,
+        request: CallToolRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResponse, McpError> {
+        let call = ToolCallContext::new(self, request, context);
+        self.tool_router.call(call).await
+    }
+
+    async fn list_tools(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListToolsResult, McpError> {
+        Ok(ListToolsResult::with_all_items(self.tool_router.list_all()))
+    }
+
     fn get_info(&self) -> ServerInfo {
         ServerInfo::new(
             ServerCapabilities::builder()
@@ -3270,6 +3288,10 @@ mod tests {
             "instructions advertise a different lab version: {instructions}"
         );
         assert!(info.capabilities.completions.is_some());
+        assert!(
+            !info.capabilities.supports_tasks(),
+            "the explicit dispatcher must not advertise Tasks before handlers exist"
+        );
         assert_eq!(
             info.capabilities
                 .resources
@@ -3681,8 +3703,8 @@ mod tests {
 
     #[test]
     fn every_tool_publishes_an_explicit_safety_contract() {
-        let router = Argus::annotated_tool_router();
-        let tools = router.list_all();
+        let server = Argus::new();
+        let tools = server.tool_router.list_all();
 
         assert_eq!(tools.len(), READ_ONLY_TOOLS.len() + MUTATING_TOOLS.len());
         for tool in &tools {
