@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**A MAPLESS DEFAULT BASELINE CAN ASK INSTEAD OF GUESSING** (#471, part of
+#370). `compare_runs` still infers the candidate map normally and never
+prompts for explicit `map` or `log_a`. Only an omitted default baseline plus a
+candidate with no map may elicit a choice, and only from configured baseline
+bands whose tapes exist. Unsupported, rejected, cancelled, malformed, or
+timed-out elicitation preserves the existing caller-visible error.
+
 **LIVE MCP RESOURCES CAN NOW REPLACE A POLLING LOOP** (#470, part of #370).
 The server advertises resource subscriptions for `argus://last` and
 `argus://lab`, supports both the current long-lived subscription request and
