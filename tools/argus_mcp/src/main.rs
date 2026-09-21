@@ -547,6 +547,8 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             }
             let ctrls = positional.get(1).map(|s| split(s)).unwrap_or_default();
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            argus_mcp::build_identity::require_authoritative(&cfg)
+                .map_err(|e| anyhow::anyhow!(e))?;
             let report = if ctrls.is_empty() {
                 argus_mcp::intel::compare_runs_band(&cfg, &cands, None, primary.as_deref())
                     .map_err(|e| anyhow::anyhow!(e))?

@@ -7,6 +7,7 @@ use serde::Serialize;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LabStatus {
+    pub lab_identity: crate::build_identity::LabIdentity,
     pub ready: bool,
     pub config: ConfigReport,
     pub maps: Vec<LabMap>,
@@ -61,6 +62,7 @@ pub fn lab_status(cfg: &Config, live: Option<MatchStatus>) -> LabStatus {
         .collect();
     let recommend = recommend(ready, &maps, &recent_runs, live.as_ref());
     LabStatus {
+        lab_identity: crate::build_identity::inspect(cfg),
         ready,
         config,
         maps,

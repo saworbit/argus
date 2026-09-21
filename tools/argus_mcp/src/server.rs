@@ -542,6 +542,13 @@ fn json_value<T: Serialize>(value: &T) -> Result<serde_json::Value, McpError> {
     if let (Some(note), serde_json::Value::Object(map)) = (crate::stale::banner(), &mut v) {
         map.insert("lab_stale".into(), serde_json::Value::String(note));
     }
+    if let (Ok(cfg), serde_json::Value::Object(map)) = (Config::load(), &mut v) {
+        map.insert(
+            "lab_identity".into(),
+            serde_json::to_value(crate::build_identity::inspect(&cfg))
+                .map_err(|e| McpError::internal_error(e.to_string(), None))?,
+        );
+    }
     Ok(v)
 }
 
@@ -591,10 +598,22 @@ fn report_json_ok<T: Serialize>(
 }
 
 fn csv_text(body: String) -> String {
-    match crate::stale::banner() {
-        Some(note) => format!("# lab_stale: {note}\n{body}"),
-        None => body,
+    let mut headers = String::new();
+    if let Ok(cfg) = Config::load() {
+        let identity = crate::build_identity::inspect(&cfg);
+        headers.push_str(&format!(
+            "# lab_identity: running={} build={} checkout={} source={} authoritative={}\n",
+            identity.running_version,
+            identity.build_source,
+            identity.checkout_version.as_deref().unwrap_or("unreadable"),
+            identity.checkout_source.as_deref().unwrap_or("unreadable"),
+            identity.authoritative,
+        ));
     }
+    if let Some(note) = crate::stale::banner() {
+        headers.push_str(&format!("# lab_stale: {note}\n"));
+    }
+    format!("{headers}{body}")
 }
 
 fn report_csv_ok(body: String) -> Result<CallToolResult, McpError> {
@@ -630,7 +649,14 @@ fn png_block(path: &str) -> Option<ContentBlock> {
 fn tool_err(msg: impl Into<String>) -> Result<CallToolResult, McpError> {
     let error = msg.into();
     let hint = hint_for(&error);
-    let body = serde_json::json!({ "error": error, "hint": hint });
+    let mut body = serde_json::json!({ "error": error, "hint": hint });
+    if let (Ok(cfg), serde_json::Value::Object(map)) = (Config::load(), &mut body) {
+        map.insert(
+            "lab_identity".into(),
+            serde_json::to_value(crate::build_identity::inspect(&cfg))
+                .map_err(|e| McpError::internal_error(e.to_string(), None))?,
+        );
+    }
     Ok(CallToolResult::error(vec![ContentBlock::text(
         serde_json::to_string_pretty(&body).unwrap_or(error),
     )]))
@@ -1628,6 +1654,9 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
         let mut map = args.map.clone();
         if args.log_a.is_none()
             && map.is_none()
@@ -1853,6 +1882,9 @@ impl Argus {
             Err(r) => return Ok(r),
         };
         if let Some(b) = args.log_b.as_deref() {
+            if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+                return tool_err(error);
+            }
             let a = args.log_a.as_deref().unwrap_or("baseline");
             match intel_compare(&cfg, a, b, args.map.as_deref()) {
                 Ok(r) => json_ok(&r.next_steps),
@@ -2360,6 +2392,9 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
         let progress = ProgressReporter::new(meta, peer);
         let repeats = args.repeats.unwrap_or(3).clamp(1, 5);
         let compile_units = u32::from(args.compile.unwrap_or(true));
@@ -2553,6 +2588,9 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
         let progress = ProgressReporter::new(meta, peer);
         let compile_units = u32::from(args.compile.unwrap_or(true));
         let total = f64::from(compile_units + 2);
@@ -2713,6 +2751,9 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
         let progress = ProgressReporter::new(meta, peer);
         let compile_units = usize::from(args.compile.unwrap_or(true));
         let total = (compile_units + maps.len() + 1) as f64;
