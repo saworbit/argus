@@ -2896,6 +2896,8 @@ enum CompletionSource {
     Maps,
     MapList,
     Runs(&'static [&'static str]),
+    Functions,
+    Constants,
     Primary,
     GraphHashes(Option<String>),
 }
@@ -2918,6 +2920,8 @@ fn completion_source(request: &CompleteRequestParams) -> Option<CompletionSource
             | ("argus://graph/{map}/{hash}", "map")
             | ("argus://probe-verdicts/{map}/{hash}", "map") => Some(CompletionSource::Maps),
             ("argus://run/{name}", "name") => Some(CompletionSource::Runs(&["latest"])),
+            ("argus://fn/{name}", "name") => Some(CompletionSource::Functions),
+            ("argus://const/{name}", "name") => Some(CompletionSource::Constants),
             ("argus://graph/{map}/{hash}", "hash")
             | ("argus://probe-verdicts/{map}/{hash}", "hash") => {
                 let map = request
@@ -2999,6 +3003,27 @@ fn completion_values(request: &CompleteRequestParams, cfg: Option<&Config>) -> C
             );
             values
         }
+        CompletionSource::Functions => cfg
+            .and_then(|cfg| index_argus(cfg).ok())
+            .map(|index| {
+                index
+                    .functions
+                    .into_iter()
+                    .filter(|function| !function.proto)
+                    .map(|function| function.name)
+                    .collect()
+            })
+            .unwrap_or_default(),
+        CompletionSource::Constants => cfg
+            .and_then(|cfg| index_argus(cfg).ok())
+            .map(|index| {
+                index
+                    .constants
+                    .into_iter()
+                    .map(|constant| constant.name)
+                    .collect()
+            })
+            .unwrap_or_default(),
         CompletionSource::Primary => ["engagements", "freezes", "lava_deaths", "stall_parity"]
             .into_iter()
             .map(str::to_string)
@@ -3443,6 +3468,56 @@ mod tests {
         assert_eq!(hashes.len(), 1);
         assert_eq!(hashes[0].len(), 32);
         assert!(hashes[0].bytes().all(|byte| byte.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn completion_routes_qc_symbols_and_applies_the_protocol_ceiling() {
+        let root = TestDir::new("server-completion-symbols").unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("maps")).unwrap();
+        let mut source = String::from(
+            "float AR_JUMPVEL = 270;\nvoid() Argus_Proto;\nvoid() Argus_MoveHazard = {};\nvoid() Argus_ModelIndex = {};\n",
+        );
+        for index in 0..105 {
+            source.push_str(&format!("float AR_C{index:03} = {index};\n"));
+        }
+        fs::write(root.path().join("src/argus.qc"), source).unwrap();
+        let cfg = completion_cfg(root.path());
+
+        let functions = CompleteRequestParams::new(
+            Reference::for_resource("argus://fn/{name}"),
+            ArgumentInfo::new("name", "argus_m"),
+        );
+        assert_eq!(
+            completion_values(&functions, Some(&cfg)).values,
+            ["Argus_ModelIndex", "Argus_MoveHazard"]
+        );
+
+        let constants = CompleteRequestParams::new(
+            Reference::for_resource("argus://const/{name}"),
+            ArgumentInfo::new("name", "ar_c"),
+        );
+        let completion = completion_values(&constants, Some(&cfg));
+        assert_eq!(completion.values.len(), CompletionInfo::MAX_VALUES);
+        assert_eq!(completion.total, Some(105));
+        assert_eq!(completion.has_more, Some(true));
+
+        assert!(completion_values(&functions, None).values.is_empty());
+        for uri in ["argus://path/{spec}", "argus://search/{needle}"] {
+            let free_form = CompleteRequestParams::new(
+                Reference::for_resource(uri),
+                ArgumentInfo::new(
+                    if uri.contains("path") {
+                        "spec"
+                    } else {
+                        "needle"
+                    },
+                    "a",
+                ),
+            );
+            assert!(completion_source(&free_form).is_none(), "{uri}");
+        }
     }
 
     #[test]

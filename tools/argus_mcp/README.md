@@ -588,7 +588,9 @@ The server also advertises MCP completions for supported prompt arguments and
 resource-template variables. Review prompts complete map, extensionless run
 and baseline names; `validate_change` completes maps and primary metrics;
 typed map/run/graph resources complete their names, with graph hashes derived
-from the selected map in completion context. The protocol does not define
+from the selected map in completion context. Function and constant resource
+variables complete from the same QC index their readers use; free-form path
+and search variables deliberately do not. The protocol does not define
 completion for arbitrary tool arguments, so the tools retain their existing
 validation rather than claiming autocomplete they cannot serve.
 

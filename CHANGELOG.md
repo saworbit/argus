@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**QC SYMBOL RESOURCES NOW COMPLETE FROM THE INDEX THAT READS THEM** (#473,
+follow-up to #465 and part of #370). `argus://fn/{name}` completes concrete
+function names and `argus://const/{name}` completes constants from the current
+QC index. They inherit case-insensitive prefix matching, sorting,
+deduplication, and the 100-value protocol ceiling; unavailable config stays
+empty, and free-form path/search variables still make no autocomplete claim.
+
 **DIRECT TOOL VALUES NOW HAVE PROTOCOL-NATIVE CATALOGS** (#472, part of
 #370). Read-only `argus://catalog/maps`, `/runs`, and `/baselines` resources
 expose exact map names, extensionless run names, valid aliases, and configured
