@@ -12,7 +12,7 @@ use crate::intel::{
 use crate::lab::{cartograph_all as all_atlases, lab_status as build_lab};
 use crate::learn::learn_hotspots;
 use crate::live::{knobs, snapshot, validate_tune};
-use crate::match_ctrl::{list_runs, MatchCtrl, DURATION_MAX, DURATION_MIN};
+use crate::match_ctrl::{list_runs, MatchCtrl, RunCancellation, DURATION_MAX, DURATION_MIN};
 use crate::nav_graph::{around_point, item_view, node_deep, route_ref};
 use crate::nav_sync::nav_sync_dispatch;
 use crate::navgen::nav_generate;
@@ -222,8 +222,15 @@ impl Argus {
         skill: Option<u32>,
         coop: Option<bool>,
         progress: Option<MatchProgress>,
+        cancellation: Option<RunCancellation>,
     ) -> Result<crate::match_ctrl::MatchRunResult, String> {
         let _one_at_a_time = self.run_gate.lock().await;
+        if cancellation
+            .as_ref()
+            .is_some_and(RunCancellation::is_requested)
+        {
+            return Err("match cancelled before startup".into());
+        }
         if let Some(p) = &progress {
             p.reporter
                 .send(p.start, p.total, format!("starting {}", p.label))
@@ -234,6 +241,9 @@ impl Argus {
             g.begin(cfg, map, duration_sec, run_name, slots, skill, coop)
                 .await?;
         }
+        if let Some(cancel) = &cancellation {
+            let _ = cancel.claim_live();
+        }
         let limit = duration_sec as u64;
         let mut last_reported = u64::MAX;
         loop {
@@ -241,7 +251,13 @@ impl Argus {
                 let mut g = self.matches.lock().await;
                 g.poll()
             };
-            if !running || elapsed >= limit || crate::match_ctrl::live_cancelled() {
+            if !running
+                || elapsed >= limit
+                || crate::match_ctrl::live_cancelled()
+                || cancellation
+                    .as_ref()
+                    .is_some_and(RunCancellation::is_requested)
+            {
                 break;
             }
             if elapsed != last_reported {
@@ -1114,6 +1130,7 @@ impl Argus {
                 None,
                 None,
                 None,
+                None,
             )
             .await
         {
@@ -1330,6 +1347,7 @@ impl Argus {
                     total: 1.0,
                     label: format!("{} match", args.map),
                 }),
+                None,
             )
             .await
         {
@@ -2328,6 +2346,7 @@ impl Argus {
                         total,
                         label: format!("{} tape {}/{}", args.map, i + 1, repeats),
                     }),
+                    None,
                 )
                 .await
             {
@@ -2514,6 +2533,7 @@ impl Argus {
                     total,
                     label: format!("{} campaign", args.map),
                 }),
+                None,
             )
             .await
         {
@@ -2657,6 +2677,7 @@ impl Argus {
                         total,
                         label: format!("{map} matrix match"),
                     }),
+                    None,
                 )
                 .await;
             match ran {
@@ -2737,6 +2758,7 @@ impl Argus {
                 Some(&format!("probe_{}", args.map)),
                 None,
                 args.skill,
+                None,
                 None,
                 None,
             )
@@ -3336,6 +3358,32 @@ mod tests {
             changed_resource_uris(&mut previous, current),
             ["argus://lab"]
         );
+    }
+
+    #[tokio::test]
+    async fn a_cancelled_waiting_run_never_starts_an_engine() {
+        let root = TestDir::new("server-prestart-cancel").unwrap();
+        let cancel = RunCancellation::new();
+        let _ = cancel.request();
+        let server = Argus::new();
+
+        let error = server
+            .drive_match(
+                &completion_cfg(root.path()),
+                "dm4",
+                DURATION_MIN,
+                Some("never_started"),
+                None,
+                None,
+                None,
+                None,
+                Some(cancel),
+            )
+            .await
+            .unwrap_err();
+
+        assert_eq!(error, "match cancelled before startup");
+        assert!(!server.matches.lock().await.status().running);
     }
 
     #[test]

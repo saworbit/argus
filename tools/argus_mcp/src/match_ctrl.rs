@@ -6,6 +6,7 @@ use crate::parse_arglog::{parse_arglog, MatchSummary};
 use crate::paths::{default_run_name, valid_run_name};
 use serde::Serialize;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -147,6 +148,7 @@ impl MatchCtrl {
                     decorate_status(&mut snap);
                     self.last = Some(snap.clone());
                     self.live = None;
+                    clear_live();
                     return snap;
                 }
                 Ok(None) => {}
@@ -597,35 +599,108 @@ fn decorate_status(st: &mut MatchStatus) {
 /// match_stop used to queue behind it: a client that closed stdio mid
 /// match left the engine holding UDP 26000 against the next server.
 /// At most one match is live by design, so one slot is enough.
-static LIVE_PID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
-static LIVE_CANCEL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static LIVE_PID: AtomicU32 = AtomicU32::new(0);
+static LIVE_CANCEL: AtomicBool = AtomicBool::new(false);
+/// Zero means the live child belongs only to the traditional global
+/// `match_stop` / shutdown path. A non-zero value is the cancellable run that
+/// may stop it. The owner check prevents a late task cancellation from taking
+/// a PID registered by a successor.
+static LIVE_OWNER: AtomicU64 = AtomicU64::new(0);
+static NEXT_LIVE_OWNER: AtomicU64 = AtomicU64::new(1);
+
+/// One run's cancellation identity. Creating or cancelling a waiting owner
+/// never touches the process-global live slot; only `claim_live` associates it
+/// with the child that `MatchCtrl::begin` just registered.
+#[derive(Clone, Debug)]
+pub struct RunCancellation {
+    id: u64,
+    requested: Arc<AtomicBool>,
+}
+
+impl Default for RunCancellation {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RunCancellation {
+    pub fn new() -> Self {
+        Self {
+            id: NEXT_LIVE_OWNER.fetch_add(1, Ordering::SeqCst).max(1),
+            requested: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    /// Record cooperative cancellation and kill the child only if this run
+    /// still owns the live slot.
+    pub fn request(&self) -> Option<u32> {
+        self.requested.store(true, Ordering::SeqCst);
+        cancel_live_owned(self.id)
+    }
+
+    pub fn is_requested(&self) -> bool {
+        self.requested.load(Ordering::SeqCst)
+    }
+
+    /// Claim the child registered by the current `begin`. A cancellation that
+    /// arrived during startup is applied after the PID becomes reachable.
+    pub fn claim_live(&self) -> bool {
+        if LIVE_PID.load(Ordering::SeqCst) == 0 {
+            return false;
+        }
+        let claimed = LIVE_OWNER
+            .compare_exchange(0, self.id, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok();
+        if claimed && self.is_requested() {
+            let _ = cancel_live_owned(self.id);
+        }
+        claimed
+    }
+}
 
 fn register_live(pid: u32) {
-    LIVE_CANCEL.store(false, std::sync::atomic::Ordering::SeqCst);
-    LIVE_PID.store(pid, std::sync::atomic::Ordering::SeqCst);
+    LIVE_OWNER.store(0, Ordering::SeqCst);
+    LIVE_CANCEL.store(false, Ordering::SeqCst);
+    LIVE_PID.store(pid, Ordering::SeqCst);
 }
 
 fn clear_live() {
-    LIVE_PID.store(0, std::sync::atomic::Ordering::SeqCst);
-    LIVE_CANCEL.store(false, std::sync::atomic::Ordering::SeqCst);
+    LIVE_OWNER.store(0, Ordering::SeqCst);
+    LIVE_PID.store(0, Ordering::SeqCst);
+    LIVE_CANCEL.store(false, Ordering::SeqCst);
 }
 
 /// True while a caller has asked the live match to end early.
 pub fn live_cancelled() -> bool {
-    LIVE_CANCEL.load(std::sync::atomic::Ordering::SeqCst)
+    LIVE_CANCEL.load(Ordering::SeqCst)
 }
 
 /// Ask the live match to end and kill its engine now, without taking
 /// the MatchCtrl mutex. Returns the pid it killed, if any. The owner
 /// still runs its own stop path and tidies up.
 pub fn cancel_live() -> Option<u32> {
-    LIVE_CANCEL.store(true, std::sync::atomic::Ordering::SeqCst);
-    let pid = LIVE_PID.swap(0, std::sync::atomic::Ordering::SeqCst);
+    LIVE_OWNER.store(0, Ordering::SeqCst);
+    LIVE_CANCEL.store(true, Ordering::SeqCst);
+    let pid = LIVE_PID.swap(0, Ordering::SeqCst);
     if pid != 0 && crate::engine::kill_pid(pid) {
         Some(pid)
     } else {
         None
     }
+}
+
+fn take_owned_live_pid(owner: u64) -> Option<u32> {
+    LIVE_OWNER
+        .compare_exchange(owner, 0, Ordering::SeqCst, Ordering::SeqCst)
+        .ok()?;
+    LIVE_CANCEL.store(true, Ordering::SeqCst);
+    let pid = LIVE_PID.swap(0, Ordering::SeqCst);
+    (pid != 0).then_some(pid)
+}
+
+fn cancel_live_owned(owner: u64) -> Option<u32> {
+    let pid = take_owned_live_pid(owner)?;
+    crate::engine::kill_pid(pid).then_some(pid)
 }
 
 fn harvest(live: &LiveMatch) -> String {
@@ -882,8 +957,18 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{take_budgeted, TAIL_BUDGET_BYTES, TAIL_MAX_LINES};
+    use super::{
+        cancel_live, clear_live, live_cancelled, register_live, take_budgeted, take_owned_live_pid,
+        RunCancellation, LIVE_OWNER, LIVE_PID, TAIL_BUDGET_BYTES, TAIL_MAX_LINES,
+    };
     use crate::test_support::{git_test_lock, run_git, TestDir};
+
+    fn live_test_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+        LOCK.get_or_init(|| std::sync::Mutex::new(()))
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
 
     /// A poll has a CEILING on what it costs, whatever the match is
     /// doing. Eighty long lines were six times eighty short ones,
@@ -1152,6 +1237,7 @@ mod tests {
     // while match_run holds the MatchCtrl mutex.
     #[test]
     fn cancel_live_is_reachable_without_the_mutex() {
+        let _serial = live_test_lock();
         clear_live();
         assert!(!live_cancelled());
         assert_eq!(cancel_live(), None, "nothing live, nothing to kill");
@@ -1159,6 +1245,37 @@ mod tests {
         // starting a match clears the flag again
         register_live(0);
         assert!(!live_cancelled());
+        clear_live();
+    }
+
+    #[test]
+    fn run_cancellation_is_inert_until_its_child_is_claimed() {
+        let _serial = live_test_lock();
+        clear_live();
+        let run = RunCancellation::new();
+
+        assert_eq!(run.request(), None);
+        assert!(run.is_requested());
+        assert_eq!(LIVE_PID.load(std::sync::atomic::Ordering::SeqCst), 0);
+        assert_eq!(LIVE_OWNER.load(std::sync::atomic::Ordering::SeqCst), 0);
+        clear_live();
+    }
+
+    #[test]
+    fn only_the_claimed_run_can_take_the_live_pid() {
+        let _serial = live_test_lock();
+        clear_live();
+        register_live(424_242);
+        let owner = RunCancellation::new();
+        let stale = RunCancellation::new();
+
+        assert!(owner.claim_live());
+        assert!(!stale.claim_live());
+        assert_eq!(take_owned_live_pid(stale.id), None);
+        assert_eq!(LIVE_PID.load(std::sync::atomic::Ordering::SeqCst), 424_242);
+        assert_eq!(take_owned_live_pid(owner.id), Some(424_242));
+        assert_eq!(LIVE_PID.load(std::sync::atomic::Ordering::SeqCst), 0);
+        assert!(live_cancelled());
         clear_live();
     }
 
