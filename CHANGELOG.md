@@ -9,6 +9,13 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**STALE LABS CANNOT ISSUE QUALITY-GATE VERDICTS** (#499). Structured MCP
+responses now identify the running package and build-time source fingerprint
+beside the checkout identity. Read-only inspection remains usable under skew,
+but compare and experiment surfaces refuse until the documented install command
+is run and the MCP client restarted. This catches a long-lived old process even
+when no newer staged binary exists.
+
 **CONTROL AND CANDIDATE BOTS CAN SHARE A COUNTERBALANCED MATCH** (#374).
 `argus-mcp within-ab` runs two tapes with four bots, two per arm, then swaps
 the slot mask so personality cannot masquerade as treatment effect. Reports
