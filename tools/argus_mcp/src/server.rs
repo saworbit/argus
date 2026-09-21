@@ -21,6 +21,7 @@ use crate::qc_index::{index_argus, qc_file_slice, qc_find, qc_read, qc_search};
 use crate::see_alias::normalize_see;
 use crate::session::{ExperimentRecord, SessionSeen};
 use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, timeline};
+use crate::task_store::TaskStore;
 use rmcp::handler::server::tool::{ToolCallContext, ToolRouter};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
@@ -35,7 +36,7 @@ use rmcp::model::{
     UnsubscribeRequestParams, UpdateTaskParams,
 };
 use rmcp::service::{ElicitationMode, RequestContext, RoleServer, SubscriptionContext};
-use rmcp::task_manager::{TaskContext, TaskExit, TaskManager, TaskOptions};
+use rmcp::task_manager::{TaskContext, TaskExit, TaskOptions};
 use rmcp::ErrorData as McpError;
 use rmcp::{
     prompt, prompt_handler, prompt_router, schemars, tool, tool_router, Peer, ServerHandler,
@@ -110,7 +111,7 @@ cause/reach_pct/item_control fields. Prefer native tools over extras."
 #[derive(Clone)]
 pub struct Argus {
     tool_router: ToolRouter<Argus>,
-    tasks: TaskManager,
+    tasks: TaskStore,
     /// Test and embedded-harness override. Normal server construction always
     /// loads the lab configuration at execution time.
     task_match_config: Option<Config>,
@@ -179,7 +180,7 @@ impl Argus {
             .unwrap_or_default();
         Self {
             tool_router: Self::annotated_tool_router(),
-            tasks: TaskManager::new(),
+            tasks: TaskStore::default(),
             task_match_config: None,
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
             run_gate: Arc::new(Mutex::new(())),
@@ -360,11 +361,7 @@ impl Argus {
         let server = self.clone();
         let cancellation = RunCancellation::new();
         self.tasks.spawn(
-            TaskOptions::new()
-                // A TTL expiry aborts its future. Match tasks instead remain
-                // cooperatively cancellable so their engine cleanup always runs.
-                .with_ttl_ms(None)
-                .with_status_message("waiting for the match slot"),
+            TaskOptions::new().with_status_message("waiting for the match slot"),
             move |context| {
                 Box::pin(async move {
                     let watch_context = context.clone();
@@ -3656,7 +3653,10 @@ mod tests {
         };
         assert_eq!(created.result_type, ResultType::TASK);
         assert_eq!(created.task.poll_interval_ms, Some(1_000));
-        assert_eq!(created.task.ttl_ms, None);
+        assert_eq!(
+            created.task.ttl_ms,
+            Some(crate::task_store::MATCH_TASK_TTL.as_millis() as u64)
+        );
         let task_id = created.task.task_id.clone();
         let working = client
             .peer()
