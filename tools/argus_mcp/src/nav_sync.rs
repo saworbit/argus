@@ -4,6 +4,39 @@ use crate::config::Config;
 use serde::Serialize;
 use std::fs;
 
+#[derive(Debug, Clone, Copy)]
+pub struct Registration {
+    pub branch: bool,
+    pub progs: bool,
+}
+
+impl Registration {
+    pub fn complete(self) -> bool {
+        self.branch && self.progs
+    }
+}
+
+pub fn registration(cfg: &Config, map: &str) -> Registration {
+    registration_text(
+        &fs::read_to_string(cfg.src.join("argus_nav_dispatch.qc")).unwrap_or_default(),
+        &fs::read_to_string(cfg.src.join("progs.src")).unwrap_or_default(),
+        map,
+    )
+}
+
+fn registration_text(dispatch: &str, progs: &str, map: &str) -> Registration {
+    static COMMENTS: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let comments = COMMENTS.get_or_init(|| regex::Regex::new(r"(?s)/\*.*?\*/|//[^\r\n]*").unwrap());
+    let dispatch = comments.replace_all(dispatch, " ");
+    let progs = comments.replace_all(progs, " ");
+    Registration {
+        branch: dispatch.contains(&format!("mapname == \"{map}\"")),
+        progs: progs
+            .lines()
+            .any(|line| line.trim() == format!("argus_nav_{map}.qc")),
+    }
+}
+
 fn require_playable_first_registration(cfg: &Config, map: &str) -> Result<(), String> {
     let bsp = cfg.maps.join(format!("{map}.bsp"));
     let graph = cfg.src.join(format!("argus_nav_{map}.qc.json"));
@@ -82,11 +115,11 @@ pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
         fs::read_to_string(&progs_path).map_err(|e| format!("{}: {e}", progs_path.display()))?;
 
     for map in &maps {
-        let branch = format!("mapname == \"{map}\"");
         let spawn = format!("Argus_Nav_Spawn_{map}");
-        let has_branch = disp.contains(&branch);
+        let state = registration_text(&disp, &progs, map);
+        let has_branch = state.branch;
         let qc_line = format!("argus_nav_{map}.qc");
-        let has_qc = progs.contains(&qc_line);
+        let has_qc = state.progs;
         if !(has_branch && has_qc) {
             require_playable_first_registration(cfg, map)?;
         }
@@ -158,6 +191,82 @@ fn insert_progs_line(src: &str, qc_line: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn registration_ignores_comments_and_requires_an_exact_progs_line() {
+        let branch = "if (mapname == \"fixture\") spawn ();";
+        for (dispatch, progs, expected) in [
+            (branch, "argus_nav_fixture.qc\n", (true, true)),
+            (branch, "", (true, false)),
+            ("", "argus_nav_fixture.qc\n", (false, true)),
+            ("// if (mapname == \"fixture\")", "", (false, false)),
+            ("/* if (mapname == \"fixture\") */", "", (false, false)),
+            (branch, "// argus_nav_fixture.qc\n", (true, false)),
+            (branch, "argus_nav_fixture.qc.bak\n", (true, false)),
+        ] {
+            let state = registration_text(dispatch, progs, "fixture");
+            assert_eq!((state.branch, state.progs), expected);
+        }
+    }
+
+    #[test]
+    fn registration_requires_both_build_entries_on_read_surfaces() {
+        let root = crate::test_support::TestDir::new("nav-registration").unwrap();
+        let mut cfg = Config::load_for_reads().unwrap();
+        cfg.root = root.path().to_path_buf();
+        cfg.src = cfg.root.join("src");
+        cfg.maps = cfg.root.join("maps");
+        cfg.basedir = cfg.root.join("engine");
+        fs::create_dir_all(&cfg.src).unwrap();
+        fs::create_dir_all(&cfg.maps).unwrap();
+        fs::write(
+            cfg.maps.join("fixture.bsp"),
+            crate::bsp::write_mini_bsp(
+                "{\n\"classname\" \"worldspawn\"\n}\n",
+                [0.0; 3],
+                [128.0; 3],
+            ),
+        )
+        .unwrap();
+        fs::write(
+            cfg.src.join("argus_nav_fixture.qc.json"),
+            r#"{"nodes":[[0,0,24]],"links":[]}"#,
+        )
+        .unwrap();
+        fs::write(
+            cfg.src.join("argus_nav_dispatch.qc"),
+            "if (mapname == \"fixture\") Argus_Nav_Spawn_fixture ();\n",
+        )
+        .unwrap();
+        for (index, (progs, expected)) in [
+            ("argus_nav_dispatch.qc\n", false),
+            ("argus_nav_fixture.qc\nargus_nav_dispatch.qc\n", true),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            fs::write(cfg.src.join("progs.src"), progs).unwrap();
+            fs::OpenOptions::new()
+                .write(true)
+                .open(cfg.src.join("progs.src"))
+                .unwrap()
+                .set_modified(
+                    std::time::UNIX_EPOCH + std::time::Duration::from_secs(100 + index as u64),
+                )
+                .unwrap();
+            let atlas = crate::cartograph::cartograph(&cfg, "fixture").unwrap();
+            assert_eq!(atlas.dispatcher_known, expected);
+            let lab = crate::lab::lab_status(&cfg, None);
+            assert_eq!(
+                lab.maps
+                    .iter()
+                    .find(|m| m.name == "fixture")
+                    .unwrap()
+                    .dispatcher,
+                expected
+            );
+        }
+    }
 
     #[test]
     fn inserts_branch_before_close() {

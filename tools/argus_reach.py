@@ -10,7 +10,7 @@ fresh regen.
 
 Two figures per spawn, because the v3.69 dm2 storm hid behind the
 first one:
-  all      - every forward edge (walk/drop, jump, tele, RJ, lift,
+  all      - every forward edge (walk/drop, jump, door, tele, RJ, lift,
              swim, train, sprint), navgen 7h semantics.
   ungated  - equipment-gated edges removed (rocket-jump needs
              RL+rocket+100 effective health, sprint links are skill
@@ -67,17 +67,19 @@ def bsp_spawns(path):
 
 
 def load_graph(path):
-    nav = json.loads(path.read_text())
+    from argus_navjson import load_nav, pairs, WALK, FREE, GATED
+    nav = load_nav(path)
     nodes = nav["nodes"]
     fwd_walk = [[] for _ in nodes]
-    for entry in nav.get("links", []):
-        i, j = entry[0], entry[1]
+    blocked = set(pairs(nav, GATED))
+    for i, j in pairs(nav, WALK):
+        if (i, j) in blocked:
+            continue
         fwd_walk[i].append(j)
     # typed hops every bot can take
-    free = (nav.get("teles", []) + nav.get("liftlinks", [])
-            + nav.get("swimlinks", []) + nav.get("trainlinks", []))
+    free = [pair for pair in pairs(nav, FREE) if pair not in blocked]
     # typed hops behind an equipment or skill gate
-    gated = nav.get("rjlinks", []) + nav.get("sprintlinks", [])
+    gated = list(pairs(nav, GATED))
     return nodes, fwd_walk, free, gated
 
 

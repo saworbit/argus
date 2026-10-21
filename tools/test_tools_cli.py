@@ -551,7 +551,7 @@ tool_timeout_sec = 700
         progs = src / "progs.src"
         dispatcher = src / "argus_nav_dispatch.qc"
         progs.write_text("progs.dat\nargus_nav_dispatch.qc\n")
-        dispatcher.write_text("void() Argus_Nav_Spawn =\n{\n};\n")
+        dispatcher.write_text("void() Argus_Nav_Spawn =\n{\n};\n// mapname == \"fixture\"\n")
 
         registered = self.run_tool(*args, "--register")
 

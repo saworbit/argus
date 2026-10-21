@@ -396,6 +396,14 @@ still live only inside the PAKs.
 Pass `register=false` to generate an experimental graph before its reach and
 mill passes.
 
+Registration flags on the atlas, GUI and lab require both the dispatcher
+branch and the exact nav QC line in `progs.src`; commented entries do not count.
+The first-registration reach gate includes ordinary jumps and door, teleporter,
+lift, swim and train links. It excludes rocket-jump and sprint links because
+a fresh spawn cannot assume the required equipment or skill. Python reach and
+pointfile readers use the same family list, with gated routes available only
+in their explicit gated view.
+
 A match brief attaches `goal_reach`: each goaled classname gets the
 cartographer's `reach`.
 
