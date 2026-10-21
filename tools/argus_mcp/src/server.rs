@@ -129,6 +129,7 @@ pub struct Argus {
 struct ProgressReporter {
     token: Option<rmcp::model::ProgressToken>,
     peer: Peer<RoleServer>,
+    last: Arc<Mutex<Option<f64>>>,
 }
 
 impl ProgressReporter {
@@ -136,26 +137,41 @@ impl ProgressReporter {
         Self {
             token: meta.get_progress_token(),
             peer,
+            last: Arc::new(Mutex::new(None)),
         }
     }
 
     async fn send(&self, progress: f64, total: f64, message: impl Into<String>) {
-        let Some(notification) =
-            progress_notification(self.token.as_ref(), progress, total, message.into())
-        else {
+        // Keep validation and transport in one critical section so clones
+        // cannot deliver increasing values out of order.
+        let mut last = self.last.lock().await;
+        let Some(notification) = progress_notification(
+            self.token.as_ref(),
+            &mut last,
+            progress,
+            total,
+            message.into(),
+        ) else {
             return;
         };
-        let _ = self.peer.notify_progress(notification).await;
+        if let Err(error) = self.peer.notify_progress(notification).await {
+            eprintln!("progress notification: {error}");
+        }
     }
 }
 
 fn progress_notification(
     token: Option<&rmcp::model::ProgressToken>,
+    last: &mut Option<f64>,
     progress: f64,
     total: f64,
     message: String,
 ) -> Option<ProgressNotificationParam> {
+    if !progress.is_finite() || last.is_some_and(|value| progress <= value) {
+        return None;
+    }
     token.map(|token| {
+        *last = Some(progress);
         ProgressNotificationParam::new(token.clone(), progress)
             .with_total(total)
             .with_message(message)
@@ -434,18 +450,10 @@ impl Argus {
             }
         }
         if uris.iter().any(|uri| uri == "argus://lab") {
-            if let Some(cfg) = Config::load_for_reads()
-                .ok()
-                .filter(|cfg| cfg.root.exists())
-            {
-                let live = {
-                    let mut matches = self.matches.lock().await;
-                    matches.reap();
-                    matches.status()
-                };
-                if let Ok(value) = serde_json::to_string(&build_lab(&cfg, Some(live))) {
-                    snapshot.insert("argus://lab".into(), value);
-                }
+            let live = self.matches.lock().await.resource_state();
+            let session = self.session.lock().await.clone();
+            if let Ok(value) = serde_json::to_string(&(live, session)) {
+                snapshot.insert("argus://lab".into(), value);
             }
         }
         snapshot
@@ -3451,7 +3459,9 @@ mod tests {
 
     #[test]
     fn progress_notifications_are_opt_in_and_keep_stage_values() {
-        assert!(progress_notification(None, 1.0, 3.0, "compile".into()).is_none());
+        let mut last = None;
+        assert!(progress_notification(None, &mut last, 1.0, 3.0, "compile".into()).is_none());
+        assert_eq!(last, None);
 
         let token = rmcp::model::ProgressToken(rmcp::model::NumberOrString::String("run-7".into()));
         let stages = [
@@ -3463,7 +3473,8 @@ mod tests {
         let notifications: Vec<_> = stages
             .iter()
             .map(|(value, message)| {
-                progress_notification(Some(&token), *value, 3.0, (*message).into()).unwrap()
+                progress_notification(Some(&token), &mut last, *value, 3.0, (*message).into())
+                    .unwrap()
             })
             .collect();
 
@@ -3473,6 +3484,91 @@ mod tests {
         assert!(notifications.iter().all(|item| item.total == Some(3.0)));
         assert_eq!(notifications[2].message.as_deref(), Some("analyze"));
         assert_eq!(notifications[3].progress_token, token);
+    }
+
+    #[test]
+    fn progress_notifications_drop_repeated_and_backward_stage_values() {
+        let token = rmcp::model::ProgressToken(rmcp::model::NumberOrString::String("run-8".into()));
+        for compile in [false, true] {
+            let mut last = None;
+            let mut values = vec![0.0, 0.0];
+            if compile {
+                values.extend([1.0, 1.0, 1.0]);
+            }
+            values.extend([1.5, 2.0, 2.0, 2.0, 1.0, 2.5, 3.0, 3.0]);
+            let notifications: Vec<_> = values
+                .into_iter()
+                .filter_map(|value| {
+                    progress_notification(Some(&token), &mut last, value, 3.0, "stage".into())
+                })
+                .collect();
+            assert!(notifications
+                .windows(2)
+                .all(|pair| pair[0].progress < pair[1].progress));
+            assert_eq!(notifications.last().unwrap().progress, 3.0);
+        }
+    }
+
+    #[tokio::test]
+    async fn live_resource_snapshot_ignores_tape_growth_and_reports_lifecycle() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("subscription-state").unwrap();
+        let control = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![control.clone()]);
+        let uris = vec!["argus://lab".to_string()];
+        let mut previous = server.live_resource_snapshot(&uris).await;
+        server
+            .matches
+            .lock()
+            .await
+            .start(
+                &completion_cfg(root.path()),
+                "dm4",
+                Some(10),
+                Some("subscription"),
+                None,
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await),
+            ["argus://lab"]
+        );
+        for tick in 1..=3 {
+            fs::write(
+                root.path().join("runs/subscription/qconsole.log"),
+                FAKE_TAPE.repeat(tick),
+            )
+            .unwrap();
+            assert!(changed_resource_uris(
+                &mut previous,
+                server.live_resource_snapshot(&uris).await
+            )
+            .is_empty());
+        }
+        control.complete();
+        assert_eq!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await),
+            ["argus://lab"]
+        );
+        // An explicit read reaps the child and harvests its tape. That must
+        // not create a second lifecycle event for the same stopped match.
+        server.matches.lock().await.status();
+        assert!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await)
+                .is_empty()
+        );
+        server
+            .session
+            .lock()
+            .await
+            .note_see("run", Some("subscription"));
+        assert_eq!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await),
+            ["argus://lab"]
+        );
     }
 
     fn result_text(result: &CallToolResult) -> &str {

@@ -3,7 +3,8 @@
 
 The verdict joins two claims which stay deliberately separate:
 
-* every deathmatch spawn can route to every live pickup in the BSP;
+* every deathmatch spawn can route to every live pickup in the BSP without
+  equipment-gated rocket jumps or skill-gated sprints;
 * the current graph has a short engine probe for ordinary and jump links.
 
 Usage: python tools/argus_mapgate.py map.bsp nav.qc.json [probe.json]
@@ -14,6 +15,8 @@ import json
 import struct
 import sys
 from pathlib import Path
+
+from argus_navjson import edges as nav_edges, load_nav
 
 
 SPAWN_MAX_U = 200
@@ -76,17 +79,9 @@ def _is_pickup(classname):
 def _graph_edges(graph):
     count = len(graph.get("nodes", []))
     edges = [[] for _ in range(count)]
-    families = (
-        "links", "teles", "liftlinks", "swimlinks", "trainlinks",
-        "rjlinks", "sprintlinks",
-    )
-    for family in families:
-        for link in graph.get(family, []):
-            if len(link) < 2:
-                continue
-            source, target = int(link[0]), int(link[1])
-            if 0 <= source < count and 0 <= target < count:
-                edges[source].append(target)
+    # Every spawn must work before it acquires equipment or skill gates.
+    for source, target in nav_edges(graph):
+        edges[source].append(target)
     return edges
 
 
@@ -137,7 +132,7 @@ def assess_playability(bsp_path, graph_path, probe_path=None):
         probe_path = graph_path.with_name(name)
     probe_path = Path(probe_path)
 
-    graph = json.loads(graph_path.read_text())
+    graph = load_nav(graph_path)
     nodes = graph.get("nodes", [])
     digest = graph_md5(graph_path)
     entities = _parse_entities(bsp_path)

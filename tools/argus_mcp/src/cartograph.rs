@@ -370,7 +370,12 @@ pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
         .unwrap_or("unknown")
         .to_ascii_lowercase();
     let nav_path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
-    let stamps = vec![file_stamp(&path), file_stamp(&nav_path)];
+    let stamps = vec![
+        file_stamp(&path),
+        file_stamp(&nav_path),
+        file_stamp(&cfg.src.join("progs.src")),
+        file_stamp(&cfg.src.join("argus_nav_dispatch.qc")),
+    ];
     if let Ok(cache) = ATLAS_CACHE.lock() {
         if let Some(hit) = cache.get(&key).or_else(|| cache.get(&map)) {
             if stamps_fresh(&hit.stamps, &stamps) {
@@ -887,7 +892,7 @@ fn atlas_from_bsp(
     control.sort_by_key(|item| std::cmp::Reverse(item.value));
     control.truncate(12);
 
-    let dispatcher_known = dispatcher_knows(cfg, map);
+    let dispatcher_known = crate::nav_sync::registration(cfg, map).complete();
     let baseline_override = crate::intel::baseline_override_for(cfg, map);
     let recommended_baseline: Option<&str> = baseline_override
         .as_deref()
@@ -895,7 +900,7 @@ fn atlas_from_bsp(
     let mut implications = map_implications(map);
     if !dispatcher_known {
         implications.push(
-            "dispatcher has no branch for this map; bots degrade to line-of-sight seeking".into(),
+            "map registration needs both its dispatcher branch and progs.src entry; bots degrade to line-of-sight seeking".into(),
         );
     }
     if nav.is_none() {
@@ -1800,14 +1805,6 @@ fn map_implications(map: &str) -> Vec<String> {
         "lqdm2" => vec!["LibreQuake stand-in used for the original headless lab matches".into()],
         _ => Vec::new(),
     }
-}
-
-fn dispatcher_knows(cfg: &Config, map: &str) -> bool {
-    let path = cfg.src.join("argus_nav_dispatch.qc");
-    let Ok(text) = std::fs::read_to_string(path) else {
-        return false;
-    };
-    text.contains(&format!("mapname == \"{map}\""))
 }
 
 fn median_spawn_z(items: &[AtlasItem]) -> Option<f32> {

@@ -188,7 +188,20 @@ fn summarize<'a>(results: impl Iterator<Item = &'a TaskResult>) -> SplitSummary 
     }
 }
 
-fn report(suite: &TaskSuite, results: Vec<TaskResult>) -> BenchmarkReport {
+fn report(suite: &TaskSuite, mut results: Vec<TaskResult>) -> BenchmarkReport {
+    // The wall timeout includes transport grace. Only engine game time
+    // decides whether a completed route met its manifest budget.
+    for result in &mut results {
+        result.completed &= suite
+            .tasks
+            .iter()
+            .find(|task| task.name == result.name)
+            .is_some_and(|task| {
+                result.game_sec.is_some_and(|seconds| {
+                    seconds.is_finite() && seconds >= 0.0 && seconds <= task.budget_sec
+                })
+            });
+    }
     BenchmarkReport {
         suite: suite.name.clone(),
         map: suite.map.clone(),
@@ -362,14 +375,14 @@ mod tests {
     fn report_keeps_train_and_heldout_apart() {
         let rows = vec![
             TaskResult {
-                name: "a".into(),
+                name: "train_route".into(),
                 split: "train".into(),
                 completed: true,
                 game_sec: Some(4.0),
                 wall_sec: 4.0,
             },
             TaskResult {
-                name: "b".into(),
+                name: "heldout_route".into(),
                 split: "heldout".into(),
                 completed: false,
                 game_sec: Some(12.0),
@@ -382,5 +395,40 @@ mod tests {
         assert_eq!(report.heldout.completion_rate, 0.0);
         assert_eq!(report.train.median_game_sec, Some(4.0));
         assert_eq!(report.heldout.median_game_sec, None);
+    }
+
+    #[test]
+    fn report_scores_completion_against_game_time_budget() {
+        for (completed, seconds, expected) in [
+            (true, Some(9.9), true),
+            (true, Some(10.0), true),
+            (true, Some(10.1), false),
+            (false, Some(4.0), false),
+            (true, None, false),
+            (true, Some(f32::NAN), false),
+            (true, Some(f32::INFINITY), false),
+            (true, Some(-1.0), false),
+        ] {
+            let value = report(
+                &suite(),
+                vec![TaskResult {
+                    name: "train_route".into(),
+                    split: "train".into(),
+                    completed,
+                    game_sec: seconds,
+                    wall_sec: 0.1,
+                }],
+            );
+            assert_eq!(value.results[0].completed, expected, "elapsed {seconds:?}");
+            assert_eq!(value.all.completed, usize::from(expected));
+            assert_eq!(
+                value.train.completion_rate,
+                if expected { 1.0 } else { 0.0 }
+            );
+            assert_eq!(value.train.median_game_sec.is_some(), expected);
+            if seconds.is_some_and(|s| s.is_finite()) {
+                assert_eq!(value.results[0].game_sec, seconds);
+            }
+        }
     }
 }

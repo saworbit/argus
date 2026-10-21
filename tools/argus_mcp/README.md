@@ -396,10 +396,37 @@ still live only inside the PAKs.
 Pass `register=false` to generate an experimental graph before its reach and
 mill passes.
 
+Registration flags on the atlas, GUI and lab require both the dispatcher
+branch and the exact nav QC line in `progs.src`; commented entries do not count.
+The first-registration reach gate includes ordinary jumps and door, teleporter,
+lift, swim and train links. It excludes rocket-jump and sprint links because
+a fresh spawn cannot assume the required equipment or skill. Python reach and
+pointfile readers use the same family list, with gated routes available only
+in their explicit gated view.
+
 A match brief attaches `goal_reach`: each goaled classname gets the
 cartographer's `reach`.
 
 ## Demo ingest
+
+Python tape review, longitudinal scorecards and pointfile freeze overlays
+use `tools/argus_tape.py`. Its samples, bot/human/instrument split and freeze
+predicate match Rust, including legacy tracks and the busiest-level rule.
+The rule has no vertical-distance or inter-sample-gap filter. Human and
+instrument freezes remain outside bot totals. A shared fixture under
+`tools/testdata/` verifies Rust and all three Python consumers.
+
+`ARGEVT <name> tactic <phase-or-abort-reason>` retains the full phase/reason.
+Full briefs expose `tactic_*` event counts, compact briefs expose `tactics`,
+and Python review and scorecards report the same phase counts and abort
+reasons. `returnshot` records a shot, never an inferred hit or completion.
+Scorecard TSVs add six `tactic_*` phase columns and `tactic_abort_reasons`;
+existing rows retain their values and receive blank cells for the new fields.
+
+Event and death rows use complete sample/spawn identities before splitting
+the verb, with the longest known name taking precedence. The raw closed-verb
+regex is a fallback for legacy rows without identity context; those rows can
+remain ambiguous when a name contains a verb. This changes no emitted format.
 
 The 1 Hz ARGLOG tape is the ruler and the gates; a `.dem` is the
 microscope. A listen session records one with the map-taking form of
@@ -485,6 +512,10 @@ budgets, and `train` or `heldout` labels. Each suite pins the MD5 of its nav
 JSON: a regenerated graph invalidates the yardstick until its routes are
 reviewed deliberately. Reports preserve individual results and summarize
 completion rate plus median game time for all, train, and held-out tasks.
+Completion requires finite engine game time within the task's `budget_sec`,
+including the exact boundary. Late finishes keep their raw `game_sec` but
+count as incomplete and do not enter successful-time medians. Wall-clock
+grace only bounds the harness wait.
 Compilation and installation happen by default; `--no-compile` deliberately
 measures the currently installed build.
 
@@ -657,6 +688,8 @@ Long-running `match_run`, `experiment`, `campaign_experiment`, and
 supplies one. Notifications name the compile, match, and analysis stage;
 active matches advance by elapsed seconds against the requested duration.
 Progress delivery is best-effort and never changes the synchronous result.
+Repeated or backward progress values are skipped, including duplicate stage
+boundaries, so every delivered value strictly increases for its request token.
 Clients without progress support keep the existing call and polling behavior.
 
 The server also implements the SEP-2663 Tasks extension for `match_run`.
@@ -677,8 +710,9 @@ after completion, then are evicted. `match_status` and the owner-independent
 `argus://last` and `argus://lab` are live subscription resources. The server
 accepts both current `subscriptions/listen` filters and legacy
 `resources/subscribe` calls, then emits `notifications/resources/updated`
-only when the resource's serialized value changes. `argus://lab` reads include
-the current match status. Explicit resource reads, `match_status`, and
+only when match identity, running state, exit status, or session memory changes.
+Subscription ticks do not read or analyse the live tape. `argus://lab` reads
+include the full current match status. Explicit resource reads, `match_status`, and
 `since_line` polling remain supported fallbacks.
 
 `compare_runs` uses form elicitation for one genuinely ambiguous case: the

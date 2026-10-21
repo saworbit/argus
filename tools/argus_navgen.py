@@ -45,7 +45,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
 builds where a hand-maintained argus_nav_dispatch.qc selects per map.
 
 --register wires a first-time map into the build only after the generated
-graph passes the spawn-to-pickup reach gate and its graph digest has matching
+graph passes the ungated spawn-to-pickup reach gate and its graph digest has matching
 deathmatch mill passes for ordinary and generated jump links.
 
 --retype-doors is a topology-preserving mode. It does not generate a graph. It
@@ -74,6 +74,8 @@ from argus_nav_budget import (
 )
 from argus_nav_tactics import compute_tactics
 from argus_mapgate import assess_playability
+from argus_navjson import FAMILIES, load_nav
+from argus_registration import registration
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -606,8 +608,7 @@ if REANALYZE_TACTICS:
         print("error: --reanalyze-tactics needs shipped QC and JSON to "
               "exist already", file=sys.stderr)
         sys.exit(1)
-    with open(_jspath, encoding="utf-8") as _tf:
-        _tdoc = _tj.load(_tf)
+    _tdoc = load_nav(_jspath)
     _tnodes = [tuple(_p) for _p in _tdoc.get("nodes", [])]
     if not _tnodes:
         print("error: shipped nav JSON has no nodes", file=sys.stderr)
@@ -632,9 +633,9 @@ if REANALYZE_TACTICS:
             _tvis[_j][_i] = _seen
 
     _blocked_pairs = set()
-    for _key in ("jlinks", "doorlinks", "teles", "sprintlinks",
-                 "rjlinks", "liftlinks", "swimlinks", "trainlinks"):
-        _blocked_pairs.update(tuple(_p) for _p in _tdoc.get(_key, []))
+    for _key in FAMILIES:
+        if _key != "links":
+            _blocked_pairs.update(tuple(_p[:2]) for _p in _tdoc.get(_key, []))
     _twalks = [[] for _ in _tnodes]
     for _row in _tdoc.get("links", []):
         _a, _b = int(_row[0]), int(_row[1])
@@ -4055,8 +4056,8 @@ if "--register" in sys.argv[5:]:
               "the output; skipped")
     else:
         t = open(ps).read()
-        _registered_qc = qcname in t
-        _registered_map = f'"{MAPNAME}"' in open(dp).read()
+        with open(dp) as _dispatch_file:
+            _registered_map, _registered_qc = registration(_dispatch_file.read(), t, MAPNAME)
         if not (_registered_qc and _registered_map):
             _playability = assess_playability(BSP, OUTQC + ".json")
             print(_playability.line())
@@ -4079,7 +4080,7 @@ if "--register" in sys.argv[5:]:
         t = open(dp).read()
         if _register_gate_failed:
             pass
-        elif f'"{MAPNAME}"' in t:
+        elif registration(t, "", MAPNAME)[0]:
             print(f"register: dispatcher already routes {MAPNAME}")
         else:
             i = t.rfind("};")
