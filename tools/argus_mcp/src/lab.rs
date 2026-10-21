@@ -37,7 +37,7 @@ pub fn lab_status(cfg: &Config, live: Option<MatchStatus>) -> LabStatus {
         .unwrap_or_default()
         .into_iter()
         .map(|m| {
-            let dispatcher = dispatcher_knows(cfg, &m.name);
+            let dispatcher = crate::nav_sync::registration(cfg, &m.name).complete();
             let has_bsp = m.path.is_some();
             LabMap {
                 recipe: has_bsp.then(|| {
@@ -70,13 +70,6 @@ pub fn lab_status(cfg: &Config, live: Option<MatchStatus>) -> LabStatus {
         live,
         recommend,
     }
-}
-
-fn dispatcher_knows(cfg: &Config, map: &str) -> bool {
-    let path = cfg.src.join("argus_nav_dispatch.qc");
-    std::fs::read_to_string(path)
-        .map(|t| t.contains(&format!("mapname == \"{map}\"")))
-        .unwrap_or(false)
 }
 
 fn recommend(

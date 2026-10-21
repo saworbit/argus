@@ -52,6 +52,8 @@ side: they never touch the server, the bots, or a match.
 import argparse, json, re, struct, sys
 from pathlib import Path
 
+from argus_navjson import edges, load_nav
+
 ROOT = Path(__file__).resolve().parent.parent
 
 
@@ -59,8 +61,8 @@ def load(mapname):
     p = ROOT / "src" / f"argus_nav_{mapname}.qc.json"
     if not p.exists():
         sys.exit(f"no nav json for {mapname}: {p}")
-    d = json.loads(p.read_text())
-    nodes = [w["origin"] if isinstance(w, dict) else w for w in d["nodes"]]
+    d = load_nav(p)
+    nodes = d["nodes"]
     return d, nodes
 
 
@@ -408,7 +410,6 @@ def human_points(tape, step):
 # them finds shortcuts the bot was never offered. Measured on dm2:
 # including them matches the router's own hop count on 155 of 182
 # routes, excluding them on 164. Pass --gated to include them.
-GATED = ("rjlinks", "sprintlinks")
 
 
 def _adj(d, gated=False):
@@ -421,13 +422,8 @@ def _adj(d, gated=False):
     """
     n = len(d["nodes"])
     adj = [[] for _ in range(n)]
-    keys = ("links", "jlinks", "doorlinks", "liftlinks", "trainlinks",
-            "swimlinks", "teles") + (GATED if gated else ())
-    for key in keys:
-        for L in d.get(key, []):
-            a, b = L[0], L[1]
-            if 0 <= a < n and 0 <= b < n:
-                adj[a].append(b)
+    for a, b in edges(d, gated=gated):
+        adj[a].append(b)
     return adj
 
 

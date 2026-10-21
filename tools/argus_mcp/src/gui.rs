@@ -418,7 +418,7 @@ fn status_payload() -> serde_json::Value {
         .map(|m| {
             let dispatcher = cfg
                 .as_ref()
-                .map(|c| dispatcher_knows(c, &m.name))
+                .map(|c| crate::nav_sync::registration(c, &m.name).complete())
                 .unwrap_or(false);
             json!({
                 "name": m.name,
@@ -449,13 +449,6 @@ fn status_payload() -> serde_json::Value {
         "backups": backups,
         "installs": installs,
     })
-}
-
-fn dispatcher_knows(cfg: &Config, map: &str) -> bool {
-    let path = cfg.src.join("argus_nav_dispatch.qc");
-    std::fs::read_to_string(path)
-        .map(|t| t.contains(&format!("mapname == \"{map}\"")))
-        .unwrap_or(false)
 }
 
 fn map_brief(name: &str) -> Response {

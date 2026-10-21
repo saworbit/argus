@@ -28,6 +28,25 @@ def write_bsp(path, entities):
 
 
 class TestArgusMapGate(unittest.TestCase):
+    def test_door_only_hop_is_in_every_reader(self):
+        from argus_mapgate import _graph_edges
+        from argus_pointfile import _adj
+        from argus_reach import load_graph
+        graph = {"nodes": [[0, 0, 24], [64, 0, 24]], "doorlinks": [[0, 1]]}
+        self.assertIn(1, _graph_edges(graph)[0])
+        self.assertIn(1, _adj(graph)[0])
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "nav.json"
+            path.write_text(json.dumps(graph))
+            _, walk, free, _ = load_graph(path)
+        self.assertTrue(1 in walk[0] or (0, 1) in map(tuple, free))
+
+    def test_playability_does_not_assume_equipment_or_skill_gated_hops(self):
+        from argus_mapgate import _graph_edges
+        for family in ("rjlinks", "sprintlinks"):
+            graph = {"nodes": [[0, 0, 24], [64, 0, 24]], family: [[0, 1]]}
+            self.assertNotIn(1, _graph_edges(graph)[0])
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix="argus-mapgate-")
         self.root = Path(self.tmp.name)

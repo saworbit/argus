@@ -9,6 +9,11 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+Navigation readers share link families, include door-only hops and keep
+equipment and skill gates out of first-registration reach (#510). All map
+surfaces require both build entries for registration (#511). BSP hull walks
+share one descent and return solid on invalid or cyclic trees (#512).
+
 Fixed navigation benchmarks score completion against each task's game-time
 budget and retain late elapsed times without counting them as successes (#508).
 

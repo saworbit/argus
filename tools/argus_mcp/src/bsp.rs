@@ -11,6 +11,26 @@ pub const CONTENTS_WATER: i32 = -3;
 pub const CONTENTS_SLIME: i32 = -4;
 pub const CONTENTS_LAVA: i32 = -5;
 
+// A missing node/plane or exhausted guard is distinct from a leaf code:
+// hull 0 must never interpret a failed walk as leaf 1 (the -2 solid code).
+fn descend(
+    planes: &[([f32; 3], f32)],
+    mut node: i32,
+    point: [f32; 3],
+    get_node: impl Fn(usize) -> Option<(i32, i32, i32)>,
+) -> Option<i32> {
+    for _ in 0..4096 {
+        if node < 0 {
+            return Some(node);
+        }
+        let (plane, front, back) = get_node(node as usize)?;
+        let (normal, distance) = planes.get(plane as usize)?;
+        let side = normal[0] * point[0] + normal[1] * point[1] + normal[2] * point[2] - distance;
+        node = if side >= 0.0 { front } else { back };
+    }
+    (node < 0).then_some(node)
+}
+
 /// Render hull (hull 0). Leaves keep real contents, so this is the
 /// classifier for lava / slime / water. Clip hulls collapse liquids
 /// to empty, which is why dm2's trench was invisible to hull 1.
@@ -24,26 +44,15 @@ pub struct Hull0 {
 
 impl Hull0 {
     pub fn contents_at(&self, p: [f32; 3]) -> i32 {
-        let mut n = self.head;
-        let mut guard = 0;
-        while n >= 0 && guard < 4096 {
-            guard += 1;
-            let idx = n as usize;
-            if idx >= self.nodes.len() {
-                return CONTENTS_SOLID;
-            }
-            let (pi, c0, c1) = self.nodes[idx];
-            let Some((normal, dist)) = self.planes.get(pi as usize).copied() else {
-                return CONTENTS_SOLID;
-            };
-            let d = normal[0] * p[0] + normal[1] * p[1] + normal[2] * p[2] - dist;
-            n = if d >= 0.0 { c0 } else { c1 };
-        }
-        if n >= 0 {
+        let Some(leaf) = descend(&self.planes, self.head, p, |index| {
+            self.nodes.get(index).copied()
+        }) else {
             return CONTENTS_SOLID;
-        }
-        let leaf = (-1 - n) as usize;
-        self.leaves.get(leaf).copied().unwrap_or(CONTENTS_SOLID)
+        };
+        self.leaves
+            .get((-1 - leaf) as usize)
+            .copied()
+            .unwrap_or(CONTENTS_SOLID)
     }
 
     pub fn is_hazard(&self, p: [f32; 3]) -> bool {
@@ -75,22 +84,12 @@ pub struct ClipHull {
 
 impl ClipHull {
     pub fn contents_at(&self, p: [f32; 3]) -> i32 {
-        let mut n = self.head;
-        let mut guard = 0;
-        while n >= 0 && guard < 4096 {
-            guard += 1;
-            let idx = n as usize;
-            if idx >= self.nodes.len() {
-                return CONTENTS_SOLID;
-            }
-            let (pi, c0, c1) = self.nodes[idx];
-            let Some((normal, dist)) = self.planes.get(pi as usize).copied() else {
-                return CONTENTS_SOLID;
-            };
-            let d = normal[0] * p[0] + normal[1] * p[1] + normal[2] * p[2] - dist;
-            n = if d >= 0.0 { c0 as i32 } else { c1 as i32 };
-        }
-        n
+        descend(&self.planes, self.head, p, |index| {
+            self.nodes
+                .get(index)
+                .map(|&(plane, front, back)| (plane, i32::from(front), i32::from(back)))
+        })
+        .unwrap_or(CONTENTS_SOLID)
     }
 
     /// Stepped point sample. Good enough for item-to-node snaps.
@@ -450,6 +449,26 @@ fn set_lump(hdr: &mut [u8], i: usize, off: u32, len: u32) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hull_descent_fails_closed_on_cycles_and_bad_indices() {
+        let planes = vec![([0.0, 0.0, 1.0], 0.0)];
+        for (head, plane, child) in [(0, 0, 0), (5, 0, -1), (0, 5, -1)] {
+            let clip = ClipHull {
+                planes: planes.clone(),
+                nodes: vec![(plane, child, child)],
+                head,
+            };
+            assert_eq!(clip.contents_at([0.0; 3]), CONTENTS_SOLID);
+            let hull = Hull0 {
+                planes: planes.clone(),
+                nodes: vec![(plane, child as i32, child as i32)],
+                leaves: vec![CONTENTS_EMPTY, CONTENTS_WATER],
+                head,
+            };
+            assert_eq!(hull.contents_at([0.0; 3]), CONTENTS_SOLID);
+        }
+    }
 
     #[test]
     fn mini_bsp_roundtrip() {
