@@ -42,7 +42,9 @@ pub struct NavigationTask {
 pub struct TaskResult {
     pub name: String,
     pub split: String,
+    /// A success event with finite, nonnegative game time within the task budget.
     pub completed: bool,
+    /// Reported engine time, retained even when late completion is rejected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub game_sec: Option<f32>,
     pub wall_sec: f32,

@@ -9,6 +9,7 @@ FAMILIES = WALK + FREE + GATED
 
 
 def normalize_nav(nav):
+    """Copy a graph with object and array nodes represented as origin arrays."""
     return {**nav, "nodes": [
         node["origin"] if isinstance(node, dict) else node
         for node in nav.get("nodes", [])
@@ -16,10 +17,12 @@ def normalize_nav(nav):
 
 
 def load_nav(path):
+    """Read UTF-8 navigation JSON and normalize its node representation."""
     return normalize_nav(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
 def pairs(nav, families):
+    """Yield in-range directed endpoint pairs from the requested families."""
     count = len(nav.get("nodes", []))
     for family in families:
         for link in nav.get(family, []):

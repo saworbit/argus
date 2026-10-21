@@ -4,18 +4,23 @@ use crate::config::Config;
 use serde::Serialize;
 use std::fs;
 
+/// Independent build entries required to register a map.
 #[derive(Debug, Clone, Copy)]
 pub struct Registration {
+    /// A map-name branch is present in the dispatcher outside comments.
     pub branch: bool,
+    /// The generated QC filename occupies a complete progs.src line.
     pub progs: bool,
 }
 
 impl Registration {
+    /// Both the dispatcher branch and the compiler input must be present.
     pub fn complete(self) -> bool {
         self.branch && self.progs
     }
 }
 
+/// Check both build files; missing or unreadable files count as absent entries.
 pub fn registration(cfg: &Config, map: &str) -> Registration {
     registration_text(
         &fs::read_to_string(cfg.src.join("argus_nav_dispatch.qc")).unwrap_or_default(),

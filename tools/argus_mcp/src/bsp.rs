@@ -43,6 +43,7 @@ pub struct Hull0 {
 }
 
 impl Hull0 {
+    /// Return real leaf contents, or solid for an invalid or cyclic hull walk.
     pub fn contents_at(&self, p: [f32; 3]) -> i32 {
         let Some(leaf) = descend(&self.planes, self.head, p, |index| {
             self.nodes.get(index).copied()
@@ -83,6 +84,8 @@ pub struct ClipHull {
 }
 
 impl ClipHull {
+    /// Return clip contents, or solid for an invalid or cyclic hull walk.
+    /// Liquids appear empty in this hull; use hull 0 to classify hazards.
     pub fn contents_at(&self, p: [f32; 3]) -> i32 {
         descend(&self.planes, self.head, p, |index| {
             self.nodes

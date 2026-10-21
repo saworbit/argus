@@ -20,7 +20,8 @@ VERBS = frozenset(EVENT_VERBS.split("|"))
 def event_fields(line, names=()):
     """Resolve against complete sample identities before the legacy lexer.
 
-    Without known names, terminal spawn records supply their own identity.
+    Pass known names longest first. Terminal spawn records supply their own
+    identity.
     Other legacy rows keep the old closed-vocabulary interpretation.
     """
     if 'ARGEVT ' not in line:
@@ -43,6 +44,7 @@ def event_fields(line, names=()):
 
 
 def sample_row(line, lineno):
+    """Return (name, sample) with the source line number, or None for other rows."""
     match = PAT.search(line)
     if not match:
         return None
@@ -72,16 +74,19 @@ def tape_lines(text):
 
 @dataclass
 class Tape:
+    """Selected level lines, samples by identity, and (line, name, verb, rest) events."""
     lines: list
     samples: dict
     events: list
 
     def bot_samples(self):
+        """Return bot tracks, excluding human and lab instrument identities."""
         bots, _, _ = track_names(self.samples, self.events)
         return {name: self.samples[name] for name in bots}
 
 
 def parse_tape(text):
+    """Parse the busiest level using complete sample and birth identities."""
     lines = tape_lines(text)
     names = sorted({match.group(1) for _, line in lines if (match := PAT.search(line))},
                    key=lambda name: (-len(name), name))
@@ -103,10 +108,12 @@ def parse_tape(text):
 
 
 def read_tape(path):
+    """Parse a UTF-8 tape, replacing undecodable bytes in console output."""
     return parse_tape(Path(path).read_text(encoding="utf-8", errors="replace"))
 
 
 def track_names(samples, events):
+    """Return sorted (bots, humans, instruments); tapes without births keep legacy bots."""
     spawned = {name for _, name, verb, _ in events if verb in ("spawned", "respawn")}
     instruments = set(samples) & INSTRUMENTS
     humans = (set(samples) - spawned - instruments) if spawned else set()
@@ -115,6 +122,7 @@ def track_names(samples, events):
 
 @dataclass(frozen=True)
 class Freeze:
+    """Endpoints, elapsed seconds and health loss for one stationary window."""
     start: dict
     end: dict
     dur: float

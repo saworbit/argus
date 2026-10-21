@@ -9,6 +9,9 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+Documented the shared navigation and tape helper contracts and their scoped
+parity checks (#502, #510, #514). CI coverage for those checks is tracked in #525.
+
 Event and death parsers resolve full track identities before reading verbs,
 so names containing words such as lift or death stay in bot totals (#520).
 

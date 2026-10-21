@@ -145,6 +145,8 @@ impl MatchCtrl {
         }
     }
 
+    /// Snapshot process/session identity without reading or harvesting the tape.
+    /// Polling records a child exit; full status owns the later reap and analysis.
     pub fn resource_state(&mut self) -> MatchResourceState {
         let (running, _) = self.poll();
         if let Some(live) = &self.live {
