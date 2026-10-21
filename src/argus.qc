@@ -2196,6 +2196,10 @@ void() Argus_Physics =
 
         Argus_Friction ();
         wdrag = AR_MAXSPEED;
+        if (self.ar_tactic && self.ar_tactic_speed > 0)
+            wdrag = self.ar_tactic_speed;
+        if (self.ar_tactic == 1 || self.ar_tactic == 4)
+            wdrag = 0; // brake through ordinary movement and brink protection
         if (self.ar_hopjump == 1 && self.ar_sprintstate == 2
             && self.ar_hopspeed > 0)
             wdrag = self.ar_hopspeed;
@@ -2901,6 +2905,7 @@ void() Argus_Die =
             ReleaseClaim (self.ar_goal);
     }
 
+    Argus_TacticReset ();
     self.ar_enemy = world;
     self.ar_goal = world;
     self.ar_node = world;
@@ -3358,6 +3363,9 @@ entity() Argus_SpawnSpot =
 void() Argus_Respawn =
 {
     local entity spot, oself;
+
+    Argus_TacticReset ();
+    self.ar_tactic_cool = 0;
 
     spot = Argus_SpawnSpot ();
     // undo the corpse: GibPlayer left this entity as a bouncing head,
@@ -4787,6 +4795,8 @@ void() Argus_TriggerFired =
 {
     local float pause;
 
+    Argus_TacticShot ();
+
     if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN
         || self.weapon == IT_LIGHTNING)
     {
@@ -4813,6 +4823,9 @@ float() Argus_Combat =
     local vector preaim, ldv, src;  // #363: the lead, on its own
 
     Argus_Perceive ();
+    Argus_TacticBegin ();
+    if (Argus_TacticThink ())
+        return TRUE;
     e = self.ar_enemy;
     if (e == world)
     {
@@ -4933,6 +4946,8 @@ float() Argus_Combat =
 
     closeband = Argus_CombatBand ();
     Argus_SelectWeapon (d, closeband);
+    if (self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)
+        Argus_TacticAbort ("abort weapon");
 
     // Effective stack bends the existing circle into pressure or caution,
     // while visible weapon shape makes a smaller correction. The result is
@@ -5803,7 +5818,25 @@ float() Argus_Combat =
             self.ar_moveyaw = vectoyaw ('0 0 0' - to);
     }
 
+    // The bounded manoeuvre owns travel, after ordinary steering choices.
+    // Its early guard has already yielded to danger/retreat. Facing and
+    // the normal aim/trigger below stay in charge of every visible shot.
+    if (self.ar_tactic)
+    {
+        if (self.ar_retreating || time < self.ar_dodgetime)
+            Argus_TacticAbort ("abort survival");
+        else
+            Argus_TacticSteer ();
+    }
+
     // ---- trigger ----
+    // A visible head at the lip is not a safe rocket lane. Finish the
+    // concealed walk before allowing the return shot through normal aim.
+    if (self.ar_tactic == 2 || self.ar_tactic == 3)
+    {
+        self.button0 = 0;
+        return TRUE;
+    }
     // holding button0 matters as much as calling W_Attack: nailgun,
     // super nailgun and lightning damage live in the attack frame
     // chains, which abort unless the fire button is down. Bots never
@@ -5872,6 +5905,20 @@ float() Argus_Combat =
         self.v_angle = vectoangles (aimpt - (self.origin + '0 0 22'));
         self.v_angle_x = 0 - self.v_angle_x;    // QC pitch convention
         self.v_angle_y = self.angles_y;
+        if (self.ar_tactic)
+        {
+            // Check the actual imperfect shot direction from the RL muzzle,
+            // not just the planner's ideal line. Rockets splash within 160u;
+            // 240u clearance also allows the bot's movement during flight.
+            makevectors (self.v_angle);
+            src = self.origin + '0 0 16';
+            traceline (src, src + v_forward * 240, TRUE, self);
+            if (trace_fraction < 1)
+            {
+                self.button0 = 0;
+                return TRUE;
+            }
+        }
         // HOLD FIRE THROUGH A TEAM MATE. Not targeting them is not
         // enough: the first e1m2 death was a bot with a monster for an
         // enemy, firing at its last known position during the
@@ -8165,6 +8212,17 @@ void() Argus_AI =
 
     // ---- combat overrides steering when an enemy is engaged ----
     fighting = Argus_Combat ();
+    // Item hops, body-block sidesteps and incidental reachability jumps must
+    // not pull a committed dry walking route away from its validated legs.
+    if (self.ar_tactic)
+    {
+        if (time > self.ar_nextlog)
+        {
+            self.ar_nextlog = time + 0.5;
+            Argus_Telemetry ();
+        }
+        return;
+    }
 
     // Goal selection happens before combat acquires a fresh target. If this
     // life already started the crossing that killed the last one, stop it as
@@ -9600,8 +9658,11 @@ void() Argus_FrameAll =
         }
         else
         {
-            Argus_AI ();
-            Argus_Physics ();
+            if (time >= ar_tacfixture_until || self == ar_tacfixture_bot)
+            {
+                Argus_AI ();
+                Argus_Physics ();
+            }
         }
 
         if (self.frags > self.ar_lastfrags && self.health > 0)
@@ -9642,6 +9703,8 @@ void() Argus_FrameAll =
         self = oself;
         b = b.ar_chain;
     }
+
+    Argus_TacticFixtureTick ();
 
     // human tracks (2026-08-20, Shane: "are you able to see what I
     // do? and where I go?" - until now, no). Real clients get the

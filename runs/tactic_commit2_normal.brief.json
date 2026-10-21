@@ -1,0 +1,507 @@
+{
+  "compile_ok": true,
+  "duration_sec": 30,
+  "ok": true,
+  "results": [
+    {
+      "compare": {
+        "baseline": {
+          "abandons": 0,
+          "acquisitions": 18,
+          "all_frags_positive": true,
+          "avg_speed": 219.63344722293516,
+          "boards": 0,
+          "closest_approach": 56.8642242539191,
+          "confine_max_sec": 11.200000000000003,
+          "confine_note": "Joe Rogan spent 11.2s inside a 220u box at 231 u/s around (211, -426)",
+          "cover": 322,
+          "deaths": 5,
+          "duration_sec": 30,
+          "engages": 15,
+          "frags": 4,
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 3,
+          "grabs": 10,
+          "hazards": 47,
+          "kd_spread": 8,
+          "lava_deaths": 1,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 5,
+          "routefails": 0,
+          "stalls": 1,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5064618644067803,
+          "weapons": 8,
+          "world_deaths": 1
+        },
+        "baseline_run": "ab_dm4_deadlink1",
+        "candidate": {
+          "abandons": 0,
+          "acquisitions": 6,
+          "all_frags_positive": false,
+          "avg_speed": 213.27610700683738,
+          "boards": 0,
+          "closest_approach": 114.54972719304048,
+          "confine_max_sec": 8.200000000000001,
+          "confine_note": "Carmack spent 8.2s inside a 220u box at 265 u/s around (-6, 509)",
+          "cover": 110,
+          "deaths": 3,
+          "duration_sec": 30,
+          "engages": 12,
+          "frags": 1,
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 2,
+          "grabs": 5,
+          "hazards": 51,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 3,
+          "routefails": 0,
+          "stalls": 0,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5121951219512193,
+          "weapons": 1,
+          "world_deaths": 0
+        },
+        "candidate_flags": [
+          "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+          "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+        ],
+        "findings": [
+          "stall_parity: candidate median 0 against a control band of 0 to 6 (control median 1), in band",
+          "stall_parity: no improvement can be demonstrated at 1 control tape(s) - the band's floor is zero. Run repeats.",
+          "stall_parity: IQM 1 to 0, no interval below two tapes a side, P(improve) 1.00; sprt Continue at a bound of 10.6 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "engagements: candidate median 12 against a control band of 3 to 27 (control median 15), in band",
+          "engagements: IQM 15 to 12, no interval below two tapes a side, P(improve) 0.00; sprt Continue at a bound of 17.9 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "lava_deaths: candidate median 0 against a control band of 0 to 6 (control median 1), in band",
+          "lava_deaths: no improvement can be demonstrated at 1 control tape(s) - the band's floor is zero. Run repeats.",
+          "lava_deaths: IQM 1 to 0, no interval below two tapes a side, P(improve) 1.00; sprt Continue at a bound of 3.0 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "freezes: candidate median 0 against a control band of 0 to 2 (control median 0), in band",
+          "freezes: no improvement can be demonstrated at 1 control tape(s) - the band's floor is zero. Run repeats.",
+          "freezes: IQM 0 to 0, no interval below two tapes a side, P(improve) 0.50; sprt Continue at a bound of 1.2 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "no primary metric was pre-registered, so all four gates could convict: that is a 19 per cent false positive rate on the null corpus. Pass primary=<metric> next time.",
+          "1 candidate tape(s) against 1 control tape(s); the band carries 1.00 of the one-tape null spread"
+        ],
+        "gate_card": "┌─────────────────────────────────────────────────────────────┐\n│ ARGUS A/B QUALITY GATES: dm4 (baseline vs candidate) (scaled) │\n├──────────────────────────┬────────┬──────────────┬──────────┤\n│ Metric                   │ Status │ Delta        │ Verdict  │\n├──────────────────────────┼────────┼──────────────┼──────────┤\n│ Lava/Slime Deaths        │   🟢   │ 1 vs 0       │ PASS     │\n│ Nav Stalls               │   🟢   │ -100.0%      │ PASS     │\n│ Weapon Engages           │   🟢   │ -20.0%       │ PASS     │\n│ Goal Pickups (gl)        │   🔴   │ -33.3%       │ FAIL     │\n│ Frag Spread Balance      │   🔴   │ 4 vs 1       │ FAIL     │\n│ K/D Spread Tightness     │   🟢   │ 8 vs 1       │ PASS     │\n│ Freeze Stalls/Statues    │   🟢   │ 0.0s vs 0.0s │ PASS     │\n│ Navigation Coverage      │   🟢   │ 322 vs 110   │ PASS     │\n│ Server tick rate         │   🟢   │ both listen  │ SAME     │\n├──────────────────────────┴────────┴──────────────┴──────────┤\n│ OVERALL VERDICT:  🟢 APPROVED FOR RELEASE (PARITY)          │\n└─────────────────────────────────────────────────────────────┘\n",
+        "gates": [
+          {
+            "a": 1,
+            "b": 0,
+            "name": "lava_deaths",
+            "note": "fewer lava deaths",
+            "pass": true
+          },
+          {
+            "a": 1,
+            "b": 0,
+            "name": "stall_parity",
+            "note": "stalls down 100%",
+            "pass": true
+          },
+          {
+            "a": 15,
+            "b": 12,
+            "name": "engagements",
+            "note": "engagements at parity",
+            "pass": true
+          },
+          {
+            "a": 4,
+            "b": 1,
+            "name": "frags_positive",
+            "note": "frag board healthy",
+            "pass": false
+          },
+          {
+            "a": 8,
+            "b": 1,
+            "name": "kd_spread",
+            "note": "K/D spread tight",
+            "pass": true
+          },
+          {
+            "a": 0,
+            "b": 0,
+            "name": "freezes",
+            "note": "no statues",
+            "pass": true
+          },
+          {
+            "a": 322,
+            "b": 110,
+            "name": "coverage",
+            "note": "not gated below 120 s of tape",
+            "pass": true
+          }
+        ],
+        "headline": "Parity: stalls 1 to 0, engages 15 to 12, lava 1 to 0, freezes 0 to 0 (medians, 1 control vs 1 candidate tapes)",
+        "hotspots": [
+          {
+            "count": 6,
+            "kind": "hazard",
+            "nearest_dist": 17.424408167854654,
+            "nearest_node": 35,
+            "x": 75.4,
+            "y": 408.5,
+            "z": -296
+          },
+          {
+            "count": 4,
+            "kind": "hazard",
+            "nearest_dist": 36.01110939696248,
+            "nearest_item": "weapon_rocketlauncher",
+            "nearest_item_dist": 153.58255109223833,
+            "nearest_node": 21,
+            "x": -70.6,
+            "y": 45.8,
+            "z": -296
+          },
+          {
+            "cause": "lava_edge",
+            "count": 4,
+            "kind": "hazard",
+            "nearest_dist": 43.84620850199022,
+            "nearest_item": "item_shells",
+            "nearest_item_dist": 91.72289790450364,
+            "nearest_node": 134,
+            "x": 412.2,
+            "y": -207.5,
+            "z": -296
+          },
+          {
+            "cause": "lava_edge",
+            "count": 3,
+            "kind": "hazard",
+            "nearest_dist": 49.05242093923601,
+            "nearest_item": "item_rockets",
+            "nearest_item_dist": 155.21385247457778,
+            "nearest_node": 4,
+            "x": -160.9,
+            "y": 429.3,
+            "z": -279.8
+          },
+          {
+            "count": 3,
+            "kind": "hazard",
+            "nearest_dist": 53.174147854008915,
+            "nearest_item": "weapon_lightning",
+            "nearest_item_dist": 71.82541332982359,
+            "nearest_node": 77,
+            "x": 481.5,
+            "y": -353.2,
+            "z": -104
+          }
+        ],
+        "next_steps": [],
+        "scale_note": "baseline counts scaled from 178s to 30s so a short experiment is comparable",
+        "scaled": true,
+        "stats": [
+          {
+            "candidate_iqm": 0,
+            "control_iqm": 1,
+            "name": "stall_parity",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 1,
+            "sprt": "continue",
+            "sprt_bound": 10.631267590275398,
+            "sprt_llr": -0.6372313569131198
+          },
+          {
+            "candidate_iqm": 12,
+            "control_iqm": 15,
+            "name": "engagements",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 0,
+            "sprt": "continue",
+            "sprt_bound": 17.895967110296915,
+            "sprt_llr": -1.048038039100604
+          },
+          {
+            "candidate_iqm": 0,
+            "control_iqm": 1,
+            "name": "lava_deaths",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 1,
+            "sprt": "continue",
+            "sprt_bound": 3.0121924839113623,
+            "sprt_llr": -0.26374728307174555
+          },
+          {
+            "candidate_iqm": 0,
+            "control_iqm": 0,
+            "name": "freezes",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 0.5,
+            "sprt": "continue",
+            "sprt_bound": 1.2403145521987962,
+            "sprt_llr": -0.7848878512225003
+          }
+        ],
+        "verdict": "parity"
+      },
+      "headline": "dm4 30s: 1 frags, 3 deaths (0 lava, 0 third-party), 0 stalls, 2 goals, 12 engages, 51 hazards, spread 1",
+      "log": "C:\\argus\\runs\\mx_dm4.log",
+      "map": "dm4",
+      "ok": true
+    },
+    {
+      "compare": {
+        "baseline": {
+          "abandons": 1,
+          "acquisitions": 13,
+          "all_frags_positive": true,
+          "avg_speed": 187.8097573359399,
+          "boards": 0,
+          "closest_approach": 4.726520919238409,
+          "confine_max_sec": 17.799999999999997,
+          "confine_note": "Joe Rogan spent 17.8s inside a 220u box at 126 u/s around (2571, -413)",
+          "cover": 385,
+          "deaths": 2,
+          "duration_sec": 29,
+          "engages": 6,
+          "frags": 2,
+          "freeze_max_sec": 7.099999999999994,
+          "freeze_total_sec": 7.099999999999994,
+          "freeze_underfire": 1,
+          "freezes": 0,
+          "goals": 1,
+          "grabs": 10,
+          "hazards": 40,
+          "kd_spread": 4,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 1,
+          "player_kills": 2,
+          "routefails": 2,
+          "stalls": 4,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5068138195777359,
+          "weapons": 3,
+          "world_deaths": 0
+        },
+        "baseline_run": "ab_dm2_doorverb1",
+        "candidate": {
+          "abandons": 1,
+          "acquisitions": 13,
+          "all_frags_positive": false,
+          "avg_speed": 202.67001217149308,
+          "boards": 1,
+          "closest_approach": 44.05099317836075,
+          "cover": 126,
+          "deaths": 2,
+          "duration_sec": 29,
+          "engages": 6,
+          "frags": 2,
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 3,
+          "grabs": 10,
+          "hazards": 41,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 1,
+          "player_kills": 2,
+          "routefails": 2,
+          "stalls": 5,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.512422360248447,
+          "weapons": 3,
+          "world_deaths": 0
+        },
+        "candidate_flags": [
+          "closed button-only doors stall at runtime until the button fires",
+          "one shootable button (*30 health 1) opens t18"
+        ],
+        "findings": [
+          "stall_parity: candidate median 5 against a control band of 0 to 12 (control median 4), in band",
+          "stall_parity: no improvement can be demonstrated at 1 control tape(s) - the band's floor is zero. Run repeats.",
+          "stall_parity: IQM 4 to 5, no interval below two tapes a side, P(improve) 0.00; sprt Continue at a bound of 43.2 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "engagements: candidate median 6 against a control band of 0 to 13 (control median 6), in band",
+          "engagements: no improvement can be demonstrated at 1 control tape(s) - the band's floor is zero. Run repeats.",
+          "engagements: IQM 6 to 6, no interval below two tapes a side, P(improve) 0.50; sprt Continue at a bound of 15.9 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "lava_deaths: candidate median 0 against a control band of 0 to 3 (control median 0), in band",
+          "lava_deaths: no improvement can be demonstrated at 1 control tape(s) - the band's floor is zero. Run repeats.",
+          "lava_deaths: IQM 0 to 0, no interval below two tapes a side, P(improve) 0.50; sprt Continue at a bound of 2.5 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "freezes: candidate median 0 against a control band of 0 to 2 (control median 0), in band",
+          "freezes: no improvement can be demonstrated at 1 control tape(s) - the band's floor is zero. Run repeats.",
+          "freezes: IQM 0 to 0, no interval below two tapes a side, P(improve) 0.50; sprt Continue at a bound of 1.4 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+          "no primary metric was pre-registered, so all four gates could convict: that is a 19 per cent false positive rate on the null corpus. Pass primary=<metric> next time.",
+          "1 candidate tape(s) against 1 control tape(s); the band carries 1.00 of the one-tape null spread"
+        ],
+        "gate_card": "┌─────────────────────────────────────────────────────────────┐\n│ ARGUS A/B QUALITY GATES: dm2 (baseline vs candidate) (scaled) │\n├──────────────────────────┬────────┬──────────────┬──────────┤\n│ Metric                   │ Status │ Delta        │ Verdict  │\n├──────────────────────────┼────────┼──────────────┼──────────┤\n│ Lava/Slime Deaths        │   🟢   │ 0 vs 0       │ PASS     │\n│ Nav Stalls               │   🟢   │ +25.0%       │ PASS     │\n│ Weapon Engages           │   🟢   │ +0.0%        │ PASS     │\n│ Goal Pickups (gl)        │   🟢   │ +200.0%      │ PASS     │\n│ Frag Spread Balance      │   🟢   │ 2 vs 2       │ PASS     │\n│ K/D Spread Tightness     │   🟢   │ 4 vs 1       │ PASS     │\n│ Freeze Stalls/Statues    │   🟢   │ 7.1s vs 0.0s │ PASS     │\n│ Navigation Coverage      │   🟢   │ 385 vs 126   │ PASS     │\n│ Server tick rate         │   🟢   │ both listen  │ SAME     │\n├──────────────────────────┴────────┴──────────────┴──────────┤\n│ OVERALL VERDICT:  🟢 APPROVED FOR RELEASE (PARITY)          │\n└─────────────────────────────────────────────────────────────┘\n",
+        "gates": [
+          {
+            "a": 0,
+            "b": 0,
+            "name": "lava_deaths",
+            "note": "lava deaths at parity (contents)",
+            "pass": true
+          },
+          {
+            "a": 4,
+            "b": 5,
+            "name": "stall_parity",
+            "note": "stalls at parity",
+            "pass": true
+          },
+          {
+            "a": 6,
+            "b": 6,
+            "name": "engagements",
+            "note": "engagements at parity",
+            "pass": true
+          },
+          {
+            "a": 2,
+            "b": 2,
+            "name": "frags_positive",
+            "note": "frag board healthy",
+            "pass": true
+          },
+          {
+            "a": 4,
+            "b": 1,
+            "name": "kd_spread",
+            "note": "K/D spread tight",
+            "pass": true
+          },
+          {
+            "a": 7.099999999999994,
+            "b": 0,
+            "name": "freezes",
+            "note": "no statues",
+            "pass": true
+          },
+          {
+            "a": 385,
+            "b": 126,
+            "name": "coverage",
+            "note": "not gated below 120 s of tape",
+            "pass": true
+          }
+        ],
+        "headline": "Parity: stalls 4 to 5, engages 6 to 6, lava 0 to 0, freezes 0 to 0 (medians, 1 control vs 1 candidate tapes)",
+        "hotspots": [
+          {
+            "cause": "door",
+            "count": 3,
+            "kind": "hazard",
+            "nearest_dist": 32.619779275770604,
+            "nearest_item": "item_health",
+            "nearest_item_dist": 175.95070332340254,
+            "nearest_node": 37,
+            "x": 1729.1,
+            "y": -668.8,
+            "z": 24
+          },
+          {
+            "count": 3,
+            "kind": "hazard",
+            "nearest_dist": 30.345345606863564,
+            "nearest_item": "item_armorInv",
+            "nearest_item_dist": 130.37806563989216,
+            "nearest_node": 162,
+            "x": 2543.8,
+            "y": -1904,
+            "z": 24
+          },
+          {
+            "count": 2,
+            "kind": "hazard",
+            "nearest_dist": 38.776926128820335,
+            "nearest_item": "item_spikes",
+            "nearest_item_dist": 139.96231635693948,
+            "nearest_node": 82,
+            "x": 2140.8,
+            "y": -1988.9,
+            "z": 72
+          },
+          {
+            "count": 2,
+            "kind": "hazard",
+            "nearest_dist": 51.84640778298923,
+            "nearest_item": "item_health",
+            "nearest_item_dist": 180.87523324103813,
+            "nearest_node": 84,
+            "x": 2165.7,
+            "y": -452.4,
+            "z": 8
+          },
+          {
+            "cause": "lava_edge",
+            "count": 2,
+            "kind": "hazard",
+            "nearest_dist": 105.08092119885514,
+            "nearest_node": 81,
+            "x": 2176,
+            "y": -2176,
+            "z": 84
+          }
+        ],
+        "next_steps": [],
+        "scale_note": "baseline counts scaled from 185s to 29s so a short experiment is comparable",
+        "scaled": true,
+        "stats": [
+          {
+            "candidate_iqm": 5,
+            "control_iqm": 4,
+            "name": "stall_parity",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 0,
+            "sprt": "continue",
+            "sprt_bound": 43.23382153378661,
+            "sprt_llr": -0.8211968252330037
+          },
+          {
+            "candidate_iqm": 6,
+            "control_iqm": 6,
+            "name": "engagements",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 0.5,
+            "sprt": "continue",
+            "sprt_bound": 15.946901385413094,
+            "sprt_llr": -0.7848878512225002
+          },
+          {
+            "candidate_iqm": 0,
+            "control_iqm": 0,
+            "name": "lava_deaths",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 0.5,
+            "sprt": "continue",
+            "sprt_bound": 2.4806291043975923,
+            "sprt_llr": -0.7848878512225003
+          },
+          {
+            "candidate_iqm": 0,
+            "control_iqm": 0,
+            "name": "freezes",
+            "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "prob_improvement": 0.5,
+            "sprt": "continue",
+            "sprt_bound": 1.4175023453700528,
+            "sprt_llr": -0.7848878512225
+          }
+        ],
+        "verdict": "parity"
+      },
+      "headline": "dm2 29s: 2 frags, 2 deaths (0 lava, 0 third-party), 5 stalls, 3 goals, 6 engages, 41 hazards, spread 1",
+      "log": "C:\\argus\\runs\\mx_dm2.log",
+      "map": "dm2",
+      "ok": true
+    }
+  ]
+}

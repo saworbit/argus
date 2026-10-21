@@ -1535,6 +1535,8 @@ void() ImpulseCommands =
 		               + cvar ("scratch4") * '0 0 1');
 		self.velocity = '0 0 0';
 	}
+	else if (self.impulse == 217 && cvar ("developer") && cvar ("scratch1") == 197)
+		Argus_TacticFixture ();
 	else if (self.impulse >= 220 && self.impulse <= 230)
 		Argus_PlayerChat (self.impulse);
 

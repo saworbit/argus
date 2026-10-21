@@ -1015,6 +1015,33 @@ float(vector p, float rad) Argus_SpotCrowded;
 float(entity e) Argus_IsDoor;
 float(entity from, entity to, entity bot) Argus_LinkBlockedByKeyDoor;
 void(entity door) Argus_CoopCommitKey;
+
+// Developer-only combat fixture, inactive unless explicitly armed.
+entity ar_tacfixture_bot;
+float ar_tacfixture_until;
+void() Argus_TacticFixture;
+void() Argus_TacticFixtureTick;
+
+.float ar_tactic;             // 1 opening, 2 cover, 3 return, 4 return shot
+.float ar_tactic_until;
+.float ar_tactic_cool;
+.float ar_tactic_check;
+.float ar_tactic_speed;
+.float ar_tactic_ammo;
+.float ar_tactic_progress;
+.vector ar_tactic_pos;
+.vector ar_tactic_enemypos;
+.vector ar_tactic_open;
+.entity ar_tactic_enemy;
+.entity ar_tactic_hop;
+.entity ar_tactic_cover;
+.entity ar_tactic_exit;
+void() Argus_TacticReset;
+void(string why) Argus_TacticAbort;
+void() Argus_TacticBegin;
+float() Argus_TacticThink;
+void() Argus_TacticSteer;
+void() Argus_TacticShot;
 .float		ar_escort_break;	// Accumulated seconds spent >512u from human teammate (#176)
 .float		ar_steal_count;		// Item/kill steals against fairness rules (#176)
 .float		ar_block_count;		// Body-blocking incidents inside player AABB (#176)
