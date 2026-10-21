@@ -370,7 +370,12 @@ pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
         .unwrap_or("unknown")
         .to_ascii_lowercase();
     let nav_path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
-    let stamps = vec![file_stamp(&path), file_stamp(&nav_path)];
+    let stamps = vec![
+        file_stamp(&path),
+        file_stamp(&nav_path),
+        file_stamp(&cfg.src.join("progs.src")),
+        file_stamp(&cfg.src.join("argus_nav_dispatch.qc")),
+    ];
     if let Ok(cache) = ATLAS_CACHE.lock() {
         if let Some(hit) = cache.get(&key).or_else(|| cache.get(&map)) {
             if stamps_fresh(&hit.stamps, &stamps) {
@@ -395,13 +400,12 @@ pub fn cartograph(cfg: &Config, bsp: &str) -> Result<MapAtlas, String> {
 /// parses independently of `cartograph`, so a single `brief_run` read
 /// the same file three times. The entry is an Arc so a hit costs a
 /// pointer clone rather than a copy of every lump.
-static BSP_CACHE: std::sync::Mutex<
-    Option<(
-        std::path::PathBuf,
-        Option<std::time::SystemTime>,
-        std::sync::Arc<Bsp29>,
-    )>,
-> = std::sync::Mutex::new(None);
+type BspCacheEntry = (
+    std::path::PathBuf,
+    Option<std::time::SystemTime>,
+    std::sync::Arc<Bsp29>,
+);
+static BSP_CACHE: std::sync::Mutex<Option<BspCacheEntry>> = std::sync::Mutex::new(None);
 
 pub fn read_bsp29_cached(path: &std::path::Path) -> Result<std::sync::Arc<Bsp29>, String> {
     let stamp = std::fs::metadata(path).and_then(|m| m.modified()).ok();
@@ -885,10 +889,10 @@ fn atlas_from_bsp(
             })
         })
         .collect();
-    control.sort_by(|a, b| b.value.cmp(&a.value));
+    control.sort_by_key(|item| std::cmp::Reverse(item.value));
     control.truncate(12);
 
-    let dispatcher_known = dispatcher_knows(cfg, map);
+    let dispatcher_known = crate::nav_sync::registration(cfg, map).complete();
     let baseline_override = crate::intel::baseline_override_for(cfg, map);
     let recommended_baseline: Option<&str> = baseline_override
         .as_deref()
@@ -896,7 +900,7 @@ fn atlas_from_bsp(
     let mut implications = map_implications(map);
     if !dispatcher_known {
         implications.push(
-            "dispatcher has no branch for this map; bots degrade to line-of-sight seeking".into(),
+            "map registration needs both its dispatcher branch and progs.src entry; bots degrade to line-of-sight seeking".into(),
         );
     }
     if nav.is_none() {
@@ -1138,7 +1142,6 @@ fn atlas_from_bsp(
 /// Static plat boardability: seated-face height, a boarding-floor ring
 /// probe outside the footprint, and a ledge-inside-the-swept-column
 /// probe (the *31 statue class, found the hard way on 2026-08-19).
-
 /// True when the shipped graph carries a lift link with an endpoint over
 /// this plat's footprint. navgen seats boarding pads outside the swept
 /// column (v3.56) and rest-top virtual pads inside it (v3.84), so check
@@ -1720,7 +1723,7 @@ fn height_bands(map: &str, nodes: &[[f32; 3]]) -> Vec<HeightBand> {
             }
         })
         .collect();
-    bands.sort_by(|a, b| b.nodes.cmp(&a.nodes));
+    bands.sort_by_key(|band| std::cmp::Reverse(band.nodes));
     bands
 }
 
@@ -1804,14 +1807,6 @@ fn map_implications(map: &str) -> Vec<String> {
     }
 }
 
-fn dispatcher_knows(cfg: &Config, map: &str) -> bool {
-    let path = cfg.src.join("argus_nav_dispatch.qc");
-    let Ok(text) = std::fs::read_to_string(path) else {
-        return false;
-    };
-    text.contains(&format!("mapname == \"{map}\""))
-}
-
 fn median_spawn_z(items: &[AtlasItem]) -> Option<f32> {
     let mut zs: Vec<f32> = items
         .iter()
@@ -1872,7 +1867,7 @@ fn undirected(g: &NavGraph) -> Vec<Vec<u32>> {
         for (to, _) in edges {
             let j = *to as usize;
             if j < n {
-                if !u[i].contains(&(*to)) {
+                if !u[i].contains(to) {
                     u[i].push(*to);
                 }
                 if !u[j].contains(&(i as u32)) {

@@ -9,6 +9,7 @@ applicable check passed; exit 1 names what did not.
 usage:
   argus_ci.py all   [--changed-files F] [--base REF] [--commit-msg M]
   argus_ci.py ship                 the binary and the paper trail agree
+  argus_ci.py eol                  committed LF text blobs contain no CRLF
   argus_ci.py tapes [--changed-files F]   evidence is append-once
   argus_ci.py nav                  graphs obey the runtime's limits
 """
@@ -88,6 +89,43 @@ def check_ship(root, **_kw):
         return ["ship: progs.dat is %s but the CLAUDE.md handoff claims "
                 "%s - one of the two is stale" % (ha, claimed)]
     return []
+
+
+# ------------------------------------------------------------------ eol
+
+def check_eol(root, **_kw):
+    """LF-designated text must be LF in Git, not only in the worktree.
+
+    Hosting APIs can create blobs directly and bypass Git's clean filter.
+    ``git ls-files --eol`` reports the index blob separately from the
+    checked-out file, so this catches that drift even when checkout has
+    already presented a normalized LF worktree.
+    """
+    proc = subprocess.run(
+        ["git", "ls-files", "--eol", "-z"],
+        capture_output=True, cwd=str(root))
+    if proc.returncode != 0:
+        detail = proc.stderr.decode("utf-8", errors="replace").strip()
+        return ["eol: git ls-files failed - %s" % (detail or "no stderr")]
+
+    fails = []
+    for record in proc.stdout.split(b"\0"):
+        if not record:
+            continue
+        try:
+            metadata, raw_path = record.split(b"\t", 1)
+        except ValueError:
+            return ["eol: git ls-files returned a malformed record"]
+        fields = metadata.decode("ascii", errors="replace").split()
+        index_eol = fields[0] if fields else ""
+        attributes = " ".join(fields[2:])
+        if "eol=lf" not in attributes or index_eol not in ("i/crlf", "i/mixed"):
+            continue
+        path = raw_path.decode("utf-8", errors="replace")
+        fails.append(
+            "eol: %s is stored with CRLF in Git despite eol=lf - "
+            "normalize the committed blob, not only the worktree" % path)
+    return fails
 
 
 # --------------------------------------------------------------- diff
@@ -263,7 +301,7 @@ def main(argv=None):
         description="Argus repo invariant battery",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__)
-    ap.add_argument("check", choices=["all", "ship", "tapes", "nav"])
+    ap.add_argument("check", choices=["all", "ship", "eol", "tapes", "nav"])
     ap.add_argument("--root", default=str(ROOT))
     ap.add_argument("--changed-files")
     ap.add_argument("--base")
@@ -271,7 +309,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     root = Path(args.root)
 
-    names = ["ship", "tapes", "nav"] if args.check == "all" else [args.check]
+    names = ["ship", "eol", "tapes", "nav"] if args.check == "all" else [args.check]
     fails = []
     for name in names:
         fn = CHECKS[name]
@@ -290,7 +328,8 @@ def main(argv=None):
     return 1 if fails else 0
 
 
-CHECKS = {"ship": check_ship, "tapes": check_tapes, "nav": check_nav}
+CHECKS = {"ship": check_ship, "eol": check_eol,
+          "tapes": check_tapes, "nav": check_nav}
 
 
 if __name__ == "__main__":

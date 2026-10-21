@@ -1,0 +1,170 @@
+{
+  "date": "2026-10-22",
+  "base": "cd36ee0b94d21494ce0509ad5a1527fdbd863f30",
+  "feature_base": "21ce7b7976afd55a1fc692397b77e5fd45d0c1ff",
+  "rust_tests": {
+    "passed": 271,
+    "failed": 0
+  },
+  "python_tests": {
+    "passed": 101,
+    "failed": 0
+  },
+  "fixture_summary": {
+    "dm4": {
+      "cases": 10,
+      "stationary": 3,
+      "damaging_returns": 1,
+      "angles": [
+        42.5,
+        40.9,
+        41.1
+      ]
+    },
+    "dm2": {
+      "cases": 10,
+      "stationary": 3,
+      "damaging_returns": 3,
+      "angles": [
+        49.1,
+        49.9,
+        49.2
+      ]
+    }
+  },
+  "fixture_results": {
+    "dm4": [
+      {
+        "map": "dm4",
+        "case": "0",
+        "concealed_at": 0.5,
+        "return_at": 1.2,
+        "first_angle": 42.5,
+        "return_damage": false
+      },
+      {
+        "map": "dm4",
+        "case": "0",
+        "concealed_at": 0.5,
+        "return_at": 1.1,
+        "first_angle": 40.9,
+        "return_damage": false
+      },
+      {
+        "map": "dm4",
+        "case": "0",
+        "concealed_at": 0.5,
+        "return_at": 1.2,
+        "first_angle": 41.1,
+        "return_damage": true
+      },
+      {
+        "map": "dm4",
+        "case": "1",
+        "interrupted": true
+      },
+      {
+        "map": "dm4",
+        "case": "2",
+        "interrupted": true
+      },
+      {
+        "map": "dm4",
+        "case": "3",
+        "interrupted": true
+      },
+      {
+        "map": "dm4",
+        "case": "4",
+        "interrupted": true
+      },
+      {
+        "map": "dm4",
+        "case": "5",
+        "interrupted": true
+      },
+      {
+        "map": "dm4",
+        "case": "6",
+        "moving_entry_safe": true
+      },
+      {
+        "map": "dm4",
+        "case": "7",
+        "interrupted": true
+      }
+    ],
+    "dm2": [
+      {
+        "map": "dm2",
+        "case": "0",
+        "concealed_at": 1.3,
+        "return_at": 1.7,
+        "first_angle": 49.1,
+        "return_damage": true
+      },
+      {
+        "map": "dm2",
+        "case": "0",
+        "concealed_at": 1.3,
+        "return_at": 1.7,
+        "first_angle": 49.9,
+        "return_damage": true
+      },
+      {
+        "map": "dm2",
+        "case": "0",
+        "concealed_at": 1.3,
+        "return_at": 1.7,
+        "first_angle": 49.2,
+        "return_damage": true
+      },
+      {
+        "map": "dm2",
+        "case": "1",
+        "interrupted": true
+      },
+      {
+        "map": "dm2",
+        "case": "2",
+        "interrupted": true
+      },
+      {
+        "map": "dm2",
+        "case": "3",
+        "interrupted": true
+      },
+      {
+        "map": "dm2",
+        "case": "4",
+        "interrupted": true
+      },
+      {
+        "map": "dm2",
+        "case": "5",
+        "interrupted": true
+      },
+      {
+        "map": "dm2",
+        "case": "6",
+        "moving_entry_safe": true
+      },
+      {
+        "map": "dm2",
+        "case": "7",
+        "interrupted": true
+      }
+    ]
+  },
+  "failed_check": "dm4 --suite: fewer than two damaging return shots",
+  "sha256": {
+    "src/argus.qc": "0df78336e26ea5fa1734801bf04271e67670eef111d2253e5da6c1a2bdf47752",
+    "src/defs.qc": "aa01c3595318d1d80fc669bb7d2da0cf3912ba6acde4ba003d5f15634671a6d8",
+    "src/weapons.qc": "94123dd10b2ce440ac5226ceb3ce72cb2bc1d56959863f71b87b41d90805ad22",
+    "src/progs.src": "1e8a1132cc7de5362e75248180fbb103c57f5a2daa29201a8025635bc6e5a6fd",
+    "src/argus_tactics.qc": "91a74475d9edc5216d95ca0a5bdeed6ea6678e0fcdd34f87609d1f19ae0fb45e",
+    "src/argus_tactic_fixture.qc": "2bf30f0f51942333fe54983eeb6e515fcf57726ec02f5ed363c145d83392abac",
+    "game/argus/progs.dat": "eea35ba27c92574e489b4f332cee39666157447d5908014b3bef9b68580812fc",
+    "engine/argus/progs.dat": "eea35ba27c92574e489b4f332cee39666157447d5908014b3bef9b68580812fc"
+  }
+}

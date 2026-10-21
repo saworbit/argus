@@ -12,7 +12,7 @@ use crate::intel::{
 use crate::lab::{cartograph_all as all_atlases, lab_status as build_lab};
 use crate::learn::learn_hotspots;
 use crate::live::{knobs, snapshot, validate_tune};
-use crate::match_ctrl::{list_runs, MatchCtrl, DURATION_MAX, DURATION_MIN};
+use crate::match_ctrl::{list_runs, MatchCtrl, RunCancellation, DURATION_MAX, DURATION_MIN};
 use crate::nav_graph::{around_point, item_view, node_deep, route_ref};
 use crate::nav_sync::nav_sync_dispatch;
 use crate::navgen::nav_generate;
@@ -21,25 +21,81 @@ use crate::qc_index::{index_argus, qc_file_slice, qc_find, qc_read, qc_search};
 use crate::see_alias::normalize_see;
 use crate::session::{ExperimentRecord, SessionSeen};
 use crate::tape_view::{bot_deep, load_named_tape, plan_view, split_tape_bot, timeline};
+use crate::task_store::TaskStore;
+use rmcp::handler::server::tool::{ToolCallContext, ToolRouter};
 use rmcp::handler::server::wrapper::Parameters;
 use rmcp::model::{
-    CallToolResult, ContentBlock, Implementation, ListResourceTemplatesResult, ListResourcesResult,
-    PaginatedRequestParams, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
-    ReadResourceResult, Role, ServerCapabilities, ServerInfo,
+    CallToolRequestParams, CallToolResponse, CallToolResult, CancelTaskParams,
+    CompleteRequestParams, CompleteResult, CompletionInfo, ContentBlock, CreateTaskResult,
+    ElicitRequestParams, ElicitResult, ElicitationAction, ElicitationSchema, EnumSchema,
+    GetTaskParams, GetTaskResult, Implementation, JsonObject, ListResourceTemplatesResult,
+    ListResourcesResult, ListToolsResult, PaginatedRequestParams, PrimitiveSchemaDefinition,
+    ProgressNotificationParam, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
+    ReadResourceResult, Reference, RequestMetaObject, ResourceUpdatedNotificationParam, Role,
+    ServerCapabilities, ServerConfig, SubscribeRequestParams, SubscriptionFilter, ToolAnnotations,
+    UnsubscribeRequestParams, UpdateTaskParams,
 };
-use rmcp::service::{RequestContext, RoleServer};
+use rmcp::service::{ElicitationMode, RequestContext, RoleServer, SubscriptionContext};
+use rmcp::task_manager::{TaskContext, TaskExit, TaskOptions};
 use rmcp::ErrorData as McpError;
 use rmcp::{
-    prompt, prompt_handler, prompt_router, schemars, tool, tool_handler, tool_router, ServerHandler,
+    prompt, prompt_handler, prompt_router, schemars, tool, tool_router, Peer, ServerHandler,
 };
 use serde::Deserialize;
 use serde::Serialize;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 
 const SERVER_NAME: &str = env!("CARGO_PKG_NAME");
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const READ_ONLY_TOOLS: &[&str] = &[
+    "bot_capture_pov_frame",
+    "brief_run",
+    "bsp_inspect_entities",
+    "cartograph_all",
+    "compare_runs",
+    "config_check",
+    "corpus",
+    "lab_status",
+    "list_maps",
+    "list_runs",
+    "live_snapshot",
+    "match_status",
+    "mill",
+    "knobs",
+    "qc_find",
+    "qc_index",
+    "qc_read",
+    "quality_bars",
+    "see",
+    "suggest_next",
+];
+
+const MUTATING_TOOLS: &[&str] = &[
+    "analyze_match",
+    "baseline_set",
+    "bot_simulate_match",
+    "campaign_experiment",
+    "cartograph",
+    "compile_qc",
+    "experiment",
+    "learn_hotspots",
+    "match_command",
+    "match_run",
+    "match_start",
+    "match_stop",
+    "matrix_experiment",
+    "nav_generate",
+    "nav_sync_dispatch",
+    "probe",
+    "quake_compile_qc",
+    "rcon_exec",
+    "ship",
+    "tune",
+];
 
 fn server_instructions() -> String {
     format!(
@@ -54,6 +110,11 @@ cause/reach_pct/item_control fields. Prefer native tools over extras."
 
 #[derive(Clone)]
 pub struct Argus {
+    tool_router: ToolRouter<Argus>,
+    tasks: TaskStore,
+    /// Test and embedded-harness override. Normal server construction always
+    /// loads the lab configuration at execution time.
+    task_match_config: Option<Config>,
     pub matches: Arc<Mutex<MatchCtrl>>,
     pub session: Arc<Mutex<SessionSeen>>,
     /// Serialises whole matches WITHOUT blocking the read paths. The
@@ -61,6 +122,69 @@ pub struct Argus {
     /// match_stop, tune, live_snapshot, see what=live and shutdown all
     /// queued behind a running match_run. Only the run paths take this.
     pub run_gate: Arc<Mutex<()>>,
+    legacy_subscriptions: Arc<Mutex<HashMap<String, tokio::task::AbortHandle>>>,
+}
+
+#[derive(Clone)]
+struct ProgressReporter {
+    token: Option<rmcp::model::ProgressToken>,
+    peer: Peer<RoleServer>,
+    last: Arc<Mutex<Option<f64>>>,
+}
+
+impl ProgressReporter {
+    fn new(meta: RequestMetaObject, peer: Peer<RoleServer>) -> Self {
+        Self {
+            token: meta.get_progress_token(),
+            peer,
+            last: Arc::new(Mutex::new(None)),
+        }
+    }
+
+    async fn send(&self, progress: f64, total: f64, message: impl Into<String>) {
+        // Keep validation and transport in one critical section so clones
+        // cannot deliver increasing values out of order.
+        let mut last = self.last.lock().await;
+        let Some(notification) = progress_notification(
+            self.token.as_ref(),
+            &mut last,
+            progress,
+            total,
+            message.into(),
+        ) else {
+            return;
+        };
+        if let Err(error) = self.peer.notify_progress(notification).await {
+            eprintln!("progress notification: {error}");
+        }
+    }
+}
+
+fn progress_notification(
+    token: Option<&rmcp::model::ProgressToken>,
+    last: &mut Option<f64>,
+    progress: f64,
+    total: f64,
+    message: String,
+) -> Option<ProgressNotificationParam> {
+    if !progress.is_finite() || last.is_some_and(|value| progress <= value) {
+        return None;
+    }
+    token.map(|token| {
+        *last = Some(progress);
+        ProgressNotificationParam::new(token.clone(), progress)
+            .with_total(total)
+            .with_message(message)
+    })
+}
+
+#[derive(Clone)]
+struct MatchProgress {
+    reporter: ProgressReporter,
+    start: f64,
+    span: f64,
+    total: f64,
+    label: String,
 }
 
 impl Argus {
@@ -71,10 +195,38 @@ impl Argus {
             .map(|p| SessionSeen::load(&p))
             .unwrap_or_default();
         Self {
+            tool_router: Self::annotated_tool_router(),
+            tasks: TaskStore::default(),
+            task_match_config: None,
             matches: Arc::new(Mutex::new(MatchCtrl::default())),
             run_gate: Arc::new(Mutex::new(())),
             session: Arc::new(Mutex::new(seen)),
+            legacy_subscriptions: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    /// Attach one explicit safety contract to every generated route. Keeping
+    /// the partition here makes the whole tool surface reviewable at once and
+    /// makes a newly added, unclassified tool fail immediately in tests and at
+    /// startup instead of inheriting the protocol's destructive defaults.
+    fn annotated_tool_router() -> ToolRouter<Self> {
+        let mut router = Self::tool_router();
+        for (name, route) in &mut router.map {
+            let read_only = READ_ONLY_TOOLS.contains(&name.as_ref());
+            let mutating = MUTATING_TOOLS.contains(&name.as_ref());
+            assert_ne!(
+                read_only, mutating,
+                "MCP tool {name} must appear in exactly one safety class"
+            );
+            route.attr.annotations = Some(ToolAnnotations::from_raw(
+                Some(name.to_string()),
+                Some(read_only),
+                Some(mutating),
+                Some(read_only),
+                Some(false),
+            ));
+        }
+        router
     }
 
     /// Drive a match WITHOUT holding the MatchCtrl mutex for its whole
@@ -82,6 +234,9 @@ impl Argus {
     /// and taken again to stop it, so match_status, match_stop, tune,
     /// live_snapshot and see what=live stay answerable during a
     /// match_run and shutdown can reach the engine.
+    // This is the lock-safe adapter for the public match tool fields. Keeping
+    // them explicit makes it harder for start and finish to disagree.
+    #[allow(clippy::too_many_arguments)]
     async fn drive_match(
         &self,
         cfg: &crate::config::Config,
@@ -91,26 +246,164 @@ impl Argus {
         slots: Option<u32>,
         skill: Option<u32>,
         coop: Option<bool>,
+        progress: Option<MatchProgress>,
+        cancellation: Option<RunCancellation>,
+        task_context: Option<TaskContext>,
     ) -> Result<crate::match_ctrl::MatchRunResult, String> {
         let _one_at_a_time = self.run_gate.lock().await;
+        if cancellation
+            .as_ref()
+            .is_some_and(RunCancellation::is_requested)
+        {
+            return Err("match cancelled before startup".into());
+        }
+        if let Some(context) = &task_context {
+            context.set_status_message(format!("starting {map}"));
+        }
+        if let Some(p) = &progress {
+            p.reporter
+                .send(p.start, p.total, format!("starting {}", p.label))
+                .await;
+        }
         {
             let mut g = self.matches.lock().await;
             g.begin(cfg, map, duration_sec, run_name, slots, skill, coop)
                 .await?;
         }
+        if let Some(cancel) = &cancellation {
+            let _ = cancel.claim_live();
+        }
+        if let Some(context) = &task_context {
+            context.set_status_message(format!("running {map}: 0/{duration_sec}s"));
+        }
         let limit = duration_sec as u64;
+        let mut last_reported = u64::MAX;
         loop {
             let (running, elapsed) = {
                 let mut g = self.matches.lock().await;
                 g.poll()
             };
-            if !running || elapsed >= limit || crate::match_ctrl::live_cancelled() {
+            if !running
+                || elapsed >= limit
+                || crate::match_ctrl::live_cancelled()
+                || cancellation
+                    .as_ref()
+                    .is_some_and(RunCancellation::is_requested)
+            {
                 break;
+            }
+            if elapsed != last_reported {
+                if let Some(context) = &task_context {
+                    context.set_status_message(format!("running {map}: {elapsed}/{duration_sec}s"));
+                }
+                if let Some(p) = &progress {
+                    let fraction = if limit == 0 {
+                        1.0
+                    } else {
+                        (elapsed as f64 / limit as f64).clamp(0.0, 1.0)
+                    };
+                    p.reporter
+                        .send(
+                            p.start + p.span * fraction,
+                            p.total,
+                            format!("{}: {elapsed}/{limit}s", p.label),
+                        )
+                        .await;
+                }
+                last_reported = elapsed;
             }
             tokio::time::sleep(std::time::Duration::from_millis(400)).await;
         }
+        if let Some(context) = &task_context {
+            context.set_status_message(format!("finalizing {map}"));
+        }
         let mut g = self.matches.lock().await;
-        g.finish(cfg, map).await
+        let result = g.finish(cfg, map).await;
+        drop(g);
+        if let Some(p) = &progress {
+            p.reporter
+                .send(p.start + p.span, p.total, format!("finished {}", p.label))
+                .await;
+        }
+        result
+    }
+
+    async fn run_match_call(
+        &self,
+        args: &MatchRunArgs,
+        progress: Option<MatchProgress>,
+        cancellation: Option<RunCancellation>,
+        task_context: Option<TaskContext>,
+        config_override: Option<Config>,
+    ) -> Result<CallToolResult, McpError> {
+        if !(DURATION_MIN..=DURATION_MAX).contains(&args.duration_sec) {
+            return Err(McpError::invalid_params(
+                format!("duration_sec must be {DURATION_MIN}..={DURATION_MAX}"),
+                None,
+            ));
+        }
+        let cfg = match config_override {
+            Some(cfg) => cfg,
+            None => match cfg_or_err() {
+                Ok(cfg) => cfg,
+                Err(result) => return Ok(result),
+            },
+        };
+        match self
+            .drive_match(
+                &cfg,
+                &args.map,
+                args.duration_sec,
+                args.run_name.as_deref(),
+                args.dedicated_slots,
+                args.skill,
+                None,
+                progress,
+                cancellation,
+                task_context,
+            )
+            .await
+        {
+            Ok(result) => json_ok(&result),
+            Err(error) => tool_err(error),
+        }
+    }
+
+    fn spawn_match_task(
+        &self,
+        args: MatchRunArgs,
+        config_override: Option<Config>,
+    ) -> rmcp::model::Task {
+        let server = self.clone();
+        let cancellation = RunCancellation::new();
+        self.tasks.spawn(
+            TaskOptions::new().with_status_message("waiting for the match slot"),
+            move |context| {
+                Box::pin(async move {
+                    let watch_context = context.clone();
+                    let watch_cancellation = cancellation.clone();
+                    let watcher = tokio::spawn(async move {
+                        watch_context.cancelled().await;
+                        let _ = watch_cancellation.request();
+                    });
+                    let result = server
+                        .run_match_call(
+                            &args,
+                            None,
+                            Some(cancellation),
+                            Some(context.clone()),
+                            config_override,
+                        )
+                        .await;
+                    watcher.abort();
+                    if context.is_cancel_requested() {
+                        Err(TaskExit::Cancelled)
+                    } else {
+                        result.map_err(TaskExit::Error)
+                    }
+                })
+            },
+        )
     }
 
     pub async fn shutdown(&self) {
@@ -119,9 +412,20 @@ impl Argus {
         // and the old lock-then-shutdown queued behind it until the
         // match ended, or never, if the client killed us outright.
         crate::match_ctrl::cancel_live();
-        match tokio::time::timeout(std::time::Duration::from_secs(10), self.matches.lock()).await {
-            Ok(mut g) => g.shutdown().await,
-            Err(_) => {}
+        if let Ok(mut g) =
+            tokio::time::timeout(std::time::Duration::from_secs(10), self.matches.lock()).await
+        {
+            g.shutdown().await;
+        }
+        // Task futures may own match cleanup, so abort them only after the
+        // live child has been stopped and MatchCtrl has finalized it.
+        self.tasks.shutdown();
+        // TaskManager abort is cooperative with Tokio scheduling: wait until
+        // the aborted future has actually dropped its run-gate guard before
+        // reporting shutdown complete.
+        if let Ok(guard) = tokio::time::timeout(Duration::from_secs(2), self.run_gate.lock()).await
+        {
+            drop(guard);
         }
     }
 
@@ -136,13 +440,109 @@ impl Argus {
         s.note_see(what, name);
         Self::persist_session(&s);
     }
+
+    async fn live_resource_snapshot(&self, uris: &[String]) -> BTreeMap<String, String> {
+        let mut snapshot = BTreeMap::new();
+        if uris.iter().any(|uri| uri == "argus://last") {
+            let session = self.session.lock().await.clone();
+            if let Ok(value) = serde_json::to_string(&session) {
+                snapshot.insert("argus://last".into(), value);
+            }
+        }
+        if uris.iter().any(|uri| uri == "argus://lab") {
+            let live = self.matches.lock().await.resource_state();
+            let session = self.session.lock().await.clone();
+            if let Ok(value) = serde_json::to_string(&(live, session)) {
+                snapshot.insert("argus://lab".into(), value);
+            }
+        }
+        snapshot
+    }
+}
+
+const LIVE_RESOURCE_URIS: [&str; 2] = ["argus://last", "argus://lab"];
+
+fn changed_resource_uris(
+    previous: &mut BTreeMap<String, String>,
+    current: BTreeMap<String, String>,
+) -> Vec<String> {
+    let changed = current
+        .iter()
+        .filter(|(uri, value)| previous.get(*uri) != Some(*value))
+        .map(|(uri, _)| uri.clone())
+        .collect();
+    *previous = current;
+    changed
+}
+
+fn configured_baseline_maps(cfg: &Config) -> Vec<String> {
+    let mut maps: Vec<String> = crate::intel::all_baseline_bands(cfg)
+        .into_iter()
+        .filter(|(_, runs)| {
+            runs.iter()
+                .any(|run| crate::paths::resolve_log(cfg, run).is_ok())
+        })
+        .map(|(map, _)| map)
+        .collect();
+    maps.sort_by_key(|map| map.to_ascii_lowercase());
+    maps.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+    maps
+}
+
+fn accepted_elicited_map(result: ElicitResult, offered: &[String]) -> Option<String> {
+    if result.action != ElicitationAction::Accept {
+        return None;
+    }
+    let content = result.content?;
+    let selected = content.get("map")?.as_str()?.trim();
+    offered
+        .iter()
+        .find(|map| map.eq_ignore_ascii_case(selected))
+        .cloned()
+}
+
+async fn elicit_baseline_map(peer: &Peer<RoleServer>, offered: &[String]) -> Option<String> {
+    if offered.is_empty()
+        || !peer
+            .supported_elicitation_modes()
+            .contains(&ElicitationMode::Form)
+    {
+        return None;
+    }
+    let schema = baseline_elicitation_schema(offered)?;
+    let result = peer
+        .create_elicitation_with_timeout(
+            ElicitRequestParams::FormElicitationParams {
+                meta: None,
+                message: "The candidate tape does not identify a map. Choose the configured baseline map to compare against.".into(),
+                requested_schema: schema,
+            },
+            Some(Duration::from_secs(30)),
+        )
+        .await
+        .ok()?;
+    accepted_elicited_map(result, offered)
+}
+
+fn baseline_elicitation_schema(offered: &[String]) -> Option<ElicitationSchema> {
+    if offered.is_empty() {
+        return None;
+    }
+    let options = EnumSchema::builder(offered.to_vec())
+        .title("Baseline map")
+        .description("Map whose configured baseline band should be used")
+        .build();
+    ElicitationSchema::builder()
+        .required_property("map", PrimitiveSchemaDefinition::Enum(options))
+        .build()
+        .ok()
 }
 
 fn json_ok<T: Serialize>(value: &T) -> Result<CallToolResult, McpError> {
     json_ok_pngs(value, &[])
 }
 
-fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult, McpError> {
+fn json_value<T: Serialize>(value: &T) -> Result<serde_json::Value, McpError> {
     let mut v =
         serde_json::to_value(value).map_err(|e| McpError::internal_error(e.to_string(), None))?;
     // a stale server must never hand out an unmarked opinion: the
@@ -150,6 +550,18 @@ fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult
     if let (Some(note), serde_json::Value::Object(map)) = (crate::stale::banner(), &mut v) {
         map.insert("lab_stale".into(), serde_json::Value::String(note));
     }
+    if let (Ok(cfg), serde_json::Value::Object(map)) = (Config::load(), &mut v) {
+        map.insert(
+            "lab_identity".into(),
+            serde_json::to_value(crate::build_identity::inspect(&cfg))
+                .map_err(|e| McpError::internal_error(e.to_string(), None))?,
+        );
+    }
+    Ok(v)
+}
+
+fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult, McpError> {
+    let v = json_value(value)?;
     let text = serde_json::to_string_pretty(&v)
         .map_err(|e| McpError::internal_error(e.to_string(), None))?;
     let mut blocks = vec![ContentBlock::text(text)];
@@ -161,15 +573,74 @@ fn json_ok_pngs<T: Serialize>(value: &T, pngs: &[&str]) -> Result<CallToolResult
     Ok(CallToolResult::success(blocks))
 }
 
+fn report_output_schema() -> Arc<JsonObject> {
+    let serde_json::Value::Object(schema) = serde_json::json!({
+        "type": "object",
+        "required": ["format", "detail", "data"],
+        "properties": {
+            "format": {"type": "string", "enum": ["json", "csv"]},
+            "detail": {"type": "string", "enum": ["brief", "full", "table"]},
+            "data": {}
+        },
+        "additionalProperties": false
+    }) else {
+        unreachable!("the report output schema is an object")
+    };
+    Arc::new(schema)
+}
+
+fn report_json_ok<T: Serialize>(
+    value: &T,
+    detail: &'static str,
+) -> Result<CallToolResult, McpError> {
+    let value = json_value(value)?;
+    let text = serde_json::to_string_pretty(&value)
+        .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+    let mut result = CallToolResult::success(vec![ContentBlock::text(text)]);
+    result.structured_content = Some(serde_json::json!({
+        "format": "json",
+        "detail": detail,
+        "data": value,
+    }));
+    Ok(result)
+}
+
+fn csv_text(body: String) -> String {
+    let mut headers = String::new();
+    if let Ok(cfg) = Config::load() {
+        let identity = crate::build_identity::inspect(&cfg);
+        headers.push_str(&format!(
+            "# lab_identity: running={} build={} checkout={} source={} authoritative={}\n",
+            identity.running_version,
+            identity.build_source,
+            identity.checkout_version.as_deref().unwrap_or("unreadable"),
+            identity.checkout_source.as_deref().unwrap_or("unreadable"),
+            identity.authoritative,
+        ));
+    }
+    if let Some(note) = crate::stale::banner() {
+        headers.push_str(&format!("# lab_stale: {note}\n"));
+    }
+    format!("{headers}{body}")
+}
+
+fn report_csv_ok(body: String) -> Result<CallToolResult, McpError> {
+    let text = csv_text(body);
+    let mut result = CallToolResult::success(vec![ContentBlock::text(text.clone())]);
+    result.structured_content = Some(serde_json::json!({
+        "format": "csv",
+        "detail": "table",
+        "data": text,
+    }));
+    Ok(result)
+}
+
 /// CSV rather than JSON, because every one of these answers is a
 /// table and a table costs about half the tokens as CSV. The
 /// stale banner still rides along, as a comment line, because a
 /// stale server must never hand out an unmarked opinion.
 fn csv_ok(body: String) -> Result<CallToolResult, McpError> {
-    let text = match crate::stale::banner() {
-        Some(note) => format!("# lab_stale: {note}\n{body}"),
-        None => body,
-    };
+    let text = csv_text(body);
     Ok(CallToolResult::success(vec![ContentBlock::text(text)]))
 }
 
@@ -186,7 +657,14 @@ fn png_block(path: &str) -> Option<ContentBlock> {
 fn tool_err(msg: impl Into<String>) -> Result<CallToolResult, McpError> {
     let error = msg.into();
     let hint = hint_for(&error);
-    let body = serde_json::json!({ "error": error, "hint": hint });
+    let mut body = serde_json::json!({ "error": error, "hint": hint });
+    if let (Ok(cfg), serde_json::Value::Object(map)) = (Config::load(), &mut body) {
+        map.insert(
+            "lab_identity".into(),
+            serde_json::to_value(crate::build_identity::inspect(&cfg))
+                .map_err(|e| McpError::internal_error(e.to_string(), None))?,
+        );
+    }
     Ok(CallToolResult::error(vec![ContentBlock::text(
         serde_json::to_string_pretty(&body).unwrap_or(error),
     )]))
@@ -417,6 +895,24 @@ pub struct CompareArgs {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct HarvestPromptArgs {
+    #[schemars(
+        description = "Archive tag such as vNNN; letters, digits, underscore, dash and dot"
+    )]
+    pub tag: String,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct ValidateChangePromptArgs {
+    #[schemars(description = "Short description of the change under test")]
+    pub change: String,
+    #[schemars(description = "Comma-separated map plan; use at least two maps (default dm2,dm4)")]
+    pub maps: Option<String>,
+    #[schemars(description = "Pre-registered metric the change is expected to move")]
+    pub primary: Option<String>,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct CartographArgs {
     #[schemars(
         description = "BSP path, short name (dm4), or maps/dm4.bsp. Ingests from ARGUS_MAPS or extracts from id1 PAK0/PAK1."
@@ -466,6 +962,27 @@ pub struct SeeArgs {
         description = "For status/live: return log lines after this 0-based count. 0 or omit = last 40."
     )]
     pub since_line: Option<u32>,
+}
+
+impl Default for Argus {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct MillArgs {
+    #[serde(default)]
+    #[schemars(description = "revisions (default) | diff")]
+    pub what: String,
+    #[schemars(description = "Map short name for revisions, e.g. dm4")]
+    pub map: Option<String>,
+    #[schemars(description = "Older map@content-hash id for diff")]
+    pub revision_a: Option<String>,
+    #[schemars(description = "Newer map@content-hash id for diff")]
+    pub revision_b: Option<String>,
+    #[schemars(description = "Optional coordinate link id; absent from both fails closed")]
+    pub link: Option<String>,
 }
 
 #[derive(Debug, Default, Deserialize, schemars::JsonSchema)]
@@ -756,6 +1273,9 @@ impl Argus {
                 None,
                 None,
                 None,
+                None,
+                None,
+                None,
             )
             .await
         {
@@ -942,32 +1462,24 @@ impl Argus {
     async fn match_run(
         &self,
         Parameters(args): Parameters<MatchRunArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
-        if !(DURATION_MIN..=DURATION_MAX).contains(&args.duration_sec) {
-            return Err(McpError::invalid_params(
-                format!("duration_sec must be {DURATION_MIN}..={DURATION_MAX}"),
-                None,
-            ));
-        }
-        let cfg = match cfg_or_err() {
-            Ok(c) => c,
-            Err(r) => return Ok(r),
-        };
-        match self
-            .drive_match(
-                &cfg,
-                &args.map,
-                args.duration_sec,
-                args.run_name.as_deref(),
-                args.dedicated_slots,
-                args.skill,
-                None,
-            )
-            .await
-        {
-            Ok(r) => json_ok(&r),
-            Err(e) => tool_err(e),
-        }
+        let progress = ProgressReporter::new(meta, peer);
+        self.run_match_call(
+            &args,
+            Some(MatchProgress {
+                reporter: progress,
+                start: 0.0,
+                span: 1.0,
+                total: 1.0,
+                label: format!("{} match", args.map),
+            }),
+            None,
+            None,
+            None,
+        )
+        .await
     }
 
     #[tool(
@@ -1112,7 +1624,8 @@ impl Argus {
     }
 
     #[tool(
-        description = "Brief a harvested log (or see what=run). Default is lite: headline, totals, flags, next_steps."
+        description = "Brief a harvested log (or see what=run). Default is lite: headline, totals, flags, next_steps.",
+        output_schema = report_output_schema()
     )]
     async fn brief_run(
         &self,
@@ -1125,11 +1638,11 @@ impl Argus {
         match intel_brief(&cfg, &args.log, args.map.as_deref()) {
             Ok(r) => {
                 if crate::intel::want_csv(args.format.as_deref()) {
-                    csv_ok(crate::intel::brief_csv(&r))
+                    report_csv_ok(crate::intel::brief_csv(&r))
                 } else if want_full(args.detail.as_deref()) {
-                    json_ok(&r)
+                    report_json_ok(&r, "full")
                 } else {
-                    json_ok(&brief_lite(&r))
+                    report_json_ok(&brief_lite(&r), "brief")
                 }
             }
             Err(e) => tool_err(e),
@@ -1137,25 +1650,38 @@ impl Argus {
     }
 
     #[tool(
-        description = "A/B two logs. Default is verdict+gates (not two full briefs). detail=full for both tapes."
+        description = "A/B two logs. Default is verdict+gates (not two full briefs). detail=full for both tapes.",
+        output_schema = report_output_schema()
     )]
     async fn compare_runs(
         &self,
         Parameters(args): Parameters<CompareArgs>,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let cfg = match cfg_read_or_err() {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
+        let mut map = args.map.clone();
+        if args.log_a.is_none()
+            && map.is_none()
+            && matches!(crate::intel::run_map(&cfg, &args.log_b), Ok(None))
+        {
+            let offered = configured_baseline_maps(&cfg);
+            map = elicit_baseline_map(&peer, &offered).await;
+        }
         let log_a = args.log_a.as_deref().unwrap_or("baseline");
-        match intel_compare(&cfg, log_a, &args.log_b, args.map.as_deref()) {
+        match intel_compare(&cfg, log_a, &args.log_b, map.as_deref()) {
             Ok(r) => {
                 if crate::intel::want_csv(args.format.as_deref()) {
-                    csv_ok(crate::intel::compare_csv(&r))
+                    report_csv_ok(crate::intel::compare_csv(&r))
                 } else if want_full(args.detail.as_deref()) {
-                    json_ok(&r)
+                    report_json_ok(&r, "full")
                 } else {
-                    json_ok(&compare_lite(&r))
+                    report_json_ok(&compare_lite(&r), "brief")
                 }
             }
             Err(e) => tool_err(e),
@@ -1315,6 +1841,43 @@ impl Argus {
     }
 
     #[tool(
+        description = "Read graph history or diff two exact nav JSON revisions. Diff output contains only links present in at least one source graph, with matching probe convictions. Read-only."
+    )]
+    async fn mill(
+        &self,
+        Parameters(args): Parameters<MillArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let cfg = match cfg_read_or_err() {
+            Ok(c) => c,
+            Err(r) => return Ok(r),
+        };
+        match args.what.trim().to_ascii_lowercase().as_str() {
+            "" | "revisions" => {
+                let Some(map) = args.map.as_deref() else {
+                    return tool_err("mill revisions needs map=dm4");
+                };
+                match crate::graph_revision::list_revisions(&cfg, map) {
+                    Ok(r) => json_ok(&r),
+                    Err(e) => tool_err(e),
+                }
+            }
+            "diff" => {
+                let Some(a) = args.revision_a.as_deref() else {
+                    return tool_err("mill diff needs revision_a=map@content-hash");
+                };
+                let Some(b) = args.revision_b.as_deref() else {
+                    return tool_err("mill diff needs revision_b=map@content-hash");
+                };
+                match crate::graph_revision::diff(&cfg, a, b, args.link.as_deref()) {
+                    Ok(r) => json_ok(&r),
+                    Err(e) => tool_err(e),
+                }
+            }
+            other => tool_err(format!("unknown mill view {other}; use revisions or diff")),
+        }
+    }
+
+    #[tool(
         description = "Concrete next places to look in the QC given a log or an A/B pair. Prefer this after compare_runs."
     )]
 
@@ -1327,6 +1890,9 @@ impl Argus {
             Err(r) => return Ok(r),
         };
         if let Some(b) = args.log_b.as_deref() {
+            if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+                return tool_err(error);
+            }
             let a = args.log_a.as_deref().unwrap_or("baseline");
             match intel_compare(&cfg, a, b, args.map.as_deref()) {
                 Ok(r) => json_ok(&r.next_steps),
@@ -1497,8 +2063,7 @@ impl Argus {
     }
 
     #[tool(
-        description = "One inspect call. what=help|project|lab|map|recipe|node|fn|const|live|bot|status|run|last|knobs. Use this before inventing a pipeline.",
-        annotations(title = "see", read_only_hint = true)
+        description = "One inspect call. what=help|project|lab|map|recipe|node|fn|const|live|bot|status|run|last|knobs. Use this before inventing a pipeline."
     )]
     async fn see(&self, Parameters(args): Parameters<SeeArgs>) -> Result<CallToolResult, McpError> {
         let what = normalize_see(&args.what);
@@ -1816,6 +2381,8 @@ impl Argus {
     async fn experiment(
         &self,
         Parameters(args): Parameters<ExperimentArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(30);
         if !(10..=185).contains(&dur) {
@@ -1833,8 +2400,17 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
+        let progress = ProgressReporter::new(meta, peer);
+        let repeats = args.repeats.unwrap_or(3).clamp(1, 5);
+        let compile_units = u32::from(args.compile.unwrap_or(true));
+        let total = f64::from(compile_units + repeats + 1);
+        progress.send(0.0, total, "preparing experiment").await;
         let mut compile_result = None;
         if args.compile.unwrap_or(true) {
+            progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
             let compiled = match tokio::time::timeout(
                 Duration::from_secs(90),
@@ -1866,6 +2442,7 @@ impl Argus {
                 }));
             }
             compile_result = Some(compiled);
+            progress.send(1.0, total, "compile complete").await;
         }
         let run_name = args
             .run_name
@@ -1878,7 +2455,6 @@ impl Argus {
                 let _ = g.stop(Duration::from_secs(3)).await;
             }
         }
-        let repeats = args.repeats.unwrap_or(3).clamp(1, 5);
         let mut runs = Vec::new();
         for i in 0..repeats {
             // one tape per name, so every tape in the band survives on
@@ -1888,8 +2464,26 @@ impl Argus {
             } else {
                 format!("{run_name}{}", i + 1)
             };
+            let start = f64::from(compile_units + i);
             match self
-                .drive_match(&cfg, &args.map, dur, Some(&name), None, args.skill, None)
+                .drive_match(
+                    &cfg,
+                    &args.map,
+                    dur,
+                    Some(&name),
+                    None,
+                    args.skill,
+                    None,
+                    Some(MatchProgress {
+                        reporter: progress.clone(),
+                        start,
+                        span: 1.0,
+                        total,
+                        label: format!("{} tape {}/{}", args.map, i + 1, repeats),
+                    }),
+                    None,
+                    None,
+                )
                 .await
             {
                 Ok(r) => runs.push(r),
@@ -1903,6 +2497,13 @@ impl Argus {
         }
         let ran = runs.last().cloned().expect("at least one match ran");
         let logs: Vec<String> = runs.iter().map(|r| r.log_path.clone()).collect();
+        progress
+            .send(
+                f64::from(compile_units + repeats),
+                total,
+                "comparing experiment tapes",
+            )
+            .await;
         let compare = match args.baseline.as_deref() {
             // an explicit baseline is still one named tape against the
             // candidates; "baseline" resolves the map's whole band
@@ -1936,6 +2537,7 @@ impl Argus {
             });
             Self::persist_session(&s);
         }
+        progress.send(total, total, "experiment complete").await;
         if want_full(args.detail.as_deref()) {
             return json_ok(&serde_json::json!({
                 "ok": ran.ok,
@@ -1968,6 +2570,8 @@ impl Argus {
     async fn campaign_experiment(
         &self,
         Parameters(args): Parameters<CampaignExperimentArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(60);
         if !(10..=300).contains(&dur) {
@@ -1992,8 +2596,16 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
+        let progress = ProgressReporter::new(meta, peer);
+        let compile_units = u32::from(args.compile.unwrap_or(true));
+        let total = f64::from(compile_units + 2);
+        progress.send(0.0, total, "preparing campaign").await;
         let mut compile_result = None;
         if args.compile.unwrap_or(true) {
+            progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
             let compiled = match tokio::time::timeout(
                 Duration::from_secs(90),
@@ -2013,6 +2625,7 @@ impl Argus {
                 }));
             }
             compile_result = Some(compiled);
+            progress.send(1.0, total, "compile complete").await;
         }
         let run_name = args
             .run_name
@@ -2052,6 +2665,15 @@ impl Argus {
                 None,
                 args.skill,
                 Some(true),
+                Some(MatchProgress {
+                    reporter: progress.clone(),
+                    start: f64::from(compile_units),
+                    span: 1.0,
+                    total,
+                    label: format!("{} campaign", args.map),
+                }),
+                None,
+                None,
             )
             .await
         {
@@ -2074,6 +2696,13 @@ impl Argus {
             Ok(c) => c,
             Err(e) => return tool_err(format!("failed to read log {}: {}", ran.log_path, e)),
         };
+        progress
+            .send(
+                f64::from(compile_units + 1),
+                total,
+                "evaluating campaign log",
+            )
+            .await;
         let report = crate::campaign::evaluate_campaign_log(
             &log_content,
             &args.map,
@@ -2082,6 +2711,7 @@ impl Argus {
             ran.elapsed_sec,
             crate::intel::hull0_for_map(&cfg, &args.map).as_ref(),
         );
+        progress.send(total, total, "campaign complete").await;
         json_ok(&serde_json::json!({
             "ok": report.ok,
             "verdict": report.verdict,
@@ -2103,6 +2733,8 @@ impl Argus {
     async fn matrix_experiment(
         &self,
         Parameters(args): Parameters<MatrixArgs>,
+        meta: RequestMetaObject,
+        peer: Peer<RoleServer>,
     ) -> Result<CallToolResult, McpError> {
         let dur = args.duration_sec.unwrap_or(20);
         if !(10..=60).contains(&dur) {
@@ -2127,8 +2759,16 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
+        let progress = ProgressReporter::new(meta, peer);
+        let compile_units = usize::from(args.compile.unwrap_or(true));
+        let total = (compile_units + maps.len() + 1) as f64;
+        progress.send(0.0, total, "preparing map matrix").await;
         let mut compile_ok = None;
         if args.compile.unwrap_or(true) {
+            progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
             let compiled = match tokio::time::timeout(
                 Duration::from_secs(90),
@@ -2147,9 +2787,10 @@ impl Argus {
                 }));
             }
             compile_ok = Some(true);
+            progress.send(1.0, total, "compile complete").await;
         }
         let mut results = Vec::new();
-        for map in &maps {
+        for (index, map) in maps.iter().enumerate() {
             {
                 let mut g = self.matches.lock().await;
                 g.reap();
@@ -2171,6 +2812,15 @@ impl Argus {
                     Some(&format!("mx_{map}")),
                     None,
                     args.skill,
+                    None,
+                    Some(MatchProgress {
+                        reporter: progress.clone(),
+                        start: (compile_units + index) as f64,
+                        span: 1.0,
+                        total,
+                        label: format!("{map} matrix match"),
+                    }),
+                    None,
                     None,
                 )
                 .await;
@@ -2194,6 +2844,10 @@ impl Argus {
                 }
             }
         }
+        progress
+            .send(total - 1.0, total, "summarizing map matrix")
+            .await;
+        progress.send(total, total, "map matrix complete").await;
         json_ok(&serde_json::json!({
             "ok": results.iter().all(|r| r.get("ok").and_then(|v| v.as_bool()).unwrap_or(false)),
             "compile_ok": compile_ok,
@@ -2248,6 +2902,9 @@ impl Argus {
                 Some(&format!("probe_{}", args.map)),
                 None,
                 args.skill,
+                None,
+                None,
+                None,
                 None,
             )
             .await
@@ -2335,6 +2992,47 @@ impl Argus {
     }
 
     #[prompt(
+        name = "harvest_before_play",
+        description = "Preserve a human play session before any new engine launch truncates qconsole.log"
+    )]
+    async fn harvest_before_play(
+        &self,
+        Parameters(args): Parameters<HarvestPromptArgs>,
+    ) -> Result<Vec<PromptMessage>, McpError> {
+        if !crate::paths::valid_run_name(&args.tag) {
+            return Err(McpError::invalid_params(
+                "tag must contain only letters, digits, underscore, dash or dot",
+                None,
+            ));
+        }
+        let body = format!(
+            "Preserve the current human session before doing anything that starts an engine. Run exactly:\n\npython tools/harvest_session.py --tag {}\n\nDo this first: every new engine launch truncates qconsole.log. Confirm the harvester succeeds before using experiment, matrix_experiment, match_start, match_run, probe, soak, cycle, gui, or another engine launcher. Then review the harvested run with brief_run or see what=demo; human tracks are review data, never bot bands or gates.",
+            args.tag
+        );
+        Ok(vec![PromptMessage::new_text(Role::User, body)])
+    }
+
+    #[prompt(
+        name = "validate_change",
+        description = "Plan a controlled multi-map Argus A/B with enough tapes and valid metric boundaries"
+    )]
+    async fn validate_change(
+        &self,
+        Parameters(args): Parameters<ValidateChangePromptArgs>,
+    ) -> Result<Vec<PromptMessage>, McpError> {
+        let maps = args.maps.as_deref().unwrap_or("dm2,dm4");
+        let primary = args
+            .primary
+            .as_deref()
+            .unwrap_or("choose before running tapes");
+        let body = format!(
+            "Validate this Argus change: {}\nRequested map context: {maps}\nPre-registered primary: {primary}\n\nUse a controlled A/B on at least two maps; one tape never settles a movement question. On dm2 collect at least three candidate tapes and three matching control tapes per arm (experiment map=dm2 repeats=3 primary=<metric> is the candidate-side minimum). Keep code, skill, duration, tick class, and map fixed within each comparison, record the tree state, and use a second map such as dm4 before deciding. Use experiment or matrix_experiment to collect evidence and compare_runs for existing arms. Trust each experiment/compare next_steps and its computed verdict; do not re-parse ARGLOG. Respect the metric boundaries in CLAUDE.md: never compare goal, engagement, raw death-event, distance, or speed counts across a boundary. Human tapes are review-only and never enter bot bands or gates.",
+            args.change
+        );
+        Ok(vec![PromptMessage::new_text(Role::User, body)])
+    }
+
+    #[prompt(
         name = "orient",
         description = "Orient an LLM on the Argus tree, live vs compile knobs, and how to test"
     )]
@@ -2362,19 +3060,249 @@ fn parse_node_ref(raw: &str) -> Option<(&str, u32)> {
     Some((map, id))
 }
 
-#[tool_handler]
+#[derive(Debug, PartialEq)]
+enum CompletionSource {
+    Maps,
+    MapList,
+    Runs(&'static [&'static str]),
+    Functions,
+    Constants,
+    Primary,
+    GraphHashes(Option<String>),
+}
+
+fn completion_source(request: &CompleteRequestParams) -> Option<CompletionSource> {
+    let argument = request.argument.name.as_str();
+    match &request.r#ref {
+        Reference::Prompt(prompt) => match (prompt.name.as_str(), argument) {
+            ("review_run", "log") => Some(CompletionSource::Runs(&[])),
+            ("review_ab", "log_a") => Some(CompletionSource::Runs(&["baseline", "shipped"])),
+            ("review_ab", "log_b") => Some(CompletionSource::Runs(&["latest"])),
+            ("review_ab", "map") | ("review_map", "bsp") => Some(CompletionSource::Maps),
+            ("validate_change", "maps") => Some(CompletionSource::MapList),
+            ("validate_change", "primary") => Some(CompletionSource::Primary),
+            _ => None,
+        },
+        Reference::Resource(resource) => match (resource.uri.as_str(), argument) {
+            ("argus://map/{name}", "name")
+            | ("argus://graph-revisions/{map}", "map")
+            | ("argus://graph/{map}/{hash}", "map")
+            | ("argus://probe-verdicts/{map}/{hash}", "map") => Some(CompletionSource::Maps),
+            ("argus://run/{name}", "name") => Some(CompletionSource::Runs(&["latest"])),
+            ("argus://fn/{name}", "name") => Some(CompletionSource::Functions),
+            ("argus://const/{name}", "name") => Some(CompletionSource::Constants),
+            ("argus://graph/{map}/{hash}", "hash")
+            | ("argus://probe-verdicts/{map}/{hash}", "hash") => {
+                let map = request
+                    .context
+                    .as_ref()
+                    .and_then(|context| context.get_argument("map"))
+                    .cloned();
+                Some(CompletionSource::GraphHashes(map))
+            }
+            _ => None,
+        },
+        _ => None,
+    }
+}
+
+fn filter_completion_values(
+    mut values: Vec<String>,
+    partial: &str,
+    comma_separated: bool,
+) -> CompletionInfo {
+    values.sort_by_key(|value| value.to_ascii_lowercase());
+    values.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+
+    let (prefix, needle, prior): (String, &str, Vec<String>) = if comma_separated {
+        match partial.rsplit_once(',') {
+            Some((head, tail)) => (
+                format!("{head},"),
+                tail.trim(),
+                head.split(',')
+                    .map(|value| value.trim().to_ascii_lowercase())
+                    .collect(),
+            ),
+            None => (String::new(), partial.trim(), Vec::new()),
+        }
+    } else {
+        (String::new(), partial, Vec::new())
+    };
+    let needle = needle.to_ascii_lowercase();
+    let mut matches: Vec<String> = values
+        .into_iter()
+        .filter(|value| value.to_ascii_lowercase().starts_with(&needle))
+        .filter(|value| !prior.iter().any(|seen| value.eq_ignore_ascii_case(seen)))
+        .map(|value| format!("{prefix}{value}"))
+        .collect();
+    let total = matches.len();
+    matches.truncate(CompletionInfo::MAX_VALUES);
+    CompletionInfo::with_pagination(
+        matches,
+        Some(total as u32),
+        total > CompletionInfo::MAX_VALUES,
+    )
+    .expect("completion values are capped to the protocol limit")
+}
+
+fn completion_values(request: &CompleteRequestParams, cfg: Option<&Config>) -> CompletionInfo {
+    let Some(source) = completion_source(request) else {
+        return CompletionInfo::default();
+    };
+    let comma_separated = source == CompletionSource::MapList;
+    let values = match source {
+        CompletionSource::Maps | CompletionSource::MapList => cfg
+            .and_then(|cfg| map_list(cfg).ok())
+            .unwrap_or_default()
+            .into_iter()
+            .map(|map| map.name)
+            .collect(),
+        CompletionSource::Runs(aliases) => {
+            let mut values: Vec<String> = aliases.iter().map(|value| (*value).into()).collect();
+            values.extend(
+                cfg.and_then(|cfg| list_runs(cfg).ok())
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|run| {
+                        run.name
+                            .strip_suffix(".log")
+                            .unwrap_or(&run.name)
+                            .to_string()
+                    }),
+            );
+            values
+        }
+        CompletionSource::Functions => cfg
+            .and_then(|cfg| index_argus(cfg).ok())
+            .map(|index| {
+                index
+                    .functions
+                    .into_iter()
+                    .filter(|function| !function.proto)
+                    .map(|function| function.name)
+                    .collect()
+            })
+            .unwrap_or_default(),
+        CompletionSource::Constants => cfg
+            .and_then(|cfg| index_argus(cfg).ok())
+            .map(|index| {
+                index
+                    .constants
+                    .into_iter()
+                    .map(|constant| constant.name)
+                    .collect()
+            })
+            .unwrap_or_default(),
+        CompletionSource::Primary => ["engagements", "freezes", "lava_deaths", "stall_parity"]
+            .into_iter()
+            .map(str::to_string)
+            .collect(),
+        CompletionSource::GraphHashes(map) => match (cfg, map) {
+            (Some(cfg), Some(map)) => crate::graph_revision::list_revisions(cfg, &map)
+                .unwrap_or_default()
+                .into_iter()
+                .filter_map(|revision| {
+                    revision
+                        .id
+                        .split_once('@')
+                        .map(|(_, hash)| hash.to_string())
+                })
+                .collect(),
+            _ => Vec::new(),
+        },
+    };
+    filter_completion_values(values, &request.argument.value, comma_separated)
+}
+
 #[prompt_handler]
 impl ServerHandler for Argus {
-    fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(
+    async fn call_tool(
+        &self,
+        request: CallToolRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<CallToolResponse, McpError> {
+        if request.name == "match_run"
+            && context
+                .client_capabilities()
+                .is_some_and(|capabilities| capabilities.supports_tasks())
+        {
+            let args: MatchRunArgs = serde_json::from_value(serde_json::Value::Object(
+                request.arguments.clone().unwrap_or_default(),
+            ))
+            .map_err(|error| McpError::invalid_params(error.to_string(), None))?;
+            if !(DURATION_MIN..=DURATION_MAX).contains(&args.duration_sec) {
+                return Err(McpError::invalid_params(
+                    format!("duration_sec must be {DURATION_MIN}..={DURATION_MAX}"),
+                    None,
+                ));
+            }
+            let task = self.spawn_match_task(args, self.task_match_config.clone());
+            return Ok(CallToolResponse::Task(CreateTaskResult::new(task)));
+        }
+        let call = ToolCallContext::new(self, request, context);
+        self.tool_router.call(call).await
+    }
+
+    async fn list_tools(
+        &self,
+        _request: Option<PaginatedRequestParams>,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<ListToolsResult, McpError> {
+        Ok(ListToolsResult::with_all_items(self.tool_router.list_all()))
+    }
+
+    async fn get_task(
+        &self,
+        request: GetTaskParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<GetTaskResult, McpError> {
+        Ok(GetTaskResult::new(self.tasks.get_task(&request.task_id)?))
+    }
+
+    async fn update_task(
+        &self,
+        request: UpdateTaskParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        self.tasks
+            .update_task(&request.task_id, request.input_responses)
+    }
+
+    async fn cancel_task(
+        &self,
+        request: CancelTaskParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        self.tasks.cancel_task(&request.task_id)
+    }
+
+    fn get_info(&self) -> ServerConfig {
+        ServerConfig::new(
             ServerCapabilities::builder()
                 .enable_tools()
                 .enable_prompts()
                 .enable_resources()
+                .enable_resources_subscribe()
+                .enable_completions()
+                .enable_tasks()
                 .build(),
         )
         .with_server_info(Implementation::new(SERVER_NAME, SERVER_VERSION))
         .with_instructions(server_instructions())
+    }
+
+    async fn complete(
+        &self,
+        request: CompleteRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<CompleteResult, McpError> {
+        let cfg = Config::load_for_reads()
+            .ok()
+            .filter(|cfg| cfg.root.exists());
+        Ok(CompleteResult::new(completion_values(
+            &request,
+            cfg.as_ref(),
+        )))
     }
 
     async fn list_resources(
@@ -2384,6 +3312,97 @@ impl ServerHandler for Argus {
     ) -> Result<ListResourcesResult, McpError> {
         let cfg = Config::load_for_reads().ok();
         Ok(crate::resources::list_static(cfg.as_ref()))
+    }
+
+    fn accepted_subscription_filter(
+        &self,
+        requested: &SubscriptionFilter,
+    ) -> Option<SubscriptionFilter> {
+        let supported = SubscriptionFilter::builder()
+            .resource_subscriptions(LIVE_RESOURCE_URIS)
+            .build();
+        Some(requested.intersection(&supported))
+    }
+
+    async fn listen(&self, context: SubscriptionContext) -> Result<(), McpError> {
+        let uris = context
+            .accepted()
+            .resource_subscriptions
+            .clone()
+            .unwrap_or_default();
+        if uris.is_empty() {
+            context.cancelled().await;
+            return Ok(());
+        }
+        let mut previous = self.live_resource_snapshot(&uris).await;
+        let mut interval = tokio::time::interval(Duration::from_secs(1));
+        loop {
+            tokio::select! {
+                _ = context.cancelled() => return Ok(()),
+                _ = interval.tick() => {
+                    let current = self.live_resource_snapshot(&uris).await;
+                    for uri in changed_resource_uris(&mut previous, current) {
+                        if context.sink().notify_resource_updated(uri).await.is_err() {
+                            return Ok(());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    #[allow(deprecated)]
+    async fn subscribe(
+        &self,
+        request: SubscribeRequestParams,
+        context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        if !LIVE_RESOURCE_URIS.contains(&request.uri.as_str()) {
+            return Err(McpError::resource_not_found(
+                format!("{} is not a live resource", request.uri),
+                None,
+            ));
+        }
+        let key = request.uri;
+        let uri = key.clone();
+        let uris = vec![uri.clone()];
+        let server = self.clone();
+        let peer = context.peer.clone();
+        let task = tokio::spawn(async move {
+            let mut previous = server.live_resource_snapshot(&uris).await;
+            let mut interval = tokio::time::interval(Duration::from_secs(1));
+            loop {
+                interval.tick().await;
+                let current = server.live_resource_snapshot(&uris).await;
+                if changed_resource_uris(&mut previous, current).is_empty() {
+                    continue;
+                }
+                if peer
+                    .notify_resource_updated(ResourceUpdatedNotificationParam::new(uri.clone()))
+                    .await
+                    .is_err()
+                {
+                    break;
+                }
+            }
+        });
+        let mut subscriptions = self.legacy_subscriptions.lock().await;
+        if let Some(old) = subscriptions.insert(key, task.abort_handle()) {
+            old.abort();
+        }
+        Ok(())
+    }
+
+    #[allow(deprecated)]
+    async fn unsubscribe(
+        &self,
+        request: UnsubscribeRequestParams,
+        _context: RequestContext<RoleServer>,
+    ) -> Result<(), McpError> {
+        if let Some(task) = self.legacy_subscriptions.lock().await.remove(&request.uri) {
+            task.abort();
+        }
+        Ok(())
     }
 
     async fn list_resource_templates(
@@ -2400,8 +3419,15 @@ impl ServerHandler for Argus {
         _context: RequestContext<RoleServer>,
     ) -> Result<ReadResourceResponse, McpError> {
         let cfg = Config::load_for_reads().ok();
+        let live = if request.uri == "argus://lab" {
+            let mut matches = self.matches.lock().await;
+            matches.reap();
+            Some(matches.status())
+        } else {
+            None
+        };
         let session = self.session.lock().await.clone();
-        match crate::resources::read_uri(&request.uri, cfg.as_ref(), &session) {
+        match crate::resources::read_uri_with_live(&request.uri, cfg.as_ref(), &session, live) {
             Ok(contents) => Ok(ReadResourceResponse::Complete(ReadResourceResult::new(
                 contents,
             ))),
@@ -2413,6 +3439,194 @@ impl ServerHandler for Argus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::engine::FakeEngineControl;
+    use crate::match_ctrl::{live_state, live_test_lock_async};
+    use crate::test_support::{git_test_lock, run_git, TestDir};
+    use rmcp::model::{
+        ArgumentInfo, ClientCapabilities, ClientConfig, CompletionContext, ResultType, TaskPayload,
+    };
+    use rmcp::ServiceExt;
+    use std::collections::HashMap;
+    use std::fs;
+    use std::path::Path;
+
+    fn prompt_text(messages: &[PromptMessage]) -> &str {
+        match &messages.first().expect("one prompt message").content {
+            ContentBlock::Text(text) => &text.text,
+            other => panic!("expected text prompt, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn progress_notifications_are_opt_in_and_keep_stage_values() {
+        let mut last = None;
+        assert!(progress_notification(None, &mut last, 1.0, 3.0, "compile".into()).is_none());
+        assert_eq!(last, None);
+
+        let token = rmcp::model::ProgressToken(rmcp::model::NumberOrString::String("run-7".into()));
+        let stages = [
+            (0.0, "compile"),
+            (1.0, "match"),
+            (2.5, "analyze"),
+            (3.0, "done"),
+        ];
+        let notifications: Vec<_> = stages
+            .iter()
+            .map(|(value, message)| {
+                progress_notification(Some(&token), &mut last, *value, 3.0, (*message).into())
+                    .unwrap()
+            })
+            .collect();
+
+        assert!(notifications
+            .windows(2)
+            .all(|pair| pair[0].progress <= pair[1].progress));
+        assert!(notifications.iter().all(|item| item.total == Some(3.0)));
+        assert_eq!(notifications[2].message.as_deref(), Some("analyze"));
+        assert_eq!(notifications[3].progress_token, token);
+    }
+
+    #[test]
+    fn progress_notifications_drop_repeated_and_backward_stage_values() {
+        let token = rmcp::model::ProgressToken(rmcp::model::NumberOrString::String("run-8".into()));
+        for compile in [false, true] {
+            let mut last = None;
+            let mut values = vec![0.0, 0.0];
+            if compile {
+                values.extend([1.0, 1.0, 1.0]);
+            }
+            values.extend([1.5, 2.0, 2.0, 2.0, 1.0, 2.5, 3.0, 3.0]);
+            let notifications: Vec<_> = values
+                .into_iter()
+                .filter_map(|value| {
+                    progress_notification(Some(&token), &mut last, value, 3.0, "stage".into())
+                })
+                .collect();
+            assert!(notifications
+                .windows(2)
+                .all(|pair| pair[0].progress < pair[1].progress));
+            assert_eq!(notifications.last().unwrap().progress, 3.0);
+        }
+    }
+
+    #[tokio::test]
+    async fn live_resource_snapshot_ignores_tape_growth_and_reports_lifecycle() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("subscription-state").unwrap();
+        let control = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![control.clone()]);
+        let uris = vec!["argus://lab".to_string()];
+        let mut previous = server.live_resource_snapshot(&uris).await;
+        server
+            .matches
+            .lock()
+            .await
+            .start(
+                &completion_cfg(root.path()),
+                "dm4",
+                Some(10),
+                Some("subscription"),
+                None,
+                None,
+                None,
+            )
+            .await
+            .unwrap();
+        assert_eq!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await),
+            ["argus://lab"]
+        );
+        for tick in 1..=3 {
+            fs::write(
+                root.path().join("runs/subscription/qconsole.log"),
+                FAKE_TAPE.repeat(tick),
+            )
+            .unwrap();
+            assert!(changed_resource_uris(
+                &mut previous,
+                server.live_resource_snapshot(&uris).await
+            )
+            .is_empty());
+        }
+        control.complete();
+        assert_eq!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await),
+            ["argus://lab"]
+        );
+        // An explicit read reaps the child and harvests its tape. That must
+        // not create a second lifecycle event for the same stopped match.
+        server.matches.lock().await.status();
+        assert!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await)
+                .is_empty()
+        );
+        server
+            .session
+            .lock()
+            .await
+            .note_see("run", Some("subscription"));
+        assert_eq!(
+            changed_resource_uris(&mut previous, server.live_resource_snapshot(&uris).await),
+            ["argus://lab"]
+        );
+    }
+
+    fn result_text(result: &CallToolResult) -> &str {
+        result
+            .content
+            .first()
+            .and_then(ContentBlock::as_text)
+            .map(|text| text.text.as_str())
+            .expect("one text result")
+    }
+
+    const FAKE_TAPE: &str = "ARGUS init on dm4\nARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
+
+    fn fake_match_server(root: &Path, controls: Vec<FakeEngineControl>) -> Argus {
+        fs::create_dir_all(root.join("runs")).unwrap();
+        fs::create_dir_all(root.join("src")).unwrap();
+        let mut server = Argus::new();
+        server.task_match_config = Some(completion_cfg(root));
+        server.matches = Arc::new(Mutex::new(MatchCtrl::with_fake_engines(controls)));
+        server
+    }
+
+    fn fake_match_args(run_name: &str) -> MatchRunArgs {
+        MatchRunArgs {
+            map: "dm4".into(),
+            duration_sec: DURATION_MIN,
+            run_name: Some(run_name.into()),
+            dedicated_slots: None,
+            skill: None,
+        }
+    }
+
+    async fn wait_for_live_match(server: &Argus) {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                if server.matches.lock().await.status().running {
+                    return;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("fake match never became live");
+    }
+
+    async fn wait_for_terminal_task(server: &Argus, task_id: &str) -> rmcp::model::DetailedTask {
+        tokio::time::timeout(Duration::from_secs(3), async {
+            loop {
+                let task = server.tasks.get_task(task_id).unwrap();
+                if task.status().is_terminal() {
+                    return task;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("fake match task never settled")
+    }
 
     #[test]
     fn server_metadata_uses_package_version() {
@@ -2425,6 +3639,793 @@ mod tests {
             instructions.starts_with(&format!("Argus lab {}.", env!("CARGO_PKG_VERSION"))),
             "instructions advertise a different lab version: {instructions}"
         );
+        assert!(info.capabilities.completions.is_some());
+        assert!(info.capabilities.supports_tasks());
+        assert_eq!(
+            info.capabilities
+                .resources
+                .and_then(|resources| resources.subscribe),
+            Some(true)
+        );
+    }
+
+    #[tokio::test]
+    async fn task_store_tracks_completion_and_cooperative_cancellation() {
+        use rmcp::model::{TaskPayload, TaskStatus};
+        use rmcp::task_manager::{TaskExit, TaskOptions};
+
+        let _serial = live_test_lock_async().await;
+        let server = Argus::new();
+        let release = Arc::new(tokio::sync::Notify::new());
+        let wait = release.clone();
+        let completed = server.tasks.spawn(
+            TaskOptions::new().with_status_message("waiting for test release"),
+            move |_context| {
+                Box::pin(async move {
+                    wait.notified().await;
+                    Ok(CallToolResult::success(vec![ContentBlock::text("done")]))
+                })
+            },
+        );
+        assert_eq!(
+            server.tasks.get_task(&completed.task_id).unwrap().status(),
+            TaskStatus::Working
+        );
+        release.notify_one();
+        let completed = loop {
+            let state = server.tasks.get_task(&completed.task_id).unwrap();
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::task::yield_now().await;
+        };
+        assert!(matches!(completed.payload, TaskPayload::Completed { .. }));
+
+        let cancelled = server.tasks.spawn(TaskOptions::new(), move |context| {
+            Box::pin(async move {
+                context.cancelled().await;
+                Err(TaskExit::Cancelled)
+            })
+        });
+        server.tasks.cancel_task(&cancelled.task_id).unwrap();
+        let cancelled = loop {
+            let state = server.tasks.get_task(&cancelled.task_id).unwrap();
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::task::yield_now().await;
+        };
+        assert!(matches!(cancelled.payload, TaskPayload::Cancelled));
+
+        assert!(server.tasks.get_task("missing-task").is_err());
+        assert!(server.tasks.cancel_task("missing-task").is_err());
+        server.shutdown().await;
+    }
+
+    #[test]
+    fn live_subscription_filter_accepts_only_live_resources() {
+        let requested = SubscriptionFilter::builder()
+            .resource_subscriptions([
+                "argus://last",
+                "argus://lab",
+                "argus://project",
+                "argus://run/latest",
+            ])
+            .build();
+        let accepted = Argus::new()
+            .accepted_subscription_filter(&requested)
+            .unwrap();
+        assert_eq!(
+            accepted.resource_subscriptions.unwrap(),
+            ["argus://last", "argus://lab"]
+        );
+    }
+
+    #[test]
+    fn resource_change_detection_is_quiet_until_values_move() {
+        let mut previous = BTreeMap::from([
+            ("argus://lab".into(), "ready".into()),
+            ("argus://last".into(), "dm4".into()),
+        ]);
+        let unchanged = previous.clone();
+        assert!(changed_resource_uris(&mut previous, unchanged).is_empty());
+
+        let current = BTreeMap::from([
+            ("argus://lab".into(), "running".into()),
+            ("argus://last".into(), "dm4".into()),
+        ]);
+        assert_eq!(
+            changed_resource_uris(&mut previous, current),
+            ["argus://lab"]
+        );
+    }
+
+    #[tokio::test]
+    async fn a_cancelled_waiting_run_never_starts_an_engine() {
+        let root = TestDir::new("server-prestart-cancel").unwrap();
+        let cancel = RunCancellation::new();
+        let _ = cancel.request();
+        let server = Argus::new();
+
+        let error = server
+            .drive_match(
+                &completion_cfg(root.path()),
+                "dm4",
+                DURATION_MIN,
+                Some("never_started"),
+                None,
+                None,
+                None,
+                None,
+                Some(cancel),
+                None,
+            )
+            .await
+            .unwrap_err();
+
+        assert_eq!(error, "match cancelled before startup");
+        assert!(!server.matches.lock().await.status().running);
+    }
+
+    #[tokio::test]
+    async fn cancelled_match_task_settles_only_after_leaving_the_run_gate() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-cancel").unwrap();
+        let server = Argus::new();
+        let gate = server.run_gate.lock().await;
+        let task = server.spawn_match_task(
+            MatchRunArgs {
+                map: "dm4".into(),
+                duration_sec: DURATION_MIN,
+                run_name: Some("task_cancelled".into()),
+                dedicated_slots: None,
+                skill: None,
+            },
+            Some(completion_cfg(root.path())),
+        );
+
+        server.tasks.cancel_task(&task.task_id).unwrap();
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        assert!(
+            !server
+                .tasks
+                .get_task(&task.task_id)
+                .unwrap()
+                .status()
+                .is_terminal(),
+            "the task must not settle while its run still owns cleanup work"
+        );
+        drop(gate);
+
+        let terminal = loop {
+            let state = server.tasks.get_task(&task.task_id).unwrap();
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::task::yield_now().await;
+        };
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        assert!(!server.matches.lock().await.status().running);
+        server.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn mcp_transport_negotiates_polls_and_cancels_match_tasks() {
+        let root = TestDir::new("server-task-transport").unwrap();
+        let mut server = Argus::new();
+        server.task_match_config = Some(completion_cfg(root.path()));
+        let gate = server.run_gate.clone().lock_owned().await;
+        let task_store = server.tasks.clone();
+        let (server_transport, client_transport) = tokio::io::duplex(65_536);
+        let service_server = server.clone();
+        let server_handle = tokio::spawn(async move {
+            let service = service_server.serve(server_transport).await.unwrap();
+            service.waiting().await.unwrap();
+        });
+        let client = ClientConfig::new(
+            ClientCapabilities::builder().enable_tasks().build(),
+            Implementation::new("argus-task-test", "1"),
+        )
+        .serve(client_transport)
+        .await
+        .unwrap();
+
+        let response = client
+            .call_tool_once(
+                CallToolRequestParams::new("match_run").with_arguments(
+                    serde_json::from_value(serde_json::json!({
+                        "map": "dm4",
+                        "duration_sec": DURATION_MIN,
+                        "run_name": "transport_cancelled"
+                    }))
+                    .unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
+        let created = match response {
+            CallToolResponse::Task(created) => created,
+            other => panic!("Task-capable client received {other:?}"),
+        };
+        assert_eq!(created.result_type, ResultType::TASK);
+        assert_eq!(created.task.poll_interval_ms, Some(1_000));
+        assert_eq!(
+            created.task.ttl_ms,
+            Some(crate::task_store::MATCH_TASK_TTL.as_millis() as u64)
+        );
+        let task_id = created.task.task_id.clone();
+        let working = client
+            .peer()
+            .get_task(GetTaskParams::new(task_id.clone()))
+            .await
+            .unwrap();
+        assert!(!working.task.status().is_terminal());
+        assert!(client
+            .peer()
+            .get_task(GetTaskParams::new("missing-task"))
+            .await
+            .is_err());
+        assert!(client
+            .peer()
+            .cancel_task(CancelTaskParams::new("missing-task"))
+            .await
+            .is_err());
+
+        client
+            .peer()
+            .cancel_task(CancelTaskParams::new(task_id.clone()))
+            .await
+            .unwrap();
+        assert!(!task_store
+            .get_task(&task_id)
+            .unwrap()
+            .status()
+            .is_terminal());
+        drop(gate);
+
+        let terminal = loop {
+            let state = client
+                .peer()
+                .get_task(GetTaskParams::new(task_id.clone()))
+                .await
+                .unwrap()
+                .task;
+            if state.status().is_terminal() {
+                break state;
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        };
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        client.cancel().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(2), server_handle)
+            .await
+            .expect("Task-capable transport did not close")
+            .unwrap();
+
+        let (server_transport, client_transport) = tokio::io::duplex(65_536);
+        let server_handle = tokio::spawn(async move {
+            let service = Argus::new().serve(server_transport).await.unwrap();
+            service.waiting().await.unwrap();
+        });
+        let legacy = ClientConfig::new(
+            ClientCapabilities::default(),
+            Implementation::new("argus-legacy-test", "1"),
+        )
+        .serve(client_transport)
+        .await
+        .unwrap();
+        let response = legacy
+            .call_tool_once(
+                CallToolRequestParams::new("match_run").with_arguments(
+                    serde_json::from_value(serde_json::json!({
+                        "map": "../invalid",
+                        "duration_sec": DURATION_MIN
+                    }))
+                    .unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
+        assert!(matches!(response, CallToolResponse::Complete(_)));
+        legacy.cancel().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(2), server_handle)
+            .await
+            .expect("legacy transport did not close")
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn negotiated_match_task_completes_with_the_synchronous_result_shape() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-complete").unwrap();
+        let control = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![control.clone()]);
+        let (server_transport, client_transport) = tokio::io::duplex(65_536);
+        let service_server = server.clone();
+        let server_handle = tokio::spawn(async move {
+            let service = service_server.serve(server_transport).await.unwrap();
+            service.waiting().await.unwrap();
+        });
+        let client = ClientConfig::new(
+            ClientCapabilities::builder().enable_tasks().build(),
+            Implementation::new("argus-task-complete-test", "1"),
+        )
+        .serve(client_transport)
+        .await
+        .unwrap();
+        let response = client
+            .call_tool_once(
+                CallToolRequestParams::new("match_run").with_arguments(
+                    serde_json::from_value(serde_json::json!({
+                        "map": "dm4",
+                        "duration_sec": DURATION_MIN,
+                        "run_name": "transport_completed"
+                    }))
+                    .unwrap(),
+                ),
+            )
+            .await
+            .unwrap();
+        let created = match response {
+            CallToolResponse::Task(created) => created,
+            other => panic!("Task-capable client received {other:?}"),
+        };
+        wait_for_live_match(&server).await;
+        assert_ne!(live_state().0, 0);
+        control.complete();
+
+        let terminal = loop {
+            let task = client
+                .peer()
+                .get_task(GetTaskParams::new(created.task.task_id.clone()))
+                .await
+                .unwrap()
+                .task;
+            if task.status().is_terminal() {
+                break task;
+            }
+            tokio::task::yield_now().await;
+        };
+        let TaskPayload::Completed { result } = terminal.payload else {
+            panic!("expected completed Task, got {terminal:?}");
+        };
+        let task_result: CallToolResult =
+            serde_json::from_value(serde_json::Value::Object(result)).unwrap();
+        assert_ne!(task_result.is_error, Some(true));
+        let data: serde_json::Value = serde_json::from_str(result_text(&task_result)).unwrap();
+        assert_eq!(data["ok"], true);
+        assert_eq!(data["run_name"], "transport_completed");
+        assert_eq!(data["map"], "dm4");
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+
+        client.cancel().await.unwrap();
+        tokio::time::timeout(Duration::from_secs(2), server_handle)
+            .await
+            .expect("completion transport did not close")
+            .unwrap();
+    }
+
+    #[tokio::test]
+    async fn active_task_cancel_reaps_its_child_and_cannot_kill_its_successor() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-active-cancel").unwrap();
+        let first = FakeEngineControl::new(FAKE_TAPE);
+        let second = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![first.clone(), second.clone()]);
+        let first_task = server.spawn_match_task(
+            fake_match_args("active_cancelled"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        assert_ne!(live_state().1, 0, "Task must claim the live child");
+        server.tasks.cancel_task(&first_task.task_id).unwrap();
+        let terminal = wait_for_terminal_task(&server, &first_task.task_id).await;
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        assert!(first.was_killed());
+        assert_eq!(live_state(), (0, 0, false));
+
+        let successor = server.spawn_match_task(
+            fake_match_args("active_successor"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        server.tasks.cancel_task(&first_task.task_id).unwrap();
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        assert!(
+            second.is_running(),
+            "late cancellation killed the successor"
+        );
+        second.complete();
+        let terminal = wait_for_terminal_task(&server, &successor.task_id).await;
+        assert!(matches!(terminal.payload, TaskPayload::Completed { .. }));
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+    }
+
+    #[tokio::test]
+    async fn cancellation_during_finalization_preserves_cleanup_and_shutdown_reaps_active_tasks() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-finalize-cancel").unwrap();
+        let finalizing = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![finalizing.clone()]);
+        let task = server.spawn_match_task(
+            fake_match_args("finalize_cancelled"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        finalizing.complete();
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while !finalizing.quit_requested() {
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .expect("finalization never sent quit");
+        server.tasks.cancel_task(&task.task_id).unwrap();
+        let terminal = wait_for_terminal_task(&server, &task.task_id).await;
+        assert!(matches!(terminal.payload, TaskPayload::Cancelled));
+        assert!(!finalizing.was_killed());
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+
+        let root = TestDir::new("server-task-shutdown-race").unwrap();
+        let active = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![active.clone()]);
+        let task = server.spawn_match_task(
+            fake_match_args("shutdown_active"),
+            server.task_match_config.clone(),
+        );
+        wait_for_live_match(&server).await;
+        server.shutdown().await;
+        assert!(active.was_killed());
+        assert!(server.tasks.get_task(&task.task_id).is_err());
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+    }
+
+    #[tokio::test]
+    async fn match_task_keeps_a_tool_error_as_a_completed_result() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-task-tool-error").unwrap();
+        let server = fake_match_server(root.path(), Vec::new());
+        let task = server.spawn_match_task(
+            fake_match_args("spawn_error"),
+            server.task_match_config.clone(),
+        );
+        let terminal = wait_for_terminal_task(&server, &task.task_id).await;
+        let TaskPayload::Completed { result } = terminal.payload else {
+            panic!("tool error became a protocol failure: {terminal:?}");
+        };
+        let result: CallToolResult =
+            serde_json::from_value(serde_json::Value::Object(result)).unwrap();
+        assert_eq!(result.is_error, Some(true));
+        assert!(result_text(&result).contains("test engine queue is empty"));
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+    }
+
+    #[test]
+    fn baseline_elicitation_offers_only_usable_configured_maps() {
+        let root = TestDir::new("server-elicitation").unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::write(root.path().join("runs/base_dm4.log"), "").unwrap();
+        fs::write(
+            root.path().join("runs/baselines.json"),
+            r#"{"dm2":["missing"],"dm4":["base_dm4"]}"#,
+        )
+        .unwrap();
+        let offered = configured_baseline_maps(&completion_cfg(root.path()));
+        assert_eq!(offered, ["dm4"]);
+
+        let schema = serde_json::to_value(baseline_elicitation_schema(&offered).unwrap()).unwrap();
+        assert_eq!(
+            schema["properties"]["map"]["enum"],
+            serde_json::json!(["dm4"])
+        );
+        assert!(baseline_elicitation_schema(&[]).is_none());
+    }
+
+    #[test]
+    fn elicited_baseline_map_accepts_only_a_valid_accept_action() {
+        let offered = vec!["dm2".into(), "dm4".into()];
+        let accepted = ElicitResult::new(ElicitationAction::Accept)
+            .with_content(serde_json::json!({"map": "DM4"}));
+        assert_eq!(
+            accepted_elicited_map(accepted, &offered).as_deref(),
+            Some("dm4")
+        );
+
+        for result in [
+            ElicitResult::new(ElicitationAction::Decline),
+            ElicitResult::new(ElicitationAction::Cancel),
+            ElicitResult::new(ElicitationAction::Accept)
+                .with_content(serde_json::json!({"map": "e1m1"})),
+            ElicitResult::new(ElicitationAction::Accept)
+                .with_content(serde_json::json!({"wrong": "dm4"})),
+        ] {
+            assert!(accepted_elicited_map(result, &offered).is_none());
+        }
+    }
+
+    fn completion_cfg(root: &Path) -> Config {
+        Config {
+            root: root.into(),
+            fteqcc: Default::default(),
+            engine: Default::default(),
+            basedir: root.into(),
+            python: Default::default(),
+            game: "argus".into(),
+            src: root.join("src"),
+            runs: root.join("runs"),
+            progs: root.join("progs.dat"),
+            maps: root.join("maps"),
+        }
+    }
+
+    #[test]
+    fn completion_routes_and_filters_prompt_names() {
+        let root = TestDir::new("server-completion").unwrap();
+        fs::create_dir_all(root.path().join("maps")).unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::write(root.path().join("maps/dm4.bsp"), []).unwrap();
+        fs::write(root.path().join("maps/dm2.bsp"), []).unwrap();
+        fs::write(root.path().join("runs/ab_dm4_alpha.log"), "").unwrap();
+        fs::write(root.path().join("runs/other.log"), "").unwrap();
+        let cfg = completion_cfg(root.path());
+
+        let maps = CompleteRequestParams::new(
+            Reference::for_prompt("review_map"),
+            ArgumentInfo::new("bsp", "dm"),
+        );
+        assert_eq!(completion_values(&maps, Some(&cfg)).values, ["dm2", "dm4"]);
+
+        let runs = CompleteRequestParams::new(
+            Reference::for_prompt("review_ab"),
+            ArgumentInfo::new("log_a", "ab_"),
+        );
+        assert_eq!(
+            completion_values(&runs, Some(&cfg)).values,
+            ["ab_dm4_alpha"]
+        );
+        let baseline = CompleteRequestParams::new(
+            Reference::for_prompt("review_ab"),
+            ArgumentInfo::new("log_a", "b"),
+        );
+        assert_eq!(
+            completion_values(&baseline, Some(&cfg)).values,
+            ["baseline"]
+        );
+
+        let list = CompleteRequestParams::new(
+            Reference::for_prompt("validate_change"),
+            ArgumentInfo::new("maps", "dm2,d"),
+        );
+        assert_eq!(
+            completion_values(&list, Some(&cfg)).values,
+            ["dm2,dm4"],
+            "a comma-separated completion preserves prior maps and omits duplicates"
+        );
+
+        let unknown = CompleteRequestParams::new(
+            Reference::for_prompt("orient"),
+            ArgumentInfo::new("map", "dm"),
+        );
+        assert!(completion_values(&unknown, Some(&cfg)).values.is_empty());
+    }
+
+    #[test]
+    fn completion_routes_resource_names_and_contextual_hashes() {
+        let _gate = git_test_lock();
+        let root = TestDir::new("server-completion-revision").unwrap();
+        fs::create_dir_all(root.path().join("maps")).unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::write(root.path().join("maps/dm4.bsp"), []).unwrap();
+        fs::write(
+            root.path().join("src/argus_nav_dm4.qc.json"),
+            r#"{"nodes":[[0,0,0]],"links":[],"trace_inputs":[]}"#,
+        )
+        .unwrap();
+        run_git(root.path(), &["init", "-q"]).unwrap();
+        run_git(root.path(), &["config", "user.name", "Argus test"]).unwrap();
+        run_git(
+            root.path(),
+            &["config", "user.email", "argus-test@example.invalid"],
+        )
+        .unwrap();
+        run_git(root.path(), &["add", "."]).unwrap();
+        run_git(root.path(), &["commit", "-q", "-m", "graph"]).unwrap();
+        let cfg = completion_cfg(root.path());
+
+        let map = CompleteRequestParams::new(
+            Reference::for_resource("argus://graph/{map}/{hash}"),
+            ArgumentInfo::new("map", "dm"),
+        );
+        assert_eq!(completion_values(&map, Some(&cfg)).values, ["dm4"]);
+
+        let mut context = HashMap::new();
+        context.insert("map".into(), "dm4".into());
+        let hash = CompleteRequestParams::new(
+            Reference::for_resource("argus://graph/{map}/{hash}"),
+            ArgumentInfo::new("hash", ""),
+        )
+        .with_context(CompletionContext::with_arguments(context));
+        let hashes = completion_values(&hash, Some(&cfg)).values;
+        assert_eq!(hashes.len(), 1);
+        assert_eq!(hashes[0].len(), 32);
+        assert!(hashes[0].bytes().all(|byte| byte.is_ascii_hexdigit()));
+    }
+
+    #[test]
+    fn completion_routes_qc_symbols_and_applies_the_protocol_ceiling() {
+        let root = TestDir::new("server-completion-symbols").unwrap();
+        fs::create_dir_all(root.path().join("src")).unwrap();
+        fs::create_dir_all(root.path().join("runs")).unwrap();
+        fs::create_dir_all(root.path().join("maps")).unwrap();
+        let mut source = String::from(
+            "float AR_JUMPVEL = 270;\nvoid() Argus_Proto;\nvoid() Argus_MoveHazard = {};\nvoid() Argus_ModelIndex = {};\n",
+        );
+        for index in 0..105 {
+            source.push_str(&format!("float AR_C{index:03} = {index};\n"));
+        }
+        fs::write(root.path().join("src/argus.qc"), source).unwrap();
+        let cfg = completion_cfg(root.path());
+
+        let functions = CompleteRequestParams::new(
+            Reference::for_resource("argus://fn/{name}"),
+            ArgumentInfo::new("name", "argus_m"),
+        );
+        assert_eq!(
+            completion_values(&functions, Some(&cfg)).values,
+            ["Argus_ModelIndex", "Argus_MoveHazard"]
+        );
+
+        let constants = CompleteRequestParams::new(
+            Reference::for_resource("argus://const/{name}"),
+            ArgumentInfo::new("name", "ar_c"),
+        );
+        let completion = completion_values(&constants, Some(&cfg));
+        assert_eq!(completion.values.len(), CompletionInfo::MAX_VALUES);
+        assert_eq!(completion.total, Some(105));
+        assert_eq!(completion.has_more, Some(true));
+
+        assert!(completion_values(&functions, None).values.is_empty());
+        for uri in ["argus://path/{spec}", "argus://search/{needle}"] {
+            let free_form = CompleteRequestParams::new(
+                Reference::for_resource(uri),
+                ArgumentInfo::new(
+                    if uri.contains("path") {
+                        "spec"
+                    } else {
+                        "needle"
+                    },
+                    "a",
+                ),
+            );
+            assert!(completion_source(&free_form).is_none(), "{uri}");
+        }
+    }
+
+    #[test]
+    fn completion_is_sorted_deduplicated_and_protocol_bounded() {
+        let mut values: Vec<String> = (0..105).map(|n| format!("value{n:03}")).collect();
+        values.push("VALUE000".into());
+        let completion = filter_completion_values(values, "value", false);
+        assert_eq!(completion.values.len(), CompletionInfo::MAX_VALUES);
+        assert_eq!(completion.total, Some(105));
+        assert_eq!(completion.has_more, Some(true));
+        assert!(completion.values.windows(2).all(|pair| pair[0] < pair[1]));
+
+        let primary = CompleteRequestParams::new(
+            Reference::for_prompt("validate_change"),
+            ArgumentInfo::new("primary", "la"),
+        );
+        assert_eq!(
+            completion_values(&primary, None).values,
+            ["lava_deaths"],
+            "static completions do not require lab config"
+        );
+    }
+
+    #[test]
+    fn safety_prompts_publish_concise_metadata() {
+        let prompts = Argus::prompt_router().list_all();
+        let names: Vec<_> = prompts.iter().map(|prompt| prompt.name.as_str()).collect();
+        assert_eq!(
+            names,
+            [
+                "harvest_before_play",
+                "orient",
+                "review_ab",
+                "review_map",
+                "review_run",
+                "validate_change",
+            ]
+        );
+
+        let harvest = prompts
+            .iter()
+            .find(|prompt| prompt.name == "harvest_before_play")
+            .unwrap();
+        let harvest_args = harvest.arguments.as_ref().unwrap();
+        assert!(harvest
+            .description
+            .as_deref()
+            .unwrap()
+            .contains("before any new engine launch"));
+        assert_eq!(harvest_args.len(), 1);
+        assert_eq!(harvest_args[0].name, "tag");
+        assert_eq!(harvest_args[0].required, Some(true));
+        assert!(harvest_args[0]
+            .description
+            .as_deref()
+            .unwrap()
+            .contains("vNNN"));
+
+        let validate = prompts
+            .iter()
+            .find(|prompt| prompt.name == "validate_change")
+            .unwrap();
+        let validate_args = validate.arguments.as_ref().unwrap();
+        assert!(validate
+            .description
+            .as_deref()
+            .unwrap()
+            .contains("multi-map"));
+        assert_eq!(
+            validate_args
+                .iter()
+                .map(|argument| argument.name.as_str())
+                .collect::<Vec<_>>(),
+            ["change", "maps", "primary"]
+        );
+        assert_eq!(validate_args[0].required, Some(true));
+        assert_eq!(validate_args[1].required, Some(false));
+        assert_eq!(validate_args[2].required, Some(false));
+    }
+
+    #[tokio::test]
+    async fn safety_prompt_bodies_preserve_the_lab_invariants() {
+        let server = Argus::new();
+        let harvest = server
+            .harvest_before_play(Parameters(HarvestPromptArgs { tag: "vNNN".into() }))
+            .await
+            .unwrap();
+        let harvest = prompt_text(&harvest);
+        assert!(harvest.contains("python tools/harvest_session.py --tag vNNN"));
+        assert!(harvest.contains("before doing anything that starts an engine"));
+        assert!(harvest.contains("every new engine launch truncates qconsole.log"));
+
+        let validate = server
+            .validate_change(Parameters(ValidateChangePromptArgs {
+                change: "movement tuning".into(),
+                maps: Some("dm2,dm4".into()),
+                primary: Some("stall_parity".into()),
+            }))
+            .await
+            .unwrap();
+        let validate = prompt_text(&validate);
+        assert!(validate.contains("at least two maps"));
+        assert!(
+            validate.contains("at least three candidate tapes and three matching control tapes")
+        );
+        assert!(validate.contains("Trust each experiment/compare next_steps"));
+        assert!(validate.contains("Respect the metric boundaries in CLAUDE.md"));
+        assert!(validate.contains("Human tapes are review-only"));
+    }
+
+    #[tokio::test]
+    async fn harvest_prompt_rejects_a_command_shaped_tag() {
+        let error = Argus::new()
+            .harvest_before_play(Parameters(HarvestPromptArgs {
+                tag: "v1\nmap dm4".into(),
+            }))
+            .await
+            .unwrap_err();
+        assert!(error.message.contains("tag must contain only"));
     }
 
     /// WHAT THE TOOL SURFACE COSTS, measured rather than argued.
@@ -2439,7 +4440,7 @@ mod tests {
     /// between tools is exact either way.
     #[test]
     fn the_tool_surface_has_a_measured_price() {
-        let router = Argus::tool_router();
+        let router = Argus::annotated_tool_router();
         let tools = router.list_all();
         assert!(tools.len() > 20, "only {} tools", tools.len());
         let mut rows: Vec<(usize, String)> = tools
@@ -2449,7 +4450,7 @@ mod tests {
                 (n, t.name.to_string())
             })
             .collect();
-        rows.sort_by(|a, b| b.0.cmp(&a.0));
+        rows.sort_by_key(|row| std::cmp::Reverse(row.0));
         let total: usize = rows.iter().map(|(n, _)| n).sum();
         eprintln!("tool surface: {} tools, {total} bytes", rows.len());
         for (n, name) in rows.iter().take(10) {
@@ -2457,11 +4458,118 @@ mod tests {
         }
         // If this fails, the question is whether the new tool earns its
         // rent, not whether to raise the bound.
-        // 18,816 bytes over 39 tools, measured 2026-09-16, which is
-        // about 4,700 tokens on EVERY request. The bound sits just
-        // above that on purpose: a bound three times the actual is
-        // not a bound. If this fails, the question is whether the new
-        // tool earns its rent, not whether to raise the number.
-        assert!(total < 22_000, "the tool surface costs {total} bytes");
+        // 25,181 bytes over 40 tools, measured 2026-09-21 after the two
+        // core briefing routes gained their report-envelope output schemas.
+        // That is about 6,300 tokens on EVERY request. The bound sits
+        // just above the measured surface on purpose: a bound three
+        // times the actual is not a bound. If this fails, the question
+        // is whether the metadata or tool earns its rent, not whether
+        // to raise the number.
+        assert!(total < 25_500, "the tool surface costs {total} bytes");
+    }
+
+    #[test]
+    fn every_tool_publishes_an_explicit_safety_contract() {
+        let server = Argus::new();
+        let tools = server.tool_router.list_all();
+
+        assert_eq!(tools.len(), READ_ONLY_TOOLS.len() + MUTATING_TOOLS.len());
+        for tool in &tools {
+            let annotations = tool
+                .annotations
+                .as_ref()
+                .unwrap_or_else(|| panic!("{} has no safety annotations", tool.name));
+            let read_only = READ_ONLY_TOOLS.contains(&tool.name.as_ref());
+            assert_eq!(annotations.title.as_deref(), Some(tool.name.as_ref()));
+            assert_eq!(annotations.read_only_hint, Some(read_only), "{}", tool.name);
+            assert_eq!(
+                annotations.destructive_hint,
+                Some(!read_only),
+                "{}",
+                tool.name
+            );
+            assert_eq!(
+                annotations.idempotent_hint,
+                Some(read_only),
+                "{}",
+                tool.name
+            );
+            assert_eq!(annotations.open_world_hint, Some(false), "{}", tool.name);
+        }
+
+        for name in ["ship", "baseline_set", "match_start", "match_stop", "tune"] {
+            let tool = tools.iter().find(|tool| tool.name == name).unwrap();
+            let annotations = tool.annotations.as_ref().unwrap();
+            assert_eq!(annotations.read_only_hint, Some(false), "{name}");
+            assert_eq!(annotations.destructive_hint, Some(true), "{name}");
+            assert_eq!(annotations.idempotent_hint, Some(false), "{name}");
+        }
+
+        let see = tools.iter().find(|tool| tool.name == "see").unwrap();
+        assert_eq!(see.annotations.as_ref().unwrap().read_only_hint, Some(true));
+    }
+
+    #[test]
+    fn briefing_tools_publish_the_report_envelope_schema() {
+        let tools = Argus::annotated_tool_router().list_all();
+        for name in ["brief_run", "compare_runs"] {
+            let tool = tools.iter().find(|tool| tool.name == name).unwrap();
+            let schema = tool
+                .output_schema
+                .as_ref()
+                .unwrap_or_else(|| panic!("{name} has no output schema"));
+            assert_eq!(schema.get("type"), Some(&serde_json::json!("object")));
+            assert_eq!(
+                schema.get("required"),
+                Some(&serde_json::json!(["format", "detail", "data"]))
+            );
+            assert_eq!(
+                schema.get("additionalProperties"),
+                Some(&serde_json::json!(false))
+            );
+            let properties = schema["properties"].as_object().unwrap();
+            assert_eq!(
+                properties["format"]["enum"],
+                serde_json::json!(["json", "csv"])
+            );
+            assert_eq!(
+                properties["detail"]["enum"],
+                serde_json::json!(["brief", "full", "table"])
+            );
+        }
+    }
+
+    #[test]
+    fn report_helpers_keep_text_and_structured_data_in_lockstep() {
+        for detail in ["brief", "full"] {
+            let result = report_json_ok(&serde_json::json!({"answer": 42}), detail).unwrap();
+            let text_value: serde_json::Value = serde_json::from_str(result_text(&result)).unwrap();
+            assert_eq!(
+                result.structured_content,
+                Some(serde_json::json!({
+                    "format": "json",
+                    "detail": detail,
+                    "data": text_value,
+                }))
+            );
+            assert_eq!(result.is_error, Some(false));
+        }
+
+        let newline = char::from(10).to_string();
+        let csv = ["name,value", "argus,42", ""].join(&newline);
+        let result = report_csv_ok(csv).unwrap();
+        let text = result_text(&result);
+        assert_eq!(
+            result.structured_content,
+            Some(serde_json::json!({
+                "format": "csv",
+                "detail": "table",
+                "data": text,
+            }))
+        );
+
+        let error = tool_err("fixture failure").unwrap();
+        assert_eq!(error.is_error, Some(true));
+        assert!(error.structured_content.is_none());
     }
 }

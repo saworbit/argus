@@ -5,6 +5,7 @@ use crate::config::Config;
 use crate::intel::{brief_run, QUALITY_BARS};
 use crate::lab::lab_status;
 use crate::live::knobs;
+use crate::match_ctrl::list_runs;
 use crate::project::{project_view, see_vocab};
 use crate::qc_index::{index_argus, qc_read};
 use crate::session::SessionSeen;
@@ -12,6 +13,61 @@ use rmcp::model::{
     ListResourceTemplatesResult, ListResourcesResult, Resource, ResourceContents, ResourceTemplate,
 };
 use serde::Serialize;
+
+#[derive(Serialize)]
+struct Catalog<T> {
+    kind: &'static str,
+    aliases: Vec<&'static str>,
+    values: T,
+}
+
+#[derive(Serialize)]
+struct BaselineCatalogEntry {
+    map: String,
+    runs: Vec<String>,
+}
+
+fn extensionless(name: &str) -> String {
+    name.strip_suffix(".log").unwrap_or(name).to_string()
+}
+
+fn map_catalog(cfg: &Config) -> Result<Catalog<Vec<String>>, String> {
+    let values = list_maps(cfg)?.into_iter().map(|map| map.name).collect();
+    Ok(Catalog {
+        kind: "maps",
+        aliases: Vec::new(),
+        values,
+    })
+}
+
+fn run_catalog(cfg: &Config) -> Result<Catalog<Vec<String>>, String> {
+    let mut values: Vec<String> = list_runs(cfg)?
+        .into_iter()
+        .map(|run| extensionless(&run.name))
+        .collect();
+    values.sort_by_key(|run| run.to_ascii_lowercase());
+    values.dedup_by(|a, b| a.eq_ignore_ascii_case(b));
+    Ok(Catalog {
+        kind: "runs",
+        aliases: vec!["latest"],
+        values,
+    })
+}
+
+fn baseline_catalog(cfg: &Config) -> Catalog<Vec<BaselineCatalogEntry>> {
+    let values = crate::intel::all_baseline_bands(cfg)
+        .into_iter()
+        .map(|(map, runs)| BaselineCatalogEntry {
+            map,
+            runs: runs.into_iter().map(|run| extensionless(&run)).collect(),
+        })
+        .collect();
+    Catalog {
+        kind: "baselines",
+        aliases: vec!["baseline", "shipped"],
+        values,
+    }
+}
 
 fn res(uri: &str, name: &str, title: &str, desc: &str) -> Resource {
     Resource::new(uri, name)
@@ -59,6 +115,24 @@ pub fn list_static(cfg: Option<&Config>) -> ListResourcesResult {
             "Inspect vocabulary",
             "see what=... and resource URIs",
         ),
+        res(
+            "argus://catalog/maps",
+            "map-catalog",
+            "Map value catalog",
+            "Exact map names accepted by lab tools",
+        ),
+        res(
+            "argus://catalog/runs",
+            "run-catalog",
+            "Run value catalog",
+            "Extensionless run names and aliases accepted by lab tools",
+        ),
+        res(
+            "argus://catalog/baselines",
+            "baseline-catalog",
+            "Baseline value catalog",
+            "Configured map-to-baseline-band relationships",
+        ),
     ];
     if let Some(cfg) = cfg {
         if let Ok(maps) = list_maps(cfg) {
@@ -101,6 +175,18 @@ pub fn list_templates() -> ListResourceTemplatesResult {
             .with_title("QC search")
             .with_description("Grep Argus QuakeC.")
             .with_mime_type("application/json"),
+        ResourceTemplate::new("argus://graph-revisions/{map}", "graph-revisions")
+            .with_title("Graph revisions")
+            .with_description("Content-hash ids for committed nav JSON revisions.")
+            .with_mime_type("application/json"),
+        ResourceTemplate::new("argus://graph/{map}/{hash}", "graph")
+            .with_title("Graph revision")
+            .with_description("Typed links from one exact nav JSON revision.")
+            .with_mime_type("application/json"),
+        ResourceTemplate::new("argus://probe-verdicts/{map}/{hash}", "probe-verdicts")
+            .with_title("Probe verdicts")
+            .with_description("Walk and typed-link evidence recorded beside a graph revision.")
+            .with_mime_type("application/json"),
     ];
     ListResourceTemplatesResult::with_all_items(tmpls)
 }
@@ -119,6 +205,15 @@ pub fn read_uri(
     cfg: Option<&Config>,
     session: &SessionSeen,
 ) -> Result<Vec<ResourceContents>, String> {
+    read_uri_with_live(uri, cfg, session, None)
+}
+
+pub fn read_uri_with_live(
+    uri: &str,
+    cfg: Option<&Config>,
+    session: &SessionSeen,
+    live: Option<crate::match_ctrl::MatchStatus>,
+) -> Result<Vec<ResourceContents>, String> {
     let uri = uri.trim();
     match uri {
         "argus://project" => {
@@ -127,13 +222,47 @@ pub fn read_uri(
         }
         "argus://lab" => {
             let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://lab")?;
-            Ok(vec![json_text(uri, &lab_status(cfg, None))])
+            Ok(vec![json_text(uri, &lab_status(cfg, live))])
         }
         "argus://knobs" => Ok(vec![json_text(uri, &knobs())]),
         "argus://last" => Ok(vec![json_text(uri, session)]),
         "argus://quality" => Ok(vec![plain_text(uri, QUALITY_BARS)]),
         "argus://help" => Ok(vec![json_text(uri, &see_vocab())]),
+        "argus://catalog/maps" => {
+            let cfg = cfg.ok_or("ARGUS_ROOT is required for the map catalog")?;
+            Ok(vec![json_text(uri, &map_catalog(cfg)?)])
+        }
+        "argus://catalog/runs" => {
+            let cfg = cfg.ok_or("ARGUS_ROOT is required for the run catalog")?;
+            Ok(vec![json_text(uri, &run_catalog(cfg)?)])
+        }
+        "argus://catalog/baselines" => {
+            let cfg = cfg.ok_or("ARGUS_ROOT is required for the baseline catalog")?;
+            Ok(vec![json_text(uri, &baseline_catalog(cfg))])
+        }
         other => {
+            if let Some(map) = other.strip_prefix("argus://graph-revisions/") {
+                let cfg = cfg.ok_or("ARGUS_ROOT is required for graph revisions")?;
+                let revisions = crate::graph_revision::list_revisions(cfg, map)?;
+                return Ok(vec![json_text(uri, &revisions)]);
+            }
+            if let Some(spec) = other.strip_prefix("argus://graph/") {
+                let cfg = cfg.ok_or("ARGUS_ROOT is required for graph revisions")?;
+                let (map, hash) = spec
+                    .split_once('/')
+                    .ok_or("graph resource must be argus://graph/{map}/{hash}")?;
+                let revision = crate::graph_revision::get_revision(cfg, &format!("{map}@{hash}"))?;
+                return Ok(vec![json_text(uri, &revision)]);
+            }
+            if let Some(spec) = other.strip_prefix("argus://probe-verdicts/") {
+                let cfg = cfg.ok_or("ARGUS_ROOT is required for probe verdicts")?;
+                let (map, hash) = spec
+                    .split_once('/')
+                    .ok_or("verdict resource must be argus://probe-verdicts/{map}/{hash}")?;
+                let verdicts =
+                    crate::graph_revision::probe_verdicts(cfg, &format!("{map}@{hash}"))?;
+                return Ok(vec![json_text(uri, &verdicts)]);
+            }
             if let Some(name) = other.strip_prefix("argus://map/") {
                 let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://map")?;
                 let atlas = cartograph(cfg, name)?;
@@ -180,6 +309,23 @@ pub fn read_uri(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::TestDir;
+    use std::fs;
+
+    fn catalog_cfg(root: &std::path::Path) -> Config {
+        Config {
+            root: root.into(),
+            fteqcc: Default::default(),
+            engine: Default::default(),
+            basedir: root.into(),
+            python: Default::default(),
+            game: "argus".into(),
+            src: root.join("src"),
+            runs: root.join("runs"),
+            progs: root.join("progs.dat"),
+            maps: root.join("maps"),
+        }
+    }
 
     #[test]
     fn lists_core_uris() {
@@ -188,6 +334,22 @@ mod tests {
         assert!(uris.contains(&"argus://project"));
         assert!(uris.contains(&"argus://knobs"));
         assert!(uris.contains(&"argus://last"));
+        assert!(uris.contains(&"argus://catalog/maps"));
+        assert!(uris.contains(&"argus://catalog/runs"));
+        assert!(uris.contains(&"argus://catalog/baselines"));
+    }
+
+    #[test]
+    fn lists_graph_resource_templates() {
+        let listed = list_templates();
+        let uris: Vec<_> = listed
+            .resource_templates
+            .iter()
+            .map(|r| r.uri_template.as_str())
+            .collect();
+        assert!(uris.contains(&"argus://graph-revisions/{map}"));
+        assert!(uris.contains(&"argus://graph/{map}/{hash}"));
+        assert!(uris.contains(&"argus://probe-verdicts/{map}/{hash}"));
     }
 
     #[test]
@@ -201,5 +363,54 @@ mod tests {
     fn rejects_unknown() {
         let session = SessionSeen::default();
         assert!(read_uri("argus://nope", None, &session).is_err());
+    }
+
+    #[test]
+    fn catalogs_are_sorted_extensionless_and_keep_baseline_bands() {
+        let root = TestDir::new("resource-catalogs").unwrap();
+        for name in ["maps", "runs", "src"] {
+            fs::create_dir_all(root.path().join(name)).unwrap();
+        }
+        fs::write(root.path().join("maps/dm4.bsp"), []).unwrap();
+        fs::write(root.path().join("maps/dm2.bsp"), []).unwrap();
+        fs::write(root.path().join("runs/zeta.log"), "").unwrap();
+        fs::write(root.path().join("runs/alpha.log"), "").unwrap();
+        fs::write(
+            root.path().join("runs/baselines.json"),
+            r#"{"dm4":["zeta.log","alpha"]}"#,
+        )
+        .unwrap();
+        let cfg = catalog_cfg(root.path());
+
+        let maps = serde_json::to_value(map_catalog(&cfg).unwrap()).unwrap();
+        assert_eq!(maps["kind"], "maps");
+        assert_eq!(maps["values"], serde_json::json!(["dm2", "dm4"]));
+
+        let runs = serde_json::to_value(run_catalog(&cfg).unwrap()).unwrap();
+        assert_eq!(runs["aliases"], serde_json::json!(["latest"]));
+        assert_eq!(runs["values"], serde_json::json!(["alpha", "zeta"]));
+
+        let baselines = serde_json::to_value(baseline_catalog(&cfg)).unwrap();
+        assert_eq!(
+            baselines["aliases"],
+            serde_json::json!(["baseline", "shipped"])
+        );
+        assert_eq!(baselines["values"][0]["map"], "dm4");
+        assert_eq!(
+            baselines["values"][0]["runs"],
+            serde_json::json!(["zeta", "alpha"])
+        );
+    }
+
+    #[test]
+    fn catalogs_fail_without_read_configuration() {
+        let session = SessionSeen::default();
+        for uri in [
+            "argus://catalog/maps",
+            "argus://catalog/runs",
+            "argus://catalog/baselines",
+        ] {
+            assert!(read_uri(uri, None, &session).is_err(), "{uri}");
+        }
     }
 }

@@ -60,12 +60,18 @@ pub fn see_vocab() -> serde_json::Value {
             "argus://last",
             "argus://quality",
             "argus://help",
+            "argus://catalog/maps",
+            "argus://catalog/runs",
+            "argus://catalog/baselines",
             "argus://map/{name}",
             "argus://fn/{name}",
             "argus://run/{name}",
             "argus://const/{name}",
             "argus://path/{spec}",
             "argus://search/{needle}",
+            "argus://graph-revisions/{map}",
+            "argus://graph/{map}/{hash}",
+            "argus://probe-verdicts/{map}/{hash}",
         ],
         "adjust": {
             "live": "tune command=\"skill 3\" (next respawn). Also fraglimit, timelimit, map, developer, status.",
@@ -201,6 +207,7 @@ mod tests {
         let joined: Vec<_> = res.iter().filter_map(|x| x.as_str()).collect();
         assert!(joined.iter().any(|s| s.contains("argus://path/")));
         assert!(joined.iter().any(|s| s.contains("argus://search/")));
+        assert!(joined.iter().any(|s| s.contains("argus://graph/")));
     }
 
     #[test]

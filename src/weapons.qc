@@ -1523,6 +1523,11 @@ void() ImpulseCommands =
 		Argus_SetOmicron (!argus_omicron);
 	else if (self.impulse >= 210 && self.impulse <= 214)
 		ArgusCam_Impulse (self.impulse);
+	else if (self.impulse == 215 && cvar ("developer"))
+	{
+		// Snapshot scratch4's slot bitmask and write every arm to the tape.
+		Argus_ABControl ();
+	}
 	else if (self.impulse == 216 && cvar ("developer"))
 	{
 		// ARGUS: dev teleport for the lab's puppet client
@@ -1537,6 +1542,15 @@ void() ImpulseCommands =
 	}
 	else if (self.impulse == 217 && cvar ("developer") && cvar ("scratch1") == 197)
 		Argus_TacticFixture ();
+	else if (self.impulse >= 217 && self.impulse <= 219
+	         && cvar ("developer"))
+	{
+		// Developer-only fixed navigation tasks (#384). The puppet chooses
+		// bot slot 0..2 with impulses 217..219; Argus_TaskControl reads the
+		// operation and point from scratch1..4. No remote client can arm the
+		// path without the server console setting developer and scratch1.
+		Argus_TaskControl (self.impulse - 217);
+	}
 	else if (self.impulse >= 220 && self.impulse <= 230)
 		Argus_PlayerChat (self.impulse);
 

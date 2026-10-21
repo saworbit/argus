@@ -1,6 +1,6 @@
 [package]
 name = "argus-mcp"
-version = "0.29.0"
+version = "0.30.0"
 edition = "2021"
 description = "Argus lab MCP server: cartographer, compile, match, A/B, deploy wizard"
 publish = false
@@ -11,12 +11,15 @@ base64 = "0.23"
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 md5 = "0.8"
 regex = "1"
-rmcp = { version = "3.1", features = ["server", "macros", "schemars", "transport-io"] }
+rmcp = { version = "3.1", features = ["server", "macros", "schemars", "transport-io", "elicitation"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 thiserror = "2"
 tokio = { version = "1", features = ["fs", "io-util", "macros", "process", "rt-multi-thread", "signal", "sync", "time"] }
 toml = "1.1"
+
+[dev-dependencies]
+rmcp = { version = "3.1", features = ["client"] }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.61", features = [

@@ -19,6 +19,30 @@ Point the client at this installed binary so startup is not a cargo build and
 `cargo clean` cannot delete the configured server. Rerun the install command to
 update it, then restart the client.
 
+Every structured MCP response carries `lab_identity`: the running package version and a
+build-time fingerprint of `Cargo.toml`, `Cargo.lock`, `build.rs`, and the Rust
+source, beside the same identity recomputed from the checkout. Inspection stays
+available when those identities differ, but the lab refuses quality-gate
+verdicts from `compare_runs`, `suggest_next` compare mode, `experiment`,
+`campaign_experiment`, and `matrix_experiment`. Repair an identity mismatch with
+the install command above, then restart the MCP client. This checkout comparison
+catches an old installed process even when no newer `target-stage` build exists;
+the older `lab_stale` stage banner remains a separate early-warning mechanism.
+
+For a config saved before the stable install was documented, run this after
+the install:
+
+```
+python tools/migrate_mcp_config.py
+```
+
+The command checks the known Codex, Grok and project config paths. Pass one or
+more TOML or JSON paths to check only those files. It changes only the `argus`
+entry when its command exactly ends in the retired
+`tools/argus_mcp/target/release/argus-mcp` path, refuses an absent installed
+binary, reparses the saved file to verify every other setting, and tells you to
+restart the client. Existing environment and timeout values stay unchanged.
+
 The running process locks the exe on Windows. To build an update without
 stopping the client, stage it instead:
 
@@ -238,15 +262,35 @@ tool call:
 | `argus://last` | `see what=last` |
 | `argus://quality` | `quality_bars` |
 | `argus://help` | `see what=help` |
+| `argus://catalog/maps` | Exact map names accepted by direct tool arguments |
+| `argus://catalog/runs` | Extensionless run names plus the `latest` alias |
+| `argus://catalog/baselines` | Configured map-to-band relationships plus `baseline` / `shipped` aliases |
 | `argus://map/{name}` | `see what=map name={name}` |
 | `argus://fn/{name}` | `see what=fn name={name}` |
 | `argus://run/{name}` | `see what=run name={name}` |
 | `argus://const/{name}` | `see what=const name={name}` |
 | `argus://path/{spec}` | `see what=path name={spec}` |
 | `argus://search/{needle}` | `see what=search name={needle}` |
+| `argus://graph-revisions/{map}` | Content-hash ids for current and committed nav JSON |
+| `argus://graph/{map}/{hash}` | One exact `GraphRevision` with typed coordinate links |
+| `argus://probe-verdicts/{map}/{hash}` | `ProbeVerdict` evidence beside that revision |
+
+The three catalogs use the stable JSON envelope
+`{kind, aliases, values}`. Map and run values are sorted by name; baseline
+values preserve each configured map-to-band relationship. They are the
+discovery path for direct tool arguments, which MCP completion does not cover.
 
 `see what=last` persists to `runs/.lab_session.json`, so it survives a
 restart (0.21).
+
+Graph ids are `map@md5`. The hash names the JSON bytes, while `commit` and
+`committed_at` retain Git provenance. `mill what=revisions map=dm4` lists
+them; `mill what=diff revision_a=dm4@... revision_b=dm4@...` reports added,
+removed and type-changed links. Link ids use endpoint coordinates so node
+renumbering does not fabricate a change. Passing `link=` narrows the result
+and fails if that id occurs in neither graph. The resources and tool wrap the
+existing `.qc.json`, `.probe.json`, `.proven.json`, `.costs.json` and
+`.mined.json` files plus their Git history; they write nothing.
 
 ## Deeper inspect
 
@@ -352,8 +396,37 @@ still live only inside the PAKs.
 Pass `register=false` to generate an experimental graph before its reach and
 mill passes.
 
+Registration flags on the atlas, GUI and lab require both the dispatcher
+branch and the exact nav QC line in `progs.src`; commented entries do not count.
+The first-registration reach gate includes ordinary jumps and door, teleporter,
+lift, swim and train links. It excludes rocket-jump and sprint links because
+a fresh spawn cannot assume the required equipment or skill. Python reach and
+pointfile readers use the same family list, with gated routes available only
+in their explicit gated view.
+
 A match brief attaches `goal_reach`: each goaled classname gets the
 cartographer's `reach`.
+
+## Tape review and event counts
+
+Python tape review, longitudinal scorecards and pointfile freeze overlays
+use `tools/argus_tape.py`. Its samples, bot/human/instrument split and freeze
+predicate match Rust, including legacy tracks and the busiest-level rule.
+The rule has no vertical-distance or inter-sample-gap filter. Human and
+instrument freezes remain outside bot totals. A shared fixture under
+`tools/testdata/` verifies Rust and all three Python consumers.
+
+`ARGEVT <name> tactic <phase-or-abort-reason>` retains the full phase/reason.
+Full briefs expose `tactic_*` event counts, compact briefs expose `tactics`,
+and Python review and scorecards report the same phase counts and abort
+reasons. `returnshot` records a shot, never an inferred hit or completion.
+Scorecard TSVs add six `tactic_*` phase columns and `tactic_abort_reasons`;
+existing rows retain their values and receive blank cells for the new fields.
+
+Event and death rows use complete sample/spawn identities before splitting
+the verb, with the longest known name taking precedence. The raw closed-verb
+regex is a fallback for legacy rows without identity context; those rows can
+remain ambiguous when a name contains a verb. This changes no emitted format.
 
 ## Demo ingest
 
@@ -412,8 +485,9 @@ argus-mcp client walk <x> <y> <z> [secs]        walk toward a point, with
                                                 (clears steps, lips, jumps)
 argus-mcp client walkrel <dx> <dy> [secs]       relative walk from spawn
 argus-mcp client impulse <n> [secs]             fire a player impulse from
-                                                the puppet's seat - 100 adds
-                                                a bot (the headless 4-player
+                                                the puppet's seat - 100 opens
+                                                the menu, 101 adds a bot
+                                                (the headless 4-player
                                                 match), 216 is the dev
                                                 teleport probelinks uses
 ```
@@ -423,6 +497,77 @@ hostname-resolved address, not loopback - the client mirrors the
 engine's lookup and locks onto whatever address answers.
 Engine-spawning tests share a lock; a stale engine on 26000 makes
 every connect fail, so kill orphans first.
+
+### Controlled attack-cover-return encounters
+
+The dm4/dm2 tactical fixture is opt-in: start an isolated skill-1 lab match,
+then use `tune` to set `developer 1`, `scratch1 197`, and `scratch2 <case>`.
+`argus-mcp client impulse 217 9` starts a six-second encounter. Case 0 is
+stationary; cases 1–7 exercise target rush/departure, low health, weapon
+change, moving entry, and a new attacker. The fixture resets Romero and
+temporarily freezes other bots and weapon pickups, so harvest any human
+session before starting a new engine and use a fresh match per map.
+
+Confirm the expected `TACFIX begin` case and its `TACFIX end` in incremental
+match output before changing case or repeating the impulse. A console write
+or elapsed client duration alone does not prove that the intended case ran.
+Check harvested tapes with:
+
+```text
+python -B tools/check_tactic_fixture.py <log> --suite
+```
+
+Normal briefs report tactical phases and abort reasons. The dedicated
+checker additionally reads independent visibility, movement, shot, damage,
+and cadence samples. The explicit `scratch1 197` gate selects this fixture
+before impulse 217's ordinary navigation-task dispatch; navigation tasks
+retain steering priority when active.
+
+See [the complete case sequence, results, and limitations](../../docs/attack-cover-return.md).
+
+## Fixed navigation benchmark
+
+The benchmark is the low-variance complement to free-running matches. It
+places one real Argus bot at a declared nav coordinate, assigns a synthetic
+goal, and observes completion through the NetQuake puppet. The other bots are
+removed and the task bot ignores the observer, so combat and spawn luck cannot
+change the route trial.
+
+```
+argus-mcp benchmark benchmarks/dm4_navigation.json [limit] [--no-compile]
+```
+
+Suites are JSON manifests containing a map, skill, start/goal coordinates,
+budgets, and `train` or `heldout` labels. Each suite pins the MD5 of its nav
+JSON: a regenerated graph invalidates the yardstick until its routes are
+reviewed deliberately. Reports preserve individual results and summarize
+completion rate plus median game time for all, train, and held-out tasks.
+Completion requires finite engine game time within the task's `budget_sec`,
+including the exact boundary. Late finishes keep their raw `game_sec` but
+count as incomplete and do not enter successful-time medians. Wall-clock
+grace only bounds the harness wait.
+Compilation and installation happen by default; `--no-compile` deliberately
+measures the currently installed build.
+
+## Counterbalanced within-match A/B
+
+For a QuakeC behaviour change that can be gated per bot, both arms can share
+one world instead of paying the variance of two unrelated matches:
+
+```
+argus-mcp within-ab dm4 60 [--skill 2] [--run PREFIX] [--no-compile]
+```
+
+The runner adds a fourth bot, assigns two control and two candidate bodies,
+then repeats the match with the assignment swapped across roster slots. That
+counterbalance is mandatory because each slot has a different personality.
+The report gives per-arm bot means, paired candidate-minus-control deltas, and
+a two-arm Bradley-Terry log-strength estimate from cross-arm kills. An interval
+covering zero is inconclusive, not parity.
+
+Candidate code opts in by testing `self.ar_abarm`; absent such a gate both
+arms are identical and the pair measures the instrument's null error. This is
+not valid for nav graphs or any other world-level change shared by both arms.
 
 ## The mill (probelinks and the verdict files)
 
@@ -541,8 +686,71 @@ gates (when comparing), hotspots (first five), bot frag lines, and
 `next_steps`. That is what you act on.
 
 Pass `detail=full` for the whole `MatchBrief` pair (events, weapons,
-every hotspot). Prompts (`orient`, `review_run`, `review_ab`,
-`review_map`) also embed the lite JSON.
+every hotspot). Review prompts (`orient`, `review_run`, `review_ab`,
+`review_map`) also embed the lite JSON. Two text-only procedure prompts expose
+the lab's safety rules without reading config or changing state:
+`harvest_before_play tag=vNNN` returns the exact harvester-first sequence, and
+`validate_change` accepts a change description plus optional `maps` and
+`primary` context for a controlled multi-map A/B. The latter requires at least
+two maps, at least three tapes per arm on dm2, trusted `next_steps`, and valid
+metric boundaries.
+
+The server also advertises MCP completions for supported prompt arguments and
+resource-template variables. Review prompts complete map, extensionless run
+and baseline names; `validate_change` completes maps and primary metrics;
+typed map/run/graph resources complete their names, with graph hashes derived
+from the selected map in completion context. Function and constant resource
+variables complete from the same QC index their readers use; free-form path
+and search variables deliberately do not. The protocol does not define
+completion for arbitrary tool arguments, so the tools retain their existing
+validation rather than claiming autocomplete they cannot serve.
+
+`brief_run` and `compare_runs` advertise a stable MCP `outputSchema` and
+return the same information in `structuredContent` as
+`{format, detail, data}`. JSON uses detail `brief` or `full` and carries
+the exact value rendered by the existing text block; CSV uses detail `table`
+and carries the exact CSV text. The text channel is unchanged for clients that
+do not consume structured output, and tool-level failures are not wrapped as
+successful data.
+
+Long-running `match_run`, `experiment`, `campaign_experiment`, and
+`matrix_experiment` calls honor the MCP request progress token when a client
+supplies one. Notifications name the compile, match, and analysis stage;
+active matches advance by elapsed seconds against the requested duration.
+Progress delivery is best-effort and never changes the synchronous result.
+Repeated or backward progress values are skipped, including duplicate stage
+boundaries, so every delivered value strictly increases for its request token.
+Clients without progress support keep the existing call and polling behavior.
+
+The server also implements the SEP-2663 Tasks extension for `match_run`.
+Clients that declare Task support receive a `CreateTaskResult`, poll the handle
+with `tasks/get`, and may request cooperative cancellation with `tasks/cancel`.
+The status message identifies whether the run is waiting for the serialized
+match slot, starting, playing, or finalizing. Cancellation does not report a
+terminal state until the owned engine child has stopped and its tape cleanup
+has finished. A client that does not declare Task support receives the same
+synchronous `match_run` result and progress notifications as before. Other
+tools remain synchronous. Match Tasks advertise a 30 minute observation TTL,
+but that deadline never aborts active work: an engine-owning future remains
+cooperatively cancellable until cleanup completes. Terminal payloads remain
+available until the advertised TTL and for at least a further 10 minute grace
+after completion, then are evicted. `match_status` and the owner-independent
+`match_stop` remain available to every client as the operational fallback.
+
+`argus://last` and `argus://lab` are live subscription resources. The server
+accepts both current `subscriptions/listen` filters and legacy
+`resources/subscribe` calls, then emits `notifications/resources/updated`
+only when match identity, running state, exit status, or session memory changes.
+Subscription ticks do not read or analyse the live tape. `argus://lab` reads
+include the full current match status. Explicit resource reads, `match_status`, and
+`since_line` polling remain supported fallbacks.
+
+`compare_runs` uses form elicitation for one genuinely ambiguous case: the
+caller omits both `log_a` and `map`, and the candidate tape contains no map.
+The offered values are restricted to configured baseline bands with tapes on
+disk. Explicit arguments and ordinary candidate-map inference never prompt.
+Clients without form elicitation, plus decline, cancel, malformed response,
+or timeout paths, receive the same error as before; the server never guesses.
 
 `compare_runs` is unscaled: it expects two tapes of similar length.
 `experiment` duration-scales the baseline counts to the candidate
@@ -772,7 +980,7 @@ a budget that can return nothing is a poll loop that never advances.
 
 **The tool surface has a price on it.** Every exposed tool is paid
 for on every request through its schema, called or not. Measured
-2026-09-16: **39 tools, 18,816 bytes, about 4,700 tokens per
+2026-09-20: **40 tools, 19,707 bytes, about 4,930 tokens per
 request**, and the suite holds a bound just above that so adding a
 tool is a decision rather than a drift.
 
@@ -958,6 +1166,27 @@ target is zero.
 `tools/argus_tick.py` reports the rate of any tape or of the whole
 archive (`--all`).
 
+`tools/argus_humanness.py` turns the trustworthy movement half of that
+archive into a descriptive distance. It builds a separate human reference
+for each map from ordinary `ARGLOG` tracks, then compares bot-track
+distributions for speed, pauses, direction changes, cells per minute,
+gyration and 30-second local dwell inside a 1024-unit neighbourhood. The
+distance uses human interquartile spread with practical-effect floors, so a
+nearly constant reference feature cannot dominate the combined score. The
+shared telemetry stream avoids the
+demo recorder's entity-angle precision and PVS-culling confounds. Lower is
+closer to the human reference, but the score is evidence, not a quality gate:
+
+If one console log spans a level change, the reader follows the brief parser's
+rule from #266: it scores only the map segment with the greatest telemetry
+span, reports the ignored segment count on stderr, and never carries roles or
+movement windows across the boundary.
+
+```
+python tools/argus_humanness.py --human
+python tools/argus_humanness.py --reference "runs/shane_*.log" runs/candidate.log
+```
+
 ## Quality bars
 
 Encoded from the project charter, not invented per call:
@@ -1094,7 +1323,62 @@ matrix_experiment  duration_sec=20
 
 ## Tests
 
-`cargo test --manifest-path tools/argus_mcp/Cargo.toml`
+```text
+cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
+cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
+cargo test --manifest-path tools/argus_mcp/Cargo.toml
+```
+
+The repository pins Rust 1.95 with the `clippy` and `rustfmt` components.
+The fast workflow runs formatting, strict Clippy and Rust library tests.
+
+Run the shared navigation, registration, mapgate and tape contracts without
+an engine or machine-local maps:
+
+```text
+python tools/test_argus_navjson.py
+python tools/test_argus_mapgate.py
+python tools/test_argus_tape.py
+```
+
+These Python suites are not yet wired into the fast workflow (#525).
+`test_tools_cli.py` remains its separate Python CLI check.
+
+The repository invariant battery also reads committed Git blob metadata for
+LF-designated text. This catches CRLF blobs written through an API even when a
+checkout has already normalized the worktree copy.
+
+The tape parser has two pure metamorphic oracles. Replaying representative
+current ARGLOG and timestamp-prefixed ARGEVT input must serialize to identical
+tapes and briefs; parsing a whole-line prefix must preserve the map, contain no
+future sample or event, and never exceed the full brief's additive totals. The
+fixtures need no engine, BSP or machine-local run.
+
+The parsed navigation graph has a per-node metamorphic oracle for every route
+edge family. Adding a link may only enlarge each source node's reachable set;
+removing it may only shrink that set. A separate equal-aggregate fixture keeps
+the test from collapsing those sets into one blind reach percentage.
+
+Git-backed Rust fixtures share one crate-wide lock. Their temporary repositories
+are collision-proof and self-cleaning, and a failed fixture command reports Git
+status, stdout and stderr rather than only an assertion label. Git output calls
+also retry the Windows process-loader failure `0xc0000142`; ordinary Git errors
+are returned immediately.
+
+Graph-history reads apply the same narrow policy to their persistent
+`git cat-file --batch` child: a loader failure starts a fresh child and replays
+the whole batch, while malformed, truncated, or ordinarily failed batches
+return an explicit error with status and stderr instead of partial history.
+
+All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
+`ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
+runner has had a separate compatibility pass.
+
+Every advertised MCP tool carries explicit safety hints. Inspection and
+analysis tools are read-only and idempotent; tools that can write, compile,
+install, launch or control a match are conservatively destructive and
+non-idempotent. All tools operate inside the configured local lab rather than
+an open external world.
 
 Parser, config, cartographer, nav-graph BFS, QC search/calls, session,
 resources, project view, and A/B tests do not need Quake. A mini BSP29
@@ -1114,6 +1398,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
+| 0.30 | Typed mill artefacts (GitHub #419). `GraphRevision` resources use content-hash ids and keep the producing commit, date, trace inputs and sidecar hashes. `ProbeVerdict` resources wrap probe and proven sidecars. The read-only `mill` tool lists history and diffs two revisions by coordinate link id, including added, removed and type-changed links plus matching convictions. A link absent from both sources is an error. Historical bytes come from Git, so there is no new on-disk format. Tape collections remain the `corpus` surface from 0.28 rather than a duplicate type. 214 tests. |
 | 0.10 | Extra spec tools beside the native set. Cartographer briefs. `see` / `probe` / `tune`. |
 | 0.11 | `see what=project`, `experiment`, session last-seen, MCP resources, `orient` prompt. |
 | 0.12 | Lite defaults. `lab_status` no longer cartographs every map. Atlas cache. Windows `CREATE_NEW_CONSOLE`. Honest no-ARGLOG error. Extra tools defer to native names. |
@@ -1128,6 +1413,7 @@ shell.
 | 0.22 | The lab joins the game: a real NetQuake client (`argus-mcp client observe/walk/walkrel`), the empirical link-verification harness (`argus-mcp probelinks`), engine-verdict files consumed by navgen, orphan-engine kill on failed matches, serialized engine tests. |
 | 0.21 | The operational gaps. STALENESS SELF-AWARENESS: at startup the server detects a newer staged build, auto-swaps it into place for the next restart (Windows allows renaming a running exe), and stamps `lab_stale` on every JSON response for the rest of the session - a stale server can never again hand out an unmarked opinion. HARVEST GUARD: every match starter (MCP tools, soak, cycle) refuses to launch over an un-harvested play session (the harvester now MOVES its inputs, so leftovers are the signal). PAIRED DEMO JOIN: brief_run folds the same-stem .dem into the brief (aim stats, highlight reel, tracks) - the whole "played, review" ritual is one call. `ship` (compile + install everywhere + MD5s) and `baseline_set` (rewrite runs/baselines.json safely) close the loop's last manual steps. `soak --parallel 2` runs two engines on separate ports, halving ladder wall clock. Last-seen session memory persists to runs/.lab_session.json across restarts; `see what=project` stops listing fifty pak-only maps; compare flags any human tape as review-only material. |
 | 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |
+| 0.30 | A stale lab can no longer issue a quality-gate verdict (GitHub #499). The build embeds a deterministic fingerprint of its manifest, lockfile, build script, and Rust source; every response reports that identity beside the live checkout identity. Read-only inspection remains available under skew, while compare and experiment surfaces refuse with the exact install-and-restart remedy. This closes the gap left by 0.21's stage-only banner: a long-lived old process is detected even when no staged binary exists. |
 | 0.29 | Response shaping, measured (GitHub #371). `brief_run` and `compare_runs` take `format=csv`: measured on a real dm4 tape a brief is 1765 bytes as CSV against 3464 as compact JSON, and more again against the pretty JSON the server actually sends. JSON stays the default. **The live tail paginates on SIZE, not line count**: telemetry lines vary by five times, so the old flat eighty-line cut returned between 1.5 and 8 KB depending on what the match happened to be doing, and a busy match returned the most. 6 KB budget, 120 line ceiling, `since_line` still the cursor, and always at least one line so a poll loop cannot stall. **THE TOOL SURFACE NOW HAS A PRICE ON IT**: 39 tools, 18,816 bytes, about 4,700 tokens on every request, with a bound in the suite so adding a tool is a decision rather than a drift. That measurement REFUSED the third part of the issue: retiring the three parked extras would save 1,206 bytes, 6 per cent, and break a documented spec capture, while 581 of those bytes were available by trimming the schema of `corpus` itself - which was the most expensive tool in the server, written one version earlier to save tokens. |
 | 0.28 | The corpus becomes something you can ask a question of (GitHub #372, #378, #386). `corpus` is one tool with a `what` selector, like `see`: `tapes` filters and aggregates an index of every committed tape, `cells` does the same for hotspot cells, `changes` runs change point detection over the dated series, `bisect` localises one step with a noisy oracle. It returns CSV, which is about half the tokens of the same table as JSON. The index is `runs/tape_index.tsv`, a cache rather than a source of truth: a tape it does not name is parsed on demand, and nothing re-parses 752 tapes on an ordinary call. **SQLITE WAS CONSIDERED AND REFUSED**: the corpus is a few hundred rows of a fixed schema, and a named filter-and-aggregate surface costs an agent less than discovering a schema and writing SQL against it. The detector reproduces the record: dm4 lava stepping 12.3 to 4.4 at `ab_dm4_B3` is the 2026-08-14 hazard fix, e1m1 engages 1.1 to 17.8 at `ab_e1m1_mover1` is #281, and it dates the September dm2 stall rise that `CLAUDE.md` calls "not bisected" to 2026-08-29 at `ab_dm2_v403_control` - while flagging on the row that the tick class differs either side, so it must not be read as code without a single-class re-run. **TWO PARSER DEFECTS THE INDEX FOUND**: the lab puppet emits ARGLOG rows and never spawns, so the human split read it as a person and every tape it connected to briefed as a human session, two committed baselines included; and human ARGLOG tracks only exist from v3.66, so 46 of 73 harvested sessions were sitting in the bot series. Both fixed, and no tape's numbers move - verified by diffing the whole index across the change. `docs/specs/2026-09-16-corpus-change-points.md`. 182 tests. |
 | 0.27 | The verdict gets an interval, a stopping rule and a pre-registered primary (GitHub #375, #376, #377). `argus-mcp measure` writes `docs/specs/2026-09-16-lab-measurement-limits.md`: the pooled within-arm sigma per map and metric over every committed same-build arm, and the smallest effect detectable at 3, 5 and 10 tapes a side. It says in print what the handoff said in prose - dm2 stalls at three tapes a side cannot see anything smaller than a 119 per cent change, and coverage at 9 per cent CV is the only metric worth reading off a small ladder. It also measures what four gates cost: each convicts a byte-identical pair 0 to 12 per cent of the time and the verdict as a whole convicts 19 per cent of the time, so `experiment` and `compare` take `primary`, the metric the change was predicted to move, and only that gate convicts. Every compare now carries a `stats` block: interquartile mean rather than median, a stratified bootstrap interval on the improvement (absent below two tapes a side, where resampling one observation is not an interval), a probability of improvement, and an SPRT call of accept, reject, continue or abandon with its bound derived from the detection limit. **Continue is the answer the lab could never give.** Validated on the null corpus: zero accepts across 58 decisions from ten same-build arms split in half, and the sixteen null pairs still read thirteen parities. 163 tests. |

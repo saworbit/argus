@@ -84,7 +84,7 @@ fn staged_twin_layout(exe: &Path) -> Option<PathBuf> {
     Some(staged)
 }
 
-fn staged_twin(exe: &PathBuf) -> Option<PathBuf> {
+fn staged_twin(exe: &Path) -> Option<PathBuf> {
     let root = std::env::var_os("ARGUS_ROOT").map(PathBuf::from);
     staged_twin_for(exe, root.as_deref())
 }

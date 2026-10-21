@@ -106,6 +106,7 @@ flowchart TD
 - **Dynamic weapon selection**: Selects optimal weapons based on distance thresholds, owned inventory, waterlevel safety, and remaining ammunition reserves. Holding nothing but a loaded Rocket Launcher at close range, a bot fires it from 120u out on a stack of 100 or more rather than charging with the axe - and below that distance it really does take the axe, because splash is `120 - dist/2` and the trade stops paying.
 - **Missile dodging**: Scans for inbound rockets and grenades every 0.15 s and commits to a perpendicular sidestep that is checked for both floor *and* clearance, shooting throughout. Floor alone is not enough: a wall has excellent floor under it, and dodging into one pins the bot exactly where the rocket is going. Serial rockets still land sometimes at every skill tier to stay human.
 - **Retreat by geometry**: Navgen bakes each node's nearest hidden ordinary-walk target and first hop. A low-stack bot tries that graph cover only when the hop is floor-safe and a live trace proves the target hides it from the actual enemy, then falls back to the established heading fan. Cover is a wall between us, never distance. Cornered means fight; the bot shoots the whole way out. `ARGEVT <name> coverroute` marks a baked-cover choice.
+- **Attack, cover, return**: Romero at base skill 1 can fire a rocket, walk behind cover, and reappear at least 30 degrees around the opponent before taking a normal, imperfect return shot. This first milestone uses two engine-verified encounters, dm4 A and dm2 C, with live geometry and danger checks. It does not search other maps yet; natural frequency and player feel remain unverified. [Routes, limits, and controlled trials](docs/attack-cover-return.md).
 - **Mid-fight item grabs**: Combat sweeps 240u for worthwhile live items every half second and bends the strafe circle toward the best for one short commit - a wounded bot steps onto the health box between rockets instead of strafing past it.
 - **Weapon-sound classification and pickup hearing**: The listener knows *what* it heard - heavy gunfire on a thin health stack keeps its distance while a healthy bot hunts the big fight, and weapon, armour, powerup, megahealth, and backpack pickups are audible intel that starts the denial loop.
 - **Theory of mind - the hunch and the ambush reflexes**: When a chase goes cold, the bot scores the map *as its opponent* (their health, their guns) and bets on the item they are running for; during pursuit it pre-fires one speculative rocket at the corner they vanished behind; and after a kill it bets on where the victim will respawn and shops toward it for a short window. That last bet now respects the engine's own spawn rule - `SelectSpawnPoint` skips any pad with a player within 84 units, so the pad nearest the body (where the killer is standing) is the one it is *least* likely to pick. Interception emerges from the same utility scorer that runs the circuits.
@@ -130,6 +131,8 @@ flowchart TD
 - **Static exposure and cover annotations**: The nav compiler runs exact BSP-tree point traces between nodes, ranks each node by how much of the graph it can see, and finds the nearest hidden target reachable by ordinary walk links. Cartograph surfaces the range, the most exposed nodes, and each inspected node's cover target. Runtime treats the result as a hint and verifies it against the live threat.
 - **Typed link execution**: Supports walk links, one-way drop links, parabolic jump links (`an_jumpmask`) with per-link approach speeds, rocket-jump links (`an_rjmask`), sprint-jump links (full-run-speed arcs, skill-gated), elevator links (`an_liftmask`), swim-exit and dive links (`an_swimmask`), train rides (`an_trainmask`), and door passages (`an_doormask`).
 - **Engine-verdict graph refinement (the mill)**: The lab's puppet client walks accused links in the real engine; refuted walk links whose centre-line void fits the jump envelope are reminted as jump links, unjumpable refusals die, and candidate entries the puppet *proves* are minted from `argus_nav_<map>.proven.json`. Every chronic stall cell fixed this way stays fixed - the engine testifies, navgen re-types, bots inherit.
+- **Graph-pinned fixed navigation tasks**: `argus-mcp benchmark benchmarks/dm4_navigation.json` places a real bot at declared starts and measures synthetic-goal completion with fixed skill and no opponents. Manifests pin the graph MD5 and keep train and held-out routes separate, giving tuning an absolute yardstick alongside noisy free-running matches.
+- **Counterbalanced within-match A/B**: `argus-mcp within-ab dm4 60` puts two control and two candidate bots in the same item economy and repeats with their personality slots swapped. Per-arm bot metrics and cross-arm Bradley-Terry strength reduce match-to-match noise for per-bot QuakeC changes; nav and world changes remain separate-match experiments.
 - **Door and button handling**: Touch-open doors are walked through (the classname masquerade fires their triggers), button-only doors detour to their button and hold for the slab when the door is near, and shoot-actuated plates are fired at with the bot's own aimed attack.
 
 ### 6. Personalities and scoreboard integration
@@ -156,6 +159,8 @@ argus/
 |       `-- autoexec.cfg       # Enforces sv_protocol 15 and max_edicts 600
 |-- src/                       # Complete QuakeC source code (GPL 1.06 base)
 |   |-- argus.qc               # Bot AI, physics, combat, perception, GOAP
+|   |-- argus_tactics.qc       # Bounded attack-cover-return on dm4 and dm2
+|   |-- argus_tactic_fixture.qc # Opt-in controlled engine encounters
 |   |-- argus_cam.qc           # ArgusCam spectator camera and broadcast director
 |   |-- argus_nav.qc           # Runtime sliced BFS router and link execution
 |   |-- argus_nav_dispatch.qc  # Map navigation dispatch table
@@ -171,6 +176,7 @@ argus/
 |   |-- argus_navgen.py        # Offline BSP29 navigation compiler (Hull 1 sampler)
 |   |-- analyze_match.py       # Trajectory visualizer and A/B comparative plotter
 |   |-- argus_review.py        # Tape review battery (summary, deaths, regions, rides)
+|   |-- check_tactic_fixture.py # Independent TACFIX outcome checker
 |   |-- argus_reach.py         # Directed-reach audit of the shipped nav graphs
 |   |-- harvest_session.py     # Stamps a play session's tape + demo into runs/
 |   |-- argus_pointfile.py     # Nav overlays drawn in-world via the engine's pointfile
@@ -178,7 +184,7 @@ argus/
 |   |-- pak_extract.py         # Standalone id1 PAK archive reader / extractor
 |   |-- mdl_skins.py           # Palette-remapped player MDL skin injector
 |   |-- setup_rig.sh           # Automated headless Linux environment setup
-|   `-- argus_mcp/             # Lab MCP (stdio), `argus-mcp gui`, puppet client, probelinks
+|   `-- argus_mcp/             # Lab MCP (stdio), GUI, puppet, probelinks, fixed benchmarks
 |-- runs/                      # Archive of telemetry logs and trajectory plots
 |   `-- demos/                 # Paired .dem recordings (machine-local, not in repo)
 |-- backups/                   # Dated progs + nav copies (machine-local, not in repo)
@@ -438,12 +444,35 @@ python tools/analyze_match.py maps/dm4.bsp runs/ab_dm4_A.log runs/ab_dm4_B.log r
 +-----------------------------------------------------------------------------------+
 ```
 
+The manoeuvre also emits `ARGEVT <name> tactic <phase-or-abort-reason>`.
+The integrated Rust and Python parsers report phases and abort reasons. The
+[controlled fixture checker](docs/attack-cover-return.md#reproducing-controlled-engine-trials)
+reads those events alongside independent `TACFIX` observations; a `prepare`
+event alone is not a completed move or a damaging shot.
+
 Human clients emit the same `ARGLOG` track under their own netname
 (camera flights excluded), so every analysis tool sees the human
 player as one more trajectory - the reference circuit the bots are
 measured against. Real-client deaths emit the same detailed
 `ARGEVT death` line as bots, and the parsers split human tracks out
 of the bot quality bands automatically.
+
+Review, longitudinal scorecards and tape pointfiles share the Rust freeze
+rule: under 20 u/s inside a strict 32u XY circle for at least six seconds,
+including the first sample. Human and instrument tracks stay out of bot
+freeze counts. Multi-level tapes use the busiest segment, with the last
+segment winning a tie.
+
+Parsers recognise `ARGEVT <name> tactic <phase-or-abort-reason>`. Reports keep
+`prepare`, `opening`, `covered`, `reappear`, `returnshot` and `abort` separate,
+including abort reasons. Preparation proves no completed return, and a return
+shot proves no hit. Compact briefs expose these counts under `tactics`.
+
+Event and death readers resolve complete sample and spawn names before the
+event verb, preferring the longest known name. Names may contain words such
+as `lift` or `death` without changing track identity. Older rows with neither
+sample nor spawn context keep the legacy closed-vocabulary interpretation;
+an ambiguous name in such a row cannot be recovered uniquely.
 
 ### Recording and reading demos
 The 1 Hz telemetry tape is the ruler; a `.dem` recording is the
@@ -519,7 +548,7 @@ a genuinely free slot from a header that never arrived.
 
 ## The lab MCP server and deploy wizard
 
-Current version **0.29**. Operator guide (with the full lab flow
+Current version **0.30**. Operator guide (with the full lab flow
 charts): [`tools/argus_mcp/README.md`](tools/argus_mcp/README.md).
 
 The Rust binary in `tools/argus_mcp/` is four instruments in one lab:
@@ -528,6 +557,7 @@ The Rust binary in `tools/argus_mcp/` is four instruments in one lab:
 - **localhost GUI** (`argus-mcp gui`) for humans: attach a `.bsp`, generate nav, view the nav PNG, compile, install, restore a dated backup.
 - **puppet client** (`argus-mcp client observe|walk|walkrel|impulse`): a real NetQuake protocol-15 client, invisible to the bots, used for live observation, roster control, and as the engine's own referee.
 - **the mill** (`argus-mcp probelinks <map> [limit] [skip]`): walks every nav link with the puppet in the real engine and persists refusals by endpoint - the empirical verdicts that navgen remints into jump links or prunes on the next regen.
+- **mill history** (`mill what=revisions|diff` over MCP): content-addressed graph revisions and probe verdicts. A diff can name only links present in one of its two source JSON files and fails closed for an absent link.
 - **the measuring stick** (`argus-mcp measure`): what this instrument can and cannot see, over the tapes already committed. The pooled within-arm sigma per map and metric, the smallest effect detectable at 3, 5 and 10 tapes a side, and what running four gates costs on sixteen pairs of byte-identical builds. Read-only; the committed table is [`docs/specs/2026-09-16-lab-measurement-limits.md`](docs/specs/2026-09-16-lab-measurement-limits.md).
 - **the corpus** (`argus-mcp corpus`, `argus-mcp history`): 752 tapes as one table you can filter, aggregate and run change point detection over, instead of briefing them one at a time. It dates every step in every metric on every map, and localises one with a noisy oracle when a plain bisect cannot. [`docs/specs/2026-09-16-corpus-change-points.md`](docs/specs/2026-09-16-corpus-change-points.md).
 
@@ -547,6 +577,7 @@ argus-mcp gui --port 7420 --no-open
 - `see what=demo name=<stem>`: Parse a harvested `.dem` - full-rate named tracks, per-player aim statistics, a highlight reel with `playdemo` timestamps, projectiles, kill feed. `:export` writes the full track vectors as JSON. Also available as the CLI verb `argus-mcp demo <stem>`.
 - `experiment map=dm4 duration_sec=30 skill=2`: Compile, short match, duration-scaled lite A/B.
 - `compare_runs log_a=baseline log_b=latest`: Unscaled A/B against the shipped tape.
+- `mill what=revisions map=dm4`: List stable graph ids; use `what=diff` with two ids to compare exact shipped graphs and their probe evidence.
 - `learn_hotspots map=dm4`: Fold stall/lava/hazard cells (kind-aware); writes `src/argus_nav_<map>.costs.json` for the next navgen.
 - `tune command="skill 3"` - live console injection into the running dedicated child (works on Windows via `AttachConsole` + `CONIN$`, integration-tested). `scratch1 1` arms the **decision tape**: every bot goal pick prints its full per-class utility board as an `ARGDBG` line, so "why did it choose that" is a grep.
 

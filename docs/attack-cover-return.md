@@ -33,8 +33,9 @@ The ordinary firing code must actually spend a rocket before movement
 commits. Travel suppresses firing; the exit hands the shot to normal
 reaction, turning and imperfect aim. A 240-unit trace checks the actual
 shot direction, allowing for the 160-unit splash radius and movement during
-rocket flight. A closer wall delays the shot without changing aim. Cover means visual
-occlusion at the sampled body points, not immunity to splash damage.
+rocket flight at the tested cadence. A closer wall delays the shot without
+changing aim. Cover means visual occlusion at the sampled body points, not
+immunity to splash damage. Lower frame rates still need verification.
 
 The opening has a 1.2-second deadline, followed by at most 2.8 seconds for
 the manoeuvre. Failure and success impose 10- and 14-second cooldowns.
@@ -45,12 +46,20 @@ coordinates; a hidden departure does not update that memory.
 
 ## Reproducing controlled engine trials
 
-Use the lab MCP to compile and start a skill-1 match on the chosen map.
+Use an isolated lab match: the fixture resets the encounter and temporarily
+changes other bots and pickups. Harvest any human session before launching
+a new engine, which truncates its console log. Use the lab MCP to compile
+and start a skill-1 match on the chosen map.
 Arm `developer 1`, `scratch1 197`, and select the case with `scratch2` via
 `tune`. Send `argus-mcp client impulse 217 9` to run a six-second trial.
 For three stationary trials use `argus-mcp client impulse 217,217,217 9`.
-Allow console changes to settle before sending each impulse. Run cases in the sequence `0,0,0,1,2,3,4,5,6,7`, then stop and harvest the
-match. Start a fresh match for the other map.
+The final run allowed one second after changing console values, but elapsed
+wall time alone is not an acknowledgement. Check the incremental match log
+for the expected `TACFIX begin <map> case <n>` and its `TACFIX end` before
+changing case or firing another impulse. Run cases in the sequence
+`0,0,0,1,2,3,4,5,6,7`, then stop and harvest the match. Reject a tape with
+missing, overlapping, or unexpected cases. Start a fresh match for the
+other map.
 
 | Case | Setup |
 |---|---|
@@ -81,6 +90,14 @@ with at least two damaging returns. Ordinary skill-1 aim can miss; hits are
 reported separately. Interrupted encounters must cancel without claiming a
 successful return shot.
 
+`ARGEVT <name> tactic` records `prepare`, `opening`, `covered`, `reappear`,
+`returnshot`, or `abort <reason>`. The integrated Rust and Python parsers
+report phases and abort reasons, retaining complete track names (#514,
+#520). Compact lab briefs expose `tactics`; full briefs and Python
+scorecards expose `tactic_*` counts. Use the dedicated checker for fixture
+outcomes, which additionally require movement, concealment, and damage.
+A `returnshot` event establishes a shot, not a hit or completed manoeuvre.
+
 The unchanged-bot baseline `runs/tactic_red_dm4b.log` fired but failed the
 independent concealment check before the feature was added. Earlier fixture
 iterations and rejected trials remain in `runs/tactic_*` for diagnosis.
@@ -95,12 +112,12 @@ the target; one rocket on each map missed with ordinary aim error.
 
 | Map | Completed manoeuvres | First reappearance angle | Concealed at | First visible again | Damaging returns |
 |---|---|---|---|---|---|
-| dm4 | 3/3 | 40.7–42.6° | 0.5 s | 1.1–1.2 s | 3/3 |
-| dm2 | 3/3 | 49.0–49.7° | 1.3 s | 1.7 s | 2/3 |
+| dm4 | 3/3 | 42.8–42.9° | 0.5 s | 1.2 s | 2/3 |
+| dm2 | 3/3 | 49.9° | 1.3 s | 1.7 s | 2/3 |
 
 Times are from fixture start, not from the first shot. Frame cadence was
 measured in each six-second trial and is recorded in the results JSON; this
-run used approximately 69–70 frames per second. It does not establish
+run measured 63.8–69.5 frames per second. It does not establish
 low-frame-rate or latency robustness. Steering uses the existing
 frametime-scaled physics, including on the frame of the opening shot.
 
@@ -109,14 +126,15 @@ verdict, with zero lava deaths and freezes. They recorded zero dm4 stalls
 and five dm2 stalls, with no corrective next steps from the lab.
 Two earlier pairs of normal-match smoke tests also returned parity. These
 short tapes are regression checks, not evidence of improved win rate.
-There were no tactical activations in the final normal-match tapes.
+The final normal-match tapes contain no raw `tactic prepare` events.
 
 A commit-verification regression tape, `runs/tactic_commit_dm2.log`,
 recorded 23 HP of self-splash with the earlier 120-unit muzzle check. Its
 build is recorded in `runs/tactic_commit.state.json`. Extending the check to
-240 units covers the 160-unit splash radius plus normal forward movement
-during rocket flight; the final suites above passed without return-shot
-self-damage. Low-frame-rate behaviour remains unverified.
+240 units allows a margin beyond the 160-unit splash radius for normal
+forward movement during rocket flight. The final suites above passed
+without return-shot self-damage at their measured cadence; this is not yet
+verified at lower frame rates.
 
 Evidence:
 
@@ -126,13 +144,38 @@ Evidence:
 - `runs/tactic_commit2_normal.brief.json`: unmodified native lab analysis.
 - `runs/tactic_commit2.state.json`: branch, HEAD and tested source/binary/nav hashes.
 
-Compilation succeeded, 71 Python tests passed (one optional test skipped), and read-only review findings were addressed. Generated nav QC,
+Compilation succeeded, 71 Python tests passed (one optional test skipped),
+and read-only review findings were addressed. Generated nav QC,
 graph JSON and the existing dm2 probe sidecar are byte-identical to their
-pre-task state. The commit excludes the checkout's prior adaptive-aim edits; those remain
-in the local working copy. The committed binaries match the feature-only
-source used by the recorded commit verification runs.
+pre-task state. Commit `21ce7b7` excludes the checkout's prior adaptive-aim
+edits. Its binaries match the feature-only source used by the recorded
+commit verification runs.
+
+The original feature snapshot failed the Rust emitter audit because its
+parsers omitted `tactic`. Current code integrates the parser fixes from
+main, along with the navigation benchmark. The fixture's explicit
+`scratch1 197` gate takes precedence over the shared impulse 217; ordinary
+navigation tasks still select their bot slot and take steering priority.
 
 Human playtesting remains necessary to judge whether the move reads as
 deliberate, whether it occurs often enough, and whether it creates the
 desired surprise. That judgement should precede broadening the candidate
 search, adding maps, or spreading the behaviour to more bots.
+
+## Tracked follow-ups
+
+Integration verification on 2026-10-22 passed 271 Rust and 101 Python tests,
+including the emitter audit, and compiled both shipped binaries. The
+20-case engine rerun preserved walking, concealment, return angles, and
+interruption handling. However, dm4 damaged the target on only one of its
+three return shots, so its `--suite` acceptance check failed the required
+two-hit minimum. The original build's passing results above do not override
+this failure. The integration is preserved for follow-up rather than merged.
+Evidence: `runs/tactic_merge3_dm4.log`, `runs/tactic_merge3_dm2.log`, and
+`runs/tactic_merge3.state.json`.
+
+- [#527: resolve the integration acceptance failure](https://github.com/saworbit/argus/issues/527) and the separately preserved adaptive-aim tuning.
+- [#514: tactical parser integration](https://github.com/saworbit/argus/issues/514), included with the main integration.
+- [#515: verify lower frame rates](https://github.com/saworbit/argus/issues/515), including movement and return-shot splash clearance.
+- [#516: synchronize fixture trials with engine acknowledgements](https://github.com/saworbit/argus/issues/516), replacing timing-only sequencing.
+- [#517: measure natural frequency and player readability](https://github.com/saworbit/argus/issues/517) before expanding candidates.

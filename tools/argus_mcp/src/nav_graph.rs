@@ -694,6 +694,43 @@ fn parse_end(s: &str) -> Option<End> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::BTreeSet;
+
+    fn graph_with_bridge(family: Option<&str>) -> NavGraph {
+        let mut value = serde_json::json!({
+            "nodes": [[0,0,0],[100,0,0],[200,0,0],[300,0,0]],
+            "links": [[0,1,1],[2,3,1]]
+        });
+        if let Some("links") = family {
+            value["links"]
+                .as_array_mut()
+                .unwrap()
+                .push(serde_json::json!([1, 2, 0]));
+        } else if let Some(key) = family {
+            value[key] = serde_json::json!([[1, 2]]);
+        }
+        parse_graph("metamorphic", &value).unwrap()
+    }
+
+    fn reachable_sets(graph: &NavGraph) -> Vec<BTreeSet<u32>> {
+        (0..graph.nodes.len() as u32)
+            .map(|from| {
+                (0..graph.nodes.len() as u32)
+                    .filter(|to| route_nodes(graph, from, *to).ok)
+                    .collect()
+            })
+            .collect()
+    }
+
+    fn assert_reach_subset(before: &[BTreeSet<u32>], after: &[BTreeSet<u32>], context: &str) {
+        assert_eq!(before.len(), after.len());
+        for (node, (old, new)) in before.iter().zip(after).enumerate() {
+            assert!(
+                old.is_subset(new),
+                "{context}: n{node} lost destinations {old:?} -> {new:?}"
+            );
+        }
+    }
 
     #[test]
     fn parses_node_and_item_paths() {
@@ -789,6 +826,68 @@ mod tests {
         assert_eq!(r.hops, 2);
         assert_eq!(r.jump, 1);
         assert_eq!(r.walk, 1);
+    }
+
+    #[test]
+    fn every_link_family_obeys_per_node_reach_monotonicity() {
+        let base = graph_with_bridge(None);
+        let base_reach = reachable_sets(&base);
+        for (family, expected_kind) in [
+            ("links", "walk"),
+            ("jlinks", "jump"),
+            ("teles", "tele"),
+            ("rjlinks", "rocket"),
+            ("liftlinks", "lift"),
+            ("swimlinks", "swim"),
+            ("doorlinks", "door"),
+            ("trainlinks", "train"),
+            ("sprintlinks", "sprint"),
+        ] {
+            let added = graph_with_bridge(Some(family));
+            let added_reach = reachable_sets(&added);
+            let removed = graph_with_bridge(None);
+            let removed_reach = reachable_sets(&removed);
+
+            // Adding an engine-verified edge cannot remove any destination
+            // from any source node. Removing it is the same relation read in
+            // reverse: the reduced graph cannot invent a destination.
+            assert_reach_subset(&base_reach, &added_reach, family);
+            assert_reach_subset(&removed_reach, &added_reach, &format!("remove {family}"));
+            assert!(
+                base_reach
+                    .iter()
+                    .zip(&added_reach)
+                    .any(|(old, new)| old != new),
+                "{family} fixture did not change reach"
+            );
+            let bridge = added.adj[1]
+                .iter()
+                .find(|edge| edge.to == 2)
+                .expect("parsed bridge edge");
+            assert_eq!(bridge.kind, expected_kind, "{family}");
+        }
+    }
+
+    #[test]
+    fn equal_aggregate_reach_can_hide_different_stranded_nodes() {
+        let left = parse_graph(
+            "left",
+            &serde_json::json!({"nodes": [[0,0,0],[1,0,0],[2,0,0]], "links": [[0,1,0]]}),
+        )
+        .unwrap();
+        let right = parse_graph(
+            "right",
+            &serde_json::json!({"nodes": [[0,0,0],[1,0,0],[2,0,0]], "links": [[1,2,0]]}),
+        )
+        .unwrap();
+        let left_reach = reachable_sets(&left);
+        let right_reach = reachable_sets(&right);
+        let total = |sets: &[BTreeSet<u32>]| sets.iter().map(BTreeSet::len).sum::<usize>();
+
+        assert_eq!(total(&left_reach), total(&right_reach));
+        assert_ne!(left_reach, right_reach);
+        assert_eq!(left_reach[0], BTreeSet::from([0, 1]));
+        assert_eq!(right_reach[0], BTreeSet::from([0]));
     }
 
     #[test]

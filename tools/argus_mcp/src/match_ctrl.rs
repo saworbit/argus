@@ -6,6 +6,7 @@ use crate::parse_arglog::{parse_arglog, MatchSummary};
 use crate::paths::{default_run_name, valid_run_name};
 use serde::Serialize;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
@@ -30,6 +31,16 @@ pub struct MatchStatus {
     pub live_headline: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub next_steps: Option<Vec<crate::intel::NextStep>>,
+}
+
+/// Stable identity for subscription change detection. No clock or tape reads.
+#[derive(Debug, Clone, Serialize)]
+pub struct MatchResourceState {
+    running: bool,
+    run_name: Option<String>,
+    map: Option<String>,
+    pid: Option<u32>,
+    exit_code: Option<i32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -67,9 +78,21 @@ pub struct MatchCtrl {
     /// one shot permission to refresh a committed tape, taken and
     /// cleared by the next start() (#328)
     refresh_committed: bool,
+    #[cfg(test)]
+    fake_engines: Option<std::collections::VecDeque<crate::engine::FakeEngineControl>>,
 }
 
 impl MatchCtrl {
+    #[cfg(test)]
+    pub(crate) fn with_fake_engines(
+        controls: impl IntoIterator<Item = crate::engine::FakeEngineControl>,
+    ) -> Self {
+        Self {
+            fake_engines: Some(controls.into_iter().collect()),
+            ..Self::default()
+        }
+    }
+
     /// A controller bound to its own engine port, for parallel work.
     pub fn on_port(port: u32) -> Self {
         MatchCtrl {
@@ -122,6 +145,28 @@ impl MatchCtrl {
         }
     }
 
+    /// Snapshot process/session identity without reading or harvesting the tape.
+    /// Polling records a child exit; full status owns the later reap and analysis.
+    pub fn resource_state(&mut self) -> MatchResourceState {
+        let (running, _) = self.poll();
+        if let Some(live) = &self.live {
+            return MatchResourceState {
+                running,
+                run_name: Some(live.run_name.clone()),
+                map: Some(live.map.clone()),
+                pid: running.then(|| live.child.id()),
+                exit_code: live.last_exit,
+            };
+        }
+        MatchResourceState {
+            running: false,
+            run_name: self.last.as_ref().and_then(|s| s.run_name.clone()),
+            map: self.last.as_ref().and_then(|s| s.map.clone()),
+            pid: None,
+            exit_code: self.last.as_ref().and_then(|s| s.exit_code),
+        }
+    }
+
     pub fn status_since(&mut self, since_line: Option<u32>) -> MatchStatus {
         if let Some(live) = self.live.as_mut() {
             match live.child.try_wait() {
@@ -147,6 +192,7 @@ impl MatchCtrl {
                     decorate_status(&mut snap);
                     self.last = Some(snap.clone());
                     self.live = None;
+                    clear_live();
                     return snap;
                 }
                 Ok(None) => {}
@@ -188,6 +234,9 @@ impl MatchCtrl {
         })
     }
 
+    // These arguments mirror the public match tool one-for-one. A separate
+    // options object would only move the same plumbing between two layers.
+    #[allow(clippy::too_many_arguments)]
     pub async fn start(
         &mut self,
         cfg: &Config,
@@ -247,6 +296,22 @@ impl MatchCtrl {
         std::fs::create_dir_all(&run_dir).map_err(|e| format!("create run dir: {e}"))?;
         let harvested = cfg.runs.join(format!("{name}.log"));
 
+        #[cfg(test)]
+        let child = match self.fake_engines.as_mut() {
+            Some(engines) => {
+                EngineChild::fake(engines.pop_front().ok_or("test engine queue is empty")?)
+            }
+            None => EngineChild::spawn(
+                cfg,
+                map,
+                slots,
+                skill,
+                &run_dir,
+                self.port,
+                coop.unwrap_or(false),
+            )?,
+        };
+        #[cfg(not(test))]
         let child = EngineChild::spawn(
             cfg,
             map,
@@ -288,31 +353,27 @@ impl MatchCtrl {
             }
         }
         let deadline = Instant::now() + timeout;
-        loop {
-            if let Some(live) = self.live.as_mut() {
-                match live.child.try_wait() {
-                    Ok(Some(code)) => {
-                        live.last_exit = Some(code);
-                        break;
-                    }
-                    Ok(None) if Instant::now() >= deadline => {
-                        let _ = live.child.kill().await;
-                        // one more wait so harvest sees a settled log
-                        tokio::time::sleep(Duration::from_millis(200)).await;
-                        if let Ok(Some(code)) = live.child.try_wait() {
-                            live.last_exit = Some(code);
-                        } else {
-                            live.last_exit = Some(1);
-                        }
-                        break;
-                    }
-                    Ok(None) => {
-                        tokio::time::sleep(Duration::from_millis(100)).await;
-                    }
-                    Err(e) => return Err(e),
+        while let Some(live) = self.live.as_mut() {
+            match live.child.try_wait() {
+                Ok(Some(code)) => {
+                    live.last_exit = Some(code);
+                    break;
                 }
-            } else {
-                break;
+                Ok(None) if Instant::now() >= deadline => {
+                    let _ = live.child.kill().await;
+                    // one more wait so harvest sees a settled log
+                    tokio::time::sleep(Duration::from_millis(200)).await;
+                    if let Ok(Some(code)) = live.child.try_wait() {
+                        live.last_exit = Some(code);
+                    } else {
+                        live.last_exit = Some(1);
+                    }
+                    break;
+                }
+                Ok(None) => {
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+                Err(e) => return Err(e),
             }
         }
         Ok(self.status())
@@ -364,6 +425,8 @@ impl MatchCtrl {
         None
     }
 
+    // See start(): these are the match tool's fields, carried unchanged.
+    #[allow(clippy::too_many_arguments)]
     pub async fn run(
         &mut self,
         cfg: &Config,
@@ -397,6 +460,8 @@ impl MatchCtrl {
 
     /// Start a match and return once it is healthy. Split out of run()
     /// so a caller can release the MatchCtrl mutex while the match runs.
+    // See start(): these are the match tool's fields, carried unchanged.
+    #[allow(clippy::too_many_arguments)]
     pub async fn begin(
         &mut self,
         cfg: &Config,
@@ -594,35 +659,133 @@ fn decorate_status(st: &mut MatchStatus) {
 /// match_stop used to queue behind it: a client that closed stdio mid
 /// match left the engine holding UDP 26000 against the next server.
 /// At most one match is live by design, so one slot is enough.
-static LIVE_PID: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
-static LIVE_CANCEL: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+static LIVE_PID: AtomicU32 = AtomicU32::new(0);
+static LIVE_CANCEL: AtomicBool = AtomicBool::new(false);
+/// Zero means the live child belongs only to the traditional global
+/// `match_stop` / shutdown path. A non-zero value is the cancellable run that
+/// may stop it. The owner check prevents a late task cancellation from taking
+/// a PID registered by a successor.
+static LIVE_OWNER: AtomicU64 = AtomicU64::new(0);
+static NEXT_LIVE_OWNER: AtomicU64 = AtomicU64::new(1);
+
+/// One run's cancellation identity. Creating or cancelling a waiting owner
+/// never touches the process-global live slot; only `claim_live` associates it
+/// with the child that `MatchCtrl::begin` just registered.
+#[derive(Clone, Debug)]
+pub struct RunCancellation {
+    id: u64,
+    requested: Arc<AtomicBool>,
+}
+
+impl Default for RunCancellation {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl RunCancellation {
+    pub fn new() -> Self {
+        Self {
+            id: NEXT_LIVE_OWNER.fetch_add(1, Ordering::SeqCst).max(1),
+            requested: Arc::new(AtomicBool::new(false)),
+        }
+    }
+
+    /// Record cooperative cancellation and kill the child only if this run
+    /// still owns the live slot.
+    pub fn request(&self) -> Option<u32> {
+        self.requested.store(true, Ordering::SeqCst);
+        cancel_live_owned(self.id)
+    }
+
+    pub fn is_requested(&self) -> bool {
+        self.requested.load(Ordering::SeqCst)
+    }
+
+    /// Claim the child registered by the current `begin`. A cancellation that
+    /// arrived during startup is applied after the PID becomes reachable.
+    pub fn claim_live(&self) -> bool {
+        if LIVE_PID.load(Ordering::SeqCst) == 0 {
+            return false;
+        }
+        let claimed = LIVE_OWNER
+            .compare_exchange(0, self.id, Ordering::SeqCst, Ordering::SeqCst)
+            .is_ok();
+        if claimed && self.is_requested() {
+            let _ = cancel_live_owned(self.id);
+        }
+        claimed
+    }
+}
 
 fn register_live(pid: u32) {
-    LIVE_CANCEL.store(false, std::sync::atomic::Ordering::SeqCst);
-    LIVE_PID.store(pid, std::sync::atomic::Ordering::SeqCst);
+    LIVE_OWNER.store(0, Ordering::SeqCst);
+    LIVE_CANCEL.store(false, Ordering::SeqCst);
+    LIVE_PID.store(pid, Ordering::SeqCst);
 }
 
 fn clear_live() {
-    LIVE_PID.store(0, std::sync::atomic::Ordering::SeqCst);
-    LIVE_CANCEL.store(false, std::sync::atomic::Ordering::SeqCst);
+    LIVE_OWNER.store(0, Ordering::SeqCst);
+    LIVE_PID.store(0, Ordering::SeqCst);
+    LIVE_CANCEL.store(false, Ordering::SeqCst);
+}
+
+#[cfg(test)]
+fn live_test_mutex() -> &'static tokio::sync::Mutex<()> {
+    static LOCK: std::sync::OnceLock<tokio::sync::Mutex<()>> = std::sync::OnceLock::new();
+    LOCK.get_or_init(|| tokio::sync::Mutex::new(()))
+}
+
+#[cfg(test)]
+pub(crate) fn live_test_lock() -> tokio::sync::MutexGuard<'static, ()> {
+    live_test_mutex().blocking_lock()
+}
+
+#[cfg(test)]
+pub(crate) async fn live_test_lock_async() -> tokio::sync::MutexGuard<'static, ()> {
+    live_test_mutex().lock().await
+}
+
+#[cfg(test)]
+pub(crate) fn live_state() -> (u32, u64, bool) {
+    (
+        LIVE_PID.load(Ordering::SeqCst),
+        LIVE_OWNER.load(Ordering::SeqCst),
+        LIVE_CANCEL.load(Ordering::SeqCst),
+    )
 }
 
 /// True while a caller has asked the live match to end early.
 pub fn live_cancelled() -> bool {
-    LIVE_CANCEL.load(std::sync::atomic::Ordering::SeqCst)
+    LIVE_CANCEL.load(Ordering::SeqCst)
 }
 
 /// Ask the live match to end and kill its engine now, without taking
 /// the MatchCtrl mutex. Returns the pid it killed, if any. The owner
 /// still runs its own stop path and tidies up.
 pub fn cancel_live() -> Option<u32> {
-    LIVE_CANCEL.store(true, std::sync::atomic::Ordering::SeqCst);
-    let pid = LIVE_PID.swap(0, std::sync::atomic::Ordering::SeqCst);
+    LIVE_OWNER.store(0, Ordering::SeqCst);
+    LIVE_CANCEL.store(true, Ordering::SeqCst);
+    let pid = LIVE_PID.swap(0, Ordering::SeqCst);
     if pid != 0 && crate::engine::kill_pid(pid) {
         Some(pid)
     } else {
         None
     }
+}
+
+fn take_owned_live_pid(owner: u64) -> Option<u32> {
+    LIVE_OWNER
+        .compare_exchange(owner, 0, Ordering::SeqCst, Ordering::SeqCst)
+        .ok()?;
+    LIVE_CANCEL.store(true, Ordering::SeqCst);
+    let pid = LIVE_PID.swap(0, Ordering::SeqCst);
+    (pid != 0).then_some(pid)
+}
+
+fn cancel_live_owned(owner: u64) -> Option<u32> {
+    let pid = take_owned_live_pid(owner)?;
+    crate::engine::kill_pid(pid).then_some(pid)
 }
 
 fn harvest(live: &LiveMatch) -> String {
@@ -777,7 +940,7 @@ pub fn list_runs(cfg: &Config) -> Result<Vec<RunEntry>, String> {
             note,
         });
     }
-    entries.sort_by(|a, b| b.mtime_unix.cmp(&a.mtime_unix));
+    entries.sort_by_key(|entry| std::cmp::Reverse(entry.mtime_unix));
     Ok(entries)
 }
 
@@ -861,13 +1024,13 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
     if !tape.is_file() {
         return None;
     }
-    let out = std::process::Command::new("git")
+    let mut command = std::process::Command::new("git");
+    command
         .arg("-C")
         .arg(&cfg.root)
         .args(["ls-files", "--error-unmatch", "--"])
-        .arg(&tape)
-        .output()
-        .ok()?;
+        .arg(&tape);
+    let out = crate::child_process::output_with_windows_loader_retry(&mut command).ok()?;
     if !out.status.success() {
         return None;
     }
@@ -879,7 +1042,12 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{take_budgeted, TAIL_BUDGET_BYTES, TAIL_MAX_LINES};
+    use super::{
+        cancel_live, clear_live, live_cancelled, live_test_lock, register_live, take_budgeted,
+        take_owned_live_pid, RunCancellation, LIVE_OWNER, LIVE_PID, TAIL_BUDGET_BYTES,
+        TAIL_MAX_LINES,
+    };
+    use crate::test_support::{git_test_lock, run_git, TestDir};
 
     /// A poll has a CEILING on what it costs, whatever the match is
     /// doing. Eighty long lines were six times eighty short ones,
@@ -947,21 +1115,15 @@ mod tests {
 
     use super::*;
 
-    /// Serialises the two tests that build a throwaway git repo.
-    /// Run in parallel on Windows they contend badly enough to take
-    /// four times as long and to fail a `git add` outright, which is
-    /// the same class as ENGINE_TEST_LOCK next door.
-    static GIT_TEST_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-    fn tmp_cfg(tag: &str) -> crate::config::Config {
+    fn tmp_cfg(tag: &str) -> (TestDir, crate::config::Config) {
         tmp_cfg_runs(tag, "runs")
     }
 
-    fn tmp_cfg_runs(tag: &str, runs: &str) -> crate::config::Config {
-        let tmp = std::env::temp_dir().join(format!("argus-{tag}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&tmp);
+    fn tmp_cfg_runs(tag: &str, runs: &str) -> (TestDir, crate::config::Config) {
+        let guard = TestDir::new(tag).unwrap();
+        let tmp = guard.path().to_path_buf();
         std::fs::create_dir_all(tmp.join(runs)).unwrap();
-        crate::config::Config {
+        let cfg = crate::config::Config {
             root: tmp.clone(),
             src: tmp.join("src"),
             progs: tmp.join("lq1/progs.dat"),
@@ -972,31 +1134,8 @@ mod tests {
             game: "id1".into(),
             maps: tmp.join("maps"),
             runs: tmp.join(runs),
-        }
-    }
-
-    fn git(root: &std::path::Path, args: &[&str]) -> bool {
-        match std::process::Command::new("git")
-            .arg("-C")
-            .arg(root)
-            .args(args)
-            .output()
-        {
-            Ok(o) if o.status.success() => true,
-            Ok(o) => {
-                eprintln!(
-                    "git {args:?} in {}: {}{}",
-                    root.display(),
-                    String::from_utf8_lossy(&o.stdout),
-                    String::from_utf8_lossy(&o.stderr)
-                );
-                false
-            }
-            Err(e) => {
-                eprintln!("git {args:?}: {e}");
-                false
-            }
-        }
+        };
+        (guard, cfg)
     }
 
     // #328: match_run wrote over a committed tape in place, twice in
@@ -1004,13 +1143,14 @@ mod tests {
     // committed tape is refused; an uncommitted one is still scratch.
     #[test]
     fn a_committed_tape_is_refused_and_a_scratch_one_is_not() {
-        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-        let cfg = tmp_cfg("committed-tape");
-        if !git(&cfg.root, &["init", "-q"]) {
+        let _gate = git_test_lock();
+        let (_tmp, cfg) = tmp_cfg("committed-tape");
+        if let Err(error) = run_git(&cfg.root, &["init", "-q"]) {
+            eprintln!("{error}");
             return; // no git on this host, and the guard fails open
         }
-        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
-        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        run_git(&cfg.root, &["config", "user.email", "t@example.com"]).unwrap();
+        run_git(&cfg.root, &["config", "user.name", "t"]).unwrap();
         std::fs::write(
             cfg.runs.join("ab_dm2_doortype2.log"),
             "tape
@@ -1023,8 +1163,8 @@ mod tests {
 ",
         )
         .unwrap();
-        assert!(git(&cfg.root, &["add", "runs/ab_dm2_doortype2.log"]));
-        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+        run_git(&cfg.root, &["add", "runs/ab_dm2_doortype2.log"]).unwrap();
+        run_git(&cfg.root, &["commit", "-q", "-m", "tape"]).unwrap();
 
         let refused =
             committed_tape(&cfg, "ab_dm2_doortype2").expect("a committed tape must be refused");
@@ -1040,7 +1180,6 @@ mod tests {
             None,
             "no file, nothing to write over"
         );
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // the helper is only worth having if start() actually asks it, and
@@ -1048,22 +1187,26 @@ mod tests {
     // exists in this temp config, so a guard that fired late would
     // come back as a spawn failure instead.
     #[tokio::test]
+    // The Git lock deliberately spans start().await so parallel tests cannot
+    // mutate repository state between the guard's checks.
+    #[allow(clippy::await_holding_lock)]
     async fn start_refuses_before_it_spawns_anything() {
-        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-        let cfg = tmp_cfg("start-committed-tape");
-        if !git(&cfg.root, &["init", "-q"]) {
+        let _gate = git_test_lock();
+        let (_tmp, cfg) = tmp_cfg("start-committed-tape");
+        if let Err(error) = run_git(&cfg.root, &["init", "-q"]) {
+            eprintln!("{error}");
             return;
         }
-        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
-        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        run_git(&cfg.root, &["config", "user.email", "t@example.com"]).unwrap();
+        run_git(&cfg.root, &["config", "user.name", "t"]).unwrap();
         std::fs::write(
             cfg.runs.join("ab_dm4_evidence.log"),
             "tape
 ",
         )
         .unwrap();
-        assert!(git(&cfg.root, &["add", "runs/ab_dm4_evidence.log"]));
-        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+        run_git(&cfg.root, &["add", "runs/ab_dm4_evidence.log"]).unwrap();
+        run_git(&cfg.root, &["commit", "-q", "-m", "tape"]).unwrap();
 
         let mut ctrl = MatchCtrl::default();
         let err = ctrl
@@ -1117,7 +1260,6 @@ mod tests {
             .await
             .expect_err("the exemption must not carry over");
         assert!(err.contains("committed"), "{err}");
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // ARGUS_RUNS can point anywhere, so the tape is not always at
@@ -1125,13 +1267,14 @@ mod tests {
     // about the wrong file, or about nothing.
     #[test]
     fn the_guard_asks_about_the_tape_it_would_write() {
-        let cfg = tmp_cfg_runs("tape-elsewhere", "tapes");
-        if !git(&cfg.root, &["init", "-q"]) {
+        let _gate = git_test_lock();
+        let (_tmp, cfg) = tmp_cfg_runs("tape-elsewhere", "tapes");
+        if let Err(error) = run_git(&cfg.root, &["init", "-q"]) {
+            eprintln!("{error}");
             return;
         }
-        let _gate = GIT_TEST_LOCK.lock().unwrap_or_else(|p| p.into_inner());
-        let _ = git(&cfg.root, &["config", "user.email", "t@example.com"]);
-        let _ = git(&cfg.root, &["config", "user.name", "t"]);
+        run_git(&cfg.root, &["config", "user.email", "t@example.com"]).unwrap();
+        run_git(&cfg.root, &["config", "user.name", "t"]).unwrap();
         // the real tape, in the configured runs dir
         std::fs::write(
             cfg.runs.join("ab_dm4_moved.log"),
@@ -1147,20 +1290,19 @@ mod tests {
 ",
         )
         .unwrap();
-        assert!(git(&cfg.root, &["add", "tapes/ab_dm4_moved.log"]));
-        assert!(git(&cfg.root, &["commit", "-q", "-m", "tape"]));
+        run_git(&cfg.root, &["add", "tapes/ab_dm4_moved.log"]).unwrap();
+        run_git(&cfg.root, &["commit", "-q", "-m", "tape"]).unwrap();
 
         let refused = committed_tape(&cfg, "ab_dm4_moved")
             .expect("the committed tape is the one in ARGUS_RUNS");
         assert!(refused.contains("ab_dm4_moved"), "{refused}");
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // the guard must never wedge the lab: outside a checkout there is
     // nothing to ask git about, so the match proceeds
     #[test]
     fn the_guard_fails_open_outside_a_checkout() {
-        let cfg = tmp_cfg("tape-no-repo");
+        let (_tmp, cfg) = tmp_cfg("tape-no-repo");
         std::fs::write(
             cfg.runs.join("loose.log"),
             "tape
@@ -1168,13 +1310,13 @@ mod tests {
         )
         .unwrap();
         assert_eq!(committed_tape(&cfg, "loose"), None);
-        let _ = std::fs::remove_dir_all(&cfg.root);
     }
 
     // #212: shutdown and match_stop must be able to reach the engine
     // while match_run holds the MatchCtrl mutex.
     #[test]
     fn cancel_live_is_reachable_without_the_mutex() {
+        let _serial = live_test_lock();
         clear_live();
         assert!(!live_cancelled());
         assert_eq!(cancel_live(), None, "nothing live, nothing to kill");
@@ -1182,6 +1324,37 @@ mod tests {
         // starting a match clears the flag again
         register_live(0);
         assert!(!live_cancelled());
+        clear_live();
+    }
+
+    #[test]
+    fn run_cancellation_is_inert_until_its_child_is_claimed() {
+        let _serial = live_test_lock();
+        clear_live();
+        let run = RunCancellation::new();
+
+        assert_eq!(run.request(), None);
+        assert!(run.is_requested());
+        assert_eq!(LIVE_PID.load(std::sync::atomic::Ordering::SeqCst), 0);
+        assert_eq!(LIVE_OWNER.load(std::sync::atomic::Ordering::SeqCst), 0);
+        clear_live();
+    }
+
+    #[test]
+    fn only_the_claimed_run_can_take_the_live_pid() {
+        let _serial = live_test_lock();
+        clear_live();
+        register_live(424_242);
+        let owner = RunCancellation::new();
+        let stale = RunCancellation::new();
+
+        assert!(owner.claim_live());
+        assert!(!stale.claim_live());
+        assert_eq!(take_owned_live_pid(stale.id), None);
+        assert_eq!(LIVE_PID.load(std::sync::atomic::Ordering::SeqCst), 424_242);
+        assert_eq!(take_owned_live_pid(owner.id), Some(424_242));
+        assert_eq!(LIVE_PID.load(std::sync::atomic::Ordering::SeqCst), 0);
+        assert!(live_cancelled());
         clear_live();
     }
 
@@ -1264,6 +1437,9 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
     }
 
     #[tokio::test]
+    // On Windows the spawned process is transferred by PID and native handle
+    // into EngineChild, whose stop/drop path owns its remaining lifecycle.
+    #[allow(clippy::zombie_processes)]
     async fn stop_matching_filters_by_run_name_and_pid() {
         let tmp =
             std::env::temp_dir().join(format!("argus-stop-match-test-{}", std::process::id()));
@@ -1296,18 +1472,20 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
         let child = EngineChild::mock();
 
         let live_pid = child.id();
-        let mut ctrl = MatchCtrl::default();
-        ctrl.live = Some(LiveMatch {
-            child,
-            run_name: "exp_dm4".into(),
-            map: "dm4".into(),
-            run_dir,
-            harvested,
-            started: Instant::now(),
-            duration: None,
-            stdout: Arc::new(std::sync::Mutex::new(String::new())),
-            last_exit: None,
-        });
+        let mut ctrl = MatchCtrl {
+            live: Some(LiveMatch {
+                child,
+                run_name: "exp_dm4".into(),
+                map: "dm4".into(),
+                run_dir,
+                harvested,
+                started: Instant::now(),
+                duration: None,
+                stdout: Arc::new(std::sync::Mutex::new(String::new())),
+                last_exit: None,
+            }),
+            ..Default::default()
+        };
 
         // Mismatched run_name does not stop
         let st1 = ctrl

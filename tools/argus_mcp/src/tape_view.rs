@@ -182,7 +182,7 @@ pub fn timeline(text: &str, bot: &str, limit: usize) -> Timeline {
 }
 
 /// `Reap` (live/last log) or `latest:Reap` / `ab_dm4_parity:Reap`
-pub fn split_tape_bot<'a>(name: &'a str) -> (&'a str, Option<&'a str>) {
+pub fn split_tape_bot(name: &str) -> (&str, Option<&str>) {
     if let Some((log, bot)) = name.split_once(':') {
         if !bot.is_empty() && !log.chars().all(|c| c.is_ascii_digit()) {
             return (bot, Some(log));

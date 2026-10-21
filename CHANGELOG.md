@@ -9,6 +9,255 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+**ROMERO CAN ATTACK, TAKE COVER, AND RETURN FROM ANOTHER ANGLE**.
+At base skill 1 with a Rocket Launcher, two bounded encounters on dm4 and
+dm2 use existing walking links, sampled body concealment, and a minimum
+30-degree change at first reappearance. Ordinary reaction and aim remain;
+danger, invalid geometry, and short deadlines cancel the move. A 240u
+clearance check on the actual tactical rocket direction prevents the close
+wall shot found during verification. Twenty controlled trials passed,
+including six completed manoeuvres and four damaging returns, at measured
+63.8–69.5 FPS. Natural frequency, player feel, and lower frame rates remain
+unverified. The developer fixture and checker are documented in
+[`docs/attack-cover-return.md`](docs/attack-cover-return.md). Ordinary lab
+event parsers report phases and abort reasons after integrating #514.
+The developer fixture shares impulse 217 with navigation tasks only when
+explicitly armed with `scratch1 197`; navigation tasks retain steering
+priority. No nav changes.
+
+Documented the shared navigation and tape helper contracts and their scoped
+parity checks (#502, #510, #514). CI coverage for those checks is tracked in #525.
+
+Event and death parsers resolve full track identities before reading verbs,
+so names containing words such as lift or death stay in bot totals (#520).
+
+Review, longitudinal scorecards and tape pointfiles share Rust's sample,
+track-identity and freeze rules, with one cross-language fixture (#502).
+Tactical phase and abort events are parsed and reported separately from
+hits in full briefs, compact briefs and Python review tools (#514).
+
+Navigation readers share link families, include door-only hops and keep
+equipment and skill gates out of first-registration reach (#510). All map
+surfaces require both build entries for registration (#511). BSP hull walks
+share one descent and return solid on invalid or cyclic trees (#512).
+
+Fixed navigation benchmarks score completion against each task's game-time
+budget and retain late elapsed times without counting them as successes (#508).
+
+Lab progress values strictly increase, and live resource subscriptions detect
+match and session changes without reparsing the growing tape (#506, #507).
+
+**STALE LABS CANNOT ISSUE QUALITY-GATE VERDICTS** (#499). Structured MCP
+responses now identify the running package and build-time source fingerprint
+beside the checkout identity. Read-only inspection remains usable under skew,
+but compare and experiment surfaces refuse until the documented install command
+is run and the MCP client restarted. This catches a long-lived old process even
+when no newer staged binary exists.
+
+**CONTROL AND CANDIDATE BOTS CAN SHARE A COUNTERBALANCED MATCH** (#374).
+`argus-mcp within-ab` runs two tapes with four bots, two per arm, then swaps
+the slot mask so personality cannot masquerade as treatment effect. Reports
+keep per-bot movement/economy metrics and cross-arm Bradley-Terry strength;
+the ungated null mode measures the instrument before a candidate trusts it.
+
+**FIXED NAVIGATION TASKS GIVE TUNING AN ABSOLUTE YARDSTICK** (#384). The
+`argus-mcp benchmark` runner places a real bot at manifest-declared starts and
+measures synthetic-goal completion through the NetQuake puppet, with graph-MD5
+pinning, fixed skill and separate train/held-out summaries. The developer-only
+QuakeC task controls are inert outside the explicit scratch/impulse protocol.
+
+**HUMANNESS MEASUREMENTS RESPECT LEVEL BOUNDARIES** (#495). Mixed-map
+console sessions now contribute only their dominant telemetry segment, matching
+the brief parser's established rule. Spawn roles, positions, cells and dwell
+windows cannot leak across the game-time reset, and the ignored segment count
+is reported.
+
+**HUMANNESS HAS A MAP-MATCHED MOVEMENT DISTANCE** (#369). The new
+`tools/argus_humanness.py` compares bot track distributions with same-map
+human `ARGLOG` references across speed, pauses, direction changes, roaming
+and local dwell. It intentionally excludes demo aim streams whose differing
+precision and PVS visibility would let a classifier learn the recorder
+instead of believable behaviour.
+
+**MATCH TASKS NOW HAVE A CHILD-CONTROLLING LIFECYCLE HARNESS** (#491).
+A deterministic fake engine drives negotiated completion, active and late
+cancellation, finalization, tool errors, successors, and shutdown without
+launching Quake or writing a committed tape. The shutdown path now waits for
+an aborted Task to release `run_gate` before it returns.
+
+**COMPLETED MATCH TASKS NO LONGER ACCUMULATE UNTIL SERVER RESTART** (#490).
+Argus now separates the client-visible Task lifetime from rmcp's active-future
+deadline. A running match is never hard-aborted by TTL, terminal results remain
+pollable through the advertised 30 minute window and a 10 minute completion
+grace, and the retained payload is then evicted.
+
+**THE NEGOTIATED MATCH TASK LIFECYCLE IS PROVED OVER A REAL MCP TRANSPORT**
+(#484, part of #479). In-memory client/server coverage now initializes both
+Task-capable and legacy clients, verifies `match_run` response negotiation,
+polls `tasks/get`, cancels through `tasks/cancel`, and observes terminal
+cleanup without launching an engine. The operator guide documents the wire
+lifecycle, status phases, cancellation guarantee, and synchronous fallback.
+
+**NEGOTIATED `match_run` CALLS ARE NOW CANCELLATION-SAFE MCP TASKS** (#483,
+part of #479). A client that declares SEP-2663 Task support receives a durable
+Task handle for `match_run`; older clients keep the original synchronous tool
+result and progress notifications. Task status follows queueing, startup,
+active play, and finalization. `tasks/cancel` records intent while queued and
+stops only the engine child owned by that run, then waits for harvesting and
+finalization before the Task settles as cancelled. Match Tasks have no hard
+TTL because aborting their future could strand a live child.
+
+**THE LAB NOW OWNS THE FULL SEP-2663 TASK LIFECYCLE** (#482, part of #479).
+The MCP server advertises Tasks, stores durable task state, and implements
+`tasks/get`, `tasks/update`, and cooperative `tasks/cancel`. Shutdown stops and
+finalizes any live engine child before aborting remaining task futures. No lab
+tool is task-backed yet, so every existing `tools/call` response remains
+synchronous until its lifecycle is explicitly adapted.
+
+**A LATE RUN CANCELLATION CANNOT KILL ITS SUCCESSOR** (#481, part of #479).
+Each cancellable run now has an opaque owner identity which claims the live PID
+only after engine startup. A waiting or stale owner can record cancellation but
+cannot touch another child; cancellation received during startup is applied as
+soon as that run claims its PID. Natural exit, stop and finalization clear the
+owner before the serialized run gate admits another match. The existing global
+`match_stop` and shutdown path remains available.
+
+**TOOL DISPATCH IS NOW EXPLICIT BEFORE TASK RESPONSES LAND** (#480, part of
+#479). `Argus` stores the same fully annotated tool router and delegates
+ordinary `tools/call` requests through `ToolCallContext`; `list_tools` reads
+that exact router. This is a wire-compatible refactor: no Task capability is
+advertised yet and every existing tool result, injected request field, safety
+annotation and error path stays on the ordinary synchronous route.
+
+**QC SYMBOL RESOURCES NOW COMPLETE FROM THE INDEX THAT READS THEM** (#473,
+follow-up to #465 and part of #370). `argus://fn/{name}` completes concrete
+function names and `argus://const/{name}` completes constants from the current
+QC index. They inherit case-insensitive prefix matching, sorting,
+deduplication, and the 100-value protocol ceiling; unavailable config stays
+empty, and free-form path/search variables still make no autocomplete claim.
+
+**DIRECT TOOL VALUES NOW HAVE PROTOCOL-NATIVE CATALOGS** (#472, part of
+#370). Read-only `argus://catalog/maps`, `/runs`, and `/baselines` resources
+expose exact map names, extensionless run names, valid aliases, and configured
+map-to-baseline bands in one stable `{kind, aliases, values}` envelope. Values
+are deterministic and come from the same lab sources as the tools; missing
+read configuration is an error rather than a partial invented catalog.
+
+**A MAPLESS DEFAULT BASELINE CAN ASK INSTEAD OF GUESSING** (#471, part of
+#370). `compare_runs` still infers the candidate map normally and never
+prompts for explicit `map` or `log_a`. Only an omitted default baseline plus a
+candidate with no map may elicit a choice, and only from configured baseline
+bands whose tapes exist. Unsupported, rejected, cancelled, malformed, or
+timed-out elicitation preserves the existing caller-visible error.
+
+**LIVE MCP RESOURCES CAN NOW REPLACE A POLLING LOOP** (#470, part of #370).
+The server advertises resource subscriptions for `argus://last` and
+`argus://lab`, supports both the current long-lived subscription request and
+legacy `resources/subscribe`, and sends updates only when the serialized value
+changes. The lab resource now includes current match status when read through
+the server. Explicit reads and `since_line` polling remain available.
+
+**LONG LAB CALLS NOW REPORT THEIR REAL STAGES THROUGH MCP PROGRESS** (#469,
+part of #370). `match_run`, `experiment`, `campaign_experiment` and
+`matrix_experiment` honor a caller-supplied progress token. Compile, engine
+run and analysis stages are monotonic; active matches report elapsed time
+against their requested duration. Calls without a token are unchanged, and a
+client that drops or rejects a notification cannot fail the underlying tool.
+
+**THE TWO CORE BRIEFING TOOLS NOW HAVE TRUTHFUL STRUCTURED OUTPUT** (#466,
+part of #370). `brief_run` and `compare_runs` advertise one stable
+`{format, detail, data}` envelope across brief JSON, full JSON and CSV table
+modes. Their existing text content remains byte-for-byte available to older
+clients; structured JSON contains the same parsed value and structured CSV the
+same exact text. Tool errors remain errors rather than successful envelopes.
+
+**MCP COMPLETION NOW COVERS THE NAME-BEARING PROMPTS AND RESOURCES** (#465,
+part of #370). The server advertises `completion/complete` and prefix-completes
+maps, extensionless run names, baseline aliases, validation primaries and
+contextual graph hashes for the prompt arguments and resource-template
+variables the protocol actually supports. Results are sorted, deduplicated and
+capped at 100; missing read config and unknown argument routes return an empty
+completion. Tool arguments remain explicitly outside this protocol feature.
+
+**TWO MCP PROMPTS PUT THE LAB'S SAFETY RITUALS ON THE WIRE** (#463, part
+of #370). `harvest_before_play` supplies the exact tagged harvester command
+before any engine can truncate `qconsole.log`; `validate_change` requires a
+controlled A/B on at least two maps and three tapes per arm on dm2, with a
+pre-registered primary, trusted `next_steps`, and explicit metric boundaries.
+Both prompts are text-only and load no config, launch no engine, and mutate no
+project state. Router metadata and prompt-body tests pin those contracts.
+
+**GRAPH HISTORY FAILS CLOSED THROUGH WINDOWS GIT LOADER TRANSIENTS** (#461).
+The persistent `git cat-file --batch` reader now retains process status and
+stderr, rejects truncated or malformed protocol output instead of returning a
+partial revision set, and replays the complete request only for Windows loader
+status `0xc0000142`. Missing objects remain ordinary sparse-history entries;
+all other Git and protocol failures return immediately.
+
+**NAV LINK EDITS NOW HAVE A PER-NODE METAMORPHIC ORACLE** (#458, part of
+#387). Adding any parsed walk, jump, teleport, rocket, lift, swim, door, train
+or sprint link must preserve every source node's reachable destination set;
+removing one must not create a destination. An equal-aggregate counterexample
+guards the reason for comparing sets instead of one reach percentage.
+
+**GIT-BACKED RUST FIXTURES NO LONGER RACE ACROSS MODULES** (#457). The
+`graph_revision` and committed-tape tests now share one crate-wide Git lock
+instead of independently serializing only part of the fixture work. Every
+fixture repository has a process-, time- and sequence-unique directory with
+drop cleanup, and a failed Git command preserves its status, stdout and stderr.
+Stress testing identified the actual transient as Windows status `0xc0000142`
+(DLL initialization failed), so Git output calls retry that loader failure only.
+
+**THE TAPE PARSER NOW HAS METAMORPHIC ORACLES** (#454, part of #387).
+Representative current ARGLOG and timestamp-prefixed ARGEVT input must produce
+byte-identical parsed tapes and briefs on replay. A whole-line prefix must keep
+the same map, never gain a future sample or event, and never exceed the full
+tape's additive event, death or duration totals. These checks are pure and run
+without an engine, BSP or machine-local tape.
+
+**MCP CLIENTS CAN NOW SEE WHICH LAB TOOLS CHANGE STATE** (#453, part of #370).
+Every advertised tool has an explicit read-only, destructive, idempotent and
+open-world contract. Inspection and analysis calls are read-only; compile,
+install, navigation writes and live-match controls are conservatively marked
+destructive. A router-level test makes a new unclassified tool fail closed.
+
+**CI NO LONGER MOVES TO A NEW UBUNTU IMAGE WITHOUT A DECISION** (#450). The
+repository invariants, Rust lab, FTEQCC compile and headless LibreQuake smoke
+now pin Ubuntu 24.04 instead of following `ubuntu-latest` onto Ubuntu 26 on
+October 19, 2026. A regression test keeps all four blocking jobs explicit, and
+the pin has a documented April 2027 review date.
+
+**DIRECT BLOB WRITES CAN NO LONGER HIDE CRLF FROM THE REPOSITORY** (#448).
+Text files declare an explicit LF policy, while Windows batch and command files
+retain CRLF checkouts. The invariant battery reads Git's committed-blob EOL
+metadata, so an API upload cannot look clean merely because checkout normalized
+the worktree. Four blobs found by the new check were normalized without content
+changes.
+
+**STRICT CLIPPY IS NOW A REAL LAB PREFLIGHT** (#446). The existing Rust lint
+backlog is clear, the repository pins Rust 1.95 with Clippy and rustfmt, and the
+fast workflow rejects warnings across every library, binary and test target.
+Intentional allowances stay local to match plumbing and serialized process
+tests, with the reason beside each one. The full parallel preflight also found
+and fixed graph-revision fixtures colliding under Windows' coarse clock.
+
+**THE MILL NOW SPEAKS IN GRAPH REVISIONS AND PROBE VERDICTS** (#419). Nav
+JSON revisions have stable content-hash ids, typed links, generator inputs and
+Git provenance through MCP resources. The read-only `mill` tool compares two
+revisions and reports only added, removed or type-changed links that exist in
+at least one source graph, with matching probe evidence. Asking about a link
+absent from both graphs fails closed. Git history supplies old bytes, so this
+adds no graph or verdict format.
+
+**OLD MCP CONFIGS CAN MOVE TO THE STABLE INSTALL SAFELY** (#437). A migration
+command updates only an Argus entry with the retired Cargo release path,
+verifies the installed binary and preserves the existing environment and
+timeouts. It handles Codex and Grok TOML plus Claude-compatible JSON, then
+states that the client must restart.
+
+**COMPARE NOW REJECTS AN EMPTY CANDIDATE LIST** (#441). The CLI returns a
+clear usage error instead of indexing an empty parsed list and panicking.
+
 **SCALED VERDICTS KEEP THE SOURCE TAPE DURATION** (#440). Count metrics still
 normalize to the candidate median, but coverage now reads every original tape
 length and stays ungated if any source was short. Non-finite durations and

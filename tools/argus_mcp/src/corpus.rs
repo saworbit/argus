@@ -138,7 +138,7 @@ impl TapeRow {
             "day" => self.started.chars().take(10).collect(),
             other => self
                 .metric(other)
-                .map(|v| trim_num(v))
+                .map(trim_num)
                 .unwrap_or_else(|| "".into()),
         }
     }

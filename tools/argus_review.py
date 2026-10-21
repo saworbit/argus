@@ -22,17 +22,7 @@ Aligned with MatchTape::freezes in the Rust lab parser.
 """
 import re, sys, collections
 
-PAT = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?")
-# the event keyword must be matched from the closed vocabulary: a lazy
-# (.+?) name followed by \w+ would split a spaced netname at its last
-# word ("Joe" + event "Rogan")
-# goal_push and goal_pop come before goal, or the alternation matches
-# "goal" and leaves "_push 1" in the rest
-EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|"
-                 r"route|routefail|"
-                 r"trapped|abandon|stall|stallnode|jump|rjump|lift|swim|"
-                 r"door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|"
-                 r"weapon|plan|death|checkpoint|win|coop_stats)\b(.*)")
+from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts
 DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
 
 
@@ -65,50 +55,32 @@ def tactical(line):
 
 
 def parse(log):
-    bots, events, deaths = collections.defaultdict(list), [], []
-    lineno = 0
-    for line in open(log, errors="replace"):
-        lineno += 1
-        m = PAT.search(line)
-        if m:
-            g = m.groups()
-            bots[g[0]].append(dict(t=float(g[1]), x=float(g[2]), y=float(g[3]),
-                z=float(g[4]), spd=float(g[5]), yaw=float(g[6]), mode=int(g[7]),
-                st=int(g[8]), gl=int(g[9]),
-                hp=float(g[10]) if g[10] else None,
-                frg=int(g[11]) if g[11] else None, line=lineno))
+    tape = read_tape(log)
+    events, deaths = [], []
+    by_line = {line: (name, verb, rest) for line, name, verb, rest in tape.events}
+    for lineno, line in tape.lines:
+        if PAT.search(line):
             continue
-        m = DEATH.search(line)
-        if m:
-            deaths.append((lineno, m.group(1), m.group(2) or "world",
-                           float(m.group(3)), float(m.group(4)), float(m.group(5))))
-        m = EVT.search(line)
-        if m:
-            events.append((lineno, m.group(1), m.group(2), m.group(3).strip()[:70]))
+        event = by_line.get(lineno)
+        if event:
+            name, verb, rest = event
+            if verb == 'death':
+                m = DEATH.search('ARGEVT _ death ' + rest)
+                if m:
+                    deaths.append((lineno, name, m.group(2) or "world",
+                                   float(m.group(3)), float(m.group(4)), float(m.group(5))))
+            events.append((lineno, name, verb, rest))
             continue
         t = tactical(line)
         if t:
             events.append((lineno, t[0], t[1], t[2]))
-    return bots, events, deaths
+    return tape.samples, events, deaths
 
 
 def freezes(bots):
-    out = []
-    for n, recs in bots.items():
-        i = 0
-        while i < len(recs):
-            j = i
-            while (j + 1 < len(recs) and recs[j+1]["spd"] < 20
-                   and ((recs[j+1]["x"] - recs[i]["x"]) ** 2
-                        + (recs[j+1]["y"] - recs[i]["y"]) ** 2) < 32.0 ** 2):
-                j += 1
-            dur = recs[j]["t"] - recs[i]["t"]
-            if dur >= 6.0:
-                r = recs[i]
-                out.append((n, r["t"], recs[j]["t"], dur, r["x"], r["y"], r["z"],
-                            r["mode"], r["line"], recs[j]["line"]))
-            i = j + 1 if j > i else i + 1
-    return out
+    return [(name, f.start['t'], f.end['t'], f.dur, f.start['x'], f.start['y'], f.start['z'],
+             f.start['mode'], f.start['line'], f.end['line'])
+            for name, rows in bots.items() for f in freeze_windows(rows)]
 
 
 def cmd_summary(log):
@@ -127,7 +99,13 @@ def cmd_summary(log):
         r = rr[-1]
         print(f"  {n}: st {r['st']} gl {r['gl']} frg {r['frg']} "
               f"ends '{r['x']:.0f} {r['y']:.0f} {r['z']:.0f}'")
-    fz = freezes(bots)
+    botnames, humans, instruments = track_names(bots, events)
+    if humans or instruments:
+        print("review tracks:", {"human": humans, "instrument": instruments})
+    counts = tactic_counts(events)
+    if counts:
+        print("tactical phases:", dict(sorted(counts.items())))
+    fz = freezes({name: bots[name] for name in botnames})
     if fz:
         for n, t0, t1, dur, x, y, z, mode, l0, l1 in fz:
             print(f"FROZEN {n}: t {t0:.1f}..{t1:.1f} ({dur:.1f}s) at "

@@ -21,8 +21,7 @@ in docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 """
 import re, sys, os, collections, math, glob
 
-PAT = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?")
-EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|death|checkpoint|win|coop_stats)\b(.*)")
+from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts
 DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
 PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin)|shove|hunch|prefire|watch spawn|sprintjump)\b")
 WORLD_PHRASES = ["tries to put the pin back in", "becomes bored with life", "discharges into", "heats up the water",
@@ -35,35 +34,13 @@ LAVA_PHRASES = ["visits the Volcano God", "turned into hot slag", "burst into fl
 
 def freezes(samples):
     """Return a list of (duration, hp_lost) for every 6 s+ statue in one bot's track."""
-    out = []
-    i = 0
-    n = len(samples)
-    while i < n:
-        a = samples[i]
-        if a['spd'] >= 20:
-            i += 1
-            continue
-        j = i
-        hp0 = a['hp']
-        hpmin = hp0
-        while j + 1 < n:
-            b = samples[j + 1]
-            if (b['spd'] < 20 and math.hypot(b['x'] - a['x'], b['y'] - a['y']) < 32
-                    and abs(b['z'] - a['z']) < 32 and b['t'] - samples[j]['t'] < 3):
-                j += 1
-                if b['hp'] is not None and hpmin is not None:
-                    hpmin = min(hpmin, b['hp'])
-            else:
-                break
-        dur = samples[j]['t'] - a['t']
-        if dur >= 6:
-            out.append((dur, (hp0 - hpmin) if (hp0 is not None and hpmin is not None) else 0))
-        i = j + 1
-    return out
+    return [(f.dur, f.hp_drop) for f in freeze_windows(samples)]
 
 
 def analyse(path):
-    bots = collections.defaultdict(list)
+    tape = read_tape(path)
+    bots = tape.samples
+    by_line = {line: (name, verb, rest) for line, name, verb, rest in tape.events}
     ev = collections.Counter()
     perbot_ev = collections.defaultdict(collections.Counter)
     plain = collections.Counter()
@@ -71,25 +48,20 @@ def analyse(path):
     spawnnames = set()
     mapname = None
     raw = []
-    for line in open(path, errors='replace'):
-        m = PAT.search(line)
-        if m:
-            g = m.groups()
-            bots[g[0]].append(dict(t=float(g[1]), x=float(g[2]), y=float(g[3]), z=float(g[4]), spd=float(g[5]),
-                                   mode=int(g[7]), st=int(g[8]), gl=int(g[9]),
-                                   hp=float(g[10]) if g[10] else None, frg=int(g[11]) if g[11] else None))
+    for lineno, line in tape.lines:
+        if PAT.search(line):
             continue
-        m = EVT.search(line)
-        if m:
-            name, verb, rest = m.groups()
+        event = by_line.get(lineno)
+        if event:
+            name, verb, rest = event
             ev[verb] += 1
             perbot_ev[name][verb] += 1
             if verb in ('spawned', 'respawn'):
                 spawnnames.add(name)
             if verb == 'death':
-                d = DEATH.search(line)
+                d = DEATH.search('ARGEVT _ death ' + rest)
                 if d:
-                    deaths.append((d.group(1), d.group(2) or '', float(d.group(5))))
+                    deaths.append((name, d.group(2) or '', float(d.group(5))))
             continue
         m = PLAIN.match(line)
         if m:
@@ -105,8 +77,8 @@ def analyse(path):
                 mapname = mm.group(1)
         raw.append(line.rstrip('\n'))
     names = set(bots) | spawnnames
-    humans = [n for n in bots if n not in spawnnames]
-    botnames = [n for n in bots if n in spawnnames]
+    botnames, humans, instruments = track_names(bots, tape.events)
+    names -= set(instruments)
     allnames = list(names | {'player'})
     obit = collections.Counter()
     hum_names = set(humans) | {'player'}
@@ -170,7 +142,8 @@ def analyse(path):
     lava_evt = sum(1 for d in bdeaths if d[1] == 'world' and d[2] < -300)
     st_by = [perbot_ev[b]['stall'] for b in botnames]
     fr = [v for v in botfrags.values() if v is not None]
-    return dict(file=os.path.basename(path), map=mapname or '?', dur=round(dur), bots=len(botnames),
+    tactics = tactic_counts(tape.events)
+    result = dict(file=os.path.basename(path), map=mapname or '?', dur=round(dur), bots=len(botnames),
                 human=','.join(humans) or ('player' if obit else '-'),
                 stalls=ev['stall'], stall_pm=round(ev['stall'] * 60 / dur, 1), stall_max_bot=max(st_by, default=0),
                 freezes=len(fz), fz_max=round(fzmax, 1), fz_fire=fzfire,
@@ -192,6 +165,12 @@ def analyse(path):
                 doors=ev['door'], lifts=ev['lift'], boards=ev['board'], trains=ev['train'], jumps=ev['jump'],
                 rjump=ev['rjump'], swim=ev['swim'], hunch=plain['hunch'], prefire=plain['prefire'],
                 watch=plain['watch'], shove=plain['shove'])
+    for phase in ('prepare', 'opening', 'covered', 'reappear', 'returnshot', 'abort'):
+        result['tactic_' + phase] = tactics['tactic_' + phase]
+    result['tactic_abort_reasons'] = ';'.join(
+        f'{key.removeprefix("tactic_abort_")}={count}' for key, count in sorted(tactics.items())
+        if key.startswith('tactic_abort_'))
+    return result
 
 
 def human_order(files):

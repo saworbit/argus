@@ -10,6 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 const CELL: f64 = 128.0;
+type CellKey = (i32, i32, i32, String);
+type CellValue = (u32, Pos, u32);
+type HotspotCells = BTreeMap<CellKey, CellValue>;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct LearnedCell {
@@ -90,7 +93,7 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
         .ok()
         .and_then(|(path, _)| crate::bsp::read_bsp29(&path).ok())
         .and_then(|b| b.hull0);
-    let mut cells: BTreeMap<(i32, i32, i32, String), (u32, Pos, u32)> = BTreeMap::new();
+    let mut cells = HotspotCells::new();
     let mut used = Vec::new();
     for path in &logs {
         let tape = match parse_tape_path(path) {
@@ -143,7 +146,7 @@ pub fn learn_hotspots(cfg: &Config, map: &str, max_logs: usize) -> Result<LearnR
     // deaths, so a global sort-and-truncate silently dropped every
     // lava cell (the exact reason the first live overlay contained
     // no death cells at all).
-    learned.sort_by(|a, b| b.count.cmp(&a.count));
+    learned.sort_by_key(|cell| std::cmp::Reverse(cell.count));
     let mut budgeted: Vec<LearnedCell> = Vec::new();
     for kind in ["lava", "stall", "hazard"] {
         let cap = match kind {
@@ -268,7 +271,7 @@ fn pick_logs(cfg: &Config, map: &str, max_logs: usize) -> Result<Vec<std::path::
             }
         }
     }
-    named.sort_by(|a, b| b.0.cmp(&a.0));
+    named.sort_by_key(|row| std::cmp::Reverse(row.0));
     let mut out: Vec<_> = named.into_iter().map(|(_, p)| p).take(max_logs).collect();
     if out.is_empty() {
         if let Ok(p) = resolve_log(cfg, "latest") {
@@ -278,11 +281,7 @@ fn pick_logs(cfg: &Config, map: &str, max_logs: usize) -> Result<Vec<std::path::
     Ok(out)
 }
 
-fn accumulate(
-    tape: &MatchTape,
-    cells: &mut BTreeMap<(i32, i32, i32, String), (u32, Pos, u32)>,
-    hull: Option<&crate::bsp::Hull0>,
-) {
+fn accumulate(tape: &MatchTape, cells: &mut HotspotCells, hull: Option<&crate::bsp::Hull0>) {
     let mut seen: BTreeMap<(i32, i32, i32, String), bool> = BTreeMap::new();
     let mut bump = |kind: &str, p: Pos| {
         let key = (

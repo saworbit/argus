@@ -2,6 +2,7 @@
 """CLI regression tests for developer scripts in tools/."""
 import hashlib
 import json
+import math
 import os
 import shutil
 import subprocess
@@ -53,6 +54,112 @@ class TestToolsCLI(unittest.TestCase):
         command = config["mcpServers"]["argus"]["command"].replace("\\", "/")
         self.assertIn("/tools/argus_mcp/install/bin/argus-mcp", command)
         self.assertNotIn("/target/", command)
+
+    def test_mcp_config_migration_preserves_json_settings(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            installed = root / "tools" / "argus_mcp" / "install" / "bin" / "argus-mcp.exe"
+            installed.parent.mkdir(parents=True)
+            installed.touch()
+            path = root / ".mcp.json"
+            old_command = str(root / "tools/argus_mcp/target/release/argus-mcp.exe")
+            before = {
+                "mcpServers": {
+                    "argus": {
+                        "command": old_command,
+                        "env": {"ARGUS_ROOT": "C:/argus", "KEEP": "yes"},
+                        "startup_timeout_sec": 15,
+                        "tool_timeout_sec": 700,
+                    },
+                    "other": {"command": old_command},
+                }
+            }
+            path.write_text(json.dumps(before, indent=4), encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 0, res.stderr)
+            after = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                Path(after["mcpServers"]["argus"]["command"]),
+                installed,
+            )
+            self.assertEqual(after["mcpServers"]["argus"]["env"], before["mcpServers"]["argus"]["env"])
+            self.assertEqual(after["mcpServers"]["argus"]["startup_timeout_sec"], 15)
+            self.assertEqual(after["mcpServers"]["argus"]["tool_timeout_sec"], 700)
+            self.assertEqual(after["mcpServers"]["other"], before["mcpServers"]["other"])
+            self.assertIn("restart the MCP client", res.stdout)
+
+    def test_mcp_config_migration_preserves_toml_settings_and_comments(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            installed = root / "tools" / "argus_mcp" / "install" / "bin" / "argus-mcp.exe"
+            installed.parent.mkdir(parents=True)
+            installed.touch()
+            path = root / "config.toml"
+            old_command = (root / "tools/argus_mcp/target/release/argus-mcp.exe").as_posix()
+            before = f"""# keep this comment
+[mcp_servers.argus]
+command = "{old_command}"
+startup_timeout_sec = 15
+tool_timeout_sec = 700
+tool_timeouts = {{ match_run = 700, compile_qc = 120 }}
+
+[mcp_servers.argus.env]
+ARGUS_ROOT = "C:/argus"
+KEEP = "yes"
+
+[mcp_servers.other]
+command = "leave-me-alone"
+"""
+            path.write_text(before, encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 0, res.stderr)
+            after = path.read_text(encoding="utf-8")
+            self.assertIn("# keep this comment", after)
+            self.assertIn(installed.as_posix(), after)
+            self.assertNotIn(old_command, after)
+            for unchanged in (
+                "startup_timeout_sec = 15",
+                "tool_timeout_sec = 700",
+                "tool_timeouts = { match_run = 700, compile_qc = 120 }",
+                'ARGUS_ROOT = "C:/argus"',
+                'KEEP = "yes"',
+                'command = "leave-me-alone"',
+            ):
+                self.assertIn(unchanged, after)
+
+    def test_mcp_config_migration_refuses_a_near_match(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "config.toml"
+            before = """[mcp_servers.argus]
+command = "C:/argus/tools/argus_mcp/target/debug/argus-mcp.exe"
+tool_timeout_sec = 700
+"""
+            path.write_text(before, encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 0, res.stderr)
+            self.assertEqual(path.read_text(encoding="utf-8"), before)
+            self.assertIn("unchanged", res.stdout)
+
+    def test_mcp_config_migration_refuses_a_missing_stable_binary(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "config.toml"
+            before = f"""[mcp_servers.argus]
+command = "{(Path(td) / 'tools/argus_mcp/target/release/argus-mcp.exe').as_posix()}"
+tool_timeout_sec = 700
+"""
+            path.write_text(before, encoding="utf-8")
+
+            res = self.run_tool("migrate_mcp_config.py", str(path))
+
+            self.assertEqual(res.returncode, 1)
+            self.assertEqual(path.read_text(encoding="utf-8"), before)
+            self.assertIn("stable installed binary not found", res.stderr)
 
     def test_mcp_binary_discovery_separates_source_and_install(self):
         with tempfile.TemporaryDirectory() as td:
@@ -444,7 +551,7 @@ class TestToolsCLI(unittest.TestCase):
         progs = src / "progs.src"
         dispatcher = src / "argus_nav_dispatch.qc"
         progs.write_text("progs.dat\nargus_nav_dispatch.qc\n")
-        dispatcher.write_text("void() Argus_Nav_Spawn =\n{\n};\n")
+        dispatcher.write_text("void() Argus_Nav_Spawn =\n{\n};\n// mapname == \"fixture\"\n")
 
         registered = self.run_tool(*args, "--register")
 
@@ -725,6 +832,150 @@ class TestToolsCLI(unittest.TestCase):
         self.assertEqual(row["freezes"], "0")
         self.assertEqual(row["unstick"], "0")
 
+    def test_humanness_reader_uses_the_rust_role_rule(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        with tempfile.TemporaryDirectory() as td:
+            tape = Path(td) / "roles.log"
+            lines = ["ARGUS init on dm4\n", "ARGEVT Reap spawned\n"]
+            for i in range(20):
+                lines.extend(
+                    (
+                        f"ARGLOG Reap t {i}.0 pos '{i * 64} 0 24' spd 64 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG Shane t {i}.0 pos '0 {i * 64} 24' spd 64 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG labprobe t {i}.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    )
+                )
+            tape.write_text("".join(lines), encoding="utf-8")
+            parsed = argus_humanness.read_tape(tape)
+            self.assertEqual(parsed["map"], "dm4")
+            self.assertEqual(set(parsed["bots"]), {"Reap"})
+            self.assertEqual(set(parsed["humans"]), {"Shane"})
+
+            # A tail slice without spawn evidence cannot label every track human.
+            tape.write_text("".join(line for line in lines if "ARGEVT" not in line), encoding="utf-8")
+            parsed = argus_humanness.read_tape(tape)
+            self.assertEqual(parsed["humans"], {})
+            self.assertEqual(parsed["bots"], {})
+
+    def test_humanness_reader_selects_one_dominant_map_segment(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        with tempfile.TemporaryDirectory() as td:
+            tape = Path(td) / "two_maps.log"
+            lines = ["ARGUS init on dm4\n", "ARGEVT OldBot spawned\n"]
+            for i in range(20):
+                lines.append(
+                    f"ARGLOG OldBot t {i}.0 pos '{i * 64} 0 24' spd 64 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n"
+                )
+            lines.extend(("ARGUS init on dm2\n", "ARGEVT Reap spawned\n"))
+            for i in range(40):
+                lines.extend(
+                    (
+                        f"ARGLOG Reap t {i}.0 pos '{i * 64} 0 24' spd 64 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG Shane t {i}.0 pos '0 {i * 64} 24' spd 64 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    )
+                )
+            tape.write_text("".join(lines), encoding="utf-8")
+
+            parsed = argus_humanness.read_tape(tape)
+            self.assertEqual(parsed["map"], "dm2")
+            self.assertEqual(parsed["segments"], 2)
+            self.assertEqual(parsed["ignored_segments"], 1)
+            self.assertEqual(set(parsed["bots"]), {"Reap"})
+            self.assertEqual(set(parsed["humans"]), {"Shane"})
+            self.assertNotIn("OldBot", parsed["bots"])
+
+    def test_humanness_uses_the_real_mixed_session_dominant_segment(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        tape = ROOT / "runs" / "shane_e1m3_2026-09-05_v409.log"
+        if not tape.is_file():
+            self.skipTest("mixed e1m2/e1m3 session not present")
+        parsed = argus_humanness.read_tape(tape)
+        self.assertEqual(parsed["map"], "e1m2")
+        self.assertEqual(parsed["segments"], 2)
+        self.assertEqual(parsed["ignored_segments"], 1)
+        self.assertEqual(len(parsed["humans"]), 1)
+        self.assertIsNotNone(
+            argus_humanness.track_metrics(next(iter(parsed["humans"].values())))
+        )
+
+    def test_humanness_distance_is_zero_for_equal_distributions(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        self.assertAlmostEqual(
+            argus_humanness.normalized_wasserstein([1, 2, 4], [1, 2, 4]),
+            0.0,
+        )
+        self.assertGreater(
+            argus_humanness.normalized_wasserstein([10, 20, 40], [1, 2, 4]),
+            1.0,
+        )
+
+    def test_humanness_cli_reports_map_matched_movement_distance(self):
+        def tape(path, human_scale, bot_scale):
+            lines = ["ARGUS init on dm4\n", "ARGEVT Reap spawned\n"]
+            for i in range(40):
+                hx = i * human_scale
+                bx = i * bot_scale
+                lines.extend(
+                    (
+                        f"ARGLOG Shane t {i}.0 pos '{hx} {i % 4 * 64} 24' spd {human_scale} yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG Reap t {i}.0 pos '{bx} {i % 4 * 64} 24' spd {bot_scale} yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    )
+                )
+            path.write_text("".join(lines), encoding="utf-8")
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            references = []
+            for index, scale in enumerate((58, 64, 70)):
+                path = root / f"human_{index}.log"
+                tape(path, scale, scale)
+                references.append(path)
+            candidate = root / "candidate.log"
+            tape(candidate, 64, 64)
+            res = self.run_tool(
+                "argus_humanness.py",
+                "--reference",
+                str(root / "human_*.log"),
+                str(candidate),
+            )
+            self.assertEqual(res.returncode, 0, res.stderr)
+            lines = res.stdout.splitlines()
+            row = dict(zip(lines[0].split("\t"), lines[1].split("\t")))
+            self.assertEqual(row["map"], "dm4")
+            self.assertEqual(row["bot_tracks"], "1")
+            self.assertEqual(row["human_reference_tracks"], "3")
+            self.assertLess(float(row["distance"]), 1.0)
+
+    def test_humanness_scores_a_real_tape_against_the_archive(self):
+        tape = ROOT / "runs" / "ab_dm4_B3.log"
+        if not tape.is_file():
+            self.skipTest("dm4 candidate tape not present")
+        res = self.run_tool("argus_humanness.py", str(tape))
+        self.assertEqual(res.returncode, 0, res.stderr)
+        lines = res.stdout.splitlines()
+        row = dict(zip(lines[0].split("\t"), lines[1].split("\t")))
+        self.assertEqual(row["map"], "dm4")
+        self.assertEqual(row["bot_tracks"], "3")
+        self.assertGreaterEqual(int(row["human_reference_tracks"]), 3)
+        self.assertGreater(float(row["distance"]), 0.0)
+        for feature in (
+            "speed_median",
+            "pause_fraction",
+            "direction_changes_pm",
+            "cells_pm",
+            "gyration",
+            "local_dwell_fraction",
+        ):
+            self.assertTrue(math.isfinite(float(row[feature])), feature)
+
     def test_tick_estimator_separates_listen_from_dedicated(self):
         """A tape says which game it recorded, or it cannot be compared."""
         pairs = [
@@ -795,10 +1046,28 @@ class TestToolsCLI(unittest.TestCase):
                 self.fail("argus-mcp source binary not built")
             self.skipTest("argus-mcp source binary not built")
 
-        for cmd in ("--help", "compile -h", "reach -h", "harvest -h", "analyze -h", "nav -h"):
+        for cmd in ("--help", "compile -h", "reach -h", "harvest -h",
+                    "analyze -h", "nav -h", "benchmark -h", "within-ab -h"):
             args = cmd.split()
             res = subprocess.run([str(mcp_bin), *args], capture_output=True, text=True, cwd=str(ROOT))
             self.assertEqual(res.returncode, 0, f"failed on {cmd}: {res.stderr}")
+
+    def test_argus_mcp_compare_rejects_an_empty_candidate_list(self):
+        mcp_bin = find_argus_mcp_binary()
+        if not mcp_bin:
+            if os.environ.get("ARGUS_REQUIRE_SOURCE_MCP") == "1":
+                self.fail("argus-mcp source binary not built")
+            self.skipTest("argus-mcp source binary not built")
+
+        res = subprocess.run(
+            [str(mcp_bin), "compare", ",", "control"],
+            capture_output=True,
+            text=True,
+            cwd=str(ROOT),
+        )
+        self.assertNotEqual(res.returncode, 0)
+        self.assertIn("candidate list must not be empty", res.stderr)
+        self.assertNotIn("panicked", res.stderr)
 
     def test_installed_argus_mcp_starts(self):
         mcp_bin = find_argus_mcp_binary(installed=True)
@@ -812,6 +1081,15 @@ class TestToolsCLI(unittest.TestCase):
         res = self.run_tool("argus_ci.py", "--help")
         self.assertEqual(res.returncode, 0)
         self.assertIn("Argus repo invariant battery", res.stdout)
+
+    def test_ci_uses_an_explicit_ubuntu_runner(self):
+        workflows = [
+            ROOT / ".github" / "workflows" / "fast.yml",
+            ROOT / ".github" / "workflows" / "compile.yml",
+        ]
+        text = "\n".join(path.read_text(encoding="utf-8") for path in workflows)
+        self.assertNotIn("runs-on: ubuntu-latest", text)
+        self.assertEqual(text.count("runs-on: ubuntu-24.04"), 4)
 
     def test_argus_ci_ship_passes_on_the_tree(self):
         # CLAUDE.md is gitignored (machine-local), so this tree holds
@@ -874,6 +1152,60 @@ class TestToolsCLI(unittest.TestCase):
             res = self.run_tool("argus_ci.py", "ship", "--root", str(root))
             self.assertEqual(res.returncode, 1)
             self.assertIn("handoff claims", res.stdout)
+
+    def _raw_index_blob(self, root, path, content):
+        blob = subprocess.run(
+            ["git", "hash-object", "-w", "--stdin"],
+            input=content, capture_output=True, cwd=str(root), check=True,
+        ).stdout.decode().strip()
+        subprocess.run(
+            ["git", "update-index", "--add", "--cacheinfo",
+             "100644", blob, path],
+            capture_output=True, cwd=str(root), check=True,
+        )
+
+    def _eol_repo(self, root):
+        subprocess.run(
+            ["git", "init", "-q"], capture_output=True,
+            cwd=str(root), check=True,
+        )
+        (root / ".gitattributes").write_text(
+            "* text=auto eol=lf\n*.bat text eol=crlf\n"
+            "*.cmd text eol=crlf\n",
+            encoding="utf-8", newline="\n",
+        )
+        subprocess.run(
+            ["git", "add", ".gitattributes"], capture_output=True,
+            cwd=str(root), check=True,
+        )
+
+    def test_argus_ci_eol_passes_on_the_tree(self):
+        res = self.run_tool("argus_ci.py", "eol")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("eol: ok", res.stdout)
+
+    def test_argus_ci_eol_rejects_an_api_style_crlf_blob(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._eol_repo(root)
+            self._raw_index_blob(root, "bad.txt", b"one\r\ntwo\r\n")
+
+            res = self.run_tool("argus_ci.py", "eol", "--root", td)
+
+            self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+            self.assertIn("bad.txt", res.stdout)
+            self.assertIn("stored with CRLF in Git", res.stdout)
+
+    def test_argus_ci_eol_keeps_windows_script_crlf_policy(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._eol_repo(root)
+            self._raw_index_blob(root, "keep.cmd", b"@echo off\r\n")
+
+            res = self.run_tool("argus_ci.py", "eol", "--root", td)
+
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("eol: ok", res.stdout)
 
     def _changed_file(self, root, lines):
         p = Path(root) / "changed.txt"

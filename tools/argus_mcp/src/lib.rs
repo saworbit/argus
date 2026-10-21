@@ -1,14 +1,18 @@
 pub mod analyze;
 pub mod backup;
+pub mod benchmark;
 pub mod bsp;
+pub mod build_identity;
 pub mod campaign;
 pub mod cartograph;
+pub(crate) mod child_process;
 pub mod compile;
 pub mod config;
 pub mod corpus;
 pub mod demo;
 pub mod diagnose;
 pub mod engine;
+pub mod graph_revision;
 pub mod gui;
 pub mod history;
 pub mod intel;
@@ -31,6 +35,12 @@ pub mod see_alias;
 pub mod server;
 pub mod session;
 pub mod soak;
+mod source_fingerprint;
 pub mod stale;
 pub mod stats;
 pub mod tape_view;
+pub mod task_store;
+pub mod within_ab;
+
+#[cfg(test)]
+pub(crate) mod test_support;

@@ -34,7 +34,7 @@ pub struct MatchSummary {
     pub events: BTreeMap<String, u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct Sample {
     pub t: f64,
     pub pos: Pos,
@@ -66,7 +66,7 @@ pub struct DeathEvent {
     pub third_party: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct GameEvent {
     pub bot: String,
     pub verb: String,
@@ -75,7 +75,7 @@ pub struct GameEvent {
     pub pos: Option<Pos>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct MatchTape {
     pub map: Option<String>,
     pub samples: BTreeMap<String, Vec<Sample>>,
@@ -583,8 +583,24 @@ pub fn parse_tape(text: &str) -> MatchTape {
 fn parse_one(text: &str) -> MatchTape {
     let v1 = v1_re();
     let death = death_re();
-    let evt = evt_re();
     let map_re = map_re();
+
+    let mut names: Vec<String> = text
+        .lines()
+        .filter_map(|line| v1.captures(line).map(|caps| caps[1].to_string()))
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+    names.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
+    let births: Vec<_> = text
+        .lines()
+        .filter_map(|line| event_fields(line, &names))
+        .filter(|event| event.1 == "spawned" || event.1 == "respawn")
+        .map(|event| event.0)
+        .collect();
+    names.extend(births);
+    names.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
+    names.dedup();
 
     let mut samples: BTreeMap<String, Vec<Sample>> = BTreeMap::new();
     let mut deaths = Vec::new();
@@ -722,10 +738,15 @@ fn parse_one(text: &str) -> MatchTape {
             last_t.insert(name, t);
             continue;
         }
-        if let Some(caps) = death.captures(line) {
+        let parsed_event = event_fields(line, &names);
+        let death_line = parsed_event
+            .as_ref()
+            .filter(|event| event.1 == "death")
+            .map(|event| format!("ARGEVT _ death {}", event.2));
+        if let Some(caps) = death_line.as_deref().and_then(|line| death.captures(line)) {
             let third_party = caps.get(6).is_some();
             deaths.push(DeathEvent {
-                victim: caps[1].to_string(),
+                victim: parsed_event.as_ref().unwrap().0.clone(),
                 killer: caps
                     .get(2)
                     .map(|m| m.as_str().to_string())
@@ -743,19 +764,36 @@ fn parse_one(text: &str) -> MatchTape {
                     .or_insert(0) += 1;
             }
         }
-        if let Some(caps) = evt.captures(line) {
-            let bot = caps[1].to_string();
-            let verb = caps[2].to_string();
-            let rest = caps
-                .get(3)
-                .map(|m| m.as_str().trim().to_string())
-                .unwrap_or_default();
+        if let Some((bot, verb, rest)) = parsed_event {
             // Argus_Die logs a bare "death" then "death <killer> pos ...".
             // Count only the detailed line.
             if verb == "death" && rest.is_empty() {
                 continue;
             }
             *event_counts.entry(verb.clone()).or_insert(0) += 1;
+            if verb == "tactic" {
+                let mut fields = rest.split_whitespace();
+                if let Some(
+                    phase @ ("prepare" | "opening" | "covered" | "reappear" | "returnshot"
+                    | "abort"),
+                ) = fields.next()
+                {
+                    // These are observed phase/shot events, never hits or
+                    // inferred completions. Keep the full raw reason below.
+                    *event_counts.entry(format!("tactic_{phase}")).or_insert(0) += 1;
+                    if phase == "abort" {
+                        if let Some(reason) = fields.next().filter(|reason| {
+                            reason
+                                .chars()
+                                .all(|c| c.is_ascii_alphanumeric() || c == '_')
+                        }) {
+                            *event_counts
+                                .entry(format!("tactic_abort_{reason}"))
+                                .or_insert(0) += 1;
+                        }
+                    }
+                }
+            }
             let t = last_t.get(&bot).copied();
             let pos = t.and_then(|tt| {
                 samples
@@ -814,16 +852,55 @@ fn death_re() -> &'static Regex {
     })
 }
 
+const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats";
+
+// A complete sample name is stronger evidence than a word inside the
+// closed verb vocabulary. Prefer the longest known identity. Terminal
+// spawn records supply identities on sample-free tapes; other legacy
+// rows retain the existing lexer when their names cannot be recovered.
+fn event_fields(line: &str, names: &[String]) -> Option<(String, String, String)> {
+    let (_, body) = line.split_once("ARGEVT ")?;
+    let body = body.trim_end();
+    for name in names {
+        if let Some(payload) = body
+            .strip_prefix(name.as_str())
+            .and_then(|s| s.strip_prefix(' '))
+        {
+            let mut fields = payload.splitn(2, char::is_whitespace);
+            let verb = fields.next()?;
+            if EVENT_VERBS.split('|').any(|known| known == verb) {
+                return Some((
+                    name.clone(),
+                    verb.into(),
+                    fields.next().unwrap_or_default().trim().into(),
+                ));
+            }
+        }
+    }
+    for verb in ["spawned", "respawn"] {
+        if let Some(name) = body.strip_suffix(&format!(" {verb}")) {
+            if !name.is_empty() {
+                return Some((name.into(), verb.into(), String::new()));
+            }
+        }
+    }
+    let caps = evt_re().captures(line)?;
+    Some((
+        caps[1].to_string(),
+        caps[2].to_string(),
+        caps.get(3)
+            .map(|m| m.as_str().trim().to_string())
+            .unwrap_or_default(),
+    ))
+}
+
 fn evt_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         // the verb comes from the closed telemetry vocabulary: a lazy
         // name followed by \S+ would split "Joe Rogan" into name
         // "Joe" and verb "Rogan"
-        Regex::new(
-            r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
-        )
-        .expect("evt regex")
+        Regex::new(&format!(r"ARGEVT (.+?) ({EVENT_VERBS})(?:\s+(.*))?$")).expect("evt regex")
     })
 }
 
@@ -837,6 +914,201 @@ fn map_re() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn event_words_inside_names_use_the_sample_identity() {
+        let text = "ARGEVT Reap spawned\nARGEVT Gap lift spawned\nARGEVT Last death spawned\n\
+ARGLOG Reap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n\
+ARGLOG Gap lift t 0.0 pos '10 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n\
+ARGLOG Last death t 0.0 pos '20 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n\
+ARGEVT Gap lift tactic abort weapon\nARGEVT Last death death Gap lift pos '20 0 24'\n\
+ARGEVT Gap lift goal spawned\n";
+        let tape = parse_tape(text);
+        assert!(tape.human_names().is_empty());
+        assert_eq!(
+            tape.events
+                .iter()
+                .map(|e| (e.bot.as_str(), e.verb.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                ("Reap", "spawned"),
+                ("Gap lift", "spawned"),
+                ("Last death", "spawned"),
+                ("Gap lift", "tactic"),
+                ("Last death", "death"),
+                ("Gap lift", "goal")
+            ]
+        );
+        assert_eq!(tape.events[3].rest, "abort weapon");
+        assert_eq!(tape.events[5].rest, "spawned");
+        assert_eq!(tape.deaths[0].victim, "Last death");
+        assert_eq!(tape.deaths[0].killer, "Gap lift");
+        let overlap = format!("ARGLOG Gap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n{text}");
+        assert_eq!(parse_tape(&overlap).events[1].bot, "Gap lift");
+        let no_samples =
+            parse_tape("ARGEVT Gap lift spawned\nARGEVT Gap lift tactic abort weapon\n");
+        assert_eq!(no_samples.events[1].bot, "Gap lift");
+        assert_eq!(no_samples.events[1].verb, "tactic");
+    }
+
+    #[test]
+    fn committed_engine_tactical_events_match_python_counts() {
+        let tape = parse_tape(include_str!("../../testdata/tactic_events.log"));
+        assert_eq!(tape.events.len(), 70);
+        let actual: BTreeMap<_, _> = tape
+            .event_counts
+            .into_iter()
+            .filter(|(key, _)| key.starts_with("tactic_"))
+            .collect();
+        let expected: BTreeMap<String, u32> =
+            serde_json::from_str(include_str!("../../testdata/tactic_events.json")).unwrap();
+        assert_eq!(actual, expected);
+        assert!(tape.events.iter().all(|event| event.bot == "Romero"));
+    }
+
+    #[test]
+    fn shared_python_fixture_has_the_same_bot_freeze_windows() {
+        let text = include_str!("../../testdata/freeze_parity.log");
+        let tape = parse_tape(text);
+        let humans = tape.human_names();
+        let mut windows: Vec<_> = tape
+            .freezes()
+            .into_iter()
+            .filter(|row| !humans.contains(&row.bot) && !is_instrument(&row.bot))
+            .collect();
+        windows.sort_by(|a, b| a.bot.cmp(&b.bot));
+        let expected: serde_json::Value =
+            serde_json::from_str(include_str!("../../testdata/freeze_parity.json")).unwrap();
+        assert_eq!(serde_json::to_value(windows).unwrap(), expected);
+        let brief = crate::intel::brief_text(text, Some("dm4"));
+        assert_eq!(brief.totals.freezes, 3);
+        assert_eq!(brief.totals.freeze_max_sec, 8.0);
+        assert_eq!(brief.totals.freeze_underfire, 2);
+    }
+
+    #[test]
+    fn tactical_events_preserve_names_phases_and_abort_reasons() {
+        let tape = parse_tape(include_str!("../../testdata/freeze_parity.log"));
+        assert_eq!(tape.event_counts["tactic"], 7);
+        for (phase, count) in [
+            ("prepare", 2),
+            ("opening", 1),
+            ("covered", 1),
+            ("reappear", 1),
+            ("returnshot", 1),
+            ("abort", 1),
+            ("abort_target", 1),
+        ] {
+            assert_eq!(tape.event_counts[&format!("tactic_{phase}")], count);
+        }
+        let events: Vec<_> = tape
+            .events
+            .iter()
+            .filter(|event| event.verb == "tactic")
+            .collect();
+        assert_eq!(events.len(), 7);
+        assert!(events.iter().all(|event| event.bot == "Joe Rogan"));
+        assert_eq!(events.last().unwrap().rest, "abort target");
+        assert!(!tape.event_counts.contains_key("tactic_hit"));
+        assert!(!tape.event_counts.contains_key("tactic_complete"));
+        let brief = crate::intel::brief_text(
+            include_str!("../../testdata/freeze_parity.log"),
+            Some("dm4"),
+        );
+        let lite = crate::intel::brief_lite(&brief);
+        assert_eq!(lite.tactics["tactic_prepare"], 2);
+        assert_eq!(lite.tactics["tactic_returnshot"], 1);
+        assert_eq!(lite.tactics["tactic_abort_target"], 1);
+    }
+
+    const METAMORPHIC_TAPE: &str = "\
+SpawnServer: dm4
+ARGUS init on dm4
+[00:00:01] ARGEVT Reap spawned
+ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+[00:00:02] ARGEVT Reap goal item_rockets
+ARGLOG Reap t 2.0 pos '64 0 24' spd 128 yaw 0 mode 2 st 1 gl 1 hp 90 frg 0
+[00:00:03] ARGEVT Reap engage Omi
+ARGLOG Reap t 3.0 pos '128 0 24' spd 160 yaw 0 mode 1 st 1 gl 1 hp 70 frg 1
+[00:00:04] ARGEVT Reap death Omi pos '128 0 24'
+[00:00:04] ARGEVT Reap respawn
+ARGLOG Reap t 4.0 pos '512 64 24' spd 0 yaw 90 mode 0 st 1 gl 1 hp 100 frg 1
+";
+
+    #[test]
+    fn parser_and_brief_replay_are_byte_stable() {
+        let first = parse_tape(METAMORPHIC_TAPE);
+        let second = parse_tape(METAMORPHIC_TAPE);
+
+        let first_tape = serde_json::to_vec(&first).expect("serialize first tape");
+        let second_tape = serde_json::to_vec(&second).expect("serialize second tape");
+        assert_eq!(first_tape, second_tape, "the parser changed on replay");
+
+        let first_brief = crate::intel::brief_tape(&first, None);
+        let second_brief = crate::intel::brief_tape(&first, None);
+        assert_eq!(
+            serde_json::to_vec(&first_brief).expect("serialize first brief"),
+            serde_json::to_vec(&second_brief).expect("serialize second brief"),
+            "the brief changed on replay"
+        );
+    }
+
+    #[test]
+    fn whole_line_prefix_never_invents_later_match_state() {
+        let prefix = METAMORPHIC_TAPE
+            .lines()
+            .take(7)
+            .collect::<Vec<_>>()
+            .join("\n")
+            + "\n";
+        let partial = parse_tape(&prefix);
+        let full = parse_tape(METAMORPHIC_TAPE);
+        let cutoff = 2.0;
+
+        assert_eq!(partial.map, full.map);
+        assert!(partial.deaths.len() <= full.deaths.len());
+        assert!(partial.events.len() <= full.events.len());
+        for (verb, count) in &partial.event_counts {
+            assert!(
+                count <= full.event_counts.get(verb).unwrap_or(&0),
+                "prefix counted more {verb} events than the full tape"
+            );
+        }
+        for (bot, samples) in &partial.samples {
+            let full_samples = full
+                .samples
+                .get(bot)
+                .expect("prefix bot exists in full tape");
+            assert!(samples.len() <= full_samples.len());
+            assert!(
+                samples.iter().all(|sample| sample.t <= cutoff),
+                "prefix contains a sample after its final line"
+            );
+        }
+        assert!(
+            partial
+                .events
+                .iter()
+                .all(|event| event.t.is_none_or(|t| t <= cutoff)),
+            "prefix contains an event associated with a later sample"
+        );
+
+        let partial_brief = crate::intel::brief_tape(&partial, None);
+        let full_brief = crate::intel::brief_tape(&full, None);
+        assert!(partial_brief.totals.duration_sec <= full_brief.totals.duration_sec);
+        assert!(partial_brief.totals.deaths <= full_brief.totals.deaths);
+        assert!(partial_brief.totals.third_party_deaths <= full_brief.totals.third_party_deaths);
+        assert!(partial_brief.totals.player_kills <= full_brief.totals.player_kills);
+        assert!(partial_brief.totals.world_deaths <= full_brief.totals.world_deaths);
+        assert!(partial_brief.totals.lava_deaths <= full_brief.totals.lava_deaths);
+        assert!(partial_brief.totals.engages <= full_brief.totals.engages);
+        assert!(partial_brief.totals.hazards <= full_brief.totals.hazards);
+        assert!(partial_brief.totals.abandons <= full_brief.totals.abandons);
+        assert!(partial_brief.totals.routefails <= full_brief.totals.routefails);
+        assert!(partial_brief.totals.weapons <= full_brief.totals.weapons);
+        assert!(partial_brief.totals.grabs <= full_brief.totals.grabs);
+        assert!(partial_brief.totals.acquisitions <= full_brief.totals.acquisitions);
+    }
 
     #[test]
     fn played_rate_jitter_stays_in_one_tick_class() {
