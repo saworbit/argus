@@ -9,6 +9,9 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+Lab progress values strictly increase, and live resource subscriptions detect
+match and session changes without reparsing the growing tape (#506, #507).
+
 **STALE LABS CANNOT ISSUE QUALITY-GATE VERDICTS** (#499). Structured MCP
 responses now identify the running package and build-time source fingerprint
 beside the checkout identity. Read-only inspection remains usable under skew,
