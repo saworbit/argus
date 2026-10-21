@@ -40,6 +40,7 @@ def freezes(samples):
 def analyse(path):
     tape = read_tape(path)
     bots = tape.samples
+    by_line = {line: (name, verb, rest) for line, name, verb, rest in tape.events}
     ev = collections.Counter()
     perbot_ev = collections.defaultdict(collections.Counter)
     plain = collections.Counter()
@@ -47,20 +48,20 @@ def analyse(path):
     spawnnames = set()
     mapname = None
     raw = []
-    for _, line in tape.lines:
+    for lineno, line in tape.lines:
         if PAT.search(line):
             continue
-        m = EVT.search(line)
-        if m:
-            name, verb, rest = m.groups()
+        event = by_line.get(lineno)
+        if event:
+            name, verb, rest = event
             ev[verb] += 1
             perbot_ev[name][verb] += 1
             if verb in ('spawned', 'respawn'):
                 spawnnames.add(name)
             if verb == 'death':
-                d = DEATH.search(line)
+                d = DEATH.search('ARGEVT _ death ' + rest)
                 if d:
-                    deaths.append((d.group(1), d.group(2) or '', float(d.group(5))))
+                    deaths.append((name, d.group(2) or '', float(d.group(5))))
             continue
         m = PLAIN.match(line)
         if m:

@@ -583,8 +583,24 @@ pub fn parse_tape(text: &str) -> MatchTape {
 fn parse_one(text: &str) -> MatchTape {
     let v1 = v1_re();
     let death = death_re();
-    let evt = evt_re();
     let map_re = map_re();
+
+    let mut names: Vec<String> = text
+        .lines()
+        .filter_map(|line| v1.captures(line).map(|caps| caps[1].to_string()))
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .collect();
+    names.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
+    let births: Vec<_> = text
+        .lines()
+        .filter_map(|line| event_fields(line, &names))
+        .filter(|event| event.1 == "spawned" || event.1 == "respawn")
+        .map(|event| event.0)
+        .collect();
+    names.extend(births);
+    names.sort_by(|a, b| b.len().cmp(&a.len()).then_with(|| a.cmp(b)));
+    names.dedup();
 
     let mut samples: BTreeMap<String, Vec<Sample>> = BTreeMap::new();
     let mut deaths = Vec::new();
@@ -722,10 +738,15 @@ fn parse_one(text: &str) -> MatchTape {
             last_t.insert(name, t);
             continue;
         }
-        if let Some(caps) = death.captures(line) {
+        let parsed_event = event_fields(line, &names);
+        let death_line = parsed_event
+            .as_ref()
+            .filter(|event| event.1 == "death")
+            .map(|event| format!("ARGEVT _ death {}", event.2));
+        if let Some(caps) = death_line.as_deref().and_then(|line| death.captures(line)) {
             let third_party = caps.get(6).is_some();
             deaths.push(DeathEvent {
-                victim: caps[1].to_string(),
+                victim: parsed_event.as_ref().unwrap().0.clone(),
                 killer: caps
                     .get(2)
                     .map(|m| m.as_str().to_string())
@@ -743,13 +764,7 @@ fn parse_one(text: &str) -> MatchTape {
                     .or_insert(0) += 1;
             }
         }
-        if let Some(caps) = evt.captures(line) {
-            let bot = caps[1].to_string();
-            let verb = caps[2].to_string();
-            let rest = caps
-                .get(3)
-                .map(|m| m.as_str().trim().to_string())
-                .unwrap_or_default();
+        if let Some((bot, verb, rest)) = parsed_event {
             // Argus_Die logs a bare "death" then "death <killer> pos ...".
             // Count only the detailed line.
             if verb == "death" && rest.is_empty() {
@@ -837,16 +852,55 @@ fn death_re() -> &'static Regex {
     })
 }
 
+const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats";
+
+// A complete sample name is stronger evidence than a word inside the
+// closed verb vocabulary. Prefer the longest known identity. Terminal
+// spawn records supply identities on sample-free tapes; other legacy
+// rows retain the existing lexer when their names cannot be recovered.
+fn event_fields(line: &str, names: &[String]) -> Option<(String, String, String)> {
+    let (_, body) = line.split_once("ARGEVT ")?;
+    let body = body.trim_end();
+    for name in names {
+        if let Some(payload) = body
+            .strip_prefix(name.as_str())
+            .and_then(|s| s.strip_prefix(' '))
+        {
+            let mut fields = payload.splitn(2, char::is_whitespace);
+            let verb = fields.next()?;
+            if EVENT_VERBS.split('|').any(|known| known == verb) {
+                return Some((
+                    name.clone(),
+                    verb.into(),
+                    fields.next().unwrap_or_default().trim().into(),
+                ));
+            }
+        }
+    }
+    for verb in ["spawned", "respawn"] {
+        if let Some(name) = body.strip_suffix(&format!(" {verb}")) {
+            if !name.is_empty() {
+                return Some((name.into(), verb.into(), String::new()));
+            }
+        }
+    }
+    let caps = evt_re().captures(line)?;
+    Some((
+        caps[1].to_string(),
+        caps[2].to_string(),
+        caps.get(3)
+            .map(|m| m.as_str().trim().to_string())
+            .unwrap_or_default(),
+    ))
+}
+
 fn evt_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
         // the verb comes from the closed telemetry vocabulary: a lazy
         // name followed by \S+ would split "Joe Rogan" into name
         // "Joe" and verb "Rogan"
-        Regex::new(
-            r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
-        )
-        .expect("evt regex")
+        Regex::new(&format!(r"ARGEVT (.+?) ({EVENT_VERBS})(?:\s+(.*))?$")).expect("evt regex")
     })
 }
 
@@ -860,6 +914,42 @@ fn map_re() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn event_words_inside_names_use_the_sample_identity() {
+        let text = "ARGEVT Reap spawned\nARGEVT Gap lift spawned\nARGEVT Last death spawned\n\
+ARGLOG Reap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n\
+ARGLOG Gap lift t 0.0 pos '10 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n\
+ARGLOG Last death t 0.0 pos '20 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n\
+ARGEVT Gap lift tactic abort weapon\nARGEVT Last death death Gap lift pos '20 0 24'\n\
+ARGEVT Gap lift goal spawned\n";
+        let tape = parse_tape(text);
+        assert!(tape.human_names().is_empty());
+        assert_eq!(
+            tape.events
+                .iter()
+                .map(|e| (e.bot.as_str(), e.verb.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                ("Reap", "spawned"),
+                ("Gap lift", "spawned"),
+                ("Last death", "spawned"),
+                ("Gap lift", "tactic"),
+                ("Last death", "death"),
+                ("Gap lift", "goal")
+            ]
+        );
+        assert_eq!(tape.events[3].rest, "abort weapon");
+        assert_eq!(tape.events[5].rest, "spawned");
+        assert_eq!(tape.deaths[0].victim, "Last death");
+        assert_eq!(tape.deaths[0].killer, "Gap lift");
+        let overlap = format!("ARGLOG Gap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n{text}");
+        assert_eq!(parse_tape(&overlap).events[1].bot, "Gap lift");
+        let no_samples =
+            parse_tape("ARGEVT Gap lift spawned\nARGEVT Gap lift tactic abort weapon\n");
+        assert_eq!(no_samples.events[1].bot, "Gap lift");
+        assert_eq!(no_samples.events[1].verb, "tactic");
+    }
 
     #[test]
     fn committed_engine_tactical_events_match_python_counts() {

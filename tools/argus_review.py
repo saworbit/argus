@@ -57,16 +57,19 @@ def tactical(line):
 def parse(log):
     tape = read_tape(log)
     events, deaths = [], []
+    by_line = {line: (name, verb, rest) for line, name, verb, rest in tape.events}
     for lineno, line in tape.lines:
         if PAT.search(line):
             continue
-        m = DEATH.search(line)
-        if m:
-            deaths.append((lineno, m.group(1), m.group(2) or "world",
-                           float(m.group(3)), float(m.group(4)), float(m.group(5))))
-        m = EVT.search(line)
-        if m:
-            events.append((lineno, m.group(1), m.group(2), (m.group(3) or "").strip()))
+        event = by_line.get(lineno)
+        if event:
+            name, verb, rest = event
+            if verb == 'death':
+                m = DEATH.search('ARGEVT _ death ' + rest)
+                if m:
+                    deaths.append((lineno, name, m.group(2) or "world",
+                                   float(m.group(3)), float(m.group(4)), float(m.group(5))))
+            events.append((lineno, name, verb, rest))
             continue
         t = tactical(line)
         if t:

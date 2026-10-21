@@ -458,6 +458,12 @@ Parsers recognise `ARGEVT <name> tactic <phase-or-abort-reason>`. Reports keep
 including abort reasons. Preparation proves no completed return, and a return
 shot proves no hit. Compact briefs expose these counts under `tactics`.
 
+Event and death readers resolve complete sample and spawn names before the
+event verb, preferring the longest known name. Names may contain words such
+as `lift` or `death` without changing track identity. Older rows with neither
+sample nor spawn context keep the legacy closed-vocabulary interpretation;
+an ambiguous name in such a row cannot be recovered uniquely.
+
 ### Recording and reading demos
 The 1 Hz telemetry tape is the ruler; a `.dem` recording is the
 microscope. Demos carry full-rate positions for every visible entity

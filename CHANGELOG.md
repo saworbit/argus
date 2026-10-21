@@ -9,6 +9,9 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+Event and death parsers resolve full track identities before reading verbs,
+so names containing words such as lift or death stay in bot totals (#520).
+
 Review, longitudinal scorecards and tape pointfiles share Rust's sample,
 track-identity and freeze rules, with one cross-language fixture (#502).
 Tactical phase and abort events are parsed and reported separately from
