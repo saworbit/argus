@@ -32,7 +32,7 @@ use rmcp::model::{
     ListResourcesResult, ListToolsResult, PaginatedRequestParams, PrimitiveSchemaDefinition,
     ProgressNotificationParam, PromptMessage, ReadResourceRequestParams, ReadResourceResponse,
     ReadResourceResult, Reference, RequestMetaObject, ResourceUpdatedNotificationParam, Role,
-    ServerCapabilities, ServerInfo, SubscribeRequestParams, SubscriptionFilter, ToolAnnotations,
+    ServerCapabilities, ServerConfig, SubscribeRequestParams, SubscriptionFilter, ToolAnnotations,
     UnsubscribeRequestParams, UpdateTaskParams,
 };
 use rmcp::service::{ElicitationMode, RequestContext, RoleServer, SubscriptionContext};
@@ -3276,8 +3276,8 @@ impl ServerHandler for Argus {
         self.tasks.cancel_task(&request.task_id)
     }
 
-    fn get_info(&self) -> ServerInfo {
-        ServerInfo::new(
+    fn get_info(&self) -> ServerConfig {
+        ServerConfig::new(
             ServerCapabilities::builder()
                 .enable_tools()
                 .enable_prompts()
@@ -3443,7 +3443,7 @@ mod tests {
     use crate::match_ctrl::{live_state, live_test_lock_async};
     use crate::test_support::{git_test_lock, run_git, TestDir};
     use rmcp::model::{
-        ArgumentInfo, ClientCapabilities, ClientInfo, CompletionContext, ResultType, TaskPayload,
+        ArgumentInfo, ClientCapabilities, ClientConfig, CompletionContext, ResultType, TaskPayload,
     };
     use rmcp::ServiceExt;
     use std::collections::HashMap;
@@ -3822,7 +3822,7 @@ mod tests {
             let service = service_server.serve(server_transport).await.unwrap();
             service.waiting().await.unwrap();
         });
-        let client = ClientInfo::new(
+        let client = ClientConfig::new(
             ClientCapabilities::builder().enable_tasks().build(),
             Implementation::new("argus-task-test", "1"),
         )
@@ -3907,7 +3907,7 @@ mod tests {
             let service = Argus::new().serve(server_transport).await.unwrap();
             service.waiting().await.unwrap();
         });
-        let legacy = ClientInfo::new(
+        let legacy = ClientConfig::new(
             ClientCapabilities::default(),
             Implementation::new("argus-legacy-test", "1"),
         )
@@ -3946,7 +3946,7 @@ mod tests {
             let service = service_server.serve(server_transport).await.unwrap();
             service.waiting().await.unwrap();
         });
-        let client = ClientInfo::new(
+        let client = ClientConfig::new(
             ClientCapabilities::builder().enable_tasks().build(),
             Implementation::new("argus-task-complete-test", "1"),
         )
