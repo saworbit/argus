@@ -409,6 +409,20 @@ cartographer's `reach`.
 
 ## Demo ingest
 
+Python tape review, longitudinal scorecards and pointfile freeze overlays
+use `tools/argus_tape.py`. Its samples, bot/human/instrument split and freeze
+predicate match Rust, including legacy tracks and the busiest-level rule.
+The rule has no vertical-distance or inter-sample-gap filter. Human and
+instrument freezes remain outside bot totals. A shared fixture under
+`tools/testdata/` verifies Rust and all three Python consumers.
+
+`ARGEVT <name> tactic <phase-or-abort-reason>` retains the full phase/reason.
+Full briefs expose `tactic_*` event counts, compact briefs expose `tactics`,
+and Python review and scorecards report the same phase counts and abort
+reasons. `returnshot` records a shot, never an inferred hit or completion.
+Scorecard TSVs add six `tactic_*` phase columns and `tactic_abort_reasons`;
+existing rows retain their values and receive blank cells for the new fields.
+
 The 1 Hz ARGLOG tape is the ruler and the gates; a `.dem` is the
 microscope. A listen session records one with the map-taking form of
 `record` in the launch command (`+record session dm4` - the bare

@@ -756,6 +756,29 @@ fn parse_one(text: &str) -> MatchTape {
                 continue;
             }
             *event_counts.entry(verb.clone()).or_insert(0) += 1;
+            if verb == "tactic" {
+                let mut fields = rest.split_whitespace();
+                if let Some(
+                    phase @ ("prepare" | "opening" | "covered" | "reappear" | "returnshot"
+                    | "abort"),
+                ) = fields.next()
+                {
+                    // These are observed phase/shot events, never hits or
+                    // inferred completions. Keep the full raw reason below.
+                    *event_counts.entry(format!("tactic_{phase}")).or_insert(0) += 1;
+                    if phase == "abort" {
+                        if let Some(reason) = fields.next().filter(|reason| {
+                            reason
+                                .chars()
+                                .all(|c| c.is_ascii_alphanumeric() || c == '_')
+                        }) {
+                            *event_counts
+                                .entry(format!("tactic_abort_{reason}"))
+                                .or_insert(0) += 1;
+                        }
+                    }
+                }
+            }
             let t = last_t.get(&bot).copied();
             let pos = t.and_then(|tt| {
                 samples
@@ -821,7 +844,7 @@ fn evt_re() -> &'static Regex {
         // name followed by \S+ would split "Joe Rogan" into name
         // "Joe" and verb "Rogan"
         Regex::new(
-            r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
+            r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats)(?:\s+(.*))?$",
         )
         .expect("evt regex")
     })
@@ -837,6 +860,76 @@ fn map_re() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn committed_engine_tactical_events_match_python_counts() {
+        let tape = parse_tape(include_str!("../../testdata/tactic_events.log"));
+        assert_eq!(tape.events.len(), 70);
+        let actual: BTreeMap<_, _> = tape
+            .event_counts
+            .into_iter()
+            .filter(|(key, _)| key.starts_with("tactic_"))
+            .collect();
+        let expected: BTreeMap<String, u32> =
+            serde_json::from_str(include_str!("../../testdata/tactic_events.json")).unwrap();
+        assert_eq!(actual, expected);
+        assert!(tape.events.iter().all(|event| event.bot == "Romero"));
+    }
+
+    #[test]
+    fn shared_python_fixture_has_the_same_bot_freeze_windows() {
+        let text = include_str!("../../testdata/freeze_parity.log");
+        let tape = parse_tape(text);
+        let humans = tape.human_names();
+        let mut windows: Vec<_> = tape
+            .freezes()
+            .into_iter()
+            .filter(|row| !humans.contains(&row.bot) && !is_instrument(&row.bot))
+            .collect();
+        windows.sort_by(|a, b| a.bot.cmp(&b.bot));
+        let expected: serde_json::Value =
+            serde_json::from_str(include_str!("../../testdata/freeze_parity.json")).unwrap();
+        assert_eq!(serde_json::to_value(windows).unwrap(), expected);
+        let brief = crate::intel::brief_text(text, Some("dm4"));
+        assert_eq!(brief.totals.freezes, 3);
+        assert_eq!(brief.totals.freeze_max_sec, 8.0);
+        assert_eq!(brief.totals.freeze_underfire, 2);
+    }
+
+    #[test]
+    fn tactical_events_preserve_names_phases_and_abort_reasons() {
+        let tape = parse_tape(include_str!("../../testdata/freeze_parity.log"));
+        assert_eq!(tape.event_counts["tactic"], 7);
+        for (phase, count) in [
+            ("prepare", 2),
+            ("opening", 1),
+            ("covered", 1),
+            ("reappear", 1),
+            ("returnshot", 1),
+            ("abort", 1),
+            ("abort_target", 1),
+        ] {
+            assert_eq!(tape.event_counts[&format!("tactic_{phase}")], count);
+        }
+        let events: Vec<_> = tape
+            .events
+            .iter()
+            .filter(|event| event.verb == "tactic")
+            .collect();
+        assert_eq!(events.len(), 7);
+        assert!(events.iter().all(|event| event.bot == "Joe Rogan"));
+        assert_eq!(events.last().unwrap().rest, "abort target");
+        assert!(!tape.event_counts.contains_key("tactic_hit"));
+        assert!(!tape.event_counts.contains_key("tactic_complete"));
+        let brief = crate::intel::brief_text(
+            include_str!("../../testdata/freeze_parity.log"),
+            Some("dm4"),
+        );
+        let lite = crate::intel::brief_lite(&brief);
+        assert_eq!(lite.tactics["tactic_prepare"], 2);
+        assert_eq!(lite.tactics["tactic_returnshot"], 1);
+        assert_eq!(lite.tactics["tactic_abort_target"], 1);
+    }
 
     const METAMORPHIC_TAPE: &str = "\
 SpawnServer: dm4

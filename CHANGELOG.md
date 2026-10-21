@@ -9,6 +9,11 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+Review, longitudinal scorecards and tape pointfiles share Rust's sample,
+track-identity and freeze rules, with one cross-language fixture (#502).
+Tactical phase and abort events are parsed and reported separately from
+hits in full briefs, compact briefs and Python review tools (#514).
+
 Navigation readers share link families, include door-only hops and keep
 equipment and skill gates out of first-registration reach (#510). All map
 surfaces require both build entries for registration (#511). BSP hull walks
