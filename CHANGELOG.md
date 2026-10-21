@@ -9,6 +9,9 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+Fixed navigation benchmarks score completion against each task's game-time
+budget and retain late elapsed times without counting them as successes (#508).
+
 Lab progress values strictly increase, and live resource subscriptions detect
 match and session changes without reparsing the growing tape (#506, #507).
 

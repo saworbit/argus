@@ -485,6 +485,10 @@ budgets, and `train` or `heldout` labels. Each suite pins the MD5 of its nav
 JSON: a regenerated graph invalidates the yardstick until its routes are
 reviewed deliberately. Reports preserve individual results and summarize
 completion rate plus median game time for all, train, and held-out tasks.
+Completion requires finite engine game time within the task's `budget_sec`,
+including the exact boundary. Late finishes keep their raw `game_sec` but
+count as incomplete and do not enter successful-time medians. Wall-clock
+grace only bounds the harness wait.
 Compilation and installation happen by default; `--no-compile` deliberately
 measures the currently installed build.
 
