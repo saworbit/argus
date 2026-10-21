@@ -10,9 +10,36 @@ from pathlib import Path
 import re
 
 PAT = re.compile(r"(?:BOTLOG|ARGLOG) (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?")
-EVT = re.compile(r"ARGEVT (.+?) (spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats)(?:\s+(.*))?$")
+EVENT_VERBS = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats"
+EVT = re.compile(r"ARGEVT (.+?) (" + EVENT_VERBS + r")(?:\s+(.*))?$")
 MAP = re.compile(r"(?:SpawnServer:\s+|ARGUS init on\s+)([A-Za-z0-9_]+)", re.I)
 INSTRUMENTS = frozenset(("labprobe", "unconnected"))
+VERBS = frozenset(EVENT_VERBS.split("|"))
+
+
+def event_fields(line, names=()):
+    """Resolve against complete sample identities before the legacy lexer.
+
+    Without known names, terminal spawn records supply their own identity.
+    Other legacy rows keep the old closed-vocabulary interpretation.
+    """
+    if 'ARGEVT ' not in line:
+        return None
+    body = line.split('ARGEVT ', 1)[1].rstrip()
+    for name in names:
+        if body.startswith(name + ' '):
+            fields = body[len(name) + 1:].split(None, 1)
+            if fields and fields[0] in VERBS:
+                return name, fields[0], fields[1].strip() if len(fields) > 1 else ''
+    for verb in ('spawned', 'respawn'):
+        suffix = ' ' + verb
+        if body.endswith(suffix) and body[:-len(suffix)]:
+            return body[:-len(suffix)], verb, ''
+    match = EVT.search(line)
+    if match:
+        name, verb, rest = match.groups()
+        return name, verb, (rest or '').strip()
+    return None
 
 
 def sample_row(line, lineno):
@@ -56,6 +83,11 @@ class Tape:
 
 def parse_tape(text):
     lines = tape_lines(text)
+    names = sorted({match.group(1) for _, line in lines if (match := PAT.search(line))},
+                   key=lambda name: (-len(name), name))
+    births = {event[0] for _, line in lines if (event := event_fields(line, names))
+              and event[1] in ('spawned', 'respawn')}
+    names = sorted(set(names) | births, key=lambda name: (-len(name), name))
     samples = collections.defaultdict(list)
     events = []
     for lineno, line in lines:
@@ -64,10 +96,9 @@ def parse_tape(text):
             name, sample = row
             samples[name].append(sample)
             continue
-        match = EVT.search(line)
-        if match:
-            name, verb, rest = match.groups()
-            events.append((lineno, name, verb, (rest or "").strip()))
+        event = event_fields(line, names)
+        if event:
+            events.append((lineno, *event))
     return Tape(lines, samples, events)
 
 

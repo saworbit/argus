@@ -16,6 +16,41 @@ EXPECTED = json.loads(FIXTURE.with_suffix(".json").read_text())
 
 
 class TestTapeConsumers(unittest.TestCase):
+    def test_event_words_in_names_do_not_change_identity_or_payload(self):
+        from argus_tape import parse_tape, track_names
+        from tempfile import TemporaryDirectory
+        text = '''ARGEVT Reap spawned
+ARGEVT Gap lift spawned
+ARGEVT Last death spawned
+ARGLOG Reap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0
+ARGLOG Gap lift t 0.0 pos '10 0 24' spd 0 yaw 0 mode 0 st 0 gl 0
+ARGLOG Last death t 0.0 pos '20 0 24' spd 0 yaw 0 mode 0 st 0 gl 0
+ARGEVT Gap lift tactic abort weapon
+ARGEVT Last death death Gap lift pos '20 0 24'
+ARGEVT Gap lift goal spawned
+'''
+        tape = parse_tape(text)
+        self.assertEqual(track_names(tape.samples, tape.events)[1], [])
+        self.assertEqual([event[1:] for event in tape.events], [
+            ('Reap', 'spawned', ''), ('Gap lift', 'spawned', ''), ('Last death', 'spawned', ''),
+            ('Gap lift', 'tactic', 'abort weapon'), ('Last death', 'death', "Gap lift pos '20 0 24'"),
+            ('Gap lift', 'goal', 'spawned'),
+        ])
+        overlap = "ARGLOG Gap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n" + text
+        self.assertEqual(parse_tape(overlap).events[1][1], 'Gap lift')
+        no_samples = parse_tape('ARGEVT Gap lift spawned\nARGEVT Gap lift tactic abort weapon\n')
+        self.assertEqual(no_samples.events[1][1:], ('Gap lift', 'tactic', 'abort weapon'))
+        with TemporaryDirectory() as td:
+            path = Path(td) / 'names.log'
+            path.write_text(text)
+            _, events, deaths = argus_review.parse(path)
+            self.assertEqual([event[1:] for event in events], [event[1:] for event in tape.events])
+            self.assertEqual(deaths[0][1:3], ('Last death', 'Gap lift'))
+            row = argus_longi.analyse(path)
+            self.assertEqual(row['bots'], 3)
+            self.assertEqual(row['human'], '-')
+            self.assertEqual(row['bot_deaths'], 1)
+
     def test_committed_engine_events_match_the_review_and_scorecard(self):
         from argus_tape import tactic_counts
         path = FIXTURE.with_name('tactic_events.log')

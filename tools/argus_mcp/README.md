@@ -423,6 +423,11 @@ reasons. `returnshot` records a shot, never an inferred hit or completion.
 Scorecard TSVs add six `tactic_*` phase columns and `tactic_abort_reasons`;
 existing rows retain their values and receive blank cells for the new fields.
 
+Event and death rows use complete sample/spawn identities before splitting
+the verb, with the longest known name taking precedence. The raw closed-verb
+regex is a fallback for legacy rows without identity context; those rows can
+remain ambiguous when a name contains a verb. This changes no emitted format.
+
 The 1 Hz ARGLOG tape is the ruler and the gates; a `.dem` is the
 microscope. A listen session records one with the map-taking form of
 `record` in the launch command (`+record session dm4` - the bare
