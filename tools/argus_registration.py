@@ -5,6 +5,7 @@ COMMENTS = re.compile(r"/\*.*?\*/|//[^\r\n]*", re.S)
 
 
 def registration(dispatch, progs, mapname):
+    """Return (dispatcher branch, exact progs entry), ignoring comments."""
     dispatch = COMMENTS.sub(" ", dispatch)
     progs = COMMENTS.sub(" ", progs)
     return (

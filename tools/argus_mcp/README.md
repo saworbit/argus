@@ -407,7 +407,7 @@ in their explicit gated view.
 A match brief attaches `goal_reach`: each goaled classname gets the
 cartographer's `reach`.
 
-## Demo ingest
+## Tape review and event counts
 
 Python tape review, longitudinal scorecards and pointfile freeze overlays
 use `tools/argus_tape.py`. Its samples, bot/human/instrument split and freeze
@@ -427,6 +427,8 @@ Event and death rows use complete sample/spawn identities before splitting
 the verb, with the longest known name taking precedence. The raw closed-verb
 regex is a fallback for legacy rows without identity context; those rows can
 remain ambiguous when a name contains a verb. This changes no emitted format.
+
+## Demo ingest
 
 The 1 Hz ARGLOG tape is the ruler and the gates; a `.dem` is the
 microscope. A listen session records one with the map-taking form of
@@ -1299,8 +1301,20 @@ cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warn
 cargo test --manifest-path tools/argus_mcp/Cargo.toml
 ```
 
-The repository pins Rust 1.95 with the `clippy` and `rustfmt` components, and
-the fast workflow runs all three commands.
+The repository pins Rust 1.95 with the `clippy` and `rustfmt` components.
+The fast workflow runs formatting, strict Clippy and Rust library tests.
+
+Run the shared navigation, registration, mapgate and tape contracts without
+an engine or machine-local maps:
+
+```text
+python tools/test_argus_navjson.py
+python tools/test_argus_mapgate.py
+python tools/test_argus_tape.py
+```
+
+These Python suites are not yet wired into the fast workflow (#525).
+`test_tools_cli.py` remains its separate Python CLI check.
 
 The repository invariant battery also reads committed Git blob metadata for
 LF-designated text. This catches CRLF blobs written through an API even when a
