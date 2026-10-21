@@ -657,6 +657,8 @@ Long-running `match_run`, `experiment`, `campaign_experiment`, and
 supplies one. Notifications name the compile, match, and analysis stage;
 active matches advance by elapsed seconds against the requested duration.
 Progress delivery is best-effort and never changes the synchronous result.
+Repeated or backward progress values are skipped, including duplicate stage
+boundaries, so every delivered value strictly increases for its request token.
 Clients without progress support keep the existing call and polling behavior.
 
 The server also implements the SEP-2663 Tasks extension for `match_run`.
@@ -677,8 +679,9 @@ after completion, then are evicted. `match_status` and the owner-independent
 `argus://last` and `argus://lab` are live subscription resources. The server
 accepts both current `subscriptions/listen` filters and legacy
 `resources/subscribe` calls, then emits `notifications/resources/updated`
-only when the resource's serialized value changes. `argus://lab` reads include
-the current match status. Explicit resource reads, `match_status`, and
+only when match identity, running state, exit status, or session memory changes.
+Subscription ticks do not read or analyse the live tape. `argus://lab` reads
+include the full current match status. Explicit resource reads, `match_status`, and
 `since_line` polling remain supported fallbacks.
 
 `compare_runs` uses form elicitation for one genuinely ambiguous case: the

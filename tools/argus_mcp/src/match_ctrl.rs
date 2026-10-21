@@ -33,6 +33,16 @@ pub struct MatchStatus {
     pub next_steps: Option<Vec<crate::intel::NextStep>>,
 }
 
+/// Stable identity for subscription change detection. No clock or tape reads.
+#[derive(Debug, Clone, Serialize)]
+pub struct MatchResourceState {
+    running: bool,
+    run_name: Option<String>,
+    map: Option<String>,
+    pid: Option<u32>,
+    exit_code: Option<i32>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct MatchRunResult {
     pub ok: bool,
@@ -132,6 +142,26 @@ impl MatchCtrl {
                 }
             }
             None => (false, 0),
+        }
+    }
+
+    pub fn resource_state(&mut self) -> MatchResourceState {
+        let (running, _) = self.poll();
+        if let Some(live) = &self.live {
+            return MatchResourceState {
+                running,
+                run_name: Some(live.run_name.clone()),
+                map: Some(live.map.clone()),
+                pid: running.then(|| live.child.id()),
+                exit_code: live.last_exit,
+            };
+        }
+        MatchResourceState {
+            running: false,
+            run_name: self.last.as_ref().and_then(|s| s.run_name.clone()),
+            map: self.last.as_ref().and_then(|s| s.map.clone()),
+            pid: None,
+            exit_code: self.last.as_ref().and_then(|s| s.exit_code),
         }
     }
 
