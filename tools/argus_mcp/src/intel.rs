@@ -312,12 +312,15 @@ pub struct CompareReport {
     pub primary: Option<String>,
 }
 
-/// LLM-sized brief: no per-event maps, no every bot sample field.
+/// Compact brief: selected tactical counts and no per-sample bot fields.
 #[derive(Debug, Clone, Serialize)]
 pub struct BriefLite {
     pub headline: String,
     pub map: Option<String>,
     pub totals: Totals,
+    /// Observed manoeuvre phases and abort reasons, not inferred hits.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub tactics: BTreeMap<String, u32>,
     pub flags: Vec<String>,
     pub next_steps: Vec<NextStep>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -381,6 +384,12 @@ pub fn brief_lite(b: &MatchBrief) -> BriefLite {
         headline: b.headline.clone(),
         map: b.map.clone(),
         totals: b.totals.clone(),
+        tactics: b
+            .events
+            .iter()
+            .filter(|(key, _)| key.starts_with("tactic_"))
+            .map(|(key, count)| (key.clone(), *count))
+            .collect(),
         flags: b.flags.clone(),
         next_steps: b.next_steps.clone(),
         hotspots: b.hotspots.iter().take(5).cloned().collect(),

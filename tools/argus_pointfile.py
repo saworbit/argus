@@ -73,35 +73,11 @@ def lerp(a, b, step):
 
 
 def tape_points(tape):
-    """freeze and stall positions, the cells worth standing in"""
-    PAT = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
-                     r"(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+)")
-    rows = []
-    for line in Path(tape).read_text(errors="replace").splitlines():
-        m = PAT.search(line)
-        if m:
-            rows.append((m.group(1), float(m.group(2)),
-                         (float(m.group(3)), float(m.group(4)), float(m.group(5))),
-                         float(m.group(6))))
-    # group by track first: the tape interleaves every bot and the
-    # human, so a neighbour's moving sample would break the run of a
-    # bot that is standing perfectly still
-    per = {}
-    for name, t, pos, spd in rows:
-        per.setdefault(name, []).append((t, pos, spd))
-    out = []
-    for name in per:
-        run = []
-        for t, pos, spd in sorted(per[name]):
-            if spd < 20:
-                run.append(pos)
-            else:
-                if len(run) >= 12:      # 6 s at the 0.5 s sample rate
-                    out.append(run[len(run) // 2])
-                run = []
-        if len(run) >= 12:
-            out.append(run[len(run) // 2])
-    return out
+    """Bot freeze origins using the same predicate as the Rust lab."""
+    from argus_tape import read_tape, freeze_windows
+    tape = read_tape(tape)
+    return [(f.start['x'], f.start['y'], f.start['z'])
+            for rows in tape.bot_samples().values() for f in freeze_windows(rows)]
 
 
 # typed links, one family at a time (#254 item 7). Cheap, and it
