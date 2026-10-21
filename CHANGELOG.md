@@ -9,6 +9,18 @@ is in `tools/argus_mcp/README.md`.
 
 ## Unreleased
 
+Restored the bounded attack-cover-return manoeuvre for Romero on dm4 and dm2,
+with item-route launch isolation, braking checks, a wider validated return
+gate and bounded exit waiting. Ordinary weapon selection, reaction and
+aim error remain in control. See `docs/attack-cover-return.md` for limits and
+the independent engine acceptance checks.
+
+Interrupted navigation floods release both shared search state and the bot's
+shopping latch. Failed-life vetoes run after GOAP weapon substitutions and
+clear typed-hop state before re-planning. Tactical fixtures refuse overlap,
+clean up removed-target references and reject post-abort falls or damage
+credited to a later ordinary-combat rocket.
+
 Documented the shared navigation and tape helper contracts and their scoped
 parity checks (#502, #510, #514). CI coverage for those checks is tracked in #525.
 

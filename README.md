@@ -94,6 +94,12 @@ flowchart TD
 - **Safe line floor validation**: `Argus_SafeLine` samples floor collision every 48 units along direct item sightlines, preventing bots from plunging into pits to reach visible items. It shares the staircase rescue above, because a downward trace that *starts* inside solid geometry returns the same result as one that finds nothing at all - rising ground and a bottomless void are indistinguishable unless you test for it explicitly.
 
 ### 3. Combat, perception, and humanized aim
+
+- **Attack, cover, return**: At base skill 1, Romero can fire a rocket, walk
+  through full-body cover and reappear from a different angle on two verified
+  dm4/dm2 routes. Entry braking, route clearance and shot safety are checked at
+  runtime; ordinary aim and reaction still govern firing. See the
+  [behaviour and engine checks](docs/attack-cover-return.md).
 - **Damped-spring aim model with saccade glide**: Second-order yaw tracking with per-skill spring constants - flick, slight overshoot, settle, tremor - plus configurable reaction latency (`ar_reactbase`) and an aim error cone that narrows over continuous tracking duration. The held error offset re-rolls every 0.25-0.55 s and *ramps* to its new value over 0.15 s instead of stepping, so the spring never chases a teleporting target - a human wrist drifts between corrections.
 - **Motion-proportional aim error**: A moving target contributes a second held error vector, sampled on the same saccade clock and normalized to a fixed 20 Hz observation horizon. It is proportional to observed displacement and inverse aim skill, so a stationary target is bit-for-bit unaffected. Sight loss glides the currently rendered offset to zero without sampling hidden motion, reacquisition starts from zero so one target cannot inherit another's vector, and dedicated and played listen-server rates do not change the error scale.
 - **Simulated hearing and investigation**: `W_Attack` broadcasts gunfire to every bot within 1000u (wall-damped, listened for at chest height so flat corridors are not mistaken for walls); an unengaged bot glances at fresh sounds - as a rate-limited head turn, not a one-frame snap - and nearby fire pulls it toward the fight instead of past it.
