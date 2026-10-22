@@ -116,8 +116,11 @@ pub struct Capture {
 /// Content identity only. Asset bytes and machine-local source paths stay local.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct AssetIdentity {
+    /// Case-preserving path under `id1/` or `capture/`, with slash separators.
     pub path: String,
+    /// File length of the identified staged bytes.
     pub bytes: u64,
+    /// Lowercase hexadecimal MD5 of the file contents.
     pub md5: String,
 }
 
@@ -493,7 +496,7 @@ async fn capture_frames(
 /// Bounded video plus its ordered source-frame evidence and playback timeline.
 #[derive(Debug, Serialize)]
 pub struct VideoCapture {
-    /// Ordered PNG sources, scheduled demo times and demo/engine identities.
+    /// Ordered PNG sources, scheduled demo times and demo/engine/asset identities.
     pub capture: Capture,
     /// Absolute path to the verified, newly published VP9 WebM.
     pub video_path: String,
@@ -511,11 +514,14 @@ pub struct VideoCapture {
     pub encoder: EncoderIdentity,
 }
 
+/// Resolved encoder content identity, build output and selected video options.
 #[derive(Debug, Serialize)]
 pub struct EncoderIdentity {
+    /// Lowercase MD5 of the resolved executable, checked between video steps.
     pub executable_md5: String,
+    /// Captured `ffmpeg -version` output, including build configuration.
     pub version: String,
-    /// FFmpeg output options applied to the encoded video.
+    /// Grouped codec, input frame-rate and frame-count options, without paths.
     pub settings: Vec<String>,
 }
 
@@ -708,7 +714,9 @@ fn frame_hashes(text: &str, count: u32, fps: f64) -> Result<Vec<String>, String>
 /// `duration` is 0.2..12 source seconds, rounded to 0.1 seconds; `rate` is a
 /// 0.1..4 playback multiplier. Every source sample must precede the demo's end.
 /// FFmpeg with libvpx-vp9 is required on PATH; PNG capture needs no encoder.
-/// A bounded one-frame VP9 preflight completes before the renderer starts.
+/// One-frame VP9 preflight also needs the lavfi input device and color filter.
+/// Child exit has a five-second deadline; inherited pipes can delay EOF beyond
+/// that deadline. Preflight completes before the renderer starts.
 /// PNG-to-YUV420 conversion precedes lossless encoding. Verify decoded frame
 /// order, hashes and timing before publishing a fresh WebM and video manifest.
 /// Manifests include staged asset digests, the FFmpeg build and codec settings.

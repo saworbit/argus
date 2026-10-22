@@ -194,7 +194,7 @@ generated `src/argus_nav_<map>.qc`; use the lab's navigation tools.
 | Bot colours match or skin warnings appear | The base player model lacks extra skins; see [bot colours](docs/controls.md#bot-colours) |
 | No `qconsole.log` or no telemetry | Launch with both `-condebug` and `+developer 1`; check the process working directory |
 | Lab configuration is missing | Run the MCP `config_check` tool and fill the named `ARGUS_*` paths |
-| Lab verdict says the server is stale | Reinstall the lab, restart the client and inspect its reported build identity |
+| Lab verdict says the server is stale | Reinstall and reconnect, then require `lab_identity.authoritative: true` in that chat; see [Windows staged updates](tools/argus_mcp/README.md#update-a-running-windows-server) |
 
 ## Documentation and development
 
