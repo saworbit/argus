@@ -26,7 +26,10 @@ def check(text):
         if velocities:
             assert len(velocities) == len(rows) and all(math.dist(list(map(float, v.split())), (0, 0, 0)) < 0.01 for v in velocities), "fixed target retained knockback velocity"
         origin, enemy = ((465, -279, -104), (337, -247, -296)) if name == "dm4" else ((2209, -279, 24), (2433, -183, 24))
-        if case == "6":
+        if case == "14":
+            assert "TACFIX lifeaccepted 1" in block, "failed-life GOAP or route cancellation regression"
+            results.append(dict(map=name, case=case, lifeveto_checks=True))
+        elif case == "6":
             # Include the settling window AFTER ownership ends. Rejecting an
             # unsafe entry leaves ordinary combat in control of legal drops.
             active = [r for r in rows if r["state"]]

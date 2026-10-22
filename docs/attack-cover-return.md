@@ -123,6 +123,7 @@ client wait is not an acknowledgement. Prefer the driver for suites.
 | 11 | Sight breaks at reappearance, before the return shot |
 | 12 | Shop cancellation on death, respawn and skill change, plus ownership isolation |
 | 13 | Shared trigger-box boundary check; reports `TACFIX hull ok` before the encounter |
+| 14 | Failed-life GOAP substitution, repeated selection and active-route ownership checks |
 
 The checker includes at least 0.5 seconds after an active moving-entry abort
 or a completed return when checking the floor. A refused entry is reported
@@ -192,9 +193,9 @@ the move reads as deliberate
 from ammo loss. The current observer counts real owned projectiles; see the
 acknowledged-suite checkpoint below for independent unlimited-ammo coverage
 ([#529](https://github.com/saworbit/argus/issues/529)).
-Case 12 checks cancellation lifecycle and queue ownership. Dedicated coverage
-of the failed-life veto after GOAP substitution is tracked in
-[#530](https://github.com/saworbit/argus/issues/530).
+Case 12 checks cancellation lifecycle and queue ownership. Case 14 now covers
+failed-life avoidance after GOAP substitution and active typed-hop cancellation
+([#530](https://github.com/saworbit/argus/issues/530)).
 Short normal matches establish smoke parity,
 not improved win rate. The compare_band_primary_scaled note in review 3.3
 requires no change: scaled correctly describes whether any arm changed scale.
@@ -231,3 +232,23 @@ joined back-to-back Windows console submissions. Both commands failed and
 stopped their owned engines. Console-ready acknowledgement and one initial
 setup submission resolved these transport failures. Diagnostic tapes are
 retained locally in backups/soak-20261022/fixture-driver-diagnostics.zip.
+
+## Failed-life regression checkpoint, 2026-10-22
+
+Run `argus-mcp tactic-suite dm4 lifeveto_dm4 --cases 14` and repeat on dm2
+with `--no-compile`. The case supplies the real scorer with a transient
+completed distance field and three items. An unarmed bot first chooses a
+powerup via a distant weapon. Failed-life memory then replaces that weapon
+with a nearer health item on three consecutive picks; a live fight is also
+checked. The active-route test checks every typed-hop latch and route
+metadata, replacement of the owner's old shopping flood, and preservation
+of another owner's queue. All transient entities and item-chain changes are
+removed before ordinary fixture observation resumes.
+
+Both final map trials passed at 66.5 Hz. Moving GOAP substitution after the
+veto and removing the typed-jump reset each made the checker fail. Final
+source, installed binary and nav identities, passing tapes and both rejected
+mutation tapes are retained in [runs/lifeveto.state.json](../runs/lifeveto.state.json).
+The matching gameplay binary MD5 is `2AA92D4EB164CB4241BB654EB70BCD46`.
+The live route-veto body is unchanged and remains after combat acquisition;
+it is a named function so this engine fixture can exercise that exact path.

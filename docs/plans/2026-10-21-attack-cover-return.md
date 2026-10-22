@@ -28,6 +28,7 @@ Details and reproduction: [manoeuvre guide](../attack-cover-return.md).
 The acknowledged-suite follow-up passed 68 more controlled trials: full
 15-trial suites on both maps at played cadence and measured 10 Hz, plus
 unlimited-ammo encounters. The driver and independent projectile observer
-close #515, #516 and #529. Remaining work is human encounter frequency and
-readability (#517), and the dedicated GOAP failed-life veto regression
-(#530). See the manoeuvre guide for the separate checkpoint identities.
+close #515, #516 and #529. The dedicated GOAP failed-life veto regression (#530) also passes on both
+maps and rejects ordering and typed-hop mutations. Remaining work is human
+encounter frequency and readability (#517). See the manoeuvre guide for
+the separate checkpoint identities.

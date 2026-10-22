@@ -47,6 +47,13 @@ class TestTacticFixture(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "case sequence mismatch"):
                 require_sequence([{"case": str(c)} for c in cases], [0, 0, 0, 1, 2])
 
+    def test_life_veto_result_belongs_to_its_own_trial(self):
+        tape = "TACFIX begin dm4 case 14\nTACFIX lifeaccepted 1\n" + sample(0.1) + "TACFIX end\n"
+        self.assertTrue(check(tape)[0]["lifeveto_checks"])
+        bad = tape.replace("lifeaccepted 1", "lifeaccepted 0")
+        with self.assertRaisesRegex(AssertionError, "failed-life GOAP"):
+            check(tape + bad)
+
     def test_actual_return_damage(self):
         self.assertTrue(check(stationary(return_hit=True))[0]["return_damage"])
 

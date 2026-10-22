@@ -124,12 +124,12 @@ pub fn validate(map: &str, name: &str, cases: &[u32], step: f32, dm: u32) -> Res
         || !["dm4", "dm2"].contains(&map)
         || cases.is_empty()
         || cases.len() > 25
-        || cases.iter().any(|c| *c > 13)
+        || cases.iter().any(|c| *c > 14)
         || !step.is_finite()
         || !(0.01..=0.1).contains(&step)
         || ![1, 4].contains(&dm)
     {
-        return Err("tactic suite needs dm4/dm2, 1..25 cases in 0..13, step 0.01..0.1 and deathmatch 1 or 4".into());
+        return Err("tactic suite needs dm4/dm2, 1..25 cases in 0..14, step 0.01..0.1 and deathmatch 1 or 4".into());
     }
     Ok(())
 }
