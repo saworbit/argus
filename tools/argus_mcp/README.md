@@ -58,7 +58,9 @@ stage and swaps it into place. Do not commit `target*/` or `install/`.
 `argus-mcp tactic-suite <dm4|dm2> <new-run-name>` compiles and runs the full
 15-trial developer suite in its own match. Add `--no-compile` to reuse the
 same build, `--step 0.1` for the slow arm, `--deathmatch 4` for unlimited ammo,
-or `--cases 0,0,0,10` for a bounded subset. Requested case/ID writes must be
+or `--cases 0,0,0,10` for a bounded subset. Add `--record` to save a
+protocol-15 demo from the fixture opponent eye (scratch4 517). The camera
+and view entity are restored before the cleanup acknowledgement. Requested case/ID writes must be
 acknowledged before the client impulse. Trials wait for matching begin/end
 and restored-state acknowledgements, with a 15-second deadline. Case 9 also
 checks refused overlap. Errors stop the owned engine and retain its tape.
@@ -67,6 +69,40 @@ the fixture frame counts, not inferred from the step option. Run the
 [acceptance checker](../../tools/check_tactic_fixture.py) on the tape;
 acknowledgement success alone is not tactical acceptance. See the
 [manoeuvre guide](../../docs/attack-cover-return.md#engine-acceptance).
+
+## Rendered POV evidence
+
+`argus-mcp record-pov <new-demo-stem> [roster-slot=1] [seconds=30]` joins
+an existing lab match on localhost:26000. It records the original complete
+server messages before decoding, including signon, through the stock camera
+impulses. Each mode and target selection waits for a client-visible reply.
+The slot is the roster slot 0..3, not a network entity number. Selection
+requires the actual protocol view entity to carry that bot skin; matching
+positions alone would still render the bot model through the camera. Death can
+make the stock spectator camera select a different living target.
+
+`argus-mcp capture-demo <demo-stem> [start-sec=1] [frames=1] [interval-sec=0.2]`
+replays that recorded POV in the configured rendering engine. The matching
+MCP call is `bot_capture_pov_frame` with `demo`, `start_sec`, `frame_count`
+and `interval_sec`. Without `demo`, it records the live `bot_client_id`
+roster slot (default 1) for eight seconds first. Debug overlays and changing
+the viewpoint of an existing demo are refused explicitly.
+
+The renderer writes fresh 640x480 PNGs and a manifest under ignored
+`backups/render_capture/`. It stages local assets in a fresh game directory;
+user configs and session logs are untouched. Licensed assets stay local.
+The child has a 45-second deadline and is killed and reaped on timeout.
+There are at most 12 images, 0.1..5 seconds apart, starting 0.5..120 seconds
+into a complete protocol-15 demo and ending before its final message.
+The MCP result includes image blocks. A missing acknowledgement or incomplete
+PNG fails the call instead of returning a substitute plot.
+
+Playback uses a fixed 0.05-second frame step and gamma 0.7. This does not
+resimulate the match. Manifest times describe scheduled playback steps,
+not exact event times. Use the source tape for actual physics cadence,
+shots and damage. The recorder's PVS and field of view still limit what
+can be seen. The fixture observer does not reproduce a human player's
+input or hit feedback, and rendered evidence cannot establish enjoyment.
 
 ## Human deploy wizard
 
@@ -841,7 +877,7 @@ with "Prefer …" so a client ranks the native call first.
 | `bsp_inspect_entities` | Raw lump-0 dump + causality, `filter_classname`. | `see what=map` / `cartograph` |
 | `bot_simulate_match` | Batch report: kills, deaths, pickups, nav_errors. Default 300 s. `time_dilation` recorded, not applied. | `experiment` |
 | `rcon_exec` | Whitelisted stdin line plus the following log tail. | `tune` |
-| `bot_capture_pov_frame` | Parked POV hook; substitute PNG paths. | `analyze_match` |
+| `bot_capture_pov_frame` | Real engine PNGs from a recorded POV or a live bot recorder. | `analyze_match` for telemetry plots |
 
 ## Can an LLM see into Quake and change things live?
 

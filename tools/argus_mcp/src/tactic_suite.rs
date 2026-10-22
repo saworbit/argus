@@ -73,6 +73,8 @@ impl Ack {
 
 #[derive(Serialize)]
 pub struct SuiteReport {
+    pub demo_path: Option<String>,
+    pub observer_restored: bool,
     pub map: String,
     pub log_path: String,
     pub cases: Vec<u32>,
@@ -142,6 +144,20 @@ pub async fn run(
     step: f32,
     dm: u32,
 ) -> Result<SuiteReport, String> {
+    run_recorded(cfg, map, name, cases, step, dm, false).await
+}
+
+// Retain the existing run signature for callers; recording adds one opt-in.
+#[allow(clippy::too_many_arguments)]
+pub async fn run_recorded(
+    cfg: &Config,
+    map: &str,
+    name: &str,
+    cases: &[u32],
+    step: f32,
+    dm: u32,
+    record: bool,
+) -> Result<SuiteReport, String> {
     validate(map, name, cases, step, dm)?;
     // Pin the inspected source and installed binary independently.
     let source_md5 = source_digest(&cfg.src)?;
@@ -163,6 +179,11 @@ pub async fn run(
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
         let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+        if record {
+            let demos = cfg.runs.join("demos");
+            std::fs::create_dir_all(&demos).map_err(|e| e.to_string())?;
+            client.start_recording(&demos.join(format!("{name}.dem")))?;
+        }
         let signon_deadline = Instant::now() + Duration::from_secs(8);
         while client.world.signon < 3 && Instant::now() < signon_deadline {
             client.pump(Duration::from_millis(50));
@@ -170,6 +191,7 @@ pub async fn run(
         if client.world.signon < 3 {
             return Err("fixture client did not sign on".into());
         }
+        let own_entity = client.world.my_ent;
         let mut overlap_refused = false;
         for (index, &case) in cases.iter().enumerate() {
             let id = index as u32 + 1;
@@ -178,7 +200,7 @@ pub async fn run(
             let mut ack = Ack::default();
             let mut overlap_sent = false;
             let ready = format!("TACFIX ready {id} case {case}");
-            ctrl.command(&format!("scratch2 {case}; scratch3 {id}; echo {ready}"))
+            ctrl.command(&format!("scratch2 {case}; scratch3 {id}; scratch4 {}; echo {ready}", if record {517} else {0}))
                 .await?;
             // The console echo proves the case/id writes were processed. A
             // completed injection alone is not a server acknowledgement.
@@ -238,8 +260,16 @@ pub async fn run(
             } else if ack.busy != 0 {
                 return Err("unrequested overlapping trial".into());
             }
+            if record {
+                let restore_deadline = Instant::now() + Duration::from_secs(2);
+                while client.world.my_ent != own_entity && Instant::now() < restore_deadline {
+                    client.pump(Duration::from_millis(50));
+                }
+                if client.world.my_ent != own_entity { return Err("fixture observer view entity was not restored".into()); }
+            }
             eprintln!("{map}: trial {id} case {case} acknowledged and cleaned up");
         }
+        let demo_path = client.finish_recording()?;
         client.disconnect();
         if binary_md5 != digest(&cfg.basedir.join(&cfg.game).join("progs.dat"))?
             || source_md5 != source_digest(&cfg.src)?
@@ -247,15 +277,17 @@ pub async fn run(
         {
             return Err("source, binary or navigation changed during suite".into());
         }
-        Ok(overlap_refused)
+        Ok((overlap_refused, demo_path))
     }
     .await;
     // This driver owns its match. A bad/missing acknowledgement stops the entire
     // isolated engine, including frozen bots and temporary pickup changes.
     let stopped = ctrl.stop(Duration::from_secs(3)).await;
     let status = stopped.map_err(|e| format!("fixture engine cleanup failed: {e}"))?;
-    let overlap_refused = result?;
+    let (overlap_refused, demo_path) = result?;
     Ok(SuiteReport {
+        demo_path,
+        observer_restored: record,
         map: map.into(),
         log_path: status.log_path.ok_or("no harvested fixture tape")?,
         cases: cases.to_vec(),

@@ -744,6 +744,7 @@ float CAM_MODE_ORBIT     = 5;
 .float  cam_mode;               // 0..5
 .entity cam_target;             // Primary bot target
 .entity cam_target2;            // Secondary bot target (duel mode)
+.entity cam_viewentity;         // Last protocol-15 view entity sent to this client
 .vector cam_pos;                // Filtered camera position
 .vector cam_vel;                // Inertial camera flight velocity
 .vector cam_angles;             // Filtered camera angles
@@ -768,6 +769,7 @@ float CAM_MODE_ORBIT     = 5;
 // standing wherever the camera stopped. These hold the client's own
 // state for the length of the flight.
 .float  cam_sv_health;
+.float  cam_sv_modelindex;
 .float  cam_sv_armorvalue;
 .float  cam_sv_armortype;
 .float  cam_sv_currentammo;
@@ -785,6 +787,8 @@ float CAM_MODE_ORBIT     = 5;
 void(vector org, entity death_owner) spawn_tdeath;
 
 void() ArgusCam_Frame;
+void(entity client) ArgusCam_Init;
+void(entity client, entity viewent) ArgusCam_SetViewEntity;
 void() ArgusCam_Toggle;
 void() ArgusCam_CycleMode;
 void() ArgusCam_CycleTarget;

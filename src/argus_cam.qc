@@ -56,9 +56,22 @@ void(entity client, entity bot) ArgusCam_SyncViewmodel =
 
 // ---------------------------------------------------------------- lifecycle
 
+void(entity client, entity viewent) ArgusCam_SetViewEntity =
+{
+    local entity saved_msg;
+    if (viewent == world) viewent = client;
+    if (client.cam_viewentity == viewent) return;
+    client.cam_viewentity = viewent;
+    saved_msg = msg_entity; msg_entity = client;
+    WriteByte (MSG_ONE, 5); // stock svc_setview, protocol 15
+    WriteEntity (MSG_ONE, viewent);
+    msg_entity = saved_msg;
+};
+
 void(entity client) ArgusCam_Init =
 {
     local entity b;
+    ArgusCam_SetViewEntity (client, client);
 
     // snapshot the client's own state before the POV sync starts
     // overwriting it. Guarded so a second Init (CycleMode calls it when
@@ -67,6 +80,7 @@ void(entity client) ArgusCam_Init =
     if (!client.cam_active)
     {
         client.cam_sv_health = client.health;
+        client.cam_sv_modelindex = client.modelindex;
         client.cam_sv_armorvalue = client.armorvalue;
         client.cam_sv_armortype = client.armortype;
         client.cam_sv_currentammo = client.currentammo;
@@ -81,6 +95,9 @@ void(entity client) ArgusCam_Init =
     }
 
     client.cam_active = 1;
+    // A POV view entity hides the bot, so hide the co-located observer too.
+    // Change only the render index; preserve the model string and hull.
+    client.modelindex = 0;
     client.cam_mode = CAM_MODE_DIRECTOR;
     client.cam_dist = 135;
     client.cam_smooth_dist = 135;
@@ -118,6 +135,7 @@ void() ArgusCam_Toggle =
 {
     if (self.cam_active)
     {
+        ArgusCam_SetViewEntity (self, self);
         self.cam_active = 0;
 
         // give the human back what the POV sync borrowed. Without this
@@ -125,6 +143,7 @@ void() ArgusCam_Toggle =
         // and health, and in coop the borrowed inventory rode into the
         // next map through SetChangeParms.
         self.health = self.cam_sv_health;
+        self.modelindex = self.cam_sv_modelindex;
         self.armorvalue = self.cam_sv_armorvalue;
         self.armortype = self.cam_sv_armortype;
         self.currentammo = self.cam_sv_currentammo;
@@ -179,7 +198,10 @@ void() ArgusCam_CycleMode =
 
     // Reset viewmodel when leaving POV mode
     if (self.cam_mode != CAM_MODE_POV)
+    {
         self.weaponmodel = "";
+        ArgusCam_SetViewEntity (self, self);
+    }
 
     if (self.cam_mode == CAM_MODE_POV)
         sprint (self, PRINT_HIGH, "ArgusCam Mode: 1st-Person Bot POV\n");
@@ -251,6 +273,9 @@ void() ArgusCam_ToggleHUD =
 
 void(entity client, entity bot) ArgusCam_POV =
 {
+    // Sharing the bot's origin alone still draws its model through the eye.
+    // The renderer hides the protocol view entity's own world model.
+    ArgusCam_SetViewEntity (client, bot);
     client.movetype = MOVETYPE_NONE;
     client.solid = SOLID_NOT;
     setorigin (client, bot.origin);
@@ -746,6 +771,8 @@ void() ArgusCam_Frame =
     {
         if (self.cam_target != world)
             ArgusCam_POV (self, self.cam_target);
+        else
+            ArgusCam_SetViewEntity (self, self);
     }
     else if (self.cam_mode == CAM_MODE_CHASE)
     {

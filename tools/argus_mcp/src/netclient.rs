@@ -191,7 +191,59 @@ pub struct ClientWorld {
     pub unknown_svc: Vec<u8>,
 }
 
+struct DemoRecording {
+    path: std::path::PathBuf,
+    data: Vec<u8>,
+    overflow: bool,
+}
+
+impl DemoRecording {
+    fn message(&mut self, data: &[u8], angles: [f32; 3]) {
+        if self.data.len() + data.len() + 16 > 32 * 1024 * 1024 {
+            self.overflow = true;
+            return;
+        }
+        self.data
+            .extend_from_slice(&(data.len() as i32).to_le_bytes());
+        for angle in angles {
+            self.data.extend_from_slice(&angle.to_le_bytes());
+        }
+        self.data.extend_from_slice(data);
+    }
+}
+
+#[cfg(test)]
+mod recording_tests {
+    use super::*;
+    #[test]
+    fn demo_framing_preserves_message_and_angles_without_network_headers() {
+        let mut r = DemoRecording {
+            path: "unused".into(),
+            data: b"-1\n".to_vec(),
+            overflow: false,
+        };
+        r.message(&[SVC_TIME, 1, 2, 3, 4], [10.0, 20.0, 0.0]);
+        assert_eq!(&r.data[..3], b"-1\n");
+        assert_eq!(i32::from_le_bytes(r.data[3..7].try_into().unwrap()), 5);
+        assert_eq!(f32::from_le_bytes(r.data[7..11].try_into().unwrap()), 10.0);
+        assert_eq!(f32::from_le_bytes(r.data[11..15].try_into().unwrap()), 20.0);
+        assert_eq!(&r.data[19..], &[SVC_TIME, 1, 2, 3, 4]);
+    }
+    #[test]
+    fn recording_overflow_is_an_error_not_a_truncated_demo() {
+        let mut r = DemoRecording {
+            path: "unused".into(),
+            data: vec![0; 32 * 1024 * 1024],
+            overflow: false,
+        };
+        r.message(&[SVC_DISCONNECT], [0.0; 3]);
+        assert!(r.overflow);
+        assert_eq!(r.data.len(), 32 * 1024 * 1024);
+    }
+}
+
 pub struct NetClient {
+    recording: Option<DemoRecording>,
     sock: UdpSocket,
     rx_rel_seq: u32,
     rx_unrel_seq: u32,
@@ -212,6 +264,54 @@ pub struct NetClient {
 }
 
 impl NetClient {
+    /// Start before signon so the demo includes models, baselines and roster.
+    /// Store only complete, deduplicated server messages, not UDP headers.
+    pub fn start_recording(&mut self, path: &std::path::Path) -> Result<(), String> {
+        if self.world.signon != 0 || self.recording.is_some() || path.exists() {
+            return Err("recording requires a fresh client and a new demo path".into());
+        }
+        self.recording = Some(DemoRecording {
+            path: path.into(),
+            data: b"-1\n".to_vec(),
+            overflow: false,
+        });
+        Ok(())
+    }
+
+    pub fn finish_recording(&mut self) -> Result<Option<String>, String> {
+        use std::io::Write;
+        let Some(mut recording) = self.recording.take() else {
+            return Ok(None);
+        };
+        if recording.overflow {
+            return Err("demo exceeded the 32 MiB recording cap".into());
+        }
+        recording.message(&[SVC_DISCONNECT], [self.pitch, self.yaw, 0.0]);
+        if recording.overflow {
+            return Err("demo exceeded the 32 MiB recording cap".into());
+        }
+        let part = recording.path.with_extension("dem.part");
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&part)
+            .map_err(|e| e.to_string())?;
+        let result = file
+            .write_all(&recording.data)
+            .and_then(|_| file.sync_all());
+        drop(file);
+        if let Err(e) = result {
+            let _ = std::fs::remove_file(&part);
+            return Err(format!("demo write failed: {e}"));
+        }
+        // Same-directory link publishes complete bytes without replacing a
+        // competing writer's file, on Windows and Unix alike.
+        let result = std::fs::hard_link(&part, &recording.path);
+        let cleanup = std::fs::remove_file(&part);
+        result.map_err(|e| format!("demo publish failed: {e}"))?;
+        cleanup.map_err(|e| format!("demo temporary cleanup failed: {e}"))?;
+        Ok(Some(recording.path.display().to_string()))
+    }
     /// CCREQ_CONNECT handshake, then hand back a socket locked to the
     /// per-client game port the server assigns.
     pub fn connect(host: &str, port: u16, name: &str) -> Result<NetClient, String> {
@@ -316,6 +416,7 @@ impl NetClient {
         sock.set_read_timeout(Some(Duration::from_millis(30)))
             .map_err(|e| format!("timeout: {e}"))?;
         Ok(NetClient {
+            recording: None,
             sock,
             rx_rel_seq: 0,
             rx_unrel_seq: 0,
@@ -472,6 +573,9 @@ impl NetClient {
     }
 
     fn process_message(&mut self, data: Vec<u8>) {
+        if let Some(recording) = self.recording.as_mut() {
+            recording.message(&data, [self.pitch, self.yaw, 0.0]);
+        }
         let mut r = Rd::new(&data);
         macro_rules! need {
             ($e:expr) => {

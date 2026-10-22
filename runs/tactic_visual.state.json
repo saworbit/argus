@@ -1,0 +1,658 @@
+{
+  "base_commit": "ee90538b779c80ac08191b8e5a36db136a96c9b7",
+  "engine_md5": "e2b23bcae6de565d01012ebe790bbe69",
+  "limits": "Automated recordings only. Fixed-step playback does not resimulate physics. Frame schedules are not exact event timestamps. Fixtures use a damageable dummy and a spectator; player hit feedback and human enjoyment are not reproduced. Ordinary samples contain no authored manoeuvre. Full original demos remain local under ignored runs/demos.",
+  "source_files": {
+    "src/ai.qc": "f4c7fee5b8d34af7650b998b1508174c",
+    "src/argus.qc": "1fbe7bd731e45da00c160c84cf1068e2",
+    "src/argus_cam.qc": "d85e82f25a939748585dfea7b8be8c25",
+    "src/argus_nav.qc": "650cb572d81a2a00aab8a90451dfa10c",
+    "src/argus_nav_dispatch.qc": "aed6a7e9539240a9be03d9830860f8f4",
+    "src/argus_nav_dm2.qc": "1dccb7948b616a83cc856d4804b2d8b3",
+    "src/argus_nav_dm3.qc": "0a42b152cac662ed063ebbed750ed372",
+    "src/argus_nav_dm4.qc": "735fc5b5af97b7193919d567a3820d2c",
+    "src/argus_nav_dm6.qc": "d6d3c3f029021358582dc69e95361cc1",
+    "src/argus_nav_e1m1.qc": "99b36e3000499bcafb454497cfc1539d",
+    "src/argus_nav_e1m2.qc": "5e7274c1f6fc797cd146d9614a661375",
+    "src/argus_nav_e1m5.qc": "364650771fcdba376c5b38dfcb555d5b",
+    "src/argus_nav_e1m6.qc": "8fadf76caffd3fc18f7355acf97e44cf",
+    "src/argus_nav_e1m7.qc": "262490603f79f8915598510764b575d2",
+    "src/argus_nav_e1m8.qc": "342124127e1f977258e453cd29c20823",
+    "src/argus_nav_lqdm2.qc": "179cdef069900a5f49b6838b48051d6e",
+    "src/argus_tactic_fixture.qc": "8fae8bb96ed0a14ad4f57f8f5e53fd16",
+    "src/argus_tactics.qc": "3249ab47abc18f339ef6279159a872f6",
+    "src/buttons.qc": "294a54fa09634b3cf8cca15e59c702ea",
+    "src/client.qc": "5af3cdceedf81ee4b2cc3fb2219854e8",
+    "src/combat.qc": "3a6dadca0f77ffc6dc1416dc12f2f32c",
+    "src/deathmatch_settings.qc": "c7b49a71d6a0f872f7d10f96b151805e",
+    "src/defs.qc": "11d5dd06c819091b3ed3923d4bd602cc",
+    "src/doors.qc": "bc394c0a1ec1f8e375f8e4fe70b31158",
+    "src/fight.qc": "37c643e0c9877456662f26e134e619af",
+    "src/items.qc": "82367d173fc449d4086fc50ab6aae7ce",
+    "src/localized_text.qc": "5fea4b8a84dcb7154646768773c8bd7f",
+    "src/lq1/cutscene_camera.qc": "b44018d5666dc98aba65879c8af63af1",
+    "src/misc.qc": "e1e75454c6ac0aa8707621f0dd9e653e",
+    "src/monsters/chthon.qc": "930090fa6113b9ab770c7f0d5eab39ea",
+    "src/monsters/enforcer.qc": "4e65c485fa1cccb437f40ea1da9d71c8",
+    "src/monsters/fiend.qc": "7dee4e091b16c0ba3f91254f5903496a",
+    "src/monsters/grunt.qc": "c954b452af4506c79b504d31264567b4",
+    "src/monsters/hellknight.qc": "25157fede968220c987844d823d062ef",
+    "src/monsters/knight.qc": "79ca7eab470f05b87ec0f348f66198b7",
+    "src/monsters/ogre.qc": "e8fd91b14a5d0e50689114402a1a8f6c",
+    "src/monsters/rotfish.qc": "39aeb190f1d026b9083b134ed0d9f220",
+    "src/monsters/rottweiler.qc": "8c6bec2cfc942d6279534ae08f8f30a3",
+    "src/monsters/scrag.qc": "07ab1147424bd114446de285c2d0a30c",
+    "src/monsters/shambler.qc": "cabfc8fe150264a991642d38243b8db2",
+    "src/monsters/shub.qc": "3e8108f23286993c82c909ee3e487c84",
+    "src/monsters/spawn.qc": "4ff1f5dfc6cd96246c01946384773d2a",
+    "src/monsters/vore.qc": "f0d2dbf6ebe0014034620b9337c31578",
+    "src/monsters/zombie.qc": "56a4b9a3030519cfcd04589ff91aebac",
+    "src/monsters.qc": "667d018a31b9a9c2d9f8531aa30fb77d",
+    "src/plats.qc": "f0da9c6309494593af36751cedf1b2eb",
+    "src/player.qc": "1a27eab79fd4245b5eef70ef11c7751a",
+    "src/progs.src": "d48f79812154b87dc7060c7b7d442340",
+    "src/server.qc": "00ad1fe7a8cfa25d8c9d319852467548",
+    "src/spectate.qc": "e2fd2bfd5d35531ab710ed06639b7cd6",
+    "src/subs.qc": "8070b58aaed72e1f8ca3a71438492424",
+    "src/triggers.qc": "2208218875226163de65804fbb054c28",
+    "src/weapons.qc": "36266c7dde7424c40aad555fc0b93ce9",
+    "src/world.qc": "7545e09ece7227a0071fc240f686d435"
+  },
+  "source_md5": "80697e88ea993916b8254fbb2810d2cf",
+  "binary_md5": "a3f7aa9428846de7f7b327506f5f5d3d",
+  "fixtures": {
+    "dm4": {
+      "report": {
+        "demo_path": "C:\\argus\\runs\\demos\\visual_shipped_dm4.dem",
+        "observer_restored": true,
+        "map": "dm4",
+        "log_path": "C:\\argus\\runs\\visual_shipped_dm4.log",
+        "cases": [
+          0
+        ],
+        "step": 0.0139,
+        "deathmatch": 1,
+        "overlap_refused": false,
+        "source_md5": "80697e88ea993916b8254fbb2810d2cf",
+        "binary_md5": "a3f7aa9428846de7f7b327506f5f5d3d",
+        "nav_md5": "624a60f0e062f8d5dda4390475077f9a"
+      },
+      "log_md5": "2025dd337c56081cc13f93145a4d2c6d",
+      "results": [
+        {
+          "map": "dm4",
+          "case": "0",
+          "concealed_at": 0.5,
+          "return_at": 1.1,
+          "first_angle": 40.9,
+          "return_damage": true,
+          "frames": 398,
+          "seconds": 6.0,
+          "fps": 66.3
+        }
+      ],
+      "capture": {
+        "demo": "visual_shipped_dm4",
+        "demo_md5": "5a637e8cbb5bac1e88104b8ac57d1474",
+        "engine_md5": "e2b23bcae6de565d01012ebe790bbe69",
+        "directory": "C:\\argus\\backups\\render_capture\\1792668442144796600-20804",
+        "frames": [
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0000.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0001.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0002.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0003.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0004.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0005.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0006.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0007.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0008.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0009.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0010.png",
+          "C:\\argus\\backups\\render_capture\\1792668442144796600-20804\\capture\\spasm0011.png"
+        ],
+        "scheduled_seconds": [
+          0.5,
+          0.95,
+          1.4,
+          1.85,
+          2.3,
+          2.75,
+          3.2,
+          3.6500000000000004,
+          4.1,
+          4.55,
+          5.0,
+          5.45
+        ],
+        "note": "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates."
+      },
+      "curated_frames": [
+        {
+          "file": "docs/media/tactic-dm4-opening.png",
+          "md5": "60a631187cfda92a487cab573e0fe697",
+          "source_frame": 0,
+          "scheduled_sec": 0.5
+        },
+        {
+          "file": "docs/media/tactic-dm4-covered.png",
+          "md5": "30e6083dc575180fe2279f367de5e097",
+          "source_frame": 2,
+          "scheduled_sec": 1.4
+        },
+        {
+          "file": "docs/media/tactic-dm4-returned.png",
+          "md5": "3cc74637e079429f706f0f0705559b69",
+          "source_frame": 3,
+          "scheduled_sec": 1.85
+        }
+      ]
+    },
+    "dm2": {
+      "report": {
+        "demo_path": "C:\\argus\\runs\\demos\\visual_shipped_dm2.dem",
+        "observer_restored": true,
+        "map": "dm2",
+        "log_path": "C:\\argus\\runs\\visual_shipped_dm2.log",
+        "cases": [
+          0
+        ],
+        "step": 0.0139,
+        "deathmatch": 1,
+        "overlap_refused": false,
+        "source_md5": "80697e88ea993916b8254fbb2810d2cf",
+        "binary_md5": "a3f7aa9428846de7f7b327506f5f5d3d",
+        "nav_md5": "283a19071dbf3577c593b8f83fa159da"
+      },
+      "log_md5": "44230284d19749a0f35264dd133b7e90",
+      "results": [
+        {
+          "map": "dm2",
+          "case": "0",
+          "concealed_at": 1.3,
+          "return_at": 1.7,
+          "first_angle": 49.8,
+          "return_damage": true,
+          "frames": 398,
+          "seconds": 6.0,
+          "fps": 66.3
+        }
+      ],
+      "capture": {
+        "demo": "visual_shipped_dm2",
+        "demo_md5": "68f73e2014fe1cee7ae1544b9c6b5cc5",
+        "engine_md5": "e2b23bcae6de565d01012ebe790bbe69",
+        "directory": "C:\\argus\\backups\\render_capture\\1792668445582040500-55940",
+        "frames": [
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0000.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0001.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0002.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0003.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0004.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0005.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0006.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0007.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0008.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0009.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0010.png",
+          "C:\\argus\\backups\\render_capture\\1792668445582040500-55940\\capture\\spasm0011.png"
+        ],
+        "scheduled_seconds": [
+          0.5,
+          0.95,
+          1.4,
+          1.85,
+          2.3,
+          2.75,
+          3.2,
+          3.6500000000000004,
+          4.1,
+          4.55,
+          5.0,
+          5.45
+        ],
+        "note": "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates."
+      },
+      "curated_frames": [
+        {
+          "file": "docs/media/tactic-dm2-opening.png",
+          "md5": "4ba0b6230aa12e14fe36fffe12ae5631",
+          "source_frame": 0,
+          "scheduled_sec": 0.5
+        },
+        {
+          "file": "docs/media/tactic-dm2-covered.png",
+          "md5": "78e53adf98200424f76c66497434642b",
+          "source_frame": 3,
+          "scheduled_sec": 1.85
+        },
+        {
+          "file": "docs/media/tactic-dm2-returned.png",
+          "md5": "091ab3fbb47cfd2dd6aebf96916115cf",
+          "source_frame": 4,
+          "scheduled_sec": 2.3
+        }
+      ]
+    }
+  },
+  "ordinary": {
+    "dm4": {
+      "log": "runs/visual_ordinary_dm4_c.log",
+      "log_md5": "aebf75a3f1431d7a2abb5336bad223f5",
+      "source_md5": "8ddbb22e7f6b1d7fad684a7b8eb1ff55",
+      "binary_md5": "2d4179632e91cb6498c507b14c31e7d7",
+      "requested_match_wall_sec": 45,
+      "requested_record_wall_sec": 30,
+      "review": {
+        "map": "dm4",
+        "bots": {
+          "Romero": {
+            "evaluation_ticks": {
+              "evaluated": 52,
+              "visible": 42,
+              "loadout": 42,
+              "no_visible_target": 10
+            },
+            "phases": {},
+            "return_hits": null
+          }
+        },
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 12.0,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 12.3,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 19.8,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 26.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 38.6,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      },
+      "capture": {
+        "demo": "ordinary_dm4_c",
+        "demo_md5": "3750af78a7cb375b41a5b44197002fb9",
+        "engine_md5": "e2b23bcae6de565d01012ebe790bbe69",
+        "directory": "C:\\argus\\backups\\render_capture\\1792667528194271900-6540",
+        "frames": [
+          "C:\\argus\\backups\\render_capture\\1792667528194271900-6540\\capture\\spasm0000.png",
+          "C:\\argus\\backups\\render_capture\\1792667528194271900-6540\\capture\\spasm0001.png"
+        ],
+        "scheduled_seconds": [
+          10.0,
+          11.0
+        ],
+        "note": "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates."
+      }
+    },
+    "dm2": {
+      "log": "runs/visual_ordinary_dm2_a.log",
+      "log_md5": "a8e0c13404228740c1a94251e2755a0e",
+      "source_md5": "8ddbb22e7f6b1d7fad684a7b8eb1ff55",
+      "binary_md5": "2d4179632e91cb6498c507b14c31e7d7",
+      "requested_match_wall_sec": 45,
+      "requested_record_wall_sec": 30,
+      "review": {
+        "map": "dm2",
+        "bots": {
+          "Romero": {
+            "evaluation_ticks": {
+              "evaluated": 42,
+              "visible": 31,
+              "loadout": 31,
+              "no_visible_target": 11
+            },
+            "phases": {},
+            "return_hits": null
+          }
+        },
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 6.5,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 18.5,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 21.0,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 28.7,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      },
+      "capture": {
+        "demo": "ordinary_dm2_a",
+        "demo_md5": "be5779e2d3815be27e46aa9a5c039d2c",
+        "engine_md5": "e2b23bcae6de565d01012ebe790bbe69",
+        "directory": "C:\\argus\\backups\\render_capture\\1792667533396752900-71776",
+        "frames": [
+          "C:\\argus\\backups\\render_capture\\1792667533396752900-71776\\capture\\spasm0000.png",
+          "C:\\argus\\backups\\render_capture\\1792667533396752900-71776\\capture\\spasm0001.png"
+        ],
+        "scheduled_seconds": [
+          10.0,
+          11.0
+        ],
+        "note": "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates."
+      }
+    }
+  },
+  "ordinary_clean": {
+    "dm4": {
+      "log": "runs/pov_clean_ordinary_dm4.log",
+      "log_md5": "218eaa716dae526d3b60a5b58425585b",
+      "requested_match_wall_sec": 18,
+      "requested_record_wall_sec": 8,
+      "review": {
+        "map": "dm4",
+        "bots": {
+          "Romero": {
+            "evaluation_ticks": {
+              "evaluated": 18,
+              "visible": 13,
+              "loadout": 13,
+              "no_visible_target": 5
+            },
+            "phases": {},
+            "return_hits": null
+          }
+        },
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 13.9,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      },
+      "capture": {
+        "demo": "pov_clean_dm4",
+        "demo_md5": "f7745667d9bd34e94e74a4a72cf459dc",
+        "engine_md5": "e2b23bcae6de565d01012ebe790bbe69",
+        "directory": "C:\\argus\\backups\\render_capture\\1792668522411464800-29608",
+        "frames": [
+          "C:\\argus\\backups\\render_capture\\1792668522411464800-29608\\capture\\spasm0000.png",
+          "C:\\argus\\backups\\render_capture\\1792668522411464800-29608\\capture\\spasm0001.png",
+          "C:\\argus\\backups\\render_capture\\1792668522411464800-29608\\capture\\spasm0002.png"
+        ],
+        "scheduled_seconds": [
+          2.0,
+          2.5,
+          3.0
+        ],
+        "note": "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates."
+      }
+    },
+    "dm2": {
+      "log": "runs/pov_clean_ordinary_dm2.log",
+      "log_md5": "2e6c32d90137955e5d3aef408d69a39d",
+      "requested_match_wall_sec": 18,
+      "requested_record_wall_sec": 8,
+      "review": {
+        "map": "dm2",
+        "bots": {},
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      },
+      "capture": {
+        "demo": "pov_clean_dm2",
+        "demo_md5": "08788466f8c26f5a76aa951fac54c3c3",
+        "engine_md5": "e2b23bcae6de565d01012ebe790bbe69",
+        "directory": "C:\\argus\\backups\\render_capture\\1792668616621153100-73088",
+        "frames": [
+          "C:\\argus\\backups\\render_capture\\1792668616621153100-73088\\capture\\spasm0000.png",
+          "C:\\argus\\backups\\render_capture\\1792668616621153100-73088\\capture\\spasm0001.png",
+          "C:\\argus\\backups\\render_capture\\1792668616621153100-73088\\capture\\spasm0002.png"
+        ],
+        "scheduled_seconds": [
+          2.0,
+          2.5,
+          3.0
+        ],
+        "note": "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates."
+      }
+    }
+  },
+  "camera_frames": {
+    "before": {
+      "file": "docs/media/tactic-pov-before.png",
+      "md5": "58ecdaef5a37a6fb58b9e52879492775"
+    },
+    "after": {
+      "file": "docs/media/tactic-pov-after.png",
+      "md5": "88ecb9c279d0fe9f5d59202afa5b8fe3"
+    }
+  },
+  "camera_regression": {
+    "test": "render_capture::tests::bot_pov_viewentity_roundtrip_when_requested",
+    "original_camera": "rejected: observer remained the POV view entity",
+    "view_entity_only_fix": "rejected: observer body was still visible",
+    "complete_fix": "passed: bot view entity, hidden observer model, chase restoration and direct POV-exit model restoration",
+    "negative_control_binary_md5": [
+      "b1d074e7b06bbc45979c5e42f1e0ce02",
+      "d22df555cf4ef36da5c3158c9d2f3bb2"
+    ]
+  },
+  "ordinary_note": "The two 45s ordinary matches predate the camera repair; their event counts are valid but their POVs can contain body clipping. The final 18s matches verify clear rendered POVs. All observers are automatic clients, not human play.",
+  "log_normalization": "LF line endings and trailing whitespace removed before first commit; event fields and order unchanged."
+}
