@@ -96,6 +96,7 @@ pub fn record_bot(cfg: &Config, name: &str, slot: u8, seconds: f32) -> Result<St
     result
 }
 
+/// Rendered PNG paths and input identities; times are scheduled playback steps.
 #[derive(Debug, Serialize)]
 pub struct Capture {
     pub demo: String,
@@ -107,6 +108,7 @@ pub struct Capture {
     pub note: &'static str,
 }
 
+/// Check finite capture bounds and require every frame before the demo's end.
 pub fn validate(start: f64, count: u32, interval: f64, duration: f64) -> Result<(), String> {
     if !start.is_finite()
         || !interval.is_finite()
@@ -220,6 +222,8 @@ fn verify_log(log: &str, count: u32) -> Result<(), String> {
     Ok(())
 }
 
+/// Replay a complete protocol-15 demo in an isolated asset directory.
+/// Return validated PNGs and a manifest, or an error after bounded child cleanup.
 pub async fn capture(
     cfg: &Config,
     demo_name: &str,

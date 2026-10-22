@@ -12,6 +12,11 @@ DIFFICULTY = re.compile(r"^ARGUS difficulty (.+) t\s+([\d.]+) base\s+([\d.-]+) c
 
 
 def review(text):
+    """Return map, tactical checks/phases and applied difficulty from log text.
+
+    Missing entry diagnostics leave opportunity counts unknown; return_hits
+    remains None because ordinary-session shot acknowledgements do not prove hits.
+    """
     tape = parse_tape(text)
     ticks = defaultdict(Counter)
     tiers = []

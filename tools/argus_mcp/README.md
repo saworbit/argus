@@ -76,8 +76,10 @@ acknowledgement success alone is not tactical acceptance. See the
 an existing lab match on localhost:26000. It records the original complete
 server messages before decoding, including signon, through the stock camera
 impulses. Each mode and target selection waits for a client-visible reply.
-The slot is the roster slot 0..3, not a network entity number. Selection
-requires the actual protocol view entity to carry that bot skin; matching
+The slot is the roster slot 0..3, not a network entity number. The duration
+is 2..185 seconds and the demo name must be new. The recording includes
+camera setup before the requested observation period, with a 32 MiB cap.
+Selection requires the actual protocol view entity to carry that bot skin; matching
 positions alone would still render the bot model through the camera. Death can
 make the stock spectator camera select a different living target.
 
@@ -89,13 +91,28 @@ roster slot (default 1) for eight seconds first. Debug overlays and changing
 the viewpoint of an existing demo are refused explicitly.
 
 The renderer writes fresh 640x480 PNGs and a manifest under ignored
-`backups/render_capture/`. It stages local assets in a fresh game directory;
-user configs and session logs are untouched. Licensed assets stay local.
+`backups/render_capture/`. It stages local `id1` PAKs and the configured game's
+loose `maps`, `progs`, `sound` and `gfx` directories in a fresh game directory.
+Game-specific PAKs are currently omitted ([#569](https://github.com/saworbit/argus/issues/569));
+do not treat a fallback stock asset as evidence of the intended mod appearance.
+User configs and session logs are untouched. Licensed assets stay local.
 The child has a 45-second deadline and is killed and reaped on timeout.
 There are at most 12 images, 0.1..5 seconds apart, starting 0.5..120 seconds
 into a complete protocol-15 demo and ending before its final message.
 The MCP result includes image blocks. A missing acknowledgement or incomplete
 PNG fails the call instead of returning a substitute plot.
+
+Capture acknowledgements can appear as console notification text in later
+frames, including at 0.1-second intervals
+([#567](https://github.com/saworbit/argus/issues/567)). Inspect the actual PNGs
+before presenting them as clean visual evidence.
+
+The native output is PNG, with no FFmpeg dependency. Video export is tracked
+in [#568](https://github.com/saworbit/argus/issues/568). For a manually assembled
+clip, keep frames in scheduled-time order and specify the input frame rate:
+0.1-second sampling is 10 fps at normal speed or 5 fps at half speed. Preserve
+the capture manifests and label any playback-speed change. An external encoder
+such as FFmpeg is required only for this separate video step.
 
 Playback uses a fixed 0.05-second frame step and gamma 0.7. This does not
 resimulate the match. Manifest times describe scheduled playback steps,
@@ -1039,7 +1056,7 @@ request**, and the suite holds a bound just above that so adding a
 tool is a decision rather than a drift.
 
 That measurement refused the last part of the issue. Retiring the
-three parked extras (`bot_simulate_match` 619 bytes,
+three then-parked extras (`bot_simulate_match` 619 bytes,
 `bot_capture_pov_frame` 334, `rcon_exec` 253) saves 1,206 bytes, six
 per cent, and breaks the table in `docs/mcp_quake_dev_spec.md` that
 records them as shipped. Meanwhile 581 of those bytes were sitting in
@@ -1047,6 +1064,10 @@ the schema of `corpus`, which was the single most expensive tool in
 the server, written one version earlier to save tokens, and which
 explained each of its views twice. The cheaper saving was in the
 newest code, not the oldest.
+
+This is the historical schema measurement. `bot_capture_pov_frame` now
+performs real rendering; its current contract is under
+[rendered POV evidence](#rendered-pov-evidence).
 
 ## Asking the corpus a question
 
@@ -1384,7 +1405,10 @@ cargo test --manifest-path tools/argus_mcp/Cargo.toml
 ```
 
 The repository pins Rust 1.95 with the `clippy` and `rustfmt` components.
-The fast workflow runs formatting, strict Clippy and Rust library tests.
+The fast workflow runs formatting, strict Clippy and Rust library tests,
+then builds the developer CLI and runs its Python CLI checks with
+`ARGUS_REQUIRE_SOURCE_MCP=1`. The shared Python suites below are also blocking
+steps in that workflow.
 
 Run the shared navigation, registration, mapgate and tape contracts without
 an engine or machine-local maps:
@@ -1395,8 +1419,8 @@ python tools/test_argus_mapgate.py
 python tools/test_argus_tape.py
 ```
 
-These Python suites are not yet wired into the fast workflow (#525).
-`test_tools_cli.py` remains its separate Python CLI check.
+Run the separate CLI suite with `python tools/test_tools_cli.py`; CI requires
+the freshly built source binary rather than accepting a skipped MCP check.
 
 The repository invariant battery also reads committed Git blob metadata for
 LF-designated text. This catches CRLF blobs written through an API even when a
@@ -1427,6 +1451,10 @@ return an explicit error with status and stderr instead of partial history.
 All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
 `ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
 runner has had a separate compatibility pass.
+
+The headless smoke workflow verifies LibreQuake downloads against
+`.github/librequake.sha256` before use or cache save. That file also contributes
+to the asset cache key, so changing a pinned checksum invalidates the cache.
 
 Every advertised MCP tool carries explicit safety hints. Inspection and
 analysis tools are read-only and idempotent; tools that can write, compile,

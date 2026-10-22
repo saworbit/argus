@@ -3,6 +3,7 @@ use crate::{config::Config, match_ctrl::MatchCtrl, netclient::NetClient};
 use serde::Serialize;
 use std::time::{Duration, Instant};
 
+/// Default review order: three nominal repeats followed by refusal/control cases.
 pub const REVIEW_CASES: &[u32] = &[0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 #[derive(Debug, Default)]
@@ -71,6 +72,7 @@ impl Ack {
     }
 }
 
+/// Acknowledged trial metadata and source/binary/nav identities, not acceptance.
 #[derive(Serialize)]
 pub struct SuiteReport {
     pub demo_path: Option<String>,
@@ -121,6 +123,7 @@ fn source_digest(dir: &std::path::Path) -> Result<String, String> {
     Ok(format!("{:x}", hash.finalize()))
 }
 
+/// Validate the map, run name, case count/IDs, frame step and deathmatch mode.
 pub fn validate(map: &str, name: &str, cases: &[u32], step: f32, dm: u32) -> Result<(), String> {
     if !crate::paths::valid_run_name(name)
         || !["dm4", "dm2"].contains(&map)
@@ -136,6 +139,7 @@ pub fn validate(map: &str, name: &str, cases: &[u32], step: f32, dm: u32) -> Res
     Ok(())
 }
 
+/// Run isolated acknowledged trials without recording an opponent-eye demo.
 pub async fn run(
     cfg: &Config,
     map: &str,
@@ -147,7 +151,8 @@ pub async fn run(
     run_recorded(cfg, map, name, cases, step, dm, false).await
 }
 
-// Retain the existing run signature for callers; recording adds one opt-in.
+/// Run isolated trials, optionally recording their actual opponent-eye view.
+/// Pin input identities and stop the owned engine on completion or failure.
 #[allow(clippy::too_many_arguments)]
 pub async fn run_recorded(
     cfg: &Config,

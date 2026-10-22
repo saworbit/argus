@@ -278,6 +278,8 @@ impl NetClient {
         Ok(())
     }
 
+    /// Append disconnect and publish the complete demo without overwriting a file.
+    /// Return None when not recording; reject recordings above the 32 MiB cap.
     pub fn finish_recording(&mut self) -> Result<Option<String>, String> {
         use std::io::Write;
         let Some(mut recording) = self.recording.take() else {
