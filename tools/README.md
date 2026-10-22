@@ -133,6 +133,16 @@ using the shared tape reader.
 - **Validation**: `python tools/test_tactic_review.py` exercises legacy tapes,
   multiword names and separation of checks, shots and applied aim share.
 
-Bot POV recording and PNG capture use the Rust lab CLI rather than a Python
-plotting tool. See [rendered POV evidence](argus_mcp/README.md#rendered-pov-evidence)
-for commands, asset requirements and output limits.
+Bot POV recording, PNG capture and video export use the Rust lab CLI:
+
+```text
+argus-mcp record-pov my_pov 1 8
+argus-mcp capture-demo my_pov 0.5 12 0.1
+argus-mcp capture-video my_pov 0.5 2.4 0.5
+```
+
+The recorder joins an existing lab match. Video export requires FFmpeg with
+`libvpx-vp9` on PATH and writes a silent lossless VP9 WebM; PNG capture needs
+no encoder. The video example samples 2.4 source seconds and plays them over
+4.8 seconds at half speed. See [rendered POV evidence](argus_mcp/README.md#rendered-pov-evidence)
+for asset requirements, verification and bounds.

@@ -24,6 +24,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Document the video CLI in the recording guides and tool index, explain its
+  playback units and public result fields, and state the current asset-identity
+  (#572) and encoder-preflight (#573) limits.
+
 - Keep capture acknowledgements out of rendered frames while preserving the
   console log (#567). Stage mod PAKs with their original search precedence
   (#569). Export bounded POV clips with explicit playback speed and verified

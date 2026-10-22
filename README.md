@@ -204,7 +204,7 @@ generated `src/argus_nav_<map>.qc`; use the lab's navigation tools.
 | Set up the lab, add a map or run a controlled comparison | [Lab workflow](docs/lab-workflow.md) |
 | Look up every lab tool and configuration option | [Lab operator guide](tools/argus_mcp/README.md) |
 | Record a match, read events or inspect a demo | [Telemetry and recording](docs/telemetry.md) |
-| Record a bot POV or render a saved viewpoint | [Rendered POV evidence](tools/argus_mcp/README.md#rendered-pov-evidence) |
+| Record a bot POV or export images and video clips | [Rendered POV evidence](tools/argus_mcp/README.md#rendered-pov-evidence) |
 | Understand the bot and source layout | [Architecture](docs/architecture.md) |
 | See what changed and which build it belongs to | [Changelog](CHANGELOG.md) |
 | Contribute or report a problem | [Contributing](CONTRIBUTING.md), [support](SUPPORT.md), [discussions](https://github.com/saworbit/argus/discussions) |

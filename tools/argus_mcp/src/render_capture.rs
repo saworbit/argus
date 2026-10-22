@@ -371,12 +371,19 @@ async fn capture_frames(
 /// Bounded video plus its ordered source-frame evidence and playback timeline.
 #[derive(Debug, Serialize)]
 pub struct VideoCapture {
+    /// Ordered PNG sources, scheduled demo times and demo/engine identities.
     pub capture: Capture,
+    /// Absolute path to the verified, newly published VP9 WebM.
     pub video_path: String,
+    /// MD5 of the published WebM bytes.
     pub video_md5: String,
+    /// Playback speed multiplier; 0.5 means half speed.
     pub playback_rate: f64,
+    /// Verified playback frames/sec: ten source samples/sec times playback_rate.
     pub output_fps: f64,
+    /// Decoded frame count divided by output_fps, after source-duration rounding.
     pub duration_seconds: f64,
+    /// Ordered MD5 hashes of decoded 640x480 YUV420 frames, matching the sources.
     pub decoded_frame_md5: Vec<String>,
 }
 
@@ -461,8 +468,15 @@ fn frame_hashes(text: &str, count: u32, fps: f64) -> Result<Vec<String>, String>
 }
 
 /// Export a recorded POV at 10 source frames/sec, with explicit playback speed.
-/// FFmpeg is optional for PNG users; validate its availability before rendering.
-/// Verify lossless decoded frame order/timing before publishing a fresh WebM.
+/// `start` is 0.5..120 demo seconds, rounded to the renderer's 0.05-second step.
+/// `duration` is 0.2..12 source seconds, rounded to 0.1 seconds; `rate` is a
+/// 0.1..4 playback multiplier. Every source sample must precede the demo's end.
+/// FFmpeg with libvpx-vp9 is required on PATH; PNG capture needs no encoder.
+/// The preflight checks binary startup, with codec support checked at encoding.
+/// PNG-to-YUV420 conversion precedes lossless encoding. Verify decoded frame
+/// order, hashes and timing before publishing a fresh WebM and video manifest.
+/// Only demo/engine input digests are recorded; retain assets and encoder build
+/// separately for reproduction. Failures retain diagnostics in the capture dir.
 pub async fn capture_video(
     cfg: &Config,
     demo: &str,
