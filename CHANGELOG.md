@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 | Status | What to use |
 |---|---|
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `2AA92D4EB164CB4241BB654EB70BCD46` |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `87B2AC40C7EA45E4546FD05C34C7CC12` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
@@ -23,6 +23,10 @@ passing botmatch does not establish better human play.
 ## Main updates
 
 ### Unreleased
+
+- Record tactical evaluation stages and actual cognition/aim tiers for human
+  review (#517, #527). Keep the adaptive aim share at 0.35 and distinguish
+  evaluation ticks, shot acknowledgements and unmeasured return hits.
 
 - Cover failed-life avoidance after GOAP weapon substitution, repeated picks,
   typed-hop cancellation and both shared-queue ownership paths in the real

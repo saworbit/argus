@@ -44,7 +44,9 @@ Per-slot offsets cycle through `0, +0.5, +1, -1, -0.5`; effective skill is
 bounded to 0-3. Adaptive difficulty starts off. It is active only against
 connected humans in deathmatch at global skill 1, not in co-op or bot-only
 matches. Each bot adjusts independently; positive adaptive changes affect
-raw aim less strongly than cognition.
+raw aim less strongly than cognition. With `developer 1`, the tape records
+base, cognition and aim tiers, offsets, drift eligibility and aim-share
+percent whenever skill is applied. The current share remains 35 percent.
 
 Three bots spawn outside co-op: Carmack, Romero and Joe Rogan. Co-op starts
 with Carmack. The runtime cap is four bots, also limited by spare client

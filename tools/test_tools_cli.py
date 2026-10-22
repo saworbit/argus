@@ -35,6 +35,10 @@ class TestToolsCLI(unittest.TestCase):
         res = self.run_tool("test_tactic_fixture.py")
         self.assertEqual(res.returncode, 0, res.stderr)
 
+    def test_tactic_review_regressions(self):
+        res = self.run_tool("test_tactic_review.py")
+        self.assertEqual(res.returncode, 0, res.stderr)
+
     def run_tool(self, script_name, *args):
         path = ROOT / "tools" / script_name
         cmd = [sys.executable, str(path), *args]

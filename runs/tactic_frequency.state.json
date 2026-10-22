@@ -1,0 +1,854 @@
+{
+  "base_commit": "c70e7d2b6275f3faf7bea2b25c8377d8eae5dae7",
+  "source_files": {
+    "src/ai.qc": "f4c7fee5b8d34af7650b998b1508174c",
+    "src/argus.qc": "1fbe7bd731e45da00c160c84cf1068e2",
+    "src/argus_cam.qc": "197e28ea2624a11638b343a94aefc841",
+    "src/argus_nav.qc": "650cb572d81a2a00aab8a90451dfa10c",
+    "src/argus_nav_dispatch.qc": "aed6a7e9539240a9be03d9830860f8f4",
+    "src/argus_nav_dm2.qc": "1dccb7948b616a83cc856d4804b2d8b3",
+    "src/argus_nav_dm3.qc": "0a42b152cac662ed063ebbed750ed372",
+    "src/argus_nav_dm4.qc": "735fc5b5af97b7193919d567a3820d2c",
+    "src/argus_nav_dm6.qc": "d6d3c3f029021358582dc69e95361cc1",
+    "src/argus_nav_e1m1.qc": "99b36e3000499bcafb454497cfc1539d",
+    "src/argus_nav_e1m2.qc": "5e7274c1f6fc797cd146d9614a661375",
+    "src/argus_nav_e1m5.qc": "364650771fcdba376c5b38dfcb555d5b",
+    "src/argus_nav_e1m6.qc": "8fadf76caffd3fc18f7355acf97e44cf",
+    "src/argus_nav_e1m7.qc": "262490603f79f8915598510764b575d2",
+    "src/argus_nav_e1m8.qc": "342124127e1f977258e453cd29c20823",
+    "src/argus_nav_lqdm2.qc": "179cdef069900a5f49b6838b48051d6e",
+    "src/argus_tactic_fixture.qc": "74c36318bfb83bb9af7ce98a5e3daa7d",
+    "src/argus_tactics.qc": "3249ab47abc18f339ef6279159a872f6",
+    "src/buttons.qc": "294a54fa09634b3cf8cca15e59c702ea",
+    "src/client.qc": "c0c9a06a345b7c112dae378d4a2faa62",
+    "src/combat.qc": "3a6dadca0f77ffc6dc1416dc12f2f32c",
+    "src/deathmatch_settings.qc": "c7b49a71d6a0f872f7d10f96b151805e",
+    "src/defs.qc": "b60d9bc276433d1a851eb2ac65958029",
+    "src/doors.qc": "bc394c0a1ec1f8e375f8e4fe70b31158",
+    "src/fight.qc": "37c643e0c9877456662f26e134e619af",
+    "src/items.qc": "82367d173fc449d4086fc50ab6aae7ce",
+    "src/localized_text.qc": "5fea4b8a84dcb7154646768773c8bd7f",
+    "src/lq1/cutscene_camera.qc": "b44018d5666dc98aba65879c8af63af1",
+    "src/misc.qc": "e1e75454c6ac0aa8707621f0dd9e653e",
+    "src/monsters/chthon.qc": "930090fa6113b9ab770c7f0d5eab39ea",
+    "src/monsters/enforcer.qc": "4e65c485fa1cccb437f40ea1da9d71c8",
+    "src/monsters/fiend.qc": "7dee4e091b16c0ba3f91254f5903496a",
+    "src/monsters/grunt.qc": "c954b452af4506c79b504d31264567b4",
+    "src/monsters/hellknight.qc": "25157fede968220c987844d823d062ef",
+    "src/monsters/knight.qc": "79ca7eab470f05b87ec0f348f66198b7",
+    "src/monsters/ogre.qc": "e8fd91b14a5d0e50689114402a1a8f6c",
+    "src/monsters/rotfish.qc": "39aeb190f1d026b9083b134ed0d9f220",
+    "src/monsters/rottweiler.qc": "8c6bec2cfc942d6279534ae08f8f30a3",
+    "src/monsters/scrag.qc": "07ab1147424bd114446de285c2d0a30c",
+    "src/monsters/shambler.qc": "cabfc8fe150264a991642d38243b8db2",
+    "src/monsters/shub.qc": "3e8108f23286993c82c909ee3e487c84",
+    "src/monsters/spawn.qc": "4ff1f5dfc6cd96246c01946384773d2a",
+    "src/monsters/vore.qc": "f0d2dbf6ebe0014034620b9337c31578",
+    "src/monsters/zombie.qc": "56a4b9a3030519cfcd04589ff91aebac",
+    "src/monsters.qc": "667d018a31b9a9c2d9f8531aa30fb77d",
+    "src/plats.qc": "f0da9c6309494593af36751cedf1b2eb",
+    "src/player.qc": "1a27eab79fd4245b5eef70ef11c7751a",
+    "src/progs.src": "d48f79812154b87dc7060c7b7d442340",
+    "src/server.qc": "00ad1fe7a8cfa25d8c9d319852467548",
+    "src/spectate.qc": "e2fd2bfd5d35531ab710ed06639b7cd6",
+    "src/subs.qc": "8070b58aaed72e1f8ca3a71438492424",
+    "src/triggers.qc": "2208218875226163de65804fbb054c28",
+    "src/weapons.qc": "36266c7dde7424c40aad555fc0b93ce9",
+    "src/world.qc": "7545e09ece7227a0071fc240f686d435"
+  },
+  "binary_md5": "87b2ac40c7ea45e4546fd05c34c7cc12",
+  "nav_md5": {
+    "dm4": "624a60f0e062f8d5dda4390475077f9a",
+    "dm2": "283a19071dbf3577c593b8f83fa159da"
+  },
+  "logs": {
+    "tactic_frequency_dm2_a.log": {
+      "md5": "065b7582e17b82a999ea28802e34b8d1",
+      "review": {
+        "map": "dm2",
+        "bots": {
+          "Romero": {
+            "evaluation_ticks": {
+              "evaluated": 25,
+              "visible": 23,
+              "loadout": 23,
+              "no_visible_target": 2
+            },
+            "phases": {},
+            "return_hits": null
+          }
+        },
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 16.5,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 24.9,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      }
+    },
+    "tactic_frequency_dm2_b.log": {
+      "md5": "81464f06e17b96037a01dd1936d1ddbf",
+      "review": {
+        "map": "dm2",
+        "bots": {
+          "Romero": {
+            "evaluation_ticks": {
+              "evaluated": 129,
+              "visible": 80,
+              "loadout": 59,
+              "no_visible_target": 49,
+              "loaded": 21,
+              "eligible": 8,
+              "outside_start": 8,
+              "unsafe_state": 13
+            },
+            "phases": {},
+            "return_hits": null
+          }
+        },
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 27.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 44.6,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 55.2,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 64.8,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 87.3,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 89.9,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 99.6,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 121.5,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 130.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 131.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 135.8,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 163.9,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      }
+    },
+    "tactic_frequency_dm4_a.log": {
+      "md5": "fbf5a73904cc1c0aec8be9e166e2a44d",
+      "review": {
+        "map": "dm4",
+        "bots": {
+          "Romero": {
+            "evaluation_ticks": {
+              "evaluated": 22,
+              "visible": 20,
+              "loadout": 20,
+              "no_visible_target": 2
+            },
+            "phases": {},
+            "return_hits": null
+          }
+        },
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 10.0,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 17.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 17.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 21.9,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 29.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      }
+    },
+    "tactic_frequency_dm4_b.log": {
+      "md5": "e61f73e31699063bd32d2826ad7ae4c7",
+      "review": {
+        "map": "dm4",
+        "bots": {
+          "Romero": {
+            "evaluation_ticks": {
+              "evaluated": 214,
+              "visible": 172,
+              "loadout": 166,
+              "no_visible_target": 42,
+              "loaded": 6,
+              "eligible": 6,
+              "outside_start": 6
+            },
+            "phases": {},
+            "return_hits": null
+          }
+        },
+        "difficulty": [
+          {
+            "bot": "Carmack",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 1.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 11.0,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 18.9,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 35.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 50.5,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 52.7,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 55.3,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 75.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 76.8,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 84.6,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 86.9,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 93.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 96.7,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 104.2,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 110.8,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 111.5,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 116.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 120.7,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 122.6,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 125.2,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 128.3,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 129.6,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 137.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 148.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 150.4,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 160.7,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 161.7,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Joe Rogan",
+            "t": 164.6,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Carmack",
+            "t": 171.7,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          },
+          {
+            "bot": "Romero",
+            "t": 177.1,
+            "base": 1.0,
+            "cognition": 1.0,
+            "aim": 1.0,
+            "offset": 0.0,
+            "drift": 0.0,
+            "adaptive": false,
+            "aimshare_pct": 35.0
+          }
+        ],
+        "note": "Evaluation ticks are throttled checks, not independent encounters. Tactic shots are attack acknowledgements; ordinary-session return hits and human feel are unmeasured."
+      }
+    }
+  },
+  "fixtures": {
+    "dm4": {
+      "md5": "548f0171c91d9884b1519c800a64fbc2",
+      "report": {
+        "map": "dm4",
+        "log_path": "C:\\argus\\runs\\telemetry_fixture_dm4.log",
+        "cases": [
+          0,
+          14
+        ],
+        "step": 0.0139,
+        "deathmatch": 1,
+        "overlap_refused": false,
+        "source_md5": "d59dacd0e7cdb969551e1db2a937fb1b",
+        "binary_md5": "87b2ac40c7ea45e4546fd05c34c7cc12",
+        "nav_md5": "624a60f0e062f8d5dda4390475077f9a"
+      }
+    },
+    "dm2": {
+      "md5": "b7e311eb59992daaa84ac45d8e09981a",
+      "report": {
+        "map": "dm2",
+        "log_path": "C:\\argus\\runs\\telemetry_fixture_dm2.log",
+        "cases": [
+          0,
+          14
+        ],
+        "step": 0.0139,
+        "deathmatch": 1,
+        "overlap_refused": false,
+        "source_md5": "d59dacd0e7cdb969551e1db2a937fb1b",
+        "binary_md5": "87b2ac40c7ea45e4546fd05c34c7cc12",
+        "nav_md5": "283a19071dbf3577c593b8f83fa159da"
+      }
+    }
+  },
+  "limits": "Evaluation ticks are not independent encounters. No ordinary manoeuvres occurred in these samples. These logs do not measure human feel or return hits. Adaptive aim share remains 0.35."
+}
