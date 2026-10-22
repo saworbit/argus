@@ -47,9 +47,9 @@ These five names are **extra** MCP tools. They do not replace
 | `bsp_inspect_entities` | Raw entity lump + `filter_classname`. | `cartograph` |
 | `bot_simulate_match` | Batch K/D / pickup / nav-error report. Default 300 s. | `match_run` |
 | `rcon_exec` | Whitelisted stdin plus log tail. | `tune` |
-| `bot_capture_pov_frame` | Parked POV hook; PNG substitutes. | `analyze_match` |
+| `bot_capture_pov_frame` | Real rendered demo/live-recorder PNGs. | `analyze_match` for plots |
 
-All five are still shipped. Retiring the three parked ones was considered under GitHub #371 and refused on the measurement: they cost 1,206 bytes of an 18,816 byte tool surface, six per cent, and the same saving was available by trimming the schema of a tool written this week. A schema that answers "no, and here is why" is worth 334 bytes when the alternative is an agent inventing a screenshot pipeline.
+All five are still shipped. Retiring the three then-parked ones was considered under GitHub #371 and refused on the measurement: they cost 1,206 bytes of an 18,816 byte tool surface, six per cent, and the same saving was available by trimming the schema of a tool written this week. A schema that answers "no, and here is why" is worth 334 bytes when the alternative is an agent inventing a screenshot pipeline.
 
 Feedback tiers as implemented:
 
@@ -57,8 +57,8 @@ Feedback tiers as implemented:
 2. Macro: `experiment` / `brief_run` / `compare_runs` (lite by default).
 3. Micro: `see what=live` / ARGLOG tape (not a new bprint JSON; bprint is
    invisible on an empty dedicated server).
-4. Visual: nav PNG + trajectory plot. In-engine TE_LIGHTNING2 and POV
-   screenshots are parked.
+4. Visual: nav PNG + trajectory plot, plus real engine PNGs of recorded
+   POVs. In-engine TE_LIGHTNING2 remains parked.
 
 ### Parked (charter or engine-track)
 
@@ -66,7 +66,7 @@ Feedback tiers as implemented:
 - `sys_ticrate 0.001` + `host_framerate 0.01` as 100x dilation. That
   changes `frametime` and therefore Argus physics. A/B matches must
   stay on the same timestep as a human listen server.
-- `bot_capture_pov_frame`, `cam_target_bot`, `screenshot_to_file`,
+- `cam_target_bot`, `screenshot_to_file`,
   `r_drawbotnav`.
 - QC `Debug_DrawLine` via TE_LIGHTNING2 (needs a connected client).
 - QC `Bot_DumpDecisionJSON` via `bprint` (invisible on dedicated;
@@ -113,7 +113,7 @@ LLM agent
 ```
 
 Argus ships the first two hubs and a physics-accurate dedicated match
-runner. The last four hubs are parked as above.
+runner. Other captured hubs remain parked; rendered POV evidence is now supported above.
 
 ## 2. Core architectural rationale
 
@@ -170,11 +170,11 @@ Argus: dedicated stdin whitelist (`tune`).
 
 ### 3.5 bot_capture_pov_frame
 
-Client screenshot from a bot eye. Inputs: `bot_client_id`,
-`render_debug_overlays`.
-
-Argus: parked. Tool returns why, plus paths to nav/trajectory PNGs if
-present.
+Real engine PNGs of a recorded POV. Inputs: `demo`, `start_sec`,
+`frame_count`, `interval_sec`. Without `demo`, record live `bot_client_id`
+(roster slot 0..3, default 1) for eight seconds first. Debug overlays and
+viewpoint changes in an existing demo are refused. See the bounded
+[renderer and recorder contract](../tools/argus_mcp/README.md#rendered-pov-evidence).
 
 ## 4. Component sketches (as captured)
 
@@ -200,7 +200,7 @@ dedicated. ARGLOG remains the tick dump.
 2. `quake_compile_qc`.
 3. `bot_simulate_match`.
 4. `bsp_inspect_entities` if a spatial failure shows up.
-5. `bot_capture_pov_frame` (parked; use `analyze_match` PNG).
+5. `bot_capture_pov_frame` (real rendered POV; `analyze_match` remains a plot).
 6. Adjust and repeat.
 
 Argus workflow: `see what=project` then `see what=map name=dm4` then

@@ -72,7 +72,6 @@ const SERVER_NAME: &str = env!("CARGO_PKG_NAME");
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const READ_ONLY_TOOLS: &[&str] = &[
-    "bot_capture_pov_frame",
     "brief_run",
     "bsp_inspect_entities",
     "cartograph_all",
@@ -95,6 +94,7 @@ const READ_ONLY_TOOLS: &[&str] = &[
 ];
 
 const MUTATING_TOOLS: &[&str] = &[
+    "bot_capture_pov_frame",
     "analyze_match",
     "baseline_set",
     "bot_simulate_match",
@@ -834,6 +834,10 @@ pub struct SpecRconArgs {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct SpecPovArgs {
+    pub demo: Option<String>,
+    pub start_sec: Option<f64>,
+    pub frame_count: Option<u32>,
+    pub interval_sec: Option<f64>,
     pub bot_client_id: Option<i32>,
     pub render_debug_overlays: Option<bool>,
 }
@@ -1387,29 +1391,68 @@ impl Argus {
 
     #[tool(
         name = "bot_capture_pov_frame",
-        description = "Prefer analyze_match. Extra: parked POV; returns nav/traj PNG paths."
+        description = "Real engine PNGs: demo POV, or record live bot slot 0..3 (default 1) for 8s. Isolated settings; 1..12 frames."
     )]
     async fn bot_capture_pov_frame(
         &self,
         Parameters(args): Parameters<SpecPovArgs>,
     ) -> Result<CallToolResult, McpError> {
-        let cfg = match cfg_read_or_err() {
+        let cfg = match cfg_or_err() {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
-        let nav = cfg.runs.join("nav_dm4.png");
-        let traj = cfg.runs.join("shane_dm4_traj.png");
-        json_ok(&serde_json::json!({
-            "ok": false,
-            "parked": true,
-            "bot_client_id": args.bot_client_id.unwrap_or(1),
-            "reason": "POV capture needs a rendering client and screenshot builtins. Argus dedicated QuakeSpasm has neither. Use analyze_match PNG or nav PNG.",
-            "substitutes": {
-                "nav_png": if nav.is_file() { Some(nav.display().to_string()) } else { None },
-                "traj_png": if traj.is_file() { Some(traj.display().to_string()) } else { None },
-                "tool": "analyze_match",
+        if (args.demo.is_some() && args.bot_client_id.is_some())
+            || args.render_debug_overlays == Some(true)
+        {
+            return tool_err("a recorded POV cannot select another bot or add engine overlays");
+        }
+        let demo = match args.demo {
+            Some(demo) => demo,
+            None => {
+                let slot = args.bot_client_id.unwrap_or(1);
+                if !(0..=3).contains(&slot) {
+                    return tool_err("live roster slot must be 0..3");
+                }
+                if let Err(e) = crate::render_capture::validate(
+                    args.start_sec.unwrap_or(1.0),
+                    args.frame_count.unwrap_or(1),
+                    args.interval_sec.unwrap_or(0.2),
+                    8.0,
+                ) {
+                    return tool_err(e);
+                }
+                let name = format!(
+                    "pov_{}",
+                    chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+                );
+                let record_cfg = cfg.clone();
+                let record_name = name.clone();
+                match tokio::task::spawn_blocking(move || {
+                    crate::render_capture::record_bot(&record_cfg, &record_name, slot as u8, 8.0)
+                })
+                .await
+                {
+                    Ok(Ok(_)) => name,
+                    Ok(Err(e)) => return tool_err(e),
+                    Err(e) => return tool_err(e.to_string()),
+                }
             }
-        }))
+        };
+        match crate::render_capture::capture(
+            &cfg,
+            &demo,
+            args.start_sec.unwrap_or(1.0),
+            args.frame_count.unwrap_or(1),
+            args.interval_sec.unwrap_or(0.2),
+        )
+        .await
+        {
+            Ok(result) => {
+                let paths: Vec<_> = result.frames.iter().map(String::as_str).collect();
+                json_ok_pngs(&result, &paths)
+            }
+            Err(e) => tool_err(e),
+        }
     }
 
     #[tool(
@@ -4510,6 +4553,37 @@ mod tests {
         // is whether the metadata or tool earns its rent, not whether
         // to raise the number.
         assert!(total < 25_500, "the tool surface costs {total} bytes");
+    }
+
+    #[tokio::test]
+    async fn capture_tool_returns_engine_png_blocks_when_requested() {
+        // Explicit local opt-in: CI has no rendering client or licensed maps.
+        let Ok(demo) = std::env::var("ARGUS_CAPTURE_TEST_DEMO") else {
+            return;
+        };
+        let server = Argus::new();
+        let result = server
+            .bot_capture_pov_frame(Parameters(SpecPovArgs {
+                demo: Some(demo),
+                start_sec: Some(0.5),
+                frame_count: Some(2),
+                interval_sec: Some(0.2),
+                bot_client_id: None,
+                render_debug_overlays: None,
+            }))
+            .await
+            .unwrap();
+        assert_ne!(result.is_error, Some(true), "{result:?}");
+        let value = serde_json::to_value(result).unwrap();
+        let images: Vec<_> = value["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|b| b["type"] == "image")
+            .collect();
+        assert_eq!(images.len(), 2);
+        assert!(images.iter().all(|b| b["mimeType"] == "image/png"
+            && b["data"].as_str().unwrap().starts_with("iVBORw0KGgo")));
     }
 
     #[test]

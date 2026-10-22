@@ -30,6 +30,7 @@ pub mod parse_fteqcc;
 pub mod paths;
 pub mod project;
 pub mod qc_index;
+pub mod render_capture;
 pub mod resources;
 pub mod see_alias;
 pub mod server;

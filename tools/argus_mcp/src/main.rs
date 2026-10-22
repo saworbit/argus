@@ -6,6 +6,45 @@ use rmcp::{transport::stdio, ServiceExt};
 async fn main() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
+        Some("record-pov") => {
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
+                println!("usage: argus-mcp record-pov <new_demo_stem> [roster_slot=1] [seconds=30]; connects to the running lab match");
+                return Ok(());
+            }
+            if rest.len() > 3 {
+                anyhow::bail!("too many record-pov arguments");
+            }
+            let slot = rest.get(1).map(|s| s.parse()).transpose()?.unwrap_or(1);
+            let seconds = rest.get(2).map(|s| s.parse()).transpose()?.unwrap_or(30.0);
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!(e))?;
+            let path = tokio::task::spawn_blocking(move || {
+                argus_mcp::render_capture::record_bot(&cfg, &rest[0], slot, seconds)
+            })
+            .await?
+            .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::json!({"demo_path":path}));
+            Ok(())
+        }
+        Some("capture-demo") => {
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
+                println!("usage: argus-mcp capture-demo <demo_stem> [start_sec=1] [frames=1] [interval_sec=0.2]");
+                return Ok(());
+            }
+            if rest.len() > 4 {
+                anyhow::bail!("too many capture arguments");
+            }
+            let start = rest.get(1).map(|s| s.parse()).transpose()?.unwrap_or(1.0);
+            let count = rest.get(2).map(|s| s.parse()).transpose()?.unwrap_or(1);
+            let interval = rest.get(3).map(|s| s.parse()).transpose()?.unwrap_or(0.2);
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!(e))?;
+            let result = argus_mcp::render_capture::capture(&cfg, &rest[0], start, count, interval)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+            Ok(())
+        }
         Some("gui") => {
             let opts = parse_gui_args(args);
             run_gui(opts).map_err(|e| anyhow::anyhow!(e))?;
@@ -29,7 +68,7 @@ async fn main() -> anyhow::Result<()> {
         Some("tactic-suite") => {
             let rest: Vec<String> = args.collect();
             if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
-                println!("usage: argus-mcp tactic-suite <dm4|dm2> <run_name> [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--deathmatch 1|4] [--no-compile]");
+                println!("usage: argus-mcp tactic-suite <dm4|dm2> <run_name> [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--deathmatch 1|4] [--record] [--no-compile]");
                 return Ok(());
             }
             if rest.len() < 2 {
@@ -39,8 +78,14 @@ async fn main() -> anyhow::Result<()> {
             let mut step = 0.0139f32;
             let mut dm = 1u32;
             let mut compile = true;
+            let mut record = false;
             let mut i = 2;
             while i < rest.len() {
+                if rest[i] == "--record" {
+                    record = true;
+                    i += 1;
+                    continue;
+                }
                 if rest[i] == "--no-compile" {
                     compile = false;
                     i += 1;
@@ -68,9 +113,11 @@ async fn main() -> anyhow::Result<()> {
             if compile && !argus_mcp::compile::compile_qc(&cfg, true).ok {
                 anyhow::bail!("QuakeC compile failed");
             }
-            let report = argus_mcp::tactic_suite::run(&cfg, &rest[0], &rest[1], &cases, step, dm)
-                .await
-                .map_err(|e| anyhow::anyhow!(e))?;
+            let report = argus_mcp::tactic_suite::run_recorded(
+                &cfg, &rest[0], &rest[1], &cases, step, dm, record,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
@@ -1217,6 +1264,8 @@ fn print_help() {
          argus-mcp gui          localhost deploy wizard (127.0.0.1:7420)\n\
          argus-mcp gui --port N\n\
          argus-mcp gui --no-open\n\
+         argus-mcp record-pov <new-demo> [slot] [seconds]\n\
+         argus-mcp capture-demo <demo> [start] [frames] [interval]\n\
          argus-mcp soak         unattended match loop with gated verdicts\n\
            --maps dm4,dm2,dm6   round-robin map list\n\
            --hours 4            wall clock cap (max 12)\n\

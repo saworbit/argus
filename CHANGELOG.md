@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 | Status | What to use |
 |---|---|
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `87B2AC40C7EA45E4546FD05C34C7CC12` |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
@@ -23,6 +23,14 @@ passing botmatch does not establish better human play.
 ## Main updates
 
 ### Unreleased
+
+- Hide the tracked bot from its own POV by selecting its protocol view
+  entity. Hide the observer body while active and restore its render index
+  and view entity on camera exit (#565).
+
+- Replace the parked POV capture with bounded real-engine PNGs, record
+  acknowledged bot POVs and fixture opponent-eye demos, and retain visual
+  evidence separately from tactical counts and human feel (#517).
 
 - Record tactical evaluation stages and actual cognition/aim tiers for human
   review (#517, #527). Keep the adaptive aim share at 0.35 and distinguish

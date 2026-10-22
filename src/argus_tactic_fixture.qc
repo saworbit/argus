@@ -5,6 +5,7 @@
 // This rewrites live bot/loadout/pickup state and freezes the other bots for
 // six seconds. Keep scratch1 197 disarmed on shared servers (#540).
 entity ar_tf_target;
+entity ar_tf_viewer;
 entity ar_tf_secondary;
 vector ar_tf_start;
 vector ar_tf_enemy;
@@ -343,6 +344,21 @@ void() Argus_TacticFixture =
     ar_tf_next = 0; ar_tf_hidden = 0; ar_tf_moved = 0; ar_tf_frames = 0;
     ar_tf_case = cvar ("scratch2");
     ar_tf_id = cvar ("scratch3"); ar_tf_launches = 0;
+    // Optional recorded opponent eye. The server, not the demo writer,
+    // selects the real target edict as view entity (stock protocol 15).
+    // This hides the dummy's own model without changing combat state.
+    if (cvar ("scratch4") == 517 && !self.cam_active)
+    {
+        ar_tf_viewer = self;
+        ArgusCam_Init (self);
+        self.cam_mode = CAM_MODE_FREELOOK; self.cam_hud_on = 0;
+        setorigin (self, q);
+        self.angles = vectoangles (p - q);
+        self.angles_x = 0 - self.angles_x;
+        self.fixangle = 1;
+        ArgusCam_SetViewEntity (self, ar_tf_target);
+        dprint ("TACFIX observer opponent_eye\n");
+    }
     ar_tf_fired = 0;
     dprint ("TACFIX begin "); dprint (mapname);
     dprint (" case "); dprint (ftos (ar_tf_case)); dprint ("\n");
@@ -397,6 +413,12 @@ void() Argus_TacticFixtureTick =
             self = saved;
             otherbot = otherbot.ar_chain;
         }
+        if (ar_tf_viewer != world)
+        {
+            ArgusCam_SetViewEntity (ar_tf_viewer, ar_tf_viewer);
+            saved = self; self = ar_tf_viewer; ArgusCam_Toggle (); self = saved;
+            ar_tf_viewer = world;
+        }
         remove (ar_tf_target); ar_tf_target = world;
         if (ar_tf_secondary != world) remove (ar_tf_secondary);
         ar_tf_secondary = world;
@@ -404,6 +426,8 @@ void() Argus_TacticFixtureTick =
         dprint ("TACFIX done "); dprint (ftos (ar_tf_id)); dprint ("\n");
         return;
     }
+    // Keep the real client's PVS seated at the moving opponent as well.
+    if (ar_tf_viewer != world) setorigin (ar_tf_viewer, ar_tf_target.origin);
     // Scan each engine frame, before the sampled observer's throttle. This
     // observes real owned projectiles independently of ammo and tactic state.
     missile = find (world, classname, "rocket");

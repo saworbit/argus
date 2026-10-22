@@ -58,6 +58,7 @@ void() SetChangeParms =
 	{
 		self.cam_active = 0;
 		self.health = self.cam_sv_health;
+		self.modelindex = self.cam_sv_modelindex;
 		self.armorvalue = self.cam_sv_armorvalue;
 		self.armortype = self.cam_sv_armortype;
 		self.ammo_shells = self.cam_sv_shells;
@@ -1528,6 +1529,8 @@ called when a player disconnects from a server
 ============*/
 void() ClientDisconnect =
 {
+	// Release the opt-in fixture observer before this client edict can be reused.
+	if (ar_tf_viewer == self) ar_tf_viewer = world;
 	if (gameover)
 		return;
 

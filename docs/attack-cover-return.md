@@ -277,3 +277,91 @@ mutation tapes are retained in [runs/lifeveto.state.json](../runs/lifeveto.state
 The matching gameplay binary MD5 is `2AA92D4EB164CB4241BB654EB70BCD46`.
 The live route-veto body is unchanged and remains after combat acquisition;
 it is a named function so this engine fixture can exercise that exact path.
+
+
+## Rendered observation checkpoint, 2026-10-22
+
+The observation path now renders actual protocol-15 demos in the configured
+QuakeSpasm client. The old POV tool returned a parked response and substitute
+plot paths. It now returns engine PNG image blocks, with bounded recording,
+fresh output directories, capture acknowledgements and timeout cleanup.
+The writer follows the pinned engine's
+[demo message framing](https://github.com/sezero/quakespasm/blob/quakespasm-0.96.3/Quake/cl_demo.c).
+The renderer uses its stock `wait` and `screenshot png` commands.
+
+Reproduce a recorded opponent-eye trial on each map:
+
+```text
+argus-mcp tactic-suite dm4 visual_dm4 --cases 0 --record
+argus-mcp tactic-suite dm2 visual_dm2 --cases 0 --record --no-compile
+argus-mcp capture-demo visual_dm4 0.5 12 0.45
+argus-mcp capture-demo visual_dm2 0.5 12 0.45
+```
+
+The server selects the actual target edict as the observer's view entity.
+This hides the target's own model and preserves its sightline. The recorder
+stores original complete server messages, not reconstructed entity updates.
+The client view entity is checked after cleanup; disconnect clears the
+observer reference before its client slot can be reused. The fixture dummy
+and spectator do not reproduce player input or player hit feedback.
+
+| Final trial | Full concealment first sampled | First reappearance | Angle change | Return damaged target | Measured cadence |
+|---|---|---|---|---|---|
+| dm4 | 0.5 s | 1.1 s | 40.9 degrees | yes | 66.3 Hz |
+| dm2 | 1.3 s | 1.7 s | 49.8 degrees | yes | 66.3 Hz |
+
+These timings and damage come from the existing independent fixture checker.
+The six uncropped engine images below are selected from the corresponding
+12-frame captures. Image schedules are playback steps and have a startup
+offset from the fixture clock. The manifests identify the source frames;
+no exact event time is inferred from a screenshot.
+
+| Map | Opening | Covered | Returned |
+|---|---|---|---|
+| dm4 | ![opening](media/tactic-dm4-opening.png) | ![covered](media/tactic-dm4-covered.png) | ![returned](media/tactic-dm4-returned.png) |
+| dm2 | ![opening](media/tactic-dm2-opening.png) | ![covered](media/tactic-dm2-covered.png) | ![returned](media/tactic-dm2-returned.png) |
+
+Both sequences visibly lose the bot behind solid geometry and recover it at
+a different screen position. On dm4 it moves from the upper centre to the
+left edge of the walkway. On dm2 it disappears behind the left pillar and
+returns to the right of the original sightline. The opening and return
+rockets are visible in the complete frame sequences. This supports visual
+readability in the authored encounters; it does not measure surprise,
+enjoyment or fairness during ordinary play.
+
+Two further 45-second ordinary matches include 30-second automatic bot POV
+recordings. They contain no authored manoeuvre. Their final refusals are
+loadout (42 dm4 checks, 31 dm2 checks) or no visible target (10 and 11).
+The earlier 30/185-second ordinary tapes reached safe/loadout eligibility
+on some checks, but all fourteen such checks across both longer tapes were
+outside the authored starting seats. These are throttled evaluation ticks,
+not independent encounters or successful pickups. Zero phases cannot be
+credited as a completed return or a return hit.
+
+Decision: retain the existing bounded eligibility and cooldowns. These
+samples do not support promoting this feature as a common ordinary-play
+behaviour. Broadening sensing or adding a general route search just to
+increase its count is not justified by this evidence. Keep ordinary aim
+and the 0.35 adaptive share unchanged. A success claim about human feel is
+still unsupported; no further human session is a gate on this observation
+work. Original demos remain local under ignored `runs/demos/`. Source,
+binary, nav, demo and frame identities, retained tapes, results and limits
+are in [runs/tactic_visual.state.json](../runs/tactic_visual.state.json).
+
+
+The same rendered review exposed and fixed #565: moving the observer into
+the bot did not hide the bot model. Selecting the bot as protocol view
+entity hid that model but exposed the co-located observer body. The final
+camera also hides the observer's render index while active and restores
+its exact index on exit, preserving its model string and collision hull.
+A real-client regression rejects both incomplete states and verifies mode
+change and direct POV exit. The fixture opponent-eye view is restored
+before cleanup as well.
+
+| Automatic POV before the fix | Automatic POV after the fix |
+|---|---|
+| ![body clipping](media/tactic-pov-before.png) | ![clear POV](media/tactic-pov-after.png) |
+
+These are separate ordinary recordings, not matching simulation frames.
+The real-client checks establish the view/entity and model changes; the
+images verify that the new observation path produces a clear rendered view.
