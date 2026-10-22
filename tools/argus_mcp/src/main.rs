@@ -26,6 +26,54 @@ async fn main() -> anyhow::Result<()> {
                 .await
                 .map_err(|e| anyhow::anyhow!(e))
         }
+        Some("tactic-suite") => {
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
+                println!("usage: argus-mcp tactic-suite <dm4|dm2> <run_name> [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--deathmatch 1|4] [--no-compile]");
+                return Ok(());
+            }
+            if rest.len() < 2 {
+                anyhow::bail!("tactic-suite requires a map and a new run name");
+            }
+            let mut cases = argus_mcp::tactic_suite::REVIEW_CASES.to_vec();
+            let mut step = 0.0139f32;
+            let mut dm = 1u32;
+            let mut compile = true;
+            let mut i = 2;
+            while i < rest.len() {
+                if rest[i] == "--no-compile" {
+                    compile = false;
+                    i += 1;
+                    continue;
+                }
+                let value = rest
+                    .get(i + 1)
+                    .ok_or_else(|| anyhow::anyhow!("missing option value"))?;
+                match rest[i].as_str() {
+                    "--cases" => {
+                        cases = value
+                            .split(',')
+                            .map(str::parse::<u32>)
+                            .collect::<Result<_, _>>()?
+                    }
+                    "--step" => step = value.parse()?,
+                    "--deathmatch" => dm = value.parse()?,
+                    other => anyhow::bail!("unknown tactic-suite option {other}"),
+                }
+                i += 2;
+            }
+            argus_mcp::tactic_suite::validate(&rest[0], &rest[1], &cases, step, dm)
+                .map_err(|e| anyhow::anyhow!(e))?;
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            if compile && !argus_mcp::compile::compile_qc(&cfg, true).ok {
+                anyhow::bail!("QuakeC compile failed");
+            }
+            let report = argus_mcp::tactic_suite::run(&cfg, &rest[0], &rest[1], &cases, step, dm)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            Ok(())
+        }
         Some("cycle") => {
             let map = args
                 .next()
@@ -1192,6 +1240,9 @@ fn print_help() {
          argus-mcp benchmark <suite.json> [limit] [--no-compile]\n\
                                 run fixed, graph-pinned navigation tasks;\n\
                                 reports train and held-out scores separately\n\
+         argus-mcp tactic-suite <dm4|dm2> <new-run-name> [options]\n\
+                                run acknowledged tactical fixture trials;\n\
+                                use --step 0.1 for the full slow arm\n\
          argus-mcp within-ab <map> [duration_sec] [options]\n\
                                 run counterbalanced control/candidate arms\n\
                                 inside two shared matches\n\

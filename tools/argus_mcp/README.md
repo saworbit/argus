@@ -53,6 +53,21 @@ cargo build --release --manifest-path tools/argus_mcp/Cargo.toml --target-dir to
 On the next client restart, the installed binary uses `ARGUS_ROOT` to find the
 stage and swaps it into place. Do not commit `target*/` or `install/`.
 
+## Tactical fixture suites
+
+`argus-mcp tactic-suite <dm4|dm2> <new-run-name>` compiles and runs the full
+15-trial developer suite in its own match. Add `--no-compile` to reuse the
+same build, `--step 0.1` for the slow arm, `--deathmatch 4` for unlimited ammo,
+or `--cases 0,0,0,10` for a bounded subset. Requested case/ID writes must be
+acknowledged before the client impulse. Trials wait for matching begin/end
+and restored-state acknowledgements, with a 15-second deadline. Case 9 also
+checks refused overlap. Errors stop the owned engine and retain its tape.
+Reports pin source, installed binary and nav hashes. Cadence is measured by
+the fixture frame counts, not inferred from the step option. Run the
+[acceptance checker](../../tools/check_tactic_fixture.py) on the tape;
+acknowledgement success alone is not tactical acceptance. See the
+[manoeuvre guide](../../docs/attack-cover-return.md#engine-acceptance).
+
 ## Human deploy wizard
 
 Same binary, not MCP. Design:
@@ -509,20 +524,22 @@ that key with each destination. Set `scratch1 0` to disarm manual teleports.
 attack-cover-return fixture; otherwise navigation-task dispatch retains it.
 It rewrites live state and freezes other bots for six seconds. Keep the
 fixture disarmed on shared servers.
-Set `scratch2` to the case number through `tune`, then use
+For a manual trial set `scratch3` to a distinct trial ID, then
+set `scratch2` to the case number through `tune` and use
 `argus-mcp client impulse 217 8`. Confirm the requested `TACFIX begin` and
-matching `TACFIX end` through incremental status before changing the case.
+matching `TACFIX done` after restoration through incremental status before
+changing the case.
 Time out missing acknowledgements; elapsed client time alone is insufficient.
 An active fixture refuses another impulse with `TACFIX busy`.
 
 The [manoeuvre guide](../../docs/attack-cover-return.md#engine-acceptance)
-defines the full 15-case suite, seven-case 10 Hz suite, rate controls and
-deliberate overlap check. Use `tools/check_tactic_fixture.py --review-suite`
-or `--slow-suite` with the corresponding tape path. Native briefs report
-tactical phases; the fixture checker establishes movement and damage
-acceptance. Its shot observation currently requires ordinary ammo rules.
-The reusable acknowledgement-based runner remains tracked in
-[#516](https://github.com/saworbit/argus/issues/516).
+defines the full 15-case suite at played cadence and 10 Hz, rate controls
+and the deliberate overlap check. Prefer the [suite driver](#tactical-fixture-suites).
+Use `tools/check_tactic_fixture.py --review-suite` with the tape path and
+`--hz 10` for the full slow arm. Native briefs report tactical phases; the
+fixture checker establishes movement and damage acceptance. Its owned-rocket
+observer supports ordinary and unlimited ammo without using phase events as
+proof of hits.
 
 ## Fixed navigation benchmark
 

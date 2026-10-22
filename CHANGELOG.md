@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 | Status | What to use |
 |---|---|
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `BA029B04A4CB9D20489B7355695B9F33` |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `98C66862A34D1A2501F4C104CE02D8B3` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
@@ -23,6 +23,11 @@ passing botmatch does not establish better human play.
 ## Main updates
 
 ### Unreleased
+
+- Sequence tactical trials with console and engine acknowledgements, unique
+  IDs and bounded cleanup (#516). Observe real owned rockets independently
+  of ammo changes for unlimited-ammo fixture acceptance (#529). Complete
+  both 15-trial map suites at played cadence and measured 10 Hz (#515).
 
 - Use the standard player hull for both teleport camera cuts and tactical
   trigger avoidance, including its 32-unit upper reach (#548).
@@ -91,7 +96,7 @@ passing botmatch does not establish better human play.
   focused subset of interruption cases.
   [Results and reproduction](docs/attack-cover-return.md#validation-record)
 - Human frequency/readability, a reusable trial runner, unlimited-ammo shot
-  observation and a dedicated goal-veto regression remain follow-ups.
+  observation and a dedicated goal-veto regression were follow-ups at this checkpoint.
   [Limits and issue links](docs/attack-cover-return.md#validation-record)
 - The separate 0.60 adaptive-aim experiment remains deferred; the current
   share is 0.35. [#527](https://github.com/saworbit/argus/issues/527)

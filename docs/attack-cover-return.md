@@ -68,42 +68,44 @@ Use an isolated lab match. Arming this fixture lets a connected client
 rewrite live bot/loadout/pickup state and freeze the other bots for six
 seconds. Keep `scratch1 197` disarmed on shared servers.
 
-Arm the fixture and select a case using separate calls:
+Run the acknowledgement-based driver from the repository root:
 
 ```text
-tune command="developer 1"
-tune command="scratch1 197"
-tune command="scratch2 0"
+argus-mcp tactic-suite dm4 tactic_ack_full_dm4
+argus-mcp tactic-suite dm2 tactic_ack_full_dm2 --no-compile
+argus-mcp tactic-suite dm4 tactic_ack_slow_dm4 --step 0.1 --no-compile
+argus-mcp tactic-suite dm2 tactic_ack_slow_dm2 --step 0.1 --no-compile
 ```
 
-Then run `argus-mcp client impulse 217 8` from the repository root. The
-developer/scratch1 gate gives the fixture precedence over impulse 217's
-normal navigation-task dispatch. Each trial lasts six seconds and samples
-position, visibility, ammunition, health, tactical state and frame count.
-Poll `see what=status` using its `next_line` cursor. Confirm the requested
-case in `TACFIX begin`, then its `TACFIX end` before changing scratch2.
-Bound the wait (the reviewed driver used 15 seconds); a missing or wrong
-acknowledgement fails the trial. The client's eight-second wait alone is
-not an acknowledgement. A reusable suite driver remains tracked in
-[#516](https://github.com/saworbit/argus/issues/516).
+The default sequence is `0,0,0,1,2,3,4,5,6,7,8,9,10,11,12`. The driver owns
+an isolated match at skill 1. It waits for console-ready, matching trial ID
+and case, end, and post-restoration cleanup records. Each trial has a
+15-second deadline. Case 9 deliberately sends one overlapping start and
+requires exactly one refusal. Missing, duplicate, wrong-case and incomplete
+acknowledgements stop the match and fail the command. No fixed delay stands
+in for an acknowledgement. Each run reports source, installed binary and
+navigation hashes; changes during the suite fail it.
 
-Run both maps with these case sequences:
+Use `--cases 0,0,0,10 --deathmatch 4` for the unlimited-ammo acceptance arm.
+The observer counts newly seen bot-owned rocket entities every engine frame,
+independently of ammunition and planner events. New tapes use this counter
+for opening/return shots; old tapes retain their ammo-delta interpretation.
+Damage still has the first-return 0.6-second window and later-shot exclusion.
 
-| Checker flag | Cases | Rate and extra requirements |
-|---|---|---|
-| `--suite` | `0,0,0,1,2,3,4,5,6,7` | Original subset; does not cover the review regressions |
-| `--review-suite` | `0,0,0,1,2,3,4,5,6,7,8,9,10,11,12` | Default played-rate launch; require shop lifecycle checks |
-| `--slow-suite` | `0,0,0,6,8,12,9` | Measured 9-11 Hz; require routed setup, shop checks and refused overlap |
+The requested step is configuration, not measured cadence. Check complete
+slow suites with both `--review-suite` and `--hz 10`. Do not mix tick classes
+in ordinary A/B comparisons. The older `--suite` subset and `--slow-suite`
+seven-case checker remain available for historical tapes.
 
-For the slow suite, send `match_command command="sys_ticrate 0.1"` before
-the first trial. This command uses the match console, since sys_ticrate is
-outside tune's whitelist. Alternatively set `ARGUS_TICRATE=0.1` in the lab
-process environment before launching that isolated job. Verify the actual
-rate from the fixture frame counts; the requested cvar is not evidence.
-For the final case 9, use `argus-mcp client impulse 217,217 1`, then observe
-until the matching end. Require one `TACFIX busy` and one completed case 9,
-without a second begin. Stop the slow match before launching a normal one;
-remove any job-local environment override. Do not compare tick classes.
+```text
+python tools/check_tactic_fixture.py runs/tactic_ack_full_dm4.log --review-suite
+python tools/check_tactic_fixture.py runs/tactic_ack_slow_dm4.log --review-suite --hz 10
+```
+
+For a manual trial, use the existing developer/scratch1 197 gate, scratch2
+for the case and scratch3 for a distinct integer trial ID before impulse 217.
+Confirm the requested `TACFIX trial` and matching `TACFIX done`; an elapsed
+client wait is not an acknowledgement. Prefer the driver for suites.
 
 | Case | Setup |
 |---|---|
@@ -186,14 +188,46 @@ backups/tactic-review-build5-20261022.zip. Final acceptance uses only build 7.
 
 Human playtesting remains necessary to judge encounter frequency and whether
 the move reads as deliberate
-([#517](https://github.com/saworbit/argus/issues/517)). The production firing
-acknowledgement handles unlimited ammo, but the fixture and checker still
-infer rockets from ammo loss; the recorded suites use ordinary ammo rules.
-Independent unlimited-ammo shot coverage is tracked in
-[#529](https://github.com/saworbit/argus/issues/529).
+([#517](https://github.com/saworbit/argus/issues/517)). The historical 44-trial checkpoint used ordinary ammo and inferred rockets
+from ammo loss. The current observer counts real owned projectiles; see the
+acknowledged-suite checkpoint below for independent unlimited-ammo coverage
+([#529](https://github.com/saworbit/argus/issues/529)).
 Case 12 checks cancellation lifecycle and queue ownership. Dedicated coverage
 of the failed-life veto after GOAP substitution is tracked in
 [#530](https://github.com/saworbit/argus/issues/530).
 Short normal matches establish smoke parity,
 not improved win rate. The compare_band_primary_scaled note in review 3.3
 requires no change: scaled correctly describes whether any arm changed scale.
+
+## Acknowledged-suite checkpoint, 2026-10-22
+
+The new driver passed every complete interruption suite at both cadences,
+plus ordinary-ammo addition cases and eight unlimited-ammo trials. Both
+installed binaries have MD5 `98C66862A34D1A2501F4C104CE02D8B3`.
+Source, binary, nav and normalized tape identities, requested case order,
+measured rates and every result are retained in
+[runs/tactic_ack.state.json](../runs/tactic_ack.state.json).
+
+| Suite | Trials | Measured cadence | Damaging stationary returns |
+|---|---|---|---|
+| full dm4 | 15 | 64.2-65.5 Hz | 3/3 |
+| full dm2 | 15 | 64.0-66.2 Hz | 3/3 |
+| slow dm4 | 15 | 10.0-10.0 Hz | 3/3 |
+| slow dm2 | 15 | 10.0-10.0 Hz | 3/3 |
+| unlimited dm4 | 4 | 64.3-66.3 Hz | 3/3 |
+| unlimited dm2 | 4 | 64.3-66.5 Hz | 3/3 |
+
+All 68 trials passed the unchanged walking, concealment, angle, cancellation,
+first-return damage and self-damage checks that apply to their cases. Both
+full suites include all interruption cases at measured 10.0 Hz. Case 9's
+extra impulse was refused once per full suite. Cleanup was acknowledged
+before the next trial. Unlimited ammo used deathmatch 4 and real owned-rocket
+counts; all six stationary returns and both ammo-addition returns damaged
+the target. This closes the coverage gaps in #515, #516 and #529. It does
+not settle ordinary encounter frequency, human feel or adaptive aim.
+
+The first driver diagnostic caught a stale case/ID write; a second found
+joined back-to-back Windows console submissions. Both commands failed and
+stopped their owned engines. Console-ready acknowledgement and one initial
+setup submission resolved these transport failures. Diagnostic tapes are
+retained locally in backups/soak-20261022/fixture-driver-diagnostics.zip.

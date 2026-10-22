@@ -13,6 +13,14 @@ def check(text):
     for block in text.split("TACFIX begin ")[1:]:
         name, _, case = block.splitlines()[0].split()
         rows = [dict(t=float(m[1]), p=list(map(float, m[2].split())), hidden=int(m[3]), rockets=float(m[4]), hp=float(m[5]), bot_hp=float(m[6]), state=int(m[7])) for m in SAMPLE.finditer(block)]
+        launch_counts = re.findall(r"state\s+\d+ launches\s+(\d+)", block)
+        shot_field = "launches" if launch_counts else "rockets"
+        if launch_counts:
+            assert len(launch_counts) == len(rows), "incomplete projectile observer"
+            for row, count in zip(rows, launch_counts):
+                row["launches"] = int(count)
+        def fired(prev, row):
+            return row[shot_field] > prev[shot_field] if shot_field == "launches" else row[shot_field] < prev[shot_field]
         assert rows and "TACFIX end" in block, "incomplete fixture"
         velocities = re.findall(r"targetvel '([^']+)'", block)
         if velocities:
@@ -41,7 +49,7 @@ def check(text):
                     assert list(map(float, setup[2].split()))[2] < origin[2] - 120, "routed fixture did not preserve a pit-floor node"
             events = re.findall(r"ARGEVT \S+ tactic ([^\r\n]+)", block)
             assert events[:5] == ["prepare", "opening", "covered", "reappear", "returnshot"], f"{name}: incomplete manoeuvre: {events}"
-            opening = next((r for prev, r in zip(rows, rows[1:]) if r["rockets"] < prev["rockets"]), None)
+            opening = next((r for prev, r in zip(rows, rows[1:]) if fired(prev, r)), None)
             assert opening, f"{name}: no actual opening rocket"
             hidden = next((r for r in rows if r["hidden"] and r["t"] >= opening["t"]), None)
             assert hidden, f"{name}: no full-body concealment after opening shot"
@@ -51,7 +59,7 @@ def check(text):
             b = math.atan2(returned["p"][1] - enemy[1], returned["p"][0] - enemy[0])
             angle = abs((math.degrees(b-a)+180)%360-180)
             assert angle >= 30, f"{name}: first reappearance changed angle only {angle:.1f} degrees"
-            shots = [(prev, r) for prev, r in zip(rows, rows[1:]) if r["t"] >= returned["t"] and r["rockets"] < prev["rockets"]]
+            shots = [(prev, r) for prev, r in zip(rows, rows[1:]) if r["t"] >= returned["t"] and fired(prev, r)]
             shot = shots[0][1] if shots else None
             assert shot, f"{name}: no actual return rocket"
             next_shot = shots[1][1]["t"] if len(shots) > 1 else math.inf
@@ -89,17 +97,25 @@ def check(text):
     assert results, "no fixture results"
     return results
 
+def require_sequence(results, expected):
+    actual = [int(r["case"]) for r in results]
+    assert actual == expected, f"case sequence mismatch: expected {expected}, got {actual} (missing, duplicate or out-of-order trial)"
+
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("log", type=Path)
     ap.add_argument("--suite", action="store_true", help="require three stationary plus all seven interruption/motion trials")
     ap.add_argument("--review-suite", action="store_true", help="also require routed, lightning, ammo, exit sight-loss and shop lifecycle cases")
     ap.add_argument("--slow-suite", action="store_true", help="require slow stationary/motion/routed cases and one refused overlapping trial")
+    ap.add_argument("--hz", type=float, help="require measured fixture cadence within ten percent of this rate")
     args = ap.parse_args()
     results = check(args.log.read_text(errors="replace"))
     if args.suite or args.review_suite or args.slow_suite:
         expected = [0, 0, 0, 6, 8, 9, 12] if args.slow_suite else [0, 0, 0, *range(1, 13 if args.review_suite else 8)]
-        assert sorted(int(r["case"]) for r in results) == expected, "incomplete acceptance suite"
+        if args.slow_suite:
+            assert sorted(int(r["case"]) for r in results) == expected, "incomplete acceptance suite"
+        else:
+            require_sequence(results, expected)
         # Preserve ordinary skill-1 aim error: a useful shot need not hit
         # every trial, but this suite must demonstrate repeatable damage.
         assert sum(r.get("return_damage", False) for r in results if r["case"] == "0") >= 2, "fewer than two damaging return shots"
@@ -109,4 +125,7 @@ if __name__ == "__main__":
             assert all(9 <= r.get("fps", 0) <= 11 for r in results), "fixture did not run at the requested 10 Hz cadence"
             assert "TACFIX busy" in args.log.read_text(errors="replace"), "overlapping fixture was not refused"
             assert "TACFIX route_setup" in args.log.read_text(errors="replace"), "missing moving routed regression setup"
+    if args.hz is not None:
+        assert math.isfinite(args.hz) and args.hz > 0, "invalid requested cadence"
+        assert all(0.9 * args.hz <= r.get("fps", 0) <= 1.1 * args.hz for r in results), "measured fixture cadence differs from requested rate"
     print(json.dumps(results, indent=2))
