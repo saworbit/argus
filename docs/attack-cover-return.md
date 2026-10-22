@@ -120,6 +120,7 @@ remove any job-local environment override. Do not compare tick classes.
 | 10 | Ammo added after prepare, before the opening shot |
 | 11 | Sight breaks at reappearance, before the return shot |
 | 12 | Shop cancellation on death, respawn and skill change, plus ownership isolation |
+| 13 | Shared trigger-box boundary check; reports `TACFIX hull ok` before the encounter |
 
 The checker includes at least 0.5 seconds after an active moving-entry abort
 or a completed return when checking the floor. A refused entry is reported

@@ -1786,6 +1786,52 @@ mod tests {
         }
     }
 
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn teleport_trigger_uses_player_hull_if_engine_present() {
+        if !cfg!(windows) {
+            return;
+        }
+        let _gate = crate::engine::ENGINE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let env =
+            std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
+        let mut cfg = crate::config::load_for_reads_from(&env, &root).unwrap();
+        if !cfg.engine.is_file() {
+            return;
+        }
+        let scratch = crate::test_support::TestDir::new("trigger-hull").unwrap();
+        cfg.runs = scratch.path().to_path_buf();
+        let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+        ctrl.begin(&cfg, "dm4", 30, Some("hull"), Some(1), Some(0), None)
+            .await
+            .unwrap();
+        let result = async {
+            let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+            client.pump(Duration::from_secs(2));
+            if client.world.signon < 3 {
+                return Err("client did not sign on".to_string());
+            }
+            ctrl.command("developer 1; scratch1 197; scratch2 13")
+                .await?;
+            client.pump(Duration::from_millis(250));
+            client.set_impulse(217);
+            client.pump(Duration::from_secs(1));
+            let text = ctrl.log_text().unwrap_or_default();
+            client.disconnect();
+            if !text.contains("TACFIX hull ok") || text.contains("TACFIX hull FAILED") {
+                return Err("player hull boundary check failed".into());
+            }
+            Ok::<(), String>(())
+        }
+        .await;
+        let stopped = ctrl.stop(Duration::from_secs(2)).await;
+        assert!(stopped.is_ok(), "engine cleanup failed: {stopped:?}");
+        assert!(result.is_ok(), "{}", result.unwrap_err());
+    }
+
     /// Live integration: spawn the lab's own dedicated engine, connect
     /// as a real client, complete the signon dance, and require the
     /// world to flow - level name, roster names, our own entity

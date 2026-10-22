@@ -116,9 +116,7 @@ float(vector a, vector b) Argus_TacticWalk =
         t = find (world, classname, "trigger_teleport");
         while (t != world)
         {
-            if (p_x > t.absmin_x - 16 && p_x < t.absmax_x + 16
-                && p_y > t.absmin_y - 16 && p_y < t.absmax_y + 16
-                && p_z > t.absmin_z - 32 && p_z < t.absmax_z + 24)
+            if (Argus_InTriggerBox (t, p))
                 return FALSE;
             t = find (t, classname, "trigger_teleport");
         }

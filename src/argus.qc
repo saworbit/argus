@@ -7305,6 +7305,17 @@ float() Argus_ActEscort =
 //
 // Eleven points: centre, head, feet, and the four box corners at two
 // heights. That is the same set the catchup warp has always used.
+// Does the standard player hull at org overlap a trigger's world box?
+float(entity trig, vector org) Argus_InTriggerBox =
+{
+    local vector lo, hi;
+    lo = org + VEC_HULL_MIN;
+    hi = org + VEC_HULL_MAX;
+    return (hi_x > trig.absmin_x && lo_x < trig.absmax_x
+        && hi_y > trig.absmin_y && lo_y < trig.absmax_y
+        && hi_z > trig.absmin_z && lo_z < trig.absmax_z);
+};
+
 float(vector p) Argus_BoxClear =
 {
     if (pointcontents (p) != CONTENT_EMPTY)                  return FALSE;
