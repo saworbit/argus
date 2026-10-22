@@ -28,6 +28,19 @@ def write_bsp(path, entities):
 
 
 class TestArgusMapGate(unittest.TestCase):
+    def test_malformed_endpoints_cannot_pass_playability(self):
+        from argus_navjson import FAMILIES
+        self.write_entities()
+        for family in FAMILIES:
+            self.write_graph()
+            graph = json.loads(self.graph.read_text())
+            graph[family] = [[0.5, 1]]
+            self.graph.write_text(json.dumps(graph))
+            self.write_probe()
+            with self.subTest(family=family):
+                with self.assertRaisesRegex(ValueError, 'endpoints must be integers'):
+                    assess_playability(self.bsp, self.graph, self.probe)
+
     def test_door_only_hop_is_in_every_reader(self):
         from argus_mapgate import _graph_edges
         from argus_pointfile import _adj

@@ -31,9 +31,22 @@ pub fn registration(cfg: &Config, map: &str) -> Registration {
 
 fn registration_text(dispatch: &str, progs: &str, map: &str) -> Registration {
     static COMMENTS: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
-    let comments = COMMENTS.get_or_init(|| regex::Regex::new(r"(?s)/\*.*?\*/|//[^\r\n]*").unwrap());
-    let dispatch = comments.replace_all(dispatch, " ");
-    let progs = comments.replace_all(progs, " ");
+    let comments = COMMENTS.get_or_init(|| {
+        regex::Regex::new(r#"(?s)"(?:\\.|[^"\\])*"|/\*.*?\*/|//[^\r\n]*"#).unwrap()
+    });
+    let strip = |text: &str| {
+        comments
+            .replace_all(text, |caps: &regex::Captures<'_>| {
+                if caps[0].starts_with('"') {
+                    caps[0].to_string()
+                } else {
+                    " ".into()
+                }
+            })
+            .into_owned()
+    };
+    let dispatch = strip(dispatch);
+    let progs = strip(progs);
     Registration {
         branch: dispatch.contains(&format!("mapname == \"{map}\"")),
         progs: progs
@@ -196,6 +209,24 @@ fn insert_progs_line(src: &str, qc_line: &str) -> Result<String, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn registration_string_and_comment_parity() {
+        let cases: serde_json::Value =
+            serde_json::from_str(include_str!("../../testdata/registration.json")).unwrap();
+        for case in cases.as_array().unwrap() {
+            let state = registration_text(
+                case["dispatch"].as_str().unwrap(),
+                case["progs"].as_str().unwrap(),
+                "fixture",
+            );
+            assert_eq!(
+                serde_json::json!([state.branch, state.progs]),
+                case["expected"],
+                "{case}"
+            );
+        }
+    }
 
     #[test]
     fn registration_ignores_comments_and_requires_an_exact_progs_line() {

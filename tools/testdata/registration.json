@@ -1,0 +1,8 @@
+[
+  {"dispatch":"dprint (\"https://example.test\"); if (mapname == \"fixture\") spawn ();","progs":"argus_nav_fixture.qc\n","expected":[true,true]},
+  {"dispatch":"dprint (\"escaped \\\" // text /* still string */\"); if (mapname == \"fixture\") spawn ();","progs":"argus_nav_fixture.qc\n","expected":[true,true]},
+  {"dispatch":"/* if (mapname == \"fixture\") spawn (); */","progs":"argus_nav_fixture.qc\n","expected":[false,true]},
+  {"dispatch":"// if (mapname == \"fixture\") spawn ();\n","progs":"argus_nav_fixture.qc\n","expected":[false,true]},
+  {"dispatch":"dprint (\"https://example.test\"); // if (mapname == \"fixture\") spawn ();","progs":"argus_nav_fixture.qc\n","expected":[false,true]},
+  {"dispatch":"/* ignored */ if (mapname == \"fixture\") spawn (); // ignored","progs":"/* ignored */\nargus_nav_fixture.qc // entry\n","expected":[true,true]}
+]

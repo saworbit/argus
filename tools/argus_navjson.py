@@ -22,12 +22,14 @@ def load_nav(path):
 
 
 def pairs(nav, families):
-    """Yield in-range directed endpoint pairs from the requested families."""
+    """Yield in-range pairs; reject endpoint types that cannot name a node."""
     count = len(nav.get("nodes", []))
     for family in families:
         for link in nav.get(family, []):
             if len(link) >= 2:
-                source, target = int(link[0]), int(link[1])
+                source, target = link[:2]
+                if type(source) is not int or type(target) is not int:
+                    raise ValueError(f'{family}: link endpoints must be integers')
                 if 0 <= source < count and 0 <= target < count:
                     yield source, target
 

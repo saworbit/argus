@@ -70,7 +70,7 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   - `--no-dispatcher`: Suppress generation of the per-map `Argus_Nav_Spawn` function (recommended when using `argus_nav_dispatch.qc`).
   - `--no-rj`: Suppress rocket-jump link exploration.
   - `--grid <n>`: Override base waypoint sampling grid spacing.
-  - `--register`: Wire the generated file into `src/progs.src` and update `src/argus_nav_dispatch.qc`.
+  - `--register`: Wire the generated file into `src/progs.src` and update `src/argus_nav_dispatch.qc`. The output filename must be `argus_nav_<mapname>.qc`; custom names are refused before generation.
   - `--reanalyze-tactics`: Recompute static exposure and nearest hidden ordinary-walk targets in an existing shipped QC/JSON pair without changing graph topology or typed movement data.
 
 ---

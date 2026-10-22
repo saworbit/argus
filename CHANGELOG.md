@@ -24,6 +24,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Preserve quoted strings while checking navigation registration in Rust and
+  Python (#523), reject noninteger graph endpoints (#524), and refuse custom
+  QC filenames with `--register` before any files change (#537).
+
 - Require separate server-console keys for A/B snapshots and probe teleports;
   consume the A/B key after use. Update both lab callers and add a real-engine
   permission regression (#533). Document the tactical fixture's live-state
