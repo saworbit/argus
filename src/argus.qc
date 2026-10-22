@@ -10068,6 +10068,13 @@ void(float on) Argus_SetOmicron =
 {
     local entity b, oself;
 
+    // A mid-match rename splits netname-keyed bot telemetry. Keep this
+    // costume local, even when the multiplayer roster key is armed (#552).
+    if (deathmatch || coop)
+    {
+        sprint (self, PRINT_HIGH, "Omicron names are single-player only.\n");
+        return;
+    }
     if (argus_omicron == on)
         return;
     argus_omicron = on;
