@@ -7303,8 +7303,6 @@ float() Argus_ActEscort =
 // first. These two are that proof, in one place, because the tree had
 // the rigour in the catchup warp and nowhere else.
 //
-// Eleven points: centre, head, feet, and the four box corners at two
-// heights. That is the same set the catchup warp has always used.
 // Does the standard player hull at org overlap a trigger's world box?
 float(entity trig, vector org) Argus_InTriggerBox =
 {
@@ -7316,6 +7314,8 @@ float(entity trig, vector org) Argus_InTriggerBox =
         && hi_z > trig.absmin_z && lo_z < trig.absmax_z);
 };
 
+// Eleven points: centre, head, feet, and the four box corners at two
+// heights. That is the same set the catchup warp has always used.
 float(vector p) Argus_BoxClear =
 {
     if (pointcontents (p) != CONTENT_EMPTY)                  return FALSE;
@@ -8120,6 +8120,46 @@ void() Argus_ABControl =
     }
 };
 
+// Shared with the bounded engine regression; the live call stays after combat.
+void(float fighting) Argus_LifeRouteVeto =
+{
+    // Goal selection happens before combat acquires a fresh target. If this
+    // life already started the crossing that killed the last one, stop it as
+    // soon as the nearby fight becomes real and shop again with that context.
+    if (fighting && self.ar_goal != world
+        && self.ar_goal == self.ar_lastlifegoal
+        && time < self.ar_lastlifeuntil
+        && time <= self.ar_seen + 0.4
+        && vlen (Argus_GoalPoint (self.ar_goal) - self.origin) >= 600)
+    {
+        if (self.ar_goal.claimed_by == self)
+            ReleaseClaim (self.ar_goal);
+        if (!self.ar_lastlifevetoed)
+        {
+            self.ar_lastlifevetoed = 1;
+            Argus_Event ("lifeveto");
+        }
+        self.ar_goal = world;
+        self.ar_node = world;
+        self.ar_pending = 0;
+        self.ar_mode = 0;
+        self.ar_routegen = self.ar_routegen + 1;
+        Argus_Nav_Abort (self);
+        self.ar_hopjump = 0;
+        self.ar_hopspeed = 0;
+        self.ar_sprintstate = 0;
+        self.ar_hoprj = 0;
+        self.ar_hoplift = 0;
+        self.ar_hopswim = 0;
+        self.ar_hoptrain = 0;
+        self.ar_hopdoor = 0;
+        self.ar_hopair = 0;
+        self.ar_liftwait = 0;
+        self.ar_jump = 0;
+        Argus_PickGoal ();
+    }
+};
+
 void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
@@ -8411,41 +8451,7 @@ void() Argus_AI =
         return;
     }
 
-    // Goal selection happens before combat acquires a fresh target. If this
-    // life already started the crossing that killed the last one, stop it as
-    // soon as the nearby fight becomes real and shop again with that context.
-    if (fighting && self.ar_goal != world
-        && self.ar_goal == self.ar_lastlifegoal
-        && time < self.ar_lastlifeuntil
-        && time <= self.ar_seen + 0.4
-        && vlen (Argus_GoalPoint (self.ar_goal) - self.origin) >= 600)
-    {
-        if (self.ar_goal.claimed_by == self)
-            ReleaseClaim (self.ar_goal);
-        if (!self.ar_lastlifevetoed)
-        {
-            self.ar_lastlifevetoed = 1;
-            Argus_Event ("lifeveto");
-        }
-        self.ar_goal = world;
-        self.ar_node = world;
-        self.ar_pending = 0;
-        self.ar_mode = 0;
-        self.ar_routegen = self.ar_routegen + 1;
-        Argus_Nav_Abort (self);
-        self.ar_hopjump = 0;
-        self.ar_hopspeed = 0;
-        self.ar_sprintstate = 0;
-        self.ar_hoprj = 0;
-        self.ar_hoplift = 0;
-        self.ar_hopswim = 0;
-        self.ar_hoptrain = 0;
-        self.ar_hopdoor = 0;
-        self.ar_hopair = 0;
-        self.ar_liftwait = 0;
-        self.ar_jump = 0;
-        Argus_PickGoal ();
-    }
+    Argus_LifeRouteVeto (fighting);
 
     // body-block clearance (#177): if within 48u of another client
     // and the other is jumping or firing, sidestep first, shoot second

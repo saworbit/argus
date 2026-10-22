@@ -1,0 +1,242 @@
+LOG started on: 10/22/2026 21:18:58 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm2
+Clearing memory
+Programs occupy 1028K.
+trying to open external vis file
+maps/dm2.vis not found, trying argus.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 215 nodes, 1005 links
+0 entities inhibited
+ARGUS init on dm2
+ARGEVT Carmack spawned
+ARGEVT Romero spawned
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '2624.0 -488.0  32.0' spd 0 yaw 177.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '2704.0 -2048.0 128.0' spd 0 yaw 317.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '2560.0 -192.0  32.0' spd 0 yaw 209.6 mode 0 st 0 gl 0 hp 100 frg 0
+SpawnServer: dm2
+Clearing memory
+Programs occupy 1028K.
+trying to open external vis file
+maps/dm2.vis not found, trying argus.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 215 nodes, 1005 links
+0 entities inhibited
+ARGUS init on dm2
+ARGEVT Carmack spawned
+ARGEVT Romero spawned
+ARGEVT Joe Rogan spawned
+Server spawned.
+TACFIX server_ready 
+ARGLOG Joe Rogan t   1.2 pos '2544.0 -32.0 -64.0' spd 0 yaw 165.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '2560.0 -192.0  32.0' spd 0 yaw 188.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '2576.0 -1328.0  24.0' spd 0 yaw 282.9 mode 0 st 0 gl 0 hp 100 frg 0
+Client 169.254.71.10:49312 connected
+ARGLOG labprobe t   1.4 pos '2176.0 -2176.0  89.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX ready 1 case 14 
+ARGEVT Romero respawn
+ARGEVT Romero plan powerup via weapon
+ARGEVT Romero goal weapon_rocketlauncher
+ARGEVT Romero lifeveto
+ARGEVT Romero goal item_health
+ARGEVT Romero goal item_health
+ARGEVT Romero goal item_health
+ARGEVT Romero goal item_health
+TACFIX lifechecks 1 control 1 near 1 fight 1 own 1 other 1
+TACFIX visible 1 walk 1 cover 1 shot 1
+TACFIX begin dm2 case 14
+TACFIX trial 1 case 14
+TACFIX lifeaccepted 1
+ARGEVT Romero tactic prepare
+TACFIX sample   0.0 pos '2209.0 -279.0  24.0' hidden 0 rockets 20 targethp 5000 hp 100 state 1 launches 0 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.1 pos '2209.0 -279.0  24.0' hidden 0 rockets 20 targethp 5000 hp 100 state 1 launches 0 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.1 pos '2209.0 -279.0  24.0' hidden 0 rockets 20 targethp 5000 hp 100 state 1 launches 0 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.1 pos '2209.0 -279.0  24.0' hidden 0 rockets 20 targethp 5000 hp 100 state 1 launches 0 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   1.7 pos '2209.0 -279.0  24.0' spd 0 yaw  22.4 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   0.2 pos '2209.0 -279.0  24.0' hidden 0 rockets 20 targethp 5000 hp 100 state 1 launches 0 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.2 pos '2209.0 -279.0  24.0' hidden 0 rockets 20 targethp 5000 hp 100 state 1 launches 0 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero tactic opening
+TACFIX sample   0.3 pos '2209.3 -277.5  24.0' hidden 0 rockets 19 targethp 5000 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.3 pos '2210.4 -271.7  24.0' hidden 0 rockets 19 targethp 5000 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.4 pos '2212.4 -261.5  24.0' hidden 0 rockets 19 targethp 5000 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   1.9 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   0.4 pos '2214.6 -249.9  24.0' hidden 0 rockets 19 targethp 5000 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.4 pos '2217.0 -237.8  24.0' hidden 0 rockets 19 targethp 5000 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.5 pos '2219.2 -225.7  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.5 pos '2221.4 -213.6  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.6 pos '2223.4 -202.0  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.6 pos '2225.5 -190.1  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.7 pos '2227.6 -178.3  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   2.2 pos '2227.6 -178.3  24.0' spd 280.0 yaw   5.9 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   0.7 pos '2229.7 -166.2  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.8 pos '2231.8 -154.3  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.8 pos '2233.7 -143.4  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.8 pos '2235.4 -134.1  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   0.9 pos '2236.7 -126.3  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   2.4 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   0.9 pos '2237.9 -120.0  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.0 pos '2238.8 -114.7  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.0 pos '2239.6 -110.3  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.1 pos '2240.2 -106.5  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.1 pos '2240.4 -102.7  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.1 pos '2237.9 -96.2  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   2.7 pos '2234.8 -90.4  24.0' spd 248.1 yaw 335.0 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   1.2 pos '2232.8 -86.8  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.2 pos '2226.2 -76.2  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.3 pos '2219.6 -66.1  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.3 pos '2214.2 -57.7  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.4 pos '2209.6 -50.6  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   2.9 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   1.4 pos '2205.5 -44.6  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.4 pos '2202.2 -39.6  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.5 pos '2199.2 -35.2  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.5 pos '2196.5 -31.4  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.6 pos '2194.0 -28.2  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 2 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero tactic covered
+TACFIX sample   1.6 pos '2190.4 -28.4  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.7 pos '2185.3 -32.8  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   3.2 pos '2183.3 -35.2  24.0' spd 215.8 yaw 330.0 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   1.7 pos '2179.0 -40.9  24.0' hidden 1 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.7 pos '2172.3 -51.2  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.8 pos '2166.0 -61.4  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.8 pos '2160.8 -70.1  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   1.9 pos '2156.3 -77.5  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   3.4 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   1.9 pos '2152.5 -83.9  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.0 pos '2149.3 -89.3  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.0 pos '2146.6 -93.9  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.0 pos '2144.4 -97.9  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.1 pos '2142.6 -101.5  24.0' hidden 0 rockets 19 targethp 4884 hp 100 state 3 launches 1 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero tactic reappear
+ARGEVT Romero tactic returnshot
+TACFIX sample   2.1 pos '2141.1 -105.3  24.0' hidden 0 rockets 18 targethp 4884 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGUS Romero threatmove range 2
+TACFIX sample   2.2 pos '2140.0 -108.4  24.0' hidden 0 rockets 18 targethp 4884 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   3.7 pos '2140.0 -108.4  24.0' spd  71.1 yaw 342.6 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   2.2 pos '2139.1 -110.8  24.0' hidden 0 rockets 18 targethp 4884 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.3 pos '2138.5 -112.5  24.0' hidden 0 rockets 18 targethp 4884 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.3 pos '2138.2 -113.5  24.0' hidden 0 rockets 18 targethp 4884 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.3 pos '2138.0 -113.9  24.0' hidden 0 rockets 18 targethp 4884 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.4 pos '2138.0 -113.9  24.0' hidden 0 rockets 18 targethp 4884 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   3.9 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   2.4 pos '2138.0 -113.9  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.5 pos '2138.0 -113.9  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.5 pos '2138.0 -113.9  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.6 pos '2138.0 -113.9  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.6 pos '2138.0 -113.9  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.6 pos '2140.6 -114.4  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   4.2 pos '2145.3 -115.4  24.0' spd 177.0 yaw 346.7 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   2.7 pos '2148.7 -116.2  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.7 pos '2161.5 -118.9  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.8 pos '2176.5 -122.3  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.8 pos '2191.2 -125.6  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.9 pos '2205.9 -128.9  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   4.4 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   2.9 pos '2220.5 -132.2  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.0 pos '2235.2 -135.5  24.0' hidden 0 rockets 18 targethp 4767 hp 100 state 0 launches 2 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.0 pos '2249.5 -138.9  24.0' hidden 0 rockets 17 targethp 4767 hp 100 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero weapon sg
+TACFIX sample   3.1 pos '2263.9 -142.1  24.0' hidden 0 rockets 17 targethp 4767 hp 100 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.1 pos '2278.3 -145.2  24.0' hidden 0 rockets 17 targethp 4767 hp 100 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.2 pos '2292.7 -148.4  24.0' hidden 0 rockets 17 targethp 4767 hp 100 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   4.7 pos '2302.3 -150.6  24.0' spd  84.5 yaw 347.0 mode 0 st 0 gl 0 hp 70 frg 0
+TACFIX sample   3.2 pos '2304.5 -151.0  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.3 pos '2309.6 -151.8  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero hazard
+TACFIX sample   3.3 pos '2307.3 -151.1  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.3 pos '2303.5 -149.9  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.4 pos '2306.6 -150.6  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   5.0 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   3.4 pos '2310.8 -151.5  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.5 pos '2308.0 -150.6  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.5 pos '2303.7 -149.3  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.6 pos '2306.5 -149.8  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.6 pos '2310.4 -150.7  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.7 pos '2307.4 -149.7  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   5.2 pos '2303.6 -148.6  24.0' spd 102.7 yaw 350.8 mode 0 st 0 gl 0 hp 70 frg 0
+TACFIX sample   3.7 pos '2302.9 -148.3  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.8 pos '2305.3 -148.8  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.8 pos '2309.2 -149.6  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.9 pos '2306.0 -148.5  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.9 pos '2305.7 -148.3  24.0' hidden 0 rockets 17 targethp 4662 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   5.5 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   4.0 pos '2310.5 -149.5  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.0 pos '2309.1 -149.0  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.0 pos '2306.1 -148.0  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.1 pos '2308.8 -148.7  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.1 pos '2307.5 -148.2  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.2 pos '2307.5 -148.2  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   5.8 pos '2307.6 -148.2  24.0' spd   9.2 yaw 345.6 mode 0 st 0 gl 0 hp 70 frg 0
+TACFIX sample   4.2 pos '2308.3 -148.3  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.3 pos '2308.3 -148.3  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.3 pos '2307.8 -148.1  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.4 pos '2307.8 -148.0  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.4 pos '2307.2 -147.8  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   6.0 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   4.5 pos '2308.4 -148.1  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.5 pos '2307.5 -147.8  24.0' hidden 0 rockets 17 targethp 4638 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.6 pos '2307.2 -147.6  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.6 pos '2307.9 -147.8  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.7 pos '2308.1 -147.8  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.7 pos '2307.3 -147.5  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   6.3 pos '2308.0 -147.7  24.0' spd  48.4 yaw 343.1 mode 0 st 0 gl 0 hp 70 frg 0
+TACFIX sample   4.7 pos '2307.2 -147.4  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.8 pos '2307.8 -147.5  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.8 pos '2307.6 -147.4  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero hazard
+TACFIX sample   4.9 pos '2308.3 -147.6  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.9 pos '2308.3 -147.5  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   6.5 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   5.0 pos '2307.3 -147.2  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.0 pos '2308.6 -147.5  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.1 pos '2307.8 -147.2  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.1 pos '2307.5 -147.1  24.0' hidden 0 rockets 17 targethp 4614 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.2 pos '2308.4 -147.3  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.2 pos '2308.5 -147.3  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   6.8 pos '2308.3 -147.2  24.0' spd   9.6 yaw 345.0 mode 0 st 0 gl 0 hp 70 frg 0
+TACFIX sample   5.3 pos '2307.7 -147.0  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.3 pos '2307.4 -146.8  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.4 pos '2308.1 -147.0  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.4 pos '2308.4 -147.1  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.4 pos '2307.8 -146.9  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   7.0 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX sample   5.5 pos '2307.7 -146.8  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.5 pos '2308.5 -147.0  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.6 pos '2308.8 -147.1  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.6 pos '2307.9 -146.7  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.7 pos '2307.7 -146.7  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.7 pos '2308.5 -146.9  24.0' hidden 0 rockets 17 targethp 4590 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   7.3 pos '2307.7 -146.6  24.0' spd  51.2 yaw 345.1 mode 0 st 0 gl 0 hp 70 frg 0
+TACFIX sample   5.8 pos '2308.6 -146.8  24.0' hidden 0 rockets 17 targethp 4566 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.8 pos '2307.9 -146.6  24.0' hidden 0 rockets 17 targethp 4566 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.9 pos '2307.7 -146.5  24.0' hidden 0 rockets 17 targethp 4566 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.9 pos '2308.3 -146.6  24.0' hidden 0 rockets 17 targethp 4566 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero hazard
+TACFIX sample   6.0 pos '2308.2 -146.6  24.0' hidden 0 rockets 17 targethp 4566 hp 70 state 0 launches 3 memory '2433.0 -183.0  24.0' targetvel '  0.0   0.0   0.0'
+ARGLOG labprobe t   7.5 pos '2176.0 -2176.0  84.0' spd 0 yaw 90 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   7.5 pos '2426.6 -22.6 -72.0' spd 407.3 yaw 233.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.5 pos '2601.0 -1436.2  24.0' spd 320.0 yaw 313.6 mode 0 st 0 gl 0 hp 100 frg 0
+TACFIX end frames 399 seconds   6.0
+TACFIX done 1
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan goal weapon_rocketlauncher
+ARGEVT Joe Rogan route 19 start '2401.0   9.0 -72.0' goal '2465.0 -1719.0  24.0'

@@ -9,7 +9,7 @@ entity ar_tf_secondary;
 vector ar_tf_start;
 vector ar_tf_enemy;
 float ar_tf_begin, ar_tf_next, ar_tf_hidden, ar_tf_moved, ar_tf_frames;
-float ar_tf_case, ar_tf_id, ar_tf_launches;
+float ar_tf_case, ar_tf_id, ar_tf_launches, ar_tf_lifeok;
 .float ar_tf_rocket_seen;
 float ar_tf_fired;
 .float ar_tf_solid, ar_tf_camera, ar_tf_weapon;
@@ -55,6 +55,141 @@ void() Argus_TacticFixtureShopChecks =
     ok = ok && an_busy && an_shop && self.ar_shopping && an_bot == self;
     Argus_Nav_Abort (self);
     dprint ("TACFIX shopchecks "); dprint (ftos (ok)); dprint ("\n");
+};
+
+void(entity goal, entity node) Argus_FixtureArmLifeRoute =
+{
+    self.ar_goal = goal; self.ar_node = node;
+    self.ar_mode = 2; self.ar_pending = 1; self.ar_shopping = 1;
+    self.ar_hopjump = 1; self.ar_hopspeed = 1; self.ar_sprintstate = 1;
+    self.ar_hoprj = 1; self.ar_hoplift = 1; self.ar_hopswim = 1;
+    self.ar_hoptrain = 1; self.ar_hopdoor = 1; self.ar_hopair = 1;
+    self.ar_liftwait = 1; self.ar_jump = 1;
+};
+
+float() Argus_FixtureLifeRouteCleared =
+{
+    if (self.ar_hopjump) return FALSE;
+    if (self.ar_hopspeed) return FALSE;
+    if (self.ar_sprintstate) return FALSE;
+    if (self.ar_hoprj) return FALSE;
+    if (self.ar_hoplift) return FALSE;
+    if (self.ar_hopswim) return FALSE;
+    if (self.ar_hoptrain) return FALSE;
+    if (self.ar_hopdoor) return FALSE;
+    if (self.ar_hopair) return FALSE;
+    if (self.ar_liftwait) return FALSE;
+    if (self.ar_jump) return FALSE;
+    if (self.ar_pending) return FALSE;
+    if (self.ar_mode) return FALSE;
+    if (self.ar_node != world) return FALSE;
+    return TRUE;
+};
+
+// Synthetic menu and completed distance field, consumed by the real scorer.
+// Nothing is added to the shipped nav or item chains beyond this call.
+void() Argus_TacticFixtureLifeChecks =
+{
+    local entity start, gun_node, quad_node, heal_node, gun, quad, heal;
+    local entity oldchain, oldstart, owner, queue;
+    local float oldpow, control, nearok, fightok, ownok, otherok, i, generation;
+    owner = an_bot;
+    if (an_busy && owner != world)
+    {
+        Argus_Nav_Abort (owner);
+        if (owner != self && owner.ar_goal != world) owner.ar_pending = 1;
+    }
+    oldchain = argus_itemchain; oldstart = an_startnode;
+    oldpow = self.ar_wpow;
+    start = spawn (); gun_node = spawn (); quad_node = spawn (); heal_node = spawn ();
+    start.origin = self.origin;
+    gun_node.origin = self.origin + '800 0 0'; gun_node.an_dist = 800;
+    quad_node.origin = self.origin + '1000 0 0'; quad_node.an_dist = 1000;
+    heal_node.origin = self.origin + '64 0 0'; heal_node.an_dist = 64;
+    start.an_mark = an_gen; gun_node.an_mark = an_gen;
+    quad_node.an_mark = an_gen; heal_node.an_mark = an_gen;
+    gun = spawn (); quad = spawn (); heal = spawn ();
+    gun.classname = "weapon_rocketlauncher";
+    quad.classname = "item_artifact_super_damage";
+    heal.classname = "item_health"; heal.healamount = 25;
+    gun.flags = FL_ITEM; quad.flags = FL_ITEM; heal.flags = FL_ITEM;
+    gun.solid = SOLID_TRIGGER; quad.solid = SOLID_TRIGGER; heal.solid = SOLID_TRIGGER;
+    setorigin (gun, gun_node.origin); setorigin (quad, quad_node.origin); setorigin (heal, heal_node.origin);
+    gun.ar_gnodeset = 1; quad.ar_gnodeset = 1; heal.ar_gnodeset = 1;
+    gun.ar_regionset = 1; quad.ar_regionset = 1; heal.ar_regionset = 1;
+    gun.ar_goalnode = gun_node; quad.ar_goalnode = quad_node; heal.ar_goalnode = heal_node;
+    gun.ar_nextitem = quad; quad.ar_nextitem = heal; argus_itemchain = gun;
+    self.items = IT_AXE | IT_SHOTGUN; self.weapon = IT_SHOTGUN;
+    self.health = 50; self.ar_wpow = 1000;
+    self.ar_lastlifegoal = world; self.ar_lastlifeuntil = 0;
+    an_startnode = start; an_shopready = 1;
+    Argus_PickGoal ();
+    control = 1;
+    if (self.ar_goal != gun) control = 0;
+    if (self.ar_planfinal != AR_C_POWER) control = 0;
+    if (self.ar_planwant != AR_C_WEAPON) control = 0;
+    self.ar_lastlifegoal = gun; self.ar_lastlifeuntil = time + 60;
+    self.ar_enemy = world;
+    nearok = 1; i = 0;
+    while (i < 3)
+    {
+        Argus_PickGoal ();
+        if (self.ar_goal != heal) nearok = 0;
+        if (self.ar_planfinal != AR_C_HEALTH) nearok = 0;
+        if (self.ar_planwant != AR_C_HEALTH) nearok = 0;
+        i = i + 1;
+    }
+    self.ar_enemy = ar_tf_target; self.ar_seen = time;
+    Argus_PickGoal ();
+    fightok = 1;
+    if (self.ar_goal != heal) fightok = 0;
+    if (!self.ar_lastlifevetoed) fightok = 0;
+    an_shopready = 0;
+    // Active route, queue owned by this bot. Veto must replace its old flood.
+    an_busy = 1; an_shop = 1; an_bot = self; anq_head = start; anq_tail = gun_node;
+    Argus_FixtureArmLifeRoute (gun, start); generation = self.ar_routegen;
+    Argus_LifeRouteVeto (TRUE);
+    ownok = 1;
+    if (!Argus_FixtureLifeRouteCleared ()) ownok = 0;
+    if (self.ar_routegen != generation + 1) ownok = 0;
+    if (self.ar_goal != world) ownok = 0;
+    if (!an_busy) ownok = 0;
+    if (!an_shop) ownok = 0;
+    if (an_bot != self) ownok = 0;
+    if (!self.ar_shopping) ownok = 0;
+    if (an_startnode == start) ownok = 0;
+    if (anq_head == start) ownok = 0;
+    Argus_Nav_Abort (self);
+    // An unrelated owner's queue must survive the same active-route veto.
+    queue = Argus_NearestNode (self.origin);
+    otherok = Argus_Shop_Start (ar_tf_target, queue);
+    Argus_FixtureArmLifeRoute (gun, start); generation = self.ar_routegen;
+    Argus_LifeRouteVeto (TRUE);
+    if (!Argus_FixtureLifeRouteCleared ()) otherok = 0;
+    if (self.ar_routegen != generation + 1) otherok = 0;
+    if (self.ar_shopping) otherok = 0;
+    if (!an_busy) otherok = 0;
+    if (!an_shop) otherok = 0;
+    if (an_bot != ar_tf_target) otherok = 0;
+    if (anq_head != queue) otherok = 0;
+    if (anq_tail != queue) otherok = 0;
+    Argus_Nav_Abort (ar_tf_target); Argus_Nav_Abort (self);
+    self.ar_goal = world; self.ar_lastlifegoal = world; self.ar_lastlifeuntil = 0;
+    self.ar_planfinal = 0; self.ar_planwant = 0; self.ar_wpow = oldpow;
+    argus_itemchain = oldchain; an_startnode = oldstart; an_goalnode = world;
+    ar_tf_lifeok = 1;
+    if (!control) ar_tf_lifeok = 0;
+    if (!nearok) ar_tf_lifeok = 0;
+    if (!fightok) ar_tf_lifeok = 0;
+    if (!ownok) ar_tf_lifeok = 0;
+    if (!otherok) ar_tf_lifeok = 0;
+    self.ar_lastlifevetoed = 0;
+    dprint ("TACFIX lifechecks "); dprint (ftos (ar_tf_lifeok));
+    dprint (" control "); dprint (ftos (control)); dprint (" near "); dprint (ftos (nearok));
+    dprint (" fight "); dprint (ftos (fightok)); dprint (" own "); dprint (ftos (ownok));
+    dprint (" other "); dprint (ftos (otherok)); dprint ("\n");
+    remove (gun); remove (quad); remove (heal);
+    remove (start); remove (gun_node); remove (quad_node); remove (heal_node);
 };
 
 void() Argus_TacticFixture =
@@ -171,9 +306,10 @@ void() Argus_TacticFixture =
     b.ar_secondaryscan = 0;
     b.ar_aimvel = 0; b.ar_mottarget = world;
     b.ar_motoff = '0 0 0'; b.ar_motprev = '0 0 0';
-    if (cvar ("scratch2") == 12)
+    if (cvar ("scratch2") == 12 || cvar ("scratch2") == 14)
     {
-        Argus_TacticFixtureShopChecks ();
+        if (cvar ("scratch2") == 12) Argus_TacticFixtureShopChecks ();
+        else Argus_TacticFixtureLifeChecks ();
         setorigin (b, p); b.velocity = '0 0 0';
         b.ar_enemy = ar_tf_target; b.ar_seen = time; b.ar_lastseen = q;
         b.ar_nextai = time + 12;
@@ -212,6 +348,8 @@ void() Argus_TacticFixture =
     dprint (" case "); dprint (ftos (ar_tf_case)); dprint ("\n");
     dprint ("TACFIX trial "); dprint (ftos (ar_tf_id));
     dprint (" case "); dprint (ftos (ar_tf_case)); dprint ("\n");
+    if (ar_tf_case == 14)
+    { dprint ("TACFIX lifeaccepted "); dprint (ftos (ar_tf_lifeok)); dprint ("\n"); }
     if (ar_tf_case == 8)
     {
         dprint ("TACFIX route_setup mode "); dprint (ftos (b.ar_mode));

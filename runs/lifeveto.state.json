@@ -1,0 +1,68 @@
+{
+  "base_commit": "d5343da58bdbb717f8bd2f9d06cdcf0a80647d42",
+  "scope": "Real scorer and route-veto function, synthetic menu and transient distance field. No shipped graph edits or combat tuning.",
+  "suites": [
+    {
+      "map": "dm4",
+      "log_path": "runs/lifeveto_final_dm4.log",
+      "cases": [
+        14
+      ],
+      "step": 0.0139,
+      "deathmatch": 1,
+      "overlap_refused": false,
+      "source_md5": "5276efe5f7526f63af094bb1031f7930",
+      "binary_md5": "2aa92d4eb164cb4241bb654eb70bcd46",
+      "nav_md5": "624a60f0e062f8d5dda4390475077f9a",
+      "log_sha256": "0929cdff85d3b222fa355af8ebb6861d5d777a3ee37a1d6fcfc5626b818642cf",
+      "results": [
+        {
+          "map": "dm4",
+          "case": "14",
+          "lifeveto_checks": true,
+          "frames": 399,
+          "seconds": 6.0,
+          "fps": 66.5
+        }
+      ]
+    },
+    {
+      "map": "dm2",
+      "log_path": "runs/lifeveto_final_dm2.log",
+      "cases": [
+        14
+      ],
+      "step": 0.0139,
+      "deathmatch": 1,
+      "overlap_refused": false,
+      "source_md5": "5276efe5f7526f63af094bb1031f7930",
+      "binary_md5": "2aa92d4eb164cb4241bb654eb70bcd46",
+      "nav_md5": "283a19071dbf3577c593b8f83fa159da",
+      "log_sha256": "439b4f1ff42798bc34c675c2a1dea272549890c46edcc26806ec05f652d64f62",
+      "results": [
+        {
+          "map": "dm2",
+          "case": "14",
+          "lifeveto_checks": true,
+          "frames": 399,
+          "seconds": 6.0,
+          "fps": 66.5
+        }
+      ]
+    }
+  ],
+  "mutations": [
+    {
+      "log_path": "runs/lifeveto_wrong_order2.log",
+      "log_sha256": "43e1fd31529ee5395f39c3eee43951b4420dc3573aab2124a216a2cb4fcb7e1e",
+      "change": "GOAP substitution moved after the failed-life veto",
+      "expected": "acceptance checker rejects the trial"
+    },
+    {
+      "log_path": "runs/lifeveto_armed_hop.log",
+      "log_sha256": "5f01187780ac03b6fdbcdc77e467c906e6c0b31b92d188db2e6920e7a4b9f534",
+      "change": "Typed jump reset removed from the active-route veto",
+      "expected": "acceptance checker rejects the trial"
+    }
+  ]
+}

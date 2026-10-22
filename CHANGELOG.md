@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 | Status | What to use |
 |---|---|
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `98C66862A34D1A2501F4C104CE02D8B3` |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `2AA92D4EB164CB4241BB654EB70BCD46` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
@@ -23,6 +23,10 @@ passing botmatch does not establish better human play.
 ## Main updates
 
 ### Unreleased
+
+- Cover failed-life avoidance after GOAP weapon substitution, repeated picks,
+  typed-hop cancellation and both shared-queue ownership paths in the real
+  engine on dm4 and dm2 (#530).
 
 - Sequence tactical trials with console and engine acknowledgements, unique
   IDs and bounded cleanup (#516). Observe real owned rockets independently
