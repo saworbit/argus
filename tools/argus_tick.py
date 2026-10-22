@@ -39,15 +39,14 @@ Written for docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 """
 import re, sys, os, glob, statistics as st
 
-PAT = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos")
+from argus_tape import samples
 
 
 def estimate(path):
+    from pathlib import Path
     per = {}
-    for line in open(path, errors='replace'):
-        m = PAT.search(line)
-        if m:
-            per.setdefault(m.group(1), []).append(float(m.group(2)))
+    for name, row in samples(Path(path).read_text(errors='replace')):
+        per.setdefault(name, []).append(row['t'])
     inc = []
     for ts in per.values():
         for a, b in zip(ts, ts[1:]):

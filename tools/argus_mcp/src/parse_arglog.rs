@@ -866,7 +866,7 @@ fn event_fields(line: &str, names: &[String]) -> Option<(String, String, String)
             .strip_prefix(name.as_str())
             .and_then(|s| s.strip_prefix(' '))
         {
-            let mut fields = payload.splitn(2, char::is_whitespace);
+            let mut fields = payload.trim_start().splitn(2, char::is_whitespace);
             let verb = fields.next()?;
             if EVENT_VERBS.split('|').any(|known| known == verb) {
                 return Some((
@@ -914,6 +914,42 @@ fn map_re() -> &'static Regex {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shared_python_role_fixture() {
+        let cases: serde_json::Value =
+            serde_json::from_str(include_str!("../../testdata/roles.json")).unwrap();
+        for case in cases.as_array().unwrap() {
+            let tape = parse_tape(case["text"].as_str().unwrap());
+            let humans = tape.human_names();
+            let instruments = tape.instrument_names();
+            let mut bots: Vec<_> = tape
+                .samples
+                .keys()
+                .filter(|name| !humans.contains(*name) && !instruments.contains(*name))
+                .cloned()
+                .collect();
+            let mut humans: Vec<_> = humans.into_iter().collect();
+            let mut instruments: Vec<_> = instruments.into_iter().collect();
+            bots.sort();
+            humans.sort();
+            instruments.sort();
+            assert_eq!(serde_json::json!(bots), case["bots"]);
+            assert_eq!(serde_json::json!(humans), case["humans"]);
+            assert_eq!(serde_json::json!(instruments), case["instruments"]);
+        }
+    }
+
+    #[test]
+    fn event_name_separators_match_python_whitespace_rules() {
+        let names = vec!["Big Bob".to_string()];
+        for gap in [" ", "  ", " \t "] {
+            assert_eq!(
+                event_fields(&format!("ARGEVT Big Bob{gap}goal  item_armor1"), &names),
+                Some(("Big Bob".into(), "goal".into(), "item_armor1".into()))
+            );
+        }
+    }
 
     #[test]
     fn event_words_inside_names_use_the_sample_identity() {

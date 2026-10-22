@@ -15,6 +15,56 @@ EVT = re.compile(r"ARGEVT (.+?) (" + EVENT_VERBS + r")(?:\s+(.*))?$")
 MAP = re.compile(r"(?:SpawnServer:\s+|ARGUS init on\s+)([A-Za-z0-9_]+)", re.I)
 INSTRUMENTS = frozenset(("labprobe", "unconnected"))
 VERBS = frozenset(EVENT_VERBS.split("|"))
+LEGACY_SAMPLE = re.compile(r"(?:BOTLOG|ARGLOG) (\S+) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' yaw\s+(-?[\d.]+) blk\s+(\d+)")
+SAMPLE_PREFIX = re.compile(r"(?:BOTLOG|ARGLOG) (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'(?: spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+))?")
+MAP_FALLBACK = re.compile(r"(?:SpawnServer:\s*|Spawning server maps/)([A-Za-z0-9_]+)|^(?:maps/)?(\w+)\.bsp", re.M)
+DEATH_PAYLOAD = re.compile(r"(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
+
+
+def samples(text):
+    """Yield (name, sample) rows in tape order using the shared grammar."""
+    for lineno, line in enumerate(text.splitlines(), 1):
+        row = sample_row(line, lineno)
+        if row is not None:
+            yield row
+        elif match := SAMPLE_PREFIX.search(line):
+            yield match[1], dict(t=float(match[2]), x=float(match[3]), y=float(match[4]),
+                                 z=float(match[5]), spd=float(match[6]) if match[6] else None,
+                                 yaw=float(match[7]) if match[7] else None, line=lineno)
+
+
+def map_name(text):
+    """Prefer confirmed init records, with legacy console map-line fallback."""
+    confirmed = {match[1].lower() for line in text.splitlines()
+                 if 'ARGUS init on' in line and (match := MAP.search(line))}
+    if confirmed:
+        return next(iter(confirmed)) if len(confirmed) == 1 else None
+    fallback, pending = None, None
+    for line in text.splitlines():
+        match = MAP_FALLBACK.search(line)
+        if match:
+            fallback = pending or fallback
+            pending = next(group.lower() for group in match.groups() if group)
+        elif line.startswith("Couldn't spawn server maps/"):
+            pending = None
+    return pending or fallback
+
+
+def roles(text):
+    """Shared role split; has_births also identifies scoreable modern tapes."""
+    tape = parse_tape(text)
+    tracks = {name: [] for name, _ in samples('\n'.join(line for _, line in tape.lines))}
+    bots, humans, instruments = track_names(tracks, tape.events)
+    return dict(bots=bots, humans=humans, instruments=instruments,
+                has_births=any(event[2] in ('spawned', 'respawn') for event in tape.events))
+
+
+def deaths(events):
+    """Yield (line, victim, killer, x, y, z); empty historical killers are world."""
+    for lineno, name, verb, rest in events:
+        match = DEATH_PAYLOAD.fullmatch(rest.removesuffix(' thirdparty')) if verb == 'death' else None
+        if match:
+            yield (lineno, name, match[1] or 'world', *(float(match[i]) for i in (2, 3, 4)))
 
 
 def event_fields(line, names=()):

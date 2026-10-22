@@ -24,14 +24,8 @@ from collections import defaultdict
 from pathlib import Path
 
 
-SAMPLE = re.compile(
-    r"(?:BOTLOG|ARGLOG) (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
-    r"(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+)"
-)
-SPAWN = re.compile(r"ARGEVT (.+?) (?:spawned|respawn)\b")
-MAP = re.compile(r"ARGUS init on ([A-Za-z0-9_]+)\b")
-MAP_FALLBACK = re.compile(r"SpawnServer:\s*([A-Za-z0-9_]+)\b")
-INSTRUMENTS = {"labprobe", "unconnected"}
+from argus_tape import MAP, map_name, roles, samples as tape_samples
+
 FEATURES = (
     "speed_median",
     "active_speed_p90",
@@ -78,7 +72,7 @@ def read_tape(path):
     with open(path, encoding="utf-8", errors="replace") as tape:
         lines = list(tape)
 
-    boundaries = [index for index, line in enumerate(lines) if MAP.search(line)]
+    boundaries = [index for index, line in enumerate(lines) if 'ARGUS init on' in line and MAP.search(line)]
     if len(boundaries) <= 1:
         segments = [lines]
     else:
@@ -105,56 +99,24 @@ def read_tape(path):
 
 def _read_segment(lines):
     """Parse one map episode; role evidence never crosses this boundary."""
+    text = ''.join(lines)
     tracks = defaultdict(list)
-    spawned = set()
-    map_names = set()
-    fallback_map = None
-    for line in lines:
-        match = MAP.search(line)
-        if match:
-            map_names.add(match.group(1).lower())
-        elif fallback_map is None:
-            match = MAP_FALLBACK.search(line)
-            if match:
-                fallback_map = match.group(1).lower()
-        match = SPAWN.search(line)
-        if match:
-            spawned.add(match.group(1))
-        match = SAMPLE.search(line)
-        if match:
-            name, t, x, y, z, speed, yaw = match.groups()
-            tracks[name].append(
-                {
-                    "t": float(t),
-                    "x": float(x),
-                    "y": float(y),
-                    "z": float(z),
-                    "speed": max(0.0, float(speed)),
-                    "yaw": float(yaw),
-                }
-            )
-    for samples in tracks.values():
-        samples.sort(key=lambda sample: sample["t"])
-    # Match the Rust parser: without any spawn evidence, a legacy or sliced
-    # tape cannot distinguish a person from a bot and must not invent one.
-    humans = {
-        name: samples
-        for name, samples in tracks.items()
-        if spawned and name not in spawned and name not in INSTRUMENTS
-    }
-    bots = {
-        name: samples
-        for name, samples in tracks.items()
-        if name in spawned and name not in INSTRUMENTS
-    }
+    split = roles(text)
+    for name, row in tape_samples(text):
+        if row['spd'] is None or row['yaw'] is None:
+            continue
+        tracks[name].append(dict(t=row['t'], x=row['x'], y=row['y'], z=row['z'],
+                                 speed=max(0.0, row['spd']), yaw=row['yaw']))
+    for rows in tracks.values():
+        rows.sort(key=lambda row: row['t'])
+    humans = {name: tracks[name] for name in split['humans'] if name in tracks}
+    # Legacy tracks retain their bot role, but cannot form a scored reference
+    # without birth evidence. Keep the existing eligibility guard.
+    bots = {name: tracks[name] for name in split['bots'] if name in tracks} if split['has_births'] else {}
     spans = [samples[-1]["t"] - samples[0]["t"] for samples in tracks.values() if len(samples) > 1]
     return {
         # A multi-map console log cannot support one map-matched distance.
-        "map": (
-            next(iter(map_names))
-            if len(map_names) == 1
-            else (fallback_map if not map_names else None)
-        ),
+        "map": map_name(text),
         "humans": humans,
         "bots": bots,
         "span": max(spans, default=0.0),

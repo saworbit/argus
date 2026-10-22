@@ -5,6 +5,7 @@ contents at the death position (z < -300 is the no-BSP fallback only).
 usage:
   analyze_match.py map.bsp logA [logB] out.png [nav.json]"""
 import re, struct, sys
+from argus_tape import PAT as PAT_V1, LEGACY_SAMPLE as PAT_V0, parse_tape, deaths as tape_deaths
 
 args = sys.argv[1:]
 if "-h" in args or "--help" in args:
@@ -77,15 +78,15 @@ def death_is_lava(contents, x, y, z):
 
 # bot names may contain spaces (the v3.37 homage roster): anchor on
 # the grammar keywords, never on whitespace-splitting
-PAT_V1 = re.compile(r"(?:BOTLOG|ARGLOG) (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?")
-PAT_V0 = re.compile(r"(?:BOTLOG|ARGLOG) (\S+) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' yaw\s+(-?[\d.]+) blk\s+(\d+)")
 # killer group optional: pre-2026-08-18 logs can carry an empty killer
 # (nameless enemy entities) and those rows must still count
-PAT_DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
 
 def parse(path):
-    bots, fmt, deaths = {}, None, []
-    for line in open(path, errors="replace"):
+    with open(path, errors="replace") as tape:
+        text = tape.read()
+    bots, fmt = {}, None
+    deaths = [row[1:] for row in tape_deaths(parse_tape(text).events)]
+    for line in text.splitlines():
         m = PAT_V1.search(line)
         if m:
             fmt = "v1"; g = m.groups()
@@ -102,11 +103,6 @@ def parse(path):
             bots.setdefault(n, []).append(dict(t=float(t), x=float(x), y=float(y),
                 z=float(z), blk=int(blk)))
             continue
-        m = PAT_DEATH.search(line)
-        if m:
-            deaths.append((m.group(1), m.group(2) or "world",
-                           float(m.group(3)), float(m.group(4)),
-                           float(m.group(5))))
     return bots, fmt, deaths
 
 def stats(bots, fmt, deaths=(), contents=None):

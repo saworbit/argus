@@ -22,8 +22,7 @@ Aligned with MatchTape::freezes in the Rust lab parser.
 """
 import re, sys, collections
 
-from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts
-DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
+from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
 
 
 def tactical(line):
@@ -56,7 +55,7 @@ def tactical(line):
 
 def parse(log):
     tape = read_tape(log)
-    events, deaths = [], []
+    events, deaths = [], list(tape_deaths(tape.events))
     by_line = {line: (name, verb, rest) for line, name, verb, rest in tape.events}
     for lineno, line in tape.lines:
         if PAT.search(line):
@@ -64,11 +63,6 @@ def parse(log):
         event = by_line.get(lineno)
         if event:
             name, verb, rest = event
-            if verb == 'death':
-                m = DEATH.search('ARGEVT _ death ' + rest)
-                if m:
-                    deaths.append((lineno, name, m.group(2) or "world",
-                                   float(m.group(3)), float(m.group(4)), float(m.group(5))))
             events.append((lineno, name, verb, rest))
             continue
         t = tactical(line)

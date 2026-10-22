@@ -16,6 +16,52 @@ EXPECTED = json.loads(FIXTURE.with_suffix(".json").read_text())
 
 
 class TestTapeConsumers(unittest.TestCase):
+    def test_shared_role_fixture_matches_rust(self):
+        from argus_tape import roles
+        cases = json.loads((Path(__file__).parent / 'testdata/roles.json').read_text())
+        for case in cases:
+            actual = roles(case['text'])
+            for role in ('bots', 'humans', 'instruments'):
+                self.assertEqual(actual[role], case[role])
+
+    def test_shared_samples_maps_roles_and_whitespace(self):
+        from argus_tape import samples, map_name, roles, event_fields
+        text = FIXTURE.read_text()
+        self.assertTrue(list(samples(text)))
+        self.assertEqual(roles(text)['humans'], ['Shane Wall'])
+        self.assertEqual(roles(text)['instruments'], ['labprobe', 'unconnected'])
+        for gap in (' ', '  ', ' \t '):
+            self.assertEqual(event_fields('ARGEVT Big Bob' + gap + 'goal  item_armor1', ['Big Bob']),
+                             ('Big Bob', 'goal', 'item_armor1'))
+        self.assertEqual(map_name('SpawnServer: DM4\n'), 'dm4')
+        self.assertEqual(map_name('Spawning server maps/DM2\n'), 'dm2')
+        self.assertEqual(map_name('maps/DM6.bsp\n'), 'dm6')
+        self.assertEqual(map_name("SpawnServer: missing\nCouldn't spawn server maps/missing.bsp\nSpawnServer: start\n"), 'start')
+        self.assertEqual(len(list(samples("ARGLOG Old Bot t 1.0 pos '0 0 24'\n"))), 1)
+        self.assertEqual(map_name('SpawnServer: dm4\nARGUS init on dm2\n'), 'dm2')
+        self.assertIsNone(map_name('ARGUS init on dm4\nARGUS init on dm2\n'))
+
+    def test_event_vocabulary_matches_rust(self):
+        import re
+        from argus_tape import VERBS
+        rust = (Path(__file__).parent / 'argus_mcp/src/parse_arglog.rs').read_text()
+        words = re.search(r'const EVENT_VERBS: &str = "([^"]+)";', rust)[1]
+        self.assertEqual(VERBS, frozenset(words.split('|')))
+
+    def test_pointfile_preserves_spaced_names_and_excludes_legacy_humans(self):
+        from tempfile import TemporaryDirectory
+        row = "ARGLOG Big Bob t {} pos '{} 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n"
+        with TemporaryDirectory() as td:
+            path = Path(td) / 'tape.log'
+            path.write_text(row.format(0, 0) + row.format(1, 16)
+                            + "ARGEVT Big Bob death world pos '16 0 24'\n")
+            self.assertEqual(argus_pointfile.event_points(path, {'death'}), [(16.0, 0.0, 24.0)])
+            self.assertEqual(argus_pointfile.human_points(path, 4), [])
+            path.write_text('ARGEVT Big Bob spawned\n' + row.format(0, 0)
+                            + row.format(1, 16).replace('Big Bob', 'labprobe')
+                            + row.format(2, 32).replace('Big Bob', 'labprobe'))
+            self.assertEqual(argus_pointfile.human_points(path, 4), [])
+
     def test_event_words_in_names_do_not_change_identity_or_payload(self):
         from argus_tape import parse_tape, track_names
         from tempfile import TemporaryDirectory

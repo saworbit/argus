@@ -28,6 +28,11 @@ passing botmatch does not establish better human play.
   Python (#523), reject noninteger graph endpoints (#524), and refuse custom
   QC filenames with `--register` before any files change (#537).
 
+- Share tape sample, map, event, death and role readers across Python tools
+  (#542, #543, #544). Preserve spaced names in pointfile events, exclude lab
+  instruments from human trails, and align Rust's repeated whitespace handling
+  with Python (#538).
+
 - Require separate server-console keys for A/B snapshots and probe teleports;
   consume the A/B key after use. Update both lab callers and add a real-engine
   permission regression (#533). Document the tactical fixture's live-state
