@@ -462,7 +462,7 @@ fn frame_hashes(text: &str, count: u32, fps: f64) -> Result<Vec<String>, String>
 
 /// Export a recorded POV at 10 source frames/sec, with explicit playback speed.
 /// FFmpeg is optional for PNG users; validate its availability before rendering.
-/// Verify lossless decoded frame order/timing before publishing a fresh MP4.
+/// Verify lossless decoded frame order/timing before publishing a fresh WebM.
 pub async fn capture_video(
     cfg: &Config,
     demo: &str,
@@ -486,7 +486,7 @@ pub async fn capture_video(
     let fps = (10.0 * rate).to_string();
     let frames = count.to_string();
     let input = dir.join("capture/spasm%04d.png");
-    let partial = dir.join("clip.part.mp4");
+    let partial = dir.join("clip.part.webm");
     let source_hashes = dir.join("source.framemd5");
     let decoded_hashes = dir.join("decoded.framemd5");
     encode_step(
@@ -535,15 +535,17 @@ pub async fn capture_video(
                 "-frames:v",
                 &frames,
                 "-c:v",
-                "libx264",
-                "-crf",
-                "0",
+                "libvpx-vp9",
+                "-lossless",
+                "1",
+                "-deadline",
+                "realtime",
+                "-cpu-used",
+                "8",
                 "-pix_fmt",
                 "yuv420p",
                 "-threads",
                 "1",
-                "-movflags",
-                "+faststart",
             ])
             .arg(&partial),
         &dir,
@@ -581,7 +583,7 @@ pub async fn capture_video(
     if expected != decoded {
         return Err("decoded video frames differ from the ordered source frames".into());
     }
-    let path = dir.join("clip.mp4");
+    let path = dir.join("clip.webm");
     // Publish complete verified bytes without replacing a competing output.
     std::fs::hard_link(&partial, &path).map_err(|e| e.to_string())?;
     std::fs::remove_file(&partial).map_err(|e| e.to_string())?;

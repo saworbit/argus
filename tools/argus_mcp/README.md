@@ -107,7 +107,7 @@ acknowledgements stay out of the image. Every message remains in `qconsole.log`;
 engine errors and missing acknowledgements still fail capture.
 
 `argus-mcp capture-video <demo-stem> [start-sec=0.5] [duration-sec=3] [playback-rate=1]`
-exports a silent H.264 MP4 from the same renderer. FFmpeg with `libx264` must
+exports a silent lossless VP9 WebM from the same renderer. FFmpeg with `libvpx-vp9` must
 be on PATH for this command; PNG capture has no encoder dependency. Video
 preflights FFmpeg before rendering, samples at 10 source frames/sec, rounds
 duration to the nearest 0.1 seconds and accepts 0.2..12 seconds at playback
@@ -117,7 +117,7 @@ Start and demo-end bounds match PNG capture; the video path permits at most
 
 The exporter checks decoded YUV frame hashes against every ordered source
 frame, including the decoded frame count, timestamps and playback timebase.
-It publishes `clip.mp4` only after verification, with `video_manifest.json`
+It publishes `clip.webm` only after verification, with `video_manifest.json`
 recording input identity, source times, output rate, duration and frame hashes.
 PNG-to-YUV conversion precedes lossless encoding. Each encoder child has a
 45-second deadline and is killed and reaped on timeout. Failures retain
