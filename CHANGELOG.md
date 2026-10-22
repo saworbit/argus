@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 | Status | What to use |
 |---|---|
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `0AF32D50A237D69FE7A8C428C152F617` |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `BA029B04A4CB9D20489B7355695B9F33` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
@@ -23,6 +23,9 @@ passing botmatch does not establish better human play.
 ## Main updates
 
 ### Unreleased
+
+- Use the standard player hull for both teleport camera cuts and tactical
+  trigger avoidance, including its 32-unit upper reach (#548).
 
 - Refuse the Omicron roster rename in deathmatch and co-op, including when
   the roster key is armed. Keep the plain single-player toggle (#552).

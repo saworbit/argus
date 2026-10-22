@@ -543,12 +543,7 @@ void(entity client) ArgusDirector_Evaluate =
             // a 56u sphere about the brush centre misses a wide
             // trigger entirely - the bot is inside the volume and more
             // than 56u from its middle. Test the box the engine tests.
-            if (client.cam_target.origin_x > tele.absmin_x - 16
-                && client.cam_target.origin_x < tele.absmax_x + 16
-                && client.cam_target.origin_y > tele.absmin_y - 16
-                && client.cam_target.origin_y < tele.absmax_y + 16
-                && client.cam_target.origin_z > tele.absmin_z - 24
-                && client.cam_target.origin_z < tele.absmax_z + 24)
+            if (Argus_InTriggerBox (tele, client.cam_target.origin))
             {
                 if (tele.target != "")
                 {

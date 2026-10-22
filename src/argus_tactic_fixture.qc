@@ -124,6 +124,16 @@ void() Argus_TacticFixture =
     setmodel (ar_tf_target, "progs/player.mdl");
     setsize (ar_tf_target, '-16 -16 -24', '16 16 32');
     setorigin (ar_tf_target, q);
+    if (cvar ("scratch2") == 13)
+    {
+        // The top of a player hull reaches 32u down into a trigger.
+        // Its bottom reaches only 24u up. Exercise the asymmetric slab.
+        if (Argus_InTriggerBox (ar_tf_target, ar_tf_target.origin - '0 0 52')
+            && !Argus_InTriggerBox (ar_tf_target, ar_tf_target.origin - '0 0 64')
+            && !Argus_InTriggerBox (ar_tf_target, ar_tf_target.origin + '0 0 64'))
+            dprint ("TACFIX hull ok\n");
+        else dprint ("TACFIX hull FAILED\n");
+    }
     saved = self; self = b;
     if (b.ar_goal != world && b.ar_goal.claimed_by == b) ReleaseClaim (b.ar_goal);
     Argus_Nav_Abort (b);
