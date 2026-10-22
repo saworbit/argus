@@ -4,6 +4,7 @@ use crate::{config::Config, netclient::NetClient};
 use serde::Serialize;
 use std::path::Path;
 use std::time::{Duration, Instant};
+use tokio::io::AsyncReadExt;
 
 fn signed_on(world: &crate::netclient::ClientWorld) -> bool {
     // Protocol 15 sends signon 3, then the first entity update completes
@@ -102,10 +103,22 @@ pub struct Capture {
     pub demo: String,
     pub demo_md5: String,
     pub engine_md5: String,
+    /// Sorted staged inputs, using paths relative to the isolated basedir.
+    pub assets: Vec<AssetIdentity>,
+    /// MD5 of the compact JSON serialization of `assets` in the listed order.
+    pub assets_md5: String,
     pub directory: String,
     pub frames: Vec<String>,
     pub scheduled_seconds: Vec<f64>,
     pub note: &'static str,
+}
+
+/// Content identity only. Asset bytes and machine-local source paths stay local.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct AssetIdentity {
+    pub path: String,
+    pub bytes: u64,
+    pub md5: String,
 }
 
 /// Check finite capture bounds and require every frame before the demo's end.
@@ -136,6 +149,12 @@ fn validate_frames(
 }
 
 fn copy_tree(from: &Path, to: &Path) -> Result<(), String> {
+    if std::fs::symlink_metadata(from)
+        .map_err(|e| e.to_string())?
+        .is_symlink()
+    {
+        return Err("capture assets must not contain symlinks".into());
+    }
     std::fs::create_dir_all(to).map_err(|e| e.to_string())?;
     for entry in std::fs::read_dir(from).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
@@ -147,23 +166,36 @@ fn copy_tree(from: &Path, to: &Path) -> Result<(), String> {
         if ty.is_dir() {
             copy_tree(&entry.path(), &dest)?;
         } else if ty.is_file() {
-            // Hard links are read-only inputs to this tool; the engine never
-            // writes these assets. Fall back across filesystems.
-            if std::fs::hard_link(entry.path(), &dest).is_err() {
-                std::fs::copy(entry.path(), &dest).map_err(|e| e.to_string())?;
-            }
+            // Independent bytes keep source writes out of the running renderer.
+            std::fs::copy(entry.path(), &dest).map_err(|e| e.to_string())?;
+        } else {
+            return Err("capture assets must be regular files or directories".into());
         }
     }
     Ok(())
 }
 
 fn md5(path: &Path) -> Result<String, String> {
-    std::fs::read(path)
-        .map(|b| format!("{:x}", md5::compute(b)))
-        .map_err(|e| e.to_string())
+    let mut file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+    let mut digest = md5::Context::new();
+    let mut buffer = [0u8; 65536];
+    loop {
+        let n = std::io::Read::read(&mut file, &mut buffer).map_err(|e| e.to_string())?;
+        if n == 0 {
+            break;
+        }
+        digest.consume(&buffer[..n]);
+    }
+    Ok(format!("{:x}", digest.finalize()))
 }
 
 fn stage_paks(from: &Path, to: &Path) -> Result<(), String> {
+    if std::fs::symlink_metadata(from)
+        .map_err(|e| e.to_string())?
+        .is_symlink()
+    {
+        return Err("capture assets must not contain symlinks".into());
+    }
     for entry in std::fs::read_dir(from).map_err(|e| e.to_string())? {
         let entry = entry.map_err(|e| e.to_string())?;
         let path = entry.path();
@@ -175,10 +207,86 @@ fn stage_paks(from: &Path, to: &Path) -> Result<(), String> {
                 return Err("capture PAK assets must be regular files, not symlinks".into());
             }
             let dest = to.join(entry.file_name());
-            if std::fs::hard_link(&path, &dest).is_err() {
-                std::fs::copy(&path, dest).map_err(|e| e.to_string())?;
+            std::fs::copy(&path, dest).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
+}
+
+fn asset_inputs(id1: &Path, game: &Path) -> Result<Vec<AssetIdentity>, String> {
+    fn visit(path: &Path, label: &str, out: &mut Vec<AssetIdentity>) -> Result<(), String> {
+        let meta = std::fs::symlink_metadata(path).map_err(|e| e.to_string())?;
+        if meta.is_symlink() {
+            return Err("capture assets must not contain symlinks".into());
+        }
+        if meta.is_dir() {
+            for entry in std::fs::read_dir(path).map_err(|e| e.to_string())? {
+                let entry = entry.map_err(|e| e.to_string())?;
+                let name = entry.file_name();
+                let name = name.to_str().ok_or("asset path is not UTF-8")?;
+                visit(&entry.path(), &format!("{label}/{name}"), out)?;
+            }
+        } else if meta.is_file() {
+            out.push(AssetIdentity {
+                path: label.into(),
+                bytes: meta.len(),
+                md5: md5(path)?,
+            });
+        } else {
+            return Err("capture assets must be regular files or directories".into());
+        }
+        Ok(())
+    }
+    let mut assets = Vec::new();
+    for (base, label) in [(id1, "id1"), (game, "capture")] {
+        if std::fs::symlink_metadata(base)
+            .map_err(|e| e.to_string())?
+            .is_symlink()
+        {
+            return Err("capture assets must not contain symlinks".into());
+        }
+        for entry in std::fs::read_dir(base).map_err(|e| e.to_string())? {
+            let entry = entry.map_err(|e| e.to_string())?;
+            if entry
+                .path()
+                .extension()
+                .is_some_and(|s| s.eq_ignore_ascii_case("pak"))
+            {
+                if !entry.file_type().map_err(|e| e.to_string())?.is_file() {
+                    return Err("capture PAK assets must be regular files, not symlinks".into());
+                }
+                let name = entry.file_name();
+                visit(
+                    &entry.path(),
+                    &format!(
+                        "{label}/{}",
+                        name.to_str().ok_or("asset path is not UTF-8")?
+                    ),
+                    &mut assets,
+                )?;
             }
         }
+    }
+    for name in ["maps", "progs", "sound", "gfx"] {
+        let path = game.join(name);
+        match std::fs::symlink_metadata(&path) {
+            Ok(_) => visit(&path, &format!("capture/{name}"), &mut assets)?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+    assets.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(assets)
+}
+
+fn assets_md5(assets: &[AssetIdentity]) -> Result<String, String> {
+    let bytes = serde_json::to_vec(assets).map_err(|e| e.to_string())?;
+    Ok(format!("{:x}", md5::compute(bytes)))
+}
+
+fn verify_assets(id1: &Path, game: &Path, expected: &[AssetIdentity]) -> Result<(), String> {
+    if asset_inputs(id1, game)? != expected {
+        return Err("asset inputs changed during capture".into());
     }
     Ok(())
 }
@@ -279,13 +387,16 @@ async fn capture_frames(
         return Err("demo must be a local demo stem, not a path".into());
     }
     let demo_path = crate::demo::resolve_demo(cfg, stem)?;
+    let demo_md5 = md5(&demo_path)?;
     let demo = crate::demo::read_demo(&demo_path)?;
     if demo.brief.protocol != 15 || demo.brief.truncated {
         return Err("capture requires a complete protocol-15 demo".into());
     }
     validate_frames(start, count, interval, demo.brief.duration_sec, max)?;
-    let demo_md5 = md5(&demo_path)?;
     let engine_md5 = md5(&cfg.engine)?;
+    let source_id1 = cfg.basedir.join("id1");
+    let source_game = cfg.basedir.join(&cfg.game);
+    let assets = asset_inputs(&source_id1, &source_game)?;
     let parent = cfg.root.join("backups").join("render_capture");
     std::fs::create_dir_all(&parent).map_err(|e| e.to_string())?;
     // create_dir, not create_dir_all: an existing output can never pass as
@@ -300,16 +411,21 @@ async fn capture_frames(
     std::fs::create_dir(&game).map_err(|e| e.to_string())?;
     let id1 = dir.join("id1");
     std::fs::create_dir(&id1).map_err(|e| e.to_string())?;
-    stage_paks(&cfg.basedir.join("id1"), &id1)?;
-    stage_paks(&cfg.basedir.join(&cfg.game), &game)?;
+    stage_paks(&source_id1, &id1)?;
+    stage_paks(&source_game, &game)?;
     for name in ["maps", "progs", "sound", "gfx"] {
         let from = cfg.basedir.join(&cfg.game).join(name);
         if from.is_dir() {
             copy_tree(&from, &game.join(name))?;
         }
     }
+    verify_assets(&id1, &game, &assets)?;
+    verify_assets(&source_id1, &source_game, &assets)?;
     // Copy mutable outputs, never link a config or the input demo.
     std::fs::copy(&demo_path, game.join("capture.dem")).map_err(|e| e.to_string())?;
+    if md5(&game.join("capture.dem"))? != demo_md5 {
+        return Err("input demo changed while staging capture".into());
+    }
     std::fs::write(game.join("capture.cfg"), script(start, count, interval))
         .map_err(|e| e.to_string())?;
     let mut command = tokio::process::Command::new(&cfg.engine);
@@ -354,10 +470,16 @@ async fn capture_frames(
         verify_png(&p)?;
         frames.push(p.display().to_string());
     }
-    if md5(&demo_path)? != demo_md5 {
+    if md5(&demo_path)? != demo_md5 || md5(&game.join("capture.dem"))? != demo_md5 {
         return Err("input demo changed during capture".into());
     }
-    let result = Capture { demo: stem.into(), demo_md5, engine_md5, directory: dir.display().to_string(), frames,
+    if md5(&cfg.engine)? != engine_md5 {
+        return Err("render engine changed during capture".into());
+    }
+    verify_assets(&id1, &game, &assets)?;
+    verify_assets(&source_id1, &source_game, &assets)?;
+    let assets_md5 = assets_md5(&assets)?;
+    let result = Capture { demo: stem.into(), demo_md5, engine_md5, assets, assets_md5, directory: dir.display().to_string(), frames,
         scheduled_seconds: (0..count).map(|i| (start / 0.05).round() * 0.05 + i as f64 * (interval / 0.05).round() * 0.05).collect(),
         note: "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates." };
     std::fs::write(
@@ -385,7 +507,34 @@ pub struct VideoCapture {
     pub duration_seconds: f64,
     /// Ordered MD5 hashes of decoded 640x480 YUV420 frames, matching the sources.
     pub decoded_frame_md5: Vec<String>,
+    /// The resolved FFmpeg bytes, version/build output and actual VP9 settings.
+    pub encoder: EncoderIdentity,
 }
+
+#[derive(Debug, Serialize)]
+pub struct EncoderIdentity {
+    pub executable_md5: String,
+    pub version: String,
+    /// FFmpeg output options applied to the encoded video.
+    pub settings: Vec<String>,
+}
+
+const VP9_SETTINGS: &[&str] = &[
+    "-c:v",
+    "libvpx-vp9",
+    "-lossless",
+    "1",
+    "-deadline",
+    "realtime",
+    "-cpu-used",
+    "8",
+    "-pix_fmt",
+    "yuv420p",
+    "-threads",
+    "1",
+    "-f",
+    "webm",
+];
 
 fn video_frames(duration: f64, rate: f64) -> Result<u32, String> {
     if !duration.is_finite()
@@ -398,8 +547,8 @@ fn video_frames(duration: f64, rate: f64) -> Result<u32, String> {
     Ok((duration * 10.0).round() as u32)
 }
 
-fn encoder() -> tokio::process::Command {
-    let mut command = tokio::process::Command::new("ffmpeg");
+fn encoder(path: &Path) -> tokio::process::Command {
+    let mut command = tokio::process::Command::new(path);
     command
         .stdin(std::process::Stdio::null())
         .stdout(std::process::Stdio::null())
@@ -408,6 +557,93 @@ fn encoder() -> tokio::process::Command {
     #[cfg(windows)]
     command.creation_flags(0x0800_0000);
     command
+}
+
+fn resolve_encoder() -> Result<std::path::PathBuf, String> {
+    let name = format!("ffmpeg{}", std::env::consts::EXE_SUFFIX);
+    for dir in std::env::split_paths(&std::env::var_os("PATH").unwrap_or_default()) {
+        let path = dir.join(&name);
+        if path.is_file() {
+            return path.canonicalize().map_err(|e| format!("FFmpeg path: {e}"));
+        }
+    }
+    Err(
+        "video export requires FFmpeg with libvpx-vp9 on PATH; PNG capture remains available"
+            .into(),
+    )
+}
+
+async fn preflight_output(command: &mut tokio::process::Command) -> Result<String, String> {
+    async fn read_output(reader: impl tokio::io::AsyncRead + Unpin) -> Result<String, String> {
+        let mut bytes = Vec::new();
+        reader
+            .take(65537)
+            .read_to_end(&mut bytes)
+            .await
+            .map_err(|e| e.to_string())?;
+        if bytes.len() > 65536 {
+            return Err("FFmpeg preflight output exceeded 64 KiB".into());
+        }
+        Ok(String::from_utf8_lossy(&bytes).into_owned())
+    }
+    let mut child = command
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .map_err(|e| format!("FFmpeg preflight: {e}"))?;
+    let stdout = child.stdout.take().ok_or("missing FFmpeg stdout")?;
+    let stderr = child.stderr.take().ok_or("missing FFmpeg stderr")?;
+    let (status, stdout, stderr) = tokio::join!(
+        wait_render(&mut child, Duration::from_secs(5)),
+        read_output(stdout),
+        read_output(stderr)
+    );
+    let text = format!("{}{}", stdout?, stderr?);
+    if !status?.success() {
+        return Err(format!("FFmpeg preflight failed: {text}"));
+    }
+    Ok(text)
+}
+
+fn verify_encoder(path: &Path, identity: &EncoderIdentity) -> Result<(), String> {
+    if md5(path)? != identity.executable_md5 {
+        return Err("FFmpeg executable changed during video capture".into());
+    }
+    Ok(())
+}
+
+async fn preflight_encoder(path: &Path) -> Result<EncoderIdentity, String> {
+    let executable_md5 = md5(path)?;
+    let version = preflight_output(encoder(path).arg("-version")).await?;
+    // Prove the actual codec and settings work, with no capture directory or
+    // renderer. Help and version commands can succeed without an encoder.
+    preflight_output(
+        encoder(path)
+            .args([
+                "-v",
+                "error",
+                "-nostdin",
+                "-f",
+                "lavfi",
+                "-i",
+                "color=c=black:s=16x16:r=1",
+                "-frames:v",
+                "1",
+            ])
+            .args(VP9_SETTINGS)
+            .arg("-"),
+    )
+    .await
+    .map_err(|e| {
+        format!("video export requires working libvpx-vp9: {e}; PNG capture remains available")
+    })?;
+    let identity = EncoderIdentity {
+        executable_md5,
+        version,
+        settings: VP9_SETTINGS.iter().map(|s| (*s).into()).collect(),
+    };
+    verify_encoder(path, &identity)?;
+    Ok(identity)
 }
 
 async fn encode_step(command: &mut tokio::process::Command, dir: &Path) -> Result<(), String> {
@@ -472,11 +708,11 @@ fn frame_hashes(text: &str, count: u32, fps: f64) -> Result<Vec<String>, String>
 /// `duration` is 0.2..12 source seconds, rounded to 0.1 seconds; `rate` is a
 /// 0.1..4 playback multiplier. Every source sample must precede the demo's end.
 /// FFmpeg with libvpx-vp9 is required on PATH; PNG capture needs no encoder.
-/// The preflight checks binary startup, with codec support checked at encoding.
+/// A bounded one-frame VP9 preflight completes before the renderer starts.
 /// PNG-to-YUV420 conversion precedes lossless encoding. Verify decoded frame
 /// order, hashes and timing before publishing a fresh WebM and video manifest.
-/// Only demo/engine input digests are recorded; retain assets and encoder build
-/// separately for reproduction. Failures retain diagnostics in the capture dir.
+/// Manifests include staged asset digests, the FFmpeg build and codec settings.
+/// Input mutation fails capture. Failures after staging retain diagnostics.
 pub async fn capture_video(
     cfg: &Config,
     demo: &str,
@@ -484,18 +720,22 @@ pub async fn capture_video(
     duration: f64,
     rate: f64,
 ) -> Result<VideoCapture, String> {
+    let path = resolve_encoder()?;
+    capture_video_with_encoder(cfg, demo, start, duration, rate, &path).await
+}
+
+async fn capture_video_with_encoder(
+    cfg: &Config,
+    demo: &str,
+    start: f64,
+    duration: f64,
+    rate: f64,
+    encoder_path: &Path,
+) -> Result<VideoCapture, String> {
     let count = video_frames(duration, rate)?;
-    let mut preflight = encoder()
-        .arg("-version")
-        .spawn()
-        .map_err(|e| format!("video export requires FFmpeg on PATH: {e}"))?;
-    if !wait_render(&mut preflight, Duration::from_secs(5))
-        .await?
-        .success()
-    {
-        return Err("FFmpeg preflight failed; PNG capture remains available".into());
-    }
+    let mut encoder_identity = preflight_encoder(encoder_path).await?;
     let capture = capture_frames(cfg, demo, start, count, 0.1, 120).await?;
+    verify_encoder(encoder_path, &encoder_identity)?;
     let dir = std::path::PathBuf::from(&capture.directory);
     let fps = (10.0 * rate).to_string();
     let frames = count.to_string();
@@ -504,7 +744,7 @@ pub async fn capture_video(
     let source_hashes = dir.join("source.framemd5");
     let decoded_hashes = dir.join("decoded.framemd5");
     encode_step(
-        encoder()
+        encoder(encoder_path)
             .args([
                 "-v",
                 "error",
@@ -531,8 +771,9 @@ pub async fn capture_video(
         &dir,
     )
     .await?;
+    verify_encoder(encoder_path, &encoder_identity)?;
     encode_step(
-        encoder()
+        encoder(encoder_path)
             .args([
                 "-v",
                 "error",
@@ -545,28 +786,15 @@ pub async fn capture_video(
                 "-i",
             ])
             .arg(&input)
-            .args([
-                "-frames:v",
-                &frames,
-                "-c:v",
-                "libvpx-vp9",
-                "-lossless",
-                "1",
-                "-deadline",
-                "realtime",
-                "-cpu-used",
-                "8",
-                "-pix_fmt",
-                "yuv420p",
-                "-threads",
-                "1",
-            ])
+            .args(["-frames:v", &frames])
+            .args(VP9_SETTINGS)
             .arg(&partial),
         &dir,
     )
     .await?;
+    verify_encoder(encoder_path, &encoder_identity)?;
     encode_step(
-        encoder()
+        encoder(encoder_path)
             .args(["-v", "error", "-nostdin", "-n", "-i"])
             .arg(&partial)
             .args([
@@ -585,6 +813,7 @@ pub async fn capture_video(
         &dir,
     )
     .await?;
+    verify_encoder(encoder_path, &encoder_identity)?;
     let read_hashes = |p: &Path| -> Result<Vec<String>, String> {
         frame_hashes(
             &std::fs::read_to_string(p).map_err(|e| e.to_string())?,
@@ -597,31 +826,182 @@ pub async fn capture_video(
     if expected != decoded {
         return Err("decoded video frames differ from the ordered source frames".into());
     }
+    encoder_identity
+        .settings
+        .extend(["-framerate".into(), fps, "-frames:v".into(), frames]);
     let path = dir.join("clip.webm");
-    // Publish complete verified bytes without replacing a competing output.
-    std::fs::hard_link(&partial, &path).map_err(|e| e.to_string())?;
-    std::fs::remove_file(&partial).map_err(|e| e.to_string())?;
     let result = VideoCapture {
-        video_md5: md5(&path)?,
+        video_md5: md5(&partial)?,
         video_path: path.display().to_string(),
         capture,
         playback_rate: rate,
         output_fps: 10.0 * rate,
         duration_seconds: count as f64 / (10.0 * rate),
         decoded_frame_md5: decoded,
+        encoder: encoder_identity,
     };
-    std::fs::write(
-        dir.join("video_manifest.json"),
-        serde_json::to_vec_pretty(&result).map_err(|e| e.to_string())?,
-    )
-    .map_err(|e| e.to_string())?;
+    publish_video(
+        &dir,
+        &serde_json::to_vec_pretty(&result).map_err(|e| e.to_string())?,
+    )?;
     Ok(result)
+}
+
+fn publish_video(dir: &Path, manifest: &[u8]) -> Result<(), String> {
+    use std::io::Write;
+    let partial_manifest = dir.join("video_manifest.part.json");
+    std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&partial_manifest)
+        .and_then(|mut f| f.write_all(manifest))
+        .map_err(|e| e.to_string())?;
+    let path = dir.join("clip.webm");
+    // Only complete verified outputs get final names. If the manifest cannot
+    // be published, roll back our video link and retain diagnostic partials.
+    std::fs::hard_link(dir.join("clip.part.webm"), &path).map_err(|e| e.to_string())?;
+    if let Err(error) = std::fs::hard_link(&partial_manifest, dir.join("video_manifest.json")) {
+        std::fs::remove_file(&path)
+            .map_err(|e| format!("manifest: {error}; video rollback: {e}"))?;
+        return Err(format!("video manifest: {error}"));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
 #[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn staged_assets_are_identified_and_isolated_from_source_writes() {
+        let dir = crate::test_support::TestDir::new("capture-inputs").unwrap();
+        let source = dir.path().join("source");
+        let staged = dir.path().join("staged");
+        for base in [&source, &staged] {
+            std::fs::create_dir_all(base.join("id1")).unwrap();
+            std::fs::create_dir_all(base.join("capture/progs")).unwrap();
+        }
+        std::fs::write(source.join("id1/pak0.pak"), b"base").unwrap();
+        std::fs::write(source.join("capture/pak0.pak"), b"mod").unwrap();
+        std::fs::write(source.join("capture/progs/player.mdl"), b"skin one").unwrap();
+        let expected = asset_inputs(&source.join("id1"), &source.join("capture")).unwrap();
+        stage_paks(&source.join("id1"), &staged.join("id1")).unwrap();
+        stage_paks(&source.join("capture"), &staged.join("capture")).unwrap();
+        copy_tree(&source.join("capture/progs"), &staged.join("capture/progs")).unwrap();
+        assert_eq!(
+            expected,
+            asset_inputs(&staged.join("id1"), &staged.join("capture")).unwrap()
+        );
+        assert_eq!(
+            expected.iter().map(|a| a.path.as_str()).collect::<Vec<_>>(),
+            [
+                "capture/pak0.pak",
+                "capture/progs/player.mdl",
+                "id1/pak0.pak"
+            ]
+        );
+        let identity = assets_md5(&expected).unwrap();
+        std::fs::write(source.join("capture/pak0.pak"), b"new mod").unwrap();
+        assert_eq!(
+            std::fs::read(staged.join("capture/pak0.pak")).unwrap(),
+            b"mod"
+        );
+        assert!(verify_assets(&source.join("id1"), &source.join("capture"), &expected).is_err());
+        let changed = asset_inputs(&source.join("id1"), &source.join("capture")).unwrap();
+        assert_ne!(identity, assets_md5(&changed).unwrap());
+        std::fs::write(staged.join("capture/progs/player.mdl"), b"skin two").unwrap();
+        assert!(verify_assets(&staged.join("id1"), &staged.join("capture"), &expected).is_err());
+        std::fs::write(staged.join("capture/progs/player.mdl"), b"skin one").unwrap();
+        std::fs::remove_file(staged.join("id1/pak0.pak")).unwrap();
+        assert!(verify_assets(&staged.join("id1"), &staged.join("capture"), &expected).is_err());
+    }
+
+    #[test]
+    fn changed_encoder_bytes_cannot_keep_the_preflight_identity() {
+        let dir = crate::test_support::TestDir::new("encoder-identity").unwrap();
+        let path = dir.path().join("ffmpeg");
+        std::fs::write(&path, b"build one").unwrap();
+        let identity = EncoderIdentity {
+            executable_md5: md5(&path).unwrap(),
+            version: "build one".into(),
+            settings: Vec::new(),
+        };
+        verify_encoder(&path, &identity).unwrap();
+        std::fs::write(&path, b"build two").unwrap();
+        assert!(verify_encoder(&path, &identity)
+            .unwrap_err()
+            .contains("changed"));
+    }
+
+    #[test]
+    fn manifest_failure_rolls_back_only_the_new_video() {
+        let dir = crate::test_support::TestDir::new("video-publication").unwrap();
+        std::fs::write(dir.path().join("clip.part.webm"), b"verified video").unwrap();
+        std::fs::write(dir.path().join("video_manifest.json"), b"existing").unwrap();
+        assert!(publish_video(dir.path(), b"new manifest").is_err());
+        assert!(!dir.path().join("clip.webm").exists());
+        assert_eq!(
+            std::fs::read(dir.path().join("video_manifest.json")).unwrap(),
+            b"existing"
+        );
+        assert!(dir.path().join("clip.part.webm").exists());
+        std::fs::remove_file(dir.path().join("video_manifest.json")).unwrap();
+        std::fs::remove_file(dir.path().join("video_manifest.part.json")).unwrap();
+        publish_video(dir.path(), b"new manifest").unwrap();
+        assert_eq!(
+            std::fs::read(dir.path().join("clip.webm")).unwrap(),
+            b"verified video"
+        );
+        assert_eq!(
+            std::fs::read(dir.path().join("video_manifest.json")).unwrap(),
+            b"new manifest"
+        );
+    }
+
+    #[tokio::test]
+    async fn missing_vp9_fails_before_demo_lookup_or_capture_output() {
+        let dir = crate::test_support::TestDir::new("capture-no-vp9").unwrap();
+        let source = dir.path().join("encoder.rs");
+        let executable = dir
+            .path()
+            .join(format!("ffmpeg{}", std::env::consts::EXE_SUFFIX));
+        // A real child that passes the old startup check but has no encoder.
+        std::fs::write(
+            &source,
+            r#"fn main() {
+            if std::env::args().nth(1).as_deref() == Some("-version") {
+                println!("ffmpeg fixture without libvpx-vp9");
+            } else { eprintln!("Unknown encoder libvpx-vp9"); std::process::exit(1); }
+        }"#,
+        )
+        .unwrap();
+        assert!(std::process::Command::new("rustc")
+            .arg(&source)
+            .arg("-o")
+            .arg(&executable)
+            .status()
+            .unwrap()
+            .success());
+        let mut cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([(
+                "ARGUS_ROOT".into(),
+                dir.path().display().to_string(),
+            )]),
+            dir.path(),
+        )
+        .unwrap();
+        cfg.engine = dir.path().join("renderer-must-not-start");
+        let error = capture_video_with_encoder(&cfg, "absent", 0.5, 0.2, 1.0, &executable)
+            .await
+            .unwrap_err();
+        assert!(error.contains("libvpx-vp9"), "{error}");
+        assert!(error.contains("Unknown encoder"), "{error}");
+        assert!(
+            !cfg.root.join("backups").exists(),
+            "failed preflight created capture output"
+        );
+    }
 
     #[test]
     fn mod_paks_keep_names_and_bytes_without_copying_configs() {

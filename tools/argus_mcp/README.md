@@ -109,10 +109,11 @@ engine errors and missing acknowledgements still fail capture.
 `argus-mcp capture-video <demo-stem> [start-sec=0.5] [duration-sec=3] [playback-rate=1]`
 exports a silent lossless VP9 WebM from the same renderer. FFmpeg with
 `libvpx-vp9` must be on PATH for this command; PNG capture has no encoder
-dependency. `ffprobe` is not required. The current preflight checks that
-`ffmpeg -version` succeeds; encoder support is checked during encoding, after
-the PNGs have been rendered. A build without VP9 support therefore fails late.
-Capability preflight is tracked in [#573](https://github.com/saworbit/argus/issues/573).
+dependency. `ffprobe` is not required. Before creating capture output or
+starting the renderer, preflight records `ffmpeg -version` and encodes one
+synthetic frame with the required VP9 settings. Each preflight child has a
+five-second deadline and bounded output. Missing codec support fails early
+with encoder diagnostics; ordinary PNG capture does not run preflight.
 Video samples at 10 source frames/sec, rounds
 duration to the nearest 0.1 seconds and accepts 0.2..12 seconds at playback
 rates 0.1..4. A rate of 0.5 plays at half speed and doubles clip duration.
@@ -127,11 +128,18 @@ PNG-to-YUV conversion precedes lossless encoding. Each encoder child has a
 45-second deadline and is killed and reaped on timeout. Failures retain
 `encoder.log` and intermediate evidence; existing outputs are never overwritten.
 
-Manifest input digests identify the demo and rendering engine. Staged asset
-bytes and the FFmpeg build are not currently fingerprinted. Preserve those
-local inputs alongside the manifests when archiving reproducible evidence;
-the same demo and engine can render differently after a mod PAK changes.
-Asset and encoder provenance is tracked in [#572](https://github.com/saworbit/argus/issues/572).
+Manifest input digests identify the demo, rendering engine and staged assets.
+The additive `assets` list is sorted by relative path under `id1/` and
+`capture/`, with each file's byte length and MD5. `assets_md5` hashes the compact
+JSON encoding of that ordered list. Assets are copied into independent files;
+source and staged identities are checked before and after rendering. Changed
+inputs fail capture. These checks detect changed bytes at the check points;
+they do not monitor writes that restore the original bytes between checks.
+The video manifest adds `encoder.executable_md5`, the full version/build
+output in `encoder.version`, and the applied codec, rate and frame-count
+options in `encoder.settings`. The resolved encoder path is pinned for all
+steps and its bytes are checked between steps. Asset contents are not embedded;
+preserve the local inputs alongside the manifests for reproduction.
 
 Playback uses a fixed 0.05-second frame step and gamma 0.7. This does not
 resimulate the match. Manifest times describe scheduled playback steps,
