@@ -24,6 +24,11 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Keep capture acknowledgements out of rendered frames while preserving the
+  console log (#567). Stage mod PAKs with their original search precedence
+  (#569). Export bounded POV clips with explicit playback speed and verified
+  decoded frame order/timing; FFmpeg remains optional for PNG capture (#568).
+
 - Synchronize tactical diagnostics, rendered POV limits, camera behaviour and
   blocking Python CI documentation. Track capture notification leakage (#567),
   bounded video export (#568) and missing mod PAK staging (#569).

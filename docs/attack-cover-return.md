@@ -300,6 +300,12 @@ argus-mcp capture-demo visual_dm4 0.5 12 0.45
 argus-mcp capture-demo visual_dm2 0.5 12 0.45
 ```
 
+For a bounded clip of an existing demo, `argus-mcp capture-video
+visual_dm4 0.5 2.4 0.5` exports 2.4 seconds of source footage at half speed
+(4.8 seconds of playback). FFmpeg is required for video only. The
+[operator guide](../tools/argus_mcp/README.md#rendered-pov-evidence) describes
+the decoded frame/timing checks and manifest.
+
 The server selects the actual target edict as the observer's view entity.
 This hides the target's own model and preserves its sightline. The recorder
 stores original complete server messages, not reconstructed entity updates.

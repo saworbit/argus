@@ -110,18 +110,27 @@ pub struct Capture {
 
 /// Check finite capture bounds and require every frame before the demo's end.
 pub fn validate(start: f64, count: u32, interval: f64, duration: f64) -> Result<(), String> {
+    validate_frames(start, count, interval, duration, 12)
+}
+
+fn validate_frames(
+    start: f64,
+    count: u32,
+    interval: f64,
+    duration: f64,
+    max: u32,
+) -> Result<(), String> {
     if !start.is_finite()
         || !interval.is_finite()
         || !duration.is_finite()
         || !(0.5..=120.0).contains(&start)
-        || !(1..=12).contains(&count)
+        || !(1..=max).contains(&count)
         || !(0.1..=5.0).contains(&interval)
         || start + (count - 1) as f64 * interval >= duration - 0.15
     {
-        return Err(
-            "capture needs start 0.5..120s, 1..12 frames, interval 0.1..5s, all before demo end"
-                .into(),
-        );
+        return Err(format!(
+            "capture needs start 0.5..120s, 1..{max} frames, interval 0.1..5s, all before demo end"
+        ));
     }
     Ok(())
 }
@@ -154,10 +163,33 @@ fn md5(path: &Path) -> Result<String, String> {
         .map_err(|e| e.to_string())
 }
 
+fn stage_paks(from: &Path, to: &Path) -> Result<(), String> {
+    for entry in std::fs::read_dir(from).map_err(|e| e.to_string())? {
+        let entry = entry.map_err(|e| e.to_string())?;
+        let path = entry.path();
+        if path
+            .extension()
+            .is_some_and(|e| e.eq_ignore_ascii_case("pak"))
+        {
+            if !entry.file_type().map_err(|e| e.to_string())?.is_file() {
+                return Err("capture PAK assets must be regular files, not symlinks".into());
+            }
+            let dest = to.join(entry.file_name());
+            if std::fs::hard_link(&path, &dest).is_err() {
+                std::fs::copy(&path, dest).map_err(|e| e.to_string())?;
+            }
+        }
+    }
+    Ok(())
+}
+
 fn script(start: f64, count: u32, interval: f64) -> String {
     // wait yields one rendered frame. Playback uses a fixed 0.05s step;
     // this changes playback speed only, never the recorded simulation.
-    let mut s = String::from("host_framerate 0.05\nviewsize 100\nfov 90\ngamma 0.7\nscr_conspeed 100000\ncon_notifytime 0\nplaydemo capture\n");
+    // Zero still draws notifications printed at this exact realtime value,
+    // including the screenshot command's synchronous screen refresh. Negative
+    // lifetime hides even zero-age text; qconsole.log still keeps every message.
+    let mut s = String::from("host_framerate 0.05\nviewsize 100\nfov 90\ngamma 0.7\nscr_conspeed 100000\ncon_notifytime -1\nplaydemo capture\n");
     for i in 0..count {
         let frames = if i == 0 {
             (start / 0.05).round() as usize
@@ -231,6 +263,17 @@ pub async fn capture(
     count: u32,
     interval: f64,
 ) -> Result<Capture, String> {
+    capture_frames(cfg, demo_name, start, count, interval, 12).await
+}
+
+async fn capture_frames(
+    cfg: &Config,
+    demo_name: &str,
+    start: f64,
+    count: u32,
+    interval: f64,
+    max: u32,
+) -> Result<Capture, String> {
     let stem = demo_name.strip_suffix(".dem").unwrap_or(demo_name);
     if !crate::paths::valid_run_name(stem) || stem == "." || stem == ".." {
         return Err("demo must be a local demo stem, not a path".into());
@@ -240,7 +283,7 @@ pub async fn capture(
     if demo.brief.protocol != 15 || demo.brief.truncated {
         return Err("capture requires a complete protocol-15 demo".into());
     }
-    validate(start, count, interval, demo.brief.duration_sec)?;
+    validate_frames(start, count, interval, demo.brief.duration_sec, max)?;
     let demo_md5 = md5(&demo_path)?;
     let engine_md5 = md5(&cfg.engine)?;
     let parent = cfg.root.join("backups").join("render_capture");
@@ -257,17 +300,8 @@ pub async fn capture(
     std::fs::create_dir(&game).map_err(|e| e.to_string())?;
     let id1 = dir.join("id1");
     std::fs::create_dir(&id1).map_err(|e| e.to_string())?;
-    for entry in std::fs::read_dir(cfg.basedir.join("id1")).map_err(|e| e.to_string())? {
-        let entry = entry.map_err(|e| e.to_string())?;
-        if entry.file_type().map_err(|e| e.to_string())?.is_file()
-            && entry.path().extension().is_some_and(|e| e == "pak")
-        {
-            let dest = id1.join(entry.file_name());
-            if std::fs::hard_link(entry.path(), &dest).is_err() {
-                std::fs::copy(entry.path(), dest).map_err(|e| e.to_string())?;
-            }
-        }
-    }
+    stage_paks(&cfg.basedir.join("id1"), &id1)?;
+    stage_paks(&cfg.basedir.join(&cfg.game), &game)?;
     for name in ["maps", "progs", "sound", "gfx"] {
         let from = cfg.basedir.join(&cfg.game).join(name);
         if from.is_dir() {
@@ -334,10 +368,296 @@ pub async fn capture(
     Ok(result)
 }
 
+/// Bounded video plus its ordered source-frame evidence and playback timeline.
+#[derive(Debug, Serialize)]
+pub struct VideoCapture {
+    pub capture: Capture,
+    pub video_path: String,
+    pub video_md5: String,
+    pub playback_rate: f64,
+    pub output_fps: f64,
+    pub duration_seconds: f64,
+    pub decoded_frame_md5: Vec<String>,
+}
+
+fn video_frames(duration: f64, rate: f64) -> Result<u32, String> {
+    if !duration.is_finite()
+        || !(0.2..=12.0).contains(&duration)
+        || !rate.is_finite()
+        || !(0.1..=4.0).contains(&rate)
+    {
+        return Err("video needs duration 0.2..12s and playback rate 0.1..4".into());
+    }
+    Ok((duration * 10.0).round() as u32)
+}
+
+fn encoder() -> tokio::process::Command {
+    let mut command = tokio::process::Command::new("ffmpeg");
+    command
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .kill_on_drop(true);
+    #[cfg(windows)]
+    command.creation_flags(0x0800_0000);
+    command
+}
+
+async fn encode_step(command: &mut tokio::process::Command, dir: &Path) -> Result<(), String> {
+    let log = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(dir.join("encoder.log"))
+        .map_err(|e| e.to_string())?;
+    let mut child = command
+        .stderr(log)
+        .spawn()
+        .map_err(|e| format!("FFmpeg: {e}"))?;
+    let status = wait_render(&mut child, Duration::from_secs(45)).await?;
+    if !status.success() {
+        return Err(format!(
+            "FFmpeg exited {status}; diagnostics in {}",
+            dir.display()
+        ));
+    }
+    Ok(())
+}
+
+fn frame_hashes(text: &str, count: u32, fps: f64) -> Result<Vec<String>, String> {
+    let timebase = text
+        .lines()
+        .find_map(|line| line.strip_prefix("#tb 0: "))
+        .and_then(|s| s.split_once('/'))
+        .and_then(|(n, d)| Some((n.parse::<f64>().ok()?, d.parse::<f64>().ok()?)))
+        .map(|(n, d)| d / n)
+        .ok_or("video verification found no timebase")?;
+    if !timebase.is_finite() || (timebase - fps).abs() > 0.000001 {
+        return Err("video verification found the wrong playback rate".into());
+    }
+    let mut hashes = Vec::new();
+    for line in text
+        .lines()
+        .filter(|s| !s.starts_with('#') && !s.trim().is_empty())
+    {
+        let fields: Vec<_> = line.split(',').map(str::trim).collect();
+        let i = hashes.len().to_string();
+        if fields.len() != 6
+            || fields[0] != "0"
+            || fields[1] != i
+            || fields[2] != i
+            || fields[3] != "1"
+            || fields[4] != "460800"
+            || fields[5].len() != 32
+            || !fields[5].bytes().all(|b| b.is_ascii_hexdigit())
+        {
+            return Err("video verification found an invalid frame or playback timestamp".into());
+        }
+        hashes.push(fields[5].to_string());
+    }
+    if hashes.len() != count as usize {
+        return Err("video verification found a missing or extra frame".into());
+    }
+    Ok(hashes)
+}
+
+/// Export a recorded POV at 10 source frames/sec, with explicit playback speed.
+/// FFmpeg is optional for PNG users; validate its availability before rendering.
+/// Verify lossless decoded frame order/timing before publishing a fresh MP4.
+pub async fn capture_video(
+    cfg: &Config,
+    demo: &str,
+    start: f64,
+    duration: f64,
+    rate: f64,
+) -> Result<VideoCapture, String> {
+    let count = video_frames(duration, rate)?;
+    let mut preflight = encoder()
+        .arg("-version")
+        .spawn()
+        .map_err(|e| format!("video export requires FFmpeg on PATH: {e}"))?;
+    if !wait_render(&mut preflight, Duration::from_secs(5))
+        .await?
+        .success()
+    {
+        return Err("FFmpeg preflight failed; PNG capture remains available".into());
+    }
+    let capture = capture_frames(cfg, demo, start, count, 0.1, 120).await?;
+    let dir = std::path::PathBuf::from(&capture.directory);
+    let fps = (10.0 * rate).to_string();
+    let frames = count.to_string();
+    let input = dir.join("capture/spasm%04d.png");
+    let partial = dir.join("clip.part.mp4");
+    let source_hashes = dir.join("source.framemd5");
+    let decoded_hashes = dir.join("decoded.framemd5");
+    encode_step(
+        encoder()
+            .args([
+                "-v",
+                "error",
+                "-nostdin",
+                "-n",
+                "-framerate",
+                &fps,
+                "-start_number",
+                "0",
+                "-i",
+            ])
+            .arg(&input)
+            .args([
+                "-frames:v",
+                &frames,
+                "-vf",
+                "format=yuv420p",
+                "-threads",
+                "1",
+                "-f",
+                "framemd5",
+            ])
+            .arg(&source_hashes),
+        &dir,
+    )
+    .await?;
+    encode_step(
+        encoder()
+            .args([
+                "-v",
+                "error",
+                "-nostdin",
+                "-n",
+                "-framerate",
+                &fps,
+                "-start_number",
+                "0",
+                "-i",
+            ])
+            .arg(&input)
+            .args([
+                "-frames:v",
+                &frames,
+                "-c:v",
+                "libx264",
+                "-crf",
+                "0",
+                "-pix_fmt",
+                "yuv420p",
+                "-threads",
+                "1",
+                "-movflags",
+                "+faststart",
+            ])
+            .arg(&partial),
+        &dir,
+    )
+    .await?;
+    encode_step(
+        encoder()
+            .args(["-v", "error", "-nostdin", "-n", "-i"])
+            .arg(&partial)
+            .args([
+                "-map",
+                "0:v:0",
+                "-fps_mode",
+                "passthrough",
+                "-pix_fmt",
+                "yuv420p",
+                "-threads",
+                "1",
+                "-f",
+                "framemd5",
+            ])
+            .arg(&decoded_hashes),
+        &dir,
+    )
+    .await?;
+    let read_hashes = |p: &Path| -> Result<Vec<String>, String> {
+        frame_hashes(
+            &std::fs::read_to_string(p).map_err(|e| e.to_string())?,
+            count,
+            10.0 * rate,
+        )
+    };
+    let expected = read_hashes(&source_hashes)?;
+    let decoded = read_hashes(&decoded_hashes)?;
+    if expected != decoded {
+        return Err("decoded video frames differ from the ordered source frames".into());
+    }
+    let path = dir.join("clip.mp4");
+    // Publish complete verified bytes without replacing a competing output.
+    std::fs::hard_link(&partial, &path).map_err(|e| e.to_string())?;
+    std::fs::remove_file(&partial).map_err(|e| e.to_string())?;
+    let result = VideoCapture {
+        video_md5: md5(&path)?,
+        video_path: path.display().to_string(),
+        capture,
+        playback_rate: rate,
+        output_fps: 10.0 * rate,
+        duration_seconds: count as f64 / (10.0 * rate),
+        decoded_frame_md5: decoded,
+    };
+    std::fs::write(
+        dir.join("video_manifest.json"),
+        serde_json::to_vec_pretty(&result).map_err(|e| e.to_string())?,
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
 #[cfg(test)]
 #[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mod_paks_keep_names_and_bytes_without_copying_configs() {
+        let temp = std::env::temp_dir().canonicalize().unwrap();
+        let dir = temp.join(format!(
+            "argus-capture-paks-{}-{}",
+            std::process::id(),
+            chrono::Utc::now().timestamp_nanos_opt().unwrap()
+        ));
+        let from = dir.join("mod");
+        let to = dir.join("capture");
+        std::fs::create_dir_all(&from).unwrap();
+        std::fs::create_dir(&to).unwrap();
+        for name in [
+            "pak0.pak",
+            "pak1.pak",
+            "pak2.PAK",
+            "config.cfg",
+            "qconsole.log",
+        ] {
+            std::fs::write(from.join(name), name.as_bytes()).unwrap();
+        }
+        stage_paks(&from, &to).unwrap();
+        for name in ["pak0.pak", "pak1.pak", "pak2.PAK"] {
+            assert_eq!(std::fs::read(to.join(name)).unwrap(), name.as_bytes());
+        }
+        assert!(!to.join("config.cfg").exists());
+        assert!(!to.join("qconsole.log").exists());
+        assert!(dir.is_absolute() && dir.parent() == Some(temp.as_path()));
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn video_verification_rejects_missing_reordered_and_retimed_frames() {
+        let header = "#tb 0: 1/5\n";
+        let a = "0, 0, 0, 1, 460800, 0123456789abcdef0123456789abcdef\n";
+        let b = "0, 1, 1, 1, 460800, abcdef0123456789abcdef0123456789\n";
+        assert_eq!(
+            frame_hashes(&format!("{header}{a}{b}"), 2, 5.0)
+                .unwrap()
+                .len(),
+            2
+        );
+        assert!(frame_hashes(&format!("{header}{a}"), 2, 5.0).is_err());
+        assert!(frame_hashes(&format!("{header}{b}{a}"), 2, 5.0).is_err());
+        assert!(frame_hashes(&format!("{header}{}", a.replace(", 1,", ", 2,")), 1, 5.0).is_err());
+        assert!(frame_hashes(&format!("{header}{a}"), 1, 10.0).is_err());
+        assert!(video_frames(f64::NAN, 1.0).is_err());
+        assert!(video_frames(13.0, 1.0).is_err());
+        assert!(video_frames(1.0, 0.0).is_err());
+        assert_eq!(video_frames(2.4, 0.5).unwrap(), 24);
+    }
 
     #[tokio::test]
     #[allow(clippy::await_holding_lock)]
@@ -519,5 +839,6 @@ mod tests {
         assert_eq!(s.matches("screenshot png").count(), 3);
         assert_eq!(s.matches("wait\n").count(), 28);
         assert!(s.ends_with("disconnect\ntoggleconsole\nquit\n"));
+        assert!(s.contains("con_notifytime -1\n"));
     }
 }
