@@ -94,6 +94,12 @@ flowchart TD
 - **Safe line floor validation**: `Argus_SafeLine` samples floor collision every 48 units along direct item sightlines, preventing bots from plunging into pits to reach visible items. It shares the staircase rescue above, because a downward trace that *starts* inside solid geometry returns the same result as one that finds nothing at all - rising ground and a bottomless void are indistinguishable unless you test for it explicitly.
 
 ### 3. Combat, perception, and humanized aim
+
+- **Attack, cover, return**: At base skill 1, Romero can fire a rocket, walk
+  through full-body cover and reappear from a different angle on two verified
+  dm4/dm2 routes. Entry braking, route clearance and shot safety are checked at
+  runtime; ordinary aim and reaction still govern firing. See the
+  [behaviour and engine checks](docs/attack-cover-return.md).
 - **Damped-spring aim model with saccade glide**: Second-order yaw tracking with per-skill spring constants - flick, slight overshoot, settle, tremor - plus configurable reaction latency (`ar_reactbase`) and an aim error cone that narrows over continuous tracking duration. The held error offset re-rolls every 0.25-0.55 s and *ramps* to its new value over 0.15 s instead of stepping, so the spring never chases a teleporting target - a human wrist drifts between corrections.
 - **Motion-proportional aim error**: A moving target contributes a second held error vector, sampled on the same saccade clock and normalized to a fixed 20 Hz observation horizon. It is proportional to observed displacement and inverse aim skill, so a stationary target is bit-for-bit unaffected. Sight loss glides the currently rendered offset to zero without sampling hidden motion, reacquisition starts from zero so one target cannot inherit another's vector, and dedicated and played listen-server rates do not change the error scale.
 - **Simulated hearing and investigation**: `W_Attack` broadcasts gunfire to every bot within 1000u (wall-damped, listened for at chest height so flat corridors are not mistaken for walls); an unengaged bot glances at fresh sounds - as a rate-limited head turn, not a one-frame snap - and nearby fire pulls it toward the fight instead of past it.
@@ -158,6 +164,8 @@ argus/
 |       `-- autoexec.cfg       # Enforces sv_protocol 15 and max_edicts 600
 |-- src/                       # Complete QuakeC source code (GPL 1.06 base)
 |   |-- argus.qc               # Bot AI, physics, combat, perception, GOAP
+|   |-- argus_tactics.qc       # Bounded attack-cover-return state machine
+|   |-- argus_tactic_fixture.qc  # Developer-only engine acceptance fixture
 |   |-- argus_cam.qc           # ArgusCam spectator camera and broadcast director
 |   |-- argus_nav.qc           # Runtime sliced BFS router and link execution
 |   |-- argus_nav_dispatch.qc  # Map navigation dispatch table
@@ -225,6 +233,7 @@ while humans keep the remaster model.
 | `impulse 212` / `Mouse 2` | **Cycle Target Bot**: Carmack -> Romero -> Joe Rogan -> Trent Reznor -> American McGee -> Sarge -> Thresh -> Killcreek -> Sandy Petersen -> Gabe Newell -> Crash -> Ranger -> Tim Willits -> Reap -> Omi -> Zeus -> Ares. |
 | `impulse 213` | **Toggle Chase Cam Framing**: Center over-head vs over-the-right-shoulder. |
 | `impulse 214` | **Toggle Broadcast HUD Overlay**: Bot health, armour, weapon, frags, and affect state. |
+| `impulse 217` | With `developer 1` and `scratch1 197`, run the tactical fixture case selected by `scratch2`; otherwise retain normal navigation-task dispatch. See the [fixture guide](docs/attack-cover-return.md#engine-acceptance). |
 | `impulse 220` | **Chat Easter Egg**: Speak to John Carmack (*Engine architecture & frame budgets*). |
 | `impulse 221` | **Chat Easter Egg**: Speak to John Romero (*Pure Deathmatch & rocket mastery*). |
 | `impulse 222` | **Chat Easter Egg**: Speak to Joe Rogan (*T1 line in 1999, DMT & electron butterflies*). |

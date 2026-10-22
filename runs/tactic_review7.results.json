@@ -1,0 +1,113 @@
+{
+  "binary_md5": "1B17C38CE8053E713112CCF2D1EA4F7C",
+  "suites": {
+    "tactic_review7_full_dm4": {
+      "cases": 15,
+      "fps_min": 64.2,
+      "fps_max": 64.5,
+      "stationary_hits": 3,
+      "ordinary_drops_after_refusal": 1
+    },
+    "tactic_review7_full_dm2": {
+      "cases": 15,
+      "fps_min": 63.3,
+      "fps_max": 64.5,
+      "stationary_hits": 3,
+      "ordinary_drops_after_refusal": 0
+    },
+    "tactic_review7_slow_dm4": {
+      "cases": 7,
+      "fps_min": 10.0,
+      "fps_max": 10.0,
+      "stationary_hits": 3,
+      "ordinary_drops_after_refusal": 1
+    },
+    "tactic_review7_slow_dm2": {
+      "cases": 7,
+      "fps_min": 10.0,
+      "fps_max": 10.0,
+      "stationary_hits": 3,
+      "ordinary_drops_after_refusal": 0
+    }
+  },
+  "checks": {
+    "python": 114,
+    "rust": 271
+  },
+  "normal_comparison": "tactic_review6_repeat.compare.txt",
+  "intermediate_archive": {
+    "path": "C:\\argus\\backups\\tactic-review-intermediate-20261022.zip",
+    "sha256": "bcac591be4aa9ab8c55cfc3715165a39c72e4df5210f0e6299e73e4a7a7ebc94",
+    "files": 34
+  },
+  "files": {
+    "runs/tactic_review6.state.json": {
+      "sha256_raw": "dbc754e094bcef0b2fed98ceb655f0da7eea0e2ff7219af51e9f46c3734807ef",
+      "sha256_lf": "dbc754e094bcef0b2fed98ceb655f0da7eea0e2ff7219af51e9f46c3734807ef"
+    },
+    "runs/tactic_review6_dm2_repeat1.log": {
+      "sha256_raw": "761f5ac52ac6277d35134d09f4b43ecbd8c431d2cc27e75e27ad0f073730a2df",
+      "sha256_lf": "d9fe62ec76484c0fd9f1f25538e713ccd5bfaa608bb5d4e2a2f40e491abc7df9"
+    },
+    "runs/tactic_review6_dm2_repeat2.log": {
+      "sha256_raw": "e0f337c45b1195caa866b463561c61fd1b3fcc48ff9b571a7a6b8da78833d6fe",
+      "sha256_lf": "39cb72111c3f231dfc7f544f7efd97f3b705ed7351b6a3460a13ee32249c915e"
+    },
+    "runs/tactic_review6_dm2_repeat3.log": {
+      "sha256_raw": "fb4c10f46a37d47849eeb3921b283fedb43e81de20c313fb56a309358a15e53c",
+      "sha256_lf": "f9c7ada4b0ae8a07e47457a4395b32312661e99f652235bdeea3de77e26e489d"
+    },
+    "runs/tactic_review6_repeat.compare.txt": {
+      "sha256_raw": "4130a81cd74c742db05c62b2c6ffe1af213dbabb18be680a3105b3e26d0fabf4",
+      "sha256_lf": "4130a81cd74c742db05c62b2c6ffe1af213dbabb18be680a3105b3e26d0fabf4"
+    },
+    "runs/tactic_review7.state.json": {
+      "sha256_raw": "343e21fc338f149dea2299de511af98054c57333d15e7bdc4d8e4476894e2372",
+      "sha256_lf": "343e21fc338f149dea2299de511af98054c57333d15e7bdc4d8e4476894e2372"
+    },
+    "runs/tactic_review7_full_dm2.log": {
+      "sha256_raw": "0e0c24ba4d1709527e0c1d306c52d53f44d93bf6fe5e90e6173ef46f15549bb1",
+      "sha256_lf": "ba44ee3e192ada0bb8d2d214de4dc6804ae108a0c409527337b5987c003ca050"
+    },
+    "runs/tactic_review7_full_dm2.results.json": {
+      "sha256_raw": "8316602fd2bb50a2e132fe0b6d3aca4f7d6b090079a6655252f5668cff7c04be",
+      "sha256_lf": "e15388c1c950f6f9ecb6dd00c15b2d4fb04a18bcf9ed977364237ea991ddeb65"
+    },
+    "runs/tactic_review7_full_dm4.log": {
+      "sha256_raw": "0743ec033ed28dc09a312478c075b2e1d99988cdf6c019dfc374aba58d1360e6",
+      "sha256_lf": "d8e524a719eeec08be1c42421c90f83edf76637b37d14c1d93c23ee2ca52925a"
+    },
+    "runs/tactic_review7_full_dm4.results.json": {
+      "sha256_raw": "e85a4f9608dbcd13124a3880a2ced7b35af0cfe264cd96dde6a7305f7ad2a4e7",
+      "sha256_lf": "ec1f90d9f20262da27c1f82ef02014b5b80e7de7b772d3fa0940681d70d922d5"
+    },
+    "runs/tactic_review7_normal.matrix.json": {
+      "sha256_raw": "d369b29a55c543c90ef740836fe1de8a2ed94e075c90123b949f1990b9885bec",
+      "sha256_lf": "d369b29a55c543c90ef740836fe1de8a2ed94e075c90123b949f1990b9885bec"
+    },
+    "runs/tactic_review7_normal_dm2.log": {
+      "sha256_raw": "8141eb37d8715961f62dbb8cfa55ee0e764ebd1f7e39f1871a89387c9dc474e5",
+      "sha256_lf": "c8f59fcbe126fb325c8f8da6a7000accf2dc171c40ad616e7be029334a0591ba"
+    },
+    "runs/tactic_review7_normal_dm4.log": {
+      "sha256_raw": "98cd54eba27308db8a71324f1b927264eeb0cc21a6cc6eed26761bb2720ef775",
+      "sha256_lf": "c56431b7ce6dffe913afc0b3b5680c6da735f50a2f121eeadd3ad2126f29e9b3"
+    },
+    "runs/tactic_review7_slow_dm2.log": {
+      "sha256_raw": "35bf09034b60135db87454e925755cfc225f065f780be4f8537a933a1cf4d295",
+      "sha256_lf": "431b674c10df6e104f23390affee42eb0fea5f2b895923d28af405b7085f6c96"
+    },
+    "runs/tactic_review7_slow_dm2.results.json": {
+      "sha256_raw": "cb3c8dc239e9fe684d8ef2044d2f514969c0216f4be071b152a29c0bfec17a7d",
+      "sha256_lf": "1721dc028faee8d78d9e6b426b3d9b44ed7fbb40b02318854889a6ac7e657ac8"
+    },
+    "runs/tactic_review7_slow_dm4.log": {
+      "sha256_raw": "eab550bbe3fecd1c7da4bb71e256831ffc4ad7505c193d35bfd1b59e23e48401",
+      "sha256_lf": "469d7bb399850839067d8651890f478b6a30e43f0bf308b5b2d75497dd39c21e"
+    },
+    "runs/tactic_review7_slow_dm4.results.json": {
+      "sha256_raw": "b8d72bd39e33495748f40ad9d8876eaa369d6ffac23743e8b2eaae8f9ba6a088",
+      "sha256_lf": "34d445b28b8cf083769d1c98086575d60145292cd28f350c2dd063896bf586a6"
+    }
+  }
+}

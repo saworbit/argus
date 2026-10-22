@@ -485,7 +485,7 @@ argus-mcp client walk <x> <y> <z> [secs]        walk toward a point, with
                                                 (clears steps, lips, jumps)
 argus-mcp client walkrel <dx> <dy> [secs]       relative walk from spawn
 argus-mcp client impulse <n> [secs]             fire a player impulse from
-                                                the puppet's seat - 100 adds
+                                                the puppet's seat - 101 adds
                                                 a bot (the headless 4-player
                                                 match), 216 is the dev
                                                 teleport probelinks uses
@@ -496,6 +496,25 @@ hostname-resolved address, not loopback - the client mirrors the
 engine's lookup and locks onto whatever address answers.
 Engine-spawning tests share a lock; a stale engine on 26000 makes
 every connect fail, so kill orphans first.
+
+## Tactical engine fixture
+
+`developer 1` plus `scratch1 197` reserves impulse 217 for the
+attack-cover-return fixture; otherwise navigation-task dispatch retains it.
+Set `scratch2` to the case number through `tune`, then use
+`argus-mcp client impulse 217 8`. Confirm the requested `TACFIX begin` and
+matching `TACFIX end` through incremental status before changing the case.
+Time out missing acknowledgements; elapsed client time alone is insufficient.
+An active fixture refuses another impulse with `TACFIX busy`.
+
+The [manoeuvre guide](../../docs/attack-cover-return.md#engine-acceptance)
+defines the full 15-case suite, seven-case 10 Hz suite, rate controls and
+deliberate overlap check. Use `tools/check_tactic_fixture.py --review-suite`
+or `--slow-suite` with the corresponding tape path. Native briefs report
+tactical phases; the fixture checker establishes movement and damage
+acceptance. Its shot observation currently requires ordinary ammo rules.
+The reusable acknowledgement-based runner remains tracked in
+[#516](https://github.com/saworbit/argus/issues/516).
 
 ## Fixed navigation benchmark
 

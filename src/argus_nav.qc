@@ -827,6 +827,22 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Start =
 // One forward flood answers every item-distance query for one shopping
 // decision. It uses the same bot-specific link tolls as the route search;
 // the chosen item's parent chain is then reused as the route itself.
+// Cancellation must release both the shared queue and its per-bot latch.
+// Clear even an idle owner's flags: death/reset may precede Nav_Frame.
+void(entity bot) Argus_Nav_Abort =
+{
+    bot.ar_shopping = 0;
+    if (an_bot == bot)
+    {
+        an_busy = 0;
+        an_shop = 0;
+        an_shopready = 0;
+        an_bot = world;
+        anq_head = world;
+        anq_tail = world;
+    }
+};
+
 float(entity bot, entity startnode) Argus_Shop_Start =
 {
     if (an_busy)

@@ -1804,7 +1804,16 @@ void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
     local float wl, spd, moveok, myaw, rhoriz, sready, wdrag, hopok, ljyaw;
-    local float protectedstep;
+    local float protectedstep, tacticmove;
+
+    // Reset can run in the trigger before this frame's physics. Hold the
+    // braking envelope briefly instead of accelerating a stale tactical yaw
+    // at full gait or consuming its preserved item-route launch. Emergency
+    // movement still owns survival and can release this handoff immediately.
+    if (!self.ar_tactic && (self.ar_retreating || time < self.ar_dodgetime
+        || self.health + self.armorvalue * self.armortype < 70))
+        self.ar_tactic_settle = 0;
+    tacticmove = self.ar_tactic || time < self.ar_tactic_settle;
 
     makevectors ('0 0 0' + self.ar_moveyaw * '0 1 0');
     wishdir = v_forward;
@@ -1875,7 +1884,7 @@ void() Argus_Physics =
         // in a wadeable pool walks like anyone else. The tread-with-
         // floor case was the residual splash cycle in Shane's third
         // sound playtest - lift, break surface, fall, splash, again.
-        if (self.ar_mode == 2 && self.ar_node != world
+        if (!tacticmove && self.ar_mode == 2 && self.ar_node != world
             && self.ar_node.origin_z < self.origin_z - 40
             && self.air_finished > time + 5
             && pointcontents (self.ar_node.origin) == CONTENT_WATER)
@@ -2090,7 +2099,7 @@ void() Argus_Physics =
             self.ar_rjweapon = 0;
         }
 
-        if (self.ar_mode == 2 && self.ar_hoprj == 1)
+        if (!tacticmove && self.ar_mode == 2 && self.ar_hoprj == 1)
         {
             // face the landing and pitch by range: 85-down only works
             // for pads almost under the ledge. dm4 quad pads sit
@@ -2139,7 +2148,7 @@ void() Argus_Physics =
             self.ar_mode = 0;
         }
 
-        if (self.ar_jump)
+        if (!tacticmove && self.ar_jump)
         {
             self.ar_jump = 0;
             self.velocity_z = AR_JUMPVEL;
@@ -2174,7 +2183,7 @@ void() Argus_Physics =
             }
         }
 
-        if (self.ar_liftwait)
+        if (!tacticmove && self.ar_liftwait)
         {
             // parked on a plat: friction only. No wish, no brink
             // guard - mid-ride every slab edge reads as a void and
@@ -2187,7 +2196,7 @@ void() Argus_Physics =
             self.ar_sprintstate = 0;    // sprint flight ends on any
                                         // grounded frame
 
-        if (self.ar_sprintstate == -1)
+        if (!tacticmove && self.ar_sprintstate == -1)
         {
             // A typed link is armed at its launch seat. Kill the
             // incoming run before asking the bot to walk backward;
@@ -2200,7 +2209,12 @@ void() Argus_Physics =
 
         Argus_Friction ();
         wdrag = AR_MAXSPEED;
-        if (self.ar_hopjump == 1 && self.ar_sprintstate == 2
+        if (self.ar_tactic && self.ar_tactic_speed > 0)
+            wdrag = self.ar_tactic_speed;
+        if (self.ar_tactic == 1 || self.ar_tactic == 4
+            || time < self.ar_tactic_settle)
+            wdrag = 0; // brake through ordinary movement and brink protection
+        if (!tacticmove && self.ar_hopjump == 1 && self.ar_sprintstate == 2
             && self.ar_hopspeed > 0)
             wdrag = self.ar_hopspeed;
         Argus_Accelerate (wishdir, wdrag);
@@ -2218,7 +2232,7 @@ void() Argus_Physics =
             // exactly the gap we mean to cross.
             moveok = 1;
             sready = 0;
-            if (self.ar_hopjump == 2)
+            if (!tacticmove && self.ar_hopjump == 2)
             {
                 // a sprint hop only fires ALIGNED: moving within 8
                 // degrees of the line to the landing node, at the
@@ -2261,7 +2275,7 @@ void() Argus_Physics =
                     }
                 }
             }
-            if (self.ar_mode == 2 && self.ar_hopjump && moveok
+            if (!tacticmove && self.ar_mode == 2 && self.ar_hopjump && moveok
                 && ((self.ar_hopjump == 2 && spd >= 310)
                     || (self.ar_hopjump == 1
                         && ((self.ar_hopspeed > 0
@@ -2395,7 +2409,7 @@ void() Argus_Physics =
             // jump 270 (apex ~45u) plus walkmove's step-up finish it.
             // No speed demand: navgen mints these at rise <= 44 only,
             // which a standing jump clears by construction.
-            if (self.ar_mode == 2 && self.ar_hopjump == 1
+            if (!tacticmove && self.ar_mode == 2 && self.ar_hopjump == 1
                 && (self.flags & FL_ONGROUND)
                 && self.ar_node != world
                 && self.ar_node.origin_z > self.origin_z + 18)
@@ -2421,7 +2435,7 @@ void() Argus_Physics =
             // 120u+ below within hop range, the heading passes the
             // hazard gate, and speed is dead, take one firm step off
             // the lip and let gravity run the hop.
-            if (self.ar_mode == 2 && self.ar_node != world
+            if (!tacticmove && self.ar_mode == 2 && self.ar_node != world
                 && spd < 80 && time > self.ar_gapjump
                 && self.ar_node.origin_z < self.origin_z - 120
                 && !self.ar_hoplift && !self.ar_hoptrain
@@ -2480,7 +2494,7 @@ void() Argus_Physics =
                 // Unrouted modes only - routed hops have their own
                 // verified links - and never during a typed hop or
                 // door detour. Rate-limited: the arc costs traces.
-                if (self.ar_mode != 2 && spd >= 250
+                if (!tacticmove && self.ar_mode != 2 && spd >= 250
                     && time > self.ar_gapjump
                     && !self.ar_hoplift && !self.ar_hoptrain
                     && !self.ar_hopdoor && !self.ar_hoprj)
@@ -2905,6 +2919,7 @@ void() Argus_Die =
             ReleaseClaim (self.ar_goal);
     }
 
+    Argus_TacticReset ();
     self.ar_enemy = world;
     self.ar_goal = world;
     self.ar_node = world;
@@ -2934,8 +2949,7 @@ void() Argus_Die =
     // in-flight search whose completion would otherwise hand the
     // respawned bot a start node from its pre-death position
     self.ar_routegen = self.ar_routegen + 1;
-    if (an_busy && an_bot == self)
-        an_busy = 0;
+    Argus_Nav_Abort (self);
     Argus_Chat (2);
     self.ar_respawntime = time + 1.5;
 
@@ -3037,8 +3051,7 @@ void() Argus_SetSkill =
             ReleaseClaim (self.ar_goal);
         self.ar_goal = world;
         self.ar_routegen = self.ar_routegen + 1;
-        if (an_busy && an_bot == self)
-            an_busy = 0;
+        Argus_Nav_Abort (self);
         self.ar_pending = 0;
         self.ar_mode = 0;
         self.ar_node = world;
@@ -3362,6 +3375,11 @@ entity() Argus_SpawnSpot =
 void() Argus_Respawn =
 {
     local entity spot, oself;
+
+    Argus_TacticReset ();
+    self.ar_tactic_cool = 0;
+    self.ar_tactic_settle = 0;
+    Argus_Nav_Abort (self);
 
     spot = Argus_SpawnSpot ();
     // undo the corpse: GibPlayer left this entity as a bouncing head,
@@ -4791,6 +4809,8 @@ void() Argus_TriggerFired =
 {
     local float pause;
 
+    Argus_TacticShot ();
+
     if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN
         || self.weapon == IT_LIGHTNING)
     {
@@ -4817,6 +4837,8 @@ float() Argus_Combat =
     local vector preaim, ldv, src;  // #363: the lead, on its own
 
     Argus_Perceive ();
+    if (Argus_TacticThink ())
+        return TRUE;
     e = self.ar_enemy;
     if (e == world)
     {
@@ -4937,6 +4959,10 @@ float() Argus_Combat =
 
     closeband = Argus_CombatBand ();
     Argus_SelectWeapon (d, closeband);
+    if (self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)
+        Argus_TacticAbort ("abort weapon");
+    // Start only after the ordinary selector has approved rockets here.
+    Argus_TacticBegin ();
 
     // Effective stack bends the existing circle into pressure or caution,
     // while visible weapon shape makes a smaller correction. The result is
@@ -5425,6 +5451,10 @@ float() Argus_Combat =
     while (diff < -180) diff = diff + 360;
 
     // ---- movement: circle strafe, close or open range ----
+    // Tactical Think owns emergency checks. Ordinary detours must not age
+    // battle-item cooldowns or log headings that the tactic never follows.
+    if (!self.ar_tactic)
+    {
     if (time > self.ar_strafetime)
     {
         self.ar_strafetime = time + 0.8 + random ();
@@ -5807,7 +5837,26 @@ float() Argus_Combat =
             self.ar_moveyaw = vectoyaw ('0 0 0' - to);
     }
 
+    }
+    // The bounded manoeuvre owns travel, after ordinary steering choices.
+    // Its early guard has already yielded to danger/retreat. Facing and
+    // the normal aim/trigger below stay in charge of every visible shot.
+    if (self.ar_tactic)
+    {
+        if (self.ar_retreating || time < self.ar_dodgetime)
+            Argus_TacticAbort ("abort survival");
+        else
+            Argus_TacticSteer ();
+    }
+
     // ---- trigger ----
+    // A visible head at the lip is not a safe rocket lane. Finish the
+    // concealed walk before allowing the return shot through normal aim.
+    if (self.ar_tactic == 2 || self.ar_tactic == 3)
+    {
+        self.button0 = 0;
+        return TRUE;
+    }
     // holding button0 matters as much as calling W_Attack: nailgun,
     // super nailgun and lightning damage live in the attack frame
     // chains, which abort unless the fire button is down. Bots never
@@ -5876,6 +5925,25 @@ float() Argus_Combat =
         self.v_angle = vectoangles (aimpt - (self.origin + '0 0 22'));
         self.v_angle_x = 0 - self.v_angle_x;    // QC pitch convention
         self.v_angle_y = self.angles_y;
+        if (self.ar_tactic)
+        {
+            // Check the actual imperfect shot direction from the RL muzzle,
+            // not just the planner's ideal line. Rockets splash within 160u;
+            // 240u clearance also allows the bot's movement during flight.
+            makevectors (self.v_angle);
+            src = self.origin + '0 0 16';
+            traceline (src, src + v_forward * 240, TRUE, self);
+            if (trace_fraction < 1)
+            {
+                self.button0 = 0;
+                // Give ordinary imperfect aim a bounded settling window.
+                // The exit cannot stand exposed until the whole route's
+                // deadline; prepare already has its own short timeout.
+                if (self.ar_tactic == 4 && time > self.ar_tactic_progress + 0.4)
+                    Argus_TacticAbort ("abort muzzle");
+                return TRUE;
+            }
+        }
         // HOLD FIRE THROUGH A TEAM MATE. Not targeting them is not
         // enough: the first e1m2 death was a bot with a monster for an
         // enemy, firing at its last known position during the
@@ -6730,6 +6798,18 @@ void() Argus_PickGoal =
         pick = near;
     }
 
+    // ---- GOAP: prepend unmet preconditions ----
+    // A powerup run has ARMED as a precondition: nobody walks to the
+    // quad holding a shotgun. The plan keeps the powerup as its end
+    // state and fetches the gun first.
+    self.ar_planfinal = final;
+    self.ar_planwant = final;
+    if (final == AR_C_POWER && !(ws & AR_WS_ARMED) && bw != world)
+    {
+        self.ar_planwant = AR_C_WEAPON;
+        pick = bw;
+    }
+
     // One failed life may refuse the same long crossing on the next.
     // A live fight vetoes it outright; without a fight, a materially nearer
     // live stack is enough. The memory expires, and it never invents a goal.
@@ -6756,24 +6836,14 @@ void() Argus_PickGoal =
                 pick = world;
                 final = AR_C_ANY;
             }
+            self.ar_planfinal = final;
+            self.ar_planwant = final;
             if (!self.ar_lastlifevetoed)
             {
                 self.ar_lastlifevetoed = 1;
                 Argus_Event ("lifeveto");
             }
         }
-    }
-
-    // ---- GOAP: prepend unmet preconditions ----
-    // A powerup run has ARMED as a precondition: nobody walks to the
-    // quad holding a shotgun. The plan keeps the powerup as its end
-    // state and fetches the gun first.
-    self.ar_planfinal = final;
-    self.ar_planwant = final;
-    if (final == AR_C_POWER && !(ws & AR_WS_ARMED) && bw != world)
-    {
-        self.ar_planwant = AR_C_WEAPON;
-        pick = bw;
     }
 
     self.ar_goal = pick;
@@ -7946,8 +8016,7 @@ void(entity bot) Argus_TaskClear =
     bot.ar_node = world;
     bot.ar_pending = 0;
     bot.ar_mode = 0;
-    if (an_busy && an_bot == bot)
-        an_busy = 0;
+    Argus_Nav_Abort (bot);
     if (marker != world)
         remove (marker);
 };
@@ -8309,12 +8378,25 @@ void() Argus_AI =
     // cannot turn a route trial into a duel merely by being visible.
     if (self.ar_taskgoal != world)
     {
+        Argus_TacticReset ();
+        self.ar_tactic_settle = 0;
         self.ar_enemy = world;
         self.button0 = 0;
         fighting = FALSE;
     }
     else
         fighting = Argus_Combat ();
+    // Item hops, body-block sidesteps and incidental reachability jumps must
+    // not pull a committed dry walking route away from its validated legs.
+    if (self.ar_tactic)
+    {
+        if (time > self.ar_nextlog)
+        {
+            self.ar_nextlog = time + 0.5;
+            Argus_Telemetry ();
+        }
+        return;
+    }
 
     // Goal selection happens before combat acquires a fresh target. If this
     // life already started the crossing that killed the last one, stop it as
@@ -8337,8 +8419,18 @@ void() Argus_AI =
         self.ar_pending = 0;
         self.ar_mode = 0;
         self.ar_routegen = self.ar_routegen + 1;
-        if (an_busy && an_bot == self)
-            an_busy = 0;
+        Argus_Nav_Abort (self);
+        self.ar_hopjump = 0;
+        self.ar_hopspeed = 0;
+        self.ar_sprintstate = 0;
+        self.ar_hoprj = 0;
+        self.ar_hoplift = 0;
+        self.ar_hopswim = 0;
+        self.ar_hoptrain = 0;
+        self.ar_hopdoor = 0;
+        self.ar_hopair = 0;
+        self.ar_liftwait = 0;
+        self.ar_jump = 0;
         Argus_PickGoal ();
     }
 
@@ -9750,8 +9842,11 @@ void() Argus_FrameAll =
         }
         else
         {
-            Argus_AI ();
-            Argus_Physics ();
+            if (time >= ar_tacfixture_until || self == ar_tacfixture_bot)
+            {
+                Argus_AI ();
+                Argus_Physics ();
+            }
         }
 
         if (self.frags > self.ar_lastfrags && self.health > 0)
@@ -9792,6 +9887,8 @@ void() Argus_FrameAll =
         self = oself;
         b = b.ar_chain;
     }
+
+    Argus_TacticFixtureTick ();
 
     // human tracks (2026-08-20, Shane: "are you able to see what I
     // do? and where I go?" - until now, no). Real clients get the
@@ -10174,8 +10271,7 @@ void() Argus_RemoveBot =
     }
     bprint (PRINT_HIGH, b.netname);
     bprint (PRINT_HIGH, " has left the arena\n");
-    if (an_busy && an_bot == b)
-        an_busy = 0;                // abort its in-flight route search
+    Argus_Nav_Abort (b);
     argus_bots = b.ar_chain;
     argus_spawncount = argus_spawncount - 1;
     remove (b);

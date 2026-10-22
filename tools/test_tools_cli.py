@@ -31,6 +31,10 @@ def find_argus_mcp_binary(root=ROOT, *, installed=False):
 
 
 class TestToolsCLI(unittest.TestCase):
+    def test_tactic_fixture_checker_regressions(self):
+        res = self.run_tool("test_tactic_fixture.py")
+        self.assertEqual(res.returncode, 0, res.stderr)
+
     def run_tool(self, script_name, *args):
         path = ROOT / "tools" / script_name
         cmd = [sys.executable, str(path), *args]
