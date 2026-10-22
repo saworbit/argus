@@ -65,6 +65,7 @@ passing botmatch does not establish better human play.
 - Reorganised this log by date and change type, restored the missing v4.20
   and v4.21 build entries, and indexed earlier releases. Detailed historical
   notes and measurements are preserved in the [archive](docs/changelog-history.md).
+  [#532](https://github.com/saworbit/argus/pull/532)
 
 ### 2026-10-21
 
