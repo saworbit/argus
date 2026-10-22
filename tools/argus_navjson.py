@@ -2,6 +2,8 @@
 import json
 from pathlib import Path
 
+STEP = 18  # max walkable step, matching nav_graph::NAV_STEP
+
 WALK = ("links", "jlinks")
 FREE = ("teles", "liftlinks", "swimlinks", "doorlinks", "trainlinks")
 GATED = ("rjlinks", "sprintlinks")

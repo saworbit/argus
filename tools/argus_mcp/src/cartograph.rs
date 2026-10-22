@@ -783,13 +783,19 @@ fn atlas_from_bsp(
     }
     let causality = build_causality(&ents, &by_name);
 
-    let graph = load_nav_graph(cfg, map);
+    let mut notes = Vec::new();
+    let graph = match load_nav_graph(cfg, map) {
+        Ok(graph) => graph,
+        Err(error) => {
+            notes.push(format!("nav graph refused: {error}"));
+            None
+        }
+    };
     let nav = graph.as_ref().map(|g| g.overlay.clone());
     let height_bands = graph
         .as_ref()
         .map(|g| height_bands(map, &g.nodes))
         .unwrap_or_default();
-    let mut notes = Vec::new();
     if counts.get("spawn").copied().unwrap_or(0) == 0 {
         notes.push("no info_player* spawn points in the entity lump".into());
     }
@@ -1299,91 +1305,26 @@ struct NodeSnap {
     dz: f32,
 }
 
-fn load_nav_graph(cfg: &Config, map: &str) -> Option<NavGraph> {
-    load_nav_graph_at(&cfg.src.join(format!("argus_nav_{map}.qc.json")))
+fn load_nav_graph(cfg: &Config, map: &str) -> Result<Option<NavGraph>, String> {
+    let path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
+    if !path.exists() {
+        return Ok(None);
+    }
+    load_nav_graph_at(&path).map(Some)
 }
 
-fn load_nav_graph_at(path: &std::path::Path) -> Option<NavGraph> {
-    let text = std::fs::read_to_string(path).ok()?;
-    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
-    let nodes: Vec<[f32; 3]> = v
-        .get("nodes")?
-        .as_array()?
-        .iter()
-        .filter_map(|n| {
-            let a = n.as_array()?;
-            Some([
-                a.first()?.as_f64()? as f32,
-                a.get(1)?.as_f64()? as f32,
-                a.get(2)?.as_f64()? as f32,
-            ])
-        })
-        .collect();
-    if nodes.is_empty() {
-        return None;
-    }
+fn load_nav_graph_at(path: &std::path::Path) -> Result<NavGraph, String> {
+    let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
+    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("nav json: {e}"))?;
+    let graph = crate::nav_graph::parse_graph("overlay", &v)?;
+    let nodes = graph.nodes;
     let n = nodes.len();
-    let mut adj: Vec<Vec<(u32, String)>> = vec![Vec::new(); n];
-    if let Some(links) = v.get("links").and_then(|x| x.as_array()) {
-        for link in links {
-            let Some(a) = link.as_array() else { continue };
-            let Some(from) = a.first().and_then(|x| x.as_u64()).map(|x| x as usize) else {
-                continue;
-            };
-            let Some(to) = a.get(1).and_then(|x| x.as_u64()).map(|x| x as usize) else {
-                continue;
-            };
-            if from < n && to < n {
-                // see nav_graph::link_kind: element 2 is reciprocity
-                let kind = if nodes[from][2] - nodes[to][2] > 18.0 {
-                    "drop"
-                } else {
-                    "walk"
-                };
-                if !adj[from].iter().any(|(t, _)| *t == to as u32) {
-                    adj[from].push((to as u32, kind.into()));
-                }
-            }
-        }
-    }
-    for (key, kind) in [
-        ("jlinks", "jump"),
-        ("teles", "tele"),
-        ("rjlinks", "rocket"),
-        ("liftlinks", "lift"),
-        ("swimlinks", "swim"),
-        ("doorlinks", "door"),
-        ("trainlinks", "train"),
-        ("sprintlinks", "sprint"),
-    ] {
-        if let Some(list) = v.get(key).and_then(|x| x.as_array()) {
-            for link in list {
-                let Some(a) = link.as_array() else { continue };
-                let Some(from) = a.first().and_then(|x| x.as_u64()).map(|x| x as usize) else {
-                    continue;
-                };
-                let Some(to) = a.get(1).and_then(|x| x.as_u64()).map(|x| x as usize) else {
-                    continue;
-                };
-                if from < n && to < n {
-                    if let Some(e) = adj[from].iter_mut().find(|(t, _)| *t == to as u32) {
-                        e.1 = kind.into();
-                    } else {
-                        adj[from].push((to as u32, kind.into()));
-                    }
-                }
-            }
-        }
-    }
-    let exposure: Vec<usize> = v
-        .get("exposure")
-        .and_then(|x| x.as_array())
-        .map(|rows| {
-            (0..n)
-                .map(|i| rows.get(i).and_then(|x| x.as_u64()).unwrap_or(0) as usize)
-                .collect()
-        })
-        .unwrap_or_else(|| vec![0; n]);
+    let adj = graph
+        .adj
+        .into_iter()
+        .map(|edges| edges.into_iter().map(|edge| (edge.to, edge.kind)).collect())
+        .collect();
+    let exposure: Vec<usize> = graph.exposure.into_iter().map(|n| n as usize).collect();
     let mut ranked: Vec<usize> = (0..n).collect();
     ranked.sort_by_key(|i| (std::cmp::Reverse(exposure[*i]), *i));
     let high_exposure = ranked
@@ -1396,70 +1337,28 @@ fn load_nav_graph_at(path: &std::path::Path) -> Option<NavGraph> {
             visible_nodes: exposure[i],
         })
         .collect();
-    let cover_nodes = v
-        .get("cover_targets")
-        .and_then(|x| x.as_array())
-        .map(|rows| {
-            rows.iter()
-                .filter(|row| {
-                    row.as_array()
-                        .and_then(|a| a.first())
-                        .and_then(|x| x.as_i64())
-                        .map(|x| x >= 0)
-                        .unwrap_or(false)
-                })
-                .count()
-        })
-        .unwrap_or(0);
-    Some(NavGraph {
+    let cover_nodes = graph.cover_targets.iter().flatten().count();
+    let count = |kind| {
+        crate::nav_graph::LINK_FAMILIES
+            .iter()
+            .find(|(_, family_kind)| *family_kind == kind)
+            .and_then(|(key, _)| v.get(*key))
+            .and_then(|rows| rows.as_array())
+            .map_or(0, Vec::len)
+    };
+    Ok(NavGraph {
         overlay: NavOverlay {
             json_path: path.display().to_string(),
             nodes: nodes.len(),
-            links: v
-                .get("links")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            jump_links: v
-                .get("jlinks")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            tele_links: v
-                .get("teles")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            rocket_links: v
-                .get("rjlinks")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            lift_links: v
-                .get("liftlinks")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            swim_links: v
-                .get("swimlinks")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            sprint_links: v
-                .get("sprintlinks")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            train_links: v
-                .get("trainlinks")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
-            door_links: v
-                .get("doorlinks")
-                .and_then(|n| n.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0),
+            links: count(None),
+            jump_links: count(Some("jump")),
+            tele_links: count(Some("tele")),
+            rocket_links: count(Some("rocket")),
+            lift_links: count(Some("lift")),
+            swim_links: count(Some("swim")),
+            sprint_links: count(Some("sprint")),
+            train_links: count(Some("train")),
+            door_links: count(Some("door")),
             exposure_min: exposure.iter().copied().min().unwrap_or(0),
             exposure_max: exposure.iter().copied().max().unwrap_or(0),
             cover_nodes,
@@ -2620,6 +2519,22 @@ mod tests {
             dm6.iter().all(|s| !s.contains("debut botmatch")),
             "stale debut verdict leaked: {dm6:?}"
         );
+    }
+
+    #[test]
+    fn overlay_rejects_malformed_links_with_the_nav_reader_error() {
+        let value = serde_json::json!({
+            "nodes": [[0, 0, 0], [32, 0, 0]],
+            "links": [[0, 1, 1], ["bad", 1, 0]]
+        });
+        let dir = crate::test_support::TestDir::new("overlay-reader").unwrap();
+        let path = dir.path().join("nav.json");
+        std::fs::write(&path, value.to_string()).unwrap();
+        let expected = crate::nav_graph::parse_graph("test", &value).unwrap_err();
+        let actual = load_nav_graph_at(&path)
+            .err()
+            .expect("partial overlays must fail");
+        assert_eq!(actual, expected);
     }
 
     #[test]

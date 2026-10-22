@@ -75,7 +75,7 @@ from argus_nav_budget import (
 )
 from argus_nav_tactics import compute_tactics
 from argus_mapgate import assess_playability
-from argus_navjson import FAMILIES, load_nav
+from argus_navjson import STEP, FAMILIES, load_nav
 from argus_registration import registration
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
@@ -155,7 +155,6 @@ if CORRIDOR:
     # corridor interiors (where no coarse column stands) spend
     # seats from the fine set.
     GRID = 16
-STEP = 18          # max walkable step up/down
 DROPMAX = 200      # max safe intentional drop
 # flat range of the conservative 280 u/s jump model: the launch is
 # back at launch height after 2*JUMPVEL/g seconds, so the range is
