@@ -62,6 +62,11 @@ passing botmatch does not establish better human play.
 
 **Documentation**
 
+- Put installation, everyday controls and the lab loop first in the README.
+  Added focused control, lab, recording and architecture guides; aligned the
+  plain-text quick start and support page. Clarified listen slots, roster
+  permission, skill timing and camera actions.
+  [#535](https://github.com/saworbit/argus/pull/535)
 - Reorganised this log by date and change type, restored the missing v4.20
   and v4.21 build entries, and indexed earlier releases. Detailed historical
   notes and measurements are preserved in the [archive](docs/changelog-history.md).
