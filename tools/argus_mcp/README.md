@@ -43,6 +43,8 @@ entry when its command exactly ends in the retired
 binary, reparses the saved file to verify every other setting, and tells you to
 restart the client. Existing environment and timeout values stay unchanged.
 
+### Update a running Windows server
+
 The running process locks the exe on Windows. To build an update without
 stopping the client, stage it instead:
 
@@ -50,8 +52,15 @@ stopping the client, stage it instead:
 cargo build --release --manifest-path tools/argus_mcp/Cargo.toml --target-dir tools/argus_mcp/target-stage
 ```
 
-On the next client restart, the installed binary uses `ARGUS_ROOT` to find the
-stage and swaps it into place. Do not commit `target*/` or `install/`.
+At startup, the installed binary uses `ARGUS_ROOT` to find a newer stage and
+swaps it into place. The process performing that swap still runs its old
+image and reports `lab_stale`; reconnect once more to load the replaced file.
+Use the client's MCP restart/reconnect action to apply pending server settings.
+Then call `see what=project` in the original chat and require
+`lab_identity.authoritative: true`, with matching build/checkout fingerprints.
+The package version alone cannot distinguish builds of the same version.
+A fresh verification session checks the installed executable; existing chat
+connections must be checked separately. Do not commit `target*/` or `install/`.
 
 ## Tactical fixture suites
 
@@ -111,9 +120,15 @@ exports a silent lossless VP9 WebM from the same renderer. FFmpeg with
 `libvpx-vp9` must be on PATH for this command; PNG capture has no encoder
 dependency. `ffprobe` is not required. Before creating capture output or
 starting the renderer, preflight records `ffmpeg -version` and encodes one
-synthetic frame with the required VP9 settings. Each preflight child has a
-five-second deadline and bounded output. Missing codec support fails early
-with encoder diagnostics; ordinary PNG capture does not run preflight.
+synthetic frame with the required VP9 settings. The current synthetic source
+also requires FFmpeg's `lavfi` input device and `color` filter, even when its
+PNG-to-VP9 encoding works. Each preflight child has a five-second exit deadline
+and a 64 KiB output limit per stream. Pipe reads wait for EOF outside that
+deadline, so a descendant holding an inherited stream can delay completion.
+The pipe deadline and extra lavfi dependency are tracked in
+[#577](https://github.com/saworbit/argus/issues/577) and
+[#578](https://github.com/saworbit/argus/issues/578). Missing codec support fails
+early with encoder diagnostics; ordinary PNG capture does not run preflight.
 Video samples at 10 source frames/sec, rounds
 duration to the nearest 0.1 seconds and accepts 0.2..12 seconds at playback
 rates 0.1..4. A rate of 0.5 plays at half speed and doubles clip duration.
@@ -136,9 +151,9 @@ source and staged identities are checked before and after rendering. Changed
 inputs fail capture. These checks detect changed bytes at the check points;
 they do not monitor writes that restore the original bytes between checks.
 The video manifest adds `encoder.executable_md5`, the full version/build
-output in `encoder.version`, and the applied codec, rate and frame-count
-options in `encoder.settings`. The resolved encoder path is pinned for all
-steps and its bytes are checked between steps. Asset contents are not embedded;
+output in `encoder.version`, and selected codec, input-rate and frame-count
+options grouped in `encoder.settings`. The resolved encoder path is pinned for
+all steps and its bytes are checked between steps. Asset contents are not embedded;
 preserve the local inputs alongside the manifests for reproduction.
 
 Playback uses a fixed 0.05-second frame step and gamma 0.7. This does not

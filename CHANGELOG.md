@@ -24,6 +24,9 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Clarify staged MCP reconnects, capture provenance fields and current VP9
+  preflight prerequisites and pipe timeout limits (#577, #578).
+
 - Update the lab's locked Tokio dependency to 1.53.3 (#575).
 
 - Record staged asset digests and FFmpeg build/settings in capture manifests,

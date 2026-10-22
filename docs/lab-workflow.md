@@ -49,6 +49,8 @@ order, optional paths and defaults.
 For an MCP client, adapt [`.mcp.json.example`](../.mcp.json.example): set its
 stdio command to the installed binary and give it the same local paths.
 Restart the client after changing its server command or updating the binary.
+In the reconnected chat, call `see what=project` and require
+`lab_identity.authoritative: true` with matching source fingerprints.
 
 ## 3. Choose an interface
 
@@ -166,12 +168,14 @@ After a navigation change, run the lab experiment/matrix loop.
 
 ## Update or restore the lab
 
-- **Stale build:** rerun the install command and restart the MCP client.
-  A current server reports running/checkout identities and refuses mismatched
-  quality verdicts. An already-running old binary needs the update/restart.
+- **Stale build:** rerun the install command and reconnect the MCP client.
+  Check the original chat's running/checkout identities; a fresh verification
+  session does not replace its existing connection. Require
+  `lab_identity.authoritative: true` before quality verdicts.
 - **Windows executable locked:** use the operator guide's
-  [staged update procedure](../tools/argus_mcp/README.md) instead of overwriting
-  a running server.
+  [staged update procedure](../tools/argus_mcp/README.md#update-a-running-windows-server).
+  The startup that swaps the file still runs the old image; reconnect again
+  to load the new one.
 - **Restore a build:** use the wizard's dated backups. Keep human session
   evidence separate from build restoration.
 
