@@ -65,6 +65,7 @@ annotations to QC and JSON, and changes no topology or typed movement data.
 """
 import re, struct, sys, heapq, collections
 import math as _dmath
+from pathlib import Path
 
 from argus_nav_budget import (
     EDICT_CEILING,
@@ -91,6 +92,9 @@ RETYPE_DOORS = "--retype-doors" in sys.argv[5:]
 REPROFILE_JUMPS = "--reprofile-jumps" in sys.argv[5:]
 REANALYZE_TACTICS = "--reanalyze-tactics" in sys.argv[5:]
 if "--register" in sys.argv[5:]:
+    if Path(OUTQC).name != f"argus_nav_{MAPNAME}.qc":
+        print(f"error: --register requires argus_nav_{MAPNAME}.qc", file=sys.stderr)
+        sys.exit(1)
     # --register wires the map into the shared argus_nav_dispatch.qc,
     # so emitting a second Argus_Nav_Spawn in the per-map file would
     # collide at compile (Shane's drift list): registering implies
