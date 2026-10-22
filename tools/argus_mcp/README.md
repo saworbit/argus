@@ -740,6 +740,8 @@ after completion, then are evicted. `match_status` and the owner-independent
 accepts both current `subscriptions/listen` filters and legacy
 `resources/subscribe` calls, then emits `notifications/resources/updated`
 only when match identity, running state, exit status, or session memory changes.
+Re-read `argus://lab` after navigation, registration, configuration or external
+run changes. These do not independently emit subscription notifications.
 Subscription ticks do not read or analyse the live tape. `argus://lab` reads
 include the full current match status. Explicit resource reads, `match_status`, and
 `since_line` polling remain supported fallbacks.

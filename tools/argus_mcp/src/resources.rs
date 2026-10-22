@@ -89,7 +89,7 @@ pub fn list_static(cfg: Option<&Config>) -> ListResourcesResult {
             "argus://lab",
             "lab",
             "Lab dashboard",
-            "Config readiness, maps, recent runs, next call",
+            "Config readiness, maps, recent runs, next call. Subscriptions notify match/session changes only; re-read after navigation, registration, config or external run changes.",
         ),
         res(
             "argus://knobs",
@@ -330,6 +330,14 @@ mod tests {
     #[test]
     fn lists_core_uris() {
         let listed = list_static(None);
+        let lab = listed
+            .resources
+            .iter()
+            .find(|resource| resource.uri == "argus://lab")
+            .unwrap();
+        let description = lab.description.as_deref().unwrap();
+        assert!(description.contains("match/session changes only"));
+        assert!(description.contains("re-read after navigation, registration, config"));
         let uris: Vec<_> = listed.resources.iter().map(|r| r.uri.as_str()).collect();
         assert!(uris.contains(&"argus://project"));
         assert!(uris.contains(&"argus://knobs"));

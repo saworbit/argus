@@ -48,6 +48,26 @@ use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
 
+// The outer deadline bounds the RPC. compile.rs separately owns the child
+// process deadline and cleanup; timing out this future cannot kill a thread.
+async fn compile_deadline(
+    work: impl std::future::Future<
+        Output = Result<crate::compile::CompileResult, tokio::task::JoinError>,
+    >,
+    deadline: Duration,
+) -> Result<crate::compile::CompileResult, String> {
+    tokio::time::timeout(deadline, work)
+        .await
+        .map_err(|_| "compile_qc timed out after 90s".to_string())?
+        .map_err(|error| format!("compile task failed: {error}"))
+}
+
+async fn compile_with_timeout(
+    work: impl FnOnce() -> crate::compile::CompileResult + Send + 'static,
+) -> Result<crate::compile::CompileResult, String> {
+    compile_deadline(tokio::task::spawn_blocking(work), Duration::from_secs(90)).await
+}
+
 const SERVER_NAME: &str = env!("CARGO_PKG_NAME");
 const SERVER_VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -439,6 +459,56 @@ impl Argus {
         let mut s = self.session.lock().await;
         s.note_see(what, name);
         Self::persist_session(&s);
+    }
+
+    async fn probe_with_config(
+        &self,
+        args: ProbeArgs,
+        cfg: Config,
+        dur: u32,
+    ) -> Result<CallToolResult, McpError> {
+        if let Err(error) = crate::build_identity::require_authoritative(&cfg) {
+            return tool_err(error);
+        }
+        let mut compile_result = None;
+        if args.compile.unwrap_or(true) {
+            let cfg_c = cfg.clone();
+            let compiled = match compile_with_timeout(move || compile_qc(&cfg_c, true)).await {
+                Ok(result) => result,
+                Err(error) => return tool_err(error),
+            };
+            if !compiled.ok {
+                return json_ok(&serde_json::json!({
+                    "ok": false,
+                    "stage": "compile",
+                    "compile": compiled,
+                }));
+            }
+            compile_result = Some(compiled);
+        }
+        match self
+            .drive_match(
+                &cfg,
+                &args.map,
+                dur,
+                Some(&format!("probe_{}", args.map)),
+                None,
+                args.skill,
+                None,
+                None,
+                None,
+                None,
+            )
+            .await
+        {
+            Ok(r) => json_ok(&serde_json::json!({
+                "ok": r.ok,
+                "compile_ok": compile_result.as_ref().map(|c| c.ok),
+                "log": r.log_path,
+                "match": brief_lite(&r.brief),
+            })),
+            Err(e) => tool_err(e),
+        }
     }
 
     async fn live_resource_snapshot(&self, uris: &[String]) -> BTreeMap<String, String> {
@@ -1104,14 +1174,9 @@ impl Argus {
             Err(r) => return Ok(r),
         };
         let cfg2 = cfg.clone();
-        let result = match tokio::time::timeout(
-            Duration::from_secs(90),
-            tokio::task::spawn_blocking(move || compile_qc(&cfg2, true)),
-        )
-        .await
-        {
-            Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
-            Err(_) => return tool_err("ship timed out after 90s (fteqcc hung)"),
+        let result = match compile_with_timeout(move || compile_qc(&cfg2, true)).await {
+            Ok(result) => result,
+            Err(error) => return tool_err(error),
         };
         if !result.ok {
             return json_ok(&serde_json::json!({
@@ -1181,16 +1246,13 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
-        let result = match tokio::time::timeout(
-            Duration::from_secs(90),
-            tokio::task::spawn_blocking(move || compile_qc(&cfg, args.install.unwrap_or(true))),
-        )
+        let result = match compile_with_timeout(move || {
+            compile_qc(&cfg, args.install.unwrap_or(true))
+        })
         .await
         {
-            Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
-            Err(_) => {
-                return tool_err("compile_qc timed out after 90s (fteqcc hung or src/ is huge)")
-            }
+            Ok(result) => result,
+            Err(error) => return tool_err(error),
         };
         json_ok(&result)
     }
@@ -1215,9 +1277,10 @@ impl Argus {
         let install = src == cfg.src;
         let opt = args.optimization_level.clone();
         let src_display = src.display().to_string();
-        let result = tokio::task::spawn_blocking(move || compile_qc_dir(&cfg, &src, install))
-            .await
-            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        let result = match compile_with_timeout(move || compile_qc_dir(&cfg, &src, install)).await {
+            Ok(result) => result,
+            Err(error) => return tool_err(error),
+        };
         json_ok(&serde_json::json!({
             "compile": result,
             "source_directory": src_display,
@@ -2412,14 +2475,9 @@ impl Argus {
         if args.compile.unwrap_or(true) {
             progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
-            let compiled = match tokio::time::timeout(
-                Duration::from_secs(90),
-                tokio::task::spawn_blocking(move || compile_qc(&cfg_c, true)),
-            )
-            .await
-            {
-                Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
-                Err(_) => return tool_err("compile_qc timed out after 90s"),
+            let compiled = match compile_with_timeout(move || compile_qc(&cfg_c, true)).await {
+                Ok(result) => result,
+                Err(error) => return tool_err(error),
             };
             if !compiled.ok {
                 {
@@ -2607,14 +2665,9 @@ impl Argus {
         if args.compile.unwrap_or(true) {
             progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
-            let compiled = match tokio::time::timeout(
-                Duration::from_secs(90),
-                tokio::task::spawn_blocking(move || compile_qc(&cfg_c, true)),
-            )
-            .await
-            {
-                Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
-                Err(_) => return tool_err("compile_qc timed out after 90s"),
+            let compiled = match compile_with_timeout(move || compile_qc(&cfg_c, true)).await {
+                Ok(result) => result,
+                Err(error) => return tool_err(error),
             };
             if !compiled.ok {
                 return json_ok(&serde_json::json!({
@@ -2770,14 +2823,9 @@ impl Argus {
         if args.compile.unwrap_or(true) {
             progress.send(0.0, total, "compiling QuakeC").await;
             let cfg_c = cfg.clone();
-            let compiled = match tokio::time::timeout(
-                Duration::from_secs(90),
-                tokio::task::spawn_blocking(move || compile_qc(&cfg_c, true)),
-            )
-            .await
-            {
-                Ok(j) => j.map_err(|e| McpError::internal_error(e.to_string(), None))?,
-                Err(_) => return tool_err("compile_qc timed out after 90s"),
+            let compiled = match compile_with_timeout(move || compile_qc(&cfg_c, true)).await {
+                Ok(result) => result,
+                Err(error) => return tool_err(error),
             };
             if !compiled.ok {
                 return json_ok(&serde_json::json!({
@@ -2879,44 +2927,7 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
-        let mut compile_result = None;
-        if args.compile.unwrap_or(true) {
-            let cfg_c = cfg.clone();
-            let compiled = tokio::task::spawn_blocking(move || compile_qc(&cfg_c, true))
-                .await
-                .map_err(|e| McpError::internal_error(e.to_string(), None))?;
-            if !compiled.ok {
-                return json_ok(&serde_json::json!({
-                    "ok": false,
-                    "stage": "compile",
-                    "compile": compiled,
-                }));
-            }
-            compile_result = Some(compiled);
-        }
-        match self
-            .drive_match(
-                &cfg,
-                &args.map,
-                dur,
-                Some(&format!("probe_{}", args.map)),
-                None,
-                args.skill,
-                None,
-                None,
-                None,
-                None,
-            )
-            .await
-        {
-            Ok(r) => json_ok(&serde_json::json!({
-                "ok": r.ok,
-                "compile_ok": compile_result.as_ref().map(|c| c.ok),
-                "log": r.log_path,
-                "match": brief_lite(&r.brief),
-            })),
-            Err(e) => tool_err(e),
-        }
+        self.probe_with_config(args, cfg, dur).await
     }
 
     #[tool(
@@ -3439,6 +3450,39 @@ impl ServerHandler for Argus {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn compile_deadline_refuses_a_nonreturning_job() {
+        let job =
+            std::future::pending::<Result<crate::compile::CompileResult, tokio::task::JoinError>>();
+        let error = compile_deadline(job, Duration::from_millis(5))
+            .await
+            .unwrap_err();
+        assert!(error.contains("timed out"), "{error}");
+    }
+
+    #[tokio::test]
+    async fn probe_refuses_stale_build_before_compile_or_engine_start() {
+        let root = TestDir::new("probe-stale").unwrap();
+        let cfg = completion_cfg(root.path());
+        let result = Argus::new()
+            .probe_with_config(
+                ProbeArgs {
+                    map: "dm4".into(),
+                    duration_sec: Some(10),
+                    compile: Some(true),
+                    skill: Some(1),
+                },
+                cfg,
+                10,
+            )
+            .await
+            .unwrap();
+        assert_eq!(result.is_error, Some(true));
+        assert!(result_text(&result).contains("STALE LAB"));
+        assert!(!root.path().join("runs").exists());
+        assert!(!root.path().join("progs.dat").exists());
+    }
     use crate::engine::FakeEngineControl;
     use crate::match_ctrl::{live_state, live_test_lock_async};
     use crate::test_support::{git_test_lock, run_git, TestDir};

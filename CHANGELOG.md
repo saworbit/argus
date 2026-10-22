@@ -24,6 +24,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Require the tested rmcp 3.5.1 minimum (#534), explain dashboard subscription
+  refreshes in the resource description (#536), and make probe enforce build
+  authority and the shared compile deadline (#546).
+
 - Preserve quoted strings while checking navigation registration in Rust and
   Python (#523), reject noninteger graph endpoints (#524), and refuse custom
   QC filenames with `--register` before any files change (#537).
