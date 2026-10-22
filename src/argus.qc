@@ -47,6 +47,7 @@ float AR_AIMERR      = 34;      // aim error in units at 500u, fresh target
 // then spatial shots, memory/awareness, denial, and finally anticipation.
 float AR_SKILL_LEAD      = 0.20;
 float AR_SKILL_SPLASH    = 0.35;
+float AR_DRIFT_AIMSHARE = 0.35; // current upward adaptive aim share (#527)
 float AR_SKILL_MEMORY    = 0.50;
 float AR_SKILL_DENIAL    = 0.65;
 float AR_SKILL_HUNCH     = 0.80;
@@ -3073,12 +3074,23 @@ void() Argus_SetSkill =
     if (Argus_SkillDriftEligible ())
     {
         if (self.ar_skilldrift > 0)
-            a = a + self.ar_skilldrift * 0.35;
+            a = a + self.ar_skilldrift * AR_DRIFT_AIMSHARE;
         else
             a = a + self.ar_skilldrift;
     }
     if (a < 0) a = 0;
     if (a > 3) a = 3;
+    // Record both tiers and the actual setting for human comparisons.
+    dprint ("ARGUS difficulty "); dprint (self.netname);
+    dprint (" t "); dprint (ftos (time));
+    dprint (" base "); dprint (ftos (skill));
+    dprint (" cognition "); dprint (ftos (s));
+    dprint (" aim "); dprint (ftos (a));
+    dprint (" offset "); dprint (ftos (self.ar_skilloff));
+    dprint (" drift "); dprint (ftos (self.ar_skilldrift));
+    dprint (" adaptive "); dprint (ftos (Argus_SkillDriftEligible ()));
+    dprint (" aimshare_pct "); dprint (ftos (AR_DRIFT_AIMSHARE * 100));
+    dprint ("\n");
     // Reaper's motion-proportional aim error used the aim skill, not the
     // cognition skill. Keep that distinction now that upward adaptive drift
     // intentionally buys only 35% of raw aim lethality (#359/#362).
@@ -10207,6 +10219,8 @@ void() Argus_ToggleSkillDrift =
 
     argus_skilldrift = !argus_skilldrift;
     argus_skilldriftactive = Argus_SkillDriftEligible ();
+    dprint ("ARGUS skilldrift enabled "); dprint (ftos (argus_skilldrift));
+    dprint (" active "); dprint (ftos (argus_skilldriftactive)); dprint ("\n");
     b = argus_bots;
     while (b != world)
     {

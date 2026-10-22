@@ -9,6 +9,14 @@ void(string why) Argus_TacticLog =
     dprint (why); dprint ("\n");
 };
 
+// Evaluation ticks, not independent encounters or proof of a hit (#517).
+void(string stage) Argus_TacticCheck =
+{
+    dprint ("TACTICCHECK "); dprint (self.netname);
+    dprint (" t "); dprint (ftos (time));
+    dprint (" stage "); dprint (stage); dprint ("\n");
+};
+
 void() Argus_TacticReset =
 {
     if (self.ar_tactic)
@@ -141,21 +149,30 @@ void() Argus_TacticBegin =
     if (self.ar_tactic || time < self.ar_tactic_settle || time < self.ar_tactic_cool
         || time < self.ar_tactic_check) return;
     self.ar_tactic_check = time + 0.5;
-    if (coop || !deathmatch || self.ar_slot != 1 || skill != 1 || self.ar_skill < 1
-        || self.ar_enemy == world || self.ar_seen != time
-        || self.weapon != IT_ROCKET_LAUNCHER || self.ammo_rockets < 2
-        || self.health + self.armorvalue * self.armortype < 75
+    if (coop || !deathmatch || self.ar_slot != 1 || skill != 1 || self.ar_skill < 1)
+        return;
+    Argus_TacticCheck ("evaluated");
+    if (self.ar_enemy == world || self.ar_seen != time)
+    { Argus_TacticCheck ("no_visible_target"); return; }
+    Argus_TacticCheck ("visible");
+    if (self.weapon != IT_ROCKET_LAUNCHER || self.ammo_rockets < 2)
+    { Argus_TacticCheck ("loadout"); return; }
+    Argus_TacticCheck ("loaded");
+    if (self.health + self.armorvalue * self.armortype < 75
         || self.ar_retreating || time < self.ar_dodgetime
         || !(self.flags & FL_ONGROUND) || self.ar_wetlevel
         || self.ar_hopjump || self.ar_hoplift || self.ar_hoprj
         || self.ar_hoptrain || self.ar_hopdoor || self.ar_hopswim)
-        return;
+    { Argus_TacticCheck ("unsafe_state"); return; }
+    Argus_TacticCheck ("eligible");
     if (mapname == "dm4")
     { start = '465 -279 -104'; via = '561 -183 -104'; cover = via; finish = '465 -151 -104'; }
     else if (mapname == "dm2")
     { start = '2209 -279 24'; via = '2241 -87 24'; cover = '2177 -23 24'; finish = '2145 -119 24'; }
-    else return;
-    if (vlen (self.origin - start) > 48) return;
+    else { Argus_TacticCheck ("unsupported_map"); return; }
+    if (vlen (self.origin - start) > 48)
+    { Argus_TacticCheck ("outside_start"); return; }
+    Argus_TacticCheck ("at_start");
     // Validate the whole braking envelope, including the residual velocity
     // after the opening shot. Stop-friction is linear below STOPSPEED and
     // proportional above it; this conservative bound also covers a frame
@@ -171,19 +188,25 @@ void() Argus_TacticBegin =
             stopdist = speed * speed / (2 * AR_FRICTION * AR_STOPSPEED);
         stopdist = stopdist + speed * frametime;
         if (!Argus_TacticWalk (self.origin,
-                self.origin + normalize (drift) * stopdist)) return;
+                self.origin + normalize (drift) * stopdist))
+        { Argus_TacticCheck ("braking"); return; }
     }
     a = Argus_TacticNode (start); b = Argus_TacticNode (via);
     c = Argus_TacticNode (cover); d = Argus_TacticNode (finish);
-    if (!Argus_TacticLink (a, b) || !Argus_TacticLink (c, d)) return;
-    if (b != c && !Argus_TacticLink (b, c)) return;
-    if (!Argus_TacticWalk (self.origin, via)) return;
+    if (!Argus_TacticLink (a, b) || !Argus_TacticLink (c, d))
+    { Argus_TacticCheck ("route"); return; }
+    if (b != c && !Argus_TacticLink (b, c))
+    { Argus_TacticCheck ("route"); return; }
+    if (!Argus_TacticWalk (self.origin, via))
+    { Argus_TacticCheck ("approach"); return; }
     if (!Argus_TacticHidden (cover, self.ar_lastseen)
         || !Argus_TacticShotLine (self.origin, self.ar_lastseen)
-        || !Argus_TacticShotLine (finish, self.ar_lastseen)) return;
+        || !Argus_TacticShotLine (finish, self.ar_lastseen))
+    { Argus_TacticCheck ("sight_geometry"); return; }
     self.ar_tactic_open = self.origin;
     self.ar_tactic_enemypos = self.ar_lastseen;
-    if (!Argus_TacticAngle (finish)) return;
+    if (!Argus_TacticAngle (finish))
+    { Argus_TacticCheck ("angle"); return; }
     // Score FIRST reappearance, not just the endpoint (dm2 D's false win).
     i = 1; exposed = 0;
     while (i <= 12)
@@ -191,7 +214,8 @@ void() Argus_TacticBegin =
         p = cover + (finish - cover) * (i / 12);
         if (!exposed && !Argus_TacticHidden (p, self.ar_tactic_enemypos))
         {
-            if (!Argus_TacticAngle (p)) return;
+            if (!Argus_TacticAngle (p))
+            { Argus_TacticCheck ("early_angle"); return; }
             exposed = 1;
         }
         i = i + 1;

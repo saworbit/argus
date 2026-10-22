@@ -23,6 +23,31 @@ teleport exclusion, all eight hull corners plus centre for concealment,
 rocket lanes and at least 30 degrees around the observed opponent at first
 reappearance. Hidden travel uses remembered coordinates only.
 
+## Ordinary-session evidence
+
+With `developer 1`, `TACTICCHECK` records why Romero's existing half-second
+entry checks stop. `evaluated`, `visible`, `loaded`, `eligible` and `at_start`
+are nested milestones; the remaining stage names are refusal reasons.
+These are sampled evaluation ticks during the existing combat path, not
+independent encounters. Busy tactics, settling and cooldowns skip entry
+checks as before. No eligibility, route, safety or aim threshold changes.
+
+Run `python tools/tactic_review.py runs/<session>.log` after harvesting a
+session. It uses the shared tape reader for map and phase records and reads
+the separate diagnostic lines. Old tapes without diagnostics cannot say how
+many eligible opportunities occurred. A `returnshot` is an attack
+acknowledgement. Ordinary-session hits remain unmeasured; controlled damage
+acceptance uses the projectile fixture. Human observations are still needed
+to judge whether an actual disappearance and changed-angle return reads as
+deliberate, surprising and fair.
+
+`ARGUS difficulty` records base skill, cognition, aim, offset, adaptive drift,
+eligibility and aim-share percent when skill is applied. Tier values use
+Quake's one-decimal console formatting; aim share is reported as whole percent.
+The share remains 35 percent. `ARGUS skilldrift` records explicit toggles.
+These records make a future 0.35/0.60 human comparison identifiable, without
+adopting the deferred tuning.
+
 ## Review changes
 
 - Item-route state survives tactical ownership, but routed dives, jumps,
