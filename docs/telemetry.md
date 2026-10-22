@@ -151,3 +151,7 @@ half-speed `clip.webm` with `video_manifest.json` under a fresh ignored
 for video; PNG capture needs no encoder. The exporter verifies decoded frame
 hashes, order, count and playback timing. It preserves the recorded viewpoint
 and cannot recover visibility missing from the original demo.
+Capture manifests also identify staged PAK and loose assets by relative path,
+size and MD5. Video manifests include the FFmpeg executable digest, build
+output and encoding settings. A bounded VP9 preflight runs before rendering;
+input changes detected during capture fail the call.
