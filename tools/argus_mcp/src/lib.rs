@@ -38,6 +38,7 @@ pub mod soak;
 mod source_fingerprint;
 pub mod stale;
 pub mod stats;
+pub mod tactic_suite;
 pub mod tape_view;
 pub mod task_store;
 pub mod within_ab;

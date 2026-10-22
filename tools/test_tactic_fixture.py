@@ -1,7 +1,7 @@
 """Regression cases for misleading tactical acceptance tapes."""
 import unittest
 
-from check_tactic_fixture import check
+from check_tactic_fixture import check, require_sequence
 
 
 def sample(t, *, z=-104, hidden=0, rockets=20, hp=5000, state=0):
@@ -28,6 +28,25 @@ def stationary(*, return_hit=False, later_hit=False, third_at=1.4):
 
 
 class TestTacticFixture(unittest.TestCase):
+    def test_unlimited_ammo_uses_actual_projectile_counts(self):
+        tape = stationary(return_hit=True)
+        import re
+        tape = re.sub(r"rockets (\d+)(.*?)state (\d+)",
+                      lambda m: f"rockets 20{m[2]}state {m[3]} launches {20-int(m[1])}", tape)
+        self.assertTrue(check(tape)[0]["return_damage"])
+
+    def test_ammo_loss_without_projectile_cannot_credit_a_shot(self):
+        tape = stationary(return_hit=True)
+        import re
+        tape = re.sub(r"state (\d+)", r"state \1 launches 0", tape)
+        with self.assertRaisesRegex(AssertionError, "no actual opening rocket"):
+            check(tape)
+
+    def test_sequence_rejects_missing_duplicate_and_reordered_cases(self):
+        for cases in ([0, 0, 1], [0, 0, 0, 1, 1, 2], [0, 0, 0, 2, 1]):
+            with self.assertRaisesRegex(AssertionError, "case sequence mismatch"):
+                require_sequence([{"case": str(c)} for c in cases], [0, 0, 0, 1, 2])
+
     def test_actual_return_damage(self):
         self.assertTrue(check(stationary(return_hit=True))[0]["return_damage"])
 

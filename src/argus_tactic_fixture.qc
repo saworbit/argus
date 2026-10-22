@@ -9,8 +9,9 @@ entity ar_tf_secondary;
 vector ar_tf_start;
 vector ar_tf_enemy;
 float ar_tf_begin, ar_tf_next, ar_tf_hidden, ar_tf_moved, ar_tf_frames;
-float ar_tf_case;
-float ar_tf_ammo, ar_tf_fired;
+float ar_tf_case, ar_tf_id, ar_tf_launches;
+.float ar_tf_rocket_seen;
+float ar_tf_fired;
 .float ar_tf_solid, ar_tf_camera, ar_tf_weapon;
 
 // The fixed target cannot move. T_Damage still adds bot knockback, so clear
@@ -61,7 +62,11 @@ void() Argus_TacticFixture =
     local entity b, saved, pack, nextpack;
     local vector p, q;
     if (ar_tacfixture_until)
-    { dprint ("TACFIX busy\n"); return; }
+    {
+        dprint ("TACFIX busy id "); dprint (ftos (ar_tf_id));
+        dprint (" requested "); dprint (ftos (cvar ("scratch3"))); dprint ("\n");
+        return;
+    }
     if (mapname == "dm4")
     { p = '465 -279 -104'; q = '337 -247 -296'; }
     else if (mapname == "dm2")
@@ -201,8 +206,11 @@ void() Argus_TacticFixture =
     ar_tf_start = p; ar_tf_enemy = q; ar_tf_begin = time;
     ar_tf_next = 0; ar_tf_hidden = 0; ar_tf_moved = 0; ar_tf_frames = 0;
     ar_tf_case = cvar ("scratch2");
-    ar_tf_ammo = b.ammo_rockets; ar_tf_fired = 0;
+    ar_tf_id = cvar ("scratch3"); ar_tf_launches = 0;
+    ar_tf_fired = 0;
     dprint ("TACFIX begin "); dprint (mapname);
+    dprint (" case "); dprint (ftos (ar_tf_case)); dprint ("\n");
+    dprint ("TACFIX trial "); dprint (ftos (ar_tf_id));
     dprint (" case "); dprint (ftos (ar_tf_case)); dprint ("\n");
     if (ar_tf_case == 8)
     {
@@ -214,7 +222,7 @@ void() Argus_TacticFixture =
 
 void() Argus_TacticFixtureTick =
 {
-    local entity b, otherbot, saved;
+    local entity b, otherbot, saved, missile;
     local float k, hidden;
     local vector p;
     if (!ar_tacfixture_until) return;
@@ -255,7 +263,20 @@ void() Argus_TacticFixtureTick =
         if (ar_tf_secondary != world) remove (ar_tf_secondary);
         ar_tf_secondary = world;
         ar_tacfixture_bot = world;
+        dprint ("TACFIX done "); dprint (ftos (ar_tf_id)); dprint ("\n");
         return;
+    }
+    // Scan each engine frame, before the sampled observer's throttle. This
+    // observes real owned projectiles independently of ammo and tactic state.
+    missile = find (world, classname, "rocket");
+    while (missile != world)
+    {
+        if (missile.owner == b && !missile.ar_tf_rocket_seen)
+        {
+            missile.ar_tf_rocket_seen = 1;
+            ar_tf_launches = ar_tf_launches + 1; ar_tf_fired = 1;
+        }
+        missile = find (missile, classname, "rocket");
     }
     if (time < ar_tf_next) return;
     ar_tf_next = time + 0.04;
@@ -290,8 +311,6 @@ void() Argus_TacticFixtureTick =
     }
     if (ar_tf_case == 11 && !ar_tf_moved && b.ar_tactic == 3)
         b.ar_react = time + 0.4; // leave a visible return-shot observation window
-    if (b.ammo_rockets < ar_tf_ammo) ar_tf_fired = 1;
-    ar_tf_ammo = b.ammo_rockets;
     if (hidden && ar_tf_fired) ar_tf_hidden = 1;
     if (ar_tf_hidden && !ar_tf_moved && (ar_tf_case == 1 || ar_tf_case == 2 || ar_tf_case == 4 || ar_tf_case == 5 || ar_tf_case == 7))
     {
@@ -332,6 +351,7 @@ void() Argus_TacticFixtureTick =
     dprint (" targethp "); dprint (ftos (ar_tf_target.health));
     dprint (" hp "); dprint (ftos (b.health));
     dprint (" state "); dprint (ftos (b.ar_tactic));
+    dprint (" launches "); dprint (ftos (ar_tf_launches));
     dprint (" memory "); dprint (vtos (b.ar_lastseen));
     dprint (" targetvel "); dprint (vtos (ar_tf_target.velocity));
     dprint ("\n");
