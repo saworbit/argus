@@ -24,6 +24,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Record staged asset digests and FFmpeg build/settings in capture manifests,
+  isolate staged bytes and reject changed inputs (#572). Check VP9 encoding
+  before rendering or creating capture output (#573).
+
 - Document the video CLI in the recording guides and tool index, explain its
   playback units and public result fields, and state the current asset-identity
   (#572) and encoder-preflight (#573) limits.
