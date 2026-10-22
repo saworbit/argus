@@ -45,6 +45,26 @@ async fn main() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&result)?);
             Ok(())
         }
+        Some("capture-video") => {
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
+                println!("usage: argus-mcp capture-video <demo_stem> [start_sec=0.5] [duration_sec=3] [playback_rate=1]; FFmpeg required only for video");
+                return Ok(());
+            }
+            if rest.len() > 4 {
+                anyhow::bail!("too many video arguments");
+            }
+            let start = rest.get(1).map(|s| s.parse()).transpose()?.unwrap_or(0.5);
+            let duration = rest.get(2).map(|s| s.parse()).transpose()?.unwrap_or(3.0);
+            let rate = rest.get(3).map(|s| s.parse()).transpose()?.unwrap_or(1.0);
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!(e))?;
+            let result =
+                argus_mcp::render_capture::capture_video(&cfg, &rest[0], start, duration, rate)
+                    .await
+                    .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+            Ok(())
+        }
         Some("gui") => {
             let opts = parse_gui_args(args);
             run_gui(opts).map_err(|e| anyhow::anyhow!(e))?;
@@ -1266,6 +1286,7 @@ fn print_help() {
          argus-mcp gui --no-open\n\
          argus-mcp record-pov <new-demo> [slot] [seconds]\n\
          argus-mcp capture-demo <demo> [start] [frames] [interval]\n\
+         argus-mcp capture-video <demo> [start] [duration] [playback_rate]\n\
          argus-mcp soak         unattended match loop with gated verdicts\n\
            --maps dm4,dm2,dm6   round-robin map list\n\
            --hours 4            wall clock cap (max 12)\n\

@@ -93,8 +93,8 @@ the viewpoint of an existing demo are refused explicitly.
 The renderer writes fresh 640x480 PNGs and a manifest under ignored
 `backups/render_capture/`. It stages local `id1` PAKs and the configured game's
 loose `maps`, `progs`, `sound` and `gfx` directories in a fresh game directory.
-Game-specific PAKs are currently omitted ([#569](https://github.com/saworbit/argus/issues/569));
-do not treat a fallback stock asset as evidence of the intended mod appearance.
+The game's PAKs retain their filenames and engine search precedence; configs
+and logs outside those packs are excluded. Symlinked assets are refused.
 User configs and session logs are untouched. Licensed assets stay local.
 The child has a 45-second deadline and is killed and reaped on timeout.
 There are at most 12 images, 0.1..5 seconds apart, starting 0.5..120 seconds
@@ -102,17 +102,26 @@ into a complete protocol-15 demo and ending before its final message.
 The MCP result includes image blocks. A missing acknowledgement or incomplete
 PNG fails the call instead of returning a substitute plot.
 
-Capture acknowledgements can appear as console notification text in later
-frames, including at 0.1-second intervals
-([#567](https://github.com/saworbit/argus/issues/567)). Inspect the actual PNGs
-before presenting them as clean visual evidence.
+The isolated playback sets `con_notifytime -1` so even zero-age capture
+acknowledgements stay out of the image. Every message remains in `qconsole.log`;
+engine errors and missing acknowledgements still fail capture.
 
-The native output is PNG, with no FFmpeg dependency. Video export is tracked
-in [#568](https://github.com/saworbit/argus/issues/568). For a manually assembled
-clip, keep frames in scheduled-time order and specify the input frame rate:
-0.1-second sampling is 10 fps at normal speed or 5 fps at half speed. Preserve
-the capture manifests and label any playback-speed change. An external encoder
-such as FFmpeg is required only for this separate video step.
+`argus-mcp capture-video <demo-stem> [start-sec=0.5] [duration-sec=3] [playback-rate=1]`
+exports a silent lossless VP9 WebM from the same renderer. FFmpeg with `libvpx-vp9` must
+be on PATH for this command; PNG capture has no encoder dependency. Video
+preflights FFmpeg before rendering, samples at 10 source frames/sec, rounds
+duration to the nearest 0.1 seconds and accepts 0.2..12 seconds at playback
+rates 0.1..4. A rate of 0.5 plays at half speed and doubles clip duration.
+Start and demo-end bounds match PNG capture; the video path permits at most
+120 source frames without increasing the 12-image MCP limit.
+
+The exporter checks decoded YUV frame hashes against every ordered source
+frame, including the decoded frame count, timestamps and playback timebase.
+It publishes `clip.webm` only after verification, with `video_manifest.json`
+recording input identity, source times, output rate, duration and frame hashes.
+PNG-to-YUV conversion precedes lossless encoding. Each encoder child has a
+45-second deadline and is killed and reaped on timeout. Failures retain
+`encoder.log` and intermediate evidence; existing outputs are never overwritten.
 
 Playback uses a fixed 0.05-second frame step and gamma 0.7. This does not
 resimulate the match. Manifest times describe scheduled playback steps,
