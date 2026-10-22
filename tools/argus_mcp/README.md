@@ -107,9 +107,13 @@ acknowledgements stay out of the image. Every message remains in `qconsole.log`;
 engine errors and missing acknowledgements still fail capture.
 
 `argus-mcp capture-video <demo-stem> [start-sec=0.5] [duration-sec=3] [playback-rate=1]`
-exports a silent lossless VP9 WebM from the same renderer. FFmpeg with `libvpx-vp9` must
-be on PATH for this command; PNG capture has no encoder dependency. Video
-preflights FFmpeg before rendering, samples at 10 source frames/sec, rounds
+exports a silent lossless VP9 WebM from the same renderer. FFmpeg with
+`libvpx-vp9` must be on PATH for this command; PNG capture has no encoder
+dependency. `ffprobe` is not required. The current preflight checks that
+`ffmpeg -version` succeeds; encoder support is checked during encoding, after
+the PNGs have been rendered. A build without VP9 support therefore fails late.
+Capability preflight is tracked in [#573](https://github.com/saworbit/argus/issues/573).
+Video samples at 10 source frames/sec, rounds
 duration to the nearest 0.1 seconds and accepts 0.2..12 seconds at playback
 rates 0.1..4. A rate of 0.5 plays at half speed and doubles clip duration.
 Start and demo-end bounds match PNG capture; the video path permits at most
@@ -122,6 +126,12 @@ recording input identity, source times, output rate, duration and frame hashes.
 PNG-to-YUV conversion precedes lossless encoding. Each encoder child has a
 45-second deadline and is killed and reaped on timeout. Failures retain
 `encoder.log` and intermediate evidence; existing outputs are never overwritten.
+
+Manifest input digests identify the demo and rendering engine. Staged asset
+bytes and the FFmpeg build are not currently fingerprinted. Preserve those
+local inputs alongside the manifests when archiving reproducible evidence;
+the same demo and engine can render differently after a mod PAK changes.
+Asset and encoder provenance is tracked in [#572](https://github.com/saworbit/argus/issues/572).
 
 Playback uses a fixed 0.05-second frame step and gamma 0.7. This does not
 resimulate the match. Manifest times describe scheduled playback steps,

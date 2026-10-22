@@ -176,6 +176,11 @@ Real engine PNGs of a recorded POV. Inputs: `demo`, `start_sec`,
 viewpoint changes in an existing demo are refused. See the bounded
 [renderer and recorder contract](../tools/argus_mcp/README.md#rendered-pov-evidence).
 
+For bounded video export, use the CLI `argus-mcp capture-video <demo> [start]
+[duration] [playback_rate]`. It writes a verified lossless VP9 WebM and manifest;
+FFmpeg with `libvpx-vp9` is required for that command. The MCP image response
+retains its 1..12-frame bound.
+
 ## 4. Component sketches (as captured)
 
 The capture included a stdio JSON-RPC loop, an fteqcc diagnostic

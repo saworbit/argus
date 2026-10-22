@@ -138,3 +138,16 @@ proposal is not evidence of improved play.
 For actual images, use [rendered POV capture](../tools/argus_mcp/README.md#rendered-pov-evidence).
 Demo replay preserves the recorded viewpoint and visibility, while the source
 tape establishes event counts and physics cadence.
+
+Export a clip from the harvested demo with the **terminal command**:
+
+```text
+argus-mcp capture-video my_run 0.5 2.4 0.5
+```
+
+This samples 2.4 source seconds starting at 0.5 seconds and writes a 4.8-second
+half-speed `clip.webm` with `video_manifest.json` under a fresh ignored
+`backups/render_capture/` directory. FFmpeg with `libvpx-vp9` on PATH is required
+for video; PNG capture needs no encoder. The exporter verifies decoded frame
+hashes, order, count and playback timing. It preserves the recorded viewpoint
+and cannot recover visibility missing from the original demo.
