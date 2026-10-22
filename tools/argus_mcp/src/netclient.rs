@@ -1715,6 +1715,77 @@ mod tests {
         assert!(result.is_ok(), "{}", result.unwrap_err());
     }
 
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn omicron_names_are_single_player_only_if_engine_present() {
+        if !cfg!(windows) {
+            return;
+        }
+        let _gate = crate::engine::ENGINE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let env =
+            std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
+        let mut cfg = crate::config::load_for_reads_from(&env, &root).unwrap();
+        if !cfg.engine.is_file() {
+            return;
+        }
+        let scratch = crate::test_support::TestDir::new("omicron-permission").unwrap();
+        cfg.runs = scratch.path().to_path_buf();
+        for (mode, dm, coop, allowed) in [
+            ("dm", 1, 0, false),
+            ("coop", 0, 1, false),
+            ("sp", 0, 0, true),
+        ] {
+            let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+            ctrl.begin(&cfg, "dm4", 40, Some(mode), Some(1), Some(0), None)
+                .await
+                .unwrap();
+            let result = async {
+                ctrl.command(&format!(
+                    "deathmatch {dm}; coop {coop}; scratch1 0; map dm4"
+                ))
+                .await?;
+                // Wait for the reload, then connect through the normal protocol.
+                tokio::time::sleep(Duration::from_millis(500)).await;
+                let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+                client.pump(Duration::from_secs(2));
+                if client.world.signon < 3 {
+                    return Err("client did not sign on".to_string());
+                }
+                for key in [0, 147] {
+                    ctrl.command(&format!("scratch1 {key}")).await?;
+                    client.pump(Duration::from_millis(250));
+                    let before = client.world.prints.len();
+                    client.set_impulse(146);
+                    client.pump(Duration::from_millis(450));
+                    let prints = client.world.prints[before..]
+                        .iter()
+                        .map(|(_, s)| s.as_str())
+                        .collect::<Vec<_>>()
+                        .join("\n");
+                    let changed =
+                        prints.contains("Omicron bots") || prints.contains("the roster returns");
+                    if changed != allowed {
+                        return Err(format!(
+                            "{mode} key={key}: rename={changed}, expected {allowed}; {prints}"
+                        ));
+                    }
+                    if !allowed && !prints.contains("single-player only") {
+                        return Err(format!("{mode}: missing refusal"));
+                    }
+                }
+                client.disconnect();
+                Ok::<(), String>(())
+            }
+            .await;
+            let stopped = ctrl.stop(Duration::from_secs(2)).await;
+            assert!(stopped.is_ok(), "engine cleanup failed: {stopped:?}");
+            assert!(result.is_ok(), "{}", result.unwrap_err());
+        }
+    }
+
     /// Live integration: spawn the lab's own dedicated engine, connect
     /// as a real client, complete the signon dance, and require the
     /// world to flow - level name, roster names, our own entity

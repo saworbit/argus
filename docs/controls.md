@@ -38,6 +38,7 @@ replaces the roster opt-in until you restore `147`.
 | `impulse 108` | Cycle slot 2's skill offset |
 | `impulse 109` | Cycle slot 3's skill offset |
 | `impulse 110` | Toggle adaptive per-bot difficulty and clear previous adaptive offsets |
+| `omicron` / `impulse 146` | Toggle tribute roster names in plain single-player; refused in deathmatch and co-op |
 
 Per-slot offsets cycle through `0, +0.5, +1, -1, -0.5`; effective skill is
 bounded to 0-3. Adaptive difficulty starts off. It is active only against
