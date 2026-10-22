@@ -24,6 +24,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Synchronize tactical diagnostics, rendered POV limits, camera behaviour and
+  blocking Python CI documentation. Track capture notification leakage (#567),
+  bounded video export (#568) and missing mod PAK staging (#569).
+
 - Hide the tracked bot from its own POV by selecting its protocol view
   entity. Hide the observer body while active and restore its render index
   and view entity on camera exit (#565).

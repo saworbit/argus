@@ -115,3 +115,24 @@ Automated Linux test rig environment bootstrap script (Ubuntu/Debian). Builds `f
   ./tools/setup_rig.sh
   ```
 - **Requirements**: Supports root or non-root execution via `sudo`.
+
+---
+
+### 9. `tactic_review.py`
+Summarizes ordinary-session tactical entry diagnostics and applied difficulty
+using the shared tape reader.
+- **Usage**:
+  ```bash
+  python tools/tactic_review.py runs/my_session.log
+  python tools/tactic_review.py --help
+  ```
+- **Output**: JSON containing map, per-bot evaluation ticks and tactical phase
+  counts, plus applied difficulty records. Entry ticks are throttled checks,
+  not independent encounters. Legacy tapes without diagnostics have unknown
+  opportunity counts; ordinary-session `return_hits` is always `null`.
+- **Validation**: `python tools/test_tactic_review.py` exercises legacy tapes,
+  multiword names and separation of checks, shots and applied aim share.
+
+Bot POV recording and PNG capture use the Rust lab CLI rather than a Python
+plotting tool. See [rendered POV evidence](argus_mcp/README.md#rendered-pov-evidence)
+for commands, asset requirements and output limits.

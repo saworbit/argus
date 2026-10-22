@@ -72,6 +72,9 @@ ARGEVT <name> goal <class>
 ARGEVT <name> death <killer> pos '<x y z>' [thirdparty]
 ARGEVT <name> tactic <phase-or-abort-reason>
 ARGDBG <name> pick <class> u <utility> ...
+TACTICCHECK <name> t <time> stage <stage>
+ARGUS difficulty <name> t <time> base <skill> cognition <tier> aim <tier>
+       offset <offset> drift <drift> adaptive <0-or-1> aimshare_pct <percent>
 ```
 
 This is a reading guide, not the complete closed event vocabulary. The Rust
@@ -86,6 +89,8 @@ documents event counting and shared Python/Rust contracts.
 | `grab <class>` | A recorded pickup; separate from goal selections |
 | Tactical `prepare` | The manoeuvre started, not that it completed |
 | Tactical `returnshot` | A shot was acknowledged, not that it hit |
+| `TACTICCHECK` | A throttled tactical entry check, not an independent encounter |
+| `ARGUS difficulty` | Applied base skill, cognition/aim tiers and adaptive settings, not a performance score |
 | `ARGDBG` | Optional decision scores; enabled by server `scratch1 1`, excluded from ordinary brief counts |
 
 Names may contain spaces and event words. Parsers resolve full known track
@@ -115,3 +120,21 @@ fields, mover analysis, death regions and paired comparisons, follow the
 For the bounded attack-cover-return behaviour, ordinary briefs report its
 phases. The separate [fixture checker](attack-cover-return.md#engine-acceptance)
 establishes controlled movement and first-return damage acceptance.
+
+With `developer 1`, review entry checks and applied difficulty using:
+
+```text
+python tools/tactic_review.py runs/my_run.log
+```
+
+The JSON keeps evaluation ticks separate from phase counts and reports
+ordinary-session `return_hits` as `null`. `evaluated`, `visible`, `loaded`,
+`eligible` and `at_start` are nested milestones; other stages give refusal
+reasons. Missing diagnostics in older tapes mean unknown opportunities.
+Applied tiers use one-decimal console formatting and aim share is a whole
+percent. The retained adaptive aim share is 35 percent; the declined 60-percent
+proposal is not evidence of improved play.
+
+For actual images, use [rendered POV capture](../tools/argus_mcp/README.md#rendered-pov-evidence).
+Demo replay preserves the recorded viewpoint and visibility, while the source
+tape establishes event counts and physics cadence.

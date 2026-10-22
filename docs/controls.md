@@ -72,6 +72,10 @@ the optional fourth bot have capacity.
 | 4: Free flight | Move with the engine's ordinary noclip controls |
 | 5: Orbit | Orbit the subject |
 
+POV hides the tracked bot's world model. The camera also hides the observer's
+body while active and restores its rendering and viewpoint on exit. If the
+target dies, the camera can select another living bot.
+
 Outside free-flight mode, the **attack action** cycles camera modes and the
 **jump action** cycles targets. The physical keys depend on your bindings;
 the impulse commands work independently of those bindings. Free flight keeps

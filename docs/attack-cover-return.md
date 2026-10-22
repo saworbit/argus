@@ -1,16 +1,18 @@
 # Attack, cover, return - reviewed implementation
 
 Romero can fire an opening rocket, walk through full-body cover and return
-from a different angle on two verified routes. This repair branch restores
-the feature preserved at c4c6716, which was closed as PR #528 after its dm4
-damage acceptance failed. Historical passing tapes do not certify this build.
+from a different angle on two verified routes. The implementation merged in
+PR #531 repairs the feature preserved at c4c6716, whose PR #528 was closed
+after its dm4 damage acceptance failed. Historical passing tapes do not
+certify the current build.
 
 The feature is limited to deathmatch at base skill 1, roster slot 1, rockets,
 at least two rounds, sufficient effective health and a dry walking approach.
 Normal reaction, weapon selection and imperfect aim govern every shot.
-The 0.35 adaptive aim share is retained. The separate 0.60 experiment, human
-tapes and scorecards remain preserved under issue #527 and the verified
-backups/pr-cleanup-20261022/ archive; they are outside this repair.
+The 0.35 adaptive aim share is retained. Issue #527 was closed as not planned;
+the separate 0.60 proposal was not validated or adopted. Its patch, human
+tapes and scorecards remain preserved under that issue and the verified
+backups/pr-cleanup-20261022/ archive.
 
 | Route | Opening | Via | Full-body cover | Return | Observed opponent |
 |---|---|---|---|---|---|
