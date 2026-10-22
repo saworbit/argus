@@ -60,12 +60,44 @@ reappearance. Hidden travel uses remembered coordinates only.
 
 ## Engine acceptance
 
-Harvest a human session before any new launch. Compile and start matches
-through the lab MCP. Arm developer 1 and scratch1 197 with tune, choose
-scratch2, then use argus-mcp client impulse 217 8. Wait for the matching
-TACFIX begin and TACFIX end acknowledgements before selecting another case.
-Each trial lasts six seconds and independently samples position, visibility,
-ammunition, health, tactical state and actual frame count.
+Harvest a human session before any new launch. Compile and start an isolated
+deathmatch on dm4 or dm2 through the lab MCP, with skill 1 and enough time
+for the suite. Arm the fixture and select a case using separate calls:
+
+```text
+tune command="developer 1"
+tune command="scratch1 197"
+tune command="scratch2 0"
+```
+
+Then run `argus-mcp client impulse 217 8` from the repository root. The
+developer/scratch1 gate gives the fixture precedence over impulse 217's
+normal navigation-task dispatch. Each trial lasts six seconds and samples
+position, visibility, ammunition, health, tactical state and frame count.
+Poll `see what=status` using its `next_line` cursor. Confirm the requested
+case in `TACFIX begin`, then its `TACFIX end` before changing scratch2.
+Bound the wait (the reviewed driver used 15 seconds); a missing or wrong
+acknowledgement fails the trial. The client's eight-second wait alone is
+not an acknowledgement. A reusable suite driver remains tracked in
+[#516](https://github.com/saworbit/argus/issues/516).
+
+Run both maps with these case sequences:
+
+| Checker flag | Cases | Rate and extra requirements |
+|---|---|---|
+| `--suite` | `0,0,0,1,2,3,4,5,6,7` | Original subset; does not cover the review regressions |
+| `--review-suite` | `0,0,0,1,2,3,4,5,6,7,8,9,10,11,12` | Default played-rate launch; require shop lifecycle checks |
+| `--slow-suite` | `0,0,0,6,8,12,9` | Measured 9-11 Hz; require routed setup, shop checks and refused overlap |
+
+For the slow suite, send `match_command command="sys_ticrate 0.1"` before
+the first trial. This command uses the match console, since sys_ticrate is
+outside tune's whitelist. Alternatively set `ARGUS_TICRATE=0.1` in the lab
+process environment before launching that isolated job. Verify the actual
+rate from the fixture frame counts; the requested cvar is not evidence.
+For the final case 9, use `argus-mcp client impulse 217,217 1`, then observe
+until the matching end. Require one `TACFIX busy` and one completed case 9,
+without a second begin. Stop the slow match before launching a normal one;
+remove any job-local environment override. Do not compare tick classes.
 
 | Case | Setup |
 |---|---|
@@ -84,11 +116,12 @@ ammunition, health, tactical state and actual frame count.
 | 12 | Shop cancellation on death, respawn and skill change, plus ownership isolation |
 
 The checker includes at least 0.5 seconds after an active moving-entry abort
-or a completed return when checking the floor. A refused entry is reported as a refusal, without a
-positive tactical-safety claim. Ordinary dry drops after refusal are recorded
-separately. Any prepare event counts as ownership, including a prepare and
-abort between observer samples; an unsampled transition cannot become a refusal. It credits damage only within 0.6 seconds of the first
-post-return rocket and before any subsequent rocket. Later ordinary combat
+or a completed return when checking the floor. A refused entry is reported
+as a refusal, without a positive tactical-safety claim. Ordinary dry drops
+after refusal are recorded separately. Any prepare event counts as ownership,
+including a prepare and abort between observer samples; an unsampled
+transition cannot become a refusal. It credits damage only within 0.6 seconds
+of the first post-return rocket and before any subsequent rocket. Later ordinary combat
 cannot rescue a missed return. The three stationary cases must still yield
 at least two damaging returns; this threshold and ordinary aim are unchanged.
 
@@ -121,13 +154,20 @@ hashes are in runs/tactic_review7.state.json; the matching binary MD5 is
 1B17C38CE8053E713112CCF2D1EA4F7C. Per-trial results, tape hashes and recovery-archive identity
 are in runs/tactic_review7.results.json.
 
+These manifests describe implementation checkpoint `bf170a9`, before the
+subsequent documentation cleanup. Documentation edits do not replace its
+source, binary or tape identities.
+
 The final 30-second native matrix returned parity on dm4 and dm2. A prior
 dm2 tape recorded 15 stalls; all attempts were retained. Three repeat tapes
 returned duration-normalised parity, with median six stalls against a control
 median of eight. The current lab CLI's report is
 runs/tactic_review6_repeat.compare.txt. The connected experiment surface's
-unscaled aggregate is not evidence of improvement. Short matches are smoke
-checks, and no win-rate improvement is claimed.
+unscaled aggregate is not evidence of improvement. This matches the
+stale-server failure already tracked and fixed in source by
+[#499](https://github.com/saworbit/argus/issues/499); install the current lab
+and restart the connected process before trusting its quality verdicts.
+Short matches are smoke checks, and no win-rate improvement is claimed.
 
 Intermediate trials exposed an overly eager lane abort, phantom knockback
 velocity on the fixed dummy, shared-queue contention in the shop fixture,
@@ -138,6 +178,15 @@ snapshot for the earlier controlled build is
 backups/tactic-review-build5-20261022.zip. Final acceptance uses only build 7.
 
 Human playtesting remains necessary to judge encounter frequency and whether
-the move reads as deliberate. Short normal matches establish smoke parity,
+the move reads as deliberate
+([#517](https://github.com/saworbit/argus/issues/517)). The production firing
+acknowledgement handles unlimited ammo, but the fixture and checker still
+infer rockets from ammo loss; the recorded suites use ordinary ammo rules.
+Independent unlimited-ammo shot coverage is tracked in
+[#529](https://github.com/saworbit/argus/issues/529).
+Case 12 checks cancellation lifecycle and queue ownership. Dedicated coverage
+of the failed-life veto after GOAP substitution is tracked in
+[#530](https://github.com/saworbit/argus/issues/530).
+Short normal matches establish smoke parity,
 not improved win rate. The compare_band_primary_scaled note in review 3.3
 requires no change: scaled correctly describes whether any arm changed scale.

@@ -23,4 +23,15 @@ measured cadences, 114 Python tests and 271 Rust tests.
 The previous feature's passing tapes and subsequent integration failure are
 historical evidence only. New acceptance uses the repaired checker and keeps
 the original two damaging returns from three stationary encounters minimum.
-Details and reproduction: docs/attack-cover-return.md.
+Details and reproduction: [manoeuvre guide](../attack-cover-return.md).
+
+Remaining validation and tooling work is tracked separately from the repaired
+implementation: a reusable acknowledgement-based runner
+([#516](https://github.com/saworbit/argus/issues/516)), human encounter
+frequency/readability ([#517](https://github.com/saworbit/argus/issues/517)),
+independent unlimited-ammo shot observation
+([#529](https://github.com/saworbit/argus/issues/529)), and a dedicated GOAP
+failed-life veto regression
+([#530](https://github.com/saworbit/argus/issues/530)). The focused slow suite
+does not replace every full interruption case at 10 Hz
+([#515](https://github.com/saworbit/argus/issues/515)).

@@ -19,7 +19,9 @@ Interrupted navigation floods release both shared search state and the bot's
 shopping latch. Failed-life vetoes run after GOAP weapon substitutions and
 clear typed-hop state before re-planning. Tactical fixtures refuse overlap,
 clean up removed-target references and reject post-abort falls or damage
-credited to a later ordinary-combat rocket.
+credited to a later ordinary-combat rocket. The manoeuvre and operator guides
+document the full and slow suite sequences, measured cadence, overlap
+acknowledgements and remaining coverage limits.
 
 Documented the shared navigation and tape helper contracts and their scoped
 parity checks (#502, #510, #514). CI coverage for those checks is tracked in #525.

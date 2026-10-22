@@ -164,6 +164,8 @@ argus/
 |       `-- autoexec.cfg       # Enforces sv_protocol 15 and max_edicts 600
 |-- src/                       # Complete QuakeC source code (GPL 1.06 base)
 |   |-- argus.qc               # Bot AI, physics, combat, perception, GOAP
+|   |-- argus_tactics.qc       # Bounded attack-cover-return state machine
+|   |-- argus_tactic_fixture.qc  # Developer-only engine acceptance fixture
 |   |-- argus_cam.qc           # ArgusCam spectator camera and broadcast director
 |   |-- argus_nav.qc           # Runtime sliced BFS router and link execution
 |   |-- argus_nav_dispatch.qc  # Map navigation dispatch table
@@ -231,6 +233,7 @@ while humans keep the remaster model.
 | `impulse 212` / `Mouse 2` | **Cycle Target Bot**: Carmack -> Romero -> Joe Rogan -> Trent Reznor -> American McGee -> Sarge -> Thresh -> Killcreek -> Sandy Petersen -> Gabe Newell -> Crash -> Ranger -> Tim Willits -> Reap -> Omi -> Zeus -> Ares. |
 | `impulse 213` | **Toggle Chase Cam Framing**: Center over-head vs over-the-right-shoulder. |
 | `impulse 214` | **Toggle Broadcast HUD Overlay**: Bot health, armour, weapon, frags, and affect state. |
+| `impulse 217` | With `developer 1` and `scratch1 197`, run the tactical fixture case selected by `scratch2`; otherwise retain normal navigation-task dispatch. See the [fixture guide](docs/attack-cover-return.md#engine-acceptance). |
 | `impulse 220` | **Chat Easter Egg**: Speak to John Carmack (*Engine architecture & frame budgets*). |
 | `impulse 221` | **Chat Easter Egg**: Speak to John Romero (*Pure Deathmatch & rocket mastery*). |
 | `impulse 222` | **Chat Easter Egg**: Speak to Joe Rogan (*T1 line in 1999, DMT & electron butterflies*). |
