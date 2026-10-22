@@ -303,16 +303,18 @@ fn write_response(stream: &mut TcpStream, resp: &Response) -> Result<(), String>
 }
 
 /// The wizard is meant to be left running while the user browses, and
-/// these POST endpoints rewrite the source tree and every installed
-/// progs.dat. A page on any other origin could reach them as a simple
-/// cross-site request: text/plain body, no preflight, no token. Require
-/// a same-origin Host, no cross-origin Origin, and real JSON.
-fn post_allowed(req: &Request, port: u16) -> Result<(), Response> {
+/// GET endpoints expose local paths and POST endpoints rewrite the tree.
+/// Check Host on every request to block DNS rebinding. POST also requires
+/// a same-origin Origin when supplied and a non-simple content type.
+fn request_allowed(req: &Request, port: u16) -> Result<(), Response> {
     let host = req.headers.get("host").map(|s| s.as_str()).unwrap_or("");
     let want_a = format!("127.0.0.1:{port}");
     let want_b = format!("localhost:{port}");
     if host != want_a && host != want_b {
         return Err(text(403, "bad Host header"));
+    }
+    if req.method != "POST" {
+        return Ok(());
     }
     if let Some(origin) = req.headers.get("origin") {
         let o = origin.trim_end_matches('/');
@@ -342,15 +344,13 @@ fn route(req: &Request) -> Response {
     route_at(req, GUI_PORT.load(std::sync::atomic::Ordering::Relaxed))
 }
 
-/// The bound port is passed in rather than read from a global: the POST
+/// The bound port is passed in rather than read from a global: the request
 /// guard is a security check and should not depend on hidden process
 /// state, and the lib tests run concurrently in one process, which made
 /// a global-reading version flake.
 fn route_at(req: &Request, port: u16) -> Response {
-    if req.method == "POST" {
-        if let Err(r) = post_allowed(req, port) {
-            return r;
-        }
+    if let Err(r) = request_allowed(req, port) {
+        return r;
     }
     match (req.method.as_str(), req.path.as_str()) {
         ("GET", "/") => html(PAGE),
@@ -947,6 +947,33 @@ mod tests {
         assert_ne!(post("/api/restore", &ok_headers).status, 415);
     }
 
+    #[test]
+    fn get_routes_reject_foreign_or_missing_hosts() {
+        for host in [None, Some("evil.example:7420"), Some("localhost:7421")] {
+            let req = Request {
+                method: "GET".into(),
+                path: "/api/status".into(),
+                query: HashMap::new(),
+                body: Vec::new(),
+                headers: host
+                    .map(|h| HashMap::from([("host".into(), h.into())]))
+                    .unwrap_or_default(),
+            };
+            assert_eq!(route_at(&req, 7420).status, 403, "host {host:?}");
+        }
+        for host in ["127.0.0.1:7420", "localhost:7420"] {
+            let req = Request {
+                method: "GET".into(),
+                path: "/".into(),
+                query: HashMap::new(),
+                body: Vec::new(),
+                // GET does not require POST's Origin or Content-Type headers.
+                headers: HashMap::from([("host".into(), host.into())]),
+            };
+            assert_eq!(route_at(&req, 7420).status, 200);
+        }
+    }
+
     // #214: a percent escape followed by a multibyte character used to
     // slice mid-codepoint and panic the connection thread
     #[test]
@@ -964,9 +991,9 @@ mod tests {
             path: "/".into(),
             query: HashMap::new(),
             body: Vec::new(),
-            headers: HashMap::new(),
+            headers: HashMap::from([("host".into(), "localhost:7420".into())]),
         };
-        let r = route(&req);
+        let r = route_at(&req, 7420);
         assert_eq!(r.status, 200);
         let page = String::from_utf8_lossy(&r.body);
         assert!(page.contains("Argus lab"));
@@ -980,9 +1007,9 @@ mod tests {
             path: "/".into(),
             query: HashMap::new(),
             body: Vec::new(),
-            headers: HashMap::new(),
+            headers: HashMap::from([("host".into(), "localhost:7420".into())]),
         };
-        let r = route(&req);
+        let r = route_at(&req, 7420);
         let page = String::from_utf8_lossy(&r.body);
         assert!(page.contains("A/B quality gates"));
         assert!(page.contains("id=\"gatecard\""));
@@ -995,9 +1022,9 @@ mod tests {
             path: "/".into(),
             query: HashMap::new(),
             body: Vec::new(),
-            headers: HashMap::new(),
+            headers: HashMap::from([("host".into(), "localhost:7420".into())]),
         };
-        let r = route(&req);
+        let r = route_at(&req, 7420);
         let page = String::from_utf8_lossy(&r.body);
         assert!(page.contains("r.edict_budget"));
         assert!(page.contains("r.playability_gate"));
@@ -1030,9 +1057,9 @@ mod tests {
             path: "/api/nav/dm4".into(),
             query: HashMap::new(),
             body: Vec::new(),
-            headers: HashMap::new(),
+            headers: HashMap::from([("host".into(), "localhost:7420".into())]),
         };
-        let r = route(&req);
+        let r = route_at(&req, 7420);
         assert_eq!(r.status, 200);
         let val: serde_json::Value = serde_json::from_slice(&r.body).unwrap();
         assert_eq!(val["ok"], true);
@@ -1049,9 +1076,9 @@ mod tests {
             path: "/api/nav/../bad".into(),
             query: HashMap::new(),
             body: Vec::new(),
-            headers: HashMap::new(),
+            headers: HashMap::from([("host".into(), "localhost:7420".into())]),
         };
-        let r = route(&req);
+        let r = route_at(&req, 7420);
         assert_eq!(r.status, 400);
     }
 
@@ -1062,9 +1089,9 @@ mod tests {
             path: "/".into(),
             query: HashMap::new(),
             body: Vec::new(),
-            headers: HashMap::new(),
+            headers: HashMap::from([("host".into(), "localhost:7420".into())]),
         };
-        let r = route(&req);
+        let r = route_at(&req, 7420);
         let page = String::from_utf8_lossy(&r.body);
         assert!(page.contains("id=\"navcanvas\""));
         assert!(page.contains("id=\"inspector-card\""));

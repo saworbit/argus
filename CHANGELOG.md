@@ -24,6 +24,9 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Check the local wizard Host header on GET requests as well as POST, so
+  a DNS-rebinding page cannot read local paths or map data (#551).
+
 - Require the tested rmcp 3.5.1 minimum (#534), explain dashboard subscription
   refreshes in the resource description (#536), and make probe enforce build
   authority and the shared compile deadline (#546).
