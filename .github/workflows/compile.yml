@@ -85,7 +85,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: lq-data
-          key: libquake-v0.09-beta
+          key: libquake-v0.09-beta-${{ hashFiles('.github/librequake.sha256') }}
       - name: Fetch LibreQuake (free content, pinned release)
         if: steps.cache-lq.outputs.cache-hit != 'true'
         run: |
@@ -95,6 +95,8 @@ jobs:
           # the cache key then keeps the poisoned file forever (#221)
           curl -fsSL -o lq-data/lite.zip   $REL/lite.zip
           curl -fsSL -o lq-data/server.zip $REL/server.zip
+      - name: Verify LibreQuake downloads before use and cache save
+        run: sha256sum -c .github/librequake.sha256
       - name: Run a botmatch and judge it
         run: |
           sudo apt-get update -qq
