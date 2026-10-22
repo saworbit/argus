@@ -192,7 +192,7 @@ argus/
 |-- runs/                      # Archive of telemetry logs and trajectory plots
 |   `-- demos/                 # Paired .dem recordings (machine-local, not in repo)
 |-- backups/                   # Dated progs + nav copies (machine-local, not in repo)
-|-- CHANGELOG.md               # Distilled build history, v3.1 to current
+|-- CHANGELOG.md               # Dated changes, build ledger and linked history
 `-- docs/                      # Architectural specifications and design records
 ```
 
