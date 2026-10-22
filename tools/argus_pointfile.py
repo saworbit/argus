@@ -53,6 +53,7 @@ import argparse, json, re, struct, sys
 from pathlib import Path
 
 from argus_navjson import edges, load_nav
+from argus_tape import parse_tape, roles, samples
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -332,21 +333,18 @@ def event_points(tape, verbs):
     to stand in the right room, which is the whole point of drawing
     these rather than counting them.
     """
-    LOG = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
-                     r"(-?[\d.]+)\s+(-?[\d.]+)'")
-    EVT = re.compile(r"ARGEVT (.+?) (\w+)")
+    parsed = parse_tape(Path(tape).read_text(errors="replace"))
     track, hits = {}, []
-    for line in Path(tape).read_text(errors="replace").splitlines():
-        m = LOG.search(line)
-        if m:
-            track[m.group(1)] = (float(m.group(3)), float(m.group(4)),
-                                 float(m.group(5)))
-            continue
-        m = EVT.search(line)
-        if m and m.group(2) in verbs:
-            pos = track.get(m.group(1))
-            if pos:
-                hits.append(pos)
+    events = {lineno: (name, verb) for lineno, name, verb, _ in parsed.events}
+    for lineno, line in parsed.lines:
+        sample = next(samples(line), None)
+        if sample:
+            name, row = sample
+            track[name] = (row['x'], row['y'], row['z'])
+        if lineno in events:
+            name, verb = events[lineno]
+            if verb in verbs and name in track:
+                hits.append(track[name])
     return hits
 
 
@@ -357,18 +355,12 @@ def human_points(tape, step):
     seen one. A human is a name with ARGLOG rows but no spawned or
     respawn event, the same rule the Rust parser uses.
     """
-    LOG = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
-                     r"(-?[\d.]+)\s+(-?[\d.]+)'")
-    SPAWN = re.compile(r"ARGEVT (.+?) (?:spawned|respawn)\b")
     text = Path(tape).read_text(errors="replace")
-    bots = set(SPAWN.findall(text))
+    humans = set(roles(text)['humans'])
     per = {}
-    for line in text.splitlines():
-        m = LOG.search(line)
-        if m and m.group(1) not in bots:
-            per.setdefault(m.group(1), []).append(
-                (float(m.group(2)), (float(m.group(3)), float(m.group(4)),
-                                     float(m.group(5)))))
+    for name, row in samples(text):
+        if name in humans:
+            per.setdefault(name, []).append((row['t'], (row['x'], row['y'], row['z'])))
     if not per:
         print("note: no human track in this tape (every name spawns)")
     pts = []
@@ -421,20 +413,19 @@ def route_points(tape, d, nodes, step, only=None, gated=False):
     """
     from collections import deque
     adj = _adj(d, gated)
-    pat = re.compile(r"ARGEVT (.+?) route (\d+) start '\s*(-?[\d.]+)\s+"
+    pat = re.compile(r"(\d+) start '\s*(-?[\d.]+)\s+"
                      r"(-?[\d.]+)\s+(-?[\d.]+)' goal '\s*(-?[\d.]+)\s+"
                      r"(-?[\d.]+)\s+(-?[\d.]+)'")
     pts, drawn, missed, mismatched = [], 0, 0, []
-    for line in Path(tape).read_text(errors="replace").splitlines():
-        m = pat.search(line)
+    parsed = parse_tape(Path(tape).read_text(errors="replace"))
+    for _, name, verb, rest in parsed.events:
+        if verb != 'route' or (only and name != only):
+            continue
+        m = pat.search(rest)
         if not m:
             continue
-        if only and m.group(1) != only:
-            continue
-        s, sd = _nearest(nodes, (float(m.group(3)), float(m.group(4)),
-                                 float(m.group(5))))
-        g, gd = _nearest(nodes, (float(m.group(6)), float(m.group(7)),
-                                 float(m.group(8))))
+        s, sd = _nearest(nodes, tuple(float(m[i]) for i in (2, 3, 4)))
+        g, gd = _nearest(nodes, tuple(float(m[i]) for i in (5, 6, 7)))
         if s is None or g is None or sd > 64 or gd > 64:
             missed += 1
             continue
@@ -459,8 +450,8 @@ def route_points(tape, d, nodes, step, only=None, gated=False):
         # count, so a rebuild that disagrees means this link set has
         # drifted from the router's and the drawing is a lie. On e1m1
         # 79 of 79 agree exactly.
-        if len(path) - 1 != int(m.group(2)):
-            mismatched.append((int(m.group(2)), len(path) - 1))
+        if len(path) - 1 != int(m.group(1)):
+            mismatched.append((int(m.group(1)), len(path) - 1))
         for a, b in zip(path, path[1:]):
             pts += lerp(a, b, step)
         drawn += 1
@@ -482,15 +473,10 @@ def route_points(tape, d, nodes, step, only=None, gated=False):
 
 def trail_points(tape, step, only=None):
     """One track's actual path (#254 item 1's other half)."""
-    LOG = re.compile(r"ARGLOG (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+"
-                     r"(-?[\d.]+)\s+(-?[\d.]+)'")
     per = {}
-    for line in Path(tape).read_text(errors="replace").splitlines():
-        m = LOG.search(line)
-        if m and (not only or m.group(1) == only):
-            per.setdefault(m.group(1), []).append(
-                (float(m.group(2)), (float(m.group(3)), float(m.group(4)),
-                                     float(m.group(5)))))
+    for name, row in samples(Path(tape).read_text(errors="replace")):
+        if not only or name == only:
+            per.setdefault(name, []).append((row['t'], (row['x'], row['y'], row['z'])))
     if not per:
         print(f"note: no track named {only!r} in this tape" if only
               else "note: no ARGLOG rows in this tape")

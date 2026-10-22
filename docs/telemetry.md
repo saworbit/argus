@@ -6,6 +6,12 @@ Use the lab's native briefs and comparisons for match metrics. The console
 log records the whole map; a demo adds detailed observations within the
 recording client's visible area.
 
+Python review, scorecard, pointfile, humanness and tick tools share the sample,
+map, event, death and role readers in `tools/argus_tape.py`. Known complete
+names take precedence over words in the event vocabulary. Lab instruments
+are excluded from human trails, and tapes without birth evidence do not
+invent human tracks. Humanness scoring still requires birth evidence.
+
 ## Record and harvest a human session
 
 With the mod installed, start a classic engine using these **engine arguments**:

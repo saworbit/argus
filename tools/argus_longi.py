@@ -21,8 +21,7 @@ in docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 """
 import re, sys, os, collections, math, glob
 
-from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts
-DEATH = re.compile(r"ARGEVT (.+?) death\s+(?:(.+?)\s+)?pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'")
+from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
 PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin)|shove|hunch|prefire|watch spawn|sprintjump)\b")
 WORLD_PHRASES = ["tries to put the pin back in", "becomes bored with life", "discharges into", "heats up the water",
                  "electrocutes", "died", "was squished", "fell to", "can't exist on slime", "visits the Volcano God",
@@ -44,9 +43,9 @@ def analyse(path):
     ev = collections.Counter()
     perbot_ev = collections.defaultdict(collections.Counter)
     plain = collections.Counter()
-    deaths = []
+    deaths = [(name, killer, z) for _, name, killer, _, _, z in tape_deaths(tape.events)]
     spawnnames = set()
-    mapname = None
+    mapname = map_name("\n".join(line for _, line in tape.lines))
     raw = []
     for lineno, line in tape.lines:
         if PAT.search(line):
@@ -58,10 +57,6 @@ def analyse(path):
             perbot_ev[name][verb] += 1
             if verb in ('spawned', 'respawn'):
                 spawnnames.add(name)
-            if verb == 'death':
-                d = DEATH.search('ARGEVT _ death ' + rest)
-                if d:
-                    deaths.append((name, d.group(2) or '', float(d.group(5))))
             continue
         m = PLAIN.match(line)
         if m:
@@ -70,11 +65,6 @@ def analyse(path):
             continue
         if line.startswith('ARG'):
             continue
-        if mapname is None:
-            mm = (re.search(r'SpawnServer: (\w+)', line) or re.search(r'Spawning server maps/(\w+)', line)
-                  or re.search(r'^(?:maps/)?(\w+)\.bsp', line))
-            if mm:
-                mapname = mm.group(1)
         raw.append(line.rstrip('\n'))
     names = set(bots) | spawnnames
     botnames, humans, instruments = track_names(bots, tape.events)
