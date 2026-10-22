@@ -2832,13 +2832,15 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
         .collect();
     let mut typed = BTreeMap::new();
     let mut dormant = Vec::new();
-    for (key, verb) in [
-        ("rjlinks", "rjump"),
-        ("liftlinks", "board"),
-        ("swimlinks", "swim"),
-        ("trainlinks", "train"),
-        ("sprintlinks", ""),
-    ] {
+    for &(key, kind) in crate::nav_graph::LINK_FAMILIES {
+        let verb = match kind {
+            Some("rocket") => "rjump",
+            Some("lift") => "board",
+            Some("swim") => "swim",
+            Some("train") => "train",
+            Some("sprint") => "",
+            _ => continue,
+        };
         let n = v
             .get(key)
             .and_then(|a| a.as_array())

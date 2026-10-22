@@ -13,7 +13,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 use std::thread;
 
-const NAV_STEP: f64 = 18.0;
+use crate::nav_graph::NAV_STEP;
 const SIDECARS: &[&str] = &["probe", "proven", "costs", "mined"];
 
 #[derive(Debug, Clone, Serialize)]
@@ -475,17 +475,7 @@ fn parse_links(v: &Value) -> Result<(usize, BTreeMap<String, GraphLink>), String
         );
         Ok(())
     };
-    for (key, kind) in [
-        ("links", None),
-        ("jlinks", Some("jump")),
-        ("teles", Some("tele")),
-        ("rjlinks", Some("rocket")),
-        ("liftlinks", Some("lift")),
-        ("swimlinks", Some("swim")),
-        ("doorlinks", Some("door")),
-        ("trainlinks", Some("train")),
-        ("sprintlinks", Some("sprint")),
-    ] {
+    for &(key, kind) in crate::nav_graph::LINK_FAMILIES {
         if let Some(rows) = v.get(key).and_then(Value::as_array) {
             for row in rows {
                 put(row, kind)?;

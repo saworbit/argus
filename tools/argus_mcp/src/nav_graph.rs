@@ -132,17 +132,29 @@ pub fn load_nav(cfg: &Config, map: &str) -> Result<NavGraph, String> {
 /// reverse the slot clamp evicted. dm4 alone carries 81 one-way links
 /// at the same level. Derive the kind from node height with the
 /// runtime's own step rule instead.
-const NAV_STEP: f32 = 18.0;
+pub(crate) const NAV_STEP: f64 = 18.0;
+
+pub(crate) const LINK_FAMILIES: &[(&str, Option<&str>)] = &[
+    ("links", None),
+    ("jlinks", Some("jump")),
+    ("teles", Some("tele")),
+    ("rjlinks", Some("rocket")),
+    ("liftlinks", Some("lift")),
+    ("swimlinks", Some("swim")),
+    ("doorlinks", Some("door")),
+    ("trainlinks", Some("train")),
+    ("sprintlinks", Some("sprint")),
+];
 
 fn link_kind(from: [f32; 3], to: [f32; 3]) -> &'static str {
-    if from[2] - to[2] > NAV_STEP {
+    if from[2] - to[2] > NAV_STEP as f32 {
         "drop"
     } else {
         "walk"
     }
 }
 
-fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
+pub(crate) fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
     let nodes_v = v
         .get("nodes")
         .and_then(|n| n.as_array())
@@ -174,44 +186,19 @@ fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, String> {
             }
         }
     }
-    if let Some(jlinks) = v.get("jlinks").and_then(|x| x.as_array()) {
-        for link in jlinks {
-            let a = link.as_array().ok_or("bad jlink")?;
-            let from = a.first().and_then(|x| x.as_u64()).ok_or("bad jlink")? as usize;
-            let to = a.get(1).and_then(|x| x.as_u64()).ok_or("bad jlink")? as usize;
-            if from < n && to < n {
-                set_kind(&mut adj[from], to as u32, "jump");
-            }
-        }
-    }
-    if let Some(teles) = v.get("teles").and_then(|x| x.as_array()) {
-        for link in teles {
-            let a = link.as_array().ok_or("bad tele")?;
-            let from = a.first().and_then(|x| x.as_u64()).ok_or("bad tele")? as usize;
-            let to = a.get(1).and_then(|x| x.as_u64()).ok_or("bad tele")? as usize;
-            if from < n && to < n {
-                set_kind(&mut adj[from], to as u32, "tele");
-            }
-        }
-    }
-    // typed hop edges live outside the walk-link list: without these
-    // the inspect BFS reported "no walk route" to targets that QC
-    // routes over Argus_NavLinkRocket/Lift/Swim (Shane's drift list)
-    for (key, kind) in [
-        ("rjlinks", "rocket"),
-        ("liftlinks", "lift"),
-        ("swimlinks", "swim"),
-        ("doorlinks", "door"),
-        ("trainlinks", "train"),
-        ("sprintlinks", "sprint"),
-    ] {
+    for &(key, kind) in &LINK_FAMILIES[1..] {
+        let error = match key {
+            "jlinks" => "bad jlink",
+            "teles" => "bad tele",
+            _ => "bad typed link",
+        };
         if let Some(list) = v.get(key).and_then(|x| x.as_array()) {
             for link in list {
-                let a = link.as_array().ok_or("bad typed link")?;
-                let from = a.first().and_then(|x| x.as_u64()).ok_or("bad typed link")? as usize;
-                let to = a.get(1).and_then(|x| x.as_u64()).ok_or("bad typed link")? as usize;
+                let a = link.as_array().ok_or(error)?;
+                let from = a.first().and_then(|x| x.as_u64()).ok_or(error)? as usize;
+                let to = a.get(1).and_then(|x| x.as_u64()).ok_or(error)? as usize;
                 if from < n && to < n {
-                    set_kind(&mut adj[from], to as u32, kind);
+                    set_kind(&mut adj[from], to as u32, kind.expect("typed family"));
                 }
             }
         }
@@ -783,7 +770,7 @@ mod tests {
                 // typed hops (jump, lift, swim, rocket, ...) legitimately
                 // overwrite the kind afterwards; a plain link at the same
                 // height must never read as a drop
-                if dz.abs() <= 18.0 {
+                if dz.abs() <= NAV_STEP as f32 {
                     assert_ne!(
                         e.kind, "drop",
                         "level link {from}->{} briefed as a drop",

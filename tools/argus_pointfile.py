@@ -52,7 +52,7 @@ side: they never touch the server, the bots, or a match.
 import argparse, json, re, struct, sys
 from pathlib import Path
 
-from argus_navjson import edges, load_nav
+from argus_navjson import STEP, edges, load_nav
 from argus_tape import parse_tape, roles, samples
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -92,7 +92,6 @@ def tape_points(tape):
 # does, because the point of drawing them is to see what navgen saw.
 CONTENTS_SOLID = -2
 CONTENTS_WATER = -3
-STEP = 18.0
 
 
 class Bsp:

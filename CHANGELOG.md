@@ -24,6 +24,9 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Build cartograph overlays with the nav reader and report malformed graphs
+  instead of drawing partial links. Share the walkable step height (#545).
+
 - Check the local wizard Host header on GET requests as well as POST, so
   a DNS-rebinding page cannot read local paths or map data (#551).
 
