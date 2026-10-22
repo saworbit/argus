@@ -22,7 +22,7 @@ If you discover a security vulnerability in the Argus tooling, MCP server, or di
 
 1. **Do not open a public issue.**
 2. Please report the issue privately using [GitHub Security Advisories](https://github.com/saworbit/argus/security/advisories/new) on the repository.
-3. If GitHub Private Vulnerability Reporting is unavailable, contact the project maintainer via their GitHub profile contact info.
+3. Sign in to GitHub to use the private reporting form. Private vulnerability reporting and Dependabot alerts are enabled for this repository.
 
 ### What to Include
 

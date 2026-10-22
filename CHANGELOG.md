@@ -28,6 +28,10 @@ passing botmatch does not establish better human play.
   refreshes in the resource description (#536), and make probe enforce build
   authority and the shared compile deadline (#546).
 
+- Run the Python navigation, tape and playability suites as blocking CI steps
+  (#525). Pin LibreQuake asset checksums and include them in the cache key
+  (#554). Enable private vulnerability reporting and Dependabot alerts (#553).
+
 - Preserve quoted strings while checking navigation registration in Rust and
   Python (#523), reject noninteger graph endpoints (#524), and refuse custom
   QC filenames with `--register` before any files change (#537).
