@@ -240,7 +240,8 @@ async fn run_trial(
         tokio::time::sleep(Duration::from_millis(200)).await;
         client.set_impulse(101); // fourth bot: two bodies per arm
         client.pump(Duration::from_millis(800));
-        ctrl.command(&format!("scratch4 {mask}")).await?;
+        ctrl.command(&format!("scratch1 374; scratch4 {mask}"))
+            .await?;
         tokio::time::sleep(Duration::from_millis(200)).await;
         client.set_impulse(215); // snapshot and emit the assignment
         client.pump(Duration::from_millis(500));

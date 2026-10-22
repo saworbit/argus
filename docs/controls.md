@@ -127,8 +127,14 @@ and impulses for isolated lab tests.
 
 - `developer 1` enables diagnostics. `scratch1 1` enables goal-decision traces;
   set `scratch1 0` to silence them.
+- With `developer 1` and server-console `scratch1 374`, impulse `215` assigns
+  A/B arms from `scratch4`. A successful snapshot consumes the key.
+- With `developer 1` and server-console `scratch1 216`, impulse `216` teleports
+  its sender to (`scratch2`, `scratch3`, `scratch4`). Set `scratch1 0` to disarm.
 - With `developer 1` and `scratch1 197`, impulse `217` runs the tactical case
   selected by `scratch2`. It takes precedence over navigation-task dispatch.
+  It changes live state and freezes other bots for six seconds. Keep it
+  disarmed on shared servers.
   See the [fixture protocol](attack-cover-return.md#engine-acceptance).
 - Impulses `217`-`219` also serve the gated fixed-navigation task protocol.
   Use the [benchmark runner](../tools/argus_mcp/README.md#fixed-navigation-benchmark)

@@ -62,7 +62,13 @@ reappearance. Hidden travel uses remembered coordinates only.
 
 Harvest a human session before any new launch. Compile and start an isolated
 deathmatch on dm4 or dm2 through the lab MCP, with skill 1 and enough time
-for the suite. Arm the fixture and select a case using separate calls:
+for the suite.
+
+Use an isolated lab match. Arming this fixture lets a connected client
+rewrite live bot/loadout/pickup state and freeze the other bots for six
+seconds. Keep `scratch1 197` disarmed on shared servers.
+
+Arm the fixture and select a case using separate calls:
 
 ```text
 tune command="developer 1"

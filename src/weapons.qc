@@ -1523,18 +1523,18 @@ void() ImpulseCommands =
 		Argus_SetOmicron (!argus_omicron);
 	else if (self.impulse >= 210 && self.impulse <= 214)
 		ArgusCam_Impulse (self.impulse);
-	else if (self.impulse == 215 && cvar ("developer"))
+	else if (self.impulse == 215 && cvar ("developer") && cvar ("scratch1") == 374)
 	{
 		// Snapshot scratch4's slot bitmask and write every arm to the tape.
 		Argus_ABControl ();
 	}
-	else if (self.impulse == 216 && cvar ("developer"))
+	else if (self.impulse == 216 && cvar ("developer") && cvar ("scratch1") == 216)
 	{
 		// ARGUS: dev teleport for the lab's puppet client
 		// (netclient.rs probe harness) - place at the point the
 		// scratch cvars carry, then walk a link and OBSERVE.
-		// developer-gated; the scratch pipe is the only external
-		// channel vanilla QC has (the v3.74 decision-tape lesson)
+		// The server console must arm scratch1 216 explicitly.
+		// Developer logging alone must not grant client control.
 		setorigin (self, cvar ("scratch2") * '1 0 0'
 		               + cvar ("scratch3") * '0 1 0'
 		               + cvar ("scratch4") * '0 0 1');

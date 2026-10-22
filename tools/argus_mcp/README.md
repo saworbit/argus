@@ -497,10 +497,18 @@ engine's lookup and locks onto whatever address answers.
 Engine-spawning tests share a lock; a stale engine on 26000 makes
 every connect fail, so kill orphans first.
 
+Developer logging alone does not arm client controls. Impulse 215 needs
+server-console `scratch1 374` and reads the A/B slot mask from `scratch4`;
+a successful snapshot consumes the key. Impulse 216 needs `scratch1 216`
+and reads its destination from `scratch2`..`scratch4`. `probelinks` sets
+that key with each destination. Set `scratch1 0` to disarm manual teleports.
+
 ## Tactical engine fixture
 
 `developer 1` plus `scratch1 197` reserves impulse 217 for the
 attack-cover-return fixture; otherwise navigation-task dispatch retains it.
+It rewrites live state and freezes other bots for six seconds. Keep the
+fixture disarmed on shared servers.
 Set `scratch2` to the case number through `tune`, then use
 `argus-mcp client impulse 217 8`. Confirm the requested `TACFIX begin` and
 matching `TACFIX end` through incremental status before changing the case.
@@ -565,8 +573,8 @@ not valid for nav graphs or any other world-level change shared by both arms.
 Empirical link verification - the killer app the netclient was
 built for. Per walk link: spawn the lab engine at skill 0, connect
 the puppet, dev-teleport it to the link's start (impulse 216 +
-scratch cvars, one semicolon-joined inject), walk toward the far
-node, judge arrival.
+`scratch1 216` and coordinate scratch cvars, one semicolon-joined inject),
+walk toward the far node, judge arrival.
 
 ```
 argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]

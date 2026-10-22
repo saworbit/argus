@@ -2,6 +2,8 @@
 // 217 opt-in only; scratch2: 0 stationary, 1 rush, 2 leave, 3 initial low HP,
 // 4 damage during cover, 5 weapon change, 6 moving entry, 7 new attacker.
 // No feature state is forced. The ordinary bot must choose and execute it.
+// This rewrites live bot/loadout/pickup state and freezes the other bots for
+// six seconds. Keep scratch1 197 disarmed on shared servers (#540).
 entity ar_tf_target;
 entity ar_tf_secondary;
 vector ar_tf_start;
