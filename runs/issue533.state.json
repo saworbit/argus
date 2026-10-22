@@ -1,0 +1,82 @@
+{
+  "base_commit": "ed250d8f54af4e71e34a544d7f2886f21907b48c",
+  "branch": "fix/developer-impulse-gates",
+  "binary_md5": "A93DCFBDEA28317E391127318737C6A9",
+  "compile": "Argus MCP experiment compiled and installed both binaries; id format success verified",
+  "permission_test": {
+    "name": "developer_impulses_require_separate_console_keys_if_engine_present",
+    "prior_binary": "failed on unarmed teleport and A/B controls",
+    "fixed_binary": "passed",
+    "fixed_duration_sec": 11.87,
+    "protocol": 15,
+    "isolation": "temporary run directory; engine stopped before reporting failure"
+  },
+  "unit_tests": "within_ab::tests: 3 passed in 0.01s",
+  "lint": "cargo clippy --all-targets -- -D warnings passed",
+  "source_cli": "cargo build --bin argus-mcp passed",
+  "production_ab_caller": "masks 5 and 10 both returned two control and two candidate bots",
+  "production_probe_caller": "n0->n1 passed; zero teleport failures; newly created verdict sidecar moved into evidence",
+  "smoke": "dm4 and dm2 short startup/telemetry checks only; no gameplay quality claim",
+  "limitations": [
+    "Connected lab 0.29 gives an invalid short-run versus full-baseline verdict; use these tapes only for startup verification",
+    "Live permission regression is machine-local and Windows-only; it skips without the engine"
+  ],
+  "identities": [
+    {
+      "path": "src/argus.qc",
+      "sha256": "3300f5e3b1df5224975fb7fcceaf3153aec8e4fe6fe16cb027c8a3846ffbb529"
+    },
+    {
+      "path": "src/weapons.qc",
+      "sha256": "719bd8e397518fe28613cccb9436c377239a0ee43b992c0ef36b9342c42ab51e"
+    },
+    {
+      "path": "src/argus_tactic_fixture.qc",
+      "sha256": "ff765d2f721c6dfc3802156d5bd925b8a2d6a88a5d98af2e3018f1e15fe40572"
+    },
+    {
+      "path": "src/argus_nav_dm4.qc.json",
+      "sha256": "352a467ef38219cc0cf6a8a61be1337a7d89b39db52887163d3fae8758d3e049"
+    },
+    {
+      "path": "src/argus_nav_dm2.qc.json",
+      "sha256": "761bc949ca78022ec5e126c134de16c9674253767d6b15d638a1efc51f0b3cd0"
+    },
+    {
+      "path": "game/argus/progs.dat",
+      "sha256": "bd7224dec74e03463fc57102c85c723ed94660e5db61113bf4fe85977df9f3bb"
+    },
+    {
+      "path": "engine/argus/progs.dat",
+      "sha256": "bd7224dec74e03463fc57102c85c723ed94660e5db61113bf4fe85977df9f3bb"
+    },
+    {
+      "path": "tools/argus_mcp/src/netclient.rs",
+      "sha256": "1e3b92cc5e5de918750a8c6f65ce009c7ce837df0e36f03ed4838fff0b677447"
+    },
+    {
+      "path": "tools/argus_mcp/src/within_ab.rs",
+      "sha256": "c3ae52f46c7ca851cd70b8e73023a495e93cd11dde5f4edf40ada3f5ee7ee133"
+    },
+    {
+      "path": "runs/issue533_dm4.log",
+      "sha256": "bc2d7c1b9d6ae89d60e623e698a26b97470e088f8ca95204e4ac3ae1c173d6b1"
+    },
+    {
+      "path": "runs/issue533_dm2.log",
+      "sha256": "04f06389c0fbbcca40522aefbd7756df503f318639b14972332f5dff5599a919"
+    },
+    {
+      "path": "runs/issue533_within_a.log",
+      "sha256": "c618d9852ba04974a107fa0a1b102d0c014906805eb3bcdcf2191bdf40e6a2b9"
+    },
+    {
+      "path": "runs/issue533_within_b.log",
+      "sha256": "59c6f629e513447729240e13f33bfb00c993f84d9bf636f962f0244a48ade3a5"
+    },
+    {
+      "path": "runs/issue533_probe.log",
+      "sha256": "f06891190ce77e96368b58c107c936444b6ba116c7d05148dc6b64e4a27d863c"
+    }
+  ]
+}

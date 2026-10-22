@@ -8076,7 +8076,7 @@ void(float slot) Argus_TaskControl =
 };
 
 // Assign both experimental arms inside one match (#374). scratch4 is a bit
-// mask over roster slots; impulse 214 snapshots it into each bot and emits the
+// mask over roster slots; impulse 215 snapshots it into each bot and emits the
 // assignment into the tape. A candidate code path opts in explicitly by
 // testing self.ar_abarm. With no such test, both arms are byte-identical: the
 // null experiment used to measure the instrument's own error bar.
@@ -8085,8 +8085,10 @@ void() Argus_ABControl =
     local entity bot, oself;
     local float mask, bit;
 
-    if (!cvar ("developer"))
+    if (!cvar ("developer") || cvar ("scratch1") != 374)
         return;
+    // One console authorisation permits one snapshot, including direct calls.
+    cvar_set ("scratch1", "0");
     mask = floor (cvar ("scratch4"));
     bot = argus_bots;
     while (bot != world)

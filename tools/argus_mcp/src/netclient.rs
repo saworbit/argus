@@ -1231,7 +1231,7 @@ pub async fn probe_links(
         // puppet kept landing on the stale coordinates)
         if let Err(e) = ctrl
             .command(&format!(
-                "scratch2 {}; scratch3 {}; scratch4 {}",
+                "scratch1 216; scratch2 {}; scratch3 {}; scratch4 {}",
                 from[0], from[1], from[2]
             ))
             .await
@@ -1410,7 +1410,9 @@ pub fn merge_verdicts(
 
 #[cfg(test)]
 mod tests {
+    use super::NetClient;
     use super::{merge_verdicts, stage_map_for_probe, LinkVerdict, ProbeReport};
+    use std::time::Duration;
 
     fn report_with(mode: &str, pairs: &[([f32; 3], [f32; 3])]) -> ProbeReport {
         ProbeReport {
@@ -1575,6 +1577,142 @@ mod tests {
         assert!(staged.0.is_none());
         assert!(!basedir.join("argus/maps/dm4.bsp").exists());
         let _ = std::fs::remove_dir_all(&root);
+    }
+
+    /// Exercise permission checks through a real protocol-15 client, not a
+    /// copy of the QC condition. No machine-local engine means no live test.
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn developer_impulses_require_separate_console_keys_if_engine_present() {
+        if !cfg!(windows) {
+            return;
+        }
+        let _gate = crate::engine::ENGINE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let env =
+            std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
+        let mut cfg = crate::config::load_for_reads_from(&env, &root).unwrap();
+        if !cfg.engine.is_file() {
+            eprintln!("SKIPPED developer impulse test: no ARGUS_ENGINE");
+            return;
+        }
+        let scratch = crate::test_support::TestDir::new("developer-impulses").unwrap();
+        cfg.runs = scratch.path().to_path_buf();
+        let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+        ctrl.begin(
+            &cfg,
+            "dm4",
+            50,
+            Some("developer_impulses"),
+            Some(5),
+            Some(0),
+            None,
+        )
+        .await
+        .unwrap();
+        let result = async {
+            let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+            client.pump(Duration::from_secs(3));
+            if client.world.signon < 3 || client.world.protocol != 15 {
+                return Err("protocol-15 client did not sign on".to_string());
+            }
+            // Keep the stationary client away from moving fixtures. Both the
+            // engine and its cvars disappear when this isolated match stops.
+            ctrl.command("sv_gravity 0; sv_freezenonclients 1").await?;
+            client.pump(Duration::from_millis(400));
+            let start = client.my_pos().ok_or("no client position")?;
+            let graph = crate::nav_graph::load_nav(&cfg, "dm4")?;
+            let distance = |a: [f32; 3], b: [f32; 3]| (a[0] - b[0]).hypot(a[1] - b[1]);
+            let target = *graph
+                .nodes
+                .iter()
+                .find(|p| distance(**p, start) > 512.0)
+                .ok_or("no distinct teleport destination")?;
+            let mut failures = Vec::new();
+            for (developer, key) in [(1, 0), (1, 147), (1, 197), (1, 374), (0, 216)] {
+                let before = client.my_pos().ok_or("lost client position")?;
+                let destination = if distance(before, target) > 128.0 {
+                    target
+                } else {
+                    start
+                };
+                ctrl.command(&format!(
+                    "developer {developer}; scratch1 {key}; scratch2 {}; scratch3 {}; scratch4 {}",
+                    destination[0], destination[1], destination[2]
+                ))
+                .await?;
+                client.pump(Duration::from_millis(250));
+                client.set_impulse(216);
+                client.pump(Duration::from_millis(350));
+                let pos = client.my_pos().ok_or("lost client position")?;
+                if distance(pos, before) > 32.0 {
+                    failures.push(format!("teleport accepted developer={developer} key={key}"));
+                }
+            }
+            ctrl.command(&format!(
+                "developer 1; scratch1 216; scratch2 {}; scratch3 {}; scratch4 {}",
+                target[0], target[1], target[2]
+            ))
+            .await?;
+            client.pump(Duration::from_millis(250));
+            client.set_impulse(216);
+            client.pump(Duration::from_millis(350));
+            if distance(client.my_pos().ok_or("lost client position")?, target) > 32.0 {
+                failures.push("armed teleport refused".into());
+            }
+
+            let arm_count = |ctrl: &crate::match_ctrl::MatchCtrl| {
+                crate::parse_arglog::parse_tape(&ctrl.log_text().unwrap_or_default())
+                    .events
+                    .iter()
+                    .filter(|e| e.verb == "arm")
+                    .count()
+            };
+            for (developer, key) in [(1, 0), (1, 147), (1, 197), (1, 216), (0, 374)] {
+                let before = arm_count(&ctrl);
+                ctrl.command(&format!(
+                    "developer {developer}; scratch1 {key}; scratch4 5"
+                ))
+                .await?;
+                client.pump(Duration::from_millis(250));
+                client.set_impulse(215);
+                client.pump(Duration::from_millis(350));
+                if arm_count(&ctrl) != before {
+                    failures.push(format!("A/B accepted developer={developer} key={key}"));
+                }
+            }
+            let before = arm_count(&ctrl);
+            ctrl.command("developer 1; scratch1 374; scratch4 5")
+                .await?;
+            client.pump(Duration::from_millis(250));
+            client.set_impulse(215);
+            client.pump(Duration::from_millis(350));
+            if arm_count(&ctrl) != before + 3 {
+                failures.push("armed A/B did not assign the three bots".into());
+            }
+            // A successful snapshot consumes the console key. A later client
+            // impulse cannot rewrite the tape without the operator rearming.
+            let before = arm_count(&ctrl);
+            ctrl.command("scratch4 10").await?;
+            client.pump(Duration::from_millis(250));
+            client.set_impulse(215);
+            client.pump(Duration::from_millis(350));
+            if arm_count(&ctrl) != before {
+                failures.push("A/B reused a consumed console key".into());
+            }
+            client.disconnect();
+            if failures.is_empty() {
+                Ok(())
+            } else {
+                Err(failures.join("\n"))
+            }
+        }
+        .await;
+        let stopped = ctrl.stop(Duration::from_secs(2)).await;
+        assert!(stopped.is_ok(), "engine cleanup failed: {stopped:?}");
+        assert!(result.is_ok(), "{}", result.unwrap_err());
     }
 
     /// Live integration: spawn the lab's own dedicated engine, connect

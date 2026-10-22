@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 | Status | What to use |
 |---|---|
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `1B17C38CE8053E713112CCF2D1EA4F7C` |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A93DCFBDEA28317E391127318737C6A9` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
@@ -21,6 +21,13 @@ build dates. A merged change does not imply a new numbered release, and a
 passing botmatch does not establish better human play.
 
 ## Main updates
+
+### Unreleased
+
+- Require separate server-console keys for A/B snapshots and probe teleports;
+  consume the A/B key after use. Update both lab callers and add a real-engine
+  permission regression (#533). Document the tactical fixture's live-state
+  changes and six-second bot freeze on shared servers (#540).
 
 ### 2026-10-22
 
