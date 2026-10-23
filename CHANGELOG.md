@@ -24,6 +24,9 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Bound FFmpeg preflight pipe I/O and use a built-in PNG instead of lavfi
+  to verify VP9 before capture (#577, #578).
+
 - Clarify staged MCP reconnects, capture provenance fields and current VP9
   preflight prerequisites and pipe timeout limits (#577, #578).
 

@@ -4,7 +4,9 @@ use crate::{config::Config, netclient::NetClient};
 use serde::Serialize;
 use std::path::Path;
 use std::time::{Duration, Instant};
+#[cfg(not(windows))]
 use tokio::io::AsyncReadExt;
+use tokio::io::AsyncWriteExt;
 
 fn signed_on(world: &crate::netclient::ClientWorld) -> bool {
     // Protocol 15 sends signon 3, then the first entity update completes
@@ -579,36 +581,131 @@ fn resolve_encoder() -> Result<std::path::PathBuf, String> {
     )
 }
 
-async fn preflight_output(command: &mut tokio::process::Command) -> Result<String, String> {
-    async fn read_output(reader: impl tokio::io::AsyncRead + Unpin) -> Result<String, String> {
-        let mut bytes = Vec::new();
+#[cfg(not(windows))]
+async fn preflight_bytes(reader: impl tokio::io::AsyncRead + Unpin) -> Result<String, String> {
+    let mut bytes = Vec::new();
+    reader
+        .take(65537)
+        .read_to_end(&mut bytes)
+        .await
+        .map_err(|e| e.to_string())?;
+    preflight_text(&bytes)
+}
+
+#[cfg(windows)]
+async fn preflight_bytes(reader: impl std::os::windows::io::AsHandle) -> Result<String, String> {
+    use std::io::Read;
+    use std::os::windows::io::AsRawHandle;
+    use windows_sys::Win32::{Foundation::ERROR_BROKEN_PIPE, System::Pipes::PeekNamedPipe};
+
+    // Tokio's Windows pipe reader uses a blocking task that survives future
+    // cancellation and can stall runtime shutdown. Read only available bytes.
+    let mut pipe = std::fs::File::from(
         reader
-            .take(65537)
-            .read_to_end(&mut bytes)
-            .await
-            .map_err(|e| e.to_string())?;
-        if bytes.len() > 65536 {
-            return Err("FFmpeg preflight output exceeded 64 KiB".into());
+            .as_handle()
+            .try_clone_to_owned()
+            .map_err(|e| e.to_string())?,
+    );
+    drop(reader);
+    let mut bytes = Vec::new();
+    while bytes.len() <= 65536 {
+        let mut available = 0;
+        // The handle is owned here, no other reader exists, and the out pointer
+        // is valid. Peek does not wait for an inherited writer to produce data.
+        let ok = unsafe {
+            PeekNamedPipe(
+                pipe.as_raw_handle(),
+                std::ptr::null_mut(),
+                0,
+                std::ptr::null_mut(),
+                &mut available,
+                std::ptr::null_mut(),
+            )
+        };
+        if ok == 0 {
+            let error = std::io::Error::last_os_error();
+            if error.raw_os_error() == Some(ERROR_BROKEN_PIPE as i32) {
+                break;
+            }
+            return Err(error.to_string());
         }
-        Ok(String::from_utf8_lossy(&bytes).into_owned())
+        if available == 0 {
+            tokio::time::sleep(Duration::from_millis(10)).await;
+            continue;
+        }
+        let mut buffer = [0; 4096];
+        let count = (available as usize)
+            .min(buffer.len())
+            .min(65537 - bytes.len());
+        let read = pipe.read(&mut buffer[..count]).map_err(|e| e.to_string())?;
+        if read == 0 {
+            break;
+        }
+        bytes.extend_from_slice(&buffer[..read]);
     }
+    preflight_text(&bytes)
+}
+
+fn preflight_text(bytes: &[u8]) -> Result<String, String> {
+    if bytes.len() > 65536 {
+        return Err("FFmpeg preflight output exceeded 64 KiB".into());
+    }
+    Ok(String::from_utf8_lossy(bytes).into_owned())
+}
+
+async fn finish_preflight(
+    child: &mut tokio::process::Child,
+    input: &[u8],
+    deadline: Duration,
+) -> Result<String, String> {
+    let collect = async {
+        let stdout = child.stdout.take().ok_or("missing FFmpeg stdout")?;
+        let stderr = child.stderr.take().ok_or("missing FFmpeg stderr")?;
+        let mut stdin = child.stdin.take().ok_or("missing FFmpeg stdin")?;
+        let (status, stdout, stderr, ()) = tokio::try_join!(
+            async { child.wait().await.map_err(|e| e.to_string()) },
+            preflight_bytes(stdout),
+            preflight_bytes(stderr),
+            async move { stdin.write_all(input).await.map_err(|e| e.to_string()) }
+        )?;
+        let text = format!("{stdout}{stderr}");
+        if !status.success() {
+            return Err(format!("FFmpeg preflight failed: {text}"));
+        }
+        Ok(text)
+    };
+    let error = match tokio::time::timeout(deadline, collect).await {
+        Ok(Ok(text)) => return Ok(text),
+        Ok(Err(error)) => error,
+        Err(_) => "FFmpeg preflight timed out".into(),
+    };
+    // Dropping collect closes every pipe, including inherited writers' readers.
+    // Reap only our direct child; no descendant or unrelated process is killed.
+    match tokio::time::timeout(Duration::from_secs(1), async {
+        if child.try_wait()?.is_none() {
+            child.kill().await?;
+        }
+        Ok::<_, std::io::Error>(())
+    })
+    .await
+    {
+        Ok(Ok(())) => Err(error),
+        Ok(Err(cleanup)) => Err(format!("{error}; preflight cleanup: {cleanup}")),
+        Err(_) => Err(format!("{error}; preflight cleanup timed out")),
+    }
+}
+
+async fn preflight_output(
+    command: &mut tokio::process::Command,
+    input: &[u8],
+) -> Result<String, String> {
     let mut child = command
+        .stdin(std::process::Stdio::piped())
         .stdout(std::process::Stdio::piped())
         .stderr(std::process::Stdio::piped())
         .spawn()
         .map_err(|e| format!("FFmpeg preflight: {e}"))?;
-    let stdout = child.stdout.take().ok_or("missing FFmpeg stdout")?;
-    let stderr = child.stderr.take().ok_or("missing FFmpeg stderr")?;
-    let (status, stdout, stderr) = tokio::join!(
-        wait_render(&mut child, Duration::from_secs(5)),
-        read_output(stdout),
-        read_output(stderr)
-    );
-    let text = format!("{}{}", stdout?, stderr?);
-    if !status?.success() {
-        return Err(format!("FFmpeg preflight failed: {text}"));
-    }
-    Ok(text)
+    finish_preflight(&mut child, input, Duration::from_secs(5)).await
 }
 
 fn verify_encoder(path: &Path, identity: &EncoderIdentity) -> Result<(), String> {
@@ -620,9 +717,10 @@ fn verify_encoder(path: &Path, identity: &EncoderIdentity) -> Result<(), String>
 
 async fn preflight_encoder(path: &Path) -> Result<EncoderIdentity, String> {
     let executable_md5 = md5(path)?;
-    let version = preflight_output(encoder(path).arg("-version")).await?;
+    let version = preflight_output(encoder(path).arg("-version"), b"").await?;
     // Prove the actual codec and settings work, with no capture directory or
-    // renderer. Help and version commands can succeed without an encoder.
+    // renderer. Feed a 16x16 RGB PNG, using the same decoder as engine frames.
+    const PNG: &[u8] = b"\x89PNG\r\n\x1a\n\x00\x00\x00\x0dIHDR\x00\x00\x00\x10\x00\x00\x00\x10\x08\x02\x00\x00\x00\x90\x91\x68\x36\x00\x00\x00\x11IDAT\x78\x9c\x63\x60\x18\x05\xa3\x60\x14\x30\x40\x01\x00\x03\x10\x00\x01\x7c\x8b\xff\x65\x00\x00\x00\x00IEND\xae\x42\x60\x82";
     preflight_output(
         encoder(path)
             .args([
@@ -630,14 +728,17 @@ async fn preflight_encoder(path: &Path) -> Result<EncoderIdentity, String> {
                 "error",
                 "-nostdin",
                 "-f",
-                "lavfi",
+                "image2pipe",
+                "-c:v",
+                "png",
                 "-i",
-                "color=c=black:s=16x16:r=1",
+                "pipe:0",
                 "-frames:v",
                 "1",
             ])
             .args(VP9_SETTINGS)
             .arg("-"),
+        PNG,
     )
     .await
     .map_err(|e| {
@@ -714,9 +815,9 @@ fn frame_hashes(text: &str, count: u32, fps: f64) -> Result<Vec<String>, String>
 /// `duration` is 0.2..12 source seconds, rounded to 0.1 seconds; `rate` is a
 /// 0.1..4 playback multiplier. Every source sample must precede the demo's end.
 /// FFmpeg with libvpx-vp9 is required on PATH; PNG capture needs no encoder.
-/// One-frame VP9 preflight also needs the lavfi input device and color filter.
-/// Child exit has a five-second deadline; inherited pipes can delay EOF beyond
-/// that deadline. Preflight completes before the renderer starts.
+/// One-frame VP9 preflight decodes a built-in PNG through stdin before rendering.
+/// Each preflight, including pipe I/O, has a five-second deadline plus at most
+/// one second to kill and reap the owned child on failure.
 /// PNG-to-YUV420 conversion precedes lossless encoding. Verify decoded frame
 /// order, hashes and timing before publishing a fresh WebM and video manifest.
 /// Manifests include staged asset digests, the FFmpeg build and codec settings.
@@ -1009,6 +1110,114 @@ mod tests {
             !cfg.root.join("backups").exists(),
             "failed preflight created capture output"
         );
+    }
+
+    fn preflight_fixture(dir: &Path, code: &str) -> std::path::PathBuf {
+        let source = dir.join("encoder.rs");
+        let executable = dir.join(format!("ffmpeg{}", std::env::consts::EXE_SUFFIX));
+        std::fs::write(&source, code).unwrap();
+        assert!(std::process::Command::new("rustc")
+            .arg(source)
+            .arg("-o")
+            .arg(&executable)
+            .status()
+            .unwrap()
+            .success());
+        executable
+    }
+
+    #[test]
+    fn preflight_bounds_inherited_pipes_and_reaps_owned_children() {
+        let dir = crate::test_support::TestDir::new("preflight-pipes").unwrap();
+        let executable = preflight_fixture(
+            dir.path(),
+            r#"use std::process::{Command, Stdio};
+            fn main() {
+                let mode = std::env::args().nth(1).unwrap();
+                if mode == "stdout" || mode == "stderr" {
+                    #[cfg(windows)]
+                    let mut holder = {
+                        use std::os::windows::process::CommandExt;
+                        let mut c = Command::new("powershell.exe");
+                        c.args(["-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 2"])
+                            .creation_flags(0x0800_0000);
+                        c
+                    };
+                    #[cfg(not(windows))]
+                    let mut holder = { let mut c = Command::new("sleep"); c.arg("2"); c };
+                    holder.stdin(Stdio::null())
+                        .stdout(if mode == "stdout" { Stdio::inherit() } else { Stdio::null() })
+                        .stderr(if mode == "stderr" { Stdio::inherit() } else { Stdio::null() });
+                    let _child = holder.spawn().unwrap();
+                    return;
+                }
+                if mode == "overflow" { println!("{}", "x".repeat(65537)); }
+                std::thread::sleep(std::time::Duration::from_secs(30));
+            }"#,
+        );
+        let start = Instant::now();
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap();
+        runtime.block_on(async {
+            for mode in ["stdout", "stderr", "running", "overflow"] {
+                let mut child = encoder(&executable)
+                    .arg(mode)
+                    .stdin(std::process::Stdio::piped())
+                    .stdout(std::process::Stdio::piped())
+                    .stderr(std::process::Stdio::piped())
+                    .spawn()
+                    .unwrap();
+                let start = Instant::now();
+                let error = finish_preflight(&mut child, b"", Duration::from_millis(200))
+                    .await
+                    .unwrap_err();
+                let expected = if mode == "overflow" {
+                    "64 KiB"
+                } else {
+                    "timed out"
+                };
+                assert!(error.contains(expected), "{mode}: {error}");
+                assert!(start.elapsed() < Duration::from_millis(1500), "{mode}");
+                assert!(
+                    child.try_wait().unwrap().is_some(),
+                    "{mode}: child not reaped"
+                );
+            }
+        });
+        drop(runtime);
+        assert!(
+            start.elapsed() < Duration::from_millis(1500),
+            "runtime shutdown waited for inherited pipes"
+        );
+    }
+
+    #[tokio::test]
+    async fn preflight_accepts_png_encoder_without_lavfi() {
+        let dir = crate::test_support::TestDir::new("preflight-png").unwrap();
+        let executable = preflight_fixture(
+            dir.path(),
+            r#"use std::io::Read;
+            fn main() {
+                let args: Vec<_> = std::env::args().skip(1).collect();
+                if args == ["-version"] { println!("ffmpeg PNG/VP9 fixture"); return; }
+                if args.iter().any(|a| a == "lavfi" || a.starts_with("color=")) {
+                    eprintln!("Unknown input format lavfi"); std::process::exit(1);
+                }
+                assert!(args.windows(2).any(|a| a == ["-c:v", "png"]));
+                assert!(args.windows(2).any(|a| a == ["-c:v", "libvpx-vp9"]));
+                let mut png = Vec::new();
+                std::io::stdin().read_to_end(&mut png).unwrap();
+                assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"));
+                assert_eq!(&png[16..24], &[0, 0, 0, 16, 0, 0, 0, 16]);
+                println!("PNG/VP9 fixture accepted");
+            }"#,
+        );
+        let identity = preflight_encoder(&executable).await.unwrap();
+        assert!(identity.version.contains("PNG/VP9 fixture"));
+        verify_encoder(&executable, &identity).unwrap();
+        assert!(!dir.path().join("backups").exists());
     }
 
     #[test]

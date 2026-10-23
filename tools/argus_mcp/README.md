@@ -119,16 +119,14 @@ engine errors and missing acknowledgements still fail capture.
 exports a silent lossless VP9 WebM from the same renderer. FFmpeg with
 `libvpx-vp9` must be on PATH for this command; PNG capture has no encoder
 dependency. `ffprobe` is not required. Before creating capture output or
-starting the renderer, preflight records `ffmpeg -version` and encodes one
-synthetic frame with the required VP9 settings. The current synthetic source
-also requires FFmpeg's `lavfi` input device and `color` filter, even when its
-PNG-to-VP9 encoding works. Each preflight child has a five-second exit deadline
-and a 64 KiB output limit per stream. Pipe reads wait for EOF outside that
-deadline, so a descendant holding an inherited stream can delay completion.
-The pipe deadline and extra lavfi dependency are tracked in
-[#577](https://github.com/saworbit/argus/issues/577) and
-[#578](https://github.com/saworbit/argus/issues/578). Missing codec support fails
-early with encoder diagnostics; ordinary PNG capture does not run preflight.
+starting the renderer, preflight records `ffmpeg -version` and encodes a built-in
+16x16 PNG through stdin with the required VP9 settings. It uses the PNG decoder
+and `image2pipe` demuxer, without requiring `lavfi` or the `color` filter. Each
+preflight has a five-second deadline covering input, child exit and output
+reads, with a 64 KiB output limit per stream. Failures close the pipes and allow
+at most one second to kill and reap the owned child. Descendants and unrelated
+processes are not killed. Missing codec support fails early with encoder
+diagnostics; ordinary PNG capture does not run preflight.
 Video samples at 10 source frames/sec, rounds
 duration to the nearest 0.1 seconds and accepts 0.2..12 seconds at playback
 rates 0.1..4. A rate of 0.5 plays at half speed and doubles clip duration.

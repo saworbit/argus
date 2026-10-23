@@ -154,6 +154,6 @@ and cannot recover visibility missing from the original demo.
 Capture manifests also identify staged PAK and loose assets by relative path,
 size and MD5. Video manifests include the FFmpeg executable digest, build
 output and encoding settings. VP9 preflight runs before rendering; input
-changes detected during capture fail the call. Current preflight prerequisites
-and pipe timeout limits are in the
+changes detected during capture fail the call. PNG input requirements and
+preflight deadlines are in the
 [operator guide](../tools/argus_mcp/README.md#rendered-pov-evidence).
