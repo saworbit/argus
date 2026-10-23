@@ -1,4 +1,4 @@
-//! Register generated argus_nav_<map>.qc in the dispatcher and progs.src.
+//! Register generated `argus_nav_<map>.qc` in the dispatcher and progs.src.
 
 use crate::config::Config;
 use serde::Serialize;

@@ -18,7 +18,7 @@
 //!
 //! Protocol notes: NetQuake datagram layer per net_dgrm.c - control
 //! packets carry NETFLAG_CTL and big-endian header ints; game packets
-//! are [u32 BE length|flags][u32 BE sequence][payload]; reliable DATA
+//! are `[u32 BE length|flags][u32 BE sequence][payload]`; reliable DATA
 //! is ACKed per packet and EOM closes a message; MSG_* payload fields
 //! are little-endian throughout. The svc vocabulary mirrors demo.rs
 //! (the same stream, minus the demo block framing) - a deliberate

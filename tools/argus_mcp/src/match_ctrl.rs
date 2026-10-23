@@ -104,7 +104,7 @@ impl MatchCtrl {
     /// Let the NEXT start() write over a committed tape.
     ///
     /// Only a rolling probe should call this. The matrix writes
-    /// mx_<map>.log every run on purpose and five of those tapes are
+    /// `mx_<map>.log` every run on purpose and five of those tapes are
     /// committed, so the guard below would refuse the lab's own loop
     /// without a way to say "this one is meant to be refreshed". It is
     /// one shot and start() clears it, so the exemption cannot leak
@@ -1005,7 +1005,7 @@ pub fn unharvested_session(cfg: &Config) -> Option<String> {
 /// ladder tape it destroyed survives only in a session transcript.
 ///
 /// TRACKED BY GIT IS THE TEST, not "the file is there". The matrix
-/// probe writes mx_<map>.log every run by design and five of those
+/// probe writes `mx_<map>.log` every run by design and five of those
 /// are committed, so refusing every collision would refuse the lab's
 /// own loop. A rolling probe says so with refresh_committed_tape()
 /// and nothing else can.
