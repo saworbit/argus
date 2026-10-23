@@ -24,6 +24,8 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Escape protocol and map filename placeholders in Rust documentation (#579).
+
 - Bound FFmpeg preflight pipe I/O and use a built-in PNG instead of lavfi
   to verify VP9 before capture (#577, #578).
 
