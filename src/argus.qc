@@ -214,6 +214,11 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .entity ar_enemy;
 .float  ar_seen;                // last time enemy was visible
 .vector ar_lastseen;            // where the enemy was last visible
+.entity ar_obsenemy;            // identity attached to this visual sample
+.vector ar_obsvelocity;         // velocity at the last successful sighting
+.float  ar_obspower;            // observed cues: quad 1, pent 2, ring 4
+.float  ar_obsground;           // observed floor contact
+.float  ar_obsair;              // observed ballistic, dry airborne movement
 .float  ar_pursuing;            // chasing the vanish point right now
 .float  ar_react;               // may not fire before this
 .float  ar_track;               // when tracking of this target began
@@ -223,6 +228,7 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_threatlog;           // once-per-class tactical branch bits
 .entity ar_secondary;           // nearest other visible player threat
 .float  ar_secondaryscan;       // bound the extra player/LOS scan
+.vector ar_secondarypos;        // position at that scan's successful trace
 .float  ar_dodgecheck;          // missile dodge: next scan time
 .float  ar_dodgeyaw;            // missile dodge: committed sidestep
 .float  ar_dodgetime;           // missile dodge: sidestep active until
@@ -2826,6 +2832,8 @@ void() Argus_Die =
 {
     local entity k;
 
+    Argus_BehaviourReset ();
+
     // Resolve the real player before telemetry as well as before adaptive
     // skill accounting. A teledeath entity is only the delivery mechanism.
     k = self.enemy;
@@ -2934,6 +2942,7 @@ void() Argus_Die =
     self.ar_hopdoor = 0;
     self.ar_hazhold = 0;
     Argus_HazardCommitClear ();
+    Argus_ObservationReset ();
     self.ar_aimvel = 0;         // no ghost flick on respawn
     self.ar_threatclass = AR_THREAT_UNKNOWN;
     self.ar_threatlog = 0;
@@ -2991,7 +3000,9 @@ void(entity attacker, float dmg) Argus_Pain =
     // clear FL_ONGROUND itself or the bot stays glued to the floor
     if (self.velocity_z > 180)
         self.flags = self.flags - (self.flags & FL_ONGROUND);
-    // fight back if hit from behind by someone new: any live player,
+    // Damage restarts tracking, but is not a visual observation. Hearing
+    // may supply a bearing; acquire the attacker only if visibility passes.
+    // Fight back if hit from behind by someone new: any live player,
     // human or bot (world excluded: lava damage is not an attacker)
     // ...but never against a team mate. Shane shot Carmack on e1m2,
     // this branch made him the enemy, and Carmack shot him dead
@@ -3001,7 +3012,7 @@ void(entity attacker, float dmg) Argus_Pain =
     // team mate, because monsters are not classname "player".
     if (attacker.classname == "player" && attacker.health > 0
         && attacker != self && self.ar_enemy == world
-        && !Argus_IsAlly (attacker))
+        && !Argus_IsAlly (attacker) && Argus_PainCanSee (attacker))
     {
         self.ar_retreating = 0;
         self.ar_retreatclass = AR_THREAT_UNKNOWN;
@@ -3009,7 +3020,7 @@ void(entity attacker, float dmg) Argus_Pain =
         self.ar_motoff = '0 0 0';
         self.ar_motprev = '0 0 0';
         self.ar_enemy = attacker;
-        self.ar_seen = time;
+        Argus_ObserveEnemy (attacker);
         self.ar_react = time + self.ar_reactbase * 0.7 + random () * 0.2;
         self.ar_track = time;
     }
@@ -3236,6 +3247,10 @@ void(entity bot, float won) Argus_SkillResult =
 
 void() Argus_BaseStats =
 {
+    Argus_ObservationRemoved (self);
+    Argus_ObservationReset ();
+    self.ar_enemy = world;
+    self.ar_lastfoe = world;
     Argus_SetSkill ();
     self.health = 100;
     // spawn-field parity with PutClientInServer: max_health 0 made
@@ -3387,6 +3402,8 @@ entity() Argus_SpawnSpot =
 void() Argus_Respawn =
 {
     local entity spot, oself;
+
+    Argus_BehaviourReset ();
 
     Argus_TacticReset ();
     self.ar_tactic_cool = 0;
@@ -3688,6 +3705,11 @@ float(entity e) Argus_CanSee =
                         // combatant - same courtesy as the camera
     if (e.health <= 0)
         return FALSE;
+    // Occluded actors supply no cue, including no invisible-player glimpse
+    // roll. Hidden powerup changes must not perturb the combat RNG stream.
+    traceline (self.origin + '0 0 22', e.origin + '0 0 22', TRUE, self);
+    if (trace_fraction != 1)
+        return FALSE;
     // the ring: an invisible enemy is eyes only, so treat it as unseen
     // beyond close range apart from a rare glimpse (stock monster
     // manners; one glimpse still buys the 3 s sight-loss hold)
@@ -3710,15 +3732,29 @@ float(entity e) Argus_CanSee =
                 return FALSE;
         }
     }
-    traceline (self.origin + '0 0 22', e.origin + '0 0 22', TRUE, self);
-    if (trace_fraction == 1)
-        return TRUE;
-    return FALSE;
+    return TRUE;
 };
 
 // Classify only a weapon we can currently see in a player's hands. The
 // value is retained through the ordinary short sight-loss pursuit, but is
 // never inferred for monsters or below the cognition threshold (#361).
+// A damage callback must not replace the weapon caller's trace result.
+// Visibility still performs exactly one ordinary check and ring-clock roll.
+float(entity e) Argus_PainCanSee =
+{
+    local float fraction, allsolid, startsolid, plane, inopen, inwater, visible;
+    local vector endpoint, normal;
+    local entity hit;
+    fraction = trace_fraction; allsolid = trace_allsolid; startsolid = trace_startsolid;
+    plane = trace_plane_dist; endpoint = trace_endpos; normal = trace_plane_normal;
+    inopen = trace_inopen; inwater = trace_inwater; hit = trace_ent;
+    visible = Argus_CanSee (e);
+    trace_fraction = fraction; trace_allsolid = allsolid; trace_startsolid = startsolid;
+    trace_plane_dist = plane; trace_endpos = endpoint; trace_plane_normal = normal;
+    trace_inopen = inopen; trace_inwater = inwater; trace_ent = hit;
+    return visible;
+};
+
 float(entity e) Argus_EnemyThreatClass =
 {
     if (self.ar_skill < AR_SKILL_MEMORY || e == world
@@ -3746,6 +3782,95 @@ void(entity e) Argus_RefreshThreatClass =
         self.ar_threatclass = tc;
         self.ar_threatlog = 0;
     }
+};
+
+// One visual sample. Call only after CanSee (or the secondary/co-op scan)
+// has succeeded for this entity in this frame. Do not trace or roll the
+// ring glimpse twice: acquisition already paid that observation cost.
+void(entity e) Argus_ObserveEnemy =
+{
+    self.ar_obsenemy = e;
+    self.ar_seen = time;
+    self.ar_lastseen = e.origin;
+    self.ar_obsvelocity = e.velocity;
+    self.ar_obsground = (e.flags & FL_ONGROUND) != 0;
+    self.ar_obsair = !self.ar_obsground && e.waterlevel < 2
+                    && e.movetype != MOVETYPE_FLY && e.movetype != MOVETYPE_NOCLIP;
+    self.ar_obspower = 0;
+    if (e.super_damage_finished > time) self.ar_obspower = 1;
+    if (e.invincible_finished > time) self.ar_obspower = self.ar_obspower + 2;
+    if (e.invisible_finished > time) self.ar_obspower = self.ar_obspower + 4;
+    Argus_RefreshThreatClass (e);
+};
+
+void() Argus_ObservationReset =
+{
+    self.ar_obsenemy = world;
+    self.ar_seen = 0;
+    self.ar_lastseen = '0 0 0';
+    self.ar_obsvelocity = '0 0 0';
+    self.ar_obspower = 0;
+    self.ar_obsground = 0;
+    self.ar_obsair = 0;
+    self.ar_threatclass = AR_THREAT_UNKNOWN;
+    self.ar_threatlog = 0;
+    self.ar_secondary = world;
+    self.ar_secondaryscan = 0;
+    self.ar_secondarypos = '0 0 0';
+};
+
+// A short, bounded continuation of observed motion. Pursuit and the
+// separate speculative corner rocket still use the original vanish point.
+vector() Argus_EnemyPosition =
+{
+    local float age;
+    local vector delta;
+    if (self.ar_enemy == world || self.ar_obsenemy != self.ar_enemy)
+        return self.origin;
+    age = time - self.ar_seen;
+    if (age < 0) age = 0;
+    if (age > 0.4) age = 0.4;
+    delta = self.ar_obsvelocity * age;
+    if (vlen (delta) > 128) delta = normalize (delta) * 128;
+    return self.ar_lastseen + delta;
+};
+
+vector() Argus_EnemyVelocity =
+{
+    if (self.ar_enemy == world || self.ar_obsenemy != self.ar_enemy)
+        return '0 0 0';
+    return self.ar_obsvelocity;
+};
+
+float() Argus_EnemyPowerThreat =
+{
+    if (self.ar_enemy == world || self.ar_obsenemy != self.ar_enemy)
+        return FALSE;
+    return (self.ar_obspower & 3) != 0;
+};
+
+// Forget an identity before a roster edict can be reused. Do not reset
+// unrelated opponents or the rest of a surviving bot's match history.
+void(entity target) Argus_ObservationRemoved =
+{
+    local entity b, saved;
+    saved = self; b = argus_bots;
+    while (b != world)
+    {
+        if (b.ar_obsenemy == target || b.ar_enemy == target)
+        {
+            self = b;
+            Argus_ObservationReset ();
+            self.ar_enemy = world;
+            self.ar_threatclass = AR_THREAT_UNKNOWN;
+            self.ar_secondary = world;
+        }
+        if (b.ar_secondary == target)
+        { b.ar_secondary = world; b.ar_secondarypos = '0 0 0'; }
+        if (b.ar_lastfoe == target) b.ar_lastfoe = world;
+        b = b.ar_chain;
+    }
+    self = saved;
 };
 
 // Once per visible weapon class and engagement is enough to prove that the
@@ -3783,6 +3908,7 @@ entity(entity primary) Argus_FindSecondaryThreat =
     {
         if (b != self && b != primary && b.health > 0
             && !b.cam_active
+            && b.netname != "labprobe" && !b.ar_disconnected
             && b.invisible_finished <= time)
         {
             d = vlen (b.origin - self.origin);
@@ -3799,6 +3925,8 @@ entity(entity primary) Argus_FindSecondaryThreat =
         }
         b = find (b, classname, "player");
     }
+    if (best != world) self.ar_secondarypos = best.origin;
+    else self.ar_secondarypos = '0 0 0';
     return best;
 };
 
@@ -3806,13 +3934,19 @@ entity(entity primary) Argus_FindSecondaryThreat =
 // body clearance and the final hazard veto remain independent (#383).
 float(entity threat, float myaw) Argus_ThreatCovered =
 {
-    local vector p;
+    local vector p, known;
 
     if (threat == world)
         return FALSE;
+    if (threat == self.ar_enemy && self.ar_obsenemy == threat)
+        known = Argus_EnemyPosition ();
+    else if (threat == self.ar_secondary)
+        known = self.ar_secondarypos;
+    else
+        return FALSE;
     makevectors ('0 0 0' + myaw * '0 1 0');
     p = self.origin + v_forward * 128 + '0 0 22';
-    traceline (p, threat.origin + '0 0 22', TRUE, self);
+    traceline (p, known + '0 0 22', TRUE, self);
     return (trace_fraction < 1);
 };
 
@@ -3881,7 +4015,9 @@ float(entity shooter, entity victim, entity ally) Argus_SplashSafe =
     if (shooter.weapon != IT_ROCKET_LAUNCHER && shooter.weapon != IT_GRENADE_LAUNCHER)
         return TRUE;
     // Splash too close to ally
-    d = vlen (victim.origin - ally.origin);
+    if (shooter != self || victim != self.ar_enemy
+        || self.ar_obsenemy != victim) return FALSE;
+    d = vlen (Argus_EnemyPosition () - ally.origin);
     if (d < 160)
         return FALSE;
     // Muzzle blast too close to ally
@@ -3928,12 +4064,17 @@ void() Argus_Perceive =
     local float d, bd, ok;
     local vector to, fov;
 
+    if (self.ar_obsenemy != world && self.ar_obsenemy != self.ar_enemy)
+        Argus_ObservationReset ();
+
     // current enemy: still valid?
     if (self.ar_enemy != world)
     {
-        if (self.ar_enemy.health <= 0)
+        if (self.ar_enemy.health <= 0 || self.ar_enemy.cam_active
+            || self.ar_enemy.ar_disconnected)
         {
             self.ar_enemy = world;
+            Argus_ObservationReset ();
             self.ar_threatclass = AR_THREAT_UNKNOWN;
             self.ar_threatlog = 0;
             self.ar_retreating = 0;
@@ -3945,18 +4086,18 @@ void() Argus_Perceive =
         }
         else if (Argus_CanSee (self.ar_enemy))
         {
-            self.ar_seen = time;
-            self.ar_lastseen = self.ar_enemy.origin;
+            Argus_ObserveEnemy (self.ar_enemy);
             self.ar_pursuing = 0;
             // combat memory: whoever we are fighting stays
             // re-acquirable at 360 degrees for 5 s after any drop
             self.ar_lastfoe = self.ar_enemy;
             self.ar_foetime = time;
-            Argus_RefreshThreatClass (self.ar_enemy);
+
         }
         else if (time > self.ar_seen + 3)
         {
             self.ar_enemy = world;
+            Argus_ObservationReset ();
             self.ar_threatclass = AR_THREAT_UNKNOWN;
             self.ar_threatlog = 0;
             self.ar_retreating = 0;
@@ -3981,8 +4122,6 @@ void() Argus_Perceive =
             self.ar_motoff = '0 0 0';
             self.ar_motprev = '0 0 0';
             self.ar_enemy = best;
-            self.ar_seen = time;
-            self.ar_lastseen = best.origin;
             self.ar_pursuing = 0;
             self.ar_prefired = 0;
             self.ar_react = time + self.ar_reactbase + random () * 0.25;
@@ -3993,6 +4132,7 @@ void() Argus_Perceive =
             self.ar_strafetime = time;
             self.ar_threatclass = AR_THREAT_UNKNOWN;
             self.ar_threatlog = 0;
+            Argus_ObserveEnemy (best);
             dprint ("ARGEVT ");
             dprint (self.netname);
             dprint (" engage monster\n");
@@ -4117,8 +4257,6 @@ void() Argus_Perceive =
         self.ar_motoff = '0 0 0';
         self.ar_motprev = '0 0 0';
         self.ar_enemy = best;
-        self.ar_seen = time;
-        self.ar_lastseen = best.origin;
         self.ar_pursuing = 0;
         self.ar_prefired = 0;       // a fresh chase earns a fresh shot
         self.ar_react = time + self.ar_reactbase + random () * 0.25;
@@ -4129,7 +4267,7 @@ void() Argus_Perceive =
         self.ar_strafetime = time;
         self.ar_threatclass = AR_THREAT_UNKNOWN;
         self.ar_threatlog = 0;
-        Argus_RefreshThreatClass (best);
+        Argus_ObserveEnemy (best);
         dprint ("ARGEVT ");
         dprint (self.netname);
         dprint (" engage ");
@@ -4427,6 +4565,53 @@ void() Argus_BattleItemScan =
 // very attractive. Interception emerges from the same scorer that
 // already runs the circuits. Gated late in the continuous capability
 // ladder - a warmup partner does not read minds.
+// A bet about another player's destination, not their private inventory.
+// Unknown needs use conservative fixed priors. Only an already-observed
+// weapon family can raise compatible-ammo interest. Keep the existing short
+// detour curve, cooldown and pursuit trigger in Hunch unchanged.
+float(entity it, float cls, float family) Argus_HunchValue =
+{
+    local string c;
+    c = it.classname;
+    if (cls == AR_C_WEAPON)
+    {
+        if (c == "weapon_rocketlauncher") return 35;
+        if (c == "weapon_lightning") return 31;
+        if (c == "weapon_supernailgun") return 20;
+        if (c == "weapon_grenadelauncher") return 17;
+        if (c == "weapon_supershotgun") return 12;
+        return 9;
+    }
+    if (cls == AR_C_AMMO)
+    {
+        if ((c == "item_rockets" && family == AR_THREAT_SPLASH)
+            || (c == "item_cells" && family == AR_THREAT_BEAM)) return 16;
+        if ((c == "item_shells" || c == "item_spikes")
+            && family == AR_THREAT_DIRECT) return 12;
+        return 4;
+    }
+    if (cls == AR_C_HEALTH)
+    {
+        if (it.healamount >= 100) return 45;
+        return 24;
+    }
+    if (cls == AR_C_ARMOR)
+    {
+        if (c == "item_armorInv") return 44;
+        if (c == "item_armor2") return 28;
+        return 12;
+    }
+    if (cls == AR_C_POWER)
+    {
+        if (c == "item_artifact_super_damage") return 100;
+        if (c == "item_artifact_invulnerability") return 90;
+        if (c == "item_artifact_invisibility") return 45;
+        return 6;
+    }
+    // Unknown pack contents and oddments have a flat prior as well.
+    return 22;
+};
+
 void(entity foe) Argus_Hunch =
 {
     local entity it, best, oself;
@@ -4834,6 +5019,34 @@ void() Argus_TriggerFired =
     self.ar_fireready = self.attack_finished + pause;
 };
 
+// Check the final imperfect firing direction, not only the planned aim line.
+// Ordinary rockets stop at the aim-point distance so a target's backdrop
+// cannot veto a clear shot. Authored tactics retain their full 240u probe.
+float(vector aimpt) Argus_MuzzleClear =
+{
+    local vector src;
+    local float reach, targetdist;
+    if (!self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)
+        return TRUE;
+    makevectors (self.v_angle);
+    src = self.origin + '0 0 16';
+    reach = 240;
+    if (!self.ar_tactic)
+    {
+        targetdist = vlen (aimpt - src);
+        if (targetdist < reach) reach = targetdist;
+    }
+    traceline (src, src + v_forward * reach, TRUE, self);
+    if (trace_fraction < 1)
+    {
+        self.button0 = 0;
+        if (self.ar_tactic == 4 && time > self.ar_tactic_progress + 0.4)
+            Argus_TacticAbort ("abort muzzle");
+        return FALSE;
+    }
+    return TRUE;
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
@@ -4846,6 +5059,7 @@ float() Argus_Combat =
     local float dt, motmag, mfrac, baseyaw, altyaw, required, primarycover;
     local float tactclass;
     local float flight;         // projectile time of flight, seconds
+    local vector epos, evel;
     local vector preaim, ldv, src;  // #363: the lead, on its own
 
     Argus_Perceive ();
@@ -4863,6 +5077,10 @@ float() Argus_Combat =
         self.ar_motprev = '0 0 0';
         return FALSE;
     }
+    if (self.ar_obsenemy != e)
+    { self.button0 = 0; return FALSE; }
+    epos = Argus_EnemyPosition ();
+    evel = Argus_EnemyVelocity ();
     if (self.ar_skill < AR_SKILL_MEMORY)
     {
         self.ar_threatclass = AR_THREAT_UNKNOWN;
@@ -4966,7 +5184,7 @@ float() Argus_Combat =
         return FALSE;               // gave up: let navigation resume
     }
 
-    to = e.origin - self.origin;
+    to = epos - self.origin;
     d = vlen (to);
 
     closeband = Argus_CombatBand ();
@@ -5059,7 +5277,7 @@ float() Argus_Combat =
         self.ar_motprev = '0 0 0';
         self.ar_motblend = time;
         self.ar_mottarget = e;
-        self.ar_motpos = e.origin;
+        self.ar_motpos = epos;
         self.ar_mottime = time;
     }
     if (time > self.ar_errtime)
@@ -5087,7 +5305,7 @@ float() Argus_Combat =
             dt = time - self.ar_mottime;
             if (dt >= 0.01 && dt <= 0.75)
             {
-                motstep = (e.origin - self.ar_motpos) * (0.05 / dt);
+                motstep = (epos - self.ar_motpos) * (0.05 / dt);
                 motmag = vlen (motstep);
                 if (motmag > 40)
                     motstep = normalize (motstep) * 40;
@@ -5099,7 +5317,7 @@ float() Argus_Combat =
             }
             else
                 self.ar_motoff = '0 0 0';
-            self.ar_motpos = e.origin;
+            self.ar_motpos = epos;
             self.ar_mottime = time;
             // Developer calibration only: compare sampled support between the
             // dedicated lab and a played-rate listen server without making
@@ -5142,7 +5360,7 @@ float() Argus_Combat =
     // the error TRIPLES (a floating pair of eyes is a hard thing to
     // put a rocket on), and while sight is currently lost the aim
     // holds the last SEEN position instead of tracking through walls.
-    if (e.invisible_finished > time)
+    if ((self.ar_obspower & 4))
     {
         err = err * 3;
         if (time > self.ar_seen + 0.3)
@@ -5151,10 +5369,10 @@ float() Argus_Combat =
             d = vlen (self.ar_lastseen - self.origin);
         }
         else
-            aimpt = e.origin + '0 0 12' + err;
+            aimpt = epos + '0 0 12' + err;
     }
     else
-        aimpt = e.origin + '0 0 12' + err;
+        aimpt = epos + '0 0 12' + err;
 
     // projectile leading (Shane's review): aim where they will be.
     // Time of flight = dist over projectile speed - rockets and nails
@@ -5174,7 +5392,7 @@ float() Argus_Combat =
     if (flight > 0)
     {
         preaim = aimpt;
-        aimpt = aimpt + e.velocity * flight;
+        aimpt = aimpt + evel * flight;
 
         // AN AIRBORNE TARGET IS NOT TRAVELLING IN A STRAIGHT LINE
         // (#117). The lead above is linear, and a body with nothing
@@ -5194,9 +5412,7 @@ float() Argus_Combat =
         // exempt because neither is falling - a body at waterlevel 2
         // or more is held by the water, and a scrag in co-op is
         // MOVETYPE_FLY.
-        if (!(e.flags & FL_ONGROUND) && e.waterlevel < 2
-            && e.movetype != MOVETYPE_FLY
-            && e.movetype != MOVETYPE_NOCLIP)
+        if (self.ar_obsair)
             aimpt_z = aimpt_z - 0.5 * Argus_Gravity () * flight * flight;
 
         // THE LEAD POINT WAS NEVER CHECKED AGAINST GEOMETRY
@@ -5265,10 +5481,10 @@ float() Argus_Combat =
     // an 800 unit rocket flight is 176 units lower than the straight
     // line says, and the clamp is what turns that into a splash at
     // its feet when it lands instead of a shot into the ground.
-    if ((e.velocity_z < 0 || !(e.flags & FL_ONGROUND))
-        && aimpt_z < e.origin_z)
+    if ((evel_z < 0 || !self.ar_obsground)
+        && aimpt_z < epos_z)
     {
-        traceline (e.origin, e.origin - '0 0 512', TRUE, e);
+        traceline (epos, epos - '0 0 512', TRUE, e);
         if (trace_fraction < 1 && aimpt_z < trace_endpos_z + 12)
             aimpt_z = trace_endpos_z + 12;
     }
@@ -5297,13 +5513,13 @@ float() Argus_Combat =
         loft = (Argus_Gravity () * d * d / 720000) - (d / 3);
         if (loft < 0)
             loft = 0;
-        if (e.origin_z > self.origin_z + 32)
-            loft = loft + (e.origin_z - self.origin_z) * 0.25;
+        if (epos_z > self.origin_z + 32)
+            loft = loft + (epos_z - self.origin_z) * 0.25;
         aimpt_z = aimpt_z + loft;
     }
     else if (self.weapon == IT_ROCKET_LAUNCHER)
     {
-        if ((e.flags & FL_ONGROUND)
+        if (self.ar_obsground
             && self.ar_skill >= AR_SKILL_SPLASH)
         {
             // foot splash (OPM slice A): a grounded target is aimed
@@ -5314,7 +5530,7 @@ float() Argus_Combat =
             // (wild-aim foot rockets at pit edges juggled everyone
             // into the drink, themselves included - the 2026-08-27
             // skill-0 probes ran lava 6-7 per 125 s)
-            aimpt_z = e.origin_z - 16;
+            aimpt_z = epos_z - 16;
 
             // offensive displacement (mre Mastermind, 2026-08-26 -
             // the bot-side version of Shane's own signature move).
@@ -5331,10 +5547,10 @@ float() Argus_Combat =
             // not an ARGEVT, the Rust parser's verb set is closed.
             if (d > 150 && self.ar_skill >= AR_SKILL_DENIAL)
             {
-                shd = e.origin - self.origin;
+                shd = epos - self.origin;
                 shd_z = 0;
                 shd = normalize (shd);
-                shp = e.origin + shd * 80 + '0 0 18';
+                shp = epos + shd * 80 + '0 0 18';
                 traceline (shp, shp - '0 0 280', TRUE, e);
                 // an enemy backed against a wall buries shp in solid,
                 // and a trace that starts solid returns fraction 1 -
@@ -5360,9 +5576,9 @@ float() Argus_Combat =
                 }
             }
         }
-        else if (e.origin_z < self.origin_z - 64)
-            aimpt_z = aimpt_z + (e.origin_z - self.origin_z) * 0.2;
-        else if (e.origin_z > self.origin_z + 64)
+        else if (epos_z < self.origin_z - 64)
+            aimpt_z = aimpt_z + (epos_z - self.origin_z) * 0.2;
+        else if (epos_z > self.origin_z + 64)
             aimpt_z = aimpt_z + 8;
     }
 
@@ -5480,10 +5696,10 @@ float() Argus_Combat =
         if (self.ar_secondary != world)
         {
             primarycover = 0;
-            cvr = e.origin - self.origin;
+            cvr = epos - self.origin;
             cvr_z = 0;
-            if (highmult > 0 && e.origin_z - self.origin_z > 100
-                && vlen (cvr) < (e.origin_z - self.origin_z) * highmult)
+            if (highmult > 0 && epos_z - self.origin_z > 100
+                && vlen (cvr) < (epos_z - self.origin_z) * highmult)
             {
                 baseyaw = vectoyaw ('0 0 0' - cvr)
                           + 35 * self.ar_strafedir;
@@ -5560,10 +5776,10 @@ float() Argus_Combat =
     // back out with a strafe skew instead of circling in. The lava
     // flip below still vetoes a hazardous escape heading, and
     // dodge/retreat keep their higher priority.
-    cvr = e.origin - self.origin;
+    cvr = epos - self.origin;
     cvr_z = 0;
-    if (highmult > 0 && e.origin_z - self.origin_z > 100
-        && vlen (cvr) < (e.origin_z - self.origin_z) * highmult)
+    if (highmult > 0 && epos_z - self.origin_z > 100
+        && vlen (cvr) < (epos_z - self.origin_z) * highmult)
     {
         self.ar_moveyaw = vectoyaw ('0 0 0' - cvr)
                         + 35 * self.ar_strafedir;
@@ -5662,7 +5878,7 @@ float() Argus_Combat =
     {
         // hysteresis: stay out until the stack recovers or the fight
         // is winnable (finish a nearly-dead enemy instead of hiding)
-        if (e.super_damage_finished > time || e.invincible_finished > time)
+        if (Argus_EnemyPowerThreat ())
         {
             if (ceff > 90 || e.health <= 30
                 || self.super_damage_finished > time)
@@ -5679,8 +5895,7 @@ float() Argus_Combat =
         }
     }
     else if ((ceff < retreatin
-              || (ceff < 70 && (e.super_damage_finished > time
-                                || e.invincible_finished > time)))
+              || (ceff < 70 && Argus_EnemyPowerThreat ()))
              && e.health > 30
              && self.super_damage_finished < time
              && self.weapon != IT_AXE
@@ -5705,7 +5920,7 @@ float() Argus_Combat =
             // be hidden from the enemy's eyes. First cover wins; a
             // floor-safe heading with no cover is kept as fallback,
             // and with neither we stand and fight.
-            want = vectoyaw (self.origin - e.origin);
+            want = vectoyaw (self.origin - epos);
 
             // The graph's static cover hop is tried before this fan.
             // Inside the fallback, the way to a live health/armour item
@@ -5751,7 +5966,7 @@ float() Argus_Combat =
                     && !Argus_MoveHazard (cy, 90))
                 {
                     traceline (ctarget.origin + '0 0 22',
-                               e.origin + '0 0 22', TRUE, self);
+                               epos + '0 0 22', TRUE, self);
                     if (trace_fraction < 1)
                     {
                         self.ar_coveryaw = cy;
@@ -5793,7 +6008,7 @@ float() Argus_Combat =
                     }
                     makevectors ('0 0 0' + cy * '0 1 0');
                     cvr = self.origin + v_forward * 128 + '0 0 22';
-                    traceline (cvr, e.origin + '0 0 22', TRUE, self);
+                    traceline (cvr, epos + '0 0 22', TRUE, self);
                     primarycover = (trace_fraction < 1);
                     if (primarycover && cfound < 2)
                     {
@@ -5917,10 +6132,10 @@ float() Argus_Combat =
             // Finishing tagged/weak monsters (<25 hp) and rescuing teammate from melee (<100u) is prioritized.
             if (self.ar_teammate != world && self.ar_teammate.health > 0 && e.health >= 25)
             {
-                if (self.ar_teammate.button0 && vlen (e.origin - self.ar_teammate.origin) < 300
-                    && vlen (e.origin - self.ar_teammate.origin) > 100)
+                if (self.ar_teammate.button0 && vlen (epos - self.ar_teammate.origin) < 300
+                    && vlen (epos - self.ar_teammate.origin) > 100)
                 {
-                    traceline (self.ar_teammate.origin + '0 0 16', e.origin + '0 0 16', TRUE, self.ar_teammate);
+                    traceline (self.ar_teammate.origin + '0 0 16', epos + '0 0 16', TRUE, self.ar_teammate);
                     if (trace_ent == e || trace_fraction == 1)
                     {
                         if (self.ar_killdelay == 0 || time > self.ar_killdelay + 1.0)
@@ -5937,25 +6152,8 @@ float() Argus_Combat =
         self.v_angle = vectoangles (aimpt - (self.origin + '0 0 22'));
         self.v_angle_x = 0 - self.v_angle_x;    // QC pitch convention
         self.v_angle_y = self.angles_y;
-        if (self.ar_tactic)
-        {
-            // Check the actual imperfect shot direction from the RL muzzle,
-            // not just the planner's ideal line. Rockets splash within 160u;
-            // 240u clearance also allows the bot's movement during flight.
-            makevectors (self.v_angle);
-            src = self.origin + '0 0 16';
-            traceline (src, src + v_forward * 240, TRUE, self);
-            if (trace_fraction < 1)
-            {
-                self.button0 = 0;
-                // Give ordinary imperfect aim a bounded settling window.
-                // The exit cannot stand exposed until the whole route's
-                // deadline; prepare already has its own short timeout.
-                if (self.ar_tactic == 4 && time > self.ar_tactic_progress + 0.4)
-                    Argus_TacticAbort ("abort muzzle");
-                return TRUE;
-            }
-        }
+        if (!Argus_MuzzleClear (aimpt))
+            return TRUE;
         // HOLD FIRE THROUGH A TEAM MATE. Not targeting them is not
         // enough: the first e1m2 death was a bot with a monster for an
         // enemy, firing at its last known position during the
@@ -7807,8 +8005,7 @@ void() Argus_CoopThink =
                     self.ar_motprev = '0 0 0';
                 }
                 self.ar_enemy = threat;
-                self.ar_seen = time;
-                self.ar_lastseen = threat.origin;
+                Argus_ObserveEnemy (threat);
                 if (Argus_GoalTopKind () != GOAL_ENGAGE)
                     Argus_GoalPush (GOAL_ENGAGE, threat, threat.origin, 80, time + 6.0, 0);
             }
@@ -7824,8 +8021,7 @@ void() Argus_CoopThink =
                 self.ar_motprev = '0 0 0';
             }
             self.ar_enemy = threat;
-            self.ar_seen = time;
-            self.ar_lastseen = threat.origin;
+            Argus_ObserveEnemy (threat);
             if (Argus_GoalTopKind () != GOAL_ENGAGE)
                 Argus_GoalPush (GOAL_ENGAGE, threat, threat.origin, 80, time + 8.0, 0);
         }
@@ -9915,11 +10111,14 @@ void() Argus_FrameAll =
         if (fraglimit > 0 && self.frags >= fraglimit && !intermission_running)
             NextLevel ();
 
+        Argus_BehaviourCheckedObserve ();
         self = oself;
         b = b.ar_chain;
     }
 
+    Argus_BehaviourFixturePre ();
     Argus_TacticFixtureTick ();
+    Argus_BehaviourFixturePost ();
 
     // human tracks (2026-08-20, Shane: "are you able to see what I
     // do? and where I go?" - until now, no). Real clients get the
@@ -10314,6 +10513,8 @@ void() Argus_RemoveBot =
     Argus_Nav_Abort (b);
     argus_bots = b.ar_chain;
     argus_spawncount = argus_spawncount - 1;
+    Argus_BehaviourRosterReset ();
+    Argus_ObservationRemoved (b);
     remove (b);
     centerprint5 (self, "Argus: Removed ", bname, " [Slot ", ftos (slot), "]");
 };

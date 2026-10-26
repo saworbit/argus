@@ -1,0 +1,37 @@
+{
+  "status": "proposal only; not implemented",
+  "basis": "Existing dm4 A/B recordings only. No new matches, compile, cohorts or deployment.",
+  "problem": "Explosive shots into nearby overhead/corner geometry while fighting on dm4 walkways.",
+  "evidence": [
+    {
+      "clip": "pair2-B-2.webm",
+      "build": "step1a",
+      "seconds": [
+        3.0,
+        3.5,
+        4.5,
+        5.0
+      ],
+      "observation": "Camera HUD changes from TACTICAL to COMBAT; rocket firing is followed by a close explosion against overhead/corner masonry. This does not prove the source of damage or deaths."
+    }
+  ],
+  "source_finding": "Argus_Combat checks actual-shot240u muzzle clearance only under if(self.ar_tactic); ordinary RL combat bypasses that guard. Existing lead-point geometry checks are not the same as checking the final imperfect firing direction.",
+  "one_change": {
+    "file": "src/argus.qc",
+    "function": "Argus_Combat",
+    "location": "Existing actual imperfect shot direction guard after self.v_angle is assigned",
+    "before": "if (self.ar_tactic)",
+    "after": "if (self.ar_tactic || self.weapon == IT_ROCKET_LAUNCHER)",
+    "preserve": "Existing movement calculation and tactical240u/abort rule. Grenades and non-tactical hitscan unchanged. No health/inventory or incoming-projectile perception changes.",
+    "ordinary_probe_limit": "For ordinary RL only, cap clearance at the nearer of240u and the intended aim-point distance, so a wall behind a close opponent does not veto the shot. Leave the existing tactical240u probe unchanged."
+  },
+  "expected_effect": "Hold an unsafe ordinary rocket for a moment while normal movement clears the obstruction; avoid visibly wasteful near-wall impacts and possible self-splash. Impact remains a hypothesis until controlled checks.",
+  "risk": "May defer a useful close-wall splash shot; do not claim gameplay improvement from footage alone.",
+  "minimal_future_verification": [
+    "Controlled ordinary-RL near-corner/overhang case: blocked actual shot holds fire and spends no ammo, movement still proceeds.",
+    "Same case with clear firing direction: ordinary RL still fires normally.",
+    "Close visible target with wall behind it: do not veto solely because the backdrop falls inside240u.",
+    "Existing tactical muzzle veto/abort and a non-RL control remain unchanged."
+  ],
+  "decision": "Keep step1a in development. Step1b and projectile perception stay parked/held. Propose only; no implementation authority assumed."
+}

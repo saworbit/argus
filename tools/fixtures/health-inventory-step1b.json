@@ -1,0 +1,16 @@
+{
+  "status": "parked after bounded inconclusive dm4 triage; no deployment",
+  "parked_functions": {
+    "Argus_Perceive": "0b26cd28631f8eed783c0348aa0716ba935632673beefbc87a724b52ecb4a1bb",
+    "Argus_Combat": "1adaf68f727b69362db994c4093ff0b2e96f86a0c45ce87651688b37b383dcaf",
+    "Argus_Hunch": "4f36f1b2e64a3fad6b4a84533a055a9f4720e376e68458e906221f376121d14a"
+  },
+  "parked_text_sha256": "29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f",
+  "candidate_text_sha256": "359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38",
+  "patch": "health-inventory-step1b.patch",
+  "active_text_sha256": "83bf46a0179c3fcbe33b371c7ef8b850a126c0ec4f469b550533e62373061967",
+  "production_amendments": [
+    "rocket-muzzle-clearance-reverse.patch"
+  ],
+  "amendment_scope": "Ordinary rocket muzzle clearance only; reverse it before checking the unchanged parked step1b definitions."
+}

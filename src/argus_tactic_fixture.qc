@@ -311,6 +311,19 @@ void() Argus_TacticFixture =
     {
         if (cvar ("scratch2") == 12) Argus_TacticFixtureShopChecks ();
         else Argus_TacticFixtureLifeChecks ();
+        // BEGIN lifecycle fixture cleanup
+        // Synthetic world deaths above add shared avoidance and drop packs
+        // AFTER the initial fixture cleanup. Neither is encounter geometry
+        // or earned ammo: clear them before testing the nominal return path.
+        Argus_AvoidClear ();
+        pack = find (world, model, "progs/backpack.mdl");
+        while (pack != world)
+        {
+            nextpack = find (pack, model, "progs/backpack.mdl");
+            Argus_ItemChain_Remove (pack);
+            remove (pack); pack = nextpack;
+        }
+        // END lifecycle fixture cleanup
         setorigin (b, p); b.velocity = '0 0 0';
         b.ar_enemy = ar_tf_target; b.ar_seen = time; b.ar_lastseen = q;
         b.ar_nextai = time + 12;
@@ -407,6 +420,7 @@ void() Argus_TacticFixtureTick =
         {
             saved = self; self = otherbot;
             Argus_TacticReset ();
+            Argus_ObservationReset ();
             self.ar_enemy = world; self.ar_lastfoe = world;
             self.ar_secondary = world; self.ar_mottarget = world;
             self.button0 = 0;

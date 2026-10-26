@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Blind bot comparison</title>
+<style>
+:root{color-scheme:dark;font:16px/1.5 system-ui;background:#11151b;color:#e6eaf0}body{max-width:1100px;margin:32px auto;padding:0 20px}h1{font-size:28px}h2{margin-top:32px}p{max-width:850px;color:#b8c3d0}.cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}.card{background:#1b2330;border:1px solid #354256;border-radius:10px;padding:16px}video{display:block;width:100%;aspect-ratio:4/3;background:#000}button,select,input{font:inherit;border-radius:5px;padding:7px;background:#29374a;color:#fff;border:1px solid #62748b}button{cursor:pointer;margin:10px 8px 0 0}button:hover{background:#3c526e}table{border-collapse:collapse;width:100%;margin-top:18px}th,td{text-align:left;padding:9px;border-bottom:1px solid #354256}input{box-sizing:border-box;width:100%;margin-top:12px}.note{font-size:14px}.status{color:#a7d9c0}label{display:block;margin-top:12px}footer{margin:28px 0}.part{color:#a7d9c0}@media(max-width:750px){.cards{grid-template-columns:1fr}body{margin-top:16px}}
+</style>
+<h1>Which bots feel more human and skilful?</h1>
+<p>Two pairs, about 96 seconds of footage altogether. A/B identities are shuffled independently in each pair. Watch both sides before scoring; the answer key stays separate.</p>
+<p class="note">Same skill, first-person camera and rendering settings. Each side has two consecutive 12-second segments; Play starts both in order. Footage is silent at 10 fps: judge decisions and combat choices, not animation smoothness or sound reactions. These are different matches, so encounters vary. Choose “Not enough evidence” when appropriate. Death may switch the bot being followed.</p>
+<main id="pairs"></main>
+<footer><button id="export">Download ratings</button><button id="save">Save ratings here</button><span id="status" class="status" role="status"></span>
+<p class="note">Ratings stay in this browser until you download and share them. No answer key, telemetry or upload is included. This is a small subjective review, not proof of a skill improvement.</p></footer>
+<script>
+const root=document.getElementById('pairs'),storageKey='argus-blind-perception-v1';
+const scoreOptions='<option value="">Unrated</option><option value="na">Not enough evidence</option>'+[1,2,3,4,5].map(n=>`<option value="${n}">${n}</option>`).join('');
+for(const [pair,map] of [[1,'dm2'],[2,'dm4']]){
+ const section=document.createElement('section');section.innerHTML=`<h2>Pair ${pair} · ${map}</h2><div class="cards">${['A','B'].map(arm=>`<div class="card"><strong>${arm}</strong> <span class="part" id="part-${pair}-${arm}">Segment 1 of 2</span><video id="v-${pair}-${arm}" controls preload="metadata" playsinline></video><button data-pair="${pair}" data-arm="${arm}">Play ${arm} · 24 sec</button></div>`).join('')}</div><table><thead><tr><th>Rate 1 (low) to 5 (high)</th><th>A</th><th>B</th></tr></thead><tbody>${[['human','Believable awareness and decisions'],['skill','Combat competence']].map(([id,label])=>`<tr><td>${label}</td>${['A','B'].map(arm=>`<td><select aria-label="Pair ${pair} ${arm} ${label}" data-rating="${pair}-${arm}-${id}">${scoreOptions}</select></td>`).join('')}</tr>`).join('')}</tbody></table><label>Overall preference <select data-rating="${pair}-preference"><option value="">Unrated</option><option>A</option><option>B</option><option>Tie</option><option>Not enough evidence</option></select></label><label>Confidence <select data-rating="${pair}-confidence"><option value="">Unrated</option><option>Low</option><option>Medium</option><option>High</option></select></label><input aria-label="Pair ${pair} evidence" data-rating="${pair}-evidence" placeholder="One moment that influenced your score (arm, segment, time).">`;root.appendChild(section);
+ for(const arm of ['A','B']){
+  const v=document.getElementById(`v-${pair}-${arm}`);let part=1;
+  const load=n=>{part=n;v.src=`pair${pair}-${arm}-${n}.webm`;document.getElementById(`part-${pair}-${arm}`).textContent=`Segment ${n} of 2`;};load(1);
+  v.addEventListener('play',()=>document.querySelectorAll('video').forEach(other=>{if(other!==v)other.pause();}));
+  v.addEventListener('ended',()=>{if(part===1){load(2);v.play().catch(()=>{});}});
+  section.querySelector(`[data-arm="${arm}"]`).onclick=()=>{document.querySelectorAll('video').forEach(other=>other.pause());load(1);v.play().catch(()=>{});};
+ }
+}
+const fields=[...document.querySelectorAll('[data-rating]')];
+function values(){return Object.fromEntries(fields.map(f=>[f.dataset.rating,f.value]));}
+try{const saved=JSON.parse(localStorage.getItem(storageKey)||'{}');fields.forEach(f=>{if(saved[f.dataset.rating]!==undefined)f.value=saved[f.dataset.rating];});}catch{}
+document.getElementById('save').onclick=()=>{try{localStorage.setItem(storageKey,JSON.stringify(values()));document.getElementById('status').textContent='Saved locally.';}catch{document.getElementById('status').textContent='Local save unavailable; download instead.';}};
+document.getElementById('export').onclick=()=>{const data={review:'blind-perception-v1',recorded_at:new Date().toISOString(),ratings:values()};const url=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='blind-bot-ratings.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);document.getElementById('status').textContent='Ratings downloaded.';};
+</script></html>

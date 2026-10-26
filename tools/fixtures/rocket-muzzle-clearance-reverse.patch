@@ -1,0 +1,53 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -5022,28 +5021,0 @@
+-// Check the final imperfect firing direction, not only the planned aim line.
+-// Ordinary rockets stop at the aim-point distance so a target's backdrop
+-// cannot veto a clear shot. Authored tactics retain their full 240u probe.
+-float(vector aimpt) Argus_MuzzleClear =
+-{
+-    local vector src;
+-    local float reach, targetdist;
+-    if (!self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)
+-        return TRUE;
+-    makevectors (self.v_angle);
+-    src = self.origin + '0 0 16';
+-    reach = 240;
+-    if (!self.ar_tactic)
+-    {
+-        targetdist = vlen (aimpt - src);
+-        if (targetdist < reach) reach = targetdist;
+-    }
+-    traceline (src, src + v_forward * reach, TRUE, self);
+-    if (trace_fraction < 1)
+-    {
+-        self.button0 = 0;
+-        if (self.ar_tactic == 4 && time > self.ar_tactic_progress + 0.4)
+-            Argus_TacticAbort ("abort muzzle");
+-        return FALSE;
+-    }
+-    return TRUE;
+-};
+-
+@@ -6155,2 +6127,19 @@
+-        if (!Argus_MuzzleClear (aimpt))
+-            return TRUE;
++        if (self.ar_tactic)
++        {
++            // Check the actual imperfect shot direction from the RL muzzle,
++            // not just the planner's ideal line. Rockets splash within 160u;
++            // 240u clearance also allows the bot's movement during flight.
++            makevectors (self.v_angle);
++            src = self.origin + '0 0 16';
++            traceline (src, src + v_forward * 240, TRUE, self);
++            if (trace_fraction < 1)
++            {
++                self.button0 = 0;
++                // Give ordinary imperfect aim a bounded settling window.
++                // The exit cannot stand exposed until the whole route's
++                // deadline; prepare already has its own short timeout.
++                if (self.ar_tactic == 4 && time > self.ar_tactic_progress + 0.4)
++                    Argus_TacticAbort ("abort muzzle");
++                return TRUE;
++            }
++        }

@@ -1,0 +1,59 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -4145,2 +4145,2 @@
+-    // choice is utility, not raw distance: near beats far, wounded
+-    // beat healthy, and a quad carrier beats everything, because the
++    // choice uses distance and visible powerup cues. Exact enemy health
++    // is private even in view. A quad carrier remains a priority, because the
+@@ -4201 +4201 @@
+-                if (ok)
++                if (ok && Argus_CanSee (b))
+@@ -4203 +4203,3 @@
+-                    d = (2500 - d) + (100 - b.health) * 3;
++                    // Score only after observation; unseen inventory cannot
++                    // change candidate ordering or visibility/RNG work.
++                    d = 2500 - d;
+@@ -4214,5 +4216,2 @@
+-                        if (Argus_CanSee (b))
+-                        {
+-                            best = b;
+-                            bd = d;
+-                        }
++                        best = b;
++                        bd = d;
+@@ -4617,2 +4616,2 @@
+-    local entity it, best, oself;
+-    local float v, cls, sc, bsc, cool;
++    local entity it, best;
++    local float v, cls, sc, bsc, cool, family;
+@@ -4630 +4629 @@
+-    if (foe == world || foe.health <= 0 || foe.cam_active)
++    if (foe == world || foe.health <= 0 || foe.cam_active || foe.ar_disconnected)
+@@ -4631,0 +4631,3 @@
++    family = AR_THREAT_UNKNOWN;
++    if (self.ar_obsenemy == foe)
++        family = self.ar_threatclass;
+@@ -4644,4 +4646 @@
+-            oself = self;
+-            self = foe;
+-            v = Argus_ItemValue (it, cls);
+-            self = oself;
++            v = Argus_HunchValue (it, cls, family);
+@@ -5851,2 +5850,2 @@
+-        // hysteresis: stay out until the stack recovers or the fight
+-        // is winnable (finish a nearly-dead enemy instead of hiding)
++        // Hysteresis uses our stack and our visible powerup, never an
++        // exact read of the opponent's hidden health.
+@@ -5855 +5854 @@
+-            if (ceff > 90 || e.health <= 30
++            if (ceff > 90
+@@ -5862 +5861 @@
+-        else if (ceff > retreatout || e.health <= 30
++        else if (ceff > retreatout
+@@ -5871 +5869,0 @@
+-             && e.health > 30
+@@ -6104,2 +6102,2 @@
+-            // Finishing tagged/weak monsters (<25 hp) and rescuing teammate from melee (<100u) is prioritized.
+-            if (self.ar_teammate != world && self.ar_teammate.health > 0 && e.health >= 25)
++            // Close-range rescue (<100u) remains; exact monster health is private.
++            if (self.ar_teammate != world && self.ar_teammate.health > 0)

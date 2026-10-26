@@ -28,6 +28,15 @@ def stationary(*, return_hit=False, later_hit=False, third_at=1.4):
 
 
 class TestTacticFixture(unittest.TestCase):
+    def test_hidden_departure_reads_only_independent_samples(self):
+        text = ("TACFIX begin dm2 case 2\nTACFIX target_moved\n"
+                "BHVDBG Carmack memory '0 0 0'\nARGEVT Romero tactic abort sight\n"
+                + sample(0.1).rstrip() + " memory '2433 -183 24'\n"
+                + "TACFIX end frames 60 seconds 6\n")
+        self.assertTrue(check(text)[0]['interrupted'])
+        with self.assertRaisesRegex(AssertionError, 'tracked a hidden departure'):
+            check(text.replace("memory '2433 -183 24'", "memory '2209 -1687 24'"))
+
     def test_unlimited_ammo_uses_actual_projectile_counts(self):
         tape = stationary(return_hit=True)
         import re
@@ -56,6 +65,13 @@ class TestTacticFixture(unittest.TestCase):
 
     def test_actual_return_damage(self):
         self.assertTrue(check(stationary(return_hit=True))[0]["return_damage"])
+
+    def test_hull_control_is_nominal_and_requires_its_own_geometry_proof(self):
+        hull = stationary(return_hit=True).replace('case 0', 'case 13')
+        self.assertTrue(check('TACFIX hull ok\n' + hull)[0]['return_damage'])
+        for bad in (hull, 'TACFIX hull FAILED\n' + hull, 'TACFIX hull ok\n' + hull + hull):
+            with self.assertRaisesRegex(AssertionError, 'asymmetric hull proof'):
+                check(bad)
 
     def test_stationary_dummy_cannot_retain_knockback(self):
         tape = stationary(return_hit=True).replace("state 1\n", "state 1 targetvel '180 0 0'\n")

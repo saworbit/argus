@@ -1,0 +1,1266 @@
+{
+  "status": "implemented in development; no deployment",
+  "scope": "Ordinary final-aim rocket muzzle clearance, step1a retained, step1b parked, incoming-projectile perception held",
+  "production_qc_changes": [
+    "src/argus.qc: new Argus_MuzzleClear and final-combat callsite"
+  ],
+  "source_sha256": "1af58f4eac89c53253b6c3e5a37d24d5d9c4c463b283b392339ebc92a3f23662",
+  "step1b_parked_verified": true,
+  "candidate_fixture_checks": 14,
+  "negative_controls": {
+    "legacy": [
+      "ordinary_wall",
+      "ordinary_overhang"
+    ],
+    "uncapped": [
+      "wall_behind_target"
+    ]
+  },
+  "native_receipts": [
+    {
+      "mode": "production",
+      "name": "muzzle1_production",
+      "compile": {
+        "diagnostics": [],
+        "installed_to": [],
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "new_errors": 0,
+        "new_warnings": 0,
+        "noise_warnings": 0,
+        "ok": true,
+        "progs_bytes": 1096146,
+        "raw_tail": [
+          "including misc.qc",
+          "including monsters/ogre.qc",
+          "including monsters/fiend.qc",
+          "including monsters/shambler.qc",
+          "including monsters/knight.qc",
+          "including monsters/grunt.qc",
+          "including monsters/scrag.qc",
+          "including monsters/rottweiler.qc",
+          "including monsters/zombie.qc",
+          "including monsters/chthon.qc",
+          "including monsters/spawn.qc",
+          "including monsters/hellknight.qc",
+          "including monsters/rotfish.qc",
+          "including monsters/vore.qc",
+          "including monsters/enforcer.qc",
+          "including monsters/shub.qc",
+          "in function T_Damage (line 129),",
+          "combat.qc:135: warning Q302: string s  no references.",
+          "in function q_touch (line 52),",
+          "items.qc:54: warning Q302: float best  no references.",
+          "in function r_touch (line 146),",
+          "items.qc:147: warning Q302: entity stemp  no references.",
+          "items.qc:148: warning Q302: float best  no references.",
+          "in function GotoNextMap (line 187),",
+          "client.qc:188: warning Q302: string newmap  no references.",
+          "in function PutClientInServer (line 634),",
+          "client.qc:636: warning Q302: float axes_only  no references.",
+          "Writing ../lq1/progs.dat",
+          "Compile finished: ../lq1/progs.dat (id format)",
+          "Done. 6 warnings"
+        ],
+        "success_line": "Compile finished: ../lq1/progs.dat (id format)"
+      },
+      "native": {
+        "compare": {
+          "baseline": {
+            "abandons": 0,
+            "acquisitions": 6,
+            "all_frags_positive": true,
+            "avg_speed": 210.40409892291052,
+            "boards": 0,
+            "closest_approach": 21.18962010041707,
+            "confine_max_sec": 10.099999999999994,
+            "confine_note": "Carmack spent 10.1s inside a 220u box at 139 u/s around (764, -792)",
+            "cover": 280,
+            "deaths": 2,
+            "duration_sec": 175.10000000000002,
+            "engages": 5,
+            "frags": 2,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 1,
+            "grabs": 4,
+            "hazards": 16,
+            "kd_spread": 7,
+            "lava_deaths": 0,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 2,
+            "routefails": 0,
+            "stalls": 0,
+            "third_party_deaths": 0,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5065146579804567,
+            "weapons": 2,
+            "world_deaths": 0
+          },
+          "baseline_run": "ab_dm4_deadlink1",
+          "candidate": {
+            "abandons": 0,
+            "acquisitions": 10,
+            "all_frags_positive": false,
+            "avg_speed": 196.59820691731966,
+            "boards": 0,
+            "closest_approach": 66.42921044239499,
+            "confine_max_sec": 6.000000000000001,
+            "confine_note": "Carmack spent 6.0s inside a 220u box at 252 u/s around (-16, -152)",
+            "cover": 44,
+            "deaths": 2,
+            "duration_sec": 10.100000000000001,
+            "engages": 5,
+            "frags": 1,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 1,
+            "grabs": 4,
+            "hazards": 15,
+            "kd_spread": 1,
+            "lava_deaths": 0,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 2,
+            "routefails": 0,
+            "stalls": 0,
+            "third_party_deaths": 1,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.505357142857143,
+            "weapons": 6,
+            "world_deaths": 0
+          },
+          "candidate_flags": [
+            "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+            "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+          ],
+          "findings": [
+            "primary metric pre-registered as stall_parity: only it can convict, the other gates flag. Four gates convict a null 19 per cent of the time against 0 to 12 per cent each (docs/specs/2026-09-16-lab-measurement-limits.md).",
+            "stall_parity: candidate median 0 against a control band of 0 to 4 (control median 0), in band",
+            "stall_parity: no improvement can be demonstrated at 4 control tape(s) - the band's floor is zero. Run repeats.",
+            "stall_parity: IQM 0 to 0, no interval below two tapes a side, P(improve) 0.62; sprt Continue at a bound of 10.6 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "engagements: candidate median 5 against a control band of 0 to 10 (control median 5), in band",
+            "engagements: no improvement can be demonstrated at 4 control tape(s) - the band's floor is zero. Run repeats.",
+            "engagements: IQM 5 to 5, no interval below two tapes a side, P(improve) 0.62; sprt Continue at a bound of 17.9 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "lava_deaths: candidate median 0 against a control band of 0 to 2 (control median 0), in band",
+            "lava_deaths: no improvement can be demonstrated at 4 control tape(s) - the band's floor is zero. Run repeats.",
+            "lava_deaths: IQM 0 to 0, no interval below two tapes a side, P(improve) 0.50; sprt Continue at a bound of 3.0 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "freezes: candidate median 0 against a control band of 0 to 2 (control median 0), in band",
+            "freezes: no improvement can be demonstrated at 4 control tape(s) - the band's floor is zero. Run repeats.",
+            "freezes: IQM 0 to 0, no interval below two tapes a side, P(improve) 0.50; sprt Continue at a bound of 1.2 - neither boundary crossed at 1 tapes a side; run another (cap 10)",
+            "1 candidate tape(s) against 4 control tape(s); the band carries 0.79 of the one-tape null spread"
+          ],
+          "gate_card": "\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 ARGUS A/B QUALITY GATES: dm4 (baseline vs candidate) (scaled) \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Metric                   \u2502 Status \u2502 Delta        \u2502 Verdict  \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Lava/Slime Deaths        \u2502   \ud83d\udfe2   \u2502 0 vs 0       \u2502 PASS     \u2502\n\u2502 Nav Stalls               \u2502   \ud83d\udfe2   \u2502 0 vs 0       \u2502 PASS     \u2502\n\u2502 Weapon Engages           \u2502   \ud83d\udfe2   \u2502 +0.0%        \u2502 PASS     \u2502\n\u2502 Goal Pickups (gl)        \u2502   \ud83d\udfe2   \u2502 +0.0%        \u2502 PASS     \u2502\n\u2502 Frag Spread Balance      \u2502   \ud83d\udd34   \u2502 2 vs 1       \u2502 FAIL     \u2502\n\u2502 K/D Spread Tightness     \u2502   \ud83d\udfe2   \u2502 7 vs 1       \u2502 PASS     \u2502\n\u2502 Freeze Stalls/Statues    \u2502   \ud83d\udfe2   \u2502 0.0s vs 0.0s \u2502 PASS     \u2502\n\u2502 Navigation Coverage      \u2502   \ud83d\udfe2   \u2502 280 vs 44    \u2502 PASS     \u2502\n\u2502 Server tick rate         \u2502   \ud83d\udfe2   \u2502 both listen  \u2502 SAME     \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 OVERALL VERDICT:  \ud83d\udfe2 APPROVED FOR RELEASE (PARITY)          \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n",
+          "gates": [
+            {
+              "a": 0.0,
+              "b": 0.0,
+              "name": "lava_deaths",
+              "note": "lava deaths at parity (contents)",
+              "pass": true
+            },
+            {
+              "a": 0.0,
+              "b": 0.0,
+              "name": "stall_parity",
+              "note": "stalls down 100%",
+              "pass": true
+            },
+            {
+              "a": 5.0,
+              "b": 5.0,
+              "name": "engagements",
+              "note": "engagements at parity",
+              "pass": true
+            },
+            {
+              "a": 2.0,
+              "b": 1.0,
+              "name": "frags_positive",
+              "note": "frag board healthy",
+              "pass": false
+            },
+            {
+              "a": 7.0,
+              "b": 1.0,
+              "name": "kd_spread",
+              "note": "K/D spread tight",
+              "pass": true
+            },
+            {
+              "a": 0.0,
+              "b": 0.0,
+              "name": "freezes",
+              "note": "no statues",
+              "pass": true
+            },
+            {
+              "a": 280.0,
+              "b": 44.0,
+              "name": "coverage",
+              "note": "not gated below 120 s of tape",
+              "pass": true
+            }
+          ],
+          "headline": "Parity: stalls 0 to 0, engages 5 to 5, lava 0 to 0, freezes 0 to 0 (medians, 4 control vs 1 candidate tapes)",
+          "hotspots": [
+            {
+              "count": 3,
+              "kind": "hazard",
+              "nearest_dist": 12.434226956268729,
+              "nearest_node": 12,
+              "x": -89.6,
+              "y": -253.5,
+              "z": -296.0
+            },
+            {
+              "count": 3,
+              "kind": "hazard",
+              "nearest_dist": 36.84901626909462,
+              "nearest_item": "weapon_rocketlauncher",
+              "nearest_item_dist": 180.32650942110536,
+              "nearest_node": 17,
+              "x": -48.9,
+              "y": -59.8,
+              "z": -296.0
+            },
+            {
+              "count": 2,
+              "kind": "hazard",
+              "nearest_dist": 16.546298679765204,
+              "nearest_node": 26,
+              "x": 28.7,
+              "y": -235.3,
+              "z": -296.0
+            }
+          ],
+          "next_steps": [],
+          "primary": "stall_parity",
+          "scale_note": "band counts scaled to the 10s candidate median so the tapes are comparable",
+          "scaled": true,
+          "stats": [
+            {
+              "candidate_iqm": 0.0,
+              "control_iqm": 0.0,
+              "name": "stall_parity",
+              "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+              "prob_improvement": 0.625,
+              "sprt": "continue",
+              "sprt_bound": 10.631267590275398,
+              "sprt_llr": -1.1967579642322486
+            },
+            {
+              "candidate_iqm": 5.0,
+              "control_iqm": 5.0,
+              "name": "engagements",
+              "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+              "prob_improvement": 0.625,
+              "sprt": "continue",
+              "sprt_bound": 17.895967110296915,
+              "sprt_llr": -1.2207338702389197
+            },
+            {
+              "candidate_iqm": 0.0,
+              "control_iqm": 0.0,
+              "name": "lava_deaths",
+              "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+              "prob_improvement": 0.5,
+              "sprt": "continue",
+              "sprt_bound": 3.0121924839113623,
+              "sprt_llr": -1.2558205619560006
+            },
+            {
+              "candidate_iqm": 0.0,
+              "control_iqm": 0.0,
+              "name": "freezes",
+              "note": "neither boundary crossed at 1 tapes a side; run another (cap 10)",
+              "prob_improvement": 0.5,
+              "sprt": "continue",
+              "sprt_bound": 1.2403145521987962,
+              "sprt_llr": -1.2558205619560003
+            }
+          ],
+          "verdict": "parity"
+        },
+        "compile_ok": null,
+        "elapsed_sec": 10,
+        "gate_card": "\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 ARGUS A/B QUALITY GATES: dm4 (baseline vs candidate) (scaled) \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Metric                   \u2502 Status \u2502 Delta        \u2502 Verdict  \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Lava/Slime Deaths        \u2502   \ud83d\udfe2   \u2502 0 vs 0       \u2502 PASS     \u2502\n\u2502 Nav Stalls               \u2502   \ud83d\udfe2   \u2502 0 vs 0       \u2502 PASS     \u2502\n\u2502 Weapon Engages           \u2502   \ud83d\udfe2   \u2502 +0.0%        \u2502 PASS     \u2502\n\u2502 Goal Pickups (gl)        \u2502   \ud83d\udfe2   \u2502 +0.0%        \u2502 PASS     \u2502\n\u2502 Frag Spread Balance      \u2502   \ud83d\udd34   \u2502 2 vs 1       \u2502 FAIL     \u2502\n\u2502 K/D Spread Tightness     \u2502   \ud83d\udfe2   \u2502 7 vs 1       \u2502 PASS     \u2502\n\u2502 Freeze Stalls/Statues    \u2502   \ud83d\udfe2   \u2502 0.0s vs 0.0s \u2502 PASS     \u2502\n\u2502 Navigation Coverage      \u2502   \ud83d\udfe2   \u2502 280 vs 44    \u2502 PASS     \u2502\n\u2502 Server tick rate         \u2502   \ud83d\udfe2   \u2502 both listen  \u2502 SAME     \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 OVERALL VERDICT:  \ud83d\udfe2 APPROVED FOR RELEASE (PARITY)          \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n",
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "log": "C:\\argus\\runs\\muzzle1_production.log",
+        "logs": [
+          "C:\\argus\\runs\\muzzle1_production.log"
+        ],
+        "match": {
+          "bots": [
+            {
+              "deaths": 1,
+              "frags": 0,
+              "goals": 0,
+              "name": "Carmack",
+              "stalls": 0
+            },
+            {
+              "deaths": 1,
+              "frags": 0,
+              "goals": 0,
+              "name": "Joe Rogan",
+              "stalls": 0
+            },
+            {
+              "deaths": 0,
+              "frags": 1,
+              "goals": 1,
+              "name": "Romero",
+              "stalls": 0
+            }
+          ],
+          "flags": [],
+          "goals": {
+            "item_armorInv": 1,
+            "weapon_lightning": 1,
+            "weapon_nailgun": 1,
+            "weapon_rocketlauncher": 3
+          },
+          "headline": "dm4 10s: 1 frags, 2 deaths (0 lava, 1 third-party), 0 stalls, 1 goals, 5 engages, 15 hazards, spread 1",
+          "hotspots": [
+            {
+              "count": 3,
+              "kind": "hazard",
+              "x": -89.6,
+              "y": -253.5,
+              "z": -296.0
+            },
+            {
+              "count": 3,
+              "kind": "hazard",
+              "x": -48.9,
+              "y": -59.8,
+              "z": -296.0
+            },
+            {
+              "count": 2,
+              "kind": "hazard",
+              "x": 28.7,
+              "y": -235.3,
+              "z": -296.0
+            }
+          ],
+          "map": "dm4",
+          "next_steps": [],
+          "totals": {
+            "abandons": 0,
+            "acquisitions": 10,
+            "all_frags_positive": false,
+            "avg_speed": 196.59820691731966,
+            "boards": 0,
+            "closest_approach": 66.42921044239499,
+            "confine_max_sec": 6.000000000000001,
+            "confine_note": "Carmack spent 6.0s inside a 220u box at 252 u/s around (-16, -152)",
+            "cover": 44,
+            "deaths": 2,
+            "duration_sec": 10.100000000000001,
+            "engages": 5,
+            "frags": 1,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 1,
+            "grabs": 4,
+            "hazards": 15,
+            "kd_spread": 1,
+            "lava_deaths": 0,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 2,
+            "routefails": 0,
+            "stalls": 0,
+            "third_party_deaths": 1,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.505357142857143,
+            "weapons": 6,
+            "world_deaths": 0
+          }
+        },
+        "next": null,
+        "ok": true,
+        "repeats": 1
+      },
+      "identity": {
+        "source_sha256": "1af58f4eac89c53253b6c3e5a37d24d5d9c4c463b283b392339ebc92a3f23662",
+        "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+        "binary_sha256": "068f51e80f73fdd02ebc44b1e627c646b5fdc488ecd0d30d8f2d517c0d474bbb",
+        "nav_sha256": "352a467ef38219cc0cf6a8a61be1337a7d89b39db52887163d3fae8758d3e049"
+      },
+      "binary_sha256": "068f51e80f73fdd02ebc44b1e627c646b5fdc488ecd0d30d8f2d517c0d474bbb",
+      "raw_sha256": "6f5e05d6a33e00b23f431a565708107b14c30f74258ae20825f3af39afbd759e",
+      "compiled_source_sha256": "1af58f4eac89c53253b6c3e5a37d24d5d9c4c463b283b392339ebc92a3f23662"
+    },
+    {
+      "mode": "candidate",
+      "name": "muzzle1_candidate",
+      "compile": {
+        "diagnostics": [],
+        "installed_to": [],
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "new_errors": 0,
+        "new_warnings": 0,
+        "noise_warnings": 0,
+        "ok": true,
+        "progs_bytes": 1100890,
+        "raw_tail": [
+          "including misc.qc",
+          "including monsters/ogre.qc",
+          "including monsters/fiend.qc",
+          "including monsters/shambler.qc",
+          "including monsters/knight.qc",
+          "including monsters/grunt.qc",
+          "including monsters/scrag.qc",
+          "including monsters/rottweiler.qc",
+          "including monsters/zombie.qc",
+          "including monsters/chthon.qc",
+          "including monsters/spawn.qc",
+          "including monsters/hellknight.qc",
+          "including monsters/rotfish.qc",
+          "including monsters/vore.qc",
+          "including monsters/enforcer.qc",
+          "including monsters/shub.qc",
+          "in function T_Damage (line 129),",
+          "combat.qc:135: warning Q302: string s  no references.",
+          "in function q_touch (line 52),",
+          "items.qc:54: warning Q302: float best  no references.",
+          "in function r_touch (line 146),",
+          "items.qc:147: warning Q302: entity stemp  no references.",
+          "items.qc:148: warning Q302: float best  no references.",
+          "in function GotoNextMap (line 187),",
+          "client.qc:188: warning Q302: string newmap  no references.",
+          "in function PutClientInServer (line 634),",
+          "client.qc:636: warning Q302: float axes_only  no references.",
+          "Writing ../lq1/progs.dat",
+          "Compile finished: ../lq1/progs.dat (id format)",
+          "Done. 6 warnings"
+        ],
+        "success_line": "Compile finished: ../lq1/progs.dat (id format)"
+      },
+      "native": {
+        "compare": {
+          "baseline": {
+            "abandons": 0,
+            "acquisitions": 96,
+            "all_frags_positive": true,
+            "avg_speed": 197.92825920140277,
+            "boards": 0,
+            "closest_approach": 24.025195108468942,
+            "confine_max_sec": 15.199999999999989,
+            "confine_note": "Joe Rogan spent 15.2s inside a 220u box at 69 u/s around (36, -231)",
+            "cover": 358,
+            "deaths": 24,
+            "duration_sec": 176.8,
+            "engages": 68,
+            "frags": 18,
+            "freeze_max_sec": 10.099999999999994,
+            "freeze_total_sec": 10.099999999999994,
+            "freeze_underfire": 0,
+            "freezes": 1,
+            "goals": 17,
+            "grabs": 61,
+            "hazards": 270,
+            "kd_spread": 4,
+            "lava_deaths": 1,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 23,
+            "routefails": 0,
+            "stalls": 8,
+            "third_party_deaths": 0,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5062305295950161,
+            "weapons": 35,
+            "world_deaths": 1
+          },
+          "baseline_run": "ab_dm4_deadlink1",
+          "candidate": {
+            "abandons": 0,
+            "acquisitions": 2,
+            "all_frags_positive": false,
+            "avg_speed": 212.77007956375815,
+            "boards": 0,
+            "closest_approach": 176.8750123674907,
+            "cover": 51,
+            "deaths": 1,
+            "duration_sec": 10.100000000000001,
+            "engages": 4,
+            "frags": 1,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 1,
+            "grabs": 2,
+            "hazards": 15,
+            "kd_spread": 1,
+            "lava_deaths": 0,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 1,
+            "routefails": 0,
+            "stalls": 0,
+            "third_party_deaths": 0,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5050847457627119,
+            "weapons": 0,
+            "world_deaths": 0
+          },
+          "candidate_flags": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+            "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+            "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+          ],
+          "findings": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands"
+          ],
+          "gate_card": "CONTROLLED FIXTURE: no ordinary gameplay verdict; use the fixture oracle",
+          "gates": [],
+          "headline": "Mixed: controlled fixtures cannot establish ordinary gameplay quality",
+          "hotspots": [
+            {
+              "count": 2,
+              "kind": "hazard",
+              "nearest_dist": 43.657759905886145,
+              "nearest_item": "item_rockets",
+              "nearest_item_dist": 72.8834686331544,
+              "nearest_node": 15,
+              "x": -64.0,
+              "y": 512.0,
+              "z": -296.0
+            },
+            {
+              "count": 2,
+              "kind": "hazard",
+              "nearest_dist": 15.4935470438502,
+              "nearest_node": 88,
+              "x": 577.6,
+              "y": -213.3,
+              "z": -296.0
+            }
+          ],
+          "next_steps": [],
+          "verdict": "mixed"
+        },
+        "compile_ok": null,
+        "elapsed_sec": 10,
+        "gate_card": "CONTROLLED FIXTURE: no ordinary gameplay verdict; use the fixture oracle",
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "log": "C:\\argus\\runs\\muzzle1_candidate.log",
+        "logs": [
+          "C:\\argus\\runs\\muzzle1_candidate.log"
+        ],
+        "match": {
+          "bots": [
+            {
+              "deaths": 0,
+              "frags": 0,
+              "goals": 0,
+              "name": "Carmack",
+              "stalls": 0
+            },
+            {
+              "deaths": 0,
+              "frags": 1,
+              "goals": 1,
+              "name": "Joe Rogan",
+              "stalls": 0
+            },
+            {
+              "deaths": 1,
+              "frags": 0,
+              "goals": 0,
+              "name": "Romero",
+              "stalls": 0
+            }
+          ],
+          "flags": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands"
+          ],
+          "goals": {
+            "item_armorInv": 2,
+            "item_health": 2,
+            "weapon_lightning": 1,
+            "weapon_nailgun": 1,
+            "weapon_rocketlauncher": 4
+          },
+          "headline": "dm4 10s: 1 frags, 1 deaths (0 lava, 0 third-party), 0 stalls, 1 goals, 4 engages, 15 hazards, spread 1. CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+          "hotspots": [
+            {
+              "count": 2,
+              "kind": "hazard",
+              "x": -64.0,
+              "y": 512.0,
+              "z": -296.0
+            },
+            {
+              "count": 2,
+              "kind": "hazard",
+              "x": 577.6,
+              "y": -213.3,
+              "z": -296.0
+            }
+          ],
+          "map": "dm4",
+          "next_steps": [],
+          "tactics": {
+            "tactic_abort": 1,
+            "tactic_abort_muzzle": 1
+          },
+          "totals": {
+            "abandons": 0,
+            "acquisitions": 2,
+            "all_frags_positive": false,
+            "avg_speed": 212.77007956375815,
+            "boards": 0,
+            "closest_approach": 176.8750123674907,
+            "cover": 51,
+            "deaths": 1,
+            "duration_sec": 10.100000000000001,
+            "engages": 4,
+            "frags": 1,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 1,
+            "grabs": 2,
+            "hazards": 15,
+            "kd_spread": 1,
+            "lava_deaths": 0,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 1,
+            "routefails": 0,
+            "stalls": 0,
+            "third_party_deaths": 0,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5050847457627119,
+            "weapons": 0,
+            "world_deaths": 0
+          }
+        },
+        "next": null,
+        "ok": true,
+        "repeats": 1
+      },
+      "identity": {
+        "source_sha256": "1af58f4eac89c53253b6c3e5a37d24d5d9c4c463b283b392339ebc92a3f23662",
+        "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+        "binary_sha256": "bcac7f6f7235851860d82f9fc5e9ffe240cfa8e0af8b95c879e6a1e04448ecbb",
+        "nav_sha256": "352a467ef38219cc0cf6a8a61be1337a7d89b39db52887163d3fae8758d3e049"
+      },
+      "binary_sha256": "bcac7f6f7235851860d82f9fc5e9ffe240cfa8e0af8b95c879e6a1e04448ecbb",
+      "raw_sha256": "7328159abd3eab3f1f34509019ebbe79a68bf13d709014baf47325024a107e11",
+      "failures": [],
+      "compiled_source_sha256": "6bc56447d42ee79a831966654aa2f783ffad9cebf58070a8e385f3676f09f18f"
+    },
+    {
+      "mode": "legacy",
+      "name": "muzzle1_legacy",
+      "compile": {
+        "diagnostics": [],
+        "installed_to": [],
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "new_errors": 0,
+        "new_warnings": 0,
+        "noise_warnings": 0,
+        "ok": true,
+        "progs_bytes": 1100858,
+        "raw_tail": [
+          "including misc.qc",
+          "including monsters/ogre.qc",
+          "including monsters/fiend.qc",
+          "including monsters/shambler.qc",
+          "including monsters/knight.qc",
+          "including monsters/grunt.qc",
+          "including monsters/scrag.qc",
+          "including monsters/rottweiler.qc",
+          "including monsters/zombie.qc",
+          "including monsters/chthon.qc",
+          "including monsters/spawn.qc",
+          "including monsters/hellknight.qc",
+          "including monsters/rotfish.qc",
+          "including monsters/vore.qc",
+          "including monsters/enforcer.qc",
+          "including monsters/shub.qc",
+          "in function T_Damage (line 129),",
+          "combat.qc:135: warning Q302: string s  no references.",
+          "in function q_touch (line 52),",
+          "items.qc:54: warning Q302: float best  no references.",
+          "in function r_touch (line 146),",
+          "items.qc:147: warning Q302: entity stemp  no references.",
+          "items.qc:148: warning Q302: float best  no references.",
+          "in function GotoNextMap (line 187),",
+          "client.qc:188: warning Q302: string newmap  no references.",
+          "in function PutClientInServer (line 634),",
+          "client.qc:636: warning Q302: float axes_only  no references.",
+          "Writing ../lq1/progs.dat",
+          "Compile finished: ../lq1/progs.dat (id format)",
+          "Done. 6 warnings"
+        ],
+        "success_line": "Compile finished: ../lq1/progs.dat (id format)"
+      },
+      "native": {
+        "compare": {
+          "baseline": {
+            "abandons": 0,
+            "acquisitions": 96,
+            "all_frags_positive": true,
+            "avg_speed": 197.92825920140277,
+            "boards": 0,
+            "closest_approach": 24.025195108468942,
+            "confine_max_sec": 15.199999999999989,
+            "confine_note": "Joe Rogan spent 15.2s inside a 220u box at 69 u/s around (36, -231)",
+            "cover": 358,
+            "deaths": 24,
+            "duration_sec": 176.8,
+            "engages": 68,
+            "frags": 18,
+            "freeze_max_sec": 10.099999999999994,
+            "freeze_total_sec": 10.099999999999994,
+            "freeze_underfire": 0,
+            "freezes": 1,
+            "goals": 17,
+            "grabs": 61,
+            "hazards": 270,
+            "kd_spread": 4,
+            "lava_deaths": 1,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 23,
+            "routefails": 0,
+            "stalls": 8,
+            "third_party_deaths": 0,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5062305295950161,
+            "weapons": 35,
+            "world_deaths": 1
+          },
+          "baseline_run": "ab_dm4_deadlink1",
+          "candidate": {
+            "abandons": 0,
+            "acquisitions": 7,
+            "all_frags_positive": false,
+            "avg_speed": 190.75390342841354,
+            "boards": 0,
+            "closest_approach": 131.14396669309647,
+            "cover": 48,
+            "deaths": 2,
+            "duration_sec": 10.100000000000001,
+            "engages": 7,
+            "frags": 1,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 3,
+            "grabs": 5,
+            "hazards": 11,
+            "kd_spread": 1,
+            "lava_deaths": 1,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 1,
+            "routefails": 0,
+            "stalls": 1,
+            "third_party_deaths": 1,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.505357142857143,
+            "weapons": 2,
+            "world_deaths": 1
+          },
+          "candidate_flags": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+            "1 lava/slime death(s) (world killer, hull-0 contents)",
+            "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+            "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+          ],
+          "findings": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands"
+          ],
+          "gate_card": "CONTROLLED FIXTURE: no ordinary gameplay verdict; use the fixture oracle",
+          "gates": [],
+          "headline": "Mixed: controlled fixtures cannot establish ordinary gameplay quality",
+          "hotspots": [
+            {
+              "cause": "lava_edge",
+              "count": 2,
+              "kind": "hazard",
+              "nearest_dist": 40.16976474912443,
+              "nearest_item": "item_shells",
+              "nearest_item_dist": 74.57486171626468,
+              "nearest_node": 134,
+              "x": 331.5,
+              "y": -200.6,
+              "z": -296.0
+            },
+            {
+              "count": 2,
+              "kind": "hazard",
+              "nearest_dist": 54.60036629913761,
+              "nearest_item": "item_armor1",
+              "nearest_item_dist": 39.69886648255843,
+              "nearest_node": 102,
+              "x": 743.6,
+              "y": 73.2,
+              "z": -296.0
+            }
+          ],
+          "next_steps": [],
+          "verdict": "mixed"
+        },
+        "compile_ok": null,
+        "elapsed_sec": 10,
+        "gate_card": "CONTROLLED FIXTURE: no ordinary gameplay verdict; use the fixture oracle",
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "log": "C:\\argus\\runs\\muzzle1_legacy.log",
+        "logs": [
+          "C:\\argus\\runs\\muzzle1_legacy.log"
+        ],
+        "match": {
+          "bots": [
+            {
+              "deaths": 1,
+              "frags": 0,
+              "goals": 0,
+              "name": "Carmack",
+              "stalls": 1
+            },
+            {
+              "deaths": 0,
+              "frags": 1,
+              "goals": 3,
+              "name": "Joe Rogan",
+              "stalls": 0
+            },
+            {
+              "deaths": 1,
+              "frags": 0,
+              "goals": 0,
+              "name": "Romero",
+              "stalls": 0
+            }
+          ],
+          "flags": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+            "1 lava/slime death(s) (world killer, hull-0 contents)"
+          ],
+          "goals": {
+            "backpack": 1,
+            "item_rockets": 1,
+            "weapon_grenadelauncher": 1,
+            "weapon_lightning": 2,
+            "weapon_rocketlauncher": 3
+          },
+          "headline": "dm4 10s: 1 frags, 2 deaths (1 lava, 1 third-party), 1 stalls, 3 goals, 7 engages, 11 hazards, spread 1. CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+          "hotspots": [
+            {
+              "count": 2,
+              "kind": "hazard",
+              "x": 331.5,
+              "y": -200.6,
+              "z": -296.0
+            },
+            {
+              "count": 2,
+              "kind": "hazard",
+              "x": 743.6,
+              "y": 73.2,
+              "z": -296.0
+            }
+          ],
+          "map": "dm4",
+          "next_steps": [],
+          "tactics": {
+            "tactic_abort": 1,
+            "tactic_abort_muzzle": 1
+          },
+          "totals": {
+            "abandons": 0,
+            "acquisitions": 7,
+            "all_frags_positive": false,
+            "avg_speed": 190.75390342841354,
+            "boards": 0,
+            "closest_approach": 131.14396669309647,
+            "cover": 48,
+            "deaths": 2,
+            "duration_sec": 10.100000000000001,
+            "engages": 7,
+            "frags": 1,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 3,
+            "grabs": 5,
+            "hazards": 11,
+            "kd_spread": 1,
+            "lava_deaths": 1,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 1,
+            "routefails": 0,
+            "stalls": 1,
+            "third_party_deaths": 1,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.505357142857143,
+            "weapons": 2,
+            "world_deaths": 1
+          }
+        },
+        "next": null,
+        "ok": true,
+        "repeats": 1
+      },
+      "identity": {
+        "source_sha256": "1af58f4eac89c53253b6c3e5a37d24d5d9c4c463b283b392339ebc92a3f23662",
+        "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+        "binary_sha256": "61364b49a78f4b2b09115fabbdfe05e20ad56d5db0e75efe0d0080ba6005bf86",
+        "nav_sha256": "352a467ef38219cc0cf6a8a61be1337a7d89b39db52887163d3fae8758d3e049"
+      },
+      "binary_sha256": "61364b49a78f4b2b09115fabbdfe05e20ad56d5db0e75efe0d0080ba6005bf86",
+      "raw_sha256": "444be808aa9c5f697f41249179e5bc20cf8441748e77a6b954b29ec5a6873261",
+      "failures": [
+        "ordinary_wall",
+        "ordinary_overhang"
+      ],
+      "compiled_source_sha256": "37a0d9387a094ffa45cf8e7db8e95477eca20eb72fb0aeeeab680987387b7a18"
+    },
+    {
+      "mode": "uncapped",
+      "name": "muzzle1_uncapped",
+      "compile": {
+        "diagnostics": [],
+        "installed_to": [],
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "new_errors": 0,
+        "new_warnings": 0,
+        "noise_warnings": 0,
+        "ok": true,
+        "progs_bytes": 1100874,
+        "raw_tail": [
+          "including misc.qc",
+          "including monsters/ogre.qc",
+          "including monsters/fiend.qc",
+          "including monsters/shambler.qc",
+          "including monsters/knight.qc",
+          "including monsters/grunt.qc",
+          "including monsters/scrag.qc",
+          "including monsters/rottweiler.qc",
+          "including monsters/zombie.qc",
+          "including monsters/chthon.qc",
+          "including monsters/spawn.qc",
+          "including monsters/hellknight.qc",
+          "including monsters/rotfish.qc",
+          "including monsters/vore.qc",
+          "including monsters/enforcer.qc",
+          "including monsters/shub.qc",
+          "in function T_Damage (line 129),",
+          "combat.qc:135: warning Q302: string s  no references.",
+          "in function q_touch (line 52),",
+          "items.qc:54: warning Q302: float best  no references.",
+          "in function r_touch (line 146),",
+          "items.qc:147: warning Q302: entity stemp  no references.",
+          "items.qc:148: warning Q302: float best  no references.",
+          "in function GotoNextMap (line 187),",
+          "client.qc:188: warning Q302: string newmap  no references.",
+          "in function PutClientInServer (line 634),",
+          "client.qc:636: warning Q302: float axes_only  no references.",
+          "Writing ../lq1/progs.dat",
+          "Compile finished: ../lq1/progs.dat (id format)",
+          "Done. 6 warnings"
+        ],
+        "success_line": "Compile finished: ../lq1/progs.dat (id format)"
+      },
+      "native": {
+        "compare": {
+          "baseline": {
+            "abandons": 0,
+            "acquisitions": 96,
+            "all_frags_positive": true,
+            "avg_speed": 197.92825920140277,
+            "boards": 0,
+            "closest_approach": 24.025195108468942,
+            "confine_max_sec": 15.199999999999989,
+            "confine_note": "Joe Rogan spent 15.2s inside a 220u box at 69 u/s around (36, -231)",
+            "cover": 358,
+            "deaths": 24,
+            "duration_sec": 176.8,
+            "engages": 68,
+            "frags": 18,
+            "freeze_max_sec": 10.099999999999994,
+            "freeze_total_sec": 10.099999999999994,
+            "freeze_underfire": 0,
+            "freezes": 1,
+            "goals": 17,
+            "grabs": 61,
+            "hazards": 270,
+            "kd_spread": 4,
+            "lava_deaths": 1,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 23,
+            "routefails": 0,
+            "stalls": 8,
+            "third_party_deaths": 0,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5062305295950161,
+            "weapons": 35,
+            "world_deaths": 1
+          },
+          "baseline_run": "ab_dm4_deadlink1",
+          "candidate": {
+            "abandons": 0,
+            "acquisitions": 8,
+            "all_frags_positive": false,
+            "avg_speed": 195.67097083103377,
+            "boards": 0,
+            "closest_approach": 72.21087175765157,
+            "cover": 46,
+            "deaths": 2,
+            "duration_sec": 10.100000000000001,
+            "engages": 5,
+            "frags": 2,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 1,
+            "grabs": 3,
+            "hazards": 11,
+            "kd_spread": 2,
+            "lava_deaths": 0,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 2,
+            "routefails": 0,
+            "stalls": 0,
+            "third_party_deaths": 1,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5054545454545455,
+            "weapons": 5,
+            "world_deaths": 0
+          },
+          "candidate_flags": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+            "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+            "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+          ],
+          "findings": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands"
+          ],
+          "gate_card": "CONTROLLED FIXTURE: no ordinary gameplay verdict; use the fixture oracle",
+          "gates": [],
+          "headline": "Mixed: controlled fixtures cannot establish ordinary gameplay quality",
+          "hotspots": [
+            {
+              "count": 2,
+              "kind": "hazard",
+              "nearest_dist": 21.986586820150148,
+              "nearest_item": "weapon_lightning",
+              "nearest_item_dist": 190.86228019176548,
+              "nearest_node": 88,
+              "x": 588.4,
+              "y": -236.5,
+              "z": -296.0
+            }
+          ],
+          "next_steps": [],
+          "verdict": "mixed"
+        },
+        "compile_ok": null,
+        "elapsed_sec": 10,
+        "gate_card": "CONTROLLED FIXTURE: no ordinary gameplay verdict; use the fixture oracle",
+        "lab_identity": {
+          "authoritative": true,
+          "build_source": "fnv1a64:8160459b29e431d6",
+          "checkout_source": "fnv1a64:8160459b29e431d6",
+          "checkout_version": "0.30.0",
+          "running_version": "0.30.0"
+        },
+        "log": "C:\\argus\\runs\\muzzle1_uncapped.log",
+        "logs": [
+          "C:\\argus\\runs\\muzzle1_uncapped.log"
+        ],
+        "match": {
+          "bots": [
+            {
+              "deaths": 1,
+              "frags": 0,
+              "goals": 0,
+              "name": "Carmack",
+              "stalls": 0
+            },
+            {
+              "deaths": 0,
+              "frags": 2,
+              "goals": 1,
+              "name": "Joe Rogan",
+              "stalls": 0
+            },
+            {
+              "deaths": 1,
+              "frags": 0,
+              "goals": 0,
+              "name": "Romero",
+              "stalls": 0
+            }
+          ],
+          "flags": [
+            "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands"
+          ],
+          "goals": {
+            "item_armor1": 1,
+            "weapon_grenadelauncher": 1,
+            "weapon_lightning": 3,
+            "weapon_nailgun": 1,
+            "weapon_rocketlauncher": 2
+          },
+          "headline": "dm4 10s: 2 frags, 2 deaths (0 lava, 1 third-party), 0 stalls, 1 goals, 5 engages, 11 hazards, spread 2. CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+          "hotspots": [
+            {
+              "count": 2,
+              "kind": "hazard",
+              "x": 588.4,
+              "y": -236.5,
+              "z": -296.0
+            }
+          ],
+          "map": "dm4",
+          "next_steps": [],
+          "tactics": {
+            "tactic_abort": 1,
+            "tactic_abort_muzzle": 1
+          },
+          "totals": {
+            "abandons": 0,
+            "acquisitions": 8,
+            "all_frags_positive": false,
+            "avg_speed": 195.67097083103377,
+            "boards": 0,
+            "closest_approach": 72.21087175765157,
+            "cover": 46,
+            "deaths": 2,
+            "duration_sec": 10.100000000000001,
+            "engages": 5,
+            "frags": 2,
+            "freeze_max_sec": 0.0,
+            "freeze_underfire": 0,
+            "freezes": 0,
+            "goals": 1,
+            "grabs": 3,
+            "hazards": 11,
+            "kd_spread": 2,
+            "lava_deaths": 0,
+            "lava_rule": "contents",
+            "mover_waits": 0,
+            "player_kills": 2,
+            "routefails": 0,
+            "stalls": 0,
+            "third_party_deaths": 1,
+            "tick_class": "listen",
+            "tick_gap_mean": 0.5054545454545455,
+            "weapons": 5,
+            "world_deaths": 0
+          }
+        },
+        "next": null,
+        "ok": true,
+        "repeats": 1
+      },
+      "identity": {
+        "source_sha256": "1af58f4eac89c53253b6c3e5a37d24d5d9c4c463b283b392339ebc92a3f23662",
+        "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+        "binary_sha256": "1834ac2593b6fdde6e76953c2bb5ad4bd2fbb91e9dec3ee03bac3916a2f38a6a",
+        "nav_sha256": "352a467ef38219cc0cf6a8a61be1337a7d89b39db52887163d3fae8758d3e049"
+      },
+      "binary_sha256": "1834ac2593b6fdde6e76953c2bb5ad4bd2fbb91e9dec3ee03bac3916a2f38a6a",
+      "raw_sha256": "ba33d6f7021c3ab5550163c0d96db9ecd95c7d5b0226bec3e48ea8f7357bc271",
+      "failures": [
+        "wall_behind_target"
+      ],
+      "compiled_source_sha256": "d3ad1e6641611280531e2dd4e0ebfb67bc1e4105b77f25ab34421268417fa369"
+    }
+  ],
+  "focused_tests": {
+    "muzzle": 2,
+    "perception": 21,
+    "tactical": 18,
+    "total": 41,
+    "passed": true
+  },
+  "repository_checks": {
+    "ship": "pass",
+    "eol": "pass",
+    "tapes": "pass",
+    "nav": "pass",
+    "diff_check": "pass"
+  },
+  "restored_binaries": {
+    "game\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "engine\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "lq1\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  },
+  "engine_processes": [],
+  "deployment": false,
+  "cohorts": 0,
+  "limits": [
+    "Four10s native runs: one production smoke, candidate and two deliberate mutants. Not a gameplay cohort.",
+    "Fixtures use independently proven real dm4 BSP rays and call the shared production gate followed by stock W_Attack. They check emission/ammo, movement requests, tactical state and cleanup; they do not run the entire combat AI.",
+    "No improvement, fun, parity or death-causality claim.",
+    "The earlier speculative-prefire branch already has its exact full muzzle line; it is unchanged."
+  ],
+  "verification_code_sha256": {
+    "tools/verify_muzzle_clearance.py": "a0cf32578498b496528bd2162ffda9689001fc4f03f2789e4913ce9bb5995248",
+    "tools/check_muzzle_fixture.py": "64807f2627f28bdea0681f3454b2002f3e94634e5bad20c2829b32f56c2fd373",
+    "tools/test_muzzle_fixture.py": "32d8825656c1f3e8514aa6d9bb854d8b953d1ac28e8678aa8439110f34f370e3",
+    "tools/fixtures/muzzle_clearance.qc": "07bd91429d98d70ea36ff1cb077a39f4c895f7afed7d4936939d38ddca0bfc60",
+    "tools/health_inventory_parked.py": "be07cddb50d6cf4e6cbc2e049e0ace72ea612f16d0305e1706d94c03aef70cb0",
+    "tools/fixtures/health-inventory-step1b.json": "cdfb6d53163e5ad7d250677275da33051914ca699f5d2e89ebc338e1ae22a626",
+    "tools/fixtures/rocket-muzzle-clearance-reverse.patch": "b22627923b5537a2d62b98c59173d8bed4aefb0c424f6c7e507ab02631cda966"
+  }
+}

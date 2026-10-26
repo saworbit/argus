@@ -636,6 +636,19 @@ proof of hits.
 
 ## Fixed navigation benchmark
 
+For passive `BHVDBG` snapshots and the isolated on/off observer fixture, see
+[behaviour diagnostics](../../docs/behaviour-diagnostics.md).
+`argus-mcp behaviour-suite --help` documents the acknowledged suite driver.
+It reuses TACFIX in an owned disposable match and does not attach to human play.
+
+The private ordinary-rocket verifier additionally emits `MFIX`, with
+`BHVRPL begin` marking the entire run as a controlled fixture. This adds no
+MCP argument, console switch or gameplay metric. Its gate/stock-fire harness
+and two negative controls are described in the
+[muzzle-clearance contract](../../docs/behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance).
+For no-install build/staging precautions and local test commands, use the
+[focused-check runbook](../../docs/lab-workflow.md#focused-checks-without-deployment).
+
 The benchmark is the low-variance complement to free-running matches. It
 places one real Argus bot at a declared nav coordinate, assigns a synthetic
 goal, and observes completion through the NetQuake puppet. The other bots are
@@ -1110,6 +1123,15 @@ performs real rendering; its current contract is under
 [rendered POV evidence](#rendered-pov-evidence).
 
 ## Asking the corpus a question
+
+Ordinary queries default to `kind=bot`, including hotspot-cell queries.
+Activated TACFIX/BHVFIX encounters and deterministic-input replays are
+`kind=fixture`; use that kind explicitly to inspect them. Human and fixture
+tapes cannot enter ordinary bot aggregates. Native quality comparisons also
+refuse controlled fixtures, including when durations are scaled. This changes
+analysis context, not the numeric ARGLOG/ARGEVT definitions. Cache rows now
+carry a context schema; an old cache is ignored until rebuilt with
+`argus-mcp corpus --rebuild --write` so stale labels cannot reintroduce fixtures.
 
 Everything else in the lab is per run: brief one tape, compare two,
 band a handful. `corpus` asks the whole thing at once, and returns

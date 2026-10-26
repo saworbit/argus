@@ -634,6 +634,8 @@ void() PutClientInServer =
 {
 	local	entity spot;
 	local	float  axes_only;
+	// A new life in the same client edict invalidates bot visual memory.
+	Argus_ObservationRemoved (self);
 
 	self.classname = "player";
 	self.health = 100;
@@ -1563,6 +1565,7 @@ void() ClientDisconnect =
 	// would keep counting someone who left and the exit guard would
 	// refuse forever.
 	self.ar_disconnected = 1;
+	Argus_ObservationRemoved (self);
 };
 
 /*===========

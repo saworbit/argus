@@ -11,6 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
+| Development source | Step 1a and ordinary rocket clearance retained; step 1b parked; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -24,36 +25,19 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
-- Escape protocol and map filename placeholders in Rust documentation (#579).
+#### Added
 
-- Bound FFmpeg preflight pipe I/O and use a built-in PNG instead of lavfi
-  to verify VP9 before capture (#577, #578).
+- Add private ordinary-rocket clearance checks using real BSP geometry and
+  stock firing: 14 checks, with legacy and uncapped negative controls. See
+  [the verification contract](docs/behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance).
 
-- Clarify staged MCP reconnects, capture provenance fields and current VP9
-  preflight prerequisites and pipe timeout limits (#577, #578).
-
-- Update the lab's locked Tokio dependency to 1.53.3 (#575).
+- Add opt-in passive behaviour diagnostics and an acknowledged isolated
+  observer suite. Step 0 alone preserves perception and tactical decisions. See
+  [the diagnostic contract](docs/behaviour-diagnostics.md).
 
 - Record staged asset digests and FFmpeg build/settings in capture manifests,
   isolate staged bytes and reject changed inputs (#572). Check VP9 encoding
   before rendering or creating capture output (#573).
-
-- Document the video CLI in the recording guides and tool index, explain its
-  playback units and public result fields, and state the current asset-identity
-  (#572) and encoder-preflight (#573) limits.
-
-- Keep capture acknowledgements out of rendered frames while preserving the
-  console log (#567). Stage mod PAKs with their original search precedence
-  (#569). Export bounded POV clips with explicit playback speed and verified
-  decoded frame order/timing; FFmpeg remains optional for PNG capture (#568).
-
-- Synchronize tactical diagnostics, rendered POV limits, camera behaviour and
-  blocking Python CI documentation. Track capture notification leakage (#567),
-  bounded video export (#568) and missing mod PAK staging (#569).
-
-- Hide the tracked bot from its own POV by selecting its protocol view
-  entity. Hide the observer body while active and restore its render index
-  and view entity on camera exit (#565).
 
 - Replace the parked POV capture with bounded real-engine PNGs, record
   acknowledged bot POVs and fixture opponent-eye demos, and retain visual
@@ -66,6 +50,116 @@ passing botmatch does not establish better human play.
 - Cover failed-life avoidance after GOAP weapon substitution, repeated picks,
   typed-hop cancellation and both shared-queue ownership paths in the real
   engine on dm4 and dm2 (#530).
+
+#### Changed
+
+- Retain perception step 1a in development; park health/inventory step 1b
+  after a bounded dm4 investigation could not isolate its regression warning.
+  Preserve the candidate as a patch; incoming-projectile perception stays on
+  hold. [Current status](docs/behaviour-diagnostics.md#current-development-status).
+
+- Record a short blind step 1a/shipped comparison with fixed viewing windows
+  and pre-reveal scores. The low-confidence results show no demonstrated
+  skill gain; retain step 1a for fair information use and prior checks.
+  [Review and limits](docs/behaviour-diagnostics.md#blind-comparison-of-step-1a-and-shipped-matches).
+
+- Complete a separate pre-registered dm2 lava-death holdout: 256 pairs,
+  512 valid matches, with two timing-invalid attempts retained under technical
+  amendments. Control/candidate lava deaths are 48/50; the registered
+  +0.10/minute non-inferiority rule passes, including both rejected-attempt
+  sensitivities. The earlier increase is consistent with sampling noise.
+  Preserve all timing disruptions and limits. No QC changes or deployment;
+  health/inventory and projectile perception remain on hold. See
+  [the protocol](docs/perception-lava-cohort-protocol.json) and
+  [results](docs/behaviour-diagnostics.md#separate-dm2-lava-holdout-2026-10-25-complete).
+
+- Complete a frozen 128-pair dm2 engagement holdout with unchanged step1a
+  and control binaries: 256 valid real-time matches, no exclusions or interim
+  decisions. Engagement-rate practical equivalence passes the registered
+  +/-2/minute margin; the earlier sharp drop is consistent with noise.
+  Retain an exploratory increase in lava deaths (20 to 45) for separate
+  validation. No deployment or further perception changes. See
+  [the protocol](docs/perception-engagement-cohort-protocol.json) and
+  [results and limits](docs/behaviour-diagnostics.md#larger-dm2-engagement-holdout-2026-10-25-complete).
+
+- Implement perception step 1a in source: ordinary combat uses cached visual
+  position, velocity, movement and powerup cues, with bounded prediction.
+  Unseen damage cannot create a sighting; target reuse clears observations.
+  Preserve weapon-callback trace results around the new visibility check.
+  The final candidate passes 320 directed engine checks; restoring the old
+  combat/pain bodies fails all four positive-control cases. Enemy-health,
+  hidden-inventory and projectile-recognition changes remain deferred. See
+  [the contract and validation](docs/behaviour-diagnostics.md#perception-step-1a).
+  Shipped binaries remain unchanged.
+
+- Complete a larger pre-registered real-time diagnostic cohort: 128 on/off
+  pairs per map, 512 valid matches, with unchanged +/-2 goals/minute bounds.
+  Goal-rate and mean-frame equivalence pass on dm2 and dm4, including a
+  retained first-attempt sensitivity after one exposure-invalid match.
+  Diagnostics add about 6 CPU ms per wall second; the earlier goal deficit is
+  consistent with sampling noise. This completed step 0 before the user
+  resumed perception implementation. See
+  [the protocol](docs/behaviour-goal-cohort-protocol.json) and
+  [the results](docs/behaviour-equivalence-results.md).
+
+- Clarify staged MCP reconnects, capture provenance fields and current VP9
+  preflight prerequisites and pipe timeout limits (#577, #578).
+
+- Update the lab's locked Tokio dependency to 1.53.3 (#575).
+
+- Document the video CLI in the recording guides and tool index, explain its
+  playback units and public result fields, and state the current asset-identity
+  (#572) and encoder-preflight (#573) limits.
+
+- Synchronize tactical diagnostics, rendered POV limits, camera behaviour and
+  blocking Python CI documentation. Track capture notification leakage (#567),
+  bounded video export (#568) and missing mod PAK staging (#569).
+
+- Require the tested rmcp 3.5.1 minimum (#534), explain dashboard subscription
+  refreshes in the resource description (#536), and make probe enforce build
+  authority and the shared compile deadline (#546).
+
+- Run the Python navigation, tape and playability suites as blocking CI steps
+  (#525). Pin LibreQuake asset checksums and include them in the cache key
+  (#554). Enable private vulnerability reporting and Dependabot alerts (#553).
+
+- Share tape sample, map, event, death and role readers across Python tools
+  (#542, #543, #544). Preserve spaced names in pointfile events, exclude lab
+  instruments from human trails, and align Rust's repeated whitespace handling
+  with Python (#538).
+
+#### Fixed
+
+- Run muzzle-clearance and local review-output contracts in fast CI. Keep
+  generated review media and frozen local study tapes out of Git staging,
+  retaining tape checksums separately (#585, #587).
+
+- Check the actual ordinary rocket firing direction against nearby geometry,
+  capped at aim-point distance so an opponent's backdrop does not veto a
+  clear shot. Preserve movement, other weapons and the tactical 240-unit
+  probe/abort rule. This is a development-source change; supplied binaries
+  remain unchanged. [Evidence](runs/muzzle1_clearance.results.json).
+
+- Investigate diagnostic overhead with fixed-input original-source controls;
+  batch snapshot output, retain frame-time precision, fix rounded-timestamp
+  validation and synthetic lifecycle-fixture residue, and quarantine controlled
+  tapes from ordinary match bands. Controlled equivalence passed; the initial
+  real-time goal-rate cohort was inconclusive. See
+  [the evidence and limits](docs/behaviour-equivalence-results.md).
+
+- Escape protocol and map filename placeholders in Rust documentation (#579).
+
+- Bound FFmpeg preflight pipe I/O and use a built-in PNG instead of lavfi
+  to verify VP9 before capture (#577, #578).
+
+- Keep capture acknowledgements out of rendered frames while preserving the
+  console log (#567). Stage mod PAKs with their original search precedence
+  (#569). Export bounded POV clips with explicit playback speed and verified
+  decoded frame order/timing; FFmpeg remains optional for PNG capture (#568).
+
+- Hide the tracked bot from its own POV by selecting its protocol view
+  entity. Hide the observer body while active and restore its render index
+  and view entity on camera exit (#565).
 
 - Sequence tactical trials with console and engine acknowledgements, unique
   IDs and bounded cleanup (#516). Observe real owned rockets independently
@@ -81,25 +175,14 @@ passing botmatch does not establish better human play.
 - Build cartograph overlays with the nav reader and report malformed graphs
   instead of drawing partial links. Share the walkable step height (#545).
 
-- Check the local wizard Host header on GET requests as well as POST, so
-  a DNS-rebinding page cannot read local paths or map data (#551).
-
-- Require the tested rmcp 3.5.1 minimum (#534), explain dashboard subscription
-  refreshes in the resource description (#536), and make probe enforce build
-  authority and the shared compile deadline (#546).
-
-- Run the Python navigation, tape and playability suites as blocking CI steps
-  (#525). Pin LibreQuake asset checksums and include them in the cache key
-  (#554). Enable private vulnerability reporting and Dependabot alerts (#553).
-
 - Preserve quoted strings while checking navigation registration in Rust and
   Python (#523), reject noninteger graph endpoints (#524), and refuse custom
   QC filenames with `--register` before any files change (#537).
 
-- Share tape sample, map, event, death and role readers across Python tools
-  (#542, #543, #544). Preserve spaced names in pointfile events, exclude lab
-  instruments from human trails, and align Rust's repeated whitespace handling
-  with Python (#538).
+#### Security
+
+- Check the local wizard Host header on GET requests as well as POST, so
+  a DNS-rebinding page cannot read local paths or map data (#551).
 
 - Require separate server-console keys for A/B snapshots and probe teleports;
   consume the A/B key after use. Update both lab callers and add a real-engine

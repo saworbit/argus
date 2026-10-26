@@ -65,6 +65,26 @@ track. Use the console tape for full-map event counts and quality gates.
 
 ## Log records and their meaning
 
+Optional `BHVDBG` snapshots and isolated `BHVFIX` trials have a separate
+[behaviour diagnostics contract](behaviour-diagnostics.md). They do not
+change the ordinary ARGLOG/ARGEVT metric grammar. `BHVTIME` reports independent
+cadence windows. Activated `BHVFIX begin`, `TACFIX begin` and `BHVRPL begin`
+mark controlled fixtures: native briefs label them and ordinary quality
+comparisons refuse them. Passive snapshots alone do not mark a fixture.
+
+`PERFIX` and `HIFIX` report private observation and health/inventory checks.
+`MFIX` reports the private muzzle-clearance fixture: three BSP premises,
+ten firing/control scenarios and cleanup, followed by its checked total.
+These tapes emit `BHVRPL begin` before ordinary play, so they remain excluded
+from bot bands. `MFIX` has no production console switch or public impulse.
+Parse it with `tools/check_muzzle_fixture.py` as a Python module; it is not
+an ARGLOG metric and the module does not expose a command-line parser.
+
+Blind-review ratings are subjective evidence, separate from native match
+metrics. Keep build identity in a separate key until scoring is complete.
+The camera client can appear under `totals.human`; it is an instrument, not
+a bot whose performance should enter comparison bands.
+
 ```text
 ARGLOG <name> t <time> pos '<x y z>' spd <speed> yaw <degrees> mode <mode>
        st <stalls> gl <goals> hp <health> frg <frags>

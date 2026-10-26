@@ -39,6 +39,7 @@ use std::path::{Path, PathBuf};
 pub const INDEX_FILE: &str = "tape_index.tsv";
 /// One row per hotspot cell, for the cell-level questions.
 pub const CELLS_FILE: &str = "tape_cells.tsv";
+const CONTEXT_SCHEMA: &str = "fixtures-v1";
 
 /// One tape, flattened. Every field is a number or a short string, so
 /// the whole corpus is a table and a question about it is a filter and
@@ -53,8 +54,7 @@ pub struct TapeRow {
     /// and would flatten the whole time axis this exists to provide.
     pub started: String,
     pub tick_class: String,
-    /// `bot` or `human`: a human tape is review-only and must never be
-    /// averaged into a bot band.
+    /// `bot`, `human`, or `fixture`. Only ordinary bots enter bot bands.
     pub kind: String,
     pub duration_sec: f64,
     pub stalls: f64,
@@ -193,7 +193,9 @@ pub fn started_of(path: &Path) -> String {
 /// `shane_<map>_<date>` and has since it was written, which is
 /// the only signal those tapes carry.
 fn kind_of(run: &str, b: &MatchBrief) -> String {
-    if b.totals.human.is_some() || run.starts_with("shane_") {
+    if crate::intel::is_controlled_fixture(b) {
+        "fixture".into()
+    } else if b.totals.human.is_some() || run.starts_with("shane_") {
         "human".into()
     } else {
         "bot".into()
@@ -270,6 +272,10 @@ fn read_tsv(path: &Path) -> Vec<TapeRow> {
         return Vec::new();
     };
     let cols: Vec<&str> = header.split('\t').collect();
+    // Old cached bot/human labels predate controlled-fixture classification.
+    if !cols.contains(&"context_schema") {
+        return Vec::new();
+    }
     let mut out = Vec::new();
     for line in lines {
         if line.trim().is_empty() {
@@ -283,6 +289,9 @@ fn read_tsv(path: &Path) -> Vec<TapeRow> {
                 .unwrap_or("")
         };
         let num = |name: &str| -> f64 { get(name).parse().unwrap_or(0.0) };
+        if get("context_schema") != CONTEXT_SCHEMA {
+            continue;
+        }
         let run = get("run").to_string();
         if run.is_empty() {
             continue;
@@ -383,17 +392,13 @@ pub fn cells(runs_dir: &Path, map: Option<&str>) -> Vec<CellRow> {
             }
         }
         let started = started_of(&path);
-        let kind = if b.totals.human.is_some() {
-            "human"
-        } else {
-            "bot"
-        };
+        let kind = kind_of(&run, &b);
         for h in &b.hotspots {
             out.push(CellRow {
                 run: run.clone(),
                 map: m.clone(),
                 started: started.clone(),
-                kind: kind.into(),
+                kind: kind.clone(),
                 x: h.x,
                 y: h.y,
                 z: h.z,
@@ -409,9 +414,11 @@ pub fn write_index(runs_dir: &Path, rows: &[TapeRow]) -> std::io::Result<PathBuf
     let p = runs_dir.join(INDEX_FILE);
     let mut s = String::new();
     s.push_str(&COLUMNS.join("\t"));
-    s.push_str("\tavg_speed\n");
+    s.push_str("\tavg_speed\tcontext_schema\n");
     for r in rows {
         s.push_str(&r.to_tsv());
+        s.push('\t');
+        s.push_str(CONTEXT_SCHEMA);
         s.push('\n');
     }
     std::fs::write(&p, s)?;
@@ -450,7 +457,7 @@ impl Query {
                 .unwrap_or(true)
         };
         eq(&self.map, &r.map)
-            && eq(&self.kind, &r.kind)
+            && self.kind.as_deref().unwrap_or("bot").eq_ignore_ascii_case(&r.kind)
             && eq(&self.tick_class, &r.tick_class)
             && self
                 .run_like
@@ -600,6 +607,37 @@ pub fn to_csv(a: &Answer) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fixtures_and_humans_require_explicit_review_queries() {
+        let mut brief = MatchBrief::empty();
+        brief
+            .flags
+            .push(crate::intel::CONTROLLED_FIXTURE_FLAG.into());
+        assert_eq!(kind_of("named_arbitrarily", &brief), "fixture");
+        assert_eq!(kind_of("shane_fixture", &brief), "fixture");
+        brief.flags.clear();
+        assert_eq!(kind_of("shane_old", &brief), "human");
+        let mut row = mk("fixture", "dm4", "", 0.0);
+        row.kind = "fixture".into();
+        assert!(!Query::default().keeps(&row));
+        assert!(Query {
+            kind: Some("fixture".into()),
+            ..Default::default()
+        }
+        .keeps(&row));
+        row.kind = "human".into();
+        assert!(!Query::default().keeps(&row));
+    }
+
+    #[test]
+    fn old_context_cache_cannot_reintroduce_fixture_rows_as_bots() {
+        let path =
+            std::env::temp_dir().join(format!("argus_old_context_{}.tsv", std::process::id()));
+        std::fs::write(&path, "run\tmap\tkind\npoisoned_fixture\tdm4\tbot\n").unwrap();
+        assert!(read_tsv(&path).is_empty());
+        std::fs::remove_file(path).unwrap();
+    }
 
     fn runs_dir() -> PathBuf {
         PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs")

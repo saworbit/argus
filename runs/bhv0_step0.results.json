@@ -1,0 +1,456 @@
+{
+  "schema_version": 1,
+  "step": 0,
+  "base_commit": "5e124260355162c77c59cca2376fc12e1c651a12",
+  "branch": "codex/behaviour-diagnostics",
+  "perception_changed": false,
+  "qc_source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+  "candidate_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+  "candidate_sha256": "0abcf987126c912c1dfc7cd9adbeb666dba6175303fb1554dd7333f0a8125dcd",
+  "shipped_md5": "a3f7aa9428846de7f7b327506f5f5d3d",
+  "shipped_binaries_restored": true,
+  "source_audit": {
+    "files": 54,
+    "unchanged_except_hooks": true
+  },
+  "controlled": {
+    "trials": 120,
+    "guard_checks": 26311,
+    "enabled_emissions": 1715,
+    "compared_gameplay_fields": 77,
+    "suite_results": [
+      {
+        "name": "bhv0_matrix_dm4_played_off",
+        "trials": 15,
+        "guard_checks": 5696,
+        "guard_emits": 0,
+        "fps_min": 64.0,
+        "fps_max": 66.33,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "0d228adad2f9a17d4dac607ef2dfc9290b1c4845fe01b7829002859d56b77a83",
+        "report": {
+          "diagnostics": false,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm4",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm4_played_off.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.0139,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "624a60f0e062f8d5dda4390475077f9a"
+        }
+      },
+      {
+        "name": "bhv0_matrix_dm4_played_on",
+        "trials": 15,
+        "guard_checks": 5690,
+        "guard_emits": 453,
+        "fps_min": 64.0,
+        "fps_max": 65.83,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "39eccc50191f03c29122d9803093e1d67591b1d5d44413dc5ea02c8e62bbbb0f",
+        "report": {
+          "diagnostics": true,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm4",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm4_played_on.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.0139,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "624a60f0e062f8d5dda4390475077f9a"
+        }
+      },
+      {
+        "name": "bhv0_matrix_dm4_slow_off",
+        "trials": 15,
+        "guard_checks": 885,
+        "guard_emits": 0,
+        "fps_min": 10.0,
+        "fps_max": 10.0,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "7988bb6cff9e8571547ce4c26199b61f54e436656b8337e7b824e190d6e5a747",
+        "report": {
+          "diagnostics": false,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm4",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm4_slow_off.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.1,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "624a60f0e062f8d5dda4390475077f9a"
+        }
+      },
+      {
+        "name": "bhv0_matrix_dm4_slow_on",
+        "trials": 15,
+        "guard_checks": 883,
+        "guard_emits": 408,
+        "fps_min": 10.0,
+        "fps_max": 10.0,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "54d6a24bdd37dde17f91fb13d40af440de0a30d507ce64d2805d06cde6ba3219",
+        "report": {
+          "diagnostics": true,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm4",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm4_slow_on.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.1,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "624a60f0e062f8d5dda4390475077f9a"
+        }
+      },
+      {
+        "name": "bhv0_matrix_dm2_played_off",
+        "trials": 15,
+        "guard_checks": 5694,
+        "guard_emits": 0,
+        "fps_min": 63.67,
+        "fps_max": 66.33,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "ea33e88b7b8bb7b16018b5398dbb33c9599836af7f2bd460d5f04056c5cd7b28",
+        "report": {
+          "diagnostics": false,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm2",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm2_played_off.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.0139,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "283a19071dbf3577c593b8f83fa159da"
+        }
+      },
+      {
+        "name": "bhv0_matrix_dm2_played_on",
+        "trials": 15,
+        "guard_checks": 5698,
+        "guard_emits": 450,
+        "fps_min": 64.0,
+        "fps_max": 66.33,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "a57cf3a9ed65d4b671e9a67730b63a1f03ca22ce810ac65fe256f6020b7cb763",
+        "report": {
+          "diagnostics": true,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm2",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm2_played_on.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.0139,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "283a19071dbf3577c593b8f83fa159da"
+        }
+      },
+      {
+        "name": "bhv0_matrix_dm2_slow_off",
+        "trials": 15,
+        "guard_checks": 882,
+        "guard_emits": 0,
+        "fps_min": 10.0,
+        "fps_max": 10.0,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "4b80e5cd8bfe307c9dd2daf3e8dab2ee134e913ef90d1c71f8b7895f1d1394eb",
+        "report": {
+          "diagnostics": false,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm2",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm2_slow_off.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.1,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "283a19071dbf3577c593b8f83fa159da"
+        }
+      },
+      {
+        "name": "bhv0_matrix_dm2_slow_on",
+        "trials": 15,
+        "guard_checks": 883,
+        "guard_emits": 404,
+        "fps_min": 10.0,
+        "fps_max": 10.0,
+        "nominal_damaging_returns": 3,
+        "cleanup_passed": true,
+        "tape_sha256": "54278564935a5120e7b232bda4a28edf1a0908d8b67311fa2ed480f37b75b4db",
+        "report": {
+          "diagnostics": true,
+          "demo_path": null,
+          "observer_restored": false,
+          "map": "dm2",
+          "log_path": "C:\\argus\\runs\\bhv0_matrix_dm2_slow_on.log",
+          "cases": [
+            0,
+            0,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9,
+            10,
+            11,
+            12
+          ],
+          "step": 0.1,
+          "deathmatch": 1,
+          "overlap_refused": true,
+          "source_md5": "6d030da36e5692e6ebac2c6e2617e8cf",
+          "binary_md5": "59ecbaebb28bb157d8d7fd8476c7c956",
+          "nav_md5": "283a19071dbf3577c593b8f83fa159da"
+        }
+      }
+    ]
+  },
+  "negative_tests": [
+    {
+      "mutation": "health",
+      "rejected": true,
+      "reason": "Error: invalid behaviour cleanup: cleanup 1 restored 1 invariant 0"
+    },
+    {
+      "mutation": "missing_done",
+      "rejected": true,
+      "reason": "Error: trial 1 case 0: timed out; begin=true, end=true, cleanup=false"
+    }
+  ],
+  "ordinary": {
+    "groups": [
+      {
+        "map": "dm4",
+        "diagnostics": "off",
+        "runs": [
+          "bhv0_ordinary2_dm4_off2",
+          "bhv0_ordinary2_dm4_off3",
+          "bhv0_ordinary2_dm4_off4"
+        ],
+        "medians": {
+          "stalls": 0,
+          "goals": 5,
+          "grabs": 6,
+          "engages": 14,
+          "frags": 4,
+          "lava_deaths": 1,
+          "freezes": 0
+        }
+      },
+      {
+        "map": "dm4",
+        "diagnostics": "on",
+        "runs": [
+          "bhv0_ordinary2_dm4_on1",
+          "bhv0_ordinary2_dm4_on2",
+          "bhv0_ordinary2_dm4_on3"
+        ],
+        "medians": {
+          "stalls": 0,
+          "goals": 3,
+          "grabs": 10,
+          "engages": 14,
+          "frags": 4,
+          "lava_deaths": 0,
+          "freezes": 0
+        }
+      },
+      {
+        "map": "dm2",
+        "diagnostics": "off",
+        "runs": [
+          "bhv0_ordinary2_dm2_off1",
+          "bhv0_ordinary2_dm2_off2",
+          "bhv0_ordinary2_dm2_off3"
+        ],
+        "medians": {
+          "stalls": 4,
+          "goals": 2,
+          "grabs": 9,
+          "engages": 6,
+          "frags": 2,
+          "lava_deaths": 0,
+          "freezes": 0
+        }
+      },
+      {
+        "map": "dm2",
+        "diagnostics": "on",
+        "runs": [
+          "bhv0_ordinary2_dm2_on1",
+          "bhv0_ordinary2_dm2_on2",
+          "bhv0_ordinary2_dm2_on3"
+        ],
+        "medians": {
+          "stalls": 6,
+          "goals": 0,
+          "grabs": 10,
+          "engages": 6,
+          "frags": 1,
+          "lava_deaths": 0,
+          "freezes": 0
+        }
+      }
+    ],
+    "excluded": [
+      {
+        "name": "bhv0_ordinary2_dm4_off1",
+        "reason": "different native tick class",
+        "tick_class": "dedicated_fast"
+      }
+    ],
+    "native_primary": "stall_parity",
+    "conclusion": "Inconclusive for match-level equivalence; goal-pickup flags retained."
+  },
+  "tests": {
+    "rust_passed": 304,
+    "python_passed": 140,
+    "strict_clippy": true
+  },
+  "local_evidence": "backups/behaviour-step0",
+  "next_step": "Report only; no perception work started."
+}

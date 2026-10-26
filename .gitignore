@@ -160,3 +160,13 @@ engine/argus/edump.cfg
 
 # superpowers SDD scratch (ledger, briefs, review packages)
 .superpowers/
+
+# Generated local review assets; keep the reusable tools/ HTML template.
+/reviews/blind-perception-*/
+
+# Frozen local study tapes. Hashes are retained in runs/local-study-tapes.json.
+/runs/bhv[0-2]_*.log
+/runs/perc[1-3]_*.log
+/runs/hi[1-2]_*.log
+/runs/blindv1_*.log
+/runs/muzzle1_*.log

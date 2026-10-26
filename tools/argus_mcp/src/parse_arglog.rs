@@ -77,6 +77,9 @@ pub struct GameEvent {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct MatchTape {
+    /// Activated lab encounters/replays are inspectable, not ordinary matches.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub controlled_fixture: bool,
     pub map: Option<String>,
     pub samples: BTreeMap<String, Vec<Sample>>,
     pub deaths: Vec<DeathEvent>,
@@ -568,6 +571,7 @@ pub fn parse_tape(text: &str) -> MatchTape {
             .map(|(i, s)| (i, *s))
             .unwrap();
         let mut tape = parse_one(best);
+        tape.controlled_fixture = controlled_fixture(text);
         tape.segments = total as u32;
         tape.segment_note = Some(format!(
             "tape spans {total} levels; briefed segment {} of {total} ({} sample rows, map {}). Counters and time restart at a level change, so figures are NOT aggregated across them",
@@ -814,6 +818,7 @@ fn parse_one(text: &str) -> MatchTape {
         map = pending_map; // last request stood unrefused
     }
     MatchTape {
+        controlled_fixture: controlled_fixture(text),
         map,
         samples,
         deaths,
@@ -823,6 +828,14 @@ fn parse_one(text: &str) -> MatchTape {
         segments: 1,
         segment_note: None,
     }
+}
+
+fn controlled_fixture(text: &str) -> bool {
+    text.lines().any(|line| {
+        line.starts_with("BHVFIX begin ")
+            || line.starts_with("TACFIX begin ")
+            || line.starts_with("BHVRPL begin ")
+    })
 }
 
 // Netnames may contain spaces (the v3.37 homage roster: "Joe Rogan").
@@ -1585,6 +1598,40 @@ ARGEVT Reap death world pos '10 20 -360'
         assert_eq!(tape.deaths.len(), 1);
         assert_eq!(tape.event_counts.get("death"), Some(&1));
         assert_eq!(tape.events.iter().filter(|e| e.verb == "death").count(), 1);
+    }
+
+    #[test]
+    fn behaviour_records_do_not_enter_match_metrics() {
+        let base = "ARGEVT Big Bob spawned\nARGLOG Big Bob t 1 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\nARGLOG Big Bob t 2 pos '32 0 24' spd 32 yaw 0 mode 0 st 0 gl 1 hp 90 frg 0\nARGEVT Big Bob goal item_health\n";
+        let diagnostics = "BHVDBG Big Bob t 1 source remembered intent combat reason sample memory '0 0 0'\nBHVFIX sample 1 pos '0 0 0' visible 1 launches 2 targethp 4900 hp 100 invariant 1\n";
+        assert_eq!(
+            serde_json::to_value(parse_arglog(base)).unwrap(),
+            serde_json::to_value(parse_arglog(&format!("{diagnostics}{base}{diagnostics}")))
+                .unwrap()
+        );
+    }
+
+    #[test]
+    fn controlled_context_requires_activation_and_preserves_metrics() {
+        let base = "ARGEVT Reap spawned\nARGLOG Reap t 1 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 1 hp 100 frg 0\n";
+        for marker in [
+            "BHVFIX begin dm4 case 0",
+            "TACFIX begin dm4 case 12",
+            "BHVRPL begin dm4 seed 113",
+        ] {
+            let text = format!("{marker}\n{base}");
+            assert!(parse_tape(&text).controlled_fixture);
+            assert_eq!(
+                serde_json::to_value(parse_arglog(base)).unwrap(),
+                serde_json::to_value(parse_arglog(&text)).unwrap()
+            );
+        }
+        assert!(
+            !parse_tape(&format!(
+                "BHVDBG Reap t 1\nBHVTIME t 1 frames 1\nBHVFIX sample 1\n{base}"
+            ))
+            .controlled_fixture
+        );
     }
 
     #[test]

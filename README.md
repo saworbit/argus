@@ -17,6 +17,11 @@ changes. The game runs in vanilla QuakeC on NetQuake protocol 15 with a
 [Controls](#controls) | [Maps](#maps) | [Lab workflow](#lab-workflow) |
 [Troubleshooting](#troubleshooting) | [Changelog](CHANGELOG.md)
 
+Development source currently retains step 1a visual observation caching and
+ordinary rocket muzzle clearance. Health/inventory step 1b is parked and
+projectile-perception work is on hold. These changes have not been installed
+in the supplied binaries. See [development status and evidence](docs/behaviour-diagnostics.md#current-development-status).
+
 ## Install and play
 
 ### What you need

@@ -2,6 +2,9 @@ ARGUS - QUICK PLAY GUIDE
 =======================
 Full installation, controls and lab workflow: README.md
 
+Development-source status and tests: docs/behaviour-diagnostics.md.
+The supplied binaries are unchanged; step 1b remains parked.
+
 PLAY: CLASSIC ENGINES
 --------------------
 1. Copy game/argus next to your Quake installation's id1 folder.

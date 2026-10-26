@@ -10,8 +10,13 @@ SAMPLE = re.compile(r"TACFIX sample\s+([\d.]+) pos '([^']+)' hidden\s+(\d+) rock
 def check(text):
     assert "Host_Error" not in text and "runaway loop error" not in text, "engine error in fixture tape"
     results = []
-    for block in text.split("TACFIX begin ")[1:]:
+    blocks = text.split("TACFIX begin ")
+    for index, block in enumerate(blocks[1:]):
         name, _, case = block.splitlines()[0].split()
+        if case == "13":
+            # The factory proves the hull immediately before its begin line.
+            # Bind that proof to this trial's preamble, not a previous trial.
+            assert re.findall(r'^TACFIX hull (ok|FAILED)$', blocks[index], re.M) == ['ok'], "missing or failed asymmetric hull proof"
         rows = [dict(t=float(m[1]), p=list(map(float, m[2].split())), hidden=int(m[3]), rockets=float(m[4]), hp=float(m[5]), bot_hp=float(m[6]), state=int(m[7])) for m in SAMPLE.finditer(block)]
         launch_counts = re.findall(r"state\s+\d+ launches\s+(\d+)", block)
         shot_field = "launches" if launch_counts else "rockets"
@@ -44,7 +49,7 @@ def check(text):
                 # it must never be reclassified as a clean refusal.
                 assert "tactic prepare" not in block, "unobserved tactical ownership"
                 results.append(dict(map=name, case=case, entry_rejected=True, ordinary_drop_after_rejection=any(r["p"][2] < origin[2] - 8 for r in rows if r["t"] <= 0.5)))
-        elif case in ("0", "8", "10", "12"):
+        elif case in ("0", "8", "10", "12", "13"):
             setup = re.search(r"TACFIX route_setup mode\s+(\d+) node '([^']+)' velocity '([^']+)'", block)
             if case == "8" and setup:
                 assert setup[1] == "2" and math.dist(list(map(float, setup[3].split())), (0, 0, 0)) > 1, "routed fixture did not exercise incoming momentum"
@@ -87,7 +92,7 @@ def check(text):
                     assert "tactic abort crossfire" in block
                 if case == "2":
                     # Moving a hidden target must not update remembered coords.
-                    memories = re.findall(r"memory '([^']+)'", block.split("TACFIX target_moved", 1)[1])
+                    memories = re.findall(r"^TACFIX sample [^\r\n]* memory '([^']+)'", block.split("TACFIX target_moved", 1)[1], re.M)
                     assert memories and all(math.dist(list(map(float, p.split())), enemy) < 1 for p in memories[:3]), f"{name}: tracked a hidden departure"
                 if case == "11":
                     assert "tactic abort sight" in block

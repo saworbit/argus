@@ -1,0 +1,263 @@
+{
+  "number": 2,
+  "registered_utc": "2026-10-25T03:48:23.048764+00:00",
+  "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+  "original_name": "perc3_dm2_candidate070",
+  "retained_name": "perc3_invalid_dm2_candidate070_a2",
+  "mode": "candidate",
+  "repeat": 70,
+  "validity_failures": [
+    "native exposure44.1s outside58..64",
+    "only8 complete timing windows, at least10 required"
+  ],
+  "timing": {
+    "wall_seconds": 60.00243860000046,
+    "native_seconds": 44.099999999999994,
+    "tick_class": "listen",
+    "windows": 8,
+    "over50": 46.0,
+    "max_ms": 100.0
+  },
+  "investigation": "Last six valid attempts, both arms, had stable15.5-15.6ms weighted frames and no >50ms frames. Current host CPU99-100% with queue10-31, with no Quake engine active. This supports a current host-load explanation, but does not prove the first attempt cause. No primary aggregate analysis or gameplay-based validity choice.",
+  "readiness": "Before any further engine launch, obtain three aggregate host samples10 seconds apart with CPU<50% and queue<=4. Read-only checks; no process termination, priority or system-setting changes. Do not relax any native validity threshold. Resume only missing original candidate070, then frozen schedule; stop again on any technical invalidity.",
+  "sensitivity": "Retain amendment001 first-attempt substitution using a1. Also report a2 substitution separately and all-attempt timing tails. Do not pool extra attempts into primary512 valid matches. Same fixed analysis functions/margin; native count/exposure from rejected attempts used only for sensitivity.",
+  "raw_sha256": "1d2dc7071bb133d23d0153b93c4d1121f6780902557e3959b84aa6ceb1cad02e",
+  "attempt_sha256": "d5c125b407dde149bb72a315d86bc6814334d8b67c0801e8a9ec6beff015a088",
+  "native_brief": {
+    "bots": [
+      {
+        "deaths": 1,
+        "frags": 0,
+        "goals": 1,
+        "name": "Carmack",
+        "stalls": 1
+      },
+      {
+        "deaths": 2,
+        "frags": 1,
+        "goals": 1,
+        "name": "Joe Rogan",
+        "stalls": 1
+      },
+      {
+        "deaths": 0,
+        "frags": 2,
+        "goals": 1,
+        "name": "Romero",
+        "stalls": 3
+      }
+    ],
+    "flags": [
+      "closed button-only doors stall at runtime until the button fires",
+      "one shootable button (*30 health 1) opens t18"
+    ],
+    "goal_reach": [
+      {
+        "band": "z\u2248-96",
+        "classname": "item_armor2",
+        "nearest_node": 186,
+        "reach": "walk",
+        "times": 2
+      },
+      {
+        "band": "z\u224896",
+        "classname": "item_armorInv",
+        "nearest_node": 187,
+        "reach": "walk",
+        "times": 3
+      },
+      {
+        "band": "z\u224896",
+        "classname": "item_health",
+        "nearest_node": 208,
+        "reach": "walk",
+        "times": 5
+      },
+      {
+        "band": "z\u2248320",
+        "classname": "weapon_grenadelauncher",
+        "nearest_node": 75,
+        "reach": "walk",
+        "times": 1
+      },
+      {
+        "band": "z\u22480",
+        "classname": "weapon_nailgun",
+        "nearest_node": 130,
+        "reach": "walk",
+        "times": 2
+      },
+      {
+        "band": "z\u2248160",
+        "classname": "weapon_rocketlauncher",
+        "nearest_node": 20,
+        "reach": "walk",
+        "times": 3
+      }
+    ],
+    "goals": {
+      "backpack": 2,
+      "item_armor2": 2,
+      "item_armorInv": 3,
+      "item_health": 5,
+      "weapon_grenadelauncher": 1,
+      "weapon_nailgun": 2,
+      "weapon_rocketlauncher": 3
+    },
+    "headline": "dm2 44s: 3 frags, 3 deaths (0 lava, 0 third-party), 5 stalls, 3 goals, 8 engages, 56 hazards, spread 2",
+    "hotspots": [
+      {
+        "count": 6,
+        "kind": "hazard",
+        "nearest_dist": 21.763501556505002,
+        "nearest_node": 6,
+        "x": 1324.3,
+        "y": -1129.6,
+        "z": 344.0
+      },
+      {
+        "cause": "door",
+        "count": 4,
+        "kind": "hazard",
+        "nearest_dist": 24.909837414162272,
+        "nearest_item": "item_armorInv",
+        "nearest_item_dist": 133.97201200250754,
+        "nearest_node": 111,
+        "x": 2337.7,
+        "y": -527.9,
+        "z": 8.0
+      },
+      {
+        "count": 4,
+        "kind": "hazard",
+        "nearest_dist": 38.29895559933714,
+        "nearest_item": "item_spikes",
+        "nearest_item_dist": 141.31882394076177,
+        "nearest_node": 143,
+        "x": 2476.6,
+        "y": -443.5,
+        "z": 8.0
+      },
+      {
+        "cause": "door",
+        "count": 3,
+        "kind": "hazard",
+        "nearest_dist": 181.83962714436032,
+        "nearest_item": "item_armor2",
+        "nearest_item_dist": 182.2126504938666,
+        "nearest_node": 14,
+        "x": 1488.8,
+        "y": -995.9,
+        "z": 20.0
+      },
+      {
+        "cause": "lava_edge",
+        "count": 3,
+        "kind": "stall",
+        "nearest_dist": 123.50777303473657,
+        "nearest_item": "item_armor2",
+        "nearest_item_dist": 128.06939525116843,
+        "nearest_node": 14,
+        "reach_pct": 96,
+        "x": 1424.0,
+        "y": -999.6,
+        "z": 55.9
+      }
+    ],
+    "item_control": [
+      {
+        "classname": "weapon_nailgun",
+        "median_gap_sec": 2.6000000000000014,
+        "period_sec": 30.0,
+        "tightness": 0.08666666666666671,
+        "visits": 6
+      }
+    ],
+    "lab_identity": {
+      "authoritative": true,
+      "build_source": "fnv1a64:8160459b29e431d6",
+      "checkout_source": "fnv1a64:8160459b29e431d6",
+      "checkout_version": "0.30.0",
+      "running_version": "0.30.0"
+    },
+    "map": "dm2",
+    "nav_coverage": {
+      "never_visited_sample": [
+        0,
+        10,
+        11,
+        12,
+        13,
+        15,
+        19,
+        20,
+        21,
+        23,
+        24,
+        25
+      ],
+      "nodes": 215,
+      "pct": 39,
+      "typed_links": {
+        "lift": "2 link(s), 0 board event(s)",
+        "rj": "3 link(s), 0 rjump event(s)",
+        "sprint": "4 link(s), no runtime verb yet",
+        "train": "2 link(s), 2 train event(s)"
+      },
+      "visited": 85
+    },
+    "next_steps": [],
+    "totals": {
+      "abandons": 2,
+      "acquisitions": 18,
+      "all_frags_positive": false,
+      "avg_speed": 184.0234948852445,
+      "boards": 0,
+      "closest_approach": 78.76293544555075,
+      "confine_max_sec": 15.899999999999999,
+      "confine_note": "Carmack spent 15.9s inside a 220u box at 215 u/s around (1357, -967)",
+      "cover": 142,
+      "deaths": 3,
+      "duration_sec": 44.099999999999994,
+      "engages": 8,
+      "frags": 3,
+      "freeze_max_sec": 0.0,
+      "freeze_underfire": 0,
+      "freezes": 0,
+      "goals": 3,
+      "grabs": 16,
+      "hazards": 56,
+      "kd_spread": 2,
+      "lava_deaths": 0,
+      "lava_rule": "contents",
+      "mover_waits": 2,
+      "player_kills": 3,
+      "routefails": 1,
+      "stalls": 5,
+      "third_party_deaths": 0,
+      "tick_class": "listen",
+      "tick_gap_mean": 0.5129554655870442,
+      "weapons": 2,
+      "world_deaths": 0
+    }
+  },
+  "host_load_check": {
+    "checked_utc": "2026-10-25T03:47:51.1151728Z",
+    "queue": {
+      "ProcessorQueueLength": 31
+    },
+    "cpu": {
+      "PercentProcessorTime": 99,
+      "PercentDPCTime": 1,
+      "PercentInterruptTime": 0
+    },
+    "engine_processes": []
+  },
+  "host_load_check_sha256": "e1bc86ff2863dcc27e6a6d838f3b639c443b532e35de007b57a220f3e37d496f",
+  "files": {
+    "runs\\perc3_dm2_candidate070.log": "runs\\perc3_invalid_dm2_candidate070_a2.log",
+    "runs\\perc3_dm2_candidate070": "runs\\perc3_invalid_dm2_candidate070_a2",
+    "backups\\perception-lava-cohort\\perc3_dm2_candidate070.attempt.json": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a2.attempt.json",
+    "backups\\perception-lava-cohort\\perc3_dm2_candidate070.stderr": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a2.stderr"
+  }
+}

@@ -85,6 +85,67 @@ async fn main() -> anyhow::Result<()> {
                 .await
                 .map_err(|e| anyhow::anyhow!(e))
         }
+        Some("behaviour-suite") => {
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
+                println!("usage: argus-mcp behaviour-suite <dm4|dm2> <new-run-name> [--diagnostics on|off] [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--no-compile]; isolated destructive fixture");
+                return Ok(());
+            }
+            if rest.len() < 2 {
+                anyhow::bail!("behaviour-suite requires map and new run name");
+            }
+            let mut cases = argus_mcp::tactic_suite::REVIEW_CASES.to_vec();
+            let mut step = 0.0139f32;
+            let mut diagnostics = true;
+            let mut compile = true;
+            let mut i = 2;
+            while i < rest.len() {
+                if rest[i] == "--no-compile" {
+                    compile = false;
+                    i += 1;
+                    continue;
+                }
+                let value = rest
+                    .get(i + 1)
+                    .ok_or_else(|| anyhow::anyhow!("missing option value"))?;
+                match rest[i].as_str() {
+                    "--cases" => {
+                        cases = value
+                            .split(',')
+                            .map(str::parse::<u32>)
+                            .collect::<Result<_, _>>()?
+                    }
+                    "--step" => step = value.parse()?,
+                    "--diagnostics" => {
+                        diagnostics = match value.as_str() {
+                            "on" => true,
+                            "off" => false,
+                            _ => anyhow::bail!("diagnostics must be on or off"),
+                        }
+                    }
+                    other => anyhow::bail!("unknown behaviour-suite option {other}"),
+                }
+                i += 2;
+            }
+            argus_mcp::tactic_suite::validate(&rest[0], &rest[1], &cases, step, 1)
+                .map_err(|e| anyhow::anyhow!(e))?;
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!(e))?;
+            if compile && !argus_mcp::compile::compile_qc(&cfg, true).ok {
+                anyhow::bail!("QuakeC compile failed");
+            }
+            let report = argus_mcp::tactic_suite::run_behaviour(
+                &cfg,
+                &rest[0],
+                &rest[1],
+                &cases,
+                step,
+                diagnostics,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            Ok(())
+        }
         Some("tactic-suite") => {
             let rest: Vec<String> = args.collect();
             if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
@@ -413,11 +474,16 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
 
             if flag("--cells") {
                 let rows = argus_mcp::corpus::cells(&runs, opt("--map").as_deref());
+                let kind = opt("--kind").unwrap_or_else(|| "bot".into());
                 println!("run,map,started,kind,x,y,z,count,cause");
                 let lim = opt("--limit")
                     .and_then(|v| v.parse().ok())
                     .unwrap_or(usize::MAX);
-                for c in rows.iter().take(lim) {
+                for c in rows
+                    .iter()
+                    .filter(|c| c.kind.eq_ignore_ascii_case(&kind))
+                    .take(lim)
+                {
                     println!(
                         "{},{},{},{},{:.0},{:.0},{:.0},{:.0},{}",
                         c.run, c.map, c.started, c.kind, c.x, c.y, c.z, c.count, c.cause
@@ -1313,6 +1379,9 @@ fn print_help() {
          argus-mcp tactic-suite <dm4|dm2> <new-run-name> [options]\n\
                                 run acknowledged tactical fixture trials;\n\
                                 use --step 0.1 for the full slow arm\n\
+         argus-mcp behaviour-suite <dm4|dm2> <new-run-name> [options]\n\
+                                run isolated observer contracts with\n\
+                                --diagnostics on|off and --step 0.1\n\
          argus-mcp within-ab <map> [duration_sec] [options]\n\
                                 run counterbalanced control/candidate arms\n\
                                 inside two shared matches\n\

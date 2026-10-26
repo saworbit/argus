@@ -1,0 +1,69 @@
+{
+  "registered_utc": "2026-10-23T20:15:27.685988+00:00",
+  "prefix": "bhv2",
+  "output": "backups/behaviour-equivalence-larger",
+  "candidate": "backups/behaviour-equivalence/candidate-final-progs.dat",
+  "shipped_sha256": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+  "maps": [
+    "dm2",
+    "dm4"
+  ],
+  "pairs_per_map": 128,
+  "seconds": 60,
+  "skill": 1,
+  "expected_matches": 512,
+  "measured_play_hours": 8.533333333333333,
+  "goal_margin_per_minute": 2,
+  "confidence": 0.9,
+  "frame_margin_ms": 1,
+  "rounding_allowance_ms": 0.1,
+  "identities": {
+    "dm2": {
+      "source_sha256": "a2f45266038fc65e081d9e49ae2058e8aa164c6ec990b17955a731b38d1b0e98",
+      "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+      "binary_sha256": "f00eb2ca930ffa259d56ea717128a1c618c9e48d65c5a4658521ab8ddda3b10c",
+      "nav_sha256": "761bc949ca78022ec5e126c134de16c9674253767d6b15d638a1efc51f0b3cd0"
+    },
+    "dm4": {
+      "source_sha256": "a2f45266038fc65e081d9e49ae2058e8aa164c6ec990b17955a731b38d1b0e98",
+      "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+      "binary_sha256": "f00eb2ca930ffa259d56ea717128a1c618c9e48d65c5a4658521ab8ddda3b10c",
+      "nav_sha256": "352a467ef38219cc0cf6a8a61be1337a7d89b39db52887163d3fae8758d3e049"
+    }
+  },
+  "analysis_code_sha256": {
+    "tools/run_behaviour_equivalence.py": "646265b3fd6bc98b1d328d6d9e57fb4ff45267bff4008265be3ddedf6cd52ee4",
+    "tools/check_behaviour_equivalence.py": "d17b1b9acbcedb0c73f35020e8fde72aba5fd8f7bd3cfe4659af689b21b3137c",
+    "tools/run_behaviour_registered.py": "6f378f2a964cb61193c96fe2be3856023354026767e9979f9c05f473c3d81429",
+    "tools/test_behaviour_equivalence.py": "41c28ae8b79bf3d463d8aa1b8fa258ed937bb86e09ca064c158d3381f65040e2"
+  },
+  "design": "Independent holdout. 128 adjacent off/on order-pairs per map, each mode a fresh real-time engine launch. Odd repeats: dm2 then dm4, off then on. Even: dm4 then dm2, on then off. No pooled decision with prior cohorts. Same candidate/source/nav/CLI throughout. No seed or frame-time override.",
+  "primary": "Native brief totals.goals * 60 / native duration_sec, on minus off within each adjacent order-pair. Each map must have its two-sided 90% paired Student-t CI strictly inside [-2,+2] goals per match-minute (TOST alpha .05, df127 critical 1.6569403435420642). Both maps must pass. Failure to pass is inconclusive unless the entire interval lies beyond a bound. Not a significance shortcut. No outcome-based exclusions or stopping.",
+  "timing": "Common developer 1 / scratch1 591 BHVTIME probe. scratch4 0 disabled versus 590 batched diagnostics. Discard first full five-second timing window as before; weight remaining printed mean_ms by frames per match. On-minus-off 90% paired CI widened by +/-0.1 ms for format rounding must remain strictly within +/-1 ms on each map. Audit all complete windows including startup and >20/>50 ms tails separately; retain last partial-window limitation. No material excess >50 ms frames.",
+  "mechanism": "Retain process CPU delta over the same 60 wall seconds and raw tape bytes. Report paired CPU difference and its descriptive 90% CI, per-map modes and output volume. Fresh randomised workload is not a per-print microbenchmark. Interpret with earlier equal-input replay/state-guard evidence. Goal equivalence plus cadence equivalence supports sampling noise as the explanation of the earlier goal deficit, while permitting measurable CPU cost. Persistent goal non-equivalence plus cadence slowdown is evidence for logging overhead; without that, do not invent a causal attribution.",
+  "secondary": "Report native grabs, acquisitions, engages, stalls, frags, lava_deaths and freezes with descriptive 90% paired CIs, plus avg_speed and tail-frame counts. No separately powered broad gameplay equivalence claim. Completed goals are not touch instrumentation; goal selections and grab detours are not pickups.",
+  "validity": "Every tape retained. No fixture may activate, native map must match, tick_class listen, native duration 58..64 s, valid BHVTIME and required diagnostic output. Any technical failure stops execution and preserves its orphan tape; investigate before a logged technical amendment/replacement. Never exclude for gameplay results. Hash all successful raw tapes and native receipts. Source/progs/nav/CLI plus protocol and runner/analysis hashes checked throughout.",
+  "stopping": "Fixed 512 successful valid matches. No interim primary CI or acceptance look, sample expansion, or stopping on pass. A technical or user interruption may pause the fixed schedule; resume only missing scheduled cells with the same frozen registration. If incomplete, report pending, never equivalence. Original bounds stay unchanged even if final result remains inconclusive.",
+  "power": {
+    "method": "Normal paired differences with variance estimated only from prior 8-pair cohort. 500000 simulated sufficient-statistic draws, numpy PCG64 seed20261024. Planning model only, not guarantee under nonnormality, serial correlation or a true effect near a bound.",
+    "maps": {
+      "dm2": {
+        "previous_mean": 0.3768690745434159,
+        "previous_paired_sd": 3.4262697312382766,
+        "estimated_power": {
+          "zero": 1.0,
+          "previous_point": 0.999888
+        }
+      },
+      "dm4": {
+        "previous_mean": -1.1306267587086662,
+        "previous_paired_sd": 3.5989116727317767,
+        "estimated_power": {
+          "zero": 0.999998,
+          "previous_point": 0.858568
+        }
+      }
+    }
+  },
+  "holds": "No QC, perception, nav or gameplay changes. Stage candidate only in workspace engine/argus/progs.dat; restore shipped bytes on completion/interruption. No external installation."
+}
