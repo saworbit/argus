@@ -1,0 +1,1039 @@
+{
+  "schema_version": 1,
+  "scope": "Step 0 diagnostic noninterference; no perception changes",
+  "verdict": {
+    "functional_controlled_equivalence": true,
+    "real_time_cadence_equivalence": true,
+    "real_time_goal_rate_equivalence": false,
+    "real_time_goal_finding": "inconclusive",
+    "perception_gate": "held"
+  },
+  "protocol": {
+    "design": "Fresh counterbalanced off/on ordinary matches, eight adjacent order-pairs on each of dm2 and dm4, 60 seconds each, skill 1. All scheduled tapes retained. Native brief supplies every gameplay metric. Primary endpoint is completed-goal rate per match-minute, not selections or touches.",
+    "equivalence": "Two one-sided tests at alpha .05: paired mean difference 90% Student-t CI must lie strictly inside [-2,+2] goals per match-minute on EACH map. This rules out the pilot-sized approximately four-goal/minute deficit, not arbitrarily small effects. No significance/non-significance shortcut. No optional stopping within this cohort.",
+    "timing": "Common BHVTIME probe in all arms, five-second windows; discard first window. Mean frame-time on-minus-off 90% paired CI within +/-1 ms; no material excess >50 ms frames. Direct process CPU and bytes recorded separately. Native tick classes reported; no cross-class native verdict asserted.",
+    "mechanism": "Separate exploratory arms: off, compute-only 591, original fragmented output 592, batched output 590. Two 60-second runs each per map, counterbalanced. Mechanism does not contribute to confirmatory gameplay equivalence cohort.",
+    "secondary": "Report grabs, acquisitions, engages, stalls, frags, lava, freezes, average speed and per-map effects. A contradictory signal blocks claiming broad gameplay equivalence even if primary passes.",
+    "controls": "Same pinned source/binary/nav, normal isolated lab matches, no BHVFIX, developer 1, scratch1 591 common cadence probe; diagnostics only scratch4 differs. Retain errors and exclusions. No perception edits. Run source noninterference audit and actual scheduled-call guards after fixes."
+  },
+  "mechanism_amendment": {
+    "reason": "The fixed 32-tape cohort completed with cadence equivalence but inconclusive goal equivalence, and gameplay variation confounded process CPU. Replace the exploratory free-running mechanism runs with identical-input engine replays; do not reinterpret the primary confidence intervals as passes.",
+    "inputs": "Private source copies only: common 16-bit integer QC input generator (all intermediate integers exactly representable), vanilla host_framerate=0.015625, end after 3842 frames. Seeds 113 and 50917 on both dm2 and dm4, selected before the holdout cases. Original production RNG is unchanged.",
+    "arms": "Candidate off, repeated off, compute-only 591, fragmented 592, batched 590. Then a private copy of the saved original source using the same input provider and frame steps. Disabled repeats must match before other arms can pass.",
+    "acceptance": "Byte-identical exported gameplay records and entity dumps, excluding only ar_bd_* diagnostic fields. Final RNG state/call count and completed-goal counters are included. Maximum 600 edicts. At least one positive consumed-goal case per map across the selected inputs; zero-goal cases remain valid negative controls. Native briefs remain the metric authority.",
+    "cost": "On remaining cases only, capture process CPU over the first approximately 50 seconds after the acknowledged map reset. Same simulated gameplay workload in each arm. Descriptive overhead measurement, separate from the fixed real-time statistical cohort.",
+    "limits": "Fixed-input replay is functional noninterference evidence, not a replacement for real-time statistical equivalence. Text entity dumps round floating values. Keep the real-time goal finding inconclusive if its pre-registered bounds fail. Perception remains unchanged."
+  },
+  "real_time": {
+    "maps": {
+      "dm2": {
+        "goals_per_minute": {
+          "n": 8,
+          "mean": 0.3768690745434159,
+          "ci90": [
+            -1.9181652472461859,
+            2.671903396333018
+          ],
+          "margin": 2,
+          "equivalent": false
+        },
+        "frame_ms": {
+          "n": 8,
+          "mean": -0.005058310686486545,
+          "ci90": [
+            -0.1131699632087132,
+            0.10305334183574011
+          ],
+          "margin": 1,
+          "equivalent": true,
+          "rounded_value_ci90": [
+            -0.0131699632087132,
+            0.00305334183574011
+          ],
+          "rounding_allowance_ms": 0.1
+        },
+        "secondary_per_minute": {
+          "grabs": {
+            "off_mean": 17.262561271421593,
+            "on_mean": 10.263146911519199,
+            "n": 8,
+            "mean": -6.999414359902394,
+            "ci90": [
+              -11.741351046911687,
+              -2.257477672893101
+            ]
+          },
+          "acquisitions": {
+            "off_mean": 21.766332854965846,
+            "on_mean": 12.64127712854758,
+            "n": 8,
+            "mean": -9.125055726418267,
+            "ci90": [
+              -14.215507583543742,
+              -4.034603869292793
+            ]
+          },
+          "engages": {
+            "off_mean": 10.508791076770086,
+            "on_mean": 9.762520868113523,
+            "n": 8,
+            "mean": -0.7462702086565626,
+            "ci90": [
+              -4.205414491080668,
+              2.712874073767543
+            ]
+          },
+          "stalls": {
+            "off_mean": 10.14778322010575,
+            "on_mean": 15.141277128547578,
+            "n": 8,
+            "mean": 4.99349390844183,
+            "ci90": [
+              -1.321395908730456,
+              11.308383725614117
+            ]
+          },
+          "frags": {
+            "off_mean": 3.2518857900302045,
+            "on_mean": 2.628338898163606,
+            "n": 8,
+            "mean": -0.6235468918665986,
+            "ci90": [
+              -2.5484396374467186,
+              1.3013458537135216
+            ]
+          },
+          "lava_deaths": {
+            "off_mean": 0.12520868113522537,
+            "on_mean": 0.3756260434056761,
+            "n": 8,
+            "mean": 0.25041736227045075,
+            "ci90": [
+              -0.344318857209444,
+              0.8451535817503455
+            ]
+          },
+          "freezes": {
+            "off_mean": 0.25062674133589424,
+            "on_mean": 0.12520868113522537,
+            "n": 8,
+            "mean": -0.1254180602006689,
+            "ci90": [
+              -0.5556306058430666,
+              0.3047944854417287
+            ]
+          }
+        },
+        "modes": {
+          "off": {
+            "goals_per_minute": 3.378556634972444,
+            "goal_counts": [
+              1,
+              4,
+              5,
+              3,
+              3,
+              5,
+              0,
+              6
+            ],
+            "frame_ms": 15.599992214263468,
+            "over50_frames": 0.0,
+            "frames": 25685.0,
+            "cpu_ms_per_wall_second": 18.098882536530915,
+            "bytes_mean": 55993.625,
+            "native_tick_classes": [
+              "listen"
+            ]
+          },
+          "on": {
+            "goals_per_minute": 3.75542570951586,
+            "goal_counts": [
+              3,
+              3,
+              3,
+              10,
+              1,
+              6,
+              2,
+              2
+            ],
+            "frame_ms": 15.594933903576981,
+            "over50_frames": 0.0,
+            "frames": 25695.0,
+            "cpu_ms_per_wall_second": 22.167845061212414,
+            "bytes_mean": 260882.5,
+            "native_tick_classes": [
+              "listen"
+            ]
+          }
+        }
+      },
+      "dm4": {
+        "goals_per_minute": {
+          "n": 8,
+          "mean": -1.1306267587086662,
+          "ci90": [
+            -3.5413026417844486,
+            1.280049124367116
+          ],
+          "margin": 2,
+          "equivalent": false
+        },
+        "frame_ms": {
+          "n": 8,
+          "mean": 0.002479725514659581,
+          "ci90": [
+            -0.10342104664226076,
+            0.10838049767157992
+          ],
+          "margin": 1,
+          "equivalent": true,
+          "rounded_value_ci90": [
+            -0.0034210466422607538,
+            0.008380497671579916
+          ],
+          "rounding_allowance_ms": 0.1
+        },
+        "secondary_per_minute": {
+          "grabs": {
+            "off_mean": 14.75419937296184,
+            "on_mean": 18.11942192221437,
+            "n": 8,
+            "mean": 3.36522254925253,
+            "ci90": [
+              0.27756217070639755,
+              6.452882927798662
+            ]
+          },
+          "acquisitions": {
+            "off_mean": 33.01361786809497,
+            "on_mean": 35.870522373524615,
+            "n": 8,
+            "mean": 2.8569045054296476,
+            "ci90": [
+              -3.9712168137373967,
+              9.685025824596693
+            ]
+          },
+          "engages": {
+            "off_mean": 22.38400460857839,
+            "on_mean": 25.87090078408895,
+            "n": 8,
+            "mean": 3.4868961755105583,
+            "ci90": [
+              1.195622505304342,
+              5.778169845716775
+            ]
+          },
+          "stalls": {
+            "off_mean": 1.6258361204013378,
+            "on_mean": 1.3760482807361198,
+            "n": 8,
+            "mean": -0.2497878396652179,
+            "ci90": [
+              -2.6466384262207,
+              2.1470627468902643
+            ]
+          },
+          "frags": {
+            "off_mean": 5.376470507615029,
+            "on_mean": 6.247512507025638,
+            "n": 8,
+            "mean": 0.871041999410608,
+            "ci90": [
+              -1.0351860173450198,
+              2.777270016166236
+            ]
+          },
+          "lava_deaths": {
+            "off_mean": 1.2508354224711196,
+            "on_mean": 0.9995861134452613,
+            "n": 8,
+            "mean": -0.25124930902585835,
+            "ci90": [
+              -0.7245597625873315,
+              0.22206114453561482
+            ]
+          },
+          "freezes": {
+            "off_mean": 0.1254180602006689,
+            "on_mean": 0.0,
+            "n": 8,
+            "mean": -0.1254180602006689,
+            "ci90": [
+              -0.36303243374514693,
+              0.11219631334380911
+            ]
+          }
+        },
+        "modes": {
+          "off": {
+            "goals_per_minute": 7.503975386135641,
+            "goal_counts": [
+              8,
+              10,
+              12,
+              9,
+              4,
+              5,
+              7,
+              5
+            ],
+            "frame_ms": 15.601246494234962,
+            "over50_frames": 0.0,
+            "frames": 25681.0,
+            "cpu_ms_per_wall_second": 17.773387752838044,
+            "bytes_mean": 61499.5,
+            "native_tick_classes": [
+              "listen"
+            ]
+          },
+          "on": {
+            "goals_per_minute": 6.373348627426975,
+            "goal_counts": [
+              7,
+              7,
+              6,
+              4,
+              8,
+              6,
+              5,
+              8
+            ],
+            "frame_ms": 15.603726219749623,
+            "over50_frames": 0.0,
+            "frames": 25683.0,
+            "cpu_ms_per_wall_second": 20.637926984419455,
+            "bytes_mean": 269609.375,
+            "native_tick_classes": [
+              "listen"
+            ]
+          }
+        }
+      }
+    },
+    "primary_equivalent": false,
+    "cadence_equivalent": true,
+    "limitations": "Eight independent launches per mode/map, paired by adjacent counterbalanced order, not identical random seeds. Student-t CI assumes approximately normal independent pair differences. Bounds concern completed-goal rate and mean frame time; secondary metrics remain descriptive, not separately powered equivalence claims.",
+    "tapes": {
+      "bhv1_confirm_dm2_off1": "e5008d8c539ac225a62e69ade062b14f174a64cfeeb897c09cac6f9c5045cfb7",
+      "bhv1_confirm_dm2_on1": "18a7f5b36f85b660b88e0c53280e5c2bb8a0dfb905c13a096d5b485846f96c43",
+      "bhv1_confirm_dm4_off1": "8e5aa844885c611e0282b80a23bfa62575cd7e6b98b8affad8f2471a116414ec",
+      "bhv1_confirm_dm4_on1": "cb38c9124da7e637b99ad4bda33a68d92be0994a579ed6d3dd505108667dca75",
+      "bhv1_confirm_dm4_on2": "5be5245f124b3dee2855b14549d1c0a7c0f2f094e64c1e8f4e90ee9749543873",
+      "bhv1_confirm_dm4_off2": "6e4a94b41fb57d1293c8e883d399b74d2a49335d50bae7ec06e9ece58e82e4f1",
+      "bhv1_confirm_dm2_on2": "a1dffc46cba96117a3e7ca3a3f6df3fddf735a156ccc78fc8298ed49d34f7dd6",
+      "bhv1_confirm_dm2_off2": "57a095ca65e430293e82c9b27c6881db6b57ab94d9913b937e71bd62a43f8a9b",
+      "bhv1_confirm_dm2_off3": "0f6c2fa870ec7a3271d67858873180d68cedc6cf3d8da4545924987355615088",
+      "bhv1_confirm_dm2_on3": "308a7b2ce3312b452a40ae4f2c9c0bc5d97f2a8c38a4c89b50a68482832b65e6",
+      "bhv1_confirm_dm4_off3": "ed2055b9561f9290de6b33fe9f6114a53f701275e2028ed7833da35e36083415",
+      "bhv1_confirm_dm4_on3": "1b21a7e066828da0685e6d6bb172d3fd9308a1a417a28ce010ccf11ca9987e27",
+      "bhv1_confirm_dm4_on4": "d375e6e2dbad59ef8b7ddc508b0fa151dd0fe377b070f70b7ba5a4fbe84a8624",
+      "bhv1_confirm_dm4_off4": "797434e0c5222d6429806cb4fc261c364819f0247d1d7e7f83b439ceb6424b86",
+      "bhv1_confirm_dm2_on4": "4461d68f43f7a79fcf509034a14d847311f961f6329fe751106df3da9fa0d0d3",
+      "bhv1_confirm_dm2_off4": "ab75ede5a6b3bf7dfadd04547b373f6c6705bd37c6ab03f3c67ff53937716f4a",
+      "bhv1_confirm_dm2_off5": "d7ca2420013528ee5dccd097456bb08b991524298379782e2af3d9edf79f8f4e",
+      "bhv1_confirm_dm2_on5": "51012600ba435998964feb8ba49fa33ae3d8188613a3146deaeb7841e2ca9135",
+      "bhv1_confirm_dm4_off5": "ca0ae7ae81028ed5fc59ae5b47866b0369d2e833e80b0c804c0aac74c3834038",
+      "bhv1_confirm_dm4_on5": "d40bd9e492aed053e216e6fbc26e96b8bab98f6023dfbfa6912a75a652c2ce08",
+      "bhv1_confirm_dm4_on6": "5522c0c026dc9082b36cad1d0bc6b1e3bbf0a9b07c1b73906e4a3e2fb56982ec",
+      "bhv1_confirm_dm4_off6": "21483dcb268f9be827394d52de2db963eafd1ba2e6a957c5f4283906db7cb120",
+      "bhv1_confirm_dm2_on6": "53ba80804a76d22af263184c05793e939cf72cdac3bcd53c4398618b6b3dde59",
+      "bhv1_confirm_dm2_off6": "aa52877f55d79eb2f45f3bed09cdd5665b0e70b352015e4a6295ef57c59b9aee",
+      "bhv1_confirm_dm2_off7": "063996d9e1516e222871669a6007472337e318fb2f75d3a2b28609e65b813cc5",
+      "bhv1_confirm_dm2_on7": "13bbb3212868fb7d9bf73c232939c434edd992ce89b7d604de36dd4c04859060",
+      "bhv1_confirm_dm4_off7": "94fc816d3f526ab64cc8c62e6077b6ba361ec902b1f600db730ce46712f52b6d",
+      "bhv1_confirm_dm4_on7": "3f5ccc9156e66605b4b5f7e3035c78be79d6823c2936110ce110d618342cafbc",
+      "bhv1_confirm_dm4_on8": "ec91dbc7e05024938a65f47148bb4dcbbb50bc2efe335928c5a1f0c052a506ae",
+      "bhv1_confirm_dm4_off8": "4ac6e82b29b5e33c9658e31bb0e9f47ac50acfbed1538b54d73a5d7db0774759",
+      "bhv1_confirm_dm2_on8": "767affa7482bd09af434e1a9f008d50e45394d72a4b95be00a9082ebd0adb7cf",
+      "bhv1_confirm_dm2_off8": "ba263c5d64f5327f9c8c03f9395d703eabfe36fc73215339104ba535be3eb4cb"
+    }
+  },
+  "complete_windows_including_startup": {
+    "windows": 352,
+    "over50": 1.0,
+    "over50_runs": [
+      "bhv1_confirm_dm2_off5"
+    ]
+  },
+  "controlled_replays": [
+    {
+      "map": "dm2",
+      "seed": 113,
+      "runs": 6,
+      "frames_per_run": 3842,
+      "native_goals": 4,
+      "rng_draws": 6385,
+      "max_edicts": 337,
+      "cpu_ms_per_wall_second": {
+        "shipped": 16.963260421336063
+      },
+      "gameplay_sha256": "aed7cb75070e22549058da93752d6804efe9954cb2ca0f57c345c44221763a7d",
+      "state_sha256": "e0cb44dfc9b368e611743573708510268f7bb633c294ea587384e521db8fe744"
+    },
+    {
+      "map": "dm2",
+      "seed": 50917,
+      "runs": 6,
+      "frames_per_run": 3842,
+      "native_goals": 4,
+      "rng_draws": 6880,
+      "max_edicts": 338,
+      "cpu_ms_per_wall_second": {
+        "off": 15.433757166465888,
+        "off_repeat": 24.378091411080426,
+        "compute": 14.819458362187195,
+        "legacy": 23.566204812054334,
+        "on": 32.88289390623402,
+        "shipped": 9.566204015186113
+      },
+      "gameplay_sha256": "40a03532fc8141656b92255bec295fb5e188466aaa0233ee665c0b8989bb39f1",
+      "state_sha256": "399e210561627c1b4f1285dad48f3db9e350e5e8a6ca270b349f5b7b4eda3604"
+    },
+    {
+      "map": "dm4",
+      "seed": 113,
+      "runs": 6,
+      "frames_per_run": 3842,
+      "native_goals": 10,
+      "rng_draws": 7922,
+      "max_edicts": 226,
+      "cpu_ms_per_wall_second": {
+        "off": 16.335857038233605,
+        "off_repeat": 28.03814689787653,
+        "compute": 15.402938910310565,
+        "legacy": 32.139450580066296,
+        "on": 34.69469012696641,
+        "shipped": 14.79416665850716
+      },
+      "gameplay_sha256": "a35384c3245176c103a5d82aec9ad5ee27060775d099da0ea26e27e05fa775ba",
+      "state_sha256": "31c4dbd8df8880276746fd910059e5bb638b2517a2e99336462f89cd29a33159"
+    },
+    {
+      "map": "dm4",
+      "seed": 50917,
+      "runs": 6,
+      "frames_per_run": 3842,
+      "native_goals": 7,
+      "rng_draws": 7264,
+      "max_edicts": 227,
+      "cpu_ms_per_wall_second": {
+        "off": 18.815662962290187,
+        "off_repeat": 11.719079452616578,
+        "compute": 18.801378669273895,
+        "legacy": 21.66157521450048,
+        "on": 16.748531304173277,
+        "shipped": 11.102547926982364
+      },
+      "gameplay_sha256": "cd511de5641a6b7b07768feb57c601ced477523a7f5126da7ab37124f67973a3",
+      "state_sha256": "06dce7c8b50b73d987f1db9cea2779282e5fcf81160777cd1afafc3975703b89"
+    }
+  ],
+  "private_source_audits": [
+    {
+      "files_restored_exactly": 78,
+      "production_rng_unchanged": true
+    },
+    {
+      "files_restored_exactly": 76,
+      "production_rng_unchanged": true
+    }
+  ],
+  "fixture_bytecode_bridge": {
+    "changed_functions": [
+      "Argus_TacticFixture"
+    ],
+    "unchanged_function_bodies": 2316,
+    "identical_field_layout": true,
+    "identical_initialized_globals": true,
+    "identical_strings_and_function_signatures": true
+  },
+  "source_audit": {
+    "baseline_commit": "5e124260355162c77c59cca2376fc12e1c651a12",
+    "files": [
+      {
+        "file": "ai.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "03f4fbc070bc7aac9bbaf3ab8039ae3a4622d0cf1404dced09980700d7316fe1"
+      },
+      {
+        "file": "argus.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "ddf5ac2495c52b1f0eb80632a59c43a4e4ab2bf2ecfa4f4a735569f4a6063dcf"
+      },
+      {
+        "file": "argus_cam.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "94b5b761308ec2c45ed4399aa588b6e7ae42d4a82b2f4630292c6e4a22618e3f"
+      },
+      {
+        "file": "argus_nav.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "e5569a1a6fb94e5bad1d12c688d30338d9ba2c01b7993a10e11058875170441e"
+      },
+      {
+        "file": "argus_nav_dispatch.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "f091aa8f01ec3b1ab2036b807192abfcfb9126ee080f5359c8a2c385a1998ea6"
+      },
+      {
+        "file": "argus_nav_dm2.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "e4fc970b3d11002a5a5957333e5761752f8e3ba044577c16bb6c9447e8fdac55"
+      },
+      {
+        "file": "argus_nav_dm3.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "24bae3da46c7500f6eef89096fa003981480080fc4dea175cd01eaf1b3cf6b14"
+      },
+      {
+        "file": "argus_nav_dm4.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "86f993dde7938533324748317268b86774c0b034ff868f848a4ee1f93894893d"
+      },
+      {
+        "file": "argus_nav_dm6.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "228521158603ad66033c108587c501c5540d9433e5bdd333e22cd6bfcfcce52f"
+      },
+      {
+        "file": "argus_nav_e1m1.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "791a9daa14a464a297c11dfccf11d5e41d83caa5d22449ca23c7b1b7987843cb"
+      },
+      {
+        "file": "argus_nav_e1m2.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "28acf03d9c972aeaf8bc17fb15b527bb2b4e72ae0c8f179c2b530b3a556c46f0"
+      },
+      {
+        "file": "argus_nav_e1m5.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "e75d98c22712300c50910591e137c7d7484d72c6f195c3fb7ff8a2f1e1aa9d8b"
+      },
+      {
+        "file": "argus_nav_e1m6.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "72b2a5112672d5a37c67f973d0d56bc2b7e4e906ae8daff29ed3086b5038a8a0"
+      },
+      {
+        "file": "argus_nav_e1m7.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "66b25c60a5577ff551b661e2dcd57137e6e32b1f6e6a164eeeee12b8774ea251"
+      },
+      {
+        "file": "argus_nav_e1m8.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "7c5d4321df84a4336dbcdf4543e08944d465057e0e1b65e492ab02f8aa9bf2f5"
+      },
+      {
+        "file": "argus_nav_lqdm2.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "3fbee1ff05b200660329eb9f678b3127671d80f7af2f34b4a7251b51ac8c69b8"
+      },
+      {
+        "file": "argus_tactic_fixture.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "323d2071d5588c8d94eb42cc507f9297f0f79c6382c80896527781d638f8bf3f"
+      },
+      {
+        "file": "argus_tactics.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "f3e71e2d6c277382dddd7c0742918d5bbaa38d8c07d7773c9752edae061622d5"
+      },
+      {
+        "file": "buttons.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "90465e503debe5e02f7ceaadeabcc781fa5429bd6cee85c12c26b7665cba427f"
+      },
+      {
+        "file": "client.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "1081af6fbd37e8df92cf557d795aa6ce587b9dcff2f795b1a658a536882e772b"
+      },
+      {
+        "file": "combat.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "3baff752be2beb6ef5bf80896f8454d8107d4803b6af9de09c83650914bca2c6"
+      },
+      {
+        "file": "deathmatch_settings.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "836ece8fbd085e1a062752649dd5f30024cb318636bf62fc4939b2dfb350b30b"
+      },
+      {
+        "file": "defs.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "c70cd762e19bba9c2bee0d2cbd9e98174428ecc0986bcc467633b8c9624a42e4"
+      },
+      {
+        "file": "doors.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "b24ce9da184ec5a2df1a4b5e9d0162d0c79dc053e786f458f125722806df0e7d"
+      },
+      {
+        "file": "fight.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "4a9527906e1102f35f938062738fac1a53c3fed096ed2fa748e8f9d5d2ca2bd7"
+      },
+      {
+        "file": "items.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "c93795e59254f582557b756e211ff518e662f7993f4021f1492139d989e01166"
+      },
+      {
+        "file": "localized_text.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "7e6b294ead20ece674c156027d21bd7dec8a9a7c1b73f1425a6e98e382190a7d"
+      },
+      {
+        "file": "lq1\\cutscene_camera.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "79897046332f3d4fd80cbdfacd5e8989542c1879aca36e406835c0573718da60"
+      },
+      {
+        "file": "misc.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "603ac49b703b72b1e5c50d579d5e2072e55ba95bf26bd14a6836e5217768ed55"
+      },
+      {
+        "file": "monsters\\chthon.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "04d747df9d629f288ec42806bcf44ae9215169bf0fbad4f5fd4bd1df50115b13"
+      },
+      {
+        "file": "monsters\\enforcer.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "e2e4f2cded268f36381fd35b77006e40c87b372bc918c34dc128c1af1af1771b"
+      },
+      {
+        "file": "monsters\\fiend.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "89d9896a8cce05b45e5eb7e0870495340287d758316ff0bc091a943ef5ec4cdb"
+      },
+      {
+        "file": "monsters\\grunt.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "3cc3e2b68dc757b25046e6a197d1246526c2275de2c768049be8d7437f96dda2"
+      },
+      {
+        "file": "monsters\\hellknight.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "bd94562e32d8e277b269aa76b00f3d3072adc62b8a4e481b99b1b2a583a732ca"
+      },
+      {
+        "file": "monsters\\knight.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "47afdde0f6f66903d4cedae6d592a1f78a538f315c2a18084b39f0be0f69b69d"
+      },
+      {
+        "file": "monsters\\ogre.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "7c171b394a130555d7e952e8497de9b12184b1d5cce9e5b0b27fd4f69930316b"
+      },
+      {
+        "file": "monsters\\rotfish.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "fadea1f96479b17319247daa7d01c5e93e9e30ca326e19402275f900fd533818"
+      },
+      {
+        "file": "monsters\\rottweiler.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "9724fbdd9bfd96f39c3696c55b83d9d825b5fdaf3c8ded6e340e90b4ade95657"
+      },
+      {
+        "file": "monsters\\scrag.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "2b3300b8e8800c9585a6ad4a5e20ce9aae8feda9a41d4d815a2b21b37bea8f32"
+      },
+      {
+        "file": "monsters\\shambler.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "3338ba45a1c2ff864a1a36a27379f6735bab17e739bed57f597f9e138ef2744c"
+      },
+      {
+        "file": "monsters\\shub.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "6f763c37e1624d412db06b6853b31ed2aeaf88437ff4291a8af09dfd2547b971"
+      },
+      {
+        "file": "monsters\\spawn.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "324239bbffd1dd23edb0370d6359f4c1d0146815f16bac99aeca3ed840d5dbe9"
+      },
+      {
+        "file": "monsters\\vore.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "bc2e0508f43074d42c7f67922d38818023fbc7f19cdbad4866aa321ee4a40f23"
+      },
+      {
+        "file": "monsters\\zombie.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "9ba27fa8512433c44928e995c358a5edb8afa1eec653fe26210b56bde9023e13"
+      },
+      {
+        "file": "monsters.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "9027fd52e20cdab99938eda53d3bab30544c685bbcf1b888aed29e96e1b5f21d"
+      },
+      {
+        "file": "plats.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "3f5573681f7b7ce1a1b46e09dff3c5f9d5c4c657b71e84a4d9c7f5c76b8e535d"
+      },
+      {
+        "file": "player.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "fe4faacc0cdd2d32cb5e595740a94fe16d14cdbacda90e5d4fc5e0c4121fd683"
+      },
+      {
+        "file": "progs.src",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "bab9baec388fac47d1836baf5c5623afebc7819ea9c290471c99fb902aeb1adb"
+      },
+      {
+        "file": "server.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "a45f8714ad4793b081d72626cb1c5cf712d5176792e7ccd35b67a428f547780d"
+      },
+      {
+        "file": "spectate.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "d314aa29657932cbe4ca192323ee3f6d50a420e6c875a3c7938c464bc60ae81f"
+      },
+      {
+        "file": "subs.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "1542db4ce5abdcecbb2eef1acc63366f2f7ccf1c69b4b98ab5608dd80e8214a3"
+      },
+      {
+        "file": "triggers.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "c31adc52312317f6e0210b8d0e5111afed393645d94e1f219d39f35d819a0d22"
+      },
+      {
+        "file": "weapons.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "719bd8e397518fe28613cccb9436c377239a0ee43b992c0ef36b9342c42ab51e"
+      },
+      {
+        "file": "world.qc",
+        "unchanged_except_hooks": true,
+        "baseline_sha256": "045d2a6df5663c2599fbaabdb1da917217635247ec9bfd3d65f9959565195139"
+      }
+    ],
+    "passed": true
+  },
+  "scheduled_observer_checks": {
+    "trials": 64,
+    "checks": 14133,
+    "enabled_emissions": 904,
+    "all_invariants_and_cleanup_passed": true,
+    "nominal_damaging_returns": 24,
+    "retained_pre_fix_tactical_failure": [
+      {
+        "run": "bhv1_matrix2_dm4_slow_on",
+        "case": 12,
+        "error": "dm4: incomplete manoeuvre: []",
+        "results": []
+      }
+    ],
+    "fixed_lifecycle_trials": 8,
+    "fixed_lifecycle_all_passed": true
+  },
+  "negative_goal_mutation": {
+    "source_rejected": true,
+    "engine_oracle_rejected": true,
+    "reason": "gameplay differs under identical inputs",
+    "native_goals": 893,
+    "private_binary_sha256": "7e61d7db3be766fc02ca0755278f51d607086cee56ae68f5df2076bc23f93708"
+  },
+  "shipped_lifecycle_control": {
+    "report": {
+      "demo_path": null,
+      "observer_restored": false,
+      "map": "dm4",
+      "log_path": "C:\\argus\\runs\\bhv1_shipped_shop12.log",
+      "cases": [
+        12
+      ],
+      "step": 0.1,
+      "deathmatch": 1,
+      "overlap_refused": false,
+      "source_md5": "5c7add60b11aac22c5152bae73384842",
+      "binary_md5": "a3f7aa9428846de7f7b327506f5f5d3d",
+      "nav_md5": "624a60f0e062f8d5dda4390475077f9a"
+    },
+    "tactical_error": "dm4: incomplete manoeuvre: []"
+  },
+  "candidate_sha256": "f00eb2ca930ffa259d56ea717128a1c618c9e48d65c5a4658521ab8ddda3b10c",
+  "measured_candidate_sha256": "4d3f6f7d80240e0cdb5a5eb98806b5722f5cda16ed75ba067ec0755fe7c3b488",
+  "shipped_md5": "a3f7aa9428846de7f7b327506f5f5d3d",
+  "normal_gameplay_and_rng_unchanged": true,
+  "raw_tapes_sha256": {
+    "bhv1_confirm_dm2_off1.log": "e5008d8c539ac225a62e69ade062b14f174a64cfeeb897c09cac6f9c5045cfb7",
+    "bhv1_confirm_dm2_off2.log": "57a095ca65e430293e82c9b27c6881db6b57ab94d9913b937e71bd62a43f8a9b",
+    "bhv1_confirm_dm2_off3.log": "0f6c2fa870ec7a3271d67858873180d68cedc6cf3d8da4545924987355615088",
+    "bhv1_confirm_dm2_off4.log": "ab75ede5a6b3bf7dfadd04547b373f6c6705bd37c6ab03f3c67ff53937716f4a",
+    "bhv1_confirm_dm2_off5.log": "d7ca2420013528ee5dccd097456bb08b991524298379782e2af3d9edf79f8f4e",
+    "bhv1_confirm_dm2_off6.log": "aa52877f55d79eb2f45f3bed09cdd5665b0e70b352015e4a6295ef57c59b9aee",
+    "bhv1_confirm_dm2_off7.log": "063996d9e1516e222871669a6007472337e318fb2f75d3a2b28609e65b813cc5",
+    "bhv1_confirm_dm2_off8.log": "ba263c5d64f5327f9c8c03f9395d703eabfe36fc73215339104ba535be3eb4cb",
+    "bhv1_confirm_dm2_on1.log": "18a7f5b36f85b660b88e0c53280e5c2bb8a0dfb905c13a096d5b485846f96c43",
+    "bhv1_confirm_dm2_on2.log": "a1dffc46cba96117a3e7ca3a3f6df3fddf735a156ccc78fc8298ed49d34f7dd6",
+    "bhv1_confirm_dm2_on3.log": "308a7b2ce3312b452a40ae4f2c9c0bc5d97f2a8c38a4c89b50a68482832b65e6",
+    "bhv1_confirm_dm2_on4.log": "4461d68f43f7a79fcf509034a14d847311f961f6329fe751106df3da9fa0d0d3",
+    "bhv1_confirm_dm2_on5.log": "51012600ba435998964feb8ba49fa33ae3d8188613a3146deaeb7841e2ca9135",
+    "bhv1_confirm_dm2_on6.log": "53ba80804a76d22af263184c05793e939cf72cdac3bcd53c4398618b6b3dde59",
+    "bhv1_confirm_dm2_on7.log": "13bbb3212868fb7d9bf73c232939c434edd992ce89b7d604de36dd4c04859060",
+    "bhv1_confirm_dm2_on8.log": "767affa7482bd09af434e1a9f008d50e45394d72a4b95be00a9082ebd0adb7cf",
+    "bhv1_confirm_dm4_off1.log": "8e5aa844885c611e0282b80a23bfa62575cd7e6b98b8affad8f2471a116414ec",
+    "bhv1_confirm_dm4_off2.log": "6e4a94b41fb57d1293c8e883d399b74d2a49335d50bae7ec06e9ece58e82e4f1",
+    "bhv1_confirm_dm4_off3.log": "ed2055b9561f9290de6b33fe9f6114a53f701275e2028ed7833da35e36083415",
+    "bhv1_confirm_dm4_off4.log": "797434e0c5222d6429806cb4fc261c364819f0247d1d7e7f83b439ceb6424b86",
+    "bhv1_confirm_dm4_off5.log": "ca0ae7ae81028ed5fc59ae5b47866b0369d2e833e80b0c804c0aac74c3834038",
+    "bhv1_confirm_dm4_off6.log": "21483dcb268f9be827394d52de2db963eafd1ba2e6a957c5f4283906db7cb120",
+    "bhv1_confirm_dm4_off7.log": "94fc816d3f526ab64cc8c62e6077b6ba361ec902b1f600db730ce46712f52b6d",
+    "bhv1_confirm_dm4_off8.log": "4ac6e82b29b5e33c9658e31bb0e9f47ac50acfbed1538b54d73a5d7db0774759",
+    "bhv1_confirm_dm4_on1.log": "cb38c9124da7e637b99ad4bda33a68d92be0994a579ed6d3dd505108667dca75",
+    "bhv1_confirm_dm4_on2.log": "5be5245f124b3dee2855b14549d1c0a7c0f2f094e64c1e8f4e90ee9749543873",
+    "bhv1_confirm_dm4_on3.log": "1b21a7e066828da0685e6d6bb172d3fd9308a1a417a28ce010ccf11ca9987e27",
+    "bhv1_confirm_dm4_on4.log": "d375e6e2dbad59ef8b7ddc508b0fa151dd0fe377b070f70b7ba5a4fbe84a8624",
+    "bhv1_confirm_dm4_on5.log": "d40bd9e492aed053e216e6fbc26e96b8bab98f6023dfbfa6912a75a652c2ce08",
+    "bhv1_confirm_dm4_on6.log": "5522c0c026dc9082b36cad1d0bc6b1e3bbf0a9b07c1b73906e4a3e2fb56982ec",
+    "bhv1_confirm_dm4_on7.log": "3f5ccc9156e66605b4b5f7e3035c78be79d6823c2936110ce110d618342cafbc",
+    "bhv1_confirm_dm4_on8.log": "ec91dbc7e05024938a65f47148bb4dcbbb50bc2efe335928c5a1f0c052a506ae",
+    "bhv1_fixturefix_smoke.log": "4564f7d2b92fd42a04c7f4637ad2d18d57941548adface063686e4299454f18d",
+    "bhv1_matrix2_dm2_played_off.log": "1d0f335ddd1958032bb5c8b287856c5ed77a862cd02129a7d30e6ed136f51dac",
+    "bhv1_matrix2_dm2_played_on.log": "9a655b4540042f4e94a3e506149930d6765094ea7e781306d947b7e4d4eedf8b",
+    "bhv1_matrix2_dm2_slow_off.log": "25218ba15b2ca35ffbd59c8e5d948067baaf060bc3ae7c33bd959f2da24134a0",
+    "bhv1_matrix2_dm2_slow_on.log": "3bef8b1b021034ead63e5a6c9e7cf15a1e6bd3e830eda8e75baf6a3616c15a9e",
+    "bhv1_matrix2_dm4_played_off.log": "a746561b01f12f8463b2acedb600d0d61de19da20b6a70f2141b2b2b53a4a519",
+    "bhv1_matrix2_dm4_played_on.log": "9e451ef9dfad54a981c81e8e750af4cace5745a03da372627a793abeb25791b4",
+    "bhv1_matrix2_dm4_slow_off.log": "2065cb904e92e7ff7b614542d6e071d80c3009a7b597f329343150e92c91f7e5",
+    "bhv1_matrix2_dm4_slow_on.log": "f41c9e4da03af65f0c84fbeebe7a27bd35d8417fda3d96fcab4165415df25790",
+    "bhv1_matrix_dm4_played_off.log": "87eaa33da35bc3f42a059a28278e8298fe64a92f24bda6ebcc427698048bbb77",
+    "bhv1_mutated_goal_counter.log": "b062341dffae4cd59df7161521b41c50979baa9e7e8e5c52ecd3de2d20df9cda",
+    "bhv1_replay2_dm2_s113_off.log": "eae8965550c4056d9eb8809cc2d9bce14dd44fb67b55565cfedb35bc7f4f48e6",
+    "bhv1_replay3_dm2_s113_compute.log": "8a803c9b7415704ac3244b579e854a0f85cae1cd462765948a55849a32c032eb",
+    "bhv1_replay3_dm2_s113_legacy.log": "4663ad1c1066027cf2f8d8644e8244231a189e67c1f2130f997f729d2b223b16",
+    "bhv1_replay3_dm2_s113_off.log": "b43f9fabe43f0e00755045acfa93dba94ac300f7a74cd3879c7ad193fd9b519c",
+    "bhv1_replay3_dm2_s113_off_repeat.log": "4f824e4fe2e6d0225586317c3be24ad823347d9db354733173a435892d94ca6c",
+    "bhv1_replay3_dm2_s113_on.log": "a1695d6ce85670a7631cb4c1af8780877279e04684c8e94092e503f85d9ee055",
+    "bhv1_replay3_dm2_s113_shipped.log": "48b5f43fa840c775b7180386c1e1c4e2c14b26400517698f0a5884315cf4bf49",
+    "bhv1_replay3_dm2_s50917_compute.log": "3170443316f38590b3fde915358294eaea0a1321736be4ca5820e8ace3cf21d6",
+    "bhv1_replay3_dm2_s50917_legacy.log": "38b9982f2211cf816c8918f57cb57ced5890d4f000a9f68e5e5cc2464e7652f1",
+    "bhv1_replay3_dm2_s50917_off.log": "5865bf63bb0a8407285a507272f07abe7b047780529d4ec190170bdd5df5abe6",
+    "bhv1_replay3_dm2_s50917_off_repeat.log": "4a461e861b14f80bd1a556068649d1bad30a1a135641502ef2f73fa32d939dcd",
+    "bhv1_replay3_dm2_s50917_on.log": "d792c182834af6968cfd836b894eda42c52a7c612aa131f530817a1868fd3d20",
+    "bhv1_replay3_dm2_s50917_shipped.log": "070cdf32fdaad71abea14d5fdcbf51e52872f926ebafba35524802386a1ae7bc",
+    "bhv1_replay3_dm4_s113_compute.log": "7dcfce0d804283967ca5cf1ec0b39750f22192b450e623c819eda74bc7693c55",
+    "bhv1_replay3_dm4_s113_legacy.log": "422d450bd9ec910c32573744bf6504a64376dc198b557fd60e2dd92fc23fb89e",
+    "bhv1_replay3_dm4_s113_off.log": "bb9a3d337786016461a019752ca4e9a23c8c96249b28a57987b5f74d53fca6cd",
+    "bhv1_replay3_dm4_s113_off_repeat.log": "1c39b39c1b057182230a957df06b22a8cede5a6b2a172f67f2146842486902c2",
+    "bhv1_replay3_dm4_s113_on.log": "8b730c80a1436549380debd2325c279b8a4dca27949e92458bc5bd151d4c6cbc",
+    "bhv1_replay3_dm4_s113_shipped.log": "fae9d06c332223f99fc67d772889bda67364727b1d0ee0a5fd28caf2e0c0d840",
+    "bhv1_replay3_dm4_s50917_compute.log": "540673a499e0288fbd04ec44d95b72671b33ae6f1c440a6e2fd2f588c276a99d",
+    "bhv1_replay3_dm4_s50917_legacy.log": "cda1878a84c9b11f571ad06f689e03e730e92b88c5b6cbee5d242422298ffd97",
+    "bhv1_replay3_dm4_s50917_off.log": "1cad011ae934e02dc1518aa947aab4b9146fdd1f2db559af6dbd9dd8189782f5",
+    "bhv1_replay3_dm4_s50917_off_repeat.log": "396766901a83525f7e31d85d20e6ea1bb5896aac9634f6cb83558e315d621d7e",
+    "bhv1_replay3_dm4_s50917_on.log": "67e9bc45ed41a45520df9cdd57ed4319630140031ccb9d5505ceec1f9406b185",
+    "bhv1_replay3_dm4_s50917_shipped.log": "7193e02d8122594fff5f5a200663b188c461fd8c3c719338e7f394631d3ae8e2",
+    "bhv1_replay_dm2_s113_off.log": "2b2a250d92102175710efa03b7f211bfa591a4d9426db95090ea12afac2fd4a9",
+    "bhv1_shipped_shop12.log": "c7f6486713622adea214b8a1ae0e2259c6e46086bf940fd3a173690ad3e1c087",
+    "bhv1_shopfixed_dm2_played_off.log": "95c9968452be2946b37e995be4a31434834a09335c06cb8bdd473620ad32262a",
+    "bhv1_shopfixed_dm2_played_on.log": "986ab6a11b3cb0a79a91e7c1ea18b9bfe2c61c933cb95d1290e554f578ad7bf7",
+    "bhv1_shopfixed_dm2_slow_off.log": "e9b98201bd74505a524d1388b4ed13f164f4f7d0854c62224b51d63f3c2339b5",
+    "bhv1_shopfixed_dm2_slow_on.log": "7a4717ba2e2d67ca3b83dbd3d0efe25f6858339868fe180c718d0f8f73ea9ac5",
+    "bhv1_shopfixed_dm4_played_off.log": "cb9100b3a3be7659ec36f5879684367cd3d69b7675ae9f6db45c72cb3b79439a",
+    "bhv1_shopfixed_dm4_played_on.log": "4dbd9b9e621d5958fcb06b50817020e423b52a3004aba3bb2b49bc4d2bc97e4b",
+    "bhv1_shopfixed_dm4_slow_off.log": "6c47a9bbf19ba24aebd9ea8e61c0787d0bf15f6272d7822f41b6dc6b6a4605f2",
+    "bhv1_shopfixed_dm4_slow_on.log": "ae4b5cb4800a41c8a37b6b3fb7ffba9559ecf32c3df3ec60962e95e4be03be2e",
+    "bhv1_shopfresh_dm2_played_off.log": "027285e232cc71cf280cd66181a5f49e40ebe3dd91852bb9ed893898d1af7cf5",
+    "bhv1_shopfresh_dm4_played_off.log": "43d345f4dcfe679aa18c2096b1d400134abe47295b8efb04030517a1625481c2",
+    "bhv1_shopfresh_dm4_played_on.log": "aec3b1f47588793d95d67c56b45ce6a84e25bc2544363f881c3efc71838d2151",
+    "bhv1_shopfresh_dm4_slow_off.log": "b8839ea998df497adb0220a4dcf23e22906a3d77877c7d94098c8209e741672b",
+    "bhv1_shopfresh_dm4_slow_on.log": "33449500f9606bef614782ad7be74c3fe8ba548ef338b73adb35f8d29b5c7435",
+    "bhv1_smoke.log": "89da3d2396d4824ca66c2bd4e49b7b6cc209e98ebbc9671f726524963520310b"
+  },
+  "limitations": [
+    "Unseeded goal-rate intervals do not meet the pre-registered +/-2 goals/minute equivalence bound.",
+    "Controlled replay fixes time and random inputs in private copies; it is not an ordinary production-RNG distribution test.",
+    "Entity exports round floating fields; 77 listed fields have additional exact scheduled-call guards.",
+    "Real-time cadence uses complete five-second windows; first windows are reported separately, and final partial windows are not recorded."
+  ],
+  "verification": {
+    "rust_full": 309,
+    "rust_affected_analysis_rerun": 45,
+    "python_full": 153,
+    "strict_clippy": true,
+    "formatting": true,
+    "git_diff_check": true,
+    "repository_invariants": true,
+    "native_validation": {
+      "ordinary_totals_unchanged": true,
+      "ordinary_diagnostics_not_fixture": true,
+      "poisoned_tape_marked_fixture": true,
+      "diagnostic_function_lookup": true,
+      "lab_identity": {
+        "authoritative": true,
+        "build_source": "fnv1a64:8160459b29e431d6",
+        "checkout_source": "fnv1a64:8160459b29e431d6",
+        "checkout_version": "0.30.0",
+        "running_version": "0.30.0"
+      },
+      "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8"
+    },
+    "fixture_comparison_refused": true,
+    "poisoned_tape_absent_from_default_corpus": true,
+    "replay_tapes_absent_from_default_corpus": true
+  },
+  "cache_context_migration": {
+    "common_rows": 752,
+    "numeric_metric_rows_preserved": 751,
+    "stale_tick_class_labels_refreshed": 5,
+    "stale_probe_row_refreshed": {
+      "run": "probe_links_run",
+      "fields": {
+        "map": [
+          "dm2",
+          "dm4"
+        ],
+        "started": [
+          "2026-09-16 07:35:58",
+          "2026-10-22 19:50:01"
+        ],
+        "duration_sec": [
+          "10.60",
+          "7.60"
+        ],
+        "engages": [
+          "2",
+          "3"
+        ],
+        "cover": [
+          "47",
+          "36"
+        ],
+        "goals": [
+          "0",
+          "1"
+        ],
+        "routefails": [
+          "1",
+          "0"
+        ],
+        "hazards": [
+          "13",
+          "12"
+        ],
+        "grabs": [
+          "9",
+          "2"
+        ],
+        "weapons": [
+          "1",
+          "4"
+        ],
+        "avg_speed": [
+          "200.44",
+          "206.13"
+        ]
+      }
+    },
+    "newly_indexed_rows": 352
+  },
+  "restored_binaries": {
+    "game/argus/progs.dat": "a3f7aa9428846de7f7b327506f5f5d3d",
+    "engine/argus/progs.dat": "a3f7aa9428846de7f7b327506f5f5d3d",
+    "lq1/progs.dat": "a3f7aa9428846de7f7b327506f5f5d3d"
+  },
+  "evidence_roles": {
+    "bhv1_confirm_dm2_off1.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_off2.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_off3.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_off4.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_off5.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_off6.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_off7.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_off8.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on1.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on2.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on3.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on4.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on5.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on6.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on7.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm2_on8.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off1.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off2.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off3.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off4.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off5.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off6.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off7.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_off8.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on1.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on2.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on3.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on4.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on5.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on6.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on7.log": "pre_registered_real_time_cohort",
+    "bhv1_confirm_dm4_on8.log": "pre_registered_real_time_cohort",
+    "bhv1_fixturefix_smoke.log": "compile_smoke_not_equivalence_cohort",
+    "bhv1_matrix2_dm2_played_off.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix2_dm2_played_on.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix2_dm2_slow_off.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix2_dm2_slow_on.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix2_dm4_played_off.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix2_dm4_played_on.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix2_dm4_slow_off.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix2_dm4_slow_on.log": "scheduled_state_guards_before_fixture_cleanup_fix",
+    "bhv1_matrix_dm4_played_off.log": "excluded_runner_case_list_mismatch",
+    "bhv1_mutated_goal_counter.log": "expected_negative_counter_mutation",
+    "bhv1_replay2_dm2_s113_off.log": "excluded_exploratory_echo_format_check",
+    "bhv1_replay3_dm2_s113_compute.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s113_legacy.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s113_off.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s113_off_repeat.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s113_on.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s113_shipped.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s50917_compute.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s50917_legacy.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s50917_off.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s50917_off_repeat.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s50917_on.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm2_s50917_shipped.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s113_compute.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s113_legacy.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s113_off.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s113_off_repeat.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s113_on.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s113_shipped.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s50917_compute.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s50917_legacy.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s50917_off.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s50917_off_repeat.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s50917_on.log": "accepted_controlled_equivalence",
+    "bhv1_replay3_dm4_s50917_shipped.log": "accepted_controlled_equivalence",
+    "bhv1_replay_dm2_s113_off.log": "excluded_exploratory_private_world_write_error",
+    "bhv1_shipped_shop12.log": "pre_existing_fixture_failure_control",
+    "bhv1_shopfixed_dm2_played_off.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfixed_dm2_played_on.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfixed_dm2_slow_off.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfixed_dm2_slow_on.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfixed_dm4_played_off.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfixed_dm4_played_on.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfixed_dm4_slow_off.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfixed_dm4_slow_on.log": "corrected_lifecycle_fixture",
+    "bhv1_shopfresh_dm2_played_off.log": "pre_existing_fixture_failure_control",
+    "bhv1_shopfresh_dm4_played_off.log": "pre_existing_fixture_failure_control",
+    "bhv1_shopfresh_dm4_played_on.log": "pre_existing_fixture_failure_control",
+    "bhv1_shopfresh_dm4_slow_off.log": "pre_existing_fixture_failure_control",
+    "bhv1_shopfresh_dm4_slow_on.log": "pre_existing_fixture_failure_control",
+    "bhv1_smoke.log": "compile_smoke_not_equivalence_cohort"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "captured_at": "2026-10-26T02:30:02.171611+00:00",
+  "ratings_provenance": "Recovered selected values from saved blind-review UI; no fields changed or rescored. Original scoring timestamp unavailable.",
+  "key": {
+    "1A": "shipped",
+    "1B": "step1a",
+    "2A": "shipped",
+    "2B": "step1a"
+  },
+  "ratings": [
+    {
+      "pair": 1,
+      "map": "dm2",
+      "A": {
+        "build": "shipped",
+        "human": 4,
+        "skill": 3
+      },
+      "B": {
+        "build": "step1a",
+        "human": 4,
+        "skill": 3
+      },
+      "preference": "Tie",
+      "confidence": "Low",
+      "evidence": ""
+    },
+    {
+      "pair": 2,
+      "map": "dm4",
+      "A": {
+        "build": "shipped",
+        "human": 1,
+        "skill": 1
+      },
+      "B": {
+        "build": "step1a",
+        "human": 2,
+        "skill": 1
+      },
+      "preference": "Not enough evidence",
+      "confidence": "Low",
+      "evidence": ""
+    }
+  ],
+  "recommendation": "Keep step1a in development as a fair-information/correctness fix; do not claim demonstrated human-likeness or skill improvement. No further validation cohorts from this review.",
+  "interpretation": [
+    "dm2: identical human and skill scores, low-confidence tie.",
+    "dm4: one-point human score advantage for step1a; equal low skill scores; overall insufficient evidence, low confidence.",
+    "Two short silent10fps pairs are not independent robust skill/fun evidence. No aggregation, significance or causal-win claim."
+  ],
+  "previous_step1a_evidence": {
+    "runs/perc2_engagement.results.json": {
+      "sha256": "fca0ca03042aca2f66ae6fd0fc97bee0ddc70b6ec6974ecec3424aca0f3f6a1a",
+      "verdict": "practically equivalent; earlier drop consistent with sampling noise"
+    },
+    "runs/perc3_lava.results.json": {
+      "sha256": "fad3ca73d46e0dc13500992d5816d4a91d22c4e864fc5c10c20adcecddd828fd",
+      "verdict": "practical non-inferiority; earlier increase consistent with sampling noise"
+    }
+  },
+  "step1b": "still parked, verified unchanged source",
+  "projectile_perception": "held",
+  "deployment": false,
+  "gameplay_changes_this_turn": false
+}

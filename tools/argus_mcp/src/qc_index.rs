@@ -32,8 +32,12 @@ pub struct QcIndex {
 }
 
 /// The file list, lifted out so the cache below can stamp it (#228).
-const INDEX_FILES: [&str; 15] = [
+const INDEX_FILES: [&str; 19] = [
     "argus.qc",
+    "argus_tactics.qc",
+    "argus_tactic_fixture.qc",
+    "argus_behaviour.qc",
+    "argus_behaviour_fixture.qc",
     "argus_nav.qc",
     "argus_nav_dispatch.qc",
     "defs.qc",
@@ -218,25 +222,8 @@ pub fn qc_search(cfg: &Config, needle: &str, max: usize) -> Result<Vec<QcHit>, S
         return Err("search needle must be at least 2 characters".into());
     }
     let q = needle.to_ascii_lowercase();
-    let names = [
-        "argus.qc",
-        "argus_nav.qc",
-        "argus_nav_dispatch.qc",
-        "defs.qc",
-        "items.qc",
-        "combat.qc",
-        "weapons.qc",
-        "world.qc",
-        "client.qc",
-        "argus_cam.qc",
-        "doors.qc",
-        "buttons.qc",
-        "plats.qc",
-        "triggers.qc",
-        "player.qc",
-    ];
     let mut hits = Vec::new();
-    for name in names {
+    for name in INDEX_FILES {
         let path = cfg.src.join(name);
         let Ok(text) = std::fs::read_to_string(&path) else {
             continue;
@@ -648,6 +635,28 @@ void() Argus_Bar =
         );
         // and the call regex must reach them too (calls/callers)
         assert!(call_re().is_match("            ArgusCam_POV (self, self.cam_target);"));
+    }
+
+    #[test]
+    fn behaviour_modules_are_readable_and_searchable() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        if !root.join("src/argus_behaviour.qc").exists() {
+            return;
+        }
+        let mut env = std::collections::HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = crate::config::load_for_reads_from(&env, &root).unwrap();
+        let source = qc_read(&cfg, "Argus_BehaviourObserve").unwrap();
+        assert_eq!(source.file, "src/argus_behaviour.qc");
+        assert!(source.source.contains("Argus_BehaviourPrint"));
+        assert!(qc_search(&cfg, "ar_bd_next", 30)
+            .unwrap()
+            .iter()
+            .any(|hit| hit.file == "src/argus_behaviour.qc"));
+        assert_eq!(
+            qc_read(&cfg, "Argus_BehaviourFixtureGuard").unwrap().file,
+            "src/argus_behaviour_fixture.qc"
+        );
     }
 
     #[test]

@@ -2,6 +2,10 @@
 
 This directory contains standalone command-line tools for navigation generation, match analysis, session harvesting, and graph reach validation.
 
+For agent development, use the [native lab workflow](../docs/lab-workflow.md)
+before choosing a standalone tool. Current development-source status and
+recorded validation are in [behaviour diagnostics](../docs/behaviour-diagnostics.md#current-development-status).
+
 ---
 
 ## Tool Index
@@ -146,3 +150,33 @@ The recorder joins an existing lab match. Video export requires FFmpeg with
 no encoder. The video example samples 2.4 source seconds and plays them over
 4.8 seconds at half speed. See [rendered POV evidence](argus_mcp/README.md#rendered-pov-evidence)
 for asset requirements, verification and bounds.
+
+### Behaviour, perception and muzzle contracts
+
+```text
+python -m pip install -r tools/requirements-perception-cohort.txt
+python -m unittest discover -s tools -p "test_behaviour*.py"
+python -m unittest discover -s tools -p "test_perception*.py"
+python tools/test_muzzle_fixture.py
+python tools/test_tactic_fixture.py
+python tools/test_review_outputs.py
+```
+
+These commands exercise Python contracts without launching a cohort or engine.
+The muzzle suite and local review-output contracts run in the fast workflow.
+`check_muzzle_fixture.py` exposes `check(text)` and `audit(source)` for Python
+callers; it has no CLI. The private `fixtures/muzzle_clearance.qc` is excluded
+from production and emits `MFIX` under a quarantining `BHVRPL begin` marker.
+
+`health_inventory_parked.py` verifies the active source against a declared
+manifest, reverses only allowlisted amendments in memory, then reconstructs
+the historical health/inventory candidate for static checks. Passing those
+candidate checks does not mean step 1b is active in normal play.
+
+`verify_muzzle_clearance.py`, `investigate_health_stalls.py` and
+`prepare_blind_perception.py` are retained one-shot study drivers. They are not
+argument-parsing CLIs and require their original local snapshots/fresh output
+names. Do not run them with `--help`, overwrite their evidence, or treat them
+as clean-checkout setup commands. See the [focused-check runbook](../docs/lab-workflow.md#focused-checks-without-deployment).
+The reusable blind-review HTML template is `blind_perception_review.html`;
+generated clips and answer keys stay local and outside Git staging.

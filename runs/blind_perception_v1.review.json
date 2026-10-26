@@ -1,0 +1,37 @@
+{
+  "ready": true,
+  "url": "http://127.0.0.1:8769/",
+  "matches": 4,
+  "pairs": 2,
+  "maps": [
+    "dm2",
+    "dm4"
+  ],
+  "skill": 1,
+  "clips": [
+    "pair1-B-1.webm",
+    "pair1-B-2.webm",
+    "pair1-A-1.webm",
+    "pair1-A-2.webm",
+    "pair2-B-1.webm",
+    "pair2-B-2.webm",
+    "pair2-A-1.webm",
+    "pair2-A-2.webm"
+  ],
+  "viewing_seconds": 96,
+  "source_windows_seconds": [
+    [
+      5,
+      17
+    ],
+    [
+      17,
+      29
+    ]
+  ],
+  "format": "Silent640x480 at10fps, playback1x",
+  "identity_mapping": "Kept outside served directory; reveal after scoring",
+  "step1b": "parked; source unchanged",
+  "deployment": false,
+  "verification": "Native decoded-frame verification on all8 clips; same render engine/assets; HTTP200 video/webm for each; answer-key URL404; original binaries restored"
+}

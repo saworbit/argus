@@ -651,6 +651,16 @@ pub fn brief_tape(tape: &MatchTape, map_hint: Option<&str>) -> MatchBrief {
     brief_tape_lava(tape, map_hint, None)
 }
 
+pub const CONTROLLED_FIXTURE_FLAG: &str =
+    "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands";
+
+pub fn is_controlled_fixture(brief: &MatchBrief) -> bool {
+    brief
+        .flags
+        .iter()
+        .any(|flag| flag == CONTROLLED_FIXTURE_FLAG)
+}
+
 fn brief_tape_lava(
     tape: &MatchTape,
     map_hint: Option<&str>,
@@ -814,6 +824,9 @@ fn brief_tape_lava(
     let hotspots = cluster_hotspots(tape, map.as_deref(), hull);
     let mode_share = mode_share(tape);
     let mut flags = flags(&totals, &hotspots, map.as_deref());
+    if tape.controlled_fixture {
+        flags.insert(0, CONTROLLED_FIXTURE_FLAG.into());
+    }
     if !tape.failed_spawns.is_empty() {
         // every historical mx_lqdm2 probe briefed as lqdm2 while the
         // engine, missing the BSP, ran the match on the start map
@@ -1499,6 +1512,9 @@ pub fn compare_band_primary_scaled(
     if candidates.is_empty() || controls.is_empty() {
         return compare_band_primary(candidates, controls, primary);
     }
+    if candidates.iter().chain(controls).any(is_controlled_fixture) {
+        return compare_band_primary(candidates, controls, primary);
+    }
     for (arm, briefs) in [("candidate", candidates), ("control", controls)] {
         for (index, brief) in briefs.iter().enumerate() {
             if let Err(error) = validate_duration(
@@ -1619,6 +1635,19 @@ pub fn compare_band_primary(
     let rep_ctl = representative(controls);
     let rep_cand = representative(candidates);
     let mut report = compare_gates(rep_ctl, rep_cand);
+    if candidates.iter().chain(controls).any(is_controlled_fixture) {
+        report.verdict = Verdict::Mixed;
+        report.headline =
+            "Mixed: controlled fixtures cannot establish ordinary gameplay quality".into();
+        report.gate_card =
+            "CONTROLLED FIXTURE: no ordinary gameplay verdict; use the fixture oracle".into();
+        report.gates.clear();
+        report.band.clear();
+        report.stats.clear();
+        report.findings = vec![CONTROLLED_FIXTURE_FLAG.into()];
+        report.next_steps.clear();
+        return report;
+    }
     let n_c = candidates.len() as f64;
     let n_k = controls.len() as f64;
     let shrink = ((1.0 / n_c + 1.0 / n_k) / 2.0).sqrt();
@@ -2279,6 +2308,9 @@ pub fn scale_brief_to_duration(
 /// Compare two briefs. When durations differ by more than 20%, scale A to B
 /// so a 30 s experiment is not judged as an engagement collapse vs 185 s.
 pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
+    if is_controlled_fixture(&a) || is_controlled_fixture(&b) {
+        return compare_briefs(a, b);
+    }
     let da = a.totals.duration_sec;
     let db = b.totals.duration_sec;
     if let Err(error) = validate_duration(da, "baseline tape") {
@@ -3347,6 +3379,33 @@ Key metrics: stalls, goals, K/D spread, coverage cells, avg speed, lava deaths, 
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn controlled_tapes_never_receive_ordinary_quality_verdicts() {
+        let mut ordinary = super::MatchBrief::empty();
+        ordinary.map = Some("dm4".into());
+        ordinary.totals.duration_sec = 60.0;
+        let mut fixture = ordinary.clone();
+        fixture.totals.duration_sec = 61.0;
+        fixture.flags.push(super::CONTROLLED_FIXTURE_FLAG.into());
+        fixture.totals.goals = 900;
+        for report in [
+            super::compare_band_primary(
+                &[ordinary.clone(), fixture.clone()],
+                &[ordinary.clone()],
+                Some("stall_parity"),
+            ),
+            super::compare_band_primary_scaled(
+                &[fixture.clone()],
+                &[ordinary.clone()],
+                Some("stall_parity"),
+            ),
+            super::compare_briefs_scaled(ordinary, fixture),
+        ] {
+            assert_eq!(report.verdict, super::Verdict::Mixed);
+            assert!(report.gates.is_empty() && report.band.is_empty() && report.stats.is_empty());
+            assert!(report.gate_card.contains("CONTROLLED FIXTURE"));
+        }
+    }
     use super::*;
 
     fn log_a() -> String {

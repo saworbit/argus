@@ -1027,6 +1027,26 @@ entity ar_tacfixture_bot;
 float ar_tacfixture_until;
 void() Argus_TacticFixture;
 void() Argus_TacticFixtureTick;
+void() Argus_BehaviourObserve;
+void() Argus_BehaviourCheckedObserve;
+void() Argus_BehaviourReset;
+void() Argus_BehaviourRosterReset;
+void(string reason) Argus_BehaviourEvent;
+void() Argus_BehaviourFixture;
+void() Argus_BehaviourFixturePre;
+void() Argus_BehaviourFixturePost;
+void() Argus_ObservationReset;
+float(entity enemy) Argus_CanSee;
+float(entity enemy) Argus_PainCanSee;
+void(entity enemy) Argus_ObserveEnemy;
+void(entity target) Argus_ObservationRemoved;
+vector() Argus_EnemyPosition;
+vector() Argus_EnemyVelocity;
+float() Argus_EnemyPowerThreat;
+void() Argus_PerceptionFixture;
+void() Argus_PerceptionFixtureTick;
+void() Argus_HealthFixtureChecks;
+float ar_pf_rngcalls; // private controlled-input fixture counter; unused in play
 
 .float ar_tactic;             // 1 opening, 2 cover, 3 return, 4 return shot
 .float ar_tactic_until;

@@ -27,6 +27,12 @@ reappearance. Hidden travel uses remembered coordinates only.
 
 ## Ordinary-session evidence
 
+The current development source shares the tactical muzzle-clearance gate
+with ordinary rocket fire. Tactical shots keep the original 240-unit reach
+and settle/abort rule; only ordinary shots cap reach at aim-point distance.
+See [ordinary rocket clearance](behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance).
+Its private gate/stock-fire fixtures do not replace the full manoeuvre suite.
+
 With `developer 1`, `TACTICCHECK` records why Romero's existing half-second
 entry checks stop. `evaluated`, `visible`, `loaded`, `eligible` and `at_start`
 are nested milestones; the remaining stage names are refusal reasons.

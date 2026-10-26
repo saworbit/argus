@@ -1542,6 +1542,10 @@ void() ImpulseCommands =
 	}
 	else if (self.impulse == 217 && cvar ("developer") && cvar ("scratch1") == 197)
 		Argus_TacticFixture ();
+	else if (self.impulse == 218 && cvar ("developer") && cvar ("scratch1") == 590)
+		Argus_BehaviourFixture ();
+	else if (self.impulse == 219 && cvar ("developer") && cvar ("scratch1") == 593)
+		Argus_PerceptionFixture ();
 	else if (self.impulse >= 217 && self.impulse <= 219
 	         && cvar ("developer"))
 	{

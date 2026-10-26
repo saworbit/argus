@@ -38,7 +38,7 @@ flowchart TD
 | Hazards | Braking-aware floor probes, dry landings, liquid checks and knockback-aware ledge avoidance |
 | Navigation | Sliced search, cached routes, typed walks/drops/jumps, doors, lifts, trains, teleports and water transitions |
 | Combat | Weapon/range choice, projectile lead, splash clearance, movement under threat and crossfire responses |
-| Perception | Soft field of view, weapon/item hearing, remembered sightings and limited invisible-player glimpses |
+| Perception | Soft field of view, weapon/item hearing, cached visual combat inputs and limited invisible-player glimpses |
 | Aim and skill | Damped spring tracking, blended aim offsets, reaction delay and continuous per-bot skill |
 | Goals | Utility scoring, personality appetites, pickup claims, item timing and prerequisite weapon errands |
 | Presentation | Fake scoreboard rows, stock player models/deaths/backpacks, chat and spectator camera |
@@ -47,6 +47,27 @@ The tactical attack-cover-return state machine owns movement temporarily on
 two authored routes. It preserves item-route state but suppresses incompatible
 launches, validates incoming momentum and brakes during handoff. See its
 [implementation and acceptance limits](attack-cover-return.md).
+
+The uncommitted perception candidate gives ordinary combat an observation cache
+for its target's position, velocity, movement flags and powerup cues. Hidden
+prediction lasts at most 0.4 seconds and travels at most 128 units. Damage
+alone cannot create a visual observation, and entity lifecycle changes clear
+cached identity. The step 1b health/inventory candidate is parked after an
+inconclusive bounded dm4 stall investigation; targeting, retreat and hunch
+changes are reverted to step 1a behaviour, with the separate rocket-clearance
+amendment described below. Its private-information
+fixes are retained as a patch for later work. Projectile
+recognition remains a separate follow-up on hold. See the
+[observation boundary and engine checks](behaviour-diagnostics.md#perception-step-1a).
+
+`Argus_MuzzleClear` gates the ordinary final-aim rocket trigger after movement
+has been computed. It traces the actual firing direction for the nearer of
+240 units and muzzle-to-aim-point distance. Blocked shots release the trigger
+without cancelling movement. Authored tactics retain their full 240-unit
+probe and existing settle/abort rule. Ordinary grenade/hitscan fire and the
+separate exact-line speculative prefire remain unchanged. This is outgoing
+shot clearance, not incoming-projectile perception. Its controlled checks
+cover the shared gate and stock firing, rather than the entire combat AI.
 
 ### Navigation is generated, not loaded at runtime
 

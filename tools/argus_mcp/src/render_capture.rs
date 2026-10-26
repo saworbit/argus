@@ -662,16 +662,19 @@ async fn finish_preflight(
         let stdout = child.stdout.take().ok_or("missing FFmpeg stdout")?;
         let stderr = child.stderr.take().ok_or("missing FFmpeg stderr")?;
         let mut stdin = child.stdin.take().ok_or("missing FFmpeg stdin")?;
-        let (status, stdout, stderr, ()) = tokio::try_join!(
+        let (status, stdout, stderr, input_written) = tokio::try_join!(
             async { child.wait().await.map_err(|e| e.to_string()) },
             preflight_bytes(stdout),
             preflight_bytes(stderr),
-            async move { stdin.write_all(input).await.map_err(|e| e.to_string()) }
+            // An encoder can reject its arguments before reading stdin.
+            // Collect its diagnostic before reporting the resulting pipe error.
+            async move { Ok::<_, String>(stdin.write_all(input).await) }
         )?;
         let text = format!("{stdout}{stderr}");
         if !status.success() {
             return Err(format!("FFmpeg preflight failed: {text}"));
         }
+        input_written.map_err(|e| e.to_string())?;
         Ok(text)
     };
     let error = match tokio::time::timeout(deadline, collect).await {
@@ -1110,6 +1113,24 @@ mod tests {
             !cfg.root.join("backups").exists(),
             "failed preflight created capture output"
         );
+    }
+
+    #[tokio::test]
+    async fn preflight_keeps_encoder_error_after_closed_stdin() {
+        let dir = crate::test_support::TestDir::new("preflight-closed-stdin").unwrap();
+        let executable = preflight_fixture(
+            dir.path(),
+            r#"fn main() {
+                eprintln!("Unknown encoder fixture");
+                std::process::exit(1);
+            }"#,
+        );
+        let input = vec![0; 128 * 1024];
+        let error = preflight_output(&mut encoder(&executable), &input)
+            .await
+            .unwrap_err();
+        assert!(error.contains("Unknown encoder fixture"), "{error}");
+        assert!(error.starts_with("FFmpeg preflight failed:"), "{error}");
     }
 
     fn preflight_fixture(dir: &Path, code: &str) -> std::path::PathBuf {

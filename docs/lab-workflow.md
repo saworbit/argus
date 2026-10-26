@@ -141,6 +141,55 @@ only new output.
 For exact baselines, primary metrics and repeated-run statistics, use the
 [measurement guide](../tools/argus_mcp/README.md#what-the-instrument-can-see-and-when-to-stop).
 
+### Focused checks without deployment
+
+For the current source's observation, parked-state and muzzle contracts,
+these **terminal commands** do not launch an engine:
+
+```text
+python -m pip install -r tools/requirements-perception-cohort.txt
+python -m unittest discover -s tools -p "test_perception*.py"
+python tools/test_muzzle_fixture.py
+python tools/test_tactic_fixture.py
+python tools/test_review_outputs.py
+```
+
+The pinned NumPy/SciPy requirements support historical cohort calculations;
+install them for the perception discovery command even though it launches no
+cohort. The muzzle module and `test_review_outputs.py` are blocking fast
+workflow checks. On restricted Windows runners, use a writable workspace
+temporary directory for `TEMP` and `TMP` if temporary-copy tests hit ACL errors.
+Fast-workflow coverage is tracked in [#585](https://github.com/saworbit/argus/issues/585).
+
+For an authorised native check, preserve human sessions first, require a
+source-authoritative lab and use one compiler at a time. `compile_qc
+install=false` prevents installation but still writes `ARGUS_PROGS`, so point
+both `ARGUS_SRC` and `ARGUS_PROGS` at an owned private build tree. `experiment
+compile=false` tests the already-staged lab binary; it does not compile or
+select the intended candidate for you. Record and verify that binary's hash
+before running, then restore every saved binary location on success or error.
+Do not use the default installing compile path in a no-deployment task.
+
+The retained `verify_muzzle_clearance.py`, `prepare_blind_perception.py` and
+`investigate_health_stalls.py` scripts are fixed session drivers, not reusable
+public CLIs. They require local ignored snapshots, fresh hard-coded names or
+output directories, and have no argument parser or `--help`. Do not invoke
+them merely to discover options, delete prior evidence, or restart completed
+cohorts. The [diagnostics guide](behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance)
+records the original checks and their limits. A repeatable driver is follow-up
+work, not a prerequisite for retaining those historical results.
+It is tracked in [#586](https://github.com/saworbit/argus/issues/586).
+
+The blind-review page saves ratings to the browser profile/origin or exports
+them on request. Keep its key outside the served anonymous directory until
+the reviewer scores, preserve pre-reveal ratings, and separate subjective
+judgments from native metric gates. Generated WebM files contain local game
+assets and should not be staged in Git. A loopback preview is temporary local
+viewing, not a deployment or a published evidence URL.
+Generated review pages/clips are ignored by default; the reusable HTML
+template remains tracked. Raw session-study tapes are also retained locally,
+with checksums in `runs/local-study-tapes.json`. Do not overwrite frozen tapes.
+
 ## Add or regenerate navigation
 
 Use **MCP**, with a real local BSP path in place of the example:

@@ -1,0 +1,1290 @@
+{
+  "primary_result_sha256": "fad3ca73d46e0dc13500992d5816d4a91d22c4e864fc5c10c20adcecddd828fd",
+  "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+  "source_identity_unchanged": {
+    "source_sha256": "37a925cf26ad2590441ec5a105692f5f55a6f990f4dce6aa33cd3d4f71b53a00",
+    "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+    "nav_sha256": "761bc949ca78022ec5e126c134de16c9674253767d6b15d638a1efc51f0b3cd0"
+  },
+  "restored_binaries": {
+    "game/argus/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "engine/argus/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "lq1/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  },
+  "checks": [
+    {
+      "command": [
+        "python",
+        "tools/argus_ci.py",
+        "all"
+      ],
+      "returncode": 0,
+      "stdout": "ship: ok\neol: ok\ntapes: ok\nnav: ok\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'src/argus.qc', CRLF will be replaced by LF the next time Git touches it\n"
+    }
+  ],
+  "analysis_rerun_bit_identical": true,
+  "valid_matches": 512,
+  "total_attempts": 514,
+  "evidence": {
+    "native-comparison.json": {
+      "command": [
+        "C:\\argus\\tools\\argus_mcp\\target\\debug\\argus-mcp.exe",
+        "compare",
+        "perc3_dm2_candidate001,perc3_dm2_candidate002,perc3_dm2_candidate003,perc3_dm2_candidate004,perc3_dm2_candidate005,perc3_dm2_candidate006,perc3_dm2_candidate007,perc3_dm2_candidate008,perc3_dm2_candidate009,perc3_dm2_candidate010,perc3_dm2_candidate011,perc3_dm2_candidate012,perc3_dm2_candidate013,perc3_dm2_candidate014,perc3_dm2_candidate015,perc3_dm2_candidate016,perc3_dm2_candidate017,perc3_dm2_candidate018,perc3_dm2_candidate019,perc3_dm2_candidate020,perc3_dm2_candidate021,perc3_dm2_candidate022,perc3_dm2_candidate023,perc3_dm2_candidate024,perc3_dm2_candidate025,perc3_dm2_candidate026,perc3_dm2_candidate027,perc3_dm2_candidate028,perc3_dm2_candidate029,perc3_dm2_candidate030,perc3_dm2_candidate031,perc3_dm2_candidate032,perc3_dm2_candidate033,perc3_dm2_candidate034,perc3_dm2_candidate035,perc3_dm2_candidate036,perc3_dm2_candidate037,perc3_dm2_candidate038,perc3_dm2_candidate039,perc3_dm2_candidate040,perc3_dm2_candidate041,perc3_dm2_candidate042,perc3_dm2_candidate043,perc3_dm2_candidate044,perc3_dm2_candidate045,perc3_dm2_candidate046,perc3_dm2_candidate047,perc3_dm2_candidate048,perc3_dm2_candidate049,perc3_dm2_candidate050,perc3_dm2_candidate051,perc3_dm2_candidate052,perc3_dm2_candidate053,perc3_dm2_candidate054,perc3_dm2_candidate055,perc3_dm2_candidate056,perc3_dm2_candidate057,perc3_dm2_candidate058,perc3_dm2_candidate059,perc3_dm2_candidate060,perc3_dm2_candidate061,perc3_dm2_candidate062,perc3_dm2_candidate063,perc3_dm2_candidate064,perc3_dm2_candidate065,perc3_dm2_candidate066,perc3_dm2_candidate067,perc3_dm2_candidate068,perc3_dm2_candidate069,perc3_dm2_candidate070,perc3_dm2_candidate071,perc3_dm2_candidate072,perc3_dm2_candidate073,perc3_dm2_candidate074,perc3_dm2_candidate075,perc3_dm2_candidate076,perc3_dm2_candidate077,perc3_dm2_candidate078,perc3_dm2_candidate079,perc3_dm2_candidate080,perc3_dm2_candidate081,perc3_dm2_candidate082,perc3_dm2_candidate083,perc3_dm2_candidate084,perc3_dm2_candidate085,perc3_dm2_candidate086,perc3_dm2_candidate087,perc3_dm2_candidate088,perc3_dm2_candidate089,perc3_dm2_candidate090,perc3_dm2_candidate091,perc3_dm2_candidate092,perc3_dm2_candidate093,perc3_dm2_candidate094,perc3_dm2_candidate095,perc3_dm2_candidate096,perc3_dm2_candidate097,perc3_dm2_candidate098,perc3_dm2_candidate099,perc3_dm2_candidate100,perc3_dm2_candidate101,perc3_dm2_candidate102,perc3_dm2_candidate103,perc3_dm2_candidate104,perc3_dm2_candidate105,perc3_dm2_candidate106,perc3_dm2_candidate107,perc3_dm2_candidate108,perc3_dm2_candidate109,perc3_dm2_candidate110,perc3_dm2_candidate111,perc3_dm2_candidate112,perc3_dm2_candidate113,perc3_dm2_candidate114,perc3_dm2_candidate115,perc3_dm2_candidate116,perc3_dm2_candidate117,perc3_dm2_candidate118,perc3_dm2_candidate119,perc3_dm2_candidate120,perc3_dm2_candidate121,perc3_dm2_candidate122,perc3_dm2_candidate123,perc3_dm2_candidate124,perc3_dm2_candidate125,perc3_dm2_candidate126,perc3_dm2_candidate127,perc3_dm2_candidate128,perc3_dm2_candidate129,perc3_dm2_candidate130,perc3_dm2_candidate131,perc3_dm2_candidate132,perc3_dm2_candidate133,perc3_dm2_candidate134,perc3_dm2_candidate135,perc3_dm2_candidate136,perc3_dm2_candidate137,perc3_dm2_candidate138,perc3_dm2_candidate139,perc3_dm2_candidate140,perc3_dm2_candidate141,perc3_dm2_candidate142,perc3_dm2_candidate143,perc3_dm2_candidate144,perc3_dm2_candidate145,perc3_dm2_candidate146,perc3_dm2_candidate147,perc3_dm2_candidate148,perc3_dm2_candidate149,perc3_dm2_candidate150,perc3_dm2_candidate151,perc3_dm2_candidate152,perc3_dm2_candidate153,perc3_dm2_candidate154,perc3_dm2_candidate155,perc3_dm2_candidate156,perc3_dm2_candidate157,perc3_dm2_candidate158,perc3_dm2_candidate159,perc3_dm2_candidate160,perc3_dm2_candidate161,perc3_dm2_candidate162,perc3_dm2_candidate163,perc3_dm2_candidate164,perc3_dm2_candidate165,perc3_dm2_candidate166,perc3_dm2_candidate167,perc3_dm2_candidate168,perc3_dm2_candidate169,perc3_dm2_candidate170,perc3_dm2_candidate171,perc3_dm2_candidate172,perc3_dm2_candidate173,perc3_dm2_candidate174,perc3_dm2_candidate175,perc3_dm2_candidate176,perc3_dm2_candidate177,perc3_dm2_candidate178,perc3_dm2_candidate179,perc3_dm2_candidate180,perc3_dm2_candidate181,perc3_dm2_candidate182,perc3_dm2_candidate183,perc3_dm2_candidate184,perc3_dm2_candidate185,perc3_dm2_candidate186,perc3_dm2_candidate187,perc3_dm2_candidate188,perc3_dm2_candidate189,perc3_dm2_candidate190,perc3_dm2_candidate191,perc3_dm2_candidate192,perc3_dm2_candidate193,perc3_dm2_candidate194,perc3_dm2_candidate195,perc3_dm2_candidate196,perc3_dm2_candidate197,perc3_dm2_candidate198,perc3_dm2_candidate199,perc3_dm2_candidate200,perc3_dm2_candidate201,perc3_dm2_candidate202,perc3_dm2_candidate203,perc3_dm2_candidate204,perc3_dm2_candidate205,perc3_dm2_candidate206,perc3_dm2_candidate207,perc3_dm2_candidate208,perc3_dm2_candidate209,perc3_dm2_candidate210,perc3_dm2_candidate211,perc3_dm2_candidate212,perc3_dm2_candidate213,perc3_dm2_candidate214,perc3_dm2_candidate215,perc3_dm2_candidate216,perc3_dm2_candidate217,perc3_dm2_candidate218,perc3_dm2_candidate219,perc3_dm2_candidate220,perc3_dm2_candidate221,perc3_dm2_candidate222,perc3_dm2_candidate223,perc3_dm2_candidate224,perc3_dm2_candidate225,perc3_dm2_candidate226,perc3_dm2_candidate227,perc3_dm2_candidate228,perc3_dm2_candidate229,perc3_dm2_candidate230,perc3_dm2_candidate231,perc3_dm2_candidate232,perc3_dm2_candidate233,perc3_dm2_candidate234,perc3_dm2_candidate235,perc3_dm2_candidate236,perc3_dm2_candidate237,perc3_dm2_candidate238,perc3_dm2_candidate239,perc3_dm2_candidate240,perc3_dm2_candidate241,perc3_dm2_candidate242,perc3_dm2_candidate243,perc3_dm2_candidate244,perc3_dm2_candidate245,perc3_dm2_candidate246,perc3_dm2_candidate247,perc3_dm2_candidate248,perc3_dm2_candidate249,perc3_dm2_candidate250,perc3_dm2_candidate251,perc3_dm2_candidate252,perc3_dm2_candidate253,perc3_dm2_candidate254,perc3_dm2_candidate255,perc3_dm2_candidate256",
+        "perc3_dm2_control001,perc3_dm2_control002,perc3_dm2_control003,perc3_dm2_control004,perc3_dm2_control005,perc3_dm2_control006,perc3_dm2_control007,perc3_dm2_control008,perc3_dm2_control009,perc3_dm2_control010,perc3_dm2_control011,perc3_dm2_control012,perc3_dm2_control013,perc3_dm2_control014,perc3_dm2_control015,perc3_dm2_control016,perc3_dm2_control017,perc3_dm2_control018,perc3_dm2_control019,perc3_dm2_control020,perc3_dm2_control021,perc3_dm2_control022,perc3_dm2_control023,perc3_dm2_control024,perc3_dm2_control025,perc3_dm2_control026,perc3_dm2_control027,perc3_dm2_control028,perc3_dm2_control029,perc3_dm2_control030,perc3_dm2_control031,perc3_dm2_control032,perc3_dm2_control033,perc3_dm2_control034,perc3_dm2_control035,perc3_dm2_control036,perc3_dm2_control037,perc3_dm2_control038,perc3_dm2_control039,perc3_dm2_control040,perc3_dm2_control041,perc3_dm2_control042,perc3_dm2_control043,perc3_dm2_control044,perc3_dm2_control045,perc3_dm2_control046,perc3_dm2_control047,perc3_dm2_control048,perc3_dm2_control049,perc3_dm2_control050,perc3_dm2_control051,perc3_dm2_control052,perc3_dm2_control053,perc3_dm2_control054,perc3_dm2_control055,perc3_dm2_control056,perc3_dm2_control057,perc3_dm2_control058,perc3_dm2_control059,perc3_dm2_control060,perc3_dm2_control061,perc3_dm2_control062,perc3_dm2_control063,perc3_dm2_control064,perc3_dm2_control065,perc3_dm2_control066,perc3_dm2_control067,perc3_dm2_control068,perc3_dm2_control069,perc3_dm2_control070,perc3_dm2_control071,perc3_dm2_control072,perc3_dm2_control073,perc3_dm2_control074,perc3_dm2_control075,perc3_dm2_control076,perc3_dm2_control077,perc3_dm2_control078,perc3_dm2_control079,perc3_dm2_control080,perc3_dm2_control081,perc3_dm2_control082,perc3_dm2_control083,perc3_dm2_control084,perc3_dm2_control085,perc3_dm2_control086,perc3_dm2_control087,perc3_dm2_control088,perc3_dm2_control089,perc3_dm2_control090,perc3_dm2_control091,perc3_dm2_control092,perc3_dm2_control093,perc3_dm2_control094,perc3_dm2_control095,perc3_dm2_control096,perc3_dm2_control097,perc3_dm2_control098,perc3_dm2_control099,perc3_dm2_control100,perc3_dm2_control101,perc3_dm2_control102,perc3_dm2_control103,perc3_dm2_control104,perc3_dm2_control105,perc3_dm2_control106,perc3_dm2_control107,perc3_dm2_control108,perc3_dm2_control109,perc3_dm2_control110,perc3_dm2_control111,perc3_dm2_control112,perc3_dm2_control113,perc3_dm2_control114,perc3_dm2_control115,perc3_dm2_control116,perc3_dm2_control117,perc3_dm2_control118,perc3_dm2_control119,perc3_dm2_control120,perc3_dm2_control121,perc3_dm2_control122,perc3_dm2_control123,perc3_dm2_control124,perc3_dm2_control125,perc3_dm2_control126,perc3_dm2_control127,perc3_dm2_control128,perc3_dm2_control129,perc3_dm2_control130,perc3_dm2_control131,perc3_dm2_control132,perc3_dm2_control133,perc3_dm2_control134,perc3_dm2_control135,perc3_dm2_control136,perc3_dm2_control137,perc3_dm2_control138,perc3_dm2_control139,perc3_dm2_control140,perc3_dm2_control141,perc3_dm2_control142,perc3_dm2_control143,perc3_dm2_control144,perc3_dm2_control145,perc3_dm2_control146,perc3_dm2_control147,perc3_dm2_control148,perc3_dm2_control149,perc3_dm2_control150,perc3_dm2_control151,perc3_dm2_control152,perc3_dm2_control153,perc3_dm2_control154,perc3_dm2_control155,perc3_dm2_control156,perc3_dm2_control157,perc3_dm2_control158,perc3_dm2_control159,perc3_dm2_control160,perc3_dm2_control161,perc3_dm2_control162,perc3_dm2_control163,perc3_dm2_control164,perc3_dm2_control165,perc3_dm2_control166,perc3_dm2_control167,perc3_dm2_control168,perc3_dm2_control169,perc3_dm2_control170,perc3_dm2_control171,perc3_dm2_control172,perc3_dm2_control173,perc3_dm2_control174,perc3_dm2_control175,perc3_dm2_control176,perc3_dm2_control177,perc3_dm2_control178,perc3_dm2_control179,perc3_dm2_control180,perc3_dm2_control181,perc3_dm2_control182,perc3_dm2_control183,perc3_dm2_control184,perc3_dm2_control185,perc3_dm2_control186,perc3_dm2_control187,perc3_dm2_control188,perc3_dm2_control189,perc3_dm2_control190,perc3_dm2_control191,perc3_dm2_control192,perc3_dm2_control193,perc3_dm2_control194,perc3_dm2_control195,perc3_dm2_control196,perc3_dm2_control197,perc3_dm2_control198,perc3_dm2_control199,perc3_dm2_control200,perc3_dm2_control201,perc3_dm2_control202,perc3_dm2_control203,perc3_dm2_control204,perc3_dm2_control205,perc3_dm2_control206,perc3_dm2_control207,perc3_dm2_control208,perc3_dm2_control209,perc3_dm2_control210,perc3_dm2_control211,perc3_dm2_control212,perc3_dm2_control213,perc3_dm2_control214,perc3_dm2_control215,perc3_dm2_control216,perc3_dm2_control217,perc3_dm2_control218,perc3_dm2_control219,perc3_dm2_control220,perc3_dm2_control221,perc3_dm2_control222,perc3_dm2_control223,perc3_dm2_control224,perc3_dm2_control225,perc3_dm2_control226,perc3_dm2_control227,perc3_dm2_control228,perc3_dm2_control229,perc3_dm2_control230,perc3_dm2_control231,perc3_dm2_control232,perc3_dm2_control233,perc3_dm2_control234,perc3_dm2_control235,perc3_dm2_control236,perc3_dm2_control237,perc3_dm2_control238,perc3_dm2_control239,perc3_dm2_control240,perc3_dm2_control241,perc3_dm2_control242,perc3_dm2_control243,perc3_dm2_control244,perc3_dm2_control245,perc3_dm2_control246,perc3_dm2_control247,perc3_dm2_control248,perc3_dm2_control249,perc3_dm2_control250,perc3_dm2_control251,perc3_dm2_control252,perc3_dm2_control253,perc3_dm2_control254,perc3_dm2_control255,perc3_dm2_control256",
+        "--primary",
+        "lava_deaths"
+      ],
+      "returncode": 0,
+      "stdout": "\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 ARGUS A/B QUALITY GATES: dm2 (baseline vs candidate) (scaled) \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Metric                   \u2502 Status \u2502 Delta        \u2502 Verdict  \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Lava/Slime Deaths        \u2502   \ud83d\udfe2   \u2502 0 vs 0       \u2502 PASS     \u2502\n\u2502 Nav Stalls               \u2502   \ud83d\udfe2   \u2502 -9.1%        \u2502 PASS     \u2502\n\u2502 Weapon Engages           \u2502   \ud83d\udfe2   \u2502 -33.3%       \u2502 PASS     \u2502\n\u2502 Goal Pickups (gl)        \u2502   \ud83d\udd34   \u2502 -71.4%       \u2502 FAIL     \u2502\n\u2502 Frag Spread Balance      \u2502   \ud83d\udd34   \u2502 5 vs 3       \u2502 FAIL     \u2502\n\u2502 K/D Spread Tightness     \u2502   \ud83d\udfe2   \u2502 2 vs 2       \u2502 PASS     \u2502\n\u2502 Freeze Stalls/Statues    \u2502   \ud83d\udfe2   \u2502 0.0s vs 0.0s \u2502 PASS     \u2502\n\u2502 Navigation Coverage      \u2502   \ud83d\udfe2   \u2502 191 vs 213   \u2502 PASS     \u2502\n\u2502 Server tick rate         \u2502   \ud83d\udfe2   \u2502 both listen  \u2502 SAME     \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 OVERALL VERDICT:  \ud83d\udfe2 APPROVED FOR RELEASE (PARITY)          \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\nParity: stalls 11 to 10, engages 11 to 11, lava 0 to 0, freezes 0 to 0 (medians, 256 control vs 256 candidate tapes)\n  - primary metric pre-registered as lava_deaths: only it can convict, the other gates flag. Four gates convict a null 19 per cent of the time against 0 to 12 per cent each (docs/specs/2026-09-16-lab-measurement-limits.md).\n  - stall_parity: candidate median 10 against a control band of 0 to 34 (control median 11), in band\n  - stall_parity: no improvement can be demonstrated at 256 control tape(s) - the band's floor is zero. Run repeats.\n  - stall_parity: IQM 10.9 to 10.7, improvement 95% CI -1.0 to +1.5 (covers zero), P(improve) 0.51; sprt Reject at a bound of 43.2 - no effect of 43.2 or more; stop running tapes\n  - engagements: candidate median 11 against a control band of 4 to 20 (control median 11), in band\n  - engagements: IQM 11.1 to 10.7, improvement 95% CI -1.1 to +0.2 (covers zero), P(improve) 0.47; sprt Reject at a bound of 15.9 - no effect of 15.9 or more; stop running tapes\n  - lava_deaths: candidate median 0 against a control band of 0 to 3 (control median 0), in band\n  - lava_deaths: no improvement can be demonstrated at 256 control tape(s) - the band's floor is zero. Run repeats.\n  - lava_deaths: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.49; sprt Reject at a bound of 2.5 - no effect of 2.5 or more; stop running tapes\n  - freezes: candidate median 0 against a control band of 0 to 6 (control median 0), in band\n  - freezes: no improvement can be demonstrated at 256 control tape(s) - the band's floor is zero. Run repeats.\n  - freezes: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.53; sprt Reject at a bound of 1.4 - no effect of 1.4 or more; stop running tapes\n  - 256 candidate tape(s) against 256 control tape(s); the band carries 0.06 of the one-tape null spread\n",
+      "stderr": ""
+    },
+    "independent-verification.json": {
+      "ci90": [
+        -0.06198802546626758,
+        0.07736403160964363
+      ],
+      "ci95": [
+        -0.07542896616220955,
+        0.09080497230558561
+      ],
+      "paired_t_pvalue": 0.8556068064814935,
+      "noninferiority_pvalue": 0.014819333321324141,
+      "archived_code_matches": true,
+      "qc_source_unchanged": true,
+      "poisson_beta_interval": [
+        0.6869375523189049,
+        1.5815580398875495
+      ]
+    },
+    "amendment-sensitivities.json": {
+      "primary_result_sha256": "fad3ca73d46e0dc13500992d5816d4a91d22c4e864fc5c10c20adcecddd828fd",
+      "amendments": [
+        {
+          "path": "docs\\perception-lava-cohort-amendment-001.json",
+          "sha256": "02d8d504ef9b19c10a8ef455eca58a2fe12ba2dc7b9295270ef017499c108de2",
+          "content": {
+            "registered_utc": "2026-10-25T03:44:23.180024+00:00",
+            "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+            "number": 1,
+            "original_name": "perc3_dm2_candidate070",
+            "retained_name": "perc3_invalid_dm2_candidate070_a1",
+            "mode": "candidate",
+            "repeat": 70,
+            "validity_failures": [
+              "native exposure56.6 seconds, outside58..64",
+              "native tick_class dedicated_fast, required listen"
+            ],
+            "timing": {
+              "wall_seconds": 60.000328000009176,
+              "native_seconds": 56.599999999999994,
+              "complete_windows": 11,
+              "frames": 2847.0,
+              "over20": 543.0,
+              "over50": 58.0,
+              "max_ms": 100.0
+            },
+            "investigation": "Correct dm2 map; no engine error markers; source/binary/resource/protocol preflight passes. Timing disruption observed; cause not established. A current aggregate CPU sample was24%, not proof of the cause. No gameplay outcomes used to decide invalidity; no interim primary analysis.",
+            "action": "Retain raw tape, original working-directory qconsole and complete attempt receipt. Replace only the missing fixed candidate070 cell, then resume original schedule. No parameter/code/bound or sample-size changes.",
+            "first_attempt_sensitivity": "After all512 valid matches finish: substitute this retained candidate070 native count/exposure for its replacement, retain every other scheduled cell. Calculate the same paired difference intervals, four-pair bootstrap and +0.10 harm rule. Use56.6s exposure for sensitivity only despite primary-invalid timing. Report all-attempt timing tails, and do not pool the extra tape into the primary.",
+            "raw_sha256": "deca891a4969f22b06daf37bb89c5cd962fc86e42ae45d747593f714b4ad1b0a",
+            "attempt_sha256": "fa16daf961ff4af1d07ebcd3a75936d704469cd16da63a836b3ad3da2e47b73f",
+            "native_brief": {
+              "bots": [
+                {
+                  "deaths": 1,
+                  "frags": 3,
+                  "goals": 1,
+                  "name": "Carmack",
+                  "stalls": 1
+                },
+                {
+                  "deaths": 4,
+                  "frags": 0,
+                  "goals": 1,
+                  "name": "Joe Rogan",
+                  "stalls": 1
+                },
+                {
+                  "deaths": 0,
+                  "frags": 2,
+                  "goals": 3,
+                  "name": "Romero",
+                  "stalls": 1
+                }
+              ],
+              "flags": [
+                "closed button-only doors stall at runtime until the button fires",
+                "one shootable button (*30 health 1) opens t18"
+              ],
+              "goal_reach": [
+                {
+                  "band": "z\u2248-96",
+                  "classname": "item_armor2",
+                  "nearest_node": 186,
+                  "reach": "walk",
+                  "times": 5
+                },
+                {
+                  "band": "z\u224896",
+                  "classname": "item_armorInv",
+                  "nearest_node": 187,
+                  "reach": "walk",
+                  "times": 7
+                },
+                {
+                  "band": "z\u224896",
+                  "classname": "item_health",
+                  "nearest_node": 208,
+                  "reach": "walk",
+                  "times": 3
+                },
+                {
+                  "band": "z\u22480",
+                  "classname": "weapon_nailgun",
+                  "nearest_node": 130,
+                  "reach": "walk",
+                  "times": 4
+                },
+                {
+                  "band": "z\u2248160",
+                  "classname": "weapon_rocketlauncher",
+                  "nearest_node": 20,
+                  "reach": "walk",
+                  "times": 5
+                }
+              ],
+              "goals": {
+                "backpack": 2,
+                "item_armor2": 5,
+                "item_armorInv": 7,
+                "item_health": 3,
+                "item_spikes": 1,
+                "weapon_nailgun": 4,
+                "weapon_rocketlauncher": 5,
+                "weapon_supershotgun": 1
+              },
+              "headline": "dm2 57s: 5 frags, 5 deaths (0 lava, 0 third-party), 3 stalls, 5 goals, 11 engages, 72 hazards, spread 3",
+              "hotspots": [
+                {
+                  "count": 6,
+                  "kind": "hazard",
+                  "nearest_dist": 21.199999999999903,
+                  "nearest_item": "item_spikes",
+                  "nearest_item_dist": 31.765389970847085,
+                  "nearest_node": 167,
+                  "x": 2604.2,
+                  "y": -357.0,
+                  "z": 24.0
+                },
+                {
+                  "cause": "door",
+                  "count": 5,
+                  "kind": "hazard",
+                  "nearest_dist": 25.056935167733503,
+                  "nearest_item": "item_armorInv",
+                  "nearest_item_dist": 133.13470621892696,
+                  "nearest_node": 111,
+                  "x": 2339.8,
+                  "y": -527.9,
+                  "z": 8.0
+                },
+                {
+                  "count": 5,
+                  "kind": "hazard",
+                  "nearest_dist": 29.21095684841545,
+                  "nearest_item": "item_health",
+                  "nearest_item_dist": 70.79039482867707,
+                  "nearest_node": 149,
+                  "x": 2558.2,
+                  "y": -182.2,
+                  "z": 32.0
+                },
+                {
+                  "count": 4,
+                  "kind": "hazard",
+                  "nearest_dist": 73.9781724564752,
+                  "nearest_item": "item_health",
+                  "nearest_item_dist": 62.091625844392254,
+                  "nearest_node": 56,
+                  "x": 2023.6,
+                  "y": -448.9,
+                  "z": 104.0
+                },
+                {
+                  "count": 4,
+                  "kind": "hazard",
+                  "nearest_dist": 41.72684986911899,
+                  "nearest_item": "item_spikes",
+                  "nearest_item_dist": 145.87162164040006,
+                  "nearest_node": 143,
+                  "x": 2474.2,
+                  "y": -447.7,
+                  "z": 8.0
+                }
+              ],
+              "item_control": [
+                {
+                  "classname": "weapon_nailgun",
+                  "median_gap_sec": 2.6000000000000014,
+                  "period_sec": 30.0,
+                  "tightness": 0.08666666666666671,
+                  "visits": 9
+                }
+              ],
+              "lab_identity": {
+                "authoritative": true,
+                "build_source": "fnv1a64:8160459b29e431d6",
+                "checkout_source": "fnv1a64:8160459b29e431d6",
+                "checkout_version": "0.30.0",
+                "running_version": "0.30.0"
+              },
+              "map": "dm2",
+              "nav_coverage": {
+                "never_visited_sample": [
+                  0,
+                  6,
+                  8,
+                  9,
+                  10,
+                  11,
+                  12,
+                  13,
+                  15,
+                  17,
+                  18,
+                  19
+                ],
+                "nodes": 215,
+                "pct": 55,
+                "typed_links": {
+                  "lift": "2 link(s), 0 board event(s)",
+                  "rj": "3 link(s), 0 rjump event(s)",
+                  "sprint": "4 link(s), no runtime verb yet",
+                  "train": "2 link(s), 0 train event(s)"
+                },
+                "visited": 120
+              },
+              "next_steps": [],
+              "totals": {
+                "abandons": 1,
+                "acquisitions": 17,
+                "all_frags_positive": false,
+                "avg_speed": 217.90262125850109,
+                "boards": 0,
+                "closest_approach": 77.23697301163477,
+                "confine_max_sec": 10.399999999999999,
+                "confine_note": "Carmack spent 10.4s inside a 220u box at 174 u/s around (2535, -336)",
+                "cover": 215,
+                "deaths": 5,
+                "duration_sec": 56.599999999999994,
+                "engages": 11,
+                "frags": 5,
+                "freeze_max_sec": 0.0,
+                "freeze_underfire": 0,
+                "freezes": 0,
+                "goals": 5,
+                "grabs": 15,
+                "hazards": 72,
+                "kd_spread": 3,
+                "lava_deaths": 0,
+                "lava_rule": "contents",
+                "mover_waits": 0,
+                "player_kills": 5,
+                "routefails": 0,
+                "stalls": 3,
+                "third_party_deaths": 0,
+                "tick_class": "dedicated_fast",
+                "tick_gap_mean": 0.5154340836012856,
+                "weapons": 2,
+                "world_deaths": 0
+              }
+            },
+            "files": {
+              "runs\\perc3_dm2_candidate070.log": "runs\\perc3_invalid_dm2_candidate070_a1.log",
+              "runs\\perc3_dm2_candidate070": "runs\\perc3_invalid_dm2_candidate070_a1",
+              "backups\\perception-lava-cohort\\perc3_dm2_candidate070.attempt.json": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a1.attempt.json",
+              "backups\\perception-lava-cohort\\perc3_dm2_candidate070.stderr": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a1.stderr"
+            }
+          }
+        },
+        {
+          "path": "docs\\perception-lava-cohort-amendment-002.json",
+          "sha256": "18eee5ed0508b2f41f48a0c9e4ed75a43de4c3ae9d075028f93f4f42f06eb140",
+          "content": {
+            "number": 2,
+            "registered_utc": "2026-10-25T03:48:23.048764+00:00",
+            "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+            "original_name": "perc3_dm2_candidate070",
+            "retained_name": "perc3_invalid_dm2_candidate070_a2",
+            "mode": "candidate",
+            "repeat": 70,
+            "validity_failures": [
+              "native exposure44.1s outside58..64",
+              "only8 complete timing windows, at least10 required"
+            ],
+            "timing": {
+              "wall_seconds": 60.00243860000046,
+              "native_seconds": 44.099999999999994,
+              "tick_class": "listen",
+              "windows": 8,
+              "over50": 46.0,
+              "max_ms": 100.0
+            },
+            "investigation": "Last six valid attempts, both arms, had stable15.5-15.6ms weighted frames and no >50ms frames. Current host CPU99-100% with queue10-31, with no Quake engine active. This supports a current host-load explanation, but does not prove the first attempt cause. No primary aggregate analysis or gameplay-based validity choice.",
+            "readiness": "Before any further engine launch, obtain three aggregate host samples10 seconds apart with CPU<50% and queue<=4. Read-only checks; no process termination, priority or system-setting changes. Do not relax any native validity threshold. Resume only missing original candidate070, then frozen schedule; stop again on any technical invalidity.",
+            "sensitivity": "Retain amendment001 first-attempt substitution using a1. Also report a2 substitution separately and all-attempt timing tails. Do not pool extra attempts into primary512 valid matches. Same fixed analysis functions/margin; native count/exposure from rejected attempts used only for sensitivity.",
+            "raw_sha256": "1d2dc7071bb133d23d0153b93c4d1121f6780902557e3959b84aa6ceb1cad02e",
+            "attempt_sha256": "d5c125b407dde149bb72a315d86bc6814334d8b67c0801e8a9ec6beff015a088",
+            "native_brief": {
+              "bots": [
+                {
+                  "deaths": 1,
+                  "frags": 0,
+                  "goals": 1,
+                  "name": "Carmack",
+                  "stalls": 1
+                },
+                {
+                  "deaths": 2,
+                  "frags": 1,
+                  "goals": 1,
+                  "name": "Joe Rogan",
+                  "stalls": 1
+                },
+                {
+                  "deaths": 0,
+                  "frags": 2,
+                  "goals": 1,
+                  "name": "Romero",
+                  "stalls": 3
+                }
+              ],
+              "flags": [
+                "closed button-only doors stall at runtime until the button fires",
+                "one shootable button (*30 health 1) opens t18"
+              ],
+              "goal_reach": [
+                {
+                  "band": "z\u2248-96",
+                  "classname": "item_armor2",
+                  "nearest_node": 186,
+                  "reach": "walk",
+                  "times": 2
+                },
+                {
+                  "band": "z\u224896",
+                  "classname": "item_armorInv",
+                  "nearest_node": 187,
+                  "reach": "walk",
+                  "times": 3
+                },
+                {
+                  "band": "z\u224896",
+                  "classname": "item_health",
+                  "nearest_node": 208,
+                  "reach": "walk",
+                  "times": 5
+                },
+                {
+                  "band": "z\u2248320",
+                  "classname": "weapon_grenadelauncher",
+                  "nearest_node": 75,
+                  "reach": "walk",
+                  "times": 1
+                },
+                {
+                  "band": "z\u22480",
+                  "classname": "weapon_nailgun",
+                  "nearest_node": 130,
+                  "reach": "walk",
+                  "times": 2
+                },
+                {
+                  "band": "z\u2248160",
+                  "classname": "weapon_rocketlauncher",
+                  "nearest_node": 20,
+                  "reach": "walk",
+                  "times": 3
+                }
+              ],
+              "goals": {
+                "backpack": 2,
+                "item_armor2": 2,
+                "item_armorInv": 3,
+                "item_health": 5,
+                "weapon_grenadelauncher": 1,
+                "weapon_nailgun": 2,
+                "weapon_rocketlauncher": 3
+              },
+              "headline": "dm2 44s: 3 frags, 3 deaths (0 lava, 0 third-party), 5 stalls, 3 goals, 8 engages, 56 hazards, spread 2",
+              "hotspots": [
+                {
+                  "count": 6,
+                  "kind": "hazard",
+                  "nearest_dist": 21.763501556505002,
+                  "nearest_node": 6,
+                  "x": 1324.3,
+                  "y": -1129.6,
+                  "z": 344.0
+                },
+                {
+                  "cause": "door",
+                  "count": 4,
+                  "kind": "hazard",
+                  "nearest_dist": 24.909837414162272,
+                  "nearest_item": "item_armorInv",
+                  "nearest_item_dist": 133.97201200250754,
+                  "nearest_node": 111,
+                  "x": 2337.7,
+                  "y": -527.9,
+                  "z": 8.0
+                },
+                {
+                  "count": 4,
+                  "kind": "hazard",
+                  "nearest_dist": 38.29895559933714,
+                  "nearest_item": "item_spikes",
+                  "nearest_item_dist": 141.31882394076177,
+                  "nearest_node": 143,
+                  "x": 2476.6,
+                  "y": -443.5,
+                  "z": 8.0
+                },
+                {
+                  "cause": "door",
+                  "count": 3,
+                  "kind": "hazard",
+                  "nearest_dist": 181.83962714436032,
+                  "nearest_item": "item_armor2",
+                  "nearest_item_dist": 182.2126504938666,
+                  "nearest_node": 14,
+                  "x": 1488.8,
+                  "y": -995.9,
+                  "z": 20.0
+                },
+                {
+                  "cause": "lava_edge",
+                  "count": 3,
+                  "kind": "stall",
+                  "nearest_dist": 123.50777303473657,
+                  "nearest_item": "item_armor2",
+                  "nearest_item_dist": 128.06939525116843,
+                  "nearest_node": 14,
+                  "reach_pct": 96,
+                  "x": 1424.0,
+                  "y": -999.6,
+                  "z": 55.9
+                }
+              ],
+              "item_control": [
+                {
+                  "classname": "weapon_nailgun",
+                  "median_gap_sec": 2.6000000000000014,
+                  "period_sec": 30.0,
+                  "tightness": 0.08666666666666671,
+                  "visits": 6
+                }
+              ],
+              "lab_identity": {
+                "authoritative": true,
+                "build_source": "fnv1a64:8160459b29e431d6",
+                "checkout_source": "fnv1a64:8160459b29e431d6",
+                "checkout_version": "0.30.0",
+                "running_version": "0.30.0"
+              },
+              "map": "dm2",
+              "nav_coverage": {
+                "never_visited_sample": [
+                  0,
+                  10,
+                  11,
+                  12,
+                  13,
+                  15,
+                  19,
+                  20,
+                  21,
+                  23,
+                  24,
+                  25
+                ],
+                "nodes": 215,
+                "pct": 39,
+                "typed_links": {
+                  "lift": "2 link(s), 0 board event(s)",
+                  "rj": "3 link(s), 0 rjump event(s)",
+                  "sprint": "4 link(s), no runtime verb yet",
+                  "train": "2 link(s), 2 train event(s)"
+                },
+                "visited": 85
+              },
+              "next_steps": [],
+              "totals": {
+                "abandons": 2,
+                "acquisitions": 18,
+                "all_frags_positive": false,
+                "avg_speed": 184.0234948852445,
+                "boards": 0,
+                "closest_approach": 78.76293544555075,
+                "confine_max_sec": 15.899999999999999,
+                "confine_note": "Carmack spent 15.9s inside a 220u box at 215 u/s around (1357, -967)",
+                "cover": 142,
+                "deaths": 3,
+                "duration_sec": 44.099999999999994,
+                "engages": 8,
+                "frags": 3,
+                "freeze_max_sec": 0.0,
+                "freeze_underfire": 0,
+                "freezes": 0,
+                "goals": 3,
+                "grabs": 16,
+                "hazards": 56,
+                "kd_spread": 2,
+                "lava_deaths": 0,
+                "lava_rule": "contents",
+                "mover_waits": 2,
+                "player_kills": 3,
+                "routefails": 1,
+                "stalls": 5,
+                "third_party_deaths": 0,
+                "tick_class": "listen",
+                "tick_gap_mean": 0.5129554655870442,
+                "weapons": 2,
+                "world_deaths": 0
+              }
+            },
+            "host_load_check": {
+              "checked_utc": "2026-10-25T03:47:51.1151728Z",
+              "queue": {
+                "ProcessorQueueLength": 31
+              },
+              "cpu": {
+                "PercentProcessorTime": 99,
+                "PercentDPCTime": 1,
+                "PercentInterruptTime": 0
+              },
+              "engine_processes": []
+            },
+            "host_load_check_sha256": "e1bc86ff2863dcc27e6a6d838f3b639c443b532e35de007b57a220f3e37d496f",
+            "files": {
+              "runs\\perc3_dm2_candidate070.log": "runs\\perc3_invalid_dm2_candidate070_a2.log",
+              "runs\\perc3_dm2_candidate070": "runs\\perc3_invalid_dm2_candidate070_a2",
+              "backups\\perception-lava-cohort\\perc3_dm2_candidate070.attempt.json": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a2.attempt.json",
+              "backups\\perception-lava-cohort\\perc3_dm2_candidate070.stderr": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a2.stderr"
+            }
+          }
+        }
+      ],
+      "substitution_sensitivities": [
+        {
+          "amendment": 1,
+          "retained_name": "perc3_invalid_dm2_candidate070_a1",
+          "native_count": 0,
+          "native_seconds": 56.599999999999994,
+          "difference_mean": 0.0037882526557146516,
+          "ci90": [
+            -0.0655919900715525,
+            0.07316849538298181
+          ],
+          "ci95": [
+            -0.07897587183885593,
+            0.08655237715028524
+          ],
+          "block_bootstrap": {
+            "ci90": [
+              -0.06273575426219019,
+              0.07396405062618307
+            ],
+            "ci95": [
+              -0.07455267169987555,
+              0.08594358372017008
+            ]
+          },
+          "verdict": "practical non-inferiority; earlier increase consistent with sampling noise",
+          "method": "Substitute this rejected attempt for its replacement cell; keep all other511 cells; no pooling or native-exposure clipping"
+        },
+        {
+          "amendment": 2,
+          "retained_name": "perc3_invalid_dm2_candidate070_a2",
+          "native_count": 0,
+          "native_seconds": 44.099999999999994,
+          "difference_mean": 0.0037882526557146516,
+          "ci90": [
+            -0.0655919900715525,
+            0.07316849538298181
+          ],
+          "ci95": [
+            -0.07897587183885593,
+            0.08655237715028524
+          ],
+          "block_bootstrap": {
+            "ci90": [
+              -0.06273575426219019,
+              0.07396405062618307
+            ],
+            "ci95": [
+              -0.07455267169987555,
+              0.08594358372017008
+            ]
+          },
+          "verdict": "practical non-inferiority; earlier increase consistent with sampling noise",
+          "method": "Substitute this rejected attempt for its replacement cell; keep all other511 cells; no pooling or native-exposure clipping"
+        }
+      ],
+      "all_attempt_timing_tails": {
+        "control": {
+          "windows": 2816,
+          "frames": 933985.0,
+          "over20": 1085.0,
+          "over50": 125.0,
+          "max_ms": 100.0
+        },
+        "candidate": {
+          "windows": 2835,
+          "frames": 939432.0,
+          "over20": 1715.0,
+          "over50": 259.0,
+          "max_ms": 100.0
+        }
+      },
+      "first_attempt_conclusion_unchanged": true,
+      "all_substitution_conclusions_unchanged": true,
+      "temporal_blocks_descriptive": [
+        {
+          "first_pair": 1,
+          "last_pair": 4,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 5,
+          "last_pair": 8,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 9,
+          "last_pair": 12,
+          "control_events": 2,
+          "candidate_events": 2,
+          "mean_delta": 0.0008319467554075977
+        },
+        {
+          "first_pair": 13,
+          "last_pair": 16,
+          "control_events": 2,
+          "candidate_events": 2,
+          "mean_delta": 0.0008389191365844595
+        },
+        {
+          "first_pair": 17,
+          "last_pair": 20,
+          "control_events": 2,
+          "candidate_events": 1,
+          "mean_delta": -0.25125487853222483
+        },
+        {
+          "first_pair": 21,
+          "last_pair": 24,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 25,
+          "last_pair": 28,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.25041736227045075
+        },
+        {
+          "first_pair": 29,
+          "last_pair": 32,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 33,
+          "last_pair": 36,
+          "control_events": 0,
+          "candidate_events": 2,
+          "mean_delta": 0.5016722408026756
+        },
+        {
+          "first_pair": 37,
+          "last_pair": 40,
+          "control_events": 3,
+          "candidate_events": 0,
+          "mean_delta": -0.7516708449422393
+        },
+        {
+          "first_pair": 41,
+          "last_pair": 44,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 45,
+          "last_pair": 48,
+          "control_events": 0,
+          "candidate_events": 2,
+          "mean_delta": 0.5012534826717885
+        },
+        {
+          "first_pair": 49,
+          "last_pair": 52,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 53,
+          "last_pair": 56,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 57,
+          "last_pair": 60,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 61,
+          "last_pair": 64,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 65,
+          "last_pair": 68,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 69,
+          "last_pair": 72,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": -0.0008333356481545484
+        },
+        {
+          "first_pair": 73,
+          "last_pair": 76,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.2516778523489933
+        },
+        {
+          "first_pair": 77,
+          "last_pair": 80,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": -0.0016834780656836967
+        },
+        {
+          "first_pair": 81,
+          "last_pair": 84,
+          "control_events": 2,
+          "candidate_events": 2,
+          "mean_delta": 0.0008347245409014992
+        },
+        {
+          "first_pair": 85,
+          "last_pair": 88,
+          "control_events": 1,
+          "candidate_events": 0,
+          "mean_delta": -0.25
+        },
+        {
+          "first_pair": 89,
+          "last_pair": 92,
+          "control_events": 1,
+          "candidate_events": 0,
+          "mean_delta": -0.25
+        },
+        {
+          "first_pair": 93,
+          "last_pair": 96,
+          "control_events": 2,
+          "candidate_events": 1,
+          "mean_delta": -0.2542016806722689
+        },
+        {
+          "first_pair": 97,
+          "last_pair": 100,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 101,
+          "last_pair": 104,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": -0.0004173622704507496
+        },
+        {
+          "first_pair": 105,
+          "last_pair": 108,
+          "control_events": 1,
+          "candidate_events": 0,
+          "mean_delta": -0.25
+        },
+        {
+          "first_pair": 109,
+          "last_pair": 112,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": 0.0004187581308870425
+        },
+        {
+          "first_pair": 113,
+          "last_pair": 116,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 117,
+          "last_pair": 120,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.2495840266222962
+        },
+        {
+          "first_pair": 121,
+          "last_pair": 124,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.25
+        },
+        {
+          "first_pair": 125,
+          "last_pair": 128,
+          "control_events": 0,
+          "candidate_events": 5,
+          "mean_delta": 1.2516722408026757
+        },
+        {
+          "first_pair": 129,
+          "last_pair": 132,
+          "control_events": 2,
+          "candidate_events": 0,
+          "mean_delta": -0.5008347245409015
+        },
+        {
+          "first_pair": 133,
+          "last_pair": 136,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 137,
+          "last_pair": 140,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 141,
+          "last_pair": 144,
+          "control_events": 2,
+          "candidate_events": 1,
+          "mean_delta": -0.2508347245409015
+        },
+        {
+          "first_pair": 145,
+          "last_pair": 148,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 149,
+          "last_pair": 152,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": -0.0004187581308870425
+        },
+        {
+          "first_pair": 153,
+          "last_pair": 156,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.25041736227045075
+        },
+        {
+          "first_pair": 157,
+          "last_pair": 160,
+          "control_events": 1,
+          "candidate_events": 0,
+          "mean_delta": -0.25
+        },
+        {
+          "first_pair": 161,
+          "last_pair": 164,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.25
+        },
+        {
+          "first_pair": 165,
+          "last_pair": 168,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 169,
+          "last_pair": 172,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 173,
+          "last_pair": 176,
+          "control_events": 2,
+          "candidate_events": 0,
+          "mean_delta": -0.5008347245409015
+        },
+        {
+          "first_pair": 177,
+          "last_pair": 180,
+          "control_events": 0,
+          "candidate_events": 4,
+          "mean_delta": 0.9995840266222962
+        },
+        {
+          "first_pair": 181,
+          "last_pair": 184,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.2495840266222962
+        },
+        {
+          "first_pair": 185,
+          "last_pair": 188,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 189,
+          "last_pair": 192,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 193,
+          "last_pair": 196,
+          "control_events": 1,
+          "candidate_events": 0,
+          "mean_delta": -0.25
+        },
+        {
+          "first_pair": 197,
+          "last_pair": 200,
+          "control_events": 2,
+          "candidate_events": 0,
+          "mean_delta": -0.5016722408026756
+        },
+        {
+          "first_pair": 201,
+          "last_pair": 204,
+          "control_events": 5,
+          "candidate_events": 2,
+          "mean_delta": -0.7516764424127327
+        },
+        {
+          "first_pair": 205,
+          "last_pair": 208,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.25041736227045075
+        },
+        {
+          "first_pair": 209,
+          "last_pair": 212,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 213,
+          "last_pair": 216,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 217,
+          "last_pair": 220,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 221,
+          "last_pair": 224,
+          "control_events": 0,
+          "candidate_events": 2,
+          "mean_delta": 0.4995840266222962
+        },
+        {
+          "first_pair": 225,
+          "last_pair": 228,
+          "control_events": 2,
+          "candidate_events": 0,
+          "mean_delta": -0.5
+        },
+        {
+          "first_pair": 229,
+          "last_pair": 232,
+          "control_events": 1,
+          "candidate_events": 2,
+          "mean_delta": 0.2512562814070352
+        },
+        {
+          "first_pair": 233,
+          "last_pair": 236,
+          "control_events": 0,
+          "candidate_events": 0,
+          "mean_delta": 0.0
+        },
+        {
+          "first_pair": 237,
+          "last_pair": 240,
+          "control_events": 0,
+          "candidate_events": 1,
+          "mean_delta": 0.25041736227045075
+        },
+        {
+          "first_pair": 241,
+          "last_pair": 244,
+          "control_events": 1,
+          "candidate_events": 2,
+          "mean_delta": 0.24832214765100669
+        },
+        {
+          "first_pair": 245,
+          "last_pair": 248,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": -0.0004187581308870425
+        },
+        {
+          "first_pair": 249,
+          "last_pair": 252,
+          "control_events": 2,
+          "candidate_events": 0,
+          "mean_delta": -0.5
+        },
+        {
+          "first_pair": 253,
+          "last_pair": 256,
+          "control_events": 1,
+          "candidate_events": 1,
+          "mean_delta": 0.0
+        }
+      ],
+      "phase_descriptive": {
+        "before_interruption": {
+          "pairs": 69,
+          "mean_delta": 0.014613810328257544
+        },
+        "after_readiness": {
+          "pairs": 187,
+          "mean_delta": 0.0051324913032212115
+        }
+      },
+      "valid_matches": 512,
+      "total_attempts": 514
+    },
+    "host-load-check-002.json": {
+      "checked_utc": "2026-10-25T03:47:51.1151728Z",
+      "queue": {
+        "ProcessorQueueLength": 31
+      },
+      "cpu": {
+        "PercentProcessorTime": 99,
+        "PercentDPCTime": 1,
+        "PercentInterruptTime": 0
+      },
+      "engine_processes": []
+    },
+    "engine-process-check.json": {
+      "checked_utc": "2026-10-25T10:22:12.8365921Z",
+      "processes": []
+    },
+    "final-targeted-tests.json": {
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tools",
+        "-p",
+        "test_perception*.py"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "................\n----------------------------------------------------------------------\nRan 16 tests in 5.776s\n\nOK\n"
+    },
+    "execution.json": {
+      "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+      "status": "complete",
+      "completed": 512,
+      "resumed_utc": "2026-10-25T03:51:44.499477+00:00",
+      "restored_sha256": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+      "stopped_utc": "2026-10-25T10:19:02.248633+00:00"
+    },
+    "execution-before-amendment-001.json": {
+      "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+      "status": "interrupted",
+      "completed": 138,
+      "resumed_utc": "2026-10-25T01:20:42.313243+00:00",
+      "error": "Traceback (most recent call last):\n  File \"C:\\argus\\tools\\run_perception_lava.py\", line 124, in main\n    windows = valid_tape(brief, text)\n  File \"C:\\argus\\tools\\run_perception_lava.py\", line 44, in valid_tape\n    assert brief['map'] == 'dm2' and brief['totals']['tick_class'] == 'listen'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError\n",
+      "restored_sha256": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+      "stopped_utc": "2026-10-25T03:42:30.208754+00:00"
+    },
+    "execution-before-amendment-002.json": {
+      "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+      "status": "interrupted",
+      "completed": 138,
+      "resumed_utc": "2026-10-25T03:44:52.553393+00:00",
+      "error": "Traceback (most recent call last):\n  File \"C:\\argus\\tools\\run_perception_lava.py\", line 124, in main\n    windows = valid_tape(brief, text)\n  File \"C:\\argus\\tools\\run_perception_lava.py\", line 46, in valid_tape\n    assert 58 <= brief['totals']['duration_sec'] <= 64, 'invalid native exposure'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: invalid native exposure\n",
+      "restored_sha256": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+      "stopped_utc": "2026-10-25T03:45:53.431065+00:00"
+    }
+  },
+  "host_readiness": [
+    {
+      "consecutive_ready": 0,
+      "cpu": 97,
+      "checked_utc": "2026-10-25T03:49:13.4666862Z",
+      "queue": 50
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 91,
+      "checked_utc": "2026-10-25T03:49:24.2069223Z",
+      "queue": 1
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 93,
+      "checked_utc": "2026-10-25T03:49:34.8286870Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 85,
+      "checked_utc": "2026-10-25T03:49:45.4493054Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 84,
+      "checked_utc": "2026-10-25T03:49:56.0636865Z",
+      "queue": 7
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 87,
+      "checked_utc": "2026-10-25T03:50:06.7125352Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 89,
+      "checked_utc": "2026-10-25T03:50:17.3347803Z",
+      "queue": 4
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 94,
+      "checked_utc": "2026-10-25T03:50:28.0171486Z",
+      "queue": 8
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 99,
+      "checked_utc": "2026-10-25T03:50:39.0797065Z",
+      "queue": 10
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 79,
+      "checked_utc": "2026-10-25T03:50:49.6964699Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 63,
+      "checked_utc": "2026-10-25T03:51:00.3012038Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 0,
+      "cpu": 67,
+      "checked_utc": "2026-10-25T03:51:10.8998058Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 1,
+      "cpu": 47,
+      "checked_utc": "2026-10-25T03:51:21.5083950Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 2,
+      "cpu": 49,
+      "checked_utc": "2026-10-25T03:51:32.1345299Z",
+      "queue": 0
+    },
+    {
+      "consecutive_ready": 3,
+      "cpu": 39,
+      "checked_utc": "2026-10-25T03:51:42.7331213Z",
+      "queue": 0
+    }
+  ],
+  "evidence_sha256": {
+    "native-comparison.json": "a6c5e5710eff6beab8e7ae3452d91340d54153cc0fc225ad6396538e1ae721e2",
+    "independent-verification.json": "87c5081bc9d4c80398e370ce70785527657a8104002078beedd64b159dc0aed1",
+    "amendment-sensitivities.json": "7c3e9fb65af0c8c76df4f8e95eec4e73eaaa8fe9c4d582d24bb737159b4688aa",
+    "host-load-check-002.json": "e1bc86ff2863dcc27e6a6d838f3b639c443b532e35de007b57a220f3e37d496f",
+    "engine-process-check.json": "93a4a5dbffd18ffa6c2c1dca61ba06e1314d290a61446ac272b5a9934c5da2d7",
+    "final-targeted-tests.json": "bcb991dc33fe6c576e2cfd195348bdc3afb933c3bf8b3bbece4502f3333d7ed3",
+    "execution.json": "d3a973c2d79b8e21020f60ef9bb6eb3649c8245a5951d87a1f67a3f576bfc24d",
+    "execution-before-amendment-001.json": "4dac20e06c30b8a97ad54923066c11d0975edf50e5efe52f39a1ad82c731f79f",
+    "execution-before-amendment-002.json": "d41cd93ff30b969234e36887011da93733970b6b01ce90e2aa04ef5ecfc67a7b"
+  },
+  "sensitivity_reproducer_sha256": "b42d335b5b797b5e455868026ae5ba94a3c9a53ad4b106e031a4405570ad0d75",
+  "finished_utc": "2026-10-25T10:25:05.173842+00:00"
+}

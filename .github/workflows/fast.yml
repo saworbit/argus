@@ -95,5 +95,19 @@ jobs:
       - name: Run Python tape parity tests
         run: python3 tools/test_argus_tape.py
 
+      - name: Run passive behaviour diagnostics and fixture contract tests
+        run: python3 -m unittest discover -s tools -p 'test_behaviour*.py'
+
+      - name: Run observation boundary and tactical fixture tests
+        run: |
+          python3 -m pip install -r tools/requirements-perception-cohort.txt
+          python3 -m unittest discover -s tools -p 'test_perception*.py'
+          python3 tools/test_tactic_fixture.py
+
+      - name: Run rocket clearance and local review contracts
+        run: |
+          python3 tools/test_muzzle_fixture.py
+          python3 tools/test_review_outputs.py
+
       - name: Run Python playability gate tests
         run: python3 tools/test_argus_mapgate.py

@@ -31,6 +31,7 @@ void() Argus_TacticReset =
 
 void(string why) Argus_TacticAbort =
 {
+    Argus_BehaviourEvent (why);
     Argus_TacticLog (why);
     Argus_TacticReset ();
     self.ar_tactic_cool = time + 10;

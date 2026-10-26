@@ -929,7 +929,7 @@ pub struct CorpusArgs {
     pub what: Option<String>,
     pub map: Option<String>,
     #[schemars(
-        description = "bot (default) or human. Never average a human tape into a bot series."
+        description = "bot (default), human, or fixture. Human and controlled-fixture tapes never enter ordinary bot bands."
     )]
     pub kind: Option<String>,
     #[schemars(
@@ -1810,8 +1810,13 @@ impl Argus {
 
         if what == "cells" {
             let rows = crate::corpus::cells(&cfg.runs, args.map.as_deref());
+            let kind = args.kind.as_deref().unwrap_or("bot");
             let mut out = String::from("run,map,started,kind,x,y,z,count,cause\n");
-            for c in rows.iter().take(limit.unwrap_or(200)) {
+            for c in rows
+                .iter()
+                .filter(|c| c.kind.eq_ignore_ascii_case(kind))
+                .take(limit.unwrap_or(200))
+            {
                 out.push_str(&format!(
                     "{},{},{},{},{:.0},{:.0},{:.0},{:.0},{}\n",
                     c.run, c.map, c.started, c.kind, c.x, c.y, c.z, c.count, c.cause

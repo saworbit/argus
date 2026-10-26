@@ -67,6 +67,14 @@ fteqcc
 `progs.src` compiles the source and outputs `lq1/progs.dat`.
 To update the playable game mod package, copy `lq1/progs.dat` to `game/argus/progs.dat`.
 
+That copy is an installation action, not a prerequisite for reviewing a
+source change. Agent sessions use the [native lab workflow](docs/lab-workflow.md)
+and preserve human sessions before launching an engine. In no-deployment work,
+compile into an owned private tree with `install=false`, explicitly verify the
+staged lab candidate, and restore saved binaries after checking it. See
+[focused checks without deployment](docs/lab-workflow.md#focused-checks-without-deployment)
+for current Python test commands and the limits of one-shot session drivers.
+
 ### Running the Rust Lab Suite
 
 The lab suite includes regression tests against committed match tapes, parsing tools, and MCP protocols:
@@ -84,10 +92,13 @@ You can run automated headless bot matches on Linux or Windows to verify stabili
 
 ```bash
 # Example with QuakeSpasm dedicated server
-quakespasm -dedicated 8 -game argus +developer 1 +deathmatch 1 +map lqdm2
+quakespasm -dedicated 8 -condebug -game argus +developer 1 +deathmatch 1 +map lqdm2
 ```
 
 Inspect `qconsole.log` (generated with `-condebug`) to ensure telemetry is flowing and no `Host_Error` or runaway loops occurred.
+
+This manual dedicated smoke is not a real-time player comparison. Measure
+cadence and keep tick classes separate. Agents use the native lab loop above.
 
 ---
 

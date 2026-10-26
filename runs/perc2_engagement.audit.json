@@ -1,0 +1,128 @@
+{
+  "registered_result_sha256": "fca0ca03042aca2f66ae6fd0fc97bee0ddc70b6ec6974ecec3424aca0f3f6a1a",
+  "protocol_sha256": "ac9e7ced872dbeed537fbc4c539738753b79a11d88c18ea86dce6401607d385c",
+  "source_identity_unchanged": {
+    "source_sha256": "37a925cf26ad2590441ec5a105692f5f55a6f990f4dce6aa33cd3d4f71b53a00",
+    "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+    "nav_sha256": "761bc949ca78022ec5e126c134de16c9674253767d6b15d638a1efc51f0b3cd0"
+  },
+  "restored_binaries": {
+    "game/argus/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "engine/argus/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "lq1/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  },
+  "checks": [
+    {
+      "command": [
+        "python",
+        "tools/argus_ci.py",
+        "all"
+      ],
+      "returncode": 0,
+      "stdout": "ship: ok\neol: ok\ntapes: ok\nnav: ok\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'src/argus.qc', CRLF will be replaced by LF the next time Git touches it\n"
+    }
+  ],
+  "analysis_rerun_bit_identical": true,
+  "focused_test_results": {
+    "pre_registration_cohort_tests": 7,
+    "combined_perception_tests": 11,
+    "result": "pass",
+    "command": "python -m unittest discover -s tools -p 'test_perception*.py'"
+  },
+  "evidence": {
+    "native-comparison.json": {
+      "command": [
+        "C:\\argus\\tools\\argus_mcp\\target\\debug\\argus-mcp.exe",
+        "compare",
+        "perc2_dm2_candidate001,perc2_dm2_candidate002,perc2_dm2_candidate003,perc2_dm2_candidate004,perc2_dm2_candidate005,perc2_dm2_candidate006,perc2_dm2_candidate007,perc2_dm2_candidate008,perc2_dm2_candidate009,perc2_dm2_candidate010,perc2_dm2_candidate011,perc2_dm2_candidate012,perc2_dm2_candidate013,perc2_dm2_candidate014,perc2_dm2_candidate015,perc2_dm2_candidate016,perc2_dm2_candidate017,perc2_dm2_candidate018,perc2_dm2_candidate019,perc2_dm2_candidate020,perc2_dm2_candidate021,perc2_dm2_candidate022,perc2_dm2_candidate023,perc2_dm2_candidate024,perc2_dm2_candidate025,perc2_dm2_candidate026,perc2_dm2_candidate027,perc2_dm2_candidate028,perc2_dm2_candidate029,perc2_dm2_candidate030,perc2_dm2_candidate031,perc2_dm2_candidate032,perc2_dm2_candidate033,perc2_dm2_candidate034,perc2_dm2_candidate035,perc2_dm2_candidate036,perc2_dm2_candidate037,perc2_dm2_candidate038,perc2_dm2_candidate039,perc2_dm2_candidate040,perc2_dm2_candidate041,perc2_dm2_candidate042,perc2_dm2_candidate043,perc2_dm2_candidate044,perc2_dm2_candidate045,perc2_dm2_candidate046,perc2_dm2_candidate047,perc2_dm2_candidate048,perc2_dm2_candidate049,perc2_dm2_candidate050,perc2_dm2_candidate051,perc2_dm2_candidate052,perc2_dm2_candidate053,perc2_dm2_candidate054,perc2_dm2_candidate055,perc2_dm2_candidate056,perc2_dm2_candidate057,perc2_dm2_candidate058,perc2_dm2_candidate059,perc2_dm2_candidate060,perc2_dm2_candidate061,perc2_dm2_candidate062,perc2_dm2_candidate063,perc2_dm2_candidate064,perc2_dm2_candidate065,perc2_dm2_candidate066,perc2_dm2_candidate067,perc2_dm2_candidate068,perc2_dm2_candidate069,perc2_dm2_candidate070,perc2_dm2_candidate071,perc2_dm2_candidate072,perc2_dm2_candidate073,perc2_dm2_candidate074,perc2_dm2_candidate075,perc2_dm2_candidate076,perc2_dm2_candidate077,perc2_dm2_candidate078,perc2_dm2_candidate079,perc2_dm2_candidate080,perc2_dm2_candidate081,perc2_dm2_candidate082,perc2_dm2_candidate083,perc2_dm2_candidate084,perc2_dm2_candidate085,perc2_dm2_candidate086,perc2_dm2_candidate087,perc2_dm2_candidate088,perc2_dm2_candidate089,perc2_dm2_candidate090,perc2_dm2_candidate091,perc2_dm2_candidate092,perc2_dm2_candidate093,perc2_dm2_candidate094,perc2_dm2_candidate095,perc2_dm2_candidate096,perc2_dm2_candidate097,perc2_dm2_candidate098,perc2_dm2_candidate099,perc2_dm2_candidate100,perc2_dm2_candidate101,perc2_dm2_candidate102,perc2_dm2_candidate103,perc2_dm2_candidate104,perc2_dm2_candidate105,perc2_dm2_candidate106,perc2_dm2_candidate107,perc2_dm2_candidate108,perc2_dm2_candidate109,perc2_dm2_candidate110,perc2_dm2_candidate111,perc2_dm2_candidate112,perc2_dm2_candidate113,perc2_dm2_candidate114,perc2_dm2_candidate115,perc2_dm2_candidate116,perc2_dm2_candidate117,perc2_dm2_candidate118,perc2_dm2_candidate119,perc2_dm2_candidate120,perc2_dm2_candidate121,perc2_dm2_candidate122,perc2_dm2_candidate123,perc2_dm2_candidate124,perc2_dm2_candidate125,perc2_dm2_candidate126,perc2_dm2_candidate127,perc2_dm2_candidate128",
+        "perc2_dm2_control001,perc2_dm2_control002,perc2_dm2_control003,perc2_dm2_control004,perc2_dm2_control005,perc2_dm2_control006,perc2_dm2_control007,perc2_dm2_control008,perc2_dm2_control009,perc2_dm2_control010,perc2_dm2_control011,perc2_dm2_control012,perc2_dm2_control013,perc2_dm2_control014,perc2_dm2_control015,perc2_dm2_control016,perc2_dm2_control017,perc2_dm2_control018,perc2_dm2_control019,perc2_dm2_control020,perc2_dm2_control021,perc2_dm2_control022,perc2_dm2_control023,perc2_dm2_control024,perc2_dm2_control025,perc2_dm2_control026,perc2_dm2_control027,perc2_dm2_control028,perc2_dm2_control029,perc2_dm2_control030,perc2_dm2_control031,perc2_dm2_control032,perc2_dm2_control033,perc2_dm2_control034,perc2_dm2_control035,perc2_dm2_control036,perc2_dm2_control037,perc2_dm2_control038,perc2_dm2_control039,perc2_dm2_control040,perc2_dm2_control041,perc2_dm2_control042,perc2_dm2_control043,perc2_dm2_control044,perc2_dm2_control045,perc2_dm2_control046,perc2_dm2_control047,perc2_dm2_control048,perc2_dm2_control049,perc2_dm2_control050,perc2_dm2_control051,perc2_dm2_control052,perc2_dm2_control053,perc2_dm2_control054,perc2_dm2_control055,perc2_dm2_control056,perc2_dm2_control057,perc2_dm2_control058,perc2_dm2_control059,perc2_dm2_control060,perc2_dm2_control061,perc2_dm2_control062,perc2_dm2_control063,perc2_dm2_control064,perc2_dm2_control065,perc2_dm2_control066,perc2_dm2_control067,perc2_dm2_control068,perc2_dm2_control069,perc2_dm2_control070,perc2_dm2_control071,perc2_dm2_control072,perc2_dm2_control073,perc2_dm2_control074,perc2_dm2_control075,perc2_dm2_control076,perc2_dm2_control077,perc2_dm2_control078,perc2_dm2_control079,perc2_dm2_control080,perc2_dm2_control081,perc2_dm2_control082,perc2_dm2_control083,perc2_dm2_control084,perc2_dm2_control085,perc2_dm2_control086,perc2_dm2_control087,perc2_dm2_control088,perc2_dm2_control089,perc2_dm2_control090,perc2_dm2_control091,perc2_dm2_control092,perc2_dm2_control093,perc2_dm2_control094,perc2_dm2_control095,perc2_dm2_control096,perc2_dm2_control097,perc2_dm2_control098,perc2_dm2_control099,perc2_dm2_control100,perc2_dm2_control101,perc2_dm2_control102,perc2_dm2_control103,perc2_dm2_control104,perc2_dm2_control105,perc2_dm2_control106,perc2_dm2_control107,perc2_dm2_control108,perc2_dm2_control109,perc2_dm2_control110,perc2_dm2_control111,perc2_dm2_control112,perc2_dm2_control113,perc2_dm2_control114,perc2_dm2_control115,perc2_dm2_control116,perc2_dm2_control117,perc2_dm2_control118,perc2_dm2_control119,perc2_dm2_control120,perc2_dm2_control121,perc2_dm2_control122,perc2_dm2_control123,perc2_dm2_control124,perc2_dm2_control125,perc2_dm2_control126,perc2_dm2_control127,perc2_dm2_control128",
+        "--primary",
+        "engagements"
+      ],
+      "returncode": 0,
+      "stdout": "\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510\n\u2502 ARGUS A/B QUALITY GATES: dm2 (baseline vs candidate) (scaled) \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u252c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Metric                   \u2502 Status \u2502 Delta        \u2502 Verdict  \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u253c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 Lava/Slime Deaths        \u2502   \ud83d\udfe2   \u2502 0 vs 0       \u2502 PASS     \u2502\n\u2502 Nav Stalls               \u2502   \ud83d\udfe2   \u2502 +0.0%        \u2502 PASS     \u2502\n\u2502 Weapon Engages           \u2502   \ud83d\udfe2   \u2502 +66.7%       \u2502 PASS     \u2502\n\u2502 Goal Pickups (gl)        \u2502   \ud83d\udfe2   \u2502 +0.0%        \u2502 PASS     \u2502\n\u2502 Frag Spread Balance      \u2502   \ud83d\udfe2   \u2502 2 vs 4       \u2502 PASS     \u2502\n\u2502 K/D Spread Tightness     \u2502   \ud83d\udfe2   \u2502 1 vs 3       \u2502 PASS     \u2502\n\u2502 Freeze Stalls/Statues    \u2502   \ud83d\udfe2   \u2502 0.0s vs 0.0s \u2502 PASS     \u2502\n\u2502 Navigation Coverage      \u2502   \ud83d\udfe2   \u2502 228 vs 183   \u2502 PASS     \u2502\n\u2502 Server tick rate         \u2502   \ud83d\udfe2   \u2502 both listen  \u2502 SAME     \u2502\n\u251c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2534\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2524\n\u2502 OVERALL VERDICT:  \ud83d\udfe2 APPROVED FOR RELEASE (PARITY)          \u2502\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518\n\nParity: stalls 11 to 11, engages 11 to 10, lava 0 to 0, freezes 0 to 0 (medians, 128 control vs 128 candidate tapes)\n  - primary metric pre-registered as engagements: only it can convict, the other gates flag. Four gates convict a null 19 per cent of the time against 0 to 12 per cent each (docs/specs/2026-09-16-lab-measurement-limits.md).\n  - stall_parity: candidate median 11 against a control band of 1 to 32 (control median 11), in band\n  - stall_parity: IQM 11.2 to 11.2, improvement 95% CI -1.8 to +1.6 (covers zero), P(improve) 0.51; sprt Reject at a bound of 43.2 - no effect of 43.2 or more; stop running tapes\n  - engagements: candidate median 10 against a control band of 4 to 23 (control median 11), in band\n  - engagements: IQM 11.1 to 10.3, improvement 95% CI -1.8 to +0.1 (covers zero), P(improve) 0.45; sprt Reject at a bound of 15.9 - no effect of 15.9 or more; stop running tapes\n  - lava_deaths: candidate median 0 against a control band of 0 to 2 (control median 0), in band\n  - lava_deaths: no improvement can be demonstrated at 128 control tape(s) - the band's floor is zero. Run repeats.\n  - lava_deaths: IQM 0 to 0.1, improvement 95% CI -0.2 to +0.0 (covers zero), P(improve) 0.42; sprt Reject at a bound of 2.5 - no effect of 2.5 or more; stop running tapes\n  - freezes: candidate median 0 against a control band of 0 to 5 (control median 0), in band\n  - freezes: no improvement can be demonstrated at 128 control tape(s) - the band's floor is zero. Run repeats.\n  - freezes: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.48; sprt Reject at a bound of 1.4 - no effect of 1.4 or more; stop running tapes\n  - 128 candidate tape(s) against 128 control tape(s); the band carries 0.09 of the one-tape null spread\n",
+      "stderr": ""
+    },
+    "independent-verification.json": {
+      "ci90": [
+        -1.1962635448240084,
+        0.2003930010545814
+      ],
+      "ci95": [
+        -1.3319216211901748,
+        0.33605107742074786
+      ],
+      "paired_t_pvalue": 0.23962647836212117,
+      "tost_pvalue": 0.00025771286012882645,
+      "all_256_attempts_valid": true,
+      "code_snapshot_hashes_match": true,
+      "qc_source_unchanged": true,
+      "recorded_receipts_sha256": "c93dc295c27aada4c9c10b1f417dfb579b85ab4448d2b7ac911ef45ea5b695d3"
+    },
+    "secondary-lava-triage.json": {
+      "status": "Exploratory secondary warning; not a pre-registered confirmatory lava test",
+      "native_metric": "lava_deaths, hull-0 contents; consumed from authoritative brief totals",
+      "means_and_interval": {
+        "control_mean": 0.15641998919473526,
+        "candidate_mean": 0.3520463828792421,
+        "delta": 0.19562639368450685,
+        "descriptive_ci95": [
+          0.0636436350463647,
+          0.327609152322649
+        ]
+      },
+      "distribution": {
+        "control": {
+          "total": 20,
+          "nonzero_matches": 18,
+          "max_per_match": 2,
+          "by_order": {
+            "control_first": 12,
+            "candidate_first": 8
+          }
+        },
+        "candidate": {
+          "total": 45,
+          "nonzero_matches": 38,
+          "max_per_match": 3,
+          "by_order": {
+            "control_first": 23,
+            "candidate_first": 22
+          }
+        }
+      },
+      "interpretation": "Increase is spread across matches and both run orders, not one outlier. No exclusions or causal attribution; retain deployment hold and validate separately before release."
+    },
+    "engine-process-check.json": {
+      "checked_utc": "2026-10-25T00:33:19.8699472Z",
+      "processes": []
+    },
+    "execution.json": {
+      "protocol_sha256": "ac9e7ced872dbeed537fbc4c539738753b79a11d88c18ea86dce6401607d385c",
+      "status": "complete",
+      "completed": 256,
+      "resumed_utc": "2026-10-24T20:09:16.888043+00:00",
+      "restored_sha256": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+      "stopped_utc": "2026-10-25T00:31:10.146427+00:00"
+    }
+  },
+  "evidence_sha256": {
+    "native-comparison.json": "9aa39913a0df07fd17eb8cc44d6c622effa3a92121d3e76c5a2db2ae969118b1",
+    "independent-verification.json": "b0aa68890e3e08f65c3a02d94428eec85e39e657b718aba9d2fae21abcc7ac6f",
+    "secondary-lava-triage.json": "ca959c765c26ef1fa8ea091ae4443c5fcd381ce5c1f9a7abb4188bc16f10f5ee",
+    "engine-process-check.json": "1ce8a26986d513796e7d85d54c3e1139ccdd45d1cfea66336c27b0dfa6c908df",
+    "execution.json": "fffc28d4673b3980d45f5a7f1a06937e1b5a4b417f9189a4a98d3d85c5caed99"
+  },
+  "finished_utc": "2026-10-25T00:35:14.649570+00:00"
+}

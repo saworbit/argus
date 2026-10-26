@@ -12,12 +12,18 @@ struct Ack {
     begun: bool,
     ended: bool,
     done: bool,
+    cleaned: bool,
     busy: usize,
 }
 
 impl Ack {
+    #[cfg(test)]
     fn read(&mut self, line: &str, id: u32, case: u32) -> Result<(), String> {
-        let Some(line) = line.strip_prefix("TACFIX ") else {
+        self.read_kind(line, id, case, "TACFIX")
+    }
+
+    fn read_kind(&mut self, line: &str, id: u32, case: u32, prefix: &str) -> Result<(), String> {
+        let Some(line) = line.strip_prefix(&format!("{prefix} ")) else {
             return Ok(());
         };
         let words: Vec<_> = line.split_whitespace().collect();
@@ -48,12 +54,33 @@ impl Ack {
                 self.ended = true;
             }
             Some("done") => {
-                if !self.ended || self.done || words != ["done", &id.to_string()] {
+                if !self.ended
+                    || self.done
+                    || (prefix == "BHVFIX" && !self.cleaned)
+                    || words != ["done", &id.to_string()]
+                {
                     return Err(format!(
                         "wrong or premature cleanup acknowledgement: {line}"
                     ));
                 }
                 self.done = true;
+            }
+            Some("cleanup") if prefix == "BHVFIX" => {
+                if !self.ended
+                    || self.cleaned
+                    || words
+                        != [
+                            "cleanup",
+                            &id.to_string(),
+                            "restored",
+                            "1",
+                            "invariant",
+                            "1",
+                        ]
+                {
+                    return Err(format!("invalid behaviour cleanup: {line}"));
+                }
+                self.cleaned = true;
             }
             Some("busy") => {
                 if !self.begun
@@ -75,6 +102,9 @@ impl Ack {
 /// Acknowledged trial metadata and source/binary/nav identities, not acceptance.
 #[derive(Serialize)]
 pub struct SuiteReport {
+    /// Behaviour diagnostics mode; absent for the existing tactical suite.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub diagnostics: Option<bool>,
     pub demo_path: Option<String>,
     pub observer_restored: bool,
     pub map: String,
@@ -163,7 +193,41 @@ pub async fn run_recorded(
     dm: u32,
     record: bool,
 ) -> Result<SuiteReport, String> {
+    run_inner(cfg, map, name, cases, step, dm, record, None).await
+}
+
+/// Run the behaviour observer contract over the existing independent fixture.
+/// This owns a disposable match; it never attaches to a human session.
+pub async fn run_behaviour(
+    cfg: &Config,
+    map: &str,
+    name: &str,
+    cases: &[u32],
+    step: f32,
+    diagnostics: bool,
+) -> Result<SuiteReport, String> {
+    run_inner(cfg, map, name, cases, step, 1, false, Some(diagnostics)).await
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn run_inner(
+    cfg: &Config,
+    map: &str,
+    name: &str,
+    cases: &[u32],
+    step: f32,
+    dm: u32,
+    record: bool,
+    diagnostics: Option<bool>,
+) -> Result<SuiteReport, String> {
     validate(map, name, cases, step, dm)?;
+    let prefix = if diagnostics.is_some() {
+        "BHVFIX"
+    } else {
+        "TACFIX"
+    };
+    let key = if diagnostics.is_some() { 590 } else { 197 };
+    let impulse = if diagnostics.is_some() { 218 } else { 217 };
     // Pin the inspected source and installed binary independently.
     let source_md5 = source_digest(&cfg.src)?;
     let binary_md5 = digest(&cfg.basedir.join(&cfg.game).join("progs.dat"))?;
@@ -175,11 +239,11 @@ pub async fn run_recorded(
         let initial_offset = ctrl.log_text().unwrap_or_default().len();
         // Keep setup in one console submission. Back-to-back Windows console
         // injections can otherwise join an unfinished input line.
-        ctrl.command(&format!("deathmatch {dm}; map {map}; sys_ticrate {step}; developer 1; scratch1 197; echo TACFIX server_ready")).await?;
+        ctrl.command(&format!("deathmatch {dm}; map {map}; sys_ticrate {step}; developer 1; scratch1 {key}; echo {prefix} server_ready")).await?;
         let setup_deadline = Instant::now() + Duration::from_secs(8);
         loop {
             let text = ctrl.log_text().ok_or("fixture tape unavailable")?;
-            if text.get(initial_offset..).unwrap_or("").lines().any(|l| l.trim() == "TACFIX server_ready") { break; }
+            if text.get(initial_offset..).unwrap_or("").lines().any(|l| l.trim() == format!("{prefix} server_ready")) { break; }
             if Instant::now() >= setup_deadline { return Err("missing server setup acknowledgement".into()); }
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
@@ -204,8 +268,9 @@ pub async fn run_recorded(
             let mut pending = String::new();
             let mut ack = Ack::default();
             let mut overlap_sent = false;
-            let ready = format!("TACFIX ready {id} case {case}");
-            ctrl.command(&format!("scratch2 {case}; scratch3 {id}; scratch4 {}; echo {ready}", if record {517} else {0}))
+            let ready = format!("{prefix} ready {id} case {case}");
+            let diag_key = if diagnostics == Some(true) { 590 } else if record { 517 } else { 0 };
+            ctrl.command(&format!("scratch2 {case}; scratch3 {id}; scratch4 {diag_key}; echo {ready}"))
                 .await?;
             // The console echo proves the case/id writes were processed. A
             // completed injection alone is not a server acknowledgement.
@@ -222,7 +287,7 @@ pub async fn run_recorded(
                     ));
                 }
             }
-            client.set_impulse(217);
+            client.set_impulse(impulse);
             let deadline = Instant::now() + Duration::from_secs(15);
             loop {
                 client.pump(Duration::from_millis(50));
@@ -234,14 +299,14 @@ pub async fn run_recorded(
                 offset = text.len();
                 while let Some(nl) = pending.find('\n') {
                     let line = pending[..nl].trim_end_matches('\r');
-                    if line.starts_with("TACFIX begin ") && line != format!("TACFIX begin {map} case {case}") {
+                    if line.starts_with(&format!("{prefix} begin ")) && line != format!("{prefix} begin {map} case {case}") {
                         return Err(format!("wrong map or case: {line}"));
                     }
-                    ack.read(line, id, case)?;
+                    ack.read_kind(line, id, case, prefix)?;
                     pending.drain(..=nl);
                 }
                 if ack.begun && case == 9 && !overlap_sent {
-                    client.set_impulse(217);
+                    client.set_impulse(impulse);
                     overlap_sent = true;
                 }
                 if ack.done {
@@ -291,6 +356,7 @@ pub async fn run_recorded(
     let status = stopped.map_err(|e| format!("fixture engine cleanup failed: {e}"))?;
     let (overlap_refused, demo_path) = result?;
     Ok(SuiteReport {
+        diagnostics,
         demo_path,
         observer_restored: record,
         map: map.into(),
@@ -308,6 +374,27 @@ pub async fn run_recorded(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn behaviour_requires_its_own_successful_cleanup_ack() {
+        let mut a = Ack::default();
+        a.read_kind("TACFIX begin dm4 case 0", 1, 0, "BHVFIX")
+            .unwrap();
+        assert!(!a.header);
+        a.read_kind("BHVFIX begin dm4 case 0", 1, 0, "BHVFIX")
+            .unwrap();
+        a.read_kind("BHVFIX trial 1 case 0", 1, 0, "BHVFIX")
+            .unwrap();
+        a.read_kind("BHVFIX end frames 60 seconds 6", 1, 0, "BHVFIX")
+            .unwrap();
+        assert!(a.read_kind("BHVFIX done 1", 1, 0, "BHVFIX").is_err());
+        assert!(a
+            .read_kind("BHVFIX cleanup 1 restored 0 invariant 1", 1, 0, "BHVFIX")
+            .is_err());
+        a.read_kind("BHVFIX cleanup 1 restored 1 invariant 1", 1, 0, "BHVFIX")
+            .unwrap();
+        a.read_kind("BHVFIX done 1", 1, 0, "BHVFIX").unwrap();
+        assert!(a.done);
+    }
     #[test]
     fn invalid_suite_is_refused_before_any_launch_or_compile() {
         assert!(validate("dm4", "test", REVIEW_CASES, 0.1, 4).is_ok());

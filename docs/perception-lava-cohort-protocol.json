@@ -1,0 +1,109 @@
+{
+  "registered_utc": "2026-10-25T01:20:16.845447+00:00",
+  "client_date": "2026-10-25 Australia/Sydney",
+  "prefix": "perc3",
+  "output": "backups/perception-lava-cohort",
+  "maps": [
+    "dm2"
+  ],
+  "pairs": 256,
+  "seconds": 60,
+  "skill": 1,
+  "expected_matches": 512,
+  "measured_play_hours": 8.533333333333333,
+  "harm_margin_per_minute": 0.1,
+  "minimum_pooled_events": 20,
+  "identity": {
+    "source_sha256": "37a925cf26ad2590441ec5a105692f5f55a6f990f4dce6aa33cd3d4f71b53a00",
+    "cli_sha256": "efe80253691885b467b6108945eec016d4f1cc6cf1d4b6244fdacfe0b06b44b8",
+    "nav_sha256": "761bc949ca78022ec5e126c134de16c9674253767d6b15d638a1efc51f0b3cd0"
+  },
+  "binaries": {
+    "control": {
+      "path": "backups/perception-step1/control-progs.dat",
+      "sha256": "f00eb2ca930ffa259d56ea717128a1c618c9e48d65c5a4658521ab8ddda3b10c",
+      "source_path": "backups/perception-step1/control-src",
+      "source_sha256": "a2f45266038fc65e081d9e49ae2058e8aa164c6ec990b17955a731b38d1b0e98"
+    },
+    "candidate": {
+      "path": "backups/perception-step1/candidate-final-progs.dat",
+      "sha256": "56a4ee159959532c36108d53c49ecf579b1e72164e804ff7561ef06b7dae454a",
+      "source_path": "backups/perception-step1/candidate-src",
+      "source_sha256": "37a925cf26ad2590441ec5a105692f5f55a6f990f4dce6aa33cd3d4f71b53a00"
+    }
+  },
+  "shipped_sha256": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+  "protected_binaries": [
+    "game/argus/progs.dat",
+    "engine/argus/progs.dat",
+    "lq1/progs.dat"
+  ],
+  "resources_sha256": {
+    "engine/quakespasm.exe": "b81e50bcb2d3b2b91f640739a3e111f956aceb1d0b852d7eb1ff532d671ac3ba",
+    "engine/quakespasm.pak": "10d558dacc6c2b954d5c9fb7fdbd650f5543b0a2309a953475645f419949d1b8",
+    "engine/id1/pak0.pak": "35a9c55e5e5a284a159ad2a62e0e8def23d829561fe2f54eb402dbc0a9a946af",
+    "engine/id1/pak1.pak": "94e355836ec42bc464e4cbe794cfb7b5163c6efa1bcc575622bb36475bf1cf30",
+    "engine/argus/autoexec.cfg": "83a4da6a449abb20f5877c7345e1227a3f5f66123646b449456c00f96db5d5bb",
+    "maps_local/dm2.bsp": "3fea2146521fee3d8eba3d83e89731fbcfd0d517a08432bdfbc356347274411f",
+    "game/argus/autoexec.cfg": "83a4da6a449abb20f5877c7345e1227a3f5f66123646b449456c00f96db5d5bb"
+  },
+  "code_sha256": {
+    "tools/run_perception_lava.py": "6c5c0b4b80a1d8c3be966c77b094de939aefab33c67eeb1c5b0295e5fda9d020",
+    "tools/report_perception_lava.py": "50d9e5dea765eecd7df765a3e2f7026915490b21cea3e422a8e6847d9a2131d3",
+    "tools/test_perception_lava.py": "ed7990f1c497d5696ae9016d7f1e984cf4bceb556235970c433bb4a2c5fa0898",
+    "tools/run_behaviour_equivalence.py": "646265b3fd6bc98b1d328d6d9e57fb4ff45267bff4008265be3ddedf6cd52ee4",
+    "tools/requirements-perception-cohort.txt": "86e921c6127d8f07900d23c9e24ef4ad0ce7f68aec2ab814c6df2a3953d3b28b"
+  },
+  "environment": {
+    "python": "3.14.0 (tags/v3.14.0:ebf955d, Oct  7 2025, 10:15:03) [MSC v.1944 64 bit (AMD64)]",
+    "numpy": "2.4.4",
+    "scipy": "1.17.1"
+  },
+  "design": "Independent confirmatory holdout, no pooling with any previous cohort. 256 adjacent control/candidate pairs; fresh real-time engine launch per arm. Odd pairs control then candidate, even pairs candidate then control. Exactly the same saved pre-perception/step1a builds, skill1, one-minute dm2 listen sessions. No seed, frame-time or gameplay changes. Common scratch1 591 timing probe, scratch4 0 diagnostics off.",
+  "primary": "Sole primary outcome: native brief totals.lava_deaths*60/totals.duration_sec, candidate minus control within each order-pair. Native lava_rule must be contents (BSP hull-0), never z fallback. Mean paired rate difference with two-sided95% Student-t CI, df255. Confirm regression only when BOTH paired95% and four-pair block-bootstrap95% lower endpoints are >0. A paired-test-only increase is inconclusive under block sensitivity and cannot be labelled noise.",
+  "noise_rule": "Directional practical non-inferiority: paired one-sided95% upper confidence limit (upper endpoint of two-sided90% CI) AND block one-sided95% upper limit must both be strictly below +0.10 lava deaths/match-minute, one additional death per10 match-minutes. A confirmed increase takes precedence even if small enough to meet that practical bound. Robust significant decrease is reported as earlier increase not reproduced. Nonsignificance alone is inconclusive. This is not symmetric equivalence or proof of zero effect. Prior engagement/goal margins are unchanged.",
+  "rare_event_guard": "At least20 pooled lava events are required for the paired inference decision. If fewer, retain ALL512 matches and report inconclusive with exact-Poisson support; no event-based exclusions, automatic extension or replacement. This prevents zero-variance/no-event bootstrap certainty.",
+  "bootstrap": {
+    "method": "Resample consecutive non-overlapping four-pair blocks,64 blocks per draw, percentile intervals",
+    "block_pairs": 4,
+    "replicates": 50000,
+    "seed": 20261026
+  },
+  "poisson_support": "Independent-Poisson sensitivity only: conditional on pooled events, exact binomial test with candidate exposure/(control+candidate exposure), and Clopper-Pearson interval transformed to the exposure-adjusted rate ratio. Report assumptions and zero-count unbounded limits. This does not account for within-match/serial dependence and never overrides the paired/block decision.",
+  "power": {
+    "n": 256,
+    "draws": 500000,
+    "seed": 20261026,
+    "planning": {
+      "zero_increase": {
+        "true_delta": 0.0,
+        "paired_sd": 0.6,
+        "t95_increase_detection": 0.025044,
+        "one_sided95_noninferiority": 0.844224
+      },
+      "observed_increase_conservative_sd": {
+        "true_delta": 0.19562639368450685,
+        "paired_sd": 0.85,
+        "t95_increase_detection": 0.95641,
+        "one_sided95_noninferiority": 0.000372
+      },
+      "harm_bound": {
+        "true_delta": 0.1,
+        "paired_sd": 0.75,
+        "t95_increase_detection": 0.56524,
+        "one_sided95_noninferiority": 0.05017
+      }
+    }
+  },
+  "power_limits": "Normal sufficient-statistic planning only,500000 draws. Previous paired SD0.7546, conservatively0.85 at previous +0.1956 increase gives95.6% paired-test detection power. Under zero with SD0.60 (above the control-based null estimate), practical non-inferiority power84.4%. Block agreement, nonnormality, drift or true effect at the +0.10 bound may reduce power. No guaranteed decision and no outcome-driven expansion.",
+  "secondary": "Native engages, goals, frags, deaths, stalls, freezes, acquisitions, grabs with descriptive paired95% intervals only. Report lava totals, nonzero matches, max per match, both run-order strata, temporal block distribution, closest approach/coverage/avg_speed/flags from native briefs, CPU/cadence and tails. No secondary gate or pooled exploratory cohort can alter the primary decision.",
+  "timing": "Same BHVTIME probe and native listen cadence. Drop first full5-second timing window for weighted mean, retain all complete windows and >20/>50ms tails separately. Descriptive mean difference90% CI widened by +/-0.1ms format rounding, compare with +/-1ms reference. Last partial window unobserved. No outcome-based exclusions for hitches, freezes, deaths, losses or zero lava events.",
+  "validity": "Every attempt retained. Native dm2 map, listen tick class, native duration58..64s, lava_rule contents, >=10 complete timing windows before startup exclusion. No diagnostic/controlled fixture output or engine-error markers. Frozen source/binary/nav/CLI/engine/resource and code hashes verified every attempt. Technical invalidity stops execution; investigate before a logged amendment/replacement. Never exclude by lava or other gameplay outcomes. Any usable native metric from a replaced technical attempt must appear in a first-attempt sensitivity analysis.",
+  "stopping": "Exactly512 valid matches. No interim primary confidence intervals, significance looks, optional stopping or outcome-based expansion. Interrupted runs resume only missing fixed cells with frozen registration. Incomplete means pending, never noise/regression. Native SPRT/release banners cannot extend or decide this holdout.",
+  "holds": "No QC or gameplay edits, health/inventory or projectile-perception changes, compile, nav regeneration or deployment. Stage only workspace engine/argus/progs.dat for each native test, restore shipped bytes after every attempt and on completion/interruption. game/argus and lq1 binaries remain original. Do not modify prior protocols or frozen study code.",
+  "references": [
+    "https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ttest_rel.html",
+    "https://www.statsmodels.org/stable/generated/statsmodels.stats.rates.test_poisson_2indep.html",
+    "https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.binomtest.html"
+  ]
+}

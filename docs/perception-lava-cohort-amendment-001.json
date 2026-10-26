@@ -1,0 +1,244 @@
+{
+  "registered_utc": "2026-10-25T03:44:23.180024+00:00",
+  "protocol_sha256": "728404eaeb9ffc8bce966dfd3b1fa7ac2898e8d629a8ea8e3726b874974a6508",
+  "number": 1,
+  "original_name": "perc3_dm2_candidate070",
+  "retained_name": "perc3_invalid_dm2_candidate070_a1",
+  "mode": "candidate",
+  "repeat": 70,
+  "validity_failures": [
+    "native exposure56.6 seconds, outside58..64",
+    "native tick_class dedicated_fast, required listen"
+  ],
+  "timing": {
+    "wall_seconds": 60.000328000009176,
+    "native_seconds": 56.599999999999994,
+    "complete_windows": 11,
+    "frames": 2847.0,
+    "over20": 543.0,
+    "over50": 58.0,
+    "max_ms": 100.0
+  },
+  "investigation": "Correct dm2 map; no engine error markers; source/binary/resource/protocol preflight passes. Timing disruption observed; cause not established. A current aggregate CPU sample was24%, not proof of the cause. No gameplay outcomes used to decide invalidity; no interim primary analysis.",
+  "action": "Retain raw tape, original working-directory qconsole and complete attempt receipt. Replace only the missing fixed candidate070 cell, then resume original schedule. No parameter/code/bound or sample-size changes.",
+  "first_attempt_sensitivity": "After all512 valid matches finish: substitute this retained candidate070 native count/exposure for its replacement, retain every other scheduled cell. Calculate the same paired difference intervals, four-pair bootstrap and +0.10 harm rule. Use56.6s exposure for sensitivity only despite primary-invalid timing. Report all-attempt timing tails, and do not pool the extra tape into the primary.",
+  "raw_sha256": "deca891a4969f22b06daf37bb89c5cd962fc86e42ae45d747593f714b4ad1b0a",
+  "attempt_sha256": "fa16daf961ff4af1d07ebcd3a75936d704469cd16da63a836b3ad3da2e47b73f",
+  "native_brief": {
+    "bots": [
+      {
+        "deaths": 1,
+        "frags": 3,
+        "goals": 1,
+        "name": "Carmack",
+        "stalls": 1
+      },
+      {
+        "deaths": 4,
+        "frags": 0,
+        "goals": 1,
+        "name": "Joe Rogan",
+        "stalls": 1
+      },
+      {
+        "deaths": 0,
+        "frags": 2,
+        "goals": 3,
+        "name": "Romero",
+        "stalls": 1
+      }
+    ],
+    "flags": [
+      "closed button-only doors stall at runtime until the button fires",
+      "one shootable button (*30 health 1) opens t18"
+    ],
+    "goal_reach": [
+      {
+        "band": "z\u2248-96",
+        "classname": "item_armor2",
+        "nearest_node": 186,
+        "reach": "walk",
+        "times": 5
+      },
+      {
+        "band": "z\u224896",
+        "classname": "item_armorInv",
+        "nearest_node": 187,
+        "reach": "walk",
+        "times": 7
+      },
+      {
+        "band": "z\u224896",
+        "classname": "item_health",
+        "nearest_node": 208,
+        "reach": "walk",
+        "times": 3
+      },
+      {
+        "band": "z\u22480",
+        "classname": "weapon_nailgun",
+        "nearest_node": 130,
+        "reach": "walk",
+        "times": 4
+      },
+      {
+        "band": "z\u2248160",
+        "classname": "weapon_rocketlauncher",
+        "nearest_node": 20,
+        "reach": "walk",
+        "times": 5
+      }
+    ],
+    "goals": {
+      "backpack": 2,
+      "item_armor2": 5,
+      "item_armorInv": 7,
+      "item_health": 3,
+      "item_spikes": 1,
+      "weapon_nailgun": 4,
+      "weapon_rocketlauncher": 5,
+      "weapon_supershotgun": 1
+    },
+    "headline": "dm2 57s: 5 frags, 5 deaths (0 lava, 0 third-party), 3 stalls, 5 goals, 11 engages, 72 hazards, spread 3",
+    "hotspots": [
+      {
+        "count": 6,
+        "kind": "hazard",
+        "nearest_dist": 21.199999999999903,
+        "nearest_item": "item_spikes",
+        "nearest_item_dist": 31.765389970847085,
+        "nearest_node": 167,
+        "x": 2604.2,
+        "y": -357.0,
+        "z": 24.0
+      },
+      {
+        "cause": "door",
+        "count": 5,
+        "kind": "hazard",
+        "nearest_dist": 25.056935167733503,
+        "nearest_item": "item_armorInv",
+        "nearest_item_dist": 133.13470621892696,
+        "nearest_node": 111,
+        "x": 2339.8,
+        "y": -527.9,
+        "z": 8.0
+      },
+      {
+        "count": 5,
+        "kind": "hazard",
+        "nearest_dist": 29.21095684841545,
+        "nearest_item": "item_health",
+        "nearest_item_dist": 70.79039482867707,
+        "nearest_node": 149,
+        "x": 2558.2,
+        "y": -182.2,
+        "z": 32.0
+      },
+      {
+        "count": 4,
+        "kind": "hazard",
+        "nearest_dist": 73.9781724564752,
+        "nearest_item": "item_health",
+        "nearest_item_dist": 62.091625844392254,
+        "nearest_node": 56,
+        "x": 2023.6,
+        "y": -448.9,
+        "z": 104.0
+      },
+      {
+        "count": 4,
+        "kind": "hazard",
+        "nearest_dist": 41.72684986911899,
+        "nearest_item": "item_spikes",
+        "nearest_item_dist": 145.87162164040006,
+        "nearest_node": 143,
+        "x": 2474.2,
+        "y": -447.7,
+        "z": 8.0
+      }
+    ],
+    "item_control": [
+      {
+        "classname": "weapon_nailgun",
+        "median_gap_sec": 2.6000000000000014,
+        "period_sec": 30.0,
+        "tightness": 0.08666666666666671,
+        "visits": 9
+      }
+    ],
+    "lab_identity": {
+      "authoritative": true,
+      "build_source": "fnv1a64:8160459b29e431d6",
+      "checkout_source": "fnv1a64:8160459b29e431d6",
+      "checkout_version": "0.30.0",
+      "running_version": "0.30.0"
+    },
+    "map": "dm2",
+    "nav_coverage": {
+      "never_visited_sample": [
+        0,
+        6,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        15,
+        17,
+        18,
+        19
+      ],
+      "nodes": 215,
+      "pct": 55,
+      "typed_links": {
+        "lift": "2 link(s), 0 board event(s)",
+        "rj": "3 link(s), 0 rjump event(s)",
+        "sprint": "4 link(s), no runtime verb yet",
+        "train": "2 link(s), 0 train event(s)"
+      },
+      "visited": 120
+    },
+    "next_steps": [],
+    "totals": {
+      "abandons": 1,
+      "acquisitions": 17,
+      "all_frags_positive": false,
+      "avg_speed": 217.90262125850109,
+      "boards": 0,
+      "closest_approach": 77.23697301163477,
+      "confine_max_sec": 10.399999999999999,
+      "confine_note": "Carmack spent 10.4s inside a 220u box at 174 u/s around (2535, -336)",
+      "cover": 215,
+      "deaths": 5,
+      "duration_sec": 56.599999999999994,
+      "engages": 11,
+      "frags": 5,
+      "freeze_max_sec": 0.0,
+      "freeze_underfire": 0,
+      "freezes": 0,
+      "goals": 5,
+      "grabs": 15,
+      "hazards": 72,
+      "kd_spread": 3,
+      "lava_deaths": 0,
+      "lava_rule": "contents",
+      "mover_waits": 0,
+      "player_kills": 5,
+      "routefails": 0,
+      "stalls": 3,
+      "third_party_deaths": 0,
+      "tick_class": "dedicated_fast",
+      "tick_gap_mean": 0.5154340836012856,
+      "weapons": 2,
+      "world_deaths": 0
+    }
+  },
+  "files": {
+    "runs\\perc3_dm2_candidate070.log": "runs\\perc3_invalid_dm2_candidate070_a1.log",
+    "runs\\perc3_dm2_candidate070": "runs\\perc3_invalid_dm2_candidate070_a1",
+    "backups\\perception-lava-cohort\\perc3_dm2_candidate070.attempt.json": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a1.attempt.json",
+    "backups\\perception-lava-cohort\\perc3_dm2_candidate070.stderr": "backups\\perception-lava-cohort\\perc3_invalid_dm2_candidate070_a1.stderr"
+  }
+}
