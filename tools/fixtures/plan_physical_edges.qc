@@ -1,7 +1,7 @@
 // PRIVATE physical evidence. Setup assigns one goal and initial conditions.
 // Afterwards only ordinary bot execution moves/routes the actor. The one
 // environmental change opens the cage when its first real rest expires.
-entity pm_bot, pm_goal, pm_wall0, pm_wall1, pm_wall2, pm_wall3, pm_lastleg;
+entity pm_bot, pm_goal, pm_wall0, pm_wall1, pm_wall2, pm_wall3, pm_lastleg, pm_door;
 vector pm_start, pm_touchpos;
 float pm_begin, pm_next, pm_frames, pm_case, pm_done, pm_contact;
 float pm_rest, pm_until, pm_retry, pm_bad, pm_legs, pm_initialdist;
@@ -94,6 +94,19 @@ void() PlanPhysicalEdges =
         // A declared low walking pace stretches actual travel past 20 s.
         // This is one initial test input, not a per-frame velocity script.
         if (pm_case == 4) AR_MAXSPEED = 160;
+        if (pm_case == 6)
+        {
+            // Mapper-supported environmental input, not a slower bot motor.
+            b = find (world, classname, "door");
+            while (b != world)
+            {
+                if (b.model == "*27") pm_door = b;
+                b = find (b, classname, "door");
+            }
+            if (pm_door == world || pm_door.state != STATE_BOTTOM)
+            { error ("PMFIX missing closed door"); return; }
+            pm_door.speed = 20;
+        }
         pm_initialdist = vlen (pm_goal.origin - self.origin);
         ar_tacfixture_until = time + 100; ar_tacfixture_bot = self;
         pm_begin = time;
@@ -105,7 +118,15 @@ void() PlanPhysicalEdges =
         dprint (" start "); dprint (vtos (pm_start));
         dprint (" goal "); dprint (vtos (pm_goal.origin));
         dprint (" solid "); dprint (ftos (pointcontents (self.origin) == CONTENT_SOLID));
-        dprint ("\n"); self = saved;
+        dprint ("\n");
+        if (pm_case == 6)
+        {
+            dprint ("PMFIX door model "); dprint (pm_door.model);
+            dprint (" speed "); dprint (ftos (pm_door.speed));
+            dprint (" from "); dprint (vtos (pm_door.pos1));
+            dprint (" to "); dprint (vtos (pm_door.pos2)); dprint ("\n");
+        }
+        self = saved;
     }
     pm_frames = pm_frames + 1;
     saved = self; self = pm_bot;
@@ -154,6 +175,13 @@ void() PlanPhysicalEdges =
         dprint (" stacked "); dprint (ftos (stacked));
         dprint (" hp "); dprint (ftos (self.health));
         dprint (" frames "); dprint (ftos (pm_frames)); dprint ("\n");
+        if (pm_case == 6)
+        {
+            dprint ("PMFIX mover t "); dprint (ftos (time - pm_begin));
+            dprint (" pos "); dprint (vtos (pm_door.origin));
+            dprint (" state "); dprint (ftos (pm_door.state));
+            dprint (" speed "); dprint (ftos (pm_door.speed)); dprint ("\n");
+        }
     }
     if (pm_contact || lost || time > pm_begin + deadline || self.health != 100 || pm_bad)
     {

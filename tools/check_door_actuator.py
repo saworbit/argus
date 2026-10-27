@@ -6,7 +6,10 @@ LABELS=['direct_button','button_needs_activation','moving_button_acknowledged',
         'latched_button_acknowledged','trigger_overlap_preserved',
         'touch_point_premise','direct_touch_trigger','notouch_is_not_a_touch_target',
         'ceiling_relay_uses_floor_button','logical_relay_uses_button','two_relays',
-        'shoot_button_preserved','cycle_is_bounded','range_cap','ownership_unchanged','cleanup']
+                      'shoot_button_preserved','cycle_is_bounded','range_cap','ownership_unchanged',
+                      'opening_near_waits','opening_remote_walks','opening_already_past_walks',
+                      'fully_open_walks','closing_handling_preserved','opening_ack_starts_bounded_phase',
+                      'opening_clock_not_rearmed','opening_timeout_releases','open_release_preserves_goal','cleanup']
 DIRECT_ONLY_FAILURES=['ceiling_relay_uses_floor_button','logical_relay_uses_button',
                       'two_relays','shoot_button_preserved']
 
@@ -33,4 +36,8 @@ def audit(source):
     assert 'argus_door_search_budget = 32;' in function(source,'Argus_TakeDoor')
     assert 'b.state == STATE_BOTTOM' in function(source,'Argus_DoorPressed')
     assert 'if (!Argus_DoorPressed (self.ar_doorbtn))' in source
+    waiting=function(source,'Argus_DoorOpeningWait')
+    assert not re.search(r'\b(?:self|d)\.\w+\s*=(?!=)',waiting),'wait predicate mutates gameplay state'
+    assert 'd.state != STATE_UP' in waiting and 'Argus_DoorPast (d, far)' in waiting
+    assert '< 320' in waiting and 'Argus_DoorShut (d)' in waiting
     return True

@@ -37,7 +37,7 @@ class PhysicalLab(Lab):
                 return response
 
 
-def prepare(folder, legacy=False, deadline_control=False):
+def prepare(folder, legacy=False, deadline_control=False, opening_control=False):
     """Copy sources; optional legacy-reset/deadline controls stay private."""
     assert not folder.exists(), 'retain previous build'
     shutil.copytree(ROOT / 'src', folder / 'src')
@@ -46,7 +46,7 @@ def prepare(folder, legacy=False, deadline_control=False):
     src = folder / 'src'
     path = src / 'argus.qc'
     source = path.read_text()
-    assert not (legacy and deadline_control)
+    assert sum((legacy, deadline_control, opening_control)) <= 1
     if legacy:
         pattern = r'void\(float paused, entity reached\) Argus_PlanObserve =\n\{.*?^\};'
         source, count = re.subn(pattern, 'void(float paused, entity reached) Argus_PlanObserve = {};', source, flags=re.M | re.S)
@@ -59,6 +59,11 @@ def prepare(folder, legacy=False, deadline_control=False):
         anchor = '        if (self.ar_taskgoal == world) self.ar_goalstart = time;'
         assert source.count(anchor) == 1
         source = source.replace(anchor, '        // PRIVATE negative control: retain the original goal deadline.')
+        path.write_text(source)
+    if opening_control:
+        pattern = r'float\(entity d, vector far\) Argus_DoorOpeningWait =\n\{.*?^\};'
+        source, count = re.subn(pattern, 'float(entity d, vector far) Argus_DoorOpeningWait = { return FALSE; };', source, flags=re.M | re.S)
+        assert count == 1
         path.write_text(source)
     block = source.split('    // ---- stall detection ----', 1)[1].split('    if (time > self.ar_nextlog)', 1)[0]
     wrapper = 'void() PlanDecision =\n{\n    local vector gp;\n    local float fighting;\n    fighting = plan_fighting;\n' + block + '};\n'
@@ -89,7 +94,7 @@ def prepare(folder, legacy=False, deadline_control=False):
     for item in sorted(src.rglob('*')):
         if item.is_file() and item.suffix in {'.qc', '.src'}:
             build_tree.update(item.relative_to(src).as_posix().encode() + b'\0' + item.read_bytes())
-    save(folder / 'source-receipt.json', dict(legacy_reset=legacy, deadline_control=deadline_control,
+    save(folder / 'source-receipt.json', dict(legacy_reset=legacy, deadline_control=deadline_control, opening_control=opening_control,
         production_sha256=sha(ROOT / 'src/argus.qc'), build_sha256=sha(src / 'argus.qc'),
         build_tree_sha256=build_tree.hexdigest(),
         fixture_sha256={name: sha(src / name) for name in
@@ -100,7 +105,7 @@ def prepare(folder, legacy=False, deadline_control=False):
         relative = original.relative_to(ROOT / 'src')
         if original.is_file() and relative.as_posix() not in {'argus.qc', 'defs.qc', 'progs.src', 'world.qc'}:
             assert original.read_bytes() == (src / relative).read_bytes()
-    if not legacy and not deadline_control:
+    if not legacy and not deadline_control and not opening_control:
         assert (src / 'argus.qc').read_bytes() == (ROOT / 'src/argus.qc').read_bytes()
 
 
@@ -112,11 +117,28 @@ def copy_assets(source, destination):
                     ignore=shutil.ignore_patterns('*.cfg', '*.log', '*.dem'))
 
 
+def physical_schedule(part):
+    """Supported physics gate; historical motor overrides are explicit only."""
+    if part in ('half', 'deadline-control'):
+        return [('current' if part == 'half' else 'deadline_control', 'e1m2', 4, 45)]
+    schedule = [('current', 'dm2', 3, 40), ('current', 'e1m2', 5, 45),
+                ('current', 'e1m2', 6, 45), ('deadline_control', 'e1m2', 6, 45),
+                ('opening_control', 'e1m2', 6, 45)]
+    if part == 'all':return schedule
+    cases = {'coop': {3}, 'detour': {5, 6}, 'normal': {5},
+             'mover': {6}, 'mover-control': {6}, 'mover-release': {6}}[part]
+    schedule = [row for row in schedule if row[2] in cases]
+    if part in ('mover', 'mover-control', 'mover-release'):
+        variant = {'mover': 'current', 'mover-control': 'deadline_control', 'mover-release': 'opening_control'}[part]
+        schedule = [row for row in schedule if row[0] == variant]
+    return schedule
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path, help='new directory beneath backups/')
     parser.add_argument('--mode', choices=('all', 'contract', 'physical', 'edges', 'physical-edges'), default='all')
-    parser.add_argument('--physical-part', choices=('all', 'coop', 'detour', 'normal', 'half', 'deadline-control'), default='all',
+    parser.add_argument('--physical-part', choices=('all', 'coop', 'detour', 'normal', 'half', 'deadline-control', 'mover', 'mover-control', 'mover-release'), default='all',
                         help='select a fixed part of --mode physical-edges without repeating accepted cases')
     parser.add_argument('--allow-failed', action='store_true', help='retain complete failing decision receipts for a diagnostic control')
     args = parser.parse_args()
@@ -157,14 +179,7 @@ def main():
         shutil.copy2(pak, private_game / pak.name)
     schedule = []
     if args.mode == 'physical-edges':
-        schedule += [('current', 'dm2', 3, 40), ('current', 'e1m2', 4, 45),
-                     ('current', 'e1m2', 5, 45), ('deadline_control', 'e1m2', 4, 45)]
-        if args.physical_part != 'all':
-            cases = {'coop': {3}, 'detour': {4, 5}, 'normal': {5}, 'half': {4}, 'deadline-control': {4}}[args.physical_part]
-            schedule = [row for row in schedule if row[2] in cases]
-            if args.physical_part in ('half', 'deadline-control'):
-                variant = 'current' if args.physical_part == 'half' else 'deadline_control'
-                schedule = [row for row in schedule if row[0] == variant]
+        schedule = physical_schedule(args.physical_part)
     elif args.mode == 'edges':
         schedule += [('current', 'dm2', 0, 10), ('current', 'e1m2', 0, 10)]
     elif args.mode != 'physical':
@@ -177,6 +192,7 @@ def main():
         physical_edge_acceptance=dict(coop='Real 20-second rest, intact request, fresh retry and physical contact within 35 s.',
             detour='Ordinary routing/movement, >20.5 s elapsed at declared pace 160, >=650 horizontal units, >=40 units away from initial goal distance, >=5 distinct reached legs, physical contact by 40 s.',
             normal_pace='Same detour at pace 320, physical contact by 40 s.',
+            mover='Pace 320, existing door *27 speed 20; same detour bounds and >20.5 s physical contact. Passive door movement receipts required.',
             control='Only deadline renewal removed; must physically travel then lose the goal at 20-21.5 s without contact.') if args.mode == 'physical-edges' else None,
         acceptance='All current contracts and physical cases pass; legacy reset is a negative control, not a shipped baseline or a rate comparison.',
         production_sha256=sha(ROOT / 'src/argus.qc')))
@@ -184,7 +200,8 @@ def main():
     try:
         for variant in dict.fromkeys(row[0] for row in schedule):
             folder = output / variant
-            prepare(folder, legacy=variant == 'legacy_reset', deadline_control=variant == 'deadline_control')
+            prepare(folder, legacy=variant == 'legacy_reset', deadline_control=variant == 'deadline_control',
+                    opening_control=variant == 'opening_control')
             environment = dict(ARGUS_SRC=str(folder / 'src'), ARGUS_PROGS=str(folder / 'lq1/progs.dat'),
                                ARGUS_RUNS=str(folder / 'runs'), ARGUS_BASEDIR=str(base),
                                ARGUS_GAME=game, TOKIO_WORKER_THREADS='2')
@@ -222,6 +239,9 @@ def main():
                                 assert checked.get('success', not checked.get('failures')), row
                         else:
                             assert not checked['success'], 'negative control did not distinguish the failed camp'
+                            if variant == 'opening_control':
+                                assert checked['lost'] and not checked['events'] and checked['elapsed'] < 20, 'opening control failed for another reason'
+                                assert checked['path_units'] >= 650, 'opening control did not reach the real door'
                 finally:
                     lab.close()
     finally:

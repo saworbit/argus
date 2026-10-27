@@ -1,0 +1,25 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -3651,8 +3650,0 @@
+-};
+-
+-// Opening is not yet passable. Near-side bots keep the mover's ownership
+-// until it finishes; remote buttons and bots already through keep walking.
+-float(entity d, vector far) Argus_DoorOpeningWait =
+-{
+-    if (d.state != STATE_UP || Argus_DoorPast (d, far)) return FALSE;
+-    return vlen (Argus_DoorShut (d) - self.origin) < 320;
+@@ -9909,9 +9901 @@
+-            if (self.ar_door.state == STATE_UP && self.ar_doorbtn != world)
+-            {
+-                // Activation starts one bounded opening phase. Clearing the
+-                // opener is the acknowledgement, so the clock cannot re-arm.
+-                self.ar_doorbtn = world;
+-                self.ar_doortime = time + 8;
+-            }
+-            if (self.ar_door.state != STATE_BOTTOM
+-                && !Argus_DoorOpeningWait (self.ar_door, tp))
++            if (self.ar_door.state != STATE_BOTTOM)
+@@ -9971,2 +9954,0 @@
+-            else if (self.ar_door.state == STATE_UP)
+-                self.ar_liftwait = 1;

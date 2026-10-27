@@ -3650,6 +3650,14 @@ float(entity d, vector far) Argus_DoorPast =
     return (((self.origin - c) * n) * ((far - c) * n)) > 0;
 };
 
+// Opening is not yet passable. Near-side bots keep the mover's ownership
+// until it finishes; remote buttons and bots already through keep walking.
+float(entity d, vector far) Argus_DoorOpeningWait =
+{
+    if (d.state != STATE_UP || Argus_DoorPast (d, far)) return FALSE;
+    return vlen (Argus_DoorShut (d) - self.origin) < 320;
+};
+
 float ar_standok;
 vector(entity ent) UseStandPoint;
 float argus_door_search_budget;
@@ -9898,7 +9906,15 @@ void() Argus_AI =
         }
         if (self.ar_door != world)
         {
-            if (self.ar_door.state != STATE_BOTTOM)
+            if (self.ar_door.state == STATE_UP && self.ar_doorbtn != world)
+            {
+                // Activation starts one bounded opening phase. Clearing the
+                // opener is the acknowledgement, so the clock cannot re-arm.
+                self.ar_doorbtn = world;
+                self.ar_doortime = time + 8;
+            }
+            if (self.ar_door.state != STATE_BOTTOM
+                && !Argus_DoorOpeningWait (self.ar_door, tp))
             {
                 // Moving or open, which is NOT the same as gone. The
                 // slab has slid beside the hole it was filling and
@@ -9952,6 +9968,8 @@ void() Argus_AI =
                 self.ar_doorbtn = world;
                 havetarget = 0;
             }
+            else if (self.ar_door.state == STATE_UP)
+                self.ar_liftwait = 1;
             else if (self.ar_door.items && !(self.items & self.ar_door.items))
             {
                 // Closed keyed door and key not held (#175):

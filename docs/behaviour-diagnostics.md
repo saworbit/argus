@@ -107,10 +107,9 @@ precondition was missing. Track the movement reproduction in
 deployment followed that investigation; step 1b was still parked then.
 
 `--mode physical-edges --physical-part coop` reproduces the passing co-op
-case. `--physical-part normal` reproduces the failing e1m2 case, while
-`--physical-part detour` includes half/normal pace and the deadline control,
-stopping on failure. All are private native builds; the default suite is
-unchanged. The physical oracle requires continuous samples and actual
+case. `--physical-part normal` selects the original e1m2 route, while
+`--physical-part detour` includes normal pace, the slower real door and both controls,
+stopping on failure. All are private native builds. The physical oracle requires continuous samples and actual
 trigger contact, and a source audit rejects scripted movement/progress or
 observer writes to the actor. All 13 plan evidence tests pass. Evidence:
 `runs/plan_progress_physical_edges.results.json` and local
@@ -149,7 +148,7 @@ the bounded lookup/state contracts on dm2/e1m2 with independent traversal and
 premature-hold controls. These are private native builds with unchanged installed
 binary hashes, not gameplay cohorts or deployment.
 
-The original normal-pace route now reaches real goal contact at 19.4 seconds,
+Before the opening-wait follow-up, the original normal-pace route reached real goal contact at 19.4 seconds,
 after 4,715.2 horizontal units and 21 distinct legs, at health 100. The historical
 half-speed diagnostic remains failed: it drops into a lower room before the door
 and expires after 20 seconds without useful progress. It changes the motor's
@@ -159,7 +158,50 @@ All existing distance, away-from-goal, waypoint, health and contact bounds remai
 in force. Two alternate normal-speed long routes were rejected by those bounds:
 one lacked the required movement away from the goal, and the other credited a
 waypoint while too far away. Neither establishes deadline renewal. Failed
-fixtures and rejected candidates remain retained locally; #589 and #593 stay open.
+fixtures and rejected candidates remain retained locally. The following
+opening-door witness supplies the missing supported-pace deadline evidence.
+
+### Opening-door ownership and physical deadline
+
+A nearby opening slab still blocks the body. Releasing door ownership at
+`STATE_UP` made the bot walk into it, stall twice and drop its reachable goal.
+`Argus_DoorOpeningWait` now retains ownership for a near-side bot within 320
+units of the closed doorway until opening finishes. The button acknowledgement
+starts one eight-second opening phase; it clears the opener so later frames
+cannot extend that deadline. Timeout still takes the existing failed-door path.
+Remote buttons, already-passed doors and finished/closing handling retain their
+walking paths. The change adds no traces, fields, entities or movement constants.
+
+Physical case 6 uses the original e1m2 route at shipped pace 320, with real door
+`*27`'s mapper-supported speed set to 20 only at setup. Thereafter the bot owns
+movement/routing and the engine owns the door. Paired passive samples require a
+closed start, actual opening displacement and the declared mover speed. Existing
+distance, away-from-goal, waypoint, continuous movement, health and contact
+bounds remain unchanged; contact must occur after 20.5 seconds and before 40.
+
+The original code released the goal at 19.0 seconds against the moving door.
+The corrected route reaches contact at 25.2 seconds, after 4,809.9 horizontal
+units and 21 distinct legs, at health 100. Disabling only deadline renewal
+releases the goal at 20.2 seconds without contact. These are controlled
+counterfactuals, not population performance or deployment evidence.
+Disabling only the opening wait instead reproduces premature release at 19.1
+seconds. The original unmodified-speed door route also passes, at 21.1 seconds
+with 21 distinct legs and health 100.
+
+Select `--mode physical-edges --physical-part mover` for the positive case,
+`mover-control` for the deadline-disabled case, or `mover-release` for premature
+door release. Each uses a new `--output backups/<new-directory>` and one bounded
+45-second native experiment. `verify_private_fixtures.py door` also executes
+the actual extracted door decision block on dm2/e1m2 to check acknowledgement,
+non-renewal, timeout, remote/past handling and preserved goal ownership.
+The historical half-speed diagnostic and rejected long witnesses remain
+retained; this witness does not establish half-speed navigation or resolve #583.
+The 160 motor override is excluded from the default gate. It does not scale the
+graph's 280-speed arc model, fixed 250/310 launch thresholds or typed-hop speeds;
+changing ordinary movement to satisfy that input would test a different navigation
+model. `half` and `deadline-control` remain explicit diagnostic selectors. The
+original supported-speed #593 defect is fixed; its remaining half-speed acceptance
+is retired as unsupported test work rather than reported as passed.
 
 `tools/verify_offset_entry.py` seeds one existing route leg at n130 on e1m2,
 then leaves the normal scheduled bot code to move and hand off. The four
