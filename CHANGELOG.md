@@ -25,6 +25,11 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Verify ordinary rocket clearance through the actual combat trigger, retaining
+  movement and checking real ammo/projectile emission against a negative
+  control. Record the existing embedded-muzzle limit without changing gameplay
+  or installed binaries (#584).
+
 - Enforce the offset-entry case 3 negative control and retain invalid receipts
   before rejecting them (#594). Add repeatable private muzzle and active
   health/inventory verification with current-source snapshots, declared

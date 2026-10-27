@@ -677,6 +677,9 @@ See [the contract and limits](../../docs/behaviour-diagnostics.md#shared-failed-
 
 Repeat current-source muzzle or active health/inventory boundary checks with
 `python tools/verify_private_fixtures.py muzzle|health --output backups/<new-directory> --prefix <new_prefix>`.
+Select `combat` for the actual ordinary-combat trigger and its negative control,
+including a separate measured embedded-muzzle contract. See the
+[clearance limits](../../docs/behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance).
 Use `--help` before choosing a fixture. This maintained driver uses the matching
 native lab with `install=false`, private source/assets/runs and serial engines.
 It retains declared current/control outcomes and SHA256 receipts, checks

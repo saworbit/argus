@@ -107,6 +107,7 @@ jobs:
       - name: Run rocket clearance and local review contracts
         run: |
           python3 tools/test_muzzle_fixture.py
+          python3 tools/test_muzzle_combat.py
           python3 tools/test_review_outputs.py
           python3 tools/test_plan_progress.py
           python3 tools/test_offset_entry.py

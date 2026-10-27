@@ -669,8 +669,8 @@ not a reusable clean-checkout CLI. It expects ignored before-source/binary
 snapshots under `backups/muzzle-clearance/`, fixed output names and empty
 per-variant directories. It has no `--help` or output-prefix flags. Do not
 delete its evidence or rerun it as a quick-start command. The private fixture
-uses real BSP rays, the shared gate and stock firing; full `Argus_Combat`
-integration remains a follow-up. No incoming-projectile logic was changed.
+uses real BSP rays, the shared gate and stock firing. No incoming-projectile
+logic was changed.
 
 For repeatable current-source checks, use
 `python tools/verify_private_fixtures.py muzzle --output backups/<new-directory> --prefix <new_prefix>`.
@@ -682,6 +682,30 @@ run serially against copied assets. Their expected outcomes are declared in
 files are never overwritten, and before/after checks run on failure too.
 Existing output directories and concurrent runner ownership are refused.
 Historical session drivers and receipts remain intact (#586).
+
+The separate actual-trigger check (#584) runs with
+`python tools/verify_private_fixtures.py combat --output backups/<new-directory> --prefix <new_prefix>`.
+It finds a real BSP obstruction along an imperfect firing direction while the
+target remains visible eight degrees beside it. Disposable actors have fixed
+initial aim state, reaction clocks and loadout; the actual `Argus_Combat`
+perception, steering, clearance and stock trigger paths then run unchanged.
+A passive counter immediately before the clearance call proves that branch
+was reached and records its existing movement request. Blocked shots consume
+no ammo and emit no rocket while preserving that request and velocity.
+Aligning aim clears the shot for the same visible-target geometry. A separate
+close-target backdrop case also fires. Disabling the ordinary rocket guard
+privately makes only the blocked-shot check fail, with real ammo/projectile
+evidence checked independently by the Python oracle.
+
+The embedded-muzzle observation is deliberately separate and does not fire.
+On the measured QuakeSpasm harness a ray wholly inside solid returns
+`trace_startsolid=1`, `trace_allsolid=1`, `trace_fraction=1`. The current helper
+therefore permits it. This records the existing contract; it does not establish
+embedded-shot safety or change ordinary/tactical gameplay. The existing
+240-unit tactical reach, settle and abort checks remain in the muzzle suite.
+Both accepted and rejected private attempts stay local under
+`backups/soak-combat-20261027-1/` and `backups/soak-combat-20261027-2/`.
+Installed binaries remain unchanged. No gameplay cohorts or deployment.
 
 ## Blind comparison of step 1a and shipped matches
 
