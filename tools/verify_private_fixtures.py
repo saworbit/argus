@@ -1,8 +1,9 @@
-"""Repeat focused muzzle or active health/inventory checks in a new private lab.
+"""Repeat focused muzzle, actual combat-trigger or health checks in a private lab.
 
 Examples:
   python tools/verify_private_fixtures.py muzzle --output backups/muzzle-new --prefix muzzle_new
   python tools/verify_private_fixtures.py health --output backups/health-new --prefix health_new
+  python tools/verify_private_fixtures.py combat --output backups/combat-new --prefix combat_new
 
 Uses the matching source-built native lab, install=false and private assets.
 No historical snapshots, cohorts or deployment. Health checks do not resolve
@@ -20,6 +21,7 @@ import time
 
 from check_health_fixture import audit as audit_health, check as check_health
 from check_muzzle_fixture import audit as audit_muzzle, check as check_muzzle
+from check_muzzle_combat import check as check_combat
 from check_perception_fixture import check as check_perception
 from run_behaviour_equivalence import EXE, Lab, ROOT
 from run_health_fixture import prepare as prepare_health, audit_private
@@ -86,6 +88,27 @@ def stage_muzzle(root, folder, variant):
                 raise ValueError('unexpected private source change: '+str(original))
 
 
+def stage_combat(root, folder, variant):
+    stage_muzzle(root, folder, 'production')
+    src=folder/'src';path=src/'argus.qc';source=path.read_text()
+    if variant=='legacy':
+        old='if (!self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)'
+        assert source.count(old)==1
+        source=source.replace(old,'if (!self.ar_tactic)')
+    anchor='        if (!Argus_MuzzleClear (aimpt))'
+    assert source.count(anchor)==1
+    source=source.replace(anchor,'        if (self == mc_actor) { mc_gates = mc_gates + 1; mc_motor = self.ar_moveyaw; }\n'+anchor)
+    path.write_text('entity mc_actor; float mc_gates, mc_motor;\n'+source)
+    shutil.copy2(root/'tools/fixtures/muzzle_combat.qc',src/'muzzle_combat.qc')
+    path=src/'progs.src';source=path.read_text()
+    assert source.count('\nworld.qc\n')==1
+    path.write_text(source.replace('\nworld.qc\n','\nmuzzle_combat.qc\nworld.qc\n'))
+    path=src/'world.qc';source=path.read_text()
+    assert source.count('Argus_FrameAll ();')==source.count('Argus_CountSlots ();')==1
+    source=source.replace('Argus_CountSlots ();','Argus_CountSlots ();\n    dprint ("BHVRPL begin muzzle_combat\\n");')
+    path.write_text(source.replace('Argus_FrameAll ();','if (time > 1) MuzzleCombatFixture ();\n    Argus_FrameAll ();'))
+
+
 def native_config(lab_factory, output):
     with (output/'config.stderr').open('w') as err:
         lab = lab_factory(err, {'TOKIO_WORKER_THREADS': '2'})
@@ -146,7 +169,7 @@ def health_trial(lab, stem, map_name, env, client_run):
 
 
 def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subprocess.run):
-    if fixture not in {'muzzle', 'health'}:
+    if fixture not in {'muzzle', 'health', 'combat'}:
         raise ValueError('unknown fixture')
     output = preflight(root, output, prefix)
     # Exclusive creation also refuses a racing invocation or a reused output.
@@ -180,9 +203,9 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                 target.parent.mkdir(parents=True)
                 shutil.copy2(path, target)
         source = (root/'src/argus.qc').read_text()
-        if fixture == 'muzzle':
+        if fixture in {'muzzle','combat'}:
             audit_muzzle(source)
-            schedule = [(v, 'dm4') for v in ('production', 'candidate', 'legacy', 'uncapped')]
+            schedule = [(v, 'dm4') for v in (('candidate','legacy') if fixture=='combat' else ('production', 'candidate', 'legacy', 'uncapped'))]
         else:
             audit_health(source)
             audit_muzzle(source)
@@ -191,6 +214,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                     'uncapped': ['wall_behind_target']}
         save(output/'plan.json', dict(fixture=fixture, prefix=prefix, schedule=schedule,
             expected_muzzle_failures=expected, health_ids=[1], health_ring=0,
+            expected_combat_failures={'candidate': [], 'legacy': ['combat_blocked']},
             source=source_before['sha256'], lab_sha256=sha(EXE), verifier_sha256=sha(Path(__file__)),
             limits='Controlled fixture evidence only. No cohorts, installation or gameplay equivalence; #583 remains unresolved.'))
         private_game = private_assets(base, game, output)
@@ -200,6 +224,8 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
             if fixture == 'health':
                 prepare_health(folder, False)
                 audit_private(folder, False)
+            elif fixture == 'combat':
+                stage_combat(root, folder, variant)
             else:
                 stage_muzzle(root, folder, variant)
             (folder/'runs').mkdir()
@@ -242,6 +268,10 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                                 row['health'] = check_health(text, map_name, [1])
                                 if not all(10 <= r['dt_ms'] <= 30 for r in row['perception']):
                                     raise RuntimeError('wrong measured fixture cadence')
+                            elif fixture == 'combat':
+                                row['combat']=check_combat(text)
+                                if row['combat']['failures'] != ([] if variant=='candidate' else ['combat_blocked']):
+                                    raise RuntimeError('unexpected combat current/control outcome')
                             elif variant != 'production':
                                 row['failures'] = check_muzzle(text)
                                 if row['failures'] != expected[variant]:
@@ -272,7 +302,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('fixture', choices=('muzzle', 'health'))
+    parser.add_argument('fixture', choices=('muzzle', 'health', 'combat'))
     parser.add_argument('--output', required=True, type=Path, help='new directory beneath backups/')
     parser.add_argument('--prefix', required=True, help='private run-name prefix')
     args = parser.parse_args()
