@@ -110,6 +110,7 @@ jobs:
           python3 tools/test_review_outputs.py
           python3 tools/test_plan_progress.py
           python3 tools/test_offset_entry.py
+          python3 tools/test_private_fixtures.py
 
       - name: Run Python playability gate tests
         run: python3 tools/test_argus_mapgate.py

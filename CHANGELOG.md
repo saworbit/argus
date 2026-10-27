@@ -25,6 +25,11 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Enforce the offset-entry case 3 negative control and retain invalid receipts
+  before rejecting them (#594). Add repeatable private muzzle and active
+  health/inventory verification with current-source snapshots, declared
+  controls and unchanged installed binaries on success or failure (#586, #595).
+
 - Resolve game-directory reports against the base directory (#590), report
   unsupported camera signon protocols (#591), and exclude `labcamera` from
   bot and human statistics in both tape readers (#592).

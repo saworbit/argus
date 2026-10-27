@@ -147,12 +147,12 @@ revisits still use the existing per-goal epoch rule.
 
 Run `python tools/verify_offset_entry.py --output backups/<new-directory>`.
 The default includes current cases and an old-handoff policy control; use
-`--variants current --cases 3` for just the fixed airborne offset. Current
-failures return nonzero. Old-handoff outcomes are recorded for manual review;
-the runner does not yet reject an unexpectedly passing control case 3. Its
-exit code alone therefore does not prove the control distinguished the fix.
-The missing enforcement is tracked in [#594](https://github.com/saworbit/argus/issues/594).
-The two offset evidence tests run in fast CI.
+`--variants current --cases 3` for just the fixed airborne offset. The plan
+declares every selected outcome before launch. All cases must contact except
+old-handoff case 3, which must fail with valid physical evidence. Unexpected
+contact, missing contact in a required passing case, and invalid control
+receipts return nonzero after retaining the complete result and rejection.
+The offset evidence tests run in fast CI (#594).
 Raw accepted/rejected builds are local under `backups/offset-entry-20261027/`.
 No cohorts or installation accompany these controlled checks.
 
@@ -672,6 +672,17 @@ delete its evidence or rerun it as a quick-start command. The private fixture
 uses real BSP rays, the shared gate and stock firing; full `Argus_Combat`
 integration remains a follow-up. No incoming-projectile logic was changed.
 
+For repeatable current-source checks, use
+`python tools/verify_private_fixtures.py muzzle --output backups/<new-directory> --prefix <new_prefix>`.
+`--help` is side-effect free. The maintained runner snapshots current inputs,
+requires the matching source-built lab, and compiles with `install=false`.
+One private production smoke and the candidate, legacy and uncapped fixtures
+run serially against copied assets. Their expected outcomes are declared in
+`plan.json`; sources, binaries and tapes have SHA256 receipts. Installed
+files are never overwritten, and before/after checks run on failure too.
+Existing output directories and concurrent runner ownership are refused.
+Historical session drivers and receipts remain intact (#586).
+
 ## Blind comparison of step 1a and shipped matches
 
 Four fixed 35-second recordings on dm2/dm4 at skill 1 supplied two consecutive
@@ -707,6 +718,18 @@ with the later ordinary rocket-clearance guard preserved; fresh native trials pa
 22 health/inventory checks on dm2 and dm4 (44 total), plus their observation
 checks. The earlier dm4 warning is still unresolved. This is no claim of
 gameplay non-regression, and no deployment or cohort was run.
+
+Reproduce the current-source boundary checks with
+`python tools/verify_private_fixtures.py health --output backups/<new-directory> --prefix <new_prefix>`.
+This runs one declared ring-0 trial on each of dm2/dm4 with the existing
+PERFIX and 22-check HIFIX oracles. Only the private fixture replaces RNG with
+controlled inputs; production sources and installed binaries stay unchanged.
+The private engine uses protocol 15 and max_edicts 600. The runner retains
+input snapshots, source/binary/tape hashes, compilation reports, per-case
+outcomes and before/after protection checks, including failure exits.
+It needs configured local assets and a matching native lab build, with no
+ignored historical snapshot dependency. The earlier `run_health_fixture.py`
+remains historical; these checks do not resolve #583's gameplay warning (#595).
 
 The manifest now verifies actual active function bodies. Inverse amendments
 recover the original parked/candidate hashes without altering live source;

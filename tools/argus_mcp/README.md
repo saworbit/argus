@@ -675,6 +675,15 @@ airborne-offset result separately until the control gate is added. Neither
 verifier changes the native MCP schema or shipped console controls.
 See [the contract and limits](../../docs/behaviour-diagnostics.md#shared-failed-plan-recognition).
 
+Repeat current-source muzzle or active health/inventory boundary checks with
+`python tools/verify_private_fixtures.py muzzle|health --output backups/<new-directory> --prefix <new_prefix>`.
+Use `--help` before choosing a fixture. This maintained driver uses the matching
+native lab with `install=false`, private source/assets/runs and serial engines.
+It retains declared current/control outcomes and SHA256 receipts, checks
+protected production inputs after success or failure, and never overwrites an
+installed game binary. Old session drivers and evidence remain available.
+The health boundary checks do not settle the outstanding dm4 gameplay warning.
+
 The benchmark is the low-variance complement to free-running matches. It
 places one real Argus bot at a declared nav coordinate, assigns a synthetic
 goal, and observes completion through the NetQuake puppet. The other bots are
