@@ -25,6 +25,12 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Retain nearby opening-door ownership until the slab finishes, with one
+  bounded eight-second opening phase and unchanged remote/past-door handling
+  (#602). Add shipped-speed physical deadline and premature-release controls
+  for #589. Retain the unsupported motor override as an explicit diagnostic,
+  outside the default gate (#593).
+
 - Deliver engine-confirmed floor-button touches for walking bots, resolve
   physical openers behind relays and wait for actual button activation. Add
   private physical/control fixtures; normal e1m2 goal contact is verified,

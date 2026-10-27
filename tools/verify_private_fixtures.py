@@ -164,7 +164,14 @@ def stage_door(root, folder, variant):
         anchor='if (b.classname == "func_button" && b.state == STATE_BOTTOM) return FALSE;'
         assert source.count(anchor)==1
         path.write_text(source.replace(anchor,'// PRIVATE control: treat box slack as activation.'))
-    shutil.copy2(root/'tools/fixtures/door_actuator.qc',src/'door_actuator.qc')
+    active=(src/'argus.qc').read_text()
+    anchor='        if (self.ar_door != world)\n        {\n            if (self.ar_door.state == STATE_UP'
+    assert active.count(anchor)==1
+    decision=anchor+active.split(anchor,1)[1].split('        // direct (unrouted) seeking',1)[0]
+    wrapper='void(vector tp) DoorDecision =\n{\n    local vector gp, to;\n    local float want, havetarget, diff;\n    havetarget = TRUE;\n'+decision+'    da_havetarget = havetarget;\n};\n'
+    fixture=(root/'tools/fixtures/door_actuator.qc').read_text()
+    assert fixture.count('// INSERT_DOOR_DECISION')==1
+    (src/'door_actuator.qc').write_text(fixture.replace('// INSERT_DOOR_DECISION',wrapper))
     path=src/'progs.src';source=path.read_text();assert source.count('\nworld.qc\n')==1
     path.write_text(source.replace('\nworld.qc\n','\ndoor_actuator.qc\nworld.qc\n'))
     path=src/'world.qc';source=path.read_text();assert source.count('Argus_FrameAll ();')==1

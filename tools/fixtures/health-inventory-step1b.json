@@ -8,15 +8,16 @@
   "parked_text_sha256": "29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f",
   "candidate_text_sha256": "359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38",
   "patch": "health-inventory-step1b.patch",
-  "active_text_sha256": "5432d3e8b1fda5720b4fb43347f1f5b04672c5e58291bf14808fec7bc3a3c66f",
+  "active_text_sha256": "ef2e65deb4315e62d2830cef3d56dbe4327df9ebde9e417db5501e33dfcccb02",
   "production_amendments": [
+    "opening-door-reverse.patch",
     "button-door-reverse.patch",
     "offset-entry-reverse.patch",
     "health-inventory-active-reverse.patch",
     "plan-progress-reverse.patch",
     "rocket-muzzle-clearance-reverse.patch"
   ],
-  "amendment_scope": "Reverse button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
+  "amendment_scope": "Reverse opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
   "active_functions": {
     "Argus_Perceive": "97ee8007c727c396c8a813596f34df15d489fd2d2918a2a571d9ccdff7613f3f",
     "Argus_Combat": "13d531e7c3e354a8601169779dace43249fe26681f3cebaf26a0547d15a3b1f4",

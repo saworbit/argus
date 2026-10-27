@@ -15,7 +15,7 @@ def audit_physical_edges(source):
     assert len(re.findall(r'setorigin\s*\(self,\s*pm_start\)', code)) == 1, 'missing initial placement'
     assert len(re.findall(r'setorigin\s*\((?:self|pm_bot|other)\b', code)) == 1, 'actor repositioned'
     observing = code.split('    pm_frames = pm_frames + 1;', 1)[1].split('    if (pm_contact || lost', 1)[0]
-    assert not re.search(r'\b(?:self|pm_bot)\.\w+\s*=(?!=)', observing), 'observer writes actor state'
+    assert not re.search(r'\b(?:self|pm_bot|pm_door)\.\w+\s*=(?!=)', observing), 'observer writes actor/mover state'
     calls = set(re.findall(r'\b(\w+)\s*\(', observing))
     assert calls <= {'if', 'dprint', 'ftos', 'vtos', 'remove', 'Argus_GoalTopKind', 'Argus_GoalTopSubj'}, 'observer calls a gameplay mutator'
 
@@ -106,15 +106,34 @@ def check_physical_edges(text, case, deadline_control=False):
     assert not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error')), 'engine error'
     rows = [line for line in text.splitlines() if line.startswith('PMFIX ')]
     assert len(rows) >= 5, 'truncated physical receipt'
-    begin = re.fullmatch(r"PMFIX begin (dm2|e1m2) case ([345]) coop ([01]) dm ([01]) pace (160|320) start '([^']+)' goal '([^']+)' solid 0", rows[0])
+    begin = re.fullmatch(r"PMFIX begin (dm2|e1m2) case ([3456]) coop ([01]) dm ([01]) pace (160|320) start '([^']+)' goal '([^']+)' solid 0", rows[0])
     assert begin and int(begin[2]) == case and begin[1] == ('dm2' if case == 3 else 'e1m2'), 'wrong/missing physical premise'
     assert int(begin[3]) == (case == 3) and int(begin[4]) == (case != 3), 'wrong actual game mode'
     assert int(begin[5]) == (160 if case == 4 else 320), 'wrong declared pace'
     vector = lambda s: tuple(map(float, s.split()))
     start, goal = vector(begin[6]), vector(begin[7])
     assert len(start) == len(goal) == 3
-    samples, legs, events = [], [], {}
+    samples, legs, events, movers = [], [], {}, []
+    door = None
     for line in rows[1:-2]:
+        m = re.fullmatch(r"PMFIX door model \*27 speed 20 from '([^']+)' to '([^']+)'", line)
+        if m:
+            assert case == 6 and door is None and not samples, 'unexpected/repeated door premise'
+            door = tuple(vector(v) for v in m.groups())
+            assert all(len(v) == 3 and all(math.isfinite(x) for x in v) for v in door)
+            assert math.dist(*door) > 32, 'no real door travel'
+            continue
+        m = re.fullmatch(r"PMFIX mover t\s+([\d.]+) pos '([^']+)' state ([0-3]) speed 20", line)
+        if m:
+            assert case == 6 and door is not None and len(movers) < len(samples), 'unpaired mover sample'
+            t, pos = float(m[1]), vector(m[2])
+            assert len(pos) == 3 and all(math.isfinite(v) for v in (*pos, t))
+            assert t == samples[len(movers)]['t'], 'mover detached from trajectory'
+            if movers:
+                dt = t - movers[-1]['t']
+                assert math.dist(pos, movers[-1]['pos']) <= 20 * (dt + .11) + .3, 'door moved faster than declared'
+            movers.append(dict(t=t, pos=pos, state=int(m[3])))
+            continue
         m = re.fullmatch(r"PMFIX sample t\s+([\d.]+) pos '([^']+)' active ([01]) stacked ([01]) hp\s+([\d.-]+) frames (\d+)", line)
         if m:
             t, pos = float(m[1]), vector(m[2])
@@ -154,6 +173,10 @@ def check_physical_edges(text, case, deadline_control=False):
     fps = (samples[-1]['frames'] - samples[0]['frames']) / elapsed
     assert 5 <= fps <= 100 and elapsed <= (35.2 if case == 3 else 40.2), 'bad deadline/cadence'
     contact = events.get('contact')
+    if case == 6:
+        assert door and len(movers) == len(samples) and movers[0]['state'] == 1, 'missing closed-door premise/samples'
+        assert math.dist(movers[0]['pos'], door[0]) < 1, 'door did not start closed'
+        assert any(math.dist(m['pos'], door[0]) >= 16 and m['state'] == 2 for m in movers), 'no engine-driven opening'
     success = bool(contact)
     assert int(end[1]) == success, 'contradictory physical result'
     if success:
@@ -171,10 +194,10 @@ def check_physical_edges(text, case, deadline_control=False):
         else:
             assert set(events) == {'contact'} and all(s['active'] for s in samples), 'detour abandoned goal'
             assert path >= 650 and away >= 40 and len(set(l['node'] for l in legs)) >= 5, 'insufficient physical detour'
-            if case == 4:
+            if case in (4, 6):
                 assert elapsed > 20.5, 'did not test original deadline'
     elif deadline_control:
-        assert case == 4 and not events and end[2] == '1', 'control failed for another reason'
+        assert case in (4, 6) and not events and end[2] == '1', 'control failed for another reason'
         assert 20 <= elapsed <= 21.5 and path >= 300, 'control did not reach old deadline through real travel'
     return dict(success=success, elapsed=elapsed, path_units=round(path, 1), away_units=round(away, 1),
                 distinct_legs=len(set(l['node'] for l in legs)), measured_fps=round(fps, 1), events=events,

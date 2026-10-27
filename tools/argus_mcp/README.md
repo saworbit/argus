@@ -667,7 +667,13 @@ longer detours and waypoint cycles; waypoint arrivals are injected inputs.
 contact. Use `--physical-part coop` for the passing dm2 retry, or
 `--physical-part normal` for the e1m2 detour (#593). It uses the
 native co-op experiment for the former and native experiments for the latter.
-The `half` and `deadline-control` parts isolate the historical slow case.
+The `half` and `deadline-control` parts retain the historical motor-override
+diagnostic. They are excluded from the default gate; they do not represent
+a supported speed setting or a uniformly slowed navigation model.
+The `mover`, `mover-control` and `mover-release` parts select the shipped-speed
+route with a slower real door, its deadline-disabled control and its
+premature-door-release control. Run each separately with a fresh output directory
+for a bounded 45-second experiment. See [the opening-door contract](../../docs/behaviour-diagnostics.md#opening-door-ownership-and-physical-deadline).
 `python tools/verify_offset_entry.py --output backups/<new-directory>` isolates
 the e1m2 entry with a seeded existing route and real movement/contact. Its
 default matrix includes the fixed policy and an old-handoff counterfactual.
@@ -688,7 +694,7 @@ protected production inputs after success or failure, and never overwrites an
 installed game binary. Old session drivers and evidence remain available.
 The health boundary checks do not settle the outstanding dm4 gameplay warning.
 Select `button` for real bot/player floor-button contact and a disabled-callback
-control, or `door` for bounded target-chain lookup and activation-state contracts.
+control, or `door` for target-chain, activation and bounded opening-wait contracts.
 See [the physical contract](../../docs/behaviour-diagnostics.md#solid-floor-buttons-and-relayed-doors).
 
 The benchmark is the low-variance complement to free-running matches. It

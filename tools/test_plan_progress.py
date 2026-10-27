@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from check_plan_progress import LABELS, EDGE_LABELS, check_contract, check_physical, check_physical_edges, audit_physical_edges
+from verify_plan_progress import physical_schedule
 
 
 def contract():
@@ -31,6 +32,8 @@ def physical_edge(case=4):
     goal, seconds = (200, 23) if coop else (800, 30)
     rows = ['BHVRPL begin plan_physical_edges',
             f"PMFIX begin {'dm2' if coop else 'e1m2'} case {case} coop {int(coop)} dm {int(not coop)} pace {160 if case==4 else 320} start '0 0 0' goal '{goal} 0 0' solid 0"]
+    if case == 6:
+        rows.append("PMFIX door model *27 speed 20 from '0 0 0' to '0 0 128'")
     for i in range(seconds * 5 + 1):
         t = i / 5
         x = max(0, t - 21) * 100 if coop else -25 * t if t <= 4 else -100 + (t - 4) * 900 / 26
@@ -40,10 +43,25 @@ def physical_edge(case=4):
             rows.append(f"PMFIX leg t {t} pos '{x} 0 0' node '{x} 0 0'")
         if t == seconds: rows.append(f"PMFIX contact t {t} pos '{goal} 0 0' active 1")
         rows.append(f"PMFIX sample t {t} pos '{x} 0 0' active {int(not coop or t < 1 or t >= 21)} stacked {int(coop)} hp 100 frames {i * 14 + 1}")
+        if case == 6:
+            z = min(128, max(0, (t-12)*20))
+            rows.append(f"PMFIX mover t {t} pos '0 0 {z}' state {1 if t<=12 else 2 if z<128 else 0} speed 20")
     return '\n'.join(rows + ['PMFIX end ok 1 lost 0 bad 0', 'PMFIX cleanup owned_engine_pending_stop'])
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_default_physics_gate_excludes_unsupported_motor_override(self):
+        default=physical_schedule('all')
+        self.assertNotIn(4,[row[2] for row in default])
+        self.assertEqual({row[0] for row in default if row[2]==6},
+                         {'current','deadline_control','opening_control'})
+        for part in ('coop','normal','mover','mover-control','mover-release','half','deadline-control'):
+            rows=physical_schedule(part)
+            self.assertEqual(len(rows),1)
+            self.assertLessEqual(rows[0][3],45)
+        self.assertEqual(physical_schedule('half')[0][2],4)
+        self.assertEqual(physical_schedule('deadline-control')[0][2],4)
+
     def test_physical_observer_cannot_drive_or_award_progress(self):
         source = Path(__file__).with_name('fixtures').joinpath('plan_physical_edges.qc').read_text()
         audit_physical_edges(source)
@@ -53,10 +71,38 @@ class EvidenceTests(unittest.TestCase):
                          'Argus_TacticReset ();', 'pm_contact = time;'):
             with self.assertRaises(AssertionError):
                 audit_physical_edges(source.replace(anchor, anchor + '\n' + mutation))
+        with self.assertRaises(AssertionError):
+            audit_physical_edges(source.replace(anchor, anchor+'\n    pm_door.speed = 40;'))
 
     def test_real_contact_and_detour_evidence(self):
         self.assertTrue(check_physical_edges(physical_edge(), 4)['success'])
         self.assertTrue(check_physical_edges(physical_edge(3), 3)['success'])
+
+    def test_mover_requires_matching_engine_movement_at_shipped_pace(self):
+        text = physical_edge(6)
+        self.assertTrue(check_physical_edges(text, 6)['success'])
+        for bad in (text.replace('pace 320', 'pace 160'),
+                    text.replace('speed 20', 'speed 40'),
+                    text.replace('model *27', 'model *99'),
+                    text.replace("mover t 0.2 pos '0 0 0'", "mover t 0.2 pos '0 0 1000'"),
+                    '\n'.join(s for s in text.splitlines() if not s.startswith('PMFIX door')),
+                    '\n'.join(s for s in text.splitlines() if not s.startswith('PMFIX mover'))):
+            self.assertNotEqual(bad, text)
+            with self.assertRaises(AssertionError):check_physical_edges(bad, 6)
+
+    def test_mover_control_must_fail_at_old_deadline_after_real_opening(self):
+        lines=[]
+        for line in physical_edge(6).splitlines():
+            if line.startswith('PMFIX contact'):continue
+            if line.startswith(('PMFIX sample', 'PMFIX mover', 'PMFIX leg')):
+                if float(line.split(' t ')[1].split()[0])>20.2:continue
+            if line.startswith('PMFIX sample t 20.2 '):line=line.replace('active 1','active 0')
+            lines.append(line.replace('end ok 1 lost 0','end ok 0 lost 1'))
+        text='\n'.join(lines)
+        self.assertFalse(check_physical_edges(text,6,deadline_control=True)['success'])
+        for bad in (text.replace('t 20.2 ', 't 22.2 '),
+                    text.replace('end ok 0 lost 1','end ok 0 lost 0')):
+            with self.assertRaises(AssertionError):check_physical_edges(bad,6,deadline_control=True)
 
     def test_physical_edge_oracle_rejects_false_evidence(self):
         text = physical_edge()
@@ -146,6 +192,7 @@ class EvidenceTests(unittest.TestCase):
         self.assertIn('--output', result.stdout)
         self.assertIn('half', result.stdout)
         self.assertIn('deadline-control', result.stdout)
+        self.assertIn('mover-control', result.stdout)
 
     def test_existing_or_production_output_is_refused_before_lab(self):
         root = Path(__file__).resolve().parents[1]

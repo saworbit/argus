@@ -1,5 +1,7 @@
 // PRIVATE target-chain contracts. No motor or route state is scripted.
-float da_done, da_checks, da_ok;
+float da_done, da_checks, da_ok, da_havetarget;
+
+// INSERT_DOOR_DECISION
 
 void(string label, float ok) DoorActuatorCheck =
 {
@@ -19,7 +21,7 @@ entity(string kind, string output_name, string input_name, vector at) DoorActuat
 
 void() DoorActuatorFixture =
 {
-    local entity saved, b, door, relay, button, link, cycle;
+    local entity saved, b, door, relay, button, link, cycle, goal;
     local vector seat, point;
     local float before, after;
     if (da_done || time < 1) return;
@@ -81,7 +83,40 @@ void() DoorActuatorFixture =
     Argus_TakeDoor (door);
     DoorActuatorCheck ("range_cap", self.ar_doorbtn == world);
     DoorActuatorCheck ("ownership_unchanged", self.ar_door == door && self.origin == seat && self.health == 100);
-    self = saved; remove (b); remove (door); remove (relay); remove (button); remove (link); remove (cycle);
+    door.state = STATE_UP; door.pos1 = door.origin;
+    DoorActuatorCheck ("opening_near_waits", Argus_DoorOpeningWait (door, seat + '0 128 0'));
+    setorigin (door, seat + '0 512 0'); door.pos1 = door.origin;
+    DoorActuatorCheck ("opening_remote_walks", !Argus_DoorOpeningWait (door, seat + '0 768 0'));
+    setorigin (door, seat); door.pos1 = door.origin;
+    setorigin (self, seat + '0 64 0');
+    DoorActuatorCheck ("opening_already_past_walks", !Argus_DoorOpeningWait (door, seat + '0 128 0'));
+    setorigin (self, seat);
+    door.state = STATE_TOP;
+    DoorActuatorCheck ("fully_open_walks", !Argus_DoorOpeningWait (door, seat + '0 128 0'));
+    door.state = STATE_DOWN;
+    DoorActuatorCheck ("closing_handling_preserved", !Argus_DoorOpeningWait (door, seat + '0 128 0'));
+    goal = DoorActuatorEntity ("door_fixture_goal", "", "", seat + '0 128 0');
+    goal.solid = SOLID_TRIGGER;
+    self.ar_goal = goal; self.ar_door = door; self.ar_doorbtn = button;
+    self.ar_liftwait = 0; self.ar_doortime = time + 1; door.state = STATE_UP;
+    DoorDecision (goal.origin);
+    DoorActuatorCheck ("opening_ack_starts_bounded_phase", self.ar_door == door
+        && self.ar_doorbtn == world && self.ar_liftwait && self.ar_goal == goal
+        && self.ar_doortime == time + 8);
+    self.ar_liftwait = 0; self.ar_doortime = time + 3;
+    DoorDecision (goal.origin);
+    DoorActuatorCheck ("opening_clock_not_rearmed", self.ar_door == door
+        && self.ar_liftwait && self.ar_doortime == time + 3);
+    self.ar_liftwait = 0; self.ar_doortime = time - 0.1;
+    DoorDecision (goal.origin);
+    DoorActuatorCheck ("opening_timeout_releases", self.ar_door == world
+        && goal.ar_failtime == time && !self.ar_liftwait && !da_havetarget);
+    self.ar_goal = goal; self.ar_door = door; self.ar_liftwait = 0;
+    door.state = STATE_TOP;
+    DoorDecision (goal.origin);
+    DoorActuatorCheck ("open_release_preserves_goal", self.ar_door == world
+        && self.ar_goal == goal && !self.ar_liftwait);
+    self = saved; remove (b); remove (door); remove (relay); remove (button); remove (link); remove (cycle); remove (goal);
     after = 0; b = nextent (world);
     while (b != world) { after = after + 1; b = nextent (b); }
     DoorActuatorCheck ("cleanup", before == after);
