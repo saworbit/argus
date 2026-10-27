@@ -42,11 +42,16 @@ class HealthTests(unittest.TestCase):
                         source.replace('if (c == "weapon_rocketlauncher") return 35;','if (it.ammo_rockets) return 35;')]:
             with self.assertRaises(AssertionError):audit(altered)
 
-    def test_active_source_matches_declared_parked_state(self):
+    def test_historical_source_and_declared_active_state(self):
         _,manifest=candidate_source()
         source,_=parked_source()
         for name,expected in manifest['parked_functions'].items():
             self.assertEqual(hashlib.sha256(body(source,name)[1].encode()).hexdigest(),expected)
+        if manifest.get('active_functions'):
+            active=(ROOT/'src/argus.qc').read_text()
+            self.assertTrue(audit(active)['combat_private_reads_removed'])
+            for name,expected in manifest['active_functions'].items():
+                self.assertEqual(hashlib.sha256(body(active,name)[1].encode()).hexdigest(),expected)
 
     def test_private_copy_inverse_and_production_rng(self):
         scratch=ROOT/'backups';scratch.mkdir(exist_ok=True)

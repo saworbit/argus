@@ -80,6 +80,21 @@ from bot bands. `MFIX` has no production console switch or public impulse.
 Parse it with `tools/check_muzzle_fixture.py` as a Python module; it is not
 an ARGLOG metric and the module does not expose a command-line parser.
 
+Private plan and entry fixtures add separate records:
+
+| Record | Evidence |
+|---|---|
+| `PLANFIX` | Controlled decision contracts and alternative goal selection |
+| `PEFIX` | Failed-goal release, alternative selection and continuous physical escape |
+| `PMFIX` | Physical co-op rest/retry, route legs, travel and trigger contact |
+| `OFFIX` | Seeded offset-entry trajectory, goal ownership and actual trigger contact |
+| `OETRACE` | Private handoff positions and wall-slide diagnostics; not an outcome counter |
+
+These tapes are quarantined with `BHVRPL begin`. Use the independent oracles
+in `tools/check_plan_progress.py` and `tools/verify_offset_entry.py`; do not
+pool their rows into match rates or count a selected goal as a pickup.
+They add no shipped console control or change to ARGLOG/ARGEVT grammar.
+
 Blind-review ratings are subjective evidence, separate from native match
 metrics. Keep build identity in a separate key until scoring is complete.
 The camera client can appear under `totals.human`; it is an instrument, not

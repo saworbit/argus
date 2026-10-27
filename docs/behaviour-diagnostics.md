@@ -1,27 +1,160 @@
 # Behaviour diagnostics and controlled fixtures
 
-Step 0 alone adds observation and test controls. Perception, aiming, movement,
-goal selection and tactical eligibility keep their existing logic.
+The original step 0 added observation and test controls without changing
+gameplay. The current development changes are listed below.
 
 ## Current development status
 
-Step 1a visual observation caching and the separate ordinary rocket-clearance
-fix are retained in development. Health/inventory step 1b is parked, including
-its exact-health/inventory leak fixes; incoming-projectile perception stays
+Step 1a visual observation caching, ordinary rocket clearance and shared
+failed-plan recognition are retained in development. Health/inventory step 1b
+is active again in development at the user's request; incoming-projectile perception stays
 on hold. Shipped binaries are unchanged. Earlier sections' test totals and
 cohort conclusions belong to their recorded builds, not every later change.
 
-Current muzzle verification comprises 14 native controlled checks and two
-negative controls, plus 41 focused Python tests. It is not a demonstration
-of improved gameplay. No new cohorts or deployment are authorised. See the
+The earlier muzzle verification comprises 14 native controlled checks and two
+negative controls, plus its recorded 41 focused Python tests. It is not a demonstration
+of improved gameplay. No new cohorts were run; the tested changes remain in
+development without installation. See the
 [focused verification runbook](lab-workflow.md#focused-checks-without-deployment).
 
-Follow-ups: [parked step 1b warning](https://github.com/saworbit/argus/issues/583),
+Open follow-ups: [unresolved step 1b warning](https://github.com/saworbit/argus/issues/583),
 [full combat-trigger coverage](https://github.com/saworbit/argus/issues/584),
-[muzzle tests in fast CI](https://github.com/saworbit/argus/issues/585),
-[repeatable native verification](https://github.com/saworbit/argus/issues/586)
-and [local review-media hygiene](https://github.com/saworbit/argus/issues/587).
+[repeatable native muzzle verification](https://github.com/saworbit/argus/issues/586)
+and complete-route integration in [#589](https://github.com/saworbit/argus/issues/589)
+and [#593](https://github.com/saworbit/argus/issues/593). The
+[fast-CI muzzle checks](https://github.com/saworbit/argus/issues/585) and
+[review-media hygiene](https://github.com/saworbit/argus/issues/587) are completed.
 These tickets do not authorise further engine runs or deployment.
+
+## Shared failed-plan recognition
+
+`Argus_PlanObserve` keeps current goal identity, closest useful objective
+distance, last reached waypoint and a visit epoch. Existing waypoints hold
+one epoch mark per bot slot. Useful distance reduction (12 units, accumulated)
+or a waypoint not previously reached during this attempt clears failure
+history and renews the ordinary 20-second progress deadline. Detours cannot
+increase the best-distance reference. Goal changes and new lives start fresh. Rebuilding a
+route or moving sideways does not erase a failed attempt. Combat, tactical
+ownership and existing door/mover/typed-link handling reset or pause this
+navigation evidence. Waiting without failed recovery attempts remains valid.
+
+Two failed attempts still use the existing bailout and per-bot goal shelf;
+the ordinary utility selector chooses the alternative. There is no authored
+escape path, map/item-class rule or nearby-item radius in the helper. This is
+navigation-plan evidence. Revisiting a two-node or longer waypoint cycle no
+longer renews the deadline. A failed co-op FETCH rests for 20 seconds after
+route failure, repeated stalls or expiry, retaining its stack request. The
+rest belongs to that bot and subject; a different request and another bot
+remain eligible. Retrying starts a fresh deadline. Combat and the external
+fixed-task tool retain their existing deadline ownership. This development
+change has not been installed.
+
+`tools/verify_plan_progress.py` builds owned source/asset copies and runs only
+through the source-authoritative native lab. Its fixed default schedule covers
+18 decision contracts on each of dm2/dm4, two physical dm2 cases, and a
+legacy-reset negative control. The private `plan_progress.qc`, `plan_escape.qc`,
+`plan_edges.qc` and `plan_physical_edges.qc` fixtures are excluded from production. `PLANFIX`, `PEFIX` and `PMFIX`
+records are checked independently; the whole tape is quarantined with
+`BHVRPL begin`. These tests do not reconstruct ARGLOG metrics.
+
+The development checks passed all 36 decision contracts. In the live-item
+physical case the bot released its failed goal by 4.3 seconds and moved beyond
+220 units by 5.7 seconds; the respawn-camp case released by 3.7 seconds and
+escaped by 5.5 seconds. Both selected valid alternatives and retained 100
+health. The legacy-reset control released at 11.4 seconds but had not escaped
+when its 12.2-second observation ended. This is controlled evidence, not a
+population regression or equivalence result. Tapes and hashes are retained in
+`backups/plan-development-20261027/`; the first physical attempt was rejected
+for contradictory fixture flags and retained separately. Its oracle was not
+relaxed. See [#589](https://github.com/saworbit/argus/issues/589) and the
+[repeatable command](lab-workflow.md#focused-checks-without-deployment).
+
+The edge follow-up reproduced nine failing checks on each of dm2/e1m2 before
+fixes. The final expanded suite passed 39 checks per map, including co-op
+retry/rest/subject isolation, combat and fixed-task deadlines, 24 distinct
+detour waypoints, two-/three-node cycles, per-bot visit marks and epoch
+rollover. `--mode edges` selects this pair of ten-second fixtures. These
+inject controller state and waypoint arrivals, including co-op globals;
+they do not demonstrate a physical long-detour route or a full co-op match.
+
+The original 36 decision checks passed again. Physical live-item/camped-item
+cases escaped beyond 220 units by 2.9/4.3 seconds, both at 100 health. The
+legacy-reset control remained within 92.4 units at 12.2 seconds. Timings vary
+with engine startup and are controlled-case evidence, not a speed comparison
+against the earlier run. The enabled tactical trial passed 415 guards over
+97 fields, with a damaging 41-degree return shot. All 78 focused Python tests
+passed. One private diagnostic startup was rejected before trial start;
+pinning protocol 15/max_edicts 600 allowed the same production source to pass.
+Evidence: `runs/plan_progress_edges.results.json` and local
+`backups/plan-edges-20261027/`. All rejected attempts are retained.
+
+The earlier separate physical follow-up passed a real co-op retry on dm2: the bot
+rested from 2.1 to 22.1 seconds with its FETCH request intact, retried with a
+fresh deadline, then touched the goal at 22.8 seconds at 100 health. A cage
+opens when that first rest expires; the fixture never moves the actor or
+assigns another goal after setup. This is an isolated co-op engine fixture,
+without a human teammate or monsters, rather than a complete campaign test.
+
+Longer physical detour completion **failed**. The clean normal-pace e1m2
+fixture travelled 1,269 units but released its goal near n130 at 7.8 seconds
+without contact. A separate native player-sized walking probe passed the
+canonical n130→n133 link. Approach/handoff or motor behaviour needs further
+isolation; this does not convict the progress deadline, which had not expired.
+The earlier half-pace attempt also failed, under different initial state.
+The deadline-control build was not run because the successful-detour
+precondition was missing. Track the movement reproduction in
+[#593](https://github.com/saworbit/argus/issues/593). No production changes or
+deployment followed that investigation; step 1b was still parked then.
+
+`--mode physical-edges --physical-part coop` reproduces the passing co-op
+case. `--physical-part normal` reproduces the failing e1m2 case, while
+`--physical-part detour` includes half/normal pace and the deadline control,
+stopping on failure. All are private native builds; the default suite is
+unchanged. The physical oracle requires continuous samples and actual
+trigger contact, and a source audit rejects scripted movement/progress or
+observer writes to the actor. All 13 plan evidence tests pass. Evidence:
+`runs/plan_progress_physical_edges.results.json` and local
+`backups/plan-physical-20261027/`, including rejected setup attempts.
+
+The health/inventory manifest verifies the active function hashes and reverses
+allowlisted amendments only in memory before reconstructing its historical
+parked/candidate sources. Their frozen hashes remain unchanged.
+
+## Physical offset entry (#593)
+
+`tools/verify_offset_entry.py` seeds one existing route leg at n130 on e1m2,
+then leaves the normal scheduled bot code to move and hand off. The four
+cases distinguish centred/offset and grounded/airborne entry. They require
+actual trigger contact within six seconds, full health and continuous sampled
+movement. Excluded actors are marked as cameras as well as non-solid, so
+they cannot contaminate the navigation test through perception. A source
+audit rejects observer movement, actor writes and manufactured progress.
+
+The old policy reproduces the airborne offset failure at 2.1 seconds while
+the centred airborne control passes. Tightening only normal arrival is
+insufficient: the separate apex shortcut bypasses that gate. A landing-only
+candidate fixed the first entry but regressed recovery; its receipts are
+retained. The final shared guard checks landing and, for off-centre approaches, two lateral rays into
+the next corridor, while preserving typed links, height changes, final arrival
+and the 48-unit radius. It applies to both handoff paths. The wall-slide
+cutoff remains 20; lowering it was an exploratory control, not the adopted fix.
+
+All four final entry cases pass, at 0.6/0.8/1.1/0.9 seconds respectively, with
+full health. The full normal-speed approach now passes this corridor and gets
+farther into the map, but complete long-detour success remains a separate
+integration check. Validated apex transitions now provide plan progress;
+revisits still use the existing per-goal epoch rule.
+
+Run `python tools/verify_offset_entry.py --output backups/<new-directory>`.
+The default includes current cases and an old-handoff policy control; use
+`--variants current --cases 3` for just the fixed airborne offset. Current
+failures return nonzero. Old-handoff outcomes are recorded for manual review;
+the runner does not yet reject an unexpectedly passing control case 3. Its
+exit code alone therefore does not prove the control distinguished the fix.
+The missing enforcement is tracked in [#594](https://github.com/saworbit/argus/issues/594).
+The two offset evidence tests run in fast CI.
+Raw accepted/rejected builds are local under `backups/offset-entry-20261027/`.
+No cohorts or installation accompany these controlled checks.
 
 ## Passive snapshots
 
@@ -100,8 +233,10 @@ is not full-body concealment. The separate TACFIX observer/checker remains
 the full-body, first-return-angle and damage-window oracle.
 
 During a behaviour fixture, a guard surrounds the subject's actual scheduled
-observer call. It compares 77 gameplay fields and the trace/vector/self/other
-globals exactly before and after that call. Saved values are local variables,
+observer call. It compares 97 gameplay fields and the trace/vector/self/other
+globals exactly before and after that call, including plan and fetch-rest
+fields. The latest six-second enabled native trial passed 415 guards and retained a
+damaging changed-angle tactical return. Saved values are local variables,
 never live engine fields on a snapshot entity. The tape records guard calls
 and enabled emissions, so a throttled/no-op observer cannot masquerade as
 tested enabled diagnostics. This proves the checked immediate state only;
@@ -512,7 +647,8 @@ and the muzzle-to-aim-point distance; a wall behind a close target does not
 veto the shot. Tactical shots retain their full 240u probe and existing
 settle/abort behaviour. Holding the trigger leaves computed movement intact.
 Ordinary shotgun/grenade behaviour and the existing exact-line prefire branch
-are unchanged. Step 1a remains active in development; step 1b remains parked.
+were unchanged at that review. Step 1a remained active in development and step
+1b was parked then.
 
 Fourteen controlled checks use independently proven dm4 BSP wall, clear and
 overhang rays. A small harness calls the shared production gate followed by
@@ -565,31 +701,40 @@ blind trial. The preparation script is also a fixed, one-shot session driver.
 
 ## Health/inventory perception step 1b
 
-**Current status: parked.** A bounded follow-up ran three 30-second dm4
+**Current status: active again in development, 27 October.** The user requested
+reactivation. The acquisition, retreat and hunch boundary changes were reapplied
+with the later ordinary rocket-clearance guard preserved; fresh native trials pass all
+22 health/inventory checks on dm2 and dm4 (44 total), plus their observation
+checks. The earlier dm4 warning is still unresolved. This is no claim of
+gameplay non-regression, and no deployment or cohort was run.
+
+The manifest now verifies actual active function bodies. Inverse amendments
+recover the original parked/candidate hashes without altering live source;
+projectile recognition and own-item valuation remain unchanged.
+
+**Earlier parking decision.** A bounded follow-up ran three 30-second dm4
 matches per arm: control, full candidate, targeting only, retreat only and
 hunch only. Median stalls were respectively 1, 0, 0, 0 and 1. The full arm
 recorded 0, 0 and 7 stalls. This did not reproduce the earlier warning or
 identify a component; it does not establish that the warning was noise.
 The run stopped at its 15-match cap.
 
-All three step 1b production functions were restored to their exact saved
-step 1a definitions. This also restores their previous private-health and
-inventory lookups; the information-boundary fixes below are currently
-inactive. The observation cache from step 1a remains. The unused helper and
-dormant fixtures are retained. A portable restoration patch and source hashes
+At that point all three step 1b production functions were restored to their
+saved step 1a definitions, including their private-health and inventory
+lookups. The observation cache, helper and fixtures remained. A restoration patch and source hashes
 live in `tools/fixtures/health-inventory-step1b.patch` and its JSON manifest.
-The 21 perception tests check active step 1a behaviour, the declared parked
-state, and the reconstructed candidate's static boundary. Historical engine
-checks below apply to the candidate, not the parked source. No large cohort
+The 21 perception tests now check live active bodies as well as the frozen
+historical sources. Historical engine
+checks below belong to their recorded builds. No large cohort
 was added. See [bounded results](../runs/hi2_dm4_isolation.results.json).
 
-The remaining text records the now-parked candidate and its original checks.
+The remaining text records the candidate's original implementation and checks.
 
-The muzzle amendment is allowlisted in the parked-state manifest through
-`tools/fixtures/rocket-muzzle-clearance-reverse.patch`. Static tests reverse
-that exact amendment in memory before checking the original parked function
-hashes and reconstructing the historical candidate. This neither reactivates
-step 1b nor establishes its information boundary in current ordinary play.
+The manifest reverses allowlisted offset-entry, active-health, plan and muzzle
+amendments in memory before checking the original parked hashes and
+reconstructing the historical candidate. Live-source audits and fresh native
+trials check the current information boundary separately. The original patch
+and frozen historical hashes have not been rewritten.
 
 The user authorised step 1b on 26 October. Exact opponent health no longer
 contributes to target utility or bypasses ordinary retreat hysteresis. The

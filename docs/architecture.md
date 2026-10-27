@@ -40,7 +40,7 @@ flowchart TD
 | Combat | Weapon/range choice, projectile lead, splash clearance, movement under threat and crossfire responses |
 | Perception | Soft field of view, weapon/item hearing, cached visual combat inputs and limited invisible-player glimpses |
 | Aim and skill | Damped spring tracking, blended aim offsets, reaction delay and continuous per-bot skill |
-| Goals | Utility scoring, personality appetites, pickup claims, item timing and prerequisite weapon errands |
+| Goals | Utility scoring, personality appetites, pickup claims, item timing, prerequisite errands and shared failed-plan evidence |
 | Presentation | Fake scoreboard rows, stock player models/deaths/backpacks, chat and spectator camera |
 
 The tactical attack-cover-return state machine owns movement temporarily on
@@ -48,15 +48,15 @@ two authored routes. It preserves item-route state but suppresses incompatible
 launches, validates incoming momentum and brakes during handoff. See its
 [implementation and acceptance limits](attack-cover-return.md).
 
-The uncommitted perception candidate gives ordinary combat an observation cache
+The development perception code gives ordinary combat an observation cache
 for its target's position, velocity, movement flags and powerup cues. Hidden
 prediction lasts at most 0.4 seconds and travels at most 128 units. Damage
 alone cannot create a visual observation, and entity lifecycle changes clear
-cached identity. The step 1b health/inventory candidate is parked after an
-inconclusive bounded dm4 stall investigation; targeting, retreat and hunch
-changes are reverted to step 1a behaviour, with the separate rocket-clearance
-amendment described below. Its private-information
-fixes are retained as a patch for later work. Projectile
+cached identity. Step 1b health/inventory perception is active again in
+development: acquisition, retreat and hunch use observed cues and fixed priors
+rather than exact opponent health/inventory. Its earlier dm4 stall warning
+remains unresolved; controlled boundary checks do not establish gameplay
+regression safety. Projectile
 recognition remains a separate follow-up on hold. See the
 [observation boundary and engine checks](behaviour-diagnostics.md#perception-step-1a).
 
@@ -68,6 +68,25 @@ probe and existing settle/abort rule. Ordinary grenade/hitscan fire and the
 separate exact-line speculative prefire remain unchanged. This is outgoing
 shot clearance, not incoming-projectile perception. Its controlled checks
 cover the shared gate and stock firing, rather than the entire combat AI.
+
+The development goal executor tracks goal identity, best objective distance
+and per-goal waypoint visits, using one epoch mark per bot slot on existing
+nodes. Useful progress clears failed recovery history and renews the goal
+deadline; repeated waypoint cycles, movement or route-cache adoption alone
+do not. Detours retain a monotonic best-distance reference. Failed co-op fetches
+rest per bot/subject before retrying. Existing bailout
+and utility selection choose another goal after repeated failed attempts.
+Combat/tactical ownership and established mover/door/link handling pause or
+reset the evidence. There is no map-specific escape sequence. See the
+[controlled proof and limits](behaviour-diagnostics.md#shared-failed-plan-recognition).
+
+Flat ordinary walking handoffs check landing. Off-centre approaches use two
+lateral rays into the next corridor; positions within eight units of the
+canonical node trust that seat. Both normal arrival and the apex shortcut use this check;
+typed transitions, changed heights and the final node retain their handling.
+The wall-slide cutoff and arrival radius stay unchanged. A validated apex
+transition also supplies the shared progress observer, so detours do not lose
+their deadline solely because they used corner cuts.
 
 ### Navigation is generated, not loaded at runtime
 

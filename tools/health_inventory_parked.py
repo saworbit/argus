@@ -1,4 +1,4 @@
-"""Recover the parked step1b candidate for static boundary tests, without edits."""
+"""Recover frozen step1b evidence and verify the declared active bodies."""
 import hashlib
 import json
 from pathlib import Path
@@ -26,6 +26,9 @@ def parked_source():
     source=(ROOT/'src/argus.qc').read_text()
     digest=lambda s:hashlib.sha256(s.encode()).hexdigest()
     assert digest(source)==manifest.get('active_text_sha256',manifest['parked_text_sha256']), 'active production source changed'
+    for name,expected in manifest.get('active_functions',{}).items():
+        match=re.search(r'^[^\n]*\b'+re.escape(name)+r'\s*=\s*\n\{\n.*?^\};',source,re.M|re.S)
+        assert match and digest(match[0])==expected, 'active function changed: '+name
     for patch in manifest.get('production_amendments',[]):
         source=apply_patch_text(source,(folder/patch).read_text())
     assert digest(source)==manifest['parked_text_sha256'], 'parked production source changed'

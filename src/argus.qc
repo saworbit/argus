@@ -111,6 +111,14 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float  ar_taskdeadline;        // hard cleanup ceiling; harness may stop sooner
 .float  ar_abarm;               // 0 control, 1 candidate in a paired lab match
 .float  ar_stallrun;
+// Shared navigation-plan evidence; independent of map and goal class.
+.entity ar_plan_goal, ar_plan_leg;
+.float ar_plan_best, ar_plan_stamp;
+// One visit epoch per supported bot slot, stored on existing waypoints.
+.float ar_plan_visit0, ar_plan_visit1, ar_plan_visit2, ar_plan_visit3;
+float argus_plan_serial;
+.entity ar_fetchfailed;
+
 .float  ar_mode;                // 0 wander, 1 direct, 2 routed
 .float  ar_nextai;
 .float  ar_nextlog;
@@ -3247,6 +3255,9 @@ void(entity bot, float won) Argus_SkillResult =
 
 void() Argus_BaseStats =
 {
+    self.ar_plan_goal = world; self.ar_plan_leg = world;
+    self.ar_plan_best = 0; self.ar_plan_stamp = 0; self.ar_stallrun = 0;
+    self.ar_fetchfailed = world; self.ar_fetchcool = 0;
     Argus_ObservationRemoved (self);
     Argus_ObservationReset ();
     self.ar_enemy = world;
@@ -4142,8 +4153,8 @@ void() Argus_Perceive =
 
     // acquire the best visible player, bots and humans alike (both
     // carry classname "player"; the masquerade cuts both ways). Target
-    // choice is utility, not raw distance: near beats far, wounded
-    // beat healthy, and a quad carrier beats everything, because the
+    // choice uses distance and visible powerup cues. Exact enemy health
+    // is private even in view. A quad carrier remains a priority, because the
     // worst place for a quad is someone else's hands.
     best = world;
     bd = 0;
@@ -4198,9 +4209,11 @@ void() Argus_Perceive =
                             ok = 1;
                     }
                 }
-                if (ok)
+                if (ok && Argus_CanSee (b))
                 {
-                    d = (2500 - d) + (100 - b.health) * 3;
+                    // Score only after observation; unseen inventory cannot
+                    // change candidate ordering or visibility/RNG work.
+                    d = 2500 - d;
                     if (b.super_damage_finished > time)
                         d = d + 600;
                     // vendetta (OPM slice C): the one who keeps
@@ -4211,11 +4224,8 @@ void() Argus_Perceive =
                         d = d + 600;
                     if (d > bd)
                     {
-                        if (Argus_CanSee (b))
-                        {
-                            best = b;
-                            bd = d;
-                        }
+                        best = b;
+                        bd = d;
                     }
                 }
             }
@@ -4614,8 +4624,8 @@ float(entity it, float cls, float family) Argus_HunchValue =
 
 void(entity foe) Argus_Hunch =
 {
-    local entity it, best, oself;
-    local float v, cls, sc, bsc, cool;
+    local entity it, best;
+    local float v, cls, sc, bsc, cool, family;
     local vector d;
 
     // skill 1+ since 2026-08-27: the v378 human tape ran the whole
@@ -4627,8 +4637,11 @@ void(entity foe) Argus_Hunch =
         return;
     if (time < self.ar_hunchcool)
         return;
-    if (foe == world || foe.health <= 0 || foe.cam_active)
+    if (foe == world || foe.health <= 0 || foe.cam_active || foe.ar_disconnected)
         return;
+    family = AR_THREAT_UNKNOWN;
+    if (self.ar_obsenemy == foe)
+        family = self.ar_threatclass;
 
     best = world;
     bsc = 22;       // below this the bet is not worth a detour
@@ -4641,10 +4654,7 @@ void(entity foe) Argus_Hunch =
                     && it.nextthink - time < 10)))
         {
             cls = Argus_ItemClass (it);
-            oself = self;
-            self = foe;
-            v = Argus_ItemValue (it, cls);
-            self = oself;
+            v = Argus_HunchValue (it, cls, family);
             if (v > 0)
             {
                 d = Argus_GoalPoint (it) - self.ar_lastseen;
@@ -5876,18 +5886,18 @@ float() Argus_Combat =
     // powerup expires, and holding our own quad still overrides.
     if (self.ar_retreating)
     {
-        // hysteresis: stay out until the stack recovers or the fight
-        // is winnable (finish a nearly-dead enemy instead of hiding)
+        // Hysteresis uses our stack and our visible powerup, never an
+        // exact read of the opponent's hidden health.
         if (Argus_EnemyPowerThreat ())
         {
-            if (ceff > 90 || e.health <= 30
+            if (ceff > 90
                 || self.super_damage_finished > time)
             {
                 self.ar_retreating = 0;
                 self.ar_retreatclass = AR_THREAT_UNKNOWN;
             }
         }
-        else if (ceff > retreatout || e.health <= 30
+        else if (ceff > retreatout
                  || self.super_damage_finished > time)
         {
             self.ar_retreating = 0;
@@ -5896,7 +5906,6 @@ float() Argus_Combat =
     }
     else if ((ceff < retreatin
               || (ceff < 70 && Argus_EnemyPowerThreat ()))
-             && e.health > 30
              && self.super_damage_finished < time
              && self.weapon != IT_AXE
              && time > self.ar_retreatlock)
@@ -6129,8 +6138,8 @@ float() Argus_Combat =
 
             // Shared-target hold fire / Kill-steal suppression (#174):
             // 300-500ms delay when teammate is actively shooting with point-blank line of sight.
-            // Finishing tagged/weak monsters (<25 hp) and rescuing teammate from melee (<100u) is prioritized.
-            if (self.ar_teammate != world && self.ar_teammate.health > 0 && e.health >= 25)
+            // Close-range rescue (<100u) remains; exact monster health is private.
+            if (self.ar_teammate != world && self.ar_teammate.health > 0)
             {
                 if (self.ar_teammate.button0 && vlen (epos - self.ar_teammate.origin) < 300
                     && vlen (epos - self.ar_teammate.origin) > 100)
@@ -7930,6 +7939,18 @@ void(entity door) Argus_CoopCommitKey =
     dprint (" goal key\n");
 };
 
+// Keep a failed co-op request on the stack, but let this bot try other work.
+// The cooldown belongs to its subject: a new request or another bot is free.
+void(entity failed) Argus_FetchRest =
+{
+    if (failed != world && Argus_GoalTopKind () == GOAL_FETCH
+        && Argus_GoalTopSubj () == failed)
+    {
+        self.ar_fetchfailed = failed;
+        self.ar_fetchcool = time + 20;
+    }
+};
+
 void() Argus_CoopThink =
 {
     local entity threat, tmate;
@@ -8181,15 +8202,17 @@ void() Argus_CoopThink =
         fitem = Argus_GoalTopSubj ();
         if (fitem != world && fitem.solid == SOLID_TRIGGER)
         {
-            // Resting after a routefail (see the stamp in Argus_AI).
+            // Rest after a failed route, repeated stalls or a timeout.
             // Leaving ar_goal clear is deliberate: the caller runs
             // Argus_PickGoal whenever the goal is world, so the bot
             // shops normally for the 20 s instead of standing still,
             // and the objective is retried afterwards rather than
             // abandoned. The goal stays on the stack throughout.
-            if (time >= self.ar_fetchcool && self.ar_goal != fitem)
+            if ((fitem != self.ar_fetchfailed || time >= self.ar_fetchcool)
+                && self.ar_goal != fitem)
             {
                 self.ar_goal = fitem;
+                self.ar_goalstart = time;
                 self.ar_pending = 1;
                 self.ar_mode = 0;
                 self.ar_node = world;
@@ -8368,6 +8391,99 @@ void(float fighting) Argus_LifeRouteVeto =
     }
 };
 
+// Progress is an outcome, not movement: a closer objective or a new
+// reached waypoint. Route rebuilds alone provide no successful evidence.
+void(float paused, entity reached) Argus_PlanObserve =
+{
+    local float d, visited, useful;
+    local entity e;
+    if (paused)
+    {
+        self.ar_plan_goal = world; self.ar_plan_leg = world;
+        self.ar_plan_best = 0; self.ar_stallrun = 0;
+        return;
+    }
+    if (!Argus_GoalOK (self.ar_goal))
+    {
+        self.ar_plan_goal = world; self.ar_plan_leg = world;
+        self.ar_plan_best = 0;
+        if (vlen (self.origin - self.ar_lastpos) >= 12)
+            self.ar_stallrun = 0;
+        return;
+    }
+    d = vlen (Argus_GoalPoint (self.ar_goal) - self.origin);
+    if (self.ar_plan_goal != self.ar_goal)
+    {
+        // Exact integer epochs in a vanilla float. Rare rollover invalidates
+        // all marks together, without allocating entities or using engine APIs.
+        if (argus_plan_serial >= 16777215)
+        {
+            e = nextent (world);
+            while (e != world)
+            {
+                e.ar_plan_visit0 = 0; e.ar_plan_visit1 = 0;
+                e.ar_plan_visit2 = 0; e.ar_plan_visit3 = 0;
+                e.ar_plan_goal = world; e.ar_plan_stamp = 0;
+                e = nextent (e);
+            }
+            argus_plan_serial = 0;
+        }
+        argus_plan_serial = argus_plan_serial + 1;
+        self.ar_plan_stamp = argus_plan_serial;
+        self.ar_plan_goal = self.ar_goal; self.ar_plan_leg = world;
+        self.ar_plan_best = d; self.ar_stallrun = 0;
+    }
+    useful = (d <= self.ar_plan_best - 12);
+    if (reached != world)
+    {
+        visited = reached.ar_plan_visit0;
+        if (self.ar_slot == 1) visited = reached.ar_plan_visit1;
+        else if (self.ar_slot == 2) visited = reached.ar_plan_visit2;
+        else if (self.ar_slot == 3) visited = reached.ar_plan_visit3;
+        if (visited != self.ar_plan_stamp)
+        {
+            useful = TRUE;
+            if (self.ar_slot == 0) reached.ar_plan_visit0 = self.ar_plan_stamp;
+            else if (self.ar_slot == 1) reached.ar_plan_visit1 = self.ar_plan_stamp;
+            else if (self.ar_slot == 2) reached.ar_plan_visit2 = self.ar_plan_stamp;
+            else if (self.ar_slot == 3) reached.ar_plan_visit3 = self.ar_plan_stamp;
+        }
+        self.ar_plan_leg = reached;
+    }
+    if (useful)
+    {
+        // Preserve the closest useful distance even while a new leg leads
+        // away from the objective. Returning around a cycle earns no credit.
+        if (d < self.ar_plan_best) self.ar_plan_best = d;
+        self.ar_stallrun = 0;
+        if (self.ar_taskgoal == world) self.ar_goalstart = time;
+    }
+};
+
+// A flat walking handoff needs a landed, body-clear entry. The eye ray can
+// clear the next corridor while the side of the body still clips its mouth.
+// Keep typed transitions, height changes and final-goal arrival as before.
+float(entity node) Argus_WalkArrivalReady =
+{
+    local entity next;
+    local vector to, side, a, b;
+    if (self.ar_hopjump || self.ar_hoprj || self.ar_hoplift
+        || self.ar_hopswim || self.ar_hoptrain || self.ar_hopdoor) return TRUE;
+    next = Argus_GetNext (node, self);
+    if (next == world || Argus_LinkIsTyped (node, next)) return TRUE;
+    if (fabs (next.origin_z - node.origin_z) > 18) return TRUE;
+    if (!(self.flags & FL_ONGROUND)) return FALSE;
+    if (vlen (self.origin - node.origin) <= 8) return TRUE;
+    to = next.origin - self.origin; to_z = 0;
+    to = normalize (to); side = '0 0 0';
+    side_x = to_y * 15; side_y = 0 - to_x * 15;
+    a = self.origin + '0 0 8'; b = next.origin + '0 0 8';
+    traceline (a + side, b + side, TRUE, self);
+    if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+    traceline (a - side, b - side, TRUE, self);
+    return (trace_fraction == 1 && !trace_startsolid && !trace_allsolid);
+};
+
 void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
@@ -8483,9 +8599,7 @@ void() Argus_AI =
             // about one bot's ability to route there, and shelving a
             // co-op objective for everyone is how one stuck bot
             // starves a whole team. Same 20 s the item shelf uses.
-            if (Argus_GoalTopKind () == GOAL_FETCH
-                && Argus_GoalTopSubj () == self.ar_goal)
-                self.ar_fetchcool = time + 20;
+            Argus_FetchRest (self.ar_goal);
             self.ar_goal = world;
 
             // four straight failures from one node with nobody to fight:
@@ -8547,6 +8661,24 @@ void() Argus_AI =
 
         if (coop > 0)
         {
+            // Co-op skips ordinary item expiry below. A FETCH that has made
+            // no useful progress still needs a rest, without popping the
+            // request or changing escort/interaction ownership.
+            if (Argus_GoalTopKind () == GOAL_FETCH
+                && Argus_GoalTopSubj () == self.ar_goal
+                && self.ar_goal != world
+                && time > self.ar_goalstart + 20)
+            {
+                if (self.ar_enemy != world)
+                    self.ar_goalstart = time - 15;
+                else
+                {
+                    Argus_FetchRest (self.ar_goal);
+                    self.ar_goal = world; self.ar_node = world;
+                    self.ar_pending = 0; self.ar_mode = 0;
+                    Argus_PlanObserve (TRUE, world);
+                }
+            }
             if (self.ar_goal == self.ar_teammate && self.ar_teammate != world)
             {
                 gn = Argus_NearestNode (self.ar_teammate.origin);
@@ -8592,6 +8724,7 @@ void() Argus_AI =
             {
                 self.ar_goal.ar_claimer = self;
                 self.ar_goal.ar_claimtime = time;
+                Argus_FetchRest (self.ar_goal);
                 self.ar_goal = world;
                 Argus_Event ("abandon");
                 Argus_PickGoal ();
@@ -8651,6 +8784,7 @@ void() Argus_AI =
     // not pull a committed dry walking route away from its validated legs.
     if (self.ar_tactic)
     {
+        Argus_PlanObserve (TRUE, world);
         if (time > self.ar_nextlog)
         {
             self.ar_nextlog = time + 0.5;
@@ -9420,6 +9554,7 @@ void() Argus_AI =
                 self.ar_mode = 0;
             }
             else if (vlen (to) < 48
+                     && Argus_WalkArrivalReady (self.ar_node)
                      && (fabs (tp_z - self.origin_z) < 48
                          || (self.origin_z - tp_z > 0
                              && self.origin_z - tp_z < 220)
@@ -9446,6 +9581,7 @@ void() Argus_AI =
                 // (the mega-room stair lip and the old walkway spot)
                 oldnode = self.ar_node;
                 self.ar_node = Argus_GetNext (self.ar_node, self);
+                Argus_PlanObserve (FALSE, oldnode);
                 self.ar_hopjump = 0;
                 self.ar_hopspeed = 0;
                 self.ar_sprintstate = 0;
@@ -9559,7 +9695,8 @@ void() Argus_AI =
                         self.ar_hopdoor = 1;
                 }
             }
-            else if (!self.ar_hopjump && vlen (to) < 112)
+            else if (!self.ar_hopjump && vlen (to) < 112
+                     && Argus_WalkArrivalReady (self.ar_node))
             {
                 // apex cornering: when the node after this one is
                 // visible on the level and the line to it is safe,
@@ -9581,7 +9718,13 @@ void() Argus_AI =
                         traceline (self.origin + '0 0 22',
                                    nx.origin + '0 0 8', TRUE, self);
                         if (trace_fraction == 1)
+                        {
+                            // This validated corner cut completes a route
+                            // leg too; otherwise long detours can make real
+                            // progress without ever renewing their deadline.
+                            Argus_PlanObserve (FALSE, self.ar_node);
                             self.ar_node = nx;
+                        }
                     }
                 }
             }
@@ -9943,6 +10086,9 @@ void() Argus_AI =
     if (time > self.ar_nextstall)
     {
         self.ar_nextstall = time + 0.7;
+        Argus_PlanObserve (fighting || self.ar_liftwait || self.ar_hoplift
+            || self.ar_hoptrain || self.ar_hopjump || self.ar_hoprj
+            || self.ar_hopswim || self.ar_door != world, world);
         if (vlen (self.origin - self.ar_lastpos) < 12 && !fighting
             && !self.ar_liftwait && !self.ar_hoplift)
         {
@@ -9979,6 +10125,8 @@ void() Argus_AI =
                     self.ar_goal.ar_claimer = self;
                     self.ar_goal.ar_claimtime = time;
                 }
+                Argus_FetchRest (self.ar_goal);
+                Argus_PlanObserve (TRUE, world);
                 self.ar_goal = world;
                 self.ar_node = world;
                 self.ar_pending = 0;
@@ -10002,8 +10150,7 @@ void() Argus_AI =
                     self.ar_nextai = time + 1.5;
             }
         }
-        else if (vlen (self.origin - self.ar_lastpos) >= 12)
-            self.ar_stallrun = 0;
+
         self.ar_lastpos = self.origin;
     }
 

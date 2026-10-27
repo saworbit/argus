@@ -649,6 +649,24 @@ and two negative controls are described in the
 For no-install build/staging precautions and local test commands, use the
 [focused-check runbook](../../docs/lab-workflow.md#focused-checks-without-deployment).
 
+Shared plan-recognition fixtures use `python tools/verify_plan_progress.py
+--output backups/plan-check-1`. They drive this native lab with private sources,
+binary and assets; `PLANFIX` checks decisions and `PEFIX` checks actual escape
+and alternative selection. They add no MCP tool or production console switch.
+`--mode edges` selects short dm2/e1m2 controller checks for co-op retries,
+longer detours and waypoint cycles; waypoint arrivals are injected inputs.
+`--mode physical-edges` instead requires real motor movement and trigger
+contact. Use `--physical-part coop` for the passing dm2 retry, or
+`--physical-part normal` for the blocked e1m2 detour (#593). It uses the
+native co-op experiment for the former and native experiments for the latter.
+`python tools/verify_offset_entry.py --output backups/<new-directory>` isolates
+the e1m2 entry with a seeded existing route and real movement/contact. Its
+default matrix includes the fixed policy and an old-handoff counterfactual.
+Only current-case success is enforced automatically; review the old-handoff
+airborne-offset result separately until the control gate is added. Neither
+verifier changes the native MCP schema or shipped console controls.
+See [the contract and limits](../../docs/behaviour-diagnostics.md#shared-failed-plan-recognition).
+
 The benchmark is the low-variance complement to free-running matches. It
 places one real Argus bot at a declared nav coordinate, assigns a synthetic
 goal, and observes completion through the NetQuake puppet. The other bots are
