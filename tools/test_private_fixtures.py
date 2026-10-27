@@ -165,5 +165,18 @@ class PrivateTests(unittest.TestCase):
         self.assertIn('--output',result.stdout)
         self.assertEqual(set(self.root.iterdir()),before)
 
+    def test_button_player_failure_stops_engine_and_keeps_client_receipt(self):
+        calls=[];folder=self.root/'player-test';folder.mkdir()
+        class Lab:
+            def call(self,name,**args):
+                calls.append(name)
+                return dict(running=True,tail=['ARGLOG ready'])
+        def failed_client(*args,**kwargs):
+            return SimpleNamespace(returncode=1,stdout='',stderr='control failed')
+        with self.assertRaisesRegex(RuntimeError,'control failed'):
+            runner.button_player_trial(Lab(),'test',{},failed_client,folder)
+        self.assertEqual(calls[-1],'match_stop')
+        self.assertEqual(json.loads((folder/'test.client.json').read_text())['returncode'],1)
+
 
 if __name__=='__main__':unittest.main()

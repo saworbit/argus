@@ -30,7 +30,7 @@ def physical_edge(case=4):
     coop = case == 3
     goal, seconds = (200, 23) if coop else (800, 30)
     rows = ['BHVRPL begin plan_physical_edges',
-            f"PMFIX begin {'dm2' if coop else 'e1m2'} case {case} coop {int(coop)} dm {int(not coop)} pace {320 if coop else 160} start '0 0 0' goal '{goal} 0 0' solid 0"]
+            f"PMFIX begin {'dm2' if coop else 'e1m2'} case {case} coop {int(coop)} dm {int(not coop)} pace {160 if case==4 else 320} start '0 0 0' goal '{goal} 0 0' solid 0"]
     for i in range(seconds * 5 + 1):
         t = i / 5
         x = max(0, t - 21) * 100 if coop else -25 * t if t <= 4 else -100 + (t - 4) * 900 / 26
@@ -144,6 +144,8 @@ class EvidenceTests(unittest.TestCase):
                                 text=True, timeout=5)
         self.assertEqual(result.returncode, 0)
         self.assertIn('--output', result.stdout)
+        self.assertIn('half', result.stdout)
+        self.assertIn('deadline-control', result.stdout)
 
     def test_existing_or_production_output_is_refused_before_lab(self):
         root = Path(__file__).resolve().parents[1]

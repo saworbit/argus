@@ -1815,6 +1815,26 @@ float(float myaw, float spd, float probe) Argus_WallSlide =
     return TRUE;
 };
 
+void() button_touch;
+
+// walkmove updates groundentity but does not deliver the solid-button impact
+// a walking client receives. Dispatch only the engine-confirmed support touch;
+// the button's state prevents repeats after its first activation.
+void() Argus_SupportButton =
+{
+    local entity bot, button, savedother, savedactivator;
+    if (!self.ar_isbot || self.cam_active || self.health <= 0) return;
+    if (!(self.flags & FL_ONGROUND)) return;
+    button = self.groundentity;
+    if (button == world || button.classname != "func_button") return;
+    if (button.state != STATE_BOTTOM || button.health > 0) return;
+    if (button.touch != button_touch) return;
+    bot = self; savedother = other; savedactivator = activator;
+    self = button; other = bot;
+    button_touch ();
+    self = bot; other = savedother; activator = savedactivator;
+};
+
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
@@ -2670,6 +2690,7 @@ void() Argus_Physics =
         }
         Argus_AirAccelerate (wishdir, AR_MAXSPEED);
     }
+    Argus_SupportButton ();
 };
 
 // post-kill spawn watch (mre / Omicron ambush reflex): the killer
@@ -3629,11 +3650,71 @@ float(entity d, vector far) Argus_DoorPast =
     return (((self.origin - c) * n) * ((far - c) * n)) > 0;
 };
 
+float ar_standok;
+vector(entity ent) UseStandPoint;
+float argus_door_search_budget;
+
+float(entity b) Argus_DoorPressed =
+{
+    if (b.classname == "func_button" && b.state == STATE_BOTTOM) return FALSE;
+    return Argus_TouchingBox (b);
+};
+
+entity(entity d, float depth) Argus_DoorOpener =
+{
+    local entity b, best, candidate;
+    local vector p;
+    local float bd, dist, usable;
+    if (depth > 4 || argus_door_search_budget <= 0) return world;
+    argus_door_search_budget = argus_door_search_budget - 1;
+    best = world; bd = 1024;
+    if (d.classname == "func_button" || d.classname == "trigger_multiple"
+        || d.classname == "trigger_once")
+    {
+        usable = TRUE;
+        if (d.classname != "func_button" && d.health <= 0)
+        {
+            usable = !(d.spawnflags & 1); // stock trigger NOTOUCH
+            p = UseStandPoint (d);
+            if (!ar_standok) usable = FALSE;
+            if (p_x + self.maxs_x < d.absmin_x - 2) usable = FALSE;
+            if (p_x + self.mins_x > d.absmax_x + 2) usable = FALSE;
+            if (p_y + self.maxs_y < d.absmin_y - 2) usable = FALSE;
+            if (p_y + self.mins_y > d.absmax_y + 2) usable = FALSE;
+            if (p_z + self.maxs_z < d.absmin_z - 2) usable = FALSE;
+            if (p_z + self.mins_z > d.absmax_z + 2) usable = FALSE;
+        }
+        p = (d.absmin + d.absmax) * 0.5;
+        dist = vlen (p - self.origin);
+        if (usable && dist < bd) { best = d; bd = dist; }
+    }
+    if (d.targetname == "") return best;
+    b = find (world, target, d.targetname);
+    while (b != world && argus_door_search_budget > 0)
+    {
+        argus_door_search_budget = argus_door_search_budget - 1;
+        candidate = world;
+        if (b.classname == "func_button" || b.classname == "trigger_multiple"
+            || b.classname == "trigger_once" || b.classname == "trigger_relay")
+            candidate = Argus_DoorOpener (b, depth + 1);
+        if (candidate != world)
+        {
+            p = (candidate.absmin + candidate.absmax) * 0.5;
+            dist = vlen (p - self.origin);
+            if (dist < bd)
+            {
+                if (best == world || candidate.health == 0 || best.health > 0)
+                { best = candidate; bd = dist; }
+            }
+        }
+        b = find (b, target, d.targetname);
+    }
+    return best;
+};
+
 void(entity d) Argus_TakeDoor =
 {
-    local entity b, best;
-    local float bd, dist;
-    local vector p;
+    local entity best;
 
     self.ar_door = d;
     self.ar_doortime = time + 8;
@@ -3654,34 +3735,8 @@ void(entity d) Argus_TakeDoor =
 
     if (d.targetname == "")
         return;                 // touch-open: walk in, masquerade fires it
-    best = world;
-    bd = 1024;
-    b = find (world, target, d.targetname);
-    while (b != world)
-    {
-        // a door wired to a pressure trigger had no activator at all
-        // by this search, so the goal was shelved as a false route
-        // failure. A trigger brush opens the same way a touch button
-        // does - by walking into it - so it serves as a target.
-        if (b.classname == "func_button"
-            || b.classname == "trigger_multiple"
-            || b.classname == "trigger_once")
-        {
-            p = (b.absmin + b.absmax) * 0.5;
-            dist = vlen (p - self.origin);
-            if (dist < bd)
-            {
-                // a touch button beats a shoot plate at the same
-                // range; slice 3 is the dedicated shoot path
-                if (best == world || b.health == 0 || best.health > 0)
-                {
-                    best = b;
-                    bd = dist;
-                }
-            }
-        }
-        b = find (b, target, d.targetname);
-    }
+    argus_door_search_budget = 32;
+    best = Argus_DoorOpener (d, 0);
     self.ar_doorbtn = best;
     // THROTTLED 1 s PER BOT, like the hazard deflection, because
     // this is not once per door. An OPEN slab on the line is
@@ -6240,8 +6295,6 @@ float(entity it) Argus_GoalOK =
 // unreachable point looks identical to a bot walking at a reachable
 // one until it fails to arrive, and nothing in the telemetry names the
 // cause, so it gets diagnosed as a navigation or door problem.
-float ar_standok;
-
 vector(entity ent) UseStandPoint =
 {
     local vector center, p, cand;
@@ -9958,7 +10011,7 @@ void() Argus_AI =
                 // walking in, which is what fires the trigger; by the
                 // time it is true the movement that got us here has
                 // already fired it, so the hold below is safe.
-                if (!Argus_TouchingBox (self.ar_doorbtn))
+                if (!Argus_DoorPressed (self.ar_doorbtn))
                     want = vectoyaw (to);
                 else
                 {
