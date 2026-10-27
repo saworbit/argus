@@ -88,6 +88,15 @@ The wall-slide cutoff and arrival radius stay unchanged. A validated apex
 transition also supplies the shared progress observer, so detours do not lose
 their deadline solely because they used corner cuts.
 
+Walking bots dispatch stock button contact for an engine-confirmed supporting,
+unpressed touch button, preserving callback context. Door opener lookup follows
+target chains with bounded depth/work and rejects unreachable touch triggers.
+A solid button must acknowledge activation before waiting. Near-side bots keep
+nearby opening-door ownership until the slab finishes, with one eight-second
+opening phase and the existing timeout path. Remote buttons and already-passed
+doors retain their walking paths. See the
+[physical contracts and controls](behaviour-diagnostics.md#opening-door-ownership-and-physical-deadline).
+
 ### Navigation is generated, not loaded at runtime
 
 QuakeC has no file I/O. A BSP is sampled offline into generated

@@ -80,25 +80,31 @@ from bot bands. `MFIX` has no production console switch or public impulse.
 Parse it with `tools/check_muzzle_fixture.py` as a Python module; it is not
 an ARGLOG metric and the module does not expose a command-line parser.
 
-Private plan and entry fixtures add separate records:
+Private plan, entry, combat and mover fixtures add separate records:
 
 | Record | Evidence |
 |---|---|
 | `PLANFIX` | Controlled decision contracts and alternative goal selection |
 | `PEFIX` | Failed-goal release, alternative selection and continuous physical escape |
-| `PMFIX` | Physical co-op rest/retry, route legs, travel and trigger contact |
+| `PMFIX` | Physical co-op rest/retry, route legs, travel, trigger contact and paired real-door movement samples |
 | `OFFIX` | Seeded offset-entry trajectory, goal ownership and actual trigger contact |
 | `OETRACE` | Private handoff positions and wall-slide diagnostics; not an outcome counter |
+| `MCFIX` | Actual combat-trigger clearance, preserved movement, ammo/projectile outcomes and separate embedded-ray observation |
+| `BPFIX` | Real bot/player floor-button crossing, support contact, activation and callback-context preservation |
+| `DAFIX` | Bounded opener lookup and actual extracted door-controller ownership/timeout checks |
 
 These tapes are quarantined with `BHVRPL begin`. Use the independent oracles
-in `tools/check_plan_progress.py` and `tools/verify_offset_entry.py`; do not
+in `tools/check_plan_progress.py`, `tools/verify_offset_entry.py`,
+`tools/check_muzzle_combat.py`, `tools/check_button_physical.py` and
+`tools/check_door_actuator.py`; do not
 pool their rows into match rates or count a selected goal as a pickup.
 They add no shipped console control or change to ARGLOG/ARGEVT grammar.
 
 Blind-review ratings are subjective evidence, separate from native match
 metrics. Keep build identity in a separate key until scoring is complete.
-The camera client can appear under `totals.human`; it is an instrument, not
-a bot whose performance should enter comparison bands.
+The `labcamera` recorder is an instrument, excluded from both bot and human
+aggregates. Its raw rows remain available for inspection. Actual human tracks
+belong under `totals.human` and stay outside bot comparison bands.
 
 ```text
 ARGLOG <name> t <time> pos '<x y z>' spd <speed> yaw <degrees> mode <mode>

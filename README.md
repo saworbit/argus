@@ -19,7 +19,11 @@ changes. The game runs in vanilla QuakeC on NetQuake protocol 15 with a
 
 Development source currently retains step 1a visual observation caching and
 ordinary rocket muzzle clearance, plus shared failed-plan recognition and
-replanning. Health/inventory step 1b is active again in development, and
+replanning. Floor-button contact, relayed openers and bounded opening-door
+waits have controlled physical coverage, including a shipped-speed route
+past the original goal deadline and independent mutation controls.
+Health/inventory step 1b is active again in development; its earlier dm4
+gameplay warning is unresolved, and
 projectile-perception work is on hold. These changes have not been installed
 in the supplied binaries. See [development status and evidence](docs/behaviour-diagnostics.md#current-development-status).
 

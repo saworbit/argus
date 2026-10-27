@@ -45,6 +45,9 @@ These keys may also be supplied as environment variables; environment wins.
 maps and player model are separate from the lab binary. Use the
 [configuration reference](../tools/argus_mcp/README.md#config) for resolution
 order, optional paths and defaults.
+`ARGUS_GAME` is an optional game-directory name, defaulting to `argus`.
+`config_check` reports its existence under `ARGUS_BASEDIR`, independently of
+the process working directory; an absent optional game does not change `complete`.
 
 For an MCP client, adapt [`.mcp.json.example`](../.mcp.json.example): set its
 stdio command to the installed binary and give it the same local paths.
@@ -143,7 +146,8 @@ For exact baselines, primary metrics and repeated-run statistics, use the
 
 ### Focused checks without deployment
 
-For the current source's observation, parked-state and muzzle contracts,
+For observation, historical-source reconstruction, combat, button, door,
+plan and entry contracts,
 these **terminal commands** do not launch an engine:
 
 ```text
@@ -154,6 +158,10 @@ python tools/test_tactic_fixture.py
 python tools/test_review_outputs.py
 python tools/test_plan_progress.py
 python tools/test_offset_entry.py
+python tools/test_muzzle_combat.py
+python tools/test_button_physical.py
+python tools/test_door_actuator.py
+python tools/test_private_fixtures.py
 ```
 
 The pinned NumPy/SciPy requirements support historical cohort calculations;
@@ -178,9 +186,26 @@ public CLIs. They require local ignored snapshots, fresh hard-coded names or
 output directories, and have no argument parser or `--help`. Do not invoke
 them merely to discover options, delete prior evidence, or restart completed
 cohorts. The [diagnostics guide](behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance)
-records the original checks and their limits. A repeatable driver is follow-up
-work, not a prerequisite for retaining those historical results.
-It is tracked in [#586](https://github.com/saworbit/argus/issues/586).
+records the original checks and their limits. Their maintained successor uses
+fresh private sources, assets, binaries and runs, and never overwrites installed
+game files. It checks protected hashes after success or failure and refuses
+existing output directories:
+
+```text
+python tools/verify_private_fixtures.py --help
+python tools/verify_private_fixtures.py muzzle --output backups/muzzle-check-1 --prefix muzzle_check_1
+```
+
+Choose a fresh directory and prefix for every invocation. Replace `muzzle`
+with one of these fixture names:
+
+| Fixture | Native coverage |
+|---|---|
+| `muzzle` | Shared clearance geometry and declared negative controls |
+| `combat` | Actual ordinary combat trigger, ammo/projectile emission and movement preservation |
+| `health` | Active health/inventory information boundary; does not resolve #583 |
+| `button` | Real bot/player floor-button activation and disabled-support control |
+| `door` | Bounded opener lookup, activation acknowledgement and opening ownership/timeout |
 
 Shared failed-plan checks have a separate repeatable native driver:
 
@@ -201,14 +226,26 @@ This is a small fixture suite, not a gameplay cohort.
 
 Physical retry/detour follow-up uses `--mode physical-edges`. Add
 `--physical-part coop` for the passing dm2 co-op rest/retry/contact check or
-`--physical-part normal` for the currently failing e1m2 detour. The full
-physical-edge schedule stops at its first failure; the deadline control is
-meaningful only after the current detour completes. `--physical-part detour`
-selects half pace (160 units/s), normal pace (320) and that control. The slow
-pace is a declared initial test input; goal clocks advance in real engine
-time. Do not count controller callbacks or goal selection as physical arrival.
-[#593](https://github.com/saworbit/argus/issues/593) blocks the longer-detour
-proof and deployment. These switches do not enable production fixtures.
+`--physical-part normal` for the completing e1m2 route at shipped speed.
+The supported deadline witness uses a slower real door, with the bot motor
+unchanged. Run each bounded part separately with a fresh output directory:
+
+```text
+python tools/verify_plan_progress.py --mode physical-edges --physical-part mover --output backups/mover-check-1
+python tools/verify_plan_progress.py --mode physical-edges --physical-part mover-control --output backups/mover-control-check-1
+python tools/verify_plan_progress.py --mode physical-edges --physical-part mover-release --output backups/mover-release-check-1
+```
+
+`mover` requires real contact after 20.5 seconds. `mover-control` disables only
+deadline renewal and requires release at the old deadline without contact;
+`mover-release` disables only the opening wait and requires premature failure.
+Each is one 45-second native experiment. `--physical-part detour` combines the
+normal route and mover cases; the full schedule stops at its first failure.
+Historical `half` and `deadline-control` selectors retain the unsupported
+160-speed motor override outside automatic acceptance. They do not scale the
+graph's arcs or fixed launch thresholds. No half-speed success is claimed.
+Do not count controller callbacks or goal selection as physical arrival.
+These switches add no production controls and do not establish deployment safety.
 
 For its isolated offset entry, use `python tools/verify_offset_entry.py
 --output backups/<new-directory>`. This seeds only the initial route and
@@ -224,12 +261,9 @@ Offset options accept comma-separated values: `--variants current,old_handoff`
 and `--cases 1,2,3,4` are the defaults. Cases 1/2 are grounded centred/offset
 entries; 3/4 are airborne offset/centred entries. `--output` must name a new
 directory beneath `backups/`; `--help` starts no lab or engine. Current-case
-failures return nonzero. The old-policy result is recorded for manual review:
-case 3 should fail, while the other controls may pass. The runner currently
-does not reject an unexpectedly passing old-policy case 3, so an exit code
-alone is not proof that the control distinguished the fix.
-Automatic enforcement is tracked in
-[#594](https://github.com/saworbit/argus/issues/594).
+failures return nonzero. The old-policy airborne-offset case 3 must fail;
+an unexpected pass or malformed receipt also fails the command. Other old-policy
+cases remain diagnostic. Invalid receipts are retained before rejection.
 
 These verifiers reuse the existing native-lab environment configuration;
 they add no dependencies, production console switches or environment variables.
