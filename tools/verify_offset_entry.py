@@ -2,8 +2,8 @@
 
 Use a new --output beneath backups/. --variants accepts current,old_handoff;
 --cases accepts 1,2,3,4 (grounded centred/offset, airborne offset/centred).
-Current cases must pass. Review old_handoff case 3 manually: its expected
-failure is recorded but is not currently enforced by the command's exit code.
+Current cases and centred/grounded controls must pass. The old_handoff
+airborne-offset case 3 must fail with a valid physical receipt.
 """
 import argparse
 import hashlib
@@ -66,6 +66,29 @@ def check(text, case):
                 measured_fps=round((samples[-1]['frames'] - 1) / samples[-1]['t'], 1), contact=contact)
 
 
+def expected_success(variant, case):
+    assert variant in {'current', 'old_handoff'} and case in {1, 2, 3, 4}
+    return not (variant == 'old_handoff' and case == 3)
+
+
+def record_case(output, results, variant, case, text, **identity):
+    """Retain invalid evidence too, then enforce the declared case outcome."""
+    expected = expected_success(variant, case)
+    row = dict(variant=variant, case=case, expected_success=expected, **identity)
+    try:
+        row.update(check(text, case))
+        row['accepted'] = row['success'] == expected
+        if not row['accepted']:
+            row['rejection'] = f'{variant} case {case}: expected contact={expected}, observed contact={row["success"]}'
+    except (AssertionError, ValueError, ZeroDivisionError) as error:
+        row.update(accepted=False, rejection=f'{variant} case {case}: invalid physical receipt: {error}')
+    results.append(row)
+    save(output/'results.json', results)
+    print(json.dumps(row), flush=True)
+    assert row['accepted'], row['rejection']
+    return row
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True, help='new directory beneath backups/')
@@ -79,7 +102,8 @@ def main():
     output.mkdir(parents=True)
     installed={p:sha(ROOT/p) for p in ('engine/argus/progs.dat','game/argus/progs.dat','lq1/progs.dat')}
     save(output/'plan.json',dict(variants=variants,cases=cases,source_sha256=sha(ROOT/'src/argus.qc'),
-        acceptance='Physical goal contact within 6 s at full health with continuous motor movement. Current cases must pass; manually review old_handoff case 3 for the expected distinguishing failure.',
+        expected_outcomes=[dict(variant=v,case=c,success=expected_success(v,c)) for v in variants for c in cases],
+        acceptance='Physical goal contact within 6 s at full health with continuous motor movement. All selected cases must contact except old_handoff case 3, which must fail with valid physical evidence.',
         installed_before=installed))
     with (output/'config.stderr').open('w') as err:
         lab=Lab(err,{'TOKIO_WORKER_THREADS':'2'})
@@ -141,9 +165,8 @@ def main():
                         stem=f'offset_{variant}_{case}'
                         r=lab.call('experiment',map='e1m2',duration_sec=10,skill=1,compile=False,repeats=1,primary='stall_parity',run_name=stem)
                         save(folder/(stem+'.native.json'),r);tape=folder/'runs'/(stem+'.log')
-                        row=dict(variant=variant,case=case,**check(tape.read_text(errors='replace'),case),tape_sha256=sha(tape),binary_sha256=sha(private_game/'progs.dat'))
-                        results.append(row);save(output/'results.json',results);print(json.dumps(row),flush=True)
-                        if variant=='current':assert row['success'], 'current physical entry failed'
+                        record_case(output, results, variant, case, tape.read_text(errors='replace'),
+                                    tape_sha256=sha(tape), binary_sha256=sha(private_game/'progs.dat'))
                 finally:lab.close()
     finally:
         after={p:sha(ROOT/p) for p in installed};save(output/'installed-after.json',after);assert installed==after
