@@ -17,14 +17,19 @@ of improved gameplay. No new cohorts were run; the tested changes remain in
 development without installation. See the
 [focused verification runbook](lab-workflow.md#focused-checks-without-deployment).
 
-Open follow-ups: [unresolved step 1b warning](https://github.com/saworbit/argus/issues/583),
-[full combat-trigger coverage](https://github.com/saworbit/argus/issues/584),
-[repeatable native muzzle verification](https://github.com/saworbit/argus/issues/586)
-and complete-route integration in [#589](https://github.com/saworbit/argus/issues/589)
-and [#593](https://github.com/saworbit/argus/issues/593). The
-[fast-CI muzzle checks](https://github.com/saworbit/argus/issues/585) and
-[review-media hygiene](https://github.com/saworbit/argus/issues/587) are completed.
-These tickets do not authorise further engine runs or deployment.
+The actual combat-trigger checks (#584), repeatable private verification
+(#586, #595), enforced offset control (#594), and supported-speed physical
+deadline gate (#589) are completed. Floor-button and opening-door fixes have
+native controls (#600, #602). The normal e1m2 route passes; #593's remaining
+unsupported motor-override requirement was retired without claiming it passed.
+See [opening-door evidence](#opening-door-ownership-and-physical-deadline) and
+the [maintained private commands](lab-workflow.md#focused-checks-without-deployment).
+
+Open follow-ups remain the [step 1b gameplay warning](https://github.com/saworbit/argus/issues/583)
+and [upstream artifact-download warning](https://github.com/saworbit/argus/issues/452).
+They do not authorise more cohorts or deployment. The original warning has not
+been labelled noise; historical test totals and tapes remain attached to their
+recorded inputs and stopping rules.
 
 ## Shared failed-plan recognition
 
@@ -858,7 +863,8 @@ was added. See [bounded results](../runs/hi2_dm4_isolation.results.json).
 
 The remaining text records the candidate's original implementation and checks.
 
-The manifest reverses allowlisted offset-entry, active-health, plan and muzzle
+The manifest reverses allowlisted opening-door, button/door, offset-entry,
+active-health, plan and muzzle
 amendments in memory before checking the original parked hashes and
 reconstructing the historical candidate. Live-source audits and fresh native
 trials check the current information boundary separately. The original patch

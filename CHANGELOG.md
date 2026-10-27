@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Step 1a, step 1b, rocket clearance and shared failed-plan recognition active; local offset entry verified, full detour unresolved; no deployment |
+| Development source | Step 1a, step 1b, rocket clearance and shared failed-plan recognition active; supported-speed route and deadline controls verified; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -24,32 +24,6 @@ passing botmatch does not establish better human play.
 ## Main updates
 
 ### Unreleased
-
-- Retain nearby opening-door ownership until the slab finishes, with one
-  bounded eight-second opening phase and unchanged remote/past-door handling
-  (#602). Add shipped-speed physical deadline and premature-release controls
-  for #589. Retain the unsupported motor override as an explicit diagnostic,
-  outside the default gate (#593).
-
-- Deliver engine-confirmed floor-button touches for walking bots, resolve
-  physical openers behind relays and wait for actual button activation. Add
-  private physical/control fixtures; normal e1m2 goal contact is verified,
-  while the historical half-speed diagnostic remains unresolved (#600;
-  remaining acceptance in #589, #593).
-
-- Verify ordinary rocket clearance through the actual combat trigger, retaining
-  movement and checking real ammo/projectile emission against a negative
-  control. Record the existing embedded-muzzle limit without changing gameplay
-  or installed binaries (#584).
-
-- Enforce the offset-entry case 3 negative control and retain invalid receipts
-  before rejecting them (#594). Add repeatable private muzzle and active
-  health/inventory verification with current-source snapshots, declared
-  controls and unchanged installed binaries on success or failure (#586, #595).
-
-- Resolve game-directory reports against the base directory (#590), report
-  unsupported camera signon protocols (#591), and exclude `labcamera` from
-  bot and human statistics in both tape readers (#592).
 
 #### Added
 
@@ -87,6 +61,12 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Synchronise current status, private verification commands, control gates and
+  fixture telemetry across the README, contribution guide and lab runbooks
+  after #597, #598, #599, #601 and #603. Preserve historical evidence and
+  the unresolved gameplay warning; supplied binaries are unchanged.
+  Record the missing private-fixture compile gate as follow-up #604.
 
 - Reactivate health/inventory perception step 1b in development at the user's
   request. Fresh dm2/dm4 controlled trials pass 44 information-boundary checks;
@@ -169,6 +149,32 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Retain nearby opening-door ownership until the slab finishes, with one
+  bounded eight-second opening phase and unchanged remote/past-door handling
+  (#602). Add shipped-speed physical deadline and premature-release controls
+  for #589. Retain the unsupported motor override as an explicit diagnostic,
+  outside the default gate (#593).
+
+- Deliver engine-confirmed floor-button touches for walking bots, resolve
+  physical openers behind relays and wait for actual button activation. Add
+  private physical/control fixtures; normal e1m2 goal contact is verified,
+  while the historical motor override is retained as a diagnostic outside
+  automatic acceptance (#600, #589, #593).
+
+- Verify ordinary rocket clearance through the actual combat trigger, retaining
+  movement and checking real ammo/projectile emission against a negative
+  control. Record the existing embedded-muzzle limit without changing gameplay
+  or installed binaries (#584).
+
+- Enforce the offset-entry case 3 negative control and retain invalid receipts
+  before rejecting them (#594). Add repeatable private muzzle and active
+  health/inventory verification with current-source snapshots, declared
+  controls and unchanged installed binaries on success or failure (#586, #595).
+
+- Resolve game-directory reports against the base directory (#590), report
+  unsupported camera signon protocols (#591), and exclude `labcamera` from
+  bot and human statistics in both tape readers (#592).
+
 - Require a landed, laterally clear entry before ordinary flat-walk waypoint
   handoff, including the apex shortcut (#593). Preserve typed/height-changing
   links and the 48-unit arrival radius. Account for validated apex transitions
@@ -178,8 +184,8 @@ passing botmatch does not establish better human play.
 - Keep progressing detours alive, reject repeated waypoint cycles as progress,
   and rest failed co-op fetches before retrying without blocking a new subject
   or another bot (#589). Preserve combat and fixed-task deadlines. Controlled
-  decision and co-op retry fixtures pass. Longer physical detours remain
-  blocked by [#593](https://github.com/saworbit/argus/issues/593); development
+  decision, physical co-op retry and supported-speed deadline controls pass.
+  The unsupported motor override remains diagnostic only (#593); development
   source only, supplied binaries unchanged.
 
 - Run muzzle-clearance and local review-output contracts in fast CI. Keep

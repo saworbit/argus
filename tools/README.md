@@ -162,6 +162,10 @@ python tools/test_tactic_fixture.py
 python tools/test_review_outputs.py
 python tools/test_plan_progress.py
 python tools/test_offset_entry.py
+python tools/test_muzzle_combat.py
+python tools/test_button_physical.py
+python tools/test_door_actuator.py
+python tools/test_private_fixtures.py
 ```
 
 These commands exercise Python contracts without launching a cohort or engine.
@@ -174,15 +178,20 @@ and asset copies and never writes installed game files. `--help` is read-only;
 `--mode edges` covers co-op retry/rest, long detours, waypoint cycles and
 deadline ownership with injected controller state on dm2/e1m2.
 `--mode physical-edges --physical-part coop` runs the separate real co-op
-retry fixture; `--physical-part normal` reproduces the unresolved e1m2
-physical detour failure (#593). The full schedule stops on failure rather
-than treating an incomplete physical route as evidence for its deadline rule.
+retry fixture; `--physical-part normal` checks the completing e1m2 route.
+The separate `mover`, `mover-control` and `mover-release` parts check the
+shipped-speed real-door witness, deadline-disabled control and premature-release
+control. Run each separately with fresh output paths for bounded experiments.
+The default physical gate excludes the historical motor override; explicit
+`half`/`deadline-control` selectors retain it as a diagnostic, not a supported
+navigation-speed setting. The full schedule stops on failure.
 `check_muzzle_fixture.py` exposes `check(text)` and `audit(source)` for Python
 callers; it has no CLI. The private `fixtures/muzzle_clearance.qc` is excluded
 from production and emits `MFIX` under a quarantining `BHVRPL begin` marker.
 
 `health_inventory_parked.py` verifies the active source against a declared
-manifest, reverses allowlisted offset-entry, active-health, plan and muzzle
+manifest, reverses allowlisted opening-door, button/door, offset-entry,
+active-health, plan and muzzle
 amendments in memory, then reconstructs
 the historical health/inventory candidate for static checks. Those historical
 checks alone do not establish the behaviour of a current build.
@@ -195,18 +204,27 @@ four small physical entry cases plus an old-handoff policy control, using
 private native builds. `--variants current` limits it to the fixed source;
 `--cases 3` isolates the recorded airborne offset. The source/trajectory audit
 and evidence parser run in fast CI through `tools/test_offset_entry.py`.
-Its `old_handoff` rows require manual outcome review; current-case failures
-are enforced, but an unexpectedly passing airborne-offset control is not yet
-an automatic failure. CLI defaults and case meanings are in the
+Its `old_handoff` airborne-offset case 3 must fail. Unexpected passes,
+current-case failures and malformed receipts fail automatically, with invalid
+receipts retained. Other old-policy cases remain diagnostic. CLI defaults and case meanings are in the
 [focused runbook](../docs/lab-workflow.md#focused-checks-without-deployment).
-The missing control gate is tracked in [#594](https://github.com/saworbit/argus/issues/594).
 
 The fresh 44 active step 1b native checks used local private drivers retained
 under `backups/offset-entry-20261027/`. They are evidence, not a clean-checkout
 command. `run_health_fixture.py` still depends on historical snapshots and
 temporarily stages `engine/argus/progs.dat`; do not treat it as a no-install
-replacement. Its private no-write successor remains follow-up work.
-See [#595](https://github.com/saworbit/argus/issues/595).
+replacement. Use the maintained driver instead:
+
+```text
+python tools/verify_private_fixtures.py --help
+python tools/verify_private_fixtures.py health --output backups/health-check-1 --prefix health_check_1
+```
+
+It uses private source/assets/binaries/runs and checks protected files after
+success or failure. Choose new output directories and prefixes. Replace `health`
+with `muzzle`, `combat`, `button` or `door` for the corresponding contracts and
+declared controls. These checks launch no gameplay cohort and do not install
+binaries. See [native fixture choices](../docs/lab-workflow.md#focused-checks-without-deployment).
 
 `verify_muzzle_clearance.py`, `investigate_health_stalls.py` and
 `prepare_blind_perception.py` are retained one-shot study drivers. They are not

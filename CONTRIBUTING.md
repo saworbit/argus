@@ -90,19 +90,28 @@ ARGUS_REQUIRE_SOURCE_MCP=1 python3 tools/test_tools_cli.py
 
 ### Running a Headless Smoke Match
 
-For the session's plan and offset evidence oracles, use the engine-free checks:
+For the maintained plan, entry, combat, button and door contracts, use the engine-free checks:
 
 ```text
 python tools/test_plan_progress.py
 python tools/test_offset_entry.py
+python tools/test_muzzle_combat.py
+python tools/test_button_physical.py
+python tools/test_door_actuator.py
+python tools/test_private_fixtures.py
 ```
 
 These also run in fast CI. Native physical fixtures require configured local
 assets and a fresh private output directory; see the
 [focused runbook](docs/lab-workflow.md#focused-checks-without-deployment).
-The current step 1b and local offset-entry changes remain development source;
-passing these contracts does not establish complete-route or general gameplay
-safety and does not update the supplied binaries.
+The plan, entry, button and door changes remain development source. Native
+fixtures verify the supported e1m2 route and distinguish deadline renewal from
+premature door release. These controlled cases do not establish general
+gameplay safety or resolve the step 1b dm4 warning, and do not update supplied binaries.
+CI currently compiles production QuakeC and runs Python fixture checks. A
+compile-only gate for staged private fixtures is tracked in
+[#604](https://github.com/saworbit/argus/issues/604); Python success alone does
+not establish that every generated fixture wrapper compiles.
 
 You can run automated headless bot matches on Linux or Windows to verify stability:
 

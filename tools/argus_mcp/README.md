@@ -683,7 +683,8 @@ verifier changes the native MCP schema or shipped console controls.
 See [the contract and limits](../../docs/behaviour-diagnostics.md#shared-failed-plan-recognition).
 
 Repeat current-source muzzle or active health/inventory boundary checks with
-`python tools/verify_private_fixtures.py muzzle|health --output backups/<new-directory> --prefix <new_prefix>`.
+`python tools/verify_private_fixtures.py muzzle --output backups/<new-directory> --prefix <new_prefix>`.
+Replace `muzzle` with `health` for the active health/inventory boundary checks.
 Select `combat` for the actual ordinary-combat trigger and its negative control,
 including a separate measured embedded-muzzle contract. See the
 [clearance limits](../../docs/behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance).
