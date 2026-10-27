@@ -1,9 +1,11 @@
-"""Repeat focused muzzle, actual combat-trigger or health checks in a private lab.
+"""Repeat focused clearance, button, door or health checks in a private lab.
 
 Examples:
   python tools/verify_private_fixtures.py muzzle --output backups/muzzle-new --prefix muzzle_new
   python tools/verify_private_fixtures.py health --output backups/health-new --prefix health_new
   python tools/verify_private_fixtures.py combat --output backups/combat-new --prefix combat_new
+  python tools/verify_private_fixtures.py button --output backups/button-new --prefix button_new
+  python tools/verify_private_fixtures.py door --output backups/door-new --prefix door_new
 
 Uses the matching source-built native lab, install=false and private assets.
 No historical snapshots, cohorts or deployment. Health checks do not resolve
@@ -22,6 +24,8 @@ import time
 from check_health_fixture import audit as audit_health, check as check_health
 from check_muzzle_fixture import audit as audit_muzzle, check as check_muzzle
 from check_muzzle_combat import check as check_combat
+from check_button_physical import audit as audit_button, check as check_button
+from check_door_actuator import audit as audit_door, check as check_door, DIRECT_ONLY_FAILURES
 from check_perception_fixture import check as check_perception
 from run_behaviour_equivalence import EXE, Lab, ROOT
 from run_health_fixture import prepare as prepare_health, audit_private
@@ -109,6 +113,64 @@ def stage_combat(root, folder, variant):
     path.write_text(source.replace('Argus_FrameAll ();','if (time > 1) MuzzleCombatFixture ();\n    Argus_FrameAll ();'))
 
 
+def stage_button(root,folder,variant):
+    stage_muzzle(root,folder,'production')
+    src=folder/'src';path=src/'argus.qc';source=path.read_text()
+    if variant=='disabled':
+        source,count=re.subn(r'void\(\) Argus_SupportButton =\n\{.*?^\};',
+                            'void() Argus_SupportButton = {};',source,flags=re.M|re.S)
+        assert count==1
+    assert source.count('    Argus_SupportButton ();')==1
+    source=source.replace('    Argus_SupportButton ();','    ButtonSupportGuard ();')
+    path.write_text('void() ButtonSupportGuard;\n'+source)
+    shutil.copy2(root/'tools/fixtures/button_physical.qc',src/'button_physical.qc')
+    path=src/'progs.src';source=path.read_text();assert source.count('\nworld.qc\n')==1
+    path.write_text(source.replace('\nworld.qc\n','\nbutton_physical.qc\nworld.qc\n'))
+    path=src/'world.qc';source=path.read_text();assert source.count('Argus_FrameAll ();')==1
+    path.write_text(source.replace('Argus_FrameAll ();','Argus_FrameAll ();\n    ButtonPhysicalFixture ();'))
+    path=src/'buttons.qc';source=path.read_text();anchor='\tself.enemy = other;\n\tbutton_fire ();'
+    assert source.count(anchor)==1
+    path.write_text(source.replace(anchor,
+        '\tif (self == bp_button && other == bp_actor) bp_touches = bp_touches + 1;\n'+anchor))
+
+
+def button_player_trial(lab,stem,env,client_run,folder):
+    try:
+        start=lab.call('match_start',map='e1m2',duration_sec=20,skill=1,run_name=stem)
+        save(folder/(stem+'.start.json'),start)
+        deadline=time.monotonic()+8
+        while True:
+            status=lab.call('match_status')
+            if 'ARGLOG ' in json.dumps(status):break
+            if not status.get('running') or time.monotonic()>=deadline:
+                raise RuntimeError('private player-control engine did not become healthy')
+            time.sleep(.1)
+        result=client_run([str(EXE),'client','walk','-224','288','320','6'],cwd=ROOT,
+            env=dict(os.environ,**env),capture_output=True,text=True,encoding='utf-8',timeout=18)
+        save(folder/(stem+'.client.json'),dict(returncode=result.returncode,stdout=result.stdout,stderr=result.stderr))
+        if result.returncode:raise RuntimeError('player-control client failed: '+result.stderr)
+    finally:
+        lab.call('match_stop')
+
+
+def stage_door(root, folder, variant):
+    stage_muzzle(root,folder,'production')
+    src=folder/'src';path=src/'argus.qc';source=path.read_text()
+    if variant=='direct_only':
+        anchor='if (d.targetname == "") return best;'
+        assert source.count(anchor)==1
+        path.write_text(source.replace(anchor,'if (depth > 0 || d.targetname == "") return best;'))
+    elif variant=='overlap_only':
+        anchor='if (b.classname == "func_button" && b.state == STATE_BOTTOM) return FALSE;'
+        assert source.count(anchor)==1
+        path.write_text(source.replace(anchor,'// PRIVATE control: treat box slack as activation.'))
+    shutil.copy2(root/'tools/fixtures/door_actuator.qc',src/'door_actuator.qc')
+    path=src/'progs.src';source=path.read_text();assert source.count('\nworld.qc\n')==1
+    path.write_text(source.replace('\nworld.qc\n','\ndoor_actuator.qc\nworld.qc\n'))
+    path=src/'world.qc';source=path.read_text();assert source.count('Argus_FrameAll ();')==1
+    path.write_text(source.replace('Argus_FrameAll ();','if (time > 1) DoorActuatorFixture ();\n    Argus_FrameAll ();'))
+
+
 def native_config(lab_factory, output):
     with (output/'config.stderr').open('w') as err:
         lab = lab_factory(err, {'TOKIO_WORKER_THREADS': '2'})
@@ -169,7 +231,7 @@ def health_trial(lab, stem, map_name, env, client_run):
 
 
 def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subprocess.run):
-    if fixture not in {'muzzle', 'health', 'combat'}:
+    if fixture not in {'muzzle', 'health', 'combat', 'button', 'door'}:
         raise ValueError('unknown fixture')
     output = preflight(root, output, prefix)
     # Exclusive creation also refuses a racing invocation or a reused output.
@@ -203,7 +265,13 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                 target.parent.mkdir(parents=True)
                 shutil.copy2(path, target)
         source = (root/'src/argus.qc').read_text()
-        if fixture in {'muzzle','combat'}:
+        if fixture=='door':
+            audit_door(source)
+            schedule=[('candidate','dm2'),('candidate','e1m2'),('direct_only','e1m2'),('overlap_only','e1m2')]
+        elif fixture=='button':
+            audit_button(source,(root/'tools/fixtures/button_physical.qc').read_text())
+            schedule=[('candidate','e1m2'),('disabled','e1m2')]
+        elif fixture in {'muzzle','combat'}:
             audit_muzzle(source)
             schedule = [(v, 'dm4') for v in (('candidate','legacy') if fixture=='combat' else ('production', 'candidate', 'legacy', 'uncapped'))]
         else:
@@ -215,6 +283,8 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
         save(output/'plan.json', dict(fixture=fixture, prefix=prefix, schedule=schedule,
             expected_muzzle_failures=expected, health_ids=[1], health_ring=0,
             expected_combat_failures={'candidate': [], 'legacy': ['combat_blocked']},
+            expected_door_failures={'candidate': [], 'direct_only': DIRECT_ONLY_FAILURES, 'overlap_only': ['button_needs_activation']},
+            expected_button_activation={'candidate': True,'disabled': False,'player': True},
             source=source_before['sha256'], lab_sha256=sha(EXE), verifier_sha256=sha(Path(__file__)),
             limits='Controlled fixture evidence only. No cohorts, installation or gameplay equivalence; #583 remains unresolved.'))
         private_game = private_assets(base, game, output)
@@ -226,6 +296,10 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                 audit_private(folder, False)
             elif fixture == 'combat':
                 stage_combat(root, folder, variant)
+            elif fixture == 'door':
+                stage_door(root,folder,variant)
+            elif fixture == 'button':
+                stage_button(root,folder,variant)
             else:
                 stage_muzzle(root, folder, variant)
             (folder/'runs').mkdir()
@@ -248,6 +322,8 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                         if tape.exists():
                             raise ValueError('retain the colliding tape: '+str(tape))
                         (private_game/'autoexec.cfg').write_text('sv_protocol 15\nmax_edicts 600\n')
+                        if fixture=='button':
+                            (private_game/'autoexec.cfg').write_text('sv_protocol 15\nmax_edicts 600\nscratch2 1\n')
                         row = dict(variant=variant, map=map_name, name=stem,
                             source_sha256=tree_identity(folder/'src')['sha256'], binary_sha256=sha(binary))
                         try:
@@ -268,6 +344,20 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                                 row['health'] = check_health(text, map_name, [1])
                                 if not all(10 <= r['dt_ms'] <= 30 for r in row['perception']):
                                     raise RuntimeError('wrong measured fixture cadence')
+                            elif fixture=='door':
+                                row['failures']=check_door(text,map_name)
+                                expected_door={'candidate': [], 'direct_only': DIRECT_ONLY_FAILURES, 'overlap_only': ['button_needs_activation']}
+                                if row['failures'] != expected_door[variant]:
+                                    raise RuntimeError('unexpected door current/control outcome')
+                            elif fixture=='button':
+                                row['button']=check_button(text,1,variant=='candidate')
+                                if variant=='candidate':
+                                    (private_game/'autoexec.cfg').write_text('sv_protocol 15\nmax_edicts 600\nscratch2 2\n')
+                                    player_stem=stem+'_player'
+                                    button_player_trial(lab,player_stem,env,client_run,folder)
+                                    player_tape=folder/'runs'/(player_stem+'.log')
+                                    row['player']=check_button(player_tape.read_text(errors='replace'),2,True)
+                                    row['player_tape_sha256']=sha(player_tape)
                             elif fixture == 'combat':
                                 row['combat']=check_combat(text)
                                 if row['combat']['failures'] != ([] if variant=='candidate' else ['combat_blocked']):
@@ -278,7 +368,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                                     raise RuntimeError('unexpected muzzle current/control outcome')
                             row['accepted'] = True
                         except Exception as failure:
-                            row.update(accepted=False, rejection=str(failure))
+                            row.update(accepted=False, rejection=str(failure) or type(failure).__name__)
                             raise
                         finally:
                             results.append(row)
@@ -302,7 +392,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('fixture', choices=('muzzle', 'health', 'combat'))
+    parser.add_argument('fixture', choices=('muzzle', 'health', 'combat', 'button', 'door'))
     parser.add_argument('--output', required=True, type=Path, help='new directory beneath backups/')
     parser.add_argument('--prefix', required=True, help='private run-name prefix')
     args = parser.parse_args()

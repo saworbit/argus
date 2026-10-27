@@ -665,13 +665,14 @@ and alternative selection. They add no MCP tool or production console switch.
 longer detours and waypoint cycles; waypoint arrivals are injected inputs.
 `--mode physical-edges` instead requires real motor movement and trigger
 contact. Use `--physical-part coop` for the passing dm2 retry, or
-`--physical-part normal` for the blocked e1m2 detour (#593). It uses the
+`--physical-part normal` for the e1m2 detour (#593). It uses the
 native co-op experiment for the former and native experiments for the latter.
+The `half` and `deadline-control` parts isolate the historical slow case.
 `python tools/verify_offset_entry.py --output backups/<new-directory>` isolates
 the e1m2 entry with a seeded existing route and real movement/contact. Its
 default matrix includes the fixed policy and an old-handoff counterfactual.
-Only current-case success is enforced automatically; review the old-handoff
-airborne-offset result separately until the control gate is added. Neither
+Current-case success and the declared old-handoff case 3 failure are enforced
+automatically; invalid or unexpected control receipts fail. Neither
 verifier changes the native MCP schema or shipped console controls.
 See [the contract and limits](../../docs/behaviour-diagnostics.md#shared-failed-plan-recognition).
 
@@ -686,6 +687,9 @@ It retains declared current/control outcomes and SHA256 receipts, checks
 protected production inputs after success or failure, and never overwrites an
 installed game binary. Old session drivers and evidence remain available.
 The health boundary checks do not settle the outstanding dm4 gameplay warning.
+Select `button` for real bot/player floor-button contact and a disabled-callback
+control, or `door` for bounded target-chain lookup and activation-state contracts.
+See [the physical contract](../../docs/behaviour-diagnostics.md#solid-floor-buttons-and-relayed-doors).
 
 The benchmark is the low-variance complement to free-running matches. It
 places one real Argus bot at a declared nav coordinate, assigns a synthetic

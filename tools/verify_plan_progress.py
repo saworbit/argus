@@ -116,7 +116,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', required=True, type=Path, help='new directory beneath backups/')
     parser.add_argument('--mode', choices=('all', 'contract', 'physical', 'edges', 'physical-edges'), default='all')
-    parser.add_argument('--physical-part', choices=('all', 'coop', 'detour', 'normal'), default='all',
+    parser.add_argument('--physical-part', choices=('all', 'coop', 'detour', 'normal', 'half', 'deadline-control'), default='all',
                         help='select a fixed part of --mode physical-edges without repeating accepted cases')
     parser.add_argument('--allow-failed', action='store_true', help='retain complete failing decision receipts for a diagnostic control')
     args = parser.parse_args()
@@ -160,8 +160,11 @@ def main():
         schedule += [('current', 'dm2', 3, 40), ('current', 'e1m2', 4, 45),
                      ('current', 'e1m2', 5, 45), ('deadline_control', 'e1m2', 4, 45)]
         if args.physical_part != 'all':
-            cases = {'coop': {3}, 'detour': {4, 5}, 'normal': {5}}[args.physical_part]
+            cases = {'coop': {3}, 'detour': {4, 5}, 'normal': {5}, 'half': {4}, 'deadline-control': {4}}[args.physical_part]
             schedule = [row for row in schedule if row[2] in cases]
+            if args.physical_part in ('half', 'deadline-control'):
+                variant = 'current' if args.physical_part == 'half' else 'deadline_control'
+                schedule = [row for row in schedule if row[0] == variant]
     elif args.mode == 'edges':
         schedule += [('current', 'dm2', 0, 10), ('current', 'e1m2', 0, 10)]
     elif args.mode != 'physical':

@@ -122,6 +122,45 @@ parked/candidate sources. Their frozen hashes remain unchanged.
 
 ## Physical offset entry (#593)
 
+### Solid floor buttons and relayed doors
+
+An isolated real-button comparison identified a separate contact gap. A bot's
+`walkmove` stepped across e1m2's floor button with `groundentity` naming that
+button and `FL_ONGROUND` set, but did not receive its solid impact callback.
+A real protocol-15 player crossing the same button did activate it.
+`Argus_SupportButton` now dispatches the existing stock `button_touch` only
+for a live bot's engine-confirmed support, an unpressed touch button and the
+expected callback. It preserves `self`, `other` and `activator`; it does not
+write movement or add traces, entities or RNG calls. Human movement is unchanged.
+
+The door path also resolves physical buttons behind target relays. A projected
+floor point is rejected for a touch trigger if the player's hull cannot reach
+its brush. Lookup is capped at four target levels and 32 work units. Direct
+buttons, reachable triggers and shoot buttons retain their paths. A solid
+button must acknowledge activation before the bot waits for its door; bounding
+box slack alone is not evidence of a press.
+
+Run `python tools/verify_private_fixtures.py button --output backups/<new-directory> --prefix <new_prefix>`
+for a physical bot crossing, a real-player control using the same binary and a
+private mutant disabling only the support callback. The corrected bot and player
+activate the button; the mutant crosses it without activation. Passive guards
+check callback context, continuous movement and retained health. `door` selects
+the bounded lookup/state contracts on dm2/e1m2 with independent traversal and
+premature-hold controls. These are private native builds with unchanged installed
+binary hashes, not gameplay cohorts or deployment.
+
+The original normal-pace route now reaches real goal contact at 19.4 seconds,
+after 4,715.2 horizontal units and 21 distinct legs, at health 100. The historical
+half-speed diagnostic remains failed: it drops into a lower room before the door
+and expires after 20 seconds without useful progress. It changes the motor's
+speed constant and is not used as the positive deadline witness.
+`half` and `deadline-control` retain individual historical-case reproduction.
+All existing distance, away-from-goal, waypoint, health and contact bounds remain
+in force. Two alternate normal-speed long routes were rejected by those bounds:
+one lacked the required movement away from the goal, and the other credited a
+waypoint while too far away. Neither establishes deadline renewal. Failed
+fixtures and rejected candidates remain retained locally; #589 and #593 stay open.
+
 `tools/verify_offset_entry.py` seeds one existing route leg at n130 on e1m2,
 then leaves the normal scheduled bot code to move and hand off. The four
 cases distinguish centred/offset and grounded/airborne entry. They require

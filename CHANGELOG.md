@@ -25,6 +25,12 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Deliver engine-confirmed floor-button touches for walking bots, resolve
+  physical openers behind relays and wait for actual button activation. Add
+  private physical/control fixtures; normal e1m2 goal contact is verified,
+  while the historical half-speed diagnostic remains unresolved (#600;
+  remaining acceptance in #589, #593).
+
 - Verify ordinary rocket clearance through the actual combat trigger, retaining
   movement and checking real ammo/projectile emission against a negative
   control. Record the existing embedded-muzzle limit without changing gameplay
