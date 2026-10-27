@@ -4493,6 +4493,47 @@ ARGEVT Reap spawned
     }
 
     #[test]
+    fn camera_tracks_do_not_trigger_the_human_warning() {
+        let dir = crate::test_support::TestDir::new("camera-roles").unwrap();
+        std::fs::create_dir(dir.path().join("runs")).unwrap();
+        let env = std::collections::HashMap::from([(
+            "ARGUS_ROOT".into(),
+            dir.path().display().to_string(),
+        )]);
+        let cfg = crate::config::load_for_reads_from(&env, dir.path()).unwrap();
+        let cases: serde_json::Value =
+            serde_json::from_str(include_str!("../../testdata/roles.json")).unwrap();
+        let mixed = cases[0]["text"].as_str().unwrap();
+        for human in [false, true] {
+            let text = mixed
+                .lines()
+                .filter(|line| human || !line.contains("Ranger"))
+                .collect::<Vec<_>>()
+                .join("\n");
+            let text = text.replace(
+                "labcamera t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0",
+                "labcamera t 0.0 pos '0 0 24' spd 300 yaw 0 mode 0 st 90 gl 90",
+            );
+            let brief = brief_text(&text, Some("dm4"));
+            assert_eq!(brief.totals.human.is_some(), human);
+            assert_eq!(brief.totals.stalls, 0);
+            assert_eq!(brief.totals.goals, 0);
+            assert_eq!(brief.totals.avg_speed, 0.0);
+            assert!(
+                brief.bots.iter().any(|b| b.name == "labcamera"),
+                "retain raw evidence"
+            );
+            std::fs::write(cfg.runs.join("recording.log"), &text).unwrap();
+            let report =
+                compare_runs_inner(&cfg, "recording", "recording", Some("dm4"), false).unwrap();
+            assert_eq!(
+                report.findings.iter().any(|f| f.contains("HUMAN tracks")),
+                human
+            );
+        }
+    }
+
+    #[test]
     fn real_v372_tape_splits_human_tracks_out_of_bot_bands_if_present() {
         // The escaped distortion this split exists for: the second
         // 2026-08-26 marvel-test tape briefed Shane's four lava swims

@@ -176,6 +176,7 @@ pub struct WorldEnt {
 #[derive(Default)]
 pub struct ClientWorld {
     pub protocol: i32,
+    pub protocol_error: Option<String>,
     pub maxclients: u8,
     pub level: String,
     pub models: Vec<String>,
@@ -264,6 +265,44 @@ pub struct NetClient {
 }
 
 impl NetClient {
+    #[cfg(test)]
+    pub(crate) fn protocol_fixture(data: Vec<u8>) -> Self {
+        let mut client = Self {
+            recording: None,
+            sock: UdpSocket::bind("127.0.0.1:0").unwrap(),
+            rx_rel_seq: 0,
+            rx_unrel_seq: 0,
+            tx_rel_seq: 0,
+            tx_unrel_seq: 0,
+            rbuf: Vec::new(),
+            queue: VecDeque::new(),
+            inflight: None,
+            world: ClientWorld::default(),
+            name: "labcamera".into(),
+            last_move: Instant::now(),
+            yaw: 0.0,
+            pitch: 0.0,
+            fwd: 0,
+            side: 0,
+            buttons: 0,
+            impulse: 0,
+        };
+        client.process_message(data);
+        client
+    }
+
+    fn accept_protocol(&mut self, protocol: i32) -> bool {
+        self.world.protocol = protocol;
+        if protocol != 15 {
+            self.world.protocol_error = Some(format!(
+                "received server protocol {protocol}; supported protocol is 15. Set sv_protocol 15 and max_edicts 600 in the game autoexec.cfg before starting the server"
+            ));
+            self.world.disconnected = true;
+            return false;
+        }
+        true
+    }
+
     /// Start before signon so the demo includes models, baselines and roster.
     /// Store only complete, deduplicated server messages, not UDP headers.
     pub fn start_recording(&mut self, path: &std::path::Path) -> Result<(), String> {
@@ -656,7 +695,10 @@ impl NetClient {
                     need!(r.i32());
                 }
                 SVC_VERSION => {
-                    self.world.protocol = need!(r.i32());
+                    let protocol = need!(r.i32());
+                    if !self.accept_protocol(protocol) {
+                        return;
+                    }
                 }
                 SVC_SETVIEW => {
                     self.world.my_ent = need!(r.i16()) as u16;
@@ -711,7 +753,10 @@ impl NetClient {
                     self.yaw = y;
                 }
                 SVC_SERVERINFO => {
-                    self.world.protocol = need!(r.i32());
+                    let protocol = need!(r.i32());
+                    if !self.accept_protocol(protocol) {
+                        return;
+                    }
                     self.world.maxclients = need!(r.u8());
                     need!(r.u8());
                     self.world.level = need!(r.string());

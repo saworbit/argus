@@ -1,6 +1,6 @@
 [
   {
-    "text": "ARGEVT Reap spawned\nARGLOG Reap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG Ranger t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG labprobe t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG unconnected t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n",
+    "text": "ARGEVT Reap spawned\nARGLOG Reap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG Ranger t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG labprobe t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG unconnected t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG labcamera t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n",
     "bots": [
       "Reap"
     ],
@@ -8,18 +8,20 @@
       "Ranger"
     ],
     "instruments": [
+      "labcamera",
       "labprobe",
       "unconnected"
     ]
   },
   {
-    "text": "ARGLOG Reap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG Ranger t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG labprobe t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG unconnected t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n",
+    "text": "ARGLOG Reap t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG Ranger t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG labprobe t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG unconnected t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\nARGLOG labcamera t 0.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n",
     "bots": [
       "Ranger",
       "Reap"
     ],
     "humans": [],
     "instruments": [
+      "labcamera",
       "labprobe",
       "unconnected"
     ]

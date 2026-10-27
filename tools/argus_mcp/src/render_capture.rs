@@ -14,6 +14,22 @@ fn signed_on(world: &crate::netclient::ClientWorld) -> bool {
     world.signon >= 3 && world.ents.get(&world.my_ent).is_some_and(|e| e.updates > 0)
 }
 
+fn wait_for_signon(client: &mut NetClient, timeout: Duration) -> Result<(), String> {
+    let deadline = Instant::now() + timeout;
+    loop {
+        if let Some(error) = &client.world.protocol_error {
+            return Err(error.clone());
+        }
+        if signed_on(&client.world) {
+            return Ok(());
+        }
+        if client.world.disconnected || Instant::now() >= deadline {
+            return Err("camera client did not complete signon".into());
+        }
+        client.pump(Duration::from_millis(50));
+    }
+}
+
 fn tracking_slot(world: &crate::netclient::ClientWorld, slot: u8) -> bool {
     let Some(eye) = world.ents.get(&world.my_ent) else {
         return false;
@@ -62,13 +78,7 @@ pub fn record_bot(cfg: &Config, name: &str, slot: u8, seconds: f32) -> Result<St
     let mut client = NetClient::connect("127.0.0.1", 26000, "labcamera")?;
     let result = (|| {
         client.start_recording(&path)?;
-        let deadline = Instant::now() + Duration::from_secs(8);
-        while !signed_on(&client.world) && Instant::now() < deadline {
-            client.pump(Duration::from_millis(50));
-        }
-        if !signed_on(&client.world) {
-            return Err("camera client did not complete signon".into());
-        }
+        wait_for_signon(&mut client, Duration::from_secs(8))?;
         impulse(&mut client, 210, "ArgusCam Active")?;
         for expected in ["Focus / Duel", "FreeLook", "Orbit", "1st-Person Bot POV"] {
             impulse(&mut client, 211, expected)?;
@@ -1452,6 +1462,56 @@ mod tests {
         entity.updates = 1;
         world.ents.insert(1, entity);
         assert!(signed_on(&world));
+    }
+
+    #[test]
+    fn signon_rejects_protocol_mismatch_without_publishing_a_demo() {
+        let dir = crate::test_support::TestDir::new("protocol-recording").unwrap();
+        for svc in [4, 11] {
+            for protocol in [0_i32, 666, 999] {
+                let mut message = vec![svc];
+                message.extend_from_slice(&protocol.to_le_bytes());
+                // Deliberately omit the rest: reject before decoding another protocol.
+                let mut client = NetClient::protocol_fixture(message);
+                assert_eq!(client.world.protocol, protocol);
+                let path = dir.path().join(format!("{svc}-{protocol}.dem"));
+                client.start_recording(&path).unwrap();
+                let error = wait_for_signon(&mut client, Duration::ZERO).unwrap_err();
+                assert!(error.contains(&format!("protocol {protocol}")), "{error}");
+                assert!(error.contains("supported protocol is 15"), "{error}");
+                assert!(error.contains("sv_protocol 15"), "{error}");
+                assert!(client.world.disconnected);
+                client.disconnect();
+                assert!(!path.exists());
+                assert!(!path.with_extension("dem.part").exists());
+            }
+        }
+    }
+
+    #[test]
+    fn signon_accepts_protocol_15_and_keeps_the_missing_packet_timeout() {
+        let mut message = vec![11];
+        message.extend_from_slice(&15_i32.to_le_bytes());
+        message.extend_from_slice(&[8, 0, b'x', 0, 0, 0]);
+        let mut client = NetClient::protocol_fixture(message);
+        assert_eq!(client.world.protocol, 15);
+        assert_eq!(client.world.maxclients, 8);
+        assert_eq!(client.world.level, "x");
+        assert!(client.world.protocol_error.is_none());
+        assert!(!client.world.disconnected);
+        assert_eq!(
+            wait_for_signon(&mut client, Duration::ZERO).unwrap_err(),
+            "camera client did not complete signon"
+        );
+        client.world.signon = 3;
+        client
+            .world
+            .ents
+            .entry(client.world.my_ent)
+            .or_default()
+            .updates = 1;
+        wait_for_signon(&mut client, Duration::ZERO).unwrap();
+        client.disconnect();
     }
     #[test]
     fn bounds_reject_menu_frames_and_unbounded_work() {

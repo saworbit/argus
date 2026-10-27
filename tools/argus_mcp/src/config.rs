@@ -187,7 +187,14 @@ pub fn report_from(env: &HashMap<String, String>, cwd: &Path) -> ConfigReport {
         };
         let exists = value
             .as_deref()
-            .map(|p| Path::new(p).exists())
+            .map(|p| {
+                if key == "ARGUS_GAME" {
+                    optional_path(&merged, "ARGUS_BASEDIR")
+                        .is_some_and(|base| base.join(p).is_dir())
+                } else {
+                    Path::new(p).exists()
+                }
+            })
             .unwrap_or(false);
         if required && (raw.is_none() || !exists) {
             complete = false;
@@ -411,6 +418,54 @@ mod tests {
     use super::*;
     use std::fs;
     use std::io::Write;
+
+    #[test]
+    fn game_report_uses_basedir_even_from_another_working_directory() {
+        let root = crate::test_support::TestDir::new("game-report").unwrap();
+        let elsewhere = crate::test_support::TestDir::new("game-cwd").unwrap();
+        let base = root.path().join("base");
+        fs::create_dir_all(base.join("argus")).unwrap();
+        let mut env = HashMap::from([
+            ("ARGUS_ROOT".into(), root.path().display().to_string()),
+            ("ARGUS_BASEDIR".into(), base.display().to_string()),
+        ]);
+        for key in ["ARGUS_FTEQCC", "ARGUS_ENGINE", "ARGUS_PYTHON"] {
+            env.insert(
+                key.into(),
+                write_exe(root.path(), key).display().to_string(),
+            );
+        }
+        for game in [None, Some("argus"), Some("missing")] {
+            env.remove("ARGUS_GAME");
+            if let Some(game) = game {
+                env.insert("ARGUS_GAME".into(), game.into());
+            }
+            let report = report_from(&env, elsewhere.path());
+            let entry = report
+                .entries
+                .iter()
+                .find(|e| e.key == "ARGUS_GAME")
+                .unwrap();
+            assert_eq!(entry.value.as_deref(), Some(game.unwrap_or("argus")));
+            assert_eq!(entry.exists, game != Some("missing"));
+            assert!(!entry.required);
+            assert!(
+                report.complete,
+                "optional game does not change completeness"
+            );
+        }
+        env.remove("ARGUS_BASEDIR");
+        let report = report_from(&env, elsewhere.path());
+        assert!(!report.complete);
+        assert!(
+            !report
+                .entries
+                .iter()
+                .find(|e| e.key == "ARGUS_GAME")
+                .unwrap()
+                .exists
+        );
+    }
 
     fn tmpdir() -> PathBuf {
         let p = std::env::temp_dir().join(format!(

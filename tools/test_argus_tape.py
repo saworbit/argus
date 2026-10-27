@@ -24,6 +24,20 @@ class TestTapeConsumers(unittest.TestCase):
             for role in ('bots', 'humans', 'instruments'):
                 self.assertEqual(actual[role], case[role])
 
+    def test_camera_is_absent_from_downstream_tracks(self):
+        from tempfile import TemporaryDirectory
+        import argus_humanness
+        case = json.loads((Path(__file__).parent / 'testdata/roles.json').read_text())[0]
+        with TemporaryDirectory() as td:
+            path = Path(td) / 'camera.log'
+            path.write_text(case['text'])
+            tracks = argus_humanness.read_tape(path)
+            self.assertEqual(set(tracks['bots']), {'Reap'})
+            self.assertEqual(set(tracks['humans']), {'Ranger'})
+            self.assertEqual(argus_longi.analyse(path)['human'], 'Ranger')
+            path.write_text(case['text'].replace("ARGLOG Ranger", "ARGLOG labcamera"))
+            self.assertEqual(argus_pointfile.human_points(path, 4), [])
+
     def test_shared_samples_maps_roles_and_whitespace(self):
         from argus_tape import samples, map_name, roles, event_fields
         text = FIXTURE.read_text()
