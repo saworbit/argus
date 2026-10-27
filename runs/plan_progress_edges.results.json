@@ -1,0 +1,180 @@
+{
+  "status": "development only; step1b parked; no cohorts or installation",
+  "source_sha256": "330acf751b633acb1540782229e968aa15833976e3bab35ebea285ed504319d3",
+  "local_evidence": "backups\\plan-edges-20261027",
+  "pre_fix_controls": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 0,
+      "checks": 35,
+      "failures": [
+        "fetch_stall_rests",
+        "fetch_new_subject_allowed",
+        "fetch_timeout_rests",
+        "detour_renews_deadline",
+        "detour_survives_old_deadline",
+        "long_unique_detour",
+        "two_node_cycle_not_progress",
+        "multi_node_cycle_not_progress",
+        "epoch_rollover"
+      ],
+      "tape_sha256": "f38d505dedfad2966201547e38c1c09b250e2bacd6e40da22c75dee78a896960",
+      "binary_sha256": "c3f135a977fef109be524e7a0687c6e7220f77f2d5b4b7facb9c796bfad6ad61"
+    },
+    {
+      "variant": "current",
+      "map": "e1m2",
+      "case": 0,
+      "checks": 35,
+      "failures": [
+        "fetch_stall_rests",
+        "fetch_new_subject_allowed",
+        "fetch_timeout_rests",
+        "detour_renews_deadline",
+        "detour_survives_old_deadline",
+        "long_unique_detour",
+        "two_node_cycle_not_progress",
+        "multi_node_cycle_not_progress",
+        "epoch_rollover"
+      ],
+      "tape_sha256": "f41d41e979b0cadfd09f22157b0cb8de20da6f3fda39570ca45691ddc783f7a5",
+      "binary_sha256": "c3f135a977fef109be524e7a0687c6e7220f77f2d5b4b7facb9c796bfad6ad61"
+    }
+  ],
+  "edge_checks": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 0,
+      "checks": 39,
+      "failures": [],
+      "tape_sha256": "66169ef70ea97beddd0f483c2f8cd0010fa9d898059eb9ff1b6456baaedb18e4",
+      "binary_sha256": "fa1e5950e03100005300dc29a079ba891f18e81e4e16d680703921668281ae75"
+    },
+    {
+      "variant": "current",
+      "map": "e1m2",
+      "case": 0,
+      "checks": 39,
+      "failures": [],
+      "tape_sha256": "259fc3b7bd75126e20713049ffa85a1f9dc3e6add1f9a3228259df7d98be43cc",
+      "binary_sha256": "fa1e5950e03100005300dc29a079ba891f18e81e4e16d680703921668281ae75"
+    }
+  ],
+  "regression": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "tape_sha256": "58a96219bd16f851ebc21eb97f556cbd199bddc225f2c6186dc027f0f460283b",
+      "binary_sha256": "fa1e5950e03100005300dc29a079ba891f18e81e4e16d680703921668281ae75"
+    },
+    {
+      "variant": "current",
+      "map": "dm4",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "tape_sha256": "c1432ddd2881a320f44bf2ed1051f2385b0840a7be9fd344a8a0d69882a3d86c",
+      "binary_sha256": "fa1e5950e03100005300dc29a079ba891f18e81e4e16d680703921668281ae75"
+    },
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 1,
+      "success": true,
+      "elapsed": 2.9,
+      "measured_fps": 67.9,
+      "release_by": 1.4,
+      "alternative_by": 2.2,
+      "final_horizontal_distance": 268.3,
+      "health": 100,
+      "samples": 15,
+      "tape_sha256": "a73e2123b6b6c6c2a848391e1bdc882a48d04f9fdc4bf4510783ed4c68226d3c",
+      "binary_sha256": "fa1e5950e03100005300dc29a079ba891f18e81e4e16d680703921668281ae75"
+    },
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 2,
+      "success": true,
+      "elapsed": 4.3,
+      "measured_fps": 69.1,
+      "release_by": 2.9,
+      "alternative_by": 3.1,
+      "final_horizontal_distance": 245.4,
+      "health": 100,
+      "samples": 22,
+      "tape_sha256": "424e0d89ae39da2f125a97a0bb13ac57948a72cb3b48d5771aeab68db6007e85",
+      "binary_sha256": "fa1e5950e03100005300dc29a079ba891f18e81e4e16d680703921668281ae75"
+    },
+    {
+      "variant": "legacy_reset",
+      "map": "dm2",
+      "case": 2,
+      "success": false,
+      "elapsed": 12.2,
+      "measured_fps": 69.0,
+      "release_by": 11.3,
+      "alternative_by": 11.8,
+      "final_horizontal_distance": 92.4,
+      "health": 100,
+      "samples": 61,
+      "tape_sha256": "47d0905813db075220d67361dccffa67e3b661925aec4abbe5f561ec0d1b9713",
+      "binary_sha256": "77496b22b4f9415393462ba70b954a695b3e39219ee08b8f0d0e0dded464dfa2"
+    }
+  ],
+  "diagnostic_guard": {
+    "fields": 97,
+    "checks": 415,
+    "frames": 416,
+    "emits": 30,
+    "binary_sha256": "f4d62a872456c04caf3ec9e70160f384869aa0d6e0b6d65279e2a4a49e4ff777",
+    "tape_sha256": "10400ffbcf3f2cae971c757bfbe25e2f0af92038673f97706fdf4c9cc35c44a2"
+  },
+  "tactic": [
+    {
+      "map": "dm4",
+      "case": "0",
+      "concealed_at": 0.5,
+      "return_at": 1.1,
+      "first_angle": 41.0,
+      "return_damage": true,
+      "frames": 416,
+      "seconds": 6.0,
+      "fps": 69.3
+    }
+  ],
+  "focused_python_tests": {
+    "passed": 78,
+    "groups": {
+      "behaviour": 26,
+      "perception": 21,
+      "tactic": 18,
+      "muzzle": 2,
+      "review": 3,
+      "plan": 8
+    }
+  },
+  "rejected_attempts": [
+    "after: fetch timeout still failed; retained",
+    "guard: startup stopped before trial; required protocol15/max_edicts600 pinned on retry"
+  ],
+  "intermediate_passes": [
+    "after-coop-timeout: 35 checks/map",
+    "final-edges: 37 checks/map"
+  ],
+  "limits": [
+    "Controller fixtures inject co-op globals, aged clocks and waypoint arrivals; no full co-op match or physical long detour.",
+    "No population performance, equivalence or skill claim."
+  ],
+  "deployment_decision": "Retain development changes; controlled evidence alone does not justify installing the wider unreleased source bundle.",
+  "installed_sha256": {
+    "engine\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "game\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "lq1\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  }
+}

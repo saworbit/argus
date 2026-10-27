@@ -3,7 +3,8 @@ ARGUS - QUICK PLAY GUIDE
 Full installation, controls and lab workflow: README.md
 
 Development-source status and tests: docs/behaviour-diagnostics.md.
-The supplied binaries are unchanged; step 1b remains parked.
+The supplied binaries are unchanged; step 1b is active again in development.
+Development source includes shared failed-plan recognition and replanning.
 
 PLAY: CLASSIC ENGINES
 --------------------

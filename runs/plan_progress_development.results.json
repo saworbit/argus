@@ -1,0 +1,113 @@
+{
+  "status": "Implemented in development; no deployment",
+  "source_sha256": "44676e9679b3bd80be95d375b1a6f32ab4000557e78544c95a490dd63df23eb6",
+  "contracts": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "tape_sha256": "da9443c73de0d2235f3d8bafd546c64ac4528f1026a42396662fb5e81f2f638d",
+      "binary_sha256": "8206e5637d604f483208aa9de78f54786d333e42ef1568101f4e739b88953fb9"
+    },
+    {
+      "variant": "current",
+      "map": "dm4",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "tape_sha256": "bfe981e081de4850c9b35bf84ed836d4d79546855de131acec3e74c482d15cf0",
+      "binary_sha256": "8206e5637d604f483208aa9de78f54786d333e42ef1568101f4e739b88953fb9"
+    }
+  ],
+  "physical": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 1,
+      "success": true,
+      "elapsed": 5.7,
+      "measured_fps": 69.1,
+      "release_by": 4.3,
+      "alternative_by": 4.5,
+      "final_horizontal_distance": 274.2,
+      "health": 100,
+      "samples": 29,
+      "tape_sha256": "007e62eacfb0eacb1615a2afadbd179b33550aa08ba510289c556dc6506ec41f",
+      "binary_sha256": "8987f8f65ed09896e82bf525f82888b260d769e1ef6be5f88c33c801319da213"
+    },
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 2,
+      "success": true,
+      "elapsed": 5.5,
+      "measured_fps": 68.9,
+      "release_by": 3.7,
+      "alternative_by": 3.9,
+      "final_horizontal_distance": 414.4,
+      "health": 100,
+      "samples": 28,
+      "tape_sha256": "02fd5a5ee2bb879acbb24979b8936e57bd974f3d9d821eddad5dd80dec5e51ac",
+      "binary_sha256": "8987f8f65ed09896e82bf525f82888b260d769e1ef6be5f88c33c801319da213"
+    },
+    {
+      "variant": "legacy_reset",
+      "map": "dm2",
+      "case": 2,
+      "success": false,
+      "elapsed": 12.2,
+      "measured_fps": 69.3,
+      "release_by": 11.4,
+      "alternative_by": 11.6,
+      "final_horizontal_distance": 80.5,
+      "health": 100,
+      "samples": 61,
+      "tape_sha256": "548489f2a315aed90963fee2ddafdb955e70d4ebad53d73b9d5a86cc46060c89",
+      "binary_sha256": "3f59cb8e99d6bb206612325555f72f3a66d69714bdaa9a2cb0edcb0f3812a59f"
+    }
+  ],
+  "guard": {
+    "fields": 90,
+    "checks": 419,
+    "emits": 30,
+    "fps": 70.0,
+    "tactic": [
+      {
+        "map": "dm4",
+        "case": "0",
+        "concealed_at": 0.5,
+        "return_at": 1.1,
+        "first_angle": 41.0,
+        "return_damage": true,
+        "frames": 420,
+        "seconds": 6.0,
+        "fps": 70.0
+      }
+    ]
+  },
+  "python_tests": 74,
+  "environment_retry": "The replay-copy test passed after TEMP/TMP were set to a writable workspace directory.",
+  "excluded_evidence": {
+    "path": "backups/plan-development-20261027/native/current/runs/plan_current_dm2_1.log",
+    "reason": "New fixture boolean precedence produced a contradictory success flag; strict physical oracle rejected it. Kept unchanged; reran physical cases with corrected fixture expressions and unchanged acceptance."
+  },
+  "installed_binaries_before": {
+    "C:\\argus\\engine\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "C:\\argus\\game\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "C:\\argus\\lq1\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  },
+  "installed_binaries_after": {
+    "C:\\argus\\engine\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "C:\\argus\\game\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "C:\\argus\\lq1\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  },
+  "step_1b": "parked; frozen historical hashes unchanged",
+  "projectile_perception": "held",
+  "limits": [
+    "No population regression, equivalence or human-likeness claim",
+    "Cooperative task retries, long detours and multi-waypoint cycles remain unverified"
+  ],
+  "raw_evidence": "backups/plan-development-20261027/"
+}

@@ -152,6 +152,8 @@ python -m unittest discover -s tools -p "test_perception*.py"
 python tools/test_muzzle_fixture.py
 python tools/test_tactic_fixture.py
 python tools/test_review_outputs.py
+python tools/test_plan_progress.py
+python tools/test_offset_entry.py
 ```
 
 The pinned NumPy/SciPy requirements support historical cohort calculations;
@@ -179,6 +181,72 @@ cohorts. The [diagnostics guide](behaviour-diagnostics.md#ordinary-rocket-muzzle
 records the original checks and their limits. A repeatable driver is follow-up
 work, not a prerequisite for retaining those historical results.
 It is tracked in [#586](https://github.com/saworbit/argus/issues/586).
+
+Shared failed-plan checks have a separate repeatable native driver:
+
+```text
+python tools/verify_plan_progress.py --output backups/plan-check-1
+```
+
+Choose a new directory beneath `backups/`; existing evidence is refused.
+`--help` starts no lab or engine. The default fixed schedule runs decision
+contracts on dm2/dm4, live-item and respawn-camp physical escape fixtures on
+dm2, and a legacy-reset negative control. `--mode contract` or `--mode physical`
+selects one part. `--mode edges` runs 39 controller checks each on dm2/e1m2
+for co-op retries, detours, waypoint cycles and deadline ownership. These
+inject waypoint arrivals and co-op state; the physical fixtures separately
+verify escape. `--allow-failed` is restricted to diagnostic edge controls;
+retain their failures and never report them as passing acceptance.
+This is a small fixture suite, not a gameplay cohort.
+
+Physical retry/detour follow-up uses `--mode physical-edges`. Add
+`--physical-part coop` for the passing dm2 co-op rest/retry/contact check or
+`--physical-part normal` for the currently failing e1m2 detour. The full
+physical-edge schedule stops at its first failure; the deadline control is
+meaningful only after the current detour completes. `--physical-part detour`
+selects half pace (160 units/s), normal pace (320) and that control. The slow
+pace is a declared initial test input; goal clocks advance in real engine
+time. Do not count controller callbacks or goal selection as physical arrival.
+[#593](https://github.com/saworbit/argus/issues/593) blocks the longer-detour
+proof and deployment. These switches do not enable production fixtures.
+
+For its isolated offset entry, use `python tools/verify_offset_entry.py
+--output backups/<new-directory>`. This seeds only the initial route and
+placement, then observes actual movement/contact. Default cases cover grounded
+and airborne, centred and offset entries; the old-handoff control disables the
+new guard only in its private copy. Use `--variants current --cases 3` for one
+fixed case. Current failures fail the command. Step 1b is active again in
+development, with fresh controlled boundary checks and the prior dm4 warning
+still open; these checks do not establish that the entire source bundle is
+ready for installation.
+
+Offset options accept comma-separated values: `--variants current,old_handoff`
+and `--cases 1,2,3,4` are the defaults. Cases 1/2 are grounded centred/offset
+entries; 3/4 are airborne offset/centred entries. `--output` must name a new
+directory beneath `backups/`; `--help` starts no lab or engine. Current-case
+failures return nonzero. The old-policy result is recorded for manual review:
+case 3 should fail, while the other controls may pass. The runner currently
+does not reject an unexpectedly passing old-policy case 3, so an exit code
+alone is not proof that the control distinguished the fix.
+Automatic enforcement is tracked in
+[#594](https://github.com/saworbit/argus/issues/594).
+
+These verifiers reuse the existing native-lab environment configuration;
+they add no dependencies, production console switches or environment variables.
+Their overrides for source, binary, runs and game assets stay inside the owned
+test directory. Historical receipts retain the code and bounds of their run.
+
+The driver requires the matching source-built CLI and configured local game
+assets. It copies sources and assets into the output directory, compiles
+with `install=false`, and launches through the native lab with private
+`ARGUS_BASEDIR` and `ARGUS_PROGS`. It never stages a candidate over the
+installed game. Preserve any pending human session before running.
+Receipts include the fixed schedule, source/decision/binary/tape hashes and
+installed-binary hashes before and after. The physical oracle requires a
+new valid goal, continuous displacement beyond 220 units, retained health,
+and a failed-plan shelf while the original prize remains in its initial
+state. The fixture assigns only initial conditions; ordinary bot code
+chooses the alternative and moves. Raw tapes and licensed assets stay local.
 
 The blind-review page saves ratings to the browser profile/origin or exports
 them on request. Keep its key outside the served anonymous directory until

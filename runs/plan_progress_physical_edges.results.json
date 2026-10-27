@@ -1,0 +1,129 @@
+{
+  "status": "Co-op physical retry passed; longer physical detour failed and remains unresolved.",
+  "source_sha256": "330acf751b633acb1540782229e968aa15833976e3bab35ebea285ed504319d3",
+  "production_changed_this_followup": false,
+  "coop": {
+    "variant": "current",
+    "map": "dm2",
+    "case": 3,
+    "success": true,
+    "elapsed": 22.8,
+    "path_units": 1750.1,
+    "away_units": 53.3,
+    "distinct_legs": 1,
+    "measured_fps": 69.1,
+    "events": {
+      "rest": [
+        2.1,
+        "22.1"
+      ],
+      "gate": [
+        22.1
+      ],
+      "retry": [
+        22.1,
+        "22.1"
+      ],
+      "contact": [
+        22.8,
+        "2399.4 -155.2  24.0"
+      ]
+    },
+    "lost": false,
+    "samples": 113,
+    "health": 100,
+    "tape_sha256": "f9c3c39907e4f4d6f692ead35a8a46f1d2258444002249afdbf102ba4cd9e4fb",
+    "binary_sha256": "b82d217f148588312fdd5732caa2ea26f90d7daffd00c1fbae0c18c35936612f",
+    "fixture_sha256": "b8e4298cc90b62f3cf145957aa41257934ff8eb4bfb5c79e0b849169bd4b2848"
+  },
+  "clean_normal_detour": {
+    "variant": "current",
+    "map": "e1m2",
+    "case": 5,
+    "success": false,
+    "elapsed": 7.8,
+    "path_units": 1269.0,
+    "away_units": 144.6,
+    "distinct_legs": 3,
+    "measured_fps": 69.1,
+    "events": {},
+    "lost": true,
+    "samples": 40,
+    "health": 100,
+    "tape_sha256": "5315bcfe93ab72db13cc074e6bda02f383d5b23a7a2458dcb564c3433cfef049",
+    "binary_sha256": "ebdfa0cadf87c8940d6f579ca7c82537cb8396d8853fddc9f3557e678f26e704",
+    "fixture_sha256": "4ff653ffeba2fa5b8bfbcde5c81d2a3da631bf1e6d6be2d196e6562e941d135d"
+  },
+  "canonical_link_probe": {
+    "map": "e1m2",
+    "graph_md5": "9871767bbbc2295fc5fd95e149939da9",
+    "probe_kind": "walk",
+    "probed": 1,
+    "passed": 1,
+    "failed": 0,
+    "teleport_failures": 0,
+    "failed_links": [],
+    "passed_sample": [
+      "n130->n133 h 224"
+    ],
+    "mode": "deathmatch",
+    "door_skipped": 0
+  },
+  "earlier_half_pace": {
+    "variant": "current",
+    "map": "e1m2",
+    "case": 4,
+    "success": false,
+    "elapsed": 15.6,
+    "path_units": 1765.3,
+    "away_units": 142.9,
+    "distinct_legs": 3,
+    "measured_fps": 69.2,
+    "events": {},
+    "lost": true,
+    "samples": 78,
+    "health": 100,
+    "tape_sha256": "b641d524dc5a82f4f4c0c709f73ee80be330f3d9dd6cbc0af056ce2c33cc9052",
+    "binary_sha256": "5845ba981026efdea1f231cd3a55b9a4b6e3ce504208264a110fee3737b39e64"
+  },
+  "rejected_setups": [
+    "initial: solo co-op uses slot0, not slot1; fixture stopped before beginning.",
+    "actor-slot dm2 detour: pace32/entry failed at2.1s; normal-pace entry reached contact but failed long-detour coverage."
+  ],
+  "deadline_control": "Not run: a completing current long-detour route is a prerequisite.",
+  "plan_python_tests": 13,
+  "source_audit": "Accepted co-op and clean detour fixture copies reject scripted movement/progress and actor writes during observation.",
+  "issues": [
+    "https://github.com/saworbit/argus/issues/589",
+    "https://github.com/saworbit/argus/issues/593"
+  ],
+  "limits": [
+    "Co-op fixture uses a private trigger goal and a cage that opens at the first recorded rest expiry, on an actual solo co-op server; no teammate/monster interaction.",
+    "Half-pace and normal-pace approaches have different initial setup state and do not constitute a matched speed comparison.",
+    "One canonical player-walking link probe does not prove the bot can enter that link from its actual approach.",
+    "No population rate/equivalence/skill conclusion."
+  ],
+  "deployment": "None: no isolated production fix was proven for the physical movement failure; do not install the wider development bundle.",
+  "step1b": "parked; frozen parked/candidate reconstruction passed",
+  "cohorts": false,
+  "installed_sha256": {
+    "engine\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "game\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "lq1\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  },
+  "local_evidence": "backups\\plan-physical-20261027",
+  "native_campaign_exit_verdict": {
+    "verdict": "FAIL",
+    "ok": false,
+    "fail_reason": "STUCK_TIMEOUT"
+  },
+  "acceptance_boundary": "PMFIX physical contact/rest contract; a full campaign exit verdict is not applicable to this isolated private-goal fixture.",
+  "issue_update_repair": "A Windows text-encoding error interrupted the first #589 update. The complete saved body was restored as UTF-8 and exact remote content/identity verified.",
+  "final_checks": {
+    "plan_tests": 13,
+    "repo_invariants": "passed",
+    "diff_check": "passed",
+    "parked_reconstruction": "passed",
+    "installed_binaries": "unchanged"
+  }
+}

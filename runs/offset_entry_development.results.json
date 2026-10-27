@@ -1,0 +1,395 @@
+{
+  "status": "Local offset entry fixed; complete detour not proven; step1b active in development; no deployment.",
+  "source_before_sha256": "330acf751b633acb1540782229e968aa15833976e3bab35ebea285ed504319d3",
+  "source_sha256": "dcb19cc2134c31077c033e1624bbd9998c58ec6aa7c9c1d07b20f50f5d7c1777",
+  "fix": "Shared landed/body-clear gate on normal and apex flat-walk handoff; existing typed/height/final handling preserved. Validated apex transitions supply shared progress evidence.",
+  "unchanged": "Wall-slide cutoff20 and arrival radius48 unchanged; no generated nav edits or authored movement.",
+  "physical_entries": [
+    {
+      "variant": "current",
+      "case": 1,
+      "success": true,
+      "elapsed": 0.6,
+      "final_pos": [
+        1363.0,
+        -158.8,
+        320.0
+      ],
+      "handoff_positions": [
+        [
+          1361.0,
+          33.0,
+          320.0
+        ]
+      ],
+      "handoff_by": 0.1,
+      "measured_fps": 75.0,
+      "contact": {
+        "t": 0.6,
+        "pos": [
+          1363.0,
+          -158.8,
+          320.0
+        ]
+      },
+      "tape_sha256": "d769af3a93ec0ed4122d3aa432695376741a2b7f98336ea485cad4556e5acdb5",
+      "binary_sha256": "ba33199c775a0de823d4b3efaee8ead71eabd6d66f13332a6b391af827f18e84"
+    },
+    {
+      "variant": "current",
+      "case": 2,
+      "success": true,
+      "elapsed": 0.8,
+      "final_pos": [
+        1385.0,
+        -161.3,
+        320.0
+      ],
+      "handoff_positions": [
+        [
+          1354.2,
+          32.0,
+          320.0
+        ]
+      ],
+      "handoff_by": 0.2,
+      "measured_fps": 68.8,
+      "contact": {
+        "t": 0.8,
+        "pos": [
+          1385.0,
+          -161.3,
+          320.0
+        ]
+      },
+      "tape_sha256": "6b24ba7292d22f7b37d3af2bca7f10dd7e4f047f8f6e01ac16e3d3b84f075d47",
+      "binary_sha256": "ba33199c775a0de823d4b3efaee8ead71eabd6d66f13332a6b391af827f18e84"
+    },
+    {
+      "variant": "current",
+      "case": 3,
+      "success": true,
+      "elapsed": 1.1,
+      "final_pos": [
+        1386.4,
+        -157.6,
+        320.0
+      ],
+      "handoff_positions": [
+        [
+          1359.8,
+          32.0,
+          320.0
+        ]
+      ],
+      "handoff_by": 0.3,
+      "measured_fps": 66.4,
+      "contact": {
+        "t": 1.1,
+        "pos": [
+          1386.4,
+          -157.6,
+          320.0
+        ]
+      },
+      "tape_sha256": "50de7a666fbb6ac38f60f04cbbdd11ddb5e39f2b12962231824ba5d39627e298",
+      "binary_sha256": "ba33199c775a0de823d4b3efaee8ead71eabd6d66f13332a6b391af827f18e84"
+    },
+    {
+      "variant": "current",
+      "case": 4,
+      "success": true,
+      "elapsed": 0.9,
+      "final_pos": [
+        1385.6,
+        -160.7,
+        320.0
+      ],
+      "handoff_positions": [
+        [
+          1364.4,
+          31.3,
+          320.0
+        ]
+      ],
+      "handoff_by": 0.3,
+      "measured_fps": 71.1,
+      "contact": {
+        "t": 0.9,
+        "pos": [
+          1385.6,
+          -160.7,
+          320.0
+        ]
+      },
+      "tape_sha256": "1f27a46698866e8b9d5075d7fb7fd2f78aba7aedffc4b5a37c7777f4893f9b0e",
+      "binary_sha256": "ba33199c775a0de823d4b3efaee8ead71eabd6d66f13332a6b391af827f18e84"
+    }
+  ],
+  "old_handoff_control": {
+    "variant": "old_handoff",
+    "case": 3,
+    "success": false,
+    "elapsed": 2.1,
+    "final_pos": [
+      1365.3,
+      23.7,
+      320.0
+    ],
+    "handoff_positions": [
+      [
+        1348.9,
+        32.0,
+        358.5
+      ],
+      [
+        1357.4,
+        32.0,
+        330.7
+      ]
+    ],
+    "handoff_by": 0.1,
+    "measured_fps": 70.0,
+    "contact": null,
+    "tape_sha256": "cac40d1820fcc9d3edf4a0c5bccb776f94e514109351049811fc980b03692b2d",
+    "binary_sha256": "0448685a78732bd01640fe71e044f3d141e374df28310a3aa0d5a4248a2e7f0b"
+  },
+  "plan_contracts": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "tape_sha256": "df54dab11bddf055ce726e44b5a40e3f2bfed80051991245ef5b1f0bf6afa75a",
+      "binary_sha256": "272f3c3ad5dd181f3d34daec38e80b79a7bce991ba3b4a01eefb22e848d2c2cd"
+    },
+    {
+      "variant": "current",
+      "map": "dm4",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "tape_sha256": "eaec44519a62fa9aebac5dc0a25cf9836bef2e180e2308855abf1a357d847a74",
+      "binary_sha256": "272f3c3ad5dd181f3d34daec38e80b79a7bce991ba3b4a01eefb22e848d2c2cd"
+    }
+  ],
+  "health_information_checks": [
+    {
+      "map": "dm2",
+      "checks": 22,
+      "failures": [],
+      "perception": [
+        {
+          "id": 1,
+          "labels": [
+            "clock",
+            "initial_observation",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "reacquired",
+            "prediction_bound",
+            "unseen_pain",
+            "unseen_pain_trace",
+            "visible_pain",
+            "visible_pain_trace",
+            "secondary_observed",
+            "secondary_hidden",
+            "target_switch",
+            "target_death",
+            "observer_respawn",
+            "roster_removal"
+          ],
+          "ended": true,
+          "clean": true,
+          "frames": 14,
+          "seconds": 0.2,
+          "dt_ms": 14.0
+        }
+      ],
+      "tape_sha256": "8daa921d1f074dc2abe45d2f25f6b403f499ab43b5f6eb81427b6c2b7883db18"
+    },
+    {
+      "map": "dm4",
+      "checks": 22,
+      "failures": [],
+      "perception": [
+        {
+          "id": 1,
+          "labels": [
+            "clock",
+            "initial_observation",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "reacquired",
+            "prediction_bound",
+            "unseen_pain",
+            "unseen_pain_trace",
+            "visible_pain",
+            "visible_pain_trace",
+            "secondary_observed",
+            "secondary_hidden",
+            "target_switch",
+            "target_death",
+            "observer_respawn",
+            "roster_removal"
+          ],
+          "ended": true,
+          "clean": true,
+          "frames": 14,
+          "seconds": 0.2,
+          "dt_ms": 14.0
+        }
+      ],
+      "tape_sha256": "c81c3c41d540183991843540c34d56c1ffba16f9979c43346d6f5344b8f78324"
+    }
+  ],
+  "health_active_functions": {
+    "Argus_Perceive": "97ee8007c727c396c8a813596f34df15d489fd2d2918a2a571d9ccdff7613f3f",
+    "Argus_Combat": "13d531e7c3e354a8601169779dace43249fe26681f3cebaf26a0547d15a3b1f4",
+    "Argus_Hunch": "c9f7573cd3449f47f8ac251970c3d6f030af9002b80563562f090a1d262fab7f"
+  },
+  "health_test_scope": "Fresh trials use the final combat/perception/hunch bodies with ordinary rocket clearance preserved.",
+  "diagnostic_guard": {
+    "fields": 97,
+    "checks": 414,
+    "frames": 415,
+    "tape_sha256": "f0088803d18497e30baf2f04a9d80e241e8d71a7274efe52d0f0b160f2cf0c10",
+    "binary_sha256": "e93102a15b879fbf365f6fa52200fa1dc46e3a6a2b98c47b87439fa331d36fcb"
+  },
+  "tactic": [
+    {
+      "map": "dm4",
+      "case": "0",
+      "concealed_at": 0.5,
+      "return_at": 1.1,
+      "first_angle": 40.8,
+      "return_damage": true,
+      "frames": 415,
+      "seconds": 6.0,
+      "fps": 69.2
+    }
+  ],
+  "normal_route_integration": [
+    {
+      "variant": "current",
+      "map": "e1m2",
+      "case": 5,
+      "success": false,
+      "elapsed": 18.8,
+      "path_units": 6596.5,
+      "away_units": 143.8,
+      "distinct_legs": 20,
+      "measured_fps": 69.3,
+      "events": {},
+      "lost": true,
+      "samples": 94,
+      "health": 100,
+      "tape_sha256": "43284fc841ba3a50d4d385282a284b48615bebbbc143bdbab3adbe891730aae7",
+      "binary_sha256": "272f3c3ad5dd181f3d34daec38e80b79a7bce991ba3b4a01eefb22e848d2c2cd"
+    }
+  ],
+  "intermediate_rejections": [
+    "Landing-only gate bypassed by apex shortcut.",
+    "Initial landing/apex guard regressed the grounded recovery case.",
+    "Landing/recovery candidate did not complete full normal/half-pace routes."
+  ],
+  "earlier_controls": "Grounded controls pass; radius4 and slide cutoff1 could mask the airborne case, and were not adopted.",
+  "fixture_correction": "Excluded actors are now non-solid AND cameras, preventing their selection as enemies.",
+  "deployment": "None: broader long-detour completion and the earlier step1b dm4 warning remain unresolved.",
+  "cohorts": false,
+  "installed_sha256": {
+    "engine\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "game\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "lq1\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4"
+  },
+  "local_evidence": "backups\\offset-entry-20261027",
+  "issues": [
+    583,
+    589,
+    593
+  ],
+  "final_combined_air_entry": [
+    {
+      "variant": "current",
+      "case": 3,
+      "success": true,
+      "elapsed": 1.1,
+      "final_pos": [
+        1388.6,
+        -158.9,
+        320.0
+      ],
+      "handoff_positions": [
+        [
+          1360.2,
+          32.0,
+          320.0
+        ]
+      ],
+      "handoff_by": 0.3,
+      "measured_fps": 67.3,
+      "contact": {
+        "t": 1.1,
+        "pos": [
+          1388.6,
+          -158.9,
+          320.0
+        ]
+      },
+      "tape_sha256": "8a679894fa7a9135ea31f9ed5c0ed57cba3235822c8a3bfe1fa2c2333f118f9c",
+      "binary_sha256": "4b55e8950c111aed59315a38c1348eb856440ccda27de9c87245b2ec5ac500ba"
+    },
+    {
+      "variant": "old_handoff",
+      "case": 3,
+      "success": false,
+      "elapsed": 2.1,
+      "final_pos": [
+        1365.4,
+        24.0,
+        320.0
+      ],
+      "handoff_positions": [
+        [
+          1348.9,
+          32.0,
+          358.5
+        ],
+        [
+          1357.6,
+          32.0,
+          327.1
+        ]
+      ],
+      "handoff_by": 0.1,
+      "measured_fps": 70.0,
+      "contact": null,
+      "tape_sha256": "1cc78d6c0b7ac32655d3d7a352577c040545d4fa26dcb7c35e627d6b45d8e5f5",
+      "binary_sha256": "e2349596bb710889f9da3af2b74f809e9bc0cbd0fb73f70e6504fb9266363881"
+    }
+  ],
+  "native_evidence_scope": "The four body-clearance cases and 36 plan contracts precede rocket-guard preservation; handoff helper is byte-identical. Final combined source independently rechecked for airborne entry/control, health boundary and tactical return.",
+  "corrected_integration_error": "Whole-body step1b restoration initially removed the independent rocket-clearance call. The muzzle regression test rejected this; the guard was restored and affected tests rerun. Rejected sources/receipts retained.",
+  "python_checks": {
+    "passed": 85,
+    "groups": {
+      "behaviour": 26,
+      "perception": 21,
+      "tactic": 18,
+      "muzzle": 2,
+      "review": 3,
+      "plan": 13,
+      "offset": 2
+    }
+  },
+  "repo_invariants": "passed"
+}

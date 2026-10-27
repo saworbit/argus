@@ -70,8 +70,10 @@ To update the playable game mod package, copy `lq1/progs.dat` to `game/argus/pro
 That copy is an installation action, not a prerequisite for reviewing a
 source change. Agent sessions use the [native lab workflow](docs/lab-workflow.md)
 and preserve human sessions before launching an engine. In no-deployment work,
-compile into an owned private tree with `install=false`, explicitly verify the
-staged lab candidate, and restore saved binaries after checking it. See
+compile into an owned private tree with `install=false`, stage the candidate
+only into private game assets, and verify installed-binary hashes remain
+unchanged. Retained one-shot scripts that overwrite the installed lab copy
+are historical workflows, not substitutes for these private verifiers. See
 [focused checks without deployment](docs/lab-workflow.md#focused-checks-without-deployment)
 for current Python test commands and the limits of one-shot session drivers.
 
@@ -87,6 +89,20 @@ ARGUS_REQUIRE_SOURCE_MCP=1 python3 tools/test_tools_cli.py
 ```
 
 ### Running a Headless Smoke Match
+
+For the session's plan and offset evidence oracles, use the engine-free checks:
+
+```text
+python tools/test_plan_progress.py
+python tools/test_offset_entry.py
+```
+
+These also run in fast CI. Native physical fixtures require configured local
+assets and a fresh private output directory; see the
+[focused runbook](docs/lab-workflow.md#focused-checks-without-deployment).
+The current step 1b and local offset-entry changes remain development source;
+passing these contracts does not establish complete-route or general gameplay
+safety and does not update the supplied binaries.
 
 You can run automated headless bot matches on Linux or Windows to verify stability:
 

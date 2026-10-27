@@ -1,0 +1,148 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -114,8 +113,0 @@
+-// Shared navigation-plan evidence; independent of map and goal class.
+-.entity ar_plan_goal, ar_plan_leg;
+-.float ar_plan_best, ar_plan_stamp;
+-// One visit epoch per supported bot slot, stored on existing waypoints.
+-.float ar_plan_visit0, ar_plan_visit1, ar_plan_visit2, ar_plan_visit3;
+-float argus_plan_serial;
+-.entity ar_fetchfailed;
+-
+@@ -3258,3 +3249,0 @@
+-    self.ar_plan_goal = world; self.ar_plan_leg = world;
+-    self.ar_plan_best = 0; self.ar_plan_stamp = 0; self.ar_stallrun = 0;
+-    self.ar_fetchfailed = world; self.ar_fetchcool = 0;
+@@ -7944,12 +7932,0 @@
+-// Keep a failed co-op request on the stack, but let this bot try other work.
+-// The cooldown belongs to its subject: a new request or another bot is free.
+-void(entity failed) Argus_FetchRest =
+-{
+-    if (failed != world && Argus_GoalTopKind () == GOAL_FETCH
+-        && Argus_GoalTopSubj () == failed)
+-    {
+-        self.ar_fetchfailed = failed;
+-        self.ar_fetchcool = time + 20;
+-    }
+-};
+-
+@@ -8207 +8184 @@
+-            // Rest after a failed route, repeated stalls or a timeout.
++            // Resting after a routefail (see the stamp in Argus_AI).
+@@ -8213,2 +8190 @@
+-            if ((fitem != self.ar_fetchfailed || time >= self.ar_fetchcool)
+-                && self.ar_goal != fitem)
++            if (time >= self.ar_fetchcool && self.ar_goal != fitem)
+@@ -8217 +8192,0 @@
+-                self.ar_goalstart = time;
+@@ -8393,69 +8367,0 @@
+-    }
+-};
+-
+-// Progress is an outcome, not movement: a closer objective or a new
+-// reached waypoint. Route rebuilds alone provide no successful evidence.
+-void(float paused, entity reached) Argus_PlanObserve =
+-{
+-    local float d, visited, useful;
+-    local entity e;
+-    if (paused)
+-    {
+-        self.ar_plan_goal = world; self.ar_plan_leg = world;
+-        self.ar_plan_best = 0; self.ar_stallrun = 0;
+-        return;
+-    }
+-    if (!Argus_GoalOK (self.ar_goal))
+-    {
+-        self.ar_plan_goal = world; self.ar_plan_leg = world;
+-        self.ar_plan_best = 0;
+-        if (vlen (self.origin - self.ar_lastpos) >= 12)
+-            self.ar_stallrun = 0;
+-        return;
+-    }
+-    d = vlen (Argus_GoalPoint (self.ar_goal) - self.origin);
+-    if (self.ar_plan_goal != self.ar_goal)
+-    {
+-        // Exact integer epochs in a vanilla float. Rare rollover invalidates
+-        // all marks together, without allocating entities or using engine APIs.
+-        if (argus_plan_serial >= 16777215)
+-        {
+-            e = nextent (world);
+-            while (e != world)
+-            {
+-                e.ar_plan_visit0 = 0; e.ar_plan_visit1 = 0;
+-                e.ar_plan_visit2 = 0; e.ar_plan_visit3 = 0;
+-                e.ar_plan_goal = world; e.ar_plan_stamp = 0;
+-                e = nextent (e);
+-            }
+-            argus_plan_serial = 0;
+-        }
+-        argus_plan_serial = argus_plan_serial + 1;
+-        self.ar_plan_stamp = argus_plan_serial;
+-        self.ar_plan_goal = self.ar_goal; self.ar_plan_leg = world;
+-        self.ar_plan_best = d; self.ar_stallrun = 0;
+-    }
+-    useful = (d <= self.ar_plan_best - 12);
+-    if (reached != world)
+-    {
+-        visited = reached.ar_plan_visit0;
+-        if (self.ar_slot == 1) visited = reached.ar_plan_visit1;
+-        else if (self.ar_slot == 2) visited = reached.ar_plan_visit2;
+-        else if (self.ar_slot == 3) visited = reached.ar_plan_visit3;
+-        if (visited != self.ar_plan_stamp)
+-        {
+-            useful = TRUE;
+-            if (self.ar_slot == 0) reached.ar_plan_visit0 = self.ar_plan_stamp;
+-            else if (self.ar_slot == 1) reached.ar_plan_visit1 = self.ar_plan_stamp;
+-            else if (self.ar_slot == 2) reached.ar_plan_visit2 = self.ar_plan_stamp;
+-            else if (self.ar_slot == 3) reached.ar_plan_visit3 = self.ar_plan_stamp;
+-        }
+-        self.ar_plan_leg = reached;
+-    }
+-    if (useful)
+-    {
+-        // Preserve the closest useful distance even while a new leg leads
+-        // away from the objective. Returning around a cycle earns no credit.
+-        if (d < self.ar_plan_best) self.ar_plan_best = d;
+-        self.ar_stallrun = 0;
+-        if (self.ar_taskgoal == world) self.ar_goalstart = time;
+@@ -8580 +8486,3 @@
+-            Argus_FetchRest (self.ar_goal);
++            if (Argus_GoalTopKind () == GOAL_FETCH
++                && Argus_GoalTopSubj () == self.ar_goal)
++                self.ar_fetchcool = time + 20;
+@@ -8642,18 +8549,0 @@
+-            // Co-op skips ordinary item expiry below. A FETCH that has made
+-            // no useful progress still needs a rest, without popping the
+-            // request or changing escort/interaction ownership.
+-            if (Argus_GoalTopKind () == GOAL_FETCH
+-                && Argus_GoalTopSubj () == self.ar_goal
+-                && self.ar_goal != world
+-                && time > self.ar_goalstart + 20)
+-            {
+-                if (self.ar_enemy != world)
+-                    self.ar_goalstart = time - 15;
+-                else
+-                {
+-                    Argus_FetchRest (self.ar_goal);
+-                    self.ar_goal = world; self.ar_node = world;
+-                    self.ar_pending = 0; self.ar_mode = 0;
+-                    Argus_PlanObserve (TRUE, world);
+-                }
+-            }
+@@ -8705 +8594,0 @@
+-                Argus_FetchRest (self.ar_goal);
+@@ -8765 +8653,0 @@
+-        Argus_PlanObserve (TRUE, world);
+@@ -9561 +9448,0 @@
+-                Argus_PlanObserve (FALSE, oldnode);
+@@ -10059,3 +9945,0 @@
+-        Argus_PlanObserve (fighting || self.ar_liftwait || self.ar_hoplift
+-            || self.ar_hoptrain || self.ar_hopjump || self.ar_hoprj
+-            || self.ar_hopswim || self.ar_door != world, world);
+@@ -10098,2 +9981,0 @@
+-                Argus_FetchRest (self.ar_goal);
+-                Argus_PlanObserve (TRUE, world);
+@@ -10123 +10005,2 @@
+-
++        else if (vlen (self.origin - self.ar_lastpos) >= 12)
++            self.ar_stallrun = 0;

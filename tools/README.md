@@ -151,7 +151,7 @@ no encoder. The video example samples 2.4 source seconds and plays them over
 4.8 seconds at half speed. See [rendered POV evidence](argus_mcp/README.md#rendered-pov-evidence)
 for asset requirements, verification and bounds.
 
-### Behaviour, perception and muzzle contracts
+### Behaviour, perception, plan and muzzle contracts
 
 ```text
 python -m pip install -r tools/requirements-perception-cohort.txt
@@ -160,18 +160,53 @@ python -m unittest discover -s tools -p "test_perception*.py"
 python tools/test_muzzle_fixture.py
 python tools/test_tactic_fixture.py
 python tools/test_review_outputs.py
+python tools/test_plan_progress.py
+python tools/test_offset_entry.py
 ```
 
 These commands exercise Python contracts without launching a cohort or engine.
 The muzzle suite and local review-output contracts run in the fast workflow.
+The plan evidence oracle runs there too. For authorised native decision and
+physical-escape checks, use `python tools/verify_plan_progress.py --output
+backups/plan-check-1`; choose a new output directory. It uses private source
+and asset copies and never writes installed game files. `--help` is read-only;
+`--mode contract` or `--mode physical` selects part of its fixed fixture suite.
+`--mode edges` covers co-op retry/rest, long detours, waypoint cycles and
+deadline ownership with injected controller state on dm2/e1m2.
+`--mode physical-edges --physical-part coop` runs the separate real co-op
+retry fixture; `--physical-part normal` reproduces the unresolved e1m2
+physical detour failure (#593). The full schedule stops on failure rather
+than treating an incomplete physical route as evidence for its deadline rule.
 `check_muzzle_fixture.py` exposes `check(text)` and `audit(source)` for Python
 callers; it has no CLI. The private `fixtures/muzzle_clearance.qc` is excluded
 from production and emits `MFIX` under a quarantining `BHVRPL begin` marker.
 
 `health_inventory_parked.py` verifies the active source against a declared
-manifest, reverses only allowlisted amendments in memory, then reconstructs
-the historical health/inventory candidate for static checks. Passing those
-candidate checks does not mean step 1b is active in normal play.
+manifest, reverses allowlisted offset-entry, active-health, plan and muzzle
+amendments in memory, then reconstructs
+the historical health/inventory candidate for static checks. Those historical
+checks alone do not establish the behaviour of a current build.
+
+Step 1b is now reactivated in development. The manifest additionally verifies
+the actual active function hashes; reverse patches retain the frozen historical
+parked/candidate definitions without altering the checked-in source.
+`python tools/verify_offset_entry.py --output backups/<new-directory>` runs
+four small physical entry cases plus an old-handoff policy control, using
+private native builds. `--variants current` limits it to the fixed source;
+`--cases 3` isolates the recorded airborne offset. The source/trajectory audit
+and evidence parser run in fast CI through `tools/test_offset_entry.py`.
+Its `old_handoff` rows require manual outcome review; current-case failures
+are enforced, but an unexpectedly passing airborne-offset control is not yet
+an automatic failure. CLI defaults and case meanings are in the
+[focused runbook](../docs/lab-workflow.md#focused-checks-without-deployment).
+The missing control gate is tracked in [#594](https://github.com/saworbit/argus/issues/594).
+
+The fresh 44 active step 1b native checks used local private drivers retained
+under `backups/offset-entry-20261027/`. They are evidence, not a clean-checkout
+command. `run_health_fixture.py` still depends on historical snapshots and
+temporarily stages `engine/argus/progs.dat`; do not treat it as a no-install
+replacement. Its private no-write successor remains follow-up work.
+See [#595](https://github.com/saworbit/argus/issues/595).
 
 `verify_muzzle_clearance.py`, `investigate_health_stalls.py` and
 `prepare_blind_perception.py` are retained one-shot study drivers. They are not

@@ -1076,7 +1076,7 @@ void() Argus_TacticShot;
 .float		ar_disconnected;	// human left; the body outlives the client
 .float		ar_escform;		// 1 = holding escort formation (hysteresis)
 .float		ar_coop_seektime;	// Next objective (key/door) seek, throttled
-.float		ar_fetchcool;		// Rest after a co-op FETCH routefail
+.float		ar_fetchcool;		// Rest after a failed co-op FETCH attempt
 .float		ar_stucktime;		// First tick of the current not-moving window
 .vector		ar_stuckpos;		// Where that was, to prove we have not moved
 .float		ar_stuckstalls;		// ar_stalls when that window opened (#271)

@@ -1,0 +1,41 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -8461,24 +8460,0 @@
+-};
+-
+-// A flat walking handoff needs a landed, body-clear entry. The eye ray can
+-// clear the next corridor while the side of the body still clips its mouth.
+-// Keep typed transitions, height changes and final-goal arrival as before.
+-float(entity node) Argus_WalkArrivalReady =
+-{
+-    local entity next;
+-    local vector to, side, a, b;
+-    if (self.ar_hopjump || self.ar_hoprj || self.ar_hoplift
+-        || self.ar_hopswim || self.ar_hoptrain || self.ar_hopdoor) return TRUE;
+-    next = Argus_GetNext (node, self);
+-    if (next == world || Argus_LinkIsTyped (node, next)) return TRUE;
+-    if (fabs (next.origin_z - node.origin_z) > 18) return TRUE;
+-    if (!(self.flags & FL_ONGROUND)) return FALSE;
+-    if (vlen (self.origin - node.origin) <= 8) return TRUE;
+-    to = next.origin - self.origin; to_z = 0;
+-    to = normalize (to); side = '0 0 0';
+-    side_x = to_y * 15; side_y = 0 - to_x * 15;
+-    a = self.origin + '0 0 8'; b = next.origin + '0 0 8';
+-    traceline (a + side, b + side, TRUE, self);
+-    if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+-    traceline (a - side, b - side, TRUE, self);
+-    return (trace_fraction == 1 && !trace_startsolid && !trace_allsolid);
+@@ -9557 +9532,0 @@
+-                     && Argus_WalkArrivalReady (self.ar_node)
+@@ -9698,2 +9673 @@
+-            else if (!self.ar_hopjump && vlen (to) < 112
+-                     && Argus_WalkArrivalReady (self.ar_node))
++            else if (!self.ar_hopjump && vlen (to) < 112)
+@@ -9721,5 +9694,0 @@
+-                        {
+-                            // This validated corner cut completes a route
+-                            // leg too; otherwise long detours can make real
+-                            // progress without ever renewing their deadline.
+-                            Argus_PlanObserve (FALSE, self.ar_node);
+@@ -9727 +9695,0 @@
+-                        }

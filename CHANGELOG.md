@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Step 1a and ordinary rocket clearance retained; step 1b parked; no deployment |
+| Development source | Step 1a, step 1b, rocket clearance and shared failed-plan recognition active; local offset entry verified, full detour unresolved; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -26,6 +26,15 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Document private plan/offset fixture records, reproducible CLI options and
+  acceptance limits. Separate current development status from earlier
+  parked-state evidence and supplied game binaries.
+
+- Recognise failed navigation plans using goal-relative progress and reached
+  waypoints, then choose alternatives through the existing selector. Add
+  repeatable decision and physical-escape fixtures. Development source only;
+  supplied binaries remain unchanged. [Checks and limits](docs/behaviour-diagnostics.md#shared-failed-plan-recognition).
 
 - Add private ordinary-rocket clearance checks using real BSP geometry and
   stock firing: 14 checks, with legacy and uncapped negative controls. See
@@ -53,7 +62,11 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
-- Retain perception step 1a in development; park health/inventory step 1b
+- Reactivate health/inventory perception step 1b in development at the user's
+  request. Fresh dm2/dm4 controlled trials pass 44 information-boundary checks;
+  the earlier dm4 gameplay warning remains unresolved. No deployment or cohorts.
+
+- Earlier investigation: retained step 1a and parked health/inventory step 1b
   after a bounded dm4 investigation could not isolate its regression warning.
   Preserve the candidate as a patch; incoming-projectile perception stays on
   hold. [Current status](docs/behaviour-diagnostics.md#current-development-status).
@@ -129,6 +142,19 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Require a landed, laterally clear entry before ordinary flat-walk waypoint
+  handoff, including the apex shortcut (#593). Preserve typed/height-changing
+  links and the 48-unit arrival radius. Account for validated apex transitions
+  as plan progress. Development source only; physical evidence is recorded
+  in the behaviour diagnostics guide.
+
+- Keep progressing detours alive, reject repeated waypoint cycles as progress,
+  and rest failed co-op fetches before retrying without blocking a new subject
+  or another bot (#589). Preserve combat and fixed-task deadlines. Controlled
+  decision and co-op retry fixtures pass. Longer physical detours remain
+  blocked by [#593](https://github.com/saworbit/argus/issues/593); development
+  source only, supplied binaries unchanged.
 
 - Run muzzle-clearance and local review-output contracts in fast CI. Keep
   generated review media and frozen local study tapes out of Git staging,
