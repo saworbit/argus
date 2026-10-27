@@ -496,7 +496,7 @@ pub fn parse_arglog_path(path: &std::path::Path) -> std::io::Result<MatchSummary
 /// that has not finished connecting. Neither is a combatant and
 /// neither belongs in a bot total or a human one.
 pub fn is_instrument(name: &str) -> bool {
-    name == "labprobe" || name == "unconnected"
+    matches!(name, "labprobe" | "labcamera" | "unconnected")
 }
 
 pub fn parse_tape_path(path: &std::path::Path) -> std::io::Result<MatchTape> {

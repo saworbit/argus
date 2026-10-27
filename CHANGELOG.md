@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Resolve game-directory reports against the base directory (#590), report
+  unsupported camera signon protocols (#591), and exclude `labcamera` from
+  bot and human statistics in both tape readers (#592).
+
 #### Added
 
 - Document private plan/offset fixture records, reproducible CLI options and

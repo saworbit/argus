@@ -85,6 +85,11 @@ acknowledgement success alone is not tactical acceptance. See the
 an existing lab match on localhost:26000. It records the original complete
 server messages before decoding, including signon, through the stock camera
 impulses. Each mode and target selection waits for a client-visible reply.
+The recorder joins as `labcamera`, an instrument excluded from bot and human
+statistics. It requires protocol 15 and reports an incompatible server protocol
+as soon as it arrives. Set `sv_protocol 15` and `max_edicts 600` in the private
+game's `autoexec.cfg` before starting the server. Missing signon packets retain
+the eight-second timeout; failed signon does not publish a partial demo.
 The slot is the roster slot 0..3, not a network entity number. The duration
 is 2..185 seconds and the demo name must be new. The recording includes
 camera setup before the requested observation period, with a 32 MiB cap.
@@ -316,6 +321,9 @@ fills fteqcc / engine / basedir / python when those files exist in
 the usual lab layout. Explicit env still wins.
 
 `config_check` always returns the resolved table and never errors.
+`ARGUS_GAME` keeps its game-name value; its existence check uses
+`ARGUS_BASEDIR/ARGUS_GAME`. It is optional and does not affect `complete`,
+which checks only required settings.
 Other tools name the missing key and refuse.
 
 Examples (fill real paths; do not commit secrets or this machine's
