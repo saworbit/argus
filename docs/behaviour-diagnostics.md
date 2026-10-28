@@ -5,8 +5,9 @@ gameplay. The current development changes are listed below.
 
 ## Current development status
 
-Step 1a visual observation caching, ordinary rocket clearance and shared
-failed-plan recognition are retained in development. Health/inventory step 1b
+Step 1a visual observation caching, ordinary rocket clearance, shared
+failed-plan recognition and the [human gait work](#human-gait-hesitation-and-cautious-liquid-approach)
+are retained in development. Health/inventory step 1b
 is active again in development at the user's request; incoming-projectile perception stays
 on hold. Shipped binaries are unchanged. Earlier sections' test totals and
 cohort conclusions belong to their recorded builds, not every later change.
@@ -30,6 +31,253 @@ and [upstream artifact-download warning](https://github.com/saworbit/argus/issue
 They do not authorise more cohorts or deployment. The original warning has not
 been labelled noise; historical test totals and tapes remain attached to their
 recorded inputs and stopping rules.
+
+## Human gait: hesitation and cautious liquid approach
+
+Movement difference against the human reference corpus, measured with
+`tools/argus_humanness.py`. The tool's distance is unsigned, so a new
+`--profile` mode reports both populations' medians and quartile bands with the
+signed gap in each feature's own scale; nothing below could have been aimed at
+without it.
+
+**What the measurement said, before any change.** On dm4 the reference human
+pauses 21.9 times per 185 s for 26.5 s in total, a mean of 1.20 s per pause.
+Bots pause 18 to 24 times for 14 to 17 s, a mean of 0.64. The *count* was never
+wrong: each pause ends too early. The human's pause lengths are also graded and
+heavy-tailed - 51 per cent at the 0.5 s tape floor, 23 per cent near 1 s,
+14 per cent at 1.5 to 2 s, 9 per cent longer - where the bot's were a spike,
+83 per cent at the floor. Separately, the bot's median gait on dm4 was 320 u/s
+against the human's 221, while on dm2 both sat at the 320 cap.
+
+**Hesitation.** `Argus_Hesitate` runs on the existing 0.2 s maintenance tick
+and `Argus_GaitHold` releases the gait in `Argus_Physics`, so stock friction
+does the stopping. Three causes, each legible on screen: `heard` (gunfire or a
+pickup beyond 500 units, and the bot faces it), `junction` (the hop after the
+one being walked turns more than 65 degrees, and the bot looks round the
+corner), `settle` (a stop the bot was already making, held a beat longer).
+Length is drawn from a four-way mixture that reproduces the reference shape
+rather than one window, and is capped at 3 s of stillness plus the brake.
+Personality scales the rate on the same axis the aim spring splits on: the
+flick slot hesitates least, the smooth operator most.
+
+**Refusals, each one measured rather than assumed.** No hesitation while an
+enemy is live, pursuing, retreating, dodging, in any typed hop, on a mover, at
+a door, in liquid, airborne, carrying quad or pentagram, in co-op, inside the
+fixed-task fixture, below skill 1, with a stall run open, within 0.6 s of a
+brink deflection, or where the resume heading fails the hazard probe. One
+hesitation per 200 units of travel. Damage clears the window outright.
+
+**Cautious gait.** Beside lava or slime found by a hazard probe in the last
+half second - not beside a drop - and out of combat, the ground wish drops to
+62 per cent of the cap. The first cut keyed on "the guard deflected me" and was
+convicted by the tapes: it improved dm4 and took dm2's median speed to 237 for
+a measured -2.60 against a control at +0.08, because dm2's brinks are mostly
+honest drops. `Argus_MoveHazard` now stamps the one branch that knows the
+hazard is lethal, changing no verdict and no control flow.
+
+**Two accounting repairs this needed.** The stall detector skips a hesitation
+one detector period past the last held frame, keyed on that frame rather than
+on the window: `ar_lastpos` is stamped every 0.7 s whether a bot is held or
+not, and damage clears the window, so reading the window counted a stall while
+the bot still stood where the pause had left it. Without the tail, raising the
+rate took dm4 stalls from 5 to 24 across six nodes - an artifact, not a place a
+bot could not leave. `ar_hazhold` turned out to be unusable as a live brink
+test: `Argus_HazardSteer` is only entered after the heading has already failed,
+so its clearing branch is unreachable and the flag stays up for a bot's life
+([#607](https://github.com/saworbit/argus/issues/607)).
+
+### Evidence
+
+Ladder at the played listen rate, skill 2, 185 s, same-session control built
+from the same tree: dm4 three tapes a side, dm2 four. Receipt:
+[`runs/human_gait.results.json`](../runs/human_gait.results.json).
+
+| Arm | Humanness distance (median, range) |
+|---|---|
+| dm4 control | 1.321 (1.082 to 1.370) |
+| dm4 candidate | 1.022 (1.017 to 1.089) |
+| dm2 control | 1.278 (1.113 to 1.386) |
+| dm2 candidate | 1.008 (0.960 to 1.058) |
+
+The dm2 arms are fully disjoint. The dm4 arms overlap by 0.007.
+
+Per feature, scaled gap, control to candidate. dm4: median speed +3.078 to
++2.406, pause fraction -1.809 to -1.267, pause length -1.107 to -0.580,
+direction changes +2.501 to +1.793, active speed +0.688 to +0.409; gyration
+-0.868 to -1.080 and local dwell +0.594 to +0.870 move the wrong way. dm2:
+pause length -0.789 to -0.037, direction changes +2.691 to +1.848, local dwell
++3.019 to +2.549, cells -0.438 to +0.020, gyration -0.947 to -0.660, pause
+fraction -0.530 to +0.423; median speed holds at the cap, +0.000 to -0.104.
+
+Four further changes aimed at what is left were refused. Three were built,
+laddered and reverted, each with its post-mortem beside the code it would have
+gone in: a gentler
+[deflection rung](#refused-a-gentler-first-rung-in-the-deflection-fan) for
+heading churn, a [lethal-void stamp](#refused-stamping-the-lethal-void) for
+dm4's residual gait, and a [flatter distance
+curve](#refused-a-flatter-distance-curve-for-an-unhurried-bot) for local dwell.
+The fourth, [re-seating waypoints off
+walls](#refuted-without-a-tape-re-seating-waypoints-off-walls), was refuted by
+measurement before any code was written.
+
+Hard gates are at parity or better. Medians, control to candidate: dm4 stalls
+9 to 8, engagements 74 to 83, world/lava deaths 3 to 5 (inside the 2 to 7 band
+this map has always run), route failures 1 to 1, freezes 0 to 0; dm2 stalls
+34 to 36.5, engagements 34.5 to 37, world deaths 0.5 to 1, route failures
+3.5 to 3, freezes 1.5 to 0.5. Every bot finished positive on every dm4 tape
+and on two of four dm2 tapes in each arm.
+
+**Under-fire freezes are pre-existing and equal across the arms**, two in each.
+`tools/argus_gait.py` attributes none of the candidate's to a hesitation, and
+the control arm produced them on unchanged code. Every one of them is the
+documented fight-pin class ([#322](https://github.com/saworbit/argus/issues/322)):
+a bot pinned against geometry while fighting, freed by the eight-second
+`unstick fightpin` branch. Whether such a pin counts as "under fire" depends on
+whether an opponent happened to be shooting at it.
+
+### Refused: a gentler first rung in the deflection fan
+
+Tried after the above and reverted, with its post-mortem beside the code in
+`Argus_HazardSteer`. Attributing every counted path-heading swing in two tapes
+to the nearest preceding marker put 37 to 49 per cent of them beside a hazard
+event, and the fan opens at 50 degrees against a 45 degree counting threshold,
+so a 30 degree rung tried ahead of the existing four should have moved a third
+of them under the threshold for nothing.
+
+Three dm4 tapes against three said otherwise. The metric it was built for went
+the wrong way, pooled +1.793 to +2.259, and stalls rose from a median of 8 to
+21. The attribution shows why: hazard-attributed swings did fall, 262 to 235,
+while wall-slide-attributed swings rose 78 to 126 and wall-slide firings rose
+107 to 145. A gentler deflection keeps the bot nearer the geometry it was
+avoiding, so it meets the adjacent wall instead, and the slide clips velocity
+into that plane - a bigger heading change than the jink it replaced.
+
+The lesson generalises past this fan, and it matches the 2026-08-28 note on the
+step-lateral probe rescue turning the '700 -800' wall-pin into wall-pressing:
+the churn is not the deflection step size, it is that the bot is pressed
+against geometry at all. Apex or corridor seats keeping routes off the walls
+would move this metric. Steering changes will not.
+
+### Refused: stamping the lethal void
+
+Also tried and reverted, with its post-mortem in `Argus_MoveHazard`'s void
+branch. The floor trace stops at 280 units because that is the survivable-drop
+line, so lava further down reads as plain emptiness and the cautious gait never
+fires at the dm4 walkway edges that most want it. Two extra point samples
+reached the lava, and on dm4 it worked: median gait gap +2.406 to +1.752 and
+distance 1.022 to 0.973 over three tapes, stalls and lava unchanged.
+
+It lost the same trade on dm2 that the first cautious-gait trigger lost: median
+gait -0.104 to -1.258 against a human pinned at the 320 cap, with heading churn
++1.848 to +2.213 and distance 1.008 to 1.099 over two tapes.
+
+`tools/argus_voidprobe.py` says why, and it is the reusable part. Sampling
+eight headings at the guard's own 48-unit reach from every waypoint in a
+shipped graph:
+
+| Map | Probe directions | Floor with lava on it | Void | Under the void |
+|---|---|---|---|---|
+| dm4 | 1096 | 0 | 18 | lava, 284 to 380 down |
+| dm2 | 1720 | 0 | 24 | lava, 284 to 572 down |
+| dm3 | 1952 | 0 | 49 | stone 41, water 8 |
+| dm6 | 1904 | 0 | 31 | stone 31 |
+
+Two things follow. Every void the guard vetoes on dm4 *and* dm2 bottoms out in
+lava, so void-depth lava cannot tell a catwalk from a deck edge - the signal
+stops discriminating, which is exactly the failure mode. And **no probe
+direction from any waypoint on any surveyed map finds lava underfoot**, because
+navgen seats waypoints off hazards by construction: the kept stamp therefore
+acts almost entirely from off-graph positions, which in practice means the dm4
+pit. That is the mechanism behind its self-targeting, and it is narrower than
+"beside lava" suggests.
+
+### Refused: a flatter distance curve for an unhurried bot
+
+The third attempt and the third reversal, post-mortem at the distance curve in
+`Argus_PickGoal`. Local dwell is the largest gap left (dm2 +2.549), two thirds
+of routed errands are shorter than the 1024-unit radius it measures, and the
+majors already read distance at 0.4x - so letting minor items read it at 0.5x
+while a bot is armed, stocked and healthy looked like the same proven lever
+applied to the same symptom.
+
+It did the opposite. Errands got **shorter**, median 521 units against 547 with
+80 per cent under 1024 against 68; local dwell went to +4.121 against a kept arm
+of +1.829 to +3.714; and the match economy fell with it, engagements 28-45 down
+to 17 and pickups 26-57 down to 19. Flattening the curve compresses the scores,
+so the winning candidate flips between ticks and the bot dithers rather than
+commits - and a commuting bot picks nothing up, so it drops out of the atoms
+that qualified it and spends the rest of the match on the tight curve, poorer.
+
+One dm2 tape, which is normally not enough on this map. It is enough here
+because the candidate falls outside the kept arm's range on the metric it
+targeted *and* on engagements *and* on pickups, and because the errand-length
+check says it failed by design rather than by luck. **The distance curve is not
+the cause of local dwell.**
+
+### Refuted without a tape: re-seating waypoints off walls
+
+The deflection post-mortem above concluded that the heading churn is the bot
+being pressed against geometry, and pointed at seats. navgen's 5a2 pass already
+shifts a decimation seat when walls sit inside 24 units of it, so the obvious
+next move was to audit the shipped graphs for seats it missed. Measuring first
+cost nothing and settled it:
+
+| Map | Waypoints | Wall inside 24u | Worst clearance |
+|---|---|---|---|
+| dm4 | 137 | 10 (7%) | 2 of 4 open, one seat |
+| dm2 | 215 | 16 (7%) | 3 of 4 open |
+| dm3 | 244 | 32 (13%) | **25 seats fully boxed in** |
+| dm6 | 238 | 17 (7%) | 3 of 4 open |
+
+And the correlation that matters: of 340 located wall slides on dm4 and 680 on
+dm2, **6 and 15 per cent respectively fall within 96 units of a wall-adjacent
+seat, against 95 to 100 per cent within 96 units of any seat at all.** Wall
+scraping is diffuse across everywhere a bot walks; it is not concentrated at
+tight seats, so re-seating would not reach it. No ladder was run.
+
+A separate observation, recorded and not acted on: dm3 carries 25 waypoints with
+**zero** open cardinals where dm4, dm2 and dm6 carry none. Promoted seats - pads,
+stair seats, sprint anchors - are exempt from the shift pass by design, so this
+may be entirely legitimate. dm3 is not in this ladder and was not investigated;
+it is filed as [#608](https://github.com/saworbit/argus/issues/608).
+`tools/argus_voidprobe.py --clearance` reproduces the table.
+
+### What the reference corpus is, and what that costs
+
+Every human track in the corpus was recorded while a human hunted bots, and the
+candidate tapes are bot-versus-bot. That difference is worth quantifying rather
+than waving at, because two of the scored features are about roaming. Comparing
+the same feature three ways - the human, the bots in those same human sessions,
+and the bots in the botmatch arms:
+
+| Map | Feature | Human | Bots with a human | Bots alone |
+|---|---|---|---|---|
+| dm2 | local dwell | 0.262 | 0.464 | 0.517 |
+| dm2 | gyration | 811.3 | 725.9 | 726.8 |
+| dm4 | local dwell | 0.879 | 0.951 | 0.966 |
+| dm4 | gyration | 527.6 | 437.3 | 389.4 |
+
+Bounded and small. On dm2 local dwell roughly a fifth of the gap is match
+configuration and four fifths is the bot; gyration is unchanged by the human's
+presence on both maps. So the gaps this section acts on are mostly real bot
+properties, and a botmatch is a fair place to measure them - but a fifth of the
+dwell gap is not something any bot change can reach.
+
+### Limits
+
+This is a movement-distribution result on two maps at skill 2, in development
+and not installed. It is not a demonstration of better human play, better
+spectating, or a difficulty change in either direction; no human session has
+been played against it. dm4's median gait remains the largest single gap at
++2.406, because its walkway edges read as void rather than lava - the lava
+surface sits further than the 280-unit floor probe below them - so the cautious
+gait does not fire there. Closing that was [tried and
+refused](#refused-stamping-the-lethal-void): it works on dm4 and costs dm2 the
+same trade the first trigger did. Gyration and local dwell went the wrong way
+on dm4 and are unexplained. dm2 single tapes swing widely on identical code;
+the four-a-side arms are what the disjointness rests on, not any one tape.
+The session that would settle the feel question is filed as
+[#610](https://github.com/saworbit/argus/issues/610).
 
 ## Shared failed-plan recognition
 

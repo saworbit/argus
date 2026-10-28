@@ -116,6 +116,7 @@ ARGDBG <name> pick <class> u <utility> ...
 TACTICCHECK <name> t <time> stage <stage>
 ARGUS difficulty <name> t <time> base <skill> cognition <tier> aim <tier>
        offset <offset> drift <drift> adaptive <0-or-1> aimshare_pct <percent>
+ARGUS <name> hesitate <heard|junction|settle>
 ```
 
 This is a reading guide, not the complete closed event vocabulary. The Rust
@@ -132,11 +133,21 @@ documents event counting and shared Python/Rust contracts.
 | Tactical `returnshot` | A shot was acknowledged, not that it hit |
 | `TACTICCHECK` | A throttled tactical entry check, not an independent encounter |
 | `ARGUS difficulty` | Applied base skill, cognition/aim tiers and adaptive settings, not a performance score |
+| `ARGUS <name> hesitate` | A pause the bot chose, and the reason it chose it, not a stall or a wedge |
 | `ARGDBG` | Optional decision scores; enabled by server `scratch1 1`, excluded from ordinary brief counts |
 
 Names may contain spaces and event words. Parsers resolve full known track
 names before interpreting verbs; older ambiguous rows without sample/spawn
 context retain the legacy interpretation. Do not split names on whitespace.
+
+A chosen pause and a wedge look identical in a 0.5 Hz sample row, and they
+want opposite reactions, so `hesitate` carries the cause that produced it.
+`tools/argus_gait.py` reads the markers against the shared freeze windows and
+attributes each stationary window to a hesitation only when that bot's own
+marker precedes it; it exits non-zero when an attributed window lost health or
+outlived the hold. Use it rather than a freeze count alone when judging a
+change to the gait: dm4 and dm2 both produce long, pre-existing fight-pin
+freezes on unchanged code.
 
 Human and instrument tracks stay outside bot bands and freeze totals.
 Freezes use speed under 20 u/s within a strict 32-unit XY circle for at least

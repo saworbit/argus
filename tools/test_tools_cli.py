@@ -896,6 +896,209 @@ tool_timeout_sec = 700
             self.assertEqual(set(parsed["humans"]), {"Shane"})
             self.assertNotIn("OldBot", parsed["bots"])
 
+    def test_humanness_profile_reports_signed_feature_gaps(self):
+        """The distance is unsigned; --profile has to say which way."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_humanness
+
+        def tape(path, bot_step, human_step):
+            lines = ["ARGUS init on dm4\n", "ARGEVT Reap spawned\n"]
+            for i in range(80):
+                lines.extend(
+                    (
+                        f"ARGLOG Reap t {i * 0.5} pos '{i * bot_step} 0 24' "
+                        f"spd {bot_step * 2} yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                        f"ARGLOG Shane t {i * 0.5} pos '0 {i * human_step} 24' "
+                        f"spd {human_step * 2} yaw 90 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    )
+                )
+            path.write_text("".join(lines), encoding="utf-8")
+            return argus_humanness.read_tape(path)
+
+        with tempfile.TemporaryDirectory() as td:
+            # The bot travels twice as far per sample as the reference human.
+            parsed = tape(Path(td) / "signed.log", 160, 80)
+            reference, counts = argus_humanness.build_reference([parsed])
+            features, bot_counts = argus_humanness.collect_bot_features([parsed])
+            rows = argus_humanness.profile_rows(features, bot_counts, reference, counts)
+            by_feature = {row["feature"]: row for row in rows}
+            speed = by_feature["speed_median"]
+            self.assertEqual(speed["map"], "dm4")
+            self.assertEqual(speed["bot_tracks"], 1)
+            self.assertEqual(speed["human_tracks"], 1)
+            self.assertGreater(speed["delta"], 0)
+            self.assertGreater(speed["delta_scaled"], 0)
+            self.assertAlmostEqual(
+                speed["delta"], speed["bot_median"] - speed["human_median"], places=6
+            )
+            # Every scored feature appears exactly once per map.
+            self.assertEqual(
+                sorted(by_feature), sorted(argus_humanness.FEATURES)
+            )
+
+            # Reverse the roles and the sign has to follow.
+            parsed = tape(Path(td) / "signed2.log", 60, 150)
+            reference, counts = argus_humanness.build_reference([parsed])
+            features, bot_counts = argus_humanness.collect_bot_features([parsed])
+            rows = argus_humanness.profile_rows(features, bot_counts, reference, counts)
+            speed = next(row for row in rows if row["feature"] == "speed_median")
+            self.assertLess(speed["delta"], 0)
+            self.assertLess(speed["delta_scaled"], 0)
+
+    def test_gait_audit_separates_chosen_pauses_from_wedges(self):
+        """A freeze belongs to the gait only when a marker precedes it."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_gait
+
+        def tape(path, marker_at):
+            lines = ["ARGUS init on dm4\n", "ARGEVT Reap spawned\n"]
+            for i in range(60):
+                t = i * 0.5
+                # Still from t=10 to t=20, on the spot, losing health.
+                if 10.0 <= t <= 20.0:
+                    speed, hp = 0, 100 - (t - 10.0) * 4
+                else:
+                    speed, hp = 320, 100
+                if marker_at is not None and abs(t - marker_at) < 0.01:
+                    lines.append("ARGUS Reap hesitate settle\n")
+                lines.append(
+                    f"ARGLOG Reap t {t} pos '0 0 24' spd {speed} yaw 0 "
+                    f"mode 2 st 0 gl 0 hp {hp:.0f} frg 0\n"
+                )
+            path.write_text("".join(lines), encoding="utf-8")
+            return path
+
+        with tempfile.TemporaryDirectory() as td:
+            # No marker: the stationary window is somebody else's defect.
+            report = argus_gait.audit(tape(Path(td) / "wedge.log", None), 8.0, 4.0)
+            self.assertEqual(report["hesitations"], 0)
+            self.assertEqual(report["freezes"], 1)
+            self.assertEqual(report["findings"][0]["verdict"], "pre-existing")
+            self.assertEqual(report["failures"], 0)
+
+            # Marker just before, health lost inside: that is the gait's.
+            report = argus_gait.audit(tape(Path(td) / "chosen.log", 9.5), 8.0, 4.0)
+            self.assertEqual(report["hesitations"], 1)
+            self.assertEqual(report["causes"], {"settle": 1})
+            self.assertEqual(report["findings"][0]["verdict"], "FAIL")
+            self.assertGreater(report["findings"][0]["hp_lost"], 0)
+            self.assertEqual(report["failures"], 1)
+
+            # Same marker, far enough ahead that it explains nothing.
+            report = argus_gait.audit(tape(Path(td) / "stale.log", 2.0), 8.0, 4.0)
+            self.assertEqual(report["findings"][0]["verdict"], "pre-existing")
+            self.assertEqual(report["failures"], 0)
+
+    def test_voidprobe_separates_lethal_floor_from_lethal_void(self):
+        """The guard's two hazard verdicts are different questions."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_voidprobe
+
+        # A synthetic world: contents are chosen by height alone, which is
+        # all the classifier contract needs here.
+        def fake(layout):
+            return lambda x, y, z: layout(z)
+
+        with tempfile.TemporaryDirectory() as td:
+            nav = Path(td) / "nav.json"
+            nav.write_text(json.dumps([[0, 0, 0]]), encoding="utf-8")
+            real = argus_voidprobe.classifier
+            try:
+                # A lava pool: surface just below the feet, stone at its
+                # bottom. The guard finds that stone and reads the contents
+                # just above it, which is the lethal verdict.
+                argus_voidprobe.classifier = lambda _p: fake(
+                    lambda z: -2 if z <= -28 else (-5 if z <= -2 else -1)
+                )
+                verdicts, under, depths = argus_voidprobe.survey("x", nav, 48)
+                self.assertEqual(verdicts["probes"], 8)
+                self.assertEqual(verdicts["lethal floor"], 8)
+                self.assertEqual(verdicts["void"], 0)
+                self.assertEqual(depths, [])
+
+                # No floor in the drop window, lava far below: the void case
+                # that was measured and refused.
+                argus_voidprobe.classifier = lambda _p: fake(
+                    lambda z: -5 if z <= -400 else -1
+                )
+                verdicts, under, depths = argus_voidprobe.survey("x", nav, 48)
+                self.assertEqual(verdicts["void"], 8)
+                self.assertEqual(verdicts["lethal floor"], 0)
+                self.assertEqual(under["lava"], 8)
+                self.assertTrue(all(d >= 400 for d in depths), depths)
+
+                # Plain floor: neither verdict.
+                argus_voidprobe.classifier = lambda _p: fake(
+                    lambda z: -2 if z <= -16 else -1
+                )
+                verdicts, under, depths = argus_voidprobe.survey("x", nav, 48)
+                self.assertEqual(verdicts["solid floor"], 8)
+                self.assertEqual(verdicts["lethal floor"], 0)
+                self.assertEqual(verdicts["void"], 0)
+            finally:
+                argus_voidprobe.classifier = real
+
+    def test_voidprobe_clearance_matches_navgens_seat_shift_bar(self):
+        """navgen shifts a seat with walls inside 24u; this audits for them."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_voidprobe
+
+        # Contents by x alone: a wall face at x >= 24, open elsewhere.
+        wall_east = lambda x, y, z: -2 if x >= 24 else -1
+        self.assertEqual(argus_voidprobe.clear_cardinals(wall_east, 0, 0, 0), 3)
+        # Open everywhere: the pass skips these.
+        self.assertEqual(
+            argus_voidprobe.clear_cardinals(lambda x, y, z: -1, 0, 0, 0), 4
+        )
+        # Boxed in on all four.
+        self.assertEqual(
+            argus_voidprobe.clear_cardinals(lambda x, y, z: -2, 0, 0, 0), 0
+        )
+
+        with tempfile.TemporaryDirectory() as td:
+            nav = Path(td) / "nav.json"
+            nav.write_text(json.dumps([[0, 0, 0], [512, 0, 0]]), encoding="utf-8")
+            real = argus_voidprobe.classifier
+            try:
+                argus_voidprobe.classifier = lambda _p: wall_east
+                counts, tight = argus_voidprobe.clearance("x", nav)
+                # The seat at the origin has the wall; the far one is inside it.
+                self.assertEqual(sum(counts.values()), 2)
+                self.assertEqual(len(tight), 2)
+                argus_voidprobe.classifier = lambda _p: (lambda x, y, z: -1)
+                counts, tight = argus_voidprobe.clearance("x", nav)
+                self.assertEqual(counts[4], 2)
+                self.assertEqual(tight, [])
+            finally:
+                argus_voidprobe.classifier = real
+
+    def test_voidprobe_reads_the_shipped_dm4_graph(self):
+        """Needs the machine-local BSP; skips where it is absent."""
+        bsp = ROOT / "maps_local" / "dm4.bsp"
+        nav = ROOT / "src" / "argus_nav_dm4.qc.json"
+        if not bsp.is_file() or not nav.is_file():
+            self.skipTest("needs maps_local/dm4.bsp and the dm4 nav sidecar")
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_voidprobe
+
+        verdicts, under, depths = argus_voidprobe.survey(bsp, nav, 48)
+        self.assertEqual(verdicts["probes"], verdicts["void"]
+                         + verdicts["solid floor"] + verdicts["lethal floor"])
+        # Waypoints are seated off hazards by construction, so no probe
+        # direction from one finds lava underfoot. If this ever fires, the
+        # cautious gait's trigger has changed meaning.
+        self.assertEqual(verdicts["lethal floor"], 0)
+        # Every void dm4 vetoes bottoms out in lava.
+        self.assertGreater(verdicts["void"], 0)
+        self.assertEqual(under.get("lava"), verdicts["void"])
+
+    def test_gait_audit_exit_status_gates(self):
+        res = self.run_tool("argus_gait.py", "--help")
+        self.assertEqual(res.returncode, 0)
+        self.assertIn("hesitation", res.stdout)
+        res = self.run_tool("argus_gait.py", "no_such_tape_*.log")
+        self.assertEqual(res.returncode, 2)
+
     def test_humanness_uses_the_real_mixed_session_dominant_segment(self):
         sys.path.insert(0, str(ROOT / "tools"))
         import argus_humanness

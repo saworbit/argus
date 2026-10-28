@@ -34,7 +34,7 @@ flowchart TD
 
 | Component | Responsibilities |
 |---|---|
-| Movement | Ground/air acceleration, friction, wall sliding, corner lookahead and separate move/aim headings |
+| Movement | Ground/air acceleration, friction, wall sliding, corner lookahead, chosen pauses and separate move/aim headings |
 | Hazards | Braking-aware floor probes, dry landings, liquid checks and knockback-aware ledge avoidance |
 | Navigation | Sliced search, cached routes, typed walks/drops/jumps, doors, lifts, trains, teleports and water transitions |
 | Combat | Weapon/range choice, projectile lead, splash clearance, movement under threat and crossfire responses |
@@ -96,6 +96,17 @@ nearby opening-door ownership until the slab finishes, with one eight-second
 opening phase and the existing timeout path. Remote buttons and already-passed
 doors retain their walking paths. See the
 [physical contracts and controls](behaviour-diagnostics.md#opening-door-ownership-and-physical-deadline).
+
+Development source also gives ordinary patrol a human gait. Outside combat a
+bot may choose a short stop with one of three recorded causes - a sound it
+heard, a junction it reached, or settling after it slowed - and it approaches
+lava or slime below full speed. Every disqualifying condition is re-tested
+each frame, so an enemy, pain, a typed hop, a mover, a door errand or an
+unstick ends a pause on the frame it arrives. The stall detector suppresses
+only the frames the hold actually held, plus a short tail, because a chosen
+stop is not a movement failure. Pauses are gated to skill 1 and above, never
+run in co-op, and scale with each personality's deliberation appetite. See the
+[measurement, refusals and limits](behaviour-diagnostics.md#human-gait-hesitation-and-cautious-liquid-approach).
 
 ### Navigation is generated, not loaded at runtime
 

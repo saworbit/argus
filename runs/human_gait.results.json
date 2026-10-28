@@ -1,0 +1,881 @@
+{
+  "arms": [
+    {
+      "arm": "control",
+      "distance": {
+        "max": 1.37,
+        "median": 1.321,
+        "min": 1.082,
+        "values": [
+          1.082,
+          1.37,
+          1.321
+        ]
+      },
+      "freezes_underfire_total": 0,
+      "gates": {
+        "engages": {
+          "max": 77,
+          "median": 74,
+          "min": 59
+        },
+        "freezes": {
+          "max": 1,
+          "median": 0,
+          "min": 0
+        },
+        "goals": {
+          "max": 145,
+          "median": 138,
+          "min": 134
+        },
+        "routefails": {
+          "max": 3,
+          "median": 1,
+          "min": 1
+        },
+        "stalls": {
+          "max": 12,
+          "median": 9,
+          "min": 7
+        },
+        "world_deaths": {
+          "max": 5,
+          "median": 3,
+          "min": 2
+        }
+      },
+      "hesitations_total": 0,
+      "map": "dm4",
+      "n": 3,
+      "tapes": [
+        "hum_ctl_dm4_1",
+        "gaitC_dm4_2",
+        "gaitC_dm4_3"
+      ],
+      "tick_gap_mean": [
+        0.5507,
+        0.5453,
+        0.5475
+      ]
+    },
+    {
+      "arm": "candidate",
+      "distance": {
+        "max": 1.089,
+        "median": 1.022,
+        "min": 1.017,
+        "values": [
+          1.089,
+          1.017,
+          1.022
+        ]
+      },
+      "freezes_underfire_total": 1,
+      "gates": {
+        "engages": {
+          "max": 83,
+          "median": 83,
+          "min": 72
+        },
+        "freezes": {
+          "max": 1,
+          "median": 0,
+          "min": 0
+        },
+        "goals": {
+          "max": 143,
+          "median": 132,
+          "min": 123
+        },
+        "routefails": {
+          "max": 1,
+          "median": 1,
+          "min": 1
+        },
+        "stalls": {
+          "max": 18,
+          "median": 8,
+          "min": 1
+        },
+        "world_deaths": {
+          "max": 6,
+          "median": 5,
+          "min": 2
+        }
+      },
+      "hesitations_total": 16,
+      "map": "dm4",
+      "n": 3,
+      "tapes": [
+        "gaitB_dm4_1",
+        "gaitB_dm4_2",
+        "gaitB_dm4_3"
+      ],
+      "tick_gap_mean": [
+        0.5453,
+        0.5488,
+        0.5499
+      ]
+    },
+    {
+      "arm": "control",
+      "distance": {
+        "max": 1.386,
+        "median": 1.278,
+        "min": 1.113,
+        "values": [
+          1.386,
+          1.193,
+          1.364,
+          1.113
+        ]
+      },
+      "freezes_underfire_total": 2,
+      "gates": {
+        "engages": {
+          "max": 40,
+          "median": 34.5,
+          "min": 32
+        },
+        "freezes": {
+          "max": 3,
+          "median": 1.5,
+          "min": 0
+        },
+        "goals": {
+          "max": 98,
+          "median": 83.5,
+          "min": 80
+        },
+        "routefails": {
+          "max": 9,
+          "median": 3.5,
+          "min": 3
+        },
+        "stalls": {
+          "max": 51,
+          "median": 34.0,
+          "min": 27
+        },
+        "world_deaths": {
+          "max": 1,
+          "median": 0.5,
+          "min": 0
+        }
+      },
+      "hesitations_total": 0,
+      "map": "dm2",
+      "n": 4,
+      "tapes": [
+        "gaitC_dm2_1",
+        "gaitC_dm2_2",
+        "gaitC_dm2_3",
+        "gaitC_dm2_4"
+      ],
+      "tick_gap_mean": [
+        0.5241,
+        0.5308,
+        0.5259,
+        0.5241
+      ]
+    },
+    {
+      "arm": "candidate",
+      "distance": {
+        "max": 1.058,
+        "median": 1.008,
+        "min": 0.96,
+        "values": [
+          1.058,
+          1.053,
+          0.963,
+          0.96
+        ]
+      },
+      "freezes_underfire_total": 1,
+      "gates": {
+        "engages": {
+          "max": 45,
+          "median": 37.0,
+          "min": 28
+        },
+        "freezes": {
+          "max": 2,
+          "median": 0.5,
+          "min": 0
+        },
+        "goals": {
+          "max": 92,
+          "median": 88.0,
+          "min": 72
+        },
+        "routefails": {
+          "max": 4,
+          "median": 3.0,
+          "min": 2
+        },
+        "stalls": {
+          "max": 62,
+          "median": 36.5,
+          "min": 25
+        },
+        "world_deaths": {
+          "max": 3,
+          "median": 1.0,
+          "min": 0
+        }
+      },
+      "hesitations_total": 43,
+      "map": "dm2",
+      "n": 4,
+      "tapes": [
+        "gaitB_dm2_1",
+        "gaitB_dm2_2",
+        "gaitB_dm2_3",
+        "gaitB_dm2_4"
+      ],
+      "tick_gap_mean": [
+        0.5288,
+        0.5254,
+        0.5208,
+        0.5288
+      ]
+    }
+  ],
+  "commands": {
+    "distance": "python tools/argus_humanness.py runs/gaitB_dm4_1.log ...",
+    "pause attribution": "python tools/argus_gait.py \"runs/gaitB_dm4_[1-3].log\"",
+    "signed gaps": "python tools/argus_humanness.py --profile \"runs/gaitB_dm2_[1-4].log\""
+  },
+  "follow_ups": {
+    "607": "Argus_HazardSteer's hold-clearing branch is unreachable, so ar_hazhold is sticky-on",
+    "608": "classify dm3's 25 waypoints with no open cardinal direction",
+    "609": "make analyze_match.py importable and share its hull-0 classifier with argus_voidprobe.py",
+    "610": "play one human session against this build; the distance is a proxy for feel",
+    "611": "add a documentation link check to tools/argus_ci.py"
+  },
+  "per_feature": {
+    "dm2_candidate": {
+      "active_speed_p90": {
+        "bot_median": 376.81,
+        "delta_scaled": 0.465,
+        "human_median": 361.94
+      },
+      "cells_pm": {
+        "bot_median": 58.438,
+        "delta_scaled": 0.02,
+        "human_median": 58.235
+      },
+      "direction_changes_pm": {
+        "bot_median": 50.003,
+        "delta_scaled": 1.848,
+        "human_median": 40.765
+      },
+      "gyration": {
+        "bot_median": 726.83,
+        "delta_scaled": -0.66,
+        "human_median": 811.278
+      },
+      "local_dwell_fraction": {
+        "bot_median": 0.517,
+        "delta_scaled": 2.549,
+        "human_median": 0.262
+      },
+      "pause_fraction": {
+        "bot_median": 0.156,
+        "delta_scaled": 0.423,
+        "human_median": 0.135
+      },
+      "pause_mean_sec": {
+        "bot_median": 1.248,
+        "delta_scaled": -0.037,
+        "human_median": 1.267
+      },
+      "speed_median": {
+        "bot_median": 316.675,
+        "delta_scaled": -0.104,
+        "human_median": 320.0
+      }
+    },
+    "dm2_control": {
+      "active_speed_p90": {
+        "bot_median": 383.69,
+        "delta_scaled": 0.68,
+        "human_median": 361.94
+      },
+      "cells_pm": {
+        "bot_median": 53.852,
+        "delta_scaled": -0.438,
+        "human_median": 58.235
+      },
+      "direction_changes_pm": {
+        "bot_median": 54.22,
+        "delta_scaled": 2.691,
+        "human_median": 40.765
+      },
+      "gyration": {
+        "bot_median": 690.028,
+        "delta_scaled": -0.947,
+        "human_median": 811.278
+      },
+      "local_dwell_fraction": {
+        "bot_median": 0.564,
+        "delta_scaled": 3.019,
+        "human_median": 0.262
+      },
+      "pause_fraction": {
+        "bot_median": 0.109,
+        "delta_scaled": -0.53,
+        "human_median": 0.135
+      },
+      "pause_mean_sec": {
+        "bot_median": 0.872,
+        "delta_scaled": -0.789,
+        "human_median": 1.267
+      },
+      "speed_median": {
+        "bot_median": 320.0,
+        "delta_scaled": 0.0,
+        "human_median": 320.0
+      }
+    },
+    "dm4_candidate": {
+      "active_speed_p90": {
+        "bot_median": 359.3,
+        "delta_scaled": 0.409,
+        "human_median": 346.2
+      },
+      "cells_pm": {
+        "bot_median": 48.0,
+        "delta_scaled": 0.354,
+        "human_median": 44.458
+      },
+      "direction_changes_pm": {
+        "bot_median": 51.271,
+        "delta_scaled": 1.793,
+        "human_median": 42.307
+      },
+      "gyration": {
+        "bot_median": 389.367,
+        "delta_scaled": -1.08,
+        "human_median": 527.599
+      },
+      "local_dwell_fraction": {
+        "bot_median": 0.966,
+        "delta_scaled": 0.87,
+        "human_median": 0.879
+      },
+      "pause_fraction": {
+        "bot_median": 0.088,
+        "delta_scaled": -1.267,
+        "human_median": 0.151
+      },
+      "pause_mean_sec": {
+        "bot_median": 0.906,
+        "delta_scaled": -0.58,
+        "human_median": 1.196
+      },
+      "speed_median": {
+        "bot_median": 298.5,
+        "delta_scaled": 2.406,
+        "human_median": 221.5
+      }
+    },
+    "dm4_control": {
+      "active_speed_p90": {
+        "bot_median": 368.2,
+        "delta_scaled": 0.688,
+        "human_median": 346.2
+      },
+      "cells_pm": {
+        "bot_median": 47.805,
+        "delta_scaled": 0.335,
+        "human_median": 44.458
+      },
+      "direction_changes_pm": {
+        "bot_median": 54.811,
+        "delta_scaled": 2.501,
+        "human_median": 42.307
+      },
+      "gyration": {
+        "bot_median": 416.487,
+        "delta_scaled": -0.868,
+        "human_median": 527.599
+      },
+      "local_dwell_fraction": {
+        "bot_median": 0.938,
+        "delta_scaled": 0.594,
+        "human_median": 0.879
+      },
+      "pause_fraction": {
+        "bot_median": 0.061,
+        "delta_scaled": -1.809,
+        "human_median": 0.151
+      },
+      "pause_mean_sec": {
+        "bot_median": 0.643,
+        "delta_scaled": -1.107,
+        "human_median": 1.196
+      },
+      "speed_median": {
+        "bot_median": 320.0,
+        "delta_scaled": 3.078,
+        "human_median": 221.5
+      }
+    }
+  },
+  "reference_corpus": {
+    "human_tracks_per_map": {
+      "dm2": 7,
+      "dm3": 4,
+      "dm4": 11,
+      "e1m2": 5
+    },
+    "tapes": 73,
+    "validation": {
+      "method": "compare the same feature for the human, for bots in those same human sessions, and for bots in the botmatch arms",
+      "per_map": {
+        "dm2": {
+          "cells_pm": {
+            "bots_alone": 58.438,
+            "bots_with_a_human": 49.869,
+            "configuration_share_of_gap": 42.212,
+            "human_reference": 58.235
+          },
+          "gyration": {
+            "bots_alone": 726.83,
+            "bots_with_a_human": 725.931,
+            "configuration_share_of_gap": 0.011,
+            "human_reference": 811.278
+          },
+          "local_dwell_fraction": {
+            "bots_alone": 0.517,
+            "bots_with_a_human": 0.464,
+            "configuration_share_of_gap": 0.208,
+            "human_reference": 0.262
+          }
+        },
+        "dm4": {
+          "cells_pm": {
+            "bots_alone": 48.0,
+            "bots_with_a_human": 50.769,
+            "configuration_share_of_gap": 0.782,
+            "human_reference": 44.458
+          },
+          "gyration": {
+            "bots_alone": 389.367,
+            "bots_with_a_human": 437.342,
+            "configuration_share_of_gap": 0.347,
+            "human_reference": 527.599
+          },
+          "local_dwell_fraction": {
+            "bots_alone": 0.966,
+            "bots_with_a_human": 0.951,
+            "configuration_share_of_gap": 0.172,
+            "human_reference": 0.879
+          }
+        }
+      },
+      "question": "every human reference track was recorded hunting bots, while candidate tapes are bot-vs-bot. How much of each gap is that difference?",
+      "reading": "Bounded and small. On dm2 local dwell, bots alone sit at 0.517 and bots with a human at 0.464 against the human's 0.262, so roughly a fifth of the gap is match configuration and four fifths is the bot. Gyration is unchanged by the human's presence on both maps. The measured gaps are therefore mostly real bot properties."
+    }
+  },
+  "refused": [
+    {
+      "baseline_arm": {
+        "distance_median": 1.022,
+        "distance_range": [
+          1.017,
+          1.089
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": 0.409,
+          "cells_pm": 0.354,
+          "direction_changes_pm": 1.793,
+          "gyration": -1.08,
+          "local_dwell_fraction": 0.87,
+          "pause_fraction": -1.267,
+          "pause_mean_sec": -0.58,
+          "speed_median": 2.406
+        },
+        "stalls_median": 8,
+        "tapes": [
+          "gaitB_dm4_1",
+          "gaitB_dm4_2",
+          "gaitB_dm4_3"
+        ],
+        "world_deaths_median": 5
+      },
+      "candidate_arm": {
+        "distance_median": 0.973,
+        "distance_range": [
+          0.97,
+          1.342
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": 0.535,
+          "cells_pm": 0.265,
+          "direction_changes_pm": 2.259,
+          "gyration": -0.736,
+          "local_dwell_fraction": 1.143,
+          "pause_fraction": -1.214,
+          "pause_mean_sec": -0.773,
+          "speed_median": 2.214
+        },
+        "stalls_median": 21,
+        "tapes": [
+          "fan30_dm4_1",
+          "fan30_dm4_2",
+          "fan30_dm4_3"
+        ],
+        "world_deaths_median": 3
+      },
+      "change": "a 30 degree first rung ahead of the existing 50/100 rungs in Argus_HazardSteer",
+      "generalisation": "the churn is not the deflection step size, it is that the bot is pressed against geometry at all. Apex or corridor seats keeping routes off the walls would move this metric; steering changes will not.",
+      "intent": "cut counted path-heading swings, 37-49 per cent of which sat beside a hazard event",
+      "mechanism": {
+        "hazard_attributed_median": {
+          "baseline": 262,
+          "candidate": 235
+        },
+        "note": "counted heading swings attributed to the nearest preceding marker for that bot",
+        "reading": "a gentler deflection keeps the bot nearer the geometry it was avoiding, so it meets the adjacent wall instead; the slide clips velocity into that plane, a bigger heading change than the jink it replaced",
+        "wallslide_attributed_median": {
+          "baseline": 78,
+          "candidate": 126
+        },
+        "wallslide_firings_median": {
+          "baseline": 107,
+          "candidate": 145
+        }
+      },
+      "post_mortem_in_code": "src/argus.qc, Argus_HazardSteer, above the 50 degree rungs",
+      "verdict": "REVERTED: failed its own prediction and cost stalls"
+    },
+    {
+      "change": "stamp the lethal-void case in Argus_MoveHazard, so the cautious gait also fires where lava sits past the 280-unit floor probe",
+      "dm2_candidate": {
+        "distance_median": 1.099,
+        "distance_range": [
+          0.931,
+          1.268
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": 0.603,
+          "cells_pm": -0.592,
+          "direction_changes_pm": 2.213,
+          "gyration": -0.786,
+          "local_dwell_fraction": 2.165,
+          "pause_fraction": -0.099,
+          "pause_mean_sec": -0.485,
+          "speed_median": -1.258
+        },
+        "stalls_median": 35.0,
+        "tapes": [
+          "voidlava_dm2_1",
+          "voidlava_dm2_2"
+        ],
+        "world_deaths_median": 1.0
+      },
+      "dm2_kept_build": {
+        "distance_median": 1.008,
+        "distance_range": [
+          0.96,
+          1.058
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": 0.465,
+          "cells_pm": 0.02,
+          "direction_changes_pm": 1.848,
+          "gyration": -0.66,
+          "local_dwell_fraction": 2.549,
+          "pause_fraction": 0.423,
+          "pause_mean_sec": -0.037,
+          "speed_median": -0.104
+        },
+        "stalls_median": 36.5,
+        "tapes": [
+          "gaitB_dm2_1",
+          "gaitB_dm2_2",
+          "gaitB_dm2_3",
+          "gaitB_dm2_4"
+        ],
+        "world_deaths_median": 1.0
+      },
+      "dm4_candidate": {
+        "distance_median": 0.973,
+        "distance_range": [
+          0.898,
+          1.106
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": 0.475,
+          "cells_pm": 0.63,
+          "direction_changes_pm": 1.832,
+          "gyration": -0.759,
+          "local_dwell_fraction": 1.037,
+          "pause_fraction": -1.506,
+          "pause_mean_sec": -0.868,
+          "speed_median": 1.752
+        },
+        "stalls_median": 9,
+        "tapes": [
+          "voidlava_dm4_1",
+          "voidlava_dm4_2",
+          "voidlava_dm4_3"
+        ],
+        "world_deaths_median": 5
+      },
+      "dm4_kept_build": {
+        "distance_median": 1.022,
+        "distance_range": [
+          1.017,
+          1.089
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": 0.409,
+          "cells_pm": 0.354,
+          "direction_changes_pm": 1.793,
+          "gyration": -1.08,
+          "local_dwell_fraction": 0.87,
+          "pause_fraction": -1.267,
+          "pause_mean_sec": -0.58,
+          "speed_median": 2.406
+        },
+        "stalls_median": 8,
+        "tapes": [
+          "gaitB_dm4_1",
+          "gaitB_dm4_2",
+          "gaitB_dm4_3"
+        ],
+        "world_deaths_median": 5
+      },
+      "geometry_survey": {
+        "per_map": {
+          "dm2": {
+            "lethal_depth_range": [
+              284,
+              572
+            ],
+            "lethal_floor": 0,
+            "probe_directions": 1720,
+            "under_the_void": {
+              "lava": 24
+            },
+            "void": 24
+          },
+          "dm3": {
+            "lethal_depth_range": null,
+            "lethal_floor": 0,
+            "probe_directions": 1952,
+            "under_the_void": {
+              "solid": 41,
+              "water": 8
+            },
+            "void": 49
+          },
+          "dm4": {
+            "lethal_depth_range": [
+              284,
+              380
+            ],
+            "lethal_floor": 0,
+            "probe_directions": 1096,
+            "under_the_void": {
+              "lava": 18
+            },
+            "void": 18
+          },
+          "dm6": {
+            "lethal_depth_range": null,
+            "lethal_floor": 0,
+            "probe_directions": 1904,
+            "under_the_void": {
+              "solid": 31
+            },
+            "void": 31
+          }
+        },
+        "reach": 48,
+        "reading": [
+          "No probe direction from any waypoint on any surveyed map finds lava UNDERFOOT, because navgen seats waypoints off hazards by construction. The kept stamp therefore acts almost entirely from off-graph positions, which in practice means the dm4 pit - that is why it reads as a dm4 change and leaves dm2 alone.",
+          "Every void the guard vetoes on dm4 AND dm2 bottoms out in lava, so void-depth lava cannot distinguish a catwalk from a deck edge. dm3 and dm6 voids bottom out in stone or water and would not be touched at all."
+        ],
+        "tool": "tools/argus_voidprobe.py"
+      },
+      "intent": "close dm4's remaining median-gait gap at its walkway edges, which read as void rather than lava",
+      "post_mortem_in_code": "src/argus.qc, Argus_MoveHazard, in the void branch",
+      "verdict": "REVERTED: gained on dm4, lost the same trade on dm2"
+    },
+    {
+      "change": "a third distance rung in Argus_PickGoal: minor items read distance at 0.5x while the bot is armed, stocked and healthy",
+      "dm2_candidate": {
+        "distance_median": 1.918,
+        "distance_range": [
+          1.918,
+          1.918
+        ],
+        "engages": [
+          17
+        ],
+        "grabs": [
+          19
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": -0.162,
+          "cells_pm": -1.57,
+          "direction_changes_pm": 4.185,
+          "gyration": -1.374,
+          "local_dwell_fraction": 3.758,
+          "pause_fraction": -0.124,
+          "pause_mean_sec": 0.337,
+          "speed_median": -2.816
+        },
+        "stalls": [
+          30
+        ],
+        "tapes": [
+          "tour_dm2_1"
+        ]
+      },
+      "dm2_kept_build": {
+        "distance_median": 1.008,
+        "distance_range": [
+          0.96,
+          1.058
+        ],
+        "engages": [
+          45,
+          35,
+          28,
+          39
+        ],
+        "grabs": [
+          45,
+          26,
+          27,
+          57
+        ],
+        "per_feature_scaled": {
+          "active_speed_p90": 0.465,
+          "cells_pm": 0.02,
+          "direction_changes_pm": 1.848,
+          "gyration": -0.66,
+          "local_dwell_fraction": 2.549,
+          "pause_fraction": 0.423,
+          "pause_mean_sec": -0.037,
+          "speed_median": -0.104
+        },
+        "stalls": [
+          38,
+          62,
+          35,
+          25
+        ],
+        "tapes": [
+          "gaitB_dm2_1",
+          "gaitB_dm2_2",
+          "gaitB_dm2_3",
+          "gaitB_dm2_4"
+        ]
+      },
+      "errand_length": {
+        "candidate_dm2": {
+          "median": 521,
+          "n": 151,
+          "pct_under_1024": 80
+        },
+        "kept_dm2": {
+          "median": 547,
+          "n": 173,
+          "pct_under_1024": 68
+        }
+      },
+      "intent": "cut local dwell, the largest remaining gap (dm2 +2.549)",
+      "post_mortem_in_code": "src/argus.qc, Argus_PickGoal, at the distance curve",
+      "reading": [
+        "Errands got SHORTER, not longer, and local dwell got worse: flattening the curve compresses the scores, so the winning candidate flips between ticks and the bot dithers instead of committing.",
+        "A commuting bot picks nothing up, so it drops out of the atoms that qualified it for the flat curve and spends the rest of the match on the tight curve, poorer at everything.",
+        "Conclusion: the distance curve is not the cause of local dwell."
+      ],
+      "single_tape_note": "One dm2 tape, which is normally not enough on this map. It is enough here because the candidate is outside the kept arm's range on the targeted metric AND on engagements and pickups, and the errand-length mechanism check says it failed by design rather than by luck.",
+      "verdict": "REVERTED: did the opposite, and took the match economy with it"
+    },
+    {
+      "change": "none built - refuted by measurement before any code was written",
+      "hypothesis": "bots scrape walls because waypoints sit against them, so navgen's 5a2 seat-shift pass re-run on the shipped graphs would cut the heading churn the deflection-rung post-mortem blamed on geometry",
+      "reading": [
+        "Only 7 per cent of dm4 and dm2 waypoints are wall-adjacent by navgen's own bar, and none is worse than three open cardinals of four - the pass has largely done its job on these graphs.",
+        "Located wall slides sit near a wall-adjacent seat 6 per cent of the time on dm4 and 14 on dm2, against 95 to 99 per cent near ANY waypoint. Wall scraping is diffuse across everywhere a bot walks, not concentrated at tight seats, so re-seating would not touch it.",
+        "SEPARATE OBSERVATION, not acted on: dm3 carries 25 waypoints with ZERO open cardinals where dm4, dm2 and dm6 carry none. Promoted seats - pads, stair seats, sprint anchors - are exempt from the shift pass by design, so this may be legitimate; dm3 is not in this ladder and was not investigated."
+      ],
+      "tool": "tools/argus_voidprobe.py --clearance",
+      "verdict": "REFUTED, at no cost in tapes",
+      "wall_slide_correlation": {
+        "dm2": {
+          "located_wall_slides": 680,
+          "pct_near_a_tight_seat": 15,
+          "pct_near_any_seat": 95
+        },
+        "dm4": {
+          "located_wall_slides": 340,
+          "pct_near_a_tight_seat": 6,
+          "pct_near_any_seat": 100
+        }
+      },
+      "waypoint_clearance": {
+        "dm2": {
+          "by_open_cardinals": {
+            "3": 16,
+            "4": 199
+          },
+          "tight": 16,
+          "waypoints": 215
+        },
+        "dm3": {
+          "by_open_cardinals": {
+            "0": 25,
+            "3": 7,
+            "4": 212
+          },
+          "tight": 32,
+          "waypoints": 244
+        },
+        "dm4": {
+          "by_open_cardinals": {
+            "2": 1,
+            "3": 9,
+            "4": 127
+          },
+          "tight": 10,
+          "waypoints": 137
+        },
+        "dm6": {
+          "by_open_cardinals": {
+            "3": 17,
+            "4": 221
+          },
+          "tight": 17,
+          "waypoints": 238
+        }
+      }
+    }
+  ],
+  "retained_exploratory_tapes": {
+    "gaitA_dm4_1-3, gaitA_dm2_1-2": "any-brink cautious gait; convicted on dm2 speed (-2.60)",
+    "hum_cand2_dm4_1": "same defect, 11 of 23 stalls after the bot's own hesitation",
+    "hum_cand_dm4_1": "stall tail keyed on the window; damage cleared it",
+    "hum_ctl_dm4_1": "also serves as control tape 1 of the dm4 arm",
+    "hum_gait2_dm4_1": "length mixture, rate too low",
+    "hum_gait3_dm4_1": "rate raised without the stall-accounting tail: stalls 24",
+    "hum_gait_dm4_1/2": "first hesitation design, before the length mixture",
+    "hum_v3_dm4_1": "ar_hazhold veto: zero hesitations, the flag is sticky-on",
+    "hum_v4_dm4_1": "brink-time veto at 1.2 s, still too blunt on dm4",
+    "note": "Iteration tapes kept as the record of what was tried and refused. They are NOT part of the laddered arms above and must not be pooled with them.",
+    "probe_gaitdbg_dm4": "bail-reason instrumentation; removed before the ladder"
+  },
+  "source_sha256": "3e16329695ebd0297ac89cba165187d89e8eb250b0073dd6d5e22058a7c52ff6",
+  "status": "development; no installation, no cohorts",
+  "subject": "human-gait: deliberate hesitation and cautious gait beside lethal liquid"
+}

@@ -137,6 +137,60 @@ using the shared tape reader.
 - **Validation**: `python tools/test_tactic_review.py` exercises legacy tapes,
   multiword names and separation of checks, shots and applied aim share.
 
+---
+
+### 10. `argus_humanness.py`
+Map-matched movement distance between bot tracks and human reference tracks, read from ordinary `ARGLOG` telemetry rather than demo entity angles.
+- **Usage**:
+  ```bash
+  python tools/argus_humanness.py runs/candidate.log
+  python tools/argus_humanness.py --profile runs/ab_dm4_*.log
+  python tools/argus_humanness.py --human
+  python tools/argus_humanness.py --help
+  ```
+- **Behavior**:
+  - Scores eight distribution features per bot track against same-map human tracks and reports a normalised empirical Wasserstein distance scaled by the human interquartile range. Lower is closer.
+  - `--profile` adds SIGNED per-feature gaps. The scored distance is unsigned by construction: it says a feature is wrong without saying which way, which is the one thing a behaviour change needs.
+  - `--human` lists the reference corpus; `--reference` overrides it.
+  - Human and bot positions share cadence and precision, and bot tracks are not PVS-culled.
+- **Exit Code**: `0` on success or `--help`. The score is evidence, never a quality gate, and the corpus carries a known bias: every human track was recorded hunting bots.
+
+---
+
+### 11. `argus_gait.py`
+Attributes a tape's stationary windows to a deliberate pause or to something else.
+- **Usage**:
+  ```bash
+  python tools/argus_gait.py runs/my_session.log
+  python tools/argus_gait.py runs/*.log --max-hold 8 --attribute-sec 4
+  python tools/argus_gait.py --help
+  ```
+- **Behavior**:
+  - Freeze windows come from the shared `argus_tape.freeze_windows`, aligned with `MatchTape::freezes` in the Rust lab parser.
+  - A window is credited to a hesitation only when that bot's own `ARGUS <name> hesitate <heard|junction|settle>` marker sits just before it. A window with no marker near it is the pre-existing fight-pin class ([#322](https://github.com/saworbit/argus/issues/322)).
+  - A freeze count alone cannot separate the two, and both laddered maps produce long fight-pin freezes on unchanged code.
+- **Exit Code**: `0` when no stationary window is attributable to a chosen pause that outlasted its own hold or took damage, `1` when one is.
+
+---
+
+### 12. `argus_voidprobe.py`
+Offline hull-0 read of a shipped navigation graph, for the two questions the runtime's point-resolution probes cannot answer.
+- **Usage**:
+  ```bash
+  python tools/argus_voidprobe.py dm4
+  python tools/argus_voidprobe.py dm4 dm2 dm3 dm6 --clearance
+  python tools/argus_voidprobe.py dm4 --reach 52 --format json
+  python tools/argus_voidprobe.py --help
+  ```
+- **Behavior**:
+  - Reproduces `Argus_MoveHazard`'s 280-unit floor test for eight headings from every waypoint, and for the directions it would veto as void, reports what actually lies underneath and how far down.
+  - `--clearance` audits each waypoint's cardinal elbow room against navgen's own 5a2 seat-shift bar, so a shipped graph can be checked without regenerating it.
+  - Measured on the shipped graphs: no probe direction from any waypoint finds lava underfoot, every void dm4 and dm2 veto bottoms out in lava while dm3's and dm6's bottom out in stone or water, and 7 per cent of dm4 and dm2 waypoints sit within 24 units of a wall.
+- **Inputs**: `maps_local/<map>.bsp` and `src/argus_nav_<map>.qc.json`; maps missing either are skipped with a note.
+- **Exit Code**: `0` on success or `--help`.
+
+---
+
 Bot POV recording, PNG capture and video export use the Rust lab CLI:
 
 ```text

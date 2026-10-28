@@ -655,6 +655,24 @@ fn parse_one(text: &str) -> MatchTape {
                 *event_counts.entry("watch".to_string()).or_insert(0) += 1;
             } else if line.ends_with(" sprintjump") {
                 *event_counts.entry("sprintjump".to_string()).or_insert(0) += 1;
+            } else if line.contains(" hesitate ") {
+                // A chosen pause, with the reason it was chosen for. A 0.5 Hz
+                // telemetry row cannot tell one from a stall, and the two want
+                // opposite reactions, so the cause rides on the marker.
+                *event_counts.entry("hesitate".to_string()).or_insert(0) += 1;
+                if line.ends_with(" hesitate heard") {
+                    *event_counts
+                        .entry("hesitate_heard".to_string())
+                        .or_insert(0) += 1;
+                } else if line.ends_with(" hesitate junction") {
+                    *event_counts
+                        .entry("hesitate_junction".to_string())
+                        .or_insert(0) += 1;
+                } else if line.ends_with(" hesitate settle") {
+                    *event_counts
+                        .entry("hesitate_settle".to_string())
+                        .or_insert(0) += 1;
+                }
             } else if line.ends_with(" prefire") {
                 *event_counts.entry("prefire".to_string()).or_insert(0) += 1;
             } else if line.ends_with(" leadclip") {
@@ -1274,6 +1292,9 @@ ARGUS Carmack crossfire strafe\n\
 ARGUS Joe Rogan crossfire retreat\n\
 ARGUS Carmack coop catchup warp\n\
 ARGUS Joe Rogan unstick pinned '2526.7 -40.9 -66.0'\n\
+ARGUS Carmack hesitate heard\n\
+ARGUS Joe Rogan hesitate settle\n\
+ARGUS Joe Rogan hesitate junction\n\
 ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         let tape = parse_tape(text);
         assert_eq!(tape.event_counts.get("shove"), Some(&2));
@@ -1289,6 +1310,10 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
         assert_eq!(tape.event_counts.get("crossfire"), Some(&2));
         assert_eq!(tape.event_counts.get("crossfire_strafe"), Some(&1));
         assert_eq!(tape.event_counts.get("crossfire_retreat"), Some(&1));
+        assert_eq!(tape.event_counts.get("hesitate"), Some(&3));
+        assert_eq!(tape.event_counts.get("hesitate_heard"), Some(&1));
+        assert_eq!(tape.event_counts.get("hesitate_settle"), Some(&1));
+        assert_eq!(tape.event_counts.get("hesitate_junction"), Some(&1));
         // both rescue teleports are countable (#278)
         assert_eq!(tape.event_counts.get("coop_warp"), Some(&1));
         assert_eq!(tape.event_counts.get("unstick"), Some(&1));
