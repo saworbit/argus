@@ -1,0 +1,637 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -289,38 +289,6 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
+ .float  ar_watchtime;           // spawn watch: bias expires here
+ .float  ar_watchcool;           // spawn watch: one bet per episode
+ 
+-.float  ar_gaitpause;           // gait: hesitation window expires here.
+-                                // A timestamp, never a flag cleared at
+-                                // the top of Argus_AI - the ar_liftwait
+-                                // lesson (#271) is that a hold flag read
+-                                // on the AI tick is always 0, so a stamp
+-                                // is the only kind the stall gate can see
+-.float  ar_gaitroll;            // gait: next hesitation roll (the AI
+-                                // tick runs 5 Hz; rolling that often
+-                                // makes any probability a certainty)
+-.float  ar_gaitdwell;           // gait: personality deliberation appetite
+-.float  ar_gaitcause;           // gait: 1 heard, 2 junction, 3 settle
+-.float  ar_gaitmoved;           // gait: last frame at real gait speed,
+-                                // so a fresh stop can be told from a
+-                                // bot that has been stationary a while
+-.vector ar_gaitpos;             // gait: where the last hesitation was
+-                                // taken, so the same spot cannot host
+-                                // a chain of them
+-.float  ar_brink;               // last frame the brink guard actually
+-                                // deflected this bot (see the stamp in
+-                                // Argus_Physics for why ar_hazhold is
+-                                // not this)
+-.float  ar_brinkliquid;         // last time a hazard probe found LAVA or
+-                                // SLIME rather than a drop; stamped in
+-                                // Argus_MoveHazard
+-.float  ar_gaitquiet;           // gait: last frame the hold actually
+-                                // held. The stall detector reads THIS
+-                                // rather than the window, because the
+-                                // window is cleared by damage and a
+-                                // bot that was deliberately still a
+-                                // tenth of a second ago has not had
+-                                // time to travel 12 units yet
+-
+ .float  ar_wweap;               // utility appetites: how loudly each
+ .float  ar_wheal;               // item class calls to this personality
+ .float  ar_warmor;              // (multipliers on the goal scorer, set
+@@ -1423,32 +1391,6 @@ float(float myaw, float pdist) Argus_MoveHazard =
+             return TRUE;            // In co-op, companion on dry land must not fall off bridges into water
+         if (pointcontents (ahead - '0 0 280') == CONTENT_WATER)
+             return FALSE;
+-        // STAMPING THE LETHAL VOID HERE WAS TRIED AND REVERTED (the
+-        // human-gait ladder). The floor trace stops at 280 because that
+-        // is the survivable-drop line, so a lava surface further down
+-        // reads as plain emptiness, and the cautious gait in
+-        // Argus_Physics therefore never fires at the dm4 walkway edges
+-        // that most want it. Two extra point samples at 400 and 560
+-        // reached the lava and did raise dm4: median gait gap +2.406 to
+-        // +1.752 and distance 1.022 to 0.973 over three tapes.
+-        //
+-        // It failed on dm2, for a reason worth measuring ONCE and not
+-        // again. Sampling eight headings at the guard's own 48u reach
+-        // from every nav node: EVERY void this branch vetoes bottoms
+-        // out in lava, on both maps - 18 of 18 on dm4 at 256 to 383
+-        // down, 24 of 24 on dm2 at 256 to 575. So "lava under the void"
+-        // does not distinguish a dm4 catwalk from a dm2 deck edge, and
+-        // slowing for it took dm2's median gait from -0.104 to -1.258
+-        // against a human pinned at the 320 cap, with its heading churn
+-        // and overall distance worse too.
+-        //
+-        // What the kept stamp keys on instead is lava the probe finds
+-        // UNDERFOOT, within the survivable window. The same survey says
+-        // that fires on no probe direction from any nav node on either
+-        // map, because navgen seats waypoints off hazards by
+-        // construction - so the cautious gait acts almost entirely from
+-        // off-graph positions, which in practice means the dm4 pit.
+-        // That is why it reads as a dm4 change and leaves dm2 alone.
+         return TRUE;                // no floor within a survivable drop
+     }
+     c = pointcontents (trace_endpos + '0 0 2');
+@@ -1456,12 +1398,6 @@ float(float myaw, float pdist) Argus_MoveHazard =
+     {
+         if (Argus_HazardBridge (ahead))
+             return FALSE;
+-        // The one place in this function that knows the hazard is
+-        // LETHAL rather than merely a drop. Stamped, changing no
+-        // verdict and no control flow, because "near lava" and "near
+-        // a brink" turn out to be different questions and the gait
+-        // wants the first. See the cautious gait in Argus_Physics.
+-        self.ar_brinkliquid = time;
+         return TRUE;
+     }
+     return FALSE;
+@@ -1496,36 +1432,6 @@ float(float want, float pdist) Argus_HazardSteer =
+         if (hdiff <= 110 && !Argus_MoveHazard (self.ar_hazardyaw, 48))
+             return self.ar_hazardyaw;
+     }
+-    // A GENTLER 30 DEGREE RUNG AHEAD OF THESE WAS TRIED AND REVERTED
+-    // (the human-gait ladder). The reasoning was sound and the result
+-    // refuted it, so it is recorded here rather than tried again.
+-    //
+-    // The case: the map-matched movement distance counts a path heading
+-    // swing of 45 degrees or more between consecutive samples, so a 50
+-    // degree deflection scored one entering and one leaving, and
+-    // attributing every counted swing in two tapes put 37 to 49 per
+-    // cent of them beside a hazard event. A 30 degree rung tried first,
+-    // with all four old rungs intact behind it, should have moved a
+-    // third of them under the threshold for free.
+-    //
+-    // What happened instead, three dm4 tapes against three: the metric
+-    // it was built for went the WRONG WAY, pooled +1.793 to +2.259, and
+-    // stalls rose from a median of 8 to 20. The mechanism is visible in
+-    // the attribution. Hazard-attributed swings did fall, 262 to 235,
+-    // and wall-slide-attributed swings rose 78 to 126 with wall slide
+-    // firings up 107 to 145. A gentler deflection keeps the bot nearer
+-    // the geometry it was deflecting away from, so it meets the
+-    // adjacent wall instead, and the slide clips its velocity into that
+-    // plane - which is a bigger heading change than the jink it
+-    // replaced.
+-    //
+-    // The lesson generalises past this fan: the bot's heading churn is
+-    // not the deflection STEP SIZE, it is that the bot is pressed
+-    // against geometry at all. A cheaper fan rung cannot fix that, and
+-    // the same note explains why the step-lateral probe rescue turned
+-    // the '700 -800' wall-pin into wall-PRESSING in 2026-08-28. What
+-    // would move this metric is apex or corridor seats keeping routes
+-    // off the walls, which is geometry work, not steering work.
+     if (!Argus_MoveHazard (want + 50, pdist))
+         want = want + 50;
+     else if (!Argus_MoveHazard (want - 50, pdist))
+@@ -1929,47 +1835,6 @@ void() Argus_SupportButton =
+     self = bot; other = savedother; activator = savedactivator;
+ };
+ 
+-// ---- gait ----------------------------------------------------------
+-//
+-// A player does not hold forward for a whole match. The map-matched
+-// movement distance (tools/argus_humanness.py) says so in numbers: on
+-// dm4 the reference human pauses on 15.1 per cent of samples with a
+-// mean pause of 1.20 s, while bots pause on 6.8 per cent with a mean
+-// of 0.68, and the bot's median speed sits at 314 u/s against the
+-// human's 221. Perpetual motion at the gait cap is the single largest
+-// movement difference this project can measure, and it is also the
+-// most legible one to a spectator: nothing on screen ever stops to
+-// look at anything.
+-//
+-// TRUE while a deliberate hesitation is running. Every condition that
+-// makes a pause wrong is re-tested here rather than at the roll, so a
+-// stimulus arriving mid-pause ends it on the same frame: an enemy
+-// coming into view, damage taken, the ground going away, a typed hop
+-// arming, a mover or door taking over. That matters for more than
+-// behaviour - this project's hard gate is the tape-side freeze
+-// detector (6 s under 20 u/s, and ANY freeze taken under fire is a
+-// regression on its own), so a hesitation has to be a thing that
+-// cannot be standing still while something is happening to it.
+-float() Argus_GaitHold =
+-{
+-    if (self.ar_gaitpause <= time)
+-        return FALSE;
+-    if (self.ar_enemy != world || self.ar_pursuing || self.ar_retreating)
+-        return FALSE;
+-    if (time < self.ar_dodgetime || self.ar_tactic
+-        || time < self.ar_tactic_settle)
+-        return FALSE;
+-    if (!(self.flags & FL_ONGROUND) || self.ar_wetlevel >= 2)
+-        return FALSE;
+-    if (self.ar_liftwait || self.ar_hoplift || self.ar_hoptrain
+-        || self.ar_hopjump || self.ar_hoprj || self.ar_hopswim
+-        || self.ar_hopdoor || self.ar_sprintstate)
+-        return FALSE;
+-    if (self.ar_door != world || self.ar_taskgoal != world)
+-        return FALSE;
+-    return TRUE;
+-};
+-
+ void() Argus_Physics =
+ {
+     local vector wishdir, vh, rto;
+@@ -2387,47 +2252,6 @@ void() Argus_Physics =
+         if (!tacticmove && self.ar_hopjump == 1 && self.ar_sprintstate == 2
+             && self.ar_hopspeed > 0)
+             wdrag = self.ar_hopspeed;
+-        else if (!tacticmove && !self.ar_hopjump && !self.ar_hoprj
+-                 && !self.ar_hopswim && !self.ar_sprintstate)
+-        {
+-            // Hesitation releases the gait and lets stock friction do
+-            // the stopping, which is what a player releasing forward
+-            // actually feels: from 320 u/s the brake takes about
+-            // three quarters of a second, so the window is sized to
+-            // leave roughly a second genuinely still. No velocity is
+-            // zeroed and no branch is skipped - the brink guard, the
+-            // wall slide and walkmove all still run below, so a bot
+-            // that hesitates on a lip is as protected as one that
+-            // walks it.
+-            if (Argus_GaitHold ())
+-            {
+-                wdrag = 0;
+-                self.ar_gaitquiet = time;
+-            }
+-            // Cautious gait beside LETHAL liquid - lava or slime found
+-            // by a hazard probe in the last half second, not merely a
+-            // drop. A player creeps along a lava lip and jogs off a
+-            // ledge, and the distinction is also what makes this
+-            // self-targeting, which the first cut got wrong and the
+-            // tapes caught. Keying on "the guard deflected me" slowed
+-            // bots at every brink on every map: dm4 improved, where the
+-            // reference human's median gait is 221 u/s against the
+-            // bot's 314, and dm2 REGRESSED hard, because its human runs
+-            // at the 320 cap and its brinks are mostly honest drops -
+-            // median speed fell to 237 for a measured -2.60 against a
+-            // control sitting at +0.08, and it cost stalls and pickups
+-            // with it. Lava is the thing that is actually worth slowing
+-            // for, and it is scattered across dm4 while dm2 keeps it by
+-            // the trains.
+-            //
+-            // Out of combat only: strafe, dodge and the retreat fan all
+-            // spend speed as defence, and the typed hops above own
+-            // their approach speeds by construction (a 250 or 310
+-            // launch floor cannot be met from a slowed run).
+-            else if (self.ar_enemy == world && self.ar_mode != 0
+-                     && time < self.ar_brinkliquid + 0.5)
+-                wdrag = AR_MAXSPEED * 0.62;
+-        }
+         Argus_Accelerate (wishdir, wdrag);
+ 
+         vh = self.velocity;
+@@ -2728,16 +2552,6 @@ void() Argus_Physics =
+                 makevectors ('0 0 0' + myaw * '0 1 0');
+                 self.velocity_x = v_forward_x * spd;
+                 self.velocity_y = v_forward_y * spd;
+-                // "a brink is under me RIGHT NOW", stamped unthrottled.
+-                // ar_hazhold cannot answer that question: HazardSteer is
+-                // only ever entered after Argus_MoveHazard has already
+-                // failed the heading, so its own opening test fails too
+-                // and the clearing branch is unreachable - the flag goes
+-                // up on a bot's first deflection and stays up for the
+-                // life, cleared only by a boxed-in reverse. Reading it
+-                // as a live brink test made a lip-local gait change into
+-                // a permanent one and vetoed every hesitation on dm4.
+-                self.ar_brink = time;
+                 if (time > self.ar_nexthazlog)
+                 {
+                     self.ar_nexthazlog = time + 1;
+@@ -3210,14 +3024,6 @@ void(entity attacker, float dmg) Argus_Pain =
+ {
+     // flinch: tracking restarts, aim error widens for a moment
+     self.ar_track = time;
+-    // being shot ends a hesitation outright, and bars the next one for
+-    // a moment. Argus_GaitHold would release the gait anyway once an
+-    // enemy was acquired, but damage arrives from attackers the bot
+-    // cannot see, and standing still while losing health is the one
+-    // shape of pause this project treats as a hard regression.
+-    self.ar_gaitpause = 0;
+-    if (self.ar_gaitroll < time + 2)
+-        self.ar_gaitroll = time + 2;
+     // knockback can launch: the engine only flymoves STEP entities
+     // that are off the ground, so a strong vertical impulse has to
+     // clear FL_ONGROUND itself or the bot stays glued to the floor
+@@ -3397,16 +3203,10 @@ void() Argus_SetSkill =
+     self.ar_wheal = 1;
+     self.ar_warmor = 1;
+     self.ar_wpow = 1;
+-    // deliberation: the same personality axis the aim spring already
+-    // splits on, spent on the feet. The flick slot keeps moving; the
+-    // smooth operator, who already settles his aim and waits an extra
+-    // 50 ms on the trigger, is the one who stops at a corner.
+-    self.ar_gaitdwell = 1;
+     if (self.ar_slot == 0)
+     {
+         self.ar_wweap = 1.3;        // armed first, always
+         self.ar_warmor = 0.8;
+-        self.ar_gaitdwell = 0.75;
+     }
+     else if (self.ar_slot == 1)
+     {
+@@ -3420,14 +3220,12 @@ void() Argus_SetSkill =
+         // positioning-aware slice, not a smaller number here.
+         self.ar_warmor = 1.4;
+         self.ar_wpow = 0.8;
+-        self.ar_gaitdwell = 1.35;
+     }
+     else
+     {
+         self.ar_wheal = 0.8;        // slots 2 and 3: glory hounds
+         self.ar_warmor = 0.7;
+         self.ar_wpow = 1.5;
+-        self.ar_gaitdwell = 0.9;
+     }
+ };
+ 
+@@ -3666,13 +3464,6 @@ void() Argus_Respawn =
+     self.ar_lastpos = self.origin;
+     self.ar_nextstall = time + 2;
+     self.ar_stallrun = 0;
+-    // a fresh life starts moving: no inherited hesitation, a grace
+-    // period before the first one, and the spawn pad itself counts as
+-    // the last place one was taken, so nothing stands on it
+-    self.ar_gaitpause = 0;
+-    self.ar_gaitcause = 0;
+-    self.ar_gaitroll = time + 3;
+-    self.ar_gaitpos = self.origin;
+ 
+     oself = self;
+     droptofloor ();
+@@ -7151,32 +6942,6 @@ void() Argus_PickGoal =
+                     // packmate discount spread the roster across
+                     // control points, denial pressure and gunfire
+                     // investigation turn the commute into contact.
+-                    // A THIRD RUNG FOR AN UNHURRIED BOT WAS TRIED HERE AND
+-                    // REVERTED (the human-gait ladder). Reading distance at
+-                    // 0.5x while armed, stocked and healthy was meant to let
+-                    // the far half of the map compete for an errand, because
+-                    // bots hold one 1024-unit neighbourhood through 52 per
+-                    // cent of thirty-second windows on dm2 against the
+-                    // reference human's 26.
+-                    //
+-                    // It did the OPPOSITE, which is why it is recorded. The
+-                    // errands got SHORTER - median 521 units against 547, and
+-                    // 80 per cent under 1024 against 68 - local dwell got
+-                    // worse (+4.121 against a kept arm of +1.829 to +3.714),
+-                    // and the match economy fell with it: engagements 37 to
+-                    // 17, pickups 27 to 4, frags 11 to 6 on dm2.
+-                    //
+-                    // The reading: flattening this curve compresses the
+-                    // scores, so the winner flips between ticks and the bot
+-                    // dithers instead of committing; and a bot that commutes
+-                    // is not picking anything up, so it drops out of the
+-                    // atoms that qualified it and spends the rest of the
+-                    // match on the tight curve, poorer. The distance curve is
+-                    // NOT the cause of local dwell. See the note on the
+-                    // reference corpus in docs/behaviour-diagnostics.md:
+-                    // every human track was recorded hunting bots, and a
+-                    // player hunting a player roams for reasons no item
+-                    // scorer contains.
+                     if (v >= 40)
+                         sc = v * 320 / (dist * 0.4 + 160);
+                     else
+@@ -8062,12 +7827,6 @@ float() Argus_Unstick =
+     self.ar_mode = 0;
+     self.ar_failstreak = 0;
+     self.ar_stucktime = 0;
+-    // a bot that just had to be lifted out of geometry walks away from
+-    // it, rather than arriving and standing there
+-    self.ar_gaitpause = 0;
+-    self.ar_gaitcause = 0;
+-    if (self.ar_gaitroll < time + 3)
+-        self.ar_gaitroll = time + 3;
+     // plain console line: the ARGEVT verb set is closed, so this rides
+     // beside shove and routecache adopt and gets grepped the same way
+     dprint ("ARGUS ");
+@@ -8762,237 +8521,6 @@ void(float paused, entity reached) Argus_PlanObserve =
+     }
+ };
+ 
+-// Decide whether to hesitate, and say why.
+-//
+-// THE MEASUREMENT CAME FIRST AND IT INVERTED THE OBVIOUS FIX. A player
+-// on dm4 pauses 21.9 times per 185 s for 26.5 s in total, a mean of
+-// 1.20 s per pause (eleven reference tracks, --profile on the human
+-// corpus). Bots already pause 18 to 24 times - the COUNT was never
+-// wrong. They pause for 14 to 17 s in total, because each stop is a
+-// 0.6 s brake-and-go. So the gap is not missing pauses to insert, it
+-// is existing pauses that end too early, and a design that inserted
+-// fresh stops would have overshot the fraction while never touching
+-// the mean. (It also would have handed out free kills: every inserted
+-// stop is a new occasion to be shot standing still, where a lengthened
+-// one is not.)
+-//
+-// Hence two cases, weighted the way the numbers ask:
+-//
+-//   settle    the common one. The bot has just come off gait speed for
+-//             its own reasons - a corner, an arrival, a deflection -
+-//             and instead of snapping straight back to 320 it takes
+-//             the beat a player takes. Adds no stop, lengthens one.
+-//   heard     the rare, legible one. Something fired or was taken out
+-//             of sight, far enough off to be news rather than a fight
+-//             already lost, so the bot stops and looks at it. The
+-//             glance at a sound has existed since the ears slice and
+-//             never once broke stride.
+-//   junction  likewise rare: the hop after the one being walked turns
+-//             hard, so the bot stops at the corner and looks round it
+-//             before committing.
+-//
+-// A stuck bot must never be able to dress its problem up as
+-// deliberation. That would hide a defect AND feed the tape-side freeze
+-// detector a longer run to find, and an under-fire freeze is a
+-// regression on its own in this project. So the settle case demands a
+-// FRESH stop: real gait speed within the last second, no stall run
+-// open. A bot that has been standing still, dithering at a lip or
+-// pinned in geometry satisfies neither.
+-void() Argus_Hesitate =
+-{
+-    local vector to;
+-    local float p, turn, spd, settle, hold;
+-    local entity nx;
+-
+-    if (self.ar_skill < 1 || coop > 0)
+-        return;                 // cognition-gated like the hunch and the
+-                                // spawn watch (v3.76); the co-op
+-                                // companion owes a human an escort
+-    to = self.velocity;
+-    to_z = 0;
+-    spd = vlen (to);
+-    if (spd > 150)
+-        self.ar_gaitmoved = time;
+-    if (time < self.ar_gaitroll || Argus_GaitHold ())
+-        return;
+-    self.ar_gaitroll = time + 0.4;
+-    if (self.ar_enemy != world || self.ar_pursuing || self.ar_retreating)
+-        return;
+-    if (time < self.ar_seen + 2.5 || time < self.ar_dodgetime)
+-        return;                 // a fight just ended: pursuit owns this
+-    if (self.ar_tactic || time < self.ar_tactic_settle)
+-        return;
+-    if (!(self.flags & FL_ONGROUND) || self.ar_wetlevel >= 2)
+-        return;
+-    if (self.ar_liftwait || self.ar_hoplift || self.ar_hoptrain
+-        || self.ar_hopjump || self.ar_hoprj || self.ar_hopswim
+-        || self.ar_hopdoor || self.ar_sprintstate)
+-        return;
+-    if (self.ar_door != world || self.ar_taskgoal != world)
+-        return;
+-    if (self.ar_mode == 1)
+-        return;                 // direct seeking includes the item-clock
+-                                // orbit, which is already a deliberate
+-                                // loiter with its own rate and its own
+-                                // reason to keep moving
+-    if (self.super_damage_finished > time || self.invincible_finished > time)
+-        return;                 // carrying the quad is a hunt (v3.81) and
+-                                // the pentagram is a clock, not a stroll
+-    if (self.ar_stallrun)
+-        return;                 // already not getting anywhere
+-    // NOT ON A LIP. This project already knows what a bot that arrives
+-    // at a ledge without momentum does: CheckBottom refuses the step,
+-    // speed never builds, and recovery jump-cycles in place (the
+-    // '2640 -50 120' pin, v366). A pause there manufactures exactly
+-    // that, and it showed - stalls correlated with the bot's own
+-    // hesitations, eleven of twenty-three in one dm4 tape, piled on the
+-    // chronic walkway cells. A player stops in a corridor, not on an
+-    // edge. Two tests, because one was not enough: the guard must not
+-    // be deflecting right now, AND the heading the bot will resume on
+-    // has to have survivable floor under it. The time stamp alone is
+-    // too blunt on a map that is nearly all brink - at 1.2 s it vetoed
+-    // every hesitation dm4 had - and a stamp cannot answer the
+-    // question that actually matters, which is whether this spot can be
+-    // walked out of from a standing start.
+-    if (time < self.ar_brink + 0.6)
+-        return;
+-    if (Argus_MoveHazard (self.ar_moveyaw, 48))
+-        return;
+-
+-    // A fresh stop: off gait speed, but moving properly a moment ago.
+-    settle = (spd < 60 && time < self.ar_gaitmoved + 1.1);
+-    if (!settle && spd < 150)
+-        return;                 // stationary for a while, or crawling:
+-                                // not a stop this bot just chose to make
+-    if (vlen (self.origin - self.ar_gaitpos) < 200)
+-        return;                 // one hesitation per place. Awkward
+-                                // geometry stops a bot repeatedly, and
+-                                // without this the settle case chains
+-                                // there: stop, hold, release, stop
+-                                // again, which is a dither wearing a
+-                                // reason rather than a player thinking
+-
+-    p = 0;
+-    self.ar_gaitcause = 0;
+-    if (self.ar_sndtime > time - 0.6
+-        && vlen (self.ar_sndpos - self.origin) > 500)
+-    {
+-        p = 0.30;
+-        self.ar_gaitcause = 1;
+-    }
+-    else if (self.ar_mode == 2 && self.ar_node != world && !settle)
+-    {
+-        nx = Argus_GetNext (self.ar_node, self);
+-        if (nx != world && vlen (self.origin - self.ar_node.origin) < 112)
+-        {
+-            to = nx.origin - self.ar_node.origin;
+-            to_z = 0;
+-            if (vlen (to) > 32)
+-            {
+-                turn = vectoyaw (to) - self.ar_moveyaw;
+-                while (turn > 180)  turn = turn - 360;
+-                while (turn < -180) turn = turn + 360;
+-                if (fabs (turn) > 65)
+-                {
+-                    p = 0.10;
+-                    self.ar_gaitcause = 2;
+-                }
+-            }
+-        }
+-    }
+-    if (!self.ar_gaitcause)
+-    {
+-        // No stimulus. A player still stops, and without this the
+-        // pause rate would track gunfire density instead of being a
+-        // property of the bot - quiet stretches of a map would look
+-        // exactly as mechanical as before. A fresh stop is nearly
+-        // free, because lengthening a stop the bot was already making
+-        // adds no new occasion to be shot standing still, so it is
+-        // taken far more readily than a stop from full gait.
+-        if (settle)
+-            p = 0.70;
+-        else
+-            p = 0.17;
+-        self.ar_gaitcause = 3;
+-    }
+-    p = p * self.ar_gaitdwell;
+-    if (random () > p)
+-    {
+-        self.ar_gaitcause = 0;
+-        return;
+-    }
+-
+-    // HOW LONG, AND WHY IT IS A MIXTURE RATHER THAN A NUMBER. The
+-    // reference pause lengths on dm4 are graded and heavy-tailed: 51
+-    // per cent of a player's pauses are the shortest the 0.5 s tape
+-    // cadence can record, 23 per cent land near 1 s, 14 per cent run
+-    // 1.5 to 2 s and 9 per cent are longer still. The shipped bot's
+-    // histogram is a spike - 83 per cent at the floor, a hole where
+-    // the human's second mode is, and a small clump at 1.5 to 2 s
+-    // from stalls and mover waits. One fixed window would move the
+-    // mean and reproduce none of that shape, which is the difference
+-    // between a bot that pauses and a bot that pauses like a person.
+-    // So the draw IS the distribution: a glance, a check, a proper
+-    // look around, and occasionally a real stop.
+-    turn = random ();
+-    if (turn < 0.28)
+-        hold = 0.5;             // a glance, barely a break in stride
+-    else if (turn < 0.58)
+-        hold = 1.0;             // a check
+-    else if (turn < 0.86)
+-        hold = 2.0;             // a look around
+-    else
+-        hold = 3.0;             // a proper stop. Capped here on
+-                                // purpose: the tape-side freeze
+-                                // detector starts at 6 s, this leaves
+-                                // the brake plus 3 s well inside it,
+-                                // and the cooldown below keeps two
+-                                // windows from ever abutting.
+-    // Stock friction, not a number: from full gait the first three
+-    // quarters of a second go on getting under the 20 u/s a tape
+-    // counts as paused, and from a near stop they do not. spd/420
+-    // tracks that closely enough over the band that matters and costs
+-    // nothing, so the window buys the stillness it meant to buy
+-    // wherever in the gait it fires.
+-    self.ar_gaitpause = time + hold + spd / 420;
+-    self.ar_gaitroll = self.ar_gaitpause + 3.5 + random () * 4.5;
+-    self.ar_gaitpos = self.origin;
+-
+-    // look where the reason is. A stop facing nothing is a statue; a
+-    // stop facing the thing that caused it is a player checking.
+-    if (self.ar_gaitcause == 1)
+-    {
+-        to = self.ar_sndpos - self.origin;
+-        to_z = 0;
+-        if (vlen (to) > 32)
+-            self.angles_y = vectoyaw (to);
+-    }
+-    else if (self.ar_gaitcause == 2 && self.ar_node != world)
+-    {
+-        nx = Argus_GetNext (self.ar_node, self);
+-        if (nx != world)
+-        {
+-            to = nx.origin - self.origin;
+-            to_z = 0;
+-            if (vlen (to) > 32)
+-                self.angles_y = vectoyaw (to);
+-        }
+-    }
+-
+-    // plain console line, greppable like shove and sprintjump: a 0.5 Hz
+-    // telemetry row cannot tell a chosen pause from a stall
+-    dprint ("ARGUS ");
+-    dprint (self.netname);
+-    dprint (" hesitate ");
+-    if (self.ar_gaitcause == 1)
+-        dprint ("heard");
+-    else if (self.ar_gaitcause == 2)
+-        dprint ("junction");
+-    else
+-        dprint ("settle");
+-    dprint ("\n");
+-};
+-
+ // A flat walking handoff needs a landed, body-clear entry. The eye ray can
+ // clear the next corridor while the side of the body still clips its mouth.
+ // Keep typed transitions, height changes and final-goal arrival as before.
+@@ -9084,8 +8612,6 @@ void() Argus_AI =
+             Argus_Chat (0);
+         }
+ 
+-        Argus_Hesitate ();
+-
+         // patrol stance: hold the best mid-range weapon between fights
+         if (self.ar_enemy == world)
+             // Patrol holding has no live opponent/stack trade to read. The
+@@ -10635,33 +10161,8 @@ void() Argus_AI =
+             || self.ar_hoptrain || self.ar_hopjump || self.ar_hoprj
+             || self.ar_hopswim || self.ar_door != world, world);
+         if (vlen (self.origin - self.ar_lastpos) < 12 && !fighting
+-            && !self.ar_liftwait && !self.ar_hoplift
+-            && time >= self.ar_gaitquiet + 0.7)
+-        {
+-            // A chosen hesitation is a designed wait, exactly like the
+-            // mover park above, and the detector has always skipped
+-            // those. The suppression keys on ar_gaitquiet - the last
+-            // frame the hold ACTUALLY held, stamped by physics - and
+-            // runs one detector period past it. Both halves of that
+-            // were paid for:
+-            //
+-            // The tail, because ar_lastpos is stamped every 0.7 s
+-            // whether the bot is held or not, so the first check after
+-            // a release compares against a position recorded while the
+-            // bot was deliberately still. Without it, raising the
+-            // hesitation rate took dm4 stalls from 5 to 24 across six
+-            // different nodes - an accounting artifact, not a place a
+-            // bot could not leave.
+-            //
+-            // Keying on the held frame rather than on the window,
+-            // because damage clears the window outright, and a bot shot
+-            // by someone it cannot see is not fighting by this
+-            // function's reckoning. Reading the window counted a stall
+-            // the instant that happened, while the bot was still
+-            // standing where the pause had left it: ten of fifteen dm4
+-            // stalls in one tape landed within six seconds of the same
+-            // bot's own hesitation. A genuine stall outlives the tail
+-            // and is still counted.
++            && !self.ar_liftwait && !self.ar_hoplift)
++        {
+             self.ar_stalls = self.ar_stalls + 1;
+             self.ar_stallrun = self.ar_stallrun + 1;
+             Argus_Event ("stall");
+@@ -10920,9 +10421,6 @@ void(string bname) Argus_SpawnOne =
+     bot.angles_y = spot.angles_y;
+     bot.ar_moveyaw = bot.angles_y;
+     bot.ar_lastpos = bot.origin;
+-    bot.ar_gaitpos = bot.origin;    // gait: the pad is not a place to
+-                                    // stand and think about it
+-    bot.ar_gaitroll = time + 3;
+     bot.ar_nextstall = time + 2;
+ 
+     oself = self;
