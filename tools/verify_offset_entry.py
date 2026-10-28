@@ -89,6 +89,47 @@ def record_case(output, results, variant, case, text, **identity):
     return row
 
 
+def stage_offset(folder, variant):
+    """Stage the exact private sources used by the native offset trials."""
+    if variant not in {'current', 'old_handoff'}:
+        raise ValueError('unknown offset variant: '+variant)
+    prepare(folder);src=folder/'src'
+    code=(src/'argus.qc').read_text()
+    if variant=='old_handoff':
+        code,count=re.subn(r'float\(entity node\) Argus_WalkArrivalReady =\n\{.*?^\};',
+            'float(entity node) Argus_WalkArrivalReady = { return TRUE; };',code,flags=re.M|re.S)
+        assert count==1
+    # Passive private prints at the actual branch, without new traces.
+    anchor='                oldnode = self.ar_node;'
+    assert code.count(anchor)==1
+    code=code.replace(anchor,'                if (self == oe_bot) { dprint ("OETRACE handoff "); dprint (vtos (self.origin)); dprint ("\\n"); }\n'+anchor)
+    anchor='    if (cspd < '
+    at=code.index(anchor,code.index('Argus_WallSlide ='))
+    code=code[:at]+'''    if (self == oe_bot && time >= oe_slide_next)
+    {
+        oe_slide_next = time + 0.2;
+        dprint ("OETRACE slide speed "); dprint (ftos (cspd));
+        dprint (" normal "); dprint (vtos (n)); dprint ("\\n");
+    }
+'''+code[at:]
+    code='entity oe_bot; float oe_slide_next;\n'+code
+    (src/'argus.qc').write_text(code,encoding='utf-8')
+    fixture=(ROOT/'tools/fixtures/offset_entry.qc').read_text().replace('entity oe_bot,','entity')
+    fixture=fixture.replace(', oe_slide_next;', ';')
+    audit_fixture(fixture)
+    (src/'offset_entry.qc').write_text(fixture,encoding='utf-8')
+    p=src/'progs.src';p.write_text(p.read_text().replace('\nworld.qc\n','\noffset_entry.qc\nworld.qc\n'))
+    p=src/'world.qc';world=p.read_text();start=world.index('    if (cvar ("scratch2") >= 3) PlanPhysicalEdges ();')
+    end=world.index('else PlanEscapeFixture ();',start)+len('else PlanEscapeFixture ();')
+    p.write_text(world[:start]+'    OffsetEntryFixture ();'+world[end:])
+    final_tree=hashlib.sha256()
+    for item in sorted(src.rglob('*')):
+        if item.is_file() and item.suffix in {'.qc','.src'}:
+            final_tree.update(item.relative_to(src).as_posix().encode()+b'\0'+item.read_bytes())
+    save(folder/'offset-source.json',dict(variant=variant,production_sha256=sha(ROOT/'src/argus.qc'),
+        build_sha256=sha(src/'argus.qc'),fixture_sha256=sha(src/'offset_entry.qc'),final_tree_sha256=final_tree.hexdigest()))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True, help='new directory beneath backups/')
@@ -118,41 +159,7 @@ def main():
     results=[]
     try:
         for variant in variants:
-            folder=output/variant;prepare(folder);src=folder/'src'
-            code=(src/'argus.qc').read_text()
-            if variant=='old_handoff':
-                code,count=re.subn(r'float\(entity node\) Argus_WalkArrivalReady =\n\{.*?^\};',
-                    'float(entity node) Argus_WalkArrivalReady = { return TRUE; };',code,flags=re.M|re.S)
-                assert count==1
-            # Passive private prints at the actual branch, without new traces.
-            anchor='                oldnode = self.ar_node;'
-            assert code.count(anchor)==1
-            code=code.replace(anchor,'                if (self == oe_bot) { dprint ("OETRACE handoff "); dprint (vtos (self.origin)); dprint ("\\n"); }\n'+anchor)
-            anchor='    if (cspd < '
-            at=code.index(anchor,code.index('Argus_WallSlide ='))
-            code=code[:at]+'''    if (self == oe_bot && time >= oe_slide_next)
-    {
-        oe_slide_next = time + 0.2;
-        dprint ("OETRACE slide speed "); dprint (ftos (cspd));
-        dprint (" normal "); dprint (vtos (n)); dprint ("\\n");
-    }
-'''+code[at:]
-            code='entity oe_bot; float oe_slide_next;\n'+code
-            (src/'argus.qc').write_text(code,encoding='utf-8')
-            fixture=(ROOT/'tools/fixtures/offset_entry.qc').read_text().replace('entity oe_bot,','entity')
-            fixture=fixture.replace(', oe_slide_next;', ';')
-            audit_fixture(fixture)
-            (src/'offset_entry.qc').write_text(fixture,encoding='utf-8')
-            p=src/'progs.src';p.write_text(p.read_text().replace('\nworld.qc\n','\noffset_entry.qc\nworld.qc\n'))
-            p=src/'world.qc';world=p.read_text();start=world.index('    if (cvar ("scratch2") >= 3) PlanPhysicalEdges ();')
-            end=world.index('else PlanEscapeFixture ();',start)+len('else PlanEscapeFixture ();')
-            p.write_text(world[:start]+'    OffsetEntryFixture ();'+world[end:])
-            final_tree=hashlib.sha256()
-            for item in sorted(src.rglob('*')):
-                if item.is_file() and item.suffix in {'.qc','.src'}:
-                    final_tree.update(item.relative_to(src).as_posix().encode()+b'\0'+item.read_bytes())
-            save(folder/'offset-source.json',dict(variant=variant,production_sha256=sha(ROOT/'src/argus.qc'),
-                build_sha256=sha(src/'argus.qc'),fixture_sha256=sha(src/'offset_entry.qc'),final_tree_sha256=final_tree.hexdigest()))
+            folder=output/variant;stage_offset(folder,variant);src=folder/'src'
             env=dict(ARGUS_SRC=str(src),ARGUS_PROGS=str(folder/'lq1/progs.dat'),ARGUS_RUNS=str(folder/'runs'),ARGUS_BASEDIR=str(output/'base'),ARGUS_GAME=game,TOKIO_WORKER_THREADS='2')
             with (folder/'offset.stderr').open('w') as err:
                 lab=Lab(err,env)
