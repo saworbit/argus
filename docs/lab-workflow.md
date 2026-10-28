@@ -207,6 +207,25 @@ with one of these fixture names:
 | `button` | Real bot/player floor-button activation and disabled-support control |
 | `door` | Bounded opener lookup, activation acknowledgement and opening ownership/timeout |
 
+
+Compile-only CI also checks all 17 maintained variants across `muzzle`,
+`combat`, `health`, `button`, `door`, `plan` and `offset`. It reuses the native
+verifiers' staging helpers, including extracted production decision wrappers:
+
+```text
+python tools/compile_private_fixtures.py --help
+python tools/compile_private_fixtures.py --compiler <pinned-fteqcc> --family door --output backups/door-compile-1
+```
+
+Use the FTEQCC revision pinned in `.github/workflows/compile.yml`. Omit
+`--family` to compile every family serially. Supply a new output directory;
+existing evidence is refused. Each variant must produce a fresh id-format
+`progs.dat` and the compiler's id-format finish line. Source/compiler/binary
+hashes, logs and failure receipts remain in that directory. This needs no
+lab connection, engine, BSPs or historical snapshots and never installs a
+binary. It proves compilation only; native trials still determine fixture
+outcomes. CI runs it when sources, fixtures or Python staging helpers change.
+
 Shared failed-plan checks have a separate repeatable native driver:
 
 ```text

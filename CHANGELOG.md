@@ -27,6 +27,10 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Compile all maintained private QuakeC fixture families in CI using their
+  native staging helpers and the pinned compiler, with fresh outputs and
+  retained failure logs. No engine or game assets are required (#604).
+
 - Document private plan/offset fixture records, reproducible CLI options and
   acceptance limits. Separate current development status from earlier
   parked-state evidence and supplied game binaries.
