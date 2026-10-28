@@ -37,9 +37,9 @@ Examples:
 import argparse
 import json
 import math
-import struct
 from collections import Counter
 from pathlib import Path
+from argus_bsp import load_classifier as classifier
 
 # Hull-0 leaf contents, as the BSP stores them.
 SOLID, WATER, SLIME, LAVA = -2, -3, -4, -5
@@ -49,33 +49,6 @@ LETHAL = (SLIME, LAVA)
 # callers probe between 32 and 52 units ahead depending on gait speed.
 DROP_WINDOW = 280
 DEFAULT_REACH = 48
-
-
-def classifier(bsp_path):
-    """Hull-0 point contents, the same tree walk the analyser uses."""
-    data = Path(bsp_path).read_bytes()
-
-    def lump(index):
-        off, length = struct.unpack_from("<ii", data, 4 + index * 8)
-        return data[off : off + length]
-
-    raw = lump(1)
-    planes = [struct.unpack_from("<4f", raw, i * 20) for i in range(len(raw) // 20)]
-    raw = lump(5)
-    nodes = [struct.unpack_from("<i8h2H", raw, i * 24) for i in range(len(raw) // 24)]
-    raw = lump(10)
-    leaves = [struct.unpack_from("<2i6h2H4B", raw, i * 28) for i in range(len(raw) // 28)]
-    root = struct.unpack_from("<9f7i", lump(14), 0)[9]
-
-    def contents(x, y, z):
-        node = root
-        while node >= 0:
-            plane = planes[nodes[node][0]]
-            side = plane[0] * x + plane[1] * y + plane[2] * z - plane[3]
-            node = nodes[node][1] if side >= 0 else nodes[node][2]
-        return leaves[-1 - node][0]
-
-    return contents
 
 
 def waypoints(nav_path):

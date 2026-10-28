@@ -25,6 +25,12 @@ Plots BSP wireframe geometry, player telemetry trajectories, A/B match panels, a
   - `nav.json` *(optional)*: Navigation graph json (`argus_nav_<map>.qc.json`) to overlay waypoints and links.
 - **Exit Code**: `0` on success or `--help`, `1` on invalid arguments or missing input files.
 
+`analyze_match.py` is safe to import without running its CLI or loading plotting
+libraries. It and `argus_voidprobe.py` use the shared hull-0 reader in
+`argus_bsp.py`. The analyzer alone retains the no-BSP `z < -300` death fallback;
+with a BSP, lava/slime contents at the death origin or 24 units below remain
+authoritative. The void probe still requires a readable BSP.
+
 ---
 
 ### 2. `argus_reach.py`

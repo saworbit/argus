@@ -5,6 +5,7 @@ import json
 import math
 import os
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -43,6 +44,72 @@ class TestToolsCLI(unittest.TestCase):
         path = ROOT / "tools" / script_name
         cmd = [sys.executable, str(path), *args]
         return subprocess.run(cmd, capture_output=True, text=True, cwd=str(ROOT))
+
+    def test_analyze_match_import_has_no_cli_or_plotting_side_effects(self):
+        code = ("import sys; sys.path.insert(0, " + repr(str(ROOT/"tools")) + "); "
+                "sys.argv=['analyze_match.py', '--help']; import analyze_match; "
+                "assert 'matplotlib' not in sys.modules; print('safe import')")
+        with tempfile.TemporaryDirectory() as td:
+            result = subprocess.run([sys.executable, "-c", code], cwd=td,
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(result.stdout, "safe import\n")
+            self.assertEqual(list(Path(td).iterdir()), [])
+
+    def _hull0_bsp(self, path, root=1):
+        def node(plane, front, back):
+            return struct.pack("<i8h2H", plane, front, back, *([0]*8))
+        def leaf(contents):
+            return struct.pack("<2i6h2H4B", contents, *([0]*13))
+        parts = {
+            1: struct.pack("<4fi", 1, 0, 0, 0, 0) + struct.pack("<4fi", 0, 0, 1, 0, 2),
+            5: node(0, -3, -3) + node(1, -1, 2) + node(0, -2, -3),
+            10: leaf(-1) + leaf(-5) + leaf(-4),
+            14: struct.pack("<9f7i", *([0.0]*9), root, *([0]*6)),
+        }
+        data, entries = b"", []
+        for i in range(15):
+            part = parts.get(i, b"")
+            entries.append((124+len(data), len(part)))
+            data += part
+        path.write_bytes(struct.pack("<i", 29) + b"".join(struct.pack("<ii", *row) for row in entries) + data)
+
+    def test_analyzer_and_voidprobe_share_world_hull0_classification(self):
+        sys.path.insert(0, str(ROOT/"tools"))
+        import analyze_match
+        import argus_bsp
+        import argus_voidprobe
+        self.assertIs(argus_voidprobe.classifier, argus_bsp.load_classifier)
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td)/"world.bsp"
+            self._hull0_bsp(path)
+            for contents in (argus_voidprobe.classifier(path), analyze_match.bsp_contents_classifier(path)):
+                self.assertEqual(contents(1, 0, 10), -1)
+                self.assertEqual(contents(1, 0, -10), -5)
+                self.assertEqual(contents(-1, 0, -10), -4)
+            # A negative world headnode denotes a leaf directly.
+            self._hull0_bsp(path, root=-2)
+            self.assertEqual(argus_bsp.load_classifier(path)(-1, 0, 10), -5)
+
+    def test_analyzer_preserves_lava_death_boundary_and_missing_bsp_policy(self):
+        sys.path.insert(0, str(ROOT/"tools"))
+        import analyze_match
+        import argus_voidprobe
+        with tempfile.TemporaryDirectory() as td:
+            missing = Path(td)/"missing.bsp"
+            self.assertIsNone(analyze_match.bsp_contents_classifier(missing))
+            with self.assertRaises(OSError):
+                argus_voidprobe.classifier(missing)
+            self.assertFalse(analyze_match.death_is_lava(None, 0, 0, -300))
+            self.assertTrue(analyze_match.death_is_lava(None, 0, 0, -301))
+            for contents in (-2, -3):
+                self.assertFalse(analyze_match.death_is_lava(lambda *p: contents, 0, 0, -400))
+            path = Path(td)/"world.bsp"
+            self._hull0_bsp(path)
+            contents = analyze_match.bsp_contents_classifier(path)
+            self.assertTrue(analyze_match.death_is_lava(contents, 1, 0, 10))
+            self.assertTrue(analyze_match.death_is_lava(contents, -1, 0, 10))
+            self.assertFalse(analyze_match.death_is_lava(contents, 1, 0, 24))
 
     def test_analyze_match_missing_args(self):
         res = self.run_tool("analyze_match.py")
