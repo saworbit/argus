@@ -222,11 +222,11 @@ shifts a decimation seat when walls sit inside 24 units of it, so the obvious
 next move was to audit the shipped graphs for seats it missed. Measuring first
 cost nothing and settled it:
 
-| Map | Waypoints | Wall inside 24u | Worst clearance |
+| Map | Waypoints | Solid cardinal sample at 24u | Air-only cardinal count |
 |---|---|---|---|
 | dm4 | 137 | 10 (7%) | 2 of 4 open, one seat |
 | dm2 | 215 | 16 (7%) | 3 of 4 open |
-| dm3 | 244 | 32 (13%) | **25 seats fully boxed in** |
+| dm3 | 244 | 7 (3%) | 25 underwater seats have zero empty samples |
 | dm6 | 238 | 17 (7%) | 3 of 4 open |
 
 And the correlation that matters: of 340 located wall slides on dm4 and 680 on
@@ -235,12 +235,20 @@ seat, against 95 to 100 per cent within 96 units of any seat at all.** Wall
 scraping is diffuse across everywhere a bot walks; it is not concentrated at
 tight seats, so re-seating would not reach it. No ladder was run.
 
-A separate observation, recorded and not acted on: dm3 carries 25 waypoints with
-**zero** open cardinals where dm4, dm2 and dm6 carry none. Promoted seats - pads,
-stair seats, sprint anchors - are exempt from the shift pass by design, so this
-may be entirely legitimate. dm3 is not in this ladder and was not investigated;
-it is filed as [#608](https://github.com/saworbit/argus/issues/608).
-`tools/argus_voidprobe.py --clearance` reproduces the table.
+The original air-only tally counted 32 dm3 seats with a nonempty cardinal
+sample and described 25 as boxed in. Offline contents classification resolves
+that outlier: all 25 centres and all 100 cardinal samples are water
+(`CONTENTS_WATER = -3`), with no solid samples. Only seven dm3 seats have a
+solid cardinal sample. The other maps' nonempty counts equal their solid counts.
+
+`tools/argus_voidprobe.py --clearance` reproduces navgen's empty-space bar,
+which counts water as nonempty; its zero score is not proof of a wall or an
+impassable player hull. The graph sidecar does not retain promotion provenance,
+so this check does not label seats as ordinary or promoted. The water result
+removes the reported reason to re-seat them regardless of provenance. No graph,
+navgen, runtime rule or gameplay measurement changed, and no engine ran.
+See [#608](https://github.com/saworbit/argus/issues/608). Local input hashes and
+per-seat contents are retained in `backups/dm3-cardinal-water/evidence.json`.
 
 ### What the reference corpus is, and what that costs
 
