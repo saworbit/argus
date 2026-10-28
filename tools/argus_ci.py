@@ -12,14 +12,18 @@ usage:
   argus_ci.py eol                  committed LF text blobs contain no CRLF
   argus_ci.py tapes [--changed-files F]   evidence is append-once
   argus_ci.py nav                  graphs obey the runtime's limits
+  argus_ci.py links                tracked documentation paths and anchors resolve
 """
 import argparse
 import collections
 import hashlib
+import html
+from html.parser import HTMLParser
 import re
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -295,13 +299,147 @@ def check_nav(root, **_kw):
     return fails
 
 
+# ---------------------------------------------------------------- links
+
+
+def markdown_prose(text):
+    """Exclude fenced examples and HTML comments from link/heading inspection."""
+    lines, fence = [], None
+    for line in text.splitlines():
+        match = re.match(r"^ {0,3}(`{3,}|~{3,})", line)
+        if match:
+            run = match[1]
+            if fence is None:
+                fence = run
+            elif run[0] == fence[0] and len(run) >= len(fence):
+                fence = None
+            lines.append("")
+        else:
+            lines.append(line if fence is None else "")
+    return re.sub(r"<!--.*?-->", lambda m: "\n" * m[0].count("\n"), "\n".join(lines), flags=re.S)
+
+
+class _HtmlAnchors(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.anchors = set()
+
+    def handle_starttag(self, tag, attrs):
+        for key, value in attrs:
+            if value is not None and (key == "id" or tag == "a" and key == "name"):
+                self.anchors.add(value)
+
+
+def markdown_anchors(text):
+    """GitHub-style heading slugs (including duplicates) and explicit HTML IDs."""
+    prose = markdown_prose(text)
+    parser = _HtmlAnchors()
+    parser.feed(prose)
+    used = set()
+    previous = ""
+    for line in prose.splitlines():
+        heading = re.match(r"^ {0,3}(?:>\s*)*#{1,6}\s+(.+?)\s*#*\s*$", line)
+        title = heading[1] if heading else None
+        if re.fullmatch(r" {0,3}(?:=+|-+)\s*", line) and previous.strip():
+            title = previous.strip()
+        if title is not None:
+            title = re.sub(r"!?\[([^\]]+)\]\([^)]*\)", r"\1", title)
+            title = html.unescape(re.sub(r"<[^>]*>", "", title)).lower().strip()
+            slug = re.sub(r"[^\w\- ]", "", title).replace(" ", "-")
+            candidate, suffix = slug, 0
+            while candidate in used:
+                suffix += 1
+                candidate = slug + "-" + str(suffix)
+            used.add(candidate)
+        previous = line
+    return used | parser.anchors
+
+
+def _link_destination(text):
+    text = text.lstrip()
+    if text.startswith("<"):
+        end = text.find(">")
+        return text[1:end] if end >= 0 else ""
+    depth, escaped, end = 0, False, 0
+    for end, char in enumerate(text):
+        if escaped:
+            escaped = False
+            continue
+        if char == "\\":
+            escaped = True
+        elif char == "(":
+            depth += 1
+        elif char == ")":
+            if depth == 0:
+                break
+            depth -= 1
+        elif char.isspace() and depth == 0:
+            break
+    else:
+        end = len(text)
+    return re.sub(r"\\([!\"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~\\])", r"\1", text[:end])
+
+
+def markdown_links(text):
+    """Read inline/image destinations and reference definitions, excluding code."""
+    prose = markdown_prose(text)
+    prose = re.sub(r"(`+).*?\1", lambda m: "\n" * m[0].count("\n"), prose, flags=re.S)
+    for match in re.finditer(r"!?\[(?:\\.|[^\]\\\n])*\]\(", prose):
+        yield prose.count("\n", 0, match.start()) + 1, _link_destination(prose[match.end():])
+    for match in re.finditer(r"(?m)^ {0,3}\[[^\]\n]+\]:[ \t]*(.*)$", prose):
+        yield prose.count("\n", 0, match.start()) + 1, _link_destination(match[1])
+
+
+def check_links(root, **_kw):
+    """Check tracked Markdown relative paths/fragments; leave archived plans alone."""
+    tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root,
+                             capture_output=True, text=True, encoding="utf-8")
+    if tracked.returncode:
+        return ["links: git ls-files failed: " + tracked.stderr.strip()]
+    paths = [Path(name) for name in tracked.stdout.split("\0") if name
+             and Path(name).suffix.lower() == ".md"
+             and not name.startswith(("backups/", "docs/plans/"))]
+    fails, anchors = [], {}
+    for relative in paths:
+        source = root/relative
+        if not source.is_file():
+            fails.append("links: tracked Markdown is missing: " + str(relative))
+            continue
+        for line, destination in markdown_links(source.read_text(encoding="utf-8")):
+            destination = html.unescape(destination)
+            if not destination or destination.startswith(("/", "\\")):
+                continue
+            try:
+                parsed = urlsplit(destination)
+            except ValueError:
+                fails.append(f"links: {relative}:{line}: invalid destination {destination}")
+                continue
+            if parsed.scheme or parsed.netloc:
+                continue
+            target = (source.parent/unquote(parsed.path)).resolve() if parsed.path else source.resolve()
+            location = f"links: {relative}:{line}: {destination}"
+            if not target.exists():
+                fails.append(location + " (missing path)")
+            elif parsed.fragment:
+                if target.is_dir():
+                    target = target/"README.md"
+                if not target.is_file():
+                    fails.append(location + " (fragment has no document)")
+                    continue
+                if target not in anchors:
+                    anchors[target] = markdown_anchors(target.read_text(encoding="utf-8", errors="replace"))
+                if unquote(parsed.fragment) not in anchors[target]:
+                    fails.append(location + " (missing fragment)")
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
         description="Argus repo invariant battery",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__)
-    ap.add_argument("check", choices=["all", "ship", "eol", "tapes", "nav"])
+    ap.add_argument("check", choices=["all", "ship", "eol", "tapes", "nav", "links"])
     ap.add_argument("--root", default=str(ROOT))
     ap.add_argument("--changed-files")
     ap.add_argument("--base")
@@ -309,7 +447,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     root = Path(args.root)
 
-    names = ["ship", "eol", "tapes", "nav"] if args.check == "all" else [args.check]
+    names = ["ship", "eol", "tapes", "nav", "links"] if args.check == "all" else [args.check]
     fails = []
     for name in names:
         fn = CHECKS[name]
@@ -329,7 +467,7 @@ def main(argv=None):
 
 
 CHECKS = {"ship": check_ship, "eol": check_eol,
-          "tapes": check_tapes, "nav": check_nav}
+          "tapes": check_tapes, "nav": check_nav, "links": check_links}
 
 
 if __name__ == "__main__":
