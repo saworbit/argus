@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Step 1a, step 1b, rocket clearance and shared failed-plan recognition active; supported-speed route and deadline controls verified; no deployment |
+| Development source | Step 1a, step 1b, rocket clearance, shared failed-plan recognition and the human gait active; supported-speed route and deadline controls verified; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -30,6 +30,48 @@ passing botmatch does not establish better human play.
 - Compile all maintained private QuakeC fixture families in CI using their
   native staging helpers and the pinned compiler, with fresh outputs and
   retained failure logs. No engine or game assets are required (#604).
+
+- Add `tools/argus_voidprobe.py`, which reads two things about a shipped
+  graph that the runtime's point-resolution probes cannot: what lies under the
+  voids the hazard guard vetoes, and how much elbow room each waypoint has
+  against navgen's own seat-shift bar. Two gait changes were built on guesses
+  about the first and a third was about to be built on a guess about the
+  second. On the shipped graphs: no probe direction from any waypoint finds
+  lava underfoot, every void dm4 and dm2 veto bottoms out in lava while dm3's
+  and dm6's bottom out in stone or water, and 7 per cent of dm4 and dm2
+  waypoints sit within 24 units of a wall - against which only 6 and 15 per
+  cent of wall slides occur, so wall scraping is diffuse rather than seated.
+  dm3 separately carries 25 fully boxed-in waypoints, recorded and not
+  investigated.
+
+- Quantify what the human reference corpus costs as a comparison: every human
+  track was recorded hunting bots, while candidate tapes are bot-versus-bot.
+  Comparing the human, the bots in those same sessions and the bots in a
+  botmatch puts roughly a fifth of the dm2 local-dwell gap on match
+  configuration and four fifths on the bot, with gyration unchanged by the
+  human's presence. The gaps are mostly real bot properties.
+
+- Record four refused gait changes with their reasons, so none is tried
+  again. A gentler 30 degree deflection rung cut hazard-attributed heading
+  swings and raised wall-slide ones to compensate, taking the metric it
+  targeted the wrong way and stalls from a median of 8 to 21: the churn is not
+  the deflection step size, it is that the bot is pressed against geometry at
+  all. Stamping the lethal void improved dm4's gait gap to +1.752 and cost
+  dm2's the same trade as the first cautious-gait trigger, because every void
+  either map vetoes has lava under it, so the signal stops discriminating. A
+  flatter distance curve for an unhurried bot made its errands shorter rather
+  than longer, worsened the dwell it targeted and cut engagements 28-45 to 17:
+  the distance curve is not the cause of local dwell. The fourth, re-seating
+  waypoints off walls, was refuted by measurement before any code was written.
+  [Post-mortems](docs/behaviour-diagnostics.md#refused-a-gentler-first-rung-in-the-deflection-fan).
+
+- Report signed per-feature gaps from `tools/argus_humanness.py --profile`.
+  The scored distance is unsigned and says a feature is wrong without saying
+  which way, which is the one thing a behaviour change needs.
+
+- Add `tools/argus_gait.py`, which attributes stationary windows to a chosen
+  pause or to something else. A freeze count alone cannot tell them apart, and
+  both laddered maps produce long fight-pin freezes on unchanged code.
 
 - Document private plan/offset fixture records, reproducible CLI options and
   acceptance limits. Separate current development status from earlier
@@ -65,6 +107,22 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Synchronise the changelog status row, architecture notes, telemetry
+  grammar, agent command table and lab runbook with the gait work, and
+  record its follow-ups: the unreachable hazard hold (#607), dm3's fully
+  boxed-in waypoints (#608), the duplicated hull-0 classifier behind an
+  unimportable analyser (#609), the human session the measurement cannot
+  replace (#610) and the missing documentation link check (#611).
+
+- Give bots a human gait: pauses they choose, with a reason, and a slower
+  approach beside lava or slime. Map-matched movement distance improves on
+  both laddered maps - dm4 median 1.321 to 1.022, dm2 1.278 to 1.008 with the
+  four-a-side arms fully disjoint - at parity or better on stalls,
+  engagements, lava, route failures and freezes. New `ARGUS <name> hesitate`
+  marker, counted in briefs. Development source only; supplied binaries
+  unchanged, and no human session has played against it.
+  [Measurement, refusals and limits](docs/behaviour-diagnostics.md#human-gait-hesitation-and-cautious-liquid-approach).
 
 - Synchronise current status, private verification commands, control gates and
   fixture telemetry across the README, contribution guide and lab runbooks

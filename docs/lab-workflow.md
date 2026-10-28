@@ -162,12 +162,15 @@ python tools/test_muzzle_combat.py
 python tools/test_button_physical.py
 python tools/test_door_actuator.py
 python tools/test_private_fixtures.py
+python tools/test_tools_cli.py
 ```
 
 The pinned NumPy/SciPy requirements support historical cohort calculations;
 install them for the perception discovery command even though it launches no
-cohort. The muzzle module and `test_review_outputs.py` are blocking fast
-workflow checks. On restricted Windows runners, use a writable workspace
+cohort. The muzzle module, `test_review_outputs.py` and the CLI suite are blocking
+fast workflow checks. The CLI suite also carries the offline analysis tools -
+tape parity, humanness profiling, gait attribution and the graph void probe -
+and self-skips the cases that need machine-local maps or tapes. On restricted Windows runners, use a writable workspace
 temporary directory for `TEMP` and `TMP` if temporary-copy tests hit ACL errors.
 Fast-workflow coverage is tracked in [#585](https://github.com/saworbit/argus/issues/585).
 
