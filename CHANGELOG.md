@@ -27,6 +27,10 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Check tracked documentation paths, heading fragments and explicit HTML
+  anchors with `argus_ci.py links`, included in the blocking invariant battery.
+  Synchronise the focused local test list with all fast-CI suites (#611, #614).
+
 - Compile all maintained private QuakeC fixture families in CI using their
   native staging helpers and the pinned compiler, with fresh outputs and
   retained failure logs. No engine or game assets are required (#604).

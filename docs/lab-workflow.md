@@ -163,12 +163,24 @@ python tools/test_button_physical.py
 python tools/test_door_actuator.py
 python tools/test_private_fixtures.py
 python tools/test_tools_cli.py
+python tools/test_argus_navjson.py
+python tools/test_argus_tape.py
+python -m unittest discover -s tools -p "test_behaviour*.py"
+python tools/test_compile_private_fixtures.py
+python tools/test_argus_mapgate.py
 ```
+
+The repo invariant job also blocks on `python tools/argus_ci.py all`.
+Use `python tools/argus_ci.py links` to check only documentation paths and
+fragments, including explicit HTML anchors. It reads tracked Markdown files,
+ignores fenced/code examples and external URLs, and excludes archived
+`backups/` and `docs/plans/` documents. It needs no engine or network access.
 
 The pinned NumPy/SciPy requirements support historical cohort calculations;
 install them for the perception discovery command even though it launches no
-cohort. The muzzle module, `test_review_outputs.py` and the CLI suite are blocking
-fast workflow checks. The CLI suite also carries the offline analysis tools -
+cohort. Every suite listed above is a blocking check in the fast workflow's
+lab job; individual tests that require machine-local inputs may self-skip.
+The CLI suite also carries the offline analysis tools -
 tape parity, humanness profiling, gait attribution and the graph void probe -
 and self-skips the cases that need machine-local maps or tapes. On restricted Windows runners, use a writable workspace
 temporary directory for `TEMP` and `TMP` if temporary-copy tests hit ACL errors.

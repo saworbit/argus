@@ -1288,6 +1288,88 @@ tool_timeout_sec = 700
         res = subprocess.run([str(mcp_bin), "--help"], capture_output=True, text=True, cwd=str(ROOT))
         self.assertEqual(res.returncode, 0, res.stderr)
 
+    def _links_repo(self, root, files):
+        subprocess.run(["git", "init", "-q"], cwd=root, capture_output=True, check=True)
+        for name, text in files.items():
+            path = root/name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=root, capture_output=True, check=True)
+
+    def test_argus_ci_links_passes_on_tracked_documentation(self):
+        result = self.run_tool("argus_ci.py", "links")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("links: ok", result.stdout)
+
+    def test_argus_ci_links_accepts_heading_html_and_reference_anchors(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._links_repo(root, {
+                "README.md": '[good](docs/guide.md#first-heading)\n'
+                             '[legacy](docs/guide.md#v3-92)\n'
+                             '[named](docs/guide.md#named)\n'
+                             '[duplicate][ref]\n\n[ref]: docs/guide.md#first-heading-1 "title"\n',
+                "docs/guide.md": '# First `heading`\n<a id="v3-92"></a>\n'
+                                 '<a name="named"></a>\n# First heading\n',
+            })
+            result = self.run_tool("argus_ci.py", "links", "--root", td)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_argus_ci_links_rejects_missing_path_and_fragment(self):
+        for destination, message in (("missing.md", "missing path"),
+                                     ("guide.md#missing", "missing fragment")):
+            with self.subTest(destination=destination), tempfile.TemporaryDirectory() as td:
+                root = Path(td)
+                self._links_repo(root, {"README.md": f"[bad]({destination})\n", "guide.md": "# Present\n"})
+                result = self.run_tool("argus_ci.py", "links", "--root", td)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(message, result.stdout)
+                self.assertIn("README.md:1", result.stdout)
+
+    def test_argus_ci_links_skips_archives_untracked_examples_and_external_urls(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._links_repo(root, {
+                "README.md": '[web](https://example.invalid/no-document#absent)\n'
+                             '[mail](mailto:nobody@example.invalid)\n'
+                             '`[code](missing.md)`\n```md\n[example](missing.md)\n```\n'
+                             '<!-- [comment](missing.md) -->\n',
+                "backups/old.md": "[old](missing.md)",
+                "docs/plans/old.md": "[old](missing.md)",
+            })
+            (root/"untracked.md").write_text("[bad](missing.md)")
+            result = self.run_tool("argus_ci.py", "links", "--root", td)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_argus_ci_links_handles_encoded_spaces_parentheses_and_images(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._links_repo(root, {
+                "README.md": '[encoded](guide%20one.md#caf%C3%A9)\n'
+                             '[angle](<guide one.md#caf\u00e9>)\n'
+                             '![image](image(1).png)\n'
+                             '[nested](docs/nested.md)\n',
+                "guide one.md": "# Caf\u00e9\n",
+                "image(1).png": "placeholder",
+                "docs/nested.md": "[home](../README.md)\n",
+            })
+            result = self.run_tool("argus_ci.py", "links", "--root", td)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_argus_ci_links_does_not_accept_code_block_headings(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self._links_repo(root, {"README.md": "[bad](guide.md#sample)\n",
+                                   "guide.md": "```md\n# Sample\n```\n"})
+            result = self.run_tool("argus_ci.py", "links", "--root", td)
+            self.assertEqual(result.returncode, 1, result.stdout)
+            self.assertIn("missing fragment", result.stdout)
+
+    def test_argus_ci_all_includes_the_link_gate(self):
+        result = self.run_tool("argus_ci.py", "all")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("links: ok", result.stdout)
+
     def test_argus_ci_help(self):
         res = self.run_tool("argus_ci.py", "--help")
         self.assertEqual(res.returncode, 0)
