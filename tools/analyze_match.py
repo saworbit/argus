@@ -5,26 +5,8 @@ contents at the death position (z < -300 is the no-BSP fallback only).
 usage:
   analyze_match.py map.bsp logA [logB] out.png [nav.json]"""
 import re, struct, sys
+from argus_bsp import load_classifier
 from argus_tape import PAT as PAT_V1, LEGACY_SAMPLE as PAT_V0, parse_tape, deaths as tape_deaths
-
-args = sys.argv[1:]
-if "-h" in args or "--help" in args:
-    print(__doc__.strip())
-    sys.exit(0)
-
-if len(args) < 3:
-    print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
-    sys.exit(1)
-
-NAV = None
-if args[-1].endswith(".json"):
-    NAV = args[-1]; args = args[:-1]
-if len(args) < 3:
-    print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
-    sys.exit(1)
-BSP, LOGA = args[0], args[1]
-LOGB = args[2] if len(args) > 3 else None
-OUT = args[-1]
 
 def load_bsp(path):
     data = open(path, "rb").read()
@@ -40,30 +22,11 @@ def load_bsp(path):
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
 
 def bsp_contents_classifier(bsp_path):
-    """Hull-0 point contents for death classification. Returns a
-    contents(x, y, z) callable, or None if the BSP is unreadable."""
+    """Return the shared hull-0 reader, or None when the BSP cannot be opened."""
     try:
-        data = open(bsp_path, "rb").read()
+        return load_classifier(bsp_path)
     except OSError:
         return None
-    def lump(i):
-        off, ln = struct.unpack_from("<ii", data, 4 + i * 8)
-        return data[off:off + ln]
-    pl = lump(1)
-    planes = [struct.unpack_from("<4f", pl, i * 20) for i in range(len(pl) // 20)]
-    nd = lump(5)
-    nodes5 = [struct.unpack_from("<i8h2H", nd, i * 24) for i in range(len(nd) // 24)]
-    lf = lump(10)
-    leaves = [struct.unpack_from("<2i6h2H4B", lf, i * 28) for i in range(len(lf) // 28)]
-    hull0 = struct.unpack_from("<9f7i", lump(14), 0)[9]
-    def contents(x, y, z):
-        n = hull0
-        while n >= 0:
-            node = nodes5[n]
-            nx, ny, nz, d = planes[node[0]][:4]
-            n = node[1] if (nx * x + ny * y + nz * z - d) >= 0 else node[2]
-        return leaves[-1 - n][0]
-    return contents
 
 def death_is_lava(contents, x, y, z):
     # CLASSIFICATION BOUNDARY (2026-08-18): lava deaths were judged by
@@ -177,40 +140,67 @@ def panel(ax, verts, edges, mins, maxs, bots, st, fmt, title, deaths=()):
     ax.set_title(title, fontsize=11)
     ax.legend(loc="upper right", fontsize=8)
 
-verts, edges, mins, maxs = load_bsp(BSP)
-contents = bsp_contents_classifier(BSP)
-ba, fa, da = parse(LOGA); sa = stats(ba, fa, da, contents)
-print("[%s] fmt=%s" % (LOGA, fa))
-for n, s in sa.items(): print(" ", n, s)
+def main(argv=None):
+    """Run the existing analysis CLI; imports never read inputs or render plots."""
+    args = list(sys.argv[1:] if argv is None else argv)
+    if "-h" in args or "--help" in args:
+        print(__doc__.strip())
+        return 0
 
-try:
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-except ImportError:
-    raise SystemExit("analyze_match.py requires matplotlib to generate plots: pip install matplotlib")
+    if len(args) < 3:
+        print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
+        return 1
 
-if LOGB:
-    bb, fb, db = parse(LOGB); sb = stats(bb, fb, db, contents)
-    print("[%s] fmt=%s" % (LOGB, fb))
-    for n, s in sb.items(): print(" ", n, s)
-    # titles come from the actual inputs: the originals were hardcoded
-    # to the first-ever A/B ("v2 vs v3 on lqdm2") and every plot since
-    # inherited them (Shane's project review)
-    import os
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10.5))
-    if NAV: draw_nav(ax1, NAV)
-    panel(ax1, verts, edges, mins, maxs, ba, sa, fa,
-          "A: %s (x = death)" % os.path.basename(LOGA), da)
-    if NAV: draw_nav(ax2, NAV)
-    panel(ax2, verts, edges, mins, maxs, bb, sb, fb,
-          "B: %s (x = death)" % os.path.basename(LOGB), db)
-    fig.suptitle("Argus on %s - headless matches, vanilla protocol 15"
-                 % os.path.splitext(os.path.basename(BSP))[0], fontsize=13)
-else:
-    fig, ax = plt.subplots(figsize=(11, 11))
-    if NAV: draw_nav(ax, NAV)
-    panel(ax, verts, edges, mins, maxs, ba, sa, fa, LOGA, da)
-plt.tight_layout()
-plt.savefig(OUT, dpi=130)
-print("wrote", OUT)
+    NAV = None
+    if args[-1].endswith(".json"):
+        NAV = args[-1]; args = args[:-1]
+    if len(args) < 3:
+        print(f"error: analyze_match.py requires at least map.bsp, logA, and out.png\n\n{__doc__.strip()}", file=sys.stderr)
+        return 1
+    BSP, LOGA = args[0], args[1]
+    LOGB = args[2] if len(args) > 3 else None
+    OUT = args[-1]
+
+    verts, edges, mins, maxs = load_bsp(BSP)
+    contents = bsp_contents_classifier(BSP)
+    ba, fa, da = parse(LOGA); sa = stats(ba, fa, da, contents)
+    print("[%s] fmt=%s" % (LOGA, fa))
+    for n, s in sa.items(): print(" ", n, s)
+
+    try:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+    except ImportError:
+        raise SystemExit("analyze_match.py requires matplotlib to generate plots: pip install matplotlib")
+
+    if LOGB:
+        bb, fb, db = parse(LOGB); sb = stats(bb, fb, db, contents)
+        print("[%s] fmt=%s" % (LOGB, fb))
+        for n, s in sb.items(): print(" ", n, s)
+        # titles come from the actual inputs: the originals were hardcoded
+        # to the first-ever A/B ("v2 vs v3 on lqdm2") and every plot since
+        # inherited them (Shane's project review)
+        import os
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(20, 10.5))
+        if NAV: draw_nav(ax1, NAV)
+        panel(ax1, verts, edges, mins, maxs, ba, sa, fa,
+              "A: %s (x = death)" % os.path.basename(LOGA), da)
+        if NAV: draw_nav(ax2, NAV)
+        panel(ax2, verts, edges, mins, maxs, bb, sb, fb,
+              "B: %s (x = death)" % os.path.basename(LOGB), db)
+        fig.suptitle("Argus on %s - headless matches, vanilla protocol 15"
+                     % os.path.splitext(os.path.basename(BSP))[0], fontsize=13)
+    else:
+        fig, ax = plt.subplots(figsize=(11, 11))
+        if NAV: draw_nav(ax, NAV)
+        panel(ax, verts, edges, mins, maxs, ba, sa, fa, LOGA, da)
+    plt.tight_layout()
+    plt.savefig(OUT, dpi=130)
+    print("wrote", OUT)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

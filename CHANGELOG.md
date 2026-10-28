@@ -215,6 +215,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Make `analyze_match.py` import-safe and share its hull-0 contents reader
+  with the void probe. Existing CLI behavior and the no-BSP lava-death
+  classification fallback are unchanged (#609).
+
 - Retain nearby opening-door ownership until the slab finishes, with one
   bounded eight-second opening phase and unchanged remote/past-door handling
   (#602). Add shipped-speed physical deadline and premature-release controls
