@@ -1366,9 +1366,12 @@ tool_timeout_sec = 700
             self.assertIn("missing fragment", result.stdout)
 
     def test_argus_ci_all_includes_the_link_gate(self):
-        result = self.run_tool("argus_ci.py", "all")
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-        self.assertIn("links: ok", result.stdout)
+        # Match the invariant job: shallow PR checkouts have no origin/main.
+        with tempfile.TemporaryDirectory() as td:
+            changed = self._changed_file(td, [])
+            result = self.run_tool("argus_ci.py", "all", "--changed-files", changed)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            self.assertIn("links: ok", result.stdout)
 
     def test_argus_ci_help(self):
         res = self.run_tool("argus_ci.py", "--help")
