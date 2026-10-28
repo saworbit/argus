@@ -45,8 +45,8 @@ passing botmatch does not establish better human play.
   and dm6's bottom out in stone or water, and 7 per cent of dm4 and dm2
   waypoints sit within 24 units of a wall - against which only 6 and 15 per
   cent of wall slides occur, so wall scraping is diffuse rather than seated.
-  dm3 separately carries 25 fully boxed-in waypoints, recorded and not
-  investigated.
+  dm3's 25 zero-empty-cardinal seats were subsequently classified as water,
+  rather than boxed-in walls; seven dm3 seats have solid cardinal samples.
 
 - Quantify what the human reference corpus costs as a comparison: every human
   track was recorded hunting bots, while candidate tapes are bot-versus-bot.
@@ -114,8 +114,8 @@ passing botmatch does not establish better human play.
 
 - Synchronise the changelog status row, architecture notes, telemetry
   grammar, agent command table and lab runbook with the gait work, and
-  record its follow-ups: the unreachable hazard hold (#607), dm3's fully
-  boxed-in waypoints (#608), the duplicated hull-0 classifier behind an
+  record its follow-ups: the unreachable hazard hold (#607), dm3's air-only
+  cardinal outlier (#608, subsequently classified as water), the duplicated hull-0 classifier behind an
   unimportable analyser (#609), the human session the measurement cannot
   replace (#610) and the missing documentation link check (#611).
 
@@ -214,6 +214,10 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Correct the dm3 clearance interpretation: 25 zero-empty-cardinal seats and
+  all 100 of their probes are water, not solid walls. Preserve the graph and
+  distinguish the air-only navgen bar from runtime movement clearance (#608).
 
 - Make `analyze_match.py` import-safe and share its hull-0 contents reader
   with the void probe. Existing CLI behavior and the no-BSP lava-death

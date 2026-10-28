@@ -191,6 +191,7 @@ Offline hull-0 read of a shipped navigation graph, for the two questions the run
 - **Behavior**:
   - Reproduces `Argus_MoveHazard`'s 280-unit floor test for eight headings from every waypoint, and for the directions it would veto as void, reports what actually lies underneath and how far down.
   - `--clearance` audits each waypoint's cardinal elbow room against navgen's own 5a2 seat-shift bar, so a shipped graph can be checked without regenerating it.
+  - That bar counts only empty contents as open. Water also scores nonempty: dm3's 25 zero-open seats have 100 water samples and no solid samples. The output is not a player-hull collision verdict.
   - Measured on the shipped graphs: no probe direction from any waypoint finds lava underfoot, every void dm4 and dm2 veto bottoms out in lava while dm3's and dm6's bottom out in stone or water, and 7 per cent of dm4 and dm2 waypoints sit within 24 units of a wall.
 - **Inputs**: `maps_local/<map>.bsp` and `src/argus_nav_<map>.qc.json`; maps missing either are skipped with a note.
 - **Exit Code**: `0` on success or `--help`.
