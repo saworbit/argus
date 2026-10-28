@@ -10,6 +10,7 @@ Examples:
   python tools/argus_humanness.py --human
   python tools/argus_humanness.py --reference "runs/shane_*.log" runs/ab_dm2_*.log
   python tools/argus_humanness.py --format json runs/candidate.log
+  python tools/argus_humanness.py --profile runs/ab_dm4_*.log
 """
 
 import argparse
@@ -287,6 +288,87 @@ def score_tape(tape, reference, reference_counts):
     }
 
 
+def collect_bot_features(tapes):
+    """Per-map bot feature samples, one entry per scorable bot track."""
+    collected = defaultdict(lambda: defaultdict(list))
+    counts = defaultdict(int)
+    for tape in tapes:
+        if not tape["map"]:
+            continue
+        for samples in tape["bots"].values():
+            metrics = track_metrics(samples)
+            if metrics is None:
+                continue
+            counts[tape["map"]] += 1
+            for feature in FEATURES:
+                collected[tape["map"]][feature].append(metrics[feature])
+    return collected, counts
+
+
+def profile_rows(bot_features, bot_counts, reference, reference_counts):
+    """Signed per-feature comparison, so a distance can be acted on.
+
+    The scored distance is unsigned by construction: it says a feature is
+    wrong without saying which way. These rows carry both populations'
+    medians and quartile bands plus the gap in units of the feature's own
+    scale floor, which is what a behaviour change needs to aim at.
+    """
+    rows = []
+    for name in sorted(set(bot_features) & set(reference)):
+        for feature in FEATURES:
+            bots = bot_features[name][feature]
+            humans = reference[name][feature]
+            if not bots or not humans:
+                continue
+            bot_median = statistics.median(bots)
+            human_median = statistics.median(humans)
+            rows.append(
+                {
+                    "map": name,
+                    "feature": feature,
+                    "bot_tracks": bot_counts[name],
+                    "human_tracks": reference_counts[name],
+                    "bot_q1": percentile(bots, 0.25),
+                    "bot_median": bot_median,
+                    "bot_q3": percentile(bots, 0.75),
+                    "human_q1": percentile(humans, 0.25),
+                    "human_median": human_median,
+                    "human_q3": percentile(humans, 0.75),
+                    "delta": bot_median - human_median,
+                    "delta_scaled": (bot_median - human_median) / SCALE_FLOORS[feature],
+                }
+            )
+    return rows
+
+
+PROFILE_COLUMNS = (
+    "map",
+    "feature",
+    "bot_tracks",
+    "human_tracks",
+    "bot_q1",
+    "bot_median",
+    "bot_q3",
+    "human_q1",
+    "human_median",
+    "human_q3",
+    "delta",
+    "delta_scaled",
+)
+
+
+def format_profile_tsv(rows):
+    lines = ["\t".join(PROFILE_COLUMNS)]
+    for row in rows:
+        lines.append(
+            "\t".join(
+                f"{row[column]:.3f}" if isinstance(row[column], float) else str(row[column])
+                for column in PROFILE_COLUMNS
+            )
+        )
+    return "\n".join(lines)
+
+
 def expand_paths(patterns):
     paths = []
     seen = set()
@@ -335,6 +417,11 @@ def main(argv=None):
         action="store_true",
         help="score bots in the human reference sessions themselves",
     )
+    parser.add_argument(
+        "--profile",
+        action="store_true",
+        help="report signed per-feature medians and bands instead of distances",
+    )
     parser.add_argument("--format", choices=("tsv", "json"), default="tsv")
     args = parser.parse_args(argv)
 
@@ -355,6 +442,7 @@ def main(argv=None):
     rows = []
     skipped = []
     noted = set()
+    candidate_tapes = []
     for tape in reference_tapes:
         if tape["ignored_segments"]:
             noted.add(tape["path"])
@@ -371,11 +459,22 @@ def main(argv=None):
                 f"ignored {tape['ignored_segments']} other map segment(s)",
                 file=sys.stderr,
             )
+        candidate_tapes.append(tape)
         row = score_tape(tape, reference, counts)
         if row is None:
             skipped.append(tape["file"])
         else:
             rows.append(row)
+    if args.profile:
+        bot_features, bot_counts = collect_bot_features(candidate_tapes)
+        profile = profile_rows(bot_features, bot_counts, reference, counts)
+        if not profile:
+            parser.error("no candidate had both usable bot tracks and a same-map human reference")
+        if args.format == "json":
+            print(json.dumps(profile, indent=2, sort_keys=True))
+        else:
+            print(format_profile_tsv(profile))
+        return 0
     if not rows:
         parser.error("no candidate had both usable bot tracks and a same-map human reference")
     if skipped:
