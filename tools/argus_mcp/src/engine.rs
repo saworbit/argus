@@ -27,7 +27,7 @@ pub struct EngineChild {
 enum Inner {
     #[cfg(not(windows))]
     Tokio {
-        child: Child,
+        child: Box<Child>,
         stdin: Option<ChildStdin>,
     },
     #[cfg(windows)]
@@ -299,7 +299,10 @@ fn spawn_unix(
     Ok(EngineChild {
         pid,
         stdout: buf,
-        inner: Inner::Tokio { child, stdin },
+        inner: Inner::Tokio {
+            child: Box::new(child),
+            stdin,
+        },
     })
 }
 
@@ -705,7 +708,10 @@ impl EngineChild {
                 .spawn()
                 .unwrap();
             Self {
-                inner: Inner::Tokio { child, stdin: None },
+                inner: Inner::Tokio {
+                    child: Box::new(child),
+                    stdin: None,
+                },
                 pid: 0,
                 stdout: std::sync::Arc::new(std::sync::Mutex::new(String::new())),
             }
