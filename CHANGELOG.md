@@ -215,8 +215,12 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Synchronise the contributor guide with the pinned Rust toolchain, strict
+  Clippy check and CI compilation of all 17 maintained private fixture variants.
+
 - Keep the lab dependency update compatible with strict Clippy by boxing the
-  Unix child handle. Update locked rmcp to 3.7.0 and Tokio to 1.54.1 (#619).
+  Unix child handle. Update locked rmcp to 3.7.0, rmcp-macros to 3.8.0 and Tokio
+  to 1.54.1 (#620).
 
 - Correct the dm3 clearance interpretation: 25 zero-empty-cardinal seats and
   all 100 of their probes are water, not solid walls. Preserve the graph and
