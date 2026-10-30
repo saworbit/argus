@@ -51,7 +51,9 @@ Every subsystem in Argus is designed to run across any standard Quake engine wit
 
 - **Python 3.10+**: For telemetry parsers, reachability checkers, and navigation generation.
 - **Modern `fteqcc`**: Required to compile the QuakeC source tree (must be a modern build from the FTEQW project; apt svn3400 is too old).
-- **Rust (optional, for lab tooling)**: Required for building `tools/argus_mcp` (the MCP server and local web GUI).
+- **Rust 1.95 (optional, for lab tooling)**: The pinned toolchain includes
+  Clippy and rustfmt; see [`rust-toolchain.toml`](rust-toolchain.toml). Required
+  for building `tools/argus_mcp` (the MCP server and local web GUI).
 - **Quake Engine or LibreQuake**: To run and test bot matches.
 
 ### Compiling QuakeC
@@ -83,6 +85,7 @@ The lab suite includes regression tests against committed match tapes, parsing t
 
 ```bash
 cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
+cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
 cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
 cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp
 ARGUS_REQUIRE_SOURCE_MCP=1 python3 tools/test_tools_cli.py
@@ -108,10 +111,14 @@ The plan, entry, button and door changes remain development source. Native
 fixtures verify the supported e1m2 route and distinguish deadline renewal from
 premature door release. These controlled cases do not establish general
 gameplay safety or resolve the step 1b dm4 warning, and do not update supplied binaries.
-CI currently compiles production QuakeC and runs Python fixture checks. A
-compile-only gate for staged private fixtures is tracked in
-[#604](https://github.com/saworbit/argus/issues/604); Python success alone does
-not establish that every generated fixture wrapper compiles.
+The compile workflow builds production QuakeC and all 17 maintained private
+fixture variants across `muzzle`, `combat`, `health`, `button`, `door`, `plan`
+and `offset`, using the pinned FTEQCC revision. It retains per-variant compile
+logs and hash receipts, then passes the production `progs` artifact to the
+LibreQuake smoke job. Private-fixture compilation needs no engine or game
+assets and never installs a binary; it proves compilation, not physical
+fixture outcomes. See the [compile-only runbook](docs/lab-workflow.md#focused-checks-without-deployment)
+for fresh-output commands and the distinction from native trials.
 
 You can run automated headless bot matches on Linux or Windows to verify stability:
 
