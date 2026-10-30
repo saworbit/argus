@@ -215,6 +215,9 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep the lab dependency update compatible with strict Clippy by boxing the
+  Unix child handle. Update locked rmcp to 3.7.0 and Tokio to 1.54.1 (#619).
+
 - Correct the dm3 clearance interpretation: 25 zero-empty-cardinal seats and
   all 100 of their probes are water, not solid walls. Preserve the graph and
   distinguish the air-only navgen bar from runtime movement clearance (#608).
