@@ -45,8 +45,8 @@ These changes remain in development; the supplied gameplay binaries are
 unchanged.
 
 The [e1m6 dock-exit repair](docs/e1m6-decisions.md) keeps a bot aboard a
-moving platform until docking and checks a dry jump across an exit seam.
-Its physical tests require landing and advancement along the original route.
+moving platform until docking and checks a landing arc across an exit seam.
+Its physical tests check landing and retention of the continuing task.
 
 ## Install and play
 

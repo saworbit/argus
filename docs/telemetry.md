@@ -106,7 +106,23 @@ The broader-map studies add these private records:
 |---|---|
 | `RDFIX` | Route-distance and shopping contracts; `verify_route_distance.py`; emits `BHVRPL begin route_distance` |
 | `FRFIX` | Measured cadence, pin recovery, fire/goal/footing/ownership guards and checked totals; `verify_freeze_recovery.py` |
-| `MVFIX` | Measured cadence, boarding, continuing-route retention, static-floor landing, launches and completion; `verify_mover_transfer.py` |
+| `MVFIX` | Measured cadence, boarding, uninterrupted task retention, world-floor landing, changed route node, launches and completion; `verify_mover_transfer.py` |
+| `MTRACE` | Read-only transfer samples: elapsed time, position/node, mode, lift/wait flags, support/grounded state, platform phase/top height, velocity, action budget/best distance and current task retention |
+
+Current mover fixtures emit `BHVRPL begin mover_transfer` and require
+`landed` and `handoff` fields in the `MVFIX result` receipt. `landed` records
+a supported, dry landing near the exit on world geometry; `handoff` records
+a non-world route node whose position differs from the exit node. Completion
+also requires the original task to remain continuously owned. A changed node
+or a landing alone does not establish completion. The field does not independently prove the
+node's order in the original route; [#647](https://github.com/saworbit/argus/issues/647)
+tracks the stronger oracle. These are checkpoint observations, not proof
+of reaching or touching the later goal.
+
+The current receipt checker rejects older result layouts without the two
+fields or the activation marker. Retain their original fixture versions and
+outcomes rather than rewriting historical tapes. `MTRACE` alone does not
+activate a fixture or add a new ARGLOG/ARGEVT metric.
 
 Native parsing treats `FRFIX begin` and `MVFIX begin` as controlled-fixture
 activation, including retained historical tapes without a `BHVRPL` marker.

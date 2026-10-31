@@ -367,6 +367,10 @@ python tools/report_map_intelligence.py backups/map-screen/control backups/map-s
 
 The default is two 60-second matches per map and arm at skill 2. Longer
 holdouts can select maps explicitly with `--maps dm3,dm6 --seconds 185`.
+`--repeats` accepts one through five per invocation. Register additional
+batches before measurement and retain every batch; do not silently discard
+earlier runs. A `--baseline` directory must already contain a compatible
+protocol and a nonempty results file.
 The [routing contract](../tools/verify_route_distance.py) separately exercises
 the production search in the real engine; its negative control must fail the
 distance tie-break and shopping checks. Graph correctness and a short match
@@ -398,12 +402,27 @@ Run the same commands against a frozen unchanged `--source` for positive
 controls. Engine checks and private compiles run serially. The `freeze`
 family is also included in the maintained private-fixture compile gate.
 
-The [mover investigation](mover-intelligence.md) adds a continuing-route
-platform task with measured boarding, static-floor landing and route
-retention. Run `tools/verify_mover_transfer.py` with a new `--output` and
-`--prefix`; `--control` records an incomplete baseline without treating it
-as a successful transfer. The `mover` family is compiled by the same serial
-gate. Experimental graphs on disk do not establish runtime navigation:
+The [dock-exit study](e1m6-decisions.md) strengthens the earlier
+[mover investigation](mover-intelligence.md) with a continuing-route platform
+task. Success requires boarding, dry world-floor landing, a route node
+different from the exit and uninterrupted task ownership, without rescue. Use fresh
+output directories beneath `backups/` and unique run prefixes:
+
+```text
+python tools/verify_mover_transfer.py --output backups/transfer-played-1 --prefix transfer_played_1
+python tools/verify_mover_transfer.py --output backups/transfer-slow-1 --prefix transfer_slow_1 --ticrate .1
+```
+
+Both commands default to e1m6 and dm3. `--maps e1m6` limits the set;
+`--source <frozen-src>` selects an unchanged control tree, and `--control`
+records its outcome without requiring completion. It does not turn an
+incomplete baseline into a successful transfer. `--port` isolates an engine;
+compilers must still run serially. `MTRACE` is read-only, and the observer
+audit rejects steering or actor/world mutations after setup. The receipt
+checker requires the current `landed`/`handoff` layout described in the
+[telemetry reference](telemetry.md#log-records-and-their-meaning).
+
+The `mover` family is compiled by the same serial gate. Experimental graphs on disk do not establish runtime navigation:
 reports require both the frozen dispatcher and compilation-list entries.
 
 ### Combat decision checks

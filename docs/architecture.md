@@ -124,6 +124,15 @@ replans, preserving an explicit navigation task.
 transition also supplies the shared progress observer, so detours do not lose
 their deadline solely because they used corner cuts.
 
+Grounded support on an actually moving platform retains the lift hold through
+docking, even when the exit is already near the bot's height. At the top,
+`Argus_MoverGapJumpOK` can validate an exit jump at current speed using the
+existing gravity-aware arc check and the routed floor's height. Launch hands
+ownership from the lift action to airborne route control without replacing
+the goal. The forecast rejects lava/slime but does not independently require
+a dry landing; the private transfer fixture checks that stronger outcome on
+world geometry. See the [dock-exit decision study](e1m6-decisions.md).
+
 Walking bots dispatch stock button contact for an engine-confirmed supporting,
 unpressed touch button, preserving callback context. Door opener lookup follows
 target chains with bounded depth/work and rejects unreachable touch triggers.

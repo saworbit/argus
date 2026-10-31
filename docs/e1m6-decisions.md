@@ -16,7 +16,7 @@ does not establish that the controller can execute this transfer.
 
 The repair keeps the ride hold while the bot is actually grounded on a
 moving platform. At the dock, a blocked step can become a jump only if the
-existing gravity-aware arc test predicts a dry, shallow landing on the
+existing gravity-aware arc test predicts a non-hazardous landing on the
 routed exit's floor. The heading must be within 30 degrees of the exit,
 horizontal distance 64 through 220 units, speed 100 through 330 units per
 second and height difference at most 48 units. The predicted landing must
@@ -30,6 +30,13 @@ impulse or score/band changes. It reuses the current physical speed and
 jump/gravity model. Ride ownership requires current ground support, so a
 stale `groundentity` reference while airborne cannot hold a bot still.
 
+The shared arc check rejects lava/slime, steep faces and excessive drops;
+the dock wrapper also checks the routed floor height and approach distance.
+It does not separately reject water. Dry landing is an observed requirement
+of the physical fixture below, not a general guarantee of the forecast.
+Dedicated negative engine controls for these forecasts remain
+[#646](https://github.com/saworbit/argus/issues/646).
+
 ## Physical witnesses
 
 The private fixture places one bot at the boarding point, assigns a later
@@ -37,9 +44,13 @@ goal and then leaves movement to production routing and physics. The e1m6
 start is `625 1425 24`, exit `529 1393 344`, and later goal
 `433 1297 208`. The dm3 task is a separate positive transfer control.
 Success now requires boarding, dry static-floor landing near the exit,
-advancement to a different route node, continuous original task ownership,
+a different route node, continuous original task ownership,
 survival and zero forced relocation. Landing beside the exit alone is
 insufficient. A later node alone is also insufficient if no landing occurred.
+The current `handoff` field checks node-position difference, not its order in
+the original route. [#647](https://github.com/saworbit/argus/issues/647)
+tracks a stronger forward-consumption oracle; the current receipts must not
+be interpreted as that stronger proof.
 
 `MTRACE` records support, mover phase, velocity and route state every half
 second. The observer audit rejects actor/world mutations and steering after
@@ -104,7 +115,8 @@ warning. All 84 tapes remain in the [initial evidence](../runs/e1m6-dock-initial
 The revised controller checks action ownership before calling the exit
 forecaster and releases the lift flag on the verified launch. A jump is
 then owned by airborne route control rather than by the platform ride. The
-physical test still requires an actual landing and continuing-route handoff.
+physical test still requires an actual landing, a changed route node and
+uninterrupted task ownership.
 This addresses a real phase transition; the earlier candidate is not renamed
 or pooled into the replacement.
 
@@ -143,7 +155,7 @@ pickups on several maps. The comparison does not establish a general win.
 Every final ordinary match has zero native freezes and zero freezes under
 fire. Gait attribution reports zero attributable failures. Two forced
 recoveries remain, both outside the upper lift transfer: Carmack underwater
-at `-15 817 -232` on e1m6 and Joe Rogan pursuing through `389 225 -200` on
+at `-15 817 -232` on e1m6 and Joe Rogan pinned near `389 225 -200` on
 dm3. The unchanged controls contain no rescues, so this study cannot claim
 an overall reduction in rescue rate. These tapes remain failures to avoid
 rescue, not successful physical transfers.
@@ -165,7 +177,9 @@ The exact final static-world-floor fixture gives:
 | dm3 / 100 ms | Completes at 1.1s | Completes at 1.3s | 0 |
 
 Every final physical success is alive, dry, landed on world geometry,
-advanced past the exit node and retains its original task without rescue.
+has a route node different from the exit and retains its original task
+without rescue. Forward node consumption is subject to the oracle limitation
+above.
 Earlier revision trials also complete the e1m6 transfer at 3.7s played and
 2.7s slow; fixture versions remain distinct. Final bank escape is 6.2s
 played / 9.0s slow, and all 56 native decision contracts pass at both rates.

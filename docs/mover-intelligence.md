@@ -144,7 +144,7 @@ retain the difference between observations and proven causes.
 
 | Issue | Work / status |
 |---|---|
-| [#622](https://github.com/saworbit/argus/issues/622) | Fix the e1m6 continuing-route transfer; verify later prize touch separately and resolve the prototype's wider-map warning |
+| [#622](https://github.com/saworbit/argus/issues/622) | Completed by [#645](https://github.com/saworbit/argus/pull/645): narrower dock-exit repair with separate frozen validation; later prize touch remains a separate outcome |
 | [#623](https://github.com/saworbit/argus/issues/623) | Close e1m3 pickup reach gaps within the legal budget before registration |
 | [#624](https://github.com/saworbit/argus/issues/624) | Cover e1m4 deathmatch spawns and pickups before registration |
 | [#625](https://github.com/saworbit/argus/issues/625) | Give native graph inventory and coverage explicit compilation provenance |

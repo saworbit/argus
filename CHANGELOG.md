@@ -27,7 +27,7 @@ passing botmatch does not establish better human play.
 
 #### Added
 
-- Require actual landing and continuing-route handoff in private mover
+- Require actual landing and continuous task ownership in private mover
   fixtures, with read-only phase traces and rejection of observer steering.
   See the [e1m6 investigation](docs/e1m6-decisions.md).
 
@@ -141,6 +141,14 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Document lift-to-flight ownership, continuing-route receipt fields and
+  current reproduction commands across the architecture, telemetry and lab
+  guides. Distinguish the runtime landing forecast from the fixture's dry
+  world-floor landing requirement.
+  Track missing negative engine controls and stronger forward-handoff proof
+  in [#646](https://github.com/saworbit/argus/issues/646) and
+  [#647](https://github.com/saworbit/argus/issues/647).
 
 - Synchronise root status, contributor checks, the tool index, telemetry and
   runbooks with the broader-map studies and 19 private fixture variants.
@@ -257,7 +265,7 @@ passing botmatch does not establish better human play.
 #### Fixed
 
 - Keep an actually supported bot aboard a moving lift through docking.
-  Cross a dock seam only after checking the jump's dry landing at current
+  Cross a dock seam only after checking the jump's landing at current
   speed, preserving the continuing route. Repair the reproduced e1m6 exit
   failure without a map-specific runtime branch or navigation edits.
 
