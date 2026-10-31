@@ -130,5 +130,11 @@ functions; its separate two-map smoke and compile identities are recorded.
 The artifact distinguishes runtime program identities from the published
 source manifest.
 
+Follow-ups are tracked in [the mega-route repair](https://github.com/saworbit/argus/issues/636),
+[the lqdm2 pin reproduction](https://github.com/saworbit/argus/issues/637) and
+[preview freshness after skipped plotting](https://github.com/saworbit/argus/issues/638).
+The existing [e1m6 route](https://github.com/saworbit/argus/issues/622) and
+[e1m5 wait](https://github.com/saworbit/argus/issues/628) investigations remain open.
+
 No gameplay binary is installed by these checks. The health/inventory and
 human-play release gates remain separate outstanding work.
