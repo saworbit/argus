@@ -120,9 +120,9 @@ assets and never installs a binary; it proves compilation, not physical
 fixture outcomes. See the [compile-only runbook](docs/lab-workflow.md#focused-checks-without-deployment)
 for fresh-output commands and the distinction from native trials.
 
-Run the additional broader-map and receipt suites locally too. They are not
-yet included in the fast workflow; compiling the fixtures is a separate check.
-Fast-workflow integration is tracked in [#627](https://github.com/saworbit/argus/issues/627).
+The broader-map and receipt suites below also run as blocking steps in the
+fast workflow. They need no engine, BSPs or historical backups. Fixture
+compilation and native physical outcomes remain separate checks.
 
 ```text
 python tools/test_nav_budget.py

@@ -119,3 +119,10 @@ jobs:
 
       - name: Run Python playability gate tests
         run: python3 tools/test_argus_mapgate.py
+
+      - name: Run navigation budgets and study receipt contracts
+        run: |
+          python3 tools/test_nav_budget.py
+          python3 tools/test_map_intelligence_report.py
+          python3 tools/test_freeze_recovery.py
+          python3 tools/test_mover_transfer.py

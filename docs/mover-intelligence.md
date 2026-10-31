@@ -138,14 +138,14 @@ The documentation audit searched open and closed issues before filing these
 distinct items. The issue bodies identify the uncommitted study inputs and
 retain the difference between observations and proven causes.
 
-| Issue | Remaining work |
+| Issue | Work / status |
 |---|---|
 | [#622](https://github.com/saworbit/argus/issues/622) | Fix the e1m6 continuing-route transfer; verify later prize touch separately and resolve the prototype's wider-map warning |
 | [#623](https://github.com/saworbit/argus/issues/623) | Close e1m3 pickup reach gaps within the legal budget before registration |
 | [#624](https://github.com/saworbit/argus/issues/624) | Cover e1m4 deathmatch spawns and pickups before registration |
 | [#625](https://github.com/saworbit/argus/issues/625) | Give native graph inventory and coverage explicit compilation provenance |
 | [#626](https://github.com/saworbit/argus/issues/626) | Quarantine new and historical recovery/transfer fixture tapes without rewriting raw evidence |
-| [#627](https://github.com/saworbit/argus/issues/627) | Run the four new engine-free budget/report/receipt suites in fast CI |
+| [#627](https://github.com/saworbit/argus/issues/627) | Completed: all four engine-free budget/report/receipt suites block fast CI |
 | [#628](https://github.com/saworbit/argus/issues/628) | Diagnose the e1m5 six-second window without assuming a chosen pause or a new mover regression |
 | [#629](https://github.com/saworbit/argus/issues/629) | Carry the registered primary into per-tape comparisons |
 

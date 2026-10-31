@@ -175,10 +175,11 @@ python tools/test_target_attention.py
 python tools/test_argus_mapgate.py
 ```
 
-The budget, map-report, freeze-receipt and mover-receipt suites above need
-explicit local invocation; the fast workflow does not yet include them.
-Their CI integration is tracked in [#627](https://github.com/saworbit/argus/issues/627).
-The compile workflow's `freeze`/`mover` checks prove compilation separately.
+The budget, map-report, freeze-receipt and mover-receipt suites above also
+block the fast workflow. They need no engine, BSPs or historical backups and
+reject invalid receipt fields, cadence and tape hashes. The compile workflow's
+`freeze`/`mover` checks prove compilation separately; native trials establish
+physical outcomes.
 
 The repo invariant job also blocks on `python tools/argus_ci.py all`.
 Use `python tools/argus_ci.py links` to check only documentation paths and

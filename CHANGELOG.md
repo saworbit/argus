@@ -245,6 +245,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Run the navigation-budget, map-report, recovery-receipt and mover-receipt
+  suites as blocking fast-CI checks, with matching contributor and lab guidance
+  (#627).
+
 - Preserve the historical health-perception fixture boundary after recovery
   changes with an exact reverse amendment; retain active function checks and
   rejection of undeclared source edits.
