@@ -171,6 +171,7 @@ python tools/test_nav_budget.py
 python tools/test_map_intelligence_report.py
 python tools/test_freeze_recovery.py
 python tools/test_mover_transfer.py
+python tools/test_target_attention.py
 python tools/test_argus_mapgate.py
 ```
 
@@ -232,8 +233,8 @@ with one of these fixture names:
 | `door` | Bounded opener lookup, activation acknowledgement and opening ownership/timeout |
 
 
-Compile-only CI also checks all 19 maintained variants across `muzzle`,
-`combat`, `health`, `button`, `door`, `plan`, `offset`, `freeze` and `mover`. It reuses the native
+Compile-only CI also checks all 20 maintained variants across `muzzle`,
+`combat`, `health`, `button`, `door`, `plan`, `offset`, `freeze`, `mover` and `attention`. It reuses the native
 verifiers' staging helpers, including extracted production decision wrappers:
 
 ```text
@@ -395,6 +396,24 @@ retention. Run `tools/verify_mover_transfer.py` with a new `--output` and
 as a successful transfer. The `mover` family is compiled by the same serial
 gate. Experimental graphs on disk do not establish runtime navigation:
 reports require both the frozen dispatcher and compilation-list entries.
+
+### Combat decision checks
+
+The [target-decision study](combat-attention.md) tests production perception
+with recent aggression, observed invulnerability, focus/reaction clocks,
+retreat ownership and hidden-state guards. The driver emits the recognised
+fixture quarantine marker and keeps these tapes out of normal match bands.
+
+```text
+python tools/verify_target_attention.py --output backups/attention/played --prefix attention_played
+python tools/verify_target_attention.py --output backups/attention/slow --prefix attention_slow --ticrate .1
+python tools/verify_target_attention.py --output backups/attention/control --prefix attention_control --source <frozen-control-src> --legacy-control
+```
+
+The default maps are dm6 and lqdm2. Outputs and prefixes must be new;
+`--legacy-control` must reproduce exactly the declared fixation failures.
+Its receipt/privacy tests run in fast CI and the `attention` private family
+is compiled with the other maintained variants.
 
 ## Add or regenerate navigation
 

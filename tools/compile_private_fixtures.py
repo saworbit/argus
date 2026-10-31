@@ -22,6 +22,7 @@ VARIANTS = {
     'offset': ('current', 'old_handoff'),
     'freeze': ('current',),
     'mover': ('current',),
+    'attention': ('current',),
 }
 
 
@@ -40,7 +41,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'mover':
+    if family == 'attention':
+        from verify_target_attention import stage as stage_attention
+        stage_attention(ROOT, folder)
+    elif family == 'mover':
         from verify_mover_transfer import stage as stage_mover
         stage_mover(ROOT, folder)
     elif family == 'freeze':

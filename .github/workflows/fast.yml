@@ -103,6 +103,7 @@ jobs:
           python3 -m pip install -r tools/requirements-perception-cohort.txt
           python3 -m unittest discover -s tools -p 'test_perception*.py'
           python3 tools/test_tactic_fixture.py
+          python3 tools/test_target_attention.py
 
       - name: Run rocket clearance and local review contracts
         run: |

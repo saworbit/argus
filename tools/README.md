@@ -251,8 +251,8 @@ callers; it has no CLI. The private `fixtures/muzzle_clearance.qc` is excluded
 from production and emits `MFIX` under a quarantining `BHVRPL begin` marker.
 
 `health_inventory_parked.py` verifies the active source against a declared
-manifest, reverses allowlisted recovery, opening-door, button/door, offset-entry,
-active-health, plan and muzzle
+manifest, reverses allowlisted target-attention, recovery, opening-door,
+button/door, offset-entry, active-health, plan and muzzle
 amendments in memory, then reconstructs
 the historical health/inventory candidate for static checks. Those historical
 checks alone do not establish the behaviour of a current build.
@@ -288,8 +288,8 @@ declared controls. These checks launch no gameplay cohort and do not install
 binaries. See [native fixture choices](../docs/lab-workflow.md#focused-checks-without-deployment).
 
 
-Compile-only CI also checks all 19 maintained variants across `muzzle`,
-`combat`, `health`, `button`, `door`, `plan`, `offset`, `freeze` and `mover`. It reuses the native
+Compile-only CI also checks all 20 maintained variants across `muzzle`,
+`combat`, `health`, `button`, `door`, `plan`, `offset`, `freeze`, `mover` and `attention`. It reuses the native
 verifiers' staging helpers, including extracted production decision wrappers:
 
 ```text
@@ -345,3 +345,10 @@ the fast workflow does not yet run them. The separate compile workflow
 includes the `freeze` and `mover` families.
 See [the tracked study follow-ups](../docs/mover-intelligence.md#tracked-follow-ups)
 for CI integration, fixture quarantine and comparison-primary propagation.
+
+`verify_target_attention.py` uses `--output`, `--prefix`, optional frozen
+`--source`, `--maps`, `--ticrate`, `--port`, and explicit `--legacy-control`.
+It checks production opponent decisions on dm6/lqdm2 by default, including
+retreat ownership and information boundaries. Its tapes emit the recognised
+quarantine marker. `test_target_attention.py` runs in fast CI; the `attention`
+family is compiled by the private gate. See the [policy and evidence](../docs/combat-attention.md).

@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Perception, shared failed plans and human gait active; equal-link routing and under-fire recovery validated across eight maps; severe-freeze verdict repaired; no deployment |
+| Development source | Opponent reassessment passes controlled checks and eight-map safety comparison; perception, shared failed plans, human gait, routing and under-fire recovery active; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -26,6 +26,14 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Reassess opponents during an ongoing fight using recent hostile damage
+  and visible powerup cues. Keep a focus margin, bounded decision clocks,
+  reaction delay and the original item goal. Record switches separately
+  from initial engagements. See the [decision controls and map study](docs/combat-attention.md).
+- Add controlled target-decision checks at played and 100 ms cadence, retain
+  the unchanged-source failures, and compile the twentieth private fixture
+  variant in CI. Keep retreat and secondary-threat state consistent on a switch.
 
 - Add frozen-source multi-map evaluation, route-distance audits and private
   recovery/continuing-route transfer fixtures. Preserve controls, rejected

@@ -117,6 +117,12 @@ the later prize pickup; check the stock item-touch/powerup state separately.
 The ordinary recovery diagnostic `ARGUS <bot> unstick underfire <position>`
 is counted in existing unstick totals, not as a new pickup or death event.
 
+`ARGEVT <bot> retarget <opponent>` records a change of opponent during an
+ongoing fight. It is separate from initial `engage` events. `ATFIX` records
+the private [target-decision contracts](combat-attention.md), including
+measured cadence, ordered checks and a final failure count. Those tapes emit
+`BHVRPL begin target_attention` and stay outside ordinary match bands.
+
 Blind-review ratings are subjective evidence, separate from native match
 metrics. Keep build identity in a separate key until scoring is complete.
 The `labcamera` recorder is an instrument, excluded from both bot and human

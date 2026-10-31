@@ -1,0 +1,121 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -228,3 +227,0 @@
+-.entity ar_hurtfoe;             // identity of a recent hostile damage source
+-.float  ar_hurtfoetime;         // damage is attention evidence, not sight
+-.float  ar_targetscan, ar_targethold;
+@@ -3353 +3349,0 @@
+-    {
+@@ -3355,7 +3350,0 @@
+-        if (attacker.classname == "player" && attacker.health > 0
+-            && !attacker.cam_active && !attacker.ar_disconnected)
+-        {
+-            self.ar_hurtfoe = attacker;
+-            self.ar_hurtfoetime = time;
+-        }
+-    }
+@@ -3398,2 +3386,0 @@
+-        self.ar_targethold = time + 0.8;
+-        self.ar_targetscan = time + 0.4;
+@@ -3643,2 +3629,0 @@
+-    self.ar_hurtfoe = world; self.ar_hurtfoetime = 0;
+-    self.ar_targetscan = 0; self.ar_targethold = 0;
+@@ -4311,2 +4295,0 @@
+-        if (b.ar_hurtfoe == target)
+-        { b.ar_hurtfoe = world; b.ar_hurtfoetime = 0; }
+@@ -4503,23 +4485,0 @@
+-// Compare observable opportunities with our own recent experience. A hidden
+-// current target supplies cached cues; a challenger supplies cues only after
+-// visibility succeeds. Exact opponent health, armour and ammunition play no
+-// part. A short-lived attacker matters more than an old grudge, while a
+-// visible pent makes another available opponent a better use of ammunition.
+-float(entity foe, float distance, float powers) Argus_TargetValue =
+-{
+-    local float value;
+-    value = 2500 - distance;
+-    if (powers & 1) value = value + 600;
+-    if (foe == self.ar_nemesis && self.ar_nemkills >= 3
+-        && self.ar_skill >= AR_SKILL_MEMORY)
+-        value = value + 600;
+-    if (self.ar_skill >= AR_SKILL_MEMORY)
+-    {
+-        if (powers & 2) value = value - 900;
+-        if (foe == self.ar_hurtfoe && self.ar_hurtfoetime > 0
+-            && time >= self.ar_hurtfoetime && time < self.ar_hurtfoetime + 2)
+-            value = value + 900 * (1 - (time - self.ar_hurtfoetime) / 2);
+-    }
+-    return value;
+-};
+-
+@@ -4529 +4489 @@
+-    local float d, bd, ok, powers, switching;
++    local float d, bd, ok;
+@@ -4576,7 +4536 @@
+-        {
+-            if (coop > 0 || self.ar_skill < AR_SKILL_MEMORY || self.ar_tactic
+-                || self.ar_obsenemy != self.ar_enemy
+-                || time < self.ar_targetscan || time < self.ar_targethold)
+-                return;
+-            self.ar_targetscan = time + 0.4;
+-        }
++            return;
+@@ -4619 +4573 @@
+-    best = self.ar_enemy;
++    best = world;
+@@ -4621,3 +4574,0 @@
+-    if (best != world)
+-        bd = Argus_TargetValue (best,
+-            vlen (Argus_EnemyPosition () - self.origin), self.ar_obspower) + 250;
+@@ -4628,2 +4579 @@
+-        if (b != self && b != self.ar_enemy && b.health > 0
+-            && !Argus_IsAlly (b))
++        if (b != self && b.health > 0)
+@@ -4674,6 +4623,0 @@
+-                        // A real hit supplies a reason to turn around, not
+-                        // permission to see through walls or through a ring.
+-                        if (b == self.ar_hurtfoe && self.ar_hurtfoetime > 0
+-                            && time < self.ar_hurtfoetime + 2
+-                            && self.ar_skill >= AR_SKILL_MEMORY)
+-                            ok = 1;
+@@ -4686,4 +4630,9 @@
+-                    powers = 0;
+-                    if (b.super_damage_finished > time) powers = 1;
+-                    if (b.invincible_finished > time) powers = powers + 2;
+-                    d = Argus_TargetValue (b, d, powers);
++                    d = 2500 - d;
++                    if (b.super_damage_finished > time)
++                        d = d + 600;
++                    // vendetta (OPM slice C): the one who keeps
++                    // killing us outranks the shopping list. Not at
++                    // skill 0 - warmup partners hold no grudges
++                    if (b == self.ar_nemesis && self.ar_nemkills >= 3
++                        && self.ar_skill >= AR_SKILL_MEMORY)
++                        d = d + 600;
+@@ -4727,10 +4676,4 @@
+-    if (best != world && best != self.ar_enemy)
+-    {
+-        switching = self.ar_enemy != world;
+-        self.ar_secondary = world;
+-        self.ar_secondaryscan = 0;
+-        if (!switching)
+-        {
+-            self.ar_retreating = 0;
+-            self.ar_retreatclass = AR_THREAT_UNKNOWN;
+-        }
++    if (best != world)
++    {
++        self.ar_retreating = 0;
++        self.ar_retreatclass = AR_THREAT_UNKNOWN;
+@@ -4741,2 +4683,0 @@
+-        self.ar_targethold = time + 0.8;
+-        self.ar_targetscan = time + 0.4;
+@@ -4754,5 +4694,0 @@
+-        if (switching && self.ar_retreating)
+-        {
+-            self.ar_retreatclass = self.ar_threatclass;
+-            self.ar_covertime = 0;
+-        }
+@@ -4761,2 +4697 @@
+-        if (switching) dprint (" retarget ");
+-        else dprint (" engage ");
++        dprint (" engage ");

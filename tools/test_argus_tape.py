@@ -16,6 +16,17 @@ EXPECTED = json.loads(FIXTURE.with_suffix(".json").read_text())
 
 
 class TestTapeConsumers(unittest.TestCase):
+    def test_retarget_is_distinct_from_starting_an_engagement(self):
+        from collections import Counter
+        from argus_tape import parse_tape
+        tape = parse_tape('ARGEVT Joe Rogan spawned\n'
+            'ARGEVT Joe Rogan engage Carmack\n'
+            'ARGEVT Joe Rogan retarget Romero\n')
+        counts = Counter(event[2] for event in tape.events)
+        self.assertEqual(counts['engage'], 1)
+        self.assertEqual(counts['retarget'], 1)
+        self.assertEqual(tape.events[-1][1:], ('Joe Rogan', 'retarget', 'Romero'))
+
     def test_shared_role_fixture_matches_rust(self):
         from argus_tape import roles
         cases = json.loads((Path(__file__).parent / 'testdata/roles.json').read_text())

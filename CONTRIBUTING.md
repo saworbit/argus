@@ -111,9 +111,9 @@ The plan, entry, button and door changes remain development source. Native
 fixtures verify the supported e1m2 route and distinguish deadline renewal from
 premature door release. These controlled cases do not establish general
 gameplay safety or resolve the step 1b dm4 warning, and do not update supplied binaries.
-The compile workflow builds production QuakeC and all 19 maintained private
+The compile workflow builds production QuakeC and all 20 maintained private
 fixture variants across `muzzle`, `combat`, `health`, `button`, `door`, `plan`,
-`offset`, `freeze` and `mover`, using the pinned FTEQCC revision. It retains per-variant compile
+`offset`, `freeze`, `mover` and `attention`, using the pinned FTEQCC revision. It retains per-variant compile
 logs and hash receipts, then passes the production `progs` artifact to the
 LibreQuake smoke job. Private-fixture compilation needs no engine or game
 assets and never installs a binary; it proves compilation, not physical
@@ -134,6 +134,10 @@ python tools/test_mover_transfer.py
 The [cross-map runbook](docs/lab-workflow.md#cross-map-routing-evaluation)
 separates normal matches, controlled physical tasks and experimental graphs.
 It records source identities, measured cadence and unchanged installed binaries.
+
+The target-decision receipt/privacy suite, `python tools/test_target_attention.py`,
+already runs in fast CI. Its native controls and `attention` compile family
+are described in the [combat decision runbook](docs/lab-workflow.md#combat-decision-checks).
 
 You can run automated headless bot matches on Linux or Windows to verify stability:
 
