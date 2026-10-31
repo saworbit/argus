@@ -839,7 +839,7 @@ Each pass also records the MD5 of the exact graph it walked. First
 registration accepts only matching deathmatch evidence for ordinary links and,
 when the graph has them, generated jumps. A refused jump is stored separately
 from walk convictions, removed on the next regen, and drawn as a dark red
-dashed line with crossed endpoints in the debug PNG. Because that changes the
+dashed line with an X at the far end in the debug PNG. Because that changes the
 graph digest, run the short passes once more before registration.
 
 Nav sidecar files, all consumed by `argus_navgen.py` on the next

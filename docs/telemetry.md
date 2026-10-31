@@ -209,7 +209,9 @@ python tools/analyze_match.py maps_local/dm4.bsp runs/my_run.log runs/my_run.png
 python tools/argus_pointfile.py dm4 --what swim
 ```
 
-The plotter needs its Python plotting dependencies. Pointfile overlays are
+The plotter needs its Python plotting dependencies. Each bot keeps its roster
+slot's track colour across panels, and the nav overlay uses the same link
+colours as the lab GUI. Pointfile overlays are
 viewed from a listen game with the engine's `pointfile` command. For live bot
 fields, mover analysis, death regions and paired comparisons, follow the
 [operator guide](../tools/argus_mcp/README.md#deeper-inspect).

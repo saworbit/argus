@@ -106,7 +106,10 @@ A drop is a plain link that descends more than one 18-unit step, the lab's
 own rule; a one-way link at one level is still a walk. On rock every pair of
 link hues is at least OKLab Delta E 15 apart for normal vision. Walk and drop,
 and rocket jump and swim, are confusable under deuteranopia, which their dashes
-resolve. A sprint is a jump, so it shares jump's red and differs by dash.
+resolve. A sprint is a jump, so it shares jump's red and differs by dash. On
+white, swim and door sit at 11.7; no white-ground renderer draws either yet,
+and [#675](https://github.com/saworbit/argus/issues/675) must settle that
+before the debug PNG does.
 
 ## The motif
 
@@ -115,7 +118,9 @@ swatches and tiles have their corners knocked off at 45 degrees, like a Quake
 brush. It is the same operation as the mark's apex and terminals, not a
 decoration chosen to match. The chamfer depth is 6 per cent of the shorter
 side; deeper reads as an octagon, which at small sizes is a stop sign or a
-slotted screw head. See [`argus-motif.svg`](argus-motif.svg).
+slotted screw head. See [`argus-motif.svg`](argus-motif.svg). The lab GUI
+still uses rounded corners; [#677](https://github.com/saworbit/argus/issues/677)
+tracks carrying the chamfer there.
 
 The nav graph appears as **texture only**, as low-opacity wallpaper on the
 banner and social card. It keeps clear of the type: no node sits inside the

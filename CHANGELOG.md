@@ -34,16 +34,6 @@ passing botmatch does not establish better human play.
   the repository settings. `tools/brand` regenerates every asset from the
   mark's parameters. No gameplay, telemetry or lab behaviour changes.
 
-- Draw each navigation link type the same way in the navgen PNG, the
-  `analyze_match.py` plots and the lab GUI, from one table in
-  `tools/argus_linkstyle.py`. Jumps were red in the PNG and blue in the GUI,
-  rocket jumps magenta and orange, and teleports purple and fuchsia. Each type
-  now keeps one hue with a dash, so colour-blind readers can still tell walk
-  from drop. Amber now means a drop of more than one step, matching the lab's
-  own rule, instead of any one-way link. The GUI legend lists node colours and
-  is drawn from the same table, and a test keeps the GUI and Python copies
-  equal. See [the brand guide](docs/brand/README.md#navigation-link-colours).
-
 - Require actual landing and continuous task ownership in private mover
   fixtures, with read-only phase traces and rejection of observer steering.
   See the [e1m6 investigation](docs/e1m6-decisions.md).
@@ -158,6 +148,20 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Draw each navigation link type the same way in the navgen PNG, the
+  `analyze_match.py` plots and the lab GUI, from one table in
+  `tools/argus_linkstyle.py`. Jumps were red in the PNG and blue in the GUI,
+  rocket jumps magenta and orange, and teleports purple and fuchsia. Each type
+  now keeps one hue with a dash, so colour-blind readers can still tell walk
+  from drop. Amber now means a drop of more than one step, matching the lab's
+  own rule, instead of any one-way link. The GUI legend lists node colours and
+  is drawn from the same table, and a test keeps the GUI and Python copies
+  equal. See [the brand guide](docs/brand/README.md#navigation-link-colours).
+
+- `argus_ci.py links` also checks the `src`, `srcset` and `href` paths in
+  raw HTML inside Markdown, so a broken `<picture>` source such as the
+  README banner fails CI like a broken Markdown image already did.
 
 - Document lift-to-flight ownership, continuing-route receipt fields and
   current reproduction commands across the architecture, telemetry and lab

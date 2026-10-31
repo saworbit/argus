@@ -185,7 +185,8 @@ physical outcomes.
 
 The repo invariant job also blocks on `python tools/argus_ci.py all`.
 Use `python tools/argus_ci.py links` to check only documentation paths and
-fragments, including explicit HTML anchors. It reads tracked Markdown files,
+fragments, including explicit HTML anchors and the `src`, `srcset` and `href`
+values of raw HTML such as the README banner. It reads tracked Markdown files,
 ignores fenced/code examples and external URLs, and excludes archived
 `backups/` and `docs/plans/` documents. It needs no engine or network access.
 
