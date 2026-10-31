@@ -69,7 +69,7 @@ airborne motion and respawn cleanup. Both played and 100 ms cadences are tested.
 
 The eight final candidate replays pass 128 checks; their eight unchanged-code
 controls pass 48 checks while remaining pinned for seven seconds. e1m7's
-ordinary pocket and dm6 walk out in 1.6–1.7 seconds without rescue. The
+ordinary pocket and dm6 walk out in 1.6-1.7 seconds without rescue. The
 additional e1m7 corner uses one rescue at about 3.1 seconds at both rates.
 e1m1 uses one rescue at about 3.0 seconds at the played cadence and walks
 out in 1.6 seconds at 100 ms. The opponent is visible during these measured

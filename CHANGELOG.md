@@ -142,6 +142,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Return the tracked tree to zero en dashes and em dashes, which the
+  editorial rule requires and the 2026-08-29 sweep had achieved. Eleven had
+  crept back into the changelog, the recovery study and the co-op spec. The
+  invariant battery does not check for them, tracked in
+  [#674](https://github.com/saworbit/argus/issues/674).
+
 - Correct the contributor and agent guidance on the lab tick rate. The
   frametime 0.1 rule they taught was refuted in lab 0.26: 0.1 was `ftos`
   printing a 0.05 s frame to one decimal, and every match has run at
@@ -163,7 +169,7 @@ passing botmatch does not establish better human play.
 - Synchronise root status, contributor checks, the tool index, telemetry and
   runbooks with the broader-map studies and 19 private fixture variants.
   Track remaining map, movement, reporting and test-coverage gaps in
-  [#622–#629](docs/mover-intelligence.md#tracked-follow-ups).
+  [#622-#629](docs/mover-intelligence.md#tracked-follow-ups).
 
 - Prefer shorter geometric distances among routes with the same fewest-link
   count; shopping and route installation share the settled distance tree.
