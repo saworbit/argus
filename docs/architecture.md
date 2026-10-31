@@ -54,6 +54,11 @@ damage corroborates an immobile body's need for the existing last-resort
 rescue; lift/train rides and destination checks remain protected. See the
 [recovery rules and physical regressions](freeze-recovery.md).
 
+Development combat also reassesses its target using recent hostile damage,
+observed powerups and a commitment margin. It can answer a visible third-party
+attacker or prefer a vulnerable opponent while preserving reaction delay,
+goal ownership and fair observation. See the [decision policy and controls](combat-attention.md).
+
 The tactical attack-cover-return state machine owns movement temporarily on
 two authored routes. It preserves item-route state but suppresses incompatible
 launches, validates incoming momentum and brakes during handoff. See its

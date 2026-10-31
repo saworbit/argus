@@ -10,7 +10,7 @@ from pathlib import Path
 import re
 
 PAT = re.compile(r"(?:BOTLOG|ARGLOG) (.+?) t\s+([\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)' spd\s+(-?[\d.]+) yaw\s+(-?[\d.]+) mode\s+(\d) st\s+(\d+) gl\s+(\d+)(?: hp\s+(-?[\d.]+) frg\s+(-?\d+))?")
-EVENT_VERBS = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats"
+EVENT_VERBS = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|retarget|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats"
 EVT = re.compile(r"ARGEVT (.+?) (" + EVENT_VERBS + r")(?:\s+(.*))?$")
 MAP = re.compile(r"(?:SpawnServer:\s+|ARGUS init on\s+)([A-Za-z0-9_]+)", re.I)
 INSTRUMENTS = frozenset(("labprobe", "labcamera", "unconnected"))

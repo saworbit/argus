@@ -12,6 +12,9 @@ current development source; see docs/map-intelligence.md and
 docs/freeze-recovery.md. A later ten-map mover study rejected its runtime
 prototype. e1m3/e1m4 navigation remains experimental and unregistered.
 See docs/mover-intelligence.md for the retained findings.
+Development combat also reassesses opponents using observed threats and
+recent damage while retaining focus, reaction delay and retreat intent.
+See docs/combat-attention.md for the decision checks and map evidence.
 
 PLAY: CLASSIC ENGINES
 --------------------

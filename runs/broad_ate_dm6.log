@@ -1,0 +1,76 @@
+LOG started on: 10/31/2026 20:07:15 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm6
+Clearing memory
+Programs occupy 1092K.
+trying to open external vis file
+maps/dm6.vis not found, trying attentioncheck_broad_ate.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 238 nodes, 1498 links
+0 entities inhibited
+ARGUS init on dm6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '  0.0 -1088.0 264.0' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero engage Carmack
+TACTICCHECK Romero t   1.2 stage evaluated
+TACTICCHECK Romero t   1.2 stage visible
+TACTICCHECK Romero t   1.2 stage loadout
+ARGUS Romero threatmove range 2
+ARGLOG Romero t   1.2 pos '408.0 -1088.0 256.0' spd 0 yaw 356.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack engage Romero
+ARGUS Carmack threatmove range 2
+ARGLOG Carmack t   1.2 pos '456.0 -1504.0 256.0' spd 0 yaw 261.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   1.7 pos '151.1 -1088.0 251.7' spd 320 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '550.6 -1124.0 256.0' spd 320.7 yaw 261.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '476.1 -1466.2 256.0' spd 152.5 yaw  78.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGEVT Carmack pursue
+BHVRPL begin target_attention
+ATFIX begin dt_ms  14.0
+ATFIX check geometry 1
+ATFIX check minor_difference_keeps_focus 1
+ARGEVT Carmack retarget attention_challenger
+ATFIX check answers_visible_attacker 1
+ATFIX check switch_reaction_delayed 1
+ATFIX check goal_retained 1
+ATFIX check secondary_is_not_primary 1
+ARGEVT Carmack retarget attention_challenger
+ATFIX check avoids_invulnerable_fixation 1
+ARGEVT Carmack retarget attention_challenger
+ATFIX check retreat_intent_retained 1
+ATFIX check commitment_held 1
+ATFIX check scan_clock_held 1
+ATFIX check warmup_keeps_policy 1
+ATFIX check tactic_keeps_owner 1
+ATFIX check hidden_attacker_not_seen 1
+ATFIX check hidden_changes_preserve_rng 1
+ATFIX check hidden_current_uses_cached_cues 1
+ATFIX check ring_still_requires_sight 1
+ATFIX check old_aggression_expires 1
+ATFIX check ally_damage_not_hostile 1
+ATFIX check world_self_not_hostile 1
+ATFIX check removed_attacker_forgotten 1
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ATFIX check respawn_clears_attention 1
+ATFIX end checks 21 failures 0

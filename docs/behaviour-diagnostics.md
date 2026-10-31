@@ -19,6 +19,11 @@ its runtime mover prototype. e1m3/e1m4 remain experimental and unregistered.
 Those studies have their own controls, cadence and stopping rules; the
 historical cohorts below are not retested by those later match sets.
 
+The subsequent [combat target policy](combat-attention.md) reconsiders an
+opponent using observed cues and recent hostile damage, while retaining
+reaction delay, retreat intent and the item goal. Its active-source boundary
+and frozen historical health definitions are checked separately.
+
 The earlier muzzle verification comprises 14 native controlled checks and two
 negative controls, plus its recorded 41 focused Python tests. It is not a demonstration
 of improved gameplay. That muzzle verification ran no new cohorts; its changes remain in

@@ -33,6 +33,11 @@ maps. A further [ten-map investigation](docs/mover-intelligence.md) fixed the
 navigation generator's entity budget and retained a rejected mover prototype
 as evidence. These studies do not establish better play against people.
 
+The current [combat decision work](docs/combat-attention.md) lets a bot
+reconsider its opponent when another visible player attacks, or when a
+vulnerable alternative beats an invulnerable target. Focus and reaction
+delays remain, and hidden opponent inventory is not used.
+
 ## Install and play
 
 ### What you need

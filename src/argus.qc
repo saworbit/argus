@@ -225,6 +225,9 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_motgain;             // motion-error gain from aim-scaled skill
 
 .entity ar_enemy;
+.entity ar_hurtfoe;             // identity of a recent hostile damage source
+.float  ar_hurtfoetime;         // damage is attention evidence, not sight
+.float  ar_targetscan, ar_targethold;
 .float  ar_seen;                // last time enemy was visible
 .vector ar_lastseen;            // where the enemy was last visible
 .entity ar_obsenemy;            // identity attached to this visual sample
@@ -3347,7 +3350,15 @@ void(entity attacker, float dmg) Argus_Pain =
     // Damage is an urgency cue, not a visual observation of the attacker.
     if (dmg > 0 && attacker != world && attacker != self
         && !Argus_IsAlly (attacker))
+    {
         self.ar_hurttime = time;
+        if (attacker.classname == "player" && attacker.health > 0
+            && !attacker.cam_active && !attacker.ar_disconnected)
+        {
+            self.ar_hurtfoe = attacker;
+            self.ar_hurtfoetime = time;
+        }
+    }
     // flinch: tracking restarts, aim error widens for a moment
     self.ar_track = time;
     // being shot ends a hesitation outright, and bars the next one for
@@ -3384,6 +3395,8 @@ void(entity attacker, float dmg) Argus_Pain =
         self.ar_motprev = '0 0 0';
         self.ar_enemy = attacker;
         Argus_ObserveEnemy (attacker);
+        self.ar_targethold = time + 0.8;
+        self.ar_targetscan = time + 0.4;
         self.ar_react = time + self.ar_reactbase * 0.7 + random () * 0.2;
         self.ar_track = time;
     }
@@ -3627,6 +3640,8 @@ void() Argus_BaseStats =
     Argus_ObservationReset ();
     self.ar_enemy = world;
     self.ar_lastfoe = world;
+    self.ar_hurtfoe = world; self.ar_hurtfoetime = 0;
+    self.ar_targetscan = 0; self.ar_targethold = 0;
     Argus_SetSkill ();
     self.health = 100;
     // spawn-field parity with PutClientInServer: max_health 0 made
@@ -4293,6 +4308,8 @@ void(entity target) Argus_ObservationRemoved =
         if (b.ar_secondary == target)
         { b.ar_secondary = world; b.ar_secondarypos = '0 0 0'; }
         if (b.ar_lastfoe == target) b.ar_lastfoe = world;
+        if (b.ar_hurtfoe == target)
+        { b.ar_hurtfoe = world; b.ar_hurtfoetime = 0; }
         b = b.ar_chain;
     }
     self = saved;
@@ -4483,10 +4500,33 @@ entity() Argus_CoopFindThreat =
     return best;
 };
 
+// Compare observable opportunities with our own recent experience. A hidden
+// current target supplies cached cues; a challenger supplies cues only after
+// visibility succeeds. Exact opponent health, armour and ammunition play no
+// part. A short-lived attacker matters more than an old grudge, while a
+// visible pent makes another available opponent a better use of ammunition.
+float(entity foe, float distance, float powers) Argus_TargetValue =
+{
+    local float value;
+    value = 2500 - distance;
+    if (powers & 1) value = value + 600;
+    if (foe == self.ar_nemesis && self.ar_nemkills >= 3
+        && self.ar_skill >= AR_SKILL_MEMORY)
+        value = value + 600;
+    if (self.ar_skill >= AR_SKILL_MEMORY)
+    {
+        if (powers & 2) value = value - 900;
+        if (foe == self.ar_hurtfoe && self.ar_hurtfoetime > 0
+            && time >= self.ar_hurtfoetime && time < self.ar_hurtfoetime + 2)
+            value = value + 900 * (1 - (time - self.ar_hurtfoetime) / 2);
+    }
+    return value;
+};
+
 void() Argus_Perceive =
 {
     local entity b, best;
-    local float d, bd, ok;
+    local float d, bd, ok, powers, switching;
     local vector to, fov;
 
     if (self.ar_obsenemy != world && self.ar_obsenemy != self.ar_enemy)
@@ -4533,7 +4573,13 @@ void() Argus_Perceive =
             self.ar_motprev = '0 0 0';
         }
         if (self.ar_enemy != world)
-            return;
+        {
+            if (coop > 0 || self.ar_skill < AR_SKILL_MEMORY || self.ar_tactic
+                || self.ar_obsenemy != self.ar_enemy
+                || time < self.ar_targetscan || time < self.ar_targethold)
+                return;
+            self.ar_targetscan = time + 0.4;
+        }
     }
 
     if (coop > 0)
@@ -4570,13 +4616,17 @@ void() Argus_Perceive =
     // choice uses distance and visible powerup cues. Exact enemy health
     // is private even in view. A quad carrier remains a priority, because the
     // worst place for a quad is someone else's hands.
-    best = world;
+    best = self.ar_enemy;
     bd = 0;
+    if (best != world)
+        bd = Argus_TargetValue (best,
+            vlen (Argus_EnemyPosition () - self.origin), self.ar_obspower) + 250;
     makevectors (self.angles);      // v_forward for the FOV gate
     b = find (world, classname, "player");
     while (b != world)
     {
-        if (b != self && b.health > 0)
+        if (b != self && b != self.ar_enemy && b.health > 0
+            && !Argus_IsAlly (b))
         {
             d = vlen (b.origin - self.origin);
             if (d < 2500)
@@ -4621,21 +4671,22 @@ void() Argus_Perceive =
                                                        + self.ar_skill * 0.75
                             && self.ar_skill >= AR_SKILL_MEMORY)
                             ok = 1;
+                        // A real hit supplies a reason to turn around, not
+                        // permission to see through walls or through a ring.
+                        if (b == self.ar_hurtfoe && self.ar_hurtfoetime > 0
+                            && time < self.ar_hurtfoetime + 2
+                            && self.ar_skill >= AR_SKILL_MEMORY)
+                            ok = 1;
                     }
                 }
                 if (ok && Argus_CanSee (b))
                 {
                     // Score only after observation; unseen inventory cannot
                     // change candidate ordering or visibility/RNG work.
-                    d = 2500 - d;
-                    if (b.super_damage_finished > time)
-                        d = d + 600;
-                    // vendetta (OPM slice C): the one who keeps
-                    // killing us outranks the shopping list. Not at
-                    // skill 0 - warmup partners hold no grudges
-                    if (b == self.ar_nemesis && self.ar_nemkills >= 3
-                        && self.ar_skill >= AR_SKILL_MEMORY)
-                        d = d + 600;
+                    powers = 0;
+                    if (b.super_damage_finished > time) powers = 1;
+                    if (b.invincible_finished > time) powers = powers + 2;
+                    d = Argus_TargetValue (b, d, powers);
                     if (d > bd)
                     {
                         best = b;
@@ -4673,14 +4724,22 @@ void() Argus_Perceive =
         }
     }
 
-    if (best != world)
+    if (best != world && best != self.ar_enemy)
     {
-        self.ar_retreating = 0;
-        self.ar_retreatclass = AR_THREAT_UNKNOWN;
+        switching = self.ar_enemy != world;
+        self.ar_secondary = world;
+        self.ar_secondaryscan = 0;
+        if (!switching)
+        {
+            self.ar_retreating = 0;
+            self.ar_retreatclass = AR_THREAT_UNKNOWN;
+        }
         self.ar_mottarget = world;
         self.ar_motoff = '0 0 0';
         self.ar_motprev = '0 0 0';
         self.ar_enemy = best;
+        self.ar_targethold = time + 0.8;
+        self.ar_targetscan = time + 0.4;
         self.ar_pursuing = 0;
         self.ar_prefired = 0;       // a fresh chase earns a fresh shot
         self.ar_react = time + self.ar_reactbase + random () * 0.25;
@@ -4692,9 +4751,15 @@ void() Argus_Perceive =
         self.ar_threatclass = AR_THREAT_UNKNOWN;
         self.ar_threatlog = 0;
         Argus_ObserveEnemy (best);
+        if (switching && self.ar_retreating)
+        {
+            self.ar_retreatclass = self.ar_threatclass;
+            self.ar_covertime = 0;
+        }
         dprint ("ARGEVT ");
         dprint (self.netname);
-        dprint (" engage ");
+        if (switching) dprint (" retarget ");
+        else dprint (" engage ");
         dprint (best.netname);
         dprint ("\n");
     }

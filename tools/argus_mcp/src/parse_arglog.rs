@@ -883,7 +883,7 @@ fn death_re() -> &'static Regex {
     })
 }
 
-const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats";
+const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|retarget|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats";
 
 // A complete sample name is stronger evidence than a word inside the
 // closed verb vocabulary. Prefer the longest known identity. Terminal
@@ -980,6 +980,18 @@ mod tests {
                 Some(("Big Bob".into(), "goal".into(), "item_armor1".into()))
             );
         }
+    }
+
+    #[test]
+    fn retarget_does_not_count_as_an_engagement_start() {
+        let tape = parse_tape(
+            "ARGEVT Joe Rogan spawned\nARGEVT Joe Rogan engage Carmack\n\
+ARGEVT Joe Rogan retarget Romero\n",
+        );
+        assert_eq!(tape.event_counts.get("engage"), Some(&1));
+        assert_eq!(tape.event_counts.get("retarget"), Some(&1));
+        assert_eq!(tape.events.last().unwrap().bot, "Joe Rogan");
+        assert_eq!(tape.events.last().unwrap().rest, "Romero");
     }
 
     #[test]
