@@ -144,7 +144,7 @@ retain the difference between observations and proven causes.
 | [#623](https://github.com/saworbit/argus/issues/623) | Close e1m3 pickup reach gaps within the legal budget before registration |
 | [#624](https://github.com/saworbit/argus/issues/624) | Cover e1m4 deathmatch spawns and pickups before registration |
 | [#625](https://github.com/saworbit/argus/issues/625) | Give native graph inventory and coverage explicit compilation provenance |
-| [#626](https://github.com/saworbit/argus/issues/626) | Quarantine new and historical recovery/transfer fixture tapes without rewriting raw evidence |
+| [#626](https://github.com/saworbit/argus/issues/626) | Completed: native parsing quarantines recovery/transfer fixtures and invalidates older cached labels |
 | [#627](https://github.com/saworbit/argus/issues/627) | Completed: all four engine-free budget/report/receipt suites block fast CI |
 | [#628](https://github.com/saworbit/argus/issues/628) | Diagnose the e1m5 six-second window without assuming a chosen pause or a new mover regression |
 | [#629](https://github.com/saworbit/argus/issues/629) | Carry the registered primary into per-tape comparisons |

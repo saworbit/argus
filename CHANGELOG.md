@@ -245,6 +245,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Quarantine new and historical recovery/transfer fixture tapes from native
+  match comparisons and default bot-corpus queries, invalidating older cached
+  classifications without changing raw tapes or numeric metrics (#626).
+
 - Run the navigation-budget, map-report, recovery-receipt and mover-receipt
   suites as blocking fast-CI checks, with matching contributor and lab guidance
   (#627).

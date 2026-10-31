@@ -3423,6 +3423,41 @@ Key metrics: stalls, goals, K/D spread, coverage cells, avg speed, lava deaths, 
 #[cfg(test)]
 mod tests {
     #[test]
+    fn physical_fixture_activation_reaches_every_comparison_guard() {
+        let text = log_a();
+        let ordinary = super::brief_text(&text, Some("dm4"));
+        assert!(!super::is_controlled_fixture(&ordinary));
+        for marker in ["FRFIX begin dt_ms 14", "MVFIX begin dt_ms 100"] {
+            let fixture = super::brief_text(&format!("{marker}\n{text}"), Some("dm4"));
+            assert!(super::is_controlled_fixture(&fixture));
+            assert_eq!(
+                serde_json::to_value(&fixture.totals).unwrap(),
+                serde_json::to_value(&ordinary.totals).unwrap()
+            );
+            for report in [
+                super::compare_band_primary(
+                    std::slice::from_ref(&fixture),
+                    std::slice::from_ref(&ordinary),
+                    Some("stall_parity"),
+                ),
+                super::compare_band_primary_scaled(
+                    std::slice::from_ref(&fixture),
+                    std::slice::from_ref(&ordinary),
+                    Some("stall_parity"),
+                ),
+                super::compare_briefs(ordinary.clone(), fixture.clone()),
+                super::compare_briefs_scaled(ordinary.clone(), fixture),
+            ] {
+                assert_eq!(report.verdict, super::Verdict::Mixed);
+                assert!(report.gate_card.contains("CONTROLLED FIXTURE"));
+                assert!(
+                    report.gates.is_empty() && report.band.is_empty() && report.stats.is_empty()
+                );
+            }
+        }
+    }
+
+    #[test]
     fn controlled_tapes_never_receive_ordinary_quality_verdicts() {
         let mut ordinary = super::MatchBrief::empty();
         ordinary.map = Some("dm4".into());

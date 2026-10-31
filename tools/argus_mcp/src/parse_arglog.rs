@@ -853,6 +853,8 @@ fn controlled_fixture(text: &str) -> bool {
         line.starts_with("BHVFIX begin ")
             || line.starts_with("TACFIX begin ")
             || line.starts_with("BHVRPL begin ")
+            || line.starts_with("FRFIX begin ")
+            || line.starts_with("MVFIX begin ")
     })
 }
 
@@ -1655,6 +1657,8 @@ ARGEVT Reap death world pos '10 20 -360'
             "BHVFIX begin dm4 case 0",
             "TACFIX begin dm4 case 12",
             "BHVRPL begin dm4 seed 113",
+            "FRFIX begin dt_ms 14",
+            "MVFIX begin dt_ms 100",
         ] {
             let text = format!("{marker}\n{base}");
             assert!(parse_tape(&text).controlled_fixture);
@@ -1665,7 +1669,7 @@ ARGEVT Reap death world pos '10 20 -360'
         }
         assert!(
             !parse_tape(&format!(
-                "BHVDBG Reap t 1\nBHVTIME t 1 frames 1\nBHVFIX sample 1\n{base}"
+                "BHVDBG Reap t 1\nBHVTIME t 1 frames 1\nBHVFIX sample 1\nFRFIX check still_shoots 1\nMVFIX result completed 1\n{base}"
             ))
             .controlled_fixture
         );

@@ -39,7 +39,7 @@ use std::path::{Path, PathBuf};
 pub const INDEX_FILE: &str = "tape_index.tsv";
 /// One row per hotspot cell, for the cell-level questions.
 pub const CELLS_FILE: &str = "tape_cells.tsv";
-const CONTEXT_SCHEMA: &str = "fixtures-v1";
+const CONTEXT_SCHEMA: &str = "fixtures-v2";
 
 /// One tape, flattened. Every field is a number or a short string, so
 /// the whole corpus is a table and a question about it is a filter and
@@ -631,11 +631,37 @@ mod tests {
     }
 
     #[test]
+    fn retained_physical_fixtures_require_explicit_review_queries() {
+        for name in ["freeze_cert_a2_dm6.log", "broad_mvfix_b2_e1m6.log"] {
+            let path = runs_dir().join(name);
+            let original = std::fs::read(&path).unwrap();
+            let text = std::str::from_utf8(&original).unwrap();
+            let brief = crate::intel::brief_text(text, None);
+            assert!(crate::intel::is_controlled_fixture(&brief), "{name}");
+            let mut row = mk(name, "", "", 0.0);
+            row.kind = kind_of(name, &brief);
+            assert_eq!(row.kind, "fixture");
+            assert!(!Query::default().keeps(&row));
+            assert!(Query {
+                kind: Some("fixture".into()),
+                ..Default::default()
+            }
+            .keeps(&row));
+            assert_eq!(std::fs::read(&path).unwrap(), original);
+        }
+    }
+
+    #[test]
     fn old_context_cache_cannot_reintroduce_fixture_rows_as_bots() {
         let path =
             std::env::temp_dir().join(format!("argus_old_context_{}.tsv", std::process::id()));
-        std::fs::write(&path, "run\tmap\tkind\npoisoned_fixture\tdm4\tbot\n").unwrap();
-        assert!(read_tsv(&path).is_empty());
+        for text in [
+            "run\tmap\tkind\npoisoned_fixture\tdm4\tbot\n",
+            "run\tmap\tkind\tcontext_schema\npoisoned_fixture\tdm4\tbot\tfixtures-v1\n",
+        ] {
+            std::fs::write(&path, text).unwrap();
+            assert!(read_tsv(&path).is_empty());
+        }
         std::fs::remove_file(path).unwrap();
     }
 
