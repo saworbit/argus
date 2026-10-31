@@ -2,6 +2,7 @@ import tempfile
 from pathlib import Path
 import unittest
 import hashlib
+from unittest.mock import patch
 
 from check_health_fixture import audit, check, LABELS
 from run_health_fixture import prepare, audit_private, body
@@ -62,6 +63,19 @@ class HealthTests(unittest.TestCase):
             with (path/'src/argus.qc').open('a') as f:f.write('\nfloat unintended_fixture_mutation;\n')
             with self.assertRaises(AssertionError):audit_private(path,False)
         self.assertEqual((ROOT/'src/defs.qc').read_bytes(),original)
+
+    def test_active_recovery_edits_cannot_bypass_the_frozen_source_guard(self):
+        target=ROOT/'src/argus.qc'
+        active=target.read_text()
+        altered=active.replace('self.ar_recoveryuntil = time + 0.8;',
+                               'self.ar_recoveryuntil = time + 0.9;')
+        self.assertNotEqual(active,altered)
+        read=Path.read_text
+        def changed(path,*args,**kwargs):
+            return altered if path==target else read(path,*args,**kwargs)
+        with patch.object(Path,'read_text',changed):
+            with self.assertRaisesRegex(AssertionError,'active production source changed'):
+                parked_source()
 
 
 if __name__=='__main__':unittest.main()

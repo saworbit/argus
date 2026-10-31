@@ -1126,7 +1126,7 @@ was added. See [bounded results](../runs/hi2_dm4_isolation.results.json).
 
 The remaining text records the candidate's original implementation and checks.
 
-The manifest reverses allowlisted opening-door, button/door, offset-entry,
+The manifest reverses allowlisted recovery, opening-door, button/door, offset-entry,
 active-health, plan and muzzle
 amendments in memory before checking the original parked hashes and
 reconstructing the historical candidate. Live-source audits and fresh native

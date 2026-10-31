@@ -251,7 +251,7 @@ callers; it has no CLI. The private `fixtures/muzzle_clearance.qc` is excluded
 from production and emits `MFIX` under a quarantining `BHVRPL begin` marker.
 
 `health_inventory_parked.py` verifies the active source against a declared
-manifest, reverses allowlisted opening-door, button/door, offset-entry,
+manifest, reverses allowlisted recovery, opening-door, button/door, offset-entry,
 active-health, plan and muzzle
 amendments in memory, then reconstructs
 the historical health/inventory candidate for static checks. Those historical

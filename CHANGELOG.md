@@ -237,6 +237,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Preserve the historical health-perception fixture boundary after recovery
+  changes with an exact reverse amendment; retain active function checks and
+  rejection of undeclared source edits.
+
 - Keep navigation infrastructure and synthetic platform pads inside Quake's
   entity allowance. The experimental e1m3 graph now fits within 600 edicts;
   e1m3/e1m4 still fail playability gates and remain unregistered.
