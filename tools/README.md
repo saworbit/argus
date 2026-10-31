@@ -340,11 +340,12 @@ requires both frozen compilation-list and dispatcher registration.
 
 Engine-free receipt and budget tests are `test_nav_budget.py`,
 `test_map_intelligence_report.py`, `test_freeze_recovery.py` and
-`test_mover_transfer.py`. They currently require explicit local invocation;
-the fast workflow does not yet run them. The separate compile workflow
-includes the `freeze` and `mover` families.
+`test_mover_transfer.py`. All four block the fast workflow using the same
+Python environment as the other contract suites. They need no engine, BSPs
+or historical backups. The separate compile workflow includes the `freeze`
+and `mover` families; native trials remain the physical verification layer.
 See [the tracked study follow-ups](../docs/mover-intelligence.md#tracked-follow-ups)
-for CI integration, fixture quarantine and comparison-primary propagation.
+for fixture quarantine and comparison-primary propagation.
 
 `verify_target_attention.py` uses `--output`, `--prefix`, optional frozen
 `--source`, `--maps`, `--ticrate`, `--port`, and explicit `--legacy-control`.
