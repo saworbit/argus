@@ -68,8 +68,8 @@ track. Use the console tape for full-map event counts and quality gates.
 Optional `BHVDBG` snapshots and isolated `BHVFIX` trials have a separate
 [behaviour diagnostics contract](behaviour-diagnostics.md). They do not
 change the ordinary ARGLOG/ARGEVT metric grammar. `BHVTIME` reports independent
-cadence windows. Activated `BHVFIX begin`, `TACFIX begin` and `BHVRPL begin`
-mark controlled fixtures: native briefs label them and ordinary quality
+cadence windows. Activated `BHVFIX begin`, `TACFIX begin`, `BHVRPL begin`,
+`FRFIX begin` and `MVFIX begin` mark controlled fixtures: native briefs label them and ordinary quality
 comparisons refuse them. Passive snapshots alone do not mark a fixture.
 
 `PERFIX` and `HIFIX` report private observation and health/inventory checks.
@@ -108,10 +108,12 @@ The broader-map studies add these private records:
 | `FRFIX` | Measured cadence, pin recovery, fire/goal/footing/ownership guards and checked totals; `verify_freeze_recovery.py` |
 | `MVFIX` | Measured cadence, boarding, continuing-route retention, static-floor landing, launches and completion; `verify_mover_transfer.py` |
 
-`FRFIX` and `MVFIX` currently lack the recognised `BHVRPL begin` quarantine
-marker. Their controlled tapes must be kept out of ordinary match bands;
-the native parser does not automatically exclude these two record families.
-The parser/fixture repair is tracked in [#626](https://github.com/saworbit/argus/issues/626).
+Native parsing treats `FRFIX begin` and `MVFIX begin` as controlled-fixture
+activation, including retained historical tapes without a `BHVRPL` marker.
+Briefs label them, ordinary comparisons refuse them and default bot-corpus
+queries exclude them. Passive check/result records alone do not activate a
+fixture. The corpus context schema invalidates older cached classifications;
+rebuild the index rather than editing raw tapes or their stored hashes (#626).
 Use the verifier receipts for outcomes. Transfer completion is not proof of
 the later prize pickup; check the stock item-touch/powerup state separately.
 The ordinary recovery diagnostic `ARGUS <bot> unstick underfire <position>`

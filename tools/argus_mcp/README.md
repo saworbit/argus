@@ -1196,8 +1196,8 @@ performs real rendering; its current contract is under
 ## Asking the corpus a question
 
 Ordinary queries default to `kind=bot`, including hotspot-cell queries.
-Activated TACFIX/BHVFIX encounters and deterministic-input replays are
-`kind=fixture`; use that kind explicitly to inspect them. Human and fixture
+Activated TACFIX/BHVFIX encounters, deterministic-input replays and
+FRFIX/MVFIX physical fixtures are `kind=fixture`; use that kind explicitly to inspect them. Human and fixture
 tapes cannot enter ordinary bot aggregates. Native quality comparisons also
 refuse controlled fixtures, including when durations are scaled. This changes
 analysis context, not the numeric ARGLOG/ARGEVT definitions. Cache rows now
