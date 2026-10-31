@@ -654,13 +654,13 @@ and physical completion; bank cases require dry ground. `--ticrate .1`
 selects the measured 100 ms profile; `.0139` selects played cadence.
 
 Cases 1 and 2 test original pool entries (case 1 also supports dm3).
-Cases 3–6 inject candidate edges once at setup and are graph experiments,
-including rejected alternatives. Cases 7–9 use the generated graph without
+Cases 3 through 6 inject candidate edges once at setup and are graph experiments,
+including rejected alternatives. Cases 7 through 9 use the generated graph without
 injected links: ramp, full rocket-launcher task, and moat-to-bank escape.
 A failed full task remains a failed task even when its escape segment works.
 `--control` requires the original eighteen-second zero-handoff failure;
 it is intended for cases 1 and 2, not partial-route negatives.
-Cases 10–12 inspect e1m1 movement. Case 11 is a positive ordinary ride.
+Cases 10 through 12 inspect e1m1 movement. Case 11 is a positive ordinary ride.
 Case 12 starts the observed slab raised, then leaves its normal call/crush
 cycle to the engine. It requires a healthy horizontal exit in under six
 seconds; `--control` requires the old delay of at least seven seconds.
