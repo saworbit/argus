@@ -682,6 +682,30 @@ waypoint budget. Witnessed jump actions survive coarse walk classification.
 Legacy proven-pair arrays retain their existing meaning. See the
 [e1m5 investigation](../../docs/e1m5-encounters.md).
 
+## Continuing lift-route checks
+
+```text
+python tools/verify_mover_transfer.py --output backups/<new-directory> --prefix <new_prefix>
+```
+
+This private, no-install fixture places one bot at the e1m6 or dm3 boarding
+point and assigns a task beyond the lift exit. Production routing and physics
+own all movement afterwards. Success requires actual boarding, dry static-floor
+landing near the exit, advancement to the next route node and uninterrupted
+task ownership. A rescue warp rejects the result. A landing alone is insufficient.
+
+`--ticrate .1` selects the measured 100 ms profile; `.0139` selects played
+cadence. `--source <frozen-src>` uses a frozen source tree. `--control` records
+the unchanged controller's outcome without requiring success. Use a fresh
+output and prefix for every run; `--maps e1m6` limits the task set and `--port`
+isolates an engine from other matches. Compilers must still run serially.
+
+`MTRACE` samples are read-only observations of position, support, platform
+phase and route ownership. `BHVRPL` quarantines the tape from ordinary gameplay
+bands. The receipt parser rejects missing or inconsistent landing/handoff
+proof, wrong maps and cadence. The observer audit rejects actor mutations and
+steering after setup. See the [e1m6 evidence](../../docs/e1m6-decisions.md).
+
 ## Fixed navigation benchmark
 
 For passive `BHVDBG` snapshots and the isolated on/off observer fixture, see

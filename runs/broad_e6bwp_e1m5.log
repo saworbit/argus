@@ -1,0 +1,143 @@
+LOG started on: 11/01/2026 07:37:12 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m5
+Clearing memory
+Programs occupy 1117K.
+trying to open external vis file
+maps/e1m5.vis not found, trying watercheck_broad_e6bwp.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 195 nodes, 706 links
+29 entities inhibited
+ARGUS init on e1m5
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '-1532.0 1600.0 152.0' spd 0 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-352.0 1996.0 216.0' spd 0 yaw 317.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-576.0 376.0 175.0' spd 0 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   1.7 pos '-1524.5 1743.9 152.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-278.4 1911.8 216.0' spd 192.2 yaw 182.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-645.9 502.0 175.0' spd 320 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+RDEC begin checks 56
+RDEC check walk_chain 1
+RDEC check typed_jump 1
+RDEC check typed_sprint 1
+RDEC check typed_rocket 1
+RDEC check typed_swim 1
+RDEC check typed_lift 1
+RDEC check typed_train 1
+RDEC check typed_door 1
+RDEC check height_change 1
+RDEC check active_action 1
+RDEC check swimming_keeps_depth 1
+RDEC check no_route 1
+RDEC check cycle_is_bounded 1
+RDEC check action_without_rockets 1
+RDEC check rocket_only_requires_gear 1
+RDEC check rocket_only_with_gear 1
+RDEC check sprint_requires_skill 1
+RDEC check impossible_jump_rejected 1
+RDEC check jump_waits_for_seat 1
+RDEC check jump_ready_on_seat 1
+RDEC check bank_waits_for_ground 1
+RDEC check bank_waits_for_height 1
+RDEC check wading_bank_is_support 1
+RDEC check action_starts_clock 1
+RDEC check action_times_out 1
+RDEC check action_approach_renews 1
+RDEC check action_oscillation_not_progress 1
+RDEC check action_pause_suspends 1
+RDEC check action_contact_does_not_renew 1
+RDEC check action_new_seat_resets 1
+RDEC check action_new_goal_resets 1
+RDEC check action_direct_held 1
+ARGUS  actionfail '-1543.0 1449.0 152.0'
+RDEC check action_task_preserved 1
+ARGUS  actionfail '-1543.0 1449.0 152.0'
+RDEC check action_goal_shelved 1
+RDEC check action_dry_wait_owned 1
+RDEC check action_dry_airborne_wait_unowned 1
+RDEC check action_floating_wait_unowned 1
+RDEC check action_wading_wait_unowned 1
+RDEC check action_rider_must_progress 1
+RDEC check action_stale_contact_unowned 1
+RDEC check action_no_wait_unowned 1
+RDEC check noise_walk_allowed 1
+RDEC check noise_jump_held 1
+RDEC check noise_swim_held 1
+RDEC check noise_lift_held 1
+RDEC check noise_train_held 1
+RDEC check noise_rocket_held 1
+RDEC check noise_door_held 1
+RDEC check noise_runup_held 1
+RDEC check noise_tactic_held 1
+RDEC check gait_plain_route_allowed 1
+RDEC check gait_immediate_action 1
+RDEC check gait_second_action 1
+RDEC check gait_distant_action_allowed 1
+RDEC check gait_action_releases_hold 1
+RDEC check gait_plain_hold_kept 1
+RDEC end checks 56 failures 0
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BHVRPL begin water_route
+WRFIX begin dt_ms  15.0 case 9 start '-279.0 425.0   8.0' goal '-87.0 809.0 111.0'
+ARGEVT Carmack swim
+WRFIX sample t 0 pos '-279.0 425.0   8.0' node '  0.0   0.0   0.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1
+ARGEVT Carmack route 6 start '-343.0 361.0 -32.0' goal '-87.0 809.0 111.0'
+ARGLOG Carmack t   2.2 pos '-268.5 426.9   4.8' spd  96.5 yaw 31 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   0.5 pos '-220.6 429.5 -22.8' node '  9.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 2 active 1 hp 100 frames 36
+ARGLOG Carmack t   2.7 pos '-181.2 430.2 -23.0' spd 226.3 yaw 40 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   1.0 pos '-100.3 430.1 -25.1' node '  9.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 2 active 1 hp 100 frames 72
+ARGLOG Carmack t   3.2 pos '-53.5 429.3 -23.5' spd 273.3 yaw 63 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   1.5 pos ' 37.9 424.2 -25.4' node ' 41.0 617.0 -32.0' grounded 0 wet 3 feet -3 handoffs 3 active 1 hp 100 frames 107
+ARGLOG Carmack t   3.7 pos ' 89.6 424.1 -22.6' spd 270.0 yaw 99 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   2.0 pos '124.8 458.0 -24.3' node ' 41.0 617.0 -32.0' grounded 0 wet 3 feet -3 handoffs 3 active 1 hp 100 frames 143
+ARGLOG Carmack t   4.2 pos '115.3 488.1 -24.0' spd 197.7 yaw 105 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   2.5 pos ' 85.2 555.2 -22.5' node ' 41.0 617.0 -32.0' grounded 0 wet 3 feet -3 handoffs 3 active 1 hp 100 frames 175
+ARGLOG Carmack t   4.7 pos ' 62.2 597.0 -17.5' spd 262.1 yaw 98 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   3.0 pos ' 29.6 674.4  16.1' node ' 20.0 841.0  80.0' grounded 0 wet 3 feet -3 handoffs 4 active 1 hp 100 frames 207
+ARGLOG Carmack t   5.3 pos ' 20.0 728.7  30.3' spd 274.3 yaw 90 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+ARGEVT Carmack swim
+WRFIX sample t   3.5 pos ' 20.0 815.4  67.0' node ' 20.0 889.0 104.0' grounded 1 wet 1 feet -3 handoffs 5 active 1 hp 100 frames 239
+ARGEVT Carmack jump
+ARGLOG Carmack t   5.8 pos ' 20.0 879.7 115.1' spd 320 yaw 214 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   4.1 pos ' 20.0 922.0 114.5' node ' 20.0 889.0 104.0' grounded 0 wet 0 feet -1 handoffs 5 active 1 hp 100 frames 272
+ARGUS Carmack hurdle speed  60.1 up 276.4
+ARGEVT Carmack jump
+ARGUS Carmack aircontrol
+ARGLOG Carmack t   6.3 pos ' 20.0 914.3 134.3' spd  49.3 yaw 225 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   4.6 pos ' 20.0 900.0 146.0' node '-87.0 809.0 111.0' grounded 0 wet 0 feet -1 handoffs 6 active 1 hp 100 frames 305
+ARGLOG Carmack t   6.8 pos ' 20.0 889.3 110.7' spd  49.4 yaw 217 mode 2 st 0 gl 0 hp 100 frg 0
+ARGUS Carmack hurdle speed  82.0 up 276
+ARGEVT Carmack jump
+WRFIX sample t   5.1 pos ' 19.9 874.1 147.3' node '-87.0 809.0 111.0' grounded 0 wet 0 feet -1 handoffs 6 active 1 hp 100 frames 338
+ARGUS Carmack aircontrol
+ARGLOG Carmack t   7.3 pos ' 19.1 862.1 141.4' spd  56.4 yaw 207 mode 2 st 0 gl 0 hp 100 frg 0
+ARGUS Carmack jumpapproach 0 actual 308.5
+ARGEVT Carmack jump
+WRFIX sample t   5.6 pos '-38.3 829.6 168.2' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 6 active 1 hp 100 frames 371
+ARGLOG Carmack t   7.8 pos '-100.3 802.0 179.7' spd 308.5 yaw 183.0 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGEVT Carmack route 10 start '-87.0 809.0 111.0' goal '-535.0 1353.0 152.0'
+WRFIX sample t   6.1 pos '-107.9 788.2 138.4' node '-87.0 809.0 111.0' grounded 0 wet 0 feet -1 handoffs 6 active 1 hp 100 frames 403
+WRFIX end completed 1 seconds   6.2 handoffs 6 active 0 pos '-102.2 788.2 111.0' hp 100 frames 409 grounded 1 feet -1

@@ -2,7 +2,8 @@
 // placement. The checkpoint is dry static floor on the continuing route,
 // not a goal-selection event or a claim that the later prize was picked up.
 float mv_started, mv_done, mv_when, mv_previous_time, mv_dt;
-float mv_boarded, mv_launches, mv_badlaunch, mv_completed;
+float mv_nextsample;
+float mv_boarded, mv_launches, mv_badlaunch, mv_completed, mv_landed, mv_lost;
 entity mv_bot, mv_marker, mv_mover;
 vector mv_start, mv_goal, mv_exit;
 
@@ -49,6 +50,7 @@ void() MoverTransferBefore =
     setsize (mv_marker, '-8 -8 -8', '8 8 8'); setorigin (mv_marker, mv_goal);
     self.ar_taskgoal = mv_marker; self.ar_goal = mv_marker;
     self.ar_goalstart = time + 3600;
+    dprint ("BHVRPL begin mover_transfer\n");
     dprint ("MVFIX begin dt_ms "); dprint (ftos (mv_dt * 1000)); dprint ("\n");
     self = saved;
 };
@@ -63,7 +65,7 @@ void() MoverTransferAfter =
         mv_boarded = 1; mv_mover = mv_bot.groundentity;
     }
     if (mv_boarded && mv_bot.groundentity == mv_mover
-        && mv_bot.ar_hopair && !mv_bot.ar_hoplift && mv_bot.velocity_z == AR_JUMPVEL)
+        && mv_bot.ar_hopair && mv_bot.velocity_z == AR_JUMPVEL)
     {
         mv_launches = mv_launches + 1;
         launch_velocity = mv_bot.velocity; launch_velocity_z = 0;
@@ -71,22 +73,50 @@ void() MoverTransferAfter =
     }
     to = mv_bot.origin - mv_exit; to_z = 0;
     retained = mv_bot.ar_goal == mv_marker && mv_bot.ar_taskgoal == mv_marker;
+    if (!retained) mv_lost = 1;
     dry = mv_bot.ar_wetlevel < 2 && mv_bot.ar_feettype != CONTENT_LAVA
         && mv_bot.ar_feettype != CONTENT_SLIME;
-    mv_completed = (mv_boarded && retained && dry && mv_bot.health > 0
-        && (mv_bot.flags & FL_ONGROUND) && mv_bot.groundentity != mv_mover
-        && fabs (mv_bot.origin_z - mv_exit_z) <= 18 && vlen (to) < 96);
+    if (mv_boarded && retained && dry && mv_bot.health > 0
+        && (mv_bot.flags & FL_ONGROUND) && mv_bot.groundentity == world
+        && fabs (mv_bot.origin_z - mv_exit_z) <= 18 && vlen (to) < 96)
+        mv_landed = 1;
+    // A landing beside the node is insufficient: the controller must accept
+    // the exit and install the continuing route without replacing its goal.
+    mv_completed = (mv_landed && !mv_lost && retained && dry && mv_bot.health > 0
+        && mv_bot.ar_node != world
+        && vlen (mv_bot.ar_node.origin - mv_exit) > 1);
+    if (time >= mv_nextsample)
+    {
+        mv_nextsample = time + 0.5;
+        dprint ("MTRACE t "); dprint (ftos(time - mv_when));
+        dprint (" pos "); dprint (vtos(mv_bot.origin));
+        dprint (" node "); dprint (vtos(mv_bot.ar_node.origin));
+        dprint (" mode "); dprint (ftos(mv_bot.ar_mode));
+        dprint (" lift "); dprint (ftos(mv_bot.ar_hoplift));
+        dprint (" wait "); dprint (ftos(mv_bot.ar_liftwait));
+        dprint (" ground "); dprint (mv_bot.groundentity.classname);
+        dprint (" floor "); dprint (ftos((mv_bot.flags & FL_ONGROUND) != 0));
+        dprint (" state "); dprint (ftos(mv_mover.state));
+        dprint (" mz "); dprint (ftos(mv_mover.absmax_z));
+        dprint (" velocity "); dprint (vtos(mv_bot.velocity));
+        dprint (" budget "); dprint (ftos(mv_bot.ar_actiontime));
+        dprint (" best "); dprint (ftos(mv_bot.ar_actionbest));
+        dprint (" retained "); dprint (ftos(retained)); dprint ("\n");
+    }
     if (mv_completed || time > mv_when + 18 || mv_bot.health <= 0)
     {
         mv_done = 1;
         dprint ("MVFIX result completed "); dprint (ftos (mv_completed));
         dprint (" seconds "); dprint (ftos (time - mv_when));
         dprint (" boarded "); dprint (ftos (mv_boarded));
-        dprint (" route_retained "); dprint (ftos (retained));
+        dprint (" route_retained "); dprint (ftos (retained && !mv_lost));
         dprint (" dry "); dprint (ftos (dry));
         dprint (" alive "); dprint (ftos (mv_bot.health > 0));
         dprint (" launches "); dprint (ftos (mv_launches));
         dprint (" bad_launch "); dprint (ftos (mv_badlaunch));
+        dprint (" landed "); dprint (ftos (mv_landed));
+        dprint (" handoff "); dprint (ftos (mv_bot.ar_node != world
+            && vlen (mv_bot.ar_node.origin - mv_exit) > 1));
         dprint (" pos "); dprint (vtos (mv_bot.origin)); dprint ("\n");
         mv_bot.velocity = '0 0 0'; mv_bot.movetype = MOVETYPE_NONE;
         mv_bot.think = SUB_Null; mv_bot.nextthink = 0;

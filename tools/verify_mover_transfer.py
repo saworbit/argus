@@ -12,11 +12,26 @@ import run_behaviour_equivalence as native
 from run_map_intelligence import ROOT, Lab, digest, write, lab_executable
 
 
+def audit_fixture(text):
+    """Only the real controller may move the bot after initial placement."""
+    after = text.split('void() MoverTransferAfter =', 1)[1]
+    observe, terminal = after.split('    if (mv_completed || time > mv_when + 18 || mv_bot.health <= 0)', 1)
+    assert not re.search(r'\b(setorigin|setsize|walkmove|droptofloor|Argus_\w+)\s*\(', observe)
+    assert not re.search(r'\b\w+\.\w+\s*=(?!=)', observe), 'observer mutates actor/world'
+    assert set(re.findall(r'\b(\w+\.\w+)\s*=(?!=)', terminal)) == {
+        'mv_bot.velocity', 'mv_bot.movetype', 'mv_bot.think', 'mv_bot.nextthink'}
+    assert not re.search(r'\b(setorigin|setsize|walkmove|Argus_\w+)\s*\(', terminal)
+    assert text.count('setorigin (self, mv_start)') == 1
+    assert text.count('BHVRPL begin mover_transfer') == 1
+
+
 def stage(root, output, source=None):
     shutil.copytree(source or root / 'src', output / 'src')
     (output / 'lq1').mkdir(); (output / 'runs').mkdir()
     src = output / 'src'
-    shutil.copy2(root / 'tools/fixtures/mover_transfer.qc', src / 'mover_transfer_fixture.qc')
+    fixture = (root / 'tools/fixtures/mover_transfer.qc').read_text(encoding='utf-8')
+    audit_fixture(fixture)
+    (src / 'mover_transfer_fixture.qc').write_text(fixture, encoding='utf-8', newline='\n')
     path = src / 'progs.src'; text = path.read_text()
     assert text.count('\nworld.qc\n') == 1
     path.write_text(text.replace('\nworld.qc\n', '\nmover_transfer_fixture.qc\nworld.qc\n'))
@@ -30,15 +45,19 @@ def inspect_fixture(text, map_name, ticrate):
     """Reject incomplete, duplicated, wrong-map or wrong-rate measurements."""
     assert not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error'))
     assert re.findall(r'^ARGUS init on (\S+)$', text, re.M) == [map_name]
+    assert text.count('BHVRPL begin mover_transfer') == 1
     starts = re.findall(r'^MVFIX begin dt_ms\s+([\d.]+)$', text, re.M)
-    matches = re.findall(r'^MVFIX result completed\s+([01]) seconds\s+([\d.]+) boarded\s+([01]) route_retained\s+([01]) dry\s+([01]) alive\s+([01]) launches\s+(\d+) bad_launch\s+([01]).*$', text, re.M)
+    matches = re.findall(r'^MVFIX result completed\s+([01]) seconds\s+([\d.]+) boarded\s+([01]) route_retained\s+([01]) dry\s+([01]) alive\s+([01]) launches\s+(\d+) bad_launch\s+([01]) landed\s+([01]) handoff\s+([01]) pos .+$', text, re.M)
     assert len(starts) == len(matches) == 1
     ms = float(starts[0])
     assert (90 <= ms <= 110) if ticrate == .1 else (10 <= ms <= 30)
     values = matches[0]
+    if values[0] == '1':
+        assert all(values[i] == '1' for i in (2, 3, 4, 5, 8, 9)), 'inconsistent completion'
     return dict(completed=values[0] == '1', seconds=float(values[1]),
         boarded=values[2] == '1', route_retained=values[3] == '1', dry=values[4] == '1',
-        alive=values[5] == '1', launches=int(values[6]), bad_launch=values[7] == '1', frame_ms=ms)
+        alive=values[5] == '1', launches=int(values[6]), bad_launch=values[7] == '1',
+        landed=values[8] == '1', handoff=values[9] == '1', frame_ms=ms)
 
 
 def main():

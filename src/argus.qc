@@ -2113,6 +2113,31 @@ float() Argus_RecoveryWalk =
     return FALSE;
 };
 
+// A docked platform can leave a short seam before its routed exit.
+// Check the arc at our actual speed and require a landing on that floor.
+float(float yaw, float spd) Argus_MoverGapJumpOK =
+{
+    local vector to, landing;
+    local float diff, distance;
+    if (!self.ar_hoplift || self.ar_node == world || spd < 100
+        || self.groundentity.classname != "plat"
+        || self.groundentity.state != STATE_TOP
+        || fabs (self.ar_node.origin_z - self.origin_z) > 48)
+        return FALSE;
+    to = self.ar_node.origin - self.origin; to_z = 0;
+    distance = vlen (to);
+    if (distance < 64 || distance > 220) return FALSE;
+    diff = yaw - vectoyaw (to);
+    while (diff > 180) diff = diff - 360;
+    while (diff < -180) diff = diff + 360;
+    if (fabs (diff) > 30) return FALSE;
+    if (!Argus_GapJumpOK (yaw, spd)) return FALSE;
+    if (fabs (trace_endpos_z - (self.ar_node.origin_z - 24)) > 18)
+        return FALSE;
+    landing = self.ar_node.origin - trace_endpos; landing_z = 0;
+    return (vlen (landing) < distance - 16);
+};
+
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
@@ -2921,6 +2946,18 @@ void() Argus_Physics =
             }
             if (moveok && !sready)
             {
+                // Keep the route while crossing a verified dock seam.
+                if (!tacticmove && self.ar_hoplift && time > self.ar_gapjump
+                    && Argus_MoverGapJumpOK (myaw, spd))
+                {
+                    self.ar_gapjump = time + 1;
+                    self.ar_hoplift = 0;
+                    self.ar_hopair = 1;
+                    self.velocity_z = AR_JUMPVEL;
+                    self.flags = self.flags - (self.flags & FL_ONGROUND);
+                    Argus_Event ("jump");
+                    return;
+                }
                 // predictive gap jump: before surrendering the
                 // heading to the deflection, see if the jump we
                 // could make right now lands dry on the far side.
@@ -10128,6 +10165,17 @@ void() Argus_AI =
                 // exempts the train pad wait
                 to = tp - self.origin;
                 to_z = 0;
+            }
+
+            // Height proximity does not mean the platform has docked.
+            // Only actual grounded support can own this ride hold.
+            if (self.ar_hoplift && (self.flags & FL_ONGROUND)
+                && self.groundentity.classname == "plat"
+                && (self.groundentity.state == STATE_UP
+                    || self.groundentity.state == STATE_DOWN))
+            {
+                self.ar_liftwait = 1;
+                self.velocity_x = 0; self.velocity_y = 0;
             }
 
             // 200, not 56: the WAIT_NODE pads sit OUTSIDE the swept

@@ -1,5 +1,5 @@
---- b/src/argus.qc
-+++ a/src/argus.qc
+--- a/src/argus.qc
++++ b/src/argus.qc
 @@ -108,2 +107,0 @@
 -.entity ar_actionnode, ar_actiongoal;
 -.float ar_actionbest, ar_actiontime;
@@ -27,17 +27,43 @@
 -    if (self.ar_door != world || self.ar_taskgoal != world
 -        || Argus_GaitApproachAction ())
 +    if (self.ar_door != world || self.ar_taskgoal != world)
-@@ -2120 +2098 @@
+@@ -2116,25 +2093,0 @@
+-// A docked platform can leave a short seam before its routed exit.
+-// Check the arc at our actual speed and require a landing on that floor.
+-float(float yaw, float spd) Argus_MoverGapJumpOK =
+-{
+-    local vector to, landing;
+-    local float diff, distance;
+-    if (!self.ar_hoplift || self.ar_node == world || spd < 100
+-        || self.groundentity.classname != "plat"
+-        || self.groundentity.state != STATE_TOP
+-        || fabs (self.ar_node.origin_z - self.origin_z) > 48)
+-        return FALSE;
+-    to = self.ar_node.origin - self.origin; to_z = 0;
+-    distance = vlen (to);
+-    if (distance < 64 || distance > 220) return FALSE;
+-    diff = yaw - vectoyaw (to);
+-    while (diff > 180) diff = diff - 360;
+-    while (diff < -180) diff = diff + 360;
+-    if (fabs (diff) > 30) return FALSE;
+-    if (!Argus_GapJumpOK (yaw, spd)) return FALSE;
+-    if (fabs (trace_endpos_z - (self.ar_node.origin_z - 24)) > 18)
+-        return FALSE;
+-    landing = self.ar_node.origin - trace_endpos; landing_z = 0;
+-    return (vlen (landing) < distance - 16);
+-};
+-
+@@ -2145 +2098 @@
 -    local float protectedstep, tacticmove, vault;
 +    local float protectedstep, tacticmove;
-@@ -2201 +2179 @@
+@@ -2226 +2179 @@
 -            && self.ar_node.origin_z < self.origin_z - 8
 +            && self.ar_node.origin_z < self.origin_z - 40
-@@ -2211,3 +2188,0 @@
+@@ -2236,3 +2188,0 @@
 -                                    // Stay within 8u of its depth: hovering
 -                                    // 40u above the seat clips the 32u-tall
 -                                    // head on submerged passage ceilings.
-@@ -2216,9 +2191,4 @@
+@@ -2241,9 +2191,4 @@
 -        else if (!(time < self.ar_gapjump && self.velocity_z > 120))
 -        {
 -            // A water vault already owns this upward momentum. Let gravity
@@ -51,9 +77,9 @@
 +            self.velocity_z = 120;  // eyes under: drive for air
 +        else
 +            self.velocity_z = 50;   // treading: hold the surface
-@@ -2231 +2200,0 @@
+@@ -2256 +2200,0 @@
 -        }
-@@ -2329,15 +2297,0 @@
+@@ -2354,15 +2297,0 @@
 -            vault = 290;
 -            if (self.ar_hopswim && self.ar_node != world)
 -            {
@@ -69,10 +95,10 @@
 -                    vault = vault + Argus_Gravity () * frametime * 0.5;
 -                }
 -            }
-@@ -2387 +2341 @@
+@@ -2412 +2341 @@
 -                        self.velocity_z = vault;
 +                        self.velocity_z = 290;
-@@ -2614,44 +2567,0 @@
+@@ -2639,44 +2567,0 @@
 -
 -            // A near-level landing can also have a low obstacle between
 -            // the seats. A known jump action must recognize that face;
@@ -117,24 +143,37 @@
 -                    }
 -                }
 -            }
-@@ -2730 +2640 @@
+@@ -2755 +2640 @@
 -                if (trace_fraction == 1 && !trace_startsolid && !trace_allsolid)
 +                if (trace_fraction == 1)
-@@ -2774,4 +2684 @@
+@@ -2799,4 +2684 @@
 -                        // A recovered ground flag can precede the next AI
 -                        // handoff. Do not fire the same jump again while
 -                        // already inside its landing's arrival envelope.
 -                        if (vlen (rto) >= 48 && self.ar_jumpfrom != world
 +                        if (vlen (rto) > 16 && self.ar_jumpfrom != world
-@@ -3729,2 +3635,0 @@
+@@ -2949,12 +2830,0 @@
+-                // Keep the route while crossing a verified dock seam.
+-                if (!tacticmove && self.ar_hoplift && time > self.ar_gapjump
+-                    && Argus_MoverGapJumpOK (myaw, spd))
+-                {
+-                    self.ar_gapjump = time + 1;
+-                    self.ar_hoplift = 0;
+-                    self.ar_hopair = 1;
+-                    self.velocity_z = AR_JUMPVEL;
+-                    self.flags = self.flags - (self.flags & FL_ONGROUND);
+-                    Argus_Event ("jump");
+-                    return;
+-                }
+@@ -3766,2 +3635,0 @@
 -    self.ar_actionnode = world; self.ar_actiongoal = world;
 -    self.ar_actionbest = 0; self.ar_actiontime = 0;
-@@ -7752,3 +7657 @@
+@@ -7789,3 +7657 @@
 -        if (vlen (gp - self.origin) < 300 && an_goalnode == startnode
 -            && !(self.ar_feettype == CONTENT_WATER
 -                 && !(self.flags & FL_ONGROUND)))
 +        if (vlen (gp - self.origin) < 300)
-@@ -9093,72 +8995,0 @@
+@@ -9130,72 +8995,0 @@
 -// A failed action can move quickly without approaching its landing: wall
 -// slides and repeated water vaults defeated the speed-only stall detector.
 -// Measure this route seat's best distance, retaining legitimate ownership.
@@ -207,21 +246,21 @@
 -    }
 -};
 -
-@@ -9231,2 +9062 @@
+@@ -9268,2 +9062 @@
 -    if (self.ar_door != world || self.ar_taskgoal != world
 -        || Argus_GaitApproachAction ())
 +    if (self.ar_door != world || self.ar_taskgoal != world)
-@@ -9397 +9227 @@
+@@ -9434 +9227 @@
 -// A flat walking handoff needs a supported, body-clear entry. The eye ray can
 +// A flat walking handoff needs a landed, body-clear entry. The eye ray can
-@@ -9399,3 +9229 @@
+@@ -9436,3 +9229 @@
 -// Water supports swimming between submerged seats without FL_ONGROUND;
 -// requiring a landing there makes the bot circle its current seat forever.
 -// Keep dry airborne entries, typed transitions and height changes as before.
 +// Keep typed transitions, height changes and final-goal arrival as before.
-@@ -9405 +9232,0 @@
+@@ -9442 +9232,0 @@
 -    local float bit;
-@@ -9407,17 +9233,0 @@
+@@ -9444,17 +9233,0 @@
 -    next = Argus_GetNext (node, self);
 -    if (next != world)
 -    {
@@ -239,15 +278,15 @@
 -        if (fabs (self.origin_z - node.origin_z) > 18) return FALSE;
 -        return TRUE;
 -    }
-@@ -9425,0 +9236 @@
+@@ -9462,0 +9236 @@
 +    next = Argus_GetNext (node, self);
-@@ -9428,4 +9239 @@
+@@ -9465,4 +9239 @@
 -    if (!(self.flags & FL_ONGROUND)
 -        && !(self.ar_feettype == CONTENT_WATER
 -             && pointcontents (node.origin) == CONTENT_WATER
 -             && pointcontents (next.origin) == CONTENT_WATER)) return FALSE;
 +    if (!(self.flags & FL_ONGROUND)) return FALSE;
-@@ -9441,33 +9248,0 @@
+@@ -9478,33 +9248,0 @@
 -};
 -
 -// A visible prize cannot cancel an action the route still requires. Parent
@@ -281,17 +320,29 @@
 -    return !self.ar_hopjump && !self.ar_hoprj && !self.ar_hopswim
 -        && !self.ar_hoplift && !self.ar_hoptrain && !self.ar_hopdoor
 -        && !self.ar_sprintstate && self.ar_door == world && !self.ar_tactic;
-@@ -9803 +9578 @@
+@@ -9840 +9578 @@
 -    if (!fighting && ar_opm_ears && Argus_CanInvestigateNoise ()
 +    if (!fighting && ar_opm_ears
-@@ -9855,5 +9630 @@
+@@ -9892,5 +9630 @@
 -        // Seeing the prize does not complete a swim exit. Keep its depth
 -        // and lip-crossing plan until arrival instead of discarding the
 -        // steering node while still floating below the bank.
 -        if (self.ar_mode == 2 && vlen (gp - self.origin) < 200
 -            && Argus_RouteCanShortcut ())
 +        if (self.ar_mode == 2 && vlen (gp - self.origin) < 200)
-@@ -10592,7 +10363,2 @@
+@@ -10168,11 +9901,0 @@
+-            }
+-
+-            // Height proximity does not mean the platform has docked.
+-            // Only actual grounded support can own this ride hold.
+-            if (self.ar_hoplift && (self.flags & FL_ONGROUND)
+-                && self.groundentity.classname == "plat"
+-                && (self.groundentity.state == STATE_UP
+-                    || self.groundentity.state == STATE_DOWN))
+-            {
+-                self.ar_liftwait = 1;
+-                self.velocity_x = 0; self.velocity_y = 0;
+@@ -10640,7 +10363,2 @@
 -                    linkbit = Argus_RouteLinkBit (oldnode, self.ar_node, self);
 -                    if (!linkbit)
 -                    {
@@ -301,7 +352,7 @@
 -                    else if (oldnode.an_jumpmask & linkbit)
 +                    linkbit = Argus_NavGetLinkBit (oldnode, self.ar_node);
 +                    if (oldnode.an_jumpmask & linkbit)
-@@ -11095,4 +10860,0 @@
+@@ -11143,4 +10860,0 @@
 -    Argus_ActionObserve (fighting || Argus_ActionWaitOwned ()
 -        || self.ar_sprintstate || self.ar_hoprj
 -        || self.ar_door != world || self.ar_tactic || time < self.ar_gaitpause);
