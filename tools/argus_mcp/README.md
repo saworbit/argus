@@ -191,8 +191,13 @@ After generate it shows the full edict-budget and playability verdicts,
 `runs/nav_<map>.png`, and the 0.17 cartographer brief (islands, door
 cuts, corridor misses, edicts). An over-budget run stops before
 registration. A new map without current reach and engine evidence is
-labelled `experimental`; generation still writes its QC, JSON, and PNG so the
-mill can inspect it.
+labelled `experimental`; generation still writes its QC and JSON so the
+mill can inspect it. The PNG is optional: `preview_generated` reports whether
+the current invocation produced it. A `nav-preview-v1` receipt at
+`<out_png>.json` binds the QC, graph JSON and PNG hashes. Missing matplotlib
+or a plot failure preserves valid graph outputs and withholds the image.
+The wizard also refuses images with absent or mismatched receipts, including
+older unreceipted previews. Existing PNG bytes can remain on disk.
 Id maps stay on this machine; the wizard will not pack them.
 
 Compile always writes `$ARGUS_ROOT/backups/<YYYYMMDD-HHMMSS>/`:
@@ -1000,7 +1005,7 @@ establish loaded navigation; e1m3/e1m4 remain unregistered experimental maps.
 | `cartograph` | `ARGUS_ROOT` | Ingest a BSP. Default **brief**. `detail=full` for every entity. `generate_nav=true` also compiles nav and registers it. |
 | `cartograph_all` | `ARGUS_ROOT` | Atlas every on-disk BSP in `ARGUS_MAPS` |
 | `list_maps` | `ARGUS_ROOT` | Maps on disk and in id1 PAKs |
-| `nav_generate` | full lab | Compile a per-map waypoint QC + PNG and return edict and playability verdicts. Over-budget graphs and first-time maps without current reach and mill evidence are not registered. |
+| `nav_generate` | full lab | Generate per-map waypoint QC/JSON and an optional PNG. Return `preview_generated`, edict and playability verdicts; attach an image only with a matching freshness receipt. Over-budget graphs and first-time maps without current reach and mill evidence are not registered. |
 | `nav_sync_dispatch` | `ARGUS_ROOT` | Register new `argus_nav_<map>.qc` in the dispatcher and `progs.src` |
 
 ### Lab loop

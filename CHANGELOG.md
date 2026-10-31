@@ -252,6 +252,11 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Report optional navigation preview freshness separately from QC/JSON
+  generation. Bind previews to their graph and image hashes, and withhold
+  stale images from native results and the wizard when plotting is skipped
+  or fails (#638).
+
 - Carry the registered study primary into per-tape native comparison cards.
   Retain input identities and native vetoes, reject incompatible baselines
   before starting matches, and gate these contracts in fast CI (#629).
