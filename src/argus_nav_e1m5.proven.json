@@ -1,0 +1,65 @@
+{
+  "schema": "argus-proven-anchors-v1",
+  "map": "e1m5",
+  "anchors": [
+    [
+      20,
+      841,
+      80
+    ],
+    [
+      20,
+      889,
+      104
+    ],
+    [
+      -87,
+      809,
+      111
+    ]
+  ],
+  "anchor_evidence": [
+    {
+      "raw": "runs/broad_ewbpp_e1m5.log",
+      "sha256": "8dcf7278d6958db9815bcda131d978bb7728fa9ace3d0ff32a36f8d5eae58c91",
+      "ticrate": 0.0139,
+      "source_sha256": "1df66e4e719c14f77fab621533e0d785ba65c8cc7e7a9b7067cd982567f38b7f",
+      "fixture_sha256": "b9346cca109f9b9538d207ba0801b7cc1656ef5a6c333a81c4eed275a304b82c",
+      "program_sha256": "855664aa72d59beb0353b08fe559a63ae12378e7054978cb16e67fa596e38293"
+    },
+    {
+      "raw": "runs/broad_ewbps_e1m5.log",
+      "sha256": "b73995d811175cf1786acd0fef3aef0b890f1cf02363b3c0bf93e17455251525",
+      "ticrate": 0.1,
+      "source_sha256": "1df66e4e719c14f77fab621533e0d785ba65c8cc7e7a9b7067cd982567f38b7f",
+      "fixture_sha256": "b9346cca109f9b9538d207ba0801b7cc1656ef5a6c333a81c4eed275a304b82c",
+      "program_sha256": "855664aa72d59beb0353b08fe559a63ae12378e7054978cb16e67fa596e38293"
+    }
+  ],
+  "links": [
+    [
+      [
+        20,
+        841,
+        80
+      ],
+      [
+        20,
+        889,
+        104
+      ]
+    ],
+    [
+      [
+        20,
+        889,
+        104
+      ],
+      [
+        -87,
+        809,
+        111
+      ]
+    ]
+  ]
+}

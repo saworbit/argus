@@ -101,6 +101,10 @@ void() Argus_BehaviourFixtureGuard =
     local float ar_bgs_ar_plan_stamp;
     local entity ar_bgs_ar_fetchfailed;
     local float ar_bgs_ar_fetchcool;
+    local entity ar_bgs_ar_actionnode;
+    local entity ar_bgs_ar_actiongoal;
+    local float ar_bgs_ar_actionbest;
+    local float ar_bgs_ar_actiontime;
     local float ar_bgs_ar_plan_visit0;
     local float ar_bgs_ar_plan_visit1;
     local float ar_bgs_ar_plan_visit2;
@@ -207,6 +211,10 @@ void() Argus_BehaviourFixtureGuard =
     ar_bgs_ar_plan_stamp = self.ar_plan_stamp;
     ar_bgs_ar_fetchfailed = self.ar_fetchfailed;
     ar_bgs_ar_fetchcool = self.ar_fetchcool;
+    ar_bgs_ar_actionnode = self.ar_actionnode;
+    ar_bgs_ar_actiongoal = self.ar_actiongoal;
+    ar_bgs_ar_actionbest = self.ar_actionbest;
+    ar_bgs_ar_actiontime = self.ar_actiontime;
     ar_bgs_ar_plan_visit0 = self.ar_plan_visit0;
     ar_bgs_ar_plan_visit1 = self.ar_plan_visit1;
     ar_bgs_ar_plan_visit2 = self.ar_plan_visit2;
@@ -313,6 +321,10 @@ void() Argus_BehaviourFixtureGuard =
     if (b.ar_plan_stamp != ar_bgs_ar_plan_stamp) ar_bf_guardok = 0;
     if (b.ar_fetchfailed != ar_bgs_ar_fetchfailed) ar_bf_guardok = 0;
     if (b.ar_fetchcool != ar_bgs_ar_fetchcool) ar_bf_guardok = 0;
+    if (b.ar_actionnode != ar_bgs_ar_actionnode) ar_bf_guardok = 0;
+    if (b.ar_actiongoal != ar_bgs_ar_actiongoal) ar_bf_guardok = 0;
+    if (b.ar_actionbest != ar_bgs_ar_actionbest) ar_bf_guardok = 0;
+    if (b.ar_actiontime != ar_bgs_ar_actiontime) ar_bf_guardok = 0;
     if (b.ar_plan_visit0 != ar_bgs_ar_plan_visit0) ar_bf_guardok = 0;
     if (b.ar_plan_visit1 != ar_bgs_ar_plan_visit1) ar_bf_guardok = 0;
     if (b.ar_plan_visit2 != ar_bgs_ar_plan_visit2) ar_bf_guardok = 0;

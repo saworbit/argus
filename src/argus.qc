@@ -105,6 +105,8 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 // .entity ar_goal moved to defs.qc: argus_nav.qc compiles first and
 // Route_Finish has to compare the finished flood's errand against the
 // bot's current one
+.entity ar_actionnode, ar_actiongoal;
+.float ar_actionbest, ar_actiontime;
 .float  ar_goalstart;
 .entity ar_taskgoal;            // developer-only fixed-task marker (#384)
 .float  ar_taskstart;           // game time when the trial began
@@ -1958,6 +1960,25 @@ void() Argus_SupportButton =
 // detector (6 s under 20 u/s, and ANY freeze taken under fire is a
 // regression on its own), so a hesitation has to be a thing that
 // cannot be standing still while something is happening to it.
+// Keep momentum for an imminent typed action, including a pause armed
+// just before the controller installs its hop flag. Limit anticipation to
+// two nearby seats so a distant transition does not suppress ordinary gait.
+float() Argus_GaitApproachAction =
+{
+    local entity n, nx;
+    local float steps;
+    if (self.ar_mode != 2) return FALSE;
+    n = self.ar_node; steps = 0;
+    while (n != world && steps < 2 && vlen (n.origin - self.origin) < 112)
+    {
+        nx = Argus_GetNext (n, self);
+        if (nx == world) return FALSE;
+        if (Argus_LinkIsTyped (n, nx)) return TRUE;
+        n = nx; steps = steps + 1;
+    }
+    return FALSE;
+};
+
 float() Argus_GaitHold =
 {
     if (self.ar_gaitpause <= time)
@@ -1973,7 +1994,8 @@ float() Argus_GaitHold =
         || self.ar_hopjump || self.ar_hoprj || self.ar_hopswim
         || self.ar_hopdoor || self.ar_sprintstate)
         return FALSE;
-    if (self.ar_door != world || self.ar_taskgoal != world)
+    if (self.ar_door != world || self.ar_taskgoal != world
+        || Argus_GaitApproachAction ())
         return FALSE;
     return TRUE;
 };
@@ -2095,7 +2117,7 @@ void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
     local float wl, spd, moveok, myaw, rhoriz, sready, wdrag, hopok, ljyaw;
-    local float protectedstep, tacticmove;
+    local float protectedstep, tacticmove, vault;
 
     // Reset can run in the trigger before this frame's physics. Hold the
     // braking envelope briefly instead of accelerating a stale tactical yaw
@@ -2176,7 +2198,7 @@ void() Argus_Physics =
         // floor case was the residual splash cycle in Shane's third
         // sound playtest - lift, break surface, fall, splash, again.
         if (!tacticmove && self.ar_mode == 2 && self.ar_node != world
-            && self.ar_node.origin_z < self.origin_z - 40
+            && self.ar_node.origin_z < self.origin_z - 8
             && self.air_finished > time + 5
             && pointcontents (self.ar_node.origin) == CONTENT_WATER)
             self.velocity_z = 0 - 120;  // routed DIVE: the node is
@@ -2186,18 +2208,27 @@ void() Argus_Physics =
                                     // submerged goal unreachable and
                                     // churned stalls at the basin
                                     // nodes (knit2 tape, n210 x24).
+                                    // Stay within 8u of its depth: hovering
+                                    // 40u above the seat clips the 32u-tall
+                                    // head on submerged passage ceilings.
                                     // Air-gated: 5 s of margin or the
                                     // drive for air wins below.
-        else if (wl == 3)
-            self.velocity_z = 120;  // eyes under: drive for air
-        else
-            self.velocity_z = 50;   // treading: hold the surface
+        else if (!(time < self.ar_gapjump && self.velocity_z > 120))
+        {
+            // A water vault already owns this upward momentum. Let gravity
+            // spend it while steering stays live; resetting 210 to 50 on the
+            // next 100ms frame cuts off the bank-crossing arc.
+            if (wl == 3)
+                self.velocity_z = 120;  // eyes under: drive for air
+            else
+                self.velocity_z = 50;   // treading: hold the surface
                                     // without vaulting clear of it -
                                     // the 120 bob at waist depth
                                     // skimmed in and out of the
                                     // water and fired the enter/exit
                                     // sound pair at 2 Hz (Shane's
                                     // second with-sound playtest)
+        }
         // Swim drag was a per-FRAME factor, so the water felt
         // different on every tick rate. Top speed is not the problem -
         // 0.8v + 60 settles at 300 u/s whatever the rate, because the
@@ -2295,6 +2326,21 @@ void() Argus_Physics =
         // bank like a real waterjump.
         if (self.ar_feettype == CONTENT_WATER && time > self.ar_gapjump)
         {
+            vault = 290;
+            if (self.ar_hopswim && self.ar_node != world)
+            {
+                // Plan the bank crossing from our own position and the
+                // route's observed geometry. Keep the existing 320 ceiling;
+                // compensate discrete gravity so its apex agrees at both
+                // measured cadences. Unplanned water scrambles stay at 290.
+                rto = self.ar_node.origin - self.origin;
+                if (rto_z > 0)
+                {
+                    if (rto_z + 4 > 290 * 290 / (2 * Argus_Gravity ()))
+                        vault = 320;
+                    vault = vault + Argus_Gravity () * frametime * 0.5;
+                }
+            }
             vh = self.origin;
             vh_z = vh_z + 8;
             traceline (vh, vh + wishdir * 24, TRUE, self);
@@ -2338,7 +2384,7 @@ void() Argus_Physics =
                     {
                         self.velocity_x = wishdir_x * 170;
                         self.velocity_y = wishdir_y * 170;
-                        self.velocity_z = 290;
+                        self.velocity_z = vault;
                     }
                 }
             }
@@ -2566,6 +2612,50 @@ void() Argus_Physics =
         {
             myaw = vectoyaw (vh);
 
+            // A near-level landing can also have a low obstacle between
+            // the seats. A known jump action must recognize that face;
+            // sliding along it forever is not a way to execute the plan.
+            if (!tacticmove && self.ar_mode == 2 && self.ar_hopjump == 1
+                && (self.flags & FL_ONGROUND) && self.ar_node != world
+                && self.ar_jumpfrom != world
+                && self.ar_node.origin_z <= self.origin_z + 18
+                && vlen (self.origin - self.ar_jumpfrom.origin) < 96)
+            {
+                rto = self.ar_node.origin - self.origin; rto_z = 0;
+                rhoriz = vlen (rto);
+                if (vlen (rto) >= 48)
+                {
+                    wdrag = vectoyaw (rto) - myaw;
+                    while (wdrag > 180) wdrag = wdrag - 360;
+                    while (wdrag < -180) wdrag = wdrag + 360;
+                    rto = normalize (rto);
+                    vh = self.origin - '0 0 6';
+                    // The body reaches a face before its centre ray does:
+                    // the 32u lookahead needs the 16u half-width as well.
+                    traceline (vh, vh + rto * 48, TRUE, self);
+                    if (fabs (wdrag) <= 60 && trace_fraction < 1)
+                    {
+                        vh_z = self.origin_z + Argus_JumpApex () - 23;
+                        traceline (vh, vh + rto * 64, TRUE, self);
+                        if (trace_fraction == 1)
+                        {
+                            vault = rhoriz * Argus_Gravity () / (2 * AR_JUMPVEL);
+                            if (vault > spd) vault = spd;
+                            self.velocity_x = rto_x * vault;
+                            self.velocity_y = rto_y * vault;
+                            self.velocity_z = AR_JUMPVEL
+                                + Argus_Gravity () * frametime * 0.5;
+                            dprint ("ARGUS "); dprint (self.netname);
+                            dprint (" hurdle speed "); dprint (ftos (vault));
+                            dprint (" up "); dprint (ftos (self.velocity_z)); dprint ("\n");
+                            self.ar_hopair = 1; self.ar_nextjump = time + 0.8;
+                            self.flags = self.flags - (self.flags & FL_ONGROUND);
+                            Argus_Event ("jump"); return;
+                        }
+                    }
+                }
+            }
+
             // router-promised jump: on a jump hop, launch the moment
             // the ledge runs out one step ahead. Checked before the
             // brink guard, which would otherwise deflect away from
@@ -2637,7 +2727,7 @@ void() Argus_Physics =
                 traceline (self.origin + vh * (rhoriz / spd) + '0 0 4',
                            self.origin + vh * (rhoriz / spd) - '0 0 40',
                            TRUE, self);
-                if (trace_fraction == 1)
+                if (trace_fraction == 1 && !trace_startsolid && !trace_allsolid)
                 {
                     hopok = 1;
                     ljyaw = myaw;
@@ -2681,7 +2771,10 @@ void() Argus_Physics =
                         rto = self.ar_node.origin - self.origin;
                         rto_z = 0;
                         hopok = 0;
-                        if (vlen (rto) > 16 && self.ar_jumpfrom != world
+                        // A recovered ground flag can precede the next AI
+                        // handoff. Do not fire the same jump again while
+                        // already inside its landing's arrival envelope.
+                        if (vlen (rto) >= 48 && self.ar_jumpfrom != world
                             && vlen (self.origin - self.ar_jumpfrom.origin) < 96)
                         {
                             wdrag = vectoyaw (rto) - myaw;
@@ -3633,6 +3726,8 @@ void() Argus_BaseStats =
 {
     Argus_RecoveryReset ();
     self.ar_hurttime = 0; self.ar_stuckhurt = 0; self.ar_stucktime = 0;
+    self.ar_actionnode = world; self.ar_actiongoal = world;
+    self.ar_actionbest = 0; self.ar_actiontime = 0;
     self.ar_plan_goal = world; self.ar_plan_leg = world;
     self.ar_plan_best = 0; self.ar_plan_stamp = 0; self.ar_stallrun = 0;
     self.ar_fetchfailed = world; self.ar_fetchcool = 0;
@@ -7654,7 +7749,9 @@ void() Argus_PickGoal =
         dprint ("\n");
 
         gp = Argus_GoalPoint (pick);
-        if (vlen (gp - self.origin) < 300)
+        if (vlen (gp - self.origin) < 300 && an_goalnode == startnode
+            && !(self.ar_feettype == CONTENT_WATER
+                 && !(self.flags & FL_ONGROUND)))
         {
             traceline (self.origin + '0 0 22', gp, TRUE, self);
             if (trace_fraction == 1 && Argus_SafeLine (gp)
@@ -8993,6 +9090,78 @@ void(float paused, entity reached) Argus_PlanObserve =
     }
 };
 
+// A failed action can move quickly without approaching its landing: wall
+// slides and repeated water vaults defeated the speed-only stall detector.
+// Measure this route seat's best distance, retaining legitimate ownership.
+float(float paused) Argus_ActionBlocked =
+{
+    local float d;
+    if (paused)
+    {
+        // Suspend the budget; do not forget it. Brief contact with a
+        // moving slab must not buy a fresh three seconds on every bob.
+        if (self.ar_actionnode != world)
+            self.ar_actiontime = self.ar_actiontime + frametime;
+        return FALSE;
+    }
+    if (self.ar_mode != 2 || self.ar_node == world || !Argus_GoalOK (self.ar_goal))
+    {
+        self.ar_actionnode = world; self.ar_actiongoal = world;
+        return FALSE;
+    }
+    d = vlen (self.ar_node.origin - self.origin);
+    if (self.ar_actionnode != self.ar_node || self.ar_actiongoal != self.ar_goal)
+    {
+        self.ar_actionnode = self.ar_node; self.ar_actiongoal = self.ar_goal;
+        self.ar_actionbest = d; self.ar_actiontime = time;
+        return FALSE;
+    }
+    if (d <= self.ar_actionbest - 12)
+    {
+        self.ar_actionbest = d; self.ar_actiontime = time;
+    }
+    return time >= self.ar_actiontime + 3;
+};
+
+// A supported static pad can wait for a lift. Once riding, moving is
+// not enough: a crush/reverse cycle must approach the requested landing.
+// Trains retain their patrol budget because an initial leg can go away.
+float() Argus_ActionWaitOwned =
+{
+    if (self.ar_hoptrain) return TRUE;
+    if (!self.ar_liftwait && !self.ar_hoplift) return FALSE;
+    if (!(self.flags & FL_ONGROUND) || self.ar_feettype == CONTENT_WATER) return FALSE;
+    if (self.groundentity != world
+        && (self.groundentity.classname == "plat"
+            || self.groundentity.classname == "train"
+            || Argus_IsRideable (self.groundentity))) return FALSE;
+    return TRUE;
+};
+
+void(float paused) Argus_ActionObserve =
+{
+    if (!Argus_ActionBlocked (paused)) return;
+    dprint ("ARGUS "); dprint (self.netname); dprint (" actionfail ");
+    dprint (vtos (self.ar_node.origin)); dprint ("\n");
+    Argus_AvoidAdd (self.ar_node.origin, 64, 12);
+    Argus_Nav_Abort (self);
+    self.ar_hopjump = 0; self.ar_hoprj = 0; self.ar_hopswim = 0;
+    self.ar_hopair = 0; self.ar_sprintstate = 0;
+    self.ar_actionnode = world; self.ar_actiongoal = world;
+    self.ar_node = world; self.ar_mode = 0;
+    if (self.ar_taskgoal != world)
+    {
+        self.ar_goal = self.ar_taskgoal; self.ar_pending = 1;
+    }
+    else
+    {
+        self.ar_goal.ar_failtime = time;
+        Argus_FetchRest (self.ar_goal);
+        self.ar_goal = world; self.ar_pending = 0;
+        self.ar_nextai = time;
+    }
+};
+
 // Decide whether to hesitate, and say why.
 //
 // THE MEASUREMENT CAME FIRST AND IT INVERTED THE OBVIOUS FIX. A player
@@ -9059,7 +9228,8 @@ void() Argus_Hesitate =
         || self.ar_hopjump || self.ar_hoprj || self.ar_hopswim
         || self.ar_hopdoor || self.ar_sprintstate)
         return;
-    if (self.ar_door != world || self.ar_taskgoal != world)
+    if (self.ar_door != world || self.ar_taskgoal != world
+        || Argus_GaitApproachAction ())
         return;
     if (self.ar_mode == 1)
         return;                 // direct seeking includes the item-clock
@@ -9224,19 +9394,41 @@ void() Argus_Hesitate =
     dprint ("\n");
 };
 
-// A flat walking handoff needs a landed, body-clear entry. The eye ray can
+// A flat walking handoff needs a supported, body-clear entry. The eye ray can
 // clear the next corridor while the side of the body still clips its mouth.
-// Keep typed transitions, height changes and final-goal arrival as before.
+// Water supports swimming between submerged seats without FL_ONGROUND;
+// requiring a landing there makes the bot circle its current seat forever.
+// Keep dry airborne entries, typed transitions and height changes as before.
 float(entity node) Argus_WalkArrivalReady =
 {
     local entity next;
+    local float bit;
     local vector to, side, a, b;
+    next = Argus_GetNext (node, self);
+    if (next != world)
+    {
+        bit = Argus_RouteLinkBit (node, next, self);
+        if (((node.an_jumpmask | node.an_sprintmask | node.an_rjmask) & bit)
+            && (!(self.flags & FL_ONGROUND)
+                || fabs (self.origin_z - node.origin_z) > 18)) return FALSE;
+    }
+    // A nearby dry bank is not reached while floating below it. Preserve
+    // the exit action until standing on its floor (shallow wading is fine).
+    if (self.ar_hopswim && pointcontents (node.origin) != CONTENT_WATER)
+    {
+        if (!(self.flags & FL_ONGROUND)) return FALSE;
+        if (self.ar_wetlevel > 1) return FALSE;
+        if (fabs (self.origin_z - node.origin_z) > 18) return FALSE;
+        return TRUE;
+    }
     if (self.ar_hopjump || self.ar_hoprj || self.ar_hoplift
         || self.ar_hopswim || self.ar_hoptrain || self.ar_hopdoor) return TRUE;
-    next = Argus_GetNext (node, self);
     if (next == world || Argus_LinkIsTyped (node, next)) return TRUE;
     if (fabs (next.origin_z - node.origin_z) > 18) return TRUE;
-    if (!(self.flags & FL_ONGROUND)) return FALSE;
+    if (!(self.flags & FL_ONGROUND)
+        && !(self.ar_feettype == CONTENT_WATER
+             && pointcontents (node.origin) == CONTENT_WATER
+             && pointcontents (next.origin) == CONTENT_WATER)) return FALSE;
     if (vlen (self.origin - node.origin) <= 8) return TRUE;
     to = next.origin - self.origin; to_z = 0;
     to = normalize (to); side = '0 0 0';
@@ -9246,6 +9438,39 @@ float(entity node) Argus_WalkArrivalReady =
     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
     traceline (a - side, b - side, TRUE, self);
     return (trace_fraction == 1 && !trace_startsolid && !trace_allsolid);
+};
+
+// A visible prize cannot cancel an action the route still requires. Parent
+// trees already paid for this plan; only an ordinary, near-level walk chain
+// may become a direct approach. The bound makes a long detour conservative.
+float() Argus_RouteCanShortcut =
+{
+    local entity n, nx;
+    local float steps;
+    if (self.ar_hopjump || self.ar_hoprj || self.ar_hoplift
+        || self.ar_hopswim || self.ar_hoptrain || self.ar_hopdoor
+        || (self.ar_feettype == CONTENT_WATER
+            && !(self.flags & FL_ONGROUND))) return FALSE;
+    n = self.ar_node; steps = 0;
+    while (n != world && steps < 12)
+    {
+        nx = Argus_GetNext (n, self);
+        if (nx == world) return TRUE;
+        if (Argus_LinkIsTyped (n, nx)
+            || fabs (nx.origin_z - n.origin_z) > 18) return FALSE;
+        n = nx; steps = steps + 1;
+    }
+    return FALSE;
+};
+
+// Investigating a noise is optional travel. Do not turn away from a
+// committed launch, swim exit, boarding action or door interaction for it.
+// A perceived opponent still goes through combat before this decision.
+float() Argus_CanInvestigateNoise =
+{
+    return !self.ar_hopjump && !self.ar_hoprj && !self.ar_hopswim
+        && !self.ar_hoplift && !self.ar_hoptrain && !self.ar_hopdoor
+        && !self.ar_sprintstate && self.ar_door == world && !self.ar_tactic;
 };
 
 void() Argus_AI =
@@ -9575,7 +9800,7 @@ void() Argus_AI =
     // override for the moment), and it decays with the sound.
     // cognition gate: a warmup partner glances at noises but never
     // hunts them - skill 1+ investigates
-    if (!fighting && ar_opm_ears
+    if (!fighting && ar_opm_ears && Argus_CanInvestigateNoise ()
         && self.ar_skill >= AR_SKILL_MEMORY && self.ar_enemy == world
         && self.ar_sndtime > 0
         && time < self.ar_sndtime + 2.5 + self.ar_skill * 0.5)
@@ -9627,7 +9852,11 @@ void() Argus_AI =
     {
         gp = Argus_GoalPoint (self.ar_goal);
 
-        if (self.ar_mode == 2 && vlen (gp - self.origin) < 200)
+        // Seeing the prize does not complete a swim exit. Keep its depth
+        // and lip-crossing plan until arrival instead of discarding the
+        // steering node while still floating below the bank.
+        if (self.ar_mode == 2 && vlen (gp - self.origin) < 200
+            && Argus_RouteCanShortcut ())
         {
             traceline (self.origin + '0 0 22', gp, TRUE, self);
             if (trace_fraction == 1 && Argus_SafeLine (gp)
@@ -10360,8 +10589,13 @@ void() Argus_AI =
                     self.ar_mode = 1;
                 else
                 {
-                    linkbit = Argus_NavGetLinkBit (oldnode, self.ar_node);
-                    if (oldnode.an_jumpmask & linkbit)
+                    linkbit = Argus_RouteLinkBit (oldnode, self.ar_node, self);
+                    if (!linkbit)
+                    {
+                        self.ar_node = world; self.ar_pending = 1;
+                        self.ar_mode = 0;
+                    }
+                    else if (oldnode.an_jumpmask & linkbit)
                     {
                         self.ar_hopjump = 1;
                         self.ar_jumpfrom = oldnode;
@@ -10857,6 +11091,10 @@ void() Argus_AI =
 
     while (self.angles_y < 0)   self.angles_y = self.angles_y + 360;
     while (self.angles_y > 360) self.angles_y = self.angles_y - 360;
+
+    Argus_ActionObserve (fighting || Argus_ActionWaitOwned ()
+        || self.ar_sprintstate || self.ar_hoprj
+        || self.ar_door != world || self.ar_tactic || time < self.ar_gaitpause);
 
     // ---- stall detection ----
     if (time > self.ar_nextstall)

@@ -550,6 +550,29 @@ float(entity bot) Argus_BotCanRJ =
     return TRUE;
 };
 
+// A parent tree records endpoints, but a shipped pair can have several
+// actions (e1m5 has both rocket and swim exits for the same pair). Execute
+// a feasible action, preferring an ordinary alternative to spending a rocket.
+// Resolving the first matching slot can turn a swim plan into an unpaid RJ.
+float(entity a, entity b, entity bot) Argus_RouteLinkBit =
+{
+    local float i, bit, rocket;
+    i = 0; bit = 1; rocket = 0;
+    while (i < a.an_nlinks)
+    {
+        if (Argus_NavGetLink (a, i) == b
+            && (!(a.an_sprintmask & bit) || bot.ar_skill >= 2)
+            && (!(a.an_jumpmask & bit)
+                || b.origin_z - a.origin_z <= Argus_JumpApex ()))
+        {
+            if (!(a.an_rjmask & bit)) return bit;
+            if (Argus_BotCanRJ (bot)) rocket = bit;
+        }
+        i = i + 1; bit = bit * 2;
+    }
+    return rocket;
+};
+
 // nonzero when the link a -> b is swim-typed
 float(entity a, entity b) Argus_LinkIsSwim =
 {
@@ -1084,7 +1107,8 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Adopt =
         nx = cur.an_cnext;
         if (nx == world)
             return FALSE;
-        bit = Argus_NavGetLinkBit (cur, nx);
+        bit = Argus_RouteLinkBit (cur, nx, bot);
+        if (!bit) return FALSE;
         if ((cur.an_rjmask & bit) && !Argus_BotCanRJ (bot))
             return FALSE;
         if ((cur.an_sprintmask & bit) && bot.ar_skill < 2)

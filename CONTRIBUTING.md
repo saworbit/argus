@@ -111,9 +111,9 @@ The plan, entry, button and door changes remain development source. Native
 fixtures verify the supported e1m2 route and distinguish deadline renewal from
 premature door release. These controlled cases do not establish general
 gameplay safety or resolve the step 1b dm4 warning, and do not update supplied binaries.
-The compile workflow builds production QuakeC and all 20 maintained private
+The compile workflow builds production QuakeC and all 21 maintained private
 fixture variants across `muzzle`, `combat`, `health`, `button`, `door`, `plan`,
-`offset`, `freeze`, `mover` and `attention`, using the pinned FTEQCC revision. It retains per-variant compile
+`offset`, `freeze`, `mover`, `attention` and `water`, using the pinned FTEQCC revision. It retains per-variant compile
 logs and hash receipts, then passes the production `progs` artifact to the
 LibreQuake smoke job. Private-fixture compilation needs no engine or game
 assets and never installs a binary; it proves compilation, not physical
