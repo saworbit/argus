@@ -34,6 +34,58 @@ def write(path, data):
     temporary.replace(path)
 
 
+SUPPORTED_PRIMARIES = ('stall_parity', 'engagements', 'lava_deaths', 'freezes')
+COMPARISON_FIELDS = ('maps', 'seconds', 'skill', 'requested_ticrate', 'primary', 'cli_sha256')
+
+
+def comparison_primary(control, candidate):
+    """Validate frozen study compatibility and return its registered primary."""
+    for key in COMPARISON_FIELDS:
+        assert key in control and key in candidate, 'missing comparison protocol field: ' + key
+        assert control[key] == candidate[key], 'comparison protocol mismatch: ' + key
+    assert candidate['primary'] in SUPPORTED_PRIMARIES, 'unsupported registered primary'
+    return candidate['primary']
+
+
+def load_comparison_baseline(folder, candidate):
+    """Refuse incompatible or empty baselines before creating a study output."""
+    control = json.loads((folder / 'protocol.json').read_text())
+    rows = json.loads((folder / 'results.json').read_text())
+    comparison_primary(control, candidate)
+    assert rows, 'empty baseline results'
+    return control, rows
+
+
+def compare_registered_tape(executable, control, candidate, baseline_rows, row):
+    """Keep the native card verbatim with its primary and frozen input identities."""
+    primary = comparison_primary(control, candidate)
+    assert row['map'] in candidate['maps'], 'candidate map outside registered protocol'
+    controls = [item for item in baseline_rows if item['map'] == row['map']]
+    assert controls, 'no same-map control'
+    assert row['repeat'] >= 1, 'invalid candidate repeat'
+    assert all(item['brief']['totals']['tick_class'] == row['brief']['totals']['tick_class']
+               for item in controls), 'cross-cadence comparison'
+    selected = controls[(row['repeat'] - 1) % len(controls)]
+    inputs = {}
+    for arm, item, protocol in [('control', selected, control), ('candidate', row, candidate)]:
+        assert re.fullmatch(r'[a-z0-9_]+', item['name']), 'invalid comparison run name'
+        assert item['binary_sha256'] == protocol['binary_sha256'], arm + ' binary changed'
+        assert item['source_sha256'] == protocol['source_sha256'], arm + ' source changed'
+        assert digest(ROOT / 'runs' / (item['name'] + '.log')) == item['raw_sha256'], arm + ' tape changed'
+        inputs[arm] = {key: item[key] for key in ('name', 'raw_sha256', 'source_sha256', 'binary_sha256')}
+    analysis_hash = digest(executable)
+    assert analysis_hash == candidate['cli_sha256'], 'comparison executable changed'
+    response = subprocess.run([str(executable), 'compare', row['name'], selected['name'],
+        '--primary', primary], cwd=ROOT, env=dict(os.environ, ARGUS_ROOT=str(ROOT)),
+        capture_output=True, text=True, encoding='utf-8', timeout=30)
+    assert response.returncode == 0, response.stderr
+    assert response.stdout.strip(), 'empty native comparison card'
+    return dict(schema='registered-native-compare-v1', effective_primary=primary,
+                analysis_lab_sha256=analysis_hash, inputs=inputs,
+                comparison_protocol={key: candidate[key] for key in COMPARISON_FIELDS},
+                native_gate_card=response.stdout)
+
+
 class Lab(native.Lab):
     def request(self, method, params):
         self.serial += 1
@@ -61,7 +113,7 @@ def main():
     parser.add_argument('--ticrate', type=float, default=.0139)
     parser.add_argument('--port', type=int)
     parser.add_argument('--lab', type=Path, default=lab_executable())
-    parser.add_argument('--primary', choices=('stall_parity', 'engagements', 'lava_deaths', 'freezes'),
+    parser.add_argument('--primary', choices=SUPPORTED_PRIMARIES,
                         default='stall_parity')
     args = parser.parse_args()
     maps = args.maps.split(',')
@@ -76,6 +128,11 @@ def main():
     assert not output.exists(), 'retain the previous arm; choose a new output'
     native.EXE = args.lab.resolve()
     assert native.EXE.exists(), 'build the current native lab first'
+    comparison_protocol = dict(maps=maps, seconds=args.seconds, skill=args.skill,
+                               requested_ticrate=args.ticrate, primary=args.primary,
+                               cli_sha256=digest(native.EXE))
+    baseline_protocol, baseline_rows = (load_comparison_baseline(args.baseline, comparison_protocol)
+                                        if args.baseline else (None, []))
     shutil.copytree(args.source, output / 'src')
     (output / 'lq1').mkdir()
     game = 'maplab_' + args.prefix
@@ -92,10 +149,8 @@ def main():
     environment = dict(ARGUS_SRC=str(output / 'src'), ARGUS_PROGS=str(output / 'lq1/progs.dat'),
                        ARGUS_GAME=game, ARGUS_PYTHON=sys.executable,
                        ARGUS_TICRATE=str(args.ticrate))
-    protocol = dict(maps=maps, seconds=args.seconds, repeats=args.repeats, skill=args.skill,
-                    requested_ticrate=args.ticrate, primary=args.primary,
-                    port=args.port,
-                    source_files=inputs, cli_sha256=digest(native.EXE), game=game,
+    protocol = dict(**comparison_protocol, repeats=args.repeats, port=args.port,
+                    source_files=inputs, game=game,
                     tree_head=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                     tree_diff=subprocess.check_output(['git', 'diff', '--binary'], cwd=ROOT, text=True),
                     shipped_sha256=digest(ROOT / 'game/argus/progs.dat'))
@@ -159,13 +214,8 @@ def main():
                                binary_sha256=digest(game_dir / 'progs.dat'), brief=brief)
                     assert row['binary_sha256'] == protocol['binary_sha256']
                     if args.baseline:
-                        baseline_rows = json.loads((args.baseline / 'results.json').read_text())
-                        controls = [r for r in baseline_rows if r['map'] == map_name]
-                        assert controls, 'no same-map control'
-                        assert all(r['brief']['totals']['tick_class'] == brief['totals']['tick_class']
-                                   for r in controls), 'cross-cadence comparison'
-                        comparison = lab.call('compare_runs', map=map_name,
-                            log_a=controls[(repeat - 1) % len(controls)]['name'], log_b=name)
+                        comparison = compare_registered_tape(native.EXE, baseline_protocol,
+                            protocol, baseline_rows, row)
                         write(output / (name + '.compare.json'), comparison)
                     rows.append(row)
                     write(output / 'results.json', rows)

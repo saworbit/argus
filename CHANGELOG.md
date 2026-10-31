@@ -252,6 +252,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Carry the registered study primary into per-tape native comparison cards.
+  Retain input identities and native vetoes, reject incompatible baselines
+  before starting matches, and gate these contracts in fast CI (#629).
+
 - Execute affordable route actions when several typed links share endpoints.
   Preserve underwater depth, supported arrivals and required transitions
   when an item becomes visible. Complete planned swim exits and low hurdles.
