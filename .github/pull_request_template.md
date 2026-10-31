@@ -17,7 +17,7 @@ Please confirm your changes adhere to Argus engineering standards:
 
 - [ ] **Vanilla QuakeC**: Code runs in standard NetQuake protocol 15, stays within 600 edicts, and uses no engine extensions or file I/O.
 - [ ] **Generated Nav Integrity**: Generated map files (`src/argus_nav_<map>.qc`) are **not** hand-edited (generated via `tools/argus_navgen.py` or MCP `nav_generate`).
-- [ ] **Frametime Calibration**: Any time-based physics or drag scales with `frametime` (calibrated against `frametime 0.1` lab rate).
+- [ ] **Frametime calibration**: Any time-based physics or drag is expressed per second against `frametime`, not per frame, and holds at the lab rate (`+sys_ticrate 0.0139`, about 70 fps) as well as at a deliberate 100 ms arm.
 - [ ] **Compilation**: Compiles cleanly with `fteqcc` (id format finish line verified).
 - [ ] **Lab Tests**: `cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib` passes without errors.
 - [ ] **Directed Reach**: `python tools/argus_reach.py [map]` verified if modifying navigation.

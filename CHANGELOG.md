@@ -142,6 +142,16 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Correct the contributor and agent guidance on the lab tick rate. The
+  frametime 0.1 rule they taught was refuted in lab 0.26: 0.1 was `ftos`
+  printing a 0.05 s frame to one decimal, and every match has run at
+  `+sys_ticrate 0.0139` since. The pull request checklist, the core rules in
+  the contributor guide and its manual dedicated example are updated, and a
+  deliberate 100 ms study arm is now named as a chosen second cadence rather
+  than the lab default. Records of trials actually run at 100 ms are
+  unchanged. `tools/setup_rig.sh` still omits the flag, tracked in
+  [#669](https://github.com/saworbit/argus/issues/669).
+
 - Document lift-to-flight ownership, continuing-route receipt fields and
   current reproduction commands across the architecture, telemetry and lab
   guides. Distinguish the runtime landing forecast from the fixture's dry
