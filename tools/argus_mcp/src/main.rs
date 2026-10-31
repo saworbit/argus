@@ -1028,7 +1028,13 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                     println!("  {gate}");
                 }
                 println!("  QC:  {}", res.out_qc);
-                println!("  PNG: {}", res.out_png);
+                if res.preview_generated {
+                    println!("  PNG: {}", res.out_png);
+                } else {
+                    println!(
+                        "  PNG: unavailable; graph generation completed without a current preview"
+                    );
+                }
                 Ok(())
             } else {
                 eprintln!("Nav generation failed for {map}:");

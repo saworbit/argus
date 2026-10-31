@@ -82,6 +82,7 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   - `--grid <n>`: Override base waypoint sampling grid spacing.
   - `--register`: Wire the generated file into `src/progs.src` and update `src/argus_nav_dispatch.qc`. The output filename must be `argus_nav_<mapname>.qc`; custom names are refused before generation.
   - `--reanalyze-tactics`: Recompute static exposure and nearest hidden ordinary-walk targets in an existing shipped QC/JSON pair without changing graph topology or typed movement data.
+- **Preview freshness**: Plotting is optional. Missing matplotlib, plot failures or an empty render leave QC/JSON generation successful and invalidate the preview receipt. `<out.png>.json` records `nav-preview-v1`, `generated` and MD5 hashes of the QC, graph JSON and successful PNG. Native results expose `preview_generated`; the wizard and image attachments require matching hashes. An old PNG can remain on disk, but is unavailable as a current preview. Images without a matching receipt are also unavailable. `test_nav_preview.py` and the developer CLI suite cover this without game execution.
 
 ---
 

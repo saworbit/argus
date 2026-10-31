@@ -132,6 +132,9 @@ python tools/test_freeze_recovery.py
 python tools/test_mover_transfer.py
 ```
 
+The developer CLI suite also runs `test_nav_preview.py`: skipped or failed
+optional plotting must preserve graph generation while withholding stale images.
+
 The [cross-map runbook](docs/lab-workflow.md#cross-map-routing-evaluation)
 separates normal matches, controlled physical tasks and experimental graphs.
 It records source identities, measured cadence and unchanged installed binaries.

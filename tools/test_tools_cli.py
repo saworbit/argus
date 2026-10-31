@@ -32,6 +32,31 @@ def find_argus_mcp_binary(root=ROOT, *, installed=False):
 
 
 class TestToolsCLI(unittest.TestCase):
+    def test_nav_preview_regressions(self):
+        res = self.run_tool("test_nav_preview.py")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
+    def test_navgen_missing_plotter_does_not_present_an_old_preview(self):
+        tmp = self.door_fixture(collision_gap=True)
+        qc, png = tmp / "new.qc", tmp / "out.png"
+        png.write_bytes(b"old graph preview")
+        code = (
+            "import sys, runpy; sys.path.insert(0, " + repr(str(ROOT / "tools")) + "); "
+            "sys.modules['matplotlib'] = None; "
+            "sys.argv = " + repr([str(ROOT / "tools/argus_navgen.py"), str(tmp / "fixture.bsp"),
+                                  "fixture", str(qc), str(png), "--no-dispatcher"]) + "; "
+            "runpy.run_path(sys.argv[0], run_name='__main__')"
+        )
+        res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertTrue(qc.is_file())
+        self.assertTrue(Path(str(qc) + ".json").is_file())
+        state = json.loads(Path(str(png) + ".json").read_text())
+        self.assertFalse(state["generated"])
+        self.assertNotIn("png_md5", state)
+        self.assertEqual(png.read_bytes(), b"old graph preview")
+        self.assertIn("debug plot skipped", res.stdout)
+
     def test_tactic_fixture_checker_regressions(self):
         res = self.run_tool("test_tactic_fixture.py")
         self.assertEqual(res.returncode, 0, res.stderr)

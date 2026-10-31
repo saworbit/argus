@@ -1543,7 +1543,8 @@ impl Argus {
             args.out_png.as_deref(),
             args.register.unwrap_or(false),
         ) {
-            Ok(r) => json_ok_pngs(&r, &[r.out_png.as_str()]),
+            Ok(r) if r.preview_generated => json_ok_pngs(&r, &[r.out_png.as_str()]),
+            Ok(r) => json_ok(&r),
             Err(e) => tool_err(e),
         }
     }

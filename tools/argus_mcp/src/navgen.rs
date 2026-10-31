@@ -1,6 +1,7 @@
 use crate::config::Config;
 use crate::paths::{resolve_input, tail_lines};
 use serde::Serialize;
+use std::path::Path;
 use std::process::Command;
 
 #[derive(Debug, Clone, Serialize)]
@@ -8,6 +9,7 @@ pub struct NavgenResult {
     pub ok: bool,
     pub out_qc: String,
     pub out_png: String,
+    pub preview_generated: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub edict_budget: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -27,6 +29,29 @@ fn playability_gate_line(output: &str) -> Option<String> {
         .lines()
         .find(|line| line.starts_with("playability gate: status "))
         .map(str::to_owned)
+}
+
+/// A preview is current only when its receipt matches all three output files.
+pub(crate) fn preview_generated(qc: &Path, png: &Path) -> bool {
+    let verify = || -> Option<bool> {
+        let receipt: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(format!("{}.json", png.display())).ok()?).ok()?;
+        if receipt["schema"] != "nav-preview-v1" || receipt["generated"] != true {
+            return Some(false);
+        }
+        for (key, path) in [
+            ("qc_md5", qc.to_path_buf()),
+            ("graph_md5", format!("{}.json", qc.display()).into()),
+            ("png_md5", png.to_path_buf()),
+        ] {
+            let bytes = std::fs::read(path).ok()?;
+            if bytes.is_empty() || receipt[key] != format!("{:x}", md5::compute(bytes)) {
+                return Some(false);
+            }
+        }
+        Some(true)
+    };
+    verify().unwrap_or(false)
 }
 
 pub fn nav_generate(
@@ -86,6 +111,10 @@ pub fn nav_generate(
         ok: output.status.success(),
         out_qc: out_qc.display().to_string(),
         out_png: out_png.display().to_string(),
+        preview_generated: text
+            .lines()
+            .any(|line| line == format!("wrote {}", out_png.display()))
+            && preview_generated(&out_qc, &out_png),
         edict_budget: edict_budget_line(&text),
         playability_gate: playability_gate_line(&text),
         stdout_tail: tail_lines(&text, 40),
@@ -94,7 +123,41 @@ pub fn nav_generate(
 
 #[cfg(test)]
 mod tests {
-    use super::{edict_budget_line, playability_gate_line};
+    use super::{edict_budget_line, playability_gate_line, preview_generated};
+
+    #[test]
+    fn previews_require_a_successful_receipt_and_matching_graph_and_image() {
+        let dir = crate::test_support::TestDir::new("nav-preview").unwrap();
+        let qc = dir.path().join("nav.qc");
+        let graph = dir.path().join("nav.qc.json");
+        let png = dir.path().join("nav.png");
+        let receipt = dir.path().join("nav.png.json");
+        for path in [&qc, &graph, &png] {
+            std::fs::write(path, "fresh").unwrap();
+        }
+        // An existing image and unknown or unavailable receipts are insufficient.
+        assert!(!preview_generated(&qc, &png));
+        for value in [
+            "broken",
+            "{}",
+            r#"{"schema":"nav-preview-v1","generated":false}"#,
+        ] {
+            std::fs::write(&receipt, value).unwrap();
+            assert!(!preview_generated(&qc, &png));
+        }
+        let hash = format!("{:x}", md5::compute("fresh"));
+        let state = serde_json::json!({"schema":"nav-preview-v1", "generated":true,
+            "qc_md5":hash, "graph_md5":hash, "png_md5":hash});
+        std::fs::write(&receipt, state.to_string()).unwrap();
+        assert!(preview_generated(&qc, &png));
+        for path in [&qc, &graph, &png] {
+            std::fs::write(path, "changed").unwrap();
+            assert!(!preview_generated(&qc, &png));
+            std::fs::write(path, "fresh").unwrap();
+        }
+        std::fs::remove_file(&png).unwrap();
+        assert!(!preview_generated(&qc, &png));
+    }
 
     #[test]
     fn extracts_the_generator_edict_verdict_for_the_gui() {

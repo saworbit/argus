@@ -670,7 +670,7 @@ fn map_png(name: &str) -> Response {
         cfg.runs.join(format!("nav_{map}.png")),
         cfg.src.join(format!("argus_nav_{map}.png")),
     ] {
-        if cand.is_file() {
+        if crate::navgen::preview_generated(&cfg.src.join(format!("argus_nav_{map}.qc")), &cand) {
             if let Ok(bytes) = std::fs::read(&cand) {
                 return png_bytes(bytes);
             }

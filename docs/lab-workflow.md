@@ -168,6 +168,7 @@ python tools/test_argus_tape.py
 python -m unittest discover -s tools -p "test_behaviour*.py"
 python tools/test_compile_private_fixtures.py
 python tools/test_nav_budget.py
+python tools/test_nav_preview.py
 python tools/test_map_intelligence_report.py
 python tools/test_study_comparison.py
 python tools/test_freeze_recovery.py
