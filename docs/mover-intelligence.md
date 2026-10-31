@@ -4,6 +4,10 @@
 [Machine-readable evidence](../runs/mover-intelligence.results.json) |
 [Diagnostic fixtures and attempts](../runs/mover-intelligence.diagnostics.json)
 
+This is the historical investigation and rejected prototype. The narrower
+[e1m6 dock-exit repair](e1m6-decisions.md) has its own frozen controls,
+stronger route-handoff checks and broader-map validation.
+
 ## Retained changes
 
 Navigation generation now reserves infrastructure seats inside the physical

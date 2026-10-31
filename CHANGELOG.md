@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Water/action execution and lift-progress recovery restore e1m5 contact in the eight-map comparison; perception, target attention and earlier release gates remain in development; no deployment |
+| Development source | Water/action execution, bounded recovery and checked dock-exit decisions; eight-map evidence and earlier release gates remain in development; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -26,6 +26,10 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Require actual landing and continuing-route handoff in private mover
+  fixtures, with read-only phase traces and rejection of observer steering.
+  See the [e1m6 investigation](docs/e1m6-decisions.md).
 
 - Add native water-route and action-decision witnesses at played and 100 ms
   cadence, including physical failures and supported-wait controls. Compile
@@ -251,6 +255,11 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Keep an actually supported bot aboard a moving lift through docking.
+  Cross a dock seam only after checking the jump's dry landing at current
+  speed, preserving the continuing route. Repair the reproduced e1m6 exit
+  failure without a map-specific runtime branch or navigation edits.
 
 - Report optional navigation preview freshness separately from QC/JSON
   generation. Bind previews to their graph and image hashes, and withhold

@@ -1,0 +1,149 @@
+LOG started on: 11/01/2026 07:16:25 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm3
+Clearing memory
+Programs occupy 1106K.
+trying to open external vis file
+maps/dm3.vis not found, trying movercheck_broad_e6hap.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 244 nodes, 771 links
+0 entities inhibited
+ARGUS init on dm3
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '192.0 -208.0 -176.0' spd 0 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '1520.0 432.0 -88.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-880.0 -232.0 -16.0' spd 0 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   1.7 pos '199.8 -59.6 -176.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '1621.3 540.7 -88.0' spd 320.0 yaw 287.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-946.5 -105.7 -16.0' spd 155.5 yaw 267.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BHVRPL begin mover_transfer
+MVFIX begin dt_ms  14.0
+MTRACE t 0 pos '485.7 928.9  40.0' node '  0.0   0.0   0.0' mode 0 lift 0 wait 0 ground worldspawn floor 1 state 0 mz 0 velocity ' 47.8  -4.0   0.0' budget 0 best 0 retained 1
+ARGEVT Carmack route 2 start '485.0 929.0  40.0' goal '517.0 673.0 216.0'
+ARGEVT Carmack lift
+ARGEVT Carmack board
+ARGLOG Carmack t   2.2 pos '534.7 905.3  48.0' spd 370.7 yaw 266 mode 2 st 0 gl 0 hp 100 frg 0
+ARGUS Carmack wallslide
+MTRACE t   0.5 pos '556.8 885.8  75.8' node '517.0 801.0 216.0' mode 2 lift 1 wait 1 ground plat floor 1 state 2 mz  52.8 velocity '  0.0   0.0   0.0' budget   2.5 best 175.7 retained 1
+ARGLOG Carmack t   2.7 pos '556.8 885.8 110.4' spd 0 yaw 260 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   1.0 pos '556.8 885.8 151.1' node '517.0 801.0 216.0' mode 2 lift 1 wait 1 ground plat floor 1 state 2 mz 128.1 velocity '  0.0   0.0   0.0' budget   2.9 best 125.9 retained 1
+ARGLOG Carmack t   3.3 pos '556.8 885.8 187.8' spd 0 yaw 260 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   1.5 pos '555.2 877.1 216.0' node '517.0 673.0 216.0' mode 2 lift 1 wait 0 ground plat floor 1 state 0 mz 193 velocity '-34.6 -196.3   0.0' budget   3.2 best 220.0 retained 1
+ARGLOG Carmack t   3.8 pos '542.2 803.1 216.0' spd 320 yaw 260 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   2.0 pos '527.2 718.4 216.0' node '517.0 673.0 216.0' mode 2 lift 1 wait 0 ground worldspawn floor 1 state 0 mz 193 velocity '-59.9 -314.4   0.0' budget   4.0 best 182.2 retained 1
+ARGEVT Carmack plan powerup via weapon
+ARGEVT Carmack goal weapon_supernailgun
+ARGEVT Carmack route 9 start '517.0 673.0 216.0' goal '-507.0 449.0 120.0'
+ARGLOG Carmack t   4.3 pos '532.9 636.6 216.0' spd 320.1 yaw 199 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   2.5 pos '532.3 592.0 189.3' node '421.0 513.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 0 state 0 mz 193 velocity '-37.5   0.0 -200.8' budget   4.5 best 200.3 retained 0
+ARGLOG Carmack t   4.8 pos '522.9 592.0 112.5' spd  38.0 yaw 191 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   3.0 pos '492.0 573.7  56.0' node '261.0 545.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 0 mz 193 velocity '-266.6 -186.3   0.0' budget   5.0 best 246.2 retained 0
+ARGLOG Carmack t   5.3 pos '420.2 541.5  56.0' spd 333.0 yaw 170 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   3.6 pos '328.9 531.4  56.0' node ' 37.0 609.0  40.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 0 mz 193 velocity '-327.6  13.6   0.0' budget   5.5 best 312.1 retained 0
+ARGLOG Carmack t   5.8 pos '254.2 541.9  56.0' spd 322.3 yaw 168 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   4.1 pos '166.7 565.0  56.0' node ' 37.0 609.0  40.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 0 mz 193 velocity '-307.5  90.0   0.0' budget   6.1 best 148.1 retained 0
+ARGLOG Carmack t   6.3 pos ' 95.8 588.1  40.0' spd 320.1 yaw 170 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   4.6 pos ' 13.4 612.4  40.0' node '-219.0 641.0  -8.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 3 mz 176.5 velocity '-313.2  70.9   0.0' budget   6.6 best 248.8 retained 0
+ARGLOG Carmack t   6.8 pos '-60.9 626.8  40.0' spd 320.4 yaw 157 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   5.1 pos '-149.1 638.5   8.0' node '-219.0 641.0  -8.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 3 mz  99.4 velocity '-318.8  31.0   0.0' budget   7.1 best  81.4 retained 0
+ARGLOG Carmack t   7.3 pos '-224.0 643.3  -8.0' spd 320.5 yaw 215 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MTRACE t   5.6 pos '-285.9 615.7 -16.0' node '-411.0 769.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '-127.5 -75.9   0.0' budget   7.5 best 194.5 retained 0
+ARGUS Carmack wallslide
+ARGLOG Carmack t   7.9 pos '-287.8 633.9 -16.0' spd 277.3 yaw 225 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   6.1 pos '-301.8 732.0 -16.0' node '-411.0 769.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '  0.0 347.9   0.0' budget   8.1 best 121.8 retained 0
+ARGLOG Carmack t   8.4 pos '-354.8 766.3 -16.0' spd 322.2 yaw 258 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MTRACE t   6.6 pos '-422.3 737.1 -16.0' node '-411.0 513.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '-143.0 -342.8  -0.0' budget   8.6 best 234.9 retained 0
+ARGUS Carmack wallslide
+ARGLOG Carmack t   8.9 pos '-431.6 653.9 -16.0' spd 323.1 yaw 279 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   7.1 pos '-424.4 573.8 -16.0' node '-411.0 513.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity ' 41.6 -318.8  -0.0' budget   9.1 best  67.4 retained 0
+ARGEVT Carmack jump
+ARGLOG Carmack t   9.4 pos '-411.9 489.6  -8.9' spd 321.5 yaw 159 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MTRACE t   7.6 pos '-400.2 428.2 -16.0' node '-411.0 513.0 120.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity ' 28.7 -79.1   0.0' budget   9.2 best 128.4 retained 0
+ARGUS Carmack wallslide
+ARGLOG Carmack t   9.9 pos '-402.1 482.5 -16.0' spd 323.6 yaw 157 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MTRACE t   8.1 pos '-415.2 559.4  -3.0' node '-411.0 513.0 120.0' mode 2 lift 0 wait 0 ground worldspawn floor 0 state 1 mz 25 velocity '-62.5 331.5 -62.4' budget   9.2 best 128.4 retained 0
+ARGLOG Carmack t  10.4 pos '-439.4 623.5 -16.0' spd  21.8 yaw 253 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   8.6 pos '-428.5 562.3 -16.0' node '-411.0 513.0 120.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity ' 75.7 -313.0   0.0' budget   9.2 best 128.4 retained 0
+ARGEVT Carmack jump
+ARGLOG Carmack t  10.9 pos '-403.6 480.4  -2.0' spd 325.3 yaw 155 mode 2 st 0 gl 0 hp 100 frg 0
+ARGUS Carmack wallslide
+ARGEVT Carmack hazard
+MTRACE t   9.2 pos '-400.4 430.7 -16.0' node '-411.0 513.0 120.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity ' -6.7  34.3   0.0' budget   9.2 best 128.4 retained 0
+ARGLOG Carmack t  11.4 pos '-403.7 502.1 -16.0' spd 334.9 yaw 171 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MTRACE t   9.7 pos '-446.0 579.5   2.2' node '-411.0 513.0 120.0' mode 2 lift 0 wait 0 ground worldspawn floor 0 state 1 mz 25 velocity '-250.6 316.1 207.6' budget   9.2 best 128.4 retained 0
+ARGLOG Carmack t  12.0 pos '-448.0 605.7  27.1' spd  30.9 yaw 254 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t  10.2 pos '-447.9 598.2  -0.2' node '-411.0 513.0 120.0' mode 2 lift 0 wait 0 ground worldspawn floor 0 state 1 mz 25 velocity '  0.5 -32.6 -204.4' budget   9.2 best 128.4 retained 0
+ARGUS Carmack actionfail '-411.0 513.0 120.0'
+ARGEVT Carmack plan powerup via weapon
+ARGEVT Carmack goal weapon_lightning
+ARGEVT Carmack route 18 start '-411.0 513.0 -16.0' goal '1541.0 -191.0 -392.0'
+ARGLOG Carmack t  12.5 pos '-419.1 551.4 -16.0' spd 362.8 yaw 24 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MTRACE t  10.7 pos '-390.9 500.8 -16.0' node '-411.0 769.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity ' 51.4 136.3   0.0' budget  12.3 best 184.5 retained 0
+ARGLOG Carmack t  13.0 pos '-387.6 528.0 -16.0' spd   4.2 yaw 33 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t  11.2 pos '-388.6 528.0 -16.0' node '-411.0 769.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 0 state 1 mz 25 velocity ' -4.5  51.0   0.0' budget  12.3 best 184.5 retained 0
+ARGLOG Carmack t  13.5 pos '-389.8 528.0 -16.0' spd   4.2 yaw 33 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t  11.7 pos '-390.6 528.0 -16.0' node '-411.0 769.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 0 state 1 mz 25 velocity ' -3.6  51.1   0.0' budget  12.3 best 184.5 retained 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '-411.0 769.0 -16.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  14.0 pos '-391.6 528.0  -0.0' spd   3.3 yaw 90 mode 0 st 1 gl 0 hp 100 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 18 start '-411.0 513.0 -16.0' goal '1541.0 -191.0 -392.0'
+MTRACE t  12.2 pos '-395.8 528.0 -16.0' node '-411.0 513.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 0 state 1 mz 25 velocity '-98.8  34.1   0.0' budget  14.1 best  27.0 retained 0
+ARGLOG Carmack t  14.5 pos '-444.8 596.0 -16.0' spd 359.6 yaw 11 mode 2 st 1 gl 0 hp 100 frg 0
+ARGUS Carmack wallslide
+MTRACE t  12.7 pos '-442.7 655.8 -16.0' node '-411.0 769.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity ' 54.0  90.5   0.0' budget  14.7 best 125.3 retained 0
+ARGLOG Carmack t  15.0 pos '-413.7 693.2 -16.0' spd 329.3 yaw 346 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MTRACE t  13.2 pos '-406.9 763.0 -16.0' node '-411.0 769.0 -16.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '-284.8 222.5  -0.0' budget  15.2 best  12.6 retained 0
+ARGLOG Carmack t  15.5 pos '-405.3 771.6 -16.0' spd 338.2 yaw 340 mode 2 st 1 gl 0 hp 100 frg 0
+MTRACE t  13.7 pos '-337.5 765.4 -16.0' node '-219.0 641.0  -8.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '346.9 -85.5  -0.0' budget  15.7 best 185.9 retained 0
+ARGLOG Carmack t  16.1 pos '-246.5 710.1  -8.0' spd 340.9 yaw 342 mode 2 st 1 gl 0 hp 100 frg 0
+MTRACE t  14.2 pos '-196.7 665.0  -8.0' node ' 37.0 609.0  40.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '283.1 -196.3  -0.0' budget  16.2 best 250.1 retained 0
+ARGLOG Carmack t  16.6 pos '-102.3 624.4  24.0' spd 324.9 yaw 348 mode 2 st 1 gl 0 hp 100 frg 0
+ARGUS Carmack hesitate settle
+MTRACE t  14.7 pos '-40.0 610.3  40.0' node '261.0 545.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '276.4 -59.8  -0.0' budget  16.7 best 327.4 retained 0
+ARGLOG Carmack t  17.1 pos '  7.0 600.3  40.0' spd  75.0 yaw 349 mode 2 st 1 gl 0 hp 100 frg 0
+MTRACE t  15.3 pos ' 13.4 599.0  40.0' node '261.0 545.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '  0.0  -0.0  -0.0' budget  17.3 best 327.4 retained 0
+ARGLOG Carmack t  17.6 pos ' 13.4 599.0  40.0' spd 0 yaw 349 mode 2 st 1 gl 0 hp 100 frg 0
+MTRACE t  15.8 pos ' 13.4 599.0  40.0' node '261.0 545.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '  0.0   0.0  -0.0' budget  17.8 best 327.4 retained 0
+ARGLOG Carmack t  18.1 pos ' 28.0 595.9  40.0' spd 257.1 yaw 349 mode 2 st 1 gl 0 hp 100 frg 0
+MTRACE t  16.3 pos ' 91.1 582.5  40.0' node '261.0 545.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '313.0 -66.5  -0.0' budget  18.3 best 179.5 retained 0
+ARGLOG Carmack t  18.6 pos '184.5 563.2  56.0' spd 320.0 yaw 347 mode 2 st 1 gl 0 hp 100 frg 0
+MTRACE t  16.8 pos '252.9 549.9  56.0' node '421.0 513.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '313.2 -65.5  -0.0' budget  18.8 best 182.3 retained 0
+ARGLOG Carmack t  19.1 pos '346.1 531.1  56.0' spd 320.0 yaw 345 mode 2 st 1 gl 0 hp 100 frg 0
+MTRACE t  17.3 pos '409.9 517.1  56.0' node '645.0 449.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '311.2 -75.7  -0.0' budget  19.3 best 249.9 retained 0
+ARGLOG Carmack t  19.6 pos '502.4 493.6  56.0' spd 320.1 yaw 348 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MTRACE t  17.8 pos '548.1 516.0  56.0' node '645.0 449.0  56.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 1 mz 25 velocity '137.5 190.6  -0.0' budget  19.7 best 117.3 retained 0
+ARGUS Carmack wallslide
+MVFIX result completed 0 seconds  18.0 boarded 1 route_retained 0 dry 1 alive 1 launches 0 bad_launch 0 pos '552.0 535.1  56.0'
