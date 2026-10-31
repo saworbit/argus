@@ -147,7 +147,7 @@ You can run automated headless bot matches on Linux or Windows to verify stabili
 
 ```bash
 # Example with QuakeSpasm dedicated server
-quakespasm -dedicated 8 -condebug -game argus +developer 1 +deathmatch 1 +map lqdm2
+quakespasm -dedicated 8 -condebug -game argus +developer 1 +sys_ticrate 0.0139 +deathmatch 1 +map lqdm2
 ```
 
 Inspect `qconsole.log` (generated with `-condebug`) to ensure telemetry is flowing and no `Host_Error` or runaway loops occurred.
@@ -202,7 +202,7 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 
 ## Core Engineering Rules & Gotchas
 
-- **Lab Frametime (0.1)**: Dedicated headless servers run at `frametime 0.1` (id's `host_frametime` clamp), while listen servers run near 72 fps. Any time-dependent physics (drag, acceleration, timers) must be scaled against `frametime` and calibrated to remain bit-stable at `frametime 0.1`.
+- **Lab tick rate**: Every lab match runs `+sys_ticrate 0.0139`, about 70 frames a second, which is the rate a listen server plays at. Any time-dependent physics (drag, acceleration, timers) must be expressed per second against `frametime` rather than per frame, and the rate must be measured rather than assumed. The `frametime 0.1` figure in older notes was `ftos` printing a 0.05 s frame to one decimal, and the engine default had been recording every tape at about 19 Hz against the 71 Hz of every played session; `sys_ticrate` does gate the dedicated main loop. Some studies also run a deliberate 100 ms arm (`sys_ticrate 0.1`) as a slow profile - that is a chosen second cadence, not the lab default, and a comparison across two tick classes is refused.
 - **Client Channel Builtins**: Bots use `classname = "player"` to satisfy standard game logic, but cannot receive client network packets. Builtins like `stuffcmd`, `sprint`, and `centerprint` are shimmed in `src/defs.qc` (`if (client.ar_isbot) return;`).
 - **Telemetry Formatting**: `bprint` is silent on empty dedicated servers. Use `dprint` for telemetry output and always run with `+developer 1`.
 - **Traces in Geometry**: In QuakeC, `traceline` originating inside solid geometry returns `trace_fraction == 1` (`trace_allsolid`). Safe floor probing routines must check `trace_allsolid` explicitly to avoid mistaking interior solids for bottomless voids.
