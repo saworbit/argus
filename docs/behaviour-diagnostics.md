@@ -7,7 +7,10 @@ gameplay. The current development changes are listed below.
 
 The [e1m6 dock-exit investigation](e1m6-decisions.md) adds a supported ride
 hold through docking and a checked exit jump that retains the route. Private
-transfer fixtures verify both static-floor landing and the next node handoff.
+transfer fixtures check world-floor landing, a changed route node and
+continuous task ownership. The current handoff field does not independently
+prove route order; [#647](https://github.com/saworbit/argus/issues/647)
+tracks the stronger oracle.
 
 The [e1m5 investigation](e1m5-encounters.md) adds supported route handoffs,
 capability-aware action execution and bounded failed-action recognition.

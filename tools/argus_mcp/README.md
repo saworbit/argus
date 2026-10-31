@@ -691,7 +691,7 @@ python tools/verify_mover_transfer.py --output backups/<new-directory> --prefix 
 This private, no-install fixture places one bot at the e1m6 or dm3 boarding
 point and assigns a task beyond the lift exit. Production routing and physics
 own all movement afterwards. Success requires actual boarding, dry static-floor
-landing near the exit, advancement to the next route node and uninterrupted
+landing near the exit, a route node different from the exit and uninterrupted
 task ownership. A rescue warp rejects the result. A landing alone is insufficient.
 
 `--ticrate .1` selects the measured 100 ms profile; `.0139` selects played
@@ -704,7 +704,9 @@ isolates an engine from other matches. Compilers must still run serially.
 phase and route ownership. `BHVRPL` quarantines the tape from ordinary gameplay
 bands. The receipt parser rejects missing or inconsistent landing/handoff
 proof, wrong maps and cadence. The observer audit rejects actor mutations and
-steering after setup. See the [e1m6 evidence](../../docs/e1m6-decisions.md).
+steering after setup. A changed node does not independently prove forward
+consumption of the original route; [#647](https://github.com/saworbit/argus/issues/647)
+tracks that oracle gap. See the [e1m6 evidence](../../docs/e1m6-decisions.md).
 
 ## Fixed navigation benchmark
 
