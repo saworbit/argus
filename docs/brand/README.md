@@ -80,6 +80,34 @@ The core palette is the lab GUI's own (`tools/argus_mcp/src/gui.html`).
   reading as data.
 - On a bone ground, secondary text uses `#6f6555` (4.33:1) in place of muted.
 
+### Navigation link colours
+
+Every renderer draws a link type the same way: one hue per meaning, a tint for
+each ground, and a dash so identity never rests on colour alone. The navgen
+debug PNG and `analyze_match.py` plots use the white column; the lab GUI uses
+the rock column. [`tools/argus_linkstyle.py`](../../tools/argus_linkstyle.py)
+is the source, and a test holds the GUI's copy to it.
+
+| Link | On white | On rock | Line |
+|---|---|---|---|
+| walk | `#2a9d5c` | `#22c55e` | solid |
+| drop | `#cc8800` | `#eab308` | dashed |
+| jump | `#d62728` | `#ef4444` | dotted |
+| sprint jump | `#d62728` | `#ef4444` | dot, dot, dash |
+| rocket jump | `#c2389b` | `#e879f9` | dash-dot |
+| lift and train | `#6d43c8` | `#8b5cf6` | solid |
+| teleport | `#3a342c` | `#e8dfd0` | long dash |
+| swim | `#0e7490` | `#22d3ee` | solid |
+| door | `#6f6555` | `#9a8f7e` | solid |
+| refused link | `#7f0000` | `#fca5a5` | dashed, X at the far end |
+| waypoint (dot) | `#1e6bd9` | `#60a5fa` | - |
+
+A drop is a plain link that descends more than one 18-unit step, the lab's
+own rule; a one-way link at one level is still a walk. On rock every pair of
+link hues is at least OKLab Delta E 15 apart for normal vision. Walk and drop,
+and rocket jump and swim, are confusable under deuteranopia, which their dashes
+resolve. A sprint is a jump, so it shares jump's red and differs by dash.
+
 ## The motif
 
 The mark's own 45-degree cut, promoted to a container rule: panels, cards,

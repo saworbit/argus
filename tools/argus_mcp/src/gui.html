@@ -39,19 +39,10 @@
     border-radius: 4px; font-size: 11px; cursor: pointer; margin: 0; transition: background 0.15s; }
   .tool-btn:hover { background: #3a342c; }
   .tool-btn.active { background: var(--accent); border-color: #a33; color: #fff; }
-  .color-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
-  .link-pill { cursor: pointer; transition: transform 0.1s; user-select: none; font-size: 11px; }
+  .link-pill { cursor: pointer; transition: transform 0.1s; user-select: none; font-size: 11px; color: var(--ink); }
   .link-pill:hover { transform: scale(1.05); filter: brightness(1.2); }
-  .link-walk { background: #14532d; color: #86efac; border-color: #22c55e; }
-  .link-drop { background: #365314; color: #bef264; border-color: #84cc16; }
-  .link-jump { background: #1e3a8a; color: #93c5fd; border-color: #3b82f6; }
-  .link-rocket, .link-rj { background: #7c2d12; color: #fdba74; border-color: #f97316; }
-  .link-lift, .link-train { background: #581c87; color: #d8b4fe; border-color: #a855f7; }
-  .link-door { background: #713f12; color: #fde047; border-color: #eab308; }
-  .link-swim { background: #164e63; color: #67e8f9; border-color: #06b6d4; }
-  .link-sprint { background: #831843; color: #f9a8d4; border-color: #ec4899; }
-  .link-tele { background: #701a75; color: #f0abfc; border-color: #d946ef; }
-  .link-refusal { background: #7f1d1d; color: #fca5a5; border-color: #ef4444; }
+  .legend-row { display: inline-flex; align-items: center; gap: 5px; }
+  .legend-row svg { flex: none; }
   .maps { list-style: none; margin: 0; padding: 0; max-height: 360px; overflow: auto; }
   .maps li { padding: 6px 8px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .maps li:hover, .maps li.on { background: #2a241e; }
@@ -120,19 +111,10 @@
       
       <!-- Legend Box -->
       <div id="legend-box" style="position:absolute;bottom:8px;left:8px;background:rgba(20,18,16,0.94);padding:8px 12px;border-radius:6px;border:1px solid var(--line);font-size:11px;display:none;z-index:5;">
-        <div style="font-weight:600;margin-bottom:4px;color:var(--ink)">Link Types</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">
-          <span><span class="color-dot" style="background:#4ade80"></span> Walk</span>
-          <span><span class="color-dot" style="background:#a3e635"></span> Drop</span>
-          <span><span class="color-dot" style="background:#60a5fa"></span> Jump</span>
-          <span><span class="color-dot" style="background:#fb923c"></span> Rocket Jump</span>
-          <span><span class="color-dot" style="background:#c084fc"></span> Lift / Train</span>
-          <span><span class="color-dot" style="background:#facc15"></span> Door</span>
-          <span><span class="color-dot" style="background:#22d3ee"></span> Swim</span>
-          <span><span class="color-dot" style="background:#f472b6"></span> Sprint</span>
-          <span><span class="color-dot" style="background:#e879f9"></span> Teleport</span>
-          <span><span class="color-dot" style="background:#ef4444"></span> Refusal / Fail</span>
-        </div>
+        <div style="font-weight:600;margin-bottom:4px;color:var(--ink)">Links</div>
+        <div id="legend-links" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px"></div>
+        <div style="font-weight:600;margin:8px 0 4px;color:var(--ink)">Nodes</div>
+        <div id="legend-nodes" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px"></div>
       </div>
       
       <!-- Tooltip & Empty state -->
@@ -309,19 +291,64 @@ function switchView(mode) {
   }
 }
 
+// One colour and one dash per link meaning: the rock-ground column of
+// tools/argus_linkstyle.py, which the navgen PNG and analyze_match plots use
+// on white. test_tools_cli.py holds the two in step. Dashes are in multiples
+// of the line width; a sprint is a jump, so it shares jump's red.
+const LINK_STYLES = {
+  walk:   { label: 'Walk',        color: '#22c55e', dash: [] },
+  drop:   { label: 'Drop',        color: '#eab308', dash: [5, 2.5] },
+  jump:   { label: 'Jump',        color: '#ef4444', dash: [1, 2] },
+  sprint: { label: 'Sprint jump', color: '#ef4444', dash: [1, 2, 1, 2, 5, 2] },
+  rocket: { label: 'Rocket jump', color: '#e879f9', dash: [5, 2, 1, 2] },
+  lift:   { label: 'Lift',        color: '#8b5cf6', dash: [] },
+  train:  { label: 'Train',       color: '#8b5cf6', dash: [] },
+  tele:   { label: 'Teleport',    color: '#e8dfd0', dash: [9, 3] },
+  swim:   { label: 'Swim',        color: '#22d3ee', dash: [] },
+  door:   { label: 'Door',        color: '#9a8f7e', dash: [] },
+};
+const REFUSAL_STYLE = { label: 'Refused link', color: '#fca5a5', dash: [4, 3] };
+const UNKNOWN_LINK = { label: 'Other', color: '#9a8f7e', dash: [2, 2] };
+const NODE_STYLES = [
+  { label: 'Waypoint',      color: '#60a5fa' },
+  { label: 'Refused link',  color: REFUSAL_STYLE.color },
+  { label: 'Learned cost',  color: '#fab219' },
+  { label: 'Near control',  color: '#e8dfd0' },
+];
+
+function linkStyle(kind) {
+  return LINK_STYLES[kind === 'rj' ? 'rocket' : kind] || UNKNOWN_LINK;
+}
+
 function getLinkColor(kind) {
-  switch (kind) {
-    case 'walk': return '#4ade80';
-    case 'drop': return '#a3e635';
-    case 'jump': return '#60a5fa';
-    case 'rocket': case 'rj': return '#fb923c';
-    case 'lift': case 'train': return '#c084fc';
-    case 'door': return '#facc15';
-    case 'swim': return '#22d3ee';
-    case 'sprint': return '#f472b6';
-    case 'tele': return '#e879f9';
-    default: return '#94a3b8';
+  return linkStyle(kind).color;
+}
+
+function legendLine(style) {
+  const dash = style.dash.length ? ` stroke-dasharray="${style.dash.map(d => d * 2).join(' ')}"` : '';
+  return `<svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="${style.color}" stroke-width="2"${dash}/></svg>`;
+}
+
+function buildLegend() {
+  const seen = new Set();
+  const rows = [];
+  for (const style of [...Object.values(LINK_STYLES), REFUSAL_STYLE]) {
+    const key = style.color + style.dash.join(',');
+    if (seen.has(key)) {
+      rows[rows.length - 1] = rows[rows.length - 1].replace(/<\/span>$/, ` / ${style.label.toLowerCase()}</span>`);
+      continue;
+    }
+    seen.add(key);
+    rows.push(`<span class="legend-row">${legendLine(style)}${style.label}</span>`);
   }
+  document.getElementById('legend-links').innerHTML = rows.join('');
+  document.getElementById('legend-nodes').innerHTML = NODE_STYLES.map(s =>
+    `<span class="legend-row"><svg width="10" height="10" aria-hidden="true"><circle cx="5" cy="5" r="4" fill="${s.color}"/></svg>${s.label}</span>`).join('');
+}
+
+function linkPillStyle(kind) {
+  const c = linkStyle(kind).color;
+  return `border-color:${c};background:${c}24`;
 }
 
 function resizeCanvas() {
@@ -439,9 +466,9 @@ function render() {
 
   // 2. Refusal Overlay Layer
   if (layers.refusals && navData.refusals) {
-    ctx.strokeStyle = '#ef4444';
+    ctx.strokeStyle = REFUSAL_STYLE.color;
     ctx.lineWidth = 2 * dpr;
-    ctx.setLineDash([5 * dpr, 4 * dpr]);
+    ctx.setLineDash(REFUSAL_STYLE.dash.map(d => d * 2 * dpr));
     for (const ref of navData.refusals) {
       const [x1, y1] = worldToCanvas(ref.from[0], ref.from[1]);
       const [x2, y2] = worldToCanvas(ref.to[0], ref.to[1]);
@@ -469,8 +496,10 @@ function render() {
       const [x2, y2] = worldToCanvas(toN.pos[0], toN.pos[1]);
 
       const isConnected = selectedNode && (selectedNode.id === link.from || selectedNode.id === link.to);
-      ctx.strokeStyle = isConnected ? '#ffffff' : getLinkColor(link.kind);
+      const style = linkStyle(link.kind);
+      ctx.strokeStyle = isConnected ? '#ffffff' : style.color;
       ctx.lineWidth = isConnected ? 2.8 * dpr : 1.4 * dpr;
+      ctx.setLineDash(style.dash.map(d => d * ctx.lineWidth));
       ctx.globalAlpha = isConnected ? 1.0 : 0.65;
 
       ctx.beginPath();
@@ -479,6 +508,7 @@ function render() {
       ctx.stroke();
       ctx.globalAlpha = 1.0;
     }
+    ctx.setLineDash([]);
   }
 
   // 4. Nodes Layer
@@ -489,10 +519,10 @@ function render() {
       const isHovered = hoveredNode && hoveredNode.id === n.id;
 
       let r = 4.2 * dpr;
-      let color = '#94a3b8';
-      if (n.refusals > 0) color = '#ef4444';
-      else if (n.cost_mult > 1.0) color = '#f97316';
-      else if (n.nearby_control && n.nearby_control.length > 0) color = '#fbbf24';
+      let color = NODE_STYLES[0].color;
+      if (n.refusals > 0) color = NODE_STYLES[1].color;
+      else if (n.cost_mult > 1.0) color = NODE_STYLES[2].color;
+      else if (n.nearby_control && n.nearby_control.length > 0) color = NODE_STYLES[3].color;
 
       if (isSelected) {
         ctx.strokeStyle = '#d4531e';
@@ -556,21 +586,21 @@ function populateInspector(node) {
 
   const ctrlEl = document.getElementById('insp-control');
   if (node.nearby_control && node.nearby_control.length > 0) {
-    ctrlEl.innerHTML = node.nearby_control.map(c => `<span class="pill" style="color:#fbbf24;border-color:#d97706">${c}</span>`).join(' ');
+    ctrlEl.innerHTML = node.nearby_control.map(c => `<span class="pill" style="border-color:${NODE_STYLES[3].color}">${c}</span>`).join(' ');
   } else {
     ctrlEl.textContent = 'none';
   }
 
   const outEl = document.getElementById('insp-out');
   if (node.out.length > 0) {
-    outEl.innerHTML = node.out.map(e => `<span class="pill link-pill link-${e.kind}" onclick="selectNodeById(${e.to})">→ Node #${e.to} <small>(${e.kind})</small></span>`).join(' ');
+    outEl.innerHTML = node.out.map(e => `<span class="pill link-pill" style="${linkPillStyle(e.kind)}" onclick="selectNodeById(${e.to})">→ Node #${e.to} <small>(${e.kind})</small></span>`).join(' ');
   } else {
     outEl.innerHTML = '<span style="color:var(--muted)">none</span>';
   }
 
   const inEl = document.getElementById('insp-in');
   if (node.inn.length > 0) {
-    inEl.innerHTML = node.inn.map(e => `<span class="pill link-pill link-${e.kind}" onclick="selectNodeById(${e.from})">← Node #${e.from} <small>(${e.kind})</small></span>`).join(' ');
+    inEl.innerHTML = node.inn.map(e => `<span class="pill link-pill" style="${linkPillStyle(e.kind)}" onclick="selectNodeById(${e.from})">← Node #${e.from} <small>(${e.kind})</small></span>`).join(' ');
   } else {
     inEl.innerHTML = '<span style="color:var(--muted)">none</span>';
   }
@@ -777,6 +807,7 @@ document.getElementById('file').addEventListener('change', e => {
   if (e.target.files[0]) upload(e.target.files[0]);
 });
 
+buildLegend();
 refresh().catch(e => log(String(e)));
 </script>
 </body>

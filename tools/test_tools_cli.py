@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import os
+import re
 import shutil
 import struct
 import subprocess
@@ -135,6 +136,64 @@ class TestToolsCLI(unittest.TestCase):
             self.assertTrue(analyze_match.death_is_lava(contents, 1, 0, 10))
             self.assertTrue(analyze_match.death_is_lava(contents, -1, 0, 10))
             self.assertFalse(analyze_match.death_is_lava(contents, 1, 0, 24))
+
+    def test_gui_link_styles_match_the_shared_python_table(self):
+        # The GUI cannot import argus_linkstyle, so it carries a copy of the
+        # rock column. Before they shared a table, the navgen PNG drew jumps
+        # red and rocket jumps magenta while the GUI drew them blue and orange.
+        sys.path.insert(0, str(ROOT/"tools"))
+        import argus_linkstyle as ls
+        html = (ROOT/"tools/argus_mcp/src/gui.html").read_text(encoding="utf-8")
+        block = re.search(r"const LINK_STYLES = \{(.*?)\n\};", html, re.S)
+        self.assertIsNotNone(block, "LINK_STYLES table missing from gui.html")
+        style = r"label: '[^']*', +color: '(#[0-9a-f]{6})', dash: \[([^\]]*)\]"
+        gui = {kind: (color, tuple(float(d) for d in dash.split(",") if d.strip()))
+               for kind, color, dash in re.findall(r"^\s*(\w+): +\{ " + style, block[1], re.M)}
+        python = {kind: (dark, tuple(float(d) for d in dash or ()))
+                  for kind, (_, dark, dash) in ls.LINK_STYLES.items()}
+        self.assertEqual(gui, python)
+        refusal = re.search(r"const REFUSAL_STYLE = \{ " + style, html)
+        self.assertEqual((refusal[1], tuple(float(d) for d in refusal[2].split(","))),
+                         (ls.REFUSAL[1], tuple(float(d) for d in ls.REFUSAL[2])))
+        waypoint = re.search(r"label: 'Waypoint', +color: '(#[0-9a-f]{6})'", html)
+        self.assertEqual(waypoint[1], ls.WAYPOINT[1])
+
+    def test_no_link_or_track_colour_is_orange(self):
+        # Rust (#d4531e) is the brand signature, so a data colour in that hue
+        # band stops reading as data. The old GUI rocket (#f97316) and the old
+        # Reap track (#d9531e) both sat inside it.
+        import colorsys
+        sys.path.insert(0, str(ROOT/"tools"))
+        import analyze_match
+        import argus_linkstyle as ls
+        colours = [c for light, dark, _ in ls.LINK_STYLES.values() for c in (light, dark)]
+        colours += [*ls.WAYPOINT, ls.REFUSAL[0], ls.REFUSAL[1], *analyze_match.SLOT_COLORS]
+        for colour in colours:
+            r, g, b = (int(colour[i:i + 2], 16) / 255 for i in (1, 3, 5))
+            hue, light, sat = colorsys.rgb_to_hls(r, g, b)
+            orange = 10 <= hue * 360 <= 35 and sat > 0.4
+            self.assertFalse(orange, f"{colour} is orange")
+        for rejected in ("#f97316", "#d9531e"):
+            r, g, b = (int(rejected[i:i + 2], 16) / 255 for i in (1, 3, 5))
+            hue, _, sat = colorsys.rgb_to_hls(r, g, b)
+            self.assertTrue(10 <= hue * 360 <= 35 and sat > 0.4)
+
+    def test_link_kind_drop_uses_the_runtime_step(self):
+        sys.path.insert(0, str(ROOT/"tools"))
+        import argus_linkstyle as ls
+        self.assertEqual(ls.walk_kind((0, 0, 40), (0, 0, 22)), "walk")
+        self.assertEqual(ls.walk_kind((0, 0, 41), (0, 0, 22)), "drop")
+        self.assertEqual(ls.walk_kind((0, 0, 0), (0, 0, 200)), "walk")
+
+    def test_analyze_match_track_colours_follow_roster_slot(self):
+        # Keyed by the retired names Reap/Omi/Zeus, every current bot drew black.
+        sys.path.insert(0, str(ROOT/"tools"))
+        import analyze_match as am
+        current = [am.track_color(n) for n in ("Carmack", "Romero", "Joe Rogan", "Mr Elusive")]
+        self.assertEqual(len(set(current)), 4)
+        self.assertEqual(current, [am.track_color(n) for n in ("Reap", "Omi", "Zeus", "Ares")])
+        self.assertEqual(am.track_color("player"), am.HUMAN_COLOR)
+        self.assertNotIn(am.HUMAN_COLOR, current)
 
     def test_analyze_match_missing_args(self):
         res = self.run_tool("analyze_match.py")

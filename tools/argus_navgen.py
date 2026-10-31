@@ -4182,6 +4182,7 @@ def _render_preview(preview_path):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
+    from argus_linkstyle import REFUSAL, WAYPOINT, mpl, walk_kind
     vo, vl = lumps[3]; eo, el = lumps[12]
     verts = [struct.unpack_from("<fff", data, vo + i*12) for i in range(vl // 12)]
     edges = [struct.unpack_from("<HH", data, eo + i*4) for i in range(el // 4)]
@@ -4190,37 +4191,38 @@ def _render_preview(preview_path):
         if a < len(verts) and b < len(verts):
             ax.plot([verts[a][0], verts[b][0]], [verts[a][1], verts[b][1]],
                     color="0.88", lw=0.3, zorder=1)
+    drops = 0
     for i in sorted(links):
-        x1, y1, _ = pos(ways[i])
+        a = pos(ways[i])
         for j in links[i]:
-            x2, y2, _ = pos(ways[j])
+            b = pos(ways[j])
             if links[i][j][1]:
-                ax.plot([x1, x2], [y1, y2], color="#d62728", lw=1.5, ls=":",
-                        alpha=0.9, zorder=2)
+                ax.plot([a[0], b[0]], [a[1], b[1]], lw=1.5, alpha=0.9,
+                        zorder=2, **mpl("jump"))
                 continue
-            two = i in links.get(j, {})
-            ax.plot([x1, x2], [y1, y2], color="#2a9d5c" if two else "#cc8800",
-                    lw=0.9 if two else 1.2, alpha=0.7, zorder=2)
+            kind = walk_kind(a, b)
+            drops += kind == "drop"
+            ax.plot([a[0], b[0]], [a[1], b[1]], lw=1.2 if kind == "drop" else 0.9,
+                    alpha=0.7, zorder=2, **mpl(kind))
     for a, b in teles:
         x1, y1, _ = pos(ways[a]); x2, y2, _ = pos(ways[b])
-        ax.plot([x1, x2], [y1, y2], color="purple", lw=1.4, ls="--", zorder=2)
+        ax.plot([x1, x2], [y1, y2], lw=1.4, zorder=2, **mpl("tele"))
     for a, b in rjlinks:
         x1, y1, _ = pos(ways[a]); x2, y2, _ = pos(ways[b])
-        ax.plot([x1, x2], [y1, y2], color="#e377c2", lw=1.8, ls="-.", zorder=2)
+        ax.plot([x1, x2], [y1, y2], lw=1.8, zorder=2, **mpl("rocket"))
     for rejected in _probe_rejected:
         x1, y1, _ = rejected["from"]
         x2, y2, _ = rejected["to"]
-        ax.plot([x1, x2], [y1, y2], color="#7f0000", lw=2.0, ls="--",
-                alpha=0.9, zorder=4)
-        ax.scatter([x1, x2], [y1, y2], s=34, marker="x", c="#7f0000",
-                   zorder=5)
+        ax.plot([x1, x2], [y1, y2], color=REFUSAL[0], lw=2.0,
+                ls=(0, REFUSAL[2]), alpha=0.9, zorder=4)
+        ax.scatter([x2], [y2], s=34, marker="x", c=REFUSAL[0], zorder=5)
     wx = [pos(w)[0] for w in ways]; wy = [pos(w)[1] for w in ways]
-    ax.scatter(wx, wy, s=16, c="#1e6bd9", zorder=3)
+    ax.scatter(wx, wy, s=16, c=WAYPOINT[0], zorder=3)
     ax.set_aspect("equal"); ax.set_xticks([]); ax.set_yticks([])
     ax.set_title(f"Argus nav graph - {MAPNAME}: {len(ways)} nodes, {nlinks} links "
-                 f"({oneway} one-way, orange; {njlinks} jump, red dotted; "
+                 f"({drops} drop, amber dashed; {njlinks} jump, red dotted; "
                  f"{len(rjlinks)} rocket-jump, magenta dash-dot), "
-                 f"{len(teles)} teleporter", fontsize=11)
+                 f"{len(teles)} teleporter, dark long dash", fontsize=11)
     plt.tight_layout(); plt.savefig(preview_path, dpi=130)
     plt.close(fig)
 
