@@ -111,14 +111,29 @@ The plan, entry, button and door changes remain development source. Native
 fixtures verify the supported e1m2 route and distinguish deadline renewal from
 premature door release. These controlled cases do not establish general
 gameplay safety or resolve the step 1b dm4 warning, and do not update supplied binaries.
-The compile workflow builds production QuakeC and all 17 maintained private
-fixture variants across `muzzle`, `combat`, `health`, `button`, `door`, `plan`
-and `offset`, using the pinned FTEQCC revision. It retains per-variant compile
+The compile workflow builds production QuakeC and all 19 maintained private
+fixture variants across `muzzle`, `combat`, `health`, `button`, `door`, `plan`,
+`offset`, `freeze` and `mover`, using the pinned FTEQCC revision. It retains per-variant compile
 logs and hash receipts, then passes the production `progs` artifact to the
 LibreQuake smoke job. Private-fixture compilation needs no engine or game
 assets and never installs a binary; it proves compilation, not physical
 fixture outcomes. See the [compile-only runbook](docs/lab-workflow.md#focused-checks-without-deployment)
 for fresh-output commands and the distinction from native trials.
+
+Run the additional broader-map and receipt suites locally too. They are not
+yet included in the fast workflow; compiling the fixtures is a separate check.
+Fast-workflow integration is tracked in [#627](https://github.com/saworbit/argus/issues/627).
+
+```text
+python tools/test_nav_budget.py
+python tools/test_map_intelligence_report.py
+python tools/test_freeze_recovery.py
+python tools/test_mover_transfer.py
+```
+
+The [cross-map runbook](docs/lab-workflow.md#cross-map-routing-evaluation)
+separates normal matches, controlled physical tasks and experimental graphs.
+It records source identities, measured cadence and unchanged installed binaries.
 
 You can run automated headless bot matches on Linux or Windows to verify stability:
 

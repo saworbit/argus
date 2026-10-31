@@ -13,6 +13,28 @@ TIGHT_SLACK = 20
 
 
 @dataclass(frozen=True)
+class WaypointLimits:
+    capacity: int
+    decimation: int
+    promotion: int
+    infrastructure: int
+
+    def admits(self, count, infrastructure=False):
+        limit = self.promotion + (self.infrastructure if infrastructure else 0)
+        return count < min(self.capacity, limit)
+
+
+def waypoint_limits(live_entities, target=200, promotion=260, infrastructure=8):
+    """Reserve infrastructure seats inside the hard entity allowance."""
+    capacity = max(0, EDICT_CEILING - WORLD_AND_CLIENT_SLOTS
+                   - RUNTIME_RESERVE - live_entities)
+    reserve = min(infrastructure, max(0, capacity - 1))
+    ordinary = capacity - reserve
+    return WaypointLimits(capacity, min(target, ordinary),
+                          min(promotion, ordinary), reserve)
+
+
+@dataclass(frozen=True)
 class EdictBudget:
     status: str
     waypoints: int

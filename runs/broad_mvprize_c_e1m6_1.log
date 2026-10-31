@@ -1,0 +1,359 @@
+LOG started on: 10/31/2026 16:08:10 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m6
+Clearing memory
+Programs occupy 1088K.
+trying to open external vis file
+maps/e1m6.vis not found, trying maplab_broad_mvprize_c.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 188 nodes, 997 links
+40 entities inhibited
+ARGUS init on e1m6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '216.0 1488.0  24.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-448.0 1280.0  24.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-928.0 416.0  24.0' spd 0 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+MOVOBS Joe Rogan t   1.5 pos '212.0 1404.7  24.0' vel '-59.2 -206.9   0.0' yaw 121.6 node '  0.0   0.0   0.0' goal worldspawn lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+MOVOBS Romero t   1.5 pos '-402.7 1323.2  24.0' vel '  2.1 -81.4   0.0' yaw 240.4 node '  0.0   0.0   0.0' goal worldspawn lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+MOVOBS Carmack t   1.5 pos '-853.0 457.6  24.0' vel '278.3 158.0   0.0' yaw  29.6 node '  0.0   0.0   0.0' goal worldspawn lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   1.7 pos '186.8 1423.1  24.0' spd 349.1 yaw 121.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-422.8 1276.3  24.0' spd 320.6 yaw 240.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-799.8 487.1  24.0' spd 320 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero jump
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+MVTASK begin e1m6 lower_to_prize
+ARGEVT Carmack door
+MOVOBS Carmack t   2.0 pos '625.5 1425.4  32.0' vel ' 37.1  25.1   0.0' yaw  34.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground plat *72 nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack route 3 start '625.0 1425.0  24.0' goal '433.0 1297.0 208.0'
+ARGEVT Carmack lift
+ARGEVT Carmack board
+ARGEVT Carmack hazard
+ARGLOG Carmack t   2.2 pos '653.7 1441.1  42.8' spd 0 yaw  87.1 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   2.5 pos '653.7 1441.1  87.8' vel '  0.0   0.0   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 1 0 0 0 ground plat *72 nearest plat *72 state 2 top  64.8 bounds '639.0 1407.0 -257.2' '705.0 1473.0  64.8'
+ARGLOG Carmack t   2.7 pos '653.7 1441.1 119.9' spd 0 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   3.0 pos '653.7 1441.1 163.6' vel '  0.0   0.0   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 1 0 0 0 ground plat *72 nearest plat *72 state 2 top 140.6 bounds '639.0 1407.0 -181.4' '705.0 1473.0 140.6'
+ARGLOG Carmack t   3.2 pos '653.7 1441.1 195.5' spd 0 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   3.5 pos '653.7 1441.1 239.2' vel '  0.0   0.0   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 1 0 0 0 ground plat *72 nearest plat *72 state 2 top 216.2 bounds '639.0 1407.0 -105.8' '705.0 1473.0 216.2'
+ARGLOG Carmack t   3.7 pos '653.7 1441.1 271.3' spd 0 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   4.0 pos '653.7 1441.1 314.8' vel '  0.0   0.0   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 1 0 0 0 ground plat *72 nearest plat *72 state 2 top 291.8 bounds '639.0 1407.0 -30.2' '705.0 1473.0 291.8'
+ARGEVT Carmack hazard
+ARGLOG Carmack t   4.2 pos '653.5 1440.6 344.0' spd  44.8 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   4.5 pos '659.7 1441.3 344.0' vel '-18.1 -67.7   0.0' yaw 151 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   4.8 pos '658.8 1440.4 344.0' spd 125.5 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   5.0 pos '665.8 1447.5 344.0' vel '113.5  43.6   0.0' yaw 153 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGEVT Carmack jump
+ARGUS Carmack aircontrol
+ARGLOG Carmack t   5.3 pos '657.7 1444.0 363.6' spd 108.6 yaw 151 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   5.5 pos '627.3 1435.7 386.8' vel '-104.7 -28.6 -30.8' yaw 144 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   5.8 pos '604.8 1429.6 360.7' spd 108.6 yaw 138 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   6.0 pos '548.4 1459.9 344.0' vel '-235.7 196.6   0.0' yaw 130 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 1 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGEVT Carmack hazard
+ARGLOG Carmack t   6.3 pos '549.1 1505.7 344.0' spd  78.7 yaw 240 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   6.5 pos '537.4 1458.0 344.0' vel '128.7 -332.5   0.0' yaw 265 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 3 top 269.1 bounds '639.0 1407.0 -52.9' '705.0 1473.0 269.1'
+ARGLOG Carmack t   6.8 pos '538.1 1377.1 344.0' spd 426.8 yaw 218 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   7.0 pos '426.4 1329.9 344.0' vel '-462.4 144.6   0.0' yaw 113.6 node '465.0 1361.0 216.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 3 top 193.8 bounds '639.0 1407.0 -128.2' '705.0 1473.0 193.8'
+ARGLOG Carmack t   7.3 pos '367.1 1408.2 344.0' spd 483.8 yaw 301 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t   7.5 pos '361.1 1410.6 344.0' vel '199.8 -320.3   0.0' yaw -26.0 node '465.0 1361.0 216.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 3 top 118.8 bounds '639.0 1407.0 -203.2' '705.0 1473.0 118.8'
+ARGLOG Carmack t   7.8 pos '422.8 1360.0 341.5' spd 292.3 yaw 280 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   8.0 pos '496.0 1360.4 295.3' vel '  6.0  32.2 -273.6' yaw  55.8 node '465.0 1361.0 216.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 3 top  43.6 bounds '639.0 1407.0 -278.4' '705.0 1473.0  43.6'
+ARGLOG Carmack t   8.3 pos '495.5 1369.2 216.0' spd  76.4 yaw 134.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   8.6 pos '421.6 1409.1 213.5' vel '-358.4 119.5 -58.4' yaw 217.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t   8.8 pos '332.5 1417.0 174.3' spd 389.1 yaw 295.1 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   9.1 pos '301.7 1400.0  80.0' vel ' 30.2   0.0 -460.8' yaw 367 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t   9.3 pos '332.5 1402.8  24.0' spd 320.0 yaw 7 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   9.6 pos '425.3 1401.4  24.0' vel '369.8 -122.8   0.0' yaw 306.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t   9.8 pos '494.3 1332.3  44.4' spd 441.9 yaw 227.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  10.1 pos '486.5 1264.0  67.5' vel '-104.2   0.0  -7.6' yaw 148 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  10.3 pos '460.8 1264.0  40.0' spd 104.2 yaw 130 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  10.6 pos '422.5 1305.5  34.9' vel '-168.9 307.9 234.8' yaw  75.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  10.8 pos '400.2 1380.0  66.9' spd 309.0 yaw 358.4 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  11.1 pos '459.6 1432.5  47.3' vel '335.8 -18.3 -174.8' yaw -88.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack hazard
+ARGLOG Carmack t  11.3 pos '524.2 1410.6  24.0' spd 191.3 yaw 232 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  11.6 pos '544.3 1401.5  24.0' vel ' 56.2 -23.9   0.0' yaw -136 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGUS Carmack wallslide
+ARGLOG Carmack t  11.8 pos '506.4 1400.0  24.0' spd 308.2 yaw 235 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  12.1 pos '429.9 1356.6  41.0' vel '-290.1 -253.6 212.4' yaw -87 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  12.3 pos '400.0 1291.0  67.7' spd 253.6 yaw 355.6 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  12.6 pos '428.4 1264.0  43.7' vel '147.4   0.0 -190.0' yaw  73.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  12.8 pos '442.3 1302.9  31.1' spd 315.5 yaw 155.9 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  13.1 pos '406.1 1369.6  66.3' vel '-281.5 167.7  52.4' yaw 234.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  13.4 pos '400.1 1370.6  49.8' spd  32.5 yaw 295 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  13.6 pos '411.2 1341.8  24.0' vel '134.1 -290.6   0.0' yaw 296 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  13.9 pos '445.8 1267.2  64.6' spd 320.1 yaw 342.6 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  14.1 pos '472.4 1256.4  59.5' vel ' 67.2  67.2 -108.4' yaw 416.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  14.4 pos '484.4 1281.2  24.0' spd 221.4 yaw 143.6 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  14.6 pos '437.5 1337.8  57.9' vel '-223.0 238.2 130.8' yaw 577.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  14.9 pos '400.0 1354.4  62.3' spd  33.8 yaw 300 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  15.1 pos '401.5 1344.8  24.0' vel ' 49.6 -98.0   0.0' yaw 664 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  15.4 pos '444.1 1278.0  55.4' spd 320.3 yaw 340.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  15.6 pos '482.4 1264.0  66.8' vel '173.2   0.0 -30.8' yaw 770.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  15.9 pos '528.0 1280.9  24.0' spd 164.6 yaw 143.1 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  16.1 pos '477.5 1322.5  40.8' vel '-332.3 178.4 213.2' yaw 930 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  16.4 pos '400.0 1339.5  67.3' spd  88.8 yaw 301.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  16.6 pos '400.0 1319.9  42.7' vel '  0.0 -88.8 -194.0' yaw 1046 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  16.9 pos '448.3 1286.7  38.0' spd 348.1 yaw  25.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  17.1 pos '520.8 1267.1  66.4' vel '351.9  59.4  50.0' yaw 1174.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  17.4 pos '559.1 1328.0  46.2' spd  39.9 yaw 186.6 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  17.6 pos '527.9 1321.4  24.0' vel '-310.5 -77.6   0.0' yaw 1275 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  17.9 pos '443.0 1299.6  62.4' spd 320.0 yaw 195 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  18.1 pos '376.0 1282.6  63.5' vel '-310.2 -78.7 -75.6' yaw 1336.2 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack hazard
+ARGUS Carmack wallslide
+ARGLOG Carmack t  18.4 pos '315.6 1264.1  24.0' spd  56.7 yaw 347.0 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  18.6 pos '373.6 1269.8  34.9' vel '322.9  51.7 234.8' yaw 1464 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  18.9 pos '466.6 1284.7  67.7' spd 327.0 yaw  98.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  19.1 pos '514.0 1328.0  48.7' vel ' 11.3   9.8 -168.4' yaw 1607.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  19.4 pos '471.7 1312.8  31.6' spd 320.1 yaw 203 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  19.6 pos '407.0 1287.6  64.9' vel '-298.3 -116.3  72.4' yaw 1682 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  19.9 pos '335.8 1264.0  51.6' spd  62.9 yaw 333.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  20.2 pos '360.0 1270.0  24.0' vel '295.4  94.6   0.0' yaw 1820 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  20.4 pos '442.3 1296.8  64.6' spd 320.2 yaw  53.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  20.7 pos '507.4 1320.7  61.1' vel '257.8 199.7 -97.2' yaw 1922.5 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  20.9 pos '509.8 1324.8  24.0' spd 256.5 yaw 200 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  21.2 pos '444.4 1304.6  55.7' vel '-306.4 -94.8 144.4' yaw 2014 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  21.5 pos '358.0 1273.5  62.5' spd 326.4 yaw 305.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  21.7 pos '344.2 1264.0  24.2' vel ' 31.0   0.1 -258.0' yaw 2175.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  22.0 pos '414.7 1287.8  53.8' spd 320.1 yaw 26 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  22.2 pos '479.0 1310.3  67.4' vel '302.1 106.0 -15.6' yaw 2251.2 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  22.5 pos '522.8 1328.0  24.7' spd  30.8 yaw 187.8 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  22.7 pos '477.8 1313.9  38.0' vel '-304.2 -99.7 223.6' yaw 2361 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  23.0 pos '385.6 1283.7  67.3' spd 320.2 yaw 270.5 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  23.2 pos '337.5 1264.0  45.4' vel '-27.2 -18.4 -182.8' yaw 2495.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  23.5 pos '387.9 1277.4  37.6' spd 320.7 yaw 23 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  23.7 pos '449.7 1296.6  65.6' vel '306.3  95.1  63.6' yaw 2586.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  24.0 pos '521.5 1328.0  46.8' spd   9.9 yaw 163.4 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  24.2 pos '496.6 1320.7  24.0' vel '-298.0 -105.3   0.0' yaw 2721 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  24.5 pos '408.9 1289.3  65.7' spd 320.1 yaw 239.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  24.7 pos '348.8 1264.9  60.5' vel '-251.6 -207.8 -101.2' yaw 2824.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t 25 pos '354.6 1268.4  24.0' spd 289.6 yaw 20 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  25.2 pos '415.6 1287.0  55.7' vel '306.1  94.5 144.4' yaw 2909 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  25.5 pos '507.2 1319.4  60.8' spd 325.9 yaw 125.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  25.7 pos '520.9 1327.9  24.0' vel '-69.0  -7.4   0.0' yaw 3069.5 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  26.0 pos '441.9 1302.8  55.8' spd 320.4 yaw 213.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  26.2 pos '380.4 1282.7  67.3' vel '-304.6 -99.4 -18.0' yaw 3158.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  26.5 pos '342.1 1264.0  24.0' spd  30.8 yaw  17.6 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  26.7 pos '389.5 1279.3  38.0' vel '302.8 104.1 223.6' yaw 3262 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  27.0 pos '482.1 1311.2  67.2' spd 320.2 yaw  93.6 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  27.2 pos '525.8 1328.0  45.6' vel '-12.7  17.8 -182.0' yaw 3398.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  27.5 pos '474.1 1312.9  37.8' spd 320.4 yaw 202 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  27.7 pos '412.5 1292.9  65.6' vel '-304.7 -99.1  62.8' yaw 3482.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  28.0 pos '337.5 1264.0  46.6' spd  41.8 yaw 338.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  28.2 pos '358.3 1269.0  24.0' vel '273.6  88.2   0.0' yaw 3620 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  28.5 pos '446.5 1298.1  65.7' spd 320.1 yaw  56.9 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  28.7 pos '507.6 1321.0  60.4' vel '258.9 198.2 -102.0' yaw 3722.2 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  29.0 pos '504.9 1323.4  24.0' spd 295.3 yaw 201 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  29.2 pos '443.9 1304.6  55.7' vel '-306.7 -94.0 144.4' yaw 3815 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  29.6 pos '353.4 1269.5  60.8' spd 328.7 yaw 312.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  29.8 pos '345.2 1264.2  24.0' vel ' 70.6  14.1   0.0' yaw 3977.2 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  30.1 pos '423.9 1290.9  55.9' spd 320.1 yaw 33 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  30.3 pos '484.7 1312.1  67.3' vel '302.2 105.6 -18.0' yaw 4057.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  30.6 pos '522.7 1328.0  24.0' spd  30.7 yaw 194.3 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  30.8 pos '473.7 1312.0  38.0' vel '-303.5 -101.8 223.6' yaw 4161 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  31.1 pos '382.1 1281.2  67.3' spd 320.1 yaw 269.7 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  31.3 pos '334.6 1264.0  46.2' vel '-25.5 -20.8 -179.6' yaw 4294.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  31.6 pos '385.8 1276.8  38.0' spd 321.0 yaw 23 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  31.8 pos '447.7 1295.1  65.6' vel '307.8  91.0  62.8' yaw 4386.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  32.1 pos '521.7 1328.0  46.2' spd  27.9 yaw 163.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  32.3 pos '496.5 1320.5  24.0' vel '-301.9 -106.1   0.0' yaw 4521 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  32.6 pos '409.9 1289.7  65.6' spd 320.1 yaw 238.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  32.8 pos '350.6 1266.5  61.3' vel '-260.0 -195.7 -95.6' yaw 4621.7 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  33.1 pos '351.7 1267.6  24.0' spd 261.9 yaw 19 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  33.3 pos '411.6 1286.1  55.4' vel '305.8  95.5 146.0' yaw 4706 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  33.6 pos '504.4 1317.5  60.8' spd 324.5 yaw 120.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  33.8 pos '522.5 1327.9  24.0' vel '-69.5  -3.6   0.0' yaw 4864.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  34.1 pos '443.2 1305.2  55.9' spd 320.9 yaw 218.5 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  34.3 pos '380.8 1286.5  67.3' vel '-304.6 -103.6 -19.6' yaw 4963.4 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  34.6 pos '346.1 1264.0  24.0' spd  31.1 yaw 20 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  34.8 pos '394.5 1280.5  38.2' vel '301.1 108.6 222.8' yaw 5063 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  35.1 pos '485.4 1313.3  67.3' spd 320.1 yaw  98.4 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  35.3 pos '524.8 1328.0  46.2' vel '-29.4   6.7 -179.6' yaw 5202.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  35.6 pos '473.4 1312.2  37.6' spd 320.1 yaw 201 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  35.8 pos '412.4 1291.7  65.5' vel '-303.4 -101.9  64.4' yaw 5279.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  36.1 pos '334.9 1264.0  45.8' spd  50.0 yaw 336.9 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  36.3 pos '359.7 1269.5  24.0' vel '302.5  91.2   0.0' yaw 5420 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  36.6 pos '448.8 1297.0  65.8' spd 320.4 yaw  63.7 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  36.8 pos '508.4 1320.7  60.6' vel '239.2 225.0 -100.4' yaw 5528.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  37.1 pos '503.9 1322.8  24.0' spd 285.1 yaw 201 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  37.3 pos '443.0 1302.2  55.8' vel '-303.5 -102.4 143.6' yaw 5608 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  37.6 pos '352.2 1268.2  60.8' spd 325.5 yaw 305.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  37.8 pos '339.6 1264.1  24.0' vel ' 72.0   8.3   0.0' yaw 5769.9 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  38.1 pos '418.6 1287.8  55.7' spd 320.3 yaw 32 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  38.3 pos '480.6 1307.4  67.3' vel '305.5  96.3 -18.0' yaw 5857.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  38.6 pos '520.5 1328.0  24.0' spd  30.4 yaw 193.6 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  38.8 pos '471.6 1311.9  38.2' vel '-303.1 -103.3 222.8' yaw 5962 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  39.1 pos '380.4 1280.8  67.3' spd 320.2 yaw 273.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  39.3 pos '335.4 1264.0  46.6' vel ' -4.2 -18.3 -178.0' yaw 6097.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  39.7 pos '387.2 1278.0  38.2' spd 320.3 yaw 22 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  39.9 pos '448.6 1297.2  65.7' vel '305.7  95.6  62.0' yaw 6183.7 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  40.2 pos '522.9 1328.0  46.0' spd  27.3 yaw 161.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  40.4 pos '497.8 1321.2  24.0' vel '-301.3 -101.5   0.0' yaw 6321 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  40.7 pos '410.2 1291.2  65.7' spd 320.2 yaw 243.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  40.9 pos '350.9 1266.6  60.7' vel '-241.1 -221.5 -99.6' yaw 6427.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  41.2 pos '358.3 1268.7  24.0' spd 289.5 yaw 20 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  41.4 pos '421.5 1288.9  56.3' vel '304.9  98.5 140.4' yaw 6514.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  41.7 pos '511.6 1324.7  60.3' spd 328.0 yaw 131.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  41.9 pos '518.8 1327.8  24.0' vel '-68.0 -13.1   0.0' yaw 6677.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  42.2 pos '440.5 1300.6  56.2' spd 320.1 yaw 206 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  42.4 pos '380.4 1279.4  67.3' vel '-302.0 -106.1 -18.0' yaw 6749.7 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  42.7 pos '335.7 1264.0  24.0' spd  30.6 yaw   7.9 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  42.9 pos '385.2 1277.4  38.0' vel '306.9  92.3 223.6' yaw 6862 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  43.2 pos '477.9 1305.3  67.3' spd 320.5 yaw  95.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  43.4 pos '523.2 1328.0  46.4' vel ' 10.9  15.9 -178.8' yaw 6999.2 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  43.7 pos '473.0 1312.7  37.8' spd 320.3 yaw 202 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  43.9 pos '411.6 1292.1  65.6' vel '-303.6 -102.0  62.8' yaw 7083.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  44.2 pos '337.6 1264.0  46.6' spd  33.3 yaw 339.6 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  44.4 pos '362.2 1270.0  24.0' vel '299.0  95.9   0.0' yaw 7220 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  44.7 pos '449.6 1298.5  65.6' spd 320.4 yaw  63.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  44.9 pos '509.2 1322.5  61.1' vel '241.4 221.7 -97.2' yaw 7327.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  45.2 pos '503.8 1322.9  24.0' spd 287.1 yaw 201 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  45.4 pos '441.6 1302.0  56.1' vel '-303.8 -101.4 142.0' yaw 7410 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  45.7 pos '351.4 1267.7  60.7' spd 326.0 yaw 306.6 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  45.9 pos '339.9 1264.1  24.0' vel ' 68.9   8.8   0.0' yaw 7571.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  46.2 pos '417.5 1287.8  55.9' spd 320.2 yaw 30 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  46.4 pos '479.4 1307.7  67.3' vel '305.0  97.7 -19.6' yaw 7654.5 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  46.7 pos '521.3 1328.0  24.0' spd  30.5 yaw 192.1 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  46.9 pos '472.6 1312.4  38.0' vel '-303.7 -101.7 223.6' yaw 7762 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+MVTASK result elapsed  45.0 completed 0 pos '446.2 1303.5  53.9'
+ARGLOG Carmack t  47.2 pos '380.6 1281.6  67.3' spd 320.3 yaw 275.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  47.4 pos '336.6 1264.0  46.0' vel ' 14.1 -17.3 -180.4' yaw 7900.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  47.7 pos '388.1 1278.9  37.8' spd 320.2 yaw 22 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  47.9 pos '449.9 1299.1  65.7' vel '304.2  99.8  62.0' yaw 7982.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  48.2 pos '525.0 1328.0  46.9' spd  51.6 yaw 157.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  48.5 pos '500.4 1321.2  24.0' vel '-298.1 -98.8   0.0' yaw 8120 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  48.7 pos '417.6 1293.5  65.6' spd 320.1 yaw 234.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  49.0 pos '353.7 1269.7  59.7' vel '-258.3 -198.9 -107.6' yaw 8222.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  49.2 pos '352.0 1266.7  24.0' spd 252.2 yaw 20 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  49.5 pos '418.2 1286.3  57.8' vel '307.5  91.9 131.6' yaw 8315 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  49.7 pos '504.5 1316.9  61.1' spd 327.4 yaw 126.5 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  50.0 pos '517.0 1327.5  24.0' vel '-108.7 -22.1   0.0' yaw 8476.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  50.3 pos '440.4 1301.7  55.9' spd 320.2 yaw 212.5 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  50.5 pos '375.2 1279.5  66.9' vel '-303.0 -103.6 -29.2' yaw 8561.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  50.8 pos '341.0 1264.0  24.0' spd  30.7 yaw  13.8 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  51.0 pos '394.4 1280.7  41.4' vel '303.8 101.5 210.8' yaw 8662 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  51.3 pos '481.3 1309.7  67.3' spd 320.3 yaw  95.3 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  51.5 pos '525.2 1328.0  42.9' vel '-30.0   4.0 -193.2' yaw 8805.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  51.8 pos '474.6 1312.7  37.8' spd 320.1 yaw 201 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  52.0 pos '409.2 1291.1  66.3' vel '-304.0 -100.3  52.4' yaw 8883.5 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  52.3 pos '335.5 1264.0  44.9' spd  41.2 yaw 338.5 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  52.5 pos '364.3 1271.0  24.0' vel '305.6  96.0   0.0' yaw 9020 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  52.8 pos '448.6 1297.7  65.8' spd 320.3 yaw  62.1 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  53.0 pos '511.4 1323.5  59.3' vel '231.6 233.2 -110.0' yaw 9130.0 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  53.3 pos '500.4 1321.8  24.0' spd 315.6 yaw 201 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  53.5 pos '438.2 1301.7  57.9' vel '-304.9 -98.6 130.8' yaw 9217.8 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  53.8 pos '348.3 1264.1  58.7' spd 328.9 yaw 315.7 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  54.0 pos '344.2 1264.6  24.0' vel '107.5  27.2   0.0' yaw 9379 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  54.3 pos '424.6 1291.2  57.7' spd 320.2 yaw  33.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  54.5 pos '485.8 1312.1  66.9' vel '303.1 103.2 -29.2' yaw 9458.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  54.8 pos '522.5 1327.9  24.0' spd  69.6 yaw 195.4 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  55.0 pos '471.0 1311.7  41.2' vel '-304.6 -98.8 211.6' yaw 9562 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  55.3 pos '375.4 1280.7  66.4' spd 320.2 yaw 281.0 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  55.5 pos '336.8 1264.0  44.1' vel ' 14.2 -15.0 -188.4' yaw 9700.5 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  55.8 pos '392.9 1280.3  43.6' spd 320.2 yaw 22 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  56.0 pos '449.9 1298.8  66.3' vel '304.5  99.0  52.4' yaw 9782.3 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  56.3 pos '525.0 1328.0  40.9' spd   4.4 yaw 163.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  56.5 pos '496.6 1321.0  24.0' vel '-306.5 -94.6   0.0' yaw 9921 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  56.9 pos '403.6 1291.8  67.0' spd 320.6 yaw 256.7 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  57.0 pos '350.2 1265.8  59.2' vel '-204.9 -260.0 -110.8' yaw 10036.6 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  57.4 pos '369.7 1272.0  24.0' spd 320.2 yaw 21 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  57.5 pos '426.2 1291.7  57.8' vel '302.5 105.0 131.6' yaw 10115.5 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  57.9 pos '518.3 1328.0  57.5' spd 208.5 yaw 137.2 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  58.0 pos '519.9 1327.5  24.0' vel '-106.5 -20.8   0.0' yaw 10276.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  58.4 pos '431.3 1298.8  60.9' spd 320.4 yaw 221.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  58.5 pos '378.6 1281.5  66.9' vel '-304.4 -99.9 -28.4' yaw 10357.4 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  58.9 pos '344.5 1264.8  24.0' spd 149.6 yaw 19 mode 1 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+MOVOBS Carmack t  59.1 pos '393.2 1279.6  41.4' vel '305.5  97.1 210.8' yaw 10463 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGLOG Carmack t  59.4 pos '493.9 1311.9  65.5' spd 321.9 yaw 110.8 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  59.6 pos '523.2 1328.0  43.1' vel '-30.5   1.4 -192.4' yaw 10606.4 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  59.9 pos '459.0 1307.5  46.8' spd 320.2 yaw 203 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  60.1 pos '407.2 1289.8  66.4' vel '-303.0 -103.6  51.6' yaw 10685.5 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGLOG Carmack t  60.4 pos '336.5 1264.0  37.5' spd  30.7 yaw 351.4 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  60.6 pos '365.4 1271.2  24.0' vel '305.9  95.2   0.0' yaw 10820 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGLOG Carmack t  60.9 pos '462.3 1301.6  67.4' spd 320.3 yaw  77.4 mode 1 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t  61.1 pos '512.3 1324.6  59.2' vel '219.3 246.2 -110.8' yaw 10933.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'

@@ -4,8 +4,8 @@
     "Argus_Hunch": "c9f7573cd3449f47f8ac251970c3d6f030af9002b80563562f090a1d262fab7f",
     "Argus_Perceive": "97ee8007c727c396c8a813596f34df15d489fd2d2918a2a571d9ccdff7613f3f"
   },
-  "active_text_sha256": "3e16329695ebd0297ac89cba165187d89e8eb250b0073dd6d5e22058a7c52ff6",
-  "amendment_scope": "Reverse human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
+  "active_text_sha256": "67165fe66447635dffdf9999426efe1ccb5ef71b8abebbc846896d05a61e74a3",
+  "amendment_scope": "Reverse under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
   "candidate_text_sha256": "359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38",
   "parked_functions": {
     "Argus_Combat": "1adaf68f727b69362db994c4093ff0b2e96f86a0c45ce87651688b37b383dcaf",
@@ -15,6 +15,7 @@
   "parked_text_sha256": "29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f",
   "patch": "health-inventory-step1b.patch",
   "production_amendments": [
+    "recovery-reverse.patch",
     "human-gait-reverse.patch",
     "opening-door-reverse.patch",
     "button-door-reverse.patch",

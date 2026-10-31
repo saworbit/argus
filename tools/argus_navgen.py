@@ -72,6 +72,7 @@ from argus_nav_budget import (
     RUNTIME_RESERVE,
     WORLD_AND_CLIENT_SLOTS,
     assess_edict_budget,
+    waypoint_limits,
 )
 from argus_nav_tactics import compute_tactics
 from argus_mapgate import assess_playability
@@ -1303,9 +1304,14 @@ live_ents = [b for b in ent_blocks if spawns_an_edict(b)]
 # and the final registration verdict cannot disagree.
 EDICT_BUDGET = (EDICT_CEILING - RUNTIME_RESERVE
                 - WORLD_AND_CLIENT_SLOTS)
-NODE_CAP = MAX_NODES
-if len(live_ents) + NODE_CAP > EDICT_BUDGET:
-    NODE_CAP = max(60, EDICT_BUDGET - len(live_ents))
+_limits = waypoint_limits(len(live_ents), target=MAX_NODES)
+NODE_CAP = _limits.decimation
+if not NODE_CAP:
+    print(assess_edict_budget(0, len(live_ents), len(ent_blocks)).line())
+    if "--register" in sys.argv[5:]:
+        print("register: skipped because the graph is over-budget")
+    sys.exit("error: no edict headroom for navigation")
+if NODE_CAP < MAX_NODES:
     print(f"edict budget: {len(live_ents)} live bsp entities "
           f"({len(ent_blocks)} in the lump, "
           f"{len(ent_blocks) - len(live_ents)} freed at spawn), "
@@ -1316,7 +1322,7 @@ if len(live_ents) + NODE_CAP > EDICT_BUDGET:
 # sake, and on dm2 the corridor+stair+sprint seat passes consumed
 # it before RJ pads got their turn - every ensure_way then snapped
 # to the same wrong seat and all four RJ links vanished
-PROMO_CAP = max(NODE_CAP, min(EDICT_BUDGET - len(live_ents), 260))
+PROMO_CAP = _limits.promotion
 # AND THE SAME THING HAPPENED AGAIN, to e1m2's only plat (#319). The
 # cap was 200, decimation seated 196, and the item, stair and sprint
 # passes took the last four before the lift asked for its exit pad,
@@ -1326,7 +1332,7 @@ PROMO_CAP = max(NODE_CAP, min(EDICT_BUDGET - len(live_ents), 260))
 # allows. A missing plat pad costs a whole level transition and an
 # extra seat costs one edict of six hundred, so infrastructure gets a
 # small reserve of its own past the cap, and says when it spends one.
-INFRA_RESERVE = 8
+INFRA_RESERVE = _limits.infrastructure
 infra_spent = 0
 starved_seats = 0
 
@@ -1339,19 +1345,41 @@ if CORRIDOR:
     # narrow passage (see the --corridor note at the top)
     allnodes = ([n for n in allnodes if n[0] % 2 == 0 and n[1] % 2 == 0]
                 + [n for n in allnodes if n[0] % 2 or n[1] % 2])
-r = WAYPOINT_R
-while True:
-    ways = []
+def decimate_at(radius):
+    result = []
     for nid in allnodes:
         x, y, z = pos(nid)
         ok = True
-        for w in ways:
+        for w in result:
             wx, wy, wz = pos(w)
-            if ((x-wx)**2 + (y-wy)**2 + (2*(z-wz))**2) ** 0.5 < r:
+            if ((x-wx)**2 + (y-wy)**2 + (2*(z-wz))**2) ** 0.5 < radius:
                 ok = False; break
-        if ok: ways.append(nid)
+        if ok: result.append(nid)
+    return result
+
+
+r = WAYPOINT_R
+previous_radius = None
+while True:
+    ways = decimate_at(r)
     if len(ways) <= NODE_CAP: break
+    previous_radius = r
     r *= 1.15
+# A hard-limited map cannot buy missed coverage with later promotions.
+# Refine the last coarse radius step rather than discarding a large fraction
+# of its already scarce seats. Keep the densest legal sampled result: greedy
+# decimation is not assumed to be perfectly monotone in radius.
+if NODE_CAP < MAX_NODES and previous_radius is not None:
+    low, high = previous_radius, r
+    for _ in range(8):
+        middle = (low + high) / 2
+        candidate = decimate_at(middle)
+        if len(candidate) <= NODE_CAP:
+            if len(candidate) > len(ways):
+                ways, r = candidate, middle
+            high = middle
+        else:
+            low = middle
 print(f"waypoints: {len(ways)} at coverage radius {r:.0f}")
 
 # ---- 5a2. wall-clearance seat shift ----
@@ -1447,16 +1475,16 @@ def force_way(x, y, z, snap=48, infra=False):
         wx, wy, wz = pos(w)
         if ((px-wx)**2 + (py-wy)**2 + (2*(pz-wz))**2) ** 0.5 < snap:
             return i
-    if len(ways) >= PROMO_CAP:
+    if not _limits.admits(len(ways), infrastructure=infra):
         global starved_seats
         starved_seats = starved_seats + 1
-        if not infra or infra_spent >= INFRA_RESERVE:
-            if infra:
-                print(f"  INFRASTRUCTURE seat at ({x:.0f} {y:.0f} "
-                      f"{z:.0f}) had a sample {d:.0f}u away and the "
-                      f"reserve is spent ({infra_spent} of "
-                      f"{INFRA_RESERVE}, cap {PROMO_CAP})")
-            return None
+        if infra:
+            print(f"  INFRASTRUCTURE seat at ({x:.0f} {y:.0f} "
+                  f"{z:.0f}) had a sample {d:.0f}u away and the "
+                  f"reserve is spent ({infra_spent} of "
+                  f"{INFRA_RESERVE}, cap {PROMO_CAP})")
+        return None
+    if len(ways) >= PROMO_CAP:
         infra_spent = infra_spent + 1
         print(f"  infrastructure seat at ({x:.0f} {y:.0f} {z:.0f}) "
               f"spends reserve {infra_spent} of {INFRA_RESERVE} "
@@ -1498,10 +1526,16 @@ def virtual_pad(bm, face_z):
     pad exists anyway. The v3.47+ runtime already handles rest-top
     pads - the lift wait steers at the slab centre when seated and
     boards by contact - so the only missing piece was ever this
-    seat. Virtual pads bypass PROMO_CAP (three per map at most, and
-    they are the map's designed circulation). Dijkstra cannot link
+    seat. Virtual pads share the bounded infrastructure allowance.
+    Dijkstra cannot link
     them (no fine-graph presence): section 6b3 stitches their
     walk-ins by direct clearance."""
+    global infra_spent, starved_seats
+    if not _limits.admits(len(ways), infrastructure=True):
+        starved_seats += 1
+        return None
+    if len(ways) >= PROMO_CAP:
+        infra_spent += 1
     pcx, pcy = (bm[0] + bm[3]) / 2, (bm[1] + bm[4]) / 2
     cx = min(range(len(xs)), key=lambda i: abs(xs[i] - pcx))
     cy = min(range(len(ys)), key=lambda i: abs(ys[i] - pcy))
@@ -1558,10 +1592,11 @@ for b in ent_blocks:
                   f"swept column (statue risk - see cartograph plats)")
     if lo is None:
         lo = virtual_pad(bm, top_z - height)
-        vpads.append((lo, bm))
-        print(f"plat at ({pcx:.0f} {pcy:.0f}): VIRTUAL pad on the "
-              f"slab rest-top at z {top_z - height:.0f} (the 5b gap, "
-              f"closed per the dm3 musing)")
+        if lo is not None:
+            vpads.append((lo, bm))
+            print(f"plat at ({pcx:.0f} {pcy:.0f}): VIRTUAL pad on the "
+                  f"slab rest-top at z {top_z - height:.0f} (the 5b gap, "
+                  f"closed per the dm3 musing)")
     hi = force_way(pcx, pcy, top_z + 24, infra=True)
     if lo is None or hi is None or lo == hi:
         print(f"plat at ({pcx:.0f} {pcy:.0f}) travel {height:.0f}: "
@@ -2312,7 +2347,7 @@ def ensure_way(nid, radius=40):
             best, bd = i, d
     if best is not None and bd < radius:
         return best
-    if len(ways) >= PROMO_CAP:
+    if not _limits.admits(len(ways)):
         return best
     ways.append(nid)
     return len(ways) - 1

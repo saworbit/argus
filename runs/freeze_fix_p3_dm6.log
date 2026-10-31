@@ -1,0 +1,65 @@
+LOG started on: 10/31/2026 14:17:38 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm6
+Clearing memory
+Programs occupy 1087K.
+trying to open external vis file
+maps/dm6.vis not found, trying freezecheck_freeze_fix_p3.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 238 nodes, 1498 links
+0 entities inhibited
+ARGUS init on dm6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '1016.0 -416.0  40.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '408.0 -1088.0 256.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '232.0 -1512.0  40.0' spd 0 yaw 209.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   1.7 pos '1011.0 -559.9  40.0' spd 320.0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '423.4 -1105.4 256.0' spd 320.5 yaw 240.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '230.7 -1500.8  40.0' spd 221.0 yaw 152.0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+FRFIX begin dt_ms  15.0
+ARGUS difficulty Joe Rogan t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+FRFIX start '929.0 -1135.0 -40.0'
+FRFIX debug flags 512 from 0 last 0 recovery 0 westclear 1
+FRFIX debug flags 0 from   2.1 last   3.0 recovery 0 westclear 1
+ARGUS recoveryfixture recovery walk 90
+ARGEVT recoveryfixture grab weapon_nailgun
+FRFIX debug flags 512 from 0 last   3.8 recovery 0 westclear 1
+FRFIX debug flags 0 from   5.0 last   5.0 recovery 0 westclear 1
+FRFIX debug flags 0 from   5.0 last   6.1 recovery 0 westclear 1
+ARGUS recoveryfixture recovery walk 90
+ARGUS recoveryfixture wallslide
+ARGEVT recoveryfixture hazard
+FRFIX debug flags 0 from   6.8 last   7.1 recovery 0 westclear 1
+ARGEVT recoveryfixture hazard
+FRFIX debug flags 0 from   7.5 last   8.1 recovery 0 westclear 1
+ARGEVT recoveryfixture hazard
+FRFIX result maxmove 455.6 exit_sec   1.7 shots 13 pos '1267.6 -851.6 -40.0'
+FRFIX check walks_out_before_freeze 1
+FRFIX check continuous_motion 1
+FRFIX check still_shoots 1
+FRFIX check goal_preserved 1
+FRFIX check alive_and_dry 1
+FRFIX end checks 5 failures 0

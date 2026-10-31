@@ -1787,9 +1787,48 @@ pub fn compare_band_primary(
         .collect();
     let cross_rate = classes.len() > 1;
 
+    // A statistical primary cannot waive severe stationary windows. Check
+    // every candidate, not only the median-stall representative shown on the
+    // card. Existing long windows in any control set the severity envelope;
+    // taking damage while frozen is always a hard failure.
+    let control_longest = controls
+        .iter()
+        .map(|b| b.totals.freeze_max_sec)
+        .fold(0.0, f64::max);
+    let control_frozen = controls
+        .iter()
+        .map(|b| b.totals.freeze_total_sec)
+        .fold(0.0, f64::max);
+    let hard_freeze = candidates.iter().enumerate().find(|(_, b)| {
+        b.totals.freeze_underfire > 0
+            || (b.totals.freeze_max_sec >= 10.0 && b.totals.freeze_max_sec > control_longest + 2.0)
+            || (b.totals.freeze_total_sec >= 30.0
+                && b.totals.freeze_total_sec > control_frozen + 30.0)
+    });
+    let freeze_failure = hard_freeze.map(|(index, b)| {
+        format!(
+            "hard freeze failure in candidate tape {}: {} under-fire freeze(s), \
+             longest {:.1}s, total {:.1}s lost to statues (control maxima {:.1}s / {:.1}s)",
+            index + 1,
+            b.totals.freeze_underfire,
+            b.totals.freeze_max_sec,
+            b.totals.freeze_total_sec,
+            control_longest,
+            control_frozen,
+        )
+    });
+    if let Some((_, b)) = hard_freeze {
+        if let Some(gate) = report.gates.iter_mut().find(|g| g.name == "freezes") {
+            gate.pass = false;
+            gate.a = control_longest;
+            gate.b = b.totals.freeze_max_sec;
+            gate.note = freeze_failure.clone().unwrap_or_default();
+        }
+    }
+
     let verdict = if cross_rate {
         Verdict::Mixed
-    } else if !regressed.is_empty() {
+    } else if hard_freeze.is_some() || !regressed.is_empty() {
         Verdict::Regressed
     } else if !beat_the_band.is_empty() && !worse_than_median {
         Verdict::Improved
@@ -1805,6 +1844,9 @@ pub fn compare_band_primary(
              Re-baseline at the played rate (task 0.5 of the recovery plan).",
             list.join(" and ")
         ));
+    }
+    if let Some(failure) = freeze_failure {
+        findings.push(failure);
     }
     for g in &band_gates {
         findings.push(format!(
@@ -1860,7 +1902,8 @@ pub fn compare_band_primary(
         findings.insert(
             0,
             format!(
-                "primary metric pre-registered as {p}: only it can convict, the other gates flag. \
+                "primary metric pre-registered as {p}: only it decides statistical gates; \
+                 severe freezes still reject and other statistical gates flag. \
                  Four gates convict a null 19 per cent of the time against 0 to 12 per cent each \
                  (docs/specs/2026-09-16-lab-measurement-limits.md)."
             ),
@@ -4224,7 +4267,7 @@ ARGEVT Reap spawned
     }
 
     #[test]
-    fn same_build_pairs_read_parity_if_present() {
+    fn same_build_statistical_pairs_read_parity_if_present() {
         let dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs");
         // one list, in measure.rs, so the validation set and the
         // corpus analysis cannot drift apart
@@ -4238,10 +4281,26 @@ ARGEVT Reap spawned
                 continue;
             }
             seen += 1;
-            let r = compare_band(
-                &[brief_path(&pb, None).unwrap()],
-                &[brief_path(&pa, None).unwrap()],
-            );
+            let mut candidate = brief_path(&pb, None).unwrap();
+            let mut control = brief_path(&pa, None).unwrap();
+            let release = compare_band(&[candidate.clone()], &[control.clone()]);
+            if release
+                .findings
+                .iter()
+                .any(|f| f.starts_with("hard freeze failure"))
+            {
+                assert_eq!(release.verdict, Verdict::Regressed);
+            }
+            // This calibration measures statistical false positives, not
+            // release readiness. Byte-identical code can still have severe
+            // freezes. Preserve freeze counts and isolate their severity;
+            // the ordinary release verdict above must still reject them.
+            for brief in [&mut candidate, &mut control] {
+                brief.totals.freeze_underfire = 0;
+                brief.totals.freeze_max_sec = 0.0;
+                brief.totals.freeze_total_sec = 0.0;
+            }
+            let r = compare_band(&[candidate], &[control]);
             if r.verdict == Verdict::Parity {
                 parity += 1;
             } else {
@@ -4385,6 +4444,81 @@ ARGEVT Reap spawned
         let typo = compare_band_primary(&cand, &ctl, Some("lava"));
         assert_eq!(typo.verdict, Verdict::Regressed, "{}", typo.headline);
         assert!(typo.primary.is_none());
+    }
+
+    #[test]
+    fn hard_freezes_survive_a_primary_and_nonrepresentative_tape() {
+        let mut clean = MatchBrief::empty();
+        clean.map = Some("dm6".into());
+        clean.totals.duration_sec = 185.0;
+        clean.totals.stalls = 10;
+        clean.totals.engages = 60;
+        let controls = [clean.clone(), clean.clone(), clean.clone()];
+        for (underfire, longest, total) in [(1, 7.0, 7.0), (0, 25.0, 25.0), (0, 9.0, 61.0)] {
+            let mut bad = clean.clone();
+            // The representative is selected by median stalls, so it is clean.
+            bad.totals.stalls = 0;
+            bad.totals.freezes = 1;
+            bad.totals.freeze_underfire = underfire;
+            bad.totals.freeze_max_sec = longest;
+            bad.totals.freeze_total_sec = total;
+            let report = compare_band_primary(
+                &[bad, clean.clone(), clean.clone()],
+                &controls,
+                Some("stall_parity"),
+            );
+            assert_eq!(report.verdict, Verdict::Regressed, "{}", report.headline);
+            assert!(report.gates.iter().any(|g| g.name == "freezes" && !g.pass));
+            assert!(report
+                .findings
+                .iter()
+                .any(|f| f.contains("candidate tape 1")));
+        }
+    }
+
+    #[test]
+    fn a_primary_still_demotes_freeze_counts_without_a_severe_window() {
+        let mut clean = MatchBrief::empty();
+        clean.map = Some("dm6".into());
+        clean.totals.duration_sec = 185.0;
+        clean.totals.stalls = 10;
+        clean.totals.engages = 60;
+        let mut candidate = clean.clone();
+        candidate.totals.freezes = 4;
+        candidate.totals.freeze_max_sec = 6.0;
+        candidate.totals.freeze_total_sec = 24.0;
+        let report = compare_band_primary(
+            &[candidate.clone(), candidate],
+            &[clean.clone(), clean],
+            Some("stall_parity"),
+        );
+        assert_eq!(report.verdict, Verdict::Parity, "{}", report.headline);
+    }
+
+    #[test]
+    fn existing_control_severity_is_checked_across_the_control_band() {
+        let mut clean = MatchBrief::empty();
+        clean.map = Some("dm6".into());
+        clean.totals.duration_sec = 185.0;
+        clean.totals.stalls = 10;
+        clean.totals.engages = 60;
+        let mut existing = clean.clone();
+        existing.totals.stalls = 0;
+        existing.totals.freezes = 1;
+        existing.totals.freeze_max_sec = 25.0;
+        existing.totals.freeze_total_sec = 25.0;
+        let mut candidate = existing.clone();
+        candidate.totals.stalls = 10;
+        let report = compare_band_primary(
+            &[candidate.clone(), candidate],
+            &[existing, clean.clone(), clean],
+            Some("stall_parity"),
+        );
+        assert_eq!(report.verdict, Verdict::Parity, "{}", report.headline);
+        assert!(!report
+            .findings
+            .iter()
+            .any(|f| f.starts_with("hard freeze failure")));
     }
 
     /// The band must still be able to say yes. Three tapes a side

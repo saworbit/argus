@@ -1,0 +1,108 @@
+LOG started on: 10/31/2026 16:00:59 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m6
+Clearing memory
+Programs occupy 1087K.
+trying to open external vis file
+maps/e1m6.vis not found, trying maplab_broad_mvprize.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 188 nodes, 997 links
+40 entities inhibited
+ARGUS init on e1m6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '216.0 1488.0  24.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-448.0 1280.0  24.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-928.0 416.0  24.0' spd 0 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+MOVOBS Joe Rogan t   1.5 pos '212.1 1406.1  24.0' vel '-57.6 -210.7   0.0' yaw 121.6 node '  0.0   0.0   0.0' goal worldspawn lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+MOVOBS Romero t   1.5 pos '-402.8 1323.4  24.0' vel '  9.2 -71.3   0.0' yaw 240.4 node '  0.0   0.0   0.0' goal worldspawn lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+MOVOBS Carmack t   1.5 pos '-854.3 456.8  24.0' vel '278.3 158.0   0.0' yaw  29.6 node '  0.0   0.0   0.0' goal worldspawn lift/wait/jump/rj/sprint 0 0 0 0 0 ground worldspawn maps/e1m6.bsp nearest worldspawn maps/e1m6.bsp state 0 top 0 bounds '  0.0   0.0   0.0' '  0.0   0.0   0.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   1.7 pos '187.0 1423.0  24.0' spd 348.0 yaw 121.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-421.8 1278.3  24.0' spd 320.6 yaw 240.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-802.0 485.8  24.0' spd 320 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero jump
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+MVTASK begin e1m6 lower_to_prize
+ARGEVT Carmack door
+MOVOBS Carmack t   2.0 pos '625.5 1425.4  32.0' vel ' 37.1  25.1   0.0' yaw  34.1 node '  0.0   0.0   0.0' goal argus_task_goal lift/wait/jump/rj/sprint 0 0 0 0 0 ground plat *72 nearest plat *72 state 1 top 9 bounds '639.0 1407.0 -313.0' '705.0 1473.0   9.0'
+ARGEVT Carmack route 3 start '625.0 1425.0  24.0' goal '433.0 1297.0 208.0'
+ARGEVT Carmack lift
+ARGEVT Carmack board
+ARGEVT Carmack hazard
+ARGLOG Carmack t   2.2 pos '656.1 1444.5  40.4' spd 0 yaw  85.8 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   2.5 pos '656.1 1444.5  85.9' vel '  0.0   0.0   0.0' yaw 151 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 1 0 0 0 ground plat *72 nearest plat *72 state 2 top  62.9 bounds '639.0 1407.0 -259.1' '705.0 1473.0  62.9'
+ARGLOG Carmack t   2.7 pos '656.1 1444.5 116.2' spd 0 yaw 151 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   3.0 pos '656.1 1444.5 161.3' vel '  0.0   0.0   0.0' yaw 151 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 1 0 0 0 ground plat *72 nearest plat *72 state 2 top 138.3 bounds '639.0 1407.0 -183.7' '705.0 1473.0 138.3'
+ARGLOG Carmack t   3.2 pos '656.1 1444.5 191.5' spd 0 yaw 151 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   3.5 pos '656.1 1444.5 236.9' vel '  0.0   0.0   0.0' yaw 151 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 1 0 0 0 ground plat *72 nearest plat *72 state 2 top 213.9 bounds '639.0 1407.0 -108.1' '705.0 1473.0 213.9'
+ARGLOG Carmack t   3.7 pos '656.1 1444.5 266.9' spd 0 yaw 151 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t   4.0 pos '655.3 1442.1 312.8' vel '-11.6 -65.7   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 2 top 289.8 bounds '639.0 1407.0 -32.2' '705.0 1473.0 289.8'
+ARGLOG Carmack t   4.2 pos '661.1 1445.9 343.4' spd 126.2 yaw 152 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   4.5 pos '664.8 1444.6 344.0' vel '123.0  64.6   0.0' yaw 152 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   4.7 pos '661.4 1434.9 344.0' spd 129.7 yaw 149 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t   5.0 pos '664.5 1444.6 344.0' vel '-116.5 -94.1   0.0' yaw 153 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   5.2 pos '662.4 1437.5 344.0' spd 192.5 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   5.5 pos '669.5 1455.3 344.0' vel '-138.8  67.1   0.0' yaw 155 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   5.7 pos '661.5 1435.9 344.0' spd  27.7 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t   6.0 pos '660.7 1437.1 344.0' vel ' 12.6  89.3   0.0' yaw 149 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   6.2 pos '669.9 1451.0 344.0' spd  33.4 yaw 154 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   6.5 pos '663.3 1442.3 344.0' vel '-34.1 166.5   0.0' yaw 151 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   6.8 pos '665.2 1446.9 344.0' spd 184.5 yaw 153 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t   7.1 pos '662.8 1438.8 344.0' vel '-43.6 113.7   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   7.3 pos '661.1 1439.3 344.0' spd 160.4 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   7.6 pos '659.0 1436.0 344.0' vel '-55.5 -135.1   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   7.8 pos '661.4 1450.6 344.0' spd 242.2 yaw 153 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t   8.1 pos '663.0 1439.1 344.0' vel ' -5.6 106.9   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   8.3 pos '667.2 1448.9 344.0' spd 152.3 yaw 154 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   8.6 pos '663.2 1435.0 344.0' vel '-14.7  22.7   0.0' yaw 150 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   8.8 pos '657.9 1436.4 344.0' spd 148.4 yaw 149 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t   9.1 pos '667.5 1452.8 344.0' vel '-114.8  60.1   0.0' yaw 155 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   9.3 pos '662.6 1437.4 344.0' spd  87.1 yaw 150 mode 2 st 0 gl 0 hp 100 frg 0
+MOVOBS Carmack t   9.6 pos '660.7 1445.2 344.0' vel '196.5 104.5   0.0' yaw 151 node '529.0 1393.0 344.0' goal argus_task_goal lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t   9.8 pos '662.8 1441.8 344.0' spd 126.1 yaw 151 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack abandon
+ARGEVT Carmack hazard
+MOVOBS Carmack t  10.1 pos '672.3 1434.2 344.0' vel '187.4  21.9   0.0' yaw  50.4 node '  0.0   0.0   0.0' goal worldspawn lift/wait/jump/rj/sprint 1 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGEVT Carmack plan powerup via weapon
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGEVT Carmack route 15 start '529.0 1393.0 344.0' goal '-719.0 977.0 -232.0'
+ARGLOG Carmack t  10.3 pos '667.8 1444.4 344.0' spd  28.8 yaw 203 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '529.0 1393.0 344.0'
+ARGEVT Carmack jump
+ARGEVT Carmack abandon
+ARGEVT Carmack plan powerup via weapon
+ARGEVT Carmack goal weapon_supernailgun
+ARGEVT Carmack route 12 start '529.0 1393.0 344.0' goal '1041.0 305.0  24.0'
+MOVOBS Carmack t  10.6 pos '662.0 1430.1 380.6' vel '-12.2 -66.2 112.4' yaw 196 node '529.0 1393.0 344.0' goal weapon_supernailgun lift/wait/jump/rj/sprint 0 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t  10.8 pos '656.7 1424.0 384.0' spd  30.9 yaw 199 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MOVOBS Carmack t  11.1 pos '649.3 1425.9 344.0' vel ' 15.2  56.7   0.0' yaw 196 node '529.0 1393.0 344.0' goal weapon_supernailgun lift/wait/jump/rj/sprint 0 0 0 0 0 ground plat *72 nearest plat *72 state 0 top 321 bounds '639.0 1407.0  -1.0' '705.0 1473.0 321.0'
+ARGLOG Carmack t  11.3 pos '649.5 1439.0 344.0' spd  53.0 yaw 203 mode 2 st 1 gl 0 hp 100 frg 0

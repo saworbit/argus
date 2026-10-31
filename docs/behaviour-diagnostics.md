@@ -12,9 +12,16 @@ is active again in development at the user's request; incoming-projectile percep
 on hold. Shipped binaries are unchanged. Earlier sections' test totals and
 cohort conclusions belong to their recorded builds, not every later change.
 
+Later work adds [equal-link route distances](map-intelligence.md) and
+[under-fire recovery](freeze-recovery.md). A [ten-map mover investigation](mover-intelligence.md)
+retains the recovery source, fixes offline navigation budgeting and rejects
+its runtime mover prototype. e1m3/e1m4 remain experimental and unregistered.
+Those studies have their own controls, cadence and stopping rules; the
+historical cohorts below are not retested by those later match sets.
+
 The earlier muzzle verification comprises 14 native controlled checks and two
 negative controls, plus its recorded 41 focused Python tests. It is not a demonstration
-of improved gameplay. No new cohorts were run; the tested changes remain in
+of improved gameplay. That muzzle verification ran no new cohorts; its changes remain in
 development without installation. See the
 [focused verification runbook](lab-workflow.md#focused-checks-without-deployment).
 
@@ -1119,7 +1126,7 @@ was added. See [bounded results](../runs/hi2_dm4_isolation.results.json).
 
 The remaining text records the candidate's original implementation and checks.
 
-The manifest reverses allowlisted opening-door, button/door, offset-entry,
+The manifest reverses allowlisted recovery, opening-door, button/door, offset-entry,
 active-health, plan and muzzle
 amendments in memory before checking the original parked hashes and
 reconstructing the historical candidate. Live-source audits and fresh native

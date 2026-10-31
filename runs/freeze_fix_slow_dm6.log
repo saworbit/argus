@@ -1,0 +1,63 @@
+LOG started on: 10/31/2026 14:20:16 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm6
+Clearing memory
+Programs occupy 1087K.
+trying to open external vis file
+maps/dm6.vis not found, trying freezecheck_freeze_fix_slow.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 238 nodes, 1498 links
+0 entities inhibited
+ARGUS init on dm6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '1016.0 -416.0  40.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '408.0 -1088.0 256.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '232.0 -1512.0  40.0' spd 0 yaw 209.6 mode 0 st 0 gl 0 hp 100 frg 0
+Bonus item fell out of level at '408.0 -1064.0 238.0'
+ARGUS Carmack wallslide
+ARGEVT Romero hazard
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   1.8 pos '1009.3 -607.9  40.0' spd 320.0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.8 pos '478.4 -1120.3 256.0' spd 322.7 yaw  79.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.8 pos ' 72.7 -1577.6  40.0' spd 321.8 yaw 209.6 mode 0 st 0 gl 0 hp 100 frg 0
+FRFIX begin dt_ms 100.0
+ARGUS difficulty Joe Rogan t 2 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+FRFIX start '929.0 -1135.0 -40.0'
+FRFIX debug flags 0 from 2 last 2 recovery 0 westclear 1 bottom 1
+FRFIX debug flags 0 from 2 last   3.1 recovery 0 westclear 1 bottom 1
+ARGUS recoveryfixture recovery walk 180
+FRFIX debug flags 0 from 4 last   4.2 recovery 0 westclear 1 bottom 1
+FRFIX debug flags 0 from 4 last   5.3 recovery 0 westclear 1 bottom 1
+ARGUS recoveryfixture recovery walk 180
+FRFIX debug flags 0 from 6 last   6.4 recovery 0 westclear 1 bottom 1
+ARGUS recoveryfixture recovery walk 180
+FRFIX debug flags 512 from 0 last   7.3 recovery   8.2 westclear 1 bottom 1
+FRFIX debug flags 0 from 8 last   8.6 recovery 0 westclear 1 bottom 1
+FRFIX result maxmove  88.2 exit_sec   1.7 shots 12 pos '937.0 -1140.0 -40.0'
+FRFIX check walks_out_before_freeze 1
+FRFIX check continuous_motion 1
+FRFIX check still_shoots 1
+FRFIX check goal_preserved 1
+FRFIX check alive_and_dry 1
+FRFIX end checks 5 failures 0

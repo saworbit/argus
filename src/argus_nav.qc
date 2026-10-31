@@ -5,7 +5,7 @@
     walk links appear in both directions; drop, teleporter, jump,
     rocket-jump and lift links in one.
 
-    Routing is breadth-first search over the node graph, sliced across
+    Routing minimises link count, then distance, through a work queue, sliced across
     server frames to stay far inside the interpreter's runaway budget.
     One search runs at a time. The search walks FORWARD from the bot's
     node; on completion the parent chain is flipped into per-bot
@@ -36,11 +36,13 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .float  an_doormask;        // bit i set = link slot i crosses a door
 .float  an_mark;            // generation stamp
 .float  an_dist;            // walked graph distance from the shopping root
+.float  an_hops;            // prefer fewer movement steps before shorter distance
 .float  an_exposure;        // other nav nodes visible through static world
 .entity an_cover;           // nearest walk-reachable node hidden from here
 .entity an_coverhop;        // first plain-walk hop toward an_cover
-.entity an_par;             // BFS parent (shared; one search at a time)
-.entity an_qnext;           // BFS queue linkage
+.entity an_par;             // shortest-distance parent, one search at a time
+.entity an_qnext;           // work queue linkage
+.float  an_queued;          // search generation while this node is queued
 .entity an_next0;           // next hop toward goal, bot slot 0
 .entity an_next1;           // next hop toward goal, bot slot 1
 .entity an_next2;
@@ -817,8 +819,10 @@ float(entity bot, entity startnode, entity goalnode) Argus_Route_Start =
 
     startnode.an_mark = an_gen;
     startnode.an_dist = 0;
+    startnode.an_hops = 0;
     startnode.an_par = world;
     startnode.an_qnext = world;
+    startnode.an_queued = an_gen;
     anq_head = startnode;
     anq_tail = startnode;
     return TRUE;
@@ -861,8 +865,10 @@ float(entity bot, entity startnode) Argus_Shop_Start =
 
     startnode.an_mark = an_gen;
     startnode.an_dist = 0;
+    startnode.an_hops = 0;
     startnode.an_par = world;
     startnode.an_qnext = world;
+    startnode.an_queued = an_gen;
     anq_head = startnode;
     anq_tail = startnode;
     return TRUE;
@@ -1151,7 +1157,7 @@ void() Argus_Route_Fail =
 void() Argus_Nav_Frame =
 {
     local entity cur, nb;
-    local float pops, i, bit;
+    local float pops, i, bit, dist, hops;
 
     if (!an_busy)
         return;
@@ -1171,6 +1177,8 @@ void() Argus_Nav_Frame =
         {
             if (an_shop)
                 Argus_Shop_Finish ();
+            else if (an_goalnode.an_mark == an_gen)
+                Argus_Route_Finish ();
             else
                 Argus_Route_Fail ();
             return;
@@ -1179,19 +1187,25 @@ void() Argus_Nav_Frame =
         anq_head = cur.an_qnext;
         if (anq_head == world)
             anq_tail = world;
-
-        if (!an_shop && cur == an_goalnode)
-        {
-            Argus_Route_Finish ();
-            return;
-        }
+        cur.an_queued = 0;
+        cur.an_qnext = world;
 
         i = 0;
         bit = 1;
         while (i < cur.an_nlinks)
         {
             nb = Argus_NavGetLink (cur, i);
-            if (nb.an_mark != an_gen)
+            dist = cur.an_dist + vlen (nb.origin - cur.origin);
+            hops = cur.an_hops + 1;
+            // Keep the original fewest-step discipline. A pure distance
+            // search added steps and exposed mover trouble in the broader
+            // map screen. Within that step count, do not let link insertion
+            // order choose a detour: dm6 has a three-step 465u first path
+            // where another three-step path costs 120u. Shopping and route
+            // installation both use this same settled parent tree.
+            if (nb != cur && (nb.an_mark != an_gen
+                || hops < nb.an_hops
+                || (hops == nb.an_hops && dist < nb.an_dist)))
             {
                 // i IS the link slot, so the typed masks can be read
                 // directly. Argus_LinkIsRocket/IsSprint each re-walk
@@ -1237,14 +1251,21 @@ void() Argus_Nav_Frame =
                         || !Argus_LinkBlockedByKeyDoor (cur, nb, an_bot))
                     {
                         nb.an_mark = an_gen;
-                        nb.an_dist = cur.an_dist + vlen (nb.origin - cur.origin);
+                        nb.an_dist = dist;
+                        nb.an_hops = hops;
                         nb.an_par = cur;
-                        nb.an_qnext = world;
-                        if (anq_tail == world)
-                            anq_head = nb;
-                        else
-                            anq_tail.an_qnext = nb;
-                        anq_tail = nb;
+                        // A pending entry already sees the new distance.
+                        // Appending it twice would corrupt the linked queue.
+                        if (nb.an_queued != an_gen)
+                        {
+                            nb.an_queued = an_gen;
+                            nb.an_qnext = world;
+                            if (anq_tail == world)
+                                anq_head = nb;
+                            else
+                                anq_tail.an_qnext = nb;
+                            anq_tail = nb;
+                        }
                     }
                 }
             }
