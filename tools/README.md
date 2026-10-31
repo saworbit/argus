@@ -288,8 +288,8 @@ declared controls. These checks launch no gameplay cohort and do not install
 binaries. See [native fixture choices](../docs/lab-workflow.md#focused-checks-without-deployment).
 
 
-Compile-only CI also checks all 17 maintained variants across `muzzle`,
-`combat`, `health`, `button`, `door`, `plan` and `offset`. It reuses the native
+Compile-only CI also checks all 19 maintained variants across `muzzle`,
+`combat`, `health`, `button`, `door`, `plan`, `offset`, `freeze` and `mover`. It reuses the native
 verifiers' staging helpers, including extracted production decision wrappers:
 
 ```text
@@ -313,3 +313,35 @@ names. Do not run them with `--help`, overwrite their evidence, or treat them
 as clean-checkout setup commands. See the [focused-check runbook](../docs/lab-workflow.md#focused-checks-without-deployment).
 The reusable blind-review HTML template is `blind_perception_review.html`;
 generated clips and answer keys stay local and outside Git staging.
+
+### Broader-map routing, recovery and mover studies
+
+Use the [cross-map runbook](../docs/lab-workflow.md#cross-map-routing-evaluation)
+for the native source build, existing lab configuration and private assets.
+New output directories must be beneath `backups/`; use a fresh lowercase
+letter/digit/underscore prefix for every engine attempt. Raw tapes are
+append-once evidence. Installed gameplay binaries remain unchanged.
+
+| Tool | Inputs and controls | Output / acceptance |
+|---|---|---|
+| `audit_route_distance.py` | `--maps`, `--gravity`, `--objective hops-distance` (default) or `distance`; optional `--output` | Offline generated-QC audit against an independent shortest-path oracle; no engine |
+| `run_map_intelligence.py` | `--output`, `--prefix`; optional frozen `--source`, `--maps`, `--seconds` (10–185), `--repeats` (1–5), `--skill`, `--primary`, `--baseline`, `--ticrate`, `--port`, `--lab` | Compile once; protocol, named tapes and native briefs; default eight maps, 60 seconds, two repeats, skill 2 |
+| `report_map_intelligence.py` | Control and candidate folders; optional `--output`, `--native-gates`, `--lab` | Verify tape hashes, summarise matched map/duration/skill/primary arms; complete both arms for registered-primary native band cards |
+| `verify_route_distance.py` | `--output`, `--prefix`; optional `--source`, `--ticrate`, `--port`, `--lab`, `--compile-only`, `--expect-failure` | Native routing and shopping contracts; declared legacy control must fail |
+| `verify_freeze_recovery.py` | `--output`, `--prefix`; optional `--source`, `--maps`, `--seat original\|corner\|south`, `--ticrate`, `--port` | Private physical recovery and guard receipts; control/source and seat determine expected checks |
+| `verify_mover_transfer.py` | `--output`, `--prefix`; optional `--source`, `--maps e1m6,dm3`, `--control`, `--ticrate`, `--port` | Continuing-route transfer, safe launch, dry static-floor landing and zero rescue warps; `--control` retains an incomplete baseline |
+
+The registered primaries are `stall_parity`, `engagements`, `lava_deaths` and
+`freezes`. Per-tape MCP comparison files do not yet carry that selection;
+use the report's final native band cards for that judgment. Cadence choices
+are `.0139` and `.1`; measure actual frames rather than assuming the request
+was honoured. Graph presence alone is not runtime navigation: the report
+requires both frozen compilation-list and dispatcher registration.
+
+Engine-free receipt and budget tests are `test_nav_budget.py`,
+`test_map_intelligence_report.py`, `test_freeze_recovery.py` and
+`test_mover_transfer.py`. They currently require explicit local invocation;
+the fast workflow does not yet run them. The separate compile workflow
+includes the `freeze` and `mover` families.
+See [the tracked study follow-ups](../docs/mover-intelligence.md#tracked-follow-ups)
+for CI integration, fixture quarantine and comparison-primary propagation.

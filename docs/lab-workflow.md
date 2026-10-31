@@ -167,8 +167,17 @@ python tools/test_argus_navjson.py
 python tools/test_argus_tape.py
 python -m unittest discover -s tools -p "test_behaviour*.py"
 python tools/test_compile_private_fixtures.py
+python tools/test_nav_budget.py
+python tools/test_map_intelligence_report.py
+python tools/test_freeze_recovery.py
+python tools/test_mover_transfer.py
 python tools/test_argus_mapgate.py
 ```
+
+The budget, map-report, freeze-receipt and mover-receipt suites above need
+explicit local invocation; the fast workflow does not yet include them.
+Their CI integration is tracked in [#627](https://github.com/saworbit/argus/issues/627).
+The compile workflow's `freeze`/`mover` checks prove compilation separately.
 
 The repo invariant job also blocks on `python tools/argus_ci.py all`.
 Use `python tools/argus_ci.py links` to check only documentation paths and
@@ -223,8 +232,8 @@ with one of these fixture names:
 | `door` | Bounded opener lookup, activation acknowledgement and opening ownership/timeout |
 
 
-Compile-only CI also checks all 17 maintained variants across `muzzle`,
-`combat`, `health`, `button`, `door`, `plan` and `offset`. It reuses the native
+Compile-only CI also checks all 19 maintained variants across `muzzle`,
+`combat`, `health`, `button`, `door`, `plan`, `offset`, `freeze` and `mover`. It reuses the native
 verifiers' staging helpers, including extracted production decision wrappers:
 
 ```text
@@ -325,6 +334,67 @@ viewing, not a deployment or a published evidence URL.
 Generated review pages/clips are ignored by default; the reusable HTML
 template remains tracked. Raw session-study tapes are also retained locally,
 with checksums in `runs/local-study-tapes.json`. Do not overwrite frozen tapes.
+
+### Cross-map routing evaluation
+
+Build the source-matched native executable at the study drivers' default
+location before using them:
+
+```text
+cargo build --release --manifest-path tools/argus_mcp/Cargo.toml --target-dir tools/argus_mcp/target-stage
+```
+
+The runners use `target-stage/release/argus-mcp` (`.exe` on Windows), the
+existing `ARGUS_*` lab configuration and local engine/map assets. The map
+runner, route verifier and report accept `--lab` for another fresh binary;
+the recovery and mover verifiers currently use the default location.
+No new environment variables or game-engine extensions are introduced.
+
+The [broader map runner](map-intelligence.md) evaluates frozen source arms on
+eight maps outside dm2/dm4. It retains native briefs, named tapes, source and
+binary identities, and refuses comparisons across measured cadence classes.
+It uses private game assets and compiles with `install=false`.
+
+```text
+python tools/run_map_intelligence.py --output backups/map-screen/control --prefix screen_a
+python tools/run_map_intelligence.py --output backups/map-screen/candidate --prefix screen_b --baseline backups/map-screen/control
+python tools/report_map_intelligence.py backups/map-screen/control backups/map-screen/candidate --output runs/map-screen.results.json --native-gates backups/map-screen/gates
+```
+
+The default is two 60-second matches per map and arm at skill 2. Longer
+holdouts can select maps explicitly with `--maps dm3,dm6 --seconds 185`.
+The [routing contract](../tools/verify_route_distance.py) separately exercises
+the production search in the real engine; its negative control must fail the
+distance tie-break and shopping checks. Graph correctness and a short match
+screen do not establish that the bot plays better against people.
+
+Use `--primary freezes` when registering a freeze-recovery arm. The primary
+is frozen in its protocol and forwarded by the report's `--native-gates`
+comparison. Complete both arms before requesting those cards. The runner's
+per-tape `.compare.json` files use the MCP comparison defaults and currently
+do not carry the registered primary; treat them as advisory. A primary
+cannot waive the severe-freeze veto on any individual candidate tape.
+See [#629](https://github.com/saworbit/argus/issues/629) for the propagation gap.
+The [recovery study](freeze-recovery.md) keeps physical replays separate from
+ordinary map matches:
+
+```text
+python tools/verify_freeze_recovery.py --output backups/recovery/played --prefix recovery_played
+python tools/verify_freeze_recovery.py --output backups/recovery/slow --prefix recovery_slow --ticrate .1
+python tools/verify_freeze_recovery.py --output backups/recovery/corner --prefix recovery_corner --maps e1m7 --seat corner
+```
+
+Run the same commands against a frozen unchanged `--source` for positive
+controls. Engine checks and private compiles run serially. The `freeze`
+family is also included in the maintained private-fixture compile gate.
+
+The [mover investigation](mover-intelligence.md) adds a continuing-route
+platform task with measured boarding, static-floor landing and route
+retention. Run `tools/verify_mover_transfer.py` with a new `--output` and
+`--prefix`; `--control` records an incomplete baseline without treating it
+as a successful transfer. The `mover` family is compiled by the same serial
+gate. Experimental graphs on disk do not establish runtime navigation:
+reports require both the frozen dispatcher and compilation-list entries.
 
 ## Add or regenerate navigation
 

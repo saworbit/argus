@@ -27,6 +27,12 @@ gameplay warning is unresolved, and
 projectile-perception work is on hold. These changes have not been installed
 in the supplied binaries. See [development status and evidence](docs/behaviour-diagnostics.md#current-development-status).
 
+Development also retains [equal-link route-distance selection](docs/map-intelligence.md)
+and [under-fire pin recovery](docs/freeze-recovery.md), tested across eight
+maps. A further [ten-map investigation](docs/mover-intelligence.md) fixed the
+navigation generator's entity budget and retained a rejected mover prototype
+as evidence. These studies do not establish better play against people.
+
 ## Install and play
 
 ### What you need
@@ -154,6 +160,9 @@ These maps have compiled navigation. The BSP/game data must also be installed;
 a baked graph does not supply the map. Other maps can run with direct visible
 item seeking and combat, but full routing needs a generated, registered graph.
 Inspect the current map inventory with `see what=project` in the lab.
+A graph file appearing in that inventory does not prove it is registered.
+The experimental e1m3/e1m4 graphs fail playability gates and are absent from
+both the compilation list and dispatcher; they do not add routed map support.
 
 ![dm2 navigation: waypoints and movement links over the map geometry](docs/media/nav_dm2.png)
 
@@ -181,7 +190,7 @@ Use this loop. `see`, `experiment`, `matrix_experiment` and `tune` are
    from the repository root; see the guide for expected input locations.
 3. **Edit and test:** after a QuakeC change, call
    `experiment map=dm4 duration_sec=30 skill=2`. For several maps, use
-   `matrix_experiment maps=["dm2","dm4"] duration_sec=30 skill=2`.
+   `matrix_experiment maps=["dm3","dm6","e1m6"] duration_sec=30 skill=2`.
 4. **Read the result:** use the native brief, verdict and `next_steps`.
    Short experiments scale baseline counts; `compare_runs` is unscaled and
    expects comparable durations and tick rates. Movement changes need two

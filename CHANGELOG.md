@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Step 1a, step 1b, rocket clearance, shared failed-plan recognition and the human gait active; supported-speed route and deadline controls verified; no deployment |
+| Development source | Perception, shared failed plans and human gait active; equal-link routing and under-fire recovery validated across eight maps; severe-freeze verdict repaired; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -26,6 +26,17 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Add frozen-source multi-map evaluation, route-distance audits and private
+  recovery/continuing-route transfer fixtures. Preserve controls, rejected
+  candidates and raw tape identities. See the [routing](docs/map-intelligence.md),
+  [recovery](docs/freeze-recovery.md) and [mover](docs/mover-intelligence.md) studies.
+
+- Recover from combat wall pins with checked movement feedback and recent
+  hostile damage as a cue for the existing bounded rescue. Retain aim/fire,
+  mover ownership and destination checks. The final 22-match candidate has
+  zero freezes under fire across eight maps, versus one in unchanged controls;
+  other warnings remain. Development source only; no deployment.
 
 - Check tracked documentation paths, heading fragments and explicit HTML
   anchors with `argus_ci.py links`, included in the blocking invariant battery.
@@ -111,6 +122,17 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Synchronise root status, contributor checks, the tool index, telemetry and
+  runbooks with the broader-map studies and 19 private fixture variants.
+  Track remaining map, movement, reporting and test-coverage gaps in
+  [#622–#629](docs/mover-intelligence.md#tracked-follow-ups).
+
+- Prefer shorter geometric distances among routes with the same fewest-link
+  count; shopping and route installation share the settled distance tree.
+  Refine sampling within reduced node caps and exclude uncompiled graphs
+  from the study report's runtime navigation coverage.
+
 
 - Synchronise the changelog status row, architecture notes, telemetry
   grammar, agent command table and lab runbook with the gait work, and
@@ -215,8 +237,16 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep navigation infrastructure and synthetic platform pads inside Quake's
+  entity allowance. The experimental e1m3 graph now fits within 600 edicts;
+  e1m3/e1m4 still fail playability gates and remain unregistered.
+
+- Enforce severe-freeze vetoes across every candidate tape in a repeated-run
+  comparison, including tapes outside the displayed representative.
+
+
 - Synchronise the contributor guide with the pinned Rust toolchain, strict
-  Clippy check and CI compilation of all 17 maintained private fixture variants.
+  Clippy check and CI compilation of all 19 maintained private fixture variants.
 
 - Keep the lab dependency update compatible with strict Clippy by boxing the
   Unix child handle. Update locked rmcp to 3.7.0, rmcp-macros to 3.8.0 and Tokio

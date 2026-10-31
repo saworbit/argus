@@ -20,6 +20,8 @@ VARIANTS = {
     'door': ('candidate', 'direct_only', 'overlap_only'),
     'plan': ('current', 'legacy_reset', 'deadline_control', 'opening_control'),
     'offset': ('current', 'old_handoff'),
+    'freeze': ('current',),
+    'mover': ('current',),
 }
 
 
@@ -38,7 +40,13 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'health':
+    if family == 'mover':
+        from verify_mover_transfer import stage as stage_mover
+        stage_mover(ROOT, folder)
+    elif family == 'freeze':
+        from verify_freeze_recovery import stage as stage_freeze
+        stage_freeze(ROOT, folder)
+    elif family == 'health':
         from run_health_fixture import prepare, audit_private
         prepare(folder, False)
         audit_private(folder, False)

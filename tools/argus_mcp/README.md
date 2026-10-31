@@ -481,7 +481,8 @@ not a raw entity dump:
 - **corridor_misses**: 16u standable cells with no waypoint in 48u
   (the 32u sampler never sat there)
 - **edict estimate**: waypoint count plus entity lump, against
-  vanilla `max_edicts 600`
+  vanilla `max_edicts 600`; use the full budget verdict (live entities,
+  world/client slots and runtime reserve) when deciding registration
 - **height bands** from the waypoint graph (on dm4: walkway / mid /
   pit / deep)
 - **recipe**: the next `experiment` / `match_run` line
@@ -933,6 +934,27 @@ against the 185 s shipped tape (`ab_dm4_water`, falling back to
 coverage stays ungated if any source tape was shorter than 120 seconds.
 Invalid durations return a Mixed verdict instead of normalizing malformed
 counts. The lite compare carries `scaled` and `scale_note` when scaling happens.
+
+A registered primary decides the statistical count gates. Severe freezes
+remain release vetoes: every candidate tape is checked for damage while
+stationary, a new 10-second statue, or a large increase in total frozen time.
+Long-window and total-time limits use the control band's maximum observed
+severity; a freeze under fire always rejects, including on unchanged code.
+The diagnostic identifies the offending candidate tape even when the displayed
+median-stall representative is clean. Statistical null-pair calibration is
+separate from this release-readiness check.
+
+The [frozen-source study drivers](../../docs/lab-workflow.md#cross-map-routing-evaluation)
+use private game assets and never install over the playable mod. Their final
+report forwards the registered primary through native CLI band comparisons.
+The MCP `compare_runs` interface currently has no primary argument, so the
+runner's per-tape comparison files retain the MCP defaults.
+
+An experimental graph on disk can contribute spatial `nav_coverage` even
+when it was not compiled into the tested program. The study report checks
+both frozen `progs.src` and dispatcher entries and reports such runtime
+coverage as unavailable. The native inventory/coverage fields alone do not
+establish loaded navigation; e1m3/e1m4 remain unregistered experimental maps.
 
 ## Tools
 

@@ -22,7 +22,7 @@ in docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 import re, sys, os, collections, math, glob
 
 from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
-PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin)|shove|hunch|prefire|watch spawn|sprintjump)\b")
+PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin|underfire)|shove|hunch|prefire|watch spawn|sprintjump)\b")
 WORLD_PHRASES = ["tries to put the pin back in", "becomes bored with life", "discharges into", "heats up the water",
                  "electrocutes", "died", "was squished", "fell to", "can't exist on slime", "visits the Volcano God",
                  "turned into hot slag", "burst into flames", "sleeps with the fishes", "sucks it down", "blew up",

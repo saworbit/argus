@@ -100,6 +100,23 @@ in `tools/check_plan_progress.py`, `tools/verify_offset_entry.py`,
 pool their rows into match rates or count a selected goal as a pickup.
 They add no shipped console control or change to ARGLOG/ARGEVT grammar.
 
+The broader-map studies add these private records:
+
+| Record | Evidence and reader |
+|---|---|
+| `RDFIX` | Route-distance and shopping contracts; `verify_route_distance.py`; emits `BHVRPL begin route_distance` |
+| `FRFIX` | Measured cadence, pin recovery, fire/goal/footing/ownership guards and checked totals; `verify_freeze_recovery.py` |
+| `MVFIX` | Measured cadence, boarding, continuing-route retention, static-floor landing, launches and completion; `verify_mover_transfer.py` |
+
+`FRFIX` and `MVFIX` currently lack the recognised `BHVRPL begin` quarantine
+marker. Their controlled tapes must be kept out of ordinary match bands;
+the native parser does not automatically exclude these two record families.
+The parser/fixture repair is tracked in [#626](https://github.com/saworbit/argus/issues/626).
+Use the verifier receipts for outcomes. Transfer completion is not proof of
+the later prize pickup; check the stock item-touch/powerup state separately.
+The ordinary recovery diagnostic `ARGUS <bot> unstick underfire <position>`
+is counted in existing unstick totals, not as a new pickup or death event.
+
 Blind-review ratings are subjective evidence, separate from native match
 metrics. Keep build identity in a separate key until scoring is complete.
 The `labcamera` recorder is an instrument, excluded from both bot and human

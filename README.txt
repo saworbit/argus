@@ -7,6 +7,11 @@ The supplied binaries are unchanged; step 1b is active again in development.
 Development source includes shared failed-plan recognition and replanning.
 Floor-button contact and bounded opening-door waits have controlled coverage.
 The earlier step 1b dm4 gameplay warning remains unresolved.
+Equal-link route distances and under-fire pin recovery are validated in
+current development source; see docs/map-intelligence.md and
+docs/freeze-recovery.md. A later ten-map mover study rejected its runtime
+prototype. e1m3/e1m4 navigation remains experimental and unregistered.
+See docs/mover-intelligence.md for the retained findings.
 
 PLAY: CLASSIC ENGINES
 --------------------

@@ -506,9 +506,9 @@ tool_timeout_sec = 700
         self.assertIn("--retype-doors", res.stdout)
 
     def test_argus_navgen_does_not_register_an_over_budget_graph(self):
-        # The BSP and runtime reserve fit on their own. The generated
-        # waypoint set is what pushes this fixture over 600.
-        tmp = self.door_fixture(collision_gap=True, extra_entities=500)
+        # There is no legal waypoint allowance after world/client/runtime
+        # reservations. Fail before decimation, and never register the map.
+        tmp = self.door_fixture(collision_gap=True, extra_entities=540)
         src = tmp / "src"
         src.mkdir()
         progs = src / "progs.src"

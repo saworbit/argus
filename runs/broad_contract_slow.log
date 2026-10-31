@@ -1,0 +1,74 @@
+LOG started on: 10/31/2026 12:44:04 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm6
+Clearing memory
+Programs occupy 1085K.
+trying to open external vis file
+maps/dm6.vis not found, trying routecheck_tieslowfinal.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 238 nodes, 1498 links
+0 entities inhibited
+BHVRPL begin route_distance
+RDFIX begin
+ARGEVT routefixture route 3 start '  0.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check fewest_hops_first 1
+RDFIX check first_parent 1
+RDFIX check step_discipline 1
+RDFIX check route_chain 1
+RDFIX check no_parent_cycle 1
+RDFIX check route_ownership 1
+ARGEVT routefixture route 3 start '  0.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check equal_hops_shorter 1
+RDFIX check equal_hops_branch 1
+RDFIX check descendant_distance 1
+ARGEVT routefixture route 3 start '  0.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check pending_improvement 1
+RDFIX check queue_drained 1
+ARGEVT routefixture routefail
+RDFIX check settles 1
+RDFIX check unreachable 1
+RDFIX check frame_budget 1
+ARGEVT routefixture route 2 start '100.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check abort_and_new_root 1
+ARGEVT routefixture route 2 start '  0.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check rocket_toll 1
+ARGEVT routefixture route 2 start '  0.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check sprint_toll 1
+ARGEVT routefixture route 2 start '  0.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check sprint_permitted 1
+ARGEVT routefixture route 2 start '  0.0   0.0   0.0' goal '400.0   0.0   0.0'
+RDFIX check settles 1
+RDFIX check jump_apex_toll 1
+RDFIX check shopping_distance 1
+RDFIX check shopping_cleanup 1
+RDFIX end checks 29 failures 0
+ARGUS init on dm6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.

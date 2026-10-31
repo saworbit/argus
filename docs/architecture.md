@@ -43,6 +43,17 @@ flowchart TD
 | Goals | Utility scoring, personality appetites, pickup claims, item timing, prerequisite errands and shared failed-plan evidence |
 | Presentation | Fake scoreboard rows, stock player models/deaths/backpacks, chat and spectator camera |
 
+Development navigation preserves fewest-link routing, then minimises geometric
+distance among equal-link alternatives. A better parent propagates its distance
+to descendants, so shopping and installed routes use the same settled distance
+space. See the [cross-map audit and engine contracts](map-intelligence.md).
+
+Development movement reacts to failed walking while combat owns steering.
+It tries a short checked exit while retaining aim and fire. Recent hostile
+damage corroborates an immobile body's need for the existing last-resort
+rescue; lift/train rides and destination checks remain protected. See the
+[recovery rules and physical regressions](freeze-recovery.md).
+
 The tactical attack-cover-return state machine owns movement temporarily on
 two authored routes. It preserves item-route state but suppresses incompatible
 launches, validates incoming momentum and brakes during handoff. See its
@@ -119,6 +130,11 @@ geometry, spawn reach and the edict budget. Real-engine probes record refused
 links by endpoint; proven candidates and learned hotspot costs feed the next
 generation. A generated graph and a well-connected graph are different claims.
 New maps need current reach and mill evidence before registration.
+Infrastructure and synthetic platform pads share the hard waypoint allowance
+with ordinary seats, after world/client slots and the 60-entity runtime
+reserve. Hard-limited maps refine sampling within that allowance. A legal
+budget is necessary but does not prove spawn or item reach. The experimental
+e1m3/e1m4 files remain unregistered; see the [wider-map findings](mover-intelligence.md).
 
 Do not hand-edit generated navigation. Use the
 [lab generation and validation workflow](lab-workflow.md#add-or-regenerate-navigation).
@@ -145,7 +161,7 @@ Compare matched tick classes and retain the source identity for every arm.
 | `src/argus_tactic_fixture.qc` | Explicit developer-only engine fixture |
 | `src/argus_nav.qc` | Runtime sliced search and route handling |
 | `src/argus_nav_dispatch.qc` | Hand-maintained map dispatcher |
-| `src/argus_nav_<map>.qc` | Generated graph compiled into the game |
+| `src/argus_nav_<map>.qc` | Generated graph; active only with compilation-list and dispatcher entries |
 | `src/argus_nav_<map>.qc.json` | Machine-readable graph twin |
 | `src/argus_nav_<map>.probe.json` / `.proven.json` | Engine refusals / proven candidates |
 | `src/argus_cam.qc` | Spectator camera and HUD |

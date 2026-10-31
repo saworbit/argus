@@ -139,6 +139,11 @@ float argus_plan_serial;
 .float  ar_hazardyaw;           // last safe deflection heading
 .float  ar_hazhold;             // 1 = ar_hazardyaw is live (0 is a legal yaw)
 .float  ar_moveyaw;             // movement heading (may differ from facing)
+.float  ar_blockedfrom, ar_blockedlast;
+.vector ar_blockedpos;
+.float  ar_recoveryuntil, ar_recoveryyaw, ar_recoverycheck;
+.vector ar_recoverypos;
+.float  ar_hurttime, ar_stuckhurt;
 
 .float  ar_itemregion;          // on items: reachability region of
                                 // the nearest nav node (S4)
@@ -1970,6 +1975,119 @@ float() Argus_GaitHold =
     return TRUE;
 };
 
+void() Argus_RecoveryReset =
+{
+    self.ar_blockedfrom = 0;
+    self.ar_blockedlast = 0;
+    self.ar_recoveryuntil = 0;
+    self.ar_recoverycheck = 0;
+};
+
+// A recovery heading needs floor and a body-width corridor. The actual
+// walkmove below remains the final collision referee, including live bodies.
+float(float yaw) Argus_RecoveryClear =
+{
+    local vector forward, side, start;
+    local float i;
+    if (Argus_MoveHazard (yaw, 48)) return FALSE;
+    makevectors ('0 0 0' + yaw * '0 1 0');
+    forward = v_forward * 48;
+    side = v_right * 17;
+    i = 0;
+    while (i < 6)
+    {
+        start = self.origin;
+        if (i < 3) start_z = start_z + 22;
+        else       start_z = start_z - 8;
+        if (i == 1 || i == 4) start = start + side;
+        if (i == 2 || i == 5) start = start - side;
+        traceline (start, start + forward, FALSE, self);
+        if (trace_fraction < 1 || trace_startsolid || trace_allsolid)
+            return FALSE;
+        i = i + 1;
+    }
+    return TRUE;
+};
+
+// Repeated blocked walks are movement feedback, including while combat owns
+// steering and the ordinary stall counter deliberately stands down. Escape
+// on foot before the eight-second last-resort unstick can become a statue.
+// A short heading commitment prevents combat from undoing the exit next frame.
+float() Argus_RecoveryWalk =
+{
+    local float i, yaw, offset;
+    local vector moved;
+    if (self.ar_wetlevel >= 2
+        || self.ar_tactic || time < self.ar_tactic_settle
+        || self.ar_liftwait || self.ar_hoplift || self.ar_hoptrain
+        || self.ar_hopjump || self.ar_hoprj || self.ar_hopswim
+        || self.ar_hopdoor || self.ar_hopair || self.ar_sprintstate || self.ar_jump
+        || self.ar_door != world || self.ar_taskgoal != world
+        || Argus_GaitHold ())
+    {
+        Argus_RecoveryReset ();
+        return FALSE;
+    }
+    // A refused walk ungrounds the bot for engine sliding. At a head-on
+    // pin that can leave zero velocity on a floor without FL_ONGROUND;
+    // requiring the flag would permanently exclude the freeze itself.
+    // Only a stationary, immediately supported body may recover this way.
+    if (!(self.flags & FL_ONGROUND))
+    {
+        traceline (self.origin + '0 0 4', self.origin - '0 0 28', TRUE, self);
+        if (fabs (self.velocity_z) > 1 || trace_fraction == 1
+            || trace_startsolid || trace_allsolid || trace_plane_normal_z < 0.7
+            || fabs (trace_endpos_z - (self.origin_z - 24)) > 2)
+        {
+            Argus_RecoveryReset ();
+            return FALSE;
+        }
+    }
+    moved = self.origin - self.ar_recoverypos; moved_z = 0;
+    if (time < self.ar_recoveryuntil && vlen (moved) < 64
+        && Argus_RecoveryClear (self.ar_recoveryyaw))
+    {
+        self.ar_moveyaw = self.ar_recoveryyaw;
+        return TRUE;
+    }
+    self.ar_recoveryuntil = 0;
+    moved = self.origin - self.ar_blockedpos; moved_z = 0;
+    if (vlen (moved) >= 24 || time > self.ar_blockedlast + 4)
+        self.ar_blockedfrom = 0;
+    if (!self.ar_blockedfrom || time < self.ar_blockedfrom + 1.4
+        || time < self.ar_recoverycheck)
+        return FALSE;
+    self.ar_recoverycheck = time + 0.3;
+    i = 0;
+    while (i < 8)
+    {
+        // Back away from the failed line first; a side step at a corner
+        // can still hug the blocking wall. Fan outward if reverse is unsafe.
+        offset = 180;
+        if (i == 1) offset = 135;
+        else if (i == 2) offset = -135;
+        else if (i == 3) offset = 90;
+        else if (i == 4) offset = -90;
+        else if (i == 5) offset = 45;
+        else if (i == 6) offset = -45;
+        else if (i == 7) offset = 0;
+        yaw = self.ar_moveyaw + offset;
+        if (Argus_RecoveryClear (yaw))
+        {
+            self.ar_recoveryyaw = yaw;
+            self.ar_recoveryuntil = time + 0.8;
+            self.ar_recoverypos = self.origin;
+            self.ar_moveyaw = yaw;
+            self.ar_blockedfrom = 0;
+            dprint ("ARGUS "); dprint (self.netname);
+            dprint (" recovery walk "); dprint (ftos (yaw)); dprint ("\n");
+            return TRUE;
+        }
+        i = i + 1;
+    }
+    return FALSE;
+};
+
 void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
@@ -2249,6 +2367,14 @@ void() Argus_Physics =
         vh_z = 0;
         if (vlen (vh) > 30 && !Argus_MoveHazard (vectoyaw (vh), 48))
             return;
+    }
+
+    if (Argus_RecoveryWalk ())
+    {
+        makevectors ('0 0 0' + self.ar_moveyaw * '0 1 0');
+        wishdir = v_forward;
+        if (!(self.flags & FL_ONGROUND) && checkbottom (self))
+            self.flags = self.flags | FL_ONGROUND;
     }
 
     if (self.flags & FL_ONGROUND)
@@ -2821,6 +2947,15 @@ void() Argus_Physics =
                     self.flags = self.flags - (self.flags & FL_ONGROUND);
                 }
             }
+            if (!moveok)
+            {
+                if (!self.ar_blockedfrom)
+                {
+                    self.ar_blockedfrom = time;
+                    self.ar_blockedpos = self.origin;
+                }
+                self.ar_blockedlast = time;
+            }
         }
     }
     else
@@ -3048,6 +3183,7 @@ void() Argus_Die =
     local entity k;
 
     Argus_BehaviourReset ();
+    Argus_RecoveryReset ();
 
     // Resolve the real player before telemetry as well as before adaptive
     // skill accounting. A teledeath entity is only the delivery mechanism.
@@ -3208,6 +3344,10 @@ float(entity e) Argus_IsAlly =
 
 void(entity attacker, float dmg) Argus_Pain =
 {
+    // Damage is an urgency cue, not a visual observation of the attacker.
+    if (dmg > 0 && attacker != world && attacker != self
+        && !Argus_IsAlly (attacker))
+        self.ar_hurttime = time;
     // flinch: tracking restarts, aim error widens for a moment
     self.ar_track = time;
     // being shot ends a hesitation outright, and bars the next one for
@@ -3478,6 +3618,8 @@ void(entity bot, float won) Argus_SkillResult =
 
 void() Argus_BaseStats =
 {
+    Argus_RecoveryReset ();
+    self.ar_hurttime = 0; self.ar_stuckhurt = 0; self.ar_stucktime = 0;
     self.ar_plan_goal = world; self.ar_plan_leg = world;
     self.ar_plan_best = 0; self.ar_plan_stamp = 0; self.ar_stallrun = 0;
     self.ar_fetchfailed = world; self.ar_fetchcool = 0;
@@ -7902,13 +8044,15 @@ float(vector p, float rad) Argus_SpotCrowded =
 // the trapped rule could not fire, and stall recovery ran 73 times
 // without freeing him.
 //
-// So there are two signatures now, and both of them require that the
+// These signatures require that the
 // bot HAS NOT MOVED, which is the part that was always doing the
 // work:
 //
 //   embedded  origin reads SOLID, 3 s. Unchanged.
 //   pinned    not in solid, 6 s, and the stall detector fired at
 //             least four times inside that window.
+//   underfire repeated hostile damage, low actual velocity, 3 s still,
+//             and at least 1.4 s to react after the first pinned hit.
 //
 // The stall count is what keeps the pinned signature honest, and it
 // is the ONLY thing that can: this runs on the 0.2 s AI tick, and
@@ -7943,8 +8087,12 @@ float() Argus_Unstick =
         self.ar_stucktime = time;
         self.ar_stuckpos = self.origin;
         self.ar_stuckstalls = self.ar_stalls;
+        self.ar_stuckhurt = 0;
         return FALSE;
     }
+    if (!self.ar_stuckhurt && self.ar_hurttime > 0
+        && self.ar_hurttime >= self.ar_stucktime)
+        self.ar_stuckhurt = time;
 
     if (embedded)
     {
@@ -7959,6 +8107,20 @@ float() Argus_Unstick =
         // Joe Rogan's nearest node was 6 units away and warping onto
         // it would have changed nothing.
         mind = 64;
+    }
+    else if (self.ar_stuckhurt && time > self.ar_stuckhurt + 1.4
+             && time < self.ar_hurttime + 3
+             && time > self.ar_stucktime + 3
+             && vlen (self.velocity) < 20
+             && !self.ar_hoplift && !self.ar_hoptrain)
+    {
+        // A motionless body still taking enemy damage is corroborated
+        // danger. Give ordinary walking time to escape first, then use
+        // the existing rescue with its full destination/occupancy checks.
+        // This also catches suspended corner pins with no centre support,
+        // where a ground-only walk recovery cannot physically run.
+        mind = 64;
+        fightpin = 2;
     }
     else if (self.ar_enemy != world && self.ar_enemy.health > 0
              && !self.ar_hoplift && !self.ar_hoptrain
@@ -8062,6 +8224,8 @@ float() Argus_Unstick =
     self.ar_mode = 0;
     self.ar_failstreak = 0;
     self.ar_stucktime = 0;
+    self.ar_stuckhurt = 0;
+    Argus_RecoveryReset ();
     // a bot that just had to be lifted out of geometry walks away from
     // it, rather than arriving and standing there
     self.ar_gaitpause = 0;
@@ -8074,6 +8238,8 @@ float() Argus_Unstick =
     dprint (self.netname);
     if (embedded)
         dprint (" unstick embedded ");
+    else if (fightpin == 2)
+        dprint (" unstick underfire ");
     else if (fightpin)
         dprint (" unstick fightpin ");
     else
