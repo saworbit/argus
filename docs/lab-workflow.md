@@ -454,6 +454,15 @@ After a navigation change, run the lab experiment/matrix loop.
 - **Restore a build:** use the wizard's dated backups. Keep human session
   evidence separate from build restoration.
 
+The [water-route checks](../tools/argus_mcp/README.md#water-route-decision-checks)
+add the `water` private compile family, bringing the maintained total to 21.
+Run `python tools/verify_water_route.py --output backups/<new-directory> --prefix <new_prefix>`
+for native production movement with private initial conditions. Preserve
+negative receipts and distinguish injected candidate links from generated
+routes. `tools/test_water_route.py` and `tools/test_argus_nav_anchors.py`
+check receipt and proof-sidecar rejection; they do not establish gameplay
+safety.
+
 For deterministic route tests, counterbalanced A/B, tactical fixtures, task
 cancellation and the full tool catalog, use the
 [operator guide](../tools/argus_mcp/README.md). Unattended soak/cycle jobs are

@@ -96,11 +96,31 @@ Combat/tactical ownership and established mover/door/link handling pause or
 reset the evidence. There is no map-specific escape sequence. See the
 [controlled proof and limits](behaviour-diagnostics.md#shared-failed-plan-recognition).
 
-Flat ordinary walking handoffs check landing. Off-centre approaches use two
+Flat ordinary walking handoffs require support. Submerged seats can use water
+support; dry airborne entries still wait for landing. Off-centre approaches use two
 lateral rays into the next corridor; positions within eight units of the
 canonical node trust that seat. Both normal arrival and the apex shortcut use this check;
-typed transitions, changed heights and the final node retain their handling.
-The wall-slide cutoff and arrival radius stay unchanged. A validated apex
+A following jump waits for its actual launch seat and ground support. A
+swim exit waits for a grounded bank at the right height, allowing shallow
+wading. Endpoint action resolution chooses a feasible link when several
+typed actions join the same pair; a swim route cannot become an unaffordable
+rocket jump simply because that slot comes first.
+The wall-slide cutoff and arrival radius stay unchanged. Visible-item
+shortcuts preserve any remaining typed transition or substantial height
+change. Routed diving follows submerged seat depth within eight units.
+Planned water vaults retain upward momentum and compensate discrete gravity;
+near-level hurdle jumps check body-width lookahead and apex clearance.
+
+Route execution also tracks the best distance to its current seat. Twelve
+units of improvement renew a three-second unpaused action clock; speed and repeated
+bobbing alone do not. Combat, doors, train patrols, charged jump setup, authored tactics and chosen
+pauses retain ownership. A supported static pad may wait for a lift, but a
+lift ride must keep approaching the landing; crush/reverse cycles cannot
+renew the action clock merely by carrying the bot. Optional sound pursuit
+yields to committed route actions. Gait anticipation checks two nearby
+seats, avoiding a fresh or continuing hesitation just before a typed action. A failed action temporarily avoids the seat and
+replans, preserving an explicit navigation task.
+ A validated apex
 transition also supplies the shared progress observer, so detours do not lose
 their deadline solely because they used corner cuts.
 

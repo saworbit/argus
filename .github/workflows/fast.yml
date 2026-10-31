@@ -104,6 +104,8 @@ jobs:
           python3 -m unittest discover -s tools -p 'test_perception*.py'
           python3 tools/test_tactic_fixture.py
           python3 tools/test_target_attention.py
+          python3 tools/test_water_route.py
+          python3 tools/test_argus_nav_anchors.py
 
       - name: Run rocket clearance and local review contracts
         run: |

@@ -1,0 +1,116 @@
+LOG started on: 10/31/2026 23:07:56 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m5
+Clearing memory
+Programs occupy 1089K.
+trying to open external vis file
+maps/e1m5.vis not found, trying watercheck_broad_ewcp.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 155 nodes, 452 links
+29 entities inhibited
+ARGUS init on e1m5
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '-1532.0 1600.0 152.0' spd 0 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-352.0 1996.0 216.0' spd 0 yaw 317.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-576.0 376.0 175.0' spd 0 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   1.7 pos '-1524.3 1746.8 152.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-281.8 1904.1 216.0' spd 261.0 yaw 182.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-647.3 504.5 175.0' spd 320 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BHVRPL begin water_route
+WRFIX begin dt_ms  14.0 start '-279.0 425.0   8.0' goal '-183.0  73.0  80.0'
+ARGEVT Carmack swim
+WRFIX sample t 0 pos '-279.0 425.0   8.0' node '  0.0   0.0   0.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1
+ARGEVT Carmack route 3 start '-279.0 425.0 -32.0' goal '-183.0  73.0  80.0'
+ARGLOG Carmack t   2.2 pos '-268.3 419.8   7.3' spd  98.3 yaw 334 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   0.5 pos '-256.3 385.3   8.7' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 37
+ARGLOG Carmack t   2.7 pos '-272.2 364.2   8.0' spd 118.8 yaw 350 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   1.0 pos '-298.6 375.3   9.4' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 73
+ARGLOG Carmack t   3.2 pos '-301.1 402.1   6.9' spd 154.7 yaw 342 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   1.5 pos '-274.4 444.6   6.7' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 109
+ARGLOG Carmack t   3.7 pos '-248.0 447.7   7.8' spd 117.1 yaw 324 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   2.0 pos '-241.3 424.1   7.7' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 145
+ARGLOG Carmack t   4.3 pos '-262.3 414.2   8.9' spd 138.4 yaw 335 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   2.6 pos '-303.0 429.8   9.2' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 181
+ARGLOG Carmack t   4.8 pos '-306.6 452.0   7.2' spd  36.5 yaw 331 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   3.1 pos '-281.5 436.8   9.0' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 216
+ARGLOG Carmack t   5.3 pos '-266.2 407.5   8.4' spd 162.8 yaw 337 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   3.6 pos '-280.7 370.7   7.0' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 252
+ARGLOG Carmack t   5.8 pos '-299.7 373.4   9.6' spd  89.2 yaw 349 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   4.1 pos '-301.3 407.5   7.6' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 288
+ARGLOG Carmack t   6.3 pos '-282.0 436.2   7.2' spd 168.5 yaw 332 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   4.6 pos '-241.8 442.7   8.6' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 324
+ARGLOG Carmack t   6.8 pos '-233.6 425.4   8.1' spd  85.1 yaw 327 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   5.1 pos '-260.9 411.4   6.2' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 360
+ARGLOG Carmack t   7.3 pos '-291.3 420.8   8.9' spd 154.1 yaw 336 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   5.6 pos '-303.9 451.9   7.4' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 396
+ARGLOG Carmack t   7.8 pos '-287.2 443.4   6.8' spd 123.3 yaw 331 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   6.1 pos '-267.3 406.8   7.2' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 431
+ARGLOG Carmack t   8.3 pos '-277.8 377.4   8.0' spd 125.6 yaw 346 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   6.6 pos '-303.3 378.5   8.2' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 467
+ARGLOG Carmack t   8.9 pos '-304.6 403.6   9.2' spd 137.5 yaw 342 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   7.1 pos '-278.1 438.4  23.0' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 503
+ARGLOG Carmack t   9.4 pos '-246.0 441.7   6.9' spd 127.0 yaw 325 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   7.6 pos '-235.9 418.9   7.1' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 539
+ARGLOG Carmack t   9.9 pos '-257.2 409.6   7.8' spd 129.7 yaw 335 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   8.2 pos '-295.1 425.8   7.5' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 575
+ARGLOG Carmack t  10.4 pos '-301.7 452.0   8.3' spd  33.1 yaw 331 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   8.7 pos '-279.6 438.5   8.1' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 611
+ARGLOG Carmack t  10.9 pos '-268.4 407.8   9.0' spd 150.1 yaw 337 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   9.2 pos '-288.2 379.0   9.5' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 647
+ARGLOG Carmack t  11.4 pos '-306.3 387.0   6.8' spd  92.0 yaw 346 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t   9.7 pos '-299.9 419.0   6.6' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 683
+ARGLOG Carmack t  11.9 pos '-272.1 439.5   7.5' spd 153.3 yaw 330 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  10.2 pos '-239.3 428.7   7.7' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 719
+ARGLOG Carmack t  12.4 pos '-243.2 409.8   8.3' spd  90.5 yaw 333 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  10.7 pos '-275.5 410.5   8.6' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 755
+ARGLOG Carmack t  12.9 pos '-296.8 434.8   9.4' spd 139.9 yaw 334 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  11.2 pos '-286.0 449.2   6.4' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 791
+ARGLOG Carmack t  13.5 pos '-268.2 428.0   7.3' spd 137.5 yaw 332 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  11.7 pos '-277.2 394.4   7.1' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 827
+ARGLOG Carmack t  14.0 pos '-299.3 393.5   8.2' spd  95.0 yaw 344 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  12.2 pos '-301.1 419.7   8.4' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 863
+ARGLOG Carmack t  14.5 pos '-277.0 436.9   9.2' spd 138.3 yaw 331 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  12.7 pos '-246.8 423.8   9.0' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 899
+ARGLOG Carmack t  15.0 pos '-251.2 404.0   6.6' spd  91.7 yaw 336 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  13.3 pos '-278.9 408.0   6.8' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 935
+ARGLOG Carmack t  15.5 pos '-291.6 434.4   7.7' spd 132.0 yaw 333 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  13.8 pos '-272.8 449.0   8.2' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 971
+ARGLOG Carmack t  16.0 pos '-256.2 426.5   9.0' spd 131.1 yaw 331 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  14.3 pos '-270.1 397.9  19.5' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1007
+ARGLOG Carmack t  16.5 pos '-290.4 403.7   6.5' spd  98.1 yaw 340 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  14.8 pos '-287.0 432.6   6.9' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1043
+ARGLOG Carmack t  17.0 pos '-264.0 439.3   6.3' spd 110.7 yaw 329 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  15.3 pos '-251.1 416.4   6.7' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1078
+ARGLOG Carmack t  17.5 pos '-268.7 405.0   7.5' spd 103.1 yaw 338 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  15.8 pos '-290.6 424.2   6.1' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1113
+ARGLOG Carmack t  18.0 pos '-281.6 448.1   8.4' spd 107.4 yaw 329 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  16.3 pos '-257.5 443.6   7.3' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1149
+ARGLOG Carmack t  18.6 pos '-260.3 421.2   9.3' spd 108.6 yaw 333 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  16.8 pos '-288.8 415.9   8.0' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1185
+ARGLOG Carmack t  19.1 pos '-300.7 436.7   9.0' spd 104.2 yaw 334 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  17.3 pos '-281.6 451.8   6.9' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1220
+ARGLOG Carmack t  19.6 pos '-265.9 435.1   9.4' spd 111.0 yaw 330 mode 2 st 0 gl 0 hp 100 frg 0
+WRFIX sample t  17.8 pos '-279.3 409.6   7.9' node '-279.0 425.0 -32.0' grounded 0 wet 3 feet -3 handoffs 0 active 1 hp 100 frames 1256
+WRFIX end completed 0 seconds  18.0 handoffs 0 active 1 pos '-298.6 410.7   7.4' hp 100 frames 1269

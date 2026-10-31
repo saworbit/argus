@@ -643,6 +643,40 @@ fixture checker establishes movement and damage acceptance. Its owned-rocket
 observer supports ordinary and unlimited ammo without using phase events as
 proof of hits.
 
+## Water-route decision checks
+
+`python tools/verify_water_route.py --output backups/<new-directory> --prefix <new_prefix>`
+uses private sources/assets and `install=false`. It runs production routing
+and physics after initial placement and task assignment. `BHVRPL` quarantines
+the tape from ordinary gameplay bands. The parser requires continuous
+movement, retained task ownership, full health or healing, measured cadence,
+and physical completion; bank cases require dry ground. `--ticrate .1`
+selects the measured 100 ms profile; `.0139` selects played cadence.
+
+Cases 1 and 2 test original pool entries (case 1 also supports dm3).
+Cases 3–6 inject candidate edges once at setup and are graph experiments,
+including rejected alternatives. Cases 7–9 use the generated graph without
+injected links: ramp, full rocket-launcher task, and moat-to-bank escape.
+A failed full task remains a failed task even when its escape segment works.
+`--control` requires the original eighteen-second zero-handoff failure;
+it is intended for cases 1 and 2, not partial-route negatives.
+Cases 10–12 inspect e1m1 movement. Case 11 is a positive ordinary ride.
+Case 12 starts the observed slab raised, then leaves its normal call/crush
+cycle to the engine. It requires a healthy horizontal exit in under six
+seconds; `--control` requires the old delay of at least seven seconds.
+Cold case 11 is not a valid pin negative. All injury remains a rejection.
+Current sources also run 56 native decision controls, covering route
+shortcuts, capability-aware actions, supported arrivals and bounded failed
+action recognition. `tools/test_water_route.py` checks receipt rejection.
+
+The optional `argus-proven-anchors-v1` navigation sidecar nominates at most
+eight exact seats backed by hashed, continuous case-6 routes at both
+cadences. The loader verifies map, geometry, direction and raw identities;
+navgen checks player-hull clearance, nearby fine samples and the existing
+waypoint budget. Witnessed jump actions survive coarse walk classification.
+Legacy proven-pair arrays retain their existing meaning. See the
+[e1m5 investigation](../../docs/e1m5-encounters.md).
+
 ## Fixed navigation benchmark
 
 For passive `BHVDBG` snapshots and the isolated on/off observer fixture, see

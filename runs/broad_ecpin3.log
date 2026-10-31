@@ -1,0 +1,1274 @@
+LOG started on: 11/01/2026 01:40:39 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m1
+Clearing memory
+Programs occupy 1103K.
+trying to open external vis file
+maps/e1m1.vis not found, trying encounter_trace_broad_ecpin3.vis
+external vis not found
+Loaded external entity file maps/e1m1@c49d.ent
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 238 nodes, 962 links
+13 entities inhibited
+BHVRPL begin encounter_trace
+ARGUS init on e1m1
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '480.0  48.0  24.0' spd 0 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-272.0 2928.0 -56.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '1312.0 880.0 -256.0' spd 0 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   1.7 pos '487.7 194.7  24.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-228.6 2933.1 -56.0' spd 321.8 yaw 247.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '1240.8 1008.5 -256.0' spd 320 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+EDBG Joe Rogan t   2.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '492.9 294.4  24.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   2.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-261.4 2838.6 -56.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   2.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '1183.2 1058.4 -256.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   2.2 pos '496.2 358.0  24.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   2.2 pos '-274.2 2775.7 -72.0' spd 332.1 yaw 247.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.2 pos '1169.3 993.7 -256.0' spd 326.3 yaw 240.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   2.7 pos '504.8 520.7  24.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   2.7 pos '-319.3 2618.1 -104.0' spd 320.2 yaw 247.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   2.7 pos '1179.0 1017.7 -256.0' spd 321.8 yaw  90.8 mode 0 st 0 gl 0 hp 100 frg 0
+EDBG Joe Rogan t   3.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '509.8 615.9  24.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   3.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-353.5 2529.1 -120.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   3.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '1178.0 1011.4 -256.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+ARGLOG Joe Rogan t   3.2 pos '513.3 684.3  24.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   3.2 pos '-377.4 2464.9 -136.0' spd 320.0 yaw 249.1 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   3.2 pos '1172.4 947.5 -256.0' spd 183.9 yaw  45.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGUS Joe Rogan wallslide
+ARGLOG Joe Rogan t   3.8 pos '559.7 688.0  24.0' spd  42.0 yaw  57.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   3.8 pos '-335.7 2410.1 -136.0' spd 323.9 yaw  34.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   3.8 pos '1294.2 1023.0 -256.0' spd 320.6 yaw  45.7 mode 0 st 0 gl 0 hp 100 frg 0
+EDBG Joe Rogan t   4.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '560.0 688.0  24.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   4.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-255.7 2454.0 -136.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   4.0 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '1360.4 1085.2 -256.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner  shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS Joe Rogan hesitate settle
+ARGDBG Joe Rogan pick weapon_grenadelauncher u  24.4 | w  15.2 a   1.5 h  11.8 r  22.9 p  13.2 o 0 ws 4 streak 0
+ARGEVT Joe Rogan goal weapon_grenadelauncher
+ARGEVT Joe Rogan route 17 start '497.0 641.0  24.0' goal '1201.0 1057.0 -408.0'
+ARGLOG Joe Rogan t   4.3 pos '560.0 688.0  24.0' spd 0 yaw 197 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   4.3 pos '-193.3 2493.2 -120.0' spd 320.1 yaw  34.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   4.3 pos '1350.5 1078.8 -256.0' spd 320.0 yaw 221.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGDBG Romero pick weapon_rocketlauncher u  45.0 | w  28.1 a 0 h  11.3 r  22.5 p  12.9 o 0 ws 4 streak 0
+ARGEVT Romero goal weapon_rocketlauncher
+ARGEVT Romero route 9 start '-175.0 2497.0 -120.0' goal '145.0 2337.0  40.0'
+ARGDBG Carmack pick item_armor2 u  36.9 | w  14.4 a 0 h   9.4 r  38.5 p  25.4 o 0 ws 4 streak 0
+ARGEVT Carmack goal item_armor2
+ARGEVT Carmack route 3 start '1265.0 1089.0 -256.0' goal '1297.0 1057.0 -408.0'
+ARGLOG Joe Rogan t   4.8 pos '560.0 688.0  24.0' spd 0 yaw 197 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   4.8 pos '-221.5 2468.0 -136.0' spd 402.0 yaw 143 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   4.8 pos '1228.2 970.3 -256.0' spd 322.7 yaw 51 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+EDBG Joe Rogan t   5.0 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '401.0 545.0  24.0' pos '560.0 688.0  24.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   5.0 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-431.0 2561.0 -104.0' pos '-317.7 2473.1 -136.0' actnode '-431.0 2561.0 -104.0' acttime   5.0 best 160.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   5.0 shop 0 goal item_armor2 mode 2 pending 0 node '1169.0 897.0 -408.0' pos '1196.6 928.0 -256.0' actnode '1169.0 897.0 -408.0' acttime   4.9 best 164.5 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGLOG Joe Rogan t   5.3 pos '560.0 688.0  24.0' spd 0 yaw 197 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   5.3 pos '-390.4 2511.3 -120.0' spd 331.4 yaw 154 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   5.3 pos '1198.3 928.0 -256.0' spd   6.2 yaw 52 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t   5.8 pos '560.0 688.0  24.0' spd 0 yaw 197 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   5.8 pos '-470.7 2646.5 -104.0' spd 381.0 yaw 212 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   5.8 pos '1200.0 920.3 -256.0' spd 0 yaw 54 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1169.0 897.0 -408.0'
+ARGEVT Carmack jump
+ARGEVT Romero lift
+EDBG Joe Rogan t   6.0 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '401.0 545.0  24.0' pos '560.0 688.0  24.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   6.0 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-559.0 2593.0  56.0' pos '-524.4 2725.1 -104.0' actnode '-559.0 2721.0 -104.0' acttime   6.0 best  57.1 door worldspawn lift 1 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   6.0 shop 0 goal item_armor2 mode 0 pending 1 node '  0.0   0.0   0.0' pos '1200.0 911.5 -236.0' actnode '  0.0   0.0   0.0' acttime   4.9 best 164.5 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS routecache adopt
+ARGEVT Carmack route 2 start '1201.0 961.0 -256.0' goal '1297.0 1057.0 -408.0'
+ARGLOG Joe Rogan t   6.3 pos '542.0 671.5  24.0' spd 320 yaw 196 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   6.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-559.0 2593.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   6.3 best  57.1
+ARGLOG Romero t   6.3 pos '-547.5 2756.3 -104.0' spd 184.2 yaw 275 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.3 pos '1200.0 911.7 -212.4' spd  39.1 yaw 102.6 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Romero board
+ARGLOG Joe Rogan t   6.8 pos '420.6 560.9  24.0' spd 322.8 yaw 234.4 mode 0 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   6.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *7 gtop -78.0 node '-559.0 2593.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   6.8 best  57.1
+ARGLOG Romero t   6.8 pos '-567.5 2675.4 -55.0' spd 0 yaw 283 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   6.8 pos '1188.5 928.0 -256.0' spd   6.2 yaw 49 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan route 16 start '401.0 545.0  24.0' goal '1201.0 1057.0 -408.0'
+ARGEVT Carmack hazard
+EDBG Joe Rogan t   7.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node ' 81.0 545.0  24.0' pos '393.4 528.0  24.0' actnode '401.0 545.0  24.0' acttime   7.0 best  52.5 door door lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   7.1 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-559.0 2593.0  56.0' pos '-567.5 2675.4 -18.7' actnode '-559.0 2721.0 -104.0' acttime   7.0 best  57.1 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   7.1 shop 0 goal item_armor2 mode 2 pending 0 node '1169.0 897.0 -408.0' pos '1190.0 928.0 -256.0' actnode '1169.0 897.0 -408.0' acttime   6.6 best 159.6 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS Joe Rogan wallslide
+ARGLOG Joe Rogan t   7.3 pos '362.6 528.6  24.0' spd 320.2 yaw 176 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   7.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *7 gtop  -2.9 node '-527.0 2497.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   7.3 best  57.1
+ARGLOG Romero t   7.3 pos '-567.3 2674.1  20.1' spd  44.8 yaw 297 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.3 pos '1191.7 928.0 -256.0' spd   6.2 yaw 50 mode 2 st 1 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1169.0 897.0 -408.0'
+ARGEVT Carmack jump
+ARGUS Romero wallslide
+ARGDBG Carmack pick weapon_supernailgun u  28.7 | w  13.8 a 0 h   9.2 r   1.1 p  27.2 o 0 ws 4 streak 0
+ARGEVT Carmack goal weapon_supernailgun
+ARGEVT Carmack route 11 start '1201.0 961.0 -256.0' goal '817.0 2433.0 -344.0'
+ARGUS routecache adopt
+ARGEVT Carmack route 11 start '1201.0 961.0 -256.0' goal '817.0 2433.0 -344.0'
+ARGLOG Joe Rogan t   7.8 pos '277.2 534.9  24.0' spd 320.0 yaw 178 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   7.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-399.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   7.8 best  57.1
+ARGLOG Romero t   7.8 pos '-514.3 2537.9  56.0' spd 322.1 yaw 324 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   7.8 pos '1207.4 931.1 -218.6' spd  53.6 yaw  94.8 mode 0 st 2 gl 0 hp 100 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 11 start '1201.0 961.0 -256.0' goal '817.0 2433.0 -344.0'
+EDBG Joe Rogan t   8.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node ' 81.0 545.0  24.0' pos '200.3 540.2  24.0' actnode ' 81.0 545.0  24.0' acttime   8.0 best 128.3 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   8.1 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-399.0 2337.0  56.0' pos '-479.4 2468.9  56.0' actnode '-559.0 2721.0 -104.0' acttime   8.0 best  57.1 door worldspawn lift 1 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   8.1 shop 0 goal weapon_supernailgun mode 0 pending 1 node '  0.0   0.0   0.0' pos '1217.1 942.6 -256.0' actnode '  0.0   0.0   0.0' acttime   6.6 best 159.6 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS routecache adopt
+ARGEVT Carmack route 11 start '1201.0 961.0 -256.0' goal '817.0 2433.0 -344.0'
+ARGEVT Joe Rogan lift
+ARGUS routecache adopt
+ARGEVT Carmack route 11 start '1201.0 961.0 -256.0' goal '817.0 2433.0 -344.0'
+PDBG Joe Rogan t   8.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-79.0 545.0 -216.0' goal weapon_grenadelauncher watch ' 81.0 545.0  24.0' clock   8.3 best  59.9
+ARGLOG Joe Rogan t   8.3 pos '113.4 545.4  24.0' spd 320.5 yaw 121 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   8.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   8.3 best  57.1
+ARGLOG Romero t   8.3 pos '-428.0 2416.0  21.7' spd 217.2 yaw 358 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   8.3 pos '1205.2 1021.9 -256.0' spd 320.3 yaw 104 mode 0 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan door
+ARGEVT Carmack hazard
+ARGUS routecache adopt
+ARGEVT Carmack route 10 start '1265.0 1089.0 -256.0' goal '817.0 2433.0 -344.0'
+ARGEVT Joe Rogan board
+ARGUS Carmack wallslide
+ARGUS Joe Rogan wallslide
+PDBG Joe Rogan t   8.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground door model *3 gtop 1 node '-79.0 545.0 -216.0' goal weapon_grenadelauncher watch ' 81.0 545.0  24.0' clock   8.8 best  59.9
+ARGLOG Joe Rogan t   8.8 pos '-40.1 568.6  24.0' spd  98.8 yaw 162 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   8.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   8.8 best  57.1
+ARGLOG Romero t   8.8 pos '-411.4 2416.0 -136.0' spd 0 yaw 358 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   8.8 pos '1272.6 1112.6 -256.0' spd 289.1 yaw 84 mode 2 st 2 gl 0 hp 100 frg 0
+EDBG Joe Rogan t   9.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '-79.0 545.0 -216.0' pos '-44.0 582.0  24.0' actnode ' 81.0 545.0  24.0' acttime   9.0 best  59.9 door door lift 1 wait 1 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t   9.1 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-411.4 2416.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime   9.0 best  57.1 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t   9.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1297.0 1249.0 -312.0' pos '1308.1 1181.8 -278.9' actnode '1297.0 1249.0 -312.0' acttime   9.0 best  90.7 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+PDBG Joe Rogan t   9.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground door model *3 gtop -21.6 node '-79.0 545.0 -216.0' goal weapon_grenadelauncher watch ' 81.0 545.0  24.0' clock   9.3 best  59.9
+ARGLOG Joe Rogan t   9.4 pos '-44.4 581.6   1.4' spd 0 yaw 227 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   9.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   9.3 best  57.1
+ARGLOG Romero t   9.4 pos '-411.4 2416.0 -136.0' spd 0 yaw 358 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   9.4 pos '1316.8 1275.2 -325.6' spd 323.8 yaw 94 mode 2 st 2 gl 0 hp 100 frg 0
+ARGUS Carmack hesitate settle
+PDBG Joe Rogan t   9.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground door model *3 gtop -72.8 node '-79.0 545.0 -216.0' goal weapon_grenadelauncher watch ' 81.0 545.0  24.0' clock   9.8 best  59.9
+ARGLOG Joe Rogan t   9.9 pos '-44.4 581.6 -49.8' spd 0 yaw 227 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t   9.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock   9.8 best  57.1
+ARGLOG Romero t   9.9 pos '-411.4 2416.0 -136.0' spd 0 yaw 358 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   9.9 pos '1303.4 1396.9 -386.4' spd  93.8 yaw 97 mode 2 st 2 gl 0 hp 100 frg 0
+EDBG Joe Rogan t  10.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '-79.0 545.0 -216.0' pos '-44.4 581.6 -69.5' actnode ' 81.0 545.0  24.0' acttime  10.0 best  59.9 door door lift 1 wait 1 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  10.1 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-411.4 2416.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  10.0 best  57.1 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  10.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1297.0 1537.0 -408.0' pos '1302.0 1407.1 -391.5' actnode '1297.0 1537.0 -408.0' acttime  10.1 best 209.0 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+PDBG Joe Rogan t  10.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground door model *3 gtop -123.8 node '-79.0 545.0 -216.0' goal weapon_grenadelauncher watch ' 81.0 545.0  24.0' clock  10.3 best  59.9
+ARGLOG Joe Rogan t  10.4 pos '-44.4 581.6 -100.8' spd 0 yaw 227 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  10.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  10.3 best  57.1
+ARGLOG Romero t  10.4 pos '-411.4 2416.0 -136.0' spd 0 yaw 358 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.4 pos '1302.0 1407.1 -391.5' spd 0 yaw 97 mode 2 st 2 gl 0 hp 100 frg 0
+PDBG Joe Rogan t  10.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground door model *3 gtop -174.7 node '-79.0 545.0 -216.0' goal weapon_grenadelauncher watch ' 81.0 545.0  24.0' clock  10.8 best  59.9
+ARGLOG Joe Rogan t  10.9 pos '-44.4 581.6 -151.7' spd 0 yaw 227 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  10.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  10.8 best  57.1
+ARGLOG Romero t  10.9 pos '-411.4 2416.0 -136.0' spd 0 yaw 358 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  10.9 pos '1302.0 1407.1 -391.5' spd 0 yaw 97 mode 2 st 2 gl 0 hp 100 frg 0
+EDBG Joe Rogan t  11.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '-79.0 545.0 -216.0' pos '-44.4 581.6 -170.1' actnode ' 81.0 545.0  24.0' acttime  11.0 best  59.9 door door lift 1 wait 1 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  11.1 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-411.4 2416.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  11.0 best  57.1 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  11.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1297.0 1537.0 -408.0' pos '1302.0 1407.1 -391.5' actnode '1297.0 1537.0 -408.0' acttime  11.1 best 209.0 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+PDBG Joe Rogan t  11.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground door model *3 gtop -225.7 node '-79.0 545.0 -216.0' goal weapon_grenadelauncher watch ' 81.0 545.0  24.0' clock  11.4 best  59.9
+ARGLOG Joe Rogan t  11.4 pos '-44.4 581.6 -202.7' spd 0 yaw 227 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  11.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  11.4 best  57.1
+ARGLOG Romero t  11.4 pos '-411.4 2416.0 -136.0' spd 0 yaw 358 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.4 pos '1302.0 1407.1 -391.5' spd 0 yaw 97 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  11.9 pos '-133.2 528.4 -224.0' spd 145.4 yaw 65 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  11.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  11.9 best  57.1
+ARGLOG Romero t  11.9 pos '-345.8 2387.1 -136.0' spd 233.1 yaw 2 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  11.9 pos '1302.0 1407.1 -391.5' spd 0 yaw 97 mode 2 st 2 gl 0 hp 100 frg 0
+EDBG Joe Rogan t  12.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node ' 17.0 705.0 -200.0' pos '-104.4 563.3 -224.0' actnode ' 17.0 705.0 -200.0' acttime  11.5 best 141.7 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  12.1 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-345.8 2387.1 -136.0' actnode '-559.0 2721.0 -104.0' acttime  12.0 best  57.1 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  12.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1297.0 1537.0 -408.0' pos '1302.0 1407.1 -391.5' actnode '1297.0 1537.0 -408.0' acttime  12.1 best 209.0 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGLOG Joe Rogan t  12.4 pos '-39.8 645.8 -208.0' spd 337.9 yaw 72 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  12.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  12.4 best  57.1
+ARGLOG Romero t  12.4 pos '-345.8 2387.1 -136.0' spd 0 yaw 2 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  12.4 pos '1301.8 1418.9 -397.4' spd 230.7 yaw 97 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t  12.9 pos ' 20.5 800.3 -200.0' spd 320.1 yaw 76 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  12.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  12.9 best  57.1
+ARGLOG Romero t  12.9 pos '-345.8 2387.1 -136.0' spd 0 yaw 2 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  12.9 pos '1287.3 1580.7 -408.0' spd 320.2 yaw 140 mode 2 st 2 gl 0 hp 100 frg 0
+EDBG Joe Rogan t  13.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node ' 81.0 1025.0 -200.0' pos ' 35.7 853.2 -200.0' actnode ' 81.0 1025.0 -200.0' acttime  13.1 best 182.4 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  13.1 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-345.8 2387.1 -136.0' actnode '-559.0 2721.0 -104.0' acttime  13.1 best  57.1 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  13.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1265.0 1697.0 -408.0' pos '1279.2 1635.2 -408.0' actnode '1265.0 1697.0 -408.0' acttime  13.1 best  68.2 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGLOG Joe Rogan t  13.4 pos ' 65.2 958.7 -200.0' spd 320.2 yaw 63 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  13.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  13.4 best  57.1
+ARGLOG Romero t  13.4 pos '-345.8 2387.1 -136.0' spd 0 yaw 2 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  13.4 pos '1253.7 1727.4 -408.0' spd 261.7 yaw 179 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t  14.0 pos '102.1 1117.0 -184.0' spd 320.1 yaw 42 mode 2 st 0 gl 0 hp 100 frg 0
+PDBG Romero t  14.0 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  13.9 best  57.1
+ARGLOG Romero t  14.0 pos '-345.8 2387.1 -136.0' spd 0 yaw 2 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.0 pos '1127.5 1758.3 -408.0' spd 322.2 yaw 157 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Romero abandon
+ARGEVT Joe Rogan jump
+EDBG Joe Rogan t  14.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '177.0 1185.0 -160.0' pos '111.9 1161.9 -184.0' actnode '177.0 1185.0 -160.0' acttime  14.1 best  73.2 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  14.1 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-338.5 2392.4 -136.0' actnode '  0.0   0.0   0.0' acttime  14.0 best  57.1 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  14.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '977.0 1729.0 -408.0' pos '1077.7 1752.2 -408.0' actnode '977.0 1729.0 -408.0' acttime  14.1 best 112.6 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS Romero hesitate settle
+ARGDBG Romero pick weapon_supershotgun u  15.6 | w   9.7 a 0 h  11.2 r   1.4 p 0 o 0 ws 4 streak 0
+ARGEVT Romero goal weapon_supershotgun
+ARGEVT Romero route 4 start '-303.0 2465.0 -136.0' goal '-335.0 2913.0 -56.0'
+ARGLOG Joe Rogan t  14.5 pos '168.2 1270.6 -140.9' spd 355.1 yaw 348 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  14.5 pos '-274.3 2439.0 -136.0' spd 112.4 yaw 85 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  14.5 pos '960.5 1738.2 -408.0' spd 381.3 yaw 114 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t  15.0 pos '259.5 1150.0 -261.6' spd 396.4 yaw 25 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  15.0 pos '-262.4 2447.7 -136.0' spd 0 yaw 86 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  15.0 pos '823.8 1845.4 -408.0' spd 338.5 yaw 90 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  15.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '177.0 1185.0 -160.0' pos '226.6 1111.8 -301.3' actnode '177.0 1185.0 -160.0' acttime  14.2 best  60.4 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  15.1 shop 0 goal weapon_supershotgun mode 2 pending 0 node '-207.0 2593.0 -88.0' pos '-262.4 2447.7 -136.0' actnode '  0.0   0.0   0.0' acttime  14.0 best  57.1 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  15.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '817.0 2049.0 -408.0' pos '806.2 1891.4 -408.0' actnode '817.0 2049.0 -408.0' acttime  15.1 best 162.5 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan jump
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  15.5 pos '127.3 1152.5 -295.5' spd 290.9 yaw 13 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  15.5 pos '-262.4 2447.7 -136.0' spd 0 yaw 86 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  15.5 pos '796.4 2011.9 -408.0' spd 321.0 yaw 87 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  16.0 pos '206.3 1228.2 -295.8' spd 303.1 yaw 357 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  16.0 pos '-262.4 2447.7 -136.0' spd 0 yaw 86 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  16.0 pos '808.0 2174.8 -389.4' spd 320.2 yaw 87 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  16.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '177.0 1185.0 -160.0' pos '226.2 1201.4 -295.9' actnode '177.0 1185.0 -160.0' acttime  14.2 best  60.4 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  16.1 shop 0 goal weapon_supershotgun mode 2 pending 0 node '-207.0 2593.0 -88.0' pos '-262.4 2447.7 -136.0' actnode '  0.0   0.0   0.0' acttime  14.0 best  57.1 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  16.1 shop 0 goal weapon_supernailgun mode 2 pending 0 node '817.0 2433.0 -344.0' pos '811.3 2215.4 -379.9' actnode '817.0 2433.0 -344.0' acttime  16.1 best 229.8 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  16.5 pos '157.3 1132.7 -295.1' spd 303.9 yaw 19 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  16.5 pos '-262.4 2447.7 -136.0' spd 0 yaw 86 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  16.5 pos '818.0 2338.1 -351.0' spd 320.1 yaw 90 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Carmack pick item_artifact_super_damage u  36.3 | w   1.4 a 0 h  17.7 r   1.1 p  36.3 o 0 ws 7 streak 0
+ARGEVT Carmack goal item_artifact_super_damage
+ARGEVT Carmack route 11 start '817.0 2433.0 -344.0' goal '529.0 2465.0 -88.0'
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  17.0 pos '174.0 1239.5 -295.6' spd 303.7 yaw 355 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  17.0 pos '-261.1 2450.9 -136.0' spd 123.2 yaw 86 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  17.0 pos '800.0 2479.1 -302.8' spd  19.2 yaw 347 mode 2 st 2 gl 1 hp 100 frg 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  17.1 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '177.0 1185.0 -160.0' pos '203.2 1231.6 -295.4' actnode '177.0 1185.0 -160.0' acttime  14.2 best  60.4 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  17.1 shop 0 goal weapon_supershotgun mode 2 pending 0 node '-207.0 2593.0 -88.0' pos '-249.6 2479.5 -136.0' actnode '-207.0 2593.0 -88.0' acttime  17.1 best 134.6 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  17.1 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '913.0 2433.0 -336.0' pos '803.6 2479.7 -302.8' actnode '913.0 2433.0 -336.0' acttime  16.8 best  99.3 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan swim
+ARGUS Joe Rogan actionfail '177.0 1185.0 -160.0'
+ARGDBG Joe Rogan pick item_health u  20.6 | w   0.6 a   2.5 h  25.7 r   2.7 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan goal item_health
+ARGEVT Joe Rogan route 6 start '241.0 1249.0 -312.0' goal '945.0 993.0 -248.0'
+ARGEVT Joe Rogan swim
+ARGEVT Romero jump
+ARGLOG Joe Rogan t  17.5 pos '294.4 1159.4 -304.4' spd 257.6 yaw 352 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  17.5 pos '-203.5 2598.2 -78.6' spd 320.0 yaw 112 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  17.5 pos '838.9 2471.3 -344.0' spd 320.4 yaw 347 mode 2 st 2 gl 1 hp 100 frg 0
+ARGLOG Joe Rogan t  18.0 pos '344.0 1166.8 -304.8' spd  96.7 yaw 349 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  18.0 pos '-201.6 2753.8 -72.0' spd 324.0 yaw 129 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  18.0 pos '991.4 2419.0 -317.7' spd 321.2 yaw 328 mode 2 st 2 gl 1 hp 100 frg 0
+EDBG Joe Rogan t  18.1 shop 0 goal item_health mode 2 pending 0 node '401.0 1217.0 -312.0' pos '344.0 1176.0 -303.9' actnode '401.0 1217.0 -312.0' acttime  18.1 best  73.4 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  18.1 shop 0 goal weapon_supershotgun mode 2 pending 0 node '-239.0 2849.0 -56.0' pos '-209.3 2785.5 -72.0' actnode '-239.0 2849.0 -56.0' acttime  18.1 best  80.9 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  18.1 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '1137.0 2401.0 -284.0' pos '1023.3 2413.2 -310.2' actnode '1137.0 2401.0 -284.0' acttime  18.1 best 121.9 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero door
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  18.5 pos '380.8 1220.7 -304.5' spd 165.7 yaw 305 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  18.5 pos '-266.6 2904.0 -56.0' spd 281.7 yaw 175 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  18.5 pos '1136.8 2400.0 -283.5' spd 208.6 yaw 280 mode 2 st 2 gl 1 hp 100 frg 0
+ARGUS Romero wallslide
+ARGLOG Joe Rogan t  19.1 pos '478.2 1205.2 -303.9' spd 229.9 yaw 289 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  19.1 pos '-286.2 2931.2 -56.0' spd 260.2 yaw 195 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  19.1 pos '1149.2 2400.0 -280.6' spd   3.1 yaw 276 mode 2 st 2 gl 1 hp 100 frg 0
+EDBG Joe Rogan t  19.1 shop 0 goal item_health mode 2 pending 0 node '561.0 961.0 -344.0' pos '493.3 1197.3 -310.9' actnode '561.0 961.0 -344.0' acttime  19.1 best 256.1 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  19.1 shop 0 goal weapon_supershotgun mode 1 pending 0 node '  0.0   0.0   0.0' pos '-287.5 2910.2 -56.0' actnode '  0.0   0.0   0.0' acttime  19.1 best  52.1 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  19.1 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '1169.0 2305.0 -234.0' pos '1149.5 2400.0 -280.6' actnode '1169.0 2305.0 -234.0' acttime  18.5 best 114.4 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero door
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '1169.0 2305.0 -234.0'
+ARGEVT Carmack jump
+ARGEVT Romero hazard
+ARGEVT Carmack route 9 start '1137.0 2401.0 -284.0' goal '529.0 2465.0 -88.0'
+ARGLOG Joe Rogan t  19.6 pos '558.5 1072.5 -312.0' spd 326.5 yaw 337 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  19.6 pos '-286.2 2878.2 -56.0' spd  31.5 yaw 155 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  19.6 pos '1151.4 2399.6 -253.4' spd  31.2 yaw 274 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  20.1 pos '588.3 917.2 -313.3' spd 278.9 yaw 8 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  20.1 pos '-287.6 2932.2 -56.0' spd  76.8 yaw 196 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  20.1 pos '1158.1 2372.9 -249.6' spd 259.1 yaw 273 mode 2 st 3 gl 1 hp 100 frg 0
+ARGUS Romero wallslide
+EDBG Joe Rogan t  20.1 shop 0 goal item_health mode 2 pending 0 node '817.0 961.0 -280.0' pos '595.0 912.1 -311.1' actnode '817.0 961.0 -280.0' acttime  20.1 best 231.3 door worldspawn lift 0 wait 0 swim 1 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  20.1 shop 0 goal weapon_supershotgun mode 1 pending 0 node '  0.0   0.0   0.0' pos '-287.7 2936.4 -56.0' actnode '  0.0   0.0   0.0' acttime  19.1 best  52.1 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  20.1 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '1169.0 2209.0 -211.0' pos '1160.2 2350.7 -244.4' actnode '1169.0 2209.0 -211.0' acttime  20.1 best 160.0 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero door
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  20.6 pos '678.6 923.5 -295.2' spd 221.6 yaw 10 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  20.6 pos '-283.4 2951.3 -56.0' spd  32.9 yaw 208 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  20.6 pos '1170.0 2211.2 -211.5' spd 320.2 yaw 219 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  21.1 pos '787.4 940.6 -295.3' spd 126.6 yaw 12 mode 2 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t  21.1 pos '-287.7 2936.6 -56.0' spd 281.3 yaw 199 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  21.1 pos '1084.7 2047.3 -192.6' spd 363.2 yaw 179 mode 2 st 3 gl 1 hp 100 frg 0
+ARGUS Romero wallslide
+EDBG Joe Rogan t  21.1 shop 0 goal item_health mode 2 pending 0 node '817.0 961.0 -280.0' pos '791.7 937.0 -295.1' actnode '817.0 961.0 -280.0' acttime  21.1 best  38.7 door worldspawn lift 0 wait 0 swim 1 gait   6.2 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  21.1 shop 0 goal weapon_supershotgun mode 1 pending 0 node '  0.0   0.0   0.0' pos '-287.7 2920.9 -56.0' actnode '  0.0   0.0   0.0' acttime  19.1 best  52.1 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  21.1 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '785.0 2049.0 -152.0' pos '1066.9 2034.7 -188.4' actnode '785.0 2049.0 -152.0' acttime  21.1 best 298.3 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero door
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  21.6 pos '913.7 984.0 -248.0' spd 323.5 yaw  53.7 mode 1 st 0 gl 0 hp 200 frg 0
+ARGLOG Romero t  21.6 pos '-285.7 2879.1 -56.0' spd  34.8 yaw 156 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  21.6 pos '916.3 2009.9 -153.0' spd 326.4 yaw 110 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Joe Rogan pick item_artifact_invulnerability u  36.7 | w   0.8 a   3.6 h 0 r  34.9 p  24.5 o 0 ws 7 streak 0
+ARGEVT Joe Rogan goal item_artifact_invulnerability
+ARGEVT Joe Rogan route 7 start '977.0 993.0 -248.0' goal '241.0 1793.0 -40.0'
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  22.1 pos '1047.6 1022.9 -248.0' spd 321.5 yaw 339 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  22.1 pos '-288.0 2933.6 -56.0' spd  66.8 yaw 197 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  22.1 pos '784.5 2121.7 -145.9' spd 358.1 yaw 85 mode 2 st 3 gl 1 hp 100 frg 0
+ARGUS Romero wallslide
+EDBG Joe Rogan t  22.1 shop 0 goal item_artifact_invulnerability mode 2 pending 0 node '945.0 961.0 -248.0' pos '1060.1 1016.3 -248.0' actnode '945.0 961.0 -248.0' acttime  21.8 best  80.2 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  22.1 shop 0 goal weapon_supershotgun mode 1 pending 0 node '  0.0   0.0   0.0' pos '-288.0 2936.2 -56.0' actnode '  0.0   0.0   0.0' acttime  19.1 best  52.1 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  22.1 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '817.0 2273.0 -110.0' pos '781.6 2136.6 -142.4' actnode '817.0 2273.0 -110.0' acttime  22.1 best 158.8 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero door
+ARGUS Joe Rogan wallslide
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  22.6 pos '954.1 966.2 -248.0' spd 365.8 yaw 343 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  22.6 pos '-288.0 2957.3 -56.0' spd  38.2 yaw 213 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  22.6 pos '787.1 2289.1 -106.5' spd 320.4 yaw 145 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  23.1 pos '951.0 787.7 -318.7' spd 429.3 yaw 26 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  23.1 pos '-287.9 2897.8 -56.0' spd  77.0 yaw 168 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  23.1 pos '810.9 2450.6 -88.0' spd 320.0 yaw  86.8 mode 2 st 3 gl 1 hp 100 frg 0
+EDBG Joe Rogan t  23.1 shop 0 goal item_artifact_invulnerability mode 2 pending 0 node '1201.0 961.0 -256.0' pos '955.9 783.8 -317.1' actnode '1201.0 961.0 -256.0' acttime  22.5 best 214.0 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  23.1 shop 0 goal weapon_supershotgun mode 1 pending 0 node '  0.0   0.0   0.0' pos '-287.9 2895.6 -56.0' actnode '  0.0   0.0   0.0' acttime  19.1 best  52.1 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  23.1 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '529.0 2465.0 -88.0' pos '812.2 2459.8 -88.0' actnode '529.0 2465.0 -88.0' acttime  23.1 best 282.2 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero door
+ARGUS Carmack wallslide
+ARGUS Romero wallslide
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  23.6 pos '992.0 742.2 -298.0' spd  38.5 yaw 41 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  23.6 pos '-287.9 2902.0 -56.0' spd 153.6 yaw 172 mode 1 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t  23.6 pos '795.9 2600.2 -72.0' spd 106.6 yaw 207 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Romero stall
+ARGEVT Romero jump
+ARGEVT Joe Rogan swim
+ARGEVT Romero route 1 start '-207.0 2945.0 -56.0' goal '-335.0 2913.0 -56.0'
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  24.2 pos '992.0 774.9 -295.4' spd  74.3 yaw 34 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  24.2 pos '-288.0 2925.2 -20.2' spd  38.7 yaw 282.7 mode 2 st 1 gl 0 hp 100 frg 0
+ARGLOG Carmack t  24.2 pos '803.6 2559.2 -72.0' spd 145.7 yaw 199 mode 2 st 3 gl 1 hp 100 frg 0
+EDBG Joe Rogan t  24.2 shop 0 goal item_artifact_invulnerability mode 2 pending 0 node '1201.0 961.0 -256.0' pos '992.0 774.9 -295.4' actnode '1201.0 961.0 -256.0' acttime  22.5 best 214.0 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  24.2 shop 0 goal weapon_supershotgun mode 2 pending 0 node '-207.0 2945.0 -56.0' pos '-288.0 2925.2 -20.2' actnode '-207.0 2945.0 -56.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  17.0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  24.2 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '529.0 2465.0 -88.0' pos '803.2 2557.1 -72.0' actnode '529.0 2465.0 -88.0' acttime  23.1 best 282.2 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Romero stall
+ARGEVT Romero stallnode '-207.0 2945.0 -56.0'
+ARGEVT Romero jump
+ARGEVT Joe Rogan swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  24.7 pos '992.0 816.5 -295.0' spd  88.9 yaw 24 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  24.7 pos '-283.2 2894.0 -13.9' spd  82.2 yaw 188.1 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  24.7 pos '797.0 2460.6 -88.0' spd 139.9 yaw 167 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGUS Carmack wallslide
+ARGUS Joe Rogan wallslide
+ARGUS Romero hesitate settle
+EDBG Joe Rogan t  25.2 shop 0 goal item_artifact_invulnerability mode 2 pending 0 node '1201.0 961.0 -256.0' pos '992.0 870.7 -296.0' actnode '1201.0 961.0 -256.0' acttime  22.5 best 214.0 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 1 owner Romero shopmode 1 queue '-239.0 2849.0 -56.0'
+EDBG Romero t  25.2 shop 1 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-248.1 2867.0 -56.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 1 owner Romero shopmode 1 queue '-239.0 2849.0 -56.0'
+EDBG Carmack t  25.2 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '529.0 2465.0 -88.0' pos '786.3 2504.2 -88.0' actnode '529.0 2465.0 -88.0' acttime  25.0 best 256.3 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 1 owner Romero shopmode 1 queue '-239.0 2849.0 -56.0'
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGLOG Joe Rogan t  25.2 pos '992.0 870.7 -296.0' spd 186.2 yaw 8 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  25.2 pos '-248.1 2867.0 -56.0' spd 275.0 yaw  15.0 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  25.2 pos '786.3 2504.2 -88.0' spd  31.3 yaw 199 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGUS Joe Rogan actionfail '1201.0 961.0 -256.0'
+ARGDBG Joe Rogan pick item_armor1 u   3.7 | w   1.5 a   3.6 h 0 r   4.4 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan goal item_armor1
+ARGEVT Joe Rogan route 4 start '977.0 993.0 -248.0' goal '689.0 481.0 104.0'
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  25.7 pos '968.5 954.5 -248.0' spd 299.6 yaw 267 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  25.7 pos '-195.3 2871.6 -56.0' spd 0 yaw  15.0 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  25.7 pos '784.3 2462.4 -88.0' spd  72.6 yaw 166 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGUS Carmack wallslide
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  26.2 shop 0 goal item_armor1 mode 2 pending 0 node '945.0 609.0 -320.0' pos '885.8 807.8 -326.4' actnode '945.0 609.0 -320.0' acttime  26.1 best 216.5 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  26.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-195.3 2871.6 -56.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  26.2 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '529.0 2465.0 -88.0' pos '784.4 2477.5 -88.0' actnode '529.0 2465.0 -88.0' acttime  25.0 best 256.3 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGLOG Joe Rogan t  26.2 pos '885.5 798.1 -323.3' spd 333.8 yaw 263 mode 2 st 0 gl 1 hp 200 frg 0
+ARGLOG Romero t  26.2 pos '-195.3 2871.6 -56.0' spd 0 yaw  15.0 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  26.2 pos '784.4 2479.3 -88.0' spd 133.0 yaw 179 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t  26.7 pos '943.9 670.3 -313.7' spd 271.5 yaw 239 mode 2 st 0 gl 1 hp 199 frg 0
+ARGLOG Romero t  26.7 pos '-100.3 2897.1 -56.0' spd 320.0 yaw  15.0 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  26.7 pos '787.9 2509.9 -88.0' spd  34.9 yaw 202 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGUS Carmack wallslide
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+EDBG Joe Rogan t  27.2 shop 0 goal item_armor1 mode 2 pending 0 node '849.0 513.0 -312.0' pos '958.4 560.3 -305.9' actnode '849.0 513.0 -312.0' acttime  27.2 best 121.6 door worldspawn lift 0 wait 0 swim 0 gait   6.2 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  27.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-68.4 2972.7 -56.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  27.2 shop 0 goal item_artifact_super_damage mode 2 pending 0 node '529.0 2465.0 -88.0' pos '785.6 2459.6 -88.0' actnode '529.0 2465.0 -88.0' acttime  25.0 best 256.3 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGLOG Joe Rogan t  27.2 pos '954.8 551.1 -304.3' spd 224.0 yaw 195 mode 2 st 0 gl 1 hp 199 frg 0
+ARGLOG Romero t  27.2 pos '-75.3 2979.3 -56.0' spd 326.1 yaw 148.4 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  27.2 pos '785.9 2458.5 -88.0' spd  38.1 yaw 163 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Romero hazard
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGUS Romero wallslide
+ARGEVT Joe Rogan lift
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+PDBG Joe Rogan t  27.7 fighting 0 owned 0 sprint 0 rj 0 feet -3 ground worldspawn model maps/e1m1.bsp gtop 0 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  27.7 best 443.7
+ARGLOG Joe Rogan t  27.7 pos '869.4 497.5 -299.2' spd 221.2 yaw 186 mode 2 st 0 gl 1 hp 198 frg 0
+ARGLOG Romero t  27.7 pos '-48.5 2992.0 -56.0' spd 330.5 yaw  15.4 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  27.7 pos '784.0 2479.4 -88.0' spd 184.0 yaw 179 mode 2 st 3 gl 1 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan board
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGUS Carmack actionfail '529.0 2465.0 -88.0'
+ARGDBG Carmack pick item_health u  34.3 | w   1.8 a 0 h  34.3 r   9.9 p   1.0 o 0 ws 7 streak 0
+ARGEVT Carmack goal item_health
+ARGEVT Carmack route 4 start '817.0 2497.0 -88.0' goal '945.0 2433.0 -112.0'
+ARGUS Carmack wallslide
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+EDBG Joe Rogan t  28.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.2 497.7 -255.0' actnode '689.0 481.0 104.0' acttime  28.1 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait   6.2 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  28.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos ' 45.4 2992.0 -88.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  28.2 shop 0 goal item_health mode 2 pending 0 node '817.0 2273.0 -110.0' pos '784.0 2469.5 -88.0' actnode '817.0 2273.0 -110.0' acttime  28.2 best 204.9 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+PDBG Joe Rogan t  28.2 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -269.5 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  28.2 best 431.5
+ARGLOG Joe Rogan t  28.2 pos '818.2 497.7 -246.5' spd 0 yaw 188 mode 2 st 0 gl 1 hp 198 frg 0
+ARGLOG Romero t  28.2 pos ' 39.2 2992.0 -88.0' spd 180.5 yaw 163.7 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  28.2 pos '784.1 2455.7 -88.0' spd 324.6 yaw 256 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+PDBG Joe Rogan t  28.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -192.7 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  28.7 best 431.5
+ARGLOG Joe Rogan t  28.8 pos '818.2 497.7 -169.7' spd 0 yaw 188 mode 2 st 0 gl 1 hp 197 frg 0
+ARGLOG Romero t  28.8 pos '-106.9 2992.0 -56.0' spd 331.8 yaw 163.7 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  28.8 pos '805.0 2432.2 -88.0' spd 271.6 yaw 242 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack jump
+ARGEVT Romero hazard
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+EDBG Joe Rogan t  29.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.3 497.6 -216.3' actnode '689.0 481.0 104.0' acttime  29.1 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  29.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-257.3 2990.8 -56.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  29.2 shop 0 goal item_health mode 2 pending 0 node '753.0 2337.0 -71.0' pos '821.2 2292.6 -79.7' actnode '753.0 2337.0 -71.0' acttime  29.1 best  74.4 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS Romero wallslide
+PDBG Joe Rogan t  29.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -250.1 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  29.2 best 431.5
+ARGLOG Joe Rogan t  29.3 pos '818.3 497.6 -227.1' spd 0 yaw 188 mode 2 st 0 gl 1 hp 196 frg 0
+ARGLOG Romero t  29.3 pos '-260.7 2988.1 -56.0' spd 103.5 yaw 338.2 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  29.3 pos '822.6 2269.5 -67.7' spd 321.4 yaw 46 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+PDBG Joe Rogan t  29.8 fighting 0 owned 1 sprint 0 rj 0 feet -3 ground plat model *22 gtop -312.7 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  29.7 best 431.5
+ARGLOG Joe Rogan t  29.8 pos '818.3 497.6 -289.7' spd 0 yaw 188 mode 2 st 0 gl 1 hp 195 frg 0
+ARGLOG Romero t  29.8 pos '-118.3 2925.4 -56.0' spd 320.0 yaw 338.2 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  29.8 pos '716.6 2187.1 -101.2' spd 355.9 yaw 43 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+EDBG Joe Rogan t  30.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.3 497.6 -225.3' actnode '689.0 481.0 104.0' acttime  30.1 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  30.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-43.0 2852.9 -56.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  30.2 shop 0 goal item_health mode 2 pending 0 node '753.0 2337.0 -71.0' pos '681.7 2224.0 -290.7' actnode '753.0 2337.0 -71.0' acttime  29.1 best  74.4 door worldspawn lift 0 wait 0 swim 0 gait  12.3 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+PDBG Joe Rogan t  30.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -235.6 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  30.2 best 431.5
+ARGLOG Joe Rogan t  30.3 pos '818.3 497.6 -212.6' spd 0 yaw 188 mode 2 st 0 gl 1 hp 195 frg 0
+ARGLOG Romero t  30.3 pos '-57.4 2833.8 -56.0' spd 333.2 yaw 214.2 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  30.3 pos '686.4 2224.0 -345.8' spd  56.6 yaw 35 mode 2 st 3 gl 1 hp 100 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+PDBG Joe Rogan t  30.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -205.6 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  30.7 best 431.5
+ARGLOG Joe Rogan t  30.8 pos '818.3 497.6 -182.6' spd 0 yaw 188 mode 2 st 0 gl 1 hp 193 frg 0
+ARGLOG Romero t  30.8 pos '-178.6 2726.7 -72.0' spd 320.2 yaw 214.2 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  30.8 pos '722.1 2249.0 -455.0' spd 132.0 yaw 35 mode 2 st 3 gl 1 hp 92 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+EDBG Joe Rogan t  31.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.3 497.6 -245.0' actnode '689.0 481.0 104.0' acttime  31.1 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  31.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-290.5 2646.5 -104.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  31.2 shop 0 goal item_health mode 2 pending 0 node '753.0 2337.0 -71.0' pos '756.7 2295.3 -455.8' actnode '753.0 2337.0 -71.0' acttime  29.1 best  74.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+PDBG Joe Rogan t  31.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -280.7 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  31.2 best 431.5
+ARGLOG Joe Rogan t  31.3 pos '818.3 497.6 -257.7' spd 0 yaw 188 mode 2 st 0 gl 1 hp 193 frg 0
+ARGLOG Romero t  31.3 pos '-309.1 2633.5 -104.0' spd 320.0 yaw 214.2 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  31.3 pos '763.4 2305.8 -455.9' spd 146.5 yaw 30 mode 2 st 3 gl 1 hp 92 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+PDBG Joe Rogan t  31.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -280.7 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  31.7 best 431.5
+ARGLOG Joe Rogan t  31.8 pos '818.3 497.6 -257.7' spd 0 yaw 188 mode 2 st 0 gl 1 hp 192 frg 0
+ARGLOG Romero t  31.8 pos '-443.1 2539.7 -120.0' spd 320.0 yaw 214.2 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  31.8 pos '744.2 2365.2 -455.1' spd 178.4 yaw 16 mode 2 st 3 gl 1 hp 88 frg 0
+ARGEVT Carmack swim
+ARGEVT Romero hazard
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGUS Carmack actionfail '753.0 2337.0 -71.0'
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGDBG Carmack pick item_armor2 u  13.7 | w   1.5 a 0 h   2.8 r  14.2 p   4.0 o 0 ws 7 streak 0
+ARGEVT Carmack goal item_armor2
+ARGEVT Carmack route 12 start '689.0 2145.0 -376.0' goal '1297.0 1057.0 -408.0'
+ARGEVT Carmack swim
+EDBG Joe Rogan t  32.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.3 497.6 -196.1' actnode '689.0 481.0 104.0' acttime  32.1 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  32.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-456.4 2587.0 -104.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  32.2 shop 0 goal item_armor2 mode 2 pending 0 node '689.0 2145.0 -376.0' pos '716.5 2304.7 -455.3' actnode '689.0 2145.0 -376.0' acttime  32.2 best 185.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+PDBG Joe Rogan t  32.3 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -204.1 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  32.2 best 431.5
+ARGLOG Joe Rogan t  32.3 pos '818.3 497.6 -181.1' spd 0 yaw 188 mode 2 st 0 gl 1 hp 192 frg 0
+ARGLOG Romero t  32.3 pos '-451.2 2614.0 -104.0' spd 320.0 yaw  79.6 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  32.3 pos '721.7 2285.4 -455.9' spd 200.4 yaw 295 mode 2 st 3 gl 1 hp 88 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+PDBG Joe Rogan t  32.8 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -236.8 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  32.7 best 431.5
+ARGLOG Joe Rogan t  32.8 pos '818.4 497.6 -213.8' spd 0 yaw 188 mode 2 st 0 gl 1 hp 190 frg 0
+ARGLOG Romero t  32.8 pos '-419.7 2773.9 -104.0' spd 263.4 yaw 295.5 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  32.8 pos '739.1 2208.0 -461.3' spd  29.2 yaw 307 mode 2 st 3 gl 1 hp 84 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+EDBG Joe Rogan t  33.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.4 497.6 -274.1' actnode '689.0 481.0 104.0' acttime  33.2 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  33.2 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-346.6 2701.9 -88.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  26.4 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  33.2 shop 0 goal item_armor2 mode 2 pending 0 node '689.0 2145.0 -376.0' pos '711.6 2208.0 -455.7' actnode '689.0 2145.0 -376.0' acttime  33.0 best 108.5 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+PDBG Joe Rogan t  33.3 fighting 0 owned 1 sprint 0 rj 0 feet -3 ground plat model *22 gtop -313.9 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  33.3 best 431.5
+ARGLOG Joe Rogan t  33.3 pos '818.4 497.6 -290.9' spd 0 yaw 188 mode 2 st 0 gl 1 hp 190 frg 0
+ARGLOG Romero t  33.3 pos '-330.7 2674.8 -88.0' spd 320.7 yaw 295.5 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  33.3 pos '701.8 2208.0 -455.8' spd  94.7 yaw 323 mode 2 st 3 gl 1 hp 84 frg 0
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGUS Romero hesitate settle
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 0
+ARGEVT Carmack swim
+PDBG Joe Rogan t  33.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -248.5 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  33.8 best 431.5
+ARGLOG Joe Rogan t  33.9 pos '818.4 497.6 -225.5' spd 0 yaw 188 mode 2 st 0 gl 1 hp 189 frg 0
+ARGLOG Romero t  33.9 pos '-272.3 2564.1 -104.0' spd  99.0 yaw 295.5 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  33.9 pos '677.3 2208.0 -455.1' spd  47.8 yaw 330 mode 2 st 3 gl 1 hp 80 frg 0
+ARGEVT Carmack swim
+ARGDBG Romero pick weapon_supershotgun u   3.5 | w   2.2 a 0 h 0 r   0.9 p 0 o 0 ws 4 streak 0
+ARGEVT Romero goal weapon_supershotgun
+ARGEVT Romero route 10 start '-239.0 2497.0 -120.0' goal '145.0 1217.0 -184.0'
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGUS routecache adopt
+ARGEVT Romero route 10 start '-239.0 2497.0 -120.0' goal '145.0 1217.0 -184.0'
+EDBG Joe Rogan t  34.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.4 497.6 -167.7' actnode '689.0 481.0 104.0' acttime  34.2 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  34.2 shop 0 goal weapon_supershotgun mode 0 pending 1 node '  0.0   0.0   0.0' pos '-267.1 2553.8 -104.0' actnode '  0.0   0.0   0.0' acttime  23.9 best  90.4 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  34.2 shop 0 goal item_armor2 mode 2 pending 0 node '689.0 2145.0 -376.0' pos '700.3 2208.0 -455.4' actnode '689.0 2145.0 -376.0' acttime  33.0 best 108.5 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+PDBG Joe Rogan t  34.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -194.9 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  34.3 best 431.5
+ARGLOG Joe Rogan t  34.4 pos '818.5 497.5 -171.9' spd 0 yaw 188 mode 2 st 0 gl 1 hp 188 frg 0
+ARGLOG Romero t  34.4 pos '-267.1 2553.8 -104.0' spd 0 yaw 287 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  34.4 pos '700.7 2208.0 -456.0' spd  17.5 yaw 324 mode 2 st 3 gl 1 hp 80 frg 0
+ARGEVT Carmack swim
+ARGUS routecache adopt
+ARGEVT Romero route 10 start '-239.0 2497.0 -120.0' goal '145.0 1217.0 -184.0'
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGUS routecache adopt
+ARGEVT Romero route 10 start '-239.0 2497.0 -120.0' goal '145.0 1217.0 -184.0'
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGUS routecache adopt
+ARGEVT Romero route 10 start '-239.0 2497.0 -120.0' goal '145.0 1217.0 -184.0'
+PDBG Joe Rogan t  34.9 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -271.6 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  34.8 best 431.5
+ARGLOG Joe Rogan t  34.9 pos '818.5 497.5 -248.6' spd 0 yaw 188 mode 2 st 0 gl 1 hp 187 frg 0
+ARGLOG Romero t  34.9 pos '-266.1 2550.4 -104.0' spd 123.2 yaw 287 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  34.9 pos '679.9 2208.0 -455.3' spd   4.9 yaw 330 mode 2 st 3 gl 1 hp 76 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGUS routecache adopt
+ARGEVT Romero route 10 start '-239.0 2497.0 -120.0' goal '145.0 1217.0 -184.0'
+ARGEVT Carmack swim
+EDBG Joe Rogan t  35.2 shop 0 goal item_armor1 mode 2 pending 0 node '689.0 481.0 104.0' pos '818.5 497.5 -289.7' actnode '689.0 481.0 104.0' acttime  35.2 best 431.5 door worldspawn lift 1 wait 1 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  35.2 shop 0 goal weapon_supershotgun mode 2 pending 0 node '-239.0 2497.0 -120.0' pos '-219.6 2439.6 -136.0' actnode '-239.0 2497.0 -120.0' acttime  35.1 best  10.5 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  35.2 shop 0 goal item_armor2 mode 2 pending 0 node '689.0 2145.0 -376.0' pos '692.3 2208.0 -455.7' actnode '689.0 2145.0 -376.0' acttime  33.0 best 108.5 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGUS Romero wallslide
+ARGEVT Carmack swim
+PDBG Joe Rogan t  35.4 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *22 gtop -291.2 node '689.0 481.0 104.0' goal item_armor1 watch '689.0 481.0 104.0' clock  35.3 best 431.5
+ARGLOG Joe Rogan t  35.4 pos '818.5 497.5 -268.2' spd 0 yaw 188 mode 2 st 0 gl 1 hp 187 frg 0
+ARGLOG Romero t  35.4 pos '-187.5 2415.1 -128.4' spd 256.4 yaw 309.7 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  35.4 pos '697.1 2208.0 -455.8' spd  20.6 yaw 325 mode 2 st 3 gl 1 hp 76 frg 0
+ARGEVT Carmack swim
+ARGEVT Romero routefail
+ARGEVT Carmack swim
+ARGEVT Joe Rogan abandon
+ARGEVT Carmack swim
+ARGDBG Joe Rogan pick weapon_supernailgun u  22.3 | w  22.3 a   4.5 h 0 r  14.7 p  12.8 o 0 ws 7 streak 0
+ARGEVT Joe Rogan goal weapon_supernailgun
+ARGEVT Joe Rogan route 14 start '945.0 609.0 -320.0' goal '817.0 2433.0 -344.0'
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '689.0 2145.0 -376.0'
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  35.9 pos '819.4 528.0 -191.9' spd  65.8 yaw 69 mode 2 st 0 gl 1 hp 186 frg 0
+ARGLOG Romero t  35.9 pos '-155.4 2415.2 -136.0' spd 320.1 yaw 105.6 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  35.9 pos '687.6 2208.0 -455.4' spd  31.4 yaw 299 mode 0 st 4 gl 1 hp 68 frg 0
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack swim
+ARGEVT Carmack route 11 start '785.0 2145.0 -396.0' goal '1297.0 1057.0 -408.0'
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack swim
+EDBG Joe Rogan t  36.3 shop 0 goal weapon_supernailgun mode 2 pending 0 node '945.0 609.0 -320.0' pos '858.2 528.0 -170.9' actnode '945.0 609.0 -320.0' acttime  35.9 best 196.8 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  36.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-188.3 2529.3 -120.0' actnode '  0.0   0.0   0.0' acttime  35.1 best  10.5 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  36.3 shop 0 goal item_armor2 mode 2 pending 0 node '785.0 2145.0 -396.0' pos '709.2 2208.0 -455.3' actnode '785.0 2145.0 -396.0' acttime  36.3 best 115.1 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  36.4 pos '882.5 528.0 -199.1' spd 156.2 yaw 79 mode 2 st 0 gl 1 hp 185 frg 0
+ARGLOG Romero t  36.4 pos '-200.0 2572.8 -104.0' spd 320.0 yaw 105.6 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  36.4 pos '720.7 2208.0 -455.9' spd  78.9 yaw 287 mode 2 st 4 gl 1 hp 68 frg 0
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  36.9 pos '954.6 564.7 -312.0' spd 341.2 yaw 91 mode 2 st 0 gl 1 hp 184 frg 0
+ARGLOG Romero t  36.9 pos '-242.6 2731.7 -72.0' spd 320.0 yaw 105.6 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  36.9 pos '736.0 2208.0 -455.6' spd 0 yaw 285 mode 2 st 4 gl 1 hp 64 frg 0
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Romero pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '785.0 2145.0 -396.0'
+ARGDBG Carmack pick weapon_supershotgun u  17.5 | w  13.4 a 0 h   9.8 r 0 p   3.9 o 0 ws 3 streak 0
+ARGEVT Carmack goal weapon_supershotgun
+ARGEVT Carmack route 21 start '785.0 2145.0 -396.0' goal '-335.0 2913.0 -56.0'
+ARGUS Romero wallslide
+EDBG Joe Rogan t  37.3 shop 0 goal weapon_supernailgun mode 2 pending 0 node '945.0 865.0 -296.0' pos '966.0 673.9 -309.7' actnode '945.0 865.0 -296.0' acttime  37.3 best 192.7 door worldspawn lift 0 wait 0 swim 1 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  37.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-270.9 2841.8 -56.0' actnode '  0.0   0.0   0.0' acttime  35.1 best  10.5 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  37.3 shop 0 goal weapon_supershotgun mode 2 pending 0 node '785.0 2145.0 -396.0' pos '734.9 2209.4 -455.9' actnode '785.0 2145.0 -396.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  37.4 pos '967.0 726.8 -303.1' spd 309.3 yaw 95 mode 2 st 0 gl 1 hp 184 frg 0
+ARGLOG Romero t  37.4 pos '-272.1 2893.6 -56.0' spd 369.3 yaw  47.9 mode 0 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  37.4 pos '731.2 2215.0 -454.8' spd  43.9 yaw 285 mode 2 st 5 gl 1 hp 64 frg 0
+ARGDBG Romero pick weapon_rocketlauncher u  41.0 | w  25.6 a 0 h 0 r   9.6 p  12.4 o 0 ws 4 streak 1
+ARGEVT Romero goal weapon_rocketlauncher
+ARGEVT Romero route 10 start '-239.0 2849.0 -56.0' goal '145.0 2337.0  40.0'
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGEVT Romero route 11 start '-207.0 2945.0 -56.0' goal '145.0 2337.0  40.0'
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  37.9 pos '957.7 882.9 -280.0' spd 311.2 yaw 17 mode 2 st 0 gl 1 hp 183 frg 0
+ARGEVT Joe Rogan jump
+ARGLOG Romero t  37.9 pos '-97.7 2937.4 -56.0' spd 438.1 yaw 257 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  37.9 pos '752.9 2237.3 -455.6' spd  98.0 yaw 281 mode 2 st 5 gl 1 hp 56 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+EDBG Joe Rogan t  38.3 shop 0 goal weapon_supernailgun mode 2 pending 0 node '945.0 961.0 -248.0' pos '936.9 981.9 -236.3' actnode '945.0 961.0 -248.0' acttime  38.2 best  10.1 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  38.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2849.0 -56.0' pos '-114.0 2798.4 -72.0' actnode '-239.0 2849.0 -56.0' acttime  38.3 best 143.5 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  38.3 shop 0 goal weapon_supershotgun mode 2 pending 0 node '785.0 2145.0 -396.0' pos '784.6 2232.8 -456.4' actnode '785.0 2145.0 -396.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  38.5 pos '930.3 1038.9 -248.0' spd 318.0 yaw 344 mode 2 st 0 gl 1 hp 183 frg 0
+ARGLOG Romero t  38.5 pos '-184.3 2776.3 -72.0' spd 338.3 yaw 211 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  38.5 pos '800.2 2227.4 -456.6' spd  69.5 yaw 273 mode 2 st 5 gl 1 hp 56 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t  39.0 pos '1050.1 988.5 -248.0' spd 201.0 yaw 350 mode 2 st 0 gl 1 hp 182 frg 0
+ARGLOG Romero t  39.0 pos '-292.5 2644.6 -104.0' spd 469.9 yaw 133 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  39.0 pos '806.7 2228.4 -456.4' spd  27.9 yaw 272 mode 2 st 5 gl 1 hp 48 frg 0
+ARGUS Joe Rogan wallslide
+ARGEVT Carmack swim
+EDBG Joe Rogan t  39.3 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1201.0 961.0 -256.0' pos '952.8 967.7 -248.0' actnode '1201.0 961.0 -256.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  39.3 shop 0 goal weapon_rocketlauncher mode 0 pending 1 node '  0.0   0.0   0.0' pos '-183.4 2568.9 -104.0' actnode '  0.0   0.0   0.0' acttime  39.0 best 292.0 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  39.3 shop 0 goal weapon_supershotgun mode 2 pending 0 node '785.0 2145.0 -396.0' pos '795.1 2228.3 -456.4' actnode '785.0 2145.0 -396.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero route 9 start '-175.0 2561.0 -104.0' goal '145.0 2337.0  40.0'
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t  39.5 pos '898.5 917.2 -264.0' spd 442.1 yaw 25 mode 2 st 0 gl 1 hp 182 frg 0
+ARGLOG Romero t  39.5 pos '-160.3 2520.7 -120.0' spd 324.4 yaw 153 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  39.5 pos '787.2 2227.8 -456.6' spd  35.0 yaw 276 mode 2 st 5 gl 1 hp 48 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  40.0 pos '992.0 754.2 -310.4' spd 120.5 yaw 50 mode 2 st 0 gl 1 hp 181 frg 0
+ARGLOG Romero t  40.0 pos '-214.0 2415.6 -132.9' spd 187.4 yaw 138 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  40.0 pos '778.5 2229.8 -456.1' spd  30.0 yaw 277 mode 2 st 5 gl 1 hp 40 frg 0
+ARGEVT Carmack swim
+ARGUS Carmack actionfail '785.0 2145.0 -396.0'
+EDBG Joe Rogan t  40.3 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1201.0 961.0 -256.0' pos '992.0 744.1 -298.9' actnode '1201.0 961.0 -256.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 1 owner Carmack shopmode 1 queue '785.0 2145.0 -396.0'
+EDBG Romero t  40.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-431.0 2561.0 -104.0' pos '-297.9 2455.3 -136.0' actnode '-431.0 2561.0 -104.0' acttime  40.3 best 186.2 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 1 owner Carmack shopmode 1 queue '785.0 2145.0 -396.0'
+EDBG Carmack t  40.3 shop 1 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '780.8 2226.9 -456.8' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 1 owner Carmack shopmode 1 queue '785.0 2145.0 -396.0'
+ARGDBG Carmack pick item_health u  46.4 | w   5.0 a 0 h  33.2 r 0 p   3.9 o 0 ws 3 streak 0
+ARGEVT Carmack goal item_health
+ARGEVT Carmack route 4 start '785.0 2145.0 -396.0' goal '1265.0 1697.0 -408.0'
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  40.5 pos '992.0 755.9 -295.4' spd  64.3 yaw 50 mode 2 st 0 gl 1 hp 181 frg 0
+ARGLOG Romero t  40.5 pos '-350.2 2491.6 -120.0' spd 323.8 yaw 154 mode 2 st 2 gl 0 hp 100 frg 0
+ARGUS routecache adopt
+ARGEVT Carmack route 4 start '785.0 2145.0 -396.0' goal '1265.0 1697.0 -408.0'
+ARGLOG Carmack t  40.5 pos '785.6 2228.3 -456.4' spd  50.2 yaw 314 mode 0 st 5 gl 1 hp 40 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGUS routecache adopt
+ARGEVT Carmack route 4 start '785.0 2145.0 -396.0' goal '1265.0 1697.0 -408.0'
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGEVT Carmack routefail
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  41.0 pos '992.0 792.8 -295.8' spd  78.9 yaw 47 mode 2 st 0 gl 1 hp 180 frg 0
+ARGLOG Romero t  41.0 pos '-466.6 2607.9 -104.0' spd 320.2 yaw 190 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  41.0 pos '828.3 2236.5 -455.2' spd  94.3 yaw 311 mode 0 st 5 gl 1 hp 32 frg 0
+ARGEVT Joe Rogan swim
+ARGUS Romero wallslide
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  41.3 shop 0 goal weapon_supernailgun mode 2 pending 0 node '1201.0 961.0 -256.0' pos '992.0 816.6 -294.8' actnode '1201.0 961.0 -256.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  41.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-559.0 2721.0 -104.0' pos '-504.6 2697.8 -96.0' actnode '-559.0 2721.0 -104.0' acttime  41.3 best  68.3 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  41.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '856.6 2233.8 -455.7' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGEVT Joe Rogan swim
+ARGEVT Romero lift
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Romero hazard
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  41.5 pos '992.0 837.1 -295.2' spd  91.2 yaw 42 mode 2 st 0 gl 1 hp 180 frg 0
+PDBG Romero t  41.5 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-559.0 2593.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  41.5 best  55.0
+ARGLOG Romero t  41.5 pos '-554.8 2705.8 -104.0' spd 386.3 yaw 278 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  41.5 pos '881.5 2230.4 -456.1' spd 114.9 yaw 310 mode 0 st 5 gl 1 hp 32 frg 0
+ARGEVT Carmack swim
+ARGEVT Romero board
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Joe Rogan swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGUS Joe Rogan wallslide
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGLOG Joe Rogan t  42.0 pos '992.0 921.5 -264.0' spd 210.9 yaw 31 mode 2 st 0 gl 1 hp 179 frg 0
+PDBG Romero t  42.0 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground plat model *7 gtop -52.4 node '-559.0 2593.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  42.0 best  55.0
+ARGLOG Romero t  42.0 pos '-566.4 2673.9 -29.4' spd 0 yaw 283 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  42.0 pos '947.6 2230.7 -455.3' spd 137.0 yaw 258.1 mode 0 st 5 gl 1 hp 24 frg 0
+ARGEVT Carmack swim
+ARGEVT Joe Rogan hazard
+ARGUS Joe Rogan actionfail '1201.0 961.0 -256.0'
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+EDBG Joe Rogan t  42.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '980.6 947.9 -248.0' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  42.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-559.0 2593.0  56.0' pos '-566.4 2673.9   9.2' actnode '-559.0 2721.0 -104.0' acttime  42.3 best  55.0 door worldspawn lift 1 wait 1 swim 0 gait  34.8 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  42.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '978.0 2214.0 -455.8' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGUS Romero wallslide
+ARGLOG Joe Rogan t  42.6 pos '908.7 972.6 -248.0' spd 320 yaw 161.9 mode 0 st 0 gl 1 hp 179 frg 0
+PDBG Romero t  42.6 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-527.0 2497.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  42.5 best  55.0
+ARGLOG Romero t  42.6 pos '-548.8 2634.3  56.0' spd 183.5 yaw 297 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  42.6 pos '1004.7 2193.0 -456.1' spd 133.4 yaw 258.1 mode 0 st 5 gl 1 hp 20 frg 0
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGLOG Joe Rogan t  43.1 pos '838.4 1034.7 -248.0' spd 329.2 yaw  17.9 mode 0 st 0 gl 1 hp 178 frg 0
+PDBG Romero t  43.1 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-399.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  43.0 best  55.0
+ARGLOG Romero t  43.1 pos '-490.0 2487.7  56.0' spd 321.1 yaw 330 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  43.1 pos '997.8 2192.0 -455.0' spd  81.7 yaw 258.1 mode 0 st 5 gl 1 hp 20 frg 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+EDBG Joe Rogan t  43.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '914.0 1070.8 -248.0' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  43.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-448.8 2416.8  41.1' actnode '-559.0 2721.0 -104.0' acttime  43.3 best  55.0 door worldspawn lift 1 wait 0 swim 0 gait  34.8 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  43.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '976.0 2192.0 -455.2' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  43.6 pos '976.7 1096.5 -248.0' spd 101.7 yaw 165.2 mode 0 st 0 gl 1 hp 178 frg 0
+PDBG Romero t  43.6 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  43.5 best  55.0
+ARGLOG Romero t  43.6 pos '-417.1 2416.0 -25.7' spd 0 yaw 358 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  43.6 pos '976.0 2192.0 -455.5' spd 0 yaw 258.1 mode 0 st 5 gl 1 hp 12 frg 0
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGUS Joe Rogan wallslide
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  44.1 pos '861.2 1103.4 -248.0' spd  46.5 yaw 357.7 mode 0 st 0 gl 1 hp 177 frg 0
+PDBG Romero t  44.1 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  44.0 best  55.0
+ARGLOG Romero t  44.1 pos '-410.1 2416.0 -136.0' spd 0 yaw 358 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  44.1 pos '976.0 2192.0 -455.1' spd 0 yaw 258.1 mode 0 st 5 gl 1 hp 12 frg 0
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack stall
+EDBG Joe Rogan t  44.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '926.9 1100.9 -248.0' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  44.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-410.1 2416.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  44.3 best  55.0 door worldspawn lift 1 wait 1 swim 0 gait  34.8 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  44.3 shop 0 goal worldspawn mode 0 pending 1 node '  0.0   0.0   0.0' pos '976.0 2192.0 -455.5' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGUS Joe Rogan hesitate settle
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGLOG Joe Rogan t  44.6 pos '977.5 1097.8 -248.0' spd   4.7 yaw 182.2 mode 0 st 0 gl 1 hp 177 frg 0
+PDBG Romero t  44.6 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  44.5 best  55.0
+ARGLOG Romero t  44.6 pos '-410.1 2416.0 -136.0' spd 0 yaw 358 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  44.6 pos '986.6 2197.9 -456.3' spd  52.5 yaw  32.4 mode 0 st 6 gl 1 hp 8 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  45.1 pos '977.5 1097.8 -248.0' spd 0 yaw 182.2 mode 0 st 0 gl 1 hp 176 frg 0
+PDBG Romero t  45.1 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  45.1 best  55.0
+ARGLOG Romero t  45.1 pos '-410.1 2416.0 -136.0' spd 0 yaw 358 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  45.1 pos '1018.4 2216.4 -455.2' spd  85.7 yaw  32.4 mode 0 st 6 gl 1 hp 8 frg 0
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+EDBG Joe Rogan t  45.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '977.5 1097.8 -248.0' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  45.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-410.1 2416.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  45.3 best  55.0 door worldspawn lift 1 wait 1 swim 0 gait  34.8 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  45.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '1036.8 2227.4 -454.8' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGEVT Carmack swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGLOG Joe Rogan t  45.6 pos '977.5 1097.8 -248.0' spd 0 yaw 182.2 mode 0 st 0 gl 1 hp 175 frg 0
+PDBG Romero t  45.6 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  45.6 best  55.0
+ARGLOG Romero t  45.6 pos '-410.1 2416.0 -136.0' spd 0 yaw 358 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  45.6 pos '1063.5 2243.6 -456.5' spd 114.5 yaw  32.4 mode 0 st 6 gl 1 hp 4 frg 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGLOG Joe Rogan t  46.1 pos '977.5 1097.8 -248.0' spd 0 yaw 226.0 mode 0 st 0 gl 1 hp 175 frg 0
+PDBG Romero t  46.1 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  46.1 best  55.0
+ARGLOG Romero t  46.1 pos '-410.1 2416.0 -136.0' spd 0 yaw 358 mode 2 st 2 gl 0 hp 100 frg 0
+ARGLOG Carmack t  46.1 pos '1119.8 2278.1 -455.3' spd 139.7 yaw  32.4 mode 0 st 6 gl 1 hp 4 frg 0
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+EDBG Joe Rogan t  46.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '977.5 1097.8 -248.0' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  46.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-410.1 2416.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  46.3 best  55.0 door worldspawn lift 1 wait 1 swim 0 gait  34.8 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  46.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '1146.5 2294.5 -455.0' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack swim
+ARGDBG Carmack pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 3 streak 1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack swim
+ARGEVT Carmack death world pos '1180.4 2315.5 -455.2'
+ARGLOG Joe Rogan t  46.6 pos '977.1 1097.4 -248.0' spd  44.8 yaw 226.0 mode 0 st 0 gl 1 hp 174 frg 0
+PDBG Romero t  46.6 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  46.6 best  55.0
+ARGLOG Romero t  46.6 pos '-410.1 2416.0 -136.0' spd 0 yaw 358 mode 2 st 2 gl 0 hp 100 frg 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGLOG Joe Rogan t  47.1 pos '873.6 986.4 -248.0' spd 320.0 yaw 226.0 mode 0 st 0 gl 1 hp 174 frg 0
+PDBG Romero t  47.1 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  47.1 best  55.0
+ARGLOG Romero t  47.1 pos '-357.6 2393.0 -136.0' spd 126.2 yaw 1 mode 2 st 2 gl 0 hp 100 frg 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+EDBG Joe Rogan t  47.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '826.4 935.8 -280.0' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  47.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-357.6 2393.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  47.3 best  55.0 door worldspawn lift 1 wait 1 swim 0 gait  34.8 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  47.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '1225.7 2343.6 -504.0' actnode '  0.0   0.0   0.0' acttime  37.3 best 101.2 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGLOG Joe Rogan t  47.6 pos '761.1 866.9 -315.5' spd 315.0 yaw 226.0 mode 0 st 0 gl 1 hp 173 frg 0
+PDBG Romero t  47.6 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  47.6 best  55.0
+ARGLOG Romero t  47.6 pos '-357.6 2393.0 -136.0' spd 0 yaw 1 mode 2 st 2 gl 0 hp 100 frg 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGUS difficulty Carmack t  48.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack respawn
+ARGLOG Carmack t  48.1 pos '528.0 1888.0 -168.0' spd 0 yaw 138.2 mode 0 st 6 gl 1 hp 100 frg -1
+ARGDBG Carmack pick weapon_rocketlauncher u  22.5 | w  10.8 a 0 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGEVT Carmack route 15 start '465.0 1921.0 -168.0' goal '145.0 2337.0  40.0'
+ARGLOG Joe Rogan t  48.1 pos '722.7 876.1 -295.7' spd 167.3 yaw  91.9 mode 0 st 0 gl 1 hp 173 frg 0
+PDBG Romero t  48.1 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  48.1 best  55.0
+ARGLOG Romero t  48.1 pos '-357.6 2393.0 -136.0' spd 0 yaw 1 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  48.3 shop 1 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '719.6 907.2 -295.5' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 1 owner Joe Rogan shopmode 1 queue '753.0 929.0 -328.0'
+EDBG Romero t  48.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-357.6 2393.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  48.3 best  55.0 door worldspawn lift 1 wait 1 swim 0 gait  34.8 busy 1 owner Joe Rogan shopmode 1 queue '753.0 929.0 -328.0'
+EDBG Carmack t  48.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '305.0 1921.0 -168.0' pos '472.9 1917.9 -168.0' actnode '305.0 1921.0 -168.0' acttime  48.3 best 181.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 1 owner Joe Rogan shopmode 1 queue '753.0 929.0 -328.0'
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  48.6 pos '385.0 1934.3 -168.0' spd 328.5 yaw 167 mode 2 st 6 gl 1 hp 100 frg -1
+ARGLOG Joe Rogan t  48.7 pos '710.8 956.6 -295.3' spd  86.1 yaw 248.9 mode 0 st 0 gl 1 hp 172 frg 0
+PDBG Romero t  48.7 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  48.6 best  55.0
+ARGLOG Romero t  48.7 pos '-357.6 2393.0 -136.0' spd 0 yaw 1 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  49.1 pos '221.0 1913.4 -184.0' spd 337.3 yaw 159 mode 2 st 6 gl 1 hp 100 frg -1
+ARGLOG Joe Rogan t  49.2 pos '666.0 947.0 -295.1' spd  96.2 yaw 248.9 mode 0 st 0 gl 1 hp 172 frg 0
+PDBG Romero t  49.2 fighting 0 owned 1 sprint 0 rj 0 feet -1 ground worldspawn model maps/e1m1.bsp gtop 0 node '-239.0 2337.0  56.0' goal weapon_rocketlauncher watch '-559.0 2721.0 -104.0' clock  49.1 best  55.0
+ARGLOG Romero t  49.2 pos '-357.6 2393.0 -136.0' spd 0 yaw 1 mode 2 st 2 gl 0 hp 100 frg 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  49.3 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '650.8 940.3 -296.1' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  49.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-239.0 2337.0  56.0' pos '-357.6 2393.0 -136.0' actnode '-559.0 2721.0 -104.0' acttime  49.3 best  55.0 door worldspawn lift 1 wait 1 swim 0 gait  34.8 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  49.3 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node ' 17.0 2017.0 -184.0' pos '142.0 1923.8 -184.0' actnode ' 17.0 2017.0 -184.0' acttime  49.3 best 164.9 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Romero abandon
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGLOG Carmack t  49.6 pos ' 62.0 1962.2 -184.0' spd 320.4 yaw 130 mode 2 st 6 gl 1 hp 100 frg -1
+ARGLOG Joe Rogan t  49.7 pos '644.9 958.8 -296.5' spd  62.9 yaw  54.8 mode 0 st 0 gl 1 hp 171 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Romero t  49.7 pos '-269.8 2382.3 -136.0' spd 320.0 yaw 352.5 mode 0 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGUS Romero wallslide
+ARGEVT Romero hazard
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Romero engage Carmack
+ARGUS Romero threatmove range 2
+ARGEVT Carmack engage Romero
+ARGUS Carmack threatmove range 2
+ARGLOG Carmack t  50.1 pos '-85.5 2030.3 -168.0' spd 287.1 yaw 115.3 mode 2 st 6 gl 1 hp 100 frg -1
+ARGLOG Joe Rogan t  50.2 pos '629.0 988.0 -295.3' spd  77.8 yaw 205.8 mode 0 st 0 gl 1 hp 171 frg 0
+ARGLOG Romero t  50.2 pos '-293.7 2392.0 -136.0' spd 126.9 yaw 214.5 mode 0 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  50.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '617.4 993.3 -295.7' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  50.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-258.9 2416.5 -136.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait  34.8 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  50.4 shop 0 goal weapon_rocketlauncher mode 2 pending 0 node '-143.0 2049.0 -152.0' pos '-71.3 2080.4 -168.0' actnode '-143.0 2049.0 -152.0' acttime  50.3 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  50.6 pos '-124.3 2068.2 -152.0' spd 322.6 yaw 111.2 mode 2 st 6 gl 1 hp 100 frg -1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  50.7 pos '588.1 1001.2 -295.1' spd  96.1 yaw 205.8 mode 0 st 0 gl 1 hp 170 frg 0
+ARGLOG Romero t  50.7 pos '-165.5 2445.1 -136.0' spd  87.7 yaw 283.1 mode 0 st 2 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Carmack routefail
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Carmack pick weapon_nailgun u   4.3 | w   2.1 a   1.7 h 0 r 0 p 0 o 0 ws 4 streak 1
+ARGEVT Carmack goal weapon_nailgun
+ARGEVT Carmack route 13 start '-207.0 2113.0 -136.0' goal '465.0 577.0  24.0'
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  51.2 pos '-290.2 2082.4 -152.0' spd 320.6 yaw  91.6 mode 2 st 6 gl 1 hp 100 frg -1
+ARGLOG Joe Rogan t  51.2 pos '555.1 1012.9 -295.6' spd  55.6 yaw  20.9 mode 0 st 0 gl 1 hp 170 frg 0
+ARGLOG Romero t  51.2 pos '-298.7 2402.0 -136.0' spd 308.8 yaw 268.8 mode 0 st 2 gl 0 hp 92 frg 0
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  51.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '559.5 1021.3 -295.4' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  51.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-340.7 2393.9 -136.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  51.4 shop 0 goal weapon_nailgun mode 2 pending 0 node '-143.0 2049.0 -152.0' pos '-326.8 2103.9 -136.0' actnode '-143.0 2049.0 -152.0' acttime  51.3 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  51.7 pos '-247.7 2143.6 -136.0' spd 320.9 yaw  95.4 mode 2 st 6 gl 1 hp 100 frg -1
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGLOG Joe Rogan t  51.7 pos '575.5 1041.6 -295.0' spd  81.0 yaw  20.9 mode 0 st 0 gl 1 hp 169 frg 0
+ARGLOG Romero t  51.7 pos '-252.1 2366.8 -136.0' spd 320.7 yaw 272.4 mode 0 st 2 gl 0 hp 92 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Carmack hazard
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGUS Carmack wallslide
+ARGLOG Carmack t  52.2 pos '-144.7 2251.2 -136.0' spd 320.0 yaw 155.1 mode 2 st 6 gl 1 hp 100 frg -1
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  52.2 pos '611.0 1073.4 -295.8' spd 107.4 yaw  20.9 mode 0 st 0 gl 1 hp 169 frg 0
+ARGLOG Romero t  52.2 pos '-340.9 2278.5 -136.0' spd 379.2 yaw 331.3 mode 0 st 2 gl 0 hp 68 frg 0
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+EDBG Joe Rogan t  52.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '620.7 1081.8 -295.2' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  52.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-351.9 2220.1 -136.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  52.4 shop 0 goal weapon_nailgun mode 2 pending 0 node '-143.0 2049.0 -152.0' pos '-150.8 2316.1 -136.0' actnode '-143.0 2049.0 -152.0' acttime  52.3 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  52.7 pos '-165.1 2287.6 -136.0' spd 278.0 yaw 223.9 mode 2 st 6 gl 1 hp 100 frg -1
+ARGLOG Joe Rogan t  52.7 pos '602.0 1087.1 -295.5' spd  60.5 yaw 199.9 mode 0 st 0 gl 1 hp 168 frg 0
+ARGLOG Romero t  52.7 pos '-309.4 2110.7 -136.0' spd 105.4 yaw  43.8 mode 0 st 2 gl 0 hp 68 frg 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGLOG Carmack t  53.2 pos '-319.7 2341.8 -136.0' spd 342.3 yaw 230.9 mode 0 st 6 gl 1 hp 76 frg -1
+ARGEVT Joe Rogan swim
+ARGLOG Joe Rogan t  53.3 pos '562.8 1087.6 -295.3' spd  91.0 yaw 199.9 mode 0 st 0 gl 1 hp 168 frg 0
+ARGLOG Romero t  53.3 pos '-434.7 2176.4 -136.0' spd 325.8 yaw  68.5 mode 0 st 2 gl 0 hp 44 frg 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  53.4 shop 1 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '555.8 1087.0 -294.9' actnode '  0.0   0.0   0.0' acttime  39.2 best 214.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 1 owner Joe Rogan shopmode 1 queue '561.0 1121.0 -312.0'
+EDBG Romero t  53.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-467.7 2197.1 -136.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 1 owner Joe Rogan shopmode 1 queue '561.0 1121.0 -312.0'
+EDBG Carmack t  53.4 shop 0 goal weapon_nailgun mode 0 pending 1 node '  0.0   0.0   0.0' pos '-371.8 2375.0 -136.0' actnode '-143.0 2049.0 -152.0' acttime  53.3 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 1 owner Joe Rogan shopmode 1 queue '561.0 1121.0 -312.0'
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGUS Romero threatmove retreat 2
+ARGEVT Romero retreat
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  53.7 pos '-344.1 2346.6 -136.0' spd 320.9 yaw 252.3 mode 0 st 6 gl 1 hp 76 frg -1
+ARGLOG Joe Rogan t  53.8 pos '572.2 1087.4 -296.2' spd  52.1 yaw   4.0 mode 0 st 0 gl 1 hp 167 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Romero t  53.8 pos '-389.7 2163.9 -136.0' spd 328.5 yaw  83.6 mode 0 st 2 gl 0 hp 20 frg 0
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick none u 0 | w 0 a 0 h 0 r 0 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan swim
+ARGLOG Carmack t  54.2 pos '-203.7 2261.4 -136.0' spd 320.1 yaw 259.2 mode 0 st 6 gl 1 hp 76 frg -1
+ARGEVT Joe Rogan swim
+ARGDBG Joe Rogan pick item_armor2 u  19.9 | w   7.8 a   4.4 h   0.8 r  23.7 p   0.7 o   3.2 ws 7 streak 0
+ARGEVT Joe Rogan goal item_armor2
+ARGEVT Joe Rogan route 7 start '561.0 1121.0 -312.0' goal '1297.0 1057.0 -408.0'
+ARGLOG Joe Rogan t  54.3 pos '609.4 1089.1 -295.0' spd  91.3 yaw 250 mode 2 st 0 gl 1 hp 167 frg 0
+ARGLOG Romero t  54.3 pos '-237.5 2096.8 -152.0' spd 332.0 yaw  86.1 mode 0 st 2 gl 0 hp 4 frg 0
+ARGEVT Joe Rogan swim
+EDBG Joe Rogan t  54.4 shop 0 goal item_armor2 mode 2 pending 0 node '561.0 961.0 -344.0' pos '620.2 1089.8 -301.9' actnode '561.0 961.0 -344.0' acttime  54.3 best 147.6 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  54.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '-200.0 2078.3 -152.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  54.4 shop 0 goal weapon_nailgun mode 0 pending 1 node '  0.0   0.0   0.0' pos '-159.8 2234.0 -136.0' actnode '-143.0 2049.0 -152.0' acttime  54.4 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Joe Rogan shopmode 0 queue '  0.0   0.0   0.0'
+ARGDBG Romero pick item_health u 169.4 | w   3.5 a   2.9 h 100.8 r 0 p   0.4 o   2.1 ws 0 streak 0
+ARGEVT Romero goal item_health
+ARGEVT Romero route 2 start '-207.0 2113.0 -136.0' goal ' 17.0 2017.0 -184.0'
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack route 13 start '-175.0 2241.0 -136.0' goal '465.0 577.0  24.0'
+ARGLOG Carmack t  54.7 pos '-237.6 2189.9 -136.0' spd 341.5 yaw 301.7 mode 0 st 6 gl 1 hp 76 frg -1
+ARGLOG Joe Rogan t  54.8 pos '644.9 1088.5 -312.0' spd 308.5 yaw 324 mode 2 st 0 gl 1 hp 166 frg 0
+ARGLOG Romero t  54.8 pos '-83.5 2038.0 -168.0' spd 320.2 yaw 124.8 mode 1 st 2 gl 0 hp 4 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Carmack route 13 start '-303.0 2145.0 -136.0' goal '465.0 577.0  24.0'
+ARGUS Romero wallslide
+ARGLOG Carmack t  55.2 pos '-317.1 2038.5 -136.0' spd 338.1 yaw 359.9 mode 2 st 6 gl 1 hp 76 frg -1
+ARGLOG Joe Rogan t  55.3 pos '576.5 940.3 -318.9' spd 305.8 yaw 3 mode 2 st 0 gl 1 hp 166 frg 0
+ARGLOG Romero t  55.3 pos ' 55.7 2071.2 -184.0' spd 178.5 yaw 182.3 mode 1 st 2 gl 0 hp 19 frg 0
+ARGEVT Romero hazard
+EDBG Joe Rogan t  55.4 shop 0 goal item_armor2 mode 2 pending 0 node '817.0 961.0 -280.0' pos '567.6 919.0 -314.1' actnode '817.0 961.0 -280.0' acttime  55.1 best 223.2 door worldspawn lift 0 wait 0 swim 1 gait  46.6 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  55.4 shop 0 goal item_health mode 1 pending 0 node '  0.0   0.0   0.0' pos ' 47.4 2088.0 -184.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  55.4 shop 0 goal weapon_nailgun mode 2 pending 0 node '-143.0 2049.0 -152.0' pos '-313.7 1983.9 -136.0' actnode '-143.0 2049.0 -152.0' acttime  55.4 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack hazard
+ARGLOG Carmack t  55.8 pos '-300.7 2061.0 -152.0' spd 321.6 yaw  12.8 mode 2 st 6 gl 1 hp 72 frg -1
+ARGLOG Joe Rogan t  55.8 pos '621.3 914.2 -298.2' spd 187.5 yaw 10 mode 2 st 0 gl 1 hp 165 frg 0
+ARGLOG Romero t  55.8 pos ' 56.0 2096.0 -184.0' spd 0 yaw 191.5 mode 1 st 2 gl 0 hp 19 frg 0
+ARGEVT Joe Rogan swim
+ARGEVT Romero coverroute
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGUS Romero wallslide
+ARGLOG Carmack t  56.3 pos '-270.0 2224.0 -136.0' spd 326.3 yaw 341.9 mode 2 st 6 gl 1 hp 72 frg -1
+ARGLOG Joe Rogan t  56.3 pos '723.1 928.4 -296.2' spd 210.5 yaw 11 mode 2 st 0 gl 1 hp 165 frg 0
+ARGEVT Joe Rogan swim
+ARGLOG Romero t  56.3 pos ' 56.0 2088.5 -184.0' spd 0 yaw 160.0 mode 1 st 2 gl 0 hp 19 frg 0
+ARGEVT Romero pursue
+ARGEVT Carmack pursue
+EDBG Joe Rogan t  56.4 shop 0 goal item_armor2 mode 2 pending 0 node '817.0 961.0 -280.0' pos '744.1 931.7 -295.8' actnode '817.0 961.0 -280.0' acttime  56.4 best  82.9 door worldspawn lift 0 wait 0 swim 1 gait  46.6 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  56.4 shop 0 goal item_health mode 1 pending 0 node '  0.0   0.0   0.0' pos ' 47.7 2089.9 -184.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  56.4 shop 0 goal weapon_nailgun mode 2 pending 0 node '-143.0 2049.0 -152.0' pos '-242.4 2263.6 -136.0' actnode '-143.0 2049.0 -152.0' acttime  56.4 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Joe Rogan swim
+ARGEVT Joe Rogan swim
+ARGEVT Carmack hazard
+ARGUS Carmack hunch item_artifact_invulnerability
+ARGLOG Carmack t  56.8 pos '-161.9 2275.8 -136.0' spd 149.9 yaw 197.1 mode 0 st 6 gl 1 hp 72 frg -1
+ARGDBG Carmack pick item_health u  10.2 | w   4.7 a   3.4 h   7.3 r 0 p   0.4 o   1.9 ws 0 streak 0
+ARGEVT Carmack goal item_health
+ARGEVT Carmack route 36 start '-175.0 2241.0 -136.0' goal '945.0 2433.0 -112.0'
+ARGEVT Carmack pursue
+ARGLOG Joe Rogan t  56.8 pos '846.1 955.1 -264.0' spd 325.8 yaw 0 mode 2 st 0 gl 1 hp 164 frg 0
+ARGLOG Romero t  56.8 pos '-65.9 2096.0 -168.0' spd  86.3 yaw 172 mode 1 st 2 gl 0 hp 19 frg 0
+ARGLOG Carmack t  57.3 pos '-213.5 2245.6 -136.0' spd 320.0 yaw 313.5 mode 2 st 6 gl 1 hp 72 frg -1
+ARGUS Joe Rogan wallslide
+ARGLOG Joe Rogan t  57.3 pos '1004.0 973.1 -248.0' spd 162.3 yaw 336 mode 2 st 0 gl 1 hp 164 frg 0
+ARGLOG Romero t  57.3 pos '-57.9 2062.7 -184.0' spd 326.8 yaw 134.7 mode 1 st 2 gl 0 hp 19 frg 0
+EDBG Joe Rogan t  57.4 shop 0 goal item_armor2 mode 2 pending 0 node '1201.0 961.0 -256.0' pos '1028.7 981.5 -248.0' actnode '1201.0 961.0 -256.0' acttime  57.4 best 189.8 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  57.4 shop 0 goal item_health mode 1 pending 0 node '  0.0   0.0   0.0' pos '-31.3 2044.1 -184.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  57.4 shop 0 goal item_health mode 2 pending 0 node '-143.0 2049.0 -152.0' pos '-172.3 2265.7 -136.0' actnode '  0.0   0.0   0.0' acttime  56.6 best  79.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS Joe Rogan jumpapproach 0 actual 332.0
+ARGEVT Joe Rogan jump
+ARGUS Joe Rogan aircontrol
+ARGEVT Carmack pursue
+ARGEVT Romero pursue
+ARGLOG Carmack t  57.8 pos '-151.4 2190.5 -136.0' spd 324.3 yaw 294 mode 2 st 6 gl 1 hp 72 frg -1
+ARGLOG Joe Rogan t  57.8 pos '1088.0 976.0 -207.0' spd 0 yaw 316 mode 2 st 0 gl 1 hp 163 frg 0
+ARGLOG Romero t  57.8 pos '-19.9 2038.1 -184.0' spd 320.0 yaw 139 mode 1 st 2 gl 0 hp 19 frg 0
+ARGUS Carmack wallslide
+ARGEVT Joe Rogan hazard
+ARGEVT Romero death Carmack pos '-66.8 2078.0 -168.0'
+ARGUS Carmack watch spawn
+ARGDBG Carmack pick  u  56.1 | w  15.6 a   6.5 h  15.0 r  19.3 p   0.7 o  56.1 ws 0 streak 0
+ARGEVT Carmack goal backpack
+ARGEVT Carmack route 1 start '-207.0 2113.0 -136.0' goal '-143.0 2049.0 -152.0'
+ARGLOG Carmack t  58.3 pos '-178.6 2084.0 -152.0' spd 175.7 yaw 355 mode 1 st 6 gl 1 hp 72 frg 0
+ARGLOG Joe Rogan t  58.4 pos '1087.1 992.4 -248.0' spd  60.7 yaw 311 mode 2 st 0 gl 1 hp 163 frg 0
+EDBG Joe Rogan t  58.4 shop 0 goal item_armor2 mode 2 pending 0 node '1201.0 961.0 -256.0' pos '1086.9 997.3 -248.0' actnode '1201.0 961.0 -256.0' acttime  57.6 best 121.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  58.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos ' 16.5 2032.6 -141.1' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  58.4 shop 0 goal  mode 1 pending 0 node '  0.0   0.0   0.0' pos '-142.0 2076.1 -152.0' actnode '  0.0   0.0   0.0' acttime  58.2 best  76.3 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGEVT Carmack jump
+ARGUS Joe Rogan wallslide
+ARGLOG Carmack t  58.8 pos '-20.0 2058.6 -125.1' spd 320.8 yaw  38.5 mode 1 st 6 gl 1 hp 72 frg 0
+ARGLOG Joe Rogan t  58.9 pos '1087.1 1039.7 -248.0' spd  73.2 yaw 300 mode 2 st 0 gl 1 hp 162 frg 0
+ARGDBG Carmack pick weapon_grenadelauncher u  33.1 | w  15.9 a 0 h  15.3 r  19.8 p   0.7 o   1.7 ws 0 streak 0
+ARGEVT Carmack goal weapon_grenadelauncher
+ARGEVT Carmack route 14 start ' 17.0 2017.0 -184.0' goal '1201.0 1057.0 -408.0'
+ARGEVT Joe Rogan hazard
+ARGEVT Carmack hazard
+ARGLOG Carmack t  59.3 pos ' 40.0 2092.9 -184.0' spd 286.9 yaw 183 mode 2 st 6 gl 2 hp 72 frg 0
+ARGLOG Joe Rogan t  59.4 pos '1088.0 1067.0 -248.0' spd  40.1 yaw 296 mode 2 st 0 gl 1 hp 162 frg 0
+EDBG Joe Rogan t  59.4 shop 0 goal item_armor2 mode 2 pending 0 node '1201.0 961.0 -256.0' pos '1088.0 1069.2 -248.0' actnode '1201.0 961.0 -256.0' acttime  57.6 best 121.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  59.4 shop 0 goal worldspawn mode 0 pending 0 node '  0.0   0.0   0.0' pos '114.3 1979.3 -184.0' actnode '  0.0   0.0   0.0' acttime  49.3 best  55.0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  59.4 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '145.0 1889.0 -184.0' pos '  3.8 2095.1 -184.0' actnode '  0.0   0.0   0.0' acttime  58.2 best  76.3 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Carmack shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS Joe Rogan wallslide
+ARGUS difficulty Romero t  59.7 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero respawn
+ARGEVT Carmack engage Romero
+ARGEVT Romero engage Carmack
+ARGLOG Romero t  59.7 pos '528.0 1888.0 -168.0' spd 0 yaw 178.8 mode 0 st 2 gl 0 hp 100 frg 0
+ARGDBG Romero pick item_armor2 u  32.7 | w   5.3 a 0 h 0 r  19.5 p   0.5 o   1.6 ws 4 streak 0
+ARGEVT Romero goal item_armor2
+ARGEVT Romero route 15 start '465.0 1921.0 -168.0' goal '1297.0 1057.0 -408.0'
+ARGLOG Carmack t  59.8 pos '-69.4 2063.2 -168.0' spd 276.7 yaw 342.6 mode 2 st 6 gl 2 hp 72 frg 0
+ARGLOG Joe Rogan t  59.9 pos '1088.0 1014.5 -248.0' spd 112.7 yaw 305 mode 2 st 0 gl 1 hp 161 frg 0
+ARGUS Carmack threatmove range 2
+ARGUS Romero threatmove range 2
+ARGEVT Joe Rogan hazard
+ARGEVT Romero grab item_artifact_invulnerability
+ARGLOG Romero t  60.2 pos '405.8 1911.8 -168.0' spd 320.1 yaw 172.9 mode 2 st 2 gl 0 hp 92 frg 0
+ARGLOG Carmack t  60.4 pos ' -6.5 1911.9 -184.0' spd 320.3 yaw 358.6 mode 2 st 6 gl 2 hp 64 frg 0
+ARGLOG Joe Rogan t  60.4 pos '1084.8 988.6 -248.0' spd  81.7 yaw 313 mode 2 st 0 gl 1 hp 161 frg 0
+EDBG Joe Rogan t  60.5 shop 0 goal item_armor2 mode 2 pending 0 node '1201.0 961.0 -256.0' pos '1086.5 994.1 -248.0' actnode '1201.0 961.0 -256.0' acttime  57.6 best 121.9 door worldspawn lift 0 wait 0 swim 0 gait  46.6 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Romero t  60.5 shop 0 goal item_armor2 mode 2 pending 0 node '145.0 1889.0 -184.0' pos '320.1 1902.7 -168.0' actnode '  0.0   0.0   0.0' acttime 0 best 0 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+EDBG Carmack t  60.5 shop 0 goal weapon_grenadelauncher mode 2 pending 0 node '145.0 1889.0 -184.0' pos '  0.1 1878.8 -184.0' actnode '145.0 1889.0 -184.0' acttime  60.3 best 266.4 door worldspawn lift 0 wait 0 swim 0 gait 0 busy 0 owner Romero shopmode 0 queue '  0.0   0.0   0.0'
+ARGUS Joe Rogan wallslide
+ARGUS Joe Rogan actionfail '1201.0 961.0 -256.0'
+ARGEVT Joe Rogan stall
+ARGEVT Joe Rogan jump
+ARGEVT Romero hazard
+ARGDBG Joe Rogan pick item_armor1 u   3.5 | w   1.4 a   3.5 h 0 r   4.2 p 0 o 0 ws 7 streak 0
+ARGEVT Joe Rogan goal item_armor1
+ARGEVT Joe Rogan route 4 start '977.0 993.0 -248.0' goal '689.0 481.0 104.0'
+ARGLOG Romero t  60.7 pos '286.5 1882.7 -168.0' spd  85.5 yaw 184.8 mode 2 st 2 gl 0 hp 84 frg 0
+ARGLOG Carmack t  60.9 pos ' 38.3 1966.3 -184.0' spd 322.9 yaw 349.0 mode 2 st 6 gl 2 hp 64 frg 0
+ARGLOG Joe Rogan t  60.9 pos '1069.3 1027.2 -205.8' spd  84.4 yaw 242 mode 2 st 1 gl 1 hp 160 frg 0
+ARGUS Carmack wallslide
+ARGLOG Romero t  61.2 pos '255.3 1883.5 -184.0' spd 246.8 yaw 143.0 mode 2 st 2 gl 0 hp 60 frg 0

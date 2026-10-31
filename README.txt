@@ -16,6 +16,9 @@ Development combat also reassesses opponents using observed threats and
 recent damage while retaining focus, reaction delay and retreat intent.
 See docs/combat-attention.md for the decision checks and map evidence.
 
+Development routing preserves water/jump actions and recognises failed
+approaches and stalled lift travel. See docs/e1m5-encounters.md.
+
 PLAY: CLASSIC ENGINES
 --------------------
 1. Copy game/argus next to your Quake installation's id1 folder.

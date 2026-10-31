@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Opponent reassessment passes controlled checks and eight-map safety comparison; perception, shared failed plans, human gait, routing and under-fire recovery active; no deployment |
+| Development source | Water/action execution and lift-progress recovery restore e1m5 contact in the eight-map comparison; perception, target attention and earlier release gates remain in development; no deployment |
 | Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -26,6 +26,13 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Add native water-route and action-decision witnesses at played and 100 ms
+  cadence, including physical failures and supported-wait controls. Compile
+  all 21 maintained private fixture variants in CI.
+- Preserve bounded, engine-proven navigation seats through validated sidecars.
+  Regenerate e1m5's moat escape without manual changes to generated QC.
+
 
 - Reassess opponents during an ongoing fight using recent hostile damage
   and visible powerup cues. Keep a focus margin, bounded decision clocks,
@@ -244,6 +251,14 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Execute affordable route actions when several typed links share endpoints.
+  Preserve underwater depth, supported arrivals and required transitions
+  when an item becomes visible. Complete planned swim exits and low hurdles.
+- Replan actions that stop approaching their route seat. Keep deliberate
+  waits and jump setup, and require lift rides to approach their landing
+  rather than renewing recovery on a crush/reverse cycle. See the [e1m5 investigation](docs/e1m5-encounters.md).
+
 
 - Quarantine new and historical recovery/transfer fixture tapes from native
   match comparisons and default bot-corpus queries, invalidating older cached

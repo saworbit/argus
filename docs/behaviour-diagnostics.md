@@ -5,6 +5,13 @@ gameplay. The current development changes are listed below.
 
 ## Current development status
 
+The [e1m5 investigation](e1m5-encounters.md) adds supported route handoffs,
+capability-aware action execution and bounded failed-action recognition.
+A static pad may wait with support, but an actual lift ride must approach
+its landing; contact and repeated reversal do not establish progress. Historical health definitions are recovered
+through an exact reverse amendment before the older fixture patches.
+
+
 Step 1a visual observation caching, ordinary rocket clearance, shared
 failed-plan recognition and the [human gait work](#human-gait-hesitation-and-cautious-liquid-approach)
 are retained in development. Health/inventory step 1b

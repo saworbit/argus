@@ -38,6 +38,12 @@ reconsider its opponent when another visible player attacks, or when a
 vulnerable alternative beats an invulnerable target. Focus and reaction
 delays remain, and hidden opponent inventory is not used.
 
+Current [route execution work](docs/e1m5-encounters.md) preserves swim and
+jump plans, chooses feasible actions, and replans when movement fails to
+approach a route seat. Static pad waits require support, and lift rides must approach their landing.
+These changes remain in development; the supplied gameplay binaries are
+unchanged.
+
 ## Install and play
 
 ### What you need

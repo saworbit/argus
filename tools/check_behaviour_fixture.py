@@ -16,6 +16,7 @@ takedamage button0 button1 button2 attack_finished nextthink think touch th_pain
 ar_enemy ar_seen ar_lastseen ar_lastfoe ar_goal ar_node ar_pending ar_shopping
 ar_routegen ar_mode ar_moveyaw ar_nextai ar_nextlog ar_nextstall ar_react ar_track
 ar_plan_goal ar_plan_leg ar_plan_best ar_plan_stamp ar_fetchfailed ar_fetchcool
+ar_actionnode ar_actiongoal ar_actionbest ar_actiontime
 ar_plan_visit0 ar_plan_visit1 ar_plan_visit2 ar_plan_visit3
 ar_aimvel ar_aimoff ar_aimprev ar_errtime ar_aimblend ar_mottarget ar_motpos
 ar_mottime ar_motoff ar_motprev ar_motblend ar_retreating ar_dodgetime
