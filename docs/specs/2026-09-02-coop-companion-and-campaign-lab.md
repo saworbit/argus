@@ -30,7 +30,7 @@ Every addition must maintain three core properties:
 
 ---
 
-## 2. Workstream A — Co-op Companion
+## 2. Workstream A - Co-op Companion
 
 ### 2.1 Four-Slot LIFO Goal Stack
 
@@ -158,11 +158,11 @@ Reuse Predator / Mastermind targeting filters:
 
 | Resource | Rule |
 | :--- | :--- |
-| **Weapons on Map** | Human has first claim for 2–3s after spawn/reveal. Bot takes only if human is >512u away or already owns the weapon. |
+| **Weapons on Map** | Human has first claim for 2-3s after spawn/reveal. Bot takes only if human is >512u away or already owns the weapon. |
 | **Keys** | Exactly one carrier. Bot fetches only if human is fighting or down. Deliver directly to locked door; no pocket-touring. |
 | **Backpacks / Corpses** | Bot never loots a teammate's dropped pack. Guards it until respawn. |
 | **Health / Cells** | Bot skips Megahealth / 100s if teammate is below 50 HP and in range. |
-| **Kills** | Finishing tagged monsters is allowed. Sniping lined-up grunts at point-blank is suppressed (300–500ms hold fire if human has LOS). |
+| **Kills** | Finishing tagged monsters is allowed. Sniping lined-up grunts at point-blank is suppressed (300-500ms hold fire if human has LOS). |
 
 #### Item Claim Mutex
 ```c
@@ -195,11 +195,11 @@ On teammate death:
 
 ---
 
-## 3. Workstream B — Campaign Lab Mode
+## 3. Workstream B - Campaign Lab Mode
 
 Extend the deathmatch lab loop to single-player/co-op campaign maps (`id1` episode maps):
 
-1. **Map Suite**: `start`, E1M1–E1M7, with stretch maps (E2M3, E3M4, E4M2).
+1. **Map Suite**: `start`, E1M1-E1M7, with stretch maps (E2M3, E3M4, E4M2).
 2. **Win Conditions**: Exit trigger activation, or named checkpoint (gold key secured, silver door opened, Chthon defeated).
 3. **Fail Taxonomy**:
    - `STUCK_TIMEOUT` (stalled > $N$ seconds)
@@ -208,8 +208,8 @@ Extend the deathmatch lab loop to single-player/co-op campaign maps (`id1` episo
    - `KEY_UNCLAIMED` (key neglected)
    - `NO_RIPPLE` (ripple oracle failed to solve door/switch cascade)
 4. **Dual-Seat Evaluation**:
-   - **Seat A (Autonomous)**: Solo bot — verifies "can it finish the level".
-   - **Seat B (Companion)**: Bot + puppet-human walking recorded path — measures escort fidelity without blocking.
+   - **Seat A (Autonomous)**: Solo bot - verifies "can it finish the level".
+   - **Seat B (Companion)**: Bot + puppet-human walking recorded path - measures escort fidelity without blocking.
 5. **Telemetry Counters**:
    - `escort_break_s`: Time spent >512u away from teammate.
    - `steal_events`: Weapons, packs, or megas picked up against fairness rules.
@@ -217,12 +217,12 @@ Extend the deathmatch lab loop to single-player/co-op campaign maps (`id1` episo
 
 ---
 
-## 4. Workstream C — Deathmatch Polish Transfer
+## 4. Workstream C - Deathmatch Polish Transfer
 
 Enhancements that immediately benefit deathmatch:
 1. **Stand-Pad Targeting**: Path to reachable floor cells rather than brush origins for lifts, doors, and triggers.
 2. **Body-Block Clearance**: If within 48u of teammate and teammate is jumping or firing, sidestep immediately.
-3. **Shared-Target Hold Fire**: 300–500ms delay when ally has point-blank line of sight to a target.
+3. **Shared-Target Hold Fire**: 300-500ms delay when ally has point-blank line of sight to a target.
 4. **Item Mutex in DM**: Claim mutex prevents multiple bots from colliding on the same Megahealth, Quad, or Pentagram.
 
 ---
