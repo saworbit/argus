@@ -169,6 +169,7 @@ python -m unittest discover -s tools -p "test_behaviour*.py"
 python tools/test_compile_private_fixtures.py
 python tools/test_nav_budget.py
 python tools/test_map_intelligence_report.py
+python tools/test_study_comparison.py
 python tools/test_freeze_recovery.py
 python tools/test_mover_transfer.py
 python tools/test_target_attention.py
@@ -371,12 +372,18 @@ distance tie-break and shopping checks. Graph correctness and a short match
 screen do not establish that the bot plays better against people.
 
 Use `--primary freezes` when registering a freeze-recovery arm. The primary
-is frozen in its protocol and forwarded by the report's `--native-gates`
-comparison. Complete both arms before requesting those cards. The runner's
-per-tape `.compare.json` files use the MCP comparison defaults and currently
-do not carry the registered primary; treat them as advisory. A primary
-cannot waive the severe-freeze veto on any individual candidate tape.
-See [#629](https://github.com/saworbit/argus/issues/629) for the propagation gap.
+is frozen in its protocol and passed to native `compare --primary` for
+both per-tape artifacts and the report's `--native-gates` comparison. Before
+creating output or starting a match, the runner rejects baselines with a
+different map list, duration, skill, requested cadence, primary or analysis
+executable hash. Source and program identities may differ between arms;
+each tape must match its own arm's frozen identities and retained raw hash.
+
+New per-tape `.compare.json` files use `registered-native-compare-v1`, with
+`effective_primary`, input identities, the matched protocol and the verbatim
+`native_gate_card`. These single-pair cards remain advisory; complete both
+arms before requesting the final band cards. Older artifacts are unchanged.
+A primary cannot waive the severe-freeze veto on any individual candidate tape.
 The [recovery study](freeze-recovery.md) keeps physical replays separate from
 ordinary map matches:
 

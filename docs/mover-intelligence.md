@@ -147,7 +147,7 @@ retain the difference between observations and proven causes.
 | [#626](https://github.com/saworbit/argus/issues/626) | Completed: native parsing quarantines recovery/transfer fixtures and invalidates older cached labels |
 | [#627](https://github.com/saworbit/argus/issues/627) | Completed: all four engine-free budget/report/receipt suites block fast CI |
 | [#628](https://github.com/saworbit/argus/issues/628) | Diagnose the e1m5 six-second window without assuming a chosen pause or a new mover regression |
-| [#629](https://github.com/saworbit/argus/issues/629) | Carry the registered primary into per-tape comparisons |
+| [#629](https://github.com/saworbit/argus/issues/629) | Completed: per-tape native cards retain the registered primary and refuse incompatible protocols |
 
 The existing [human-play check #610](https://github.com/saworbit/argus/issues/610)
 and [step 1b warning #583](https://github.com/saworbit/argus/issues/583) remain

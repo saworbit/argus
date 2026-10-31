@@ -4497,17 +4497,19 @@ ARGEVT Reap spawned
             bad.totals.freeze_underfire = underfire;
             bad.totals.freeze_max_sec = longest;
             bad.totals.freeze_total_sec = total;
-            let report = compare_band_primary(
-                &[bad, clean.clone(), clean.clone()],
-                &controls,
-                Some("stall_parity"),
-            );
-            assert_eq!(report.verdict, Verdict::Regressed, "{}", report.headline);
-            assert!(report.gates.iter().any(|g| g.name == "freezes" && !g.pass));
-            assert!(report
-                .findings
-                .iter()
-                .any(|f| f.contains("candidate tape 1")));
+            for primary in ["stall_parity", "engagements", "lava_deaths", "freezes"] {
+                let report = compare_band_primary(
+                    &[bad.clone(), clean.clone(), clean.clone()],
+                    &controls,
+                    Some(primary),
+                );
+                assert_eq!(report.verdict, Verdict::Regressed, "{}", report.headline);
+                assert!(report.gates.iter().any(|g| g.name == "freezes" && !g.pass));
+                assert!(report
+                    .findings
+                    .iter()
+                    .any(|f| f.contains("candidate tape 1")));
+            }
         }
     }
 

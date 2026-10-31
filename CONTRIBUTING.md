@@ -127,6 +127,7 @@ compilation and native physical outcomes remain separate checks.
 ```text
 python tools/test_nav_budget.py
 python tools/test_map_intelligence_report.py
+python tools/test_study_comparison.py
 python tools/test_freeze_recovery.py
 python tools/test_mover_transfer.py
 ```

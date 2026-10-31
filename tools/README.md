@@ -325,23 +325,27 @@ append-once evidence. Installed gameplay binaries remain unchanged.
 | Tool | Inputs and controls | Output / acceptance |
 |---|---|---|
 | `audit_route_distance.py` | `--maps`, `--gravity`, `--objective hops-distance` (default) or `distance`; optional `--output` | Offline generated-QC audit against an independent shortest-path oracle; no engine |
-| `run_map_intelligence.py` | `--output`, `--prefix`; optional frozen `--source`, `--maps`, `--seconds` (10–185), `--repeats` (1–5), `--skill`, `--primary`, `--baseline`, `--ticrate`, `--port`, `--lab` | Compile once; protocol, named tapes and native briefs; default eight maps, 60 seconds, two repeats, skill 2 |
+| `run_map_intelligence.py` | `--output`, `--prefix`; optional frozen `--source`, `--maps`, `--seconds` (10â€“185), `--repeats` (1â€“5), `--skill`, `--primary`, `--baseline`, `--ticrate`, `--port`, `--lab` | Compile once; protocol, named tapes and native briefs; default eight maps, 60 seconds, two repeats, skill 2 |
 | `report_map_intelligence.py` | Control and candidate folders; optional `--output`, `--native-gates`, `--lab` | Verify tape hashes, summarise matched map/duration/skill/primary arms; complete both arms for registered-primary native band cards |
 | `verify_route_distance.py` | `--output`, `--prefix`; optional `--source`, `--ticrate`, `--port`, `--lab`, `--compile-only`, `--expect-failure` | Native routing and shopping contracts; declared legacy control must fail |
 | `verify_freeze_recovery.py` | `--output`, `--prefix`; optional `--source`, `--maps`, `--seat original\|corner\|south`, `--ticrate`, `--port` | Private physical recovery and guard receipts; control/source and seat determine expected checks |
 | `verify_mover_transfer.py` | `--output`, `--prefix`; optional `--source`, `--maps e1m6,dm3`, `--control`, `--ticrate`, `--port` | Continuing-route transfer, safe launch, dry static-floor landing and zero rescue warps; `--control` retains an incomplete baseline |
 
 The registered primaries are `stall_parity`, `engagements`, `lava_deaths` and
-`freezes`. Per-tape MCP comparison files do not yet carry that selection;
-use the report's final native band cards for that judgment. Cadence choices
+`freezes`. New per-tape `.compare.json` artifacts pass the frozen selection
+to native `compare --primary` and retain `effective_primary`, input identities
+and the verbatim `native_gate_card`. Incompatible baseline protocols fail
+before output or matches start. Single-pair cards remain advisory; use the
+report's final native band cards for the study judgment. Older artifacts are
+unchanged, and severe freezes retain their independent veto. Cadence choices
 are `.0139` and `.1`; measure actual frames rather than assuming the request
 was honoured. Graph presence alone is not runtime navigation: the report
 requires both frozen compilation-list and dispatcher registration.
 
 Engine-free receipt and budget tests are `test_nav_budget.py`,
-`test_map_intelligence_report.py`, `test_freeze_recovery.py` and
-`test_mover_transfer.py`. All four block the fast workflow using the same
-Python environment as the other contract suites. They need no engine, BSPs
+`test_map_intelligence_report.py`, `test_study_comparison.py`,
+`test_freeze_recovery.py` and `test_mover_transfer.py`. All five block the fast
+workflow using the same Python environment as the other contract suites. They need no engine, BSPs
 or historical backups. The separate compile workflow includes the `freeze`
 and `mover` families; native trials remain the physical verification layer.
 See [the tracked study follow-ups](../docs/mover-intelligence.md#tracked-follow-ups)
