@@ -1,4 +1,9 @@
-# Argus
+<h1>
+  <picture>
+    <source media="(prefers-color-scheme: light)" srcset="docs/brand/readme-banner-light.svg">
+    <img src="docs/brand/readme-banner.svg" alt="Argus" width="100%">
+  </picture>
+</h1>
 
 Vanilla Quake deathmatch bots, with a lab for testing and improving them.
 
@@ -242,6 +247,7 @@ generated `src/argus_nav_<map>.qc`; use the lab's navigation tools.
 | Understand the bot and source layout | [Architecture](docs/architecture.md) |
 | See what changed and which build it belongs to | [Changelog](CHANGELOG.md) |
 | Contribute or report a problem | [Contributing](CONTRIBUTING.md), [support](SUPPORT.md), [discussions](https://github.com/saworbit/argus/discussions) |
+| Use the Argus mark, banner or palette | [Brand](docs/brand/README.md) |
 
 The main source is in `src/`; the playable mod is `game/argus`; lab tools
 live under `tools/argus_mcp`; saved evidence lives in `runs/`. Engine installs,

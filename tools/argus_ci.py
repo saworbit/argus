@@ -380,14 +380,40 @@ def _link_destination(text):
     return re.sub(r"\\([!\"#$%&'()*+,\-./:;<=>?@\[\]^_`{|}~\\])", r"\1", text[:end])
 
 
+class _HtmlLinks(HTMLParser):
+    """Raw-HTML src, srcset and href values, so a README banner's <picture>
+    sources are held to the same rule as Markdown image syntax."""
+
+    def __init__(self):
+        super().__init__()
+        self.found = []
+
+    def handle_starttag(self, tag, attrs):
+        line = self.getpos()[0]
+        for key, value in attrs:
+            if not value:
+                continue
+            if key in ("src", "href"):
+                self.found.append((line, value.strip()))
+            elif key == "srcset":
+                for candidate in value.split(","):
+                    if candidate.strip():
+                        self.found.append((line, candidate.split()[0]))
+
+
 def markdown_links(text):
-    """Read inline/image destinations and reference definitions, excluding code."""
+    """Read inline/image destinations, reference definitions and raw-HTML
+    src/srcset/href values, excluding code."""
     prose = markdown_prose(text)
     prose = re.sub(r"(`+).*?\1", lambda m: "\n" * m[0].count("\n"), prose, flags=re.S)
     for match in re.finditer(r"!?\[(?:\\.|[^\]\\\n])*\]\(", prose):
         yield prose.count("\n", 0, match.start()) + 1, _link_destination(prose[match.end():])
     for match in re.finditer(r"(?m)^ {0,3}\[[^\]\n]+\]:[ \t]*(.*)$", prose):
         yield prose.count("\n", 0, match.start()) + 1, _link_destination(match[1])
+    parser = _HtmlLinks()
+    parser.feed(prose)
+    parser.close()
+    yield from parser.found
 
 
 def check_links(root, **_kw):

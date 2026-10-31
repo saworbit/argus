@@ -1448,6 +1448,26 @@ tool_timeout_sec = 700
             result = self.run_tool("argus_ci.py", "links", "--root", td)
             self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    def test_argus_ci_links_reads_html_src_srcset_and_href(self):
+        page = ('<picture>\n<source srcset="{dark} 1x, art/dark@2x.svg 2x">\n'
+                '<img src="{img}" alt="Argus">\n</picture>\n'
+                '<a href="{href}">guide</a>\n')
+        good = dict(dark="art/dark.svg", img="art/light.svg", href="guide.md#present")
+        files = {"art/dark.svg": "<svg/>", "art/dark@2x.svg": "<svg/>",
+                 "art/light.svg": "<svg/>", "guide.md": "# Present\n"}
+        with tempfile.TemporaryDirectory() as td:
+            self._links_repo(Path(td), {"README.md": page.format(**good), **files})
+            result = self.run_tool("argus_ci.py", "links", "--root", td)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        for key, bad, message in (("dark", "art/missing.svg", "missing path"),
+                                  ("img", "art/missing.svg", "missing path"),
+                                  ("href", "guide.md#absent", "missing fragment")):
+            with self.subTest(attribute=key), tempfile.TemporaryDirectory() as td:
+                self._links_repo(Path(td), {"README.md": page.format(**{**good, key: bad}), **files})
+                result = self.run_tool("argus_ci.py", "links", "--root", td)
+                self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+                self.assertIn(message, result.stdout)
+
     def test_argus_ci_links_does_not_accept_code_block_headings(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
