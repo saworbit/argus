@@ -818,6 +818,23 @@ steering after setup. A changed node does not independently prove forward
 consumption of the original route; [#647](https://github.com/saworbit/argus/issues/647)
 tracks that oracle gap. See the [e1m6 evidence](../../docs/e1m6-decisions.md).
 
+## Camera chase controls
+
+```text
+python tools/verify_camera_chase.py --output backups/<new-directory> --prefix <new_prefix>
+```
+
+The private `camera` fixture surrounds a camera subject with real BSP brushes
+and observes production `ArgusCam_SmartChase` after all eight flyby rays fail.
+It checks the final vector basis and bounded position blend. `--ticrate .1`
+selects a separate 100 ms arm. Use a fresh output and prefix; compilers remain
+serial. Source, fixture, program and raw identities survive a failed check.
+These `BHVRPL` tapes are component evidence outside ordinary gameplay bands.
+Live impulse 210 can verify camera ownership through the puppet; it does not
+replace a human visual judgement of a director cut.
+The [camera receipts](../../runs/camera-chase-v1.results.json) retain both
+cadences and the original basis and unbounded-blend failure controls.
+
 ## Mover forecast controls
 
 ```text

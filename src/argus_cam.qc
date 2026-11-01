@@ -299,7 +299,7 @@ void(entity client, entity bot) ArgusCam_SmartChase =
 {
     local vector want_pos, lead, ideal_look, cand;
     local float min_frac, d, target_yaw, diff_yaw, target_pitch, diff_pitch;
-    local float sweep, cy, k;
+    local float sweep, cy, k, blend;
 
     client.movetype = MOVETYPE_NONE;
     client.solid = SOLID_NOT;
@@ -413,7 +413,6 @@ void(entity client, entity bot) ArgusCam_SmartChase =
                         client.cam_angles_y = cy;
                         client.cam_smooth_dist = client.cam_dist;
                         client.cam_pinch_time = time;
-                        makevectors (client.cam_angles);
                         sweep = 999;    // found: break both loops
                         k = 2;
                     }
@@ -425,12 +424,16 @@ void(entity client, entity bot) ArgusCam_SmartChase =
         }
     }
 
+    // A failed sweep also changes the shared probe basis.
+    makevectors (client.cam_angles);
     want_pos = (bot.origin + '0 0 22') - (v_forward * client.cam_smooth_dist);
     if (client.cam_shoulder)
         want_pos = want_pos + (v_right * 14);
 
-    // 7. Spatial exponential smoothing
-    client.cam_pos = client.cam_pos + (want_pos - client.cam_pos) * (frametime * 14.0);
+    // 7. Bound the spatial blend so a slow frame cannot overshoot.
+    blend = frametime * 14.0;
+    if (blend > 1) blend = 1;
+    client.cam_pos = client.cam_pos + (want_pos - client.cam_pos) * blend;
 
     setorigin (client, client.cam_pos);
     client.angles = vectoangles (ideal_look - client.cam_pos);

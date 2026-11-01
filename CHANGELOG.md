@@ -25,6 +25,9 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Restore the chase camera basis after failed flyby sweeps and bound its
+  position blend at slow frame rates ([#654](https://github.com/saworbit/argus/issues/654)).
+
 - Add private engine controls for obstructed, mismatched-floor and undocked
   mover forecasts, with real water depth kept separate from dry landing proof
   ([#646](https://github.com/saworbit/argus/issues/646)).

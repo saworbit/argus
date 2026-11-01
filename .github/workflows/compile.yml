@@ -66,7 +66,7 @@ jobs:
 
       - name: Compile maintained private fixtures
         run: |
-          for family in muzzle combat health button door plan offset freeze mover forecast attention water; do
+          for family in muzzle combat health button door plan offset freeze mover forecast camera attention water; do
             python3 tools/compile_private_fixtures.py \
               --compiler "$PWD/fteqw/engine/release/fteqcc" \
               --family "$family" --output "$RUNNER_TEMP/private-$family"

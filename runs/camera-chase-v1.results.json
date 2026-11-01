@@ -1,0 +1,86 @@
+{
+  "schema": "argus-camera-chase-v1",
+  "cases": [
+    {
+      "source_sha256": "fa113db96c58802bc9bea24bc1901aee874db2528a3b9126f08816c63d668cb1",
+      "fixture_sha256": "006bb3621bd09cfe4604f43facfe78e990d2667ce1faea58a998d3b5faa7f1c4",
+      "binary_sha256": "11f21c34aaac87abb41668a8a34a44125e9894b1a453236f8c154b31445f4f69",
+      "raw_sha256": "cb7d4a17df8ecf1cc2dbc6aee26a7f86f30d82a8636e28da9dbad9b078ecb5df",
+      "raw": "runs/camera_chase_v1_fixed_fast.log",
+      "ticrate": 0.0139,
+      "fixture_layout": "camera-chase-v1",
+      "frame_ms": 14.0,
+      "candidates": 8,
+      "blocked": 8,
+      "basis_error": 0.0,
+      "position_error": 0.0,
+      "distance": 22.3,
+      "failed_control": false,
+      "label": "fixed_fast"
+    },
+    {
+      "source_sha256": "fa113db96c58802bc9bea24bc1901aee874db2528a3b9126f08816c63d668cb1",
+      "fixture_sha256": "006bb3621bd09cfe4604f43facfe78e990d2667ce1faea58a998d3b5faa7f1c4",
+      "binary_sha256": "11f21c34aaac87abb41668a8a34a44125e9894b1a453236f8c154b31445f4f69",
+      "raw_sha256": "6592f81f1ffebfba52e9c0aca8aaf85c0ac794b9b441cb21ac1d5da409bd9ef1",
+      "raw": "runs/camera_chase_v1_fixed_slow.log",
+      "ticrate": 0.1,
+      "fixture_layout": "camera-chase-v1",
+      "frame_ms": 100.0,
+      "candidates": 8,
+      "blocked": 8,
+      "basis_error": 0.0,
+      "position_error": 0.0,
+      "distance": 22.3,
+      "failed_control": false,
+      "label": "fixed_slow"
+    }
+  ],
+  "negative_controls": [
+    {
+      "source_sha256": "97db3257029de4929edde0293a3ddec3c0aa229c3f8fcd7d6ff5c795c7a120e6",
+      "fixture_sha256": "006bb3621bd09cfe4604f43facfe78e990d2667ce1faea58a998d3b5faa7f1c4",
+      "binary_sha256": "1e574f69a42a7d9293d2e144b68abe4c41e4d00e5bed396756f729fc7e5f26d7",
+      "raw_sha256": "a0de60c4e5ba91675bb69f7b2b4321c70891ff198f6d248bce0ab6a5d6b4db6d",
+      "raw": "runs/camera_chase_v1_old_basis.log",
+      "ticrate": 0.0139,
+      "failed_control": true,
+      "label": "old_basis"
+    },
+    {
+      "source_sha256": "efad023c3e4ae59be3df9b9ac87f212b5e7c2c523bf669463ab4b985442ea861",
+      "fixture_sha256": "006bb3621bd09cfe4604f43facfe78e990d2667ce1faea58a998d3b5faa7f1c4",
+      "binary_sha256": "1b0bab3cf6fb63d988914386b27c2f967d9a4a6047971fc57a6ca98de4aa2535",
+      "raw_sha256": "00afac5409afeef9a3640fb1eed13b8632dc3cccfe27a830ce8acef090d237f5",
+      "raw": "runs/camera_chase_v1_unbounded_blend.log",
+      "ticrate": 0.1,
+      "failed_control": true,
+      "label": "unbounded_blend"
+    }
+  ],
+  "native_activation": {
+    "impulses": [
+      210,
+      211,
+      211,
+      211,
+      211,
+      211
+    ],
+    "last_puppet_time": 3.8,
+    "last_bot_time": 10.3,
+    "proof": "Puppet logs stop after camera takes ownership; final mode is chase",
+    "human_visual_review": false
+  },
+  "ordinary_experiment": {
+    "path": "backups/camera_live_20261102/experiment.json",
+    "duration": 30,
+    "map": "dm4",
+    "compare": null
+  },
+  "development_trials": [
+    "backups/camera_chase_old_fast_20261102",
+    "backups/camera_chase_old_fast_20261102_v2"
+  ],
+  "limits": "Camera component checks and live puppet ownership; no human visual judgement or gameplay-performance claim."
+}
