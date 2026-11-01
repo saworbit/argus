@@ -163,6 +163,18 @@ node tools/brand/raster.js
 The README's badges are shields.io images in the palette (`labelColor`
 panel, `color` line) and need no rebuild.
 
+`python tools/test_gui_rendering.py` compares the GUI's decoded inline
+favicon with `favicon.svg` as XML. Fast CI runs this cheap check through the
+CLI test suite. A favicon change must also update its data URI in
+`tools/argus_mcp/src/gui.html`.
+
+Full brand reproduction remains a manual check for brand changes. Run the
+commands above with the exact package versions in `tools/brand/package.json`
+and inspect `git diff -- docs/brand` before submitting. It does not run in
+fast CI: the font package is large and the wider font/raster toolchain is
+not fully locked. This is a recorded limit, rather than a claim that CI
+reproduces all brand assets.
+
 ## Directions rejected, and why
 
 Recorded so they are not proposed again.

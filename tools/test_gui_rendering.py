@@ -91,6 +91,15 @@ window.fetch=async(path)=>({ok:true,headers:new Headers({'content-type':'applica
 
 
 class GuiRendering(unittest.TestCase):
+    def test_inline_favicon_matches_the_source_svg(self):
+        page = PAGE.read_text(encoding='utf-8')
+        match = re.search(r'<link\s+rel="icon"[^>]*href="data:image/svg\+xml,([^"]+)"', page)
+        self.assertIsNotNone(match, 'GUI inline favicon missing')
+        inline = ET.fromstring(unquote(match[1]))
+        source = ET.parse(ROOT / 'docs/brand/favicon.svg').getroot()
+        self.assertEqual(ET.tostring(inline), ET.tostring(source),
+                         'update the GUI favicon data URI from docs/brand/favicon.svg')
+
     @unittest.skipUnless(browser(), 'no Chromium browser installed')
     def test_server_fields_are_text_and_edge_handlers_keep_data(self):
         self.assertTrue(browser_receipt()['pass'])
