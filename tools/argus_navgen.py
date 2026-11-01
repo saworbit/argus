@@ -39,6 +39,7 @@ Sidecar files, all optional, all read from the output directory:
 usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj]
        argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reprofile-jumps
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --audit-jump-anchors
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reconcile-artifacts [--reanalyze-tactics]
        argus_navgen.py map.bsp mapname shipped.qc out.png --render-only
@@ -60,6 +61,13 @@ linking, no knitting, no plot. Section 2c.
 approach speed, landing runway and arc margin for each existing jump
 link, adds the speed argument to its QC builder call, records all three
 values in JSON, and changes no node, link, type, slot or sidecar.
+It refuses a resolved launch at or beyond the runtime's 96-unit source anchor,
+including vertical separation, before publishing either output. Full generation
+enforces the same bar. Re-seat a refused link rather than adding a fallback speed.
+
+--audit-jump-anchors reports all shipped jump profiles without writing files.
+Exit 1 means a modelled launch violates that anchor. Direct/fallback links have
+no resolved gap launch and remain explicitly unclassified by this check.
 
 --reanalyze-tactics preserves the shipped graph too. It recomputes static
 node exposure and the nearest hidden ordinary-walk target, writes those
@@ -93,6 +101,7 @@ from argus_registration import registration
 from argus_nav_preview import generate_preview
 from argus_nav_slots import slot_count, clamp_walk, require_slots
 from argus_nav_artifacts import canonical_sidecar, refresh_banner, validate_pair, publish_pair, existing_bytes
+from argus_jump_anchor import require_anchor, audit as audit_jump_anchors
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -105,6 +114,10 @@ try:
     MAPNAME = map_name(MAPNAME)
 except ValueError as error:
     print(f'error: {error}', file=sys.stderr)
+    sys.exit(1)
+AUDIT_JUMP_ANCHORS = '--audit-jump-anchors' in sys.argv[5:]
+if AUDIT_JUMP_ANCHORS and set(sys.argv[5:]) != {'--audit-jump-anchors'}:
+    print('error: --audit-jump-anchors cannot combine with generation options', file=sys.stderr)
     sys.exit(1)
 if '--render-only' in sys.argv[5:]:
     if set(sys.argv[5:]) != {'--render-only'}:
@@ -922,6 +935,7 @@ def _jump_approach_points(_src, _dst):
     if _gap is None:
         return 0.0, 0.0, 0.0
     _launch, _landing, _dir, _flight = _gap
+    require_anchor(_src, _launch)
     _runway = _landing_runway_points(_landing, _dir)
     _dz = _landing[2] - _launch[2]
     _disc = JUMPVEL*JUMPVEL - 2*GRAV*_dz
@@ -951,6 +965,23 @@ def _jump_approach_points(_src, _dst):
     # 250+ launch instead of inventing a speed for an engine-proven link.
     return 0.0, _runway, 0.0
 
+
+if AUDIT_JUMP_ANCHORS:
+    import hashlib as _ah
+    import json as _aj
+    try:
+        _audit_qc = Path(OUTQC).read_bytes()
+        _audit_json = Path(OUTQC + '.json').read_bytes()
+        _audit_nav = load_nav(OUTQC + '.json')
+        validate_pair(_audit_qc.decode('ascii'), _audit_nav)
+        _audit = audit_jump_anchors(_audit_nav['nodes'], _audit_nav.get('jlinks', []), _jump_gap_points)
+        _audit.update(map=MAPNAME, qc_sha256=_ah.sha256(_audit_qc).hexdigest(),
+                      graph_sha256=_ah.sha256(_audit_json).hexdigest(), bsp_sha256=_ah.sha256(Path(BSP).read_bytes()).hexdigest())
+    except (OSError, ValueError) as error:
+        print(f'error: {error}', file=sys.stderr)
+        sys.exit(1)
+    print(_aj.dumps(_audit))
+    sys.exit(1 if _audit['violations'] else 0)
 
 if REPROFILE_JUMPS:
     import json as _rj
@@ -987,8 +1018,12 @@ if REPROFILE_JUMPS:
               f"refusing", file=sys.stderr)
         sys.exit(1)
 
-    _profiles = {(_a, _b): _jump_approach_points(_nodes[_a], _nodes[_b])
-                 for _a, _b in _jlinks}
+    try:
+        _profiles = {(_a, _b): _jump_approach_points(_nodes[_a], _nodes[_b])
+                     for _a, _b in _jlinks}
+    except ValueError as error:
+        print(f'reprofile: {error}; outputs unchanged', file=sys.stderr)
+        sys.exit(1)
     _link_re = re.compile(
         r"^(\s*)Argus_NavLinkJump \(n(\d+), n(\d+)"
         r"(?:,\s*[-+0-9.]+)?\);(?:\s*//.*)?$")
@@ -3965,7 +4000,11 @@ jump_approach = {}
 for _i in sorted(links):
     for _j in sorted(links[_i]):
         if links[_i][_j][1]:
-            jump_approach[(_i, _j)] = _jump_approach(_i, _j)
+            try:
+                jump_approach[(_i, _j)] = _jump_approach(_i, _j)
+            except ValueError as error:
+                print(f'error: n{_i}->n{_j}: {error}; generation refused before publication', file=sys.stderr)
+                sys.exit(1)
 _staged = sum(1 for _v in jump_approach.values() if _v[0] > 0)
 print(f"jump approaches: {_staged} staged gap(s), "
       f"{len(jump_approach) - _staged} direct/fallback link(s)")

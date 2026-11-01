@@ -863,6 +863,38 @@ tool_timeout_sec = 700
         qc = (tmp / "nav.qc").read_text(encoding="ascii")
         self.assertIn(f"Argus_NavLinkJump (n1, n0, {row[2]:.0f});", qc)
 
+    def test_argus_navgen_refuses_a_profile_outside_the_runtime_anchor(self):
+        nodes = [list(p) for p in self.DOOR_FIXTURE_NODES]
+        nodes[1] = [-96.0, 0.0, 24.0]
+        nodes[0] = [160.0, 0.0, 24.0]
+        tmp = self.door_fixture(nodes=nodes, collision_gap=True)
+        paths = (tmp / 'nav.qc', tmp / 'nav.qc.json')
+        before = [p.read_bytes() for p in paths]
+        result = self.reprofile(tmp)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        self.assertIn('runtime requires < 96u', result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual([p.read_bytes() for p in paths], before)
+        report = self.run_tool('argus_navgen.py', str(tmp / 'fixture.bsp'), 'fixture',
+                               str(tmp / 'nav.qc'), str(tmp / 'unused.png'), '--audit-jump-anchors')
+        self.assertEqual(report.returncode, 1, report.stdout + report.stderr)
+        audit = json.loads(report.stdout)
+        self.assertEqual([(r['source'], r['target']) for r in audit['violations']], [(1, 0)])
+        self.assertGreaterEqual(audit['violations'][0]['launch_distance'], 96)
+        self.assertEqual([p.read_bytes() for p in paths], before)
+        self.assertFalse((tmp / 'unused.png').exists())
+
+    def test_jump_anchor_audit_rejects_mutating_modes_before_they_run(self):
+        tmp = self.door_fixture()
+        paths = (tmp / 'nav.qc', tmp / 'nav.qc.json')
+        before = [p.read_bytes() for p in paths]
+        for flag in ('--retype-doors', '--reanalyze-tactics', '--reconcile-artifacts', '--register'):
+            result = self.run_tool('argus_navgen.py', str(tmp / 'fixture.bsp'), 'fixture',
+                                   str(tmp / 'nav.qc'), str(tmp / 'unused.png'), '--audit-jump-anchors', flag)
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn('cannot combine', result.stderr)
+            self.assertEqual([p.read_bytes() for p in paths], before)
+
     def test_argus_navgen_reprofile_uses_the_standable_landing_height(self):
         nodes = [list(p) for p in self.DOOR_FIXTURE_NODES]
         nodes[1] = [32.0, 0.0, 24.0]
