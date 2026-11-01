@@ -305,6 +305,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Match the engine's door-lip default for explicit zero values (#668), reject
+  proven anchors that collide on one fine sample before writing navigation
+  (#694), and remove two unused, uncallable jump wrappers (#667).
+
 - Keep proof and study validation active under optimized Python (#681), refuse
   the backups root before creating plan-test output (#651), and close failed
   lab sessions without replacing the original error or skipping binary
