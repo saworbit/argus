@@ -220,7 +220,7 @@ fn mode_share_bot(tape: &MatchTape, name: &str) -> crate::intel::ModeShare {
 
 pub fn load_named_tape(cfg: &Config, log: &str) -> Result<String, String> {
     let path = crate::intel::resolve_run_ref(cfg, log, None)?;
-    std::fs::read_to_string(&path).map_err(|e| format!("{}: {e}", path.display()))
+    crate::paths::read_engine_text(&path).map_err(|e| format!("{}: {e}", path.display()))
 }
 
 #[cfg(test)]

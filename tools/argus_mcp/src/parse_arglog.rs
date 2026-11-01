@@ -488,7 +488,7 @@ pub fn parse_arglog(text: &str) -> MatchSummary {
 }
 
 pub fn parse_arglog_path(path: &std::path::Path) -> std::io::Result<MatchSummary> {
-    let text = std::fs::read_to_string(path)?;
+    let text = crate::paths::read_engine_text(path)?;
     Ok(parse_arglog(&text))
 }
 
@@ -500,7 +500,7 @@ pub fn is_instrument(name: &str) -> bool {
 }
 
 pub fn parse_tape_path(path: &std::path::Path) -> std::io::Result<MatchTape> {
-    let text = std::fs::read_to_string(path)?;
+    let text = crate::paths::read_engine_text(path)?;
     Ok(parse_tape(&text))
 }
 
@@ -528,9 +528,10 @@ fn split_segments(text: &str) -> Vec<&str> {
     let mut cuts: Vec<usize> = Vec::new();
     let mut seen_samples = false;
     let mut pos = 0usize;
-    for line in text.lines() {
+    for line in text.split_inclusive('\n') {
         let start = pos;
-        pos += line.len() + 1;
+        pos += line.len();
+        let line = line.trim_end_matches(['\r', '\n']);
         if line.starts_with("ARGLOG ") {
             seen_samples = true;
             continue;
@@ -572,6 +573,15 @@ pub fn parse_tape(text: &str) -> MatchTape {
             .unwrap();
         let mut tape = parse_one(best);
         tape.controlled_fixture = controlled_fixture(text);
+        // A refused request elsewhere in a multi-level tape must not disappear
+        // when a different segment wins the sample-count selection.
+        tape.failed_spawns = text
+            .lines()
+            .filter_map(|line| {
+                line.strip_prefix("Couldn't spawn server maps/")
+                    .map(|name| name.trim_end_matches(".bsp").to_ascii_lowercase())
+            })
+            .collect();
         tape.segments = total as u32;
         tape.segment_note = Some(format!(
             "tape spans {total} levels; briefed segment {} of {total} ({} sample rows, map {}). Counters and time restart at a level change, so figures are NOT aggregated across them",
@@ -638,7 +648,7 @@ fn parse_one(text: &str) -> MatchTape {
                 pending_map = None;
             }
             failed_spawns.push(name);
-        } else if line.starts_with("ARGUS ") {
+        } else if let Some(line) = plain_argus_payload(line) {
             // plain ARGUS console lines sit OUTSIDE the closed ARGEVT
             // vocabulary by design (shove since v3.73, routecache
             // adopt since v3.63) - count them as pseudo-events so the
@@ -871,6 +881,30 @@ fn v1_re() -> &'static Regex {
         )
         .expect("v1 regex")
     })
+}
+
+/// Match a complete marker suffix so words in a spaced netname cannot win an
+/// earlier branch. Hunch/watch arguments are single tokens in the QC grammar.
+fn plain_argus_payload(line: &str) -> Option<&str> {
+    let body = line.strip_prefix("ARGUS ")?.trim_end();
+    if body == "routecache adopt" {
+        return Some(body);
+    }
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let caps = RE
+        .get_or_init(|| {
+            Regex::new(concat!(
+                r"^.+( (?:shove|hunch \S+|watch \S+|sprintjump|",
+                r"hesitate (?:heard|junction|settle)|prefire|leadclip|",
+                r"hazardpass (?:suit|pent) (?:slime|lava)|",
+                r"threatmove (?:range|high|retreat) \S+|",
+                r"crossfire (?:strafe|backout|retreat)|coop catchup warp|",
+                r"unstick (?:embedded|underfire|fightpin|pinned) '[^']+'))$"
+            ))
+            .expect("plain ARGUS marker regex")
+        })
+        .captures(body)?;
+    Some(caps.get(1)?.as_str())
 }
 
 fn death_re() -> &'static Regex {
@@ -1288,6 +1322,51 @@ ARGLOG unconnected t 1.0 pos '5 5 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\
         assert!(inst.contains("labprobe"), "{inst:?}");
         assert!(inst.contains("unconnected"), "{inst:?}");
         assert!(!inst.contains("Carmack"), "{inst:?}");
+    }
+
+    #[test]
+    fn tape_regression_crlf_segments_keep_exact_boundaries() {
+        let first =
+            "SpawnServer: dm4\nARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n";
+        let second =
+            "SpawnServer: dm2\nARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n";
+        for prefix in ["", "bronze \u{fffd}\n", "map title \u{00e9}\n"] {
+            let text = format!("{prefix}{first}{second}");
+            let expected: Vec<_> = split_segments(&text)
+                .into_iter()
+                .map(str::to_string)
+                .collect();
+            let crlf = text.replace('\n', "\r\n");
+            let actual: Vec<_> = split_segments(&crlf)
+                .into_iter()
+                .map(|s| s.replace("\r\n", "\n"))
+                .collect();
+            assert_eq!(actual, expected);
+            assert_eq!(actual[1], second);
+        }
+    }
+
+    #[test]
+    fn tape_regression_bronze_bytes_do_not_discard_tape() {
+        let dir = crate::test_support::TestDir::new("bronze-tape").unwrap();
+        let path = dir.path().join("match.log");
+        let mut bytes = vec![0x80, 0xff, b'\n'];
+        bytes.extend_from_slice(b"SpawnServer: dm4\nARGEVT Joe Rogan spawned\nARGLOG Joe Rogan t 1.0 pos '0 0 24' spd 320 yaw 0 mode 2 st 0 gl 0\n");
+        std::fs::write(&path, bytes).unwrap();
+        assert_eq!(parse_tape_path(&path).unwrap().map.as_deref(), Some("dm4"));
+        assert_eq!(parse_arglog_path(&path).unwrap().bots[0].name, "Joe Rogan");
+    }
+
+    #[test]
+    fn tape_regression_netname_words_are_not_markers() {
+        let text = "ARGUS night watch kid hesitate heard\nARGUS Al hesitate Bob leadclip\nARGUS late hunch kid watch spawn\nARGUS Carmack hesitate junction\nARGUS night watch kid hunch item_health\n";
+        let tape = parse_tape(text);
+        assert_eq!(tape.event_counts.get("hesitate"), Some(&2));
+        assert_eq!(tape.event_counts.get("hesitate_heard"), Some(&1));
+        assert_eq!(tape.event_counts.get("hesitate_junction"), Some(&1));
+        assert_eq!(tape.event_counts.get("watch"), Some(&1));
+        assert_eq!(tape.event_counts.get("hunch"), Some(&1));
+        assert_eq!(tape.event_counts.get("leadclip"), Some(&1));
     }
 
     #[test]

@@ -1384,7 +1384,11 @@ argus-mcp compare cand1,cand2,cand3 ctl1,ctl2,ctl3 --primary stall_parity
 ```
 
 Only the named gate convicts; the rest are computed, printed and
-flagged. It also stops the habit of deciding which gate to believe
+flagged. A refused map spawn in any candidate or control tape invalidates
+the comparison: it returns `mixed` with a `WRONG MAP` card and no statistical
+gates. `totals.failed_spawns` retains the refused names when present, including
+through duration scaling. Stage the requested BSP and record fresh tapes.
+It also stops the habit of deciding which gate to believe
 after the tapes are in: a change predicted to affect lava has no
 business being convicted by an engagement count. Pre-registering drops
 the false positive rate from 19 per cent to about 6.

@@ -19,6 +19,9 @@ pub enum Verdict {
 #[derive(Debug, Clone, Serialize)]
 pub struct Totals {
     pub duration_sec: f64,
+    /// Refused map requests make this tape unsuitable for gameplay comparisons.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub failed_spawns: Vec<String>,
     pub stalls: i32,
     pub goals: i32,
     pub frags: i32,
@@ -782,6 +785,7 @@ fn brief_tape_lava(
     let tick_class = tick_gap_mean.map(|g| crate::parse_arglog::tick_class(g).to_string());
     let totals = Totals {
         duration_sec: duration,
+        failed_spawns: tape.failed_spawns.clone(),
         tick_gap_mean,
         tick_class,
         stalls,
@@ -1512,7 +1516,11 @@ pub fn compare_band_primary_scaled(
     if candidates.is_empty() || controls.is_empty() {
         return compare_band_primary(candidates, controls, primary);
     }
-    if candidates.iter().chain(controls).any(is_controlled_fixture) {
+    if candidates
+        .iter()
+        .chain(controls)
+        .any(|b| is_controlled_fixture(b) || !b.totals.failed_spawns.is_empty())
+    {
         return compare_band_primary(candidates, controls, primary);
     }
     for (arm, briefs) in [("candidate", candidates), ("control", controls)] {
@@ -1634,6 +1642,10 @@ pub fn compare_band_primary(
     // match rather than an average that never happened.
     let rep_ctl = representative(controls);
     let rep_cand = representative(candidates);
+    let wrong_maps = wrong_map_findings(candidates, controls);
+    if !wrong_maps.is_empty() {
+        return refuse_wrong_map(rep_ctl, rep_cand, wrong_maps);
+    }
     let mut report = compare_gates(rep_ctl, rep_cand);
     if candidates.iter().chain(controls).any(is_controlled_fixture) {
         report.verdict = Verdict::Mixed;
@@ -2005,11 +2017,55 @@ pub fn compare_briefs(a: MatchBrief, b: MatchBrief) -> CompareReport {
     compare_band(&[b], &[a])
 }
 
+fn wrong_map_findings(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Vec<String> {
+    let mut findings = Vec::new();
+    for (arm, briefs) in [("candidate", candidates), ("control", controls)] {
+        for (index, brief) in briefs.iter().enumerate() {
+            if !brief.totals.failed_spawns.is_empty() {
+                findings.push(format!(
+                    "WRONG MAP: {arm} tape {} refused {} and describes '{}'; no gameplay verdict",
+                    index + 1,
+                    brief.totals.failed_spawns.join(", "),
+                    brief.map.as_deref().unwrap_or("unknown")
+                ));
+            }
+        }
+    }
+    findings
+}
+
+fn refuse_wrong_map(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> CompareReport {
+    CompareReport {
+        verdict: Verdict::Mixed,
+        headline: "Mixed: a refused map spawn invalidates this comparison".into(),
+        gate_card: "WRONG MAP: no gameplay verdict; stage the requested BSP and record fresh tapes"
+            .into(),
+        gates: Vec::new(),
+        findings,
+        next_steps: vec![NextStep {
+            priority: 1,
+            area: "maps".into(),
+            look_at: "the refused BSP and invalid tapes".into(),
+            why: "Stage the requested map and record fresh tapes before comparing.".into(),
+        }],
+        a,
+        b,
+        scaled: false,
+        scale_note: None,
+        baseline_run: None,
+        band: Vec::new(),
+        stats: Vec::new(),
+        primary: None,
+    }
+}
+
 /// One tape against one tape, with every diagnostic gate the lab has
-/// ever grown. This builds the gates and the card; it does NOT decide
-/// the verdict any more - `band_verdict` does, because a single pair
-/// of tapes cannot tell a change from nothing (see `compare_band`).
+/// ever grown. Banded comparisons decide statistical verdicts separately.
 fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
+    let wrong_maps = wrong_map_findings(std::slice::from_ref(&b), std::slice::from_ref(&a));
+    if !wrong_maps.is_empty() {
+        return refuse_wrong_map(a, b, wrong_maps);
+    }
     let mut gates = Vec::new();
     let bars = bars_for(b.map.as_deref().or(a.map.as_deref()));
 
@@ -2351,7 +2407,11 @@ pub fn scale_brief_to_duration(
 /// Compare two briefs. When durations differ by more than 20%, scale A to B
 /// so a 30 s experiment is not judged as an engagement collapse vs 185 s.
 pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
-    if is_controlled_fixture(&a) || is_controlled_fixture(&b) {
+    if is_controlled_fixture(&a)
+        || is_controlled_fixture(&b)
+        || !a.totals.failed_spawns.is_empty()
+        || !b.totals.failed_spawns.is_empty()
+    {
         return compare_briefs(a, b);
     }
     let da = a.totals.duration_sec;
@@ -4479,6 +4539,65 @@ ARGEVT Reap spawned
         let typo = compare_band_primary(&cand, &ctl, Some("lava"));
         assert_eq!(typo.verdict, Verdict::Regressed, "{}", typo.headline);
         assert!(typo.primary.is_none());
+    }
+
+    #[test]
+    fn tape_regression_wrong_map_refuses_pair_and_every_band_member() {
+        let clean = brief_text(&log_a(), None);
+        let bad = brief_text(
+            &format!(
+                "SpawnServer: missing\nCouldn't spawn server maps/missing.bsp\n{}",
+                log_a()
+            ),
+            None,
+        );
+        for (a, b) in [(bad.clone(), clean.clone()), (clean.clone(), bad.clone())] {
+            let pair = compare_gates(a, b);
+            assert_eq!(pair.verdict, Verdict::Mixed, "{}", pair.headline);
+            assert!(pair.gate_card.contains("WRONG MAP"));
+        }
+        let mut short = clean.clone();
+        short.totals.duration_sec = 3.0;
+        assert!(compare_briefs_scaled(bad.clone(), short)
+            .gate_card
+            .contains("WRONG MAP"));
+        let multi = brief_text(&format!("SpawnServer: missing\nCouldn't spawn server maps/missing.bsp\n{}\nSpawnServer: dm2\n{}\n{}", log_a(), log_a(), log_a()), None);
+        assert_eq!(multi.totals.failed_spawns, vec!["missing"]);
+        for primary in [
+            None,
+            Some("stall_parity"),
+            Some("engagements"),
+            Some("lava_deaths"),
+            Some("freezes"),
+        ] {
+            for index in 0..3 {
+                for bad_control in [false, true] {
+                    let mut controls = vec![clean.clone(); 3];
+                    let mut candidates = controls.clone();
+                    if bad_control {
+                        controls[index] = bad.clone();
+                    } else {
+                        candidates[index] = bad.clone();
+                    }
+                    for report in [
+                        compare_band_primary(&candidates, &controls, primary),
+                        compare_band_primary_scaled(&candidates, &controls, primary),
+                    ] {
+                        assert_eq!(report.verdict, Verdict::Mixed, "{}", report.headline);
+                        assert!(report.gate_card.contains("WRONG MAP"));
+                        assert!(report.band.is_empty());
+                        assert!(report.stats.is_empty());
+                        assert!(report.findings.iter().any(|f| f.contains(if bad_control {
+                            "control"
+                        } else {
+                            "candidate"
+                        }) && f
+                            .contains(&format!("tape {}", index + 1))
+                            && f.contains("missing")));
+                    }
+                }
+            }
+        }
     }
 
     #[test]
