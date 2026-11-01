@@ -19,9 +19,10 @@ def check(text):
 def audit(source):
     combat=function(source,'Argus_Combat')
     assert combat.count('if (!Argus_MuzzleClear (aimpt))\n            return TRUE;')==1
-    # The earlier prefire branch already traces the complete exact muzzle
-    # line. This new gate protects the final imperfect-aim firing branch.
-    assert combat.index('self.v_angle_y = self.angles_y;')<combat.index('Argus_MuzzleClear (aimpt)')<combat.index('Argus_TriggerReady ()')<combat.rindex('W_Attack ();')
+    # Prefire has its own planned-line and barrel gates. Check the ordinary
+    # trigger locally so an earlier facing assignment cannot satisfy its order.
+    trigger=combat.split('if (self.ar_tactic == 2 || self.ar_tactic == 3)',1)[1]
+    assert trigger.index('self.v_angle_y = self.angles_y;')<trigger.index('Argus_MuzzleClear (aimpt)')<trigger.index('Argus_TriggerReady ()')<trigger.rindex('W_Attack ();')
     helper=function(source,'Argus_MuzzleClear')
     assert 'if (!self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)' in helper
     assert 'targetdist = vlen (aimpt - src);' in helper

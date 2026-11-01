@@ -1,0 +1,1111 @@
+{
+  "layout": "ally-barrel-v1",
+  "status": "native_parity",
+  "protocol": {
+    "maps": [
+      "dm2",
+      "dm4"
+    ],
+    "repeats": 3,
+    "seconds": 30,
+    "skill": 2,
+    "ticrate": 0.0139,
+    "primary": "engagements",
+    "stopping_rule": "Exactly three per arm on each map, alternating control/candidate. No outcome-selected extra repeats.",
+    "tree_head": "ed3ddb642afbde131f7d4a5f18ef347d4a7d7dcb",
+    "tree_diff": "diff --git a/.gitattributes b/.gitattributes\nindex 8a59cd6..4784a18 100644\n--- a/.gitattributes\n+++ b/.gitattributes\n@@ -28,6 +28,8 @@ runs/startup_skill_v1_*.log -text !eol -whitespace\n runs/stall_ownership_v1_*.log -text !eol -whitespace\n runs/stall-ownership-v1.source.patch -whitespace\n runs/motion_observer_v2_*.log -text !eol -whitespace\n+runs/ally_barrel_v1_*.log -text !eol -whitespace\n+runs/ally-barrel-v1.source.patch -whitespace\n runs/motion-observer-v2.mutation.txt -text !eol -whitespace\n runs/motion-observer-v2.reference.json -text !eol -whitespace\n docs/mover-exit-prototype.patch -whitespace\ndiff --git a/.github/workflows/compile.yml b/.github/workflows/compile.yml\nindex e1955ff..80f0341 100644\n--- a/.github/workflows/compile.yml\n+++ b/.github/workflows/compile.yml\n@@ -66,7 +66,7 @@ jobs:\n \n       - name: Compile maintained private fixtures\n         run: |\n-          for family in muzzle combat health button door plan offset freeze mover forecast camera stall motion attention water; do\n+          for family in muzzle combat health button door plan offset freeze mover forecast camera stall motion ally attention water; do\n             python3 tools/compile_private_fixtures.py \\\n               --compiler \"$PWD/fteqw/engine/release/fteqcc\" \\\n               --family \"$family\" --output \"$RUNNER_TEMP/private-$family\"\ndiff --git a/.github/workflows/fast.yml b/.github/workflows/fast.yml\nindex b7a0bae..a4727d4 100644\n--- a/.github/workflows/fast.yml\n+++ b/.github/workflows/fast.yml\n@@ -145,3 +145,4 @@ jobs:\n           python3 tools/test_startup_skill.py\n           python3 tools/test_stall_ownership.py\n           python3 tools/test_motion.py\n+          python3 tools/test_ally_barrel.py\ndiff --git a/CHANGELOG.md b/CHANGELOG.md\nindex 743c3f4..bff51e7 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.\n \n ### Unreleased\n \n+- Check co-op allies along the limited barrel direction and keep speculative\n+  rocket shots within deathmatch, facing and muzzle-clearance gates\n+  ([#655](https://github.com/saworbit/argus/issues/655)).\n+\n - Keep plan-proof input, source and output guards active under optimized Python\n   ([#728](https://github.com/saworbit/argus/issues/728)).\n \ndiff --git a/src/argus.qc b/src/argus.qc\nindex 34511a3..ee011fa 100644\n--- a/src/argus.qc\n+++ b/src/argus.qc\n@@ -5806,8 +5806,14 @@ float() Argus_Combat =\n                 // point while chasing it - the shot arrives where\n                 // they were, and sometimes where they still are.\n                 // Top of the sub-skill-1 ladder, rockets to spare (never the last one),\n-                // a clear line, and the refire clock respected.\n-                if (!self.ar_prefired && self.ar_skill >= AR_SKILL_PREFIRE\n+                // a clear line, and the refire clock respected. Wait for\n+                // the limited facing to catch up; an unseen rocket never\n+                // bypasses co-op's ally-safe visible firing path.\n+                dy = want - self.angles_y;\n+                while (dy > 180) dy = dy - 360;\n+                while (dy < -180) dy = dy + 360;\n+                if (coop <= 0 && fabs (dy) < 8\n+                    && !self.ar_prefired && self.ar_skill >= AR_SKILL_PREFIRE\n                     && self.weapon == IT_ROCKET_LAUNCHER\n                     && self.ammo_rockets >= 2\n                     && time > self.attack_finished\n@@ -5817,19 +5823,21 @@ float() Argus_Combat =\n                                self.ar_lastseen, TRUE, self);\n                     if (trace_fraction == 1)\n                     {\n-                        self.ar_prefired = 1;\n                         to = vectoangles (self.ar_lastseen\n                                           - (self.origin + '0 0 16'));\n                         // vectoangles pitch is up-positive; v_angle\n                         // wants down-positive (the RJ convention)\n                         self.v_angle_x = 0 - to_x;\n-                        self.v_angle_y = to_y;\n+                        self.v_angle_y = self.angles_y;\n                         self.v_angle_z = 0;\n-                        self.angles_y = to_y;\n-                        W_Attack ();\n-                        dprint (\"ARGUS \");\n-                        dprint (self.netname);\n-                        dprint (\" prefire\\n\");\n+                        if (Argus_MuzzleClear (self.ar_lastseen))\n+                        {\n+                            self.ar_prefired = 1;\n+                            W_Attack ();\n+                            dprint (\"ARGUS \");\n+                            dprint (self.netname);\n+                            dprint (\" prefire\\n\");\n+                        }\n                     }\n                 }\n                 return TRUE;        // combat still owns the steering\n@@ -6845,7 +6853,10 @@ float() Argus_Combat =\n         // shot we are about to take, and if a team mate is what it\n         // reaches, wait. Splash is not covered here: a rocket landing\n         // beside a team mate still hurts them.\n-        traceline (self.origin + '0 0 22', aimpt, FALSE, self);\n+        // The barrel follows limited facing, which can lag the aim point.\n+        makevectors (self.v_angle);\n+        src = self.origin + '0 0 22';\n+        traceline (src, src + v_forward * vlen (aimpt - src), FALSE, self);\n         if (Argus_IsAlly (trace_ent))\n             self.button0 = 0;\n         else if (!Argus_TriggerReady ())\ndiff --git a/tools/check_muzzle_fixture.py b/tools/check_muzzle_fixture.py\nindex 06e7aa2..4e0da24 100644\n--- a/tools/check_muzzle_fixture.py\n+++ b/tools/check_muzzle_fixture.py\n@@ -19,9 +19,10 @@ def check(text):\n def audit(source):\n     combat=function(source,'Argus_Combat')\n     assert combat.count('if (!Argus_MuzzleClear (aimpt))\\n            return TRUE;')==1\n-    # The earlier prefire branch already traces the complete exact muzzle\n-    # line. This new gate protects the final imperfect-aim firing branch.\n-    assert combat.index('self.v_angle_y = self.angles_y;')<combat.index('Argus_MuzzleClear (aimpt)')<combat.index('Argus_TriggerReady ()')<combat.rindex('W_Attack ();')\n+    # Prefire has its own planned-line and barrel gates. Check the ordinary\n+    # trigger locally so an earlier facing assignment cannot satisfy its order.\n+    trigger=combat.split('if (self.ar_tactic == 2 || self.ar_tactic == 3)',1)[1]\n+    assert trigger.index('self.v_angle_y = self.angles_y;')<trigger.index('Argus_MuzzleClear (aimpt)')<trigger.index('Argus_TriggerReady ()')<trigger.rindex('W_Attack ();')\n     helper=function(source,'Argus_MuzzleClear')\n     assert 'if (!self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)' in helper\n     assert 'targetdist = vlen (aimpt - src);' in helper\ndiff --git a/tools/compile_private_fixtures.py b/tools/compile_private_fixtures.py\nindex 71e8a2f..3381986 100644\n--- a/tools/compile_private_fixtures.py\n+++ b/tools/compile_private_fixtures.py\n@@ -26,6 +26,7 @@ VARIANTS = {\n     'camera': ('current',),\n     'stall': ('current',),\n     'motion': ('current',),\n+    'ally': ('current',),\n     'attention': ('current',),\n     'water': ('current',),\n }\n@@ -46,7 +47,10 @@ def stage(folder, family, variant):\n     \"\"\"Reuse native verifier staging, without configuration or engine startup.\"\"\"\n     # Import lazily: --help needs only Python's standard library.\n     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door\n-    if family == 'stall':\n+    if family == 'ally':\n+        from verify_ally_barrel import stage as stage_ally\n+        stage_ally(ROOT, folder)\n+    elif family == 'stall':\n         from verify_stall_ownership import stage as stage_stall\n         stage_stall(ROOT, folder)\n     elif family == 'motion':\ndiff --git a/tools/fixtures/health-inventory-step1b.json b/tools/fixtures/health-inventory-step1b.json\nindex 12a89ef..802f05e 100644\n--- a/tools/fixtures/health-inventory-step1b.json\n+++ b/tools/fixtures/health-inventory-step1b.json\n@@ -1,11 +1,11 @@\n {\n   \"active_functions\": {\n-    \"Argus_Combat\": \"8b2230be542fb9f57d3d7a07db1ac76bb05b17a603ceb5dc1bb629e3f79de5a5\",\n+    \"Argus_Combat\": \"427a131eb0e5180a7e3374ea5bd2b82deac244812be8562fb74c6b1573be84b8\",\n     \"Argus_Hunch\": \"c9f7573cd3449f47f8ac251970c3d6f030af9002b80563562f090a1d262fab7f\",\n     \"Argus_Perceive\": \"2dc63bea68194463ff86596a5ab9b185104897b82c6b60d9d50d4b21f9e697c5\"\n   },\n-  \"active_text_sha256\": \"b47d9cb717bea1d78a4b716a2691a4c8c362ca77140e6c614d392defff7229f8\",\n-  \"amendment_scope\": \"Reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.\",\n+  \"active_text_sha256\": \"7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d\",\n+  \"amendment_scope\": \"Reverse ally-barrel safety in memory, then reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.\",\n   \"candidate_text_sha256\": \"359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38\",\n   \"parked_functions\": {\n     \"Argus_Combat\": \"1adaf68f727b69362db994c4093ff0b2e96f86a0c45ce87651688b37b383dcaf\",\n@@ -15,6 +15,7 @@\n   \"parked_text_sha256\": \"29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f\",\n   \"patch\": \"health-inventory-step1b.patch\",\n   \"production_amendments\": [\n+    \"ally-barrel-reverse.patch\",\n     \"motion-observer-reverse.patch\",\n     \"stall-ownership-reverse.patch\",\n     \"water-route-reverse.patch\",\ndiff --git a/tools/test_muzzle_fixture.py b/tools/test_muzzle_fixture.py\nindex 93a1743..1ca63f9 100644\n--- a/tools/test_muzzle_fixture.py\n+++ b/tools/test_muzzle_fixture.py\n@@ -17,5 +17,9 @@ class MuzzleTests(unittest.TestCase):\n                     source.replace('if (targetdist < reach) reach = targetdist;','reach = 240;'),\n                     source.replace('!self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER','!self.ar_tactic')]:\n             with self.assertRaises(AssertionError):audit(bad)\n+        early='        self.v_angle_y = self.angles_y;\\n        if (!Argus_MuzzleClear (aimpt))\\n            return TRUE;'\n+        late='        if (!Argus_MuzzleClear (aimpt))\\n            return TRUE;\\n        self.v_angle_y = self.angles_y;'\n+        self.assertEqual(source.count(early),1)\n+        with self.assertRaises(AssertionError):audit(source.replace(early,late))\n \n if __name__=='__main__':unittest.main()\n",
+    "cli_sha256": "2921a3635fee84e62922d46b6ebba4a593aa71ff6219b35859bc53a7eb8b5fdd",
+    "arms": {
+      "control": {
+        "source_sha256": "f76723838a162dce7b47c9b7526da30bc1aab9666f1d61687e3cfd75c818fc23",
+        "binary_sha256": "472776e69fd15bcb0ce7c892d946df3c60102e61c860d325c4e284891cc53b66"
+      },
+      "candidate": {
+        "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+        "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629"
+      }
+    },
+    "schedule": [
+      {
+        "map": "dm2",
+        "arm": "control",
+        "repeat": 1
+      },
+      {
+        "map": "dm2",
+        "arm": "candidate",
+        "repeat": 1
+      },
+      {
+        "map": "dm2",
+        "arm": "control",
+        "repeat": 2
+      },
+      {
+        "map": "dm2",
+        "arm": "candidate",
+        "repeat": 2
+      },
+      {
+        "map": "dm2",
+        "arm": "control",
+        "repeat": 3
+      },
+      {
+        "map": "dm2",
+        "arm": "candidate",
+        "repeat": 3
+      },
+      {
+        "map": "dm4",
+        "arm": "control",
+        "repeat": 1
+      },
+      {
+        "map": "dm4",
+        "arm": "candidate",
+        "repeat": 1
+      },
+      {
+        "map": "dm4",
+        "arm": "control",
+        "repeat": 2
+      },
+      {
+        "map": "dm4",
+        "arm": "candidate",
+        "repeat": 2
+      },
+      {
+        "map": "dm4",
+        "arm": "control",
+        "repeat": 3
+      },
+      {
+        "map": "dm4",
+        "arm": "candidate",
+        "repeat": 3
+      }
+    ]
+  },
+  "frozen_source_patch": "runs/ally-barrel-v1.source.patch",
+  "physical": [
+    {
+      "map": "dm4",
+      "ticrate": 0.0139,
+      "failed_control": true,
+      "source_sha256": "b046feadf51a4706991c6de0b9a4dd34677c1380f6ebbfe36a2b697473281b54",
+      "binary_sha256": "dbc3b575d805fba45104fc2992aaaf66aa2c624a071c4b94447b39e640200114",
+      "raw_sha256": "6fb64399b29ebcba7a0081e8fb2c2336950008789ecda1bfd3d2c187bd3619c8",
+      "raw": "runs/ally_barrel_v1_physical_control.log",
+      "frame_ms": 14.0,
+      "checks": 8,
+      "failures": [
+        "lagged_barrel_hold",
+        "aim_only_ally",
+        "coop_prefire_hold",
+        "prefire_turn_hold"
+      ],
+      "shot_witnesses": [
+        [
+          "lagged_barrel_hold",
+          "1",
+          "24",
+          "0",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "aligned_shot",
+          "1",
+          "0",
+          "24",
+          "0",
+          "0",
+          "1"
+        ],
+        [
+          "aim_only_ally",
+          "0",
+          "0",
+          "0",
+          "1",
+          "0",
+          "1"
+        ]
+      ],
+      "prefire_witnesses": [
+        [
+          "coop_prefire_hold",
+          "1",
+          "1",
+          "1",
+          "2.4",
+          "1"
+        ],
+        [
+          "prefire_turn_hold",
+          "1",
+          "1",
+          "89",
+          "2.4",
+          "1"
+        ],
+        [
+          "aligned_prefire",
+          "1",
+          "1",
+          "1",
+          "2.4",
+          "1"
+        ]
+      ]
+    },
+    {
+      "map": "dm4",
+      "ticrate": 0.0139,
+      "failed_control": false,
+      "source_sha256": "b8590484772c8f4d787c312352db4616ba9028ba907d6cb9220c7fa9f9e20182",
+      "binary_sha256": "63a27c9ff60b92c8b03f38b779e9fb678998a9aab6a2de8d0dafba6409159daf",
+      "raw_sha256": "84e6355f006fb99f42c85c56d6eb3e9914ca923b3c7826c05481cb12c1c85fc7",
+      "raw": "runs/ally_barrel_v1_physical_dm4_played.log",
+      "frame_ms": 14.0,
+      "checks": 8,
+      "failures": [],
+      "shot_witnesses": [
+        [
+          "lagged_barrel_hold",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "aligned_shot",
+          "1",
+          "0",
+          "24",
+          "0",
+          "0",
+          "1"
+        ],
+        [
+          "aim_only_ally",
+          "1",
+          "0",
+          "0",
+          "1",
+          "0",
+          "1"
+        ]
+      ],
+      "prefire_witnesses": [
+        [
+          "coop_prefire_hold",
+          "0",
+          "0",
+          "1",
+          "2.4",
+          "1"
+        ],
+        [
+          "prefire_turn_hold",
+          "0",
+          "0",
+          "2.4",
+          "2.4",
+          "1"
+        ],
+        [
+          "aligned_prefire",
+          "1",
+          "1",
+          "1",
+          "2.4",
+          "1"
+        ]
+      ]
+    },
+    {
+      "map": "dm2",
+      "ticrate": 0.1,
+      "failed_control": false,
+      "source_sha256": "b8590484772c8f4d787c312352db4616ba9028ba907d6cb9220c7fa9f9e20182",
+      "binary_sha256": "63a27c9ff60b92c8b03f38b779e9fb678998a9aab6a2de8d0dafba6409159daf",
+      "raw_sha256": "7a125051bd0c70a3e75a92e96e39bfc09384f3f9c2a2740b715e2935ea81fcea",
+      "raw": "runs/ally_barrel_v1_physical_dm2_slow.log",
+      "frame_ms": 100.0,
+      "checks": 8,
+      "failures": [],
+      "shot_witnesses": [
+        [
+          "lagged_barrel_hold",
+          "0",
+          "0",
+          "0",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "aligned_shot",
+          "1",
+          "0",
+          "24",
+          "0",
+          "0",
+          "1"
+        ],
+        [
+          "aim_only_ally",
+          "1",
+          "0",
+          "0",
+          "1",
+          "0",
+          "1"
+        ]
+      ],
+      "prefire_witnesses": [
+        [
+          "coop_prefire_hold",
+          "0",
+          "0",
+          "0",
+          "17",
+          "1"
+        ],
+        [
+          "prefire_turn_hold",
+          "0",
+          "0",
+          "17",
+          "17",
+          "1"
+        ],
+        [
+          "aligned_prefire",
+          "1",
+          "1",
+          "0",
+          "17",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "ordinary": [
+    {
+      "map": "dm2",
+      "arm": "control",
+      "repeat": 1,
+      "raw": "runs/ally_barrel_v1_control_dm2_1.log",
+      "raw_sha256": "be3b7bf8ae233371326e1b83bb71f9f6ac0bad3f4171a01291da957ced1dacab",
+      "source_sha256": "f76723838a162dce7b47c9b7526da30bc1aab9666f1d61687e3cfd75c818fc23",
+      "binary_sha256": "472776e69fd15bcb0ce7c892d946df3c60102e61c860d325c4e284891cc53b66",
+      "totals": {
+        "abandons": 2,
+        "acquisitions": 11,
+        "all_frags_positive": false,
+        "avg_speed": 193.50794472413028,
+        "boards": 0,
+        "closest_approach": 129.1722106337117,
+        "confine_max_sec": 6.600000000000001,
+        "confine_note": "Carmack spent 6.6s inside a 220u box at 203 u/s around (1958, -465)",
+        "cover": 112,
+        "deaths": 3,
+        "duration_sec": 30.0,
+        "engages": 7,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 10,
+        "hazards": 42,
+        "kd_spread": 1,
+        "lava_deaths": 1,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 1,
+        "stalls": 5,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5059523809523809,
+        "weapons": 1,
+        "world_deaths": 1
+      },
+      "flags": [
+        "1 lava/slime death(s) (world killer, hull-0 contents)",
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ]
+    },
+    {
+      "map": "dm2",
+      "arm": "candidate",
+      "repeat": 1,
+      "raw": "runs/ally_barrel_v1_candidate_dm2_1.log",
+      "raw_sha256": "f61b8249780176e38206611567b419f931046f9f63f83f26cb75befa27c572fe",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 8,
+        "all_frags_positive": false,
+        "avg_speed": 172.9704104384936,
+        "boards": 0,
+        "closest_approach": 86.68702325031137,
+        "confine_max_sec": 10.6,
+        "confine_note": "Romero spent 10.6s inside a 220u box at 57 u/s around (1480, -984)",
+        "cover": 93,
+        "deaths": 1,
+        "duration_sec": 29.900000000000002,
+        "engages": 4,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 7,
+        "hazards": 43,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 1,
+        "stalls": 10,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5057471264367817,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ]
+    },
+    {
+      "map": "dm2",
+      "arm": "control",
+      "repeat": 2,
+      "raw": "runs/ally_barrel_v1_control_dm2_2.log",
+      "raw_sha256": "062fd1f2e188e635714fc99c971f6082a75f48ec0c4913dc27b93da1e76562cf",
+      "source_sha256": "f76723838a162dce7b47c9b7526da30bc1aab9666f1d61687e3cfd75c818fc23",
+      "binary_sha256": "472776e69fd15bcb0ce7c892d946df3c60102e61c860d325c4e284891cc53b66",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 7,
+        "all_frags_positive": false,
+        "avg_speed": 167.21675372534298,
+        "boards": 0,
+        "closest_approach": 81.6120089202566,
+        "confine_max_sec": 8.100000000000001,
+        "confine_note": "Romero spent 8.1s inside a 220u box at 144 u/s around (1847, -1238)",
+        "cover": 103,
+        "deaths": 2,
+        "duration_sec": 30.0,
+        "engages": 4,
+        "frags": 2,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 3,
+        "grabs": 6,
+        "hazards": 39,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 0,
+        "stalls": 4,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5064705882352941,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ]
+    },
+    {
+      "map": "dm2",
+      "arm": "candidate",
+      "repeat": 2,
+      "raw": "runs/ally_barrel_v1_candidate_dm2_2.log",
+      "raw_sha256": "8cef1a101820a03f783328aabd16c654621f56babed71c8cab5cfb2f5f31722c",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 4,
+        "all_frags_positive": false,
+        "avg_speed": 207.30106742367647,
+        "boards": 0,
+        "closest_approach": 77.62602656326033,
+        "confine_max_sec": 5.600000000000001,
+        "confine_note": "Joe Rogan spent 5.6s inside a 220u box at 296 u/s around (2534, -418)",
+        "cover": 105,
+        "deaths": 2,
+        "duration_sec": 29.900000000000002,
+        "engages": 4,
+        "frags": 2,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 3,
+        "hazards": 48,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.506508875739645,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ]
+    },
+    {
+      "map": "dm2",
+      "arm": "control",
+      "repeat": 3,
+      "raw": "runs/ally_barrel_v1_control_dm2_3.log",
+      "raw_sha256": "9173070cf521cb9d2e7c6f15cafd7cfeeb2b2cef9c2565cf43d9e9397b6ed249",
+      "source_sha256": "f76723838a162dce7b47c9b7526da30bc1aab9666f1d61687e3cfd75c818fc23",
+      "binary_sha256": "472776e69fd15bcb0ce7c892d946df3c60102e61c860d325c4e284891cc53b66",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 14,
+        "all_frags_positive": false,
+        "avg_speed": 187.47160678007026,
+        "boards": 0,
+        "closest_approach": 93.96212002716857,
+        "confine_max_sec": 15.6,
+        "confine_note": "Romero spent 15.6s inside a 220u box at 152 u/s around (1309, -929)",
+        "cover": 102,
+        "deaths": 1,
+        "duration_sec": 29.8,
+        "engages": 2,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 12,
+        "hazards": 45,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 3,
+        "stalls": 2,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5051136363636364,
+        "weapons": 2,
+        "world_deaths": 0
+      },
+      "flags": [
+        "more routefails than goal completions",
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ]
+    },
+    {
+      "map": "dm2",
+      "arm": "candidate",
+      "repeat": 3,
+      "raw": "runs/ally_barrel_v1_candidate_dm2_3.log",
+      "raw_sha256": "a4087fc4a26376f65dbd7081f6642827525e9ee63dbde58ff342432a4fa2ce5b",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 14,
+        "all_frags_positive": false,
+        "avg_speed": 201.49900116154484,
+        "boards": 0,
+        "closest_approach": 62.09871174187117,
+        "confine_max_sec": 7.000000000000001,
+        "confine_note": "Joe Rogan spent 7.0s inside a 220u box at 310 u/s around (2235, -389)",
+        "cover": 120,
+        "deaths": 3,
+        "duration_sec": 30.0,
+        "engages": 7,
+        "frags": 3,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 11,
+        "hazards": 42,
+        "kd_spread": 3,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 3,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.505389221556886,
+        "weapons": 3,
+        "world_deaths": 0
+      },
+      "flags": [
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "control",
+      "repeat": 1,
+      "raw": "runs/ally_barrel_v1_control_dm4_1.log",
+      "raw_sha256": "58ef80192b4c1d0c710aa29545fb18c9b70239c820d50b0466a1ce1e5c9d13ae",
+      "source_sha256": "f76723838a162dce7b47c9b7526da30bc1aab9666f1d61687e3cfd75c818fc23",
+      "binary_sha256": "472776e69fd15bcb0ce7c892d946df3c60102e61c860d325c4e284891cc53b66",
+      "totals": {
+        "abandons": 2,
+        "acquisitions": 5,
+        "all_frags_positive": false,
+        "avg_speed": 217.58871283027995,
+        "boards": 0,
+        "closest_approach": 71.9169660094195,
+        "confine_max_sec": 7.599999999999998,
+        "confine_note": "Joe Rogan spent 7.6s inside a 220u box at 271 u/s around (-66, 498)",
+        "cover": 110,
+        "deaths": 5,
+        "duration_sec": 30.2,
+        "engages": 9,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 5,
+        "hazards": 39,
+        "kd_spread": 1,
+        "lava_deaths": 2,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 3,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5056603773584906,
+        "weapons": 0,
+        "world_deaths": 2
+      },
+      "flags": [
+        "2 lava/slime death(s) (world killer, hull-0 contents)",
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "candidate",
+      "repeat": 1,
+      "raw": "runs/ally_barrel_v1_candidate_dm4_1.log",
+      "raw_sha256": "c28ab41fcc95a0b5d6feec652cb69d071e59f1a18b5eb8b544d3b689ba3cb432",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 14,
+        "all_frags_positive": false,
+        "avg_speed": 219.39551459044927,
+        "boards": 0,
+        "closest_approach": 67.51673866531169,
+        "cover": 129,
+        "deaths": 4,
+        "duration_sec": 29.900000000000002,
+        "engages": 9,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 3,
+        "grabs": 9,
+        "hazards": 40,
+        "kd_spread": 2,
+        "lava_deaths": 2,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 1,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5049382716049383,
+        "weapons": 5,
+        "world_deaths": 2
+      },
+      "flags": [
+        "2 lava/slime death(s) (world killer, hull-0 contents)",
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "control",
+      "repeat": 2,
+      "raw": "runs/ally_barrel_v1_control_dm4_2.log",
+      "raw_sha256": "6fababfeeb188eab2d7098b50e72e36eecbc67d2a3a5149f69635f2b7602b72e",
+      "source_sha256": "f76723838a162dce7b47c9b7526da30bc1aab9666f1d61687e3cfd75c818fc23",
+      "binary_sha256": "472776e69fd15bcb0ce7c892d946df3c60102e61c860d325c4e284891cc53b66",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 9,
+        "all_frags_positive": false,
+        "avg_speed": 210.58277038382198,
+        "boards": 0,
+        "closest_approach": 110.26898929436143,
+        "confine_max_sec": 6.1,
+        "confine_note": "Carmack spent 6.1s inside a 220u box at 202 u/s around (-84, 512)",
+        "cover": 102,
+        "deaths": 4,
+        "duration_sec": 30.0,
+        "engages": 10,
+        "frags": 2,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 4,
+        "hazards": 43,
+        "kd_spread": 2,
+        "lava_deaths": 1,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 3,
+        "routefails": 1,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5048484848484848,
+        "weapons": 5,
+        "world_deaths": 1
+      },
+      "flags": [
+        "1 lava/slime death(s) (world killer, hull-0 contents)",
+        "known hotspot walkway_200_-900 (hazard, n=2)",
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "candidate",
+      "repeat": 2,
+      "raw": "runs/ally_barrel_v1_candidate_dm4_2.log",
+      "raw_sha256": "7e40f6ea2f069e0462dfedc1401e3ce64aaa1014bdbce87e8bf1ef644d071eb4",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 9,
+        "all_frags_positive": true,
+        "avg_speed": 193.70371047201252,
+        "boards": 0,
+        "closest_approach": 100.04503985705637,
+        "confine_max_sec": 6.099999999999998,
+        "confine_note": "Joe Rogan spent 6.1s inside a 220u box at 148 u/s around (-18, 424)",
+        "cover": 103,
+        "deaths": 4,
+        "duration_sec": 29.900000000000002,
+        "engages": 13,
+        "frags": 4,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 4,
+        "grabs": 6,
+        "hazards": 53,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 4,
+        "routefails": 1,
+        "stalls": 2,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5073170731707316,
+        "weapons": 3,
+        "world_deaths": 0
+      },
+      "flags": [
+        "known hotspot walkway_700_-800 (hazard, n=2)",
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "control",
+      "repeat": 3,
+      "raw": "runs/ally_barrel_v1_control_dm4_3.log",
+      "raw_sha256": "f860788f8a8568968a9807407eb2768a382623c102712dc0cf86dda8ff122d20",
+      "source_sha256": "f76723838a162dce7b47c9b7526da30bc1aab9666f1d61687e3cfd75c818fc23",
+      "binary_sha256": "472776e69fd15bcb0ce7c892d946df3c60102e61c860d325c4e284891cc53b66",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 12,
+        "all_frags_positive": true,
+        "avg_speed": 194.5629157552637,
+        "boards": 0,
+        "closest_approach": 64.81303881164654,
+        "confine_max_sec": 16.6,
+        "confine_note": "Joe Rogan spent 16.6s inside a 220u box at 203 u/s around (20, 459)",
+        "cover": 100,
+        "deaths": 4,
+        "duration_sec": 29.900000000000002,
+        "engages": 10,
+        "frags": 4,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 7,
+        "grabs": 1,
+        "hazards": 57,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 4,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5048780487804879,
+        "weapons": 11,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "candidate",
+      "repeat": 3,
+      "raw": "runs/ally_barrel_v1_candidate_dm4_3.log",
+      "raw_sha256": "68d280a20ba2670d3f684f3763174e1f28ddcae84057fcd7919f041687da8e79",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 24,
+        "all_frags_positive": true,
+        "avg_speed": 228.06240031455977,
+        "boards": 0,
+        "closest_approach": 98.5348669253681,
+        "cover": 125,
+        "deaths": 5,
+        "duration_sec": 30.0,
+        "engages": 16,
+        "frags": 5,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 6,
+        "grabs": 13,
+        "hazards": 46,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 5,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5043749999999999,
+        "weapons": 11,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    }
+  ],
+  "gate_cards": {
+    "dm2": "runs/ally-barrel-v1.dm2.gate.txt",
+    "dm4": "runs/ally-barrel-v1.dm4.gate.txt"
+  },
+  "artifacts": [
+    {
+      "path": "runs/ally_barrel_v1_control_dm2_1.log",
+      "sha256": "be3b7bf8ae233371326e1b83bb71f9f6ac0bad3f4171a01291da957ced1dacab"
+    },
+    {
+      "path": "runs/ally_barrel_v1_candidate_dm2_1.log",
+      "sha256": "f61b8249780176e38206611567b419f931046f9f63f83f26cb75befa27c572fe"
+    },
+    {
+      "path": "runs/ally_barrel_v1_control_dm2_2.log",
+      "sha256": "062fd1f2e188e635714fc99c971f6082a75f48ec0c4913dc27b93da1e76562cf"
+    },
+    {
+      "path": "runs/ally_barrel_v1_candidate_dm2_2.log",
+      "sha256": "8cef1a101820a03f783328aabd16c654621f56babed71c8cab5cfb2f5f31722c"
+    },
+    {
+      "path": "runs/ally_barrel_v1_control_dm2_3.log",
+      "sha256": "9173070cf521cb9d2e7c6f15cafd7cfeeb2b2cef9c2565cf43d9e9397b6ed249"
+    },
+    {
+      "path": "runs/ally_barrel_v1_candidate_dm2_3.log",
+      "sha256": "a4087fc4a26376f65dbd7081f6642827525e9ee63dbde58ff342432a4fa2ce5b"
+    },
+    {
+      "path": "runs/ally_barrel_v1_control_dm4_1.log",
+      "sha256": "58ef80192b4c1d0c710aa29545fb18c9b70239c820d50b0466a1ce1e5c9d13ae"
+    },
+    {
+      "path": "runs/ally_barrel_v1_candidate_dm4_1.log",
+      "sha256": "c28ab41fcc95a0b5d6feec652cb69d071e59f1a18b5eb8b544d3b689ba3cb432"
+    },
+    {
+      "path": "runs/ally_barrel_v1_control_dm4_2.log",
+      "sha256": "6fababfeeb188eab2d7098b50e72e36eecbc67d2a3a5149f69635f2b7602b72e"
+    },
+    {
+      "path": "runs/ally_barrel_v1_candidate_dm4_2.log",
+      "sha256": "7e40f6ea2f069e0462dfedc1401e3ce64aaa1014bdbce87e8bf1ef644d071eb4"
+    },
+    {
+      "path": "runs/ally_barrel_v1_control_dm4_3.log",
+      "sha256": "f860788f8a8568968a9807407eb2768a382623c102712dc0cf86dda8ff122d20"
+    },
+    {
+      "path": "runs/ally_barrel_v1_candidate_dm4_3.log",
+      "sha256": "68d280a20ba2670d3f684f3763174e1f28ddcae84057fcd7919f041687da8e79"
+    },
+    {
+      "path": "runs/ally_barrel_v1_physical_control.log",
+      "sha256": "6fb64399b29ebcba7a0081e8fb2c2336950008789ecda1bfd3d2c187bd3619c8"
+    },
+    {
+      "path": "runs/ally_barrel_v1_physical_dm4_played.log",
+      "sha256": "84e6355f006fb99f42c85c56d6eb3e9914ca923b3c7826c05481cb12c1c85fc7"
+    },
+    {
+      "path": "runs/ally_barrel_v1_physical_dm2_slow.log",
+      "sha256": "7a125051bd0c70a3e75a92e96e39bfc09384f3f9c2a2740b715e2935ea81fcea"
+    },
+    {
+      "path": "runs/ally-barrel-v1.dm2.gate.txt",
+      "sha256": "04eec5aefd9971a91d80b9599a67d3d9ef6a2a55ae4d827f6107a0baf33253f6"
+    },
+    {
+      "path": "runs/ally-barrel-v1.dm4.gate.txt",
+      "sha256": "e7a5c1d34a21f5b3f7802ed6abde0367e56faf6bf7dacbfff0219d8a56b5eac4"
+    },
+    {
+      "path": "runs/ally-barrel-v1.source.patch",
+      "sha256": "8b784d55c0c4e72448af73d56e7cd5219eb9ada8a80bb59eb011908eae730d76"
+    },
+    {
+      "path": "runs/ally_barrel_v1_health_dm2.log",
+      "sha256": "8d0bed1e3f2144892817e478e15dcb0eba219af50f7fa2d9a68f491d8335a330"
+    },
+    {
+      "path": "runs/ally_barrel_v1_health_dm4.log",
+      "sha256": "39c65cac679b7046077dc70d7bb1c246409c1fe22ba6d4f0be879f12d33fc69d"
+    }
+  ],
+  "limitations": [
+    "Physical fixture uses full combat, actual collision hulls and stock weapons. Rockets are counted on emission and removed; no flight-damage claim.",
+    "Central-ray ally safety does not establish shotgun-spread or splash immunity. Existing splash safety is unchanged.",
+    "Three ordinary tapes per arm on each map are a bounded native comparison, not a human-play judgement.",
+    "No installed program or historical tape changed.",
+    "Native comparisons approve parity on dm2 and dm4. They do not demonstrate improvement; all statistical confidence intervals include zero.",
+    "Secondary pickup summaries flag dm2 and warn on dm4. All twelve tapes have zero freezes and zero under-fire freezes."
+  ],
+  "legacy_boundary": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "name": "ally_health_boundary_current_dm2",
+      "source_sha256": "8469f0d8de36f7c44aa9f1ad9db204fc91ffe9c978075185727abe333bf9c854",
+      "binary_sha256": "cc10b5573fc0df9c091614ba909a4cc5951b4c4f2487136831be53c4086d2682",
+      "tape_sha256": "8d0bed1e3f2144892817e478e15dcb0eba219af50f7fa2d9a68f491d8335a330",
+      "perception": [
+        {
+          "id": 1,
+          "labels": [
+            "clock",
+            "initial_observation",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "reacquired",
+            "prediction_bound",
+            "unseen_pain",
+            "unseen_pain_trace",
+            "visible_pain",
+            "visible_pain_trace",
+            "secondary_observed",
+            "secondary_hidden",
+            "target_switch",
+            "target_death",
+            "observer_respawn",
+            "roster_removal"
+          ],
+          "ended": true,
+          "clean": true,
+          "frames": 13,
+          "seconds": 0.2,
+          "dt_ms": 15.0
+        }
+      ],
+      "health": [
+        {
+          "id": 1,
+          "labels": [
+            "hidden_enter",
+            "hidden_stay",
+            "hidden_power_enter",
+            "hidden_power_stay",
+            "visible_enter",
+            "visible_stay",
+            "visible_power_enter",
+            "visible_power_stay",
+            "own_stack",
+            "coop_hold_fire",
+            "acquire_low_near",
+            "acquire_low_far",
+            "hunch_health",
+            "hunch_weapons",
+            "hunch_ammo",
+            "hunch_armor",
+            "hunch_pack",
+            "hunch_inputs_isolated",
+            "hidden_weapon_family",
+            "visible_weapon_family",
+            "hunch_cooldown",
+            "identity_and_rng"
+          ],
+          "failures": [],
+          "ended": true,
+          "clean": true
+        }
+      ],
+      "accepted": true,
+      "raw": "runs/ally_barrel_v1_health_dm2.log"
+    },
+    {
+      "variant": "current",
+      "map": "dm4",
+      "name": "ally_health_boundary_current_dm4",
+      "source_sha256": "8469f0d8de36f7c44aa9f1ad9db204fc91ffe9c978075185727abe333bf9c854",
+      "binary_sha256": "cc10b5573fc0df9c091614ba909a4cc5951b4c4f2487136831be53c4086d2682",
+      "tape_sha256": "39c65cac679b7046077dc70d7bb1c246409c1fe22ba6d4f0be879f12d33fc69d",
+      "perception": [
+        {
+          "id": 1,
+          "labels": [
+            "clock",
+            "initial_observation",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "hidden_pair",
+            "reacquired",
+            "prediction_bound",
+            "unseen_pain",
+            "unseen_pain_trace",
+            "visible_pain",
+            "visible_pain_trace",
+            "secondary_observed",
+            "secondary_hidden",
+            "target_switch",
+            "target_death",
+            "observer_respawn",
+            "roster_removal"
+          ],
+          "ended": true,
+          "clean": true,
+          "frames": 13,
+          "seconds": 0.2,
+          "dt_ms": 16.0
+        }
+      ],
+      "health": [
+        {
+          "id": 1,
+          "labels": [
+            "hidden_enter",
+            "hidden_stay",
+            "hidden_power_enter",
+            "hidden_power_stay",
+            "visible_enter",
+            "visible_stay",
+            "visible_power_enter",
+            "visible_power_stay",
+            "own_stack",
+            "coop_hold_fire",
+            "acquire_low_near",
+            "acquire_low_far",
+            "hunch_health",
+            "hunch_weapons",
+            "hunch_ammo",
+            "hunch_armor",
+            "hunch_pack",
+            "hunch_inputs_isolated",
+            "hidden_weapon_family",
+            "visible_weapon_family",
+            "hunch_cooldown",
+            "identity_and_rng"
+          ],
+          "failures": [],
+          "ended": true,
+          "clean": true
+        }
+      ],
+      "accepted": true,
+      "raw": "runs/ally_barrel_v1_health_dm4.log"
+    }
+  ],
+  "protected_after": {
+    "binaries": {
+      "C:\\argus\\game\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+      "C:\\argus\\engine\\argus\\progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+      "C:\\argus\\lq1\\progs.dat": "1699e14596776ac35729767c8fcc0d80ff557923d63b2b78abd45f69d0b07633",
+      "C:\\argus\\tools\\argus_mcp\\target\\debug\\argus-mcp.exe": "2921a3635fee84e62922d46b6ebba4a593aa71ff6219b35859bc53a7eb8b5fdd"
+    },
+    "unchanged": true,
+    "error": null
+  }
+}

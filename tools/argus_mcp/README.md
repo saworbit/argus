@@ -947,6 +947,13 @@ the separate slow-cadence check. `--source` selects a frozen source tree;
 contracts, not physical wedge or ordinary-match acceptance. Each invocation
 owns its source, program and raw output; installed gameplay is protected.
 
+`python tools/verify_ally_barrel.py --output backups/<new-directory>
+--prefix <new_prefix> --map dm4` checks eight real-hull firing contracts through
+full combat and stock weapons. Use `--map dm2 --ticrate .1` for the separate
+slow profile. `--source` stages a frozen control and `--expect-failure` records
+its negative outcome. The maintained `ally` compile family also runs in CI.
+See the [firing limits](../../docs/behaviour-diagnostics.md#ally-barrel-and-speculative-shots).
+
 Repeat current-source muzzle or active health/inventory boundary checks with
 `python tools/verify_private_fixtures.py muzzle --output backups/<new-directory> --prefix <new_prefix>`.
 Replace `muzzle` with `health` for the active health/inventory boundary checks.

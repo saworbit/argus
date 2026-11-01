@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Check co-op allies along the limited barrel direction and disable speculative
+  rockets in co-op while respecting facing and muzzle-clearance gates
+  ([#655](https://github.com/saworbit/argus/issues/655)).
+
 - Keep plan-proof input, source and output guards active under optimized Python
   ([#728](https://github.com/saworbit/argus/issues/728)).
 

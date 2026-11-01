@@ -1,0 +1,32 @@
+┌─────────────────────────────────────────────────────────────┐
+│ ARGUS A/B QUALITY GATES: dm4 (baseline vs candidate) (scaled) │
+├──────────────────────────┬────────┬──────────────┬──────────┤
+│ Metric                   │ Status │ Delta        │ Verdict  │
+├──────────────────────────┼────────┼──────────────┼──────────┤
+│ Lava/Slime Deaths        │   🟢   │ 0 vs 0       │ PASS     │
+│ Nav Stalls               │   🟢   │ 0 vs 0       │ PASS     │
+│ Weapon Engages           │   🟢   │ +60.0%       │ PASS     │
+│ Goal Pickups (gl)        │   🟡   │ -14.3%       │ WARN     │
+│ Frag Spread Balance      │   🟢   │ 4 vs 5       │ PASS     │
+│ K/D Spread Tightness     │   🟢   │ 1 vs 1       │ PASS     │
+│ Freeze Stalls/Statues    │   🟢   │ 0.0s vs 0.0s │ PASS     │
+│ Navigation Coverage      │   🟢   │ 100 vs 125   │ PASS     │
+│ Server tick rate         │   🟢   │ both listen  │ SAME     │
+├──────────────────────────┴────────┴──────────────┴──────────┤
+│ OVERALL VERDICT:  🟢 APPROVED FOR RELEASE (PARITY)          │
+└─────────────────────────────────────────────────────────────┘
+
+Parity: stalls 0 to 0, engages 10 to 13, lava 1 to 0, freezes 0 to 0 (medians, 3 control vs 3 candidate tapes)
+  - primary metric pre-registered as engagements: only it decides statistical gates; severe freezes still reject and other statistical gates flag. Four gates convict a null 19 per cent of the time against 0 to 12 per cent each (docs/specs/2026-09-16-lab-measurement-limits.md).
+  - stall_parity: candidate median 0 against a control band of 0 to 3 (control median 0), in band
+  - stall_parity: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.
+  - stall_parity: IQM 0 to 0, improvement 95% CI -2.0 to +1.0 (covers zero), P(improve) 0.44; sprt Continue at a bound of 10.6 - neither boundary crossed at 3 tapes a side; run another (cap 10)
+  - engagements: candidate median 13 against a control band of 5 to 15 (control median 10), in band
+  - engagements: IQM 10 to 13, improvement 95% CI -1.0 to +7.0 (covers zero), P(improve) 0.72; sprt Continue at a bound of 17.9 - neither boundary crossed at 3 tapes a side; run another (cap 10)
+  - lava_deaths: candidate median 0 against a control band of 0 to 4 (control median 1), in band
+  - lava_deaths: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.
+  - lava_deaths: IQM 1 to 0, improvement 95% CI -2.0 to +2.0 (covers zero), P(improve) 0.61; sprt Continue at a bound of 3.0 - neither boundary crossed at 3 tapes a side; run another (cap 10)
+  - freezes: candidate median 0 against a control band of 0 to 1 (control median 0), in band
+  - freezes: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.
+  - freezes: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.50; sprt Continue at a bound of 1.2 - neither boundary crossed at 3 tapes a side; run another (cap 10)
+  - 3 candidate tape(s) against 3 control tape(s); the band carries 0.58 of the one-tape null spread
