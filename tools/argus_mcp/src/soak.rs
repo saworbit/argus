@@ -64,8 +64,8 @@ pub fn parse_soak_args(mut args: impl Iterator<Item = String>) -> Result<SoakOpt
             "--maps" => {
                 o.maps = val("--maps")?
                     .split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect()
+                    .map(crate::paths::map_name)
+                    .collect::<Result<Vec<_>, _>>()?
             }
             "--hours" => {
                 o.hours = val("--hours")?
@@ -108,7 +108,12 @@ pub fn parse_soak_args(mut args: impl Iterator<Item = String>) -> Result<SoakOpt
     Ok(o)
 }
 
-pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
+pub async fn run_soak(mut opts: SoakOpts) -> Result<(), String> {
+    opts.maps = opts
+        .maps
+        .iter()
+        .map(|m| crate::paths::map_name(m))
+        .collect::<Result<_, _>>()?;
     let cfg = Config::load().map_err(|e| format!("{e:?}"))?;
     let stamp = chrono_lite_stamp();
     let report_path = cfg.runs.join(format!("soak_{stamp}.md"));
@@ -294,7 +299,8 @@ pub async fn run_soak(opts: SoakOpts) -> Result<(), String> {
 /// snapshot (never by recompiling - fteqcc is not byte-stable and a
 /// recompile would silently drift the recorded ship MD5).
 pub async fn run_cycle(map: &str) -> Result<(), String> {
-    crate::engine::validate_map(map)?;
+    let map = crate::paths::map_name(map)?;
+    let map = map.as_str();
     let cfg = Config::load().map_err(|e| format!("{e:?}"))?;
     // resolve the baseline first. Step 6 used to be the first place
     // that asked for it, and a `?` there returned with the candidate

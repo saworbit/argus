@@ -305,6 +305,11 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Share QC-safe map names across lab entry points (#688), count every typed
+  family in runtime slot admission and refuse typed overflow (#664), and use
+  the cached graph representation for overlays while exposing unavailable
+  map-item data in graph views (#691).
+
 - Keep parsing client messages after NetQuake keepalives, report malformed
   `svc_bad` streams explicitly, and retain later prints and entity updates
   from the same packet (#658).

@@ -266,7 +266,8 @@ pub async fn run_pair(
     skill: u32,
     prefix: Option<&str>,
 ) -> Result<WithinAbReport, String> {
-    crate::engine::validate_map(map)?;
+    let map = crate::paths::map_name(map)?;
+    let map = map.as_str();
     if !(10..=300).contains(&duration_sec) {
         return Err("within-match A/B duration must be 10..=300 seconds".into());
     }

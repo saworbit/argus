@@ -84,6 +84,7 @@ from argus_mapgate import assess_playability
 from argus_navjson import STEP, FAMILIES, load_nav
 from argus_registration import registration
 from argus_nav_preview import generate_preview
+from argus_nav_slots import slot_count, clamp_walk, require_slots
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -91,6 +92,12 @@ if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     sys.exit(0 if ("--help" in sys.argv or "-h" in sys.argv) else 1)
 
 BSP, MAPNAME, OUTQC, OUTPNG = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+from argus_names import map_name
+try:
+    MAPNAME = map_name(MAPNAME)
+except ValueError as error:
+    print(f'error: {error}', file=sys.stderr)
+    sys.exit(1)
 if '--render-only' in sys.argv[5:]:
     if set(sys.argv[5:]) != {'--render-only'}:
         print('error: --render-only cannot be combined with generation options', file=sys.stderr)
@@ -2387,6 +2394,12 @@ def rj_feasible(ax, ay, az, bx, by, bz, min_dz=100):
 
 tele_out = collections.Counter(a for a, b in teles)
 rjlinks = []
+sprints = []
+swims = []
+
+def _slot_free(source):
+    return slot_count(source, links, teles, rjlinks, lifts, swims, trains, sprints) < MAX_LINKS
+
 NO_RJ = "--no-rj" in sys.argv[5:]
 
 def ensure_way(nid, radius=40):
@@ -2410,9 +2423,7 @@ def ensure_way(nid, radius=40):
 def try_rj(i, j):
     if i is None or j is None or i == j:
         return
-    used = (len(links.get(i, {})) + tele_out[i]
-            + sum(1 for x, _ in rjlinks if x == i))
-    if used >= MAX_LINKS or j in links.get(i, {}):
+    if not _slot_free(i) or j in links.get(i, {}):
         return
     if (i, j) in rjlinks:
         return
@@ -2532,7 +2543,7 @@ print(f"pad walk-ins: {n_stitch} stitch links for promoted launch pads")
 # between its promoted seats, re-verified from the seat positions.
 # This is the extensible shape for the whole trick-move family:
 # an arc model, a typed link, and a toll the router checks.
-sprints = []
+
 for _sa, _sb, _sd in sprint_edges:
     i = ensure_way(_sa, 8)
     j = ensure_way(_sb, 8)
@@ -2561,7 +2572,7 @@ print(f"sprint links: {len(sprints)} typed "
 # CONTENTS_WATER, never slime or lava.
 # h0_contents / water_surface_z now live above sampling (lava slice)
 
-swims = []
+
 n_swimnodes = 0
 for i, w in enumerate(ways):
     wx, wy, wz = pos(w)
@@ -2628,21 +2639,12 @@ print(f"swim-exit links: {len(swims)} from {n_swimnodes} underwater waypoints")
 # (lqdm2 n126 lost its teleporter - Shane's fix-now list). Evict the
 # LONGEST plain walk links to guarantee room; jump-typed links are
 # kept preferentially.
-typed_out = collections.Counter()
-for _a, _b in teles: typed_out[_a] += 1
-for _a, _b in rjlinks: typed_out[_a] += 1
-for _a, _b in lifts: typed_out[_a] += 1
-for _a, _b in trains: typed_out[_a] += 1
-for _a, _b in swims: typed_out[_a] += 1
-for _a, _b in sprints: typed_out[_a] += 1
-n_evict = 0
-for _i in list(links):
-    room = 8 - typed_out[_i]
-    if len(links[_i]) > room:
-        keep_links = sorted(links[_i].items(),
-                            key=lambda kv: (not kv[1][1], kv[1][0]))[:max(0, room)]
-        n_evict += len(links[_i]) - len(keep_links)
-        links[_i] = dict(keep_links)
+try:
+    n_evict = clamp_walk(links, teles, rjlinks, lifts, swims, trains, sprints)
+except ValueError as error:
+    print(f"error: {error}", file=sys.stderr)
+    sys.exit(1)
+
 if n_evict:
     print(f"link budget: evicted {n_evict} longest walk links so typed links fit 8 slots")
 nlinks = sum(len(v) for v in links.values())
@@ -2832,9 +2834,7 @@ if not NO_RJ:
             if _dropped >= 2:
                 break
             _mx, _my, _mz = pos(ways[_m])
-            _used = (len(links.get(_m, {})) + tele_out[_m]
-                     + sum(1 for x, _ in rjlinks if x == _m))
-            if _used >= MAX_LINKS:
+            if not _slot_free(_m):
                 continue
             _dc = []
             for _o in range(len(ways)):
@@ -2858,9 +2858,7 @@ if not NO_RJ:
         _cands = []
         for _m in _comp:
             _mx, _my, _mz = pos(ways[_m])
-            _used = (len(links.get(_m, {})) + tele_out[_m]
-                     + sum(1 for x, _ in rjlinks if x == _m))
-            if _used >= MAX_LINKS:
+            if not _slot_free(_m):
                 continue
             for _o in range(len(ways)):
                 if _o in _comp:
@@ -3096,10 +3094,6 @@ def _knit_pass(_toward_main, _use_rj):
         def _src_dst(_m, _o):
             return (_m, _o) if _toward_main else (_o, _m)
 
-        def _slot_free(_s):
-            _u = (len(links.get(_s, {})) + tele_out[_s]
-                  + sum(1 for x, _ in rjlinks if x == _s))
-            return _u < MAX_LINKS
 
         for _h, _m, _o in sorted(_walkc)[:48]:
             _s, _d = _src_dst(_m, _o)
@@ -3603,6 +3597,9 @@ if __import__("os").path.exists(_provenpath):
             _npv += 1
             print(f"engine-proven entry: {_src}->{_dst} retyped as JUMP")
             continue
+        if not _slot_free(_src):
+            print(f"engine-proven entry: {_src}->{_dst} refused: no runtime slot")
+            continue
         _d = ((_pt[0] - _pf[0]) ** 2 + (_pt[1] - _pf[1]) ** 2) ** 0.5
         links.setdefault(_src, {})[_dst] = (_d, 1)
         _npv += 1
@@ -3639,28 +3636,16 @@ sprints = _dedupe_typed(sprints, "sprint")
 # hops (tele/RJ/lift/swim/train/sprint) own their slots, jump-typed
 # walk links are kept preferentially (7e's own policy), longest
 # plain walks evict first.
-_typedout = collections.Counter()
-for _a, _b in teles + rjlinks + lifts + swims + trains + sprints:
-    _typedout[_a] += 1
-_indeg = collections.Counter()
-for _i in links:
-    for _j in links[_i]:
-        _indeg[_j] += 1
-_nclamp = 0
-for _i in list(links):
-    _budget = max(0, 8 - _typedout[_i])
-    if len(links[_i]) <= _budget:
-        continue
-    # keep jump-typed, then links whose TARGET is poorly served
-    # (evicting a well-served target's link costs nothing; evicting
-    # a bridge to a 1-in-link node cut the tower spawn's reach from
-    # 85% to 74% under the first, length-only policy), shortest last
-    _kept = sorted(
-        links[_i].items(),
-        key=lambda kv: (0 if kv[1][1] else 1, -1_000_000 // max(1, _indeg[kv[0]]),
-                        kv[1][0]))
-    _nclamp += len(links[_i]) - _budget
-    links[_i] = dict(_kept[:_budget])
+_indeg = collections.Counter(_j for outgoing in links.values() for _j in outgoing)
+try:
+    _nclamp = clamp_walk(
+        links, teles, rjlinks, lifts, swims, trains, sprints,
+        key=lambda source, kv: (0 if kv[1][1] else 1,
+                               -1_000_000 // max(1, _indeg[kv[0]]), kv[1][0]))
+except ValueError as error:
+    print(f"error: {error}", file=sys.stderr)
+    sys.exit(1)
+
 if _nclamp:
     print(f"final slot clamp evicted {_nclamp} link(s) past the "
           f"8-slot runtime budget")
@@ -3983,6 +3968,12 @@ for i, w in enumerate(ways):
                     break
 
 # ---- 8a. emit QC ----
+try:
+    require_slots(links, teles, rjlinks, lifts, swims, trains, sprints)
+except ValueError as error:
+    print(f"error: {error}", file=sys.stderr)
+    sys.exit(1)
+
 with open(OUTQC, "w", newline="\n") as f:
     f.write("/* generated by argus_navgen.py - do not edit */\n\n")
     f.write(f"void() Argus_Nav_Spawn_{MAPNAME} =\n{{\n")

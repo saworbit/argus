@@ -33,6 +33,37 @@ def find_argus_mcp_binary(root=ROOT, *, installed=False):
 
 
 class TestToolsCLI(unittest.TestCase):
+    def test_nav_contract_regressions(self):
+        res = self.run_tool('test_nav_contracts.py')
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
+    def test_navgen_normalizes_the_generated_map_symbol(self):
+        tmp = self.door_fixture(collision_gap=True)
+        qc, png = tmp / 'normalized.qc', tmp / 'normalized.png'
+        result = self.run_tool('argus_navgen.py', str(tmp / 'fixture.bsp'), 'DM4',
+                               str(qc), str(png), '--no-dispatcher', '--no-rj')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        source = qc.read_text()
+        self.assertIn('Argus_Nav_Spawn_dm4', source)
+        self.assertNotIn('Argus_Nav_Spawn_DM4', source)
+
+    def test_navgen_typed_overflow_preserves_existing_outputs(self):
+        tmp = self.door_fixture(collision_gap=True)
+        qc, png = tmp / 'nav.qc', tmp / 'out.png'
+        before = {p: p.read_bytes() for p in (qc, Path(str(qc) + '.json'))}
+        args = [str(ROOT / 'tools/argus_navgen.py'), str(tmp / 'fixture.bsp'),
+                'fixture', str(qc), str(png), '--no-dispatcher']
+        code = ("import sys,runpy;sys.path.insert(0," + repr(str(ROOT / 'tools')) + ");"
+                "import argus_nav_slots as slots; original=slots.clamp_walk;"
+                "slots.clamp_walk=lambda links,*families,**kw:original(links,*families,[(0,n) for n in range(1,10)],**kw);"
+                "sys.argv=" + repr(args) + ";runpy.run_path(sys.argv[0],run_name='__main__')")
+        result = subprocess.run([sys.executable, '-c', code], capture_output=True,
+                                text=True, timeout=30)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('typed link slot overflow', result.stderr)
+        self.assertNotIn('Traceback', result.stderr)
+        self.assertEqual({p: p.read_bytes() for p in before}, before)
+
     def test_nav_preview_regressions(self):
         res = self.run_tool("test_nav_preview.py")
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)

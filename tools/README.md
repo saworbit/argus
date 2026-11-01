@@ -1,5 +1,12 @@
 # Argus Developer Tools
 
+Navigation names use the lab's shared rule: trim and lowercase, then
+`[a-z0-9_]{1,32}`, excluding `dispatch`. `argus_navgen.py` refuses invalid
+names before opening a BSP or output. Generation counts unique destinations
+across all typed families, preserves typed routes when pruning walks and
+refuses typed overflow before writing. `test_nav_contracts.py` checks the
+name cases shared with Rust and the eight-slot contract.
+
 This directory contains standalone command-line tools for navigation generation, match analysis, session harvesting, and graph reach validation.
 
 For agent development, use the [native lab workflow](../docs/lab-workflow.md)

@@ -124,7 +124,8 @@ impl EngineChild {
         port: Option<u32>,
         coop: bool,
     ) -> Result<Self, String> {
-        validate_map(map)?;
+        let map = crate::paths::map_name(map)?;
+        let map = map.as_str();
         if slots == 0 || slots > 16 {
             return Err("dedicated_slots must be 1..=16".into());
         }
@@ -253,20 +254,7 @@ impl Drop for EngineChild {
 }
 
 pub fn validate_map(map: &str) -> Result<(), String> {
-    let m = map.trim();
-    if m.is_empty() {
-        return Err("map is empty; use a short name such as dm4".into());
-    }
-    if m.contains('/') || m.contains('\\') || m.contains("..") || m.contains(' ') {
-        return Err("map must be a short name (dm4), not a path".into());
-    }
-    if !m
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
-    {
-        return Err("map must match [A-Za-z0-9_-]+".into());
-    }
-    Ok(())
+    crate::paths::map_name(map).map(|_| ())
 }
 
 #[cfg(not(windows))]

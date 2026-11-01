@@ -131,6 +131,9 @@ pub fn validate_tune(line: &str) -> Result<String, String> {
                 .into(),
         );
     }
+    if let Some(("map", name)) = line.split_once(char::is_whitespace) {
+        return Ok(format!("map {}", crate::paths::map_name(name)?));
+    }
     Ok(line.to_string())
 }
 

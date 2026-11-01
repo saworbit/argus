@@ -1029,6 +1029,17 @@ establish loaded navigation; e1m3/e1m4 remain unregistered experimental maps.
 
 ### Maps
 
+Map names are trimmed, lowercased and checked as `[a-z0-9_]{1,32}` across the
+engine, graph revisions, GUI import and generator. `dispatch` is reserved.
+Hyphens are refused because the same name forms a QuakeC function suffix.
+GUI uploads may include a `.bsp` extension. Invalid or noncanonical generated
+QC filenames stop dispatcher sync with the filename in the error.
+
+Graph parsing and cached loading live in `nav_graph`; map-enriched views live
+in `nav_view`. Numeric node routes need only the graph. Node and area views
+report `atlas: "unavailable: <reason>"` when map items cannot be read, and
+item routes return that error rather than claiming no item exists.
+
 | Tool | Needs | Does |
 |------|-------|------|
 | `lab_status` | `ARGUS_ROOT` | Dashboard: config, map flags, recent runs, recommend. No per-map ingest. |
@@ -1037,6 +1048,14 @@ establish loaded navigation; e1m3/e1m4 remain unregistered experimental maps.
 | `list_maps` | `ARGUS_ROOT` | Maps on disk and in id1 PAKs |
 | `nav_generate` | full lab | Generate per-map waypoint QC/JSON and an optional PNG. Return `preview_generated`, edict and playability verdicts; attach an image only with a matching freshness receipt. Over-budget graphs and first-time maps without current reach and mill evidence are not registered. |
 | `nav_sync_dispatch` | `ARGUS_ROOT` | Register new `argus_nav_<map>.qc` in the dispatcher and `progs.src` |
+
+Generation counts unique destinations across every typed family against the
+runtime's eight slots. Walk pruning preserves typed connectivity. More than
+eight typed destinations refuses generation before output, rather than
+choosing a lift, train or other typed route to discard. Late stitches and
+engine-proven additions use the same admission count, with a final overflow
+check before emission. Existing graphs still need their normal engine gates
+when regenerated.
 
 ### Lab loop
 

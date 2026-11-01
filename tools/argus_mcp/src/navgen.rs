@@ -62,6 +62,8 @@ pub fn nav_generate(
     out_png: Option<&str>,
     register: bool,
 ) -> Result<NavgenResult, String> {
+    let map = crate::paths::map_name(map)?;
+    let map = map.as_str();
     let bsp_path = resolve_input(cfg, bsp)?;
     let out_qc = match out_qc {
         Some(p) => crate::paths::resolve_output(cfg, p),

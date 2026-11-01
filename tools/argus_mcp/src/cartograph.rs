@@ -2,6 +2,7 @@
 
 use crate::bsp::{pak_find, pak_list_maps, read_bsp29, Bsp29, ClipHull};
 use crate::config::Config;
+use crate::nav_graph::NavGraph;
 use crate::paths::resolve_input;
 use regex::Regex;
 use serde::Serialize;
@@ -791,7 +792,9 @@ fn atlas_from_bsp(
             None
         }
     };
-    let nav = graph.as_ref().map(|g| g.overlay.clone());
+    let nav = graph
+        .as_ref()
+        .map(|g| nav_overlay(&cfg.src.join(format!("argus_nav_{map}.qc.json")), g));
     let height_bands = graph
         .as_ref()
         .map(|g| height_bands(map, &g.nodes))
@@ -820,7 +823,7 @@ fn atlas_from_bsp(
                 g.adj
                     .iter()
                     .flatten()
-                    .filter(|(_, kind)| kind == "rocket")
+                    .filter(|edge| edge.kind == "rocket")
                     .count()
             })
             .unwrap_or(0);
@@ -1162,7 +1165,8 @@ fn plat_has_lift_link(g: &NavGraph, mins: [f32; 3], maxs: [f32; 3]) -> bool {
             && n[1] <= maxs[1] + MARGIN
     };
     for (from, edges) in g.adj.iter().enumerate() {
-        for (to, kind) in edges {
+        for edge in edges {
+            let (to, kind) = (&edge.to, &edge.kind);
             if kind != "lift" {
                 continue;
             }
@@ -1292,13 +1296,6 @@ fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29, graph: Option<&NavGraph>) -> 
     out
 }
 
-struct NavGraph {
-    overlay: NavOverlay,
-    nodes: Vec<[f32; 3]>,
-    /// Directed edges (kind, to). Walk/drop/jump/tele/rocket/lift/swim.
-    adj: Vec<Vec<(u32, String)>>,
-}
-
 struct NodeSnap {
     node: u32,
     dist: f32,
@@ -1306,25 +1303,23 @@ struct NodeSnap {
 }
 
 fn load_nav_graph(cfg: &Config, map: &str) -> Result<Option<NavGraph>, String> {
-    let path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
-    if !path.exists() {
+    if !cfg.src.join(format!("argus_nav_{map}.qc.json")).exists() {
         return Ok(None);
     }
-    load_nav_graph_at(&path).map(Some)
+    crate::nav_graph::load_nav(cfg, map).map(Some)
 }
 
-fn load_nav_graph_at(path: &std::path::Path) -> Result<NavGraph, String> {
+#[cfg(test)]
+fn load_nav_graph_at(path: &Path) -> Result<NavGraph, String> {
     let text = std::fs::read_to_string(path).map_err(|e| e.to_string())?;
-    let v: serde_json::Value = serde_json::from_str(&text).map_err(|e| format!("nav json: {e}"))?;
-    let graph = crate::nav_graph::parse_graph("overlay", &v)?;
-    let nodes = graph.nodes;
+    let value = serde_json::from_str(&text).map_err(|e| format!("nav json: {e}"))?;
+    crate::nav_graph::parse_graph("overlay", &value)
+}
+
+fn nav_overlay(path: &Path, graph: &NavGraph) -> NavOverlay {
+    let nodes = &graph.nodes;
     let n = nodes.len();
-    let adj = graph
-        .adj
-        .into_iter()
-        .map(|edges| edges.into_iter().map(|edge| (edge.to, edge.kind)).collect())
-        .collect();
-    let exposure: Vec<usize> = graph.exposure.into_iter().map(|n| n as usize).collect();
+    let exposure: Vec<usize> = graph.exposure.iter().map(|n| *n as usize).collect();
     let mut ranked: Vec<usize> = (0..n).collect();
     ranked.sort_by_key(|i| (std::cmp::Reverse(exposure[*i]), *i));
     let high_exposure = ranked
@@ -1342,31 +1337,27 @@ fn load_nav_graph_at(path: &std::path::Path) -> Result<NavGraph, String> {
         crate::nav_graph::LINK_FAMILIES
             .iter()
             .find(|(_, family_kind)| *family_kind == kind)
-            .and_then(|(key, _)| v.get(*key))
-            .and_then(|rows| rows.as_array())
-            .map_or(0, Vec::len)
+            .and_then(|(key, _)| graph.family_counts.get(*key))
+            .copied()
+            .unwrap_or(0)
     };
-    Ok(NavGraph {
-        overlay: NavOverlay {
-            json_path: path.display().to_string(),
-            nodes: nodes.len(),
-            links: count(None),
-            jump_links: count(Some("jump")),
-            tele_links: count(Some("tele")),
-            rocket_links: count(Some("rocket")),
-            lift_links: count(Some("lift")),
-            swim_links: count(Some("swim")),
-            sprint_links: count(Some("sprint")),
-            train_links: count(Some("train")),
-            door_links: count(Some("door")),
-            exposure_min: exposure.iter().copied().min().unwrap_or(0),
-            exposure_max: exposure.iter().copied().max().unwrap_or(0),
-            cover_nodes,
-            high_exposure,
-        },
-        nodes,
-        adj,
-    })
+    NavOverlay {
+        json_path: path.display().to_string(),
+        nodes: nodes.len(),
+        links: count(None),
+        jump_links: count(Some("jump")),
+        tele_links: count(Some("tele")),
+        rocket_links: count(Some("rocket")),
+        lift_links: count(Some("lift")),
+        swim_links: count(Some("swim")),
+        sprint_links: count(Some("sprint")),
+        train_links: count(Some("train")),
+        door_links: count(Some("door")),
+        exposure_min: exposure.iter().copied().min().unwrap_or(0),
+        exposure_max: exposure.iter().copied().max().unwrap_or(0),
+        cover_nodes,
+        high_exposure,
+    }
 }
 
 fn snap_reach(
@@ -1763,7 +1754,8 @@ fn undirected(g: &NavGraph) -> Vec<Vec<u32>> {
     let n = g.nodes.len();
     let mut u = vec![Vec::new(); n];
     for (i, edges) in g.adj.iter().enumerate() {
-        for (to, _) in edges {
+        for edge in edges {
+            let to = &edge.to;
             let j = *to as usize;
             if j < n {
                 if !u[i].contains(to) {
@@ -1814,7 +1806,8 @@ fn kosaraju(g: &NavGraph) -> Vec<Vec<u32>> {
             return;
         }
         seen[i] = true;
-        for (to, _) in &g.adj[i] {
+        for edge in &g.adj[i] {
+            let to = &edge.to;
             visit(*to as usize, g, seen, order);
         }
         order.push(i);
@@ -1824,7 +1817,8 @@ fn kosaraju(g: &NavGraph) -> Vec<Vec<u32>> {
     }
     let mut rev = vec![Vec::new(); n];
     for (i, edges) in g.adj.iter().enumerate() {
-        for (to, _) in edges {
+        for edge in edges {
+            let to = &edge.to;
             let j = *to as usize;
             if j < n {
                 rev[j].push(i as u32);
@@ -1907,7 +1901,8 @@ fn find_door_cuts(g: &NavGraph, doors: &[DoorMeta], causality: &[CausalLink]) ->
         let mut sample = Vec::new();
         let mut walk_links = 0u32;
         for (from, edges) in g.adj.iter().enumerate() {
-            for (to, kind) in edges {
+            for edge in edges {
+                let (to, kind) = (&edge.to, &edge.kind);
                 if kind != "walk" && kind != "drop" && kind != "door" {
                     continue;
                 }
@@ -2417,32 +2412,22 @@ mod tests {
         assert!(cuts.weak >= 1);
     }
 
-    fn dummy_overlay(n: usize) -> NavOverlay {
-        NavOverlay {
-            json_path: String::new(),
-            nodes: n,
-            links: 0,
-            jump_links: 0,
-            tele_links: 0,
-            rocket_links: 0,
-            lift_links: 0,
-            swim_links: 0,
-            sprint_links: 0,
-            train_links: 0,
-            door_links: 0,
-            exposure_min: 0,
-            exposure_max: 0,
-            cover_nodes: 0,
-            high_exposure: vec![],
-        }
-    }
-
     #[test]
     fn two_islands_from_a_disconnected_node() {
         let g = NavGraph {
-            overlay: dummy_overlay(3),
             nodes: vec![[0.0, 0.0, 0.0], [32.0, 0.0, 0.0], [400.0, 0.0, 0.0]],
-            adj: vec![vec![(1, "walk".into())], vec![(0, "walk".into())], vec![]],
+            adj: vec![
+                vec![crate::nav_graph::NavEdge {
+                    to: 1,
+                    kind: "walk".into(),
+                }],
+                vec![crate::nav_graph::NavEdge {
+                    to: 0,
+                    kind: "walk".into(),
+                }],
+                vec![],
+            ],
+            ..Default::default()
         };
         let (cuts, map) = graph_cuts(&g, &[]);
         assert_eq!(cuts.weak, 2);
@@ -2453,9 +2438,15 @@ mod tests {
     #[test]
     fn door_aabb_cuts_a_walk_link() {
         let g = NavGraph {
-            overlay: dummy_overlay(2),
             nodes: vec![[0.0, 0.0, 0.0], [64.0, 0.0, 0.0]],
-            adj: vec![vec![(1, "walk".into())], vec![]],
+            adj: vec![
+                vec![crate::nav_graph::NavEdge {
+                    to: 1,
+                    kind: "walk".into(),
+                }],
+                vec![],
+            ],
+            ..Default::default()
         };
         let doors = [DoorMeta {
             door: "*12".into(),
@@ -2485,9 +2476,15 @@ mod tests {
     #[test]
     fn door_keyed_cut_records_key_requirement() {
         let g = NavGraph {
-            overlay: dummy_overlay(2),
             nodes: vec![[0.0, 0.0, 0.0], [64.0, 0.0, 0.0]],
-            adj: vec![vec![(1, "walk".into())], vec![]],
+            adj: vec![
+                vec![crate::nav_graph::NavEdge {
+                    to: 1,
+                    kind: "walk".into(),
+                }],
+                vec![],
+            ],
+            ..Default::default()
         };
         let doors = [DoorMeta {
             door: "*13".into(),
@@ -2531,9 +2528,7 @@ mod tests {
         let path = dir.path().join("nav.json");
         std::fs::write(&path, value.to_string()).unwrap();
         let expected = crate::nav_graph::parse_graph("test", &value).unwrap_err();
-        let actual = load_nav_graph_at(&path)
-            .err()
-            .expect("partial overlays must fail");
+        let actual = load_nav_graph_at(&path).expect_err("partial overlays must fail");
         assert_eq!(actual, expected);
     }
 
@@ -2542,9 +2537,9 @@ mod tests {
         let jf = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
             .join("../../src/argus_nav_dm4.qc.json");
         let g = load_nav_graph_at(&jf).expect("dm4 nav graph");
-        assert!(g.overlay.exposure_max > g.overlay.exposure_min);
-        assert!(g.overlay.cover_nodes > 0);
-        assert!(!g.overlay.high_exposure.is_empty());
+        assert!(nav_overlay(&jf, &g).exposure_max > nav_overlay(&jf, &g).exposure_min);
+        assert!(nav_overlay(&jf, &g).cover_nodes > 0);
+        assert!(!nav_overlay(&jf, &g).high_exposure.is_empty());
     }
 
     /// #29: dm3 rides its three plats in every tape (liftlinks are in
@@ -2583,7 +2578,7 @@ mod tests {
             "expected the pre-fix false warning on raw geometry"
         );
         let g = load_nav_graph_at(&jf).expect("dm3 nav graph");
-        assert!(g.overlay.lift_links >= 1, "dm3 ships lift links");
+        assert!(nav_overlay(&jf, &g).lift_links >= 1, "dm3 ships lift links");
         let served = analyze_plats(&items, &bsp, Some(&g));
         for pl in &served {
             assert!(
