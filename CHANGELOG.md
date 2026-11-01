@@ -305,6 +305,9 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Preserve configuration, argument, missing-target and internal failure kinds
+  across MCP tools, prompts and resources, with actionable JSON hints (#689).
+
 - Share each controller's typed UDP port with its clients, expose side ports
   on connected CLI helpers, and refuse an occupied port before launch (#690).
 - Refuse dot, hidden and trailing-dot run names before creating a directory,

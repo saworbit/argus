@@ -84,6 +84,11 @@ jobs:
       - name: Build the developer CLI
         run: cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp
 
+      - name: Check MCP error responses
+        env:
+          ARGUS_LAB: tools/argus_mcp/target/debug/argus-mcp
+        run: python3 tools/test_mcp_errors.py
+
       - name: Run Python developer CLI tests
         env:
           ARGUS_REQUIRE_SOURCE_MCP: "1"

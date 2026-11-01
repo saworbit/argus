@@ -74,8 +74,20 @@ fn nearby_control(cfg: &Config, map: &str, id: u32) -> (Vec<String>, String) {
 }
 
 pub fn route_ref(cfg: &Config, raw: &str) -> Result<Route, String> {
+    route_checked(cfg, raw).map_err(|e| e.to_string())
+}
+
+pub fn route_checked(cfg: &Config, raw: &str) -> Result<Route, crate::inspection_error::Failure> {
+    use crate::inspection_error::Failure;
     let spec = parse_path_ref(raw)
-        .ok_or_else(|| "name=dm4:56-72 or dm4:56->72 or dm4:quad->lg".to_string())?;
+        .ok_or_else(|| Failure::bad("name=dm4:56-72 or dm4:56->72 or dm4:quad->lg"))?;
+    match std::fs::metadata(cfg.src.join(format!("argus_nav_{}.qc.json", spec.map))) {
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Err(Failure::missing(format!("no nav graph for {}", spec.map)))
+        }
+        Err(e) => return Err(e.to_string().into()),
+        Ok(_) => {}
+    }
     let g = load_nav(cfg, &spec.map)?;
     let atlas = if matches!(&spec.from, End::Item(_)) || matches!(&spec.to, End::Item(_)) {
         Some(cartograph(cfg, &spec.map).map_err(|e| format!("atlas unavailable: {e}"))?)
@@ -110,11 +122,15 @@ fn resolve_end(
     g: &NavGraph,
     control: Option<&[ControlItem]>,
     end: &End,
-) -> Result<Resolved, String> {
+) -> Result<Resolved, crate::inspection_error::Failure> {
+    use crate::inspection_error::Failure;
     match end {
         End::Node(id) => {
             if *id as usize >= g.nodes.len() {
-                return Err(format!("node {id} out of range (0..{})", g.nodes.len()));
+                return Err(Failure::bad(format!(
+                    "node {id} out of range (0..{})",
+                    g.nodes.len()
+                )));
             }
             Ok(Resolved {
                 id: *id,
@@ -124,7 +140,7 @@ fn resolve_end(
         End::Item(token) => {
             let control = control.ok_or("no atlas to resolve item")?;
             let item = resolve_item(control, token)
-                .ok_or_else(|| format!("no control item matching {token}"))?;
+                .ok_or_else(|| Failure::bad(format!("no control item matching {token}")))?;
             let id = item
                 .nearest_node
                 .ok_or_else(|| format!("{} is off-graph ({})", item.classname, item.reach))?;

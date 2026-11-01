@@ -278,26 +278,33 @@ fn git_batch(root: &Path, specs: &[String]) -> Result<BTreeMap<String, Vec<u8>>,
     unreachable!("the bounded process retry loop always returns")
 }
 
-fn history_sources(cfg: &Config, map: &str) -> Result<Vec<Source>, String> {
+fn history_sources(
+    cfg: &Config,
+    map: &str,
+) -> Result<Vec<Source>, crate::inspection_error::Failure> {
     let rel = graph_path(map);
     let current = cfg.root.join(&rel);
     let mut sources = Vec::new();
-    if let Ok(bytes) = std::fs::read(&current) {
-        let sidecars = SIDECARS
-            .iter()
-            .filter_map(|kind| {
-                std::fs::read(cfg.root.join(format!("src/argus_nav_{map}.{kind}.json")))
-                    .ok()
-                    .map(|bytes| ((*kind).to_string(), bytes))
-            })
-            .collect();
-        sources.push(Source {
-            bytes,
-            sidecars,
-            working_tree: true,
-            commit: None,
-            committed_at: None,
-        });
+    match std::fs::read(&current) {
+        Ok(bytes) => {
+            let sidecars = SIDECARS
+                .iter()
+                .filter_map(|kind| {
+                    std::fs::read(cfg.root.join(format!("src/argus_nav_{map}.{kind}.json")))
+                        .ok()
+                        .map(|bytes| ((*kind).to_string(), bytes))
+                })
+                .collect();
+            sources.push(Source {
+                bytes,
+                sidecars,
+                working_tree: true,
+                commit: None,
+                committed_at: None,
+            });
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+        Err(e) => return Err(format!("{}: {e}", current.display()).into()),
     }
 
     if let Some(raw) = git(
@@ -347,7 +354,10 @@ fn history_sources(cfg: &Config, map: &str) -> Result<Vec<Source>, String> {
         }
     }
     if sources.is_empty() {
-        return Err(format!("no nav JSON for {map} ({})", current.display()));
+        return Err(crate::inspection_error::Failure::missing(format!(
+            "no nav JSON for {map} ({})",
+            current.display()
+        )));
     }
 
     // The working file normally equals HEAD. Keep one content revision and
@@ -528,10 +538,21 @@ fn revision_from_source(map: &str, source: &Source) -> Result<GraphRevision, Str
 }
 
 pub fn list_revisions(cfg: &Config, map: &str) -> Result<Vec<RevisionSummary>, String> {
-    let map = valid_map(map)?;
+    list_revisions_checked(cfg, map).map_err(|e| e.to_string())
+}
+
+pub fn list_revisions_checked(
+    cfg: &Config,
+    map: &str,
+) -> Result<Vec<RevisionSummary>, crate::inspection_error::Failure> {
+    let map = valid_map(map).map_err(crate::inspection_error::Failure::bad)?;
     history_sources(cfg, &map)?
         .iter()
-        .map(|s| revision_from_source(&map, s).map(|r| r.summary))
+        .map(|s| {
+            revision_from_source(&map, s)
+                .map(|r| r.summary)
+                .map_err(Into::into)
+        })
         .collect()
 }
 
@@ -548,7 +569,7 @@ fn split_id(id: &str) -> Result<(String, String), String> {
 
 pub fn get_revision(cfg: &Config, id: &str) -> Result<GraphRevision, String> {
     let (map, wanted) = split_id(id)?;
-    for source in history_sources(cfg, &map)? {
+    for source in history_sources(cfg, &map).map_err(|e| e.to_string())? {
         if digest(&source.bytes) == wanted {
             return revision_from_source(&map, &source);
         }
@@ -634,7 +655,8 @@ fn verdicts_from_source(
 
 pub fn probe_verdicts(cfg: &Config, id: &str) -> Result<Vec<ProbeVerdict>, String> {
     let (map, wanted) = split_id(id)?;
-    let source = history_sources(cfg, &map)?
+    let source = history_sources(cfg, &map)
+        .map_err(|e| e.to_string())?
         .into_iter()
         .find(|s| digest(&s.bytes) == wanted)
         .ok_or_else(|| format!("unknown graph revision {id}"))?;
@@ -653,7 +675,7 @@ pub fn diff(
     if from_map != to_map {
         return Err("graph revisions must name the same map".into());
     }
-    let sources = history_sources(cfg, &from_map)?;
+    let sources = history_sources(cfg, &from_map).map_err(|e| e.to_string())?;
     let from_source = sources
         .iter()
         .find(|s| digest(&s.bytes) == from_hash)
