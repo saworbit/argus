@@ -1209,7 +1209,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
 
             let ran = ran.map_err(|e| anyhow::anyhow!(e))?;
 
-            let log_text = std::fs::read_to_string(&ran.log_path)
+            let log_text = argus_mcp::paths::read_engine_text(&ran.log_path)
                 .map_err(|e| anyhow::anyhow!("failed to read log {}: {}", ran.log_path, e))?;
             let report = argus_mcp::campaign::evaluate_campaign_log(
                 &log_text,

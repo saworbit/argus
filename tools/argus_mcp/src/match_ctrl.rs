@@ -406,7 +406,7 @@ impl MatchCtrl {
         if let Some(live) = &self.live {
             let q = live.run_dir.join("qconsole.log");
             if q.is_file() {
-                if let Ok(t) = std::fs::read_to_string(q) {
+                if let Ok(t) = crate::paths::read_engine_text(q) {
                     if !t.trim().is_empty() {
                         return Some(t);
                     }
@@ -418,7 +418,7 @@ impl MatchCtrl {
             if let Some(p) = &st.log_path {
                 let path = PathBuf::from(p);
                 if path.is_file() {
-                    return std::fs::read_to_string(path).ok();
+                    return crate::paths::read_engine_text(path).ok();
                 }
             }
         }
@@ -616,7 +616,7 @@ fn format_match_fail(log_path: &str, text: &str, why: &str) -> String {
 
 fn read_log_retry(path: &str, attempts: u32) -> String {
     for i in 0..attempts {
-        if let Ok(t) = std::fs::read_to_string(path) {
+        if let Ok(t) = crate::paths::read_engine_text(path) {
             if log_has_tape(&t) || i + 1 == attempts {
                 return t;
             }
@@ -631,12 +631,12 @@ fn decorate_status(st: &mut MatchStatus) {
         return;
     };
     let path = PathBuf::from(path_s);
-    let mut text = std::fs::read_to_string(&path).ok();
+    let mut text = crate::paths::read_engine_text(&path).ok();
     if text.as_ref().map(|t| t.trim().is_empty()).unwrap_or(true) {
         if let (Some(parent), Some(stem)) = (path.parent(), path.file_stem()) {
             let q = parent.join(stem).join("qconsole.log");
             if q.is_file() {
-                text = std::fs::read_to_string(q).ok();
+                text = crate::paths::read_engine_text(q).ok();
             }
         }
     }
@@ -791,7 +791,7 @@ fn cancel_live_owned(owner: u64) -> Option<u32> {
 fn harvest(live: &LiveMatch) -> String {
     let qconsole = live.run_dir.join("qconsole.log");
     let mut body = if qconsole.exists() {
-        std::fs::read_to_string(&qconsole).unwrap_or_default()
+        crate::paths::read_engine_text(&qconsole).unwrap_or_default()
     } else {
         String::new()
     };
@@ -808,7 +808,7 @@ fn harvest(live: &LiveMatch) -> String {
     }
 
     let existing_has_tape = if live.harvested.is_file() {
-        std::fs::read_to_string(&live.harvested)
+        crate::paths::read_engine_text(&live.harvested)
             .map(|t| log_has_tape(&t))
             .unwrap_or(false)
     } else {
@@ -880,7 +880,7 @@ fn take_budgeted(all: &[&str], start: usize) -> (Vec<String>, u32) {
 
 fn recent_lines_since(live: &LiveMatch, since_line: Option<u32>) -> (Vec<String>, u32) {
     let qconsole = live.run_dir.join("qconsole.log");
-    let mut text = std::fs::read_to_string(&qconsole).unwrap_or_default();
+    let mut text = crate::paths::read_engine_text(&qconsole).unwrap_or_default();
     if text.trim().is_empty() {
         if let Ok(g) = live.stdout.lock() {
             text = g.clone();
@@ -967,7 +967,7 @@ pub fn unharvested_session(cfg: &Config) -> Option<String> {
         cfg.root.join("qconsole.log"),
         cfg.basedir.join("qconsole.log"),
     ] {
-        if let Ok(text) = std::fs::read_to_string(&p) {
+        if let Ok(text) = crate::paths::read_engine_text(&p) {
             if text.contains("SpawnServer:") {
                 hits.push(p.display().to_string());
             }
@@ -1049,15 +1049,25 @@ mod tests {
     };
     use crate::test_support::{git_test_lock, run_git, TestDir};
 
-    /// A poll has a CEILING on what it costs, whatever the match is
-    /// doing. Eighty long lines were six times eighty short ones,
-    /// which is the failure Datadog documented and the reason this
-    /// paginates on size.
-    ///
-    /// Note what is and is not claimed: the budget BOUNDS the cost,
-    /// it does not equalise it. A quiet match still returns less,
-    /// because it hits the line ceiling first and there is no
-    /// reason to pad it.
+    #[test]
+    fn tape_regression_live_retry_and_harvest_guard_accept_bronze_text() {
+        let (_tmp, cfg) = tmp_cfg("bronze-live");
+        let path = cfg.root.join("qconsole.log");
+        let mut bytes = vec![0x80, 0xff, b'\n'];
+        bytes.extend_from_slice(b"SpawnServer: dm4\nARGLOG Joe Rogan t 1.0 pos '0 0 24' spd 320 yaw 0 mode 2 st 0 gl 0\n");
+        std::fs::write(&path, bytes).unwrap();
+        assert!(log_has_tape(&read_log_retry(path.to_str().unwrap(), 1)));
+        assert!(unharvested_session(&cfg).is_some());
+        assert!(crate::paths::read_tail(&path, 2)[0].contains("SpawnServer"));
+        assert_eq!(
+            crate::paths::read_engine_text(path.with_extension("missing"))
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::NotFound
+        );
+    }
+
+    /// A poll has a ceiling on bytes, as well as lines, whatever the match is doing.
     #[test]
     fn a_tail_has_a_ceiling_whatever_the_lines_look_like() {
         let short: Vec<String> = (0..400).map(|_| "ARGEVT Reap jump".to_string()).collect();

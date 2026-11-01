@@ -2794,7 +2794,7 @@ impl Argus {
             let _ = th.join();
         }
 
-        let log_content = match std::fs::read_to_string(&ran.log_path) {
+        let log_content = match crate::paths::read_engine_text(&ran.log_path) {
             Ok(c) => c,
             Err(e) => return tool_err(format!("failed to read log {}: {}", ran.log_path, e)),
         };

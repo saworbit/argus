@@ -74,10 +74,16 @@ pub fn tail_lines(text: &str, n: usize) -> Vec<String> {
 }
 
 pub fn read_tail(path: &Path, n: usize) -> Vec<String> {
-    match std::fs::read_to_string(path) {
+    match read_engine_text(path) {
         Ok(text) => tail_lines(&text, n),
         Err(_) => Vec::new(),
     }
+}
+
+/// Quake console bytes may use bit 7 for bronze text. Keep the ASCII telemetry
+/// readable while preserving real filesystem errors for the caller.
+pub fn read_engine_text(path: impl AsRef<Path>) -> std::io::Result<String> {
+    std::fs::read(path).map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
 }
 
 #[cfg(test)]

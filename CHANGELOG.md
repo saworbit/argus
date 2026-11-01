@@ -305,6 +305,11 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Preserve Quake console text with bronze bytes (#657), split CRLF tapes at
+  exact level boundaries (#662), attribute plain markers independently of
+  bot names (#693), and refuse gameplay comparisons when any tape records a
+  failed map spawn (#656).
+
 - Colour `analyze_match.py` trajectory tracks by roster slot. The table was
   keyed by the retired names Reap, Omi and Zeus, so Carmack, Romero and Joe
   Rogan all drew black and could not be told apart.
