@@ -76,6 +76,9 @@ POV hides the tracked bot's world model. The camera also hides the observer's
 body while active and restores its rendering and viewpoint on exit. If the
 target dies, the camera can select another living bot.
 
+Chase retains its camera heading when every flyby ray is blocked. Its position
+blend is bounded so a slow frame cannot overshoot the requested position.
+
 Outside free-flight mode, the **attack action** cycles camera modes and the
 **jump action** cycles targets. The physical keys depend on your bindings;
 the impulse commands work independently of those bindings. Free flight keeps
