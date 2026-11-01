@@ -1,5 +1,6 @@
 """Fail-closed evidence tests for shared plan recognition and physical escape."""
 import subprocess
+import os
 import sys
 import unittest
 from pathlib import Path
@@ -50,6 +51,31 @@ def physical_edge(case=4):
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_optimized_interpreter_keeps_receipt_and_existing_output_guards(self):
+        code = '''
+import json,sys,tempfile
+from pathlib import Path
+from test_plan_progress import contract
+from check_plan_progress import check_contract
+from verify_plan_progress import prepare
+rejected=[]
+try:check_contract(contract().replace('PLANFIX cleanup owned_engine_pending_stop',''),'dm2')
+except AssertionError:rejected.append('cleanup')
+with tempfile.TemporaryDirectory() as temp:
+    target=Path(temp)/'owned';target.mkdir();(target/'marker').write_text('retain')
+    try:prepare(target)
+    except AssertionError:rejected.append('output')
+    if sorted(p.name for p in target.iterdir())!=['marker']:rejected.append('dirty')
+print(json.dumps(rejected))
+sys.exit(0 if rejected==['cleanup','output'] else 1)
+'''
+        for flags,setting in (([],None),(['-O'],None),([], '1')):
+            env=dict(os.environ);env.pop('PYTHONOPTIMIZE',None)
+            if setting is not None:env['PYTHONOPTIMIZE']=setting
+            result=subprocess.run([sys.executable,*flags,'-c',code],cwd=Path(__file__).resolve().parent,
+                                  env=env,capture_output=True,text=True,timeout=5)
+            self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
     def test_default_physics_gate_excludes_unsupported_motor_override(self):
         default=physical_schedule('all')
         self.assertNotIn(4,[row[2] for row in default])

@@ -3,6 +3,7 @@
 Run from the repository: python tools/verify_plan_progress.py --output backups/plan-check-1
 Requires the matching source-built lab CLI and configured local Quake assets.
 """
+from argus_validation import require
 import argparse
 import hashlib
 import json
@@ -26,36 +27,36 @@ def sha(path):
 
 def prepare(folder, legacy=False, deadline_control=False, opening_control=False):
     """Copy sources; optional legacy-reset/deadline controls stay private."""
-    assert not folder.exists(), 'retain previous build'
+    require((not folder.exists()), 'retain previous build')
     shutil.copytree(ROOT / 'src', folder / 'src')
     (folder / 'lq1').mkdir()
     (folder / 'runs').mkdir()
     src = folder / 'src'
     path = src / 'argus.qc'
     source = path.read_text(encoding='utf-8')
-    assert sum((legacy, deadline_control, opening_control)) <= 1
+    require((sum((legacy, deadline_control, opening_control)) <= 1))
     if legacy:
         pattern = r'void\(float paused, entity reached\) Argus_PlanObserve =\n\{.*?^\};'
         source, count = re.subn(pattern, 'void(float paused, entity reached) Argus_PlanObserve = {};', source, flags=re.M | re.S)
-        assert count == 1
+        require((count == 1))
         anchor = '        self.ar_lastpos = self.origin;'
-        assert source.count(anchor) == 1
+        require((source.count(anchor) == 1))
         source = source.replace(anchor, '        else if (vlen (self.origin - self.ar_lastpos) >= 12)\n            self.ar_stallrun = 0;\n' + anchor)
         path.write_text(source, encoding='utf-8', newline='\n')
     if deadline_control:
         anchor = '        if (self.ar_taskgoal == world) self.ar_goalstart = time;'
-        assert source.count(anchor) == 1
+        require((source.count(anchor) == 1))
         source = source.replace(anchor, '        // PRIVATE negative control: retain the original goal deadline.')
         path.write_text(source, encoding='utf-8', newline='\n')
     if opening_control:
         pattern = r'float\(entity d, vector far\) Argus_DoorOpeningWait =\n\{.*?^\};'
         source, count = re.subn(pattern, 'float(entity d, vector far) Argus_DoorOpeningWait = { return FALSE; };', source, flags=re.M | re.S)
-        assert count == 1
+        require((count == 1))
         path.write_text(source, encoding='utf-8', newline='\n')
     block = source.split('    // ---- stall detection ----', 1)[1].split('    if (time > self.ar_nextlog)', 1)[0]
     wrapper = 'void() PlanDecision =\n{\n    local vector gp;\n    local float fighting;\n    fighting = plan_fighting;\n' + block + '};\n'
     fixture = (ROOT / 'tools/fixtures/plan_progress.qc').read_text(encoding='utf-8')
-    assert fixture.count('// INSERT_DECISION') == 1
+    require((fixture.count('// INSERT_DECISION') == 1))
     (src / 'plan_progress.qc').write_text('float() random = { return 0.5; };\nvoid() PlanEdgeCases;\n' + fixture.replace('// INSERT_DECISION', wrapper), encoding='utf-8', newline='\n')
     shutil.copy2(ROOT / 'tools/fixtures/plan_escape.qc', src / 'plan_escape.qc')
     physical_source = ROOT / 'tools/fixtures/plan_physical_edges.qc'
@@ -66,15 +67,15 @@ def prepare(folder, legacy=False, deadline_control=False, opening_control=False)
     (src / 'plan_edges.qc').write_text(edges.replace('// INSERT_EPOCH_DECLARATION', epoch), encoding='utf-8', newline='\n')
     path = src / 'defs.qc'
     changed, count = re.subn(r'float\(\) random\s*= #7;[^\n]*', 'float() random; // PRIVATE fixed test input', path.read_text(encoding='utf-8'))
-    assert count == 1
+    require((count == 1))
     path.write_text(changed, encoding='utf-8', newline='\n')
     path = src / 'progs.src'
     source_list = path.read_text(encoding='utf-8')
-    assert source_list.count('\nworld.qc\n') == 1
+    require((source_list.count('\nworld.qc\n') == 1))
     path.write_text(source_list.replace('\nworld.qc\n', '\nplan_progress.qc\nplan_escape.qc\nplan_edges.qc\nplan_physical_edges.qc\nworld.qc\n'), encoding='utf-8', newline='\n')
     path = src / 'world.qc'
     world = path.read_text(encoding='utf-8')
-    assert world.count('Argus_FrameAll ();') == world.count('Argus_CountSlots ();') == 1
+    require((world.count('Argus_FrameAll ();') == world.count('Argus_CountSlots ();') == 1))
     world = world.replace('Argus_FrameAll ();', 'Argus_FrameAll ();\n    if (cvar ("scratch2") >= 3) PlanPhysicalEdges ();\n    else if (cvar ("scratch2") == 0) PlanFixture ();\n    else PlanEscapeFixture ();')
     path.write_text(world.replace('Argus_CountSlots ();', 'Argus_CountSlots ();\n    dprint ("BHVRPL begin plan_fixture\\n");'), encoding='utf-8', newline='\n')
     build_tree = hashlib.sha256()
@@ -91,15 +92,15 @@ def prepare(folder, legacy=False, deadline_control=False, opening_control=False)
     for original in (ROOT / 'src').rglob('*'):
         relative = original.relative_to(ROOT / 'src')
         if original.is_file() and relative.as_posix() not in {'argus.qc', 'defs.qc', 'progs.src', 'world.qc'}:
-            assert original.read_bytes() == (src / relative).read_bytes()
+            require((original.read_bytes() == (src / relative).read_bytes()))
     if not legacy and not deadline_control and not opening_control:
-        assert (src / 'argus.qc').read_bytes() == (ROOT / 'src/argus.qc').read_bytes()
+        require(((src / 'argus.qc').read_bytes() == (ROOT / 'src/argus.qc').read_bytes()))
 
 
 def copy_assets(source, destination):
     """Copy independent local asset bytes, excluding user configuration/logs."""
     for path in source.rglob('*'):
-        assert not path.is_symlink(), f'symlinked test asset: {path}'
+        require((not path.is_symlink()), f'symlinked test asset: {path}')
     shutil.copytree(source, destination,
                     ignore=shutil.ignore_patterns('*.cfg', '*.log', '*.dem'))
 
@@ -148,12 +149,12 @@ def main():
             config = lab.call('config_check')
         finally:
             lab.close()
-    assert config['complete'], config
+    require((config['complete']), config)
     values = {row['key']: row['value'] for row in config['entries']}
     original_base = Path(values['ARGUS_BASEDIR'])
-    assert not any(p.exists() for p in (ROOT / 'qconsole.log', original_base / 'qconsole.log')), 'harvest the pending human session first'
+    require((not any(p.exists() for p in (ROOT / 'qconsole.log', original_base / 'qconsole.log'))), 'harvest the pending human session first')
     game = values['ARGUS_GAME']
-    assert re.fullmatch(r'[A-Za-z0-9_-]+', game)
+    require((re.fullmatch(r'[A-Za-z0-9_-]+', game)))
     base = output / 'base'
     copy_assets(original_base / 'id1', base / 'id1')
     private_game = base / game
@@ -163,7 +164,7 @@ def main():
         if source.is_dir():
             copy_assets(source, private_game / name)
     for pak in (original_base / game).glob('*.pak'):
-        assert not pak.is_symlink()
+        require((not pak.is_symlink()))
         shutil.copy2(pak, private_game / pak.name)
     schedule = []
     if args.mode == 'physical-edges':
@@ -198,8 +199,8 @@ def main():
                 try:
                     compiled = lab.call('compile_qc', install=False)
                     save(folder / 'compile.json', compiled)
-                    assert compiled['ok'] and not compiled['installed_to']
-                    assert compiled['new_errors'] == compiled['new_warnings'] == 0, compiled
+                    require((compiled['ok'] and not compiled['installed_to']))
+                    require((compiled['new_errors'] == compiled['new_warnings'] == 0), compiled)
                     shutil.copy2(folder / 'lq1/progs.dat', private_game / 'progs.dat')
                     for _, map_name, case, seconds in (s for s in schedule if s[0] == variant):
                         (private_game / 'autoexec.cfg').write_text(f'sv_protocol 15\nmax_edicts 600\nscratch2 {case}\nscratch3 {589 if args.mode == "edges" else 0}\n', encoding='utf-8', newline='\n')
@@ -225,18 +226,18 @@ def main():
                         print(json.dumps(row), flush=True)
                         if variant == 'current':
                             if not args.allow_failed:
-                                assert checked.get('success', not checked.get('failures')), row
+                                require((checked.get('success', not checked.get('failures'))), row)
                         else:
-                            assert not checked['success'], 'negative control did not distinguish the failed camp'
+                            require((not checked['success']), 'negative control did not distinguish the failed camp')
                             if variant == 'opening_control':
-                                assert checked['lost'] and not checked['events'] and checked['elapsed'] < 20, 'opening control failed for another reason'
-                                assert checked['path_units'] >= 650, 'opening control did not reach the real door'
+                                require((checked['lost'] and not checked['events'] and checked['elapsed'] < 20), 'opening control failed for another reason')
+                                require((checked['path_units'] >= 650), 'opening control did not reach the real door')
                 finally:
                     lab.close()
     finally:
         after = {str(p): sha(p) for p in installed}
         save(output / 'after.json', after)
-        assert before == after, 'installed game bytes changed'
+        require((before == after), 'installed game bytes changed')
 
 
 if __name__ == '__main__':

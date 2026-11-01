@@ -916,6 +916,8 @@ Shared plan-recognition fixtures use `python tools/verify_plan_progress.py
 --output backups/plan-check-1`. They drive this native lab with private sources,
 binary and assets; `PLANFIX` checks decisions and `PEFIX` checks actual escape
 and alternative selection. They add no MCP tool or production console switch.
+Input, source and output guards use explicit checks under normal Python,
+`python -O` and `PYTHONOPTIMIZE`; optimization cannot waive proof requirements.
 `--mode edges` selects short dm2/e1m2 controller checks for co-op retries,
 longer detours and waypoint cycles; waypoint arrivals are injected inputs.
 `--mode physical-edges` instead requires real motor movement and trigger
