@@ -46,6 +46,8 @@ const CLC_DISCONNECT: u8 = 2;
 const CLC_MOVE: u8 = 3;
 const CLC_STRINGCMD: u8 = 4;
 
+const SVC_BAD: u8 = 0;
+const SVC_NOP: u8 = 1;
 const SVC_DISCONNECT: u8 = 2;
 const SVC_UPDATESTAT: u8 = 3;
 const SVC_VERSION: u8 = 4;
@@ -685,7 +687,14 @@ impl NetClient {
                 continue;
             }
             match cmd {
-                0 | SVC_KILLEDMONSTER | SVC_FOUNDSECRET | SVC_INTERMISSION | SVC_SELLSCREEN => {}
+                SVC_NOP | SVC_KILLEDMONSTER | SVC_FOUNDSECRET | SVC_INTERMISSION
+                | SVC_SELLSCREEN => {}
+                SVC_BAD => {
+                    self.world.protocol_error =
+                        Some("received svc_bad (0): malformed server message".into());
+                    self.world.disconnected = true;
+                    return;
+                }
                 SVC_DISCONNECT => {
                     self.world.disconnected = true;
                     return;
@@ -1076,6 +1085,8 @@ pub struct WalkOutcome {
 pub struct ObserveReport {
     pub level: String,
     pub protocol: i32,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub protocol_error: Option<String>,
     pub maxclients: u8,
     pub signon: u8,
     pub my_ent: u16,
@@ -1103,6 +1114,7 @@ impl NetClient {
         ObserveReport {
             level: self.world.level.clone(),
             protocol: self.world.protocol,
+            protocol_error: self.world.protocol_error.clone(),
             maxclients: self.world.maxclients,
             signon: self.world.signon,
             my_ent: self.world.my_ent,
@@ -1600,6 +1612,42 @@ mod tests {
     /// stamped deathmatch, because that is the only mode that could
     /// have produced it.
     #[test]
+    fn keepalive_preserves_following_time_prints_and_entity_updates() {
+        let mut message = vec![1, 7];
+        message.extend_from_slice(&12.5f32.to_le_bytes());
+        message.extend_from_slice(&[1, 8]);
+        message.extend_from_slice(b"still connected\n\0");
+        // A minimal fast update for entity 4 follows another nop.
+        message.extend_from_slice(&[1, 0x80, 4, 1]);
+        let client = NetClient::protocol_fixture(message);
+        assert_eq!(client.world.time, 12.5);
+        assert_eq!(client.world.prints, vec![(12.5, "still connected".into())]);
+        assert_eq!(client.world.ents[&4].updates, 1);
+        assert!(client.world.unknown_svc.is_empty());
+        assert!(!client.world.disconnected);
+    }
+
+    #[test]
+    fn bad_service_byte_stops_the_stream_with_an_explicit_error() {
+        let client = NetClient::protocol_fixture(vec![0, 8, b'x', b'\n', 0]);
+        assert!(client.world.disconnected);
+        assert!(client
+            .world
+            .protocol_error
+            .as_deref()
+            .unwrap_or("")
+            .contains("svc_bad"));
+        assert!(client.world.prints.is_empty());
+        assert!(client.world.unknown_svc.is_empty());
+        assert!(client
+            .snapshot()
+            .protocol_error
+            .as_deref()
+            .unwrap_or("")
+            .contains("svc_bad"));
+    }
+
+    #[test]
     fn a_coop_sweep_keeps_its_verdicts_separate_from_the_deathmatch_ones() {
         let legacy = serde_json::json!({
             "failed": [[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]]],
@@ -2022,7 +2070,7 @@ mod tests {
         let _ = std::fs::create_dir_all(&tmp_runs);
         cfg.runs = tmp_runs.clone();
         let mut ctrl = crate::match_ctrl::MatchCtrl::default();
-        if ctrl
+        if let Err(error) = ctrl
             .start(
                 &cfg,
                 "dm4",
@@ -2033,10 +2081,9 @@ mod tests {
                 None,
             )
             .await
-            .is_err()
         {
-            eprintln!("SKIPPED probe_netclient_test: engine refused to start (port in use?)");
-            return; // port busy: not this test's fault
+            eprintln!("SKIPPED probe_netclient_test: engine refused to start: {error}");
+            return;
         }
         tokio::time::sleep(std::time::Duration::from_secs(4)).await;
         let report = tokio::task::spawn_blocking(|| {
@@ -2046,6 +2093,11 @@ mod tests {
         .expect("join");
         let _ = ctrl.stop(std::time::Duration::from_secs(3)).await;
         let report = report.expect("client must connect to the lab engine");
+        assert!(
+            report.unknown_svc.is_empty(),
+            "unknown services: {:?}",
+            report.unknown_svc
+        );
         assert_eq!(report.protocol, 15, "lab matches are protocol 15");
         assert!(
             report.signon >= 3,

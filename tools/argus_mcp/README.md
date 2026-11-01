@@ -625,6 +625,10 @@ a successful snapshot consumes the key. Impulse 216 needs `scratch1 216`
 and reads its destination from `scratch2`..`scratch4`. `probelinks` sets
 that key with each destination. Set `scratch1 0` to disarm manual teleports.
 
+Client keepalives (`svc_nop`, byte 1) preserve the rest of their message.
+A malformed `svc_bad` byte stops parsing and disconnects the client; snapshots
+include `protocol_error` when a protocol failure occurs.
+
 ## Tactical engine fixture
 
 `developer 1` plus `scratch1 197` reserves impulse 217 for the
