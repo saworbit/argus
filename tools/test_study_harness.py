@@ -252,7 +252,7 @@ class FixtureContract(unittest.TestCase):
 
     def test_mover_main_uses_one_native_session_and_named_private_tapes(self):
         import verify_mover_transfer as mover
-        from test_mover_transfer import receipt
+        from test_mover_transfer import current_receipt
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             for folder in ('src', 'tools/fixtures', 'game/argus', 'engine/argus', 'lq1'):
@@ -261,7 +261,9 @@ class FixtureContract(unittest.TestCase):
                 (root / folder / 'progs.dat').write_bytes(b'shipped')
             (root / 'game/argus/autoexec.cfg').write_text('max_edicts 600\n')
             (root / 'src/progs.src').write_text('argus.qc\nworld.qc\n')
-            (root / 'src/argus.qc').write_text('bot')
+            (root / 'src/argus.qc').write_text(
+                (native.ROOT / 'src/argus.qc').read_text(encoding='utf-8'),
+                encoding='utf-8', newline='\n')
             (root / 'src/world.qc').write_text('Argus_FrameAll ();\n')
             for name in ('e1m6', 'dm3'):
                 (root / f'src/argus_nav_{name}.qc.json').write_text('{}')
@@ -284,7 +286,11 @@ class FixtureContract(unittest.TestCase):
             def cli(executable, command, map_name, seconds, name, *rest, **options):
                 commands.append((executable, map_name, name, rest))
                 runs = Path(options['environment']['ARGUS_RUNS'])
-                (runs / (name + '.log')).write_text(receipt().replace('on e1m6', 'on ' + map_name))
+                text = current_receipt().replace('on e1m6', 'on ' + map_name)
+                if map_name == 'dm3':
+                    text = text.replace('529 1393 344', '517 801 216').replace(
+                        '433 1297 208', '517 673 216')
+                (runs / (name + '.log')).write_text(text, encoding='utf-8', newline='\n')
                 return subprocess.CompletedProcess([], 0, '{"ok":true}', '')
             before = fixtures.installed_identity(root)
             output = root / 'backups/job'

@@ -1,0 +1,74 @@
+LOG started on: 11/02/2026 01:40:54 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m6
+Clearing memory
+Programs occupy 1109K.
+trying to open external vis file
+maps/e1m6.vis not found, trying movercheck_handoff_mutant.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 188 nodes, 1008 links
+40 entities inhibited
+ARGUS init on e1m6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '216.0 1488.0  24.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-448.0 1280.0  24.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-928.0 416.0  24.0' spd 0 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   1.7 pos '188.1 1427.9  24.0' spd 364.4 yaw 121.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-423.7 1275.1  24.0' spd 320.6 yaw 240.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-799.7 487.1  24.0' spd 320 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+MVFIX oracle different_node accepted 1
+MVFIX oracle expected_without_consumption accepted 1
+BHVRPL begin mover_transfer
+MVFIX begin dt_ms  15.0 layout 2 exit '529.0 1393.0 344.0'
+ARGEVT Carmack door
+MTRACE t 0 pos '625.7 1425.1  32.0' node '  0.0   0.0   0.0' mode 0 lift 0 wait 0 ground plat floor 1 state 1 mz 9 velocity ' 47.8   4.0   0.0' budget 0 best 0 retained 1
+ARGEVT Carmack route 3 start '625.0 1425.0  24.0' goal '433.0 1297.0 208.0'
+ARGEVT Carmack lift
+ARGEVT Carmack board
+ARGLOG Carmack t   2.2 pos '652.7 1434.2  46.9' spd 0 yaw  73.0 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   0.5 pos '652.7 1434.2  91.6' node '529.0 1393.0 344.0' mode 2 lift 1 wait 1 ground plat floor 1 state 2 mz  68.6 velocity '  0.0   0.0   0.0' budget 0 best 0 retained 1
+ARGLOG Carmack t   2.7 pos '652.7 1434.2 123.7' spd 0 yaw 148 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   1.0 pos '652.7 1434.2 168.2' node '529.0 1393.0 344.0' mode 2 lift 1 wait 1 ground plat floor 1 state 2 mz 145.2 velocity '  0.0   0.0   0.0' budget 0 best 0 retained 1
+ARGLOG Carmack t   3.2 pos '652.7 1434.2 200.0' spd 0 yaw 148 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   1.5 pos '652.7 1434.2 244.1' node '529.0 1393.0 344.0' mode 2 lift 1 wait 1 ground plat floor 1 state 2 mz 221.1 velocity '  0.0   0.0   0.0' budget 0 best 0 retained 1
+ARGLOG Carmack t   3.7 pos '652.7 1434.2 276.1' spd 0 yaw 148 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   2.0 pos '652.7 1434.2 320.8' node '529.0 1393.0 344.0' mode 2 lift 1 wait 1 ground plat floor 1 state 2 mz 297.8 velocity '  0.0   0.0   0.0' budget 0 best 0 retained 1
+ARGEVT Carmack hazard
+ARGLOG Carmack t   4.3 pos '654.2 1436.5 344.0' spd  92.7 yaw 149 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack jump
+ARGUS Carmack aircontrol
+MTRACE t   2.5 pos '660.0 1442.3 348.1' node '529.0 1393.0 344.0' mode 2 lift 0 wait 0 ground plat floor 0 state 0 mz 321 velocity '-100.3 -38.3 257.2' budget 0 best 0 retained 1
+ARGLOG Carmack t   4.8 pos '639.4 1434.5 382.8' spd 107.4 yaw 146 mode 2 st 0 gl 0 hp 100 frg 0
+MTRACE t   3.1 pos '609.6 1424.0 373.3' node '529.0 1393.0 344.0' mode 2 lift 0 wait 0 ground plat floor 0 state 0 mz 321 velocity '-100.3   0.0 -144.4' budget 0 best 0 retained 1
+MVFIX landed pos '593.3 1424.6 344.0' world 1 floor 1 dry 1 retained 1
+ARGLOG Carmack t   5.3 pos '585.0 1429.4 344.0' spd 241.0 yaw 133 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+MTRACE t   3.6 pos '543.0 1498.7 344.0' node '529.0 1393.0 344.0' mode 2 lift 0 wait 0 ground worldspawn floor 1 state 0 mz 321 velocity '268.6 138.1   0.0' budget   5.4 best  71.0 retained 1
+ARGLOG Carmack t   5.8 pos '536.2 1490.5 344.0' spd 307.3 yaw 242 mode 2 st 0 gl 0 hp 100 frg 0
+MVFIX expect step 1 generation 2 from '529.0 1393.0 344.0' to '465.0 1361.0 216.0'
+MVFIX consumed step 1 generation 2 from '529.0 1393.0 344.0' to '465.0 1361.0 216.0' accepted 1
+MVFIX result completed 1 seconds   3.9 boarded 1 route_retained 1 dry 1 alive 1 launches 1 bad_launch 0 landed 1 handoff 1 exit_consumed 1 frames 265 node '465.0 1361.0 216.0' generation 2 pos '518.9 1430.2 344.0'
