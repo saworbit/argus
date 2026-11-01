@@ -33,6 +33,10 @@ def find_argus_mcp_binary(root=ROOT, *, installed=False):
 
 
 class TestToolsCLI(unittest.TestCase):
+    def test_gui_rendering_regressions(self):
+        result = self.run_tool('test_gui_rendering.py')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_study_harness_regressions(self):
         result = self.run_tool('test_study_harness.py')
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)

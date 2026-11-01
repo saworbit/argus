@@ -117,9 +117,12 @@ swatches and tiles have their corners knocked off at 45 degrees, like a Quake
 brush. It is the same operation as the mark's apex and terminals, not a
 decoration chosen to match. The chamfer depth is 6 per cent of the shorter
 side; deeper reads as an octagon, which at small sizes is a stop sign or a
-slotted screw head. See [`argus-motif.svg`](argus-motif.svg). The lab GUI
-still uses rounded corners; [#677](https://github.com/saworbit/argus/issues/677)
-tracks carrying the chamfer there.
+slotted screw head. See [`argus-motif.svg`](argus-motif.svg). The lab GUI uses
+the same cut on panels, buttons, pills and canvas frames. A resize observer
+measures six percent of each frame's shorter side; an inset polygon keeps
+the border visible on the diagonal edges. Panel padding protects text from
+the corners. `test_gui_rendering.py` checks geometry and text boundaries at
+normal and doubled display scale without a live lab or engine.
 
 On the banner and social card the nav graph appears as **texture only**, as
 low-opacity wallpaper. It keeps clear of the type: no node sits inside the
@@ -162,6 +165,18 @@ node tools/brand/raster.js
 `dist.py` after dm2's graph changes; a stale figure misrepresents the map.
 The README's badges are shields.io images in the palette (`labelColor`
 panel, `color` line) and need no rebuild.
+
+`python tools/test_gui_rendering.py` compares the GUI's decoded inline
+favicon with `favicon.svg` as XML. Fast CI runs this cheap check through the
+CLI test suite. A favicon change must also update its data URI in
+`tools/argus_mcp/src/gui.html`.
+
+Full brand reproduction remains a manual check for brand changes. Run the
+commands above with the exact package versions in `tools/brand/package.json`
+and inspect `git diff -- docs/brand` before submitting. It does not run in
+fast CI: the font package is large and the wider font/raster toolchain is
+not fully locked. This is a recorded limit, rather than a claim that CI
+reproduces all brand assets.
 
 ## Directions rejected, and why
 
