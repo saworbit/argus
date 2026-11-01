@@ -194,11 +194,29 @@ class TestToolsCLI(unittest.TestCase):
         self.assertEqual(current, [am.track_color(n) for n in ("Reap", "Omi", "Zeus", "Ares")])
         self.assertEqual(am.track_color("player"), am.HUMAN_COLOR)
         self.assertNotIn(am.HUMAN_COLOR, current)
+        homage = ("Omicron", "Mr Elusive", "H2SO4", "Obot")
+        self.assertEqual([am.track_color(n, homage) for n in homage], list(am.SLOT_COLORS))
+        self.assertEqual(am.track_color("Mr Elusive", ("Carmack", "Mr Elusive")), am.SLOT_COLORS[3])
 
     def test_analyze_match_missing_args(self):
         res = self.run_tool("analyze_match.py")
         self.assertEqual(res.returncode, 1)
         self.assertIn("error: analyze_match.py requires at least map.bsp, logA, and out.png", res.stderr)
+
+    def test_omicron_death_markers_match_the_track_slot(self):
+        from unittest.mock import Mock
+        sys.path.insert(0, str(ROOT/"tools"))
+        import analyze_match as am
+        names = ("Omicron", "Mr Elusive", "H2SO4", "Obot")
+        bots = {name: [dict(x=0, y=0)] for name in names}
+        st = {name: dict(avg=0, cover=1, goals=0, stalls=0) for name in names}
+        ax = Mock()
+        am.panel(ax, [], [], (0, 0, 0), (10, 10, 10), bots, st, 'v1', 'test',
+                 [("Mr Elusive", "world", 0, 0, 0)])
+        lines = ax.plot.call_args_list
+        tracks = [call.kwargs['color'] for call in lines if 'label' in call.kwargs]
+        self.assertEqual(tracks, list(am.SLOT_COLORS))
+        self.assertEqual(lines[-1].kwargs['color'], am.SLOT_COLORS[1])
 
     def test_analyze_match_help(self):
         res = self.run_tool("analyze_match.py", "--help")

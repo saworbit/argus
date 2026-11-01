@@ -97,7 +97,7 @@ is the source, and a test holds the GUI's copy to it.
 | rocket jump | `#c2389b` | `#e879f9` | dash-dot |
 | lift and train | `#6d43c8` | `#8b5cf6` | solid |
 | teleport | `#3a342c` | `#e8dfd0` | long dash |
-| swim | `#0e7490` | `#22d3ee` | solid |
+| swim | `#0e7490` | `#22d3ee` | dashed (6, 2) |
 | door | `#6f6555` | `#9a8f7e` | solid |
 | refused link | `#7f0000` | `#fca5a5` | dashed, X at the far end |
 | waypoint (dot) | `#1e6bd9` | `#60a5fa` | - |
@@ -107,9 +107,8 @@ own rule; a one-way link at one level is still a walk. On rock every pair of
 link hues is at least OKLab Delta E 15 apart for normal vision. Walk and drop,
 and rocket jump and swim, are confusable under deuteranopia, which their dashes
 resolve. A sprint is a jump, so it shares jump's red and differs by dash. On
-white, swim and door sit at 11.7; no white-ground renderer draws either yet,
-and [#675](https://github.com/saworbit/argus/issues/675) must settle that
-before the debug PNG does.
+white, swim and door sit at 11.7; swim uses a dashed stroke and door stays
+solid in the debug PNG, match overlay and GUI so both remain distinct.
 
 ## The motif
 

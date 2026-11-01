@@ -305,6 +305,11 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Draw every typed link family in navigation previews, with dashed swim links
+  distinct from solid door links (#675). Render shipped graphs with
+  `--render-only` without regenerating navigation (#676), and give the Omicron
+  roster four distinct track and death-marker colours (#698).
+
 - Run navigation tactics and Rust integration tests in fast CI, preserve
   option-like PR titles and line-buffer smoke output (#670). Enforce the
   dash rule on tracked prose and sources (#674), and stop accepting false
