@@ -22,6 +22,7 @@ VARIANTS = {
     'offset': ('current', 'old_handoff'),
     'freeze': ('current',),
     'mover': ('current',),
+    'forecast': ('current',),
     'attention': ('current',),
     'water': ('current',),
 }
@@ -42,7 +43,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'water':
+    if family == 'forecast':
+        from verify_mover_forecast import stage as stage_forecast
+        stage_forecast(ROOT, folder)
+    elif family == 'water':
         from verify_water_route import stage as stage_water
         stage_water(ROOT, folder)
     elif family == 'attention':

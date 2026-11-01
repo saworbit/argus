@@ -21,6 +21,7 @@
 # Study receipts hash the original console bytes, including CRLF.
 runs/broad_*.log -text !eol -whitespace
 runs/freeze_*.log -text !eol -whitespace
+runs/mover_forecast_v1_*.log -text !eol -whitespace
 docs/mover-exit-prototype.patch -whitespace
 
 # Shell scripts must always use LF line endings
