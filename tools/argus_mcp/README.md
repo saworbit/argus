@@ -1181,8 +1181,16 @@ Yes, with a hard line.
   the running child (or the last harvested match).
 - `see what=bot name=Reap`: deep tape (events, deaths, nearest
   node/item). `name=latest:Reap` reads a harvested log.
-- `match_command` is still there for a single console line; `tune` is
-  the safe whitelist.
+- `match_command` is the deliberate raw engine console escape hatch for
+  trusted fixtures, including `exec`, `quit` and semicolon-separated engine
+  commands. It rejects empty input and newlines. It does not apply the
+  `tune` whitelist, which limits ordinary live adjustments.
+
+New run names are 1 through 80 ASCII letters, digits, dots, underscores or
+hyphens. They cannot start or end with a dot or contain repeated dots.
+This refuses `.` and `..`, hidden names and Windows trailing-dot aliases
+before a run directory or engine child is created. Historical tapes remain
+readable by path.
 
 Vanilla NetQuake has no QuakeWorld RCON. There is no VM memory
 inspector. The engine stays a harness.

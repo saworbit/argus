@@ -16,9 +16,14 @@ pub fn map_name(raw: &str) -> Result<String, String> {
     Ok(name)
 }
 
+pub const RUN_NAME_RULE: &str = "must be 1..80 ASCII letters, digits, dot, underscore or hyphen; no leading/trailing dot or repeated dots";
+
 pub fn valid_run_name(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= 80
+        && !name.starts_with('.')
+        && !name.ends_with('.')
+        && !name.contains("..")
         && name
             .chars()
             .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_' || c == '-')
@@ -308,6 +313,16 @@ mod tests {
         assert!(!valid_run_name("a/b"));
         assert!(!valid_run_name(""));
         assert!(!valid_run_name("has space"));
+    }
+
+    #[test]
+    fn run_name_refuses_dot_components_hidden_names_and_windows_aliases() {
+        for name in [".", "..", ".hidden", "a..b", "run."] {
+            assert!(!valid_run_name(name), "unsafe run name: {name}");
+        }
+        assert!(valid_run_name("arm.dm4-1_control"));
+        assert!(valid_run_name(&"a".repeat(80)));
+        assert!(!valid_run_name(&"a".repeat(81)));
     }
 
     #[test]
