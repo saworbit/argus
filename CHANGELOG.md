@@ -307,6 +307,8 @@ passing botmatch does not establish better human play.
 
 - Share each controller's typed UDP port with its clients, expose side ports
   on connected CLI helpers, and refuse an occupied port before launch (#690).
+- Refuse dot, hidden and trailing-dot run names before creating a directory,
+  and declare `match_command` as the trusted raw console escape hatch (#663).
 
 - Isolate Windows console injection in a bounded helper process so parallel
   live commands cannot detach the lab or swap its standard handles (#659).

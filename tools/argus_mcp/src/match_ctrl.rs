@@ -293,9 +293,7 @@ impl MatchCtrl {
         let name = match run_name {
             Some(n) => {
                 if !valid_run_name(n) {
-                    return Err(
-                        "run_name must match [A-Za-z0-9._-]+ and contain no path separators".into(),
-                    );
+                    return Err(format!("run_name {}", crate::paths::RUN_NAME_RULE));
                 }
                 n.to_string()
             }
@@ -1062,6 +1060,23 @@ mod tests {
     fn port_contract_controller_exposes_default_and_override() {
         assert_eq!(super::MatchCtrl::default().port(), super::DEFAULT_PORT);
         assert_eq!(super::MatchCtrl::on_port(26011).port(), 26011u16);
+    }
+
+    #[tokio::test]
+    async fn dot_run_names_are_refused_before_any_directory_or_child() {
+        let _serial = super::live_test_lock_async().await;
+        let (_temp, cfg) = tmp_cfg("dot-run-name");
+        for name in [".", "..", ".hidden", "arm..one", "arm."] {
+            let engine = crate::engine::FakeEngineControl::new("unused");
+            let mut ctrl = super::MatchCtrl::with_fake_engines([engine]);
+            let error = ctrl
+                .start(&cfg, "dm4", Some(10), Some(name), None, None, None)
+                .await
+                .unwrap_err();
+            assert!(error.contains("run_name"), "{error}");
+            assert!(!ctrl.status().running);
+            assert_eq!(std::fs::read_dir(&cfg.runs).unwrap().count(), 0);
+        }
     }
 
     use super::{

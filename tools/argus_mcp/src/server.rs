@@ -1658,7 +1658,9 @@ impl Argus {
         }
     }
 
-    #[tool(description = "Send one console line to the live dedicated server stdin.")]
+    #[tool(
+        description = "Raw console escape hatch (exec/quit) for trusted fixtures. Prefer whitelisted tune."
+    )]
     async fn match_command(
         &self,
         Parameters(args): Parameters<MatchCommandArgs>,
@@ -3086,7 +3088,7 @@ impl Argus {
     ) -> Result<Vec<PromptMessage>, McpError> {
         if !crate::paths::valid_run_name(&args.tag) {
             return Err(McpError::invalid_params(
-                "tag must contain only letters, digits, underscore, dash or dot",
+                format!("tag {}", crate::paths::RUN_NAME_RULE),
                 None,
             ));
         }
@@ -3523,6 +3525,66 @@ impl ServerHandler for Argus {
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn match_command_keeps_its_declared_raw_console_capability() {
+        let _serial = crate::match_ctrl::live_test_lock_async().await;
+        let root = TestDir::new("raw-console-policy").unwrap();
+        let control = FakeEngineControl::new(FAKE_TAPE);
+        let server = fake_match_server(root.path(), vec![control.clone()]);
+        let cfg = server.task_match_config.as_ref().unwrap();
+        server
+            .matches
+            .lock()
+            .await
+            .start(cfg, "dm4", Some(10), Some("raw_policy"), None, None, None)
+            .await
+            .unwrap();
+        let bad = server
+            .match_command(Parameters(MatchCommandArgs {
+                command: "quit\nstatus".into(),
+            }))
+            .await
+            .unwrap();
+        assert_eq!(bad.is_error, Some(true));
+        assert!(!control.quit_requested());
+        let command = "exec fixture.cfg; quit";
+        assert!(crate::live::validate_tune(command).is_err());
+        let raw = server
+            .match_command(Parameters(MatchCommandArgs {
+                command: command.into(),
+            }))
+            .await
+            .unwrap();
+        assert_ne!(raw.is_error, Some(true));
+        let quit = server
+            .match_command(Parameters(MatchCommandArgs {
+                command: "quit".into(),
+            }))
+            .await
+            .unwrap();
+        assert_ne!(quit.is_error, Some(true));
+        assert!(control.quit_requested());
+        server
+            .matches
+            .lock()
+            .await
+            .stop(Duration::from_millis(5))
+            .await
+            .unwrap();
+        let tools = Argus::annotated_tool_router().list_all();
+        let description = tools
+            .iter()
+            .find(|t| t.name == "match_command")
+            .unwrap()
+            .description
+            .as_deref()
+            .unwrap();
+        assert!(
+            description.contains("Raw console escape hatch")
+                && description.contains("whitelisted tune")
+        );
+    }
+
     use super::*;
 
     #[tokio::test]
@@ -4543,7 +4605,7 @@ mod tests {
             }))
             .await
             .unwrap_err();
-        assert!(error.message.contains("tag must contain only"));
+        assert!(error.message.contains(crate::paths::RUN_NAME_RULE));
     }
 
     /// WHAT THE TOOL SURFACE COSTS, measured rather than argued.

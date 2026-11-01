@@ -295,7 +295,7 @@ pub async fn run_pair_with_ctrl(
         .map(str::to_string)
         .unwrap_or_else(|| format!("within_{map}_{stamp}"));
     if !crate::paths::valid_run_name(&base) {
-        return Err("run prefix must match [A-Za-z0-9._-]+".into());
+        return Err(format!("run prefix {}", crate::paths::RUN_NAME_RULE));
     }
     let first = run_trial(cfg, map, duration_sec, skill, &format!("{base}_a"), 5, ctrl).await?;
     let second = run_trial(
