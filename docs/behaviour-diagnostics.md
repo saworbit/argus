@@ -108,9 +108,14 @@ not, and damage clears the window, so reading the window counted a stall while
 the bot still stood where the pause had left it. Without the tail, raising the
 rate took dm4 stalls from 5 to 24 across six nodes - an artifact, not a place a
 bot could not leave. `ar_hazhold` turned out to be unusable as a live brink
-test: `Argus_HazardSteer` is only entered after the heading has already failed,
-so its clearing branch is unreachable and the flag stays up for a bot's life
-([#607](https://github.com/saworbit/argus/issues/607)).
+test. Current callers enter `Argus_HazardSteer` only after vetoing the heading,
+so its defensive safe-entry clear does not run on ordinary safe travel. The
+stored deflection can persist until a boxed reverse or a new life clears it;
+it is not write-once state. Only hazard steering consumes this memory, and
+revalidates its heading before reuse. Gait uses `ar_brink`, the timestamp of
+an actual physics deflection ([#607](https://github.com/saworbit/argus/issues/607)).
+The steering policy is retained; movement-cause investigation is tracked in
+[#697](https://github.com/saworbit/argus/issues/697).
 
 ### Evidence
 

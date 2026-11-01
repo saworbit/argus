@@ -28,6 +28,9 @@ passing botmatch does not establish better human play.
 - Keep plan-proof input, source and output guards active under optimized Python
   ([#728](https://github.com/saworbit/argus/issues/728)).
 
+- Clarify persistent hazard-deflection memory and its reset paths without
+  changing steering ([#607](https://github.com/saworbit/argus/issues/607)).
+
 - Share the stall ownership predicate so stationary typed actions can release
   failed goals, while moving item-clock orbits clear isolated failure history
   ([#649](https://github.com/saworbit/argus/issues/649), [#650](https://github.com/saworbit/argus/issues/650)).
