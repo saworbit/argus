@@ -98,6 +98,7 @@ jobs:
         run: |
           python3 tools/test_argus_navjson.py
           python3 tools/test_nav_tactics.py
+          python3 tools/test_nav_artifacts.py
           python3 tools/test_ci_validation.py
 
       - name: Run Python tape parity tests

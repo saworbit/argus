@@ -1031,5 +1031,5 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_AddCamNode ('-1015 -527 -336', '-15 159 0', "arena_4");
     Argus_AddCamNode ('-887 -207 -336', '-15 -10 0', "arena_5");
     Argus_AddCamNode ('-823 -1711 120', '-15 -12 0', "arena_6");
-    dprint ("ARGNAV 175 nodes, 446 links\n");
+    dprint ("ARGNAV 175 nodes, 485 links\n");
 };
