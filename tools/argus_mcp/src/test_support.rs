@@ -66,6 +66,23 @@ pub(crate) fn run_git(root: &Path, args: &[&str]) -> Result<(), String> {
     ))
 }
 
+/// Directory junctions work on Windows without the symlink privilege.
+pub(crate) fn directory_link(target: &Path, link: &Path) {
+    #[cfg(unix)]
+    std::os::unix::fs::symlink(target, link).unwrap();
+    #[cfg(windows)]
+    {
+        let mut cmd = Command::new("cmd");
+        cmd.args(["/C", "mklink", "/J"]).arg(link).arg(target);
+        let out = crate::child_process::output_with_windows_loader_retry(&mut cmd).unwrap();
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

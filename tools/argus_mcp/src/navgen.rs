@@ -65,27 +65,44 @@ pub fn nav_generate(
     let map = crate::paths::map_name(map)?;
     let map = map.as_str();
     let bsp_path = resolve_input(cfg, bsp)?;
-    let out_qc = match out_qc {
-        Some(p) => crate::paths::resolve_output(cfg, p),
-        None => cfg.src.join(format!("argus_nav_{map}.qc")),
-    };
-    let out_png = match out_png {
-        Some(p) => crate::paths::resolve_output(cfg, p),
-        None => cfg.runs.join(format!("nav_{map}.png")),
-    };
-    if let Some(parent) = out_qc.parent() {
-        let _ = std::fs::create_dir_all(parent);
+    let own_qc = cfg.src.join(format!("argus_nav_{map}.qc"));
+    let default_png = cfg.runs.join(format!("nav_{map}.png"));
+    let out_qc = crate::paths::resolve_output(
+        cfg,
+        out_qc.unwrap_or(&own_qc.to_string_lossy()),
+        &cfg.src,
+        "qc",
+        Some(&own_qc),
+    )?;
+    let out_png = crate::paths::resolve_output(
+        cfg,
+        out_png.unwrap_or(&default_png.to_string_lossy()),
+        &cfg.runs,
+        "png",
+        None,
+    )?;
+    if register && out_qc != crate::paths::canonical_target(&own_qc)? {
+        return Err("registration requires the map's default ARGUS_SRC output".into());
     }
-    if let Some(parent) = out_png.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-
     let script = cfg.navgen_script();
     if !script.exists() {
         return Err(format!(
             "ARGUS_ROOT tools/argus_navgen.py missing: {}",
             script.display()
         ));
+    }
+    // A failed child must not reuse an earlier successful receipt.
+    let receipt = format!("{}.json", out_png.display());
+    match std::fs::remove_file(&receipt) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(format!("invalidate preview receipt: {error}")),
+    }
+    if let Some(parent) = out_qc.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("create QC output directory: {e}"))?;
+    }
+    if let Some(parent) = out_png.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("create PNG output directory: {e}"))?;
     }
 
     let mut cmd = Command::new(&cfg.python);
@@ -113,10 +130,7 @@ pub fn nav_generate(
         ok: output.status.success(),
         out_qc: out_qc.display().to_string(),
         out_png: out_png.display().to_string(),
-        preview_generated: text
-            .lines()
-            .any(|line| line == format!("wrote {}", out_png.display()))
-            && preview_generated(&out_qc, &out_png),
+        preview_generated: output.status.success() && preview_generated(&out_qc, &out_png),
         edict_budget: edict_budget_line(&text),
         playability_gate: playability_gate_line(&text),
         stdout_tail: tail_lines(&text, 40),
@@ -125,6 +139,86 @@ pub fn nav_generate(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn preview_receipt_is_authoritative_and_must_be_from_this_invocation() {
+        let dir = crate::test_support::TestDir::new("nav-receipt-paths").unwrap();
+        let root = dir.path();
+        std::fs::create_dir_all(root.join("tools")).unwrap();
+        std::fs::write(root.join("map.bsp"), "bsp").unwrap();
+        let script = root.join("tools/argus_navgen.py");
+        std::fs::write(&script, r#"import sys, pathlib, hashlib, json
+qc, png = map(pathlib.Path, sys.argv[3:5])
+graph = pathlib.Path(str(qc) + '.json')
+for p in (qc, graph, png): p.write_bytes(b'fresh')
+h = hashlib.md5(b'fresh').hexdigest()
+pathlib.Path(str(png) + '.json').write_text(json.dumps(dict(schema='nav-preview-v1', generated=True, qc_md5=h, graph_md5=h, png_md5=h)))
+print('preview ready')
+"#).unwrap();
+        let mut cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            root,
+        )
+        .unwrap();
+        if !cfg.python.is_file() {
+            eprintln!("SKIPPED nav receipt subprocess: no discovered Python");
+            return;
+        }
+        for spelling in [
+            "runs/nav_dm4.png",
+            "./runs/nav_dm4.png",
+            "runs//nav_dm4.png",
+        ] {
+            let result =
+                super::nav_generate(&cfg, "map.bsp", "dm4", None, Some(spelling), false).unwrap();
+            assert!(result.ok && result.preview_generated, "{result:?}");
+        }
+        // Success without a new receipt and spawn failure cannot reuse one.
+        std::fs::write(&script, "print('no preview this run')").unwrap();
+        let result = super::nav_generate(&cfg, "map.bsp", "dm4", None, None, false).unwrap();
+        assert!(result.ok && !result.preview_generated, "{result:?}");
+        cfg.python = root.join("missing-python");
+        assert!(super::nav_generate(&cfg, "map.bsp", "dm4", None, None, false).is_err());
+    }
+    #[test]
+    fn rejects_bad_names_and_outputs_before_starting_python() {
+        let dir = crate::test_support::TestDir::new("nav-output").unwrap();
+        let root = dir.path();
+        std::fs::create_dir_all(root.join("tools")).unwrap();
+        std::fs::write(root.join("map.bsp"), "bsp").unwrap();
+        std::fs::write(
+            root.join("tools/argus_navgen.py"),
+            "raise RuntimeError('must not run')",
+        )
+        .unwrap();
+        let cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            root,
+        )
+        .unwrap();
+        for (map, qc, png) in [
+            ("../escape", None, None),
+            ("bad\"name", None, None),
+            ("dispatch", None, None),
+            ("my-map", None, None),
+            ("dm4", Some("../outside.qc"), None),
+            ("dm4", Some("tools/argus_navgen.py"), None),
+            ("dm4", None, Some("runs/../tape.log")),
+        ] {
+            let error = super::nav_generate(&cfg, "map.bsp", map, qc, png, false).unwrap_err();
+            assert!(
+                !error.contains("spawn ARGUS_PYTHON"),
+                "validation was bypassed: {error}"
+            );
+            assert!(
+                !root.join("src").exists(),
+                "validation created an output directory"
+            );
+            assert!(
+                !root.join("runs").exists(),
+                "validation created an output directory"
+            );
+        }
+    }
     use super::{edict_budget_line, playability_gate_line, preview_generated};
 
     #[test]

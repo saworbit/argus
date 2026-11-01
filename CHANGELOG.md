@@ -305,6 +305,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Resolve relative lab config paths at load, confine generated outputs and backup
+  restores, preflight restores with rollback, and trust fresh preview receipts
+  instead of printed path spelling (#692, #684, #661, #680).
+
 - Share QC-safe map names across lab entry points (#688), count every typed
   family in runtime slot admission and refuse typed overflow (#664), and use
   the cached graph representation for overlays while exposing unavailable
