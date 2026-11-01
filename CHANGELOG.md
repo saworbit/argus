@@ -305,6 +305,9 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Isolate Windows console injection in a bounded helper process so parallel
+  live commands cannot detach the lab or swap its standard handles (#659).
+
 - Bound Python helper lifetimes, yield the async worker while they run, and
   publish staged nav, registration and plot outputs only after success (#683).
 - Apply six-percent chamfers with complete inset borders to GUI panels,

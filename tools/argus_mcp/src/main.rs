@@ -2,8 +2,16 @@ use argus_mcp::gui::{parse_gui_args, run_gui};
 use argus_mcp::server::Argus;
 use rmcp::{transport::stdio, ServiceExt};
 
+fn main() -> anyhow::Result<()> {
+    if std::env::args().nth(1).as_deref() == Some("internal-win-inject") {
+        return argus_mcp::engine::console_helper(std::env::args().skip(2))
+            .map_err(|e| anyhow::anyhow!(e));
+    }
+    run()
+}
+
 #[tokio::main]
-async fn main() -> anyhow::Result<()> {
+async fn run() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
         Some("record-pov") => {
