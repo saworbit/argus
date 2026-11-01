@@ -25,6 +25,11 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Evaluate both water-route ownership identities and distinguish corrected
+  layout-2 receipts from historical task-only markers
+  ([#733](https://github.com/saworbit/argus/issues/733)).
+  Let accepted route checks return without reading a missing rejection field.
+
 - Check co-op allies along the limited barrel direction and disable speculative
   rockets in co-op while respecting facing and muzzle-clearance gates
   ([#655](https://github.com/saworbit/argus/issues/655)).

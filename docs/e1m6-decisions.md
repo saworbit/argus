@@ -4,6 +4,16 @@
 [Earlier mover investigation](mover-intelligence.md) |
 [Water/action execution](e1m5-encounters.md)
 
+Historical water-route (`WRFIX`) ownership flags have the qualification in
+the [ownership audit](../runs/water-ownership-v1.results.json): they cannot
+prove the current-goal identity. This applies to water-route bank/mega-task
+claims here, independently of the separate mover-transfer fixture and its
+recorded world-floor landing and node-consumption checks. Raw tapes remain
+unchanged.
+Mover retention/dryness flags have a separate compound-assignment audit in
+[#735](https://github.com/saworbit/argus/issues/735); final handoff checks are
+independent of those individual flags.
+
 ## Decision failure and repair
 
 The unchanged controller boards e1m6's upper platform but releases its ride

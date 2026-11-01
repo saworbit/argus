@@ -32,6 +32,13 @@ handoffs for eighteen seconds on both e1m5 and dm3. Rejected alternatives
 include a direct bank edge and a corner inside the player hull. Point
 visibility and a nominal arc were insufficient.
 
+Historical `WRFIX active` flags prove only the task marker, because their
+QuakeC assignment omitted parentheses around the combined comparison (#733).
+Claims below about retaining the current goal are therefore unproved by that
+flag alone. The recorded positions, health, handoffs and completion remain
+unchanged. See the [separate audit](../runs/water-ownership-v1.results.json);
+new layout-2 receipts check both identities.
+
 The accepted ramp witness completes in 4.0 seconds at played cadence and
 3.3 seconds at 100 ms, landing dry without forced relocation. Exact seats
 and directed jumps survive through a validated proof sidecar. Generated QC

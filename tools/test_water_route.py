@@ -19,6 +19,14 @@ def receipt(control=False, slow=False):
 
 
 class WaterRouteContracts(unittest.TestCase):
+    def test_current_goal_identity_requires_corrected_layout(self):
+        legacy=receipt()
+        self.assertFalse(inspect_fixture(legacy,'e1m5',.0139)['goal_identity_verified'])
+        current=legacy.replace('dt_ms 14 case','dt_ms 14 layout 2 case')
+        self.assertTrue(inspect_fixture(current,'e1m5',.0139)['goal_identity_verified'])
+        with self.assertRaises(AssertionError):
+            inspect_fixture(current.replace('layout 2','layout 3'),'e1m5',.0139)
+
     def test_complete_routes_and_required_negative_at_both_rates(self):
         for control in (False,True):
             for slow in (False,True):

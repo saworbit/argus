@@ -785,6 +785,21 @@ movement, retained task ownership, full health or healing, measured cadence,
 and physical completion; bank cases require dry ground. `--ticrate .1`
 selects the measured 100 ms profile; `.0139` selects played cadence.
 
+Corrected receipts declare `layout 2` and compute `active` from both the task
+marker and current goal. Earlier receipts remain readable but are labelled
+`goal_identity_verified=false`: their unparenthesized QuakeC assignment stored
+only the task comparison. Those flags cannot establish current-goal ownership.
+Their recorded movement, cadence and physical arrival remain review evidence.
+The [ownership audit](../../runs/water-ownership-v1.results.json) retains all
+47 historical tape hashes without rewriting them.
+
+`python tools/verify_water_ownership.py --output backups/<new-directory>
+--prefix <new_prefix>` calls the actual observer with all four combinations
+of task/goal identity. `--legacy` must fail the task-only case; `--ticrate .1`
+checks the separate slow profile. The `ownership` compile family builds both
+current and legacy predicates in CI. This is an observer contract, not a
+physics or gameplay comparison.
+
 Cases 1 and 2 test original pool entries (case 1 also supports dm3).
 Cases 3 through 6 inject candidate edges once at setup and are graph experiments,
 including rejected alternatives. Cases 7 through 9 use the generated graph without

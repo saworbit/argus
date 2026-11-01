@@ -78,14 +78,14 @@ def stage(root, output, source=None):
 def inspect_fixture(text, map_name, ticrate, case=1):
     check_tape(text, map_name)
     require((text.count('BHVRPL begin water_route') == 1))
-    starts = re.findall(r"^WRFIX begin dt_ms\s+([\d.]+) case (\d+) start '([^']+)' goal '([^']+)'$", text, re.M)
+    starts = re.findall(r"^WRFIX begin dt_ms\s+([\d.]+)(?: layout (2))? case (\d+) start '([^']+)' goal '([^']+)'$", text, re.M)
     ends = re.findall(r"^WRFIX end completed\s+([01]) seconds\s+([\d.]+) handoffs\s+(\d+) active\s+([01]) pos '([^']+)' hp ([\d.]+) frames (\d+) grounded ([01]) feet (-?\d+)$", text, re.M)
     require((len(starts) == len(ends) == 1))
-    ms = measured_frame_ms(text, 'WRFIX', ticrate); require((int(starts[0][1]) == case), 'wrong fixture case')
+    ms = measured_frame_ms(text, 'WRFIX', ticrate); require((int(starts[0][2]) == case), 'wrong fixture case')
     samples = re.findall(r"^WRFIX sample t\s+([\d.]+) pos '([^']+)' node '([^']+)' grounded ([01]) wet ([0-3]) feet (-?\d+) handoffs (\d+) active ([01]) hp ([\d.]+) frames (\d+)$", text, re.M)
     require((len(samples) >= 2))
     require((len([s for s in text.splitlines() if s.startswith('WRFIX')]) == len(samples) + 2))
-    start = tuple(map(float, starts[0][2].split())); target = tuple(map(float, starts[0][3].split()))
+    start = tuple(map(float, starts[0][3].split())); target = tuple(map(float, starts[0][4].split()))
     expected_start = (-279,425,8) if map_name == 'e1m5' else (1093,-159,-336)
     if case == 2 and map_name == 'e1m5': expected_start = (-791,233,8)
     expected_target = (-183,73,80) if map_name == 'e1m5' else (1349,545,-392)
@@ -124,6 +124,8 @@ def inspect_fixture(text, map_name, ticrate, case=1):
         handoffs=int(ends[0][2]), active=ends[0][3] == '1', frame_ms=ms,
         start=start, target=target, final_position=final, measured_fps=fps,
         grounded=end[7]=='1', feet_contents=int(end[8]),
+        goal_identity_verified=starts[0][1]=='2',
+        ownership_evidence=('task and current goal' if starts[0][1]=='2' else 'historical task marker only; current goal unproved'),
         samples=samples)
 
 
@@ -194,7 +196,7 @@ def main():
                         row.update(accepted=False, rejection=str(error))
                     rows.append(row); write(output / 'receipt.json', rows)
                     print(json.dumps({k:v for k,v in row.items() if k!='samples'}), flush=True)
-                    require((row['accepted']), row['rejection'])
+                    require((row['accepted']), row.get('rejection', 'private route rejected'))
             finally:
                 native.finish_lab(lab)
 
