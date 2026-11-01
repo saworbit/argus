@@ -169,7 +169,7 @@ print('preview ready')
             "runs//nav_dm4.png",
         ] {
             let result =
-                super::nav_generate(&cfg, "map.bsp", "dm4", None, Some(spelling), false).unwrap();
+                super::nav_generate(&cfg, "map.bsp", " DM4 ", None, Some(spelling), false).unwrap();
             assert!(result.ok && result.preview_generated, "{result:?}");
         }
         // Success without a new receipt and spawn failure cannot reuse one.
