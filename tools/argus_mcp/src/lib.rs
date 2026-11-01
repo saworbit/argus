@@ -15,6 +15,7 @@ pub mod engine;
 pub mod graph_revision;
 pub mod gui;
 pub mod history;
+pub mod inspection_error;
 pub mod intel;
 pub mod lab;
 pub mod learn;

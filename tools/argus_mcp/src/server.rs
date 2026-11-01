@@ -765,33 +765,14 @@ fn hint_for(error: &str) -> String {
 }
 
 fn cfg_or_err() -> Result<Config, CallToolResult> {
-    match Config::load() {
-        Ok(cfg) => match cfg.require_ready() {
-            Ok(()) => Ok(cfg),
-            Err(e) => Err(CallToolResult::error(vec![ContentBlock::text(format!(
-                "{e}. hint: config_check or see what=project"
-            ))])),
-        },
-        Err(e) => Err(CallToolResult::error(vec![ContentBlock::text(format!(
-            "{e}. hint: set ARGUS_ROOT and the five lab keys"
-        ))])),
-    }
+    let cfg = Config::load().map_err(|e| crate::inspection_error::Failure::config(e).tool())?;
+    cfg.require_ready()
+        .map_err(|e| crate::inspection_error::Failure::config(e).tool())?;
+    Ok(cfg)
 }
 
 fn cfg_read_or_err() -> Result<Config, CallToolResult> {
-    match Config::load_for_reads() {
-        Ok(cfg) => {
-            if !cfg.root.exists() {
-                return Err(CallToolResult::error(vec![ContentBlock::text(
-                    "config path for ARGUS_ROOT does not exist".to_string(),
-                )]));
-            }
-            Ok(cfg)
-        }
-        Err(e) => Err(CallToolResult::error(vec![ContentBlock::text(format!(
-            "{e}. hint: set ARGUS_ROOT"
-        ))])),
-    }
+    crate::inspection_error::read_config().map_err(|e| e.tool())
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -3026,13 +3007,14 @@ impl Argus {
         &self,
         Parameters(args): Parameters<BriefArgs>,
     ) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg =
-            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
+        let cfg = crate::inspection_error::read_config().map_err(|e| e.prompt())?;
+        crate::inspection_error::run(&cfg, &args.log, args.map.as_deref())
+            .map_err(|e| e.prompt())?;
         let brief = intel_brief(&cfg, &args.log, args.map.as_deref())
-            .map_err(|e| McpError::invalid_params(e, None))?;
+            .map_err(|e| crate::inspection_error::Failure::from(e).prompt())?;
         let body = format!(
             "Review this Argus match. Trust these computed numbers; do not re-parse the log by hand.\n\n{}\n\nQuality bars:\n{}",
-            serde_json::to_string_pretty(&brief_lite(&brief)).unwrap_or_default(),
+            serde_json::to_string_pretty(&brief_lite(&brief)).map_err(|e| crate::inspection_error::Failure::from(e.to_string()).prompt())?,
             QUALITY_BARS
         );
         Ok(vec![PromptMessage::new_text(Role::User, body)])
@@ -3046,14 +3028,21 @@ impl Argus {
         &self,
         Parameters(args): Parameters<CompareArgs>,
     ) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg =
-            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
+        let cfg = crate::inspection_error::read_config().map_err(|e| e.prompt())?;
         let log_a = args.log_a.as_deref().unwrap_or("baseline");
+        crate::inspection_error::run(&cfg, &args.log_b, args.map.as_deref())
+            .map_err(|e| e.prompt())?;
+        let map = match &args.map {
+            Some(map) => Some(map.clone()),
+            None => crate::intel::run_map(&cfg, &args.log_b)
+                .map_err(|e| crate::inspection_error::Failure::from(e).prompt())?,
+        };
+        crate::inspection_error::run(&cfg, log_a, map.as_deref()).map_err(|e| e.prompt())?;
         let report = intel_compare(&cfg, log_a, &args.log_b, args.map.as_deref())
-            .map_err(|e| McpError::invalid_params(e, None))?;
+            .map_err(|e| crate::inspection_error::Failure::from(e).prompt())?;
         let body = format!(
             "Review this Argus A/B. log_a is the baseline, log_b is the candidate. Trust the verdict and gates; explain them, do not re-count ARGLOG lines.\n\n{}\n\nQuality bars:\n{}",
-            serde_json::to_string_pretty(&compare_lite(&report)).unwrap_or_default(),
+            serde_json::to_string_pretty(&compare_lite(&report)).map_err(|e| crate::inspection_error::Failure::from(e.to_string()).prompt())?,
             QUALITY_BARS
         );
         Ok(vec![PromptMessage::new_text(Role::User, body)])
@@ -3067,13 +3056,11 @@ impl Argus {
         &self,
         Parameters(args): Parameters<MapArgs>,
     ) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg =
-            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
-        let atlas =
-            map_cartograph(&cfg, &args.bsp).map_err(|e| McpError::invalid_params(e, None))?;
+        let cfg = crate::inspection_error::read_config().map_err(|e| e.prompt())?;
+        let atlas = crate::inspection_error::map(&cfg, &args.bsp).map_err(|e| e.prompt())?;
         let body = format!(
             "Review this Argus map brief. Trust reach (walk/jump/rocket_jump/off_graph) and the recipe. Do not invent a nav story that contradicts nearest_node.\n\n{}",
-            serde_json::to_string_pretty(&atlas_brief(&atlas)).unwrap_or_default()
+            serde_json::to_string_pretty(&atlas_brief(&atlas)).map_err(|e| crate::inspection_error::Failure::from(e.to_string()).prompt())?
         );
         Ok(vec![PromptMessage::new_text(Role::User, body)])
     }
@@ -3124,14 +3111,13 @@ impl Argus {
         description = "Orient an LLM on the Argus tree, live vs compile knobs, and how to test"
     )]
     async fn orient(&self) -> Result<Vec<PromptMessage>, McpError> {
-        let cfg =
-            Config::load_for_reads().map_err(|e| McpError::invalid_params(e.to_string(), None))?;
+        let cfg = crate::inspection_error::read_config().map_err(|e| e.prompt())?;
         let view = project_view(&cfg);
         let session = self.session.lock().await.clone();
         let body = format!(
             "You are in the Argus lab. Follow tools/argus_mcp/README.md. Do not invent a shell pipeline. First call is already see what=project. Use see / experiment / tune.\n\n{}\n\nSession last-seen:\n{}\n\nQuality bars:\n{}",
-            serde_json::to_string_pretty(&view).unwrap_or_default(),
-            serde_json::to_string_pretty(&session).unwrap_or_default(),
+            serde_json::to_string_pretty(&view).map_err(|e| crate::inspection_error::Failure::from(e.to_string()).prompt())?,
+            serde_json::to_string_pretty(&session).map_err(|e| crate::inspection_error::Failure::from(e.to_string()).prompt())?,
             QUALITY_BARS
         );
         Ok(vec![PromptMessage::new_text(Role::User, body)])
@@ -3505,7 +3491,7 @@ impl ServerHandler for Argus {
         request: ReadResourceRequestParams,
         _context: RequestContext<RoleServer>,
     ) -> Result<ReadResourceResponse, McpError> {
-        let cfg = Config::load_for_reads().ok();
+        let cfg = crate::inspection_error::read_config();
         let live = if request.uri == "argus://lab" {
             let mut matches = self.matches.lock().await;
             matches.reap();
@@ -3514,11 +3500,16 @@ impl ServerHandler for Argus {
             None
         };
         let session = self.session.lock().await.clone();
-        match crate::resources::read_uri_with_live(&request.uri, cfg.as_ref(), &session, live) {
+        match crate::resources::read_uri_with_config(
+            &request.uri,
+            cfg.as_ref().map_err(Clone::clone),
+            &session,
+            live,
+        ) {
             Ok(contents) => Ok(ReadResourceResponse::Complete(ReadResourceResult::new(
                 contents,
             ))),
-            Err(e) => Err(McpError::resource_not_found(e, None)),
+            Err(e) => Err(e.resource()),
         }
     }
 }

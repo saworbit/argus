@@ -1,7 +1,8 @@
 //! MCP resources: a client can open argus://project without a tool call.
 
-use crate::cartograph::{atlas_brief, cartograph, list_maps};
+use crate::cartograph::{atlas_brief, list_maps};
 use crate::config::Config;
+use crate::inspection_error::Failure;
 use crate::intel::{brief_run, QUALITY_BARS};
 use crate::lab::lab_status;
 use crate::live::knobs;
@@ -191,9 +192,9 @@ pub fn list_templates() -> ListResourceTemplatesResult {
     ListResourceTemplatesResult::with_all_items(tmpls)
 }
 
-fn json_text(uri: &str, value: &impl Serialize) -> ResourceContents {
-    let text = serde_json::to_string_pretty(value).unwrap_or_else(|_| "{}".into());
-    ResourceContents::text(text, uri).with_mime_type("application/json")
+fn json_text(uri: &str, value: &impl Serialize) -> Result<ResourceContents, Failure> {
+    let text = serde_json::to_string_pretty(value).map_err(|e| Failure::from(e.to_string()))?;
+    Ok(ResourceContents::text(text, uri).with_mime_type("application/json"))
 }
 
 fn plain_text(uri: &str, text: impl Into<String>) -> ResourceContents {
@@ -204,7 +205,7 @@ pub fn read_uri(
     uri: &str,
     cfg: Option<&Config>,
     session: &SessionSeen,
-) -> Result<Vec<ResourceContents>, String> {
+) -> Result<Vec<ResourceContents>, Failure> {
     read_uri_with_live(uri, cfg, session, None)
 }
 
@@ -213,83 +214,129 @@ pub fn read_uri_with_live(
     cfg: Option<&Config>,
     session: &SessionSeen,
     live: Option<crate::match_ctrl::MatchStatus>,
-) -> Result<Vec<ResourceContents>, String> {
+) -> Result<Vec<ResourceContents>, Failure> {
+    read_uri_with_config(
+        uri,
+        cfg.ok_or_else(|| Failure::config("ARGUS_ROOT is required")),
+        session,
+        live,
+    )
+}
+
+pub fn read_uri_with_config(
+    uri: &str,
+    cfg: Result<&Config, Failure>,
+    session: &SessionSeen,
+    live: Option<crate::match_ctrl::MatchStatus>,
+) -> Result<Vec<ResourceContents>, Failure> {
     let uri = uri.trim();
+    for prefix in [
+        "map",
+        "fn",
+        "run",
+        "path",
+        "search",
+        "const",
+        "graph-revisions",
+        "graph",
+        "probe-verdicts",
+    ] {
+        if uri == format!("argus://{prefix}/") {
+            return Err(Failure::bad("resource variable is empty"));
+        }
+    }
     match uri {
         "argus://project" => {
-            let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://project")?;
-            Ok(vec![json_text(uri, &project_view(cfg))])
+            let cfg = cfg.clone()?;
+            Ok(vec![json_text(uri, &project_view(cfg))?])
         }
         "argus://lab" => {
-            let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://lab")?;
-            Ok(vec![json_text(uri, &lab_status(cfg, live))])
+            let cfg = cfg.clone()?;
+            Ok(vec![json_text(uri, &lab_status(cfg, live))?])
         }
-        "argus://knobs" => Ok(vec![json_text(uri, &knobs())]),
-        "argus://last" => Ok(vec![json_text(uri, session)]),
+        "argus://knobs" => Ok(vec![json_text(uri, &knobs())?]),
+        "argus://last" => Ok(vec![json_text(uri, session)?]),
         "argus://quality" => Ok(vec![plain_text(uri, QUALITY_BARS)]),
-        "argus://help" => Ok(vec![json_text(uri, &see_vocab())]),
+        "argus://help" => Ok(vec![json_text(uri, &see_vocab())?]),
         "argus://catalog/maps" => {
-            let cfg = cfg.ok_or("ARGUS_ROOT is required for the map catalog")?;
-            Ok(vec![json_text(uri, &map_catalog(cfg)?)])
+            let cfg = cfg.clone()?;
+            Ok(vec![json_text(uri, &map_catalog(cfg)?)?])
         }
         "argus://catalog/runs" => {
-            let cfg = cfg.ok_or("ARGUS_ROOT is required for the run catalog")?;
-            Ok(vec![json_text(uri, &run_catalog(cfg)?)])
+            let cfg = cfg.clone()?;
+            Ok(vec![json_text(uri, &run_catalog(cfg)?)?])
         }
         "argus://catalog/baselines" => {
-            let cfg = cfg.ok_or("ARGUS_ROOT is required for the baseline catalog")?;
-            Ok(vec![json_text(uri, &baseline_catalog(cfg))])
+            let cfg = cfg.clone()?;
+            Ok(vec![json_text(uri, &baseline_catalog(cfg))?])
         }
         other => {
             if let Some(map) = other.strip_prefix("argus://graph-revisions/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for graph revisions")?;
-                let revisions = crate::graph_revision::list_revisions(cfg, map)?;
-                return Ok(vec![json_text(uri, &revisions)]);
+                let cfg = cfg.clone()?;
+                let revisions = crate::graph_revision::list_revisions_checked(cfg, map)?;
+                return Ok(vec![json_text(uri, &revisions)?]);
             }
             if let Some(spec) = other.strip_prefix("argus://graph/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for graph revisions")?;
-                let (map, hash) = spec
-                    .split_once('/')
-                    .ok_or("graph resource must be argus://graph/{map}/{hash}")?;
+                let cfg = cfg.clone()?;
+                let (map, hash) = spec.split_once('/').ok_or_else(|| {
+                    Failure::bad("graph resource must be argus://graph/{map}/{hash}")
+                })?;
+                check_revision(cfg, map, hash)?;
                 let revision = crate::graph_revision::get_revision(cfg, &format!("{map}@{hash}"))?;
-                return Ok(vec![json_text(uri, &revision)]);
+                return Ok(vec![json_text(uri, &revision)?]);
             }
             if let Some(spec) = other.strip_prefix("argus://probe-verdicts/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for probe verdicts")?;
-                let (map, hash) = spec
-                    .split_once('/')
-                    .ok_or("verdict resource must be argus://probe-verdicts/{map}/{hash}")?;
+                let cfg = cfg.clone()?;
+                let (map, hash) = spec.split_once('/').ok_or_else(|| {
+                    Failure::bad("verdict resource must be argus://probe-verdicts/{map}/{hash}")
+                })?;
+                check_revision(cfg, map, hash)?;
                 let verdicts =
                     crate::graph_revision::probe_verdicts(cfg, &format!("{map}@{hash}"))?;
-                return Ok(vec![json_text(uri, &verdicts)]);
+                return Ok(vec![json_text(uri, &verdicts)?]);
             }
             if let Some(name) = other.strip_prefix("argus://map/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://map")?;
-                let atlas = cartograph(cfg, name)?;
-                return Ok(vec![json_text(uri, &atlas_brief(&atlas))]);
+                let cfg = cfg.clone()?;
+                let atlas = crate::inspection_error::map(cfg, name)?;
+                return Ok(vec![json_text(uri, &atlas_brief(&atlas))?]);
             }
             if let Some(name) = other.strip_prefix("argus://fn/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://fn")?;
+                let cfg = cfg.clone()?;
+                if name.is_empty() {
+                    return Err(Failure::bad("function name is empty"));
+                }
+                let idx = index_argus(cfg)?;
+                if !idx.functions.iter().any(|f| {
+                    !f.proto
+                        && f.name
+                            .to_ascii_lowercase()
+                            .contains(&name.to_ascii_lowercase())
+                }) {
+                    return Err(Failure::missing(format!(
+                        "no Argus function matching {name}"
+                    )));
+                }
                 let src = qc_read(cfg, name)?;
-                return Ok(vec![json_text(uri, &src)]);
+                return Ok(vec![json_text(uri, &src)?]);
             }
             if let Some(name) = other.strip_prefix("argus://run/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://run")?;
-                let brief = brief_run(cfg, name, None)?;
-                return Ok(vec![json_text(uri, &brief)]);
+                let cfg = cfg.clone()?;
+                let path = crate::inspection_error::run(cfg, name, None)?;
+                let brief = brief_run(cfg, &path.to_string_lossy(), None)?;
+                return Ok(vec![json_text(uri, &brief)?]);
             }
             if let Some(spec) = other.strip_prefix("argus://path/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://path")?;
-                let route = crate::nav_view::route_ref(cfg, spec)?;
-                return Ok(vec![json_text(uri, &route)]);
+                let cfg = cfg.clone()?;
+                let route = crate::nav_view::route_checked(cfg, spec)?;
+                return Ok(vec![json_text(uri, &route)?]);
             }
             if let Some(needle) = other.strip_prefix("argus://search/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://search")?;
+                let cfg = cfg.clone()?;
                 let hits = crate::qc_index::qc_search(cfg, needle, 24)?;
-                return Ok(vec![json_text(uri, &hits)]);
+                return Ok(vec![json_text(uri, &hits)?]);
             }
             if let Some(name) = other.strip_prefix("argus://const/") {
-                let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://const")?;
+                let cfg = cfg.clone()?;
                 let idx = index_argus(cfg)?;
                 let q = name.to_ascii_lowercase();
                 let hits: Vec<_> = idx
@@ -297,13 +344,32 @@ pub fn read_uri_with_live(
                     .into_iter()
                     .filter(|c| c.name.to_ascii_lowercase().contains(&q))
                     .collect();
-                return Ok(vec![json_text(uri, &hits)]);
+                return Ok(vec![json_text(uri, &hits)?]);
             }
-            Err(format!(
+            Err(Failure::missing(format!(
                 "unknown resource {other}; try argus://project or see what=help"
-            ))
+            )))
         }
     }
+}
+
+fn check_revision(cfg: &Config, map: &str, hash: &str) -> Result<(), Failure> {
+    crate::paths::map_name(map).map_err(Failure::bad)?;
+    if hash.len() != 32 || !hash.bytes().all(|c| c.is_ascii_hexdigit()) {
+        return Err(Failure::bad(
+            "revision requires a 32-character content hash",
+        ));
+    }
+    let revisions = crate::graph_revision::list_revisions_checked(cfg, map)?;
+    if !revisions
+        .iter()
+        .any(|r| r.graph_md5.eq_ignore_ascii_case(hash))
+    {
+        return Err(Failure::missing(format!(
+            "unknown graph revision {map}@{hash}"
+        )));
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -420,5 +486,60 @@ mod tests {
         ] {
             assert!(read_uri(uri, None, &session).is_err(), "{uri}");
         }
+    }
+
+    #[test]
+    fn resource_errors_keep_their_cause() {
+        use crate::inspection_error::Kind;
+        let dir = TestDir::new("resource-errors").unwrap();
+        let cfg = catalog_cfg(dir.path());
+        fs::create_dir_all(&cfg.src).unwrap();
+        fs::create_dir_all(&cfg.maps).unwrap();
+        fs::create_dir_all(&cfg.runs).unwrap();
+        fs::write(
+            cfg.src.join("argus.qc"),
+            "void() Argus_Example = { return; };\n",
+        )
+        .unwrap();
+        fs::write(cfg.maps.join("broken.bsp"), "broken BSP").unwrap();
+        fs::write(cfg.src.join("argus_nav_broken.qc.json"), "{broken").unwrap();
+        fs::write(
+            cfg.src.join("argus_nav_valid.qc.json"),
+            r#"{"nodes":[[0,0,0]],"links":[]}"#,
+        )
+        .unwrap();
+        fs::create_dir(cfg.src.join("argus_nav_unreadable.qc.json")).unwrap();
+        fs::create_dir(cfg.runs.join("unreadable.log")).unwrap();
+        let session = SessionSeen::default();
+        for (uri, kind) in [
+            ("argus://unknown", Kind::NotFound),
+            ("argus://map/absent", Kind::NotFound),
+            ("argus://fn/Absent", Kind::NotFound),
+            ("argus://run/absent", Kind::NotFound),
+            ("argus://graph-revisions/absent", Kind::NotFound),
+            (
+                "argus://graph/valid/00000000000000000000000000000000",
+                Kind::NotFound,
+            ),
+            ("argus://path/absent:0->1", Kind::NotFound),
+            ("argus://graph/broken/not-a-hash", Kind::BadArgs),
+            ("argus://path/nonsense", Kind::BadArgs),
+            ("argus://path/valid:0->99", Kind::BadArgs),
+            ("argus://fn/", Kind::BadArgs),
+            ("argus://map/broken", Kind::Internal),
+            ("argus://graph-revisions/broken", Kind::Internal),
+            ("argus://graph-revisions/unreadable", Kind::Internal),
+            ("argus://path/broken:0->1", Kind::Internal),
+            ("argus://run/unreadable.log", Kind::Internal),
+        ] {
+            let error = read_uri(uri, Some(&cfg), &session).unwrap_err();
+            assert_eq!(error.kind, kind, "{uri}: {error}");
+        }
+        let error = Failure::config("missing ARGUS_ROOT");
+        let result = read_uri_with_config("argus://project", Err(error.clone()), &session, None)
+            .unwrap_err();
+        assert_eq!(result.kind, Kind::Unconfigured);
+        assert_eq!(result.error, error.error);
+        assert!(read_uri_with_config("argus://help", Err(error), &session, None).is_ok());
     }
 }

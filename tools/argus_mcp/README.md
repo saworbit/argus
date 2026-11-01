@@ -386,7 +386,13 @@ Omit `what` (or pass `start` / `orient`) for `project`. Aliases:
 `goap`/`goalplan` → `plan`, `dem`/`replay` → `demo`.
 `see what=help` prints the vocabulary.
 
-Tool errors are JSON `{error, hint}` with a next call.
+Tool errors are JSON `{error, hint}` with a next call. Configuration failures
+also include `kind: unconfigured`. Prompts and resources carry the same fields
+in JSON-RPC error data: configuration and internal failures use -32603, and
+bad arguments use -32602. Missing resource targets use -32002 on older MCP
+versions; the protocol library translates that to -32602 for 2026-07-28.
+Unknown run or map arguments in prompts use -32602. Static help and knobs
+remain readable without configuration.
 
 Python helpers share an async process owner with null stdin, captured stdout
 and stderr, and kill-on-drop cancellation. Deadlines are 180 seconds for nav
