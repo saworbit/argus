@@ -362,6 +362,17 @@ Omit `what` (or pass `start` / `orient`) for `project`. Aliases:
 
 Tool errors are JSON `{error, hint}` with a next call.
 
+Python helpers share an async process owner with null stdin, captured stdout
+and stderr, and kill-on-drop cancellation. Deadlines are 180 seconds for nav
+generation, 60 seconds for match plots and 30 seconds for registration's
+playability check. Timeout kills and reaps the child. Nav and plot helpers
+write into private temporary directories. Successful output is published only
+if destinations still match their pre-run bytes; a publication error rolls
+back earlier writes and reports any rollback failure. Registration edits are
+published together after every playability check passes. Cancellation or a
+failed helper leaves the requested outputs unchanged, apart from invalidating
+the prior nav preview receipt before a new invocation.
+
 | `what` | `name` | Returns |
 |--------|--------|---------|
 | `project` | | Tree: QC files, maps, live vs compile, next call |
@@ -1566,7 +1577,7 @@ Grok (`.grok/config.toml`):
 command = "C:/argus/tools/argus_mcp/install/bin/argus-mcp.exe"
 startup_timeout_sec = 15
 tool_timeout_sec = 700
-tool_timeouts = { match_run = 700, compile_qc = 120, nav_generate = 180, cartograph = 60, experiment = 400, probe = 180, bot_simulate_match = 400 }
+tool_timeouts = { match_run = 700, compile_qc = 120, nav_generate = 240, cartograph = 240, nav_sync_dispatch = 60, analyze_match = 90, experiment = 400, probe = 180, bot_simulate_match = 400 }
 ```
 
 Set the five `ARGUS_*` keys in the env block or in

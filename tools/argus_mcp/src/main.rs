@@ -1019,6 +1019,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             let register = !sub_args.iter().any(|a| a == "--no-register");
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let res = argus_mcp::navgen::nav_generate(&cfg, map, map, None, None, register)
+                .await
                 .map_err(|e| anyhow::anyhow!(e))?;
             if res.ok {
                 println!("Nav generation OK for {map}!");
