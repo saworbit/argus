@@ -305,6 +305,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep parsing client messages after NetQuake keepalives, report malformed
+  `svc_bad` streams explicitly, and retain later prints and entity updates
+  from the same packet (#658).
+
 - Match the engine's door-lip default for explicit zero values (#668), reject
   proven anchors that collide on one fine sample before writing navigation
   (#694), and remove two unused, uncallable jump wrappers (#667).
