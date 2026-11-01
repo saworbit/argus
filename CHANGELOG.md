@@ -25,6 +25,11 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Share the stall ownership predicate so stationary typed actions can release
+  failed goals, while moving item-clock orbits clear isolated failure history
+  ([#649](https://github.com/saworbit/argus/issues/649), [#650](https://github.com/saworbit/argus/issues/650)).
+  Preserve the frozen health/inventory source through an explicit reverse amendment.
+
 - Apply requested lab skill before loading the map so the initial roster uses
   the declared difficulty ([#726](https://github.com/saworbit/argus/issues/726)).
 

@@ -920,6 +920,14 @@ automatically; invalid or unexpected control receipts fail. Neither
 verifier changes the native MCP schema or shipped console controls.
 See [the contract and limits](../../docs/behaviour-diagnostics.md#shared-failed-plan-recognition).
 
+`python tools/verify_stall_ownership.py --output backups/<new-directory>
+--prefix <new_prefix> --map dm3` checks fifteen production stall decisions
+with prescribed stationary/moving inputs. Use `--map e1m6 --ticrate .1` for
+the separate slow-cadence check. `--source` selects a frozen source tree;
+`--expect-failure` requires a failed diagnostic control. These are component
+contracts, not physical wedge or ordinary-match acceptance. Each invocation
+owns its source, program and raw output; installed gameplay is protected.
+
 Repeat current-source muzzle or active health/inventory boundary checks with
 `python tools/verify_private_fixtures.py muzzle --output backups/<new-directory> --prefix <new_prefix>`.
 Replace `muzzle` with `health` for the active health/inventory boundary checks.

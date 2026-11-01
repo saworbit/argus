@@ -92,8 +92,11 @@ deadline; repeated waypoint cycles, movement or route-cache adoption alone
 do not. Detours retain a monotonic best-distance reference. Failed co-op fetches
 rest per bot/subject before retrying. Existing bailout
 and utility selection choose another goal after repeated failed attempts.
-Combat/tactical ownership and established mover/door/link handling pause or
-reset the evidence. There is no map-specific escape sequence. See the
+The stall window uses a shared pause predicate for plan evidence and detection.
+Explicit waits and moving typed actions keep ownership. Moving pending-item
+orbits clear isolated failures; stationary typed flags and camps can reach
+the bailout. The bailout cancels its old search, action state and item claim.
+There is no map-specific escape sequence. See the
 [controlled proof and limits](behaviour-diagnostics.md#shared-failed-plan-recognition).
 
 Flat ordinary walking handoffs require support. Submerged seats can use water

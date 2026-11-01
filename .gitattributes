@@ -25,6 +25,8 @@ runs/mover_forecast_v1_*.log -text !eol -whitespace
 runs/camera_chase_v1_*.log -text !eol -whitespace
 runs/mover_handoff_v2_*.log -text !eol -whitespace
 runs/startup_skill_v1_*.log -text !eol -whitespace
+runs/stall_ownership_v1_*.log -text !eol -whitespace
+runs/stall-ownership-v1.source.patch -whitespace
 docs/mover-exit-prototype.patch -whitespace
 
 # Shell scripts must always use LF line endings
