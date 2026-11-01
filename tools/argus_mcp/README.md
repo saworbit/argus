@@ -596,6 +596,34 @@ Inspect private copies first. This mode resamples no seats and promotes no
 links. It validates both outputs before publication, refuses changed inputs
 and rolls back a first write if the second fails. It does not install a program.
 
+Plain jump profiles must resolve a launch strictly within 96 units of the
+integer source seat emitted to QC, including vertical distance. Generation and
+`--reprofile-jumps` refuse a violating profile before publishing either file.
+The source generator's `--audit-jump-anchors` mode reports distances, input
+hashes and violations without writing QC, JSON or images:
+
+```text
+python tools/argus_navgen.py maps_local/dm3.bsp dm3 src/argus_nav_dm3.qc unused.png --audit-jump-anchors
+```
+
+Exit 1 identifies modelled violations. Direct/fallback hops have no resolved
+gap launch and are reported as unclassified, not certified by this test.
+The 2026-11-02 audit of graph source `9c88ac1` found 93 profiled and 114
+direct/fallback links across 13 maps. Four legacy profiles violate the bar:
+
+| Map | Directed link | Launch distance |
+|---|---|---|
+| dm3 | 73 to 86 | 100.013 |
+| e1m5 | 19 to 28 | 104.000 |
+| e1m6 | 167 to 160 | 101.705 |
+| lqdm2 | 159 to 162 | 96.000 |
+
+These measurements describe the model, not proof of an inert engine hop.
+The first three links have no alternate directed path, even with gated hops.
+Current graph topology is retained pending engine-proven reseating; blindly
+deleting these bridges would cut reach. lqdm2 has an alternate ungated path
+through nodes 198 and 148. See #665 for the physical follow-up.
+
 Registration flags on the atlas, GUI and lab require both the dispatcher
 branch and the exact nav QC line in `progs.src`; commented entries do not count.
 The first-registration reach gate includes ordinary jumps and door, teleporter,

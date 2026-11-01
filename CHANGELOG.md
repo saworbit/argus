@@ -312,6 +312,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Reject resolved jump launches outside the runtime's strict 96-unit source
+  anchor before generation or profiling publishes artifacts. Add a read-only,
+  hash-stamped audit for existing jump links (#665).
+
 - Bind navigation coverage to frozen compile and tape receipts, distinguish
   on-disk registration from the tested build, and withhold runtime claims
   when provenance is unknown. Keep study report checks active under optimized
