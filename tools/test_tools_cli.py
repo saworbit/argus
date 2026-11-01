@@ -868,6 +868,36 @@ tool_timeout_sec = 700
         self.assertEqual(res.returncode, 1)
         self.assertIn("n3 reads 112 0 24", res.stderr)
 
+    def test_argus_navgen_zero_lip_matches_the_engine_default(self):
+        nodes = [list(p) for p in self.DOOR_FIXTURE_NODES]
+        nodes[2], nodes[3] = [52, 0, 24], [52, 100, 24]
+        graphs = []
+        for lip in ('missing', '0', '8'):
+            tmp = self.door_fixture(nodes=nodes, spawnflags=1)
+            bsp = tmp/'fixture.bsp'
+            replacement = b'"pad" "8"' if lip == 'missing' else f'"lip" "{lip}"'.encode()
+            bsp.write_bytes(bsp.read_bytes().replace(b'"lip" "8"', replacement))
+            result = self.retype(tmp)
+            self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+            graphs.append(json.loads((tmp/'nav.qc.json').read_text()))
+        self.assertEqual(graphs[0], graphs[1])
+        self.assertEqual(graphs[1], graphs[2])
+
+    def test_argus_navgen_refuses_two_anchors_on_one_sample(self):
+        tmp = self.door_fixture(collision_gap=True)
+        qc, png = tmp/'nav.qc', tmp/'out.png'
+        inputs = {p: p.read_bytes() for p in (qc, Path(str(qc)+'.json'))}
+        arguments = [str(ROOT/'tools/argus_navgen.py'), str(tmp/'fixture.bsp'),
+                     'fixture', str(qc), str(png), '--no-dispatcher']
+        code = ("import sys,runpy;sys.path.insert(0," + repr(str(ROOT/'tools')) + ");"
+                "import argus_nav_anchors;argus_nav_anchors.load_anchors=lambda *args: [[15,15,24],[16,16,24]];"
+                "sys.argv=" + repr(arguments) + ";runpy.run_path(sys.argv[0],run_name='__main__')")
+        result = subprocess.run([sys.executable, '-c', code], capture_output=True,
+                                text=True, timeout=30)
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertIn('share fine sample', result.stderr)
+        self.assertEqual({p: p.read_bytes() for p in inputs}, inputs)
+
     def test_argus_navgen_retype_doors_rewrites_only_the_verbs(self):
         tmp = self.door_fixture()
         res = self.retype(tmp)

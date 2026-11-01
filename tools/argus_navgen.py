@@ -216,6 +216,11 @@ def kv(block):
     return dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
 bmodels = [struct.unpack_from("<9f7i", md, i * 64) for i in range(len(md)//64)]
 
+def _door_lip(entity):
+    # doors.qc defaults the numeric value, including an explicit zero.
+    return float(entity.get("lip", 8) or 8) or 8.0
+
+
 def _door_travel_boxes(_e, _mn, _mx):
     """(shut, open) world boxes for a travelling func_door, or None.
 
@@ -263,7 +268,7 @@ def _door_travel_boxes(_e, _mn, _mx):
         _d = (_dmath.cos(_r), _dmath.sin(_r), 0.0)
     _size = (_mx[0] - _mn[0], _mx[1] - _mn[1], _mx[2] - _mn[2])
     _travel = abs(sum(_d[k] * _size[k] for k in range(3))) \
-        - float(_e.get("lip", "8") or 8)
+        - _door_lip(_e)
     if _travel <= 0:
         return None
     _moved = (tuple(_mn[k] + _d[k] * _travel for k in range(3)),
@@ -1528,6 +1533,9 @@ for _anchor in proven_anchors:
     # exact position, and the proven pair pass supplies witnessed jumps.
     if hull_contents(*_anchor) == CONTENTS_SOLID:
         raise ValueError(f"proven anchor {_anchor} is inside the player hull")
+    if _nid in _proven_positions and _proven_positions[_nid] != tuple(_anchor):
+        raise ValueError(f"proven anchors {_proven_positions[_nid]} and {_anchor} "
+                         f"share fine sample {_nid}")
     if _nid not in ways:
         if not _limits.admits(len(ways), infrastructure=True):
             raise ValueError(f"proven anchor {_anchor} exceeds the waypoint budget")
@@ -1536,7 +1544,7 @@ for _anchor in proven_anchors:
         ways.append(_nid)
     _proven_positions[_nid] = tuple(_anchor)
 if proven_anchors:
-    print(f"engine-proven seats: {len(proven_anchors)} nominations promoted")
+    print(f"engine-proven seats: {len(_proven_positions)} distinct nominations promoted")
 
 
 def boarding_pad(bm, face_z):
@@ -1692,7 +1700,7 @@ for b in ent_blocks:
     # lip). DOOR_START_OPEN swaps pos1 and pos2, which moves the slab
     # but not the pair of heights its top face visits, so the two
     # faces below are right either way.
-    travel = (bm[5] - bm[2]) - float(e.get("lip", 8) or 8)
+    travel = (bm[5] - bm[2]) - _door_lip(e)
     if travel < MOVER_MIN_TRAVEL:
         continue
     hi_face = bm[5] if (e.get("angle") or "").strip() == "-2" else bm[5] + travel
@@ -3940,21 +3948,6 @@ if _top_exposure:
 # arc with a little speed margin, bounded by the dry runway beyond the
 # landing. Jump-up and engine-proven auto-hop links have no centre-line
 # void and deliberately keep speed zero, which means no staged run-up.
-def _landing_runway(_a, _b):
-    return _landing_runway_points(pos(ways[_a]), pos(ways[_b]))
-
-
-def _jump_void(_a, _b):
-    """Longest loss of support at the link's own height.
-
-    _centre_void is a walkability test, so a survivable floor 200 units
-    below ends its void. For a jump approach that lower ledge is still
-    empty space. Follow the source-to-landing height instead and count
-    only floor a runner could stay on without jumping.
-    """
-    return _jump_void_points(pos(ways[_a]), pos(ways[_b]))
-
-
 def _jump_approach(_a, _b):
     return _jump_approach_points(pos(ways[_a]), pos(ways[_b]))
 
