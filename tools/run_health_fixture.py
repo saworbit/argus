@@ -9,7 +9,7 @@ import shutil
 import subprocess
 import time
 
-from run_behaviour_equivalence import ROOT, EXE, Lab, identity
+from run_behaviour_equivalence import finish_lab, ROOT, EXE, Lab, identity
 from check_perception_fixture import check
 from check_health_fixture import check as health_check
 
@@ -168,9 +168,10 @@ def main():
             assert identity('dm2') == pinned, 'production inputs changed during fixture matrix'
             audit_private(output, args.legacy)
         finally:
-            if active: lab.call('match_stop')
-            lab.close()
-            shutil.copy2(shipped, lab_binary)
+            try:
+                finish_lab(lab, active)
+            finally:
+                shutil.copy2(shipped, lab_binary)
 
 
 if __name__ == '__main__':

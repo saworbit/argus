@@ -11,7 +11,7 @@ import shutil
 import subprocess
 import time
 
-from run_behaviour_equivalence import ROOT, EXE, Lab, identity, timing, cpu_seconds
+from run_behaviour_equivalence import finish_lab, ROOT, EXE, Lab, identity, timing, cpu_seconds
 
 OUT = ROOT / 'backups/perception-step1'
 
@@ -104,8 +104,7 @@ def main():
                             print(json.dumps(dict(name=name, completed=len(rows), goals=brief['totals']['goals'],
                                 frags=brief['totals']['frags'], deaths=brief['totals']['deaths'])), flush=True)
                         finally:
-                            if active: lab.call('match_stop')
-                            lab.close()
+                            finish_lab(lab, active)
         write_comparisons(rows)
     finally:
         shutil.copy2(shipped, engine)

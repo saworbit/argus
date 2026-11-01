@@ -8,7 +8,7 @@ import time
 import traceback
 
 from report_perception_lava import digest, schedule
-from run_behaviour_equivalence import ROOT, Lab, identity, timing, cpu_seconds
+from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity, timing, cpu_seconds
 
 
 def source_digest(path):
@@ -134,9 +134,10 @@ def main():
                     attempt['error'] = traceback.format_exc(); write(attempt_path, attempt)
                     raise
                 finally:
-                    if active: lab.call('match_stop')
-                    lab.close()
-                    shutil.copy2(restore, engine)
+                    try:
+                        finish_lab(lab, active)
+                    finally:
+                        shutil.copy2(restore, engine)
         state['status'] = 'complete'
     except BaseException:
         state['status'] = 'interrupted'; state['error'] = traceback.format_exc()

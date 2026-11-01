@@ -305,6 +305,11 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep proof and study validation active under optimized Python (#681), refuse
+  the backups root before creating plan-test output (#651), and close failed
+  lab sessions without replacing the original error or skipping binary
+  restoration (#695).
+
 - Draw every typed link family in navigation previews, with dashed swim links
   distinct from solid door links (#675). Render shipped graphs with
   `--render-only` without regenerating navigation (#676), and give the Omicron

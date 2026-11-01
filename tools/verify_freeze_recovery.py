@@ -127,7 +127,7 @@ def main():
             assert all(not r['failures'] for r in receipts), [
                 (r['map'], r['failures']) for r in receipts]
         finally:
-            lab.call('match_stop'); lab.close()
+            native.finish_lab(lab)
 
 
 if __name__ == '__main__':

@@ -125,7 +125,7 @@ def main():
                 rows.append(row); write(output / 'receipt.json', rows)
                 print(json.dumps(row), flush=True)
         finally:
-            lab.call('match_stop'); lab.close()
+            native.finish_lab(lab)
 
 
 if __name__ == '__main__':
