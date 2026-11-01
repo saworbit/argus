@@ -11,6 +11,7 @@ Uses the matching source-built native lab, install=false and private assets.
 No historical snapshots, cohorts or deployment. Health checks do not resolve
 the outstanding dm4 gameplay warning in #583.
 """
+from argus_validation import require
 import argparse
 import hashlib
 import json
@@ -97,18 +98,18 @@ def stage_combat(root, folder, variant):
     src=folder/'src';path=src/'argus.qc';source=path.read_text()
     if variant=='legacy':
         old='if (!self.ar_tactic && self.weapon != IT_ROCKET_LAUNCHER)'
-        assert source.count(old)==1
+        require((source.count(old)==1))
         source=source.replace(old,'if (!self.ar_tactic)')
     anchor='        if (!Argus_MuzzleClear (aimpt))'
-    assert source.count(anchor)==1
+    require((source.count(anchor)==1))
     source=source.replace(anchor,'        if (self == mc_actor) { mc_gates = mc_gates + 1; mc_motor = self.ar_moveyaw; }\n'+anchor)
     path.write_text('entity mc_actor; float mc_gates, mc_motor;\n'+source)
     shutil.copy2(root/'tools/fixtures/muzzle_combat.qc',src/'muzzle_combat.qc')
     path=src/'progs.src';source=path.read_text()
-    assert source.count('\nworld.qc\n')==1
+    require((source.count('\nworld.qc\n')==1))
     path.write_text(source.replace('\nworld.qc\n','\nmuzzle_combat.qc\nworld.qc\n'))
     path=src/'world.qc';source=path.read_text()
-    assert source.count('Argus_FrameAll ();')==source.count('Argus_CountSlots ();')==1
+    require((source.count('Argus_FrameAll ();')==source.count('Argus_CountSlots ();')==1))
     source=source.replace('Argus_CountSlots ();','Argus_CountSlots ();\n    dprint ("BHVRPL begin muzzle_combat\\n");')
     path.write_text(source.replace('Argus_FrameAll ();','if (time > 1) MuzzleCombatFixture ();\n    Argus_FrameAll ();'))
 
@@ -119,17 +120,17 @@ def stage_button(root,folder,variant):
     if variant=='disabled':
         source,count=re.subn(r'void\(\) Argus_SupportButton =\n\{.*?^\};',
                             'void() Argus_SupportButton = {};',source,flags=re.M|re.S)
-        assert count==1
-    assert source.count('    Argus_SupportButton ();')==1
+        require((count==1))
+    require((source.count('    Argus_SupportButton ();')==1))
     source=source.replace('    Argus_SupportButton ();','    ButtonSupportGuard ();')
     path.write_text('void() ButtonSupportGuard;\n'+source)
     shutil.copy2(root/'tools/fixtures/button_physical.qc',src/'button_physical.qc')
-    path=src/'progs.src';source=path.read_text();assert source.count('\nworld.qc\n')==1
+    path=src/'progs.src';source=path.read_text();require((source.count('\nworld.qc\n')==1))
     path.write_text(source.replace('\nworld.qc\n','\nbutton_physical.qc\nworld.qc\n'))
-    path=src/'world.qc';source=path.read_text();assert source.count('Argus_FrameAll ();')==1
+    path=src/'world.qc';source=path.read_text();require((source.count('Argus_FrameAll ();')==1))
     path.write_text(source.replace('Argus_FrameAll ();','Argus_FrameAll ();\n    ButtonPhysicalFixture ();'))
     path=src/'buttons.qc';source=path.read_text();anchor='\tself.enemy = other;\n\tbutton_fire ();'
-    assert source.count(anchor)==1
+    require((source.count(anchor)==1))
     path.write_text(source.replace(anchor,
         '\tif (self == bp_button && other == bp_actor) bp_touches = bp_touches + 1;\n'+anchor))
 
@@ -158,23 +159,23 @@ def stage_door(root, folder, variant):
     src=folder/'src';path=src/'argus.qc';source=path.read_text()
     if variant=='direct_only':
         anchor='if (d.targetname == "") return best;'
-        assert source.count(anchor)==1
+        require((source.count(anchor)==1))
         path.write_text(source.replace(anchor,'if (depth > 0 || d.targetname == "") return best;'))
     elif variant=='overlap_only':
         anchor='if (b.classname == "func_button" && b.state == STATE_BOTTOM) return FALSE;'
-        assert source.count(anchor)==1
+        require((source.count(anchor)==1))
         path.write_text(source.replace(anchor,'// PRIVATE control: treat box slack as activation.'))
     active=(src/'argus.qc').read_text()
     anchor='        if (self.ar_door != world)\n        {\n            if (self.ar_door.state == STATE_UP'
-    assert active.count(anchor)==1
+    require((active.count(anchor)==1))
     decision=anchor+active.split(anchor,1)[1].split('        // direct (unrouted) seeking',1)[0]
     wrapper='void(vector tp) DoorDecision =\n{\n    local vector gp, to;\n    local float want, havetarget, diff;\n    havetarget = TRUE;\n'+decision+'    da_havetarget = havetarget;\n};\n'
     fixture=(root/'tools/fixtures/door_actuator.qc').read_text()
-    assert fixture.count('// INSERT_DOOR_DECISION')==1
+    require((fixture.count('// INSERT_DOOR_DECISION')==1))
     (src/'door_actuator.qc').write_text(fixture.replace('// INSERT_DOOR_DECISION',wrapper))
-    path=src/'progs.src';source=path.read_text();assert source.count('\nworld.qc\n')==1
+    path=src/'progs.src';source=path.read_text();require((source.count('\nworld.qc\n')==1))
     path.write_text(source.replace('\nworld.qc\n','\ndoor_actuator.qc\nworld.qc\n'))
-    path=src/'world.qc';source=path.read_text();assert source.count('Argus_FrameAll ();')==1
+    path=src/'world.qc';source=path.read_text();require((source.count('Argus_FrameAll ();')==1))
     path.write_text(source.replace('Argus_FrameAll ();','if (time > 1) DoorActuatorFixture ();\n    Argus_FrameAll ();'))
 
 

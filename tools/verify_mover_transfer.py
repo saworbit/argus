@@ -116,7 +116,7 @@ def main():
                 assert all(r['completed'] and r['route_retained'] and r['dry'] and r['alive']
                     and not r['bad_launch'] and not r['unstick_warps'] for r in rows), rows
         finally:
-            lab.call('match_stop'); lab.close()
+            native.finish_lab(lab)
 
 
 if __name__ == '__main__':

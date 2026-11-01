@@ -3,6 +3,7 @@
 Uses a separate game directory and never installs over the playable build.
 Receipts retain native briefs, input identities and every named tape.
 """
+from argus_validation import require
 import argparse
 import hashlib
 import json
@@ -41,9 +42,9 @@ COMPARISON_FIELDS = ('maps', 'seconds', 'skill', 'requested_ticrate', 'primary',
 def comparison_primary(control, candidate):
     """Validate frozen study compatibility and return its registered primary."""
     for key in COMPARISON_FIELDS:
-        assert key in control and key in candidate, 'missing comparison protocol field: ' + key
-        assert control[key] == candidate[key], 'comparison protocol mismatch: ' + key
-    assert candidate['primary'] in SUPPORTED_PRIMARIES, 'unsupported registered primary'
+        require((key in control and key in candidate), 'missing comparison protocol field: ' + key)
+        require((control[key] == candidate[key]), 'comparison protocol mismatch: ' + key)
+    require((candidate['primary'] in SUPPORTED_PRIMARIES), 'unsupported registered primary')
     return candidate['primary']
 
 
@@ -52,34 +53,34 @@ def load_comparison_baseline(folder, candidate):
     control = json.loads((folder / 'protocol.json').read_text())
     rows = json.loads((folder / 'results.json').read_text())
     comparison_primary(control, candidate)
-    assert rows, 'empty baseline results'
+    require((rows), 'empty baseline results')
     return control, rows
 
 
 def compare_registered_tape(executable, control, candidate, baseline_rows, row):
     """Keep the native card verbatim with its primary and frozen input identities."""
     primary = comparison_primary(control, candidate)
-    assert row['map'] in candidate['maps'], 'candidate map outside registered protocol'
+    require((row['map'] in candidate['maps']), 'candidate map outside registered protocol')
     controls = [item for item in baseline_rows if item['map'] == row['map']]
-    assert controls, 'no same-map control'
-    assert row['repeat'] >= 1, 'invalid candidate repeat'
-    assert all(item['brief']['totals']['tick_class'] == row['brief']['totals']['tick_class']
-               for item in controls), 'cross-cadence comparison'
+    require((controls), 'no same-map control')
+    require((row['repeat'] >= 1), 'invalid candidate repeat')
+    require((all(item['brief']['totals']['tick_class'] == row['brief']['totals']['tick_class']
+               for item in controls)), 'cross-cadence comparison')
     selected = controls[(row['repeat'] - 1) % len(controls)]
     inputs = {}
     for arm, item, protocol in [('control', selected, control), ('candidate', row, candidate)]:
-        assert re.fullmatch(r'[a-z0-9_]+', item['name']), 'invalid comparison run name'
-        assert item['binary_sha256'] == protocol['binary_sha256'], arm + ' binary changed'
-        assert item['source_sha256'] == protocol['source_sha256'], arm + ' source changed'
-        assert digest(ROOT / 'runs' / (item['name'] + '.log')) == item['raw_sha256'], arm + ' tape changed'
+        require((re.fullmatch(r'[a-z0-9_]+', item['name'])), 'invalid comparison run name')
+        require((item['binary_sha256'] == protocol['binary_sha256']), arm + ' binary changed')
+        require((item['source_sha256'] == protocol['source_sha256']), arm + ' source changed')
+        require((digest(ROOT / 'runs' / (item['name'] + '.log')) == item['raw_sha256']), arm + ' tape changed')
         inputs[arm] = {key: item[key] for key in ('name', 'raw_sha256', 'source_sha256', 'binary_sha256')}
     analysis_hash = digest(executable)
-    assert analysis_hash == candidate['cli_sha256'], 'comparison executable changed'
+    require((analysis_hash == candidate['cli_sha256']), 'comparison executable changed')
     response = subprocess.run([str(executable), 'compare', row['name'], selected['name'],
         '--primary', primary], cwd=ROOT, env=dict(os.environ, ARGUS_ROOT=str(ROOT)),
         capture_output=True, text=True, encoding='utf-8', timeout=30)
-    assert response.returncode == 0, response.stderr
-    assert response.stdout.strip(), 'empty native comparison card'
+    require((response.returncode == 0), response.stderr)
+    require((response.stdout.strip()), 'empty native comparison card')
     return dict(schema='registered-native-compare-v1', effective_primary=primary,
                 analysis_lab_sha256=analysis_hash, inputs=inputs,
                 comparison_protocol={key: candidate[key] for key in COMPARISON_FIELDS},
@@ -95,7 +96,7 @@ class Lab(native.Lab):
         deadline = time.monotonic() + 900
         while True:
             response = self.records.get(timeout=max(.01, deadline - time.monotonic()))
-            assert response is not None, 'native lab exited'
+            require((response is not None), 'native lab exited')
             if response.get('id') == self.serial:
                 return response
 
@@ -117,17 +118,17 @@ def main():
                         default='stall_parity')
     args = parser.parse_args()
     maps = args.maps.split(',')
-    assert 1 <= len(maps) <= 12 and len(set(maps)) == len(maps)
-    assert all(re.fullmatch(r'[a-z0-9_]+', m) for m in maps)
-    assert re.fullmatch(r'[a-z0-9_]+', args.prefix)
-    assert 10 <= args.seconds <= 185 and 1 <= args.repeats <= 5 and 0 <= args.skill <= 3
-    assert args.ticrate in (.0139, .1), 'use the played or 10 Hz profile'
-    assert args.port is None or 1024 <= args.port <= 65535
+    require((1 <= len(maps) <= 12 and len(set(maps)) == len(maps)))
+    require((all(re.fullmatch(r'[a-z0-9_]+', m) for m in maps)))
+    require((re.fullmatch(r'[a-z0-9_]+', args.prefix)))
+    require((10 <= args.seconds <= 185 and 1 <= args.repeats <= 5 and 0 <= args.skill <= 3))
+    require((args.ticrate in (.0139, .1)), 'use the played or 10 Hz profile')
+    require((args.port is None or 1024 <= args.port <= 65535))
     output = args.output.resolve()
-    assert output.is_relative_to((ROOT / 'backups').resolve()), 'output must be beneath backups/'
-    assert not output.exists(), 'retain the previous arm; choose a new output'
+    require((output.is_relative_to((ROOT / 'backups').resolve())), 'output must be beneath backups/')
+    require((not output.exists()), 'retain the previous arm; choose a new output')
     native.EXE = args.lab.resolve()
-    assert native.EXE.exists(), 'build the current native lab first'
+    require((native.EXE.exists()), 'build the current native lab first')
     comparison_protocol = dict(maps=maps, seconds=args.seconds, skill=args.skill,
                                requested_ticrate=args.ticrate, primary=args.primary,
                                cli_sha256=digest(native.EXE))
@@ -137,7 +138,7 @@ def main():
     (output / 'lq1').mkdir()
     game = 'maplab_' + args.prefix
     game_dir = ROOT / 'engine' / game
-    assert not game_dir.exists(), 'private game already exists'
+    require((not game_dir.exists()), 'private game already exists')
     game_dir.mkdir()
     for name in ('progs', 'maps', 'sound', 'gfx'):
         source = ROOT / 'engine/argus' / name
@@ -167,7 +168,7 @@ def main():
             env=dict(os.environ, ARGUS_ROOT=str(ROOT), **environment),
             capture_output=True, text=True, encoding='utf-8', timeout=seconds + 45)
         (output / (name + '.stderr')).write_text(result.stderr)
-        assert result.returncode == 0, result.stderr
+        require((result.returncode == 0), result.stderr)
         return json.loads(result.stdout)
 
     with (output / 'lab.stderr').open('w') as errors:
@@ -176,7 +177,7 @@ def main():
             lab.call('see', what='project')
             compiled = lab.call('compile_qc', install=False)
             write(output / 'compile.json', compiled)
-            assert compiled['ok'], compiled
+            require((compiled['ok']), compiled)
             binary = output / 'lq1/progs.dat'
             protocol['binary_sha256'] = digest(binary)
             write(output / 'protocol.json', protocol)
@@ -194,7 +195,7 @@ def main():
             for repeat in range(1, args.repeats + 1):
                 for map_name in maps if repeat % 2 else maps[::-1]:
                     name = f'{args.prefix}_{map_name}_{repeat}'
-                    assert not (ROOT / f'runs/{name}.log').exists(), 'retain existing tape'
+                    require((not (ROOT / f'runs/{name}.log').exists()), 'retain existing tape')
                     write(output / 'state.json', dict(status='running', completed=len(rows),
                           total=len(maps) * args.repeats, current=name))
                     result = run_match(lab, map_name, args.seconds, name)
@@ -203,16 +204,16 @@ def main():
                     write(output / (name + '.brief.json'), brief)
                     raw = ROOT / f'runs/{name}.log'
                     text = raw.read_text(errors='replace')
-                    assert not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error'))
-                    assert brief['map'] == map_name
-                    assert not any('WRONG MAP' in flag for flag in brief['flags']), brief['flags']
-                    assert args.seconds - 2 <= brief['totals']['duration_sec'] <= args.seconds + 3
+                    require((not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error'))))
+                    require((brief['map'] == map_name))
+                    require((not any('WRONG MAP' in flag for flag in brief['flags'])), brief['flags'])
+                    require((args.seconds - 2 <= brief['totals']['duration_sec'] <= args.seconds + 3))
                     if args.ticrate == .0139:
-                        assert brief['totals']['tick_class'] == 'listen', 'wrong measured cadence'
+                        require((brief['totals']['tick_class'] == 'listen'), 'wrong measured cadence')
                     row = dict(name=name, map=map_name, repeat=repeat, raw_sha256=digest(raw),
                                source_sha256=protocol['source_sha256'],
                                binary_sha256=digest(game_dir / 'progs.dat'), brief=brief)
-                    assert row['binary_sha256'] == protocol['binary_sha256']
+                    require((row['binary_sha256'] == protocol['binary_sha256']))
                     if args.baseline:
                         comparison = compare_registered_tape(native.EXE, baseline_protocol,
                             protocol, baseline_rows, row)
@@ -221,16 +222,15 @@ def main():
                     write(output / 'results.json', rows)
                     print(json.dumps(dict(name=name, completed=len(rows),
                           totals=brief['totals'], flags=brief['flags'])), flush=True)
-            assert {p.relative_to(output).as_posix(): digest(p)
+            require(({p.relative_to(output).as_posix(): digest(p)
                     for p in sorted((output / 'src').rglob('*')) if p.is_file()
                     and p.suffix in ('.qc', '.src', '.json')} == {
-                    p: h for p, h in inputs.items() if Path(p).suffix in ('.qc', '.src', '.json')}, 'source changed'
-            assert digest(ROOT / 'game/argus/progs.dat') == protocol['shipped_sha256']
+                    p: h for p, h in inputs.items() if Path(p).suffix in ('.qc', '.src', '.json')}), 'source changed')
+            require((digest(ROOT / 'game/argus/progs.dat') == protocol['shipped_sha256']))
             write(output / 'state.json', dict(status='complete', completed=len(rows),
                   total=len(maps) * args.repeats))
         finally:
-            lab.call('match_stop')
-            lab.close()
+            native.finish_lab(lab)
 
 
 if __name__ == '__main__':

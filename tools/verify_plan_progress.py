@@ -16,7 +16,7 @@ from run_behaviour_equivalence import Lab, ROOT
 
 
 def save(path, value):
-    path.write_text(json.dumps(value, indent=2) + '\n', encoding='utf-8')
+    path.write_text(json.dumps(value, indent=2) + '\n', encoding='utf-8', newline='\n')
 
 
 def sha(path):
@@ -45,7 +45,7 @@ def prepare(folder, legacy=False, deadline_control=False, opening_control=False)
     (folder / 'runs').mkdir()
     src = folder / 'src'
     path = src / 'argus.qc'
-    source = path.read_text()
+    source = path.read_text(encoding='utf-8')
     assert sum((legacy, deadline_control, opening_control)) <= 1
     if legacy:
         pattern = r'void\(float paused, entity reached\) Argus_PlanObserve =\n\{.*?^\};'
@@ -54,42 +54,42 @@ def prepare(folder, legacy=False, deadline_control=False, opening_control=False)
         anchor = '        self.ar_lastpos = self.origin;'
         assert source.count(anchor) == 1
         source = source.replace(anchor, '        else if (vlen (self.origin - self.ar_lastpos) >= 12)\n            self.ar_stallrun = 0;\n' + anchor)
-        path.write_text(source)
+        path.write_text(source, encoding='utf-8', newline='\n')
     if deadline_control:
         anchor = '        if (self.ar_taskgoal == world) self.ar_goalstart = time;'
         assert source.count(anchor) == 1
         source = source.replace(anchor, '        // PRIVATE negative control: retain the original goal deadline.')
-        path.write_text(source)
+        path.write_text(source, encoding='utf-8', newline='\n')
     if opening_control:
         pattern = r'float\(entity d, vector far\) Argus_DoorOpeningWait =\n\{.*?^\};'
         source, count = re.subn(pattern, 'float(entity d, vector far) Argus_DoorOpeningWait = { return FALSE; };', source, flags=re.M | re.S)
         assert count == 1
-        path.write_text(source)
+        path.write_text(source, encoding='utf-8', newline='\n')
     block = source.split('    // ---- stall detection ----', 1)[1].split('    if (time > self.ar_nextlog)', 1)[0]
     wrapper = 'void() PlanDecision =\n{\n    local vector gp;\n    local float fighting;\n    fighting = plan_fighting;\n' + block + '};\n'
-    fixture = (ROOT / 'tools/fixtures/plan_progress.qc').read_text()
+    fixture = (ROOT / 'tools/fixtures/plan_progress.qc').read_text(encoding='utf-8')
     assert fixture.count('// INSERT_DECISION') == 1
-    (src / 'plan_progress.qc').write_text('float() random = { return 0.5; };\nvoid() PlanEdgeCases;\n' + fixture.replace('// INSERT_DECISION', wrapper))
+    (src / 'plan_progress.qc').write_text('float() random = { return 0.5; };\nvoid() PlanEdgeCases;\n' + fixture.replace('// INSERT_DECISION', wrapper), encoding='utf-8', newline='\n')
     shutil.copy2(ROOT / 'tools/fixtures/plan_escape.qc', src / 'plan_escape.qc')
     physical_source = ROOT / 'tools/fixtures/plan_physical_edges.qc'
-    audit_physical_edges(physical_source.read_text())
+    audit_physical_edges(physical_source.read_text(encoding='utf-8'))
     shutil.copy2(physical_source, src / 'plan_physical_edges.qc')
-    edges = (ROOT / 'tools/fixtures/plan_edges.qc').read_text()
+    edges = (ROOT / 'tools/fixtures/plan_edges.qc').read_text(encoding='utf-8')
     epoch = '' if re.search(r'\bfloat\s+argus_plan_serial\s*;', source) else 'float argus_plan_serial;'
-    (src / 'plan_edges.qc').write_text(edges.replace('// INSERT_EPOCH_DECLARATION', epoch))
+    (src / 'plan_edges.qc').write_text(edges.replace('// INSERT_EPOCH_DECLARATION', epoch), encoding='utf-8', newline='\n')
     path = src / 'defs.qc'
-    changed, count = re.subn(r'float\(\) random\s*= #7;[^\n]*', 'float() random; // PRIVATE fixed test input', path.read_text())
+    changed, count = re.subn(r'float\(\) random\s*= #7;[^\n]*', 'float() random; // PRIVATE fixed test input', path.read_text(encoding='utf-8'))
     assert count == 1
-    path.write_text(changed)
+    path.write_text(changed, encoding='utf-8', newline='\n')
     path = src / 'progs.src'
-    source_list = path.read_text()
+    source_list = path.read_text(encoding='utf-8')
     assert source_list.count('\nworld.qc\n') == 1
-    path.write_text(source_list.replace('\nworld.qc\n', '\nplan_progress.qc\nplan_escape.qc\nplan_edges.qc\nplan_physical_edges.qc\nworld.qc\n'))
+    path.write_text(source_list.replace('\nworld.qc\n', '\nplan_progress.qc\nplan_escape.qc\nplan_edges.qc\nplan_physical_edges.qc\nworld.qc\n'), encoding='utf-8', newline='\n')
     path = src / 'world.qc'
-    world = path.read_text()
+    world = path.read_text(encoding='utf-8')
     assert world.count('Argus_FrameAll ();') == world.count('Argus_CountSlots ();') == 1
     world = world.replace('Argus_FrameAll ();', 'Argus_FrameAll ();\n    if (cvar ("scratch2") >= 3) PlanPhysicalEdges ();\n    else if (cvar ("scratch2") == 0) PlanFixture ();\n    else PlanEscapeFixture ();')
-    path.write_text(world.replace('Argus_CountSlots ();', 'Argus_CountSlots ();\n    dprint ("BHVRPL begin plan_fixture\\n");'))
+    path.write_text(world.replace('Argus_CountSlots ();', 'Argus_CountSlots ();\n    dprint ("BHVRPL begin plan_fixture\\n");'), encoding='utf-8', newline='\n')
     build_tree = hashlib.sha256()
     for item in sorted(src.rglob('*')):
         if item.is_file() and item.suffix in {'.qc', '.src'}:
@@ -147,7 +147,8 @@ def main():
     if args.physical_part != 'all' and args.mode != 'physical-edges':
         parser.error('--physical-part requires --mode physical-edges')
     output = args.output.resolve()
-    if output.exists() or not output.is_relative_to((ROOT / 'backups').resolve()):
+    backups_root = (ROOT / 'backups').resolve()
+    if output.exists() or output == backups_root or not output.is_relative_to(backups_root):
         parser.error('output must be a new directory beneath backups/')
     output.mkdir(parents=True)
     installed = [ROOT / p for p in ('engine/argus/progs.dat', 'game/argus/progs.dat', 'lq1/progs.dat')]
@@ -214,7 +215,7 @@ def main():
                     assert compiled['new_errors'] == compiled['new_warnings'] == 0, compiled
                     shutil.copy2(folder / 'lq1/progs.dat', private_game / 'progs.dat')
                     for _, map_name, case, seconds in (s for s in schedule if s[0] == variant):
-                        (private_game / 'autoexec.cfg').write_text(f'sv_protocol 15\nmax_edicts 600\nscratch2 {case}\nscratch3 {589 if args.mode == "edges" else 0}\n')
+                        (private_game / 'autoexec.cfg').write_text(f'sv_protocol 15\nmax_edicts 600\nscratch2 {case}\nscratch3 {589 if args.mode == "edges" else 0}\n', encoding='utf-8', newline='\n')
                         stem = f'plan_{variant}_{map_name}_{case}'
                         if case == 3:
                             native = lab.call('campaign_experiment', map=map_name, duration_sec=seconds,

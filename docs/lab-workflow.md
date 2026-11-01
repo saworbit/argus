@@ -184,6 +184,11 @@ reject invalid receipt fields, cadence and tape hashes. The compile workflow's
 physical outcomes.
 
 The repo invariant job also blocks on `python tools/argus_ci.py all`.
+Water-route proofs, private fixture staging and study compatibility checks use
+explicit validation that stays active under `python -O` and `PYTHONOPTIMIZE`.
+These checks retain their `AssertionError` contract. Runner teardown always
+closes the lab, skips another request while a failure is unwinding, and bounds
+a healthy stop request to two seconds before closing the process.
 `python tools/argus_ci.py dashes` checks tracked Markdown, QuakeC, Python and
 lab source files for U+2013 and U+2014, reporting each file and line.
 Fast CI also runs the navigation tactics suite and builds and runs Rust
