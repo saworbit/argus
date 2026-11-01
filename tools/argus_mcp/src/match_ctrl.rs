@@ -11,6 +11,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
 
+pub const DEFAULT_PORT: u16 = 26000;
 pub const DURATION_MIN: u32 = 10;
 pub const DURATION_MAX: u32 = 600;
 
@@ -74,7 +75,7 @@ pub struct MatchCtrl {
     /// engine UDP port override, so two controllers can run two
     /// dedicated children side by side (the 2026-08-18 paired-run
     /// forensics proved the engines coexist on 26010/26011)
-    port: Option<u32>,
+    port: Option<u16>,
     /// one shot permission to refresh a committed tape, taken and
     /// cleared by the next start() (#328)
     refresh_committed: bool,
@@ -94,11 +95,25 @@ impl MatchCtrl {
     }
 
     /// A controller bound to its own engine port, for parallel work.
-    pub fn on_port(port: u32) -> Self {
+    pub fn on_port(port: u16) -> Self {
         MatchCtrl {
             port: Some(port),
             ..Default::default()
         }
+    }
+
+    /// The UDP port used by this controller and its attached clients.
+    pub fn port(&self) -> u16 {
+        self.port.unwrap_or(DEFAULT_PORT)
+    }
+
+    /// Advisory launch preflight, not a reservation against other processes.
+    pub fn check_port_available(&self) -> Result<(), String> {
+        #[cfg(test)]
+        if self.fake_engines.is_some() {
+            return Ok(());
+        }
+        crate::engine::check_port_available(self.port())
     }
 
     /// Let the NEXT start() write over a committed tape.
@@ -1043,6 +1058,12 @@ pub fn committed_tape(cfg: &Config, name: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn port_contract_controller_exposes_default_and_override() {
+        assert_eq!(super::MatchCtrl::default().port(), super::DEFAULT_PORT);
+        assert_eq!(super::MatchCtrl::on_port(26011).port(), 26011u16);
+    }
+
     use super::{
         cancel_live, clear_live, live_cancelled, live_test_lock, register_live, take_budgeted,
         take_owned_live_pid, RunCancellation, LIVE_OWNER, LIVE_PID, TAIL_BUDGET_BYTES,

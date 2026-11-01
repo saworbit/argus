@@ -194,7 +194,23 @@ pub async fn run_recorded(
     dm: u32,
     record: bool,
 ) -> Result<SuiteReport, String> {
-    run_inner(cfg, map, name, cases, step, dm, record, None).await
+    let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+    run_recorded_with_ctrl(cfg, map, name, cases, step, dm, record, &mut ctrl).await
+}
+
+#[allow(clippy::too_many_arguments)]
+/// Use the caller-selected controller for both the engine and protocol client.
+pub async fn run_recorded_with_ctrl(
+    cfg: &Config,
+    map: &str,
+    name: &str,
+    cases: &[u32],
+    step: f32,
+    dm: u32,
+    record: bool,
+    ctrl: &mut crate::match_ctrl::MatchCtrl,
+) -> Result<SuiteReport, String> {
+    run_inner(cfg, map, name, cases, step, dm, record, None, ctrl).await
 }
 
 /// Run the behaviour observer contract over the existing independent fixture.
@@ -207,7 +223,32 @@ pub async fn run_behaviour(
     step: f32,
     diagnostics: bool,
 ) -> Result<SuiteReport, String> {
-    run_inner(cfg, map, name, cases, step, 1, false, Some(diagnostics)).await
+    let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+    run_behaviour_with_ctrl(cfg, map, name, cases, step, diagnostics, &mut ctrl).await
+}
+
+/// Use the caller-selected controller for both the engine and protocol client.
+pub async fn run_behaviour_with_ctrl(
+    cfg: &Config,
+    map: &str,
+    name: &str,
+    cases: &[u32],
+    step: f32,
+    diagnostics: bool,
+    ctrl: &mut crate::match_ctrl::MatchCtrl,
+) -> Result<SuiteReport, String> {
+    run_inner(
+        cfg,
+        map,
+        name,
+        cases,
+        step,
+        1,
+        false,
+        Some(diagnostics),
+        ctrl,
+    )
+    .await
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -220,6 +261,7 @@ async fn run_inner(
     dm: u32,
     record: bool,
     diagnostics: Option<bool>,
+    ctrl: &mut MatchCtrl,
 ) -> Result<SuiteReport, String> {
     validate(map, name, cases, step, dm)?;
     let prefix = if diagnostics.is_some() {
@@ -233,7 +275,6 @@ async fn run_inner(
     let legacy_source_md5 = legacy_tree_digest(&cfg.src)?;
     let binary_md5 = digest(&cfg.basedir.join(&cfg.game).join("progs.dat"))?;
     let nav_md5 = digest(&cfg.src.join(format!("argus_nav_{map}.qc.json")))?;
-    let mut ctrl = MatchCtrl::default();
     ctrl.begin(cfg, map, 600, Some(name), Some(8), Some(1), Some(false))
         .await?;
     let result = async {
@@ -248,7 +289,7 @@ async fn run_inner(
             if Instant::now() >= setup_deadline { return Err("missing server setup acknowledgement".into()); }
             tokio::time::sleep(Duration::from_millis(50)).await;
         }
-        let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+        let mut client = NetClient::connect_match(ctrl, "labprobe")?;
         if record {
             let demos = cfg.runs.join("demos");
             std::fs::create_dir_all(&demos).map_err(|e| e.to_string())?;

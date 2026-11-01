@@ -224,7 +224,7 @@ async fn run_connected(
     tasks: &[NavigationTask],
 ) -> Result<BenchmarkReport, String> {
     tokio::time::sleep(Duration::from_secs(4)).await;
-    let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+    let mut client = NetClient::connect_match(ctrl, "labprobe")?;
     client.pump(Duration::from_secs(3));
     if client.world.signon < 3 {
         return Err(format!("signon stalled at {}", client.world.signon));
@@ -286,6 +286,17 @@ pub async fn run_suite(
     suite: &TaskSuite,
     limit: Option<usize>,
 ) -> Result<BenchmarkReport, String> {
+    let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+    run_suite_with_ctrl(cfg, suite, limit, &mut ctrl).await
+}
+
+/// Use the caller-selected controller for both the engine and protocol client.
+pub async fn run_suite_with_ctrl(
+    cfg: &Config,
+    suite: &TaskSuite,
+    limit: Option<usize>,
+    ctrl: &mut crate::match_ctrl::MatchCtrl,
+) -> Result<BenchmarkReport, String> {
     let mut normalized = suite.clone();
     normalized.map = crate::paths::map_name(&suite.map)?;
     let suite = &normalized;
@@ -302,7 +313,6 @@ pub async fn run_suite(
         .sum::<u32>()
         .saturating_add(30)
         .min(590);
-    let mut ctrl = MatchCtrl::default();
     ctrl.start(
         cfg,
         &suite.map,
@@ -314,7 +324,7 @@ pub async fn run_suite(
     )
     .await
     .map_err(|e| format!("engine start: {e}"))?;
-    let result = run_connected(&mut ctrl, suite, tasks).await;
+    let result = run_connected(ctrl, suite, tasks).await;
     let _ = ctrl.stop(Duration::from_secs(3)).await;
     result
 }

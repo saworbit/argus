@@ -15,9 +15,10 @@ async fn run() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
         Some("record-pov") => {
-            let rest: Vec<String> = args.collect();
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
             if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
-                println!("usage: argus-mcp record-pov <new_demo_stem> [roster_slot=1] [seconds=30]; connects to the running lab match");
+                println!("usage: argus-mcp record-pov <new_demo_stem> [roster_slot=1] [seconds=30] [--port N]; connects to the running lab match");
                 return Ok(());
             }
             if rest.len() > 3 {
@@ -27,7 +28,7 @@ async fn run() -> anyhow::Result<()> {
             let seconds = rest.get(2).map(|s| s.parse()).transpose()?.unwrap_or(30.0);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!(e))?;
             let path = tokio::task::spawn_blocking(move || {
-                argus_mcp::render_capture::record_bot(&cfg, &rest[0], slot, seconds)
+                argus_mcp::render_capture::record_bot_on_port(&cfg, &rest[0], slot, seconds, port)
             })
             .await?
             .map_err(|e| anyhow::anyhow!(e))?;
@@ -94,9 +95,10 @@ async fn run() -> anyhow::Result<()> {
                 .map_err(|e| anyhow::anyhow!(e))
         }
         Some("behaviour-suite") => {
-            let rest: Vec<String> = args.collect();
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
             if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
-                println!("usage: argus-mcp behaviour-suite <dm4|dm2> <new-run-name> [--diagnostics on|off] [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--no-compile]; isolated destructive fixture");
+                println!("usage: argus-mcp behaviour-suite <dm4|dm2> <new-run-name> [--diagnostics on|off] [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--no-compile] [--port N]; isolated destructive fixture");
                 return Ok(());
             }
             if rest.len() < 2 {
@@ -137,17 +139,21 @@ async fn run() -> anyhow::Result<()> {
             }
             argus_mcp::tactic_suite::validate(&rest[0], &rest[1], &cases, step, 1)
                 .map_err(|e| anyhow::anyhow!(e))?;
+            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            ctrl.check_port_available()
+                .map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!(e))?;
             if compile && !argus_mcp::compile::compile_qc(&cfg, true).ok {
                 anyhow::bail!("QuakeC compile failed");
             }
-            let report = argus_mcp::tactic_suite::run_behaviour(
+            let report = argus_mcp::tactic_suite::run_behaviour_with_ctrl(
                 &cfg,
                 &rest[0],
                 &rest[1],
                 &cases,
                 step,
                 diagnostics,
+                &mut ctrl,
             )
             .await
             .map_err(|e| anyhow::anyhow!(e))?;
@@ -155,9 +161,10 @@ async fn run() -> anyhow::Result<()> {
             Ok(())
         }
         Some("tactic-suite") => {
-            let rest: Vec<String> = args.collect();
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
             if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
-                println!("usage: argus-mcp tactic-suite <dm4|dm2> <run_name> [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--deathmatch 1|4] [--record] [--no-compile]");
+                println!("usage: argus-mcp tactic-suite <dm4|dm2> <run_name> [--cases 0,0,0,1,2,3,4,5,6,7,8,9,10,11,12] [--step 0.0139] [--deathmatch 1|4] [--record] [--no-compile] [--port N]");
                 return Ok(());
             }
             if rest.len() < 2 {
@@ -198,12 +205,15 @@ async fn run() -> anyhow::Result<()> {
             }
             argus_mcp::tactic_suite::validate(&rest[0], &rest[1], &cases, step, dm)
                 .map_err(|e| anyhow::anyhow!(e))?;
+            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            ctrl.check_port_available()
+                .map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             if compile && !argus_mcp::compile::compile_qc(&cfg, true).ok {
                 anyhow::bail!("QuakeC compile failed");
             }
-            let report = argus_mcp::tactic_suite::run_recorded(
-                &cfg, &rest[0], &rest[1], &cases, step, dm, record,
+            let report = argus_mcp::tactic_suite::run_recorded_with_ctrl(
+                &cfg, &rest[0], &rest[1], &cases, step, dm, record, &mut ctrl,
             )
             .await
             .map_err(|e| anyhow::anyhow!(e))?;
@@ -244,38 +254,44 @@ async fn run() -> anyhow::Result<()> {
             // The mode is part of the verdict (#310): deathmatch
             // strips every spawnflags 2048 entity, doors included, so
             // a link verified there can still be a lie in co-op.
-            let rest: Vec<String> = args.collect();
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
             let coop = rest.iter().any(|a| a == "--coop");
             let jumps_only = rest.iter().any(|a| a == "--jumps");
-            let mut pos = rest.iter().filter(|a| !a.starts_with("--"));
+            let mut pos = rest
+                .iter()
+                .filter(|a| !a.starts_with("--") || a.as_str() == "--help");
             let map = pos.next().cloned().ok_or_else(|| {
                 anyhow::anyhow!(
-                    "usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]"
+                    "usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--port N]"
                 )
             })?;
             if map == "-h" || map == "--help" || map == "help" {
-                println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.\n--jumps verifies generated jump links instead of ordinary walk/drop links.");
+                println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--port N]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.\n--jumps verifies generated jump links instead of ordinary walk/drop links.");
                 return Ok(());
             }
             let map = argus_mcp::paths::map_name(&map).map_err(|e| anyhow::anyhow!(e))?;
             let limit: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(30);
             let skip: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            let report =
-                argus_mcp::netclient::probe_links(&cfg, &map, limit, skip, coop, jumps_only)
-                    .await
-                    .map_err(|e| anyhow::anyhow!(e))?;
+            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            let report = argus_mcp::netclient::probe_links_with_ctrl(
+                &cfg, &map, limit, skip, coop, jumps_only, &mut ctrl,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
         Some("benchmark") => {
-            let rest: Vec<String> = args.collect();
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
             if rest.is_empty()
                 || rest
                     .iter()
                     .any(|a| a == "-h" || a == "--help" || a == "help")
             {
-                println!("usage: argus-mcp benchmark <suite.json> [limit] [--no-compile]\n\nRun fixed navigation tasks with a real Argus bot. The suite pins its navigation graph and keeps train and held-out scores separate.");
+                println!("usage: argus-mcp benchmark <suite.json> [limit] [--no-compile] [--port N]\n\nRun fixed navigation tasks with a real Argus bot. The suite pins its navigation graph and keeps train and held-out scores separate.");
                 return Ok(());
             }
             let no_compile = rest.iter().any(|a| a == "--no-compile");
@@ -291,9 +307,12 @@ async fn run() -> anyhow::Result<()> {
                 .transpose()?;
             if pos.next().is_some() {
                 return Err(anyhow::anyhow!(
-                    "usage: argus-mcp benchmark <suite.json> [limit] [--no-compile]"
+                    "usage: argus-mcp benchmark <suite.json> [limit] [--no-compile] [--port N]"
                 ));
             }
+            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            ctrl.check_port_available()
+                .map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let suite =
                 argus_mcp::benchmark::load_suite(&suite_path).map_err(|e| anyhow::anyhow!(e))?;
@@ -306,20 +325,21 @@ async fn run() -> anyhow::Result<()> {
                     ));
                 }
             }
-            let report = argus_mcp::benchmark::run_suite(&cfg, &suite, limit)
+            let report = argus_mcp::benchmark::run_suite_with_ctrl(&cfg, &suite, limit, &mut ctrl)
                 .await
                 .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
         Some("within-ab") => {
-            let rest: Vec<String> = args.collect();
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
             if rest.is_empty()
                 || rest
                     .iter()
                     .any(|a| a == "-h" || a == "--help" || a == "help")
             {
-                println!("usage: argus-mcp within-ab <map> [duration_sec] [--skill N] [--run PREFIX] [--no-compile]\n\nRun two within-match A/B tapes. Four bots share each match; candidate masks 5 and 10 swap the arms across personality slots.");
+                println!("usage: argus-mcp within-ab <map> [duration_sec] [--skill N] [--run PREFIX] [--no-compile] [--port N]\n\nRun two within-match A/B tapes. Four bots share each match; candidate masks 5 and 10 swap the arms across personality slots.");
                 return Ok(());
             }
             let mut positional = Vec::new();
@@ -364,9 +384,12 @@ async fn run() -> anyhow::Result<()> {
                 .unwrap_or(60);
             if positional.len() > 2 {
                 return Err(anyhow::anyhow!(
-                    "usage: argus-mcp within-ab <map> [duration_sec] [options]"
+                    "usage: argus-mcp within-ab <map> [duration_sec] [options] [--port N]"
                 ));
             }
+            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            ctrl.check_port_available()
+                .map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             if !no_compile {
                 let compiled = argus_mcp::compile::compile_qc(&cfg, true);
@@ -377,10 +400,16 @@ async fn run() -> anyhow::Result<()> {
                     ));
                 }
             }
-            let report =
-                argus_mcp::within_ab::run_pair(&cfg, map, duration, skill, prefix.as_deref())
-                    .await
-                    .map_err(|e| anyhow::anyhow!(e))?;
+            let report = argus_mcp::within_ab::run_pair_with_ctrl(
+                &cfg,
+                map,
+                duration,
+                skill,
+                prefix.as_deref(),
+                &mut ctrl,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
@@ -390,7 +419,8 @@ async fn run() -> anyhow::Result<()> {
             // running server's exe is locked on Windows, so the loop
             // cannot wait for a client restart:
             //   argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--coop] [--slots N]
-            let rest: Vec<String> = args.collect();
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
             if rest
                 .iter()
                 .any(|a| a == "-h" || a == "--help" || a == "help")
@@ -437,16 +467,14 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             let map = argus_mcp::paths::map_name(&map).map_err(|e| anyhow::anyhow!(e))?;
             let duration: u32 = pos.get(1).and_then(|s| s.parse().ok()).unwrap_or(185);
             let run_name = pos.get(2).map(|s| s.to_string());
+            let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            ctrl.check_port_available()
+                .map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             // a second engine on its own port halves a ladder's wall
             // clock; check the tapes still read the listen tick class
             // before trusting a parallel run, because a loaded box
             // drops the dedicated loop into the slow regime
-            let port: Option<u32> = flag("--port").and_then(|s| s.parse().ok());
-            let mut ctrl = match port {
-                Some(p) => argus_mcp::match_ctrl::MatchCtrl::on_port(p),
-                None => argus_mcp::match_ctrl::MatchCtrl::default(),
-            };
             let res = ctrl
                 .run(
                     &cfg,
@@ -781,7 +809,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                     let secs: f32 = rest.first().and_then(|s| s.parse().ok()).unwrap_or(6.0);
                     let host = rest.get(1).cloned().unwrap_or_else(|| "127.0.0.1".into());
                     let port: u16 =
-                        rest.get(2).and_then(|s| s.parse().ok()).unwrap_or(26000);
+                        rest.get(2).and_then(|s| s.parse().ok()).unwrap_or(argus_mcp::match_ctrl::DEFAULT_PORT);
                     argus_mcp::netclient::observe(&host, port, secs, "labprobe")
                         .and_then(|r| serde_json::to_string_pretty(&r).map_err(|e| e.to_string()))
                 }
@@ -797,7 +825,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                     let secs: f32 = rest.get(3).and_then(|s| s.parse().ok()).unwrap_or(15.0);
                     let host = rest.get(4).cloned().unwrap_or_else(|| "127.0.0.1".into());
                     let port: u16 =
-                        rest.get(5).and_then(|s| s.parse().ok()).unwrap_or(26000);
+                        rest.get(5).and_then(|s| s.parse().ok()).unwrap_or(argus_mcp::match_ctrl::DEFAULT_PORT);
                     let mut c = argus_mcp::netclient::NetClient::connect(
                         &host, port, "labprobe",
                     )?;
@@ -823,7 +851,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                     let secs: f32 = rest.get(2).and_then(|s| s.parse().ok()).unwrap_or(8.0);
                     let mut c = argus_mcp::netclient::NetClient::connect(
                         "127.0.0.1",
-                        26000,
+                        argus_mcp::match_ctrl::DEFAULT_PORT,
                         "labprobe",
                     )?;
                     c.pump(std::time::Duration::from_secs(3));
@@ -866,7 +894,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                     let yaw: f32 = rest.get(1).and_then(|s| s.parse().ok()).unwrap_or(0.0);
                     let pitch: f32 = rest.get(2).and_then(|s| s.parse().ok()).unwrap_or(0.0);
                     let host = rest.get(3).cloned().unwrap_or_else(|| "127.0.0.1".into());
-                    let port: u16 = rest.get(4).and_then(|s| s.parse().ok()).unwrap_or(26000);
+                    let port: u16 = rest.get(4).and_then(|s| s.parse().ok()).unwrap_or(argus_mcp::match_ctrl::DEFAULT_PORT);
                     let mut c =
                         argus_mcp::netclient::NetClient::connect(&host, port, "labfoe")?;
                     c.pump(std::time::Duration::from_secs(3));
@@ -930,7 +958,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                     let secs: f32 = rest.get(1).and_then(|s| s.parse().ok()).unwrap_or(2.0);
                     let host = rest.get(2).cloned().unwrap_or_else(|| "127.0.0.1".into());
                     let port: u16 =
-                        rest.get(3).and_then(|s| s.parse().ok()).unwrap_or(26000);
+                        rest.get(3).and_then(|s| s.parse().ok()).unwrap_or(argus_mcp::match_ctrl::DEFAULT_PORT);
                     let mut c = argus_mcp::netclient::NetClient::connect(
                         &host, port, "labprobe",
                     )?;
@@ -1108,14 +1136,15 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             run_python_script(&cfg, "tools/argus_reach.py", &sub_args)
         }
         Some("campaign") => {
-            let sub_args: Vec<String> = args.collect();
+            let mut sub_args: Vec<String> = args.collect();
+            let port = take_port(&mut sub_args)?;
             if sub_args.is_empty()
                 || sub_args
                     .iter()
                     .any(|a| a == "-h" || a == "--help" || a == "help")
             {
                 println!(
-                    "usage: argus-mcp campaign <map> [options]\n\
+                    "usage: argus-mcp campaign <map> [options] [--port N]\n\
                      \n\
                      Run campaign/co-op experiment and evaluate against win/checkpoint triggers and fail taxonomy.\n\
                      \n\
@@ -1169,6 +1198,8 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 idx += 1;
             }
 
+            let mut mc = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            mc.check_port_available().map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             if compile {
                 println!("Compiling QuakeC progs.dat...");
@@ -1180,7 +1211,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             }
 
             println!("Running campaign match on {map} (seat={seat}, duration={duration}s)...");
-            let mut mc = argus_mcp::match_ctrl::MatchCtrl::default();
+            let puppet_port = mc.port();
             let run_name = format!("campaign_{}_{}", map, seat);
 
             let stop_puppet = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
@@ -1188,8 +1219,11 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 let stop_clone = std::sync::Arc::clone(&stop_puppet);
                 Some(std::thread::spawn(move || {
                     std::thread::sleep(std::time::Duration::from_millis(1500));
+                    if stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
+                        return;
+                    }
                     if let Ok(mut puppet) =
-                        argus_mcp::netclient::NetClient::connect("127.0.0.1", 26000, "puppet")
+                        argus_mcp::netclient::NetClient::connect("127.0.0.1", puppet_port, "puppet")
                     {
                         while !stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
                             puppet.pump(std::time::Duration::from_millis(100));
@@ -1251,6 +1285,35 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
         }
         None => run_stdio().await,
     }
+}
+
+/// Remove a single explicit port flag without changing arguments on refusal.
+fn take_port(args: &mut Vec<String>) -> anyhow::Result<u16> {
+    if args.iter().any(|a| a.starts_with("--port=")) {
+        anyhow::bail!("use --port N");
+    }
+    let positions: Vec<_> = args
+        .iter()
+        .enumerate()
+        .filter_map(|(i, a)| (a == "--port").then_some(i))
+        .collect();
+    if positions.is_empty() {
+        return Ok(argus_mcp::match_ctrl::DEFAULT_PORT);
+    }
+    if positions.len() != 1 {
+        anyhow::bail!("--port may occur only once");
+    }
+    let index = positions[0];
+    let port: u16 = args
+        .get(index + 1)
+        .ok_or_else(|| anyhow::anyhow!("--port needs 1024..65535"))?
+        .parse()
+        .map_err(|_| anyhow::anyhow!("--port needs 1024..65535"))?;
+    if port < 1024 {
+        anyhow::bail!("--port needs 1024..65535");
+    }
+    args.drain(index..=index + 1);
+    Ok(port)
 }
 
 fn run_python_script(
@@ -1429,4 +1492,42 @@ fn print_help() {
          argus-mcp campaign <map> [options]\n\
                                 run campaign lab experiment and evaluate against win/checkpoint triggers and fail taxonomy\n"
     );
+}
+
+#[cfg(test)]
+mod port_tests {
+    use super::take_port;
+    #[test]
+    fn explicit_ports_are_removed_and_defaults_are_shared() {
+        let mut args = vec![
+            "dm4".into(),
+            "--port".into(),
+            "26018".into(),
+            "--coop".into(),
+        ];
+        assert_eq!(take_port(&mut args).unwrap(), 26018);
+        assert_eq!(args, ["dm4", "--coop"]);
+        assert_eq!(
+            take_port(&mut args).unwrap(),
+            argus_mcp::match_ctrl::DEFAULT_PORT
+        );
+    }
+    #[test]
+    fn invalid_ports_refuse_without_mutating_remaining_arguments() {
+        for args in [
+            vec!["--port"],
+            vec!["--port", "bad"],
+            vec!["--port", "0"],
+            vec!["--port", "1023"],
+            vec!["--port", "65536"],
+            vec!["--port", "-1"],
+            vec!["--port", "26001", "--port", "26002"],
+            vec!["--port=26001"],
+        ] {
+            let mut args: Vec<String> = args.into_iter().map(str::to_string).collect();
+            let before = args.clone();
+            assert!(take_port(&mut args).is_err(), "{before:?}");
+            assert_eq!(args, before);
+        }
+    }
 }
