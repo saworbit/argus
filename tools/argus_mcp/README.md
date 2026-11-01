@@ -207,6 +207,12 @@ and the rerelease Saved Games copy if that folder exists),
 `src/argus_nav_*.qc`, plus `manifest.json`. Restore copies those
 files back. `backups/` is gitignored.
 
+Restore validates every destination before writing. Targets must remain under
+the resolved repo root, basedir, or the user's
+`Saved Games/Nightdive Studios/Quake` directory. Parent traversal and links
+escaping those roots are refused. A write failure rolls back prior file bytes
+and removes newly created files and directories; rollback errors are reported.
+
 Agents keep using `see` / `experiment`. The GUI only buttons the
 same functions.
 
@@ -324,6 +330,11 @@ Load order: optional TOML, then env. Env wins. TOML path is
 walks parents from the process cwd for `game/argus/autoexec.cfg` and
 fills fteqcc / engine / basedir / python when those files exist in
 the usual lab layout. Explicit env still wins.
+
+Path settings are made absolute when loaded. Relative environment values and
+`ARGUS_MCP_CONFIG` use the process cwd; relative TOML values use the TOML file's
+directory. Dot components are normalised before discovery and child launches.
+The config report shows these resolved paths, including paths not yet created.
 
 `config_check` always returns the resolved table and never errors.
 `ARGUS_GAME` keeps its game-name value; its existence check uses
@@ -1056,6 +1067,13 @@ choosing a lift, train or other typed route to discard. Late stitches and
 engine-proven additions use the same admission count, with a final overflow
 check before emission. Existing graphs still need their normal engine gates
 when regenerated.
+
+`nav_generate` uses the shared map-name rule. Its QC output must be under `ARGUS_SRC`; PNG outputs from it and
+`analyze_match` must be under `ARGUS_RUNS`. Paths are relative to `ARGUS_ROOT`
+unless absolute. Parent traversal, output symlinks and tracked outputs are
+refused, including JSON sidecars. The map's own default QC and graph may be
+replaced; other existing source is protected. Registration requires that
+default QC path. Preview status uses a fresh receipt, independent of stdout.
 
 ### Lab loop
 

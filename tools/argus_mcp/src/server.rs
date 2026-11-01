@@ -844,15 +844,15 @@ pub struct SpecPovArgs {
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct NavArgs {
-    #[schemars(description = "BSP path or short map name (dm4)")]
+    #[schemars(description = "BSP path or map name")]
     pub bsp: String,
-    #[schemars(description = "Map name used in the generated QC symbol")]
+    #[schemars(description = "QC-safe map name")]
     pub map: String,
+    #[schemars(description = "QC under ARGUS_SRC")]
     pub out_qc: Option<String>,
+    #[schemars(description = "PNG under ARGUS_RUNS")]
     pub out_png: Option<String>,
-    #[schemars(
-        description = "Also pass --register: first registration requires current reach and mill evidence before wiring progs.src and argus_nav_dispatch.qc"
-    )]
+    #[schemars(description = "Register after reach and mill gates")]
     pub register: Option<bool>,
 }
 
@@ -892,6 +892,7 @@ pub struct MatchStopArgs {
 pub struct AnalyzeArgs {
     pub bsp: String,
     pub log_a: String,
+    #[schemars(description = "PNG under ARGUS_RUNS")]
     pub out_png: String,
     pub log_b: Option<String>,
     pub nav_json: Option<String>,

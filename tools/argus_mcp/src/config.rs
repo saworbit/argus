@@ -210,21 +210,75 @@ pub fn report_from(env: &HashMap<String, String>, cwd: &Path) -> ConfigReport {
 }
 
 fn merge(env: &HashMap<String, String>, cwd: &Path) -> HashMap<String, String> {
+    let cwd = absolute_path(
+        cwd,
+        &std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
+    );
     let mut out = HashMap::new();
-    if let Some(path) = toml_path(env, cwd) {
+    if let Some(path) = toml_path(env, &cwd) {
         if let Ok(text) = std::fs::read_to_string(&path) {
             if let Ok(table) = text.parse::<toml::Table>() {
                 flatten_toml(&table, &mut out);
+                resolve_paths(&mut out, path.parent().unwrap_or(&cwd));
             }
         }
     }
     for (k, v) in env {
         if k.starts_with("ARGUS_") && k != "ARGUS_MCP_CONFIG" {
-            out.insert(k.clone(), v.clone());
+            let value = if is_path_key(k) && !v.is_empty() {
+                absolute_path(Path::new(v), &cwd).display().to_string()
+            } else {
+                v.clone()
+            };
+            out.insert(k.clone(), value);
         }
     }
-    apply_discovery(cwd, &mut out);
+    apply_discovery(&cwd, &mut out);
     out
+}
+
+fn is_path_key(key: &str) -> bool {
+    matches!(
+        key,
+        "ARGUS_ROOT"
+            | "ARGUS_FTEQCC"
+            | "ARGUS_ENGINE"
+            | "ARGUS_BASEDIR"
+            | "ARGUS_PYTHON"
+            | "ARGUS_SRC"
+            | "ARGUS_RUNS"
+            | "ARGUS_PROGS"
+            | "ARGUS_MAPS"
+    )
+}
+
+fn resolve_paths(values: &mut HashMap<String, String>, base: &Path) {
+    for (key, value) in values {
+        if is_path_key(key) && !value.is_empty() {
+            *value = absolute_path(Path::new(value), base).display().to_string();
+        }
+    }
+}
+
+/// Config values may name files not created yet. Resolve their source directory
+/// and dot components without requiring the target to exist.
+fn absolute_path(path: &Path, base: &Path) -> PathBuf {
+    let path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        base.join(path)
+    };
+    let mut result = PathBuf::new();
+    for component in path.components() {
+        match component {
+            std::path::Component::CurDir => {}
+            std::path::Component::ParentDir => {
+                result.pop();
+            }
+            other => result.push(other.as_os_str()),
+        }
+    }
+    result
 }
 
 /// If keys are unset, infer ARGUS_ROOT from a parent that has
@@ -344,10 +398,14 @@ fn find_python() -> Option<String> {
 
 fn toml_path(env: &HashMap<String, String>, cwd: &Path) -> Option<PathBuf> {
     if let Some(p) = env.get("ARGUS_MCP_CONFIG") {
-        return Some(PathBuf::from(p));
+        return Some(absolute_path(Path::new(p), cwd));
     }
     if let Some(root) = env.get("ARGUS_ROOT") {
-        return Some(PathBuf::from(root).join("tools").join("argus_mcp.toml"));
+        return Some(
+            absolute_path(Path::new(root), cwd)
+                .join("tools")
+                .join("argus_mcp.toml"),
+        );
     }
     Some(cwd.join("tools").join("argus_mcp.toml"))
 }
@@ -418,6 +476,40 @@ mod tests {
     use super::*;
     use std::fs;
     use std::io::Write;
+
+    #[test]
+    fn relative_paths_resolve_at_their_source_before_discovery() {
+        let dir = crate::test_support::TestDir::new("relative-config").unwrap();
+        let cwd = dir.path().join("server");
+        let config_dir = dir.path().join("settings");
+        fs::create_dir_all(&cwd).unwrap();
+        fs::create_dir_all(config_dir.join("repo/engine/id1")).unwrap();
+        fs::write(config_dir.join("repo/engine/quakespasm.exe"), b"x").unwrap();
+        let file = config_dir.join("lab.toml");
+        fs::write(&file, "ARGUS_ROOT = 'repo'\nARGUS_FTEQCC = './compiler'\nARGUS_PYTHON = 'python'\nARGUS_RUNS = 'tapes'\n").unwrap();
+        let env = HashMap::from([
+            ("ARGUS_MCP_CONFIG".into(), "../settings/lab.toml".into()),
+            ("ARGUS_PYTHON".into(), "./bin/../python".into()),
+        ]);
+        let cfg = load_from(&env, &cwd).unwrap();
+        assert_eq!(cfg.root, config_dir.join("repo"));
+        assert_eq!(cfg.fteqcc, config_dir.join("compiler"));
+        assert_eq!(cfg.python, cwd.join("python"));
+        assert_eq!(cfg.runs, config_dir.join("tapes"));
+        assert_eq!(cfg.engine, config_dir.join("repo/engine/quakespasm.exe"));
+        assert_eq!(load_for_reads_from(&env, &cwd).unwrap().root, cfg.root);
+        let report = report_from(&env, &cwd);
+        assert_eq!(
+            report
+                .entries
+                .iter()
+                .find(|e| e.key == "ARGUS_PYTHON")
+                .unwrap()
+                .value
+                .as_deref(),
+            cfg.python.to_str()
+        );
+    }
 
     #[test]
     fn game_report_uses_basedir_even_from_another_working_directory() {

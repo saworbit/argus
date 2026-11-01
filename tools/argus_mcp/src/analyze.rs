@@ -30,10 +30,7 @@ pub fn analyze_match(
 ) -> Result<AnalyzeResult, String> {
     let bsp_path = resolve_input(cfg, bsp)?;
     let log_a_path = resolve_log(cfg, log_a)?;
-    let out_png_path = resolve_output(cfg, out_png);
-    if let Some(parent) = out_png_path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
+    let out_png_path = resolve_output(cfg, out_png, &cfg.runs, "png", None)?;
     let log_b_path = match log_b {
         Some(p) => Some(resolve_log(cfg, p)?),
         None => None,
@@ -49,6 +46,10 @@ pub fn analyze_match(
             "ARGUS_ROOT tools/analyze_match.py missing: {}",
             script.display()
         ));
+    }
+
+    if let Some(parent) = out_png_path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| format!("create PNG output directory: {e}"))?;
     }
 
     let mut cmd = Command::new(&cfg.python);

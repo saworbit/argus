@@ -140,42 +140,84 @@ pub fn restore_backup(cfg: &Config, id: &str) -> Result<BackupResult, String> {
         return Err(format!("no backup {id}"));
     }
     let man = read_manifest(&dir).ok_or("backup has no manifest.json")?;
-    let mut restored = 0u32;
-    // A `?` on each copy used to abandon the restore midway with no
-    // rollback and no account of what had already landed. Try them all
-    // and report what failed.
-    let mut failed: Vec<String> = Vec::new();
+    // Validate and read the complete plan before the first destination write.
+    let mut plan = Vec::new();
     for f in &man.files {
         let rel = safe_rel(&f.rel).ok_or_else(|| format!("unsafe path in manifest: {}", f.rel))?;
         let src = dir.join(&rel);
-        if !src.is_file() {
-            failed.push(format!("{}: missing from the backup", f.rel));
-            continue;
-        }
         let dest = restore_dest(cfg, &f.restore_to, &rel)?;
-        if let Some(parent) = dest.parent() {
-            let _ = fs::create_dir_all(parent);
+        let content = fs::read(&src).map_err(|e| format!("read backup {}: {e}", src.display()))?;
+        let previous = match fs::read(&dest) {
+            Ok(bytes) => Some(bytes),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => None,
+            Err(e) => return Err(format!("read restore destination {}: {e}", dest.display())),
+        };
+        if plan.iter().any(|(p, _, _)| p == &dest) {
+            return Err(format!("duplicate restore destination {}", dest.display()));
         }
-        match fs::copy(&src, &dest) {
-            Ok(_) => restored += 1,
-            Err(e) => failed.push(format!("{}: {e}", dest.display())),
-        }
+        plan.push((dest, content, previous));
     }
+    let failure = apply_restore(&plan, |dest, bytes| fs::write(dest, bytes));
     Ok(BackupResult {
-        ok: failed.is_empty(),
+        ok: failure.is_none(),
         id,
         path: dir.display().to_string(),
-        files: restored as usize,
-        error: if failed.is_empty() {
-            None
-        } else {
-            Some(format!(
-                "restored {restored} of {}, failed: {}",
-                man.files.len(),
-                failed.join("; ")
-            ))
-        },
+        files: if failure.is_none() { plan.len() } else { 0 },
+        error: failure,
     })
+}
+
+type RestoreFile = (PathBuf, Vec<u8>, Option<Vec<u8>>);
+
+fn apply_restore(
+    plan: &[RestoreFile],
+    mut write: impl FnMut(&Path, &[u8]) -> std::io::Result<()>,
+) -> Option<String> {
+    let mut created_dirs = Vec::new();
+    for (index, (dest, content, _)) in plan.iter().enumerate() {
+        let result = (|| {
+            let mut parent = dest.parent();
+            let mut missing = Vec::new();
+            while let Some(p) = parent {
+                if p.exists() {
+                    break;
+                }
+                missing.push(p.to_path_buf());
+                parent = p.parent();
+            }
+            for p in missing.iter().rev() {
+                fs::create_dir(p)?;
+                created_dirs.push(p.clone());
+            }
+            write(dest, content)
+        })();
+        if let Err(error) = result {
+            let mut errors = vec![format!(
+                "restore {}: {error}; rollback attempted",
+                dest.display()
+            )];
+            // Include the failed write: it may have truncated its destination.
+            for (path, _, previous) in plan[..=index].iter().rev() {
+                let result = match previous {
+                    Some(bytes) => fs::write(path, bytes),
+                    None => match fs::remove_file(path) {
+                        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+                        result => result,
+                    },
+                };
+                if let Err(e) = result {
+                    errors.push(format!("rollback {} FAILED: {e}", path.display()));
+                }
+            }
+            for path in created_dirs.iter().rev() {
+                if let Err(e) = fs::remove_dir(path) {
+                    errors.push(format!("remove created directory {}: {e}", path.display()));
+                }
+            }
+            return Some(errors.join("; "));
+        }
+    }
+    None
 }
 
 fn backup_sources(cfg: &Config) -> Vec<(PathBuf, String)> {
@@ -257,26 +299,26 @@ pub fn safe_backup_id(id: &str) -> Option<String> {
 }
 
 fn restore_dest(cfg: &Config, restore_to: &str, rel: &str) -> Result<std::path::PathBuf, String> {
-    if !restore_to.is_empty() {
-        let dest = std::path::PathBuf::from(restore_to);
-        if dest_allowed(cfg, &dest) {
+    let dest = if restore_to.is_empty() {
+        cfg.root.join(rel)
+    } else {
+        PathBuf::from(restore_to)
+    };
+    let dest = crate::paths::canonical_target(&dest)?;
+    let mut roots = vec![cfg.root.clone()];
+    if !cfg.basedir.as_os_str().is_empty() {
+        roots.push(cfg.basedir.clone());
+    }
+    if let Some(home) = std::env::var_os("USERPROFILE").or_else(|| std::env::var_os("HOME")) {
+        roots.push(PathBuf::from(home).join("Saved Games/Nightdive Studios/Quake"));
+    }
+    for root in roots {
+        let root = crate::paths::canonical_target(&root)?;
+        if dest != root && dest.starts_with(&root) {
             return Ok(dest);
         }
-        return Err(format!("restore path not allowed: {restore_to}"));
     }
-    Ok(cfg.root.join(rel))
-}
-
-fn dest_allowed(cfg: &Config, dest: &Path) -> bool {
-    let dest = dest.to_path_buf();
-    if dest.starts_with(&cfg.root) {
-        return true;
-    }
-    if !cfg.basedir.as_os_str().is_empty() && dest.starts_with(&cfg.basedir) {
-        return true;
-    }
-    let s = dest.to_string_lossy();
-    s.contains("Nightdive Studios") && s.contains("Quake")
+    Err(format!("restore path not allowed: {}", dest.display()))
 }
 
 fn safe_rel(rel: &str) -> Option<String> {
@@ -289,6 +331,65 @@ fn safe_rel(rel: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn restore_refuses_escapes_and_checks_every_destination_before_copying() {
+        let dir = crate::test_support::TestDir::new("restore-boundary").unwrap();
+        let root = dir.path().join("repo");
+        fs::create_dir_all(root.join("backups/test")).unwrap();
+        let cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            &root,
+        )
+        .unwrap();
+        for dest in [
+            root.join("../outside.dat"),
+            dir.path().join("Nightdive Studios/fake/Quake/file.dat"),
+        ] {
+            assert!(
+                restore_dest(&cfg, dest.to_str().unwrap(), "file.dat").is_err(),
+                "accepted {}",
+                dest.display()
+            );
+        }
+        let outside = dir.path().join("outside");
+        fs::create_dir_all(&outside).unwrap();
+        crate::test_support::directory_link(&outside, &root.join("escape"));
+        assert!(restore_dest(
+            &cfg,
+            root.join("escape/new/file.dat").to_str().unwrap(),
+            "file.dat"
+        )
+        .is_err());
+        assert!(!outside.join("new").exists());
+        let good = root.join("good.dat");
+        fs::write(&good, "old").unwrap();
+        let backup = root.join("backups/test");
+        fs::write(backup.join("good.dat"), "new").unwrap();
+        fs::write(backup.join("bad.dat"), "bad").unwrap();
+        let man = BackupManifest {
+            id: "test".into(),
+            created: "test".into(),
+            files: vec![
+                BackupFile {
+                    rel: "good.dat".into(),
+                    restore_to: good.display().to_string(),
+                    bytes: 3,
+                },
+                BackupFile {
+                    rel: "bad.dat".into(),
+                    restore_to: root.join("../bad.dat").display().to_string(),
+                    bytes: 3,
+                },
+            ],
+        };
+        fs::write(
+            backup.join("manifest.json"),
+            serde_json::to_vec(&man).unwrap(),
+        )
+        .unwrap();
+        assert!(restore_backup(&cfg, "test").is_err());
+        assert_eq!(fs::read_to_string(good).unwrap(), "old");
+    }
     use super::*;
     use crate::config::load_for_reads_from;
     use std::collections::HashMap;
@@ -311,14 +412,52 @@ mod tests {
         assert!(taken.ok, "{taken:?}");
         assert!(taken.files >= 3);
 
+        // take_backup can read real installs. This test may only restore its
+        // own fixture, never Saved Games or a machine-local basedir.
+        let backup = backups_dir(&cfg).join(&taken.id);
+        let mut manifest = read_manifest(&backup).unwrap();
+        manifest
+            .files
+            .retain(|f| Path::new(&f.restore_to).starts_with(&root));
+        fs::write(
+            backup.join("manifest.json"),
+            serde_json::to_vec(&manifest).unwrap(),
+        )
+        .unwrap();
+
         fs::write(lq1.join("progs.dat"), b"PROGS-B").unwrap();
         fs::write(src.join("argus_nav_dm4.qc"), b"nav-b").unwrap();
-        restore_backup(&cfg, &taken.id).unwrap();
+        let restored = restore_backup(&cfg, &taken.id).unwrap();
+        assert!(restored.ok, "{restored:?}");
         assert_eq!(fs::read(lq1.join("progs.dat")).unwrap(), b"PROGS-A");
         assert_eq!(fs::read(src.join("argus_nav_dm4.qc")).unwrap(), b"nav-a");
         assert!(safe_backup_id("../x").is_none());
         assert!(safe_rel("../etc/passwd").is_none());
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn failed_restore_rolls_back_truncated_files_and_new_directories() {
+        let dir = crate::test_support::TestDir::new("restore-rollback").unwrap();
+        let old = dir.path().join("old.dat");
+        let new = dir.path().join("created/new.dat");
+        fs::write(&old, "old").unwrap();
+        let plan = vec![
+            (old.clone(), b"new".to_vec(), Some(b"old".to_vec())),
+            (new.clone(), b"new".to_vec(), None),
+        ];
+        let error = apply_restore(&plan, |path, bytes| {
+            fs::write(path, bytes)?;
+            if path == new {
+                return Err(std::io::Error::other("injected after write"));
+            }
+            Ok(())
+        })
+        .unwrap();
+        assert!(error.contains("injected after write"));
+        assert!(!error.contains("FAILED"), "{error}");
+        assert_eq!(fs::read(&old).unwrap(), b"old");
+        assert!(!new.parent().unwrap().exists());
     }
 
     // #215: rel_under falls back to the bare file name for any path

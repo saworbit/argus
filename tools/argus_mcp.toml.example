@@ -1,5 +1,7 @@
 # Copy to tools/argus_mcp.toml or point ARGUS_MCP_CONFIG at a copy.
 # Environment variables with the same names override these values.
+# Relative paths in this file use its directory. Relative environment paths
+# and ARGUS_MCP_CONFIG use the server's working directory.
 # Operator guide: tools/argus_mcp/README.md.
 # Humans: argus-mcp gui  (localhost wizard; uses these same keys).
 # If ARGUS_ROOT is unset, the server walks parents for

@@ -73,13 +73,139 @@ pub fn resolve_log(cfg: &Config, given: &str) -> Result<PathBuf, String> {
     ))
 }
 
-pub fn resolve_output(cfg: &Config, given: &str) -> PathBuf {
-    let p = PathBuf::from(given);
-    if p.is_absolute() {
-        p
-    } else {
-        cfg.root.join(p)
+/// Resolve existing ancestors, including links, without creating the leaf.
+/// Refuse parent traversal and dangling links rather than guessing their target.
+pub(crate) fn canonical_target(path: &Path) -> Result<PathBuf, String> {
+    use std::path::Component;
+    if !path.is_absolute() || path.components().any(|c| c == Component::ParentDir) {
+        return Err(format!(
+            "expected absolute path without parent traversal: {}",
+            path.display()
+        ));
     }
+    let mut ancestor = path;
+    let mut missing = Vec::new();
+    loop {
+        match std::fs::canonicalize(ancestor) {
+            Ok(mut resolved) => {
+                for part in missing.iter().rev() {
+                    resolved.push(part);
+                }
+                return Ok(native_path(resolved));
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                if std::fs::symlink_metadata(ancestor).is_ok() {
+                    return Err(format!("unresolved link: {}", ancestor.display()));
+                }
+                missing.push(
+                    ancestor
+                        .file_name()
+                        .ok_or_else(|| error.to_string())?
+                        .to_os_string(),
+                );
+                ancestor = ancestor.parent().ok_or_else(|| error.to_string())?;
+            }
+            Err(error) => return Err(format!("resolve {}: {error}", ancestor.display())),
+        }
+    }
+}
+
+fn native_path(path: PathBuf) -> PathBuf {
+    // canonicalize uses Win32 extended paths, which external tools need not
+    // understand. Keep UNC paths as UNC and drive paths in their usual form.
+    #[cfg(windows)]
+    {
+        let raw = path.as_os_str().to_string_lossy();
+        if let Some(rest) = raw.strip_prefix(r"\\?\UNC\") {
+            return PathBuf::from(format!(r"\\{rest}"));
+        }
+        if let Some(rest) = raw.strip_prefix(r"\\?\") {
+            return PathBuf::from(rest);
+        }
+    }
+    path
+}
+
+/// PNGs belong under ARGUS_RUNS; generated QC belongs under ARGUS_SRC.
+/// Only the map's own generated files may replace tracked source.
+pub fn resolve_output(
+    cfg: &Config,
+    given: &str,
+    allowed: &Path,
+    extension: &str,
+    replace: Option<&Path>,
+) -> Result<PathBuf, String> {
+    let p = PathBuf::from(given);
+    let p = if p.is_absolute() { p } else { cfg.root.join(p) };
+    if p.extension().and_then(|v| v.to_str()) != Some(extension) {
+        return Err(format!("output must have .{extension} extension"));
+    }
+    for leaf in [&p, &PathBuf::from(format!("{}.json", p.display()))] {
+        match std::fs::symlink_metadata(leaf) {
+            Ok(meta) if meta.file_type().is_symlink() => {
+                return Err(format!("output cannot be a symlink: {}", leaf.display()))
+            }
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+            Err(e) => return Err(format!("inspect output {}: {e}", leaf.display())),
+        }
+    }
+    let target = canonical_target(&p)?;
+    let allowed = canonical_target(allowed)?;
+    if target == allowed || !target.starts_with(&allowed) {
+        return Err(format!("output must be under {}", allowed.display()));
+    }
+    let replace = replace.map(canonical_target).transpose()?;
+    let root = canonical_target(&cfg.root)?;
+    for candidate in [
+        target.clone(),
+        PathBuf::from(format!("{}.json", target.display())),
+    ] {
+        let resolved = canonical_target(&candidate)?;
+        if !resolved.starts_with(&allowed) {
+            return Err(format!("output sidecar escapes {}", allowed.display()));
+        }
+        let own = replace
+            .as_ref()
+            .is_some_and(|p| resolved == *p || resolved == format!("{}.json", p.display()));
+        if own {
+            continue;
+        }
+        if extension == "qc" && candidate.exists() {
+            return Err(format!(
+                "refusing to replace source {}",
+                candidate.display()
+            ));
+        }
+        if cfg.root.join(".git").exists() {
+            if let Ok(rel) = resolved.strip_prefix(&root) {
+                let mut command = std::process::Command::new("git");
+                command
+                    .arg("-C")
+                    .arg(&cfg.root)
+                    .args(["ls-files", "--error-unmatch", "--"])
+                    .arg(rel);
+                let output = crate::child_process::output_with_windows_loader_retry(&mut command)
+                    .map_err(|e| format!("check tracked output: {e}"))?;
+                match output.status.code() {
+                    Some(0) => {
+                        return Err(format!(
+                            "refusing to replace tracked output {}",
+                            candidate.display()
+                        ))
+                    }
+                    Some(1) => {}
+                    _ => {
+                        return Err(format!(
+                            "check tracked output: {}",
+                            String::from_utf8_lossy(&output.stderr)
+                        ))
+                    }
+                }
+            }
+        }
+    }
+    Ok(target)
 }
 
 pub fn tail_lines(text: &str, n: usize) -> Vec<String> {
@@ -122,6 +248,56 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn output_boundary_rejects_links_traversal_and_tracked_files() {
+        let _gate = crate::test_support::git_test_lock();
+        let dir = crate::test_support::TestDir::new("output-boundary").unwrap();
+        let root = dir.path().join("repo");
+        let outside = dir.path().join("outside");
+        for p in [root.join("src"), root.join("runs"), outside.clone()] {
+            std::fs::create_dir_all(p).unwrap();
+        }
+        let cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            &root,
+        )
+        .unwrap();
+        let own = cfg.src.join("argus_nav_dm4.qc");
+        std::fs::write(&own, "nav").unwrap();
+        std::fs::write(cfg.src.join("argus.qc"), "source").unwrap();
+        std::fs::write(cfg.runs.join("kept.png"), "tracked").unwrap();
+        crate::test_support::run_git(&root, &["init"]).unwrap();
+        crate::test_support::run_git(&root, &["add", "src", "runs"]).unwrap();
+        assert!(
+            resolve_output(&cfg, "runs/kept.png", &cfg.runs, "png", None)
+                .unwrap_err()
+                .contains("tracked")
+        );
+        assert!(resolve_output(&cfg, "src/argus.qc", &cfg.src, "qc", Some(&own)).is_err());
+        assert_eq!(
+            resolve_output(&cfg, "src/argus_nav_dm4.qc", &cfg.src, "qc", Some(&own)).unwrap(),
+            own
+        );
+        assert!(resolve_output(&cfg, "runs/../escape.png", &cfg.runs, "png", None).is_err());
+        assert!(resolve_output(
+            &cfg,
+            outside.join("escape.png").to_str().unwrap(),
+            &cfg.runs,
+            "png",
+            None
+        )
+        .is_err());
+        let link = cfg.runs.join("escape");
+        crate::test_support::directory_link(&outside, &link);
+        assert!(resolve_output(&cfg, "runs/escape/new/image.png", &cfg.runs, "png", None).is_err());
+        assert!(!outside.join("new").exists());
+        std::fs::write(cfg.runs.join("receipt.png.json"), "tracked receipt").unwrap();
+        crate::test_support::run_git(&root, &["add", "runs/receipt.png.json"]).unwrap();
+        assert!(resolve_output(&cfg, "runs/receipt.png", &cfg.runs, "png", None).is_err());
+        let normal = resolve_output(&cfg, "./runs//fresh.png", &cfg.runs, "png", None).unwrap();
+        assert_eq!(normal, cfg.runs.join("fresh.png"));
     }
 
     #[test]
