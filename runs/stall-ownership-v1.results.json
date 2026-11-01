@@ -1,0 +1,824 @@
+{
+  "layout": "stall-ownership-v1",
+  "status": "native_parity",
+  "protocol": {
+    "maps": [
+      "dm3",
+      "e1m6"
+    ],
+    "repeats": 3,
+    "seconds": 30,
+    "skill": 2,
+    "ticrate": 0.0139,
+    "primary": "stall_parity",
+    "stopping_rule": "Exactly three per arm on each map, alternating control/candidate. No outcome-selected extra repeats.",
+    "tree_head": "93e4ecc3d0036c611e94581f810f2227f2a29dc4",
+    "tree_diff": "",
+    "cli_sha256": "11bb4a1b13a50c6756f7d658467e5874476f60fe9952fe708aff6944a85bb14c",
+    "arms": {
+      "control": {
+        "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+        "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b"
+      },
+      "candidate": {
+        "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+        "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1"
+      }
+    },
+    "schedule": [
+      {
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 1
+      },
+      {
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 1
+      },
+      {
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 2
+      },
+      {
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 2
+      },
+      {
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 3
+      },
+      {
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 3
+      },
+      {
+        "map": "e1m6",
+        "arm": "control",
+        "repeat": 1
+      },
+      {
+        "map": "e1m6",
+        "arm": "candidate",
+        "repeat": 1
+      },
+      {
+        "map": "e1m6",
+        "arm": "control",
+        "repeat": 2
+      },
+      {
+        "map": "e1m6",
+        "arm": "candidate",
+        "repeat": 2
+      },
+      {
+        "map": "e1m6",
+        "arm": "control",
+        "repeat": 3
+      },
+      {
+        "map": "e1m6",
+        "arm": "candidate",
+        "repeat": 3
+      }
+    ]
+  },
+  "frozen_source_patch": "runs/stall-ownership-v1.source.patch",
+  "source_patch_note": "Collected from the exact frozen arms after the runs. Only argus.qc differs. The registered source/program hashes identify both complete inputs; tree_diff was empty because the worktree change was staged.",
+  "decisions": [
+    {
+      "map": "dm3",
+      "ticrate": 0.0139,
+      "failed_control": false,
+      "source_sha256": "a36060ad531928c136888a76168343048ddacecb4bc830f1d79edc0844a5b3b0",
+      "binary_sha256": "05087820ea6c933c490e53b76bd7fe08a6cc45a8657ac36f365e8dfd7194460b",
+      "raw_sha256": "425941aa86162a952cafe69c0f44980ad0e44f72d0b5d90d3a105d13e2b0724d",
+      "raw": "runs/stall_ownership_v1_decision_dm3_played.log",
+      "frame_ms": 15.0,
+      "checks": 15,
+      "failures": []
+    },
+    {
+      "map": "e1m6",
+      "ticrate": 0.1,
+      "failed_control": false,
+      "source_sha256": "a36060ad531928c136888a76168343048ddacecb4bc830f1d79edc0844a5b3b0",
+      "binary_sha256": "05087820ea6c933c490e53b76bd7fe08a6cc45a8657ac36f365e8dfd7194460b",
+      "raw_sha256": "ea26d72acff745a32313bad6dae866d8783108caa6cc83f08e9a8b98a1db9d42",
+      "raw": "runs/stall_ownership_v1_decision_e1m6_slow.log",
+      "frame_ms": 100.0,
+      "checks": 15,
+      "failures": []
+    },
+    {
+      "map": "dm3",
+      "ticrate": 0.0139,
+      "failed_control": true,
+      "source_sha256": "1c1c75467d7667d20e8d7b0089a8d7590dd0a8913624455ca2c05010f238b130",
+      "binary_sha256": "6d91b55b66b6101e1172399a0d861307569da99bead1c47c3ef756897acff345",
+      "raw_sha256": "607567464e7d09b414589ad56717cb15b3eff4653caf73b5e2759c6dd35731cd",
+      "raw": "runs/stall_ownership_v1_decision_control.log",
+      "frame_ms": 14.0,
+      "checks": 15,
+      "failures": [
+        "stationary_train_released",
+        "stationary_jump_released",
+        "stationary_rj_released",
+        "stationary_swim_released",
+        "stationary_door_released",
+        "gait_tail",
+        "camp_orbit_keeps_goal"
+      ]
+    }
+  ],
+  "ordinary": [
+    {
+      "map": "dm3",
+      "arm": "control",
+      "repeat": 1,
+      "raw": "runs/stall_ownership_v1_control_dm3_1.log",
+      "raw_sha256": "ac776a86d6af75d3983ceea77620a8ae3150e842a0d3ca3bb54cc19cf7ed4fdb",
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 2,
+        "all_frags_positive": false,
+        "avg_speed": 187.71785628861448,
+        "boards": 0,
+        "closest_approach": 132.2086608358167,
+        "confine_max_sec": 7.1,
+        "confine_note": "Joe Rogan spent 7.1s inside a 220u box at 159 u/s around (1523, -158)",
+        "cover": 122,
+        "deaths": 1,
+        "duration_sec": 30.0,
+        "engages": 4,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 1,
+        "hazards": 30,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5057471264367817,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "candidate",
+      "repeat": 1,
+      "raw": "runs/stall_ownership_v1_candidate_dm3_1.log",
+      "raw_sha256": "6e9e2ce85d212fa860d06b5785561622d56884d7fb3915fe63ec6d28bf212f18",
+      "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+      "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 5,
+        "all_frags_positive": false,
+        "avg_speed": 177.20455131112695,
+        "boards": 0,
+        "closest_approach": 92.27610741681728,
+        "confine_max_sec": 8.100000000000001,
+        "confine_note": "Romero spent 8.1s inside a 220u box at 59 u/s around (1103, -197)",
+        "cover": 107,
+        "deaths": 1,
+        "duration_sec": 29.8,
+        "engages": 4,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 0,
+        "hazards": 32,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 0,
+        "stalls": 4,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627119,
+        "weapons": 5,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "control",
+      "repeat": 2,
+      "raw": "runs/stall_ownership_v1_control_dm3_2.log",
+      "raw_sha256": "684cceada7469825adf24b4dbdb3df8c15f6f85516c9a8eb870616eb2ea91a5d",
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 0,
+        "all_frags_positive": false,
+        "avg_speed": 213.94805917376024,
+        "boards": 0,
+        "closest_approach": 277.3477420135235,
+        "confine_max_sec": 5.600000000000001,
+        "confine_note": "Romero spent 5.6s inside a 220u box at 232 u/s around (436, 136)",
+        "cover": 124,
+        "deaths": 2,
+        "duration_sec": 29.900000000000002,
+        "engages": 3,
+        "frags": 2,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 0,
+        "hazards": 32,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5052941176470587,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "candidate",
+      "repeat": 2,
+      "raw": "runs/stall_ownership_v1_candidate_dm3_2.log",
+      "raw_sha256": "99626fd6661d5194d208924d5445f02ad79fe5a468670c944b6e224ed152cc14",
+      "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+      "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 4,
+        "all_frags_positive": false,
+        "avg_speed": 213.13719069324375,
+        "boards": 0,
+        "closest_approach": 198.86583416967332,
+        "confine_max_sec": 8.100000000000001,
+        "confine_note": "Joe Rogan spent 8.1s inside a 220u box at 275 u/s around (1624, 480)",
+        "cover": 115,
+        "deaths": 1,
+        "duration_sec": 29.8,
+        "engages": 4,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 3,
+        "grabs": 2,
+        "hazards": 29,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5051724137931035,
+        "weapons": 2,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "control",
+      "repeat": 3,
+      "raw": "runs/stall_ownership_v1_control_dm3_3.log",
+      "raw_sha256": "ac58c9ae8e2f62329c2fe5f2dc1e6d41cc750eaee595a926bd866a43776e2122",
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 2,
+        "all_frags_positive": false,
+        "avg_speed": 181.3440179995323,
+        "boards": 0,
+        "closest_approach": 190.57402761131954,
+        "confine_max_sec": 9.100000000000001,
+        "confine_note": "Joe Rogan spent 9.1s inside a 220u box at 229 u/s around (1526, -201)",
+        "cover": 115,
+        "deaths": 1,
+        "duration_sec": 30.0,
+        "engages": 4,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 3,
+        "grabs": 2,
+        "hazards": 23,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 1,
+        "stalls": 7,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5051724137931035,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "candidate",
+      "repeat": 3,
+      "raw": "runs/stall_ownership_v1_candidate_dm3_3.log",
+      "raw_sha256": "6e226c74cc0e2e97d28720ca39226103456f943ca12a2952d4d91de5c4e358d8",
+      "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+      "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 3,
+        "all_frags_positive": false,
+        "avg_speed": 200.86050637732774,
+        "boards": 0,
+        "closest_approach": 167.34067048987225,
+        "confine_max_sec": 7.600000000000001,
+        "confine_note": "Carmack spent 7.6s inside a 220u box at 165 u/s around (-585, 303)",
+        "cover": 126,
+        "deaths": 1,
+        "duration_sec": 30.0,
+        "engages": 4,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 5,
+        "grabs": 1,
+        "hazards": 29,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 1,
+        "stalls": 3,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5045977011494251,
+        "weapons": 2,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "control",
+      "repeat": 1,
+      "raw": "runs/stall_ownership_v1_control_e1m6_1.log",
+      "raw_sha256": "9a3f26001f2f1ebac520f8132c18fa2c233018c9fe3e87a26f73b2f3a210e624",
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "totals": {
+        "abandons": 2,
+        "acquisitions": 3,
+        "all_frags_positive": false,
+        "avg_speed": 137.47928456776367,
+        "boards": 1,
+        "closest_approach": 178.7910512302,
+        "confine_max_sec": 13.099999999999998,
+        "confine_note": "Romero spent 13.1s inside a 220u box at 143 u/s around (-220, 1278)",
+        "cover": 69,
+        "deaths": 0,
+        "duration_sec": 29.8,
+        "engages": 3,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 3,
+        "hazards": 51,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 1,
+        "player_kills": 0,
+        "routefails": 1,
+        "stalls": 4,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627119,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "candidate",
+      "repeat": 1,
+      "raw": "runs/stall_ownership_v1_candidate_e1m6_1.log",
+      "raw_sha256": "d69dbb9f38533d0173991e20a8164b02c9096ca72a911c63a875df1e0a6e8b10",
+      "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+      "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1",
+      "totals": {
+        "abandons": 3,
+        "acquisitions": 1,
+        "all_frags_positive": false,
+        "avg_speed": 169.49537348854173,
+        "boards": 0,
+        "closest_approach": 165.37303286811908,
+        "confine_max_sec": 24.2,
+        "confine_note": "Romero spent 24.2s inside a 220u box at 161 u/s around (-215, 1225)",
+        "cover": 82,
+        "deaths": 0,
+        "duration_sec": 29.8,
+        "engages": 1,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 1,
+        "hazards": 55,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 0,
+        "routefails": 0,
+        "stalls": 6,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627119,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "control",
+      "repeat": 2,
+      "raw": "runs/stall_ownership_v1_control_e1m6_2.log",
+      "raw_sha256": "004dffa3434bf690ff8a29a6f76682cb935b92140d3272cf184e51697c36d825",
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "totals": {
+        "abandons": 2,
+        "acquisitions": 3,
+        "all_frags_positive": false,
+        "avg_speed": 148.58267058324046,
+        "boards": 0,
+        "closest_approach": 134.06050872647026,
+        "confine_max_sec": 18.7,
+        "confine_note": "Romero spent 18.7s inside a 220u box at 184 u/s around (-139, 1254)",
+        "cover": 76,
+        "deaths": 2,
+        "duration_sec": 29.900000000000002,
+        "engages": 9,
+        "frags": 2,
+        "freeze_max_sec": 8.100000000000001,
+        "freeze_total_sec": 8.100000000000001,
+        "freeze_underfire": 0,
+        "freezes": 1,
+        "goals": 0,
+        "grabs": 3,
+        "hazards": 58,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 2,
+        "stalls": 19,
+        "third_party_deaths": 1,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5058823529411764,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "1 freeze(s) 6 s+, longest 8.1 s at '202 1384 24' (Joe Rogan)",
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "candidate",
+      "repeat": 2,
+      "raw": "runs/stall_ownership_v1_candidate_e1m6_2.log",
+      "raw_sha256": "82eb667e9dde42057b32c8d1a36e01140329ce8fb110a9a11b6aaed57320fc5e",
+      "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+      "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1",
+      "totals": {
+        "abandons": 3,
+        "acquisitions": 2,
+        "all_frags_positive": false,
+        "avg_speed": 131.2602015572912,
+        "boards": 1,
+        "closest_approach": 161.17015852818415,
+        "confine_max_sec": 12.2,
+        "confine_note": "Carmack spent 12.2s inside a 220u box at 52 u/s around (-352, 848)",
+        "cover": 67,
+        "deaths": 0,
+        "duration_sec": 29.8,
+        "engages": 3,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 2,
+        "hazards": 54,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 1,
+        "player_kills": 0,
+        "routefails": 3,
+        "stalls": 16,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627118,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "control",
+      "repeat": 3,
+      "raw": "runs/stall_ownership_v1_control_e1m6_3.log",
+      "raw_sha256": "19b4619d8c72707a2deb3f4c71074eee04985e3b9bbd511cc5fd0e7f6e9d5185",
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "totals": {
+        "abandons": 3,
+        "acquisitions": 0,
+        "all_frags_positive": false,
+        "avg_speed": 162.5625997011155,
+        "boards": 0,
+        "closest_approach": 154.63883729516337,
+        "confine_max_sec": 13.600000000000001,
+        "confine_note": "Romero spent 13.6s inside a 220u box at 136 u/s around (-167, 1239)",
+        "cover": 82,
+        "deaths": 1,
+        "duration_sec": 29.900000000000002,
+        "engages": 2,
+        "frags": -1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 0,
+        "hazards": 60,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 1,
+        "stalls": 6,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5051724137931035,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "candidate",
+      "repeat": 3,
+      "raw": "runs/stall_ownership_v1_candidate_e1m6_3.log",
+      "raw_sha256": "14a76fdfec1a8dd981801cee0524bede8ea79fba0f2155c27ee9419fc4709692",
+      "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+      "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1",
+      "totals": {
+        "abandons": 1,
+        "acquisitions": 8,
+        "all_frags_positive": false,
+        "avg_speed": 158.23656027539263,
+        "boards": 0,
+        "closest_approach": 41.50614412349101,
+        "confine_max_sec": 9.600000000000001,
+        "confine_note": "Romero spent 9.6s inside a 220u box at 256 u/s around (273, 1406)",
+        "cover": 104,
+        "deaths": 0,
+        "duration_sec": 29.8,
+        "engages": 6,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 8,
+        "hazards": 52,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 0,
+        "routefails": 0,
+        "stalls": 4,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627119,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    }
+  ],
+  "gate_cards": {
+    "dm3": "runs/stall-ownership-v1.dm3.gate.txt",
+    "e1m6": "runs/stall-ownership-v1.e1m6.gate.txt"
+  },
+  "legacy_contracts": [
+    {
+      "variant": "current",
+      "map": "dm2",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "source_sha256": "2ed8680591557478a1fac429def6573daa0cfad2637d245d6cb9c5bea464b939",
+      "tape_sha256": "98e7d0db5cffa11fa362347e36c1491b29eff121592215233bb4579acee09c44",
+      "binary_sha256": "2f03929f758258e84a076d385f95c49ae9148e515bb8238388e8e65419b6fa96",
+      "raw": "runs/stall_ownership_v1_plan_dm2.log"
+    },
+    {
+      "variant": "current",
+      "map": "dm4",
+      "case": 0,
+      "checks": 18,
+      "failures": [],
+      "source_sha256": "2ed8680591557478a1fac429def6573daa0cfad2637d245d6cb9c5bea464b939",
+      "tape_sha256": "6cd58ce777a7f49565c8e204869407034a2174ecd0432f6918ece5b3342e63b8",
+      "binary_sha256": "2f03929f758258e84a076d385f95c49ae9148e515bb8238388e8e65419b6fa96",
+      "raw": "runs/stall_ownership_v1_plan_dm4.log"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "runs/stall_ownership_v1_control_dm3_1.log",
+      "sha256": "ac776a86d6af75d3983ceea77620a8ae3150e842a0d3ca3bb54cc19cf7ed4fdb"
+    },
+    {
+      "path": "runs/stall_ownership_v1_candidate_dm3_1.log",
+      "sha256": "6e9e2ce85d212fa860d06b5785561622d56884d7fb3915fe63ec6d28bf212f18"
+    },
+    {
+      "path": "runs/stall_ownership_v1_control_dm3_2.log",
+      "sha256": "684cceada7469825adf24b4dbdb3df8c15f6f85516c9a8eb870616eb2ea91a5d"
+    },
+    {
+      "path": "runs/stall_ownership_v1_candidate_dm3_2.log",
+      "sha256": "99626fd6661d5194d208924d5445f02ad79fe5a468670c944b6e224ed152cc14"
+    },
+    {
+      "path": "runs/stall_ownership_v1_control_dm3_3.log",
+      "sha256": "ac58c9ae8e2f62329c2fe5f2dc1e6d41cc750eaee595a926bd866a43776e2122"
+    },
+    {
+      "path": "runs/stall_ownership_v1_candidate_dm3_3.log",
+      "sha256": "6e226c74cc0e2e97d28720ca39226103456f943ca12a2952d4d91de5c4e358d8"
+    },
+    {
+      "path": "runs/stall_ownership_v1_control_e1m6_1.log",
+      "sha256": "9a3f26001f2f1ebac520f8132c18fa2c233018c9fe3e87a26f73b2f3a210e624"
+    },
+    {
+      "path": "runs/stall_ownership_v1_candidate_e1m6_1.log",
+      "sha256": "d69dbb9f38533d0173991e20a8164b02c9096ca72a911c63a875df1e0a6e8b10"
+    },
+    {
+      "path": "runs/stall_ownership_v1_control_e1m6_2.log",
+      "sha256": "004dffa3434bf690ff8a29a6f76682cb935b92140d3272cf184e51697c36d825"
+    },
+    {
+      "path": "runs/stall_ownership_v1_candidate_e1m6_2.log",
+      "sha256": "82eb667e9dde42057b32c8d1a36e01140329ce8fb110a9a11b6aaed57320fc5e"
+    },
+    {
+      "path": "runs/stall_ownership_v1_control_e1m6_3.log",
+      "sha256": "19b4619d8c72707a2deb3f4c71074eee04985e3b9bbd511cc5fd0e7f6e9d5185"
+    },
+    {
+      "path": "runs/stall_ownership_v1_candidate_e1m6_3.log",
+      "sha256": "14a76fdfec1a8dd981801cee0524bede8ea79fba0f2155c27ee9419fc4709692"
+    },
+    {
+      "path": "runs/stall_ownership_v1_decision_dm3_played.log",
+      "sha256": "425941aa86162a952cafe69c0f44980ad0e44f72d0b5d90d3a105d13e2b0724d"
+    },
+    {
+      "path": "runs/stall_ownership_v1_decision_e1m6_slow.log",
+      "sha256": "ea26d72acff745a32313bad6dae866d8783108caa6cc83f08e9a8b98a1db9d42"
+    },
+    {
+      "path": "runs/stall_ownership_v1_decision_control.log",
+      "sha256": "607567464e7d09b414589ad56717cb15b3eff4653caf73b5e2759c6dd35731cd"
+    },
+    {
+      "path": "runs/stall-ownership-v1.dm3.gate.txt",
+      "sha256": "125b92bcddb31d583830b3de5eef87053e2729d31364d807553da63d26d39eca"
+    },
+    {
+      "path": "runs/stall-ownership-v1.e1m6.gate.txt",
+      "sha256": "ba396b75fd0ef1c8e35633884b264279314fc05c06edecee67fc4229667ee34c"
+    },
+    {
+      "path": "runs/stall-ownership-v1.source.patch",
+      "sha256": "cc6a2dc29f45f10249a79e9d0cabd99599f71a519e4f7dccdb2010ca37fdda19"
+    },
+    {
+      "path": "runs/stall_ownership_v1_plan_dm2.log",
+      "sha256": "98e7d0db5cffa11fa362347e36c1491b29eff121592215233bb4579acee09c44"
+    },
+    {
+      "path": "runs/stall_ownership_v1_plan_dm4.log",
+      "sha256": "6cd58ce777a7f49565c8e204869407034a2174ecd0432f6918ece5b3342e63b8"
+    }
+  ],
+  "limitations": [
+    "Three tapes per arm on two maps approve native stall parity, not improvement.",
+    "Secondary summary flags: dm3 frag spread and e1m6 aggregate engagements. Per-band median engagements remain in band.",
+    "No candidate freezes, under-fire freezes or lava deaths. One control freeze is retained.",
+    "Decision fixture positions are prescribed inputs, not physical wedge reproductions.",
+    "The invalid initial pair from the old launcher is excluded and retained in startup-skill-v1.results.json.",
+    "Old plan evidence guards fail under optimized Python; independent issue 728 tracks that defect.",
+    "No installed program or historical tape changed."
+  ]
+}

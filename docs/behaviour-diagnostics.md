@@ -321,13 +321,18 @@ one epoch mark per bot slot. Useful distance reduction (12 units, accumulated)
 or a waypoint not previously reached during this attempt clears failure
 history and renews the ordinary 20-second progress deadline. Detours cannot
 increase the best-distance reference. Goal changes and new lives start fresh. Rebuilding a
-route or moving sideways does not erase a failed attempt. Combat, tactical
-ownership and existing door/mover/typed-link handling reset or pause this
-navigation evidence. Waiting without failed recovery attempts remains valid.
+route or moving sideways does not erase a failed attempt. The stall window
+uses one ownership predicate for observation and detection: combat, explicit
+lift waits, lift hops and the held-gait tail pause both. Other typed flags and
+door ownership pause only while the actor moves at least 12 units in that
+window. A moving orbit within the pending-item controller's 150-unit horizontal
+and 72-unit vertical bounds also clears isolated failure history. Its ordinary
+deadline is unchanged, and stationary camps still reach the two-failure bailout.
+Waiting without failed recovery attempts remains valid.
 
 Two failed attempts still use the existing bailout and per-bot goal shelf;
-the ordinary utility selector chooses the alternative. There is no authored
-escape path, map/item-class rule or nearby-item radius in the helper. This is
+the ordinary utility selector chooses the alternative. The progress recognizer
+uses no authored escape path or map/item-class exception. This is
 navigation-plan evidence. Revisiting a two-node or longer waypoint cycle no
 longer renews the deadline. A failed co-op FETCH rests for 20 seconds after
 route failure, repeated stalls or expiry, retaining its stack request. The
@@ -335,6 +340,24 @@ rest belongs to that bot and subject; a different request and another bot
 remain eligible. Retrying starts a fresh deadline. Combat and the external
 fixed-task tool retain their existing deadline ownership. This development
 change has not been installed.
+
+`tools/verify_stall_ownership.py` copies the production stall decision block
+into a private fifteen-case component fixture. It checks stationary typed
+flags, moving actions, explicit waits, camp hitches, a genuinely stationary
+camp, claim/search cleanup and the unchanged camp deadline. These prescribed
+inputs prove decisions, not a physical wedge or an ordinary gameplay result.
+The ordinary dm3/e1m6 comparison is retained separately. The first pair was
+invalidated by #726's initial-skill mismatch and is excluded from the corrected
+fixed cohort.
+
+The corrected fixed cohort has three 30-second tapes per arm on each of dm3
+and e1m6, with actual initial skill 2 verified. Both native `stall_parity`
+cards approve parity and demonstrate no improvement. Stall medians are 1 to 3
+on dm3 and 6 to 6 on e1m6, within the native control bands. dm3 frag spread
+and e1m6 aggregate engagements flag in the summary. No candidate has a freeze,
+under-fire freeze or lava death. These bounded results are not a human-play
+verdict. Evidence and unchanged native cards are in
+`runs/stall-ownership-v1.results.json`.
 
 `tools/verify_plan_progress.py` builds owned source/asset copies and runs only
 through the source-authoritative native lab. Its fixed default schedule covers

@@ -1,0 +1,294 @@
+LOG started on: 11/02/2026 09:02:56 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\backups\stall_final_plan_contracts_20261102\base'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm2
+Clearing memory
+Programs occupy 1125K.
+trying to open external vis file
+maps/dm2.vis not found, trying argus.vis
+external vis not found
+ARGUS slots 8
+BHVRPL begin plan_fixture
+ARGUS worldspawn reached
+ARGNAV 215 nodes, 1046 links
+0 entities inhibited
+ARGUS init on dm2
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '2176.0 -2176.0  84.0' spd 0 yaw 270 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '2704.0 -2048.0 128.0' spd 0 yaw 270 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '2576.0 -1328.0  24.0' spd 0 yaw 270 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGEVT Romero engage Joe Rogan
+TACTICCHECK Romero t   1.5 stage evaluated
+TACTICCHECK Romero t   1.5 stage visible
+TACTICCHECK Romero t   1.5 stage loadout
+ARGUS Romero threatmove range 2
+ARGEVT Romero grab weapon_supershotgun
+ARGLOG Joe Rogan t   1.7 pos '2204.0 -2313.9  88.0' spd 320.6 yaw 270 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '2710.0 -2192.8 120.0' spd 322.0 yaw 207.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '2578.5 -1472.4  24.0' spd 320 yaw 270 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan engage Romero
+ARGUS Joe Rogan threatmove range 2
+ARGUS difficulty Romero t   2.0 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+PLANFIX begin dm2
+ARGEVT Romero stall
+PLANFIX check sideways_retains_failure 1
+ARGEVT Romero stall
+PLANFIX check failed_plan_released 1
+ARGEVT Romero stall
+PLANFIX check small_gain_not_success 1
+PLANFIX check partial_gain_accumulates 1
+PLANFIX check useful_progress_resets 1
+ARGEVT Romero stall
+ARGEVT Romero stall
+PLANFIX check new_goal_fresh_attempt 1
+ARGEVT Romero stall
+PLANFIX check route_rebuild_not_success 1
+PLANFIX check reached_waypoint_counts 1
+PLANFIX check same_waypoint_not_new_evidence 1
+ARGEVT Romero stall
+PLANFIX check combat_ownership_pauses 1
+ARGEVT Romero stall
+PLANFIX check resume_has_fresh_attempt 1
+ARGEVT Romero stall
+PLANFIX check mover_wait_not_failure 1
+ARGEVT Romero stall
+PLANFIX check typed_link_pause 1
+PLANFIX check healthy_wait_no_timeout 1
+ARGEVT Romero stall
+ARGEVT Romero stall
+PLANFIX check blocked_wait_reconsiders 1
+ARGEVT Romero stall
+ARGUS difficulty Romero t   2.0 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero stall
+PLANFIX check new_life_fresh_attempt 1
+ARGEVT Romero stall
+ARGEVT Romero stall
+PLANFIX check real_goal_failure_released 1
+TACFIX sample   2.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   2.2 pos '2726.7 -2297.6 120.0' spd 0 yaw 188.9 mode 0 st 16 gl 0 hp 100 frg 0
+TACFIX sample   2.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   2.7 pos '2726.7 -2297.6 120.0' spd 0 yaw 188.9 mode 0 st 16 gl 0 hp 100 frg 0
+TACFIX sample   2.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   2.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   3.2 pos '2726.7 -2297.6 120.0' spd 0 yaw 188.9 mode 0 st 16 gl 0 hp 100 frg 0
+TACFIX sample   3.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+ARGLOG Romero t   3.7 pos '2726.7 -2297.6 120.0' spd 0 yaw 188.9 mode 0 st 16 gl 0 hp 100 frg 0
+TACFIX sample   3.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   3.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+ARGEVT Romero goal item_armorInv
+ARGEVT Romero route 19 start '2721.0 -2327.0 120.0' goal '2369.0 -567.0  56.0'
+TACFIX sample   4.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+PLANFIX check alternative_selected 1
+PLANFIX alternative item_armorInv elapsed   2.2
+PLANFIX end checks 18 ok 1
+PLANFIX cleanup owned_engine_pending_stop
+TACFIX sample   4.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   4.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   5.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   6.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   7.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   8.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample 9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample   9.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.3 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.4 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.5 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.6 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.7 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.8 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  10.9 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  11.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  11.0 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  11.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  11.1 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'
+TACFIX sample  11.2 pos '  0.0   0.0   0.0' hidden 0 rockets 0 targethp 0 hp 0 state 0 launches 0 memory '  0.0   0.0   0.0' targetvel '  0.0   0.0   0.0'

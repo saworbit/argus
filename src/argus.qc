@@ -9058,6 +9058,29 @@ void(float fighting) Argus_LifeRouteVeto =
     }
 };
 
+// One ownership test serves both plan observation and stall detection.
+// Typed flags alone cannot turn a stationary wedge into a permanent pause.
+float(float fighting) Argus_StallPaused =
+{
+    local vector gp, to;
+    if (fighting || self.ar_liftwait || self.ar_hoplift) return TRUE;
+    if (time < self.ar_gaitquiet + 0.7) return TRUE;
+    if (vlen (self.origin - self.ar_lastpos) < 12) return FALSE;
+    if (self.ar_hoptrain || self.ar_hopjump || self.ar_hoprj
+        || self.ar_hopswim || self.ar_door != world) return TRUE;
+    // A moving orbit around a valid pending item satisfies the wait.
+    // Keep the controller's horizontal/vertical bounds and its deadline.
+    // A stationary camp still accumulates failed attempts and can bail out.
+    if (self.ar_mode == 1 && Argus_GoalOK (self.ar_goal)
+        && self.ar_goal.solid == SOLID_NOT)
+    {
+        gp = Argus_GoalPoint (self.ar_goal);
+        to = gp - self.origin; to_z = 0;
+        if (vlen (to) < 150 && fabs (gp_z - self.origin_z) < 72) return TRUE;
+    }
+    return FALSE;
+};
+
 // Progress is an outcome, not movement: a closer objective or a new
 // reached waypoint. Route rebuilds alone provide no successful evidence.
 void(float paused, entity reached) Argus_PlanObserve =
@@ -11148,12 +11171,9 @@ void() Argus_AI =
     if (time > self.ar_nextstall)
     {
         self.ar_nextstall = time + 0.7;
-        Argus_PlanObserve (fighting || self.ar_liftwait || self.ar_hoplift
-            || self.ar_hoptrain || self.ar_hopjump || self.ar_hoprj
-            || self.ar_hopswim || self.ar_door != world, world);
-        if (vlen (self.origin - self.ar_lastpos) < 12 && !fighting
-            && !self.ar_liftwait && !self.ar_hoplift
-            && time >= self.ar_gaitquiet + 0.7)
+        Argus_PlanObserve (Argus_StallPaused (fighting), world);
+        if (vlen (self.origin - self.ar_lastpos) < 12
+            && !Argus_StallPaused (fighting))
         {
             // A chosen hesitation is a designed wait, exactly like the
             // mover park above, and the detector has always skipped
@@ -11202,11 +11222,15 @@ void() Argus_AI =
             }
             else
             {
-                // Two consecutive stalls say this is a place problem rather
-                // than a missed frame. The next shopping flood routes around
+                // Two failures without useful progress say this is a place
+                // problem. The next shopping flood routes around
                 // it instead of choosing another item through the same cell.
                 if (!self.ar_pending && Argus_GoalOK (self.ar_goal))
                     Argus_AvoidAdd (self.origin, 144, 12);
+                // ReleaseClaim also clears the failed-goal shelf, so release
+                // the mutex before recording this attempt's cooldown.
+                if (self.ar_goal != world && self.ar_goal.claimed_by == self)
+                    ReleaseClaim (self.ar_goal);
                 if (Argus_GoalOK (self.ar_goal))
                 {
                     self.ar_goal.ar_claimer = self;
@@ -11214,6 +11238,16 @@ void() Argus_AI =
                 }
                 Argus_FetchRest (self.ar_goal);
                 Argus_PlanObserve (TRUE, world);
+                // Release the failed action with its goal. A queued search
+                // or armed hop must not survive into the wander/replan.
+                Argus_Nav_Abort (self);
+                self.ar_routegen = self.ar_routegen + 1;
+                self.ar_hopjump = 0; self.ar_hopspeed = 0;
+                self.ar_sprintstate = 0; self.ar_hoprj = 0;
+                self.ar_hopswim = 0; self.ar_hoptrain = 0;
+                self.ar_hopdoor = 0; self.ar_hopair = 0;
+                self.ar_door = world; self.ar_doorbtn = world;
+                self.ar_actionnode = world; self.ar_actiongoal = world;
                 self.ar_goal = world;
                 self.ar_node = world;
                 self.ar_pending = 0;

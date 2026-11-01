@@ -24,6 +24,7 @@ VARIANTS = {
     'mover': ('current',),
     'forecast': ('current',),
     'camera': ('current',),
+    'stall': ('current',),
     'attention': ('current',),
     'water': ('current',),
 }
@@ -44,7 +45,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'camera':
+    if family == 'stall':
+        from verify_stall_ownership import stage as stage_stall
+        stage_stall(ROOT, folder)
+    elif family == 'camera':
         from verify_camera_chase import stage as stage_camera
         stage_camera(ROOT, folder)
     elif family == 'forecast':
