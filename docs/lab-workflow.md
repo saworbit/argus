@@ -374,6 +374,19 @@ hash matches the earlier path-prefixed study algorithm. Whole-tree
 inputs and are separate identities. Historical receipts are retained verbatim.
 Native tactic reports label their older unprefixed MD5 as `legacy_source_md5`.
 
+The routing, recovery, mover, attention and water fixture drivers share
+`argus_fixture_harness`. Output must be a new strict child of `backups/`.
+Staging writes fixture edits as UTF-8 with LF and removes an incomplete copy
+on failure. Private game directories must be absent, including aliases;
+installed binaries in `game/argus`, `engine/argus` and `lq1` are checked on
+both success and failure. Completed private assets remain as evidence.
+Each fixture reads its exact named tape and requires one expected map init,
+no engine errors and one measured cadence marker. These checks remain active
+under `python -O`. Physical outcome labels and controls are unchanged.
+Default ports are mover 26003, recovery 26004, water 26005, attention 26006
+and routing 26007. Routing always requests a named native match. Compilers
+must still run serially.
+
 The [broader map runner](map-intelligence.md) evaluates frozen source arms on
 eight maps outside dm2/dm4. It retains native briefs, named tapes, source and
 binary identities, and refuses comparisons across measured cadence classes.

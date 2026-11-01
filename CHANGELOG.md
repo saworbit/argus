@@ -309,6 +309,9 @@ passing botmatch does not establish better human play.
   restores, preflight restores with rollback, and trust fresh preview receipts
   instead of printed path spelling, with boundary help kept within the tool
   schema budget (#692, #684, #661, #680).
+- Share private fixture staging, protected installs, named single-map tape
+  reads and measured cadence checks across study runners (#685).
+
 - Use one QC/SRC identity in new Python receipts, preserve existing source
   hash ordering, and distinguish whole-tree audits and native legacy MD5
   identities from the shared `source_sha256` field (#687).

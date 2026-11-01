@@ -2,6 +2,7 @@
 import contextlib
 import hashlib
 import io
+import json
 import os
 import shutil
 from pathlib import Path
@@ -14,6 +15,7 @@ from unittest.mock import patch
 import run_behaviour_equivalence as native
 import run_map_intelligence as maps
 from argus_source import source_identity
+import argus_fixture_harness as fixtures
 
 
 class ExecutableContract(unittest.TestCase):
@@ -145,6 +147,184 @@ class SourceContract(unittest.TestCase):
             digest.update(b'\0')
             digest.update(path.read_bytes())
         self.assertEqual(source_identity(src), digest.hexdigest())
+
+
+class FixtureContract(unittest.TestCase):
+    def test_every_runner_refuses_the_absent_backups_root_itself(self):
+        import verify_freeze_recovery, verify_mover_transfer, verify_target_attention
+        import verify_water_route, verify_route_distance
+        modules = (verify_freeze_recovery, verify_mover_transfer, verify_target_attention,
+                   verify_water_route, verify_route_distance, maps)
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for module in modules:
+                args = [module.__file__, '--output', str(root / 'backups'), '--prefix', 'unit']
+                with patch.object(module, 'ROOT', root), patch.object(sys, 'argv', args), \
+                     patch.object(module, 'Lab') as lab:
+                    with self.assertRaisesRegex(ValueError, 'strict child'): module.main()
+                lab.assert_not_called()
+                self.assertFalse((root / 'backups').exists())
+
+    def test_shared_stage_writes_lf_and_rolls_back_a_failed_copy(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            source = root / 'source'; source.mkdir()
+            (source / 'progs.src').write_bytes(b'argus.qc\r\nworld.qc\r\n')
+            (source / 'world.qc').write_bytes(b'Argus_FrameAll ();\r\n')
+            (source / 'argus.qc').write_text('bot')
+            output = fixtures.new_output(root / 'backups/staged', root=root, create=False)
+            fixtures.stage_fixture(root, output, source, fixtures={'fixture.qc': '// witness\n'},
+                                   frame_wrap='Fixture ();\n    Argus_FrameAll ();')
+            for name in ('progs.src', 'world.qc', 'fixture.qc'):
+                self.assertNotIn(b'\r\n', (output / 'src' / name).read_bytes())
+            self.assertEqual((output / 'src/progs.src').read_text().count('fixture.qc'), 1)
+            failed = root / 'backups/failed'
+            def partial_copy(src, dest):
+                dest.mkdir(); (dest / 'partial.qc').write_text('partial')
+                raise OSError('injected copy failure')
+            with patch.object(fixtures.shutil, 'copytree', side_effect=partial_copy):
+                with self.assertRaisesRegex(OSError, 'injected'):
+                    fixtures.stage_fixture(root, failed, source)
+            self.assertFalse(failed.exists())
+            self.assertEqual((source / 'argus.qc').read_text(), 'bot')
+
+    def test_named_tape_reader_never_uses_another_log(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); (root / 'runs').mkdir()
+            (root / 'runs/other.log').write_text('ARGUS init on dm4\n')
+            with self.assertRaises(FileNotFoundError): fixtures.read_tape(root, 'chosen', 'dm4')
+            path = root / 'runs/chosen.log'
+            for text in ('ARGUS init on dm4\nARGUS init on dm4\n',
+                         'ARGUS init on dm2\n', 'ARGUS init on dm4\nHost_Error broken\n'):
+                path.write_text(text)
+                with self.assertRaises(AssertionError): fixtures.read_tape(root, 'chosen', 'dm4')
+            path.write_bytes(b'ARGUS init on dm4\r\nretained\xff\r\n')
+            self.assertEqual(fixtures.read_tape(root, 'chosen', 'DM4')[0], path)
+
+    def test_cadence_checks_are_shared_at_both_played_profiles(self):
+        for marker in ('FRFIX', 'MVFIX', 'ATFIX', 'WRFIX', 'RDFIX'):
+            for rate, ms in ((.0139, 14), (.1, 100)):
+                text = f'{marker} begin dt_ms {ms}\n'
+                self.assertEqual(fixtures.frame_ms(text, marker, rate), ms)
+                with self.assertRaises(AssertionError): fixtures.frame_ms(text + text, marker, rate)
+            with self.assertRaises(AssertionError): fixtures.frame_ms(f'{marker} begin dt_ms 100\n', marker, .0139)
+
+    def test_private_game_checks_installs_on_success_and_failure(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for folder in ('game/argus', 'engine/argus', 'lq1'):
+                (root / folder).mkdir(parents=True)
+                (root / folder / 'progs.dat').write_bytes(b'shipped')
+            (root / 'game/argus/autoexec.cfg').write_text('max_edicts 600\n')
+            before = fixtures.installed_identity(root)
+            failure = RuntimeError('compile failed')
+            with self.assertRaises(RuntimeError) as reported:
+                with fixtures.private_game(root, 'failure', 'check'):
+                    raise failure
+            self.assertIs(reported.exception, failure)
+            self.assertEqual(fixtures.installed_identity(root), before)
+            with self.assertRaisesRegex(AssertionError, 'installed progs.dat changed'):
+                with fixtures.private_game(root, 'changed', 'check'):
+                    (root / 'engine/argus/progs.dat').write_bytes(b'external edit')
+            self.assertEqual((root / 'engine/argus/progs.dat').read_bytes(), b'external edit')
+            failure = RuntimeError('original failure')
+            with contextlib.redirect_stderr(io.StringIO()):
+                with self.assertRaises(RuntimeError) as reported:
+                    with fixtures.private_game(root, 'both', 'check'):
+                        (root / 'engine/argus/progs.dat').write_bytes(b'second external edit')
+                        raise failure
+            self.assertIs(reported.exception, failure)
+            self.assertTrue(any('installed progs.dat' in note for note in failure.__notes__))
+
+    def test_dangling_private_game_alias_is_refused_before_creation(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td); (root / 'engine').mkdir()
+            link, target = root / 'engine/check_alias', root / 'engine/argus'
+            if os.name == 'nt':
+                result = subprocess.run(['cmd', '/C', 'mklink', '/J', str(link), str(target)],
+                                        capture_output=True, text=True, timeout=5)
+                self.assertEqual(result.returncode, 0, result.stderr)
+            else:
+                link.symlink_to(target, target_is_directory=True)
+            with self.assertRaises(FileExistsError):
+                with fixtures.private_game(root, 'alias', 'check'): self.fail('alias entered')
+            self.assertFalse(target.exists())
+
+    def test_mover_main_uses_one_native_session_and_named_private_tapes(self):
+        import verify_mover_transfer as mover
+        from test_mover_transfer import receipt
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for folder in ('src', 'tools/fixtures', 'game/argus', 'engine/argus', 'lq1'):
+                (root / folder).mkdir(parents=True)
+            for folder in ('game/argus', 'engine/argus', 'lq1'):
+                (root / folder / 'progs.dat').write_bytes(b'shipped')
+            (root / 'game/argus/autoexec.cfg').write_text('max_edicts 600\n')
+            (root / 'src/progs.src').write_text('argus.qc\nworld.qc\n')
+            (root / 'src/argus.qc').write_text('bot')
+            (root / 'src/world.qc').write_text('Argus_FrameAll ();\n')
+            for name in ('e1m6', 'dm3'):
+                (root / f'src/argus_nav_{name}.qc.json').write_text('{}')
+            shutil.copy2(native.ROOT / 'tools/fixtures/mover_transfer.qc', root / 'tools/fixtures/mover_transfer.qc')
+            exe = root / 'lab'; exe.write_bytes(b'lab')
+            sessions, commands = [], []
+            class FakeLab:
+                def __init__(self, err, environment, **options):
+                    self.executable, self.environment = options['exe'], environment
+                    self.closed = False; sessions.append(self)
+                def call(self, tool, **args):
+                    if tool == 'compile_qc':
+                        require_install = args['install']
+                        if require_install: raise AssertionError('fixture installed')
+                        Path(self.environment['ARGUS_PROGS']).write_bytes(b'private build')
+                        return dict(ok=True)
+                    if tool == 'brief_run': return dict(events={})
+                    return {}
+                def close(self): self.closed = True
+            def cli(executable, command, map_name, seconds, name, *rest, **options):
+                commands.append((executable, map_name, name, rest))
+                runs = Path(options['environment']['ARGUS_RUNS'])
+                (runs / (name + '.log')).write_text(receipt().replace('on e1m6', 'on ' + map_name))
+                return subprocess.CompletedProcess([], 0, '{"ok":true}', '')
+            before = fixtures.installed_identity(root)
+            output = root / 'backups/job'
+            args = ['verify_mover_transfer.py', '--output', str(output), '--prefix', 'unit']
+            with patch.object(mover, 'ROOT', root), patch.object(mover, 'Lab', FakeLab), \
+                 patch.object(fixtures, 'lab_cli', side_effect=cli), \
+                 patch.dict(os.environ, ARGUS_LAB=str(exe)), patch.object(sys, 'argv', args), \
+                 contextlib.redirect_stdout(io.StringIO()):
+                mover.main()
+            rows = json.loads((output / 'receipt.json').read_text())
+            self.assertEqual(len(rows), 2)
+            self.assertTrue(sessions[0].closed)
+            self.assertTrue(all(c[0] == sessions[0].executable == exe for c in commands))
+            self.assertEqual({c[2] for c in commands}, {'unit_e1m6', 'unit_dm3'})
+            self.assertEqual(fixtures.installed_identity(root), before)
+    def test_route_output_refusal_precedes_staging_or_lab_start(self):
+        import verify_route_distance as route
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            for folder in ('src', 'tools/fixtures', 'game/argus', 'engine'):
+                (root / folder).mkdir(parents=True)
+            (root / 'src/progs.src').write_text('argus.qc\nworld.qc\n')
+            (root / 'src/world.qc').write_text('Argus_FrameAll ();\n')
+            (root / 'src/argus.qc').write_text('bot')
+            (root / 'tools/fixtures/route_distance.qc').write_text('fixture')
+            (root / 'game/argus/autoexec.cfg').write_text('max_edicts 600\n')
+            output = root / 'outside-backups'
+            args = ['verify_route_distance.py', '--output', str(output), '--prefix', 'private', '--compile-only']
+            with patch.object(route, 'ROOT', root), patch.object(sys, 'argv', args), \
+                 patch.object(route, 'Lab', side_effect=RuntimeError('must not start')) as lab:
+                with self.assertRaises(ValueError): route.main()
+            lab.assert_not_called()
+            self.assertFalse(output.exists())
+
+    def test_freeze_parser_refuses_a_second_map_init(self):
+        from verify_freeze_recovery import inspect_fixture
+        from test_freeze_recovery import receipt
+        tape = 'ARGUS init on dm4\nARGUS init on dm4\n' + receipt()
+        with self.assertRaisesRegex(AssertionError, 'map'):
+            inspect_fixture(tape, True, .0139)
 
 
 if __name__ == '__main__':
