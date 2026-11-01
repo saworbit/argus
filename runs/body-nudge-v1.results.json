@@ -1,0 +1,1842 @@
+{
+  "layout": "body-nudge-v1",
+  "status": "draft_held_for_dm4_combat_warning",
+  "protocol": {
+    "maps": [
+      "dm3",
+      "dm4",
+      "e1m6"
+    ],
+    "repeats": 3,
+    "seconds": 30,
+    "skill": 2,
+    "ticrate": 0.0139,
+    "primary": "stall_parity",
+    "stopping_rule": "Exactly three per arm on each map, alternating control/candidate. No outcome-selected extra repeats.",
+    "tree_head": "54d06c2218ac2cf04b5504ed3323dc173ddc3e14",
+    "tree_diff": "diff --git a/.gitattributes b/.gitattributes\nindex 4784a18..c397cbf 100644\n--- a/.gitattributes\n+++ b/.gitattributes\n@@ -30,6 +30,8 @@ runs/stall-ownership-v1.source.patch -whitespace\n runs/motion_observer_v2_*.log -text !eol -whitespace\n runs/ally_barrel_v1_*.log -text !eol -whitespace\n runs/ally-barrel-v1.source.patch -whitespace\n+runs/body_nudge_v1_*.log -text !eol -whitespace\n+runs/body-nudge-v1.source.patch -whitespace\n runs/motion-observer-v2.mutation.txt -text !eol -whitespace\n runs/motion-observer-v2.reference.json -text !eol -whitespace\n docs/mover-exit-prototype.patch -whitespace\ndiff --git a/.github/workflows/compile.yml b/.github/workflows/compile.yml\nindex 80f0341..21bcd73 100644\n--- a/.github/workflows/compile.yml\n+++ b/.github/workflows/compile.yml\n@@ -66,7 +66,7 @@ jobs:\n \n       - name: Compile maintained private fixtures\n         run: |\n-          for family in muzzle combat health button door plan offset freeze mover forecast camera stall motion ally attention water; do\n+          for family in muzzle combat health button door plan offset freeze mover forecast camera stall motion ally nudge attention water; do\n             python3 tools/compile_private_fixtures.py \\\n               --compiler \"$PWD/fteqw/engine/release/fteqcc\" \\\n               --family \"$family\" --output \"$RUNNER_TEMP/private-$family\"\ndiff --git a/.github/workflows/fast.yml b/.github/workflows/fast.yml\nindex a4727d4..2f1c154 100644\n--- a/.github/workflows/fast.yml\n+++ b/.github/workflows/fast.yml\n@@ -146,3 +146,4 @@ jobs:\n           python3 tools/test_stall_ownership.py\n           python3 tools/test_motion.py\n           python3 tools/test_ally_barrel.py\n+          python3 tools/test_body_nudge.py\ndiff --git a/CHANGELOG.md b/CHANGELOG.md\nindex fa46b96..0ab541a 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.\n \n ### Unreleased\n \n+- Ignore players on other floors when clearing body blocks and use engine\n+  collision for separation steps to prevent the dm3 lower-room entry pin\n+  ([#644](https://github.com/saworbit/argus/issues/644)).\n+\n - Check co-op allies along the limited barrel direction and disable speculative\n   rockets in co-op while respecting facing and muzzle-clearance gates\n   ([#655](https://github.com/saworbit/argus/issues/655)).\ndiff --git a/docs/behaviour-diagnostics.md b/docs/behaviour-diagnostics.md\nindex a9b5b61..5f7d116 100644\n--- a/docs/behaviour-diagnostics.md\n+++ b/docs/behaviour-diagnostics.md\n@@ -1125,6 +1125,32 @@ control, fixed checks on two maps and the frozen ordinary-match comparison.\n These checks establish direct-ray safety and bounded prefire, not complete\n shotgun-spread or splash immunity, nor a human-play assessment.\n \n+## Body separation and the dm3 lower-room pin\n+\n+Body-block handling now requires vertical overlap and separates nearby players\n+with `walkmove`, preserving engine hull collision. Players on another floor\n+cannot nudge the bot or trigger a phantom sidestep. A blocked separation step\n+stays put; ordinary steering, aiming and recovery keep their existing roles.\n+\n+The preserved #644 tape pins Joe at `335.1 125.9 -200`, targeting the nearby\n+`389 225 -200` waypoint while Carmack travels on the upper floor. A private\n+control starts at the valid neighbouring position `338.1 125.9 -200` and\n+places another player at `371.1 125.9 56`. Production body-block handling\n+nudges the bot into that exact recorded pin. The eleven-point clearance check\n+accepts the destination, but a real zero-step player-hull test refuses it.\n+This reproduces a concrete entry mechanism; the old sampled tape alone cannot\n+prove which instruction originally moved Joe there.\n+\n+The [physical and ordinary receipts](../runs/body-nudge-v1.results.json)\n+retain the unchanged control and both tick profiles. Checks cover the upper\n+floor, a same-height wall refusal, an allowed three-unit separation step,\n+an upper-floor shooter and existing axial/diagonal body overlaps. Separation\n+clears the square hull on an axis instead of leaving diagonal boxes overlapping.\n+Production routing then owns a continuing task.\n+The observer records task identity and frame displacement; a changed goal or\n+forced relocation cannot satisfy the route check. No recovery threshold,\n+navigation graph or statistical gate is changed.\n+\n ## Blind comparison of step 1a and shipped matches\n \n Four fixed 35-second recordings on dm2/dm4 at skill 1 supplied two consecutive\ndiff --git a/src/argus.qc b/src/argus.qc\nindex ee011fa..503ba93 100644\n--- a/src/argus.qc\n+++ b/src/argus.qc\n@@ -5517,12 +5517,12 @@ void() Argus_DodgeScan =\n     }\n };\n \n-// body-block clearance (#177): if within 48u of another client\n+// body-block clearance (#177): if within 48u of a vertically overlapping client\n // and the other is jumping or firing, sidestep first, shoot second\n void() Argus_BodyBlockCheck =\n {\n     local entity cl;\n-    local vector to, cand;\n+    local vector to, cand, step;\n     local float side;\n \n     cl = find (world, classname, \"player\");\n@@ -5532,36 +5532,34 @@ void() Argus_BodyBlockCheck =\n         {\n             to = self.origin - cl.origin;\n             to_z = 0;\n-            if (vlen (to) < 48)\n+            if (vlen (to) < 48 && fabs (self.origin_z - cl.origin_z) < 56)\n             {\n-                // Anti-embed nudge: if bounding boxes overlap (<36u),\n+                // Anti-embed nudge: if bodies are closer than 36u,\n                 // step the bot clear so the player is never stuck solid.\n                 //\n-                // TWO THINGS THIS USED TO GET WRONG (#267). to_z is\n-                // zeroed, so the gate is a horizontal test with no\n-                // bound on vertical separation, and the destination\n-                // used to be cl.origin + to, which inherits the OTHER\n-                // player's height: a bot on the dm4 walkway at z -232\n-                // directly above someone on the pit floor near z -380\n-                // read a horizontal distance near zero and warped 150\n-                // units down, and the one underneath warped up into\n-                // the walkway solid. Keep our own z. Then verify,\n-                // because setorigin does not collide and 36 units\n-                // along the separation vector goes through the wall in\n-                // any corridor, which is the common case in co-op\n-                // where the companion escorts through doorways. If the\n-                // spot does not fit we do not move at all and the\n-                // sidestep below resolves it against real collision.\n+                // Players on another floor do not block this body.\n+                // Keep our own height (#267), then let the engine test\n+                // the full hull at the separation step. The old point\n+                // samples allowed a sub-unit hull overlap at dm3's\n+                // lower-room wall, and setorigin turned that nudge into\n+                // a six-second pin (#644). A refused step stays put;\n+                // ordinary sidestepping and recovery remain in charge.\n                 if (vlen (to) < 36)\n                 {\n                     if (vlen (to) < 6)\n                         to = '32 0 0';\n                     else\n-                        to = normalize (to) * 36;\n+                    {\n+                        // Separate square hulls on an axis. A 36u radial\n+                        // gap leaves diagonal player boxes overlapping.\n+                        side = fabs (to_x);\n+                        if (fabs (to_y) > side) side = fabs (to_y);\n+                        to = to * (36 / side);\n+                    }\n                     cand = cl.origin + to;\n                     cand_z = self.origin_z;\n-                    if (Argus_BoxClear (cand))\n-                        setorigin (self, cand);\n+                    step = cand - self.origin;\n+                    walkmove (vectoyaw (step), vlen (step));\n                 }\n \n                 // other is jumping, actively firing, or human teammate in coop: clear the line\n@@ -9920,7 +9918,7 @@ void() Argus_AI =\n \n     Argus_LifeRouteVeto (fighting);\n \n-    // body-block clearance (#177): if within 48u of another client\n+    // body-block clearance (#177): if within 48u of a vertically overlapping client\n     // and the other is jumping or firing, sidestep first, shoot second\n     Argus_BodyBlockCheck ();\n \ndiff --git a/tools/argus_mcp/README.md b/tools/argus_mcp/README.md\nindex b9c2ebd..c1f1315 100644\n--- a/tools/argus_mcp/README.md\n+++ b/tools/argus_mcp/README.md\n@@ -954,6 +954,12 @@ slow profile. `--source` stages a frozen control and `--expect-failure` records\n its negative outcome. The maintained `ally` compile family also runs in CI.\n See the [firing limits](../../docs/behaviour-diagnostics.md#ally-barrel-and-speculative-shots).\n \n+`python tools/verify_body_nudge.py --output backups/<new-directory>\n+--prefix <new_prefix>` checks real player-hull separation and a continuing dm3\n+task. `--ticrate .1` selects the separate slow profile. `--source` and\n+`--expect-failure` retain an unchanged negative control. The `nudge` compile\n+family is included in CI. See the [entry mechanism and limits](../../docs/behaviour-diagnostics.md#body-separation-and-the-dm3-lower-room-pin).\n+\n Repeat current-source muzzle or active health/inventory boundary checks with\n `python tools/verify_private_fixtures.py muzzle --output backups/<new-directory> --prefix <new_prefix>`.\n Replace `muzzle` with `health` for the active health/inventory boundary checks.\ndiff --git a/tools/compile_private_fixtures.py b/tools/compile_private_fixtures.py\nindex 3381986..c33232c 100644\n--- a/tools/compile_private_fixtures.py\n+++ b/tools/compile_private_fixtures.py\n@@ -27,6 +27,7 @@ VARIANTS = {\n     'stall': ('current',),\n     'motion': ('current',),\n     'ally': ('current',),\n+    'nudge': ('current',),\n     'attention': ('current',),\n     'water': ('current',),\n }\n@@ -47,7 +48,10 @@ def stage(folder, family, variant):\n     \"\"\"Reuse native verifier staging, without configuration or engine startup.\"\"\"\n     # Import lazily: --help needs only Python's standard library.\n     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door\n-    if family == 'ally':\n+    if family == 'nudge':\n+        from verify_body_nudge import stage as stage_nudge\n+        stage_nudge(ROOT, folder)\n+    elif family == 'ally':\n         from verify_ally_barrel import stage as stage_ally\n         stage_ally(ROOT, folder)\n     elif family == 'stall':\ndiff --git a/tools/fixtures/health-inventory-step1b.json b/tools/fixtures/health-inventory-step1b.json\nindex 802f05e..3f17a9b 100644\n--- a/tools/fixtures/health-inventory-step1b.json\n+++ b/tools/fixtures/health-inventory-step1b.json\n@@ -4,8 +4,8 @@\n     \"Argus_Hunch\": \"c9f7573cd3449f47f8ac251970c3d6f030af9002b80563562f090a1d262fab7f\",\n     \"Argus_Perceive\": \"2dc63bea68194463ff86596a5ab9b185104897b82c6b60d9d50d4b21f9e697c5\"\n   },\n-  \"active_text_sha256\": \"7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d\",\n-  \"amendment_scope\": \"Reverse ally-barrel safety in memory, then reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.\",\n+  \"active_text_sha256\": \"b0c5d7dc73790e2230f84c760f5cdabd6d0c17d2fad7e1d297fc7d7f4927d409\",\n+  \"amendment_scope\": \"Reverse collision-checked body nudges in memory, then reverse ally-barrel safety in memory, then reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.\",\n   \"candidate_text_sha256\": \"359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38\",\n   \"parked_functions\": {\n     \"Argus_Combat\": \"1adaf68f727b69362db994c4093ff0b2e96f86a0c45ce87651688b37b383dcaf\",\n@@ -15,6 +15,7 @@\n   \"parked_text_sha256\": \"29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f\",\n   \"patch\": \"health-inventory-step1b.patch\",\n   \"production_amendments\": [\n+    \"body-nudge-reverse.patch\",\n     \"ally-barrel-reverse.patch\",\n     \"motion-observer-reverse.patch\",\n     \"stall-ownership-reverse.patch\",\n",
+    "cli_sha256": "2921a3635fee84e62922d46b6ebba4a593aa71ff6219b35859bc53a7eb8b5fdd",
+    "arms": {
+      "control": {
+        "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+        "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629"
+      },
+      "candidate": {
+        "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+        "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf"
+      }
+    },
+    "schedule": [
+      {
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 1
+      },
+      {
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 1
+      },
+      {
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 2
+      },
+      {
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 2
+      },
+      {
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 3
+      },
+      {
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 3
+      },
+      {
+        "map": "dm4",
+        "arm": "control",
+        "repeat": 1
+      },
+      {
+        "map": "dm4",
+        "arm": "candidate",
+        "repeat": 1
+      },
+      {
+        "map": "dm4",
+        "arm": "control",
+        "repeat": 2
+      },
+      {
+        "map": "dm4",
+        "arm": "candidate",
+        "repeat": 2
+      },
+      {
+        "map": "dm4",
+        "arm": "control",
+        "repeat": 3
+      },
+      {
+        "map": "dm4",
+        "arm": "candidate",
+        "repeat": 3
+      },
+      {
+        "map": "e1m6",
+        "arm": "control",
+        "repeat": 1
+      },
+      {
+        "map": "e1m6",
+        "arm": "candidate",
+        "repeat": 1
+      },
+      {
+        "map": "e1m6",
+        "arm": "control",
+        "repeat": 2
+      },
+      {
+        "map": "e1m6",
+        "arm": "candidate",
+        "repeat": 2
+      },
+      {
+        "map": "e1m6",
+        "arm": "control",
+        "repeat": 3
+      },
+      {
+        "map": "e1m6",
+        "arm": "candidate",
+        "repeat": 3
+      }
+    ]
+  },
+  "frozen_source_patch": "runs/body-nudge-v1.source.patch",
+  "physical": [
+    {
+      "map": "dm3",
+      "ticrate": 0.0139,
+      "failed_control": true,
+      "source_sha256": "62a04609e5043d0b97f71eb5751b452fc454529271301d3da0c9c57a6bd4a132",
+      "binary_sha256": "debf1d0a2b59b3a698a8a6425a34a37f7b73871480fb8a353a489eeb2d4d7346",
+      "raw_sha256": "f88f752b9910c6725a8821fd63386a08ca74471ea7df07e432d7d756cc882f73",
+      "raw": "runs/body_nudge_v1_physical_control.log",
+      "checks": 10,
+      "failures": [
+        "upper_floor",
+        "wall_refused",
+        "upper_fire",
+        "overlap_diagonal",
+        "route_complete",
+        "continuous_motion",
+        "task_preserved"
+      ],
+      "cases": [
+        [
+          "upper_floor",
+          "1",
+          "0",
+          "3",
+          "0"
+        ],
+        [
+          "wall_refused",
+          "1",
+          "0",
+          "3",
+          "0"
+        ],
+        [
+          "clear_step",
+          "1",
+          "1",
+          "3",
+          "0"
+        ],
+        [
+          "upper_fire",
+          "1",
+          "0",
+          "3",
+          "1"
+        ],
+        [
+          "overlap_axis",
+          "0",
+          "1",
+          "16",
+          "0"
+        ],
+        [
+          "overlap_diagonal",
+          "0",
+          "0",
+          "7.7",
+          "0"
+        ]
+      ],
+      "seconds": 9.4,
+      "frames": 614,
+      "frame_ms": 14.0,
+      "measured_fps": 65.2127659574468,
+      "position": [
+        655.6,
+        152.6,
+        -200.0
+      ],
+      "lost": true,
+      "discontinuous": true,
+      "rescues": 1
+    },
+    {
+      "map": "dm3",
+      "ticrate": 0.0139,
+      "failed_control": false,
+      "source_sha256": "0161e2ef77d655dbea3d869f7bd425d239e7e158b7f194cc47055432e02cfb16",
+      "binary_sha256": "bb4c3c3ac7e058e813834bd9ce3ea17ec64d509ed5c3c9658e2417ec6623ca15",
+      "raw_sha256": "c4beabcbefa3dddcbedfe972d38b44ed93e8e7538d557c5d3fe995878fa790a7",
+      "raw": "runs/body_nudge_v1_physical_dm3_played.log",
+      "checks": 10,
+      "failures": [],
+      "cases": [
+        [
+          "upper_floor",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "wall_refused",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "clear_step",
+          "1",
+          "1",
+          "3",
+          "0"
+        ],
+        [
+          "upper_fire",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "overlap_axis",
+          "0",
+          "1",
+          "16.0",
+          "0"
+        ],
+        [
+          "overlap_diagonal",
+          "0",
+          "1",
+          "22.6",
+          "0"
+        ]
+      ],
+      "seconds": 1.0,
+      "frames": 69,
+      "frame_ms": 14.0,
+      "measured_fps": 68.0,
+      "position": [
+        631.0,
+        182.5,
+        -200.0
+      ],
+      "lost": false,
+      "discontinuous": false,
+      "rescues": 0
+    },
+    {
+      "map": "dm3",
+      "ticrate": 0.1,
+      "failed_control": false,
+      "source_sha256": "0161e2ef77d655dbea3d869f7bd425d239e7e158b7f194cc47055432e02cfb16",
+      "binary_sha256": "bb4c3c3ac7e058e813834bd9ce3ea17ec64d509ed5c3c9658e2417ec6623ca15",
+      "raw_sha256": "f3af18717433da9aa7f520de33139f231f6cc36856bb32f8c340f69010bda095",
+      "raw": "runs/body_nudge_v1_physical_dm3_slow.log",
+      "checks": 10,
+      "failures": [],
+      "cases": [
+        [
+          "upper_floor",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "wall_refused",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "clear_step",
+          "1",
+          "1",
+          "3",
+          "0"
+        ],
+        [
+          "upper_fire",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "overlap_axis",
+          "0",
+          "1",
+          "16.0",
+          "0"
+        ],
+        [
+          "overlap_diagonal",
+          "0",
+          "1",
+          "22.6",
+          "0"
+        ]
+      ],
+      "seconds": 0.9,
+      "frames": 10,
+      "frame_ms": 100.0,
+      "measured_fps": 10.0,
+      "position": [
+        652.4,
+        185.9,
+        -200.0
+      ],
+      "lost": false,
+      "discontinuous": false,
+      "rescues": 0
+    }
+  ],
+  "ordinary": [
+    {
+      "map": "dm3",
+      "arm": "control",
+      "repeat": 1,
+      "raw": "runs/body_nudge_v1_control_dm3_1.log",
+      "raw_sha256": "7d36c61b680199585c9519b141707ff7d506380d1a548af6854c55d30d7f9e3e",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 7,
+        "all_frags_positive": false,
+        "avg_speed": 186.78465266135905,
+        "boards": 0,
+        "closest_approach": 149.50976556733676,
+        "confine_max_sec": 7.100000000000001,
+        "confine_note": "Carmack spent 7.1s inside a 220u box at 176 u/s around (-769, 669)",
+        "cover": 108,
+        "deaths": 2,
+        "duration_sec": 29.900000000000002,
+        "engages": 4,
+        "frags": 2,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 4,
+        "grabs": 2,
+        "hazards": 28,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5063583815028901,
+        "weapons": 5,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "candidate",
+      "repeat": 1,
+      "raw": "runs/body_nudge_v1_candidate_dm3_1.log",
+      "raw_sha256": "e7a12626d058e8ee7a98c2ec4fd541d48a163f2d72c327605a14da8913012bf7",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 2,
+        "all_frags_positive": false,
+        "avg_speed": 192.92959327040535,
+        "boards": 0,
+        "closest_approach": 261.5722844645433,
+        "confine_max_sec": 6.999999999999998,
+        "confine_note": "Romero spent 7.0s inside a 220u box at 148 u/s around (1595, 252)",
+        "cover": 115,
+        "deaths": 1,
+        "duration_sec": 29.8,
+        "engages": 2,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 0,
+        "hazards": 30,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 1,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5052023121387282,
+        "weapons": 2,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "control",
+      "repeat": 2,
+      "raw": "runs/body_nudge_v1_control_dm3_2.log",
+      "raw_sha256": "02dddd4628f262f4f82b7a2b43dca8959d8509209bdcd3d3067c63e064cd0479",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 3,
+        "all_frags_positive": false,
+        "avg_speed": 195.55252036948994,
+        "boards": 0,
+        "closest_approach": 109.34660488556563,
+        "confine_max_sec": 7.1000000000000005,
+        "confine_note": "Romero spent 7.1s inside a 220u box at 160 u/s around (1841, 480)",
+        "cover": 118,
+        "deaths": 0,
+        "duration_sec": 29.900000000000002,
+        "engages": 2,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 2,
+        "hazards": 27,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 0,
+        "routefails": 0,
+        "stalls": 2,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.506779661016949,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "candidate",
+      "repeat": 2,
+      "raw": "runs/body_nudge_v1_candidate_dm3_2.log",
+      "raw_sha256": "21db81bc6ddf1e19743c665c747908e05aef422ed11fd23d5aeb6a7ba9199872",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 8,
+        "all_frags_positive": false,
+        "avg_speed": 206.67689750126746,
+        "boards": 0,
+        "closest_approach": 105.25573618573003,
+        "confine_max_sec": 6.6000000000000005,
+        "confine_note": "Romero spent 6.6s inside a 220u box at 182 u/s around (1860, 480)",
+        "cover": 127,
+        "deaths": 3,
+        "duration_sec": 29.8,
+        "engages": 5,
+        "frags": 3,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 2,
+        "hazards": 27,
+        "kd_spread": 2,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 3,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5065868263473053,
+        "weapons": 6,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "control",
+      "repeat": 3,
+      "raw": "runs/body_nudge_v1_control_dm3_3.log",
+      "raw_sha256": "6898ab8c651b0d4f4d9c373b8dfd560e681dc5b7b8135a1ec93d485e35bdeefe",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 2,
+        "all_frags_positive": false,
+        "avg_speed": 182.18367539068996,
+        "boards": 0,
+        "closest_approach": 343.0274187291739,
+        "confine_max_sec": 6.600000000000001,
+        "confine_note": "Carmack spent 6.6s inside a 220u box at 264 u/s around (-424, 536)",
+        "cover": 89,
+        "deaths": 0,
+        "duration_sec": 29.8,
+        "engages": 2,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 1,
+        "hazards": 33,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 0,
+        "routefails": 0,
+        "stalls": 2,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627119,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm3",
+      "arm": "candidate",
+      "repeat": 3,
+      "raw": "runs/body_nudge_v1_candidate_dm3_3.log",
+      "raw_sha256": "8735a5063039133100be8150bb1682266a9d88c9902e3762bcab5d84646f3832",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 2,
+        "all_frags_positive": false,
+        "avg_speed": 188.7643211554719,
+        "boards": 0,
+        "closest_approach": 173.87978605921967,
+        "confine_max_sec": 9.100000000000001,
+        "confine_note": "Joe Rogan spent 9.1s inside a 220u box at 144 u/s around (1452, 19)",
+        "cover": 115,
+        "deaths": 0,
+        "duration_sec": 29.8,
+        "engages": 2,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 3,
+        "grabs": 0,
+        "hazards": 33,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 0,
+        "routefails": 1,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627119,
+        "weapons": 2,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lifts and swim-exit links are compiled in; remaining reach gap is directed (one-way drops), not dry islands",
+        "2 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "control",
+      "repeat": 1,
+      "raw": "runs/body_nudge_v1_control_dm4_1.log",
+      "raw_sha256": "db6434d6397e80728e0edab9305e883fda47451d51b79d32c9e582cc7b368235",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 10,
+        "all_frags_positive": true,
+        "avg_speed": 240.31770215044676,
+        "boards": 0,
+        "closest_approach": 26.908363012268158,
+        "confine_max_sec": 6.600000000000001,
+        "confine_note": "Carmack spent 6.6s inside a 220u box at 183 u/s around (435, -179)",
+        "cover": 112,
+        "deaths": 5,
+        "duration_sec": 30.1,
+        "engages": 16,
+        "frags": 5,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 5,
+        "grabs": 9,
+        "hazards": 58,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 5,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 1,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5056603773584906,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "known hotspot walkway_200_-900 (hazard, n=2)",
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "candidate",
+      "repeat": 1,
+      "raw": "runs/body_nudge_v1_candidate_dm4_1.log",
+      "raw_sha256": "2168057ac496648ce101f8867ad1ee2b6f7075bbd8f7a1bc76e9c1170d8729b3",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 20,
+        "all_frags_positive": false,
+        "avg_speed": 197.51556562309665,
+        "boards": 0,
+        "closest_approach": 34.6770817687994,
+        "confine_max_sec": 5.6000000000000005,
+        "confine_note": "Carmack spent 5.6s inside a 220u box at 266 u/s around (-47, -168)",
+        "cover": 106,
+        "deaths": 2,
+        "duration_sec": 29.900000000000002,
+        "engages": 9,
+        "frags": 2,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 9,
+        "hazards": 52,
+        "kd_spread": 2,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 2,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 2,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5058823529411763,
+        "weapons": 11,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "control",
+      "repeat": 2,
+      "raw": "runs/body_nudge_v1_control_dm4_2.log",
+      "raw_sha256": "0ab4864b20c9acde4fcbb4d5c418c6e34f8e824f8c866fc765637fb0a42dd381",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 17,
+        "all_frags_positive": true,
+        "avg_speed": 218.27888951141043,
+        "boards": 0,
+        "closest_approach": 125.0747776332223,
+        "cover": 106,
+        "deaths": 6,
+        "duration_sec": 29.900000000000002,
+        "engages": 19,
+        "frags": 6,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 3,
+        "grabs": 9,
+        "hazards": 48,
+        "kd_spread": 3,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 6,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 2,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5064516129032258,
+        "weapons": 8,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "candidate",
+      "repeat": 2,
+      "raw": "runs/body_nudge_v1_candidate_dm4_2.log",
+      "raw_sha256": "fc73004a628345b4108038d7954854b4a8015f42b9a4abf4bce24d7fcf61d960",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 9,
+        "all_frags_positive": false,
+        "avg_speed": 205.52296807197067,
+        "boards": 0,
+        "closest_approach": 138.66679487173562,
+        "confine_max_sec": 7.600000000000001,
+        "confine_note": "Romero spent 7.6s inside a 220u box at 161 u/s around (404, -108)",
+        "cover": 104,
+        "deaths": 1,
+        "duration_sec": 29.900000000000002,
+        "engages": 5,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 3,
+        "grabs": 5,
+        "hazards": 50,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5051724137931035,
+        "weapons": 4,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "control",
+      "repeat": 3,
+      "raw": "runs/body_nudge_v1_control_dm4_3.log",
+      "raw_sha256": "07aa9e6b08afe234b49a6ed92046c65a0288e00964fd9167d64e42e6d2d25418",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 22,
+        "all_frags_positive": false,
+        "avg_speed": 226.6506007086315,
+        "boards": 0,
+        "closest_approach": 41.69184572551327,
+        "confine_max_sec": 6.599999999999998,
+        "confine_note": "Romero spent 6.6s inside a 220u box at 277 u/s around (779, -256)",
+        "cover": 122,
+        "deaths": 6,
+        "duration_sec": 30.1,
+        "engages": 17,
+        "frags": 6,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 6,
+        "grabs": 19,
+        "hazards": 32,
+        "kd_spread": 5,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 6,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 1,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.505128205128205,
+        "weapons": 3,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "dm4",
+      "arm": "candidate",
+      "repeat": 3,
+      "raw": "runs/body_nudge_v1_candidate_dm4_3.log",
+      "raw_sha256": "6cb92b8b2fd94595ac95b262d1573496302e5303fe25ff1233dc855682093154",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 25,
+        "all_frags_positive": false,
+        "avg_speed": 216.47829195635268,
+        "boards": 0,
+        "closest_approach": 119.78263647123484,
+        "confine_max_sec": 9.599999999999998,
+        "confine_note": "Joe Rogan spent 9.6s inside a 220u box at 233 u/s around (1, 425)",
+        "cover": 102,
+        "deaths": 5,
+        "duration_sec": 30.1,
+        "engages": 8,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 6,
+        "hazards": 41,
+        "kd_spread": 1,
+        "lava_deaths": 2,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 3,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5055900621118012,
+        "weapons": 19,
+        "world_deaths": 2
+      },
+      "flags": [
+        "2 lava/slime death(s) (world killer, hull-0 contents)",
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "control",
+      "repeat": 1,
+      "raw": "runs/body_nudge_v1_control_e1m6_1.log",
+      "raw_sha256": "306fef6c9bf6daa29c066dc53292a0612e9a498f02fbb62f43093a81962529a1",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 1,
+        "acquisitions": 4,
+        "all_frags_positive": false,
+        "avg_speed": 153.57976133969666,
+        "boards": 2,
+        "closest_approach": 89.22471630663783,
+        "confine_max_sec": 10.100000000000001,
+        "confine_note": "Carmack spent 10.1s inside a 220u box at 288 u/s around (-90, 844)",
+        "cover": 77,
+        "deaths": 0,
+        "duration_sec": 29.8,
+        "engages": 4,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 4,
+        "hazards": 57,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 2,
+        "player_kills": 0,
+        "routefails": 3,
+        "stalls": 5,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5050847457627119,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "candidate",
+      "repeat": 1,
+      "raw": "runs/body_nudge_v1_candidate_e1m6_1.log",
+      "raw_sha256": "46342a2f2fe8468fa32d5b2afe6c3045ae2b4aa2701964deebba12f3b9029e08",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 3,
+        "acquisitions": 0,
+        "all_frags_positive": false,
+        "avg_speed": 134.58662235172454,
+        "boards": 2,
+        "closest_approach": 262.064057054759,
+        "confine_max_sec": 25.8,
+        "confine_note": "Romero spent 25.8s inside a 220u box at 146 u/s around (-171, 1240)",
+        "cover": 63,
+        "deaths": 0,
+        "duration_sec": 29.900000000000002,
+        "engages": 0,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 0,
+        "hazards": 57,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 2,
+        "player_kills": 0,
+        "routefails": 1,
+        "stalls": 9,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.506779661016949,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "control",
+      "repeat": 2,
+      "raw": "runs/body_nudge_v1_control_e1m6_2.log",
+      "raw_sha256": "c6a4ac5e93e5a9decc0eb157e1483a539f565647621cb561eade4eb34ee6f99c",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 2,
+        "acquisitions": 0,
+        "all_frags_positive": false,
+        "avg_speed": 166.57255262427282,
+        "boards": 1,
+        "closest_approach": 123.18705289112171,
+        "confine_max_sec": 9.599999999999998,
+        "confine_note": "Romero spent 9.6s inside a 220u box at 174 u/s around (-221, 1215)",
+        "cover": 88,
+        "deaths": 2,
+        "duration_sec": 30.1,
+        "engages": 4,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 0,
+        "hazards": 50,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 1,
+        "player_kills": 2,
+        "routefails": 3,
+        "stalls": 11,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5058823529411764,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "more routefails than goal completions",
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "candidate",
+      "repeat": 2,
+      "raw": "runs/body_nudge_v1_candidate_e1m6_2.log",
+      "raw_sha256": "fbec7672f428bfb6cb3ae4f318139c390a982bd6d4be8aa8d858c9376d3882a9",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 3,
+        "acquisitions": 0,
+        "all_frags_positive": false,
+        "avg_speed": 185.5165007270784,
+        "boards": 1,
+        "closest_approach": 128.1896251652216,
+        "confine_max_sec": 8.099999999999998,
+        "confine_note": "Romero spent 8.1s inside a 220u box at 146 u/s around (-168, 1226)",
+        "cover": 101,
+        "deaths": 2,
+        "duration_sec": 29.8,
+        "engages": 4,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 4,
+        "grabs": 0,
+        "hazards": 53,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 2,
+        "player_kills": 2,
+        "routefails": 0,
+        "stalls": 6,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5052023121387283,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "control",
+      "repeat": 3,
+      "raw": "runs/body_nudge_v1_control_e1m6_3.log",
+      "raw_sha256": "51763941be9b322197415b0348f9569ab7e0faee8e305120e16921d732125508",
+      "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+      "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+      "totals": {
+        "abandons": 3,
+        "acquisitions": 2,
+        "all_frags_positive": false,
+        "avg_speed": 180.1981992833412,
+        "boards": 0,
+        "closest_approach": 99.38053129260278,
+        "confine_max_sec": 16.599999999999998,
+        "confine_note": "Romero spent 16.6s inside a 220u box at 154 u/s around (-199, 1221)",
+        "cover": 90,
+        "deaths": 1,
+        "duration_sec": 29.8,
+        "engages": 6,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 2,
+        "hazards": 48,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 1,
+        "stalls": 4,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5052023121387283,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "bots are goaling elevated quad; look for ARGEVT rjump, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    },
+    {
+      "map": "e1m6",
+      "arm": "candidate",
+      "repeat": 3,
+      "raw": "runs/body_nudge_v1_candidate_e1m6_3.log",
+      "raw_sha256": "9865e53ea5af93bf0e341a3a513d8d3753f9849c3ebb55dc0ef90cb12334c6c8",
+      "source_sha256": "029ba385420bfcb11019eb553edddc89fcadff4e58463310bec93d60354e5c7a",
+      "binary_sha256": "8f2eeab7aa68fefe7b2ecd00d09dd7b9385191809c0d59a8d7963bc7b64370cf",
+      "totals": {
+        "abandons": 1,
+        "acquisitions": 1,
+        "all_frags_positive": false,
+        "avg_speed": 161.09162327386764,
+        "boards": 1,
+        "closest_approach": 85.53718489639463,
+        "confine_max_sec": 13.7,
+        "confine_note": "Romero spent 13.7s inside a 220u box at 153 u/s around (-172, 1230)",
+        "cover": 82,
+        "deaths": 1,
+        "duration_sec": 29.8,
+        "engages": 2,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 1,
+        "hazards": 53,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 2,
+        "player_kills": 1,
+        "routefails": 1,
+        "stalls": 13,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5057803468208093,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop",
+        "a control item is off the waypoint graph; bots will routefail or LOS-seek it",
+        "7 strongly-connected components (one-way drops/hops split return paths)"
+      ]
+    }
+  ],
+  "gate_cards": {
+    "dm3": "runs/body-nudge-v1.dm3.gate.txt",
+    "dm4": "runs/body-nudge-v1.dm4.gate.txt",
+    "e1m6": "runs/body-nudge-v1.e1m6.gate.txt"
+  },
+  "investigation": [
+    {
+      "source_sha256": "746cc9c820d4d7ed212c3bb96361ee0593f7a62ec643879a18d4a53c1a46a9d1",
+      "binary_sha256": "9dea0a6aa1f948fd70810564383bcbf5f9ff60e5f689d9176e48a2373ca71de5",
+      "raw_sha256": "c88a60e2d285ed53dd0f0f81acecf5638008e5d8b3c460b4e45e17a2068b6b44",
+      "raw": "runs/body_nudge_v1_investigation_dm3_pin_control_20261102_v2.log",
+      "tree_head": "5aa57ab92e421bde6d18abe1cd87dde0d35b722f"
+    },
+    {
+      "source_sha256": "d4ed2f726e1bdd9cba30714b6301451f20631b84aca09d684d750690edb62411",
+      "binary_sha256": "ccc3dcf223cd84cd55d5cc7a1eaa8c3f8e25e05c80c2314d2ebae668536a4fe7",
+      "raw_sha256": "0718bf70f5963e20fd0736fe1cefab8cf7437f3f95a23af5327349e813114025",
+      "raw": "runs/body_nudge_v1_investigation_dm3_nudge_upper_control_20261102.log",
+      "tree_head": "54d06c2218ac2cf04b5504ed3323dc173ddc3e14"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "runs/body_nudge_v1_control_dm3_1.log",
+      "sha256": "7d36c61b680199585c9519b141707ff7d506380d1a548af6854c55d30d7f9e3e"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_dm3_1.log",
+      "sha256": "e7a12626d058e8ee7a98c2ec4fd541d48a163f2d72c327605a14da8913012bf7"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_dm3_2.log",
+      "sha256": "02dddd4628f262f4f82b7a2b43dca8959d8509209bdcd3d3067c63e064cd0479"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_dm3_2.log",
+      "sha256": "21db81bc6ddf1e19743c665c747908e05aef422ed11fd23d5aeb6a7ba9199872"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_dm3_3.log",
+      "sha256": "6898ab8c651b0d4f4d9c373b8dfd560e681dc5b7b8135a1ec93d485e35bdeefe"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_dm3_3.log",
+      "sha256": "8735a5063039133100be8150bb1682266a9d88c9902e3762bcab5d84646f3832"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_dm4_1.log",
+      "sha256": "db6434d6397e80728e0edab9305e883fda47451d51b79d32c9e582cc7b368235"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_dm4_1.log",
+      "sha256": "2168057ac496648ce101f8867ad1ee2b6f7075bbd8f7a1bc76e9c1170d8729b3"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_dm4_2.log",
+      "sha256": "0ab4864b20c9acde4fcbb4d5c418c6e34f8e824f8c866fc765637fb0a42dd381"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_dm4_2.log",
+      "sha256": "fc73004a628345b4108038d7954854b4a8015f42b9a4abf4bce24d7fcf61d960"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_dm4_3.log",
+      "sha256": "07aa9e6b08afe234b49a6ed92046c65a0288e00964fd9167d64e42e6d2d25418"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_dm4_3.log",
+      "sha256": "6cb92b8b2fd94595ac95b262d1573496302e5303fe25ff1233dc855682093154"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_e1m6_1.log",
+      "sha256": "306fef6c9bf6daa29c066dc53292a0612e9a498f02fbb62f43093a81962529a1"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_e1m6_1.log",
+      "sha256": "46342a2f2fe8468fa32d5b2afe6c3045ae2b4aa2701964deebba12f3b9029e08"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_e1m6_2.log",
+      "sha256": "c6a4ac5e93e5a9decc0eb157e1483a539f565647621cb561eade4eb34ee6f99c"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_e1m6_2.log",
+      "sha256": "fbec7672f428bfb6cb3ae4f318139c390a982bd6d4be8aa8d858c9376d3882a9"
+    },
+    {
+      "path": "runs/body_nudge_v1_control_e1m6_3.log",
+      "sha256": "51763941be9b322197415b0348f9569ab7e0faee8e305120e16921d732125508"
+    },
+    {
+      "path": "runs/body_nudge_v1_candidate_e1m6_3.log",
+      "sha256": "9865e53ea5af93bf0e341a3a513d8d3753f9849c3ebb55dc0ef90cb12334c6c8"
+    },
+    {
+      "path": "runs/body_nudge_v1_physical_control.log",
+      "sha256": "f88f752b9910c6725a8821fd63386a08ca74471ea7df07e432d7d756cc882f73"
+    },
+    {
+      "path": "runs/body_nudge_v1_physical_dm3_played.log",
+      "sha256": "c4beabcbefa3dddcbedfe972d38b44ed93e8e7538d557c5d3fe995878fa790a7"
+    },
+    {
+      "path": "runs/body_nudge_v1_physical_dm3_slow.log",
+      "sha256": "f3af18717433da9aa7f520de33139f231f6cc36856bb32f8c340f69010bda095"
+    },
+    {
+      "path": "runs/body-nudge-v1.dm3.gate.txt",
+      "sha256": "286d3755b85ceec866f8a7a617d78b147db7e0e362d265ded3dcc835baf54c3f"
+    },
+    {
+      "path": "runs/body-nudge-v1.dm4.gate.txt",
+      "sha256": "fb5e7eabaad6df68396e62b7948bc3702d33a7790a3624565c880ee8ad72fe53"
+    },
+    {
+      "path": "runs/body-nudge-v1.e1m6.gate.txt",
+      "sha256": "d3feccfb07b73b19a0ed7f2440f150a8c67efae8074f2f3e86bdb7367078a9e5"
+    },
+    {
+      "path": "runs/body-nudge-v1.source.patch",
+      "sha256": "1b9e2daef47c6eb9ee36be56b002d349d97475ef6ecb4b0c816b7fbcfe59db5b"
+    },
+    {
+      "path": "runs/body_nudge_v1_investigation_dm3_pin_control_20261102_v2.log",
+      "sha256": "c88a60e2d285ed53dd0f0f81acecf5638008e5d8b3c460b4e45e17a2068b6b44"
+    },
+    {
+      "path": "runs/body_nudge_v1_investigation_dm3_nudge_upper_control_20261102.log",
+      "sha256": "0718bf70f5963e20fd0736fe1cefab8cf7437f3f95a23af5327349e813114025"
+    },
+    {
+      "path": "runs/body_nudge_v1_superseded_nudge_candidate_dm3_1_20261102.log",
+      "sha256": "e4a6c05e1a2d22c8f31f2cfa54e1a5a88cb8c71f184d1ebb717656e07423b244"
+    },
+    {
+      "path": "runs/body_nudge_v1_superseded_nudge_candidate_dm3_2_20261102.log",
+      "sha256": "fa3063a139f9ee0fa91de8b7d5e3a3f7125504499c4ce8e6d4ea095854c4d549"
+    },
+    {
+      "path": "runs/body_nudge_v1_superseded_nudge_candidate_dm3_3_20261102.log",
+      "sha256": "de7ec2072088619183e015eaeb2f3448970ad10e7815570eb70ea1951f6a8c8d"
+    },
+    {
+      "path": "runs/body_nudge_v1_superseded_nudge_control_dm3_1_20261102.log",
+      "sha256": "515399c1368e88feeb49511df4472a1127f59de3b45541c7cb9767a24f1d17df"
+    },
+    {
+      "path": "runs/body_nudge_v1_superseded_nudge_control_dm3_2_20261102.log",
+      "sha256": "76bb29a2d8ec90fcab189604afff62d6da1823a1cb9d04ba2fda0badef1678ce"
+    },
+    {
+      "path": "runs/body_nudge_v1_superseded_nudge_control_dm3_3_20261102.log",
+      "sha256": "0b98e4ff7b5154c220a17b34720923ffff954ee58829d816593be75c837aec00"
+    },
+    {
+      "path": "runs/body_nudge_v1_superseded_nudge_control_dm4_1_20261102.log",
+      "sha256": "539b1011b3b855bd24738328d1bf46257da3cf8c15f02283f9cb12c791549fbb"
+    },
+    {
+      "path": "runs/body_nudge_v1_rejected_overlap.log",
+      "sha256": "11067b63b232d4df857a0a7a1717de9f7c958f39aa1c020612b07865ad239655"
+    }
+  ],
+  "superseded": {
+    "protocol": {
+      "maps": [
+        "dm3",
+        "dm4",
+        "e1m6"
+      ],
+      "repeats": 3,
+      "seconds": 30,
+      "skill": 2,
+      "ticrate": 0.0139,
+      "primary": "stall_parity",
+      "stopping_rule": "Exactly three per arm on each map, alternating control/candidate. No outcome-selected extra repeats.",
+      "tree_head": "54d06c2218ac2cf04b5504ed3323dc173ddc3e14",
+      "tree_diff": "diff --git a/.gitattributes b/.gitattributes\nindex 4784a18..c397cbf 100644\n--- a/.gitattributes\n+++ b/.gitattributes\n@@ -30,6 +30,8 @@ runs/stall-ownership-v1.source.patch -whitespace\n runs/motion_observer_v2_*.log -text !eol -whitespace\n runs/ally_barrel_v1_*.log -text !eol -whitespace\n runs/ally-barrel-v1.source.patch -whitespace\n+runs/body_nudge_v1_*.log -text !eol -whitespace\n+runs/body-nudge-v1.source.patch -whitespace\n runs/motion-observer-v2.mutation.txt -text !eol -whitespace\n runs/motion-observer-v2.reference.json -text !eol -whitespace\n docs/mover-exit-prototype.patch -whitespace\ndiff --git a/.github/workflows/compile.yml b/.github/workflows/compile.yml\nindex 80f0341..21bcd73 100644\n--- a/.github/workflows/compile.yml\n+++ b/.github/workflows/compile.yml\n@@ -66,7 +66,7 @@ jobs:\n \n       - name: Compile maintained private fixtures\n         run: |\n-          for family in muzzle combat health button door plan offset freeze mover forecast camera stall motion ally attention water; do\n+          for family in muzzle combat health button door plan offset freeze mover forecast camera stall motion ally nudge attention water; do\n             python3 tools/compile_private_fixtures.py \\\n               --compiler \"$PWD/fteqw/engine/release/fteqcc\" \\\n               --family \"$family\" --output \"$RUNNER_TEMP/private-$family\"\ndiff --git a/.github/workflows/fast.yml b/.github/workflows/fast.yml\nindex a4727d4..2f1c154 100644\n--- a/.github/workflows/fast.yml\n+++ b/.github/workflows/fast.yml\n@@ -146,3 +146,4 @@ jobs:\n           python3 tools/test_stall_ownership.py\n           python3 tools/test_motion.py\n           python3 tools/test_ally_barrel.py\n+          python3 tools/test_body_nudge.py\ndiff --git a/CHANGELOG.md b/CHANGELOG.md\nindex fa46b96..0ab541a 100644\n--- a/CHANGELOG.md\n+++ b/CHANGELOG.md\n@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.\n \n ### Unreleased\n \n+- Ignore players on other floors when clearing body blocks and use engine\n+  collision for separation steps to prevent the dm3 lower-room entry pin\n+  ([#644](https://github.com/saworbit/argus/issues/644)).\n+\n - Check co-op allies along the limited barrel direction and disable speculative\n   rockets in co-op while respecting facing and muzzle-clearance gates\n   ([#655](https://github.com/saworbit/argus/issues/655)).\ndiff --git a/src/argus.qc b/src/argus.qc\nindex ee011fa..fe034d2 100644\n--- a/src/argus.qc\n+++ b/src/argus.qc\n@@ -5517,12 +5517,12 @@ void() Argus_DodgeScan =\n     }\n };\n \n-// body-block clearance (#177): if within 48u of another client\n+// body-block clearance (#177): if within 48u of a vertically overlapping client\n // and the other is jumping or firing, sidestep first, shoot second\n void() Argus_BodyBlockCheck =\n {\n     local entity cl;\n-    local vector to, cand;\n+    local vector to, cand, step;\n     local float side;\n \n     cl = find (world, classname, \"player\");\n@@ -5532,26 +5532,18 @@ void() Argus_BodyBlockCheck =\n         {\n             to = self.origin - cl.origin;\n             to_z = 0;\n-            if (vlen (to) < 48)\n+            if (vlen (to) < 48 && fabs (self.origin_z - cl.origin_z) < 56)\n             {\n-                // Anti-embed nudge: if bounding boxes overlap (<36u),\n+                // Anti-embed nudge: if bodies are closer than 36u,\n                 // step the bot clear so the player is never stuck solid.\n                 //\n-                // TWO THINGS THIS USED TO GET WRONG (#267). to_z is\n-                // zeroed, so the gate is a horizontal test with no\n-                // bound on vertical separation, and the destination\n-                // used to be cl.origin + to, which inherits the OTHER\n-                // player's height: a bot on the dm4 walkway at z -232\n-                // directly above someone on the pit floor near z -380\n-                // read a horizontal distance near zero and warped 150\n-                // units down, and the one underneath warped up into\n-                // the walkway solid. Keep our own z. Then verify,\n-                // because setorigin does not collide and 36 units\n-                // along the separation vector goes through the wall in\n-                // any corridor, which is the common case in co-op\n-                // where the companion escorts through doorways. If the\n-                // spot does not fit we do not move at all and the\n-                // sidestep below resolves it against real collision.\n+                // Players on another floor do not block this body.\n+                // Keep our own height (#267), then let the engine test\n+                // the full hull and intervening brushes. The old point\n+                // samples allowed a sub-unit hull overlap at dm3's\n+                // lower-room wall, and setorigin turned that nudge into\n+                // a six-second pin (#644). A refused step stays put;\n+                // ordinary sidestepping and recovery remain in charge.\n                 if (vlen (to) < 36)\n                 {\n                     if (vlen (to) < 6)\n@@ -5560,8 +5552,8 @@ void() Argus_BodyBlockCheck =\n                         to = normalize (to) * 36;\n                     cand = cl.origin + to;\n                     cand_z = self.origin_z;\n-                    if (Argus_BoxClear (cand))\n-                        setorigin (self, cand);\n+                    step = cand - self.origin;\n+                    walkmove (vectoyaw (step), vlen (step));\n                 }\n \n                 // other is jumping, actively firing, or human teammate in coop: clear the line\n@@ -9920,7 +9912,7 @@ void() Argus_AI =\n \n     Argus_LifeRouteVeto (fighting);\n \n-    // body-block clearance (#177): if within 48u of another client\n+    // body-block clearance (#177): if within 48u of a vertically overlapping client\n     // and the other is jumping or firing, sidestep first, shoot second\n     Argus_BodyBlockCheck ();\n \ndiff --git a/tools/compile_private_fixtures.py b/tools/compile_private_fixtures.py\nindex 3381986..c33232c 100644\n--- a/tools/compile_private_fixtures.py\n+++ b/tools/compile_private_fixtures.py\n@@ -27,6 +27,7 @@ VARIANTS = {\n     'stall': ('current',),\n     'motion': ('current',),\n     'ally': ('current',),\n+    'nudge': ('current',),\n     'attention': ('current',),\n     'water': ('current',),\n }\n@@ -47,7 +48,10 @@ def stage(folder, family, variant):\n     \"\"\"Reuse native verifier staging, without configuration or engine startup.\"\"\"\n     # Import lazily: --help needs only Python's standard library.\n     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door\n-    if family == 'ally':\n+    if family == 'nudge':\n+        from verify_body_nudge import stage as stage_nudge\n+        stage_nudge(ROOT, folder)\n+    elif family == 'ally':\n         from verify_ally_barrel import stage as stage_ally\n         stage_ally(ROOT, folder)\n     elif family == 'stall':\ndiff --git a/tools/fixtures/health-inventory-step1b.json b/tools/fixtures/health-inventory-step1b.json\nindex 802f05e..480fef8 100644\n--- a/tools/fixtures/health-inventory-step1b.json\n+++ b/tools/fixtures/health-inventory-step1b.json\n@@ -4,8 +4,8 @@\n     \"Argus_Hunch\": \"c9f7573cd3449f47f8ac251970c3d6f030af9002b80563562f090a1d262fab7f\",\n     \"Argus_Perceive\": \"2dc63bea68194463ff86596a5ab9b185104897b82c6b60d9d50d4b21f9e697c5\"\n   },\n-  \"active_text_sha256\": \"7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d\",\n-  \"amendment_scope\": \"Reverse ally-barrel safety in memory, then reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.\",\n+  \"active_text_sha256\": \"6a55cfc29d60b5b5673dd6457e59005a6c9b33680836c4247357563c5d5cc1c1\",\n+  \"amendment_scope\": \"Reverse collision-checked body nudges in memory, then reverse ally-barrel safety in memory, then reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.\",\n   \"candidate_text_sha256\": \"359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38\",\n   \"parked_functions\": {\n     \"Argus_Combat\": \"1adaf68f727b69362db994c4093ff0b2e96f86a0c45ce87651688b37b383dcaf\",\n@@ -15,6 +15,7 @@\n   \"parked_text_sha256\": \"29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f\",\n   \"patch\": \"health-inventory-step1b.patch\",\n   \"production_amendments\": [\n+    \"body-nudge-reverse.patch\",\n     \"ally-barrel-reverse.patch\",\n     \"motion-observer-reverse.patch\",\n     \"stall-ownership-reverse.patch\",\n",
+      "cli_sha256": "2921a3635fee84e62922d46b6ebba4a593aa71ff6219b35859bc53a7eb8b5fdd",
+      "arms": {
+        "control": {
+          "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+          "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629"
+        },
+        "candidate": {
+          "source_sha256": "2cf9f041aff8e95702651557d91cbfcb71b838567401fba1d2ce46a0ec25e77d",
+          "binary_sha256": "f235bbe3d2c9a55ef2414927e168af025d78b50816c012a03b721ed3104236a2"
+        }
+      },
+      "schedule": [
+        {
+          "map": "dm3",
+          "arm": "control",
+          "repeat": 1
+        },
+        {
+          "map": "dm3",
+          "arm": "candidate",
+          "repeat": 1
+        },
+        {
+          "map": "dm3",
+          "arm": "control",
+          "repeat": 2
+        },
+        {
+          "map": "dm3",
+          "arm": "candidate",
+          "repeat": 2
+        },
+        {
+          "map": "dm3",
+          "arm": "control",
+          "repeat": 3
+        },
+        {
+          "map": "dm3",
+          "arm": "candidate",
+          "repeat": 3
+        },
+        {
+          "map": "dm4",
+          "arm": "control",
+          "repeat": 1
+        },
+        {
+          "map": "dm4",
+          "arm": "candidate",
+          "repeat": 1
+        },
+        {
+          "map": "dm4",
+          "arm": "control",
+          "repeat": 2
+        },
+        {
+          "map": "dm4",
+          "arm": "candidate",
+          "repeat": 2
+        },
+        {
+          "map": "dm4",
+          "arm": "control",
+          "repeat": 3
+        },
+        {
+          "map": "dm4",
+          "arm": "candidate",
+          "repeat": 3
+        },
+        {
+          "map": "e1m6",
+          "arm": "control",
+          "repeat": 1
+        },
+        {
+          "map": "e1m6",
+          "arm": "candidate",
+          "repeat": 1
+        },
+        {
+          "map": "e1m6",
+          "arm": "control",
+          "repeat": 2
+        },
+        {
+          "map": "e1m6",
+          "arm": "candidate",
+          "repeat": 2
+        },
+        {
+          "map": "e1m6",
+          "arm": "control",
+          "repeat": 3
+        },
+        {
+          "map": "e1m6",
+          "arm": "candidate",
+          "repeat": 3
+        }
+      ],
+      "superseded": "Stopped after seven registered tapes because an independent physical overlap audit exposed diagonal separation failure. Retained without using outcomes to select repeats. Final source will use a fresh fixed cohort."
+    },
+    "ordinary": [
+      {
+        "name": "nudge_candidate_dm3_1_20261102",
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 1,
+        "raw": "runs/body_nudge_v1_superseded_nudge_candidate_dm3_1_20261102.log",
+        "raw_sha256": "e4a6c05e1a2d22c8f31f2cfa54e1a5a88cb8c71f184d1ebb717656e07423b244",
+        "source_sha256": "2cf9f041aff8e95702651557d91cbfcb71b838567401fba1d2ce46a0ec25e77d",
+        "binary_sha256": "f235bbe3d2c9a55ef2414927e168af025d78b50816c012a03b721ed3104236a2",
+        "totals": {
+          "abandons": 0,
+          "acquisitions": 3,
+          "all_frags_positive": false,
+          "avg_speed": 193.73314762028045,
+          "boards": 0,
+          "closest_approach": 112.10642265276333,
+          "confine_max_sec": 8.100000000000001,
+          "confine_note": "Carmack spent 8.1s inside a 220u box at 228 u/s around (-498, 486)",
+          "cover": 117,
+          "deaths": 1,
+          "duration_sec": 29.900000000000002,
+          "engages": 3,
+          "frags": 1,
+          "freeze_max_sec": 0.0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 1,
+          "grabs": 3,
+          "hazards": 31,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 1,
+          "routefails": 1,
+          "stalls": 2,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5051724137931035,
+          "weapons": 0,
+          "world_deaths": 0
+        }
+      },
+      {
+        "name": "nudge_candidate_dm3_2_20261102",
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 2,
+        "raw": "runs/body_nudge_v1_superseded_nudge_candidate_dm3_2_20261102.log",
+        "raw_sha256": "fa3063a139f9ee0fa91de8b7d5e3a3f7125504499c4ce8e6d4ea095854c4d549",
+        "source_sha256": "2cf9f041aff8e95702651557d91cbfcb71b838567401fba1d2ce46a0ec25e77d",
+        "binary_sha256": "f235bbe3d2c9a55ef2414927e168af025d78b50816c012a03b721ed3104236a2",
+        "totals": {
+          "abandons": 0,
+          "acquisitions": 2,
+          "all_frags_positive": false,
+          "avg_speed": 209.2821528397635,
+          "boards": 0,
+          "closest_approach": 149.91244111147012,
+          "confine_max_sec": 8.5,
+          "confine_note": "Romero spent 8.5s inside a 220u box at 142 u/s around (1714, 480)",
+          "cover": 130,
+          "deaths": 1,
+          "duration_sec": 29.8,
+          "engages": 5,
+          "frags": 1,
+          "freeze_max_sec": 0.0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 2,
+          "grabs": 0,
+          "hazards": 25,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 1,
+          "routefails": 0,
+          "stalls": 3,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5052023121387283,
+          "weapons": 2,
+          "world_deaths": 0
+        }
+      },
+      {
+        "name": "nudge_candidate_dm3_3_20261102",
+        "map": "dm3",
+        "arm": "candidate",
+        "repeat": 3,
+        "raw": "runs/body_nudge_v1_superseded_nudge_candidate_dm3_3_20261102.log",
+        "raw_sha256": "de7ec2072088619183e015eaeb2f3448970ad10e7815570eb70ea1951f6a8c8d",
+        "source_sha256": "2cf9f041aff8e95702651557d91cbfcb71b838567401fba1d2ce46a0ec25e77d",
+        "binary_sha256": "f235bbe3d2c9a55ef2414927e168af025d78b50816c012a03b721ed3104236a2",
+        "totals": {
+          "abandons": 0,
+          "acquisitions": 7,
+          "all_frags_positive": false,
+          "avg_speed": 207.98285491130756,
+          "boards": 0,
+          "closest_approach": 48.81198623289156,
+          "confine_max_sec": 6.600000000000001,
+          "confine_note": "Romero spent 6.6s inside a 220u box at 157 u/s around (1154, 112)",
+          "cover": 128,
+          "deaths": 1,
+          "duration_sec": 29.900000000000002,
+          "engages": 4,
+          "frags": 0,
+          "freeze_max_sec": 0.0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 1,
+          "grabs": 1,
+          "hazards": 23,
+          "kd_spread": 0,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 1,
+          "routefails": 1,
+          "stalls": 1,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.506779661016949,
+          "weapons": 6,
+          "world_deaths": 0
+        }
+      },
+      {
+        "name": "nudge_control_dm3_1_20261102",
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 1,
+        "raw": "runs/body_nudge_v1_superseded_nudge_control_dm3_1_20261102.log",
+        "raw_sha256": "515399c1368e88feeb49511df4472a1127f59de3b45541c7cb9767a24f1d17df",
+        "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+        "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+        "totals": {
+          "abandons": 0,
+          "acquisitions": 6,
+          "all_frags_positive": false,
+          "avg_speed": 200.5944613517879,
+          "boards": 0,
+          "closest_approach": 154.38552393278326,
+          "confine_max_sec": 5.999999999999998,
+          "confine_note": "Romero spent 6.0s inside a 220u box at 112 u/s around (1963, -236)",
+          "cover": 115,
+          "deaths": 1,
+          "duration_sec": 30.0,
+          "engages": 6,
+          "frags": 1,
+          "freeze_max_sec": 0.0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 2,
+          "grabs": 2,
+          "hazards": 32,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 1,
+          "routefails": 0,
+          "stalls": 0,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5051724137931035,
+          "weapons": 4,
+          "world_deaths": 0
+        }
+      },
+      {
+        "name": "nudge_control_dm3_2_20261102",
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 2,
+        "raw": "runs/body_nudge_v1_superseded_nudge_control_dm3_2_20261102.log",
+        "raw_sha256": "76bb29a2d8ec90fcab189604afff62d6da1823a1cb9d04ba2fda0badef1678ce",
+        "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+        "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+        "totals": {
+          "abandons": 0,
+          "acquisitions": 1,
+          "all_frags_positive": false,
+          "avg_speed": 210.10348544470642,
+          "boards": 0,
+          "closest_approach": 148.40707530303263,
+          "confine_max_sec": 5.6000000000000005,
+          "confine_note": "Carmack spent 5.6s inside a 220u box at 132 u/s around (-925, 138)",
+          "cover": 125,
+          "deaths": 1,
+          "duration_sec": 30.0,
+          "engages": 1,
+          "frags": 1,
+          "freeze_max_sec": 0.0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 1,
+          "grabs": 1,
+          "hazards": 30,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 1,
+          "routefails": 0,
+          "stalls": 1,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5051724137931033,
+          "weapons": 0,
+          "world_deaths": 0
+        }
+      },
+      {
+        "name": "nudge_control_dm3_3_20261102",
+        "map": "dm3",
+        "arm": "control",
+        "repeat": 3,
+        "raw": "runs/body_nudge_v1_superseded_nudge_control_dm3_3_20261102.log",
+        "raw_sha256": "0b98e4ff7b5154c220a17b34720923ffff954ee58829d816593be75c837aec00",
+        "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+        "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+        "totals": {
+          "abandons": 0,
+          "acquisitions": 5,
+          "all_frags_positive": false,
+          "avg_speed": 209.8454658499071,
+          "boards": 0,
+          "closest_approach": 155.49845658398027,
+          "confine_max_sec": 6.000000000000001,
+          "confine_note": "Romero spent 6.0s inside a 220u box at 184 u/s around (1747, 482)",
+          "cover": 131,
+          "deaths": 1,
+          "duration_sec": 29.900000000000002,
+          "engages": 6,
+          "frags": 1,
+          "freeze_max_sec": 0.0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 2,
+          "grabs": 3,
+          "hazards": 29,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 1,
+          "routefails": 0,
+          "stalls": 1,
+          "third_party_deaths": 0,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5063583815028901,
+          "weapons": 2,
+          "world_deaths": 0
+        }
+      },
+      {
+        "name": "nudge_control_dm4_1_20261102",
+        "map": "dm4",
+        "arm": "control",
+        "repeat": 1,
+        "raw": "runs/body_nudge_v1_superseded_nudge_control_dm4_1_20261102.log",
+        "raw_sha256": "539b1011b3b855bd24738328d1bf46257da3cf8c15f02283f9cb12c791549fbb",
+        "source_sha256": "ea5c4093d86b6b349fdb42fbfda68fb7e71562275a5ecbddb99eb46bcc3c786c",
+        "binary_sha256": "9f52480bf3aac2681e9cb78e3960ec51a77c9636eb7f3fe32bf2459950c86629",
+        "totals": {
+          "abandons": 0,
+          "acquisitions": 13,
+          "all_frags_positive": true,
+          "avg_speed": 207.36004558530536,
+          "boards": 0,
+          "closest_approach": 106.16105688999136,
+          "confine_max_sec": 7.1000000000000005,
+          "confine_note": "Carmack spent 7.1s inside a 220u box at 203 u/s around (-6, 513)",
+          "cover": 109,
+          "deaths": 4,
+          "duration_sec": 30.0,
+          "engages": 10,
+          "frags": 4,
+          "freeze_max_sec": 0.0,
+          "freeze_underfire": 0,
+          "freezes": 0,
+          "goals": 6,
+          "grabs": 4,
+          "hazards": 42,
+          "kd_spread": 1,
+          "lava_deaths": 0,
+          "lava_rule": "contents",
+          "mover_waits": 0,
+          "player_kills": 4,
+          "routefails": 0,
+          "stalls": 0,
+          "third_party_deaths": 1,
+          "tick_class": "listen",
+          "tick_gap_mean": 0.5055555555555555,
+          "weapons": 9,
+          "world_deaths": 0
+        }
+      }
+    ],
+    "physical_audit": {
+      "map": "dm3",
+      "ticrate": 0.0139,
+      "failed_control": true,
+      "source_sha256": "13389869c30bc320a1d050edba6cda9465daa8711b0a9bba9510388651a1a54d",
+      "binary_sha256": "735eaf9a144f735d5fa20c3cb4834a1d80544d085c5e58404d22fb0731c5b6bb",
+      "raw_sha256": "11067b63b232d4df857a0a7a1717de9f7c958f39aa1c020612b07865ad239655",
+      "raw": "runs/body_nudge_v1_rejected_overlap.log",
+      "checks": 10,
+      "failures": [
+        "overlap_diagonal"
+      ],
+      "cases": [
+        [
+          "upper_floor",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "wall_refused",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "clear_step",
+          "1",
+          "1",
+          "3",
+          "0"
+        ],
+        [
+          "upper_fire",
+          "1",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "overlap_axis",
+          "0",
+          "1",
+          "16.0",
+          "0"
+        ],
+        [
+          "overlap_diagonal",
+          "0",
+          "0",
+          "0",
+          "0"
+        ]
+      ],
+      "seconds": 1.0,
+      "frames": 70,
+      "frame_ms": 14.0,
+      "measured_fps": 69.0,
+      "position": [
+        633.2,
+        182.8,
+        -200.0
+      ],
+      "lost": false,
+      "discontinuous": false,
+      "rescues": 0
+    }
+  },
+  "limitations": [
+    "The unchanged production nudge reproducibly places a valid player hull into the exact observed dm3 pin. The historical sampled tape does not identify the original instruction that moved that bot there.",
+    "The physical task uses prescribed initial conditions; production routing and physics own subsequent motion. Both goal identities and frame displacement are checked.",
+    "Three tapes per arm per map are a bounded native comparison, not a human-play judgement.",
+    "Investigation WRFIX active markers from dm3_pin_control_20261102_v2 are invalid after goal replacement. Issue733 tracks the fixture assignment bug. The maintained nudge fixture uses a parenthesized predicate.",
+    "No installed program, historical tape, navigation or recovery threshold changed.",
+    "All three native comparisons approve the registered stall-parity primary. This is not an overall gameplay improvement claim.",
+    "Secondary dm4 engagements regress outside the control band (median17 to8, band9..25); pickups and frag spread also flag. E1m6 aggregate stalls and engagements flag, while the native medians remain within their bands.",
+    "The candidate final dm4 tape has2 lava deaths; all other final tapes have0. All18 final tapes have0 freezes and0 under-fire freezes.",
+    "Seven earlier ordinary tapes were superseded because the independent overlap audit found a diagonal-body failure. Their outcomes are retained without adding favourable repeats.",
+    "Combat preservation is not established: dm4 engagement interval is entirely worse. Registered primary approval does not close issue644 or authorize merging this prototype."
+  ]
+}

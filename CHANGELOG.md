@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Prototype engine-checked body separation to prevent the dm3 entry pin;
+  hold it for the dm4 combat warning recorded in the fixed comparison
+  ([#644](https://github.com/saworbit/argus/issues/644)).
+
 - Check co-op allies along the limited barrel direction and disable speculative
   rockets in co-op while respecting facing and muzzle-clearance gates
   ([#655](https://github.com/saworbit/argus/issues/655)).

@@ -1125,6 +1125,39 @@ control, fixed checks on two maps and the frozen ordinary-match comparison.
 These checks establish direct-ray safety and bounded prefire, not complete
 shotgun-spread or splash immunity, nor a human-play assessment.
 
+## Body separation and the dm3 lower-room pin
+
+The proposed body-block handling requires vertical overlap and separates nearby players
+with `walkmove`, preserving engine hull collision. Players on another floor
+cannot nudge the bot or trigger a phantom sidestep. A blocked separation step
+stays put; ordinary steering, aiming and recovery keep their existing roles.
+
+The preserved #644 tape pins Joe at `335.1 125.9 -200`, targeting the nearby
+`389 225 -200` waypoint while Carmack travels on the upper floor. A private
+control starts at the valid neighbouring position `338.1 125.9 -200` and
+places another player at `371.1 125.9 56`. Production body-block handling
+nudges the bot into that exact recorded pin. The eleven-point clearance check
+accepts the destination, but a real zero-step player-hull test refuses it.
+This reproduces a concrete entry mechanism; the old sampled tape alone cannot
+prove which instruction originally moved Joe there.
+
+The [physical and ordinary receipts](../runs/body-nudge-v1.results.json)
+retain the unchanged control and both tick profiles. Checks cover the upper
+floor, a same-height wall refusal, an allowed three-unit separation step,
+an upper-floor shooter and existing axial/diagonal body overlaps. Separation
+clears the square hull on an axis instead of leaving diagonal boxes overlapping.
+Production routing then owns a continuing task.
+The observer records task identity and frame displacement; a changed goal or
+forced relocation cannot satisfy the route check. No recovery threshold,
+navigation graph or statistical gate is changed.
+
+The fixed eighteen-tape comparison approves its registered stall-parity primary
+on dm3, dm4 and e1m6, with zero freezes and under-fire freezes. It does not
+establish combat preservation: dm4 median engagements fall from 17 to 8,
+outside the control band of 9 to 25, with the interval entirely worse.
+Pickups and frag spread also flag there. The prototype is held as a draft;
+#644 remains open. No extra favourable repeats or deployment were performed.
+
 ## Blind comparison of step 1a and shipped matches
 
 Four fixed 35-second recordings on dm2/dm4 at skill 1 supplied two consecutive

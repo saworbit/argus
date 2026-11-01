@@ -954,6 +954,12 @@ slow profile. `--source` stages a frozen control and `--expect-failure` records
 its negative outcome. The maintained `ally` compile family also runs in CI.
 See the [firing limits](../../docs/behaviour-diagnostics.md#ally-barrel-and-speculative-shots).
 
+`python tools/verify_body_nudge.py --output backups/<new-directory>
+--prefix <new_prefix>` checks real player-hull separation and a continuing dm3
+task. `--ticrate .1` selects the separate slow profile. `--source` and
+`--expect-failure` retain an unchanged negative control. The `nudge` compile
+family is included in CI. See the [entry mechanism and limits](../../docs/behaviour-diagnostics.md#body-separation-and-the-dm3-lower-room-pin).
+
 Repeat current-source muzzle or active health/inventory boundary checks with
 `python tools/verify_private_fixtures.py muzzle --output backups/<new-directory> --prefix <new_prefix>`.
 Replace `muzzle` with `health` for the active health/inventory boundary checks.
