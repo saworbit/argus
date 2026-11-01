@@ -25,6 +25,9 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Apply requested lab skill before loading the map so the initial roster uses
+  the declared difficulty ([#726](https://github.com/saworbit/argus/issues/726)).
+
 - Require observed exit-node consumption, the planned successor and a dry
   world-floor landing in private mover receipts. Preserve the weaker v1 evidence
   and reject node-only oracle controls ([#647](https://github.com/saworbit/argus/issues/647)).

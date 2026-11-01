@@ -1,0 +1,89 @@
+{
+  "layout": "startup-skill-v1",
+  "purpose": "Initial roster must use the requested baseline before the first live frame.",
+  "cases": [
+    {
+      "map": "dm3",
+      "requested_skill": 2,
+      "initial": {
+        "Carmack": {
+          "time": 1.1,
+          "base": 2.0,
+          "cognition": 2.0,
+          "aim": 2.0
+        },
+        "Romero": {
+          "time": 1.1,
+          "base": 2.0,
+          "cognition": 2.0,
+          "aim": 2.0
+        },
+        "Joe Rogan": {
+          "time": 1.1,
+          "base": 2.0,
+          "cognition": 2.0,
+          "aim": 2.0
+        }
+      },
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "cli_sha256": "11bb4a1b13a50c6756f7d658467e5874476f60fe9952fe708aff6944a85bb14c",
+      "raw_sha256": "501404f03c94db24d0f53f68e41d9e23c729ae6fe87569eeebbcea2e71544528",
+      "raw": "runs/startup_skill_v1_dm3_2.log",
+      "invalid_control": false
+    },
+    {
+      "map": "e1m6",
+      "requested_skill": 0,
+      "initial": {
+        "Carmack": {
+          "time": 1.1,
+          "base": 0.0,
+          "cognition": 0.0,
+          "aim": 0.0
+        },
+        "Romero": {
+          "time": 1.1,
+          "base": 0.0,
+          "cognition": 0.0,
+          "aim": 0.0
+        },
+        "Joe Rogan": {
+          "time": 1.1,
+          "base": 0.0,
+          "cognition": 0.0,
+          "aim": 0.0
+        }
+      },
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "cli_sha256": "11bb4a1b13a50c6756f7d658467e5874476f60fe9952fe708aff6944a85bb14c",
+      "raw_sha256": "ac75d008af325750314b09afdc66825863f033569cf6446dc6c21172722cc030",
+      "raw": "runs/startup_skill_v1_e1m6_0.log",
+      "invalid_control": false
+    },
+    {
+      "requested_skill": 2,
+      "invalid_control": true,
+      "map": "dm3",
+      "source_sha256": "2c4bba5cf238a6ac71060e25493e7d5704be96262ec9fe044b33007f922a6afc",
+      "binary_sha256": "cc4b12a2757f7b65364e7aca785010050e6b3cdf2f9c215cd03722d225c7d40b",
+      "cli_sha256": "9c4e92b0156f1806e7d69456acc7c51bd6498f1b36023fd149732dce7b006cb7",
+      "raw_sha256": "0ebcf8ce889364a6fecb9f356dbe83a06118324be5285e223fe174dd24e9608d",
+      "raw": "runs/startup_skill_v1_bad_control.log"
+    },
+    {
+      "requested_skill": 2,
+      "invalid_control": true,
+      "map": "dm3",
+      "source_sha256": "4165dc81940b0e4187b4d2f6e7802dde2bfdd3b53c9fffd2b2f05f7fbe41ddfc",
+      "binary_sha256": "8bbfc236a4e2f76b9367c2a18d42049b784b6a677c6d4e4faee848d3051ce8f1",
+      "cli_sha256": "9c4e92b0156f1806e7d69456acc7c51bd6498f1b36023fd149732dce7b006cb7",
+      "raw_sha256": "8963563326fe43f4236db6b0f9de63b3bc6c88735c3f188e55e8cacf08fbe139",
+      "raw": "runs/startup_skill_v1_bad_candidate.log"
+    }
+  ],
+  "old_tapes": "The invalid first pair is retained and excluded from fixed-skill acceptance. Old outcomes are not reinterpreted as parity.",
+  "verification": "The new argument-order test failed on the original Windows command. Both platform builders now pass for skills 0 through 3 and both game modes. Omitted skill remains inherited.",
+  "installed_gameplay": "Unchanged MD5 A3F7AA9428846DE7F7B327506F5F5D3D"
+}

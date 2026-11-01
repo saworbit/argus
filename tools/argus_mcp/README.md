@@ -1313,6 +1313,14 @@ Yes, with a hard line.
 
 **Live (no recompile):**
 
+At match startup, an explicitly requested `skill` is set before the map loads,
+so the first roster spawns at that difficulty. An omitted value inherits the
+configuration. Older lab launches placed the skill command after the map and
+could record the default initial roster under a different requested label.
+Retain those tapes, and inspect their `ARGUS difficulty` rows before treating
+them as fixed-skill evidence. Startup ordering does not change the live
+console behaviour described below.
+
 - `tune` / `see what=knobs`: `skill 0-3` (takes effect at the **next
   bot respawn**, `Argus_SetSkill`), `fraglimit`, `timelimit`,
   `map <name>`, `developer`, `status`. Unix writes the child stdin.
