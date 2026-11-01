@@ -242,7 +242,8 @@ void() Argus_TacticSteer =
         return;
     }
     dist = vlen (self.ar_tactic_hop.origin - self.origin);
-    self.ar_moveyaw = vectoyaw (self.ar_tactic_hop.origin - self.origin);
+    self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw,
+        vectoyaw (self.ar_tactic_hop.origin - self.origin), "tactic_route");
     self.ar_tactic_speed = dist * 4;
     if (self.ar_tactic_speed > 280) self.ar_tactic_speed = 280;
     // Below 60, ground stop-friction exceeds acceleration: the bot would
@@ -280,7 +281,8 @@ float() Argus_TacticThink =
     if (time < self.ar_dodgetime)
     {
         Argus_TacticAbort ("abort missile");
-        self.ar_moveyaw = self.ar_dodgeyaw; self.button0 = 0;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_dodgeyaw, "tactic_dodge");
+        self.button0 = 0;
         return TRUE;
     }
     // The normal combat refresh only runs with a visible primary target.

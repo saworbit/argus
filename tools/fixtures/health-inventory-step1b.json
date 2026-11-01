@@ -1,11 +1,11 @@
 {
   "active_functions": {
-    "Argus_Combat": "13d531e7c3e354a8601169779dace43249fe26681f3cebaf26a0547d15a3b1f4",
+    "Argus_Combat": "8b2230be542fb9f57d3d7a07db1ac76bb05b17a603ceb5dc1bb629e3f79de5a5",
     "Argus_Hunch": "c9f7573cd3449f47f8ac251970c3d6f030af9002b80563562f090a1d262fab7f",
     "Argus_Perceive": "2dc63bea68194463ff86596a5ab9b185104897b82c6b60d9d50d4b21f9e697c5"
   },
-  "active_text_sha256": "a4d351f702392999d70c04d34929422c7e4940e46908003e68dd08f505e4e5bf",
-  "amendment_scope": "Reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
+  "active_text_sha256": "b47d9cb717bea1d78a4b716a2691a4c8c362ca77140e6c614d392defff7229f8",
+  "amendment_scope": "Reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
   "candidate_text_sha256": "359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38",
   "parked_functions": {
     "Argus_Combat": "1adaf68f727b69362db994c4093ff0b2e96f86a0c45ce87651688b37b383dcaf",
@@ -15,6 +15,7 @@
   "parked_text_sha256": "29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f",
   "patch": "health-inventory-step1b.patch",
   "production_amendments": [
+    "motion-observer-reverse.patch",
     "stall-ownership-reverse.patch",
     "water-route-reverse.patch",
     "attention-reverse.patch",

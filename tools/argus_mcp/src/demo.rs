@@ -116,6 +116,103 @@ pub struct TrackBrief {
     pub dist: f64,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub aim: Option<AimStats>,
+    /// Full-rate horizontal reversals. PVS gaps and teleport-like segments
+    /// are excluded; moving exposure is measured rather than wall time.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub movement: Option<MovementStats>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MovementStats {
+    pub definition: &'static str,
+    pub observed_sec: f64,
+    pub moving_sec: f64,
+    pub reversals: usize,
+    pub reversals_per_moving_minute: Option<f64>,
+    pub discontinuities: usize,
+    pub speed_floor: f64,
+    pub minimum_turn_degrees: f64,
+    pub reversal_window_sec: f64,
+    pub refractory_sec: f64,
+    pub maximum_gap_sec: f64,
+    pub maximum_segment_speed: f64,
+    /// Kept for attribution inside the lab without bloating the demo brief.
+    #[serde(skip_serializing)]
+    pub reversal_times: Vec<f64>,
+}
+
+/// A turn over 120 degrees within 250 ms, with horizontal speed over 120
+/// units/s at both ends. Debounce for 500 ms. Never bridge missing visibility,
+/// invalid timestamps or a segment above 1000 units/s in three dimensions.
+pub fn movement_stats(t: &[f64], pos: &[[f32; 3]]) -> Option<MovementStats> {
+    if t.len() != pos.len() || t.len() < 2 {
+        return None;
+    }
+    let mut stats = MovementStats {
+        definition: "argus-reversal-v1",
+        observed_sec: 0.0,
+        moving_sec: 0.0,
+        reversals: 0,
+        reversals_per_moving_minute: None,
+        discontinuities: 0,
+        speed_floor: 120.0,
+        minimum_turn_degrees: 120.0,
+        reversal_window_sec: 0.25,
+        refractory_sec: 0.5,
+        maximum_gap_sec: 0.25,
+        maximum_segment_speed: 1000.0,
+        reversal_times: Vec::new(),
+    };
+    let mut history: std::collections::VecDeque<(f64, f64, f64, f64)> =
+        std::collections::VecDeque::new();
+    let mut last_reversal = f64::NEG_INFINITY;
+    for i in 1..t.len() {
+        let dt = t[i] - t[i - 1];
+        let delta = [
+            f64::from(pos[i][0] - pos[i - 1][0]),
+            f64::from(pos[i][1] - pos[i - 1][1]),
+            f64::from(pos[i][2] - pos[i - 1][2]),
+        ];
+        let valid = t[i].is_finite()
+            && t[i - 1].is_finite()
+            && dt > 0.0
+            && dt <= stats.maximum_gap_sec
+            && delta.iter().all(|value| value.is_finite())
+            && delta.iter().map(|v| v * v).sum::<f64>().sqrt() / dt <= stats.maximum_segment_speed;
+        if !valid {
+            history.clear();
+            stats.discontinuities += 1;
+            continue;
+        }
+        stats.observed_sec += dt;
+        let vx = delta[0] / dt;
+        let vy = delta[1] / dt;
+        let speed = vx.hypot(vy);
+        while history
+            .front()
+            .is_some_and(|sample| t[i] - sample.0 > stats.reversal_window_sec)
+        {
+            history.pop_front();
+        }
+        if speed <= stats.speed_floor {
+            continue;
+        }
+        stats.moving_sec += dt;
+        if t[i] - last_reversal >= stats.refractory_sec
+            && history
+                .iter()
+                .any(|sample| (vx * sample.1 + vy * sample.2) / (speed * sample.3) < -0.5)
+        {
+            stats.reversals += 1;
+            stats.reversal_times.push(t[i]);
+            last_reversal = t[i];
+        }
+        history.push_back((t[i], vx, vy, speed));
+    }
+    if stats.moving_sec > 0.0 {
+        stats.reversals_per_moving_minute = Some(stats.reversals as f64 * 60.0 / stats.moving_sec);
+    }
+    Some(stats)
 }
 
 /// Full-rate positions and view angles for one entity.
@@ -750,6 +847,9 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
                 last: tr.pos.last().copied().unwrap_or_default(),
                 dist,
                 aim,
+                movement: (tr.kind == "player")
+                    .then(|| movement_stats(&tr.t, &tr.pos))
+                    .flatten(),
             }
         })
         .collect();
@@ -987,6 +1087,91 @@ pub fn demo_brief(cfg: &Config, name: &str) -> Result<DemoBrief, String> {
             .push(format!("tracks exported: {}", out.display()));
     }
     Ok(brief)
+}
+
+#[cfg(test)]
+mod movement_tests {
+    use super::*;
+
+    fn trajectory(velocities: &[[f32; 3]], dt: f64) -> (Vec<f64>, Vec<[f32; 3]>) {
+        let mut times = vec![0.0];
+        let mut points = vec![[0.0, 0.0, 0.0]];
+        for velocity in velocities {
+            let last = *points.last().unwrap();
+            points.push(std::array::from_fn(|axis| {
+                last[axis] + velocity[axis] * dt as f32
+            }));
+            times.push(times.last().unwrap() + dt);
+        }
+        (times, points)
+    }
+
+    #[test]
+    fn straight_motion_has_exposure_without_reversals() {
+        let (t, p) = trajectory(&[[200.0, 0.0, 0.0]; 100], 0.01);
+        let measured = movement_stats(&t, &p).unwrap();
+        assert_eq!(measured.reversals, 0);
+        assert!((measured.moving_sec - 1.0).abs() < 1e-6);
+        assert_eq!(measured.reversals_per_moving_minute, Some(0.0));
+    }
+
+    #[test]
+    fn reversal_survives_a_brief_stop_and_is_debounced() {
+        let mut velocities = vec![[200.0, 0.0, 0.0]; 5];
+        velocities.extend([[0.0, 0.0, 0.0], [-200.0, 0.0, 0.0], [200.0, 0.0, 0.0]]);
+        velocities.extend([[200.0, 0.0, 0.0]; 5]);
+        velocities.push([-200.0, 0.0, 0.0]);
+        let (t, p) = trajectory(&velocities, 0.1);
+        let measured = movement_stats(&t, &p).unwrap();
+        assert_eq!(measured.reversals, 2);
+        assert_eq!(measured.reversal_times.len(), 2);
+        assert!(measured.reversal_times[1] - measured.reversal_times[0] >= 0.5);
+    }
+
+    #[test]
+    fn slow_or_vertical_motion_has_no_eligible_exposure() {
+        for velocity in [[119.0, 0.0, 0.0], [0.0, 0.0, 300.0]] {
+            let (t, p) = trajectory(&[velocity; 10], 0.05);
+            let measured = movement_stats(&t, &p).unwrap();
+            assert_eq!(measured.moving_sec, 0.0);
+            assert_eq!(measured.reversals_per_moving_minute, None);
+        }
+    }
+
+    #[test]
+    fn pvs_gaps_and_teleports_do_not_create_reversals() {
+        let measured = movement_stats(
+            &[0.0, 0.1, 1.0, 1.1, 1.2, 1.3],
+            &[
+                [0.0, 0.0, 0.0],
+                [20.0, 0.0, 0.0],
+                [10.0, 0.0, 0.0],
+                [-10.0, 0.0, 0.0],
+                [2000.0, 0.0, 0.0],
+                [2020.0, 0.0, 0.0],
+            ],
+        )
+        .unwrap();
+        assert_eq!(measured.reversals, 0);
+        assert_eq!(measured.discontinuities, 2);
+        assert!((measured.observed_sec - 0.3).abs() < 1e-6);
+    }
+
+    #[test]
+    fn turns_below_the_angle_bar_are_not_reversals() {
+        let vectors = [[200.0, 0.0, 0.0], [0.0, 200.0, 0.0]];
+        let (t, p) = trajectory(&vectors, 0.1);
+        assert_eq!(movement_stats(&t, &p).unwrap().reversals, 0);
+    }
+
+    #[test]
+    fn invalid_data_is_not_motion_evidence() {
+        assert!(movement_stats(&[], &[]).is_none());
+        assert!(movement_stats(&[0.0], &[[0.0; 3], [1.0; 3]]).is_none());
+        let measured = movement_stats(&[0.0, 0.1], &[[0.0; 3], [f32::NAN; 3]]).unwrap();
+        assert_eq!(measured.discontinuities, 1);
+        assert_eq!(measured.reversals_per_moving_minute, None);
+    }
 }
 
 #[cfg(test)]

@@ -1,0 +1,543 @@
+LOG started on: 11/02/2026 08:26:29 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm2
+Clearing memory
+Programs occupy 1107K.
+trying to open external vis file
+maps/dm2.vis not found, trying motioncheck_motion_final_dm2_slow_v2.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 215 nodes, 1046 links
+0 entities inhibited
+ARGMOT begin layout 2
+ARGUS init on dm2
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGMOT Joe Rogan ms 1200 pos '2624.0 -488.0  32.0' wish 180 cause spawn ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Joe Rogan t   1.2 pos '2624.0 -488.0  32.0' spd 0 yaw 177.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Romero ms 1200 pos '2704.0 -2048.0 128.0' wish 270 cause spawn ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   1.2 pos '2704.0 -2048.0 128.0' spd 0 yaw 317.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 1200 pos '2560.0 -192.0  32.0' wish 180 cause spawn ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Carmack t   1.2 pos '2560.0 -192.0  32.0' spd 0 yaw 209.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 1300 pos '2592.0 -486.3  32.0' wish 177.6 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Romero ms 1300 pos '2727.8 -2069.4 128.0' wish 317.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 1300 pos '2532.3 -208.0  32.0' wish 209.6 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 1400 pos '2560.1 -484.7  24.0' wish 177.6 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Romero ms 1400 pos '2751.6 -2090.8 128.0' wish 317.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero flip wander ms 1400 from 317.5 to 448.5
+ARGMOT Carmack ms 1400 pos '2504.6 -224.0  24.0' wish 209.6 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 1500 pos '2528.0 -474.8  24.0' wish 145.6 cause noise_investigate ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Romero ms 1500 pos '2766.8 -2072.0 120.0' wish 448.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 1500 pos '2476.9 -240.0  24.0' wish 209.6 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack wallslide
+ARGMOT Joe Rogan ms 1600 pos '2501.2 -451.5   8.0' wish 113.6 cause noise_investigate ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGEVT Joe Rogan engage Carmack
+ARGUS Joe Rogan threatmove range 2
+ARGEVT Joe Rogan grab item_armorInv
+ARGMOT Romero ms 1600 pos '2776.5 -2040.3 120.0' wish  88.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 1600 pos '2449.0 -240.0  24.0' wish 209.6 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 1700 pos '2469.6 -465.6   8.0' wish 241 cause battle_item ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Romero ms 1700 pos '2782.7 -2008.5 120.0' wish  88.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 1700 pos '2417.1 -240.0  24.0' wish 209.6 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 1800 pos '2444.4 -489.9   8.0' wish 247 cause battle_item ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Joe Rogan t   1.8 pos '2444.4 -489.9   8.0' spd 350.0 yaw 110.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Romero ms 1800 pos '2787.2 -1976.6 120.0' wish  88.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero flip wander ms 1800 from  88.5 to 250.7
+ARGLOG Romero t   1.8 pos '2787.2 -1976.6 120.0' spd 321.5 yaw 250.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 1800 pos '2384.6 -240.0  24.0' wish 209.6 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Carmack t   1.8 pos '2384.6 -240.0  24.0' spd 324.9 yaw 209.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 1900 pos '2425.1 -517.4   8.0' wish 252 cause battle_item ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip combat_hazard ms 1900 from 256 to 27
+ARGMOT Romero ms 1900 pos '2779.1 -1987.7 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 1900 pos '2352.1 -240.0  24.0' wish 209.6 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack flip wander ms 1900 from 209.6 to 392.0
+BHVRPL begin motion_observer
+MOCHECK disabled_yaw 1
+MOCHECK disabled_fields 1
+MOCHECK raw_yaw 1
+ARGUS motion_fixture flip fixture ms 2000 from 37 to -479
+MOCHECK raw_yaw 1
+MOCHECK raw_yaw 1
+MOCHECK raw_yaw 1
+MOCHECK raw_yaw 1
+MOCHECK raw_yaw 1
+MOCHECK raw_yaw 1
+MOCHECK no_steering_write 1
+MOCHECK basis_preserved 1
+MOCHECK trace_preserved 1
+MOCHECK end checks 12 failures 0
+ARGMOT Joe Rogan ms 2000 pos '2441.9 -519.2   8.0' wish 27 cause combat_hazard ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 2000 from 30 to 249
+ARGMOT Romero ms 2000 pos '2766.5 -2017.3 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2000 pos '2359.9 -223.2  24.0' wish 392.0 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGEVT Carmack engage Joe Rogan
+ARGUS Carmack flip combat_strafe ms 2000 from 392.0 to 207
+ARGUS Carmack threatmove range 2
+ARGMOT Joe Rogan ms 2100 pos '2420.0 -520.4   8.0' wish 180 cause combat_hazard ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip combat_hazard ms 2100 from 258 to 24
+ARGMOT Romero ms 2100 pos '2755.1 -2047.2 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2100 pos '2336.0 -227.8  24.0' wish 207 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 2200 pos '2436.2 -508.2   8.0' wish 24 cause combat_hazard ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 2200 from 25 to 253
+ARGMOT Romero ms 2200 pos '2744.1 -2077.3 128.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2200 pos '2305.7 -238.9  24.0' wish 207 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 2300 pos '2414.0 -497.8   8.0' wish 175 cause combat_hazard ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 2300 from 170 to 262
+ARGMOT Romero ms 2300 pos '2733.2 -2107.3 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2300 pos '2276.2 -238.9  24.0' wish 209 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 2400 pos '2396.6 -523.6   8.0' wish 262 cause battle_item ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Joe Rogan t   2.4 pos '2396.6 -523.6   8.0' spd 311.5 yaw 105.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGUS Joe Rogan wallslide
+ARGMOT Romero ms 2400 pos '2722.7 -2137.6 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   2.4 pos '2722.7 -2137.6 120.0' spd 320.0 yaw 250.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 2400 pos '2244.2 -248.0  24.0' wish 211 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Carmack t   2.4 pos '2244.2 -248.0  24.0' spd 332.8 yaw 270.2 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 2500 pos '2365.3 -523.6   8.0' wish 268 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Romero ms 2500 pos '2712.3 -2167.9 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2500 pos '2214.3 -262.0  24.0' wish 219 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 2600 pos '2334.2 -523.6   8.0' wish 283 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 2600 from 196 to 295
+ARGUS Joe Rogan flip combat_hazard ms 2600 from 295 to 46
+ARGMOT Romero ms 2600 pos '2701.9 -2198.1 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2600 pos '2186.5 -278.7  24.0' wish 220 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 2700 pos '2337.9 -500.6   8.0' wish 46 cause combat_hazard ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 2700 from 56 to 291
+ARGMOT Romero ms 2700 pos '2691.5 -2228.4 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2700 pos '2161.1 -299.2  24.0' wish 230 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 2800 pos '2351.7 -516.5   8.0' wish 291 cause battle_item ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 2800 from 291 to 62
+ARGUS Joe Rogan flip battle_item ms 2800 from 62 to 288
+ARGMOT Romero ms 2800 pos '2681.1 -2258.6 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2800 pos '2138.9 -323.0  24.0' wish 237 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack wallslide
+ARGMOT Joe Rogan ms 2900 pos '2321.2 -516.5   8.0' wish 212 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Joe Rogan flip combat_hazard ms 2900 from 299 to 62
+ARGMOT Romero ms 2900 pos '2670.7 -2288.9 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 2900 pos '2138.9 -348.2  24.0' wish 239 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 3000 pos '2318.2 -488.2   8.0' wish 62 cause combat_hazard ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 3000 from  73.1 to 295
+ARGLOG Joe Rogan t 3 pos '2318.2 -488.2   8.0' spd 255.5 yaw 139.9 mode 0 st 0 gl 0 hp 91 frg 0
+ARGMOT Romero ms 3000 pos '2660.2 -2319.1 120.0' wish 250.7 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero flip wander ms 3000 from 250.7 to 418.5
+ARGLOG Romero t 3 pos '2660.2 -2319.1 120.0' spd 320.0 yaw  58.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 3000 pos '2132.7 -380.1   8.0' wish 248 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Carmack t 3 pos '2132.7 -380.1   8.0' spd 325.0 yaw 325.8 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 3100 pos '2332.2 -501.7   8.0' wish 295 cause battle_item ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 3100 from 295 to  79.1
+ARGUS Joe Rogan flip battle_item ms 3100 from  79.1 to 293
+ARGMOT Romero ms 3100 pos '2670.7 -2310.1 120.0' wish 418.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3100 pos '2132.7 -411.3   8.0' wish 254 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 3200 pos '2348.7 -501.7   8.0' wish 293 cause wall_slide ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 3200 from 293 to  88.1
+ARGMOT Romero ms 3200 pos '2689.6 -2284.1 120.0' wish  58.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3200 pos '2131.6 -443.3   8.0' wish 263 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 3300 pos '2360.2 -470.2   8.0' wish  88.1 cause combat_strafe ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGMOT Romero ms 3300 pos '2707.9 -2257.9 120.0' wish  58.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3300 pos '2132.7 -475.6   8.0' wish 279 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 3400 pos '2362.6 -436.3   8.0' wish 106.1 cause combat_strafe ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGMOT Romero ms 3400 pos '2725.8 -2231.3 120.0' wish  58.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3400 pos '2139.4 -507.4   8.0' wish -66 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack flip combat_hazard ms 3400 from -50 to 100
+ARGMOT Joe Rogan ms 3500 pos '2356.0 -402.7   8.0' wish 122.1 cause combat_strafe ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGMOT Romero ms 3500 pos '2743.3 -2204.5 120.0' wish  58.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3500 pos '2145.5 -487.5   8.0' wish 100 cause combat_hazard ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 3600 pos '2344.2 -371.8   8.0' wish 126.1 cause combat_strafe ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGLOG Joe Rogan t   3.6 pos '2344.2 -371.8   8.0' spd 331.1 yaw 203.4 mode 0 st 0 gl 0 hp 91 frg 0
+ARGMOT Romero ms 3600 pos '2760.7 -2177.6 120.0' wish  58.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero flip wander ms 3600 from  58.5 to 184.3
+ARGLOG Romero t   3.6 pos '2760.7 -2177.6 120.0' spd 320.0 yaw 184.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 3600 pos '2143.8 -454.8   8.0' wish 105 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Carmack t   3.6 pos '2143.8 -454.8   8.0' spd 326.7 yaw  49.9 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 3700 pos '2329.4 -342.9   8.0' wish 127.1 cause combat_strafe ctx '  0.0   0.0   1.0' hp 91 ground worldspawn
+ARGMOT Romero ms 3700 pos '2739.1 -2163.6 120.0' wish 184.3 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3700 pos '2139.3 -422.9   8.0' wish 106 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 3800 pos '2312.9 -315.3   8.0' wish 127.1 cause combat_strafe ctx '  0.0   0.0   1.0' hp 73 ground worldspawn
+ARGUS Joe Rogan flip combat_hazard ms 3800 from 125.3 to 280.7
+ARGMOT Romero ms 3800 pos '2706.5 -2156.7 120.0' wish 184.3 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3800 pos '2133.2 -391.3   8.0' wish 106 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 3900 pos '2310.9 -328.1   8.0' wish 280.7 cause combat_hazard ctx '  0.0   0.0   1.0' hp 73 ground worldspawn
+ARGMOT Romero ms 3900 pos '2674.2 -2153.3 120.0' wish 184.3 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 3900 pos '2128.7 -359.6  24.0' wish 94 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 4000 pos '2308.6 -360.0   8.0' wish 267.7 cause combat_strafe ctx '  0.0   0.0   1.0' hp 73 ground worldspawn
+ARGMOT Romero ms 4000 pos '2672.0 -2152.3 120.0' wish 184.3 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero wallslide
+ARGMOT Carmack ms 4000 pos '2129.9 -326.7  24.0' wish 75 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 4100 pos '2301.8 -391.9   8.0' wish 246.7 cause combat_strafe ctx '  0.0   0.0   1.0' hp 73 ground worldspawn
+ARGMOT Romero ms 4100 pos '2672.0 -2154.7 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 4100 pos '2139.7 -294.4  24.0' wish 415 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 4200 pos '2287.1 -422.1   8.0' wish 225.7 cause combat_strafe ctx '  0.0   0.0   1.0' hp 73 ground worldspawn
+ARGLOG Joe Rogan t   4.2 pos '2287.1 -422.1   8.0' spd 336.5 yaw 134.4 mode 0 st 0 gl 0 hp 73 frg 0
+ARGMOT Romero ms 4200 pos '2672.0 -2157.1 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   4.2 pos '2672.0 -2157.1 120.0' spd  23.8 yaw 184.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 4200 pos '2159.0 -265.8  24.0' wish 395 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Carmack t   4.2 pos '2159.0 -265.8  24.0' spd 344.3 yaw 294.7 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 4300 pos '2264.2 -447.6   8.0' wish 206.7 cause combat_strafe ctx '  0.0   0.0   1.0' hp 64 ground worldspawn
+ARGMOT Romero ms 4300 pos '2672.0 -2159.5 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 4300 pos '2186.4 -244.4  24.0' wish 376 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack flip strafe_reroll ms 4300 from 376 to 208
+ARGMOT Joe Rogan ms 4400 pos '2235.0 -468.8   8.0' wish 188.6 cause combat_strafe ctx '  0.0   0.0   1.0' hp 64 ground worldspawn
+ARGMOT Romero ms 4400 pos '2672.0 -2161.9 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 4400 pos '2174.4 -246.6  24.0' wish 208 cause strafe_reroll ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 4500 pos '2204.0 -482.6   8.0' wish 183.6 cause combat_strafe ctx '  0.0   0.0   1.0' hp 64 ground worldspawn
+ARGMOT Romero ms 4500 pos '2672.0 -2164.2 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 4500 pos '2144.2 -257.5  24.0' wish 203 cause combat_strafe ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack flip combat_hazard ms 4500 from 202 to 352
+ARGEVT Joe Rogan goal item_armorInv
+ARGEVT Joe Rogan route 3 start '2273.0 -375.0   8.0' goal '2369.0 -567.0  56.0'
+ARGMOT Joe Rogan ms 4600 pos '2172.4 -491.6   8.0' wish 182.6 cause combat_strafe ctx '  0.0   0.0   1.0' hp 64 ground worldspawn
+ARGUS Joe Rogan flip strafe_reroll ms 4600 from 182.6 to  14.4
+ARGEVT Joe Rogan grab item_health
+ARGUS Joe Rogan flip battle_item ms 4600 from  14.4 to 178
+ARGMOT Romero ms 4600 pos '2672.0 -2166.6 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 4600 pos '2158.0 -268.3  24.0' wish 352 cause combat_hazard ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 4700 pos '2140.3 -496.7   8.0' wish 178 cause battle_item ctx '  2.0   0.0   1.0' hp 64 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 4700 from 178 to  -1.6
+ARGUS Joe Rogan flip battle_item ms 4700 from  -1.6 to 175
+ARGUS Joe Rogan flip combat_backoff ms 4700 from 155.6 to 258
+ARGEVT Joe Rogan hazard
+ARGUS Joe Rogan wallslide
+ARGMOT Romero ms 4700 pos '2672.0 -2169.0 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 4700 pos '2187.2 -281.9  24.0' wish 341 cause combat_strafe ctx '  0.0   0.0   1.0' hp 76 ground worldspawn
+ARGMOT Joe Rogan ms 4800 pos '2146.0 -496.7   8.0' wish 258 cause wall_slide ctx '  2.0   0.0   1.0' hp 64 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 4800 from 258 to 148.6
+ARGUS Joe Rogan flip combat_hazard ms 4800 from 175 to  -8.6
+ARGLOG Joe Rogan t   4.8 pos '2146.0 -496.7   8.0' spd  57.7 yaw  68.3 mode 2 st 0 gl 0 hp 64 frg 0
+ARGMOT Romero ms 4800 pos '2672.0 -2171.4 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   4.8 pos '2672.0 -2171.4 120.0' spd  23.8 yaw 184.3 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 4800 pos '2220.8 -284.2  24.0' wish 337.4 cause combat_strafe ctx '  0.0   0.0   1.0' hp 76 ground worldspawn
+ARGLOG Carmack t   4.8 pos '2220.8 -284.2  24.0' spd 336.4 yaw 271.2 mode 0 st 0 gl 0 hp 76 frg 0
+ARGMOT Joe Rogan ms 4900 pos '2177.7 -501.2   8.0' wish  -8.6 cause combat_hazard ctx '  2.0   0.0   1.0' hp 64 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 4900 from  -8.6 to 175
+ARGMOT Romero ms 4900 pos '2672.0 -2173.8 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 4900 pos '2252.7 -291.0  24.0' wish 336.4 cause combat_strafe ctx '  0.0   0.0   1.0' hp 76 ground worldspawn
+ARGUS Carmack wallslide
+ARGMOT Joe Rogan ms 5000 pos '2164.9 -501.0   8.0' wish 175 cause battle_item ctx '  2.0   0.0   1.0' hp 64 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 5000 from 175 to -12.6
+ARGUS Joe Rogan flip battle_item ms 5000 from -12.6 to 174
+ARGMOT Romero ms 5000 pos '2672.0 -2176.2 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 5000 pos '2252.7 -303.0  24.0' wish 325.4 cause wall_slide ctx '  0.0   0.0   1.0' hp 76 ground worldspawn
+ARGEVT Romero goal item_armor2
+ARGEVT Romero route 8 start '2721.0 -2199.0 120.0' goal '1313.0 -951.0  32.0'
+ARGMOT Joe Rogan ms 5100 pos '2133.0 -498.2   8.0' wish 174 cause battle_item ctx '  2.0   0.0   1.0' hp 64 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 5100 from 174 to -28.6
+ARGUS Joe Rogan flip battle_item ms 5100 from -28.6 to 174
+ARGUS Joe Rogan flip combat_backoff ms 5100 from 128.6 to 231
+ARGUS Joe Rogan flip hazard_fan ms 5100 from 205 to 305
+ARGMOT Romero ms 5100 pos '2672.0 -2178.5 120.0' wish 184.3 cause wall_slide ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero wallslide
+ARGMOT Carmack ms 5100 pos '2272.7 -328.6   8.0' wish 316.4 cause combat_strafe ctx '  0.0   0.0   1.0' hp 76 ground worldspawn
+ARGMOT Joe Rogan ms 5200 pos '2153.5 -498.2   8.0' wish 231 cause wall_slide ctx '  2.0   0.0   1.0' hp 64 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 5200 from 231 to 124.6
+ARGUS Joe Rogan flip combat_hazard ms 5200 from 175 to -32.6
+ARGMOT Romero ms 5200 pos '2672.0 -2197.5 120.0' wish 216.3 cause wall_slide ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 5200 pos '2293.3 -353.1   8.0' wish 312.4 cause combat_strafe ctx '  0.0   0.0   1.0' hp 76 ground worldspawn
+ARGUS Carmack flip strafe_reroll ms 5200 from 312.4 to 158.6
+ARGMOT Joe Rogan ms 5300 pos '2184.2 -509.3   8.0' wish -32.6 cause combat_hazard ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 5300 from -20.5 to 172
+ARGMOT Romero ms 5300 pos '2672.0 -2216.8 120.0' wish 196 cause wall_slide ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 5300 pos '2275.7 -356.5   8.0' wish 158.6 cause strafe_reroll ctx '  0.0   0.0   1.0' hp 52 ground worldspawn
+ARGMOT Joe Rogan ms 5400 pos '2173.6 -508.8   8.0' wish 172 cause battle_item ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 5400 from 172 to -13.5
+ARGUS Joe Rogan flip battle_item ms 5400 from -13.5 to 172
+ARGLOG Joe Rogan t   5.4 pos '2173.6 -508.8   8.0' spd 106.3 yaw  68.3 mode 2 st 0 gl 0 hp 55 frg 0
+ARGMOT Romero ms 5400 pos '2672.0 -2234.1 120.0' wish 191 cause wall_slide ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   5.4 pos '2672.0 -2234.1 120.0' spd 172.7 yaw 227 mode 2 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 5400 pos '2248.5 -338.8   8.0' wish 157.2 cause combat_strafe ctx '  0.0   0.0   1.0' hp 52 ground worldspawn
+ARGLOG Carmack t   5.4 pos '2248.5 -338.8   8.0' spd 324.7 yaw 231.7 mode 0 st 0 gl 0 hp 52 frg 0
+ARGMOT Joe Rogan ms 5500 pos '2141.8 -504.9   8.0' wish 172 cause battle_item ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 5500 from 172 to -13.5
+ARGUS Joe Rogan flip battle_item ms 5500 from -13.5 to 171
+ARGUS Joe Rogan flip combat_backoff ms 5500 from 145.5 to 247
+ARGUS Joe Rogan flip hazard_fan ms 5500 from 218 to 318
+ARGMOT Romero ms 5500 pos '2672.0 -2248.2 120.0' wish 187 cause wall_slide ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 5500 pos '2220.3 -323.2  24.0' wish 158.2 cause combat_strafe ctx '  0.0   0.0   1.0' hp 52 ground worldspawn
+ARGEVT Carmack goal item_health
+ARGEVT Carmack route 6 start '2273.0 -375.0   8.0' goal '2017.0 -535.0 104.0'
+ARGMOT Joe Rogan ms 5600 pos '2169.2 -504.9   8.0' wish 247 cause wall_slide ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGMOT Romero ms 5600 pos '2640.7 -2258.9 120.0' wish 184 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGEVT Romero hazard
+ARGMOT Carmack ms 5600 pos '2189.2 -312.5  24.0' wish 175.2 cause combat_strafe ctx '  0.0   0.0   1.0' hp 52 ground worldspawn
+ARGMOT Joe Rogan ms 5700 pos '2154.0 -500.8   8.0' wish 173 cause battle_item ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_hazard ms 5700 from 174 to   9.5
+ARGMOT Romero ms 5700 pos '2626.0 -2287.9 120.0' wish 182 cause hazard_fan ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 5700 pos '2157.2 -306.3  24.0' wish 180.2 cause combat_strafe ctx '  2.0   0.0   1.0' hp 52 ground worldspawn
+ARGUS Carmack flip combat_hazard ms 5700 from 196.2 to 355.8
+ARGMOT Joe Rogan ms 5800 pos '2176.5 -493.5   8.0' wish   9.5 cause combat_hazard ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 5800 from  12.5 to 177
+ARGMOT Romero ms 5800 pos '2603.8 -2303.4 120.0' wish 172 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 5800 pos '2169.9 -305.0  24.0' wish 355.8 cause combat_hazard ctx '  2.0   0.0   1.0' hp 52 ground worldspawn
+ARGMOT Joe Rogan ms 5900 pos '2158.0 -487.1   8.0' wish 177 cause battle_item ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 5900 from 177 to  -3.5
+ARGUS Joe Rogan flip battle_item ms 5900 from  -3.5 to 181
+ARGMOT Romero ms 5900 pos '2581.6 -2310.6 120.0' wish 166 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 5900 pos '2201.6 -309.4  24.0' wish 346.8 cause combat_strafe ctx '  2.0   0.0   1.0' hp 28 ground worldspawn
+ARGUS Carmack threatmove retreat 2
+ARGEVT Carmack retreat
+ARGEVT Carmack coverroute
+ARGUS Carmack flip cover_retreat ms 5900 from 329.2 to 133
+ARGMOT Joe Rogan ms 6000 pos '2128.5 -474.6   8.0' wish 155.5 cause combat_hazard ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_hazard ms 6000 from 188 to -10.5
+ARGLOG Joe Rogan t 6 pos '2128.5 -474.6   8.0' spd 320.2 yaw  67.7 mode 2 st 0 gl 0 hp 55 frg 0
+ARGMOT Romero ms 6000 pos '2560.2 -2312.5 120.0' wish 162 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t 6 pos '2560.2 -2312.5 120.0' spd 214.5 yaw 234 mode 2 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 6000 pos '2201.6 -277.8  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 28 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6000 from 133 to 336.2
+ARGUS Carmack flip cover_retreat ms 6000 from 336.2 to 133
+ARGLOG Carmack t 6 pos '2201.6 -277.8  24.0' spd 316.6 yaw 241.9 mode 2 st 0 gl 0 hp 28 frg 0
+ARGMOT Joe Rogan ms 6100 pos '2142.2 -473.2   8.0' wish -10.5 cause combat_hazard ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip battle_item ms 6100 from  -1.5 to 188
+ARGUS Joe Rogan flip combat_backoff ms 6100 from 157.5 to 259
+ARGMOT Romero ms 6100 pos '2539.7 -2310.4 120.0' wish 158 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 6100 pos '2189.8 -245.3  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 28 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6100 from 133 to 343.2
+ARGUS Carmack flip cover_retreat ms 6100 from 343.2 to 133
+ARGMOT Joe Rogan ms 6200 pos '2144.4 -503.7   8.0' wish 259 cause combat_backoff ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_strafe ms 6200 from 259 to 163.5
+ARGUS Joe Rogan flip combat_hazard ms 6200 from 163.5 to   4.5
+ARGMOT Romero ms 6200 pos '2509.1 -2300.4 120.0' wish 156 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 6200 pos '2173.9 -216.5  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 28 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6200 from 133 to 353.2
+ARGUS Carmack flip cover_retreat ms 6200 from 353.2 to 133
+ARGMOT Joe Rogan ms 6300 pos '2177.7 -519.2   8.0' wish   4.5 cause combat_hazard ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGMOT Romero ms 6300 pos '2479.2 -2288.3 120.0' wish 153 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 6300 pos '2155.8 -189.7  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 28 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6300 from 133 to 362.2
+ARGUS Carmack flip cover_retreat ms 6300 from 362.2 to 133
+ARGMOT Joe Rogan ms 6400 pos '2212.1 -524.7   8.0' wish  13.5 cause combat_strafe ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGMOT Romero ms 6400 pos '2446.6 -2282.6 120.0' wish 185 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 6400 pos '2136.0 -164.4  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 28 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6400 from 133 to 370.2
+ARGUS Carmack flip cover_retreat ms 6400 from 370.2 to 133
+ARGMOT Joe Rogan ms 6500 pos '2245.9 -523.5   8.0' wish  21.5 cause combat_strafe ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGMOT Romero ms 6500 pos '2412.4 -2290.5 120.0' wish 217 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero flip route_steer ms 6500 from 153 to 249
+ARGMOT Carmack ms 6500 pos '2115.4 -139.9  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 20 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6500 from 133 to 377
+ARGUS Carmack flip cover_retreat ms 6500 from 377 to 133
+ARGMOT Joe Rogan ms 6600 pos '2278.2 -516.0   8.0' wish  28.5 cause combat_strafe ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGLOG Joe Rogan t   6.6 pos '2278.2 -516.0   8.0' spd 332.0 yaw 110.9 mode 2 st 0 gl 0 hp 55 frg 0
+ARGMOT Romero ms 6600 pos '2384.8 -2314.4 120.0' wish 249 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   6.6 pos '2384.8 -2314.4 120.0' spd 365.0 yaw 138 mode 2 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 6600 pos '2095.7 -114.6  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 20 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6600 from 133 to 382
+ARGUS Carmack flip cover_retreat ms 6600 from 382 to 133
+ARGLOG Carmack t   6.6 pos '2095.7 -114.6  24.0' spd 321.0 yaw 306.1 mode 2 st 0 gl 0 hp 20 frg 0
+ARGMOT Joe Rogan ms 6700 pos '2308.9 -504.3   8.0' wish  34.5 cause combat_strafe ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGMOT Romero ms 6700 pos '2372.7 -2349.7 120.0' wish 281 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 6700 pos '2075.1 -90.0  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 20 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6700 from 133 to 387
+ARGUS Carmack flip cover_retreat ms 6700 from 387 to 133
+ARGMOT Joe Rogan ms 6800 pos '2337.6 -489.0   8.0' wish  39.5 cause combat_strafe ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGMOT Romero ms 6800 pos '2371.6 -2352.0 120.0' wish 294 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 6800 pos '2054.1 -65.9  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 20 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6800 from 133 to 391
+ARGUS Carmack flip cover_retreat ms 6800 from 391 to 133
+ARGMOT Joe Rogan ms 6900 pos '2364.5 -470.9   8.0' wish  43.5 cause combat_strafe ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGMOT Romero ms 6900 pos '2385.1 -2381.0 120.0' wish 295 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 6900 pos '2032.6 -42.1  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 20 ground worldspawn
+ARGUS Carmack flip combat_strafe ms 6900 from 133 to 395
+ARGUS Carmack flip cover_retreat ms 6900 from 395 to 133
+ARGMOT Joe Rogan ms 7000 pos '2389.6 -450.6   8.0' wish  47.5 cause combat_strafe ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGEVT Joe Rogan grab item_armorInv
+ARGUS Joe Rogan flip battle_item ms 7000 from 131 to 271
+ARGMOT Romero ms 7000 pos '2398.6 -2410.0 120.0' wish 295 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 7000 pos '2011.2 -18.3  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 20 ground worldspawn
+ARGUS Carmack flip combat_approach ms 7000 from 133 to 312
+ARGUS Carmack flip cover_retreat ms 7000 from 312 to 133
+ARGMOT Joe Rogan ms 7100 pos '2405.2 -469.9   8.0' wish 271 cause battle_item ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7100 from 271 to 131
+ARGUS Joe Rogan flip battle_item ms 7100 from 131 to 266
+ARGMOT Romero ms 7100 pos '2412.2 -2439.0 120.0' wish 295 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 7100 pos '1989.8   5.5  24.0' wish 133 cause cover_retreat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGEVT Carmack weapon sg
+ARGUS Carmack flip combat_approach ms 7100 from 133 to 310
+ARGUS Carmack flip cover_retreat ms 7100 from 310 to 133
+ARGUS Carmack flip combat_hazard ms 7100 from 133 to 227.1
+ARGMOT Joe Rogan ms 7200 pos '2413.4 -502.5   8.0' wish 266 cause battle_item ctx '  2.0   0.0   1.0' hp 55 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7200 from 266 to 132
+ARGUS Joe Rogan flip battle_item ms 7200 from 132 to 262
+ARGLOG Joe Rogan t   7.2 pos '2413.4 -502.5   8.0' spd 335.4 yaw 130.6 mode 2 st 0 gl 0 hp 55 frg 0
+ARGUS Joe Rogan wallslide
+ARGMOT Romero ms 7200 pos '2425.7 -2468.0 120.0' wish 294 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   7.2 pos '2425.7 -2468.0 120.0' spd 320.0 yaw 132 mode 2 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 7200 pos '1947.4   4.8  24.0' wish 227.1 cause combat_hazard ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGLOG Carmack t   7.2 pos '1947.4   4.8  24.0' spd 423.7 yaw 309.9 mode 2 st 0 gl 0 hp 21 frg 0
+ARGMOT Joe Rogan ms 7300 pos '2416.2 -502.5   8.0' wish 262 cause wall_slide ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7300 from 262 to 135
+ARGUS Joe Rogan flip battle_item ms 7300 from 135 to 261
+ARGMOT Romero ms 7300 pos '2431.5 -2501.1 120.0' wish 262 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 7300 pos '1913.0 -13.5  24.0' wish 242 cause cover_retreat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGEVT Carmack hazard
+ARGMOT Joe Rogan ms 7400 pos '2411.7 -502.5   8.0' wish 261 cause wall_slide ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7400 from 261 to 137
+ARGUS Joe Rogan flip battle_item ms 7400 from 137 to 263
+ARGMOT Romero ms 7400 pos '1342.0 -1376.0 147.0' wish 230 cause route_steer ctx '  0.0   0.0   0.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 7400 pos '1913.0 -48.2  24.0' wish 242 cause hazard_fan ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 7500 pos '2407.3 -502.5   8.0' wish 263 cause wall_slide ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7500 from 263 to 139
+ARGUS Joe Rogan flip battle_item ms 7500 from 139 to 264
+ARGMOT Romero ms 7500 pos '1372.0 -1376.0 144.0' wish 198 cause route_steer ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 7500 pos '1906.6 -81.1  24.0' wish 242 cause cover_retreat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGUS Carmack flip combat_hazard ms 7500 from 242 to 402.9
+ARGMOT Joe Rogan ms 7600 pos '2403.6 -502.5   8.0' wish 264 cause wall_slide ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7600 from 264 to 138
+ARGUS Joe Rogan flip battle_item ms 7600 from 138 to 266
+ARGMOT Romero ms 7600 pos '1372.0 -1376.0 144.0' wish 166 cause route_steer ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Romero flip route_steer ms 7600 from 230 to 134
+ARGMOT Carmack ms 7600 pos '1926.2 -79.0  24.0' wish 402.9 cause combat_hazard ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 7700 pos '2401.4 -502.5   8.0' wish 266 cause wall_slide ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7700 from 266 to 136
+ARGUS Joe Rogan flip battle_item ms 7700 from 136 to 267
+ARGMOT Romero ms 7700 pos '1372.0 -1376.0 144.0' wish 134 cause route_steer ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 7700 pos '1923.4 -106.1  24.0' wish 242 cause cover_retreat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGEVT Romero route 4 start '1313.0 -1367.0 144.0' goal '1313.0 -951.0  32.0'
+ARGMOT Joe Rogan ms 7800 pos '2399.7 -528.0   8.0' wish 267 cause battle_item ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7800 from 267 to 133
+ARGUS Joe Rogan flip battle_item ms 7800 from 133 to 267
+ARGLOG Joe Rogan t   7.8 pos '2399.7 -528.0   8.0' spd  16.7 yaw 137.1 mode 2 st 0 gl 0 hp 46 frg 0
+ARGEVT Joe Rogan hazard
+ARGMOT Romero ms 7800 pos '1372.0 -1376.0 144.0' wish 102 cause route_steer ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   7.8 pos '1372.0 -1376.0 144.0' spd 300 yaw 104 mode 2 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 7800 pos '1913.9 -137.2  24.0' wish 242 cause cover_retreat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGLOG Carmack t   7.8 pos '1913.9 -137.2  24.0' spd 325.4 yaw 328.0 mode 2 st 0 gl 0 hp 21 frg 0
+ARGUS Carmack wallslide
+ARGMOT Joe Rogan ms 7900 pos '2374.1 -528.0   8.0' wish 267 cause wall_slide ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 7900 from 267 to 130
+ARGUS Joe Rogan flip battle_item ms 7900 from 130 to 279
+ARGMOT Romero ms 7900 pos '1372.0 -1376.0 144.0' wish 113 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 7900 pos '1913.9 -167.1  24.0' wish 242 cause wall_slide ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 8000 pos '2343.3 -528.0   8.0' wish 279 cause wall_slide ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip combat_approach ms 8000 from 279 to 126
+ARGUS Joe Rogan flip battle_item ms 8000 from 126 to 293
+ARGUS Joe Rogan flip hazard_fan ms 8000 from 259 to 359
+ARGMOT Romero ms 8000 pos '1372.0 -1376.0 144.0' wish 113 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8000 pos '1906.5 -199.3  24.0' wish 242 cause cover_retreat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGUS Carmack flip combat_backoff ms 8000 from 246.1 to 148
+ARGMOT Joe Rogan ms 8100.0 pos '2373.4 -528.0   8.0' wish 293 cause hazard_fan ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGEVT Joe Rogan pursue
+ARGUS Joe Rogan flip combat ms 8100.0 from 293 to 134
+ARGMOT Romero ms 8100.0 pos '1377.7 -1346.6 136.0' wish 113 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8100.0 pos '1906.5 -231.1  24.0' wish 148 cause hazard_hold ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGEVT Carmack pursue
+ARGUS Carmack flip combat ms 8100.0 from 148 to 332
+ARGMOT Joe Rogan ms 8200 pos '2369.3 -504.9   8.0' wish 134 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 8200 pos '1371.8 -1313.0 136.0' wish 121 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8200 pos '1942.5 -234.3  24.0' wish 332 cause hazard_fan ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 8300 pos '2352.3 -476.6   8.0' wish 136 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 8300 pos '1364.6 -1281.6 136.0' wish 109 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8300 pos '1974.8 -242.3  40.0' wish 330 cause combat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 8400 pos '2332.8 -450.8   8.0' wish 136 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGLOG Joe Rogan t   8.4 pos '2332.8 -450.8   8.0' spd 323.7 yaw 137 mode 2 st 0 gl 0 hp 46 frg 0
+ARGMOT Romero ms 8400 pos '1355.7 -1250.8 136.0' wish 110 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t   8.4 pos '1355.7 -1250.8 136.0' spd 320.7 yaw 105 mode 2 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 8400 pos '2005.3 -253.4  40.0' wish 329 cause combat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGLOG Carmack t   8.4 pos '2005.3 -253.4  40.0' spd 325.3 yaw 328 mode 2 st 0 gl 0 hp 21 frg 0
+ARGMOT Joe Rogan ms 8500 pos '2311.7 -426.5   8.0' wish 137 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 8500 pos '1345.8 -1220.3 152.0' wish 111 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8500 pos '2034.5 -267.1  40.0' wish 328 cause combat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 8600 pos '2289.8 -403.0   8.0' wish 137 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 8600 pos '1335.4 -1190.1 168.0' wish 112 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8600 pos '2063.1 -281.6  56.0' wish 328 cause combat ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGUS Carmack hunch item_artifact_super_damage
+ARGUS Carmack flip wander ms 8600 from 328 to 454.5
+ARGMOT Joe Rogan ms 8700 pos '2267.2 -380.4   8.0' wish 138 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 8700 pos '1323.9 -1160.1 184.0' wish 115 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8700 pos '2063.1 -258.7  40.0' wish 454.5 cause wall_slide ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 8800 pos '2244.2 -358.1   8.0' wish 138 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 8800 pos '1314.0 -1129.6 200.0' wish 103 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Carmack ms 8800 pos '2062.0 -226.7  24.0' wish  94.5 cause wander ctx '  2.0   0.0   1.0' hp 21 ground worldspawn
+ARGMOT Joe Rogan ms 8900 pos '2220.7 -336.3   8.0' wish 138 cause combat ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGEVT Carmack death Joe Rogan pos '2060.3 -194.8  24.0'
+ARGUS Joe Rogan watch spawn
+ARGMOT Romero ms 8900 pos '1305.7 -1098.6 200.0' wish 102 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 9000 pos '2222.0 -299.2  24.0' wish  57.6 cause combat_strafe ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGLOG Joe Rogan t 9 pos '2222.0 -299.2  24.0' spd 371.5 yaw  89.6 mode 2 st 0 gl 0 hp 46 frg 1
+ARGMOT Romero ms 9000 pos '1297.9 -1067.5 200.0' wish 102 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t 9 pos '1297.9 -1067.5 200.0' spd 320.2 yaw 82 mode 2 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 9100 pos '2223.2 -267.2  24.0' wish  89.6 cause noise_investigate ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 9100 pos '1291.3 -1036.2 200.0' wish 101 cause route_steer ctx '  2.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 9200 pos '2215.6 -234.4  24.0' wish 121.6 cause noise_investigate ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip noise_investigate ms 9200 from  57.6 to 153.6
+ARGMOT Romero ms 9200 pos '1290.0 -969.9 192.0' wish 76 cause route_steer ctx '  1.0   0.0   0.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 9300 pos '2194.2 -206.0  24.0' wish 153.6 cause noise_investigate ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 9300 pos '1289.3 -936.7 176.0' wish 44 cause route_steer ctx '  1.0   0.0   0.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 9400 pos '2164.6 -186.8  24.0' wish 172 cause noise_investigate ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 9400 pos '1288.6 -903.6 152.0' wish 12 cause route_steer ctx '  1.0   0.0   0.0' hp 100 ground worldspawn
+ARGEVT Joe Rogan goal backpack
+ARGEVT Joe Rogan route 3 start '2209.0 -279.0  24.0' goal '2017.0 -279.0  56.0'
+ARGMOT Joe Rogan ms 9500 pos '2133.8 -173.7  24.0' wish 175 cause noise_investigate ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 9500 pos '1302.0 -875.5 120.0' wish -20 cause route_steer ctx '  1.0   0.0   0.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 9600 pos '2102.1 -165.2  24.0' wish 178 cause noise_investigate ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGLOG Joe Rogan t   9.6 pos '2102.1 -165.2  24.0' spd 327.5 yaw 181 mode 2 st 0 gl 0 hp 46 frg 1
+ARGMOT Romero ms 9600 pos '1325.7 -860.8  80.0' wish -52 cause route_steer ctx '  1.0   0.0   0.0' hp 100 ground worldspawn
+ARGUS Romero flip route_steer ms 9600 from 12 to -84
+ARGLOG Romero t   9.6 pos '1325.7 -860.8  80.0' spd 279.7 yaw 276 mode 1 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 9700 pos '2070.1 -160.1  24.0' wish 181 cause noise_investigate ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 9700 pos '1351.1 -861.1  32.0' wish -84 cause route_steer ctx '  1.0   0.0   0.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 9800 pos '2038.0 -157.9  24.0' wish 183 cause noise_investigate ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 9800 pos '1360.0 -873.1  32.0' wish -113 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 9900 pos '2005.8 -157.3  24.0' wish 185 cause noise_investigate ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 9900 pos '1346.9 -902.5  32.0' wish -121 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 10000 pos '1973.8 -159.0  24.0' wish 187 cause noise_investigate ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 10000 pos '1331.8 -930.9  32.0' wish -125 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 10100 pos '1941.9 -170.6  24.0' wish 219 cause route_steer ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 10100 pos '1322.1 -962.6  32.0' wish -93 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 10200 pos '1916.6 -195.9  24.0' wish 251 cause route_steer ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip route_steer ms 10200 from 187 to 283
+ARGLOG Joe Rogan t  10.2 pos '1916.6 -195.9  24.0' spd 357.7 yaw 355 mode 2 st 0 gl 0 hp 46 frg 1
+ARGMOT Romero ms 10200 pos '1313.8 -993.5  32.0' wish -102 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Romero t  10.2 pos '1313.8 -993.5  32.0' spd 320.6 yaw 226 mode 1 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 10300 pos '1906.4 -231.4  24.0' wish 283 cause route_steer ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGEVT Joe Rogan hazard
+ARGMOT Romero ms 10300 pos '1696.0 -926.0  27.0' wish -134 cause route_steer ctx '  1.0   0.0   0.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 10400 pos '1943.9 -232.0  24.0' wish 315 cause hazard_hold ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 10400 pos '1696.0 -956.0  20.0' wish -166 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground door
+ARGMOT Joe Rogan ms 10500 pos '1976.1 -234.3  24.0' wish 347 cause route_steer ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 10500 pos '1696.0 -956.0  20.0' wish -181 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground door
+ARGUS Carmack flip spawn ms 10500 from  94.5 to 0
+ARGUS difficulty Carmack t  10.5 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack respawn
+ARGMOT Joe Rogan ms 10600 pos '2008.9 -231.4  24.0' wish 379 cause noise_investigate ctx '  2.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 10600 pos '1696.0 -956.0  20.0' wish -181 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground door
+ARGMOT Carmack ms 10600 pos '2248.0 -16.0 -136.0' wish 0 cause spawn ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGLOG Carmack t  10.6 pos '2248.0 -16.0 -136.0' spd 0 yaw 328 mode 0 st 0 gl 0 hp 100 frg 0
+ARGMOT Joe Rogan ms 10700 pos '2040.1 -215.5  24.0' wish 411 cause noise_investigate ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGUS Joe Rogan flip noise_investigate ms 10700 from 347 to 443
+ARGMOT Romero ms 10700 pos '1696.0 -956.0  20.0' wish -181 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground door
+ARGMOT Carmack ms 10700 pos '2275.4 -32.5 -136.0' wish -32 cause noise_investigate ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGMOT Joe Rogan ms 10800 pos '2061.5 -186.1  24.0' wish 443 cause noise_investigate ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGLOG Joe Rogan t  10.8 pos '2061.5 -186.1  24.0' spd 364.1 yaw 115 mode 0 st 0 gl 1 hp 46 frg 1
+ARGMOT Romero ms 10800 pos '1696.0 -956.0  20.0' wish -181 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground door
+ARGLOG Romero t  10.8 pos '1696.0 -956.0  20.0' spd 300 yaw 179 mode 1 st 0 gl 0 hp 100 frg 0
+ARGMOT Carmack ms 10800 pos '2298.8 -56.6 -120.0' wish -64 cause noise_investigate ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack flip noise_investigate ms 10800 from 0 to -96
+ARGEVT Carmack hazard
+ARGMOT Joe Rogan ms 10900 pos '2065.4 -149.0  24.0' wish 475 cause noise_investigate ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 10900 pos '1696.0 -956.0  20.0' wish -181 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground door
+ARGMOT Carmack ms 10900 pos '2332.1 -68.8 -104.0' wish -96 cause hazard_fan ctx '  0.0   0.0   1.0' hp 100 ground worldspawn
+ARGUS Carmack flip wander ms 10900 from -96 to 497.5
+ARGEVT Joe Rogan goal item_health
+ARGEVT Joe Rogan route 3 start '2017.0 -183.0  24.0' goal '2017.0 -535.0 104.0'
+ARGMOT Joe Rogan ms 11000 pos '2056.7 -114.1  24.0' wish 132.0 cause wander ctx '  0.0   0.0   1.0' hp 46 ground worldspawn
+ARGMOT Romero ms 11000 pos '1664.1 -973.7  20.0' wish -181 cause route_steer ctx '  1.0   0.0   1.0' hp 100 ground door
+ARGMOT Carmack ms 11000 pos '2328.5 -54.4 -104.0' wish 497.5 cause wander ctx '  0.0   0.0   1.0' hp 100 ground worldspawn

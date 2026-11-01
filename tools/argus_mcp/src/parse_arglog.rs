@@ -77,6 +77,8 @@ pub struct GameEvent {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct MatchTape {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub movement: Option<crate::motion::MotionReport>,
     /// Activated lab encounters/replays are inspectable, not ordinary matches.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub controlled_fixture: bool,
@@ -845,7 +847,9 @@ fn parse_one(text: &str) -> MatchTape {
     if map.is_none() {
         map = pending_map; // last request stood unrefused
     }
+    let movement = crate::motion::inspect(text, &events);
     MatchTape {
+        movement,
         controlled_fixture: controlled_fixture(text),
         map,
         samples,

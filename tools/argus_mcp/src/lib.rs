@@ -22,6 +22,7 @@ pub mod learn;
 pub mod live;
 pub mod match_ctrl;
 pub mod measure;
+pub mod motion;
 pub mod nav_graph;
 pub mod nav_provenance;
 pub mod nav_sync;

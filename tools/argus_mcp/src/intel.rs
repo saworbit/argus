@@ -161,6 +161,9 @@ pub struct ModeShare {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct MatchBrief {
+    /// Opt-in full-rate diagnostics, never folded into ARGLOG bands.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub movement: Option<crate::motion::MotionReport>,
     pub map: Option<String>,
     pub totals: Totals,
     pub mode_share: ModeShare,
@@ -894,6 +897,7 @@ fn brief_tape_lava(
     let goals = count_event_rest(tape, "goal");
     let weapons = count_event_rest(tape, "weapon");
     let mut brief = MatchBrief {
+        movement: tape.movement.clone(),
         map,
         totals,
         mode_share,

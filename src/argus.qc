@@ -1361,6 +1361,62 @@ void() Argus_HazardEntryMark =
         Argus_HazardCommitClear ();
 };
 
+// Opt-in full-rate movement diagnostics. Return the requested yaw unchanged;
+// these fields and markers are never read by steering or weapon decisions.
+float argus_motion_diag, argus_motion_latched;
+.string ar_motioncause, ar_fliplogcause;
+.float ar_fliplogtime;
+.float ar_motionbasetime, ar_motionbaseyaw;
+.string ar_motionbasecause;
+
+float(float previous, float requested, string cause) Argus_MotionTurn =
+{
+    local float delta, span, origin_yaw;
+    if (!argus_motion_diag) return requested;
+    self.ar_motioncause = cause;
+    if (self.ar_motionbasecause != cause || time > self.ar_motionbasetime + 0.25)
+    {
+        self.ar_motionbasecause = cause; self.ar_motionbasetime = time;
+        self.ar_motionbaseyaw = previous;
+    }
+    delta = requested - previous;
+    while (delta > 180) delta = delta - 360;
+    while (delta < -180) delta = delta + 360;
+    span = requested - self.ar_motionbaseyaw;
+    while (span > 180) span = span - 360;
+    while (span < -180) span = span + 360;
+    origin_yaw = previous;
+    if (fabs (delta) <= 90) origin_yaw = self.ar_motionbaseyaw;
+    if ((fabs (delta) > 90 || fabs (span) > 90)
+        && (time >= self.ar_fliplogtime || self.ar_fliplogcause != cause))
+    {
+        self.ar_fliplogtime = time + 0.1; self.ar_fliplogcause = cause;
+        dprint ("ARGUS "); dprint (self.netname); dprint (" flip "); dprint (cause);
+        dprint (" ms "); dprint (ftos (time * 1000));
+        dprint (" from "); dprint (ftos (origin_yaw));
+        dprint (" to "); dprint (ftos (requested)); dprint ("\n");
+        self.ar_motionbaseyaw = requested; self.ar_motionbasetime = time;
+    }
+    return requested;
+};
+
+void() Argus_MotionSample =
+{
+    local vector context;
+    if (!argus_motion_diag || self.health <= 0 || self.cam_active) return;
+    if (self.ar_motioncause == "") self.ar_motioncause = "spawn";
+    context_x = self.ar_mode; context_y = self.ar_liftwait;
+    context_z = (self.flags & FL_ONGROUND) != 0;
+    dprint ("ARGMOT "); dprint (self.netname);
+    dprint (" ms "); dprint (ftos (time * 1000));
+    dprint (" pos "); dprint (vtos (self.origin));
+    dprint (" wish "); dprint (ftos (self.ar_moveyaw));
+    dprint (" cause "); dprint (self.ar_motioncause);
+    dprint (" ctx "); dprint (vtos (context));
+    dprint (" hp "); dprint (ftos (self.health));
+    dprint (" ground "); dprint (self.groundentity.classname); dprint ("\n");
+};
+
 // TRUE when walking pdist units along myaw would end in lava, slime,
 // or a bottomless drop. Traces down 280u at the probe point: a
 // legitimate one-way drop link (<= 200u onto solid) passes, a lava pit
@@ -1483,12 +1539,13 @@ float(float myaw, float pdist) Argus_MoveHazard =
 // result is still hazardous the caller is boxed in.
 float(float want, float pdist) Argus_HazardSteer =
 {
-    local float hdiff;
+    local float hdiff, original;
+    original = want;
 
     if (!Argus_MoveHazard (want, pdist))
     {
         self.ar_hazhold = 0;
-        return want;
+        return Argus_MotionTurn (original, want, "hazard_safe");
     }
     if (self.ar_hazhold)
     {
@@ -1504,7 +1561,7 @@ float(float want, float pdist) Argus_HazardSteer =
         // and at 32u it saw the pit too late (2026-08-18 forensics:
         // lava 5-11 across the draft's four matches)
         if (hdiff <= 110 && !Argus_MoveHazard (self.ar_hazardyaw, 48))
-            return self.ar_hazardyaw;
+            return Argus_MotionTurn (original, self.ar_hazardyaw, "hazard_hold");
     }
     // A GENTLER 30 DEGREE RUNG AHEAD OF THESE WAS TRIED AND REVERTED
     // (the human-gait ladder). The reasoning was sound and the result
@@ -1550,11 +1607,11 @@ float(float want, float pdist) Argus_HazardSteer =
         // an escape, not a steer, and a held reverse marches the bot
         // back the way it came at the next corner
         self.ar_hazhold = 0;
-        return want + 180;
+        return Argus_MotionTurn (original, want + 180, "hazard_reverse");
     }
     self.ar_hazardyaw = want;
     self.ar_hazhold = 1;
-    return want;
+    return Argus_MotionTurn (original, want, "hazard_fan");
 };
 
 // TRUE when the straight walk from here to 'to' keeps survivable floor
@@ -1906,6 +1963,7 @@ float(float myaw, float spd, float probe) Argus_WallSlide =
     self.velocity_y = vh_y;
     if (!walkmove (cyaw, cspd * frametime))
         return FALSE;
+    Argus_MotionTurn (myaw, cyaw, "wall_slide");
     // throttled like the hazard deflection beside it, and for the
     // same reason: this fires about twelve times a second across a
     // roster and a line per firing would be most of the tape.
@@ -2072,7 +2130,7 @@ float() Argus_RecoveryWalk =
     if (time < self.ar_recoveryuntil && vlen (moved) < 64
         && Argus_RecoveryClear (self.ar_recoveryyaw))
     {
-        self.ar_moveyaw = self.ar_recoveryyaw;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_recoveryyaw, "recovery");
         return TRUE;
     }
     self.ar_recoveryuntil = 0;
@@ -2102,7 +2160,7 @@ float() Argus_RecoveryWalk =
             self.ar_recoveryyaw = yaw;
             self.ar_recoveryuntil = time + 0.8;
             self.ar_recoverypos = self.origin;
-            self.ar_moveyaw = yaw;
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, yaw, "recovery");
             self.ar_blockedfrom = 0;
             dprint ("ARGUS "); dprint (self.netname);
             dprint (" recovery walk "); dprint (ftos (yaw)); dprint ("\n");
@@ -3945,7 +4003,7 @@ void() Argus_Respawn =
     self.angles_y = spot.angles_y;
     self.angles_x = 0;
     self.angles_z = 0;
-    self.ar_moveyaw = self.angles_y;
+    self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "spawn");
     // the stock spawn rites: fog, and telefrag whoever is standing
     // here (their absence let a bot respawn inside a human and lock
     // both solid - found by the fifth playtest)
@@ -5519,7 +5577,7 @@ void() Argus_BodyBlockCheck =
                     }
                     self.ar_dodgeyaw = side;
                     self.ar_dodgetime = time + 0.25;
-                    self.ar_moveyaw = side;
+                    self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, side, "bodyblockcheck");
                     // SIDESTEP IN BOTH MODES, HOLD FIRE ONLY IN CO-OP
                     // (2026-09-15). The trigger release is the whole
                     // point in co-op: a companion that keeps firing
@@ -5671,6 +5729,7 @@ float(vector aimpt) Argus_MuzzleClear =
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
+    local string movecause;
     local entity e, sup, cnode, ctarget, chop;
     local vector to, aimpt, err, cvr, shd, shp, motstep, moterr;
     local float d, want, diff, turn, trackt, errscale, loft;
@@ -5741,7 +5800,7 @@ float() Argus_Combat =
                 if (diff > turn)        diff = turn;
                 else if (diff < -turn)  diff = -turn;
                 self.angles_y = self.angles_y + diff;
-                self.ar_moveyaw = self.angles_y;
+                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "combat");
                 // ambush reflex (2026-08-27, the hunch's trigger
                 // finger): ONE speculative rocket at the vanish
                 // point while chasing it - the shot arrives where
@@ -6300,6 +6359,7 @@ float() Argus_Combat =
     while (diff < -180) diff = diff + 360;
 
     // ---- movement: circle strafe, close or open range ----
+    movecause = "combat_strafe";
     // Tactical Think owns emergency checks. Ordinary detours must not age
     // battle-item cooldowns or log headings that the tactic never follows.
     if (!self.ar_tactic)
@@ -6308,7 +6368,10 @@ float() Argus_Combat =
     {
         self.ar_strafetime = time + 0.8 + random ();
         if (random () < 0.4)
+        {
             self.ar_strafedir = 0 - self.ar_strafedir;
+            movecause = "strafe_reroll";
+        }
 
         // Killzone's secondary threat is a tie-breaker between otherwise
         // equivalent committed directions, never a per-frame steering force.
@@ -6342,6 +6405,7 @@ float() Argus_Combat =
                 && Argus_SideClear (altyaw))
             {
                 self.ar_strafedir = 0 - self.ar_strafedir;
+                movecause = "secondary_threat";
                 if (primarycover == 2)
                     Argus_CrossfireLog ("backout");
                 else
@@ -6378,12 +6442,12 @@ float() Argus_Combat =
     // not radial force - idea bank, next design. Tapes:
     // ab_dm4_range1/2/3.
     if (d > 550)
-        self.ar_moveyaw = vectoyaw (to);
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to), "combat_approach");
     else if (d < 130)
-        self.ar_moveyaw = vectoyaw ('0 0 0' - to);
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - to), "combat_backoff");
     else
     {
-        self.ar_moveyaw = vectoyaw (to) + orbit * self.ar_strafedir;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to) + orbit * self.ar_strafedir, movecause);
         if (self.ar_threatclass)
             Argus_ThreatMoveLog (1, "range");
     }
@@ -6402,8 +6466,8 @@ float() Argus_Combat =
     if (highmult > 0 && epos_z - self.origin_z > 100
         && vlen (cvr) < (epos_z - self.origin_z) * highmult)
     {
-        self.ar_moveyaw = vectoyaw ('0 0 0' - cvr)
-                        + 35 * self.ar_strafedir;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - cvr)
+                        + 35 * self.ar_strafedir, "high_ground");
         if (self.ar_threatclass)
             Argus_ThreatMoveLog (2, "high");
     }
@@ -6433,9 +6497,8 @@ float() Argus_Combat =
                 self.ar_bitem = world;
             }
             else
-                self.ar_moveyaw =
-                    vectoyaw (Argus_GoalPoint (self.ar_bitem)
-                              - self.origin);
+                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (Argus_GoalPoint (self.ar_bitem)
+                              - self.origin), "battle_item");
         }
     }
 
@@ -6450,13 +6513,13 @@ float() Argus_Combat =
         Argus_DodgeScan ();
     }
     if (time < self.ar_dodgetime)
-        self.ar_moveyaw = self.ar_dodgeyaw;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_dodgeyaw, "missile_dodge");
 
     // the axe has no reach: the band logic above backs a dry bot
     // away from melee forever (Shane's review, fix 3). Charge
     // instead; the hazard check below still vetoes charging a brink
     if (self.weapon == IT_AXE)
-        self.ar_moveyaw = vectoyaw (to);
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to), "axe_charge");
 
     // ---- retreat by GEOMETRY, not speed (cortex DISENGAGE; third
     // attempt - the two 2026-08-18 backpedal retreats died in the
@@ -6659,7 +6722,7 @@ float() Argus_Combat =
             self.ar_covertime = time + 1.2;
         }
         if (self.ar_retreating)
-            self.ar_moveyaw = self.ar_coveryaw;
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_coveryaw, "cover_retreat");
     }
 
     // A RETREAT state was tried here twice (2026-08-18, "address the
@@ -6679,9 +6742,9 @@ float() Argus_Combat =
     {
         self.ar_strafedir = 0 - self.ar_strafedir;
         self.ar_strafetime = time + 0.5 + random () * 0.5;
-        self.ar_moveyaw = vectoyaw (to) + orbit * self.ar_strafedir;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to) + orbit * self.ar_strafedir, "combat_hazard");
         if (Argus_MoveHazard (self.ar_moveyaw, 48))
-            self.ar_moveyaw = vectoyaw ('0 0 0' - to);
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - to), "combat_backoff");
     }
 
     }
@@ -8066,7 +8129,7 @@ float() Argus_ActEscort =
         if (Argus_MoveHazard (want, 48))
             want = Argus_HazardSteer (want, 48);
 
-        self.ar_moveyaw = want;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, want, "actescort");
         self.angles_y = self.ar_teammate.angles_y;
         self.ar_liftwait = 0;
         return TRUE;
@@ -8124,7 +8187,7 @@ float() Argus_ActEscort =
         want = vectoyaw (to);
         if (Argus_MoveHazard (want, 32))
             want = Argus_HazardSteer (want, 32);
-        self.ar_moveyaw = want;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, want, "actescort");
         // face where we are going while closing, face with the player
         // once we are settled
         self.angles_y = want;
@@ -8146,7 +8209,7 @@ float() Argus_ActEscort =
         self.velocity_x = self.velocity_x * 0.5;
         self.velocity_y = self.velocity_y * 0.5;
         self.angles_y = self.ar_teammate.angles_y;
-        self.ar_moveyaw = self.angles_y;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "actescort");
     }
     return TRUE;
 };
@@ -8835,7 +8898,7 @@ void() Argus_CoopThink =
     {
         if (time < self.ar_coop_cover_end)
         {
-            self.ar_moveyaw = vectoyaw (self.ar_coop_cover_spot - self.origin);
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (self.ar_coop_cover_spot - self.origin), "coop");
             self.ar_coop_local = 1;
         }
         else
@@ -8859,7 +8922,7 @@ void() Argus_CoopThink =
         {
             // Perimeter guard: hold perimeter around fallen teammate, 360-degree scan
             self.angles_y = self.angles_y + 90 * frametime;
-            self.ar_moveyaw = self.angles_y;
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "coop");
             self.ar_coop_local = 1;
         }
     }
@@ -9898,7 +9961,7 @@ void() Argus_AI =
                 turn = AR_TURNRATE * frametime;
                 if (diff > turn)        diff = turn;
                 else if (diff < -turn)  diff = -turn;
-                self.ar_moveyaw = self.ar_moveyaw + diff;
+                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "noise_investigate");
                 self.angles_y = self.ar_moveyaw;
                 fighting = 1;       // borrow the combat override:
                                     // goal steering stands down
@@ -11098,7 +11161,7 @@ void() Argus_AI =
             self.ar_pending = 0;
             self.ar_mode = 0;
             self.angles_y = self.angles_y + 150;
-            self.ar_moveyaw = self.angles_y;
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "goal_abandon");
             Argus_Event ("abandon");
         }
         else
@@ -11122,7 +11185,7 @@ void() Argus_AI =
             turn = AR_TURNRATE * frametime;
             if (diff > turn)        diff = turn;
             else if (diff < -turn)  diff = -turn;
-            self.ar_moveyaw = self.ar_moveyaw + diff;
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "route_steer");
             self.angles_y = self.ar_moveyaw;
 
             // corner pre-aim (OPM slice C): while routed with nobody
@@ -11157,7 +11220,7 @@ void() Argus_AI =
             self.ar_wanderturn = time + 1 + random () * 2;
             self.angles_y = self.angles_y + (random () - 0.5) * 120;
         }
-        self.ar_moveyaw = self.angles_y;
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "wander");
     }
 
     while (self.angles_y < 0)   self.angles_y = self.angles_y + 360;
@@ -11313,6 +11376,16 @@ void() Argus_FrameAll =
         Argus_RetuneAll ();
     }
 
+    // QC assignment binds before &&. Keep the opt-in gate explicit.
+    argus_motion_diag = 0;
+    if (cvar ("developer"))
+        if (cvar ("scratch1") == 697) argus_motion_diag = 1;
+    if (argus_motion_diag && !argus_motion_latched)
+    {
+        dprint ("ARGMOT begin layout 2\n"); argus_motion_latched = 1;
+    }
+    if (!argus_motion_diag) argus_motion_latched = 0;
+
     Argus_Nav_Frame ();
 
     // rebroadcast names and frags every few seconds so clients that
@@ -11329,6 +11402,11 @@ void() Argus_FrameAll =
     {
         oself = self;
         self = b;
+        // StartFrame precedes engine physics. This is the finalized pose
+        // from the previous frame, at the same server time as its demo.
+        // Sampling after walkmove would observe an intermediate QC pose.
+        Argus_MotionSample ();
+        if (argus_motion_diag) self.ar_motioncause = "coast";
 
         if (self.health <= 0)
         {

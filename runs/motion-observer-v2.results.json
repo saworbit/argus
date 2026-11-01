@@ -1,0 +1,1405 @@
+{
+  "layout": "motion-observer-v2",
+  "status": "instrument_only",
+  "definition": "argus-reversal-v1",
+  "scope": "Passive intent markers and finalized engine poses. No steering or random decisions changed.",
+  "attribution": "Most recent intent marker within 250ms is temporal association, not causation.",
+  "limitations": [
+    "Development layout 1 is refused.",
+    "No gameplay A/B or promotion claim.",
+    "Historical demos remain local and unchanged; reference hashes identify the six reviewed files.",
+    "Issue 697 still needs matched dm4/dm2 bands and human feel confirmation.",
+    "No cross-cadence comparison; the 100ms case is an observer compatibility check."
+  ],
+  "artifacts": [
+    {
+      "path": "runs/motion_observer_v2_dm4_demo.log",
+      "sha256": "dbac3d8c07bfa5a777c171797d4b287344decbdeee2cf6d523a620f9f5f58400"
+    },
+    {
+      "path": "runs/demos/motion_observer_v2_dm4.dem",
+      "sha256": "f03cd936c6aa5383c59c0af80954856a30b11947670037fbec463ca21707a62a"
+    },
+    {
+      "path": "runs/demos/motion_observer_v2_dm4.tracks.json",
+      "sha256": "05d556bcc61035cad5b7a117047d23bcfa37228a201daa72182c0a1ef19e7489"
+    },
+    {
+      "path": "runs/motion_observer_v2_dm2_played.log",
+      "sha256": "59e88963d29f1e45b62e6afb7b8c6bce4cc31ecf8c3187e08ff16dafb56d3d5a"
+    },
+    {
+      "path": "runs/motion_observer_v2_dm2_slow.log",
+      "sha256": "7339a6e197100b864ffa99b93e189a24b1cf55ea07ca90b42d4823c0f62b9659"
+    },
+    {
+      "path": "runs/motion_observer_v2_disabled.log",
+      "sha256": "0f17d437b276c5b90ce4310be110c03b5e0a6edf9f13fcd4c5347aa12512089b"
+    },
+    {
+      "path": "runs/motion_observer_v2_bad_gate.log",
+      "sha256": "14cd9ad6348226600f8ceda7155041caa0615d361e9a41a931c349cae8f95231"
+    },
+    {
+      "path": "runs/motion-observer-v2.reference.json",
+      "sha256": "558a7dcce22934efd8b386bf22859e9ad2d5e12ae97602460f839994f9ac1f21"
+    },
+    {
+      "path": "runs/motion-observer-v2.mutation.txt",
+      "sha256": "eae3313f1ff834b6d3d1b630ce6a45aec1992556dbb56f03bb6377a75c6add42"
+    }
+  ],
+  "cases": [
+    {
+      "map": "dm4",
+      "ticrate": 0.0139,
+      "contracts": true,
+      "diagnostics": true,
+      "source_sha256": "316bfe4845ab2dfab628b2e32a42a9f5b9b1081625ffe62a7e662837935ee350",
+      "binary_sha256": "372798b94f160dda298b4a7767fffa04efe4c9ac5912c5d972d82368c92a88cd",
+      "raw_sha256": "dbac3d8c07bfa5a777c171797d4b287344decbdeee2cf6d523a620f9f5f58400",
+      "raw": "runs/motion_observer_v2_dm4_demo.log",
+      "demo_sha256": "f03cd936c6aa5383c59c0af80954856a30b11947670037fbec463ca21707a62a",
+      "tracks_sha256": "05d556bcc61035cad5b7a117047d23bcfa37228a201daa72182c0a1ef19e7489",
+      "movement": {
+        "bots": [
+          {
+            "epochs": 1,
+            "marker_attributed": 13,
+            "measured_hz": 69.58078656541335,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 0,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 13.639000000000003,
+              "observed_sec": 16.197,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 15,
+              "reversals_per_moving_minute": 65.98724246645646,
+              "speed_floor": 120.0
+            },
+            "name": "Carmack",
+            "reversal_causes": {
+              "combat": 1,
+              "combat_hazard": 2,
+              "hazard_fan": 1,
+              "hazard_hold": 1,
+              "high_ground": 4,
+              "wander": 4
+            },
+            "reversal_events": [
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  -23.600000381469727,
+                  435.79998779296875,
+                  -296.0
+                ],
+                "t": 1.63
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  -114.19999694824219,
+                  481.1000061035156,
+                  -296.0
+                ],
+                "t": 2.142
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "hazard_hold",
+                "pos": [
+                  33.099998474121094,
+                  422.20001220703125,
+                  -296.0
+                ],
+                "t": 2.83
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  -73.5,
+                  606.9000244140625,
+                  -296.0
+                ],
+                "t": 3.688
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  -44.5,
+                  533.9000244140625,
+                  -296.0
+                ],
+                "t": 4.2
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": null,
+                "pos": [
+                  -18.0,
+                  597.7999877929688,
+                  -296.0
+                ],
+                "t": 4.965
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": null,
+                "pos": [
+                  107.9000015258789,
+                  74.19999694824219,
+                  -296.0
+                ],
+                "t": 7.84
+              },
+              {
+                "active_branch": "hazard_fan",
+                "marker_cause": "hazard_fan",
+                "pos": [
+                  100.5,
+                  130.60000610351562,
+                  -296.0
+                ],
+                "t": 9.839
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  -53.099998474121094,
+                  -259.79998779296875,
+                  -296.0
+                ],
+                "t": 11.676
+              },
+              {
+                "active_branch": "high_ground",
+                "marker_cause": "high_ground",
+                "pos": [
+                  232.60000610351562,
+                  -239.0,
+                  -296.0
+                ],
+                "t": 12.783
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  191.8000030517578,
+                  -235.60000610351562,
+                  -296.0
+                ],
+                "t": 13.292
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": "high_ground",
+                "pos": [
+                  613.2000122070312,
+                  -265.6000061035156,
+                  -296.0
+                ],
+                "t": 14.9
+              },
+              {
+                "active_branch": "combat",
+                "marker_cause": "combat",
+                "pos": [
+                  213.10000610351562,
+                  -260.6000061035156,
+                  -296.0
+                ],
+                "t": 16.315
+              },
+              {
+                "active_branch": "high_ground",
+                "marker_cause": "high_ground",
+                "pos": [
+                  314.70001220703125,
+                  -183.0,
+                  -296.0
+                ],
+                "t": 16.86
+              },
+              {
+                "active_branch": "combat",
+                "marker_cause": "high_ground",
+                "pos": [
+                  358.1000061035156,
+                  -256.20001220703125,
+                  -296.0
+                ],
+                "t": 17.369
+              }
+            ],
+            "samples": 1128,
+            "unattributed": 2,
+            "unattributed_context": {
+              "route_steer": 2
+            }
+          },
+          {
+            "epochs": 1,
+            "marker_attributed": 15,
+            "measured_hz": 69.6961438888132,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 4,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 11.903999999999995,
+              "observed_sec": 14.635999999999997,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 17,
+              "reversals_per_moving_minute": 85.68548387096779,
+              "speed_floor": 120.0
+            },
+            "name": "Joe Rogan",
+            "reversal_causes": {
+              "battle_item": 1,
+              "combat": 2,
+              "combat_hazard": 4,
+              "combat_strafe": 2,
+              "hazard_fan": 1,
+              "hazard_hold": 1,
+              "high_ground": 2,
+              "wander": 2
+            },
+            "reversal_events": [
+              {
+                "active_branch": "hazard_fan",
+                "marker_cause": null,
+                "pos": [
+                  392.5,
+                  -219.5,
+                  -296.0
+                ],
+                "t": 2.858
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  376.79998779296875,
+                  -240.60000610351562,
+                  -296.0
+                ],
+                "t": 3.371
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  342.5,
+                  -233.89999389648438,
+                  -296.0
+                ],
+                "t": 3.902
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": "hazard_hold",
+                "pos": [
+                  333.20001220703125,
+                  -103.5,
+                  -296.0
+                ],
+                "t": 5.537
+              },
+              {
+                "active_branch": "battle_item",
+                "marker_cause": "battle_item",
+                "pos": [
+                  335.70001220703125,
+                  -137.60000610351562,
+                  -296.0
+                ],
+                "t": 6.047
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  378.29998779296875,
+                  3.799999952316284,
+                  -296.0
+                ],
+                "t": 6.618
+              },
+              {
+                "active_branch": "hazard_fan",
+                "marker_cause": "high_ground",
+                "pos": [
+                  379.8999938964844,
+                  -261.5,
+                  -296.0
+                ],
+                "t": 7.722
+              },
+              {
+                "active_branch": "hazard_hold",
+                "marker_cause": "combat",
+                "pos": [
+                  271.29998779296875,
+                  -211.60000610351562,
+                  -296.0
+                ],
+                "t": 8.251
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_strafe",
+                "pos": [
+                  251.89999389648438,
+                  -269.29998779296875,
+                  -296.0
+                ],
+                "t": 8.906
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  162.1999969482422,
+                  -234.60000610351562,
+                  -296.0
+                ],
+                "t": 9.427
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  160.60000610351562,
+                  -240.39999389648438,
+                  -296.0
+                ],
+                "t": 9.981
+              },
+              {
+                "active_branch": "hazard_fan",
+                "marker_cause": "combat_strafe",
+                "pos": [
+                  364.3999938964844,
+                  -214.10000610351562,
+                  -296.0
+                ],
+                "t": 10.869
+              },
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  440.1000061035156,
+                  -233.1999969482422,
+                  -296.0
+                ],
+                "t": 11.541
+              },
+              {
+                "active_branch": "combat",
+                "marker_cause": "combat",
+                "pos": [
+                  640.0999755859375,
+                  -130.8000030517578,
+                  -296.0
+                ],
+                "t": 12.297
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": null,
+                "pos": [
+                  731.4000244140625,
+                  -723.7999877929688,
+                  -216.0
+                ],
+                "t": 14.599
+              },
+              {
+                "active_branch": "high_ground",
+                "marker_cause": "high_ground",
+                "pos": [
+                  349.79998779296875,
+                  -48.5,
+                  -296.0
+                ],
+                "t": 16.099
+              },
+              {
+                "active_branch": "hazard_fan",
+                "marker_cause": "hazard_fan",
+                "pos": [
+                  350.3999938964844,
+                  95.4000015258789,
+                  -288.0
+                ],
+                "t": 16.949
+              }
+            ],
+            "samples": 1025,
+            "unattributed": 2,
+            "unattributed_context": {
+              "hazard_fan": 1,
+              "route_steer": 1
+            }
+          },
+          {
+            "epochs": 1,
+            "marker_attributed": 13,
+            "measured_hz": 69.58078656541335,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 0,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 15.501000000000001,
+              "observed_sec": 16.197,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 15,
+              "reversals_per_moving_minute": 58.06077027288561,
+              "speed_floor": 120.0
+            },
+            "name": "Romero",
+            "reversal_causes": {
+              "battle_item": 1,
+              "combat": 4,
+              "combat_hazard": 3,
+              "combat_strafe": 1,
+              "strafe_reroll": 1,
+              "wander": 3
+            },
+            "reversal_events": [
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  454.6000061035156,
+                  -911.7000122070312,
+                  -104.0
+                ],
+                "t": 3.759
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": "wander",
+                "pos": [
+                  449.6000061035156,
+                  -769.0,
+                  -104.0
+                ],
+                "t": 4.427
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": null,
+                "pos": [
+                  312.79998779296875,
+                  -749.7999877929688,
+                  -104.0
+                ],
+                "t": 4.937
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "wander",
+                "pos": [
+                  464.20001220703125,
+                  -66.80000305175781,
+                  -104.0
+                ],
+                "t": 7.603
+              },
+              {
+                "active_branch": "hazard_fan",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  461.1000061035156,
+                  -258.29998779296875,
+                  -104.0
+                ],
+                "t": 8.553
+              },
+              {
+                "active_branch": "combat",
+                "marker_cause": "combat",
+                "pos": [
+                  298.29998779296875,
+                  -520.7000122070312,
+                  -104.0
+                ],
+                "t": 10.197
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "strafe_reroll",
+                "pos": [
+                  123.5,
+                  -377.1000061035156,
+                  -104.0
+                ],
+                "t": 11.198
+              },
+              {
+                "active_branch": "combat",
+                "marker_cause": "combat",
+                "pos": [
+                  415.20001220703125,
+                  -503.8999938964844,
+                  -104.0
+                ],
+                "t": 12.282
+              },
+              {
+                "active_branch": "battle_item",
+                "marker_cause": "combat_strafe",
+                "pos": [
+                  444.29998779296875,
+                  -381.6000061035156,
+                  -104.0
+                ],
+                "t": 12.783
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  254.60000610351562,
+                  -408.70001220703125,
+                  -104.0
+                ],
+                "t": 14.043
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  415.0,
+                  -467.20001220703125,
+                  -104.0
+                ],
+                "t": 14.674
+              },
+              {
+                "active_branch": "route_steer",
+                "marker_cause": null,
+                "pos": [
+                  451.8999938964844,
+                  -259.1000061035156,
+                  -104.0
+                ],
+                "t": 15.441
+              },
+              {
+                "active_branch": "combat",
+                "marker_cause": "combat",
+                "pos": [
+                  592.2000122070312,
+                  -133.39999389648438,
+                  -104.0
+                ],
+                "t": 16.358
+              },
+              {
+                "active_branch": "battle_item",
+                "marker_cause": "battle_item",
+                "pos": [
+                  483.3999938964844,
+                  -164.8000030517578,
+                  -104.0
+                ],
+                "t": 16.86
+              },
+              {
+                "active_branch": "combat",
+                "marker_cause": "combat",
+                "pos": [
+                  584.7999877929688,
+                  -67.19999694824219,
+                  -104.0
+                ],
+                "t": 17.383
+              }
+            ],
+            "samples": 1128,
+            "unattributed": 2,
+            "unattributed_context": {
+              "route_steer": 2
+            }
+          }
+        ],
+        "eligible_for_reversal_claims": true,
+        "errors": [],
+        "layout": "argus-motion-v2"
+      },
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 7,
+        "all_frags_positive": false,
+        "avg_speed": 205.52305277813866,
+        "boards": 0,
+        "closest_approach": 195.34610310932746,
+        "cover": 72,
+        "deaths": 1,
+        "duration_sec": 16.0,
+        "engages": 6,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 2,
+        "grabs": 6,
+        "hazards": 30,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 0,
+        "stalls": 1,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.508888888888889,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav",
+        "paired demo joined: 1 highlight(s), 11 track(s) - playdemo motion_final_demo_dm4 and jump to a highlight's t"
+      ],
+      "demo_alignment": {
+        "name": "Carmack",
+        "demo_samples": 1071,
+        "paired": 1070,
+        "maximum_error": 0.14142135623730648
+      }
+    },
+    {
+      "map": "dm2",
+      "ticrate": 0.0139,
+      "contracts": true,
+      "diagnostics": true,
+      "source_sha256": "316bfe4845ab2dfab628b2e32a42a9f5b9b1081625ffe62a7e662837935ee350",
+      "binary_sha256": "372798b94f160dda298b4a7767fffa04efe4c9ac5912c5d972d82368c92a88cd",
+      "raw_sha256": "59e88963d29f1e45b62e6afb7b8c6bce4cc31ecf8c3187e08ff16dafb56d3d5a",
+      "raw": "runs/motion_observer_v2_dm2_played.log",
+      "movement": {
+        "bots": [
+          {
+            "epochs": 1,
+            "marker_attributed": 8,
+            "measured_hz": 69.1930806919308,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 4,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 8.111000000000002,
+              "observed_sec": 9.944,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 8,
+              "reversals_per_moving_minute": 59.17889286154603,
+              "speed_floor": 120.0
+            },
+            "name": "Carmack",
+            "reversal_causes": {
+              "combat_hazard": 3,
+              "combat_strafe": 1,
+              "cover_retreat": 2,
+              "hazard_hold": 1,
+              "strafe_reroll": 1
+            },
+            "reversal_events": [
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_strafe",
+                "pos": [
+                  2442.300048828125,
+                  -240.0,
+                  24.0
+                ],
+                "t": 1.759
+              },
+              {
+                "active_branch": "wall_slide",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2328.89990234375,
+                  -240.0,
+                  24.0
+                ],
+                "t": 2.46
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2414.800048828125,
+                  -236.89999389648438,
+                  24.0
+                ],
+                "t": 2.971
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2174.800048828125,
+                  -511.3999938964844,
+                  8.0
+                ],
+                "t": 4.549
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "strafe_reroll",
+                "pos": [
+                  2237.60009765625,
+                  -259.0,
+                  24.0
+                ],
+                "t": 5.455
+              },
+              {
+                "active_branch": "hazard_hold",
+                "marker_cause": "hazard_hold",
+                "pos": [
+                  2341.39990234375,
+                  -319.20001220703125,
+                  8.0
+                ],
+                "t": 8.413
+              },
+              {
+                "active_branch": "cover_retreat",
+                "marker_cause": "cover_retreat",
+                "pos": [
+                  2316.699951171875,
+                  -404.8999938964844,
+                  8.0
+                ],
+                "t": 8.921
+              },
+              {
+                "active_branch": "cover_retreat",
+                "marker_cause": "cover_retreat",
+                "pos": [
+                  2340.699951171875,
+                  -166.0,
+                  24.0
+                ],
+                "t": 11.186
+              }
+            ],
+            "samples": 693,
+            "unattributed": 0,
+            "unattributed_context": {}
+          },
+          {
+            "epochs": 1,
+            "marker_attributed": 5,
+            "measured_hz": 69.1930806919308,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 7,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 5.514000000000004,
+              "observed_sec": 9.901000000000002,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 5,
+              "reversals_per_moving_minute": 54.406964091403665,
+              "speed_floor": 120.0
+            },
+            "name": "Joe Rogan",
+            "reversal_causes": {
+              "battle_item": 1,
+              "combat_hazard": 4
+            },
+            "reversal_events": [
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2503.699951171875,
+                  -508.3999938964844,
+                  8.0
+                ],
+                "t": 4.905
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2516.199951171875,
+                  -321.79998779296875,
+                  24.0
+                ],
+                "t": 5.61
+              },
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2594.300048828125,
+                  -328.79998779296875,
+                  24.0
+                ],
+                "t": 6.383
+              },
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2557.39990234375,
+                  -328.1000061035156,
+                  24.0
+                ],
+                "t": 8.864
+              },
+              {
+                "active_branch": "battle_item",
+                "marker_cause": "battle_item",
+                "pos": [
+                  2633.300048828125,
+                  -326.5,
+                  24.0
+                ],
+                "t": 9.744
+              }
+            ],
+            "samples": 693,
+            "unattributed": 0,
+            "unattributed_context": {}
+          },
+          {
+            "epochs": 1,
+            "marker_attributed": 5,
+            "measured_hz": 69.1930806919308,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 5,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 7.3759999999999994,
+              "observed_sec": 9.927000000000001,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 5,
+              "reversals_per_moving_minute": 40.67245119305857,
+              "speed_floor": 120.0
+            },
+            "name": "Romero",
+            "reversal_causes": {
+              "wander": 5
+            },
+            "reversal_events": [
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2751.89990234375,
+                  -2100.199951171875,
+                  120.0
+                ],
+                "t": 1.556
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2756.0,
+                  -2260.39990234375,
+                  120.0
+                ],
+                "t": 2.519
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2666.300048828125,
+                  -2165.199951171875,
+                  120.0
+                ],
+                "t": 3.113
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2731.39990234375,
+                  -2323.10009765625,
+                  120.0
+                ],
+                "t": 3.815
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2744.699951171875,
+                  -2255.10009765625,
+                  120.0
+                ],
+                "t": 4.322
+              }
+            ],
+            "samples": 693,
+            "unattributed": 0,
+            "unattributed_context": {}
+          }
+        ],
+        "eligible_for_reversal_claims": true,
+        "errors": [],
+        "layout": "argus-motion-v2"
+      },
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 6,
+        "all_frags_positive": false,
+        "avg_speed": 171.26779987994283,
+        "boards": 0,
+        "closest_approach": 182.28343314739274,
+        "cover": 45,
+        "deaths": 0,
+        "duration_sec": 9.600000000000001,
+        "engages": 2,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 0,
+        "grabs": 5,
+        "hazards": 11,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 0,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.505263157894737,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ],
+      "demo_alignment": null
+    },
+    {
+      "map": "dm2",
+      "ticrate": 0.1,
+      "contracts": true,
+      "diagnostics": true,
+      "source_sha256": "316bfe4845ab2dfab628b2e32a42a9f5b9b1081625ffe62a7e662837935ee350",
+      "binary_sha256": "372798b94f160dda298b4a7767fffa04efe4c9ac5912c5d972d82368c92a88cd",
+      "raw_sha256": "7339a6e197100b864ffa99b93e189a24b1cf55ea07ca90b42d4823c0f62b9659",
+      "raw": "runs/motion_observer_v2_dm2_slow.log",
+      "movement": {
+        "bots": [
+          {
+            "epochs": 1,
+            "marker_attributed": 6,
+            "measured_hz": 10.0,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 1,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 8.0,
+              "observed_sec": 8.0,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 6,
+              "reversals_per_moving_minute": 45.0,
+              "speed_floor": 120.0
+            },
+            "name": "Carmack",
+            "reversal_causes": {
+              "combat_hazard": 1,
+              "combat_strafe": 1,
+              "cover_retreat": 1,
+              "strafe_reroll": 2,
+              "wander": 1
+            },
+            "reversal_events": [
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "combat_strafe",
+                "pos": [
+                  2336.0,
+                  -227.8000030517578,
+                  24.0
+                ],
+                "t": 2.1
+              },
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2145.5,
+                  -487.5,
+                  8.0
+                ],
+                "t": 3.5
+              },
+              {
+                "active_branch": "strafe_reroll",
+                "marker_cause": "strafe_reroll",
+                "pos": [
+                  2174.39990234375,
+                  -246.60000610351562,
+                  24.0
+                ],
+                "t": 4.4
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "strafe_reroll",
+                "pos": [
+                  2248.5,
+                  -338.79998779296875,
+                  8.0
+                ],
+                "t": 5.4
+              },
+              {
+                "active_branch": "combat_strafe",
+                "marker_cause": "cover_retreat",
+                "pos": [
+                  2201.60009765625,
+                  -309.3999938964844,
+                  24.0
+                ],
+                "t": 5.9
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2328.5,
+                  -54.400001525878906,
+                  -104.0
+                ],
+                "t": 11.0
+              }
+            ],
+            "samples": 82,
+            "unattributed": 0,
+            "unattributed_context": {}
+          },
+          {
+            "epochs": 1,
+            "marker_attributed": 8,
+            "measured_hz": 10.0,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 0,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 9.1,
+              "observed_sec": 9.8,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 8,
+              "reversals_per_moving_minute": 52.74725274725275,
+              "speed_floor": 120.0
+            },
+            "name": "Joe Rogan",
+            "reversal_causes": {
+              "battle_item": 3,
+              "combat": 1,
+              "combat_hazard": 2,
+              "hazard_fan": 1,
+              "route_steer": 1
+            },
+            "reversal_events": [
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "battle_item",
+                "pos": [
+                  2441.89990234375,
+                  -519.2000122070312,
+                  8.0
+                ],
+                "t": 2.0
+              },
+              {
+                "active_branch": "battle_item",
+                "marker_cause": "battle_item",
+                "pos": [
+                  2351.699951171875,
+                  -516.5,
+                  8.0
+                ],
+                "t": 2.8
+              },
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2310.89990234375,
+                  -328.1000061035156,
+                  8.0
+                ],
+                "t": 3.9
+              },
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "battle_item",
+                "pos": [
+                  2177.699951171875,
+                  -501.20001220703125,
+                  8.0
+                ],
+                "t": 4.9
+              },
+              {
+                "active_branch": "battle_item",
+                "marker_cause": "hazard_fan",
+                "pos": [
+                  2141.800048828125,
+                  -504.8999938964844,
+                  8.0
+                ],
+                "t": 5.5
+              },
+              {
+                "active_branch": "combat_hazard",
+                "marker_cause": "combat_hazard",
+                "pos": [
+                  2128.5,
+                  -474.6000061035156,
+                  8.0
+                ],
+                "t": 6.0
+              },
+              {
+                "active_branch": "hazard_fan",
+                "marker_cause": "combat",
+                "pos": [
+                  2373.39990234375,
+                  -528.0,
+                  8.0
+                ],
+                "t": 8.1
+              },
+              {
+                "active_branch": "hazard_hold",
+                "marker_cause": "route_steer",
+                "pos": [
+                  1943.9000244140625,
+                  -232.0,
+                  24.0
+                ],
+                "t": 10.4
+              }
+            ],
+            "samples": 99,
+            "unattributed": 0,
+            "unattributed_context": {}
+          },
+          {
+            "epochs": 1,
+            "marker_attributed": 2,
+            "measured_hz": 10.0,
+            "movement": {
+              "definition": "argus-reversal-v1",
+              "discontinuities": 2,
+              "maximum_gap_sec": 0.25,
+              "maximum_segment_speed": 1000.0,
+              "minimum_turn_degrees": 120.0,
+              "moving_sec": 7.299999999999998,
+              "observed_sec": 9.599999999999998,
+              "refractory_sec": 0.5,
+              "reversal_window_sec": 0.25,
+              "reversals": 2,
+              "reversals_per_moving_minute": 16.438356164383567,
+              "speed_floor": 120.0
+            },
+            "name": "Romero",
+            "reversal_causes": {
+              "wander": 2
+            },
+            "reversal_events": [
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2779.10009765625,
+                  -1987.699951171875,
+                  120.0
+                ],
+                "t": 1.9
+              },
+              {
+                "active_branch": "wander",
+                "marker_cause": "wander",
+                "pos": [
+                  2670.699951171875,
+                  -2310.10009765625,
+                  120.0
+                ],
+                "t": 3.1
+              }
+            ],
+            "samples": 99,
+            "unattributed": 0,
+            "unattributed_context": {}
+          }
+        ],
+        "eligible_for_reversal_claims": true,
+        "errors": [],
+        "layout": "argus-motion-v2"
+      },
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 4,
+        "all_frags_positive": false,
+        "avg_speed": 216.8140298485755,
+        "boards": 0,
+        "closest_approach": 181.2226255190008,
+        "cover": 41,
+        "deaths": 1,
+        "duration_sec": 9.600000000000001,
+        "engages": 2,
+        "frags": 1,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 3,
+        "hazards": 7,
+        "kd_spread": 1,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 1,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "slower_than_12hz",
+        "tick_gap_mean": 0.6000000000000004,
+        "weapons": 1,
+        "world_deaths": 0
+      },
+      "flags": [
+        "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+        "closed button-only doors stall at runtime until the button fires",
+        "one shootable button (*30 health 1) opens t18"
+      ],
+      "demo_alignment": null
+    },
+    {
+      "map": "dm4",
+      "ticrate": 0.0139,
+      "contracts": false,
+      "diagnostics": false,
+      "source_sha256": "9ba39dbd528a59e931feb62d45e2696cc32b62dcf065ceb6338331e9a03b244d",
+      "binary_sha256": "8d8e9db876dc873d74dc7b21aaea010e874437297a44c1d0f050330c5b90e513",
+      "raw_sha256": "0f17d437b276c5b90ce4310be110c03b5e0a6edf9f13fcd4c5347aa12512089b",
+      "raw": "runs/motion_observer_v2_disabled.log",
+      "movement": null,
+      "totals": {
+        "abandons": 0,
+        "acquisitions": 3,
+        "all_frags_positive": false,
+        "avg_speed": 197.7776261817681,
+        "boards": 0,
+        "closest_approach": 177.6117676281614,
+        "confine_max_sec": 7.1000000000000005,
+        "confine_note": "Joe Rogan spent 7.1s inside a 220u box at 215 u/s around (283, -160)",
+        "cover": 42,
+        "deaths": 0,
+        "duration_sec": 9.700000000000001,
+        "engages": 3,
+        "frags": 0,
+        "freeze_max_sec": 0.0,
+        "freeze_underfire": 0,
+        "freezes": 0,
+        "goals": 1,
+        "grabs": 3,
+        "hazards": 19,
+        "kd_spread": 0,
+        "lava_deaths": 0,
+        "lava_rule": "contents",
+        "mover_waits": 0,
+        "player_kills": 0,
+        "routefails": 0,
+        "stalls": 0,
+        "third_party_deaths": 0,
+        "tick_class": "listen",
+        "tick_gap_mean": 0.5105263157894737,
+        "weapons": 0,
+        "world_deaths": 0
+      },
+      "flags": [
+        "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+        "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+      ],
+      "demo_alignment": null
+    }
+  ],
+  "contracts": [
+    "runs/motion_observer_v2_dm4_demo.log",
+    "runs/motion_observer_v2_dm2_played.log",
+    "runs/motion_observer_v2_dm2_slow.log"
+  ],
+  "disabled_raw": "runs/motion_observer_v2_disabled.log",
+  "negative_controls": [
+    {
+      "map": "dm4",
+      "ticrate": 0.0139,
+      "contracts": false,
+      "diagnostics": false,
+      "source_sha256": "64632c0a9d96f8f5987e4ef01226488bb60a5f220d55edd01fd98a299d9414b5",
+      "binary_sha256": "f9aa86186f74048ce002c034188fc1b59163d8d19fb203df2c825178cb817ecc",
+      "raw_sha256": "14cd9ad6348226600f8ceda7155041caa0615d361e9a41a931c349cae8f95231",
+      "raw": "runs/motion_observer_v2_bad_gate.log",
+      "expected_failure": "disabled diagnostics emitted data"
+    }
+  ],
+  "demo_alignment": {
+    "raw": "runs/motion_observer_v2_dm4_demo.log",
+    "demo": "runs/demos/motion_observer_v2_dm4.dem",
+    "tracks": "runs/demos/motion_observer_v2_dm4.tracks.json",
+    "name": "Carmack",
+    "result": {
+      "name": "Carmack",
+      "demo_samples": 1071,
+      "paired": 1070,
+      "maximum_error": 0.14142135623730648
+    }
+  },
+  "historical_reference": "runs/motion-observer-v2.reference.json",
+  "metric_mutation": "runs/motion-observer-v2.mutation.txt"
+}
