@@ -9,8 +9,10 @@ use std::sync::{Arc, Mutex};
 use std::process::Stdio;
 #[cfg(not(windows))]
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
+#[cfg(any(not(windows), test))]
+use tokio::process::Command;
 #[cfg(not(windows))]
-use tokio::process::{Child, ChildStdin, Command};
+use tokio::process::{Child, ChildStdin};
 
 /// Serialises the engine-gated integration tests: each spawns a real
 /// dedicated engine on the UDP port, and cargo runs tests in
@@ -339,7 +341,7 @@ pub fn ticrate() -> String {
     std::env::var("ARGUS_TICRATE").unwrap_or_else(|_| PLAYED_TICRATE.to_string())
 }
 
-#[cfg(not(windows))]
+#[cfg(any(not(windows), test))]
 fn apply_args(
     cmd: &mut Command,
     cfg: &Config,
@@ -367,10 +369,11 @@ fn apply_args(
     }
     cmd.arg("-port")
         .arg(port.unwrap_or(crate::match_ctrl::DEFAULT_PORT).to_string());
-    cmd.arg("+map").arg(map);
     if let Some(s) = skill {
         cmd.arg("+skill").arg(s.to_string());
     }
+    // Map loading runs QC and spawns the roster before later commands.
+    cmd.arg("+map").arg(map);
 }
 
 #[cfg(not(windows))]
@@ -443,7 +446,7 @@ fn engine_job() -> windows_sys::Win32::Foundation::HANDLE {
     .0
 }
 
-#[cfg(windows)]
+#[cfg(any(windows, test))]
 /// Build the dedicated engine's command line. Split out of
 /// `spawn_windows` so a test can assert on it without spawning a
 /// process: the tick-rate flag is the one argument the whole lab's
@@ -465,7 +468,7 @@ fn windows_args(
     };
     let tick = ticrate();
     let mut args = format!(
-        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +sys_ticrate {tick} {mode_arg} +map {map}",
+        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +sys_ticrate {tick} {mode_arg}",
         cfg.basedir.display(),
         cfg.game
     );
@@ -475,6 +478,7 @@ fn windows_args(
         }
         args.push_str(&format!(" +skill {s}"));
     }
+    args.push_str(&format!(" +map {map}"));
     Ok(args)
 }
 
@@ -1041,6 +1045,49 @@ mod tests {
             game: "argus".into(),
             maps: tmp.join("maps"),
             runs: tmp.join("runs"),
+        }
+    }
+
+    #[test]
+    fn startup_skill_precedes_map_on_both_spawn_paths() {
+        let cfg = tick_cfg();
+        for skill in 0..=3 {
+            for coop in [false, true] {
+                let windows = windows_args(&cfg, "dm3", 8, Some(skill), None, coop).unwrap();
+                let mut cmd = Command::new("x");
+                apply_args(&mut cmd, &cfg, "dm3", 8, Some(skill), None, coop);
+                let unix = cmd
+                    .as_std()
+                    .get_args()
+                    .map(|s| s.to_string_lossy())
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                for args in [windows, unix] {
+                    assert!(
+                        args.find(&format!("+skill {skill}")).unwrap()
+                            < args.find("+map dm3").unwrap(),
+                        "{args}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn absent_startup_skill_keeps_inherited_configuration() {
+        let cfg = tick_cfg();
+        let windows = windows_args(&cfg, "dm3", 8, None, None, false).unwrap();
+        let mut cmd = Command::new("x");
+        apply_args(&mut cmd, &cfg, "dm3", 8, None, None, false);
+        let unix = cmd
+            .as_std()
+            .get_args()
+            .map(|s| s.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join(" ");
+        for args in [windows, unix] {
+            assert!(!args.contains("+skill"), "{args}");
+            assert!(args.contains("+map dm3"), "{args}");
         }
     }
 
