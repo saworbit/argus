@@ -1,4 +1,6 @@
 """Observe real water-route execution in private native lab assets."""
+
+from run_behaviour_equivalence import lab_executable, lab_cli
 from argus_validation import require
 import argparse
 import json
@@ -11,7 +13,7 @@ import subprocess
 import sys
 
 import run_behaviour_equivalence as native
-from run_map_intelligence import ROOT, Lab, digest, write, lab_executable
+from run_map_intelligence import ROOT, Lab, digest, write
 
 DECISION_LABELS = ('walk_chain','typed_jump','typed_sprint','typed_rocket','typed_swim',
     'typed_lift','typed_train','typed_door','height_change','active_action',
@@ -171,13 +173,13 @@ def main():
         original = ROOT / 'engine/argus' / name
         if original.exists(): shutil.copytree(original, folder / name)
     (folder / 'autoexec.cfg').write_text(f'sv_protocol 15\nmax_edicts 600\nscratch2 {args.case}\n')
-    native.EXE = lab_executable()
+    executable = lab_executable()
     env = dict(ARGUS_SRC=str(output / 'src'), ARGUS_PROGS=str(output / 'lq1/progs.dat'),
         ARGUS_RUNS=str(output / 'runs'), ARGUS_GAME=game, ARGUS_PYTHON=sys.executable,
         ARGUS_TICRATE=str(args.ticrate))
     rows = []
     with (output / 'lab.stderr').open('w') as err:
-        lab = Lab(err, env)
+        lab = Lab(err, env, exe=executable, timeout=900)
         try:
             lab.call('see', what='project')
             compiled = lab.call('compile_qc', install=False); write(output / 'compile.json', compiled)
@@ -185,10 +187,7 @@ def main():
             shutil.copy2(output / 'lq1/progs.dat', folder / 'progs.dat')
             for map_name in maps:
                 name = args.prefix + '_' + map_name
-                result = subprocess.run([str(native.EXE), 'match', map_name, '36' if args.case in (8,9) else '24', name,
-                    '--skill', '2', '--port', str(args.port)], cwd=ROOT,
-                    env=dict(os.environ, ARGUS_ROOT=str(ROOT), **env), capture_output=True,
-                    text=True, encoding='utf-8', timeout=65)
+                result = lab_cli(executable, 'match', map_name, '36' if args.case in (8,9) else '24', name, '--skill', '2', '--port', str(args.port), cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT), **env), timeout=65)
                 (output / (map_name + '.stderr')).write_text(result.stderr)
                 require((result.returncode == 0), result.stderr)
                 raw = output / 'runs' / (name + '.log')

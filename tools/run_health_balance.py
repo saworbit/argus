@@ -2,6 +2,8 @@
 
 Eight counterbalanced pairs per map; not a powered gameplay equivalence test.
 """
+
+from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import hashlib
 import json
@@ -11,7 +13,7 @@ import shutil
 import subprocess
 import time
 
-from run_behaviour_equivalence import finish_lab, ROOT, EXE, Lab, identity, timing, cpu_seconds
+from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity, timing, cpu_seconds
 
 OUT = ROOT / 'backups/perception-step1b'
 
@@ -24,7 +26,8 @@ def source_digest(path):
     return h.hexdigest()
 
 
-def write_comparisons(rows):
+def write_comparisons(rows, executable=None):
+    executable = lab_executable(executable)
     assert len(rows) == 32, 'complete the fixed cohort before comparison'
     comparisons = {}
     for map_name in ('dm2', 'dm4'):
@@ -36,9 +39,8 @@ def write_comparisons(rows):
                 path = ROOT / f"runs/{row['name']}.log"
                 assert hashlib.sha256(path.read_bytes()).hexdigest() == row['raw_sha256']
             names[mode] = ','.join(r['name'] for r in arm)
-        command = [str(EXE), 'compare', names['candidate'], names['control'], '--primary', 'lava_deaths']
-        run = subprocess.run(command, cwd=ROOT, env=dict(os.environ, ARGUS_ROOT=str(ROOT)),
-            capture_output=True, text=True, encoding='utf-8', timeout=60)
+        command = [str(executable), 'compare', names['candidate'], names['control'], '--primary', 'lava_deaths']
+        run = lab_cli(executable, *command[1:], cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT)), timeout=60)
         assert run.returncode == 0, run.stderr
         # Native compare emits a UTF-8 gate card and findings, not JSON.
         comparisons[map_name] = dict(command=command, returncode=run.returncode,
@@ -47,6 +49,7 @@ def write_comparisons(rows):
 
 
 def main():
+    executable = lab_executable()
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--compare-only', action='store_true', help='export the completed cohort without launching engines')
     args = ap.parse_args()
@@ -81,7 +84,7 @@ def main():
                     assert before == dict(base_identity[map_name],binary_sha256=binary_hashes[mode])
                     active = False
                     with (OUT / f'{name}.stderr').open('w') as err:
-                        lab = Lab(err)
+                        lab = Lab(err, exe=executable)
                         try:
                             start = lab.call('match_start', map=map_name, duration_sec=80, skill=1, run_name=name)
                             active = True

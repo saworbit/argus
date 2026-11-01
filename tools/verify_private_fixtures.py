@@ -28,7 +28,7 @@ from check_muzzle_combat import check as check_combat
 from check_button_physical import audit as audit_button, check as check_button
 from check_door_actuator import audit as audit_door, check as check_door, DIRECT_ONLY_FAILURES
 from check_perception_fixture import check as check_perception
-from run_behaviour_equivalence import EXE, Lab, ROOT
+from run_behaviour_equivalence import Lab, ROOT, lab_executable, lab_cli
 from run_health_fixture import prepare as prepare_health, audit_private
 from verify_plan_progress import copy_assets, save, sha
 
@@ -44,13 +44,14 @@ def identities(paths):
     return {str(p): sha(p) if p.is_file() else None for p in paths}
 
 
-def preflight(root, output, prefix):
+def preflight(root, output, prefix, executable=None):
+    executable = lab_executable(executable)
     output = output.resolve()
     if not output.is_relative_to((root/'backups').resolve()) or output.exists():
         raise ValueError('output must be a new directory beneath backups/')
     if not re.fullmatch(r'[a-z0-9_]{1,48}', prefix):
         raise ValueError('prefix must contain 1..48 lowercase letters, digits or underscores')
-    if not (root/'src/progs.src').is_file() or not EXE.is_file():
+    if not (root/'src/progs.src').is_file() or not executable.is_file():
         raise ValueError('current sources and a source-built native lab are required')
     return output
 
@@ -146,8 +147,7 @@ def button_player_trial(lab,stem,env,client_run,folder):
             if not status.get('running') or time.monotonic()>=deadline:
                 raise RuntimeError('private player-control engine did not become healthy')
             time.sleep(.1)
-        result=client_run([str(EXE),'client','walk','-224','288','320','6'],cwd=ROOT,
-            env=dict(os.environ,**env),capture_output=True,text=True,encoding='utf-8',timeout=18)
+        result=lab_cli(lab.executable, 'client', 'walk', '-224', '288', '320', '6', cwd=ROOT, environment=dict(os.environ,**env), timeout=18, runner=client_run)
         save(folder/(stem+'.client.json'),dict(returncode=result.returncode,stdout=result.stdout,stderr=result.stderr))
         if result.returncode:raise RuntimeError('player-control client failed: '+result.stderr)
     finally:
@@ -179,9 +179,9 @@ def stage_door(root, folder, variant):
     path.write_text(source.replace('Argus_FrameAll ();','if (time > 1) DoorActuatorFixture ();\n    Argus_FrameAll ();'))
 
 
-def native_config(lab_factory, output):
+def native_config(lab_factory, output, executable):
     with (output/'config.stderr').open('w') as err:
-        lab = lab_factory(err, {'TOKIO_WORKER_THREADS': '2'})
+        lab = lab_factory(err, {'TOKIO_WORKER_THREADS': '2'}, exe=executable)
         try:
             project = lab.call('see', what='project')
             if not project.get('lab_identity', {}).get('authoritative'):
@@ -229,24 +229,23 @@ def health_trial(lab, stem, map_name, env, client_run):
                 raise RuntimeError('private engine did not become healthy')
             time.sleep(.05)
         lab.call('match_command', command='sys_ticrate 0.0139; developer 1; scratch1 593; scratch2 0; scratch3 1; scratch4 594')
-        result = client_run([str(EXE), 'client', 'impulse', '219', '0.6'], cwd=ROOT,
-            env=dict(os.environ, **env), capture_output=True, text=True,
-            encoding='utf-8', timeout=20)
+        result = lab_cli(lab.executable, 'client', 'impulse', '219', '0.6', cwd=ROOT, environment=dict(os.environ, **env), timeout=20, runner=client_run)
         if result.returncode:
             raise RuntimeError('fixture client failed: '+result.stderr)
     finally:
         lab.call('match_stop')
 
 
-def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subprocess.run):
+def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=None):
     if fixture not in {'muzzle', 'health', 'combat', 'button', 'door'}:
         raise ValueError('unknown fixture')
-    output = preflight(root, output, prefix)
+    executable = lab_executable()
+    output = preflight(root, output, prefix, executable)
     # Exclusive creation also refuses a racing invocation or a reused output.
     output.mkdir(parents=True, exist_ok=False)
     source_before = tree_identity(root/'src')
     protected = [root/'game/argus/progs.dat', root/'engine/argus/progs.dat',
-                 root/'lq1/progs.dat', EXE]
+                 root/'lq1/progs.dat', executable]
     before = identities(protected)
     save(output/'before.json', dict(binaries=before, source=source_before))
     results = []
@@ -257,7 +256,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
         with lock.open('x') as handle:
             acquired = True
             handle.write(str(output))
-        values = native_config(lab_factory, output)
+        values = native_config(lab_factory, output, executable)
         base = Path(values['ARGUS_BASEDIR']); game = values['ARGUS_GAME']
         protected += [base/game/'progs.dat', Path(values['ARGUS_PROGS'])]
         before = identities(protected)
@@ -293,7 +292,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
             expected_combat_failures={'candidate': [], 'legacy': ['combat_blocked']},
             expected_door_failures={'candidate': [], 'direct_only': DIRECT_ONLY_FAILURES, 'overlap_only': ['button_needs_activation']},
             expected_button_activation={'candidate': True,'disabled': False,'player': True},
-            source=source_before['sha256'], lab_sha256=sha(EXE), verifier_sha256=sha(Path(__file__)),
+            source=source_before['sha256'], lab_sha256=sha(executable), verifier_sha256=sha(Path(__file__)),
             limits='Controlled fixture evidence only. No cohorts, installation or gameplay equivalence; #583 remains unresolved.'))
         private_game = private_assets(base, game, output)
         save(output/'assets.json', tree_identity(output/'base'))
@@ -316,7 +315,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=subpr
                 ARGUS_RUNS=str(folder/'runs'), ARGUS_BASEDIR=str(output/'base'),
                 ARGUS_GAME=game, TOKIO_WORKER_THREADS='2')
             with (folder/'lab.stderr').open('w') as err:
-                lab = lab_factory(err, env)
+                lab = lab_factory(err, env, exe=executable)
                 try:
                     compiled = lab.call('compile_qc', install=False)
                     save(folder/'compile.json', compiled)

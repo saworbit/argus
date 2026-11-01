@@ -1,7 +1,9 @@
 """Four ordinary recordings, fixed clip windows, anonymous local review."""
+
+from run_behaviour_equivalence import lab_executable, lab_cli
 import hashlib,json,os,secrets,shutil,subprocess,time
 from pathlib import Path
-from run_behaviour_equivalence import ROOT,EXE,Lab,identity
+from run_behaviour_equivalence import ROOT,Lab,identity
 
 PRIVATE=ROOT/'backups/blind-perception-v1'
 PUBLIC=ROOT/'reviews/blind-perception-v1'
@@ -9,8 +11,7 @@ BASE=ROOT/'backups/perception-step1b'
 def sha(p):return hashlib.sha256(p.read_bytes()).hexdigest()
 def write(p,data):p.write_text(json.dumps(data,indent=2)+'\n')
 def native(args,timeout=65):
-    result=subprocess.run([str(EXE),*args],cwd=ROOT,env=dict(os.environ,ARGUS_ROOT=str(ROOT)),
-        capture_output=True,text=True,encoding='utf-8',timeout=timeout)
+    result=lab_cli(lab_executable(), *args, cwd=ROOT, environment=dict(os.environ,ARGUS_ROOT=str(ROOT)), timeout=timeout)
     assert result.returncode==0,result.stderr
     return json.loads(result.stdout)
 

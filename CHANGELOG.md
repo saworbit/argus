@@ -309,6 +309,8 @@ passing botmatch does not establish better human play.
   restores, preflight restores with rollback, and trust fresh preview receipts
   instead of printed path spelling, with boundary help kept within the tool
   schema budget (#692, #684, #661, #680).
+- Use one platform-aware study lab resolver for MCP, CLI calls and receipt
+  hashes, with explicit request deadlines and bounded CLI cleanup (#686).
 
 - Share QC-safe map names across lab entry points (#688), count every typed
   family in runtime slot admission and refuse typed overflow (#664), and use

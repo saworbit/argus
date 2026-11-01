@@ -358,11 +358,13 @@ location before using them:
 cargo build --release --manifest-path tools/argus_mcp/Cargo.toml --target-dir tools/argus_mcp/target-stage
 ```
 
-The runners use `target-stage/release/argus-mcp` (`.exe` on Windows), the
-existing `ARGUS_*` lab configuration and local engine/map assets. The map
-runner, route verifier and report accept `--lab` for another fresh binary;
-the recovery and mover verifiers currently use the default location.
-No new environment variables or game-engine extensions are introduced.
+The runners use `tools/argus_mcp/target-stage/release/argus-mcp` (`.exe` on
+Windows). MCP, CLI calls and receipt hashes use the same selected file.
+`ARGUS_LAB` overrides the default; runners with `--lab` use that explicit
+choice first. Relative overrides resolve from the process cwd. Request
+deadlines are per-session arguments to the shared `Lab` client. The existing
+`ARGUS_*` configuration and local engine/map assets are still required.
+No game-engine extensions are introduced.
 
 The [broader map runner](map-intelligence.md) evaluates frozen source arms on
 eight maps outside dm2/dm4. It retains native briefs, named tapes, source and

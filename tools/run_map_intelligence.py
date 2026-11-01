@@ -3,6 +3,9 @@
 Uses a separate game directory and never installs over the playable build.
 Receipts retain native briefs, input identities and every named tape.
 """
+
+from run_behaviour_equivalence import Lab
+from run_behaviour_equivalence import lab_executable, lab_cli
 from argus_validation import require
 import argparse
 import hashlib
@@ -18,11 +21,6 @@ import time
 import run_behaviour_equivalence as native
 
 ROOT = native.ROOT
-
-
-def lab_executable():
-    suffix = '.exe' if os.name == 'nt' else ''
-    return ROOT / ('tools/argus_mcp/target-stage/release/argus-mcp' + suffix)
 
 
 def digest(path):
@@ -76,29 +74,13 @@ def compare_registered_tape(executable, control, candidate, baseline_rows, row):
         inputs[arm] = {key: item[key] for key in ('name', 'raw_sha256', 'source_sha256', 'binary_sha256')}
     analysis_hash = digest(executable)
     require((analysis_hash == candidate['cli_sha256']), 'comparison executable changed')
-    response = subprocess.run([str(executable), 'compare', row['name'], selected['name'],
-        '--primary', primary], cwd=ROOT, env=dict(os.environ, ARGUS_ROOT=str(ROOT)),
-        capture_output=True, text=True, encoding='utf-8', timeout=30)
+    response = lab_cli(executable, 'compare', row['name'], selected['name'], '--primary', primary, cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT)), timeout=30)
     require((response.returncode == 0), response.stderr)
     require((response.stdout.strip()), 'empty native comparison card')
     return dict(schema='registered-native-compare-v1', effective_primary=primary,
                 analysis_lab_sha256=analysis_hash, inputs=inputs,
                 comparison_protocol={key: candidate[key] for key in COMPARISON_FIELDS},
                 native_gate_card=response.stdout)
-
-
-class Lab(native.Lab):
-    def request(self, method, params):
-        self.serial += 1
-        self.p.stdin.write(json.dumps(dict(jsonrpc='2.0', id=self.serial,
-                                         method=method, params=params)) + '\n')
-        self.p.stdin.flush()
-        deadline = time.monotonic() + 900
-        while True:
-            response = self.records.get(timeout=max(.01, deadline - time.monotonic()))
-            require((response is not None), 'native lab exited')
-            if response.get('id') == self.serial:
-                return response
 
 
 def main():
@@ -127,11 +109,11 @@ def main():
     output = args.output.resolve()
     require((output.is_relative_to((ROOT / 'backups').resolve())), 'output must be beneath backups/')
     require((not output.exists()), 'retain the previous arm; choose a new output')
-    native.EXE = args.lab.resolve()
-    require((native.EXE.exists()), 'build the current native lab first')
+    executable = lab_executable(args.lab)
+    require((executable.exists()), 'build the current native lab first')
     comparison_protocol = dict(maps=maps, seconds=args.seconds, skill=args.skill,
                                requested_ticrate=args.ticrate, primary=args.primary,
-                               cli_sha256=digest(native.EXE))
+                               cli_sha256=digest(executable))
     baseline_protocol, baseline_rows = (load_comparison_baseline(args.baseline, comparison_protocol)
                                         if args.baseline else (None, []))
     shutil.copytree(args.source, output / 'src')
@@ -163,16 +145,13 @@ def main():
         if args.port is None:
             return lab.call('match_run', map=map_name, duration_sec=seconds,
                             skill=args.skill, run_name=name)
-        result = subprocess.run([str(native.EXE), 'match', map_name, str(seconds), name,
-            '--skill', str(args.skill), '--port', str(args.port)], cwd=ROOT,
-            env=dict(os.environ, ARGUS_ROOT=str(ROOT), **environment),
-            capture_output=True, text=True, encoding='utf-8', timeout=seconds + 45)
+        result = lab_cli(executable, 'match', map_name, str(seconds), name, '--skill', str(args.skill), '--port', str(args.port), cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT), **environment), timeout=seconds + 45)
         (output / (name + '.stderr')).write_text(result.stderr)
         require((result.returncode == 0), result.stderr)
         return json.loads(result.stdout)
 
     with (output / 'lab.stderr').open('w') as errors:
-        lab = Lab(errors, environment)
+        lab = Lab(errors, environment, exe=executable, timeout=900)
         try:
             lab.call('see', what='project')
             compiled = lab.call('compile_qc', install=False)
@@ -215,7 +194,7 @@ def main():
                                binary_sha256=digest(game_dir / 'progs.dat'), brief=brief)
                     require((row['binary_sha256'] == protocol['binary_sha256']))
                     if args.baseline:
-                        comparison = compare_registered_tape(native.EXE, baseline_protocol,
+                        comparison = compare_registered_tape(executable, baseline_protocol,
                             protocol, baseline_rows, row)
                         write(output / (name + '.compare.json'), comparison)
                     rows.append(row)

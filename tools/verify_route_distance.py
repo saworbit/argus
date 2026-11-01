@@ -1,4 +1,6 @@
 """Compile and exercise routing contracts in private assets via the native lab."""
+
+from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import json
 from pathlib import Path
@@ -9,7 +11,7 @@ import subprocess
 import sys
 
 import run_behaviour_equivalence as native
-from run_map_intelligence import ROOT, Lab, digest, write, lab_executable
+from run_map_intelligence import ROOT, Lab, digest, write
 
 
 def main():
@@ -45,12 +47,12 @@ def main():
         original = ROOT / 'engine/argus' / name
         if original.exists(): shutil.copytree(original, folder / name)
     shutil.copy2(ROOT / 'game/argus/autoexec.cfg', folder / 'autoexec.cfg')
-    native.EXE = args.lab.resolve()
+    executable = lab_executable(args.lab)
     env = dict(ARGUS_SRC=str(src), ARGUS_PROGS=str(output / 'lq1/progs.dat'),
                ARGUS_RUNS=str(output / 'runs'), ARGUS_GAME=game,
                ARGUS_PYTHON=sys.executable, ARGUS_TICRATE=str(args.ticrate))
     with (output / 'lab.stderr').open('w') as err:
-        lab = Lab(err, env)
+        lab = Lab(err, env, exe=executable, timeout=900)
         try:
             lab.call('see', what='project')
             compiled = lab.call('compile_qc', install=False)
@@ -62,10 +64,7 @@ def main():
                 return
             if args.port:
                 assert 1024 <= args.port <= 65535
-                result = subprocess.run([str(native.EXE), 'match', 'dm6', '10', args.prefix,
-                    '--skill', '2', '--port', str(args.port)], cwd=ROOT,
-                    env=dict(os.environ, ARGUS_ROOT=str(ROOT), **env),
-                    capture_output=True, text=True, encoding='utf-8', timeout=30)
+                result = lab_cli(executable, 'match', 'dm6', '10', args.prefix, '--skill', '2', '--port', str(args.port), cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT), **env), timeout=30)
                 (output / 'match.stderr').write_text(result.stderr)
                 assert result.returncode == 0, result.stderr
                 smoke = json.loads(result.stdout)

@@ -23,20 +23,6 @@ def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-class PhysicalLab(Lab):
-    """Allow the explicitly bounded 40/45-second native tools to finish."""
-    def request(self, method, params):
-        self.serial += 1
-        self.p.stdin.write(json.dumps(dict(jsonrpc='2.0', id=self.serial, method=method, params=params)) + '\n')
-        self.p.stdin.flush()
-        deadline = time.monotonic() + 90
-        while True:
-            response = self.records.get(timeout=max(.01, deadline - time.monotonic()))
-            assert response is not None, 'lab exited'
-            if response.get('id') == self.serial:
-                return response
-
-
 def prepare(folder, legacy=False, deadline_control=False, opening_control=False):
     """Copy sources; optional legacy-reset/deadline controls stay private."""
     assert not folder.exists(), 'retain previous build'
@@ -207,7 +193,7 @@ def main():
                                ARGUS_RUNS=str(folder / 'runs'), ARGUS_BASEDIR=str(base),
                                ARGUS_GAME=game, TOKIO_WORKER_THREADS='2')
             with (folder / 'lab.stderr').open('w') as err:
-                lab = PhysicalLab(err, environment) if args.mode == 'physical-edges' else Lab(err, environment)
+                lab = Lab(err, environment, timeout=90) if args.mode == 'physical-edges' else Lab(err, environment)
                 try:
                     compiled = lab.call('compile_qc', install=False)
                     save(folder / 'compile.json', compiled)

@@ -1,4 +1,6 @@
 """Exercise production target decisions with private, quarantined inputs."""
+
+from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import json
 import os
@@ -9,7 +11,7 @@ import subprocess
 import sys
 
 import run_behaviour_equivalence as native
-from run_map_intelligence import ROOT, Lab, digest, write, lab_executable
+from run_map_intelligence import ROOT, Lab, digest, write
 
 LABELS = ('geometry', 'minor_difference_keeps_focus', 'answers_visible_attacker',
     'switch_reaction_delayed', 'goal_retained', 'secondary_is_not_primary', 'avoids_invulnerable_fixation',
@@ -93,13 +95,13 @@ def main():
         original = ROOT / 'engine/argus' / name
         if original.exists(): shutil.copytree(original, folder / name)
     shutil.copy2(ROOT / 'game/argus/autoexec.cfg', folder / 'autoexec.cfg')
-    native.EXE = lab_executable()
+    executable = lab_executable()
     env = dict(ARGUS_SRC=str(output / 'src'), ARGUS_PROGS=str(output / 'lq1/progs.dat'),
         ARGUS_RUNS=str(output / 'runs'), ARGUS_GAME=game, ARGUS_PYTHON=sys.executable,
         ARGUS_TICRATE=str(args.ticrate))
     rows = []
     with (output / 'lab.stderr').open('w') as err:
-        lab = Lab(err, env)
+        lab = Lab(err, env, exe=executable, timeout=900)
         try:
             lab.call('see', what='project')
             compiled = lab.call('compile_qc', install=False); write(output / 'compile.json', compiled)
@@ -107,10 +109,7 @@ def main():
             shutil.copy2(output / 'lq1/progs.dat', folder / 'progs.dat')
             for map_name in maps:
                 name = args.prefix + '_' + map_name
-                result = subprocess.run([str(native.EXE), 'match', map_name, '10', name,
-                    '--skill', '2', '--port', str(args.port)], cwd=ROOT,
-                    env=dict(os.environ, ARGUS_ROOT=str(ROOT), **env), capture_output=True,
-                    text=True, encoding='utf-8', timeout=40)
+                result = lab_cli(executable, 'match', map_name, '10', name, '--skill', '2', '--port', str(args.port), cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT), **env), timeout=40)
                 (output / (map_name + '.stderr')).write_text(result.stderr)
                 assert result.returncode == 0, result.stderr
                 raw = output / 'runs' / (name + '.log')
