@@ -1426,10 +1426,23 @@ impl Argus {
                     "pov_{}",
                     chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
                 );
+                let port = {
+                    let mut controller = self.matches.lock().await;
+                    if !controller.poll().0 {
+                        return tool_err("start the owned lab match before live recording");
+                    }
+                    controller.port()
+                };
                 let record_cfg = cfg.clone();
                 let record_name = name.clone();
                 match tokio::task::spawn_blocking(move || {
-                    crate::render_capture::record_bot(&record_cfg, &record_name, slot as u8, 8.0)
+                    crate::render_capture::record_bot_on_port(
+                        &record_cfg,
+                        &record_name,
+                        slot as u8,
+                        8.0,
+                        port,
+                    )
                 })
                 .await
                 {
@@ -2741,20 +2754,24 @@ impl Argus {
             .run_name
             .clone()
             .unwrap_or_else(|| format!("campaign_{}_{}", args.map, seat));
-        {
+        let puppet_port = {
             let mut g = self.matches.lock().await;
             g.reap();
             if g.status().running {
                 let _ = g.stop(Duration::from_secs(3)).await;
             }
-        }
+            g.port()
+        };
         let stop_puppet = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
         let puppet_thread = if seat == "companion" {
             let stop_clone = std::sync::Arc::clone(&stop_puppet);
             Some(std::thread::spawn(move || {
                 std::thread::sleep(Duration::from_millis(1500));
+                if stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
+                    return;
+                }
                 if let Ok(mut puppet) =
-                    crate::netclient::NetClient::connect("127.0.0.1", 26000, "puppet")
+                    crate::netclient::NetClient::connect("127.0.0.1", puppet_port, "puppet")
                 {
                     while !stop_clone.load(std::sync::atomic::Ordering::Relaxed) {
                         puppet.pump(Duration::from_millis(100));

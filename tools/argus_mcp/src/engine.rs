@@ -121,7 +121,7 @@ impl EngineChild {
         slots: u32,
         skill: Option<u32>,
         cwd: &Path,
-        port: Option<u32>,
+        port: Option<u16>,
         coop: bool,
     ) -> Result<Self, String> {
         let map = crate::paths::map_name(map)?;
@@ -134,6 +134,10 @@ impl EngineChild {
                 return Err("port must be 1024..=65535".into());
             }
         }
+        let actual_port = port.unwrap_or(crate::match_ctrl::DEFAULT_PORT);
+        // The engine can survive a failed bind. Refuse a currently occupied
+        // socket before starting it, so no helper attaches to another match.
+        check_port_available(actual_port)?;
         #[cfg(windows)]
         {
             spawn_windows(cfg, map, slots, skill, cwd, port, coop)
@@ -253,6 +257,16 @@ impl Drop for EngineChild {
     }
 }
 
+pub(crate) fn check_port_available(port: u16) -> Result<(), String> {
+    if port < 1024 {
+        return Err("port must be 1024..=65535".into());
+    }
+    let probe = std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, port))
+        .map_err(|e| format!("engine UDP port {port} is unavailable: {e}"))?;
+    drop(probe);
+    Ok(())
+}
+
 pub fn validate_map(map: &str) -> Result<(), String> {
     crate::paths::map_name(map).map(|_| ())
 }
@@ -264,7 +278,7 @@ fn spawn_unix(
     slots: u32,
     skill: Option<u32>,
     cwd: &Path,
-    port: Option<u32>,
+    port: Option<u16>,
     coop: bool,
 ) -> Result<EngineChild, String> {
     let mut cmd = Command::new(&cfg.engine);
@@ -332,7 +346,7 @@ fn apply_args(
     map: &str,
     slots: u32,
     skill: Option<u32>,
-    port: Option<u32>,
+    port: Option<u16>,
     coop: bool,
 ) {
     cmd.arg("-dedicated")
@@ -351,9 +365,8 @@ fn apply_args(
     } else {
         cmd.arg("+deathmatch").arg("1");
     }
-    if let Some(p) = port {
-        cmd.arg("-port").arg(p.to_string());
-    }
+    cmd.arg("-port")
+        .arg(port.unwrap_or(crate::match_ctrl::DEFAULT_PORT).to_string());
     cmd.arg("+map").arg(map);
     if let Some(s) = skill {
         cmd.arg("+skill").arg(s.to_string());
@@ -440,11 +453,11 @@ fn windows_args(
     map: &str,
     slots: u32,
     skill: Option<u32>,
-    port: Option<u32>,
+    port: Option<u16>,
     coop: bool,
 ) -> Result<String, String> {
     let exe = cfg.engine.display().to_string();
-    let portarg = port.map(|p| format!(" -port {p}")).unwrap_or_default();
+    let portarg = format!(" -port {}", port.unwrap_or(crate::match_ctrl::DEFAULT_PORT));
     let mode_arg = if coop {
         "+coop 1 +deathmatch 0"
     } else {
@@ -472,7 +485,7 @@ fn spawn_windows(
     slots: u32,
     skill: Option<u32>,
     cwd: &Path,
-    port: Option<u32>,
+    port: Option<u16>,
     coop: bool,
 ) -> Result<EngineChild, String> {
     use std::os::windows::ffi::OsStrExt;
@@ -982,6 +995,35 @@ mod tests {
             before,
             "console helper changed the parent's standard handles"
         );
+    }
+
+    #[test]
+    fn port_contract_busy_udp_is_refused_before_engine_spawn() {
+        let socket = std::net::UdpSocket::bind("0.0.0.0:0").unwrap();
+        let port = socket.local_addr().unwrap().port();
+        let temp = crate::test_support::TestDir::new("busy-engine-port").unwrap();
+        let mut cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([(
+                "ARGUS_ROOT".into(),
+                temp.path().display().to_string(),
+            )]),
+            temp.path(),
+        )
+        .unwrap();
+        cfg.engine = temp.path().join("must-not-spawn.exe");
+        let result =
+            super::EngineChild::spawn(&cfg, "dm4", 4, Some(2), temp.path(), Some(port), false);
+        let error = match result {
+            Err(error) => error,
+            Ok(_) => panic!("engine started on a busy UDP port"),
+        };
+        assert!(
+            error.contains(&format!("UDP port {port} is unavailable")),
+            "{error}"
+        );
+        drop(socket);
+        assert!(super::check_port_available(port).is_ok());
+        assert!(super::check_port_available(0).is_err());
     }
 
     use super::*;

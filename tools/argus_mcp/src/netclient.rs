@@ -357,6 +357,13 @@ impl NetClient {
     }
     /// CCREQ_CONNECT handshake, then hand back a socket locked to the
     /// per-client game port the server assigns.
+    pub fn connect_match(
+        ctrl: &crate::match_ctrl::MatchCtrl,
+        name: &str,
+    ) -> Result<NetClient, String> {
+        Self::connect("127.0.0.1", ctrl.port(), name)
+    }
+
     pub fn connect(host: &str, port: u16, name: &str) -> Result<NetClient, String> {
         let sock = UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("bind: {e}"))?;
         sock.set_read_timeout(Some(Duration::from_millis(300)))
@@ -1245,6 +1252,20 @@ pub async fn probe_links(
     coop: bool,
     jumps_only: bool,
 ) -> Result<ProbeReport, String> {
+    let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+    probe_links_with_ctrl(cfg, map, limit, skip, coop, jumps_only, &mut ctrl).await
+}
+
+/// Use the caller-selected controller for both the engine and protocol client.
+pub async fn probe_links_with_ctrl(
+    cfg: &crate::config::Config,
+    map: &str,
+    limit: usize,
+    skip: usize,
+    coop: bool,
+    jumps_only: bool,
+    ctrl: &mut crate::match_ctrl::MatchCtrl,
+) -> Result<ProbeReport, String> {
     let navj = cfg
         .root
         .join("src")
@@ -1345,7 +1366,6 @@ pub async fn probe_links(
     let mode = if coop { "coop" } else { "deathmatch" };
     let secs = (todo.len() as u32) * 9 + 40;
     let _staged_map = stage_map_for_probe(cfg, map)?;
-    let mut ctrl = crate::match_ctrl::MatchCtrl::default();
     ctrl.start(
         cfg,
         map,
@@ -1359,7 +1379,7 @@ pub async fn probe_links(
     .map_err(|e| format!("engine start: {e}"))?;
     tokio::time::sleep(Duration::from_secs(4)).await;
 
-    let mut client = match NetClient::connect("127.0.0.1", 26000, "labprobe") {
+    let mut client = match NetClient::connect_match(ctrl, "labprobe") {
         Ok(c) => c,
         Err(e) => {
             let _ = ctrl.stop(Duration::from_secs(3)).await;
@@ -1573,6 +1593,93 @@ pub fn merge_verdicts(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(windows)]
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn owned_side_port_signs_on_while_default_port_is_busy() {
+        let _gate = crate::engine::ENGINE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            &root,
+        )
+        .unwrap();
+        if !cfg.engine.is_file() {
+            eprintln!("SKIPPED owned side port: no local engine");
+            return;
+        }
+        let trap = std::net::UdpSocket::bind((
+            std::net::Ipv4Addr::UNSPECIFIED,
+            crate::match_ctrl::DEFAULT_PORT,
+        ))
+        .expect("default port must be reserved by this test");
+        trap.set_nonblocking(true).unwrap();
+        let temp = crate::test_support::TestDir::new("owned-side-port").unwrap();
+        cfg.runs = temp.path().to_path_buf();
+        let mut ctrl = crate::match_ctrl::MatchCtrl::on_port(26018);
+        ctrl.begin(&cfg, "dm4", 30, Some("owned_port"), Some(8), Some(2), None)
+            .await
+            .unwrap();
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        let connected = (|| -> Result<(), String> {
+            let mut client = super::NetClient::connect_match(&ctrl, "owned-peer")?;
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+            while client.world.signon < 3 && std::time::Instant::now() < deadline {
+                client.pump(std::time::Duration::from_millis(50));
+            }
+            let valid = client.world.signon >= 3 && client.world.protocol == 15;
+            client.disconnect();
+            if !valid {
+                return Err("side-port client did not complete protocol-15 signon".into());
+            }
+            Ok(())
+        })();
+        let stopped = ctrl.stop(std::time::Duration::from_secs(3)).await;
+        assert!(stopped.is_ok(), "owned engine did not stop: {stopped:?}");
+        connected.unwrap();
+        let mut packet = [0u8; 1024];
+        assert!(
+            trap.recv_from(&mut packet).is_err(),
+            "client reached the busy default port"
+        );
+    }
+
+    #[test]
+    fn port_contract_connects_to_the_controllers_udp_peer() {
+        let server = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+        server
+            .set_read_timeout(Some(std::time::Duration::from_secs(2)))
+            .unwrap();
+        let port = server.local_addr().unwrap().port();
+        let ctrl = crate::match_ctrl::MatchCtrl::on_port(port);
+        let peer = std::thread::spawn(move || {
+            let mut request = [0u8; 64];
+            let Ok((n, from)) = server.recv_from(&mut request) else {
+                return false;
+            };
+            if n != 12 || request[4] != super::CCREQ_CONNECT {
+                return false;
+            }
+            let mut response = (super::NETFLAG_CTL | 9).to_be_bytes().to_vec();
+            response.push(super::CCREP_ACCEPT);
+            response.extend_from_slice(&(port as i32).to_le_bytes());
+            server.send_to(&response, from).is_ok()
+        });
+        let client = super::NetClient::connect_match(&ctrl, "owned-peer");
+        let received = peer.join().unwrap();
+        assert!(
+            received,
+            "controller's UDP peer received no connect request"
+        );
+        let client = match client {
+            Ok(client) => client,
+            Err(error) => panic!("{error}"),
+        };
+        assert_eq!(client.sock.peer_addr().unwrap().port(), ctrl.port());
+    }
+
     use super::NetClient;
     use super::{merge_verdicts, stage_map_for_probe, LinkVerdict, ProbeReport};
     use std::time::Duration;
@@ -1812,7 +1919,7 @@ mod tests {
         .await
         .unwrap();
         let result = async {
-            let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+            let mut client = NetClient::connect_match(&ctrl, "labprobe")?;
             client.pump(Duration::from_secs(3));
             if client.world.signon < 3 || client.world.protocol != 15 {
                 return Err("protocol-15 client did not sign on".to_string());
@@ -1948,7 +2055,7 @@ mod tests {
                 .await?;
                 // Wait for the reload, then connect through the normal protocol.
                 tokio::time::sleep(Duration::from_millis(500)).await;
-                let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+                let mut client = NetClient::connect_match(&ctrl, "labprobe")?;
                 client.pump(Duration::from_secs(2));
                 if client.world.signon < 3 {
                     return Err("client did not sign on".to_string());
@@ -2008,7 +2115,7 @@ mod tests {
             .await
             .unwrap();
         let result = async {
-            let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+            let mut client = NetClient::connect_match(&ctrl, "labprobe")?;
             client.pump(Duration::from_secs(2));
             if client.world.signon < 3 {
                 return Err("client did not sign on".to_string());
@@ -2086,8 +2193,9 @@ mod tests {
             return;
         }
         tokio::time::sleep(std::time::Duration::from_secs(4)).await;
-        let report = tokio::task::spawn_blocking(|| {
-            crate::netclient::observe("127.0.0.1", 26000, 6.0, "labprobe")
+        let port = ctrl.port();
+        let report = tokio::task::spawn_blocking(move || {
+            crate::netclient::observe("127.0.0.1", port, 6.0, "labprobe")
         })
         .await
         .expect("join");

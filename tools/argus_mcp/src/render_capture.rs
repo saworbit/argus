@@ -63,6 +63,21 @@ fn impulse(client: &mut NetClient, command: u8, expected: &str) -> Result<String
 /// Record an ordinary match through the stock spectator controls. Every
 /// impulse waits for its client-visible acknowledgement before proceeding.
 pub fn record_bot(cfg: &Config, name: &str, slot: u8, seconds: f32) -> Result<String, String> {
+    record_bot_on_port(cfg, name, slot, seconds, crate::match_ctrl::DEFAULT_PORT)
+}
+
+/// Record the existing match at the explicitly selected UDP port.
+pub fn record_bot_on_port(
+    cfg: &Config,
+    name: &str,
+    slot: u8,
+    seconds: f32,
+    port: u16,
+) -> Result<String, String> {
+    if port < 1024 {
+        return Err("record-pov port must be 1024..=65535".into());
+    }
+
     if !crate::paths::valid_run_name(name)
         || name == "."
         || name == ".."
@@ -75,7 +90,7 @@ pub fn record_bot(cfg: &Config, name: &str, slot: u8, seconds: f32) -> Result<St
     let dir = cfg.runs.join("demos");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
     let path = dir.join(format!("{name}.dem"));
-    let mut client = NetClient::connect("127.0.0.1", 26000, "labcamera")?;
+    let mut client = NetClient::connect("127.0.0.1", port, "labcamera")?;
     let result = (|| {
         client.start_recording(&path)?;
         wait_for_signon(&mut client, Duration::from_secs(8))?;
@@ -1332,7 +1347,7 @@ mod tests {
         .await
         .unwrap();
         let result = (|| -> Result<(bool, bool, bool), String> {
-            let mut client = NetClient::connect("127.0.0.1", 26018, "cameratest")?;
+            let mut client = NetClient::connect_match(&ctrl, "cameratest")?;
             let observed = (|| {
                 let deadline = std::time::Instant::now() + Duration::from_secs(5);
                 while !signed_on(&client.world) && std::time::Instant::now() < deadline {

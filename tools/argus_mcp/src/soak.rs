@@ -163,6 +163,11 @@ pub async fn run_soak(mut opts: SoakOpts) -> Result<(), String> {
     let stamp2 = stamp.clone();
     let mut workers = Vec::new();
     for wid in 0..opts.parallel {
+        let worker_port = if wid == 0 {
+            crate::match_ctrl::DEFAULT_PORT
+        } else {
+            u16::try_from(26010 + wid).map_err(|_| "soak worker port exceeds 65535")?
+        };
         let shared = shared.clone();
         let opts = opts.clone();
         let cfg = cfg.clone();
@@ -170,11 +175,7 @@ pub async fn run_soak(mut opts: SoakOpts) -> Result<(), String> {
         let stamp = stamp2.clone();
         let mut cancel_rx = cancel_rx.clone();
         workers.push(tokio::spawn(async move {
-            let mut ctrl = if wid == 0 {
-                MatchCtrl::default()
-            } else {
-                MatchCtrl::on_port(26010 + wid)
-            };
+            let mut ctrl = MatchCtrl::on_port(worker_port);
             loop {
                 // claim the next match under the caps, or stop
                 let (n, map) = {

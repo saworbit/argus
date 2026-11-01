@@ -217,8 +217,8 @@ async fn run_trial(
     skill: u32,
     run_name: &str,
     mask: u32,
+    ctrl: &mut MatchCtrl,
 ) -> Result<ArmTrial, String> {
-    let mut ctrl = MatchCtrl::default();
     ctrl.begin(
         cfg,
         map,
@@ -231,7 +231,7 @@ async fn run_trial(
     .await?;
 
     let setup = async {
-        let mut client = NetClient::connect("127.0.0.1", 26000, "labprobe")?;
+        let mut client = NetClient::connect_match(ctrl, "labprobe")?;
         client.pump(Duration::from_secs(3));
         if client.world.signon < 3 {
             return Err(format!("signon stalled at {}", client.world.signon));
@@ -266,6 +266,19 @@ pub async fn run_pair(
     skill: u32,
     prefix: Option<&str>,
 ) -> Result<WithinAbReport, String> {
+    let mut ctrl = crate::match_ctrl::MatchCtrl::default();
+    run_pair_with_ctrl(cfg, map, duration_sec, skill, prefix, &mut ctrl).await
+}
+
+/// Use the caller-selected controller for both the engine and protocol client.
+pub async fn run_pair_with_ctrl(
+    cfg: &Config,
+    map: &str,
+    duration_sec: u32,
+    skill: u32,
+    prefix: Option<&str>,
+    ctrl: &mut crate::match_ctrl::MatchCtrl,
+) -> Result<WithinAbReport, String> {
     let map = crate::paths::map_name(map)?;
     let map = map.as_str();
     if !(10..=300).contains(&duration_sec) {
@@ -284,8 +297,17 @@ pub async fn run_pair(
     if !crate::paths::valid_run_name(&base) {
         return Err("run prefix must match [A-Za-z0-9._-]+".into());
     }
-    let first = run_trial(cfg, map, duration_sec, skill, &format!("{base}_a"), 5).await?;
-    let second = run_trial(cfg, map, duration_sec, skill, &format!("{base}_b"), 10).await?;
+    let first = run_trial(cfg, map, duration_sec, skill, &format!("{base}_a"), 5, ctrl).await?;
+    let second = run_trial(
+        cfg,
+        map,
+        duration_sec,
+        skill,
+        &format!("{base}_b"),
+        10,
+        ctrl,
+    )
+    .await?;
     let trials = vec![first, second];
     let candidate_kills = trials
         .iter()

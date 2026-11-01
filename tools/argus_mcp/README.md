@@ -352,6 +352,24 @@ exe paths as if they were defaults): `tools/argus_mcp.toml.example`,
 
 ## Inspect (`see` and resources)
 
+`MatchCtrl` stores a `u16` UDP port and exposes `port()`, defaulting to
+`DEFAULT_PORT` (26000). Attached protocol clients use that controller's
+port. The `probelinks`, `benchmark`, `within-ab`, `tactic-suite`,
+`behaviour-suite`, `campaign` and `match` CLI commands accept `--port N`;
+`record-pov` accepts it for the existing match it records. Values must be
+1024 through 65535. Missing, duplicate and malformed values are refused
+before compilation. Connected study APIs also offer `*_with_ctrl` entry
+points; existing entry points retain their default controller.
+The injected controller remains the caller's owner of the engine; callers
+that cancel a helper future must stop that controller or drop it.
+
+Engine startup checks whether the selected UDP port is already occupied
+and refuses before creating a child. This is a launch-time check, not a
+reservation against another process binding between the check and spawn.
+Live MCP recording requires its owned match and reads that controller's
+port. Campaign puppets keep the selected port and skip connection when
+their launch has already failed.
+
 The local GUI renders server fields as text. Dynamic map, backup and edge
 controls bind event listeners without parsing their values as HTML or code.
 `python tools/test_gui_rendering.py` checks hostile fields in an installed
