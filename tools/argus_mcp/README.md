@@ -685,6 +685,23 @@ HARVEST BEFORE STARTING ANYTHING NEW.
 `argus-mcp demo <stem>[:export]` is the CLI face of the same reader,
 for sessions without an MCP client.
 
+Player tracks include `movement` using `argus-reversal-v1`: a horizontal turn
+over 120 degrees within 250 ms, speed above 120 units/s at both ends, with a
+500 ms refractory period. Rates use moving exposure. Gaps above 250 ms,
+invalid timestamps and segments above 1000 units/s are excluded. No eligible
+moving exposure gives a null rate. PVS visibility still limits bot tracks.
+
+For cause investigation, `developer 1` with `scratch1 697` enables passive
+intent markers and full-rate `ARGMOT` poses. Layout 2 samples at StartFrame
+before AI and QC movement, after the previous engine physics step. Layout 1
+was an intermediate-pose development layout and is refused. Native run briefs
+keep this optional `movement` report separate from ARGLOG counters and gates.
+Only bot birth identities enter it. A marker within the previous 250 ms is a
+temporal association, not proof of causation; unmatched reversals stay explicit.
+`python tools/verify_motion.py --help` describes private checks. Diagnostics
+default off, and do not change steering, random draws or installed programs.
+This instrument does not settle #697's multi-map bands or human feel gate.
+
 The brief carries analysis, not just inventory: per-player `aim`
 statistics (mean and p95 angular rate, flick count - the recording
 client measured from full-precision POV angles, bots from their

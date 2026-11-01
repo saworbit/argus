@@ -33,6 +33,11 @@ passing botmatch does not establish better human play.
 - Apply requested lab skill before loading the map so the initial roster uses
   the declared difficulty ([#726](https://github.com/saworbit/argus/issues/726)).
 
+- Measure full-rate movement reversals in native demo briefs and add passive
+  steering markers with finalized engine poses for the open movement study
+  ([#697](https://github.com/saworbit/argus/issues/697)).
+  Retain the frozen health/inventory definitions through a reverse amendment.
+
 - Require observed exit-node consumption, the planned successor and a dry
   world-floor landing in private mover receipts. Preserve the weaker v1 evidence
   and reject node-only oracle controls ([#647](https://github.com/saworbit/argus/issues/647)).

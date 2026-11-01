@@ -1,0 +1,182 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -1364,56 +1363,0 @@
+-// Opt-in full-rate movement diagnostics. Return the requested yaw unchanged;
+-// these fields and markers are never read by steering or weapon decisions.
+-float argus_motion_diag, argus_motion_latched;
+-.string ar_motioncause, ar_fliplogcause;
+-.float ar_fliplogtime;
+-.float ar_motionbasetime, ar_motionbaseyaw;
+-.string ar_motionbasecause;
+-
+-float(float previous, float requested, string cause) Argus_MotionTurn =
+-{
+-    local float delta, span, origin_yaw;
+-    if (!argus_motion_diag) return requested;
+-    self.ar_motioncause = cause;
+-    if (self.ar_motionbasecause != cause || time > self.ar_motionbasetime + 0.25)
+-    {
+-        self.ar_motionbasecause = cause; self.ar_motionbasetime = time;
+-        self.ar_motionbaseyaw = previous;
+-    }
+-    delta = requested - previous;
+-    while (delta > 180) delta = delta - 360;
+-    while (delta < -180) delta = delta + 360;
+-    span = requested - self.ar_motionbaseyaw;
+-    while (span > 180) span = span - 360;
+-    while (span < -180) span = span + 360;
+-    origin_yaw = previous;
+-    if (fabs (delta) <= 90) origin_yaw = self.ar_motionbaseyaw;
+-    if ((fabs (delta) > 90 || fabs (span) > 90)
+-        && (time >= self.ar_fliplogtime || self.ar_fliplogcause != cause))
+-    {
+-        self.ar_fliplogtime = time + 0.1; self.ar_fliplogcause = cause;
+-        dprint ("ARGUS "); dprint (self.netname); dprint (" flip "); dprint (cause);
+-        dprint (" ms "); dprint (ftos (time * 1000));
+-        dprint (" from "); dprint (ftos (origin_yaw));
+-        dprint (" to "); dprint (ftos (requested)); dprint ("\n");
+-        self.ar_motionbaseyaw = requested; self.ar_motionbasetime = time;
+-    }
+-    return requested;
+-};
+-
+-void() Argus_MotionSample =
+-{
+-    local vector context;
+-    if (!argus_motion_diag || self.health <= 0 || self.cam_active) return;
+-    if (self.ar_motioncause == "") self.ar_motioncause = "spawn";
+-    context_x = self.ar_mode; context_y = self.ar_liftwait;
+-    context_z = (self.flags & FL_ONGROUND) != 0;
+-    dprint ("ARGMOT "); dprint (self.netname);
+-    dprint (" ms "); dprint (ftos (time * 1000));
+-    dprint (" pos "); dprint (vtos (self.origin));
+-    dprint (" wish "); dprint (ftos (self.ar_moveyaw));
+-    dprint (" cause "); dprint (self.ar_motioncause);
+-    dprint (" ctx "); dprint (vtos (context));
+-    dprint (" hp "); dprint (ftos (self.health));
+-    dprint (" ground "); dprint (self.groundentity.classname); dprint ("\n");
+-};
+-
+@@ -1542,2 +1486 @@
+-    local float hdiff, original;
+-    original = want;
++    local float hdiff;
+@@ -1548 +1491 @@
+-        return Argus_MotionTurn (original, want, "hazard_safe");
++        return want;
+@@ -1564 +1507 @@
+-            return Argus_MotionTurn (original, self.ar_hazardyaw, "hazard_hold");
++            return self.ar_hazardyaw;
+@@ -1610 +1553 @@
+-        return Argus_MotionTurn (original, want + 180, "hazard_reverse");
++        return want + 180;
+@@ -1614 +1557 @@
+-    return Argus_MotionTurn (original, want, "hazard_fan");
++    return want;
+@@ -1966 +1908,0 @@
+-    Argus_MotionTurn (myaw, cyaw, "wall_slide");
+@@ -2133 +2075 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_recoveryyaw, "recovery");
++        self.ar_moveyaw = self.ar_recoveryyaw;
+@@ -2163 +2105 @@
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, yaw, "recovery");
++            self.ar_moveyaw = yaw;
+@@ -4006 +3948 @@
+-    self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "spawn");
++    self.ar_moveyaw = self.angles_y;
+@@ -5580 +5522 @@
+-                    self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, side, "bodyblockcheck");
++                    self.ar_moveyaw = side;
+@@ -5732 +5673,0 @@
+-    local string movecause;
+@@ -5803 +5744 @@
+-                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "combat");
++                self.ar_moveyaw = self.angles_y;
+@@ -6362 +6302,0 @@
+-    movecause = "combat_strafe";
+@@ -6371 +6310,0 @@
+-        {
+@@ -6373,2 +6311,0 @@
+-            movecause = "strafe_reroll";
+-        }
+@@ -6408 +6344,0 @@
+-                movecause = "secondary_threat";
+@@ -6445 +6381 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to), "combat_approach");
++        self.ar_moveyaw = vectoyaw (to);
+@@ -6447 +6383 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - to), "combat_backoff");
++        self.ar_moveyaw = vectoyaw ('0 0 0' - to);
+@@ -6450 +6386 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to) + orbit * self.ar_strafedir, movecause);
++        self.ar_moveyaw = vectoyaw (to) + orbit * self.ar_strafedir;
+@@ -6469,2 +6405,2 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - cvr)
+-                        + 35 * self.ar_strafedir, "high_ground");
++        self.ar_moveyaw = vectoyaw ('0 0 0' - cvr)
++                        + 35 * self.ar_strafedir;
+@@ -6500,2 +6436,3 @@
+-                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (Argus_GoalPoint (self.ar_bitem)
+-                              - self.origin), "battle_item");
++                self.ar_moveyaw =
++                    vectoyaw (Argus_GoalPoint (self.ar_bitem)
++                              - self.origin);
+@@ -6516 +6453 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_dodgeyaw, "missile_dodge");
++        self.ar_moveyaw = self.ar_dodgeyaw;
+@@ -6522 +6459 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to), "axe_charge");
++        self.ar_moveyaw = vectoyaw (to);
+@@ -6725 +6662 @@
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_coveryaw, "cover_retreat");
++            self.ar_moveyaw = self.ar_coveryaw;
+@@ -6745 +6682 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to) + orbit * self.ar_strafedir, "combat_hazard");
++        self.ar_moveyaw = vectoyaw (to) + orbit * self.ar_strafedir;
+@@ -6747 +6684 @@
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - to), "combat_backoff");
++            self.ar_moveyaw = vectoyaw ('0 0 0' - to);
+@@ -8132 +8069 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, want, "actescort");
++        self.ar_moveyaw = want;
+@@ -8190 +8127 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, want, "actescort");
++        self.ar_moveyaw = want;
+@@ -8212 +8149 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "actescort");
++        self.ar_moveyaw = self.angles_y;
+@@ -8901 +8838 @@
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (self.ar_coop_cover_spot - self.origin), "coop");
++            self.ar_moveyaw = vectoyaw (self.ar_coop_cover_spot - self.origin);
+@@ -8925 +8862 @@
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "coop");
++            self.ar_moveyaw = self.angles_y;
+@@ -9964 +9901 @@
+-                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "noise_investigate");
++                self.ar_moveyaw = self.ar_moveyaw + diff;
+@@ -11164 +11101 @@
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "goal_abandon");
++            self.ar_moveyaw = self.angles_y;
+@@ -11188 +11125 @@
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "route_steer");
++            self.ar_moveyaw = self.ar_moveyaw + diff;
+@@ -11223 +11160 @@
+-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "wander");
++        self.ar_moveyaw = self.angles_y;
+@@ -11379,10 +11315,0 @@
+-    // QC assignment binds before &&. Keep the opt-in gate explicit.
+-    argus_motion_diag = 0;
+-    if (cvar ("developer"))
+-        if (cvar ("scratch1") == 697) argus_motion_diag = 1;
+-    if (argus_motion_diag && !argus_motion_latched)
+-    {
+-        dprint ("ARGMOT begin layout 2\n"); argus_motion_latched = 1;
+-    }
+-    if (!argus_motion_diag) argus_motion_latched = 0;
+-
+@@ -11405,5 +11331,0 @@
+-        // StartFrame precedes engine physics. This is the finalized pose
+-        // from the previous frame, at the same server time as its demo.
+-        // Sampling after walkmove would observe an intermediate QC pose.
+-        Argus_MotionSample ();
+-        if (argus_motion_diag) self.ar_motioncause = "coast";

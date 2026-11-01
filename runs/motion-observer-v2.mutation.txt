@@ -1,0 +1,27 @@
+
+running 1 test
+test demo::movement_tests::straight_motion_has_exposure_without_reversals ... FAILED
+
+failures:
+
+---- demo::movement_tests::straight_motion_has_exposure_without_reversals stdout ----
+
+thread 'demo::movement_tests::straight_motion_has_exposure_without_reversals' (26796) panicked at src\demo.rs:1113:9:
+assertion `left == right` failed
+  left: 2
+ right: 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    demo::movement_tests::straight_motion_has_exposure_without_reversals
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 367 filtered out; finished in 0.00s
+
+   Compiling argus-mcp v0.30.0 (C:\argus\tools\argus_mcp)
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\argus\tools\argus_mcp\target\debug\incremental\argus_mcp-0ye2odl1hcgo6\s-hnrkp6jyrc-1e70bvr-working`
+
+warning: `argus-mcp` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.91s
+     Running unittests src\lib.rs (tools\argus_mcp\target\debug\deps\argus_mcp-9d3304d4e7719f1c.exe)
+error: test failed, to rerun pass `--lib`

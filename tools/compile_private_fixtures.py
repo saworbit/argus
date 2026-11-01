@@ -25,6 +25,7 @@ VARIANTS = {
     'forecast': ('current',),
     'camera': ('current',),
     'stall': ('current',),
+    'motion': ('current',),
     'attention': ('current',),
     'water': ('current',),
 }
@@ -48,6 +49,9 @@ def stage(folder, family, variant):
     if family == 'stall':
         from verify_stall_ownership import stage as stage_stall
         stage_stall(ROOT, folder)
+    elif family == 'motion':
+        from verify_motion import stage as stage_motion
+        stage_motion(ROOT, folder, contracts=True)
     elif family == 'camera':
         from verify_camera_chase import stage as stage_camera
         stage_camera(ROOT, folder)

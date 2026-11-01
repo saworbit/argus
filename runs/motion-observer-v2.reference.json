@@ -1,0 +1,698 @@
+{
+  "definition": "argus-reversal-v1",
+  "lab_sha256": "cd130c5057dc5310651900bb06db6ccca2ecdc584025cc86c4219b91231b7bff",
+  "sessions": [
+    {
+      "stem": "shane_dm4_2026-08-28_v393b",
+      "raw_sha256": "d0913f1bb74be1f203e92b2d7c76bb5cc8c5f38082b6330844aa7379e939c28c",
+      "tracks": [
+        {
+          "entity": 1,
+          "name": "player",
+          "role": "human",
+          "samples": 17541,
+          "hz": 69.30379823661858,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 252.59605288505554,
+            "moving_sec": 163.4520719051361,
+            "reversals": 63,
+            "reversals_per_moving_minute": 23.126045182185432,
+            "discontinuities": 35,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 171,
+          "name": null,
+          "role": "unidentified",
+          "samples": 11331,
+          "hz": 52.86978655840176,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 163.24601364135742,
+            "moving_sec": 0.0,
+            "reversals": 0,
+            "reversals_per_moving_minute": null,
+            "discontinuities": 11,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 234,
+          "name": "Romero",
+          "role": "bot",
+          "samples": 6985,
+          "hz": 28.571543269709597,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 99.75500822067261,
+            "moving_sec": 70.27307653427124,
+            "reversals": 84,
+            "reversals_per_moving_minute": 71.72021275519451,
+            "discontinuities": 77,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 237,
+          "name": "Joe Rogan",
+          "role": "bot",
+          "samples": 5810,
+          "hz": 23.109201241302213,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 83.71900749206543,
+            "moving_sec": 57.01092851161957,
+            "reversals": 59,
+            "reversals_per_moving_minute": 62.09335810551659,
+            "discontinuities": 50,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 231,
+          "name": "Carmack",
+          "role": "bot",
+          "samples": 5795,
+          "hz": 23.70957643132526,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 82.76100254058838,
+            "moving_sec": 63.06105136871338,
+            "reversals": 72,
+            "reversals_per_moving_minute": 68.50504243485054,
+            "discontinuities": 65,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        }
+      ]
+    },
+    {
+      "stem": "shane_dm4_2026-08-29_v405",
+      "raw_sha256": "189db00d91646c0eac5d2d316517d5468fd2b3bd5f5fe87db4e50708bff05ced",
+      "tracks": [
+        {
+          "entity": 1,
+          "name": "player",
+          "role": "human",
+          "samples": 20846,
+          "hz": 69.03311908437702,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 301.3889801502228,
+            "moving_sec": 214.26097655296326,
+            "reversals": 78,
+            "reversals_per_moving_minute": 21.842521560817907,
+            "discontinuities": 41,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 234,
+          "name": "Romero",
+          "role": "bot",
+          "samples": 11987,
+          "hz": 41.67970451834755,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 172.83207988739014,
+            "moving_sec": 130.82713508605957,
+            "reversals": 134,
+            "reversals_per_moving_minute": 61.45514074516114,
+            "discontinuities": 85,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 171,
+          "name": null,
+          "role": "unidentified",
+          "samples": 11710,
+          "hz": 52.6512192530763,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 169.53002166748047,
+            "moving_sec": 0.0,
+            "reversals": 0,
+            "reversals_per_moving_minute": null,
+            "discontinuities": 14,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 172,
+          "name": null,
+          "role": "unidentified",
+          "samples": 10285,
+          "hz": 47.934638452620014,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 148.80601501464844,
+            "moving_sec": 0.0,
+            "reversals": 0,
+            "reversals_per_moving_minute": null,
+            "discontinuities": 18,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 231,
+          "name": "Carmack",
+          "role": "bot",
+          "samples": 9194,
+          "hz": 30.73600509441399,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 132.6280061006546,
+            "moving_sec": 93.85700953006744,
+            "reversals": 100,
+            "reversals_per_moving_minute": 63.92703144966362,
+            "discontinuities": 65,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 237,
+          "name": "Joe Rogan",
+          "role": "bot",
+          "samples": 7968,
+          "hz": 26.680684856631988,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 114.22699522972107,
+            "moving_sec": 87.60996961593628,
+            "reversals": 103,
+            "reversals_per_moving_minute": 70.53991717029264,
+            "discontinuities": 78,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        }
+      ]
+    },
+    {
+      "stem": "shane_dm4_2026-09-16",
+      "raw_sha256": "6b291931e4e6102f7ff05b198914765ffd9fecaefb1725217db29286dbd37faa",
+      "tracks": [
+        {
+          "entity": 1,
+          "name": "player",
+          "role": "human",
+          "samples": 18912,
+          "hz": 69.24428538276575,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 272.36707389354706,
+            "moving_sec": 205.4760341644287,
+            "reversals": 65,
+            "reversals_per_moving_minute": 18.98031571350599,
+            "discontinuities": 52,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 219,
+          "name": "Joe Rogan",
+          "role": "bot",
+          "samples": 11024,
+          "hz": 40.397968183296385,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 157.04398131370544,
+            "moving_sec": 118.18696475028992,
+            "reversals": 104,
+            "reversals_per_moving_minute": 52.797700771689314,
+            "discontinuities": 180,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 216,
+          "name": "Romero",
+          "role": "bot",
+          "samples": 7507,
+          "hz": 28.001268278882282,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 107.53097677230835,
+            "moving_sec": 80.85901403427124,
+            "reversals": 84,
+            "reversals_per_moving_minute": 62.33071303421841,
+            "discontinuities": 99,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 213,
+          "name": "Carmack",
+          "role": "bot",
+          "samples": 6645,
+          "hz": 24.732483126022366,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 95.62501335144043,
+            "moving_sec": 70.50311708450317,
+            "reversals": 69,
+            "reversals_per_moving_minute": 58.72080797559497,
+            "discontinuities": 74,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 154,
+          "name": null,
+          "role": "unidentified",
+          "samples": 4802,
+          "hz": 31.966447324549456,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 69.1159896850586,
+            "moving_sec": 0.0,
+            "reversals": 0,
+            "reversals_per_moving_minute": null,
+            "discontinuities": 15,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 155,
+          "name": null,
+          "role": "unidentified",
+          "samples": 2533,
+          "hz": 24.542197555577566,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 36.52098083496094,
+            "moving_sec": 0.0,
+            "reversals": 0,
+            "reversals_per_moving_minute": null,
+            "discontinuities": 3,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 156,
+          "name": null,
+          "role": "unidentified",
+          "samples": 2257,
+          "hz": 29.32082806129761,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 32.467010498046875,
+            "moving_sec": 0.0,
+            "reversals": 0,
+            "reversals_per_moving_minute": null,
+            "discontinuities": 8,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        }
+      ]
+    },
+    {
+      "stem": "shane_dm4_2026-09-21_6b9dc220",
+      "raw_sha256": "25b4a912a62f7828240c70ad63744af83005f0f61c6e24274fcb41a2ee0a3c77",
+      "tracks": [
+        {
+          "entity": 1,
+          "name": "player",
+          "role": "human",
+          "samples": 18205,
+          "hz": 69.20158635628096,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 262.6110121011734,
+            "moving_sec": 179.05101585388184,
+            "reversals": 76,
+            "reversals_per_moving_minute": 25.467601947152755,
+            "discontinuities": 32,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 219,
+          "name": "Joe Rogan",
+          "role": "bot",
+          "samples": 8429,
+          "hz": 32.58427979939208,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 120.57496786117554,
+            "moving_sec": 84.22193932533264,
+            "reversals": 94,
+            "reversals_per_moving_minute": 66.96592414256574,
+            "discontinuities": 85,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 213,
+          "name": "Carmack",
+          "role": "bot",
+          "samples": 7832,
+          "hz": 30.181116507736647,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 112.38507294654846,
+            "moving_sec": 81.92911458015442,
+            "reversals": 80,
+            "reversals_per_moving_minute": 58.587231469515935,
+            "discontinuities": 97,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 153,
+          "name": null,
+          "role": "unidentified",
+          "samples": 7491,
+          "hz": 30.63302444046396,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 108.00797080993652,
+            "moving_sec": 0.0,
+            "reversals": 0,
+            "reversals_per_moving_minute": null,
+            "discontinuities": 18,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 216,
+          "name": "Romero",
+          "role": "bot",
+          "samples": 7466,
+          "hz": 28.52492584687664,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 106.96197581291199,
+            "moving_sec": 75.76300954818726,
+            "reversals": 80,
+            "reversals_per_moving_minute": 63.355455764294504,
+            "discontinuities": 101,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        }
+      ]
+    },
+    {
+      "stem": "shane_dm4_2026-10-22_review517",
+      "raw_sha256": "a3cac2868d33b2af6ab728d53d2a79cef3f426a0e57144089cd3d0f2bca8bcd7",
+      "tracks": [
+        {
+          "entity": 1,
+          "name": "player",
+          "role": "human",
+          "samples": 12851,
+          "hz": 69.08582167981832,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 185.64001750946045,
+            "moving_sec": 122.32405042648315,
+            "reversals": 47,
+            "reversals_per_moving_minute": 23.053520466074023,
+            "discontinuities": 26,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 216,
+          "name": "Romero",
+          "role": "bot",
+          "samples": 6842,
+          "hz": 38.91324728639845,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 98.6230115890503,
+            "moving_sec": 76.39508724212646,
+            "reversals": 83,
+            "reversals_per_moving_minute": 65.18743782851371,
+            "discontinuities": 66,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 219,
+          "name": "Joe Rogan",
+          "role": "bot",
+          "samples": 5118,
+          "hz": 27.896480656755692,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 73.42298424243927,
+            "moving_sec": 55.28296101093292,
+            "reversals": 59,
+            "reversals_per_moving_minute": 64.03419670845632,
+            "discontinuities": 73,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 213,
+          "name": "Carmack",
+          "role": "bot",
+          "samples": 4997,
+          "hz": 28.83838468302066,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 71.76298141479492,
+            "moving_sec": 54.82596969604492,
+            "reversals": 60,
+            "reversals_per_moving_minute": 65.66231331535755,
+            "discontinuities": 41,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        }
+      ]
+    },
+    {
+      "stem": "shane_dm4_2026-11-01_bumpercars",
+      "raw_sha256": "70d48fc979f82e5b346bf79ce1ad7029c0a9de237b55c47d8c0ab7a9c61328f4",
+      "tracks": [
+        {
+          "entity": 1,
+          "name": "player",
+          "role": "human",
+          "samples": 10804,
+          "hz": 68.5698290247733,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 156.72301995754242,
+            "moving_sec": 104.45698881149292,
+            "reversals": 31,
+            "reversals_per_moving_minute": 17.806371992558844,
+            "discontinuities": 58,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 219,
+          "name": "Joe Rogan",
+          "role": "bot",
+          "samples": 5111,
+          "hz": 34.26889217813348,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 74.62601852416992,
+            "moving_sec": 57.86302137374878,
+            "reversals": 58,
+            "reversals_per_moving_minute": 60.14203747713046,
+            "discontinuities": 43,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 216,
+          "name": "Romero",
+          "role": "bot",
+          "samples": 4409,
+          "hz": 28.85735446186288,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 65.15100479125977,
+            "moving_sec": 50.46608781814575,
+            "reversals": 58,
+            "reversals_per_moving_minute": 68.95719780261469,
+            "discontinuities": 28,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        },
+        {
+          "entity": 213,
+          "name": "Carmack",
+          "role": "bot",
+          "samples": 3881,
+          "hz": 28.50490509362487,
+          "movement": {
+            "definition": "argus-reversal-v1",
+            "observed_sec": 57.03701877593994,
+            "moving_sec": 45.36701536178589,
+            "reversals": 45,
+            "reversals_per_moving_minute": 59.514605015746696,
+            "discontinuities": 35,
+            "speed_floor": 120.0,
+            "minimum_turn_degrees": 120.0,
+            "reversal_window_sec": 0.25,
+            "refractory_sec": 0.5,
+            "maximum_gap_sec": 0.25,
+            "maximum_segment_speed": 1000.0
+          }
+        }
+      ]
+    }
+  ],
+  "human_median": 22.448021013445967,
+  "bot_median": 63.64124360697906,
+  "ratio": 2.8350491817901937,
+  "human_target": 33.67203152016895,
+  "limits": "PVS-culled observed movement; no cause attribution can be recovered retrospectively; not ARGLOG half-second metrics"
+}
