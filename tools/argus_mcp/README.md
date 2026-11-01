@@ -64,6 +64,10 @@ connections must be checked separately. Do not commit `target*/` or `install/`.
 
 ## Tactical fixture suites
 
+Suite receipts use `legacy_source_md5` for their existing unprefixed QC/SRC
+digest. It is distinct from Python's path-prefixed `source_sha256` identity.
+Historical receipts keep their original field and bytes.
+
 `argus-mcp tactic-suite <dm4|dm2> <new-run-name>` compiles and runs the full
 15-trial developer suite in its own match. Add `--no-compile` to reuse the
 same build, `--step 0.1` for the slow arm, `--deathmatch 4` for unlimited ammo,

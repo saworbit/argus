@@ -1,17 +1,21 @@
 """Observe real water-route execution in private native lab assets."""
+
+from argus_source import source_identity
+from argus_fixture_harness import (new_output, stage_fixture, private_game,
+    read_tape, check_tape, frame_ms as measured_frame_ms, run_match)
+
+from run_behaviour_equivalence import lab_executable
 from argus_validation import require
 import argparse
 import json
 import math
-import os
 from pathlib import Path
 import re
 import shutil
-import subprocess
 import sys
 
 import run_behaviour_equivalence as native
-from run_map_intelligence import ROOT, Lab, digest, write, lab_executable
+from run_map_intelligence import ROOT, Lab, digest, write
 
 DECISION_LABELS = ('walk_chain','typed_jump','typed_sprint','typed_rocket','typed_swim',
     'typed_lift','typed_train','typed_door','height_change','active_action',
@@ -57,36 +61,27 @@ def audit_fixture(text):
 
 
 def stage(root, output, source=None):
-    shutil.copytree(source or root / 'src', output / 'src')
-    (output / 'lq1').mkdir(); (output / 'runs').mkdir()
-    src = output / 'src'
-    fixture = (root / 'tools/fixtures/water_route.qc').read_text()
+    base = Path(source or root / 'src')
+    fixture = (root / 'tools/fixtures/water_route.qc').read_text(encoding='utf-8')
     audit_fixture(fixture)
-    (src / 'water_route_fixture.qc').write_text(fixture)
-    components = 'Argus_GaitApproachAction =' in (src/'argus.qc').read_text()
-    if components: (src/'water_route_fixture.qc').write_text('#define ROUTE_ACTION_COMPONENTS\n'+fixture)
-    contracts=(root/'tools/fixtures/route_decisions.qc').read_text()
-    if components: contracts='#define ROUTE_DECISION_COMPONENTS\n'+contracts
-    (src/'route_decisions_fixture.qc').write_text(contracts)
-    path = src / 'progs.src'; text = path.read_text()
-    require((text.count('\nworld.qc\n') == 1))
-    path.write_text(text.replace('\nworld.qc\n', '\nroute_decisions_fixture.qc\nwater_route_fixture.qc\nworld.qc\n'))
-    path = src / 'world.qc'; text = path.read_text()
-    require((text.count('Argus_FrameAll ();') == 1))
-    path.write_text(text.replace('Argus_FrameAll ();',
-        'WaterRouteBefore ();\n    if (!wr_done) Argus_FrameAll ();\n    WaterRouteAfter ();'))
+    components = 'Argus_GaitApproachAction =' in (base / 'argus.qc').read_text(encoding='utf-8')
+    contracts = (root / 'tools/fixtures/route_decisions.qc').read_text(encoding='utf-8')
+    if components:
+        fixture = '#define ROUTE_ACTION_COMPONENTS\n' + fixture
+        contracts = '#define ROUTE_DECISION_COMPONENTS\n' + contracts
+    stage_fixture(root, output, source,
+                  fixtures={'route_decisions_fixture.qc': contracts, 'water_route_fixture.qc': fixture},
+                  frame_wrap='WaterRouteBefore ();\n    if (!wr_done) Argus_FrameAll ();\n    WaterRouteAfter ();')
     return components
 
 
 def inspect_fixture(text, map_name, ticrate, case=1):
-    require((not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error'))))
-    require((re.findall(r'^ARGUS init on (\S+)$', text, re.M) == [map_name]))
+    check_tape(text, map_name)
     require((text.count('BHVRPL begin water_route') == 1))
     starts = re.findall(r"^WRFIX begin dt_ms\s+([\d.]+) case (\d+) start '([^']+)' goal '([^']+)'$", text, re.M)
     ends = re.findall(r"^WRFIX end completed\s+([01]) seconds\s+([\d.]+) handoffs\s+(\d+) active\s+([01]) pos '([^']+)' hp ([\d.]+) frames (\d+) grounded ([01]) feet (-?\d+)$", text, re.M)
     require((len(starts) == len(ends) == 1))
-    ms = float(starts[0][0]); require((int(starts[0][1]) == case), 'wrong fixture case')
-    require(((90 <= ms <= 110) if ticrate == .1 else (10 <= ms <= 30)))
+    ms = measured_frame_ms(text, 'WRFIX', ticrate); require((int(starts[0][1]) == case), 'wrong fixture case')
     samples = re.findall(r"^WRFIX sample t\s+([\d.]+) pos '([^']+)' node '([^']+)' grounded ([01]) wet ([0-3]) feet (-?\d+) handoffs (\d+) active ([01]) hp ([\d.]+) frames (\d+)$", text, re.M)
     require((len(samples) >= 2))
     require((len([s for s in text.splitlines() if s.startswith('WRFIX')]) == len(samples) + 2))
@@ -156,64 +151,52 @@ def main():
     parser.add_argument('--case', type=int, choices=(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12), default=1)
     parser.add_argument('--control', action='store_true', help='require the original blocked entry (cases 1/2) or raised-platform delay (case 12)')
     args = parser.parse_args()
-    require((re.fullmatch(r'[a-z0-9_]+', args.prefix)))
+    require((re.fullmatch(r'[a-z0-9_]{1,48}', args.prefix)))
     maps = args.maps.split(','); require((maps and len(set(maps)) == len(maps)))
     require((set(maps) <= {'e1m5', 'dm3','e1m1'} and 1024 <= args.port <= 65535))
     require((args.case < 3 or maps == (['e1m1'] if args.case in (10,11,12) else ['e1m5'])))
     require((not args.control or args.case in (1,2,12)), 'this case has no declared negative outcome')
-    output = args.output.resolve(); require((not output.exists()))
-    require((output.is_relative_to((ROOT / 'backups').resolve())))
-    protected = {p: digest(ROOT / p) for p in ('game/argus/progs.dat', 'engine/argus/progs.dat')}
+    output = new_output(args.output, root=ROOT, create=False)
     components=stage(ROOT, output, args.source)
-    game = 'watercheck_' + args.prefix; folder = ROOT / 'engine' / game
-    require((not folder.exists())); folder.mkdir()
-    for name in ('progs', 'maps', 'sound', 'gfx'):
-        original = ROOT / 'engine/argus' / name
-        if original.exists(): shutil.copytree(original, folder / name)
-    (folder / 'autoexec.cfg').write_text(f'sv_protocol 15\nmax_edicts 600\nscratch2 {args.case}\n')
-    native.EXE = lab_executable()
-    env = dict(ARGUS_SRC=str(output / 'src'), ARGUS_PROGS=str(output / 'lq1/progs.dat'),
-        ARGUS_RUNS=str(output / 'runs'), ARGUS_GAME=game, ARGUS_PYTHON=sys.executable,
-        ARGUS_TICRATE=str(args.ticrate))
-    rows = []
-    with (output / 'lab.stderr').open('w') as err:
-        lab = Lab(err, env)
-        try:
-            lab.call('see', what='project')
-            compiled = lab.call('compile_qc', install=False); write(output / 'compile.json', compiled)
-            require((compiled['ok']), compiled)
-            shutil.copy2(output / 'lq1/progs.dat', folder / 'progs.dat')
-            for map_name in maps:
-                name = args.prefix + '_' + map_name
-                result = subprocess.run([str(native.EXE), 'match', map_name, '36' if args.case in (8,9) else '24', name,
-                    '--skill', '2', '--port', str(args.port)], cwd=ROOT,
-                    env=dict(os.environ, ARGUS_ROOT=str(ROOT), **env), capture_output=True,
-                    text=True, encoding='utf-8', timeout=65)
-                (output / (map_name + '.stderr')).write_text(result.stderr)
-                require((result.returncode == 0), result.stderr)
-                raw = output / 'runs' / (name + '.log')
-                row = dict(map=map_name, case=args.case, control=args.control,
-                    source_sha256=digest(output / 'src/argus.qc'),
-                    fixture_sha256=digest(output / 'src/water_route_fixture.qc'),
-                    binary_sha256=digest(folder / 'progs.dat'), raw_sha256=digest(raw),
-                    raw=str(raw.relative_to(ROOT)))
-                write(output / (map_name + '.identity.json'), row)
-                brief = lab.call('brief_run', log=str(raw), map=map_name, detail='full')
-                write(output / (map_name + '.brief.json'), brief)
-                try:
-                    row.update(inspect_fixture(raw.read_text(errors='replace'), map_name, args.ticrate, args.case))
-                    row['decision_checks']=inspect_decisions(raw.read_text(errors='replace'),components)
-                    require((not brief['events'].get('unstick', 0)), 'forced relocation is not route completion')
-                    require_outcome(row, args.control)
-                    row['accepted'] = True
-                except AssertionError as error:
-                    row.update(accepted=False, rejection=str(error))
-                rows.append(row); write(output / 'receipt.json', rows)
-                print(json.dumps({k:v for k,v in row.items() if k!='samples'}), flush=True)
-                require((row['accepted']), row['rejection'])
-        finally:
-            native.finish_lab(lab)
-            require((protected == {p: digest(ROOT / p) for p in protected}))
+    with private_game(ROOT, args.prefix, 'watercheck', autoexec=f'sv_protocol 15\nmax_edicts 600\nscratch2 {args.case}\n') as folder:
+        game = folder.name
+        executable = lab_executable()
+        env = dict(ARGUS_SRC=str(output / 'src'), ARGUS_PROGS=str(output / 'lq1/progs.dat'),
+            ARGUS_RUNS=str(output / 'runs'), ARGUS_GAME=game, ARGUS_PYTHON=sys.executable,
+            ARGUS_TICRATE=str(args.ticrate))
+        rows = []
+        with (output / 'lab.stderr').open('w') as err:
+            lab = Lab(err, env, exe=executable, timeout=900)
+            try:
+                lab.call('see', what='project')
+                compiled = lab.call('compile_qc', install=False); write(output / 'compile.json', compiled)
+                require((compiled['ok']), compiled)
+                shutil.copy2(output / 'lq1/progs.dat', folder / 'progs.dat')
+                for map_name in maps:
+                    name = args.prefix + '_' + map_name
+                    result = run_match(lab, map_name, int('36' if args.case in (8,9) else '24'), name, port=args.port, timeout=65, environment=env, stderr_path=output / (map_name + '.stderr'))
+                    raw, text = read_tape(output, name, map_name)
+                    row = dict(map=map_name, case=args.case, control=args.control,
+                        source_sha256=source_identity(output / 'src'),
+                        fixture_sha256=digest(output / 'src/water_route_fixture.qc'),
+                        binary_sha256=digest(folder / 'progs.dat'), raw_sha256=digest(raw),
+                        raw=str(raw.relative_to(ROOT)))
+                    write(output / (map_name + '.identity.json'), row)
+                    brief = lab.call('brief_run', log=str(raw), map=map_name, detail='full')
+                    write(output / (map_name + '.brief.json'), brief)
+                    try:
+                        row.update(inspect_fixture(text, map_name, args.ticrate, args.case))
+                        row['decision_checks']=inspect_decisions(text,components)
+                        require((not brief['events'].get('unstick', 0)), 'forced relocation is not route completion')
+                        require_outcome(row, args.control)
+                        row['accepted'] = True
+                    except AssertionError as error:
+                        row.update(accepted=False, rejection=str(error))
+                    rows.append(row); write(output / 'receipt.json', rows)
+                    print(json.dumps({k:v for k,v in row.items() if k!='samples'}), flush=True)
+                    require((row['accepted']), row['rejection'])
+            finally:
+                native.finish_lab(lab)
 
 
 if __name__ == '__main__':

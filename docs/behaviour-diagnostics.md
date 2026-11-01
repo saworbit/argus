@@ -576,8 +576,9 @@ cleanup and done records. Case 9 deliberately sends a second impulse and
 requires one busy refusal. Bad IDs, duplicates, missing records, disconnects
 and timeouts fail; the runner stops its owned engine on failure.
 
-Use the CLI built from this checkout. On Windows its development path is
-`tools/argus_mcp/target/debug/argus-mcp.exe`; an older installed MCP/CLI does
+Use the CLI built from this checkout. The study runners default to
+`tools/argus_mcp/target-stage/release/argus-mcp` (`.exe` on Windows), or the
+explicit `ARGUS_LAB` override; an older installed MCP/CLI does
 not acquire the new command until rebuilt. The examples assume matching QC
 has been staged in the disposable lab.
 

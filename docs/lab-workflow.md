@@ -358,11 +358,34 @@ location before using them:
 cargo build --release --manifest-path tools/argus_mcp/Cargo.toml --target-dir tools/argus_mcp/target-stage
 ```
 
-The runners use `target-stage/release/argus-mcp` (`.exe` on Windows), the
-existing `ARGUS_*` lab configuration and local engine/map assets. The map
-runner, route verifier and report accept `--lab` for another fresh binary;
-the recovery and mover verifiers currently use the default location.
-No new environment variables or game-engine extensions are introduced.
+The runners use `tools/argus_mcp/target-stage/release/argus-mcp` (`.exe` on
+Windows). MCP, CLI calls and receipt hashes use the same selected file.
+`ARGUS_LAB` overrides the default; runners with `--lab` use that explicit
+choice first. Relative overrides resolve from the process cwd. Request
+deadlines are per-session arguments to the shared `Lab` client. The existing
+`ARGUS_*` configuration and local engine/map assets are still required.
+No game-engine extensions are introduced.
+
+New Python receipt fields named `source_sha256` use `argus_source.source_identity`:
+all QC/SRC paths, sorted by relative path components, with a `src/` prefix and
+NUL before each file's bytes. Graph JSON is excluded. The current source tree's
+hash matches the earlier path-prefixed study algorithm. Whole-tree
+`source.json` manifests and the map runner's `source_tree_sha256` include broader
+inputs and are separate identities. Historical receipts are retained verbatim.
+Native tactic reports label their older unprefixed MD5 as `legacy_source_md5`.
+
+The routing, recovery, mover, attention and water fixture drivers share
+`argus_fixture_harness`. Output must be a new strict child of `backups/`.
+Staging writes fixture edits as UTF-8 with LF and removes an incomplete copy
+on failure. Private game directories must be absent, including aliases;
+installed binaries in `game/argus`, `engine/argus` and `lq1` are checked on
+both success and failure. Completed private assets remain as evidence.
+Each fixture reads its exact named tape and requires one expected map init,
+no engine errors and one measured cadence marker. These checks remain active
+under `python -O`. Physical outcome labels and controls are unchanged.
+Default ports are mover 26003, recovery 26004, water 26005, attention 26006
+and routing 26007. Routing always requests a named native match. Compilers
+must still run serially.
 
 The [broader map runner](map-intelligence.md) evaluates frozen source arms on
 eight maps outside dm2/dm4. It retains native briefs, named tapes, source and

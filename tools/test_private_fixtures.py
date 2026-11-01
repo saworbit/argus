@@ -36,7 +36,7 @@ class PrivateTests(unittest.TestCase):
         self.exe=self.root/'lab.exe';self.exe.write_bytes(b'lab')
         for p in ('game/argus/progs.dat','engine/argus/progs.dat','lq1/progs.dat'):
             (self.root/p).write_bytes(b'original '+p.encode())
-        self.patches=[patch.object(runner,'EXE',self.exe),patch.object(runner,'audit_muzzle'),
+        self.patches=[patch.object(runner,'lab_executable',return_value=self.exe),patch.object(runner,'audit_muzzle'),
                       patch.object(runner,'audit_health')]
         for p in self.patches:p.start();self.addCleanup(p.stop)
         self.output=self.root/'backups/fresh'
@@ -44,9 +44,10 @@ class PrivateTests(unittest.TestCase):
         self.before=runner.tree_identity(self.root/'src')
         self.binaries=runner.identities([self.root/p for p in ('game/argus/progs.dat','engine/argus/progs.dat','lq1/progs.dat')])
 
-    def factory(self,err,env):
+    def factory(self,err,env,**options):
         outer=self
         class FakeLab:
+            executable=options['exe']
             def call(self,name,**args):
                 outer.calls.append((name,args))
                 if name=='see':return {'lab_identity':{'authoritative':outer.failure!='stale'}}
@@ -127,8 +128,8 @@ class PrivateTests(unittest.TestCase):
 
     def test_changed_protected_input_is_reported_without_overwriting_it(self):
         factory=self.factory
-        def changed_input(err,env):
-            lab=factory(err,env)
+        def changed_input(err,env,**options):
+            lab=factory(err,env,**options)
             if 'ARGUS_SRC' in env:
                 (self.root/'engine/argus/progs.dat').write_bytes(b'external edit')
             return lab
@@ -142,6 +143,7 @@ class PrivateTests(unittest.TestCase):
     def test_health_client_failure_always_stops_its_owned_engine(self):
         calls=[]
         class Lab:
+            executable=self.exe
             def call(self,name,**args):
                 calls.append(name)
                 return dict(running=True,tail=['ARGLOG ready'])
@@ -168,6 +170,7 @@ class PrivateTests(unittest.TestCase):
     def test_button_player_failure_stops_engine_and_keeps_client_receipt(self):
         calls=[];folder=self.root/'player-test';folder.mkdir()
         class Lab:
+            executable=self.exe
             def call(self,name,**args):
                 calls.append(name)
                 return dict(running=True,tail=['ARGLOG ready'])

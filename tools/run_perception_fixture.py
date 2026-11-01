@@ -1,4 +1,6 @@
 """Private controlled-input observation trials through the native lab only."""
+
+from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import hashlib
 import json
@@ -9,7 +11,7 @@ import shutil
 import subprocess
 import time
 
-from run_behaviour_equivalence import finish_lab, ROOT, EXE, Lab, identity
+from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity
 from check_perception_fixture import check
 
 INPUTS = '''// PRIVATE controlled-input fixture, never in production progs.src.
@@ -91,6 +93,7 @@ def audit_private(output, legacy):
 
 
 def main():
+    executable = lab_executable()
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--output', type=Path, required=True)
     ap.add_argument('--prefix', required=True)
@@ -142,8 +145,7 @@ def main():
                         # the ID first; impulse transport owns its own seat.
                         for trial in range(1, args.repeats + 1):
                             lab.call('tune', command=f'scratch3 {trial}')
-                            client = subprocess.run([str(EXE), 'client', 'impulse', '219', '0.6'], cwd=ROOT,
-                                env=dict(os.environ, ARGUS_ROOT=str(ROOT)), capture_output=True, text=True, timeout=20)
+                            client = lab_cli(executable, 'client', 'impulse', '219', '0.6', cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT)), timeout=20)
                             assert client.returncode == 0, client.stderr
                         stop = lab.call('match_stop'); active = False
                         text = (ROOT / f'runs/{name}.log').read_text(errors='replace')

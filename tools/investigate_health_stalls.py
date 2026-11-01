@@ -9,7 +9,7 @@ from pathlib import Path
 
 from run_behaviour_equivalence import ROOT, Lab, identity
 from run_health_fixture import body
-from run_health_balance import source_digest
+from argus_source import source_identity as source_digest
 
 OUT=ROOT/'backups/perception-step1b-isolation'
 PREV=ROOT/'backups/perception-step1b'

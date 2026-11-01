@@ -36,7 +36,7 @@ class RegisteredComparisons(unittest.TestCase):
                     brief=dict(totals=dict(tick_class='listen')))
 
     def compare(self, run):
-        with patch.object(runner.subprocess, 'run', return_value=run) as invoke:
+        with patch.object(runner, 'lab_cli', return_value=run) as invoke:
             value = runner.compare_registered_tape(self.exe, self.control, self.protocol,
                                                    [self.baseline], self.row)
         return value, invoke
@@ -47,9 +47,9 @@ class RegisteredComparisons(unittest.TestCase):
             with self.subTest(primary=primary):
                 self.protocol['primary'] = self.control['primary'] = primary
                 value, invoke = self.compare(subprocess.CompletedProcess([], 0, card, ''))
-                self.assertEqual(invoke.call_args.args[0],
-                    [str(self.exe), 'compare', 'candidate', 'control', '--primary', primary])
-                self.assertEqual(invoke.call_args.kwargs['env']['ARGUS_ROOT'], str(self.root))
+                self.assertEqual(invoke.call_args.args,
+                    (self.exe, 'compare', 'candidate', 'control', '--primary', primary))
+                self.assertEqual(invoke.call_args.kwargs['environment']['ARGUS_ROOT'], str(self.root))
                 self.assertEqual(value['effective_primary'], primary)
                 self.assertEqual(value['native_gate_card'], card)
                 self.assertEqual(value['analysis_lab_sha256'], runner.digest(self.exe))
@@ -68,7 +68,7 @@ class RegisteredComparisons(unittest.TestCase):
                         del control[key]
                     else:
                         control[key] = value
-                    with patch.object(runner.subprocess, 'run') as invoke:
+                    with patch.object(runner, 'lab_cli') as invoke:
                         with self.assertRaisesRegex(AssertionError, key):
                             runner.compare_registered_tape(self.exe, control, self.protocol,
                                                            [self.baseline], self.row)
@@ -85,8 +85,7 @@ class RegisteredComparisons(unittest.TestCase):
         argv = ['run_map_intelligence.py', '--maps', 'dm3', '--seconds', '60', '--skill', '2',
                 '--output', str(output), '--prefix', 'new_study', '--lab', str(self.exe),
                 '--baseline', str(baseline), '--primary', 'freezes']
-        with patch.object(sys, 'argv', argv), patch.object(runner, 'Lab') as lab, \
-             patch.object(runner.native, 'EXE', self.exe):
+        with patch.object(sys, 'argv', argv), patch.object(runner, 'Lab') as lab:
             with self.assertRaisesRegex(AssertionError, 'primary'):
                 runner.main()
             lab.assert_not_called()
@@ -107,7 +106,7 @@ class RegisteredComparisons(unittest.TestCase):
                     row = dict(original, **{field: 'changed'})
                     candidate = row if arm == 'candidate' else self.row
                     baseline = row if arm == 'control' else self.baseline
-                    with patch.object(runner.subprocess, 'run') as invoke:
+                    with patch.object(runner, 'lab_cli') as invoke:
                         with self.assertRaises(AssertionError):
                             runner.compare_registered_tape(self.exe, self.control, self.protocol,
                                                            [baseline], candidate)
@@ -121,14 +120,14 @@ class RegisteredComparisons(unittest.TestCase):
         other = self.tape('control_two', self.control)
         self.row['repeat'] = 2
         response = subprocess.CompletedProcess([], 0, 'native card\n', '')
-        with patch.object(runner.subprocess, 'run', return_value=response) as invoke:
+        with patch.object(runner, 'lab_cli', return_value=response) as invoke:
             result = runner.compare_registered_tape(self.exe, self.control, self.protocol,
                                                    [self.baseline, other], self.row)
-            self.assertEqual(invoke.call_args.args[0][3], 'control_two')
+            self.assertEqual(invoke.call_args.args[3], 'control_two')
             self.assertEqual(result['inputs']['control']['name'], 'control_two')
         self.row['repeat'] = 1
         other['brief']['totals']['tick_class'] = 'dedicated'
-        with patch.object(runner.subprocess, 'run') as invoke:
+        with patch.object(runner, 'lab_cli') as invoke:
             with self.assertRaisesRegex(AssertionError, 'cross-cadence'):
                 runner.compare_registered_tape(self.exe, self.control, self.protocol,
                                                [self.baseline, other], self.row)

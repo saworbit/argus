@@ -5,6 +5,7 @@ Requires a previously compiled/staged candidate. Retains native briefs and raw
 tapes; parses only the new BHVTIME grammar, never reconstructs ARGLOG metrics.
 """
 from argus_validation import require
+from argus_source import source_identity
 import argparse
 import ctypes
 import datetime as dt
@@ -15,16 +16,69 @@ import os
 from pathlib import Path
 import queue
 import re
+import signal
 import subprocess
 import sys
 import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-EXE = ROOT / 'tools/argus_mcp/target/debug/argus-mcp.exe'
 OUT = ROOT / 'backups/behaviour-equivalence'
 MODES = dict(off=0, on=590, compute=591, legacy=592)
 TIMING = re.compile(r'^BHVTIME t\s+([\d.]+) frames\s+(\d+) seconds\s+([\d.]+) mean_ms\s+([\d.]+) max_ms\s+([\d.]+) over20\s+(\d+) over50\s+(\d+)$', re.M)
+
+
+def lab_executable(override=None):
+    """Resolve one source-built lab for MCP, CLI calls and receipt hashes."""
+    selected = override or os.environ.get('ARGUS_LAB')
+    if not selected:
+        selected = ROOT / 'tools/argus_mcp/target-stage/release' / (
+            'argus-mcp.exe' if os.name == 'nt' else 'argus-mcp')
+    return Path(selected).expanduser().resolve()
+
+
+def lab_cli(executable, *arguments, timeout=45, environment=None, cwd=None, runner=None):
+    """Run the selected lab with bounded UTF-8 capture and child cleanup."""
+    root = Path(cwd) if cwd is not None else ROOT
+    command = [str(lab_executable(executable)), *map(str, arguments)]
+    options = dict(cwd=root, env={**os.environ, 'ARGUS_ROOT': str(root), **(environment or {})},
+                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                   text=True, encoding='utf-8', errors='replace')
+    if runner is not None:  # Explicit test transport; no real child is owned.
+        options.pop('stdout'); options.pop('stderr')
+        return runner(command, capture_output=True, timeout=timeout, **options)
+    if os.name != 'nt':
+        options['start_new_session'] = True
+    process = subprocess.Popen(command, **options)
+    try:
+        out, err = process.communicate(timeout=timeout)
+        return subprocess.CompletedProcess(command, process.returncode, out, err)
+    except BaseException:
+        try:
+            if os.name == 'nt':
+                if process.poll() is None:
+                    cleanup = subprocess.run(['taskkill', '/PID', str(process.pid), '/T', '/F'],
+                        capture_output=True, timeout=5, creationflags=subprocess.CREATE_NO_WINDOW)
+                    if cleanup.returncode:
+                        print(f'lab child-tree cleanup failed: {cleanup.stderr!r}', file=sys.stderr)
+            else:
+                try: os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError: pass
+        except Exception as error:
+            print(f'lab child-tree cleanup failed: {error!r}', file=sys.stderr)
+        finally:
+            try:
+                if process.poll() is None:
+                    process.kill()
+            except Exception as error:
+                print(f'lab process cleanup failed: {error!r}', file=sys.stderr)
+            try: process.communicate(timeout=5)
+            except Exception as error: print(f'lab pipe cleanup failed: {error!r}', file=sys.stderr)
+        raise
+    finally:
+        for pipe in (process.stdout, process.stderr):
+            try: pipe.close()
+            except OSError as error: print(f'lab pipe close failed: {error!r}', file=sys.stderr)
 
 
 def timing(text):
@@ -36,15 +90,9 @@ def timing(text):
     return rows[1:]  # pre-registered startup exclusion, irrespective of arm/outcome
 
 
-def identity(map_name):
-    paths = sorted([*ROOT.joinpath('src').rglob('*.qc'), *ROOT.joinpath('src').rglob('*.src')])
-    h = hashlib.sha256()
-    for path in paths:
-        h.update(path.relative_to(ROOT).as_posix().encode())
-        h.update(b'\0')
-        h.update(path.read_bytes())
+def identity(map_name, executable=None):
     digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
-    return dict(source_sha256=h.hexdigest(), cli_sha256=digest(EXE),
+    return dict(source_sha256=source_identity(ROOT / 'src'), cli_sha256=digest(lab_executable(executable)),
                 binary_sha256=digest(ROOT / 'engine/argus/progs.dat'),
                 nav_sha256=digest(ROOT / f'src/argus_nav_{map_name}.qc.json'))
 
@@ -79,9 +127,11 @@ def cpu_seconds(pid):
 
 
 class Lab:
-    def __init__(self, stderr, environment=None):
-        self.p = subprocess.Popen([str(EXE)], cwd=ROOT,
-            env=dict(os.environ, ARGUS_ROOT=str(ROOT), **(environment or {})), stdin=subprocess.PIPE,
+    def __init__(self, stderr, environment=None, *, exe=None, timeout=45):
+        self.executable = lab_executable(exe)
+        self.timeout = timeout
+        self.p = subprocess.Popen([str(self.executable)], cwd=ROOT,
+            env={**os.environ, 'ARGUS_ROOT': str(ROOT), **(environment or {})}, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=stderr, text=True, encoding='utf-8')
         self.records = queue.Queue()
         self.serial = 0
@@ -104,7 +154,8 @@ class Lab:
             finish_lab(self, active=False)
             raise
 
-    def request(self, method, params, timeout=45):
+    def request(self, method, params, timeout=None):
+        timeout = self.timeout if timeout is None else timeout
         self.serial += 1
         self.p.stdin.write(json.dumps(dict(jsonrpc='2.0', id=self.serial, method=method, params=params)) + '\n')
         self.p.stdin.flush()
@@ -157,7 +208,7 @@ def finish_lab(lab, active=True):
         if active and not failed:
             if isinstance(lab, Lab):
                 if lab.p.poll() is None:
-                    # Bypass a study's long request override during teardown.
+                    # Teardown is bounded independently of the study timeout.
                     response = Lab.request(lab, 'tools/call',
                         dict(name='match_stop', arguments={}), timeout=2)
                     if response.get('error') or response.get('result', {}).get('isError'):

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from check_plan_progress import check_contract, check_physical, check_physical_edges, audit_physical_edges
 from run_behaviour_equivalence import Lab, ROOT
+from argus_source import source_identity
 
 
 def save(path, value):
@@ -21,20 +22,6 @@ def save(path, value):
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-class PhysicalLab(Lab):
-    """Allow the explicitly bounded 40/45-second native tools to finish."""
-    def request(self, method, params):
-        self.serial += 1
-        self.p.stdin.write(json.dumps(dict(jsonrpc='2.0', id=self.serial, method=method, params=params)) + '\n')
-        self.p.stdin.flush()
-        deadline = time.monotonic() + 90
-        while True:
-            response = self.records.get(timeout=max(.01, deadline - time.monotonic()))
-            assert response is not None, 'lab exited'
-            if response.get('id') == self.serial:
-                return response
 
 
 def prepare(folder, legacy=False, deadline_control=False, opening_control=False):
@@ -207,7 +194,7 @@ def main():
                                ARGUS_RUNS=str(folder / 'runs'), ARGUS_BASEDIR=str(base),
                                ARGUS_GAME=game, TOKIO_WORKER_THREADS='2')
             with (folder / 'lab.stderr').open('w') as err:
-                lab = PhysicalLab(err, environment) if args.mode == 'physical-edges' else Lab(err, environment)
+                lab = Lab(err, environment, timeout=90) if args.mode == 'physical-edges' else Lab(err, environment)
                 try:
                     compiled = lab.call('compile_qc', install=False)
                     save(folder / 'compile.json', compiled)
@@ -231,6 +218,7 @@ def main():
                         else:
                             checked = check_physical(text, case) if case else check_contract(text, map_name, edges=args.mode == 'edges')
                         row = dict(variant=variant, map=map_name, case=case, **checked,
+                                   source_sha256=source_identity(folder / 'src'),
                                    tape_sha256=sha(tape), binary_sha256=sha(private_game / 'progs.dat'))
                         results.append(row)
                         save(output / 'results.json', results)

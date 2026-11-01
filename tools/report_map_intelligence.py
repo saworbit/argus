@@ -1,4 +1,6 @@
 """Summarise native multi-map receipts without reconstructing tape metrics."""
+
+from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import hashlib
 import json
@@ -6,7 +8,6 @@ import os
 from pathlib import Path
 import statistics
 import subprocess
-from run_map_intelligence import lab_executable
 from argus_registration import registration
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -91,10 +92,7 @@ def main():
         arms = [json.loads((p / 'results.json').read_text()) for p in (args.control, args.candidate)]
         for row in result['maps']:
             names = [','.join(r['name'] for r in rows if r['map'] == row['map']) for rows in arms]
-            response = subprocess.run([str(executable), 'compare', names[1], names[0],
-                '--primary', result['candidate_protocol'].get('primary', 'stall_parity')], cwd=ROOT,
-                env=dict(os.environ, ARGUS_ROOT=str(ROOT)), capture_output=True,
-                text=True, encoding='utf-8', timeout=30)
+            response = lab_cli(executable, 'compare', names[1], names[0], '--primary', result['candidate_protocol'].get('primary', 'stall_parity'), cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT)), timeout=30)
             assert response.returncode == 0, response.stderr
             (args.native_gates / (row['map'] + '.txt')).write_text(response.stdout, encoding='utf-8')
             row['native_gate_card'] = response.stdout
