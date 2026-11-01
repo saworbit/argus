@@ -364,7 +364,13 @@ pub async fn run_cycle(map: &str) -> Result<(), String> {
 
     // 3. regen (the costs file inflates the learned cells)
     let bsp = format!("{map}.bsp");
-    let gen = crate::navgen::nav_generate(&cfg, &bsp, map, None, None, false)?;
+    let gen = match crate::navgen::nav_generate(&cfg, &bsp, map, None, None, false).await {
+        Ok(result) => result,
+        Err(e) => {
+            restore(&saved);
+            return Err(format!("navgen failed, snapshot restored: {e}"));
+        }
+    };
     if !gen.ok {
         restore(&saved);
         return Err(format!(

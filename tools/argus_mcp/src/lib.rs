@@ -30,6 +30,7 @@ pub mod parse_arglog;
 pub mod parse_fteqcc;
 pub mod paths;
 pub mod project;
+pub(crate) mod python_helper;
 pub mod qc_index;
 pub mod render_capture;
 pub mod resources;

@@ -2,8 +2,8 @@ use crate::config::Config;
 use crate::intel::{brief_path, compare_briefs, CompareReport, MatchBrief};
 use crate::parse_arglog::{parse_arglog_path, MatchSummary};
 use crate::paths::{resolve_input, resolve_log, resolve_output, tail_lines};
+use crate::python_helper::{self, Outputs, ANALYZE_DEADLINE};
 use serde::Serialize;
-use std::process::Command;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct AnalyzeResult {
@@ -20,7 +20,7 @@ pub struct AnalyzeResult {
     pub stdout_tail: Vec<String>,
 }
 
-pub fn analyze_match(
+pub async fn analyze_match(
     cfg: &Config,
     bsp: &str,
     log_a: &str,
@@ -52,19 +52,17 @@ pub fn analyze_match(
         std::fs::create_dir_all(parent).map_err(|e| format!("create PNG output directory: {e}"))?;
     }
 
-    let mut cmd = Command::new(&cfg.python);
-    cmd.arg(&script).arg(&bsp_path).arg(&log_a_path);
+    let mut files = Outputs::new()?;
+    let staged_png = files.add(&out_png_path, true)?;
+    let mut args = vec![bsp_path.as_path(), log_a_path.as_path()];
     if let Some(b) = &log_b_path {
-        cmd.arg(b);
+        args.push(b.as_path());
     }
-    cmd.arg(&out_png_path);
+    args.push(staged_png.as_path());
     if let Some(n) = &nav_path {
-        cmd.arg(n);
+        args.push(n.as_path());
     }
-
-    let output = cmd
-        .output()
-        .map_err(|e| format!("failed to spawn ARGUS_PYTHON: {e}"))?;
+    let output = python_helper::run(cfg, &script, &args, ANALYZE_DEADLINE).await?;
     let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
     if !output.stderr.is_empty() {
         text.push('\n');
@@ -84,6 +82,10 @@ pub fn analyze_match(
     let compare = brief_b
         .as_ref()
         .map(|b| compare_briefs(brief_a.clone(), b.clone()));
+
+    if output.status.success() {
+        files.publish()?;
+    }
 
     Ok(AnalyzeResult {
         ok: output.status.success(),

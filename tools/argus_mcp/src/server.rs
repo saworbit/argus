@@ -1488,7 +1488,9 @@ impl Argus {
                 None,
                 None,
                 args.register.unwrap_or(true),
-            ) {
+            )
+            .await
+            {
                 Ok(nav) => {
                     if want_full {
                         return json_ok(&serde_json::json!({
@@ -1543,7 +1545,9 @@ impl Argus {
             args.out_qc.as_deref(),
             args.out_png.as_deref(),
             args.register.unwrap_or(false),
-        ) {
+        )
+        .await
+        {
             Ok(r) if r.preview_generated => json_ok_pngs(&r, &[r.out_png.as_str()]),
             Ok(r) => json_ok(&r),
             Err(e) => tool_err(e),
@@ -1558,7 +1562,7 @@ impl Argus {
             Ok(c) => c,
             Err(r) => return Ok(r),
         };
-        match nav_sync_dispatch(&cfg) {
+        match nav_sync_dispatch(&cfg).await {
             Ok(r) => json_ok(&r),
             Err(e) => tool_err(e),
         }
@@ -1711,8 +1715,11 @@ impl Argus {
             &args.out_png,
             args.log_b.as_deref(),
             args.nav_json.as_deref(),
-        ) {
-            Ok(r) => json_ok_pngs(&r, &[r.out_png.as_str()]),
+        )
+        .await
+        {
+            Ok(r) if r.ok => json_ok_pngs(&r, &[r.out_png.as_str()]),
+            Ok(r) => json_ok(&r),
             Err(e) => tool_err(e),
         }
     }

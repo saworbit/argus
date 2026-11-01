@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::paths::{resolve_input, tail_lines};
+use crate::python_helper::{self, Outputs, NAV_DEADLINE};
 use serde::Serialize;
 use std::path::Path;
-use std::process::Command;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct NavgenResult {
@@ -54,7 +54,7 @@ pub(crate) fn preview_generated(qc: &Path, png: &Path) -> bool {
     verify().unwrap_or(false)
 }
 
-pub fn nav_generate(
+pub async fn nav_generate(
     cfg: &Config,
     bsp: &str,
     map: &str,
@@ -105,21 +105,45 @@ pub fn nav_generate(
         std::fs::create_dir_all(parent).map_err(|e| format!("create PNG output directory: {e}"))?;
     }
 
-    let mut cmd = Command::new(&cfg.python);
-    cmd.arg(&script)
-        .arg(&bsp_path)
-        .arg(map)
-        .arg(&out_qc)
-        .arg(&out_png)
-        .arg("--no-dispatcher");
-    if register {
-        // Python-side --register wires progs.src and the dispatcher
-        // idempotently (and itself implies --no-dispatcher)
-        cmd.arg("--register");
+    let mut files = Outputs::new()?;
+    let staged_qc = files.add(&out_qc, true)?;
+    files.add(
+        &std::path::PathBuf::from(format!("{}.json", out_qc.display())),
+        true,
+    )?;
+    let staged_png = files.add(&out_png, false)?;
+    files.add(&std::path::PathBuf::from(&receipt), false)?;
+    for kind in ["costs", "probe", "proven", "mined"] {
+        let input = out_qc
+            .parent()
+            .unwrap()
+            .join(format!("argus_nav_{map}.{kind}.json"));
+        if kind == "mined" {
+            files.add(&input, false)?;
+        }
+        files.input(&input)?;
     }
-    let output = cmd
-        .output()
-        .map_err(|e| format!("failed to spawn ARGUS_PYTHON: {e}"))?;
+    if register {
+        for name in ["progs.src", "argus_nav_dispatch.qc"] {
+            let input = cfg.src.join(name);
+            files.add(&input, input.exists())?;
+            files.input(&input)?;
+        }
+    }
+    let mut args = vec![
+        bsp_path.as_path(),
+        Path::new(map),
+        staged_qc.as_path(),
+        staged_png.as_path(),
+        Path::new("--no-dispatcher"),
+    ];
+    if register {
+        args.push(Path::new("--register"));
+    }
+    let output = python_helper::run(cfg, &script, &args, NAV_DEADLINE).await?;
+    if output.status.success() {
+        files.publish()?;
+    }
 
     let mut text = String::from_utf8_lossy(&output.stdout).into_owned();
     if !output.stderr.is_empty() {
@@ -139,8 +163,67 @@ pub fn nav_generate(
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn preview_receipt_is_authoritative_and_must_be_from_this_invocation() {
+    #[tokio::test]
+    async fn cancelled_generation_cannot_publish_source_or_registration() {
+        let dir = crate::test_support::TestDir::new("nav-cancel").unwrap();
+        let root = dir.path();
+        for name in ["src", "tools", "runs"] {
+            std::fs::create_dir(root.join(name)).unwrap();
+        }
+        std::fs::write(root.join("map.bsp"), "bsp").unwrap();
+        let mut saved = Vec::new();
+        for name in [
+            "argus_nav_dm4.qc",
+            "argus_nav_dm4.qc.json",
+            "argus_nav_dm4.mined.json",
+            "progs.src",
+            "argus_nav_dispatch.qc",
+        ] {
+            let path = root.join("src").join(name);
+            std::fs::write(&path, "original").unwrap();
+            saved.push(path);
+        }
+        std::fs::write(root.join("tools/argus_navgen.py"), r#"import sys,pathlib,time
+qc,png=map(pathlib.Path,sys.argv[3:5])
+for name in (qc.name,qc.name+'.json','argus_nav_dm4.mined.json','progs.src','argus_nav_dispatch.qc'):
+    (qc.parent/name).write_text('partial')
+(pathlib.Path(__file__).parent/'started').write_text(str(qc.parent))
+time.sleep(2)
+qc.write_text('orphan')
+"#).unwrap();
+        let cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            root,
+        )
+        .unwrap();
+        assert!(
+            cfg.python.is_file(),
+            "Python required for cancellation regression"
+        );
+        let work = tokio::spawn(async move {
+            super::nav_generate(&cfg, "map.bsp", "dm4", None, None, true).await
+        });
+        let marker = root.join("tools/started");
+        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            while !marker.exists() {
+                tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .unwrap();
+        let staged = std::path::PathBuf::from(std::fs::read_to_string(marker).unwrap());
+        assert!(!staged.starts_with(root));
+        work.abort();
+        assert!(work.await.unwrap_err().is_cancelled());
+        for path in saved {
+            assert_eq!(std::fs::read_to_string(path).unwrap(), "original");
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(2200)).await;
+        assert!(!staged.exists(), "private workspace survived cancellation");
+    }
+
+    #[tokio::test]
+    async fn preview_receipt_is_authoritative_and_must_be_from_this_invocation() {
         let dir = crate::test_support::TestDir::new("nav-receipt-paths").unwrap();
         let root = dir.path();
         std::fs::create_dir_all(root.join("tools")).unwrap();
@@ -168,19 +251,26 @@ print('preview ready')
             "./runs/nav_dm4.png",
             "runs//nav_dm4.png",
         ] {
-            let result =
-                super::nav_generate(&cfg, "map.bsp", " DM4 ", None, Some(spelling), false).unwrap();
+            let result = super::nav_generate(&cfg, "map.bsp", " DM4 ", None, Some(spelling), false)
+                .await
+                .unwrap();
             assert!(result.ok && result.preview_generated, "{result:?}");
         }
         // Success without a new receipt and spawn failure cannot reuse one.
-        std::fs::write(&script, "print('no preview this run')").unwrap();
-        let result = super::nav_generate(&cfg, "map.bsp", "dm4", None, None, false).unwrap();
+        std::fs::write(&script, "import sys,pathlib\nqc=pathlib.Path(sys.argv[3])\nqc.write_bytes(b'fresh')\npathlib.Path(str(qc)+'.json').write_bytes(b'fresh')\nprint('no preview this run')").unwrap();
+        let result = super::nav_generate(&cfg, "map.bsp", "dm4", None, None, false)
+            .await
+            .unwrap();
         assert!(result.ok && !result.preview_generated, "{result:?}");
         cfg.python = root.join("missing-python");
-        assert!(super::nav_generate(&cfg, "map.bsp", "dm4", None, None, false).is_err());
+        assert!(
+            super::nav_generate(&cfg, "map.bsp", "dm4", None, None, false)
+                .await
+                .is_err()
+        );
     }
-    #[test]
-    fn rejects_bad_names_and_outputs_before_starting_python() {
+    #[tokio::test]
+    async fn rejects_bad_names_and_outputs_before_starting_python() {
         let dir = crate::test_support::TestDir::new("nav-output").unwrap();
         let root = dir.path();
         std::fs::create_dir_all(root.join("tools")).unwrap();
@@ -204,7 +294,9 @@ print('preview ready')
             ("dm4", Some("tools/argus_navgen.py"), None),
             ("dm4", None, Some("runs/../tape.log")),
         ] {
-            let error = super::nav_generate(&cfg, "map.bsp", map, qc, png, false).unwrap_err();
+            let error = super::nav_generate(&cfg, "map.bsp", map, qc, png, false)
+                .await
+                .unwrap_err();
             assert!(
                 !error.contains("spawn ARGUS_PYTHON"),
                 "validation was bypassed: {error}"

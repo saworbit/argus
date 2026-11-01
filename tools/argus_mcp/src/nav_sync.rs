@@ -55,7 +55,7 @@ fn registration_text(dispatch: &str, progs: &str, map: &str) -> Registration {
     }
 }
 
-fn require_playable_first_registration(cfg: &Config, map: &str) -> Result<(), String> {
+async fn require_playable_first_registration(cfg: &Config, map: &str) -> Result<(), String> {
     let bsp = cfg.maps.join(format!("{map}.bsp"));
     let graph = cfg.src.join(format!("argus_nav_{map}.qc.json"));
     if !bsp.is_file() || !graph.is_file() {
@@ -71,16 +71,21 @@ fn require_playable_first_registration(cfg: &Config, map: &str) -> Result<(), St
             "{map} is experimental: the playability gate needs ARGUS_PYTHON"
         ));
     }
-    let output = std::process::Command::new(&cfg.python)
-        .arg(script)
-        .arg(&bsp)
-        .arg(&graph)
-        .output()
-        .map_err(|e| format!("{map} playability gate: {e}"))?;
+    let output = crate::python_helper::run(
+        cfg,
+        &script,
+        &[&bsp, &graph],
+        crate::python_helper::MAPGATE_DEADLINE,
+    )
+    .await?;
     if output.status.success() {
         return Ok(());
     }
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stdout = format!(
+        "{}\n{}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
     let reason = stdout
         .lines()
         .filter(|line| !line.trim().is_empty())
@@ -99,7 +104,7 @@ pub struct NavSyncReport {
     pub headline: String,
 }
 
-pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
+pub async fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
     let mut maps = Vec::new();
     let rd = fs::read_dir(&cfg.src).map_err(|e| format!("ARGUS_SRC: {e}"))?;
     for ent in rd {
@@ -138,6 +143,9 @@ pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
     let mut progs =
         fs::read_to_string(&progs_path).map_err(|e| format!("{}: {e}", progs_path.display()))?;
 
+    let mut publication = crate::python_helper::Outputs::new()?;
+    let staged_dispatch = publication.add(&disp_path, false)?;
+    let staged_progs = publication.add(&progs_path, false)?;
     for map in &maps {
         let spawn = format!("Argus_Nav_Spawn_{map}");
         let state = registration_text(&disp, &progs, map);
@@ -145,7 +153,7 @@ pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
         let qc_line = format!("argus_nav_{map}.qc");
         let has_qc = state.progs;
         if !(has_branch && has_qc) {
-            require_playable_first_registration(cfg, map)?;
+            require_playable_first_registration(cfg, map).await?;
         }
         if has_branch {
             already.push(map.clone());
@@ -160,11 +168,12 @@ pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
     }
 
     if !added_dispatch.is_empty() {
-        fs::write(&disp_path, disp).map_err(|e| format!("write dispatch: {e}"))?;
+        fs::write(staged_dispatch, disp).map_err(|e| format!("stage dispatch: {e}"))?;
     }
     if !added_progs.is_empty() {
-        fs::write(&progs_path, progs).map_err(|e| format!("write progs.src: {e}"))?;
+        fs::write(staged_progs, progs).map_err(|e| format!("stage progs.src: {e}"))?;
     }
+    publication.publish()?;
 
     let headline = if added_dispatch.is_empty() && added_progs.is_empty() {
         format!("dispatcher already covers {}", maps.join(", "))
@@ -214,8 +223,8 @@ fn insert_progs_line(src: &str, qc_line: &str) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
-    #[test]
-    fn invalid_nav_filename_is_reported_before_registration_writes() {
+    #[tokio::test]
+    async fn invalid_nav_filename_is_reported_before_registration_writes() {
         let dir = crate::test_support::TestDir::new("nav-invalid-name").unwrap();
         let cfg = crate::config::load_for_reads_from(
             &std::collections::HashMap::from([(
@@ -230,7 +239,7 @@ mod tests {
         for name in ["argus_nav_dispatch.qc", "progs.src"] {
             fs::write(cfg.src.join(name), "unchanged").unwrap();
         }
-        let error = nav_sync_dispatch(&cfg).unwrap_err();
+        let error = nav_sync_dispatch(&cfg).await.unwrap_err();
         assert!(error.contains("argus_nav_my-map.qc"), "{error}");
         for name in ["argus_nav_dispatch.qc", "progs.src"] {
             assert_eq!(fs::read_to_string(cfg.src.join(name)).unwrap(), "unchanged");
@@ -348,8 +357,8 @@ mod tests {
         assert!(out.contains("argus_nav_e1m1.qc\nargus_nav_dispatch.qc"));
     }
 
-    #[test]
-    fn sync_does_not_bypass_the_first_registration_gate() {
+    #[tokio::test]
+    async fn sync_does_not_bypass_the_first_registration_gate() {
         let temp = std::env::temp_dir().join(format!("argus-nav-sync-gate-{}", std::process::id()));
         let _ = fs::remove_dir_all(&temp);
         let src = temp.join("src");
@@ -372,7 +381,7 @@ mod tests {
         cfg.src = src.clone();
         cfg.maps = maps;
 
-        let err = nav_sync_dispatch(&cfg).unwrap_err();
+        let err = nav_sync_dispatch(&cfg).await.unwrap_err();
 
         assert!(err.contains("newmap is experimental"), "{err}");
         assert!(!fs::read_to_string(src.join("progs.src"))

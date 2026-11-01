@@ -765,7 +765,22 @@ fn do_generate(body: &[u8]) -> Response {
     let Ok(cfg) = cfg_full() else {
         return json_ok(&json!({"ok": false, "error": "lab paths incomplete; set ARGUS_*"}));
     };
-    match nav_generate(&cfg, &format!("{map}.bsp"), &map, None, None, true) {
+    // Each HTTP request runs on its own std thread, outside the MCP runtime.
+    let runtime = match tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(e) => return json_ok(&json!({"ok": false, "error": format!("helper runtime: {e}")})),
+    };
+    match runtime.block_on(nav_generate(
+        &cfg,
+        &format!("{map}.bsp"),
+        &map,
+        None,
+        None,
+        true,
+    )) {
         Ok(r) => json_ok(&r),
         Err(e) => json_ok(&json!({"ok": false, "error": e})),
     }

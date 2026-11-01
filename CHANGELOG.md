@@ -305,6 +305,9 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Bound Python helper lifetimes, yield the async worker while they run, and
+  publish staged nav, registration and plot outputs only after success (#683).
+
 - Resolve relative lab config paths at load, confine generated outputs and backup
   restores, preflight restores with rollback, and trust fresh preview receipts
   instead of printed path spelling, with boundary help kept within the tool
