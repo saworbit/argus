@@ -47,6 +47,12 @@ Every subsystem in Argus is designed to run across any standard Quake engine wit
 
 ## Development Setup
 
+The root [AGENTS.md](AGENTS.md) is the tracked, portable agent brief. Submit
+corrections to durable rules there so every checkout receives them.
+`CLAUDE.md` remains an ignored, optional working handoff for local paths,
+installs and session notes. A fresh clone uses this guide and the
+[lab workflow](docs/lab-workflow.md) without that file.
+
 ### Prerequisites
 
 - **Python 3.10+**: For telemetry parsers, reachability checkers, and navigation generation.
