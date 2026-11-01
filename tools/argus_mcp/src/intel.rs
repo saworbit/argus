@@ -241,6 +241,8 @@ pub struct ItemControl {
 /// skill gate today).
 #[derive(Debug, Clone, Serialize)]
 pub struct NavCoverage {
+    pub provenance: crate::nav_provenance::CoverageSource,
+    pub current_tree: crate::nav_provenance::Inventory,
     pub nodes: usize,
     pub visited: usize,
     pub pct: u32,
@@ -987,7 +989,19 @@ pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<Matc
     let hull = map.as_deref().and_then(|m| hull0_for_map(cfg, m));
     let mut brief = brief_tape_lava(&tape, map_hint, hull.as_ref());
     attach_nav(cfg, &mut brief);
-    attach_coverage(cfg, &tape, &mut brief);
+    let snapshot = match brief.map.as_deref() {
+        Some(map) => match crate::nav_provenance::read_tape(&path, map) {
+            Ok(snapshot) => snapshot,
+            Err(error) => {
+                brief
+                    .flags
+                    .push(format!("navigation provenance unavailable: {error}"));
+                None
+            }
+        },
+        None => None,
+    };
+    attach_coverage_with_snapshot(cfg, &tape, &mut brief, snapshot.as_ref());
     attach_atlas(cfg, &mut brief, hull.as_ref());
     attach_item_control(cfg, &tape, &mut brief);
     attach_paired_demo(cfg, &path, &mut brief);
@@ -2218,9 +2232,9 @@ fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
         note: if !cover_gated {
             format!("not gated below {COVER_GATE_MIN_SEC:.0} s of tape")
         } else if cover_ratio < 0.80 {
-            "map coverage dropped".into()
+            "spatial cell coverage dropped".into()
         } else {
-            "coverage at parity".into()
+            "spatial cell coverage at parity".into()
         },
     });
 
@@ -2788,10 +2802,25 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
     // two disagree, say so instead of letting the labels stand (the
     // item_eye bug briefed 11 of 12 dm4 control items off_graph on a
     // map whose tapes route 57% of the time, and nothing shouted)
-    let evidence = reach_evidence_flags(&brief.goal_reach, &brief.events, &brief.mode_share);
+    let current_graph_digest = std::fs::read(cfg.src.join(format!("argus_nav_{map}.qc.json")))
+        .ok()
+        .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+        .and_then(|graph| crate::nav_provenance::graph_digest(&graph).ok());
+    let matches_build = brief.nav_coverage.as_ref().is_some_and(|coverage| {
+        coverage.provenance.eligible_for_navigation_claims
+            && current_graph_digest.is_some()
+            && coverage.provenance.graph_md5 == current_graph_digest
+    });
+    let evidence = if matches_build {
+        reach_evidence_flags(&brief.goal_reach, &brief.events, &brief.mode_share)
+    } else {
+        brief.flags.push("atlas and goal_reach use the current on-disk graph; tested build is unverified or different".into());
+        Vec::new()
+    };
     let contradicted = !evidence.is_empty() && evidence[0].contains("CONTRADICTED");
     brief.flags.extend(evidence);
-    if !contradicted
+    if matches_build
+        && !contradicted
         && brief
             .goal_reach
             .iter()
@@ -2821,8 +2850,13 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
         );
     }
     for line in atlas.implications.iter().take(2) {
-        if !brief.flags.iter().any(|f| f == line) {
-            brief.flags.push(line.clone());
+        let line = if matches_build {
+            line.clone()
+        } else {
+            format!("current atlas: {line}")
+        };
+        if !brief.flags.iter().any(|f| f == &line) {
+            brief.flags.push(line);
         }
     }
 }
@@ -2912,26 +2946,44 @@ fn reach_evidence_flags(
     out
 }
 
-/// Graph utilisation from the tape: which nodes carried traffic, and
-/// whether each typed-link family in the graph actually fired.
+/// Spatial graph proximity. Runtime claims require a tape-bound build snapshot.
 pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
+    attach_coverage_with_snapshot(cfg, tape, brief, None);
+}
+
+fn attach_coverage_with_snapshot(
+    cfg: &Config,
+    tape: &MatchTape,
+    brief: &mut MatchBrief,
+    snapshot: Option<&crate::nav_provenance::MapSnapshot>,
+) {
     let Some(map) = brief.map.as_deref() else {
         return;
     };
+    if !tape.failed_spawns.is_empty() || tape.map.as_deref().is_some_and(|actual| actual != map) {
+        return;
+    }
     let path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
-    let Ok(text) = std::fs::read_to_string(&path) else {
-        return;
-    };
-    let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else {
-        return;
+    let provenance = crate::nav_provenance::CoverageSource::new(snapshot);
+    let v = match snapshot.and_then(|s| s.graph.as_ref()) {
+        Some(graph) => graph.clone(),
+        None => {
+            let Ok(text) = std::fs::read_to_string(&path) else {
+                return;
+            };
+            let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+                return;
+            };
+            value
+        }
     };
     let Some(nodes) = v.get("nodes").and_then(|n| n.as_array()) else {
         return;
     };
-    let pts: Vec<(f64, f64, f64)> = nodes
+    let pts: Option<Vec<(f64, f64, f64)>> = nodes
         .iter()
-        .filter_map(|n| {
-            let a = n.as_array()?;
+        .map(|n| {
+            let a = n.as_array().or_else(|| n.get("origin")?.as_array())?;
             Some((
                 a.first()?.as_f64()?,
                 a.get(1)?.as_f64()?,
@@ -2939,6 +2991,7 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
             ))
         })
         .collect();
+    let Some(pts) = pts else { return };
     if pts.is_empty() {
         return;
     }
@@ -2989,11 +3042,18 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
         } else {
             Some(*brief.events.get(verb).unwrap_or(&0))
         };
-        let line = match fired {
-            Some(f) => format!("{n} link(s), {f} {verb} event(s)"),
-            None => format!("{n} link(s), no runtime verb yet"),
+        let line = if !provenance.eligible_for_navigation_claims {
+            format!("{n} link(s), runtime use unattributed")
+        } else {
+            match fired {
+                Some(f) => format!("{n} link(s), {f} {verb} event(s)"),
+                None => format!("{n} link(s), no runtime verb yet"),
+            }
         };
-        if fired == Some(0) && brief.totals.duration_sec >= 120.0 {
+        if provenance.eligible_for_navigation_claims
+            && fired == Some(0)
+            && brief.totals.duration_sec >= 120.0
+        {
             dormant.push(format!("{key} ({n})"));
         }
         typed.insert(key.trim_end_matches("links").to_string(), line);
@@ -3054,6 +3114,22 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
     };
     let mut sink_notes: Vec<String> = Vec::new();
     for h in &mut brief.hotspots {
+        // Node ids on a historical tape belong to the frozen graph, never
+        // to whatever graph attach_nav happened to find in today's tree.
+        if let Some((node, distance)) = pts
+            .iter()
+            .enumerate()
+            .map(|(i, p)| {
+                (
+                    i,
+                    ((h.x - p.0).powi(2) + (h.y - p.1).powi(2) + (h.z - p.2).powi(2)).sqrt(),
+                )
+            })
+            .min_by(|a, b| a.1.total_cmp(&b.1))
+        {
+            h.nearest_node = Some(node as u32);
+            h.nearest_dist = Some(distance);
+        }
         if h.kind != "routefail" && h.kind != "stall" {
             continue;
         }
@@ -3063,7 +3139,11 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
         }
         let pct = (100 * reach_of(n as usize) / pts.len().max(1)) as u32;
         h.reach_pct = Some(pct);
-        if h.kind == "routefail" && pct < 60 && h.count >= 5 {
+        if provenance.eligible_for_navigation_claims
+            && h.kind == "routefail"
+            && pct < 60
+            && h.count >= 5
+        {
             sink_notes.push(format!(
                 "n{} at {:.0} {:.0} {:.0} reach {}%",
                 n, h.x, h.y, h.z, pct
@@ -3078,6 +3158,8 @@ pub fn attach_coverage(cfg: &Config, tape: &MatchTape, brief: &mut MatchBrief) {
     }
 
     brief.nav_coverage = Some(NavCoverage {
+        provenance,
+        current_tree: crate::nav_provenance::inventory(cfg, map),
         nodes: pts.len(),
         visited: visited_n,
         pct: (100 * visited_n / pts.len().max(1)) as u32,
@@ -4172,7 +4254,36 @@ ARGEVT Reap spawned
             cause: None,
             reach_pct: None,
         });
-        attach_coverage(&cfg, &tape, &mut brief);
+        let mut diagnostic = brief.clone();
+        attach_coverage(&cfg, &tape, &mut diagnostic);
+        assert!(
+            !diagnostic
+                .nav_coverage
+                .as_ref()
+                .unwrap()
+                .provenance
+                .eligible_for_navigation_claims
+        );
+        assert!(!diagnostic
+            .flags
+            .iter()
+            .any(|f| f.contains("never fired") || f.contains("DIRECTED SINK")));
+        let snapshot = crate::nav_provenance::MapSnapshot {
+            map: "dmcov".into(),
+            program_md5: "test-program".into(),
+            inputs_md5: "test-inputs".into(),
+            in_progs_src: true,
+            in_dispatcher: true,
+            qc_present: true,
+            loaded_in_tape: Some(true),
+            graph: Some(
+                serde_json::from_str(
+                    &fs::read_to_string(src.join("argus_nav_dmcov.qc.json")).unwrap(),
+                )
+                .unwrap(),
+            ),
+        };
+        attach_coverage_with_snapshot(&cfg, &tape, &mut brief, Some(&snapshot));
         let cov = brief.nav_coverage.expect("coverage attached");
         assert_eq!(cov.nodes, 3);
         assert_eq!(cov.visited, 1, "only the node under the samples");

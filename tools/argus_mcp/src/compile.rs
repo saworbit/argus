@@ -40,6 +40,7 @@ static COMPILE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
     let _serialised = COMPILE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let nav_inputs = crate::nav_provenance::capture(cfg);
     if let Err(e) = fs::create_dir_all(cfg.root.join("lq1")) {
         return CompileResult {
             ok: false,
@@ -176,6 +177,15 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
             report
                 .raw_tail
                 .push("fteqcc reported success line but progs.dat was not written".into());
+        }
+    }
+    if report.ok {
+        let recorded =
+            nav_inputs.and_then(|inputs| crate::nav_provenance::record_build(cfg, inputs));
+        if let Err(error) = recorded {
+            report
+                .raw_tail
+                .push(format!("navigation provenance unavailable: {error}"));
         }
     }
     finish(cfg, install, report)

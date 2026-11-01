@@ -11,6 +11,11 @@ import argus_ci as ci
 
 
 class CIValidationTests(unittest.TestCase):
+    def test_navigation_receipts_share_their_tapes_append_once_guard(self):
+        self.assertTrue(ci.PROTECTED_TAPE.fullmatch('runs/ab_dm4_test.nav.json'))
+        self.assertTrue(ci.PROTECTED_TAPE.fullmatch('runs/shane_dm2_test.nav.json'))
+        self.assertFalse(ci.PROTECTED_TAPE.fullmatch('runs/unrelated-results.json'))
+
     def test_setext_underlines_do_not_promote_other_blocks(self):
         cases = {
             "1. Install\n---\n": set(),
