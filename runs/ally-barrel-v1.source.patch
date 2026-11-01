@@ -1,0 +1,60 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -5806,8 +5806,14 @@
+                 // point while chasing it - the shot arrives where
+                 // they were, and sometimes where they still are.
+                 // Top of the sub-skill-1 ladder, rockets to spare (never the last one),
+-                // a clear line, and the refire clock respected.
+-                if (!self.ar_prefired && self.ar_skill >= AR_SKILL_PREFIRE
++                // a clear line, and the refire clock respected. Wait for
++                // the limited facing to catch up; an unseen rocket never
++                // bypasses co-op's ally-safe visible firing path.
++                dy = want - self.angles_y;
++                while (dy > 180) dy = dy - 360;
++                while (dy < -180) dy = dy + 360;
++                if (coop <= 0 && fabs (dy) < 8
++                    && !self.ar_prefired && self.ar_skill >= AR_SKILL_PREFIRE
+                     && self.weapon == IT_ROCKET_LAUNCHER
+                     && self.ammo_rockets >= 2
+                     && time > self.attack_finished
+@@ -5817,19 +5823,21 @@
+                                self.ar_lastseen, TRUE, self);
+                     if (trace_fraction == 1)
+                     {
+-                        self.ar_prefired = 1;
+                         to = vectoangles (self.ar_lastseen
+                                           - (self.origin + '0 0 16'));
+                         // vectoangles pitch is up-positive; v_angle
+                         // wants down-positive (the RJ convention)
+                         self.v_angle_x = 0 - to_x;
+-                        self.v_angle_y = to_y;
++                        self.v_angle_y = self.angles_y;
+                         self.v_angle_z = 0;
+-                        self.angles_y = to_y;
+-                        W_Attack ();
+-                        dprint ("ARGUS ");
+-                        dprint (self.netname);
+-                        dprint (" prefire\n");
++                        if (Argus_MuzzleClear (self.ar_lastseen))
++                        {
++                            self.ar_prefired = 1;
++                            W_Attack ();
++                            dprint ("ARGUS ");
++                            dprint (self.netname);
++                            dprint (" prefire\n");
++                        }
+                     }
+                 }
+                 return TRUE;        // combat still owns the steering
+@@ -6845,7 +6853,10 @@
+         // shot we are about to take, and if a team mate is what it
+         // reaches, wait. Splash is not covered here: a rocket landing
+         // beside a team mate still hurts them.
+-        traceline (self.origin + '0 0 22', aimpt, FALSE, self);
++        // The barrel follows limited facing, which can lag the aim point.
++        makevectors (self.v_angle);
++        src = self.origin + '0 0 22';
++        traceline (src, src + v_forward * vlen (aimpt - src), FALSE, self);
+         if (Argus_IsAlly (trace_ent))
+             self.button0 = 0;
+         else if (!Argus_TriggerReady ())

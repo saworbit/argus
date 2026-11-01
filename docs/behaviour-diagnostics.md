@@ -1044,7 +1044,8 @@ and the muzzle-to-aim-point distance; a wall behind a close target does not
 veto the shot. Tactical shots retain their full 240u probe and existing
 settle/abort behaviour. Holding the trigger leaves computed movement intact.
 Ordinary shotgun/grenade behaviour and the existing exact-line prefire branch
-were unchanged at that review. Step 1a remained active in development and step
+were unchanged at that review. The later ally-barrel checks below cover their
+current firing gates. Step 1a remained active in development and step
 1b was parked then.
 
 Fourteen controlled checks use independently proven dm4 BSP wall, clear and
@@ -1103,6 +1104,26 @@ embedded-shot safety or change ordinary/tactical gameplay. The existing
 Both accepted and rejected private attempts stay local under
 `backups/soak-combat-20261027-1/` and `backups/soak-combat-20261027-2/`.
 Installed binaries remain unchanged. No gameplay cohorts or deployment.
+
+## Ally barrel and speculative shots
+
+Co-op hold fire traces the final limited barrel direction to the aim-point
+distance. The aim point can lead facing by several degrees; tracing toward
+that point could miss an ally directly in front of the gun. This is a central
+ray check, with the existing splash gate retained separately.
+
+Lost-sight rocket prefire is disabled in co-op. It waits until limited facing
+is within eight degrees and uses the ordinary muzzle-clearance helper without
+snapping yaw. The per-second turn budget remains active at both tick profiles.
+
+`python tools/verify_ally_barrel.py --help` describes the private real-engine
+fixture. It calls full `Argus_Combat` with actual player hulls and stock
+weapons, observing ammo, damage, emitted rockets and turn limits. Disposable
+actors and owned rockets are removed before restoring match state. The
+[receipts](../runs/ally-barrel-v1.results.json) retain the failing unchanged
+control, fixed checks on two maps and the frozen ordinary-match comparison.
+These checks establish direct-ray safety and bounded prefire, not complete
+shotgun-spread or splash immunity, nor a human-play assessment.
 
 ## Blind comparison of step 1a and shipped matches
 
