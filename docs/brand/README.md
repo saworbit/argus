@@ -122,9 +122,11 @@ slotted screw head. See [`argus-motif.svg`](argus-motif.svg). The lab GUI
 still uses rounded corners; [#677](https://github.com/saworbit/argus/issues/677)
 tracks carrying the chamfer there.
 
-The nav graph appears as **texture only**, as low-opacity wallpaper on the
-banner and social card. It keeps clear of the type: no node sits inside the
-wordmark or tagline and no link crosses them.
+On the banner and social card the nav graph appears as **texture only**, as
+low-opacity wallpaper. It keeps clear of the type: no node sits inside the
+wordmark or tagline and no link crosses them. Where a graph is data, as in the
+README's map figure, it is a real shipped graph in the link colours above,
+never decoration.
 
 ## Files
 
@@ -139,6 +141,8 @@ wordmark or tagline and no link crosses them.
 | `readme-banner{,-light}.svg` | 1280 x 400 banner at the top of the README |
 | `social-preview.{svg,png}` | 1280 x 640 GitHub repository social preview |
 | `argus-motif.svg` | the chamfer rule as a divider |
+| `readme-facts{,-light}.svg` | the hard constraints as chamfered stat tiles, under the README badges |
+| `readme-nav-dm2.svg` | the shipped dm2 graph on rock, the README's map figure |
 
 The tagline is **VANILLA QUAKEC DEATHMATCH BOT · TELEMETRY LABORATORY**.
 
@@ -155,6 +159,10 @@ node tools/brand/raster.js
 
 `dist.py` writes every SVG here and `raster.js` writes the two PNGs. Change
 `MASTER` or `FAVICON` in `tools/brand/build.py` to change the mark everywhere.
+`readme-nav-dm2.svg` is drawn from `src/argus_nav_dm2.qc.json`, so rerun
+`dist.py` after dm2's graph changes; a stale figure misrepresents the map.
+The README's badges are shields.io images in the palette (`labelColor`
+panel, `color` line) and need no rebuild.
 
 ## Directions rejected, and why
 

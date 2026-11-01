@@ -29,10 +29,14 @@ passing botmatch does not establish better human play.
 
 - Add the Argus brand: the faceted A mark, the wordmark, the palette and the
   chamfer motif, with a guide in [docs/brand](docs/brand/README.md). The README
-  opens on a banner that follows the reader's light or dark theme, the lab GUI
+  opens on a banner that follows the reader's light or dark theme, carries its
+  badges in the palette, states the hard constraints as chamfered stat tiles,
+  shows the shipped dm2 graph in the lab's link colours in place of the stale
+  162-node `docs/media/nav_dm2.png`, and signs off with the mark. The lab GUI
   shows the mark as its tab icon, and a 1280 x 640 social preview is ready for
   the repository settings. `tools/brand` regenerates every asset from the
-  mark's parameters. No gameplay, telemetry or lab behaviour changes.
+  mark's parameters and the nav figure from the shipped graph. No gameplay,
+  telemetry or lab behaviour changes.
 
 - Require actual landing and continuous task ownership in private mover
   fixtures, with read-only phase traces and rejection of observer steering.

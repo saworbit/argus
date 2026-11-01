@@ -6,8 +6,13 @@
 #   node tools/brand/raster.js      writes docs/brand/*.png
 import os
 import random
+import sys
 import build
 import wordmark as wm
+
+sys.path.insert(0, os.path.join(build.ROOT, "tools"))
+from argus_linkstyle import LINK_STYLES, WAYPOINT, walk_kind  # noqa: E402
+from argus_navjson import load_nav  # noqa: E402
 
 OUT = os.path.join(build.ROOT, "docs", "brand")
 
@@ -246,6 +251,120 @@ def motif(w=1200.0, h=120.0):
             + "".join(out) + '</svg>')
 
 
+# --- README facts: the hard constraints as stat tiles ----------------------
+FACTS = (("15", "NETQUAKE PROTOCOL"), ("600", "EDICT CEILING"),
+         ("0", "ENGINE EXTENSIONS"), ("3", "BOTS JOIN BY DEFAULT"))
+
+
+def facts(panel, value, label, w=1280.0, h=150.0, gap=16.0):
+    tw = (w - gap * (len(FACTS) - 1)) / len(FACTS)
+    out = []
+    for i, (val, cap) in enumerate(FACTS):
+        x = i * (tw + gap)
+        out.append(brush(x, 0, tw, h, 0.06 * h, panel))
+        vb, vw = text_body(val, value, 54.0, 0, 0)
+        lb, lw = text_body(cap, label, 13.0, 0, 0, track=2.2)
+        out.append(f'<g transform="translate({x + (tw - vw) / 2:.2f} 82)">'
+                   f'{vb}</g>')
+        out.append(f'<g transform="translate({x + (tw - lw) / 2:.2f} 118)">'
+                   f'{lb}</g>')
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:g} {h:g}">'
+            + "".join(out) + '</svg>')
+
+
+# --- README figure: a real shipped graph, drawn the way the lab GUI draws it
+# Data, not texture, so it takes the rock column of argus_linkstyle exactly.
+# Rerun after the graph changes. A pair carries one stroke: a typed family
+# wins over a plain link, and a plain pair is a drop only when no walk runs
+# either way between its ends. Lifts and trains share a style, so they share
+# a legend entry.
+FIG_FAMILIES = (("doorlinks", "door"), ("liftlinks", "lift"),
+                ("trainlinks", "lift"), ("swimlinks", "swim"),
+                ("jlinks", "jump"), ("sprintlinks", "sprint"),
+                ("rjlinks", "rocket"), ("teles", "tele"))
+FIG_ORDER = ("walk", "drop", "door", "lift", "swim",
+             "jump", "sprint", "rocket", "tele")
+FIG_NAMES = {"walk": "WALK", "drop": "DROP", "jump": "JUMP",
+             "sprint": "SPRINT JUMP", "rocket": "ROCKET JUMP",
+             "lift": "LIFT OR TRAIN", "tele": "TELEPORT", "door": "DOOR",
+             "swim": "SWIM"}
+
+
+def _stroke(kind, lw):
+    colour, dash = LINK_STYLES[kind][1], LINK_STYLES[kind][2]
+    d = (f' stroke-dasharray="{" ".join(f"{v * lw:g}" for v in dash)}"'
+         if dash else "")
+    return f'stroke="{colour}" stroke-width="{lw:g}"{d}'
+
+
+def nav_figure(mapname, w=1280.0, pad=44.0):
+    nav = load_nav(os.path.join(build.ROOT, "src",
+                                f"argus_nav_{mapname}.qc.json"))
+    nodes = nav["nodes"]
+    kinds = {}
+    for fam, kind in FIG_FAMILIES:
+        for a, b in (l[:2] for l in nav.get(fam, [])):
+            kinds.setdefault(frozenset((a, b)), kind)
+    plain = {}
+    for a, b in (l[:2] for l in nav.get("links", [])):
+        pair = frozenset((a, b))
+        if pair in kinds or a == b:
+            continue
+        k = walk_kind(nodes[a], nodes[b])
+        plain[pair] = "walk" if "walk" in (k, plain.get(pair)) else k
+    kinds.update(plain)
+
+    # A quarter turn lays the long axis across the page.
+    xs, ys = [p[0] for p in nodes], [p[1] for p in nodes]
+    s = (w - 2 * pad) / (max(ys) - min(ys))
+    gh = (max(xs) - min(xs)) * s
+
+    def pt(i):
+        return (pad + (nodes[i][1] - min(ys)) * s,
+                pad + 34 + (nodes[i][0] - min(xs)) * s)
+
+    present = [k for k in FIG_ORDER if k in kinds.values()]
+    out = []
+    for kind in present:
+        lw = 1.3 if kind == "walk" else 2.2
+        segs = []
+        for pair in sorted(tuple(sorted(p)) for p, k in kinds.items()
+                           if k == kind):
+            (x1, y1), (x2, y2) = pt(pair[0]), pt(pair[1])
+            segs.append(f'M{x1:.1f} {y1:.1f}L{x2:.1f} {y2:.1f}')
+        out.append(f'<path d="{"".join(segs)}" fill="none" '
+                   f'{_stroke(kind, lw)}/>')
+    out.append(f'<g fill="{WAYPOINT[1]}">' + "".join(
+        f'<circle cx="{x:.1f}" cy="{y:.1f}" r="2.6"/>'
+        for x, y in map(pt, range(len(nodes)))) + '</g>')
+
+    cap, _ = text_body(f"{mapname.upper()} · {len(nodes)} WAYPOINTS · "
+                       f"{len(kinds)} LINKS · AS THE LAB DRAWS IT",
+                       MUTED, 13.0, 0, 0, track=2.2)
+    out.insert(0, f'<g transform="translate({pad:g} {pad + 4:g})">{cap}</g>')
+
+    # Legend: a stroke sample per kind present, labels in text ink.
+    ly = pad + 34 + gh + 46
+    x, row = pad, []
+    entries = [(k, FIG_NAMES[k]) for k in present] + [("node", "WAYPOINT")]
+    for kind, name in entries:
+        lb, lw_ = text_body(name, INK, 12.0, 0, 0, track=1.8)
+        if x + 44 + lw_ > w - pad:
+            x, ly = pad, ly + 30
+        if kind == "node":
+            row.append(f'<circle cx="{x + 17:.1f}" cy="{ly - 4:.1f}" r="3.4" '
+                       f'fill="{WAYPOINT[1]}"/>')
+        else:
+            row.append(f'<path d="M{x:.1f} {ly - 4:.1f}L{x + 34:.1f} '
+                       f'{ly - 4:.1f}" {_stroke(kind, 2.4)}/>')
+        row.append(f'<g transform="translate({x + 44:.1f} {ly:.1f})">{lb}</g>')
+        x += 44 + lw_ + 34
+    h = ly + pad - 6
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w:g} '
+            f'{h:.0f}">' + brush(0, 0, w, round(h), 0.06 * min(w, h), ROCK)
+            + "".join(out) + "".join(row) + '</svg>')
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     built = []
@@ -264,6 +383,10 @@ def main():
                        banner(bg=INK, fg=ROCK, sub="#6f6555", rule="#cabfae")))
     built.append(write("social-preview.svg", social()))
     built.append(write("argus-motif.svg", motif()))
+    built.append(write("readme-facts.svg", facts(P["panel"], INK, MUTED)))
+    built.append(write("readme-facts-light.svg",
+                       facts(INK, ROCK, "#6f6555")))
+    built.append(write("readme-nav-dm2.svg", nav_figure("dm2")))
     print("wrote", len(built), "svgs to", OUT)
 
 

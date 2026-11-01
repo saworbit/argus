@@ -7,11 +7,16 @@
 
 Vanilla Quake deathmatch bots, with a lab for testing and improving them.
 
-[![compile](https://github.com/saworbit/argus/actions/workflows/compile.yml/badge.svg)](https://github.com/saworbit/argus/actions/workflows/compile.yml)
-[![Discussions](https://img.shields.io/badge/GitHub-Discussions-brightgreen?logo=github)](https://github.com/saworbit/argus/discussions)
-[![License: GPL v2](https://img.shields.io/badge/License-GPL_v2-blue.svg)](LICENSE)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE-MIT)
-[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md)
+[![compile](https://img.shields.io/github/actions/workflow/status/saworbit/argus/compile.yml?branch=main&style=flat-square&label=compile&labelColor=1e1b18)](https://github.com/saworbit/argus/actions/workflows/compile.yml)
+[![Discussions](https://img.shields.io/badge/GitHub-discussions-3a342c?style=flat-square&logo=github&logoColor=e8dfd0&labelColor=1e1b18)](https://github.com/saworbit/argus/discussions)
+[![Game licence: GPL v2](https://img.shields.io/badge/game-GPL_v2-3a342c?style=flat-square&labelColor=1e1b18)](LICENSE)
+[![Tools licence: MIT](https://img.shields.io/badge/tools-MIT-3a342c?style=flat-square&labelColor=1e1b18)](LICENSE-MIT)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor_Covenant-2.1-3a342c?style=flat-square&labelColor=1e1b18)](CODE_OF_CONDUCT.md)
+
+<picture>
+  <source media="(prefers-color-scheme: light)" srcset="docs/brand/readme-facts-light.svg">
+  <img src="docs/brand/readme-facts.svg" alt="NetQuake protocol 15, a 600-edict ceiling, no engine extensions, and three bots that join by default" width="100%">
+</picture>
 
 Three bots join automatically: Carmack, Romero and Joe Rogan. Play against
 them, watch through ArgusCam, or use the lab to inspect navigation and compare
@@ -184,7 +189,10 @@ A graph file appearing in that inventory does not prove it is registered.
 The experimental e1m3/e1m4 graphs fail playability gates and are absent from
 both the compilation list and dispatcher; they do not add routed map support.
 
-![dm2 navigation: waypoints and movement links over the map geometry](docs/media/nav_dm2.png)
+![The shipped dm2 navigation graph: 215 waypoints and their typed movement links](docs/brand/readme-nav-dm2.svg)
+
+The shipped dm2 graph, drawn from `src/argus_nav_dm2.qc.json` in the lab's
+own [link colours](docs/brand/README.md#navigation-link-colours).
 
 ## Lab workflow
 
@@ -259,3 +267,7 @@ The QuakeC game (`src/`, `game/`) is GPL v2: [LICENSE](LICENSE).
 Python/Rust tooling and documentation use MIT: [LICENSE-MIT](LICENSE-MIT).
 See the [code of conduct](CODE_OF_CONDUCT.md) and
 [security policy](SECURITY.md) for community and reporting guidance.
+
+<p align="center">
+  <img src="docs/brand/argus-icon-tile.svg" alt="The Argus mark" width="48">
+</p>
