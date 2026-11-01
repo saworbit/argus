@@ -1,0 +1,51 @@
+LOG started on: 11/02/2026 02:03:47 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m6
+Clearing memory
+Programs occupy 1109K.
+trying to open external vis file
+maps/e1m6.vis not found, trying forecastcheck_forecast_verified_1_fast.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 188 nodes, 1008 links
+40 entities inhibited
+ARGUS init on e1m6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '216.0 1488.0  24.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-448.0 1280.0  24.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-928.0 416.0  24.0' spd 0 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   1.7 pos '187.3 1428.2  24.0' spd 364.7 yaw 121.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-423.9 1274.4  24.0' spd 320.5 yaw 240.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-799.2 487.4  24.0' spd 320 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BHVRPL begin mover_forecast
+MCFIX begin dt_ms  14.0 layout 1 case 1
+MCFIX decision frame 1 allowed 1 yaw 201 speed 177.0 pos '657.0 1441.0 344.0'
+ARGEVT Carmack jump
+MCFIX launch frame 1 accepted 1
+ARGUS Carmack aircontrol
+MCFIX decision frame 50 allowed 0 yaw 191 speed 261.8 pos '541.1 1423.3 344.0'
+ARGEVT Carmack hazard
+MCFIX result case 1 forecast 1 jump 1 invalid_jump 0 checks 2 refused 1 accepted 1 alive 1 retained 1 wetlevel 0 depth 0 dry_floor 1 world_floor 1 state 0 dock_gap 0 blocked 0 target_contents -1 frames 108 seconds   1.5 predicted '549.9 1399.9 320.0' pos '386.6 1354.9 216.0' pool_floor 0 pool_surface 0 final_gap 0

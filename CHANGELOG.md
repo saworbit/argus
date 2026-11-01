@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Add private engine controls for obstructed, mismatched-floor and undocked
+  mover forecasts, with real water depth kept separate from dry landing proof
+  ([#646](https://github.com/saworbit/argus/issues/646)).
+
 #### Added
 
 - Add the Argus brand: the faceted A mark, the wordmark, the palette and the

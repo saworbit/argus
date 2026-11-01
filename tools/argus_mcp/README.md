@@ -790,6 +790,41 @@ steering after setup. A changed node does not independently prove forward
 consumption of the original route; [#647](https://github.com/saworbit/argus/issues/647)
 tracks that oracle gap. See the [e1m6 evidence](../../docs/e1m6-decisions.md).
 
+## Mover forecast controls
+
+```text
+python tools/verify_mover_forecast.py --output backups/<new-directory> --prefix <new_prefix> --case 2
+```
+
+This private e1m6 component fixture measures one production
+`Argus_MoverGapJumpOK` call at a seeded 140 u/s seat, followed by 1.5 seconds
+of production `Argus_Physics` and real engine physics. It holds a task and
+exit node without running AI reselection after setup. It does not claim a
+completed route. The observer cannot move the actor. Use fresh outputs and
+prefixes and run compilers serially. `--ticrate .1` selects the separate
+100 ms arm; `--port` isolates the engine.
+
+Cases are `1` feasible, `2` actual BSP brush obstruction, `3` mismatched exit
+floor, `4` a physically ascending undocked platform and `5` real pool entry.
+Invalid seeds require forecast refusal, survival and retained task and node
+ownership. Each later mover launch must have a same-frame accepted production
+forecast; a valid escape from another heading is not an invalid launch. Live
+forecast decisions and totals are retained. The feasible seeded forecast must
+pass, so always refusing fails.
+Pair these component controls with the continuing lift-route fixture at both
+cadences, including its played e1m6 production jump witness.
+
+The shared arc predictor rejects lava and slime but permits water. Case 5
+records real point contents, pool depth and observed body waterlevel. Water
+entry is separate from a dry world-floor landing; it does not prove a dry
+transfer or recommend changing the runtime liquid policy. `BHVRPL` excludes
+all these tapes from ordinary gameplay bands. Source, program, fixture and raw
+identities are retained even when a control fails. The compile gate includes
+the `forecast` family and fast CI runs its receipt and observer tests.
+The [forecast receipts](../../runs/mover-forecast-v1.results.json) retain ten
+matching-program controls, two rejected real-engine mutations and a reference
+to the positive transfers using the same production controller source.
+
 ## Fixed navigation benchmark
 
 For passive `BHVDBG` snapshots and the isolated on/off observer fixture, see

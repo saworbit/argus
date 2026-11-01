@@ -1,0 +1,58 @@
+LOG started on: 11/02/2026 02:05:02 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m6
+Clearing memory
+Programs occupy 1109K.
+trying to open external vis file
+maps/e1m6.vis not found, trying forecastcheck_forecast_verified_1_slow.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 188 nodes, 1008 links
+40 entities inhibited
+ARGUS init on e1m6
+ARGUS difficulty Carmack t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 1 cognition 1 aim 1 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '216.0 1488.0  24.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-448.0 1280.0  24.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-928.0 416.0  24.0' spd 0 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGLOG Joe Rogan t   1.8 pos '277.9 1470.2  24.0' spd 320.0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.8 pos '-524.2 1317.7  24.0' spd 320.2 yaw 178.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.8 pos '-760.1 509.1  24.0' spd 320 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGUS difficulty Carmack t 2 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BHVRPL begin mover_forecast
+MCFIX begin dt_ms 100.0 layout 1 case 1
+MCFIX decision frame 1 allowed 0 yaw 201 speed 320.0 pos '657.0 1441.0 344.0'
+ARGEVT Carmack hazard
+MCFIX decision frame 3 allowed 0 yaw 201 speed 320 pos '674.9 1447.9 344.0'
+MCFIX decision frame 4 allowed 0 yaw 197 speed 320.8 pos '664.5 1424.0 344.0'
+MCFIX decision frame 5 allowed 0 yaw 166 speed 331.1 pos '660.6 1455.9 344.0'
+MCFIX decision frame 6 allowed 0 yaw 201 speed 320 pos '658.3 1424.0 344.0'
+MCFIX decision frame 7 allowed 0 yaw 167 speed 343.4 pos '652.2 1455.4 344.0'
+MCFIX decision frame 8 allowed 0 yaw 201 speed 320 pos '650.4 1424.0 344.0'
+MCFIX decision frame 12 allowed 0 yaw 197 speed 321.1 pos '547.0 1442.5 344.0'
+ARGEVT Carmack hazard
+MCFIX decision frame 13 allowed 0 yaw 167 speed 343.7 pos '540.9 1474.0 344.0'
+MCFIX decision frame 14 allowed 0 yaw 165 speed 349.3 pos '534.3 1507.7 344.0'
+MCFIX decision frame 15 allowed 0 yaw 232 speed 371.3 pos '531.3 1473.0 344.0'
+MCFIX decision frame 16 allowed 0 yaw 234 speed 377.5 pos '528.0 1436.0 344.0'
+MCFIX result case 1 forecast 1 jump 0 invalid_jump 0 checks 12 refused 12 accepted 0 alive 1 retained 1 wetlevel 0 depth 0 dry_floor 1 world_floor 1 state 0 dock_gap 0 blocked 0 target_contents -1 frames 16 seconds   1.5 predicted '549.9 1399.9 320.0' pos '528.0 1436.0 344.0' pool_floor 0 pool_surface 0 final_gap 0
