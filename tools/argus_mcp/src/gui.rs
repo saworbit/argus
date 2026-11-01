@@ -704,7 +704,7 @@ fn set_config(body: &[u8]) -> Response {
         set_override("ARGUS_BASEDIR", b);
     }
     if let Some(g) = parsed.game.filter(|s| !s.is_empty()) {
-        if safe_map_name(&g).is_none() {
+        if !safe_game_name(&g) {
             return json_ok(&json!({"ok": false, "error": "bad game name"}));
         }
         set_override("ARGUS_GAME", g);
@@ -849,25 +849,22 @@ fn do_restore(body: &[u8]) -> Response {
     }
 }
 
+fn safe_game_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 32
+        && name
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
+}
+
 pub fn safe_map_name(s: &str) -> Option<String> {
     let s = s.trim();
-    if s.contains("..") || s.contains('/') || s.contains('\\') {
-        return None;
-    }
-    let stem = Path::new(s)
-        .file_stem()
-        .and_then(|x| x.to_str())
-        .unwrap_or(s);
-    if stem.is_empty() || stem.len() > 32 {
-        return None;
-    }
-    if !stem
-        .chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
-    {
-        return None;
-    }
-    Some(stem.to_ascii_lowercase())
+    let stem = if s.to_ascii_lowercase().ends_with(".bsp") {
+        &s[..s.len() - 4]
+    } else {
+        s
+    };
+    crate::paths::map_name(stem).ok()
 }
 
 #[cfg(test)]
@@ -877,11 +874,45 @@ mod tests {
     #[test]
     fn rejects_unsafe_map_names() {
         assert_eq!(safe_map_name("dm4.bsp"), Some("dm4".into()));
-        assert_eq!(safe_map_name("My-Map_2"), Some("my-map_2".into()));
+        assert_eq!(safe_map_name("My_Map_2"), Some("my_map_2".into()));
+        assert!(safe_map_name("My-Map_2").is_none());
         assert!(safe_map_name("../evil").is_none());
         assert!(safe_map_name("foo.bar.bsp").is_none());
-        assert_eq!(safe_map_name("x.exe"), Some("x".into()));
+        assert!(safe_map_name("x.exe").is_none());
         assert!(safe_map_name("").is_none());
+    }
+
+    #[test]
+    fn map_admission_matches_engine_and_qc_identifiers() {
+        let cases: Vec<(String, Option<String>)> =
+            serde_json::from_str(include_str!("../../map_name_cases.json")).unwrap();
+        for (raw, expected) in cases {
+            let expected = expected.as_deref();
+            assert_eq!(safe_map_name(&raw).as_deref(), expected, "GUI: {raw}");
+            assert_eq!(
+                crate::graph_revision::valid_map(&raw).ok().as_deref(),
+                expected,
+                "revision: {raw}"
+            );
+            assert_eq!(
+                crate::paths::map_name(&raw).ok().as_deref(),
+                expected,
+                "shared: {raw}"
+            );
+            assert_eq!(
+                crate::engine::validate_map(&raw).is_ok(),
+                expected.is_some(),
+                "engine: {raw}"
+            );
+            assert_eq!(
+                crate::live::validate_tune(&format!("map {raw}")).ok(),
+                expected.map(|name| format!("map {name}")),
+                "tune: {raw}"
+            );
+        }
+        assert!(safe_game_name("my-game"));
+        assert!(!safe_game_name("../game"));
+        assert_eq!(crate::live::validate_tune("map\tDM4").unwrap(), "map dm4");
     }
 
     fn post(path: &str, headers: &[(&str, &str)]) -> Response {

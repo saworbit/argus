@@ -23,6 +23,7 @@ pub mod match_ctrl;
 pub mod measure;
 pub mod nav_graph;
 pub mod nav_sync;
+pub mod nav_view;
 pub mod navgen;
 pub mod netclient;
 pub mod parse_arglog;

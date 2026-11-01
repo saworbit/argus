@@ -280,7 +280,7 @@ pub fn read_uri_with_live(
             }
             if let Some(spec) = other.strip_prefix("argus://path/") {
                 let cfg = cfg.ok_or("ARGUS_ROOT is required for argus://path")?;
-                let route = crate::nav_graph::route_ref(cfg, spec)?;
+                let route = crate::nav_view::route_ref(cfg, spec)?;
                 return Ok(vec![json_text(uri, &route)]);
             }
             if let Some(needle) = other.strip_prefix("argus://search/") {

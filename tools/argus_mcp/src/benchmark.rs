@@ -73,7 +73,9 @@ pub struct BenchmarkReport {
 
 pub fn load_suite(path: &Path) -> Result<TaskSuite, String> {
     let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let suite: TaskSuite = serde_json::from_str(&text).map_err(|e| format!("task suite: {e}"))?;
+    let mut suite: TaskSuite =
+        serde_json::from_str(&text).map_err(|e| format!("task suite: {e}"))?;
+    suite.map = crate::paths::map_name(&suite.map)?;
     validate_suite(&suite)?;
     Ok(suite)
 }
@@ -284,6 +286,9 @@ pub async fn run_suite(
     suite: &TaskSuite,
     limit: Option<usize>,
 ) -> Result<BenchmarkReport, String> {
+    let mut normalized = suite.clone();
+    normalized.map = crate::paths::map_name(&suite.map)?;
+    let suite = &normalized;
     validate_suite(suite)?;
     verify_graph(cfg, suite)?;
     let count = limit.unwrap_or(suite.tasks.len()).min(suite.tasks.len());

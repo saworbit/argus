@@ -102,18 +102,24 @@ pub struct NavSyncReport {
 pub fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
     let mut maps = Vec::new();
     let rd = fs::read_dir(&cfg.src).map_err(|e| format!("ARGUS_SRC: {e}"))?;
-    for ent in rd.flatten() {
+    for ent in rd {
+        let ent = ent.map_err(|e| format!("read ARGUS_SRC entry: {e}"))?;
         let name = ent.file_name().to_string_lossy().into_owned();
         if let Some(map) = name
             .strip_prefix("argus_nav_")
             .and_then(|s| s.strip_suffix(".qc"))
         {
-            if map == "dispatch" || map.contains('.') {
+            if map == "dispatch" {
                 continue;
             }
-            if map.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-                maps.push(map.to_string());
+            let normalized =
+                crate::paths::map_name(map).map_err(|e| format!("refused {name}: {e}"))?;
+            if normalized != map {
+                return Err(format!(
+                    "refused {name}: regenerate with canonical map name {normalized}"
+                ));
             }
+            maps.push(normalized);
         }
     }
     maps.sort();
@@ -208,6 +214,28 @@ fn insert_progs_line(src: &str, qc_line: &str) -> Result<String, String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn invalid_nav_filename_is_reported_before_registration_writes() {
+        let dir = crate::test_support::TestDir::new("nav-invalid-name").unwrap();
+        let cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([(
+                "ARGUS_ROOT".into(),
+                dir.path().display().to_string(),
+            )]),
+            dir.path(),
+        )
+        .unwrap();
+        fs::create_dir_all(&cfg.src).unwrap();
+        fs::write(cfg.src.join("argus_nav_my-map.qc"), "graph").unwrap();
+        for name in ["argus_nav_dispatch.qc", "progs.src"] {
+            fs::write(cfg.src.join(name), "unchanged").unwrap();
+        }
+        let error = nav_sync_dispatch(&cfg).unwrap_err();
+        assert!(error.contains("argus_nav_my-map.qc"), "{error}");
+        for name in ["argus_nav_dispatch.qc", "progs.src"] {
+            assert_eq!(fs::read_to_string(cfg.src.join(name)).unwrap(), "unchanged");
+        }
+    }
     use super::*;
 
     #[test]

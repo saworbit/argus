@@ -104,16 +104,8 @@ struct Source {
     committed_at: Option<String>,
 }
 
-fn valid_map(map: &str) -> Result<String, String> {
-    let map = map.trim().to_ascii_lowercase();
-    if map.is_empty()
-        || !map
-            .bytes()
-            .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-')
-    {
-        return Err("map must be a short name such as dm4".into());
-    }
-    Ok(map)
+pub(crate) fn valid_map(map: &str) -> Result<String, String> {
+    crate::paths::map_name(map)
 }
 
 fn graph_path(map: &str) -> String {

@@ -1,6 +1,21 @@
 use crate::config::Config;
 use std::path::{Path, PathBuf};
 
+/// One spelling that is also safe in Argus_Nav_Spawn_<map>.
+pub fn map_name(raw: &str) -> Result<String, String> {
+    let name = raw.trim().to_ascii_lowercase();
+    if name.is_empty()
+        || name.len() > 32
+        || name == "dispatch"
+        || !name
+            .bytes()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == b'_')
+    {
+        return Err("map must match [a-z0-9_]{1,32}; dispatch is reserved".into());
+    }
+    Ok(name)
+}
+
 pub fn valid_run_name(name: &str) -> bool {
     !name.is_empty()
         && name.len() <= 80
@@ -24,11 +39,12 @@ pub fn resolve_input(cfg: &Config, given: &str) -> Result<PathBuf, String> {
     if under_root.exists() {
         return Ok(under_root);
     }
-    let under_maps = cfg.maps.join(given);
+    let map = map_name(given).unwrap_or_else(|_| given.to_string());
+    let under_maps = cfg.maps.join(&map);
     if under_maps.exists() {
         return Ok(under_maps);
     }
-    let with_bsp = cfg.maps.join(format!("{given}.bsp"));
+    let with_bsp = cfg.maps.join(format!("{map}.bsp"));
     if with_bsp.exists() {
         return Ok(with_bsp);
     }
@@ -89,6 +105,24 @@ pub fn read_engine_text(path: impl AsRef<Path>) -> std::io::Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shipped_map_names_are_already_canonical() {
+        let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../src");
+        for entry in std::fs::read_dir(src).unwrap() {
+            let entry = entry.unwrap();
+            let name = entry.file_name();
+            let name = name.to_string_lossy();
+            if let Some(map) = name
+                .strip_prefix("argus_nav_")
+                .and_then(|n| n.strip_suffix(".qc"))
+            {
+                if map != "dispatch" {
+                    assert_eq!(map_name(map).unwrap(), map);
+                }
+            }
+        }
+    }
 
     #[test]
     fn run_name_rejects_path_escape() {

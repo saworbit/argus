@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::diagnose::{diagnose_log, log_has_tape, tail_nonempty};
-use crate::engine::{validate_map, EngineChild};
+use crate::engine::EngineChild;
 use crate::intel::{brief_text, brief_text_hull, MatchBrief};
 use crate::parse_arglog::{parse_arglog, MatchSummary};
 use crate::paths::{default_run_name, valid_run_name};
@@ -258,7 +258,8 @@ impl MatchCtrl {
                 "match already running: {name}. match_stop first, or wait."
             ));
         }
-        validate_map(map)?;
+        let map = crate::paths::map_name(map)?;
+        let map = map.as_str();
         if let Some(msg) = unharvested_session(cfg) {
             return Err(msg);
         }

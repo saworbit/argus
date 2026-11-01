@@ -210,7 +210,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("usage: argus-mcp cycle <map>\n\nOne guarded learning cycle: learn -> regen -> compile -> probe.");
                 return Ok(());
             }
-            argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
+            let map = argus_mcp::paths::map_name(&map).map_err(|e| anyhow::anyhow!(e))?;
             argus_mcp::soak::run_cycle(&map)
                 .await
                 .map_err(|e| anyhow::anyhow!(e))
@@ -249,7 +249,7 @@ async fn main() -> anyhow::Result<()> {
                 println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.\n--jumps verifies generated jump links instead of ordinary walk/drop links.");
                 return Ok(());
             }
-            argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
+            let map = argus_mcp::paths::map_name(&map).map_err(|e| anyhow::anyhow!(e))?;
             let limit: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(30);
             let skip: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
@@ -426,7 +426,7 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
                     anyhow::anyhow!("usage: argus-mcp match <map> [duration_sec] [run_name]")
                 })?
                 .clone();
-            argus_mcp::engine::validate_map(&map).map_err(|e| anyhow::anyhow!(e))?;
+            let map = argus_mcp::paths::map_name(&map).map_err(|e| anyhow::anyhow!(e))?;
             let duration: u32 = pos.get(1).and_then(|s| s.parse().ok()).unwrap_or(185);
             let run_name = pos.get(2).map(|s| s.to_string());
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
@@ -1014,7 +1014,8 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 return Ok(());
             }
             let map = &sub_args[0];
-            argus_mcp::engine::validate_map(map).map_err(|e| anyhow::anyhow!(e))?;
+            let normalized_map = argus_mcp::paths::map_name(map).map_err(|e| anyhow::anyhow!(e))?;
+            let map = normalized_map.as_str();
             let register = !sub_args.iter().any(|a| a == "--no-register");
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let res = argus_mcp::navgen::nav_generate(&cfg, map, map, None, None, register)
@@ -1119,7 +1120,8 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 return Ok(());
             }
             let map = &sub_args[0];
-            argus_mcp::engine::validate_map(map).map_err(|e| anyhow::anyhow!(e))?;
+            let normalized_map = argus_mcp::paths::map_name(map).map_err(|e| anyhow::anyhow!(e))?;
+            let map = normalized_map.as_str();
             let mut seat = "solo".to_string();
             let mut duration: u32 = 60;
             let mut skill: Option<u32> = None;

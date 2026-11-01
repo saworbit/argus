@@ -1,6 +1,5 @@
 //! Waypoint graph from navgen JSON: links, jumps, teles, BFS routes.
 
-use crate::cartograph::{band_label, cartograph, item_value, ControlItem};
 use crate::config::Config;
 use serde::Serialize;
 use std::collections::{BTreeMap, VecDeque};
@@ -21,31 +20,15 @@ pub struct CamNode {
     pub tag: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct NavGraph {
+    pub family_counts: BTreeMap<String, usize>,
     pub map: String,
     pub nodes: Vec<[f32; 3]>,
     pub adj: Vec<Vec<NavEdge>>,
     pub cam_nodes: Vec<CamNode>,
     pub exposure: Vec<u32>,
     pub cover_targets: Vec<Option<(u32, u32)>>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct NodeDeep {
-    pub map: String,
-    pub node: u32,
-    pub origin: [f32; 3],
-    pub band: String,
-    pub nearby_control: Vec<String>,
-    pub out: Vec<NavEdge>,
-    pub inn: Vec<NavEdge>,
-    pub degree: usize,
-    pub exposure: u32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cover_target: Option<u32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cover_hop: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -98,7 +81,7 @@ struct CachedGraph {
 static GRAPH_CACHE: Mutex<BTreeMap<String, CachedGraph>> = Mutex::new(BTreeMap::new());
 
 pub fn load_nav(cfg: &Config, map: &str) -> Result<NavGraph, String> {
-    let map = map.trim().to_ascii_lowercase();
+    let map = crate::paths::map_name(map)?;
     let path = cfg.src.join(format!("argus_nav_{map}.qc.json"));
     let mtime = std::fs::metadata(&path).and_then(|m| m.modified()).ok();
     if let Ok(c) = GRAPH_CACHE.lock() {
@@ -257,6 +240,17 @@ pub(crate) fn parse_graph(map: &str, v: &serde_json::Value) -> Result<NavGraph, 
         }
     }
     Ok(NavGraph {
+        family_counts: LINK_FAMILIES
+            .iter()
+            .map(|(key, _)| {
+                (
+                    (*key).into(),
+                    v.get(*key)
+                        .and_then(|rows| rows.as_array())
+                        .map_or(0, Vec::len),
+                )
+            })
+            .collect(),
         map: map.to_string(),
         nodes,
         adj,
@@ -295,52 +289,6 @@ pub fn nearest_node(g: &NavGraph, x: f32, y: f32, z: f32) -> (u32, f32) {
         }
     }
     best
-}
-
-pub fn node_deep(cfg: &Config, map: &str, id: u32) -> Result<NodeDeep, String> {
-    let g = load_nav(cfg, map)?;
-    let i = id as usize;
-    if i >= g.nodes.len() {
-        return Err(format!("node {id} out of range (0..{})", g.nodes.len()));
-    }
-    let origin = g.nodes[i];
-    let mut inn = Vec::new();
-    for (from, edges) in g.adj.iter().enumerate() {
-        for e in edges {
-            if e.to == id {
-                inn.push(NavEdge {
-                    to: from as u32,
-                    kind: e.kind.clone(),
-                });
-            }
-        }
-    }
-    let nearby = nearby_control(cfg, map, id);
-    Ok(NodeDeep {
-        map: g.map,
-        node: id,
-        origin,
-        band: band_label(map, origin[2]),
-        nearby_control: nearby,
-        out: g.adj[i].clone(),
-        inn,
-        degree: g.adj[i].len(),
-        exposure: g.exposure.get(i).copied().unwrap_or(0),
-        cover_target: g.cover_targets.get(i).and_then(|v| v.map(|x| x.0)),
-        cover_hop: g.cover_targets.get(i).and_then(|v| v.map(|x| x.1)),
-    })
-}
-
-fn nearby_control(cfg: &Config, map: &str, id: u32) -> Vec<String> {
-    cartograph(cfg, map)
-        .map(|a| {
-            a.control
-                .iter()
-                .filter(|c| c.nearest_node == Some(id))
-                .map(|c| format!("{} ({})", c.classname, c.reach))
-                .collect()
-        })
-        .unwrap_or_default()
 }
 
 pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
@@ -503,181 +451,6 @@ pub fn route_nodes(g: &NavGraph, from: u32, to: u32) -> Route {
     }
 }
 
-pub fn route_ref(cfg: &Config, raw: &str) -> Result<Route, String> {
-    let spec = parse_path_ref(raw)
-        .ok_or_else(|| "name=dm4:56-72 or dm4:56->72 or dm4:quad->lg".to_string())?;
-    let g = load_nav(cfg, &spec.map)?;
-    let atlas = cartograph(cfg, &spec.map).ok();
-    let from = resolve_end(&g, atlas.as_ref().map(|a| a.control.as_slice()), &spec.from)?;
-    let to = resolve_end(&g, atlas.as_ref().map(|a| a.control.as_slice()), &spec.to)?;
-    let mut r = route_nodes(&g, from.id, to.id);
-    r.from_label = from.label;
-    r.to_label = to.label;
-    Ok(r)
-}
-
-struct PathSpec {
-    map: String,
-    from: End,
-    to: End,
-}
-
-enum End {
-    Node(u32),
-    Item(String),
-}
-
-struct Resolved {
-    id: u32,
-    label: String,
-}
-
-fn resolve_end(
-    g: &NavGraph,
-    control: Option<&[ControlItem]>,
-    end: &End,
-) -> Result<Resolved, String> {
-    match end {
-        End::Node(id) => {
-            if *id as usize >= g.nodes.len() {
-                return Err(format!("node {id} out of range (0..{})", g.nodes.len()));
-            }
-            Ok(Resolved {
-                id: *id,
-                label: format!("n{id}"),
-            })
-        }
-        End::Item(token) => {
-            let control = control.ok_or("no atlas to resolve item")?;
-            let item = resolve_item(control, token)
-                .ok_or_else(|| format!("no control item matching {token}"))?;
-            let id = item
-                .nearest_node
-                .ok_or_else(|| format!("{} is off-graph ({})", item.classname, item.reach))?;
-            Ok(Resolved {
-                id,
-                label: format!("{}@n{id}", item.classname),
-            })
-        }
-    }
-}
-
-pub fn resolve_item<'a>(control: &'a [ControlItem], token: &str) -> Option<&'a ControlItem> {
-    let t = token.to_ascii_lowercase();
-    let class = match t.as_str() {
-        "quad" => "item_artifact_super_damage",
-        "lg" | "lightning" => "weapon_lightning",
-        "rl" | "rocket" => "weapon_rocketlauncher",
-        "gl" | "grenade" => "weapon_grenadelauncher",
-        "ssg" => "weapon_supershotgun",
-        "sng" => "weapon_supernailgun",
-        "ng" | "nails" => "weapon_nailgun",
-        "sg" | "shotgun" => "weapon_shotgun",
-        "pent" => "item_artifact_invulnerability",
-        "ring" => "item_artifact_invisibility",
-        "mega" | "mh" => "item_health",
-        "ya" | "yellow" => "item_armor2",
-        "ra" | "red" => "item_armorInv",
-        other => other,
-    };
-    control
-        .iter()
-        .find(|c| c.classname.eq_ignore_ascii_case(class))
-        .or_else(|| {
-            control.iter().find(|c| {
-                c.classname.to_ascii_lowercase().contains(&t)
-                    || item_value(&c.classname, 0)
-                        .map(|(_, why)| why.to_ascii_lowercase().contains(&t))
-                        .unwrap_or(false)
-                    || c.why.to_ascii_lowercase().contains(&t)
-            })
-        })
-}
-
-pub fn around_point(cfg: &Config, raw: &str) -> Result<serde_json::Value, String> {
-    let (map, coords) = raw.split_once(':').unwrap_or(("dm4", raw));
-    let parts: Vec<&str> = coords
-        .split(|c: char| c == ',' || c.is_whitespace())
-        .filter(|s| !s.is_empty())
-        .collect();
-    if parts.len() < 3 {
-        return Err("name=dm4:200,-900,24".into());
-    }
-    let x: f32 = parts[0].parse().map_err(|_| "bad x")?;
-    let y: f32 = parts[1].parse().map_err(|_| "bad y")?;
-    let z: f32 = parts[2].parse().map_err(|_| "bad z")?;
-    let g = load_nav(cfg, map)?;
-    let (id, dist) = nearest_node(&g, x, y, z);
-    let node = node_deep(cfg, map, id)?;
-    let atlas = cartograph(cfg, map).ok();
-    let near_items: Vec<String> = atlas
-        .as_ref()
-        .map(|a| {
-            let mut items: Vec<(f32, String)> = a
-                .control
-                .iter()
-                .filter_map(|c| {
-                    let o = c.origin?;
-                    let d = (o[0] - x).hypot(o[1] - y).hypot(o[2] - z);
-                    Some((d, format!("{} {} @ {:.0}", c.classname, c.reach, d)))
-                })
-                .collect();
-            items.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap_or(std::cmp::Ordering::Equal));
-            items.into_iter().take(5).map(|(_, s)| s).collect()
-        })
-        .unwrap_or_default();
-    Ok(serde_json::json!({
-        "map": map,
-        "at": [x, y, z],
-        "nearest_node": id,
-        "dist": dist,
-        "node": node,
-        "nearby_items": near_items,
-    }))
-}
-
-pub fn item_view(cfg: &Config, raw: &str) -> Result<serde_json::Value, String> {
-    let (map, token) = raw.split_once(':').unwrap_or(("dm4", raw));
-    let atlas = cartograph(cfg, map)?;
-    let item = resolve_item(&atlas.control, token)
-        .cloned()
-        .ok_or_else(|| format!("no control item matching {token} on {map}"))?;
-    let node = item
-        .nearest_node
-        .and_then(|id| node_deep(cfg, map, id).ok());
-    Ok(serde_json::json!({
-        "map": atlas.map,
-        "item": item,
-        "node": node,
-    }))
-}
-
-/// `dm4:56-72`, `dm4:56->72`, `dm4:quad->lg`
-fn parse_path_ref(raw: &str) -> Option<PathSpec> {
-    let raw = raw.trim();
-    let (map, rest) = raw.split_once(':')?;
-    if map.is_empty() || rest.is_empty() {
-        return None;
-    }
-    let rest = rest.replace("->", "-").replace(" to ", "-");
-    let (a, b) = rest.split_once('-')?;
-    Some(PathSpec {
-        map: map.to_ascii_lowercase(),
-        from: parse_end(a.trim())?,
-        to: parse_end(b.trim())?,
-    })
-}
-
-fn parse_end(s: &str) -> Option<End> {
-    if s.is_empty() {
-        return None;
-    }
-    if let Ok(n) = s.parse::<u32>() {
-        return Some(End::Node(n));
-    }
-    Some(End::Item(s.to_string()))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -717,15 +490,6 @@ mod tests {
                 "{context}: n{node} lost destinations {old:?} -> {new:?}"
             );
         }
-    }
-
-    #[test]
-    fn parses_node_and_item_paths() {
-        let a = parse_path_ref("dm4:56-72").unwrap();
-        assert_eq!(a.map, "dm4");
-        let b = parse_path_ref("dm4:quad->lg").unwrap();
-        assert!(matches!(b.from, End::Item(_)));
-        assert!(parse_path_ref("56-72").is_none());
     }
 
     // #218: element 2 of a links entry is reciprocity. Reading it as a
@@ -791,6 +555,7 @@ mod tests {
     #[test]
     fn bfs_finds_short_path() {
         let g = NavGraph {
+            family_counts: BTreeMap::new(),
             map: "t".into(),
             nodes: vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0]],
             adj: vec![
@@ -930,6 +695,7 @@ mod tests {
         // #39: train / sprint / door edges fell through `_ => walk`, so
         // a dm2 east-deck ride briefed as a plain walk.
         let g = NavGraph {
+            family_counts: BTreeMap::new(),
             map: "t".into(),
             nodes: vec![[0.0; 3], [1.0, 0.0, 0.0], [2.0, 0.0, 0.0], [3.0, 0.0, 0.0]],
             adj: vec![
