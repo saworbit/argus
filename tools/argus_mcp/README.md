@@ -801,8 +801,9 @@ python tools/verify_mover_transfer.py --output backups/<new-directory> --prefix 
 This private, no-install fixture places one bot at the e1m6 or dm3 boarding
 point and assigns a task beyond the lift exit. Production routing and physics
 own all movement afterwards. Success requires actual boarding, dry static-floor
-landing near the exit, a route node different from the exit and uninterrupted
-task ownership. A rescue warp rejects the result. A landing alone is insufficient.
+landing near the exit, observed consumption of the exit into its planned forward
+successor and uninterrupted task ownership. A rescue warp rejects the result.
+A landing alone is insufficient.
 
 `--ticrate .1` selects the measured 100 ms profile; `.0139` selects played
 cadence. `--source <frozen-src>` uses a frozen source tree. `--control` records
@@ -813,10 +814,19 @@ isolates an engine from other matches. Compilers must still run serially.
 `MTRACE` samples are read-only observations of position, support, platform
 phase and route ownership. `BHVRPL` quarantines the tape from ordinary gameplay
 bands. The receipt parser rejects missing or inconsistent landing/handoff
-proof, wrong maps and cadence. The observer audit rejects actor mutations and
-steering after setup. A changed node does not independently prove forward
-consumption of the original route; [#647](https://github.com/saworbit/argus/issues/647)
-tracks that oracle gap. See the [e1m6 evidence](../../docs/e1m6-decisions.md).
+proof, wrong maps and cadence. Layout `mover-transfer-v2` records generation-stamped
+route expectations around the production arrival assignment, its consumed
+successor, a world-floor landing and measured frame count. Read-only callbacks
+are injected only into the private source. Setup controls install a different
+node and an expected node without consumption; both must fail the handoff check.
+The observer audit rejects actor mutations and steering after setup.
+
+The archived `tools/fixtures/mover_transfer_v1.qc` and historical receipts retain
+their weaker `node_difference` proof. The parser never upgrades those outcomes
+to forward-consumption proof. See [#647](https://github.com/saworbit/argus/issues/647)
+and the historical [e1m6 evidence](../../docs/e1m6-decisions.md). The
+[v2 receipts](../../runs/mover-handoff-v2.results.json) retain four matching-program
+witnesses and the real-engine node-difference mutation control with raw hashes.
 
 ## Camera chase controls
 

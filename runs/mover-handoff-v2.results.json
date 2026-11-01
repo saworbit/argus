@@ -1,0 +1,193 @@
+{
+  "schema": "argus-mover-handoff-v2",
+  "production_commit": "9d3689f3ee280c29b7e71bdb14e364fcf29ae640",
+  "production_argus_sha256": "71cecc207e97c64d6b8efecceb44985c00b982f280a6447c5c381a6ac15050a3",
+  "legacy_fixture_sha256": "3d5014477ec8d69bb604ccde732d71543f0bbf6da68ecf946810162c69c09206",
+  "quarantine": "BHVRPL controlled fixtures; never ordinary gameplay bands",
+  "cases": [
+    {
+      "map": "e1m6",
+      "completed": true,
+      "seconds": 3.9,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 1,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 14.0,
+      "fixture_layout": "mover-transfer-v2",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "exit_consumed": true,
+      "frames": 264,
+      "measured_fps": 67.43589743589743,
+      "expected_successor": [
+        465.0,
+        1361.0,
+        216.0
+      ],
+      "exit_node": [
+        529.0,
+        1393.0,
+        344.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "2be790392675ca101855a48baa664cce0f182943d47f2dcb7bc23d64f7d8afca",
+      "graph_sha256": "f4da52f5f11dcd252d973e55b91c5c08f6d6a1c95386577d1f3de17fac40994e",
+      "fixture_sha256": "d570ac8cecd4a944dd47819332097f812cd275669f4cdc8ef7c1357a1db2d8fa",
+      "binary_sha256": "2991681e64d0c64d76efe3ff752d061765b92b6933c737b99ddb6efaba3ce6f0",
+      "raw_sha256": "865ed730c26f90fd675d5d4bb13929be8fb86618617f82365c9d945f3f540958",
+      "raw": "runs/mover_handoff_v2_e1m6_fast.log",
+      "control": false
+    },
+    {
+      "map": "e1m6",
+      "completed": true,
+      "seconds": 2.7,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 0,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 100.0,
+      "fixture_layout": "mover-transfer-v2",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "exit_consumed": true,
+      "frames": 28,
+      "measured_fps": 10.0,
+      "expected_successor": [
+        465.0,
+        1361.0,
+        216.0
+      ],
+      "exit_node": [
+        529.0,
+        1393.0,
+        344.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "2be790392675ca101855a48baa664cce0f182943d47f2dcb7bc23d64f7d8afca",
+      "graph_sha256": "f4da52f5f11dcd252d973e55b91c5c08f6d6a1c95386577d1f3de17fac40994e",
+      "fixture_sha256": "d570ac8cecd4a944dd47819332097f812cd275669f4cdc8ef7c1357a1db2d8fa",
+      "binary_sha256": "2991681e64d0c64d76efe3ff752d061765b92b6933c737b99ddb6efaba3ce6f0",
+      "raw_sha256": "11f7307ea51412498d5413ab2c2b2bf129fcb0474382bea56fbde1ebfd69f2e3",
+      "raw": "runs/mover_handoff_v2_e1m6_slow.log",
+      "control": false
+    },
+    {
+      "map": "dm3",
+      "completed": true,
+      "seconds": 1.6,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 0,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 14.0,
+      "fixture_layout": "mover-transfer-v2",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "exit_consumed": true,
+      "frames": 114,
+      "measured_fps": 70.625,
+      "expected_successor": [
+        517.0,
+        673.0,
+        216.0
+      ],
+      "exit_node": [
+        517.0,
+        801.0,
+        216.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "2be790392675ca101855a48baa664cce0f182943d47f2dcb7bc23d64f7d8afca",
+      "graph_sha256": "9351787bac1c41033e2b2299da7f35c17bc5c6917f4d3a0fd12a43dcc2444ea5",
+      "fixture_sha256": "d570ac8cecd4a944dd47819332097f812cd275669f4cdc8ef7c1357a1db2d8fa",
+      "binary_sha256": "2991681e64d0c64d76efe3ff752d061765b92b6933c737b99ddb6efaba3ce6f0",
+      "raw_sha256": "1c4185eedc9f960e6cfa5c35f390871c8044c09c61ba3784ce022cb5cb7e5802",
+      "raw": "runs/mover_handoff_v2_dm3_fast.log",
+      "control": false
+    },
+    {
+      "map": "dm3",
+      "completed": true,
+      "seconds": 1.3,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 0,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 100.0,
+      "fixture_layout": "mover-transfer-v2",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "exit_consumed": true,
+      "frames": 14,
+      "measured_fps": 10.0,
+      "expected_successor": [
+        517.0,
+        673.0,
+        216.0
+      ],
+      "exit_node": [
+        517.0,
+        801.0,
+        216.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "2be790392675ca101855a48baa664cce0f182943d47f2dcb7bc23d64f7d8afca",
+      "graph_sha256": "9351787bac1c41033e2b2299da7f35c17bc5c6917f4d3a0fd12a43dcc2444ea5",
+      "fixture_sha256": "d570ac8cecd4a944dd47819332097f812cd275669f4cdc8ef7c1357a1db2d8fa",
+      "binary_sha256": "2991681e64d0c64d76efe3ff752d061765b92b6933c737b99ddb6efaba3ce6f0",
+      "raw_sha256": "764ad531713de690cded0de9329e01298cf38227baa30f9a952644c0a1a19bf6",
+      "raw": "runs/mover_handoff_v2_dm3_slow.log",
+      "control": false
+    }
+  ],
+  "mutation": {
+    "change": "Replace handoff with the legacy node-difference predicate",
+    "outcome": "Rejected by both setup oracle controls in the real engine",
+    "raw": "runs/mover_handoff_v2_mutant.log",
+    "raw_sha256": "86864364ecfd393318794712c06077ae57f92266771632d1614f3567b2f20fb1"
+  },
+  "development_trials": [
+    {
+      "path": "backups/mover_handoff_e1m6_fast_20261102",
+      "outcome": "Physical success; parser rejected padded dt_ms formatting before correction"
+    },
+    {
+      "path": "backups/mover_handoff_dm3_fast_20261102",
+      "outcome": "Rejected handoff before observer covered the production corner-consumption branch"
+    }
+  ]
+}
