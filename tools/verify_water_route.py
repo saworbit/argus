@@ -1,5 +1,7 @@
 """Observe real water-route execution in private native lab assets."""
 
+from argus_source import source_identity
+
 from run_behaviour_equivalence import lab_executable, lab_cli
 from argus_validation import require
 import argparse
@@ -192,7 +194,7 @@ def main():
                 require((result.returncode == 0), result.stderr)
                 raw = output / 'runs' / (name + '.log')
                 row = dict(map=map_name, case=args.case, control=args.control,
-                    source_sha256=digest(output / 'src/argus.qc'),
+                    source_sha256=source_identity(output / 'src'),
                     fixture_sha256=digest(output / 'src/water_route_fixture.qc'),
                     binary_sha256=digest(folder / 'progs.dat'), raw_sha256=digest(raw),
                     raw=str(raw.relative_to(ROOT)))

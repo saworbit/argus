@@ -3,6 +3,8 @@
 Three counterbalanced pairs per map; not a powered gameplay equivalence test.
 """
 
+from argus_source import source_identity as source_digest
+
 from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import hashlib
@@ -16,14 +18,6 @@ import time
 from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity, timing, cpu_seconds
 
 OUT = ROOT / 'backups/perception-step1'
-
-
-def source_digest(path):
-    h = hashlib.sha256()
-    for file in sorted([*path.rglob('*.qc'), *path.rglob('*.src')]):
-        h.update(('src/' + file.relative_to(path).as_posix()).encode())
-        h.update(b'\0'); h.update(file.read_bytes())
-    return h.hexdigest()
 
 
 def write_comparisons(rows, executable=None):

@@ -13,6 +13,7 @@ from pathlib import Path
 
 from check_plan_progress import check_contract, check_physical, check_physical_edges, audit_physical_edges
 from run_behaviour_equivalence import Lab, ROOT
+from argus_source import source_identity
 
 
 def save(path, value):
@@ -217,6 +218,7 @@ def main():
                         else:
                             checked = check_physical(text, case) if case else check_contract(text, map_name, edges=args.mode == 'edges')
                         row = dict(variant=variant, map=map_name, case=case, **checked,
+                                   source_sha256=source_identity(folder / 'src'),
                                    tape_sha256=sha(tape), binary_sha256=sha(private_game / 'progs.dat'))
                         results.append(row)
                         save(output / 'results.json', results)

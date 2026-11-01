@@ -1,5 +1,7 @@
 """Fixed real-engine mover tasks, with route retention and actual landing checks."""
 
+from argus_source import source_identity
+
 from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import json
@@ -107,7 +109,7 @@ def main():
                 write(output / (map_name + '.brief.json'), brief)
                 row = dict(map=map_name, **measurement,
                     unstick_warps=brief['events'].get('unstick', 0),
-                    source_sha256=digest(output / 'src/argus.qc'), graph_sha256=digest(output / 'src' / ('argus_nav_' + map_name + '.qc.json')),
+                    source_sha256=source_identity(output / 'src'), graph_sha256=digest(output / 'src' / ('argus_nav_' + map_name + '.qc.json')),
                     fixture_sha256=digest(output / 'src/mover_transfer_fixture.qc'), binary_sha256=digest(folder / 'progs.dat'),
                     raw_sha256=digest(raw), raw=str(raw.relative_to(ROOT)), control=args.control)
                 rows.append(row); write(output / 'receipt.json', rows); print(json.dumps(row), flush=True)

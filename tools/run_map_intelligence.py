@@ -4,6 +4,8 @@ Uses a separate game directory and never installs over the playable build.
 Receipts retain native briefs, input identities and every named tape.
 """
 
+from argus_source import source_identity
+
 from run_behaviour_equivalence import Lab
 from run_behaviour_equivalence import lab_executable, lab_cli
 from argus_validation import require
@@ -137,7 +139,8 @@ def main():
                     tree_head=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                     tree_diff=subprocess.check_output(['git', 'diff', '--binary'], cwd=ROOT, text=True),
                     shipped_sha256=digest(ROOT / 'game/argus/progs.dat'))
-    protocol['source_sha256'] = hashlib.sha256(
+    protocol['source_sha256'] = source_identity(output / 'src')
+    protocol['source_tree_sha256'] = hashlib.sha256(
         json.dumps(inputs, sort_keys=True).encode()).hexdigest()
     write(output / 'protocol.json', protocol)
     rows = []

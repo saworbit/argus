@@ -1,5 +1,7 @@
 """Compile and exercise routing contracts in private assets via the native lab."""
 
+from argus_source import source_identity
+
 from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import json
@@ -85,7 +87,7 @@ def main():
             assert f'RDFIX end checks 29 failures {len(failures)}' in text
             receipt = dict(checks=checks, failures=failures,
                 frame_ms=frame_ms, requested_ticrate=args.ticrate,
-                source_sha256=digest(src / 'argus_nav.qc'), raw_sha256=digest(raw),
+                source_sha256=source_identity(src), raw_sha256=digest(raw),
                 binary_sha256=digest(folder / 'progs.dat'))
             write(output / 'receipt.json', receipt)
             assert bool(failures) == args.expect_failure, failures

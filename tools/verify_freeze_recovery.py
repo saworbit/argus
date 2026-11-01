@@ -1,5 +1,7 @@
 """Run blocked-walk regressions in real engine physics using the native lab."""
 
+from argus_source import source_identity
+
 from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import json
@@ -116,7 +118,7 @@ def main():
                 receipt = dict(map=map_name, candidate=candidate, seat=args.seat,
                     **inspect_fixture(text, candidate, args.ticrate,
                                       map_name in ('lqdm2', 'e1m1') or args.seat == 'corner'),
-                    source_sha256=digest(src / 'argus.qc'), raw_sha256=digest(raw),
+                    source_sha256=source_identity(src), raw_sha256=digest(raw),
                     source_files={p.relative_to(src).as_posix(): digest(p)
                                   for p in sorted(src.rglob('*')) if p.is_file()
                                   and p.suffix in ('.qc', '.src', '.json')},

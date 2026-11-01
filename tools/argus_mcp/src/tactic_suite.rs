@@ -113,7 +113,8 @@ pub struct SuiteReport {
     pub step: f32,
     pub deathmatch: u32,
     pub overlap_refused: bool,
-    pub source_md5: String,
+    /// Legacy unprefixed QC/SRC MD5, distinct from Python source_sha256.
+    pub legacy_source_md5: String,
     pub binary_md5: String,
     pub nav_md5: String,
 }
@@ -124,7 +125,7 @@ fn digest(path: &std::path::Path) -> Result<String, String> {
         .map_err(|e| e.to_string())
 }
 
-fn source_digest(dir: &std::path::Path) -> Result<String, String> {
+fn legacy_tree_digest(dir: &std::path::Path) -> Result<String, String> {
     fn collect(dir: &std::path::Path, out: &mut Vec<std::path::PathBuf>) -> Result<(), String> {
         for entry in std::fs::read_dir(dir).map_err(|e| e.to_string())? {
             let path = entry.map_err(|e| e.to_string())?.path();
@@ -229,7 +230,7 @@ async fn run_inner(
     let key = if diagnostics.is_some() { 590 } else { 197 };
     let impulse = if diagnostics.is_some() { 218 } else { 217 };
     // Pin the inspected source and installed binary independently.
-    let source_md5 = source_digest(&cfg.src)?;
+    let legacy_source_md5 = legacy_tree_digest(&cfg.src)?;
     let binary_md5 = digest(&cfg.basedir.join(&cfg.game).join("progs.dat"))?;
     let nav_md5 = digest(&cfg.src.join(format!("argus_nav_{map}.qc.json")))?;
     let mut ctrl = MatchCtrl::default();
@@ -342,7 +343,7 @@ async fn run_inner(
         let demo_path = client.finish_recording()?;
         client.disconnect();
         if binary_md5 != digest(&cfg.basedir.join(&cfg.game).join("progs.dat"))?
-            || source_md5 != source_digest(&cfg.src)?
+            || legacy_source_md5 != legacy_tree_digest(&cfg.src)?
             || nav_md5 != digest(&cfg.src.join(format!("argus_nav_{map}.qc.json")))?
         {
             return Err("source, binary or navigation changed during suite".into());
@@ -365,7 +366,7 @@ async fn run_inner(
         step,
         deathmatch: dm,
         overlap_refused,
-        source_md5,
+        legacy_source_md5,
         binary_md5,
         nav_md5,
     })
@@ -373,6 +374,18 @@ async fn run_inner(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn legacy_identity_keeps_its_unprefixed_qc_src_domain() {
+        let dir = crate::test_support::TestDir::new("legacy-source-digest").unwrap();
+        std::fs::write(dir.path().join("argus.qc"), "bot").unwrap();
+        std::fs::write(dir.path().join("progs.src"), "argus.qc\n").unwrap();
+        let expected = format!("{:x}", md5::compute(b"argus.qc\0botprogs.src\0argus.qc\n"));
+        assert_eq!(legacy_tree_digest(dir.path()).unwrap(), expected);
+        std::fs::write(dir.path().join("graph.qc.json"), "{}").unwrap();
+        assert_eq!(legacy_tree_digest(dir.path()).unwrap(), expected);
+        std::fs::write(dir.path().join("tactics.qc"), "policy").unwrap();
+        assert_ne!(legacy_tree_digest(dir.path()).unwrap(), expected);
+    }
     use super::*;
     #[test]
     fn behaviour_requires_its_own_successful_cleanup_ack() {

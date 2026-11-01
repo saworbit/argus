@@ -1,5 +1,7 @@
 """Exercise production target decisions with private, quarantined inputs."""
 
+from argus_source import source_identity
+
 from run_behaviour_equivalence import lab_executable, lab_cli
 import argparse
 import json
@@ -12,6 +14,11 @@ import sys
 
 import run_behaviour_equivalence as native
 from run_map_intelligence import ROOT, Lab, digest, write
+
+def source_receipt(src):
+    """Identity of every QuakeC input in the staged fixture source."""
+    return dict(source_sha256=source_identity(src))
+
 
 LABELS = ('geometry', 'minor_difference_keeps_focus', 'answers_visible_attacker',
     'switch_reaction_delayed', 'goal_retained', 'secondary_is_not_primary', 'avoids_invulnerable_fixation',
@@ -114,7 +121,7 @@ def main():
                 assert result.returncode == 0, result.stderr
                 raw = output / 'runs' / (name + '.log')
                 # Keep even a failing oracle result before judging it.
-                row = dict(map=map_name, source_sha256=digest(output / 'src/argus.qc'),
+                row = dict(map=map_name, **source_receipt(output / 'src'),
                     fixture_sha256=digest(output / 'src/target_attention_fixture.qc'),
                     binary_sha256=digest(folder / 'progs.dat'), raw_sha256=digest(raw),
                     raw=str(raw.relative_to(ROOT)))

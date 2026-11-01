@@ -5,6 +5,8 @@ Use a new --output beneath backups/. --variants accepts current,old_handoff;
 Current cases and centred/grounded controls must pass. The old_handoff
 airborne-offset case 3 must fail with a valid physical receipt.
 """
+
+from argus_source import source_identity
 import argparse
 import hashlib
 import json
@@ -142,7 +144,7 @@ def main():
     assert set(variants) <= {'current','old_handoff'} and set(cases) <= {1,2,3,4}
     output.mkdir(parents=True)
     installed={p:sha(ROOT/p) for p in ('engine/argus/progs.dat','game/argus/progs.dat','lq1/progs.dat')}
-    save(output/'plan.json',dict(variants=variants,cases=cases,source_sha256=sha(ROOT/'src/argus.qc'),
+    save(output/'plan.json',dict(variants=variants,cases=cases,base_source_sha256=source_identity(ROOT/'src'),
         expected_outcomes=[dict(variant=v,case=c,success=expected_success(v,c)) for v in variants for c in cases],
         acceptance='Physical goal contact within 6 s at full health with continuous motor movement. All selected cases must contact except old_handoff case 3, which must fail with valid physical evidence.',
         installed_before=installed))
@@ -173,6 +175,7 @@ def main():
                         r=lab.call('experiment',map='e1m2',duration_sec=10,skill=1,compile=False,repeats=1,primary='stall_parity',run_name=stem)
                         save(folder/(stem+'.native.json'),r);tape=folder/'runs'/(stem+'.log')
                         record_case(output, results, variant, case, tape.read_text(errors='replace'),
+                                    source_sha256=source_identity(src),
                                     tape_sha256=sha(tape), binary_sha256=sha(private_game/'progs.dat'))
                 finally:lab.close()
     finally:

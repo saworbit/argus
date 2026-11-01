@@ -366,6 +366,14 @@ deadlines are per-session arguments to the shared `Lab` client. The existing
 `ARGUS_*` configuration and local engine/map assets are still required.
 No game-engine extensions are introduced.
 
+New Python receipt fields named `source_sha256` use `argus_source.source_identity`:
+all QC/SRC paths, sorted by relative path components, with a `src/` prefix and
+NUL before each file's bytes. Graph JSON is excluded. The current source tree's
+hash matches the earlier path-prefixed study algorithm. Whole-tree
+`source.json` manifests and the map runner's `source_tree_sha256` include broader
+inputs and are separate identities. Historical receipts are retained verbatim.
+Native tactic reports label their older unprefixed MD5 as `legacy_source_md5`.
+
 The [broader map runner](map-intelligence.md) evaluates frozen source arms on
 eight maps outside dm2/dm4. It retains native briefs, named tapes, source and
 binary identities, and refuses comparisons across measured cadence classes.

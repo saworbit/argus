@@ -1,4 +1,6 @@
 """Run the frozen dm2 lava holdout via the native lab; retain all attempts and restore bytes."""
+
+from argus_source import source_identity as source_digest
 import argparse
 import datetime as dt
 import json
@@ -9,15 +11,6 @@ import traceback
 
 from report_perception_lava import digest, schedule
 from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity, timing, cpu_seconds
-
-
-def source_digest(path):
-    import hashlib
-    h = hashlib.sha256()
-    for file in sorted([*path.rglob('*.qc'), *path.rglob('*.src')]):
-        h.update(('src/' + file.relative_to(path).as_posix()).encode())
-        h.update(b'\0'); h.update(file.read_bytes())
-    return h.hexdigest()
 
 
 def write(path, data):

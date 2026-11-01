@@ -3,6 +3,7 @@ import contextlib
 import hashlib
 import io
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -12,6 +13,7 @@ from unittest.mock import patch
 
 import run_behaviour_equivalence as native
 import run_map_intelligence as maps
+from argus_source import source_identity
 
 
 class ExecutableContract(unittest.TestCase):
@@ -101,6 +103,48 @@ for line in sys.stdin:
             (root / 'src/progs.src').write_text('world.qc\n')
             with patch.object(native, 'ROOT', root):
                 self.assertEqual(private.preflight(root, root / 'backups/new', 'new'), root / 'backups/new')
+
+
+class SourceContract(unittest.TestCase):
+    def test_attention_stage_receipt_tracks_tactics_changes(self):
+        import verify_target_attention as attention
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            src, output = root / 'source', root / 'staged'
+            shutil.copytree(native.ROOT / 'src', src)
+            (src / 'argus_tactics.qc').write_text('first')
+            attention.stage(native.ROOT, output, src)
+            before = attention.source_receipt(output / 'src')
+            (output / 'src/argus_tactics.qc').write_text('second')
+            self.assertNotEqual(attention.source_receipt(output / 'src')['source_sha256'], before['source_sha256'])
+
+    def test_missing_or_empty_source_is_not_a_valid_identity(self):
+        with tempfile.TemporaryDirectory() as td:
+            with self.assertRaises(FileNotFoundError): source_identity(Path(td) / 'missing')
+            with self.assertRaises(ValueError): source_identity(td)
+    def test_nonprimary_sources_and_names_change_the_identity_but_sidecars_do_not(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td)
+            (src / 'argus.qc').write_bytes(b'bot')
+            path = src / 'argus_tactics.qc'
+            path.write_bytes(b'first')
+            before = source_identity(src)
+            path.write_bytes(b'second')
+            self.assertNotEqual(source_identity(src), before)
+            before = source_identity(src)
+            (src / 'graph.qc.json').write_text('{}')
+            self.assertEqual(source_identity(src), before)
+            path.rename(src / 'other.qc')
+            self.assertNotEqual(source_identity(src), before)
+
+    def test_current_tree_matches_the_recorded_path_prefixed_algorithm(self):
+        digest = hashlib.sha256()
+        src = native.ROOT / 'src'
+        for path in sorted([*src.rglob('*.qc'), *src.rglob('*.src')]):
+            digest.update(path.relative_to(native.ROOT).as_posix().encode())
+            digest.update(b'\0')
+            digest.update(path.read_bytes())
+        self.assertEqual(source_identity(src), digest.hexdigest())
 
 
 if __name__ == '__main__':

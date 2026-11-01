@@ -11,6 +11,8 @@ Uses the matching source-built native lab, install=false and private assets.
 No historical snapshots, cohorts or deployment. Health checks do not resolve
 the outstanding dm4 gameplay warning in #583.
 """
+
+from argus_source import source_identity
 from argus_validation import require
 import argparse
 import hashlib
@@ -34,6 +36,7 @@ from verify_plan_progress import copy_assets, save, sha
 
 
 def tree_identity(folder):
+    """Whole-tree audit including graph JSON, distinct from source_sha256."""
     files = {p.relative_to(folder).as_posix(): sha(p)
              for p in sorted(folder.rglob('*')) if p.is_file()}
     return dict(files=files, sha256=hashlib.sha256(
@@ -332,7 +335,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=None)
                         if fixture=='button':
                             (private_game/'autoexec.cfg').write_text('sv_protocol 15\nmax_edicts 600\nscratch2 1\n')
                         row = dict(variant=variant, map=map_name, name=stem,
-                            source_sha256=tree_identity(folder/'src')['sha256'], binary_sha256=sha(binary))
+                            source_sha256=source_identity(folder/'src'), binary_sha256=sha(binary))
                         try:
                             if fixture == 'health':
                                 health_trial(lab, stem, map_name, env, client_run)

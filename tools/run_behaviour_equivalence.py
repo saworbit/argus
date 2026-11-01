@@ -5,6 +5,7 @@ Requires a previously compiled/staged candidate. Retains native briefs and raw
 tapes; parses only the new BHVTIME grammar, never reconstructs ARGLOG metrics.
 """
 from argus_validation import require
+from argus_source import source_identity
 import argparse
 import ctypes
 import datetime as dt
@@ -90,14 +91,8 @@ def timing(text):
 
 
 def identity(map_name, executable=None):
-    paths = sorted([*ROOT.joinpath('src').rglob('*.qc'), *ROOT.joinpath('src').rglob('*.src')])
-    h = hashlib.sha256()
-    for path in paths:
-        h.update(path.relative_to(ROOT).as_posix().encode())
-        h.update(b'\0')
-        h.update(path.read_bytes())
     digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
-    return dict(source_sha256=h.hexdigest(), cli_sha256=digest(lab_executable(executable)),
+    return dict(source_sha256=source_identity(ROOT / 'src'), cli_sha256=digest(lab_executable(executable)),
                 binary_sha256=digest(ROOT / 'engine/argus/progs.dat'),
                 nav_sha256=digest(ROOT / f'src/argus_nav_{map_name}.qc.json'))
 
