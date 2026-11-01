@@ -200,35 +200,42 @@ async function api(path, opt) {
   return r;
 }
 
+function element(tag, text, className) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = String(text);
+  if (className) node.className = className;
+  return node;
+}
+
 async function refresh() {
   const s = await api('/api/status');
   document.getElementById('root').value = s.root || '';
   document.getElementById('basedir').value = s.basedir || '';
   document.getElementById('game').value = s.game || 'argus';
   const cfg = document.getElementById('cfg');
-  cfg.innerHTML = (s.ready ? '<span class="ok">lab ready</span>' : '<span class="bad">paths incomplete</span>')
-    + '<br>' + (s.installs || []).map(p => '<div>' + p + '</div>').join('');
+  cfg.replaceChildren(element('span', s.ready ? 'lab ready' : 'paths incomplete', s.ready ? 'ok' : 'bad'));
+  for (const path of s.installs || []) cfg.appendChild(element('div', path));
   const ul = document.getElementById('maps');
-  ul.innerHTML = '';
+  ul.replaceChildren();
   (s.maps || []).forEach(m => {
-    const li = document.createElement('li');
+    const li = element('li');
     li.dataset.name = m.name;
     if (m.name === selected) li.className = 'on';
-    li.innerHTML = '<strong>' + m.name + '</strong><small>'
-      + (m.has_bsp ? 'bsp' : 'pak') + (m.has_nav ? ' · nav' : '')
-      + (m.dispatcher ? ' · dispatcher' : '') + '</small>';
-    li.onclick = () => pick(m.name);
+    li.append(element('strong', m.name), element('small',
+      (m.has_bsp ? 'bsp' : 'pak') + (m.has_nav ? ' · nav' : '')
+      + (m.dispatcher ? ' · dispatcher' : '')));
+    li.addEventListener('click', () => pick(m.name));
     ul.appendChild(li);
   });
   const backs = document.getElementById('backs');
-  backs.innerHTML = '';
+  backs.replaceChildren();
   (s.backups || []).forEach(b => {
-    const li = document.createElement('li');
-    li.innerHTML = '<span>' + b.id + ' <small>' + b.files + ' files</small></span>';
-    const btn = document.createElement('button');
-    btn.textContent = 'Restore';
-    btn.onclick = () => restore(b.id);
-    li.appendChild(btn);
+    const li = element('li');
+    const label = element('span', b.id + ' ');
+    label.appendChild(element('small', b.files + ' files'));
+    const btn = element('button', 'Restore');
+    btn.addEventListener('click', () => restore(b.id));
+    li.append(label, btn);
     backs.appendChild(li);
   });
 }
@@ -239,24 +246,26 @@ async function pick(name) {
   const box = document.getElementById('sel');
   const brief = document.getElementById('brief');
   const img = document.getElementById('png');
-  box.innerHTML = '<strong>' + name + '</strong>';
+  box.replaceChildren(element('strong', name));
   try {
-    const a = await api('/api/map/' + name);
+    const a = await api('/api/map/' + encodeURIComponent(name));
     brief.textContent = JSON.stringify(a, null, 2);
     const pills = [];
     if (a.graph_cuts) pills.push(a.graph_cuts.weak + ' islands');
     if (a.door_cuts && a.door_cuts.length) pills.push(a.door_cuts.length + ' door cuts');
     if (a.edicts_est) pills.push(a.edicts_est + ' edicts');
-    box.innerHTML = '<strong>' + name + '</strong> '
-      + pills.map(p => '<span class="pill">' + p + '</span>').join(' ')
-      + '<div style="color:#9a8f7e;margin-top:6px">' + (a.headline || '') + '</div>';
+    box.replaceChildren(element('strong', name));
+    for (const pill of pills) box.appendChild(element('span', pill, 'pill'));
+    const headline = element('div', a.headline || '');
+    headline.style.cssText = 'color:#9a8f7e;margin-top:6px';
+    box.appendChild(headline);
   } catch (e) {
     brief.textContent = String(e);
   }
 
   // Load interactive nav graph
   try {
-    const nav = await api('/api/nav/' + name);
+    const nav = await api('/api/nav/' + encodeURIComponent(name));
     if (nav.ok) {
       navData = nav;
       selectedNode = null;
@@ -275,7 +284,7 @@ async function pick(name) {
   img.style.display = 'none';
   img.onload = () => { if (currentView === 'png') img.style.display = 'block'; };
   img.onerror = () => { img.style.display = 'none'; };
-  img.src = '/api/png/' + name + '?' + Date.now();
+  img.src = '/api/png/' + encodeURIComponent(name) + '?' + Date.now();
 }
 
 // Canvas & Navigation Visualizer
@@ -317,7 +326,8 @@ const NODE_STYLES = [
 ];
 
 function linkStyle(kind) {
-  return LINK_STYLES[kind === 'rj' ? 'rocket' : kind] || UNKNOWN_LINK;
+  const key = kind === 'rj' ? 'rocket' : kind;
+  return Object.hasOwn(LINK_STYLES, key) ? LINK_STYLES[key] : UNKNOWN_LINK;
 }
 
 function getLinkColor(kind) {
@@ -585,25 +595,28 @@ function populateInspector(node) {
   }
 
   const ctrlEl = document.getElementById('insp-control');
-  if (node.nearby_control && node.nearby_control.length > 0) {
-    ctrlEl.innerHTML = node.nearby_control.map(c => `<span class="pill" style="border-color:${NODE_STYLES[3].color}">${c}</span>`).join(' ');
-  } else {
-    ctrlEl.textContent = 'none';
+  ctrlEl.replaceChildren();
+  for (const control of node.nearby_control || []) {
+    const pill = element('span', control, 'pill');
+    pill.style.borderColor = NODE_STYLES[3].color;
+    ctrlEl.appendChild(pill);
   }
+  if (!ctrlEl.childNodes.length) ctrlEl.textContent = 'none';
+  renderEdges(document.getElementById('insp-out'), node.out, 'to', '→');
+  renderEdges(document.getElementById('insp-in'), node.inn, 'from', '←');
+}
 
-  const outEl = document.getElementById('insp-out');
-  if (node.out.length > 0) {
-    outEl.innerHTML = node.out.map(e => `<span class="pill link-pill" style="${linkPillStyle(e.kind)}" onclick="selectNodeById(${e.to})">→ Node #${e.to} <small>(${e.kind})</small></span>`).join(' ');
-  } else {
-    outEl.innerHTML = '<span style="color:var(--muted)">none</span>';
+function renderEdges(container, edges, key, arrow) {
+  container.replaceChildren();
+  for (const edge of edges) {
+    const pill = element('button', `${arrow} Node #${edge[key]} `, 'pill link-pill');
+    pill.type = 'button';
+    pill.style.cssText = linkPillStyle(edge.kind);
+    pill.appendChild(element('small', '(' + edge.kind + ')'));
+    pill.addEventListener('click', () => selectNodeById(edge[key]));
+    container.appendChild(pill);
   }
-
-  const inEl = document.getElementById('insp-in');
-  if (node.inn.length > 0) {
-    inEl.innerHTML = node.inn.map(e => `<span class="pill link-pill" style="${linkPillStyle(e.kind)}" onclick="selectNodeById(${e.from})">← Node #${e.from} <small>(${e.kind})</small></span>`).join(' ');
-  } else {
-    inEl.innerHTML = '<span style="color:var(--muted)">none</span>';
-  }
+  if (!edges.length) container.appendChild(element('span', 'none', 'muted'));
 }
 
 function closeInspector() {

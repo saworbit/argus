@@ -352,6 +352,14 @@ exe paths as if they were defaults): `tools/argus_mcp.toml.example`,
 
 ## Inspect (`see` and resources)
 
+The local GUI renders server fields as text. Dynamic map, backup and edge
+controls bind event listeners without parsing their values as HTML or code.
+`python tools/test_gui_rendering.py` checks hostile fields in an installed
+Chromium browser using a temporary local page with stubbed API reads. It
+does not start the lab, launch the engine or write through the API. Set
+`ARGUS_GUI_BROWSER` to select a Chromium executable; the browser check skips
+when none is installed.
+
 `see` is the one inspect call. Pass `what` and, when needed, `name`.
 Omit `what` (or pass `start` / `orient`) for `project`. Aliases:
 `qc`/`func` → `fn`, `atlas` → `map`, `session` → `last`,

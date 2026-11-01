@@ -307,6 +307,8 @@ passing botmatch does not establish better human play.
 
 - Bound Python helper lifetimes, yield the async worker while they run, and
   publish staged nav, registration and plot outputs only after success (#683).
+- Render GUI server fields as text and bind dynamic edge clicks without
+  parsing data as markup or JavaScript (#660).
 
 - Resolve relative lab config paths at load, confine generated outputs and backup
   restores, preflight restores with rollback, and trust fresh preview receipts
