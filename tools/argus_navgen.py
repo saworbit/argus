@@ -40,6 +40,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
        argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reprofile-jumps
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
+       argus_navgen.py map.bsp mapname shipped.qc out.png --render-only
 
 --no-dispatcher emits only Argus_Nav_Spawn_<mapname>, for multi-map
 builds where a hand-maintained argus_nav_dispatch.qc selects per map.
@@ -62,6 +63,9 @@ values in JSON, and changes no node, link, type, slot or sidecar.
 --reanalyze-tactics preserves the shipped graph too. It recomputes static
 node exposure and the nearest hidden ordinary-walk target, writes those
 annotations to QC and JSON, and changes no topology or typed movement data.
+
+--render-only reads a shipped graph and writes only the PNG and its freshness
+receipt. It cannot be combined with generation or registration options.
 """
 import re, struct, sys, heapq, collections
 import math as _dmath
@@ -87,6 +91,17 @@ if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     sys.exit(0 if ("--help" in sys.argv or "-h" in sys.argv) else 1)
 
 BSP, MAPNAME, OUTQC, OUTPNG = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+if '--render-only' in sys.argv[5:]:
+    if set(sys.argv[5:]) != {'--render-only'}:
+        print('error: --render-only cannot be combined with generation options', file=sys.stderr)
+        sys.exit(1)
+    from argus_nav_preview import render_only
+    try:
+        ok = render_only(BSP, MAPNAME, OUTQC, OUTPNG)
+    except (OSError, ValueError) as error:
+        print(f'error: {error}', file=sys.stderr)
+        sys.exit(1)
+    sys.exit(0 if ok else 1)
 EMIT_DISPATCHER = "--no-dispatcher" not in sys.argv[5:]
 # --retype-doors corrects the door typing of a graph that already
 # ships and changes nothing else about it. Section 2c does the whole
@@ -4179,52 +4194,8 @@ if "--register" in sys.argv[5:]:
 # ARGUS_PYTHON, which may be a bare install) must not turn a successful
 # generation into a failure exit.
 def _render_preview(preview_path):
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    from argus_linkstyle import REFUSAL, WAYPOINT, mpl, walk_kind
-    vo, vl = lumps[3]; eo, el = lumps[12]
-    verts = [struct.unpack_from("<fff", data, vo + i*12) for i in range(vl // 12)]
-    edges = [struct.unpack_from("<HH", data, eo + i*4) for i in range(el // 4)]
-    fig, ax = plt.subplots(figsize=(12, 12))
-    for a, b in edges[1:]:
-        if a < len(verts) and b < len(verts):
-            ax.plot([verts[a][0], verts[b][0]], [verts[a][1], verts[b][1]],
-                    color="0.88", lw=0.3, zorder=1)
-    drops = 0
-    for i in sorted(links):
-        a = pos(ways[i])
-        for j in links[i]:
-            b = pos(ways[j])
-            if links[i][j][1]:
-                ax.plot([a[0], b[0]], [a[1], b[1]], lw=1.5, alpha=0.9,
-                        zorder=2, **mpl("jump"))
-                continue
-            kind = walk_kind(a, b)
-            drops += kind == "drop"
-            ax.plot([a[0], b[0]], [a[1], b[1]], lw=1.2 if kind == "drop" else 0.9,
-                    alpha=0.7, zorder=2, **mpl(kind))
-    for a, b in teles:
-        x1, y1, _ = pos(ways[a]); x2, y2, _ = pos(ways[b])
-        ax.plot([x1, x2], [y1, y2], lw=1.4, zorder=2, **mpl("tele"))
-    for a, b in rjlinks:
-        x1, y1, _ = pos(ways[a]); x2, y2, _ = pos(ways[b])
-        ax.plot([x1, x2], [y1, y2], lw=1.8, zorder=2, **mpl("rocket"))
-    for rejected in _probe_rejected:
-        x1, y1, _ = rejected["from"]
-        x2, y2, _ = rejected["to"]
-        ax.plot([x1, x2], [y1, y2], color=REFUSAL[0], lw=2.0,
-                ls=(0, REFUSAL[2]), alpha=0.9, zorder=4)
-        ax.scatter([x2], [y2], s=34, marker="x", c=REFUSAL[0], zorder=5)
-    wx = [pos(w)[0] for w in ways]; wy = [pos(w)[1] for w in ways]
-    ax.scatter(wx, wy, s=16, c=WAYPOINT[0], zorder=3)
-    ax.set_aspect("equal"); ax.set_xticks([]); ax.set_yticks([])
-    ax.set_title(f"Argus nav graph - {MAPNAME}: {len(ways)} nodes, {nlinks} links "
-                 f"({drops} drop, amber dashed; {njlinks} jump, red dotted; "
-                 f"{len(rjlinks)} rocket-jump, magenta dash-dot), "
-                 f"{len(teles)} teleporter, dark long dash", fontsize=11)
-    plt.tight_layout(); plt.savefig(preview_path, dpi=130)
-    plt.close(fig)
+    from argus_nav_preview import render_graph
+    render_graph(BSP, MAPNAME, OUTQC, preview_path)
 
 generate_preview(OUTQC, OUTPNG, _render_preview)
 if _register_gate_failed:

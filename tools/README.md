@@ -35,6 +35,8 @@ Each bot track keeps its roster slot's colour (Carmack, Romero, Joe Rogan and
 Mr Elusive, or the same slots under their older names), so one bot matches
 across A/B panels; a player outside the roster draws in neutral ink. The nav
 overlay uses the shared link styles in `argus_linkstyle.py`.
+The Omicron roster puts Mr Elusive in slot 1; the normal roster puts him in
+slot 3. Each panel selects its roster from the names in that tape.
 
 ---
 
@@ -79,9 +81,11 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   ```bash
   python tools/argus_navgen.py <map.bsp> <mapname> <out.qc> <out.png> [--no-dispatcher] [--no-rj] [--grid <n>] [--register]
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --reanalyze-tactics
+  python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <out.png> --render-only
   python tools/argus_navgen.py --help
   ```
 - **Options**:
+  - `--render-only`: Render the existing QC/JSON graph into a PNG and freshness receipt. No navigation, tactics or registration file is changed. Cannot be combined with generation options; plotting failure returns a nonzero status.
   - `--no-dispatcher`: Suppress generation of the per-map `Argus_Nav_Spawn` function (recommended when using `argus_nav_dispatch.qc`).
   - `--no-rj`: Suppress rocket-jump link exploration.
   - `--grid <n>`: Override base waypoint sampling grid spacing.

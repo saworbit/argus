@@ -10,8 +10,8 @@ Colour alone cannot keep eight link types apart where any two can meet on a
 map, so dashes carry identity too. Measured as OKLab Delta E x100: on rock,
 every pair of hues clears 15 for normal vision, but walk/drop (4.2) and
 rocket/swim (5.9) collide under deuteranopia, which their dashes resolve. On
-white, walk/drop (5.7) is resolved the same way; swim/door sit at 11.7, and no
-white-ground renderer draws either today. Sprint shares jump's red, because a
+white, walk/drop (5.7) is resolved the same way; swim/door sit at 11.7, so swim
+uses a dashed stroke against door's solid line. Sprint shares jump's red, because a
 sprint is a jump, and differs by dash alone. Refusals add an X at the far end.
 No data colour is orange: rust (#d4531e) is the brand's signature.
 """
@@ -29,7 +29,7 @@ LINK_STYLES = {
     "lift":   ("#6d43c8", "#8b5cf6", None),
     "train":  ("#6d43c8", "#8b5cf6", None),
     "tele":   ("#3a342c", "#e8dfd0", (9, 3)),
-    "swim":   ("#0e7490", "#22d3ee", None),
+    "swim":   ("#0e7490", "#22d3ee", (6, 2)),
     "door":   ("#6f6555", "#9a8f7e", None),
 }
 

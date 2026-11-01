@@ -111,34 +111,29 @@ SLOTS = {"Carmack": 0, "Romero": 1, "Joe Rogan": 2, "Mr Elusive": 3,
 HUMAN_COLOR = "#3a342c"
 
 
-def track_color(name):
+def track_color(name, roster=()):
     slot = SLOTS.get(name)
+    if name == "Mr Elusive" and any(n in roster for n in ("Omicron", "H2SO4", "Obot")):
+        slot = 1
     return HUMAN_COLOR if slot is None else SLOT_COLORS[slot]
 
 
 def draw_nav(ax, navpath):
-    from argus_linkstyle import WAYPOINT, mpl, walk_kind
+    from argus_nav_preview import draw_nav_graph
     from argus_navjson import load_nav
     nav = load_nav(navpath)
-    P = nav["nodes"]
-    for link in nav["links"]:
-        i, j = link[:2]
-        ax.plot([P[i][0], P[j][0]], [P[i][1], P[j][1]],
-                lw=0.4, alpha=0.25, zorder=2, **mpl(walk_kind(P[i], P[j])))
-    for a, b in nav["teles"]:
-        ax.plot([P[a][0], P[b][0]], [P[a][1], P[b][1]],
-                lw=0.7, alpha=0.4, zorder=2, **mpl("tele"))
-    ax.scatter([p[0] for p in P], [p[1] for p in P], s=4, c=WAYPOINT[0],
-               alpha=0.3, zorder=2)
+    draw_nav_graph(ax, nav, alpha=0.25, linewidth=0.5)
 
 def panel(ax, verts, edges, mins, maxs, bots, st, fmt, title, deaths=()):
+    deaths = tuple(deaths)
+    roster = set(bots) | {name for row in deaths for name in row[:2]}
     for a, b in edges[1:]:
         if a < len(verts) and b < len(verts):
             ax.plot([verts[a][0], verts[b][0]], [verts[a][1], verts[b][1]],
                     color="0.85", lw=0.35, zorder=1)
     for n, r in bots.items():
         xs = [p["x"] for p in r]; ys = [p["y"] for p in r]
-        c = track_color(n)
+        c = track_color(n, roster)
         s = st[n]
         if fmt == "v1" and "frags" in s:
             extra = "%dK/%dD, %d goals, %d stalls" % (s["frags"], s["deaths"],
@@ -152,7 +147,7 @@ def panel(ax, verts, edges, mins, maxs, bots, st, fmt, title, deaths=()):
         ax.plot(xs[0], ys[0], "o", ms=8, color=c, mec="black", zorder=4)
         ax.plot(xs[-1], ys[-1], "s", ms=7, color=c, mec="black", zorder=4)
     for victim, killer, dx, dy, dz in deaths:
-        ax.plot(dx, dy, "x", ms=8, mew=2.2, color=track_color(victim), zorder=5)
+        ax.plot(dx, dy, "x", ms=8, mew=2.2, color=track_color(victim, roster), zorder=5)
     ax.set_aspect("equal")
     ax.set_xlim(mins[0]-64, maxs[0]+64); ax.set_ylim(mins[1]-64, maxs[1]+64)
     ax.set_xticks([]); ax.set_yticks([])
