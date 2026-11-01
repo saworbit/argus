@@ -307,6 +307,9 @@ passing botmatch does not establish better human play.
 
 - Bound Python helper lifetimes, yield the async worker while they run, and
   publish staged nav, registration and plot outputs only after success (#683).
+- Apply six-percent chamfers with complete inset borders to GUI panels,
+  buttons, pills and canvas frames at normal and doubled display scale (#677).
+
 - Check the GUI's inline favicon against its source SVG in fast CI and
   document the manual full-brand reproduction check (#678).
 

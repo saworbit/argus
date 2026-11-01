@@ -26,17 +26,17 @@
   header p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
   main { display: grid; grid-template-columns: 280px 1fr 320px; gap: 16px; padding: 16px 20px; }
   @media (max-width: 980px) { main { grid-template-columns: 1fr; } }
-  section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 0; padding: 12px; }
   h2 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
   label { display: block; font-size: 12px; color: var(--muted); margin-top: 8px; }
   input[type=text] { width: 100%; background: #0f0d0b; color: var(--ink); border: 1px solid var(--line);
-    padding: 6px 8px; border-radius: 4px; }
+    padding: 6px 8px; border-radius: 0; }
   button { background: #2a241e; color: var(--ink); border: 1px solid var(--line); padding: 7px 12px;
-    border-radius: 4px; cursor: pointer; margin: 6px 6px 0 0; font-size: 13px; }
+    border-radius: 0; cursor: pointer; margin: 6px 6px 0 0; font-size: 13px; }
   button.primary { background: var(--accent); border-color: #a33; color: #fff; }
   button:disabled { opacity: 0.45; cursor: wait; }
   .tool-btn { background: #2a241e; color: var(--ink); border: 1px solid var(--line); padding: 4px 8px;
-    border-radius: 4px; font-size: 11px; cursor: pointer; margin: 0; transition: background 0.15s; }
+    border-radius: 0; font-size: 11px; cursor: pointer; margin: 0; transition: background 0.15s; }
   .tool-btn:hover { background: #3a342c; }
   .tool-btn.active { background: var(--accent); border-color: #a33; color: #fff; }
   .link-pill { cursor: pointer; transition: transform 0.1s; user-select: none; font-size: 11px; color: var(--ink); }
@@ -47,15 +47,41 @@
   .maps li { padding: 6px 8px; border-bottom: 1px solid var(--line); cursor: pointer; }
   .maps li:hover, .maps li.on { background: #2a241e; }
   .maps small { color: var(--muted); display: block; }
-  #drop { border: 1px dashed var(--line); border-radius: 6px; padding: 18px; text-align: center;
+  #drop { border: 1px dashed var(--line); border-radius: 0; padding: 18px; text-align: center;
     color: var(--muted); margin-top: 10px; }
   #drop.over { border-color: var(--accent); color: var(--ink); }
-  #png { max-width: 100%; background: #000; border: 1px solid var(--line); display: none; border-radius: 6px; }
+  #png { max-width: 100%; background: #000; border: 1px solid var(--line); display: none; border-radius: 0; }
   pre { white-space: pre-wrap; font-size: 12px; color: var(--muted); max-height: 280px; overflow: auto; }
-  .pill { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 10px; border: 1px solid var(--line); margin-right: 4px; }
+  .pill { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 0; border: 1px solid var(--line); margin-right: 4px; }
   .ok { color: var(--ok); } .bad { color: var(--bad); }
   .backs { list-style: none; margin: 0; padding: 0; font-size: 13px; }
   .backs li { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  /* The inner polygon keeps the frame visible along the 45-degree cuts. */
+  .chamfer { --cut: 2px; position: relative; isolation: isolate; border: 0 !important;
+    background: var(--frame, var(--line)) !important;
+    clip-path: polygon(var(--cut) 0, calc(100% - var(--cut)) 0, 100% var(--cut),
+      100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, var(--cut) 100%,
+      0 calc(100% - var(--cut)), 0 var(--cut)); }
+  .chamfer::before { content: ''; position: absolute; inset: 1px; z-index: -1;
+    pointer-events: none; --inner-cut: max(0px, calc(var(--cut) - 0.586px));
+    background: linear-gradient(var(--face, var(--panel)), var(--face, var(--panel))), var(--panel);
+    clip-path: polygon(var(--inner-cut) 0, calc(100% - var(--inner-cut)) 0, 100% var(--inner-cut),
+      100% calc(100% - var(--inner-cut)), calc(100% - var(--inner-cut)) 100%, var(--inner-cut) 100%,
+      0 calc(100% - var(--inner-cut)), 0 var(--inner-cut)); }
+  section.chamfer { padding: 24px max(12px, calc(var(--cut) - 18px)); }
+  #sel > .pill { margin-left: 4px; }
+  button { --face: #2a241e; }
+  button.primary, .tool-btn.active { --face: var(--accent); --frame: #a33; }
+  .tool-btn:hover { --face: #3a342c; }
+  .chamfer:focus-visible { --frame: var(--ink); outline: none; }
+  #canvas-wrap { --face: #0d0b09; }
+  #gatecard { --face: #0d1117; }
+  #inspector-card { --face: #181512; --frame: var(--accent); }
+  .nav-toolbar { --face: #141210e0; top: 24px !important; left: 24px !important; }
+  #legend-box { --face: #141210f0; }
+  #canvas-tooltip { --face: #0f0d0beb; }
+  #drop.over { --frame: var(--accent); }
+  .muted { color: var(--muted); }
 </style>
 </head>
 <body>
@@ -87,7 +113,7 @@
       <button class="primary" onclick="act('compare')">A/B quality gates</button>
       <button onclick="act('backup')">Backup only</button>
     </div>
-    <pre id="gatecard" style="display:none;margin:10px 0;padding:12px;background:#0d1117;color:#58a6ff;border-radius:6px;font-family:monospace;font-size:12px;line-height:1.4;border:1px solid #30363d;white-space:pre;overflow-x:auto"></pre>
+    <pre id="gatecard" style="display:none;margin:10px 0;padding:12px;background:#0d1117;color:#58a6ff;border-radius: 0;font-family:monospace;font-size:12px;line-height:1.4;border:1px solid #30363d;white-space:pre;overflow-x:auto"></pre>
     
     <!-- View switcher & Interactive Canvas -->
     <div id="view-tabs" style="display:flex;gap:6px;margin:8px 0;">
@@ -95,11 +121,11 @@
       <button id="tab-png" class="tool-btn" onclick="switchView('png')">Static PNG</button>
     </div>
     
-    <div id="canvas-wrap" style="position:relative;width:100%;height:460px;background:#0d0b09;border:1px solid var(--line);border-radius:6px;overflow:hidden;">
+    <div id="canvas-wrap" style="position:relative;width:100%;height:460px;background:#0d0b09;border:1px solid var(--line);border-radius: 0;overflow:hidden;">
       <canvas id="navcanvas" style="width:100%;height:100%;display:block;cursor:grab;"></canvas>
       
       <!-- Floating Toolbar -->
-      <div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;background:rgba(20,18,16,0.88);backdrop-filter:blur(4px);padding:4px 6px;border-radius:6px;border:1px solid var(--line);z-index:5;">
+      <div class="nav-toolbar" style="position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;background:rgba(20,18,16,0.88);backdrop-filter:blur(4px);padding:4px 6px;border-radius: 0;border:1px solid var(--line);z-index:5;">
         <button class="tool-btn" onclick="zoomIn()" title="Zoom In">➕</button>
         <button class="tool-btn" onclick="zoomOut()" title="Zoom Out">➖</button>
         <button class="tool-btn" onclick="fitView()" title="Fit / Reset View">⟲ Fit</button>
@@ -110,7 +136,7 @@
       </div>
       
       <!-- Legend Box -->
-      <div id="legend-box" style="position:absolute;bottom:8px;left:8px;background:rgba(20,18,16,0.94);padding:8px 12px;border-radius:6px;border:1px solid var(--line);font-size:11px;display:none;z-index:5;">
+      <div id="legend-box" style="position:absolute;bottom:8px;left:8px;background:rgba(20,18,16,0.94);padding:8px 12px;border-radius: 0;border:1px solid var(--line);font-size:11px;display:none;z-index:5;">
         <div style="font-weight:600;margin-bottom:4px;color:var(--ink)">Links</div>
         <div id="legend-links" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px"></div>
         <div style="font-weight:600;margin:8px 0 4px;color:var(--ink)">Nodes</div>
@@ -118,12 +144,12 @@
       </div>
       
       <!-- Tooltip & Empty state -->
-      <div id="canvas-tooltip" style="position:absolute;pointer-events:none;background:rgba(15,13,11,0.92);color:#fff;padding:4px 8px;border-radius:4px;font-size:11px;border:1px solid var(--line);display:none;white-space:nowrap;z-index:10;"></div>
+      <div id="canvas-tooltip" style="position:absolute;pointer-events:none;background:rgba(15,13,11,0.92);color:#fff;padding:4px 8px;border-radius: 0;font-size:11px;border:1px solid var(--line);display:none;white-space:nowrap;z-index:10;"></div>
       <div id="canvas-empty" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;color:var(--muted);font-size:13px;">No navigation graph generated yet.</div>
     </div>
     
     <!-- Node Inspector Sidecard -->
-    <div id="inspector-card" style="display:none;background:#181512;border:1px solid var(--accent);border-radius:6px;padding:12px;margin-top:10px;">
+    <div id="inspector-card" style="display:none;background:#181512;border:1px solid var(--accent);border-radius: 0;padding:12px;margin-top:10px;">
       <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);padding-bottom:6px;margin-bottom:8px;">
         <div>
           <strong id="insp-title" style="font-size:15px;color:var(--ink)">Node #0</strong>
@@ -200,10 +226,38 @@ async function api(path, opt) {
   return r;
 }
 
+const FRAME_SELECTOR = 'section, button, .pill, #canvas-wrap, #drop, #inspector-card, #legend-box, .nav-toolbar, #canvas-tooltip, #gatecard';
+const frameObserver = new ResizeObserver(entries => {
+  for (const entry of entries) {
+    const size = entry.borderBoxSize?.[0];
+    const width = size ? size.inlineSize : entry.target.offsetWidth;
+    const height = size ? size.blockSize : entry.target.offsetHeight;
+    entry.target.style.setProperty('--cut', (0.06 * Math.min(width, height)) + 'px');
+  }
+});
+function watchFrame(node) {
+  if (node.matches(FRAME_SELECTOR)) {
+    node.classList.add('chamfer');
+    frameObserver.observe(node);
+  }
+}
+function measureFrames() {
+  // Initialize attached controls before first paint; the observer handles resize.
+  for (const node of document.querySelectorAll('.chamfer')) {
+    node.style.setProperty('--cut', (0.06 * Math.min(node.offsetWidth, node.offsetHeight)) + 'px');
+  }
+}
+function replaceContent(container, ...children) {
+  // Removed pills and buttons must leave the observer with their DOM owner.
+  for (const node of container.querySelectorAll('.chamfer')) frameObserver.unobserve(node);
+  container.replaceChildren(...children);
+}
+
 function element(tag, text, className) {
   const node = document.createElement(tag);
   if (text !== undefined) node.textContent = String(text);
   if (className) node.className = className;
+  watchFrame(node);
   return node;
 }
 
@@ -213,10 +267,10 @@ async function refresh() {
   document.getElementById('basedir').value = s.basedir || '';
   document.getElementById('game').value = s.game || 'argus';
   const cfg = document.getElementById('cfg');
-  cfg.replaceChildren(element('span', s.ready ? 'lab ready' : 'paths incomplete', s.ready ? 'ok' : 'bad'));
+  replaceContent(cfg, element('span', s.ready ? 'lab ready' : 'paths incomplete', s.ready ? 'ok' : 'bad'));
   for (const path of s.installs || []) cfg.appendChild(element('div', path));
   const ul = document.getElementById('maps');
-  ul.replaceChildren();
+  replaceContent(ul);
   (s.maps || []).forEach(m => {
     const li = element('li');
     li.dataset.name = m.name;
@@ -228,7 +282,7 @@ async function refresh() {
     ul.appendChild(li);
   });
   const backs = document.getElementById('backs');
-  backs.replaceChildren();
+  replaceContent(backs);
   (s.backups || []).forEach(b => {
     const li = element('li');
     const label = element('span', b.id + ' ');
@@ -238,6 +292,7 @@ async function refresh() {
     li.append(label, btn);
     backs.appendChild(li);
   });
+  measureFrames();
 }
 
 async function pick(name) {
@@ -246,7 +301,7 @@ async function pick(name) {
   const box = document.getElementById('sel');
   const brief = document.getElementById('brief');
   const img = document.getElementById('png');
-  box.replaceChildren(element('strong', name));
+  replaceContent(box, element('strong', name));
   try {
     const a = await api('/api/map/' + encodeURIComponent(name));
     brief.textContent = JSON.stringify(a, null, 2);
@@ -254,7 +309,7 @@ async function pick(name) {
     if (a.graph_cuts) pills.push(a.graph_cuts.weak + ' islands');
     if (a.door_cuts && a.door_cuts.length) pills.push(a.door_cuts.length + ' door cuts');
     if (a.edicts_est) pills.push(a.edicts_est + ' edicts');
-    box.replaceChildren(element('strong', name));
+    replaceContent(box, element('strong', name));
     for (const pill of pills) box.appendChild(element('span', pill, 'pill'));
     const headline = element('div', a.headline || '');
     headline.style.cssText = 'color:#9a8f7e;margin-top:6px';
@@ -285,6 +340,7 @@ async function pick(name) {
   img.onload = () => { if (currentView === 'png') img.style.display = 'block'; };
   img.onerror = () => { img.style.display = 'none'; };
   img.src = '/api/png/' + encodeURIComponent(name) + '?' + Date.now();
+  measureFrames();
 }
 
 // Canvas & Navigation Visualizer
@@ -358,7 +414,7 @@ function buildLegend() {
 
 function linkPillStyle(kind) {
   const c = linkStyle(kind).color;
-  return `border-color:${c};background:${c}24`;
+  return `--frame:${c};--face:${c}24`;
 }
 
 function resizeCanvas() {
@@ -585,6 +641,7 @@ function populateInspector(node) {
     refEl.textContent = '✅ 0 refusals';
   }
 
+  watchFrame(refEl);
   const costEl = document.getElementById('insp-cost');
   if (node.cost_mult > 1.0) {
     costEl.className = 'pill bad';
@@ -594,20 +651,22 @@ function populateInspector(node) {
     costEl.textContent = '1.0x (normal)';
   }
 
+  watchFrame(costEl);
   const ctrlEl = document.getElementById('insp-control');
-  ctrlEl.replaceChildren();
+  replaceContent(ctrlEl);
   for (const control of node.nearby_control || []) {
     const pill = element('span', control, 'pill');
-    pill.style.borderColor = NODE_STYLES[3].color;
+    pill.style.setProperty('--frame', NODE_STYLES[3].color);
     ctrlEl.appendChild(pill);
   }
   if (!ctrlEl.childNodes.length) ctrlEl.textContent = 'none';
   renderEdges(document.getElementById('insp-out'), node.out, 'to', '→');
   renderEdges(document.getElementById('insp-in'), node.inn, 'from', '←');
+  measureFrames();
 }
 
 function renderEdges(container, edges, key, arrow) {
-  container.replaceChildren();
+  replaceContent(container);
   for (const edge of edges) {
     const pill = element('button', `${arrow} Node #${edge[key]} `, 'pill link-pill');
     pill.type = 'button';
@@ -820,6 +879,7 @@ document.getElementById('file').addEventListener('change', e => {
   if (e.target.files[0]) upload(e.target.files[0]);
 });
 
+document.querySelectorAll(FRAME_SELECTOR).forEach(watchFrame);
 buildLegend();
 refresh().catch(e => log(String(e)));
 </script>

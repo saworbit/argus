@@ -117,9 +117,12 @@ swatches and tiles have their corners knocked off at 45 degrees, like a Quake
 brush. It is the same operation as the mark's apex and terminals, not a
 decoration chosen to match. The chamfer depth is 6 per cent of the shorter
 side; deeper reads as an octagon, which at small sizes is a stop sign or a
-slotted screw head. See [`argus-motif.svg`](argus-motif.svg). The lab GUI
-still uses rounded corners; [#677](https://github.com/saworbit/argus/issues/677)
-tracks carrying the chamfer there.
+slotted screw head. See [`argus-motif.svg`](argus-motif.svg). The lab GUI uses
+the same cut on panels, buttons, pills and canvas frames. A resize observer
+measures six percent of each frame's shorter side; an inset polygon keeps
+the border visible on the diagonal edges. Panel padding protects text from
+the corners. `test_gui_rendering.py` checks geometry and text boundaries at
+normal and doubled display scale without a live lab or engine.
 
 On the banner and social card the nav graph appears as **texture only**, as
 low-opacity wallpaper. It keeps clear of the type: no node sits inside the

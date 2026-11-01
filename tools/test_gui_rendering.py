@@ -29,6 +29,11 @@ def browser_receipt(page=None, *, scale=1, screenshot=None):
                   installs=[payload], maps=[dict(name=payload, has_bsp=False, has_nav=True)],
                   backups=[dict(id=payload, files=payload)])
     setup = '''window.__xss=0; window.confirm=()=>false;
+window.__observed=new Set();
+window.ResizeObserver=class extends ResizeObserver {
+ observe(node,...rest){window.__observed.add(node);super.observe(node,...rest);}
+ unobserve(node){window.__observed.delete(node);super.unobserve(node);}
+};
 window.__status=STATUS;
 window.fetch=async(path)=>({ok:true,headers:new Headers({'content-type':'application/json'}),
  json:async()=>String(path).startsWith('/api/status')?window.__status:
@@ -62,11 +67,24 @@ window.fetch=async(path)=>({ok:true,headers:new Headers({'content-type':'applica
  window.__status.backups=[{id:'fixture_backup',files:4}];
  await refresh();
  selected='dm4';
- document.getElementById('sel').replaceChildren(element('strong','dm4'),element('span','1 island','pill'));
+ replaceContent(document.getElementById('sel'),element('strong','dm4'),element('span','1 island','pill'));
  document.getElementById('brief').textContent='Private rendering fixture. No engine or API writes.';
  populateInspector({...node,band:'lower',nearby_control:['quad'],out:[{to:7,kind:'jump'}],inn:[{from:2,kind:'walk'}]});
  await new Promise(resolve=>setTimeout(resolve,100));
- return {pass:true,scale:devicePixelRatio,width:innerWidth};
+ const frames=[...document.querySelectorAll('.chamfer')].filter(n=>n.offsetWidth&&n.offsetHeight);
+ for(const frame of frames){
+  const style=getComputedStyle(frame),inside=getComputedStyle(frame,'::before');
+  const cut=parseFloat(style.getPropertyValue('--cut'));
+  check(Math.abs(cut-.06*Math.min(frame.offsetWidth,frame.offsetHeight))<.1,'wrong chamfer depth '+frame.tagName+'#'+frame.id+' '+cut+' '+frame.offsetWidth+'x'+frame.offsetHeight);
+  check(style.clipPath.startsWith('polygon(')&&inside.clipPath.startsWith('polygon('),'missing chamfer border polygon');
+  check(inside.content!== 'none'&&inside.backgroundImage!=='none','missing inner frame');
+  if(frame.matches('section')){
+   const heading=frame.querySelector('h2').getBoundingClientRect(),box=frame.getBoundingClientRect();
+   check(heading.left-box.left+heading.top-box.top>=cut,'section heading clipped by chamfer');
+  }
+ }
+ check([...window.__observed].every(node=>node.isConnected),'removed frame still observed');
+ return {pass:true,frames:frames.length,scale:devicePixelRatio,width:innerWidth};
 })().then(result=>{const p=document.createElement('pre');p.id='gui-test-result';p.hidden=true;p.textContent=JSON.stringify(result);document.body.appendChild(p);})
  .catch(error=>{const p=document.createElement('pre');p.id='gui-test-result';p.textContent=JSON.stringify({pass:false,error:String(error)});document.body.appendChild(p);});
 '''.replace('PAYLOAD', json.dumps(payload))
@@ -77,7 +95,7 @@ window.fetch=async(path)=>({ok:true,headers:new Headers({'content-type':'applica
         root = Path(td); path = root / 'fixture.html'; path.write_text(page, encoding='utf-8')
         command = [browser(), '--headless=new', '--disable-gpu', '--no-sandbox', '--no-first-run',
                    '--disable-extensions', '--disable-background-networking', '--disable-dev-shm-usage',
-                   '--user-data-dir=' + str(root / 'profile'), '--window-size=1920,1600',
+                   '--user-data-dir=' + str(root / 'profile'), f'--window-size={1920//scale},{1600//scale}',
                    '--force-device-scale-factor=' + str(scale), '--virtual-time-budget=3000', '--dump-dom']
         if screenshot is not None: command.append('--screenshot=' + str(Path(screenshot).resolve()))
         command.append(path.as_uri())
@@ -102,7 +120,8 @@ class GuiRendering(unittest.TestCase):
 
     @unittest.skipUnless(browser(), 'no Chromium browser installed')
     def test_server_fields_are_text_and_edge_handlers_keep_data(self):
-        self.assertTrue(browser_receipt()['pass'])
+        for scale in (1, 2):
+            with self.subTest(scale=scale): self.assertTrue(browser_receipt(scale=scale)['pass'])
 
 
 if __name__ == '__main__':
