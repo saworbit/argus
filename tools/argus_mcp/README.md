@@ -818,6 +818,24 @@ steering after setup. A changed node does not independently prove forward
 consumption of the original route; [#647](https://github.com/saworbit/argus/issues/647)
 tracks that oracle gap. See the [e1m6 evidence](../../docs/e1m6-decisions.md).
 
+## Cover-hop controls
+
+```text
+python tools/verify_cover_hop.py --output backups/<new-directory> --prefix <new_prefix> --map dm4
+```
+
+The private `cover` fixture checks the production cover-hop predicate against
+missing and reverse-only edges, every typed movement mask, the 18-unit drop
+boundary and a linked stair climb. The live combat consumer applies this guard
+before using the hint's heading. Geometry and threat occlusion checks still
+decide whether to use an eligible hint. `--map dm2` selects the second context;
+`--ticrate .1` measures the separate 100 ms arm. Use fresh outputs and prefixes.
+Private nodes are removed before AI resumes, and `BHVRPL` quarantines the tape
+from ordinary gameplay bands. No generated graph is changed.
+The [cover receipts](../../runs/cover-hop-v1.results.json) preserve the rejected
+three-per-arm cost check. Its severe-freeze veto blocks adoption of this guard;
+passing predicate contracts does not override that result.
+
 ## Mover forecast controls
 
 ```text

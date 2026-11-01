@@ -5669,6 +5669,16 @@ float(vector aimpt) Argus_MuzzleClear =
 };
 
 // returns TRUE while combat is steering the bot
+// Baked cover is only a hint. Confirm its first directed hop still matches
+// the generator's ordinary-link and step-down contract before steering.
+float(entity from, entity hop) Argus_CoverHopOK =
+{
+    if (from == world || hop == world) return FALSE;
+    if (!Argus_NavGetLinkBit (from, hop) || Argus_LinkIsTyped (from, hop))
+        return FALSE;
+    return (from.origin_z - hop.origin_z <= 18);
+};
+
 float() Argus_Combat =
 {
     local entity e, sup, cnode, ctarget, chop;
@@ -6573,7 +6583,7 @@ float() Argus_Combat =
             cfound = 0;
             cnode = Argus_NearestNode (self.origin);
             if (cnode != world && cnode.an_cover != world
-                && cnode.an_coverhop != world)
+                && Argus_CoverHopOK (cnode, cnode.an_coverhop))
             {
                 ctarget = cnode.an_cover;
                 chop = cnode.an_coverhop;

@@ -23,6 +23,7 @@ VARIANTS = {
     'freeze': ('current',),
     'mover': ('current',),
     'forecast': ('current',),
+    'cover': ('current',),
     'attention': ('current',),
     'water': ('current',),
 }
@@ -43,7 +44,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'forecast':
+    if family == 'cover':
+        from verify_cover_hop import stage as stage_cover
+        stage_cover(ROOT, folder)
+    elif family == 'forecast':
         from verify_mover_forecast import stage as stage_forecast
         stage_forecast(ROOT, folder)
     elif family == 'water':
