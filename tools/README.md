@@ -31,6 +31,11 @@ libraries. It and `argus_voidprobe.py` use the shared hull-0 reader in
 with a BSP, lava/slime contents at the death origin or 24 units below remain
 authoritative. The void probe still requires a readable BSP.
 
+Each bot track keeps its roster slot's colour (Carmack, Romero, Joe Rogan and
+Mr Elusive, or the same slots under their older names), so one bot matches
+across A/B panels; a player outside the roster draws in neutral ink. The nav
+overlay uses the shared link styles in `argus_linkstyle.py`.
+
 ---
 
 ### 2. `argus_reach.py`
@@ -83,6 +88,7 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   - `--register`: Wire the generated file into `src/progs.src` and update `src/argus_nav_dispatch.qc`. The output filename must be `argus_nav_<mapname>.qc`; custom names are refused before generation.
   - `--reanalyze-tactics`: Recompute static exposure and nearest hidden ordinary-walk targets in an existing shipped QC/JSON pair without changing graph topology or typed movement data.
 - **Preview freshness**: Plotting is optional. Missing matplotlib, plot failures or an empty render leave QC/JSON generation successful and invalidate the preview receipt. `<out.png>.json` records `nav-preview-v1`, `generated` and MD5 hashes of the QC, graph JSON and successful PNG. Native results expose `preview_generated`; the wizard and image attachments require matching hashes. An old PNG can remain on disk, but is unavailable as a current preview. Images without a matching receipt are also unavailable. `test_nav_preview.py` and the developer CLI suite cover this without game execution.
+- **Preview styling**: Link colours and dashes come from `argus_linkstyle.py`, the table the lab GUI also draws from: walk green, drop amber dashed, jump red dotted, rocket jump magenta dash-dot, teleport dark long dash, refused jump dark red dashed with an X at the far end. A drop is a plain link that descends more than one 18-unit step, so a one-way link at one level draws as a walk. See the [brand guide](../docs/brand/README.md#navigation-link-colours).
 
 ---
 
@@ -196,6 +202,17 @@ Offline hull-0 read of a shipped navigation graph, for the two questions the run
   - Measured on the shipped graphs: no probe direction from any waypoint finds lava underfoot, every void dm4 and dm2 veto bottoms out in lava while dm3's and dm6's bottom out in stone or water, and 7 per cent of dm4 and dm2 waypoints sit within 24 units of a wall.
 - **Inputs**: `maps_local/<map>.bsp` and `src/argus_nav_<map>.qc.json`; maps missing either are skipped with a note.
 - **Exit Code**: `0` on success or `--help`.
+
+### 13. `brand/`
+Regenerates every file in `docs/brand` (mark, wordmark, banners, social preview, favicon) from the mark's parameters in `brand/build.py`.
+- **Usage**:
+  ```bash
+  npm install --prefix tools/brand
+  python tools/brand/dist.py
+  node tools/brand/raster.js
+  ```
+- **Requirements**: Python with fontTools, and Node.js for the pinned `@ibm/plex` font package and `@resvg/resvg-js` rasteriser. Neither is needed to play, build or run the lab. `node_modules` stays ignored.
+- **Behavior**: `dist.py` writes the SVGs and `raster.js` the two PNGs. Output is deterministic: a rerun reproduces the committed files byte for byte. The lab GUI inlines its own copy of `docs/brand/favicon.svg`, so update both together; no test catches that drift yet ([#678](https://github.com/saworbit/argus/issues/678)). See the [brand guide](../docs/brand/README.md).
 
 ---
 

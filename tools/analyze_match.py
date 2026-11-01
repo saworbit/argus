@@ -97,19 +97,38 @@ def stats(bots, fmt, deaths=(), contents=None):
         out[n] = s
     return out
 
-COLORS = {"Reap": "#d9531e", "Omi": "#1e6bd9", "Zeus": "#2a9d5c"}
+# Track colour follows the roster SLOT, the way personalities do (v3.37), so
+# a slot keeps its colour across renames and across the A and B panels. The
+# names were once Reap/Omi/Zeus/Ares and wear Omicron's when the homage is on;
+# Mr Elusive is slot 3 outside it. Four hues, all-pairs checked on white and
+# none orange (rust is the brand signature); the legend and the outlined
+# start/end markers carry identity where two tracks still look alike. Anyone
+# not in the roster - a human player - draws in neutral ink.
+SLOT_COLORS = ("#6250d6", "#e34948", "#1baf7a", "#eda100")
+SLOTS = {"Carmack": 0, "Romero": 1, "Joe Rogan": 2, "Mr Elusive": 3,
+         "Reap": 0, "Omi": 1, "Zeus": 2, "Ares": 3,
+         "Omicron": 0, "H2SO4": 2, "Obot": 3}
+HUMAN_COLOR = "#3a342c"
+
+
+def track_color(name):
+    slot = SLOTS.get(name)
+    return HUMAN_COLOR if slot is None else SLOT_COLORS[slot]
+
 
 def draw_nav(ax, navpath):
-    import json
-    nav = json.load(open(navpath))
+    from argus_linkstyle import WAYPOINT, mpl, walk_kind
+    from argus_navjson import load_nav
+    nav = load_nav(navpath)
     P = nav["nodes"]
-    for i, j, two in nav["links"]:
+    for link in nav["links"]:
+        i, j = link[:2]
         ax.plot([P[i][0], P[j][0]], [P[i][1], P[j][1]],
-                color="#2a9d5c" if two else "#cc8800", lw=0.4, alpha=0.25, zorder=2)
+                lw=0.4, alpha=0.25, zorder=2, **mpl(walk_kind(P[i], P[j])))
     for a, b in nav["teles"]:
         ax.plot([P[a][0], P[b][0]], [P[a][1], P[b][1]],
-                color="purple", lw=0.7, ls="--", alpha=0.4, zorder=2)
-    ax.scatter([p[0] for p in P], [p[1] for p in P], s=4, c="#1e6bd9",
+                lw=0.7, alpha=0.4, zorder=2, **mpl("tele"))
+    ax.scatter([p[0] for p in P], [p[1] for p in P], s=4, c=WAYPOINT[0],
                alpha=0.3, zorder=2)
 
 def panel(ax, verts, edges, mins, maxs, bots, st, fmt, title, deaths=()):
@@ -119,7 +138,7 @@ def panel(ax, verts, edges, mins, maxs, bots, st, fmt, title, deaths=()):
                     color="0.85", lw=0.35, zorder=1)
     for n, r in bots.items():
         xs = [p["x"] for p in r]; ys = [p["y"] for p in r]
-        c = COLORS.get(n, "black")
+        c = track_color(n)
         s = st[n]
         if fmt == "v1" and "frags" in s:
             extra = "%dK/%dD, %d goals, %d stalls" % (s["frags"], s["deaths"],
@@ -133,7 +152,7 @@ def panel(ax, verts, edges, mins, maxs, bots, st, fmt, title, deaths=()):
         ax.plot(xs[0], ys[0], "o", ms=8, color=c, mec="black", zorder=4)
         ax.plot(xs[-1], ys[-1], "s", ms=7, color=c, mec="black", zorder=4)
     for victim, killer, dx, dy, dz in deaths:
-        ax.plot(dx, dy, "x", ms=8, mew=2.2, color=COLORS.get(victim, "black"), zorder=5)
+        ax.plot(dx, dy, "x", ms=8, mew=2.2, color=track_color(victim), zorder=5)
     ax.set_aspect("equal")
     ax.set_xlim(mins[0]-64, maxs[0]+64); ax.set_ylim(mins[1]-64, maxs[1]+64)
     ax.set_xticks([]); ax.set_yticks([])

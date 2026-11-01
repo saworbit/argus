@@ -27,6 +27,17 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Add the Argus brand: the faceted A mark, the wordmark, the palette and the
+  chamfer motif, with a guide in [docs/brand](docs/brand/README.md). The README
+  opens on a banner that follows the reader's light or dark theme, carries its
+  badges in the palette, states the hard constraints as chamfered stat tiles,
+  shows the shipped dm2 graph in the lab's link colours in place of the stale
+  162-node `docs/media/nav_dm2.png`, and signs off with the mark. The lab GUI
+  shows the mark as its tab icon, and a 1280 x 640 social preview is ready for
+  the repository settings. `tools/brand` regenerates every asset from the
+  mark's parameters and the nav figure from the shipped graph. No gameplay,
+  telemetry or lab behaviour changes.
+
 - Require actual landing and continuous task ownership in private mover
   fixtures, with read-only phase traces and rejection of observer steering.
   See the [e1m6 investigation](docs/e1m6-decisions.md).
@@ -141,6 +152,20 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Draw each navigation link type the same way in the navgen PNG, the
+  `analyze_match.py` plots and the lab GUI, from one table in
+  `tools/argus_linkstyle.py`. Jumps were red in the PNG and blue in the GUI,
+  rocket jumps magenta and orange, and teleports purple and fuchsia. Each type
+  now keeps one hue with a dash, so colour-blind readers can still tell walk
+  from drop. Amber now means a drop of more than one step, matching the lab's
+  own rule, instead of any one-way link. The GUI legend lists node colours and
+  is drawn from the same table, and a test keeps the GUI and Python copies
+  equal. See [the brand guide](docs/brand/README.md#navigation-link-colours).
+
+- `argus_ci.py links` also checks the `src`, `srcset` and `href` paths in
+  raw HTML inside Markdown, so a broken `<picture>` source such as the
+  README banner fails CI like a broken Markdown image already did.
 
 - Return the tracked tree to zero en dashes and em dashes, which the
   editorial rule requires and the 2026-08-29 sweep had achieved. Eleven had
@@ -279,6 +304,10 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Colour `analyze_match.py` trajectory tracks by roster slot. The table was
+  keyed by the retired names Reap, Omi and Zeus, so Carmack, Romero and Joe
+  Rogan all drew black and could not be told apart.
 
 - Keep an actually supported bot aboard a moving lift through docking.
   Cross a dock seam only after checking the jump's landing at current
