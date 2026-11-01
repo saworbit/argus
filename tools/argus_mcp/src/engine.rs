@@ -198,7 +198,7 @@ impl EngineChild {
                     .map_err(|e| format!("flush console: {e}"))
             }
             #[cfg(windows)]
-            Inner::Win { .. } => win_inject(self.pid, line),
+            Inner::Win { .. } => win_inject(self.pid, line).await,
             #[cfg(test)]
             Inner::Fake { control } => {
                 if line == "quit" {
@@ -565,8 +565,69 @@ fn win_try_wait(handle: windows_sys::Win32::Foundation::HANDLE) -> Result<Option
     }
 }
 
+/// Private executable entry point. Never expose this as an MCP tool.
+pub fn console_helper(args: impl Iterator<Item = String>) -> Result<(), String> {
+    let args: Vec<_> = args.collect();
+    if args.len() != 3 || args[0] != crate::build_identity::BUILD_SOURCE {
+        return Err("console helper requires a matching source build, PID and one line".into());
+    }
+    let pid: u32 = args[1].parse().map_err(|_| "invalid console PID")?;
+    if pid == 0 || pid == u32::MAX || args[2].is_empty() || args[2].contains(['\r', '\n']) {
+        return Err("invalid console PID or line".into());
+    }
+    #[cfg(windows)]
+    {
+        console_inject_attached(pid, &args[2])
+    }
+    #[cfg(not(windows))]
+    {
+        Err("console helper is Windows-only".into())
+    }
+}
+
 #[cfg(windows)]
-fn win_inject(pid: u32, line: &str) -> Result<(), String> {
+async fn win_inject(pid: u32, line: &str) -> Result<(), String> {
+    let executable =
+        std::env::current_exe().map_err(|e| format!("console helper executable: {e}"))?;
+    // Cargo's library harness is in deps/. Its sibling executable is built by
+    // cargo test; the fingerprint argument refuses an older helper image.
+    #[cfg(test)]
+    let executable = executable
+        .parent()
+        .and_then(Path::parent)
+        .ok_or("test executable directory")?
+        .join("argus-mcp.exe");
+    let mut command = tokio::process::Command::new(executable);
+    command
+        .args([
+            "internal-win-inject",
+            crate::build_identity::BUILD_SOURCE,
+            &pid.to_string(),
+            line,
+        ])
+        .creation_flags(windows_sys::Win32::System::Threading::CREATE_NO_WINDOW);
+    let result = crate::python_helper::capture(
+        &mut command,
+        "Windows console helper",
+        std::time::Duration::from_secs(5),
+    )
+    .await?;
+    if !result.status.success() {
+        return Err(format!(
+            "console helper exited {}: {}",
+            result.status,
+            String::from_utf8_lossy(&result.stderr).trim()
+        ));
+    }
+    Ok(())
+}
+
+#[cfg(windows)]
+fn console_inject_attached(pid: u32, line: &str) -> Result<(), String> {
+    if std::env::args().nth(1).as_deref() != Some("internal-win-inject") {
+        return Err("console attachment is allowed only in the private helper process".into());
+    }
+
     use windows_sys::Win32::Foundation::{
         CloseHandle, GENERIC_READ, GENERIC_WRITE, INVALID_HANDLE_VALUE,
     };
@@ -578,8 +639,8 @@ fn win_inject(pid: u32, line: &str) -> Result<(), String> {
         STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
     };
 
-    // Save the MCP JSON-RPC pipes, attach to the child's hidden console,
-    // type the line, then restore the pipes so stdio MCP stays intact.
+    // Only this short-lived helper attaches. Restore its own captured handles
+    // so an error can reach its parent; the lab never changes its console.
     // The console input buffer must be opened as CONIN$: after
     // AttachConsole, GetStdHandle(STD_INPUT_HANDLE) still returns this
     // process's redirected stdin (the JSON-RPC pipe) - writing console
@@ -592,13 +653,11 @@ fn win_inject(pid: u32, line: &str) -> Result<(), String> {
         let herr = GetStdHandle(STD_ERROR_HANDLE);
         let _ = FreeConsole();
         if AttachConsole(pid) == 0 {
+            let error = std::io::Error::last_os_error();
             let _ = SetStdHandle(STD_INPUT_HANDLE, hin);
             let _ = SetStdHandle(STD_OUTPUT_HANDLE, hout);
             let _ = SetStdHandle(STD_ERROR_HANDLE, herr);
-            return Err(format!(
-                "AttachConsole({pid}): {}",
-                std::io::Error::last_os_error()
-            ));
+            return Err(format!("AttachConsole({pid}): {}", error));
         }
         let conin: Vec<u16> = "CONIN$\0".encode_utf16().collect();
         let con_in = CreateFileW(
@@ -625,16 +684,20 @@ fn win_inject(pid: u32, line: &str) -> Result<(), String> {
         }
         let mut written = 0u32;
         let ok = WriteConsoleInputW(con_in, recs.as_ptr(), recs.len() as u32, &mut written);
+        let write_error = std::io::Error::last_os_error();
         let _ = CloseHandle(con_in);
         let _ = FreeConsole();
         let _ = SetStdHandle(STD_INPUT_HANDLE, hin);
         let _ = SetStdHandle(STD_OUTPUT_HANDLE, hout);
         let _ = SetStdHandle(STD_ERROR_HANDLE, herr);
-        if ok == 0 {
+        if ok != 0 && written != recs.len() as u32 {
             return Err(format!(
-                "WriteConsoleInputW: {}",
-                std::io::Error::last_os_error()
+                "WriteConsoleInputW wrote {written} of {} records",
+                recs.len()
             ));
+        }
+        if ok == 0 {
+            return Err(format!("WriteConsoleInputW: {}", write_error));
         }
     }
     Ok(())
@@ -779,6 +842,148 @@ pub fn kill_pid(pid: u32) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn console_helper_refuses_bad_build_pid_or_line_before_attachment() {
+        let build = crate::build_identity::BUILD_SOURCE;
+        for args in [
+            vec![],
+            vec!["old", "1", "status"],
+            vec![build, "0", "status"],
+            vec![build, "4294967295", "status"],
+            vec![build, "bad", "status"],
+            vec![build, "1", ""],
+            vec![build, "1", "status\nquit"],
+            vec![build, "1", "status\rquit"],
+            vec![build, "1", "status", "extra"],
+        ] {
+            assert!(super::console_helper(args.into_iter().map(str::to_string)).is_err());
+        }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn console_attachment_refuses_the_parent_process() {
+        let error = super::console_inject_attached(std::process::id(), "status").unwrap_err();
+        assert!(error.contains("private helper process"), "{error}");
+    }
+
+    #[cfg(windows)]
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn windows_parallel_inject_keeps_markers_and_parent_handles_separate() {
+        use windows_sys::Win32::System::Console::{
+            GetStdHandle, STD_ERROR_HANDLE, STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
+        };
+        let _gate = super::ENGINE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            &root,
+        )
+        .unwrap();
+        if !cfg.engine.is_file() {
+            eprintln!("SKIPPED parallel console injection: no local engine");
+            return;
+        }
+        let temp = crate::test_support::TestDir::new("parallel-console").unwrap();
+        cfg.runs = temp.path().join("runs");
+        let handles = || unsafe {
+            [
+                GetStdHandle(STD_INPUT_HANDLE) as usize,
+                GetStdHandle(STD_OUTPUT_HANDLE) as usize,
+                GetStdHandle(STD_ERROR_HANDLE) as usize,
+            ]
+        };
+        let before = handles();
+        let mut left = crate::match_ctrl::MatchCtrl::on_port(26018);
+        let mut right = crate::match_ctrl::MatchCtrl::on_port(26019);
+        left.start(
+            &cfg,
+            "dm4",
+            Some(30),
+            Some("inject_left"),
+            None,
+            Some(2),
+            None,
+        )
+        .await
+        .unwrap();
+        right
+            .start(
+                &cfg,
+                "dm4",
+                Some(30),
+                Some("inject_right"),
+                None,
+                Some(2),
+                None,
+            )
+            .await
+            .unwrap();
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        let send = |mut ctrl: crate::match_ctrl::MatchCtrl, side: &'static str| async move {
+            let mut error = None;
+            for index in 0..20 {
+                if let Err(e) = ctrl
+                    .command(&format!("echo inject_{side}_659_{index}"))
+                    .await
+                {
+                    error = Some(e);
+                    break;
+                }
+            }
+            (ctrl, error)
+        };
+        let ((mut left, left_error), (mut right, right_error)) =
+            tokio::join!(send(left, "left"), send(right, "right"));
+        let received = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+            loop {
+                if left
+                    .log_text()
+                    .unwrap_or_default()
+                    .contains("inject_left_659_19")
+                    && right
+                        .log_text()
+                        .unwrap_or_default()
+                        .contains("inject_right_659_19")
+                {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        })
+        .await;
+        let left_log = left.log_text().unwrap_or_default();
+        let right_log = right.log_text().unwrap_or_default();
+        let (stopped_left, stopped_right) = tokio::join!(
+            left.stop(std::time::Duration::from_secs(2)),
+            right.stop(std::time::Duration::from_secs(2))
+        );
+        assert!(stopped_left.is_ok() && stopped_right.is_ok());
+        assert!(
+            left_error.is_none() && right_error.is_none(),
+            "{left_error:?} {right_error:?}"
+        );
+        assert!(
+            received.is_ok(),
+            "console marker deadline; left: {} right: {}",
+            crate::paths::tail_lines(&left_log, 8).join("\n"),
+            crate::paths::tail_lines(&right_log, 8).join("\n")
+        );
+        for index in 0..20 {
+            assert!(left_log.contains(&format!("inject_left_659_{index}")));
+            assert!(right_log.contains(&format!("inject_right_659_{index}")));
+        }
+        assert!(!left_log.contains("inject_right_659_") && !right_log.contains("inject_left_659_"));
+        assert_eq!(
+            handles(),
+            before,
+            "console helper changed the parent's standard handles"
+        );
+    }
+
     use super::*;
 
     fn tick_cfg() -> Config {

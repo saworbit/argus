@@ -1158,7 +1158,7 @@ Yes, with a hard line.
 - `tune` / `see what=knobs`: `skill 0-3` (takes effect at the **next
   bot respawn**, `Argus_SetSkill`), `fraglimit`, `timelimit`,
   `map <name>`, `developer`, `status`. Unix writes the child stdin.
-  Windows injects via `AttachConsole` + `WriteConsoleInputW`.
+  Windows injects via a short-lived helper using `AttachConsole` + `WriteConsoleInputW`.
 - `live_snapshot` / `see what=live`: last ARGLOG sample per bot from
   the running child (or the last harvested match).
 - `see what=bot name=Reap`: deep tape (events, deaths, nearest
@@ -1175,9 +1175,13 @@ stdio pipe under `CREATE_NEW_CONSOLE`, so matches could die at
 "Server spawned." 0.13 uses `CreateProcess` with
 `bInheritHandles=FALSE`, a new hidden console, and no
 `STARTF_USESTDHANDLES`. Harvest is still `-condebug` `qconsole.log`.
-`tune` / `match_command` inject via `AttachConsole` +
-`WriteConsoleInputW` (stdio pipes are saved and restored so MCP JSON-RPC
-is not stolen). If inject fails, pass `skill` on `experiment` /
+`tune` / `match_command` use a hidden helper process with a five-second
+deadline, null stdin and captured output. Only that process calls
+`AttachConsole` + `WriteConsoleInputW`; the lab keeps its console and
+standard handles. The private entry point checks the source fingerprint,
+PID and single-line command before attaching. It runs without starting an
+async runtime. Timeout or cancellation kills the helper. If inject fails,
+pass `skill` on `experiment` /
 `match_start`. `match_stop` sends `quit` the same way, then kills.
 Engine children are bound to an explicit process handle and terminated
 on drop, and on Ctrl+C in `soak` and `cycle`, which install a handler. The stdio server does not, so a hard kill relies on the Windows job object instead.

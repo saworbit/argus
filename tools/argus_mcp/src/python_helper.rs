@@ -18,17 +18,28 @@ pub(crate) async fn run(
     deadline: Duration,
 ) -> Result<Output, String> {
     let mut command = Command::new(&cfg.python);
+    command.arg(script).args(args).current_dir(&cfg.root);
+    capture(
+        &mut command,
+        &format!("{} (ARGUS_PYTHON)", script.display()),
+        deadline,
+    )
+    .await
+}
+
+pub(crate) async fn capture(
+    command: &mut Command,
+    label: &str,
+    deadline: Duration,
+) -> Result<Output, String> {
     command
-        .arg(script)
-        .args(args)
-        .current_dir(&cfg.root)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
     let mut child = command
         .spawn()
-        .map_err(|e| format!("{}: failed to spawn ARGUS_PYTHON: {e}", script.display()))?;
+        .map_err(|e| format!("{label}: failed to spawn child: {e}"))?;
     let mut stdout = child.stdout.take().expect("piped stdout");
     let mut stderr = child.stderr.take().expect("piped stderr");
     let mut out = Vec::new();
@@ -49,12 +60,8 @@ pub(crate) async fn run(
         }),
         failure => {
             let mut message = match failure {
-                Err(_) => format!(
-                    "{} timed out after {}s",
-                    script.display(),
-                    deadline.as_secs_f64()
-                ),
-                Ok(Err(e)) => format!("{} capture failed: {e}", script.display()),
+                Err(_) => format!("{} timed out after {}s", label, deadline.as_secs_f64()),
+                Ok(Err(e)) => format!("{label} capture failed: {e}"),
                 _ => unreachable!(),
             };
             if let Err(e) = child.kill().await {
