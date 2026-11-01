@@ -576,6 +576,26 @@ still live only inside the PAKs.
 Pass `register=false` to generate an experimental graph before its reach and
 mill passes.
 
+Generated QC and its JSON sidecar must describe the same directed edges and
+winning types. The ARGNAV banner counts emitted calls, including teleporters,
+after all late passes and duplicate suppression. `python tools/argus_ci.py nav`
+checks this agreement, node positions, runtime slot limits and live ordinary
+walk hops for baked cover hints.
+
+For an existing graph, the source generator's `--reconcile-artifacts` mode
+derives sidecar families and the banner from QC without changing nodes, link
+calls or slot order. It preserves independent lift, swim and other typed
+families. If stale cover hints prevent publication, combine it with
+`--reanalyze-tactics` to recompute hints using the BSP:
+
+```text
+python tools/argus_navgen.py maps_local/dm4.bsp dm4 src/argus_nav_dm4.qc unused.png --reconcile-artifacts --reanalyze-tactics
+```
+
+Inspect private copies first. This mode resamples no seats and promotes no
+links. It validates both outputs before publication, refuses changed inputs
+and rolls back a first write if the second fails. It does not install a program.
+
 Registration flags on the atlas, GUI and lab require both the dispatcher
 branch and the exact nav QC line in `progs.src`; commented entries do not count.
 The first-registration reach gate includes ordinary jumps and door, teleporter,

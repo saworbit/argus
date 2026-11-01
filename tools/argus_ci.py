@@ -11,7 +11,7 @@ usage:
   argus_ci.py ship                 the binary and the paper trail agree
   argus_ci.py eol                  committed LF text blobs contain no CRLF
   argus_ci.py tapes [--changed-files F]   evidence is append-once
-  argus_ci.py nav                  graphs obey the runtime's limits
+  argus_ci.py nav                  runtime limits, QC/JSON edges, banners and cover hops
   argus_ci.py links                tracked documentation paths and anchors resolve
   argus_ci.py dashes               tracked prose and sources contain no en or em dashes
 """
@@ -19,6 +19,7 @@ import argparse
 import collections
 import hashlib
 import html
+import json
 from html.parser import HTMLParser
 import re
 import subprocess
@@ -250,11 +251,8 @@ def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
 
 # ----------------------------------------------------------------- nav
 
-# READ THE .qc, NEVER THE .json. The runtime compiles the .qc and the
-# two files do not agree: the json's `links` array keeps entries for
-# pairs a later navgen pass reminted under a typed verb, so reading it
-# makes e1m2, e1m5 and e1m6 look like they carry degree-zero nodes when
-# they do not. #330 reached the same conclusion from the other side.
+# The runtime compiles QC. Check its limits and require the sidecar to
+# describe those same emitted edges, including typed families (#653).
 NAV_VERBS = ("Argus_NavLinkJump", "Argus_NavLinkSprint",
              "Argus_NavLinkRocket", "Argus_NavLinkLift",
              "Argus_NavLinkSwim", "Argus_NavLinkTrain",
@@ -267,7 +265,7 @@ NAV_SLOTS = 8
 
 
 def check_nav(root, **_kw):
-    """Every committed graph obeys the two limits the runtime enforces.
+    """Every committed graph obeys runtime limits and artifact parity.
 
     Guards v3.88, where links past the 8-slot budget were dropped
     silently at load with only a dprint to say so, and v3.70, where
@@ -282,6 +280,12 @@ def check_nav(root, **_kw):
         nodes = len(NAV_NODE_RE.findall(text))
         if nodes == 0:
             continue
+        try:
+            from argus_nav_artifacts import validate_pair
+            document = json.loads(Path(str(p) + '.json').read_text(encoding='utf-8'))
+            validate_pair(text, document)
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as error:
+            fails.append(f'nav: {p.name}: {error}')
         out = collections.Counter()
         for _verb, src, _dst in NAV_LINK_RE.findall(text):
             out[int(src)] += 1

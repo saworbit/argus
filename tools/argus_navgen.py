@@ -40,6 +40,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
        argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reprofile-jumps
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --reconcile-artifacts [--reanalyze-tactics]
        argus_navgen.py map.bsp mapname shipped.qc out.png --render-only
 
 --no-dispatcher emits only Argus_Nav_Spawn_<mapname>, for multi-map
@@ -64,10 +65,16 @@ values in JSON, and changes no node, link, type, slot or sidecar.
 node exposure and the nearest hidden ordinary-walk target, writes those
 annotations to QC and JSON, and changes no topology or typed movement data.
 
+--reconcile-artifacts derives sidecar families and the banner from shipped QC
+without changing nodes, link calls or their slot order. It rejects stale cover
+hops unless combined with --reanalyze-tactics, which uses the BSP to rebake
+those annotations before publishing both files together.
+
 --render-only reads a shipped graph and writes only the PNG and its freshness
 receipt. It cannot be combined with generation or registration options.
 """
 import re, struct, sys, heapq, collections
+import io
 import math as _dmath
 from pathlib import Path
 
@@ -85,6 +92,7 @@ from argus_navjson import STEP, FAMILIES, load_nav
 from argus_registration import registration
 from argus_nav_preview import generate_preview
 from argus_nav_slots import slot_count, clamp_walk, require_slots
+from argus_nav_artifacts import canonical_sidecar, refresh_banner, validate_pair, publish_pair, existing_bytes
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -109,6 +117,20 @@ if '--render-only' in sys.argv[5:]:
         print(f'error: {error}', file=sys.stderr)
         sys.exit(1)
     sys.exit(0 if ok else 1)
+RECONCILE_ARTIFACTS = '--reconcile-artifacts' in sys.argv[5:]
+if RECONCILE_ARTIFACTS:
+    if set(sys.argv[5:]) - {'--reconcile-artifacts', '--reanalyze-tactics'}:
+        print('error: reconciliation only combines with --reanalyze-tactics', file=sys.stderr)
+        sys.exit(1)
+    if '--reanalyze-tactics' not in sys.argv[5:]:
+        from argus_nav_artifacts import reconcile
+        try:
+            reconcile(OUTQC)
+        except (OSError, ValueError) as error:
+            print(f'error: {error}', file=sys.stderr)
+            sys.exit(1)
+        print(f'reconciled {OUTQC} + .json; nodes and runtime links untouched')
+        sys.exit(0)
 EMIT_DISPATCHER = "--no-dispatcher" not in sys.argv[5:]
 # --retype-doors corrects the door typing of a graph that already
 # ships and changes nothing else about it. Section 2c does the whole
@@ -634,14 +656,21 @@ def h0_line_clear(a, b, node=None):
 
 
 if REANALYZE_TACTICS:
-    import json as _tj
     import os as _tos
     _qcpath, _jspath = OUTQC, OUTQC + ".json"
     if not (_tos.path.exists(_qcpath) and _tos.path.exists(_jspath)):
         print("error: --reanalyze-tactics needs shipped QC and JSON to "
               "exist already", file=sys.stderr)
         sys.exit(1)
+    _old_qc = Path(_qcpath).read_bytes()
+    _old_json = Path(_jspath).read_bytes()
+    _candidate_qc = _old_qc.decode('ascii')
     _tdoc = load_nav(_jspath)
+    if RECONCILE_ARTIFACTS:
+        _tdoc = canonical_sidecar(_tdoc, _candidate_qc)
+    else:
+        validate_pair(_candidate_qc, _tdoc, banner=False, tactics=False)
+    _candidate_qc = refresh_banner(_candidate_qc)
     _tnodes = [tuple(_p) for _p in _tdoc.get("nodes", [])]
     if not _tnodes:
         print("error: shipped nav JSON has no nodes", file=sys.stderr)
@@ -679,9 +708,8 @@ if REANALYZE_TACTICS:
         _twalks[_a].append(_b)
     _texposure, _tcover = compute_tactics(_tnodes, _twalks, _tvis)
 
-    _raw = open(_qcpath, "rb").read()
-    _newline = "\r\n" if b"\r\n" in _raw else "\n"
-    _qlines = _raw.decode("ascii").splitlines()
+    _newline = "\r\n" if b"\r\n" in _old_qc else "\n"
+    _qlines = _candidate_qc.splitlines()
     _qlines = [
         _line for _line in _qlines
         if "Argus_NavTactics (" not in _line
@@ -703,13 +731,9 @@ if REANALYZE_TACTICS:
             f"    Argus_NavTactics (n{_i}, {_texposure[_i]}, "
             f"{_target_qc}, {_hop_qc});")
     _qlines[_insert:_insert] = [""] + _tlines
-    with open(_qcpath, "wb") as _qf:
-        _qf.write((_newline.join(_qlines) + _newline).encode("ascii"))
-
     _tdoc["exposure"] = _texposure
     _tdoc["cover_targets"] = _tcover
-    with open(_jspath, "w", encoding="utf-8") as _tf:
-        _tj.dump(_tdoc, _tf)
+    publish_pair(_qcpath, _old_qc, _old_json, _newline.join(_qlines) + _newline, _tdoc)
     _covered = sum(1 for _target, _hop in _tcover if _target >= 0)
     _top = sorted(range(len(_tnodes)),
                   key=lambda _n: (-_texposure[_n], _n))[:5]
@@ -3974,7 +3998,9 @@ except ValueError as error:
     print(f"error: {error}", file=sys.stderr)
     sys.exit(1)
 
-with open(OUTQC, "w", newline="\n") as f:
+_before_qc = existing_bytes(OUTQC)
+_before_json = existing_bytes(OUTQC + '.json')
+with io.StringIO() as f:
     f.write("/* generated by argus_navgen.py - do not edit */\n\n")
     f.write(f"void() Argus_Nav_Spawn_{MAPNAME} =\n{{\n")
     for i, w in enumerate(ways):
@@ -4049,43 +4075,46 @@ with open(OUTQC, "w", newline="\n") as f:
         for cpos, cang, ctag in cam_nodes:
             f.write(f"    Argus_AddCamNode ('{cpos[0]:.0f} {cpos[1]:.0f} {cpos[2]:.0f}', '{cang[0]:.0f} {cang[1]:.0f} {cang[2]:.0f}', \"{ctag}\");\n")
     f.write(f'    dprint ("ARGNAV {len(ways)} nodes, '
-            f'{nlinks + len(teles) + len(rjlinks) + len(lifts) + len(swims) + len(trains) + len(sprints)} links\\n");\n')
+            f'{len(_emitted)} links\\n");\n')
     f.write("};\n")
     if EMIT_DISPATCHER:
         f.write("\nvoid() Argus_Nav_Spawn =\n{\n")
         f.write(f'    if (mapname == "{MAPNAME}")\n')
         f.write(f"        Argus_Nav_Spawn_{MAPNAME} ();\n")
         f.write("};\n")
+    _qc_text = f.getvalue()
 import json
-with open(OUTQC + ".json", "w", newline="\n") as jf:
-    json.dump({"nodes": [pos(w) for w in ways],
-               # sorted so the json is CANONICAL: the passes that add
-               # links late (closure, knit, trace mining, the mined
-               # sidecar) insert in different orders on different
-               # machines, and a graph that is identical as a set still
-               # diffed. The .qc emission order is deliberately left
-               # alone - it is what assigns runtime link slots.
-               "links": [[i, j, int(i in links.get(j, {}))] for i in sorted(links) for j in sorted(links[i])],
-               "jlinks": [[i, j] for i in sorted(links) for j in sorted(links[i]) if links[i][j][1]],
-               "jumpapproach": [[i, j, round(jump_approach[(i, j)][0], 1),
-                                  round(jump_approach[(i, j)][1], 1),
-                                  round(jump_approach[(i, j)][2], 1)]
-                                 for i in sorted(links) for j in sorted(links[i])
-                                 if links[i][j][1]],
-               "sprintlinks": sprints,
-               "rjlinks": rjlinks,
-               "liftlinks": lifts,
-               "swimlinks": swims,
-               "trainlinks": trains,
-               "doorlinks": doorlinks,
-               "regions": regions,
-               "exposure": exposure,
-               "cover_targets": cover_targets,
-               "probe_rejected": _probe_rejected,
-               "trace_inputs": trace_inputs,
-               "proven_anchors": proven_anchors,
-               "cam_nodes": [{"pos": cpos, "ang": cang, "tag": ctag} for cpos, cang, ctag in cam_nodes],
-               "teles": teles}, jf)
+_nav_doc = {"nodes": [pos(w) for w in ways],
+           # sorted so the json is CANONICAL: the passes that add
+           # links late (closure, knit, trace mining, the mined
+           # sidecar) insert in different orders on different
+           # machines, and a graph that is identical as a set still
+           # diffed. The .qc emission order is deliberately left
+           # alone - it is what assigns runtime link slots.
+           "links": [[i, j, int(i in links.get(j, {}))] for i in sorted(links) for j in sorted(links[i])],
+           "jlinks": [[i, j] for i in sorted(links) for j in sorted(links[i]) if links[i][j][1]],
+           "jumpapproach": [[i, j, round(jump_approach[(i, j)][0], 1),
+                              round(jump_approach[(i, j)][1], 1),
+                              round(jump_approach[(i, j)][2], 1)]
+                             for i in sorted(links) for j in sorted(links[i])
+                             if links[i][j][1]],
+           "sprintlinks": sprints,
+           "rjlinks": rjlinks,
+           "liftlinks": lifts,
+           "swimlinks": swims,
+           "trainlinks": trains,
+           "doorlinks": doorlinks,
+           "regions": regions,
+           "exposure": exposure,
+           "cover_targets": cover_targets,
+           "probe_rejected": _probe_rejected,
+           "trace_inputs": trace_inputs,
+           "proven_anchors": proven_anchors,
+           "cam_nodes": [{"pos": cpos, "ang": cang, "tag": ctag} for cpos, cang, ctag in cam_nodes],
+           "teles": teles}
+_nav_doc = canonical_sidecar(_nav_doc, _qc_text)
+validate_pair(_qc_text, _nav_doc)
+publish_pair(OUTQC, _before_qc, _before_json, _qc_text, _nav_doc)
 print("wrote", OUTQC, "+ .json")
 # live entities only, same rule as the budget above: an untargeted
 # light and an info_null are gone before the first frame

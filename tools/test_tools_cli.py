@@ -618,7 +618,7 @@ tool_timeout_sec = 700
         (tmp / "nav.qc").write_bytes(self.fixture_qc(nodes).encode("ascii"))
         (tmp / "nav.qc.json").write_text(json.dumps({
             "nodes": nodes if jsonnodes is None else jsonnodes,
-            "links": [[0, 1, 1], [1, 0, 1], [2, 3, 1], [3, 2, 1]],
+            "links": [[0, 1, 1], [1, 0, 1], [2, 3, 0], [4, 5, 0]],
             "jlinks": [[1, 0]],
             "doorlinks": [[2, 3]],
             "regions": [0, 0, 0, 0, 0, 0],
@@ -965,8 +965,8 @@ tool_timeout_sec = 700
         self.assertEqual(js["doorlinks"], [[0, 1]])
         self.assertEqual(list(js), ["nodes", "links", "jlinks", "doorlinks",
                                     "regions", "teles"])
-        self.assertEqual(js["links"], [[0, 1, 1], [1, 0, 1], [2, 3, 1],
-                                       [3, 2, 1]])
+        self.assertEqual(js["links"], [[0, 1, 1], [1, 0, 1], [2, 3, 0],
+                                       [4, 5, 0]])
         self.assertEqual(js["jlinks"], [[1, 0]])
         self.assertEqual(js["teles"], [[3, 0]])
         self.assertEqual(js["nodes"], self.DOOR_FIXTURE_NODES)
@@ -1862,9 +1862,18 @@ tool_timeout_sec = 700
             self.assertEqual(res.returncode, 0, res.stdout)
 
     def _nav_qc(self, root, name, body):
+        from argus_nav_artifacts import BANNER, qc_graph, canonical_sidecar, refresh_banner
         d = Path(root) / "src"
         d.mkdir(parents=True, exist_ok=True)
-        (d / name).write_text(body, encoding="utf-8")
+        path = d / name
+        if 'Argus_NavNode' in body:
+            nodes, _ = qc_graph(body)
+            if not BANNER.search(body):
+                body += '    dprint ("ARGNAV 0 nodes, 0 links\\n");\n'
+            body = refresh_banner(body)
+            doc = canonical_sidecar({'nodes': list(nodes.values())}, body)
+            Path(str(path) + '.json').write_text(json.dumps(doc), encoding='utf-8')
+        path.write_text(body, encoding="utf-8")
 
     def test_argus_ci_nav_passes_on_the_tree(self):
         res = self.run_tool("argus_ci.py", "nav")

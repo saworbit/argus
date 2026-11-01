@@ -305,6 +305,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Count emitted navigation links in ARGNAV banners and enforce QC/JSON edge
+  and cover-hop agreement. Reconcile all 13 graph pairs and rebake dm4 hints
+  after removing its phantom walk edge (#666, #653).
+
 - Preserve configuration, argument, missing-target and internal failure kinds
   across MCP tools, prompts and resources, with actionable JSON hints (#689).
 
