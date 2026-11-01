@@ -17,6 +17,7 @@ pub struct ProjectView {
     pub missing: Vec<String>,
     pub qc: Vec<QcFile>,
     pub maps: Vec<String>,
+    pub navigation: Vec<crate::nav_provenance::Inventory>,
     pub recent_runs: Vec<String>,
 }
 
@@ -122,6 +123,11 @@ pub fn project_view(cfg: &Config) -> ProjectView {
     // nav graph); the fifty pak-only campaign maps used to spend
     // half this response saying nothing
     let all = list_maps(cfg).unwrap_or_default();
+    let navigation = all
+        .iter()
+        .filter(|m| m.has_nav)
+        .map(|m| crate::nav_provenance::inventory(cfg, &m.name))
+        .collect();
     let pak_only = all
         .iter()
         .filter(|m| m.path.is_none() && !m.has_nav)
@@ -134,7 +140,7 @@ pub fn project_view(cfg: &Config) -> ProjectView {
                 "{} ({}{})",
                 m.name,
                 if m.path.is_some() { "bsp" } else { "pak-only" },
-                if m.has_nav { ", nav" } else { "" },
+                if m.has_nav { ", nav on disk" } else { "" },
             )
         })
         .collect();
@@ -184,6 +190,7 @@ pub fn project_view(cfg: &Config) -> ProjectView {
         missing,
         qc,
         maps,
+        navigation,
         recent_runs,
     }
 }

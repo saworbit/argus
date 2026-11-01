@@ -134,7 +134,7 @@ jobs:
       - name: Run navigation budgets and study receipt contracts
         run: |
           python3 tools/test_nav_budget.py
-          python3 tools/test_map_intelligence_report.py
+          python3 -O tools/test_map_intelligence_report.py
           python3 tools/test_study_comparison.py
           python3 tools/test_study_validation.py
           python3 tools/test_freeze_recovery.py

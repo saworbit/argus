@@ -29,7 +29,7 @@ pub fn registration(cfg: &Config, map: &str) -> Registration {
     )
 }
 
-fn registration_text(dispatch: &str, progs: &str, map: &str) -> Registration {
+pub(crate) fn registration_text(dispatch: &str, progs: &str, map: &str) -> Registration {
     static COMMENTS: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     let comments = COMMENTS.get_or_init(|| {
         regex::Regex::new(r#"(?s)"(?:\\.|[^"\\])*"|/\*.*?\*/|//[^\r\n]*"#).unwrap()

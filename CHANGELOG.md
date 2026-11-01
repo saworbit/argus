@@ -305,6 +305,11 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Bind navigation coverage to frozen compile and tape receipts, distinguish
+  on-disk registration from the tested build, and withhold runtime claims
+  when provenance is unknown. Keep study report checks active under optimized
+  Python (#625).
+
 - Count emitted navigation links in ARGNAV banners and enforce QC/JSON edge
   and cover-hop agreement. Reconcile all 13 graph pairs and rebake dm4 hints
   after removing its phantom walk edge (#666, #653).

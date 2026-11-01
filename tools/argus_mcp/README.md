@@ -1097,11 +1097,35 @@ report forwards the registered primary through native CLI band comparisons.
 The MCP `compare_runs` interface currently has no primary argument, so the
 runner's per-tape comparison files retain the MCP defaults.
 
-An experimental graph on disk can contribute spatial `nav_coverage` even
-when it was not compiled into the tested program. The study report checks
-both frozen `progs.src` and dispatcher entries and reports such runtime
-coverage as unavailable. The native inventory/coverage fields alone do not
-establish loaded navigation; e1m3/e1m4 remain unregistered experimental maps.
+Project inventory labels navigation as on disk and reports QC/JSON presence,
+the compilation-list entry and dispatcher entry separately. `installed_navigation`
+is null when the installed program has no matching compile receipt.
+e1m3/e1m4 remain unregistered experimental maps.
+
+A successful native compile freezes its navigation inputs in
+`backups/navigation_builds/<program-md5>.json`. Receipts are immutable by
+program hash. A source change during compilation withholds this proof and
+reports the reason in the compile tail. Compilation itself can still succeed.
+At launch the lab selects the receipt by the actual game program's bytes,
+then harvest writes `<run>.nav.json` beside the tape with its log hash and
+frozen graph. Keep that sidecar when retaining a tape. Recorded ladder and
+human receipts share their tapes' append-once check.
+
+`nav_coverage.pct` is spatial proximity, not a route-consumption counter.
+Its `provenance` states whether the graph is a build snapshot or a current-tree
+diagnostic, whether the recorded build registered navigation, and whether
+navigation claims are eligible. `loaded_in_tape` records the matching ARGNAV
+initialization; registration alone cannot establish a runtime claim.
+Historical tapes without proof remain unknown;
+today's registration never establishes what an older program contained.
+Dormant-link and directed-sink claims require build attribution. Atlas claims
+also require the current atlas graph to match that frozen graph.
+The existing comparison coverage gate counts spatial 64-unit cells independently
+of navigation nodes; its duration rules are unchanged.
+
+The frozen-source study report verifies the protocol's source-file hashes and
+both registration entries. Unknown or uncompiled navigation and unfrozen graph
+coverage are unavailable as runtime scores. Spatial diagnostics remain inspectable.
 
 ## Tools
 

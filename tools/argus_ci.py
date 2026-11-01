@@ -180,7 +180,7 @@ def read_changes(changed_files=None, base=None, root=None):
 # and together they account for 21 of the 22 modifications in the seven
 # weeks to 2026-09-17. The 22nd, e768bbd, is why the escape hatch
 # exists.
-PROTECTED_TAPE = re.compile(r"^runs/(ab|shane)_.*\.log$")
+PROTECTED_TAPE = re.compile(r"^runs/(ab|shane)_.*(?:\.log|\.nav\.json)$")
 TAPE_ESCAPE = "[tape-rewrite]"
 
 

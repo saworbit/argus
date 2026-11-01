@@ -66,6 +66,7 @@ struct LiveMatch {
     duration: Option<Duration>,
     stdout: Arc<Mutex<String>>,
     last_exit: Option<i32>,
+    navigation: Option<crate::nav_provenance::MapSnapshot>,
 }
 
 #[derive(Default)]
@@ -309,6 +310,7 @@ impl MatchCtrl {
         let run_dir = cfg.runs.join(&name);
         std::fs::create_dir_all(&run_dir).map_err(|e| format!("create run dir: {e}"))?;
         let harvested = cfg.runs.join(format!("{name}.log"));
+        let navigation = crate::nav_provenance::for_launch(cfg, map);
 
         #[cfg(test)]
         let child = match self.fake_engines.as_mut() {
@@ -336,6 +338,8 @@ impl MatchCtrl {
             coop.unwrap_or(false),
         )?;
         let stdout = child.stdout_buf();
+        let navigation = navigation
+            .filter(|before| crate::nav_provenance::for_launch(cfg, map).as_ref() == Some(before));
         register_live(child.id());
         self.live = Some(LiveMatch {
             child,
@@ -347,6 +351,7 @@ impl MatchCtrl {
             duration: duration_sec.map(|s| Duration::from_secs(s as u64)),
             stdout,
             last_exit: None,
+            navigation,
         });
         Ok(self.status())
     }
@@ -520,6 +525,13 @@ impl MatchCtrl {
             let why = diagnose_log(&text).unwrap_or_else(|| "server may have died at spawn".into());
             return Err(format_match_fail(&log_path, &text, &why));
         }
+        let brief = crate::intel::brief_run(cfg, &log_path, Some(map)).unwrap_or_else(|error| {
+            let mut brief = brief_text_hull(cfg, &text, Some(map));
+            brief.flags.push(format!(
+                "file-backed navigation diagnostics unavailable: {error}"
+            ));
+            brief
+        });
         Ok(MatchRunResult {
             ok: true,
             run_name: st.run_name.unwrap_or_default(),
@@ -528,7 +540,7 @@ impl MatchCtrl {
             elapsed_sec: st.elapsed_sec.unwrap_or(0),
             exit_code: st.exit_code,
             summary: parse_arglog(&text),
-            brief: brief_text_hull(cfg, &text, Some(map)),
+            brief,
         })
     }
 
@@ -848,6 +860,12 @@ fn harvest(live: &LiveMatch) -> String {
                 "failed to write harvest log {}: {e}",
                 live.harvested.display()
             );
+        } else if let Err(error) = crate::nav_provenance::record_tape(
+            &live.harvested,
+            body.as_bytes(),
+            live.navigation.as_ref(),
+        ) {
+            eprintln!("navigation tape provenance unavailable: {error}");
         }
     }
 
@@ -1427,6 +1445,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
             duration: None,
             stdout: Arc::new(std::sync::Mutex::new(tape.to_string())),
             last_exit: None,
+            navigation: None,
         };
         let out = harvest(&live);
         assert_eq!(std::fs::read_to_string(&out).unwrap(), tape);
@@ -1461,6 +1480,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
             duration: None,
             stdout: Arc::new(std::sync::Mutex::new(String::new())),
             last_exit: None,
+            navigation: None,
         };
 
         let result_path = harvest(&live);
@@ -1530,6 +1550,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
                 duration: None,
                 stdout: Arc::new(std::sync::Mutex::new(String::new())),
                 last_exit: None,
+                navigation: None,
             }),
             ..Default::default()
         };
