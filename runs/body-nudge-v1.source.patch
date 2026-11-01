@@ -1,0 +1,81 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -5517,12 +5517,12 @@
+     }
+ };
+ 
+-// body-block clearance (#177): if within 48u of another client
++// body-block clearance (#177): if within 48u of a vertically overlapping client
+ // and the other is jumping or firing, sidestep first, shoot second
+ void() Argus_BodyBlockCheck =
+ {
+     local entity cl;
+-    local vector to, cand;
++    local vector to, cand, step;
+     local float side;
+ 
+     cl = find (world, classname, "player");
+@@ -5532,36 +5532,34 @@
+         {
+             to = self.origin - cl.origin;
+             to_z = 0;
+-            if (vlen (to) < 48)
++            if (vlen (to) < 48 && fabs (self.origin_z - cl.origin_z) < 56)
+             {
+-                // Anti-embed nudge: if bounding boxes overlap (<36u),
++                // Anti-embed nudge: if bodies are closer than 36u,
+                 // step the bot clear so the player is never stuck solid.
+                 //
+-                // TWO THINGS THIS USED TO GET WRONG (#267). to_z is
+-                // zeroed, so the gate is a horizontal test with no
+-                // bound on vertical separation, and the destination
+-                // used to be cl.origin + to, which inherits the OTHER
+-                // player's height: a bot on the dm4 walkway at z -232
+-                // directly above someone on the pit floor near z -380
+-                // read a horizontal distance near zero and warped 150
+-                // units down, and the one underneath warped up into
+-                // the walkway solid. Keep our own z. Then verify,
+-                // because setorigin does not collide and 36 units
+-                // along the separation vector goes through the wall in
+-                // any corridor, which is the common case in co-op
+-                // where the companion escorts through doorways. If the
+-                // spot does not fit we do not move at all and the
+-                // sidestep below resolves it against real collision.
++                // Players on another floor do not block this body.
++                // Keep our own height (#267), then let the engine test
++                // the full hull at the separation step. The old point
++                // samples allowed a sub-unit hull overlap at dm3's
++                // lower-room wall, and setorigin turned that nudge into
++                // a six-second pin (#644). A refused step stays put;
++                // ordinary sidestepping and recovery remain in charge.
+                 if (vlen (to) < 36)
+                 {
+                     if (vlen (to) < 6)
+                         to = '32 0 0';
+                     else
+-                        to = normalize (to) * 36;
++                    {
++                        // Separate square hulls on an axis. A 36u radial
++                        // gap leaves diagonal player boxes overlapping.
++                        side = fabs (to_x);
++                        if (fabs (to_y) > side) side = fabs (to_y);
++                        to = to * (36 / side);
++                    }
+                     cand = cl.origin + to;
+                     cand_z = self.origin_z;
+-                    if (Argus_BoxClear (cand))
+-                        setorigin (self, cand);
++                    step = cand - self.origin;
++                    walkmove (vectoyaw (step), vlen (step));
+                 }
+ 
+                 // other is jumping, actively firing, or human teammate in coop: clear the line
+@@ -9920,7 +9918,7 @@
+ 
+     Argus_LifeRouteVeto (fighting);
+ 
+-    // body-block clearance (#177): if within 48u of another client
++    // body-block clearance (#177): if within 48u of a vertically overlapping client
+     // and the other is jumping or firing, sidestep first, shoot second
+     Argus_BodyBlockCheck ();
+ 

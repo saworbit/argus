@@ -1,0 +1,133 @@
+LOG started on: 11/02/2026 10:31:04 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm3
+Clearing memory
+Programs occupy 1112K.
+trying to open external vis file
+maps/dm3.vis not found, trying nudgecheck_body_nudge_final_control_dm3.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 244 nodes, 829 links
+0 entities inhibited
+ARGUS init on dm3
+ARGUS difficulty Carmack t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '192.0 -208.0 -176.0' spd 0 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '1520.0 432.0 -88.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-880.0 -232.0 -16.0' spd 0 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Joe Rogan t   1.7 pos '199.7 -61.6 -176.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '1620.0 539.2 -88.0' spd 320.0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-948.8 -105.1 -16.0' spd 227.2 yaw 343.1 mode 0 st 0 gl 0 hp 100 frg 0
+BHVRPL begin body_nudge
+BNFIX begin dt_ms  14.0 layout 1
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BNCASE upper_floor initialfit 1 finalfit 0 distance 3 dodge 0
+BNCHECK upper_floor 0
+BNCASE wall_refused initialfit 1 finalfit 0 distance 3 dodge 0
+BNCHECK wall_refused 0
+BNCASE clear_step initialfit 1 finalfit 1 distance 3 dodge 0
+BNCHECK clear_step 1
+ARGUS Carmack bodyblock
+BNCASE upper_fire initialfit 1 finalfit 0 distance 3 dodge 1
+BNCHECK upper_fire 0
+BNCASE overlap_axis initialfit 0 finalfit 1 distance 16 dodge 0
+BNCHECK overlap_axis 1
+BNCASE overlap_diagonal initialfit 0 finalfit 0 distance   7.7 dodge 0
+BNCHECK overlap_diagonal 0
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BNPOSE t 0 pos '335.1 125.9 -200.0' node '  0.0   0.0   0.0' active 1 wet 0 flags 0 blocked   2.0 enemy 
+ARGEVT Carmack route 1 start '389.0 225.0 -200.0' goal '677.0 193.0 -200.0'
+ARGLOG Carmack t   2.2 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 0 gl 0 hp 100 frg 0
+BNPOSE t   0.5 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 1 wet 0 flags 0 blocked 0 enemy 
+ARGLOG Carmack t   2.7 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 0 gl 0 hp 100 frg 0
+BNPOSE t   1.0 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 1 wet 0 flags 0 blocked 0 enemy 
+ARGLOG Carmack t   3.2 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 0 gl 0 hp 100 frg 0
+BNPOSE t   1.5 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 1 wet 0 flags 0 blocked 0 enemy 
+ARGLOG Carmack t   3.8 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '389.0 225.0 -200.0'
+BNPOSE t   2.0 pos '335.1 125.9 -200.0' node '  0.0   0.0   0.0' active 1 wet 0 flags 0 blocked 0 enemy 
+ARGUS routecache adopt
+ARGEVT Carmack route 1 start '389.0 225.0 -200.0' goal '677.0 193.0 -200.0'
+ARGLOG Carmack t   4.3 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 1 gl 0 hp 100 frg 0
+BNPOSE t   2.6 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 1 wet 0 flags 0 blocked 0 enemy 
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '389.0 225.0 -200.0'
+ARGLOG Carmack t   4.8 pos '335.1 125.9 -200.0' spd 0 yaw  39.4 mode 0 st 2 gl 0 hp 100 frg 0
+ARGEVT Carmack goal weapon_lightning
+ARGEVT Carmack route 10 start '389.0 225.0 -200.0' goal '1541.0 -191.0 -392.0'
+BNPOSE t   3.1 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 0 wet 0 flags 0 blocked 0 enemy 
+ARGLOG Carmack t   5.3 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 2 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '389.0 225.0 -200.0'
+BNPOSE t   3.6 pos '335.1 125.9 -200.0' node '  0.0   0.0   0.0' active 0 wet 0 flags 0 blocked 0 enemy 
+ARGUS routecache adopt
+ARGEVT Carmack route 10 start '389.0 225.0 -200.0' goal '1541.0 -191.0 -392.0'
+ARGLOG Carmack t   5.8 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 3 gl 0 hp 100 frg 0
+BNPOSE t   4.1 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 0 wet 0 flags 0 blocked 0 enemy 
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '389.0 225.0 -200.0'
+ARGLOG Carmack t   6.3 pos '335.1 125.9 -200.0' spd 0 yaw  11.2 mode 0 st 4 gl 0 hp 100 frg 0
+ARGEVT Carmack goal item_health
+ARGEVT Carmack route 3 start '389.0 225.0 -200.0' goal '549.0 -63.0 -168.0'
+BNPOSE t   4.6 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 0 wet 0 flags 0 blocked 0 enemy 
+ARGLOG Carmack t   6.8 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 4 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '389.0 225.0 -200.0'
+ARGUS routecache adopt
+ARGEVT Carmack route 3 start '389.0 225.0 -200.0' goal '549.0 -63.0 -168.0'
+BNPOSE t   5.1 pos '335.1 125.9 -200.0' node '389.0 225.0 -200.0' active 0 wet 0 flags 0 blocked 0 enemy 
+ARGLOG Carmack t   7.3 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 5 gl 0 hp 100 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '389.0 225.0 -200.0'
+BNPOSE t   5.6 pos '335.1 125.9 -200.0' node '  0.0   0.0   0.0' active 0 wet 0 flags 0 blocked 0 enemy 
+ARGEVT Carmack plan powerup via weapon
+ARGEVT Carmack goal weapon_supernailgun
+ARGEVT Carmack route 32 start '389.0 225.0 -200.0' goal '-507.0 449.0 120.0'
+ARGLOG Carmack t   7.8 pos '335.1 125.9 -200.0' spd 0 yaw 11 mode 2 st 6 gl 0 hp 100 frg 0
+ARGUS Carmack unstick pinned '389.0 225.0 -200.0'
+BNPOSE t   6.1 pos '389.6 226.6 -200.0' node '  0.0   0.0   0.0' active 0 wet 0 flags 512 blocked 0 enemy 
+ARGEVT Carmack hazard
+ARGUS Carmack wallslide
+ARGLOG Carmack t   8.3 pos '354.0 234.4 -200.0' spd 322.9 yaw 136.8 mode 0 st 6 gl 0 hp 100 frg 0
+BNPOSE t   6.6 pos '336.2 156.1 -200.0' node '  0.0   0.0   0.0' active 0 wet 0 flags 512 blocked 0 enemy 
+ARGLOG Carmack t   8.8 pos '336.0  93.7 -200.0' spd 320.6 yaw 266 mode 0 st 6 gl 0 hp 100 frg 0
+BNPOSE t   7.1 pos '337.0  47.1 -200.0' node '  0.0   0.0   0.0' active 0 wet 0 flags 0 blocked   9.1 enemy 
+ARGEVT Carmack hazard
+ARGLOG Carmack t   9.3 pos '338.5  45.5 -200.0' spd  14.6 yaw 205 mode 0 st 6 gl 0 hp 100 frg 0
+BNPOSE t   7.6 pos '339.8  44.3 -200.0' node '  0.0   0.0   0.0' active 0 wet 0 flags 0 blocked   9.6 enemy 
+ARGEVT Carmack stall
+ARGEVT Carmack jump
+ARGEVT Carmack route 33 start '389.0   1.0 -200.0' goal '-507.0 449.0 120.0'
+ARGLOG Carmack t   9.8 pos '339.4  44.7 -175.6' spd  37.4 yaw 5 mode 2 st 7 gl 0 hp 100 frg 0
+BNPOSE t   8.1 pos '341.2  42.8 -159.0' node '389.0   1.0 -200.0' active 0 wet 0 flags 0 blocked 0 enemy 
+ARGLOG Carmack t  10.3 pos '347.0  37.1 -189.1' spd  39.4 yaw 7 mode 2 st 7 gl 0 hp 100 frg 0
+BNPOSE t   8.6 pos '422.2  17.7 -200.0' node '549.0  65.0 -184.0' active 0 wet 0 flags 512 blocked 0 enemy 
+ARGLOG Carmack t  10.8 pos '487.0  26.8 -184.3' spd 346.0 yaw 5 mode 2 st 7 gl 0 hp 100 frg 0
+BNPOSE t   9.1 pos '578.8  77.6 -188.5' node '677.0 193.0 -200.0' active 0 wet 0 flags 512 blocked 0 enemy 
+ARGLOG Carmack t  11.3 pos '624.8 118.5 -200.0' spd 323.5 yaw 350 mode 2 st 7 gl 0 hp 100 frg 0
+BNCHECK route_complete 0
+BNCHECK continuous_motion 0
+BNCHECK task_preserved 0
+BNCHECK dry_and_alive 1
+BNFIX end checks 10 failures 7 seconds   9.4 frames 614
+BNRESULT pos '655.6 152.6 -200.0' lost 1 discontinuous 1 hp 100 wet 0

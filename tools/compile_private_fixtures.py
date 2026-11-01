@@ -27,6 +27,7 @@ VARIANTS = {
     'stall': ('current',),
     'motion': ('current',),
     'ally': ('current',),
+    'nudge': ('current',),
     'attention': ('current',),
     'water': ('current',),
 }
@@ -47,7 +48,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'ally':
+    if family == 'nudge':
+        from verify_body_nudge import stage as stage_nudge
+        stage_nudge(ROOT, folder)
+    elif family == 'ally':
         from verify_ally_barrel import stage as stage_ally
         stage_ally(ROOT, folder)
     elif family == 'stall':
