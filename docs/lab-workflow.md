@@ -184,6 +184,10 @@ reject invalid receipt fields, cadence and tape hashes. The compile workflow's
 physical outcomes.
 
 The repo invariant job also blocks on `python tools/argus_ci.py all`.
+`python tools/argus_ci.py dashes` checks tracked Markdown, QuakeC, Python and
+lab source files for U+2013 and U+2014, reporting each file and line.
+Fast CI also runs the navigation tactics suite and builds and runs Rust
+integration tests; cases needing local engine assets self-skip on CI.
 Use `python tools/argus_ci.py links` to check only documentation paths and
 fragments, including explicit HTML anchors and the `src`, `srcset` and `href`
 values of raw HTML such as the README banner. It reads tracked Markdown files,

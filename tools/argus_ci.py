@@ -13,6 +13,7 @@ usage:
   argus_ci.py tapes [--changed-files F]   evidence is append-once
   argus_ci.py nav                  graphs obey the runtime's limits
   argus_ci.py links                tracked documentation paths and anchors resolve
+  argus_ci.py dashes               tracked prose and sources contain no en or em dashes
 """
 import argparse
 import collections
@@ -330,6 +331,15 @@ class _HtmlAnchors(HTMLParser):
                 self.anchors.add(value)
 
 
+def _setext_text(line):
+    """A structural block before an underline is not a setext heading."""
+    if not line.strip() or line.expandtabs(4).startswith("    "):
+        return False
+    if re.match(r"^ {0,3}(?:#{1,6}(?:\s|$)|>|(?:[-+*]|\d{1,9}[.)])(?:\s|$))", line):
+        return False
+    return not re.fullmatch(r" {0,3}(?:(?:-\s*){3,}|(?:\*\s*){3,}|(?:_\s*){3,})", line)
+
+
 def markdown_anchors(text):
     """GitHub-style heading slugs (including duplicates) and explicit HTML IDs."""
     prose = markdown_prose(text)
@@ -340,7 +350,7 @@ def markdown_anchors(text):
     for line in prose.splitlines():
         heading = re.match(r"^ {0,3}(?:>\s*)*#{1,6}\s+(.+?)\s*#*\s*$", line)
         title = heading[1] if heading else None
-        if re.fullmatch(r" {0,3}(?:=+|-+)\s*", line) and previous.strip():
+        if re.fullmatch(r" {0,3}(?:=+|-+)\s*", line) and _setext_text(previous):
             title = previous.strip()
         if title is not None:
             title = re.sub(r"!?\[([^\]]+)\]\([^)]*\)", r"\1", title)
@@ -459,13 +469,40 @@ def check_links(root, **_kw):
     return fails
 
 
+def check_dashes(root, **_kw):
+    """Enforce the two-codepoint editorial rule on tracked prose and code."""
+    tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root,
+                             capture_output=True, text=True, encoding="utf-8")
+    if tracked.returncode:
+        return ["dashes: git ls-files failed: " + tracked.stderr.strip()]
+    fails = []
+    for name in tracked.stdout.split("\0"):
+        path = Path(name)
+        if not name or not (path.suffix.lower() == ".md"
+                            or name.startswith("src/") and path.suffix == ".qc"
+                            or name.startswith("tools/") and path.suffix == ".py"
+                            or name.startswith("tools/argus_mcp/src/")):
+            continue
+        try:
+            text = (root/path).read_text(encoding="utf-8", errors="replace")
+        except OSError as error:
+            fails.append(f"dashes: {name}: cannot read tracked text: {error}")
+            continue
+        for number, line in enumerate(text.splitlines(), 1):
+            found = sorted({f"U+{ord(c):04X}" for c in line if c in "\u2013\u2014"})
+            if found:
+                fails.append(f"dashes: {name}:{number}: {', '.join(found)}: "
+                             f"no en or em dashes; use words or punctuation: {line}")
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
         description="Argus repo invariant battery",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__)
-    ap.add_argument("check", choices=["all", "ship", "eol", "tapes", "nav", "links"])
+    ap.add_argument("check", choices=["all", *CHECKS])
     ap.add_argument("--root", default=str(ROOT))
     ap.add_argument("--changed-files")
     ap.add_argument("--base")
@@ -473,7 +510,7 @@ def main(argv=None):
     args = ap.parse_args(argv)
     root = Path(args.root)
 
-    names = ["ship", "eol", "tapes", "nav", "links"] if args.check == "all" else [args.check]
+    names = list(CHECKS) if args.check == "all" else [args.check]
     fails = []
     for name in names:
         fn = CHECKS[name]
@@ -493,7 +530,8 @@ def main(argv=None):
 
 
 CHECKS = {"ship": check_ship, "eol": check_eol,
-          "tapes": check_tapes, "nav": check_nav, "links": check_links}
+          "tapes": check_tapes, "nav": check_nav, "links": check_links,
+          "dashes": check_dashes}
 
 
 if __name__ == "__main__":

@@ -54,7 +54,7 @@ jobs:
         run: |
           python3 tools/argus_ci.py all \
             --changed-files changed.txt \
-            --commit-msg "$PR_TITLE $(cat commit_msgs.txt)"
+            --commit-msg="$PR_TITLE $(cat commit_msgs.txt)"
 
   lab:
     name: lab test suite (rust)
@@ -79,7 +79,7 @@ jobs:
       - name: Run the lab suite
         # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;
         # the committed runs/*.log regression tapes run in full
-        run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
+        run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --tests
 
       - name: Build the developer CLI
         run: cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp
@@ -90,7 +90,10 @@ jobs:
         run: python3 tools/test_tools_cli.py
 
       - name: Run Python navigation reader tests
-        run: python3 tools/test_argus_navjson.py
+        run: |
+          python3 tools/test_argus_navjson.py
+          python3 tools/test_nav_tactics.py
+          python3 tools/test_ci_validation.py
 
       - name: Run Python tape parity tests
         run: python3 tools/test_argus_tape.py

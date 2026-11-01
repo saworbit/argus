@@ -305,6 +305,11 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Run navigation tactics and Rust integration tests in fast CI, preserve
+  option-like PR titles and line-buffer smoke output (#670). Enforce the
+  dash rule on tracked prose and sources (#674), and stop accepting false
+  setext anchors after lists, quotes, headings and separators (#696).
+
 - Preserve Quake console text with bronze bytes (#657), split CRLF tapes at
   exact level boundaries (#662), attribute plain markers independently of
   bot names (#693), and refuse gameplay comparisons when any tape records a
