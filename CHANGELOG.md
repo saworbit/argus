@@ -153,6 +153,9 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Track portable agent rules in AGENTS.md while keeping local handoffs ignored,
+  so rule corrections reach every checkout (#672).
+
 - Draw each navigation link type the same way in the navgen PNG, the
   `analyze_match.py` plots and the lab GUI, from one table in
   `tools/argus_linkstyle.py`. Jumps were red in the PNG and blue in the GUI,
