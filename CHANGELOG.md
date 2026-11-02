@@ -23,6 +23,12 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Check that a baked combat cover hop is still a live, untyped link from its
+  node, with no deliberate drop, before a retreating bot steers along it.
+  Every shipped graph already meets this, so current matches are unchanged;
+  the guard covers future regenerations
+  ([#652](https://github.com/saworbit/argus/issues/652)).
+
 - Reproduce the dm4 under-fire freeze from the cover-hop cohort in the real
   engine. A player passing on the pit floor below nudged the bot into the
   walkway wall on both the candidate and its unchanged control, so the cover
