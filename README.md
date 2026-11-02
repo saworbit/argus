@@ -58,6 +58,13 @@ The [e1m6 dock-exit repair](docs/e1m6-decisions.md) keeps a bot aboard a
 moving platform until docking and checks a landing arc across an exit seam.
 Its physical tests check landing and retention of the continuing task.
 
+The latest [body-height repair](docs/body-height-investigation.md) prevents
+players on other floors from triggering a separation nudge. Its broader
+comparison meets the registered parity bands with material activity limits.
+Full-rate [movement diagnostics](tools/argus_mcp/README.md#demo-ingest) are
+available; the excessive-reversal issue remains open. See the
+[session audit](docs/session-cleanup-2026-11-02.md) for outstanding work.
+
 ## Install and play
 
 ### What you need

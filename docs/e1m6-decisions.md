@@ -217,10 +217,12 @@ separate evidence file; do not pool those matches into the replacement.
 
 ## Reproduction and limits
 
-The maintained mover fixture now uses layout v2 and requires observed exit-node
-consumption into its planned successor. The results above retain the original
-v1 node-difference proof. New [v2 receipts](../runs/mover-handoff-v2.results.json)
-and raw hashes are separate; they do not upgrade this historical study.
+The maintained mover fixture now uses layout 3. It retains the observed
+exit-node consumption added in [v2 receipts](../runs/mover-handoff-v2.results.json)
+and checks every retention/dryness clause, as verified by the separate
+[predicate audit](../runs/mover-predicates-v1.results.json). The results above
+retain the original v1 node-difference proof. Later receipts and raw hashes
+are separate; they do not upgrade this historical study.
 
 ```text
 python tools/verify_mover_transfer.py --output backups/<new-directory> --prefix <new_prefix>

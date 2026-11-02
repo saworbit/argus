@@ -22,7 +22,12 @@ these controlled tests establish a concrete way to enter both failures.
 The narrow correction requires actual vertical bounds to overlap before
 nudging or clearing another player's line. It uses both entities' bounds.
 It leaves same-floor nudge and collision behavior in place. The wider
-collision and diagonal-separation prototype in draft #734 remains separate.
+collision and diagonal-separation prototype in closed #734 was not adopted:
+its dm4 combat-preservation comparison failed. The narrow height repair
+superseded that proposal only for the reproduced different-floor entry.
+The retained same-floor wall and diagonal-hull failures remain tracked in
+[#747](https://github.com/saworbit/argus/issues/747). They are not covered by
+the height gate or the closed #642/#644 acceptance.
 
 The maintained native fixture gives these physical outcomes:
 
