@@ -1,0 +1,101 @@
+{
+  "compare": null,
+  "compile_ok": null,
+  "elapsed_sec": 10,
+  "gate_card": null,
+  "lab_identity": {
+    "authoritative": true,
+    "build_source": "fnv1a64:e48dc3d64c97408b",
+    "checkout_source": "fnv1a64:e48dc3d64c97408b",
+    "checkout_version": "0.30.0",
+    "running_version": "0.30.0"
+  },
+  "log": "C:\\argus\\backups\\muzzle_pred_legacy_played_v2_20261102\\runs\\muzzle_pred_legacy_played_v2_20261102.log",
+  "logs": [
+    "C:\\argus\\backups\\muzzle_pred_legacy_played_v2_20261102\\runs\\muzzle_pred_legacy_played_v2_20261102.log"
+  ],
+  "match": {
+    "bots": [],
+    "flags": [
+      "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+      "lava pit under the walkways; hull-0 contents classify lava deaths (z below -300 is the no-BSP fallback)",
+      "quad ledge is a rocket-jump item; prize-only pads are in the nav"
+    ],
+    "headline": "dm4 0s: 0 frags, 0 deaths (0 lava, 0 third-party), 0 stalls, 0 goals, 0 engages, 0 hazards, spread 0. CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+    "map": "dm4",
+    "nav_coverage": {
+      "current_tree": {
+        "in_dispatcher": true,
+        "in_progs_src": true,
+        "installed_navigation": true,
+        "json_on_disk": true,
+        "map": "dm4",
+        "qc_on_disk": true
+      },
+      "never_visited_sample": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      "nodes": 137,
+      "pct": 0,
+      "provenance": {
+        "build_in_dispatcher": true,
+        "build_in_progs_src": true,
+        "eligible_for_navigation_claims": true,
+        "graph_md5": "251cb44b7c116cd55004c55bad3359ca",
+        "inputs_md5": "60d5a68a91bdc46eb2f18153c6be4f9b",
+        "loaded_in_tape": true,
+        "program_md5": "47b8b99afe5654e04b8de1778bfb0267",
+        "runtime_navigation": true,
+        "spatial_source": "build_snapshot"
+      },
+      "typed_links": {
+        "rj": "6 link(s), 0 rjump event(s)",
+        "sprint": "3 link(s), no runtime verb yet"
+      },
+      "visited": 0
+    },
+    "next_steps": [],
+    "totals": {
+      "abandons": 0,
+      "acquisitions": 0,
+      "all_frags_positive": false,
+      "avg_speed": 0.0,
+      "boards": 0,
+      "cover": 0,
+      "deaths": 0,
+      "duration_sec": 0.0,
+      "engages": 0,
+      "frags": 0,
+      "freeze_max_sec": 0.0,
+      "freeze_underfire": 0,
+      "freezes": 0,
+      "goals": 0,
+      "grabs": 0,
+      "hazards": 0,
+      "kd_spread": 0,
+      "lava_deaths": 0,
+      "lava_rule": "contents",
+      "mover_waits": 0,
+      "player_kills": 0,
+      "routefails": 0,
+      "stalls": 0,
+      "third_party_deaths": 0,
+      "weapons": 0,
+      "world_deaths": 0
+    }
+  },
+  "next": null,
+  "ok": true,
+  "repeats": 1
+}

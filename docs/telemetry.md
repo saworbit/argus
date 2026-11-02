@@ -100,6 +100,12 @@ in `tools/check_plan_progress.py`, `tools/verify_offset_entry.py`,
 pool their rows into match rates or count a selected goal as a pickup.
 They add no shipped console control or change to ARGLOG/ARGEVT grammar.
 
+The private muzzle predicate witness adds `MPSTATE`, `MPOUTCOME` and
+`MPCHECK` rows bracketed by `MPP`. Each row isolates one false post-call
+state after real combat. Read these with `verify_muzzle_predicates.py`.
+The [receipt](../runs/muzzle-predicates-v1.results.json) qualifies the older
+MCFIX state-preservation claims separately from ammo/projectile evidence.
+
 The broader-map studies add these private records:
 
 | Record | Evidence and reader |

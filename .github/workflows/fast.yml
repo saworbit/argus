@@ -124,6 +124,7 @@ jobs:
         run: |
           python3 tools/test_muzzle_fixture.py
           python3 tools/test_muzzle_combat.py
+          python3 -O tools/test_muzzle_combat.py
           python3 tools/test_button_physical.py
           python3 tools/test_door_actuator.py
           python3 tools/test_review_outputs.py

@@ -23,6 +23,10 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Check every muzzle combat witness predicate and retain strict receipt
+  rejection under optimized Python
+  ([#745](https://github.com/saworbit/argus/issues/745)).
+
 - Keep health and observation evidence, frozen-source and private-input
   guards active under optimized Python
   ([#742](https://github.com/saworbit/argus/issues/742)).

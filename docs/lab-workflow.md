@@ -159,6 +159,7 @@ python tools/test_review_outputs.py
 python tools/test_plan_progress.py
 python tools/test_offset_entry.py
 python tools/test_muzzle_combat.py
+python -O tools/test_muzzle_combat.py
 python tools/test_button_physical.py
 python tools/test_door_actuator.py
 python tools/test_private_fixtures.py
