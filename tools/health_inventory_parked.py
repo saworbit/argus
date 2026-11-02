@@ -1,4 +1,5 @@
 """Recover frozen step1b evidence and verify the declared active bodies."""
+from argus_validation import require
 import hashlib
 import json
 from pathlib import Path
@@ -14,9 +15,9 @@ def apply_patch_text(source,patch):
             start=int(hunk[1])-(0 if hunk[2]=='0' else 1)
             out.extend(lines[pos:start]);pos=start
         else:
-            assert line[0] in ' +-'
+            require((line[0] in ' +-'))
             if line[0] in ' -':
-                assert lines[pos]==line[1:];pos+=1
+                require((lines[pos]==line[1:]));pos+=1
             if line[0] in ' +':out.append(line[1:])
     out.extend(lines[pos:]);return ''.join(out)
 
@@ -25,18 +26,18 @@ def parked_source():
     manifest=json.loads((folder/'health-inventory-step1b.json').read_text())
     source=(ROOT/'src/argus.qc').read_text()
     digest=lambda s:hashlib.sha256(s.encode()).hexdigest()
-    assert digest(source)==manifest.get('active_text_sha256',manifest['parked_text_sha256']), 'active production source changed'
+    require((digest(source)==manifest.get('active_text_sha256',manifest['parked_text_sha256'])), 'active production source changed')
     for name,expected in manifest.get('active_functions',{}).items():
         match=re.search(r'^[^\n]*\b'+re.escape(name)+r'\s*=\s*\n\{\n.*?^\};',source,re.M|re.S)
-        assert match and digest(match[0])==expected, 'active function changed: '+name
+        require((match and digest(match[0])==expected), 'active function changed: '+name)
     for patch in manifest.get('production_amendments',[]):
         source=apply_patch_text(source,(folder/patch).read_text())
-    assert digest(source)==manifest['parked_text_sha256'], 'parked production source changed'
+    require((digest(source)==manifest['parked_text_sha256']), 'parked production source changed')
     return source,manifest
 
 def candidate_source():
     source,manifest=parked_source()
     candidate=apply_patch_text(source,(ROOT/'tools/fixtures'/manifest['patch']).read_text())
     digest=lambda s:hashlib.sha256(s.encode()).hexdigest()
-    assert digest(candidate)==manifest['candidate_text_sha256'], 'candidate patch changed'
+    require((digest(candidate)==manifest['candidate_text_sha256']), 'candidate patch changed')
     return candidate,manifest

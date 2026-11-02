@@ -1182,6 +1182,11 @@ remains historical; these checks do not resolve #583's gameplay warning (#595).
 The manifest now verifies actual active function bodies. Inverse amendments
 recover the original parked/candidate hashes without altering live source;
 projectile recognition and own-item valuation remain unchanged.
+The HIFIX and shared PERFIX readers, frozen-source reconstruction and both
+historical private-input stagers use explicit checks that remain active under
+optimized Python. Failed trials stay available only through the declared
+diagnostic mode. Existing output directories and changed production or private
+sources are still rejected. This guard repair adds no perception study.
 
 **Earlier parking decision.** A bounded follow-up ran three 30-second dm4
 matches per arm: control, full candidate, targeting only, retreat only and
