@@ -6,6 +6,7 @@ from argus_fixture_harness import (new_output, stage_fixture, private_game,
 
 from run_behaviour_equivalence import lab_executable
 from argus_validation import require
+from ctypes import c_float
 import argparse
 import json
 import math
@@ -142,6 +143,37 @@ def require_outcome(row, control):
         require((row['completed'] and row['handoffs'] > 0), 'candidate did not complete the real route')
 
 
+def _fixture_seat_near(point, seat):
+    # QC vector subtraction, dot product and vlen return single precision.
+    delta = [c_float(c_float(a).value - b).value for a, b in zip(point, seat)]
+    squared = 0
+    for value in delta:
+        squared = c_float(squared + c_float(value * value).value).value
+    return c_float(math.sqrt(squared)).value < 1
+
+
+def preflight_source(source, case):
+    """Historical injected-edge cases require seats in the compiled QC graph."""
+    if case not in (3, 4, 5, 6):
+        return
+    graph = Path(source) / 'argus_nav_e1m5.qc'
+    code = graph.read_text(encoding='utf-8')
+    code = re.sub(r'//[^\n]*|/\*.*?\*/', '', code, flags=re.S)
+    seats = []
+    for vector in re.findall(r"\bArgus_NavNode\s*\(\s*'([^']+)'\s*\)", code):
+        point = tuple(c_float(float(v)).value for v in vector.split())
+        if len(point) != 3 or not all(math.isfinite(v) for v in point):
+            raise ValueError('invalid navigation seat in ' + str(graph))
+        seats.append(point)
+    needed = ((41, 713, 7.2), (-87, 809, 111))
+    missing = [p for p in needed if not any(_fixture_seat_near(p, q) for q in seats)]
+    if missing:
+        points = ', '.join(' '.join(f'{v:g}' for v in p) for p in missing)
+        raise ValueError(f'legacy water-route case {case} is missing required seat(s) '
+            f'{points} in {graph}; use --source with the archived source graph for '
+            'this injected-edge experiment. No output or engine was created.')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, required=True)
@@ -158,6 +190,10 @@ def main():
     require((set(maps) <= {'e1m5', 'dm3','e1m1'} and 1024 <= args.port <= 65535))
     require((args.case < 3 or maps == (['e1m1'] if args.case in (10,11,12) else ['e1m5'])))
     require((not args.control or args.case in (1,2,12)), 'this case has no declared negative outcome')
+    try:
+        preflight_source(args.source, args.case)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     output = new_output(args.output, root=ROOT, create=False)
     components=stage(ROOT, output, args.source)
     with private_game(ROOT, args.prefix, 'watercheck', autoexec=f'sv_protocol 15\nmax_edicts 600\nscratch2 {args.case}\n') as folder:

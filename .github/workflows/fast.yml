@@ -115,6 +115,7 @@ jobs:
           python3 tools/test_tactic_fixture.py
           python3 tools/test_target_attention.py
           python3 tools/test_water_route.py
+          python3 tools/test_water_route_preflight.py
           python3 tools/test_argus_nav_anchors.py
 
       - name: Run rocket clearance and local review contracts
