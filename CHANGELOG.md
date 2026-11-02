@@ -23,6 +23,12 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Require vertical body overlap before nudging or sidestepping another
+  player. Prevent the reproduced dry e1m6 and dm3 pins caused by players
+  on other floors; retain separate task and broader-match gates
+  ([#642](https://github.com/saworbit/argus/issues/642),
+  [#644](https://github.com/saworbit/argus/issues/644)).
+
 - Preserve weapon-free swim exits when the generator also finds a rocket
   link for the same pair. Record the private mega-return proof while graph
   adoption remains blocked by the legacy jump anchor

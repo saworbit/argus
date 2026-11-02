@@ -1,0 +1,133 @@
+LOG started on: 11/02/2026 12:28:46 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: e1m6
+Clearing memory
+Programs occupy 1115K.
+trying to open external vis file
+maps/e1m6.vis not found, trying pinprobe_e1m6_nudge_current_20261102.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 188 nodes, 1008 links
+40 entities inhibited
+ARGUS init on e1m6
+ARGUS difficulty Carmack t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '216.0 1488.0  24.0' spd 0 yaw 267.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '-448.0 1280.0  24.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-928.0 416.0  24.0' spd 0 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan hazard
+ARGLOG Joe Rogan t   1.7 pos '187.6 1428.0  24.0' spd 364.7 yaw 121.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '-424.1 1274.1  24.0' spd 320.5 yaw 240.4 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-798.9 487.6  24.0' spd 320 yaw  29.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Romero hazard
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+NPFIX before '-163.1 833.0 -232.0' fullfit 0
+NPFIX candidate_pointbox 1
+NPFIX after '-160.1 833.0 -232.0' fullfit 0
+BHVRPL begin water_route
+WRFIX begin dt_ms  14.0 layout 2 case 1 start '-163.1 833.0 -232.0' goal '-719.0 977.0 -232.0'
+PINCTX flags 0 support worldspawn velocity '-35.6  27.3   0.0' yaw 142.5 mode 0 pending 1 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom   2.0 blockedlast   2.0 recovery 0 actionbest 0 actiontime 0 planbest 0 stallrun 0 goal argus_task_goal
+PINMED wet 0 feet -1 painfoe worldspawn stuck 0 now   2.0
+WRFIX sample t 0 pos '-160.1 833.0 -232.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1
+ARGEVT Carmack route 12 start '-143.0 785.0 -232.0' goal '-719.0 977.0 -232.0'
+ARGLOG Carmack t   2.2 pos '-160.1 833.0 -232.0' spd 0 yaw 354 mode 2 st 0 gl 0 hp 82 frg 0
+PINCTX flags 0 support worldspawn velocity '-10.1 -28.3   0.0' yaw 250.4 mode 2 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   2.1 planbest 0 stallrun 0 goal argus_task_goal
+PINMED wet 0 feet -1 painfoe worldspawn stuck   2.0 now   2.5
+WRFIX sample t   0.5 pos '-160.1 833.0 -232.0' node '-143.0 785.0 -232.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 82 frames 37
+ARGLOG Carmack t   2.7 pos '-160.1 833.0 -232.0' spd 0 yaw 354 mode 2 st 0 gl 0 hp 82 frg 0
+PINCTX flags 0 support worldspawn velocity ' 56.2 -11.5 -50.8' yaw 290 mode 2 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   2.1 planbest 0 stallrun 0 goal argus_task_goal
+PINMED wet 0 feet -1 painfoe worldspawn stuck   2.0 now   3.0
+WRFIX sample t   1.0 pos '-160.1 833.0 -232.0' node '-143.0 785.0 -232.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 73 frames 73
+ARGLOG Carmack t   3.2 pos '-160.1 833.0 -232.0' spd 0 yaw 354 mode 2 st 0 gl 0 hp 64 frg 0
+PINCTX flags 0 support worldspawn velocity ' 10.3 -28.2   0.0' yaw 290 mode 2 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   2.1 planbest 0 stallrun 0 goal argus_task_goal
+PINMED wet 0 feet -1 painfoe worldspawn stuck   2.0 now   3.5
+WRFIX sample t   1.5 pos '-160.1 833.0 -232.0' node '-143.0 785.0 -232.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 64 frames 109
+ARGLOG Carmack t   3.7 pos '-160.1 833.0 -232.0' spd 0 yaw 354 mode 2 st 0 gl 0 hp 64 frg 0
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '-143.0 785.0 -232.0'
+PINCTX flags 0 support worldspawn velocity '  5.7 -29.4   0.0' yaw 281.0 mode 0 pending 1 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   2.1 planbest 577.2 stallrun 1 goal argus_task_goal
+PINMED wet 0 feet -1 painfoe worldspawn stuck   2.0 now   4.0
+WRFIX sample t   2.0 pos '-160.1 833.0 -232.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 55 frames 145
+ARGUS routecache adopt
+ARGEVT Carmack route 12 start '-143.0 785.0 -232.0' goal '-719.0 977.0 -232.0'
+ARGLOG Carmack t   4.2 pos '-160.1 833.0 -232.0' spd 0 yaw 354 mode 2 st 1 gl 0 hp 46 frg 0
+PINCTX flags 0 support worldspawn velocity ' 10.3 -28.2   0.0' yaw 290 mode 2 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   4.2 planbest 577.2 stallrun 1 goal argus_task_goal
+PINMED wet 0 feet -1 painfoe worldspawn stuck   2.0 now   4.5
+WRFIX sample t   2.5 pos '-160.1 833.0 -232.0' node '-143.0 785.0 -232.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 46 frames 177
+ARGEVT Carmack stall
+ARGEVT Carmack stallnode '-143.0 785.0 -232.0'
+ARGLOG Carmack t   4.7 pos '-160.1 833.0 -232.0' spd 0 yaw  21.5 mode 0 st 2 gl 0 hp 46 frg 0
+ARGEVT Carmack goal weapon_rocketlauncher
+ARGEVT Carmack route 12 start '-143.0 785.0 -232.0' goal '-719.0 977.0 -232.0'
+PINCTX flags 0 support worldspawn velocity ' 17.3 -24.5   0.0' yaw -54.7 mode 2 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   4.8 planbest 0 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   2.0 now   5.0
+WRFIX sample t   3.0 pos '-160.1 833.0 -232.0' node '-143.0 785.0 -232.0' grounded 0 wet 0 feet -1 handoffs 0 active 0 hp 37 frames 209
+ARGUS Carmack unstick underfire '-15.0 817.0 -232.0'
+ARGEVT Carmack hazard
+ARGUS Carmack wallslide
+ARGLOG Carmack t   5.3 pos ' -9.4 816.0 -232.0' spd  85.9 yaw 259.9 mode 0 st 2 gl 0 hp 28 frg 0
+PINCTX flags 512 support worldspawn velocity '-328.2  15.1   0.0' yaw -195.8 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   4.8 planbest 719.4 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   5.4 now   5.6
+WRFIX sample t   3.6 pos '-37.8 816.6 -232.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 0 hp 28 frames 241
+ARGLOG Carmack t   5.8 pos '-98.3 824.8 -232.0' spd 322.2 yaw 162 mode 0 st 2 gl 0 hp 28 frg 0
+PINCTX flags 512 support worldspawn velocity '-51.0 342.8   0.0' yaw -239.0 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   4.8 planbest 719.4 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   6.0 now   6.1
+WRFIX sample t   4.1 pos '-161.9 880.9 -232.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 0 hp 28 frames 273
+ARGEVT Carmack hazard
+ARGLOG Carmack t   6.3 pos '-165.3 887.2 -232.0' spd 130.9 yaw 177.0 mode 0 st 2 gl 0 hp 19 frg 0
+ARGUS Carmack wallslide
+PINCTX flags 0 support worldspawn velocity ' 50.3 -83.2   0.0' yaw -93.0 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom   6.6 blockedlast   6.6 recovery 0 actionbest  51.0 actiontime   4.8 planbest 548.9 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   6.2 now   6.6
+WRFIX sample t   4.6 pos '-165.2 867.5 -232.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 0 hp 19 frames 305
+ARGLOG Carmack t   6.8 pos '-150.3 823.6 -232.0' spd 325.0 yaw 267 mode 0 st 2 gl 0 hp 19 frg 0
+PINCTX flags 512 support worldspawn velocity '-24.3  36.4  -0.0' yaw -163.4 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   4.8 planbest 548.9 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   7.0 now   7.1
+WRFIX sample t   5.1 pos '-130.9 762.7 -232.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 0 hp 19 frames 337
+ARGLOG Carmack t   7.3 pos '-160.3 785.0 -232.0' spd 320.2 yaw 141.6 mode 0 st 2 gl 0 hp 19 frg 0
+ARGEVT Carmack hazard
+ARGUS Carmack wallslide
+PINCTX flags 0 support worldspawn velocity ' -6.5 332.6   0.0' yaw -253 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom   7.6 blockedlast   7.6 recovery 0 actionbest  51.0 actiontime   4.8 planbest 548.9 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   7.4 now   7.6
+WRFIX sample t   5.6 pos '-160.0 842.5 -232.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 0 hp 19 frames 369
+ARGLOG Carmack t   7.8 pos '-154.4 895.4 -232.0' spd  10.9 yaw 137.1 mode 0 st 2 gl 0 hp 19 frg 0
+PINCTX flags 0 support worldspawn velocity '-30.3 -37.4   0.0' yaw -127.2 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom   8.1 blockedlast   8.1 recovery 0 actionbest  51.0 actiontime   4.8 planbest 548.9 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   7.8 now   8.1
+WRFIX sample t   6.1 pos '-167.6 869.1 -232.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 0 hp 19 frames 401
+ARGLOG Carmack t   8.3 pos '-158.4 862.1 -232.0' spd 154.1 yaw 268 mode 0 st 2 gl 0 hp 10 frg 0
+ARGEVT Carmack hazard
+PINCTX flags 0 support worldspawn velocity '200.1 -289.4  -0.0' yaw -132.6 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom   8.6 blockedlast   8.6 recovery 0 actionbest  51.0 actiontime   4.8 planbest 548.9 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   8.5 now   8.6
+WRFIX sample t   6.6 pos '-142.3 771.6 -232.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 0 hp 10 frames 433
+ARGUS Carmack wallslide
+ARGLOG Carmack t   8.8 pos '-135.5 767.3 -232.0' spd 108.1 yaw 161.8 mode 0 st 2 gl 0 hp 10 frg 0
+PINCTX flags 512 support worldspawn velocity ' 27.2 256.3 -47.1' yaw -253.0 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   4.8 planbest 548.9 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   9.1 now   9.1
+WRFIX sample t   7.1 pos '-156.6 812.2 -232.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 0 hp 1 frames 465
+ARGLOG Carmack t   9.3 pos '-161.1 872.9 -232.0' spd 323.3 yaw 107.0 mode 0 st 2 gl 0 hp 1 frg 0
+ARGEVT Carmack hazard
+PINCTX flags 512 support worldspawn velocity ' 77.1 -51.4  -0.0' yaw -161.5 mode 0 pending 0 hops 0 door worldspawn phase 0 enemy  pursuing 0 blockedfrom 0 blockedlast 0 recovery 0 actionbest  51.0 actiontime   4.8 planbest 548.9 stallrun 0 goal weapon_rocketlauncher
+PINMED wet 0 feet -1 painfoe worldspawn stuck   9.3 now   9.6
+WRFIX sample t   7.6 pos '-170.8 871.5 -232.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 0 hp 1 frames 497
+ARGUS Carmack wallslide
+ARGLOG Carmack t   9.8 pos '-167.8 869.2 -232.0' spd  33.3 yaw 263.8 mode 0 st 2 gl 0 hp 1 frg 0
+ARGEVT Carmack death spike trap pos '-148.4 827.3 -232.0'
+WRFIX end completed 0 seconds   8.0 handoffs 0 active 0 pos '-148.4 827.3 -232.0' hp -8 frames 525 grounded 0 feet -1

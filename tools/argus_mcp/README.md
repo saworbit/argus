@@ -83,6 +83,35 @@ the fixture frame counts, not inferred from the step option. Run the
 acknowledgement success alone is not tactical acceptance. See the
 [manoeuvre guide](../../docs/attack-cover-return.md#engine-acceptance).
 
+## Body height and physical exits
+
+The [investigation](../../docs/body-height-investigation.md) separates the
+controlled entry and local escape from ordinary-match adoption.
+
+`python tools/verify_body_height.py --output backups/<new-directory> --prefix <new_prefix>`
+checks the actual body-block function and continuing physical movement on dm3
+and e1m6. Repeat with `--ticrate .1` for the separate slow profile. Use
+`--source <frozen-source> --expect-failure` for the disabled-height-gate control.
+All programs and game folders remain private. The `height` compile family
+checks this fixture in CI without starting an engine.
+
+The controlled entry requires both initial bodies to fit, then verifies that
+a player on another floor cannot nudge the subject into a collision failure.
+Native cases cover above and below, firing, touching vertical bounds and an
+unchanged same-floor nudge. Touching-bound cases are synthetic contracts;
+the continuing routes provide the physical proof. dm3 must reach its original
+checkpoint within three seconds. e1m6 must move at least 64 units from the
+valid seed within that bound, while grounded on dry world geometry, alive,
+continuous and retaining the original launcher task. That local exit does
+not certify the rest of the launcher route. Ordinary-match preservation is
+a separate adoption gate.
+
+`ARGUS <name> unstick <kind> '<position>'` records the rescue destination.
+It does not locate the original pin. The e1m6 reproduction is dry; its
+original pre-rescue position is near (-160.1,833,-232), while the logged
+destination is (-15,817,-232). The preserved sampled incident does not prove
+which instruction originally placed the bot there.
+
 ## Rendered POV evidence
 
 `argus-mcp record-pov <new-demo-stem> [roster-slot=1] [seconds=30]` joins
