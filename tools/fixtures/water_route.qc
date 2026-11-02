@@ -134,7 +134,7 @@ void() WaterRouteBefore =
         Argus_NavLinkJump (b, wr_to, 0);
     }
     dprint ("BHVRPL begin water_route\nWRFIX begin dt_ms ");
-    dprint (ftos (wr_dt * 1000)); dprint (" case "); dprint (ftos (wr_case)); dprint (" start ");
+    dprint (ftos (wr_dt * 1000)); dprint (" layout 2 case "); dprint (ftos (wr_case)); dprint (" start ");
     dprint (vtos (wr_seed)); dprint (" goal "); dprint (vtos (wr_target)); dprint ("\n");
     self = saved;
 };
@@ -165,7 +165,7 @@ void() WaterRouteAfter =
         if (wr_bot.ar_feettype == CONTENT_WATER) completed = 0;
         if (fabs (wr_bot.origin_z - wr_target_z) > 18) completed = 0;
     }
-    active = wr_bot.ar_taskgoal == wr_goal && wr_bot.ar_goal == wr_goal;
+    active = (wr_bot.ar_taskgoal == wr_goal && wr_bot.ar_goal == wr_goal);
     if (time >= wr_next)
     {
         wr_next = time + 0.5;

@@ -29,6 +29,7 @@ VARIANTS = {
     'ally': ('current',),
     'attention': ('current',),
     'water': ('current',),
+    'ownership': ('current','legacy'),
 }
 
 
@@ -47,7 +48,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'ally':
+    if family == 'ownership':
+        from verify_water_ownership import stage as stage_ownership
+        stage_ownership(ROOT, folder, legacy=variant=='legacy')
+    elif family == 'ally':
         from verify_ally_barrel import stage as stage_ally
         stage_ally(ROOT, folder)
     elif family == 'stall':

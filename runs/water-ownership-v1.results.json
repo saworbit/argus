@@ -1,0 +1,430 @@
+{
+  "layout": "water-ownership-v1",
+  "status": "corrected_observer_contract",
+  "tree_head": "54d06c2218ac2cf04b5504ed3323dc173ddc3e14",
+  "native": [
+    {
+      "ticrate": 0.0139,
+      "legacy": true,
+      "source_sha256": "e483276d031755c7d8e2045b3bc61e909c864003db45d4ed44d4ffea153c0713",
+      "binary_sha256": "2fff86622ac05350d12ed2e5dc521c9d1f4c3d035ac8cf7829e69d9e4d369c33",
+      "raw_sha256": "3a968bf2c4c5ca54f7f412b9a505902d11cc6a4df52b81352e62a47cfcca3e90",
+      "raw": "runs/water_ownership_v1_control.log",
+      "frame_ms": 14.0,
+      "cases": [
+        [
+          "owned",
+          "1",
+          "1"
+        ],
+        [
+          "task_only",
+          "1",
+          "2"
+        ],
+        [
+          "goal_only",
+          "0",
+          "3"
+        ],
+        [
+          "neither",
+          "0",
+          "4"
+        ]
+      ],
+      "failures": [
+        "task_only"
+      ],
+      "observer_function_sha256": "398742993ac34b51bb7b04e59482864d7930bdf7d215bbee842ee7709d9939d8"
+    },
+    {
+      "ticrate": 0.0139,
+      "legacy": false,
+      "source_sha256": "ef564a4af7a46f420eaad1c08bc359f861bd74e8f7136bdc692ed8ab92ca0525",
+      "binary_sha256": "78a16a0b5761ba2ff258e52312736d69c93076aaed04e84e61fbbfa0ced4c244",
+      "raw_sha256": "a8a406759a96bd83ebbad3102126cb3f889844ed395c6647b8ea7af7e87e9077",
+      "raw": "runs/water_ownership_v1_fixed.log",
+      "frame_ms": 14.0,
+      "cases": [
+        [
+          "owned",
+          "1",
+          "1"
+        ],
+        [
+          "task_only",
+          "0",
+          "2"
+        ],
+        [
+          "goal_only",
+          "0",
+          "3"
+        ],
+        [
+          "neither",
+          "0",
+          "4"
+        ]
+      ],
+      "failures": [],
+      "observer_function_sha256": "e43ebf42484fbf334505b696293de970620b1e98ff3b39ba386801db2800549f"
+    },
+    {
+      "ticrate": 0.1,
+      "legacy": false,
+      "source_sha256": "452dbb920ffc59a9bba45f94772597a1e295b09948d90b1c44a90e66a20d9459",
+      "binary_sha256": "6a5f4d4b9ff4269963f248c6f83581088fb1382a637df947f31b25263b0661c8",
+      "raw_sha256": "40d7d729344b7eb16f39dbfff600419dd0d0c428d1f8bb6bc6a24683b85d1519",
+      "raw": "runs/water_ownership_v1_fixed_slow.log",
+      "frame_ms": 100.0,
+      "cases": [
+        [
+          "owned",
+          "1",
+          "1"
+        ],
+        [
+          "task_only",
+          "0",
+          "2"
+        ],
+        [
+          "goal_only",
+          "0",
+          "3"
+        ],
+        [
+          "neither",
+          "0",
+          "4"
+        ]
+      ],
+      "failures": [],
+      "observer_function_sha256": "e43ebf42484fbf334505b696293de970620b1e98ff3b39ba386801db2800549f"
+    }
+  ],
+  "historical_audit": "runs/water-ownership-v1.historical.json",
+  "compatibility": [
+    {
+      "map": "dm3",
+      "case": 1,
+      "control": false,
+      "source_sha256": "0f52331065988d55ffc4ccf74b072fef126f5ec7e703ab12b744a41149a3a01a",
+      "fixture_sha256": "f0c252aa843e981cf4629004852af87567d38af753035328994090943eb6de20",
+      "binary_sha256": "6e07e20ffa31245ca4520dab2241b901ab3f477f4af19d6364d3f602cd11af05",
+      "raw_sha256": "d9069de636f6862749557c83c1649f7fbb399236e17d5b708d19210a00d7243e",
+      "raw": "runs/water_ownership_v1_dm3_before_reporting_fix.log",
+      "completed": true,
+      "seconds": 3.6,
+      "handoffs": 4,
+      "active": true,
+      "frame_ms": 14.0,
+      "start": [
+        1093.0,
+        -159.0,
+        -336.0
+      ],
+      "target": [
+        1349.0,
+        545.0,
+        -392.0
+      ],
+      "final_position": [
+        1349.9,
+        501.0,
+        -382.9
+      ],
+      "measured_fps": 67.77777777777777,
+      "grounded": false,
+      "feet_contents": -3,
+      "goal_identity_verified": true,
+      "ownership_evidence": "task and current goal",
+      "samples": [
+        [
+          "0",
+          "1093.0 -159.0 -336.0",
+          "  0.0   0.0   0.0",
+          "0",
+          "3",
+          "-3",
+          "0",
+          "1",
+          "100",
+          "1"
+        ],
+        [
+          "0.5",
+          "1149.4 -142.8 -375.4",
+          "1253.0 -127.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "1",
+          "1",
+          "100",
+          "37"
+        ],
+        [
+          "1.0",
+          "1266.9 -123.5 -384.8",
+          "1349.0  97.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "2",
+          "1",
+          "100",
+          "73"
+        ],
+        [
+          "1.5",
+          "1370.4 -64.9 -383.7",
+          "1349.0  97.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "2",
+          "1",
+          "100",
+          "109"
+        ],
+        [
+          "2.0",
+          "1396.5  52.5 -382.9",
+          "1349.0 321.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "3",
+          "1",
+          "100",
+          "145"
+        ],
+        [
+          "2.5",
+          "1386.5 189.3 -385.3",
+          "1349.0 321.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "3",
+          "1",
+          "100",
+          "177"
+        ],
+        [
+          "3.1",
+          "1365.3 334.2 -383.7",
+          "1349.0 545.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "4",
+          "1",
+          "100",
+          "209"
+        ],
+        [
+          "3.6",
+          "1351.2 482.0 -386.0",
+          "1349.0 545.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "4",
+          "1",
+          "100",
+          "241"
+        ]
+      ],
+      "decision_checks": 56,
+      "accepted": true,
+      "cli_success": false,
+      "postprocessing_error": "Accepted route was saved, then eager access to missing rejection raised KeyError. Corrected to dict.get without controller changes."
+    },
+    {
+      "map": "dm3",
+      "case": 1,
+      "control": false,
+      "source_sha256": "0f52331065988d55ffc4ccf74b072fef126f5ec7e703ab12b744a41149a3a01a",
+      "fixture_sha256": "f0c252aa843e981cf4629004852af87567d38af753035328994090943eb6de20",
+      "binary_sha256": "6e07e20ffa31245ca4520dab2241b901ab3f477f4af19d6364d3f602cd11af05",
+      "raw_sha256": "7e2a3811f50d454312a1ef146d7766fdff5cf96980ece0cb344d3f53e162fdb5",
+      "raw": "runs/water_ownership_v1_dm3_cli.log",
+      "completed": true,
+      "seconds": 3.7,
+      "handoffs": 4,
+      "active": true,
+      "frame_ms": 14.0,
+      "start": [
+        1093.0,
+        -159.0,
+        -336.0
+      ],
+      "target": [
+        1349.0,
+        545.0,
+        -392.0
+      ],
+      "final_position": [
+        1348.6,
+        500.5,
+        -383.3
+      ],
+      "measured_fps": 66.75675675675676,
+      "grounded": false,
+      "feet_contents": -3,
+      "goal_identity_verified": true,
+      "ownership_evidence": "task and current goal",
+      "samples": [
+        [
+          "0",
+          "1093.0 -159.0 -336.0",
+          "  0.0   0.0   0.0",
+          "0",
+          "3",
+          "-3",
+          "0",
+          "1",
+          "100",
+          "1"
+        ],
+        [
+          "0.5",
+          "1147.4 -142.9 -373.7",
+          "1253.0 -127.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "1",
+          "1",
+          "100",
+          "36"
+        ],
+        [
+          "1.0",
+          "1264.7 -124.0 -383.4",
+          "1349.0  97.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "2",
+          "1",
+          "100",
+          "72"
+        ],
+        [
+          "1.5",
+          "1374.9 -74.7 -385.8",
+          "1349.0  97.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "2",
+          "1",
+          "100",
+          "108"
+        ],
+        [
+          "2.0",
+          "1401.2  36.7 -384.9",
+          "1349.0 321.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "3",
+          "1",
+          "100",
+          "144"
+        ],
+        [
+          "2.5",
+          "1388.8 171.6 -383.1",
+          "1349.0 321.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "3",
+          "1",
+          "100",
+          "176"
+        ],
+        [
+          "3.0",
+          "1365.7 314.9 -382.4",
+          "1349.0 545.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "4",
+          "1",
+          "100",
+          "208"
+        ],
+        [
+          "3.5",
+          "1351.0 463.5 -385.5",
+          "1349.0 545.0 -392.0",
+          "0",
+          "3",
+          "-3",
+          "4",
+          "1",
+          "100",
+          "240"
+        ]
+      ],
+      "decision_checks": 56,
+      "accepted": true,
+      "cli_success": true
+    }
+  ],
+  "setup_failure": {
+    "map": "e1m5",
+    "case": 6,
+    "accepted": false,
+    "reason": "WRFIX missing ramp seats; case never starts. Issue736.",
+    "source_sha256": "0f52331065988d55ffc4ccf74b072fef126f5ec7e703ab12b744a41149a3a01a",
+    "binary_sha256": "6e07e20ffa31245ca4520dab2241b901ab3f477f4af19d6364d3f602cd11af05",
+    "raw": "runs/water_ownership_v1_stale_ramp.log"
+  },
+  "artifacts": [
+    {
+      "path": "runs/water_ownership_v1_control.log",
+      "sha256": "3a968bf2c4c5ca54f7f412b9a505902d11cc6a4df52b81352e62a47cfcca3e90"
+    },
+    {
+      "path": "runs/water_ownership_v1_fixed.log",
+      "sha256": "a8a406759a96bd83ebbad3102126cb3f889844ed395c6647b8ea7af7e87e9077"
+    },
+    {
+      "path": "runs/water_ownership_v1_fixed_slow.log",
+      "sha256": "40d7d729344b7eb16f39dbfff600419dd0d0c428d1f8bb6bc6a24683b85d1519"
+    },
+    {
+      "path": "runs/water-ownership-v1.historical.json",
+      "sha256": "c0e14fcef1ee00040bd0ef176b574270befed24612426e735e3d1d0c3d62b32f"
+    },
+    {
+      "path": "runs/water_ownership_v1_dm3_before_reporting_fix.log",
+      "sha256": "d9069de636f6862749557c83c1649f7fbb399236e17d5b708d19210a00d7243e"
+    },
+    {
+      "path": "runs/water_ownership_v1_dm3_cli.log",
+      "sha256": "7e2a3811f50d454312a1ef146d7766fdff5cf96980ece0cb344d3f53e162fdb5"
+    },
+    {
+      "path": "runs/water_ownership_v1_stale_ramp.log",
+      "sha256": "fb29080a708a33682368acb18a9783d9a832749cb41023edc29ae5256218fac5"
+    }
+  ],
+  "limitations": [
+    "Native cases call actual WaterRouteAfter with prescribed identity combinations; they are observer contracts, not physics or gameplay cohorts.",
+    "Historical WRFIX active flags cannot prove current-goal identity. Physical positions, cadence, health and arrival remain evidence, with all47 original raw hashes preserved.",
+    "Corrected normal receipts declare layout2. Legacy receipts remain readable with goal_identity_verified=false.",
+    "Separate mover retained/dry predicates remain tracked in issue735. The legacy e1m5 case6 setup failure remains tracked in issue736.",
+    "No production QC, generated graph, installed binary or old tape changed."
+  ]
+}
