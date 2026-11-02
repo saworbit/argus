@@ -1,0 +1,33 @@
+--- a/water_route_fixture.qc
++++ b/water_route_fixture.qc
+@@ -134,6 +134,17 @@
+         else Argus_NavLink (wr_from, b);
+         Argus_NavLinkJump (b, wr_to, 0);
+     }
++    b = find (world, classname, "argus_node");
++    while (b != world)
++    {
++        if (vlen (b.origin - '-183 169 -32') < 1) wr_from = b;
++        if (vlen (b.origin - '-183 73 80') < 1) wr_to = b;
++        b = find (b, classname, "argus_node");
++    }
++    if (wr_from == world || wr_to == world) { error ("MEGAFIX missing shipped seats"); return; }
++    Argus_NavLinkSwim (wr_from, wr_to);
++    dprint ("MEGAFIX rocket_owned "); dprint (ftos ((self.items & IT_ROCKET_LAUNCHER) != 0));
++    dprint (" rockets "); dprint (ftos (self.ammo_rockets)); dprint ("\n");
+     dprint ("BHVRPL begin water_route\nWRFIX begin dt_ms ");
+     dprint (ftos (wr_dt * 1000)); dprint (" layout 2 case "); dprint (ftos (wr_case)); dprint (" start ");
+     dprint (vtos (wr_seed)); dprint (" goal "); dprint (vtos (wr_target)); dprint ("\n");
+@@ -160,10 +171,10 @@
+         displacement = wr_bot.origin - wr_seed; displacement_z = 0;
+         completed = vlen (displacement) >= 64;
+     }
+-    if (wr_case >= 3 && wr_case <= 9)
++    if ((wr_case >= 3 && wr_case <= 9) || wr_case == 1)
+     {
+         if (!(wr_bot.flags & FL_ONGROUND)) completed = 0;
+-        if (wr_bot.ar_feettype == CONTENT_WATER) completed = 0;
++        if (wr_bot.ar_feettype == CONTENT_WATER || wr_bot.ar_feettype == CONTENT_LAVA || wr_bot.ar_feettype == CONTENT_SLIME || wr_bot.groundentity != world) completed = 0;
+         if (fabs (wr_bot.origin_z - wr_target_z) > 18) completed = 0;
+     }
+     active = (wr_bot.ar_taskgoal == wr_goal && wr_bot.ar_goal == wr_goal);

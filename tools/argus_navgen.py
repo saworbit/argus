@@ -4092,7 +4092,13 @@ with io.StringIO() as f:
         _dupes += not emit("Argus_NavLinkSprint", a, b)
     for a, b in teles:
         _dupes += not emit("Argus_NavLink", a, b, "    // teleporter")
+    _swimset = set(swims)
     for a, b in rjlinks:
+        # A geometric swim exit needs no weapon. Rocket-first
+        # emission discarded that action on e1m5's mega return (#636).
+        if (a, b) in _swimset:
+            _dupes += 1
+            continue
         _dupes += not emit("Argus_NavLinkRocket", a, b)
     for a, b in lifts:
         _dupes += not emit("Argus_NavLinkLift", a, b)

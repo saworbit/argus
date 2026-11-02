@@ -23,6 +23,12 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Preserve weapon-free swim exits when the generator also finds a rocket
+  link for the same pair. Record the private mega-return proof while graph
+  adoption remains blocked by the legacy jump anchor
+  ([#636](https://github.com/saworbit/argus/issues/636),
+  [#719](https://github.com/saworbit/argus/issues/719)).
+
 ### Unreleased
 
 - Evaluate every mover-observer retention and dryness clause and qualify

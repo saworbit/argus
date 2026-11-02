@@ -125,7 +125,7 @@ class NavArtifacts(unittest.TestCase):
                 ways=[(0, 0, 0), (32, 0, 0), (64, 0, 0)], pos=lambda w: w,
                 links={0: {1: (1, False)}, 1: {0: (1, True)}},
                 jump_approach={(1, 0): (0, 0, 0)}, nlinks=123,
-                teles=[(2, 0)], rjlinks=[(0, 1)], lifts=[(0, 2)], swims=[],
+                teles=[(2, 0)], rjlinks=[(0, 1), (1, 2), (2, 1)], lifts=[(0, 2)], swims=[(2, 1)],
                 trains=[], sprints=[(0, 1)], doorlinks=[], regions=[0, 0, 0],
                 exposure=[0, 0, 0], cover_targets=[[-1, -1]] * 3, cam_nodes=[],
                 _probe_rejected=[], trace_inputs=[], proven_anchors=[],
@@ -135,10 +135,11 @@ class NavArtifacts(unittest.TestCase):
             exec(compile(section, 'argus_navgen emission', 'exec'), namespace)
             text = Path(qc).read_text(encoding='ascii')
             doc = json.loads(Path(qc + '.json').read_text(encoding='utf-8'))
-            self.assertIn('ARGNAV 3 nodes, 4 links', text)
-            self.assertEqual(doc['rjlinks'], [])
+            self.assertIn('ARGNAV 3 nodes, 6 links', text)
+            self.assertEqual(doc['rjlinks'], [[1, 2]])
             self.assertEqual(doc['sprintlinks'], [])
             self.assertEqual(doc['liftlinks'], [[0, 2]])
+            self.assertEqual(doc['swimlinks'], [[2, 1]])
             self.assertEqual(doc['teles'], [[2, 0]])
             artifacts.validate_pair(text, doc)
 
