@@ -21,6 +21,10 @@ def receipt(case, slow=False):
 
 
 class ForecastControls(unittest.TestCase):
+    def test_corrected_predicates_have_their_own_layout(self):
+        self.assertFalse(inspect_fixture(receipt(1),1,.0139)['observer_predicates_verified'])
+        self.assertTrue(inspect_fixture(receipt(1).replace('layout 1','layout 2'),1,.0139)['observer_predicates_verified'])
+
     def test_published_controls_and_raw_identities(self):
         root = Path(__file__).resolve().parents[1]
         evidence = json.loads((root/'runs/mover-forecast-v1.results.json').read_text(encoding='utf-8'))

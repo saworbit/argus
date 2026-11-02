@@ -3,6 +3,12 @@
 The original step 0 added observation and test controls without changing
 gameplay. The current development changes are listed below.
 
+Historical mover retention/dryness fields have the qualification in the
+[predicate audit](../runs/mover-predicates-v1.results.json). Corrected observer
+layouts test all conditions; older fields alone do not prove continuous task
+identity or every liquid exclusion. Independent physical and final handoff
+checks retain their own evidential scope.
+
 ## Current development status
 
 The [e1m6 dock-exit investigation](e1m6-decisions.md) adds a supported ride

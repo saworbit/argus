@@ -1,0 +1,1268 @@
+{
+  "layout": "mover-predicates-v1",
+  "status": "corrected_observer_contract",
+  "tree_head": "9c95578d4b88def4bfa5c79acbbd37f12437154e",
+  "native": [
+    {
+      "variant": "legacy_retention",
+      "ticrate": 0.0139,
+      "source_sha256": "a28f375d0bcc243eb28878f541093ba4bb2ca5113b248f6b4132458d7b3b1ffe",
+      "binary_sha256": "7ed8fc31b8e5ceb718c6b8a44feb41a0fcbd78ecf5bcf3770a4e3db5b5c24329",
+      "raw_sha256": "56505e07ab15e4aea23cda9fc92955cbabc44e5f57921e104d36590986ca00f4",
+      "raw": "runs/mover_predicates_v1_legacy_retention.log",
+      "frame_ms": 14.0,
+      "rows": [
+        [
+          "transfer",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "missing_task",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "water_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "lava_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "slime_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "missing_task",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "missing_node",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "water_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "lava_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "slime_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "failures": [
+        "transfer:missing_task",
+        "forecast:missing_task",
+        "forecast:missing_node"
+      ]
+    },
+    {
+      "variant": "legacy_dry",
+      "ticrate": 0.0139,
+      "source_sha256": "3fc1c5ab397c0ee9aac88df3ca9b0282a19cd6b4a13c7fc66dfdd1573ef7ed9f",
+      "binary_sha256": "479a2565a2939a4d41bb40ab875920c2722fc1fa30394959df5f768a8eaf93ef",
+      "raw_sha256": "7e32e05017fc45b5752f75448c3b8eb56f92093331c3bde3403f7302ef94f14a",
+      "raw": "runs/mover_predicates_v1_legacy_dry.log",
+      "frame_ms": 15.0,
+      "rows": [
+        [
+          "transfer",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "missing_task",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "water_feet",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "lava_feet",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "slime_feet",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "missing_task",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "missing_node",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "water_feet",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "lava_feet",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "slime_feet",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "failures": [
+        "transfer:water_feet",
+        "transfer:lava_feet",
+        "transfer:slime_feet",
+        "forecast:water_feet",
+        "forecast:lava_feet",
+        "forecast:slime_feet"
+      ]
+    },
+    {
+      "variant": "current",
+      "ticrate": 0.0139,
+      "source_sha256": "7a1d333a22316af0acdacee44b704f9c1de11d88cc7bc3d055cd9c8f054d6dda",
+      "binary_sha256": "22330a98a4e561c3d653df5e187fbd975f806fdcc16c6e9316bb03a3904d4398",
+      "raw_sha256": "4408ce0482c9c2bf0c6dc9a66068f467c9a00a82621b6502ecf9009c14fd9a8d",
+      "raw": "runs/mover_predicates_v1_current_played.log",
+      "frame_ms": 14.0,
+      "rows": [
+        [
+          "transfer",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "missing_task",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "water_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "lava_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "slime_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "missing_task",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "missing_node",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "water_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "lava_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "slime_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "failures": []
+    },
+    {
+      "variant": "current",
+      "ticrate": 0.1,
+      "source_sha256": "7a1d333a22316af0acdacee44b704f9c1de11d88cc7bc3d055cd9c8f054d6dda",
+      "binary_sha256": "22330a98a4e561c3d653df5e187fbd975f806fdcc16c6e9316bb03a3904d4398",
+      "raw_sha256": "aaac53769c4712ebd5da8c8d21346bde2dcef32e82f328c20194ff226807afaa",
+      "raw": "runs/mover_predicates_v1_current_slow.log",
+      "frame_ms": 100.0,
+      "rows": [
+        [
+          "transfer",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "transfer",
+          "missing_task",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "transfer",
+          "water_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "lava_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "slime_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "transfer",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "owned",
+          "1",
+          "1",
+          "0"
+        ],
+        [
+          "forecast",
+          "missing_task",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "missing_goal",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "neither",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "missing_node",
+          "0",
+          "1",
+          "1"
+        ],
+        [
+          "forecast",
+          "water_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "lava_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "slime_feet",
+          "1",
+          "0",
+          "0"
+        ],
+        [
+          "forecast",
+          "wet_body",
+          "1",
+          "0",
+          "0"
+        ]
+      ],
+      "failures": []
+    }
+  ],
+  "transfers": [
+    {
+      "map": "e1m6",
+      "completed": true,
+      "seconds": 4.0,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 1,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 14.0,
+      "fixture_layout": "mover-transfer-v3",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "observer_predicates_verified": true,
+      "exit_consumed": true,
+      "frames": 266,
+      "measured_fps": 66.25,
+      "expected_successor": [
+        465.0,
+        1361.0,
+        216.0
+      ],
+      "exit_node": [
+        529.0,
+        1393.0,
+        344.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "c2ba0e93b1ec9d2502cc31d577115366b518c838fcd7e65492a8fa0011fcc38b",
+      "graph_sha256": "f4da52f5f11dcd252d973e55b91c5c08f6d6a1c95386577d1f3de17fac40994e",
+      "fixture_sha256": "7580c0fb6b1dfbbeefaba6ba37d1a5650e1b11a1f1e5f862565255fa2c61c478",
+      "binary_sha256": "22374e061cc4a44a949b58e4baa318ed463b24e8d242e885d8b24d01651a5248",
+      "raw_sha256": "96cba34781dbd992f89c4e4a7da906596107f5b46003328a4e42618016c7d3c7",
+      "raw": "runs/mover_predicates_v1_transfer_e1m6_0_played.log",
+      "control": false,
+      "ticrate": 0.0139
+    },
+    {
+      "map": "e1m6",
+      "completed": true,
+      "seconds": 2.7,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 0,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 100.0,
+      "fixture_layout": "mover-transfer-v3",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "observer_predicates_verified": true,
+      "exit_consumed": true,
+      "frames": 28,
+      "measured_fps": 10.0,
+      "expected_successor": [
+        465.0,
+        1361.0,
+        216.0
+      ],
+      "exit_node": [
+        529.0,
+        1393.0,
+        344.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "c2ba0e93b1ec9d2502cc31d577115366b518c838fcd7e65492a8fa0011fcc38b",
+      "graph_sha256": "f4da52f5f11dcd252d973e55b91c5c08f6d6a1c95386577d1f3de17fac40994e",
+      "fixture_sha256": "7580c0fb6b1dfbbeefaba6ba37d1a5650e1b11a1f1e5f862565255fa2c61c478",
+      "binary_sha256": "22374e061cc4a44a949b58e4baa318ed463b24e8d242e885d8b24d01651a5248",
+      "raw_sha256": "39314c5e288903214cbbe5063866a688fe99cfe5fefb8f087df8f3abd1a90a2f",
+      "raw": "runs/mover_predicates_v1_transfer_e1m6_0_slow.log",
+      "control": false,
+      "ticrate": 0.1
+    },
+    {
+      "map": "dm3",
+      "completed": true,
+      "seconds": 1.6,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 0,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 14.0,
+      "fixture_layout": "mover-transfer-v3",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "observer_predicates_verified": true,
+      "exit_consumed": true,
+      "frames": 115,
+      "measured_fps": 71.25,
+      "expected_successor": [
+        517.0,
+        673.0,
+        216.0
+      ],
+      "exit_node": [
+        517.0,
+        801.0,
+        216.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "c2ba0e93b1ec9d2502cc31d577115366b518c838fcd7e65492a8fa0011fcc38b",
+      "graph_sha256": "9351787bac1c41033e2b2299da7f35c17bc5c6917f4d3a0fd12a43dcc2444ea5",
+      "fixture_sha256": "7580c0fb6b1dfbbeefaba6ba37d1a5650e1b11a1f1e5f862565255fa2c61c478",
+      "binary_sha256": "22374e061cc4a44a949b58e4baa318ed463b24e8d242e885d8b24d01651a5248",
+      "raw_sha256": "7d4c884c7fce202b59b4ffb14b6b471fffb1794cae59d4709241aef9512feee2",
+      "raw": "runs/mover_predicates_v1_transfer_dm3_0_played.log",
+      "control": false,
+      "ticrate": 0.0139
+    },
+    {
+      "map": "dm3",
+      "completed": true,
+      "seconds": 1.3,
+      "boarded": true,
+      "route_retained": true,
+      "dry": true,
+      "alive": true,
+      "launches": 0,
+      "bad_launch": false,
+      "landed": true,
+      "handoff": true,
+      "frame_ms": 100.0,
+      "fixture_layout": "mover-transfer-v3",
+      "proof": "observed_exit_consumption",
+      "forward_proven": true,
+      "observer_predicates_verified": true,
+      "exit_consumed": true,
+      "frames": 14,
+      "measured_fps": 10.0,
+      "expected_successor": [
+        517.0,
+        673.0,
+        216.0
+      ],
+      "exit_node": [
+        517.0,
+        801.0,
+        216.0
+      ],
+      "oracle_controls": {
+        "different_node": "0",
+        "expected_without_consumption": "0"
+      },
+      "unstick_warps": 0,
+      "source_sha256": "c2ba0e93b1ec9d2502cc31d577115366b518c838fcd7e65492a8fa0011fcc38b",
+      "graph_sha256": "9351787bac1c41033e2b2299da7f35c17bc5c6917f4d3a0fd12a43dcc2444ea5",
+      "fixture_sha256": "7580c0fb6b1dfbbeefaba6ba37d1a5650e1b11a1f1e5f862565255fa2c61c478",
+      "binary_sha256": "22374e061cc4a44a949b58e4baa318ed463b24e8d242e885d8b24d01651a5248",
+      "raw_sha256": "fd43956011c0c1ea9e828f914667df80023516562a53aa5d71b98a7cad22f2dc",
+      "raw": "runs/mover_predicates_v1_transfer_dm3_0_slow.log",
+      "control": false,
+      "ticrate": 0.1
+    }
+  ],
+  "forecasts": [
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "6e0bb1de5ec31024e8c86d872e7ae399140d67d99b1f9702e75138a9995d89f9",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_1_played.log",
+      "ticrate": 0.0139,
+      "case": 1,
+      "name": "feasible",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": true,
+      "jump": true,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 2,
+      "live_refusals": 1,
+      "live_accepts": 1,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": true,
+      "world_floor": true,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": false,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 0.0,
+      "frames": 108,
+      "seconds": 1.5,
+      "measured_fps": 71.33333333333333,
+      "frame_ms": 14.0,
+      "predicted": [
+        549.9,
+        1399.9,
+        320.0
+      ],
+      "position": [
+        386.5,
+        1354.9,
+        216.0
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "7a3e6e8db847c457ca28945180687786d5be7e50904076372ca601fecf11e6b2",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_2_played.log",
+      "ticrate": 0.0139,
+      "case": 2,
+      "name": "brush_obstruction",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": false,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 66,
+      "live_refusals": 66,
+      "live_accepts": 0,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": false,
+      "world_floor": false,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": true,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 0.0,
+      "frames": 108,
+      "seconds": 1.5,
+      "measured_fps": 71.33333333333333,
+      "frame_ms": 14.0,
+      "predicted": [
+        552.9,
+        1401.0,
+        329.1
+      ],
+      "position": [
+        667.4,
+        1427.9,
+        344.0
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "d9918cf311af7b93d923243507c5d3fa3947ef1d01fab700c430e13fdd31d80a",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_3_played.log",
+      "ticrate": 0.0139,
+      "case": 3,
+      "name": "mismatched_floor",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": false,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 66,
+      "live_refusals": 66,
+      "live_accepts": 0,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": false,
+      "world_floor": false,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": false,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 0.0,
+      "frames": 107,
+      "seconds": 1.5,
+      "measured_fps": 70.66666666666667,
+      "frame_ms": 14.0,
+      "predicted": [
+        549.9,
+        1399.9,
+        320.0
+      ],
+      "position": [
+        665.8,
+        1435.6,
+        344.0
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "18164c88644e4090708926a20be706fba2419314497508dce5f7b3c22ab0b6c8",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_4_played.log",
+      "ticrate": 0.0139,
+      "case": 4,
+      "name": "undocked",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": false,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 52,
+      "live_refusals": 52,
+      "live_accepts": 0,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": false,
+      "world_floor": false,
+      "initial_state": 2,
+      "dock_gap": 16.0,
+      "brush_blocked": false,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 14.5,
+      "frames": 108,
+      "seconds": 1.5,
+      "measured_fps": 71.33333333333333,
+      "frame_ms": 14.0,
+      "predicted": [
+        -685.6,
+        550.4,
+        0.0
+      ],
+      "position": [
+        663.8,
+        1443.4,
+        329.5
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "0cb50c94260ae8b36174c883397ba56e419062817cf96a68ec4a96ac5423e293",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_5_played.log",
+      "ticrate": 0.0139,
+      "case": 5,
+      "name": "wet_entry",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": true,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 0,
+      "live_refusals": 0,
+      "live_accepts": 0,
+      "wetlevel": 2,
+      "pool_depth": 48.0,
+      "dry_floor": false,
+      "world_floor": false,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": false,
+      "target_contents": -3.0,
+      "pool_floor": -112.0,
+      "pool_surface": -63.9,
+      "final_dock_gap": 0.0,
+      "frames": 107,
+      "seconds": 1.5,
+      "measured_fps": 70.66666666666667,
+      "frame_ms": 14.0,
+      "predicted": [
+        1200.0,
+        237.7,
+        -112.0
+      ],
+      "position": [
+        1200.3,
+        208.0,
+        -80.4
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "0bc91ddcc36adcb47d5aea6c6308333dfc144b29188bacba0445e5d041f7b135",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_1_slow.log",
+      "ticrate": 0.1,
+      "case": 1,
+      "name": "feasible",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": true,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 12,
+      "live_refusals": 12,
+      "live_accepts": 0,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": true,
+      "world_floor": true,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": false,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 0.0,
+      "frames": 16,
+      "seconds": 1.5,
+      "measured_fps": 10.0,
+      "frame_ms": 100.0,
+      "predicted": [
+        549.9,
+        1399.9,
+        320.0
+      ],
+      "position": [
+        528.0,
+        1436.0,
+        344.0
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "4b0f3d6ec7eeba87d421e5e41e35a99c082729db91c3b4542c45b2f1d9fb1f76",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_2_slow.log",
+      "ticrate": 0.1,
+      "case": 2,
+      "name": "brush_obstruction",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": false,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 12,
+      "live_refusals": 12,
+      "live_accepts": 0,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": true,
+      "world_floor": true,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": true,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 0.0,
+      "frames": 16,
+      "seconds": 1.5,
+      "measured_fps": 10.0,
+      "frame_ms": 100.0,
+      "predicted": [
+        552.9,
+        1401.0,
+        329.1
+      ],
+      "position": [
+        528.0,
+        1436.0,
+        344.0
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "e0eae6bad795a787360e68b7d7d099eedd930fcb700dc5a1545572593f9668fe",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_3_slow.log",
+      "ticrate": 0.1,
+      "case": 3,
+      "name": "mismatched_floor",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": false,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 12,
+      "live_refusals": 12,
+      "live_accepts": 0,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": true,
+      "world_floor": true,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": false,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 0.0,
+      "frames": 16,
+      "seconds": 1.5,
+      "measured_fps": 10.0,
+      "frame_ms": 100.0,
+      "predicted": [
+        549.9,
+        1399.9,
+        320.0
+      ],
+      "position": [
+        528.0,
+        1436.0,
+        344.0
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "763bf9fad5b146a5e6f4e530fa7fdb93ef268d6bb5abdfd67029d8cd419200e4",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_4_slow.log",
+      "ticrate": 0.1,
+      "case": 4,
+      "name": "undocked",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": false,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 1,
+      "live_refusals": 1,
+      "live_accepts": 0,
+      "wetlevel": 0,
+      "pool_depth": 0.0,
+      "dry_floor": false,
+      "world_floor": false,
+      "initial_state": 2,
+      "dock_gap": 16.0,
+      "brush_blocked": false,
+      "target_contents": -1.0,
+      "pool_floor": 0.0,
+      "pool_surface": 0.0,
+      "final_dock_gap": 14.5,
+      "frames": 16,
+      "seconds": 1.5,
+      "measured_fps": 10.0,
+      "frame_ms": 100.0,
+      "predicted": [
+        -697.4,
+        543.8,
+        0.0
+      ],
+      "position": [
+        624.0,
+        1433.0,
+        329.5
+      ]
+    },
+    {
+      "source_sha256": "e84cb7ab2e9dd8e2262d90fd69a98e68631c1af857cbe294f4f42d214c872d96",
+      "production_argus_sha256": "7c540de25b0c4f3456469c6619502c1b27ac4ce3e0c1ae404499cf2d8c80b67d",
+      "fixture_sha256": "4047f2df65d098f4491e0c199b5d544a89a3c97488f5d3242b6d7a076963bc91",
+      "binary_sha256": "b73acc94c0e38664ec5def45f973f2e60e5c2409150b14cf8603b3aa34c938fb",
+      "raw_sha256": "671e0b45f3e3a9e30ac7fabcef9417de30b57c9f3ae6dc4b29494d4af0f2b788",
+      "raw": "runs/mover_predicates_v1_forecast_e1m6_5_slow.log",
+      "ticrate": 0.1,
+      "case": 5,
+      "name": "wet_entry",
+      "fixture_layout": "mover-forecast-v2",
+      "observer_predicates_verified": true,
+      "forecast": true,
+      "jump": false,
+      "alive": true,
+      "retained": true,
+      "invalid_jump": false,
+      "live_checks": 0,
+      "live_refusals": 0,
+      "live_accepts": 0,
+      "wetlevel": 3,
+      "pool_depth": 48.0,
+      "dry_floor": false,
+      "world_floor": false,
+      "initial_state": 0,
+      "dock_gap": 0.0,
+      "brush_blocked": false,
+      "target_contents": -3.0,
+      "pool_floor": -112.0,
+      "pool_surface": -63.9,
+      "final_dock_gap": 0.0,
+      "frames": 16,
+      "seconds": 1.5,
+      "measured_fps": 10.0,
+      "frame_ms": 100.0,
+      "predicted": [
+        1200.0,
+        237.7,
+        -112.0
+      ],
+      "position": [
+        1200.6,
+        208.0,
+        -87.0
+      ]
+    }
+  ],
+  "historical_audit": "runs/mover-predicates-v1.historical.json",
+  "artifacts": [
+    {
+      "path": "runs/mover_predicates_v1_legacy_retention.log",
+      "sha256": "56505e07ab15e4aea23cda9fc92955cbabc44e5f57921e104d36590986ca00f4"
+    },
+    {
+      "path": "runs/mover_predicates_v1_legacy_dry.log",
+      "sha256": "7e32e05017fc45b5752f75448c3b8eb56f92093331c3bde3403f7302ef94f14a"
+    },
+    {
+      "path": "runs/mover_predicates_v1_current_played.log",
+      "sha256": "4408ce0482c9c2bf0c6dc9a66068f467c9a00a82621b6502ecf9009c14fd9a8d"
+    },
+    {
+      "path": "runs/mover_predicates_v1_current_slow.log",
+      "sha256": "aaac53769c4712ebd5da8c8d21346bde2dcef32e82f328c20194ff226807afaa"
+    },
+    {
+      "path": "runs/mover_predicates_v1_transfer_e1m6_0_played.log",
+      "sha256": "96cba34781dbd992f89c4e4a7da906596107f5b46003328a4e42618016c7d3c7"
+    },
+    {
+      "path": "runs/mover_predicates_v1_transfer_e1m6_0_slow.log",
+      "sha256": "39314c5e288903214cbbe5063866a688fe99cfe5fefb8f087df8f3abd1a90a2f"
+    },
+    {
+      "path": "runs/mover_predicates_v1_transfer_dm3_0_played.log",
+      "sha256": "7d4c884c7fce202b59b4ffb14b6b471fffb1794cae59d4709241aef9512feee2"
+    },
+    {
+      "path": "runs/mover_predicates_v1_transfer_dm3_0_slow.log",
+      "sha256": "fd43956011c0c1ea9e828f914667df80023516562a53aa5d71b98a7cad22f2dc"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_1_played.log",
+      "sha256": "6e0bb1de5ec31024e8c86d872e7ae399140d67d99b1f9702e75138a9995d89f9"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_2_played.log",
+      "sha256": "7a3e6e8db847c457ca28945180687786d5be7e50904076372ca601fecf11e6b2"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_3_played.log",
+      "sha256": "d9918cf311af7b93d923243507c5d3fa3947ef1d01fab700c430e13fdd31d80a"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_4_played.log",
+      "sha256": "18164c88644e4090708926a20be706fba2419314497508dce5f7b3c22ab0b6c8"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_5_played.log",
+      "sha256": "0cb50c94260ae8b36174c883397ba56e419062817cf96a68ec4a96ac5423e293"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_1_slow.log",
+      "sha256": "0bc91ddcc36adcb47d5aea6c6308333dfc144b29188bacba0445e5d041f7b135"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_2_slow.log",
+      "sha256": "4b0f3d6ec7eeba87d421e5e41e35a99c082729db91c3b4542c45b2f1d9fb1f76"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_3_slow.log",
+      "sha256": "e0eae6bad795a787360e68b7d7d099eedd930fcb700dc5a1545572593f9668fe"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_4_slow.log",
+      "sha256": "763bf9fad5b146a5e6f4e530fa7fdb93ef268d6bb5abdfd67029d8cd419200e4"
+    },
+    {
+      "path": "runs/mover_predicates_v1_forecast_e1m6_5_slow.log",
+      "sha256": "671e0b45f3e3a9e30ac7fabcef9417de30b57c9f3ae6dc4b29494d4af0f2b788"
+    },
+    {
+      "path": "runs/mover-predicates-v1.historical.json",
+      "sha256": "422b1044ab47dc0da56eb9cafc1fbb615196fca2dd3f4a02a908de95d363ce23"
+    }
+  ],
+  "limitations": [
+    "Seventeen prescribed states call actual observer functions with passive computed-value callbacks. These are state contracts, not physical landings or gameplay cohorts.",
+    "Retention and dryness mutations independently fail three identity and six liquid-foot cases.",
+    "Older individual flags cannot prove every clause. Independent final handoff, exit consumption, world-floor geometry and measured water-depth evidence retain their own scope.",
+    "Forty-eight original raw tapes are unchanged. New transfer layout3 and forecast layout2 identify corrected observer fields.",
+    "Production QC, generated navigation, installed binaries and statistical gates are unchanged."
+  ]
+}

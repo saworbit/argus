@@ -71,8 +71,8 @@ def inspect_fixture(text, case, ticrate):
     check_tape(text, 'e1m6')
     require(text.count('BHVRPL begin mover_forecast') == 1, 'missing quarantine marker')
     ms = frame_ms(text, 'MCFIX', ticrate)
-    starts = re.findall(r'^MCFIX begin dt_ms\s+[\d.]+ layout 1 case (\d+)\r?$', text, re.M)
-    require(starts == [str(case)], 'wrong control layout/case')
+    starts = re.findall(r'^MCFIX begin dt_ms\s+[\d.]+ layout ([12]) case (\d+)\r?$', text, re.M)
+    require(len(starts)==1 and starts[0][1]==str(case), 'wrong control layout/case')
     pattern = (r'^MCFIX result case (\d+) forecast ([01]) jump ([01]) '
         r'invalid_jump ([01]) checks (\d+) refused (\d+) accepted (\d+) alive ([01]) retained ([01]) '
         r'wetlevel ([0-3]) depth\s+([\d.]+) dry_floor ([01]) world_floor ([01]) '
@@ -115,7 +115,8 @@ def inspect_fixture(text, case, ticrate):
         require(r[7] == '0', 'wet entry claimed a dry world-floor landing')
         require(abs(float(r[18]) - float(r[17]) - float(r[6])) <= 1,
                 'water column does not match measured depth')
-    return dict(case=case, name=CASES[case], fixture_layout='mover-forecast-v1',
+    return dict(case=case, name=CASES[case], fixture_layout='mover-forecast-v'+starts[0][0],
+        observer_predicates_verified=starts[0][0]=='2',
         forecast=r[1] == '1', jump=r[2] == '1', alive=True, retained=True,
         invalid_jump=False, live_checks=counts[0], live_refusals=counts[1], live_accepts=counts[2],
         wetlevel=int(r[5]), pool_depth=float(r[6]), dry_floor=r[7] == '1',

@@ -775,6 +775,25 @@ fixture checker establishes movement and damage acceptance. Its owned-rocket
 observer supports ordinary and unlimited ammo without using phase events as
 proof of hits.
 
+## Mover observer predicate checks
+
+`python tools/verify_mover_predicates.py --output backups/<new-directory>
+--prefix <new_prefix>` calls the actual transfer and forecast observers in
+seventeen prescribed identity/liquid states. Passive callbacks expose their
+computed flags, and forecast latches must agree. `--variant legacy_retention`
+must fail three identity cases; `--variant legacy_dry` must fail six liquid-foot
+cases. `--ticrate .1` selects the separate slow profile. These are observer
+state contracts, not physical landing or gameplay comparisons.
+
+Corrected transfer receipts declare layout 3 and forecast receipts layout 2.
+Older layouts remain readable with `observer_predicates_verified=false`.
+Their individual retention/dryness flags cannot establish every combined
+condition. Independent exit-consumption, final handoff, position, world-floor
+and measured water-depth checks remain separate evidence. The
+[predicate audit](../../runs/mover-predicates-v1.results.json) preserves the
+48 historical tape hashes and current native controls. CI compiles current
+and both legacy predicate variants in the `predicates` family.
+
 ## Water-route decision checks
 
 `python tools/verify_water_route.py --output backups/<new-directory> --prefix <new_prefix>`

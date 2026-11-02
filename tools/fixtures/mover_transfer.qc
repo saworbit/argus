@@ -106,7 +106,7 @@ void() MoverTransferBefore =
     remove (probe_expected); remove (probe_wrong);
     dprint ("BHVRPL begin mover_transfer\n");
     dprint ("MVFIX begin dt_ms "); dprint (ftos (mv_dt * 1000));
-    dprint (" layout 2 exit "); dprint (vtos (mv_exit)); dprint ("\n");
+    dprint (" layout 3 exit "); dprint (vtos (mv_exit)); dprint ("\n");
     self = saved;
 };
 
@@ -128,11 +128,11 @@ void() MoverTransferAfter =
         if (mv_mover.state != STATE_TOP || vlen (launch_velocity) > 330) mv_badlaunch = 1;
     }
     to = mv_bot.origin - mv_exit; to_z = 0;
-    retained = mv_bot.ar_goal == mv_marker && mv_bot.ar_taskgoal == mv_marker;
+    retained = (mv_bot.ar_goal == mv_marker && mv_bot.ar_taskgoal == mv_marker);
     if (!retained) mv_lost = 1;
-    dry = mv_bot.ar_wetlevel == 0 && mv_bot.ar_feettype != CONTENT_WATER
+    dry = (mv_bot.ar_wetlevel == 0 && mv_bot.ar_feettype != CONTENT_WATER
         && mv_bot.ar_feettype != CONTENT_LAVA
-        && mv_bot.ar_feettype != CONTENT_SLIME;
+        && mv_bot.ar_feettype != CONTENT_SLIME);
     if (!mv_landed && mv_boarded && retained && dry && mv_bot.health > 0
         && (mv_bot.flags & FL_ONGROUND) && mv_bot.groundentity == world
         && fabs (mv_bot.origin_z - mv_exit_z) <= 18 && vlen (to) < 96)

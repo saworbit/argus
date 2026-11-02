@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Evaluate every mover-observer retention and dryness clause and qualify
+  older field claims separately from physical handoff evidence
+  ([#735](https://github.com/saworbit/argus/issues/735)).
+
 - Refuse legacy water-route ramp experiments before staging or engine launch
   when the selected source graph lacks their required seats
   ([#736](https://github.com/saworbit/argus/issues/736)).

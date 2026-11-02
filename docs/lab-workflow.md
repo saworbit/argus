@@ -446,6 +446,10 @@ python tools/verify_mover_transfer.py --output backups/transfer-played-1 --prefi
 python tools/verify_mover_transfer.py --output backups/transfer-slow-1 --prefix transfer_slow_1 --ticrate .1
 ```
 
+Use transfer layout 3 and forecast layout 2 for corrected observer flag checks.
+Older individual retention/dryness fields have the [predicate qualification](../runs/mover-predicates-v1.results.json);
+independent geometry and exit-consumption evidence keep their separate scope.
+
 Both commands default to e1m6 and dm3. `--maps e1m6` limits the set;
 `--source <frozen-src>` selects an unchanged control tree, and `--control`
 records its outcome without requiring completion. It does not turn an
