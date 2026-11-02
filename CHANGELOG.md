@@ -25,6 +25,10 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+- Refuse legacy water-route ramp experiments before staging or engine launch
+  when the selected source graph lacks their required seats
+  ([#736](https://github.com/saworbit/argus/issues/736)).
+
 - Evaluate both water-route ownership identities and distinguish corrected
   layout-2 receipts from historical task-only markers
   ([#733](https://github.com/saworbit/argus/issues/733)).

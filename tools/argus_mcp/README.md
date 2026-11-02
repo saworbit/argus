@@ -804,6 +804,11 @@ Cases 1 and 2 test original pool entries (case 1 also supports dm3).
 Cases 3 through 6 inject candidate edges once at setup and are graph experiments,
 including rejected alternatives. Cases 7 through 9 use the generated graph without
 injected links: ramp, full rocket-launcher task, and moat-to-bank escape.
+The historical injected-edge cases require their original seats in the selected
+`--source` QC graph. The maintained CLI checks those seats before creating
+output, compiling or launching an engine, and reports when an archived source
+is needed. A JSON sidecar or nearby replacement seat does not satisfy that
+check; the original fixture tolerance remains unchanged.
 A failed full task remains a failed task even when its escape segment works.
 `--control` requires the original eighteen-second zero-handoff failure;
 it is intended for cases 1 and 2, not partial-route negatives.
