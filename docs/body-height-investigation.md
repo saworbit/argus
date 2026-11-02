@@ -85,3 +85,25 @@ was changed to obtain approval.
 No generated navigation or installed gameplay program changes. The historical
 health/inventory sources remain recoverable through a separate reverse patch.
 No additional health/inventory cohorts or human-play claims are made.
+
+## The dm4 walkway pin
+
+[#723](https://github.com/saworbit/argus/issues/723) recorded a 6.1 s freeze
+under fire at `13 -273 -72` in a cover-hop cohort tape. Those programs predate
+the height gate. In the tape, Joe Rogan respawns at `-64 -232 -72`, and by
+t 25.1 he holds at `12.8 -272.9 -72` with speed 0 for thirteen samples. At that
+moment Carmack is on the pit floor at `-2.8 -240.5 -296`, 224 units below and
+35.96 units away horizontally, which is the nudge radius. The south wall face
+is at y -288.0 and the player hull reaches y -288.9, so every move starts in
+solid. The body-height fixture now has a dm4 case seeded on that line:
+
+| Program | Played | 100 ms |
+|---|---|---|
+| Cover-hop candidate from the tape | Nudged 12 units onto the recorded spot, pinned for 3.0 s, task lost | Not run |
+| Unchanged cover-hop control | Same pin and position | Same nudge, then a 32-unit step clears the wall |
+| Current main | No nudge, clears 64 units in 0.2 s | No nudge, clears 64 units in 0.1 s |
+
+The unchanged control pins exactly like the candidate, so the cover guard did
+not cause the freeze. The height gate removes the trigger, and the
+[same-floor repair](body-nudge-investigation.md) refuses a hull that clips a
+wall. Receipt: [runs/dm4-pin-v1.results.json](../runs/dm4-pin-v1.results.json).

@@ -82,6 +82,11 @@ void() BodyHeightBefore =
     }
     else if (mapname == "e1m6")
     { bh_seed = '-157.1 833 -232'; bh_target = '-719 977 -232'; }
+    // #723: a respawned bot on the walkway with another player passing
+    // beneath it on the pit floor. Without a height gate the nudge lands
+    // 0.9u inside the south wall and every move starts in solid.
+    else if (mapname == "dm4")
+    { bh_seed = '7.6 -262.1 -72'; bh_target = '145 -247 -72'; }
     else { error ("BHFIX wrong map"); return; }
     Argus_BaseStats (); Argus_AvoidClear (); Argus_TacticReset ();
     setorigin (self, bh_seed); self.velocity = '0 0 0'; self.flags = FL_ONGROUND;
@@ -92,6 +97,7 @@ void() BodyHeightBefore =
     b.flags = FL_ONGROUND; b.solid = SOLID_SLIDEBOX; b.movetype = MOVETYPE_STEP;
     setsize (b, '-16 -16 -24', '16 16 32');
     if (mapname == "dm3") setorigin (b, '371.1 125.9 56');
+    else if (mapname == "dm4") setorigin (b, '-2.8 -240.5 -296');
     else setorigin (b, '-124.1 833 216');
     self = b; upperfit = walkmove (0, 0); self = bh_bot;
     Argus_BodyBlockCheck (); afterfit = walkmove (0, 0);
@@ -128,7 +134,7 @@ void() BodyHeightAfter =
     bh_previous = bh_bot.origin;
     distance = vlen (bh_bot.origin - bh_seed);
     completed = (vlen (bh_bot.origin - bh_target) < 48);
-    if (mapname == "e1m6") completed = (distance >= 64);
+    if (mapname == "e1m6" || mapname == "dm4") completed = (distance >= 64);
     if (!(bh_bot.flags & FL_ONGROUND) || bh_bot.groundentity != world
         || bh_bot.ar_wetlevel || bh_bot.health <= 0) completed = 0;
     if (time >= bh_next)

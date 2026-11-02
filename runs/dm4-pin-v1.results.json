@@ -1,0 +1,213 @@
+{
+ "schema": "dm4-pin-v1",
+ "issues": [
+  723
+ ],
+ "tape": {
+  "path": "runs/cover_hop_v1_candidate_2.log",
+  "branch": "fix/cover-hop-validation",
+  "commit": "363dd23521a078d1f9060c5751e32c8823ac0a39",
+  "raw_sha256": "9bbb35b3c765161085d80e9a45e0c1b1985b47d458b8a3596a80b0e56a7e6b8b"
+ },
+ "reconstruction": {
+  "subject": {
+   "name": "Joe Rogan",
+   "respawn_t": 24.6,
+   "respawn_pos": [
+    -64,
+    -232,
+    -72
+   ],
+   "pinned_from_t": 25.1,
+   "pinned_pos": [
+    12.8,
+    -272.9,
+    -72
+   ],
+   "samples_at_zero_speed": 13,
+   "health": [
+    100,
+    76
+   ]
+  },
+  "neighbour": {
+   "name": "Carmack",
+   "t": 25.1,
+   "pos": [
+    -2.8,
+    -240.5,
+    -296
+   ]
+  },
+  "horizontal_distance": 35.96,
+  "wall_face_y": -288.0,
+  "hull_face_y": -288.9,
+  "overlap": 0.9,
+  "cause": "Body-block nudge without a vertical bound placed the subject 36u horizontally from a player 224u below, at the subject height. Point samples passed while the player hull clipped the south wall by 0.9u.",
+  "height_gate_absent_in": "both cover-hop cohort programs (branch predates #743)"
+ },
+ "fixture": [
+  {
+   "label": "cover_candidate_played",
+   "program": "cover-hop candidate program from the #723 tape",
+   "pre_height_gate": true,
+   "ticrate": 0.0139,
+   "raw": "runs/dm4_pin_v1_pin723_cover_candidate_played_dm4.log",
+   "raw_sha256": "5f4bf6b7728253fe58dd6fd447c28dac0fa31c151b6b334b29a47a071b4ddf4b",
+   "source_sha256": "cb1088be9b1c0e334e8e738304ae1eebda809b9340a072bbc3cda78a91c845f8",
+   "binary_sha256": "c5254b1077a5793584b08d39c98270159c60e4d4c22bfe2ab6bc6c8bee79bbff",
+   "fixture_sha256": "80d4647ab0c856f4614c09e55945c2d3ee3294e1769990eec8565c599f09516c",
+   "failures": [
+    "entry_kept",
+    "physical_exit",
+    "task_preserved"
+   ],
+   "entry": [
+    "1",
+    "1",
+    "0",
+    "12.0"
+   ],
+   "seconds": 3.0,
+   "position": [
+    12.8,
+    -272.9,
+    -72.0
+   ],
+   "rescues": 0
+  },
+  {
+   "label": "cover_control_played",
+   "program": "unchanged cover-hop control program",
+   "pre_height_gate": true,
+   "ticrate": 0.0139,
+   "raw": "runs/dm4_pin_v1_pin723_cover_control_played_dm4.log",
+   "raw_sha256": "6d0835f223278587a65b9949dbd6bf9fb23391036165d47778b394b07926ef2e",
+   "source_sha256": "0ced1531b83b424919acffd9e6617e406c531d2118164a8e3bcb7f3083c68f5f",
+   "binary_sha256": "6b1500eb39a6b8ae5c0a0f87df8bf660c2a7bfbf6345f927734c934a5bd07051",
+   "fixture_sha256": "80d4647ab0c856f4614c09e55945c2d3ee3294e1769990eec8565c599f09516c",
+   "failures": [
+    "entry_kept",
+    "physical_exit",
+    "task_preserved"
+   ],
+   "entry": [
+    "1",
+    "1",
+    "0",
+    "12.0"
+   ],
+   "seconds": 3.0,
+   "position": [
+    12.8,
+    -272.9,
+    -72.0
+   ],
+   "rescues": 0
+  },
+  {
+   "label": "cover_control_slow",
+   "program": "unchanged cover-hop control program",
+   "pre_height_gate": true,
+   "ticrate": 0.1,
+   "raw": "runs/dm4_pin_v1_pin723_cover_control_slow_dm4.log",
+   "raw_sha256": "1c5da0311a2d11c2e5895d78373e9d57a9ec2bd6485906448d96b4d0d82ab8ee",
+   "source_sha256": "0ced1531b83b424919acffd9e6617e406c531d2118164a8e3bcb7f3083c68f5f",
+   "binary_sha256": "6b1500eb39a6b8ae5c0a0f87df8bf660c2a7bfbf6345f927734c934a5bd07051",
+   "fixture_sha256": "80d4647ab0c856f4614c09e55945c2d3ee3294e1769990eec8565c599f09516c",
+   "failures": [
+    "entry_kept"
+   ],
+   "entry": [
+    "1",
+    "1",
+    "0",
+    "12.0"
+   ],
+   "seconds": 0.1,
+   "position": [
+    75.7,
+    -261.3,
+    -72.0
+   ],
+   "rescues": 0
+  },
+  {
+   "label": "main_played",
+   "program": "current main with #743 and #751",
+   "pre_height_gate": false,
+   "ticrate": 0.0139,
+   "raw": "runs/dm4_pin_v1_pin723_main_played_dm4.log",
+   "raw_sha256": "1a7540b50857c0204e8916ebfd3c19bf40876f7e47dbbbfcd8fa6f9b7c57f2f0",
+   "source_sha256": "e3f3115a7a987e2afd2a715f23deb56929171ccd57b4f1c059c799ce07a63ee3",
+   "binary_sha256": "3906065dffbdf2b3f08d870fbafc58afca668e4ba487756347277e800fab483c",
+   "fixture_sha256": "80d4647ab0c856f4614c09e55945c2d3ee3294e1769990eec8565c599f09516c",
+   "failures": [],
+   "entry": [
+    "1",
+    "1",
+    "1",
+    "0"
+   ],
+   "seconds": 0.2,
+   "position": [
+    74.8,
+    -255.0,
+    -72.0
+   ],
+   "rescues": 0
+  },
+  {
+   "label": "main_slow",
+   "program": "current main with #743 and #751",
+   "pre_height_gate": false,
+   "ticrate": 0.1,
+   "raw": "runs/dm4_pin_v1_pin723_main_slow_dm4.log",
+   "raw_sha256": "8af5df4044d2843e4b27c768a57fe2ba3c7e76651e9b26fd94bf590f1f827c61",
+   "source_sha256": "e3f3115a7a987e2afd2a715f23deb56929171ccd57b4f1c059c799ce07a63ee3",
+   "binary_sha256": "3906065dffbdf2b3f08d870fbafc58afca668e4ba487756347277e800fab483c",
+   "fixture_sha256": "80d4647ab0c856f4614c09e55945c2d3ee3294e1769990eec8565c599f09516c",
+   "failures": [],
+   "entry": [
+    "1",
+    "1",
+    "1",
+    "0"
+   ],
+   "seconds": 0.1,
+   "position": [
+    71.4,
+    -256.5,
+    -72.0
+   ],
+   "rescues": 0
+  }
+ ],
+ "artifacts": [
+  {
+   "path": "runs/dm4_pin_v1_pin723_cover_candidate_played_dm4.log",
+   "sha256": "5f4bf6b7728253fe58dd6fd447c28dac0fa31c151b6b334b29a47a071b4ddf4b"
+  },
+  {
+   "path": "runs/dm4_pin_v1_pin723_cover_control_played_dm4.log",
+   "sha256": "6d0835f223278587a65b9949dbd6bf9fb23391036165d47778b394b07926ef2e"
+  },
+  {
+   "path": "runs/dm4_pin_v1_pin723_cover_control_slow_dm4.log",
+   "sha256": "1c5da0311a2d11c2e5895d78373e9d57a9ec2bd6485906448d96b4d0d82ab8ee"
+  },
+  {
+   "path": "runs/dm4_pin_v1_pin723_main_played_dm4.log",
+   "sha256": "1a7540b50857c0204e8916ebfd3c19bf40876f7e47dbbbfcd8fa6f9b7c57f2f0"
+  },
+  {
+   "path": "runs/dm4_pin_v1_pin723_main_slow_dm4.log",
+   "sha256": "8af5df4044d2843e4b27c768a57fe2ba3c7e76651e9b26fd94bf590f1f827c61"
+  }
+ ],
+ "limits": [
+  "The fixture seed is chosen on the tape ray so the nudge lands on the recorded pin; the exact pre-nudge position is not in the 2 Hz tape.",
+  "At 100 ms the unchanged program makes the same invalid nudge, then a 32u step clears the wall, so the pin appears at the played rate.",
+  "No production code changes here. #743 removes the different-floor trigger and #751 adds the hull check."
+ ]
+}

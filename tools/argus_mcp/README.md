@@ -89,8 +89,8 @@ The [investigation](../../docs/body-height-investigation.md) separates the
 controlled entry and local escape from ordinary-match adoption.
 
 `python tools/verify_body_height.py --output backups/<new-directory> --prefix <new_prefix>`
-checks the actual body-block function and continuing physical movement on dm3
-and e1m6. Repeat with `--ticrate .1` for the separate slow profile. Use
+checks the actual body-block function and continuing physical movement on dm3,
+e1m6 and dm4. Repeat with `--ticrate .1` for the separate slow profile. Use
 `--source <frozen-source> --expect-failure` for the disabled-height-gate control.
 All programs and game folders remain private. The `height` compile family
 checks this fixture in CI without starting an engine.

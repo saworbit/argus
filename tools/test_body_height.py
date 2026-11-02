@@ -1,4 +1,6 @@
 """Physical escape receipts must not accept forged geometry or ownership."""
+import hashlib
+import json
 from pathlib import Path
 import unittest
 from verify_body_height import CASES,PHYSICAL,audit_fixture,inspect_fixture
@@ -13,8 +15,8 @@ def receipt(map_name='e1m6',slow=False):
                          f'BHCHECK {label} 1'])
     rows.extend(['BHENTRY beforefit 1 upperfit 1 afterfit 1 movement 0',
                  'BHCHECK entry_bodies_fit 1','BHCHECK entry_kept 1'])
-    initial='338.1 125.9 -200' if map_name=='dm3' else '-157.1 833 -232'
-    final='640 190 -200' if map_name=='dm3' else '-40 833 -232'
+    initial={'dm3':'338.1 125.9 -200','e1m6':'-157.1 833 -232','dm4':'7.6 -262.1 -72'}[map_name]
+    final={'dm3':'640 190 -200','e1m6':'-40 833 -232','dm4':'75 -255 -72'}[map_name]
     rows.extend([f"BHPOSE t 0 pos '{initial}' active 1 hp 100",
                  *[f'BHCHECK {n} 1' for n in PHYSICAL[2:]],
                  f"BHRESULT completed 1 seconds 1 frames {11 if slow else 73} pos '{final}' hp 82 grounded 1 worldfloor 1 wet 0 lost 0 discontinuous 0",
@@ -27,7 +29,7 @@ def receipt(map_name='e1m6',slow=False):
 
 class BodyHeightContracts(unittest.TestCase):
     def test_maps_and_profiles_need_real_entry_and_supported_escape(self):
-        for m in ('dm3','e1m6'):
+        for m in ('dm3','e1m6','dm4'):
             for slow in (False,True):
                 self.assertFalse(inspect_fixture(receipt(m,slow),m,.1 if slow else .0139)['failures'])
 
@@ -67,6 +69,22 @@ class BodyHeightContracts(unittest.TestCase):
                 audit_fixture(text.replace('    bh_frames = bh_frames + 1;',line))
         with self.assertRaises(AssertionError):
             audit_fixture(text.replace('    bh_checks = bh_checks + 1;','    bh_bot.health = 100;'))
+
+    def test_dm4_pin_receipt_reproduces_on_old_programs_only(self):
+        root=Path(__file__).resolve().parents[1]
+        proof=json.loads((root/'runs/dm4-pin-v1.results.json').read_text(encoding='utf-8'))
+        for row in proof['artifacts']:
+            self.assertEqual(hashlib.sha256((root/row['path']).read_bytes()).hexdigest(),row['sha256'])
+        for row in proof['fixture']:
+            result=inspect_fixture((root/row['raw']).read_text(encoding='utf-8'),'dm4',row['ticrate'])
+            self.assertEqual(result['failures'],row['failures'])
+            self.assertIn('entry_kept' in result['failures'],(row['pre_height_gate'],))
+            if not row['pre_height_gate']:
+                self.assertEqual((result['failures'],row['rescues']),([],0))
+        played=[r for r in proof['fixture'] if r['pre_height_gate'] and r['ticrate']==.0139]
+        self.assertEqual(len(played),2)
+        for row in played:
+            self.assertIn('physical_exit',row['failures'])
 
 
 if __name__=='__main__':unittest.main()
