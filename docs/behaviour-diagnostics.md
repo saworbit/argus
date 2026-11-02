@@ -1109,6 +1109,26 @@ embedded-shot safety or change ordinary/tactical gameplay. The existing
 240-unit tactical reach, settle and abort checks remain in the muzzle suite.
 Both accepted and rejected private attempts stay local under
 `backups/soak-combat-20261027-1/` and `backups/soak-combat-20261027-2/`.
+
+The original compound QC assignments only stored their first operands.
+Their ammo, projectile and button checks remain evidence, but their accepted
+results did not independently prove seen time, enemy/cache identity, weapon,
+tactic, movement-request preservation or unchanged velocity. The corrected
+assignments enclose each full expression (#745). The
+[predicate receipt](../runs/muzzle-predicates-v1.results.json) retains all
+ten single-false-state controls at measured 14 ms and 100 ms cadence. The
+old observer misses nine; the corrected observer rejects all ten while all
+six baseline fixture checks pass. These states are prescribed after the
+real combat call to test the witness. They are not gameplay failure claims.
+The zero-frametime startup attempt is retained as rejected setup evidence.
+
+Repeat with `python tools/verify_muzzle_predicates.py --output backups/<new-directory>
+--prefix <new_prefix>`. Add `--variant legacy` to restore the assignment
+defect, or `--ticrate 0.1` for the separate slow profile. Current and legacy
+sources compile in CI under the `muzzle_predicates` family. The receipt
+reader keeps its guards under `python -O`; the fast workflow runs the
+same five engine-free tests in both modes. No ordinary cohort or deployment
+is part of this witness repair.
 Installed binaries remain unchanged. No gameplay cohorts or deployment.
 
 ## Ally barrel and speculative shots

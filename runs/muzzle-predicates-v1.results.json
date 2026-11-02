@@ -1,0 +1,625 @@
+{
+  "issue": 745,
+  "protocol": {
+    "map": "dm4",
+    "duration_sec": 10,
+    "skill": 2,
+    "ticrates": [
+      0.0139,
+      0.1
+    ],
+    "repeats": 1,
+    "install": false,
+    "ordinary_cohorts": false,
+    "states": "One prescribed false post-call predicate per real Argus_Combat call. These are observer negatives, not gameplay bugs.",
+    "expected_legacy_misses": [
+      "gates",
+      "seen",
+      "enemy",
+      "cache",
+      "weapon",
+      "tactic",
+      "motor_set",
+      "motor_equal",
+      "velocity"
+    ],
+    "expected_current_misses": [],
+    "historical_qualification": "The old compound assignments did not enforce seen time, enemy/cache identity, weapon/tactic state, movement request or velocity. Independent ammo/projectile/button checks remain valid. The Python reader independently enforced gate count."
+  },
+  "native": [
+    {
+      "variant": "legacy",
+      "ticrate": 0.0139,
+      "source_sha256": "4b50271cb511925b82b37ddc0ceb94650610098c49343009d06815da939ab345",
+      "fixture_sha256": "0eda1877f0ff32594a1034aec2f67953c3bc126e2f1f50bc6df3cefc8f00f5a3",
+      "binary_sha256": "aa08bdb65003f0f0ea52d2c9c90bfc2f9ba7188786b3c899b02f40528ce08bfc",
+      "raw_sha256": "9ac2ece194a43eb4fafcdc8057009b8cebebd3cedb1f89f419c52d04b1e0c784",
+      "raw": "runs/muzzle_predicates_v1_legacy_played_v2.log",
+      "frame_ms": 14.0,
+      "baseline": {
+        "failures": [],
+        "outcomes": [
+          [
+            "combat_blocked",
+            "1",
+            "0",
+            "0",
+            "176"
+          ],
+          [
+            "combat_clear",
+            "1",
+            "1",
+            "1",
+            "176"
+          ],
+          [
+            "combat_backdrop",
+            "1",
+            "1",
+            "1",
+            "184"
+          ]
+        ],
+        "embedded": [
+          "1",
+          "1",
+          "1",
+          "1"
+        ]
+      },
+      "states": [
+        [
+          "owned",
+          "0 1 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "gates",
+          "1 0 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "seen",
+          "1 1 0 1 1 1 1 1 1 1"
+        ],
+        [
+          "enemy",
+          "1 1 1 0 1 1 1 1 1 1"
+        ],
+        [
+          "cache",
+          "1 1 1 1 0 1 1 1 1 1"
+        ],
+        [
+          "weapon",
+          "1 1 1 1 1 0 1 1 1 1"
+        ],
+        [
+          "tactic",
+          "1 1 1 1 1 1 0 1 1 1"
+        ],
+        [
+          "motor_set",
+          "1 1 1 1 1 1 1 0 1 1"
+        ],
+        [
+          "motor_equal",
+          "1 1 1 1 1 1 1 1 0 1"
+        ],
+        [
+          "velocity",
+          "1 1 1 1 1 1 1 1 1 0"
+        ]
+      ],
+      "checks": [
+        [
+          "owned",
+          "0"
+        ],
+        [
+          "gates",
+          "1"
+        ],
+        [
+          "seen",
+          "1"
+        ],
+        [
+          "enemy",
+          "1"
+        ],
+        [
+          "cache",
+          "1"
+        ],
+        [
+          "weapon",
+          "1"
+        ],
+        [
+          "tactic",
+          "1"
+        ],
+        [
+          "motor_set",
+          "1"
+        ],
+        [
+          "motor_equal",
+          "1"
+        ],
+        [
+          "velocity",
+          "1"
+        ]
+      ],
+      "failures": [
+        "gates",
+        "seen",
+        "enemy",
+        "cache",
+        "weapon",
+        "tactic",
+        "motor_set",
+        "motor_equal",
+        "velocity"
+      ],
+      "native": "runs/muzzle-predicates-v1.legacy_played_v2.native.json",
+      "fixture": "runs/muzzle-predicates-v1.legacy.fixture.qc"
+    },
+    {
+      "variant": "current",
+      "ticrate": 0.0139,
+      "source_sha256": "b01e85c4f3acf61a1a93b3b6e9d905a2583bb53a15da07524d10b88123b89606",
+      "fixture_sha256": "61a76e1b7396090d6cc3214cb566e000cccf1cbcf1b56bc3008c597c1c55f4b8",
+      "binary_sha256": "55ce915e6e0cbd116ddd056573be191f7f2c36c79c664e6561271e0a6795c9b5",
+      "raw_sha256": "7701c86189083fafd61843438bd26f4d4bdcd721462c00a4ce7ec26af197262c",
+      "raw": "runs/muzzle_predicates_v1_current_played.log",
+      "frame_ms": 14.0,
+      "baseline": {
+        "failures": [],
+        "outcomes": [
+          [
+            "combat_blocked",
+            "1",
+            "0",
+            "0",
+            "176"
+          ],
+          [
+            "combat_clear",
+            "1",
+            "1",
+            "1",
+            "176"
+          ],
+          [
+            "combat_backdrop",
+            "1",
+            "1",
+            "1",
+            "184"
+          ]
+        ],
+        "embedded": [
+          "1",
+          "1",
+          "1",
+          "1"
+        ]
+      },
+      "states": [
+        [
+          "owned",
+          "0 1 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "gates",
+          "1 0 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "seen",
+          "1 1 0 1 1 1 1 1 1 1"
+        ],
+        [
+          "enemy",
+          "1 1 1 0 1 1 1 1 1 1"
+        ],
+        [
+          "cache",
+          "1 1 1 1 0 1 1 1 1 1"
+        ],
+        [
+          "weapon",
+          "1 1 1 1 1 0 1 1 1 1"
+        ],
+        [
+          "tactic",
+          "1 1 1 1 1 1 0 1 1 1"
+        ],
+        [
+          "motor_set",
+          "1 1 1 1 1 1 1 0 1 1"
+        ],
+        [
+          "motor_equal",
+          "1 1 1 1 1 1 1 1 0 1"
+        ],
+        [
+          "velocity",
+          "1 1 1 1 1 1 1 1 1 0"
+        ]
+      ],
+      "checks": [
+        [
+          "owned",
+          "0"
+        ],
+        [
+          "gates",
+          "0"
+        ],
+        [
+          "seen",
+          "0"
+        ],
+        [
+          "enemy",
+          "0"
+        ],
+        [
+          "cache",
+          "0"
+        ],
+        [
+          "weapon",
+          "0"
+        ],
+        [
+          "tactic",
+          "0"
+        ],
+        [
+          "motor_set",
+          "0"
+        ],
+        [
+          "motor_equal",
+          "0"
+        ],
+        [
+          "velocity",
+          "0"
+        ]
+      ],
+      "failures": [],
+      "native": "runs/muzzle-predicates-v1.current_played.native.json",
+      "fixture": "runs/muzzle-predicates-v1.current.fixture.qc"
+    },
+    {
+      "variant": "legacy",
+      "ticrate": 0.1,
+      "source_sha256": "4b50271cb511925b82b37ddc0ceb94650610098c49343009d06815da939ab345",
+      "fixture_sha256": "0eda1877f0ff32594a1034aec2f67953c3bc126e2f1f50bc6df3cefc8f00f5a3",
+      "binary_sha256": "aa08bdb65003f0f0ea52d2c9c90bfc2f9ba7188786b3c899b02f40528ce08bfc",
+      "raw_sha256": "654b070f915cbf35f3eb585e391e253015dab90df41bb13c9b29ccb9031651d5",
+      "raw": "runs/muzzle_predicates_v1_legacy_slow.log",
+      "frame_ms": 100.0,
+      "baseline": {
+        "failures": [],
+        "outcomes": [
+          [
+            "combat_blocked",
+            "1",
+            "0",
+            "0",
+            "176"
+          ],
+          [
+            "combat_clear",
+            "1",
+            "1",
+            "1",
+            "176"
+          ],
+          [
+            "combat_backdrop",
+            "1",
+            "1",
+            "1",
+            "184"
+          ]
+        ],
+        "embedded": [
+          "1",
+          "1",
+          "1",
+          "1"
+        ]
+      },
+      "states": [
+        [
+          "owned",
+          "0 1 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "gates",
+          "1 0 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "seen",
+          "1 1 0 1 1 1 1 1 1 1"
+        ],
+        [
+          "enemy",
+          "1 1 1 0 1 1 1 1 1 1"
+        ],
+        [
+          "cache",
+          "1 1 1 1 0 1 1 1 1 1"
+        ],
+        [
+          "weapon",
+          "1 1 1 1 1 0 1 1 1 1"
+        ],
+        [
+          "tactic",
+          "1 1 1 1 1 1 0 1 1 1"
+        ],
+        [
+          "motor_set",
+          "1 1 1 1 1 1 1 0 1 1"
+        ],
+        [
+          "motor_equal",
+          "1 1 1 1 1 1 1 1 0 1"
+        ],
+        [
+          "velocity",
+          "1 1 1 1 1 1 1 1 1 0"
+        ]
+      ],
+      "checks": [
+        [
+          "owned",
+          "0"
+        ],
+        [
+          "gates",
+          "1"
+        ],
+        [
+          "seen",
+          "1"
+        ],
+        [
+          "enemy",
+          "1"
+        ],
+        [
+          "cache",
+          "1"
+        ],
+        [
+          "weapon",
+          "1"
+        ],
+        [
+          "tactic",
+          "1"
+        ],
+        [
+          "motor_set",
+          "1"
+        ],
+        [
+          "motor_equal",
+          "1"
+        ],
+        [
+          "velocity",
+          "1"
+        ]
+      ],
+      "failures": [
+        "gates",
+        "seen",
+        "enemy",
+        "cache",
+        "weapon",
+        "tactic",
+        "motor_set",
+        "motor_equal",
+        "velocity"
+      ],
+      "native": "runs/muzzle-predicates-v1.legacy_slow.native.json"
+    },
+    {
+      "variant": "current",
+      "ticrate": 0.1,
+      "source_sha256": "b01e85c4f3acf61a1a93b3b6e9d905a2583bb53a15da07524d10b88123b89606",
+      "fixture_sha256": "61a76e1b7396090d6cc3214cb566e000cccf1cbcf1b56bc3008c597c1c55f4b8",
+      "binary_sha256": "55ce915e6e0cbd116ddd056573be191f7f2c36c79c664e6561271e0a6795c9b5",
+      "raw_sha256": "ecd3ec1237109abbc3c55cc1f996c79310e28075bbb5cbf2ff0f90283dcb366a",
+      "raw": "runs/muzzle_predicates_v1_current_slow.log",
+      "frame_ms": 100.0,
+      "baseline": {
+        "failures": [],
+        "outcomes": [
+          [
+            "combat_blocked",
+            "1",
+            "0",
+            "0",
+            "176"
+          ],
+          [
+            "combat_clear",
+            "1",
+            "1",
+            "1",
+            "176"
+          ],
+          [
+            "combat_backdrop",
+            "1",
+            "1",
+            "1",
+            "184"
+          ]
+        ],
+        "embedded": [
+          "1",
+          "1",
+          "1",
+          "1"
+        ]
+      },
+      "states": [
+        [
+          "owned",
+          "0 1 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "gates",
+          "1 0 1 1 1 1 1 1 1 1"
+        ],
+        [
+          "seen",
+          "1 1 0 1 1 1 1 1 1 1"
+        ],
+        [
+          "enemy",
+          "1 1 1 0 1 1 1 1 1 1"
+        ],
+        [
+          "cache",
+          "1 1 1 1 0 1 1 1 1 1"
+        ],
+        [
+          "weapon",
+          "1 1 1 1 1 0 1 1 1 1"
+        ],
+        [
+          "tactic",
+          "1 1 1 1 1 1 0 1 1 1"
+        ],
+        [
+          "motor_set",
+          "1 1 1 1 1 1 1 0 1 1"
+        ],
+        [
+          "motor_equal",
+          "1 1 1 1 1 1 1 1 0 1"
+        ],
+        [
+          "velocity",
+          "1 1 1 1 1 1 1 1 1 0"
+        ]
+      ],
+      "checks": [
+        [
+          "owned",
+          "0"
+        ],
+        [
+          "gates",
+          "0"
+        ],
+        [
+          "seen",
+          "0"
+        ],
+        [
+          "enemy",
+          "0"
+        ],
+        [
+          "cache",
+          "0"
+        ],
+        [
+          "weapon",
+          "0"
+        ],
+        [
+          "tactic",
+          "0"
+        ],
+        [
+          "motor_set",
+          "0"
+        ],
+        [
+          "motor_equal",
+          "0"
+        ],
+        [
+          "velocity",
+          "0"
+        ]
+      ],
+      "failures": [],
+      "native": "runs/muzzle-predicates-v1.current_slow.native.json"
+    }
+  ],
+  "rejected_setup": {
+    "raw": "runs/muzzle_predicates_v1_rejected_zero_frame.log",
+    "fixture": "runs/muzzle-predicates-v1.zero_frame.fixture.qc",
+    "reason": "The original time-one entry runs during map spawn with zero frametime. Rejected as cadence evidence. Later witness waits until time two."
+  },
+  "installed_identity": {
+    "game/argus/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "engine/argus/progs.dat": "9aa98b29bbe925988d4a70e3b55840f8c2cca12f0e3fda0e4a07101b50c7dcc4",
+    "lq1/progs.dat": "1699e14596776ac35729767c8fcc0d80ff557923d63b2b78abd45f69d0b07633"
+  },
+  "artifacts": [
+    {
+      "path": "runs/muzzle_predicates_v1_legacy_played_v2.log",
+      "sha256": "9ac2ece194a43eb4fafcdc8057009b8cebebd3cedb1f89f419c52d04b1e0c784"
+    },
+    {
+      "path": "runs/muzzle-predicates-v1.legacy_played_v2.native.json",
+      "sha256": "d25e9279234c388864b412bde892757deb52e1b61b96679aa6477e773ebd7e78"
+    },
+    {
+      "path": "runs/muzzle-predicates-v1.legacy.fixture.qc",
+      "sha256": "0eda1877f0ff32594a1034aec2f67953c3bc126e2f1f50bc6df3cefc8f00f5a3"
+    },
+    {
+      "path": "runs/muzzle_predicates_v1_current_played.log",
+      "sha256": "7701c86189083fafd61843438bd26f4d4bdcd721462c00a4ce7ec26af197262c"
+    },
+    {
+      "path": "runs/muzzle-predicates-v1.current_played.native.json",
+      "sha256": "65a40594e2d3b827f0ceb3befd76b35c456ae216b21a77ab8973d69916072707"
+    },
+    {
+      "path": "runs/muzzle-predicates-v1.current.fixture.qc",
+      "sha256": "61a76e1b7396090d6cc3214cb566e000cccf1cbcf1b56bc3008c597c1c55f4b8"
+    },
+    {
+      "path": "runs/muzzle_predicates_v1_legacy_slow.log",
+      "sha256": "654b070f915cbf35f3eb585e391e253015dab90df41bb13c9b29ccb9031651d5"
+    },
+    {
+      "path": "runs/muzzle-predicates-v1.legacy_slow.native.json",
+      "sha256": "3250cc9d72d3ca64cb505d1aafa7e395e286f8ca9218ddfcbfdb284fb4ec95b2"
+    },
+    {
+      "path": "runs/muzzle_predicates_v1_current_slow.log",
+      "sha256": "ecd3ec1237109abbc3c55cc1f996c79310e28075bbb5cbf2ff0f90283dcb366a"
+    },
+    {
+      "path": "runs/muzzle-predicates-v1.current_slow.native.json",
+      "sha256": "fe54d464df47d8a60b00ed95d67af095307c49142a98661167e0c4d11be84692"
+    },
+    {
+      "path": "runs/muzzle_predicates_v1_rejected_zero_frame.log",
+      "sha256": "8746bde2da469ab0a023195e79f71d2dc50b86cccb79e9318989fc831a33d4c9"
+    },
+    {
+      "path": "runs/muzzle-predicates-v1.zero_frame.fixture.qc",
+      "sha256": "2377c7594eb4359980a6fa8520b4eb6ede3c1a653b4ce8e4e8598f2b773b32c9"
+    }
+  ]
+}

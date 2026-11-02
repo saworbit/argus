@@ -37,11 +37,11 @@ void(string label, vector origin, vector target, float yaw, float blocked) Muzzl
         { shots = shots + 1; remove (missile); }
         missile = next;
     }
-    ok = owned && mc_gates == gates + 1 && self.ar_seen == time;
-    ok = ok && self.ar_enemy == foe && self.ar_obsenemy == foe;
-    ok = ok && self.weapon == IT_ROCKET_LAUNCHER && !self.ar_tactic;
-    ok = ok && self.ar_moveyaw != 10000 && self.ar_moveyaw == mc_motor;
-    ok = ok && self.velocity == '23 7 0';
+    ok = (owned && mc_gates == gates + 1 && self.ar_seen == time);
+    ok = (ok && self.ar_enemy == foe && self.ar_obsenemy == foe);
+    ok = (ok && self.weapon == IT_ROCKET_LAUNCHER && !self.ar_tactic);
+    ok = (ok && self.ar_moveyaw != 10000 && self.ar_moveyaw == mc_motor);
+    ok = (ok && self.velocity == '23 7 0');
     if (blocked)
     {
         if (self.ammo_rockets != before) ok = 0;

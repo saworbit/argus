@@ -1,0 +1,78 @@
+LOG started on: 11/02/2026 14:07:09 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm4
+Clearing memory
+Programs occupy 1114K.
+trying to open external vis file
+maps/dm4.vis not found, trying muzzlepredicate_muzzle_pred_legacy_played_v2_20261102.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 137 nodes, 734 links
+0 entities inhibited
+ARGUS init on dm4
+ARGUS difficulty Carmack t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+BHVRPL begin muzzle_combat
+MCFIX begin dm4
+MCFIX check geometry 1
+MCFIX outcome combat_blocked gates 1 ammo 0 rockets 0 motor 176
+MCFIX check combat_blocked 1
+MCFIX outcome combat_clear gates 1 ammo 1 rockets 1 motor 176
+MCFIX check combat_clear 1
+MCFIX outcome combat_backdrop gates 1 ammo 1 rockets 1 motor 184
+MCFIX check combat_backdrop 1
+MCFIX embedded fraction 1 startsolid 1 allsolid 1 allowed 1
+MCFIX check embedded_contract 1
+MCFIX check cleanup 1
+MCFIX end checks 6 ok 1
+MPP begin dt_ms 14 layout 1
+MPSTATE owned 0 1 1 1 1 1 1 1 1 1
+MPOUTCOME owned gates 1 ammo 1 rockets 1 motor 176
+MPCHECK owned 0
+MPSTATE gates 1 0 1 1 1 1 1 1 1 1
+MPOUTCOME gates gates 0 ammo 1 rockets 1 motor 176
+MPCHECK gates 1
+MPSTATE seen 1 1 0 1 1 1 1 1 1 1
+MPOUTCOME seen gates 1 ammo 1 rockets 1 motor 176
+MPCHECK seen 1
+MPSTATE enemy 1 1 1 0 1 1 1 1 1 1
+MPOUTCOME enemy gates 1 ammo 1 rockets 1 motor 176
+MPCHECK enemy 1
+MPSTATE cache 1 1 1 1 0 1 1 1 1 1
+MPOUTCOME cache gates 1 ammo 1 rockets 1 motor 176
+MPCHECK cache 1
+MPSTATE weapon 1 1 1 1 1 0 1 1 1 1
+MPOUTCOME weapon gates 1 ammo 1 rockets 1 motor 176
+MPCHECK weapon 1
+MPSTATE tactic 1 1 1 1 1 1 0 1 1 1
+MPOUTCOME tactic gates 1 ammo 1 rockets 1 motor 176
+MPCHECK tactic 1
+MPSTATE motor_set 1 1 1 1 1 1 1 0 1 1
+MPOUTCOME motor_set gates 1 ammo 1 rockets 1 motor 10000
+MPCHECK motor_set 1
+MPSTATE motor_equal 1 1 1 1 1 1 1 1 0 1
+MPOUTCOME motor_equal gates 1 ammo 1 rockets 1 motor 176
+MPCHECK motor_equal 1
+MPSTATE velocity 1 1 1 1 1 1 1 1 1 0
+MPOUTCOME velocity gates 1 ammo 1 rockets 1 motor 176
+MPCHECK velocity 1
+MPP end rows 10
