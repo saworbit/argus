@@ -153,6 +153,7 @@ these **terminal commands** do not launch an engine:
 ```text
 python -m pip install -r tools/requirements-perception-cohort.txt
 python -m unittest discover -s tools -p "test_perception*.py"
+python -O tools/test_perception_health.py
 python tools/test_muzzle_fixture.py
 python tools/test_tactic_fixture.py
 python tools/test_review_outputs.py
@@ -174,6 +175,16 @@ python tools/test_map_intelligence_report.py
 python tools/test_study_comparison.py
 python tools/test_freeze_recovery.py
 python tools/test_mover_transfer.py
+python tools/test_mover_forecast.py
+python tools/test_mover_predicates.py
+python tools/test_water_ownership.py
+python tools/test_water_route_preflight.py
+python tools/test_body_height.py
+python tools/test_motion.py
+python tools/test_camera_chase.py
+python tools/test_stall_ownership.py
+python tools/test_ally_barrel.py
+python tools/test_startup_skill.py
 python tools/test_target_attention.py
 python tools/test_argus_mapgate.py
 ```
@@ -247,9 +258,12 @@ with one of these fixture names:
 | `door` | Bounded opener lookup, activation acknowledgement and opening ownership/timeout |
 
 
-Compile-only CI also checks all 20 maintained variants across `muzzle`,
-`combat`, `health`, `button`, `door`, `plan`, `offset`, `freeze`, `mover` and `attention`. It reuses the native
-verifiers' staging helpers, including extracted production decision wrappers:
+Compile-only CI checks every maintained family registered in
+[`compile_private_fixtures.py`](../tools/compile_private_fixtures.py).
+The [compile workflow](../.github/workflows/compile.yml) selects each family
+serially, including the current and deliberately defective observer variants.
+It reuses native verifiers' staging helpers, including extracted production
+decision wrappers:
 
 ```text
 python tools/compile_private_fixtures.py --help
@@ -520,7 +534,7 @@ After a navigation change, run the lab experiment/matrix loop.
   evidence separate from build restoration.
 
 The [water-route checks](../tools/argus_mcp/README.md#water-route-decision-checks)
-add the `water` private compile family, bringing the maintained total to 21.
+use the `water` private compile family.
 Run `python tools/verify_water_route.py --output backups/<new-directory> --prefix <new_prefix>`
 for native production movement with private initial conditions. Preserve
 negative receipts and distinguish injected candidate links from generated

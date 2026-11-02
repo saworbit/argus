@@ -45,6 +45,15 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+#### Changed
+
+- Synchronize lab runbooks with current fixture families and observer layouts.
+  Clarify the closed body-clearance prototype and retain its same-floor hull
+  failures as a separate follow-up
+  ([#747](https://github.com/saworbit/argus/issues/747)).
+
+#### Fixed
+
 - Evaluate every mover-observer retention and dryness clause and qualify
   older field claims separately from physical handoff evidence
   ([#735](https://github.com/saworbit/argus/issues/735)).

@@ -1028,6 +1028,11 @@ Replace `muzzle` with `health` for the active health/inventory boundary checks.
 Select `combat` for the actual ordinary-combat trigger and its negative control,
 including a separate measured embedded-muzzle contract. See the
 [clearance limits](../../docs/behaviour-diagnostics.md#ordinary-rocket-muzzle-clearance).
+For all ten independent state-predicate negatives, run
+`python tools/verify_muzzle_predicates.py --output backups/<new-directory> --prefix <new_prefix>`.
+Use `--variant legacy` for the old assignments and `--ticrate 0.1` for the
+separate slow profile. The `muzzle_predicates` family compiles both variants
+in CI; these prescribed post-call states are witness tests, not gameplay bugs.
 Use `--help` before choosing a fixture. This maintained driver uses the matching
 native lab with `install=false`, private source/assets/runs and serial engines.
 It retains declared current/control outcomes and SHA256 receipts, checks
