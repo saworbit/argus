@@ -23,6 +23,13 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Separate same-floor body nudges on a hull axis and let the engine refuse a
+  spot the player hull cannot fit, so a nudge no longer clips a wall or
+  leaves two players overlapping on a diagonal. Matched dm3 and dm4 matches
+  stay at parity
+  ([#747](https://github.com/saworbit/argus/issues/747),
+  [details](docs/body-nudge-investigation.md)).
+
 - Check every muzzle combat witness predicate and retain strict receipt
   rejection under optimized Python
   ([#745](https://github.com/saworbit/argus/issues/745)).

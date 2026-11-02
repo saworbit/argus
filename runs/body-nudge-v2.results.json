@@ -1,0 +1,1135 @@
+{
+ "schema": "body-nudge-v2",
+ "issues": [
+  747
+ ],
+ "adoption": "approved",
+ "production_argus_sha256": "81567bb9bcd5b5efc96fa103ee05c1e65389a91c8ac36f72fff571461d305f73",
+ "control": {
+  "head": "892272764001830284139a0185566c33a6ddc123"
+ },
+ "physical": [
+  {
+   "label": "control_played",
+   "raw": "runs/body_nudge_v2_nudge747_control_played.log",
+   "raw_sha256": "bacda3a5a058a33350bbdedbba6a7fec93ad422a2b9f453abcb28580cbf37b30",
+   "ticrate": 0.0139,
+   "failed_control": true,
+   "failures": [
+    "wall_refused",
+    "overlap_diagonal"
+   ],
+   "cases": [
+    [
+     "upper_floor",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "wall_refused",
+     "1",
+     "0",
+     "3",
+     "0"
+    ],
+    [
+     "clear_step",
+     "1",
+     "1",
+     "3",
+     "0"
+    ],
+    [
+     "upper_fire",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "overlap_axis",
+     "0",
+     "1",
+     "16",
+     "0"
+    ],
+    [
+     "overlap_diagonal",
+     "0",
+     "0",
+     "7.7",
+     "0"
+    ]
+   ],
+   "seconds": 1.0,
+   "measured_fps": 67.0,
+   "rescues": 0,
+   "source_sha256": "b1d86fc16ccb7a37f8209ccfe93dd08e418ec25e6333b375bc4d9c7344ede272",
+   "binary_sha256": "d45b232143a185f6ec7e4b034ffadaf1bf52bdac3473c25264012130c88ea848"
+  },
+  {
+   "label": "control_slow",
+   "raw": "runs/body_nudge_v2_nudge747_control_slow.log",
+   "raw_sha256": "a9a881ddd0c7c2b5257d3ee8428a2c6e8c6b11e060bd034d5434b056074d583e",
+   "ticrate": 0.1,
+   "failed_control": true,
+   "failures": [
+    "wall_refused",
+    "overlap_diagonal"
+   ],
+   "cases": [
+    [
+     "upper_floor",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "wall_refused",
+     "1",
+     "0",
+     "3",
+     "0"
+    ],
+    [
+     "clear_step",
+     "1",
+     "1",
+     "3",
+     "0"
+    ],
+    [
+     "upper_fire",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "overlap_axis",
+     "0",
+     "1",
+     "16",
+     "0"
+    ],
+    [
+     "overlap_diagonal",
+     "0",
+     "0",
+     "7.7",
+     "0"
+    ]
+   ],
+   "seconds": 0.9,
+   "measured_fps": 10.0,
+   "rescues": 0,
+   "source_sha256": "b1d86fc16ccb7a37f8209ccfe93dd08e418ec25e6333b375bc4d9c7344ede272",
+   "binary_sha256": "d45b232143a185f6ec7e4b034ffadaf1bf52bdac3473c25264012130c88ea848"
+  },
+  {
+   "label": "candidate_played",
+   "raw": "runs/body_nudge_v2_nudge747_candidate_played.log",
+   "raw_sha256": "37c9ae9522608d52d8c182892776d4b15b2aabb5629e51937bffa1f46b7273af",
+   "ticrate": 0.0139,
+   "failed_control": false,
+   "failures": [],
+   "cases": [
+    [
+     "upper_floor",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "wall_refused",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "clear_step",
+     "1",
+     "1",
+     "3",
+     "0"
+    ],
+    [
+     "upper_fire",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "overlap_axis",
+     "0",
+     "1",
+     "16.0",
+     "0"
+    ],
+    [
+     "overlap_diagonal",
+     "0",
+     "1",
+     "22.6",
+     "0"
+    ]
+   ],
+   "seconds": 1.0,
+   "measured_fps": 67.0,
+   "rescues": 0,
+   "source_sha256": "17d391ad3acb7a5e7270ed1dea7570bf93cd4983cad99e2ca92526ff47f52cd0",
+   "binary_sha256": "c475a552ea81d54d10c97df7e43c9acf2369a9a6b8bc0dfca95160ed8767da72"
+  },
+  {
+   "label": "candidate_slow",
+   "raw": "runs/body_nudge_v2_nudge747_candidate_slow.log",
+   "raw_sha256": "fb9ffedf0646ac4912f63f79ea23181566021d1f9fe228f5e33fa6381e9526b2",
+   "ticrate": 0.1,
+   "failed_control": false,
+   "failures": [],
+   "cases": [
+    [
+     "upper_floor",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "wall_refused",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "clear_step",
+     "1",
+     "1",
+     "3",
+     "0"
+    ],
+    [
+     "upper_fire",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "overlap_axis",
+     "0",
+     "1",
+     "16.0",
+     "0"
+    ],
+    [
+     "overlap_diagonal",
+     "0",
+     "1",
+     "22.6",
+     "0"
+    ]
+   ],
+   "seconds": 0.9,
+   "measured_fps": 10.0,
+   "rescues": 0,
+   "source_sha256": "17d391ad3acb7a5e7270ed1dea7570bf93cd4983cad99e2ca92526ff47f52cd0",
+   "binary_sha256": "c475a552ea81d54d10c97df7e43c9acf2369a9a6b8bc0dfca95160ed8767da72"
+  },
+  {
+   "label": "mutant_noverify_played",
+   "raw": "runs/body_nudge_v2_nudge747_mutant_noverify.log",
+   "raw_sha256": "d51e04107a22d1fc3b95275df62ad007180fb6f09daaef2dc578d0bebe8c9133",
+   "ticrate": 0.0139,
+   "failed_control": true,
+   "failures": [
+    "wall_refused"
+   ],
+   "cases": [
+    [
+     "upper_floor",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "wall_refused",
+     "1",
+     "0",
+     "3",
+     "0"
+    ],
+    [
+     "clear_step",
+     "1",
+     "1",
+     "3",
+     "0"
+    ],
+    [
+     "upper_fire",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "overlap_axis",
+     "0",
+     "1",
+     "16",
+     "0"
+    ],
+    [
+     "overlap_diagonal",
+     "0",
+     "1",
+     "22.6",
+     "0"
+    ]
+   ],
+   "seconds": 1.0,
+   "measured_fps": 67.0,
+   "rescues": 0,
+   "source_sha256": "3d99f8e3d7f4e7efaf46e7fb624bbaa2fca6b91f2fa5d8af3817076b0cc00fec",
+   "binary_sha256": "ae75306aacd33aded7a616f2201b959ee1cf3da767df6eda9551eef875555757"
+  },
+  {
+   "label": "mutant_noaxis_played",
+   "raw": "runs/body_nudge_v2_nudge747_mutant_noaxis.log",
+   "raw_sha256": "1d2d0c4707a70192485fad7a874e9776894220dc0820d1d784b010b62849709c",
+   "ticrate": 0.0139,
+   "failed_control": true,
+   "failures": [
+    "overlap_diagonal"
+   ],
+   "cases": [
+    [
+     "upper_floor",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "wall_refused",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "clear_step",
+     "1",
+     "1",
+     "3",
+     "0"
+    ],
+    [
+     "upper_fire",
+     "1",
+     "1",
+     "0",
+     "0"
+    ],
+    [
+     "overlap_axis",
+     "0",
+     "1",
+     "16.0",
+     "0"
+    ],
+    [
+     "overlap_diagonal",
+     "0",
+     "0",
+     "0",
+     "0"
+    ]
+   ],
+   "seconds": 1.0,
+   "measured_fps": 67.0,
+   "rescues": 0,
+   "source_sha256": "38bca52b438d532634e0ec581a52f082226607ec7cf01d721e354b5075ebf35f",
+   "binary_sha256": "bed46fc3a1a81d3fefb3349f90336534d0e67c8732367faa2b37b2592e7529b9"
+  }
+ ],
+ "height": [
+  [
+   {
+    "map": "dm3",
+    "ticrate": 0.0139,
+    "source_sha256": "c2cffb2b0352276e97d04fa1f68fca96373a3de3916b82a6a8b18d90b1b243ca",
+    "fixture_sha256": "2556e573c73a88105c39da60d1e48fa54550451e946513138dd1813f03d1d4fa",
+    "binary_sha256": "229dd948346fc2f55a9d33f4ac995996e6eeb622c27b2ac023354b18019e492f",
+    "raw_sha256": "bfebc25fe52b54b2ea0e83b40929880494a3e113beba9c19fb0a4cecdc66387b",
+    "raw": "backups/nudge747/height_played/runs/nudge747_height_played_dm3.log",
+    "checks": 13,
+    "failures": [],
+    "seconds": 1.0,
+    "frames": 68,
+    "measured_fps": 67.0,
+    "frame_ms": 14.0,
+    "position": [
+     631.0,
+     182.6,
+     -200.0
+    ],
+    "health": 100.0,
+    "task_lost": false,
+    "discontinuous": false,
+    "cases": [
+     [
+      "upper_floor",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "lower_floor",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "upper_fire",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "lower_fire",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "touch_upper",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "touch_lower",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "same_floor",
+      "1",
+      "1",
+      "3",
+      "0",
+      "1"
+     ]
+    ],
+    "entry": [
+     "1",
+     "1",
+     "1",
+     "0"
+    ],
+    "rescues": 0
+   },
+   {
+    "map": "e1m6",
+    "ticrate": 0.0139,
+    "source_sha256": "c2cffb2b0352276e97d04fa1f68fca96373a3de3916b82a6a8b18d90b1b243ca",
+    "fixture_sha256": "2556e573c73a88105c39da60d1e48fa54550451e946513138dd1813f03d1d4fa",
+    "binary_sha256": "229dd948346fc2f55a9d33f4ac995996e6eeb622c27b2ac023354b18019e492f",
+    "raw_sha256": "e9f9727b911a8ff7ef1076ba89bd7fd536759e8a7a5103a6545a3f55406e01b0",
+    "raw": "backups/nudge747/height_played/runs/nudge747_height_played_e1m6.log",
+    "checks": 6,
+    "failures": [],
+    "seconds": 0.4,
+    "frames": 31,
+    "measured_fps": 75.0,
+    "frame_ms": 15.0,
+    "position": [
+     -141.3,
+     896.0,
+     -232.0
+    ],
+    "health": 82.0,
+    "task_lost": false,
+    "discontinuous": false,
+    "cases": [],
+    "entry": [
+     "1",
+     "1",
+     "1",
+     "0"
+    ],
+    "rescues": 0
+   }
+  ],
+  [
+   {
+    "map": "dm3",
+    "ticrate": 0.1,
+    "source_sha256": "c2cffb2b0352276e97d04fa1f68fca96373a3de3916b82a6a8b18d90b1b243ca",
+    "fixture_sha256": "2556e573c73a88105c39da60d1e48fa54550451e946513138dd1813f03d1d4fa",
+    "binary_sha256": "229dd948346fc2f55a9d33f4ac995996e6eeb622c27b2ac023354b18019e492f",
+    "raw_sha256": "b69b6c356ebf2f43871d1191d58ed23d0983c858611742ede53c82e6b31c8e1d",
+    "raw": "backups/nudge747/height_slow/runs/nudge747_height_slow_dm3.log",
+    "checks": 13,
+    "failures": [],
+    "seconds": 0.9,
+    "frames": 10,
+    "measured_fps": 10.0,
+    "frame_ms": 100.0,
+    "position": [
+     652.4,
+     185.9,
+     -200.0
+    ],
+    "health": 100.0,
+    "task_lost": false,
+    "discontinuous": false,
+    "cases": [
+     [
+      "upper_floor",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "lower_floor",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "upper_fire",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "lower_fire",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "touch_upper",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "touch_lower",
+      "1",
+      "1",
+      "0",
+      "0",
+      "1"
+     ],
+     [
+      "same_floor",
+      "1",
+      "1",
+      "3",
+      "0",
+      "1"
+     ]
+    ],
+    "entry": [
+     "1",
+     "1",
+     "1",
+     "0"
+    ],
+    "rescues": 0
+   },
+   {
+    "map": "e1m6",
+    "ticrate": 0.1,
+    "source_sha256": "c2cffb2b0352276e97d04fa1f68fca96373a3de3916b82a6a8b18d90b1b243ca",
+    "fixture_sha256": "2556e573c73a88105c39da60d1e48fa54550451e946513138dd1813f03d1d4fa",
+    "binary_sha256": "229dd948346fc2f55a9d33f4ac995996e6eeb622c27b2ac023354b18019e492f",
+    "raw_sha256": "dbc3fca76f9398ff5f69a77782153eaf0ecfcc8b7f4d1404d2ad7de32cd7f431",
+    "raw": "backups/nudge747/height_slow/runs/nudge747_height_slow_e1m6.log",
+    "checks": 6,
+    "failures": [],
+    "seconds": 0.2,
+    "frames": 3,
+    "measured_fps": 10.0,
+    "frame_ms": 100.0,
+    "position": [
+     -131.8,
+     894.1,
+     -232.0
+    ],
+    "health": 100.0,
+    "task_lost": false,
+    "discontinuous": false,
+    "cases": [],
+    "entry": [
+     "1",
+     "1",
+     "1",
+     "0"
+    ],
+    "rescues": 0
+   }
+  ]
+ ],
+ "protocol": {
+  "registration": "#747 matched cohort registration, written before any tape ran.\nArms: control = frozen main 8922727 (backups/nudge747/control-src), candidate = fix/body-nudge-hull working tree.\nMaps: dm3 and dm4. 3 tapes per map per arm, 120 s, skill 2, played rate (ticrate 0.0139).\nRunner: tools/run_map_intelligence.py --maps dm3,dm4 --repeats 3 --seconds 120 --primary stall_parity.\nReject if any of:\n  native band verdict rejects on either map;\n  candidate engagement median falls outside the control band on either map (the #734 failure mode);\n  any candidate under-fire freeze.\nNo extra tapes after the results are seen.\n",
+  "maps": [
+   "dm3",
+   "dm4"
+  ],
+  "repeats": 3,
+  "seconds": 120,
+  "skill": 2,
+  "ticrate": 0.0139,
+  "primary": "stall_parity",
+  "arms": {
+   "control": {
+    "source_sha256": "34797bcfb0e8c0dfcd6130d184ed70e424e8196c594940b8c3f4c7473e8071a1",
+    "binary_sha256": "39ba9bdd1d274f604d9d4f52f0e911e8e0eb46369eb427eec38c6f827b3e55e6"
+   },
+   "candidate": {
+    "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+    "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186"
+   }
+  },
+  "schedule": [
+   "nudge_ctl_dm3_1",
+   "nudge_ctl_dm4_1",
+   "nudge_ctl_dm4_2",
+   "nudge_ctl_dm3_2",
+   "nudge_ctl_dm3_3",
+   "nudge_ctl_dm4_3",
+   "nudge_cnd_dm3_1",
+   "nudge_cnd_dm4_1",
+   "nudge_cnd_dm4_2",
+   "nudge_cnd_dm3_2",
+   "nudge_cnd_dm3_3",
+   "nudge_cnd_dm4_3"
+  ]
+ },
+ "ordinary": [
+  {
+   "map": "dm3",
+   "arm": "control",
+   "repeat": 1,
+   "name": "nudge_ctl_dm3_1",
+   "raw": "runs/body_nudge_v2_nudge_ctl_dm3_1.log",
+   "raw_sha256": "9b0601cc958fe2388775930e1be2617c49f7eefda49cab36b1e868aad0cc2568",
+   "source_sha256": "34797bcfb0e8c0dfcd6130d184ed70e424e8196c594940b8c3f4c7473e8071a1",
+   "binary_sha256": "39ba9bdd1d274f604d9d4f52f0e911e8e0eb46369eb427eec38c6f827b3e55e6",
+   "totals": {
+    "duration_sec": 119.89999999999999,
+    "tick_class": "listen",
+    "stalls": 7,
+    "engages": 11,
+    "goals": 12,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 1,
+    "cover": 377,
+    "routefails": 1
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm4",
+   "arm": "control",
+   "repeat": 1,
+   "name": "nudge_ctl_dm4_1",
+   "raw": "runs/body_nudge_v2_nudge_ctl_dm4_1.log",
+   "raw_sha256": "27be70d503640e17ca80d4a04fddfc1db260cc26c748f90e280b43bc782e8329",
+   "source_sha256": "34797bcfb0e8c0dfcd6130d184ed70e424e8196c594940b8c3f4c7473e8071a1",
+   "binary_sha256": "39ba9bdd1d274f604d9d4f52f0e911e8e0eb46369eb427eec38c6f827b3e55e6",
+   "totals": {
+    "duration_sec": 120.0,
+    "tick_class": "listen",
+    "stalls": 5,
+    "engages": 38,
+    "goals": 13,
+    "lava_deaths": 4,
+    "world_deaths": 4,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 2,
+    "cover": 278,
+    "routefails": 2
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm4",
+   "arm": "control",
+   "repeat": 2,
+   "name": "nudge_ctl_dm4_2",
+   "raw": "runs/body_nudge_v2_nudge_ctl_dm4_2.log",
+   "raw_sha256": "930910ae620315a629a9a2d033cb217acd7905219d3562653a33e4cc4fd92ef9",
+   "source_sha256": "34797bcfb0e8c0dfcd6130d184ed70e424e8196c594940b8c3f4c7473e8071a1",
+   "binary_sha256": "39ba9bdd1d274f604d9d4f52f0e911e8e0eb46369eb427eec38c6f827b3e55e6",
+   "totals": {
+    "duration_sec": 119.89999999999999,
+    "tick_class": "listen",
+    "stalls": 2,
+    "engages": 47,
+    "goals": 20,
+    "lava_deaths": 2,
+    "world_deaths": 2,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 4,
+    "cover": 274,
+    "routefails": 2
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm3",
+   "arm": "control",
+   "repeat": 2,
+   "name": "nudge_ctl_dm3_2",
+   "raw": "runs/body_nudge_v2_nudge_ctl_dm3_2.log",
+   "raw_sha256": "dcd8bbc8ce01933f70bad87e82032222f6331bf0b80a949cad04397385387bfb",
+   "source_sha256": "34797bcfb0e8c0dfcd6130d184ed70e424e8196c594940b8c3f4c7473e8071a1",
+   "binary_sha256": "39ba9bdd1d274f604d9d4f52f0e911e8e0eb46369eb427eec38c6f827b3e55e6",
+   "totals": {
+    "duration_sec": 119.89999999999999,
+    "tick_class": "listen",
+    "stalls": 16,
+    "engages": 6,
+    "goals": 15,
+    "lava_deaths": 0,
+    "world_deaths": 1,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 1,
+    "cover": 304,
+    "routefails": 3
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm3",
+   "arm": "control",
+   "repeat": 3,
+   "name": "nudge_ctl_dm3_3",
+   "raw": "runs/body_nudge_v2_nudge_ctl_dm3_3.log",
+   "raw_sha256": "7a077a0fdeb05d62a83bb31e26ea3668bd5d9c7ec11965e747d3046ad45c9489",
+   "source_sha256": "34797bcfb0e8c0dfcd6130d184ed70e424e8196c594940b8c3f4c7473e8071a1",
+   "binary_sha256": "39ba9bdd1d274f604d9d4f52f0e911e8e0eb46369eb427eec38c6f827b3e55e6",
+   "totals": {
+    "duration_sec": 120.0,
+    "tick_class": "listen",
+    "stalls": 10,
+    "engages": 14,
+    "goals": 11,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 1,
+    "cover": 372,
+    "routefails": 5
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm4",
+   "arm": "control",
+   "repeat": 3,
+   "name": "nudge_ctl_dm4_3",
+   "raw": "runs/body_nudge_v2_nudge_ctl_dm4_3.log",
+   "raw_sha256": "5ee094cc3bc8cc31ccfb7c94057f792de841866541e7aeb4e9254675cf087358",
+   "source_sha256": "34797bcfb0e8c0dfcd6130d184ed70e424e8196c594940b8c3f4c7473e8071a1",
+   "binary_sha256": "39ba9bdd1d274f604d9d4f52f0e911e8e0eb46369eb427eec38c6f827b3e55e6",
+   "totals": {
+    "duration_sec": 119.89999999999999,
+    "tick_class": "listen",
+    "stalls": 1,
+    "engages": 52,
+    "goals": 10,
+    "lava_deaths": 1,
+    "world_deaths": 1,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 9,
+    "cover": 281,
+    "routefails": 1
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm3",
+   "arm": "candidate",
+   "repeat": 1,
+   "name": "nudge_cnd_dm3_1",
+   "raw": "runs/body_nudge_v2_nudge_cnd_dm3_1.log",
+   "raw_sha256": "408a70b48bd6c05f1633334e3675dea4d40233992312b9b2537c53cd0d1d052a",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 119.7,
+    "tick_class": "listen",
+    "stalls": 10,
+    "engages": 17,
+    "goals": 12,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 3,
+    "cover": 404,
+    "routefails": 0
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm4",
+   "arm": "candidate",
+   "repeat": 1,
+   "name": "nudge_cnd_dm4_1",
+   "raw": "runs/body_nudge_v2_nudge_cnd_dm4_1.log",
+   "raw_sha256": "f1d4fbf88c83b789cb91a2507319e5c71c05d2851ad7640b5a70b60a39010e24",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 119.8,
+    "tick_class": "listen",
+    "stalls": 2,
+    "engages": 59,
+    "goals": 22,
+    "lava_deaths": 2,
+    "world_deaths": 2,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 4,
+    "cover": 294,
+    "routefails": 1
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm4",
+   "arm": "candidate",
+   "repeat": 2,
+   "name": "nudge_cnd_dm4_2",
+   "raw": "runs/body_nudge_v2_nudge_cnd_dm4_2.log",
+   "raw_sha256": "52a6485499a6c317da12dfc295c12332573c98cd33207d2017977f78aa0f3943",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 119.7,
+    "tick_class": "listen",
+    "stalls": 3,
+    "engages": 47,
+    "goals": 16,
+    "lava_deaths": 2,
+    "world_deaths": 2,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 4,
+    "cover": 313,
+    "routefails": 0
+   },
+   "bodynudge": {
+    "moved": 2,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm3",
+   "arm": "candidate",
+   "repeat": 2,
+   "name": "nudge_cnd_dm3_2",
+   "raw": "runs/body_nudge_v2_nudge_cnd_dm3_2.log",
+   "raw_sha256": "580f0f72b791916a68507645c71d31f01f8a933be37f90c636ec50af0d2c8ac5",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 120.0,
+    "tick_class": "listen",
+    "stalls": 7,
+    "engages": 10,
+    "goals": 19,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 1,
+    "cover": 400,
+    "routefails": 2
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm3",
+   "arm": "candidate",
+   "repeat": 3,
+   "name": "nudge_cnd_dm3_3",
+   "raw": "runs/body_nudge_v2_nudge_cnd_dm3_3.log",
+   "raw_sha256": "097406337640376951825e118182c166ccd3fae2aab19724123d9f361f0767f9",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 119.8,
+    "tick_class": "listen",
+    "stalls": 10,
+    "engages": 11,
+    "goals": 14,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 2,
+    "cover": 417,
+    "routefails": 1
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  },
+  {
+   "map": "dm4",
+   "arm": "candidate",
+   "repeat": 3,
+   "name": "nudge_cnd_dm4_3",
+   "raw": "runs/body_nudge_v2_nudge_cnd_dm4_3.log",
+   "raw_sha256": "48faefc88a39b0c3bf76c05e5193e24ddc5460072dc7a68703f874448dcea797",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 120.1,
+    "tick_class": "listen",
+    "stalls": 4,
+    "engages": 47,
+    "goals": 16,
+    "lava_deaths": 2,
+    "world_deaths": 2,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 7,
+    "cover": 296,
+    "routefails": 1
+   },
+   "bodynudge": {
+    "moved": 0,
+    "refused": 0
+   }
+  }
+ ],
+ "gates": {
+  "dm3": "┌─────────────────────────────────────────────────────────────┐\n│ ARGUS A/B QUALITY GATES: dm3 (baseline vs candidate) (scaled) │\n├──────────────────────────┬────────┬──────────────┬──────────┤\n│ Metric                   │ Status │ Delta        │ Verdict  │\n├──────────────────────────┼────────┼──────────────┼──────────┤\n│ Lava/Slime Deaths        │   🟢   │ 0 vs 0       │ PASS     │\n│ Nav Stalls               │   🟢   │ +0.0%        │ PASS     │\n│ Weapon Engages           │   🟢   │ +21.4%       │ PASS     │\n│ Goal Pickups (gl)        │   🟢   │ +9.1%        │ PASS     │\n│ Frag Spread Balance      │   🟢   │ 4 vs 4       │ PASS     │\n│ K/D Spread Tightness     │   🟢   │ 1 vs 3       │ PASS     │\n│ Freeze Stalls/Statues    │   🟢   │ 0.0s vs 0.0s │ PASS     │\n│ Navigation Coverage      │   🟢   │ 372 vs 404   │ PASS     │\n│ Server tick rate         │   🟢   │ both listen  │ SAME     │\n├──────────────────────────┴────────┴──────────────┴──────────┤\n│ OVERALL VERDICT:  🟢 APPROVED FOR RELEASE (PARITY)          │\n└─────────────────────────────────────────────────────────────┘\n\nParity: stalls 10 to 10, engages 11 to 11, lava 0 to 0, freezes 0 to 0 (medians, 3 control vs 3 candidate tapes)\n  - primary metric pre-registered as stall_parity: only it decides statistical gates; severe freezes still reject and other statistical gates flag. Four gates convict a null 19 per cent of the time against 0 to 12 per cent each (docs/specs/2026-09-16-lab-measurement-limits.md).\n  - stall_parity: candidate median 10 against a control band of 2 to 18 (control median 10), in band\n  - stall_parity: IQM 10 to 10, improvement 95% CI -3.0 to +9.0 (covers zero), P(improve) 0.61; sprt Continue at a bound of 6.1 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - engagements: candidate median 11 against a control band of 4 to 17 (control median 11), in band\n  - engagements: IQM 11 to 11, improvement 95% CI -4.0 to +11.0 (covers zero), P(improve) 0.61; sprt Continue at a bound of 6.9 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - lava_deaths: candidate median 0 against a control band of 0 to 2 (control median 0), in band\n  - lava_deaths: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - lava_deaths: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.50; sprt Continue at a bound of 0.0 - no variance estimate for this metric; the test cannot run\n  - freezes: candidate median 0 against a control band of 0 to 1 (control median 0), in band\n  - freezes: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - freezes: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.50; sprt Continue at a bound of 0.0 - no variance estimate for this metric; the test cannot run\n  - 3 candidate tape(s) against 3 control tape(s); the band carries 0.58 of the one-tape null spread\n",
+  "dm4": "┌─────────────────────────────────────────────────────────────┐\n│ ARGUS A/B QUALITY GATES: dm4 (baseline vs candidate) (scaled) │\n├──────────────────────────┬────────┬──────────────┬──────────┤\n│ Metric                   │ Status │ Delta        │ Verdict  │\n├──────────────────────────┼────────┼──────────────┼──────────┤\n│ Lava/Slime Deaths        │   🟢   │ 2 vs 2       │ PASS     │\n│ Nav Stalls               │   🟢   │ +50.0%       │ PASS     │\n│ Weapon Engages           │   🟢   │ +0.0%        │ PASS     │\n│ Goal Pickups (gl)        │   🟡   │ -20.0%       │ WARN     │\n│ Frag Spread Balance      │   🟢   │ 13 vs 16     │ PASS     │\n│ K/D Spread Tightness     │   🟢   │ 4 vs 4       │ PASS     │\n│ Freeze Stalls/Statues    │   🟢   │ 0.0s vs 0.0s │ PASS     │\n│ Navigation Coverage      │   🟢   │ 274 vs 313   │ PASS     │\n│ Server tick rate         │   🟢   │ both listen  │ SAME     │\n├──────────────────────────┴────────┴──────────────┴──────────┤\n│ OVERALL VERDICT:  🟢 APPROVED FOR RELEASE (PARITY)          │\n└─────────────────────────────────────────────────────────────┘\n\nParity: stalls 2 to 3, engages 47 to 47, lava 2 to 2, freezes 0 to 0 (medians, 3 control vs 3 candidate tapes)\n  - primary metric pre-registered as stall_parity: only it decides statistical gates; severe freezes still reject and other statistical gates flag. Four gates convict a null 19 per cent of the time against 0 to 12 per cent each (docs/specs/2026-09-16-lab-measurement-limits.md).\n  - stall_parity: candidate median 3 against a control band of 0 to 7 (control median 2), in band\n  - stall_parity: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - stall_parity: IQM 2 to 3, improvement 95% CI -3.0 to +3.0 (covers zero), P(improve) 0.39; sprt Continue at a bound of 10.6 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - engagements: candidate median 47 against a control band of 30 to 64 (control median 47), in band\n  - engagements: IQM 47 to 47, improvement 95% CI -5.0 to +21.0 (covers zero), P(improve) 0.67; sprt Continue at a bound of 17.9 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - lava_deaths: candidate median 2 against a control band of 0 to 6 (control median 2), in band\n  - lava_deaths: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - lava_deaths: IQM 2 to 2, improvement 95% CI -1.0 to +2.0 (covers zero), P(improve) 0.50; sprt Continue at a bound of 3.0 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - freezes: candidate median 0 against a control band of 0 to 1 (control median 0), in band\n  - freezes: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - freezes: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.50; sprt Continue at a bound of 1.2 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - 3 candidate tape(s) against 3 control tape(s); the band carries 0.58 of the one-tape null spread\n  - hotspot walkway_700_-800 x5 at 764 -742 -216: chronic dm4 walkway stall corner; suspected deflection dithering\n  - hotspot walkway_200_-900 x4 at 144 -830 -104: chronic dm4 walkway stall corner; suspected deflection dithering\n"
+ },
+ "decision": {
+  "adoption": "approved",
+  "rule": "Reject on a native band rejection on either map, an engagement median outside the control band on either map, or any candidate under-fire freeze.",
+  "dm3": {
+   "native": "APPROVED (PARITY)",
+   "stalls_median": [
+    10,
+    10
+   ],
+   "engages_median": [
+    11,
+    11
+   ],
+   "engage_band": [
+    4,
+    17
+   ],
+   "lava_median": [
+    0,
+    0
+   ],
+   "freeze_underfire": [
+    0,
+    0
+   ]
+  },
+  "dm4": {
+   "native": "APPROVED (PARITY)",
+   "stalls_median": [
+    2,
+    3
+   ],
+   "engages_median": [
+    47,
+    47
+   ],
+   "engage_band": [
+    30,
+    64
+   ],
+   "lava_median": [
+    2,
+    2
+   ],
+   "freeze_underfire": [
+    0,
+    0
+   ]
+  },
+  "exercise": "The changed nudge path reached the engine check twice in the six candidate tapes, both moved and none refused.",
+  "rescues": "One candidate dm3 tape records unstick underfire for Romero at 1029 -31 -168. That tape has no bodynudge marker, so the changed path moved nothing there.",
+  "limits": [
+   "The fixture proves the two same-floor cases at both cadences; the cohort shows parity, not a measured benefit, because the path ran only twice.",
+   "Airborne bots keep the old point-sample placement.",
+   "No installed gameplay binary changed and no human play is claimed."
+  ]
+ },
+ "artifacts": [
+  {
+   "path": "runs/body_nudge_v2_nudge747_control_played.log",
+   "sha256": "bacda3a5a058a33350bbdedbba6a7fec93ad422a2b9f453abcb28580cbf37b30"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge747_control_slow.log",
+   "sha256": "a9a881ddd0c7c2b5257d3ee8428a2c6e8c6b11e060bd034d5434b056074d583e"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge747_candidate_played.log",
+   "sha256": "37c9ae9522608d52d8c182892776d4b15b2aabb5629e51937bffa1f46b7273af"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge747_candidate_slow.log",
+   "sha256": "fb9ffedf0646ac4912f63f79ea23181566021d1f9fe228f5e33fa6381e9526b2"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge747_mutant_noverify.log",
+   "sha256": "d51e04107a22d1fc3b95275df62ad007180fb6f09daaef2dc578d0bebe8c9133"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge747_mutant_noaxis.log",
+   "sha256": "1d2d0c4707a70192485fad7a874e9776894220dc0820d1d784b010b62849709c"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_ctl_dm3_1.log",
+   "sha256": "9b0601cc958fe2388775930e1be2617c49f7eefda49cab36b1e868aad0cc2568"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_ctl_dm4_1.log",
+   "sha256": "27be70d503640e17ca80d4a04fddfc1db260cc26c748f90e280b43bc782e8329"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_ctl_dm4_2.log",
+   "sha256": "930910ae620315a629a9a2d033cb217acd7905219d3562653a33e4cc4fd92ef9"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_ctl_dm3_2.log",
+   "sha256": "dcd8bbc8ce01933f70bad87e82032222f6331bf0b80a949cad04397385387bfb"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_ctl_dm3_3.log",
+   "sha256": "7a077a0fdeb05d62a83bb31e26ea3668bd5d9c7ec11965e747d3046ad45c9489"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_ctl_dm4_3.log",
+   "sha256": "5ee094cc3bc8cc31ccfb7c94057f792de841866541e7aeb4e9254675cf087358"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_cnd_dm3_1.log",
+   "sha256": "408a70b48bd6c05f1633334e3675dea4d40233992312b9b2537c53cd0d1d052a"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_cnd_dm4_1.log",
+   "sha256": "f1d4fbf88c83b789cb91a2507319e5c71c05d2851ad7640b5a70b60a39010e24"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_cnd_dm4_2.log",
+   "sha256": "52a6485499a6c317da12dfc295c12332573c98cd33207d2017977f78aa0f3943"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_cnd_dm3_2.log",
+   "sha256": "580f0f72b791916a68507645c71d31f01f8a933be37f90c636ec50af0d2c8ac5"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_cnd_dm3_3.log",
+   "sha256": "097406337640376951825e118182c166ccd3fae2aab19724123d9f361f0767f9"
+  },
+  {
+   "path": "runs/body_nudge_v2_nudge_cnd_dm4_3.log",
+   "sha256": "48faefc88a39b0c3bf76c05e5193e24ddc5460072dc7a68703f874448dcea797"
+  }
+ ],
+ "limits": [
+  "The fixture proves the two same-floor cases at both cadences; the cohort shows parity, not a measured benefit, because the path ran only twice.",
+  "Airborne bots keep the old point-sample placement.",
+  "No installed gameplay binary changed and no human play is claimed."
+ ]
+}

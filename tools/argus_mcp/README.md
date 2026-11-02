@@ -106,6 +106,13 @@ continuous and retaining the original launcher task. That local exit does
 not certify the rest of the launcher route. Ordinary-match preservation is
 a separate adoption gate.
 
+`python tools/verify_body_nudge.py --output backups/<new-directory> --prefix <new_prefix>`
+checks same-floor separation on dm3 against the real player hull, then a
+continuing task from the original pin seat. Repeat with `--ticrate .1` for the
+slow profile. `--source <frozen-source> --expect-failure` retains an unchanged
+control. The `nudge` compile family checks this fixture in CI. See the
+[same-floor repair](../../docs/body-nudge-investigation.md).
+
 `ARGUS <name> unstick <kind> '<position>'` records the rescue destination.
 It does not locate the original pin. The e1m6 reproduction is dry; its
 original pre-rescue position is near (-160.1,833,-232), while the logged

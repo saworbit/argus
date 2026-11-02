@@ -33,6 +33,7 @@ VARIANTS = {
     'predicates': ('current','legacy_retention','legacy_dry'),
     'height': ('current',),
     'muzzle_predicates': ('current','legacy'),
+    'nudge': ('current',),
 }
 
 
@@ -51,7 +52,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'muzzle_predicates':
+    if family == 'nudge':
+        from verify_body_nudge import stage as stage_nudge
+        stage_nudge(ROOT, folder)
+    elif family == 'muzzle_predicates':
         from verify_muzzle_predicates import stage as stage_muzzle_predicates
         stage_muzzle_predicates(ROOT, folder, variant)
     elif family == 'height':
