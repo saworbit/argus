@@ -1,0 +1,67 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -261,7 +261,6 @@
+                                 // per-frame re-scan of the same fan)
+ .float  ar_shovelog;            // displacement: shove-line log throttle
+ .float  ar_blocklog;            // body-block marker throttle (2 s)
+-.float  ar_nudgelog;            // body-nudge marker throttle (2 s)
+ .float  ar_leadlog;             // lead-clip marker throttle (2 s)
+ .float  ar_hazardenter;         // pending protected entry deadline
+ .float  ar_hazardliquid;        // CONTENT_LAVA or CONTENT_SLIME
+@@ -5523,7 +5522,7 @@
+ void() Argus_BodyBlockCheck =
+ {
+     local entity cl;
+-    local vector to, cand, old;
++    local vector to, cand;
+     local float side;
+ 
+     cl = find (world, classname, "player");
+@@ -5555,45 +5554,16 @@
+                 // where the companion escorts through doorways. If the
+                 // spot does not fit we do not move at all and the
+                 // sidestep below resolves it against real collision.
+-                // SAME FLOOR (#747): the point samples passed a spot whose
+-                // hull clipped a wall by a fraction of a unit, and a 36u
+-                // radial gap still leaves two square hulls overlapping on
+-                // a diagonal. Clear one axis, then let the engine judge a
+-                // grounded bot: a zero step fails on any hull overlap or
+-                // missing floor, and a refused spot puts the bot back
+-                // where it stood. Airborne bots keep the old placement.
+                 if (vlen (to) < 36)
+                 {
+                     if (vlen (to) < 6)
+-                        to = '36 0 0';
++                        to = '32 0 0';
+                     else
+-                    {
+-                        side = fabs (to_x);
+-                        if (fabs (to_y) > side)
+-                            side = fabs (to_y);
+-                        to = to * (36 / side);
+-                    }
++                        to = normalize (to) * 36;
+                     cand = cl.origin + to;
+                     cand_z = self.origin_z;
+                     if (Argus_BoxClear (cand))
+-                    {
+-                        old = self.origin;
+                         setorigin (self, cand);
+-                        side = 1;
+-                        if ((self.flags & FL_ONGROUND) && !walkmove (0, 0))
+-                        {
+-                            setorigin (self, old);
+-                            side = 0;
+-                        }
+-                        if (time > self.ar_nudgelog)
+-                        {
+-                            self.ar_nudgelog = time + 2;
+-                            dprint ("ARGUS ");
+-                            dprint (self.netname);
+-                            if (side) dprint (" bodynudge moved\n");
+-                            else      dprint (" bodynudge refused\n");
+-                        }
+-                    }
+                 }
+ 
+                 // other is jumping, actively firing, or human teammate in coop: clear the line

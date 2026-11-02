@@ -25,9 +25,10 @@ It leaves same-floor nudge and collision behavior in place. The wider
 collision and diagonal-separation prototype in closed #734 was not adopted:
 its dm4 combat-preservation comparison failed. The narrow height repair
 superseded that proposal only for the reproduced different-floor entry.
-The retained same-floor wall and diagonal-hull failures remain tracked in
+The retained same-floor wall and diagonal-hull failures were tracked in
 [#747](https://github.com/saworbit/argus/issues/747). They are not covered by
-the height gate or the closed #642/#644 acceptance.
+the height gate or the closed #642/#644 acceptance. The
+[same-floor repair](body-nudge-investigation.md) fixes them separately.
 
 The maintained native fixture gives these physical outcomes:
 
