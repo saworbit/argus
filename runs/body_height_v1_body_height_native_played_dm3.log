@@ -1,0 +1,72 @@
+LOG started on: 11/02/2026 12:37:46 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm3
+Clearing memory
+Programs occupy 1113K.
+trying to open external vis file
+maps/dm3.vis not found, trying heightcheck_body_height_native_played.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 244 nodes, 829 links
+0 entities inhibited
+ARGUS init on dm3
+ARGUS difficulty Carmack t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '192.0 -208.0 -176.0' spd 0 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '1520.0 432.0 -88.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-880.0 -232.0 -16.0' spd 0 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   1.7 pos '199.7 -61.6 -176.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '1620.0 539.3 -88.0' spd 320 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-945.9 -107.5 -16.0' spd 156.3 yaw 267.8 mode 0 st 0 gl 0 hp 100 frg 0
+BHVRPL begin body_height
+BHFIX begin dt_ms  15.0 layout 1
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BHCASE upper_floor initialfit 1 finalfit 1 distance 0 dodge 0 firing 1
+BHCHECK upper_floor 1
+BHCASE lower_floor initialfit 1 finalfit 1 distance 0 dodge 0 firing 1
+BHCHECK lower_floor 1
+BHCASE upper_fire initialfit 1 finalfit 1 distance 0 dodge 0 firing 1
+BHCHECK upper_fire 1
+BHCASE lower_fire initialfit 1 finalfit 1 distance 0 dodge 0 firing 1
+BHCHECK lower_fire 1
+BHCASE touch_upper initialfit 1 finalfit 1 distance 3 dodge 0 firing 1
+BHCHECK touch_upper 0
+BHCASE touch_lower initialfit 1 finalfit 1 distance 0 dodge 0 firing 1
+BHCHECK touch_lower 1
+BHCASE same_floor initialfit 1 finalfit 1 distance 3 dodge 0 firing 1
+BHCHECK same_floor 1
+ARGUS difficulty Carmack t   2.0 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+BHENTRY beforefit 1 upperfit 1 afterfit 1 movement 0
+BHCHECK entry_bodies_fit 1
+BHCHECK entry_kept 1
+BHPOSE t 0 pos '338.8 126.0 -200.0' active 1 hp 100
+ARGEVT Carmack route 1 start '389.0 225.0 -200.0' goal '677.0 193.0 -200.0'
+ARGLOG Carmack t   2.2 pos '389.5 135.5 -200.0' spd 320 yaw 11 mode 2 st 0 gl 0 hp 100 frg 0
+BHPOSE t   0.5 pos '487.8 154.6 -200.0' active 1 hp 100
+ARGLOG Carmack t   2.7 pos '550.3 166.8 -200.0' spd 320 yaw 11 mode 1 st 0 gl 0 hp 100 frg 0
+BHCHECK physical_exit 1
+BHCHECK continuous_motion 1
+BHCHECK task_preserved 1
+BHCHECK alive_and_dry 1
+BHRESULT completed 1 seconds   1.0 frames 70 pos '634.5 183.1 -200.0' hp 100 grounded 1 worldfloor 1 wet 0 lost 0 discontinuous 0
+BHFIX end checks 13 failures 1

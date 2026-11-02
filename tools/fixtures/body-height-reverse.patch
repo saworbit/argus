@@ -1,0 +1,22 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -5532,16 +5532,14 @@
+         {
+             to = self.origin - cl.origin;
+             to_z = 0;
+-            if (vlen (to) < 48
+-                && self.origin_z + self.mins_z < cl.origin_z + cl.maxs_z
+-                && self.origin_z + self.maxs_z > cl.origin_z + cl.mins_z)
++            if (vlen (to) < 48)
+             {
+                 // Anti-embed nudge: if bounding boxes overlap (<36u),
+                 // step the bot clear so the player is never stuck solid.
+                 //
+                 // TWO THINGS THIS USED TO GET WRONG (#267). to_z is
+-                // zeroed; the horizontal-only gate previously had no
+-                // bound on vertical separation (#642). The destination
++                // zeroed, so the gate is a horizontal test with no
++                // bound on vertical separation, and the destination
+                 // used to be cl.origin + to, which inherits the OTHER
+                 // player's height: a bot on the dm4 walkway at z -232
+                 // directly above someone on the pit floor near z -380

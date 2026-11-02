@@ -5532,14 +5532,16 @@ void() Argus_BodyBlockCheck =
         {
             to = self.origin - cl.origin;
             to_z = 0;
-            if (vlen (to) < 48)
+            if (vlen (to) < 48
+                && self.origin_z + self.mins_z < cl.origin_z + cl.maxs_z
+                && self.origin_z + self.maxs_z > cl.origin_z + cl.mins_z)
             {
                 // Anti-embed nudge: if bounding boxes overlap (<36u),
                 // step the bot clear so the player is never stuck solid.
                 //
                 // TWO THINGS THIS USED TO GET WRONG (#267). to_z is
-                // zeroed, so the gate is a horizontal test with no
-                // bound on vertical separation, and the destination
+                // zeroed; the horizontal-only gate previously had no
+                // bound on vertical separation (#642). The destination
                 // used to be cl.origin + to, which inherits the OTHER
                 // player's height: a bot on the dm4 walkway at z -232
                 // directly above someone on the pit floor near z -380
