@@ -23,6 +23,10 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Keep health and observation evidence, frozen-source and private-input
+  guards active under optimized Python
+  ([#742](https://github.com/saworbit/argus/issues/742)).
+
 - Require vertical body overlap before nudging or sidestepping another
   player. Prevent the reproduced dry e1m6 and dm3 pins caused by players
   on other floors; retain separate task and broader-match gates

@@ -2,6 +2,9 @@ import tempfile
 from pathlib import Path
 import unittest
 import hashlib
+import os
+import subprocess
+import sys
 from unittest.mock import patch
 
 from check_health_fixture import audit, check, LABELS
@@ -19,6 +22,43 @@ def tape(failed=False):
 
 
 class HealthTests(unittest.TestCase):
+    def test_optimized_interpreter_keeps_evidence_and_output_guards(self):
+        script=r'''
+from pathlib import Path
+from unittest.mock import patch
+from check_health_fixture import check as health_check
+from check_perception_fixture import check as perception_check
+from health_inventory_parked import parked_source
+from run_health_fixture import prepare, ROOT
+from test_perception_health import tape
+from test_perception_fixture import tape as perception_tape
+
+def rejected(call):
+    try:
+        call()
+    except AssertionError:
+        return
+    raise RuntimeError('invalid evidence or output was accepted')
+
+rejected(lambda: health_check(tape(True),'dm2',[1]))
+rejected(lambda: perception_check(
+    perception_tape().replace('PERFIX cleanup 1 restored 1',''),'dm4',0,[1]))
+with patch('run_health_fixture.shutil.copytree',side_effect=RuntimeError('staging started')):
+    rejected(lambda: prepare(ROOT,False))
+target=ROOT/'src/argus.qc';read=Path.read_text
+changed=read(target)+'\n// unapproved active-source change\n'
+def source(path,*args,**kwargs):
+    return changed if path==target else read(path,*args,**kwargs)
+with patch.object(Path,'read_text',source):
+    rejected(parked_source)
+print('four optimized rejections verified')
+'''
+        result=subprocess.run([sys.executable,'-O','-c',script],cwd=ROOT,
+            env={**os.environ,'PYTHONPATH':str(ROOT/'tools')},
+            capture_output=True,text=True,timeout=10)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+        self.assertIn('four optimized rejections verified',result.stdout)
+
     def test_complete_and_old_code_failure_records(self):
         self.assertEqual(len(check(tape(),'dm2',[1])[0]['labels']),22)
         with self.assertRaises(AssertionError):check(tape(True),'dm2',[1])
