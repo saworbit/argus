@@ -1,0 +1,231 @@
+{
+ "schema": "cover-hop-v2",
+ "status": "approved",
+ "issue": 652,
+ "unblocked_by": [
+  723,
+  743,
+  751
+ ],
+ "cases": [
+  {
+   "source_sha256": "2a9b0b1f3cadda02d77f32f36da031a2a9ab8162a61bfbebd3598b64c0c11e07",
+   "fixture_sha256": "b34dfd1f6569e757888d98b0603ba4502854bb3a2b15bf6be8e5ddbdbae5ecce",
+   "binary_sha256": "bf0e00de27f8a2c06541bf0788a4a2fa6bd6e1390618e544921d4187325b2347",
+   "raw_sha256": "e893d7403e28592d7fab9c55aa2db7e6da306d265a2096b281e346a08681b8c7",
+   "raw": "runs/cover_hop_v2_cover652_pred_dm4_played.log",
+   "ticrate": 0.0139,
+   "map": "dm4",
+   "fixture_layout": "cover-hop-v1",
+   "frame_ms": 15.0,
+   "checks": 15
+  },
+  {
+   "source_sha256": "2a9b0b1f3cadda02d77f32f36da031a2a9ab8162a61bfbebd3598b64c0c11e07",
+   "fixture_sha256": "b34dfd1f6569e757888d98b0603ba4502854bb3a2b15bf6be8e5ddbdbae5ecce",
+   "binary_sha256": "bf0e00de27f8a2c06541bf0788a4a2fa6bd6e1390618e544921d4187325b2347",
+   "raw_sha256": "d2cf52d8e9d1b0a7a324f18b90eeab7f6f9190086092ad1e0f5e39ca5c5fcbb1",
+   "raw": "runs/cover_hop_v2_cover652_pred_dm2_slow.log",
+   "ticrate": 0.1,
+   "map": "dm2",
+   "fixture_layout": "cover-hop-v1",
+   "frame_ms": 100.0,
+   "checks": 15
+  }
+ ],
+ "negative_controls": [
+  {
+   "label": "guard disabled (returns TRUE after the world checks)",
+   "raw": "runs/cover_hop_v2_cover652_pred_mutant.log",
+   "raw_sha256": "654abd4d922c680532b295e9bf2d18379c265ac9c41fe40c0fa33bf64a090d5d",
+   "ticrate": 0.0139,
+   "map": "dm4",
+   "failed_checks": [
+    "unlinked",
+    "reverse_only",
+    "jump",
+    "sprint",
+    "rocket",
+    "lift",
+    "swim",
+    "train",
+    "door",
+    "deliberate_drop"
+   ]
+  }
+ ],
+ "cost_protocol": {
+  "map": "dm4",
+  "repeats": 3,
+  "seconds": 30,
+  "skill": 2,
+  "ticrate": 0.0139,
+  "primary": "stall_parity",
+  "registration": "#652 cover-hop guard cost cohort, rerun on current main. Written before any tape ran.\nSame protocol as the rejected v1 cohort: dm4, exactly 3 tapes per arm, 30 s, skill 2,\nplayed rate (ticrate 0.0139), primary stall_parity, no extra tapes chosen by outcome.\nArms: control = frozen main 24a8de3 (backups/cover652/control-src); candidate = fix/cover-hop-guard.\nArms run side by side on ports 26031 and 26032.\nReject if the native band verdict rejects, which includes the severe-freeze veto\n(any candidate under-fire freeze).\n",
+  "control_head": "24a8de36cc5f0e9dea20ed7586c17a2abac22693",
+  "arms": {
+   "control": {
+    "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+    "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186"
+   },
+   "candidate": {
+    "source_sha256": "a4fc20558294b546dcd115e2ad4fad12250fd862563635f2ebf1d68fcea751cf",
+    "binary_sha256": "2062fb7c3e8266b57ffe303fc52b5fad1a7f6966c5f08803d72dcf76e9a6d931"
+   }
+  }
+ },
+ "cost_cases": [
+  {
+   "arm": "control",
+   "repeat": 1,
+   "name": "cover652_ctl_dm4_1",
+   "raw": "runs/cover_hop_v2_cover652_ctl_dm4_1.log",
+   "raw_sha256": "d84e700dabfb38ce9a9f88b6a8fa5f697e5eed318ebd0c998773c48bfe314af2",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 28.900000000000002,
+    "tick_class": "listen",
+    "stalls": 1,
+    "engages": 11,
+    "goals": 5,
+    "lava_deaths": 1,
+    "world_deaths": 1,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 2,
+    "cover": 107
+   }
+  },
+  {
+   "arm": "control",
+   "repeat": 2,
+   "name": "cover652_ctl_dm4_2",
+   "raw": "runs/cover_hop_v2_cover652_ctl_dm4_2.log",
+   "raw_sha256": "775140cdb7ff4f24e7d948bafb2e86060b7f2ed96c1d4f0e450c8a61b7cb6b72",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 29.7,
+    "tick_class": "listen",
+    "stalls": 0,
+    "engages": 11,
+    "goals": 2,
+    "lava_deaths": 1,
+    "world_deaths": 1,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 1,
+    "cover": 93
+   }
+  },
+  {
+   "arm": "control",
+   "repeat": 3,
+   "name": "cover652_ctl_dm4_3",
+   "raw": "runs/cover_hop_v2_cover652_ctl_dm4_3.log",
+   "raw_sha256": "38b6112404a899392edd0838a5fd2725e6c764d023d30d529f5247cff4f681cf",
+   "source_sha256": "a3ea7d22b91d44197ecf452e3e242706dc0d5d80bfb5ad77bb43e7c4699e7254",
+   "binary_sha256": "458bce12352ed62a2b5f5aeff5a9c78a819635a29530a9c75941c9f8a3c6d186",
+   "totals": {
+    "duration_sec": 30.0,
+    "tick_class": "listen",
+    "stalls": 0,
+    "engages": 20,
+    "goals": 3,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 1,
+    "cover": 117
+   }
+  },
+  {
+   "arm": "candidate",
+   "repeat": 1,
+   "name": "cover652_cnd_dm4_1",
+   "raw": "runs/cover_hop_v2_cover652_cnd_dm4_1.log",
+   "raw_sha256": "0867dece909bb15ae9cd342bef37f24ddbf931fbf2789a2d204f732102990278",
+   "source_sha256": "a4fc20558294b546dcd115e2ad4fad12250fd862563635f2ebf1d68fcea751cf",
+   "binary_sha256": "2062fb7c3e8266b57ffe303fc52b5fad1a7f6966c5f08803d72dcf76e9a6d931",
+   "totals": {
+    "duration_sec": 30.0,
+    "tick_class": "listen",
+    "stalls": 0,
+    "engages": 11,
+    "goals": 7,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 1,
+    "cover": 109
+   }
+  },
+  {
+   "arm": "candidate",
+   "repeat": 2,
+   "name": "cover652_cnd_dm4_2",
+   "raw": "runs/cover_hop_v2_cover652_cnd_dm4_2.log",
+   "raw_sha256": "53ed090d41dc3eb26daa269f5980365305225b703d23182836b8362671e3e4be",
+   "source_sha256": "a4fc20558294b546dcd115e2ad4fad12250fd862563635f2ebf1d68fcea751cf",
+   "binary_sha256": "2062fb7c3e8266b57ffe303fc52b5fad1a7f6966c5f08803d72dcf76e9a6d931",
+   "totals": {
+    "duration_sec": 29.900000000000002,
+    "tick_class": "listen",
+    "stalls": 1,
+    "engages": 7,
+    "goals": 7,
+    "lava_deaths": 0,
+    "world_deaths": 0,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 0,
+    "cover": 104
+   }
+  },
+  {
+   "arm": "candidate",
+   "repeat": 3,
+   "name": "cover652_cnd_dm4_3",
+   "raw": "runs/cover_hop_v2_cover652_cnd_dm4_3.log",
+   "raw_sha256": "b9a9a6920fa8b4d16df115fa0b6bf4039230cf4e3ca3e33c74c4d0dab48fb98e",
+   "source_sha256": "a4fc20558294b546dcd115e2ad4fad12250fd862563635f2ebf1d68fcea751cf",
+   "binary_sha256": "2062fb7c3e8266b57ffe303fc52b5fad1a7f6966c5f08803d72dcf76e9a6d931",
+   "totals": {
+    "duration_sec": 29.900000000000002,
+    "tick_class": "listen",
+    "stalls": 3,
+    "engages": 11,
+    "goals": 2,
+    "lava_deaths": 2,
+    "world_deaths": 2,
+    "freezes": 0,
+    "freeze_underfire": 0,
+    "freeze_max_sec": 0.0,
+    "kd_spread": 4,
+    "cover": 114
+   }
+  }
+ ],
+ "cost_verdict": "Approved",
+ "cost_reason": "Native band verdict approves parity on stall_parity; no freezes in either arm. The card flags engagements (mean 14 to 9.7) while both medians are 11, inside the control band of 5 to 22.",
+ "native_gate": "┌─────────────────────────────────────────────────────────────┐\n│ ARGUS A/B QUALITY GATES: dm4 (baseline vs candidate) (scaled) │\n├──────────────────────────┬────────┬──────────────┬──────────┤\n│ Metric                   │ Status │ Delta        │ Verdict  │\n├──────────────────────────┼────────┼──────────────┼──────────┤\n│ Lava/Slime Deaths        │   🟢   │ 0 vs 0       │ PASS     │\n│ Nav Stalls               │   🟢   │ 0 vs 1       │ PASS     │\n│ Weapon Engages           │   🔴   │ -65.0%       │ FAIL     │\n│ Goal Pickups (gl)        │   🟢   │ +133.3%      │ PASS     │\n│ Frag Spread Balance      │   🟢   │ 8 vs 3       │ PASS     │\n│ K/D Spread Tightness     │   🟢   │ 1 vs 0       │ PASS     │\n│ Freeze Stalls/Statues    │   🟢   │ 0.0s vs 0.0s │ PASS     │\n│ Navigation Coverage      │   🟢   │ 117 vs 104   │ PASS     │\n│ Server tick rate         │   🟢   │ both listen  │ SAME     │\n├──────────────────────────┴────────┴──────────────┴──────────┤\n│ OVERALL VERDICT:  🟢 APPROVED FOR RELEASE (PARITY)          │\n└─────────────────────────────────────────────────────────────┘\n\nParity: stalls 0 to 1, engages 11 to 11, lava 1 to 0, freezes 0 to 0 (medians, 3 control vs 3 candidate tapes)\n  - primary metric pre-registered as stall_parity: only it decides statistical gates; severe freezes still reject and other statistical gates flag. Four gates convict a null 19 per cent of the time against 0 to 12 per cent each (docs/specs/2026-09-16-lab-measurement-limits.md).\n  - stall_parity: candidate median 1 against a control band of 0 to 3 (control median 0), in band\n  - stall_parity: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - stall_parity: IQM 0 to 1, improvement 95% CI -3.0 to +1.0 (covers zero), P(improve) 0.28; sprt Continue at a bound of 10.6 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - engagements: candidate median 11 against a control band of 5 to 22 (control median 11), in band\n  - engagements: IQM 11 to 11, improvement 95% CI -13.0 to +0.0 (covers zero), P(improve) 0.22; sprt Reject at a bound of 17.9 - no effect of 17.9 or more; stop running tapes\n  - lava_deaths: candidate median 0 against a control band of 0 to 4 (control median 1), in band\n  - lava_deaths: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - lava_deaths: IQM 1 to 0, improvement 95% CI -2.0 to +1.0 (covers zero), P(improve) 0.56; sprt Continue at a bound of 3.0 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - freezes: candidate median 0 against a control band of 0 to 1 (control median 0), in band\n  - freezes: no improvement can be demonstrated at 3 control tape(s) - the band's floor is zero. Run repeats.\n  - freezes: IQM 0 to 0, improvement 95% CI +0.0 to +0.0 (covers zero), P(improve) 0.50; sprt Continue at a bound of 1.2 - neither boundary crossed at 3 tapes a side; run another (cap 10)\n  - 3 candidate tape(s) against 3 control tape(s); the band carries 0.58 of the one-tape null spread\n  - hotspot walkway_700_-800 x2 at 776 -808 -232: chronic dm4 walkway stall corner; suspected deflection dithering\n",
+ "native_gate_sha256": "2d0d4f1f7dda13ffd5170ad88939805a45e8653975a145692f989d20817e1dd4",
+ "shipped_graphs": {
+  "pairs": 1751,
+  "failing": 0,
+  "note": "Every baked cover pair on all 13 shipped graphs already meets the contract, so the guard changes no decision in current matches."
+ },
+ "limits": [
+  "The guard is inert on every shipped graph today; the cohort is a cost check, not evidence of better play.",
+  "The earlier v1 rejection came from the body nudge reproduced in #723, not from this guard.",
+  "No installed binary changed and no human play is claimed."
+ ]
+}

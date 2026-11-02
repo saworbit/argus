@@ -83,6 +83,25 @@ the fixture frame counts, not inferred from the step option. Run the
 acknowledgement success alone is not tactical acceptance. See the
 [manoeuvre guide](../../docs/attack-cover-return.md#engine-acceptance).
 
+## Cover-hop controls
+
+```text
+python tools/verify_cover_hop.py --output backups/<new-directory> --prefix <new_prefix> --map dm4
+```
+
+The private `cover` fixture checks the production cover-hop predicate against
+missing and reverse-only edges, every typed movement mask, the 18-unit drop
+boundary and a linked stair climb. The live combat consumer applies this guard
+before using the hint's heading. Geometry and threat occlusion checks still
+decide whether to use an eligible hint. `--map dm2` selects the second context;
+`--ticrate .1` measures the separate 100 ms arm. Use fresh outputs and prefixes.
+Private nodes are removed before AI resumes, and `BHVRPL` quarantines the tape
+from ordinary gameplay bands. No generated graph is changed. Every baked pair
+on the shipped graphs already meets the contract, and `tools/test_cover_hop.py`
+checks that offline, so the guard protects future regenerations. The
+[cover receipts](../../runs/cover-hop-v2.results.json) hold the controls and the
+three-per-arm dm4 cost check on current main.
+
 ## Body height and physical exits
 
 The [investigation](../../docs/body-height-investigation.md) separates the
