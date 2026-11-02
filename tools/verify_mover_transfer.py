@@ -63,7 +63,7 @@ def stage(root, output, source=None):
 
 
 def inspect_fixture(text, map_name, ticrate, *, require_current=False):
-    """Preserve v1 outcomes as legacy evidence; v2 proves the actual transition."""
+    """Keep legacy fields readable; v2 proves transition, v3 fixes flag truth."""
     check_tape(text, map_name)
     require(text.count('BHVRPL begin mover_transfer') == 1)
     matches = re.findall(r"^MVFIX result completed\s+([01]) seconds\s+([\d.]+) boarded\s+([01]) route_retained\s+([01]) dry\s+([01]) alive\s+([01]) launches\s+(\d+) bad_launch\s+([01]) landed\s+([01]) handoff\s+([01])(?: exit_consumed ([01]) frames (\d+) node '([^']+)' generation (\d+))? pos '([^']+)'\r?$", text, re.M)
@@ -76,19 +76,20 @@ def inspect_fixture(text, map_name, ticrate, *, require_current=False):
         boarded=values[2] == '1', route_retained=values[3] == '1', dry=values[4] == '1',
         alive=values[5] == '1', launches=int(values[6]), bad_launch=values[7] == '1',
         landed=values[8] == '1', handoff=values[9] == '1', frame_ms=ms,
-        fixture_layout='mover-transfer-v1', proof='node_difference', forward_proven=False)
-    starts = re.findall(r"^MVFIX begin dt_ms\s+[\d.]+ layout 2 exit '([^']+)'\r?$", text, re.M)
+        fixture_layout='mover-transfer-v1', proof='node_difference', forward_proven=False,
+        observer_predicates_verified=False)
+    starts = re.findall(r"^MVFIX begin dt_ms\s+[\d.]+ layout ([23]) exit '([^']+)'\r?$", text, re.M)
     if not starts:
         require(not require_current, 'legacy mover receipt cannot prove forward handoff')
         require(not values[10] and 'MVFIX expect ' not in text and 'MVFIX consumed ' not in text, 'missing proof layout')
         return row
-    require(len(starts) == 1 and bool(values[10]), 'incomplete v2 proof layout')
+    require(len(starts) == 1 and bool(values[10]), 'incomplete transition proof layout')
     vector = lambda s: tuple(map(float, s.split()))
     def point(s):
         result = vector(s)
         require(len(result) == 3 and all(math.isfinite(v) for v in result), 'invalid proof position')
         return result
-    exit_pos = point(starts[0])
+    exit_pos = point(starts[0][1])
     expected_exit = (529,1393,344) if map_name == 'e1m6' else (517,801,216)
     require(exit_pos == expected_exit, 'wrong exit geometry')
     controls = re.findall(r'^MVFIX oracle (\w+) accepted ([01])\r?$', text, re.M)
@@ -122,7 +123,8 @@ def inspect_fixture(text, map_name, ticrate, *, require_current=False):
         require(point(values[12]) == point(last[3]) and int(values[13]) == int(last[1]), 'final node/generation differs from consumed successor')
     if row['completed']:
         require(forward and row['landed'] and not row['bad_launch'], 'completion lacks forward-consumption proof')
-    row.update(fixture_layout='mover-transfer-v2', proof='observed_exit_consumption',
+    row.update(fixture_layout='mover-transfer-v'+starts[0][0], proof='observed_exit_consumption',
+        observer_predicates_verified=starts[0][0]=='3',
         forward_proven=forward, exit_consumed=values[10] == '1', frames=frames, measured_fps=fps,
         expected_successor=point(witnessed[-1][3]) if witnessed else None, exit_node=exit_pos,
         oracle_controls=dict(controls))

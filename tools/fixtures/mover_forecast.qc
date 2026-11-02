@@ -122,15 +122,15 @@ void() MoverForecastSetup =
     }
     dprint ("BHVRPL begin mover_forecast\n");
     dprint ("MCFIX begin dt_ms "); dprint (ftos (mc_dt * 1000));
-    dprint (" layout 1 case "); dprint (ftos (mc_case)); dprint ("\n");
+    dprint (" layout 2 case "); dprint (ftos (mc_case)); dprint ("\n");
     self = saved;
 };
 
 void() MoverForecastObserve =
 {
     local float retained, dry;
-    retained = mc_bot.ar_goal == mc_goal && mc_bot.ar_taskgoal == mc_goal
-        && mc_bot.ar_node == mc_node;
+    retained = (mc_bot.ar_goal == mc_goal && mc_bot.ar_taskgoal == mc_goal
+        && mc_bot.ar_node == mc_node);
     if (!retained) mc_lost = 1;
     if (!mc_wasair && mc_bot.ar_hopair && mc_bot.velocity_z == AR_JUMPVEL)
     {
@@ -140,8 +140,8 @@ void() MoverForecastObserve =
         dprint (" accepted "); dprint (ftos (mc_allowed)); dprint ("\n");
     }
     if (mc_bot.ar_wetlevel > mc_wet) mc_wet = mc_bot.ar_wetlevel;
-    dry = mc_bot.ar_wetlevel == 0 && mc_bot.ar_feettype != CONTENT_WATER
-        && mc_bot.ar_feettype != CONTENT_LAVA && mc_bot.ar_feettype != CONTENT_SLIME;
+    dry = (mc_bot.ar_wetlevel == 0 && mc_bot.ar_feettype != CONTENT_WATER
+        && mc_bot.ar_feettype != CONTENT_LAVA && mc_bot.ar_feettype != CONTENT_SLIME);
     if ((mc_bot.flags & FL_ONGROUND) && mc_bot.groundentity == world)
     { mc_floor = 1; if (dry) mc_dry = 1; }
 };

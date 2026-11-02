@@ -28,6 +28,13 @@ def current_receipt(frame_ms=14):
 
 
 class TransferReceipts(unittest.TestCase):
+    def test_corrected_predicates_have_their_own_layout(self):
+        legacy=inspect_fixture(current_receipt(),'e1m6',.0139,require_current=True)
+        self.assertTrue(legacy['forward_proven'])
+        self.assertFalse(legacy['observer_predicates_verified'])
+        current=inspect_fixture(current_receipt().replace('layout 2','layout 3'),'e1m6',.0139,require_current=True)
+        self.assertTrue(current['forward_proven'] and current['observer_predicates_verified'])
+
     def test_published_raw_identities_and_proof(self):
         root = Path(__file__).resolve().parents[1]
         evidence = json.loads((root / 'runs/mover-handoff-v2.results.json').read_text(encoding='utf-8'))

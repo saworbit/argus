@@ -30,6 +30,7 @@ VARIANTS = {
     'attention': ('current',),
     'water': ('current',),
     'ownership': ('current','legacy'),
+    'predicates': ('current','legacy_retention','legacy_dry'),
 }
 
 
@@ -48,7 +49,10 @@ def stage(folder, family, variant):
     """Reuse native verifier staging, without configuration or engine startup."""
     # Import lazily: --help needs only Python's standard library.
     from verify_private_fixtures import stage_muzzle, stage_combat, stage_button, stage_door
-    if family == 'ownership':
+    if family == 'predicates':
+        from verify_mover_predicates import stage as stage_predicates
+        stage_predicates(ROOT, folder, variant=variant)
+    elif family == 'ownership':
         from verify_water_ownership import stage as stage_ownership
         stage_ownership(ROOT, folder, legacy=variant=='legacy')
     elif family == 'ally':

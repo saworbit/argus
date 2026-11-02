@@ -1,0 +1,69 @@
+LOG started on: 11/02/2026 11:15:35 
+Playing registered version.
+UDP Initialized
+WIPX_OpenSocket: Address family not supported by protocol family
+WIPX_Init: Unable to open control socket, IPX disabled
+Exe: 20:02:47 Jul 31 2024
+256.0 megabyte heap
+
+Language initialization
+Couldn't load 'localization/loc_english.txt'
+from 'C:\argus\engine'
+
+========= Quake Initialized =========
+
+execing autoexec.cfg
+SpawnServer: dm3
+Clearing memory
+Programs occupy 1123K.
+trying to open external vis file
+maps/dm3.vis not found, trying moverpredicate_mover_predicate_fixed.vis
+external vis not found
+ARGUS slots 8
+ARGUS worldspawn reached
+ARGNAV 244 nodes, 829 links
+0 entities inhibited
+ARGUS init on dm3
+ARGUS difficulty Carmack t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Carmack spawned
+ARGUS difficulty Romero t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Romero spawned
+ARGUS difficulty Joe Rogan t   1.1 base 2 cognition 2 aim 2 offset 0 drift 0 adaptive 0 aimshare_pct 35
+ARGEVT Joe Rogan spawned
+Server spawned.
+ARGLOG Joe Rogan t   1.2 pos '192.0 -208.0 -176.0' spd 0 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.2 pos '1520.0 432.0 -88.0' spd 0 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.2 pos '-880.0 -232.0 -16.0' spd 0 yaw 119.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Carmack hazard
+ARGLOG Joe Rogan t   1.7 pos '199.7 -60.3 -176.0' spd 320 yaw  87.6 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Romero t   1.7 pos '1620.9 540.2 -88.0' spd 320 yaw  47.5 mode 0 st 0 gl 0 hp 100 frg 0
+ARGLOG Carmack t   1.7 pos '-946.4 -106.1 -16.0' spd 159.5 yaw 267.8 mode 0 st 0 gl 0 hp 100 frg 0
+BHVRPL begin mover_predicates
+MPP begin dt_ms 14 layout 1
+MVPRED transfer owned retained 1 dry 1 lost 0
+MVPRED transfer missing_task retained 0 dry 1 lost 1
+MVPRED transfer missing_goal retained 0 dry 1 lost 1
+MVPRED transfer neither retained 0 dry 1 lost 1
+MVPRED transfer water_feet retained 1 dry 0 lost 0
+MVPRED transfer lava_feet retained 1 dry 0 lost 0
+MVPRED transfer slime_feet retained 1 dry 0 lost 0
+MVPRED transfer wet_body retained 1 dry 0 lost 0
+MVPRED forecast owned retained 1 dry 1 lost 0
+MPLATCH owned dry 1 lost 0
+MVPRED forecast missing_task retained 0 dry 1 lost 1
+MPLATCH missing_task dry 1 lost 1
+MVPRED forecast missing_goal retained 0 dry 1 lost 1
+MPLATCH missing_goal dry 1 lost 1
+MVPRED forecast neither retained 0 dry 1 lost 1
+MPLATCH neither dry 1 lost 1
+MVPRED forecast missing_node retained 0 dry 1 lost 1
+MPLATCH missing_node dry 1 lost 1
+MVPRED forecast water_feet retained 1 dry 0 lost 0
+MPLATCH water_feet dry 0 lost 0
+MVPRED forecast lava_feet retained 1 dry 0 lost 0
+MPLATCH lava_feet dry 0 lost 0
+MVPRED forecast slime_feet retained 1 dry 0 lost 0
+MPLATCH slime_feet dry 0 lost 0
+MVPRED forecast wet_body retained 1 dry 0 lost 0
+MPLATCH wet_body dry 0 lost 0
+MPP end rows 17 cleanup 1

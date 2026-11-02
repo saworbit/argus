@@ -108,15 +108,19 @@ The broader-map studies add these private records:
 | `FRFIX` | Measured cadence, pin recovery, fire/goal/footing/ownership guards and checked totals; `verify_freeze_recovery.py` |
 | `MVFIX` | Measured cadence, boarding, uninterrupted task retention, world-floor landing, changed route node, launches and completion; `verify_mover_transfer.py` |
 | `MTRACE` | Read-only transfer samples: elapsed time, position/node, mode, lift/wait flags, support/grounded state, platform phase/top height, velocity, action budget/best distance and current task retention |
+| `MPP` / `MVPRED` / `MPLATCH` | Seventeen prescribed mover-observer states, computed retention/dryness flags and actual forecast latches; `verify_mover_predicates.py` |
 
 Current mover fixtures emit `BHVRPL begin mover_transfer` and require
 `landed` and `handoff` fields in the `MVFIX result` receipt. `landed` records
 a supported, dry landing near the exit on world geometry; `handoff` records
 a non-world route node whose position differs from the exit node. Completion
 also requires the original task to remain continuously owned. A changed node
-or a landing alone does not establish completion. The field does not independently prove the
-node's order in the original route; [#647](https://github.com/saworbit/argus/issues/647)
-tracks the stronger oracle. These are checkpoint observations, not proof
+or a landing alone does not establish completion. Layouts 2 and 3 also require
+the planned exit to be consumed into its expected successor and route generation
+([#647](https://github.com/saworbit/argus/issues/647)). Layout 3 additionally fixes
+retention/dryness predicate evaluation. Earlier individual flags have the
+[predicate qualification](../runs/mover-predicates-v1.results.json), separately
+from those stronger transition checks. These are checkpoint observations, not proof
 of reaching or touching the later goal.
 
 The current receipt checker rejects older result layouts without the two

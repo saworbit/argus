@@ -10,9 +10,13 @@ prove the current-goal identity. This applies to water-route bank/mega-task
 claims here, independently of the separate mover-transfer fixture and its
 recorded world-floor landing and node-consumption checks. Raw tapes remain
 unchanged.
-Mover retention/dryness flags have a separate compound-assignment audit in
-[#735](https://github.com/saworbit/argus/issues/735); final handoff checks are
-independent of those individual flags.
+The [mover predicate audit](../runs/mover-predicates-v1.results.json) qualifies
+older individual retention/dryness flags: their assignments stored only the
+first comparison. The corrected transfer layout 3 checks all clauses. Final
+parenthesized handoff checks, observed node consumption and recorded geometry
+are independent of those older individual flags; those stronger checks are
+not erased by this qualification. Historical continuous-identity claims from
+the old retention latch alone are unproved.
 
 ## Decision failure and repair
 

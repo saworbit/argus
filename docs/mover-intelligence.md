@@ -68,6 +68,10 @@ the gap and abandon its continuing route. A task ending at the nearby exit
 already succeeds in the control, so that easy task alone would conceal the
 fault. The maintained fixture uses a goal beyond the exit and measures a dry
 landing on static upper floor with the original task and route retained.
+Historical individual retention/dryness fields have the
+[predicate qualification](../runs/mover-predicates-v1.results.json); they do not
+alone prove every clause. Independent physical and final handoff checks remain
+separate evidence.
 
 The prototype waits for the actual contacted platform to finish moving,
 steers toward a safe exit, and permits an ordinary-speed jump only from a
