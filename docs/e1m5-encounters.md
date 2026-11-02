@@ -99,6 +99,22 @@ general win-rate improvement or good play against people.
 
 ## Final matched comparison
 
+The [later mega-return study](../runs/mega-return-v1.results.json) uses
+corrected ownership markers. Current-source controls lose the goal after
+routing fails. A private swim link from `(-183,169,-32)` to `(-183,73,80)`
+reaches a dry world-floor landing in 3.2 seconds at played cadence and 4.0
+seconds at 100 ms, retaining the goal and health with no rocket launcher.
+The first, weaker airborne completion is retained separately. These are
+checkpoint witnesses, not an instrumented mega pickup count.
+
+The generator previously kept a rocket action ahead of a swim action on
+the same pair. Emission now preserves the weapon-free swim action. The
+shipped graph is unchanged: a fresh native regeneration refuses its
+104-unit legacy jump launch before publication (#719). No ordinary cohort
+or graph-adoption claim is made for this generator-only repair. The
+seventeen-slot allowance and broader encounter gates still apply to a
+future regenerated candidate (#636).
+
 Each cell is the mean per sixty-second match, two repeats per arm.
 
 | Map | Engagements, control / final | Consumed goals, control / final | Freezes, control / final |
