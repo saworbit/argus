@@ -23,6 +23,14 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Reproduce the dm4 under-fire freeze from the cover-hop cohort in the real
+  engine. A player passing on the pit floor below nudged the bot into the
+  walkway wall on both the candidate and its unchanged control, so the cover
+  guard did not cause it. The body-height fixture keeps a dm4 regression,
+  which current main passes at both cadences
+  ([#723](https://github.com/saworbit/argus/issues/723),
+  [details](docs/body-height-investigation.md#the-dm4-walkway-pin)).
+
 - Separate same-floor body nudges on a hull axis and let the engine refuse a
   spot the player hull cannot fit, so a nudge no longer clips a wall or
   leaves two players overlapping on a diagonal. Matched dm3 and dm4 matches

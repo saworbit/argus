@@ -89,8 +89,9 @@ def inspect_fixture(text,map_name,ticrate):
     recognized=1+len(checks)+len(cases)+len(entry)+len(results)+1+len(poses)
     require(sum(s.startswith(('BHFIX ','BHCHECK ','BHCASE ','BHENTRY ','BHRESULT ','BHPOSE ')) for s in text.splitlines())==recognized,
             'malformed or duplicate body-height record')
+    seeds={'e1m6':(-157.1,833,-232),'dm4':(7.6,-262.1,-72)}
     at_exit=(math.dist(pos,(677,193,-200))<48 if map_name=='dm3'
-             else math.dist(pos,(-157.1,833,-232))>=64)
+             else math.dist(pos,seeds[map_name])>=64)
     supported=(ground==world=='1' and wet=='0' and hp>0)
     require((completed=='1')==(at_exit and supported),'contradictory completion')
     verdicts.update(physical_exit=(completed=='1' and seconds<3),
@@ -109,11 +110,11 @@ def main():
     p.add_argument('--output',required=True,type=Path);p.add_argument('--prefix',required=True)
     p.add_argument('--source',type=Path,default=ROOT/'src')
     p.add_argument('--ticrate',type=float,choices=(.0139,.1),default=.0139)
-    p.add_argument('--maps',default='dm3,e1m6')
+    p.add_argument('--maps',default='dm3,e1m6,dm4')
     p.add_argument('--expect-failure',action='store_true')
     args=p.parse_args()
     require(re.fullmatch(r'[a-z0-9_]{1,48}',args.prefix),'invalid prefix')
-    maps=args.maps.split(',');require(maps and len(set(maps))==len(maps) and set(maps)<={'dm3','e1m6'})
+    maps=args.maps.split(',');require(maps and len(set(maps))==len(maps) and set(maps)<={'dm3','e1m6','dm4'})
     require(not any(p.exists() for p in (ROOT/'qconsole.log',ROOT/'engine/qconsole.log')),'harvest human logs first')
     require(not list((ROOT/'engine/argus').glob('*.dem')),'harvest human demos first')
     out=new_output(args.output,root=ROOT,create=False);src=stage(ROOT,out,args.source)
