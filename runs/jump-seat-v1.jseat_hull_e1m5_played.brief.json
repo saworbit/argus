@@ -1,0 +1,184 @@
+{
+  "bots": [
+    {
+      "avg": 164.17174895138547,
+      "cover": 15,
+      "deaths": 1,
+      "dist": 1986.4781623117644,
+      "dur": 12.100000000000001,
+      "frags": 0,
+      "goals": 0,
+      "hp": 10.0,
+      "name": "Carmack",
+      "stalls": 0
+    },
+    {
+      "avg": 293.2047066470798,
+      "cover": 2,
+      "deaths": 0,
+      "dist": 146.6023533235399,
+      "dur": 0.5,
+      "frags": 0,
+      "goals": 0,
+      "hp": 100.0,
+      "name": "Joe Rogan",
+      "stalls": 0
+    },
+    {
+      "avg": 226.20035366904284,
+      "cover": 2,
+      "deaths": 0,
+      "dist": 113.10017683452142,
+      "dur": 0.5,
+      "frags": 0,
+      "goals": 0,
+      "hp": 100.0,
+      "name": "Romero",
+      "stalls": 0
+    }
+  ],
+  "events": {
+    "death": 1,
+    "goal": 1,
+    "hazard": 7,
+    "jump": 5,
+    "route": 2,
+    "routefail": 1,
+    "spawned": 3
+  },
+  "flags": [
+    "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+    "12 strongly-connected components (one-way drops/hops split return paths)",
+    "12 door(s) cut 50 walk link(s); bots pin on a closed door until the button fires"
+  ],
+  "goal_reach": [
+    {
+      "band": "z\u2248128",
+      "classname": "weapon_rocketlauncher",
+      "nearest_node": 167,
+      "reach": "walk",
+      "times": 1
+    }
+  ],
+  "goals": {
+    "weapon_rocketlauncher": 1
+  },
+  "headline": "e1m5 12s: 0 frags, 1 deaths (0 lava, 0 third-party), 0 stalls, 0 goals, 0 engages, 7 hazards, spread 0. CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+  "hotspots": [
+    {
+      "count": 2,
+      "kind": "hazard",
+      "nearest_dist": 91.66269688373798,
+      "nearest_item": "item_shells",
+      "nearest_item_dist": 135.80666404856584,
+      "nearest_node": 28,
+      "x": -1164.4,
+      "y": 2151.7,
+      "z": 24.0
+    },
+    {
+      "count": 2,
+      "kind": "hazard",
+      "nearest_dist": 52.0,
+      "nearest_item": "item_shells",
+      "nearest_item_dist": 75.0066663703967,
+      "nearest_node": 19,
+      "x": -1251.0,
+      "y": 2185.0,
+      "z": 24.0
+    }
+  ],
+  "kills": {
+    "spike trap>Carmack": 1
+  },
+  "lab_identity": {
+    "authoritative": true,
+    "build_source": "fnv1a64:e48dc3d64c97408b",
+    "checkout_source": "fnv1a64:e48dc3d64c97408b",
+    "checkout_version": "0.30.0",
+    "running_version": "0.30.0"
+  },
+  "map": "e1m5",
+  "mode_share": {
+    "combat": 0.0,
+    "routed": 0.8473282442748091,
+    "seeking": 0.15267175572519082
+  },
+  "nav_coverage": {
+    "current_tree": {
+      "in_dispatcher": true,
+      "in_progs_src": true,
+      "installed_navigation": true,
+      "json_on_disk": true,
+      "map": "e1m5",
+      "qc_on_disk": true
+    },
+    "never_visited_sample": [
+      0,
+      2,
+      3,
+      4,
+      7,
+      8,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18
+    ],
+    "nodes": 195,
+    "pct": 8,
+    "provenance": {
+      "build_in_dispatcher": true,
+      "build_in_progs_src": true,
+      "eligible_for_navigation_claims": true,
+      "graph_md5": "72cc4dd60d53f6d3777fdeaff3da34cc",
+      "inputs_md5": "8794446e8a091275a1a8fea8487e5e63",
+      "loaded_in_tape": true,
+      "program_md5": "de474c0b807465434853bba3bfa41676",
+      "runtime_navigation": true,
+      "spatial_source": "build_snapshot"
+    },
+    "typed_links": {
+      "lift": "2 link(s), 0 board event(s)",
+      "rj": "4 link(s), 0 rjump event(s)",
+      "swim": "1 link(s), 0 swim event(s)",
+      "train": "2 link(s), 0 train event(s)"
+    },
+    "visited": 17
+  },
+  "next_steps": [],
+  "totals": {
+    "abandons": 0,
+    "acquisitions": 0,
+    "all_frags_positive": false,
+    "avg_speed": 227.85893642250267,
+    "boards": 0,
+    "closest_approach": 1246.319381218153,
+    "cover": 19,
+    "deaths": 1,
+    "duration_sec": 12.100000000000001,
+    "engages": 0,
+    "frags": 0,
+    "freeze_max_sec": 0.0,
+    "freeze_underfire": 0,
+    "freezes": 0,
+    "goals": 0,
+    "grabs": 0,
+    "hazards": 7,
+    "kd_spread": 0,
+    "lava_deaths": 0,
+    "lava_rule": "contents",
+    "mover_waits": 0,
+    "player_kills": 1,
+    "routefails": 1,
+    "stalls": 0,
+    "third_party_deaths": 0,
+    "tick_class": "listen",
+    "tick_gap_mean": 0.5038461538461539,
+    "weapons": 0,
+    "world_deaths": 0
+  },
+  "weapons": {}
+}

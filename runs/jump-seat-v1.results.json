@@ -1,0 +1,501 @@
+{
+  "schema": "jump-seat-v1",
+  "issue": 719,
+  "status": "REJECTED source-only candidate; draft evidence only",
+  "observations": [
+    {
+      "map": "e1m5",
+      "ticrate": 0.0139,
+      "raw": "runs/jump_seat_v1_jseat_control_e1m5_played.log",
+      "raw_sha256": "0208fe13a20e7d3986ee235508c32d05b175266254c4b76af7b9717e382c4dba",
+      "source_sha256": "d3974af4f4700936c1912b977f4f20078c1f3c33f9968ea6e1db0d24768a6afd",
+      "fixture_sha256": "0a546364020c77953013700f812459cef72e4f6d3a61e331d57792c4d0a87e21",
+      "program_sha256": "4435de6200cd0d1705c313bfc7bde7723fb60dd70618a7b471f448397d7bf063",
+      "markers": [
+        "WRFIX begin dt_ms  14.0 layout 2 case 1 start '-1303.0 2185.0  24.0' goal '-1079.0 2185.0  24.0'",
+        "WRFIX sample t 0 pos '-1303.0 2185.0  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1",
+        "WRFIX sample t   0.5 pos '-1174.6 2209.0  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 37",
+        "WRFIX sample t   1.0 pos '-1181.9 2233.4  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 72",
+        "WRFIX sample t   1.5 pos '-1188.6 2245.6  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 108",
+        "WRFIX sample t   2.0 pos '-1192.4 2252.6  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 144",
+        "WRFIX sample t   2.5 pos '-1169.4 2142.7  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 176",
+        "WRFIX sample t   3.0 pos '-1165.2 2164.7  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 208",
+        "WRFIX sample t   3.5 pos '-1170.2 2212.3  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 240",
+        "WRFIX sample t   4.1 pos '-1178.4 2227.2  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 272",
+        "WRFIX sample t   4.6 pos '-1186.2 2241.1  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 304",
+        "WRFIX sample t   5.1 pos '-1174.5 2220.0  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 336",
+        "WRFIX sample t   5.6 pos '-1162.3 2194.2  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 368",
+        "WRFIX sample t   6.1 pos '-1313.4 2271.5  24.0' node '-1463.0 2089.0  24.0' grounded 1 wet 0 feet -1 handoffs 3 active 0 hp 100 frames 400",
+        "WRFIX sample t   6.6 pos '-1439.9 2156.3  24.0' node '-1463.0 1897.0  24.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 100 frames 432",
+        "WRFIX sample t   7.1 pos '-1470.4 1994.3  24.0' node '-1463.0 1705.0  24.0' grounded 1 wet 0 feet -1 handoffs 5 active 0 hp 100 frames 464",
+        "WRFIX sample t   7.6 pos '-1467.4 1832.0  24.0' node '-1463.0 1705.0  24.0' grounded 1 wet 0 feet -1 handoffs 5 active 0 hp 100 frames 496",
+        "WRFIX sample t   8.1 pos '-1510.8 1672.9  24.0' node '-1591.0 1609.0  24.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 100 frames 528",
+        "WRFIX sample t   8.6 pos '-1541.5 1538.3  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 100 frames 560",
+        "WRFIX sample t   9.1 pos '-1523.4 1376.8  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 100 frames 592",
+        "WRFIX sample t   9.6 pos '-1552.0 1457.8  50.9' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 82 frames 624",
+        "WRFIX sample t  10.1 pos '-1552.0 1486.8  27.0' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 64 frames 656",
+        "WRFIX sample t  10.6 pos '-1551.9 1421.6  68.4' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 46 frames 688",
+        "WRFIX sample t  11.1 pos '-1552.0 1448.4  32.1' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 46 frames 720",
+        "WRFIX sample t  11.6 pos '-1552.0 1441.8  47.7' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 28 frames 752",
+        "WRFIX sample t  12.1 pos '-1552.0 1428.1  64.2' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 28 frames 784",
+        "WRFIX sample t  12.6 pos '-1552.0 1452.2  26.3' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 10 frames 816",
+        "WRFIX end completed 0 seconds  13.0 handoffs 8 active 0 pos '-1552.0 1462.0  67.1' hp -8 frames 840 grounded 0 feet -1"
+      ],
+      "arm": "control",
+      "completed": false,
+      "seconds": 13.0,
+      "final_position": [
+        -1552.0,
+        1462.0,
+        67.1
+      ],
+      "terminal_health": -8.0,
+      "terminal_active": false,
+      "diagnostics": []
+    },
+    {
+      "map": "e1m5",
+      "ticrate": 0.1,
+      "raw": "runs/jump_seat_v1_jseat_control_e1m5_slow.log",
+      "raw_sha256": "c3116c52c4c122b445ab5c80ea7e40a793157241a533d6b7314de2a4a39402d7",
+      "source_sha256": "d3974af4f4700936c1912b977f4f20078c1f3c33f9968ea6e1db0d24768a6afd",
+      "fixture_sha256": "0a546364020c77953013700f812459cef72e4f6d3a61e331d57792c4d0a87e21",
+      "program_sha256": "4435de6200cd0d1705c313bfc7bde7723fb60dd70618a7b471f448397d7bf063",
+      "markers": [
+        "WRFIX begin dt_ms 100.0 layout 2 case 1 start '-1303.0 2185.0  24.0' goal '-1079.0 2185.0  24.0'",
+        "WRFIX sample t 0 pos '-1303.0 2185.0  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1",
+        "WRFIX sample t   0.5 pos '-1181.1 2202.0  24.0' node '-1303.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 6",
+        "WRFIX sample t 1 pos '-1282.5 2277.5  24.0' node '-1303.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 11",
+        "WRFIX sample t   1.5 pos '-1302.1 2139.9  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 16",
+        "WRFIX sample t 2 pos '-1161.6 2166.1  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 21",
+        "WRFIX sample t   2.5 pos '-1180.2 2147.7  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 26",
+        "WRFIX sample t 3 pos '-1181.4 2176.6  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 31",
+        "WRFIX sample t   3.5 pos '-1172.4 2186.8  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 36",
+        "WRFIX sample t 4 pos '-1192.1 2230.5  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 41",
+        "WRFIX sample t   4.5 pos '-1187.6 2176.9  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 46",
+        "WRFIX sample t 5 pos '-1161.6 2174.2  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 51",
+        "WRFIX sample t   5.5 pos '-1191.5 2234.0  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 56",
+        "WRFIX sample t 6 pos '-1337.6 2282.6  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 1 active 0 hp 100 frames 61",
+        "WRFIX sample t   6.5 pos '-1446.3 2164.7  24.0' node '-1463.0 1897.0  24.0' grounded 1 wet 0 feet -1 handoffs 3 active 0 hp 100 frames 66",
+        "WRFIX sample t 7 pos '-1463.7 2005.0  24.0' node '-1463.0 1897.0  24.0' grounded 1 wet 0 feet -1 handoffs 3 active 0 hp 100 frames 71",
+        "WRFIX sample t   7.5 pos '-1462.0 1845.0  24.0' node '-1463.0 1705.0  24.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 100 frames 76",
+        "WRFIX sample t 8 pos '-1514.2 1694.1  24.0' node '-1591.0 1609.0  24.0' grounded 1 wet 0 feet -1 handoffs 5 active 0 hp 100 frames 81",
+        "WRFIX sample t   8.5 pos '-1542.6 1565.3  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 100 frames 86",
+        "WRFIX sample t 9 pos '-1520.6 1406.4  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 100 frames 91",
+        "WRFIX sample t   9.5 pos '-1533.3 1429.5  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 82 frames 96",
+        "WRFIX sample t 10 pos '-1551.0 1550.6  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 64 frames 101",
+        "WRFIX sample t  10.5 pos '-1576.0 1589.1  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 64 frames 106",
+        "WRFIX sample t 11 pos '-1544.6 1543.0  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 64 frames 111",
+        "WRFIX sample t  11.5 pos '-1528.7 1406.8  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 46 frames 116",
+        "WRFIX sample t 12 pos '-1528.7 1455.4  24.0' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp 28 frames 121",
+        "WRFIX sample t  12.5 pos '-1552.0 1447.8  52.0' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp 28 frames 126",
+        "WRFIX sample t 13 pos '-1544.2 1400.8  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 10 frames 131",
+        "WRFIX sample t  13.5 pos '-1552.0 1498.2  54.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp -8 frames 136",
+        "WRFIX end completed 0 seconds  13.5 handoffs 7 active 0 pos '-1552.0 1498.2  54.0' hp -8 frames 136 grounded 0 feet -1"
+      ],
+      "arm": "control",
+      "completed": false,
+      "seconds": 13.5,
+      "final_position": [
+        -1552.0,
+        1498.2,
+        54.0
+      ],
+      "terminal_health": -8.0,
+      "terminal_active": false,
+      "diagnostics": []
+    },
+    {
+      "map": "e1m5",
+      "ticrate": 0.0139,
+      "raw": "runs/jump_seat_v1_jseat_candidate_e1m5_played.log",
+      "raw_sha256": "74df3579df750a92631c32bad3d53af211929e6ec16108f067c80c2143e90067",
+      "source_sha256": "be7b017e1c86cdf213dad61f21c2dfae00ea9ca3ca87af9a0812afe29e426259",
+      "fixture_sha256": "29475285739410635b140a9cc0e5025fa8a5d3f4ce050d81bd807c8c95920587",
+      "program_sha256": "a38f189e0e348bfa7b301122ab9cd2d51899807f605df998514849019be6fc1d",
+      "markers": [
+        "WRFIX begin dt_ms  15.0 layout 2 case 1 start '-1303.0 2185.0  24.0' goal '-1079.0 2185.0  24.0'",
+        "WRFIX sample t 0 pos '-1303.0 2185.0  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1",
+        "WRFIX sample t   0.5 pos '-1174.3 2209.0  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 37",
+        "WRFIX sample t   1.0 pos '-1181.9 2233.4  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 73",
+        "WRFIX sample t   1.5 pos '-1188.5 2245.5  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 109",
+        "WRFIX sample t   2.0 pos '-1193.3 2254.1  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 145",
+        "WRFIX sample t   2.5 pos '-1168.9 2143.6  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 177",
+        "WRFIX sample t   3.1 pos '-1164.5 2165.2  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 209",
+        "WRFIX sample t   3.6 pos '-1170.0 2211.8  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 241",
+        "WRFIX sample t   4.1 pos '-1178.1 2226.6  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 273",
+        "WRFIX sample t   4.6 pos '-1185.8 2240.5  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 305",
+        "WRFIX sample t   5.1 pos '-1193.3 2254.1  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 337",
+        "WRFIX sample t   5.6 pos '-1167.4 2153.5  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 369",
+        "WRFIX sample t   6.1 pos '-1305.0 2084.3  24.0' node '-1463.0 2089.0  24.0' grounded 1 wet 0 feet -1 handoffs 2 active 0 hp 100 frames 401",
+        "WRFIX sample t   6.6 pos '-1468.6 2078.6  24.0' node '-1463.0 1897.0  24.0' grounded 1 wet 0 feet -1 handoffs 3 active 0 hp 100 frames 433",
+        "WRFIX sample t   7.1 pos '-1532.9 1918.0  24.0' node '-1463.0 1705.0  24.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 82 frames 465",
+        "WRFIX sample t   7.6 pos '-1492.2 1760.4  24.0' node '-1591.0 1609.0  24.0' grounded 1 wet 0 feet -1 handoffs 5 active 0 hp 82 frames 497",
+        "WRFIX sample t   8.1 pos '-1545.4 1595.0  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 82 frames 529",
+        "WRFIX sample t   8.6 pos '-1521.5 1448.4  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 82 frames 561",
+        "WRFIX sample t   9.1 pos '-1539.6 1390.6  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 64 frames 593",
+        "WRFIX sample t   9.6 pos '-1552.0 1505.7  58.7' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp 46 frames 625",
+        "WRFIX sample t  10.1 pos '-1552.0 1440.9  39.2' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp 28 frames 657",
+        "WRFIX sample t  10.6 pos '-1552.0 1435.7  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 28 frames 689",
+        "WRFIX sample t  11.1 pos '-1552.0 1458.3  68.2' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp 10 frames 721",
+        "WRFIX sample t  11.6 pos '-1552.0 1445.0  24.0' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp 10 frames 753",
+        "WRFIX end completed 0 seconds  11.8 handoffs 7 active 0 pos '-1552.0 1460.8  55.7' hp -8 frames 763 grounded 0 feet -1"
+      ],
+      "arm": "source_only_candidate",
+      "completed": false,
+      "seconds": 11.8,
+      "final_position": [
+        -1552.0,
+        1460.8,
+        55.7
+      ],
+      "terminal_health": -8.0,
+      "terminal_active": false,
+      "diagnostics": []
+    },
+    {
+      "map": "e1m5",
+      "ticrate": 0.1,
+      "raw": "runs/jump_seat_v1_jseat_candidate_e1m5_slow.log",
+      "raw_sha256": "e47fe67208278fa355db6d759a3af561b70fadfbf8e7aa28707872fc1232113b",
+      "source_sha256": "be7b017e1c86cdf213dad61f21c2dfae00ea9ca3ca87af9a0812afe29e426259",
+      "fixture_sha256": "29475285739410635b140a9cc0e5025fa8a5d3f4ce050d81bd807c8c95920587",
+      "program_sha256": "a38f189e0e348bfa7b301122ab9cd2d51899807f605df998514849019be6fc1d",
+      "markers": [
+        "WRFIX begin dt_ms 100.0 layout 2 case 1 start '-1303.0 2185.0  24.0' goal '-1079.0 2185.0  24.0'",
+        "WRFIX sample t 0 pos '-1303.0 2185.0  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1",
+        "WRFIX sample t   0.5 pos '-1181.1 2202.0  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 6",
+        "WRFIX sample t 1 pos '-1282.5 2277.5  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 11",
+        "WRFIX sample t   1.5 pos '-1302.1 2139.9  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 16",
+        "WRFIX sample t 2 pos '-1224.2 2252.0  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 21",
+        "WRFIX sample t   2.5 pos '-1334.0 2172.6  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 26",
+        "WRFIX sample t 3 pos '-1201.8 2208.9  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 31",
+        "WRFIX sample t   3.5 pos '-1336.6 2219.8  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 36",
+        "WRFIX sample t 4 pos '-1211.7 2163.3  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 41",
+        "WRFIX sample t   4.5 pos '-1307.7 2259.0  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 46",
+        "WRFIX sample t 5 pos '-1251.3 2127.8  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 51",
+        "WRFIX sample t   5.5 pos '-1172.2 2211.7  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 56",
+        "WRFIX sample t 6 pos '-1175.8 2194.6  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 61",
+        "WRFIX sample t   6.5 pos '-1198.0 2105.1  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 66",
+        "WRFIX sample t 7 pos '-1190.9 2241.1  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 71",
+        "WRFIX sample t   7.5 pos '-1175.8 2212.2  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 76",
+        "WRFIX sample t 8 pos '-1211.1 2072.7  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 81",
+        "WRFIX sample t   8.5 pos '-1177.1 2204.7  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 86",
+        "WRFIX sample t 9 pos '-1193.8 2235.4  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 91",
+        "WRFIX sample t   9.5 pos '-1179.2 2128.7  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 96",
+        "WRFIX sample t 10 pos '-1169.0 2173.1  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 101",
+        "WRFIX sample t  10.5 pos '-1194.4 2249.6  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 106",
+        "WRFIX sample t 11 pos '-1198.5 2102.7  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 111",
+        "WRFIX sample t  11.5 pos '-1166.4 2182.2  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 116",
+        "WRFIX sample t 12 pos '-1223.1 2279.8  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 121",
+        "WRFIX sample t  12.5 pos '-1174.3 2146.0  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 126",
+        "WRFIX sample t 13 pos '-1164.0 2155.8  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 131",
+        "WRFIX sample t  13.5 pos '-1233.5 2272.8  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 136",
+        "WRFIX sample t 14 pos '-1164.0 2159.2  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 141",
+        "WRFIX sample t  14.5 pos '-1176.6 2133.7  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 146",
+        "WRFIX sample t 15 pos '-1189.4 2243.9  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 151",
+        "WRFIX sample t  15.5 pos '-1171.0 2183.1  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 156",
+        "WRFIX sample t 16 pos '-1188.1 2109.0  24.0' node '-1271.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 161",
+        "WRFIX sample t  16.5 pos '-1218.5 2278.2  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 166",
+        "WRFIX sample t 17 pos '-1380.3 2277.6  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 171",
+        "WRFIX sample t  17.5 pos '-1358.8 2141.7  24.0' node '-1271.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 176",
+        "WRFIX sample t 18 pos '-1194.7 2169.0  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 181",
+        "WRFIX end completed 0 seconds  18.1 handoffs 1 active 1 pos '-1163.0 2173.5  24.0' hp 100 frames 182 grounded 1 feet -1"
+      ],
+      "arm": "source_only_candidate",
+      "completed": false,
+      "seconds": 18.1,
+      "final_position": [
+        -1163.0,
+        2173.5,
+        24.0
+      ],
+      "terminal_health": 100.0,
+      "terminal_active": true,
+      "diagnostics": []
+    },
+    {
+      "map": "dm3",
+      "ticrate": 0.0139,
+      "raw": "runs/jump_seat_v1_jseat_control_dm3_played.log",
+      "raw_sha256": "be5cfd9b9b998f28a6d75bd50aafa553d5b7f035bb940a2605971af402a92f45",
+      "source_sha256": "d3974af4f4700936c1912b977f4f20078c1f3c33f9968ea6e1db0d24768a6afd",
+      "fixture_sha256": "0a546364020c77953013700f812459cef72e4f6d3a61e331d57792c4d0a87e21",
+      "program_sha256": "4435de6200cd0d1705c313bfc7bde7723fb60dd70618a7b471f448397d7bf063",
+      "markers": [
+        "WRFIX begin dt_ms  14.0 layout 2 case 1 start '421.0 513.0  56.0' goal '645.0 449.0  56.0'",
+        "WRFIX sample t 0 pos '421.0 513.0  56.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1",
+        "WRFIX sample t   0.5 pos '546.8 512.6  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 37",
+        "WRFIX sample t   1.0 pos '552.0 543.4  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 73",
+        "WRFIX sample t   1.5 pos '552.0 559.4  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 109",
+        "WRFIX sample t   2.0 pos '552.0 574.8  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 145",
+        "WRFIX sample t   2.6 pos '552.0 580.4  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 177",
+        "WRFIX sample t   3.1 pos '552.0 421.5  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 209",
+        "WRFIX sample t   3.6 pos '552.0 392.0  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 242",
+        "WRFIX sample t   4.1 pos '552.0 371.1  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 274",
+        "WRFIX sample t   4.6 pos '552.0 352.2  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 306",
+        "WRFIX sample t   5.1 pos '552.0 334.5  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 338",
+        "WRFIX sample t   5.6 pos '552.0 397.2  56.0' node '645.0 449.0  56.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 370",
+        "WRFIX sample t   6.1 pos '547.3 488.4  56.0' node '421.0 513.0  56.0' grounded 1 wet 0 feet -1 handoffs 2 active 0 hp 100 frames 402",
+        "WRFIX sample t   6.6 pos '394.7 523.3  56.0' node '261.0 545.0  56.0' grounded 1 wet 0 feet -1 handoffs 3 active 0 hp 100 frames 434",
+        "WRFIX sample t   7.1 pos '237.0 558.9  56.0' node ' 37.0 609.0  40.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 100 frames 466",
+        "WRFIX sample t   7.6 pos ' 81.3 599.7  40.0' node ' 37.0 609.0  40.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 100 frames 498",
+        "WRFIX sample t   8.1 pos '-78.1 628.6  40.0' node '-219.0 641.0  -8.0' grounded 1 wet 0 feet -1 handoffs 5 active 0 hp 100 frames 530",
+        "WRFIX sample t   8.6 pos '-239.1 643.7  -8.0' node '-411.0 769.0 -16.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 100 frames 562",
+        "WRFIX sample t   9.1 pos '-330.9 774.4 -16.0' node '-411.0 769.0 -16.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 100 frames 594",
+        "WRFIX sample t   9.6 pos '-431.6 688.1 -16.0' node '-411.0 513.0 -16.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 100 frames 626",
+        "WRFIX sample t  10.1 pos '-416.0 531.1  -0.0' node '-411.0 513.0 120.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 100 frames 657",
+        "WRFIX sample t  10.6 pos '-400.3 438.4 -16.0' node '-411.0 513.0 120.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 100 frames 689",
+        "WRFIX sample t  11.1 pos '-428.3 599.4 -16.0' node '-411.0 513.0 120.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 100 frames 721",
+        "WRFIX sample t  11.6 pos '-421.0 524.4 -16.0' node '-411.0 513.0 120.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 100 frames 753",
+        "WRFIX sample t  12.1 pos '-400.5 471.9 -16.0' node '-411.0 513.0 120.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 100 frames 785",
+        "WRFIX sample t  12.7 pos '-448.0 624.8  19.6' node '-411.0 513.0 120.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 100 frames 817",
+        "WRFIX sample t  13.2 pos '-445.5 606.2 -16.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 8 active 1 hp 100 frames 849",
+        "WRFIX sample t  13.7 pos '-417.4 491.0 -16.0' node '-411.0 769.0 -16.0' grounded 1 wet 0 feet -1 handoffs 10 active 0 hp 100 frames 881",
+        "WRFIX sample t  14.2 pos '-443.5 518.9 -16.0' node '-411.0 769.0 -16.0' grounded 1 wet 0 feet -1 handoffs 10 active 0 hp 100 frames 913",
+        "WRFIX sample t  14.7 pos '-425.5 681.0 -16.0' node '-411.0 769.0 -16.0' grounded 1 wet 0 feet -1 handoffs 10 active 0 hp 100 frames 945",
+        "WRFIX sample t  15.2 pos '-393.6 762.9 -16.0' node '-219.0 641.0  -8.0' grounded 1 wet 0 feet -1 handoffs 11 active 0 hp 100 frames 977",
+        "WRFIX sample t  15.7 pos '-231.8 706.0  -8.0' node ' 37.0 609.0  40.0' grounded 1 wet 0 feet -1 handoffs 12 active 0 hp 100 frames 1009",
+        "WRFIX sample t  16.2 pos '-86.1 627.8  24.0' node ' 37.0 609.0  40.0' grounded 1 wet 0 feet -1 handoffs 12 active 0 hp 100 frames 1041",
+        "WRFIX sample t  16.7 pos ' 71.2 590.2  40.0' node '261.0 545.0  56.0' grounded 1 wet 0 feet -1 handoffs 13 active 0 hp 100 frames 1073",
+        "WRFIX sample t  17.2 pos '228.6 555.1  56.0' node '421.0 513.0  56.0' grounded 1 wet 0 feet -1 handoffs 14 active 0 hp 100 frames 1105",
+        "WRFIX sample t  17.7 pos '387.0 521.4  56.0' node '421.0 513.0  56.0' grounded 1 wet 0 feet -1 handoffs 14 active 0 hp 100 frames 1137",
+        "WRFIX end completed 0 seconds  18.0 handoffs 15 active 0 pos '481.5 481.7  56.0' hp 100 frames 1156 grounded 1 feet -1"
+      ],
+      "arm": "other_map_control",
+      "completed": false,
+      "seconds": 18.0,
+      "final_position": [
+        481.5,
+        481.7,
+        56.0
+      ],
+      "terminal_health": 100.0,
+      "terminal_active": false,
+      "diagnostics": []
+    },
+    {
+      "map": "e1m5",
+      "ticrate": 0.0139,
+      "raw": "runs/jump_seat_v1_jseat_diagnostic_e1m5_played.log",
+      "raw_sha256": "d1c9f89f160212d2fe70ebe05dd796ad0aa5d0174d64182f1c488f948d53f398",
+      "source_sha256": "f9b58e6fbb13e27663114cda2c36fc927275d5703c026790a840002cfcdb85ac",
+      "fixture_sha256": "1c230b9e8f6bb06dee4128692f0ad4ac7cba6fa0155651d96e21dfd9e0d7b092",
+      "program_sha256": "35802498301713955b8b8077ca309038a4c0b356406c522fb2acfa96847b8ddc",
+      "markers": [
+        "WRFIX begin dt_ms  14.0 layout 2 case 1 start '-1303.0 2185.0  24.0' goal '-1079.0 2185.0  24.0'",
+        "WRFIX sample t 0 pos '-1303.0 2185.0  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1",
+        "WRFIX sample t   0.5 pos '-1174.2 2209.3  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 37",
+        "WRFIX sample t   1.0 pos '-1181.9 2233.4  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 73",
+        "WRFIX sample t   1.5 pos '-1188.6 2245.6  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 109",
+        "WRFIX sample t   2.0 pos '-1192.3 2252.2  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 145",
+        "WRFIX sample t   2.6 pos '-1168.8 2143.9  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 178",
+        "WRFIX sample t   3.1 pos '-1160.3 2192.0  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 210",
+        "WRFIX sample t   3.6 pos '-1171.5 2214.5  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 242",
+        "WRFIX sample t   4.1 pos '-1179.4 2228.9  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 274",
+        "WRFIX sample t   4.6 pos '-1187.0 2242.8  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 306",
+        "WRFIX sample t   5.1 pos '-1194.4 2256.0  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 338",
+        "WRFIX sample t   5.6 pos '-1178.7 2127.5  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 370",
+        "WRFIX sample t   6.1 pos '-1323.9 2085.8  24.0' node '-1463.0 2089.0  24.0' grounded 1 wet 0 feet -1 handoffs 3 active 0 hp 100 frames 402",
+        "WRFIX sample t   6.6 pos '-1489.7 2070.8  24.0' node '-1463.0 1897.0  24.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 100 frames 434",
+        "WRFIX sample t   7.1 pos '-1524.8 1896.0  24.0' node '-1463.0 1705.0  24.0' grounded 1 wet 0 feet -1 handoffs 5 active 0 hp 82 frames 466",
+        "WRFIX sample t   7.6 pos '-1494.1 1730.9  24.0' node '-1591.0 1609.0  24.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 82 frames 498",
+        "WRFIX sample t   8.1 pos '-1551.1 1569.7  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 82 frames 530",
+        "WRFIX sample t   8.6 pos '-1520.4 1423.0  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 82 frames 562",
+        "WRFIX sample t   9.1 pos '-1549.2 1418.5  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 64 frames 594",
+        "WRFIX sample t   9.6 pos '-1552.0 1496.8  55.5' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 46 frames 626",
+        "WRFIX sample t  10.1 pos '-1552.0 1424.2  49.6' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 28 frames 658",
+        "WRFIX sample t  10.6 pos '-1552.0 1446.6  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 28 frames 690",
+        "WRFIX sample t  11.1 pos '-1552.0 1449.6  65.5' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 10 frames 722",
+        "WRFIX sample t  11.6 pos '-1552.0 1452.4  45.1' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 10 frames 754",
+        "WRFIX end completed 0 seconds  11.8 handoffs 8 active 0 pos '-1552.0 1462.7  61.0' hp -8 frames 761 grounded 0 feet -1"
+      ],
+      "arm": "point_diagnostic",
+      "completed": false,
+      "seconds": 11.8,
+      "final_position": [
+        -1552.0,
+        1462.7,
+        61.0
+      ],
+      "terminal_health": -8.0,
+      "terminal_active": false,
+      "diagnostics": [
+        "JSEAT target_contents -2 startsolid 1 allsolid 1"
+      ]
+    },
+    {
+      "map": "e1m5",
+      "ticrate": 0.0139,
+      "raw": "runs/jump_seat_v1_jseat_hull_e1m5_played.log",
+      "raw_sha256": "3de2a2fbc4c4d8b01b96976873641fa78451c0248bf5ac9a35f10fc6e6a8d658",
+      "source_sha256": "268ed6c5df9c0675961914d47743912d17c2bec082c8f2f829475d7bb842c4ea",
+      "fixture_sha256": "f6bdd223e1216dd0ca6afd60f06c450737c84cd1042153120b2cc3510466dab0",
+      "program_sha256": "d0b29483c9978006b5f6199ccc0e89c5e9c7a22267f16644de928db98555ae21",
+      "markers": [
+        "WRFIX begin dt_ms  14.0 layout 2 case 1 start '-1303.0 2185.0  24.0' goal '-1079.0 2185.0  24.0'",
+        "WRFIX sample t 0 pos '-1303.0 2185.0  24.0' node '  0.0   0.0   0.0' grounded 0 wet 0 feet -1 handoffs 0 active 1 hp 100 frames 1",
+        "WRFIX sample t   0.5 pos '-1174.0 2213.2  24.0' node '-1079.0 2185.0  24.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 37",
+        "WRFIX sample t   1.0 pos '-1160.9 2159.5  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 73",
+        "WRFIX sample t   1.5 pos '-1168.7 2144.1  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 109",
+        "WRFIX sample t   2.0 pos '-1175.6 2131.6  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 145",
+        "WRFIX sample t   2.6 pos '-1167.4 2207.2  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 177",
+        "WRFIX sample t   3.1 pos '-1175.7 2222.3  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 209",
+        "WRFIX sample t   3.6 pos '-1183.8 2236.8  24.0' node '-1079.0 2185.0  24.0' grounded 0 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 241",
+        "WRFIX sample t   4.1 pos '-1161.4 2188.5  24.0' node '  0.0   0.0   0.0' grounded 1 wet 0 feet -1 handoffs 1 active 1 hp 100 frames 273",
+        "WRFIX sample t   4.6 pos '-1228.7 2209.7  24.0' node '-1463.0 2089.0  24.0' grounded 1 wet 0 feet -1 handoffs 3 active 0 hp 100 frames 305",
+        "WRFIX sample t   5.1 pos '-1404.3 2176.5  24.0' node '-1463.0 1897.0  24.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 100 frames 337",
+        "WRFIX sample t   5.6 pos '-1472.0 2022.7  24.0' node '-1463.0 1897.0  24.0' grounded 1 wet 0 feet -1 handoffs 4 active 0 hp 100 frames 369",
+        "WRFIX sample t   6.1 pos '-1472.8 1860.6  24.0' node '-1463.0 1705.0  24.0' grounded 1 wet 0 feet -1 handoffs 5 active 0 hp 100 frames 401",
+        "WRFIX sample t   6.6 pos '-1497.8 1697.4  24.0' node '-1591.0 1609.0  24.0' grounded 1 wet 0 feet -1 handoffs 6 active 0 hp 100 frames 433",
+        "WRFIX sample t   7.1 pos '-1553.3 1553.9  24.0' node '-1527.0 1353.0  24.0' grounded 1 wet 0 feet -1 handoffs 7 active 0 hp 100 frames 465",
+        "WRFIX sample t   7.6 pos '-1520.1 1403.0  24.0' node '-1527.0 1353.0  24.0' grounded 0 wet 0 feet -1 handoffs 7 active 0 hp 100 frames 497",
+        "WRFIX sample t   8.1 pos '-1552.0 1432.6  31.8' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 82 frames 529",
+        "WRFIX sample t   8.6 pos '-1552.0 1494.4  38.7' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 64 frames 561",
+        "WRFIX sample t   9.1 pos '-1552.0 1415.7  65.3' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 46 frames 593",
+        "WRFIX sample t   9.6 pos '-1552.0 1436.1  24.0' node '-1623.0 1449.0 152.0' grounded 1 wet 0 feet -1 handoffs 8 active 0 hp 46 frames 625",
+        "WRFIX sample t  10.1 pos '-1552.0 1453.6  57.9' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 28 frames 657",
+        "WRFIX sample t  10.6 pos '-1552.0 1424.9  53.4' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 28 frames 689",
+        "WRFIX sample t  11.1 pos '-1552.0 1449.0  27.5' node '-1623.0 1449.0 152.0' grounded 0 wet 0 feet -1 handoffs 8 active 0 hp 10 frames 722",
+        "WRFIX end completed 0 seconds  11.6 handoffs 8 active 0 pos '-1552.0 1467.4  65.8' hp -8 frames 749 grounded 0 feet -1"
+      ],
+      "arm": "body_diagnostic",
+      "completed": false,
+      "seconds": 11.6,
+      "final_position": [
+        -1552.0,
+        1467.4,
+        65.8
+      ],
+      "terminal_health": -8.0,
+      "terminal_active": false,
+      "diagnostics": [
+        "JSEAT target_body_fit 1",
+        "JSEAT target_contents -2 startsolid 1 allsolid 1"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "runs/jump_seat_v1_jseat_control_e1m5_played.log",
+      "sha256": "0208fe13a20e7d3986ee235508c32d05b175266254c4b76af7b9717e382c4dba"
+    },
+    {
+      "path": "runs/jump_seat_v1_jseat_control_e1m5_slow.log",
+      "sha256": "c3116c52c4c122b445ab5c80ea7e40a793157241a533d6b7314de2a4a39402d7"
+    },
+    {
+      "path": "runs/jump_seat_v1_jseat_candidate_e1m5_played.log",
+      "sha256": "74df3579df750a92631c32bad3d53af211929e6ec16108f067c80c2143e90067"
+    },
+    {
+      "path": "runs/jump_seat_v1_jseat_candidate_e1m5_slow.log",
+      "sha256": "e47fe67208278fa355db6d759a3af561b70fadfbf8e7aa28707872fc1232113b"
+    },
+    {
+      "path": "runs/jump_seat_v1_jseat_control_dm3_played.log",
+      "sha256": "be5cfd9b9b998f28a6d75bd50aafa553d5b7f035bb940a2605971af402a92f45"
+    },
+    {
+      "path": "runs/jump_seat_v1_jseat_diagnostic_e1m5_played.log",
+      "sha256": "d1c9f89f160212d2fe70ebe05dd796ad0aa5d0174d64182f1c488f948d53f398"
+    },
+    {
+      "path": "runs/jump_seat_v1_jseat_hull_e1m5_played.log",
+      "sha256": "3de2a2fbc4c4d8b01b96976873641fa78451c0248bf5ac9a35f10fc6e6a8d658"
+    },
+    {
+      "path": "runs/jump-seat-v1.jump_seat_probe.patch",
+      "sha256": "d0bb7e2de007fac0ba6c6b2ba614d30eacfc21cd805cd5b36876c4cfe0620138",
+      "base_fixture_sha256": "2efb591e3a6a2359b113a586b2fb6614e31f64e0499685d56b7d2b65a714e654",
+      "result_fixture_sha256": "0a546364020c77953013700f812459cef72e4f6d3a61e331d57792c4d0a87e21"
+    },
+    {
+      "path": "runs/jump-seat-v1.jump_seat_candidate.patch",
+      "sha256": "acae2ad06bcfadc4b8fa713f5ccccebbf6dd46d332f835905838c40fbdbbf586",
+      "base_fixture_sha256": "2efb591e3a6a2359b113a586b2fb6614e31f64e0499685d56b7d2b65a714e654",
+      "result_fixture_sha256": "29475285739410635b140a9cc0e5025fa8a5d3f4ce050d81bd807c8c95920587"
+    },
+    {
+      "path": "runs/jump-seat-v1.jump_seat_diagnostic.patch",
+      "sha256": "4183979a5d62b29317252b7abc900d9d9d0913e14ec2fd218f031d974a4df972",
+      "base_fixture_sha256": "2efb591e3a6a2359b113a586b2fb6614e31f64e0499685d56b7d2b65a714e654",
+      "result_fixture_sha256": "1c230b9e8f6bb06dee4128692f0ad4ac7cba6fa0155651d96e21dfd9e0d7b092"
+    },
+    {
+      "path": "runs/jump-seat-v1.jump_seat_hull_diagnostic.patch",
+      "sha256": "5465e91b18ddd28e2d051bff50a520c9ee1b370cfe70ab349fafee9751d5ba7a",
+      "base_fixture_sha256": "2efb591e3a6a2359b113a586b2fb6614e31f64e0499685d56b7d2b65a714e654",
+      "result_fixture_sha256": "f6bdd223e1216dd0ca6afd60f06c450737c84cd1042153120b2cc3510466dab0"
+    },
+    {
+      "path": "runs/jump-seat-v1.archived-driver.py",
+      "sha256": "560b71f3b586decc42b87387b62b25d9b5660634f87a11ff1d7a9d725a951e57"
+    },
+    {
+      "path": "runs/jump-seat-v1.jseat_control_e1m5_played.brief.json",
+      "sha256": "56777a8bcab25cb0bf8b04e45ec81ddd25fce927cad05cc2725d7b4721d45729"
+    },
+    {
+      "path": "runs/jump-seat-v1.jseat_control_e1m5_slow.brief.json",
+      "sha256": "2617d368c0bf8a5e036739ceac01510f4a80a9d8d275affba054d8ea4c7a718e"
+    },
+    {
+      "path": "runs/jump-seat-v1.jseat_candidate_e1m5_played.brief.json",
+      "sha256": "b82da9e3f307a14e6c2b69da370fdc507aa2d5349d0a49918720486ec41367b8"
+    },
+    {
+      "path": "runs/jump-seat-v1.jseat_candidate_e1m5_slow.brief.json",
+      "sha256": "f56c0a39fd7620fef5b469d0d917a42832117d556006d5047971bbd4867379b1"
+    },
+    {
+      "path": "runs/jump-seat-v1.jseat_control_dm3_played.brief.json",
+      "sha256": "7e41d89afef338e85c8cab7dd51840f52871166367f7329e660947bb8533789a"
+    },
+    {
+      "path": "runs/jump-seat-v1.jseat_diagnostic_e1m5_played.brief.json",
+      "sha256": "5064d904ecaa133d4b9a6f7f0009cd635feca251ddc1fcb18f70a9bbe59c7a65"
+    },
+    {
+      "path": "runs/jump-seat-v1.jseat_hull_e1m5_played.brief.json",
+      "sha256": "ad18bfa9e98c7f7d294a7a75d70c150b480d8a05795e7c37b86091dbe9bbd9d7"
+    }
+  ],
+  "candidate": {
+    "map": "e1m5",
+    "source": [
+      -1303,
+      2185,
+      24
+    ],
+    "reseated_source": [
+      -1271,
+      2185,
+      24
+    ],
+    "seed_unchanged": true,
+    "target": [
+      -1079,
+      2185,
+      24
+    ],
+    "model_launch": [
+      -1199,
+      2185,
+      24
+    ],
+    "old_model_distance": 104,
+    "new_model_distance": 72,
+    "strict_anchor_limit": 96
+  },
+  "limits": [
+    "No production QC, generated graph, sidecar or installed program was changed.",
+    "Initial graph-node relocation is a private experiment, not graph adoption.",
+    "Both candidate cadences failed; no favorable repeats or relaxed gates were added.",
+    "The unchanged e1m5 controls and dm3 played control also fail. No feasible route positive control or complete four-map study is claimed.",
+    "Engine target point contents are SOLID and the point trace starts/all-solid; engine zero-step body fit succeeds there. Neither point-only inference is a physical route proof.",
+    "The later injury and death in played e1m5 tapes occur after the continuing task is lost; they do not explain the initial crossing failure.",
+    "Only initial placement and task are assigned. The observer is passive; terminal stopping occurs after measurement.",
+    "The archived driver is a frozen one-off study record. Its default output paths deliberately refuse reuse."
+  ]
+}

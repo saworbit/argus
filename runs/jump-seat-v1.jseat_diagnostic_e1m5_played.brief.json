@@ -1,0 +1,175 @@
+{
+  "bots": [
+    {
+      "avg": 159.17149356540847,
+      "cover": 14,
+      "deaths": 1,
+      "dist": 1925.9750721414428,
+      "dur": 12.100000000000001,
+      "frags": 0,
+      "goals": 0,
+      "hp": 10.0,
+      "name": "Carmack",
+      "stalls": 0
+    },
+    {
+      "avg": 295.20196476310946,
+      "cover": 2,
+      "deaths": 0,
+      "dist": 147.60098238155473,
+      "dur": 0.5,
+      "frags": 0,
+      "goals": 0,
+      "hp": 100.0,
+      "name": "Joe Rogan",
+      "stalls": 0
+    },
+    {
+      "avg": 232.6907819403254,
+      "cover": 2,
+      "deaths": 0,
+      "dist": 116.3453909701627,
+      "dur": 0.5,
+      "frags": 0,
+      "goals": 0,
+      "hp": 100.0,
+      "name": "Romero",
+      "stalls": 0
+    }
+  ],
+  "events": {
+    "death": 1,
+    "goal": 1,
+    "hazard": 8,
+    "jump": 4,
+    "route": 2,
+    "routefail": 1,
+    "spawned": 3
+  },
+  "flags": [
+    "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+    "12 strongly-connected components (one-way drops/hops split return paths)",
+    "12 door(s) cut 50 walk link(s); bots pin on a closed door until the button fires"
+  ],
+  "goal_reach": [
+    {
+      "band": "z\u2248128",
+      "classname": "weapon_rocketlauncher",
+      "nearest_node": 167,
+      "reach": "walk",
+      "times": 1
+    }
+  ],
+  "goals": {
+    "weapon_rocketlauncher": 1
+  },
+  "headline": "e1m5 12s: 0 frags, 1 deaths (0 lava, 0 third-party), 0 stalls, 0 goals, 0 engages, 8 hazards, spread 0. CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands",
+  "hotspots": [
+    {
+      "count": 6,
+      "kind": "hazard",
+      "nearest_dist": 46.90000000000009,
+      "nearest_item": "item_shells",
+      "nearest_item_dist": 75.3830882890851,
+      "nearest_node": 19,
+      "x": -1256.1,
+      "y": 2185.0,
+      "z": 24.0
+    }
+  ],
+  "kills": {
+    "spike trap>Carmack": 1
+  },
+  "lab_identity": {
+    "authoritative": true,
+    "build_source": "fnv1a64:e48dc3d64c97408b",
+    "checkout_source": "fnv1a64:e48dc3d64c97408b",
+    "checkout_version": "0.30.0",
+    "running_version": "0.30.0"
+  },
+  "map": "e1m5",
+  "mode_share": {
+    "combat": 0.0,
+    "routed": 0.8091603053435115,
+    "seeking": 0.19083969465648853
+  },
+  "nav_coverage": {
+    "current_tree": {
+      "in_dispatcher": true,
+      "in_progs_src": true,
+      "installed_navigation": true,
+      "json_on_disk": true,
+      "map": "e1m5",
+      "qc_on_disk": true
+    },
+    "never_visited_sample": [
+      0,
+      2,
+      4,
+      7,
+      8,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      20
+    ],
+    "nodes": 195,
+    "pct": 8,
+    "provenance": {
+      "build_in_dispatcher": true,
+      "build_in_progs_src": true,
+      "eligible_for_navigation_claims": true,
+      "graph_md5": "72cc4dd60d53f6d3777fdeaff3da34cc",
+      "inputs_md5": "3c176f77d23767cd84ff4fc0b70a05f2",
+      "loaded_in_tape": true,
+      "program_md5": "b9dc83d503baf5462fcd485e51d7fbcb",
+      "runtime_navigation": true,
+      "spatial_source": "build_snapshot"
+    },
+    "typed_links": {
+      "lift": "2 link(s), 0 board event(s)",
+      "rj": "4 link(s), 0 rjump event(s)",
+      "swim": "1 link(s), 0 swim event(s)",
+      "train": "2 link(s), 0 train event(s)"
+    },
+    "visited": 16
+  },
+  "next_steps": [],
+  "totals": {
+    "abandons": 0,
+    "acquisitions": 0,
+    "all_frags_positive": false,
+    "avg_speed": 229.0214134229478,
+    "boards": 0,
+    "closest_approach": 1246.319381218153,
+    "confine_max_sec": 6.1000000000000005,
+    "confine_note": "Carmack spent 6.1s inside a 220u box at 153 u/s around (-1273, 2168)",
+    "cover": 18,
+    "deaths": 1,
+    "duration_sec": 12.100000000000001,
+    "engages": 0,
+    "frags": 0,
+    "freeze_max_sec": 0.0,
+    "freeze_underfire": 0,
+    "freezes": 0,
+    "goals": 0,
+    "grabs": 0,
+    "hazards": 8,
+    "kd_spread": 0,
+    "lava_deaths": 0,
+    "lava_rule": "contents",
+    "mover_waits": 0,
+    "player_kills": 1,
+    "routefails": 1,
+    "stalls": 0,
+    "third_party_deaths": 0,
+    "tick_class": "listen",
+    "tick_gap_mean": 0.5038461538461539,
+    "weapons": 0,
+    "world_deaths": 0
+  },
+  "weapons": {}
+}

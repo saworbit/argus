@@ -622,7 +622,11 @@ These measurements describe the model, not proof of an inert engine hop.
 The first three links have no alternate directed path, even with gated hops.
 Current graph topology is retained pending engine-proven reseating; blindly
 deleting these bridges would cut reach. lqdm2 has an alternate ungated path
-through nodes 198 and 148. See #665 for the physical follow-up.
+through nodes 198 and 148. See #719 for the physical follow-up.
+The [later source-only experiment](../../docs/jump-seat-investigation.md)
+fails on e1m5 at both cadences even after its modeled distance falls to
+72 units. The engine's point and body probes also disagree at the landing.
+An admissible modeled anchor alone cannot certify graph adoption.
 
 Registration flags on the atlas, GUI and lab require both the dispatcher
 branch and the exact nav QC line in `progs.src`; commented entries do not count.

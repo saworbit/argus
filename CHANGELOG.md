@@ -23,6 +23,11 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Retain the rejected e1m5 source-only jump-seat candidate and distinguish
+  engine point contents, body fit and actual route completion. Keep the
+  strict anchor and shipped topology unchanged
+  ([#719](https://github.com/saworbit/argus/issues/719)).
+
 ### Unreleased
 
 - Evaluate every mover-observer retention and dryness clause and qualify

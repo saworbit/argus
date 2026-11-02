@@ -1,0 +1,74 @@
+--- a/water_route_fixture.qc
++++ b/water_route_fixture.qc
+@@ -1,3 +1,4 @@
++#define ROUTE_ACTION_COMPONENTS
+ // Private route-entry witness. Only initial placement/task is assigned;
+ // production AI, router and physics own every subsequent movement.
+ void() plat_go_down;
+@@ -14,31 +15,15 @@
+     if (wr_started || time < 2) return;
+     wr_started = 1; wr_begin = time; wr_case = cvar ("scratch2");
+     wr_limit = 18; if (wr_case == 8 || wr_case == 9) wr_limit = 30;
+-    if (mapname == "e1m5")
+-    {
+-        wr_seed = '-279 425 8'; wr_target = '-183 73 80';
+-        if (wr_case == 2) wr_seed = '-791 233 8';
+-        if (wr_case == 3)
+-        { wr_seed = '41 713 47'; wr_target = '-87 809 111'; }
+-        if (wr_case == 4)
+-        { wr_seed = '41 713 47'; wr_target = '20 889 104'; }
+-        if (wr_case == 5)
+-        { wr_seed = '20 889 105'; wr_target = '-87 809 111'; }
+-        if (wr_case == 6 || wr_case == 7)
+-        { wr_seed = '41 713 47'; wr_target = '-87 809 111'; }
+-        if (wr_case == 8) wr_target = '-535 1353 152';
+-        if (wr_case == 9) wr_target = '-87 809 111';
+-    }
+-    else if (mapname == "dm3")
+-    {
+-        wr_seed = '1093 -159 -336'; wr_target = '1349 545 -392';
+-    }
+-    else if (mapname == "e1m1" && (wr_case == 10 || wr_case == 11 || wr_case == 12))
+-    {
+-        wr_seed = '823.9 496 -257.9'; wr_target = '1201 961 -256';
+-        if (wr_case == 11 || wr_case == 12) { wr_seed = '810.5 505.1 -223.5'; wr_target = '689 481 104'; }
+-    }
+-    else { error ("WRFIX wrong map"); return; }
++    if (mapname == "dm3")
++    { wr_seed = '421 513 56'; wr_target = '645 449 56'; }
++    else if (mapname == "e1m5")
++    { wr_seed = '-1303 2185 24'; wr_target = '-1079 2185 24'; }
++    else if (mapname == "e1m6")
++    { wr_seed = '753 817 32'; wr_target = '593 1041 32'; }
++    else if (mapname == "lqdm2")
++    { wr_seed = '625 -495 -88'; wr_target = '625 -271 -128'; }
++    else { error ("JSEAT wrong map"); return; }
+     b = argus_bots;
+     while (b != world)
+     {
+@@ -133,6 +118,12 @@
+         else Argus_NavLink (wr_from, b);
+         Argus_NavLinkJump (b, wr_to, 0);
+     }
++    b = find (world, classname, "argus_node");
++    while (b != world)
++    {
++        if (mapname == "e1m5" && vlen (b.origin - '-1303 2185 24') < 1) setorigin (b, '-1271 2185 24');
++        b = find (b, classname, "argus_node");
++    }
+     dprint ("BHVRPL begin water_route\nWRFIX begin dt_ms ");
+     dprint (ftos (wr_dt * 1000)); dprint (" layout 2 case "); dprint (ftos (wr_case)); dprint (" start ");
+     dprint (vtos (wr_seed)); dprint (" goal "); dprint (vtos (wr_target)); dprint ("\n");
+@@ -159,10 +150,10 @@
+         displacement = wr_bot.origin - wr_seed; displacement_z = 0;
+         completed = vlen (displacement) >= 64;
+     }
+-    if (wr_case >= 3 && wr_case <= 9)
++    if (wr_case == 1 || (wr_case >= 3 && wr_case <= 9))
+     {
+         if (!(wr_bot.flags & FL_ONGROUND)) completed = 0;
+-        if (wr_bot.ar_feettype == CONTENT_WATER) completed = 0;
++        if (wr_bot.ar_feettype == CONTENT_WATER || wr_bot.ar_feettype == CONTENT_LAVA || wr_bot.ar_feettype == CONTENT_SLIME || wr_bot.groundentity != world) completed = 0;
+         if (fabs (wr_bot.origin_z - wr_target_z) > 18) completed = 0;
+     }
+     active = (wr_bot.ar_taskgoal == wr_goal && wr_bot.ar_goal == wr_goal);
