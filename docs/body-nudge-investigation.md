@@ -62,7 +62,8 @@ moved nothing there.
 The changed path reached the engine check only twice across the six candidate
 tapes, so the matches show the repair costs nothing measurable. They do not
 measure a benefit. The fixture is the proof of the two cases. Airborne bots are
-out of scope. No installed binary changed and no human play is claimed.
+out of scope and tracked with the other box test callers in
+[#755](https://github.com/saworbit/argus/issues/755). No installed binary changed and no human play is claimed.
 
 Receipt: [runs/body-nudge-v2.results.json](../runs/body-nudge-v2.results.json),
 with every raw tape listed by hash.

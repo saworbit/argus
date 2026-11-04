@@ -95,7 +95,8 @@ t 25.1 he holds at `12.8 -272.9 -72` with speed 0 for thirteen samples. At that
 moment Carmack is on the pit floor at `-2.8 -240.5 -296`, 224 units below and
 35.96 units away horizontally, which is the nudge radius. The south wall face
 is at y -288.0 and the player hull reaches y -288.9, so every move starts in
-solid. The body-height fixture now has a dm4 case seeded on that line:
+solid. The body-height fixture now has a dm4 case seeded on that line, which
+adds six checks per profile to the nineteen above:
 
 | Program | Played | 100 ms |
 |---|---|---|
@@ -107,3 +108,5 @@ The unchanged control pins exactly like the candidate, so the cover guard did
 not cause the freeze. The height gate removes the trigger, and the
 [same-floor repair](body-nudge-investigation.md) refuses a hull that clips a
 wall. Receipt: [runs/dm4-pin-v1.results.json](../runs/dm4-pin-v1.results.json).
+[#756](https://github.com/saworbit/argus/issues/756) tracks recognising a clipped hull directly, since the existing
+rescue branches take 3 to 8 s to reach this state.

@@ -119,10 +119,10 @@ a player on another floor cannot nudge the subject into a collision failure.
 Native cases cover above and below, firing, touching vertical bounds and an
 unchanged same-floor nudge. Touching-bound cases are synthetic contracts;
 the continuing routes provide the physical proof. dm3 must reach its original
-checkpoint within three seconds. e1m6 must move at least 64 units from the
-valid seed within that bound, while grounded on dry world geometry, alive,
-continuous and retaining the original launcher task. That local exit does
-not certify the rest of the launcher route. Ordinary-match preservation is
+checkpoint within three seconds. e1m6 and dm4 must each move at least 64 units
+from the valid seed within that bound, while grounded on dry world geometry,
+alive, continuous and retaining their task. The e1m6 exit does not certify the
+rest of its launcher route. Ordinary-match preservation is
 a separate adoption gate.
 
 `python tools/verify_body_nudge.py --output backups/<new-directory> --prefix <new_prefix>`
@@ -756,6 +756,8 @@ temporal association, not proof of causation; unmatched reversals stay explicit.
 `python tools/verify_motion.py --help` describes private checks. Diagnostics
 default off, and do not change steering, random draws or installed programs.
 This instrument does not settle #697's multi-map bands or human feel gate.
+The [findings so far](../../docs/behaviour-diagnostics.md#movement-reversals)
+rank the leading causes and record two refused responses.
 
 The brief carries analysis, not just inventory: per-player `aim`
 statistics (mean and p95 angular rate, flick count - the recording
