@@ -212,6 +212,7 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 - **Client Channel Builtins**: Bots use `classname = "player"` to satisfy standard game logic, but cannot receive client network packets. Builtins like `stuffcmd`, `sprint`, and `centerprint` are shimmed in `src/defs.qc` (`if (client.ar_isbot) return;`).
 - **Telemetry Formatting**: `bprint` is silent on empty dedicated servers. Use `dprint` for telemetry output and always run with `+developer 1`.
 - **Traces in Geometry**: In QuakeC, `traceline` originating inside solid geometry returns `trace_fraction == 1` (`trace_allsolid`). Safe floor probing routines must check `trace_allsolid` explicitly to avoid mistaking interior solids for bottomless voids.
+- **Production source manifest**: `tools/test_perception_health.py` pins the whole text of `src/argus.qc`, so any edit there fails it until the manifest is updated. Write a reverse patch from the new file to the old one with `diff -u --label a/src/argus.qc --label b/src/argus.qc src/argus.qc <frozen-copy>/argus.qc > tools/fixtures/<name>-reverse.patch`. Add its name to the front of `production_amendments` in `tools/fixtures/health-inventory-step1b.json`, extend `amendment_scope`, and set `active_text_sha256` to the SHA-256 of the new file. If `Argus_Combat`, `Argus_Hunch` or `Argus_Perceive` changed, also update its `active_functions` hash, computed from the function text as `tools/health_inventory_parked.py` matches it.
 
 ---
 

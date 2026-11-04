@@ -68,6 +68,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Record the ranked reversal causes and two refused responses in the
+  behaviour guide, and document the manifest step every `src/argus.qc` edit
+  needs. Link the follow-ups from the body-nudge, cover-hop and dm4 pin work
+  ([#697](https://github.com/saworbit/argus/issues/697), [#754](https://github.com/saworbit/argus/issues/754), [#755](https://github.com/saworbit/argus/issues/755),
+  [#756](https://github.com/saworbit/argus/issues/756), [#757](https://github.com/saworbit/argus/issues/757)).
+
 - Synchronize lab runbooks with current fixture families and observer layouts.
   Clarify the closed body-clearance prototype and retain its same-floor hull
   failures as a separate follow-up

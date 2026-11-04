@@ -5,6 +5,17 @@ cleanup. The range includes the merged muzzle-witness repair in
 [#746](https://github.com/saworbit/argus/pull/746). Historical tapes, protocols
 and rejected prototypes retain their original bytes and evidence limits.
 
+## Later changes
+
+The tables below are kept as written on 2 November. Since then, the same-floor
+hull row is fixed by [#751](https://github.com/saworbit/argus/pull/751). The
+[#723](https://github.com/saworbit/argus/issues/723) part of the stationary windows row is explained and closed by
+[#752](https://github.com/saworbit/argus/pull/752). The baked cover row is fixed
+by [#753](https://github.com/saworbit/argus/pull/753). The reversal row has a
+[ranked cause list](behaviour-diagnostics.md#movement-reversals) and two refused
+responses, and still needs a repair. New follow-ups are [#754](https://github.com/saworbit/argus/issues/754),
+[#755](https://github.com/saworbit/argus/issues/755), [#756](https://github.com/saworbit/argus/issues/756) and [#757](https://github.com/saworbit/argus/issues/757).
+
 ## Documentation matrix
 
 | Area | Current documentation and audit result |

@@ -324,6 +324,70 @@ the four-a-side arms are what the disjointness rests on, not any one tape.
 The session that would settle the feel question is filed as
 [#610](https://github.com/saworbit/argus/issues/610).
 
+## Movement reversals
+
+[#697](https://github.com/saworbit/argus/issues/697) measures bots reversing about three times as often as the
+human, from demo tracks. `scratch1 697` adds passive markers that name the
+branch behind each reversal. These are the results on unchanged source, main
+8922727, from three 40 s dm4 tapes and one dm2 tape, skill 2, played rate. A
+marker within 250 ms is a temporal association, not proof of cause.
+
+| Cause | dm4 reversals, of 281 | Share |
+|---|---|---|
+| `combat_hazard` | 64 | 23% |
+| `wander` | 41 | 15% |
+| `hazard_hold` | 23 | 8% |
+| `combat` | 19 | 7% |
+| `cover_retreat` | 17 | 6% |
+| `combat_strafe` | 16 | 6% |
+| `hazard_fan` | 16 | 6% |
+| No marker | 43 | 15% |
+
+The strafe re-roll the issue first suspected accounts for 4 of 281. Every hazard
+flip pushes `ar_strafetime` out by 0.5 to 1 s, so the re-roll rarely runs. The
+dm2 tape has the same leader at a lower rate, `combat_hazard` 9 of 58.
+
+The `combat_hazard` reversals sit on the dm4 pit walkways. At `162 -240 -296`
+the floor strip runs from y -288 to y -192, 96 units wide with drops on both
+sides. The strafe probe reaches 48 units, so a bot near the middle always has
+one side vetoed. Joe Rogan flipped sides 14 times in 1.7 s there, with markers
+100 to 218 ms apart; the marker is throttled to one per 100 ms. The `wander`
+branch turns by 120 to 240 degrees when a brink refuses its heading. Of its 41
+reversals, 20 are in the pit floor pocket around `0 500 -296` and the rest are
+spread across the map.
+
+### Refused: answering a pinched strafe differently
+
+Both attempts fire when the side a hazard flip just chose is refused inside
+that flip's commitment. Neither is in the tree.
+
+| Response | dm4 reversals per 40 s tape | Outcome |
+|---|---|---|
+| Unchanged control | 94, 106, 81 | |
+| Back off | 104, 87 | `combat_approach` reversals rise from 1 to 11, so the bounce moves to the range band |
+| Hold ground | 73, 76, 74 | Refused by the matched cohort below |
+
+The hold-ground cohort ran 120 s tapes against a frozen copy of main, with
+`stall_parity` registered first. On dm4, three tapes a side, stalls median rose
+from 2 to 8 against a control band of 0 to 5, and the native verdict rejected
+it. Engagements went 46 to 42, lava 5 to 5, freezes 0 to 0. On dm2, five tapes a
+side, it read parity with goal pickups flagged: stalls 16 to 16, engagements 23
+to 20, lava 1 to 0, freezes 0 to 0. The extra dm4 stalls came from routing to a
+backpack in the pit floor pocket with no enemy, where the hold never runs. That
+does not show the hold caused them, and the fixed rule refuses it either way.
+
+Changing only the response to a veto either moves the oscillation or trades it
+for stalls, which matches the post-mortems beside the strafe code. The next
+question is positioning. [#754](https://github.com/saworbit/argus/issues/754) tracks a separate path these attempts
+never touched: a refused non-strafe heading re-chooses a side every frame, at
+speeds the reversal measure does not count.
+
+Receipts are machine-local: `backups/motion697_*` for the markers, and
+`backups/strafe697` for the frozen source, the hold candidate patch (SHA256
+`41ac1732e18e0bc4b5d3748ce45e57f68d2d8db21c8e1c3f3387e78bbd38e321`), both cohorts
+and their gate cards. A 40 s tape is a small sample, so read the shares as a
+ranking and not as fixed proportions.
+
 ## Shared failed-plan recognition
 
 `Argus_PlanObserve` keeps current goal identity, closest useful objective
