@@ -42,6 +42,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
        argus_navgen.py map.bsp mapname shipped.qc unused.png --audit-jump-anchors
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
        argus_navgen.py map.bsp mapname shipped.qc unused.png --repair-links
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --seat-links seats.json
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reconcile-artifacts [--reanalyze-tactics]
        argus_navgen.py map.bsp mapname shipped.qc out.png --render-only
 
@@ -84,6 +85,20 @@ liquid at origin+24, which is floor+48). A cut liquid link is kept when it
 is a dry seat's only way to the mainland without a rocket or sprint, and
 seats already in liquid keep their links out, so liquid stays an exit and
 never a shortcut. Found by tools/argus_navmesh.py --audit (2026-11-13).
+
+--seat-links adds seats and walks to a shipped graph without a regen. The
+spec (src/argus_nav_<map>.seats.json) lists "seats" as origins and "walks"
+as [from, to] origin pairs, by coordinates so it survives renumbering. New
+seats go after the last node and new link calls after the last link call,
+so no existing index or slot moves. It refuses a seat that is not a dry
+standable origin, a walk whose ends are not seats, a walk beeline_ok
+refuses or longer than LINK_PATH_MAX, and a ninth slot. "cuts" retires
+plain walks an elbow replaces (the router always prefers the shorter
+diagonal), refused unless the far end stays reachable without it; the
+remaining calls keep their order. Entries already applied are skipped, so
+a rerun changes nothing. Then it rebakes regions and tactics. Built for
+elbow seats: a corridor that turns a corner fails beeline_ok end to end,
+and a seat at the turn makes two walks that pass.
 
 --reconcile-artifacts derives sidecar families and the banner from shipped QC
 without changing nodes, link calls or their slot order. It rejects stale cover
@@ -164,6 +179,13 @@ RETYPE_DOORS = "--retype-doors" in sys.argv[5:]
 REPROFILE_JUMPS = "--reprofile-jumps" in sys.argv[5:]
 REANALYZE_TACTICS = "--reanalyze-tactics" in sys.argv[5:]
 REPAIR_LINKS = "--repair-links" in sys.argv[5:]
+SEAT_LINKS = None
+if "--seat-links" in sys.argv[5:]:
+    _seat_idx = sys.argv.index("--seat-links")
+    if _seat_idx + 1 >= len(sys.argv) or sys.argv[_seat_idx + 1].startswith("--"):
+        print("error: --seat-links requires a seats.json path", file=sys.stderr)
+        sys.exit(1)
+    SEAT_LINKS = sys.argv[_seat_idx + 1]
 if "--register" in sys.argv[5:]:
     if Path(OUTQC).name != f"argus_nav_{MAPNAME}.qc":
         print(f"error: --register requires argus_nav_{MAPNAME}.qc", file=sys.stderr)
@@ -694,6 +716,79 @@ def h0_line_clear(a, b, node=None):
     return h0_line_clear(a, mid, near) and h0_line_clear(mid, b, far)
 
 
+def beeline_points(a, b):
+    """6b's beeline walk between two origins (beeline_ok minus pos()).
+
+    Lives up here so the shipped-graph modes can call navgen's own
+    referee before sampling exists: --seat-links refuses any walk
+    this refuses.
+    """
+    ax, ay, az = a
+    bx, by, bz = b
+    dist = ((bx-ax)**2 + (by-ay)**2) ** 0.5
+    if dist < 1:
+        # A zero-length line has no direction to walk. It used to pass
+        # unconditionally whatever the height, and 6b2's closure then
+        # added the reverse: 15 "walks" straight up 128 to 192u shipped
+        # across six maps, one the only walk entry to dm3's SNG floor
+        # (2026-11-13, tools/argus_navmesh.py --audit). A zero-length
+        # DROP stays: the upper seat sits on hull 1's overhang strip and
+        # the runtime's lip tolerance carries a bot down it.
+        return bz - az <= STEP
+    steps = int(dist // 16) + 1
+    px, py = -(by-ay) / dist, (bx-ax) / dist    # unit perpendicular
+    z = az
+    bad = 0
+    wallrun = 0
+    for s in range(1, steps + 1):
+        f = s / steps
+        cx, cy = ax + (bx-ax)*f, ay + (by-ay)*f
+        nz = None
+        # walkmove slides along walls, so a line that clips a corner is
+        # still walkable when floor continues just beside it: probe the
+        # line first, then perpendicular offsets either side
+        useoff = 0
+        for off in (0, 16, -16, 32, -32):
+            floors = column_floors(cx + px*off, cy + py*off)
+            for fz in floors:                 # climbable step first
+                if -STEP <= z - fz <= STEP:
+                    nz = fz
+                    break
+            if nz is None:
+                for fz in floors:             # forward drop is fine
+                    if STEP < z - fz <= DROPMAX:
+                        nz = fz
+                        break
+            # a lava or slime floor is not a step, it is a death:
+            # reject and let the next offset look for a dry line
+            if nz is not None and hostile_at(cx + px*off, cy + py*off, nz):
+                nz = None
+            if nz is not None:
+                useoff = off
+                break
+        if nz is None:
+            # tolerate brief nicks; sustained wall is a lie
+            bad = bad + 1
+            if bad >= 3:
+                return False
+            continue
+        # NEGATIVE RESULTS, three of them (2026-08-28, the quad-court
+        # pit-mouth link n68->n248): a +-16 offset cap, an any-offset
+        # streak, and a runtime-veto-simulation streak were each
+        # tried here to kill links whose centre line crosses ground
+        # the brink guard deflects at. All three amputated half the
+        # west wing (121-140 nodes to the poison prune): HazardSteer
+        # makes rim-hugging lines PARTIALLY walkable, so walkability
+        # under steering slack is graded, and a binary line-level
+        # criterion cannot separate "slides past with a wobble" from
+        # "deflect-dances forever". The pit-mouth class needs APEX
+        # SEATS (seat the elbow so routes bend around small voids) -
+        # the corridor-campaign design, filed in the dm3 musing.
+        bad = 0
+        z = nz
+    return abs(z - bz) <= STEP
+
+
 def _wades_hazard(a, b):
     """Does a walk line wade lava or slime with no dry floor beside it?
 
@@ -861,13 +956,23 @@ def _repair_links(text, doc):
     for k_ in cut:
         cut[k_] = [(c[0], c[1]) for c in cut[k_]]
     text = "".join(l_ for l_ in kept_lines if l_ is not None)
-    # regions, 8a05 semantics, over what survives
+    text, doc, rid = _rebake_regions(text, doc)
+    return text, doc, cut, rid, sum(wet)
+
+
+def _rebake_regions(text, doc):
+    """Regions, 8a05 semantics, over the links the QC actually calls.
+
+    Mainland 0 is the largest strongly connected set and everything it
+    reaches; each weakly connected pocket outside that is its own id.
+    Shared by --repair-links and --seat-links.
+    """
     from argus_nav_artifacts import qc_graph as _qcg
     _n, _edges = _qcg(text)
     fwd = collections.defaultdict(set)
     for (a, b) in _edges:
         fwd[a].add(b)
-    n = len(nodes)
+    n = len(_n)
     order, seen = [], [False] * n
     for s0 in range(n):
         if seen[s0]:
@@ -945,15 +1050,137 @@ def _repair_links(text, doc):
     doc = dict(doc)
     doc["regions"] = regions_
     doc = canonical_sidecar(doc, text)
-    return text, doc, cut, rid, sum(wet)
+    return text, doc, rid
 
 
-if REANALYZE_TACTICS or REPAIR_LINKS:
+def _seat_links(text, doc, spec_path):
+    """--seat-links: append seats and beeline-verified walks, then rebake.
+
+    The case it was written for (2026-11-13): dm3's south upper area,
+    the red armour's, had no walk in at all once --repair-links cut two
+    impossible climbs. tools/argus_navmesh.py found the real route, a
+    pair of L-shaped walkways along pit edges. Each corner fails
+    beeline_ok end to end, which is why navgen never linked across it,
+    and one seat in each elbow makes two walks that pass.
+    """
+    import json as _sj
+    from argus_nav_artifacts import qc_graph as _qcg, NODE as _NODE, LINK as _LINK
+    spec = _sj.loads(Path(spec_path).read_text(encoding="utf-8"))
+    nodes = [tuple(float(v) for v in p) for p in doc["nodes"]]
+
+    def _find(p):
+        hit = [i for i, n in enumerate(nodes)
+               if max(abs(n[k] - float(p[k])) for k in range(3)) < 1.0]
+        return hit[0] if hit else None
+
+    def _fmt(p):
+        return f"({p[0]:.0f} {p[1]:.0f} {p[2]:.0f})"
+
+    added = []
+    for p in spec.get("seats", []):
+        p = tuple(float(v) for v in p)
+        if len(p) != 3:
+            raise ValueError(f"seat {p} is not an origin")
+        if _find(p) is not None:
+            continue
+        if hull_contents(*p) != CONTENTS_EMPTY:
+            raise ValueError(f"seat {_fmt(p)} is inside the hull-1 world")
+        if not any(abs(f - p[2]) <= 2.0 for f in column_floors(p[0], p[1])):
+            raise ValueError(f"seat {_fmt(p)} does not stand on a floor")
+        if hostile_at(*p):
+            raise ValueError(f"seat {_fmt(p)} stands in lava or slime")
+        nodes.append(p)
+        added.append(len(nodes) - 1)
+    _, edges = _qcg(text)
+    present = set(edges)
+    walks = []
+    for pair in spec.get("walks", []):
+        a, b = _find(pair[0]), _find(pair[1])
+        if a is None or b is None:
+            raise ValueError(f"walk {pair} does not join two seats")
+        if (a, b) in present:
+            continue
+        na, nb = nodes[a], nodes[b]
+        flat = ((nb[0] - na[0]) ** 2 + (nb[1] - na[1]) ** 2) ** 0.5
+        if flat > LINK_PATH_MAX:
+            raise ValueError(f"walk n{a} -> n{b} is {flat:.0f}u, past {LINK_PATH_MAX}")
+        if not beeline_points(na, nb):
+            raise ValueError(f"beeline_ok refuses n{a} {_fmt(na)} -> n{b} {_fmt(nb)}")
+        present.add((a, b))
+        walks.append((a, b))
+    # a CUT retires a plain walk an elbow replaces: the router prices a
+    # corner-cutting diagonal below any two-leg detour, so a seat beside
+    # it is never used while it stands. Only plain walks, and only when
+    # the far end stays reachable without it.
+    cuts = []
+    for pair in spec.get("cuts", []):
+        a, b = _find(pair[0]), _find(pair[1])
+        if a is None or b is None:
+            raise ValueError(f"cut {pair} does not join two seats")
+        if (a, b) not in present:
+            continue
+        if edges.get((a, b)) != "links":
+            raise ValueError(f"cut n{a} -> n{b} is not a plain walk")
+        present.discard((a, b))
+        cuts.append((a, b))
+    dests = collections.defaultdict(set)
+    for a, b in present:
+        dests[a].add(b)
+    over = {a: len(d) for a, d in dests.items() if len(d) > MAX_LINKS}
+    if over:
+        raise ValueError(f"link slot overflow: {over}")
+    ungated = collections.defaultdict(set)
+    for a, b in present:
+        if edges.get((a, b)) not in ("rjlinks", "sprintlinks"):
+            ungated[a].add(b)
+    for a, b in cuts:
+        seen, stack = {a}, [a]
+        while stack:
+            u = stack.pop()
+            for v in ungated[u]:
+                if v not in seen:
+                    seen.add(v)
+                    stack.append(v)
+        if b not in seen:
+            raise ValueError(f"cut n{a} -> n{b} leaves n{b} unreachable from n{a}")
+    if not added and not walks and not cuts:
+        return text, doc, added, walks, cuts
+    lines = text.splitlines(keepends=True)
+    nl = "\r\n" if "\r\n" in text else "\n"
+    local_re = re.compile(r"^\s*local entity n\d+;")
+    cutset = set(cuts)
+
+    def _cut(l):
+        m = _LINK.match(l)
+        return (m is not None and m.group(1) == "Argus_NavLink"
+                and "teleporter" not in m.group(4)
+                and (int(m.group(2)), int(m.group(3))) in cutset)
+    lines = [l for l in lines if not _cut(l)]
+
+    def _after_last(pred):
+        return max(i for i, l in enumerate(lines) if pred(l)) + 1
+    # links first, then spawns, then locals: each insertion sits below
+    # the next one's anchor, so no anchor moves before it is used
+    at = _after_last(lambda l: _LINK.match(l))
+    lines[at:at] = [f"    Argus_NavLink (n{a}, n{b});{nl}" for a, b in walks]
+    at = _after_last(lambda l: _NODE.match(l))
+    lines[at:at] = [f"    n{i} = Argus_NavNode ('{nodes[i][0]:.0f} {nodes[i][1]:.0f} "
+                    f"{nodes[i][2]:.0f}');{nl}" for i in added]
+    at = _after_last(lambda l: local_re.match(l))
+    lines[at:at] = [f"    local entity n{i};{nl}" for i in added]
+    text = "".join(lines)
+    doc = dict(doc)
+    doc["nodes"] = list(doc["nodes"]) + [list(nodes[i]) for i in added]
+    text, doc, _rid = _rebake_regions(text, doc)
+    return text, doc, added, walks, cuts
+
+
+if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS:
     import os as _tos
     _qcpath, _jspath = OUTQC, OUTQC + ".json"
     if not (_tos.path.exists(_qcpath) and _tos.path.exists(_jspath)):
-        print("error: --reanalyze-tactics and --repair-links need shipped "
-              "QC and JSON to exist already", file=sys.stderr)
+        print("error: --reanalyze-tactics, --repair-links and --seat-links need "
+              "shipped QC and JSON to exist already", file=sys.stderr)
         sys.exit(1)
     _old_qc = Path(_qcpath).read_bytes()
     _old_json = Path(_jspath).read_bytes()
@@ -975,6 +1202,25 @@ if REANALYZE_TACTICS or REPAIR_LINKS:
             for _a, _b in _cut[_k][:12]:
                 print(f"  {_k}: n{_a} {tuple(round(v) for v in _tdoc['nodes'][_a])} -> "
                       f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
+    if SEAT_LINKS:
+        try:
+            _candidate_qc, _tdoc, _added, _walks, _cuts = _seat_links(
+                _candidate_qc, _tdoc, SEAT_LINKS)
+        except (OSError, ValueError, KeyError, IndexError, TypeError) as _error:
+            print(f"error: --seat-links: {_error}", file=sys.stderr)
+            sys.exit(1)
+        _sregions = _tdoc.get("regions", [])
+        print(f"seat: appended {len(_added)} seat(s) and {len(_walks)} beeline-verified "
+              f"walk(s), cut {len(_cuts)} replaced walk(s); regions now "
+              f"{max(_sregions, default=0)} stranded pocket(s)")
+        for _a, _b in _cuts:
+            print(f"  cut: n{_a} {tuple(round(v) for v in _tdoc['nodes'][_a])} -> "
+                  f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
+        for _i in _added:
+            print(f"  seat: n{_i} {tuple(round(v) for v in _tdoc['nodes'][_i])}")
+        for _a, _b in _walks:
+            print(f"  walk: n{_a} {tuple(round(v) for v in _tdoc['nodes'][_a])} -> "
+                  f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
     _candidate_qc = refresh_banner(_candidate_qc)
     _tnodes = [tuple(_p) for _p in _tdoc.get("nodes", [])]
     if not _tnodes:
@@ -2394,70 +2640,7 @@ for i in list(links):
 # hull 1: floor continuity, step-ups <= STEP, drops only forward.
 # Jump links are exempt; their arc was verified in hull 1 already.
 def beeline_ok(a, b):
-    ax, ay, az = pos(a)
-    bx, by, bz = pos(b)
-    dist = ((bx-ax)**2 + (by-ay)**2) ** 0.5
-    if dist < 1:
-        # A zero-length line has no direction to walk. It used to pass
-        # unconditionally whatever the height, and 6b2's closure then
-        # added the reverse: 15 "walks" straight up 128 to 192u shipped
-        # across six maps, one the only walk entry to dm3's SNG floor
-        # (2026-11-13, tools/argus_navmesh.py --audit). A zero-length
-        # DROP stays: the upper seat sits on hull 1's overhang strip and
-        # the runtime's lip tolerance carries a bot down it.
-        return bz - az <= STEP
-    steps = int(dist // 16) + 1
-    px, py = -(by-ay) / dist, (bx-ax) / dist    # unit perpendicular
-    z = az
-    bad = 0
-    wallrun = 0
-    for s in range(1, steps + 1):
-        f = s / steps
-        cx, cy = ax + (bx-ax)*f, ay + (by-ay)*f
-        nz = None
-        # walkmove slides along walls, so a line that clips a corner is
-        # still walkable when floor continues just beside it: probe the
-        # line first, then perpendicular offsets either side
-        useoff = 0
-        for off in (0, 16, -16, 32, -32):
-            floors = column_floors(cx + px*off, cy + py*off)
-            for fz in floors:                 # climbable step first
-                if -STEP <= z - fz <= STEP:
-                    nz = fz
-                    break
-            if nz is None:
-                for fz in floors:             # forward drop is fine
-                    if STEP < z - fz <= DROPMAX:
-                        nz = fz
-                        break
-            # a lava or slime floor is not a step, it is a death:
-            # reject and let the next offset look for a dry line
-            if nz is not None and hostile_at(cx + px*off, cy + py*off, nz):
-                nz = None
-            if nz is not None:
-                useoff = off
-                break
-        if nz is None:
-            # tolerate brief nicks; sustained wall is a lie
-            bad = bad + 1
-            if bad >= 3:
-                return False
-            continue
-        # NEGATIVE RESULTS, three of them (2026-08-28, the quad-court
-        # pit-mouth link n68->n248): a +-16 offset cap, an any-offset
-        # streak, and a runtime-veto-simulation streak were each
-        # tried here to kill links whose centre line crosses ground
-        # the brink guard deflects at. All three amputated half the
-        # west wing (121-140 nodes to the poison prune): HazardSteer
-        # makes rim-hugging lines PARTIALLY walkable, so walkability
-        # under steering slack is graded, and a binary line-level
-        # criterion cannot separate "slides past with a wobble" from
-        # "deflect-dances forever". The pit-mouth class needs APEX
-        # SEATS (seat the elbow so routes bend around small voids) -
-        # the corridor-campaign design, filed in the dm3 musing.
-        bad = 0
-        z = nz
-    return abs(z - bz) <= STEP
+    return beeline_points(pos(a), pos(b))
 
 VERBOSE = "--verbose" in sys.argv[5:]
 
