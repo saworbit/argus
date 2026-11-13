@@ -105,6 +105,36 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Judge where a bot running off a ledge lands, not only the floor under its
+  hazard probe. On e1m7 the guard approved run-offs whose probe found the
+  island, the floor under the deathmatch spawn pads or the deathmatch lava
+  bridge, and run speed carried bots 200 to 240 units past them into the
+  lava lake: 28 of 43 lava deaths in six full-rate tapes
+  ([#773](https://github.com/saworbit/argus/pull/773),
+  [details](docs/e1m7-lava-investigation.md)).
+
+- Drop a jump that would land in lava. The other 15 e1m7 lava deaths were
+  jumps at the lake edge: the fighting reachability jump fired under a
+  walkway seat 160 units overhead, and the predictive gap jump judged its
+  landing at chest height and let steering bend its flight. Reachability,
+  stall, escort and gap jumps now trace the arc at the feet first, and a
+  gap jump holds its launch line until it lands
+  ([#773](https://github.com/saworbit/argus/pull/773),
+  [details](docs/e1m7-lava-investigation.md#the-jump-change)).
+
+- Evidence: five interleaved e1m7 tapes a side with lava deaths registered
+  read parity (median 3 to 2, P(improve) 0.56), while two full-rate
+  candidate tapes held no upper-floor run-off against 4.7 a tape before.
+  dm4 holds stall parity over six tapes against eight earlier controls of
+  the same build. Smoke and controlled parity only; no human play.
+
+- Evidence for the jump check: ten interleaved e1m7 tapes a side against the
+  run-off build, lava deaths registered, read parity overall but lava deaths
+  fall 25 to 14 (median 3 to 1.5, improvement CI +0.2 to +2.2, P(improve)
+  0.77); stalls and engagements unchanged. The frag gap between bots widened
+  (median 6 to 10.5) and is unexplained. dm4 logs about one veto a tape and
+  holds stall parity. Controlled parity only; no human play.
+
 - Correct three `src/argus.qc` comments that still gave the refuted
   frametime 0.1 lab rate as measured fact: the swim drag block, the aim tremor
   guard and the tremor clock field. Comments only; the compiled program is
