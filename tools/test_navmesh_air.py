@@ -23,7 +23,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 import argus_navmesh as nm  # noqa: E402
 
 
-def write_fixture(path):
+def write_fixture(path, ents_extra=b"", models_extra=b""):
     rows = (
         (1.0, 0.0, 0.0, 0.0, 0),     # p0 platform face (hull 0)
         (0.0, 0.0, 1.0, 128.0, 2),   # p1 platform top (hull 0)
@@ -50,8 +50,8 @@ def write_fixture(path):
     clipnodes = b"".join(struct.pack("<ihh", *r) for r in (
         (6, 2, 1), (7, -1, -2), (8, -1, -2)))
     models = struct.pack("<9f7i", -512.0, -256.0, -64.0, 768.0, 256.0, 512.0,
-                         0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0)
-    ents = b'{\n"classname" "worldspawn"\n}\n\0'
+                         0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0) + models_extra
+    ents = b'{\n"classname" "worldspawn"\n}\n' + ents_extra + b"\0"
     table, blob, base = [(0, 0)] * 15, b"", 4 + 15 * 8
     for idx, payload in ((0, ents), (1, planes), (5, h0nodes), (9, clipnodes),
                          (10, leaves), (14, models)):
@@ -137,8 +137,83 @@ class AirLayer(unittest.TestCase):
         r = nm.entries_vs_ledges(self.bsp, self.samples, ["\n".join(lines)])
         self.assertEqual(r["entries"], 1)
         self.assertEqual(r["entries_danger"], 1)
+        self.assertEqual(r["entries_jump"], 0)
         self.assertGreater(r["moves"], 5)
         self.assertEqual(r["moves_danger"], 0)
+
+    def test_a_jump_event_splits_the_entry(self):
+        lines = [arglog("Jumper", 1.5, -40, 0, 152),
+                 "ARGEVT Jumper jump",
+                 arglog("Jumper", 2.0, 120, 0, 70),
+                 arglog("Jumper", 2.5, 180, 0, 24)]
+        r = nm.entries_vs_ledges(self.bsp, self.samples, ["\n".join(lines)])
+        self.assertEqual((r["entries"], r["entries_jump"], r["entries_danger_jump"]),
+                         (1, 1, 1))
+
+
+def bridge():
+    """A func_wall deck over the lava strip, x 150..250, top at z 32."""
+    model = struct.pack("<9f7i", 150.0, -64.0, 0.0, 250.0, 64.0, 32.0,
+                        0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0)
+    ent = b'{\n"classname" "func_wall"\n"model" "*1"\n}\n'
+    return ent, model
+
+
+class Brushes(unittest.TestCase):
+    """The world hull knows nothing of brush entities (e1m7's pads and
+    lava bridge deck), so a deck over the strip must catch the run."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        path = Path(cls.tmp.name) / "bridge.bsp"
+        ent, model = bridge()
+        write_fixture(path, ent, model)
+        cls.bsp, cls.frags, _ = nm.load_mesh(path)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_brush_boxes_reads_the_deck(self):
+        self.assertEqual(nm.brush_boxes(self.bsp),
+                         [("func_wall", (150.0, -64.0, 0.0), (250.0, 64.0, 32.0))])
+
+    def test_the_deck_catches_the_run(self):
+        world = nm.WithBrushes(self.bsp, nm.brush_boxes(self.bsp))
+        r = nm.fly(world, 16.0, 0.0, 152.0, 1.0, 0.0, 320.0)
+        self.assertEqual(r["kind"], "floor")
+        self.assertEqual(r["on"], "func_wall")
+        self.assertAlmostEqual(r["pos"][2], 56.0, delta=1.0)   # deck top + 24
+        bare = nm.fly(nm.WithBrushes(self.bsp, []), 16.0, 0.0, 152.0, 1.0, 0.0, 320.0)
+        self.assertEqual(bare["kind"], "lava")
+
+    def test_verdict_changes_with_the_deck(self):
+        with_deck = nm.air_layer(nm.WithBrushes(self.bsp, nm.brush_boxes(self.bsp)),
+                                 self.frags)
+        without = nm.air_layer(self.bsp, self.frags)
+        self.assertTrue(with_deck and without)
+        self.assertEqual({s["verdict"] for s in without}, {"danger"})
+        # in front of the deck a straight run lands on it; turned runs can
+        # still miss it, so those points become risky, not safe
+        front = [s for s in with_deck if abs(s["pos"][1]) <= 40]
+        beside = [s for s in with_deck if abs(s["pos"][1]) >= 120]
+        self.assertTrue(front and beside)
+        self.assertNotIn("danger", {s["verdict"] for s in front})
+        self.assertEqual({s["verdict"] for s in beside}, {"danger"})
+
+    def test_spawn_positions_follow_doors_qc_and_plats_qc(self):
+        b = type("B", (), {})()
+        b.models = [None, (0.0, 0.0, 0.0, 64.0, 16.0, 64.0)]
+        b.entities = [{"classname": "func_door", "model": "*1", "angle": "0",
+                       "spawnflags": "1", "lip": "8"},
+                      {"classname": "func_plat", "model": "*1"},
+                      {"classname": "func_wall", "model": "*1", "spawnflags": "2048"}]
+        boxes = nm.brush_boxes(b)
+        # START_OPEN door: travel 64 - 8 = 56 along +x; plat: down 64 - 8 = 56
+        self.assertEqual(boxes[0], ("func_door", (56.0, 0.0, 0.0), (120.0, 16.0, 64.0)))
+        self.assertEqual(boxes[1], ("func_plat", (0.0, 0.0, -56.0), (64.0, 16.0, 8.0)))
+        self.assertEqual(len(boxes), 2)   # a 2048 wall is not in deathmatch
 
 
 class MapGravity(unittest.TestCase):

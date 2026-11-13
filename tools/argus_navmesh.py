@@ -486,6 +486,99 @@ AIR_VARIANTS = (("walk", WALK, 0.0, 0.0), ("run", RUN, 0.0, 0.0),
                 ("jump", RUN, 0.0, JUMPVEL))
 
 
+BRUSH_CLASSES = ("func_wall", "func_door", "func_door_secret", "func_plat")
+
+
+def brush_boxes(bsp, deathmatch=True):
+    """World boxes of solid brush entities, where each sits at spawn.
+
+    The world hull knows nothing of them, and e1m7 showed why that
+    matters: its deathmatch spawn pads (func_wall) and its lava bridge
+    deck (a func_door) are dry floor the runtime guard approves stepping
+    toward, and the first air layer flew straight through all of them
+    (9 of 28 run-offs in the e1m7 investigation). Positions follow the
+    stock spawn code navgen also follows: a DOOR_START_OPEN door sits one
+    travel along its move direction from where it was built (doors.qc
+    swaps pos1 and pos2), an untargeted plat rests one travel below its
+    compiled top (plats.qc), walls and secret doors stay where they were
+    built. Trains move and are left out. spawnflags 2048 removes an
+    entity in deathmatch.
+    """
+    out = []
+    for e in bsp.entities:
+        cls = e.get("classname", "")
+        m = e.get("model", "")
+        if cls not in BRUSH_CLASSES or not m.startswith("*"):
+            continue
+        sf = int(float(e.get("spawnflags", "0") or 0))
+        if deathmatch and sf & 2048:
+            continue
+        mdl = bsp.models[int(m[1:])]
+        mn, mx = list(mdl[0:3]), list(mdl[3:6])
+        if cls == "func_door" and sf & 1:
+            a = (e.get("angle", "0") or "0").strip()
+            if a in ("-1", "-2"):
+                d = (0.0, 0.0, 1.0 if a == "-1" else -1.0)
+            else:
+                try:
+                    r = math.radians(float(a))
+                except ValueError:
+                    r = 0.0
+                d = (math.cos(r), math.sin(r), 0.0)
+            lip = float(e.get("lip", 8) or 8) or 8.0
+            travel = abs(sum(d[k] * (mx[k] - mn[k]) for k in range(3))) - lip
+            if travel > 0:
+                mn = [mn[k] + d[k] * travel for k in range(3)]
+                mx = [mx[k] + d[k] * travel for k in range(3)]
+        elif cls == "func_plat" and not e.get("targetname"):
+            h = float(e.get("height", 0) or 0) or (mx[2] - mn[2] - 8.0)
+            mn[2] -= h
+            mx[2] -= h
+        out.append((cls, tuple(mn), tuple(mx)))
+    return out
+
+
+class WithBrushes:
+    """A Bsp whose hull-1 test also refuses solid brush entities.
+
+    Duck-types the Bsp interface every air-layer function uses (h1, h0,
+    mins, maxs), so the flight, the ledge sampler, the straight drop and
+    the link runs all see pads, doors and plats without changing logic.
+    A player origin collides with a world box when it lies inside the box
+    grown by the player hull: 16 either side, 32 below, 24 above.
+    """
+
+    def __init__(self, bsp, boxes, cell=128.0):
+        self.bsp = bsp
+        self.mins, self.maxs = bsp.mins, bsp.maxs
+        self.entities, self.models = bsp.entities, bsp.models
+        self.cell = cell
+        self.boxes = [(cls, (mn[0] - 16, mn[1] - 16, mn[2] - 32),
+                       (mx[0] + 16, mx[1] + 16, mx[2] + 24))
+                      for cls, mn, mx in boxes]
+        self.grid = {}
+        for i, (_, mn, mx) in enumerate(self.boxes):
+            for gx in range(math.floor(mn[0] / cell), math.floor(mx[0] / cell) + 1):
+                for gy in range(math.floor(mn[1] / cell), math.floor(mx[1] / cell) + 1):
+                    self.grid.setdefault((gx, gy), []).append(i)
+
+    def box_at(self, x, y, z):
+        for i in self.grid.get((math.floor(x / self.cell), math.floor(y / self.cell)), ()):
+            cls, mn, mx = self.boxes[i]
+            if mn[0] < x < mx[0] and mn[1] < y < mx[1] and mn[2] < z < mx[2]:
+                return cls
+        return None
+
+    def h1(self, x, y, z, node=None):
+        c = self.bsp.h1(x, y, z)
+        if c != CONTENTS_EMPTY:
+            return c
+        return CONTENTS_SOLID if self.box_at(x, y, z) else CONTENTS_EMPTY
+
+    def h0(self, x, y, z):
+        return self.bsp.h0(x, y, z)
+
+
 def _feet_kind(bsp, x, y, oz):
     c = bsp.h0(x, y, oz - 23.0)
     return {CONTENTS_LAVA: "lava", CONTENTS_SLIME: "slime",
@@ -531,8 +624,10 @@ def fly(bsp, x, y, z, ux, uy, speed, vz=0.0, gravity=GRAVITY, tmax=3.0):
                 land = fall_to(bsp, nx, ny, z + 0.5, maxdrop=(z - nz) + 2.0)
                 lz = land if land is not None else nz
                 kind = _feet_kind(bsp, nx, ny, lz)
+                box_at = getattr(bsp, "box_at", None)
+                on = box_at(nx, ny, lz - 0.5) if box_at else None
                 return {"kind": kind if kind else "floor", "pos": (nx, ny, lz),
-                        "t": t, "fall": z0 - lz}
+                        "t": t, "fall": z0 - lz, "on": on}
         kind = _feet_kind(bsp, nx, ny, nz)
         if kind:
             return {"kind": kind, "pos": (nx, ny, nz), "t": t, "fall": z0 - nz}
@@ -723,14 +818,32 @@ def entries_vs_ledges(bsp, samples, tape_texts, near=32.0, dz=48.0, window=2):
     stats = {"entries": 0, "moves": 0,
              "entries_danger": 0, "moves_danger": 0,
              "entries_lethal_any": 0, "moves_lethal_any": 0,
-             "entries_any_ledge": 0, "moves_any_ledge": 0}
+             "entries_any_ledge": 0, "moves_any_ledge": 0,
+             "entries_jump": 0, "entries_danger_jump": 0}
     lethal = ("danger", "risky")
     every = ("danger", "risky", "momentum", "safe")
+    # Two classes hide inside "left a danger ledge" (the e1m7 lava
+    # investigation): a run-off, where a grounded bot walks off at speed,
+    # and a deliberate jump from a low floor at the lake edge, which is a
+    # danger ledge too. A jump or rocket jump event in the window splits
+    # them. Events carry no time of their own, so each takes the time of
+    # the latest sample before it in the tape.
+    jump_re = re.compile(r"ARGEVT (.+?) (?:jump|rjump)\s*$")
+    time_re = re.compile(r"ARGLOG .+? t\s+([\d.]+)")
     for text in tape_texts:
         tracks = {}
         for name, s in at.samples(text):
             tracks.setdefault(name, []).append(s)
-        for ss in tracks.values():
+        jumps, now = {}, 0.0
+        for line in text.splitlines():
+            m = time_re.search(line)
+            if m:
+                now = float(m.group(1))
+                continue
+            m = jump_re.search(line)
+            if m:
+                jumps.setdefault(m.group(1), []).append(now)
+        for name, ss in tracks.items():
             wet = [_feet_kind(bsp, s["x"], s["y"], s["z"]) in LETHAL for s in ss]
             for k in range(window, len(ss)):
                 path = ss[k - window:k + 1]
@@ -746,8 +859,15 @@ def entries_vs_ledges(bsp, samples, tape_texts, near=32.0, dz=48.0, window=2):
                 else:
                     continue
                 stats[key] += 1
+                jumped = key == "entries" and any(
+                    path[0]["t"] - 0.01 <= tj <= b["t"] + 0.01
+                    for tj in jumps.get(name, ()))
+                if jumped:
+                    stats["entries_jump"] += 1
                 if crosses(("danger",), path):
                     stats[key + "_danger"] += 1
+                    if jumped:
+                        stats["entries_danger_jump"] += 1
                 if crosses(lethal, path):
                     stats[key + "_lethal_any"] += 1
                 if crosses(every, path):
@@ -844,6 +964,8 @@ def main(argv=None):
     ap.add_argument("--air-png", help="with --air: draw the ledge verdicts over the mesh")
     ap.add_argument("--gravity", type=float,
                     help="override sv_gravity (default: 100 on e1m8, else 800)")
+    ap.add_argument("--no-brushes", action="store_true",
+                    help="with --air: world hull only, ignoring walls, doors and plats")
     a = ap.parse_args(argv)
     bsp, frags, stats = load_mesh(a.bsp)
     if a.air:
@@ -893,11 +1015,15 @@ def main(argv=None):
 def _air_report(a, bsp, frags):
     stem = Path(a.bsp).stem
     gravity = a.gravity if a.gravity else map_gravity(a.bsp)
-    samples = air_layer(bsp, frags, gravity=gravity)
+    boxes = [] if a.no_brushes else brush_boxes(bsp)
+    world = WithBrushes(bsp, boxes)
+    samples = air_layer(world, frags, gravity=gravity)
     v = {k: sum(1 for s in samples if s["verdict"] == k)
          for k in ("danger", "risky", "momentum", "safe")}
+    on = sum(1 for s in samples for r in s["out"].values() if r.get("on"))
     print(f"{stem} air layer at gravity {gravity:.0f}: {len(samples)} ledge points, "
-          f"16u apart")
+          f"16u apart; {len(boxes)} solid brush entities"
+          + (f", {on} flights land on one" if boxes else " (--no-brushes)"))
     print(f"  danger   {v['danger']:4d}  a straight run at {RUN:.0f} u/s lands in lava or slime")
     print(f"  risky    {v['risky']:4d}  only a walk, a turned run or a jump does")
     print(f"  momentum {v['momentum']:4d}  lethal straight down, dry every way at speed")
@@ -915,8 +1041,8 @@ def _air_report(a, bsp, frags):
         # that land in lava at 320 all land dry at 240 - real lava entries
         # pass their lips LESS often than ordinary moves do (0.7 against
         # 2.2 per cent over 120 tapes). A 320-only verdict cried wolf.
-        rows = link_runs(bsp, doc, speed=RUN, gravity=gravity)
-        slow = {(r["a"], r["b"]): r for r in link_runs(bsp, doc, speed=WALK, gravity=gravity)}
+        rows = link_runs(world, doc, speed=RUN, gravity=gravity)
+        slow = {(r["a"], r["b"]): r for r in link_runs(world, doc, speed=WALK, gravity=gravity)}
         both = [r for r in rows if r["run"] in LETHAL
                 and slow.get((r["a"], r["b"]), {}).get("run") in LETHAL]
         fast = [r for r in rows if r["run"] in LETHAL and r not in both]
@@ -934,7 +1060,7 @@ def _air_report(a, bsp, frags):
             text = Path(t).read_text(errors="replace")
             if f"SpawnServer: {stem}" in text:
                 texts.append(text)
-        r = entries_vs_ledges(bsp, samples, texts)
+        r = entries_vs_ledges(world, samples, texts)
         e = r["entries_danger"] / max(1, r["entries"])
         m = r["moves_danger"] / max(1, r["moves"])
         print(f"  tapes {len(texts)}: {r['entries']} lava or slime entries, "
@@ -942,6 +1068,10 @@ def _air_report(a, bsp, frags):
               f"{100 * m:.1f}% of {r['moves']} ordinary 1 s windows "
               f"({e / m:.1f}x)" if m else
               f"  tapes {len(texts)}: {r['entries']} entries, no ordinary moves to compare")
+        dj, d = r["entries_danger_jump"], r["entries_danger"]
+        print(f"    of those {d} danger-ledge entries, {d - dj} were run-offs and "
+              f"{dj} followed a jump event; {r['entries_jump']} of all "
+              f"{r['entries']} entries followed one")
     if a.air_png:
         render_air(frags, samples, a.air_png, f"{stem}: ledge verdicts at {RUN:.0f} u/s")
     return 0

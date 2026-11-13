@@ -25,12 +25,14 @@ passing botmatch does not establish better human play.
 
 - Add an air layer to the clip-hull navmesh audit: fly a player body off
   every ledge at walk, run and running-jump speeds and record where it
-  lands. Against tapes, with every ordinary second of movement as the base
-  rate, lava entries cross the ledges it flags far more often than
-  ordinary moves do: e1m7 95.7 against 10.8 per cent, dm4 74.7 against
-  15.5, e1m8 49.0 against 12.5. Its drop-link check is not supported by
-  the tapes and is reported as such. Audit tooling only; no bot or graph
-  change ([details](docs/navmesh-experiment.md#the-air-layer)).
+  lands, counting walls, doors and plats at their spawn positions. Against
+  tapes, with every ordinary second of movement as the base rate, lava
+  entries cross the ledges it flags far more often than ordinary moves do:
+  e1m7 94.4 against 8.3 per cent, dm4 74.7 against 15.5, e1m8 49.0 against
+  12.5, and the report splits run-offs from deliberate jumps. Its drop-link
+  check is not supported by the tapes and is reported as such. Audit
+  tooling only; no bot or graph change
+  ([details](docs/navmesh-experiment.md#the-air-layer)).
 
 - Stop routing bots into shallow lava and up impossible vertical "walks".
   navgen tested liquid 48u above the floor, so 70 seats across six maps stood
