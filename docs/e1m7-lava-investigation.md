@@ -264,6 +264,22 @@ and 0 vetoes. Against the six run-off-build dm4 tapes, stalls hold parity
 (median 6.5 to 7, in band, SPRT rejecting an effect of 10.6 or more) and
 lava deaths read 2 to 3, inside noise.
 
+## Follow-ups
+
+- [#782](https://github.com/saworbit/argus/issues/782): stop the fighting
+  reachability jump firing at a point no jump can reach (the high end of the
+  test; #774 and #780 cover the low end and battle grabs).
+- [#783](https://github.com/saworbit/argus/issues/783): seat deathmatch
+  spawns that stand on brush entities, such as e1m7's pads.
+- [#784](https://github.com/saworbit/argus/issues/784): ladder the run-off
+  check on e1m8, e1m6 and e1m1, where it refuses run-speed drop links.
+- [#785](https://github.com/saworbit/argus/issues/785): register a check of
+  the frag gap the jump ladder widened.
+- [#786](https://github.com/saworbit/argus/issues/786): keep ladder engines in
+  the played tick class on a busy machine.
+- [#775](https://github.com/saworbit/argus/issues/775) now carries the three
+  run-offs that left a lip after the guard vetoed the heading.
+
 ## Reproduce
 
 - Full-rate tapes: copy the control build to an ignored mod dir, add
