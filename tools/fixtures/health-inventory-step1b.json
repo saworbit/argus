@@ -1,11 +1,11 @@
 {
   "active_functions": {
-    "Argus_Combat": "0a1a68d050fedae651de1dddf2b824b2040b383fb21cc9263dc35500f935c3be",
+    "Argus_Combat": "e581f3bae6b438142ef2aeff686e4e6f2016b657526bc7032e89cb000577de3b",
     "Argus_Hunch": "c9f7573cd3449f47f8ac251970c3d6f030af9002b80563562f090a1d262fab7f",
     "Argus_Perceive": "2dc63bea68194463ff86596a5ab9b185104897b82c6b60d9d50d4b21f9e697c5"
   },
-  "active_text_sha256": "5ce88824ad896a156e49b01f747d0d5f798b9635fbbb72e92795040f917b319d",
-  "amendment_scope": "Reverse the cover-hop guard in memory, then reverse same-floor body-nudge hull checks in memory, then reverse body-height gating in memory, then reverse ally-barrel safety in memory, then reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
+  "active_text_sha256": "c33ba30441532988413cbfd3455e1d9b93fd2f1cd11b6375448ee93fcf04305d",
+  "amendment_scope": "Reverse the refuted tick-rate comment corrections in memory, then reverse the cover-hop guard in memory, then reverse same-floor body-nudge hull checks in memory, then reverse body-height gating in memory, then reverse ally-barrel safety in memory, then reverse passive motion observations in memory, then reverse stall ownership in memory, then reverse dock-exit and water-route support, target attention, under-fire recovery, human gait, opening-door, button/door, offset handoff, active health/inventory, plan and muzzle amendments in memory to recover the frozen historical parked/candidate definitions.",
   "candidate_text_sha256": "359211b3ae17dd2f8a0729adae5cfb3947d1d4bde968fac1479c4d3183119f38",
   "parked_functions": {
     "Argus_Combat": "1adaf68f727b69362db994c4093ff0b2e96f86a0c45ce87651688b37b383dcaf",
@@ -15,6 +15,7 @@
   "parked_text_sha256": "29100e880ab4b971d7dc29cabc5822b42463c1f11bf2fc8674bfdea0ffba914f",
   "patch": "health-inventory-step1b.patch",
   "production_amendments": [
+    "refuted-comments-reverse.patch",
     "cover-hop-reverse.patch",
     "body-nudge-reverse.patch",
     "body-height-reverse.patch",

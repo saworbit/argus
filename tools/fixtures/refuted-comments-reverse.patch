@@ -1,0 +1,85 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -194,9 +194,8 @@
+ .float  ar_nemkills;            // OPM: consecutive deaths to them;
+                                 // 3+ is a vendetta, any kill vents it
+ .float  ar_tremtime;            // next aim-tremor injection: the shake
+-                                // runs on a 0.095 s clock (about 10.5 a
+-                                // second) so its noise power does not
+-                                // scale with tick rate
++                                // runs on a 20 Hz clock so its noise
++                                // power does not scale with tick rate
+ .float  ar_rjweapon;            // gun held before a nav rocket jump
+                                 // forced the RL, restored on landing
+ .entity ar_lastkill;            // who this bot most recently killed -
+@@ -2318,22 +2317,22 @@
+         // different on every tick rate. Top speed is not the problem -
+         // 0.8v + 60 settles at 300 u/s whatever the rate, because the
+         // drag scales with the impulse - but the TIME CONSTANT is
+-        // frame-counted, so it is expressed per second here.
++        // frame-counted, and the two rates that matter are far apart.
+         //
+-        // The rate it was calibrated against was wrong. v4.07 read the
+-        // lab as one 0.1 s frame (about 10 Hz) from a one-decimal ftos
+-        // print, refuted 2026-09-14. The lab really ran at about 19 Hz
+-        // then, and since #336 every lab match runs at about 70 Hz under
+-        // +sys_ticrate 0.0139, the same rate as a listen server (#762).
+-        // Measure the rate before you calibrate to it.
++        // MEASURED, do not assume (2026-08-29): the dedicated lab runs
++        // at frametime 0.1, which is id's host_frametime CLAMP, not
++        // sys_ticrate - roughly 10 frames a second of real time. A
++        // listen server runs about 72. So every tape in runs/ was
++        // recorded at 0.1 while every session Shane plays is ~0.0139,
++        // a factor of seven.
+         //
+-        // Same model expressed per second: k = 2/s toward 300 u/s
+-        // (terminal speed 600 / 2). That reproduces 0.8 and 60 only for
+-        // a 0.1 s frame, which the lab never ran at, so it is not the
+-        // feel the old per-frame drag had: at the real 19 Hz, 0.8 per
+-        // frame was about 4.3/s, which the first cut (k = 4, impulse
+-        // 1200) matched. Whether to restore that is a feel decision,
+-        // #761. At the played rate the time constant is 0.5 s.
++        // Same model expressed per second: k = 2/s toward 300 u/s.
++        // At frametime 0.1 that is exactly 0.8 and 60 again, so the
++        // lab behaviour - and every baseline measured on it - is
++        // unchanged, and the listen server now matches it. (The first
++        // cut of this used k = 4 and 600*2, calibrated against an
++        // ASSUMED 0.05; it silently changed lab swim drag from 0.8 to
++        // 0.6. Measure the rate before you calibrate to it.)
+         wdrag = 1 - 2 * frametime;
+         if (wdrag < 0)
+             wdrag = 0;
+@@ -6380,20 +6379,19 @@
+         trem = 0.8;                          // adrenaline shake
+     // TREMOR ON A FIXED CLOCK, not once per frame (the #98 class,
+     // found by the 2026-08-29 per-frame audit). The shake is
+-    // injected noise, so its power per SECOND would scale with tick
+-    // rate. The clock caps injections at one per 0.095 s, about 10.5
+-    // a second, on any host whose frame is shorter than 0.09 s. The
+-    // lab (about 70 Hz under +sys_ticrate 0.0139 since #336) and a
+-    // listen server (about 72 Hz) therefore inject at the same rate,
+-    // and only a host slower than about 11 Hz injects every frame.
+-    // Magnitude semantics are untouched, and the effect is small: 0.3
+-    // degrees is about 2.6 units at 500u range against a 32-unit-wide
+-    // target.
+-    //
+-    // The 2026-08-29 note here said the lab never entered this branch,
+-    // from a one-decimal ftos print of a 0.05 to 0.07 s frame (refuted
+-    // 2026-09-14, #762). The branch has run in every lab match: at
+-    // about 19 Hz then, and on every frame at the pinned rate now.
++    // injected noise, so its power per SECOND scaled with tick rate:
++    // 10 injections a second on the lab's measured 0.1 frametime
++    // against ~72 on a listen server, which is roughly 2.7x the
++    // steady-state jitter for the same nominal 0.3 degrees. The
++    // clock pins the injection rate to the lab's, and the frametime
++    // guard means the branch cannot even be entered there - inert by
++    // construction rather than by argument. Magnitude semantics are
++    // untouched, and the effect is small: 0.3 degrees is about 2.6
++    // units at 500u range against a 32-unit-wide target.
++    // Gated on the HOST being faster than the calibration rate, so
++    // at 20 Hz this branch is never entered and the code is exactly
++    // what every tape was tuned against - inert by construction
++    // rather than by argument.
+     if (frametime < 0.09)
+     {
+         if (time < self.ar_tremtime)

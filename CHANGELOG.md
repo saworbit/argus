@@ -23,6 +23,19 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Add `argus_ci.py refuted` to the blocking invariant battery. It fails when
+  tracked text restates a rule listed in `tools/refuted_claims.json` as
+  current, so a correction now reaches every copy. It is seeded with the three
+  refuted tick-rate claims, and the pre-#673 CONTRIBUTING and PR template
+  copies fail it ([#764](https://github.com/saworbit/argus/issues/764)).
+
+- Correct three `src/argus.qc` comments that still stated the refuted
+  frametime 0.1 lab rate: the swim drag block, the aim tremor guard and the
+  tremor clock field. Comments only; the compiled program is unchanged. The
+  swim comment now records that its constant was calibrated to the wrong rate,
+  a feel decision left to [#761](https://github.com/saworbit/argus/issues/761)
+  ([#762](https://github.com/saworbit/argus/issues/762)).
+
 - Check that a baked combat cover hop is still a live, untyped link from its
   node, with no deliberate drop, before a retreating bot steers along it.
   Every shipped graph already meets this, so current matches are unchanged;
