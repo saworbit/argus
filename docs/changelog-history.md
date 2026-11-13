@@ -2989,6 +2989,11 @@ A performance, navigation accuracy, and player-experience milestone addressing b
 
 ## v4.07 (2026-08-29) - the lab runs at 10 Hz, and a correction
 
+> Refuted 2026-09-14: the "0.1" below was `ftos` printing a 0.05 to 0.07 s
+> frame to one decimal. The unpinned lab ran at about 19 Hz, and every lab
+> match has run at about 70 Hz since phase 0 (#336). See [v4.18](#v4-18),
+> #762 and #761.
+
 Following the v405 session review's own recommendation: audit bot
 physics for per-frame constants that should be scaled by `frametime`.
 The audit mostly VALIDATED the code, found one small defect, and

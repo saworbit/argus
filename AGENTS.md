@@ -89,6 +89,12 @@ the whole tape describes the fallback map - judge nothing).
   sessions at about 71 Hz. A guard like `if (frametime < 0.09)` fires
   on every normal lab frame. Deliberate slow studies set
   `sys_ticrate 0.1` as a separate arm. Never compare two tick classes.
+- Refuted rules are registered in `tools/refuted_claims.json`, and
+  `python tools/argus_ci.py refuted` fails when tracked text restates
+  one as current. When a change shows a recorded rule is wrong, add an
+  entry in the same change, and keep any historical mention by saying
+  "refuted" in its paragraph. Restoring text from history is how a
+  corrected rule comes back.
 - ONE TAPE SETTLES NOTHING on a movement question. A control tape of
   byte-identical shipped code ran dm2 stalls 31 and then 63, with one
   grate-room cell swinging 12 to 35; dm4 lava ranged 4 to 11 across a
