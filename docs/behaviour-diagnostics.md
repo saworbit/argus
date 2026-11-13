@@ -27,9 +27,13 @@ through an exact reverse amendment before the older fixture patches.
 
 Step 1a visual observation caching, ordinary rocket clearance, shared
 failed-plan recognition and the [human gait work](#human-gait-hesitation-and-cautious-liquid-approach)
-are retained in development. Health/inventory step 1b
-is active again in development at the user's request; incoming-projectile perception stays
-on hold. Shipped binaries are unchanged. Earlier sections' test totals and
+reached players on 2026-11-13, when main was installed as the gameplay binary
+(MD5 `ED8926C1F3F0E4A5D6F591F905516638`,
+[#793](https://github.com/saworbit/argus/pull/793)). That install also ships
+health/inventory step 1b as it stands in main. It closes neither the step 1b
+gameplay warning ([#583](https://github.com/saworbit/argus/issues/583)) nor
+the human-session check ([#610](https://github.com/saworbit/argus/issues/610)).
+Incoming-projectile perception stays on hold. Earlier sections' test totals and
 cohort conclusions belong to their recorded builds, not every later change.
 
 Later work adds [equal-link route distances](map-intelligence.md) and
@@ -46,8 +50,8 @@ and frozen historical health definitions are checked separately.
 
 The earlier muzzle verification comprises 14 native controlled checks and two
 negative controls, plus its recorded 41 focused Python tests. It is not a demonstration
-of improved gameplay. That muzzle verification ran no new cohorts; its changes remain in
-development without installation. See the
+of improved gameplay. That muzzle verification ran no new cohorts; its changes
+reached players with the #793 install, still without a cohort of their own. See the
 [focused verification runbook](lab-workflow.md#focused-checks-without-deployment).
 
 The actual combat-trigger checks (#584), repeatable private verification
@@ -314,10 +318,13 @@ dwell gap is not something any bot change can reach.
 
 ### Limits
 
-This is a movement-distribution result on two maps at skill 2, in development
-and not installed. It is not a demonstration of better human play, better
-spectating, or a difficulty change in either direction; no human session has
-been played against it. dm4's median gait remains the largest single gap at
+This is a movement-distribution result on two maps at skill 2. The gait was
+installed with main on 2026-11-13
+([#793](https://github.com/saworbit/argus/pull/793)). It is not a demonstration
+of better human play, better spectating, or a difficulty change in either
+direction. One human session has since been played against it, and its
+measurements [do not separate it from earlier builds](#first-human-session-on-the-installed-gait).
+dm4's median gait remains the largest single gap at
 +2.406, because its walkway edges read as void rather than lava - the lava
 surface sits further than the 280-unit floor probe below them - so the cautious
 gait does not fire there. Closing that was [tried and
@@ -327,6 +334,36 @@ on dm4 and are unexplained. dm2 single tapes swing widely on identical code;
 the four-a-side arms are what the disjointness rests on, not any one tape.
 The session that would settle the feel question is filed as
 [#610](https://github.com/saworbit/argus/issues/610).
+
+### First human session on the installed gait
+
+`runs/shane_dm4_2026-11-14_ed8926.log`: dm4, 176 s, skill 1, three bots, on the
+installed build. The human won 14 to 4. Bots recorded zero freezes, zero
+route failures, 2 stalls and 3 lava deaths, and visited 94 per cent of nav
+nodes.
+
+`tools/argus_gait.py` finds 6 hesitations (2.0 per bot: heard 2, junction 1,
+settle 3), no freezes and no attributable failure.
+
+`tools/argus_humanness.py` scores the bot tracks at a distance of 1.306. For
+like-for-like comparison, bots in four earlier human dm4 sessions on pre-gait
+builds score 0.792 to 1.457:
+
+| Session | Build | Distance |
+|---|---|---|
+| `shane_dm4_2026-08-29_v405` | pre-gait | 1.308 |
+| `shane_dm4_2026-09-16` | pre-gait | 1.231 |
+| `shane_dm4_2026-09-16b` | pre-gait | 0.792 |
+| `shane_dm4_2026-11-01_bumpercars` | pre-gait | 1.457 |
+| `shane_dm4_2026-11-14_ed8926` | gait installed | 1.306 |
+
+All five are scored against the same reference corpus, which includes these
+sessions' own human tracks. The botmatch figures above (1.321 to 1.022 on dm4)
+are not comparable: a human session puts bots in a different match.
+
+One tape cannot separate the gait from earlier builds in either direction.
+[#610](https://github.com/saworbit/argus/issues/610) still needs the human's
+written verdict on feel and a dm2 session.
 
 ## Movement reversals
 
@@ -391,6 +428,56 @@ Receipts are machine-local: `backups/motion697_*` for the markers, and
 `41ac1732e18e0bc4b5d3748ce45e57f68d2d8db21c8e1c3f3387e78bbd38e321`), both cohorts
 and their gate cards. A 40 s tape is a small sample, so read the shares as a
 ranking and not as fixed proportions.
+
+The first human session on the installed build
+(`runs/shane_dm4_2026-11-14_ed8926.log`) still shows bots making 57 to 60 hard
+reversals per moving minute against the human's 15.
+
+### Ground overspeed comes from cornering, not the brink deflection
+
+In that session, a bot at full health ran off a dm4 ledge into lava at about
+440 u/s while chasing a target it had lost sight of. The brink deflection keeps
+full speed while acceleration pushes toward the vetoed heading, so it was
+suspected of pumping speed.
+
+Two private probe builds, never installed, logged every grounded frame above
+340 u/s. Six tapes: dm4 four times and dm2 twice, 185 s, skill 1, played rate,
+all listen class. The three tapes from the second build give the shares of
+frames above 400 u/s:
+
+| Cause | dm4 | dm4 | dm2 |
+|---|---|---|---|
+| Wish heading turning at the full `AR_TURNRATE`, 320 deg/s | 67% | 69% | 77% |
+| Velocity lagging the wish without fast turning | 8% | 8% | 10% |
+| Brink deflection within 0.1 s | 6% | 10% | 6% |
+| Wall slide within 0.1 s | 3% | 4% | 3% |
+| Knockback, external damage within 0.5 s | 13% | 9% | 4% |
+
+This is stock ground physics. When the wish heading keeps turning, velocity
+lags behind it and acceleration adds speed off the velocity line. A lag held at
+about 54 degrees settles at about 494 u/s at 70 Hz, and every probe tape caps at
+exactly 487 u/s. Across five human session demos, bots spend 1.6 to 6.8 per
+cent of flat-ground time above 400 u/s and the human 0.2 to 0.7 per cent,
+because bots corner at the turn cap far more often.
+
+The overspeed is not a lava cause in these tapes. Of nine world deaths in the
+six probe tapes, none followed overspeed the bot built itself; the one fast run
+before a death was rocket knockback. Capping the deflection's speed would not
+change the picture.
+
+The bot physics also lacks two stock damping terms: edge friction, which
+doubles friction when the ground ends 16 units ahead, and wall friction. That
+gap is [#794](https://github.com/saworbit/argus/issues/794). Edge friction would
+cap the same held-angle pump at about 354 u/s near drops; neither term is shown
+to cost deaths.
+
+The same session's other unforced lava death was a stall jump that passed its
+landing check on the launch heading, then was steered by air control onto the
+heading the stall turn had picked
+([#797](https://github.com/saworbit/argus/issues/797)).
+
+The probe tapes, both diffs against `src/argus.qc`, both builds and the
+analysis scripts are machine-local in `backups/pump-probe-20261114/`.
 
 ## Shared failed-plan recognition
 

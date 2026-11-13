@@ -119,6 +119,26 @@ passing botmatch does not establish better human play.
   and plays; it is not an A/B result and says nothing about human play. The
   rerelease client was not checked.
 
+- Add the first human session on that install, a 176 s dm4 tape at skill 1
+  (`runs/shane_dm4_2026-11-14_ed8926.log`), with its scorecard row. Bots had
+  no freezes or route failures, and the gait check finds no attributable
+  failure. The behaviour guide records why one tape cannot separate the
+  installed gait from earlier builds; the feel verdict and a dm2 session for
+  [#610](https://github.com/saworbit/argus/issues/610) are still open.
+
+- Record in the behaviour guide a probe of fast bot movement. Two thirds or
+  more of grounded frames above 400 u/s come from bots turning at the full
+  320 deg/s turn rate, which is stock Quake physics; the brink deflection
+  accounts for 6 to 10 per cent, and none of nine probe-tape lava deaths
+  followed self-made overspeed. Follow-ups: the missing stock edge and wall
+  friction ([#794](https://github.com/saworbit/argus/issues/794)), and a stall
+  jump whose landing check misses the heading it then flies
+  ([#797](https://github.com/saworbit/argus/issues/797)).
+
+- Correct the behaviour guide's status lines, which still called the gait,
+  observation, muzzle and plan work uninstalled after #793, and the step 1b
+  manifest's status string.
+
 - Index the navmesh audit, its air layer and the mesh-derived graph in the
   developer tools guide, with navgen's `--repair-links` mode, and link the
   navmesh follow-ups from the experiment's limits: CI coverage for its
