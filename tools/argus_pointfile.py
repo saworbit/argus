@@ -488,13 +488,31 @@ def trail_points(tape, step, only=None):
     return pts
 
 
+def mesh_points(mapname, step):
+    """Outlines of the exact hull-1 navmesh (tools/argus_navmesh.py).
+
+    Fragment vertices are player ORIGINS, 24u above the floor they
+    stand on, so the outline is drawn 22u lower to sit on the floor.
+    """
+    import argus_navmesh as nm
+    _, frags, _ = nm.load_mesh(find_bsp(mapname))
+    pts = []
+    for f in frags:
+        poly = f["poly"]
+        for i in range(len(poly)):
+            a = (poly[i][0], poly[i][1], poly[i][2] - 22.0)
+            b = poly[(i + 1) % len(poly)]
+            pts += lerp(a, (b[0], b[1], b[2] - 22.0), step)
+    return pts
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("map")
     ap.add_argument("--what", default="nodes",
                     choices=["nodes", "links", "swim", "water", "tape",
                              "fails", "human", "route", "trail",
-                             "badseats", "surface", "diff", "probe"]
+                             "badseats", "surface", "diff", "probe", "mesh"]
                             + sorted(TYPED))
     ap.add_argument("--tape")
     ap.add_argument("--bot", help="restrict route/trail to one track")
@@ -563,6 +581,8 @@ def main():
         pts = diff_points(d, nodes, a.against)
     elif a.what == "probe":
         pts = probe_points(a.map, a.step)
+    elif a.what == "mesh":
+        pts = mesh_points(a.map, a.step)
     elif a.what in TYPED:
         key = TYPED[a.what]
         links = d.get(key, [])
