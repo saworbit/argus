@@ -1990,11 +1990,13 @@ then builds the developer CLI and runs its Python CLI checks with
 `ARGUS_REQUIRE_SOURCE_MCP=1`. The shared Python suites below are also blocking
 steps in that workflow.
 
-Run the shared navigation, registration, mapgate and tape contracts without
-an engine or machine-local maps:
+Run the shared navigation, navmesh, registration, mapgate and tape contracts
+without an engine or machine-local maps:
 
 ```text
 python tools/test_argus_navjson.py
+python tools/test_navmesh_repair.py
+python tools/test_navmesh_air.py
 python tools/test_argus_mapgate.py
 python tools/test_argus_tape.py
 ```
