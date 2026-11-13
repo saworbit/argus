@@ -100,7 +100,8 @@ passing botmatch does not establish better human play.
   now get every source change merged since then: the human gait, combat
   target reassessment, route actions and recovery, docked lift exits, the
   body nudge and cover-hop guards, the shallow-lava and climb repairs, the
-  dm3 red armour route and the e1m7 lava run-off fix.
+  dm3 red armour route and the e1m7 lava run-off fix
+  ([#793](https://github.com/saworbit/argus/pull/793)).
 
 - Smoke evidence for that install: 75 s dedicated matches at the played
   rate, skill 1, on dm4, e1m7 and dm3, with no engine or progs errors and no
