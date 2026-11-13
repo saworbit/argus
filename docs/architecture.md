@@ -201,6 +201,7 @@ Compare matched tick classes and retain the source identity for every arm.
 | `src/argus_nav_<map>.qc` | Generated graph; active only with compilation-list and dispatcher entries |
 | `src/argus_nav_<map>.qc.json` | Machine-readable graph twin |
 | `src/argus_nav_<map>.probe.json` / `.proven.json` | Engine refusals / proven candidates |
+| `src/argus_nav_<map>.seats.json` | Seats, walks and cuts applied to a shipped graph by `argus_navgen.py --seat-links` |
 | `src/argus_cam.qc` | Spectator camera and HUD |
 | `src/defs.qc` / `src/progs.src` | Definitions, client-message shims and compile order |
 | `tools/argus_mcp/` | Lab server, wizard, CLI, puppet and native reports |

@@ -1159,6 +1159,7 @@ regen of that map:
 | `argus_nav_<map>.probe.json` | probelinks failures and graph-specific pass evidence | 7g2c verdict prune/remint plus first-registration gate |
 | `argus_nav_<map>.proven.json` | candidate probe runs | 7g2d engine-proven entry mint |
 | `argus_nav_<map>.candidates.json` / `.splice.json` | entry-candidate sessions | paper trail of how proven.json was derived |
+| `argus_nav_<map>.seats.json` | hand-curated seats, walks and cuts by coordinates | `argus_navgen.py --seat-links` on the shipped graph only; a full regen does not read it yet |
 
 Sweeping the whole rotation is a chunk loop: a detached driver
 calling `probelinks` with advancing `skip`, honouring

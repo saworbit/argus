@@ -1,0 +1,69 @@
+{
+  "schema_version": 1,
+  "name": "dm3_red_armour_v1",
+  "map": "dm3",
+  "graph_md5": "854bc04b134e4c90b80026d34642fc02",
+  "skill": 2,
+  "tasks": [
+    {
+      "name": "south_walkway_to_red_armour",
+      "start": [
+        485.0,
+        -703.0,
+        56.0
+      ],
+      "goal": [
+        261.0,
+        -703.0,
+        328.0
+      ],
+      "budget_sec": 40.0,
+      "split": "train"
+    },
+    {
+      "name": "floor_below_to_red_armour",
+      "start": [
+        69.0,
+        -671.0,
+        -16.0
+      ],
+      "goal": [
+        261.0,
+        -703.0,
+        328.0
+      ],
+      "budget_sec": 50.0,
+      "split": "train"
+    },
+    {
+      "name": "west_walkway_to_red_armour",
+      "start": [
+        -219.0,
+        -639.0,
+        152.0
+      ],
+      "goal": [
+        261.0,
+        -703.0,
+        328.0
+      ],
+      "budget_sec": 35.0,
+      "split": "heldout"
+    },
+    {
+      "name": "red_armour_to_floor_below",
+      "start": [
+        261.0,
+        -703.0,
+        328.0
+      ],
+      "goal": [
+        69.0,
+        -671.0,
+        -16.0
+      ],
+      "budget_sec": 30.0,
+      "split": "heldout"
+    }
+  ]
+}

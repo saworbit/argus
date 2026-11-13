@@ -177,8 +177,8 @@ never came within 96u of it: the climbs made the planner believe in a route
 no bot could walk, so every one of those errands was doomed. After the
 repair the area is a stranded region and the planner stops choosing it. The
 mesh finds a real walking route into that area which the graph has never
-had; seating it from the mesh would give bots dm3's red armour, and is the
-obvious next piece of work. The reach gate's FAIL verdict is
+had; it is now seated (see [Seating dm3's south upper
+area](#seating-dm3s-south-upper-area)). The reach gate's FAIL verdict is
 unchanged: it was e1m8's two spawns over 200u from any waypoint before the
 repair too.
 
@@ -366,6 +366,125 @@ navgen's link-repair passes, plays at parity. It has twice as many one-way
 drops (126 against 66 descending past a step), routes in slightly fewer hops
 (9.3 against 9.6 for pairs over 400u apart), and keeps no link the exact
 walker refuses, against 65 of 700 in the shipped graph.
+
+## Seating dm3's south upper area
+
+The area is a spiral of 64u walkways around a pit whose floor, at z -42, is
+the mainland. From the lower east walkway (n232, z 56) a corridor turns west
+to n72; stairs climb to the z 152 walkway (n60, n46), which turns south down
+a west strip (n36, n35) and east along a south strip (n47); stairs climb to
+the z 264 walkways (n213, n64, n66, n230) and on to the top, a U at z 328
+whose south arm runs onto the red armour's platform (n228, n52, n183). Every
+leg after n72 was already in the graph. Two were missing and one was a lie:
+
+| Corner | Shipped graph | Why |
+|---|---|---|
+| n232 to n72, z 56 | no link | the straight line clips the inside corner; beeline_ok and the mesh walker both refuse it |
+| n46 to n36, z 152 | a jump n36 to n46 only | the same, and nothing walked back |
+| n45 to n40, z 328 | a walk both ways | the origin crosses 119u of open air over a 346u drop; the mesh walker refuses it and the v3.96 mill refused its predecessor in the engine |
+
+navgen gains `--seat-links`, which reads `src/argus_nav_dm3.seats.json`:
+seats and walks by coordinates, appended after n243 and after the last link
+call so no existing index or slot moves, plus cuts that remove a plain walk
+only when its far end stays reachable without it. Each walk must pass
+beeline_ok; each one here also passes the mesh walker, with SV_CheckBottom
+holding at every 4u sample, which matters because bots move with walkmove.
+Rerunning it, `--reanalyze-tactics` or `--repair-links` leaves the bytes
+unchanged.
+
+The first cut (v1) put one seat in the middle of each corner. A probe showed
+it was not enough: bots switch to their next waypoint 48u early, and
+`Argus_WalkArrivalReady` refuses that switch only for a wall, never for open
+air. On a 64u walkway, a bot switching 48u short of the top elbow heads for
+n40 on a line 8u inside the void. Three skill-1 tapes (sprints refused, so
+the walk is the only way up) put a bot on the top walkway four times, and all
+four fell off at that corner. v2 places each elbow toward the outer corner
+and gives the top U three seats, chosen by simulating the early switch with
+12u of lateral error so that the origin stays over floor in both directions:
+
+| Seat | Origin | Role |
+|---|---|---|
+| n244 | 492 -528 56 | z 56 elbow, n232 to n72 |
+| n245 | -236 -532 152 | z 152 elbow, n46 to n36 |
+| n246 | -172 -532 328 | top north-west elbow, from n45 |
+| n247 | -176 -660 328 | top west arm |
+| n248 | -140 -720 328 | top south arm, to n228 |
+
+Sixteen walks join them (each leg both ways) and the cut retires n45 to n40
+in both directions. n40 keeps its links to n228; linking it to the new seats
+would bring back the corner-cutting route through the router's
+fewest-hop search.
+
+Offline, the 22 seats rejoin the mainland, leaving only the pre-existing
+three-seat pocket at n15, n16 and n24. Directed reach from the worst spawn
+rises from 89 to 98 per cent over all edges and from 83 to 92 per cent
+without rockets or sprints. The mesh audit is unchanged; its one finding,
+n165 to n169, is a 224u ballistic drop. In the engine, `probelinks` walked
+all 16 new legs twice each with no failure. An earlier sweep of all 52 plain
+links in the area passed 35 and failed none, with 17 teleport failures while
+ladder matches ran beside it.
+
+### What the tapes show
+
+Ladder: the repaired graph (be0d4f4, progs 42637d43) against v2 (progs
+452bcd33), dm3, skill 2, 185 s, played rate. The primary, stall parity, was
+registered before any tape. A second rule was fixed after the first two
+waves and before any later tape: only listen-class tapes count. Those waves
+ran six engines at once beside another session's ladder and an unrelated
+Rust build, and 9 of their 12 tapes fell into the dedicated classes. Every
+later tape ran as one matched pair at a time, and all held the listen class.
+
+| Comparison | Tapes | Stalls median | IQM | Improvement 95% interval | P(improve) | Verdict |
+|---|---|---|---|---|---|---|
+| v2 against its paired controls | 5 / 5 | 13 to 18 | 14.3 to 19 | -26.0 to +6.3 | 0.34 | parity, sequential test says stop |
+| v2 against all listen controls | 11 / 5 | 15 to 18 | 14.9 to 19 | -24.8 to +7.7 | 0.39 | parity, sequential test says stop |
+| v1 (progs 5af60557) | 6 / 5 | 15.5 to 17 | 16 to 17 | -13.9 to +7.2 | 0.40 | parity, sequential test says stop |
+
+The v2 point estimate leans worse. 39 of the 49 stalls in its worst tape sit
+in the pre-existing cell at (-635 225 -16), which also leads the controls'
+worst tapes and is far from the change. Paired medians: engagements 17 to
+22, goals 25 to 25. No tape in either arm froze or lost a bot to lava.
+
+Mechanism, ARGLOG samples, skill 2, 185 s:
+
+| Arm | Tapes | Red armour chosen | Tapes with a bot in the area | Within 96u | On the platform |
+|---|---|---|---|---|---|
+| repaired graph (control) | 15 | 0 | 0 | 0 | 0 |
+| v1 | 10 | 14 | 3 | 1 tape, 10 samples | 0 |
+| v2 | 5 | 14 | 3 | 2 tapes, 28 samples | 0 |
+
+"Within 96u" is the measure the 157-tape history used. It overcounts: the
+z 264 walkway passes 90u from the item, 64u below it, and every bot it
+counted here was on that walkway, jumping at the item from below. "On the platform" is an origin at z 316 or above,
+within 96u horizontally.
+
+Skill-1 diagnostics, 300 s, three tapes each: v1 put a bot on the top
+walkway in four episodes and lost all four at the north-west corner. v2 put
+a bot on the top in four episodes; one ran across the platform past the item
+(its samples either side of it lie on a line 11u away), and three fell off
+the top.
+
+Why trips still fall short:
+
+- The errand is long: 30 to 37 hops from the middle of the map, about 4300u,
+  through dm3's central low area, where one bot spent its 20 s walking
+  budget re-routing before it reached the new entry.
+- Bots reach the top airborne. Routed steering jumps whenever the next seat
+  is more than 24u up and within 80u, and the stairs from n55 to n229 rise
+  48u, so every bot hops there and lands on the 64u walkway at 360 to 440
+  u/s, where it cannot turn. A seat on every tread would not stop it: with a
+  48u arrival radius the next seat is always two treads up. This is a
+  runtime rule, not a graph defect.
+- At skill 2 the router prefers the existing sprint from n241 to n52 across
+  the top gap, three hops from n229 against seven on foot. In the one v1
+  tape where a bot got there it never fired the sprint; it dithered on the
+  stairs, then steered at the visible armour from the walkway below.
+- The fixed navigation benchmark, `benchmarks/dm3_red_armour.json` (four
+  tasks between the mainland and the armour seat), could not run. The harness
+  placed the task bot but lost the console commands that remove the other
+  bots and assign the goal, at both skills and with the engine alone. Its
+  150 ms waits are shorter than this rig's command latency; `probelinks`
+  retries for 1.8 s and works.
 
 ## Limits
 

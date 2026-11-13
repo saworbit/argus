@@ -514,7 +514,10 @@ mill evidence pass; over-budget graphs are refused. Inspect the returned
 edict/playability verdict and follow its next steps.
 
 Never hand-edit `src/argus_nav_<map>.qc`. Keep probe convictions and proven
-links in their sidecars for the next generation. For **terminal** link checks:
+links in their sidecars for the next generation. Curated seats and walks go
+in `src/argus_nav_<map>.seats.json` and are applied to the shipped graph with
+`argus_navgen.py --seat-links`; a full regeneration does not read that file
+yet. For **terminal** link checks:
 
 ```text
 python tools/argus_reach.py mymap
