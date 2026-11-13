@@ -297,7 +297,10 @@ found 28 run-offs and 15 jumps of 43 entries; the 2 Hz split here finds
 say run-offs are most of it. That investigation also found why: the
 runtime hazard guard traces 280u down from 32 to 52u ahead, finds a dry
 floor under those edges and approves the step, without allowing for the
-run-off carrying the bot 200 to 240u past that floor.
+run-off carrying the bot 200 to 240u past that floor. Runtime checks for
+both classes, one judging a run-off's landing and one tracing a jump at the
+feet, are in [#773](https://github.com/saworbit/argus/pull/773)
+([e1m7 lava investigation](e1m7-lava-investigation.md)).
 
 ### What it does not support
 

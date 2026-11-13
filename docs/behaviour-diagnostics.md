@@ -105,7 +105,11 @@ half second - not beside a drop - and out of combat, the ground wish drops to
 convicted by the tapes: it improved dm4 and took dm2's median speed to 237 for
 a measured -2.60 against a control at +0.08, because dm2's brinks are mostly
 honest drops. `Argus_MoveHazard` now stamps the one branch that knows the
-hazard is lethal, changing no verdict and no control flow.
+hazard is lethal, changing no verdict and no control flow. Since
+[#773](https://github.com/saworbit/argus/pull/773) the run-off landing test
+stamps it too, when the place a running bot would land (not the floor under
+the probe) is lava or slime, so the gait also slows beside lips such as the
+open end of e1m7's west walkway.
 
 **Two accounting repairs this needed.** The stall detector skips a hesitation
 one detector period past the last held frame, keyed on that frame rather than

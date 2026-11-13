@@ -1,0 +1,133 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -1442,10 +1442,9 @@ float(float a) Argus_Sqrt =
+ // void. Argus_MoveHazard's floor trace answers "what is under the probe
+ // point", which is where a bot STEPPING off would come down. A bot running
+ // off keeps its horizontal speed through the fall and lands about
+-// speed * sqrt (2 drop / g) further on. Air control could shorten that
+-// only with a wish pointing back (AR_AIRWISH caps the gain along the wish,
+-// not a brake against it), and the steering that ran the bot off the lip
+-// still points forward.
++// speed * sqrt (2 drop / g) further on. Air control can bend that arc but
++// never shorten it: AR_AIRWISH caps the gain along the wish at 30 u/s, so
++// nothing in the air sheds the run speed.
+ //
+ // MEASURED, e1m7, 2026-11-13: in six full-rate ARGMOT tapes 28 of 43 lava
+ // deaths left an upper floor, 26 of them at 300 to 450 u/s. Replayed
+@@ -1964,70 +1963,6 @@ float(float myaw, float spd) Argus_GapJumpOK =
+     return FALSE;
+ };
+ 
+-// TRUE when a jump launched now, at the bot's own horizontal velocity,
+-// comes down in lava, slime or a void. The arc is traced at the FEET.
+-// Argus_GapJumpOK traces at chest height, so the floor it lands on can be
+-// 48u above where the feet actually are: on e1m7 three of seven approved
+-// gap jumps put the feet into the island's bank below its top, and the
+-// bot slid down the face into the lake. A face or wall in the way drops
+-// the body straight down beside it.
+-//
+-// MEASURED, e1m7, 2026-11-13: 15 of 43 lava deaths in six full-rate tapes
+-// were jumps from the low floors or the island. Tagged by site in three
+-// more, 5 of 10 lava entries were the reachability jump in Argus_AI (a
+-// walkway seat 160u overhead is "above and within 80u", so a bot running
+-// at the lake edge under it jumped, at 164 to 442 u/s) and 4 were gap
+-// jumps. No jump site asked where it would land.
+-float() Argus_JumpLandHazard =
+-{
+-    local vector vh, dir, p0, p1;
+-    local float spd, t, g, tmax, c;
+-
+-    vh = self.velocity;
+-    vh_z = 0;
+-    spd = vlen (vh);
+-    if (spd < 1)
+-        return FALSE;           // straight up comes straight back down
+-    dir = normalize (vh);
+-    g = Argus_Gravity ();
+-    tmax = 1.25 * (800 / g);    // the Argus_GapJumpOK window, for the
+-    if (tmax > 3)               // same low-gravity reason
+-        tmax = 3;
+-    p0 = self.origin - '0 0 20';
+-    t = 0.1;
+-    while (t < tmax)
+-    {
+-        p1 = self.origin + dir * (spd * t);
+-        p1_z = self.origin_z - 20 + AR_JUMPVEL * t - 0.5 * g * t * t;
+-        traceline (p0, p1, TRUE, self);
+-        if (trace_fraction < 1)
+-        {
+-            p1 = trace_endpos;
+-            if (trace_plane_normal_z < 0.7)
+-            {
+-                p1 = trace_endpos - dir * 16;
+-                traceline (p1, p1 - '0 0 280', TRUE, self);
+-                if (trace_fraction == 1)
+-                    return TRUE;
+-                p1 = trace_endpos;
+-            }
+-            c = pointcontents (p1 + '0 0 2');
+-            if ((c == CONTENT_LAVA || c == CONTENT_SLIME)
+-                && !Argus_HazardBridge (p1 + '0 0 24'))
+-                return TRUE;
+-            return FALSE;
+-        }
+-        c = pointcontents (p1);
+-        if (c == CONTENT_LAVA || c == CONTENT_SLIME)
+-            return TRUE;        // the feet go in before any floor
+-        p0 = p1;
+-        t = t + 0.1;
+-    }
+-    if (pointcontents (p0) == CONTENT_WATER)
+-        return FALSE;           // a pool breaks any fall
+-    return TRUE;                // no landing in the window: the unknown
+-};
+-
+ // wall slide on a blocked ground step (2026-09-16, GitHub #380).
+ // Stock SV_FlyMove clips the velocity into every plane it hits and
+ // continues the move along the clipped vector, which is what lets a
+@@ -2735,19 +2670,10 @@ void() Argus_Physics =
+         if (!tacticmove && self.ar_jump)
+         {
+             self.ar_jump = 0;
+-            // Reachability, stall and escort jumps fire wherever the bot
+-            // stands and carry its run speed. One that lands in lava is
+-            // dropped, and the frame walks on under the brink guard.
+-            if (!Argus_JumpLandHazard ())
+-            {
+-                self.velocity_z = AR_JUMPVEL;
+-                self.flags = self.flags - (self.flags & FL_ONGROUND);
+-                Argus_Event ("jump");
+-                return;
+-            }
+-            dprint ("ARGUS ");
+-            dprint (self.netname);
+-            dprint (" jumpveto\n");
++            self.velocity_z = AR_JUMPVEL;
++            self.flags = self.flags - (self.flags & FL_ONGROUND);
++            Argus_Event ("jump");
++            return;
+         }
+ 
+         // Water-vault for wading bots standing on pool floor:
+@@ -3193,20 +3119,11 @@ void() Argus_Physics =
+                     && !self.ar_hopdoor && !self.ar_hoprj)
+                 {
+                     self.ar_gapjump = time + 1;
+-                    // The arc check is at chest height and assumes a
+-                    // straight flight. Confirm the feet land dry too,
+-                    // then HOLD the launch line with the sprint flight
+-                    // latch: air acceleration follows whatever the
+-                    // steering wants next and can bend or brake the
+-                    // jump short of the far side (on e1m7 a wander
+-                    // wish cut one from 317 to 142 u/s over the lake).
+-                    if (Argus_GapJumpOK (myaw, spd)
+-                        && !Argus_JumpLandHazard ())
++                    if (Argus_GapJumpOK (myaw, spd))
+                     {
+                         self.velocity_z = AR_JUMPVEL;
+                         self.flags = self.flags
+                                    - (self.flags & FL_ONGROUND);
+-                        self.ar_sprintstate = 3;
+                         Argus_Event ("jump");
+                         return;
+                     }
