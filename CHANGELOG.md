@@ -11,9 +11,9 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Water/action execution, bounded recovery and checked dock-exit decisions; eight-map evidence and earlier release gates remain in development; no deployment |
-| Latest gameplay update | 2026-10-22, [#531](https://github.com/saworbit/argus/pull/531): attack, cover and return on dm4/dm2 |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `A3F7AA9428846DE7F7B327506F5F5D3D` |
+| Development source | Main as of 2026-11-13 is installed; the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) and the parked step 1b gate ([#583](https://github.com/saworbit/argus/issues/583)) remain open |
+| Latest gameplay update | 2026-11-13: main installed, the first gameplay binary since 2026-10-22; see Unreleased |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `ED8926C1F3F0E4A5D6F591F905516638` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
@@ -93,6 +93,20 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Changed
+
+- Install main as the gameplay binary, MD5
+  `ED8926C1F3F0E4A5D6F591F905516638`. It is the first install since
+  2026-10-22 ([#566](https://github.com/saworbit/argus/pull/566)), so players
+  now get every source change merged since then: the human gait, combat
+  target reassessment, route actions and recovery, docked lift exits, the
+  body nudge and cover-hop guards, the shallow-lava and climb repairs, the
+  dm3 red armour route and the e1m7 lava run-off fix.
+
+- Smoke evidence for that install: 75 s dedicated matches at the played
+  rate, skill 1, on dm4, e1m7 and dm3, with no engine or progs errors and no
+  freezes (`runs/smoke_deploy_ed8926c1_*.log`). This shows the build loads
+  and plays; it is not an A/B result and says nothing about human play. The
+  rerelease client was not checked.
 
 - Index the navmesh audit, its air layer and the mesh-derived graph in the
   developer tools guide, with navgen's `--repair-links` mode, and link the
