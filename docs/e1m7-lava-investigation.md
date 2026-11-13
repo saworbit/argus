@@ -3,8 +3,8 @@
 e1m7 bots die in the central lava lake about four times a match. The
 navigation repair of 2026-11-13 cut every graph route into the lake's lava
 seats and left that count at parity (4 to 3), so the deaths were not routes
-into lava. This note records what they are and the runtime check that
-addresses the larger share.
+into lava. This note records what they are and the two runtime checks that
+address them: one for running off a ledge, one for jumping.
 
 ## Two mechanisms
 
@@ -31,7 +31,11 @@ heading. A dry floor within the window approves it, and the walk branch
 then completes the step off the lip (the `FL_PARTIALGROUND` retry). That is
 right for a bot stepping off. A running bot keeps its horizontal speed
 through the fall and lands `speed * sqrt (2 * drop / gravity)` further on.
-Air control can bend that arc but never shorten it.
+Air control could shorten that only with a wish pointing back, and the
+steering that ran the bot off the lip still points forward. (A first draft
+of this note said air control can never shorten a flight. That is wrong:
+`Argus_AirAccelerate` caps the gain along the wish, not a brake against it,
+and the gap-jump tapes below show it braking a flight from 317 to 142 u/s.)
 
 e1m7 puts a narrow dry target under its main lips, with lava beyond it:
 
@@ -73,14 +77,19 @@ guard saw each lip in time and approved it.
 The other 15 started on the low floors (z 56 and 24) or the island (z 8),
 each launched with an upward velocity, and each fell 18 to 71 units into the
 lava. Every one logged a `jump` event on the departure frame, at 164 to 405
-u/s. Which jump site fired was not instrumented. The likely ones are the
-reachability jump in
-`Argus_AI` (it sets `ar_jump` when the steering point is more than 24 units
-up and within 80 units, which a walkway seat over the low floor satisfies),
-the climb branch for jump-up links such as the island's n39 to n187, which
-fires within 72 units of the seat with no speed limit, and the jump links
-between the east lava seats. None of these checks where the jump lands.
-This is left for a separate change.
+u/s.
+
+Three more full-rate tapes of the run-off build, with every jump site
+tagged, held 10 lava entries:
+
+| Jump site | Lava entries | Why it lands in lava |
+|---|---|---|
+| Reachability jump in `Argus_AI`, while fighting | 5 | It fires when the steering point is more than 24 units up and within 80. A walkway seat 160 units overhead qualifies, so a bot running along the low floor's lake edge under it jumps, at 164 to 442 u/s, toward a seat no jump can reach |
+| Predictive gap jump (`Argus_GapJumpOK`) | 4 | Its arc is traced at chest height, so a "landing" can leave the feet 48 units lower: three of the seven gap jumps approved in these tapes put the feet into the island's bank. And nothing holds the launch line in the air, so steering bends or brakes the flight |
+| None (an upper-floor run-off the first change misses) | 1 | |
+
+No jump-up link (the climb branch) fired in these tapes. Of 104 untyped
+jumps, 70 were the fighting reachability jump.
 
 ## The change
 
@@ -110,6 +119,32 @@ pit; the landing is over the deep lava), 3 e1m6, 2 e1m1 and 23 e1m8 links
 (gravity 100, where a 112 unit drop flies 480 units), and on none of dm2,
 dm3, dm6, e1m5, e1m7 or lqdm2. A bot approaching those links slowly is
 unaffected.
+
+## The jump change
+
+`Argus_JumpLandHazard` traces the jump the bot would make right now (its own
+horizontal velocity, `AR_JUMPVEL` up, map gravity) at the feet, in 0.1 s
+segments over the gap jump's own window. Feet entering lava or slime, a
+landing on either that the hull does not bridge, or no landing at all
+(unless water breaks the fall) is a hazard. A face in the way drops the
+body straight down beside it, so a jump onto a step or a ledge still passes.
+
+- The `ar_jump` consumer in `Argus_Physics` (reachability, stall and escort
+  jumps) drops a hazardous jump and lets the frame walk on under the brink
+  guard, printing `ARGUS <name> jumpveto`.
+- The gap jump needs `Argus_JumpLandHazard` to pass as well as
+  `Argus_GapJumpOK`, and holds its launch line through the flight with the
+  existing sprint flight latch (`ar_sprintstate` 3, cleared on landing).
+
+Typed launches, hurdles and the climb branch are unchanged.
+
+Emulated offline on the 104 untyped jumps in the three tagged tapes, the
+check vetoes 5 of the 9 that started a lava entry (3 of 5 reachability, 2 of
+4 gap) and 15 of the other 95, most of them reachability jumps at a seat no
+jump can reach. The four it passes all had dry straight arcs and were
+steered off them in the air. The held launch line covers the two gap jumps;
+the reachability jump is left free to steer, since steering toward its
+target is its purpose.
 
 ## Ladder
 
@@ -174,6 +209,61 @@ run-off from dm4's walkway seats beside the pit lands over the deep lava,
 but it was not the registered metric and the arms were not run side by side,
 so it is a lead for a registered dm4 ladder, not a result.
 
+### Jump ladder
+
+Registered before any tape: primary lava deaths on e1m7, predicted down.
+Candidate progs `e9959a8f` (both changes), control `4b758405` (the run-off
+change alone). Same rig, rounds of three engines at AboveNormal priority,
+both arms interleaved; every tape in the listen tick class and at a full
+185 s of game time.
+
+| Arm | Tapes | Lava deaths | Stalls | Engagements | Goals |
+|---|---|---|---|---|---|
+| Control | 5 | 3, 2, 4, 4, 2 | 1, 4, 1, 2, 18 | 103, 109, 102, 87, 68 | 30, 23, 23, 21, 13 |
+| Candidate | 5 | 0, 3, 1, 2, 1 | 3, 5, 3, 0, 2 | 104, 72, 102, 99, 93 | 18, 20, 28, 27, 26 |
+
+At five a side `argus-mcp compare` returns PARITY: lava median 3 to 1, IQM 3
+to 1.3, improvement 95% CI +0.0 to +3.0, P(improve) 0.86, SPRT continue.
+Stalls (2 to 3) and engagements (102 to 99) stay in band. Goal pickups
+warned on the gate card's representative pair, but the medians rose (23 to
+26). The K/D spread row flagged again (medians 7 to 11, candidate range 2 to
+12 against control 4 to 11).
+
+SPRT asked for more tapes, so the ladder ran on to its cap of ten a side,
+still interleaved:
+
+| Arm | Tapes | Lava deaths (all ten) | Total |
+|---|---|---|---|
+| Control | 10 | 3, 2, 4, 4, 2, 3, 3, 3, 1, 0 | 25 |
+| Candidate | 10 | 0, 3, 1, 2, 1, 2, 2, 2, 1, 0 | 14 |
+
+At ten a side the overall verdict is still PARITY. On the registered metric
+the median falls 3 to 1.5 and the IQM 2.7 to 1.5, and the improvement's 95%
+CI is +0.2 to +2.2, clear of zero, with P(improve) 0.77. The band gate cannot
+call an improvement because the control band reaches zero, and SPRT stops
+undecided at the cap, which it reads as an effect smaller than 2 a tape.
+Stalls (median 2.5 both arms, SPRT rejecting an effect of 6.7 or more) and
+engagements (99 to 94.5) are unchanged. The gate card's goal-pickup row
+failed on its representative pair, but over all twenty tapes goal pickups
+rose (mean 22.2 to 24.0).
+
+One secondary is not explained. The frag gap between the best and worst bot
+(`kd_spread`) widened, median 6 to 10.5 (mean 6.8 to 8.6), with both arms
+ranging 2 to 12. Frag totals did not change (median 30 to 31), so it is not
+a volume effect. The same control build read a median of 6 here and 8 in
+the run-off ladder, so the metric is noisy. It is recorded for a registered
+check, not read as an effect.
+
+Two full-rate candidate tapes held 3 lava entries (1.5 a tape): one jump
+and one walk-in from the low floor, and one east-lip departure of the
+"vetoed but still fell" kind. The run-off build's full-rate tapes had 2 to
+3 jump entries a tape. `jumpveto` fired 5 and 7 times in them.
+
+On dm4 the jump check is nearly inert: three candidate tapes logged 1, 1
+and 0 vetoes. Against the six run-off-build dm4 tapes, stalls hold parity
+(median 6.5 to 7, in band, SPRT rejecting an effect of 10.6 or more) and
+lava deaths read 2 to 3, inside noise.
+
 ## Reproduce
 
 - Full-rate tapes: copy the control build to an ignored mod dir, add
@@ -187,3 +277,7 @@ so it is a lead for a registered dm4 ladder, not a result.
   (full-rate candidate), `runs/lc2_e1m7_1..5` and `runs/lk2_e1m7_1..5` (the
   ladder), `runs/lc2_dm4_1..6` (dm4 candidate). The rejected slow rounds are
   `runs/landcand_*`, `runs/landctl_*`, `runs/lcand_*` and `runs/lctl_*`.
+  For the jump change: `runs/jdbg_e1m7_1..3` (full-rate, every jump site
+  tagged, scratch build `b3f04d67`), `runs/jcd_e1m7_1..2` (full-rate
+  candidate), `runs/jc_e1m7_1..10` and `runs/jk_e1m7_1..10` (the ladder) and
+  `runs/jc_dm4_1..3`.
