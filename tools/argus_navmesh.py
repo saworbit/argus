@@ -466,6 +466,295 @@ def load_mesh(bsp_path):
                        "hostile_dropped": hostile}
 
 
+# ---- the air layer ----
+#
+# The floor mesh says where a player can STAND. A Quake player who leaves
+# a floor keeps moving: at 320 u/s a 190u fall carries about 220u sideways
+# before it lands, which is how dm4's n45 -> n66 crosses 40u of lava and
+# how e1m7's routed bots run off their upper walkways into the lake. So
+# fly a player origin off every ledge through hull 1, at the speeds a bot
+# actually leaves one, and see where it lands.
+
+GRAVITY = 800.0        # sv_gravity on every map Argus ships but e1m8
+RUN, WALK = 320.0, 240.0
+JUMPVEL = 270.0        # AR_JUMPVEL
+AIR_DT = 0.01
+LETHAL = ("lava", "slime")
+# (name, horizontal speed, heading offset in degrees, launch velocity_z)
+AIR_VARIANTS = (("walk", WALK, 0.0, 0.0), ("run", RUN, 0.0, 0.0),
+                ("run+30", RUN, 30.0, 0.0), ("run-30", RUN, -30.0, 0.0),
+                ("jump", RUN, 0.0, JUMPVEL))
+
+
+def _feet_kind(bsp, x, y, oz):
+    c = bsp.h0(x, y, oz - 23.0)
+    return {CONTENTS_LAVA: "lava", CONTENTS_SLIME: "slime",
+            CONTENTS_WATER: "water"}.get(c)
+
+
+def fly(bsp, x, y, z, ux, uy, speed, vz=0.0, gravity=GRAVITY, tmax=3.0):
+    """Ballistic flight of a player origin through hull 1.
+
+    Returns {"kind", "pos", "t", "fall"}: kind is "floor" (dry landing),
+    "lava", "slime" or "water" (the feet entered it, which ends the fall
+    whatever lies under it) or "void" (nothing within tmax). A wall met in
+    flight stops the motion into it, axis by axis, the way SV_FlyMove
+    clips velocity; a ceiling kills the rise. "fall" is how far below the
+    launch the body ends up.
+    """
+    vx, vy = ux * speed, uy * speed
+    z0, t = z, 0.0
+    while t < tmax:
+        t += AIR_DT
+        # Still on a floor: keep running at this height until it ends. A
+        # body falls from the edge, not from wherever its run started
+        # (the first link-run check fell at its first step and "landed"
+        # back on the platform it had not yet left).
+        grounded = vz <= 0 and bsp.h1(x, y, z - 0.25) != CONTENTS_EMPTY
+        if grounded:
+            vz = 0.0
+        else:
+            vz -= gravity * AIR_DT
+        nx, ny = x + vx * AIR_DT, y + vy * AIR_DT
+        if bsp.h1(nx, ny, z) != CONTENTS_EMPTY:
+            if bsp.h1(nx, y, z) == CONTENTS_EMPTY:
+                ny, vy = y, 0.0
+            elif bsp.h1(x, ny, z) == CONTENTS_EMPTY:
+                nx, vx = x, 0.0
+            else:
+                nx, ny, vx, vy = x, y, 0.0, 0.0
+        nz = z + vz * AIR_DT
+        if bsp.h1(nx, ny, nz) != CONTENTS_EMPTY:
+            if vz > 0:
+                vz, nz = 0.0, z
+            else:
+                land = fall_to(bsp, nx, ny, z + 0.5, maxdrop=(z - nz) + 2.0)
+                lz = land if land is not None else nz
+                kind = _feet_kind(bsp, nx, ny, lz)
+                return {"kind": kind if kind else "floor", "pos": (nx, ny, lz),
+                        "t": t, "fall": z0 - lz}
+        kind = _feet_kind(bsp, nx, ny, nz)
+        if kind:
+            return {"kind": kind, "pos": (nx, ny, nz), "t": t, "fall": z0 - nz}
+        x, y, z = nx, ny, nz
+        if z < bsp.mins[2] - 64:
+            break
+    return {"kind": "void", "pos": (x, y, z), "t": t, "fall": z0 - z}
+
+
+def ledge_points(bsp, frags, spacing=16.0):
+    """Points along every fragment edge where a body walks into open air."""
+    out = []
+    for fi, f in enumerate(frags):
+        for ei, (p, q, u, n, ln) in enumerate(_edges_xy(f["poly"])):
+            if ln < 4.0:
+                continue
+            k = max(1, int(ln // spacing))
+            for i in range(k):
+                t = (i + 0.5) * ln / k
+                x, y = p[0] + u[0] * t, p[1] + u[1] * t
+                z = plane_z(f["plane"], x, y)
+                px, py = x + n[0] * 1.5, y + n[1] * 1.5
+                if bsp.h1(px, py, z + 1.0) != CONTENTS_EMPTY:
+                    continue                  # a wall, or a step up
+                if fall_to(bsp, px, py, z + 1.0, maxdrop=STEP + 2.0) is not None:
+                    continue                  # floor within a step: walk on
+                out.append({"frag": fi, "edge": (fi, ei), "pos": (x, y, z),
+                            "n": n, "u": u})
+    return out
+
+
+def map_gravity(bsp_path):
+    """sv_gravity as stock world.qc sets it: 100 on e1m8, 800 elsewhere."""
+    return 100.0 if Path(bsp_path).stem.lower() in ("e1m8", "lq_e1m8") else GRAVITY
+
+
+def danger_stretches(samples, verdict="danger"):
+    """Runs of consecutive same-verdict points along one edge, longest first."""
+    runs, cur = [], None
+    for s in samples:
+        if s["verdict"] == verdict and cur and cur["edge"] == s["edge"]:
+            cur["end"] = s["pos"]
+            cur["points"] += 1
+        else:
+            if cur:
+                runs.append(cur)
+            cur = ({"edge": s["edge"], "start": s["pos"], "end": s["pos"], "points": 1}
+                   if s["verdict"] == verdict else None)
+    if cur:
+        runs.append(cur)
+    for r in runs:
+        r["length"] = math.hypot(r["end"][0] - r["start"][0],
+                                 r["end"][1] - r["start"][1])
+    return sorted(runs, key=lambda r: (-r["points"], r["start"]))
+
+
+def air_layer(bsp, frags, spacing=16.0, gravity=GRAVITY):
+    """Fly every ledge point off in each AIR_VARIANTS way.
+
+    Each sample gains "drop" (the straight-down landing the floor mesh
+    models), "out" ({variant: flight result}) and "verdict": "danger"
+    when a straight run at RUN lands in lava or slime, "risky" when only
+    a turned run, a walk or a jump does, "momentum" when the straight drop
+    is lethal but every way off at speed lands dry (dm4's n45 class), and
+    "safe" otherwise.
+    """
+    samples = ledge_points(bsp, frags, spacing)
+    for s in samples:
+        x, y, z = s["pos"]
+        nx, ny = s["n"]
+        px, py = x + nx * 1.5, y + ny * 1.5
+        straight = fall_to(bsp, px, py, z + 1.0, maxdrop=4096.0)
+        if straight is None:
+            s["drop"] = "void"
+        else:
+            s["drop"] = _feet_kind(bsp, px, py, straight) or "floor"
+        s["out"] = {}
+        for name, speed, off, vz in AIR_VARIANTS:
+            a = math.radians(off)
+            ux = nx * math.cos(a) - ny * math.sin(a)
+            uy = nx * math.sin(a) + ny * math.cos(a)
+            s["out"][name] = fly(bsp, x, y, z, ux, uy, speed, vz, gravity)
+        kinds = {k: r["kind"] for k, r in s["out"].items()}
+        if kinds["run"] in LETHAL:
+            s["verdict"] = "danger"
+        elif any(k in LETHAL for k in kinds.values()):
+            s["verdict"] = "risky"
+        elif s["drop"] in LETHAL:
+            s["verdict"] = "momentum"
+        else:
+            s["verdict"] = "safe"
+    return samples
+
+
+def link_runs(bsp, doc, speed=RUN, gravity=GRAVITY):
+    """Run every descending plain link at speed and see where it lands.
+
+    Walk the straight line from the source on hull 1 until the floor
+    falls away, then fly off that lip along the link's heading. Returns
+    one row per link that has a lip: the straight-down and at-speed
+    landings and how far the at-speed landing ends from the target seat.
+    """
+    nodes = [tuple(p) for p in doc["nodes"]]
+    typed = set()
+    for k in TYPED_FAMILIES:
+        typed |= {tuple(r[:2]) for r in doc.get(k, [])}
+    rows = []
+    for row in doc.get("links", []):
+        a, b = row[0], row[1]
+        if (a, b) in typed or nodes[a][2] - nodes[b][2] <= STEP:
+            continue
+        (ax, ay, az), (bx, by, bz) = nodes[a], nodes[b]
+        d = math.hypot(bx - ax, by - ay)
+        if d < 1.0:
+            continue
+        ux, uy = (bx - ax) / d, (by - ay) / d
+        z, t, lip = az, 0.0, None
+        while t < d:
+            t += 4.0
+            x, y = ax + ux * t, ay + uy * t
+            if bsp.h1(x, y, z + STEP) != CONTENTS_EMPTY:
+                break                         # a wall before any lip
+            f = fall_to(bsp, x, y, z + STEP, maxdrop=2 * STEP)
+            if f is None:
+                lip = (x - ux * 4.0, y - uy * 4.0, z)
+                break
+            z = f
+        if lip is None:
+            continue
+        straight = fall_to(bsp, lip[0] + ux * 1.5, lip[1] + uy * 1.5,
+                           lip[2] + 1.0, maxdrop=4096.0)
+        skind = ("void" if straight is None else
+                 _feet_kind(bsp, lip[0] + ux * 1.5, lip[1] + uy * 1.5, straight) or "floor")
+        r = fly(bsp, lip[0], lip[1], lip[2], ux, uy, speed, 0.0, gravity)
+        miss = math.hypot(r["pos"][0] - bx, r["pos"][1] - by)
+        rows.append({"a": a, "b": b, "lip": lip, "straight": skind,
+                     "run": r["kind"], "land": r["pos"], "miss": miss})
+    return rows
+
+
+def _seg_dist(px, py, ax, ay, bx, by):
+    dx, dy = bx - ax, by - ay
+    L2 = dx * dx + dy * dy
+    t = 0.0 if L2 < 1e-9 else max(0.0, min(1.0, ((px - ax) * dx + (py - ay) * dy) / L2))
+    return math.hypot(px - (ax + dx * t), py - (ay + dy * t))
+
+
+def entries_vs_ledges(bsp, samples, tape_texts, near=32.0, dz=48.0, window=2):
+    """Do bots enter lava by leaving the ledges the air layer calls lethal?
+
+    A proximity count alone proves nothing (2026-11-13: every e1m7 lava
+    death sat near a lava seat because the seats are in the lake). So the
+    same test runs on two populations of consecutive 0.5 s sample pairs:
+    lava ENTRIES (dry, then feet in lava or slime) and ordinary dry MOVES
+    (both dry, more than 32u apart). A pair "crosses" a ledge class when
+    its segment passes within `near` of one of its points at a height
+    within `dz` of the pair's dry end. The answer is the ratio of the two
+    rates, not either count. `window` widens each population to its last
+    N segments: 0.5 s samples at 320 u/s are 160u apart, so a bot that
+    left the ledge between two samples enters the lava from a sample that
+    was already in the air (e1m7: 118 of 223 entries fell more than 48u
+    from a pair that crossed no ledge).
+    """
+    import argus_tape as at
+    cell = 64.0
+    grids = {}
+    for s in samples:
+        g = grids.setdefault(s["verdict"], {})
+        x, y, z = s["pos"]
+        g.setdefault((math.floor(x / cell), math.floor(y / cell)), []).append((x, y, z))
+
+    def crosses(verdicts, path):
+        return any(crosses1(verdicts, a, b) for a, b in zip(path, path[1:]))
+
+    def crosses1(verdicts, a, b):
+        x0, x1 = sorted((a["x"], b["x"]))
+        y0, y1 = sorted((a["y"], b["y"]))
+        for v in verdicts:
+            g = grids.get(v, {})
+            for gx in range(math.floor((x0 - near) / cell), math.floor((x1 + near) / cell) + 1):
+                for gy in range(math.floor((y0 - near) / cell), math.floor((y1 + near) / cell) + 1):
+                    for (x, y, z) in g.get((gx, gy), ()):
+                        if abs(z - a["z"]) <= dz and _seg_dist(
+                                x, y, a["x"], a["y"], b["x"], b["y"]) <= near:
+                            return True
+        return False
+
+    stats = {"entries": 0, "moves": 0,
+             "entries_danger": 0, "moves_danger": 0,
+             "entries_lethal_any": 0, "moves_lethal_any": 0,
+             "entries_any_ledge": 0, "moves_any_ledge": 0}
+    lethal = ("danger", "risky")
+    every = ("danger", "risky", "momentum", "safe")
+    for text in tape_texts:
+        tracks = {}
+        for name, s in at.samples(text):
+            tracks.setdefault(name, []).append(s)
+        for ss in tracks.values():
+            wet = [_feet_kind(bsp, s["x"], s["y"], s["z"]) in LETHAL for s in ss]
+            for k in range(window, len(ss)):
+                path = ss[k - window:k + 1]
+                if any(b["t"] - a["t"] > 1.0 for a, b in zip(path, path[1:])):
+                    continue                  # respawn or a gap in the tape
+                if any(wet[k - window:k]):
+                    continue                  # already in it
+                a, b = path[0], path[-1]
+                if wet[k]:
+                    key = "entries"
+                elif math.hypot(b["x"] - a["x"], b["y"] - a["y"]) > 32.0:
+                    key = "moves"
+                else:
+                    continue
+                stats[key] += 1
+                if crosses(("danger",), path):
+                    stats[key + "_danger"] += 1
+                if crosses(lethal, path):
+                    stats[key + "_lethal_any"] += 1
+                if crosses(every, path):
+                    stats[key + "_any_ledge"] += 1
+    return stats
+
+
 TYPED_FAMILIES = ("jlinks", "sprintlinks", "rjlinks", "liftlinks",
                   "swimlinks", "trainlinks", "teles")
 
@@ -546,8 +835,19 @@ def main(argv=None):
     ap.add_argument("--audit", action="store_true",
                     help="cross-examine the shipped graph (src/argus_nav_<map>.qc.json "
                          "unless --nav names one)")
+    ap.add_argument("--air", action="store_true",
+                    help="fly a body off every ledge at walk, run and jump speeds "
+                         "and report where it lands")
+    ap.add_argument("--tapes", nargs="*", default=[],
+                    help="with --air: tapes whose lava entries to test against "
+                         "the lethal ledges, with ordinary moves as the base rate")
+    ap.add_argument("--air-png", help="with --air: draw the ledge verdicts over the mesh")
+    ap.add_argument("--gravity", type=float,
+                    help="override sv_gravity (default: 100 on e1m8, else 800)")
     a = ap.parse_args(argv)
     bsp, frags, stats = load_mesh(a.bsp)
+    if a.air:
+        return _air_report(a, bsp, frags)
     if a.audit:
         nav = a.nav or str(Path(__file__).resolve().parent.parent / "src"
                            / f"argus_nav_{Path(a.bsp).stem}.qc.json")
@@ -588,6 +888,87 @@ def main(argv=None):
     if a.png:
         render(frags, a.png, a.nav)
     return 0
+
+
+def _air_report(a, bsp, frags):
+    stem = Path(a.bsp).stem
+    gravity = a.gravity if a.gravity else map_gravity(a.bsp)
+    samples = air_layer(bsp, frags, gravity=gravity)
+    v = {k: sum(1 for s in samples if s["verdict"] == k)
+         for k in ("danger", "risky", "momentum", "safe")}
+    print(f"{stem} air layer at gravity {gravity:.0f}: {len(samples)} ledge points, "
+          f"16u apart")
+    print(f"  danger   {v['danger']:4d}  a straight run at {RUN:.0f} u/s lands in lava or slime")
+    print(f"  risky    {v['risky']:4d}  only a walk, a turned run or a jump does")
+    print(f"  momentum {v['momentum']:4d}  lethal straight down, dry every way at speed")
+    print(f"  safe     {v['safe']:4d}")
+    for r in danger_stretches(samples)[:8]:
+        s, e = r["start"], r["end"]
+        print(f"    danger stretch {r['points']:2d} pts  ({s[0]:.0f} {s[1]:.0f} {s[2] - 24:.0f}) "
+              f"to ({e[0]:.0f} {e[1]:.0f} {e[2] - 24:.0f})  floor height")
+    nav = a.nav or str(Path(__file__).resolve().parent.parent / "src"
+                       / f"argus_nav_{stem}.qc.json")
+    if Path(nav).exists():
+        doc = json.loads(Path(nav).read_text())
+        # Both speeds, because the lip speed decides it: the runtime takes
+        # a router-promised drop with a 240 u/s step, and dm4's five links
+        # that land in lava at 320 all land dry at 240 - real lava entries
+        # pass their lips LESS often than ordinary moves do (0.7 against
+        # 2.2 per cent over 120 tapes). A 320-only verdict cried wolf.
+        rows = link_runs(bsp, doc, speed=RUN, gravity=gravity)
+        slow = {(r["a"], r["b"]): r for r in link_runs(bsp, doc, speed=WALK, gravity=gravity)}
+        both = [r for r in rows if r["run"] in LETHAL
+                and slow.get((r["a"], r["b"]), {}).get("run") in LETHAL]
+        fast = [r for r in rows if r["run"] in LETHAL and r not in both]
+        saved = [r for r in rows if r["straight"] in LETHAL and r["run"] not in LETHAL]
+        print(f"  descending plain links: {len(rows)} with a lip; land in lava or slime "
+              f"at both {WALK:.0f} and {RUN:.0f} u/s: {len(both)}; at {RUN:.0f} only: "
+              f"{len(fast)}; lethal straight down but dry at speed: {len(saved)}")
+        for r in both[:6] + fast[:6]:
+            tag = "both speeds" if r in both else f"{RUN:.0f} only"
+            print(f"    n{r['a']} -> n{r['b']} ({tag}) lands {r['run']} at "
+                  f"({r['land'][0]:.0f} {r['land'][1]:.0f} {r['land'][2]:.0f})")
+    if a.tapes:
+        texts = []
+        for t in a.tapes:
+            text = Path(t).read_text(errors="replace")
+            if f"SpawnServer: {stem}" in text:
+                texts.append(text)
+        r = entries_vs_ledges(bsp, samples, texts)
+        e = r["entries_danger"] / max(1, r["entries"])
+        m = r["moves_danger"] / max(1, r["moves"])
+        print(f"  tapes {len(texts)}: {r['entries']} lava or slime entries, "
+              f"{100 * e:.1f}% left a danger ledge in the last second, against "
+              f"{100 * m:.1f}% of {r['moves']} ordinary 1 s windows "
+              f"({e / m:.1f}x)" if m else
+              f"  tapes {len(texts)}: {r['entries']} entries, no ordinary moves to compare")
+    if a.air_png:
+        render_air(frags, samples, a.air_png, f"{stem}: ledge verdicts at {RUN:.0f} u/s")
+    return 0
+
+
+def render_air(frags, samples, path, title=""):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from matplotlib.collections import PolyCollection
+    fig, ax = plt.subplots(figsize=(14, 14))
+    ax.add_collection(PolyCollection([[(p[0], p[1]) for p in f["poly"]] for f in frags],
+                                     facecolors="#e6e6e6", edgecolors="#9a9a9a",
+                                     linewidths=0.3))
+    colours = {"danger": "#d62728", "risky": "#ff9f1c", "momentum": "#1f77b4",
+               "safe": "#2ca02c"}
+    for k, c in colours.items():
+        pts = [s["pos"] for s in samples if s["verdict"] == k]
+        if pts:
+            ax.scatter([p[0] for p in pts], [p[1] for p in pts], s=9, c=c,
+                       label=f"{k} ({len(pts)})", zorder=5)
+    ax.legend(loc="upper right")
+    ax.autoscale()
+    ax.set_aspect("equal")
+    ax.set_title(title)
+    fig.savefig(path, dpi=100, bbox_inches="tight")
+    plt.close(fig)
 
 
 def render(frags, path, nav=None, title=None):

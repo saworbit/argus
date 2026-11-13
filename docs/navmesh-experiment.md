@@ -232,6 +232,68 @@ land in lava at run speed, all starting from lava seats), so the falls come
 from walking the upper floors, not from deliberate drops. That is a runtime
 question and a separate piece of work.
 
+## The air layer
+
+The floor mesh says where a player can stand. A player who leaves a floor
+keeps moving: at 320 u/s a 190u fall carries about 220u sideways. The air
+layer flies a player origin through hull 1 off every ledge and records
+where it lands.
+
+```bash
+python tools/argus_navmesh.py maps_local/e1m7.bsp --air --tapes runs/*e1m7*.log --air-png e1m7_air.png
+```
+
+- Ledge points sit 16u apart on every fragment edge with open air past it
+  and no floor within a step. Each is flown off five ways: a 240 u/s walk,
+  a 320 u/s run straight out and turned 30 degrees either side, and a
+  running jump (velocity_z 270). A body still on a floor keeps running
+  until the floor ends; a wall stops the motion into it axis by axis; the
+  fall ends when the feet enter lava, slime or water, or at a floor.
+- Gravity follows stock `world.qc`: 100 on e1m8, 800 everywhere else.
+- Verdicts: danger (a straight run lands in lava or slime), risky (only a
+  walk, a turned run or a jump does), momentum (lethal straight down, dry
+  every way at speed, which is dm4's n45 class) and safe.
+
+### Checked against tapes, with a base rate
+
+A proximity count proved nothing on e1m7 once already, so the test runs on
+two populations: lava and slime ENTRIES (the last second before the feet
+go in) and every ordinary dry one-second window. Each counts as crossing a
+ledge when one of its 0.5 s sample segments passes within 32u of a danger
+point at a height within 48u.
+
+| Map | Tapes | Entries | Entries crossing a danger ledge | Ordinary windows | Lift |
+|---|---|---|---|---|---|
+| e1m7 | 126 | 255 | 95.7% | 10.8% | 8.8x |
+| dm4 | 860 | 2217 | 74.7% | 15.5% | 4.8x |
+| e1m8 | 16 | 51 | 49.0% | 12.5% | 3.9x |
+
+So nearly every e1m7 lava death is a bot leaving one of the danger ledges
+ringing the lake, which is the walkway-fall mechanism the repair ladder
+found by hand. Almost all entries are falls (only 13 of 223 e1m7 entries in
+one sample were level walk-ins), and a one-segment test explains only 41
+per cent of them: at 160u between samples the bot has usually left the
+ledge before the last dry sample.
+
+### What it does not support
+
+The link-run check flies each descending plain link off its lip along the
+link's line. On dm4 it calls n90 to n79 lethal at both 240 and 320 u/s, and
+five more lethal at 320 only. The tapes disagree: lava entries pass n90's
+lip in 0.23 per cent of cases against 0.81 per cent of ordinary windows,
+and the five lips 0.7 against 2.2 per cent. Bots die leaving lethal ledges
+OFF their links (fighting, deflecting, wandering), not by following a drop
+link in, so the ledge verdicts are evidence and the link verdicts are not.
+
+Limits: air control is not modelled (bots steer in flight only on typed
+jump hops); real bots leave a ledge at any angle, not only straight out or
+at 30 degrees; the 32u and 48u crossing tolerances are judgement calls; a
+faller's own pre-entry windows count as ordinary moves, which inflates the
+base rate and makes every lift above conservative. e1m8 rests on 16 tapes.
+`tools/test_navmesh_air.py` builds a platform beside a lava strip where a
+straight drop lands dry, a walk and a run land in the lava and a running
+jump clears it.
+
 ## The mesh graph ladder
 
 dm4, skill 2, 185 s, `+sys_ticrate 0.0139`, every tape in the listen tick
