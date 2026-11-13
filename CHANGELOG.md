@@ -23,6 +23,19 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Stop routing bots into shallow lava and up impossible vertical "walks".
+  navgen tested liquid 48u above the floor, so 70 seats across six maps stood
+  in lava or slime that burns at the feet, and it passed any zero-length link
+  whatever the height, minting 15 climbs of 128 to 192u. navgen now tests the
+  feet and refuses a zero-length rise; a new `--repair-links` mode cut both
+  classes from nine shipped graphs without a regeneration, keeping liquid
+  only as a seat's last way out. Matched dm4, e1m7, dm3 and e1m8 ladders stay
+  at parity: dm4 lava entries fall 40 to 24, and dm3 stops choosing a red
+  armour that bots picked 70 times in 157 tapes and never reached. e1m7's
+  lava deaths are falls off its upper walkways and do not move. Found by a
+  new exact navmesh audit read from the BSP's player clip hull
+  ([details](docs/navmesh-experiment.md)).
+
 - Check that a baked combat cover hop is still a live, untyped link from its
   node, with no deliberate drop, before a retreating bot steers along it.
   Every shipped graph already meets this, so current matches are unchanged;

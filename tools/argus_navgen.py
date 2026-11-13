@@ -41,6 +41,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reprofile-jumps
        argus_navgen.py map.bsp mapname shipped.qc unused.png --audit-jump-anchors
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --repair-links
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reconcile-artifacts [--reanalyze-tactics]
        argus_navgen.py map.bsp mapname shipped.qc out.png --render-only
 
@@ -72,6 +73,17 @@ no resolved gap launch and remain explicitly unclassified by this check.
 --reanalyze-tactics preserves the shipped graph too. It recomputes static
 node exposure and the nearest hidden ordinary-walk target, writes those
 annotations to QC and JSON, and changes no topology or typed movement data.
+
+--repair-links preserves the shipped nodes and removes two classes of link
+the generator should never have minted, then rebakes regions and tactics.
+A "walk" between seats less than 1u apart horizontally that RISES past a
+step (beeline_ok used to pass any zero-length link), and any link from a
+dry seat into a seat whose FEET stand in lava or slime, or a walk that
+wades it for 48u with no dry floor within 32u either side (4b used to test
+liquid at origin+24, which is floor+48). A cut liquid link is kept when it
+is a dry seat's only way to the mainland without a rocket or sprint, and
+seats already in liquid keep their links out, so liquid stays an exit and
+never a shortcut. Found by tools/argus_navmesh.py --audit (2026-11-13).
 
 --reconcile-artifacts derives sidecar families and the banner from shipped QC
 without changing nodes, link calls or their slot order. It rejects stale cover
@@ -151,6 +163,7 @@ EMIT_DISPATCHER = "--no-dispatcher" not in sys.argv[5:]
 RETYPE_DOORS = "--retype-doors" in sys.argv[5:]
 REPROFILE_JUMPS = "--reprofile-jumps" in sys.argv[5:]
 REANALYZE_TACTICS = "--reanalyze-tactics" in sys.argv[5:]
+REPAIR_LINKS = "--repair-links" in sys.argv[5:]
 if "--register" in sys.argv[5:]:
     if Path(OUTQC).name != f"argus_nav_{MAPNAME}.qc":
         print(f"error: --register requires argus_nav_{MAPNAME}.qc", file=sys.stderr)
@@ -649,6 +662,19 @@ def h0_contents(x, y, z):
     return h0leaves[-1 - n][0]
 
 
+def hostile_at(x, y, oz):
+    """Lava or slime at a standing origin's FEET or torso.
+
+    WaterMove burns at waterlevel 1, which is the feet: origin minus 23.
+    Testing only origin+24 (floor+48) let 70 seats across six maps
+    stand in liquid up to 39u deep - e1m7 41 of them, dm4's seven pit
+    seats under 15u of lava (2026-11-13, tools/argus_navmesh.py
+    --audit). Water stays: wading is fine.
+    """
+    return (h0_contents(x, y, oz - 23) in (CONTENTS_LAVA, CONTENTS_SLIME)
+            or h0_contents(x, y, oz + 24) in (CONTENTS_LAVA, CONTENTS_SLIME))
+
+
 def h0_line_clear(a, b, node=None):
     """Exact point segment test against the world BSP tree."""
     n = HULL0 if node is None else node
@@ -668,12 +694,266 @@ def h0_line_clear(a, b, node=None):
     return h0_line_clear(a, mid, near) and h0_line_clear(mid, b, far)
 
 
-if REANALYZE_TACTICS:
+def _wades_hazard(a, b):
+    """Does a walk line wade lava or slime with no dry floor beside it?
+
+    beeline_ok's own walk and tolerance with only hostility counted as
+    a miss, so a link refused here is exactly one the fixed beeline_ok
+    would refuse for its liquid: three straight 16u samples whose every
+    floor within 32u either side has lava or slime at the feet.
+    """
+    ax, ay, az = a
+    bx, by, bz = b
+    dist = ((bx - ax) ** 2 + (by - ay) ** 2) ** 0.5
+    if dist < 1:
+        return False
+    steps = int(dist // 16) + 1
+    px, py = -(by - ay) / dist, (bx - ax) / dist
+    z, bad = az, 0
+    for s_ in range(1, steps + 1):
+        f_ = s_ / steps
+        cx, cy = ax + (bx - ax) * f_, ay + (by - ay) * f_
+        nz, wet = None, False
+        for off in (0, 16, -16, 32, -32):
+            x_, y_ = cx + px * off, cy + py * off
+            floors = column_floors(x_, y_)
+            cand = next((fz for fz in floors if -STEP <= z - fz <= STEP), None)
+            if cand is None:
+                cand = next((fz for fz in floors if STEP < z - fz <= DROPMAX), None)
+            if cand is None:
+                continue
+            if hostile_at(x_, y_, cand):
+                wet = True
+                continue
+            nz = cand
+            break
+        if nz is None:
+            if wet:
+                bad += 1
+                if bad >= 3:
+                    return True
+            continue
+        bad = 0
+        z = nz
+    return False
+
+
+def _repair_links(text, doc):
+    """--repair-links: drop vertical walks and routes into liquid."""
+    nodes = [tuple(p) for p in doc["nodes"]]
+    wet = [hostile_at(*n) for n in nodes]
+    link_re = re.compile(r"^\s*(Argus_NavLink\w*)\s*\(\s*n(\d+),\s*n(\d+)")
+    walkish = ("Argus_NavLink", "Argus_NavLinkDoor")
+    cut = {"vertical": [], "into_liquid": [], "wades": []}
+    kept_lines = []
+    for line in text.splitlines(keepends=True):
+        m = link_re.match(line)
+        if m and "teleporter" not in line:
+            verb, a, b = m.group(1), int(m.group(2)), int(m.group(3))
+            na, nb = nodes[a], nodes[b]
+            flat = ((nb[0] - na[0]) ** 2 + (nb[1] - na[1]) ** 2) ** 0.5
+            why = None
+            if verb in walkish and flat < 1 and nb[2] - na[2] > STEP:
+                why = "vertical"
+            elif wet[b] and not wet[a]:
+                why = "into_liquid"
+            elif verb in walkish and not wet[a] and _wades_hazard(na, nb):
+                why = "wades"
+            if why:
+                cut[why].append((a, b, line))
+                kept_lines.append(None)
+                continue
+        kept_lines.append(line)
+    # LIQUID AS A LAST RESORT. e1m8's spawn at (1000 -136 -712) stands
+    # on a ledge 40u above the lava floor, and its only exits are a
+    # rocket jump and the drop into 7u of lava: half a second of wading
+    # costs about 30 health, which beats routefailing into the trapped
+    # exit. So a cut liquid link comes back whenever cutting it leaves
+    # a dry seat unable to reach the mainland without a rocket or a
+    # sprint. Liquid stays an exit, never a shortcut.
+    _gated_verbs = ("Argus_NavLinkRocket", "Argus_NavLinkSprint")
+
+    def _ungated(lines_):
+        fwd_ = collections.defaultdict(set)
+        for l_ in lines_:
+            if l_ is None:
+                continue
+            m_ = link_re.match(l_)
+            if m_ and m_.group(1) not in _gated_verbs:
+                fwd_[int(m_.group(2))].add(int(m_.group(3)))
+        return fwd_
+
+    def _reachers(fwd_, targets):
+        rev_ = collections.defaultdict(set)
+        for u_ in fwd_:
+            for v_ in fwd_[u_]:
+                rev_[v_].add(u_)
+        seen_, stack_ = set(targets), list(targets)
+        while stack_:
+            u_ = stack_.pop()
+            for v_ in rev_[u_]:
+                if v_ not in seen_:
+                    seen_.add(v_)
+                    stack_.append(v_)
+        return seen_
+
+    before_lines = text.splitlines(keepends=True)
+    fwd0 = _ungated(before_lines)
+    # mainland: dry seats every dry seat in the largest ungated SCC
+    # can both reach and be reached by, computed as a forward and
+    # reverse closure from the dry seat with the widest forward reach
+    _dry = [i for i in range(len(nodes)) if not wet[i]]
+
+    def _fwd_reach(fwd_, s_):
+        seen_, stack_ = {s_}, [s_]
+        while stack_:
+            u_ = stack_.pop()
+            for v_ in fwd_[u_]:
+                if v_ not in seen_:
+                    seen_.add(v_)
+                    stack_.append(v_)
+        return seen_
+    # the mainland is the largest strongly connected set; the seat
+    # with the widest forward reach can be a high pocket nothing
+    # climbs back to (e1m8's first cut picked one and kept nothing)
+    def _mainland(fwd_):
+        sccs_, done_ = [], set()
+        for s_ in _dry:
+            if s_ in done_:
+                continue
+            comp_ = _fwd_reach(fwd_, s_) & _reachers(fwd_, {s_})
+            done_ |= comp_
+            sccs_.append(comp_)
+        return max(sccs_, key=len) & set(_dry) if sccs_ else set()
+    _ok0 = _reachers(fwd0, _mainland(fwd0))
+    restored = []
+    for _round in range(len(nodes)):
+        # recompute the mainland on what survives: a seat the cut
+        # isolates was itself part of the old one (e1m8 n66 counted
+        # as its own target and nothing came back)
+        fwd1 = _ungated(kept_lines)
+        reach1 = _reachers(fwd1, _mainland(fwd1))
+        lost = {i for i in _dry if i in _ok0 and i not in reach1}
+        if not lost:
+            break
+        # one way out per stranded seat a round, the shortest: an exit
+        # needs one route through the liquid, not every route
+        best_ = {}
+        for k in ("into_liquid", "wades"):
+            for c in cut[k]:
+                if c[0] in lost:
+                    d_ = sum((nodes[c[0]][i] - nodes[c[1]][i]) ** 2 for i in range(3))
+                    if c[0] not in best_ or d_ < best_[c[0]][0]:
+                        best_[c[0]] = (d_, (c[0], c[1]))
+        back = {v_[1] for v_ in best_.values()}
+        if not back:
+            break
+        restored.extend(sorted(back))
+        # put the lines back where they stood, so slot order holds
+        for k_, l_ in enumerate(kept_lines):
+            if l_ is None:
+                m_ = link_re.match(before_lines[k_])
+                if (int(m_.group(2)), int(m_.group(3))) in back:
+                    kept_lines[k_] = before_lines[k_]
+        for k in ("into_liquid", "wades"):
+            cut[k] = [c for c in cut[k] if (c[0], c[1]) not in back]
+    cut["restored"] = restored
+    for k_ in cut:
+        cut[k_] = [(c[0], c[1]) for c in cut[k_]]
+    text = "".join(l_ for l_ in kept_lines if l_ is not None)
+    # regions, 8a05 semantics, over what survives
+    from argus_nav_artifacts import qc_graph as _qcg
+    _n, _edges = _qcg(text)
+    fwd = collections.defaultdict(set)
+    for (a, b) in _edges:
+        fwd[a].add(b)
+    n = len(nodes)
+    order, seen = [], [False] * n
+    for s0 in range(n):
+        if seen[s0]:
+            continue
+        seen[s0] = True
+        stack = [(s0, iter(sorted(fwd[s0])))]
+        while stack:
+            u, it = stack[-1]
+            v = next(it, None)
+            if v is None:
+                stack.pop()
+                order.append(u)
+            elif not seen[v]:
+                seen[v] = True
+                stack.append((v, iter(sorted(fwd[v]))))
+    rev = collections.defaultdict(set)
+    for u in fwd:
+        for v in fwd[u]:
+            rev[v].add(u)
+    comp, groups = [-1] * n, []
+    for s0 in reversed(order):
+        if comp[s0] >= 0:
+            continue
+        comp[s0] = len(groups)
+        grp, stack = [], [s0]
+        while stack:
+            u = stack.pop()
+            grp.append(u)
+            for v in rev[u]:
+                if comp[v] < 0:
+                    comp[v] = len(groups)
+                    stack.append(v)
+        groups.append(grp)
+    main = set(max(groups, key=len))
+    reach_ = set(main)
+    stack = list(main)
+    while stack:
+        u = stack.pop()
+        for v in fwd[u]:
+            if v not in reach_:
+                reach_.add(v)
+                stack.append(v)
+    und = collections.defaultdict(set)
+    for u in fwd:
+        for v in fwd[u]:
+            und[u].add(v)
+            und[v].add(u)
+    regions_, rid = [0] * n, 0
+    for s0 in range(n):
+        if s0 in reach_ or regions_[s0]:
+            continue
+        rid += 1
+        regions_[s0] = rid
+        stack = [s0]
+        while stack:
+            u = stack.pop()
+            for v in und[u]:
+                if v not in reach_ and not regions_[v]:
+                    regions_[v] = rid
+                    stack.append(v)
+    lines = text.splitlines(keepends=True)
+    nl = "\r\n" if "\r\n" in text else "\n"
+    at = next((i for i, l in enumerate(lines) if "Argus_NavRegion (" in l), None)
+    lines = [l for l in lines if "Argus_NavRegion (" not in l]
+    if at is None:
+        at = next((i for i, l in enumerate(lines)
+                   if "Static tactical annotations:" in l
+                   or "// Camera vantage nodes" in l
+                   or 'dprint ("ARGNAV ' in l), len(lines))
+        while at > 0 and not lines[at - 1].strip():
+            at -= 1
+    lines[at:at] = [f"    Argus_NavRegion (n{i}, {r});{nl}"
+                    for i, r in enumerate(regions_) if r]
+    text = "".join(lines)
+    doc = dict(doc)
+    doc["regions"] = regions_
+    doc = canonical_sidecar(doc, text)
+    return text, doc, cut, rid, sum(wet)
+
+
+if REANALYZE_TACTICS or REPAIR_LINKS:
     import os as _tos
     _qcpath, _jspath = OUTQC, OUTQC + ".json"
     if not (_tos.path.exists(_qcpath) and _tos.path.exists(_jspath)):
-        print("error: --reanalyze-tactics needs shipped QC and JSON to "
-              "exist already", file=sys.stderr)
+        print("error: --reanalyze-tactics and --repair-links need shipped "
+              "QC and JSON to exist already", file=sys.stderr)
         sys.exit(1)
     _old_qc = Path(_qcpath).read_bytes()
     _old_json = Path(_jspath).read_bytes()
@@ -683,6 +963,18 @@ if REANALYZE_TACTICS:
         _tdoc = canonical_sidecar(_tdoc, _candidate_qc)
     else:
         validate_pair(_candidate_qc, _tdoc, banner=False, tactics=False)
+    if REPAIR_LINKS:
+        _candidate_qc, _tdoc, _cut, _rid, _nwet = _repair_links(_candidate_qc, _tdoc)
+        print(f"repair: removed {len(_cut['vertical'])} rising vertical walk(s), "
+              f"{len(_cut['into_liquid'])} link(s) into a liquid seat, "
+              f"{len(_cut['wades'])} walk(s) wading liquid, kept "
+              f"{len(_cut['restored'])} as the only dry way out; "
+              f"{_nwet} seat(s) stand in lava or slime and keep their links out; "
+              f"regions now {_rid} stranded pocket(s)")
+        for _k in ("vertical", "into_liquid", "wades", "restored"):
+            for _a, _b in _cut[_k][:12]:
+                print(f"  {_k}: n{_a} {tuple(round(v) for v in _tdoc['nodes'][_a])} -> "
+                      f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
     _candidate_qc = refresh_banner(_candidate_qc)
     _tnodes = [tuple(_p) for _p in _tdoc.get("nodes", [])]
     if not _tnodes:
@@ -743,7 +1035,14 @@ if REANALYZE_TACTICS:
         _tlines.append(
             f"    Argus_NavTactics (n{_i}, {_texposure[_i]}, "
             f"{_target_qc}, {_hop_qc});")
-    _qlines[_insert:_insert] = [""] + _tlines
+    # rebuild the layout navgen emits (one blank before the header, one
+    # before the camera block) instead of adding a blank to whatever is
+    # there: each rerun used to grow the file by one empty line
+    while _insert > 0 and not _qlines[_insert - 1].strip():
+        del _qlines[_insert - 1]
+        _insert -= 1
+    _tail = [""] if "// Camera vantage nodes" in _qlines[_insert] else []
+    _qlines[_insert:_insert] = [""] + _tlines + _tail
     _tdoc["exposure"] = _texposure
     _tdoc["cover_targets"] = _tcover
     publish_pair(_qcpath, _old_qc, _old_json, _newline.join(_qlines) + _newline, _tdoc)
@@ -1082,14 +1381,16 @@ print(f"fine samples: {nsamp} standable points in {len(samples)} columns")
 # ---- 4b. lava and slime seats are not standable ----
 # hull 1 collapses liquids to empty, so the sampler happily seats
 # waypoints on a lava pool's floor (dm2 shipped 29 of them). Classify
-# every fine sample against hull 0 at torso height and drop hostile
+# every fine sample against hull 0 at feet and torso height (feet since
+# 2026-11-13: torso alone missed liquid shallower than 48u, which still
+# burns at waterlevel 1 - dm4's pit floor and e1m7's lava lake) and drop hostile
 # seats before decimation, links, pads or jump edges can build on
 # them. Water seats stay: swim links (7d) need underwater waypoints.
 _n_liquid = 0
 for _k in list(samples.keys()):
     _keep = []
     for _z in samples[_k]:
-        if h0_contents(xs[_k[0]], ys[_k[1]], _z + 24) in (CONTENTS_LAVA, CONTENTS_SLIME):
+        if hostile_at(xs[_k[0]], ys[_k[1]], _z):
             _n_liquid += 1
         else:
             _keep.append(_z)
@@ -2097,7 +2398,14 @@ def beeline_ok(a, b):
     bx, by, bz = pos(b)
     dist = ((bx-ax)**2 + (by-ay)**2) ** 0.5
     if dist < 1:
-        return True
+        # A zero-length line has no direction to walk. It used to pass
+        # unconditionally whatever the height, and 6b2's closure then
+        # added the reverse: 15 "walks" straight up 128 to 192u shipped
+        # across six maps, one the only walk entry to dm3's SNG floor
+        # (2026-11-13, tools/argus_navmesh.py --audit). A zero-length
+        # DROP stays: the upper seat sits on hull 1's overhang strip and
+        # the runtime's lip tolerance carries a bot down it.
+        return bz - az <= STEP
     steps = int(dist // 16) + 1
     px, py = -(by-ay) / dist, (bx-ax) / dist    # unit perpendicular
     z = az
@@ -2124,7 +2432,7 @@ def beeline_ok(a, b):
                         break
             # a lava or slime floor is not a step, it is a death:
             # reject and let the next offset look for a dry line
-            if nz is not None and h0_contents(cx + px*off, cy + py*off, nz + 24) in (CONTENTS_LAVA, CONTENTS_SLIME):
+            if nz is not None and hostile_at(cx + px*off, cy + py*off, nz):
                 nz = None
             if nz is not None:
                 useoff = off
