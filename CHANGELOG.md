@@ -81,6 +81,15 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Correct three `src/argus.qc` comments that still gave the refuted
+  frametime 0.1 lab rate as measured fact: the swim drag block, the aim tremor
+  guard and the tremor clock field. Comments only; the compiled program is
+  byte-identical. The swim constant was calibrated to that wrong rate, and
+  whether to restore its original feel is left to
+  [#761](https://github.com/saworbit/argus/issues/761)
+  ([#762](https://github.com/saworbit/argus/issues/762),
+  [#765](https://github.com/saworbit/argus/pull/765)).
+
 - Evaluate every mover-observer retention and dryness clause and qualify
   older field claims separately from physical handoff evidence
   ([#735](https://github.com/saworbit/argus/issues/735)).
@@ -129,6 +138,13 @@ passing botmatch does not establish better human play.
   ([#646](https://github.com/saworbit/argus/issues/646)).
 
 #### Added
+
+- Add `argus_ci.py refuted` to the blocking invariant battery. It fails when
+  tracked text restates a rule listed in `tools/refuted_claims.json` as
+  current, so one correction reaches every copy. It is seeded with the three
+  refuted tick-rate claims, and the guide copies #669 found would have failed
+  it ([#764](https://github.com/saworbit/argus/issues/764),
+  [#765](https://github.com/saworbit/argus/pull/765)).
 
 - Add the Argus brand: the faceted A mark, the wordmark, the palette and the
   chamfer motif, with a guide in [docs/brand](docs/brand/README.md). The README

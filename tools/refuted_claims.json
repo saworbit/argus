@@ -1,0 +1,54 @@
+{
+  "about": "Rules this project once taught and then measured to be wrong. `tools/argus_ci.py refuted` fails when one is restated as current in tracked text outside the archives. A mention counts as history when its paragraph or comment block also holds one of the entry's markers (or a default marker). Each entry must match its own example, so a pattern that drifts away from the wording it guards fails too.",
+  "archives": [
+    "runs/",
+    "backups/",
+    "docs/plans/",
+    "docs/changelog-history.md"
+  ],
+  "default_markers": [
+    "refut",
+    "ftos"
+  ],
+  "claims": [
+    {
+      "id": "lab-frametime-0.1",
+      "pattern": "frametime[`\\s]+0\\.1\\b|\\b0\\.1[`\\s]+frametime",
+      "claim": "the lab runs at frametime 0.1, so calibrate per-frame constants to it",
+      "correction": "every lab match runs at about 70 Hz under +sys_ticrate 0.0139 (pinned since #336); the 0.1 was ftos printing a 0.05 to 0.07 s frame to one decimal",
+      "refuted": "2026-09-14",
+      "evidence": [
+        "docs/plans/2026-09-14-regression-analysis-and-recovery.md section 1.5",
+        "#669",
+        "#673",
+        "#762"
+      ],
+      "example": "the dedicated lab runs at frametime 0.1, id's host_frametime clamp"
+    },
+    {
+      "id": "lab-runs-at-10hz",
+      "pattern": "\\b(?:runs|running)\\s+at\\s+(?:roughly\\s+|about\\s+)?(?:10\\s*Hz|ten\\s+frames\\s+a\\s+second)",
+      "claim": "the headless lab runs at 10 Hz",
+      "correction": "the unpinned lab ran at about 19 Hz (14 to 15 on some days), and every match has run at about 70 Hz since #336",
+      "refuted": "2026-09-14",
+      "evidence": [
+        "docs/plans/2026-09-14-regression-analysis-and-recovery.md section 1.5",
+        "#669",
+        "#762"
+      ],
+      "example": "the headless dedicated child is running at roughly ten frames a second"
+    },
+    {
+      "id": "ticrate-does-nothing",
+      "pattern": "sys_ticrate\\s+does\\s+nothing",
+      "claim": "sys_ticrate does nothing to the dedicated tick",
+      "correction": "sys_ticrate gates the dedicated main loop: host_speeds read 19.3 frames a second by default and 69.4 with +sys_ticrate 0.0139",
+      "refuted": "2026-09-14",
+      "evidence": [
+        "docs/plans/2026-09-14-regression-analysis-and-recovery.md section 1.5",
+        "tools/argus_mcp/README.md 0.26 row"
+      ],
+      "example": "sys_ticrate does nothing to the dedicated tick"
+    }
+  ]
+}

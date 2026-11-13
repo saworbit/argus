@@ -203,6 +203,11 @@ closes the lab, skips another request while a failure is unwinding, and bounds
 a healthy stop request to two seconds before closing the process.
 `python tools/argus_ci.py dashes` checks tracked Markdown, QuakeC, Python and
 lab source files for U+2013 and U+2014, reporting each file and line.
+`python tools/argus_ci.py refuted` fails when tracked text restates a rule
+listed in [`tools/refuted_claims.json`](../tools/refuted_claims.json) as current,
+naming the file, line, date and correction. A mention passes as history when
+its paragraph or comment block also says "refuted"; `docs/plans/`,
+`docs/changelog-history.md`, `runs/` and `backups/` are archives and are not read.
 Fast CI also runs the navigation tactics suite and builds and runs Rust
 integration tests; cases needing local engine assets self-skip on CI.
 Use `python tools/argus_ci.py links` to check only documentation paths and

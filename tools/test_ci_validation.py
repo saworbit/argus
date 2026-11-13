@@ -1,6 +1,7 @@
 """Focused regression tests for repository validation rules."""
 import contextlib
 import io
+import json
 from pathlib import Path
 import subprocess
 import tempfile
@@ -67,6 +68,82 @@ class CIValidationTests(unittest.TestCase):
             failures = ci.check_dashes(Path("missing"))
         self.assertEqual(len(failures), 1)
         self.assertIn("git ls-files failed", failures[0])
+
+    @staticmethod
+    def _refuted_repo(td, files, registry=None):
+        """A throwaway git repo holding a synthetic refuted-claims registry."""
+        root = Path(td)
+        subprocess.run(["git", "init", "-q", td], check=True, capture_output=True)
+        if registry is None:
+            registry = {"archives": ["docs/plans/", "runs/"],
+                        "default_markers": ["refut"],
+                        "claims": [{"id": "cheese", "pattern": r"moon\s+is\s+cheese",
+                                    "claim": "the moon is cheese",
+                                    "correction": "it is rock", "refuted": "1969-07-20",
+                                    "example": "everyone knows the moon is cheese"}]}
+        files = {"tools/refuted_claims.json": json.dumps(registry), **files}
+        for name, text in files.items():
+            path = root/name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text, encoding="utf-8")
+        subprocess.run(["git", "add", "."], cwd=root, check=True, capture_output=True)
+        return root
+
+    def test_refuted_flags_current_claims_and_spares_history(self):
+        files = {"AGENTS.md": "Rule: the moon is cheese.\n",
+                 "src/bot.qc": "// the moon is cheese, so calibrate to it\nfloat x;\n",
+                 "docs/notes.md": "Old notes said the moon is cheese.\nThat was refuted in 1969.\n",
+                 "docs/apart.md": "The moon is cheese.\n\nSomething else was refuted.\n",
+                 "src/comment.qc": "// the moon is cheese\n//\n// refuted elsewhere\n",
+                 "docs/plans/old.md": "the moon is cheese\n",
+                 "runs/tape.log": "the moon is cheese\n",
+                 "data.json": "\"the moon is cheese\"\n"}
+        with tempfile.TemporaryDirectory() as td:
+            root = self._refuted_repo(td, files)
+            (root/"untracked.md").write_text("the moon is cheese\n", encoding="utf-8")
+            failures = ci.check_refuted(root)
+        flagged = sorted(f.split(": ")[1] for f in failures)
+        self.assertEqual(flagged, ["AGENTS.md:1", "docs/apart.md:1",
+                                   "src/bot.qc:1", "src/comment.qc:1"], failures)
+        self.assertTrue(all("was refuted 1969-07-20; it is rock" in f for f in failures))
+
+    def test_refuted_registry_entries_must_prove_themselves(self):
+        registry = {"default_markers": ["refut"], "claims": [
+            {"id": "drifted", "pattern": "moon is cheese", "claim": "c", "correction": "r",
+             "refuted": "d", "example": "the sun is cheese"},
+            {"id": "marked", "pattern": "moon is cheese", "claim": "c", "correction": "r",
+             "refuted": "d", "example": "the refuted moon is cheese"},
+            {"id": "broken", "pattern": "(", "claim": "c", "correction": "r",
+             "refuted": "d", "example": "x"},
+            {"id": "bare", "pattern": "x"}]}
+        with tempfile.TemporaryDirectory() as td:
+            failures = ci.check_refuted(self._refuted_repo(td, {}, registry))
+        joined = "\n".join(failures)
+        self.assertEqual(len(failures), 4, failures)
+        self.assertIn("drifted does not match its own example", joined)
+        self.assertIn("marked has an example that carries a marker", joined)
+        self.assertIn("broken has a bad pattern", joined)
+        self.assertIn("bare lacks claim, correction, refuted, example", joined)
+
+    def test_refuted_reports_a_missing_registry_and_git_failure(self):
+        with tempfile.TemporaryDirectory() as td:
+            subprocess.run(["git", "init", "-q", td], check=True, capture_output=True)
+            failures = ci.check_refuted(Path(td))
+        self.assertEqual(len(failures), 1, failures)
+        self.assertIn("cannot read tools/refuted_claims.json", failures[0])
+        result = subprocess.CompletedProcess([], 1, stdout="", stderr="not a repository")
+        with patch.object(ci.subprocess, "run", return_value=result):
+            failures = ci.check_refuted(Path("missing"))
+        self.assertEqual(failures, ["refuted: git ls-files failed: not a repository"])
+
+    def test_shipped_refuted_registry_is_valid(self):
+        claims, archives, failures = ci.load_refuted_registry(ci.ROOT)
+        self.assertEqual(failures, [])
+        self.assertGreaterEqual(len(claims), 3)
+        self.assertIn("docs/changelog-history.md", archives)
+
+    def test_all_runs_the_refuted_gate(self):
+        self.assertIs(ci.CHECKS["refuted"], ci.check_refuted)
 
     def test_all_runs_the_dash_gate(self):
         called = []

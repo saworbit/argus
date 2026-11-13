@@ -14,6 +14,7 @@ usage:
   argus_ci.py nav                  runtime limits, QC/JSON edges, banners and cover hops
   argus_ci.py links                tracked documentation paths and anchors resolve
   argus_ci.py dashes               tracked prose and sources contain no en or em dashes
+  argus_ci.py refuted              tracked text does not restate a refuted rule as current
 """
 import argparse
 import collections
@@ -500,6 +501,110 @@ def check_dashes(root, **_kw):
     return fails
 
 
+# ---------------------------------------------------------------- refuted
+#
+# The frametime 0.1 rule was refuted on 2026-09-14 and was still being
+# taught seven weeks later in AGENTS.md, CONTRIBUTING.md, the PR template
+# (#669) and three src/argus.qc comments (#762). A correction landed in
+# one place cannot reach the copies on its own, so the refuted rules live
+# in a registry and this check finds any copy still stated as current.
+
+REFUTED_REGISTRY = Path("tools") / "refuted_claims.json"
+REFUTED_REACH = 8          # lines either way that one paragraph may span
+_COMMENT_LEAD = re.compile(r"^(?:/{2,3}|#+|/?\*+|--|;+|>+)\s*")
+
+
+def _refuted_in_scope(name):
+    path = Path(name)
+    suffix = path.suffix.lower()
+    return (suffix in (".md", ".txt")
+            or name.startswith("src/") and suffix == ".qc"
+            or name.startswith("tools/") and suffix in (".py", ".sh")
+            or name.startswith("tools/argus_mcp/src/")
+            or name.startswith(".github/"))
+
+
+def _has_words(line):
+    """True for a line that carries text once comment leaders are gone."""
+    return bool(_COMMENT_LEAD.sub("", line.strip()))
+
+
+def refuted_paragraph(lines, index):
+    """The paragraph or comment block around lines[index], as one string.
+
+    A blank line, or a comment line with nothing after its leader, ends
+    the block. It never reaches more than REFUTED_REACH lines either way,
+    so a marker in an unrelated comment further down a function does not
+    excuse a claim.
+    """
+    start = end = index
+    while start > 0 and index - start < REFUTED_REACH and _has_words(lines[start - 1]):
+        start -= 1
+    while end + 1 < len(lines) and end - index < REFUTED_REACH and _has_words(lines[end + 1]):
+        end += 1
+    return "\n".join(lines[start:end + 1])
+
+
+def load_refuted_registry(root):
+    """Return (claims, archives, failures) with each pattern compiled."""
+    path = root / REFUTED_REGISTRY
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        return [], (), [f"refuted: cannot read {REFUTED_REGISTRY.as_posix()}: {error}"]
+    defaults = [m.lower() for m in data.get("default_markers", [])]
+    claims, fails = [], []
+    for entry in data.get("claims", []):
+        ident = entry.get("id", "?")
+        missing = [k for k in ("id", "pattern", "claim", "correction", "refuted", "example")
+                   if not entry.get(k)]
+        if missing:
+            fails.append(f"refuted: registry entry {ident} lacks {', '.join(missing)}")
+            continue
+        try:
+            pattern = re.compile(entry["pattern"], re.IGNORECASE)
+        except re.error as error:
+            fails.append(f"refuted: registry entry {ident} has a bad pattern: {error}")
+            continue
+        markers = defaults + [m.lower() for m in entry.get("markers", [])]
+        if not pattern.search(entry["example"]):
+            fails.append(f"refuted: registry entry {ident} does not match its own example")
+        elif any(m in entry["example"].lower() for m in markers):
+            fails.append(f"refuted: registry entry {ident} has an example that carries "
+                         "a marker, so it proves nothing")
+        claims.append((entry, pattern, markers))
+    return claims, tuple(data.get("archives", [])), fails
+
+
+def check_refuted(root, **_kw):
+    """Fail when tracked text restates a registered refuted rule as current."""
+    tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root,
+                             capture_output=True, text=True, encoding="utf-8")
+    if tracked.returncode:
+        return ["refuted: git ls-files failed: " + tracked.stderr.strip()]
+    claims, archives, fails = load_refuted_registry(root)
+    for name in tracked.stdout.split("\0"):
+        if not name or not _refuted_in_scope(name) or name.startswith(archives):
+            continue
+        try:
+            lines = (root / name).read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError as error:
+            fails.append(f"refuted: {name}: cannot read tracked text: {error}")
+            continue
+        for number, line in enumerate(lines, 1):
+            for entry, pattern, markers in claims:
+                if not pattern.search(line):
+                    continue
+                paragraph = refuted_paragraph(lines, number - 1).lower()
+                if any(m in paragraph for m in markers):
+                    continue
+                fails.append(
+                    f"refuted: {name}:{number}: {entry['id']}: \"{entry['claim']}\" was "
+                    f"refuted {entry['refuted']}; {entry['correction']}. If this is "
+                    f"history, say \"refuted\" in the same paragraph: {line.strip()[:160]}")
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
@@ -535,7 +640,7 @@ def main(argv=None):
 
 CHECKS = {"ship": check_ship, "eol": check_eol,
           "tapes": check_tapes, "nav": check_nav, "links": check_links,
-          "dashes": check_dashes}
+          "dashes": check_dashes, "refuted": check_refuted}
 
 
 if __name__ == "__main__":
