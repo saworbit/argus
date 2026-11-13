@@ -370,7 +370,21 @@ walker refuses, against 65 of 700 in the shipped graph.
   one whose shipped graph the mesh agrees with most (699 of 700 plain links
   pass), so it is the hardest place for a new graph to win.
 - The graph inherits navgen's typed seats. A mesh-native jump, drop-arc and
-  lift finder would remove that dependency and has not been written.
+  lift finder would remove that dependency and has not been written. Both
+  this and a second map are
+  [#790](https://github.com/saworbit/argus/issues/790).
+- The extractor misses some floors. 31 shipped seats stand on dry world
+  floor with no fragment under them: e1m8 25, e1m7 3, e1m2 2, lqdm2 1. The
+  audit's "seats on no mesh fragment" line also counts the lava seats the
+  repair keeps on purpose (e1m7 39 of its 42, all 5 on e1m1), so read it
+  with that split in mind until
+  [#788](https://github.com/saworbit/argus/issues/788) separates them. dm4
+  has no misses, so the ladder above is unaffected.
+- Water floors are only flagged wet, and movers stand at their deathmatch
+  spawn positions; func_train is left out of the air layer. Swim volumes
+  and mover timing are [#791](https://github.com/saworbit/argus/issues/791).
+- `tools/test_navmesh_repair.py` and `tools/test_navmesh_air.py` do not run
+  in CI yet ([#787](https://github.com/saworbit/argus/issues/787)).
 - The straight-fall drop model is stricter than play: dm4 n45 to n66 crosses
   about 40u of lava on momentum and killed nobody in 120 tapes.
 - dm3 at its 244-seat budget covers 90 per cent of the mesh against the
