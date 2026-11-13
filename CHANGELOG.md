@@ -23,6 +23,23 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Seat a real walking route into dm3's south upper area, which holds the red
+  armour. The navmesh found it: walkways along pit edges whose corners
+  navgen's beeline test refused end to end. A new navgen `--seat-links` mode
+  adds seats and beeline-verified walks to a shipped graph by coordinates,
+  keeping every index and slot, and retires the one walk that crossed 119u of
+  open air at the top. Elbow seats sit where a bot switching to its next
+  waypoint 48u early still stays over floor. The 22 stranded seats rejoin the
+  mainland, reach from the worst spawn rises from 89 to 98 per cent, and the
+  engine walks every new leg. Matched dm3 ladders stay at stall parity
+  (listen class, 5 against 5 and 5 against 11). Bots now choose the armour
+  (28 times in 15 tapes, against 0) and climb into the area in 6 of those
+  tapes, but none reached the platform at skill 2. A skill-1 diagnostic put
+  one across it. Bots reach the top walkway airborne, after a stair hop the
+  runtime fires whenever the next seat is over 24u up, and at skill 2 the
+  router prefers an existing sprint there. Both are runtime follow-ups
+  ([details](docs/navmesh-experiment.md#seating-dm3s-south-upper-area)).
+
 - Add an air layer to the clip-hull navmesh audit: fly a player body off
   every ledge at walk, run and running-jump speeds and record where it
   lands, counting walls, doors and plats at their spawn positions. Against
