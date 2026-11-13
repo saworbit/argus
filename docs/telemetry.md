@@ -171,6 +171,7 @@ ARGUS <name> hesitate <heard|junction|settle>
 ARGUS <name> actionfail <route-seat-vector>
 ARGUS <name> hurdle speed <horizontal-speed> up <vertical-speed>
 ARGUS <name> bodynudge <moved|refused>
+ARGUS <name> jumpveto
 ```
 
 This is a reading guide, not the complete closed event vocabulary. The Rust
@@ -191,6 +192,7 @@ documents event counting and shared Python/Rust contracts.
 | `ARGUS <name> actionfail` | A route action failed its approach clock and requested replanning; not a failed shot or an engagement |
 | `ARGUS <name> hurdle` | A planned obstacle jump launched; not proof of landing |
 | `ARGUS <name> bodynudge` | A same-floor anti-embed nudge reached the engine hull check and either moved or was put back; throttled to once every 2 s per bot, so a floor on how often it ran |
+| `ARGUS <name> jumpveto` | A reachability, stall or escort jump was dropped because its arc, traced at the feet, comes down in lava, slime or nowhere; the bot walked on instead. Unthrottled, one line per refused jump ([#773](https://github.com/saworbit/argus/pull/773)) |
 | `ARGDBG` | Optional decision scores; enabled by server `scratch1 1`, excluded from ordinary brief counts |
 
 Names may contain spaces and event words. Parsers resolve full known track
