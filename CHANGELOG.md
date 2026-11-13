@@ -573,6 +573,16 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Read CRLF as LF in the lab's source fingerprint, so a worktree and the main
+  checkout of one commit report the same identity and a worktree compare is
+  no longer refused as a stale lab
+  ([#777](https://github.com/saworbit/argus/issues/777)).
+
+- Say on a band gate card that its rows compare the median-stall tape of each
+  arm while the verdict uses every tape, so a red row under a green verdict
+  is not read as a failed gate
+  ([#757](https://github.com/saworbit/argus/issues/757)).
+
 - Reject resolved jump launches outside the runtime's strict 96-unit source
   anchor before generation or profiling publishes artifacts. Add a read-only,
   hash-stamped audit for existing jump links (#665).
