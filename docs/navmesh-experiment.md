@@ -104,9 +104,11 @@ between the feet and that point is invisible to navgen and still lethal.
   CORRELATION, NOT CAUSE, and it was read as cause until the ladder said
   otherwise: the seats sit in the lava lake, so any death in the lake is
   near one. The repaired ladder below shows e1m7's lava deaths come from
-  routed bots running off the upper walkways (z 135 to 280) and landing in
-  the lake, most with no damage taken first, which the repair does not
-  touch.
+  bots running off the upper walkways (z 135 to 280) and landing in the
+  lake, most with no damage taken first, which the repair does not touch.
+  They are in route mode, but `ar_mode` is 2 whenever a bot has a next
+  waypoint, fighting included, so that does not mean they were following a
+  route.
 - dm4: the seven pit-floor seats stand in 15u of lava. They are also
   navgen's 7g sink-escape seats, so removing them is not free.
 - The lab's lava gate is NOT affected. Both parsers also probe 24u below
@@ -200,7 +202,7 @@ to be rebuilt from the moved checkout before it would issue verdicts.
 | dm4 | 8 / 8 | lava deaths | 4 | 3 | parity, P(improve) 0.75 | lava entries 40 to 24; pit deaths 8 to 1 |
 | e1m7 | 5 / 5 | lava deaths | 4 | 3 | parity, P(improve) 0.70 | rim falls unchanged (see below) |
 | dm3 | 3 / 3 | stall parity | 18 | 16 | parity | red armour picks 7 to 0; goals 12 to 25; routefails 4 to 2 |
-| e1m8 | 3 / 3 | lava deaths | 2 | 1 | parity, P(improve) 0.78 | lava entries 10 to 7, routed 7 to 4; stalls rose (see below) |
+| e1m8 | 3 / 3 | lava deaths | 2 | 1 | parity, P(improve) 0.78 | lava entries 10 to 7, from route mode 7 to 4; stalls rose (see below) |
 
 Secondaries, control to repaired medians: dm4 engagements 74 to 78.5, goals 19
 to 24, stalls 4.5 to 4; e1m7 engagements 98 to 97, stalls 3 to 1; dm3
@@ -208,8 +210,8 @@ engagements 16 to 14. No freezes in any of the 38 tapes. dm2, dm6, e1m1,
 e1m5 and e1m6 carry one to six cut links each and were not laddered.
 
 dm4 is the clean case. Its repair cut every route into the pit, and lava
-entries across eight tapes fell from 40 to 24, entries from routed mode from
-30 to 17, and deaths within 96u of a pit seat from 8 to 1. The gate still
+entries across eight tapes fell from 40 to 24, entries from route mode (which
+includes fighting with a route set) from 30 to 17, and deaths within 96u of a pit seat from 8 to 1. The gate still
 reads parity: lava median 4 to 3, interval -0.2 to +3.5, P(improve) 0.75.
 The first four candidate tapes had looked stronger (median 1.5); the next
 four pulled it back, which is the measurement-limits note again.
@@ -225,12 +227,99 @@ was already broken. That cell is the next e1m8 defect, and the repair can be
 held back on e1m8 alone by restoring its two files.
 
 e1m7 is the honest miss. Its lava deaths do not move, because they are not
-the graph's doing: in the repaired arm routed bots still run off the upper
-walkways at full speed and land in the lake, most with no damage taken
+the graph's doing: in the repaired arm bots still run off the upper walkways
+at full speed and land in the lake, most with no damage taken
 first. A drop-arc simulation clears navgen's drop links (only three of 42
 land in lava at run speed, all starting from lava seats), so the falls come
 from walking the upper floors, not from deliberate drops. That is a runtime
 question and a separate piece of work.
+
+## The air layer
+
+The floor mesh says where a player can stand. A player who leaves a floor
+keeps moving: at 320 u/s a 190u fall carries about 220u sideways. The air
+layer flies a player origin through hull 1 off every ledge and records
+where it lands.
+
+```bash
+python tools/argus_navmesh.py maps_local/e1m7.bsp --air --tapes runs/*e1m7*.log --air-png e1m7_air.png
+```
+
+- Ledge points sit 16u apart on every fragment edge with open air past it
+  and no floor within a step. Each is flown off five ways: a 240 u/s walk,
+  a 320 u/s run straight out and turned 30 degrees either side, and a
+  running jump (velocity_z 270). A body still on a floor keeps running
+  until the floor ends; a wall stops the motion into it axis by axis; the
+  fall ends when the feet enter lava, slime or water, or at a floor.
+- Gravity follows stock `world.qc`: 100 on e1m8, 800 everywhere else.
+- Solid brush entities count: walls, doors, secret doors and plats, as
+  bounding boxes at their deathmatch spawn positions (a DOOR_START_OPEN door
+  one travel along its move direction, an untargeted plat one travel below
+  its top, the rules `doors.qc` and `plats.qc` follow). The first version
+  used the world hull alone and flew straight through e1m7's spawn pads and
+  lava bridge deck, which the e1m7 investigation found under 9 of its 28
+  run-offs. `--no-brushes` keeps the world-only answer for comparison.
+  Trains move and are left out.
+- Verdicts: danger (a straight run lands in lava or slime), risky (only a
+  walk, a turned run or a jump does), momentum (lethal straight down, dry
+  every way at speed, which is dm4's n45 class) and safe.
+
+### Checked against tapes, with a base rate
+
+A proximity count proved nothing on e1m7 once already, so the test runs on
+two populations: lava and slime ENTRIES (the last second before the feet
+go in) and every ordinary dry one-second window. Each counts as crossing a
+ledge when one of its 0.5 s sample segments passes within 32u of a danger
+point at a height within 48u.
+
+| Map | Tapes | Entries | Entries crossing a danger ledge | Ordinary windows | Lift | Run-offs / jumps |
+|---|---|---|---|---|---|---|
+| e1m7 | 153 | 339 | 94.4% | 8.3% | 11.3x | 259 / 61 |
+| dm4 | 866 | 2232 | 74.7% | 15.5% | 4.8x | 1367 / 300 |
+| e1m8 | 16 | 51 | 49.0% | 12.5% | 3.9x | 24 / 1 |
+
+Brushes sharpen e1m7 from 9.1x to 11.3x, mostly by removing false danger
+points beside the pads and the bridge (dm4 has none; e1m8's six change no
+tape figure). So nearly every e1m7 lava death is a bot leaving one of the
+danger ledges ringing the lake. Almost all entries are falls (only 13 of
+223 e1m7 entries in one sample were level walk-ins), and a one-segment test
+explains only 41 per cent of them: at 160u between samples the bot has
+usually left the ledge before the last dry sample.
+
+The last column splits the danger-ledge entries into two classes the
+ledge test alone cannot tell apart: run-offs, where a grounded bot walks
+off at speed, and deliberate jumps, flagged by a `jump` or `rjump` event
+in the same second (events carry no time of their own, so each takes the
+time of the latest sample before it). Run-offs dominate on every map. The
+e1m7 investigation reconstructed six tapes at the full frame rate and
+found 28 run-offs and 15 jumps of 43 entries; the 2 Hz split here finds
+19 per cent jumps, a different sample at a coarser resolution, and both
+say run-offs are most of it. That investigation also found why: the
+runtime hazard guard traces 280u down from 32 to 52u ahead, finds a dry
+floor under those edges and approves the step, without allowing for the
+run-off carrying the bot 200 to 240u past that floor.
+
+### What it does not support
+
+The link-run check flies each descending plain link off its lip along the
+link's line. On dm4 it calls n90 to n79 lethal at both 240 and 320 u/s, and
+five more lethal at 320 only. The tapes disagree: lava entries pass n90's
+lip in 0.23 per cent of cases against 0.81 per cent of ordinary windows,
+and the five lips 0.7 against 2.2 per cent. Bots die leaving lethal ledges
+OFF their links (fighting, deflecting, wandering), not by following a drop
+link in, so the ledge verdicts are evidence and the link verdicts are not.
+
+Limits: air control is not modelled (bots steer in flight only on typed
+jump hops); real bots leave a ledge at any angle, not only straight out or
+at 30 degrees; brushes are bounding boxes, which over-claim floor for an
+irregular brush, and doors and plats sit where they spawn, not where play
+moves them; ledge points come from the world mesh, so the edges of a pad
+or deck are not sampled as ledges themselves; the 32u and 48u crossing tolerances are judgement calls; a
+faller's own pre-entry windows count as ordinary moves, which inflates the
+base rate and makes every lift above conservative. e1m8 rests on 16 tapes.
+`tools/test_navmesh_air.py` builds a platform beside a lava strip where a
+straight drop lands dry, a walk and a run land in the lava and a running
+jump clears it.
 
 ## The mesh graph ladder
 
