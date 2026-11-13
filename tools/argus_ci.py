@@ -577,19 +577,29 @@ def load_refuted_registry(root):
 
 
 def check_refuted(root, **_kw):
-    """Fail when tracked text restates a registered refuted rule as current."""
+    """Fail when tracked text, or the local CLAUDE.md, restates a refuted rule.
+
+    CLAUDE.md is gitignored (#672) yet every session reads it in full, and
+    it held the longest-lived copy of the frametime 0.1 rule (#766). It is
+    read when present, as check_ship does, and the output says when it is
+    not, so a CI pass is not mistaken for a checked brief.
+    """
     tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root,
                              capture_output=True, text=True, encoding="utf-8")
     if tracked.returncode:
         return ["refuted: git ls-files failed: " + tracked.stderr.strip()]
     claims, archives, fails = load_refuted_registry(root)
-    for name in tracked.stdout.split("\0"):
-        if not name or not _refuted_in_scope(name) or name.startswith(archives):
+    names = [name for name in tracked.stdout.split("\0") if name]
+    brief = (root / "CLAUDE.md").is_file()
+    if brief and "CLAUDE.md" not in names:
+        names.append("CLAUDE.md")
+    for name in names:
+        if not _refuted_in_scope(name) or name.startswith(archives):
             continue
         try:
             lines = (root / name).read_text(encoding="utf-8", errors="replace").splitlines()
         except OSError as error:
-            fails.append(f"refuted: {name}: cannot read tracked text: {error}")
+            fails.append(f"refuted: {name}: cannot read text: {error}")
             continue
         for number, line in enumerate(lines, 1):
             for entry, pattern, markers in claims:
@@ -602,6 +612,9 @@ def check_refuted(root, **_kw):
                     f"refuted: {name}:{number}: {entry['id']}: \"{entry['claim']}\" was "
                     f"refuted {entry['refuted']}; {entry['correction']}. If this is "
                     f"history, say \"refuted\" in the same paragraph: {line.strip()[:160]}")
+    if not fails and not brief:
+        return PartialOk("refuted: ok (tracked text only; CLAUDE.md is "
+                         "machine-local and absent here, so the brief was not checked)")
     return fails
 
 

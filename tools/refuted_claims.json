@@ -49,6 +49,87 @@
         "tools/argus_mcp/README.md 0.26 row"
       ],
       "example": "sys_ticrate does nothing to the dedicated tick"
+    },
+    {
+      "id": "dm2-has-water",
+      "pattern": "\\bdm2(?:'s)?\\s+(?:water|pools?)\\b|\\b(?:water|pools?)\\s+on\\s+dm2\\b",
+      "claim": "dm2 has water to swim in or vault out of",
+      "correction": "dm2's only liquid is lava: hull-0 probes over every suspect spot read empty, and its graph has no swim links",
+      "refuted": "2026-08-18",
+      "evidence": [
+        "docs/specs/2026-08-18-dm2-campaign-design.md",
+        "src/argus_nav_dm2.qc.json has no swimlinks"
+      ],
+      "example": "Its real target is dm2's pools"
+    },
+    {
+      "id": "dm6-has-movers",
+      "pattern": "\\bdm6(?:'s)?\\s+(?:lifts?|plats?|elevators?)\\b",
+      "claim": "dm6 has a lift or plats",
+      "correction": "dm6's only brush entities are one shootable func_door_secret and four trigger_teleport volumes",
+      "refuted": "2026-08-18",
+      "evidence": [
+        "the dm6 BSP entity lump (bsp_inspect_entities)"
+      ],
+      "example": "the FrikBot note's dm6's lift"
+    },
+    {
+      "id": "colormap-colours-bots",
+      "pattern": "\\bcolormap\\s+(?:alone\\s+)?(?:colou?rs|paints|tints|translates)\\s+(?:the\\s+)?bots?\\b",
+      "claim": "setting colormap colours bot models in the world",
+      "correction": "GL-lineage renderers key the shirt and pants translation by entity number, so a spawned bot is never coloured that way; bots wear baked skins through the skin field since v3.15",
+      "refuted": "2026-08-17",
+      "evidence": [
+        "tools/mdl_skins.py docstring",
+        "QuakeSpasm r_alias.c"
+      ],
+      "example": "setting colormap colours the bot models in the world"
+    },
+    {
+      "id": "splash-fails-at-walls",
+      "pattern": "\\bsplash\\s+(?:damage\\s+)?(?:silently\\s+)?fails\\s+(?:against|on|for)\\b",
+      "claim": "rocket splash silently fails against a target backed into a wall",
+      "correction": "CanDamage returns TRUE on a trace that starts in solid, so splash reaches a wall-adjacent target",
+      "refuted": "2026-08-29",
+      "evidence": [
+        "#76"
+      ],
+      "example": "rocket splash silently fails against a target backed into a wall"
+    },
+    {
+      "id": "grenade-spawns-at-feet",
+      "pattern": "\\bgrenades?\\s+(?:spawn|launch|leave)(?:s|es|ed)?\\s+(?:at|from)\\s+(?:the\\s+)?(?:(?:player|bot|firer)'?s\\s+)?feet\\b",
+      "claim": "W_FireGrenade spawns grenades at the player's feet",
+      "correction": "self.origin is 24 units above the floor, so a grenade leaves from the player's centre",
+      "refuted": "2026-08-29",
+      "evidence": [
+        "#64"
+      ],
+      "example": "grenades spawn at the player's feet"
+    },
+    {
+      "id": "strafe-reroll-causes-reversals",
+      "pattern": "\\b(?:prime|main|likely)\\s+(?:suspect|cause|source)\\s+is\\s+the\\s+(?:combat\\s+)?strafe\\s+re-?roll\\b",
+      "claim": "the combat strafe re-roll causes most bot reversals",
+      "correction": "the re-roll accounts for 4 of 281 dm4 reversals; the leader is the combat hazard flip on narrow walkways, 23 per cent",
+      "refuted": "2026-11-04",
+      "evidence": [
+        "docs/behaviour-diagnostics.md, Movement reversals",
+        "#697"
+      ],
+      "example": "The prime suspect is the combat strafe re-roll in Argus_Combat"
+    },
+    {
+      "id": "refit-played-aim-spring",
+      "pattern": "\\bre-?fit(?:ted|ting)?\\s+(?:the\\s+)?(?:71\\s*Hz|played(?:-rate)?|listen(?:-server)?)\\s+(?:aim\\s+)?spring\\b",
+      "claim": "re-fit the played-rate aim spring constants to match the 19 Hz lab",
+      "correction": "the 19 Hz behaviour was a damping floor hit at every tier, not a tuning; #348 sub-steps the spring at 0.02 s so every rig runs the same bot",
+      "refuted": "2026-09-15",
+      "evidence": [
+        "#348",
+        "docs/architecture.md"
+      ],
+      "example": "re-fit the 71 Hz spring constants so their settle times match the lab"
     }
   ]
 }

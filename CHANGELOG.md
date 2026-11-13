@@ -153,6 +153,14 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Name the missing lab binary. The study runners now stop with the path they
+  tried and the two ways to provide a lab, instead of a bare
+  FileNotFoundError from subprocess ([#768](https://github.com/saworbit/argus/issues/768)).
+
+- Correct two `src/argus.qc` comments that still said dm2 has pools. Its only
+  liquid is lava, settled on 2026-08-18. Comments only: the compiled
+  progs.dat is byte-identical ([#767](https://github.com/saworbit/argus/issues/767)).
+
 - Let routed bots walk into dm3's south upper area, which holds the red
   armour. Removing two impossible climbs (#770) had stranded its 22 seats;
   five elbow seats and sixteen walks that navgen's beeline test accepts now
@@ -259,6 +267,17 @@ passing botmatch does not establish better human play.
   ([#646](https://github.com/saworbit/argus/issues/646)).
 
 #### Added
+
+- `argus_ci.py refuted` also reads the machine-local CLAUDE.md when it is
+  present, and says the brief was not checked when it is absent, as in CI
+  ([#766](https://github.com/saworbit/argus/issues/766)).
+
+- Seed `tools/refuted_claims.json` with seven more refuted rules: dm2 water,
+  dm6 movers, colormap bot colours, splash against walls, grenades at the
+  feet, the strafe re-roll as the reversal cause, and re-fitting the played
+  aim spring ([#767](https://github.com/saworbit/argus/issues/767)).
+
+- Run the navmesh repair and air layer suites in fast CI ([#787](https://github.com/saworbit/argus/issues/787)).
 
 - Add navgen `--seat-links`, which adds seats and walks to a shipped graph
   from a coordinate sidecar (`src/argus_nav_<map>.seats.json`) without a
