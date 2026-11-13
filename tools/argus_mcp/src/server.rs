@@ -1383,6 +1383,33 @@ impl Argus {
         &self,
         Parameters(args): Parameters<SpecPovArgs>,
     ) -> Result<CallToolResult, McpError> {
+        // A trigger's arguments and its live match are checked before the
+        // config, so a bad `on` reads as itself on an unconfigured lab too.
+        let triggered = match args.on.as_deref() {
+            None => None,
+            Some(spec) => {
+                if args.demo.is_some() {
+                    return tool_err("`on` records live; it cannot apply to an existing demo");
+                }
+                let triggers = match crate::pov_trigger::parse_spec(spec) {
+                    Ok(t) => t,
+                    Err(e) => return tool_err(e),
+                };
+                let focus = match args.bot_client_id {
+                    None => crate::render_capture::PovFocus::Any,
+                    Some(s @ 0..=3) => crate::render_capture::PovFocus::Slot(s as u8),
+                    Some(_) => return tool_err("live roster slot must be 0..3"),
+                };
+                let mut controller = self.matches.lock().await;
+                if !controller.poll().0 {
+                    return tool_err("start the owned lab match before live recording");
+                }
+                match controller.live_log_path() {
+                    Some(log) => Some((triggers, focus, controller.port(), log)),
+                    None => return tool_err("the owned match has no live log"),
+                }
+            }
+        };
         let cfg = match cfg_or_err() {
             Ok(c) => c,
             Err(r) => return Ok(r),
@@ -1392,29 +1419,7 @@ impl Argus {
         {
             return tool_err("a recorded POV cannot select another bot or add engine overlays");
         }
-        if let Some(spec) = args.on.as_deref() {
-            if args.demo.is_some() {
-                return tool_err("`on` records live; it cannot apply to an existing demo");
-            }
-            let triggers = match crate::pov_trigger::parse_spec(spec) {
-                Ok(t) => t,
-                Err(e) => return tool_err(e),
-            };
-            let focus = match args.bot_client_id {
-                None => crate::render_capture::PovFocus::Any,
-                Some(s @ 0..=3) => crate::render_capture::PovFocus::Slot(s as u8),
-                Some(_) => return tool_err("live roster slot must be 0..3"),
-            };
-            let (port, log) = {
-                let mut controller = self.matches.lock().await;
-                if !controller.poll().0 {
-                    return tool_err("start the owned lab match before live recording");
-                }
-                match controller.live_log_path() {
-                    Some(log) => (controller.port(), log),
-                    None => return tool_err("the owned match has no live log"),
-                }
-            };
+        if let Some((triggers, focus, port, log)) = triggered {
             let name = format!(
                 "pov_{}",
                 chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
