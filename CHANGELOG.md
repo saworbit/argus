@@ -28,7 +28,8 @@ passing botmatch does not establish better human play.
   island, the floor under the deathmatch spawn pads or the deathmatch lava
   bridge, and run speed carried bots 200 to 240 units past them into the
   lava lake: 28 of 43 lava deaths in six full-rate tapes
-  ([details](docs/e1m7-lava-investigation.md)).
+  ([#773](https://github.com/saworbit/argus/pull/773),
+  [details](docs/e1m7-lava-investigation.md)).
 
 - Drop a jump that would land in lava. The other 15 e1m7 lava deaths were
   jumps at the lake edge: the fighting reachability jump fired under a
@@ -36,7 +37,8 @@ passing botmatch does not establish better human play.
   landing at chest height and let steering bend its flight. Reachability,
   stall, escort and gap jumps now trace the arc at the feet first, and a
   gap jump holds its launch line until it lands
-  ([details](docs/e1m7-lava-investigation.md#the-jump-change)).
+  ([#773](https://github.com/saworbit/argus/pull/773),
+  [details](docs/e1m7-lava-investigation.md#the-jump-change)).
 
 - Evidence: five interleaved e1m7 tapes a side with lava deaths registered
   read parity (median 3 to 2, P(improve) 0.56), while two full-rate
