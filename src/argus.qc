@@ -1419,6 +1419,91 @@ void() Argus_MotionSample =
     dprint (" ground "); dprint (self.groundentity.classname); dprint ("\n");
 };
 
+float() Argus_Gravity;
+
+// Square root for the 1996 builtin set, which has none. Newton from
+// (1 + a) / 2 and three more steps: within 0.2 per cent for every fall
+// time the landing test asks about (a = 0.04 to 6, which covers 18 to
+// 280u drops at gravity 800 and at e1m8's 100).
+float(float a) Argus_Sqrt =
+{
+    local float x;
+
+    if (a <= 0)
+        return 0;
+    x = (1 + a) * 0.5;
+    x = (x + a / x) * 0.5;
+    x = (x + a / x) * 0.5;
+    x = (x + a / x) * 0.5;
+    return x;
+};
+
+// TRUE when a bot that runs off the lip ahead lands in lava, slime or a
+// void. Argus_MoveHazard's floor trace answers "what is under the probe
+// point", which is where a bot STEPPING off would come down. A bot running
+// off keeps its horizontal speed through the fall and lands about
+// speed * sqrt (2 drop / g) further on. Air control can bend that arc but
+// never shorten it: AR_AIRWISH caps the gain along the wish at 30 u/s, so
+// nothing in the air sheds the run speed.
+//
+// MEASURED, e1m7, 2026-11-13: in six full-rate ARGMOT tapes 28 of 43 lava
+// deaths left an upper floor, 26 of them at 300 to 450 u/s. Replayed
+// offline, the probe had approved 25 of those steps because it found a dry
+// floor, and this test refuses 21 of them. The west walkway ends 208u above
+// the island, and the bot flew 230u over it into the lake. The four z 280
+// spawn pads are deathmatch-only func_walls (invisible to navgen) 224u above
+// a dry floor and 64u above a 56u-wide walkway, and the bot cleared the
+// walkway. The east walkway lip sits 168u above the deathmatch lava bridge
+// (func_door, deck at z -16, 126u wide), and the bot cleared the bridge.
+// The guard was asked the wrong question.
+//
+// The speed is the bot's own, measured now. A deliberate slow drop (the
+// routed DROP commit below fires under 80 u/s) keeps today's verdict, and a
+// bot that accelerates toward a lip is re-judged every frame at its new
+// speed, which reaches gait speed within 16u of a standing start. Flooring
+// it at AR_MAXSPEED was considered and not taken: offline it newly refused
+// 9 dm4, 3 e1m6, 2 e1m1 and 23 low-gravity e1m8 drop links that a slow
+// bot can still take. A wall in the flight path ends it early and the bot
+// drops beside it.
+float(vector ahead, float myaw, float floorz) Argus_DropLandHazard =
+{
+    local vector vh, land, fwd;
+    local float drop, spd, carry, c;
+
+    drop = self.origin_z + self.mins_z - floorz;
+    if (drop <= 18)
+        return FALSE;           // walkmove steps down this far: no flight
+    vh = self.velocity;
+    vh_z = 0;
+    spd = vlen (vh);
+    if (spd < 1)
+        return FALSE;           // a standing step comes down underneath
+    carry = spd * Argus_Sqrt (2 * drop / Argus_Gravity ());
+    makevectors ('0 0 0' + myaw * '0 1 0');
+    fwd = v_forward;
+    land = ahead + fwd * carry;
+    traceline (ahead, land, TRUE, self);
+    if (trace_fraction < 1)
+        land = trace_endpos - fwd * 16;
+    traceline (land + '0 0 4', land - '0 0 280', TRUE, self);
+    if (trace_fraction == 1)
+    {
+        // the same water rule as the probe: a pool breaks any fall
+        if (pointcontents (land - '0 0 280') == CONTENT_WATER)
+            return FALSE;
+        return TRUE;
+    }
+    c = pointcontents (trace_endpos + '0 0 2');
+    if (c == CONTENT_LAVA || c == CONTENT_SLIME)
+    {
+        if (Argus_HazardBridge (land))
+            return FALSE;
+        self.ar_brinkliquid = time;
+        return TRUE;
+    }
+    return FALSE;
+};
+
 // TRUE when walking pdist units along myaw would end in lava, slime,
 // or a bottomless drop. Traces down 280u at the probe point: a
 // legitimate one-way drop link (<= 200u onto solid) passes, a lava pit
@@ -1532,6 +1617,10 @@ float(float myaw, float pdist) Argus_MoveHazard =
         self.ar_brinkliquid = time;
         return TRUE;
     }
+    // The floor under the probe is only where a bot STEPPING off would
+    // land. One running off keeps its speed and lands further on.
+    if (Argus_DropLandHazard (ahead, myaw, trace_endpos_z))
+        return TRUE;
     return FALSE;
 };
 

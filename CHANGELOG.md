@@ -23,6 +23,20 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Judge where a bot running off a ledge lands, not only the floor under its
+  hazard probe. On e1m7 the guard approved run-offs whose probe found the
+  island, the floor under the deathmatch spawn pads or the deathmatch lava
+  bridge, and run speed carried bots 200 to 240 units past them into the
+  lava lake: 28 of 43 lava deaths in six full-rate tapes. The other 15 are
+  jumps at the lake edge and are not addressed
+  ([details](docs/e1m7-lava-investigation.md)).
+
+- Evidence: five interleaved e1m7 tapes a side with lava deaths registered
+  read parity (median 3 to 2, P(improve) 0.56), while two full-rate
+  candidate tapes held no upper-floor run-off against 4.7 a tape before.
+  dm4 holds stall parity over six tapes against eight earlier controls of
+  the same build. Smoke and controlled parity only; no human play.
+
 - Add an air layer to the clip-hull navmesh audit: fly a player body off
   every ledge at walk, run and running-jump speeds and record where it
   lands, counting walls, doors and plats at their spawn positions. Against
