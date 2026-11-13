@@ -78,6 +78,10 @@ the whole tape describes the fallback map - judge nothing).
   Exception class: a SCRIPTED splice of engine-proven links (json and
   QC in lockstep, ladder after) when a fresh regen measurably
   regresses the accumulated graph - the v3.96 islet entry precedent.
+  `argus_navgen.py ... --seat-links src/argus_nav_<map>.seats.json` is
+  that splice for seats and walks: coordinates in, beeline_ok enforced,
+  indices and slots kept, regions and tactics rebaked. Mind the 48u
+  early waypoint switch on void-edged corners (dm3, docs/navmesh-experiment.md).
   The proper path is still the sidecar files (probe.json convictions,
   proven.json entries) consumed at the next real regen.
 - One compiler at a time. Record the tree state on every A/B log.

@@ -88,6 +88,8 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   ```bash
   python tools/argus_navgen.py <map.bsp> <mapname> <out.qc> <out.png> [--no-dispatcher] [--no-rj] [--grid <n>] [--register]
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --reanalyze-tactics
+  python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --repair-links
+  python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --seat-links src/argus_nav_<map>.seats.json
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <out.png> --render-only
   python tools/argus_navgen.py --help
   ```
@@ -98,6 +100,8 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   - `--grid <n>`: Override base waypoint sampling grid spacing.
   - `--register`: Wire the generated file into `src/progs.src` and update `src/argus_nav_dispatch.qc`. The output filename must be `argus_nav_<mapname>.qc`; custom names are refused before generation.
   - `--reanalyze-tactics`: Recompute static exposure and nearest hidden ordinary-walk targets in an existing shipped QC/JSON pair without changing graph topology or typed movement data.
+  - `--repair-links`: Remove rising zero-length "walks" and links into lava or slime seats from a shipped pair, keeping every node and slot order, then rebake regions and tactics. A cut liquid link is kept when it is a dry seat's only way to the mainland.
+  - `--seat-links <seats.json>`: Add seats and walks to a shipped pair from a coordinate sidecar (`src/argus_nav_<map>.seats.json`: `seats`, `walks` and optional `cuts` as origins). New seats and link calls are appended, so no index or slot moves. It refuses a seat that is not a dry standable origin, a walk that `beeline_ok` refuses or that exceeds 340u, a ninth slot, and a cut whose far end would become unreachable. Reruns change nothing; regions and tactics are rebaked. A full regeneration does not read the sidecar yet. On void-edged walkways, place elbow seats so that a bot switching to its next waypoint 48u early stays over floor (see [the dm3 case](../docs/navmesh-experiment.md#seating-dm3s-south-upper-area)).
 - **Input checks**: Door travel uses the engine's 8-unit lip default for both missing and explicit zero values. Proven seat nominations must resolve to distinct fine samples; a collision stops generation before any QC or graph JSON is replaced.
 - **Preview freshness**: Plotting is optional. Missing matplotlib, plot failures or an empty render leave QC/JSON generation successful and invalidate the preview receipt. `<out.png>.json` records `nav-preview-v1`, `generated` and MD5 hashes of the QC, graph JSON and successful PNG. Native results expose `preview_generated`; the wizard and image attachments require matching hashes. An old PNG can remain on disk, but is unavailable as a current preview. Images without a matching receipt are also unavailable. `test_nav_preview.py` and the developer CLI suite cover this without game execution.
 - **Preview styling**: Link colours and dashes come from `argus_linkstyle.py`, the table the lab GUI also draws from: walk green, drop amber dashed, jump red dotted, rocket jump magenta dash-dot, teleport dark long dash, refused jump dark red dashed with an X at the far end. A drop is a plain link that descends more than one 18-unit step, so a one-way link at one level draws as a walk. See the [brand guide](../docs/brand/README.md#navigation-link-colours).

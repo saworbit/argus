@@ -130,6 +130,96 @@ class RepairLinks(unittest.TestCase):
         self.assertEqual((self.tmp / "nav.qc").read_bytes(), once)
 
 
+class SeatLinks(unittest.TestCase):
+    """--seat-links on the same fixture: append, verify, cut, rebake."""
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="argus-seat-"))
+        write_fixture(self.tmp)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def seat(self, spec):
+        (self.tmp / "seats.json").write_text(json.dumps(spec))
+        return subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "argus_navgen.py"),
+             str(self.tmp / "fixture.bsp"), "fixture", str(self.tmp / "nav.qc"),
+             str(self.tmp / "out.png"), "--seat-links", str(self.tmp / "seats.json")],
+            capture_output=True, text=True, cwd=str(ROOT))
+
+    def links_in_order(self):
+        qc = (self.tmp / "nav.qc").read_bytes().decode("ascii")
+        import re
+        return [(int(a), int(b)) for a, b in
+                re.findall(r"Argus_NavLink \(n(\d+), n(\d+)\);", qc)]
+
+    def test_usage_names_the_mode(self):
+        res = subprocess.run([sys.executable, str(ROOT / "tools" / "argus_navgen.py"),
+                              "--help"], capture_output=True, text=True)
+        self.assertIn("--seat-links", res.stdout)
+
+    def test_appends_after_everything_and_rebakes(self):
+        before = self.links_in_order()
+        res = self.seat({"seats": [[0, 128, 24]],
+                         "walks": [[[0, 0, 24], [0, 128, 24]],
+                                   [[0, 128, 24], [0, 0, 24]]]})
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn("appended 1 seat(s) and 2 beeline-verified walk(s)", res.stdout)
+        qc = (self.tmp / "nav.qc").read_bytes().decode("ascii")
+        self.assertIn("\r\n", qc, "a rewrite must not reflow CRLF")
+        self.assertLess(qc.index("local entity n4;"), qc.index("local entity n5;"))
+        self.assertLess(qc.index("n4 = Argus_NavNode"), qc.index("n5 = Argus_NavNode ('0 128 24');"))
+        # every existing call keeps its place; the new ones follow them all
+        self.assertEqual(self.links_in_order(), before + [(0, 5), (5, 0)])
+        self.assertIn("ARGNAV 6 nodes, 10 links", qc)
+        doc = json.loads((self.tmp / "nav.qc.json").read_text())
+        self.assertEqual(doc["nodes"][5], [0.0, 128.0, 24.0])
+        self.assertEqual(len(doc["regions"]), 6)
+        self.assertEqual(doc["regions"][5], 0)
+        self.assertEqual(len(doc["exposure"]), 6)
+
+    def test_rerun_changes_nothing(self):
+        spec = {"seats": [[0, 128, 24]],
+                "walks": [[[0, 0, 24], [0, 128, 24]], [[0, 128, 24], [0, 0, 24]]]}
+        self.assertEqual(self.seat(spec).returncode, 0)
+        once = [(self.tmp / n).read_bytes() for n in ("nav.qc", "nav.qc.json")]
+        res = self.seat(spec)
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("appended 0 seat(s) and 0 beeline-verified walk(s), cut 0", res.stdout)
+        self.assertEqual([(self.tmp / n).read_bytes() for n in ("nav.qc", "nav.qc.json")], once)
+
+    def test_refusals_write_nothing(self):
+        before = [(self.tmp / n).read_bytes() for n in ("nav.qc", "nav.qc.json")]
+        for spec, why in (
+            ({"seats": [[0, 128, 10]]}, "inside the hull-1 world"),
+            ({"seats": [[0, 128, 60]]}, "does not stand on a floor"),
+            ({"seats": [[320, 128, 24]]}, "stands in lava or slime"),
+            # across the 128u lava strip: beeline_ok's own liquid veto
+            ({"seats": [[448, 0, 24]],
+              "walks": [[[128, 0, 24], [448, 0, 24]]]}, "beeline_ok refuses"),
+            ({"walks": [[[0, 0, 24], [0, 999, 24]]]}, "does not join two seats"),
+            # n0's only way anywhere is n1
+            ({"cuts": [[[0, 0, 24], [128, 0, 24]]]}, "unreachable"),
+        ):
+            res = self.seat(spec)
+            self.assertEqual(res.returncode, 1, (spec, res.stdout))
+            self.assertIn(why, res.stderr)
+            self.assertEqual([(self.tmp / n).read_bytes() for n in ("nav.qc", "nav.qc.json")],
+                             before, spec)
+
+    def test_cut_needs_its_replacement_and_keeps_order(self):
+        res = self.seat({"seats": [[64, 64, 24]],
+                         "walks": [[[0, 0, 24], [64, 64, 24]],
+                                   [[64, 64, 24], [128, 0, 24]]],
+                         "cuts": [[[0, 0, 24], [128, 0, 24]]]})
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn("cut 1 replaced walk(s)", res.stdout)
+        kept = [p for p in LINKS if p != (0, 1)]
+        self.assertEqual(self.links_in_order(), kept + [(0, 5), (5, 1)])
+
+
 class MeshAudit(unittest.TestCase):
     def test_audit_sees_shallow_lava_and_vertical_walks(self):
         with tempfile.TemporaryDirectory() as td:
