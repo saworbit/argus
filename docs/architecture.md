@@ -35,7 +35,7 @@ flowchart TD
 | Component | Responsibilities |
 |---|---|
 | Movement | Ground/air acceleration, friction, wall sliding, corner lookahead, chosen pauses and separate move/aim headings |
-| Hazards | Braking-aware floor probes, dry landings, liquid checks and knockback-aware ledge avoidance |
+| Hazards | Braking-aware floor probes, speed-aware run-off landings, feet-level jump arcs, dry landings, liquid checks and knockback-aware ledge avoidance |
 | Navigation | Sliced search, cached routes, typed walks/drops/jumps, doors, lifts, trains, teleports and water transitions |
 | Combat | Weapon/range choice, projectile lead, splash clearance, movement under threat and crossfire responses |
 | Perception | Soft field of view, weapon/item hearing, cached visual combat inputs and limited invisible-player glimpses |

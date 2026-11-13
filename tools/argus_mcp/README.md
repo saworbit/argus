@@ -1874,7 +1874,7 @@ Encoded from the project charter, not invented per call:
 
 | Signal | Look at |
 |--------|---------|
-| Lava spike | `src/argus.qc` `Argus_MoveHazard` / `Argus_HazardSteer` |
+| Lava spike | `src/argus.qc` `Argus_MoveHazard` / `Argus_DropLandHazard` (run-offs) / `Argus_JumpLandHazard` (jumps) / `Argus_HazardSteer` |
 | Known walkway cells | `Argus_HazardSteer` hold at `200 -900 24` / `700 -800 -200` |
 | Engagements gone | `button0` / perception / `W_FireLightning` |
 | No weapon events | `src/items.qc` `weapon_touch` |
