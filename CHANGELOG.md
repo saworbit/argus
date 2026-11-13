@@ -32,7 +32,8 @@ passing botmatch does not establish better human play.
   12.5, and the report splits run-offs from deliberate jumps. Its drop-link
   check is not supported by the tapes and is reported as such. Audit
   tooling only; no bot or graph change
-  ([details](docs/navmesh-experiment.md#the-air-layer)).
+  ([#771](https://github.com/saworbit/argus/pull/771),
+  [details](docs/navmesh-experiment.md#the-air-layer)).
 
 - Stop routing bots into shallow lava and up impossible vertical "walks".
   navgen tested liquid 48u above the floor, so 70 seats across six maps stood
@@ -45,7 +46,8 @@ passing botmatch does not establish better human play.
   armour that bots picked 70 times in 157 tapes and never reached. e1m7's
   lava deaths are falls off its upper walkways and do not move. Found by a
   new exact navmesh audit read from the BSP's player clip hull
-  ([details](docs/navmesh-experiment.md)).
+  ([#770](https://github.com/saworbit/argus/pull/770),
+  [details](docs/navmesh-experiment.md)).
 
 - Check that a baked combat cover hop is still a live, untyped link from its
   node, with no deliberate drop, before a retreating bot steers along it.
@@ -91,6 +93,17 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Changed
+
+- Index the navmesh audit, its air layer and the mesh-derived graph in the
+  developer tools guide, with navgen's `--repair-links` mode, and link the
+  navmesh follow-ups from the experiment's limits: CI coverage for its
+  tests, floors the extractor misses under 31 dry seats, e1m8's uncovered
+  spawns, the mesh graph beyond dm4, and swim and mover layers
+  ([#787](https://github.com/saworbit/argus/issues/787),
+  [#788](https://github.com/saworbit/argus/issues/788),
+  [#789](https://github.com/saworbit/argus/issues/789),
+  [#790](https://github.com/saworbit/argus/issues/790),
+  [#791](https://github.com/saworbit/argus/issues/791)).
 
 - Record the ranked reversal causes and two refused responses in the
   behaviour guide, and document the manifest step every `src/argus.qc` edit

@@ -100,8 +100,9 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   - `--grid <n>`: Override base waypoint sampling grid spacing.
   - `--register`: Wire the generated file into `src/progs.src` and update `src/argus_nav_dispatch.qc`. The output filename must be `argus_nav_<mapname>.qc`; custom names are refused before generation.
   - `--reanalyze-tactics`: Recompute static exposure and nearest hidden ordinary-walk targets in an existing shipped QC/JSON pair without changing graph topology or typed movement data.
-  - `--repair-links`: Remove rising zero-length "walks" and links into lava or slime seats from a shipped pair, keeping every node and slot order, then rebake regions and tactics. A cut liquid link is kept when it is a dry seat's only way to the mainland.
+  - `--repair-links`: Keep a shipped graph's nodes and link slot order and cut two classes of link: a zero-length "walk" that rises past an 18-unit step, and a link from a dry seat into a seat whose feet stand in lava or slime (or a walk that wades it). A cut liquid link stays when it is a dry seat's only ungated way to the mainland, and seats already in liquid keep their links out. Rebakes regions and tactics; a second run changes nothing. Applied to nine shipped graphs in [#770](https://github.com/saworbit/argus/pull/770).
   - `--seat-links <seats.json>`: Add seats and walks to a shipped pair from a coordinate sidecar (`src/argus_nav_<map>.seats.json`: `seats`, `walks` and optional `cuts` as origins). New seats and link calls are appended, so no index or slot moves. It refuses a seat that is not a dry standable origin, a walk that `beeline_ok` refuses or that exceeds 340u, a ninth slot, and a cut whose far end would become unreachable. Reruns change nothing; regions and tactics are rebaked. A full regeneration does not read the sidecar yet. On void-edged walkways, place elbow seats so that a bot switching to its next waypoint 48u early stays over floor (see [the dm3 case](../docs/navmesh-experiment.md#seating-dm3s-south-upper-area)).
+  - `--help` lists the other topology-preserving modes (`--retype-doors`, `--reprofile-jumps`, `--audit-jump-anchors`, `--reconcile-artifacts`).
 - **Input checks**: Door travel uses the engine's 8-unit lip default for both missing and explicit zero values. Proven seat nominations must resolve to distinct fine samples; a collision stops generation before any QC or graph JSON is replaced.
 - **Preview freshness**: Plotting is optional. Missing matplotlib, plot failures or an empty render leave QC/JSON generation successful and invalidate the preview receipt. `<out.png>.json` records `nav-preview-v1`, `generated` and MD5 hashes of the QC, graph JSON and successful PNG. Native results expose `preview_generated`; the wizard and image attachments require matching hashes. An old PNG can remain on disk, but is unavailable as a current preview. Images without a matching receipt are also unavailable. `test_nav_preview.py` and the developer CLI suite cover this without game execution.
 - **Preview styling**: Link colours and dashes come from `argus_linkstyle.py`, the table the lab GUI also draws from: walk green, drop amber dashed, jump red dotted, rocket jump magenta dash-dot, teleport dark long dash, refused jump dark red dashed with an X at the far end. A drop is a plain link that descends more than one 18-unit step, so a one-way link at one level draws as a walk. See the [brand guide](../docs/brand/README.md#navigation-link-colours).
@@ -229,6 +230,35 @@ Regenerates every file in `docs/brand` (mark, wordmark, banners, social preview,
   ```
 - **Requirements**: Python with fontTools, and Node.js for the pinned `@ibm/plex` font package and `@resvg/resvg-js` rasteriser. Neither is needed to play, build or run the lab. `node_modules` stays ignored.
 - **Behavior**: `dist.py` writes the SVGs and `raster.js` the two PNGs. Output is deterministic: a rerun reproduces the committed files byte for byte. The lab GUI inlines its own copy of `docs/brand/favicon.svg`, so update both together; no test catches that drift yet ([#678](https://github.com/saworbit/argus/issues/678)). See the [brand guide](../docs/brand/README.md).
+
+### 14. `argus_navmesh.py`
+Exact navigation mesh read from a BSP's player clip hull (hull 1), with an audit of a shipped graph and an air layer for falls and jumps. Experimental audit tooling; it changes no graph. See [the navmesh experiment](../docs/navmesh-experiment.md).
+- **Usage**:
+  ```bash
+  python tools/argus_navmesh.py maps_local/dm4.bsp --audit
+  python tools/argus_navmesh.py maps_local/dm4.bsp --png dm4_mesh.png --nav src/argus_nav_dm4.qc.json
+  python tools/argus_navmesh.py maps_local/e1m7.bsp --air --tapes runs/<tape>.log [...] --air-png e1m7_air.png
+  python tools/argus_navmesh.py --help
+  ```
+- **Options**:
+  - `--audit`: Cross-examine the shipped graph (`src/argus_nav_<map>.qc.json`, or the file `--nav` names): seats whose feet stand in lava or slime, seats on no mesh fragment, rising zero-length walks, and plain links with no mesh walk or drop path. The off-mesh line also counts the lava seats `--repair-links` keeps on purpose ([#788](https://github.com/saworbit/argus/issues/788)).
+  - `--air`: Fly a body off every ledge point, 16 units apart, at walk (240), run (320) and run turned 30 degrees either way, plus a running jump, and grade each point danger, risky, momentum or safe by where it lands. Gravity is 100 on e1m8 and 800 elsewhere; `--gravity` overrides it.
+  - `--tapes <log> [...]`: With `--air`, test each lava entry's last second against the danger ledges, using every ordinary second of movement as the base rate, and split run-offs from entries that followed a jump event.
+  - `--no-brushes`: With `--air`, fly through the world hull only. By default solid walls, doors, secret doors and plats count as boxes at their deathmatch spawn positions; trains are left out.
+  - `--png`, `--air-png`, `--json`: Draw the mesh or the ledge verdicts, or write the fragments as JSON. Plotting needs matplotlib; the audit and air layer do not.
+- **Inputs**: A BSP29 file, usually `maps_local/<map>.bsp` (machine-local).
+- **Tests**: `test_navmesh_repair.py` and `test_navmesh_air.py`, both on built fixtures. They are not yet in fast CI ([#787](https://github.com/saworbit/argus/issues/787)).
+- `argus_pointfile.py <map> --what mesh` draws the mesh outlines into a listen game. It has not been checked by eye.
+
+### 15. `argus_navmesh_graph.py`
+Experimental waypoint graph derived from the mesh. Typed links are inherited from the shipped graph with their exact seats, so only the walk graph is new. On dm4 it played at parity with navgen's graph ([ladder](../docs/navmesh-experiment.md#the-mesh-graph-ladder)); other maps are [#790](https://github.com/saworbit/argus/issues/790).
+- **Usage**:
+  ```bash
+  python tools/argus_navmesh_graph.py dm4 OUTDIR [--max-seats N] [--radius R] [--min-clear C] [--prune P]
+  python tools/argus_navmesh_graph.py --help
+  ```
+- **Behavior**: Seats control items, then covers the mesh roomiest first. It accepts a walk link only when a body following it stays on the mesh with world floor under its centre. `--max-seats` builds dense, then removes the most crowded seat only while every in-neighbour still reaches every out-neighbour within three hops. Run navgen's `--reanalyze-tactics` on the output pair to fill exposure and cover.
+- **Output**: A QC and JSON pair in `OUTDIR`, named like the shipped pair (`argus_nav_<map>.qc` and `.qc.json`). Pass a scratch directory, not `src/`, unless you mean to replace the shipped graph.
 
 ---
 
