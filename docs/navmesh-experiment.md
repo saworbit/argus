@@ -473,7 +473,7 @@ Why trips still fall short:
   48u arrival radius the next seat is always two treads up. This is a
   runtime rule, not a graph defect.
 - At skill 2 the router prefers the existing sprint from n241 to n52 across
-  the top gap, three hops from n229 against eight on foot. In the one v1
+  the top gap, three hops from n229 against seven on foot. In the one v1
   tape where a bot got there it never fired the sprint; it dithered on the
   stairs, then steered at the visible armour from the walkway below.
 - The fixed navigation benchmark, `benchmarks/dm3_red_armour.json` (four

@@ -23,23 +23,6 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
-- Seat a real walking route into dm3's south upper area, which holds the red
-  armour. The navmesh found it: walkways along pit edges whose corners
-  navgen's beeline test refused end to end. A new navgen `--seat-links` mode
-  adds seats and beeline-verified walks to a shipped graph by coordinates,
-  keeping every index and slot, and retires the one walk that crossed 119u of
-  open air at the top. Elbow seats sit where a bot switching to its next
-  waypoint 48u early still stays over floor. The 22 stranded seats rejoin the
-  mainland, reach from the worst spawn rises from 89 to 98 per cent, and the
-  engine walks every new leg. Matched dm3 ladders stay at stall parity
-  (listen class, 5 against 5 and 5 against 11). Bots now choose the armour
-  (28 times in 15 tapes, against 0) and climb into the area in 6 of those
-  tapes, but none reached the platform at skill 2. A skill-1 diagnostic put
-  one across it. Bots reach the top walkway airborne, after a stair hop the
-  runtime fires whenever the next seat is over 24u up, and at skill 2 the
-  router prefers an existing sprint there. Both are runtime follow-ups
-  ([details](docs/navmesh-experiment.md#seating-dm3s-south-upper-area)).
-
 - Add an air layer to the clip-hull navmesh audit: fly a player body off
   every ledge at walk, run and running-jump speeds and record where it
   lands, counting walls, doors and plats at their spawn positions. Against
@@ -122,6 +105,25 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Let routed bots walk into dm3's south upper area, which holds the red
+  armour. Removing two impossible climbs (#770) had stranded its 22 seats;
+  five elbow seats and sixteen walks that navgen's beeline test accepts now
+  join it to the mainland, and the walk that crossed 119u of open air at the
+  top is retired. Reach from the worst spawn rises from 89 to 98 per cent
+  ([#772](https://github.com/saworbit/argus/pull/772)).
+
+- Evidence for the dm3 route: the engine walked all sixteen new legs twice;
+  matched dm3 ladders stay at stall parity (listen class, 5 against 5 and 5
+  against 11); bots chose the armour 28 times in 15 tapes against 0 and
+  entered the area in 6. Controlled acceptance on dm3 only, not human play
+  ([details](docs/navmesh-experiment.md#seating-dm3s-south-upper-area)).
+
+- Limitation: no bot reached dm3's armour platform at skill 2; a skill-1
+  diagnostic put one across it. Bots reach the top walkway airborne after a
+  stair hop the runtime fires whenever the next seat is over 24u up, and at
+  skill 2 the router prefers an existing sprint across the top gap. Both are
+  open runtime work.
+
 - Correct three `src/argus.qc` comments that still gave the refuted
   frametime 0.1 lab rate as measured fact: the swim drag block, the aim tremor
   guard and the tremor clock field. Comments only; the compiled program is
@@ -179,6 +181,12 @@ passing botmatch does not establish better human play.
   ([#646](https://github.com/saworbit/argus/issues/646)).
 
 #### Added
+
+- Add navgen `--seat-links`, which adds seats and walks to a shipped graph
+  from a coordinate sidecar (`src/argus_nav_<map>.seats.json`) without a
+  regeneration. Every index and slot is kept, every walk must pass
+  `beeline_ok`, cuts retire only walks whose far end stays reachable, and a
+  rerun changes nothing ([#772](https://github.com/saworbit/argus/pull/772)).
 
 - Add `argus_ci.py refuted` to the blocking invariant battery. It fails when
   tracked text restates a rule listed in `tools/refuted_claims.json` as

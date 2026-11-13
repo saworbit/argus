@@ -35,6 +35,9 @@ Sidecar files, all optional, all read from the output directory:
                                paper trail of an entry-candidate
                                probe session (how proven.json was
                                derived); not consumed by navgen
+  argus_nav_<map>.seats.json   seats, walks and cuts by coordinates;
+                               read only by --seat-links on a
+                               shipped graph, not by a full regen
 
 usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj]
        argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
