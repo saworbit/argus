@@ -23,6 +23,15 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+- Start a bot's-eye recording when something happens instead of at a fixed
+  time. `argus-mcp watch-pov` and `bot_capture_pov_frame` with `on`
+  join the lab match as a camera, tail its console, and cut to the first bot
+  that stalls, stands still, emits a chosen marker or produces a burst of
+  them (`stall`, `still:3`, `flip:3`). They then record and render frames,
+  with the lead-up when the camera was already on that bot. Lab tooling only;
+  no bot or graph change
+  ([details](tools/argus_mcp/README.md#triggered-capture)).
+
 - Add an air layer to the clip-hull navmesh audit: fly a player body off
   every ledge at walk, run and running-jump speeds and record where it
   lands, counting walls, doors and plats at their spawn positions. Against

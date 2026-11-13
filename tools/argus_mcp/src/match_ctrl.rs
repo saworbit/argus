@@ -108,6 +108,13 @@ impl MatchCtrl {
         self.port.unwrap_or(DEFAULT_PORT)
     }
 
+    /// The live match's growing console log, for tools that tail it.
+    /// None without a live match. QuakeSpasm on Windows writes it to the
+    /// launch directory, which is the run directory here.
+    pub fn live_log_path(&self) -> Option<PathBuf> {
+        self.live.as_ref().map(|l| l.run_dir.join("qconsole.log"))
+    }
+
     /// Advisory launch preflight, not a reservation against other processes.
     pub fn check_port_available(&self) -> Result<(), String> {
         #[cfg(test)]

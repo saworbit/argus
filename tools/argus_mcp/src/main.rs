@@ -35,6 +35,93 @@ async fn run() -> anyhow::Result<()> {
             println!("{}", serde_json::json!({"demo_path":path}));
             Ok(())
         }
+        Some("watch-pov") => {
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
+            if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
+                println!(
+                    "usage: argus-mcp watch-pov <new_demo_stem> [--on stall,still] [--bot NAME | --slot N] \
+                     [--wait 60] [--keep 8] [--frames 6] [--interval 0.5] [--offset S] \
+                     [--run NAME | --log PATH] [--no-render] [--port N]\n\
+                     Joins the running lab match as a camera, waits for the first bot to meet a trigger, \
+                     cuts to that bot's eyes, records, and renders frames. Triggers: an ARGEVT verb or ARGUS \
+                     marker word (stall, hazard, routefail, unstick, flip...), word:N for N within 2 s, \
+                     still[:secs] for a bot that has not left a 32u circle (default 2.5 s). \
+                     flip needs scratch1 697 on the server. --offset is seconds from the trigger."
+                );
+                return Ok(());
+            }
+            let spec = take_value(&mut rest, "--on")?
+                .unwrap_or_else(|| argus_mcp::pov_trigger::DEFAULT_SPEC.into());
+            let triggers =
+                argus_mcp::pov_trigger::parse_spec(&spec).map_err(|e| anyhow::anyhow!(e))?;
+            let bot = take_value(&mut rest, "--bot")?;
+            let slot: Option<u8> = take_value(&mut rest, "--slot")?
+                .map(|s| s.parse())
+                .transpose()?;
+            let focus = match (bot, slot) {
+                (Some(_), Some(_)) => anyhow::bail!("use --bot or --slot, not both"),
+                (Some(n), None) => argus_mcp::render_capture::PovFocus::Name(n),
+                (None, Some(s)) => argus_mcp::render_capture::PovFocus::Slot(s),
+                (None, None) => argus_mcp::render_capture::PovFocus::Any,
+            };
+            let num = |v: Option<String>, d: f64| -> anyhow::Result<f64> {
+                Ok(v.map(|s| s.parse()).transpose()?.unwrap_or(d))
+            };
+            let wait = num(take_value(&mut rest, "--wait")?, 60.0)?;
+            let keep = num(take_value(&mut rest, "--keep")?, 8.0)?;
+            let frames: u32 = take_value(&mut rest, "--frames")?
+                .map(|s| s.parse())
+                .transpose()?
+                .unwrap_or(6);
+            let interval = num(take_value(&mut rest, "--interval")?, 0.5)?;
+            let offset = take_value(&mut rest, "--offset")?
+                .map(|s| s.parse::<f64>())
+                .transpose()?;
+            let run = take_value(&mut rest, "--run")?;
+            let log = take_value(&mut rest, "--log")?;
+            let render = !take_switch(&mut rest, "--no-render");
+            if rest.len() != 1 || rest[0].starts_with("--") {
+                anyhow::bail!("watch-pov takes one demo name plus flags; see --help");
+            }
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!(e))?;
+            let log = live_log(&cfg, run, log)?;
+            let name = rest.remove(0);
+            let rec_cfg = cfg.clone();
+            let rec = tokio::task::spawn_blocking(move || {
+                argus_mcp::render_capture::record_triggered(
+                    &rec_cfg,
+                    &name,
+                    triggers,
+                    focus,
+                    wait as f32,
+                    keep as f32,
+                    port,
+                    &log,
+                )
+            })
+            .await?
+            .map_err(|e| anyhow::anyhow!(e))?;
+            let capture = if render {
+                let (start, count) =
+                    argus_mcp::render_capture::triggered_window(&rec, offset, frames, interval);
+                Some(
+                    argus_mcp::render_capture::capture(&cfg, &rec.demo, start, count, interval)
+                        .await
+                        .map_err(|e| anyhow::anyhow!(e))?,
+                )
+            } else {
+                None
+            };
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&serde_json::json!({
+                    "recording": rec,
+                    "capture": capture,
+                }))?
+            );
+            Ok(())
+        }
         Some("capture-demo") => {
             let rest: Vec<String> = args.collect();
             if rest.is_empty() || rest.iter().any(|s| s == "--help" || s == "-h") {
@@ -1314,6 +1401,90 @@ fn take_port(args: &mut Vec<String>) -> anyhow::Result<u16> {
     }
     args.drain(index..=index + 1);
     Ok(port)
+}
+
+/// Remove `flag VALUE` from args. Repeats and a missing value are errors.
+fn take_value(args: &mut Vec<String>, flag: &str) -> anyhow::Result<Option<String>> {
+    let positions: Vec<_> = args
+        .iter()
+        .enumerate()
+        .filter_map(|(i, a)| (a == flag).then_some(i))
+        .collect();
+    match positions.as_slice() {
+        [] => Ok(None),
+        [i] => {
+            let i = *i;
+            let value = args
+                .get(i + 1)
+                .filter(|v| !v.starts_with("--"))
+                .cloned()
+                .ok_or_else(|| anyhow::anyhow!("{flag} needs a value"))?;
+            args.drain(i..=i + 1);
+            Ok(Some(value))
+        }
+        _ => anyhow::bail!("{flag} may occur only once"),
+    }
+}
+
+/// Remove a bare switch from args; true when it was present.
+fn take_switch(args: &mut Vec<String>, flag: &str) -> bool {
+    let before = args.len();
+    args.retain(|a| a != flag);
+    args.len() != before
+}
+
+/// The console log a triggered camera should watch. An explicit --log or
+/// --run wins. Otherwise the one run directory whose qconsole.log grew in
+/// the last 30 s; two live logs is ambiguous, because the camera joins
+/// the match on its port and the log must belong to that same match.
+fn live_log(
+    cfg: &argus_mcp::config::Config,
+    run: Option<String>,
+    log: Option<String>,
+) -> anyhow::Result<std::path::PathBuf> {
+    if run.is_some() && log.is_some() {
+        anyhow::bail!("use --run or --log, not both");
+    }
+    if let Some(l) = log {
+        return Ok(l.into());
+    }
+    if let Some(r) = run {
+        if !argus_mcp::paths::valid_run_name(&r) {
+            anyhow::bail!("--run {}", argus_mcp::paths::RUN_NAME_RULE);
+        }
+        return Ok(cfg.runs.join(r).join("qconsole.log"));
+    }
+    let now = std::time::SystemTime::now();
+    let mut live = Vec::new();
+    for entry in std::fs::read_dir(&cfg.runs)?.flatten() {
+        let q = entry.path().join("qconsole.log");
+        let Ok(meta) = std::fs::metadata(&q) else {
+            continue;
+        };
+        let age = meta
+            .modified()
+            .ok()
+            .and_then(|m| now.duration_since(m).ok())
+            .unwrap_or(std::time::Duration::MAX);
+        if age < std::time::Duration::from_secs(30) {
+            live.push(q);
+        }
+    }
+    match live.len() {
+        1 => Ok(live.remove(0)),
+        0 => anyhow::bail!(
+            "no live match log under {}; start a lab match or pass --run NAME",
+            cfg.runs.display()
+        ),
+        _ => anyhow::bail!(
+            "{} match logs are live ({}); pass --run NAME for the match on this port",
+            live.len(),
+            live.iter()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    }
 }
 
 fn run_python_script(

@@ -821,6 +821,10 @@ pub struct SpecPovArgs {
     pub interval_sec: Option<f64>,
     pub bot_client_id: Option<i32>,
     pub render_debug_overlays: Option<bool>,
+    // Trigger list, as watch-pov --on. A plain comment, not a doc comment:
+    // schemars would publish a doc comment in the budgeted tool surface,
+    // and neither it nor a wait override earned the bytes (fixed 60 s).
+    pub on: Option<String>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1373,7 +1377,7 @@ impl Argus {
 
     #[tool(
         name = "bot_capture_pov_frame",
-        description = "Real engine PNGs: demo POV, or record live bot slot 0..3 (default 1) for 8s. Isolated settings; 1..12 frames."
+        description = "Engine PNGs: demo POV, slot 0..3 live 8s, or first bot to fire on (stall,still) in 60s; 1..12."
     )]
     async fn bot_capture_pov_frame(
         &self,
@@ -1387,6 +1391,73 @@ impl Argus {
             || args.render_debug_overlays == Some(true)
         {
             return tool_err("a recorded POV cannot select another bot or add engine overlays");
+        }
+        if let Some(spec) = args.on.as_deref() {
+            if args.demo.is_some() {
+                return tool_err("`on` records live; it cannot apply to an existing demo");
+            }
+            let triggers = match crate::pov_trigger::parse_spec(spec) {
+                Ok(t) => t,
+                Err(e) => return tool_err(e),
+            };
+            let focus = match args.bot_client_id {
+                None => crate::render_capture::PovFocus::Any,
+                Some(s @ 0..=3) => crate::render_capture::PovFocus::Slot(s as u8),
+                Some(_) => return tool_err("live roster slot must be 0..3"),
+            };
+            let (port, log) = {
+                let mut controller = self.matches.lock().await;
+                if !controller.poll().0 {
+                    return tool_err("start the owned lab match before live recording");
+                }
+                match controller.live_log_path() {
+                    Some(log) => (controller.port(), log),
+                    None => return tool_err("the owned match has no live log"),
+                }
+            };
+            let name = format!(
+                "pov_{}",
+                chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
+            );
+            let wait = 60.0;
+            let record_cfg = cfg.clone();
+            let rec = match tokio::task::spawn_blocking(move || {
+                crate::render_capture::record_triggered(
+                    &record_cfg,
+                    &name,
+                    triggers,
+                    focus,
+                    wait,
+                    8.0,
+                    port,
+                    &log,
+                )
+            })
+            .await
+            {
+                Ok(Ok(rec)) => rec,
+                Ok(Err(e)) => return tool_err(e),
+                Err(e) => return tool_err(e.to_string()),
+            };
+            let interval = args.interval_sec.unwrap_or(0.5);
+            let (start, count) = crate::render_capture::triggered_window(
+                &rec,
+                args.start_sec,
+                args.frame_count.unwrap_or(6),
+                interval,
+            );
+            return match crate::render_capture::capture(&cfg, &rec.demo, start, count, interval)
+                .await
+            {
+                Ok(capture) => {
+                    let paths: Vec<_> = capture.frames.iter().map(String::as_str).collect();
+                    json_ok_pngs(
+                        &serde_json::json!({"recording": rec, "capture": capture}),
+                        &paths,
+                    )
+                }
+                Err(e) => tool_err(e),
+            };
         }
         let demo = match args.demo {
             Some(demo) => demo,
@@ -4631,12 +4702,45 @@ mod tests {
         // rent, not whether to raise the bound.
         // 25,181 bytes over 40 tools, measured 2026-09-21 after the two
         // core briefing routes gained their report-envelope output schemas.
+        // 25,497 on 2026-11-14 after bot_capture_pov_frame gained `on`,
+        // paid for by a shorter description: three bytes of headroom.
         // That is about 6,300 tokens on EVERY request. The bound sits
         // just above the measured surface on purpose: a bound three
         // times the actual is not a bound. If this fails, the question
         // is whether the metadata or tool earns its rent, not whether
         // to raise the number.
         assert!(total < 25_500, "the tool surface costs {total} bytes");
+    }
+
+    #[tokio::test]
+    async fn capture_tool_refuses_a_trigger_it_cannot_honour() {
+        let server = Argus::new();
+        let call = |demo: Option<&str>, on: &str, slot: Option<i32>| SpecPovArgs {
+            demo: demo.map(String::from),
+            start_sec: None,
+            frame_count: None,
+            interval_sec: None,
+            bot_client_id: slot,
+            render_debug_overlays: None,
+            on: Some(on.into()),
+        };
+        for (args, needle) in [
+            (
+                call(Some("old"), "stall", None),
+                "cannot apply to an existing demo",
+            ),
+            (call(None, "Stall", None), "lowercase"),
+            (call(None, "stall", Some(7)), "0..3"),
+            (call(None, "stall", None), "start the owned lab match"),
+        ] {
+            let result = server
+                .bot_capture_pov_frame(Parameters(args))
+                .await
+                .unwrap();
+            assert_eq!(result.is_error, Some(true), "{result:?}");
+            let text = serde_json::to_string(&result).unwrap();
+            assert!(text.contains(needle), "{needle:?} missing from {text}");
+        }
     }
 
     #[tokio::test]
@@ -4654,6 +4758,7 @@ mod tests {
                 interval_sec: Some(0.2),
                 bot_client_id: None,
                 render_debug_overlays: None,
+                on: None,
             }))
             .await
             .unwrap();
