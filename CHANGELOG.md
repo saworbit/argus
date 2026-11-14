@@ -275,6 +275,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Re-pin `benchmarks/dm4_navigation.json` to the shipped dm4 graph
+  (`561c3ede`). Every task still starts and ends on a node and keeps a route;
+  `pit_east_to_green` and `pit_center_to_east` lost a gated shortcut in the
+  #770 repair, so their routes are one hop longer than before
+  ([#820](https://github.com/saworbit/argus/issues/820)).
+
 - Start each lab engine on Windows one priority class above normal. On
   2026-11-13 a CPU-heavy job beside a ladder pushed every tape to
   `dedicated_fast`; the same engines raised to AboveNormal by hand stayed in
@@ -518,6 +524,15 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Confirm each step of `argus-mcp benchmark` in the server log instead of
+  sleeping 150 ms: every console line ends with an echoed marker and is resent
+  until it lands, opponents are removed one at a time while more than one bot
+  remains, and placement and goal are confirmed together by the task bot's
+  route from the task start to the task goal, placing again up to four times.
+  A task that never starts is reported incomplete with a `note`. The dm3 suite had
+  scored 0 of 4 because a late console line made the goal impulse place the
+  bot again ([#776](https://github.com/saworbit/argus/issues/776)).
 
 - Classify lava deaths in `argus-mcp corpus` by hull-0 contents when the map's
   BSP is on hand, as briefs and `compare_runs` already do. The corpus used the

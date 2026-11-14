@@ -1157,6 +1157,17 @@ grace only bounds the harness wait.
 Compilation and installation happen by default; `--no-compile` deliberately
 measures the currently installed build.
 
+Each step is confirmed in the server log before the next one runs. Every
+console line ends with an `echo ARGUS_BENCH_ACK <n>` marker and is resent
+until the marker appears. Opponents are removed one at a time while the
+puppet's scoreboard still shows more than one bot. The goal is assigned
+straight after the placement, and both are confirmed by the task bot's route
+event: its start node at the task start and its goal node at the task goal.
+A bot runs on between its placement and its next 2 Hz `ARGLOG` row, so a
+position check alone misses placements that worked. Each attempt places
+again, up to four times. A task that never starts is reported incomplete
+with a `note`.
+
 ## Counterbalanced within-match A/B
 
 For a QuakeC behaviour change that can be gated per bot, both arms can share
