@@ -8,6 +8,10 @@
 Vanilla Quake deathmatch bots, with a lab for testing and improving them.
 
 [![compile](https://img.shields.io/github/actions/workflow/status/saworbit/argus/compile.yml?branch=main&style=flat-square&label=compile&labelColor=1e1b18)](https://github.com/saworbit/argus/actions/workflows/compile.yml)
+[![tests](https://img.shields.io/github/actions/workflow/status/saworbit/argus/fast.yml?branch=main&style=flat-square&label=tests&labelColor=1e1b18)](https://github.com/saworbit/argus/actions/workflows/fast.yml)
+[![CodeQL](https://img.shields.io/github/actions/workflow/status/saworbit/argus/codeql.yml?branch=main&style=flat-square&label=CodeQL&labelColor=1e1b18)](https://github.com/saworbit/argus/actions/workflows/codeql.yml)
+[![OpenSSF Scorecard](https://img.shields.io/ossf-scorecard/github.com/saworbit/argus?style=flat-square&label=OpenSSF%20Scorecard&labelColor=1e1b18)](https://scorecard.dev/viewer/?uri=github.com/saworbit/argus)
+[![Latest release](https://img.shields.io/github/v/release/saworbit/argus?style=flat-square&label=release&color=3a342c&labelColor=1e1b18)](https://github.com/saworbit/argus/releases/latest)
 [![Discussions](https://img.shields.io/badge/GitHub-discussions-3a342c?style=flat-square&logo=github&logoColor=e8dfd0&labelColor=1e1b18)](https://github.com/saworbit/argus/discussions)
 [![Game licence: GPL v2](https://img.shields.io/badge/game-GPL_v2-3a342c?style=flat-square&labelColor=1e1b18)](LICENSE)
 [![Tools licence: MIT](https://img.shields.io/badge/tools-MIT-3a342c?style=flat-square&labelColor=1e1b18)](LICENSE-MIT)

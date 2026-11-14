@@ -10,30 +10,38 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # cancel superseded pull request runs only; every main commit keeps its result
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   invariants:
     name: repo invariants
     # Keep the blocking gate stable across ubuntu-latest image migrations (#450).
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Collect the changed-file list
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           # fetch-depth 0 against a 198 MB .git would cost more than
           # this whole job; one compare call fetches no history at all
           : > changed.txt
           : > commit_msgs.txt
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ]; then
             gh api --paginate \
-              "repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+              "repos/$REPO/compare/$BASE_SHA...$HEAD_SHA" \
               --jq '.files[] | if .status == "renamed" then "\(.status)\t\(.previous_filename)\t\(.filename)" else "\(.status)\t\(.filename)" end' > changed.txt
             gh api --paginate \
-              "repos/${{ github.repository }}/compare/${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}" \
+              "repos/$REPO/compare/$BASE_SHA...$HEAD_SHA" \
               --jq '.commits[].commit.message' > commit_msgs.txt
             # a pull request always changes at least one file, so an
             # empty list here means the compare call gave us nothing
@@ -60,10 +68,13 @@ jobs:
     name: lab test suite (rust)
     # Match the invariant job's explicit base image.
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
       - name: Cache cargo
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.cargo/registry
@@ -74,7 +85,7 @@ jobs:
         run: cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
 
       - name: Run strict Clippy
-        run: cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
+        run: cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --locked --all-targets -- -D warnings
 
       - name: Build rustdoc with warnings denied
         env:
@@ -84,10 +95,10 @@ jobs:
       - name: Run the lab suite
         # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;
         # the committed runs/*.log regression tapes run in full
-        run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --tests
+        run: cargo test --manifest-path tools/argus_mcp/Cargo.toml --locked --tests
 
       - name: Build the developer CLI
-        run: cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp
+        run: cargo build --manifest-path tools/argus_mcp/Cargo.toml --locked --bin argus-mcp
 
       - name: Check MCP error responses
         env:

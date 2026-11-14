@@ -1,27 +1,36 @@
-# Dependabot configuration for Argus
-# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot version updates for Argus
+# https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Commit messages use Dependabot's default sentence-case "Bump ..." subject,
+# which matches the project's commit style. Every updater waits a week after
+# a release before proposing it (cooldown), so a compromised or broken
+# release has time to be yanked first. Security updates are not delayed.
 
 version: 2
 updates:
-  # Maintain GitHub Actions workflow dependencies
   - package-ecosystem: "github-actions"
-    directory: "/"
+    # covers .github/workflows and the local composite actions
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: "weekly"
-    commit-message:
-      prefix: "ci(actions)"
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "github_actions"
     groups:
       actions:
         patterns:
           - "*"
 
-  # Maintain Rust dependencies for the Argus lab MCP server
   - package-ecosystem: "cargo"
     directory: "/tools/argus_mcp"
     schedule:
       interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
+    cooldown:
+      default-days: 7
     labels:
       - "dependencies"
       - "rust-mcp"
@@ -30,3 +39,18 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  - package-ecosystem: "pip"
+    # tools/requirements-*.txt: pinned analysis dependencies for the cohort tests
+    directory: "/tools"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "tooling"
+    groups:
+      python:
+        patterns:
+          - "*"

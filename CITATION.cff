@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: >-
+  If you use Argus, its navigation tooling or its telemetry lab in your own
+  work, please cite it using the metadata below.
+title: "Argus: a vanilla QuakeC deathmatch bot and telemetry lab"
+type: software
+authors:
+  - family-names: Wall
+    given-names: Shane
+    alias: saworbit
+repository-code: "https://github.com/saworbit/argus"
+url: "https://github.com/saworbit/argus"
+abstract: >-
+  Argus is a deathmatch bot for Quake 1 written in pure vanilla QuakeC, in the
+  lineage of the Reaper and Omicron bots. It runs unmodified on any NetQuake
+  engine at protocol 15 within a 600-edict ceiling. The repository also holds
+  an offline navigation compiler that turns BSP geometry into typed waypoint
+  graphs, and a headless lab that compiles, plays and compares botmatches from
+  structured telemetry.
+keywords:
+  - quake
+  - quakec
+  - game-ai
+  - bot
+  - goap
+  - navigation
+license:
+  - GPL-2.0-or-later
+  - MIT

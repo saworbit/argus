@@ -476,20 +476,42 @@ def check_links(root, **_kw):
     return fails
 
 
+# The rule says "anywhere", and until 2026-11-15 the check read only prose
+# and sources: a dash in a workflow, a manifest or CITATION.cff went unseen.
+# Configuration and repository metadata are in scope too. Tapes and study
+# receipts are not: they are captured evidence and cannot be edited.
+_DASH_CONFIG_SUFFIXES = {".yml", ".yaml", ".toml", ".cff", ".cfg", ".txt",
+                         ".sh", ".html", ".js", ".css", ".svg"}
+_DASH_CONFIG_NAMES = {".gitignore", ".gitattributes", ".editorconfig",
+                      "CODEOWNERS"}
+
+
+def _dashes_in_scope(name):
+    path = Path(name)
+    suffix = path.suffix.lower()
+    if (suffix == ".md"
+            or name.startswith("src/") and path.suffix == ".qc"
+            or name.startswith("tools/") and path.suffix == ".py"
+            or name.startswith("tools/argus_mcp/src/")):
+        return True
+    if name.startswith(("runs/", "backups/")):
+        return False
+    return (name.startswith(".github/")
+            or suffix in _DASH_CONFIG_SUFFIXES
+            or path.name in _DASH_CONFIG_NAMES)
+
+
 def check_dashes(root, **_kw):
-    """Enforce the two-codepoint editorial rule on tracked prose and code."""
+    """Enforce the two-codepoint editorial rule on tracked prose, code and config."""
     tracked = subprocess.run(["git", "ls-files", "-z"], cwd=root,
                              capture_output=True, text=True, encoding="utf-8")
     if tracked.returncode:
         return ["dashes: git ls-files failed: " + tracked.stderr.strip()]
     fails = []
     for name in tracked.stdout.split("\0"):
-        path = Path(name)
-        if not name or not (path.suffix.lower() == ".md"
-                            or name.startswith("src/") and path.suffix == ".qc"
-                            or name.startswith("tools/") and path.suffix == ".py"
-                            or name.startswith("tools/argus_mcp/src/")):
+        if not name or not _dashes_in_scope(name):
             continue
+        path = Path(name)
         try:
             text = (root/path).read_text(encoding="utf-8", errors="replace")
         except OSError as error:

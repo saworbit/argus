@@ -2138,8 +2138,9 @@ Graph-history reads apply the same narrow policy to their persistent
 the whole batch, while malformed, truncated, or ordinarily failed batches
 return an explicit error with status and stderr instead of partial history.
 
-All four blocking CI jobs pin Ubuntu 24.04 instead of following the moving
-`ubuntu-latest` label. Revisit that pin by 2027-04-19, after the Ubuntu 26
+Every CI job pins Ubuntu 24.04 instead of following the moving
+`ubuntu-latest` label, and `test_tools_cli.py` holds every workflow to it.
+Revisit that pin by 2027-04-19, after the Ubuntu 26
 runner has had a separate compatibility pass.
 
 The headless smoke workflow verifies LibreQuake downloads against

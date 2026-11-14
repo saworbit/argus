@@ -379,7 +379,7 @@ python tools/compile_private_fixtures.py --help
 python tools/compile_private_fixtures.py --compiler <pinned-fteqcc> --family door --output backups/door-compile-1
 ```
 
-Use the FTEQCC revision pinned in `.github/workflows/compile.yml`. Omit
+Use the FTEQCC revision pinned in `.github/actions/build-progs/action.yml`. Omit
 `--family` to compile every family serially. Supply a new output directory;
 existing evidence is refused. Each variant must produce a fresh id-format
 `progs.dat` and the compiler's id-format finish line. Source/compiler/binary

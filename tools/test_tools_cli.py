@@ -1669,13 +1669,16 @@ tool_timeout_sec = 700
         self.assertIn("Argus repo invariant battery", res.stdout)
 
     def test_ci_uses_an_explicit_ubuntu_runner(self):
-        workflows = [
-            ROOT / ".github" / "workflows" / "fast.yml",
-            ROOT / ".github" / "workflows" / "compile.yml",
-        ]
-        text = "\n".join(path.read_text(encoding="utf-8") for path in workflows)
-        self.assertNotIn("runs-on: ubuntu-latest", text)
-        self.assertEqual(text.count("runs-on: ubuntu-24.04"), 4)
+        # every workflow, not only the two that existed when #450 pinned the
+        # image: a new workflow on ubuntu-latest moves on the next image swap
+        workflows = sorted((ROOT / ".github" / "workflows").glob("*.y*ml"))
+        self.assertGreaterEqual(len(workflows), 2)
+        for path in workflows:
+            runners = re.findall(r"^\s*runs-on:\s*(\S+)",
+                                 path.read_text(encoding="utf-8"), re.M)
+            with self.subTest(workflow=path.name):
+                self.assertTrue(runners, "no runs-on line")
+                self.assertEqual(set(runners), {"ubuntu-24.04"})
 
     def test_argus_ci_ship_passes_on_the_tree(self):
         # CLAUDE.md is gitignored (machine-local), so this tree holds

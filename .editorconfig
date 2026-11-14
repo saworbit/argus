@@ -1,0 +1,38 @@
+# EditorConfig: https://editorconfig.org
+# .gitattributes owns what Git stores; this file keeps editors from
+# fighting it. Indentation is declared only where the tree is uniform:
+# the vendored LibreQuake QuakeC mixes tabs and spaces and stays as is.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{py,rs}]
+indent_style = space
+indent_size = 4
+
+[src/argus*.qc]
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,cff}]
+indent_style = space
+indent_size = 2
+
+[*.md]
+# two trailing spaces are a Markdown line break
+trim_trailing_whitespace = false
+
+[*.{bat,cmd}]
+end_of_line = crlf
+
+# Telemetry tapes and study patches are evidence: some keep their original
+# CRLF console bytes so their recorded hashes still verify. Never rewrite them.
+[{runs/**,*.patch}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
