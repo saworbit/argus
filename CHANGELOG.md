@@ -287,22 +287,38 @@ passing botmatch does not establish better human play.
   scorecard, baselines, benchmark suites, puppet verdicts and measurement
   limits with a written objective (`tools/lab_objective.json`, a draft until
   signed off) and a claims ledger (`tools/lab_claims.json`: open defects with
-  map cells, fixed cells with dates, the graveyard of refused changes). `state`
-  generates the session brief from that evidence; `stale` lists what has
-  moved, and on its first run found six maps whose baselines were recorded at
-  19 Hz, e1m5 baselines from a 155-node graph where 195 now ship, and a dm4
-  benchmark suite pinned to an old graph; `skeptic` voids or caveats a
-  comparison and reads each metric against its detection limit; `triage`
-  names the claim behind each cluster of a tape's trouble and flags trouble at
-  a fixed cell after its fix date; `session` scores human sessions against the
-  hard gates and goal targets; `pyramid` runs the cheap evidence tiers first
-  and holds a ratchet on benchmark suites, which always exit 0; `review` reads
-  each session against the objective as the harvester lands it; and `night` is
-  an unattended census of every registered map that alerts only on what got
-  worse since the last sweep. `argus_ci.py lab` validates the objective and
-  claims, and
-  `argus_reach.py` now honours `ARGUS_MAPS`
+  map cells, fixed cells with dates and measured allowances, the graveyard of
+  refused changes). `state` generates the session brief from that evidence,
+  `session` and `review` score human sessions against the objective (the
+  harvester now runs `review`), `skeptic` audits a comparison before it is
+  read, `triage` names the claim behind a tape's trouble, `pyramid` runs the
+  cheap evidence tiers first, and `night` is an unattended census that alerts
+  only on what got worse. `argus_ci.py lab` validates the objective and the
+  claims, and `argus_reach.py` honours `ARGUS_MAPS`
   ([guide](docs/lab-spine.md)).
+
+- `argus_lab.py stale` found, on its first run, six maps whose baselines were
+  recorded at 19 Hz, eight whose baselines ran a graph that no longer ships
+  (all before the 2026-11-13 link repair; e1m5's from a 155-seat graph where
+  195 now ship), and a dm4 benchmark suite pinned to an old graph. A tape's
+  graph is read from git history, not from its `ARGNAV` banner, which changed
+  meaning at #716.
+
+- The skeptic recounts lava from map contents at each death, because the
+  corpus still counts lava below z -300 and reads 0 on dm2 and e1m7 (#816).
+  It reads each metric against the larger of the documented and the observed
+  spread, and voids comparisons across tick classes, maps or tape kinds.
+
+- Triage judges each fixed claim's cell against an allowance measured on the
+  archive, which gives zero regression flags across every bot tape in
+  `runs/`. Measuring it showed the dm3 quad-court pinch was not fixed by the
+  2026-08-28 remint, as the record said: the cell held a median of 15 stalls a
+  tape until the 2026-09-13 regeneration, and 0 since.
+
+- Evidence: 61 tests on built fixtures (`tools/test_argus_lab.py`, in fast
+  CI), and every one of 51 deliberately broken guards fails a test. Three
+  independent review rounds found about 44 defects, all fixed; the third found
+  six. Goal targets stay proposals until the objective is signed off.
 
 - The human scorecard gains `bot_world_unforced`: bot world deaths that no
   damage led into, so a bot walking or jumping off a ledge into lava no

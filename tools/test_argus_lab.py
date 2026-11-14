@@ -841,7 +841,7 @@ class TestSecondRoundFindings(unittest.TestCase):
                                         key=key or f'{area}:{item}:{severity}')):
                 code, report = run()
             self.assertEqual(code, 0, report)
-            self.assertIn('0 tapes recorded since', report)
+            self.assertIn('0 new tapes', report)
             # A new reason on a map that is already void does alert.
             fx.write('runs/baselines.json', json.dumps({'dm4': ['ab_dm4_fast', 'ab_dm4_gone']}))
             code, report = run()
@@ -901,6 +901,123 @@ class TestSecondRoundFindings(unittest.TestCase):
                 self.assertEqual(argus_lab.main(['--root', str(fx.root), 'skeptic', 'ab_dm4_a1', '--vs', 'ab_dm2_b1',
                                                  '--metric', 'stall']), 2)
             self.assertIn('no metric called stall', err.getvalue())
+
+
+class TestThirdRoundFindings(unittest.TestCase):
+    """One test per defect the third red-team round found."""
+
+    def test_a_fixed_cell_is_judged_on_all_its_points_not_per_cluster(self):
+        cell = {'map': 'dm4', 'at': [0, 0, -384], 'radius': 420, 'dz': 40}
+        claims = [dict(id='lake', status='fixed', fixed_on='2026-11-01', regression={'deaths': 2}, cells=[cell])]
+        body = 'ARGEVT Reap spawned\n'
+        for i, x in enumerate((-300, 0, 300)):  # three deaths 300u apart: three clusters, one cell
+            body += sample('Reap', i * 2.0, x, 0, -296) + sample('Reap', i * 2.0 + 0.5, x, 0, -384, hp=40)
+            body += f"ARGEVT Reap death world pos '{x} 0 -384'\nARGEVT Reap respawn\n"
+        lava = lambda x, y, z: -5 if z < -350 else -1  # noqa: E731
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            path = fx.write('runs/t.log', tape(started='11/05/2026', body=body))
+            with mock.patch.object(argus_lab, 'bsp_path', return_value=Path('x.bsp')), \
+                    mock.patch.object(argus_lab.argus_longi, '_classifier', return_value=lava):
+                rep = argus_lab.triage(fx.root, path, claims=claims)
+            self.assertEqual(len(rep['clusters']), 3)
+            self.assertEqual(rep['cells'][0]['kinds'], {'unforced death': 3})
+            self.assertTrue(rep['cells'][0]['regression'])
+            self.assertTrue(all(c['flag'] == 'regression?' for c in rep['clusters']))
+
+    def test_clusters_merge_until_no_two_centres_are_close(self):
+        clusters = [dict(centre=(0.0, 0.0, 0.0), points=[dict(x=0.0, y=0.0, z=0.0)] * 13),
+                    dict(centre=(17.0, 0.0, 0.0), points=[dict(x=17.0, y=0.0, z=0.0)] * 4),
+                    dict(centre=(500.0, 0.0, 0.0), points=[dict(x=500.0, y=0.0, z=0.0)])]
+        merged = argus_lab.merge_clusters(clusters, 96.0)
+        self.assertEqual(sorted(len(c['points']) for c in merged), [1, 17])
+
+    def test_triage_merges_piles_its_greedy_pass_split(self):
+        # Greedy assignment drifts: 0 and 90 form a pile centred at 45, -60 starts
+        # another, -10 pulls the first to 27, now 87 from the second.
+        body = 'ARGEVT Reap spawned' + chr(10)
+        for i, x in enumerate((0, 90, -60, -10)):
+            body += sample('Reap', i * 1.0, x, 0, 24) + 'ARGEVT Reap stall' + chr(10)
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            path = fx.write('runs/t.log', tape(body=body))
+            with mock.patch.object(argus_lab, 'bsp_path', return_value=None):
+                rep = argus_lab.triage(fx.root, path, claims=[])
+            self.assertEqual([c['count'] for c in rep['clusters']], [4])
+
+    def test_a_failing_reach_step_reports_counts(self):
+        out = ('print("  worst spawn: 55% all, 50% ungated"); '
+               'print("  COVERAGE: 6 of 9 spawns are over 200u"); raise SystemExit(1)')
+        step = dict(tier=1, name='r', cmd=[sys.executable, '-c', out], parse='reach')
+        with tempfile.TemporaryDirectory() as td, no_lab_binary():
+            row = argus_lab.run_step(Fixture(td).root, step)
+        self.assertEqual(row['status'], 'fail')
+        self.assertEqual(row['detail'], {'reach_short_all': 45, 'reach_short_ungated': 50, 'far_spawns': 6})
+
+    def test_fix_times_place_a_same_day_tape(self):
+        self.assertEqual(argus_lab.fix_phase('2026-11-13 23:09:00', '2026-11-13 21:09:57'), 'after')
+        self.assertEqual(argus_lab.fix_phase('2026-11-13 20:00:00', '2026-11-13 21:09:57'), 'before')
+        self.assertEqual(argus_lab.fix_phase('2026-11-13 23:09:00', '2026-11-13'), 'same day')
+        self.assertEqual(argus_lab.fix_phase('2026-11-14', '2026-11-13 21:09:57'), 'after')
+        self.assertEqual(argus_lab.fix_phase(None, '2026-11-13'), 'undated')
+
+    def test_a_failure_the_last_sweep_did_not_check_alerts_and_is_not_known(self):
+        bad = [sys.executable, '-c', 'raise SystemExit(1)']
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            (fx.root / 'runs' / 'lab').mkdir(parents=True)
+            fx.write('runs/lab/night-20261101T000000000000Z.json', json.dumps(dict(
+                date='2026-11-01', triaged=[], void_keys=[],
+                steps=[dict(name='skipped one', status='skipped')])))
+            code, report = TestNight.sweep(self, fx, [dict(tier=1, name='skipped one', cmd=bad),
+                                                      dict(tier=1, name='brand new', cmd=bad)])
+            self.assertEqual(code, 1)
+            self.assertIn('newly failing: skipped one', report)
+            self.assertIn('newly failing: brand new', report)
+            receipt = json.loads(sorted((fx.root / 'runs' / 'lab').glob('night-*.json'))[-1].read_text())
+            self.assertEqual(argus_lab.known_failures(receipt), {})
+
+    def test_a_tape_that_arrives_late_is_still_triaged(self):
+        ok = [sys.executable, '-c', 'pass']
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            self.assertEqual(TestNight.sweep(self, fx, [dict(tier=1, name='a', cmd=ok)])[0], 0)
+            fx.write('runs/ab_dm4_late.log', tape(started='01/02/2026', body=sample('Reap', 1.0, 0, 0, 24)))
+            code, report = TestNight.sweep(self, fx, [dict(tier=1, name='a', cmd=ok)])
+            self.assertIn('1 new tape', report)
+            code, report = TestNight.sweep(self, fx, [dict(tier=1, name='a', cmd=ok)])
+            self.assertIn('0 new tapes', report)
+
+    def test_a_partial_reach_fix_is_not_worse(self):
+        known = argus_lab.reach_detail('  worst spawn: 55% all, 50% ungated\n  COVERAGE: 6 of 9 spawns are over 200u\n')
+        better = argus_lab.reach_detail('  worst spawn: 70% all, 60% ungated\n  COVERAGE: 1 of 9 spawns are over 200u\n')
+        worse = argus_lab.reach_detail('  worst spawn: 40% all, 50% ungated\n  COVERAGE: 6 of 9 spawns are over 200u\n')
+        self.assertEqual(known, {'reach_short_all': 45, 'reach_short_ungated': 50, 'far_spawns': 6})
+        self.assertTrue(argus_lab.no_worse(better, known))
+        self.assertFalse(argus_lab.no_worse(worse, known))
+        self.assertIsNone(argus_lab.reach_detail('nothing to parse'))
+
+    def test_a_claim_counts_only_the_trouble_its_fix_addressed(self):
+        cluster = dict(points=[dict(kind='freeze', dur=64.0)] + [dict(kind='stall')] * 3)
+        self.assertTrue(argus_lab.regressed(cluster, {'events': 16}))
+        self.assertFalse(argus_lab.regressed(cluster, {'kinds': ['stall'], 'events': 16}))
+        self.assertTrue(argus_lab.regressed(dict(points=[dict(kind='stall')] * 17), {'kinds': ['stall'], 'events': 16}))
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.claims([claim(id='bad-kinds', status='fixed', fixed_on='2026-11-01', regression={'kinds': ['stalls']}),
+                       claim(id='timed', status='fixed', fixed_on='2026-11-13 21:09:57'),
+                       claim(id='bad-time', status='fixed', fixed_on='2026-11-13T21:09')])
+            errors = chr(10).join(argus_lab.validate(fx.root))
+            self.assertIn('bad-kinds: regression is an object', errors)
+            self.assertNotIn('claim timed:', errors)
+            self.assertIn('bad-time: a fixed claim says when', errors)
+
+    def test_the_nearest_candidate_describes_a_change(self):
+        a = dict(nodes=3, links=frozenset({('L', 'n0', 'n1'), ('L', 'n1', 'n2')}))
+        b = dict(nodes=3, links=frozenset({('L', 'n0', 'n1')}))
+        shipped = dict(nodes=3, links=frozenset({('L', 'n0', 'n1')}))
+        self.assertIs(argus_lab.nearest_topology([a, b], shipped), b)
+        self.assertEqual(argus_lab.topology_change(a, shipped), '1 links gone and 0 new')
 
 
 class TestCommandLine(unittest.TestCase):

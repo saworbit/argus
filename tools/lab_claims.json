@@ -407,7 +407,7 @@
       "id": "dm3-quad-court-pinch",
       "title": "dm3 quad-court pit mouth",
       "status": "fixed",
-      "fixed_on": "2026-08-28",
+      "fixed_on": "2026-09-13 20:55:02",
       "kind": "defect",
       "tier": 1,
       "maps": [
@@ -424,10 +424,19 @@
           "radius": 96
         }
       ],
-      "statement": "The puppet jammed at 552 240 56 on the n68 to n248 walk link; reminting it as a jump link cleared the cluster for the first time since the campaign began (2026-08-28).",
+      "statement": "The puppet jammed at 552 240 56 on the n68 to n248 walk link, and the 2026-08-28 remint as a jump link cleared the cluster from one tape. It did not hold: until the 2026-09-13 seat regeneration of dm3 (#308) the cell carried a median of 15 stalls a tape, 18 of 20 tapes over 4. Since that regeneration the median is 0.",
       "evidence": [
-        "runs/ab_dm3_verdictjump1.log"
-      ]
+        "runs/ab_dm3_verdictjump1.log",
+        "#308",
+        "runs/ab_dm3_gapsclosed2.log"
+      ],
+      "regression": {
+        "kinds": [
+          "stall"
+        ],
+        "events": 4
+      },
+      "regression_basis": "Measured 2026-11-14 over every point in the cell on the dm3 bot tapes in runs/: 246 recorded after the regeneration hold a median of 0 stalls, 95th percentile 1, maximum 4, the allowance."
     },
     {
       "id": "dm2-ne-stair-lip",
@@ -456,15 +465,18 @@
         "runs/probe_lipdbg.log"
       ],
       "regression": {
+        "kinds": [
+          "stall"
+        ],
         "events": 16
       },
-      "regression_basis": "Measured 2026-11-14 over the 309 dm2 bot tapes in runs/ (by each tape's own map line): 64 before the fix ran a median of 8 events in the cell, 95th percentile 17, maximum 22; 245 after it ran a median of 1, 95th percentile 10, maximum 16. The allowance is the post-fix maximum, so no recorded post-fix tape alerts; one tape can only show a return to the worst pre-fix levels."
+      "regression_basis": "Measured 2026-11-14 over every point inside the cell, on the dm2 bot tapes in runs/ (by each tape's own map line), with fix-day tapes set aside: 45 before the fix ran a median of 7 events, 95th percentile 15, maximum 17; 245 after it a median of 1, 95th percentile 10, maximum 16, the allowance. The fix addressed teetering, so only stalls count; the cell's post-fix freezes, up to 64 s, come from the September embedded-in-world defect."
     },
     {
       "id": "e1m7-lava-runoffs",
       "title": "e1m7 bots running and jumping into the lava lake",
       "status": "fixed",
-      "fixed_on": "2026-11-13",
+      "fixed_on": "2026-11-13 21:09:57",
       "kind": "defect",
       "tier": 1,
       "maps": [
@@ -488,10 +500,12 @@
         }
       ],
       "regression": {
-        "deaths": 4,
-        "events": 10
+        "kinds": [
+          "unforced death"
+        ],
+        "deaths": 4
       },
-      "regression_basis": "No tape recorded after the fix is in runs/. Over 132 e1m7 bot tapes before it, unforced lake deaths per tape ran a median of 0, 95th percentile 4, maximum 7, and events a maximum of 10. The allowance is the pre-fix 95th percentile, so only a return past the old level flags; tighten it once post-fix tapes exist."
+      "regression_basis": "Only one tape recorded after the fix is in runs/ (the 2026-11-13 deploy smoke, one unforced lake death). Over 131 e1m7 bot tapes before it, unforced lake deaths per tape ran a median of 0, 95th percentile 4, maximum 6, so the allowance is the pre-fix 95th percentile: only a return past the old level flags. Tighten it once post-fix tapes exist."
     },
     {
       "id": "dm4-dead-jump-link",
@@ -536,10 +550,10 @@
         "runs/shane_dm2_2026-09-14.log"
       ],
       "regression": {
-        "freeze_sec": 8,
+        "freeze_sec": 9,
         "events": 8
       },
-      "regression_basis": "The fix rescues a pin after 8 s, so freezes up to 8 s remain expected. Over 162 dm2 bot tapes after it, events in the cell reach a 95th percentile of 2 and a maximum of 8, the allowance."
+      "regression_basis": "Measured the same way over 162 dm2 bot tapes after the fix: events in the cell reach a 95th percentile of 2 and a maximum of 8, and the longest freeze 8.6 s, which the 8 s rescue allows. The allowance is 8 events and freezes up to 9 s."
     },
     {
       "id": "hunch-major-decay",

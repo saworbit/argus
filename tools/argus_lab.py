@@ -63,6 +63,7 @@ SKILL_BASE = re.compile(r'^ARGUS difficulty .+? t\s+[\d.]+ base (\d+)', re.M)
 SKILL_TIER = re.compile(r'^ARGUS .+? skill (\d+) aim -?\d+', re.M)
 LIMIT_METRICS = ('stalls', 'engages', 'lava_deaths', 'freezes', 'cover', 'goals')
 REGRESSION_COUNT = 5
+TROUBLE_KINDS = ('stall', 'freeze', 'freeze under fire', 'unforced death', 'knock-in', 'world death')
 DOC_TAPE_SEC = 185.0
 CORPUS_METRICS = ('stalls', 'engages', 'lava_deaths', 'world_deaths', 'freezes', 'freeze_underfire', 'cover', 'goals',
                   'frags', 'deaths', 'routefails', 'hazards', 'grabs', 'weapons', 'boards', 'kd_spread', 'avg_speed',
@@ -291,13 +292,26 @@ def tape_graph(root, mapname, tape_path):
                 break
             run.append(r)
     else:
-        run = [r for r in history if r['banner'] == banner][:1]
+        # The graph committed next with this banner: the tape most likely ran
+        # a candidate that later merged. Failing that, the newest with it.
+        later = [r for r in history if r['banner'] == banner and r['when'] > when]
+        run = later[-1:] or [r for r in history if r['banner'] == banner][:1]
     if not run:
         return dict(ids=frozenset({f'uncommitted:{banner[0]}:{banner[1]}'}),
                     label=f'an uncommitted graph ({banner_text(banner)})', commit=None, topology=None)
     commits = ' or '.join(r['commit'][:7] for r in run)
     return dict(ids=frozenset(r['topology']['id'] for r in run), commit=run[0]['commit'], topology=run[0]['topology'],
-                label=f'the graph at {commits} ({banner_text(banner)})')
+                topologies=[r['topology'] for r in run], label=f'the graph at {commits} ({banner_text(banner)})')
+
+
+def topology_distance(old, new):
+    return abs(old['nodes'] - new['nodes']) + len(old['links'] ^ new['links'])
+
+
+def nearest_topology(candidates, target):
+    """Of the revisions a tape could have run, the one closest to the target: the smallest honest difference."""
+    candidates = [c for c in candidates or [] if c]
+    return min(candidates, key=lambda c: topology_distance(c, target)) if candidates and target else None
 
 
 def topology_change(old, new):
@@ -609,17 +623,22 @@ def validate(root):
             errors.append(f'{where}: tier must be 1 to 4 or null')
         if 'cheapest_tier' in c and (c['cheapest_tier'] not in TIERS or isinstance(c['cheapest_tier'], bool)):
             errors.append(f'{where}: cheapest_tier must be 1 to 5')
-        if c.get('status') == 'fixed' and not DATE.fullmatch(str(c.get('fixed_on', ''))):
-            errors.append(f'{where}: a fixed claim says when, as fixed_on YYYY-MM-DD')
+        if c.get('status') == 'fixed' and not re.fullmatch(r'\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?', str(c.get('fixed_on', ''))):
+            errors.append(f'{where}: a fixed claim says when, as fixed_on YYYY-MM-DD or YYYY-MM-DD HH:MM:SS (local)')
         if c.get('kind') == 'graveyard' and c.get('status') not in ('refuted', 'parked'):
             errors.append(f'{where}: a graveyard entry is refuted or parked')
         if c.get('do_not_retry') and c.get('next'):
             errors.append(f'{where}: do_not_retry contradicts a next step; park it instead')
         if c.get('kind') == 'hypothesis' and c.get('status') == 'open' and not c.get('refute_by'):
             errors.append(f'{where}: an open hypothesis says what would refute it (refute_by)')
-        if 'regression' in c and not (isinstance(c['regression'], dict) and set(c['regression']) <= {'events', 'freeze_sec', 'deaths'}
-                                      and all(is_number(v) and v >= 0 for v in c['regression'].values())):
-            errors.append(f'{where}: regression is an object of events, freeze_sec and deaths, each a non-negative number')
+        allowance = c.get('regression')
+        if 'regression' in c and not (
+                isinstance(allowance, dict) and set(allowance) <= {'events', 'freeze_sec', 'deaths', 'kinds'}
+                and all(is_number(v) and v >= 0 for k, v in allowance.items() if k != 'kinds')
+                and (isinstance(allowance.get('kinds', []), list)
+                     and set(allowance.get('kinds', [])) <= set(TROUBLE_KINDS))):
+            errors.append(f'{where}: regression is an object of events, freeze_sec and deaths (non-negative numbers) '
+                          f'and kinds (a list from {", ".join(TROUBLE_KINDS)})')
         if 'regression' in c and c.get('status') != 'fixed':
             errors.append(f'{where}: only a fixed claim sets a regression allowance')
         for key in ('cells', 'maps', 'evidence'):
@@ -868,7 +887,7 @@ def stale_findings(root, obj):
                                f'record three listen-class tapes and point baselines.json {mapname} at them',
                                key=f'baseline:{mapname}:tick:{tick}'))
         for (gid, label), which in sorted(graphs.items()):
-            change = topology_change(which[0][1]['topology'], shipped)
+            change = topology_change(nearest_topology(which[0][1].get('topologies'), shipped), shipped)
             out.append(finding('baseline', 'stale', item,
                                f'ran {label}, not the shipped graph ({change}): {", ".join(n for n, _ in which)}',
                                're-baseline on the current graph', key=f'baseline:{mapname}:graph:{gid[0][:12]}'))
@@ -1229,20 +1248,62 @@ def regressed(cluster, tolerate):
     still leaves 6 to 8 s freezes). Other events count past the claim's events
     allowance, REGRESSION_COUNT by default.
     """
-    if sum(1 for p in cluster['points'] if p['kind'] == 'unforced death') > tolerate.get('deaths', 0):
+    points = cluster['points']
+    if tolerate.get('kinds'):
+        # A claim names the trouble its fix addressed; other trouble in the
+        # cell (a freeze from a different defect) is not its regression.
+        points = [p for p in points if p['kind'] in tolerate['kinds']]
+    if sum(1 for p in points if p['kind'] == 'unforced death') > tolerate.get('deaths', 0):
         return True
     limit = tolerate.get('freeze_sec', 0)
-    if any(p['kind'].startswith('freeze') and p.get('dur', 0) > limit for p in cluster['points']):
+    if any(p['kind'].startswith('freeze') and p.get('dur', 0) > limit for p in points):
         return True
-    return len(cluster['points']) > tolerate.get('events', REGRESSION_COUNT - 1)
+    return len(points) > tolerate.get('events', REGRESSION_COUNT - 1)
+
+
+def fix_phase(recorded, fixed_on):
+    """Where a tape falls against a fix: after, before, same day (cannot tell) or undated.
+
+    Either side may be a date or a local date and time; with times on both
+    sides the comparison is exact, otherwise a shared day is undecidable.
+    """
+    if not recorded:
+        return 'undated'
+    if len(recorded) > 10 and len(fixed_on) > 10:
+        return 'after' if recorded > fixed_on else 'before'
+    if recorded[:10] == fixed_on[:10]:
+        return 'same day'
+    return 'after' if recorded[:10] > fixed_on[:10] else 'before'
+
+
+def merge_clusters(clusters, radius):
+    """Merge clusters until no two centres lie within the radius; greedy assignment alone leaves split piles."""
+    merged = True
+    while merged:
+        merged = False
+        for i in range(len(clusters)):
+            for j in range(i + 1, len(clusters)):
+                if math.dist(clusters[i]['centre'], clusters[j]['centre']) <= radius:
+                    pts = clusters[i]['points'] + clusters[j]['points']
+                    clusters[i] = dict(points=pts, centre=tuple(statistics.fmean(p[k] for p in pts) for k in 'xyz'))
+                    del clusters[j]
+                    merged = True
+                    break
+            if merged:
+                break
+    return clusters
 
 
 def triage(root, tape_path, claims=None, radius=96.0):
-    """Cluster a tape's stalls, freezes and world deaths, and name the claim each cluster belongs to."""
+    """Cluster a tape's stalls, freezes and world deaths, name the claim each cluster belongs to, and judge fixed cells.
+
+    A fixed claim is judged over every point inside its cells, the same unit
+    its regression allowance is measured in, not cluster by cluster.
+    """
     tape = argus_tape.read_tape(str(tape_path))
     text = '\n'.join(line for _, line in tape.lines)
     mapname = argus_tape.map_name(text)
-    recorded = tape_date(tape_path)
+    recorded = tape_when(tape_path)
     bots, _, _ = argus_tape.track_names(tape.samples, tape.events)
     bots = set(bots)
     samples = {n: sorted(rows, key=lambda r: r['line']) for n, rows in tape.samples.items()}
@@ -1292,44 +1353,57 @@ def triage(root, tape_path, claims=None, radius=96.0):
                 break
         else:
             clusters.append(dict(centre=(p['x'], p['y'], p['z']), points=[p]))
+    clusters = merge_clusters(clusters, radius)
     claims = claims if claims is not None else all_claims(root)
+
+    cells = []
+    for cl in claims:
+        mine = [cell for cell in cl.get('cells') or [] if cell['map'] == mapname]
+        inside = [p for p in points if any(in_cell((p['x'], p['y'], p['z']), cell) for cell in mine)]
+        if not inside:
+            continue
+        kinds = collections.Counter(p['kind'] for p in inside)
+        row = dict(id=cl['id'], status=cl['status'], events=len(inside), kinds=dict(kinds),
+                   freeze_sec=max((p.get('dur', 0) for p in inside if p['kind'].startswith('freeze')), default=0))
+        if cl['status'] == 'fixed' and cl.get('fixed_on'):
+            row.update(phase=fix_phase(recorded, cl['fixed_on']),
+                       heavy=regressed(dict(points=inside), cl.get('regression') or {}))
+            row['regression'] = row['heavy'] and row['phase'] in ('after', 'undated')
+        cells.append(row)
+    judged = {r['id']: r for r in cells if 'phase' in r}
+
     out = []
     for c in clusters:
         kinds = collections.Counter(p['kind'] for p in c['points'])
         matches = []
         for cl in claims:
-            for cell in cl.get('cells', []):
+            for cell in cl.get('cells') or []:
                 if cell['map'] == mapname and in_cell(c['centre'], cell):
-                    matches.append(dict(id=cl['id'], status=cl['status'], fixed_on=cl.get('fixed_on'),
-                                        regression=cl.get('regression', {})))
+                    matches.append(dict(id=cl['id'], status=cl['status'], fixed_on=cl.get('fixed_on')))
                     break
         severe = kinds['freeze under fire'] + kinds['unforced death'] + kinds['freeze']
         flag = 'new'
         if matches:
             flag = 'known'
-            fixed = [m for m in matches if m['status'] == 'fixed']
             # An open claim on the same cell does not switch off a fixed one:
             # the fixed claim's allowance already covers the residual.
-            if fixed:
-                # Trouble at a fixed cell is a regression only on a tape recorded after the fix.
-                # A stall or two can recur at any cell; a regression needs a freeze,
-                # an unforced death, or more events than the claim tolerates.
-                heavy = any(regressed(c, m['regression']) for m in fixed)
-                after = [m for m in fixed if recorded and m['fixed_on'] and recorded > m['fixed_on']]
-                same_day = [m for m in fixed if recorded and m['fixed_on'] == recorded]
-                if not recorded:
-                    flag = 'regression? (undated tape)' if heavy else 'known'
-                elif after:
-                    flag = 'regression?' if heavy else 'known'
-                elif same_day:
-                    flag = 'on the fix day'
-                elif len(fixed) == len(matches):
-                    flag = 'before the fix'
+            verdicts = [judged[m['id']] for m in matches if m['id'] in judged]
+            if any(v['regression'] and v['phase'] == 'after' for v in verdicts):
+                flag = 'regression?'
+            elif any(v['regression'] for v in verdicts):
+                flag = 'regression? (undated tape)'
+            elif any(v['phase'] in ('after', 'undated') for v in verdicts):
+                flag = 'known'
+            elif any(v['phase'] == 'same day' for v in verdicts):
+                flag = 'on the fix day'
+            elif verdicts and len(verdicts) == len(matches):
+                flag = 'before the fix'
         out.append(dict(centre=[round(v) for v in c['centre']], count=len(c['points']), kinds=dict(kinds),
                         bots=sorted({p['bot'] for p in c['points']}), matches=matches, flag=flag,
                         severe=severe))
     out.sort(key=lambda c: (-c['severe'], -c['count']))
-    return dict(tape=str(tape_path), map=mapname, date=recorded, bsp=bool(contents), clusters=out)
+    return dict(tape=str(tape_path), map=mapname, date=recorded[:10] if recorded else None, when=recorded,
+                bsp=bool(contents), clusters=out, cells=cells)
 
 
 def print_triage(rep, min_count=3, out=None):
@@ -1541,7 +1615,7 @@ def pyramid_plan(root, maps, through, obj, effect_pct=30.0):
         if bsp:
             steps.append(dict(tier=1, name=f'{m} navmesh audit', audit=(str(bsp), str(root / 'src' / f'argus_nav_{m}.qc.json'))))
             steps.append(dict(tier=1, name=f'{m} directed reach', cmd=[py, 'tools/argus_reach.py', m],
-                              env={'ARGUS_MAPS': str(bsp.parent)}))
+                              env={'ARGUS_MAPS': str(bsp.parent)}, parse='reach'))
         else:
             for name in ('navmesh audit', 'directed reach'):
                 steps.append(dict(tier=1, name=f'{m} {name}', skip='no BSP (set ARGUS_MAPS or keep maps_local/)'))
@@ -1644,10 +1718,27 @@ def run_step(root, s, dry_run=False):
     tail = (res.stdout + res.stderr).strip().splitlines()[-3:]
     row = dict(s, status='pass' if res.returncode == 0 else 'fail', returncode=res.returncode,
                detail=' | '.join(tail) if res.returncode else '')
+    if res.returncode and s.get('parse') == 'reach':
+        row['detail'] = reach_detail(res.stdout) or row['detail']
     if res.returncode == 0 and s.get('judge') == 'benchmark':
         ok, detail, done = judge_benchmark(root, s, res.stdout)
         row.update(status='pass' if ok else 'fail', detail=detail, completed=done if ok else None)
     return row
+
+
+def reach_detail(stdout):
+    """A failing reach audit as counts where lower is better, so a partial fix is not read as worse.
+
+    reach_short_all and reach_short_ungated are 100 minus the worst spawn's
+    reach; far_spawns counts spawns over 200u from any waypoint.
+    """
+    out = {}
+    m = re.search(r'worst spawn: (\d+)% all, (\d+)% ungated', stdout)
+    if m:
+        out.update(reach_short_all=100 - int(m.group(1)), reach_short_ungated=100 - int(m.group(2)))
+    m = re.search(r'COVERAGE: (\d+) of \d+ spawns are over', stdout)
+    out['far_spawns'] = int(m.group(1)) if m else 0
+    return out if len(out) > 1 else None
 
 
 def show_step(row, out):
@@ -1781,20 +1872,28 @@ def night(root, maps=None, engine=False, out=None):
         if r['status'] != 'fail':
             continue
         was = before.get(r['name'])
-        if was and was.get('status') == 'pass':
+        if previous and (not was or was.get('status') != 'fail'):
+            # Passing, skipped, blocked or not run last time: a failure the
+            # last sweep did not see is new, so it alerts and is not known yet.
             newly_failing.append(r['name'])
             r['newly_failing'] = True
-        elif was and was.get('status') == 'fail' and not no_worse(r.get('detail'), was.get('detail')):
+        elif was and not no_worse(r.get('detail'), was.get('detail')):
             worse.append(r['name'])
             r['newly_failing'] = True
     still_failing = [r['name'] for r in results if r['status'] == 'fail' and not r.get('newly_failing')]
 
     # New tapes, by each tape's own header date: a fresh clone stamps every
     # file with the checkout time. The first sweep looks back a week.
-    # A tape the previous sweep already triaged (same name and size) is not new.
-    seen_before = {tuple(t) for t in (previous or {}).get('triaged', [])}
-    fresh = [p for p in match_tapes_paths(root / 'runs') if (tape_date(p) or '') >= since
-             and (p.name, p.stat().st_size) not in seen_before]
+    # After the first sweep, new means not triaged before (same name and size),
+    # whatever its header date: a tape recorded earlier and merged later is new.
+    # The first sweep triages the last week and records the rest as seen.
+    every = [(p, (p.name, p.stat().st_size)) for p in match_tapes_paths(root / 'runs')]
+    if previous and 'triaged' in previous:
+        seen_before = {tuple(t) for t in previous['triaged']}
+        fresh = [p for p, key in every if key not in seen_before]
+    else:
+        seen_before = {key for p, key in every if (tape_date(p) or '') < since}
+        fresh = [p for p, key in every if key not in seen_before]
 
     def freezes(c):
         return c['kinds'].get('freeze', 0) + c['kinds'].get('freeze under fire', 0)
@@ -1804,8 +1903,9 @@ def night(root, maps=None, engine=False, out=None):
         rep = triage(root, p)
         flagged = [c for c in rep['clusters'] if c['flag'].startswith('regression')
                    or (c['flag'] == 'new' and (freezes(c) or c['count'] >= REGRESSION_COUNT))]
-        if flagged:
-            tape_rows.append(dict(tape=p.name, clusters=flagged))
+        regressed_cells = [r['id'] for r in rep['cells'] if r.get('regression')]
+        if flagged or regressed_cells:
+            tape_rows.append(dict(tape=p.name, clusters=flagged, regressions=regressed_cells))
     findings = stale_findings(root, obj)
     void_now = {f['key']: f for f in findings if f['severity'] == 'void'}
     # Keys name the artefact and the reason, so rewording a message cannot raise
@@ -1818,15 +1918,15 @@ def night(root, maps=None, engine=False, out=None):
 
     alerts = ([f'newly failing: {n}' for n in newly_failing] + [f'failing worse than before: {n}' for n in worse]
               + [f'newly void: {v}' for v in newly_void])
-    alerts += [f'regression at a fixed cell in {t["tape"]} at {" ".join(map(str, c["centre"]))}'
-               for t in tape_rows for c in t['clusters'] if c['flag'].startswith('regression')]
+    alerts += [f'regression of {cid} in {t["tape"]}' for t in tape_rows for cid in t.get('regressions', [])]
     today = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')
     head = (git(root, 'log', '-1', '--format=%h %s') or '?').strip()
     buf = io.StringIO()
     print(f'# Argus nightly sweep, {today}', file=buf)
     print(file=buf)
-    print(f'At {head}. Maps: {", ".join(maps)}. Engines: {"yes" if engine else "no"}. Tapes recorded since {since}. '
-          + (f'Compared with {previous_name}.' if previous else 'First sweep: nothing to compare with.'), file=buf)
+    print(f'At {head}. Maps: {", ".join(maps)}. Engines: {"yes" if engine else "no"}. '
+          + (f'Compared with {previous_name}; new tapes are those it had not triaged.' if previous
+             else f'First sweep: nothing to compare with; new tapes are those recorded since {since}.'), file=buf)
     print(file=buf)
     print('## What changed', file=buf)
     print(file=buf)
@@ -1843,12 +1943,13 @@ def night(root, maps=None, engine=False, out=None):
     print(file=buf)
     print('## New tapes', file=buf)
     print(file=buf)
-    print(f'{plural(len(fresh), "tape")} recorded since {since}; '
-          f'{plural(len(tape_rows), "tape")} with a cluster worth a look.', file=buf)
+    print(f'{plural(len(fresh), "new tape")}; {plural(len(tape_rows), "tape")} with a cluster worth a look.', file=buf)
     for t in tape_rows:
         print(file=buf)
         print(f'### {t["tape"]}', file=buf)
         print(file=buf)
+        for cid in t.get('regressions', []):
+            print(f'- regression of {cid}: trouble in its cell past the allowance it records', file=buf)
         for c in t['clusters']:
             what = ', '.join(f'{k} {v}' for k, v in sorted(c['kinds'].items()))
             print(f'- {c["flag"]} at {" ".join(map(str, c["centre"]))}: {what}', file=buf)

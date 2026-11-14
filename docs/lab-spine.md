@@ -85,23 +85,27 @@ kill ratio (no bot kills on the human) as `"inf"`.
 
 ### `triage`
 
-Clusters a tape's stalls, freezes and world deaths within 96 units and
-matches each cluster to the claims' map cells. A cell has a radius across the
+Clusters a tape's stalls, freezes and world deaths within 96 units, merging
+piles until no two centres are that close, and matches each cluster to the
+claims' map cells. A cell has a radius across the
 floor and a vertical bound (`dz`, 56 units by default), so a fight on a
 walkway does not land in the pit below it. With the map's BSP, world deaths
 split into knock-ins and unforced deaths. Each cluster reads:
 
 - **known**: an open claim covers it, or light trouble at a fixed cell.
 - **new**: nothing does; consider a claim.
-- **regression?**: heavy trouble at a fixed claim's cell, on a tape recorded
-  after the fix, even when an open claim shares the cell. Heavy means more
-  unforced deaths, longer freezes or more events than the fixed claim
-  tolerates (no deaths, no freezes and four events by default). A fixed claim
-  sets its allowance with `regression: {events, freeze_sec, deaths}` from the
-  measured post-fix spread, records the basis in `regression_basis`, and
-  should be tightened once more post-fix tapes exist.
-- **on the fix day**: trouble at a fixed cell on the day of the fix, which
-  the day alone cannot place before or after it.
+- **regression?**: heavy trouble in a fixed claim's cell, on a tape recorded
+  after the fix, even when an open claim shares the cell. A fixed claim is
+  judged over every point inside its cell, the unit its allowance is measured
+  in, not cluster by cluster. Heavy means more unforced deaths, longer freezes
+  or more events than the claim tolerates (no deaths, no freezes and four
+  events by default). A fixed claim sets its allowance with
+  `regression: {kinds, events, freeze_sec, deaths}`, where `kinds` names the
+  trouble its fix addressed so trouble from another defect in the same cell
+  does not count. It records the measured basis in `regression_basis`;
+  tighten an allowance taken from pre-fix tapes once post-fix tapes exist.
+- **on the fix day**: trouble at a fixed cell on the day of the fix, when the
+  claim's `fixed_on` has no time to place the tape before or after it.
 - **before the fix**: trouble at a fixed cell on a tape that predates the fix.
 
 ### `skeptic`
@@ -165,7 +169,9 @@ the next if that tier refuted the change. A step that the last `night` sweep
 recorded as failing, and found failing the same way, is a known failure: it
 is reported and does not stop the climb, so an accepted condition such as
 e1m8's three kept liquid links does not hide a new failure. A known failure
-that gets worse (an audit count that grows, or different output) is a failure.
+that gets worse is a failure: the navmesh audit and directed reach report
+counts where lower is better (liquid entries, reach shortfall, spawns far from
+any seat), so a partial fix reads as no worse; other steps compare output.
 A failure first seen by a sweep is not trusted as known until a later sweep
 finds it still failing, so one sweep cannot launder a breaking change. It exits 1 when a tier failed, 3 when a step was
 blocked by a stale artefact and nothing failed (the evidence is incomplete),
@@ -202,8 +208,11 @@ It exits 1 only on what got worse since the previous sweep: a step that
 passed then and fails now or fails worse, a regression at a fixed claim's cell
 on a new tape, or an artefact newly void. Void artefacts are compared by a key
 naming the artefact and the reason, so rewording a message raises nothing and
-a new reason on an already void map does. A tape the previous sweep triaged
-is not triaged again. A failure that was already failing is listed as
+a new reason on an already void map does. A step the previous sweep did
+not run, skipped or saw pass alerts if it fails now. New tapes are those the
+previous sweep had not triaged (by name and size), whatever their header date,
+so a tape recorded earlier and merged later is still triaged; the first
+sweep triages the last week and records the rest as seen. A failure that was already failing is listed as
 still failing and does not alert, so a known defect such as e1m8's reach gate
 does not drown a new one.
 
@@ -216,8 +225,9 @@ has an id (lower-case words joined by hyphens), a title, a status (`open`,
 issue or PR as `#n`, or a run name in `runs/`. The validator enforces:
 
 - an open hypothesis says what would refute it (`refute_by`);
-- a fixed claim says when (`fixed_on`, YYYY-MM-DD), so triage can tell a
-  regression from an old tape;
+- a fixed claim says when (`fixed_on`, YYYY-MM-DD, or YYYY-MM-DD HH:MM:SS
+  in local time for an exact merge), so triage can tell a regression from an
+  old tape;
 - a graveyard entry is refuted or parked;
 - a cell's map is one of the claim's maps;
 - no claim repeats a rule already in `tools/refuted_claims.json`.
