@@ -513,6 +513,12 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Read the working-tree graph revision, its sidecars and their mtimes from
+  `ARGUS_SRC`, and its history from the repository that holds it. Run from a
+  worktree with `ARGUS_ROOT` at the main checkout, `mill what=revisions` and
+  `argus://graph-revisions/<map>` used to describe the main checkout's graph
+  ([#804](https://github.com/saworbit/argus/issues/804)).
+
 - Print capture manifests' scheduled seconds as exact playback steps (2.8,
   not 2.8000000000000003) by counting whole 0.05 s steps and dividing once
   ([#811](https://github.com/saworbit/argus/issues/811)).

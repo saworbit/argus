@@ -586,7 +586,9 @@ removed and type-changed links. Link ids use endpoint coordinates so node
 renumbering does not fabricate a change. Passing `link=` narrows the result
 and fails if that id occurs in neither graph. The resources and tool wrap the
 existing `.qc.json`, `.probe.json`, `.proven.json`, `.costs.json` and
-`.mined.json` files plus their Git history; they write nothing.
+`.mined.json` files plus their Git history; they write nothing. The
+working-tree revision is read from `ARGUS_SRC`, and history from the Git
+repository that holds it, so a worktree reports its own graph and branch.
 
 ## Deeper inspect
 

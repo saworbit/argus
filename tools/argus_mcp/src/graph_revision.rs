@@ -9,7 +9,7 @@ use serde::Serialize;
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::{BufRead, BufReader, Read, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::thread;
 
@@ -108,8 +108,64 @@ pub(crate) fn valid_map(map: &str) -> Result<String, String> {
     crate::paths::map_name(map)
 }
 
-fn graph_path(map: &str) -> String {
-    format!("src/argus_nav_{map}.qc.json")
+fn graph_name(map: &str) -> String {
+    format!("argus_nav_{map}.qc.json")
+}
+
+fn sidecar_name(map: &str, kind: &str) -> String {
+    format!("argus_nav_{map}.{kind}.json")
+}
+
+/// Where the working graph lives and which repository holds its history.
+///
+/// Working files come from `cfg.src` (ARGUS_SRC), so a worktree reads its own
+/// graph. History comes from the repository that holds `cfg.src`, so its
+/// branch is read too. When `cfg.src` is not inside a repository, history
+/// falls back to `cfg.root` with the default `src/` layout.
+struct Home {
+    src: PathBuf,
+    repo: PathBuf,
+    prefix: String,
+}
+
+impl Home {
+    fn of(cfg: &Config) -> Self {
+        let fallback = Home {
+            src: cfg.src.clone(),
+            repo: cfg.root.clone(),
+            prefix: "src/".into(),
+        };
+        let Some(raw) = git(&cfg.src, &["rev-parse", "--show-toplevel"]) else {
+            return fallback;
+        };
+        let top = PathBuf::from(String::from_utf8_lossy(&raw).trim());
+        let (Ok(top_real), Ok(src_real)) =
+            (std::fs::canonicalize(&top), std::fs::canonicalize(&cfg.src))
+        else {
+            return fallback;
+        };
+        let Ok(rel) = src_real.strip_prefix(&top_real) else {
+            return fallback;
+        };
+        let mut prefix = rel
+            .components()
+            .map(|c| c.as_os_str().to_string_lossy().into_owned())
+            .collect::<Vec<_>>()
+            .join("/");
+        if !prefix.is_empty() {
+            prefix.push('/');
+        }
+        Home {
+            src: cfg.src.clone(),
+            repo: top,
+            prefix,
+        }
+    }
+
+    /// `name`'s path inside the repository, for git.
+    fn rel(&self, name: &str) -> String {
+        format!("{}{name}", self.prefix)
+    }
 }
 
 fn digest(bytes: &[u8]) -> String {
@@ -282,15 +338,16 @@ fn history_sources(
     cfg: &Config,
     map: &str,
 ) -> Result<Vec<Source>, crate::inspection_error::Failure> {
-    let rel = graph_path(map);
-    let current = cfg.root.join(&rel);
+    let home = Home::of(cfg);
+    let rel = home.rel(&graph_name(map));
+    let current = home.src.join(graph_name(map));
     let mut sources = Vec::new();
     match std::fs::read(&current) {
         Ok(bytes) => {
             let sidecars = SIDECARS
                 .iter()
                 .filter_map(|kind| {
-                    std::fs::read(cfg.root.join(format!("src/argus_nav_{map}.{kind}.json")))
+                    std::fs::read(home.src.join(sidecar_name(map, kind)))
                         .ok()
                         .map(|bytes| ((*kind).to_string(), bytes))
                 })
@@ -308,7 +365,7 @@ fn history_sources(
     }
 
     if let Some(raw) = git(
-        &cfg.root,
+        &home.repo,
         &["log", "--format=%H%x09%cI", "--", rel.as_str()],
     ) {
         let commits: Vec<(String, Option<String>)> = String::from_utf8_lossy(&raw)
@@ -325,10 +382,10 @@ fn history_sources(
             specs.extend(
                 SIDECARS
                     .iter()
-                    .map(|kind| format!("{commit}:src/argus_nav_{map}.{kind}.json")),
+                    .map(|kind| format!("{commit}:{}", home.rel(&sidecar_name(map, kind)))),
             );
         }
-        let objects = git_batch(&cfg.root, &specs)?;
+        let objects = git_batch(&home.repo, &specs)?;
         for (commit, committed_at) in commits {
             let graph_spec = format!("{commit}:{rel}");
             let Some(bytes) = objects.get(&graph_spec).cloned() else {
@@ -337,7 +394,7 @@ fn history_sources(
             let sidecars = SIDECARS
                 .iter()
                 .filter_map(|kind| {
-                    let spec = format!("{commit}:src/argus_nav_{map}.{kind}.json");
+                    let spec = format!("{commit}:{}", home.rel(&sidecar_name(map, kind)));
                     objects
                         .get(&spec)
                         .cloned()
@@ -389,14 +446,15 @@ fn sidecar_time(
     source: &Source,
     bytes: &[u8],
 ) -> Option<String> {
-    let rel = format!("src/argus_nav_{map}.{kind}.json");
+    let home = Home::of(cfg);
+    let rel = home.rel(&sidecar_name(map, kind));
     if source.working_tree {
-        let committed = git(&cfg.root, &["show", &format!("HEAD:{rel}")]);
+        let committed = git(&home.repo, &["show", &format!("HEAD:{rel}")]);
         if committed.as_deref() == Some(bytes) {
-            let raw = git(&cfg.root, &["log", "-1", "--format=%cI", "--", &rel])?;
+            let raw = git(&home.repo, &["log", "-1", "--format=%cI", "--", &rel])?;
             return Some(String::from_utf8_lossy(&raw).trim().to_string());
         }
-        let modified = std::fs::metadata(cfg.root.join(&rel))
+        let modified = std::fs::metadata(home.src.join(sidecar_name(map, kind)))
             .ok()?
             .modified()
             .ok()?;
@@ -405,7 +463,7 @@ fn sidecar_time(
     }
     let commit = source.commit.as_deref()?;
     let raw = git(
-        &cfg.root,
+        &home.repo,
         &["log", "-1", "--format=%cI", commit, "--", &rel],
     )?;
     let value = String::from_utf8_lossy(&raw).trim().to_string();
@@ -833,6 +891,44 @@ mod tests {
         run_git(root.path(), &["commit", "-q", "-m", "second"]).unwrap();
         let c = cfg(root.path());
         (root, c)
+    }
+
+    #[test]
+    fn the_working_revision_is_read_from_argus_src_and_its_repository() {
+        // ARGUS_ROOT at the main checkout, ARGUS_SRC at a worktree whose
+        // graph has moved on: the working revision must be the worktree's
+        // file, and history must come from the worktree's branch (#804).
+        let _gate = git_test_lock();
+        let (root, main_cfg) = repo();
+        let tree = TestDir::new("graph-revision-worktree").unwrap();
+        let wt = tree.path().join("wt");
+        run_git(
+            root.path(),
+            &["worktree", "add", "-q", "-b", "side", wt.to_str().unwrap()],
+        )
+        .unwrap();
+        let moved = graph("walk", true).replace("\"links\"", "\"comment\": \"wt\", \"links\"");
+        fs::write(wt.join("src/argus_nav_dm4.qc.json"), &moved).unwrap();
+        let mut cfg = main_cfg.clone();
+        cfg.src = wt.join("src");
+
+        let revisions = list_revisions(&cfg, "dm4").unwrap();
+        let working: Vec<_> = revisions.iter().filter(|r| r.working_tree).collect();
+        assert_eq!(working.len(), 1);
+        assert_eq!(working[0].graph_md5, digest(moved.as_bytes()));
+        assert!(revisions.iter().any(|r| r.commit.is_some()));
+
+        // ARGUS_SRC unset: the default layout reads exactly what it read before.
+        let default = list_revisions(&main_cfg, "dm4").unwrap();
+        let head = fs::read(root.path().join("src/argus_nav_dm4.qc.json")).unwrap();
+        assert_eq!(default.len(), 2);
+        assert!(default[0].working_tree);
+        assert_eq!(default[0].graph_md5, digest(&head));
+        run_git(
+            root.path(),
+            &["worktree", "remove", "--force", wt.to_str().unwrap()],
+        )
+        .unwrap();
     }
 
     #[test]
