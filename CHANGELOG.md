@@ -275,6 +275,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Trim rationale four lab tool descriptions repeated from the guides, and a
+  stale tape count, reclaiming tool-surface headroom from 3 bytes to 262.
+  `bot_capture_pov_frame` spends part of it on `wait_sec` (5 to 110, default
+  60) for live `on` recordings, which the CLI `watch-pov --wait` already had
+  ([#808](https://github.com/saworbit/argus/issues/808)).
+
 - Re-pin `benchmarks/dm4_navigation.json` to the shipped dm4 graph
   (`561c3ede`). Every task still starts and ends on a node and keeps a route;
   `pit_east_to_green` and `pit_center_to_east` lost a gated shortcut in the
