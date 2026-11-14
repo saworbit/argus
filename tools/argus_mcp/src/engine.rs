@@ -494,8 +494,7 @@ fn spawn_windows(
 ) -> Result<EngineChild, String> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::System::Threading::{
-        CreateProcessW, CREATE_NEW_CONSOLE, CREATE_UNICODE_ENVIRONMENT, PROCESS_INFORMATION,
-        STARTF_USESHOWWINDOW, STARTUPINFOW,
+        CreateProcessW, PROCESS_INFORMATION, STARTF_USESHOWWINDOW, STARTUPINFOW,
     };
 
     let args = windows_args(cfg, map, slots, skill, port, coop)?;
@@ -523,7 +522,7 @@ fn spawn_windows(
             std::ptr::null(),
             std::ptr::null(),
             0,
-            CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT,
+            engine_creation_flags(),
             std::ptr::null(),
             cwd_wide.as_ptr(),
             &si,
@@ -550,6 +549,21 @@ fn spawn_windows(
             handle: SendHandle(pi.hProcess),
         },
     })
+}
+
+/// Creation flags for a lab engine on Windows.
+///
+/// ABOVE_NORMAL_PRIORITY_CLASS keeps a ladder in the played tick class when
+/// another job holds the CPU: on 2026-11-13 a busy machine pushed every tape
+/// in two rounds to `dedicated_fast` at normal priority, and raising the same
+/// engines to AboveNormal kept them in the listen class with full game time
+/// (#786). It is one class above normal, not High, so the desktop stays usable.
+#[cfg(windows)]
+fn engine_creation_flags() -> u32 {
+    use windows_sys::Win32::System::Threading::{
+        ABOVE_NORMAL_PRIORITY_CLASS, CREATE_NEW_CONSOLE, CREATE_UNICODE_ENVIRONMENT,
+    };
+    CREATE_NEW_CONSOLE | CREATE_UNICODE_ENVIRONMENT | ABOVE_NORMAL_PRIORITY_CLASS
 }
 
 #[cfg(windows)]
@@ -1046,6 +1060,19 @@ mod tests {
             maps: tmp.join("maps"),
             runs: tmp.join("runs"),
         }
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_engines_start_one_priority_class_above_normal() {
+        use windows_sys::Win32::System::Threading::{
+            ABOVE_NORMAL_PRIORITY_CLASS, CREATE_NEW_CONSOLE, HIGH_PRIORITY_CLASS,
+            REALTIME_PRIORITY_CLASS,
+        };
+        let flags = engine_creation_flags();
+        assert_ne!(flags & ABOVE_NORMAL_PRIORITY_CLASS, 0);
+        assert_ne!(flags & CREATE_NEW_CONSOLE, 0);
+        assert_eq!(flags & (HIGH_PRIORITY_CLASS | REALTIME_PRIORITY_CLASS), 0);
     }
 
     #[test]

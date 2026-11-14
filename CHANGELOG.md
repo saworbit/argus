@@ -275,6 +275,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Start each lab engine on Windows one priority class above normal. On
+  2026-11-13 a CPU-heavy job beside a ladder pushed every tape to
+  `dedicated_fast`; the same engines raised to AboveNormal by hand stayed in
+  the listen class with full game time. Linux still relies on the tick-class
+  check ([#786](https://github.com/saworbit/argus/issues/786)).
+
 - `harvest_session.py` now reads each harvested session against the lab
   objective and claims after scoring it: hard gates, whether it counts for a
   goal verdict, and any new or regressed trouble. `argus_reach.py` honours
