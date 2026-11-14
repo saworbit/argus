@@ -1058,8 +1058,17 @@ passing botmatch does not establish better human play.
   and the workflows; OpenSSF Scorecard publishes a score; dependency review
   checks every pull request; and `cargo deny` checks the lab's advisories,
   licences and sources weekly and on every manifest change. Dependabot now
-  covers the Python requirements and waits a week before proposing a new
-  release ([#838](https://github.com/saworbit/argus/pull/838)).
+  waits a week before proposing a new release
+  ([#838](https://github.com/saworbit/argus/pull/838)).
+
+- Stop Dependabot proposing bumps to
+  `tools/requirements-perception-cohort.txt`. Its SHA-256 is registered in
+  the engagement and lava cohort protocols and asserted before a cohort
+  runs, so a bump would break reproduction of both studies; #838 had added
+  a pip updater that opened one within minutes. The updater now ignores
+  every dependency, security updates included, and an advisory against a
+  pin still raises a Dependabot alert for a deliberate decision
+  ([#840](https://github.com/saworbit/argus/pull/840)).
 
 - Check the local wizard Host header on GET requests as well as POST, so
   a DNS-rebinding page cannot read local paths or map data (#551).
