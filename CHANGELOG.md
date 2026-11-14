@@ -418,6 +418,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- `argus-mcp probelinks` reports a verdict for every link it probes
+  (`passed`, `failed` or `teleport_failed`) in sweep order, beside the
+  eight-entry passed sample. It also reads the graph and records verdicts
+  under `ARGUS_SRC`, so a sweep run from a worktree no longer writes into the
+  main checkout ([#781](https://github.com/saworbit/argus/issues/781)).
+
 - Track portable agent rules in AGENTS.md while keeping local handoffs ignored,
   so rule corrections reach every checkout (#672).
 
