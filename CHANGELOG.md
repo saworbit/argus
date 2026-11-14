@@ -291,7 +291,8 @@ passing botmatch does not establish better human play.
   Across the 75 committed session tapes, 107 of 164 bot world deaths were
   unforced, and the 2026-11-14 dm4 session reads 2 of 3, matching its
   review. Existing scorecard values are unchanged. A hit landing in the same
-  half second as the entry still reads as unforced.
+  half second as the entry still reads as unforced
+  ([#815](https://github.com/saworbit/argus/pull/815)).
 
 - `argus_ci.py refuted` also reads the machine-local CLAUDE.md when it is
   present, and says the brief was not checked when it is absent, as in CI
