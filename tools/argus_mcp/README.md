@@ -491,7 +491,9 @@ controls bind event listeners without parsing their values as HTML or code.
 Chromium browser using a temporary local page with stubbed API reads. It
 does not start the lab, launch the engine or write through the API. Set
 `ARGUS_GUI_BROWSER` to select a Chromium executable; the browser check skips
-when none is installed.
+when none is installed. A browser launch that produces nothing for 25 s is
+killed with its child processes and retried once, with a note on stderr; a
+second stall fails with the browser's stderr from both attempts (#817).
 
 `see` is the one inspect call. Pass `what` and, when needed, `name`.
 Omit `what` (or pass `start` / `orient`) for `project`. Aliases:

@@ -1,13 +1,18 @@
 """GUI text boundaries and browser rendering, without a live lab server."""
 import html
+import io
 import json
 import os
 from pathlib import Path
 import re
 import shutil
+import signal
 import subprocess
+import sys
 import tempfile
+import time
 import unittest
+import unittest.mock
 from urllib.parse import unquote
 import xml.etree.ElementTree as ET
 
@@ -21,6 +26,48 @@ def browser():
                   'C:/Program Files/Google/Chrome/Application/chrome.exe',
                   'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe']
     return next((str(p) for p in candidates if p and Path(p).is_file()), None)
+
+
+def kill_tree(proc):
+    """Kill a browser and every process it started, so no child keeps the pipes open."""
+    if os.name == 'nt':
+        subprocess.run(['taskkill', '/T', '/F', '/PID', str(proc.pid)], capture_output=True)
+    else:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+    if proc.poll() is None:
+        proc.kill()
+
+
+def run_browser(command, *, timeout=25, attempts=2):
+    """Run headless Chrome, and once more if it stalls (#817).
+
+    The page work takes a few seconds, but on the CI runner the first launch
+    has hung for the whole timeout with no output. One stall is retried with
+    a note. A stall on every attempt fails with Chrome's stderr from each,
+    which is what a real GUI hang looks like.
+    """
+    notes = []
+    for attempt in range(1, attempts + 1):
+        group = ({'creationflags': subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == 'nt'
+                 else {'start_new_session': True})
+        proc = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, encoding='utf-8', errors='replace', **group)
+        try:
+            out, err = proc.communicate(timeout=timeout)
+            return proc.returncode, out, err
+        except subprocess.TimeoutExpired:
+            kill_tree(proc)
+            try:
+                _out, err = proc.communicate(timeout=10)
+            except subprocess.TimeoutExpired:
+                err = '(output pipes still open after the kill)'
+            notes.append(f'attempt {attempt}: no result after {timeout} s; stderr: {err[-1500:]}')
+            print(f'note: headless browser stalled for {timeout} s on attempt {attempt} (#817)',
+                  file=sys.stderr)
+    raise AssertionError('headless browser stalled on every attempt (#817)\n' + '\n'.join(notes))
 
 
 def browser_receipt(page=None, *, scale=1, screenshot=None):
@@ -99,10 +146,10 @@ window.fetch=async(path)=>({ok:true,headers:new Headers({'content-type':'applica
                    '--force-device-scale-factor=' + str(scale), '--virtual-time-budget=3000', '--dump-dom']
         if screenshot is not None: command.append('--screenshot=' + str(Path(screenshot).resolve()))
         command.append(path.as_uri())
-        result = subprocess.run(command, capture_output=True, text=True, encoding='utf-8', errors='replace', timeout=25)
-        if result.returncode: raise AssertionError(result.stderr[-3000:])
-        match = re.search(r'<pre id="gui-test-result"[^>]*>(.*?)</pre>', result.stdout, re.S)
-        if not match: raise AssertionError('browser did not finish GUI checks: ' + result.stderr[-1000:] + result.stdout[-2000:])
+        returncode, stdout, stderr = run_browser(command)
+        if returncode: raise AssertionError(stderr[-3000:])
+        match = re.search(r'<pre id="gui-test-result"[^>]*>(.*?)</pre>', stdout, re.S)
+        if not match: raise AssertionError('browser did not finish GUI checks: ' + stderr[-1000:] + stdout[-2000:])
         receipt = json.loads(html.unescape(match[1]))
         if not receipt.get('pass'): raise AssertionError(receipt)
         return receipt
@@ -117,6 +164,38 @@ class GuiRendering(unittest.TestCase):
         source = ET.parse(ROOT / 'docs/brand/favicon.svg').getroot()
         self.assertEqual(ET.tostring(inline), ET.tostring(source),
                          'update the GUI favicon data URI from docs/brand/favicon.svg')
+
+    def test_a_stalled_browser_is_retried_once_and_its_children_are_killed(self):
+        # A stand-in browser that stalls on its first launch with a child
+        # holding the output pipes, then answers on the second (#817).
+        with tempfile.TemporaryDirectory() as td:
+            marker = Path(td) / 'stalled-once'
+            script = (
+                'import pathlib, subprocess, sys, time\n'
+                f'm = pathlib.Path({str(marker)!r})\n'
+                'if not m.exists():\n'
+                '    m.write_text("x")\n'
+                '    subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])\n'
+                '    time.sleep(60)\n'
+                'print("answered")\n')
+            started = time.monotonic()
+            with unittest.mock.patch('sys.stderr', new=io.StringIO()) as noted:
+                code, out, _err = run_browser([sys.executable, '-c', script], timeout=3)
+            # Killing only the parent leaves the child holding the pipes for
+            # the full 10 s drain, so a quick return proves the tree died.
+            self.assertLess(time.monotonic() - started, 9)
+            self.assertEqual((code, out.strip()), (0, 'answered'))
+            self.assertIn('stalled for 3 s on attempt 1 (#817)', noted.getvalue())
+
+    def test_a_browser_that_stalls_every_time_fails_with_both_attempts(self):
+        stall = [sys.executable, '-c', 'import sys, time; print("loading", file=sys.stderr, flush=True); time.sleep(60)']
+        with unittest.mock.patch('sys.stderr', new=io.StringIO()):
+            with self.assertRaises(AssertionError) as caught:
+                run_browser(stall, timeout=2)
+        message = str(caught.exception)
+        self.assertIn('stalled on every attempt (#817)', message)
+        self.assertIn('attempt 2: no result after 2 s', message)
+        self.assertIn('loading', message)
 
     @unittest.skipUnless(browser(), 'no Chromium browser installed')
     def test_server_fields_are_text_and_edge_handlers_keep_data(self):

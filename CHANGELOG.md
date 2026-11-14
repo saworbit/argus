@@ -513,6 +513,12 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Retry the GUI rendering test's headless browser once when it stalls, kill
+  the browser's whole process tree on a timeout, and fail a second stall with
+  the browser's stderr from both attempts. The first launch on the CI runner
+  had hung for the full 25 s with no output while the page work takes a few
+  seconds ([#817](https://github.com/saworbit/argus/issues/817)).
+
 - Escape the `Argus_Nav_Spawn_<map>` placeholder in the lab's rustdoc, and
   build rustdoc with warnings denied in the fast workflow so the next one
   fails its pull request ([#806](https://github.com/saworbit/argus/issues/806)).
