@@ -130,6 +130,41 @@ const LADDER_ARMS: &[(&str, &[&str])] = &[
             "ab_e1m5_doorverb4",
         ],
     ),
+    // listen-class baselines superseded by the 2026-11-14 re-baseline
+    // (#819), still same-build arms; without them dm2 fell to one arm
+    (
+        "dm2",
+        &[
+            "ab_dm2_doorverb1",
+            "ab_dm2_doorverb2",
+            "ab_dm2_doorverb3",
+            "ab_dm2_doorverb4",
+            "ab_dm2_doorverb5",
+        ],
+    ),
+    (
+        "dm4",
+        &[
+            "ab_dm4_deadlink1",
+            "ab_dm4_deadlink2",
+            "ab_dm4_deadlink3",
+            "ab_dm4_deadlink4",
+        ],
+    ),
+    (
+        "e1m5",
+        &[
+            "band_e1m5_1",
+            "band_e1m5_2",
+            "band_e1m5_3",
+            "band_e1m5_b1",
+            "band_e1m5_b2",
+        ],
+    ),
+    (
+        "e1m6",
+        &["band_e1m6_1", "band_e1m6_2", "band_e1m6_3", "band_e1m6_4"],
+    ),
 ];
 
 /// The metrics worth a detection limit. The first four are the gates
@@ -158,11 +193,15 @@ pub fn metric_value(b: &MatchBrief, name: &str) -> f64 {
     }
 }
 
-/// The instrument's noise per map and metric, measured 2026-09-16 by
-/// `argus-mcp measure` over 84 tapes in 27 same-build arms, and baked
+/// The instrument's noise per map and metric, measured 2026-11-14 by
+/// `argus-mcp measure` over 66 listen-class tapes in 15 same-build arms
+/// (first measured 2026-09-16, over every tick class). Each row keeps the
+/// larger of the two: a refresh on fewer arms may raise the noise model but
+/// not lower it, because a lower e1m6 stall sigma let the stopping rule
+/// accept a null across two halves of one build. Baked
 /// here so a compare does not re-parse the corpus on every call.
-/// `docs/specs/2026-09-16-lab-measurement-limits.md` is the same
-/// numbers with their tape counts and the MDE columns.
+/// `docs/specs/2026-09-16-lab-measurement-limits.md` is the measured
+/// table, with tape counts, tick class and the MDE columns.
 ///
 /// Regenerate after a harvest that adds arms; the test below fails if
 /// these drift from the corpus by more than a factor of two, which
@@ -172,26 +211,26 @@ const SIGMA: &[(&str, &str, f64)] = &[
     ("dm2", "stalls", 24.4),
     ("dm2", "engages", 9.0),
     ("dm2", "lava_deaths", 1.4),
-    ("dm2", "freezes", 0.8),
+    ("dm2", "freezes", 0.9),
     ("dm2", "cover", 34.3),
-    ("dm2", "goals", 2.1),
+    ("dm2", "goals", 2.9),
     ("dm4", "stalls", 6.0),
     ("dm4", "engages", 10.1),
     ("dm4", "lava_deaths", 1.7),
     ("dm4", "freezes", 0.7),
-    ("dm4", "cover", 22.4),
-    ("dm4", "goals", 4.7),
+    ("dm4", "cover", 23.7),
+    ("dm4", "goals", 5.0),
     ("e1m5", "stalls", 19.8),
     ("e1m5", "engages", 12.2),
     ("e1m5", "freezes", 2.7),
     ("e1m5", "cover", 86.4),
-    ("e1m5", "goals", 3.2),
+    ("e1m5", "goals", 5.2),
     ("e1m6", "stalls", 23.3),
     ("e1m6", "engages", 14.6),
     ("e1m6", "lava_deaths", 1.1),
     ("e1m6", "freezes", 1.0),
     ("e1m6", "cover", 68.1),
-    ("e1m6", "goals", 2.1),
+    ("e1m6", "goals", 2.5),
 ];
 
 /// The measured noise for a map and metric, if the corpus has one.
@@ -248,6 +287,9 @@ pub struct Limit {
     pub mde3: f64,
     pub mde5: f64,
     pub mde10: f64,
+    /// the tick class of the arms that contributed (`listen` when a map
+    /// has any listen-class arm, since only those count then)
+    pub tick: String,
 }
 
 /// Collect every same-build arm this project has committed, as
@@ -256,7 +298,16 @@ pub struct Limit {
 /// so the validation tests run on a bare checkout. A validation set
 /// that skips itself on CI is not a validation set.
 fn arms_in(runs_dir: &Path) -> Vec<(String, Vec<MatchBrief>)> {
+    arms_with(runs_dir, None)
+}
+
+/// `arms_in`, with lava classified by hull-0 contents when `cfg` can find
+/// each map's BSP, as briefs, `compare_runs` and the corpus do (#816).
+/// Without it lava falls back to the z < -300 rule, which reads dm2's and
+/// e1m7's lava as none at all.
+fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBrief>)> {
     let mut out: Vec<(String, Vec<String>)> = Vec::new();
+    let mut hulls = std::collections::HashMap::new();
 
     // the baseline bands: same-build by construction
     for (map, runs) in crate::intel::all_baseline_bands_in(runs_dir) {
@@ -284,7 +335,12 @@ fn arms_in(runs_dir: &Path) -> Vec<(String, Vec<MatchBrief>)> {
             } else {
                 Some(map.as_str())
             };
-            if let Ok(b) = brief_path(&runs_dir.join(format!("{r}.log")), hint) {
+            let path = runs_dir.join(format!("{r}.log"));
+            let brief = match cfg {
+                Some(_) => crate::corpus::brief_for(&path, cfg, &mut hulls),
+                None => brief_path(&path, hint),
+            };
+            if let Ok(b) = brief {
                 briefs.push(b);
             }
         }
@@ -311,11 +367,15 @@ fn arms_in(runs_dir: &Path) -> Vec<(String, Vec<MatchBrief>)> {
 /// noise and the smallest effect it could see at 3, 5 and 10 tapes a
 /// side.
 pub fn limits(cfg: &Config) -> Vec<Limit> {
-    limits_in(&cfg.runs)
+    limits_with(&cfg.runs, Some(cfg))
 }
 
 pub fn limits_in(runs_dir: &Path) -> Vec<Limit> {
-    let loaded = arms_in(runs_dir);
+    limits_with(runs_dir, None)
+}
+
+fn limits_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<Limit> {
+    let loaded = arms_with(runs_dir, cfg);
     let mut maps: Vec<String> = loaded.iter().map(|(m, _)| m.clone()).collect();
     maps.sort();
     maps.dedup();
@@ -324,6 +384,23 @@ pub fn limits_in(runs_dir: &Path) -> Vec<Limit> {
     for map in maps {
         let mine: Vec<&(String, Vec<MatchBrief>)> =
             loaded.iter().filter(|(m, _)| *m == map).collect();
+        // Every arm is one tick class (arms_in drops mixed ones). The lab
+        // runs at the played rate, so once a map has listen-class arms the
+        // noise of 19 Hz arms describes a different instrument (#822).
+        let class = |(_, bs): &&(String, Vec<MatchBrief>)| {
+            bs.first()
+                .and_then(|b| b.totals.tick_class.clone())
+                .unwrap_or_else(|| "unknown".into())
+        };
+        let mine: Vec<&(String, Vec<MatchBrief>)> = if mine.iter().any(|a| class(a) == "listen") {
+            mine.into_iter().filter(|a| class(a) == "listen").collect()
+        } else {
+            mine
+        };
+        let mut classes: Vec<String> = mine.iter().map(class).collect();
+        classes.sort();
+        classes.dedup();
+        let tick = classes.join("+");
         for (metric, _) in METRICS {
             let arm_vals: Vec<Vec<f64>> = mine
                 .iter()
@@ -347,6 +424,7 @@ pub fn limits_in(runs_dir: &Path) -> Vec<Limit> {
                 mde3: stats::mde(sigma, 3),
                 mde5: stats::mde(sigma, 5),
                 mde10: stats::mde(sigma, 10),
+                tick: tick.clone(),
             });
         }
     }
@@ -580,18 +658,20 @@ pub fn render(limits: &[Limit], audit: &GateAudit, sprt: &SprtAudit, stamp: &str
          smallest difference in arm means detectable at that many tapes a\n\
          side, at 5 per cent false positives and 80 per cent power. Tapes\n\
          enter as a square root, so halving the detectable effect costs four\n\
-         times the tapes.\n\n",
+         times the tapes. Where a map has listen-class arms only those count,\n\
+         because the lab runs at the played rate; `tick` names the class each\n\
+         sigma was measured on.\n\n",
     );
     let mut maps: Vec<&str> = limits.iter().map(|l| l.map.as_str()).collect();
     maps.sort();
     maps.dedup();
     for map in maps {
         s.push_str(&format!("### {map}\n\n"));
-        s.push_str("| metric | arms | tapes | mean | sigma | CV | MDE n=3 | n=5 | n=10 |\n");
-        s.push_str("|---|---|---|---|---|---|---|---|---|\n");
+        s.push_str("| metric | arms | tapes | mean | sigma | CV | MDE n=3 | n=5 | n=10 | tick |\n");
+        s.push_str("|---|---|---|---|---|---|---|---|---|---|\n");
         for l in limits.iter().filter(|l| l.map == map) {
             s.push_str(&format!(
-                "| {} | {} | {} | {:.1} | {:.1} | {} | {:.1} ({}) | {:.1} ({}) | {:.1} ({}) |\n",
+                "| {} | {} | {} | {:.1} | {:.1} | {} | {:.1} ({}) | {:.1} ({}) | {:.1} ({}) | {} |\n",
                 l.metric,
                 l.arms,
                 l.tapes,
@@ -604,6 +684,7 @@ pub fn render(limits: &[Limit], audit: &GateAudit, sprt: &SprtAudit, stamp: &str
                 pct(if l.mean > 0.0 { l.mde5 / l.mean } else { 0.0 }),
                 l.mde10,
                 pct(if l.mean > 0.0 { l.mde10 / l.mean } else { 0.0 }),
+                l.tick,
             ));
         }
         s.push('\n');
@@ -741,6 +822,55 @@ mod tests {
         }
         // and an unknown name must not quietly read as zero data
         assert_eq!(metric_value(&b, "not_a_metric"), 0.0);
+    }
+
+    /// The tick column goes last, so `argus_lab.py limits` still reads
+    /// tapes, mean and sigma from cells 2, 3 and 4.
+    #[test]
+    fn the_limits_doc_names_each_sigmas_tick_class_in_the_last_column() {
+        let row = Limit {
+            map: "dm2".into(),
+            metric: "stalls".into(),
+            arms: 2,
+            tapes: 10,
+            mean: 38.6,
+            sigma: 19.6,
+            cv: 0.5,
+            mde3: 1.0,
+            mde5: 1.0,
+            mde10: 1.0,
+            tick: "listen".into(),
+        };
+        let audit = GateAudit {
+            pairs_seen: 0,
+            per_gate: Vec::new(),
+            any_gate: 0,
+            detail: Vec::new(),
+        };
+        let sprt = SprtAudit {
+            splits: 0,
+            decisions: 0,
+            accept: 0,
+            reject: 0,
+            keep_going: 0,
+            wrong: Vec::new(),
+            asn_decided: 0,
+            asn_undecided: 0,
+            asn_mean: 0.0,
+            asn_cap_median: 0.0,
+        };
+        let text = render(&[row], &audit, &sprt, "2026-11-14");
+        let header = text.lines().find(|l| l.starts_with("| metric")).unwrap();
+        assert!(header.ends_with("| tick |"), "{header}");
+        let line = text.lines().find(|l| l.starts_with("| stalls")).unwrap();
+        let cells: Vec<&str> = line
+            .trim()
+            .trim_matches('|')
+            .split('|')
+            .map(str::trim)
+            .collect();
+        assert_eq!((cells[2], cells[3], cells[4]), ("10", "38.6", "19.6"));
+        assert_eq!(cells.last(), Some(&"listen"));
     }
 
     #[test]

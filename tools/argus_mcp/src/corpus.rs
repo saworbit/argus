@@ -350,7 +350,7 @@ pub struct IndexStatus {
 /// one recorded as a boundary in the changelog.
 /// A tape's brief, with lava classified by hull-0 contents when `cfg` can
 /// find the map's BSP. Each map's hull is loaded once per index build.
-fn brief_for(
+pub(crate) fn brief_for(
     path: &Path,
     cfg: Option<&Config>,
     hulls: &mut HashMap<String, Option<crate::bsp::Hull0>>,
