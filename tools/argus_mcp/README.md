@@ -1838,6 +1838,15 @@ That is the prose table above turned into numbers. dm2 stalls at three
 tapes a side cannot detect anything smaller than a doubling, and a
 great many historical stall verdicts were unearned in both directions.
 
+Since 2026-11-14 a map with listen-class arms is measured from those arms
+only, because the lab runs at the played rate, and the doc's last column
+names the tick class each sigma came from. Lava is classified by hull-0
+contents when the map's BSP is on hand. A baseline band that is replaced
+stays in the noise corpus as a ladder arm, since it is still a same-build
+arm. The baked sigmas that `compare` uses keep the larger of their old value
+and a new measurement: lowering e1m6's stall sigma from 23.3 to 21.0 let the
+stopping rule accept a null across two halves of one build.
+
 **What four gates cost.** A verdict that convicts on any of four gates
 is not one test. Over the sixteen null pairs each gate convicts a
 change that does not exist 0 to 12 per cent of the time and the
@@ -1962,6 +1971,11 @@ Encoded from the project charter, not invented per call:
 - A/B baselines are config-driven: `runs/baselines.json` maps a map
   to its baseline run; era defaults are the fallback and a missing
   named run errors loudly. Refresh the file after each clean ship.
+  When a band is replaced, add the old one to `LADDER_ARMS` in
+  `measure.rs` and rerun `argus-mcp measure`, or the noise corpus loses
+  an arm (dm2 fell to one arm when its doorverb band was replaced).
+  Never start two matches with the same run name: both engines write
+  `runs/<run>/qconsole.log` and the tape loses its head (#832).
 
 `next_steps` maps failures to code:
 

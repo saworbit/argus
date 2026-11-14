@@ -993,6 +993,11 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- File the loose bullets that sat between Main updates and Unreleased under
+  their categories, and merge the repeated category headings, so each one
+  appears once. Every bullet keeps its wording and links
+  ([#769](https://github.com/saworbit/argus/issues/769)).
+
 - Refresh the measurement limits and persist the tape index. `measure` now
   uses only listen-class arms for any map that has them, names each sigma's
   tick class in a new last column, and classifies lava by hull-0 contents
