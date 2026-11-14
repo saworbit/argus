@@ -1,0 +1,23 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -1817,7 +1817,7 @@
+             // not stock water physics) can flicker waterlevel across 0
+             // several times a second in a shallow pool, and a faithful
+             // enter/exit sound pair per flicker is a machine-gun splash
+-            // (found in Shane's first playtest with sound, on dm2). Flags
++            // (Shane's first with-sound playtest, the dm2 pool). Flags
+             // update every transition; only the sounds rate-limit.
+             if (time > self.ar_h2otime)
+             {
+@@ -2427,9 +2427,8 @@
+     // here for the FrikBot-review slice and REVERTED - across five
+     // dm4 matches it correlated with off-band lava deaths and stalls
+     // (its 2 s ballistic latch suspends steering at the worst edges).
+-    // Its stated target, pools on dm2, was refuted on 2026-08-18:
+-    // dm2's only liquid is lava. A latch-free vault, gated to water,
+-    // now lives in the swim block below.
++    // Its real target is dm2's pools; re-attempt it inside the dm2
++    // campaign with map-specific bars instead of on dm4's lava.
+ 
+     if (wl >= 2 && (wl == 3 || !(self.flags & FL_ONGROUND)))
+     {

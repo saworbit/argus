@@ -38,7 +38,7 @@ the vocabulary. Do not grep the tree for "how do I compile".
 | Was that stationary window a chosen pause | `python tools/argus_gait.py runs/<tape>.log` (attributes freezes to this bot's own `hesitate` marker; exits 1 on an attributable failure, and a window with no marker is the pre-existing wedge class) |
 | What is under a vetoed void, how tight is a seat | `python tools/argus_voidprobe.py dm4 dm2 [--clearance]` (offline hull-0 read of the SHIPPED graph; needs maps_local/<map>.bsp - two gait changes were built on guesses this answers) |
 | Why did it pick that goal | `tune command="scratch1 1"` then grep ARGDBG (scratch1 0 to silence) |
-| Walk a link in the REAL engine | `argus-mcp probelinks <map> [limit<=80] [skip]` (refusals persist by endpoint in src/argus_nav_<map>.probe.json; teleport_failures need AABB triage on tele maps) |
+| Walk a link in the REAL engine | `argus-mcp probelinks <map> [limit<=80] [skip]` (`verdicts` names every walked link; refusals persist by endpoint in ARGUS_SRC's argus_nav_<map>.probe.json; teleport_failures need AABB triage on tele maps) |
 | Puppet a live match | `argus-mcp client observe|walk|walkrel|impulse <n>` (impulse 101 = 4th bot, 100 = menu, headless 4-player) |
 | Full-rotation sweep | chunk probelinks in a detached driver; stop file runs/soak.stop, position in runs/probe_soak_state.json; monitor the STATE FILE, never tail -f a PS-written log |
 | Unattended match shift (only when Shane asks) | `argus-mcp soak --maps dm2 --matches N [--parallel 2]` / `argus-mcp cycle <map>` (hard caps; stop via runs/soak.stop) |
@@ -94,8 +94,8 @@ the whole tape describes the fallback map - judge nothing).
   on every normal lab frame. Deliberate slow studies set
   `sys_ticrate 0.1` as a separate arm. Never compare two tick classes.
 - Refuted rules are registered in `tools/refuted_claims.json`, and
-  `python tools/argus_ci.py refuted` fails when tracked text restates
-  one as current. When a change shows a recorded rule is wrong, add an
+  `python tools/argus_ci.py refuted` fails when tracked text, or the
+  local CLAUDE.md when present, restates one as current. When a change shows a recorded rule is wrong, add an
   entry in the same change, and keep any historical mention by saying
   "refuted" in its paragraph. Restoring text from history is how a
   corrected rule comes back.

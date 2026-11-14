@@ -161,7 +161,20 @@ passing botmatch does not establish better human play.
   failures as a separate follow-up
   ([#747](https://github.com/saworbit/argus/issues/747)).
 
+- The lab guide and the lab workflow describe three recent fixes: the source
+  fingerprint reads CRLF as LF, a band gate card names the tapes its rows
+  compare, and a runner with no lab binary stops and says where to build one
+  ([#777](https://github.com/saworbit/argus/issues/777), [#757](https://github.com/saworbit/argus/issues/757), [#768](https://github.com/saworbit/argus/issues/768)).
+
 #### Fixed
+
+- Name the missing lab binary. The study runners now stop with the path they
+  tried and the two ways to provide a lab, instead of a bare
+  FileNotFoundError from subprocess ([#768](https://github.com/saworbit/argus/issues/768)).
+
+- Correct two `src/argus.qc` comments that still said dm2 has pools. Its only
+  liquid is lava, settled on 2026-08-18. Comments only: the compiled
+  progs.dat is byte-identical ([#767](https://github.com/saworbit/argus/issues/767)).
 
 - Let routed bots walk into dm3's south upper area, which holds the red
   armour. Removing two impossible climbs (#770) had stranded its 22 seats;
@@ -269,6 +282,17 @@ passing botmatch does not establish better human play.
   ([#646](https://github.com/saworbit/argus/issues/646)).
 
 #### Added
+
+- `argus_ci.py refuted` also reads the machine-local CLAUDE.md when it is
+  present, and says the brief was not checked when it is absent, as in CI
+  ([#766](https://github.com/saworbit/argus/issues/766)).
+
+- Seed `tools/refuted_claims.json` with seven more refuted rules: dm2 water,
+  dm6 movers, colormap bot colours, splash against walls, grenades at the
+  feet, the strafe re-roll as the reversal cause, and re-fitting the played
+  aim spring ([#767](https://github.com/saworbit/argus/issues/767)).
+
+- Run the navmesh repair and air layer suites in fast CI ([#787](https://github.com/saworbit/argus/issues/787)).
 
 - Add navgen `--seat-links`, which adds seats and walks to a shipped graph
   from a coordinate sidecar (`src/argus_nav_<map>.seats.json`) without a
@@ -408,6 +432,12 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- `argus-mcp probelinks` reports a verdict for every link it probes
+  (`passed`, `failed` or `teleport_failed`) in sweep order, beside the
+  eight-entry passed sample. It also reads the graph and records verdicts
+  under `ARGUS_SRC`, so a sweep run from a worktree no longer writes into the
+  main checkout ([#781](https://github.com/saworbit/argus/issues/781)).
 
 - Track portable agent rules in AGENTS.md while keeping local handoffs ignored,
   so rule corrections reach every checkout (#672).
@@ -563,6 +593,16 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Read CRLF as LF in the lab's source fingerprint, so a worktree and the main
+  checkout of one commit report the same identity and a worktree compare is
+  no longer refused as a stale lab
+  ([#777](https://github.com/saworbit/argus/issues/777)).
+
+- Say on a band gate card that its rows compare the median-stall tape of each
+  arm while the verdict uses every tape, so a red row under a green verdict
+  is not read as a failed gate
+  ([#757](https://github.com/saworbit/argus/issues/757)).
 
 - Reject resolved jump launches outside the runtime's strict 96-unit source
   anchor before generation or profiling publishes artifacts. Add a read-only,

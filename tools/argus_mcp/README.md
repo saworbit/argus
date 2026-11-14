@@ -21,7 +21,9 @@ update it, then restart the client.
 
 Every structured MCP response carries `lab_identity`: the running package version and a
 build-time fingerprint of `Cargo.toml`, `Cargo.lock`, `build.rs`, and the Rust
-source, beside the same identity recomputed from the checkout. Inspection stays
+source, beside the same identity recomputed from the checkout. The fingerprint
+reads CRLF as LF, so a worktree and the main checkout of one commit share an
+identity whatever line endings Git gave each. Inspection stays
 available when those identities differ, but the lab refuses quality-gate
 verdicts from `compare_runs`, `suggest_next` compare mode, `experiment`,
 `campaign_experiment`, and `matrix_experiment`. Repair an identity mismatch with
@@ -1133,8 +1135,14 @@ The default pass covers ordinary walk and drop links. `--jumps` covers the
 generated jump subset. A community BSP found only in `ARGUS_MAPS` is copied
 into the game directory for the pass and removed when the engine stops.
 
+The report lists a `verdicts` entry for every link it walked, in sweep
+order: `a`, `b`, the horizontal length `h` and one of `passed`, `failed` or
+`teleport_failed`. `passed_sample` still keeps only the first eight passes.
+
 Failures persist by ENDPOINT COORDINATES (indices shift per regen)
-in `src/argus_nav_<map>.probe.json`, merged across sweeps. The
+in `src/argus_nav_<map>.probe.json`, merged across sweeps. The graph and the
+verdict file both come from `ARGUS_SRC` (default `<root>/src`), so a sweep run
+from a worktree reads and writes that worktree's files. The
 output also counts `teleport_failures` - on teleporter maps the
 puppet can step into a live mouth mid-walk and read as a distant
 failure; triage convictions against the `trigger_teleport` AABBs
@@ -1314,7 +1322,10 @@ stationary, a new 10-second statue, or a large increase in total frozen time.
 Long-window and total-time limits use the control band's maximum observed
 severity; a freeze under fire always rejects, including on unchanged code.
 The diagnostic identifies the offending candidate tape even when the displayed
-median-stall representative is clean. Statistical null-pair calibration is
+median-stall representative is clean. The card's rows compare those two
+representative tapes, one per arm, so a band card says so on a `Rows:` line
+under its title, with the band sizes: a red row under a green verdict is one
+pair, and the band medians decide. Statistical null-pair calibration is
 separate from this release-readiness check.
 
 The [frozen-source study drivers](../../docs/lab-workflow.md#cross-map-routing-evaluation)
@@ -1990,11 +2001,13 @@ then builds the developer CLI and runs its Python CLI checks with
 `ARGUS_REQUIRE_SOURCE_MCP=1`. The shared Python suites below are also blocking
 steps in that workflow.
 
-Run the shared navigation, registration, mapgate and tape contracts without
-an engine or machine-local maps:
+Run the shared navigation, navmesh, registration, mapgate and tape contracts
+without an engine or machine-local maps:
 
 ```text
 python tools/test_argus_navjson.py
+python tools/test_navmesh_repair.py
+python tools/test_navmesh_air.py
 python tools/test_argus_mapgate.py
 python tools/test_argus_tape.py
 ```

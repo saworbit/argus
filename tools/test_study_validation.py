@@ -90,8 +90,11 @@ for line in sys.stdin:
         start = subprocess.Popen
         def launch(command, **kw):
             return start([sys.executable, '-u', '-c', program], **kw)
-        with tempfile.TemporaryFile(mode='w+') as errors, patch.object(native.subprocess, 'Popen', side_effect=launch):
-            lab = native.Lab(errors)
+        with tempfile.TemporaryDirectory() as td, tempfile.TemporaryFile(mode='w+') as errors, \
+                patch.object(native.subprocess, 'Popen', side_effect=launch):
+            exe = Path(td) / 'lab'
+            exe.write_bytes(b'')  # Lab refuses a missing binary before it spawns.
+            lab = native.Lab(errors, exe=exe)
             with self.assertRaisesRegex(AssertionError, 'lab exited'):
                 try:
                     lab.call('see', what='project')
