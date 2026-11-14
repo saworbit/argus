@@ -43,6 +43,11 @@ The actual harvest moves inputs into `runs/<stem>.log` and
 `runs/demos/<stem>.dem`, avoiding existing names, and updates the human
 scorecard. Use the stem printed by the tool in subsequent calls.
 
+The scorecard's `bot_world_unforced` column counts bot world deaths with no
+health lost in the 3 s before the bot reached lava or slime, which separates
+walk-offs from knock-ins. It needs the map's BSP (`ARGUS_MAPS`,
+`maps_local/` or `engine/argus/maps/`) and is blank without one.
+
 For automated comparison matches, let `experiment` or `matrix_experiment`
 launch the dedicated engine with the lab's rate/configuration controls.
 

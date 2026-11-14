@@ -283,6 +283,16 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- The human scorecard gains `bot_world_unforced`: bot world deaths that no
+  damage led into, so a bot walking or jumping off a ledge into lava no
+  longer counts the same as one knocked in. A death is unforced when the bot
+  lost no health in the 3 s before it reached lava or slime, read from the
+  map's hull-0 contents; without a machine-local BSP the column is blank.
+  Across the 75 committed session tapes, 107 of 164 bot world deaths were
+  unforced, and the 2026-11-14 dm4 session reads 2 of 3, matching its
+  review. Existing scorecard values are unchanged. A hit landing in the same
+  half second as the entry still reads as unforced.
+
 - `argus_ci.py refuted` also reads the machine-local CLAUDE.md when it is
   present, and says the brief was not checked when it is absent, as in CI
   ([#766](https://github.com/saworbit/argus/issues/766)).

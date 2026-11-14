@@ -18,9 +18,21 @@ world death reads 17 frags on shane_dm4_2026-08-27_v374.
 Freeze rule matches argus_review.py and the Rust lab: under 20 u/s within a
 32 u radius for 6 s or more. Written 2026-09-14 for the regression analysis
 in docs/plans/2026-09-14-regression-analysis-and-recovery.md.
+
+bot_world_unforced counts bot world deaths that no damage led into: the bot
+lost no health in the 3 s before it reached lava or slime (or, for a world
+death anywhere else, before its last sample). It separates a bot walking or
+jumping off a ledge from a knock-in, which bot_world cannot. Liquid needs
+hull-0 contents, so the map's BSP is looked up in ARGUS_MAPS, maps_local/
+and engine/argus/maps/; without one the column is blank rather than a guess.
+Two limits of a 2 Hz tape: a hit landing in the same half second as the
+entry reads as unforced, and a drowning reads as forced.
 """
 import re, sys, os, collections, math, glob
+from functools import lru_cache
+from pathlib import Path
 
+from argus_bsp import load_classifier
 from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
 PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin|underfire)|shove|hunch|prefire|watch spawn|sprintjump)\b")
 WORLD_PHRASES = ["tries to put the pin back in", "becomes bored with life", "discharges into", "heats up the water",
@@ -36,7 +48,105 @@ def freezes(samples):
     return [(f.dur, f.hp_drop) for f in freeze_windows(samples)]
 
 
-def analyse(path):
+HAZARD = (-5, -4)  # CONTENTS_LAVA, CONTENTS_SLIME: the liquids that burn
+PRIOR_SEC = 3.0    # how far before the entry damage counts as the cause
+BOB_SEC = 1.0      # a dry gap this short inside the hazard is a bob, not an exit
+_LOOKUP = object()
+
+
+def bsp_for(mapname):
+    """The map's BSP, or None: ARGUS_MAPS first, then the machine-local copies."""
+    if not mapname:
+        return None
+    root = Path(__file__).resolve().parent.parent
+    for folder in (os.environ.get('ARGUS_MAPS'), root / 'maps_local', root / 'engine' / 'argus' / 'maps'):
+        if folder and (Path(folder) / f'{mapname}.bsp').is_file():
+            return Path(folder) / f'{mapname}.bsp'
+    return None
+
+
+@lru_cache(maxsize=None)
+def _classifier(path):
+    try:
+        return load_classifier(path)
+    except OSError:
+        return None
+
+
+def in_hazard(sample, contents):
+    """Lava or slime at the origin or at the feet, origin minus 23 (navgen's hostile_at)."""
+    x, y, z = sample['x'], sample['y'], sample['z']
+    return contents(x, y, z) in HAZARD or contents(x, y, z - 23) in HAZARD
+
+
+def world_death_unforced(life, contents, death=None):
+    """True, False or None for one world death, from the victim's samples this life.
+
+    The entry is the first sample of the final run inside lava or slime,
+    allowing dry gaps of up to BOB_SEC, because a bot struggling in shallow
+    lava surfaces between samples and the burn before that bob is the hazard,
+    not a cause. The death position, when it is in the hazard, ends that run
+    a quarter second after the last sample: a bot can burn at a lava edge for
+    a sample or two after its feet read dry. With no hazard at all (a crush,
+    a drowning) the last sample stands in for the entry. The death is
+    unforced when health never fell in the PRIOR_SEC before the entry.
+    Megahealth rot above 100 is not damage. None means the tape cannot say:
+    no samples this life, or a grammar without hp.
+    """
+    if not life or any(s.get('hp') is None for s in life):
+        return None
+    entry, entry_t = None, None
+    if death is not None and in_hazard(death, contents):
+        entry, entry_t = len(life), life[-1]['t'] + 0.25
+    for i in range(len(life) - 1, -1, -1):
+        if in_hazard(life[i], contents):
+            entry, entry_t = i, life[i]['t']
+        elif entry is None or entry_t - life[i]['t'] > BOB_SEC:
+            break
+    pre = len(life) - 1 if entry is None else entry - 1
+    if pre < 0:
+        return True
+    start = life[pre]['t'] - PRIOR_SEC
+    first = next(i for i in range(pre + 1) if life[i]['t'] >= start)
+    window = life[max(first - 1, 0):pre + 1]
+    for a, b in zip(window, window[1:]):
+        if b['hp'] < a['hp'] and not (a['hp'] > 100 and b['hp'] >= 100):
+            return False
+    return True
+
+
+def unforced_world_deaths(tape, botnames, contents):
+    """Count of bot world deaths no damage led into, or '' when the tape cannot say.
+
+    Blank without a BSP or on a tape whose samples carry no hp. A death with
+    no sample in its own life (a spawn kill) is not counted either way.
+    """
+    lives = collections.defaultdict(int)
+    count = 0
+    for line, name, verb, rest in tape.events:
+        if name not in botnames:
+            continue
+        if verb in ('spawned', 'respawn'):
+            lives[name] = line
+            continue
+        if verb != 'death':
+            continue
+        death = next(iter(tape_deaths([(line, name, verb, rest)])), None)
+        if death is None:
+            continue  # the bare death line tapes before 2026-08-18 wrote beside the detailed one
+        if death[2] == 'world':
+            if contents is None:
+                return ''
+            life = [s for s in tape.samples.get(name, []) if lives[name] < s['line'] < line]
+            if any(s.get('hp') is None for s in life):
+                return ''
+            point = dict(x=death[3], y=death[4], z=death[5])
+            count += world_death_unforced(life, contents, point) is True
+        lives[name] = line
+    return count
+
+
+def analyse(path, contents=_LOOKUP):
     tape = read_tape(path)
     bots = tape.samples
     by_line = {line: (name, verb, rest) for line, name, verb, rest in tape.events}
@@ -46,6 +156,9 @@ def analyse(path):
     deaths = [(name, killer, z) for _, name, killer, _, _, z in tape_deaths(tape.events)]
     spawnnames = set()
     mapname = map_name("\n".join(line for _, line in tape.lines))
+    if contents is _LOOKUP:
+        bsp = bsp_for(mapname)
+        contents = _classifier(str(bsp)) if bsp else None
     raw = []
     for lineno, line in tape.lines:
         if PAT.search(line):
@@ -144,6 +257,7 @@ def analyse(path):
                 hazard=ev['hazard'], haz_pm=round(ev['hazard'] * 60 / dur, 1),
                 bot_deaths=len(bdeaths), bot_world=sum(1 for d in bdeaths if d[1] == 'world'), bot_lava_z=lava_evt,
                 bot_lava_obit=obit[('bot', 'lava')],
+                bot_world_unforced=unforced_world_deaths(tape, set(botnames), contents),
                 bot_kills_human=obit[('human', 'bot')], human_kills_bot=obit[('bot', 'human')],
                 human_deaths=obit[('human', 'bot')] + obit[('human', 'world')], human_world=obit[('human', 'world')],
                 bot_kills_bot=obit[('bot', 'bot')],
