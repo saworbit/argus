@@ -107,6 +107,28 @@ class CIValidationTests(unittest.TestCase):
                                    "src/bot.qc:1", "src/comment.qc:1"], failures)
         self.assertTrue(all("was refuted 1969-07-20; it is rock" in f for f in failures))
 
+    def test_refuted_reads_the_untracked_brief_when_present(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._refuted_repo(td, {"docs/ok.md": "Nothing to see.\n"})
+            (root/"CLAUDE.md").write_text("# Brief\n\nCalibrate: the moon is cheese.\n",
+                                          encoding="utf-8")
+            failures = ci.check_refuted(root)
+        self.assertEqual([f.split(": ")[1] for f in failures], ["CLAUDE.md:3"], failures)
+        self.assertNotIsInstance(failures, ci.PartialOk)
+
+    def test_refuted_says_when_the_brief_was_not_checked(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._refuted_repo(td, {"docs/ok.md": "Nothing to see.\n"})
+            result = ci.check_refuted(root)
+            self.assertIsInstance(result, ci.PartialOk)
+            self.assertEqual(result, [])
+            self.assertIn("CLAUDE.md", result.message)
+            self.assertIn("not checked", result.message)
+            (root/"CLAUDE.md").write_text("The moon is rock.\n", encoding="utf-8")
+            checked = ci.check_refuted(root)
+        self.assertEqual(checked, [])
+        self.assertNotIsInstance(checked, ci.PartialOk)
+
     def test_refuted_registry_entries_must_prove_themselves(self):
         registry = {"default_markers": ["refut"], "claims": [
             {"id": "drifted", "pattern": "moon is cheese", "claim": "c", "correction": "r",

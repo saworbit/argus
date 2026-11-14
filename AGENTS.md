@@ -94,8 +94,8 @@ the whole tape describes the fallback map - judge nothing).
   on every normal lab frame. Deliberate slow studies set
   `sys_ticrate 0.1` as a separate arm. Never compare two tick classes.
 - Refuted rules are registered in `tools/refuted_claims.json`, and
-  `python tools/argus_ci.py refuted` fails when tracked text restates
-  one as current. When a change shows a recorded rule is wrong, add an
+  `python tools/argus_ci.py refuted` fails when tracked text, or the
+  local CLAUDE.md when present, restates one as current. When a change shows a recorded rule is wrong, add an
   entry in the same change, and keep any historical mention by saying
   "refuted" in its paragraph. Restoring text from history is how a
   corrected rule comes back.

@@ -37,10 +37,32 @@ def lab_executable(override=None):
     return Path(selected).expanduser().resolve()
 
 
+class LabMissing(FileNotFoundError):
+    """The resolved lab binary does not exist."""
+
+
+def require_lab(override=None):
+    """Resolve the lab and fail with the path and the fix when it is missing.
+
+    A fresh checkout or worktree has no target-stage build, and a bare
+    FileNotFoundError from subprocess names neither the path nor the fix.
+    """
+    path = lab_executable(override)
+    if not path.is_file():
+        built = Path('tools/argus_mcp/target/debug') / ('argus-mcp.exe' if os.name == 'nt' else 'argus-mcp')
+        raise LabMissing(
+            f'no lab binary at {path}. Build one with '
+            f'`cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp` '
+            f'and set ARGUS_LAB to {built}, or set ARGUS_LAB to a lab you have already built.')
+    return path
+
+
 def lab_cli(executable, *arguments, timeout=45, environment=None, cwd=None, runner=None):
     """Run the selected lab with bounded UTF-8 capture and child cleanup."""
     root = Path(cwd) if cwd is not None else ROOT
-    command = [str(lab_executable(executable)), *map(str, arguments)]
+    # A test transport owns no real child, so only a real spawn needs the binary.
+    path = lab_executable(executable) if runner is not None else require_lab(executable)
+    command = [str(path), *map(str, arguments)]
     options = dict(cwd=root, env={**os.environ, 'ARGUS_ROOT': str(root), **(environment or {})},
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                    text=True, encoding='utf-8', errors='replace')
@@ -92,7 +114,7 @@ def timing(text):
 
 def identity(map_name, executable=None):
     digest = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
-    return dict(source_sha256=source_identity(ROOT / 'src'), cli_sha256=digest(lab_executable(executable)),
+    return dict(source_sha256=source_identity(ROOT / 'src'), cli_sha256=digest(require_lab(executable)),
                 binary_sha256=digest(ROOT / 'engine/argus/progs.dat'),
                 nav_sha256=digest(ROOT / f'src/argus_nav_{map_name}.qc.json'))
 
@@ -128,7 +150,7 @@ def cpu_seconds(pid):
 
 class Lab:
     def __init__(self, stderr, environment=None, *, exe=None, timeout=45):
-        self.executable = lab_executable(exe)
+        self.executable = require_lab(exe)
         self.timeout = timeout
         self.p = subprocess.Popen([str(self.executable)], cwd=ROOT,
             env={**os.environ, 'ARGUS_ROOT': str(ROOT), **(environment or {})}, stdin=subprocess.PIPE,
