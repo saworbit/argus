@@ -2138,8 +2138,9 @@ Graph-history reads apply the same narrow policy to their persistent
 the whole batch, while malformed, truncated, or ordinarily failed batches
 return an explicit error with status and stderr instead of partial history.
 
-Every CI job pins Ubuntu 24.04 instead of following the moving
-`ubuntu-latest` label, and `test_tools_cli.py` holds every workflow to it.
+Every Linux CI job pins Ubuntu 24.04, and the Windows Clippy job pins
+`windows-2025`, instead of following a moving
+`*-latest` label; `test_tools_cli.py` holds every workflow to it.
 Revisit that pin by 2027-04-19, after the Ubuntu 26
 runner has had a separate compatibility pass.
 

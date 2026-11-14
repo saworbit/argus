@@ -1008,7 +1008,14 @@ passing botmatch does not establish better human play.
   tag with the pinned compiler, packages it as earlier releases were shipped,
   attests the zip's build provenance and opens a draft release for the notes
   to be written before publishing. The fteqcc pin now lives once, in
-  `.github/actions/build-progs`, shared by the compile gate and the release ([#838](https://github.com/saworbit/argus/pull/838)).
+  `.github/actions/build-progs`, shared by the compile gate and the release
+  ([#838](https://github.com/saworbit/argus/pull/838)).
+
+- Type-check the lab on Windows in CI. Its console injection, job objects and
+  pipe handling sit behind `cfg(windows)`, which the Linux job never compiled;
+  a `windows` workflow now runs strict Clippy on every target whenever the lab
+  changes. It does not run the suite, whose Windows inject tests need an
+  engine ([#838](https://github.com/saworbit/argus/pull/838)).
 
 - File the loose bullets that sat between Main updates and Unreleased under
   their categories, and merge the repeated category headings, so each one
