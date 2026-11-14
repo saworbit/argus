@@ -1164,6 +1164,16 @@ pub struct LinkVerdict {
     pub note: String,
 }
 
+/// What happened to one probed link: `passed`, `failed`, or
+/// `teleport_failed` when the puppet never reached the start.
+#[derive(Serialize, Clone, Debug, PartialEq)]
+pub struct LinkOutcome {
+    pub a: usize,
+    pub b: usize,
+    pub h: f32,
+    pub verdict: &'static str,
+}
+
 #[derive(Serialize)]
 pub struct ProbeReport {
     pub map: String,
@@ -1177,6 +1187,10 @@ pub struct ProbeReport {
     pub teleport_failures: usize,
     pub failed_links: Vec<LinkVerdict>,
     pub passed_sample: Vec<String>,
+    /// One verdict per link probed, in sweep order (#781). passed_sample
+    /// stops at eight, so without this a long sweep could not say which
+    /// links were judged and which never got walked.
+    pub verdicts: Vec<LinkOutcome>,
     /// which mode the engine ran, because that decides which entities
     /// existed to be walked into (#310)
     pub mode: String,
@@ -1184,6 +1198,12 @@ pub struct ProbeReport {
     /// the puppet cannot press a button, so a shut slab would be
     /// written down as a bad link
     pub door_skipped: usize,
+}
+
+impl ProbeReport {
+    fn record(&mut self, a: usize, b: usize, h: f32, verdict: &'static str) {
+        self.verdicts.push(LinkOutcome { a, b, h, verdict });
+    }
 }
 
 struct StagedProbeMap(Option<std::path::PathBuf>);
@@ -1266,10 +1286,9 @@ pub async fn probe_links_with_ctrl(
     jumps_only: bool,
     ctrl: &mut crate::match_ctrl::MatchCtrl,
 ) -> Result<ProbeReport, String> {
-    let navj = cfg
-        .root
-        .join("src")
-        .join(format!("argus_nav_{map}.qc.json"));
+    // ARGUS_SRC, not root/src: a worktree sweep must read and record the
+    // graph it is testing, not the main checkout's
+    let navj = cfg.src.join(format!("argus_nav_{map}.qc.json"));
     let nav_bytes = std::fs::read(&navj).map_err(|e| format!("{}: {e}", navj.display()))?;
     let graph_md5 = format!("{:x}", md5::compute(&nav_bytes));
     let nav: serde_json::Value =
@@ -1404,6 +1423,7 @@ pub async fn probe_links_with_ctrl(
         teleport_failures: 0,
         failed_links: Vec::new(),
         passed_sample: Vec::new(),
+        verdicts: Vec::new(),
     };
     for (a, b) in todo {
         let from = nodes[a];
@@ -1436,19 +1456,22 @@ pub async fn probe_links_with_ctrl(
             }
         }
         report.probed += 1;
+        let h = ((to[0] - from[0]).powi(2) + (to[1] - from[1]).powi(2)).sqrt();
         if !landed {
             report.teleport_failures += 1;
+            report.record(a, b, h, "teleport_failed");
             continue;
         }
-        let h = ((to[0] - from[0]).powi(2) + (to[1] - from[1]).powi(2)).sqrt();
         let out = client.walk_toward(to, h / 240.0 + 3.0);
         if out.reached {
             report.passed += 1;
+            report.record(a, b, h, "passed");
             if report.passed_sample.len() < 8 {
                 report.passed_sample.push(format!("n{a}->n{b} h {h:.0}"));
             }
         } else {
             report.failed += 1;
+            report.record(a, b, h, "failed");
             report.failed_links.push(LinkVerdict {
                 a,
                 b,
@@ -1482,10 +1505,7 @@ pub async fn probe_links_with_ctrl(
     // readable afterwards (#310). A file with no `modes` block
     // predates this and is stamped deathmatch on first write, which
     // is true: nothing else could run.
-    let vpath = cfg
-        .root
-        .join("src")
-        .join(format!("argus_nav_{map}.probe.json"));
+    let vpath = cfg.src.join(format!("argus_nav_{map}.probe.json"));
     let doc: serde_json::Value = std::fs::read_to_string(&vpath)
         .ok()
         .and_then(|s| serde_json::from_str(&s).ok())
@@ -1707,9 +1727,29 @@ mod tests {
                 })
                 .collect(),
             passed_sample: Vec::new(),
+            verdicts: Vec::new(),
             mode: mode.into(),
             door_skipped: 0,
         }
+    }
+
+    /// #781: every probed link gets a verdict in the report, past the
+    /// eight-entry passed sample, and the JSON carries them in order.
+    #[test]
+    fn every_probed_link_reports_a_verdict() {
+        let mut report = report_with("deathmatch", &[]);
+        for i in 0..10 {
+            report.record(i, i + 1, 100.0, "passed");
+        }
+        report.record(10, 11, 50.0, "failed");
+        report.record(11, 12, 60.0, "teleport_failed");
+        let json = serde_json::to_value(&report).unwrap();
+        let verdicts = json["verdicts"].as_array().unwrap();
+        assert_eq!(verdicts.len(), 12);
+        assert_eq!(verdicts[0]["a"], 0);
+        assert_eq!(verdicts[10]["verdict"], "failed");
+        assert_eq!(verdicts[11]["verdict"], "teleport_failed");
+        assert_eq!(verdicts[11]["b"], 12);
     }
 
     /// A co-op sweep must not dissolve into a deathmatch one (#310).
