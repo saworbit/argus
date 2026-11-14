@@ -615,7 +615,7 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
                 return Ok(());
             }
 
-            let (rows, st) = argus_mcp::corpus::index(&runs, flag("--rebuild"));
+            let (rows, st) = argus_mcp::corpus::index(&runs, flag("--rebuild"), Some(&cfg));
             if flag("--write") || flag("--rebuild") {
                 let p = argus_mcp::corpus::write_index(&runs, &rows)?;
                 eprintln!(
@@ -659,7 +659,7 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
                     .cloned()
             };
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
-            let (rows, _) = argus_mcp::corpus::index(&cfg.runs, false);
+            let (rows, _) = argus_mcp::corpus::index(&cfg.runs, false, Some(&cfg));
             let kind = opt("--kind").unwrap_or_else(|| "bot".into());
             // one class at a time is how to be certain a step is not
             // the server frame rate wearing a regression costume

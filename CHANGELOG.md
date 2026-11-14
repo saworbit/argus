@@ -519,6 +519,15 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Classify lava deaths in `argus-mcp corpus` by hull-0 contents when the map's
+  BSP is on hand, as briefs and `compare_runs` already do. The corpus used the
+  retired z < -300 rule, so dm2 (lava near z -35) and e1m7 (near z -30) read
+  0 lava on every tape. CLASSIFICATION BOUNDARY: corpus, `measure` and
+  `corpus what=changes` lava figures for dm2, e1m7 and dm4 are not comparable
+  with earlier outputs. The index's context schema is bumped, so a cached
+  index written under the old rule is re-parsed
+  ([#816](https://github.com/saworbit/argus/issues/816)).
+
 - Read the working-tree graph revision, its sidecars and their mtimes from
   `ARGUS_SRC`, and its history from the repository that holds it. Run from a
   worktree with `ARGUS_ROOT` at the main checkout, `mill what=revisions` and

@@ -29,17 +29,23 @@
 //! of truth: a tape missing from it is parsed on demand and appended.
 //! Nothing re-parses the whole corpus on an ordinary call.
 
+use crate::config::Config;
 use crate::intel::{brief_path, MatchBrief};
 use crate::stats;
 use serde::Serialize;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 
 /// Where the index lives, under the runs directory beside the tapes.
 pub const INDEX_FILE: &str = "tape_index.tsv";
 /// One row per hotspot cell, for the cell-level questions.
 pub const CELLS_FILE: &str = "tape_cells.tsv";
-const CONTEXT_SCHEMA: &str = "fixtures-v2";
+/// Bumped whenever a row's meaning changes, so an index written under the
+/// old meaning is re-parsed instead of trusted. `lava-hull0`: lava deaths
+/// are classified by hull-0 contents when the map's BSP is on hand, as
+/// `brief_text_hull` and `compare_runs` do, not by the retired z < -300
+/// rule (#816).
+const CONTEXT_SCHEMA: &str = "fixtures-v2-lava-hull0";
 
 /// One tape, flattened. Every field is a number or a short string, so
 /// the whole corpus is a table and a question about it is a filter and
@@ -342,7 +348,35 @@ pub struct IndexStatus {
 /// full re-parse, which is what to run after a metric changes meaning -
 /// and metrics in this project have changed meaning eight times, each
 /// one recorded as a boundary in the changelog.
-pub fn index(runs_dir: &Path, rebuild: bool) -> (Vec<TapeRow>, IndexStatus) {
+/// A tape's brief, with lava classified by hull-0 contents when `cfg` can
+/// find the map's BSP. Each map's hull is loaded once per index build.
+fn brief_for(
+    path: &Path,
+    cfg: Option<&Config>,
+    hulls: &mut HashMap<String, Option<crate::bsp::Hull0>>,
+) -> Result<MatchBrief, String> {
+    let Some(cfg) = cfg else {
+        return brief_path(path, None);
+    };
+    let tape = crate::parse_arglog::parse_tape_path(path)
+        .map_err(|e| format!("{}: {e}", path.display()))?;
+    let hull = tape.map.as_deref().and_then(|m| {
+        let m = m.to_ascii_lowercase();
+        hulls
+            .entry(m.clone())
+            .or_insert_with(|| crate::intel::hull0_for_map(cfg, &m))
+            .clone()
+    });
+    Ok(crate::intel::brief_tape_lava(&tape, None, hull.as_ref()))
+}
+
+/// `cfg` lets lava be classified by hull-0 contents; without it, or
+/// without the map's BSP, lava falls back to the z < -300 rule.
+pub fn index(
+    runs_dir: &Path,
+    rebuild: bool,
+    cfg: Option<&Config>,
+) -> (Vec<TapeRow>, IndexStatus) {
     let cached: BTreeMap<String, TapeRow> = if rebuild {
         BTreeMap::new()
     } else {
@@ -358,13 +392,14 @@ pub fn index(runs_dir: &Path, rebuild: bool) -> (Vec<TapeRow>, IndexStatus) {
         parsed: 0,
         dropped: 0,
     };
+    let mut hulls = HashMap::new();
     for (run, path) in tape_files(runs_dir) {
         if let Some(r) = cached.get(&run) {
             st.from_cache += 1;
             rows.push(r.clone());
             continue;
         }
-        match brief_path(&path, None) {
+        match brief_for(&path, cfg, &mut hulls) {
             Ok(b) => {
                 st.parsed += 1;
                 rows.push(row_from(&run, &path, &b));
@@ -608,6 +643,55 @@ pub fn to_csv(a: &Answer) -> String {
 mod tests {
     use super::*;
 
+    /// dm2's killing lava sits near z -35, so the retired z < -300 rule
+    /// counted none of it (#816). With the map's BSP on hand the corpus
+    /// classifies by hull-0 contents, and an index written under the old
+    /// rule is re-parsed rather than trusted.
+    #[test]
+    fn corpus_lava_uses_hull0_contents_and_old_rows_are_reparsed() {
+        let root = crate::test_support::TestDir::new("corpus-lava").unwrap();
+        let runs = root.path().join("runs");
+        let maps = root.path().join("maps");
+        std::fs::create_dir_all(&runs).unwrap();
+        std::fs::create_dir_all(&maps).unwrap();
+        std::fs::write(maps.join("dm2.bsp"), crate::bsp::write_halfspace_bsp()).unwrap();
+        std::fs::write(
+            runs.join("ab_dm2_lava.log"),
+            "ARGUS init on dm2\n\
+             ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n\
+             ARGEVT Reap death world pos '1937.0 -1650.0 -35.0'\n",
+        )
+        .unwrap();
+        let cfg = Config {
+            root: root.path().into(),
+            fteqcc: Default::default(),
+            engine: Default::default(),
+            basedir: Default::default(),
+            python: Default::default(),
+            game: "argus".into(),
+            src: root.path().join("src"),
+            runs: runs.clone(),
+            progs: root.path().join("progs.dat"),
+            maps: maps.clone(),
+        };
+
+        let (fallback, _) = index(&runs, true, None);
+        assert_eq!(fallback[0].lava_deaths, 0.0);
+        let (rows, st) = index(&runs, true, Some(&cfg));
+        assert_eq!((st.parsed, rows[0].lava_deaths), (1, 1.0));
+
+        // A row cached under the z rule says 0 and must not be trusted.
+        write_index(&runs, &fallback).unwrap();
+        let path = runs.join(INDEX_FILE);
+        let old = std::fs::read_to_string(&path)
+            .unwrap()
+            .replace(CONTEXT_SCHEMA, "fixtures-v2");
+        std::fs::write(&path, old).unwrap();
+        let (rows, st) = index(&runs, false, Some(&cfg));
+        assert_eq!((st.from_cache, st.parsed), (0, 1));
+        assert_eq!(rows[0].lava_deaths, 1.0);
+    }
+
     #[test]
     fn fixtures_and_humans_require_explicit_review_queries() {
         let mut brief = MatchBrief::empty();
@@ -834,7 +918,7 @@ mod tests {
         if !dir.exists() {
             return;
         }
-        let (rows, st) = index(&dir, false);
+        let (rows, st) = index(&dir, false, None);
         if rows.len() < 100 {
             return;
         }

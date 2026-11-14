@@ -669,7 +669,7 @@ pub fn is_controlled_fixture(brief: &MatchBrief) -> bool {
         .any(|flag| flag == CONTROLLED_FIXTURE_FLAG)
 }
 
-fn brief_tape_lava(
+pub(crate) fn brief_tape_lava(
     tape: &MatchTape,
     map_hint: Option<&str>,
     hull: Option<&crate::bsp::Hull0>,

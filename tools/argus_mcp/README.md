@@ -1745,7 +1745,11 @@ the start time from the tape's own header, tick class, kind and
 every headline metric. It is a CACHE, not a source of truth - a tape
 it does not name is parsed on demand and appended - so nothing
 re-parses 752 tapes on an ordinary call. A full rebuild takes about
-forty seconds; a query off the cache takes sixty milliseconds.
+forty seconds; a query off the cache takes sixty milliseconds. Lava deaths
+are classified by hull-0 contents when the map's BSP is on hand, as in
+briefs and `compare_runs`; without it they fall back to the z < -300 rule.
+Rows carry a context schema, and rows written under an older one are
+re-parsed rather than trusted.
 
 The start time comes from `LOG started on:` inside the file rather
 than the file mtime, because a fresh clone stamps every file with
