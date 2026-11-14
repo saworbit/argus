@@ -513,6 +513,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Print capture manifests' scheduled seconds as exact playback steps (2.8,
+  not 2.8000000000000003) by counting whole 0.05 s steps and dividing once
+  ([#811](https://github.com/saworbit/argus/issues/811)).
+
 - Retry the GUI rendering test's headless browser once when it stalls, kill
   the browser's whole process tree on a timeout, and fail a second stall with
   the browser's stderr from both attempts. The first launch on the CI runner
