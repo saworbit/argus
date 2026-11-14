@@ -531,6 +531,13 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Give the lab server's git children a 30-second deadline, as the Python
+  helpers already have: plain calls are killed and reported as timed out, the
+  `cat-file --batch` history reader has a watchdog, and `mill` and argument
+  completion run their history walks on the blocking pool instead of holding
+  an async worker for as long as git takes
+  ([#813](https://github.com/saworbit/argus/issues/813)).
+
 - Confirm each step of `argus-mcp benchmark` in the server log instead of
   sleeping 150 ms: every console line ends with an echoed marker and is resent
   until it lands, opponents are removed one at a time while more than one bot

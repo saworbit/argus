@@ -2056,9 +2056,16 @@ impl Argus {
                 let Some(map) = args.map.as_deref() else {
                     return tool_err("mill revisions needs map=dm4");
                 };
-                match crate::graph_revision::list_revisions(&cfg, map) {
-                    Ok(r) => json_ok(&r),
-                    Err(e) => tool_err(e),
+                // git history walks block; keep them off the async workers
+                let map = map.to_string();
+                match tokio::task::spawn_blocking(move || {
+                    crate::graph_revision::list_revisions(&cfg, &map)
+                })
+                .await
+                {
+                    Ok(Ok(r)) => json_ok(&r),
+                    Ok(Err(e)) => tool_err(e),
+                    Err(e) => tool_err(format!("mill revisions failed: {e}")),
                 }
             }
             "diff" => {
@@ -2068,9 +2075,15 @@ impl Argus {
                 let Some(b) = args.revision_b.as_deref() else {
                     return tool_err("mill diff needs revision_b=map@content-hash");
                 };
-                match crate::graph_revision::diff(&cfg, a, b, args.link.as_deref()) {
-                    Ok(r) => json_ok(&r),
-                    Err(e) => tool_err(e),
+                let (a, b, link) = (a.to_string(), b.to_string(), args.link.clone());
+                match tokio::task::spawn_blocking(move || {
+                    crate::graph_revision::diff(&cfg, &a, &b, link.as_deref())
+                })
+                .await
+                {
+                    Ok(Ok(r)) => json_ok(&r),
+                    Ok(Err(e)) => tool_err(e),
+                    Err(e) => tool_err(format!("mill diff failed: {e}")),
                 }
             }
             other => tool_err(format!("unknown mill view {other}; use revisions or diff")),
@@ -3456,10 +3469,12 @@ impl ServerHandler for Argus {
         let cfg = Config::load_for_reads()
             .ok()
             .filter(|cfg| cfg.root.exists());
-        Ok(CompleteResult::new(completion_values(
-            &request,
-            cfg.as_ref(),
-        )))
+        // Graph-hash completion walks git history; the client fires this
+        // while the user types, so it must not hold an async worker.
+        let values = tokio::task::spawn_blocking(move || completion_values(&request, cfg.as_ref()))
+            .await
+            .map_err(|e| McpError::internal_error(format!("completion failed: {e}"), None))?;
+        Ok(CompleteResult::new(values))
     }
 
     async fn list_resources(

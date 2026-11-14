@@ -514,7 +514,11 @@ remain readable without configuration.
 Python helpers share an async process owner with null stdin, captured stdout
 and stderr, and kill-on-drop cancellation. Deadlines are 180 seconds for nav
 generation, 60 seconds for match plots and 30 seconds for registration's
-playability check. Timeout kills and reaps the child. Nav and plot helpers
+playability check. Timeout kills and reaps the child. Git children have a
+30-second deadline too: plain calls are killed and reported as timed out, and
+the `cat-file --batch` history reader has a watchdog that kills it. The `mill`
+tool and argument completion run their git history walks off the async
+workers. Nav and plot helpers
 write into private temporary directories. Successful output is published only
 if destinations still match their pre-run bytes; a publication error rolls
 back earlier writes and reports any rollback failure. Registration edits are
