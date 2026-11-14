@@ -94,6 +94,16 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Open CONTRIBUTING's lab tick-rate rule with the rate, about 70 frames a
+  second and not 10, so a preview that shows only its opening no longer
+  stops before the correction. A new rule asks that a commit or PR refuting
+  an earlier rule name that rule in its title: the change that refuted the
+  10 Hz rule ([#336](https://github.com/saworbit/argus/pull/336)) never
+  mentions it, so a history search for the rule finds the commit that
+  taught it and not the one that disproved it. The PR template's
+  refuted-rules item says the same. Documentation only
+  ([#796](https://github.com/saworbit/argus/pull/796)).
+
 - Install main as the gameplay binary, MD5
   `ED8926C1F3F0E4A5D6F591F905516638`. It is the first install since
   2026-10-22 ([#566](https://github.com/saworbit/argus/pull/566)), so players
