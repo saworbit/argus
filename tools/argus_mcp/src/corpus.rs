@@ -372,11 +372,7 @@ fn brief_for(
 
 /// `cfg` lets lava be classified by hull-0 contents; without it, or
 /// without the map's BSP, lava falls back to the z < -300 rule.
-pub fn index(
-    runs_dir: &Path,
-    rebuild: bool,
-    cfg: Option<&Config>,
-) -> (Vec<TapeRow>, IndexStatus) {
+pub fn index(runs_dir: &Path, rebuild: bool, cfg: Option<&Config>) -> (Vec<TapeRow>, IndexStatus) {
     let cached: BTreeMap<String, TapeRow> = if rebuild {
         BTreeMap::new()
     } else {

@@ -647,7 +647,9 @@ fn playback_steps(seconds: f64) -> usize {
 /// once keeps the printed values exact (2.8, not 2.8000000000000003).
 fn scheduled_seconds(start: f64, count: u32, interval: f64) -> Vec<f64> {
     let (first, step) = (playback_steps(start), playback_steps(interval));
-    (0..count as usize).map(|i| (first + i * step) as f64 / 20.0).collect()
+    (0..count as usize)
+        .map(|i| (first + i * step) as f64 / 20.0)
+        .collect()
 }
 
 fn script(start: f64, count: u32, interval: f64) -> String {
@@ -1343,11 +1345,18 @@ mod tests {
     fn scheduled_seconds_print_exact_playback_steps() {
         // 2.77 is not a whole number of steps; it rounds to step 55.
         let got = scheduled_seconds(2.77, 4, 0.5);
-        assert_eq!(serde_json::to_string(&got).unwrap(), "[2.75,3.25,3.75,4.25]");
+        assert_eq!(
+            serde_json::to_string(&got).unwrap(),
+            "[2.75,3.25,3.75,4.25]"
+        );
         let got = scheduled_seconds(2.8, 4, 0.5);
         assert_eq!(serde_json::to_string(&got).unwrap(), "[2.8,3.3,3.8,4.3]");
-        let waits = script(2.8, 2, 0.5).matches("wait
-").count();
+        let waits = script(2.8, 2, 0.5)
+            .matches(
+                "wait
+",
+            )
+            .count();
         assert_eq!(waits, playback_steps(2.8) + playback_steps(0.5));
     }
 
