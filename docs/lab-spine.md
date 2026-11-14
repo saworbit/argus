@@ -61,9 +61,12 @@ Artefacts whose inputs have moved, each with a fix:
 
 - **void**: a verdict that depends on it cannot be trusted. A baseline recorded
   at 19 Hz is void, because verdicts against it compare two frame rates.
-- **stale**: out of date. A baseline that ran a different graph, a benchmark
-  suite pinned to a graph that no longer ships, a link the puppet refused that
-  still ships as a plain walk, a session tape nobody scored.
+- **stale**: out of date. A baseline that ran a different graph (its tape's
+  `ARGNAV` banner, nodes and links, against the banner the shipped graph's QC
+  prints), a benchmark suite pinned to a graph that no longer ships, a link
+  the puppet refused that still ships (matched within 24 units, navgen's own
+  rule, for walk and jump verdicts), limits measured before many newer tapes,
+  a session tape nobody scored.
 - **info**: worth knowing. Verdicts whose endpoints a regeneration has
   outlived, source commits since the last install.
 
@@ -74,37 +77,56 @@ Artefacts whose inputs have moved, each with a fix:
 Scores human sessions against the objective's hard gates (engine errors,
 freezes under fire, 10 s statues, unforced world deaths, rescue warps) and
 goal measures (bot kills on the human per minute, the kill ratio). A session
-counts towards a goal verdict only on a goal map, at the calibration skill,
-over the minimum length and with the skill tier named in the tape. Its build
-is the install in force on the tape's date. A goal verdict needs three such
-sessions on the installed build.
+counts towards a goal verdict only on a goal map, with a human in it, at the
+calibration skill, over the minimum length and with the skill tier named in
+the tape. Its build is the install in force at the tape's start time, from
+its header, against commit times in the same local clock. A goal verdict
+needs three such sessions on the installed build. `--json` writes an infinite
+kill ratio (no bot kills on the human) as `"inf"`.
 
 ### `triage`
 
 Clusters a tape's stalls, freezes and world deaths within 96 units and
-matches each cluster to the claims' map cells. With the map's BSP, world
-deaths split into knock-ins and unforced deaths. Each cluster reads:
+matches each cluster to the claims' map cells. A cell has a radius across the
+floor and a vertical bound (`dz`, 56 units by default), so a fight on a
+walkway does not land in the pit below it. With the map's BSP, world deaths
+split into knock-ins and unforced deaths. Each cluster reads:
 
-- **known**: an open claim already covers it.
+- **known**: an open claim covers it, or light trouble at a fixed cell.
 - **new**: nothing does; consider a claim.
-- **regression?**: a fixed claim's cell, on a tape recorded after the fix.
-- **before the fix**: the same, on a tape that predates the fix.
+- **regression?**: heavy trouble at a fixed claim's cell, on a tape recorded
+  after the fix. Heavy means an unforced death, a freeze longer than the claim
+  tolerates, or more events than it tolerates (five or more by default). A
+  claim sets its allowance with `regression: {events, freeze_sec}` from the
+  measured post-fix spread, and records the basis.
+- **before the fix**: trouble at a fixed cell on a tape that predates the fix.
 
 ### `skeptic`
 
 Lists every reason a comparison cannot be read at face value, before anyone
 reads it. The first arm is the control.
 
-- **Void**: the same tape in both arms, tapes from different maps, human or
-  fixture tapes, mixed tick classes, a run with no corpus row.
-- **Confound**: the arms ran different graphs (from each tape's `ARGNAV`
-  banner) or skill tiers, or a metric crosses a recorded metric boundary.
+- **Void**: the same tape in both arms or twice in one, tapes from different
+  maps, human or fixture tapes, mixed or unknown tick classes, a stub tape
+  with no duration, a run with no corpus row.
+- **Confound**: the arms ran different graphs (each tape's `ARGNAV` banner,
+  nodes and links) or skill tiers, or a metric crosses an emission boundary:
+  a date when the QC changed what tapes record. Parser boundaries are not
+  confounds, because the corpus re-parses every tape with today's parser.
 - **Per metric**: the change in arm means against the detection limit,
-  2.8 × sigma × √(2/n) with sigma from the limits doc. A change inside the limit is
-  "no detectable effect", never "improved". When durations differ, per-minute
-  rates are compared and the spread comes from the arms themselves.
+  2.8 × sigma × √(2/n). Sigma is the larger of the limits doc's and the arms'
+  own pooled spread, so a pair noisier than average cannot read "moved" on the
+  average's strength; a doc sigma of zero counts as unknown. A change inside
+  the limit is "no detectable effect", never "improved". When durations
+  differ, per-minute rates are compared and the spread comes from the arms.
+- **Lava**: the corpus index counts lava deaths below z -300, which misses
+  dm2's and e1m7's lava entirely. With the map's BSP the skeptic recounts lava
+  from hull-0 contents at each death and 24 units below, the quality bar's
+  definition, and says so.
 
-Tapes do not name their build, so the skeptic cannot see a build confound.
+Run names may be given as `x`, `x.log` or `runs/x.log`. A tape the corpus
+cache lacks is parsed by `argus-mcp corpus`, asked for each tape kind. Tapes
+do not name their build, so the skeptic cannot see a build confound.
 
 ### `review`
 
@@ -120,17 +142,26 @@ objective and the claims. `argus_ci.py lab` runs the same validation in CI.
 
 ### `pyramid`
 
-Runs the evidence tiers cheapest first and stops at the first that fails:
+Runs the evidence tiers cheapest first. It finishes a tier, and stops before
+the next if that tier refuted the change. A step that the last `night` sweep
+recorded as failing is a known failure: it is reported and does not stop the
+climb, so an accepted condition such as e1m8's three kept liquid links does
+not hide a new failure. It exits 1 when a tier failed, 3 when a step was
+blocked by a stale artefact and nothing failed (the evidence is incomplete),
+and 0 otherwise.
 
 - **Tier 1, static checks**: the CI battery, the claims, the navmesh audit
   (no link from dry ground into a liquid seat, no vertical walk link) and
   directed reach for each map.
 - **Tier 2, deterministic cases**: each benchmark suite whose pinned graph
   still ships. A suite pinned to an old graph is reported as blocked, not run.
-  The benchmark always exits 0, so the pyramid reads its report and holds a
-  ratchet: the first run on a graph sets the bar, and a later run fails if a
-  task that graph used to finish no longer finishes. A task that has never
-  finished does not block anything.
+  The benchmark runs `--no-compile`, so it measures the installed build the
+  lab engine loads, which the step names; to test a source change, compile
+  and install it into a scratch game folder first (`ARGUS_GAME`). The
+  benchmark always exits 0, so the pyramid reads its report and holds a
+  ratchet keyed by the graph and the installed binary: the first run sets the
+  bar, and a later run fails if a task that pair used to finish no longer
+  finishes. A task that has never finished does not block anything.
 - **Tier 4, with `--through 4`**: the ladder plan, meaning how many
   listen-class tapes a side each map needs to see a 30 per cent change, from
   the limits doc. It plans ladders; it does not run them.
@@ -180,8 +211,11 @@ them in both places.
 
 ## Limits
 
-- Build attribution uses the merge date of the commit that last changed
-  `game/argus/progs.dat`, not when a binary was copied to a machine.
+- Build attribution uses the merge time of the commit that last changed
+  `game/argus/progs.dat`, not when a binary was copied to a machine; a binary
+  installed before its merge is credited to the previous build until then.
+- Graph identity is the `ARGNAV` banner, the node and link counts navgen
+  bakes into the QC; two graphs with the same counts would look alike.
 - The skeptic sees graph and skill confounds, not build ones.
 - Triage clusters by distance alone; two problems within 96 units merge.
 - Goal verdicts count only sessions whose tape names its skill tier, which

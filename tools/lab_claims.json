@@ -160,9 +160,10 @@
       "maps": [
         "dm4"
       ],
-      "statement": "Bot kills on the human fell from a mid-August median of 3.6 a minute on dm4 to about 1.1 since September, while the human's own rate rose. The two are confounded and nothing has separated them.",
+      "statement": "Bot kills on the human fell from 4.2 a minute on dm4 (v3.8 to v3.20) to 2.2 (v3.71 to v4.05, nine sessions), and the four dm4 sessions since September have a median of about 1.2. The human's own rate rose over the same span; the two are confounded and nothing has separated them.",
       "refute_by": "Three skill-1 sessions on one build inside the 2.0 to 3.0 target, or a calibration ladder that separates the human's improvement.",
       "evidence": [
+        "docs/plans/2026-09-14-regression-analysis-and-recovery.md",
         "runs/human_scorecard.tsv",
         "runs/shane_dm4_2026-11-14_ed8926.log"
       ],
@@ -209,6 +210,34 @@
       "evidence": [
         "#797",
         "runs/shane_dm4_2026-11-14_ed8926.log"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "e1m7-early-switch-runoffs",
+      "title": "e1m7 run-offs after an early waypoint switch",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "e1m7"
+      ],
+      "cells": [
+        {
+          "map": "e1m7",
+          "at": [
+            250,
+            70,
+            -30
+          ],
+          "radius": 420,
+          "dz": 40
+        }
+      ],
+      "statement": "After the run-off landing check (#773), e1m7 still loses bots to the lava lake when an early waypoint switch draws a line across open air; three run-offs remain on record.",
+      "evidence": [
+        "#775",
+        "docs/e1m7-lava-investigation.md"
       ],
       "cheapest_tier": 2
     },
@@ -264,10 +293,11 @@
             -150,
             -384
           ],
-          "radius": 330
+          "radius": 330,
+          "dz": 40
         }
       ],
-      "statement": "Most dm4 world deaths with no damage before them are bots leaving a ledge into the pit lava at run speed: 2 of 3 on 2026-11-14 (Carmack at 440 u/s) and 5 of 8 on 2026-08-29. The brink deflection is not the cause, and edge friction is untested.",
+      "statement": "dm4 bots die in the pit lava with no damage before it. On 2026-11-14 one of the three world deaths was a pit run-off (Carmack at 440 u/s) and one a knock-in; the third was the north-west pocket stall jump, its own claim. On 2026-08-29 5 of 8 world deaths were unforced, but their entry mechanism was not checked. The brink deflection is not the cause, and edge friction is untested.",
       "next": "Triage the unforced pit deaths across the session tapes by entry heading and speed before choosing a fix.",
       "evidence": [
         "runs/shane_dm4_2026-11-14_ed8926.log",
@@ -278,7 +308,7 @@
     },
     {
       "id": "dm2-door-cell",
-      "title": "dm2 remote-button door cell",
+      "title": "dm2 door *18 cell",
       "status": "open",
       "kind": "defect",
       "tier": 1,
@@ -296,9 +326,36 @@
           "radius": 96
         }
       ],
-      "statement": "A door-cause cell at 2231 -1968 120 on dm2 held 22 stalls in the 2026-09-14 session; the remote-button door class there has produced under-fire freezes since v3.43.",
+      "statement": "Bots stall at func_door *18 (t11) on dm2, at 2231 -1968 120, opened by button *19 at 2624 -1984: 16 stalls in the 2026-09-14 session by the brief's cell, 22 within triage's 96u.",
       "evidence": [
         "runs/shane_dm2_2026-09-14.log"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "dm2-t6-doors",
+      "title": "dm2 t6 remote-button doors",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm2"
+      ],
+      "cells": [
+        {
+          "map": "dm2",
+          "at": [
+            2712,
+            -40,
+            -67
+          ],
+          "radius": 96
+        }
+      ],
+      "statement": "dm2's t6 door pair (func_door *12 and *13 at 2712 -40) opens from button *15 inside the rockets pocket, 490u away. That remote-button class has produced under-fire freezes in human and ladder tapes since v3.43; the 2026-09-14 session holds a freeze and four stalls at the doors.",
+      "evidence": [
+        "runs/shane_dm2_2026-09-14.log",
+        "docs/changelog-history.md"
       ],
       "cheapest_tier": 2
     },
@@ -379,7 +436,11 @@
       "evidence": [
         "runs/ab_dm2_lipdrop1.log",
         "runs/probe_lipdbg.log"
-      ]
+      ],
+      "regression": {
+        "events": 10
+      },
+      "regression_basis": "Measured over the dm2 bot tapes in runs/ on 2026-11-14: 62 tapes before the fix ran a median of 8 events in the cell (95th percentile 17); 318 after it ran a median of 0 (95th percentile 10)."
     },
     {
       "id": "e1m7-lava-runoffs",
@@ -395,6 +456,18 @@
       "evidence": [
         "#773",
         "docs/e1m7-lava-investigation.md"
+      ],
+      "cells": [
+        {
+          "map": "e1m7",
+          "at": [
+            250,
+            70,
+            -30
+          ],
+          "radius": 420,
+          "dz": 40
+        }
       ]
     },
     {
@@ -438,7 +511,12 @@
       "evidence": [
         "#322",
         "runs/shane_dm2_2026-09-14.log"
-      ]
+      ],
+      "regression": {
+        "freeze_sec": 8,
+        "events": 6
+      },
+      "regression_basis": "The fix rescues a pin after 8 s, so freezes up to 8 s remain expected. Over 234 dm2 bot tapes after it, events in the cell reach a 95th percentile of 2 and a maximum of 8."
     },
     {
       "id": "hunch-major-decay",
@@ -473,16 +551,15 @@
     {
       "id": "jump-takeoff-acceleration",
       "title": "Ground acceleration on the jump takeoff frame",
-      "status": "refuted",
+      "status": "parked",
       "kind": "graveyard",
       "tier": 1,
       "maps": [
         "dm4",
         "dm2"
       ],
-      "statement": "Correct physics that gave dm4 its two lowest stall figures, but with point-blank target displacement it could not clear lava across five tapes against a both-reverted control. Jump arcs were verified at about 280 u/s and a faster launch lands elsewhere.",
+      "statement": "Correct physics that gave dm4 its two lowest stall figures, but with point-blank target displacement it could not clear lava across five tapes against a both-reverted control. Jump arcs were verified at about 280 u/s and a faster launch lands elsewhere. Parked, not dead: it is the dismissal most likely to come back once navgen re-verifies arcs.",
       "next": "Re-verify jump arcs in navgen at the true launch speed, then reland.",
-      "do_not_retry": true,
       "evidence": [
         "#54",
         "#91"
@@ -637,16 +714,19 @@
     },
     {
       "id": "dm2-door-retype",
-      "title": "Retyping dm2's door crossings",
-      "status": "refuted",
-      "kind": "graveyard",
+      "title": "dm2's untyped door crossings",
+      "status": "fixed",
+      "fixed_on": "2026-09-16",
+      "kind": "defect",
       "tier": 1,
       "maps": [
         "dm2"
       ],
-      "statement": "A regen differing from shipped only in door typing rejected on stalls (32 to 42) and on under-fire freezes, though two of those freezes sat 380u from any door. The rule was taken over the argument.",
+      "statement": "dm2 shipped three walk links through shut doors with no door type. The first retype regen was refused on its tapes (#324); the retype then shipped in #390 at parity five a side, and its tapes became dm2's baseline.",
       "evidence": [
-        "#324"
+        "#324",
+        "#390",
+        "docs/changelog-history.md"
       ]
     },
     {

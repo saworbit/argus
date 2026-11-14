@@ -172,22 +172,46 @@ def md5(path):
 
 
 def installs(root):
-    """Commits that changed the shipped binary, newest first: the install history."""
+    """Commits that changed the shipped binary, newest first, with commit time in this machine's local time.
+
+    Tape headers are written in local time without a zone, so commit times
+    are converted to the same clock before any comparison.
+    """
     out = []
-    for line in (git(root, 'log', '--format=%H %cs %s', '--', 'game/argus/progs.dat') or '').splitlines():
-        sha, date, subject = (line.split(' ', 2) + ['', ''])[:3]
-        out.append(dict(commit=sha, date=date, subject=subject))
+    for line in (git(root, 'log', '--format=%H %cI %s', '--', 'game/argus/progs.dat') or '').splitlines():
+        sha, stamp, subject = (line.split(' ', 2) + ['', ''])[:3]
+        try:
+            local = dt.datetime.fromisoformat(stamp).astimezone().replace(tzinfo=None)
+        except ValueError:
+            continue
+        out.append(dict(commit=sha, when=local.strftime('%Y-%m-%d %H:%M:%S'), date=local.strftime('%Y-%m-%d'),
+                        subject=subject))
     return out
 
 
-def build_on(date, history):
-    """The install in force on a date, or None when the date predates the history."""
-    if not date:
+def build_on(when, history):
+    """The install in force at a local 'YYYY-MM-DD HH:MM:SS' (or a bare date, read as its end), or None.
+
+    This is the merge commit that changed the shipped binary. A binary copied
+    to a machine before its merge (as #793 was) is attributed to the previous
+    build until the merge lands.
+    """
+    if not when:
         return None
+    when = when if len(when) > 10 else when + ' 23:59:59'
     for row in history:
-        if row['date'] <= date:
+        if row.get('when', row['date'] + ' 00:00:00') <= when:
             return row
     return None
+
+
+QC_ARGNAV = re.compile(r'"ARGNAV (\d+) nodes, (\d+) links')
+
+
+def nav_banner(root, mapname):
+    """The ARGNAV (nodes, links) the shipped graph prints at runtime, read from the dprint in its generated QC."""
+    m = QC_ARGNAV.search(read_text(root / 'src' / f'argus_nav_{mapname}.qc'))
+    return (int(m.group(1)), int(m.group(2))) if m else None
 
 
 def graph(root, mapname):
@@ -195,24 +219,62 @@ def graph(root, mapname):
     if not path.is_file():
         return None
     doc = read_json(path)
-    return dict(md5=md5(path), nodes=len(doc.get('nodes', [])), doc=doc)
+    return dict(md5=md5(path), nodes=len(doc.get('nodes', [])), doc=doc, banner=nav_banner(root, mapname))
 
 
-LOG_STARTED = re.compile(r'^LOG started on: (\d{2})/(\d{2})/(\d{4})', re.M)
+LOG_STARTED = re.compile(r'^LOG started on: (\d{2})/(\d{2})/(\d{4})(?: (\d{2}:\d{2}:\d{2}))?', re.M)
+
+
+def tape_when(path, text=None):
+    """Local 'YYYY-MM-DD HH:MM:SS' from the tape's own header, else the date in its file name, else None."""
+    m = LOG_STARTED.search(text if text is not None else read_text(path)[:400])
+    if m:
+        return f'{m.group(3)}-{m.group(1)}-{m.group(2)}' + (f' {m.group(4)}' if m.group(4) else '')
+    m = DATE.search(Path(path).name)
+    return m.group(1) if m else None
 
 
 def tape_date(path, text=None):
     """YYYY-MM-DD from the tape's own header, else from its file name; the header is what a clone keeps."""
-    m = LOG_STARTED.search(text if text is not None else read_text(path)[:400])
-    if m:
-        return f'{m.group(3)}-{m.group(1)}-{m.group(2)}'
-    m = DATE.search(Path(path).name)
-    return m.group(1) if m else None
+    when = tape_when(path, text)
+    return when[:10] if when else None
 
 
 def argnav(text):
     m = ARGNAV.search(text)
     return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def banner_text(banner):
+    if not banner:
+        return 'no banner'
+    return f'{banner[0]} nodes' + (f', {banner[1]} links' if banner[1] is not None else '')
+
+
+def run_name(name):
+    """A run as given on the command line (x, x.log or runs/x.log) reduced to its stem."""
+    return Path(str(name)).name[:-4] if str(name).endswith('.log') else Path(str(name)).name
+
+
+def known_maps(root):
+    return {p.name[len('argus_nav_'):-len('.qc.json')] for p in (root / 'src').glob('argus_nav_*.qc.json')}
+
+
+def map_from_name(root, name):
+    """The map a run name mentions (ab_dm4_x, nm_ctl_dm4_1, rep_cand_e1m7_3), or None."""
+    maps = known_maps(root)
+    return next((t for t in run_name(name).split('_') if t in maps), None)
+
+
+def jsonable(value):
+    """Infinity and NaN as strings, so --json output parses everywhere, not only in Python."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return 'inf' if value > 0 else ('-inf' if value < 0 else None)
+    if isinstance(value, dict):
+        return {k: jsonable(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [jsonable(v) for v in value]
+    return value
 
 
 def skill_of(text):
@@ -300,33 +362,53 @@ def corpus_rows(root, names, mapname=None):
     source = {n: 'index' for n in rows}
     missing = [n for n in names if n not in rows and (root / 'runs' / f'{n}.log').is_file()]
     lab = lab_binary(root) if missing else None
-    if missing and lab:
-        cmd = [lab, 'corpus'] + (['--map', mapname] if mapname else [])
+    # The corpus answers one kind at a time and defaults to bot tapes, so a
+    # human or fixture tape is asked for by kind before it is called missing.
+    for kind in ('bot', 'human', 'fixture'):
+        if not missing or not lab:
+            break
+        cmd = [lab, 'corpus', '--kind', kind] + (['--map', mapname] if mapname else [])
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace',
                                  env=lab_env(root), timeout=600)
         except (OSError, subprocess.TimeoutExpired):
             res = None
-        if res is not None and res.returncode == 0:
-            lines = res.stdout.strip().splitlines()
-            head = lines[0].split(',') if lines else []
-            for line in lines[1:]:
-                row = dict(zip(head, line.split(',')))
-                if row.get('run') in missing:
-                    rows[row['run']] = row
-                    source[row['run']] = 'parsed by argus-mcp corpus'
+        if res is None or res.returncode != 0:
+            continue
+        lines = res.stdout.strip().splitlines()
+        head = lines[0].split(',') if lines else []
+        for line in lines[1:]:
+            cells = line.split(',')
+            if len(cells) != len(head):
+                continue  # a run name with a comma in it cannot be read back safely
+            row = dict(zip(head, cells))
+            if row.get('run') in missing:
+                rows[row['run']] = row
+                source[row['run']] = 'parsed by argus-mcp corpus'
+        missing = [n for n in missing if n not in rows]
     return rows, source
 
 
 # ---------------------------------------------------------------- validation
 
+def is_number(value):
+    """A real number: JSON true and false are ints to Python, and a quoted "0" is a string."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def validate(root):
-    """Schema and reference errors in the objective and the claims; empty when sound."""
+    """Schema and reference errors in the objective and the claims; empty when sound.
+
+    Every rule here exists because a malformed value would otherwise
+    validate and then crash or mislead a later command.
+    """
     errors = []
     try:
         obj = objective(root)
     except (OSError, ValueError) as exc:
         return [f'lab_objective.json: {exc}']
+    if not isinstance(obj, dict):
+        return ['lab_objective.json: the top level must be an object']
     for key in ('schema', 'status', 'tiers', 'calibration', 'hard_gates', 'goal_targets', 'labels',
                 'metric_boundaries', 'limits_doc'):
         if key not in obj:
@@ -335,39 +417,65 @@ def validate(root):
         errors.append('lab_objective.json: status must be draft or signed')
     if obj.get('status') == 'signed' and not obj.get('signed_off'):
         errors.append('lab_objective.json: a signed objective names who signed it and when in signed_off')
+    cal = obj.get('calibration')
+    if not isinstance(cal, dict):
+        errors.append('lab_objective.json: calibration must be an object')
+    else:
+        if not (is_number(cal.get('skill')) and int(cal['skill']) == cal['skill']):
+            errors.append('calibration: skill must be a whole number')
+        if not (isinstance(cal.get('goal_maps'), list) and cal['goal_maps']
+                and all(isinstance(m, str) and m for m in cal['goal_maps'])):
+            errors.append('calibration: goal_maps must be a non-empty list of map names')
+        if not (is_number(cal.get('sessions_per_verdict')) and cal['sessions_per_verdict'] >= 1
+                and int(cal['sessions_per_verdict']) == cal['sessions_per_verdict']):
+            errors.append('calibration: sessions_per_verdict must be a whole number of at least 1')
+        if not (is_number(cal.get('min_session_sec')) and cal['min_session_sec'] >= 0):
+            errors.append('calibration: min_session_sec must be a number of seconds')
     header = set()
     card = root / 'runs' / 'human_scorecard.tsv'
     if card.is_file():
         first = read_text(card).splitlines()[:1]
         header = set(first[0].split('\t')) if first else set()
     gate_ids = set()
-    for g in obj.get('hard_gates', []):
+    gates = obj.get('hard_gates', [])
+    for g in gates if isinstance(gates, list) else []:
+        if not isinstance(g, dict):
+            errors.append(f'hard gate {g!r}: must be an object')
+            continue
         gid = g.get('id', '?')
         if gid in gate_ids:
             errors.append(f'lab_objective.json: duplicate gate {gid}')
         gate_ids.add(gid)
         if 'scan' in g:
-            if not g['scan'] or not all(isinstance(p, str) and p for p in g['scan']):
+            if not isinstance(g['scan'], list) or not g['scan'] or not all(isinstance(p, str) and p for p in g['scan']):
                 errors.append(f'gate {gid}: scan must be a list of non-empty strings')
         elif 'column' in g:
-            if ('max' in g) == ('below' in g):
+            bounds = [k for k in ('max', 'below') if k in g]
+            if len(bounds) != 1:
                 errors.append(f'gate {gid}: give exactly one of max or below')
+            elif not is_number(g[bounds[0]]):
+                errors.append(f'gate {gid}: {bounds[0]} must be a number, not {g[bounds[0]]!r}')
             if header and g['column'] not in header:
                 errors.append(f'gate {gid}: column {g["column"]} is not in runs/human_scorecard.tsv')
         else:
             errors.append(f'gate {gid}: needs scan or column')
-    for key, target in obj.get('goal_targets', {}).items():
-        if not (isinstance(target.get('low'), (int, float)) and isinstance(target.get('high'), (int, float))
+    targets = obj.get('goal_targets', {})
+    for key in ('bot_kills_human_pm', 'kill_ratio'):
+        if isinstance(targets, dict) and key not in targets:
+            errors.append(f'goal_targets: missing {key}')
+    for key, target in (targets.items() if isinstance(targets, dict) else []):
+        if not (isinstance(target, dict) and is_number(target.get('low')) and is_number(target.get('high'))
                 and target['low'] <= target['high']):
             errors.append(f'goal target {key}: needs numeric low <= high')
     for b in obj.get('metric_boundaries', []):
-        if not DATE.fullmatch(str(b.get('date', ''))) or not b.get('metrics'):
-            errors.append(f'metric boundary {b}: needs a YYYY-MM-DD date and metrics')
-    if not (root / obj.get('limits_doc', '')).is_file():
+        if (not isinstance(b, dict) or not DATE.fullmatch(str(b.get('date', ''))) or not b.get('metrics')
+                or b.get('source') not in ('emission', 'parser')):
+            errors.append(f'metric boundary {b}: needs a YYYY-MM-DD date, metrics, and source emission or parser')
+    if not (root / str(obj.get('limits_doc', ''))).is_file():
         errors.append(f'lab_objective.json: limits_doc {obj.get("limits_doc")} does not exist')
     try:
         claims = own_claims(root)
-    except (OSError, ValueError, KeyError) as exc:
+    except (OSError, ValueError, KeyError, TypeError) as exc:
         return errors + [f'lab_claims.json: {exc}']
     ids = set()
     registry = set()
@@ -375,6 +483,9 @@ def validate(root):
     if reg.is_file():
         registry = {c['id'] for c in read_json(reg)['claims']}
     for c in claims:
+        if not isinstance(c, dict):
+            errors.append(f'claim {c!r}: must be an object')
+            continue
         cid = c.get('id', '?')
         where = f'claim {cid}'
         if not re.fullmatch(r'[a-z0-9][a-z0-9-]*', str(cid)):
@@ -391,48 +502,64 @@ def validate(root):
             errors.append(f'{where}: status must be one of {", ".join(STATUSES)}')
         if c.get('kind') not in KINDS:
             errors.append(f'{where}: kind must be one of {", ".join(KINDS)}')
-        if c.get('tier') not in (None, 1, 2, 3, 4):
+        if c.get('tier') not in (None, 1, 2, 3, 4) or isinstance(c.get('tier'), bool):
             errors.append(f'{where}: tier must be 1 to 4 or null')
-        if 'cheapest_tier' in c and c['cheapest_tier'] not in TIERS:
+        if 'cheapest_tier' in c and (c['cheapest_tier'] not in TIERS or isinstance(c['cheapest_tier'], bool)):
             errors.append(f'{where}: cheapest_tier must be 1 to 5')
         if c.get('status') == 'fixed' and not DATE.fullmatch(str(c.get('fixed_on', ''))):
             errors.append(f'{where}: a fixed claim says when, as fixed_on YYYY-MM-DD')
         if c.get('kind') == 'graveyard' and c.get('status') not in ('refuted', 'parked'):
             errors.append(f'{where}: a graveyard entry is refuted or parked')
+        if c.get('do_not_retry') and c.get('next'):
+            errors.append(f'{where}: do_not_retry contradicts a next step; park it instead')
         if c.get('kind') == 'hypothesis' and c.get('status') == 'open' and not c.get('refute_by'):
             errors.append(f'{where}: an open hypothesis says what would refute it (refute_by)')
+        tolerate = c.get('regression', {})
+        if tolerate and not (isinstance(tolerate, dict) and set(tolerate) <= {'events', 'freeze_sec'}
+                             and all(is_number(v) and v >= 0 for v in tolerate.values())):
+            errors.append(f'{where}: regression takes events and freeze_sec, both non-negative numbers')
         for cell in c.get('cells', []):
-            at = cell.get('at')
-            if (not isinstance(cell.get('map'), str) or not isinstance(at, list) or len(at) != 3
-                    or not all(isinstance(v, (int, float)) for v in at)
-                    or not isinstance(cell.get('radius'), (int, float)) or cell['radius'] <= 0):
-                errors.append(f'{where}: a cell is {{map, at: [x, y, z], radius > 0}}')
+            at = cell.get('at') if isinstance(cell, dict) else None
+            if (not isinstance(cell, dict) or not isinstance(cell.get('map'), str) or not isinstance(at, list)
+                    or len(at) != 3 or not all(is_number(v) for v in at)
+                    or not is_number(cell.get('radius')) or cell['radius'] <= 0
+                    or ('dz' in cell and not (is_number(cell['dz']) and cell['dz'] > 0))):
+                errors.append(f'{where}: a cell is {{map, at: [x, y, z], radius > 0, optional dz > 0}}')
             elif cell['map'] not in c.get('maps', []):
                 errors.append(f'{where}: cell map {cell["map"]} is not in maps')
         for ref in c.get('evidence', []):
             if not evidence_resolves(root, ref):
-                errors.append(f'{where}: evidence {ref} does not resolve (a path, #n or a run in runs/)')
+                errors.append(f'{where}: evidence {ref} does not resolve (a file in the repo, #n or a run in runs/)')
     return errors
 
 
 def evidence_resolves(root, ref):
+    """An issue or PR as #n, a file inside this checkout, or a run name in runs/."""
     ref = str(ref)
     if ISSUE.match(ref):
         return True
-    if (root / ref).exists():
+    root = Path(root).resolve()
+    try:
+        path = (root / ref).resolve()
+        path.relative_to(root)
+    except (ValueError, OSError):
+        return False
+    if path.is_file():
         return True
-    return (root / 'runs' / f'{ref}.log').is_file()
+    return re.fullmatch(r'[\w.-]+', ref) is not None and (root / 'runs' / f'{ref}.log').is_file()
 
 
 # ---------------------------------------------------------------- sessions
 
-def session_date(root, row, index):
-    date = tape_date(root / 'runs' / row.get('file', ''))
-    if date:
-        return date
+def session_when(root, row, index):
+    """Local start time of a session tape, from its header, else the corpus index, else its name."""
+    when = tape_when(root / 'runs' / row.get('file', ''))
+    if when and len(when) > 10:
+        return when
     started = index.get(Path(row.get('file', '')).stem, {}).get('started', '')
-    m = DATE.search(started)
-    return m.group(1) if m else None
+    if re.fullmatch(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', started):
+        return started
+    return when or (started[:10] if DATE.fullmatch(started[:10]) else None)
 
 
 def evaluate_session(root, row, obj, history, index):
@@ -457,8 +584,9 @@ def evaluate_session(root, row, obj, history, index):
     ratio = (hk / bk if bk else (math.inf if hk else None)) if hk is not None and bk is not None else None
     skill = skill_of(text)
     cal = obj['calibration']
-    date = session_date(root, row, index)
-    build = build_on(date, history)
+    when = session_when(root, row, index)
+    date = when[:10] if when else None
+    build = build_on(when, history)
     reasons = []
     if row.get('map') not in cal['goal_maps']:
         reasons.append(f'map {row.get("map")} is not a goal map')
@@ -468,7 +596,9 @@ def evaluate_session(root, row, obj, history, index):
         reasons.append('the tape does not name its skill tier')
     elif skill != [cal['skill']]:
         reasons.append(f'skill {",".join(map(str, skill))}, not {cal["skill"]}')
-    if bk_pm is None:
+    if row.get('human', '-') in ('', '-') and 'human' in row:
+        reasons.append('no human in the tape')
+    elif bk_pm is None:
         reasons.append('no kill counts (no human in the obituaries)')
     return dict(file=row['file'], map=row.get('map'), date=date, dur=dur, skill=skill,
                 build=build['commit'][:7] if build else None, gates=gates,
@@ -561,13 +691,26 @@ def print_sessions(sessions, verdicts, out=None):
 
 # ---------------------------------------------------------------- staleness
 
+def match_tapes_paths(runs):
+    """Every match tape in runs/: a .log whose opening carries ARGLOG samples."""
+    out = []
+    for p in sorted(runs.glob('*.log')):
+        try:
+            with open(p, 'rb') as fh:
+                if b'ARGLOG ' in fh.read(200000):
+                    out.append(p)
+        except OSError:
+            continue
+    return out
+
+
 def stale_findings(root, obj):
     out = []
     index = tape_index(root)
     runs = root / 'runs'
 
     # Tapes the corpus cache has not persisted: every query parses them again.
-    match_tapes = [p.stem for p in runs.glob('*.log') if b'ARGLOG ' in p.read_bytes()[:200000]]
+    match_tapes = [p.stem for p in match_tapes_paths(runs)]
     unindexed = sorted(t for t in match_tapes if t not in index)
     if unindexed:
         out.append(finding('tape index', 'info', 'runs/tape_index.tsv',
@@ -575,30 +718,45 @@ def stale_findings(root, obj):
                            f'e.g. {", ".join(unindexed[:3])}',
                            'argus-mcp corpus --write persists them and makes queries fast'))
 
-    # Baselines: a verdict is only as current as the tape it is measured against.
+    # Baselines: a verdict is only as current as the tapes it is measured
+    # against. One finding per map and reason, naming the tapes.
     path = runs / 'baselines.json'
     baselines = read_json(path) if path.is_file() else {}
     for mapname, names in sorted(baselines.items()):
-        names = [names] if isinstance(names, str) else names
+        names = [names] if isinstance(names, str) else list(names)
         g = graph(root, mapname)
+        shipped = g['banner'] if g and g.get('banner') else ((g['nodes'], None) if g else None)
+        missing, unindexed, slow, banners = [], [], collections.defaultdict(list), collections.defaultdict(list)
         for name in names:
-            row = index.get(name)
             if not (runs / f'{name}.log').is_file():
-                out.append(finding('baseline', 'void', f'{mapname}: {name}', 'the baseline tape is missing',
-                                   f'pick a new baseline with baseline_set for {mapname}'))
+                missing.append(name)
                 continue
+            row = index.get(name)
             if row is None:
-                out.append(finding('baseline', 'stale', f'{mapname}: {name}', 'the baseline is not in the corpus index',
-                                   'argus-mcp corpus --rebuild --write'))
+                unindexed.append(name)
             elif row.get('tick_class') != 'listen':
-                out.append(finding('baseline', 'void', f'{mapname}: {name}',
-                                   f'recorded at {row.get("tick_class")}, not the played rate, so verdicts against it are void',
-                                   f'record three listen-class tapes and point baselines.json {mapname} at them'))
+                slow[row.get('tick_class') or 'an unknown rate'].append(name)
             banner = argnav(read_text(runs / f'{name}.log'))
-            if g and banner and banner[0] != g['nodes']:
-                out.append(finding('baseline', 'stale', f'{mapname}: {name}',
-                                   f'ran a {banner[0]}-node graph; the shipped graph has {g["nodes"]}',
-                                   're-baseline on the current graph'))
+            if shipped and banner and (banner[0] != shipped[0] or (shipped[1] is not None and banner[1] != shipped[1])):
+                banners[banner].append(name)
+        item = f'{mapname} baseline'
+        if missing:
+            out.append(finding('baseline', 'void', item, f'{plural(len(missing), "tape")} missing: {", ".join(missing)}',
+                               f'pick a new baseline with baseline_set for {mapname}'))
+        for tick, which in sorted(slow.items()):
+            out.append(finding('baseline', 'void', item,
+                               f'recorded at {tick}, not the played rate, so verdicts against it are void '
+                               f'({", ".join(which)})',
+                               f'record three listen-class tapes and point baselines.json {mapname} at them'))
+        for banner, which in sorted(banners.items()):
+            out.append(finding('baseline', 'stale', item,
+                               f'ran {banner_text(banner)}; the shipped graph prints {banner_text(shipped)} '
+                               f'({", ".join(which)})',
+                               're-baseline on the current graph'))
+        if unindexed:
+            out.append(finding('baseline', 'info', item,
+                               f'tick class unknown until indexed: {", ".join(unindexed)}',
+                               'argus-mcp corpus --write'))
 
     # Benchmark suites pin the graph they were written for.
     for suite in sorted((root / 'benchmarks').glob('*.json')):
@@ -621,8 +779,9 @@ def stale_findings(root, obj):
         nodes = doc.get('nodes', [])
 
         def node_at(p):
+            # navgen's own rule for consuming a verdict: within 24u on each axis.
             for i, n in enumerate(nodes):
-                if all(abs(a - b) <= 1.0 for a, b in zip(n, p)):
+                if len(p) == 3 and all(abs(a - b) <= 24.0 for a, b in zip(n, p)):
                     return i
             return None
 
@@ -632,6 +791,18 @@ def stale_findings(root, obj):
         # A sweep stamps its server mode, and the modes disagree (#310): a
         # conviction from a co-op sweep says nothing about deathmatch.
         modes = verdicts.get('modes') or {'unstamped': {'failed': verdicts.get('failed', [])}}
+        jumps = {tuple(l[:2]) for l in doc.get('jlinks', [])}
+        typed_shipped = []
+        for t in verdicts.get('typed_failed', []):
+            if t.get('kind') == 'jump':
+                ia, ib = node_at(t.get('from', [])), node_at(t.get('to', []))
+                if ia is not None and ib is not None and (ia, ib) in jumps:
+                    typed_shipped.append(f'n{ia}->n{ib}')
+        if typed_shipped:
+            out.append(finding('verdicts', 'stale', f'{side.name} (jump sweep)',
+                               f'{plural(len(typed_shipped), "jump link")} the puppet refused still shipped, '
+                               f'e.g. {", ".join(typed_shipped[:3])}',
+                               f'regenerate {mapname}; navgen removes refused jump links outright'))
         for mode, body in sorted(modes.items()):
             failed = body.get('failed', [])
             shipped, orphans = [], 0
@@ -668,13 +839,20 @@ def stale_findings(root, obj):
                 out.append(finding('scorecard', 'info', col, f'{len(blank)} rows have no value (no BSP when scored)'))
 
     # The measurement limits are a snapshot; tapes recorded since can move them.
-    m = DATE.search(obj['limits_doc'])
+    # The date is the one the doc says it was generated on, which a rerun of
+    # measure rewrites; the index is a cache, so tapes are dated by header.
+    doc_text = read_text(root / obj['limits_doc'])
+    m = re.search(r'Generated by `?argus-mcp measure`? on (\d{4}-\d{2}-\d{2})', doc_text) or DATE.search(obj['limits_doc'])
     if m:
-        since = [r for r in index.values() if r.get('kind') == 'bot' and r.get('tick_class') == 'listen'
-                 and r.get('started', '')[:10] > m.group(1)]
-        if len(since) >= 10:
+        generated = m.group(1)
+        newer = [p for p in match_tapes_paths(runs) if (tape_date(p) or '') > generated
+                 and not p.name.startswith('shane_')
+                 and index.get(p.stem, {}).get('kind', 'bot') == 'bot']
+        listen = sum(1 for p in newer if index.get(p.stem, {}).get('tick_class') == 'listen')
+        if len(newer) >= 10:
             out.append(finding('limits', 'stale', obj['limits_doc'],
-                               f'{len(since)} listen-class bot tapes recorded since the limits were measured',
+                               f'generated {generated}; {plural(len(newer), "bot tape")} recorded since '
+                               f'({listen} of them listen-class in the index, the rest unindexed)',
                                'argus-mcp measure --write ' + obj['limits_doc']))
 
     # The installed binary against the source it was built from.
@@ -685,7 +863,8 @@ def stale_findings(root, obj):
             out.append(finding('install', 'info', 'game/argus/progs.dat',
                                f'installed on {history[0]["date"]}; {plural(len(since), "commit")} changed src/ since: '
                                + '; '.join(since[:3]),
-                               'compile and install when a human session should test them'))
+                               'compile and install when a human session should test them; '
+                               'a comment-only change compiles to the same bytes'))
 
     if obj.get('status') != 'signed':
         out.append(finding('objective', 'info', 'tools/lab_objective.json',
@@ -709,30 +888,64 @@ def print_findings(findings, out=None):
 # ---------------------------------------------------------------- skeptic
 
 def boundaries_crossed(obj, metric, dates):
+    """Emission boundaries for this metric that fall inside the arms' date range.
+
+    A tape recorded on the boundary day already carries the new metric. Parser
+    boundaries are not confounds for corpus data: the corpus re-parses every
+    tape with the current parser.
+    """
     dates = [d for d in dates if d]
     if not dates:
         return []
     lo, hi = min(dates), max(dates)
-    return [b for b in obj['metric_boundaries'] if metric in b['metrics'] and lo < b['date'] <= hi]
+    return [b for b in obj['metric_boundaries']
+            if metric in b['metrics'] and b.get('source', 'emission') == 'emission' and lo < b['date'] <= hi]
+
+
+def hull0_lava(root, name, mapname):
+    """Bot lava and slime deaths in one tape, judged by hull-0 contents at the death origin and 24u below.
+
+    The quality bar's definition. The corpus index counts deaths below z -300
+    instead, which misses dm2's and e1m7's lava entirely. None without a BSP.
+    """
+    bsp = bsp_path(root, mapname) if mapname else None
+    contents = argus_longi._classifier(str(bsp)) if bsp else None
+    if contents is None:
+        return None
+    tape = argus_tape.read_tape(str(root / 'runs' / f'{name}.log'))
+    bots = set(argus_tape.track_names(tape.samples, tape.events)[0])
+    count = 0
+    for _, victim, killer, x, y, z in argus_tape.deaths(tape.events):
+        if victim in bots and killer == 'world' and (contents(x, y, z) in argus_longi.HAZARD
+                                                      or contents(x, y, z - 24) in argus_longi.HAZARD):
+            count += 1
+    return count
 
 
 def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     """Every reason the comparison of arm_a (control) with arm_b cannot be read at face value."""
     obj = obj or objective(root)
     void, confounds, notes = [], [], []
+    arm_a, arm_b = [run_name(n) for n in arm_a], [run_name(n) for n in arm_b]
+    for label, arm in (('control', arm_a), ('candidate', arm_b)):
+        twice = sorted({n for n in arm if arm.count(n) > 1})
+        if twice:
+            void.append(f'the {label} arm names {", ".join(twice)} more than once, which would inflate n')
     names = list(dict.fromkeys(arm_a + arm_b))
     overlap = sorted(set(arm_a) & set(arm_b))
     if overlap:
         void.append(f'the same tape is in both arms: {", ".join(overlap)}')
     known = tape_index(root)
-    guess = next((known[n]['map'] for n in names if n in known), None)
-    if guess is None:
-        m = re.match(r'^(?:ab|band|mx|smoke|nm|rep)_([a-z0-9]+)_', names[0]) if names else None
-        guess = m.group(1) if m else None
+    guess = next((known[n]['map'] for n in names if n in known), None) or next(
+        (m for m in (map_from_name(root, n) for n in names) if m), None)
     found, source = corpus_rows(root, names, guess)
     missing = [n for n in names if n not in found]
-    if missing:
-        void.append(f'no corpus row for {", ".join(missing)}: not in runs/, or no argus-mcp binary to parse it')
+    for n in missing:
+        if not (root / 'runs' / f'{n}.log').is_file():
+            void.append(f'{n} is not in runs/')
+        else:
+            void.append(f'{n} has no corpus row: the index lacks it and argus-mcp could not parse it'
+                        + ('' if lab_binary(root) else ' (no argus-mcp binary; set ARGUS_LAB)'))
     parsed = [n for n, s in source.items() if s != 'index']
     if parsed:
         notes.append(f'{plural(len(parsed), "tape")} not in the index, parsed by argus-mcp corpus')
@@ -740,7 +953,7 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     rows_b = [found[r] for r in arm_b if r in found]
     rows = rows_a + rows_b
     if not rows_a or not rows_b:
-        void.append('one arm has no indexed tapes')
+        void.append('one arm has no tape with a corpus row')
         return dict(verdict='void', void=void, confounds=confounds, notes=notes, metrics={})
     maps = sorted({r['map'] for r in rows})
     if len(maps) > 1:
@@ -748,42 +961,59 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     kinds = sorted({r.get('kind') for r in rows})
     if kinds != ['bot']:
         void.append(f'tape kinds {", ".join(map(str, kinds))}: human and fixture tapes never enter a bot comparison')
-    ticks = sorted({r.get('tick_class') for r in rows})
-    if len(ticks) > 1:
-        void.append(f'tick classes differ ({", ".join(map(str, ticks))}): a rate change before it is a behaviour change')
+    ticks = sorted({r.get('tick_class') or '' for r in rows})
+    if '' in ticks:
+        void.append('a tape has no tick class, so a frame-rate change cannot be ruled out: '
+                    + ', '.join(r['run'] for r in rows if not r.get('tick_class')))
+    elif len(ticks) > 1:
+        void.append(f'tick classes differ ({", ".join(ticks)}): a rate change before it is a behaviour change')
     elif ticks != ['listen']:
         notes.append(f'recorded at {ticks[0]}, not the played rate')
+    stubs = [r['run'] for r in rows if not (num(r.get('duration_sec')) or 0) > 0]
+    if stubs:
+        void.append(f'no duration, a stub tape: {", ".join(stubs)}')
 
-    def per_arm(names, reader):
-        return {n: reader(read_text(root / 'runs' / f'{n}.log')) for n in names}
+    def per_arm(arm, reader):
+        return {n: reader(read_text(root / 'runs' / f'{n}.log')) for n in arm}
 
     banners_a, banners_b = per_arm(arm_a, argnav), per_arm(arm_b, argnav)
     set_a, set_b = set(banners_a.values()) - {None}, set(banners_b.values()) - {None}
     if len(set_a) > 1 or len(set_b) > 1:
         confounds.append('graphs differ inside an arm: ' + '; '.join(
-            f'{n} {b[0]} nodes' for n, b in {**banners_a, **banners_b}.items() if b))
+            f'{n} {banner_text(b)}' for n, b in {**banners_a, **banners_b}.items() if b))
     elif set_a and set_b and set_a != set_b:
-        a, b = next(iter(set_a)), next(iter(set_b))
-        confounds.append(f'the arms ran different graphs ({a[0]} against {b[0]} nodes); '
-                         'only a graph change may differ this way')
+        confounds.append(f'the arms ran different graphs ({banner_text(next(iter(set_a)))} against '
+                         f'{banner_text(next(iter(set_b)))}); only a graph change may differ this way')
     skills_a = {tuple(s) for s in per_arm(arm_a, skill_of).values() if s}
     skills_b = {tuple(s) for s in per_arm(arm_b, skill_of).values() if s}
     if skills_a and skills_b and skills_a != skills_b:
         confounds.append(f'skill tiers differ: {sorted(skills_a)} against {sorted(skills_b)}')
     durs = [num(r.get('duration_sec')) or 0 for r in rows]
-    rates = bool(durs) and min(durs) > 0 and max(durs) / min(durs) > 1.1
+    rates = not stubs and max(durs) / min(durs) > 1.1
     if rates:
         notes.append(f'durations run {min(durs):.0f} to {max(durs):.0f} s; per-minute rates are compared, '
                      'with spread taken from these arms because the limits doc is per tape')
     if len(arm_a) < 2 or len(arm_b) < 2:
         notes.append('one tape a side: no spread to measure, and the stall band floor is zero')
 
-    lim = limits(root, obj).get(maps[0], {}) if len(maps) == 1 else {}
+    mapname = maps[0] if len(maps) == 1 else None
+    lim = limits(root, obj).get(mapname, {}) if mapname else {}
     dates = [r.get('started', '')[:10] for r in rows]
+    lava = {}
+    if 'lava_deaths' in (metrics or LIMIT_METRICS) and mapname and not void:
+        lava = {r['run']: hull0_lava(root, r['run'], mapname) for r in rows}
+        if all(v is not None for v in lava.values()):
+            notes.append('lava_deaths recounted from hull-0 contents at each death (the corpus counts z below -300)')
+        else:
+            lava = {}
+            notes.append('lava_deaths is the corpus z-below-300 count; without the BSP it misses lava above that')
     results = {}
     for metric in metrics or LIMIT_METRICS:
-        va = [num(r.get(metric)) for r in rows_a]
-        vb = [num(r.get(metric)) for r in rows_b]
+        if metric == 'lava_deaths' and lava:
+            va, vb = [float(lava[r['run']]) for r in rows_a], [float(lava[r['run']]) for r in rows_b]
+        else:
+            va = [num(r.get(metric)) for r in rows_a]
+            vb = [num(r.get(metric)) for r in rows_b]
         if any(v is None for v in va + vb):
             results[metric] = dict(effect='not in the index')
             continue
@@ -792,15 +1022,18 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
             vb = [v * 60 / num(r.get('duration_sec')) for v, r in zip(vb, rows_b)]
         mean_a, mean_b = statistics.fmean(va), statistics.fmean(vb)
         n = min(len(va), len(vb))
-        source = 'limits doc'
-        sigma = lim.get(metric, {}).get('sigma')
-        if sigma is None or rates:
-            if len(va) >= 2 and len(vb) >= 2:
-                sigma = math.sqrt((statistics.variance(va) * (len(va) - 1) + statistics.variance(vb) * (len(vb) - 1))
+        # The detection limit uses the larger of the instrument's committed
+        # spread and the spread these arms show: the doc's sigma is a pooled
+        # average, and a noisier pair than average must not read "moved" on
+        # the average's strength. A zero in the doc means it saw no spread.
+        doc_sigma = None if rates else (lim.get(metric, {}).get('sigma') or None)
+        arm_sigma = None
+        if len(va) >= 2 and len(vb) >= 2:
+            arm_sigma = math.sqrt((statistics.variance(va) * (len(va) - 1) + statistics.variance(vb) * (len(vb) - 1))
                                   / (len(va) + len(vb) - 2))
-                source = 'these arms only'
-            else:
-                sigma, source = None, 'unknown'
+        candidates = [(s, label) for s, label in ((doc_sigma, 'limits doc'), (arm_sigma, 'these arms'))
+                      if s is not None]
+        sigma, source = max(candidates) if candidates else (None, 'unknown')
         limit = mde(sigma, n, obj.get('mde_z', 2.8)) if sigma else None
         delta = mean_b - mean_a
         if limit is None and delta == 0:
@@ -818,7 +1051,7 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
             confounds.append(f'{metric} crosses a metric boundary: ' + '; '.join(results[metric]['boundaries']))
     verdict = 'void' if void else ('caveated' if confounds else 'clean')
     return dict(verdict=verdict, void=void, confounds=confounds, notes=notes, metrics=results,
-                map=maps[0] if len(maps) == 1 else None, arm_a=arm_a, arm_b=arm_b)
+                map=mapname, arm_a=arm_a, arm_b=arm_b)
 
 
 def print_skeptic(rep, out=None):
@@ -840,6 +1073,30 @@ def print_skeptic(rep, out=None):
 
 
 # ---------------------------------------------------------------- triage
+
+CELL_DZ = 56.0
+
+
+def in_cell(point, cell):
+    """Inside a claim cell: within its radius across the floor and its dz (default 56u, about a storey) up or down."""
+    dx, dy, dz = (point[i] - cell['at'][i] for i in range(3))
+    return math.hypot(dx, dy) <= cell['radius'] and abs(dz) <= cell.get('dz', CELL_DZ)
+
+
+def regressed(cluster, tolerate):
+    """Trouble at a fixed cell heavy enough to call a regression, given what the claim says it tolerates.
+
+    Unforced deaths always count. Freezes count when longer than freeze_sec
+    (a fix that bounds a pin at 8 s still leaves 6 to 8 s freezes). Other
+    events count past the claim's events allowance, REGRESSION_COUNT by default.
+    """
+    if any(p['kind'] == 'unforced death' for p in cluster['points']):
+        return True
+    limit = tolerate.get('freeze_sec', 0)
+    if any(p['kind'].startswith('freeze') and p.get('dur', 0) > limit for p in cluster['points']):
+        return True
+    return len(cluster['points']) > tolerate.get('events', REGRESSION_COUNT - 1)
+
 
 def triage(root, tape_path, claims=None, radius=96.0):
     """Cluster a tape's stalls, freezes and world deaths, and name the claim each cluster belongs to."""
@@ -884,7 +1141,7 @@ def triage(root, tape_path, claims=None, radius=96.0):
     for name in bots:
         for f in argus_tape.freeze_windows(samples.get(name, [])):
             kind = 'freeze under fire' if f.hp_drop > 0 else 'freeze'
-            points.append(dict(kind=kind, bot=name, x=f.start['x'], y=f.start['y'], z=f.start['z']))
+            points.append(dict(kind=kind, bot=name, x=f.start['x'], y=f.start['y'], z=f.start['z'], dur=f.dur))
 
     clusters = []
     for p in points:
@@ -903,8 +1160,9 @@ def triage(root, tape_path, claims=None, radius=96.0):
         matches = []
         for cl in claims:
             for cell in cl.get('cells', []):
-                if cell['map'] == mapname and math.dist(c['centre'], cell['at']) <= cell['radius'] + 32:
-                    matches.append(dict(id=cl['id'], status=cl['status'], fixed_on=cl.get('fixed_on')))
+                if cell['map'] == mapname and in_cell(c['centre'], cell):
+                    matches.append(dict(id=cl['id'], status=cl['status'], fixed_on=cl.get('fixed_on'),
+                                        regression=cl.get('regression', {})))
                     break
         severe = kinds['freeze under fire'] + kinds['unforced death'] + kinds['freeze']
         flag = 'new'
@@ -914,8 +1172,8 @@ def triage(root, tape_path, claims=None, radius=96.0):
             if fixed and len(matches) == len(fixed):
                 # Trouble at a fixed cell is a regression only on a tape recorded after the fix.
                 # A stall or two can recur at any cell; a regression needs a freeze,
-                # an unforced death, or REGRESSION_COUNT events.
-                heavy = severe > 0 or len(c['points']) >= REGRESSION_COUNT
+                # an unforced death, or more events than the claim tolerates.
+                heavy = any(regressed(c, m['regression']) for m in fixed)
                 after = [m for m in fixed if recorded and m['fixed_on'] and recorded > m['fixed_on']]
                 if not recorded:
                     flag = 'regression? (undated tape)' if heavy else 'known'
@@ -1116,6 +1374,14 @@ def state(root, out=None):
 
 # ---------------------------------------------------------------- pyramid
 
+def installed_progs(root):
+    """The progs.dat the lab engine loads: ARGUS_BASEDIR/ARGUS_GAME (default argus), as the benchmark runs it."""
+    env = lab_env(root)
+    base = env.get('ARGUS_BASEDIR')
+    path = Path(base) / env.get('ARGUS_GAME', 'argus') / 'progs.dat' if base else None
+    return path if path and path.is_file() else None
+
+
 def pyramid_plan(root, maps, through, obj, effect_pct=30.0):
     """The tier steps for these maps: each a dict with a command or a reason it cannot run."""
     py = sys.executable
@@ -1146,8 +1412,11 @@ def pyramid_plan(root, maps, through, obj, effect_pct=30.0):
             elif not lab:
                 steps.append(dict(tier=2, name=f'benchmark {suite.name}', skip='no argus-mcp binary (set ARGUS_LAB)'))
             else:
+                installed = installed_progs(root)
+                key = f'{g["md5"]}:{md5(installed) if installed else "unknown"}'
                 steps.append(dict(tier=2, name=f'benchmark {suite.name}', cmd=[lab, 'benchmark', str(suite), '--no-compile'],
-                                  judge='benchmark', graph_md5=g['md5']))
+                                  judge='benchmark', key=key,
+                                  measures=f'the installed build {md5(installed)[:8].upper() if installed else "(unknown)"}'))
     if through >= 4:
         lim = limits(root, obj)
         for m in maps:
@@ -1174,15 +1443,15 @@ def benchmark_report(stdout):
         return None
 
 
-def previous_completions(root, name, graph_md5):
-    """Tasks a passing earlier run of this suite completed on this graph: the bar a new run must hold."""
-    for path in sorted((root / 'runs' / 'lab').glob('pyramid-*.json'), reverse=True):
+def previous_completions(root, name, key):
+    """Tasks a passing earlier run of this suite completed with the same graph and binary: the bar to hold."""
+    for path in sorted((root / 'runs' / 'lab').glob('*-*.json'), key=lambda p: p.name.split('-', 1)[-1], reverse=True):
         try:
             steps = read_json(path).get('steps', [])
-        except (OSError, ValueError):
+        except (OSError, ValueError, AttributeError):
             continue
         for s in steps:
-            if s.get('name') == name and s.get('graph_md5') == graph_md5 and s.get('completed') is not None:
+            if s.get('name') == name and s.get('key') == key and s.get('completed') is not None:
                 return set(s['completed']), path.name
     return None, None
 
@@ -1194,7 +1463,7 @@ def judge_benchmark(root, step, stdout):
         return False, 'no benchmark report in the output', None
     done = sorted(r['name'] for r in report.get('results', []) if r.get('completed'))
     total = len(report.get('results', []))
-    before, receipt = previous_completions(root, step['name'], step['graph_md5'])
+    before, receipt = previous_completions(root, step['name'], step['key'])
     summary = f'{len(done)} of {total} tasks completed'
     if before is None:
         return True, summary + '; the first run on this graph sets the bar', done
@@ -1238,7 +1507,7 @@ def run_step(root, s, dry_run=False):
 
 
 def show_step(row, out):
-    label = f'tier {row["tier"]} {row["name"]}'
+    label = f'tier {row["tier"]} {row["name"]}' + (f' (measures {row["measures"]})' if row.get('measures') else '')
     status = {'pass': 'pass', 'fail': 'FAIL'}.get(row['status'], row['status'])
     detail = row.get('detail')
     if row['status'] in ('skipped', 'blocked'):
@@ -1260,26 +1529,45 @@ def write_receipt(root, kind, body):
 
 
 def pyramid(root, maps, through=2, dry_run=False, out=None, receipt=True):
-    """Climb the tiers for one change and stop at the first that refutes it."""
+    """Climb the tiers for one change: finish each tier, and stop before the next if it refuted the change.
+
+    A step that the last nightly sweep already recorded as failing is a known
+    failure: it is reported and does not stop the climb, so an accepted
+    condition (e1m8's kept liquid links) does not hide a new one. Exit 1 when
+    a tier failed, 3 when a step was blocked by a stale artefact and nothing
+    failed (the evidence is incomplete), else 0.
+    """
     out = out or sys.stdout
     steps = pyramid_plan(root, maps, through, objective(root))
+    last_night, night_name = last_receipt(root, 'night')
+    known = {r['name'] for r in (last_night or {}).get('steps', []) if r.get('status') == 'fail'}
     results = []
     stopped = None
-    for s in steps:
-        row = run_step(root, s, dry_run)
-        results.append(row)
-        show_step(row, out)
-        if row['status'] == 'fail':
-            stopped = s['tier']
-            print(f'Stopped at tier {stopped}: a cheaper tier refuted the change, so nothing above it runs.', file=out)
+    for tier in sorted({s['tier'] for s in steps}):
+        failed_here = False
+        for s in (s for s in steps if s['tier'] == tier):
+            row = run_step(root, s, dry_run)
+            if row['status'] == 'fail' and s['name'] in known:
+                row['status'] = 'known failure'
+                row['detail'] = f'{row.get("detail") or ""} (already failing in {night_name})'.strip()
+            results.append(row)
+            show_step(row, out)
+            failed_here = failed_here or row['status'] == 'fail'
+        if failed_here:
+            stopped = tier
+            print(f'Stopped after tier {tier}: it refuted the change, so nothing above it runs.', file=out)
             break
     blocked = [r for r in results if r['status'] == 'blocked']
     if blocked and stopped is None:
-        print(f'{plural(len(blocked), "step")} blocked by stale artefacts; see `argus_lab.py stale`.', file=out)
+        print(f'{plural(len(blocked), "step")} blocked by stale artefacts, so this evidence is incomplete; '
+              'see `argus_lab.py stale`.', file=out)
+    if not last_night and not dry_run:
+        print('No nightly sweep on record, so every failure counts; `argus_lab.py night` records the known ones.',
+              file=out)
     if receipt and not dry_run:
         path = write_receipt(root, 'pyramid', dict(maps=maps, through=through, stopped=stopped, steps=results))
         print(f'Receipt: {path.relative_to(root)}', file=out)
-    return 1 if stopped else 0
+    return 1 if stopped else (3 if blocked else 0)
 
 
 # ---------------------------------------------------------------- the nightly sweep
@@ -1398,7 +1686,8 @@ def night(root, maps=None, engine=False, out=None):
 # ---------------------------------------------------------------- command line
 
 def main(argv=None):
-    ap = argparse.ArgumentParser(prog='argus_lab.py', description='Argus lab spine')
+    ap = argparse.ArgumentParser(prog='argus_lab.py', description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--root', default=str(ROOT))
     sub = ap.add_subparsers(dest='cmd', required=True)
     p = sub.add_parser('state')
@@ -1435,6 +1724,11 @@ def main(argv=None):
     p.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
     root = Path(a.root).resolve()
+    for name in ('lab_objective.json', 'lab_claims.json'):
+        if not (root / 'tools' / name).is_file():
+            print(f'{root} has no tools/{name}; pass --root with a checkout that carries the lab spine',
+                  file=sys.stderr)
+            return 2
 
     if a.cmd == 'claims':
         if a.check:
@@ -1465,14 +1759,14 @@ def main(argv=None):
         sessions, verdicts = sessions_report(root, objective(root), files=a.tapes or None,
                                              last=a.last if a.last or a.tapes else 5)
         if a.json:
-            print(json.dumps(dict(sessions=sessions, verdicts=verdicts), indent=1, default=str))
+            print(json.dumps(jsonable(dict(sessions=sessions, verdicts=verdicts)), indent=1, default=str))
         else:
             print_sessions(sessions, verdicts)
         return 0
     if a.cmd == 'skeptic':
         rep = skeptic(root, a.arm_a, a.arm_b, a.metric)
         if a.json:
-            print(json.dumps(rep, indent=1, default=str))
+            print(json.dumps(jsonable(rep), indent=1, default=str))
         else:
             print_skeptic(rep)
         return 0

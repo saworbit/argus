@@ -185,12 +185,13 @@ class TestStale(unittest.TestCase):
             fx.write('benchmarks/dm4.json', json.dumps({'map': 'dm4', 'graph_md5': '0' * 32, 'tasks': []}))
             fx.write('src/argus_nav_dm4.probe.json', json.dumps({'failed': [
                 [[0.0, 0.0, 24.0], [100.0, 0.0, 24.0]],      # still shipped as a walk
-                [[5.0, 5.0, 5.0], [6.0, 6.0, 6.0]]]}))         # endpoints gone
+                [[5000.0, 5000.0, 5.0], [6000.0, 6000.0, 6.0]]]}))   # endpoints gone
             fx.write('runs/shane_dm4_2026-10-02.log', tape())
             text = '\n'.join(f'{f["severity"]} {f["area"]} {f["item"]} {f["detail"]}' for f in self.findings(fx))
-            self.assertIn('void baseline dm4: ab_dm4_fast recorded at dedicated_fast', text)
-            self.assertIn('stale baseline dm4: ab_dm4_oldgraph ran a 120-node graph; the shipped graph has 137', text)
-            self.assertIn('void baseline dm2: gone the baseline tape is missing', text)
+            self.assertIn('void baseline dm4 baseline recorded at dedicated_fast, not the played rate', text)
+            self.assertIn('(ab_dm4_fast)', text)
+            self.assertIn('stale baseline dm4 baseline ran 120 nodes, 700 links; the shipped graph prints 137 nodes', text)
+            self.assertIn('void baseline dm2 baseline 1 tape missing: gone', text)
             self.assertIn('stale benchmark dm4.json pins graph 00000000', text)
             self.assertIn('1 link the puppet refused still shipped as plain walks, e.g. n0->n1', text)
             self.assertIn('1 of 2 convictions name endpoints no longer in the graph', text)
@@ -257,31 +258,34 @@ class TestSkeptic(unittest.TestCase):
             self.assertIn('the same tape is in both arms: ab_dm4_b', text)
             self.assertIn('tick classes differ', text)
             self.assertIn('human and fixture tapes never enter', text)
-            self.assertIn('no corpus row for ab_dm4_missing', text)
+            self.assertIn('ab_dm4_missing is not in runs/', text)
 
     def test_confounds_graph_skill_and_metric_boundary(self):
         with tempfile.TemporaryDirectory() as td:
             fx = Fixture(td)
-            fx.add_run('ab_dm4_a1', started='2026-08-28 10:00:00', text=tape(nodes=137, base=1))
-            fx.add_run('ab_dm4_a2', started='2026-08-28 11:00:00', text=tape(nodes=137, base=1))
-            fx.add_run('ab_dm4_b1', started='2026-08-30 10:00:00', text=tape(nodes=145, base=2))
-            fx.add_run('ab_dm4_b2', started='2026-08-30 11:00:00', text=tape(nodes=145, base=2))
+            fx.add_run('ab_dm4_a1', started='2026-08-19 10:00:00', text=tape(nodes=137, base=1))
+            fx.add_run('ab_dm4_a2', started='2026-08-19 11:00:00', text=tape(nodes=137, base=1))
+            fx.add_run('ab_dm4_b1', started='2026-08-21 10:00:00', text=tape(nodes=145, base=2))
+            fx.add_run('ab_dm4_b2', started='2026-08-21 11:00:00', text=tape(nodes=145, base=2))
             rep = self.run_skeptic(fx, ['ab_dm4_a1', 'ab_dm4_a2'], ['ab_dm4_b1', 'ab_dm4_b2'],
-                                   metrics=['stalls', 'avg_speed'])
+                                   metrics=['stalls', 'goals', 'avg_speed'])
             text = '\n'.join(rep['confounds'])
             self.assertEqual(rep['verdict'], 'caveated')
-            self.assertIn('different graphs (137 against 145 nodes)', text)
+            self.assertIn('different graphs (137 nodes, 700 links against 145 nodes, 700 links)', text)
             self.assertIn('skill tiers differ', text)
-            self.assertIn('avg_speed crosses a metric boundary: 2026-08-29', text)
+            self.assertIn('goals crosses a metric boundary: 2026-08-20', text)
+            self.assertNotIn('avg_speed crosses', text)
 
     def test_a_tape_on_the_boundary_day_is_after_the_change(self):
         obj = argus_lab.objective(REPO)
-        # avg_speed changed meaning on 2026-08-29: a tape that day is already the new metric.
-        self.assertTrue(argus_lab.boundaries_crossed(obj, 'avg_speed', ['2026-08-28', '2026-08-29']))
-        self.assertFalse(argus_lab.boundaries_crossed(obj, 'avg_speed', ['2026-08-29', '2026-08-30']))
-        self.assertFalse(argus_lab.boundaries_crossed(obj, 'avg_speed', ['2026-08-27', '2026-08-28']))
+        # world_deaths changed meaning on 2026-09-16 (telefrags credited to their cause): a tape that day is new.
+        self.assertTrue(argus_lab.boundaries_crossed(obj, 'world_deaths', ['2026-09-15', '2026-09-16']))
+        self.assertFalse(argus_lab.boundaries_crossed(obj, 'world_deaths', ['2026-09-16', '2026-09-17']))
+        self.assertFalse(argus_lab.boundaries_crossed(obj, 'world_deaths', ['2026-09-14', '2026-09-15']))
         self.assertFalse(argus_lab.boundaries_crossed(obj, 'stalls', ['2026-08-01', '2026-10-01']))
-        self.assertFalse(argus_lab.boundaries_crossed(obj, 'avg_speed', ['', '']))
+        self.assertFalse(argus_lab.boundaries_crossed(obj, 'world_deaths', ['', '']))
+        # A parser boundary is no confound: the corpus re-parses every tape with today's parser.
+        self.assertFalse(argus_lab.boundaries_crossed(obj, 'avg_speed', ['2026-08-28', '2026-08-30']))
 
     def test_unequal_durations_compare_rates_and_zero_spread_is_not_a_move(self):
         with tempfile.TemporaryDirectory() as td:
@@ -293,7 +297,7 @@ class TestSkeptic(unittest.TestCase):
             rep = self.run_skeptic(fx, ['ab_dm4_a1', 'ab_dm4_a2'], ['ab_dm4_b1', 'ab_dm4_b2'])
             self.assertTrue(any('per-minute rates' in n for n in rep['notes']))
             self.assertAlmostEqual(rep['metrics']['stalls']['a'], rep['metrics']['stalls']['b'])
-            self.assertEqual(rep['metrics']['stalls']['sigma_from'], 'these arms only')
+            self.assertEqual(rep['metrics']['stalls']['sigma_from'], 'these arms')
             self.assertEqual(rep['metrics']['lava_deaths']['effect'], 'no change')
 
     def test_one_tape_a_side_is_noted(self):
@@ -440,13 +444,13 @@ class TestPyramid(unittest.TestCase):
             return 'task a ...\n' + json.dumps(dict(suite='s', results=rows), indent=1)
         with tempfile.TemporaryDirectory() as td:
             fx = Fixture(td)
-            step = dict(name='benchmark s.json', graph_md5='g1')
+            step = dict(name='benchmark s.json', key='g1')
             ok, detail, done = argus_lab.judge_benchmark(fx.root, step, report('a', 'b'))
             self.assertTrue(ok)
             self.assertIn('2 of 3 tasks completed; the first run on this graph sets the bar', detail)
             (fx.root / 'runs' / 'lab').mkdir(parents=True)
             fx.write('runs/lab/pyramid-20260101T000000Z.json',
-                     json.dumps(dict(steps=[dict(name='benchmark s.json', graph_md5='g1', completed=done)])))
+                     json.dumps(dict(steps=[dict(name='benchmark s.json', key='g1', completed=done)])))
             ok, detail, _ = argus_lab.judge_benchmark(fx.root, step, report('a'))
             self.assertFalse(ok)
             self.assertIn('no longer completes b', detail)
@@ -454,7 +458,7 @@ class TestPyramid(unittest.TestCase):
             self.assertTrue(ok)
             self.assertIn('newly completes c', detail)
             # A new graph starts its own bar.
-            ok, detail, _ = argus_lab.judge_benchmark(fx.root, dict(step, graph_md5='g2'), report('a'))
+            ok, detail, _ = argus_lab.judge_benchmark(fx.root, dict(step, key='g2'), report('a'))
             self.assertTrue(ok)
             self.assertIn('sets the bar', detail)
             ok, detail, _ = argus_lab.judge_benchmark(fx.root, step, 'crashed before a report\n')
@@ -513,7 +517,7 @@ class TestNight(unittest.TestCase):
             fx.write('runs/baselines.json', json.dumps({'dm4': 'ab_dm4_fast'}))
             code, report = self.sweep(fx, [dict(tier=1, name='a', cmd=ok)])
             self.assertEqual(code, 1)
-            self.assertIn('newly void: baseline: dm4: ab_dm4_fast', report)
+            self.assertIn('newly void: baseline: dm4 baseline', report)
             self.assertEqual(self.sweep(fx, [dict(tier=1, name='a', cmd=ok)])[0], 0)
 
     def test_registered_maps_come_from_progs_src(self):
@@ -521,6 +525,215 @@ class TestNight(unittest.TestCase):
             fx = Fixture(td)
             fx.write('src/progs.src', '../lq1/progs.dat\ndefs.qc\nargus_nav_dm4.qc\n  argus_nav_e1m1.qc\nargus_nav_dispatch.qc\n')
             self.assertEqual(argus_lab.registered_maps(fx.root), ['dm4', 'e1m1'])
+
+
+class TestReviewFindings(unittest.TestCase):
+    """One test per defect the 2026-11-14 red-team rounds found, so none comes back."""
+
+    def test_builds_are_attributed_by_time_of_day(self):
+        history = [dict(commit='v418', when='2026-09-16 06:23:53', date='2026-09-16'),
+                   dict(commit='v417', when='2026-09-14 09:56:07', date='2026-09-14')]
+        self.assertEqual(argus_lab.build_on('2026-09-16 06:06:00', history)['commit'], 'v417')
+        self.assertEqual(argus_lab.build_on('2026-09-16 06:26:00', history)['commit'], 'v418')
+        self.assertEqual(argus_lab.build_on('2026-09-16', history)['commit'], 'v418')
+        with tempfile.TemporaryDirectory() as td:
+            p = Path(td) / 'x.log'
+            p.write_text('LOG started on: 09/16/2026 06:06:12 \n')
+            self.assertEqual(argus_lab.tape_when(p), '2026-09-16 06:06:12')
+
+    def test_a_baseline_on_the_same_nodes_but_other_links_is_stale(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.write('src/argus_nav_dm4.qc', 'void() x = { dprint ("ARGNAV 137 nodes, 716 links\\n"); };\n')
+            fx.add_run('ab_dm4_base', text=tape(nodes=137))  # the fixture tape prints 700 links
+            fx.write('runs/baselines.json', json.dumps({'dm4': 'ab_dm4_base'}))
+            with no_lab_binary():
+                found = [f for f in argus_lab.stale_findings(fx.root, argus_lab.objective(fx.root))
+                         if f['area'] == 'baseline']
+            self.assertEqual(len(found), 1)
+            self.assertIn('ran 137 nodes, 700 links; the shipped graph prints 137 nodes, 716 links', found[0]['detail'])
+
+    def test_the_limits_age_uses_the_generated_date_and_tape_headers(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.write('docs/specs/2026-09-16-lab-measurement-limits.md',
+                     'Generated by `argus-mcp measure` on 2026-11-01.\n' + LIMITS)
+            for i in range(12):
+                fx.write(f'runs/ab_dm4_new{i}.log', tape(started='11/05/2026', body=sample('Reap', 1.0, 0, 0, 24)))
+            for i in range(12):
+                fx.write(f'runs/ab_dm4_old{i}.log', tape(started='10/05/2026', body=sample('Reap', 1.0, 0, 0, 24)))
+            fx.write('runs/shane_dm4_2026-11-06.log', tape(started='11/06/2026', body=sample('Reap', 1.0, 0, 0, 24)))
+            with no_lab_binary():
+                found = [f for f in argus_lab.stale_findings(fx.root, argus_lab.objective(fx.root))
+                         if f['area'] == 'limits']
+            self.assertEqual(len(found), 1)
+            self.assertIn('generated 2026-11-01; 12 bot tapes recorded since', found[0]['detail'])
+
+    def test_a_tape_twice_in_one_arm_is_void(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.add_run('ab_dm4_a1', engages=60)
+            fx.add_run('ab_dm4_b1', engages=90)
+            with no_lab_binary():
+                rep = argus_lab.skeptic(fx.root, ['ab_dm4_a1'] * 3, ['ab_dm4_b1'] * 3)
+            self.assertEqual(rep['verdict'], 'void')
+            self.assertTrue(any('more than once' in v for v in rep['void']))
+
+    def test_a_zero_sigma_in_the_doc_falls_back_to_the_arms(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.write('docs/specs/2026-09-16-lab-measurement-limits.md',
+                     LIMITS.replace('| lava_deaths | 14 | 43 | 4.1 | 1.7 |', '| lava_deaths | 14 | 43 | 0.0 | 0.0 |'))
+            for i, v in enumerate((0, 1, 0)):
+                fx.add_run(f'ab_dm4_a{i}', lava=v)
+            for i, v in enumerate((3, 4, 3)):
+                fx.add_run(f'ab_dm4_b{i}', lava=v)
+            with no_lab_binary(), mock.patch.object(argus_lab, 'bsp_path', return_value=None):
+                rep = argus_lab.skeptic(fx.root, [f'ab_dm4_a{i}' for i in range(3)], [f'ab_dm4_b{i}' for i in range(3)],
+                                        metrics=['lava_deaths'])
+            m = rep['metrics']['lava_deaths']
+            self.assertEqual(m['sigma_from'], 'these arms')
+            self.assertEqual(m['effect'], 'moved')
+
+    def test_arms_noisier_than_the_doc_set_the_limit(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            for i, c in enumerate((300, 400, 330)):
+                fx.add_run(f'ab_dm4_a{i}', cover=c)
+            for i, c in enumerate((420, 330, 450)):
+                fx.add_run(f'ab_dm4_b{i}', cover=c)
+            with no_lab_binary():
+                rep = argus_lab.skeptic(fx.root, [f'ab_dm4_a{i}' for i in range(3)], [f'ab_dm4_b{i}' for i in range(3)],
+                                        metrics=['cover'])
+            m = rep['metrics']['cover']
+            self.assertEqual(m['sigma_from'], 'these arms')
+            self.assertEqual(m['effect'], 'no detectable effect')
+
+    def test_names_and_maps_are_read_from_any_spelling(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            self.assertEqual(argus_lab.run_name('runs/ab_dm4_x.log'), 'ab_dm4_x')
+            self.assertEqual(argus_lab.run_name('ab_dm4_x'), 'ab_dm4_x')
+            self.assertEqual(argus_lab.map_from_name(fx.root, 'nm_ctl_dm4_1'), 'dm4')
+            self.assertEqual(argus_lab.map_from_name(fx.root, 'rep_cand_dm4_3.log'), 'dm4')
+            self.assertIsNone(argus_lab.map_from_name(fx.root, 'nm_ctl_zz9_1'))
+            fx.add_run('ab_dm4_a1')
+            fx.add_run('ab_dm4_b1')
+            with no_lab_binary():
+                rep = argus_lab.skeptic(fx.root, ['runs/ab_dm4_a1.log'], ['ab_dm4_b1.log'])
+            self.assertNotEqual(rep['verdict'], 'void', rep['void'])
+
+    def test_stub_tapes_and_unknown_tick_classes_are_void(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.add_run('ab_dm4_a1', dur=0.0)
+            fx.add_run('ab_dm4_b1', tick='')
+            with no_lab_binary():
+                rep = argus_lab.skeptic(fx.root, ['ab_dm4_a1'], ['ab_dm4_b1'])
+            text = '\n'.join(rep['void'])
+            self.assertIn('no duration, a stub tape: ab_dm4_a1', text)
+            self.assertIn('no tick class', text)
+
+    def test_lava_is_recounted_from_hull0_contents(self):
+        body = 'ARGEVT Reap spawned\n' + sample('Reap', 1.0, 0, 0, -20) + "ARGEVT Reap death world pos '0 0 -30'\n"
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            for name in ('ab_dm4_a1', 'ab_dm4_a2'):
+                fx.add_run(name, lava=0)
+            for name in ('ab_dm4_b1', 'ab_dm4_b2'):
+                fx.add_run(name, lava=0, text=tape(body=body))
+            lava = lambda x, y, z: -5 if z < -40 else -1  # noqa: E731  shallow lava the z rule misses
+            with no_lab_binary(), mock.patch.object(argus_lab, 'bsp_path', return_value=Path('x.bsp')), \
+                    mock.patch.object(argus_lab.argus_longi, '_classifier', return_value=lava):
+                rep = argus_lab.skeptic(fx.root, ['ab_dm4_a1', 'ab_dm4_a2'], ['ab_dm4_b1', 'ab_dm4_b2'],
+                                        metrics=['lava_deaths'])
+            self.assertEqual((rep['metrics']['lava_deaths']['a'], rep['metrics']['lava_deaths']['b']), (0.0, 1.0))
+            self.assertTrue(any('hull-0' in n for n in rep['notes']))
+
+    def test_known_failures_do_not_stop_the_pyramid_and_a_tier_finishes(self):
+        ok = [sys.executable, '-c', 'pass']
+        bad = [sys.executable, '-c', 'raise SystemExit(1)']
+        steps = [dict(tier=1, name='known', cmd=bad), dict(tier=1, name='new', cmd=bad),
+                 dict(tier=1, name='later in the tier', cmd=ok), dict(tier=2, name='next tier', cmd=ok)]
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            (fx.root / 'runs' / 'lab').mkdir(parents=True)
+            fx.write('runs/lab/night-20261101T000000000000Z.json',
+                     json.dumps(dict(date='2026-11-01', steps=[dict(name='known', status='fail')])))
+            out = io.StringIO()
+            with mock.patch.object(argus_lab, 'pyramid_plan', return_value=steps), no_lab_binary():
+                code = argus_lab.pyramid(fx.root, ['dm4'], 2, out=out)
+            text = out.getvalue()
+            self.assertEqual(code, 1)
+            self.assertIn('tier 1 known: known failure', text)
+            self.assertIn('tier 1 later in the tier: pass', text)
+            self.assertNotIn('next tier', text)
+            out = io.StringIO()
+            with mock.patch.object(argus_lab, 'pyramid_plan', return_value=[dict(tier=1, name='known', cmd=bad),
+                                                                             dict(tier=2, name='b', skip='x', blocks=True)]), \
+                    no_lab_binary():
+                self.assertEqual(argus_lab.pyramid(fx.root, ['dm4'], 2, out=out), 3)
+
+    def test_validation_rejects_values_that_would_crash_later(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            obj = json.loads((fx.root / 'tools/lab_objective.json').read_text())
+            obj['hard_gates'][1]['max'] = '0'
+            obj['goal_targets']['kill_ratio'] = 'high'
+            del obj['calibration']['goal_maps']
+            fx.write('tools/lab_objective.json', json.dumps(obj))
+            fx.claims([claim(id='dot', evidence=['.']), claim(id='outside', evidence=['../outside.txt']),
+                       claim(id='absolute', evidence=[str(Path(sys.executable).resolve())]),
+                       claim(id='bool-radius', cells=[{'map': 'dm4', 'at': [0, 0, 0], 'radius': True}]),
+                       claim(id='mixed', kind='graveyard', status='refuted', do_not_retry=True, next='retry it')])
+            errors = '\n'.join(argus_lab.validate(fx.root))
+            for needle in ("max must be a number, not '0'", 'goal target kill_ratio: needs numeric',
+                           'goal_maps must be a non-empty list', 'claim dot: evidence . does not resolve',
+                           'claim outside: evidence ../outside.txt', 'claim absolute: evidence',
+                           'claim bool-radius: a cell is',
+                           'claim mixed: do_not_retry contradicts'):
+                self.assertIn(needle, errors)
+
+    def test_a_bot_only_tape_never_counts_and_json_has_no_infinity(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.write('runs/b.log', tape(base=1))
+            row = dict(file='b.log', map='dm4', dur='300', human='-', bot_world='0', bot_world_unforced='0',
+                       fz_fire='0', fz_max='0', unstick='0', bot_kills_human='0', human_kills_bot='3')
+            s = argus_lab.evaluate_session(fx.root, row, argus_lab.objective(fx.root), [], {})
+            self.assertFalse(s['eligible'])
+            self.assertIn('no human in the tape', s['reasons'])
+            self.assertEqual(s['ratio'], math.inf)
+            self.assertEqual(json.loads(json.dumps(argus_lab.jsonable(s)))['ratio'], 'inf')
+
+    def test_a_refused_jump_link_still_shipped_is_stale(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            doc = json.loads((fx.root / 'src/argus_nav_dm4.qc.json').read_text())
+            doc['jlinks'] = [[1, 2]]
+            fx.write('src/argus_nav_dm4.qc.json', json.dumps(doc))
+            fx.write('src/argus_nav_dm4.probe.json', json.dumps({'failed': [], 'typed_failed': [
+                {'kind': 'jump', 'from': [101.0, 3.0, 24.0], 'to': [205.0, -4.0, 30.0]}]}))
+            with no_lab_binary():
+                found = [f for f in argus_lab.stale_findings(fx.root, argus_lab.objective(fx.root))
+                         if f['area'] == 'verdicts']
+            self.assertEqual(len(found), 1)
+            self.assertIn('1 jump link the puppet refused still shipped, e.g. n1->n2', found[0]['detail'])
+
+    def test_cells_bound_height_and_claims_set_their_tolerance(self):
+        cell = {'map': 'dm4', 'at': [0, 0, -384], 'radius': 330, 'dz': 40}
+        self.assertTrue(argus_lab.in_cell((300, 0, -380), cell))
+        self.assertFalse(argus_lab.in_cell((194, -276, -73), cell))
+        self.assertFalse(argus_lab.in_cell((100, 0, -300), cell))  # inside the radius, a storey up
+        self.assertTrue(argus_lab.in_cell((100, 0, -350), cell))
+        self.assertFalse(argus_lab.in_cell((340, 0, -384), cell))
+        mk = lambda *pts: dict(points=[dict(kind=k, dur=d) for k, d in pts])  # noqa: E731
+        self.assertFalse(argus_lab.regressed(mk(('freeze', 7.0)), {'freeze_sec': 8}))
+        self.assertTrue(argus_lab.regressed(mk(('freeze', 9.0)), {'freeze_sec': 8}))
+        self.assertTrue(argus_lab.regressed(mk(('unforced death', 0)), {'events': 99}))
+        self.assertFalse(argus_lab.regressed(mk(*[('stall', 0)] * 10), {'events': 10}))
+        self.assertTrue(argus_lab.regressed(mk(*[('stall', 0)] * 11), {'events': 10}))
+        self.assertTrue(argus_lab.regressed(mk(*[('stall', 0)] * argus_lab.REGRESSION_COUNT), {}))
 
 
 class TestCommandLine(unittest.TestCase):
