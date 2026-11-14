@@ -932,6 +932,12 @@ passing botmatch does not establish better human play.
   Python (#523), reject noninteger graph endpoints (#524), and refuse custom
   QC filenames with `--register` before any files change (#537).
 
+#### Maintenance
+
+- Move the lab's lockfile off the yanked `yoke-derive` 0.8.3 to 0.8.4, a
+  transitive dependency through `rmcp` and `url`, so `cargo install --locked`
+  stops warning about it ([#807](https://github.com/saworbit/argus/issues/807)).
+
 #### Security
 
 - Check the local wizard Host header on GET requests as well as POST, so
