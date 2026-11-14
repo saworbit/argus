@@ -49,7 +49,12 @@ jobs:
           # requests cannot write to code scanning, and a gate that only
           # reports is not a gate
           advanced-security: false
+          annotations: true
           persona: regular
+          # the action defaults to the latest zizmor, and a new release can
+          # add audits that turn this gate red with no change in the repo;
+          # move the pin deliberately
+          version: 1.32.0
 
   schemas:
     name: config schemas
@@ -101,4 +106,7 @@ jobs:
           persist-credentials: false
 
       - name: ShellCheck tracked shell scripts
-        run: git ls-files -z '*.sh' | xargs -0 --no-run-if-empty shellcheck --severity=warning
+        run: |
+          # name what was checked, so a pass is never a silent no-op
+          git ls-files '*.sh'
+          git ls-files -z '*.sh' | xargs -0 --no-run-if-empty shellcheck --severity=warning
