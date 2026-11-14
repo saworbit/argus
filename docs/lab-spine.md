@@ -61,9 +61,8 @@ Artefacts whose inputs have moved, each with a fix:
 
 - **void**: a verdict that depends on it cannot be trusted. A baseline recorded
   at 19 Hz is void, because verdicts against it compare two frame rates.
-- **stale**: out of date. A baseline that ran a different graph (its tape's
-  `ARGNAV` banner, nodes and links, against the banner the shipped graph's QC
-  prints), a benchmark suite pinned to a graph that no longer ships, a link
+- **stale**: out of date. A baseline that ran a different graph (see graph
+  identity below), a benchmark suite pinned to a graph that no longer ships, a link
   the puppet refused that still ships (matched within 24 units, navgen's own
   rule, for walk and jump verdicts), limits measured before many newer tapes,
   a session tape nobody scored.
@@ -95,10 +94,14 @@ split into knock-ins and unforced deaths. Each cluster reads:
 - **known**: an open claim covers it, or light trouble at a fixed cell.
 - **new**: nothing does; consider a claim.
 - **regression?**: heavy trouble at a fixed claim's cell, on a tape recorded
-  after the fix. Heavy means an unforced death, a freeze longer than the claim
-  tolerates, or more events than it tolerates (five or more by default). A
-  claim sets its allowance with `regression: {events, freeze_sec}` from the
-  measured post-fix spread, and records the basis.
+  after the fix, even when an open claim shares the cell. Heavy means more
+  unforced deaths, longer freezes or more events than the fixed claim
+  tolerates (no deaths, no freezes and four events by default). A fixed claim
+  sets its allowance with `regression: {events, freeze_sec, deaths}` from the
+  measured post-fix spread, records the basis in `regression_basis`, and
+  should be tightened once more post-fix tapes exist.
+- **on the fix day**: trouble at a fixed cell on the day of the fix, which
+  the day alone cannot place before or after it.
 - **before the fix**: trouble at a fixed cell on a tape that predates the fix.
 
 ### `skeptic`
@@ -109,14 +112,15 @@ reads it. The first arm is the control.
 - **Void**: the same tape in both arms or twice in one, tapes from different
   maps, human or fixture tapes, mixed or unknown tick classes, a stub tape
   with no duration, a run with no corpus row.
-- **Confound**: the arms ran different graphs (each tape's `ARGNAV` banner,
-  nodes and links) or skill tiers, or a metric crosses an emission boundary:
+- **Confound**: the arms ran different graphs (see graph identity below) or
+  skill tiers, or a metric crosses an emission boundary:
   a date when the QC changed what tapes record. Parser boundaries are not
   confounds, because the corpus re-parses every tape with today's parser.
 - **Per metric**: the change in arm means against the detection limit,
   2.8 × sigma × √(2/n). Sigma is the larger of the limits doc's and the arms'
   own pooled spread, so a pair noisier than average cannot read "moved" on the
-  average's strength; a doc sigma of zero counts as unknown. A change inside
+  average's strength; a doc sigma of zero counts as unknown, and the doc's
+  spread is used only for tapes of its own length (about 185 s). A change inside
   the limit is "no detectable effect", never "improved". When durations
   differ, per-minute rates are compared and the spread comes from the arms.
 - **Lava**: the corpus index counts lava deaths below z -300, which misses
@@ -124,9 +128,23 @@ reads it. The first arm is the control.
   from hull-0 contents at each death and 24 units below, the quality bar's
   definition, and says so.
 
-Run names may be given as `x`, `x.log` or `runs/x.log`. A tape the corpus
-cache lacks is parsed by `argus-mcp corpus`, asked for each tape kind. Tapes
-do not name their build, so the skeptic cannot see a build confound.
+Run names may be given as `x`, `x.log` or `runs/x.log`, and `--metric` must
+name a corpus metric. A tape the corpus cache lacks is parsed by
+`argus-mcp corpus`, asked per map and per tape kind. Tapes do not name their
+build, so the skeptic cannot see a build confound.
+
+### Graph identity
+
+A tape prints only its graph's `ARGNAV` banner, the node and link counts
+navgen bakes into the QC, and the banner is not an identity: #716 changed it
+from the pre-clamp to the post-clamp count with no topology change. So a
+tape's graph is the committed revision of `src/argus_nav_<map>.qc` in force
+when it was recorded, if that revision prints the tape's banner, plus any
+later revisions printing the same banner (a surgical edit such as #388's
+dead-link removal keeps the banner, and a candidate tape recorded before its
+merge matches both). Revisions are compared by topology: seat positions and
+typed links, with profile arguments stripped. A banner no revision prints
+means a graph that was never committed, such as a candidate arm.
 
 ### `review`
 
@@ -144,9 +162,12 @@ objective and the claims. `argus_ci.py lab` runs the same validation in CI.
 
 Runs the evidence tiers cheapest first. It finishes a tier, and stops before
 the next if that tier refuted the change. A step that the last `night` sweep
-recorded as failing is a known failure: it is reported and does not stop the
-climb, so an accepted condition such as e1m8's three kept liquid links does
-not hide a new failure. It exits 1 when a tier failed, 3 when a step was
+recorded as failing, and found failing the same way, is a known failure: it
+is reported and does not stop the climb, so an accepted condition such as
+e1m8's three kept liquid links does not hide a new failure. A known failure
+that gets worse (an audit count that grows, or different output) is a failure.
+A failure first seen by a sweep is not trusted as known until a later sweep
+finds it still failing, so one sweep cannot launder a breaking change. It exits 1 when a tier failed, 3 when a step was
 blocked by a stale artefact and nothing failed (the evidence is incomplete),
 and 0 otherwise.
 
@@ -178,8 +199,11 @@ a week on the first sweep), and lists what is stale. It writes
 `runs/lab/night-<stamp>.md` with a JSON receipt beside it.
 
 It exits 1 only on what got worse since the previous sweep: a step that
-passed then and fails now, a regression at a fixed claim's cell on a new tape,
-or an artefact newly void. A failure that was already failing is listed as
+passed then and fails now or fails worse, a regression at a fixed claim's cell
+on a new tape, or an artefact newly void. Void artefacts are compared by a key
+naming the artefact and the reason, so rewording a message raises nothing and
+a new reason on an already void map does. A tape the previous sweep triaged
+is not triaged again. A failure that was already failing is listed as
 still failing and does not alert, so a known defect such as e1m8's reach gate
 does not drown a new one.
 
@@ -214,8 +238,9 @@ them in both places.
 - Build attribution uses the merge time of the commit that last changed
   `game/argus/progs.dat`, not when a binary was copied to a machine; a binary
   installed before its merge is credited to the previous build until then.
-- Graph identity is the `ARGNAV` banner, the node and link counts navgen
-  bakes into the QC; two graphs with the same counts would look alike.
+- Graph identity reads a tape's banner against git history; two revisions in
+  force at the same time with the same banner and different topology would
+  look alike, and the spine reports both.
 - The skeptic sees graph and skill confounds, not build ones.
 - Triage clusters by distance alone; two problems within 96 units merge.
 - Goal verdicts count only sessions whose tape names its skill tier, which

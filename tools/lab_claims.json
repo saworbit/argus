@@ -153,7 +153,7 @@
     },
     {
       "id": "threat-decline",
-      "title": "Bots kill the human a third as often as in August",
+      "title": "Bots kill the human about half as often as in late August",
       "status": "open",
       "kind": "hypothesis",
       "tier": 3,
@@ -366,8 +366,9 @@
       "kind": "defect",
       "tier": null,
       "maps": [],
-      "statement": "test_gui_rendering's headless Chrome run hits its 25 s timeout on the GitHub runner, failing the lab suite on main at 3d3b450 though that merge changed no GUI code.",
+      "statement": "test_gui_rendering's headless Chrome run hits its 25 s timeout on the GitHub runner intermittently: it failed main at 3d3b450, which changed no GUI code, and failed #815 once before passing on a re-run.",
       "evidence": [
+        "#817",
         "tools/test_gui_rendering.py"
       ],
       "cheapest_tier": 1
@@ -382,6 +383,23 @@
       "statement": "Five Windows console-inject tests fail in a full parallel cargo test run and pass single-threaded or alone. Cause unknown.",
       "evidence": [
         "#805"
+      ],
+      "cheapest_tier": 1
+    },
+    {
+      "id": "corpus-lava-z-rule",
+      "title": "The corpus counts lava with the retired z rule",
+      "status": "open",
+      "kind": "defect",
+      "tier": null,
+      "maps": [
+        "dm2",
+        "e1m7",
+        "dm4"
+      ],
+      "statement": "argus-mcp corpus builds its rows without the map's BSP, so lava deaths fall back to z below -300: dm2 and e1m7 read 0 on every tape in runs/tape_index.tsv, and the limits doc inherits it. The skeptic recounts lava from hull-0 contents per tape until it is fixed.",
+      "evidence": [
+        "#816"
       ],
       "cheapest_tier": 1
     },
@@ -438,9 +456,9 @@
         "runs/probe_lipdbg.log"
       ],
       "regression": {
-        "events": 10
+        "events": 16
       },
-      "regression_basis": "Measured over the dm2 bot tapes in runs/ on 2026-11-14: 62 tapes before the fix ran a median of 8 events in the cell (95th percentile 17); 318 after it ran a median of 0 (95th percentile 10)."
+      "regression_basis": "Measured 2026-11-14 over the 309 dm2 bot tapes in runs/ (by each tape's own map line): 64 before the fix ran a median of 8 events in the cell, 95th percentile 17, maximum 22; 245 after it ran a median of 1, 95th percentile 10, maximum 16. The allowance is the post-fix maximum, so no recorded post-fix tape alerts; one tape can only show a return to the worst pre-fix levels."
     },
     {
       "id": "e1m7-lava-runoffs",
@@ -468,7 +486,12 @@
           "radius": 420,
           "dz": 40
         }
-      ]
+      ],
+      "regression": {
+        "deaths": 4,
+        "events": 10
+      },
+      "regression_basis": "No tape recorded after the fix is in runs/. Over 132 e1m7 bot tapes before it, unforced lake deaths per tape ran a median of 0, 95th percentile 4, maximum 7, and events a maximum of 10. The allowance is the pre-fix 95th percentile, so only a return past the old level flags; tighten it once post-fix tapes exist."
     },
     {
       "id": "dm4-dead-jump-link",
@@ -514,9 +537,9 @@
       ],
       "regression": {
         "freeze_sec": 8,
-        "events": 6
+        "events": 8
       },
-      "regression_basis": "The fix rescues a pin after 8 s, so freezes up to 8 s remain expected. Over 234 dm2 bot tapes after it, events in the cell reach a 95th percentile of 2 and a maximum of 8."
+      "regression_basis": "The fix rescues a pin after 8 s, so freezes up to 8 s remain expected. Over 162 dm2 bot tapes after it, events in the cell reach a 95th percentile of 2 and a maximum of 8, the allowance."
     },
     {
       "id": "hunch-major-decay",

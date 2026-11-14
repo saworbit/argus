@@ -33,6 +33,7 @@ import argparse
 import bisect
 import collections
 import datetime as dt
+import functools
 import hashlib
 import io
 import json
@@ -62,6 +63,10 @@ SKILL_BASE = re.compile(r'^ARGUS difficulty .+? t\s+[\d.]+ base (\d+)', re.M)
 SKILL_TIER = re.compile(r'^ARGUS .+? skill (\d+) aim -?\d+', re.M)
 LIMIT_METRICS = ('stalls', 'engages', 'lava_deaths', 'freezes', 'cover', 'goals')
 REGRESSION_COUNT = 5
+DOC_TAPE_SEC = 185.0
+CORPUS_METRICS = ('stalls', 'engages', 'lava_deaths', 'world_deaths', 'freezes', 'freeze_underfire', 'cover', 'goals',
+                  'frags', 'deaths', 'routefails', 'hazards', 'grabs', 'weapons', 'boards', 'kd_spread', 'avg_speed',
+                  'duration_sec')
 
 
 # ---------------------------------------------------------------- loading
@@ -214,6 +219,100 @@ def nav_banner(root, mapname):
     return (int(m.group(1)), int(m.group(2))) if m else None
 
 
+NAV_NODE = re.compile(r"(n\d+)\s*=\s*Argus_NavNode\s*\(\s*'([^']*)'")
+NAV_LINK = re.compile(r'(Argus_NavLink[A-Za-z]*)\s*\(\s*(n\d+)\s*,\s*(n\d+)')
+
+
+def topology(qc_text):
+    """A graph's identity from its generated QC: seat positions and typed links, profile arguments stripped.
+
+    The ARGNAV banner is not an identity: #716 (2026-11-01) changed it from
+    the pre-clamp to the post-clamp link count with no topology change, and
+    #405 added profile arguments to typed links without moving one.
+    """
+    nodes = sorted(NAV_NODE.findall(qc_text))
+    links = sorted(set(NAV_LINK.findall(qc_text)))
+    if not nodes:
+        return None
+    digest = hashlib.md5(repr((nodes, links)).encode()).hexdigest()
+    return dict(id=digest, nodes=len(nodes), links=frozenset(links))
+
+
+@functools.lru_cache(maxsize=None)
+def graph_history(root, mapname):
+    """Every committed revision of a map's generated QC, newest first, with its banner and topology."""
+    rel = f'src/argus_nav_{mapname}.qc'
+    out = []
+    for line in (git(root, 'log', '--format=%H %cI', '--', rel) or '').splitlines():
+        sha, _, stamp = line.partition(' ')
+        text = git(root, 'show', f'{sha}:{rel}') or ''
+        topo = topology(text)
+        if topo is None:
+            continue
+        try:
+            when = dt.datetime.fromisoformat(stamp).astimezone().replace(tzinfo=None).strftime('%Y-%m-%d %H:%M:%S')
+        except ValueError:
+            continue
+        out.append(dict(commit=sha, when=when, banner=argnav_anywhere(text), topology=topo))
+    return tuple(out)
+
+
+def argnav_anywhere(text):
+    m = QC_ARGNAV.search(text) or ARGNAV.search(text)
+    return (int(m.group(1)), int(m.group(2))) if m else None
+
+
+def shipped_topology(root, mapname):
+    return topology(read_text(root / 'src' / f'argus_nav_{mapname}.qc'))
+
+
+def tape_graph(root, mapname, tape_path):
+    """Which graph a tape ran, as the set of committed revisions it could have been.
+
+    The revision in force when the tape was recorded, plus any later
+    revisions that print the same banner: a surgical edit that keeps the
+    banner (the #388 dead-link removal) is invisible to a tape, so a
+    candidate arm recorded before its merge matches both. Returns {ids,
+    label, topology, commit} or None when the tape prints no banner. A
+    banner no committed revision prints means a graph never committed.
+    """
+    text = read_text(tape_path)
+    banner = argnav(text)
+    if banner is None:
+        return None
+    when = tape_when(tape_path, text[:400]) or ''
+    when = when if len(when) > 10 else (when + ' 23:59:59' if when else '9999')
+    history = list(graph_history(Path(root), mapname))  # newest first
+    start = next((i for i, r in enumerate(history) if r['when'] <= when), None)
+    if start is not None and history[start]['banner'] == banner:
+        run = [history[start]]
+        for r in reversed(history[:start]):  # newer revisions, oldest first
+            if r['banner'] != banner:
+                break
+            run.append(r)
+    else:
+        run = [r for r in history if r['banner'] == banner][:1]
+    if not run:
+        return dict(ids=frozenset({f'uncommitted:{banner[0]}:{banner[1]}'}),
+                    label=f'an uncommitted graph ({banner_text(banner)})', commit=None, topology=None)
+    commits = ' or '.join(r['commit'][:7] for r in run)
+    return dict(ids=frozenset(r['topology']['id'] for r in run), commit=run[0]['commit'], topology=run[0]['topology'],
+                label=f'the graph at {commits} ({banner_text(banner)})')
+
+
+def topology_change(old, new):
+    """How two topologies differ, in words."""
+    if old is None or new is None:
+        return 'unknown'
+    lost, gained = len(old['links'] - new['links']), len(new['links'] - old['links'])
+    parts = []
+    if old['nodes'] != new['nodes']:
+        parts.append(f'{old["nodes"]} to {new["nodes"]} seats')
+    if lost or gained:
+        parts.append(f'{lost} links gone and {gained} new')
+    return ', '.join(parts) or 'seats moved'
+
+
 def graph(root, mapname):
     path = root / 'src' / f'argus_nav_{mapname}.qc.json'
     if not path.is_file():
@@ -289,8 +388,10 @@ def plural(n, word, many=None):
     return f'{n} {word if n == 1 else (many or word + "s")}'
 
 
-def finding(area, severity, item, detail, fix=''):
-    return dict(area=area, severity=severity, item=item, detail=detail, fix=fix)
+def finding(area, severity, item, detail, fix='', key=None):
+    """One stale artefact. The key names the artefact and the reason, and stays put when the wording changes."""
+    return dict(area=area, severity=severity, item=item, detail=detail, fix=fix,
+                key=key or f'{area}:{item}:{severity}')
 
 
 def common_checkout(root):
@@ -471,6 +572,8 @@ def validate(root):
         if (not isinstance(b, dict) or not DATE.fullmatch(str(b.get('date', ''))) or not b.get('metrics')
                 or b.get('source') not in ('emission', 'parser')):
             errors.append(f'metric boundary {b}: needs a YYYY-MM-DD date, metrics, and source emission or parser')
+    if not (is_number(obj.get('mde_z')) and 1.0 <= obj['mde_z'] <= 5.0):
+        errors.append('lab_objective.json: mde_z must be a number from 1 to 5 (2.8 is 5 per cent false positives, 80 per cent power)')
     if not (root / str(obj.get('limits_doc', ''))).is_file():
         errors.append(f'lab_objective.json: limits_doc {obj.get("limits_doc")} does not exist')
     try:
@@ -514,11 +617,15 @@ def validate(root):
             errors.append(f'{where}: do_not_retry contradicts a next step; park it instead')
         if c.get('kind') == 'hypothesis' and c.get('status') == 'open' and not c.get('refute_by'):
             errors.append(f'{where}: an open hypothesis says what would refute it (refute_by)')
-        tolerate = c.get('regression', {})
-        if tolerate and not (isinstance(tolerate, dict) and set(tolerate) <= {'events', 'freeze_sec'}
-                             and all(is_number(v) and v >= 0 for v in tolerate.values())):
-            errors.append(f'{where}: regression takes events and freeze_sec, both non-negative numbers')
-        for cell in c.get('cells', []):
+        if 'regression' in c and not (isinstance(c['regression'], dict) and set(c['regression']) <= {'events', 'freeze_sec', 'deaths'}
+                                      and all(is_number(v) and v >= 0 for v in c['regression'].values())):
+            errors.append(f'{where}: regression is an object of events, freeze_sec and deaths, each a non-negative number')
+        if 'regression' in c and c.get('status') != 'fixed':
+            errors.append(f'{where}: only a fixed claim sets a regression allowance')
+        for key in ('cells', 'maps', 'evidence'):
+            if key in c and not isinstance(c[key], list):
+                errors.append(f'{where}: {key} must be a list')
+        for cell in (c.get('cells') if isinstance(c.get('cells'), list) else []):
             at = cell.get('at') if isinstance(cell, dict) else None
             if (not isinstance(cell, dict) or not isinstance(cell.get('map'), str) or not isinstance(at, list)
                     or len(at) != 3 or not all(is_number(v) for v in at)
@@ -527,7 +634,7 @@ def validate(root):
                 errors.append(f'{where}: a cell is {{map, at: [x, y, z], radius > 0, optional dz > 0}}')
             elif cell['map'] not in c.get('maps', []):
                 errors.append(f'{where}: cell map {cell["map"]} is not in maps')
-        for ref in c.get('evidence', []):
+        for ref in (c.get('evidence') if isinstance(c.get('evidence'), list) else []):
             if not evidence_resolves(root, ref):
                 errors.append(f'{where}: evidence {ref} does not resolve (a file in the repo, #n or a run in runs/)')
     return errors
@@ -553,7 +660,7 @@ def evidence_resolves(root, ref):
 
 def session_when(root, row, index):
     """Local start time of a session tape, from its header, else the corpus index, else its name."""
-    when = tape_when(root / 'runs' / row.get('file', ''))
+    when = tape_when(Path(row['_path']) if row.get('_path') else root / 'runs' / row.get('file', ''))
     if when and len(when) > 10:
         return when
     started = index.get(Path(row.get('file', '')).stem, {}).get('started', '')
@@ -562,9 +669,19 @@ def session_when(root, row, index):
     return when or (started[:10] if DATE.fullmatch(started[:10]) else None)
 
 
+def score_tape(root, path):
+    """A scorecard row for a tape the scorecard lacks, with the map's BSP found the spine's way."""
+    mapname = argus_tape.map_name(read_text(path))
+    bsp = bsp_path(root, mapname) if mapname else None
+    contents = argus_longi._classifier(str(bsp)) if bsp else None
+    row = {k: str(v) for k, v in argus_longi.analyse(str(path), contents=contents).items()}
+    row['_path'] = str(path)
+    return row
+
+
 def evaluate_session(root, row, obj, history, index):
     """Hard gates, goal measures and eligibility for one scorecard row."""
-    path = root / 'runs' / row['file']
+    path = Path(row['_path']) if row.get('_path') else root / 'runs' / row['file']
     text = read_text(path)
     gates = []
     for g in obj['hard_gates']:
@@ -645,13 +762,15 @@ def sessions_report(root, obj, files=None, last=None):
     history = installs(root)
     rows = scorecard(root)
     if files:
-        wanted = {Path(f).name for f in files}
-        known = {r['file'] for r in rows}
-        rows = [r for r in rows if r['file'] in wanted]
-        for name in sorted(wanted - known):
-            path = Path(name) if Path(name).is_file() else root / 'runs' / name
-            if path.is_file():
-                rows.append({k: str(v) for k, v in argus_longi.analyse(str(path)).items()})
+        scored = {r['file']: r for r in rows}
+        rows = []
+        for name in files:
+            path = Path(name) if Path(name).is_file() else root / 'runs' / Path(name).name
+            in_runs = path.resolve() == (root / 'runs' / path.name).resolve()
+            if in_runs and path.name in scored:
+                rows.append(scored[path.name])
+            elif path.is_file():
+                rows.append(score_tape(root, path))
     if last:
         rows = rows[-last:]
     sessions = [evaluate_session(root, r, obj, history, index) for r in rows]
@@ -724,9 +843,8 @@ def stale_findings(root, obj):
     baselines = read_json(path) if path.is_file() else {}
     for mapname, names in sorted(baselines.items()):
         names = [names] if isinstance(names, str) else list(names)
-        g = graph(root, mapname)
-        shipped = g['banner'] if g and g.get('banner') else ((g['nodes'], None) if g else None)
-        missing, unindexed, slow, banners = [], [], collections.defaultdict(list), collections.defaultdict(list)
+        shipped = shipped_topology(root, mapname)
+        missing, unindexed, slow, graphs = [], [], collections.defaultdict(list), collections.defaultdict(list)
         for name in names:
             if not (runs / f'{name}.log').is_file():
                 missing.append(name)
@@ -736,23 +854,24 @@ def stale_findings(root, obj):
                 unindexed.append(name)
             elif row.get('tick_class') != 'listen':
                 slow[row.get('tick_class') or 'an unknown rate'].append(name)
-            banner = argnav(read_text(runs / f'{name}.log'))
-            if shipped and banner and (banner[0] != shipped[0] or (shipped[1] is not None and banner[1] != shipped[1])):
-                banners[banner].append(name)
+            ran = tape_graph(root, mapname, runs / f'{name}.log')
+            if shipped and ran and shipped['id'] not in ran['ids']:
+                graphs[(tuple(sorted(ran['ids'])), ran['label'])].append((name, ran))
         item = f'{mapname} baseline'
         if missing:
             out.append(finding('baseline', 'void', item, f'{plural(len(missing), "tape")} missing: {", ".join(missing)}',
-                               f'pick a new baseline with baseline_set for {mapname}'))
+                               f'pick a new baseline with baseline_set for {mapname}', key=f'baseline:{mapname}:missing'))
         for tick, which in sorted(slow.items()):
             out.append(finding('baseline', 'void', item,
                                f'recorded at {tick}, not the played rate, so verdicts against it are void '
                                f'({", ".join(which)})',
-                               f'record three listen-class tapes and point baselines.json {mapname} at them'))
-        for banner, which in sorted(banners.items()):
+                               f'record three listen-class tapes and point baselines.json {mapname} at them',
+                               key=f'baseline:{mapname}:tick:{tick}'))
+        for (gid, label), which in sorted(graphs.items()):
+            change = topology_change(which[0][1]['topology'], shipped)
             out.append(finding('baseline', 'stale', item,
-                               f'ran {banner_text(banner)}; the shipped graph prints {banner_text(shipped)} '
-                               f'({", ".join(which)})',
-                               're-baseline on the current graph'))
+                               f'ran {label}, not the shipped graph ({change}): {", ".join(n for n, _ in which)}',
+                               're-baseline on the current graph', key=f'baseline:{mapname}:graph:{gid[0][:12]}'))
         if unindexed:
             out.append(finding('baseline', 'info', item,
                                f'tick class unknown until indexed: {", ".join(unindexed)}',
@@ -936,9 +1055,15 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     if overlap:
         void.append(f'the same tape is in both arms: {", ".join(overlap)}')
     known = tape_index(root)
-    guess = next((known[n]['map'] for n in names if n in known), None) or next(
-        (m for m in (map_from_name(root, n) for n in names) if m), None)
-    found, source = corpus_rows(root, names, guess)
+    guesses = {n: (known[n]['map'] if n in known else map_from_name(root, n)) for n in names}
+    found, source = {}, {}
+    if None in guesses.values():
+        found, source = corpus_rows(root, names, None)
+    else:
+        for m in sorted(set(guesses.values())):
+            got, how = corpus_rows(root, [n for n in names if guesses[n] == m], m)
+            found.update(got)
+            source.update(how)
     missing = [n for n in names if n not in found]
     for n in missing:
         if not (root / 'runs' / f'{n}.log').is_file():
@@ -976,14 +1101,21 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     def per_arm(arm, reader):
         return {n: reader(read_text(root / 'runs' / f'{n}.log')) for n in arm}
 
-    banners_a, banners_b = per_arm(arm_a, argnav), per_arm(arm_b, argnav)
-    set_a, set_b = set(banners_a.values()) - {None}, set(banners_b.values()) - {None}
-    if len(set_a) > 1 or len(set_b) > 1:
+    graph_map = maps[0] if len(maps) == 1 else None
+    ran = {n: tape_graph(root, graph_map, root / 'runs' / f'{n}.log') if graph_map else None for n in names}
+    def common(arm):
+        sets = [ran[n]['ids'] for n in arm if ran.get(n)]
+        return frozenset.intersection(*sets) if sets else None
+
+    ids_a, ids_b = common(arm_a), common(arm_b)
+    if ids_a == frozenset() or ids_b == frozenset():
         confounds.append('graphs differ inside an arm: ' + '; '.join(
-            f'{n} {banner_text(b)}' for n, b in {**banners_a, **banners_b}.items() if b))
-    elif set_a and set_b and set_a != set_b:
-        confounds.append(f'the arms ran different graphs ({banner_text(next(iter(set_a)))} against '
-                         f'{banner_text(next(iter(set_b)))}); only a graph change may differ this way')
+            f'{n} ran {ran[n]["label"]}' for n in names if ran.get(n)))
+    elif ids_a and ids_b and not ids_a & ids_b:
+        a = next(ran[n] for n in arm_a if ran.get(n))
+        b = next(ran[n] for n in arm_b if ran.get(n))
+        confounds.append(f'the arms ran different graphs: {a["label"]} against {b["label"]} '
+                         f'({topology_change(a["topology"], b["topology"])}); only a graph change may differ this way')
     skills_a = {tuple(s) for s in per_arm(arm_a, skill_of).values() if s}
     skills_b = {tuple(s) for s in per_arm(arm_b, skill_of).values() if s}
     if skills_a and skills_b and skills_a != skills_b:
@@ -998,6 +1130,12 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
 
     mapname = maps[0] if len(maps) == 1 else None
     lim = limits(root, obj).get(mapname, {}) if mapname else {}
+    # The limits doc's sigma is per standard tape (about 185 s); a shorter or
+    # longer match has a different spread, so the arms' own spread is used.
+    doc_length = all(abs(d - DOC_TAPE_SEC) <= 0.1 * DOC_TAPE_SEC for d in durs)
+    if lim and not doc_length and not rates:
+        notes.append(f'the tapes are not {DOC_TAPE_SEC:.0f} s long, so the limits doc spread does not apply; '
+                     'spread comes from these arms')
     dates = [r.get('started', '')[:10] for r in rows]
     lava = {}
     if 'lava_deaths' in (metrics or LIMIT_METRICS) and mapname and not void:
@@ -1026,7 +1164,7 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
         # spread and the spread these arms show: the doc's sigma is a pooled
         # average, and a noisier pair than average must not read "moved" on
         # the average's strength. A zero in the doc means it saw no spread.
-        doc_sigma = None if rates else (lim.get(metric, {}).get('sigma') or None)
+        doc_sigma = None if (rates or not doc_length) else (lim.get(metric, {}).get('sigma') or None)
         arm_sigma = None
         if len(va) >= 2 and len(vb) >= 2:
             arm_sigma = math.sqrt((statistics.variance(va) * (len(va) - 1) + statistics.variance(vb) * (len(vb) - 1))
@@ -1086,11 +1224,12 @@ def in_cell(point, cell):
 def regressed(cluster, tolerate):
     """Trouble at a fixed cell heavy enough to call a regression, given what the claim says it tolerates.
 
-    Unforced deaths always count. Freezes count when longer than freeze_sec
-    (a fix that bounds a pin at 8 s still leaves 6 to 8 s freezes). Other
-    events count past the claim's events allowance, REGRESSION_COUNT by default.
+    Unforced deaths count past the claim's deaths allowance (none by default).
+    Freezes count when longer than freeze_sec (a fix that bounds a pin at 8 s
+    still leaves 6 to 8 s freezes). Other events count past the claim's events
+    allowance, REGRESSION_COUNT by default.
     """
-    if any(p['kind'] == 'unforced death' for p in cluster['points']):
+    if sum(1 for p in cluster['points'] if p['kind'] == 'unforced death') > tolerate.get('deaths', 0):
         return True
     limit = tolerate.get('freeze_sec', 0)
     if any(p['kind'].startswith('freeze') and p.get('dur', 0) > limit for p in cluster['points']):
@@ -1169,17 +1308,22 @@ def triage(root, tape_path, claims=None, radius=96.0):
         if matches:
             flag = 'known'
             fixed = [m for m in matches if m['status'] == 'fixed']
-            if fixed and len(matches) == len(fixed):
+            # An open claim on the same cell does not switch off a fixed one:
+            # the fixed claim's allowance already covers the residual.
+            if fixed:
                 # Trouble at a fixed cell is a regression only on a tape recorded after the fix.
                 # A stall or two can recur at any cell; a regression needs a freeze,
                 # an unforced death, or more events than the claim tolerates.
                 heavy = any(regressed(c, m['regression']) for m in fixed)
                 after = [m for m in fixed if recorded and m['fixed_on'] and recorded > m['fixed_on']]
+                same_day = [m for m in fixed if recorded and m['fixed_on'] == recorded]
                 if not recorded:
                     flag = 'regression? (undated tape)' if heavy else 'known'
                 elif after:
                     flag = 'regression?' if heavy else 'known'
-                else:
+                elif same_day:
+                    flag = 'on the fix day'
+                elif len(fixed) == len(matches):
                     flag = 'before the fix'
         out.append(dict(centre=[round(v) for v in c['centre']], count=len(c['points']), kinds=dict(kinds),
                         bots=sorted({p['bot'] for p in c['points']}), matches=matches, flag=flag,
@@ -1215,8 +1359,8 @@ def review(root, path, out=None):
     obj = objective(root)
     path = Path(path)
     row = next((r for r in scorecard(root) if r['file'] == path.name), None)
-    if row is None:
-        row = {k: str(v) for k, v in argus_longi.analyse(str(path)).items()}
+    if row is None or path.resolve() != (root / 'runs' / path.name).resolve():
+        row = score_tape(root, path)
     s = evaluate_session(root, row, obj, installs(root), tape_index(root))
     failed = ', '.join(s['failed']) or 'none'
     print(f'gates failed: {failed}' + (f' (unknown: {", ".join(s["unknown"])})' if s['unknown'] else ''), file=out)
@@ -1540,7 +1684,7 @@ def pyramid(root, maps, through=2, dry_run=False, out=None, receipt=True):
     out = out or sys.stdout
     steps = pyramid_plan(root, maps, through, objective(root))
     last_night, night_name = last_receipt(root, 'night')
-    known = {r['name'] for r in (last_night or {}).get('steps', []) if r.get('status') == 'fail'}
+    known = known_failures(last_night)
     results = []
     stopped = None
     for tier in sorted({s['tier'] for s in steps}):
@@ -1548,8 +1692,11 @@ def pyramid(root, maps, through=2, dry_run=False, out=None, receipt=True):
         for s in (s for s in steps if s['tier'] == tier):
             row = run_step(root, s, dry_run)
             if row['status'] == 'fail' and s['name'] in known:
-                row['status'] = 'known failure'
-                row['detail'] = f'{row.get("detail") or ""} (already failing in {night_name})'.strip()
+                if no_worse(row.get('detail'), known[s['name']]):
+                    row['status'] = 'known failure'
+                    row['detail'] = f'{row.get("detail") or ""} (already failing in {night_name})'.strip()
+                else:
+                    row['detail'] = f'{row.get("detail") or ""} (worse than the known failure in {night_name})'.strip()
             results.append(row)
             show_step(row, out)
             failed_here = failed_here or row['status'] == 'fail'
@@ -1571,6 +1718,24 @@ def pyramid(root, maps, through=2, dry_run=False, out=None, receipt=True):
 
 
 # ---------------------------------------------------------------- the nightly sweep
+
+def known_failures(receipt):
+    """{step name: detail} for failures a nightly sweep recorded as already failing, not newly.
+
+    A failure first seen in a sweep raised that sweep's alert; it becomes known
+    only once a later sweep finds it still failing, so a breaking change cannot
+    launder itself through one sweep. The first sweep accepts what it finds.
+    """
+    return {r['name']: r.get('detail') for r in (receipt or {}).get('steps', [])
+            if r.get('status') == 'fail' and not r.get('newly_failing')}
+
+
+def no_worse(detail, known):
+    """True when a failure is the known one or milder: counts no higher, or the same words."""
+    if isinstance(detail, dict) and isinstance(known, dict):
+        return all(detail.get(k, 0) <= known.get(k, 0) for k in detail)
+    return (detail or '') == (known or '')
+
 
 def registered_maps(root):
     """Maps whose graph is compiled in: argus_nav_<map>.qc named in src/progs.src."""
@@ -1610,14 +1775,26 @@ def night(root, maps=None, engine=False, out=None):
             seen.add(s['name'])
             steps.append(s)
     results = [run_step(root, s) for s in steps]
-    before = {r['name']: r['status'] for r in (previous or {}).get('steps', [])}
-    newly_failing = [r['name'] for r in results if r['status'] == 'fail' and before.get(r['name']) == 'pass']
-    still_failing = [r['name'] for r in results if r['status'] == 'fail' and r['name'] not in newly_failing]
+    before = {r['name']: r for r in (previous or {}).get('steps', [])}
+    newly_failing, worse = [], []
+    for r in results:
+        if r['status'] != 'fail':
+            continue
+        was = before.get(r['name'])
+        if was and was.get('status') == 'pass':
+            newly_failing.append(r['name'])
+            r['newly_failing'] = True
+        elif was and was.get('status') == 'fail' and not no_worse(r.get('detail'), was.get('detail')):
+            worse.append(r['name'])
+            r['newly_failing'] = True
+    still_failing = [r['name'] for r in results if r['status'] == 'fail' and not r.get('newly_failing')]
 
     # New tapes, by each tape's own header date: a fresh clone stamps every
     # file with the checkout time. The first sweep looks back a week.
-    fresh = sorted(p for p in (root / 'runs').glob('*.log') if (tape_date(p) or '') >= since
-                   and b'ARGLOG ' in p.read_bytes()[:200000])
+    # A tape the previous sweep already triaged (same name and size) is not new.
+    seen_before = {tuple(t) for t in (previous or {}).get('triaged', [])}
+    fresh = [p for p in match_tapes_paths(root / 'runs') if (tape_date(p) or '') >= since
+             and (p.name, p.stat().st_size) not in seen_before]
 
     def freezes(c):
         return c['kinds'].get('freeze', 0) + c['kinds'].get('freeze under fire', 0)
@@ -1630,11 +1807,17 @@ def night(root, maps=None, engine=False, out=None):
         if flagged:
             tape_rows.append(dict(tape=p.name, clusters=flagged))
     findings = stale_findings(root, obj)
-    void_now = {f'{f["area"]}: {f["item"]}' for f in findings if f['severity'] == 'void'}
-    void_before = set((previous or {}).get('void', []))
-    newly_void = sorted(void_now - void_before) if previous else []
+    void_now = {f['key']: f for f in findings if f['severity'] == 'void'}
+    # Keys name the artefact and the reason, so rewording a message cannot raise
+    # an alert; a receipt from before keys existed compares nothing.
+    if previous and 'void_keys' in previous:
+        newly_void = [f'{void_now[k]["area"]}: {void_now[k]["item"]}: {void_now[k]["detail"]}'
+                      for k in sorted(set(void_now) - set(previous['void_keys']))]
+    else:
+        newly_void = []
 
-    alerts = [f'newly failing: {n}' for n in newly_failing] + [f'newly void: {v}' for v in newly_void]
+    alerts = ([f'newly failing: {n}' for n in newly_failing] + [f'failing worse than before: {n}' for n in worse]
+              + [f'newly void: {v}' for v in newly_void])
     alerts += [f'regression at a fixed cell in {t["tape"]} at {" ".join(map(str, c["centre"]))}'
                for t in tape_rows for c in t['clusters'] if c['flag'].startswith('regression')]
     today = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')
@@ -1674,8 +1857,10 @@ def night(root, maps=None, engine=False, out=None):
     print(file=buf)
     print_findings(findings, buf)
 
+    triaged = sorted(seen_before | {(p.name, p.stat().st_size) for p in fresh})
     receipt = write_receipt(root, 'night', dict(date=today, maps=maps, engine=engine, steps=results,
-                                                void=sorted(void_now), tapes=tape_rows, alerts=alerts))
+                                                void_keys=sorted(void_now), tapes=tape_rows, alerts=alerts,
+                                                triaged=[list(t) for t in triaged]))
     report = receipt.with_suffix('.md')
     report.write_text(buf.getvalue(), encoding='utf-8')
     print(f'{report.relative_to(root)}: {plural(len(alerts), "alert")}, '
@@ -1764,6 +1949,10 @@ def main(argv=None):
             print_sessions(sessions, verdicts)
         return 0
     if a.cmd == 'skeptic':
+        unknown = [m for m in a.metric or [] if m not in CORPUS_METRICS]
+        if unknown:
+            print(f'no metric called {", ".join(unknown)}; try one of {", ".join(CORPUS_METRICS)}', file=sys.stderr)
+            return 2
         rep = skeptic(root, a.arm_a, a.arm_b, a.metric)
         if a.json:
             print(json.dumps(jsonable(rep), indent=1, default=str))
