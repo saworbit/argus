@@ -48,6 +48,9 @@ pub struct TaskResult {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub game_sec: Option<f32>,
     pub wall_sec: f32,
+    /// Why a task never started, when the harness could not confirm a step.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -218,6 +221,150 @@ fn report(suite: &TaskSuite, mut results: Vec<TaskResult>) -> BenchmarkReport {
     }
 }
 
+/// How many times a step's impulse is fired before the task is given up.
+const STEP_ATTEMPTS: usize = 4;
+/// How long one attempt waits for its confirmation in the server log.
+const STEP_WAIT: Duration = Duration::from_millis(1500);
+
+/// Lines of `log` after the first `mark` lines.
+fn lines_after(log: &str, mark: usize) -> impl Iterator<Item = &str> {
+    log.lines().skip(mark)
+}
+
+/// Whether the console echoed `token` after `mark`. Console lines run in
+/// order, so the echo proves the commands before it on the same line ran.
+fn echoed(log: &str, mark: usize, token: &str) -> bool {
+    lines_after(log, mark).any(|line| line.trim() == token)
+}
+
+fn parse_vec(text: &str) -> Option<[f32; 3]> {
+    let mut it = text.split_whitespace().map(|v| v.parse::<f32>().ok());
+    Some([it.next()??, it.next()??, it.next()??])
+}
+
+/// The quoted vector after `key` in `line`, as in `pos '1 2 3'`.
+fn quoted_vec(line: &str, key: &str) -> Option<[f32; 3]> {
+    let rest = &line[line.find(key)? + key.len()..];
+    let rest = rest.trim_start().strip_prefix('\'')?;
+    parse_vec(&rest[..rest.find('\'')?])
+}
+
+fn near(a: [f32; 3], b: [f32; 3], horizontal: f32, vertical: f32) -> bool {
+    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt() < horizontal
+        && (a[2] - b[2]).abs() < vertical
+}
+
+/// Whether `bot` started the task after `mark`: a route whose start node is
+/// at the task start and whose goal node is at the task goal. That one line
+/// proves both the placement and the goal landed. A bot moves between its
+/// placement and its next 2 Hz ARGLOG row, so a position check alone misses
+/// placements that worked. Before the goal impulse lands the bot shops for
+/// ordinary goals, whose routes end elsewhere. A `routefail` counts when an
+/// ARGLOG row after `mark` puts the bot near the start, since it carries no
+/// endpoints of its own.
+fn started_task(log: &str, mark: usize, bot: &str, start: [f32; 3], goal: [f32; 3]) -> bool {
+    let route = format!("ARGEVT {bot} route ");
+    let failed = format!("ARGEVT {bot} routefail");
+    let row = format!("ARGLOG {bot} t ");
+    let mut near_start = false;
+    for line in lines_after(log, mark) {
+        if line.starts_with(&row) {
+            near_start |= quoted_vec(line, " pos ").is_some_and(|p| near(p, start, 256.0, 72.0));
+        } else if line.starts_with(&route) {
+            let from = quoted_vec(line, " start ");
+            let to = quoted_vec(line, " goal ");
+            if from.is_some_and(|f| near(f, start, 160.0, 72.0))
+                && to.is_some_and(|g| near(g, goal, 128.0, 96.0))
+            {
+                return true;
+            }
+        } else if line.starts_with(&failed) && near_start {
+            return true;
+        }
+    }
+    false
+}
+
+/// The roster's bots: named scoreboard rows other than the puppet.
+fn roster_bots(names: &std::collections::BTreeMap<u8, String>) -> Vec<String> {
+    names
+        .values()
+        .filter(|n| !n.trim().is_empty() && n.as_str() != "labprobe")
+        .cloned()
+        .collect()
+}
+
+/// Run `attempt` until `check` passes on the log written after it, up to
+/// STEP_ATTEMPTS times, pumping `client` while it waits. Each attempt takes
+/// a fresh mark, so a confirmation is always newer than the attempt it
+/// confirms.
+fn confirm<C>(
+    client: &mut C,
+    read_log: &dyn Fn() -> String,
+    pump: &dyn Fn(&mut C),
+    wait: Duration,
+    mut attempt: impl FnMut(&mut C, u32) -> Result<(), String>,
+    check: impl Fn(&str, usize, u32) -> bool,
+) -> Result<bool, String> {
+    for n in 1..=STEP_ATTEMPTS as u32 {
+        let mark = read_log().lines().count();
+        attempt(client, n)?;
+        let started = Instant::now();
+        while started.elapsed() < wait {
+            pump(client);
+            if check(&read_log(), mark, n) {
+                return Ok(true);
+            }
+        }
+    }
+    Ok(false)
+}
+
+/// Fire `impulse` until `check` passes, through the live match's log.
+fn impulse_confirmed(
+    ctrl: &MatchCtrl,
+    client: &mut NetClient,
+    impulse: u8,
+    check: impl Fn(&str, usize) -> bool,
+) -> Result<bool, String> {
+    confirm(
+        client,
+        &|| ctrl.log_text().unwrap_or_default(),
+        &|c: &mut NetClient| c.pump(Duration::from_millis(100)),
+        STEP_WAIT,
+        |c, _| {
+            c.set_impulse(impulse);
+            Ok(())
+        },
+        |log, mark, _| check(log, mark),
+    )
+}
+
+/// Send console `line` and wait until the server echoes a marker after it,
+/// resending if the line was lost. A fixed 150 ms sleep let the next impulse
+/// run on the previous cvars whenever the console was slow (#776).
+async fn command_confirmed(
+    ctrl: &mut MatchCtrl,
+    client: &mut NetClient,
+    line: &str,
+    seq: &mut u32,
+) -> Result<(), String> {
+    for _ in 0..STEP_ATTEMPTS {
+        *seq += 1;
+        let token = format!("ARGUS_BENCH_ACK {seq}");
+        let mark = ctrl.log_text().unwrap_or_default().lines().count();
+        ctrl.command(&format!("{line}; echo {token}")).await?;
+        let started = Instant::now();
+        while started.elapsed() < STEP_WAIT {
+            client.pump(Duration::from_millis(100));
+            if echoed(&ctrl.log_text().unwrap_or_default(), mark, &token) {
+                return Ok(());
+            }
+        }
+    }
+    Err(format!("the server console never confirmed: {line}"))
+}
+
 async fn run_connected(
     ctrl: &mut MatchCtrl,
     suite: &TaskSuite,
@@ -229,32 +376,64 @@ async fn run_connected(
     if client.world.signon < 3 {
         return Err(format!("signon stalled at {}", client.world.signon));
     }
+    let mut seq = 0u32;
 
-    // Keep slot zero and remove the two free-running opponents. scratch1 147
-    // is the existing server-admin gate for roster impulses.
-    ctrl.command("scratch1 147").await?;
-    for _ in 0..2 {
+    // Keep slot zero and remove the free-running opponents one at a time,
+    // firing again only while more than one bot remains, so a late impulse
+    // cannot take the task bot too. scratch1 147 is the server-admin gate
+    // for roster impulses.
+    command_confirmed(ctrl, &mut client, "scratch1 147", &mut seq).await?;
+    for _ in 0..STEP_ATTEMPTS * 2 {
+        let before = roster_bots(&client.world.names).len();
+        if before <= 1 {
+            break;
+        }
         client.set_impulse(102);
-        client.pump(Duration::from_millis(400));
+        let started = Instant::now();
+        while started.elapsed() < STEP_WAIT && roster_bots(&client.world.names).len() >= before {
+            client.pump(Duration::from_millis(100));
+        }
     }
+    let bots = roster_bots(&client.world.names);
+    let [bot] = bots.as_slice() else {
+        return Err(format!(
+            "could not reduce the roster to the task bot; it still holds {bots:?}"
+        ));
+    };
+    let bot = bot.clone();
 
     let mut results = Vec::new();
     for task in tasks {
-        ctrl.command(&command_point(3841, task.start)).await?;
-        tokio::time::sleep(Duration::from_millis(150)).await;
-        client.set_impulse(217);
-        client.pump(Duration::from_millis(500));
-
+        // Place, then assign the goal at once, and confirm both from the
+        // route that starts the task. Every attempt places again, so a bot
+        // that wandered off before its goal landed starts over.
         let first_print = client.world.prints.len();
-        ctrl.command(&command_point(3842, task.goal)).await?;
-        tokio::time::sleep(Duration::from_millis(150)).await;
-        client.set_impulse(217);
-        client.pump(Duration::from_millis(400));
+        let mut began = false;
+        for _ in 0..STEP_ATTEMPTS {
+            command_confirmed(
+                ctrl,
+                &mut client,
+                &command_point(3841, task.start),
+                &mut seq,
+            )
+            .await?;
+            let mark = ctrl.log_text().unwrap_or_default().lines().count();
+            client.set_impulse(217);
+            client.pump(Duration::from_millis(250));
+            command_confirmed(ctrl, &mut client, &command_point(3842, task.goal), &mut seq).await?;
+            began = impulse_confirmed(ctrl, &mut client, 217, |log, _| {
+                started_task(log, mark, &bot, task.start, task.goal)
+            })?;
+            if began {
+                break;
+            }
+        }
+        let note = (!began).then(|| format!("{bot} never started a route from the task start"));
 
         let started = Instant::now();
         let wall_limit = Duration::from_secs_f32(task.budget_sec + 3.0);
         let mut outcome = None;
-        while started.elapsed() < wall_limit && !client.world.disconnected {
+        while note.is_none() && started.elapsed() < wall_limit && !client.world.disconnected {
             client.pump(Duration::from_millis(200));
             outcome = client.world.prints[first_print..]
                 .iter()
@@ -264,7 +443,7 @@ async fn run_connected(
             }
         }
         if outcome.is_none() {
-            ctrl.command("scratch1 3840").await?;
+            command_confirmed(ctrl, &mut client, "scratch1 3840", &mut seq).await?;
             client.set_impulse(217);
             client.pump(Duration::from_millis(300));
         }
@@ -275,6 +454,7 @@ async fn run_connected(
             completed,
             game_sec: outcome.map(|_| game_sec),
             wall_sec: started.elapsed().as_secs_f32(),
+            note,
         });
     }
     client.disconnect();
@@ -397,6 +577,7 @@ mod tests {
                 completed: true,
                 game_sec: Some(4.0),
                 wall_sec: 4.0,
+                note: None,
             },
             TaskResult {
                 name: "heldout_route".into(),
@@ -404,6 +585,7 @@ mod tests {
                 completed: false,
                 game_sec: Some(12.0),
                 wall_sec: 12.0,
+                note: None,
             },
         ];
         let report = report(&suite(), rows);
@@ -434,6 +616,7 @@ mod tests {
                     completed,
                     game_sec: seconds,
                     wall_sec: 0.1,
+                    note: None,
                 }],
             );
             assert_eq!(value.results[0].completed, expected, "elapsed {seconds:?}");
@@ -447,5 +630,108 @@ mod tests {
                 assert_eq!(value.results[0].game_sec, seconds);
             }
         }
+    }
+
+    #[test]
+    fn step_checks_read_only_lines_after_their_mark() {
+        let log = "\
+ARGUS_BENCH_ACK 1
+ARGLOG Joe Rogan t 4.5 pos '485 -703 56' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
+ARGEVT Joe Rogan route 7 start '485 -703 56' goal '261 -703 328'
+ARGEVT Joe Rogan route 3 start '485 -703 56' goal '900 0 0'
+";
+        assert!(echoed(log, 0, "ARGUS_BENCH_ACK 1"));
+        assert!(!echoed(log, 1, "ARGUS_BENCH_ACK 1"));
+        assert!(!echoed(log, 0, "ARGUS_BENCH_ACK 11"));
+        let goal = [261.0, -703.0, 328.0];
+        let start = [480.0, -700.0, 60.0];
+        // a spaced name is matched whole, and only a route from the start
+        // to the goal counts
+        assert!(started_task(log, 0, "Joe Rogan", start, goal));
+        assert!(!started_task(log, 0, "Joe", start, goal));
+        assert!(!started_task(log, 0, "Joe Rogan", [0.0, 0.0, 56.0], goal));
+        assert!(!started_task(
+            log,
+            0,
+            "Joe Rogan",
+            start,
+            [900.0, 900.0, 0.0]
+        ));
+        assert!(!started_task(log, 3, "Joe Rogan", start, goal));
+        // a routefail counts only once a row after the mark puts the bot
+        // near the start, as a bot that ran on after its placement still is
+        let ran_on =
+            "ARGLOG Carmack t 52.6 pos '-25.5 -551.7 -16.0' spd 451\nARGEVT Carmack routefail\n";
+        assert!(started_task(
+            ran_on,
+            0,
+            "Carmack",
+            [69.0, -671.0, -16.0],
+            goal
+        ));
+        assert!(!started_task(
+            "ARGEVT Carmack routefail\n",
+            0,
+            "Carmack",
+            [69.0, -671.0, -16.0],
+            goal
+        ));
+    }
+
+    #[test]
+    fn roster_bots_leave_out_the_puppet_and_blank_rows() {
+        let names = std::collections::BTreeMap::from([
+            (0u8, "labprobe".to_string()),
+            (5u8, String::new()),
+            (6u8, "Joe Rogan".to_string()),
+            (7u8, "Carmack".to_string()),
+        ]);
+        assert_eq!(roster_bots(&names), vec!["Joe Rogan", "Carmack"]);
+    }
+
+    /// The harness fires again until the log confirms the step, and a
+    /// confirmation written before an attempt does not count (#776).
+    #[test]
+    fn confirm_retries_until_the_log_answers_and_ignores_stale_lines() {
+        use std::cell::RefCell;
+        let start = [485.0, -703.0, 56.0];
+        let goal = [261.0, -703.0, 328.0];
+        let row = "ARGEVT Carmack route 7 start '485 -703 56' goal '261 -703 328'\n";
+        // A stale row before the first attempt, then nothing until the third.
+        let log = RefCell::new(row.to_string());
+        let mut fired = 0u32;
+        let ok = confirm(
+            &mut fired,
+            &|| log.borrow().clone(),
+            &|_| {},
+            Duration::from_millis(20),
+            |count: &mut u32, n| {
+                *count += 1;
+                if n == 3 {
+                    log.borrow_mut().push_str(row);
+                }
+                Ok(())
+            },
+            |text, mark, _| started_task(text, mark, "Carmack", start, goal),
+        )
+        .unwrap();
+        assert!(ok);
+        assert_eq!(fired, 3);
+
+        let mut fired = 0u32;
+        let never = confirm(
+            &mut fired,
+            &|| log.borrow().clone(),
+            &|_| {},
+            Duration::from_millis(20),
+            |count: &mut u32, _| {
+                *count += 1;
+                Ok(())
+            },
+            |text, mark, _| started_task(text, mark, "Carmack", start, goal),
+        )
+        .unwrap();
+        assert!(!never);
+        assert_eq!(fired as usize, STEP_ATTEMPTS);
     }
 }
