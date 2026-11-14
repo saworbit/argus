@@ -538,6 +538,15 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Name the real cause when the Windows console-inject tests fail. They spawn
+  `target/debug/argus-mcp.exe`, which `cargo test --lib` does not build, so a
+  fresh target directory failed with a bare os error 2 at any thread count.
+  The error now names the missing binary or a helper built from other source
+  and says to run `cargo build --bin argus-mcp`, and CONTRIBUTING builds the
+  CLI before the lib tests. With the CLI current, the full parallel lib run
+  passes 405 of 405
+  ([#805](https://github.com/saworbit/argus/issues/805)).
+
 - Give the lab server's git children a 30-second deadline, as the Python
   helpers already have: plain calls are killed and reported as timed out, the
   `cat-file --batch` history reader has a watchdog, and `mill` and argument
