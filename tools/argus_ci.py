@@ -16,6 +16,7 @@ usage:
   argus_ci.py dashes               tracked prose and sources contain no en or em dashes
   argus_ci.py refuted              tracked text does not restate a refuted rule as current
   argus_ci.py lab                  the lab objective and claims ledger are sound and cite real evidence
+  argus_ci.py suites               every tools/test_*.py suite runs in a workflow
 """
 import argparse
 import collections
@@ -637,6 +638,58 @@ def check_lab(root, **_kw):
     return [f"lab: {error}" for error in argus_lab.validate(Path(root))]
 
 
+# ---------------------------------------------------------------- suites
+
+# A tools test suite that genuinely needs something CI lacks goes here,
+# with the reason. It still runs nowhere, so say why that is acceptable.
+LOCAL_ONLY_SUITES = {}
+
+_DISCOVER = re.compile(r"discover\b[^\n]*?-p\s+['\"]?([^'\"\s]+)")
+_RUN_TOOL = re.compile(r"run_tool\(\s*['\"](test_\w+\.py)['\"]")
+
+
+def check_suites(root, **_kw):
+    """Fail when a tools/test_*.py suite runs in no workflow.
+
+    #525, #627, #670 and #787 each wired a missed suite by hand, and each
+    fix only added that one file to a list. A suite counts as run when a
+    workflow names it, a workflow's `unittest discover -p` pattern matches
+    it, or a suite that runs calls it through run_tool (test_tools_cli.py
+    runs most of them that way).
+    """
+    import fnmatch
+    wf_dir = root / ".github" / "workflows"
+    suites = sorted(p.name for p in (root / "tools").glob("test_*.py"))
+    if not wf_dir.is_dir() or not suites:
+        return Skipped("no workflows or no tools test suites")
+    workflows = "\n".join(p.read_text(encoding="utf-8", errors="replace")
+                          for p in sorted(wf_dir.glob("*.y*ml")))
+    patterns = _DISCOVER.findall(workflows)
+    run = {s for s in suites
+           if re.search(r"(?<![\w.])" + re.escape(s) + r"\b", workflows)
+           or any(fnmatch.fnmatch(s, pat) for pat in patterns)}
+    grew = True
+    while grew:
+        grew = False
+        for s in sorted(run):
+            text = (root / "tools" / s).read_text(encoding="utf-8", errors="replace")
+            for called in _RUN_TOOL.findall(text):
+                if called in suites and called not in run:
+                    run.add(called)
+                    grew = True
+    fails = []
+    for s in suites:
+        if s in run or s in LOCAL_ONLY_SUITES:
+            continue
+        fails.append(f"suites: tools/{s} runs in no workflow; name it in "
+                     ".github/workflows/fast.yml, call it from test_tools_cli.py, "
+                     "or add it to LOCAL_ONLY_SUITES with the reason")
+    for s in sorted(LOCAL_ONLY_SUITES):
+        if s not in suites:
+            fails.append(f"suites: LOCAL_ONLY_SUITES names tools/{s}, which does not exist")
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
@@ -672,7 +725,8 @@ def main(argv=None):
 
 CHECKS = {"ship": check_ship, "eol": check_eol,
           "tapes": check_tapes, "nav": check_nav, "links": check_links,
-          "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab}
+          "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab,
+          "suites": check_suites}
 
 
 if __name__ == "__main__":

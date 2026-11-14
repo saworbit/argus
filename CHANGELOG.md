@@ -23,6 +23,17 @@ passing botmatch does not establish better human play.
 
 ## Main updates
 
+### Unreleased
+
+#### Added
+
+- Add `argus_ci.py suites`, part of `all`, which fails when a `tools/test_*.py`
+  suite runs in no workflow. It counts a suite as run when a workflow names it,
+  a `discover -p` pattern matches it, or a running suite calls it through
+  `run_tool`. All 55 suites run today; the five named in the issue run
+  through `test_tools_cli.py`
+  ([#803](https://github.com/saworbit/argus/issues/803)).
+
 - Add an air layer to the clip-hull navmesh audit: fly a player body off
   every ledge at walk, run and running-jump speeds and record where it
   lands, counting walls, doors and plats at their spawn positions. Against
@@ -35,26 +46,6 @@ passing botmatch does not establish better human play.
   ([#771](https://github.com/saworbit/argus/pull/771),
   [details](docs/navmesh-experiment.md#the-air-layer)).
 
-- Stop routing bots into shallow lava and up impossible vertical "walks".
-  navgen tested liquid 48u above the floor, so 70 seats across six maps stood
-  in lava or slime that burns at the feet, and it passed any zero-length link
-  whatever the height, minting 15 climbs of 128 to 192u. navgen now tests the
-  feet and refuses a zero-length rise; a new `--repair-links` mode cut both
-  classes from nine shipped graphs without a regeneration, keeping liquid
-  only as a seat's last way out. Matched dm4, e1m7, dm3 and e1m8 ladders stay
-  at parity: dm4 lava entries fall 40 to 24, and dm3 stops choosing a red
-  armour that bots picked 70 times in 157 tapes and never reached. e1m7's
-  lava deaths are falls off its upper walkways and do not move. Found by a
-  new exact navmesh audit read from the BSP's player clip hull
-  ([#770](https://github.com/saworbit/argus/pull/770),
-  [details](docs/navmesh-experiment.md)).
-
-- Check that a baked combat cover hop is still a live, untyped link from its
-  node, with no deliberate drop, before a retreating bot steers along it.
-  Every shipped graph already meets this, so current matches are unchanged;
-  the guard covers future regenerations
-  ([#652](https://github.com/saworbit/argus/issues/652)).
-
 - Reproduce the dm4 under-fire freeze from the cover-hop cohort in the real
   engine. A player passing on the pit floor below nudged the bot into the
   walkway wall on both the candidate and its unchanged control, so the cover
@@ -62,232 +53,6 @@ passing botmatch does not establish better human play.
   which current main passes at both cadences
   ([#723](https://github.com/saworbit/argus/issues/723),
   [details](docs/body-height-investigation.md#the-dm4-walkway-pin)).
-
-- Separate same-floor body nudges on a hull axis and let the engine refuse a
-  spot the player hull cannot fit, so a nudge no longer clips a wall or
-  leaves two players overlapping on a diagonal. Matched dm3 and dm4 matches
-  stay at parity
-  ([#747](https://github.com/saworbit/argus/issues/747),
-  [details](docs/body-nudge-investigation.md)).
-
-- Check every muzzle combat witness predicate and retain strict receipt
-  rejection under optimized Python
-  ([#745](https://github.com/saworbit/argus/issues/745)).
-
-- Keep health and observation evidence, frozen-source and private-input
-  guards active under optimized Python
-  ([#742](https://github.com/saworbit/argus/issues/742)).
-
-- Require vertical body overlap before nudging or sidestepping another
-  player. Prevent the reproduced dry e1m6 and dm3 pins caused by players
-  on other floors; retain separate task and broader-match gates
-  ([#642](https://github.com/saworbit/argus/issues/642),
-  [#644](https://github.com/saworbit/argus/issues/644)).
-
-- Preserve weapon-free swim exits when the generator also finds a rocket
-  link for the same pair. Record the private mega-return proof while graph
-  adoption remains blocked by the legacy jump anchor
-  ([#636](https://github.com/saworbit/argus/issues/636),
-  [#719](https://github.com/saworbit/argus/issues/719)).
-
-### Unreleased
-
-#### Changed
-
-- `harvest_session.py` now reads each harvested session against the lab
-  objective and claims after scoring it: hard gates, whether it counts for a
-  goal verdict, and any new or regressed trouble. `argus_reach.py` honours
-  `ARGUS_MAPS`, so it runs from a worktree against the main checkout's
-  machine-local BSPs ([#818](https://github.com/saworbit/argus/pull/818)).
-
-- Open CONTRIBUTING's lab tick-rate rule with the rate, about 70 frames a
-  second and not 10, so a preview that shows only its opening no longer
-  stops before the correction. A new rule asks that a commit or PR refuting
-  an earlier rule name that rule in its title: the change that refuted the
-  10 Hz rule ([#336](https://github.com/saworbit/argus/pull/336)) never
-  mentions it, so a history search for the rule finds the commit that
-  taught it and not the one that disproved it. The PR template's
-  refuted-rules item says the same. Documentation only
-  ([#796](https://github.com/saworbit/argus/pull/796)).
-
-- Install main as the gameplay binary, MD5
-  `ED8926C1F3F0E4A5D6F591F905516638`. It is the first install since
-  2026-10-22 ([#566](https://github.com/saworbit/argus/pull/566)), so players
-  now get every source change merged since then: the human gait, combat
-  target reassessment, route actions and recovery, docked lift exits, the
-  body nudge and cover-hop guards, the shallow-lava and climb repairs, the
-  dm3 red armour route and the e1m7 lava run-off fix
-  ([#793](https://github.com/saworbit/argus/pull/793)).
-
-- Smoke evidence for that install: 75 s dedicated matches at the played
-  rate, skill 1, on dm4, e1m7 and dm3, with no engine or progs errors and no
-  freezes (`runs/smoke_deploy_ed8926c1_*.log`). This shows the build loads
-  and plays; it is not an A/B result and says nothing about human play. The
-  rerelease client was not checked.
-
-- Add the first human session on that install, a 176 s dm4 tape at skill 1
-  (`runs/shane_dm4_2026-11-14_ed8926.log`), with its scorecard row. Bots had
-  no freezes or route failures, and the gait check finds no attributable
-  failure. The behaviour guide records why one tape cannot separate the
-  installed gait from earlier builds; the feel verdict and a dm2 session for
-  [#610](https://github.com/saworbit/argus/issues/610) are still open.
-
-- Record in the behaviour guide a probe of fast bot movement. Two thirds or
-  more of grounded frames above 400 u/s come from bots turning at the full
-  320 deg/s turn rate, which is stock Quake physics; the brink deflection
-  accounts for 6 to 10 per cent, and none of nine probe-tape lava deaths
-  followed self-made overspeed. Follow-ups: the missing stock edge and wall
-  friction ([#794](https://github.com/saworbit/argus/issues/794)), and a stall
-  jump whose landing check misses the heading it then flies
-  ([#797](https://github.com/saworbit/argus/issues/797)).
-
-- Correct the behaviour guide's status lines, which still called the gait,
-  observation, muzzle and plan work uninstalled after #793, and the step 1b
-  manifest's status string.
-
-- Index the navmesh audit, its air layer and the mesh-derived graph in the
-  developer tools guide, with navgen's `--repair-links` mode, and link the
-  navmesh follow-ups from the experiment's limits: CI coverage for its
-  tests, floors the extractor misses under 31 dry seats, e1m8's uncovered
-  spawns, the mesh graph beyond dm4, and swim and mover layers
-  ([#787](https://github.com/saworbit/argus/issues/787),
-  [#788](https://github.com/saworbit/argus/issues/788),
-  [#789](https://github.com/saworbit/argus/issues/789),
-  [#790](https://github.com/saworbit/argus/issues/790),
-  [#791](https://github.com/saworbit/argus/issues/791)).
-
-- Record the ranked reversal causes and two refused responses in the
-  behaviour guide, and document the manifest step every `src/argus.qc` edit
-  needs. Link the follow-ups from the body-nudge, cover-hop and dm4 pin work
-  ([#697](https://github.com/saworbit/argus/issues/697), [#754](https://github.com/saworbit/argus/issues/754), [#755](https://github.com/saworbit/argus/issues/755),
-  [#756](https://github.com/saworbit/argus/issues/756), [#757](https://github.com/saworbit/argus/issues/757)).
-
-- Synchronize lab runbooks with current fixture families and observer layouts.
-  Clarify the closed body-clearance prototype and retain its same-floor hull
-  failures as a separate follow-up
-  ([#747](https://github.com/saworbit/argus/issues/747)).
-
-- The lab guide and the lab workflow describe three recent fixes: the source
-  fingerprint reads CRLF as LF, a band gate card names the tapes its rows
-  compare, and a runner with no lab binary stops and says where to build one
-  ([#777](https://github.com/saworbit/argus/issues/777), [#757](https://github.com/saworbit/argus/issues/757), [#768](https://github.com/saworbit/argus/issues/768)).
-
-#### Fixed
-
-- Name the missing lab binary. The study runners now stop with the path they
-  tried and the two ways to provide a lab, instead of a bare
-  FileNotFoundError from subprocess ([#768](https://github.com/saworbit/argus/issues/768)).
-
-- Correct two `src/argus.qc` comments that still said dm2 has pools. Its only
-  liquid is lava, settled on 2026-08-18. Comments only: the compiled
-  progs.dat is byte-identical ([#767](https://github.com/saworbit/argus/issues/767)).
-
-- Let routed bots walk into dm3's south upper area, which holds the red
-  armour. Removing two impossible climbs (#770) had stranded its 22 seats;
-  five elbow seats and sixteen walks that navgen's beeline test accepts now
-  join it to the mainland, and the walk that crossed 119u of open air at the
-  top is retired. Reach from the worst spawn rises from 89 to 98 per cent
-  ([#772](https://github.com/saworbit/argus/pull/772)).
-
-- Evidence for the dm3 route: the engine walked all sixteen new legs twice;
-  matched dm3 ladders stay at stall parity (listen class, 5 against 5 and 5
-  against 11); bots chose the armour 28 times in 15 tapes against 0 and
-  entered the area in 6. Controlled acceptance on dm3 only, not human play
-  ([details](docs/navmesh-experiment.md#seating-dm3s-south-upper-area)).
-
-- Limitation: no bot reached dm3's armour platform at skill 2; a skill-1
-  diagnostic put one across it. Bots reach the top walkway airborne after a
-  stair hop the runtime fires whenever the next seat is over 24u up, and at
-  skill 2 the router prefers an existing sprint across the top gap. Both are
-  open runtime work.
-
-- Judge where a bot running off a ledge lands, not only the floor under its
-  hazard probe. On e1m7 the guard approved run-offs whose probe found the
-  island, the floor under the deathmatch spawn pads or the deathmatch lava
-  bridge, and run speed carried bots 200 to 240 units past them into the
-  lava lake: 28 of 43 lava deaths in six full-rate tapes
-  ([#773](https://github.com/saworbit/argus/pull/773),
-  [details](docs/e1m7-lava-investigation.md)).
-
-- Drop a jump that would land in lava. The other 15 e1m7 lava deaths were
-  jumps at the lake edge: the fighting reachability jump fired under a
-  walkway seat 160 units overhead, and the predictive gap jump judged its
-  landing at chest height and let steering bend its flight. Reachability,
-  stall, escort and gap jumps now trace the arc at the feet first, and a
-  gap jump holds its launch line until it lands
-  ([#773](https://github.com/saworbit/argus/pull/773),
-  [details](docs/e1m7-lava-investigation.md#the-jump-change)).
-
-- Evidence: five interleaved e1m7 tapes a side with lava deaths registered
-  read parity (median 3 to 2, P(improve) 0.56), while two full-rate
-  candidate tapes held no upper-floor run-off against 4.7 a tape before.
-  dm4 holds stall parity over six tapes against eight earlier controls of
-  the same build. Smoke and controlled parity only; no human play.
-
-- Evidence for the jump check: ten interleaved e1m7 tapes a side against the
-  run-off build, lava deaths registered, read parity overall but lava deaths
-  fall 25 to 14 (median 3 to 1.5, improvement CI +0.2 to +2.2, P(improve)
-  0.77); stalls and engagements unchanged. The frag gap between bots widened
-  (median 6 to 10.5) and is unexplained. dm4 logs about one veto a tape and
-  holds stall parity. Controlled parity only; no human play.
-
-- Correct three `src/argus.qc` comments that still gave the refuted
-  frametime 0.1 lab rate as measured fact: the swim drag block, the aim tremor
-  guard and the tremor clock field. Comments only; the compiled program is
-  byte-identical. The swim constant was calibrated to that wrong rate, and
-  whether to restore its original feel is left to
-  [#761](https://github.com/saworbit/argus/issues/761)
-  ([#762](https://github.com/saworbit/argus/issues/762),
-  [#765](https://github.com/saworbit/argus/pull/765)).
-
-- Evaluate every mover-observer retention and dryness clause and qualify
-  older field claims separately from physical handoff evidence
-  ([#735](https://github.com/saworbit/argus/issues/735)).
-
-- Refuse legacy water-route ramp experiments before staging or engine launch
-  when the selected source graph lacks their required seats
-  ([#736](https://github.com/saworbit/argus/issues/736)).
-
-- Evaluate both water-route ownership identities and distinguish corrected
-  layout-2 receipts from historical task-only markers
-  ([#733](https://github.com/saworbit/argus/issues/733)).
-  Let accepted route checks return without reading a missing rejection field.
-
-- Check co-op allies along the limited barrel direction and disable speculative
-  rockets in co-op while respecting facing and muzzle-clearance gates
-  ([#655](https://github.com/saworbit/argus/issues/655)).
-
-- Keep plan-proof input, source and output guards active under optimized Python
-  ([#728](https://github.com/saworbit/argus/issues/728)).
-
-- Clarify persistent hazard-deflection memory and its reset paths without
-  changing steering ([#607](https://github.com/saworbit/argus/issues/607)).
-
-- Share the stall ownership predicate so stationary typed actions can release
-  failed goals, while moving item-clock orbits clear isolated failure history
-  ([#649](https://github.com/saworbit/argus/issues/649), [#650](https://github.com/saworbit/argus/issues/650)).
-  Preserve the frozen health/inventory source through an explicit reverse amendment.
-
-- Apply requested lab skill before loading the map so the initial roster uses
-  the declared difficulty ([#726](https://github.com/saworbit/argus/issues/726)).
-
-- Measure full-rate movement reversals in native demo briefs and add passive
-  steering markers with finalized engine poses for the open movement study
-  ([#697](https://github.com/saworbit/argus/issues/697)).
-  Retain the frozen health/inventory definitions through a reverse amendment.
-
-- Require observed exit-node consumption, the planned successor and a dry
-  world-floor landing in private mover receipts. Preserve the weaker v1 evidence
-  and reject node-only oracle controls ([#647](https://github.com/saworbit/argus/issues/647)).
-
-- Restore the chase camera basis after failed flyby sweeps and bound its
-  position blend at slow frame rates ([#654](https://github.com/saworbit/argus/issues/654)).
-
-- Add private engine controls for obstructed, mismatched-floor and undocked
-  mover forecasts, with real water depth kept separate from dry landing proof
-  ([#646](https://github.com/saworbit/argus/issues/646)).
-
-#### Added
 
 - Add the lab spine, `tools/argus_lab.py`, which joins the corpus,
   scorecard, baselines, benchmark suites, puppet verdicts and measurement
@@ -406,7 +171,6 @@ passing botmatch does not establish better human play.
 - Preserve bounded, engine-proven navigation seats through validated sidecars.
   Regenerate e1m5's moat escape without manual changes to generated QC.
 
-
 - Reassess opponents during an ongoing fight using recent hostile damage
   and visible powerup cues. Keep a focus margin, bounded decision clocks,
   reaction delay and the original item goal. Record switches separately
@@ -511,6 +275,84 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- `harvest_session.py` now reads each harvested session against the lab
+  objective and claims after scoring it: hard gates, whether it counts for a
+  goal verdict, and any new or regressed trouble. `argus_reach.py` honours
+  `ARGUS_MAPS`, so it runs from a worktree against the main checkout's
+  machine-local BSPs ([#818](https://github.com/saworbit/argus/pull/818)).
+
+- Open CONTRIBUTING's lab tick-rate rule with the rate, about 70 frames a
+  second and not 10, so a preview that shows only its opening no longer
+  stops before the correction. A new rule asks that a commit or PR refuting
+  an earlier rule name that rule in its title: the change that refuted the
+  10 Hz rule ([#336](https://github.com/saworbit/argus/pull/336)) never
+  mentions it, so a history search for the rule finds the commit that
+  taught it and not the one that disproved it. The PR template's
+  refuted-rules item says the same. Documentation only
+  ([#796](https://github.com/saworbit/argus/pull/796)).
+
+- Install main as the gameplay binary, MD5
+  `ED8926C1F3F0E4A5D6F591F905516638`. It is the first install since
+  2026-10-22 ([#566](https://github.com/saworbit/argus/pull/566)), so players
+  now get every source change merged since then: the human gait, combat
+  target reassessment, route actions and recovery, docked lift exits, the
+  body nudge and cover-hop guards, the shallow-lava and climb repairs, the
+  dm3 red armour route and the e1m7 lava run-off fix
+  ([#793](https://github.com/saworbit/argus/pull/793)).
+
+- Smoke evidence for that install: 75 s dedicated matches at the played
+  rate, skill 1, on dm4, e1m7 and dm3, with no engine or progs errors and no
+  freezes (`runs/smoke_deploy_ed8926c1_*.log`). This shows the build loads
+  and plays; it is not an A/B result and says nothing about human play. The
+  rerelease client was not checked.
+
+- Add the first human session on that install, a 176 s dm4 tape at skill 1
+  (`runs/shane_dm4_2026-11-14_ed8926.log`), with its scorecard row. Bots had
+  no freezes or route failures, and the gait check finds no attributable
+  failure. The behaviour guide records why one tape cannot separate the
+  installed gait from earlier builds; the feel verdict and a dm2 session for
+  [#610](https://github.com/saworbit/argus/issues/610) are still open.
+
+- Record in the behaviour guide a probe of fast bot movement. Two thirds or
+  more of grounded frames above 400 u/s come from bots turning at the full
+  320 deg/s turn rate, which is stock Quake physics; the brink deflection
+  accounts for 6 to 10 per cent, and none of nine probe-tape lava deaths
+  followed self-made overspeed. Follow-ups: the missing stock edge and wall
+  friction ([#794](https://github.com/saworbit/argus/issues/794)), and a stall
+  jump whose landing check misses the heading it then flies
+  ([#797](https://github.com/saworbit/argus/issues/797)).
+
+- Correct the behaviour guide's status lines, which still called the gait,
+  observation, muzzle and plan work uninstalled after #793, and the step 1b
+  manifest's status string.
+
+- Index the navmesh audit, its air layer and the mesh-derived graph in the
+  developer tools guide, with navgen's `--repair-links` mode, and link the
+  navmesh follow-ups from the experiment's limits: CI coverage for its
+  tests, floors the extractor misses under 31 dry seats, e1m8's uncovered
+  spawns, the mesh graph beyond dm4, and swim and mover layers
+  ([#787](https://github.com/saworbit/argus/issues/787),
+  [#788](https://github.com/saworbit/argus/issues/788),
+  [#789](https://github.com/saworbit/argus/issues/789),
+  [#790](https://github.com/saworbit/argus/issues/790),
+  [#791](https://github.com/saworbit/argus/issues/791)).
+
+- Record the ranked reversal causes and two refused responses in the
+  behaviour guide, and document the manifest step every `src/argus.qc` edit
+  needs. Link the follow-ups from the body-nudge, cover-hop and dm4 pin work
+  ([#697](https://github.com/saworbit/argus/issues/697), [#754](https://github.com/saworbit/argus/issues/754), [#755](https://github.com/saworbit/argus/issues/755),
+  [#756](https://github.com/saworbit/argus/issues/756), [#757](https://github.com/saworbit/argus/issues/757)).
+
+- Synchronize lab runbooks with current fixture families and observer layouts.
+  Clarify the closed body-clearance prototype and retain its same-floor hull
+  failures as a separate follow-up
+  ([#747](https://github.com/saworbit/argus/issues/747)).
+
+- The lab guide and the lab workflow describe three recent fixes: the source
+  fingerprint reads CRLF as LF, a band gate card names the tapes its rows
+  compare, and a runner with no lab binary stops and says where to build one
+  ([#777](https://github.com/saworbit/argus/issues/777), [#757](https://github.com/saworbit/argus/issues/757), [#768](https://github.com/saworbit/argus/issues/768)).
+
 - `argus-mcp probelinks` reports a verdict for every link it probes
   (`passed`, `failed` or `teleport_failed`) in sweep order, beside the
   eight-entry passed sample. It also reads the graph and records verdicts
@@ -567,7 +409,6 @@ passing botmatch does not establish better human play.
   count; shopping and route installation share the settled distance tree.
   Refine sampling within reduced node caps and exclude uncompiled graphs
   from the study report's runtime navigation coverage.
-
 
 - Synchronise the changelog status row, architecture notes, telemetry
   grammar, agent command table and lab runbook with the gait work, and
@@ -671,6 +512,176 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Retry the GUI rendering test's headless browser once when it stalls, kill
+  the browser's whole process tree on a timeout, and fail a second stall with
+  the browser's stderr from both attempts. The first launch on the CI runner
+  had hung for the full 25 s with no output while the page work takes a few
+  seconds ([#817](https://github.com/saworbit/argus/issues/817)).
+
+- Escape the `Argus_Nav_Spawn_<map>` placeholder in the lab's rustdoc, and
+  build rustdoc with warnings denied in the fast workflow so the next one
+  fails its pull request ([#806](https://github.com/saworbit/argus/issues/806)).
+
+- Stop routing bots into shallow lava and up impossible vertical "walks".
+  navgen tested liquid 48u above the floor, so 70 seats across six maps stood
+  in lava or slime that burns at the feet, and it passed any zero-length link
+  whatever the height, minting 15 climbs of 128 to 192u. navgen now tests the
+  feet and refuses a zero-length rise; a new `--repair-links` mode cut both
+  classes from nine shipped graphs without a regeneration, keeping liquid
+  only as a seat's last way out. Matched dm4, e1m7, dm3 and e1m8 ladders stay
+  at parity: dm4 lava entries fall 40 to 24, and dm3 stops choosing a red
+  armour that bots picked 70 times in 157 tapes and never reached. e1m7's
+  lava deaths are falls off its upper walkways and do not move. Found by a
+  new exact navmesh audit read from the BSP's player clip hull
+  ([#770](https://github.com/saworbit/argus/pull/770),
+  [details](docs/navmesh-experiment.md)).
+
+- Check that a baked combat cover hop is still a live, untyped link from its
+  node, with no deliberate drop, before a retreating bot steers along it.
+  Every shipped graph already meets this, so current matches are unchanged;
+  the guard covers future regenerations
+  ([#652](https://github.com/saworbit/argus/issues/652)).
+
+- Separate same-floor body nudges on a hull axis and let the engine refuse a
+  spot the player hull cannot fit, so a nudge no longer clips a wall or
+  leaves two players overlapping on a diagonal. Matched dm3 and dm4 matches
+  stay at parity
+  ([#747](https://github.com/saworbit/argus/issues/747),
+  [details](docs/body-nudge-investigation.md)).
+
+- Check every muzzle combat witness predicate and retain strict receipt
+  rejection under optimized Python
+  ([#745](https://github.com/saworbit/argus/issues/745)).
+
+- Keep health and observation evidence, frozen-source and private-input
+  guards active under optimized Python
+  ([#742](https://github.com/saworbit/argus/issues/742)).
+
+- Require vertical body overlap before nudging or sidestepping another
+  player. Prevent the reproduced dry e1m6 and dm3 pins caused by players
+  on other floors; retain separate task and broader-match gates
+  ([#642](https://github.com/saworbit/argus/issues/642),
+  [#644](https://github.com/saworbit/argus/issues/644)).
+
+- Preserve weapon-free swim exits when the generator also finds a rocket
+  link for the same pair. Record the private mega-return proof while graph
+  adoption remains blocked by the legacy jump anchor
+  ([#636](https://github.com/saworbit/argus/issues/636),
+  [#719](https://github.com/saworbit/argus/issues/719)).
+
+- Name the missing lab binary. The study runners now stop with the path they
+  tried and the two ways to provide a lab, instead of a bare
+  FileNotFoundError from subprocess ([#768](https://github.com/saworbit/argus/issues/768)).
+
+- Correct two `src/argus.qc` comments that still said dm2 has pools. Its only
+  liquid is lava, settled on 2026-08-18. Comments only: the compiled
+  progs.dat is byte-identical ([#767](https://github.com/saworbit/argus/issues/767)).
+
+- Let routed bots walk into dm3's south upper area, which holds the red
+  armour. Removing two impossible climbs (#770) had stranded its 22 seats;
+  five elbow seats and sixteen walks that navgen's beeline test accepts now
+  join it to the mainland, and the walk that crossed 119u of open air at the
+  top is retired. Reach from the worst spawn rises from 89 to 98 per cent
+  ([#772](https://github.com/saworbit/argus/pull/772)).
+
+- Evidence for the dm3 route: the engine walked all sixteen new legs twice;
+  matched dm3 ladders stay at stall parity (listen class, 5 against 5 and 5
+  against 11); bots chose the armour 28 times in 15 tapes against 0 and
+  entered the area in 6. Controlled acceptance on dm3 only, not human play
+  ([details](docs/navmesh-experiment.md#seating-dm3s-south-upper-area)).
+
+- Limitation: no bot reached dm3's armour platform at skill 2; a skill-1
+  diagnostic put one across it. Bots reach the top walkway airborne after a
+  stair hop the runtime fires whenever the next seat is over 24u up, and at
+  skill 2 the router prefers an existing sprint across the top gap. Both are
+  open runtime work.
+
+- Judge where a bot running off a ledge lands, not only the floor under its
+  hazard probe. On e1m7 the guard approved run-offs whose probe found the
+  island, the floor under the deathmatch spawn pads or the deathmatch lava
+  bridge, and run speed carried bots 200 to 240 units past them into the
+  lava lake: 28 of 43 lava deaths in six full-rate tapes
+  ([#773](https://github.com/saworbit/argus/pull/773),
+  [details](docs/e1m7-lava-investigation.md)).
+
+- Drop a jump that would land in lava. The other 15 e1m7 lava deaths were
+  jumps at the lake edge: the fighting reachability jump fired under a
+  walkway seat 160 units overhead, and the predictive gap jump judged its
+  landing at chest height and let steering bend its flight. Reachability,
+  stall, escort and gap jumps now trace the arc at the feet first, and a
+  gap jump holds its launch line until it lands
+  ([#773](https://github.com/saworbit/argus/pull/773),
+  [details](docs/e1m7-lava-investigation.md#the-jump-change)).
+
+- Evidence: five interleaved e1m7 tapes a side with lava deaths registered
+  read parity (median 3 to 2, P(improve) 0.56), while two full-rate
+  candidate tapes held no upper-floor run-off against 4.7 a tape before.
+  dm4 holds stall parity over six tapes against eight earlier controls of
+  the same build. Smoke and controlled parity only; no human play.
+
+- Evidence for the jump check: ten interleaved e1m7 tapes a side against the
+  run-off build, lava deaths registered, read parity overall but lava deaths
+  fall 25 to 14 (median 3 to 1.5, improvement CI +0.2 to +2.2, P(improve)
+  0.77); stalls and engagements unchanged. The frag gap between bots widened
+  (median 6 to 10.5) and is unexplained. dm4 logs about one veto a tape and
+  holds stall parity. Controlled parity only; no human play.
+
+- Correct three `src/argus.qc` comments that still gave the refuted
+  frametime 0.1 lab rate as measured fact: the swim drag block, the aim tremor
+  guard and the tremor clock field. Comments only; the compiled program is
+  byte-identical. The swim constant was calibrated to that wrong rate, and
+  whether to restore its original feel is left to
+  [#761](https://github.com/saworbit/argus/issues/761)
+  ([#762](https://github.com/saworbit/argus/issues/762),
+  [#765](https://github.com/saworbit/argus/pull/765)).
+
+- Evaluate every mover-observer retention and dryness clause and qualify
+  older field claims separately from physical handoff evidence
+  ([#735](https://github.com/saworbit/argus/issues/735)).
+
+- Refuse legacy water-route ramp experiments before staging or engine launch
+  when the selected source graph lacks their required seats
+  ([#736](https://github.com/saworbit/argus/issues/736)).
+
+- Evaluate both water-route ownership identities and distinguish corrected
+  layout-2 receipts from historical task-only markers
+  ([#733](https://github.com/saworbit/argus/issues/733)).
+  Let accepted route checks return without reading a missing rejection field.
+
+- Check co-op allies along the limited barrel direction and disable speculative
+  rockets in co-op while respecting facing and muzzle-clearance gates
+  ([#655](https://github.com/saworbit/argus/issues/655)).
+
+- Keep plan-proof input, source and output guards active under optimized Python
+  ([#728](https://github.com/saworbit/argus/issues/728)).
+
+- Clarify persistent hazard-deflection memory and its reset paths without
+  changing steering ([#607](https://github.com/saworbit/argus/issues/607)).
+
+- Share the stall ownership predicate so stationary typed actions can release
+  failed goals, while moving item-clock orbits clear isolated failure history
+  ([#649](https://github.com/saworbit/argus/issues/649), [#650](https://github.com/saworbit/argus/issues/650)).
+  Preserve the frozen health/inventory source through an explicit reverse amendment.
+
+- Apply requested lab skill before loading the map so the initial roster uses
+  the declared difficulty ([#726](https://github.com/saworbit/argus/issues/726)).
+
+- Measure full-rate movement reversals in native demo briefs and add passive
+  steering markers with finalized engine poses for the open movement study
+  ([#697](https://github.com/saworbit/argus/issues/697)).
+  Retain the frozen health/inventory definitions through a reverse amendment.
+
+- Require observed exit-node consumption, the planned successor and a dry
+  world-floor landing in private mover receipts. Preserve the weaker v1 evidence
+  and reject node-only oracle controls ([#647](https://github.com/saworbit/argus/issues/647)).
+
+- Restore the chase camera basis after failed flyby sweeps and bound its
+  position blend at slow frame rates ([#654](https://github.com/saworbit/argus/issues/654)).
+
+- Add private engine controls for obstructed, mismatched-floor and undocked
+  mover forecasts, with real water depth kept separate from dry landing proof
+  ([#646](https://github.com/saworbit/argus/issues/646)).
 
 - Read CRLF as LF in the lab's source fingerprint, so a worktree and the main
   checkout of one commit report the same identity and a worktree compare is
@@ -789,7 +800,6 @@ passing botmatch does not establish better human play.
   waits and jump setup, and require lift rides to approach their landing
   rather than renewing recovery on a crush/reverse cycle. See the [e1m5 investigation](docs/e1m5-encounters.md).
 
-
 - Quarantine new and historical recovery/transfer fixture tapes from native
   match comparisons and default bot-corpus queries, invalidating older cached
   classifications without changing raw tapes or numeric metrics (#626).
@@ -808,7 +818,6 @@ passing botmatch does not establish better human play.
 
 - Enforce severe-freeze vetoes across every candidate tape in a repeated-run
   comparison, including tapes outside the displayed representative.
-
 
 - Synchronise the contributor guide with the pinned Rust toolchain, strict
   Clippy check and CI compilation of all 19 maintained private fixture variants.

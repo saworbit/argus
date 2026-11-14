@@ -221,6 +221,10 @@ its paragraph or comment block also says "refuted"; `docs/plans/`,
 (see [the lab spine](lab-spine.md#adding-a-claim)), and fast CI runs the lab
 spine's tests. Fast CI also runs the navigation tactics suite and builds and runs Rust
 integration tests; cases needing local engine assets self-skip on CI.
+`python tools/argus_ci.py suites` fails when a `tools/test_*.py` suite runs in
+no workflow: a workflow must name it, match it with a `discover -p` pattern, or
+run it through `test_tools_cli.py`. A suite that truly needs local assets goes
+in `LOCAL_ONLY_SUITES` in that script, with its reason.
 Use `python tools/argus_ci.py links` to check only documentation paths and
 fragments, including explicit HTML anchors and the `src`, `srcset` and `href`
 values of raw HTML such as the README banner. It reads tracked Markdown files,

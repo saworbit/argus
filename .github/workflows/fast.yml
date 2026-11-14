@@ -76,6 +76,11 @@ jobs:
       - name: Run strict Clippy
         run: cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
 
+      - name: Build rustdoc with warnings denied
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --manifest-path tools/argus_mcp/Cargo.toml --no-deps --locked
+
       - name: Run the lab suite
         # machine-local fixtures (maps_local BSPs, runs/demos) self-skip;
         # the committed runs/*.log regression tapes run in full

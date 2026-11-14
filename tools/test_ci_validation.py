@@ -191,6 +191,54 @@ class CIValidationTests(unittest.TestCase):
             failures = ci.check_lab(root)
         self.assertTrue(any("a fixed claim says when" in f for f in failures), failures)
 
+    def _suite_root(self, td, workflow):
+        root = Path(td)
+        (root / ".github" / "workflows").mkdir(parents=True)
+        (root / "tools").mkdir()
+        (root / ".github" / "workflows" / "fast.yml").write_text(workflow, encoding="utf-8")
+        return root
+
+    def test_suites_gate_fails_on_an_unlisted_suite(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._suite_root(td, (
+                "run: python3 tools/test_tools_cli.py\n"
+                "run: python3 -m unittest discover -s tools -p 'test_behaviour*.py'\n"))
+            (root / "tools" / "test_tools_cli.py").write_text(
+                "self.run_tool('test_called.py')\n", encoding="utf-8")
+            (root / "tools" / "test_called.py").write_text("", encoding="utf-8")
+            (root / "tools" / "test_behaviour_x.py").write_text("", encoding="utf-8")
+            self.assertEqual(ci.check_suites(root), [])
+            (root / "tools" / "test_orphan.py").write_text("", encoding="utf-8")
+            failures = ci.check_suites(root)
+            self.assertEqual(len(failures), 1, failures)
+            self.assertIn("tools/test_orphan.py runs in no workflow", failures[0])
+            with patch.dict(ci.LOCAL_ONLY_SUITES, {"test_orphan.py": "needs a GPU"}):
+                self.assertEqual(ci.check_suites(root), [])
+            with patch.dict(ci.LOCAL_ONLY_SUITES, {"test_gone.py": "stale"}):
+                self.assertTrue(any("test_gone.py, which does not exist" in f
+                                    for f in ci.check_suites(root)))
+
+    def test_suites_gate_ignores_run_tool_calls_from_suites_that_never_run(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._suite_root(td, "run: true\n")
+            (root / "tools" / "test_parent.py").write_text(
+                "self.run_tool('test_child.py')\n", encoding="utf-8")
+            (root / "tools" / "test_child.py").write_text("", encoding="utf-8")
+            self.assertEqual(len(ci.check_suites(root)), 2)
+
+    def test_suites_gate_does_not_take_a_longer_name_for_a_shorter_one(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self._suite_root(td, "run: python3 tools/test_lab_extra.py\n")
+            (root / "tools" / "test_lab_extra.py").write_text("", encoding="utf-8")
+            (root / "tools" / "test_lab.py").write_text("", encoding="utf-8")
+            failures = ci.check_suites(root)
+            self.assertEqual(len(failures), 1, failures)
+            self.assertIn("tools/test_lab.py", failures[0])
+
+    def test_all_runs_the_suites_gate_and_it_passes_on_the_tree(self):
+        self.assertIs(ci.CHECKS["suites"], ci.check_suites)
+        self.assertEqual(ci.check_suites(ci.ROOT), [])
+
     def test_all_runs_the_dash_gate(self):
         called = []
         stubs = {name: (lambda root, _name=name, **kw: called.append(_name) or [])
