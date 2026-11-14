@@ -628,6 +628,17 @@ async fn win_inject(pid: u32, line: &str) -> Result<(), String> {
         .and_then(Path::parent)
         .ok_or("test executable directory")?
         .join("argus-mcp.exe");
+    // `cargo test --lib` builds no binary, so a fresh target directory, or
+    // one whose CLI predates the source, fails here in every thread count
+    // (#805). Say so rather than report a bare os error 2.
+    #[cfg(test)]
+    if !executable.is_file() {
+        return Err(format!(
+            "console helper {} is missing; cargo test --lib does not build it, \
+             so run cargo build --bin argus-mcp first",
+            executable.display()
+        ));
+    }
     let mut command = tokio::process::Command::new(executable);
     command
         .args([
@@ -644,10 +655,17 @@ async fn win_inject(pid: u32, line: &str) -> Result<(), String> {
     )
     .await?;
     if !result.status.success() {
+        let stderr = String::from_utf8_lossy(&result.stderr);
+        let hint = if stderr.contains("matching source build") {
+            "; the helper binary was built from different source, so rebuild it \
+             with cargo build --bin argus-mcp"
+        } else {
+            ""
+        };
         return Err(format!(
-            "console helper exited {}: {}",
+            "console helper exited {}: {}{hint}",
             result.status,
-            String::from_utf8_lossy(&result.stderr).trim()
+            stderr.trim()
         ));
     }
     Ok(())
