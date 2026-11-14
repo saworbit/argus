@@ -151,6 +151,11 @@ passing botmatch does not establish better human play.
   failures as a separate follow-up
   ([#747](https://github.com/saworbit/argus/issues/747)).
 
+- The lab guide and the lab workflow describe three recent fixes: the source
+  fingerprint reads CRLF as LF, a band gate card names the tapes its rows
+  compare, and a runner with no lab binary stops and says where to build one
+  ([#777](https://github.com/saworbit/argus/issues/777), [#757](https://github.com/saworbit/argus/issues/757), [#768](https://github.com/saworbit/argus/issues/768)).
+
 #### Fixed
 
 - Name the missing lab binary. The study runners now stop with the path they

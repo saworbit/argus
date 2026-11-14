@@ -21,7 +21,9 @@ update it, then restart the client.
 
 Every structured MCP response carries `lab_identity`: the running package version and a
 build-time fingerprint of `Cargo.toml`, `Cargo.lock`, `build.rs`, and the Rust
-source, beside the same identity recomputed from the checkout. Inspection stays
+source, beside the same identity recomputed from the checkout. The fingerprint
+reads CRLF as LF, so a worktree and the main checkout of one commit share an
+identity whatever line endings Git gave each. Inspection stays
 available when those identities differ, but the lab refuses quality-gate
 verdicts from `compare_runs`, `suggest_next` compare mode, `experiment`,
 `campaign_experiment`, and `matrix_experiment`. Repair an identity mismatch with
@@ -1378,7 +1380,10 @@ stationary, a new 10-second statue, or a large increase in total frozen time.
 Long-window and total-time limits use the control band's maximum observed
 severity; a freeze under fire always rejects, including on unchanged code.
 The diagnostic identifies the offending candidate tape even when the displayed
-median-stall representative is clean. Statistical null-pair calibration is
+median-stall representative is clean. The card's rows compare those two
+representative tapes, one per arm, so a band card says so on a `Rows:` line
+under its title, with the band sizes: a red row under a green verdict is one
+pair, and the band medians decide. Statistical null-pair calibration is
 separate from this release-readiness check.
 
 The [frozen-source study drivers](../../docs/lab-workflow.md#cross-map-routing-evaluation)
