@@ -469,7 +469,7 @@ exe paths as if they were defaults): `tools/argus_mcp.toml.example`,
 `DEFAULT_PORT` (26000). Attached protocol clients use that controller's
 port. The `probelinks`, `benchmark`, `within-ab`, `tactic-suite`,
 `behaviour-suite`, `campaign` and `match` CLI commands accept `--port N`;
-`record-pov` accepts it for the existing match it records. Values must be
+`record-pov` and `watch-pov` accept it for the existing match they record. Values must be
 1024 through 65535. Missing, duplicate and malformed values are refused
 before compilation. Connected study APIs also offer `*_with_ctrl` entry
 points; existing entry points retain their default controller.

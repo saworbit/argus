@@ -266,11 +266,15 @@ Bot POV recording, PNG capture and video export use the Rust lab CLI:
 
 ```text
 argus-mcp record-pov my_pov 1 8
+argus-mcp watch-pov my_stall --on stall,still --run <run_name>
 argus-mcp capture-demo my_pov 0.5 12 0.1
 argus-mcp capture-video my_pov 0.5 2.4 0.5
 ```
 
-The recorder joins an existing lab match. Video export requires FFmpeg with
+The recorder joins an existing lab match. `watch-pov` waits on that match's
+console for the first bot to stall, stand still or emit a chosen marker, cuts
+the camera to it, and renders frames; see
+[triggered capture](argus_mcp/README.md#triggered-capture). Video export requires FFmpeg with
 `libvpx-vp9` on PATH and writes a silent lossless VP9 WebM; PNG capture needs
 no encoder. The video example samples 2.4 source seconds and plays them over
 4.8 seconds at half speed. See [rendered POV evidence](argus_mcp/README.md#rendered-pov-evidence)

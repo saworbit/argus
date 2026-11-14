@@ -172,8 +172,11 @@ Argus: dedicated stdin whitelist (`tune`).
 
 Real engine PNGs of a recorded POV. Inputs: `demo`, `start_sec`,
 `frame_count`, `interval_sec`. Without `demo`, record live `bot_client_id`
-(roster slot 0..3, default 1) for eight seconds first. Debug overlays and
-viewpoint changes in an existing demo are refused. See the bounded
+(roster slot 0..3, default 1) for eight seconds first. With `on` (a trigger
+list such as `stall,still`) it instead waits up to 60 s for the first bot to
+meet a trigger, cuts the camera to that bot and renders from the cut, and
+`start_sec` counts from the trigger. Debug overlays and viewpoint changes in
+an existing demo are refused. See the bounded
 [renderer and recorder contract](../tools/argus_mcp/README.md#rendered-pov-evidence).
 
 For bounded video export, use the CLI `argus-mcp capture-video <demo> [start]

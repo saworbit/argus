@@ -208,8 +208,11 @@ pub enum PovFocus {
 /// A recording that started itself, with the moments needed to render it.
 #[derive(Debug, Clone, Serialize)]
 pub struct TriggeredRecording {
+    /// Demo stem under `runs/demos/`, for `capture-demo` or `capture-video`.
     pub demo: String,
+    /// The bot the camera cut to: the one that met the trigger.
     pub bot: String,
+    /// The trigger that fired, as `stall`, `flip x3` or `still 2.5s`.
     pub trigger: String,
     /// The console line that fired, trimmed to 200 characters.
     pub line: String,
@@ -222,7 +225,9 @@ pub struct TriggeredRecording {
     /// The camera was already on that bot, so frames before the trigger
     /// show the lead-up rather than another bot.
     pub preroll_valid: bool,
+    /// Wall-clock seconds from the camera being ready to the trigger.
     pub waited_sec: f64,
+    /// Length of the published demo, which bounds the renderable frames.
     pub demo_duration_sec: f64,
     /// Names that fired but that the camera could not track (not bots).
     pub skipped: Vec<String>,

@@ -106,12 +106,15 @@ pub fn parse_spec(spec: &str) -> Result<Vec<Trigger>, String> {
 /// What fired, for whom, and the console line that did it.
 #[derive(Debug, Clone, PartialEq, serde::Serialize)]
 pub struct Fired {
+    /// Bot name as its ARGLOG lines spell it; spaces allowed.
     pub bot: String,
+    /// The trigger's label: `stall`, `flip x3` or `still 2.5s`.
     pub trigger: String,
     /// The tape's game clock: the newest ARGLOG time read so far. ARGEVT
     /// and ARGUS lines carry no time of their own, so this is accurate to
     /// the 0.5 s ARGLOG cadence.
     pub game_time: f64,
+    /// The console line that fired, trimmed to 200 characters.
     pub line: String,
 }
 
