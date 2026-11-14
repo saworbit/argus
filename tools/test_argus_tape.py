@@ -180,6 +180,63 @@ ARGEVT Gap lift goal spawned
             self.assertIsNotNone(event)
             self.assertEqual(event.groups(), ('Joe Rogan', 'tactic', 'abort target'))
 
+    def test_unforced_world_deaths_split_walk_offs_from_knock_ins(self):
+        from tempfile import TemporaryDirectory
+        # Lava below z -350; every sample is (t, z, hp) for one bot.
+        lava = lambda x, y, z: -5 if z < -350 else -1
+
+        def count(rows, death_z=-384, contents=lava, extra=''):
+            lines = ['ARGUS init on dm4', 'ARGEVT Reap spawned']
+            lines += [f"ARGLOG Reap t {t:.1f} pos '0 0 {z}' spd 300 yaw 0 mode 2 st 0 gl 0 hp {hp} frg 0"
+                      for t, z, hp in rows]
+            lines += [extra] if extra else []
+            lines.append(f"ARGEVT Reap death world pos '0 0 {death_z}'")
+            with TemporaryDirectory() as td:
+                path = Path(td) / 'deaths.log'
+                path.write_text('\n'.join(lines) + '\n')
+                return argus_longi.analyse(path, contents=contents)['bot_world_unforced']
+
+        run_off = [(1.0, -296, 100), (1.5, -296, 100), (2.0, -296, 100), (2.5, -384, 60), (3.0, -384, 20)]
+        self.assertEqual(count(run_off), 1)
+        knock_in = [(1.0, -296, 100), (1.5, -296, 80), (2.0, -296, 80), (2.5, -384, 50), (3.0, -384, 20)]
+        self.assertEqual(count(knock_in), 0)
+        # Surfacing between samples is a bob: the burn before it is the lava, not a cause.
+        bob = [(1.0, -296, 100), (1.5, -296, 100), (2.0, -384, 80), (2.5, -384, 60), (3.0, -320, 50), (3.5, -384, 20)]
+        self.assertEqual(count(bob), 1)
+        # Burning at the edge after the feet read dry: the death position ends the run.
+        edge = [(1.0, -296, 100), (1.5, -384, 70), (2.0, -384, 40), (2.5, -320, 25), (3.0, -320, 10)]
+        self.assertEqual(count(edge, death_z=-384), 1)
+        self.assertEqual(count(edge, death_z=-320), 0)
+        # Megahealth rot is not damage; a hit more than 3 s before the entry is not the cause.
+        self.assertEqual(count([(1.0, -296, 110), (1.5, -296, 109), (2.0, -296, 108), (2.5, -384, 70)]), 1)
+        old_hit = [(0.0, -296, 100), (0.5, -296, 50), (4.0, -296, 50), (4.5, -296, 50), (5.0, -296, 50), (5.5, -384, 20)]
+        self.assertEqual(count(old_hit), 1)
+        # Tapes before 2026-08-18 wrote a bare death line beside the detailed one.
+        self.assertEqual(count(run_off, extra='ARGEVT Reap death'), 1)
+        # A spawn kill has no samples to judge and is skipped, not blanked.
+        self.assertEqual(count(run_off, extra="ARGEVT Reap death world pos '0 0 24'\nARGEVT Reap respawn"), 1)
+        # No BSP: blank rather than a guess.
+        self.assertEqual(count(run_off, contents=None), '')
+
+    def test_unforced_is_zero_without_world_deaths_even_without_a_bsp(self):
+        from tempfile import TemporaryDirectory
+        text = ('ARGEVT Reap spawned\nARGEVT Omi spawned\n'
+                "ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n"
+                "ARGEVT Reap death Omi pos '0 0 24'\n")
+        with TemporaryDirectory() as td:
+            path = Path(td) / 'frag.log'
+            path.write_text(text)
+            self.assertEqual(argus_longi.analyse(path, contents=None)['bot_world_unforced'], 0)
+
+    def test_the_first_session_on_ed8926_has_two_unforced_world_deaths(self):
+        # Carmack ran off a ledge at 440 u/s and Joe Rogan's stall jump (#797)
+        # flew him into lava; the third bot was knocked in after a 17 hp hit.
+        tape = Path(__file__).resolve().parent.parent / 'runs/shane_dm4_2026-11-14_ed8926.log'
+        if not tape.is_file() or argus_longi.bsp_for('dm4') is None:
+            self.skipTest('needs the 11-14 tape and a machine-local dm4.bsp')
+        row = argus_longi.analyse(tape)
+        self.assertEqual((row['bot_world'], row['bot_world_unforced']), (3, 2))
+
     def test_summary_reports_tactical_phases_without_claiming_hits(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
