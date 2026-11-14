@@ -58,6 +58,34 @@ docs/mover-exit-prototype.patch -whitespace
 *.dll binary
 *.so binary
 *.dylib binary
+*.ico binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.webm binary
+*.mp4 binary
+*.wav binary
+*.ogg binary
+*.lmp binary
+*.wad binary
+*.pdf binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.7z binary
+*.gz binary
+*.tar binary
+
+# GitHub presentation: collapse machine-written files in pull request diffs
+# and keep them out of the language statistics. navgen writes every
+# per-map graph; the mapname dispatcher is hand-maintained and stays visible.
+src/argus_nav_*.qc linguist-generated=true
+src/argus_nav_*.qc.json linguist-generated=true
+src/argus_nav_dispatch.qc -linguist-generated
+runs/** linguist-generated=true
+tools/argus_mcp/Cargo.lock linguist-generated=true
 runs/mega_return_v1_mega_return_current.log -text !eol -whitespace
 runs/mega_return_v1_mega_return_current_slow.log -text !eol -whitespace
 runs/mega_return_v1_mega_return_swim_candidate.log -text !eol -whitespace

@@ -1,5 +1,5 @@
 # Argus .gitignore - written before any git init, so licensed id data
-# can never reach a repository (hard rule in CLAUDE.md).
+# can never reach a repository (a hard project rule; see AGENTS.md).
 
 # id/Steam licensed data: machine-local only, never commit
 engine/id1/
@@ -179,3 +179,30 @@ engine/argus/edump.cfg
 
 # Portable project rules are reviewed; local agent notes stay ignored.
 !/AGENTS.md
+
+# operating system and editor droppings
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# Python tooling caches and environments
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+.coverage
+htmlcov/
+
+# secrets and credentials never belong in the tree
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12

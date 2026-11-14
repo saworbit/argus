@@ -1,0 +1,14 @@
+# Review routing: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+# Later rules win. The maintainer owns everything; the explicit lines below
+# keep ownership of the gates and the shipped binary visible even if a
+# second owner is added to the default rule later.
+
+*                               @saworbit
+
+/.github/                       @saworbit
+/tools/argus_ci.py              @saworbit
+/tools/argus_mcp/deny.toml      @saworbit
+/game/argus/                    @saworbit
+/LICENSE                        @saworbit
+/LICENSE-MIT                    @saworbit
+/SECURITY.md                    @saworbit

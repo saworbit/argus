@@ -1,30 +1,42 @@
-# Configuration for automatic release notes generation
+# Generated release notes: groups merged pull requests by label.
 # https://docs.github.com/en/repositories/releasing-projects-on-github/automatically-generated-release-notes
+# .github/workflows/labeler.yml applies the path labels; combat, physics and
+# bug are applied by hand. A pull request lands in the first category whose
+# labels it carries, and anything unlabelled lands under "Other changes".
 
 changelog:
+  exclude:
+    labels:
+      - duplicate
+      - invalid
+      - wontfix
+      - question
   categories:
-    - title: "🤖 Bot AI, Tactics & Combat"
+    - title: "Bot AI, tactics and combat"
       labels:
-        - "ai"
-        - "combat"
-    - title: "🏃 Locomotion & Physics Simulation"
+        - ai
+        - combat
+    - title: "Locomotion and physics"
       labels:
-        - "physics"
-    - title: "🗺️ Navigation & Map Support"
+        - physics
+    - title: "Navigation and map support"
       labels:
-        - "navigation"
-        - "maps"
-    - title: "🔬 Lab MCP Server, GUI & Telemetry"
+        - navigation
+        - maps
+    - title: "Bug fixes and engine compatibility"
       labels:
-        - "rust-mcp"
-        - "tooling"
-    - title: "🐛 Bug Fixes & Engine Compatibility"
+        - bug
+    - title: "Lab, telemetry and tooling"
       labels:
-        - "bug"
-    - title: "🛠️ Dependency Updates & CI"
+        - rust-mcp
+        - tooling
+    - title: "Documentation and community"
       labels:
-        - "dependencies"
-        - "github_actions"
-    - title: "📝 Documentation & Community"
+        - documentation
+    - title: "Dependencies and CI"
       labels:
-        - "documentation"
+        - dependencies
+        - github_actions
+    - title: "Other changes"
+      labels:
+        - "*"

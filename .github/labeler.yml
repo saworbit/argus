@@ -1,0 +1,50 @@
+# Path labels for pull requests, applied by .github/workflows/labeler.yml.
+# The release notes (.github/release.yml) group changes by these labels, so a
+# pull request that touches nothing below still lands under "Other changes".
+# combat and physics share src/argus.qc with the AI and are applied by hand.
+
+ai:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/argus.qc
+          - src/argus_cam.qc
+
+navigation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/argus_nav.qc
+          - src/argus_nav_dispatch.qc
+          - tools/argus_navgen.py
+          - tools/argus_navmesh*.py
+          - tools/argus_reach.py
+          - tools/argus_navjson.py
+
+maps:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/argus_nav_*.qc
+          - src/argus_nav_*.json
+          - benchmarks/**
+
+rust-mcp:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tools/argus_mcp/**
+
+tooling:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tools/*.py
+          - tools/fixtures/**
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/*.md'
+          - docs/**
+          - README.txt
+
+github_actions:
+  - changed-files:
+      - any-glob-to-any-file:
+          - .github/**

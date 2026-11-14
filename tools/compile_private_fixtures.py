@@ -1,6 +1,6 @@
 """Compile maintained private fixture sources without a lab, engine or map assets.
 
-Use the same pinned FTEQCC build as compile.yml. Every invocation needs a new
+Use the FTEQCC build pinned in .github/actions/build-progs. Every invocation needs a new
 output directory. Sources, logs and receipts are retained there, including on
 failure. This checks compilation only, not native fixture outcomes.
 """

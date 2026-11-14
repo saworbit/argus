@@ -1,37 +1,47 @@
-name: Map Navigation & Support
-description: Request navigation graph support or report pathfinding/routing issues for a specific map.
+name: Map navigation and support
+description: Request a navigation graph for a map, or report a routing problem on one.
 title: "[Map]: "
 labels: ["maps", "navigation"]
 body:
   - type: markdown
     attributes:
       value: |
-        Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `lqdm2`.
-        You can also generate navigation graphs for any `.bsp` using `tools/argus_navgen.py` or the `argus-mcp gui` wizard.
+        Argus ships navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, `e1m1`, `e1m2`, `e1m5`, `e1m6`, `e1m7`, `e1m8` and `lqdm2`; other maps fall back to line-of-sight seeking.
+        You can generate a graph for any `.bsp` yourself with `tools/argus_navgen.py` or the `argus-mcp gui` wizard; see the [lab workflow](https://github.com/saworbit/argus/blob/main/docs/lab-workflow.md).
+        Please do not attach id Software map files: the stock maps are licensed data and cannot be redistributed here.
 
   - type: input
     id: map_name
     attributes:
-      label: Map Name / BSP
-      placeholder: "e.g. cpm3a, ztndm1, aerowalk, dm1"
+      label: Map name or BSP
+      placeholder: "e.g. ztndm1, aerowalk, dm1"
     validations:
       required: true
 
   - type: dropdown
     id: map_source
     attributes:
-      label: Map Source
+      label: Map source
       options:
-        - "Stock id Quake Map (id1)"
-        - "LibreQuake Map"
-        - "Custom / Community Deathmatch Map"
+        - "Stock id Quake map (id1)"
+        - "LibreQuake map"
+        - "Custom or community deathmatch map"
     validations:
       required: true
+
+  - type: input
+    id: build
+    attributes:
+      label: Argus build
+      description: For a routing problem, the release tag, source commit or `progs.dat` MD5 you ran.
+      placeholder: "e.g. v4.07 or commit c41d408"
+    validations:
+      required: false
 
   - type: textarea
     id: details
     attributes:
-      label: Map Navigation Details / Issues
-      description: Describe what tricky geometry exists on the map (e.g. rocket-jump ledges, teleporters, moving elevators, liquid hazard pits) or what routing improvements are needed.
+      label: Navigation details or problem
+      description: What tricky geometry the map has (rocket-jump ledges, teleporters, lifts, doors, liquid pits), or where and how bots fail to route. Coordinates from `ARGLOG` lines help most.
     validations:
       required: true

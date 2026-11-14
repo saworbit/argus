@@ -1,0 +1,33 @@
+name: labeler
+
+# Labels pull requests by the paths they touch (.github/labeler.yml) so the
+# generated release notes can group them. This deliberately uses
+# pull_request, not pull_request_target: a pull request from a fork gets a
+# read-only token, so its labelling is skipped rather than handing untrusted
+# code a write token. Dependabot labels its own pull requests.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  label:
+    name: path labels
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository
+      && github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read        # read .github/labeler.yml
+      pull-requests: write  # add the labels
+    steps:
+      - uses: actions/labeler@bf12e9b00b37c5c0ca2b87b79b2daf7891dbda13 # v7.0.0
+        with:
+          sync-labels: false

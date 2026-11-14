@@ -1,11 +1,14 @@
 blank_issues_enabled: true
 contact_links:
-  - name: GitHub Discussions
+  - name: Report a security vulnerability
+    url: https://github.com/saworbit/argus/security/advisories/new
+    about: Please report security problems privately, never in a public issue.
+  - name: Ask a question or share a match
     url: https://github.com/saworbit/argus/discussions
-    about: Ask questions, share ideas, post match recordings, or chat with the community!
-  - name: Argus Documentation
-    url: https://github.com/saworbit/argus#readme
-    about: Read the complete user manual, system architecture, and console impulse guide.
-  - name: Developer Brief & Constraints
-    url: https://github.com/saworbit/argus/blob/main/CLAUDE.md
-    about: Understand the vanilla QuakeC constraints, telemetry format, and engineering rules.
+    about: Setup questions, ideas, match recordings and community chat.
+  - name: Getting support
+    url: https://github.com/saworbit/argus/blob/main/SUPPORT.md
+    about: Installation, controls, common problems and where each guide lives.
+  - name: Design constraints and contributing
+    url: https://github.com/saworbit/argus/blob/main/CONTRIBUTING.md
+    about: The vanilla QuakeC rules, the lab loop and how to submit a change.
