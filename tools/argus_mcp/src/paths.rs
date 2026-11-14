@@ -1,7 +1,7 @@
 use crate::config::Config;
 use std::path::{Path, PathBuf};
 
-/// One spelling that is also safe in Argus_Nav_Spawn_<map>.
+/// One spelling that is also safe in `Argus_Nav_Spawn_<map>`.
 pub fn map_name(raw: &str) -> Result<String, String> {
     let name = raw.trim().to_ascii_lowercase();
     if name.is_empty()

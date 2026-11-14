@@ -2050,11 +2050,13 @@ matrix_experiment  duration_sec=20
 ```text
 cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
 cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path tools/argus_mcp/Cargo.toml --no-deps --locked
 cargo test --manifest-path tools/argus_mcp/Cargo.toml
 ```
 
 The repository pins Rust 1.95 with the `clippy` and `rustfmt` components.
-The fast workflow runs formatting, strict Clippy and Rust library tests,
+The fast workflow runs formatting, strict Clippy, a rustdoc build with
+warnings denied and Rust library tests,
 then builds the developer CLI and runs its Python CLI checks with
 `ARGUS_REQUIRE_SOURCE_MCP=1`. The shared Python suites below are also blocking
 steps in that workflow.

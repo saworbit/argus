@@ -92,6 +92,7 @@ The lab suite includes regression tests against committed match tapes, parsing t
 ```bash
 cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
 cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
+RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path tools/argus_mcp/Cargo.toml --no-deps --locked
 cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
 cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp
 ARGUS_REQUIRE_SOURCE_MCP=1 python3 tools/test_tools_cli.py

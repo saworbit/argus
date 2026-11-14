@@ -506,6 +506,10 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Escape the `Argus_Nav_Spawn_<map>` placeholder in the lab's rustdoc, and
+  build rustdoc with warnings denied in the fast workflow so the next one
+  fails its pull request ([#806](https://github.com/saworbit/argus/issues/806)).
+
 - Stop routing bots into shallow lava and up impossible vertical "walks".
   navgen tested liquid 48u above the floor, so 70 seats across six maps stood
   in lava or slime that burns at the feet, and it passed any zero-length link
