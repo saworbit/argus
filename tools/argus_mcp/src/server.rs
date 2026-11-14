@@ -822,9 +822,10 @@ pub struct SpecPovArgs {
     pub bot_client_id: Option<i32>,
     pub render_debug_overlays: Option<bool>,
     // Trigger list, as watch-pov --on. A plain comment, not a doc comment:
-    // schemars would publish a doc comment in the budgeted tool surface,
-    // and neither it nor a wait override earned the bytes (fixed 60 s).
+    // schemars would publish a doc comment in the budgeted tool surface.
     pub on: Option<String>,
+    #[schemars(description = "with on: seconds to wait, 5-110 (60)")]
+    pub wait_sec: Option<f32>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -948,9 +949,7 @@ pub struct CompareArgs {
     pub map: Option<String>,
     #[schemars(description = "brief (default, verdict+gates) or full (both MatchBriefs)")]
     pub detail: Option<String>,
-    #[schemars(
-        description = "json (default) or csv. Every large part of this answer is a table, and a table as CSV is about half the tokens of the same table as JSON."
-    )]
+    #[schemars(description = "json (default) or csv, about half the tokens.")]
     pub format: Option<String>,
 }
 
@@ -1073,11 +1072,11 @@ pub struct ExperimentArgs {
     #[schemars(description = "brief (default) or full (compile + match + both briefs)")]
     pub detail: Option<String>,
     #[schemars(
-        description = "Candidate matches to run, 1-5. Default 3. One tape cannot tell a change from nothing on this instrument: same-build dm2 stalls run 17 to 100 and dm4 1 to 20. Three narrow every band by 42 per cent."
+        description = "Candidate matches, 1-5 (default 3). One tape cannot tell a change from noise: same-build dm2 stalls run 17 to 100."
     )]
     pub repeats: Option<u32>,
     #[schemars(
-        description = "PRE-REGISTER the metric this change is expected to move, before the tapes exist: stall_parity | engagements | lava_deaths | freezes. Only that gate can convict; the rest are computed and flagged. Four gates convict a change that does not exist 19 per cent of the time against 0 to 12 per cent each, measured over sixteen byte-identical pairs."
+        description = "PRE-REGISTER the metric this change should move, before the tapes exist: stall_parity | engagements | lava_deaths | freezes. Only that gate can convict; the rest are flagged. All four together convict a null change 19 per cent of the time."
     )]
     pub primary: Option<String>,
 }
@@ -1377,7 +1376,7 @@ impl Argus {
 
     #[tool(
         name = "bot_capture_pov_frame",
-        description = "Engine PNGs: demo POV, slot 0..3 live 8s, or first bot to fire on (stall,still) in 60s; 1..12."
+        description = "Engine PNGs: demo POV, live slot 0..3 for 8s, or the first bot to fire on (stall,still); 1..12 frames."
     )]
     async fn bot_capture_pov_frame(
         &self,
@@ -1386,10 +1385,19 @@ impl Argus {
         // A trigger's arguments and its live match are checked before the
         // config, so a bad `on` reads as itself on an unconfigured lab too.
         let triggered = match args.on.as_deref() {
+            None if args.wait_sec.is_some() => {
+                return tool_err("wait_sec applies only to a live `on` recording");
+            }
             None => None,
             Some(spec) => {
                 if args.demo.is_some() {
                     return tool_err("`on` records live; it cannot apply to an existing demo");
+                }
+                if args
+                    .wait_sec
+                    .is_some_and(|w| !w.is_finite() || !(5.0..=110.0).contains(&w))
+                {
+                    return tool_err("wait_sec must be 5 to 110 seconds");
                 }
                 let triggers = match crate::pov_trigger::parse_spec(spec) {
                     Ok(t) => t,
@@ -1424,7 +1432,7 @@ impl Argus {
                 "pov_{}",
                 chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default()
             );
-            let wait = 60.0;
+            let wait = args.wait_sec.unwrap_or(60.0);
             let record_cfg = cfg.clone();
             let rec = match tokio::task::spawn_blocking(move || {
                 crate::render_capture::record_triggered(
@@ -1876,7 +1884,7 @@ impl Argus {
     }
 
     #[tool(
-        description = "Ask the 750+ tape corpus a question instead of briefing one tape at a time. CSV out. tapes: filter and aggregate (n, IQM, median, mean, sd, CV, min, max). cells: the same for hotspot cells. changes: every dated step in the series, with a permutation p and the tick class either side. bisect: localise one step with a noisy oracle, and name where to spend the next tapes. Read-only."
+        description = "Query the tape corpus instead of briefing one tape at a time. CSV out. tapes: filter and aggregate. cells: the same for hotspot cells. changes: dated steps with a permutation p and the tick class either side. bisect: localise one step and say where to spend the next tapes. Read-only."
     )]
     async fn corpus(
         &self,
@@ -2048,9 +2056,16 @@ impl Argus {
                 let Some(map) = args.map.as_deref() else {
                     return tool_err("mill revisions needs map=dm4");
                 };
-                match crate::graph_revision::list_revisions(&cfg, map) {
-                    Ok(r) => json_ok(&r),
-                    Err(e) => tool_err(e),
+                // git history walks block; keep them off the async workers
+                let map = map.to_string();
+                match tokio::task::spawn_blocking(move || {
+                    crate::graph_revision::list_revisions(&cfg, &map)
+                })
+                .await
+                {
+                    Ok(Ok(r)) => json_ok(&r),
+                    Ok(Err(e)) => tool_err(e),
+                    Err(e) => tool_err(format!("mill revisions failed: {e}")),
                 }
             }
             "diff" => {
@@ -2060,9 +2075,15 @@ impl Argus {
                 let Some(b) = args.revision_b.as_deref() else {
                     return tool_err("mill diff needs revision_b=map@content-hash");
                 };
-                match crate::graph_revision::diff(&cfg, a, b, args.link.as_deref()) {
-                    Ok(r) => json_ok(&r),
-                    Err(e) => tool_err(e),
+                let (a, b, link) = (a.to_string(), b.to_string(), args.link.clone());
+                match tokio::task::spawn_blocking(move || {
+                    crate::graph_revision::diff(&cfg, &a, &b, link.as_deref())
+                })
+                .await
+                {
+                    Ok(Ok(r)) => json_ok(&r),
+                    Ok(Err(e)) => tool_err(e),
+                    Err(e) => tool_err(format!("mill diff failed: {e}")),
                 }
             }
             other => tool_err(format!("unknown mill view {other}; use revisions or diff")),
@@ -3448,10 +3469,12 @@ impl ServerHandler for Argus {
         let cfg = Config::load_for_reads()
             .ok()
             .filter(|cfg| cfg.root.exists());
-        Ok(CompleteResult::new(completion_values(
-            &request,
-            cfg.as_ref(),
-        )))
+        // Graph-hash completion walks git history; the client fires this
+        // while the user types, so it must not hold an async worker.
+        let values = tokio::task::spawn_blocking(move || completion_values(&request, cfg.as_ref()))
+            .await
+            .map_err(|e| McpError::internal_error(format!("completion failed: {e}"), None))?;
+        Ok(CompleteResult::new(values))
     }
 
     async fn list_resources(
@@ -4709,6 +4732,9 @@ mod tests {
         // core briefing routes gained their report-envelope output schemas.
         // 25,497 on 2026-11-14 after bot_capture_pov_frame gained `on`,
         // paid for by a shorter description: three bytes of headroom.
+        // Reclaimed the same day (#808) by trimming rationale that four
+        // descriptions repeated from the guides, then spent part of it on
+        // bot_capture_pov_frame's wait_sec: 25,238, 262 bytes of headroom.
         // That is about 6,300 tokens on EVERY request. The bound sits
         // just above the measured surface on purpose: a bound three
         // times the actual is not a bound. If this fails, the question
@@ -4728,8 +4754,17 @@ mod tests {
             bot_client_id: slot,
             render_debug_overlays: None,
             on: Some(on.into()),
+            wait_sec: None,
+        };
+        let waiting = |on: Option<&str>, wait: f32| SpecPovArgs {
+            on: on.map(String::from),
+            wait_sec: Some(wait),
+            ..call(None, "stall", None)
         };
         for (args, needle) in [
+            (waiting(None, 30.0), "only to a live `on` recording"),
+            (waiting(Some("stall"), 4.0), "5 to 110 seconds"),
+            (waiting(Some("stall"), f32::NAN), "5 to 110 seconds"),
             (
                 call(Some("old"), "stall", None),
                 "cannot apply to an existing demo",
@@ -4764,6 +4799,7 @@ mod tests {
                 bot_client_id: None,
                 render_debug_overlays: None,
                 on: None,
+                wait_sec: None,
             }))
             .await
             .unwrap();

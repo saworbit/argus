@@ -282,6 +282,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Trim rationale four lab tool descriptions repeated from the guides, and a
+  stale tape count, reclaiming tool-surface headroom from 3 bytes to 262.
+  `bot_capture_pov_frame` spends part of it on `wait_sec` (5 to 110, default
+  60) for live `on` recordings, which the CLI `watch-pov --wait` already had
+  ([#808](https://github.com/saworbit/argus/issues/808)).
+
 - Re-pin `benchmarks/dm4_navigation.json` to the shipped dm4 graph
   (`561c3ede`). Every task still starts and ends on a node and keeps a route;
   `pit_east_to_green` and `pit_center_to_east` lost a gated shortcut in the
@@ -531,6 +537,13 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Give the lab server's git children a 30-second deadline, as the Python
+  helpers already have: plain calls are killed and reported as timed out, the
+  `cat-file --batch` history reader has a watchdog, and `mill` and argument
+  completion run their history walks on the blocking pool instead of holding
+  an async worker for as long as git takes
+  ([#813](https://github.com/saworbit/argus/issues/813)).
 
 - Confirm each step of `argus-mcp benchmark` in the server log instead of
   sleeping 150 ms: every console line ends with an echoed marker and is resent
