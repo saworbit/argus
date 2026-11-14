@@ -188,8 +188,8 @@ A fixed window rarely holds the moment worth seeing. `argus-mcp watch-pov
 console log, and waits for the first bot to meet a trigger. It then cuts the
 camera to that bot's eyes, keeps recording, publishes the demo and renders
 frames from it. The MCP equivalent is `bot_capture_pov_frame` with `on` (the
-same trigger list) and no `demo`; it waits a fixed 60 s, because the tool
-surface is budgeted and a wait field did not earn its bytes.
+same trigger list) and no `demo`; it waits `wait_sec` (5 to 110, default 60)
+and keeps a fixed 8 s.
 
 ```
 argus-mcp watch-pov <stem> [--on stall,still] [--bot NAME | --slot N]
