@@ -62,10 +62,22 @@ jobs:
           echo "name=$name" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance
+        id: attest
         if: github.ref_type == 'tag'
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: ${{ steps.package.outputs.name }}.zip
+
+      - name: Keep the signed attestation beside the package
+        if: github.ref_type == 'tag'
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          NAME: ${{ steps.package.outputs.name }}
+        run: |
+          # GitHub stores the attestation, but a release asset lets anyone
+          # verify the zip offline (cosign or gh attestation verify --bundle)
+          # and is what OpenSSF Scorecard's Signed-Releases check looks for
+          cp "$BUNDLE" "$NAME.zip.sigstore.json"
 
       - name: Upload the package
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -83,5 +95,5 @@ jobs:
           TAG: ${{ github.ref_name }}
           NAME: ${{ steps.package.outputs.name }}
         run: |
-          gh release create "$TAG" "$NAME.zip" "$NAME.zip.sha256" \
+          gh release create "$TAG" "$NAME.zip" "$NAME.zip.sha256" "$NAME.zip.sigstore.json" \
             --draft --verify-tag --generate-notes --title "Argus $TAG"

@@ -1070,6 +1070,12 @@ passing botmatch does not establish better human play.
   pin still raises a Dependabot alert for a deliberate decision
   ([#840](https://github.com/saworbit/argus/pull/840)).
 
+- Attach each release's signed provenance attestation as a release asset,
+  `argus-<tag>.zip.sigstore.json`, beside the zip and its checksum, so the
+  package can be verified offline. GitHub kept the attestation but not as a
+  file, and OpenSSF Scorecard scored Signed-Releases at 0 for it
+  ([#840](https://github.com/saworbit/argus/pull/840)).
+
 - Check the local wizard Host header on GET requests as well as POST, so
   a DNS-rebinding page cannot read local paths or map data (#551).
 
