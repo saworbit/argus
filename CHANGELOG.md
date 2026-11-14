@@ -98,7 +98,7 @@ passing botmatch does not establish better human play.
   objective and claims after scoring it: hard gates, whether it counts for a
   goal verdict, and any new or regressed trouble. `argus_reach.py` honours
   `ARGUS_MAPS`, so it runs from a worktree against the main checkout's
-  machine-local BSPs.
+  machine-local BSPs ([#818](https://github.com/saworbit/argus/pull/818)).
 
 - Open CONTRIBUTING's lab tick-rate rule with the rate, about 70 frames a
   second and not 10, so a preview that shows only its opening no longer
@@ -300,7 +300,7 @@ passing botmatch does not establish better human play.
   behind a tape's trouble, `pyramid` runs the cheap evidence tiers first, and
   `night` is an unattended census that alerts only on what got worse.
   `argus_ci.py lab` validates the objective and the claims in CI
-  ([guide](docs/lab-spine.md)).
+  ([guide](docs/lab-spine.md), [#818](https://github.com/saworbit/argus/pull/818)).
 
 - `argus_lab.py stale` found, on its first run, six maps whose baselines were
   recorded at 19 Hz, eight whose baselines ran a graph that no longer ships
@@ -324,7 +324,20 @@ passing botmatch does not establish better human play.
 - Evidence: 65 tests on built fixtures (`tools/test_argus_lab.py`, in fast
   CI), and every one of 56 deliberately broken guards fails a test. Four
   independent review rounds found about 47 defects, all fixed; the fourth
-  found three. Goal targets stay proposals until the objective is signed off.
+  found three.
+
+- Limits: goal targets stay proposals until the objective is signed off.
+  Tapes do not name their build, so session attribution uses merge times and
+  the skeptic cannot see a build confound
+  ([#823](https://github.com/saworbit/argus/issues/823)). What the first run
+  found stale is filed: baselines
+  ([#819](https://github.com/saworbit/argus/issues/819)), the dm4 benchmark
+  pin ([#820](https://github.com/saworbit/argus/issues/820)), refused links
+  still shipping ([#821](https://github.com/saworbit/argus/issues/821)) and
+  the measurement limits
+  ([#822](https://github.com/saworbit/argus/issues/822)). The mutation check
+  is not yet committed
+  ([#824](https://github.com/saworbit/argus/issues/824)).
 
 - The human scorecard gains `bot_world_unforced`: bot world deaths that no
   damage led into, so a bot walking or jumping off a ledge into lava no
