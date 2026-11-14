@@ -27,6 +27,13 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Add `argus_ci.py suites`, part of `all`, which fails when a `tools/test_*.py`
+  suite runs in no workflow. It counts a suite as run when a workflow names it,
+  a `discover -p` pattern matches it, or a running suite calls it through
+  `run_tool`. All 55 suites run today; the five named in the issue run
+  through `test_tools_cli.py`
+  ([#803](https://github.com/saworbit/argus/issues/803)).
+
 - Add an air layer to the clip-hull navmesh audit: fly a player body off
   every ledge at walk, run and running-jump speeds and record where it
   lands, counting walls, doors and plats at their spawn positions. Against
