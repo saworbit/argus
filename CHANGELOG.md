@@ -94,6 +94,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- `harvest_session.py` now reads each harvested session against the lab
+  objective and claims after scoring it: hard gates, whether it counts for a
+  goal verdict, and any new or regressed trouble. `argus_reach.py` honours
+  `ARGUS_MAPS`, so it runs from a worktree against the main checkout's
+  machine-local BSPs ([#818](https://github.com/saworbit/argus/pull/818)).
+
 - Open CONTRIBUTING's lab tick-rate rule with the rate, about 70 frames a
   second and not 10, so a preview that shows only its opening no longer
   stops before the correction. A new rule asks that a commit or PR refuting
@@ -282,6 +288,56 @@ passing botmatch does not establish better human play.
   ([#646](https://github.com/saworbit/argus/issues/646)).
 
 #### Added
+
+- Add the lab spine, `tools/argus_lab.py`, which joins the corpus,
+  scorecard, baselines, benchmark suites, puppet verdicts and measurement
+  limits with a written objective (`tools/lab_objective.json`, a draft until
+  signed off) and a claims ledger (`tools/lab_claims.json`: open defects with
+  map cells, fixed cells with dates and measured allowances, the graveyard of
+  refused changes). `state` generates the session brief from that evidence,
+  `session` and `review` score human sessions against the objective,
+  `skeptic` audits a comparison before it is read, `triage` names the claim
+  behind a tape's trouble, `pyramid` runs the cheap evidence tiers first, and
+  `night` is an unattended census that alerts only on what got worse.
+  `argus_ci.py lab` validates the objective and the claims in CI
+  ([guide](docs/lab-spine.md), [#818](https://github.com/saworbit/argus/pull/818)).
+
+- `argus_lab.py stale` found, on its first run, six maps whose baselines were
+  recorded at 19 Hz, eight whose baselines ran a graph that no longer ships
+  (all before the 2026-11-13 link repair; e1m5's from a 155-seat graph where
+  195 now ship), and a dm4 benchmark suite pinned to an old graph. A tape's
+  graph is read from git history, not from its `ARGNAV` banner, which changed
+  meaning at #716.
+
+- The skeptic recounts lava from map contents at each death, because the
+  corpus still counts lava below z -300 and reads 0 on dm2 and e1m7 (#816).
+  It reads each metric against the larger of the documented and the observed
+  spread, and voids comparisons across tick classes, maps or tape kinds.
+
+- Triage judges each fixed claim's cell against an allowance measured on the
+  archive, which gives zero regression flags across every bot tape in
+  `runs/`. Measuring it showed the dm3 quad-court pinch was not fixed by the
+  2026-08-28 remint, as the record said: the 20 tapes between the remint and
+  the 2026-09-13 regeneration held a median of 10 stalls in the cell, and the
+  246 since hold 0.
+
+- Evidence: 65 tests on built fixtures (`tools/test_argus_lab.py`, in fast
+  CI), and every one of 56 deliberately broken guards fails a test. Four
+  independent review rounds found about 47 defects, all fixed; the fourth
+  found three.
+
+- Limits: goal targets stay proposals until the objective is signed off.
+  Tapes do not name their build, so session attribution uses merge times and
+  the skeptic cannot see a build confound
+  ([#823](https://github.com/saworbit/argus/issues/823)). What the first run
+  found stale is filed: baselines
+  ([#819](https://github.com/saworbit/argus/issues/819)), the dm4 benchmark
+  pin ([#820](https://github.com/saworbit/argus/issues/820)), refused links
+  still shipping ([#821](https://github.com/saworbit/argus/issues/821)) and
+  the measurement limits
+  ([#822](https://github.com/saworbit/argus/issues/822)). The mutation check
+  is not yet committed
+  ([#824](https://github.com/saworbit/argus/issues/824)).
 
 - The human scorecard gains `bot_world_unforced`: bot world deaths that no
   damage led into, so a bot walking or jumping off a ledge into lava no

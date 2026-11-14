@@ -123,6 +123,13 @@ def main():
             print(f"scorecard: {n} row(s) -> {card}")
         except Exception as e:  # a scorecard failure must not lose a tape
             print(f"scorecard skipped: {e}")
+        # Read the session against the objective and the claims while it is
+        # fresh: its hard gates, and any cluster of trouble no claim covers.
+        try:
+            import argus_lab
+            argus_lab.review(ROOT, dest_log)
+        except Exception as e:  # a review failure must not lose a tape either
+            print(f"lab review skipped: {e}")
 
     print(f"map={mapname} stem={dest_log.stem}")
     return 0

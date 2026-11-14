@@ -1,0 +1,302 @@
+{
+  "schema": 1,
+  "about": "What a better Argus means, as data the lab can check. Drafted 2026-11-14 from the objective page; every value under goal_targets and calibration is a draft until signed_off names who approved it and when. tools/argus_lab.py reads this file; argus_ci.py lab validates it. A metric boundary is emission when the QC changed what a tape records (every tape before it differs) and parser when only an analyser changed (the corpus re-parses every tape with the current parser, so it is not a confound there).",
+  "status": "draft",
+  "signed_off": null,
+  "tiers": [
+    {
+      "id": 1,
+      "name": "Never visibly broken",
+      "rule": "Any hard-gate failure rejects the change, whatever else it improves."
+    },
+    {
+      "id": 2,
+      "name": "Fair",
+      "rule": "The threat comes from play, not from knowledge or aim a player could not have. A fairness fix ships even if it lowers threat."
+    },
+    {
+      "id": 3,
+      "name": "A real threat at skill 1",
+      "rule": "Measured only in human sessions; the lab protects it but cannot prove it."
+    },
+    {
+      "id": 4,
+      "name": "Moves like a person",
+      "rule": "Measured by proxies and by eye."
+    }
+  ],
+  "calibration": {
+    "skill": 1,
+    "goal_maps": [
+      "dm4",
+      "dm2"
+    ],
+    "sessions_per_verdict": 3,
+    "min_session_sec": 120
+  },
+  "hard_gates": [
+    {
+      "id": "engine-error",
+      "tier": 1,
+      "what": "Engine or progs error in the tape",
+      "scan": [
+        "Host_Error",
+        "Program error",
+        "runaway loop",
+        "SZ_GetSpace: overflow",
+        "Sys_Error",
+        "PR_RunError"
+      ],
+      "session_bar": "none",
+      "ladder_bar": "none"
+    },
+    {
+      "id": "freeze-under-fire",
+      "tier": 1,
+      "what": "Still 6 s or more while losing health",
+      "column": "fz_fire",
+      "max": 0,
+      "session_bar": "none",
+      "ladder_bar": "not above the control arm"
+    },
+    {
+      "id": "statue-10s",
+      "tier": 1,
+      "what": "Still 10 s or more, any cause",
+      "column": "fz_max",
+      "below": 10,
+      "session_bar": "none",
+      "ladder_bar": "not above the control arm"
+    },
+    {
+      "id": "unforced-world-death",
+      "tier": 1,
+      "what": "Bot world death with no health lost in the 3 s before lava or slime",
+      "column": "bot_world_unforced",
+      "max": 0,
+      "session_bar": "none",
+      "ladder_bar": "lava inside the map band"
+    },
+    {
+      "id": "rescue-warp",
+      "tier": 1,
+      "what": "Visible unstick rescue warp",
+      "column": "unstick",
+      "max": 0,
+      "session_bar": "none",
+      "ladder_bar": "not above the control arm"
+    }
+  ],
+  "goal_targets": {
+    "bot_kills_human_pm": {
+      "low": 2.0,
+      "high": 3.0,
+      "what": "Bot kills on the human per minute at skill 1"
+    },
+    "kill_ratio": {
+      "low": 1.2,
+      "high": 2.0,
+      "what": "Human kills on bots over bot kills on the human"
+    }
+  },
+  "verdict_questions": [
+    "Did they feel dangerous?",
+    "Did they look human?",
+    "Did anything look broken?"
+  ],
+  "labels": {
+    "freezes": {
+      "label": "health",
+      "tier": 1,
+      "gate": true
+    },
+    "freeze_underfire": {
+      "label": "health",
+      "tier": 1,
+      "gate": true
+    },
+    "fz_fire": {
+      "label": "health",
+      "tier": 1,
+      "gate": true
+    },
+    "fz_max": {
+      "label": "health",
+      "tier": 1,
+      "gate": true
+    },
+    "lava_deaths": {
+      "label": "health",
+      "tier": 1,
+      "gate": true,
+      "cannot_say": "lava off dm4 from the corpus index, which counts deaths below z -300; the skeptic recounts lava from hull-0 contents when the BSP is on hand"
+    },
+    "world_deaths": {
+      "label": "health",
+      "tier": 1
+    },
+    "bot_world": {
+      "label": "health",
+      "tier": 1
+    },
+    "bot_world_unforced": {
+      "label": "health",
+      "tier": 1,
+      "gate": true
+    },
+    "unstick": {
+      "label": "health",
+      "tier": 1,
+      "gate": true
+    },
+    "stalls": {
+      "label": "health",
+      "tier": 1,
+      "cannot_say": "whether it looked stuck; one cell holding a third of stalls matters more than the total"
+    },
+    "routefails": {
+      "label": "health",
+      "tier": 1
+    },
+    "routefail": {
+      "label": "health",
+      "tier": 1
+    },
+    "trapped": {
+      "label": "health",
+      "tier": 1
+    },
+    "abandon": {
+      "label": "health",
+      "tier": 1
+    },
+    "kd_spread": {
+      "label": "health",
+      "tier": 1
+    },
+    "frag_spread": {
+      "label": "health",
+      "tier": 1
+    },
+    "cover": {
+      "label": "health",
+      "tier": 1
+    },
+    "cells": {
+      "label": "health",
+      "tier": 1
+    },
+    "engages": {
+      "label": "proxy",
+      "tier": 3,
+      "cannot_say": "danger: it counts acquisitions, not kills on the human"
+    },
+    "engage": {
+      "label": "proxy",
+      "tier": 3
+    },
+    "goals": {
+      "label": "proxy",
+      "tier": 3,
+      "cannot_say": "contest: selections are not touches, and contested maps read low"
+    },
+    "goal": {
+      "label": "proxy",
+      "tier": 3
+    },
+    "bot_kills_human": {
+      "label": "goal",
+      "tier": 3
+    },
+    "human_kills_bot": {
+      "label": "goal",
+      "tier": 3
+    },
+    "avg_speed": {
+      "label": "proxy",
+      "tier": 4,
+      "cannot_say": "anything before 2026-08-29; bots corner faster than people"
+    },
+    "avg_spd": {
+      "label": "proxy",
+      "tier": 4
+    },
+    "hazards": {
+      "label": "diagnostic",
+      "tier": null,
+      "cannot_say": "behaviour; the throttled count rises with frame rate"
+    },
+    "hazard": {
+      "label": "diagnostic",
+      "tier": null
+    }
+  },
+  "metric_boundaries": [
+    {
+      "date": "2026-08-17",
+      "metrics": [
+        "goals",
+        "goal"
+      ],
+      "what": "goal completions count consumed pickups, not 32u arrivals (GOAP build)",
+      "source": "emission"
+    },
+    {
+      "date": "2026-08-17",
+      "metrics": [
+        "engages",
+        "engage"
+      ],
+      "what": "pursuit holds enemies through sight breaks, so engage events undercount contact against earlier tapes",
+      "source": "emission"
+    },
+    {
+      "date": "2026-08-18",
+      "metrics": [
+        "lava_deaths"
+      ],
+      "what": "lava deaths classified by hull-0 contents, not z below -300",
+      "source": "parser"
+    },
+    {
+      "date": "2026-08-19",
+      "metrics": [
+        "goals",
+        "goal",
+        "weapons",
+        "weapon"
+      ],
+      "what": "the cold-shelf fix: early-match goal and weapon economies before it idled for 20 s",
+      "source": "emission"
+    },
+    {
+      "date": "2026-08-20",
+      "metrics": [
+        "goals",
+        "goal"
+      ],
+      "what": "arriving at a pending item no longer counts as a completion",
+      "source": "emission"
+    },
+    {
+      "date": "2026-08-29",
+      "metrics": [
+        "avg_speed",
+        "avg_spd"
+      ],
+      "what": "travel distance drops the sample either side of a respawn",
+      "source": "parser"
+    },
+    {
+      "date": "2026-09-16",
+      "metrics": [
+        "world_deaths",
+        "bot_world"
+      ],
+      "what": "telefrags credited to the player who caused them, not to world",
+      "source": "emission"
+    }
+  ],
+  "limits_doc": "docs/specs/2026-09-16-lab-measurement-limits.md",
+  "mde_z": 2.8
+}

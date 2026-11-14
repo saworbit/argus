@@ -19,12 +19,15 @@ first one:
 
 Usage: python tools/argus_reach.py [map ...]
        (default: every map with both maps_local/<map>.bsp and
-        src/argus_nav_<map>.qc.json)
+        src/argus_nav_<map>.qc.json; ARGUS_MAPS names another BSP
+        folder, as for the scorecard, so a worktree can borrow the
+        main checkout's machine-local maps)
 
 Exit code 1 when any spawn's all-edges reach is under 60% (the 7h
 WARNING bar), so a rig script can gate on it.
 """
 import json
+import os
 import struct
 import sys
 from pathlib import Path
@@ -95,8 +98,12 @@ def reach_from(start, fwd):
     return len(seen)
 
 
+def bsp_dir():
+    return Path(os.environ["ARGUS_MAPS"]) if os.environ.get("ARGUS_MAPS") else ROOT / "maps_local"
+
+
 def audit(mapname, explicit=False):
-    bsp = ROOT / "maps_local" / f"{mapname}.bsp"
+    bsp = bsp_dir() / f"{mapname}.bsp"
     navj = ROOT / "src" / f"argus_nav_{mapname}.qc.json"
     if not bsp.exists() or not navj.exists():
         print(f"{mapname}: skipped (need {bsp.name} and {navj.name})")

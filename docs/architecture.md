@@ -207,6 +207,8 @@ Compare matched tick classes and retain the source identity for every arm.
 | `tools/argus_mcp/` | Lab server, wizard, CLI, puppet and native reports |
 | `tools/argus_navgen.py` | BSP navigation generation |
 | `tools/harvest_session.py` | Preserve console logs and demos from human play |
+| `tools/argus_lab.py` | Lab spine: session state, staleness, triage, comparison audit, evidence tiers |
+| `tools/lab_objective.json` / `tools/lab_claims.json` | The lab's written objective and its claims ledger |
 | `runs/` | Saved tapes, outcomes and build provenance |
 
 Engine installs, licensed maps/models, local configuration, demos and dated

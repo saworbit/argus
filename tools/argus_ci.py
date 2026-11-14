@@ -15,6 +15,7 @@ usage:
   argus_ci.py links                tracked documentation paths and anchors resolve
   argus_ci.py dashes               tracked prose and sources contain no en or em dashes
   argus_ci.py refuted              tracked text does not restate a refuted rule as current
+  argus_ci.py lab                  the lab objective and claims ledger are sound and cite real evidence
 """
 import argparse
 import collections
@@ -618,6 +619,24 @@ def check_refuted(root, **_kw):
     return fails
 
 
+def check_lab(root, **_kw):
+    """Fail when the lab objective or the claims ledger is malformed or cites missing evidence.
+
+    tools/lab_claims.json is the lab's memory of what it has tried and
+    refused; a claim whose evidence no longer resolves, or a fixed claim
+    that does not say when, misleads the next session as surely as a
+    refuted rule restated in prose.
+    """
+    if not (root / "tools" / "lab_objective.json").is_file():
+        return Skipped("no tools/lab_objective.json")
+    sys.path.insert(0, str(root / "tools"))
+    try:
+        import argus_lab
+    except ImportError as error:
+        return [f"lab: cannot import argus_lab: {error}"]
+    return [f"lab: {error}" for error in argus_lab.validate(Path(root))]
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
@@ -653,7 +672,7 @@ def main(argv=None):
 
 CHECKS = {"ship": check_ship, "eol": check_eol,
           "tapes": check_tapes, "nav": check_nav, "links": check_links,
-          "dashes": check_dashes, "refuted": check_refuted}
+          "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab}
 
 
 if __name__ == "__main__":

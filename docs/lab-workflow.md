@@ -6,6 +6,11 @@
 The lab compiles QuakeC, installs the result, runs the real engine and reports
 what happened. Playing the prebuilt mod does not require this setup.
 
+Start a working session with `python tools/argus_lab.py state`: it generates
+the current build, session scores, stale artefacts and open claims from the
+evidence. [The lab spine](lab-spine.md) describes it and its skeptic, triage
+and evidence-tier commands.
+
 ## 1. Install the lab binary
 
 You need Rust/Cargo (the repository pins its toolchain in
@@ -89,7 +94,9 @@ python tools/harvest_session.py --tag my_session
 ```
 
 The harvester moves the freshest root/`engine/` console log into `runs/` and
-pairs recent demos from `engine/argus/` under `runs/demos/`. If you played
+pairs recent demos from `engine/argus/` under `runs/demos/`, then reads the
+session against the objective and the claims (`argus_lab.py review`: hard
+gates, goal eligibility, and any new or regressed trouble). If you played
 from another install, first preserve its log and demo and place copies in
 those expected input locations. Check what will move with `--dry-run`.
 See [recording and harvest](telemetry.md#record-and-harvest-a-human-session).
@@ -210,7 +217,9 @@ CLAUDE.md when it is present, restates a rule listed in [`tools/refuted_claims.j
 naming the file, line, date and correction. A mention passes as history when
 its paragraph or comment block also says "refuted"; `docs/plans/`,
 `docs/changelog-history.md`, `runs/` and `backups/` are archives and are not read.
-Fast CI also runs the navigation tactics suite and builds and runs Rust
+`python tools/argus_ci.py lab` validates the lab objective and claims ledger
+(see [the lab spine](lab-spine.md#adding-a-claim)), and fast CI runs the lab
+spine's tests. Fast CI also runs the navigation tactics suite and builds and runs Rust
 integration tests; cases needing local engine assets self-skip on CI.
 Use `python tools/argus_ci.py links` to check only documentation paths and
 fragments, including explicit HTML anchors and the `src`, `srcset` and `href`

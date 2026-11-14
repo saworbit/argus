@@ -2,6 +2,7 @@
 import contextlib
 import io
 import json
+import shutil
 from pathlib import Path
 import subprocess
 import tempfile
@@ -166,6 +167,29 @@ class CIValidationTests(unittest.TestCase):
 
     def test_all_runs_the_refuted_gate(self):
         self.assertIs(ci.CHECKS["refuted"], ci.check_refuted)
+
+    def test_all_runs_the_lab_gate_and_it_passes_on_the_tree(self):
+        self.assertIs(ci.CHECKS["lab"], ci.check_lab)
+        self.assertEqual(ci.check_lab(ci.ROOT), [])
+
+    def test_lab_gate_reports_a_bad_claim_and_skips_without_an_objective(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            self.assertIsInstance(ci.check_lab(root), ci.Skipped)
+            (root / "tools").mkdir()
+            (root / "runs").mkdir()
+            (root / "docs").mkdir()
+            shutil.copy(ci.ROOT / "tools" / "lab_objective.json", root / "tools")
+            shutil.copy(ci.ROOT / "tools" / "argus_lab.py", root / "tools")
+            obj = json.loads((root / "tools" / "lab_objective.json").read_text(encoding="utf-8"))
+            obj["limits_doc"] = "docs/limits.md"
+            (root / "tools" / "lab_objective.json").write_text(json.dumps(obj), encoding="utf-8")
+            (root / "docs" / "limits.md").write_text("# limits\n", encoding="utf-8")
+            (root / "tools" / "lab_claims.json").write_text(json.dumps({"claims": [
+                {"id": "x", "title": "X", "status": "fixed", "kind": "defect", "statement": "s",
+                 "evidence": ["#1"]}]}), encoding="utf-8")
+            failures = ci.check_lab(root)
+        self.assertTrue(any("a fixed claim says when" in f for f in failures), failures)
 
     def test_all_runs_the_dash_gate(self):
         called = []

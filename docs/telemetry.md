@@ -40,8 +40,10 @@ change those search paths: preserve your external log/demo and put copies in
 those input locations first. Inspect the dry run before moving anything.
 
 The actual harvest moves inputs into `runs/<stem>.log` and
-`runs/demos/<stem>.dem`, avoiding existing names, and updates the human
-scorecard. Use the stem printed by the tool in subsequent calls.
+`runs/demos/<stem>.dem`, avoiding existing names, updates the human
+scorecard, and prints the session's reading against the lab objective (see
+[the lab spine](lab-spine.md#review)). Use the stem printed by the tool in
+subsequent calls.
 
 The scorecard's `bot_world_unforced` column counts bot world deaths with no
 health lost in the 3 s before the bot reached lava or slime, which separates
