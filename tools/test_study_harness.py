@@ -68,6 +68,7 @@ for line in sys.stdin:
             return start([sys.executable, '-u', '-c', program], **options)
         with tempfile.TemporaryDirectory() as td, tempfile.TemporaryFile(mode='w+') as errors:
             exe = Path(td) / 'chosen-lab'
+            exe.write_bytes(b'')  # Lab refuses a missing binary before it spawns.
             with patch.object(native.subprocess, 'Popen', side_effect=launch):
                 lab = native.Lab(errors, exe=exe, timeout=1)
                 try:

@@ -166,6 +166,8 @@ python tools/test_door_actuator.py
 python tools/test_private_fixtures.py
 python tools/test_tools_cli.py
 python tools/test_argus_navjson.py
+python tools/test_navmesh_repair.py
+python tools/test_navmesh_air.py
 python tools/test_argus_tape.py
 python -m unittest discover -s tools -p "test_behaviour*.py"
 python tools/test_compile_private_fixtures.py
@@ -203,8 +205,8 @@ closes the lab, skips another request while a failure is unwinding, and bounds
 a healthy stop request to two seconds before closing the process.
 `python tools/argus_ci.py dashes` checks tracked Markdown, QuakeC, Python and
 lab source files for U+2013 and U+2014, reporting each file and line.
-`python tools/argus_ci.py refuted` fails when tracked text restates a rule
-listed in [`tools/refuted_claims.json`](../tools/refuted_claims.json) as current,
+`python tools/argus_ci.py refuted` fails when tracked text, or the local
+CLAUDE.md when it is present, restates a rule listed in [`tools/refuted_claims.json`](../tools/refuted_claims.json) as current,
 naming the file, line, date and correction. A mention passes as history when
 its paragraph or comment block also says "refuted"; `docs/plans/`,
 `docs/changelog-history.md`, `runs/` and `backups/` are archives and are not read.

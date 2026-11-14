@@ -2009,7 +2009,29 @@ pub fn compare_band_primary(
         &report.b.totals,
         report.scaled,
     );
+    if controls.len() > 1 || candidates.len() > 1 {
+        report.gate_card =
+            label_representative_rows(&report.gate_card, controls.len(), candidates.len());
+    }
     report
+}
+
+/// A band card's rows compare one tape per arm, chosen by median stalls,
+/// while its verdict comes from the band over every tape (#757). Say so on
+/// the card, so a red row under a green verdict reads as what it is. A
+/// single pair needs no note: its rows are its only tapes.
+fn label_representative_rows(card: &str, controls: usize, candidates: usize) -> String {
+    let note =
+        format!("Rows: median-stall tape of each arm; verdict: {controls} v {candidates} band");
+    let mut out = String::with_capacity(card.len() + 80);
+    for (index, line) in card.lines().enumerate() {
+        out.push_str(line);
+        out.push('\n');
+        if index == 1 {
+            out.push_str(&format!("│ {:<59} │\n", note));
+        }
+    }
+    out
 }
 
 impl MatchBrief {
@@ -4654,6 +4676,47 @@ ARGEVT Reap spawned
         let typo = compare_band_primary(&cand, &ctl, Some("lava"));
         assert_eq!(typo.verdict, Verdict::Regressed, "{}", typo.headline);
         assert!(typo.primary.is_none());
+    }
+
+    /// #757: a band card's rows show one representative tape per arm,
+    /// so a red row can sit under a green verdict. The card says so.
+    #[test]
+    fn a_band_card_names_the_tapes_its_rows_compare() {
+        let base = brief_text(&log_a(), None);
+        let mk = |stalls: i32, lava: i32| {
+            let mut b = base.clone();
+            b.totals.stalls = stalls;
+            b.totals.engages = 60;
+            b.totals.lava_deaths = lava;
+            b.totals.freezes = 0;
+            b.totals.duration_sec = 185.0;
+            b
+        };
+        let ctl: Vec<MatchBrief> = [10, 11, 9, 10].iter().map(|s| mk(*s, 1)).collect();
+        let cand: Vec<MatchBrief> = [10, 11, 9].iter().map(|s| mk(*s, 40)).collect();
+        let pinned = compare_band_primary(&cand, &ctl, Some("stall_parity"));
+        assert_eq!(pinned.verdict, Verdict::Parity, "{}", pinned.headline);
+        let card = &pinned.gate_card;
+        // the representative pair disagrees with the verdict...
+        assert!(card.contains("APPROVED FOR RELEASE (PARITY)"), "{card}");
+        assert!(card.contains("🔴"), "{card}");
+        // ...and the card says which tapes those rows are
+        assert!(
+            card.contains("Rows: median-stall tape of each arm; verdict: 4 v 3 band"),
+            "{card}"
+        );
+        let lines: Vec<&str> = card.lines().collect();
+        assert!(lines[1].contains("ARGUS A/B QUALITY GATES"), "{card}");
+        assert!(lines[2].contains("Rows: median-stall tape"), "{card}");
+        assert_eq!(lines[2].chars().count(), lines[1].chars().count(), "{card}");
+
+        // a single pair keeps its meaning: its rows are its only tapes
+        let single = compare_band(&cand[..1], &ctl[..1]);
+        assert!(
+            !single.gate_card.contains("Rows: median-stall"),
+            "{}",
+            single.gate_card
+        );
     }
 
     #[test]

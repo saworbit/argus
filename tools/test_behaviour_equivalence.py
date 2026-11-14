@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 from check_behaviour_equivalence import evaluate, frame_interval, interval, rate, T95_DF127
-from run_behaviour_equivalence import timing, validate_protocol
+from run_behaviour_equivalence import LabMissing, lab_cli, require_lab, timing, validate_protocol
 import run_behaviour_registered
 
 
@@ -114,6 +114,32 @@ class EquivalenceTests(unittest.TestCase):
         for text in (line * 4, (line * 6).replace('frames 320', 'frames 0'), line * 6 + 'BHVTIME bad\n'):
             with self.assertRaises(AssertionError):
                 timing(text)
+
+
+class LabPathTests(unittest.TestCase):
+    def test_missing_lab_names_the_path_and_the_fix(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = Path(tmp) / 'argus-mcp.exe'
+            with patch('subprocess.Popen') as popen:
+                with self.assertRaises(LabMissing) as caught:
+                    lab_cli(missing, 'see')
+                popen.assert_not_called()
+            message = str(caught.exception)
+            self.assertIn(str(missing.resolve()), message)
+            self.assertIn('cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp', message)
+            self.assertIn('ARGUS_LAB', message)
+            self.assertIsInstance(caught.exception, FileNotFoundError)
+
+    def test_existing_lab_resolves_unchanged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            present = Path(tmp) / 'argus-mcp.exe'
+            present.write_bytes(b'')
+            self.assertEqual(require_lab(present), present.resolve())
+
+    def test_test_transport_does_not_need_a_binary(self):
+        seen = []
+        lab_cli(Path('nowhere/argus-mcp.exe'), 'see', runner=lambda command, **_: seen.append(command))
+        self.assertEqual(seen[0][1:], ['see'])
 
 
 if __name__ == '__main__':

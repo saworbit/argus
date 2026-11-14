@@ -1191,8 +1191,14 @@ The default pass covers ordinary walk and drop links. `--jumps` covers the
 generated jump subset. A community BSP found only in `ARGUS_MAPS` is copied
 into the game directory for the pass and removed when the engine stops.
 
+The report lists a `verdicts` entry for every link it walked, in sweep
+order: `a`, `b`, the horizontal length `h` and one of `passed`, `failed` or
+`teleport_failed`. `passed_sample` still keeps only the first eight passes.
+
 Failures persist by ENDPOINT COORDINATES (indices shift per regen)
-in `src/argus_nav_<map>.probe.json`, merged across sweeps. The
+in `src/argus_nav_<map>.probe.json`, merged across sweeps. The graph and the
+verdict file both come from `ARGUS_SRC` (default `<root>/src`), so a sweep run
+from a worktree reads and writes that worktree's files. The
 output also counts `teleport_failures` - on teleporter maps the
 puppet can step into a live mouth mid-walk and read as a distant
 failure; triage convictions against the `trigger_teleport` AABBs
@@ -2048,11 +2054,13 @@ then builds the developer CLI and runs its Python CLI checks with
 `ARGUS_REQUIRE_SOURCE_MCP=1`. The shared Python suites below are also blocking
 steps in that workflow.
 
-Run the shared navigation, registration, mapgate and tape contracts without
-an engine or machine-local maps:
+Run the shared navigation, navmesh, registration, mapgate and tape contracts
+without an engine or machine-local maps:
 
 ```text
 python tools/test_argus_navjson.py
+python tools/test_navmesh_repair.py
+python tools/test_navmesh_air.py
 python tools/test_argus_mapgate.py
 python tools/test_argus_tape.py
 ```
