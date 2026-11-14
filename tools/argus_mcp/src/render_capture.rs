@@ -124,6 +124,27 @@ pub fn record_bot_on_port(
     result
 }
 
+/// What the cut logic needs from the camera client. NetClient is the real
+/// one; tests drive a scripted world, so a cut that accepts the old view or
+/// a lap that tracks a non-bot fails in CI without an engine (#809).
+trait Camera {
+    fn world(&self) -> &crate::netclient::ClientWorld;
+    fn press(&mut self, impulse: u8);
+    fn pump(&mut self, wait: Duration);
+}
+
+impl Camera for NetClient {
+    fn world(&self) -> &crate::netclient::ClientWorld {
+        &self.world
+    }
+    fn press(&mut self, impulse: u8) {
+        self.set_impulse(impulse);
+    }
+    fn pump(&mut self, wait: Duration) {
+        NetClient::pump(self, wait);
+    }
+}
+
 /// The bot entity the camera is looking out of: the protocol view entity
 /// when it is a player model other than the camera's own body (`own`).
 fn bot_view(world: &crate::netclient::ClientWorld, own: u16) -> Option<u16> {
@@ -134,20 +155,20 @@ fn bot_view(world: &crate::netclient::ClientWorld, own: u16) -> Option<u16> {
 
 /// Press 212 and read the bot the camera now tracks from its own reply.
 /// The reply is three sprints that the client coalesces into one line.
-fn next_target(client: &mut NetClient) -> Result<String, String> {
-    let offset = client.world.prints.len();
-    client.set_impulse(212);
+fn next_target<C: Camera>(client: &mut C) -> Result<String, String> {
+    let offset = client.world().prints.len();
+    client.press(212);
     let deadline = Instant::now() + Duration::from_secs(3);
     loop {
         client.pump(Duration::from_millis(50));
-        let named = client.world.prints[offset..].iter().find_map(|(_, s)| {
+        let named = client.world().prints[offset..].iter().find_map(|(_, s)| {
             s.strip_prefix("Tracking Target:")
                 .map(|n| n.trim().to_string())
         });
         if let Some(name) = named {
             return Ok(name);
         }
-        if client.world.disconnected || Instant::now() >= deadline {
+        if client.world().disconnected || Instant::now() >= deadline {
             // CycleTarget prints nothing when no bot is alive to track
             return Err("camera impulse 212 missing acknowledgement Tracking Target:".into());
         }
@@ -159,16 +180,16 @@ fn next_target(client: &mut NetClient) -> Result<String, String> {
 /// and a view that was already a bot is not the new one (the first live
 /// run rendered the previous bot because of exactly that). If the view
 /// never moves, the camera was already on that bot, the one-bot case.
-fn await_cut(client: &mut NetClient, own: u16, prev: Option<u16>) -> Option<u16> {
+fn await_cut<C: Camera>(client: &mut C, own: u16, prev: Option<u16>) -> Option<u16> {
     let deadline = Instant::now() + Duration::from_millis(1500);
     loop {
-        if let Some(e) = bot_view(&client.world, own) {
+        if let Some(e) = bot_view(client.world(), own) {
             if Some(e) != prev {
                 return Some(e);
             }
         }
-        if client.world.disconnected || Instant::now() >= deadline {
-            return bot_view(&client.world, own);
+        if client.world().disconnected || Instant::now() >= deadline {
+            return bot_view(client.world(), own);
         }
         client.pump(Duration::from_millis(50));
     }
@@ -179,9 +200,9 @@ fn await_cut(client: &mut NetClient, own: u16, prev: Option<u16>) -> Option<u16>
 /// roster, which is what a human or a lab seat produces. Every
 /// intermediate cut is allowed to land before the next press, or a late
 /// view change from one press would pass for the cut to the target.
-fn target_named(client: &mut NetClient, own: u16, name: &str) -> Option<u16> {
+fn target_named<C: Camera>(client: &mut C, own: u16, name: &str) -> Option<u16> {
     for _ in 0..5 {
-        let prev = bot_view(&client.world, own);
+        let prev = bot_view(client.world(), own);
         let Ok(got) = next_target(client) else {
             return None;
         };
@@ -1340,6 +1361,109 @@ fn publish_video(dir: &Path, manifest: &[u8]) -> Result<(), String> {
 #[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
+
+    /// A scripted camera: each press of 212 names the next roster entry
+    /// after `reply_after` pumps and moves the view entity to it after
+    /// `cut_after` pumps, as the real camera's reply and view change land
+    /// at different times.
+    struct ScriptedCamera {
+        world: crate::netclient::ClientWorld,
+        roster: Vec<(&'static str, u16)>,
+        next: usize,
+        pending: Option<(usize, &'static str, u16)>,
+        pumps: usize,
+        reply_after: usize,
+        cut_after: usize,
+        presses: usize,
+    }
+
+    impl ScriptedCamera {
+        fn new(roster: Vec<(&'static str, u16)>, viewing: u16) -> Self {
+            let mut world = crate::netclient::ClientWorld::default();
+            world.player_model = Some(7);
+            world.my_ent = viewing;
+            for ent in [1u16, 2, 3, 4] {
+                let mut body = crate::netclient::WorldEnt::default();
+                body.model = 7;
+                body.updates = 1;
+                world.ents.insert(ent, body);
+            }
+            ScriptedCamera {
+                world,
+                roster,
+                next: 0,
+                pending: None,
+                pumps: 0,
+                reply_after: 1,
+                cut_after: 4,
+                presses: 0,
+            }
+        }
+    }
+
+    impl Camera for ScriptedCamera {
+        fn world(&self) -> &crate::netclient::ClientWorld {
+            &self.world
+        }
+        fn press(&mut self, impulse: u8) {
+            assert_eq!(impulse, 212);
+            self.presses += 1;
+            let (name, ent) = self.roster[self.next % self.roster.len()];
+            self.next += 1;
+            self.pending = Some((self.pumps, name, ent));
+        }
+        fn pump(&mut self, _wait: Duration) {
+            std::thread::sleep(Duration::from_millis(2));
+            self.pumps += 1;
+            if let Some((at, name, ent)) = self.pending {
+                if self.pumps == at + self.reply_after {
+                    self.world
+                        .prints
+                        .push((0.0, format!("Tracking Target: {name}")));
+                }
+                if self.pumps >= at + self.cut_after {
+                    self.world.my_ent = ent;
+                    self.pending = None;
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn a_cut_waits_for_the_view_to_leave_the_previous_bot() {
+        // The reply names Romero at once; the view only moves from Carmack
+        // (2) to Romero (3) three pumps later. Accepting the view already on
+        // screen rendered the wrong bot on the first live run.
+        let mut cam = ScriptedCamera::new(vec![("Romero", 3)], 2);
+        let prev = bot_view(cam.world(), 1);
+        assert_eq!(prev, Some(2));
+        assert_eq!(next_target(&mut cam).unwrap(), "Romero");
+        assert_eq!(await_cut(&mut cam, 1, prev), Some(3));
+    }
+
+    #[test]
+    fn the_camera_body_is_never_a_cut() {
+        // Entity 1 is the camera's own body: a view on it is not a bot view.
+        let cam = ScriptedCamera::new(vec![("Romero", 3)], 1);
+        assert_eq!(bot_view(cam.world(), 1), None);
+    }
+
+    #[test]
+    fn a_lap_lands_each_cut_before_the_next_press_and_finds_the_target() {
+        let mut cam = ScriptedCamera::new(vec![("Carmack", 2), ("Romero", 3), ("Joe Rogan", 4)], 2);
+        assert_eq!(target_named(&mut cam, 1, "Joe Rogan"), Some(4));
+        assert_eq!(cam.presses, 3);
+        assert_eq!(cam.world().my_ent, 4);
+    }
+
+    #[test]
+    fn a_name_the_camera_cannot_track_is_refused_after_one_lap() {
+        // A human or a lab seat fires triggers but is never a camera target,
+        // so the caller skips it rather than recording another bot.
+        let mut cam = ScriptedCamera::new(vec![("Carmack", 2), ("Romero", 3), ("Joe Rogan", 4)], 2);
+        assert_eq!(target_named(&mut cam, 1, "labprobe"), None);
+        assert_eq!(cam.presses, 5);
+    }
 
     #[test]
     fn scheduled_seconds_print_exact_playback_steps() {

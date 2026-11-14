@@ -27,6 +27,13 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Cover triggered capture's camera cut in CI. The cut logic now runs against
+  a small camera trait, and a scripted camera checks that a cut waits for the
+  view to leave the previous bot, that each intermediate cut lands before the
+  next press, and that a name the camera cannot track is refused after one
+  lap. The only test of this path used to need an engine
+  ([#809](https://github.com/saworbit/argus/issues/809)).
+
 - Add `argus_ci.py suites`, part of `all`, which fails when a `tools/test_*.py`
   suite runs in no workflow. It counts a suite as run when a workflow names it,
   a `discover -p` pattern matches it, or a running suite calls it through
