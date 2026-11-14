@@ -6,6 +6,11 @@
 The lab compiles QuakeC, installs the result, runs the real engine and reports
 what happened. Playing the prebuilt mod does not require this setup.
 
+Start a working session with `python tools/argus_lab.py state`: it generates
+the current build, session scores, stale artefacts and open claims from the
+evidence. [The lab spine](lab-spine.md) describes it and its skeptic, triage
+and evidence-tier commands.
+
 ## 1. Install the lab binary
 
 You need Rust/Cargo (the repository pins its toolchain in

@@ -1,0 +1,188 @@
+# The lab spine
+
+[Back to the lab workflow](lab-workflow.md) |
+[Operator guide](../tools/argus_mcp/README.md)
+
+`tools/argus_lab.py` joins the lab's instruments into one loop. It adds no new
+instrument and no second tape parser. It reads what the lab already keeps,
+plus two hand-written files, and answers four questions: what is true now,
+what is stale, what a new tape's trouble is, and whether a comparison can be
+believed.
+
+## What it reads
+
+| Source | Written by | Used for |
+|---|---|---|
+| `tools/lab_objective.json` | hand, signed off by Shane | Priority tiers, hard gates, goal targets, measure labels, metric boundaries |
+| `tools/lab_claims.json` | hand | Open defects and hypotheses, fixed cells, the graveyard, supported rules |
+| `tools/refuted_claims.json` | hand | Imported as refuted rules, so they are not repeated in the claims |
+| `runs/tape_index.tsv` | `argus-mcp corpus` | Per-tape metrics, tick class and kind for the skeptic |
+| `runs/human_scorecard.tsv` | `argus_longi.py`, every harvest | Session gates and goal measures |
+| `runs/baselines.json`, `benchmarks/*.json` | `baseline_set`, hand | What each verdict is measured against |
+| `src/argus_nav_<map>.qc.json` and `.probe.json` | navgen, `probelinks` | Graph identity, refused links |
+| `docs/specs/2026-09-16-lab-measurement-limits.md` | `argus-mcp measure` | Per-map sigma, so any tape count has a detection limit |
+| `game/argus/progs.dat` history | git | Which build a session ran |
+
+Raw artefacts stay the source of truth. When the skeptic needs a tape that
+the corpus cache has not persisted, it asks `argus-mcp corpus` to parse it
+rather than parsing metrics in Python.
+
+In a worktree the machine-local BSPs, the lab binary and `.mcp.json` live in
+the main checkout; the spine finds them there. `ARGUS_MAPS` and `ARGUS_LAB`
+override both.
+
+## Commands
+
+From the repository root:
+
+```text
+python tools/argus_lab.py state
+python tools/argus_lab.py stale
+python tools/argus_lab.py session --last 5
+python tools/argus_lab.py triage shane_dm4_2026-11-14_ed8926
+python tools/argus_lab.py skeptic ab_dm4_shipctl1 ab_dm4_shipctl2 --vs ab_dm4_shipnew1 ab_dm4_shipnew2
+python tools/argus_lab.py claims --check
+python tools/argus_lab.py pyramid --maps dm4,dm2 --dry-run
+python tools/argus_lab.py night
+```
+
+### `state`
+
+The session brief, generated from the evidence instead of typed into a
+handoff: the installed binary and whether the changelog agrees, whether the
+objective is signed, the last five human sessions against the gates, the goal
+verdict per goal map, every stale artefact, the open claims and the three
+cheapest next steps. `--write PATH` saves it. Start a session here instead of
+reading the history.
+
+### `stale`
+
+Artefacts whose inputs have moved, each with a fix:
+
+- **void**: a verdict that depends on it cannot be trusted. A baseline recorded
+  at 19 Hz is void, because verdicts against it compare two frame rates.
+- **stale**: out of date. A baseline that ran a different graph, a benchmark
+  suite pinned to a graph that no longer ships, a link the puppet refused that
+  still ships as a plain walk, a session tape nobody scored.
+- **info**: worth knowing. Verdicts whose endpoints a regeneration has
+  outlived, source commits since the last install.
+
+`--strict` exits 1 on any void or stale finding; `--json` prints the list.
+
+### `session`
+
+Scores human sessions against the objective's hard gates (engine errors,
+freezes under fire, 10 s statues, unforced world deaths, rescue warps) and
+goal measures (bot kills on the human per minute, the kill ratio). A session
+counts towards a goal verdict only on a goal map, at the calibration skill,
+over the minimum length and with the skill tier named in the tape. Its build
+is the install in force on the tape's date. A goal verdict needs three such
+sessions on the installed build.
+
+### `triage`
+
+Clusters a tape's stalls, freezes and world deaths within 96 units and
+matches each cluster to the claims' map cells. With the map's BSP, world
+deaths split into knock-ins and unforced deaths. Each cluster reads:
+
+- **known**: an open claim already covers it.
+- **new**: nothing does; consider a claim.
+- **regression?**: a fixed claim's cell, on a tape recorded after the fix.
+- **before the fix**: the same, on a tape that predates the fix.
+
+### `skeptic`
+
+Lists every reason a comparison cannot be read at face value, before anyone
+reads it. The first arm is the control.
+
+- **Void**: the same tape in both arms, tapes from different maps, human or
+  fixture tapes, mixed tick classes, a run with no corpus row.
+- **Confound**: the arms ran different graphs (from each tape's `ARGNAV`
+  banner) or skill tiers, or a metric crosses a recorded metric boundary.
+- **Per metric**: the change in arm means against the detection limit,
+  2.8 × sigma × √(2/n) with sigma from the limits doc. A change inside the limit is
+  "no detectable effect", never "improved". When durations differ, per-minute
+  rates are compared and the spread comes from the arms themselves.
+
+Tapes do not name their build, so the skeptic cannot see a build confound.
+
+### `review`
+
+One fresh session: its hard gates, its goal measures, whether it counts for a
+goal verdict, and every new or regressed cluster of trouble. The harvester
+runs it after scoring, so a session is read against the objective and the
+claims the moment it lands.
+
+### `claims`
+
+Lists the ledger; `--status open` filters it; `--check` validates the
+objective and the claims. `argus_ci.py lab` runs the same validation in CI.
+
+### `pyramid`
+
+Runs the evidence tiers cheapest first and stops at the first that fails:
+
+- **Tier 1, static checks**: the CI battery, the claims, the navmesh audit
+  (no link from dry ground into a liquid seat, no vertical walk link) and
+  directed reach for each map.
+- **Tier 2, deterministic cases**: each benchmark suite whose pinned graph
+  still ships. A suite pinned to an old graph is reported as blocked, not run.
+  The benchmark always exits 0, so the pyramid reads its report and holds a
+  ratchet: the first run on a graph sets the bar, and a later run fails if a
+  task that graph used to finish no longer finishes. A task that has never
+  finished does not block anything.
+- **Tier 4, with `--through 4`**: the ladder plan, meaning how many
+  listen-class tapes a side each map needs to see a 30 per cent change, from
+  the limits doc. It plans ladders; it does not run them.
+
+Each real run leaves a receipt in `runs/lab/` (ignored by git).
+
+### `night`
+
+The unattended census, safe to schedule because it starts no engine unless
+given `--engine`. It runs every map compiled into `src/progs.src` through
+tier 1 (and tier 2 with `--engine`) without stopping at a failure, triages
+every tape recorded since the last sweep (read from each tape's own header,
+a week on the first sweep), and lists what is stale. It writes
+`runs/lab/night-<stamp>.md` with a JSON receipt beside it.
+
+It exits 1 only on what got worse since the previous sweep: a step that
+passed then and fails now, a regression at a fixed claim's cell on a new tape,
+or an artefact newly void. A failure that was already failing is listed as
+still failing and does not alert, so a known defect such as e1m8's reach gate
+does not drown a new one.
+
+## Adding a claim
+
+Add an entry to `tools/lab_claims.json` and run `claims --check`. Every claim
+has an id (lower-case words joined by hyphens), a title, a status (`open`,
+`supported`, `refuted`, `fixed`, `parked`), a kind (`defect`, `hypothesis`,
+`rule`, `graveyard`), a statement and evidence. Evidence is a repo path, an
+issue or PR as `#n`, or a run name in `runs/`. The validator enforces:
+
+- an open hypothesis says what would refute it (`refute_by`);
+- a fixed claim says when (`fixed_on`, YYYY-MM-DD), so triage can tell a
+  regression from an old tape;
+- a graveyard entry is refuted or parked;
+- a cell's map is one of the claim's maps;
+- no claim repeats a rule already in `tools/refuted_claims.json`.
+
+When a change is reverted, add it to the graveyard with the numbers that
+convicted it and `do_not_retry`. When a fix lands, set `status` to `fixed` and
+`fixed_on` to the merge date.
+
+## Signing off the objective
+
+`tools/lab_objective.json` is a draft until `status` is `signed` and
+`signed_off` names who approved it and when. Until then `state` says so and
+the goal targets are proposals. The values mirror the objective page; change
+them in both places.
+
+## Limits
+
+- Build attribution uses the merge date of the commit that last changed
+  `game/argus/progs.dat`, not when a binary was copied to a machine.
+- The skeptic sees graph and skill confounds, not build ones.
+- Triage clusters by distance alone; two problems within 96 units merge.
+- Goal verdicts count only sessions whose tape names its skill tier, which
+  every tape has done since 2026-09-21.

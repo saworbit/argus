@@ -259,6 +259,7 @@ generated `src/argus_nav_<map>.qc`; use the lab's navigation tools.
 |---|---|
 | Find every play/camera/chat command | [Controls](docs/controls.md) |
 | Set up the lab, add a map or run a controlled comparison | [Lab workflow](docs/lab-workflow.md) |
+| See what is true now, what is stale, and whether a comparison can be believed | [The lab spine](docs/lab-spine.md) |
 | Look up every lab tool and configuration option | [Lab operator guide](tools/argus_mcp/README.md) |
 | Record a match, read events or inspect a demo | [Telemetry and recording](docs/telemetry.md) |
 | Record a bot POV or export images and video clips | [Rendered POV evidence](tools/argus_mcp/README.md#rendered-pov-evidence) |

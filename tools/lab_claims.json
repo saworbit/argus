@@ -1,0 +1,683 @@
+{
+  "schema": 1,
+  "about": "The claims ledger: what the lab believes, what it has refused and what is still open, each with the evidence that would change its mind. Hand-written; tools/argus_lab.py reads it and imports tools/refuted_claims.json as refuted rules, so those are not repeated here. Statuses: open, supported, refuted, fixed, parked. A cell is a map position with a radius; triage matches a tape's trouble against them, and trouble at a fixed cell reads as a possible regression. Evidence is a repo path, an issue or PR as #n, or a run name in runs/.",
+  "claims": [
+    {
+      "id": "dm4-walkway-corner",
+      "title": "dm4 walkway corner deflections",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm4"
+      ],
+      "cells": [
+        {
+          "map": "dm4",
+          "at": [
+            720,
+            -800,
+            -232
+          ],
+          "radius": 128
+        }
+      ],
+      "statement": "Bots deflect repeatedly at dm4's walkway corner near 720 -800 -232: 7 to 27 hazard deflections a tape on every build since August. It is geometry, not policy; three steering fixes for it are in the graveyard.",
+      "next": "Seat apex or corridor waypoints at the corner. Do not add another steering rule.",
+      "evidence": [
+        "runs/shane_dm4_2026-08-29_v405.log",
+        "docs/behaviour-diagnostics.md"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "dm2-grate-room",
+      "title": "dm2 south-east grate room stalls",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm2"
+      ],
+      "cells": [
+        {
+          "map": "dm2",
+          "at": [
+            2280,
+            -2175,
+            88
+          ],
+          "radius": 160
+        }
+      ],
+      "statement": "dm2's south-east grate room holds 12 to 35 stalls a tape, and that swing on identical code is why single dm2 tapes cannot judge movement. The 2026-08-28 remint of n159 to n76 cleared one cell in it, not the room.",
+      "next": "A benchmark task across the room, then seats for its channels.",
+      "evidence": [
+        "docs/plans/2026-09-14-regression-analysis-and-recovery.md",
+        "runs/ab_dm2_gratejump1.log"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "dm2-west-deck",
+      "title": "dm2 west deck pin above n64",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm2"
+      ],
+      "cells": [
+        {
+          "map": "dm2",
+          "at": [
+            2049,
+            -1136,
+            344
+          ],
+          "radius": 96
+        }
+      ],
+      "statement": "Bots pin at 2049 -1136 344 on dm2's west deck steering at n64 192u below; it held a third of one graph's stalls. The puppet refused the named n65 to n66 cure because n66 sits under the deck, not off its end.",
+      "next": "Seat a waypoint off the deck's southern lip (apex or corridor seating).",
+      "evidence": [
+        "#323",
+        "runs/ab_dm2_apexgate1.log",
+        "runs/shane_dm2_2026-09-14.log"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "e1m8-n56-cell",
+      "title": "e1m8 spawns far from any seat",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "e1m8"
+      ],
+      "cells": [
+        {
+          "map": "e1m8",
+          "at": [
+            860,
+            64,
+            32
+          ],
+          "radius": 96
+        },
+        {
+          "map": "e1m8",
+          "at": [
+            880,
+            128,
+            24
+          ],
+          "radius": 64
+        },
+        {
+          "map": "e1m8",
+          "at": [
+            1024,
+            720,
+            -104
+          ],
+          "radius": 64
+        }
+      ],
+      "statement": "e1m8's spawn at 880 128 24 is 488u from any seat and snaps to n56 392u below, which is the 860 64 32 stall cell. The spawn at 1024 720 -104 is 606u out with no floor under it. The lava repair pushed more traffic onto the cell (stalls 28 to 49).",
+      "next": "Seat the spawns, then a benchmark task from each.",
+      "evidence": [
+        "#789",
+        "docs/navmesh-experiment.md"
+      ],
+      "cheapest_tier": 1
+    },
+    {
+      "id": "movement-reversals",
+      "title": "Bots reverse three times as often as a person",
+      "status": "open",
+      "kind": "defect",
+      "tier": 4,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "Bots make 53 to 71 hard reversals per moving minute against a human's 18 to 26, on every build since August. The leading cause is combat_hazard at 23 per cent: dm4 walkways are 96u wide against a 48u strafe probe, so one side is always vetoed. Backing off and holding ground were both refused.",
+      "next": "Read the movement reversals section before a third attempt.",
+      "evidence": [
+        "#697",
+        "#754",
+        "docs/behaviour-diagnostics.md"
+      ],
+      "cheapest_tier": 3
+    },
+    {
+      "id": "threat-decline",
+      "title": "Bots kill the human a third as often as in August",
+      "status": "open",
+      "kind": "hypothesis",
+      "tier": 3,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "Bot kills on the human fell from a mid-August median of 3.6 a minute on dm4 to about 1.1 since September, while the human's own rate rose. The two are confounded and nothing has separated them.",
+      "refute_by": "Three skill-1 sessions on one build inside the 2.0 to 3.0 target, or a calibration ladder that separates the human's improvement.",
+      "evidence": [
+        "runs/human_scorecard.tsv",
+        "runs/shane_dm4_2026-11-14_ed8926.log"
+      ],
+      "cheapest_tier": 5
+    },
+    {
+      "id": "swim-drag-half",
+      "title": "Swim acceleration at half its tuned value",
+      "status": "open",
+      "kind": "hypothesis",
+      "tier": 4,
+      "maps": [
+        "dm3",
+        "e1m2"
+      ],
+      "statement": "v4.07 set swim drag to k = 2 per second from the refuted 10 Hz rate. At the real rate the original 0.8 per frame was about 4.3 per second, so swim acceleration has run at half its tuned value since 2026-08-29. Terminal speed never changed.",
+      "refute_by": "A played-rate ladder on dm3 and e1m2 comparing k = 2 and k = 4.",
+      "evidence": [
+        "#761"
+      ],
+      "cheapest_tier": 4
+    },
+    {
+      "id": "stall-jump-air-steer",
+      "title": "Stall jump steered into lava by air control",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm4"
+      ],
+      "cells": [
+        {
+          "map": "dm4",
+          "at": [
+            -16,
+            390,
+            -360
+          ],
+          "radius": 96
+        }
+      ],
+      "statement": "A stall jump approved on its launch heading is then steered by air control onto a different heading and into the lava of dm4's north-west pocket; Joe Rogan died this way on 2026-11-14.",
+      "evidence": [
+        "#797",
+        "runs/shane_dm4_2026-11-14_ed8926.log"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "edge-wall-friction",
+      "title": "No stock edge or wall friction",
+      "status": "open",
+      "kind": "hypothesis",
+      "tier": 4,
+      "maps": [],
+      "statement": "Argus_Friction lacks stock edge friction (doubled friction when the ground ends 16u ahead) and the ground path lacks wall friction. Edge friction would cap the cornering speed near drops at about 354 u/s. Neither is shown to cost deaths.",
+      "refute_by": "Its own ladder per friction term.",
+      "evidence": [
+        "#794",
+        "docs/behaviour-diagnostics.md"
+      ],
+      "cheapest_tier": 4
+    },
+    {
+      "id": "e1m2-regen-worse",
+      "title": "Every e1m2 regeneration plays worse",
+      "status": "open",
+      "kind": "hypothesis",
+      "tier": 1,
+      "maps": [
+        "e1m2"
+      ],
+      "statement": "An e1m2 regeneration has been refused on its tapes four times, after the budget, door typing, plat pad and jump ceiling were each fixed. Whatever makes it worse is not on any list anyone has named.",
+      "next": "Start by not assuming it is navgen; compare door events and route failures cell by cell.",
+      "refute_by": "A regenerated e1m2 graph that holds parity against three same-build control tapes.",
+      "evidence": [
+        "#325",
+        "#308",
+        "#318",
+        "#319"
+      ],
+      "cheapest_tier": 4
+    },
+    {
+      "id": "dm4-pit-runoffs",
+      "title": "dm4 bots running off ledges into the pit lava",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm4"
+      ],
+      "cells": [
+        {
+          "map": "dm4",
+          "at": [
+            250,
+            -150,
+            -384
+          ],
+          "radius": 330
+        }
+      ],
+      "statement": "Most dm4 world deaths with no damage before them are bots leaving a ledge into the pit lava at run speed: 2 of 3 on 2026-11-14 (Carmack at 440 u/s) and 5 of 8 on 2026-08-29. The brink deflection is not the cause, and edge friction is untested.",
+      "next": "Triage the unforced pit deaths across the session tapes by entry heading and speed before choosing a fix.",
+      "evidence": [
+        "runs/shane_dm4_2026-11-14_ed8926.log",
+        "runs/shane_dm4_2026-08-29_v405.log",
+        "#794"
+      ],
+      "cheapest_tier": 1
+    },
+    {
+      "id": "dm2-door-cell",
+      "title": "dm2 remote-button door cell",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm2"
+      ],
+      "cells": [
+        {
+          "map": "dm2",
+          "at": [
+            2231,
+            -1968,
+            120
+          ],
+          "radius": 96
+        }
+      ],
+      "statement": "A door-cause cell at 2231 -1968 120 on dm2 held 22 stalls in the 2026-09-14 session; the remote-button door class there has produced under-fire freezes since v3.43.",
+      "evidence": [
+        "runs/shane_dm2_2026-09-14.log"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "gui-render-timeout",
+      "title": "GUI rendering test times out on the CI runner",
+      "status": "open",
+      "kind": "defect",
+      "tier": null,
+      "maps": [],
+      "statement": "test_gui_rendering's headless Chrome run hits its 25 s timeout on the GitHub runner, failing the lab suite on main at 3d3b450 though that merge changed no GUI code.",
+      "evidence": [
+        "tools/test_gui_rendering.py"
+      ],
+      "cheapest_tier": 1
+    },
+    {
+      "id": "parallel-inject-tests",
+      "title": "Console-inject tests fail only in a full parallel run",
+      "status": "open",
+      "kind": "defect",
+      "tier": null,
+      "maps": [],
+      "statement": "Five Windows console-inject tests fail in a full parallel cargo test run and pass single-threaded or alone. Cause unknown.",
+      "evidence": [
+        "#805"
+      ],
+      "cheapest_tier": 1
+    },
+    {
+      "id": "dm3-quad-court-pinch",
+      "title": "dm3 quad-court pit mouth",
+      "status": "fixed",
+      "fixed_on": "2026-08-28",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm3"
+      ],
+      "cells": [
+        {
+          "map": "dm3",
+          "at": [
+            552,
+            240,
+            56
+          ],
+          "radius": 96
+        }
+      ],
+      "statement": "The puppet jammed at 552 240 56 on the n68 to n248 walk link; reminting it as a jump link cleared the cluster for the first time since the campaign began (2026-08-28).",
+      "evidence": [
+        "runs/ab_dm3_verdictjump1.log"
+      ]
+    },
+    {
+      "id": "dm2-ne-stair-lip",
+      "title": "dm2 north-east stair lip teeter",
+      "status": "fixed",
+      "fixed_on": "2026-08-20",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm2"
+      ],
+      "cells": [
+        {
+          "map": "dm2",
+          "at": [
+            2640,
+            -50,
+            120
+          ],
+          "radius": 96
+        }
+      ],
+      "statement": "Bots arriving at walking pace teetered at the 192u drop off dm2's north-east balcony; the router-promised drop (one firm step off the lip) cleared it in v3.67.",
+      "evidence": [
+        "runs/ab_dm2_lipdrop1.log",
+        "runs/probe_lipdbg.log"
+      ]
+    },
+    {
+      "id": "e1m7-lava-runoffs",
+      "title": "e1m7 bots running and jumping into the lava lake",
+      "status": "fixed",
+      "fixed_on": "2026-11-13",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "e1m7"
+      ],
+      "statement": "Routed bots ran off e1m7's upper walkways at 300 to 450 u/s because the hazard guard approved a dry floor under the probe that a running bot overflies. The guard now judges the run-off landing.",
+      "evidence": [
+        "#773",
+        "docs/e1m7-lava-investigation.md"
+      ]
+    },
+    {
+      "id": "dm4-dead-jump-link",
+      "title": "dm4 n124 to n95 jump link the runtime cannot fly",
+      "status": "fixed",
+      "fixed_on": "2026-09-16",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "The puppet convicted dm4's n124 to n95 jump link; removing the one dead direction took its cell from 85 s holds to 2.5 s (v4.19).",
+      "evidence": [
+        "#350",
+        "runs/ab_dm4_deadlink1.log"
+      ]
+    },
+    {
+      "id": "dm2-fight-pin",
+      "title": "A bot pinned while fighting could not be unstuck",
+      "status": "fixed",
+      "fixed_on": "2026-09-14",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "dm2"
+      ],
+      "cells": [
+        {
+          "map": "dm2",
+          "at": [
+            2372,
+            16,
+            72
+          ],
+          "radius": 96
+        }
+      ],
+      "statement": "The stall detector is gated on having no enemy and the pinned rescue needs four stalls, so the two cancelled: Carmack held 2372 16 72 for 19.7 s at 26 health. A fight-pin rescue (eight seconds without moving 32 units while fighting) shipped in v4.17.",
+      "evidence": [
+        "#322",
+        "runs/shane_dm2_2026-09-14.log"
+      ]
+    },
+    {
+      "id": "hunch-major-decay",
+      "title": "Hunch that decays on majors",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 3,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "Alone on dm4 it ran lava 11 and stalls 13 against 4 and 5. A bet is a detour, not a shopping trip.",
+      "do_not_retry": true,
+      "evidence": [
+        "#92"
+      ]
+    },
+    {
+      "id": "hunch-every-disengage",
+      "title": "Hunch on every disengage",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 3,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "It did not raise the hunch count, because the 6 s cooldown already bounds it, and it cost 2 lava deaths.",
+      "do_not_retry": true,
+      "evidence": [
+        "#93"
+      ]
+    },
+    {
+      "id": "jump-takeoff-acceleration",
+      "title": "Ground acceleration on the jump takeoff frame",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm4",
+        "dm2"
+      ],
+      "statement": "Correct physics that gave dm4 its two lowest stall figures, but with point-blank target displacement it could not clear lava across five tapes against a both-reverted control. Jump arcs were verified at about 280 u/s and a faster launch lands elsewhere.",
+      "next": "Re-verify jump arcs in navgen at the true launch speed, then reland.",
+      "do_not_retry": true,
+      "evidence": [
+        "#54",
+        "#91"
+      ]
+    },
+    {
+      "id": "safeline-water",
+      "title": "SafeLine tolerating water",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm3"
+      ],
+      "statement": "dm3 coverage halved and engagements fell 8 to 2. MoveHazard can permit water because it is a per-step guard; SafeLine is an all-or-nothing verdict on a whole line.",
+      "do_not_retry": true,
+      "evidence": [
+        "#105"
+      ]
+    },
+    {
+      "id": "goap-goal-stack",
+      "title": "GOAP goal stack remembering displaced goals",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 3,
+      "maps": [
+        "dm2",
+        "e1m6"
+      ],
+      "statement": "Parity on every hard gate and goal pickups down on both maps that exercise it: the remembered goal is usually the least completable one on the board.",
+      "do_not_retry": true,
+      "evidence": [
+        "#367",
+        "runs/ab_dm2_goalstack1.log",
+        "runs/ab_e1m6_goalstack1.log"
+      ]
+    },
+    {
+      "id": "runtime-arc-check",
+      "title": "Runtime jump arc check",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "Built, found four defects in itself, and still disagreed with the engine. Point traces cannot referee a bounding box; the graph owns collision truth.",
+      "do_not_retry": true,
+      "evidence": [
+        "#356"
+      ]
+    },
+    {
+      "id": "retreat-backpedal",
+      "title": "Retreat by backing away",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 3,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "Three attempts failed two ways: close-range backpedalling killed bots with their own rockets, and longer back-offs walked them blind off walkway lips. Retreat by geometry (break line of sight toward cover) is what shipped.",
+      "do_not_retry": true,
+      "evidence": [
+        "runs/ab_dm4_retreat.log",
+        "runs/ab_dm4_retreat2.log",
+        "runs/ab_dm4_range1.log",
+        "runs/ab_dm4_range3.log"
+      ]
+    },
+    {
+      "id": "lava-scramble",
+      "title": "Waterjump vault out of lava",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "dm4's lava surface sits about 80u below its lips and a vault rises about 31u; the pops replaced steady swim-up with chaos (lava 6 then 10).",
+      "do_not_retry": true,
+      "evidence": [
+        "runs/ab_dm4_scramble1.log"
+      ]
+    },
+    {
+      "id": "brink-aware-strafe",
+      "title": "Choosing the strafe side away from the brink",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "The softest slice of pit fear failed twice (lava 5 then 9, the walkway corner at 22). dm4's boundary economy is load-bearing; reopen only with cover-based positioning.",
+      "do_not_retry": true,
+      "evidence": [
+        "#13",
+        "runs/ab_dm4_pitfear1.log",
+        "runs/ab_dm4_pitfear2.log"
+      ]
+    },
+    {
+      "id": "romero-armour-appetite",
+      "title": "Lowering one slot's armour appetite",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 3,
+      "maps": [
+        "dm4"
+      ],
+      "statement": "Dropping the slot's armour appetite from 1.4 to 1.15 left its red armour goals unchanged (11 to 13): the class wins its menu by margin, not by the multiplier.",
+      "do_not_retry": true,
+      "evidence": [
+        "runs/ab_dm4_romero1.log"
+      ]
+    },
+    {
+      "id": "learned-nav-costs",
+      "title": "Folding learned hotspots into nav costs",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm4",
+        "dm3"
+      ],
+      "statement": "On dm4 deaths recurred at the same boundary cells with routes detoured, so its lava band is combat and physics, not routing. On dm3 the inflated cells were load-bearing corridors (stalls 114, engagements 4).",
+      "do_not_retry": true,
+      "evidence": [
+        "runs/ab_dm4_learncost1.log",
+        "runs/ab_dm4_learncost2.log",
+        "runs/ab_dm3_knit5.log"
+      ]
+    },
+    {
+      "id": "brink-speed-pump",
+      "title": "The brink deflection pumping bots over 400 u/s",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm4",
+        "dm2"
+      ],
+      "statement": "Of grounded frames over 400 u/s, route and combat turning at the full turn rate account for 67 to 77 per cent and the deflection for 6 to 10. None of nine probe-tape world deaths followed self-made overspeed. Do not cap the deflection to fix lava.",
+      "do_not_retry": true,
+      "evidence": [
+        "docs/behaviour-diagnostics.md"
+      ]
+    },
+    {
+      "id": "dm2-door-retype",
+      "title": "Retyping dm2's door crossings",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "dm2"
+      ],
+      "statement": "A regen differing from shipped only in door typing rejected on stalls (32 to 42) and on under-fire freezes, though two of those freezes sat 380u from any door. The rule was taken over the argument.",
+      "evidence": [
+        "#324"
+      ]
+    },
+    {
+      "id": "trace-start-in-solid",
+      "title": "A trace that starts in solid reads as empty",
+      "status": "supported",
+      "kind": "rule",
+      "tier": null,
+      "maps": [],
+      "statement": "A traceline whose start is inside solid returns trace_fraction 1, byte-identical to finding nothing. Every floor or void probe must check pointcontents at the start first.",
+      "evidence": [
+        "#55",
+        "#78",
+        "#76"
+      ]
+    },
+    {
+      "id": "single-tape-movement-verdicts",
+      "title": "One tape cannot settle a movement question",
+      "status": "supported",
+      "kind": "rule",
+      "tier": null,
+      "maps": [
+        "dm2",
+        "dm4"
+      ],
+      "statement": "dm2 verdicts flip at the third, fourth and fifth tape, and dm4 stalls cannot be read off five tapes unless they more than double. Judge on two maps, a band or a control.",
+      "evidence": [
+        "docs/specs/2026-09-16-lab-measurement-limits.md",
+        "docs/plans/2026-09-14-regression-analysis-and-recovery.md"
+      ]
+    }
+  ]
+}

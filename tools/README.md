@@ -260,6 +260,19 @@ Experimental waypoint graph derived from the mesh. Typed links are inherited fro
 - **Behavior**: Seats control items, then covers the mesh roomiest first. It accepts a walk link only when a body following it stays on the mesh with world floor under its centre. `--max-seats` builds dense, then removes the most crowded seat only while every in-neighbour still reaches every out-neighbour within three hops. Run navgen's `--reanalyze-tactics` on the output pair to fill exposure and cover.
 - **Output**: A QC and JSON pair in `OUTDIR`, named like the shipped pair (`argus_nav_<map>.qc` and `.qc.json`). Pass a scratch directory, not `src/`, unless you mean to replace the shipped graph.
 
+### 16. `argus_lab.py`
+The lab spine: joins the corpus, scorecard, baselines, benchmarks, verdict sidecars and limits with the objective (`lab_objective.json`) and claims ledger (`lab_claims.json`). See [the lab spine](../docs/lab-spine.md).
+- **Usage**:
+  ```bash
+  python tools/argus_lab.py state
+  python tools/argus_lab.py stale [--strict]
+  python tools/argus_lab.py skeptic RUN ... --vs RUN ...
+  python tools/argus_lab.py triage TAPE
+  python tools/argus_lab.py --help
+  ```
+- **Behavior**: `stale` reports void and stale artefacts with fixes; `skeptic` voids or caveats a comparison and reads each metric against its detection limit; `triage` matches a tape's trouble to claim cells; `session` scores human sessions against the hard gates and goal targets; `pyramid` runs the cheap evidence tiers first.
+- **Tests**: `test_argus_lab.py` on a built fixture tree; `argus_ci.py lab` validates the objective and claims.
+
 ---
 
 Bot POV recording, PNG capture and video export use the Rust lab CLI:

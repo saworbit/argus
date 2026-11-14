@@ -283,6 +283,27 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Add the lab spine, `tools/argus_lab.py`, which joins the corpus,
+  scorecard, baselines, benchmark suites, puppet verdicts and measurement
+  limits with a written objective (`tools/lab_objective.json`, a draft until
+  signed off) and a claims ledger (`tools/lab_claims.json`: open defects with
+  map cells, fixed cells with dates, the graveyard of refused changes). `state`
+  generates the session brief from that evidence; `stale` lists what has
+  moved, and on its first run found six maps whose baselines were recorded at
+  19 Hz, e1m5 baselines from a 155-node graph where 195 now ship, and a dm4
+  benchmark suite pinned to an old graph; `skeptic` voids or caveats a
+  comparison and reads each metric against its detection limit; `triage`
+  names the claim behind each cluster of a tape's trouble and flags trouble at
+  a fixed cell after its fix date; `session` scores human sessions against the
+  hard gates and goal targets; `pyramid` runs the cheap evidence tiers first
+  and holds a ratchet on benchmark suites, which always exit 0; `review` reads
+  each session against the objective as the harvester lands it; and `night` is
+  an unattended census of every registered map that alerts only on what got
+  worse since the last sweep. `argus_ci.py lab` validates the objective and
+  claims, and
+  `argus_reach.py` now honours `ARGUS_MAPS`
+  ([guide](docs/lab-spine.md)).
+
 - The human scorecard gains `bot_world_unforced`: bot world deaths that no
   damage led into, so a bot walking or jumping off a ledge into lava no
   longer counts the same as one knocked in. A death is unforced when the bot

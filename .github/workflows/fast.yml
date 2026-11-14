@@ -107,6 +107,9 @@ jobs:
       - name: Run Python tape parity tests
         run: python3 tools/test_argus_tape.py
 
+      - name: Run lab spine tests
+        run: python3 tools/test_argus_lab.py
+
       - name: Run passive behaviour diagnostics and fixture contract tests
         run: python3 -m unittest discover -s tools -p 'test_behaviour*.py'
 
