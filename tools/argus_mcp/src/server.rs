@@ -1906,7 +1906,7 @@ impl Argus {
             return csv_ok(out);
         }
 
-        let (rows, _) = crate::corpus::index(&cfg.runs, false);
+        let (rows, _) = crate::corpus::index(&cfg.runs, false, Some(&cfg));
         if what == "tapes" {
             let q = crate::corpus::Query {
                 map: args.map.clone(),

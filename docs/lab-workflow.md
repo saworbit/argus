@@ -142,6 +142,9 @@ only new output.
   `compare_runs` is unscaled and needs comparable tape lengths.
 - Different tick classes invalidate a comparison. The default lab launch
   requests the played rate; measure actual cadence rather than assuming it.
+  On Windows the lab starts each engine one priority class above normal, so a
+  busy machine is less likely to push a ladder out of the listen class. On
+  Linux raising priority needs privileges, so check `tick_class` there.
 - One movement tape settles nothing. Use two maps or a suitable repeated
   control, and keep outliers and failed attempts.
 - A short clean match is smoke evidence. It does not establish better win

@@ -638,6 +638,20 @@ fn verify_assets(id1: &Path, game: &Path, expected: &[AssetIdentity]) -> Result<
     Ok(())
 }
 
+/// Whole 0.05 s playback steps in `seconds`, the renderer's fixed step.
+fn playback_steps(seconds: f64) -> usize {
+    (seconds / 0.05).round() as usize
+}
+
+/// The demo time of each captured frame. Counting whole steps and dividing
+/// once keeps the printed values exact (2.8, not 2.8000000000000003).
+fn scheduled_seconds(start: f64, count: u32, interval: f64) -> Vec<f64> {
+    let (first, step) = (playback_steps(start), playback_steps(interval));
+    (0..count as usize)
+        .map(|i| (first + i * step) as f64 / 20.0)
+        .collect()
+}
+
 fn script(start: f64, count: u32, interval: f64) -> String {
     // wait yields one rendered frame. Playback uses a fixed 0.05s step;
     // this changes playback speed only, never the recorded simulation.
@@ -647,9 +661,9 @@ fn script(start: f64, count: u32, interval: f64) -> String {
     let mut s = String::from("host_framerate 0.05\nviewsize 100\nfov 90\ngamma 0.7\nscr_conspeed 100000\ncon_notifytime -1\nplaydemo capture\n");
     for i in 0..count {
         let frames = if i == 0 {
-            (start / 0.05).round() as usize
+            playback_steps(start)
         } else {
-            (interval / 0.05).round() as usize
+            playback_steps(interval)
         };
         for _ in 0..frames {
             s.push_str("wait\n");
@@ -827,7 +841,7 @@ async fn capture_frames(
     verify_assets(&source_id1, &source_game, &assets)?;
     let assets_md5 = assets_md5(&assets)?;
     let result = Capture { demo: stem.into(), demo_md5, engine_md5, assets, assets_md5, directory: dir.display().to_string(), frames,
-        scheduled_seconds: (0..count).map(|i| (start / 0.05).round() * 0.05 + i as f64 * (interval / 0.05).round() * 0.05).collect(),
+        scheduled_seconds: scheduled_seconds(start, count, interval),
         note: "Real engine PNGs of the recorded POV. Times are scheduled playback steps, not exact event timestamps. PVS and the recorded viewpoint limit visibility. Playback is fixed-step; use the source tape for simulation rates." };
     std::fs::write(
         dir.join("manifest.json"),
@@ -1326,6 +1340,25 @@ fn publish_video(dir: &Path, manifest: &[u8]) -> Result<(), String> {
 #[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn scheduled_seconds_print_exact_playback_steps() {
+        // 2.77 is not a whole number of steps; it rounds to step 55.
+        let got = scheduled_seconds(2.77, 4, 0.5);
+        assert_eq!(
+            serde_json::to_string(&got).unwrap(),
+            "[2.75,3.25,3.75,4.25]"
+        );
+        let got = scheduled_seconds(2.8, 4, 0.5);
+        assert_eq!(serde_json::to_string(&got).unwrap(), "[2.8,3.3,3.8,4.3]");
+        let waits = script(2.8, 2, 0.5)
+            .matches(
+                "wait
+",
+            )
+            .count();
+        assert_eq!(waits, playback_steps(2.8) + playback_steps(0.5));
+    }
 
     fn triggered(trigger: f64, view: f64, duration: f64, preroll: bool) -> TriggeredRecording {
         TriggeredRecording {

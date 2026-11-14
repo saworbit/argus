@@ -275,6 +275,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Start each lab engine on Windows one priority class above normal. On
+  2026-11-13 a CPU-heavy job beside a ladder pushed every tape to
+  `dedicated_fast`; the same engines raised to AboveNormal by hand stayed in
+  the listen class with full game time. Linux still relies on the tick-class
+  check ([#786](https://github.com/saworbit/argus/issues/786)).
+
 - `harvest_session.py` now reads each harvested session against the lab
   objective and claims after scoring it: hard gates, whether it counts for a
   goal verdict, and any new or regressed trouble. `argus_reach.py` honours
@@ -512,6 +518,25 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Classify lava deaths in `argus-mcp corpus` by hull-0 contents when the map's
+  BSP is on hand, as briefs and `compare_runs` already do. The corpus used the
+  retired z < -300 rule, so dm2 (lava near z -35) and e1m7 (near z -30) read
+  0 lava on every tape. CLASSIFICATION BOUNDARY: corpus, `measure` and
+  `corpus what=changes` lava figures for dm2, e1m7 and dm4 are not comparable
+  with earlier outputs. The index's context schema is bumped, so a cached
+  index written under the old rule is re-parsed
+  ([#816](https://github.com/saworbit/argus/issues/816)).
+
+- Read the working-tree graph revision, its sidecars and their mtimes from
+  `ARGUS_SRC`, and its history from the repository that holds it. Run from a
+  worktree with `ARGUS_ROOT` at the main checkout, `mill what=revisions` and
+  `argus://graph-revisions/<map>` used to describe the main checkout's graph
+  ([#804](https://github.com/saworbit/argus/issues/804)).
+
+- Print capture manifests' scheduled seconds as exact playback steps (2.8,
+  not 2.8000000000000003) by counting whole 0.05 s steps and dividing once
+  ([#811](https://github.com/saworbit/argus/issues/811)).
 
 - Retry the GUI rendering test's headless browser once when it stalls, kill
   the browser's whole process tree on a timeout, and fail a second stall with
@@ -921,6 +946,12 @@ passing botmatch does not establish better human play.
 - Preserve quoted strings while checking navigation registration in Rust and
   Python (#523), reject noninteger graph endpoints (#524), and refuse custom
   QC filenames with `--register` before any files change (#537).
+
+#### Maintenance
+
+- Move the lab's lockfile off the yanked `yoke-derive` 0.8.3 to 0.8.4, a
+  transitive dependency through `rmcp` and `url`, so `cargo install --locked`
+  stops warning about it ([#807](https://github.com/saworbit/argus/issues/807)).
 
 #### Security
 
