@@ -17,6 +17,10 @@ see what=project
 Same data: open `argus://project`. Then `see what=help` if you need
 the vocabulary. Do not grep the tree for "how do I compile".
 
+Then `python tools/argus_lab.py state` for what the evidence says now:
+the installed build, sessions against the objective, stale artefacts and
+open claims ([the lab spine](docs/lab-spine.md)).
+
 ## The loop
 
 | You want | Call |
@@ -34,6 +38,9 @@ the vocabulary. Do not grep the tree for "how do I compile".
 | Harvest a human session | `python tools/harvest_session.py --tag vNNN` (FIRST, before any new engine launch - launches truncate qconsole.log) |
 | Read the session's demo | `see what=demo name=<stem>` (full-rate named tracks; PVS-culled to the recorder's view) |
 | Directed reach of shipped graphs | `python tools/argus_reach.py [map]` |
+| Can this comparison be believed | `python tools/argus_lab.py skeptic <control runs> --vs <candidate runs>` (voids, confounds, each metric against its detection limit) |
+| Whose trouble is in this tape | `python tools/argus_lab.py triage <tape>` (names the claim behind each cluster; a fixed cell past its measured allowance reads `regression?`) |
+| Which artefacts went stale | `python tools/argus_lab.py stale` (19 Hz or old-graph baselines, stale benchmark pins, refused links still shipping) |
 | How human does a tape's movement look | `python tools/argus_humanness.py runs/<tape>.log --profile` (map-matched distance plus SIGNED per-feature gaps; the bare distance says a feature is wrong, never which way) |
 | Was that stationary window a chosen pause | `python tools/argus_gait.py runs/<tape>.log` (attributes freezes to this bot's own `hesitate` marker; exits 1 on an attributable failure, and a window with no marker is the pre-existing wedge class) |
 | What is under a vetoed void, how tight is a seat | `python tools/argus_voidprobe.py dm4 dm2 [--clearance]` (offline hull-0 read of the SHIPPED graph; needs maps_local/<map>.bsp - two gait changes were built on guesses this answers) |

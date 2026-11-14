@@ -94,6 +94,12 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- `harvest_session.py` now reads each harvested session against the lab
+  objective and claims after scoring it: hard gates, whether it counts for a
+  goal verdict, and any new or regressed trouble. `argus_reach.py` honours
+  `ARGUS_MAPS`, so it runs from a worktree against the main checkout's
+  machine-local BSPs.
+
 - Open CONTRIBUTING's lab tick-rate rule with the rate, about 70 frames a
   second and not 10, so a preview that shows only its opening no longer
   stops before the correction. A new rule asks that a commit or PR refuting
@@ -289,12 +295,11 @@ passing botmatch does not establish better human play.
   signed off) and a claims ledger (`tools/lab_claims.json`: open defects with
   map cells, fixed cells with dates and measured allowances, the graveyard of
   refused changes). `state` generates the session brief from that evidence,
-  `session` and `review` score human sessions against the objective (the
-  harvester now runs `review`), `skeptic` audits a comparison before it is
-  read, `triage` names the claim behind a tape's trouble, `pyramid` runs the
-  cheap evidence tiers first, and `night` is an unattended census that alerts
-  only on what got worse. `argus_ci.py lab` validates the objective and the
-  claims, and `argus_reach.py` honours `ARGUS_MAPS`
+  `session` and `review` score human sessions against the objective,
+  `skeptic` audits a comparison before it is read, `triage` names the claim
+  behind a tape's trouble, `pyramid` runs the cheap evidence tiers first, and
+  `night` is an unattended census that alerts only on what got worse.
+  `argus_ci.py lab` validates the objective and the claims in CI
   ([guide](docs/lab-spine.md)).
 
 - `argus_lab.py stale` found, on its first run, six maps whose baselines were

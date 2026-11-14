@@ -5,10 +5,11 @@ checks that join the lab's instruments into one loop.
 usage:
   argus_lab.py state [--write PATH]               what is true now, generated from the evidence
   argus_lab.py stale [--json] [--strict]          artefacts whose inputs have moved
-  argus_lab.py session [TAPE ...] [--last N]      score human sessions against the objective
+  argus_lab.py session [TAPE ...] [--last N] [--json]
+                                                  score human sessions against the objective
   argus_lab.py skeptic RUN ... --vs RUN ... [--metric M] [--json]
                                                   audit a comparison before believing it
-  argus_lab.py triage TAPE [--json]               match a tape's trouble to known claims
+  argus_lab.py triage TAPE [--min N] [--json]     match a tape's trouble to known claims
   argus_lab.py review TAPE                        one fresh session: gates, goal eligibility, new trouble
   argus_lab.py claims [--status S] [--check]      list or validate the claims ledger
   argus_lab.py ledger [--write PATH]              the joined evidence index as JSON
@@ -2030,7 +2031,7 @@ def main(argv=None):
     p = sub.add_parser('triage')
     p.add_argument('tape')
     p.add_argument('--json', action='store_true')
-    p.add_argument('--min', type=int, default=3)
+    p.add_argument('--min', type=int, default=3, help='smallest cluster to show unless it holds a freeze or an unforced death')
     p = sub.add_parser('review')
     p.add_argument('tape')
     p = sub.add_parser('claims')

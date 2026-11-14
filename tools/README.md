@@ -56,6 +56,7 @@ Directed-reach audit for shipped navigation graphs using spawn-point BFS travers
   ```
 - **Behavior**:
   - Without arguments, audits every map that has both `maps_local/<map>.bsp` and `src/argus_nav_<map>.qc.json`.
+  - `ARGUS_MAPS` overrides the BSP folder, as it does for the lab, so a worktree can point at the main checkout's `maps_local/`.
   - Calculates directed forward reach from each spawn across all edges (`walk`, `jump`, `tele`, `rj`, `lift`, `swim`, `train`, `sprint`) and ungated edges.
 - **Exit Code**:
   - `0`: All spawn points meet the $\ge 60\%$ directed reach threshold.

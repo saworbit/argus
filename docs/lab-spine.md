@@ -29,7 +29,7 @@ rather than parsing metrics in Python.
 
 In a worktree the machine-local BSPs, the lab binary and `.mcp.json` live in
 the main checkout; the spine finds them there. `ARGUS_MAPS` and `ARGUS_LAB`
-override both.
+override both. Every command takes `--root DIR` to read another checkout.
 
 ## Commands
 
@@ -111,6 +111,10 @@ split into knock-ins and unforced deaths. Each cluster reads:
 - **on the fix day**: trouble at a fixed cell on the day of the fix, when the
   claim's `fixed_on` has no time to place the tape before or after it.
 - **before the fix**: trouble at a fixed cell on a tape that predates the fix.
+
+The table shows clusters of at least three events, or any holding a freeze or
+an unforced death; `--min N` changes the size, and `--json` prints every cluster with
+the per-cell verdicts.
 
 ### `skeptic`
 
