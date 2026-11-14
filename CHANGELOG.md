@@ -984,6 +984,26 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Refresh the measurement limits and persist the tape index. `measure` now
+  uses only listen-class arms for any map that has them, names each sigma's
+  tick class in a new last column, and classifies lava by hull-0 contents
+  as #816 did for the corpus. The superseded listen-class baseline bands stay
+  in the noise corpus as ladder arms. Each baked sigma keeps the larger of its
+  old value and the new one, because a lower e1m6 stall sigma let the stopping
+  rule accept a null. `runs/tape_index.tsv` is rebuilt with hull-0 lava and
+  the current context schema, so queries stop re-parsing every tape
+  ([#822](https://github.com/saworbit/argus/issues/822)).
+
+- Re-baseline every map in `runs/baselines.json` on main at the played rate,
+  skill 2, 185 s: five tapes for dm2 and three each for dm3, dm4, dm6, e1m1,
+  e1m2, e1m5, e1m6, e1m7 and lqdm2, all listen class. Six of those maps had
+  baselines recorded at about 19 Hz, so verdicts against them were void, and
+  every map's baseline ran a graph from before the #770 link repair. One
+  e1m1 tape whose game clock ran 3 per cent slow under load was replaced, and
+  e1m7 was run again after two drivers started it in the same run
+  directories and cut the head off its tapes
+  ([#819](https://github.com/saworbit/argus/issues/819)).
+
 - Move the lab's lockfile off the yanked `yoke-derive` 0.8.3 to 0.8.4, a
   transitive dependency through `rmcp` and `url`, so `cargo install --locked`
   stops warning about it ([#807](https://github.com/saworbit/argus/issues/807)).
