@@ -124,6 +124,323 @@ pub fn record_bot_on_port(
     result
 }
 
+/// The bot entity the camera is looking out of: the protocol view entity
+/// when it is a player model other than the camera's own body (`own`).
+fn bot_view(world: &crate::netclient::ClientWorld, own: u16) -> Option<u16> {
+    let eye = world.ents.get(&world.my_ent)?;
+    (world.my_ent != own && Some(eye.model) == world.player_model && eye.updates > 0)
+        .then_some(world.my_ent)
+}
+
+/// Press 212 and read the bot the camera now tracks from its own reply.
+/// The reply is three sprints that the client coalesces into one line.
+fn next_target(client: &mut NetClient) -> Result<String, String> {
+    let offset = client.world.prints.len();
+    client.set_impulse(212);
+    let deadline = Instant::now() + Duration::from_secs(3);
+    loop {
+        client.pump(Duration::from_millis(50));
+        let named = client.world.prints[offset..].iter().find_map(|(_, s)| {
+            s.strip_prefix("Tracking Target:")
+                .map(|n| n.trim().to_string())
+        });
+        if let Some(name) = named {
+            return Ok(name);
+        }
+        if client.world.disconnected || Instant::now() >= deadline {
+            // CycleTarget prints nothing when no bot is alive to track
+            return Err("camera impulse 212 missing acknowledgement Tracking Target:".into());
+        }
+    }
+}
+
+/// Wait for a cut to land: the view entity must become a bot other than
+/// `prev`. The camera's reply can arrive before the view entity changes,
+/// and a view that was already a bot is not the new one (the first live
+/// run rendered the previous bot because of exactly that). If the view
+/// never moves, the camera was already on that bot, the one-bot case.
+fn await_cut(client: &mut NetClient, own: u16, prev: Option<u16>) -> Option<u16> {
+    let deadline = Instant::now() + Duration::from_millis(1500);
+    loop {
+        if let Some(e) = bot_view(&client.world, own) {
+            if Some(e) != prev {
+                return Some(e);
+            }
+        }
+        if client.world.disconnected || Instant::now() >= deadline {
+            return bot_view(&client.world, own);
+        }
+        client.pump(Duration::from_millis(50));
+    }
+}
+
+/// Cycle until the camera tracks `name`. Some(view entity) on success;
+/// None when no living bot by that name answers inside one lap of the
+/// roster, which is what a human or a lab seat produces. Every
+/// intermediate cut is allowed to land before the next press, or a late
+/// view change from one press would pass for the cut to the target.
+fn target_named(client: &mut NetClient, own: u16, name: &str) -> Option<u16> {
+    for _ in 0..5 {
+        let prev = bot_view(&client.world, own);
+        let Ok(got) = next_target(client) else {
+            return None;
+        };
+        let landed = await_cut(client, own, prev);
+        if got == name {
+            return landed;
+        }
+    }
+    None
+}
+
+/// Which bot the camera watches before anything fires. Watching the right
+/// bot already is the only way a capture can show the lead-up.
+#[derive(Debug, Clone)]
+pub enum PovFocus {
+    /// Whoever the camera lands on; it cuts when a trigger names another.
+    Any,
+    /// Roster slot 0..3, and only that bot can fire.
+    Slot(u8),
+    /// Bot name, and only that bot can fire.
+    Name(String),
+}
+
+/// A recording that started itself, with the moments needed to render it.
+#[derive(Debug, Clone, Serialize)]
+pub struct TriggeredRecording {
+    /// Demo stem under `runs/demos/`, for `capture-demo` or `capture-video`.
+    pub demo: String,
+    /// The bot the camera cut to: the one that met the trigger.
+    pub bot: String,
+    /// The trigger that fired, as `stall`, `flip x3` or `still 2.5s`.
+    pub trigger: String,
+    /// The console line that fired, trimmed to 200 characters.
+    pub line: String,
+    /// Tape clock at the trigger, for finding the moment in the match log.
+    pub game_time: f64,
+    /// Demo playback seconds when the trigger was read.
+    pub trigger_demo_sec: f64,
+    /// Demo playback seconds once the camera was looking out of that bot.
+    pub view_demo_sec: f64,
+    /// The camera was already on that bot, so frames before the trigger
+    /// show the lead-up rather than another bot.
+    pub preroll_valid: bool,
+    /// Wall-clock seconds from the camera being ready to the trigger.
+    pub waited_sec: f64,
+    /// Length of the published demo, which bounds the renderable frames.
+    pub demo_duration_sec: f64,
+    /// Names that fired but that the camera could not track (not bots).
+    pub skipped: Vec<String>,
+}
+
+/// Join the lab match as a camera, watch the console, and record the first
+/// bot to meet a trigger: cut to it, keep `keep_sec`, publish the demo.
+/// Without a trigger inside `wait_sec` nothing is published.
+#[allow(clippy::too_many_arguments)]
+pub fn record_triggered(
+    cfg: &Config,
+    name: &str,
+    triggers: Vec<crate::pov_trigger::Trigger>,
+    focus: PovFocus,
+    wait_sec: f32,
+    keep_sec: f32,
+    port: u16,
+    log: &Path,
+) -> Result<TriggeredRecording, String> {
+    if port < 1024 {
+        return Err("record port must be 1024..=65535".into());
+    }
+    if !crate::paths::valid_run_name(name)
+        || name == "."
+        || name == ".."
+        // capture renders from at most 120 s into a demo, and camera
+        // setup comes first: a later trigger would record and not render
+        || !wait_sec.is_finite()
+        || !(5.0..=110.0).contains(&wait_sec)
+        || !keep_sec.is_finite()
+        || !(2.0..=30.0).contains(&keep_sec)
+        || triggers.is_empty()
+    {
+        return Err(
+            "triggered recording needs a new name, a trigger, 5..110 s of waiting and 2..30 s kept"
+                .into(),
+        );
+    }
+    if let PovFocus::Slot(s) = focus {
+        if s > 3 {
+            return Err("roster slot must be 0..3".into());
+        }
+    }
+    if !log.is_file() {
+        return Err(format!(
+            "no live match log at {}; start a lab match first",
+            log.display()
+        ));
+    }
+    let dir = cfg.runs.join("demos");
+    std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
+    let path = dir.join(format!("{name}.dem"));
+    let mut client = NetClient::connect("127.0.0.1", port, "labcamera")?;
+    let result = (|| {
+        client.start_recording(&path)?;
+        wait_for_signon(&mut client, Duration::from_secs(8))?;
+        // the camera's own body: never a bot view
+        let own = client.world.my_ent;
+        impulse(&mut client, 210, "ArgusCam Active")?;
+        for expected in ["Focus / Duel", "FreeLook", "Orbit", "1st-Person Bot POV"] {
+            impulse(&mut client, 211, expected)?;
+        }
+        // the bot we are looking out of, by name and by view entity
+        let (watching, mut watching_ent) = match &focus {
+            PovFocus::Any => {
+                let prev = bot_view(&client.world, own);
+                let n = next_target(&mut client)?;
+                (n, await_cut(&mut client, own, prev))
+            }
+            PovFocus::Name(n) => {
+                let e = target_named(&mut client, own, n)
+                    .ok_or_else(|| format!("camera could not find a living bot named {n}"))?;
+                (n.clone(), Some(e))
+            }
+            PovFocus::Slot(s) => {
+                let mut found = None;
+                for _ in 0..5 {
+                    let prev = bot_view(&client.world, own);
+                    let n = next_target(&mut client)?;
+                    let landed = await_cut(&mut client, own, prev);
+                    if tracking_slot(&client.world, *s) {
+                        found = Some((n, landed));
+                        break;
+                    }
+                }
+                found.ok_or_else(|| format!("camera could not select living roster slot {s}"))?
+            }
+        };
+        let focus_name = match &focus {
+            PovFocus::Any => None,
+            _ => Some(watching.clone()),
+        };
+        let mut detector = crate::pov_trigger::Detector::new(triggers, focus_name);
+        let mut tail = crate::pov_trigger::LogTail::at_end(log)?;
+        let started = Instant::now();
+        let deadline = started + Duration::from_secs_f32(wait_sec);
+        let mut skipped: Vec<String> = Vec::new();
+        let fired = 'watch: loop {
+            client.pump(Duration::from_millis(100));
+            if client.world.disconnected {
+                return Err("camera disconnected while waiting for a trigger".into());
+            }
+            for line in tail.read_lines()? {
+                let Some(f) = detector.feed(&line) else {
+                    continue;
+                };
+                let trigger_time = client.world.time;
+                // POV mode jumps to another living bot when its target
+                // dies, without a reply, so a name alone can be stale
+                let on_it = f.bot == watching
+                    && watching_ent.is_some()
+                    && bot_view(&client.world, own) == watching_ent;
+                if on_it {
+                    break 'watch (f, trigger_time, trigger_time, true);
+                }
+                match target_named(&mut client, own, &f.bot) {
+                    Some(_) => break 'watch (f, trigger_time, client.world.time, false),
+                    None => {
+                        // the failed lap left the camera on some other
+                        // bot; force an explicit cut next time
+                        watching_ent = None;
+                        detector.ignore(&f.bot);
+                        skipped.push(f.bot);
+                    }
+                }
+            }
+            if Instant::now() >= deadline {
+                let seen = detector.names().join(", ");
+                return Err(if detector.lines_read == 0 {
+                    format!(
+                        "the match log did not grow in {wait_sec} s; is {} the live match's log?",
+                        log.display()
+                    )
+                } else {
+                    format!(
+                        "no trigger fired in {wait_sec} s ({} lines read; bots seen: {}). Nothing was published.",
+                        detector.lines_read,
+                        if seen.is_empty() { "none" } else { &seen }
+                    )
+                });
+            }
+        };
+        let (f, trigger_time, view_time, preroll_valid) = fired;
+        let waited_sec = started.elapsed().as_secs_f64();
+        client.pump(Duration::from_secs_f32(keep_sec));
+        if client.world.disconnected {
+            return Err("camera disconnected before recording completed".into());
+        }
+        let last_time = client.world.time;
+        let published = client
+            .finish_recording()?
+            .ok_or("camera demo was not recorded")?;
+        // Demo playback time counts from the first svc_time recorded, and
+        // the last one recorded is the client's clock right now.
+        let demo = crate::demo::read_demo(&std::path::PathBuf::from(&published))?;
+        let t0 = last_time - demo.brief.duration_sec;
+        let round = |x: f64| (x * 100.0).round() / 100.0;
+        Ok(TriggeredRecording {
+            demo: name.to_string(),
+            bot: f.bot,
+            trigger: f.trigger,
+            line: f.line,
+            game_time: f.game_time,
+            trigger_demo_sec: round(trigger_time - t0),
+            view_demo_sec: round(view_time - t0),
+            preroll_valid,
+            waited_sec: round(waited_sec),
+            demo_duration_sec: round(demo.brief.duration_sec),
+            skipped,
+        })
+    })();
+    client.disconnect();
+    result
+}
+
+/// Which frames to render from a triggered recording: (start, count).
+/// `offset` is seconds from the trigger. By default it is the lead-up
+/// when the camera was already on the bot, otherwise just after the cut,
+/// which is never crossed: a frame before it shows a different bot. Frames
+/// that would run past the demo's end are dropped rather than moved
+/// earlier.
+pub fn triggered_window(
+    rec: &TriggeredRecording,
+    offset: Option<f64>,
+    count: u32,
+    interval: f64,
+) -> (f64, u32) {
+    let anchor = if rec.preroll_valid {
+        rec.trigger_demo_sec
+    } else {
+        rec.view_demo_sec
+    };
+    // Measured on dm4: the rendered cut landed between 0.0 and 0.1 s after
+    // view_demo_sec (the weapon and status bar switch first; the overlay
+    // label is a refreshed centerprint and trails by about 0.3 s). Frames
+    // keep 0.1 s clear of the cut and start 0.2 s after it by default.
+    let default = if rec.preroll_valid { -1.5 } else { 0.2 };
+    let mut start = anchor + offset.unwrap_or(default);
+    if !rec.preroll_valid {
+        start = start.max(rec.view_demo_sec + 0.1);
+    }
+    // playback steps are 0.05 s; round up so the cut is never crossed,
+    // with slack for 11.3 * 20 landing a hair above 226
+    let start = (start.max(0.5) * 20.0 - 1e-6).ceil() / 20.0;
+    let room = rec.demo_duration_sec - 0.1 - start;
+    let fit = if room < 0.0 || interval <= 0.0 {
+        1
+    } else {
+        (room / interval).floor() as u32 + 1
+    };
+    (start, count.min(fit).max(1))
+}
+
 /// Rendered PNG paths and input identities; times are scheduled playback steps.
 #[derive(Debug, Serialize)]
 pub struct Capture {
@@ -1009,6 +1326,109 @@ fn publish_video(dir: &Path, manifest: &[u8]) -> Result<(), String> {
 #[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
+
+    fn triggered(trigger: f64, view: f64, duration: f64, preroll: bool) -> TriggeredRecording {
+        TriggeredRecording {
+            demo: "t".into(),
+            bot: "Romero".into(),
+            trigger: "stall".into(),
+            line: String::new(),
+            game_time: 40.0,
+            trigger_demo_sec: trigger,
+            view_demo_sec: view,
+            preroll_valid: preroll,
+            waited_sec: 9.0,
+            demo_duration_sec: duration,
+            skipped: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn a_triggered_window_shows_the_lead_up_only_from_the_same_bot() {
+        // already watching: 1.5 s of lead-up by default
+        assert_eq!(
+            triggered_window(&triggered(10.0, 10.0, 18.0, true), None, 6, 0.5),
+            (8.5, 6)
+        );
+        // a cut: frames before the view change would show another bot, so
+        // even an explicit negative offset stops 0.1 s after the cut
+        assert_eq!(
+            triggered_window(&triggered(10.0, 11.3, 18.0, false), None, 6, 0.5),
+            (11.5, 6)
+        );
+        assert_eq!(
+            triggered_window(&triggered(10.0, 11.3, 18.0, false), Some(-3.0), 6, 0.5),
+            (11.4, 6)
+        );
+        // frames past the end are dropped, never moved before the cut
+        assert_eq!(
+            triggered_window(&triggered(16.0, 17.0, 18.0, false), None, 6, 0.5),
+            (17.2, 2)
+        );
+        // the demo's first half second carries signon, not a view
+        assert_eq!(
+            triggered_window(&triggered(1.0, 1.0, 9.0, true), None, 3, 1.0),
+            (0.5, 3)
+        );
+    }
+
+    /// Live: a lab match, a camera waiting on the default triggers, and the
+    /// recording it publishes. Opt-in like the view-entity round trip.
+    #[tokio::test]
+    #[allow(clippy::await_holding_lock)]
+    async fn a_triggered_recording_cuts_to_the_bot_that_fired_when_requested() {
+        if std::env::var("ARGUS_CAMERA_TEST").ok().as_deref() != Some("1") {
+            return;
+        }
+        let _gate = crate::engine::ENGINE_TEST_LOCK
+            .lock()
+            .unwrap_or_else(|p| p.into_inner());
+        let mut cfg = Config::load().unwrap();
+        cfg.runs = cfg.root.join("backups/camera_triggered").join(
+            chrono::Utc::now()
+                .timestamp_nanos_opt()
+                .unwrap()
+                .to_string(),
+        );
+        let mut ctrl = crate::match_ctrl::MatchCtrl::on_port(26017);
+        ctrl.begin(
+            &cfg,
+            "dm4",
+            120,
+            Some("camera_triggered"),
+            Some(8),
+            Some(1),
+            None,
+        )
+        .await
+        .unwrap();
+        let log = ctrl.live_log_path().unwrap();
+        let port = ctrl.port();
+        let rec_cfg = cfg.clone();
+        let rec = tokio::task::spawn_blocking(move || {
+            record_triggered(
+                &rec_cfg,
+                "triggered_live",
+                crate::pov_trigger::parse_spec("stall,still,hazard").unwrap(),
+                PovFocus::Any,
+                90.0,
+                3.0,
+                port,
+                &log,
+            )
+        })
+        .await
+        .unwrap();
+        ctrl.stop(Duration::from_secs(3)).await.unwrap();
+        let rec = rec.unwrap();
+        assert!(
+            !rec.bot.is_empty() && !rec.bot.starts_with("lab"),
+            "{rec:?}"
+        );
+        assert!(rec.view_demo_sec >= rec.trigger_demo_sec, "{rec:?}");
+        assert!(rec.demo_duration_sec >= rec.view_demo_sec + 2.5, "{rec:?}");
+        assert!(cfg.runs.join("demos/triggered_live.dem").is_file());
+    }
 
     #[test]
     fn staged_assets_are_identified_and_isolated_from_source_writes() {

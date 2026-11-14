@@ -32,6 +32,7 @@ pub mod netclient;
 pub mod parse_arglog;
 pub mod parse_fteqcc;
 pub mod paths;
+pub mod pov_trigger;
 pub mod project;
 pub(crate) mod python_helper;
 pub mod qc_index;

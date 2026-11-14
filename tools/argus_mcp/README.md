@@ -181,6 +181,64 @@ The isolated playback sets `con_notifytime -1` so even zero-age capture
 acknowledgements stay out of the image. Every message remains in `qconsole.log`;
 engine errors and missing acknowledgements still fail capture.
 
+### Triggered capture
+
+A fixed window rarely holds the moment worth seeing. `argus-mcp watch-pov
+<new-demo-stem>` joins the running lab match as `labcamera`, tails that match's
+console log, and waits for the first bot to meet a trigger. It then cuts the
+camera to that bot's eyes, keeps recording, publishes the demo and renders
+frames from it. The MCP equivalent is `bot_capture_pov_frame` with `on` (the
+same trigger list) and no `demo`; it waits a fixed 60 s, because the tool
+surface is budgeted and a wait field did not earn its bytes.
+
+```
+argus-mcp watch-pov <stem> [--on stall,still] [--bot NAME | --slot N]
+    [--wait 60] [--keep 8] [--frames 6] [--interval 0.5] [--offset S]
+    [--run NAME | --log PATH] [--no-render] [--port N]
+```
+
+Triggers are a comma list. A word fires on an `ARGEVT <bot> <word>` event or an
+`ARGUS <bot> <word>` marker: `stall`, `hazard`, `routefail`, `abandon`,
+`unstick`, `wallslide`, `hesitate` and so on. `word:N` needs N of them from one
+bot inside 2 s of game time. `still[:secs]` fires when every ARGLOG sample over
+that window (default 2.5 s) sits inside a 32u circle and the bot is alive: the
+freeze gate's circle, early enough that the camera arrives while the bot is
+still stuck. The default is `stall,still`. Reversals fire on `flip`, for
+example `flip:3`, and only while the server has motion diagnostics armed
+(`developer 1`, `scratch1 697`); without them the marker is never printed.
+
+Bot names come from ARGLOG lines, so spaced names such as `Joe Rogan` work and
+console lines that merely mention a name never invent a bot. Lab seats never
+fire. A name the camera cannot track, such as a human, is skipped and listed
+in `skipped`. Only lines written after the camera is ready count: earlier
+moments can no longer be filmed.
+
+A cut takes one to four camera presses, usually well under a second. Frames
+start 0.2 s after the recorded cut and never closer than 0.1 s, because
+earlier frames show the previous bot. On dm4 the rendered cut landed within
+0.1 s of the recorded time: the weapon and status bar switch first, and the
+overlay's bot label, a refreshed centerprint, trails by about 0.3 s. Watching one bot from the start (`--bot` or `--slot`, or
+`bot_client_id` over MCP) restricts firing to that bot and keeps the lead-up:
+frames then start 1.5 s before the trigger. `--offset` (MCP `start_sec`) moves
+the first frame relative to the trigger, still never across a cut. Frames that
+would run past the end of the recording are dropped, not moved earlier.
+
+The result's `recording` carries the bot, the trigger, the console line that
+fired, the tape's game time (for finding the moment in the match log), the demo
+seconds of the trigger and of the cut, and `preroll_valid`. With no trigger
+inside `--wait` (5..110 s, so a late trigger still renders inside capture's
+120 s limit) nothing is published, and the error says how many
+lines were read and which bots were seen; a log that never grew names the path
+it watched. Without `--run` or `--log`, the CLI picks the one run directory
+whose `qconsole.log` grew in the last 30 s and refuses when two are live,
+because the camera joins the match on its port and the log must belong to that
+same match.
+
+The view is the bot's body orientation, not its perception. Bots see through
+line traces, a horizontal field-of-view test and hearing; the camera's pitch
+follows the bot's aim only while it fires. Death in POV mode moves the camera
+to another living bot.
+
 `argus-mcp capture-video <demo-stem> [start-sec=0.5] [duration-sec=3] [playback-rate=1]`
 exports a silent lossless VP9 WebM from the same renderer. FFmpeg with
 `libvpx-vp9` must be on PATH for this command; PNG capture has no encoder
@@ -413,7 +471,7 @@ exe paths as if they were defaults): `tools/argus_mcp.toml.example`,
 `DEFAULT_PORT` (26000). Attached protocol clients use that controller's
 port. The `probelinks`, `benchmark`, `within-ab`, `tactic-suite`,
 `behaviour-suite`, `campaign` and `match` CLI commands accept `--port N`;
-`record-pov` accepts it for the existing match it records. Values must be
+`record-pov` and `watch-pov` accept it for the existing match they record. Values must be
 1024 through 65535. Missing, duplicate and malformed values are refused
 before compilation. Connected study APIs also offer `*_with_ctrl` entry
 points; existing entry points retain their default controller.
@@ -1452,7 +1510,7 @@ with "Prefer …" so a client ranks the native call first.
 | `bsp_inspect_entities` | Raw lump-0 dump + causality, `filter_classname`. | `see what=map` / `cartograph` |
 | `bot_simulate_match` | Batch report: kills, deaths, pickups, nav_errors. Default 300 s. `time_dilation` recorded, not applied. | `experiment` |
 | `rcon_exec` | Whitelisted stdin line plus the following log tail. | `tune` |
-| `bot_capture_pov_frame` | Real engine PNGs from a recorded POV or a live bot recorder. | `analyze_match` for telemetry plots |
+| `bot_capture_pov_frame` | Real engine PNGs from a recorded POV, a live bot recorder, or a recorder that waits for a trigger. | `analyze_match` for telemetry plots |
 
 ## Can an LLM see into Quake and change things live?
 
@@ -2073,6 +2131,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
+| 0.30 | Triggered POV capture. `watch-pov` and `bot_capture_pov_frame` `on` tail the live console and cut the camera to the first bot that stalls, stands still or emits a chosen marker, then record and render it; see [triggered capture](#triggered-capture). |
 | 0.30 | Typed mill artefacts (GitHub #419). `GraphRevision` resources use content-hash ids and keep the producing commit, date, trace inputs and sidecar hashes. `ProbeVerdict` resources wrap probe and proven sidecars. The read-only `mill` tool lists history and diffs two revisions by coordinate link id, including added, removed and type-changed links plus matching convictions. A link absent from both sources is an error. Historical bytes come from Git, so there is no new on-disk format. Tape collections remain the `corpus` surface from 0.28 rather than a duplicate type. 214 tests. |
 | 0.10 | Extra spec tools beside the native set. Cartographer briefs. `see` / `probe` / `tune`. |
 | 0.11 | `see what=project`, `experiment`, session last-seen, MCP resources, `orient` prompt. |

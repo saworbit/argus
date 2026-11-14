@@ -294,6 +294,17 @@ passing botmatch does not establish better human play.
 
 - Run the navmesh repair and air layer suites in fast CI ([#787](https://github.com/saworbit/argus/issues/787)).
 
+- Start a bot's-eye recording when something happens instead of at a fixed
+  time. `argus-mcp watch-pov`, and `bot_capture_pov_frame` with `on`, join the
+  lab match as a camera, tail its console and cut to the first bot that
+  stalls, stands still, emits a chosen marker or produces a burst of them
+  (`stall`, `still:3`, `flip:3`). They then record and render frames, with
+  the lead-up when the camera was already watching that bot. The MCP form
+  waits a fixed 60 s; the CLI takes `--wait` up to 110 s. Lab tooling only;
+  no bot or graph change
+  ([#795](https://github.com/saworbit/argus/pull/795),
+  [details](tools/argus_mcp/README.md#triggered-capture)).
+
 - Add navgen `--seat-links`, which adds seats and walks to a shipped graph
   from a coordinate sidecar (`src/argus_nav_<map>.seats.json`) without a
   regeneration. Every index and slot is kept, every walk must pass
