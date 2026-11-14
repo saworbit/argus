@@ -695,7 +695,8 @@ class TestReviewFindings(unittest.TestCase):
             fx = Fixture(td)
             (fx.root / 'runs' / 'lab').mkdir(parents=True)
             fx.write('runs/lab/night-20261101T000000000000Z.json',
-                     json.dumps(dict(date='2026-11-01', steps=[dict(name='known', status='fail')])))
+                     json.dumps(dict(format=argus_lab.RECEIPT_FORMAT, date='2026-11-01',
+                                     steps=[dict(name='known', status='fail')])))
             out = io.StringIO()
             with mock.patch.object(argus_lab, 'pyramid_plan', return_value=steps), no_lab_binary():
                 code = argus_lab.pyramid(fx.root, ['dm4'], 2, out=out)
@@ -811,7 +812,7 @@ class TestSecondRoundFindings(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             fx = Fixture(td)
             (fx.root / 'runs' / 'lab').mkdir(parents=True)
-            fx.write('runs/lab/night-20261101T000000000000Z.json', json.dumps(dict(date='2026-11-01', **receipt)))
+            fx.write('runs/lab/night-20261101T000000000000Z.json', json.dumps(dict(format=argus_lab.RECEIPT_FORMAT, date='2026-11-01', **receipt)))
             steps = [dict(tier=1, name='audit', audit=('a', 'b'))]
             for counts, code in (({'liquid_entries': 3}, 0), ({'liquid_entries': 40}, 1)):
                 with mock.patch.object(argus_lab, 'pyramid_plan', return_value=steps), \
@@ -967,7 +968,7 @@ class TestThirdRoundFindings(unittest.TestCase):
             fx = Fixture(td)
             (fx.root / 'runs' / 'lab').mkdir(parents=True)
             fx.write('runs/lab/night-20261101T000000000000Z.json', json.dumps(dict(
-                date='2026-11-01', triaged=[], void_keys=[],
+                format=argus_lab.RECEIPT_FORMAT, date='2026-11-01', triaged=[], void_keys=[],
                 steps=[dict(name='skipped one', status='skipped')])))
             code, report = TestNight.sweep(self, fx, [dict(tier=1, name='skipped one', cmd=bad),
                                                       dict(tier=1, name='brand new', cmd=bad)])
@@ -1018,6 +1019,99 @@ class TestThirdRoundFindings(unittest.TestCase):
         shipped = dict(nodes=3, links=frozenset({('L', 'n0', 'n1')}))
         self.assertIs(argus_lab.nearest_topology([a, b], shipped), b)
         self.assertEqual(argus_lab.topology_change(a, shipped), '1 links gone and 0 new')
+
+
+class TestFourthRoundFindings(unittest.TestCase):
+    """One test per defect the fourth red-team round found."""
+
+    LIP = dict(id='lip', status='fixed', fixed_on='2026-08-20', regression={'kinds': ['stall'], 'events': 16},
+               cells=[{'map': 'dm4', 'at': [0, 0, 24], 'radius': 96}])
+
+    def frozen_under_fire(self, started='11/05/2026'):
+        body = 'ARGEVT Reap spawned\n'
+        for i in range(17):  # 8 s at one spot, losing health: a freeze under fire
+            body += sample('Reap', i * 0.5, 0, 0, 24, spd=0, hp=100 - i * 5)
+        return tape(started=started, body=body)
+
+    def test_heavy_trouble_outside_a_fixed_claims_kinds_is_new(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            path = fx.write('runs/ab_dm4_pin.log', self.frozen_under_fire())
+            rep = argus_lab.triage(fx.root, path, claims=[self.LIP])
+            c = rep['clusters'][0]
+            self.assertEqual(c['flag'], 'new')
+            self.assertEqual(c['unexplained'], {'freeze under fire': 1})
+            self.assertIn('outside the claims here', argus_lab.reading(c))
+            self.assertFalse(rep['cells'][0]['regression'])
+            out = io.StringIO()
+            with mock.patch.object(argus_lab, 'all_claims', return_value=[self.LIP]), \
+                    mock.patch.object(argus_lab, 'score_tape', return_value={}), \
+                    mock.patch.object(argus_lab, 'evaluate_session', return_value=dict(
+                        failed=[], unknown=[], bk_pm=None, ratio=None, eligible=False, reasons=['no human'])):
+                _, worth = argus_lab.review(fx.root, path, out=out)
+            self.assertEqual(len(worth), 1, out.getvalue())
+            # An open claim on the cell explains any trouble there.
+            open_claim = dict(id='pin', status='open', cells=self.LIP['cells'])
+            rep = argus_lab.triage(fx.root, path, claims=[self.LIP, open_claim])
+            self.assertEqual(rep['clusters'][0]['flag'], 'known')
+            # A fixed claim that names no kinds covers every kind.
+            broad = dict(self.LIP, regression={'freeze_sec': 9})
+            rep = argus_lab.triage(fx.root, path, claims=[broad])
+            self.assertEqual(rep['clusters'][0]['flag'], 'known')
+
+    def test_light_trouble_outside_a_fixed_claims_kinds_stays_known(self):
+        body = 'ARGEVT Reap spawned\n'
+        for i in range(6):
+            body += sample('Reap', i * 1.0, 0, 0, 24) + 'ARGEVT Reap stall\n'
+        body += "ARGEVT Reap death world pos '0 0 24'\nARGEVT Reap respawn\n"
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            path = fx.write('runs/ab_dm4_light.log', tape(started='11/05/2026', body=body))
+            rep = argus_lab.triage(fx.root, path, claims=[self.LIP])
+            c = rep['clusters'][0]
+            self.assertEqual(c['unexplained'], {'world death': 1})
+            self.assertEqual(c['flag'], 'known')
+            self.assertEqual(argus_lab.reading(c), 'known')
+
+    def test_the_sweep_weighs_new_trouble_at_a_claimed_cell_by_what_no_claim_covers(self):
+        ok = [sys.executable, '-c', 'pass']
+        body = 'ARGEVT Reap spawned\n'
+        for i in range(10):  # within the fixed claim's stall allowance
+            body += sample('Reap', i * 1.0, 0, 0, 24) + 'ARGEVT Reap stall\n'
+        body += "ARGEVT Reap death world pos '0 0 24'\nARGEVT Reap respawn\n" * 3
+        today = dt.datetime.now(dt.timezone.utc).strftime('%m/%d/%Y')
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            path = fx.write('runs/ab_dm4_mixed.log', tape(started=today, body=body))
+            with mock.patch.object(argus_lab, 'all_claims', return_value=[self.LIP]):
+                rep = argus_lab.triage(fx.root, path)
+                self.assertEqual(rep['clusters'][0]['flag'], 'new')
+                self.assertEqual(rep['clusters'][0]['unexplained'], {'world death': 3})
+                # Three world deaths are worth a reader's look but not a nightly
+                # listing, which wants a freeze or five events no claim covers.
+                code, report = TestNight.sweep(self, fx, [dict(tier=1, name='a', cmd=ok)])
+            self.assertEqual(code, 0, report)
+            self.assertIn('1 new tape; 0 tapes with a cluster worth a look', report)
+
+    def test_a_receipt_in_an_older_format_compares_nothing(self):
+        bad = [sys.executable, '-c', 'import json; print("  worst spawn: 55% all, 50% ungated"); raise SystemExit(1)']
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            (fx.root / 'runs' / 'lab').mkdir(parents=True)
+            # Before the format field: reach detail was a string and only a week of tapes was listed.
+            fx.write('runs/lab/night-20261101T000000000000Z.json', json.dumps(dict(
+                date='2026-11-01', triaged=[], void_keys=[],
+                steps=[dict(name='reach', status='fail', detail='worst spawn: 55% all')])))
+            self.assertEqual(argus_lab.last_receipt(fx.root, 'night'), (None, None))
+            code, report = TestNight.sweep(self, fx, [dict(tier=1, name='reach', cmd=bad, parse='reach')])
+            self.assertEqual(code, 0, report)
+            self.assertIn('First sweep', report)
+            receipt, _ = argus_lab.last_receipt(fx.root, 'night')
+            self.assertEqual(receipt['format'], argus_lab.RECEIPT_FORMAT)
+            # The next sweep compares with it, and the same failure is known.
+            code, report = TestNight.sweep(self, fx, [dict(tier=1, name='reach', cmd=bad, parse='reach')])
+            self.assertEqual(code, 0, report)
+            self.assertIn('Still failing, not an alert: reach', report)
 
 
 class TestCommandLine(unittest.TestCase):

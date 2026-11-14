@@ -312,13 +312,14 @@ passing botmatch does not establish better human play.
 - Triage judges each fixed claim's cell against an allowance measured on the
   archive, which gives zero regression flags across every bot tape in
   `runs/`. Measuring it showed the dm3 quad-court pinch was not fixed by the
-  2026-08-28 remint, as the record said: the cell held a median of 15 stalls a
-  tape until the 2026-09-13 regeneration, and 0 since.
+  2026-08-28 remint, as the record said: the 20 tapes between the remint and
+  the 2026-09-13 regeneration held a median of 10 stalls in the cell, and the
+  246 since hold 0.
 
-- Evidence: 61 tests on built fixtures (`tools/test_argus_lab.py`, in fast
-  CI), and every one of 51 deliberately broken guards fails a test. Three
-  independent review rounds found about 44 defects, all fixed; the third found
-  six. Goal targets stay proposals until the objective is signed off.
+- Evidence: 65 tests on built fixtures (`tools/test_argus_lab.py`, in fast
+  CI), and every one of 56 deliberately broken guards fails a test. Four
+  independent review rounds found about 47 defects, all fixed; the fourth
+  found three. Goal targets stay proposals until the objective is signed off.
 
 - The human scorecard gains `bot_world_unforced`: bot world deaths that no
   damage led into, so a bot walking or jumping off a ledge into lava no

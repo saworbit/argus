@@ -1261,6 +1261,24 @@ def regressed(cluster, tolerate):
     return len(points) > tolerate.get('events', REGRESSION_COUNT - 1)
 
 
+NEW_COUNT = 3   # events of one cluster worth a reader's look, when none is a freeze or an unforced death
+
+
+def notable(kinds):
+    """Trouble worth a look: any freeze or unforced death, or NEW_COUNT events of any kind."""
+    if kinds.get('freeze') or kinds.get('freeze under fire') or kinds.get('unforced death'):
+        return True
+    return sum(kinds.values()) >= NEW_COUNT
+
+
+def reading(cluster):
+    """A cluster's flag for a reader; new trouble at a claimed cell names what no claim there covers."""
+    extra = cluster.get('unexplained') or {}
+    if cluster['flag'] == 'new' and cluster['matches'] and extra:
+        return 'new: ' + ', '.join(f'{k} {v}' for k, v in sorted(extra.items())) + ' outside the claims here'
+    return cluster['flag']
+
+
 def fix_phase(recorded, fixed_on):
     """Where a tape falls against a fix: after, before, same day (cannot tell) or undated.
 
@@ -1375,12 +1393,18 @@ def triage(root, tape_path, claims=None, radius=96.0):
     out = []
     for c in clusters:
         kinds = collections.Counter(p['kind'] for p in c['points'])
-        matches = []
+        matches, explains = [], []
         for cl in claims:
             for cell in cl.get('cells') or []:
                 if cell['map'] == mapname and in_cell(c['centre'], cell):
                     matches.append(dict(id=cl['id'], status=cl['status'], fixed_on=cl.get('fixed_on')))
+                    # An open claim explains all its cell's trouble; a fixed one
+                    # only the kinds its fix addressed, or all when it names none.
+                    named = (cl.get('regression') or {}).get('kinds') if cl['status'] == 'fixed' else None
+                    explains.append(set(named) if named else None)
                     break
+        unexplained = collections.Counter(p['kind'] for p in c['points']
+                                          if not any(e is None or p['kind'] in e for e in explains))
         severe = kinds['freeze under fire'] + kinds['unforced death'] + kinds['freeze']
         flag = 'new'
         if matches:
@@ -1392,6 +1416,10 @@ def triage(root, tape_path, claims=None, radius=96.0):
                 flag = 'regression?'
             elif any(v['regression'] for v in verdicts):
                 flag = 'regression? (undated tape)'
+            elif notable(unexplained):
+                # Trouble no claim here names, such as a long freeze at a cell
+                # whose fix was for stalls, is new trouble, not the known kind.
+                flag = 'new'
             elif any(v['phase'] in ('after', 'undated') for v in verdicts):
                 flag = 'known'
             elif any(v['phase'] == 'same day' for v in verdicts):
@@ -1400,7 +1428,7 @@ def triage(root, tape_path, claims=None, radius=96.0):
                 flag = 'before the fix'
         out.append(dict(centre=[round(v) for v in c['centre']], count=len(c['points']), kinds=dict(kinds),
                         bots=sorted({p['bot'] for p in c['points']}), matches=matches, flag=flag,
-                        severe=severe))
+                        severe=severe, unexplained=dict(unexplained)))
     out.sort(key=lambda c: (-c['severe'], -c['count']))
     return dict(tape=str(tape_path), map=mapname, date=recorded[:10] if recorded else None, when=recorded,
                 bsp=bool(contents), clusters=out, cells=cells)
@@ -1420,7 +1448,7 @@ def print_triage(rep, min_count=3, out=None):
         what = ', '.join(f'{k} {v}' for k, v in sorted(c['kinds'].items()))
         claim = ', '.join(f'{m["id"]} ({m["status"]})' for m in c['matches']) or '-'
         print(f'| {" ".join(map(str, c["centre"]))} | {c["count"]} | {what} | {", ".join(c["bots"])} | {claim} '
-              f'| {c["flag"]} |', file=out)
+              f'| {reading(c)} |', file=out)
 
 
 def review(root, path, out=None):
@@ -1443,11 +1471,12 @@ def review(root, path, out=None):
     print('counts for a goal verdict' if s['eligible'] else 'does not count for a goal verdict: ' + '; '.join(s['reasons']),
           file=out)
     rep = triage(root, path)
-    worth = [c for c in rep['clusters'] if c['flag'] in ('new', 'regression?', 'regression? (undated tape)')
-             and (c['count'] >= 3 or c['severe'])]
+    worth = [c for c in rep['clusters']
+             if (c['flag'].startswith('regression') and notable(c['kinds']))
+             or (c['flag'] == 'new' and notable(c['unexplained']))]
     for c in worth:
         what = ', '.join(f'{k} {v}' for k, v in sorted(c['kinds'].items()))
-        print(f'{c["flag"]}: {" ".join(map(str, c["centre"]))}: {what}', file=out)
+        print(f'{reading(c)}: {" ".join(map(str, c["centre"]))}: {what}', file=out)
     if not worth:
         print('no new or regressed cluster of trouble', file=out)
     return s, worth
@@ -1753,12 +1782,15 @@ def show_step(row, out):
         print(f'- {label}: {status}' + (f', {detail}' if detail else ''), file=out)
 
 
+RECEIPT_FORMAT = 2   # raise when a receipt field changes meaning, so an old receipt is not compared as a new one
+
+
 def write_receipt(root, kind, body):
     folder = root / 'runs' / 'lab'
     folder.mkdir(parents=True, exist_ok=True)
     stamp = dt.datetime.now(dt.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ')
     path = folder / f'{kind}-{stamp}.json'
-    body = dict(head=(git(root, 'rev-parse', 'HEAD') or '').strip(), **body)
+    body = dict(format=RECEIPT_FORMAT, head=(git(root, 'rev-parse', 'HEAD') or '').strip(), **body)
     path.write_text(json.dumps(body, indent=1, default=str), encoding='utf-8')
     return path
 
@@ -1835,11 +1867,14 @@ def registered_maps(root):
 
 
 def last_receipt(root, kind):
+    """The newest readable receipt of this kind in the current format; an older format compares nothing."""
     for path in reversed(sorted((root / 'runs' / 'lab').glob(f'{kind}-*.json'))):
         try:
-            return read_json(path), path.name
+            body = read_json(path)
         except (OSError, ValueError):
             continue
+        if isinstance(body, dict) and body.get('format') == RECEIPT_FORMAT:
+            return body, path.name
     return None, None
 
 
@@ -1895,14 +1930,16 @@ def night(root, maps=None, engine=False, out=None):
         seen_before = {key for p, key in every if (tape_date(p) or '') < since}
         fresh = [p for p, key in every if key not in seen_before]
 
-    def freezes(c):
-        return c['kinds'].get('freeze', 0) + c['kinds'].get('freeze under fire', 0)
+    def worth(c):
+        # New trouble is judged on what no claim covers; at an unclaimed cell that is all of it.
+        new = c['unexplained']
+        return new.get('freeze', 0) + new.get('freeze under fire', 0) or sum(new.values()) >= REGRESSION_COUNT
 
     tape_rows = []
     for p in fresh:
         rep = triage(root, p)
         flagged = [c for c in rep['clusters'] if c['flag'].startswith('regression')
-                   or (c['flag'] == 'new' and (freezes(c) or c['count'] >= REGRESSION_COUNT))]
+                   or (c['flag'] == 'new' and worth(c))]
         regressed_cells = [r['id'] for r in rep['cells'] if r.get('regression')]
         if flagged or regressed_cells:
             tape_rows.append(dict(tape=p.name, clusters=flagged, regressions=regressed_cells))
@@ -1952,7 +1989,7 @@ def night(root, maps=None, engine=False, out=None):
             print(f'- regression of {cid}: trouble in its cell past the allowance it records', file=buf)
         for c in t['clusters']:
             what = ', '.join(f'{k} {v}' for k, v in sorted(c['kinds'].items()))
-            print(f'- {c["flag"]} at {" ".join(map(str, c["centre"]))}: {what}', file=buf)
+            print(f'- {reading(c)} at {" ".join(map(str, c["centre"]))}: {what}', file=buf)
     print(file=buf)
     print('## Stale artefacts', file=buf)
     print(file=buf)

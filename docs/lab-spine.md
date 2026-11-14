@@ -92,8 +92,12 @@ floor and a vertical bound (`dz`, 56 units by default), so a fight on a
 walkway does not land in the pit below it. With the map's BSP, world deaths
 split into knock-ins and unforced deaths. Each cluster reads:
 
-- **known**: an open claim covers it, or light trouble at a fixed cell.
-- **new**: nothing does; consider a claim.
+- **known**: an open claim covers it, or trouble at a fixed cell within what
+  the claim tolerates.
+- **new**: nothing does; consider a claim. Trouble at a fixed cell of a kind
+  the claim does not name also reads new, once it holds a freeze, an unforced
+  death or three events: a long freeze where the fix was for stalls is not the
+  fixed defect coming back, and it is not known either.
 - **regression?**: heavy trouble in a fixed claim's cell, on a tape recorded
   after the fix, even when an open claim shares the cell. A fixed claim is
   judged over every point inside its cell, the unit its allowance is measured
@@ -193,7 +197,10 @@ and 0 otherwise.
   listen-class tapes a side each map needs to see a 30 per cent change, from
   the limits doc. It plans ladders; it does not run them.
 
-Each real run leaves a receipt in `runs/lab/` (ignored by git).
+Each real run leaves a receipt in `runs/lab/` (ignored by git). Receipts
+carry a format number, and `pyramid` and `night` ignore a receipt in an older
+format, so the first sweep after a format change compares with nothing rather
+than reading old fields as new ones.
 
 ### `night`
 
