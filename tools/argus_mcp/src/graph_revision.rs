@@ -256,6 +256,15 @@ fn git_batch_once(
     let mut stdin = child.stdin.take().expect("piped git stdin");
     let stdout = child.stdout.take().expect("piped git stdout");
     let mut stderr = child.stderr.take().expect("piped git stderr");
+    // The read below blocks until git answers. A watchdog kills a git that
+    // never does, which closes stdout and ends the read (#813).
+    let child = std::sync::Arc::new(std::sync::Mutex::new(child));
+    let done = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+    let watchdog = crate::child_process::kill_at_deadline(
+        child.clone(),
+        crate::child_process::GIT_DEADLINE,
+        done.clone(),
+    );
     let requests = specs.to_vec();
     let writer = thread::spawn(move || -> Result<(), String> {
         for spec in requests {
@@ -271,6 +280,9 @@ fn git_batch_once(
     });
     let mut reader = BufReader::new(stdout);
     let parsed = read_git_batch(&mut reader, specs);
+    done.store(true, std::sync::atomic::Ordering::Release);
+    let timed_out = watchdog.join().unwrap_or(false);
+    let mut child = child.lock().unwrap_or_else(|p| p.into_inner());
     if parsed.is_err() {
         let _ = child.kill();
     }
@@ -278,6 +290,16 @@ fn git_batch_once(
         code: None,
         message: format!("could not wait for git cat-file --batch: {e}"),
     })?;
+    drop(child);
+    if timed_out {
+        return Err(GitBatchError {
+            code: None,
+            message: format!(
+                "git cat-file --batch timed out after {}s",
+                crate::child_process::GIT_DEADLINE.as_secs()
+            ),
+        });
+    }
     let write_result = writer.join().map_err(|_| GitBatchError {
         code: status.code(),
         message: "git cat-file --batch request writer panicked".into(),
