@@ -74,13 +74,14 @@ acts on the wall clock and would play at a sixth of the game's speed.
 
 Fixed tapes read the listen tick class (their telemetry gap is 0.5004 s), so
 the tick-class guard does not tell them from wall-clock tapes. The `ARGUS
-clock` line does, and the skeptic reports arms on different clocks as a
-confound.
+clock` line does: the skeptic, and since #852 the Rust `compare`, band and
+`experiment` verdicts, report arms on different clocks as a confound.
 
 `ARGUS_FIXED_FRAME` overrides the frame for an experiment, the way
-`ARGUS_TICRATE` does for the wall clock. Every tape records its frame, and the
-skeptic reports arms that ran different clocks or frames as a confound, and
-voids an arm that holds the same seed and build twice.
+`ARGUS_TICRATE` does for the wall clock. Every tape records its frame. The
+skeptic and the Rust verdicts report arms that ran different clocks or frames
+as a confound; the skeptic voids an arm that holds the same seed and build
+twice, and the Rust verdicts refuse it.
 
 ## Where it agrees with the wall clock
 

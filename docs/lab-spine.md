@@ -142,8 +142,9 @@ reads it. The first arm is the control.
 
 Run names may be given as `x`, `x.log` or `runs/x.log`, and `--metric` must
 name a corpus metric. A tape the corpus cache lacks is parsed by
-`argus-mcp corpus`, asked per map and per tape kind. Tapes do not name their
-build, so the skeptic cannot see a build confound.
+`argus-mcp corpus`, asked per map and per tape kind. Tapes recorded before
+#823 print no build stamp, so the skeptic cannot see a build confound on them
+and lists them in its notes.
 
 ### Graph identity
 
@@ -291,7 +292,8 @@ them in both places.
 - Graph identity reads a tape's banner against git history; two revisions in
   force at the same time with the same banner and different topology would
   look alike, and the spine reports both.
-- The skeptic sees graph and skill confounds, not build ones.
+- The skeptic sees a build confound only on tapes that print `ARGUS build`,
+  which every tape has done since #823.
 - Triage clusters by distance alone; two problems within 96 units merge.
 - Goal verdicts count only sessions whose tape names its skill tier, which
   every tape has done since 2026-09-21.

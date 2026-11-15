@@ -89,8 +89,9 @@ Counting note, found while analysing: a dedicated server sends obituaries to
 clients and never writes them to its console, so an obituary-based count reads
 zero on every stand-in tape. The calibration counts `ARGEVT ... death` lines,
 taking a kill as a death whose killer is a bot by name. The brief's human
-scorecard subtracts only world deaths, so it also credits the stand-in's own
-rocket suicides to the bots ([#844](https://github.com/saworbit/argus/issues/844)).
+scorecard now counts the same way; it used to subtract only world deaths, which
+credited the stand-in's own rocket suicides to the bots
+([#844](https://github.com/saworbit/argus/issues/844)).
 
 ## What would fix it
 

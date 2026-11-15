@@ -142,7 +142,9 @@ the whole tape describes the fallback map - judge nothing).
   protocol records is evidence, not a dependency: never bump it, and
   never merge a bot pull request that does.
   `tools/requirements-perception-cohort.txt` is one (both perception
-  cohort protocols assert it), so Dependabot ignores it.
+  cohort protocols assert it), so Dependabot ignores it. CI installs a
+  hash-locked copy, `.github/requirements/perception.txt`, and
+  `argus_ci.py pins` fails if the two ever name different versions.
 - Workflows follow the rules in CONTRIBUTING.md's
   [what CI checks](CONTRIBUTING.md#what-ci-checks): SHA-pinned actions,
   no persisted checkout credentials, expressions passed through `env:`,
