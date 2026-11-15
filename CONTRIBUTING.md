@@ -20,6 +20,8 @@ Whether you are improving bot combat AI, adding navigation support for new commu
 - [Working with Navigation Graphs](#working-with-navigation-graphs)
 - [Core Engineering Rules & Gotchas](#core-engineering-rules--gotchas)
 - [Submitting Pull Requests](#submitting-pull-requests)
+  - [What CI checks](#what-ci-checks)
+- [Cutting a release](#cutting-a-release)
 - [License Information](#license-information)
 
 ---
@@ -91,12 +93,14 @@ The lab suite includes regression tests against committed match tapes, parsing t
 
 ```bash
 cargo fmt --manifest-path tools/argus_mcp/Cargo.toml -- --check
-cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --all-targets -- -D warnings
+cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --locked --all-targets -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --manifest-path tools/argus_mcp/Cargo.toml --no-deps --locked
-cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp
-cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib
+cargo build --manifest-path tools/argus_mcp/Cargo.toml --locked --bin argus-mcp
+cargo test --manifest-path tools/argus_mcp/Cargo.toml --locked --tests
 ARGUS_REQUIRE_SOURCE_MCP=1 python3 tools/test_tools_cli.py
 ```
+
+These match the `lab test suite (rust)` CI job. `--locked` fails when `Cargo.toml` changed without its `Cargo.lock`, instead of resolving a new lock silently. Build the CLI before the tests: the Windows console-inject tests spawn it (#805). After a dependency change, `cargo deny check` from `tools/argus_mcp` applies the advisory, licence and source policy in [deny.toml](tools/argus_mcp/deny.toml).
 
 ### Running a Headless Smoke Match
 
@@ -231,9 +235,40 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 1. **Fork and Branch**: Create a feature branch from `main` (e.g. `feature/stair-climbing` or `fix/dm3-lift-wait`).
 2. **Compile & Test**:
    - Ensure QuakeC compiles cleanly with `fteqcc` (producing an id-format output).
-   - Verify `cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib` passes.
+   - Run `cargo test --manifest-path tools/argus_mcp/Cargo.toml --locked --tests`, as CI does.
+   - Run `python tools/argus_ci.py all` for the repository invariants.
    - Run a short match to verify that telemetry records cleanly without engine warnings.
-3. **Open a PR**: Fill out the provided [Pull Request Template](.github/pull_request_template.md). Explain what changed, the rationale, and any telemetry observations.
+3. **Open a PR**: Fill out the provided [Pull Request Template](.github/pull_request_template.md). Explain what changed, the rationale, and any telemetry observations. Add an entry under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) when the change has an observable result.
+
+### What CI checks
+
+`main` accepts changes only through a pull request, and a pull request merges only once these checks pass on a branch that is up to date with `main`:
+
+| Check | Workflow | What it gates |
+|---|---|---|
+| `repo invariants` | [fast](.github/workflows/fast.yml) | `argus_ci.py all`: shipped binary pair, line endings, protected tapes, nav integrity, links, dashes, refuted rules, lab claims, suite wiring, build stamp |
+| `lab test suite (rust)` | [fast](.github/workflows/fast.yml) | rustfmt, strict Clippy, rustdoc, the Rust suite and the Python suites |
+| `workflow lint` | [lint](.github/workflows/lint.yml) | actionlint and the zizmor workflow security audit |
+| `config schemas` | [lint](.github/workflows/lint.yml) | Dependabot, issue form, discussion form and `CITATION.cff` schemas |
+| `python critical lint` | [lint](.github/workflows/lint.yml) | Ruff's syntax-error and undefined-name rules over `tools/` |
+| `shell lint` | [lint](.github/workflows/lint.yml) | ShellCheck over tracked shell scripts |
+| `dependency review` | [dependencies](.github/workflows/dependencies.yml) | new dependencies with moderate or worse advisories |
+
+These also run, without blocking a merge: the QuakeC compile, private fixture compiles and the LibreQuake botmatch smoke ([compile](.github/workflows/compile.yml), when sources change), CodeQL ([codeql](.github/workflows/codeql.yml)), `cargo deny` ([dependencies](.github/workflows/dependencies.yml)), strict Clippy on Windows ([windows](.github/workflows/windows.yml), when the lab changes) and path labels ([labeler](.github/workflows/labeler.yml)).
+
+**Changing a workflow**: pin every action to a full commit SHA with its version as a comment, set `persist-credentials: false` on checkout, pass `${{ }}` values to scripts through `env:`, give every job `timeout-minutes`, and run Linux jobs on `ubuntu-24.04` (`test_tools_cli.py` rejects a `*-latest` label). Before pushing, run `actionlint` and `zizmor --persona pedantic .github`. Audits deliberately disabled are recorded, with the reason, in [.github/zizmor.yml](.github/zizmor.yml).
+
+---
+
+## Cutting a release
+
+The [release workflow](.github/workflows/release.yml) builds the release package; nothing is uploaded by hand.
+
+1. On an up-to-date `main`, tag the commit and push the tag: `git tag v4.22` then `git push origin v4.22`. Tags matching `v*` are protected from deletion and moving once pushed.
+2. The workflow builds `progs.dat` from that tag with the pinned fteqcc, packages `argus/progs.dat`, `autoexec.cfg`, `README.txt` and `LICENSE` as `argus-<tag>.zip`, attests its build provenance, and opens a **draft** release with the zip, its `.sha256` and its `.sigstore.json` attestation attached.
+3. Replace the generated notes with the release's story, then publish the draft.
+
+To check the packaging without releasing, run the workflow by hand (`gh workflow run release.yml --ref main`): it builds the same zip as an artifact and creates no release. The tag-only steps (attestation, bundle and draft release) have not yet run for real; check them against [#848](https://github.com/saworbit/argus/issues/848) on the first release.
 
 ---
 

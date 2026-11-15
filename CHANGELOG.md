@@ -1054,6 +1054,19 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Record the repository settings applied with the GitHub hardening, which
+  live outside Git: `main` now accepts changes only through pull requests
+  and requires seven checks (`repo invariants`, `lab test suite (rust)`,
+  `workflow lint`, `config schemas`, `python critical lint`, `shell lint`
+  and `dependency review`) on an up-to-date branch, with no approvals
+  needed and the admin bypass kept. A ruleset stops `v*` release tags being
+  deleted or moved. Dependabot security updates and the Update branch
+  button are on; the empty wiki is off. CONTRIBUTING.md now lists the
+  checks, gives the CI test commands (the `--lib` form it taught missed the
+  integration tests) and adds a release runbook; AGENTS.md carries the
+  workflow and frozen-input rules
+  ([#845](https://github.com/saworbit/argus/pull/845)).
+
 - Add the repository metadata a public project is expected to carry: an
   `.editorconfig` that matches `.gitattributes`, `CODEOWNERS`, a
   `CITATION.cff` behind GitHub's "Cite this repository" button, linguist rules

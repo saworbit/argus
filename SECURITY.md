@@ -34,4 +34,4 @@ We will acknowledge receipt within 48 hours and coordinate a fix and advisory di
 
 ## How the repository is protected
 
-Private vulnerability reporting, Dependabot alerts and security updates, secret scanning with push protection, CodeQL analysis and OpenSSF Scorecard are enabled. Every workflow pins its actions to a full commit SHA, and pull requests are checked by dependency review, `cargo deny` and a workflow security audit.
+Private vulnerability reporting, Dependabot alerts and security updates, secret scanning with push protection, CodeQL analysis and OpenSSF Scorecard are enabled. Every workflow pins its actions to a full commit SHA, and pull requests are checked by dependency review, `cargo deny` and a workflow security audit. `main` accepts changes only through pull requests that pass the required checks listed in [contributing](CONTRIBUTING.md#what-ci-checks), and `v*` release tags cannot be deleted or moved once pushed.
