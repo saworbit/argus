@@ -18,8 +18,21 @@ Same data: open `argus://project`. Then `see what=help` if you need
 the vocabulary. Do not grep the tree for "how do I compile".
 
 Then `python tools/argus_lab.py state` for what the evidence says now:
-the installed build, sessions against the objective, stale artefacts and
-open claims ([the lab spine](docs/lab-spine.md)).
+the installed build, sessions against the objective, stale artefacts,
+which instruments are trusted where, and open claims
+([the lab spine](docs/lab-spine.md)). [The improvement loop](docs/improvement-loop.md)
+says which instrument answers which question.
+
+- Fast, repeatable ladders: `argus-mcp seeds <map> <n> <stem>` (the fixed
+  clock; trusted only where `tools/lab_instruments.json` says, and never
+  for that map's listed limits). Replay one tape exactly with
+  `argus-mcp match <map> <secs> <run> --seed N`.
+- Threat questions still need a human session: the stand-in
+  (`argus-mcp standin`) failed its dose-response calibration (#842).
+- After a session: `argus_lab.py review <stem>` lists the player's marks;
+  `argus_gallery.py build <stem>` cuts them for a ruling.
+- After editing `src/`, `python tools/argus_build_stamp.py --write`
+  (the lab's compile does it for you; `argus_ci.py stamp` checks).
 
 ## The loop
 
@@ -147,7 +160,7 @@ in the process working directory; launch needs `-condebug` and
 ## Where the rest lives
 
 - CONTRIBUTING.md: portable engineering constraints and focused checks
-- CLAUDE.md: optional ignored local handoff and machine-specific paper trail
+- CLAUDE.md: optional ignored local handoff; CLAUDE-history.md holds the older handoffs
 - tools/argus_mcp/README.md: operator guide for every tool, with
   the lab-loop and mill flow charts
 - README.md: the public face: features, quick start, map table,

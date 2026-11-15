@@ -11,11 +11,11 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Main as of 2026-11-13 is installed; the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) and the parked step 1b gate ([#583](https://github.com/saworbit/argus/issues/583)) remain open |
-| Latest gameplay update | 2026-11-13: main installed, the first gameplay binary since 2026-10-22; see Unreleased |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `ED8926C1F3F0E4A5D6F591F905516638` |
+| Development source | Main as of 2026-11-15 is installed; the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) and the parked step 1b gate ([#583](https://github.com/saworbit/argus/issues/583)) remain open |
+| Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
-| Lab version | 0.30; [operator guide and version history](tools/argus_mcp/README.md#versions) |
+| Lab version | 0.31; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
 Main-update dates are UTC merge dates. Numbered builds retain their recorded
 build dates. A merged change does not imply a new numbered release, and a
@@ -26,6 +26,54 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Add the fixed lab clock: `argus-mcp seeds <map> <count> <stem>` and
+  `argus-mcp match ... --seed N` run matches at the wall-clock lab's measured
+  14.25 ms frame about six times faster than real time per engine, on up to
+  eight engines at once, and a given progs, map and seed repeat line for line,
+  so a freeze or a death can be replayed by its seed. Stock engine settings
+  only (`host_framerate`, `sys_ticrate 0.001`, `host_maxfps 1000`,
+  `timelimit`); the seed reaches QC as `saved4`. Validated per map against a
+  registered protocol: 13.9 ms failed on dm4 (more lava deaths and
+  routefails than the wall clock), and 14.25 ms passed a registered
+  confirmation on fresh seeds on dm4 and dm2, with lava, world deaths and
+  routefails (and dm4 stalls) as limits
+  ([details](docs/fixed-clock.md)).
+
+- Stamp a build identity into every tape (#823). `src/argus_build.qc` holds a
+  hash of the QC source with comments and layout removed, so a comment-only
+  change keeps the stamp and the compiled bytes. Every match prints
+  `ARGUS build <id>` and `ARGUS clock ...`, compile and `ship` refresh the
+  stamp, `argus_ci.py stamp` fails while it is stale, briefs carry the build,
+  clock and marks, the spine credits a session to the install carrying its
+  stamp, and the skeptic reports arms on different builds, clocks or frames
+  and voids an arm holding one fixed-clock seed and build twice.
+
+- Add session marks: `bind m mark` (impulse 200, handed to every client as an
+  alias) writes `ARGUS mark` with the time, where the player stood and looked,
+  and the bot in sight nearest their view. It works while dead, says
+  "not saved" without `+developer 1`, and changes nothing in play. `review`
+  and `triage` list each mark with the bot's state and events around it
+  ([controls](docs/controls.md#session-marks)).
+
+- Add the session gallery, `tools/argus_gallery.py`: it picks a session's
+  marks, freezes under fire, unforced world deaths and long freezes, cuts a
+  six-second clip of each from the demo, and serves a local page that records
+  rulings. Clips stay machine-local ([details](docs/session-gallery.md)).
+
+- Add the stand-in human, `argus-mcp standin`: a puppet that follows a route a
+  person ran (from the demo's full-rate track), rejoins it over the nav graph,
+  reacts in 0.25 s with a capped, noisy aim, strafes at the human reversal
+  rate and refuses lava. Its registered calibration on dm4 failed dose
+  response (bot kills on it did not rise with bot skill, Spearman 0.13,
+  because its time in sight of bots ran 0 to 2608 ticks between matches), so
+  it does not screen threat claims yet ([details](docs/stand-in.md)).
+
+- Add `tools/lab_instruments.json`, where the fixed clock and the stand-in may
+  be trusted, read by `argus_lab.py state`, validated by `argus_ci.py lab`,
+  and used by `pyramid` (`--through 5` plans the stand-in rung); and
+  [the improvement loop](docs/improvement-loop.md), which says which
+  instrument answers which question.
 
 - Cover triggered capture's camera cut in CI. The cut logic now runs against
   a small camera trait, and a scripted camera checks that a cut waits for the
@@ -537,6 +585,19 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Refuse a second match on a live run's name or a held port before it spawns
+  anything (#832). Every match takes a lease on `runs/<run>/`, and a reused
+  directory's old log is cleared before the engine starts, so a rerun cannot
+  read its predecessor's tape; the port probe also binds the hostname address
+  QuakeSpasm binds.
+
+- Let capture start up to 900 s into a demo (it stopped at 120 s), with a
+  render deadline that grows with the seek.
+
+- Resolve `ARGUS_LAB` to an absolute path in the lab spine: Windows could not
+  launch a relative one once the child had its own environment, so the
+  corpus silently returned nothing.
 
 - Name the real cause when the Windows console-inject tests fail. They spawn
   `target/debug/argus-mcp.exe`, which `cargo test --lib` does not build, so a

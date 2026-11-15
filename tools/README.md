@@ -274,6 +274,51 @@ The lab spine: joins the corpus, scorecard, baselines, benchmarks, verdict sidec
 - **Behavior**: `stale` reports void and stale artefacts with fixes; `skeptic` voids or caveats a comparison and reads each metric against its detection limit; `triage` matches a tape's trouble to claim cells; `session` scores human sessions against the hard gates and goal targets; `pyramid` runs the cheap evidence tiers first.
 - **Tests**: `test_argus_lab.py` on a built fixture tree; `argus_ci.py lab` validates the objective and claims.
 
+### 17. `argus_build_stamp.py`
+Writes the QC build identity (#823) into `src/argus_build.qc`: a hash of every file `progs.src` lists, with comments and layout removed, so a comment-only change keeps the stamp and the compiled bytes. Every match prints it as `ARGUS build <id>`, and the spine credits a session to the build its tape names.
+- **Usage**:
+  ```bash
+  python tools/argus_build_stamp.py            # print the identity of src/
+  python tools/argus_build_stamp.py --write    # rewrite argus_build.qc when stale
+  python tools/argus_build_stamp.py --check    # exit 1 when stale (CI: argus_ci.py stamp)
+  ```
+- **Behavior**: the lab's compile and `ship` steps refresh the stamp themselves (`build_stamp.rs`, held to this tool by a parity test). After a hand edit under `src/`, run `--write` and commit the stamp with the change.
+- **Tests**: `test_argus_build_stamp.py`.
+
+### 18. `argus_gallery.py`
+The session gallery: picks the moments of a session worth a ruling (marks, freezes under fire, unforced world deaths, long freezes), cuts a six-second clip of each from the paired demo and serves a local page for rulings. See [the session gallery](../docs/session-gallery.md).
+- **Usage**:
+  ```bash
+  python tools/argus_gallery.py build <stem> [--dry-run]
+  python tools/argus_gallery.py serve <stem>
+  python tools/argus_gallery.py verdicts <stem>
+  ```
+- **Behavior**: clips are licensed-data renders and stay under `runs/demos/gallery/` (gitignored); the server listens on 127.0.0.1 and accepts rulings only from its own page.
+- **Tests**: `test_argus_gallery.py`.
+
+### 19. `argus_clock_validation.py`
+Applies the registered fixed-clock criterion (`docs/specs/2026-11-15-fixed-clock-validation.md`) to a played arm and a fixed arm of tapes: per metric, Welch intervals for the difference against a margin of 30 per cent of the played mean or one event. See [the fixed lab clock](../docs/fixed-clock.md).
+- **Usage**:
+  ```bash
+  python tools/argus_clock_validation.py --map dm4 --played-glob 'fxval_played_dm4_r*' --fixed-glob 'fxval_fixed_dm4_s*'
+  ```
+- **Behavior**: exits 0 when the map is accepted. Metrics come from `argus-mcp corpus`; a metric the corpus does not carry reads "not measured", never zero.
+
+---
+
+The fixed lab clock and the stand-in human are Rust lab CLI commands:
+
+```text
+argus-mcp seeds dm4 20 fx_dm4 --lanes 4 --skill 2
+argus-mcp match dm4 185 fx_dm4_replay --seed 7919 --skill 2
+argus-mcp standin dm4 185 standin_dm4_a --skill 1
+```
+
+`seeds` runs fixed-clock matches on several engines at once (the lab's
+14.25 ms frame, about six times faster than real time per engine, and the same
+match every time for one seed and build); see [the fixed lab clock](../docs/fixed-clock.md).
+`standin` seats a puppet that plays like a person; see [the stand-in human](../docs/stand-in.md).
+
 ---
 
 Bot POV recording, PNG capture and video export use the Rust lab CLI:
@@ -407,7 +452,7 @@ append-once evidence. Installed gameplay binaries remain unchanged.
 | Tool | Inputs and controls | Output / acceptance |
 |---|---|---|
 | `audit_route_distance.py` | `--maps`, `--gravity`, `--objective hops-distance` (default) or `distance`; optional `--output` | Offline generated-QC audit against an independent shortest-path oracle; no engine |
-| `run_map_intelligence.py` | `--output`, `--prefix`; optional frozen `--source`, `--maps`, `--seconds` (10â€“185), `--repeats` (1â€“5), `--skill`, `--primary`, `--baseline`, `--ticrate`, `--port`, `--lab` | Compile once; protocol, named tapes and native briefs; default eight maps, 60 seconds, two repeats, skill 2 |
+| `run_map_intelligence.py` | `--output`, `--prefix`; optional frozen `--source`, `--maps`, `--seconds` (10 to 185), `--repeats` (1 to 5), `--skill`, `--primary`, `--baseline`, `--ticrate`, `--port`, `--lab` | Compile once; protocol, named tapes and native briefs; default eight maps, 60 seconds, two repeats, skill 2 |
 | `report_map_intelligence.py` | Control and candidate folders; optional `--output`, `--native-gates`, `--lab` | Verify tape hashes, summarise matched map/duration/skill/primary arms; complete both arms for registered-primary native band cards |
 | `verify_route_distance.py` | `--output`, `--prefix`; optional `--source`, `--ticrate`, `--port`, `--lab`, `--compile-only`, `--expect-failure` | Native routing and shopping contracts; declared legacy control must fail |
 | `verify_freeze_recovery.py` | `--output`, `--prefix`; optional `--source`, `--maps`, `--seat original\|corner\|south`, `--ticrate`, `--port` | Private physical recovery and guard receipts; control/source and seat determine expected checks |

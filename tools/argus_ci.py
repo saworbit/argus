@@ -17,6 +17,7 @@ usage:
   argus_ci.py refuted              tracked text does not restate a refuted rule as current
   argus_ci.py lab                  the lab objective and claims ledger are sound and cite real evidence
   argus_ci.py suites               every tools/test_*.py suite runs in a workflow
+  argus_ci.py stamp                src/argus_build.qc names the source it sits in
 """
 import argparse
 import collections
@@ -660,6 +661,35 @@ def check_lab(root, **_kw):
     return [f"lab: {error}" for error in argus_lab.validate(Path(root))]
 
 
+# ---------------------------------------------------------------- stamp
+
+def check_stamp(root, **_kw):
+    """Fail when src/argus_build.qc does not hold the identity of src/.
+
+    Every tape prints the stamp as ARGUS build, and the lab spine credits a
+    session to the build it names (#823). A stale stamp would credit a tape
+    to source it was not compiled from, which is the merge-time guess the
+    stamp exists to replace.
+    """
+    src = root / "src"
+    if not (src / "progs.src").is_file():
+        return Skipped("no src/progs.src")
+    sys.path.insert(0, str(root / "tools"))
+    try:
+        import argus_build_stamp
+    except ImportError as error:
+        return [f"stamp: cannot import argus_build_stamp: {error}"]
+    try:
+        current = argus_build_stamp.compute(src)
+    except (OSError, ValueError) as error:
+        return [f"stamp: {error}"]
+    held = argus_build_stamp.read_stamp(src)
+    if held != current:
+        return [f"stamp: src/argus_build.qc holds {held or 'nothing'} but src/ "
+                f"is {current}; run python tools/argus_build_stamp.py --write"]
+    return []
+
+
 # ---------------------------------------------------------------- suites
 
 # A tools test suite that genuinely needs something CI lacks goes here,
@@ -748,7 +778,7 @@ def main(argv=None):
 CHECKS = {"ship": check_ship, "eol": check_eol,
           "tapes": check_tapes, "nav": check_nav, "links": check_links,
           "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab,
-          "suites": check_suites}
+          "suites": check_suites, "stamp": check_stamp}
 
 
 if __name__ == "__main__":

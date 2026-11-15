@@ -179,6 +179,9 @@ ARGUS <name> actionfail <route-seat-vector>
 ARGUS <name> hurdle speed <horizontal-speed> up <vertical-speed>
 ARGUS <name> bodynudge <moved|refused>
 ARGUS <name> jumpveto
+ARGUS build <id>
+ARGUS clock frame_us <microseconds> tick_us <microseconds> seed <n>
+ARGUS mark <n> t <time> pos '<x y z>' yaw <deg> [seen <0|1> dist <units>] near <name|none>
 ```
 
 This is a reading guide, not the complete closed event vocabulary. The Rust
@@ -201,6 +204,9 @@ documents event counting and shared Python/Rust contracts.
 | `ARGUS <name> bodynudge` | A same-floor anti-embed nudge reached the engine hull check and either moved or was put back; throttled to once every 2 s per bot, so a floor on how often it ran |
 | `ARGUS <name> jumpveto` | A reachability, stall or escort jump was dropped because its arc, traced at the feet, comes down in lava, slime or nowhere; the bot walked on instead. Unthrottled, one line per refused jump ([#773](https://github.com/saworbit/argus/pull/773)) |
 | `ARGDBG` | Optional decision scores; enabled by server `scratch1 1`, excluded from ordinary brief counts |
+| `ARGUS build` | The QC source identity the progs was compiled from (`src/argus_build.qc`, #823); the spine credits the tape to the install carrying that stamp, and the skeptic reports arms that ran different builds |
+| `ARGUS clock` | The engine clock: `frame_us 0` is an ordinary server on the wall clock; a positive `frame_us` is the lab's fixed clock (`host_framerate`), and `seed` names which repeat of an exactly repeatable match it is ([the fixed lab clock](fixed-clock.md)) |
+| `ARGUS mark` | A session bookmark the player pressed (`bind m mark`), with the bot nearest their eye; not a defect by itself, a pointer to look ([controls](controls.md#session-marks)) |
 
 Names may contain spaces and event words. Parsers resolve full known track
 names before interpreting verbs; older ambiguous rows without sample/spawn

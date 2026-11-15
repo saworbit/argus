@@ -1114,6 +1114,196 @@ class TestFourthRoundFindings(unittest.TestCase):
             self.assertIn('Still failing, not an alert: reach', report)
 
 
+IDENT = 'ARGUS build {build}\nARGUS clock frame_us {frame} tick_us 1000 seed {seed}\n'
+
+
+def stamped(build='aaaaaa000001', frame=0, seed=0, body=''):
+    return tape(body=IDENT.format(build=build, frame=frame, seed=seed) + body)
+
+
+class TestTapeIdentity(unittest.TestCase):
+    """The build stamp (#823), the fixed lab clock and session marks."""
+
+    def run_skeptic(self, fx, a, b, **kw):
+        with no_lab_binary():
+            return argus_lab.skeptic(fx.root, a, b, **kw)
+
+    def test_different_builds_across_arms_are_a_confound(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            for i in range(2):
+                fx.add_run(f'ab_dm4_a{i}', text=stamped('aaaaaa000001'))
+                fx.add_run(f'ab_dm4_b{i}', text=stamped('bbbbbb000002'))
+            rep = self.run_skeptic(fx, ['ab_dm4_a0', 'ab_dm4_a1'], ['ab_dm4_b0', 'ab_dm4_b1'])
+            self.assertTrue(any('different builds: aaaaaa000001 against bbbbbb000002' in c
+                                for c in rep['confounds']), rep['confounds'])
+            self.assertEqual(rep['verdict'], 'caveated')
+
+    def test_a_mixed_arm_and_unstamped_tapes_are_reported(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.add_run('ab_dm4_a0', text=stamped('aaaaaa000001'))
+            fx.add_run('ab_dm4_a1', text=stamped('cccccc000003'))
+            fx.add_run('ab_dm4_b0', text=stamped('aaaaaa000001'))
+            fx.add_run('ab_dm4_b1')
+            rep = self.run_skeptic(fx, ['ab_dm4_a0', 'ab_dm4_a1'], ['ab_dm4_b0', 'ab_dm4_b1'])
+            self.assertTrue(any('builds differ inside an arm: control' in c for c in rep['confounds']))
+            self.assertTrue(any('print no build stamp' in n and 'ab_dm4_b1' in n for n in rep['notes']))
+
+    def test_one_build_two_arms_is_clean(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            for i in range(2):
+                fx.add_run(f'ab_dm4_a{i}', text=stamped('aaaaaa000001'))
+                fx.add_run(f'ab_dm4_b{i}', text=stamped('aaaaaa000001'))
+            rep = self.run_skeptic(fx, ['ab_dm4_a0', 'ab_dm4_a1'], ['ab_dm4_b0', 'ab_dm4_b1'])
+            self.assertFalse(any('build' in c or 'clock' in c for c in rep['confounds']), rep['confounds'])
+
+    def test_clocks_and_repeated_seeds(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.add_run('ab_dm4_p0', text=stamped())
+            fx.add_run('ab_dm4_p1', text=tape())
+            fx.add_run('fx_dm4_s5', text=stamped(frame=13900, seed=5))
+            fx.add_run('fx_dm4_s5b', text=stamped(frame=13900, seed=5))
+            fx.add_run('fx_dm4_s9', text=stamped(frame=13900, seed=9))
+            rep = self.run_skeptic(fx, ['ab_dm4_p0', 'ab_dm4_p1'], ['fx_dm4_s5', 'fx_dm4_s9'])
+            self.assertTrue(any('engine clocks differ: control realtime, candidate fixed 13.9 ms' in c
+                                for c in rep['confounds']), rep['confounds'])
+            fx.add_run('fx_dm4_long', text=stamped(frame=14250, seed=11))
+            rep = self.run_skeptic(fx, ['fx_dm4_s9', 'fx_dm4_s5'], ['fx_dm4_long', 'fx_dm4_s5b'])
+            self.assertTrue(any('fixed 14.25 ms' in c for c in rep['confounds']), rep['confounds'])
+            rep = self.run_skeptic(fx, ['fx_dm4_s9', 'ab_dm4_p0'], ['fx_dm4_s5', 'fx_dm4_s5b'])
+            self.assertEqual(rep['verdict'], 'void')
+            self.assertTrue(any('repeats seed 5' in v for v in rep['void']), rep['void'])
+
+    def test_sessions_are_credited_by_stamp_before_merge_time(self):
+        history = [dict(commit='c' * 40, when='2026-11-14 10:00:00', date='2026-11-14', stamp='cccccc000003'),
+                   dict(commit='b' * 40, when='2026-11-10 10:00:00', date='2026-11-10', stamp='bbbbbb000002'),
+                   dict(commit='a' * 40, when='2026-11-01 10:00:00', date='2026-11-01', stamp=None)]
+        root = Path('.')
+        # A tape played on the 15th but stamped with the older build is that build.
+        row, stamp, how = argus_lab.tape_build(root, IDENT.format(build='bbbbbb000002', frame=0, seed=0),
+                                               '2026-11-15 12:00:00', history)
+        self.assertEqual((row['commit'][0], stamp, how), ('b', 'bbbbbb000002', 'stamp'))
+        row, stamp, how = argus_lab.tape_build(root, IDENT.format(build='dddddd000004', frame=0, seed=0),
+                                               '2026-11-15 12:00:00', history)
+        self.assertEqual((row, how), (None, 'stamp of an unshipped build'))
+        row, stamp, how = argus_lab.tape_build(root, 'ARGUS init on dm4\n', '2026-11-12 12:00:00', history)
+        self.assertEqual((row['commit'][0], stamp, how), ('b', None, 'merge time'))
+
+    def test_install_stamps_read_the_committed_stamp(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            subprocess.run(['git', 'init', '-q', td], check=True, capture_output=True)
+            env = dict(os.environ, GIT_AUTHOR_NAME='t', GIT_AUTHOR_EMAIL='t@t', GIT_COMMITTER_NAME='t',
+                       GIT_COMMITTER_EMAIL='t@t')
+            fx.write('game/argus/progs.dat', 'v1')
+            subprocess.run(['git', 'add', '-A'], cwd=td, check=True, capture_output=True)
+            subprocess.run(['git', 'commit', '-q', '-m', 'old'], cwd=td, check=True, capture_output=True, env=env)
+            fx.write('src/argus_build.qc', '// generated\nstring ARGUS_BUILD = "0123456789ab";\n')
+            fx.write('game/argus/progs.dat', 'v2')
+            subprocess.run(['git', 'add', '-A'], cwd=td, check=True, capture_output=True)
+            subprocess.run(['git', 'commit', '-q', '-m', 'new'], cwd=td, check=True, capture_output=True, env=env)
+            history = argus_lab.install_stamps(fx.root, argus_lab.installs(fx.root))
+            self.assertEqual([h['stamp'] for h in history], ['0123456789ab', None])
+
+    def test_triage_reports_each_mark_with_its_context(self):
+        rows = [sample('Reap', t, 1000, 0, 24, spd=0 if t >= 10 else 200) for t in range(1, 30)]
+        rows.insert(0, 'ARGEVT Reap spawned\n')
+        rows.insert(12, 'ARGEVT Reap stall\n')
+        rows.insert(14, "ARGUS mark 1 t  13.0 pos ' 900.0  0.0  24.0' yaw 0 seen 1 dist 100 near Reap\n")
+        rows.append("ARGUS mark 2 t  28.0 pos '0.0 0.0 24.0' yaw 90 near none\n")
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            path = fx.write('runs/shane_dm4_marks.log', tape(body=''.join(rows)))
+            rep = argus_lab.triage(fx.root, path, claims=[])
+            marks = rep['marks']
+            self.assertEqual([m['n'] for m in marks], [1, 2])
+            self.assertEqual(marks[0]['near'], 'Reap')
+            self.assertEqual(marks[0]['bot']['pos'], [1000, 0, 24])
+            self.assertIn('stall', marks[0]['events'])
+            self.assertTrue(marks[0]['clusters'], 'the freeze at the bot should be within reach')
+            self.assertIsNone(marks[1]['near'])
+            self.assertNotIn('bot', marks[1])
+            out = io.StringIO()
+            argus_lab.print_triage(rep, out=out)
+            self.assertIn('| 1 | 13.0 | Reap (in sight, 100u)', out.getvalue())
+            self.assertIn('| 2 | 28.0 | no bot alive', out.getvalue())
+            # a clean tape still shows its marks
+            calm = [sample('Reap', t, 1000 + t * 100, 0, 24) for t in range(1, 30)]
+            calm.insert(0, 'ARGEVT Reap spawned\n')
+            calm.append("ARGUS mark 1 t  5.0 pos '0.0 0.0 24.0' yaw 0 seen 1 dist 50 near Reap\n")
+            path = fx.write('runs/shane_dm4_calm.log', tape(body=''.join(calm)))
+            out = io.StringIO()
+            argus_lab.print_triage(argus_lab.triage(fx.root, path, claims=[]), out=out)
+            self.assertIn('No cluster of trouble.', out.getvalue())
+            self.assertIn('| 1 | 5.0 | Reap (in sight, 50u)', out.getvalue())
+
+
+class TestInstruments(unittest.TestCase):
+    """tools/lab_instruments.json: where the fixed clock and the stand-in are trusted."""
+
+    def registry(self, fx, fixed=None, stand=None):
+        fx.write('docs/fixed-clock.md', '# protocol\n')
+        doc = {'schema': 1}
+        if fixed is not None:
+            doc['fixed_clock'] = {'protocol': 'docs/fixed-clock.md', 'maps': fixed}
+        if stand is not None:
+            doc['stand_in'] = {'protocol': 'docs/fixed-clock.md', 'maps': stand}
+        fx.write('tools/lab_instruments.json', json.dumps(doc))
+
+    def test_a_sound_registry_validates_and_errors_are_named(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.add_run('fxval_dm2_a')
+            self.registry(fx, fixed={'dm2': {'accepted': True, 'frame_ms': 13.9,
+                                             'metrics': {'engages': 'equivalent', 'lava_deaths': 'inconclusive'},
+                                             'evidence': ['fxval_dm2_a']}},
+                          stand={'dm4': {'dose_response': None, 'level': None, 'evidence': []}})
+            self.assertEqual(argus_lab.validate_instruments(fx.root), [])
+            self.registry(fx, fixed={'dm4': {'accepted': True, 'frame_ms': 0,
+                                             'metrics': {'lava_deaths': 'different'},
+                                             'evidence': ['nowhere_run']}})
+            text = '\n'.join(argus_lab.validate_instruments(fx.root))
+            self.assertIn('frame_ms is a positive number', text)
+            self.assertIn('an accepted map cannot have a metric read different', text)
+            self.assertIn('evidence nowhere_run does not resolve', text)
+            fx.write('tools/lab_instruments.json', json.dumps({'schema': 2}))
+            self.assertIn('schema 1', argus_lab.validate_instruments(fx.root)[0])
+
+    def test_the_ladder_plan_says_what_the_fixed_clock_can_do(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            self.assertIn('not validated', argus_lab.fixed_clock_note(fx.root, 'dm4', 'engages', 10))
+            self.registry(fx, fixed={
+                'dm4': {'accepted': False, 'frame_ms': 13.9, 'metrics': {}, 'evidence': []},
+                'dm2': {'accepted': True, 'frame_ms': 13.9,
+                        'metrics': {'engages': 'equivalent', 'lava_deaths': 'inconclusive'}, 'evidence': []}})
+            self.assertIn('not accepted on this map', argus_lab.fixed_clock_note(fx.root, 'dm4', 'engages', 10))
+            self.assertIn('lava_deaths reads inconclusive', argus_lab.fixed_clock_note(fx.root, 'dm2', 'lava_deaths', 10))
+            note = argus_lab.fixed_clock_note(fx.root, 'dm2', 'engages', 10)
+            self.assertIn('argus-mcp seeds', note)
+            self.assertIn('about 2 min', note)  # 2 * 10 * 185 / (6.3 * 4) / 60
+
+    def test_the_stand_in_rung_is_planned_only_where_calibrated(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            self.registry(fx, stand={'dm4': {'dose_response': True, 'level': False, 'evidence': []}})
+            with no_lab_binary():
+                steps = argus_lab.pyramid_plan(fx.root, ['dm4', 'dm2'], 5, argus_lab.objective(fx.root))
+            tier5 = {s['name']: s for s in steps if s['tier'] == 5}
+            self.assertIn('level does not match', tier5['dm4 stand-in before a session']['plan'])
+            self.assertIn('not calibrated', tier5['dm2 stand-in before a session']['skip'])
+            self.registry(fx, stand={'dm4': {'dose_response': False, 'level': True, 'evidence': []}})
+            with no_lab_binary():
+                steps = argus_lab.pyramid_plan(fx.root, ['dm4'], 5, argus_lab.objective(fx.root))
+            self.assertIn('failed its dose response', next(s for s in steps if s['tier'] == 5)['skip'])
+            with no_lab_binary():
+                steps = argus_lab.pyramid_plan(fx.root, ['dm4'], 4, argus_lab.objective(fx.root))
+            self.assertFalse([s for s in steps if s['tier'] == 5])
+
+
 class TestCommandLine(unittest.TestCase):
     def test_every_command_runs_on_the_fixture(self):
         with tempfile.TemporaryDirectory() as td:

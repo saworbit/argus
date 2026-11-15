@@ -221,3 +221,43 @@ def tactic_counts(events):
                     and fields[1].isascii() and fields[1].replace('_', '').isalnum()):
                 counts['tactic_abort_' + fields[1]] += 1
     return counts
+
+
+# ---------------------------------------------------------------- identity
+# What a tape says about itself, the Python twin of tape_identity.rs:
+#   ARGUS build <id>                              the QC source identity (#823)
+#   ARGUS clock frame_us <n> tick_us <n> seed <n> frame_us 0 is the wall clock;
+#                                                 above 0 the fixed lab clock
+#   ARGUS mark <n> t <t> pos '<x y z>' yaw <deg> [seen <0|1> dist <u>] near <name|none>
+BUILD_LINE = re.compile(r"^ARGUS build ([0-9a-f]{6,32})\s*$")
+CLOCK_LINE = re.compile(r"^ARGUS clock frame_us\s+(\d+) tick_us\s+(\d+) seed\s+(\d+)\s*$")
+MARK_LINE = re.compile(r"^ARGUS mark (\d+) t\s+(-?[\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'"
+                       r" yaw\s+(-?[\d.]+)(?: near none| seen ([01]) dist\s+(-?[\d.]+) near (.+?))\s*$")
+
+
+def identity(text):
+    """Build, other builds, clock and marks from one level's text (use the busiest level's lines)."""
+    out = dict(build=None, other_builds=[], clock=None, marks=[])
+    for raw in text.splitlines():
+        line = raw.rstrip("\r")
+        if not line.startswith("ARGUS "):
+            continue
+        if m := BUILD_LINE.match(line):
+            if out["build"] is None:
+                out["build"] = m[1]
+            elif m[1] != out["build"] and m[1] not in out["other_builds"]:
+                out["other_builds"].append(m[1])
+        elif m := CLOCK_LINE.match(line):
+            frame = int(m[1])
+            out["clock"] = dict(frame_us=frame, tick_us=int(m[2]), seed=int(m[3]),
+                                kind="fixed" if frame > 0 else "realtime")
+        elif m := MARK_LINE.match(line):
+            out["marks"].append(dict(n=int(m[1]), t=float(m[2]), pos=(float(m[3]), float(m[4]), float(m[5])),
+                                     yaw=float(m[6]), seen=None if m[7] is None else m[7] == "1",
+                                     dist=None if m[8] is None else float(m[8]), near=m[9]))
+    return out
+
+
+def tape_identity(text):
+    """identity() over the busiest level, the segment every other reader uses."""
+    return identity("\n".join(line for _, line in tape_lines(text)))

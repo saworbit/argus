@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "about": "Where two lab instruments may be trusted, from their registered validations. argus_lab.py state prints it, claims --check and argus_ci.py lab validate it, and pyramid plans the fixed-clock screen and the stand-in rung from it. Readings per metric are equivalent, inconclusive, different or not measured; a metric that is not equivalent is a limit on that map.",
+  "fixed_clock": {
+    "protocol": "docs/specs/2026-11-15-fixed-clock-validation.md",
+    "results": "docs/fixed-clock.md",
+    "frame_ms": 14.25,
+    "maps": {
+      "dm4": {
+        "accepted": true,
+        "frame_ms": 14.25,
+        "metrics": {
+          "stalls": "inconclusive",
+          "engages": "equivalent",
+          "lava_deaths": "inconclusive",
+          "world_deaths": "inconclusive",
+          "freezes": "equivalent",
+          "cover": "equivalent",
+          "goals": "equivalent",
+          "deaths": "equivalent",
+          "routefails": "inconclusive",
+          "avg_speed": "not measured"
+        },
+        "note": "13.9 ms was not accepted (lava and routefails read different); 14.25 ms passed a registered confirmation on fresh seeds.",
+        "evidence": [
+          "docs/fixed-clock.md",
+          "fxval_played_dm4_r1",
+          "fxconf_fixed1425_dm4_s273",
+          "fxval_fixed_dm4_s867"
+        ]
+      },
+      "dm2": {
+        "accepted": true,
+        "frame_ms": 14.25,
+        "metrics": {
+          "stalls": "equivalent",
+          "engages": "equivalent",
+          "lava_deaths": "inconclusive",
+          "world_deaths": "inconclusive",
+          "freezes": "equivalent",
+          "cover": "equivalent",
+          "goals": "equivalent",
+          "deaths": "equivalent",
+          "routefails": "inconclusive",
+          "avg_speed": "not measured"
+        },
+        "note": "Also accepted at 13.9 ms in the first validation.",
+        "evidence": [
+          "docs/fixed-clock.md",
+          "fxval_played_dm2_r1",
+          "fxconf_fixed1425_dm2_s273"
+        ]
+      }
+    }
+  },
+  "stand_in": {
+    "protocol": "docs/specs/2026-11-15-stand-in-calibration.md",
+    "results": "docs/stand-in.md",
+    "maps": {
+      "dm4": {
+        "dose_response": false,
+        "level": true,
+        "spearman": 0.13,
+        "note": "Bot kills on the stand-in did not rise with bot skill (Spearman 0.13; skill 3 minus 0 +0.16 a minute, 95 per cent -1.18 to +1.50). Its time in sight of bots ran 0 to 2608 ticks between matches, which swamps the effect. Level at skill 1 matched (1.19 against 1.27) but means nothing without a dose response.",
+        "evidence": [
+          "docs/stand-in.md",
+          "standin_cal_dm4_k0_1",
+          "standin_cal_dm4_k3_4"
+        ]
+      }
+    }
+  }
+}

@@ -227,6 +227,28 @@ sweep triages the last week and records the rest as seen. A failure that was alr
 still failing and does not alert, so a known defect such as e1m8's reach gate
 does not drown a new one.
 
+## Instruments
+
+`tools/lab_instruments.json` records where two instruments may be trusted,
+from their registered validations: the [fixed lab clock](fixed-clock.md) per
+map (accepted or not, its frame, and each metric's reading: equivalent,
+inconclusive, different or not measured) and the [stand-in human](stand-in.md)
+per map (dose response and level, each true, false or not yet measured).
+Every entry cites its evidence. `state` prints it, `claims --check` and
+`argus_ci.py lab` validate it (an accepted map cannot carry a Different
+metric), and `pyramid --through 4` notes on each planned ladder whether the
+fixed clock can screen it, while `--through 5` plans the stand-in rung only
+on maps where it passed dose response.
+
+Tapes also say what they are now: `ARGUS build` names the source the progs
+was compiled from (#823), `ARGUS clock` the engine clock and seed, and
+`ARGUS mark` a session bookmark. `session` credits a tape to the install
+whose committed stamp matches its build, falling back to merge times for
+older tapes; the skeptic reports arms on different builds, clocks or frames
+as a confound and voids an arm holding one fixed-clock seed and build twice;
+`triage` and `review` list each mark with the bot's state and events around
+it and any trouble cluster within 192 units.
+
 ## Adding a claim
 
 Add an entry to `tools/lab_claims.json` and run `claims --check`. Every claim

@@ -126,6 +126,12 @@ jobs:
       - name: Run lab spine tests
         run: python3 tools/test_argus_lab.py
 
+      - name: Run build identity, gallery and instrument tool tests
+        run: |
+          python3 tools/test_argus_build_stamp.py
+          python3 tools/test_argus_gallery.py
+          python3 tools/test_argus_instrument_tools.py
+
       - name: Run passive behaviour diagnostics and fixture contract tests
         run: python3 -m unittest discover -s tools -p 'test_behaviour*.py'
 

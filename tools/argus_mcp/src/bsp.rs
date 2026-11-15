@@ -59,6 +59,23 @@ impl Hull0 {
     pub fn is_hazard(&self, p: [f32; 3]) -> bool {
         matches!(self.contents_at(p), CONTENTS_LAVA | CONTENTS_SLIME)
     }
+
+    /// Whether the straight line from `a` to `b` stays out of solid, sampled
+    /// at worst every 8 units: a sight test in the render hull, where
+    /// liquids are see-through and walls are not.
+    pub fn line_clear(&self, a: [f32; 3], b: [f32; 3]) -> bool {
+        let dist = ((b[0] - a[0]).powi(2) + (b[1] - a[1]).powi(2) + (b[2] - a[2]).powi(2)).sqrt();
+        let steps = ((dist / 8.0).ceil() as i32).clamp(2, 1024);
+        (0..=steps).all(|i| {
+            let t = i as f32 / steps as f32;
+            let p = [
+                a[0] + (b[0] - a[0]) * t,
+                a[1] + (b[1] - a[1]) * t,
+                a[2] + (b[2] - a[2]) * t,
+            ];
+            self.contents_at(p) != CONTENTS_SOLID
+        })
+    }
 }
 
 /// Classify a death origin. Probe the point and one step below

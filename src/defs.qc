@@ -710,6 +710,7 @@ float intermission_running;                 // ARGUS: moved here from
 .float dmgtime;     // ARGUS: moved here from client.qc so the bot
                     // WaterMove mirror (compiled earlier) can use it
 void() Argus_BotMenu;       // ARGUS: in-game bot roster menu (#147)
+void() Argus_Mark;         // ARGUS: session bookmark (impulse 200, PlayerPreThink)
 void() Argus_AddBot;        // ARGUS: roster impulses, defined in
 void() Argus_RemoveBot;     // argus.qc, wired in ImpulseCommands
 void() Argus_CycleSkill;    // ARGUS: cycle bot difficulty (0..3)

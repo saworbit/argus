@@ -97,6 +97,9 @@ pub struct MatchTape {
     /// them.
     pub segments: u32,
     pub segment_note: Option<String>,
+    /// The build, clock and session marks the tape names (#823).
+    #[serde(skip_serializing_if = "crate::tape_identity::TapeIdentity::is_empty")]
+    pub identity: crate::tape_identity::TapeIdentity,
 }
 
 /// A statue: 6 s or longer at under 20 u/s inside a 32u circle,
@@ -859,6 +862,7 @@ fn parse_one(text: &str) -> MatchTape {
         failed_spawns,
         segments: 1,
         segment_note: None,
+        identity: crate::tape_identity::inspect(text),
     }
 }
 

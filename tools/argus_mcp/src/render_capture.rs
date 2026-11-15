@@ -274,8 +274,8 @@ pub fn record_triggered(
     if !crate::paths::valid_run_name(name)
         || name == "."
         || name == ".."
-        // capture renders from at most 120 s into a demo, and camera
-        // setup comes first: a later trigger would record and not render
+        // the watch itself is bounded: camera setup comes first, and a
+        // trigger more than 110 s in means the cut was missed, not late
         || !wait_sec.is_finite()
         || !(5.0..=110.0).contains(&wait_sec)
         || !keep_sec.is_finite()
@@ -494,6 +494,21 @@ pub fn validate(start: f64, count: u32, interval: f64, duration: f64) -> Result<
     validate_frames(start, count, interval, duration, 12)
 }
 
+/// The latest demo second a capture may start at. Playback seeks by rendering
+/// one 0.05 s step per frame, so a later start costs render time, which the
+/// child's deadline grows to cover (`render_deadline`). 900 s covers the
+/// longest session the scorecard holds; it was 120 s until the session
+/// gallery needed moments from anywhere in a match.
+pub const MAX_START_SEC: f64 = 900.0;
+
+/// The render child's deadline: 45 s for the frames themselves, plus 15 ms
+/// for every seek step before the first frame. Each `wait` is one host
+/// frame, and the render client runs at QuakeSpasm's default host_maxfps of
+/// 72, so a step costs at least 13.9 ms of wall time.
+fn render_deadline(start: f64) -> Duration {
+    Duration::from_secs(45) + Duration::from_millis(15 * playback_steps(start.max(0.0)) as u64)
+}
+
 fn validate_frames(
     start: f64,
     count: u32,
@@ -504,13 +519,13 @@ fn validate_frames(
     if !start.is_finite()
         || !interval.is_finite()
         || !duration.is_finite()
-        || !(0.5..=120.0).contains(&start)
+        || !(0.5..=MAX_START_SEC).contains(&start)
         || !(1..=max).contains(&count)
         || !(0.1..=5.0).contains(&interval)
         || start + (count - 1) as f64 * interval >= duration - 0.15
     {
         return Err(format!(
-            "capture needs start 0.5..120s, 1..{max} frames, interval 0.1..5s, all before demo end"
+            "capture needs start 0.5..{MAX_START_SEC}s, 1..{max} frames, interval 0.1..5s, all before demo end"
         ));
     }
     Ok(())
@@ -834,7 +849,7 @@ async fn capture_frames(
     #[cfg(windows)]
     command.creation_flags(0x0800_0000); // CREATE_NO_WINDOW: no console flash
     let mut child = command.spawn().map_err(|e| format!("render client: {e}"))?;
-    let status = wait_render(&mut child, Duration::from_secs(45))
+    let status = wait_render(&mut child, render_deadline(start))
         .await
         .map_err(|e| format!("{e}; diagnostics in {}", dir.display()))?;
     if !status.success() {
@@ -1191,7 +1206,7 @@ fn frame_hashes(text: &str, count: u32, fps: f64) -> Result<Vec<String>, String>
 }
 
 /// Export a recorded POV at 10 source frames/sec, with explicit playback speed.
-/// `start` is 0.5..120 demo seconds, rounded to the renderer's 0.05-second step.
+/// `start` is 0.5..900 demo seconds, rounded to the renderer's 0.05-second step.
 /// `duration` is 0.2..12 source seconds, rounded to 0.1 seconds; `rate` is a
 /// 0.1..4 playback multiplier. Every source sample must precede the demo's end.
 /// FFmpeg with libvpx-vp9 is required on PATH; PNG capture needs no encoder.
@@ -2114,10 +2129,15 @@ mod tests {
             (1.0, 13, 1.0, 30.0),
             (1.0, 2, 0.0, 10.0),
             (9.0, 2, 1.0, 10.0),
-            (121.0, 1, 1.0, 150.0),
+            (901.0, 1, 1.0, 1000.0),
         ] {
             assert!(validate(s, n, i, d).is_err());
         }
+        // a moment late in a long session is reachable
+        assert!(validate(500.0, 12, 0.2, 600.0).is_ok());
+        // and the child gets longer to seek there
+        assert_eq!(render_deadline(0.5), Duration::from_millis(45_150));
+        assert_eq!(render_deadline(500.0), Duration::from_secs(195));
     }
     #[test]
     fn script_uses_engine_png_and_exits_through_console() {
