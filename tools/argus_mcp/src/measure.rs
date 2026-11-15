@@ -198,7 +198,17 @@ pub fn metric_value(b: &MatchBrief, name: &str) -> f64 {
 /// (first measured 2026-09-16, over every tick class). Each row keeps the
 /// larger of the two: a refresh on fewer arms may raise the noise model but
 /// not lower it, because a lower e1m6 stall sigma let the stopping rule
-/// accept a null across two halves of one build. Baked
+/// accept a null across two halves of one build.
+///
+/// The max rule stays on purpose (#834). With e1m6 stalls at the
+/// listen-class 21.0 the accept is #324's seven-tape candidate arm, split
+/// ab_e1m6_doorverb1 to 3 (stalls 105, 55, 94) against doorverb4 and
+/// doorverbb1 to 3 (28, 40, 56, 49): llr 3.30, effect 41.4. That arm
+/// alone runs a standard deviation of 28.2, so the pooled 21.0 understates
+/// it, and its two high tapes landing in one half of three is the long
+/// tail a normal model with a known sigma cannot absorb. e1m6 stalls are
+/// not close enough to normal for the test at three or four tapes a half,
+/// and the larger sigma is what keeps it honest there. Baked
 /// here so a compare does not re-parse the corpus on every call.
 /// `docs/specs/2026-09-16-lab-measurement-limits.md` is the measured
 /// table, with tape counts, tick class and the MDE columns.
@@ -293,19 +303,26 @@ pub struct Limit {
 }
 
 /// Collect every same-build arm this project has committed, as
-/// (map, tapes).
-/// Everything here takes the RUNS DIRECTORY rather than a `Config`,
-/// so the validation tests run on a bare checkout. A validation set
-/// that skips itself on CI is not a validation set.
-fn arms_in(runs_dir: &Path) -> Vec<(String, Vec<MatchBrief>)> {
-    arms_with(runs_dir, None)
+/// (map, tapes), with lava classified by hull-0 contents when `cfg` can
+/// find each map's BSP, as briefs, `compare_runs` and the corpus do
+/// (#816). Without it lava falls back to the z < -300 rule, which reads
+/// dm2's and e1m7's lava as none at all.
+/// Everything here takes the RUNS DIRECTORY, and `cfg` is optional, so
+/// the validation tests run on a bare checkout. A validation set that
+/// skips itself on CI is not a validation set.
+fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBrief>)> {
+    arms_named(runs_dir, cfg)
+        .into_iter()
+        .map(|(map, _, briefs)| (map, briefs))
+        .collect()
 }
 
-/// `arms_in`, with lava classified by hull-0 contents when `cfg` can find
-/// each map's BSP, as briefs, `compare_runs` and the corpus do (#816).
-/// Without it lava falls back to the z < -300 rule, which reads dm2's and
-/// e1m7's lava as none at all.
-fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBrief>)> {
+/// `arms_with`, keeping the run name of every tape that loaded, so an
+/// audit can say which arm it is talking about (#834).
+fn arms_named(
+    runs_dir: &Path,
+    cfg: Option<&Config>,
+) -> Vec<(String, Vec<String>, Vec<MatchBrief>)> {
     let mut out: Vec<(String, Vec<String>)> = Vec::new();
     let mut hulls = std::collections::HashMap::new();
 
@@ -329,6 +346,7 @@ fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBri
     let mut loaded = Vec::new();
     for (map, runs) in out {
         let mut briefs = Vec::new();
+        let mut names = Vec::new();
         for r in &runs {
             let hint = if map.is_empty() {
                 None
@@ -342,6 +360,7 @@ fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBri
             };
             if let Ok(b) = brief {
                 briefs.push(b);
+                names.push(r.clone());
             }
         }
         if briefs.len() < 2 {
@@ -358,7 +377,7 @@ fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBri
         if classes.len() > 1 {
             continue;
         }
-        loaded.push((m, briefs));
+        loaded.push((m, names, briefs));
     }
     loaded
 }
@@ -375,7 +394,10 @@ pub fn limits_in(runs_dir: &Path) -> Vec<Limit> {
 }
 
 fn limits_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<Limit> {
-    let loaded = arms_with(runs_dir, cfg);
+    limits_from(&arms_with(runs_dir, cfg))
+}
+
+fn limits_from(loaded: &[(String, Vec<MatchBrief>)]) -> Vec<Limit> {
     let mut maps: Vec<String> = loaded.iter().map(|(m, _)| m.clone()).collect();
     maps.sort();
     maps.dedup();
@@ -450,18 +472,25 @@ pub struct GateAudit {
 /// One tape a side, which is the hardest case and the one the band was
 /// fitted on.
 pub fn gate_audit(cfg: &Config) -> GateAudit {
-    gate_audit_in(&cfg.runs)
+    gate_audit_with(&cfg.runs, Some(cfg))
 }
 
 pub fn gate_audit_in(runs_dir: &Path) -> GateAudit {
+    gate_audit_with(runs_dir, None)
+}
+
+/// With `cfg`, lava is classified by hull-0 contents as `limits` does
+/// (#835); the z < -300 fallback reads dm2's and e1m7's lava as none.
+fn gate_audit_with(runs_dir: &Path, cfg: Option<&Config>) -> GateAudit {
+    let mut hulls = std::collections::HashMap::new();
     let mut seen = 0;
     let mut any = 0;
     let mut per: std::collections::BTreeMap<String, usize> = Default::default();
     let mut detail = Vec::new();
     for (a, b) in NULL_PAIRS {
         let (ba, bb) = (
-            brief_path(&runs_dir.join(format!("{a}.log")), None),
-            brief_path(&runs_dir.join(format!("{b}.log")), None),
+            crate::corpus::brief_for(&runs_dir.join(format!("{a}.log")), cfg, &mut hulls),
+            crate::corpus::brief_for(&runs_dir.join(format!("{b}.log")), cfg, &mut hulls),
         );
         let (ba, bb) = match (ba, bb) {
             (Ok(x), Ok(y)) => (x, y),
@@ -534,10 +563,15 @@ pub struct SprtAudit {
 }
 
 pub fn sprt_audit(cfg: &Config) -> SprtAudit {
-    sprt_audit_in(&cfg.runs)
+    sprt_audit_with(&cfg.runs, Some(cfg))
 }
 
 pub fn sprt_audit_in(runs_dir: &Path) -> SprtAudit {
+    sprt_audit_with(runs_dir, None)
+}
+
+/// With `cfg`, the arms brief lava by hull-0 contents (#835).
+fn sprt_audit_with(runs_dir: &Path, cfg: Option<&Config>) -> SprtAudit {
     let mut out = SprtAudit {
         splits: 0,
         decisions: 0,
@@ -552,12 +586,17 @@ pub fn sprt_audit_in(runs_dir: &Path) -> SprtAudit {
     };
     let mut sample_numbers: Vec<f64> = Vec::new();
     let mut caps: Vec<f64> = Vec::new();
-    for (map, briefs) in arms_in(runs_dir) {
+    for (map, runs, briefs) in arms_named(runs_dir, cfg) {
         if briefs.len() < 4 {
             continue;
         }
         out.splits += 1;
         let half = briefs.len() / 2;
+        let arm = format!(
+            "halves {} against {}",
+            runs[..half].join(", "),
+            runs[half..].join(", ")
+        );
         for (metric, lower_is_better) in METRICS {
             let Some(sigma) = sigma_for(Some(&map), metric) else {
                 continue;
@@ -584,7 +623,7 @@ pub fn sprt_audit_in(runs_dir: &Path) -> SprtAudit {
                 stats::SprtCall::Accept => {
                     out.accept += 1;
                     out.wrong.push(format!(
-                        "{map} {metric}: accepted an effect across two halves of one build (llr {:.2}, effect {:.1})",
+                        "{map} {metric}: accepted an effect across two halves of one build (llr {:.2}, effect {:.1}), {arm}",
                         r.llr, r.effect
                     ));
                 }
@@ -800,6 +839,39 @@ mod tests {
 
     fn runs_dir() -> std::path::PathBuf {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs")
+    }
+
+    /// Once a map has a listen-class arm, a 19 Hz arm's spread describes
+    /// a different instrument and must not enter the sigma (#822). Only
+    /// the rendered tick column was covered before (#835).
+    #[test]
+    fn only_listen_class_arms_count_once_a_map_has_one() {
+        let arm = |class: &str, stalls: &[i32]| {
+            let briefs: Vec<MatchBrief> = stalls
+                .iter()
+                .map(|s| {
+                    let mut b = MatchBrief::empty();
+                    b.totals.stalls = *s;
+                    b.totals.tick_class = Some(class.into());
+                    b
+                })
+                .collect();
+            ("zz".to_string(), briefs)
+        };
+        let rows = limits_from(&[arm("listen", &[10, 20]), arm("dedicated_fast", &[0, 100])]);
+        let stalls = rows.iter().find(|l| l.metric == "stalls").expect("stalls");
+        assert_eq!((stalls.arms, stalls.tapes), (1, 2), "{stalls:?}");
+        assert_eq!(stalls.tick, "listen");
+        assert!(stalls.sigma < 10.0, "the 19 Hz arm leaked in: {stalls:?}");
+
+        // with no listen arm on the map, every arm still counts
+        let rows = limits_from(&[
+            arm("dedicated_fast", &[10, 20]),
+            arm("dedicated_slow", &[0, 100]),
+        ]);
+        let stalls = rows.iter().find(|l| l.metric == "stalls").expect("stalls");
+        assert_eq!((stalls.arms, stalls.tapes), (2, 4), "{stalls:?}");
+        assert_eq!(stalls.tick, "dedicated_fast+dedicated_slow");
     }
 
     #[test]
