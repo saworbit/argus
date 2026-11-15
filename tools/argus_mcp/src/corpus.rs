@@ -83,7 +83,7 @@ pub struct TapeRow {
 }
 
 /// The queryable columns, in the order the table prints them.
-pub const COLUMNS: [&str; 22] = [
+pub const COLUMNS: [&str; 23] = [
     "run",
     "map",
     "started",
@@ -106,6 +106,7 @@ pub const COLUMNS: [&str; 22] = [
     "weapons",
     "boards",
     "kd_spread",
+    "avg_speed",
 ];
 
 impl TapeRow {
@@ -150,8 +151,7 @@ impl TapeRow {
     }
 
     fn to_tsv(&self) -> String {
-        let mut f: Vec<String> = COLUMNS.iter().map(|c| self.field(c)).collect();
-        f.push(trim_num(self.avg_speed));
+        let f: Vec<String> = COLUMNS.iter().map(|c| self.field(c)).collect();
         f.join("\t")
     }
 }
@@ -445,7 +445,7 @@ pub fn write_index(runs_dir: &Path, rows: &[TapeRow]) -> std::io::Result<PathBuf
     let p = runs_dir.join(INDEX_FILE);
     let mut s = String::new();
     s.push_str(&COLUMNS.join("\t"));
-    s.push_str("\tavg_speed\tcontext_schema\n");
+    s.push_str("\tcontext_schema\n");
     for r in rows {
         s.push_str(&r.to_tsv());
         s.push('\t');
@@ -887,6 +887,24 @@ mod tests {
         assert!(out.contains("a,dm2,2026-09-01 10:00:00"), "{out}");
     }
 
+    /// The fixed-clock validation registered average speed and read it
+    /// as not measured, because the table left it out (#843). A tape the
+    /// index does not hold reaches Python through this CSV only.
+    #[test]
+    fn the_csv_carries_average_speed() {
+        let mut row = mk("a", "dm2", "2026-09-01 10:00:00", 40.0);
+        row.avg_speed = 245.42;
+        let out = to_csv(&query(&[row], &Query::default()).unwrap());
+        let mut lines = out.lines();
+        let head: Vec<&str> = lines.next().unwrap().split(',').collect();
+        let cells: Vec<&str> = lines.next().unwrap().split(',').collect();
+        let at = head
+            .iter()
+            .position(|c| *c == "avg_speed")
+            .expect("avg_speed column");
+        assert_eq!(cells[at], "245.42", "{out}");
+    }
+
     /// The index round-trips, and a cached row is not re-parsed.
     #[test]
     fn the_index_is_a_cache_and_a_round_trip() {
@@ -902,6 +920,12 @@ mod tests {
         assert_eq!(back[0].run, "a");
         assert!((back[0].stalls - 40.0).abs() < 1e-9);
         assert_eq!(back[1].map, "dm4");
+        let header = std::fs::read_to_string(dir.join(INDEX_FILE)).unwrap();
+        let header = header.lines().next().unwrap();
+        assert!(
+            header.ends_with("\tkd_spread\tavg_speed\tcontext_schema"),
+            "the index keeps its column order: {header}"
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

@@ -588,6 +588,19 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Count a human death as a bot kill in the brief's human scorecard only when a
+  bot is the killer. A self-splash used to count, so the 16 September dm4
+  session read eight bot kills where the bots got six (#844).
+
+- Print `avg_speed` in `argus-mcp corpus` tables. The index already carried
+  it, but a tape the index lacks reached the fixed-clock validation without
+  it (#843).
+
+- Carry build and clock confounds into the Rust compare, band and experiment
+  verdicts, as the skeptic already does: different builds or engine clocks
+  between or inside arms are reported, and an arm holding one fixed-clock seed
+  and build twice is refused (#852).
+
 - Refuse a second match on a live run's name or a held port before it spawns
   anything (#832). Every match takes a lease on `runs/<run>/`, and a reused
   directory's old log is cleared before the engine starts, so a rerun cannot
