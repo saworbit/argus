@@ -258,7 +258,7 @@ mod tests {
         crate::config::Config::load_for_reads().unwrap()
     }
     async fn wait_file(path: &Path) {
-        tokio::time::timeout(Duration::from_secs(5), async {
+        tokio::time::timeout(Duration::from_secs(30), async {
             while !path.exists() {
                 tokio::time::sleep(Duration::from_millis(10)).await;
             }
@@ -274,33 +274,85 @@ mod tests {
             "Python required for helper lifetime regression"
         );
         let root = crate::test_support::TestDir::new("helper-lifetime").unwrap();
+        // The helper beats a heartbeat file until a release file appears,
+        // then writes its orphan. The test waits for each heartbeat to stop,
+        // which is the process being gone, instead of guessing how long a
+        // deadline, a start-up or a kill takes: fixed sleeps raced all three
+        // on a loaded machine (#836). A helper killed before it wrote
+        // `started` has still been killed, which is what this checks.
         let script = root.path().join("wait.py");
-        std::fs::write(&script, "import pathlib,sys,time\npathlib.Path(sys.argv[1]).write_text('started')\ntime.sleep(1.5)\npathlib.Path(sys.argv[2]).write_text('orphan')\n").unwrap();
+        std::fs::write(&script, "import pathlib,sys,time\nstarted,orphan,release,beat=map(pathlib.Path,sys.argv[1:5])\nstarted.write_text('started')\nn=0\nwhile not release.exists():\n    n+=1\n    beat.write_text(str(n))\n    time.sleep(0.01)\norphan.write_text('orphan')\n").unwrap();
         let started = root.path().join("started");
         let orphan = root.path().join("orphan");
-        let args = [&started as &Path, &orphan as &Path];
-        let work = run(&cfg, &script, &args, Duration::from_millis(400));
-        let observer = async {
-            wait_file(&started).await;
-            assert!(!orphan.exists());
+        let release = root.path().join("release");
+        let (beat1, beat2) = (root.path().join("beat1"), root.path().join("beat2"));
+        let args = [
+            &started as &Path,
+            &orphan as &Path,
+            &release as &Path,
+            &beat1 as &Path,
+        ];
+        // On this current-thread runtime the ticker only advances if run()
+        // yields while it waits on the helper.
+        let ticks = std::cell::Cell::new(0u32);
+        let ticker = async {
+            loop {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+                ticks.set(ticks.get() + 1);
+            }
         };
-        let (result, ()) = tokio::join!(work, observer);
+        let result = tokio::select! {
+            r = run(&cfg, &script, &args, Duration::from_millis(400)) => r,
+            _ = ticker => unreachable!("the ticker never ends"),
+        };
         assert!(result.unwrap_err().contains("timed out"));
-        std::fs::remove_file(&started).unwrap();
+        assert!(ticks.get() > 0, "run() blocked the runtime while it waited");
+        wait_heartbeat_stops(&beat1, "timed-out").await;
+        let _ = std::fs::remove_file(&started);
         let c = cfg.clone();
         let s = script.clone();
-        let a = started.clone();
-        let b = orphan.clone();
+        let (a, b, r, h) = (
+            started.clone(),
+            orphan.clone(),
+            release.clone(),
+            beat2.clone(),
+        );
         let task =
-            tokio::spawn(async move { run(&c, &s, &[&a, &b], Duration::from_secs(10)).await });
+            tokio::spawn(
+                async move { run(&c, &s, &[&a, &b, &r, &h], Duration::from_secs(60)).await },
+            );
         wait_file(&started).await;
         task.abort();
         assert!(task.await.unwrap_err().is_cancelled());
-        tokio::time::sleep(Duration::from_millis(1700)).await;
+        wait_heartbeat_stops(&beat2, "cancelled").await;
+        // Both are gone, so releasing them must write nothing.
+        std::fs::write(&release, "go").unwrap();
+        tokio::time::sleep(Duration::from_millis(500)).await;
         assert!(
             !orphan.exists(),
             "cancelled or timed-out Python survived its owner"
         );
+    }
+
+    /// Wait until a helper's heartbeat has not changed for a full second,
+    /// so the process is gone. A survivor keeps beating and fails here.
+    async fn wait_heartbeat_stops(beat: &Path, which: &str) {
+        tokio::time::timeout(Duration::from_secs(30), async {
+            let mut last = None;
+            let mut still = 0;
+            while still < 40 {
+                let now = std::fs::read_to_string(beat).ok();
+                if now == last {
+                    still += 1;
+                } else {
+                    still = 0;
+                    last = now;
+                }
+                tokio::time::sleep(Duration::from_millis(25)).await;
+            }
+        })
+        .await
+        .unwrap_or_else(|_| panic!("the {which} Python helper survived its owner"));
     }
     #[tokio::test]
     async fn captures_both_streams_nonzero_exit_and_null_stdin() {

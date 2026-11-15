@@ -1636,6 +1636,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut cfg = crate::config::load_for_reads_from(
             &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
@@ -1941,6 +1944,74 @@ mod tests {
         let _ = std::fs::remove_dir_all(&root);
     }
 
+    /// The bound on waiting for the live engine to act. A deadline, not a
+    /// delay: the waits return as soon as their condition holds (#836).
+    const SETTLE: Duration = Duration::from_secs(20);
+
+    /// Pump until `done` holds or `limit` passes; true when it held.
+    fn pump_until(
+        client: &mut NetClient,
+        limit: Duration,
+        mut done: impl FnMut(&NetClient) -> bool,
+    ) -> bool {
+        let end = std::time::Instant::now() + limit;
+        loop {
+            if done(client) {
+                return true;
+            }
+            if std::time::Instant::now() >= end {
+                return false;
+            }
+            client.pump(Duration::from_millis(50));
+        }
+    }
+
+    /// Send a console line and wait, with no client to pump, until the engine
+    /// has run it: the same echoed tag as `console_settled`.
+    async fn console_ran(
+        ctrl: &mut crate::match_ctrl::MatchCtrl,
+        line: &str,
+        tag: &str,
+    ) -> Result<(), String> {
+        ctrl.command(&format!("{line}; echo {tag}")).await?;
+        let ran = tokio::time::timeout(SETTLE, async {
+            while !ctrl
+                .log_text()
+                .unwrap_or_default()
+                .lines()
+                .any(|l| l.trim() == tag)
+            {
+                tokio::time::sleep(Duration::from_millis(25)).await;
+            }
+        })
+        .await;
+        ran.map_err(|_| format!("the engine never ran console line: {line}"))
+    }
+
+    /// Send a console line and pump until the engine has run it. The line
+    /// ends by echoing a fresh tag, and the tag reaching the log on a line of
+    /// its own means every command before it ran.
+    async fn console_settled(
+        ctrl: &mut crate::match_ctrl::MatchCtrl,
+        client: &mut NetClient,
+        line: &str,
+        tag: &str,
+    ) -> Result<(), String> {
+        ctrl.command(&format!("{line}; echo {tag}")).await?;
+        let ctrl: &crate::match_ctrl::MatchCtrl = ctrl;
+        let ran = pump_until(client, SETTLE, |_| {
+            ctrl.log_text()
+                .unwrap_or_default()
+                .lines()
+                .any(|l| l.trim() == tag)
+        });
+        if ran {
+            Ok(())
+        } else {
+            Err(format!("the engine never ran console line: {line}"))
+        }
+    }
+
     /// Exercise permission checks through a real protocol-15 client, not a
     /// copy of the QC condition. No machine-local engine means no live test.
     #[tokio::test]
@@ -1952,6 +2023,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let env =
             std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
@@ -1993,6 +2067,15 @@ mod tests {
                 .find(|p| distance(**p, start) > 512.0)
                 .ok_or("no distinct teleport destination")?;
             let mut failures = Vec::new();
+            // Every console line waits until the engine has run it, and every
+            // positive case waits for its effect with a deadline. Fixed pumps
+            // lost both races on a loaded machine (#836). A negative case
+            // still has to watch a window, now 500 ms after its line ran.
+            let mut tags = 0u32;
+            let mut tag = || {
+                tags += 1;
+                format!("impulse_test_{tags}")
+            };
             for (developer, key) in [(1, 0), (1, 147), (1, 197), (1, 374), (0, 216)] {
                 let before = client.my_pos().ok_or("lost client position")?;
                 let destination = if distance(before, target) > 128.0 {
@@ -2000,28 +2083,28 @@ mod tests {
                 } else {
                     start
                 };
-                ctrl.command(&format!(
+                let line = format!(
                     "developer {developer}; scratch1 {key}; scratch2 {}; scratch3 {}; scratch4 {}",
                     destination[0], destination[1], destination[2]
-                ))
-                .await?;
-                client.pump(Duration::from_millis(250));
+                );
+                console_settled(&mut ctrl, &mut client, &line, &tag()).await?;
                 client.set_impulse(216);
-                client.pump(Duration::from_millis(350));
+                client.pump(Duration::from_millis(500));
                 let pos = client.my_pos().ok_or("lost client position")?;
                 if distance(pos, before) > 32.0 {
                     failures.push(format!("teleport accepted developer={developer} key={key}"));
                 }
             }
-            ctrl.command(&format!(
+            let line = format!(
                 "developer 1; scratch1 216; scratch2 {}; scratch3 {}; scratch4 {}",
                 target[0], target[1], target[2]
-            ))
-            .await?;
-            client.pump(Duration::from_millis(250));
+            );
+            console_settled(&mut ctrl, &mut client, &line, &tag()).await?;
             client.set_impulse(216);
-            client.pump(Duration::from_millis(350));
-            if distance(client.my_pos().ok_or("lost client position")?, target) > 32.0 {
+            let arrived = pump_until(&mut client, SETTLE, |c| {
+                c.my_pos().is_some_and(|p| distance(p, target) <= 32.0)
+            });
+            if !arrived {
                 failures.push("armed teleport refused".into());
             }
 
@@ -2034,33 +2117,33 @@ mod tests {
             };
             for (developer, key) in [(1, 0), (1, 147), (1, 197), (1, 216), (0, 374)] {
                 let before = arm_count(&ctrl);
-                ctrl.command(&format!(
-                    "developer {developer}; scratch1 {key}; scratch4 5"
-                ))
-                .await?;
-                client.pump(Duration::from_millis(250));
+                let line = format!("developer {developer}; scratch1 {key}; scratch4 5");
+                console_settled(&mut ctrl, &mut client, &line, &tag()).await?;
                 client.set_impulse(215);
-                client.pump(Duration::from_millis(350));
+                client.pump(Duration::from_millis(500));
                 if arm_count(&ctrl) != before {
                     failures.push(format!("A/B accepted developer={developer} key={key}"));
                 }
             }
             let before = arm_count(&ctrl);
-            ctrl.command("developer 1; scratch1 374; scratch4 5")
-                .await?;
-            client.pump(Duration::from_millis(250));
+            console_settled(
+                &mut ctrl,
+                &mut client,
+                "developer 1; scratch1 374; scratch4 5",
+                &tag(),
+            )
+            .await?;
             client.set_impulse(215);
-            client.pump(Duration::from_millis(350));
+            pump_until(&mut client, SETTLE, |_| arm_count(&ctrl) >= before + 3);
             if arm_count(&ctrl) != before + 3 {
                 failures.push("armed A/B did not assign the three bots".into());
             }
             // A successful snapshot consumes the console key. A later client
             // impulse cannot rewrite the tape without the operator rearming.
             let before = arm_count(&ctrl);
-            ctrl.command("scratch4 10").await?;
-            client.pump(Duration::from_millis(250));
+            console_settled(&mut ctrl, &mut client, "scratch4 10", &tag()).await?;
             client.set_impulse(215);
-            client.pump(Duration::from_millis(350));
+            client.pump(Duration::from_millis(500));
             if arm_count(&ctrl) != before {
                 failures.push("A/B reused a consumed console key".into());
             }
@@ -2086,6 +2169,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let env =
             std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
@@ -2105,23 +2191,30 @@ mod tests {
                 .await
                 .unwrap();
             let result = async {
-                ctrl.command(&format!(
-                    "deathmatch {dm}; coop {coop}; scratch1 0; map dm4"
-                ))
-                .await?;
-                // Wait for the reload, then connect through the normal protocol.
-                tokio::time::sleep(Duration::from_millis(500)).await;
+                // Wait for the reload to finish (the echo runs after `map`
+                // returns), then connect through the normal protocol. Every
+                // wait here is a condition with a deadline: fixed sleeps and
+                // pumps lost on a loaded machine (#836).
+                let line = format!("deathmatch {dm}; coop {coop}; scratch1 0; map dm4");
+                console_ran(&mut ctrl, &line, &format!("omicron_{mode}_reload")).await?;
                 let mut client = NetClient::connect_match(&ctrl, "labprobe")?;
-                client.pump(Duration::from_secs(2));
-                if client.world.signon < 3 {
+                if !pump_until(&mut client, SETTLE, |c| c.world.signon >= 3) {
                     return Err("client did not sign on".to_string());
                 }
                 for key in [0, 147] {
-                    ctrl.command(&format!("scratch1 {key}")).await?;
-                    client.pump(Duration::from_millis(250));
+                    let line = format!("scratch1 {key}");
+                    let tag = format!("omicron_{mode}_{key}");
+                    console_settled(&mut ctrl, &mut client, &line, &tag).await?;
                     let before = client.world.prints.len();
                     client.set_impulse(146);
-                    client.pump(Duration::from_millis(450));
+                    // every case answers: a rename, or the refusal
+                    pump_until(&mut client, SETTLE, |c| {
+                        c.world.prints[before..].iter().any(|(_, s)| {
+                            s.contains("Omicron bots")
+                                || s.contains("the roster returns")
+                                || s.contains("single-player only")
+                        })
+                    });
                     let prints = client.world.prints[before..]
                         .iter()
                         .map(|(_, s)| s.as_str())
@@ -2157,6 +2250,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let env =
             std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
@@ -2172,15 +2268,17 @@ mod tests {
             .unwrap();
         let result = async {
             let mut client = NetClient::connect_match(&ctrl, "labprobe")?;
-            client.pump(Duration::from_secs(2));
-            if client.world.signon < 3 {
+            if !pump_until(&mut client, SETTLE, |c| c.world.signon >= 3) {
                 return Err("client did not sign on".to_string());
             }
-            ctrl.command("developer 1; scratch1 197; scratch2 13")
-                .await?;
-            client.pump(Duration::from_millis(250));
+            // wait for the console line to run and for the verdict, each
+            // with a deadline: fixed pumps lost on a loaded machine (#836)
+            let line = "developer 1; scratch1 197; scratch2 13";
+            console_settled(&mut ctrl, &mut client, line, "hull_armed").await?;
             client.set_impulse(217);
-            client.pump(Duration::from_secs(1));
+            pump_until(&mut client, SETTLE, |_| {
+                ctrl.log_text().unwrap_or_default().contains("TACFIX hull ")
+            });
             let text = ctrl.log_text().unwrap_or_default();
             client.disconnect();
             if !text.contains("TACFIX hull ok") || text.contains("TACFIX hull FAILED") {
@@ -2212,6 +2310,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut env = std::collections::HashMap::new();
         env.insert("ARGUS_ROOT".into(), root.display().to_string());

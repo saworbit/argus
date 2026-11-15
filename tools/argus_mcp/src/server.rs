@@ -442,8 +442,9 @@ impl Argus {
         self.tasks.shutdown();
         // TaskManager abort is cooperative with Tokio scheduling: wait until
         // the aborted future has actually dropped its run-gate guard before
-        // reporting shutdown complete.
-        if let Ok(guard) = tokio::time::timeout(Duration::from_secs(2), self.run_gate.lock()).await
+        // reporting shutdown complete. 2 s was not enough on a loaded
+        // machine (#836); the bound matches the match lock's above.
+        if let Ok(guard) = tokio::time::timeout(Duration::from_secs(10), self.run_gate.lock()).await
         {
             drop(guard);
         }
@@ -3871,8 +3872,13 @@ mod tests {
         }
     }
 
+    /// The bound on every wait for a fake match or task to reach a state.
+    /// It is a deadline, not a delay: each wait returns the moment its
+    /// condition holds, so it only needs to outlast a loaded machine (#836).
+    const SETTLE: Duration = Duration::from_secs(20);
+
     async fn wait_for_live_match(server: &Argus) {
-        tokio::time::timeout(Duration::from_secs(2), async {
+        tokio::time::timeout(SETTLE, async {
             loop {
                 if server.matches.lock().await.status().running {
                     return;
@@ -3885,7 +3891,7 @@ mod tests {
     }
 
     async fn wait_for_terminal_task(server: &Argus, task_id: &str) -> rmcp::model::DetailedTask {
-        tokio::time::timeout(Duration::from_secs(3), async {
+        tokio::time::timeout(SETTLE, async {
             loop {
                 let task = server.tasks.get_task(task_id).unwrap();
                 if task.status().is_terminal() {
@@ -4167,7 +4173,7 @@ mod tests {
         };
         assert!(matches!(terminal.payload, TaskPayload::Cancelled));
         client.cancel().await.unwrap();
-        tokio::time::timeout(Duration::from_secs(2), server_handle)
+        tokio::time::timeout(SETTLE, server_handle)
             .await
             .expect("Task-capable transport did not close")
             .unwrap();
@@ -4198,7 +4204,7 @@ mod tests {
             .unwrap();
         assert!(matches!(response, CallToolResponse::Complete(_)));
         legacy.cancel().await.unwrap();
-        tokio::time::timeout(Duration::from_secs(2), server_handle)
+        tokio::time::timeout(SETTLE, server_handle)
             .await
             .expect("legacy transport did not close")
             .unwrap();
@@ -4270,7 +4276,7 @@ mod tests {
         assert!(server.run_gate.try_lock().is_ok());
 
         client.cancel().await.unwrap();
-        tokio::time::timeout(Duration::from_secs(2), server_handle)
+        tokio::time::timeout(SETTLE, server_handle)
             .await
             .expect("completion transport did not close")
             .unwrap();
@@ -4325,7 +4331,7 @@ mod tests {
         );
         wait_for_live_match(&server).await;
         finalizing.complete();
-        tokio::time::timeout(Duration::from_secs(2), async {
+        tokio::time::timeout(SETTLE, async {
             while !finalizing.quit_requested() {
                 tokio::task::yield_now().await;
             }
