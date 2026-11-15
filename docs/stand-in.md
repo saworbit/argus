@@ -90,11 +90,12 @@ clients and never writes them to its console, so an obituary-based count reads
 zero on every stand-in tape. The calibration counts `ARGEVT ... death` lines,
 taking a kill as a death whose killer is a bot by name. The brief's human
 scorecard subtracts only world deaths, so it also credits the stand-in's own
-rocket suicides to the bots.
+rocket suicides to the bots ([#844](https://github.com/saworbit/argus/issues/844)).
 
 ## What would fix it
 
-Two things, either of which needs its own registered calibration:
+Two things, either of which needs its own registered calibration
+([#842](https://github.com/saworbit/argus/issues/842)):
 
 - Navigation that keeps it in the game: the remaining stalls are on dm4's
   walkway steps and in corners the nav graph's nearest node cannot see.
