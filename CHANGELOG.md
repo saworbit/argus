@@ -11,9 +11,9 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Main as of 2026-11-13 is installed; the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) and the parked step 1b gate ([#583](https://github.com/saworbit/argus/issues/583)) remain open |
-| Latest gameplay update | 2026-11-13: main installed, the first gameplay binary since 2026-10-22; see Unreleased |
-| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `ED8926C1F3F0E4A5D6F591F905516638` |
+| Development source | Main as of 2026-11-15 is installed; the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) and the parked step 1b gate ([#583](https://github.com/saworbit/argus/issues/583)) remain open |
+| Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
+| Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
 | Lab version | 0.31; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
