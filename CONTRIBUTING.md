@@ -268,7 +268,7 @@ The [release workflow](.github/workflows/release.yml) builds the release package
 2. The workflow builds `progs.dat` from that tag with the pinned fteqcc, packages `argus/progs.dat`, `autoexec.cfg`, `README.txt` and `LICENSE` as `argus-<tag>.zip`, attests its build provenance, and opens a **draft** release with the zip, its `.sha256` and its `.sigstore.json` attestation attached.
 3. Replace the generated notes with the release's story, then publish the draft.
 
-To check the packaging without releasing, run the workflow by hand (`gh workflow run release.yml --ref main`): it builds the same zip as an artifact and creates no release.
+To check the packaging without releasing, run the workflow by hand (`gh workflow run release.yml --ref main`): it builds the same zip as an artifact and creates no release. The tag-only steps (attestation, bundle and draft release) have not yet run for real; check them against [#848](https://github.com/saworbit/argus/issues/848) on the first release.
 
 ---
 
