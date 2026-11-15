@@ -176,7 +176,10 @@ mod tests {
 
     #[tokio::test]
     async fn every_terminal_payload_is_observable_then_bounded() {
-        let store = TaskStore::new(Duration::from_millis(30), Duration::from_millis(10));
+        // Retention long enough that all three can be observed before the
+        // first is evicted, then a deadline for the eviction itself: a 30 ms
+        // retention and a fixed 50 ms sleep both lost on a loaded machine.
+        let store = TaskStore::new(Duration::from_millis(1500), Duration::from_millis(10));
         let completed = store.spawn(TaskOptions::new(), |_context| {
             Box::pin(async { Ok(CallToolResult::success(vec![ContentBlock::text("ok")])) })
         });
@@ -201,8 +204,13 @@ mod tests {
             }
         }
         assert_eq!(store.len(), 3);
-        tokio::time::sleep(Duration::from_millis(50)).await;
-        assert_eq!(store.len(), 0);
+        tokio::time::timeout(Duration::from_secs(20), async {
+            while store.len() != 0 {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+            }
+        })
+        .await
+        .expect("terminal tasks were never evicted");
         assert!(store.get_task(&completed.task_id).is_err());
         assert!(store.get_task(&failed.task_id).is_err());
         assert!(store.get_task(&cancelled.task_id).is_err());

@@ -1555,6 +1555,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let mut cfg = Config::load().unwrap();
         cfg.runs = cfg.root.join("backups/camera_triggered").join(
             chrono::Utc::now()
@@ -1777,12 +1780,12 @@ mod tests {
                     let mut holder = {
                         use std::os::windows::process::CommandExt;
                         let mut c = Command::new("powershell.exe");
-                        c.args(["-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 2"])
+                        c.args(["-NoProfile", "-NonInteractive", "-Command", "Start-Sleep -Seconds 30"])
                             .creation_flags(0x0800_0000);
                         c
                     };
                     #[cfg(not(windows))]
-                    let mut holder = { let mut c = Command::new("sleep"); c.arg("2"); c };
+                    let mut holder = { let mut c = Command::new("sleep"); c.arg("30"); c };
                     holder.stdin(Stdio::null())
                         .stdout(if mode == "stdout" { Stdio::inherit() } else { Stdio::null() })
                         .stderr(if mode == "stderr" { Stdio::inherit() } else { Stdio::null() });
@@ -1793,6 +1796,10 @@ mod tests {
                 std::thread::sleep(std::time::Duration::from_secs(30));
             }"#,
         );
+        // The grandchild holds an inherited pipe for 30 s. A preflight or a
+        // runtime shutdown that waited for that pipe would take all of it, so
+        // the bounds below only need to fall well short of 30 s; they are
+        // sized for a loaded machine, not for an idle one (#836).
         let start = Instant::now();
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -1808,16 +1815,22 @@ mod tests {
                     .spawn()
                     .unwrap();
                 let start = Instant::now();
-                let error = finish_preflight(&mut child, b"", Duration::from_millis(200))
+                // The overflow child must be refused for its output, not its
+                // time, so its deadline outlasts a slow start; the 200 ms ones
+                // are the deadlines under test.
+                let (deadline, expected) = if mode == "overflow" {
+                    (Duration::from_secs(8), "64 KiB")
+                } else {
+                    (Duration::from_millis(200), "timed out")
+                };
+                let error = finish_preflight(&mut child, b"", deadline)
                     .await
                     .unwrap_err();
-                let expected = if mode == "overflow" {
-                    "64 KiB"
-                } else {
-                    "timed out"
-                };
                 assert!(error.contains(expected), "{mode}: {error}");
-                assert!(start.elapsed() < Duration::from_millis(1500), "{mode}");
+                assert!(
+                    start.elapsed() < deadline + Duration::from_secs(5),
+                    "{mode}"
+                );
                 assert!(
                     child.try_wait().unwrap().is_some(),
                     "{mode}: child not reaped"
@@ -1826,7 +1839,7 @@ mod tests {
         });
         drop(runtime);
         assert!(
-            start.elapsed() < Duration::from_millis(1500),
+            start.elapsed() < Duration::from_secs(25),
             "runtime shutdown waited for inherited pipes"
         );
     }
@@ -1919,6 +1932,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let mut cfg = Config::load().unwrap();
         cfg.runs = cfg.root.join("backups/camera_viewentity").join(
             chrono::Utc::now()

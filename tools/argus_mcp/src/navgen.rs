@@ -204,7 +204,9 @@ qc.write_text('orphan')
             super::nav_generate(&cfg, "map.bsp", "dm4", None, None, true).await
         });
         let marker = root.join("tools/started");
-        tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        // generous: this waits on a Python start, which a loaded machine
+        // can stretch past a few seconds (#836)
+        tokio::time::timeout(std::time::Duration::from_secs(30), async {
             while !marker.exists() {
                 tokio::time::sleep(std::time::Duration::from_millis(10)).await;
             }
@@ -218,8 +220,24 @@ qc.write_text('orphan')
         for path in saved {
             assert_eq!(std::fs::read_to_string(path).unwrap(), "original");
         }
-        tokio::time::sleep(std::time::Duration::from_millis(2200)).await;
-        assert!(!staged.exists(), "private workspace survived cancellation");
+        // The workspace goes as soon as the killed helper lets go of it.
+        // Wait for that with a deadline rather than a fixed sleep, then
+        // past the helper's own 2 s sleep, so a survivor would have had
+        // its chance to write the orphan (#836).
+        let aborted = std::time::Instant::now();
+        tokio::time::timeout(std::time::Duration::from_secs(20), async {
+            while staged.exists() {
+                tokio::time::sleep(std::time::Duration::from_millis(25)).await;
+            }
+        })
+        .await
+        .expect("private workspace survived cancellation");
+        let past_sleep = std::time::Duration::from_millis(2500);
+        tokio::time::sleep(past_sleep.saturating_sub(aborted.elapsed())).await;
+        assert!(
+            !staged.exists(),
+            "private workspace came back after cancellation"
+        );
     }
 
     #[tokio::test]

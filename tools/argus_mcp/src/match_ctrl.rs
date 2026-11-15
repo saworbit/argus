@@ -14,6 +14,8 @@ use std::time::{Duration, Instant};
 pub const DEFAULT_PORT: u16 = 26000;
 pub const DURATION_MIN: u32 = 10;
 pub const DURATION_MAX: u32 = 600;
+/// How long `stop` waits for a killed engine to exit before calling it gone.
+const KILL_GRACE: Duration = Duration::from_secs(5);
 
 #[derive(Debug, Clone, Serialize)]
 pub struct MatchStatus {
@@ -415,13 +417,22 @@ impl MatchCtrl {
                 }
                 Ok(None) if Instant::now() >= deadline => {
                     let _ = live.child.kill().await;
-                    // one more wait so harvest sees a settled log
-                    tokio::time::sleep(Duration::from_millis(200)).await;
-                    if let Ok(Some(code)) = live.child.try_wait() {
-                        live.last_exit = Some(code);
-                    } else {
-                        live.last_exit = Some(1);
-                    }
+                    // Wait for the kill to land, so harvest sees a settled
+                    // log and status() does not report a dying engine as
+                    // running. TerminateProcess returns before the process
+                    // is gone, and a fixed 200 ms was not enough on a loaded
+                    // machine (#836). The grace bounds a kill that never
+                    // lands.
+                    let grace = Instant::now() + KILL_GRACE;
+                    live.last_exit = loop {
+                        if let Ok(Some(code)) = live.child.try_wait() {
+                            break Some(code);
+                        }
+                        if Instant::now() >= grace {
+                            break Some(1);
+                        }
+                        tokio::time::sleep(Duration::from_millis(25)).await;
+                    };
                     break;
                 }
                 Ok(None) => {
@@ -1623,6 +1634,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
     // into EngineChild, whose stop/drop path owns its remaining lifecycle.
     #[allow(clippy::zombie_processes)]
     async fn stop_matching_filters_by_run_name_and_pid() {
+        let _live = super::live_test_lock_async().await;
         let tmp =
             std::env::temp_dir().join(format!("argus-stop-match-test-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&tmp);
