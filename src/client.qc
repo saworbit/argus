@@ -1197,6 +1197,17 @@ Called every frame before physics are run
 ================*/
 void() PlayerPreThink =
 {
+	// ARGUS: the session bookmark (Argus_Mark) is taken here, before the
+	// intermission, camera and death returns. ImpulseCommands is reached
+	// only from W_WeaponFrame in PostThink, for a living player off its
+	// refire clock, so a mark pressed while dead (the moment a player most
+	// wants to mark) waited for the respawn and named the spawn pad.
+	if (self.impulse == 200)
+	{
+		Argus_Mark ();
+		self.impulse = 0;
+	}
+
 	if (intermission_running)
 	{
 		IntermissionThink ();	// otherwise a button could be missed between

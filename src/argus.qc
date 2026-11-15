@@ -11712,6 +11712,8 @@ void() Argus_FrameAll =
         {
             b.ar_aliased = 1;
             stuffcmd (b, "alias omicron \"impulse 146\"\n");
+            // the session bookmark (Argus_Mark): "bind m mark" once
+            stuffcmd (b, "alias mark \"impulse 200\"\n");
         }
         if (!b.ar_isbot && (b.flags & FL_CLIENT) && b.health > 0
             && !b.cam_active && time > b.ar_nextlog)
@@ -11822,8 +11824,54 @@ string(float idx) Argus_RosterName =
 
 void() Argus_Init =
 {
+    local float seed, burn;
+
     dprint ("ARGUS init on ");
     dprint (mapname);
+    dprint ("\n");
+
+    // ---- tape identity (#823) and the lab clock ----
+    // ARGUS build names the QC source this progs was compiled from: a
+    // hash of every file progs.src lists with comments and layout
+    // removed, which tools/argus_build_stamp.py writes into
+    // argus_build.qc. A tape therefore names its own build instead of
+    // the spine guessing it from merge times.
+    //
+    // ARGUS clock records the engine's frame settings in whole
+    // microseconds, because ftos prints a fraction to one decimal (the
+    // trap behind the refuted "frametime 0.1"). An ordinary server runs
+    // frame_us 0: frames last as long as the wall clock says. The lab's
+    // fixed clock pins host_framerate at the wall-clock lab's measured
+    // 14.25 ms frame and stops the dedicated loop waiting for the wall
+    // clock (docs/fixed-clock.md).
+    //
+    // The seed: the engine draws random() from the C library stream and
+    // takes one extra draw per main-loop pass. With the fast clock's one
+    // pass per frame that stream is the same every run, so a match
+    // repeats exactly. saved4 burns that many draws here, before the
+    // roster spawns, to choose which repeat. On any ordinary server the
+    // stream already depends on wall time and saved4 is 0, so this is
+    // inert. The cap of 2000 keeps the loop (about five statements a draw)
+    // far inside id's original runaway limit of 100000 statements a call,
+    // with the roster spawn that follows in the same think.
+    seed = floor (cvar ("saved4"));
+    if (seed < 1 || seed > 2000)
+        seed = 0;
+    burn = seed;
+    while (burn > 0)
+    {
+        random ();
+        burn = burn - 1;
+    }
+    dprint ("ARGUS build ");
+    dprint (ARGUS_BUILD);
+    dprint ("\n");
+    dprint ("ARGUS clock frame_us ");
+    dprint (ftos (rint (cvar ("host_framerate") * 1000000)));
+    dprint (" tick_us ");
+    dprint (ftos (rint (cvar ("sys_ticrate") * 1000000)));
+    dprint (" seed ");
+    dprint (ftos (seed));
     dprint ("\n");
 
     ar_opm_ears = 1;            // OPM slice B live (hearing + soft FOV)
@@ -11841,6 +11889,86 @@ void() Argus_Init =
     }
 
     remove (self);
+};
+
+// ---------------------------------------------------------------- marks
+
+// The session bookmark. A human playing a session presses the key bound
+// to "mark" (an alias every client is handed alongside omicron's) the
+// moment a bot looks wrong, and the tape gets one line: the mark's
+// number, the time, where the human stood and looked, and the bot that
+// most plausibly drew the eye - the nearest one in sight within 60
+// degrees of where the human looked, or the nearest at all when none is.
+// The review then jumps to those moments instead of combing the whole
+// match. Passive: it prints a line and acknowledges the press, and
+// changes nothing in play. PlayerPreThink calls it, so a mark works while
+// dead and is not held back by the weapon's refire clock.
+float argus_marks;
+
+void() Argus_Mark =
+{
+    local entity b, best;
+    local float d, bestd, seen, bestseen;
+
+    if (self.ar_isbot || !(self.flags & FL_CLIENT))
+        return;
+    // the line is a dprint: without developer it reaches no tape, and
+    // telling the player "saved" would be a lie
+    if (!cvar ("developer"))
+    {
+        sprint (self, PRINT_HIGH, "mark not saved: start the game with +developer 1\n");
+        return;
+    }
+    argus_marks = argus_marks + 1;
+    makevectors (self.v_angle);
+    best = world;
+    bestd = 0;
+    bestseen = 0;
+    b = find (world, classname, "player");
+    while (b != world)
+    {
+        if (b.ar_isbot && b.health > 0)
+        {
+            traceline (self.origin + self.view_ofs, b.origin + b.view_ofs,
+                       TRUE, self);
+            // in sight means a clear line AND inside 60 degrees of the
+            // view: a bot behind the player is not what caught the eye
+            seen = (trace_fraction == 1
+                    && normalize (b.origin - self.origin) * v_forward > 0.5);
+            d = vlen (b.origin - self.origin);
+            if (best == world || seen > bestseen
+                || (seen == bestseen && d < bestd))
+            {
+                best = b;
+                bestd = d;
+                bestseen = seen;
+            }
+        }
+        b = find (b, classname, "player");
+    }
+    dprint ("ARGUS mark ");
+    dprint (ftos (argus_marks));
+    dprint (" t ");
+    dprint (ftos (time));
+    dprint (" pos ");
+    dprint (vtos (self.origin));
+    dprint (" yaw ");
+    dprint (ftos (rint (self.v_angle_y)));
+    if (best == world)
+        dprint (" near none\n");
+    else
+    {
+        dprint (" seen ");
+        dprint (ftos (bestseen));
+        dprint (" dist ");
+        dprint (ftos (rint (bestd)));
+        dprint (" near ");
+        dprint (best.netname);
+        dprint ("\n");
+    }
+    sprint (self, PRINT_HIGH, "mark ");
+    sprint (self, PRINT_HIGH, ftos (argus_marks));
+    sprint (self, PRINT_HIGH, " saved\n");
 };
 
 // ---------------------------------------------------------------- roster

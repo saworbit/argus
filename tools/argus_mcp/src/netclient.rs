@@ -192,6 +192,15 @@ pub struct ClientWorld {
     print_buf: String,
     pub disconnected: bool,
     pub unknown_svc: Vec<u8>,
+    /// The client's own state from svc_clientdata: item bits (IT_*),
+    /// health, the four ammo counts (shells, nails, rockets, cells) and the
+    /// active weapon's item bit (0 for the axe, which does not fit a byte).
+    /// `stats_seen` is false until the first svc_clientdata arrives.
+    pub stats_seen: bool,
+    pub items: i32,
+    pub health: i16,
+    pub ammo: [u8; 4],
+    pub weapon: u8,
 }
 
 struct DemoRecording {
@@ -830,7 +839,7 @@ impl NetClient {
                             need!(r.i8());
                         }
                     }
-                    need!(r.i32());
+                    let items = need!(r.i32());
                     if bits & SU_WEAPONFRAME != 0 {
                         need!(r.u8());
                     }
@@ -840,11 +849,18 @@ impl NetClient {
                     if bits & SU_WEAPON != 0 {
                         need!(r.u8());
                     }
-                    need!(r.i16());
-                    for _ in 0..5 {
-                        need!(r.u8());
+                    let health = need!(r.i16());
+                    need!(r.u8()); // currentammo
+                    let mut ammo = [0u8; 4];
+                    for slot in &mut ammo {
+                        *slot = need!(r.u8());
                     }
-                    need!(r.u8());
+                    let weapon = need!(r.u8());
+                    self.world.stats_seen = true;
+                    self.world.items = items;
+                    self.world.health = health;
+                    self.world.ammo = ammo;
+                    self.world.weapon = weapon;
                 }
                 SVC_STOPSOUND => {
                     need!(r.i16());

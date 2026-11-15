@@ -117,6 +117,7 @@ unsafe impl Send for SendHandle {}
 unsafe impl Sync for SendHandle {}
 
 impl EngineChild {
+    #[allow(clippy::too_many_arguments)]
     pub fn spawn(
         cfg: &Config,
         map: &str,
@@ -125,6 +126,7 @@ impl EngineChild {
         cwd: &Path,
         port: Option<u16>,
         coop: bool,
+        clock: EngineClock,
     ) -> Result<Self, String> {
         let map = crate::paths::map_name(map)?;
         let map = map.as_str();
@@ -142,11 +144,11 @@ impl EngineChild {
         check_port_available(actual_port)?;
         #[cfg(windows)]
         {
-            spawn_windows(cfg, map, slots, skill, cwd, port, coop)
+            spawn_windows(cfg, map, slots, skill, cwd, port, coop, clock)
         }
         #[cfg(not(windows))]
         {
-            spawn_unix(cfg, map, slots, skill, cwd, port, coop)
+            spawn_unix(cfg, map, slots, skill, cwd, port, coop, clock)
         }
     }
 
@@ -266,7 +268,36 @@ pub(crate) fn check_port_available(port: u16) -> Result<(), String> {
     let probe = std::net::UdpSocket::bind((std::net::Ipv4Addr::UNSPECIFIED, port))
         .map_err(|e| format!("engine UDP port {port} is unavailable: {e}"))?;
     drop(probe);
+    // QuakeSpasm binds the address gethostbyname gives for the local host,
+    // not the wildcard, and on Windows a wildcard probe succeeds while an
+    // engine holds that address (#832). Probe each hostname address too.
+    for addr in hostname_ipv4s() {
+        let probe = std::net::UdpSocket::bind((addr, port)).map_err(|e| {
+            format!("engine UDP port {port} is unavailable on {addr} (an engine holds it): {e}")
+        })?;
+        drop(probe);
+    }
     Ok(())
+}
+
+/// The IPv4 addresses the local hostname resolves to, as WinQuake's
+/// gethostbyname lookup sees them. Empty when the name cannot be resolved.
+fn hostname_ipv4s() -> Vec<std::net::Ipv4Addr> {
+    use std::net::ToSocketAddrs;
+    let Ok(name) = std::env::var("COMPUTERNAME").or_else(|_| std::env::var("HOSTNAME")) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    if let Ok(addrs) = (name.as_str(), 0).to_socket_addrs() {
+        for addr in addrs {
+            if let std::net::IpAddr::V4(v4) = addr.ip() {
+                if !v4.is_unspecified() && !out.contains(&v4) {
+                    out.push(v4);
+                }
+            }
+        }
+    }
+    out
 }
 
 pub fn validate_map(map: &str) -> Result<(), String> {
@@ -274,6 +305,7 @@ pub fn validate_map(map: &str) -> Result<(), String> {
 }
 
 #[cfg(not(windows))]
+#[allow(clippy::too_many_arguments)]
 fn spawn_unix(
     cfg: &Config,
     map: &str,
@@ -282,9 +314,10 @@ fn spawn_unix(
     cwd: &Path,
     port: Option<u16>,
     coop: bool,
+    clock: EngineClock,
 ) -> Result<EngineChild, String> {
     let mut cmd = Command::new(&cfg.engine);
-    apply_args(&mut cmd, cfg, map, slots, skill, port, coop);
+    apply_args(&mut cmd, cfg, map, slots, skill, port, coop, clock);
     cmd.current_dir(cwd)
         .kill_on_drop(true)
         .stdin(Stdio::piped())
@@ -341,7 +374,108 @@ pub fn ticrate() -> String {
     std::env::var("ARGUS_TICRATE").unwrap_or_else(|_| PLAYED_TICRATE.to_string())
 }
 
+/// The frame every fixed-clock match runs: 14.25 ms, the wall-clock lab's own
+/// measured rate (70.2 Hz with `host_speeds`; the loop waits at least
+/// `PLAYED_TICRATE` and the sleep rounds it up). The fixed clock screens for
+/// the lab, so it runs the lab's frame. 13.9 ms, the human's listen-server
+/// frame, was the first default and failed its registered validation on dm4
+/// (more lava deaths and routefails than the wall clock); 14.25 ms passed a
+/// registered confirmation on fresh seeds on dm4 and dm2
+/// (docs/fixed-clock.md).
+pub const FIXED_FRAME: &str = "0.01425";
+
+/// The fixed clock's frame for this launch: `FIXED_FRAME` unless
+/// `ARGUS_FIXED_FRAME` overrides it. Like `ARGUS_TICRATE`, the override
+/// exists to measure what the frame length itself does (the wall-clock lab
+/// averages 14.25 ms against the fixed 13.9), and every tape records the
+/// frame it ran in its `ARGUS clock` line.
+pub fn fixed_frame() -> String {
+    std::env::var("ARGUS_FIXED_FRAME")
+        .ok()
+        .filter(|v| v.parse::<f64>().is_ok_and(|f| (0.005..=0.1).contains(&f)))
+        .unwrap_or_else(|| FIXED_FRAME.to_string())
+}
+
+/// How the engine's clock runs for one launch.
+///
+/// `Played` is the ordinary server: the dedicated loop waits for
+/// `sys_ticrate` of wall time per frame, so a 185 s match takes 185 s.
+///
+/// `Fixed` is the lab clock. `host_framerate` pins every frame at
+/// `FIXED_FRAME` whatever the wall clock did, so the physics runs the lab's
+/// measured rate exactly, and `sys_ticrate 0.001` with `host_maxfps 1000` lets the
+/// loop run a frame per millisecond instead of waiting. Measured on this rig
+/// (2026-11-15) at about 6.5 times real time per engine. Two consequences:
+///
+/// - It repeats. The engine draws QC random() from the C library stream
+///   and calls rand() once per main-loop pass ("keep the random time
+///   dependent"); with one pass per frame that is one draw per frame, so a
+///   given progs, map and seed produce the same match every time. `seed`
+///   reaches QC as `saved4`, which Argus_Init burns as that many draws.
+///   (`sys_ticrate 0`, which runs about twice as fast, busy-loops and
+///   draws thousands of times between frames, so it never repeats.)
+/// - It ends on game time. `+timelimit` makes the bots end the match at the
+///   requested length, so every fixed tape is exactly as long as asked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum EngineClock {
+    #[default]
+    Played,
+    Fixed {
+        seed: u32,
+        limit_sec: Option<u32>,
+    },
+}
+
+impl EngineClock {
+    pub fn fixed(seed: u32) -> Self {
+        EngineClock::Fixed {
+            seed,
+            limit_sec: None,
+        }
+    }
+
+    pub fn is_fixed(&self) -> bool {
+        matches!(self, EngineClock::Fixed { .. })
+    }
+
+    /// The same clock with the match length it must end at.
+    pub fn with_limit(self, limit: Option<u32>) -> Self {
+        match self {
+            EngineClock::Fixed { seed, .. } => EngineClock::Fixed {
+                seed,
+                limit_sec: limit,
+            },
+            played => played,
+        }
+    }
+
+    /// The console arguments that set this clock, in launch order.
+    pub fn args(&self) -> Vec<String> {
+        match *self {
+            EngineClock::Played => vec!["+sys_ticrate".into(), ticrate()],
+            EngineClock::Fixed { seed, limit_sec } => {
+                let mut args = vec![
+                    "+sys_ticrate".to_string(),
+                    "0.001".into(),
+                    "+host_framerate".into(),
+                    fixed_frame(),
+                    "+host_maxfps".into(),
+                    "1000".into(),
+                    "+saved4".into(),
+                    seed.to_string(),
+                ];
+                if let Some(limit) = limit_sec {
+                    args.push("+timelimit".into());
+                    args.push(format!("{:.6}", f64::from(limit) / 60.0));
+                }
+                args
+            }
+        }
+    }
+}
+
 #[cfg(any(not(windows), test))]
+#[allow(clippy::too_many_arguments)]
 fn apply_args(
     cmd: &mut Command,
     cfg: &Config,
@@ -350,6 +484,7 @@ fn apply_args(
     skill: Option<u32>,
     port: Option<u16>,
     coop: bool,
+    clock: EngineClock,
 ) {
     cmd.arg("-dedicated")
         .arg(slots.to_string())
@@ -360,8 +495,7 @@ fn apply_args(
         .arg("-condebug")
         .arg("+developer")
         .arg("1")
-        .arg("+sys_ticrate")
-        .arg(ticrate());
+        .args(clock.args());
     if coop {
         cmd.arg("+coop").arg("1").arg("+deathmatch").arg("0");
     } else {
@@ -458,6 +592,7 @@ fn windows_args(
     skill: Option<u32>,
     port: Option<u16>,
     coop: bool,
+    clock: EngineClock,
 ) -> Result<String, String> {
     let exe = cfg.engine.display().to_string();
     let portarg = format!(" -port {}", port.unwrap_or(crate::match_ctrl::DEFAULT_PORT));
@@ -466,9 +601,9 @@ fn windows_args(
     } else {
         "+deathmatch 1"
     };
-    let tick = ticrate();
+    let tick = clock.args().join(" ");
     let mut args = format!(
-        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 +sys_ticrate {tick} {mode_arg}",
+        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 {tick} {mode_arg}",
         cfg.basedir.display(),
         cfg.game
     );
@@ -483,6 +618,7 @@ fn windows_args(
 }
 
 #[cfg(windows)]
+#[allow(clippy::too_many_arguments)]
 fn spawn_windows(
     cfg: &Config,
     map: &str,
@@ -491,13 +627,14 @@ fn spawn_windows(
     cwd: &Path,
     port: Option<u16>,
     coop: bool,
+    clock: EngineClock,
 ) -> Result<EngineChild, String> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::System::Threading::{
         CreateProcessW, PROCESS_INFORMATION, STARTF_USESHOWWINDOW, STARTUPINFOW,
     };
 
-    let args = windows_args(cfg, map, slots, skill, port, coop)?;
+    let args = windows_args(cfg, map, slots, skill, port, coop, clock)?;
 
     let mut cmd_wide: Vec<u16> = args.encode_utf16().chain(std::iter::once(0)).collect();
     let cwd_wide: Vec<u16> = cwd
@@ -1047,8 +1184,16 @@ mod tests {
         )
         .unwrap();
         cfg.engine = temp.path().join("must-not-spawn.exe");
-        let result =
-            super::EngineChild::spawn(&cfg, "dm4", 4, Some(2), temp.path(), Some(port), false);
+        let result = super::EngineChild::spawn(
+            &cfg,
+            "dm4",
+            4,
+            Some(2),
+            temp.path(),
+            Some(port),
+            false,
+            super::EngineClock::Played,
+        );
         let error = match result {
             Err(error) => error,
             Ok(_) => panic!("engine started on a busy UDP port"),
@@ -1098,9 +1243,20 @@ mod tests {
         let cfg = tick_cfg();
         for skill in 0..=3 {
             for coop in [false, true] {
-                let windows = windows_args(&cfg, "dm3", 8, Some(skill), None, coop).unwrap();
+                let windows =
+                    windows_args(&cfg, "dm3", 8, Some(skill), None, coop, EngineClock::Played)
+                        .unwrap();
                 let mut cmd = Command::new("x");
-                apply_args(&mut cmd, &cfg, "dm3", 8, Some(skill), None, coop);
+                apply_args(
+                    &mut cmd,
+                    &cfg,
+                    "dm3",
+                    8,
+                    Some(skill),
+                    None,
+                    coop,
+                    EngineClock::Played,
+                );
                 let unix = cmd
                     .as_std()
                     .get_args()
@@ -1121,9 +1277,18 @@ mod tests {
     #[test]
     fn absent_startup_skill_keeps_inherited_configuration() {
         let cfg = tick_cfg();
-        let windows = windows_args(&cfg, "dm3", 8, None, None, false).unwrap();
+        let windows = windows_args(&cfg, "dm3", 8, None, None, false, EngineClock::Played).unwrap();
         let mut cmd = Command::new("x");
-        apply_args(&mut cmd, &cfg, "dm3", 8, None, None, false);
+        apply_args(
+            &mut cmd,
+            &cfg,
+            "dm3",
+            8,
+            None,
+            None,
+            false,
+            EngineClock::Played,
+        );
         let unix = cmd
             .as_std()
             .get_args()
@@ -1143,7 +1308,16 @@ mod tests {
     fn every_unix_launch_pins_the_played_tick_rate() {
         let cfg = tick_cfg();
         let mut cmd = Command::new("x");
-        apply_args(&mut cmd, &cfg, "dm4", 8, None, None, false);
+        apply_args(
+            &mut cmd,
+            &cfg,
+            "dm4",
+            8,
+            None,
+            None,
+            false,
+            EngineClock::Played,
+        );
         let joined: Vec<String> = cmd
             .as_std()
             .get_args()
@@ -1157,14 +1331,57 @@ mod tests {
     #[cfg(windows)]
     fn every_windows_launch_pins_the_played_tick_rate() {
         let cfg = tick_cfg();
-        let args = windows_args(&cfg, "dm4", 8, None, None, false).expect("args");
+        let args =
+            windows_args(&cfg, "dm4", 8, None, None, false, EngineClock::Played).expect("args");
         assert!(args.contains("+sys_ticrate 0.0139"), "{args}");
-        let coop = windows_args(&cfg, "e1m2", 4, Some(1), Some(26011), true).expect("args");
+        let coop = windows_args(
+            &cfg,
+            "e1m2",
+            4,
+            Some(1),
+            Some(26011),
+            true,
+            EngineClock::Played,
+        )
+        .expect("args");
         assert!(coop.contains("+sys_ticrate 0.0139"), "{coop}");
         assert!(
             coop.contains("-port 26011") && coop.contains("+coop 1"),
             "{coop}"
         );
+    }
+
+    #[test]
+    fn the_fixed_clock_pins_frame_seed_and_limit_before_the_map() {
+        let cfg = tick_cfg();
+        let clock = EngineClock::fixed(7).with_limit(Some(185));
+        let windows = windows_args(&cfg, "dm4", 8, Some(2), None, false, clock).unwrap();
+        let mut cmd = Command::new("x");
+        apply_args(&mut cmd, &cfg, "dm4", 8, Some(2), None, false, clock);
+        let unix = cmd
+            .as_std()
+            .get_args()
+            .map(|s| s.to_string_lossy())
+            .collect::<Vec<_>>()
+            .join(" ");
+        for args in [windows, unix] {
+            for want in [
+                "+sys_ticrate 0.001",
+                "+host_framerate 0.01425",
+                "+host_maxfps 1000",
+                "+saved4 7",
+                "+timelimit 3.083333",
+            ] {
+                assert!(args.contains(want), "{want} missing: {args}");
+                assert!(args.find(want).unwrap() < args.find("+map dm4").unwrap());
+            }
+            assert!(!args.contains("+sys_ticrate 0.0139"), "{args}");
+        }
+        assert_eq!(EngineClock::Played.with_limit(Some(9)), EngineClock::Played);
+        assert!(!EngineClock::fixed(1)
+            .args()
+            .iter()
+            .any(|a| a == "+timelimit"));
     }
 
     #[test]

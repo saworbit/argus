@@ -9,7 +9,11 @@ what happened. Playing the prebuilt mod does not require this setup.
 Start a working session with `python tools/argus_lab.py state`: it generates
 the current build, session scores, stale artefacts and open claims from the
 evidence. [The lab spine](lab-spine.md) describes it and its skeptic, triage
-and evidence-tier commands.
+and evidence-tier commands. [The improvement loop](improvement-loop.md) says
+how a change climbs from static checks to a human session, and which
+instrument may answer which question: the [fixed lab clock](fixed-clock.md)
+for fast, repeatable ladders, the [stand-in human](stand-in.md) for threat,
+and the [session gallery](session-gallery.md) for a player's rulings.
 
 ## 1. Install the lab binary
 

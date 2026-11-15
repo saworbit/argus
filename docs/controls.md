@@ -39,6 +39,7 @@ replaces the roster opt-in until you restore `147`.
 | `impulse 109` | Cycle slot 3's skill offset |
 | `impulse 110` | Toggle adaptive per-bot difficulty and clear previous adaptive offsets |
 | `omicron` / `impulse 146` | Toggle tribute roster names in plain single-player; refused in deathmatch and co-op |
+| `mark` / `impulse 200` | Bookmark this moment in the session tape; see [session marks](#session-marks) |
 
 Per-slot offsets cycle through `0, +0.5, +1, -1, -0.5`; effective skill is
 bounded to 0-3. Adaptive difficulty starts off. It is active only against
@@ -52,6 +53,25 @@ Three bots spawn outside co-op: Carmack, Romero and Joe Rogan. Co-op starts
 with Carmack. The runtime cap is four bots, also limited by spare client
 slots. On classic engines, launch with `-listen 8` so scoreboard rows and
 the optional fourth bot have capacity.
+
+## Session marks
+
+When a bot does something that looks wrong, press a key bound to `mark`. The
+game prints `mark 3 saved` and the tape gets one line: the mark's number, the
+time, where you stood and looked, and the bot that most plausibly caught your
+eye (the nearest one in sight, or the nearest at all when none is). Marks
+change nothing in play. Every client is handed the `mark` alias when it
+joins, so one bind does it:
+
+```text
+bind m mark
+```
+
+After the session, `python tools/argus_lab.py review <stem>` lists each mark
+with what the bot was doing around it, and `python tools/argus_gallery.py
+build <stem>` cuts a short clip of each one from the session demo for a
+quick ruling ([the session gallery](session-gallery.md)). Marks need
+`+developer 1`, which the session launch command already sets.
 
 ## ArgusCam
 

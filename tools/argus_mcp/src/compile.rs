@@ -15,6 +15,10 @@ pub struct CompileResult {
     pub new_errors: usize,
     pub new_warnings: usize,
     pub noise_warnings: usize,
+    /// The build identity stamped into argus_build.qc before fteqcc ran
+    /// (#823); absent for a tree whose progs.src does not list the stamp.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub build: Option<String>,
 }
 
 /// Extra tool: compile a given source directory. Does not install unless
@@ -52,8 +56,31 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
             new_errors: 0,
             new_warnings: 0,
             noise_warnings: 0,
+            build: None,
         };
     }
+
+    // Stamp the build identity first (#823): every match prints it, so the
+    // binary must name the source fteqcc is about to read. A tree that does
+    // not list argus_build.qc (older checkouts, fixture copies) is compiled
+    // as it is.
+    let build = match crate::build_stamp::refresh(&cfg.src) {
+        Ok(build) => build,
+        Err(e) => {
+            return CompileResult {
+                ok: false,
+                success_line: None,
+                diagnostics: Vec::new(),
+                raw_tail: vec![format!("could not stamp the build identity: {e}")],
+                progs_bytes: None,
+                installed_to: Vec::new(),
+                new_errors: 0,
+                new_warnings: 0,
+                noise_warnings: 0,
+                build: None,
+            };
+        }
+    };
 
     // Unlink old progs.dat before compiling so a failed compile never leaves
     // or re-installs a stale binary from a previous run.
@@ -79,6 +106,7 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
                 new_errors: 0,
                 new_warnings: 0,
                 noise_warnings: 0,
+                build: None,
             };
         }
     };
@@ -126,6 +154,7 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
                     new_errors: 0,
                     new_warnings: 0,
                     noise_warnings: 0,
+                    build: None,
                 };
             }
         }
@@ -151,6 +180,7 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
             new_errors: 1,
             new_warnings: 0,
             noise_warnings: 0,
+            build: None,
         };
     }
 
@@ -188,7 +218,9 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
                 .push(format!("navigation provenance unavailable: {error}"));
         }
     }
-    finish(cfg, install, report)
+    let mut result = finish(cfg, install, report);
+    result.build = build;
+    result
 }
 
 fn finish(cfg: &Config, install: bool, report: FteqccReport) -> CompileResult {
@@ -235,6 +267,7 @@ fn finish(cfg: &Config, install: bool, report: FteqccReport) -> CompileResult {
                             new_errors,
                             new_warnings,
                             noise_warnings,
+                            build: None,
                         };
                     }
                 }
@@ -251,6 +284,7 @@ fn finish(cfg: &Config, install: bool, report: FteqccReport) -> CompileResult {
         new_errors,
         new_warnings,
         noise_warnings,
+        build: None,
     }
 }
 

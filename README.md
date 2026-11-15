@@ -143,6 +143,7 @@ Enter these in the **Quake console**, not your operating-system terminal.
 | `timelimit 10` | Set a ten-minute match; `0` disables the limit |
 | `impulse 100` | Show the roster command menu |
 | `impulse 105` | Show bot statistics |
+| `mark` | Bookmark the moment in a recorded session when a bot looks wrong; `bind m mark` once ([session marks](docs/controls.md#session-marks)) |
 
 ### Add, remove and retune bots
 
@@ -214,7 +215,7 @@ headless matches and comparison reports. Start with the
 |---|---|---|
 | Local web wizard | Human map ingest, navigation, compile/install and restore | `argus-mcp gui` |
 | MCP server | Structured inspection and experiments from a connected client | Run the installed `argus-mcp` binary as the client's stdio server |
-| Terminal CLI | Puppet observations, link probes and saved-tape queries | `argus-mcp client observe`, `argus-mcp probelinks`, `argus-mcp corpus` |
+| Terminal CLI | Puppet observations, link probes, saved-tape queries, fast seeded ladders and the stand-in human | `argus-mcp client observe`, `argus-mcp probelinks`, `argus-mcp corpus`, `argus-mcp seeds`, `argus-mcp standin` |
 
 `argus-mcp` means the installed binary on your `PATH`, or its full path under
 `tools/argus_mcp/install/bin/`. The wizard binds `127.0.0.1:7420`.
@@ -260,6 +261,10 @@ generated `src/argus_nav_<map>.qc`; use the lab's navigation tools.
 | Find every play/camera/chat command | [Controls](docs/controls.md) |
 | Set up the lab, add a map or run a controlled comparison | [Lab workflow](docs/lab-workflow.md) |
 | See what is true now, what is stale, and whether a comparison can be believed | [The lab spine](docs/lab-spine.md) |
+| Know which instrument answers which question, from a static check to a human session | [The improvement loop](docs/improvement-loop.md) |
+| Run ladders faster than real time, or replay a match exactly by its seed | [The fixed lab clock](docs/fixed-clock.md) |
+| Estimate how often bots kill a person without one | [The stand-in human](docs/stand-in.md) |
+| Rule on the marked and suspect moments of a session in two minutes | [The session gallery](docs/session-gallery.md) |
 | Look up every lab tool and configuration option | [Lab operator guide](tools/argus_mcp/README.md) |
 | Record a match, read events or inspect a demo | [Telemetry and recording](docs/telemetry.md) |
 | Record a bot POV or export images and video clips | [Rendered POV evidence](tools/argus_mcp/README.md#rendered-pov-evidence) |

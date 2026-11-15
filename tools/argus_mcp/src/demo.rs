@@ -86,6 +86,9 @@ pub struct DemoBrief {
     pub level: String,
     pub maxclients: u8,
     pub duration_sec: f64,
+    /// Server time of the first message: tape time `t` is demo second
+    /// `t - start_time`, the clock capture and playdemo seek by.
+    pub start_time: f64,
     pub blocks: usize,
     /// true when the file ends mid-block (a killed engine instead of
     /// a `stop`); everything up to the tear still counts
@@ -863,6 +866,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
         level,
         maxclients,
         duration_sec: duration,
+        start_time: first_time.unwrap_or(0.0),
         blocks,
         truncated,
         names,

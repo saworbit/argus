@@ -418,6 +418,163 @@ async fn run() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&report)?);
             Ok(())
         }
+        Some("standin") => {
+            //   argus-mcp standin <map> <secs> <run> [--route TAPE] [--skill N]
+            //                     [--port N] [--seed N] [--reaction S]
+            let mut rest: Vec<String> = args.collect();
+            let port = take_port(&mut rest)?;
+            if rest.len() < 3 || rest.iter().any(|a| a == "-h" || a == "--help") {
+                println!("usage: argus-mcp standin <map> <secs> <run> [--route TAPE] [--skill N] [--port N] [--seed N] [--reaction S]
+
+Seat the stand-in human (netname standin) in a wall-clock match for <secs> seconds
+and print the run as JSON: what it did, and the tape's human scorecard (bot kills
+on it a minute, its kills a minute). It follows the route a human ran in --route
+(default: the newest runs/shane_<map>_*.log) and plays with a 0.25 s reaction,
+a turn-rate-capped noisy aim and human-rate strafe reversals. Its numbers are a
+stand-in's; docs/specs/2026-11-15-stand-in-calibration.md says what they are worth.");
+                return Ok(());
+            }
+            let flag = |name: &str| -> Option<String> {
+                rest.iter()
+                    .position(|a| a == name)
+                    .and_then(|i| rest.get(i + 1).cloned())
+            };
+            let map = argus_mcp::paths::map_name(&rest[0]).map_err(|e| anyhow::anyhow!(e))?;
+            let secs: u32 = rest[1]
+                .parse()
+                .map_err(|_| anyhow::anyhow!("secs must be a number"))?;
+            if !(20..=900).contains(&secs) {
+                anyhow::bail!("secs must be 20..900");
+            }
+            let run = rest[2].clone();
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let route = match flag("--route") {
+                Some(r) => {
+                    let p = std::path::PathBuf::from(&r);
+                    if p.is_file() {
+                        p
+                    } else {
+                        cfg.runs.join(&r)
+                    }
+                }
+                None => {
+                    argus_mcp::standin::default_route_tape(&cfg.runs, &map).ok_or_else(|| {
+                        anyhow::anyhow!(
+                            "no runs/shane_{map}_*.log to take a route from; pass --route"
+                        )
+                    })?
+                }
+            };
+            let skill: Option<u32> = flag("--skill")
+                .map(|s| s.parse())
+                .transpose()
+                .map_err(|_| anyhow::anyhow!("--skill needs 0..3"))?;
+            let seed: u64 = flag("--seed")
+                .map(|s| s.parse())
+                .transpose()
+                .map_err(|_| anyhow::anyhow!("--seed needs a number"))?
+                .unwrap_or(1);
+            let mut profile = argus_mcp::standin::Profile::default();
+            if let Some(r) = flag("--reaction") {
+                profile.reaction = r
+                    .parse()
+                    .map_err(|_| anyhow::anyhow!("--reaction needs seconds"))?;
+            }
+            let out = argus_mcp::standin::run_match(
+                &cfg, &map, secs, &run, &route, skill, port, seed, profile,
+            )
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&out)?);
+            Ok(())
+        }
+        Some("seeds") => {
+            //   argus-mcp seeds <map> <count> <stem> [--duration N] [--skill N]
+            //                   [--lanes N] [--first N] [--seed-list a,b,c] [--coop]
+            let rest: Vec<String> = args.collect();
+            if rest.is_empty() || rest.iter().any(|a| a == "-h" || a == "--help") {
+                println!("usage: argus-mcp seeds <map> <count> <stem> [--duration N] [--skill N] [--lanes N] [--first N] [--seed-list a,b,c] [--coop]
+
+Run <count> fixed-clock matches on <map>, several engines at once, and print a JSON
+report. Tapes are runs/<stem>_s<seed>.log. The fixed clock runs the played 72 Hz
+frame faster than real time and repeats exactly for one seed and build, so any
+tape can be replayed with `argus-mcp match <map> <secs> <run> --seed <seed>`.
+
+  --duration N    game seconds per match (default 185)
+  --lanes N       engines at once, 1..8 (default 4), ports 26060 upward
+  --first N       start the seed walk at index N (default 1)
+  --seed-list     run exactly these seeds instead of a walk");
+                return Ok(());
+            }
+            let flag = |name: &str| -> Option<String> {
+                rest.iter()
+                    .position(|a| a == name)
+                    .and_then(|i| rest.get(i + 1).cloned())
+            };
+            let flagged: std::collections::HashSet<usize> = rest
+                .iter()
+                .enumerate()
+                .filter(|(_, a)| a.starts_with("--"))
+                .flat_map(|(i, a)| {
+                    if a == "--coop" {
+                        vec![i]
+                    } else {
+                        vec![i, i + 1]
+                    }
+                })
+                .collect();
+            let pos: Vec<&String> = rest
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !flagged.contains(i))
+                .map(|(_, a)| a)
+                .collect();
+            if pos.len() < 3 {
+                anyhow::bail!("usage: argus-mcp seeds <map> <count> <stem>");
+            }
+            let num = |name: &str, default: u32| -> anyhow::Result<u32> {
+                match flag(name) {
+                    None => Ok(default),
+                    Some(s) => s
+                        .parse()
+                        .map_err(|_| anyhow::anyhow!("{name} needs a number")),
+                }
+            };
+            let seeds: Vec<u32> = match flag("--seed-list") {
+                None => Vec::new(),
+                Some(list) => list
+                    .split(',')
+                    .map(|s| s.trim().parse::<u32>())
+                    .collect::<Result<_, _>>()
+                    .map_err(|_| anyhow::anyhow!("--seed-list needs numbers like 5,9,12"))?,
+            };
+            let opts = argus_mcp::seeds::SeedOptions {
+                map: pos[0].clone(),
+                count: pos[1]
+                    .parse()
+                    .map_err(|_| anyhow::anyhow!("count must be a number"))?,
+                stem: pos[2].clone(),
+                duration_sec: num("--duration", 185)?,
+                skill: flag("--skill")
+                    .map(|s| s.parse())
+                    .transpose()
+                    .map_err(|_| anyhow::anyhow!("--skill needs 0..3"))?,
+                lanes: num("--lanes", 4)?,
+                first: num("--first", 1)?,
+                seeds,
+                coop: rest.iter().any(|a| a == "--coop"),
+            };
+            argus_mcp::seeds::validate(&opts).map_err(|e| anyhow::anyhow!(e))?;
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let report = argus_mcp::seeds::run(std::sync::Arc::new(cfg), opts)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            if report.failed > 0 {
+                std::process::exit(1);
+            }
+            Ok(())
+        }
         Some("within-ab") => {
             let mut rest: Vec<String> = args.collect();
             let port = take_port(&mut rest)?;
@@ -513,9 +670,13 @@ async fn run() -> anyhow::Result<()> {
                 .any(|a| a == "-h" || a == "--help" || a == "help")
                 || rest.is_empty()
             {
-                println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--port N] [--coop]
+                println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--port N] [--coop] [--seed N]
 
-Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.");
+Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.
+
+--seed N (1..10000) runs the fixed lab clock: the played 72 Hz frame, faster than
+real time, ending at duration_sec of game time, and the same match every time for
+one seed and build. Without it the match runs on the wall clock.");
                 return Ok(());
             }
             let flag = |name: &str| -> Option<String> {
@@ -526,6 +687,13 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             let coop = rest.iter().any(|a| a == "--coop");
             let skill: Option<u32> = flag("--skill").and_then(|s| s.parse().ok());
             let slots: Option<u32> = flag("--slots").and_then(|s| s.parse().ok());
+            let seed: Option<u32> = match flag("--seed") {
+                None => None,
+                Some(s) => match s.parse::<u32>() {
+                    Ok(n) if (1..=argus_mcp::seeds::MAX_SEED).contains(&n) => Some(n),
+                    _ => anyhow::bail!("--seed needs 1..{}", argus_mcp::seeds::MAX_SEED),
+                },
+            };
             let flagged: std::collections::HashSet<usize> = rest
                 .iter()
                 .enumerate()
@@ -555,6 +723,9 @@ Run one named match and print its brief as JSON. The tape lands in runs/<run_nam
             let duration: u32 = pos.get(1).and_then(|s| s.parse().ok()).unwrap_or(185);
             let run_name = pos.get(2).map(|s| s.to_string());
             let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
+            if let Some(seed) = seed {
+                ctrl.set_clock(argus_mcp::engine::EngineClock::fixed(seed));
+            }
             ctrl.check_port_available()
                 .map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;

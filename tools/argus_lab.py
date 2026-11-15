@@ -15,6 +15,7 @@ usage:
   argus_lab.py ledger [--write PATH]              the joined evidence index as JSON
   argus_lab.py pyramid --maps M[,M] [--through N] [--dry-run]
                                                   run the cheap evidence tiers first
+                                                  (--through 5 also plans the stand-in rung)
   argus_lab.py night [--maps M[,M]] [--engine]    the unattended sweep: tiers, new tapes, staleness
   every command takes --root DIR (default: this checkout)
 
@@ -48,6 +49,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import argus_build_stamp  # noqa: E402
 import argus_longi  # noqa: E402
 import argus_tape  # noqa: E402
 
@@ -66,6 +68,10 @@ LIMIT_METRICS = ('stalls', 'engages', 'lava_deaths', 'freezes', 'cover', 'goals'
 REGRESSION_COUNT = 5
 TROUBLE_KINDS = ('stall', 'freeze', 'freeze under fire', 'unforced death', 'knock-in', 'world death')
 DOC_TAPE_SEC = 185.0
+INSTRUMENTS_FILE = 'tools/lab_instruments.json'
+FIXED_SPEED = 6.3   # game seconds per wall second for one fixed-clock engine (docs/fixed-clock.md)
+FIXED_LANES = 4
+INSTRUMENT_READINGS = ('equivalent', 'inconclusive', 'different', 'not measured')
 CORPUS_METRICS = ('stalls', 'engages', 'lava_deaths', 'world_deaths', 'freezes', 'freeze_underfire', 'cover', 'goals',
                   'frags', 'deaths', 'routefails', 'hazards', 'grabs', 'weapons', 'boards', 'kd_spread', 'avg_speed',
                   'duration_sec')
@@ -210,6 +216,39 @@ def build_on(when, history):
         if row.get('when', row['date'] + ' 00:00:00') <= when:
             return row
     return None
+
+
+def install_stamps(root, history):
+    """Give each install the build stamp its commit carries (#823); None before stamps existed.
+
+    The stamp is committed with the source and CI keeps it current, so the
+    stamp at an install commit is the identity of the binary that commit
+    shipped. Rows are annotated in place and the lookup runs once per row.
+    """
+    for row in history:
+        if 'stamp' not in row:
+            text = git(root, 'show', f'{row["commit"]}:src/{argus_build_stamp.STAMP_FILE}')
+            match = argus_build_stamp.STAMP_RE.search(text) if text else None
+            row['stamp'] = match[1] if match else None
+    return history
+
+
+def tape_build(root, text, when, history):
+    """The install a tape ran, and how that was decided.
+
+    A tape that prints `ARGUS build` names its own source, which wins over the
+    merge-time guess: a binary installed before its merge, or one run from a
+    scratch game folder, used to be credited to whatever install was in force.
+    A stamp no install carries is a build that was never shipped.
+    """
+    stamp = argus_tape.tape_identity(text).get('build') if text else None
+    if stamp:
+        matching = [r for r in install_stamps(root, history) if r.get('stamp') == stamp]
+        # identical source installed twice: the install in force at the tape's
+        # time, else the earliest one carrying that stamp
+        row = build_on(when, matching) or (matching[-1] if matching else None)
+        return row, stamp, ('stamp' if row else 'stamp of an unshipped build')
+    return build_on(when, history), None, 'merge time'
 
 
 QC_ARGNAV = re.compile(r'"ARGNAV (\d+) nodes, (\d+) links')
@@ -426,7 +465,9 @@ def local_roots(root):
 def lab_binary(root):
     env = os.environ.get('ARGUS_LAB')
     if env and Path(env).is_file():
-        return env
+        # absolute: Windows CreateProcess does not find a relative path
+        # with forward slashes once the child gets its own environment
+        return str(Path(env).resolve())
     for base in local_roots(root):
         for rel in ('tools/argus_mcp/target-stage/release', 'tools/argus_mcp/install/bin',
                     'tools/argus_mcp/target/release', 'tools/argus_mcp/target/debug'):
@@ -657,6 +698,7 @@ def validate(root):
         for ref in (c.get('evidence') if isinstance(c.get('evidence'), list) else []):
             if not evidence_resolves(root, ref):
                 errors.append(f'{where}: evidence {ref} does not resolve (a file in the repo, #n or a run in runs/)')
+    errors += validate_instruments(root)
     return errors
 
 
@@ -674,6 +716,71 @@ def evidence_resolves(root, ref):
     if path.is_file():
         return True
     return re.fullmatch(r'[\w.-]+', ref) is not None and (root / 'runs' / f'{ref}.log').is_file()
+
+
+# ---------------------------------------------------------------- instruments
+
+def instruments(root):
+    """Where the fixed lab clock and the stand-in human have been validated, or {} without the file."""
+    path = Path(root) / INSTRUMENTS_FILE
+    return read_json(path) if path.is_file() else {}
+
+
+def validate_instruments(root):
+    """Schema and evidence errors in tools/lab_instruments.json; empty when sound or absent."""
+    path = Path(root) / INSTRUMENTS_FILE
+    if not path.is_file():
+        return []
+    try:
+        doc = read_json(path)
+    except (OSError, ValueError) as exc:
+        return [f'lab_instruments.json: {exc}']
+    errors = []
+    if not isinstance(doc, dict) or doc.get('schema') != 1:
+        return ['lab_instruments.json: the top level is an object with schema 1']
+    for name, keys in (('fixed_clock', ('accepted',)), ('stand_in', ('dose_response', 'level'))):
+        block = doc.get(name)
+        if block is None:
+            continue
+        where = f'lab_instruments.json {name}'
+        if not isinstance(block, dict) or not isinstance(block.get('maps'), dict):
+            errors.append(f'{where}: an object with maps')
+            continue
+        if not evidence_resolves(root, block.get('protocol', '')):
+            errors.append(f'{where}: protocol {block.get("protocol")} does not resolve')
+        for mapname, row in block['maps'].items():
+            here = f'{where} {mapname}'
+            if not isinstance(row, dict):
+                errors.append(f'{here}: an object')
+                continue
+            for key in keys:
+                if key not in row or not (row[key] is None or isinstance(row[key], bool)):
+                    errors.append(f'{here}: {key} is true, false or null (not yet measured)')
+            if name == 'fixed_clock':
+                if not (is_number(row.get('frame_ms')) and row['frame_ms'] > 0):
+                    errors.append(f'{here}: frame_ms is a positive number')
+                readings = row.get('metrics', {})
+                if not isinstance(readings, dict) or any(v not in INSTRUMENT_READINGS for v in readings.values()):
+                    errors.append(f'{here}: metrics map each metric to one of {", ".join(INSTRUMENT_READINGS)}')
+                elif row.get('accepted') and 'different' in readings.values():
+                    errors.append(f'{here}: an accepted map cannot have a metric read different')
+            if not isinstance(row.get('evidence', []), list):
+                errors.append(f'{here}: evidence is a list')
+            for ref in row.get('evidence', []) if isinstance(row.get('evidence'), list) else []:
+                if not evidence_resolves(root, ref):
+                    errors.append(f'{here}: evidence {ref} does not resolve')
+    return errors
+
+
+def fixed_clock_on(root, mapname):
+    """The fixed-clock record for a map: accepted, frame and limits, or None when it was never validated there."""
+    row = instruments(root).get('fixed_clock', {}).get('maps', {}).get(mapname)
+    return row if isinstance(row, dict) else None
+
+
+def stand_in_on(root, mapname):
+    row = instruments(root).get('stand_in', {}).get('maps', {}).get(mapname)
+    return row if isinstance(row, dict) else None
 
 
 # ---------------------------------------------------------------- sessions
@@ -723,7 +830,8 @@ def evaluate_session(root, row, obj, history, index):
     cal = obj['calibration']
     when = session_when(root, row, index)
     date = when[:10] if when else None
-    build = build_on(when, history)
+    build, stamp, build_source = tape_build(root, text, when, history)
+    marks = argus_tape.tape_identity(text)['marks'] if text else []
     reasons = []
     if row.get('map') not in cal['goal_maps']:
         reasons.append(f'map {row.get("map")} is not a goal map')
@@ -738,7 +846,8 @@ def evaluate_session(root, row, obj, history, index):
     elif bk_pm is None:
         reasons.append('no kill counts (no human in the obituaries)')
     return dict(file=row['file'], map=row.get('map'), date=date, dur=dur, skill=skill,
-                build=build['commit'][:7] if build else None, gates=gates,
+                build=build['commit'][:7] if build else None, stamp=stamp, build_source=build_source,
+                marks=len(marks), gates=gates,
                 failed=[g['id'] for g in gates if g['ok'] is False],
                 unknown=[g['id'] for g in gates if g['ok'] is None],
                 bk_pm=bk_pm, ratio=ratio, eligible=not reasons, reasons=reasons)
@@ -1140,6 +1249,40 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     skills_b = {tuple(s) for s in per_arm(arm_b, skill_of).values() if s}
     if skills_a and skills_b and skills_a != skills_b:
         confounds.append(f'skill tiers differ: {sorted(skills_a)} against {sorted(skills_b)}')
+    ids = {n: argus_tape.tape_identity(read_text(root / 'runs' / f'{n}.log')) for n in names}
+    builds_a = sorted({ids[n]['build'] for n in arm_a if ids[n]['build']})
+    builds_b = sorted({ids[n]['build'] for n in arm_b if ids[n]['build']})
+    mixed = [f'{label} {", ".join(b)}' for label, b in (('control', builds_a), ('candidate', builds_b)) if len(b) > 1]
+    if mixed:
+        confounds.append('builds differ inside an arm: ' + '; '.join(mixed))
+    elif builds_a and builds_b and builds_a != builds_b:
+        confounds.append(f'the arms ran different builds: {builds_a[0]} against {builds_b[0]}; '
+                         'expected when the change under test is a build, a confound otherwise')
+    unstamped = [n for n in names if not ids[n]['build']]
+    if unstamped and (builds_a or builds_b):
+        notes.append(f'{plural(len(unstamped), "tape")} print no build stamp, so their build is not known: '
+                     + ', '.join(unstamped))
+
+    def clock_of(n):
+        clock = ids[n]['clock']
+        if not clock or clock['kind'] != 'fixed':
+            return 'realtime'
+        return f'fixed {clock["frame_us"] / 1000:g} ms'
+    clocks_a, clocks_b = {clock_of(n) for n in arm_a}, {clock_of(n) for n in arm_b}
+    if clocks_a != clocks_b or len(clocks_a) > 1:
+        confounds.append(f'engine clocks differ: control {", ".join(sorted(clocks_a))}, candidate '
+                         f'{", ".join(sorted(clocks_b))}; docs/fixed-clock.md says which maps and metrics agree '
+                         'across the fixed and wall clocks')
+    for label, arm in (('control', arm_a), ('candidate', arm_b)):
+        seen = collections.defaultdict(list)
+        for n in arm:
+            clock = ids[n]['clock']
+            if clock and clock['kind'] == 'fixed':
+                seen[(ids[n]['build'], clock['seed'])].append(n)
+        for (build, seed), runs in seen.items():
+            if len(runs) > 1:
+                void.append(f'the {label} arm repeats seed {seed} on one build ({", ".join(runs)}): a fixed-clock '
+                            'match replays exactly, so the same match would count more than once')
     durs = [num(r.get('duration_sec')) or 0 for r in rows]
     rates = not stubs and max(durs) / min(durs) > 1.1
     if rates:
@@ -1431,8 +1574,46 @@ def triage(root, tape_path, claims=None, radius=96.0):
                         bots=sorted({p['bot'] for p in c['points']}), matches=matches, flag=flag,
                         severe=severe, unexplained=dict(unexplained)))
     out.sort(key=lambda c: (-c['severe'], -c['count']))
+    marks = mark_context(text, samples, tape.events, out)
     return dict(tape=str(tape_path), map=mapname, date=recorded[:10] if recorded else None, when=recorded,
-                bsp=bool(contents), clusters=out, cells=cells)
+                bsp=bool(contents), clusters=out, cells=cells, marks=marks)
+
+
+MARK_BEFORE, MARK_AFTER, MARK_NEAR = 6.0, 2.0, 192.0
+
+
+def mark_context(text, samples, events, clusters):
+    """What the tape holds around each session bookmark.
+
+    A mark names the bot nearest the player's eye when the key went down. For
+    that bot this reports its sample at the mark, the events it logged from
+    MARK_BEFORE seconds before to MARK_AFTER after, and any trouble cluster
+    within MARK_NEAR units of it, which is usually what the mark was about.
+    """
+    out = []
+    for m in argus_tape.identity(text)['marks']:
+        row = dict(n=m['n'], t=m['t'], near=m['near'], seen=m['seen'], dist=m['dist'], pos=[round(v) for v in m['pos']])
+        track = samples.get(m['near'] or '', [])
+        at = min(track, key=lambda s: abs(s['t'] - m['t']), default=None)
+        if at is not None and abs(at['t'] - m['t']) <= 1.0:
+            row['bot'] = dict(pos=[round(at['x']), round(at['y']), round(at['z'])], spd=at['spd'], mode=at['mode'],
+                              hp=at['hp'])
+            times = [s['t'] for s in track]
+            lines_ = [s['line'] for s in track]
+            near_events = []
+            for line, name, verb, rest in events:
+                if name != m['near']:
+                    continue
+                i = bisect.bisect_right(lines_, line) - 1
+                when = times[i] if i >= 0 else None
+                if when is not None and m['t'] - MARK_BEFORE <= when <= m['t'] + MARK_AFTER:
+                    near_events.append(verb if not rest else f'{verb} {rest.split()[0]}')
+            row['events'] = near_events
+            here = (at['x'], at['y'], at['z'])
+            row['clusters'] = [dict(centre=c['centre'], flag=c['flag'], kinds=c['kinds'])
+                               for c in clusters if math.dist(here, c['centre']) <= MARK_NEAR]
+        out.append(row)
+    return out
 
 
 def print_triage(rep, min_count=3, out=None):
@@ -1442,6 +1623,8 @@ def print_triage(rep, min_count=3, out=None):
     shown = [c for c in rep['clusters'] if c['count'] >= min_count or c['severe']]
     if not shown:
         print('No cluster of trouble.', file=out)
+        # marks are the player's own pointers: show them even on a clean tape
+        print_marks(rep.get('marks') or [], out)
         return
     print('| Where | Count | What | Bots | Claim | Reading |', file=out)
     print('| --- | --- | --- | --- | --- | --- |', file=out)
@@ -1450,6 +1633,26 @@ def print_triage(rep, min_count=3, out=None):
         claim = ', '.join(f'{m["id"]} ({m["status"]})' for m in c['matches']) or '-'
         print(f'| {" ".join(map(str, c["centre"]))} | {c["count"]} | {what} | {", ".join(c["bots"])} | {claim} '
               f'| {reading(c)} |', file=out)
+    print_marks(rep.get('marks') or [], out)
+
+
+def print_marks(marks, out):
+    """The session bookmarks, each with what the tape shows around it."""
+    if not marks:
+        return
+    print(file=out)
+    print('| Mark | Time | Bot | Bot at the mark | Events around it | Trouble within 192u |', file=out)
+    print('| --- | --- | --- | --- | --- | --- |', file=out)
+    for m in marks:
+        who = m['near'] or 'no bot alive'
+        if m['near'] and m['seen'] is not None:
+            who += f' ({"in sight" if m["seen"] else "out of sight"}, {m["dist"]:.0f}u)'
+        bot = m.get('bot')
+        state = (f'{" ".join(map(str, bot["pos"]))}, {bot["spd"]:.0f} u/s, mode {bot["mode"]}'
+                 if bot else 'no sample')
+        events = ', '.join(m.get('events') or []) or '-'
+        trouble = '; '.join(f'{" ".join(map(str, c["centre"]))} {c["flag"]}' for c in m.get('clusters') or []) or '-'
+        print(f'| {m["n"]} | {m["t"]:.1f} | {who} | {state} | {events} | {trouble} |', file=out)
 
 
 def review(root, path, out=None):
@@ -1480,6 +1683,11 @@ def review(root, path, out=None):
         print(f'{reading(c)}: {" ".join(map(str, c["centre"]))}: {what}', file=out)
     if not worth:
         print('no new or regressed cluster of trouble', file=out)
+    print(f'build {s.get("build") or "unknown"} ({s.get("build_source", "merge time")}'
+          + (f', stamp {s["stamp"]}' if s.get('stamp') else '') + ')', file=out)
+    if rep.get('marks'):
+        print(f'{plural(len(rep["marks"]), "mark")} pressed during the session:', file=out)
+        print_marks(rep['marks'], out)
     return s, worth
 
 
@@ -1600,6 +1808,27 @@ def state(root, out=None):
     print_findings(findings, out)
     print(file=out)
 
+    print('## Instruments', file=out)
+    print(file=out)
+    inst = instruments(root)
+    clock = inst.get('fixed_clock', {}).get('maps', {})
+    if clock:
+        for m, row in sorted(clock.items()):
+            limits_ = [k for k, v in row.get('metrics', {}).items() if v != 'equivalent']
+            print(f'- Fixed clock on {m} at {row.get("frame_ms", "?")} ms: '
+                  f'{"accepted" if row.get("accepted") else "not accepted"}'
+                  + (f'; not for {", ".join(limits_)}' if limits_ else '') + '.', file=out)
+    else:
+        print('- Fixed clock: not validated on any map.', file=out)
+    stand = inst.get('stand_in', {}).get('maps', {})
+    for m, row in sorted(stand.items()):
+        dose = {True: 'passes', False: 'fails', None: 'not measured'}[row.get('dose_response')]
+        level = {True: 'matches', False: 'does not match', None: 'not measured'}[row.get('level')]
+        print(f'- Stand-in on {m}: dose response {dose}; level {level} a person\'s.', file=out)
+    if not stand:
+        print('- Stand-in: not calibrated on any map.', file=out)
+    print(file=out)
+
     print('## Claims', file=out)
     print(file=out)
     claims = all_claims(root)
@@ -1675,8 +1904,40 @@ def pyramid_plan(root, maps, through, obj, effect_pct=30.0):
                 n = tapes_needed(row['sigma'], row['mean'] * effect_pct / 100, obj.get('mde_z', 2.8))
                 steps.append(dict(tier=4, name=f'{m} ladder for {metric}',
                                   plan=f'{n} listen-class tapes a side see a {effect_pct:.0f}% change in {metric} '
-                                       f'(sigma {row["sigma"]}, mean {row["mean"]}); run with experiment or argus-mcp match'))
+                                       f'(sigma {row["sigma"]}, mean {row["mean"]}); run with experiment or argus-mcp match'
+                                       + fixed_clock_note(root, m, metric, n)))
+    if through >= 5:
+        for m in maps:
+            row = stand_in_on(root, m)
+            if row and row.get('dose_response'):
+                level = ('its numbers read beside a person\'s' if row.get('level')
+                         else 'its direction counts, its level does not match a person\'s')
+                steps.append(dict(tier=5, name=f'{m} stand-in before a session',
+                                  plan=f'the stand-in is calibrated here ({level}): four argus-mcp standin '
+                                       f'matches a side screen a threat claim before a human session is spent'))
+            else:
+                why = ('failed its dose response here' if row and row.get('dose_response') is False
+                       else 'has no calibration result here yet' if row else 'is not calibrated on this map')
+                steps.append(dict(tier=5, name=f'{m} stand-in before a session',
+                                  skip=f'the stand-in {why}, so threat claims need a human session '
+                                       '(docs/stand-in.md)'))
     return [s for s in steps if s['tier'] <= through]
+
+
+def fixed_clock_note(root, mapname, metric, n):
+    """What the fixed clock can do for a planned ladder on this map and metric."""
+    row = fixed_clock_on(root, mapname)
+    if not row:
+        return '; the fixed clock is not validated on this map'
+    if not row.get('accepted'):
+        return '; the fixed clock is not accepted on this map, so the ladder runs on the wall clock'
+    reading = row.get('metrics', {}).get(metric)
+    if reading != 'equivalent':
+        return (f'; the fixed clock is accepted on this map but {metric} reads {reading or "unmeasured"} there, '
+                'so this ladder runs on the wall clock')
+    minutes = 2 * n * DOC_TAPE_SEC / (FIXED_SPEED * FIXED_LANES) / 60
+    return (f'; on the fixed clock ({row["frame_ms"]:g} ms) both arms take about {minutes:.0f} min with '
+            f'argus-mcp seeds on {FIXED_LANES} lanes, as a screen ahead of wall-clock tapes')
 
 
 def benchmark_report(stdout):
@@ -2044,7 +2305,7 @@ def main(argv=None):
     p.add_argument('--engine', action='store_true', help='also run the benchmark tier, which starts engines')
     p = sub.add_parser('pyramid')
     p.add_argument('--maps', required=True)
-    p.add_argument('--through', type=int, default=2, choices=(1, 2, 4))
+    p.add_argument('--through', type=int, default=2, choices=(1, 2, 4, 5))
     p.add_argument('--dry-run', action='store_true')
     a = ap.parse_args(argv)
     root = Path(a.root).resolve()

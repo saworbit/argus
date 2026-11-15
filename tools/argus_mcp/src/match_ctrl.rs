@@ -67,6 +67,8 @@ struct LiveMatch {
     stdout: Arc<Mutex<String>>,
     last_exit: Option<i32>,
     navigation: Option<crate::nav_provenance::MapSnapshot>,
+    /// Held for the life of the match; dropping it frees runs/<run>/.
+    _lease: Option<crate::run_lease::RunLease>,
 }
 
 #[derive(Default)]
@@ -80,6 +82,9 @@ pub struct MatchCtrl {
     /// one shot permission to refresh a committed tape, taken and
     /// cleared by the next start() (#328)
     refresh_committed: bool,
+    /// The engine clock for this controller's launches. `Played` unless a
+    /// caller asks for the fixed lab clock (see `EngineClock`).
+    clock: crate::engine::EngineClock,
     #[cfg(test)]
     fake_engines: Option<std::collections::VecDeque<crate::engine::FakeEngineControl>>,
 }
@@ -101,6 +106,12 @@ impl MatchCtrl {
             port: Some(port),
             ..Default::default()
         }
+    }
+
+    /// Run this controller's matches on `clock`. A fixed clock also ends
+    /// each match at its requested length through `timelimit`.
+    pub fn set_clock(&mut self, clock: crate::engine::EngineClock) {
+        self.clock = clock;
     }
 
     /// The UDP port used by this controller and its attached clients.
@@ -316,8 +327,22 @@ impl MatchCtrl {
         let slots = dedicated_slots.unwrap_or(8);
         let run_dir = cfg.runs.join(&name);
         std::fs::create_dir_all(&run_dir).map_err(|e| format!("create run dir: {e}"))?;
+        // Claim the run directory before anything spawns: a second engine
+        // there would truncate the live match's qconsole.log (#832).
+        let lease = crate::run_lease::RunLease::acquire(&run_dir, &name)?;
+        // A reused run directory still holds the last match's console log,
+        // and the engine only truncates it once it has started. Until then
+        // the health check and the fixed clock's game-time wait would read
+        // the old tape: a rerun under one name stopped at once on its
+        // predecessor's last sample (red-team review, 2026-11-15).
+        let stale = run_dir.join("qconsole.log");
+        if stale.exists() {
+            std::fs::remove_file(&stale)
+                .map_err(|e| format!("clear the previous log in runs/{name}/: {e}"))?;
+        }
         let harvested = cfg.runs.join(format!("{name}.log"));
         let navigation = crate::nav_provenance::for_launch(cfg, map);
+        let clock = self.clock.with_limit(duration_sec);
 
         #[cfg(test)]
         let child = match self.fake_engines.as_mut() {
@@ -332,6 +357,7 @@ impl MatchCtrl {
                 &run_dir,
                 self.port,
                 coop.unwrap_or(false),
+                clock,
             )?,
         };
         #[cfg(not(test))]
@@ -343,6 +369,7 @@ impl MatchCtrl {
             &run_dir,
             self.port,
             coop.unwrap_or(false),
+            clock,
         )?;
         let stdout = child.stdout_buf();
         let navigation = navigation
@@ -359,6 +386,7 @@ impl MatchCtrl {
             stdout,
             last_exit: None,
             navigation,
+            _lease: Some(lease),
         });
         Ok(self.status())
     }
@@ -474,12 +502,46 @@ impl MatchCtrl {
         )
         .await?;
         let limit = duration_sec as u64;
-        loop {
-            let (running, elapsed) = self.poll();
-            if !running || elapsed >= limit || live_cancelled() {
-                break;
+        if self.clock.is_fixed() {
+            // A fixed clock runs faster than the wall, and the bots end the
+            // match themselves at the timelimit. Wait for the tape to reach
+            // its length; the wall cap only guards a hung engine, since a
+            // fixed match never runs slower than real time.
+            let goal = f64::from(duration_sec) - FIXED_END_SLACK_SEC;
+            let mut short = None;
+            loop {
+                let (running, elapsed) = self.poll();
+                let last = self.log_text().and_then(|text| last_game_time(&text));
+                if last.is_some_and(|t| t >= goal) || !running || live_cancelled() {
+                    break;
+                }
+                if elapsed >= limit + 60 {
+                    short = Some(last.unwrap_or(0.0));
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(100)).await;
             }
-            tokio::time::sleep(Duration::from_millis(400)).await;
+            let mut res = self.finish(cfg, map).await?;
+            if let Some(t) = short {
+                // a loaded box can run a fixed match slower than real time;
+                // a tape cut short must say so rather than brief as whole
+                res.brief.flags.insert(
+                    0,
+                    format!(
+                        "fixed-clock match stopped by the wall-clock cap at game time {t:.1} of \
+                         {duration_sec} s: the tape is short"
+                    ),
+                );
+            }
+            return Ok(res);
+        } else {
+            loop {
+                let (running, elapsed) = self.poll();
+                if !running || elapsed >= limit || live_cancelled() {
+                    break;
+                }
+                tokio::time::sleep(Duration::from_millis(400)).await;
+            }
         }
         self.finish(cfg, map).await
     }
@@ -645,6 +707,19 @@ fn format_match_fail(log_path: &str, text: &str, why: &str) -> String {
         format!(" tail: {}", tail.join(" | "))
     };
     format!("{why}; tape at {log_path}.{tail_s}")
+}
+
+/// A played 185 s tape's last sample sits at about t 184.5, since ARGLOG
+/// runs twice a second; a fixed match is complete once it gets that far.
+const FIXED_END_SLACK_SEC: f64 = 0.6;
+
+/// The latest game time any ARGLOG sample in `text` reached.
+pub fn last_game_time(text: &str) -> Option<f64> {
+    text.lines().rev().find_map(|line| {
+        let rest = line.strip_prefix("ARGLOG ")?;
+        let (_, after) = rest.split_once(" t ")?;
+        after.split_whitespace().next()?.parse::<f64>().ok()
+    })
 }
 
 fn read_log_retry(path: &str, attempts: u32) -> String {
@@ -1104,6 +1179,37 @@ mod tests {
         }
     }
 
+    /// #832: a second controller given a live run's name is refused before
+    /// it spawns anything, and the name frees up when the first match ends.
+    #[tokio::test]
+    async fn a_live_run_name_is_refused_before_anything_spawns() {
+        let _live = super::live_test_lock_async().await;
+        let (_temp, cfg) = tmp_cfg("live-run-name");
+        let first_engine = crate::engine::FakeEngineControl::new("");
+        let mut first = super::MatchCtrl::with_fake_engines([first_engine.clone()]);
+        first
+            .start(&cfg, "dm4", Some(10), Some("dup"), None, None, None)
+            .await
+            .expect("first start");
+        let second_engine = crate::engine::FakeEngineControl::new("");
+        let mut second = super::MatchCtrl::with_fake_engines([second_engine.clone()]);
+        let error = second
+            .start(&cfg, "dm4", Some(10), Some("dup"), None, None, None)
+            .await
+            .unwrap_err();
+        assert!(error.contains("run dup is live"), "{error}");
+        assert!(!second.status().running);
+        first_engine.complete();
+        let _ = first.stop(Duration::from_millis(200)).await;
+        second
+            .start(&cfg, "dm4", Some(10), Some("dup"), None, None, None)
+            .await
+            .expect("the name is free once the first match stops");
+        second_engine.complete();
+        let _ = second.stop(Duration::from_millis(200)).await;
+        clear_live();
+    }
+
     use super::{
         cancel_live, clear_live, live_cancelled, live_test_lock, register_live, take_budgeted,
         take_owned_live_pid, RunCancellation, LIVE_OWNER, LIVE_PID, TAIL_BUDGET_BYTES,
@@ -1453,6 +1559,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
             stdout: Arc::new(std::sync::Mutex::new(tape.to_string())),
             last_exit: None,
             navigation: None,
+            _lease: None,
         };
         let out = harvest(&live);
         assert_eq!(std::fs::read_to_string(&out).unwrap(), tape);
@@ -1488,6 +1595,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
             stdout: Arc::new(std::sync::Mutex::new(String::new())),
             last_exit: None,
             navigation: None,
+            _lease: None,
         };
 
         let result_path = harvest(&live);
@@ -1558,6 +1666,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
                 stdout: Arc::new(std::sync::Mutex::new(String::new())),
                 last_exit: None,
                 navigation: None,
+                _lease: None,
             }),
             ..Default::default()
         };

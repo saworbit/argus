@@ -194,6 +194,12 @@ pub struct MatchBrief {
     /// played, which is the only question Shane ever asks.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub human_scorecard: Option<HumanScorecard>,
+    /// The build, clock and session marks the tape names about itself.
+    #[serde(
+        default,
+        skip_serializing_if = "crate::tape_identity::TapeIdentity::is_empty"
+    )]
+    pub identity: crate::tape_identity::TapeIdentity,
 }
 
 /// One session, scored on what the player sees. Rates are per minute
@@ -344,6 +350,8 @@ pub struct BriefLite {
     pub item_control: Vec<ItemControl>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub paired_demo: Option<crate::demo::DemoBrief>,
+    #[serde(skip_serializing_if = "crate::tape_identity::TapeIdentity::is_empty")]
+    pub identity: crate::tape_identity::TapeIdentity,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -417,6 +425,7 @@ pub fn brief_lite(b: &MatchBrief) -> BriefLite {
         nav_coverage: b.nav_coverage.clone(),
         item_control: b.item_control.clone(),
         paired_demo: b.paired_demo.clone(),
+        identity: b.identity.clone(),
     }
 }
 
@@ -915,6 +924,7 @@ pub(crate) fn brief_tape_lava(
         item_control: Vec::new(),
         paired_demo: None,
         human_scorecard: None,
+        identity: tape.identity.clone(),
     };
     brief.human_scorecard = human_scorecard(tape, &brief.totals);
     brief.next_steps = suggest_next(&brief, None);

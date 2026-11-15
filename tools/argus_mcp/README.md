@@ -171,9 +171,10 @@ loose `maps`, `progs`, `sound` and `gfx` directories in a fresh game directory.
 The game's PAKs retain their filenames and engine search precedence; configs
 and logs outside those packs are excluded. Symlinked assets are refused.
 User configs and session logs are untouched. Licensed assets stay local.
-The child has a 45-second deadline and is killed and reaped on timeout.
-There are at most 12 images, 0.1..5 seconds apart, starting 0.5..120 seconds
-into a complete protocol-15 demo and ending before its final message.
+The child has a 45-second deadline, plus 5 ms for each 0.05-second seek step
+before the first frame, and is killed and reaped on timeout. There are at most
+12 images, 0.1..5 seconds apart, starting 0.5..900 seconds into a complete
+protocol-15 demo and ending before its final message.
 The MCP result includes image blocks. A missing acknowledgement or incomplete
 PNG fails the call instead of returning a substitute plot.
 
@@ -226,8 +227,8 @@ would run past the end of the recording are dropped, not moved earlier.
 The result's `recording` carries the bot, the trigger, the console line that
 fired, the tape's game time (for finding the moment in the match log), the demo
 seconds of the trigger and of the cut, and `preroll_valid`. With no trigger
-inside `--wait` (5..110 s, so a late trigger still renders inside capture's
-120 s limit) nothing is published, and the error says how many
+inside `--wait` (5..110 s; camera setup comes first, so a later trigger means
+the cut was missed) nothing is published, and the error says how many
 lines were read and which bots were seen; a log that never grew names the path
 it watched. Without `--run` or `--log`, the CLI picks the one run directory
 whose `qconsole.log` grew in the last 30 s and refuses when two are live,
@@ -346,6 +347,9 @@ argus-mcp analyze <log_path> [options]
 argus-mcp harvest [--tag <name>]
 argus-mcp reach [map]
 argus-mcp measure [--write <path>]
+argus-mcp match <map> [secs] [run] [--skill N] [--port N] [--seed N]
+argus-mcp seeds <map> <count> <stem> [--duration N] [--skill N] [--lanes N] [--first N] [--seed-list a,b]
+argus-mcp standin <map> <secs> <run> [--route TAPE] [--skill N] [--port N] [--seed N] [--reaction S]
 ```
 
 - `compile`: Compiles QuakeC `progs.dat` via `fteqcc` with timestamp verification and optional backup creation and installation.
@@ -354,6 +358,59 @@ argus-mcp measure [--write <path>]
 - `harvest`: Runs `harvest_session.py` to archive listen server logs and paired demos into `runs/`.
 - `reach`: Runs `argus_reach.py` to audit directed item reachability for shipped navigation graphs.
 - `measure`: The detection limit per map and metric over every committed same-build arm, and what four gates cost measured on the null corpus. Read-only. Writes `docs/specs/2026-09-16-lab-measurement-limits.md`.
+- `match --seed`, `seeds`: the fixed lab clock; see [the fixed lab clock and seeded ladders](#the-fixed-lab-clock-and-seeded-ladders).
+- `standin`: a puppet that plays like a person; see [the stand-in human](#the-stand-in-human).
+
+`compile` and `ship` stamp the build identity first: they rewrite
+`src/argus_build.qc` when the QC source has changed (`build_stamp.rs`, the twin
+of `tools/argus_build_stamp.py`, held to it by a parity test), so every binary
+names the source it was compiled from and every tape prints it as
+`ARGUS build <id>`. Briefs carry it, with the tape's clock and any session
+marks, under `identity`.
+
+## The fixed lab clock and seeded ladders
+
+`EngineClock::Fixed` adds `+sys_ticrate 0.001 +host_framerate 0.01425
++host_maxfps 1000 +saved4 <seed>` and, for a timed match, `+timelimit`. Each
+frame is the wall-clock lab's measured 14.25 ms frame whatever the wall clock
+did (a 13.9 ms default failed its dm4 validation), the dedicated
+loop runs one frame a millisecond instead of waiting, and the bots end the
+match at its length, so `run` waits on game time (the last ARGLOG `t`) instead
+of wall time. About 6.3 times real speed per engine on the Windows rig.
+
+It repeats: one loop pass per frame means one engine `rand()` per frame, so
+a progs, map and seed give the same match every time (checked line for line).
+`saved4` reaches `Argus_Init`, which burns that many draws before the roster
+spawns. `seeds` walks seeds spaced far apart (`seeds::seed_for`), runs them on
+lanes from port 26060 with 1.5 s staggered starts, retries a lane that dies at
+network start-up once, and reports game seconds per wall second.
+`ARGUS_FIXED_FRAME` overrides the frame for an experiment.
+
+Where a fixed tape may stand in for a wall-clock one is decided per map by
+the registered validation: [the fixed lab clock](../../docs/fixed-clock.md).
+The skeptic reports arms on different clocks or frames as a confound and voids
+an arm holding one seed and build twice.
+
+Every match, fixed or not, takes a lease on `runs/<run>/` before it spawns:
+a `.lease` file holding the owner's process id, created exclusively and
+removed when the match ends. A second start with a live run's name is refused
+before anything spawns, because QuakeSpasm truncates `qconsole.log` on start
+and the live tape would lose its head (GitHub #832). A lease whose owner has
+gone is taken over. The port probe also binds the hostname address QuakeSpasm
+binds, which on Windows a wildcard probe does not see.
+
+## The stand-in human
+
+`standin` starts a wall-clock match, seats a puppet named `standin`, plays it
+for the requested seconds and prints what it did with the tape's human
+scorecard. It follows the route a human ran: the recording player's full-rate
+path from `runs/demos/<stem>.tracks.json` when the session has a demo export,
+else the tape's 2 Hz human samples. It rejoins the route over the bots' nav
+graph when stuck, sees bots only along a clear hull-0 line, fires after a
+0.25 s reaction with a turn-rate-capped aim and a held offset re-rolled like a
+saccade, strafes at the human reversal rate, picks weapons from its own
+inventory and refuses to step into lava or slime. It is an instrument with a
+calibration record, not a person: [the stand-in human](../../docs/stand-in.md).
 
 ## What it is for
 
@@ -2170,6 +2227,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
+| 0.31 | The fixed lab clock (`match --seed`, `seeds`): the played frame faster than real time, repeating exactly for one seed and build, validated per map. The stand-in human (`standin`). Build identity: compile stamps `src/argus_build.qc` and briefs carry the tape's build, clock and session marks. Run-directory leases and a hostname-aware port probe (GitHub #832). Capture may start up to 900 s into a demo, with a deadline that grows with the seek. |
 | 0.30 | Triggered POV capture. `watch-pov` and `bot_capture_pov_frame` `on` tail the live console and cut the camera to the first bot that stalls, stands still or emits a chosen marker, then record and render it; see [triggered capture](#triggered-capture). |
 | 0.30 | Typed mill artefacts (GitHub #419). `GraphRevision` resources use content-hash ids and keep the producing commit, date, trace inputs and sidecar hashes. `ProbeVerdict` resources wrap probe and proven sidecars. The read-only `mill` tool lists history and diffs two revisions by coordinate link id, including added, removed and type-changed links plus matching convictions. A link absent from both sources is an error. Historical bytes come from Git, so there is no new on-disk format. Tape collections remain the `corpus` surface from 0.28 rather than a duplicate type. 214 tests. |
 | 0.10 | Extra spec tools beside the native set. Cartographer briefs. `see` / `probe` / `tune`. |
