@@ -72,6 +72,11 @@ engines launched in the same instant have been seen to lose one on Windows,
 so lanes start 1.5 s apart. The stand-in human cannot use the fixed clock: it
 acts on the wall clock and would play at a sixth of the game's speed.
 
+Fixed tapes read the listen tick class (their telemetry gap is 0.5004 s), so
+the tick-class guard does not tell them from wall-clock tapes. The `ARGUS
+clock` line does, and the skeptic reports arms on different clocks as a
+confound.
+
 `ARGUS_FIXED_FRAME` overrides the frame for an experiment, the way
 `ARGUS_TICRATE` does for the wall clock. Every tape records its frame, and the
 skeptic reports arms that ran different clocks or frames as a confound, and

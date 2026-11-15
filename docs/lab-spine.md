@@ -199,7 +199,14 @@ and 0 otherwise.
   finishes. A task that has never finished does not block anything.
 - **Tier 4, with `--through 4`**: the ladder plan, meaning how many
   listen-class tapes a side each map needs to see a 30 per cent change, from
-  the limits doc. It plans ladders; it does not run them.
+  the limits doc. It plans ladders; it does not run them. Each line also says
+  whether the fixed lab clock may screen that ladder: only on a map where
+  `tools/lab_instruments.json` records it accepted and only for a metric that
+  read equivalent there, with the wall time on four lanes.
+- **Tier 5, with `--through 5`**: the stand-in rung, planned only on a map
+  where the stand-in passed its dose-response calibration; elsewhere it says
+  why not (failed, not yet measured, or never calibrated), because a threat
+  claim there still needs a human session.
 
 Each real run leaves a receipt in `runs/lab/` (ignored by git). Receipts
 carry a format number, and `pyramid` and `night` ignore a receipt in an older
