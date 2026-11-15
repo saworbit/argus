@@ -1064,7 +1064,8 @@ passing botmatch does not establish better human play.
   button are on; the empty wiki is off. CONTRIBUTING.md now lists the
   checks, gives the CI test commands (the `--lib` form it taught missed the
   integration tests) and adds a release runbook; AGENTS.md carries the
-  workflow and frozen-input rules (PRNUM).
+  workflow and frozen-input rules
+  ([#845](https://github.com/saworbit/argus/pull/845)).
 
 - Add the repository metadata a public project is expected to carry: an
   `.editorconfig` that matches `.gitattributes`, `CODEOWNERS`, a
