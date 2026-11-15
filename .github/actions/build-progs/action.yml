@@ -1,0 +1,70 @@
+name: Build progs.dat
+description: >-
+  Build the pinned fteqcc from fteqw source and compile src/ to lq1/progs.dat
+  in id format. The compiler commit lives here and nowhere else, so the
+  compile gate and the release build cannot drift apart.
+
+inputs:
+  cache:
+    description: >-
+      Restore and save the compiler from the Actions cache. The release
+      workflow passes false so a tag build never trusts a cache entry.
+    required: false
+    default: 'true'
+
+outputs:
+  compiler:
+    description: Absolute path of the fteqcc binary that compiled progs.dat.
+    value: ${{ steps.paths.outputs.compiler }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve paths
+      id: paths
+      shell: bash
+      env:
+        # the commit the lab rig ships from (setup_rig.sh gotcha list)
+        FTEQW_COMMIT: f937b9d88f71fc4429db5fe56c6a98d922711b2e
+      run: |
+        echo "commit=$FTEQW_COMMIT" >> "$GITHUB_OUTPUT"
+        echo "compiler=$GITHUB_WORKSPACE/fteqw/engine/release/fteqcc" >> "$GITHUB_OUTPUT"
+
+    - name: Cache fteqcc
+      id: cache
+      if: inputs.cache == 'true'
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: fteqw/engine/release/fteqcc
+        # the commit is IN the key on purpose: a fixed key meant the
+        # compiler was whatever landed in the cache first, and an eviction
+        # moved it with nothing said
+        key: fteqcc-${{ runner.os }}-${{ steps.paths.outputs.commit }}
+
+    - name: Build fteqcc from fteqw git
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        FTEQW_COMMIT: ${{ steps.paths.outputs.commit }}
+      run: |
+        # apt's fteqcc is years too old for this tree; build the modern one
+        sudo apt-get update -qq
+        sudo apt-get install -y -qq build-essential zlib1g-dev
+        git clone -q https://github.com/fte-team/fteqw.git
+        git -C fteqw checkout -q "$FTEQW_COMMIT"
+        make -C fteqw/engine qcc-rel
+
+    - name: Compile QuakeC
+      shell: bash
+      env:
+        FTEQCC: ${{ steps.paths.outputs.compiler }}
+      run: |
+        # progs.src writes ../lq1/progs.dat; the dir must exist first, and
+        # fteqcc exits 0 even when the output write fails - trust the
+        # id-format finish line and a fresh progs.dat, never the exit code
+        mkdir -p lq1
+        rm -f lq1/progs.dat
+        (cd src && "$FTEQCC" 2>&1 | tee ../compile.log) || true
+        grep -q 'Compile finished.*id format' compile.log || { echo '::error::COMPILE FAILED: no id-format finish line'; tail -40 compile.log; exit 1; }
+        [ -f lq1/progs.dat ] || { echo '::error::COMPILE FAILED: no progs.dat written'; exit 1; }
+        ls -l lq1/progs.dat

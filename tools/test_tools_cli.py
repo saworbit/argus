@@ -1668,14 +1668,21 @@ tool_timeout_sec = 700
         self.assertEqual(res.returncode, 0)
         self.assertIn("Argus repo invariant battery", res.stdout)
 
-    def test_ci_uses_an_explicit_ubuntu_runner(self):
-        workflows = [
-            ROOT / ".github" / "workflows" / "fast.yml",
-            ROOT / ".github" / "workflows" / "compile.yml",
-        ]
-        text = "\n".join(path.read_text(encoding="utf-8") for path in workflows)
-        self.assertNotIn("runs-on: ubuntu-latest", text)
-        self.assertEqual(text.count("runs-on: ubuntu-24.04"), 4)
+    def test_ci_uses_an_explicit_runner_image(self):
+        # every workflow, not only the two that existed when #450 pinned the
+        # image: a job on a *-latest label moves on the next image swap.
+        # Linux jobs share one image; windows.yml is the one Windows job.
+        pinned = {"ubuntu-24.04", "windows-2025"}
+        workflows = sorted((ROOT / ".github" / "workflows").glob("*.y*ml"))
+        self.assertGreaterEqual(len(workflows), 2)
+        for path in workflows:
+            runners = re.findall(r"^\s*runs-on:\s*(\S+)",
+                                 path.read_text(encoding="utf-8"), re.M)
+            with self.subTest(workflow=path.name):
+                self.assertTrue(runners, "no runs-on line")
+                self.assertLessEqual(set(runners), pinned)
+                expected = "windows-2025" if path.name == "windows.yml" else "ubuntu-24.04"
+                self.assertEqual(set(runners), {expected})
 
     def test_argus_ci_ship_passes_on_the_tree(self):
         # CLAUDE.md is gitignored (machine-local), so this tree holds

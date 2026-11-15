@@ -1,0 +1,112 @@
+name: lint
+
+# Unfiltered on purpose: every job here finishes in well under a minute,
+# and a path filter would stop any of them being a required check.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # cancel superseded pull request runs only; every main commit keeps its result
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  workflows:
+    name: workflow lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install actionlint (pinned, checksum verified)
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+          ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+        run: |
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl -fsSLo "$RUNNER_TEMP/$archive" \
+            "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/$archive"
+          echo "$ACTIONLINT_SHA256  $RUNNER_TEMP/$archive" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Run actionlint
+        # shellcheck is preinstalled on the runner; actionlint uses it for run blocks
+        run: actionlint -color
+
+      - name: Audit workflow security with zizmor
+        uses: zizmorcore/zizmor-action@45d7276c9ca790aabd705e31ca99c6185c3e76dd # v0.8.1
+        with:
+          # fail the job on findings instead of uploading SARIF: fork pull
+          # requests cannot write to code scanning, and a gate that only
+          # reports is not a gate
+          advanced-security: false
+          annotations: true
+          persona: regular
+          # the action defaults to the latest zizmor, and a new release can
+          # add audits that turn this gate red with no change in the repo;
+          # move the pin deliberately
+          version: 1.32.0
+
+  schemas:
+    name: config schemas
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Validate GitHub configuration against published schemas
+        env:
+          CHECK_JSONSCHEMA: check-jsonschema==0.38.0
+        run: |
+          # Dependabot and issue form mistakes are silent until the bot or
+          # a contributor trips over them; catch them at review time
+          pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.dependabot .github/dependabot.yml
+          pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.github-issue-config .github/ISSUE_TEMPLATE/config.yml
+          find .github/ISSUE_TEMPLATE -name '*.yml' ! -name config.yml -print0 \
+            | xargs -0 pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.github-issue-forms
+          find .github/DISCUSSION_TEMPLATE -name '*.yml' -print0 \
+            | xargs -0 pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.github-discussion
+          pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.citation-file-format CITATION.cff
+
+  python:
+    name: python critical lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Ruff (syntax errors and undefined names)
+        env:
+          RUFF: ruff==0.14.6
+        run: |
+          # the flake8 "critical" set: code that cannot run as written.
+          # Style is deliberately out of scope for this gate.
+          pipx run "$RUFF" check --output-format=github --select E9,F63,F7,F82 tools
+
+  shell:
+    name: shell lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: ShellCheck tracked shell scripts
+        run: |
+          # name what was checked, so a pass is never a silent no-op
+          git ls-files '*.sh'
+          git ls-files -z '*.sh' | xargs -0 --no-run-if-empty shellcheck --severity=warning

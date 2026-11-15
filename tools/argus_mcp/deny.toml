@@ -1,0 +1,42 @@
+# cargo-deny policy for the lab crate. CI runs it on every change to the
+# manifest, the lock file or this policy, and weekly, because a new RustSec
+# advisory can land against a lock file nobody touched.
+# Reference: https://embarkstudios.github.io/cargo-deny/
+#
+# Run locally from tools/argus_mcp:  cargo deny check
+
+[graph]
+all-features = true
+
+[advisories]
+version = 2
+# A yanked crate is how #807 (yoke-derive 0.8.3) went unnoticed: Cargo keeps
+# resolving a yanked version that is already in the lock file.
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+confidence-threshold = 0.93
+# Every licence here is compatible with distributing the lab under MIT
+# (LICENSE-MIT). Adding one is a deliberate decision, not a fix for a red run.
+allow = [
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "MIT",
+    "Unicode-3.0",
+]
+
+[licenses.private]
+# argus-mcp is publish = false; LICENSE-MIT at the repository root covers it.
+ignore = true
+
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+allow-wildcard-paths = true
+
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]

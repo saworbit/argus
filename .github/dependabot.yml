@@ -1,27 +1,37 @@
-# Dependabot configuration for Argus
-# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
+# Dependabot version updates for Argus
+# https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Commit messages use Dependabot's default sentence-case "Bump ..." subject,
+# which matches the project's commit style. Every updater that proposes
+# versions waits a week after a release before proposing it (cooldown), so
+# a compromised or broken release has time to be yanked first. Security
+# updates are not delayed.
 
 version: 2
 updates:
-  # Maintain GitHub Actions workflow dependencies
   - package-ecosystem: "github-actions"
-    directory: "/"
+    # covers .github/workflows and the local composite actions
+    directories:
+      - "/"
+      - "/.github/actions/*"
     schedule:
       interval: "weekly"
-    commit-message:
-      prefix: "ci(actions)"
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "github_actions"
     groups:
       actions:
         patterns:
           - "*"
 
-  # Maintain Rust dependencies for the Argus lab MCP server
   - package-ecosystem: "cargo"
     directory: "/tools/argus_mcp"
     schedule:
       interval: "weekly"
-    commit-message:
-      prefix: "chore(deps)"
+    cooldown:
+      default-days: 7
     labels:
       - "dependencies"
       - "rust-mcp"
@@ -30,3 +40,20 @@ updates:
         update-types:
           - "minor"
           - "patch"
+
+  # tools/requirements-perception-cohort.txt is FROZEN study evidence, not a
+  # dependency to keep current: its SHA-256 is registered in
+  # docs/perception-engagement-cohort-protocol.json and
+  # docs/perception-lava-cohort-protocol.json, and run_perception_cohort.py
+  # asserts it before a cohort runs. A version bump would break reproduction
+  # of both registered studies, so nothing here may propose one. This entry
+  # exists only to ignore every dependency (ignore conditions bind security
+  # updates as well); a vulnerable pin still raises a Dependabot alert, and
+  # replacing it is a deliberate decision about the studies.
+  - package-ecosystem: "pip"
+    directory: "/tools"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"

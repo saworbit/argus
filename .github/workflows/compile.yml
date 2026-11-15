@@ -13,68 +13,45 @@ on:
       - 'tools/*.py'
       - 'tools/fixtures/**'
       - '.github/workflows/compile.yml'
+      - '.github/actions/build-progs/**'
 
 permissions:
   contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # cancel superseded pull request runs only: every main commit is a
+  # possible install source and keeps its own result
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   quakec:
     name: fteqcc compile (id format)
     # Keep compiler and package inputs stable across latest-image moves (#450).
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
-
-      - name: Cache fteqcc
-        id: cache-fteqcc
-        uses: actions/cache@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          path: fteqw/engine/release/fteqcc
-          # the SHA is IN the key on purpose: before this, a fixed key
-          # meant the compiler was whatever landed in the cache first,
-          # and an eviction moved it with nothing said
-          key: fteqcc-${{ runner.os }}-f937b9d88f71fc4429db5fe56c6a98d922711b2e
+          persist-credentials: false
 
-      - name: Build fteqcc from fteqw git
-        if: steps.cache-fteqcc.outputs.cache-hit != 'true'
-        run: |
-          # apt's fteqcc is years too old for this tree (setup_rig.sh
-          # gotcha list); build the modern one from source, pinned to
-          # the commit the lab rig ships from
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq build-essential zlib1g-dev
-          git clone -q https://github.com/fte-team/fteqw.git
-          git -C fteqw checkout -q f937b9d88f71fc4429db5fe56c6a98d922711b2e
-          make -C fteqw/engine qcc-rel
-
-      - name: Compile QuakeC
-        run: |
-          # progs.src writes ../lq1/progs.dat; the dir must exist first,
-          # and fteqcc exits 0 even when the output write fails - trust
-          # the id-format finish line and a fresh progs.dat, never the
-          # exit code
-          mkdir -p lq1
-          rm -f lq1/progs.dat
-          (cd src && ../fteqw/engine/release/fteqcc 2>&1 | tee ../compile.log) || true
-          grep -q 'Compile finished.*id format' compile.log || { echo 'COMPILE FAILED: no id-format finish line'; tail -40 compile.log; exit 1; }
-          [ -f lq1/progs.dat ] || { echo 'COMPILE FAILED: no progs.dat written'; exit 1; }
-          ls -l lq1/progs.dat
+      - name: Build fteqcc and compile QuakeC
+        id: progs
+        uses: ./.github/actions/build-progs
 
       - name: Compile maintained private fixtures
+        env:
+          FTEQCC: ${{ steps.progs.outputs.compiler }}
         run: |
           for family in muzzle combat health button door plan offset freeze mover forecast camera stall motion ally attention water ownership predicates height muzzle_predicates nudge cover; do
             python3 tools/compile_private_fixtures.py \
-              --compiler "$PWD/fteqw/engine/release/fteqcc" \
+              --compiler "$FTEQCC" \
               --family "$family" --output "$RUNNER_TEMP/private-$family"
           done
 
       - name: Retain private fixture compile receipts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: private-fixture-compiles
           path: |
@@ -84,7 +61,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload progs.dat for the smoke job
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: progs
           path: lq1/progs.dat
@@ -94,27 +71,31 @@ jobs:
     needs: quakec
     # Run the engine on the same explicit image that built its progs.dat.
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: progs
           path: lq1
       - name: Cache LibreQuake data
         id: cache-lq
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: lq-data
           key: libquake-v0.09-beta-${{ hashFiles('.github/librequake.sha256') }}
       - name: Fetch LibreQuake (free content, pinned release)
         if: steps.cache-lq.outputs.cache-hit != 'true'
+        env:
+          REL: https://github.com/lavenderdotpet/LibreQuake/releases/download/v0.09-beta
         run: |
-          REL=https://github.com/lavenderdotpet/LibreQuake/releases/download/v0.09-beta
           mkdir -p lq-data
           # -f or a 404 writes the HTML error body into the zip and
           # the cache key then keeps the poisoned file forever (#221)
-          curl -fsSL -o lq-data/lite.zip   $REL/lite.zip
-          curl -fsSL -o lq-data/server.zip $REL/server.zip
+          curl -fsSL -o lq-data/lite.zip   "$REL/lite.zip"
+          curl -fsSL -o lq-data/server.zip "$REL/server.zip"
       - name: Verify LibreQuake downloads before use and cache save
         run: sha256sum -c .github/librequake.sha256
       - name: Run a botmatch and judge it
@@ -157,7 +138,7 @@ jobs:
 
       - name: Upload the smoke tape
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: smoke-tape
           path: smoke.log

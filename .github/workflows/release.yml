@@ -1,0 +1,99 @@
+name: release
+
+# Pushing a v* tag builds the mod from that tag's source with the pinned
+# compiler, packages it the way earlier releases were shipped, attests the
+# package's build provenance and opens a DRAFT release. The release notes
+# are written by hand before publishing, so nothing goes public unreviewed.
+# A manual run builds and uploads the package as an artifact only.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  package:
+    name: build and package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write       # create the draft release
+      id-token: write       # sign the provenance attestation
+      attestations: write   # store the attestation
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build fteqcc and compile QuakeC
+        uses: ./.github/actions/build-progs
+        with:
+          # a tag build never trusts a cache entry
+          cache: 'false'
+
+      - name: Package the mod directory
+        id: package
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+        run: |
+          if [ "$REF_TYPE" = "tag" ]; then
+            name="argus-$REF_NAME"
+          else
+            name="argus-${SHA:0:12}"
+          fi
+          stage="$RUNNER_TEMP/stage"
+          mkdir -p "$stage/argus"
+          cp lq1/progs.dat game/argus/autoexec.cfg README.txt LICENSE "$stage/argus/"
+          # fixed timestamps and ordering, so the same source packs the same zip
+          epoch="$(git log -1 --format=%ct)"
+          find "$stage" -exec touch -d "@$epoch" {} +
+          (cd "$stage" && find argus -type f | LC_ALL=C sort | zip -X -q -@ "$GITHUB_WORKSPACE/$name.zip")
+          sha256sum "$name.zip" > "$name.zip.sha256"
+          unzip -l "$name.zip"
+          cat "$name.zip.sha256"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Attest build provenance
+        id: attest
+        if: github.ref_type == 'tag'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: ${{ steps.package.outputs.name }}.zip
+
+      - name: Keep the signed attestation beside the package
+        if: github.ref_type == 'tag'
+        env:
+          BUNDLE: ${{ steps.attest.outputs.bundle-path }}
+          NAME: ${{ steps.package.outputs.name }}
+        run: |
+          # GitHub stores the attestation, but a release asset lets anyone
+          # verify the zip offline (cosign or gh attestation verify --bundle)
+          # and is what OpenSSF Scorecard's Signed-Releases check looks for
+          cp "$BUNDLE" "$NAME.zip.sigstore.json"
+
+      - name: Upload the package
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.package.outputs.name }}
+          path: |
+            ${{ steps.package.outputs.name }}.zip
+            ${{ steps.package.outputs.name }}.zip.sha256
+          if-no-files-found: error
+
+      - name: Open a draft release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          NAME: ${{ steps.package.outputs.name }}
+        run: |
+          gh release create "$TAG" "$NAME.zip" "$NAME.zip.sha256" "$NAME.zip.sigstore.json" \
+            --draft --verify-tag --generate-notes --title "Argus $TAG"

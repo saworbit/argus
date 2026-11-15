@@ -1,0 +1,13 @@
+# zizmor configuration: https://docs.zizmor.sh/configuration/
+# Each disabled or tuned audit says why, so a reader can tell a decision
+# from an oversight.
+
+rules:
+  self-repository:
+    # zizmor prefers GitHub's "$/" self-repository syntax (July 2026) over
+    # "./". actionlint 1.7.12 rejects "$/" as an invalid action reference,
+    # so adopting it would trade one linter's finding for another's error.
+    # The "./" references here run straight after a non-persisted checkout
+    # of the triggering commit, before any step can write to .github/.
+    # Revisit when actionlint accepts the new syntax.
+    disable: true

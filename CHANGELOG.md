@@ -1054,6 +1054,30 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Add the repository metadata a public project is expected to carry: an
+  `.editorconfig` that matches `.gitattributes`, `CODEOWNERS`, a
+  `CITATION.cff` behind GitHub's "Cite this repository" button, linguist rules
+  that collapse generated nav graphs and tapes in pull request diffs, and
+  ignore rules for editor, Python cache and credential files. The issue forms
+  ask for the Argus build and how the session ran, as `SUPPORT.md` already
+  did, and the template links no longer point at a file that is not in the
+  repository. Pull requests are labelled by path so the generated release
+  notes group them. The `dashes` check now reads workflows, manifests and
+  repository metadata too, not only prose and sources ([#838](https://github.com/saworbit/argus/pull/838)).
+
+- Add a `release` workflow: pushing a `v*` tag builds `progs.dat` from that
+  tag with the pinned compiler, packages it as earlier releases were shipped,
+  attests the zip's build provenance and opens a draft release for the notes
+  to be written before publishing. The fteqcc pin now lives once, in
+  `.github/actions/build-progs`, shared by the compile gate and the release
+  ([#838](https://github.com/saworbit/argus/pull/838)).
+
+- Type-check the lab on Windows in CI. Its console injection, job objects and
+  pipe handling sit behind `cfg(windows)`, which the Linux job never compiled;
+  a `windows` workflow now runs strict Clippy on every target whenever the lab
+  changes. It does not run the suite, whose Windows inject tests need an
+  engine ([#838](https://github.com/saworbit/argus/pull/838)).
+
 - File the loose bullets that sat between Main updates and Unreleased under
   their categories, and merge the repeated category headings, so each one
   appears once. Every bullet keeps its wording and links
@@ -1084,6 +1108,34 @@ passing botmatch does not establish better human play.
   stops warning about it ([#807](https://github.com/saworbit/argus/issues/807)).
 
 #### Security
+
+- Pin every GitHub Action to a full commit SHA, stop checkouts persisting
+  the job token, move workflow expressions out of shell scripts, give every
+  job a timeout, and cancel superseded runs on pull requests only, so each
+  main commit keeps its result. A new `lint` workflow gates every pull request
+  on actionlint, a zizmor workflow security audit, schema checks for the
+  Dependabot, issue form, discussion and citation files, critical Python
+  lint and ShellCheck. CodeQL analyses the Rust lab, the Python tools, the GUI
+  and the workflows; OpenSSF Scorecard publishes a score; dependency review
+  checks every pull request; and `cargo deny` checks the lab's advisories,
+  licences and sources weekly and on every manifest change. Dependabot now
+  waits a week before proposing a new release
+  ([#838](https://github.com/saworbit/argus/pull/838)).
+
+- Stop Dependabot proposing bumps to
+  `tools/requirements-perception-cohort.txt`. Its SHA-256 is registered in
+  the engagement and lava cohort protocols and asserted before a cohort
+  runs, so a bump would break reproduction of both studies; #838 had added
+  a pip updater that opened one within minutes. The updater now ignores
+  every dependency, security updates included, and an advisory against a
+  pin still raises a Dependabot alert for a deliberate decision
+  ([#840](https://github.com/saworbit/argus/pull/840)).
+
+- Attach each release's signed provenance attestation as a release asset,
+  `argus-<tag>.zip.sigstore.json`, beside the zip and its checksum, so the
+  package can be verified offline. GitHub kept the attestation but not as a
+  file, and OpenSSF Scorecard scored Signed-Releases at 0 for it
+  ([#840](https://github.com/saworbit/argus/pull/840)).
 
 - Check the local wizard Host header on GET requests as well as POST, so
   a DNS-rebinding page cannot read local paths or map data (#551).

@@ -1,29 +1,29 @@
 ## Summary
 
-<!-- Briefly describe the purpose and impact of this change. -->
+<!-- What this change does and why, in a sentence or two. Link the issue it closes. -->
 
-## Type of Change
+## Type of change
 
-- [ ] **Bot AI / Logic** (GOAP goal scorer, combat, aim model, perception)
-- [ ] **Movement / Physics** (hazard avoidance, jump mechanics, elevator/train handling)
-- [ ] **Navigation / Maps** (navgen generator, graph links, sidecar probe data)
-- [ ] **Lab MCP & Tooling** (Rust server, Python telemetry, visualization)
-- [ ] **CI / Build System** (fteqcc compile, GitHub Actions, packaging)
+- [ ] **Bot AI or logic** (GOAP goal scorer, combat, aim model, perception)
+- [ ] **Movement or physics** (hazard avoidance, jump mechanics, lift and train handling)
+- [ ] **Navigation or maps** (navgen, graph links, sidecar probe data)
+- [ ] **Lab and tooling** (Rust MCP server, Python telemetry, visualisation)
+- [ ] **CI or build** (fteqcc compile, GitHub Actions, packaging)
 - [ ] **Documentation** (README, guides, comments)
 
-## Hard Project Constraints & Checklist
-
-Please confirm your changes adhere to Argus engineering standards:
+## Project constraints
 
 - [ ] **Vanilla QuakeC**: Code runs in standard NetQuake protocol 15, stays within 600 edicts, and uses no engine extensions or file I/O.
-- [ ] **Generated Nav Integrity**: Generated map files (`src/argus_nav_<map>.qc`) are **not** hand-edited (generated via `tools/argus_navgen.py` or MCP `nav_generate`).
+- [ ] **Generated nav integrity**: Generated map files (`src/argus_nav_<map>.qc`) are **not** hand-edited (generated via `tools/argus_navgen.py` or MCP `nav_generate`).
 - [ ] **Frametime calibration**: Any time-based physics or drag is expressed per second against `frametime`, not per frame, and holds at the lab rate (`+sys_ticrate 0.0139`, about 70 fps) as well as at a deliberate 100 ms arm.
 - [ ] **Refuted rules**: If this change shows a documented rule is wrong, the rule is added to `tools/refuted_claims.json` (see CONTRIBUTING.md) so `argus_ci.py refuted` stops it coming back, and the PR title names the rule it refutes.
 - [ ] **Compilation**: Compiles cleanly with `fteqcc` (id format finish line verified).
-- [ ] **Lab Tests**: `cargo test --manifest-path tools/argus_mcp/Cargo.toml --lib` passes without errors.
-- [ ] **Directed Reach**: `python tools/argus_reach.py [map]` verified if modifying navigation.
+- [ ] **Lab tests**: `cargo test --manifest-path tools/argus_mcp/Cargo.toml --locked --tests` passes, as CI runs it.
+- [ ] **Invariants**: `python tools/argus_ci.py all` passes locally.
+- [ ] **Directed reach**: `python tools/argus_reach.py <map>` verified if navigation changed.
+- [ ] **Changelog**: An entry under **Unreleased** in `CHANGELOG.md` describes the observable result, if there is one.
 - [ ] **Licensing**: QC code in `src/` complies with GPLv2; tooling in `tools/` complies with MIT.
 
-## Telemetry / Verification
+## Verification
 
-<!-- Describe how you verified this change (e.g. headless match run, telemetry log comparison, or live client observation). -->
+<!-- How you verified this change: headless match, telemetry comparison, a fixture, or live client observation. Say which, and what it does not establish. -->

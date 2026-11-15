@@ -1,0 +1,63 @@
+name: dependencies
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+    paths:
+      - 'tools/argus_mcp/Cargo.toml'
+      - 'tools/argus_mcp/Cargo.lock'
+      - 'tools/argus_mcp/deny.toml'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/dependencies.yml'
+  schedule:
+    # a new RustSec advisory can land against a lock file nobody touched
+    - cron: '17 6 * * 3'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  review:
+    name: dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Review dependency changes in this pull request
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
+        with:
+          # moderate and above blocks; low severity is reported only
+          fail-on-severity: moderate
+
+  cargo-deny:
+    name: cargo deny
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install cargo-deny (pinned, checksum verified)
+        env:
+          CARGO_DENY_VERSION: 0.20.2
+          CARGO_DENY_SHA256: 9f12ed4c49936e09b48bf862b595cde2fe64fcbd9d74dfacac6131ca824c8d5f
+        run: |
+          name="cargo-deny-${CARGO_DENY_VERSION}-x86_64-unknown-linux-musl"
+          curl -fsSLo "$RUNNER_TEMP/$name.tar.gz" \
+            "https://github.com/EmbarkStudios/cargo-deny/releases/download/${CARGO_DENY_VERSION}/$name.tar.gz"
+          echo "$CARGO_DENY_SHA256  $RUNNER_TEMP/$name.tar.gz" | sha256sum -c -
+          tar -xzf "$RUNNER_TEMP/$name.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/$name" >> "$GITHUB_PATH"
+
+      - name: Check advisories, licences, bans and sources
+        working-directory: tools/argus_mcp
+        # policy and rationale: tools/argus_mcp/deny.toml
+        run: cargo deny --locked check

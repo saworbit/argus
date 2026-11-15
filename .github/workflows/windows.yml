@@ -1,0 +1,50 @@
+name: windows
+
+# The lab runs on Windows first, and its console injection, job objects and
+# pipe handling live behind cfg(windows), which the Linux lab job never
+# compiles. This job type-checks every target on Windows with warnings
+# denied. It does not run the suite: the Windows inject tests need an engine
+# and a built console helper, and stay a local check (#805, #836).
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/argus_mcp/**'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/windows.yml'
+  pull_request:
+    paths:
+      - 'tools/argus_mcp/**'
+      - 'rust-toolchain.toml'
+      - '.github/workflows/windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  clippy:
+    name: lab clippy (windows)
+    # pinned like the Ubuntu jobs, so an image migration is a deliberate change
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Cache cargo
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            tools/argus_mcp/target
+          key: cargo-${{ runner.os }}-${{ hashFiles('rust-toolchain.toml', 'tools/argus_mcp/Cargo.lock') }}
+
+      - name: Run strict Clippy on every target
+        run: cargo clippy --manifest-path tools/argus_mcp/Cargo.toml --locked --all-targets -- -D warnings

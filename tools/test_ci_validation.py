@@ -38,7 +38,7 @@ class CIValidationTests(unittest.TestCase):
             with self.subTest(source=source):
                 self.assertEqual(ci.markdown_anchors(source), expected)
 
-    def test_dashes_checks_tracked_prose_and_sources_only(self):
+    def test_dashes_checks_tracked_prose_sources_and_config_only(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             subprocess.run(["git", "init", "-q", td], check=True, capture_output=True)
@@ -46,7 +46,11 @@ class CIValidationTests(unittest.TestCase):
                      "src/bot.qc": "// \u2013\n", "tools/helper.py": "# \u2014\n",
                      "tools/argus_mcp/src/gui.html": "<!-- \u2013 -->\n",
                      "tools/argus_mcp/src/demo.rs": "// \u2014\n",
-                     "docs/image.png": "\u2013", "runs/old.log": "\u2014"}
+                     ".github/workflows/ci.yml": "name: a \u2013 b\n",
+                     "CITATION.cff": "title: a \u2014 b\n",
+                     ".gitignore": "# a \u2013 b\n",
+                     "docs/image.png": "\u2013", "runs/old.log": "\u2014",
+                     "runs/receipt.txt": "\u2013", "backups/old.yml": "\u2014"}
             for name, text in files.items():
                 path = root/name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -54,7 +58,9 @@ class CIValidationTests(unittest.TestCase):
             subprocess.run(["git", "add", "."], cwd=root, check=True, capture_output=True)
             (root/"untracked.md").write_text("\u2014", encoding="utf-8")
             failures = ci.check_dashes(root)
-            self.assertEqual(len(failures), 6, failures)
+            self.assertEqual(len(failures), 9, failures)
+            self.assertTrue(any(".github/workflows/ci.yml:1" in f for f in failures))
+            self.assertFalse(any("runs/" in f or "backups/" in f for f in failures))
             self.assertTrue(any("docs/read me.md:2" in f and "U+2013" in f for f in failures))
             self.assertTrue(any("docs/read me.md:3" in f and "U+2014" in f for f in failures))
             self.assertTrue(all("no en or em dashes" in f for f in failures))
