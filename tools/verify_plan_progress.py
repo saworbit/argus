@@ -9,7 +9,6 @@ import hashlib
 import json
 import re
 import shutil
-import time
 from pathlib import Path
 
 from check_plan_progress import check_contract, check_physical, check_physical_edges, audit_physical_edges

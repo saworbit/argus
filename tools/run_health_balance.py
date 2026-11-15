@@ -10,9 +10,7 @@ import argparse
 import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
-import subprocess
 import time
 
 from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity, timing, cpu_seconds

@@ -28,12 +28,13 @@ and engine/argus/maps/; without one the column is blank rather than a guess.
 Two limits of a 2 Hz tape: a hit landing in the same half second as the
 entry reads as unforced, and a drowning reads as forced.
 """
-import re, sys, os, collections, math, glob
+import re, sys, os, collections, glob
 from functools import lru_cache
 from pathlib import Path
 
 from argus_bsp import load_classifier
-from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
+from argus_tape import PAT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
+from argus_tape import EVT  # noqa: F401  test_tools_cli checks this tool reads the shared event vocabulary
 PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin|underfire)|shove|hunch|prefire|watch spawn|sprintjump)\b")
 WORLD_PHRASES = ["tries to put the pin back in", "becomes bored with life", "discharges into", "heats up the water",
                  "electrocutes", "died", "was squished", "fell to", "can't exist on slime", "visits the Volcano God",

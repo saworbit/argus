@@ -20,9 +20,10 @@ The freeze detector flags any bot below 20 u/s within a 32 u radius for
 (grate pin, pocket jitter hold, dead-lift statue, door-button wait).
 Aligned with MatchTape::freezes in the Rust lab parser.
 """
-import re, sys, collections
+import sys, collections
 
-from argus_tape import PAT, EVT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
+from argus_tape import PAT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths
+from argus_tape import EVT  # noqa: F401  test_tools_cli checks this tool reads the shared event vocabulary
 
 
 def tactical(line):

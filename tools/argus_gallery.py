@@ -30,7 +30,6 @@ import argparse
 import html
 import http.server
 import json
-import math
 import os
 import shutil
 import subprocess

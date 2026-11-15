@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-import subprocess
 import time
 
 from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity

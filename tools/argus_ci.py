@@ -18,6 +18,7 @@ usage:
   argus_ci.py lab                  the lab objective and claims ledger are sound and cite real evidence
   argus_ci.py suites               every tools/test_*.py suite runs in a workflow
   argus_ci.py stamp                src/argus_build.qc names the source it sits in
+  argus_ci.py pins                 CI installs Python packages by hash, and its perception copy matches the frozen pins
 """
 import argparse
 import collections
@@ -742,6 +743,51 @@ def check_suites(root, **_kw):
     return fails
 
 
+# ---------------------------------------------------------------- pins
+
+FROZEN_PINS = "tools/requirements-perception-cohort.txt"
+CI_PINS = ".github/requirements/perception.txt"
+_PIN = re.compile(r"^([A-Za-z0-9][A-Za-z0-9._-]*)==([^\s;\\]+)", re.M)
+
+
+def _pins(path):
+    text = path.read_text(encoding="utf-8", errors="replace")
+    return {name.lower().replace("_", "-"): version for name, version in _PIN.findall(text)}
+
+
+def check_pins(root, **_kw):
+    """Fail when CI installs Python packages without hashes, or its copy of the frozen pins drifts.
+
+    tools/requirements-perception-cohort.txt is study evidence: two cohort
+    protocols register its SHA-256, so it cannot carry hashes. CI installs
+    a hash-locked copy instead (#846), and the copy must name exactly the
+    frozen versions or CI tests the cohort code against packages the
+    studies never ran.
+    """
+    frozen, copy = root / FROZEN_PINS, root / CI_PINS
+    wf_dir = root / ".github" / "workflows"
+    if not frozen.is_file() or not wf_dir.is_dir():
+        return Skipped("no frozen perception pins or no workflows")
+    fails = []
+    if not copy.is_file():
+        fails.append(f"pins: {CI_PINS} is missing; CI installs the frozen pins from it")
+    else:
+        want, got = _pins(frozen), _pins(copy)
+        if want != got:
+            show = lambda pins: ", ".join(f"{k}=={v}" for k, v in sorted(pins.items())) or "nothing"
+            fails.append(f"pins: {CI_PINS} names {show(got)} but {FROZEN_PINS} names {show(want)}; "
+                         "regenerate the copy and never edit the frozen file")
+    for wf in sorted(wf_dir.glob("*.y*ml")):
+        lines = wf.read_text(encoding="utf-8", errors="replace").splitlines()
+        for n, line in enumerate(lines, 1):
+            code = line.split("#", 1)[0]
+            unhashed = re.search(r"\bpip3?\s+install\b", code) and "--require-hashes" not in code
+            if unhashed or re.search(r"\bpipx\s+run\b", code):
+                fails.append(f"pins: .github/workflows/{wf.name}:{n} installs Python packages "
+                             "without --require-hashes; install from .github/requirements/")
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
@@ -778,7 +824,7 @@ def main(argv=None):
 CHECKS = {"ship": check_ship, "eol": check_eol,
           "tapes": check_tapes, "nav": check_nav, "links": check_links,
           "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab,
-          "suites": check_suites, "stamp": check_stamp}
+          "suites": check_suites, "stamp": check_stamp, "pins": check_pins}
 
 
 if __name__ == "__main__":

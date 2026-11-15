@@ -162,7 +162,7 @@ def main():
                 shutil.copy2(output / 'lq1/progs.dat', folder / 'progs.dat')
                 for map_name in maps:
                     name = args.prefix + '_' + map_name
-                    result = run_match(lab, map_name, 24, name, port=args.port, timeout=50, environment=env, stderr_path=output / (map_name + '.stderr'))
+                    run_match(lab, map_name, 24, name, port=args.port, timeout=50, environment=env, stderr_path=output / (map_name + '.stderr'))
                     raw, text = read_tape(output, name, map_name)
                     measurement = inspect_fixture(text, map_name, args.ticrate, require_current=True)
                     brief = lab.call('brief_run', log=str(raw), map=map_name, detail='full')

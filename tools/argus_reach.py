@@ -26,7 +26,6 @@ Usage: python tools/argus_reach.py [map ...]
 Exit code 1 when any spawn's all-edges reach is under 60% (the 7h
 WARNING bar), so a rig script can gate on it.
 """
-import json
 import os
 import struct
 import sys
