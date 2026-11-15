@@ -1898,11 +1898,14 @@ great many historical stall verdicts were unearned in both directions.
 Since 2026-11-14 a map with listen-class arms is measured from those arms
 only, because the lab runs at the played rate, and the doc's last column
 names the tick class each sigma came from. Lava is classified by hull-0
-contents when the map's BSP is on hand. A baseline band that is replaced
+contents when the map's BSP is on hand, in the limits table and in both audits
+(#835). A baseline band that is replaced
 stays in the noise corpus as a ladder arm, since it is still a same-build
 arm. The baked sigmas that `compare` uses keep the larger of their old value
 and a new measurement: lowering e1m6's stall sigma from 23.3 to 21.0 let the
-stopping rule accept a null across two halves of one build.
+stopping rule accept a null across two halves of one build. The audit names the
+arm and both halves behind any accept; that one is #324's candidate arm, whose
+own spread exceeds the pooled sigma (#834).
 
 **What four gates cost.** A verdict that convicts on any of four gates
 is not one test. Over the sixteen null pairs each gate convicts a
@@ -1924,6 +1927,9 @@ flagged. A refused map spawn in any candidate or control tape invalidates
 the comparison: it returns `mixed` with a `WRONG MAP` card and no statistical
 gates. `totals.failed_spawns` retains the refused names when present, including
 through duration scaling. Stage the requested BSP and record fresh tapes.
+An arm holding one fixed-clock seed and build twice is refused the same way,
+with a `REPEATED SEED` card, and different builds or engine clocks between or
+inside the arms are reported in the findings (#852).
 It also stops the habit of deciding which gate to believe
 after the tapes are in: a change predicted to affect lava has no
 business being convicted by an engagement count. Pre-registering drops

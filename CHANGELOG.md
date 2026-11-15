@@ -1092,6 +1092,13 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Bring the guides in line with #834, #835, #844, #846 and #852: the lab
+  operator guide names the repeated-seed refusal, the confounds the Rust
+  verdicts now report and the audits' lava rule, the fixed-clock and lab spine
+  guides say which instruments see clock and build confounds, the stand-in
+  guide drops its scorecard caveat, and AGENTS.md names the hashed CI copy of
+  the frozen perception pins.
+
 - Clear 35 of the 37 pyflakes findings in `tools/` and widen the `python
   critical lint` gate from Ruff's critical set to all of pyflakes. The other
   two sit in `verify_muzzle_clearance.py`, whose hash a results file records,
