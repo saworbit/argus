@@ -136,7 +136,20 @@ the whole tape describes the fallback map - judge nothing).
   to establish compatibility. Human tracks are review data, never
   bot bands or gates.
 - Use Australian English and sentence case headings. Do not introduce
-  em dashes or en dashes in prose, comments, output or commits.
+  em dashes or en dashes in prose, comments, output or commits;
+  `argus_ci.py dashes` checks prose, code, workflows and config.
+- Frozen study inputs stay frozen. A file whose SHA-256 a registered
+  protocol records is evidence, not a dependency: never bump it, and
+  never merge a bot pull request that does.
+  `tools/requirements-perception-cohort.txt` is one (both perception
+  cohort protocols assert it), so Dependabot ignores it.
+- Workflows follow the rules in CONTRIBUTING.md's
+  [what CI checks](CONTRIBUTING.md#what-ci-checks): SHA-pinned actions,
+  no persisted checkout credentials, expressions passed through `env:`,
+  job timeouts, pinned runner images. Run `actionlint` and
+  `zizmor --persona pedantic .github` before pushing a workflow
+  change; the `lint` workflow gates on both. `main` takes changes only
+  through pull requests that pass the required checks.
 
 ## Human wizard
 
