@@ -115,6 +115,10 @@ pub struct HumanTracks {
     /// kills the human scored on players/bots (their frag row is in
     /// `bots` like any track; this is death-event-derived)
     pub kills: i32,
+    /// human deaths whose killer is a bot track. Not deaths minus
+    /// world deaths: a self-splash names the human as killer and is
+    /// neither (#844).
+    pub bot_kills: i32,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -728,6 +732,9 @@ pub(crate) fn brief_tape_lava(
     let mut h_world = 0;
     let mut h_lava = 0;
     let mut h_kills = 0;
+    let mut h_bot_kills = 0;
+    let bot_names: std::collections::HashSet<&str> =
+        bot_rows.iter().map(|b| b.name.as_str()).collect();
     for d in &tape.deaths {
         let lava = d.killer.eq_ignore_ascii_case("world")
             && crate::bsp::death_is_lava(hull, d.pos.x, d.pos.y, d.pos.z);
@@ -736,6 +743,9 @@ pub(crate) fn brief_tape_lava(
         }
         if humans.contains(&d.victim) {
             h_deaths += 1;
+            if bot_names.contains(d.killer.as_str()) {
+                h_bot_kills += 1;
+            }
             if d.killer.eq_ignore_ascii_case("world") {
                 h_world += 1;
                 if lava {
@@ -770,6 +780,7 @@ pub(crate) fn brief_tape_lava(
             world_deaths: h_world,
             lava_deaths: h_lava,
             kills: h_kills,
+            bot_kills: h_bot_kills,
         })
     };
     let lava_rule = Some(if hull.is_some() {
@@ -940,7 +951,7 @@ pub(crate) fn brief_tape_lava(
 fn human_scorecard(tape: &MatchTape, totals: &Totals) -> Option<HumanScorecard> {
     let h = totals.human.as_ref()?;
     let minutes = (totals.duration_sec / 60.0).max(1.0 / 60.0);
-    let bot_kills_human = h.deaths - h.world_deaths;
+    let bot_kills_human = h.bot_kills;
     let per_min = |n: f64| (n / minutes * 10.0).round() / 10.0;
     let ratio = if h.kills > 0 {
         (bot_kills_human as f64 / h.kills as f64 * 100.0).round() / 100.0
@@ -1674,6 +1685,10 @@ pub fn compare_band_primary(
     if !wrong_maps.is_empty() {
         return refuse_wrong_map(rep_ctl, rep_cand, wrong_maps);
     }
+    let identity = identity_check(controls, candidates);
+    if !identity.void.is_empty() {
+        return refuse_repeated_seed(rep_ctl, rep_cand, identity.void);
+    }
     let mut report = compare_gates(rep_ctl, rep_cand);
     if candidates.iter().chain(controls).any(is_controlled_fixture) {
         report.verdict = Verdict::Mixed;
@@ -1885,6 +1900,7 @@ pub fn compare_band_primary(
             list.join(" and ")
         ));
     }
+    findings.extend(identity.confounds);
     if let Some(failure) = freeze_failure {
         findings.push(failure);
     }
@@ -2107,6 +2123,104 @@ fn refuse_wrong_map(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> Comp
         stats: Vec::new(),
         primary: None,
     }
+}
+
+/// What the tapes' own identity lines say about comparing two arms
+/// (#852), the same reading the spine's skeptic makes. A fixed-clock
+/// match replays exactly for one build and seed, so an arm holding one
+/// twice counts the same match twice: that voids it. Different builds
+/// inside an arm, different builds between arms and different clocks
+/// are confounds the verdict must carry.
+struct IdentityCheck {
+    void: Vec<String>,
+    confounds: Vec<String>,
+}
+
+fn clock_label(b: &MatchBrief) -> String {
+    match &b.identity.clock {
+        Some(c) if c.frame_us > 0 => format!("fixed {} ms", c.frame_us as f64 / 1000.0),
+        _ => "realtime".into(),
+    }
+}
+
+fn identity_check(controls: &[MatchBrief], candidates: &[MatchBrief]) -> IdentityCheck {
+    use std::collections::{BTreeMap, BTreeSet};
+    let mut void = Vec::new();
+    let mut confounds = Vec::new();
+    let builds = |arm: &[MatchBrief]| -> BTreeSet<String> {
+        arm.iter()
+            .flat_map(|b| b.identity.build.iter().chain(&b.identity.other_builds))
+            .cloned()
+            .collect()
+    };
+    let (builds_c, builds_d) = (builds(controls), builds(candidates));
+    let mixed: Vec<String> = [("control", &builds_c), ("candidate", &builds_d)]
+        .iter()
+        .filter(|(_, b)| b.len() > 1)
+        .map(|(label, b)| {
+            format!(
+                "{label} {}",
+                b.iter().cloned().collect::<Vec<_>>().join(", ")
+            )
+        })
+        .collect();
+    if !mixed.is_empty() {
+        confounds.push(format!("builds differ inside an arm: {}", mixed.join("; ")));
+    } else if !builds_c.is_empty() && !builds_d.is_empty() && builds_c != builds_d {
+        confounds.push(format!(
+            "the arms ran different builds: {} against {}; expected when the change under \
+             test is a build, a confound otherwise",
+            builds_c.iter().next().unwrap(),
+            builds_d.iter().next().unwrap()
+        ));
+    }
+    let clocks = |arm: &[MatchBrief]| -> BTreeSet<String> { arm.iter().map(clock_label).collect() };
+    let (clocks_c, clocks_d) = (clocks(controls), clocks(candidates));
+    if clocks_c != clocks_d || clocks_c.len() > 1 {
+        let join = |s: &BTreeSet<String>| s.iter().cloned().collect::<Vec<_>>().join(", ");
+        confounds.push(format!(
+            "engine clocks differ: control {}, candidate {}; docs/fixed-clock.md says which \
+             maps and metrics agree across the fixed and wall clocks",
+            join(&clocks_c),
+            join(&clocks_d)
+        ));
+    }
+    for (label, arm) in [("control", controls), ("candidate", candidates)] {
+        let mut seen: BTreeMap<(Option<String>, u64), Vec<usize>> = BTreeMap::new();
+        for (index, b) in arm.iter().enumerate() {
+            if let Some(c) = b.identity.clock.as_ref().filter(|c| c.frame_us > 0) {
+                seen.entry((b.identity.build.clone(), c.seed))
+                    .or_default()
+                    .push(index + 1);
+            }
+        }
+        for ((_, seed), tapes) in seen {
+            if tapes.len() > 1 {
+                let list: Vec<String> = tapes.iter().map(|t| t.to_string()).collect();
+                void.push(format!(
+                    "the {label} arm repeats seed {seed} on one build (tapes {}): a fixed-clock \
+                     match replays exactly, so the same match would count more than once",
+                    list.join(", ")
+                ));
+            }
+        }
+    }
+    IdentityCheck { void, confounds }
+}
+
+fn refuse_repeated_seed(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> CompareReport {
+    let mut report = refuse_wrong_map(a, b, findings);
+    report.headline = "Mixed: an arm holds one fixed-clock match twice".into();
+    report.gate_card =
+        "REPEATED SEED: no gameplay verdict; give every tape in an arm its own seed".into();
+    report.next_steps = vec![NextStep {
+        priority: 1,
+        area: "lab".into(),
+        look_at: "the repeated seed in each arm".into(),
+        why: "A fixed-clock match repeats line for line, so record a fresh seed in its place."
+            .into(),
+    }];
+    report
 }
 
 /// One tape against one tape, with every diagnostic gate the lab has
@@ -4390,6 +4504,57 @@ ARGEVT Reap spawned
     /// The row the player would recognise, from the last human dm4
     /// tape on record: Shane went 18 and 11 and the bots killed him
     /// ten times in 302 seconds.
+    /// A self-splash names the human as its own killer. It is neither a
+    /// world death nor a bot kill, so deaths minus world deaths read it
+    /// as one (#844). Three deaths here, one by a bot.
+    #[test]
+    fn a_human_self_kill_is_not_a_bot_kill() {
+        let mut text = String::from("ARGEVT Romero spawned\nARGEVT Carmack spawned\n");
+        for i in 0..=120 {
+            let t = i as f64 * 0.5;
+            for name in ["Romero", "Carmack", "Shane"] {
+                text.push_str(&format!(
+                    "ARGLOG {name} t {t:.1} pos '{} 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n",
+                    i * 4
+                ));
+            }
+        }
+        text.push_str("ARGEVT Shane death Shane pos '100 0 24'\n");
+        text.push_str("ARGEVT Shane death world pos '200 0 24'\n");
+        text.push_str("ARGEVT Shane death Romero pos '300 0 24'\n");
+        let b = brief_text(&text, None);
+        let human = b
+            .totals
+            .human
+            .as_ref()
+            .expect("Shane never spawned, so is human");
+        assert_eq!(human.deaths, 3);
+        assert_eq!(human.world_deaths, 1);
+        assert_eq!(human.bot_kills, 1, "only Romero's kill is a bot kill");
+        let sc = b.human_scorecard.expect("human tape carries a scorecard");
+        assert!(
+            (sc.bot_kills_human_pm - 1.0).abs() < 0.05,
+            "one bot kill in one minute, got {}",
+            sc.bot_kills_human_pm
+        );
+    }
+
+    /// The 16 September dm4 session: nine deaths, one to the world and
+    /// two self-splashes, so the bots killed the player six times.
+    #[test]
+    fn the_september_session_drops_its_self_splashes_if_present() {
+        let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../runs/shane_dm4_2026-09-16.log");
+        if !path.exists() {
+            return;
+        }
+        let b = brief_path(&path, None).unwrap();
+        let human = b.totals.human.as_ref().expect("human tape");
+        assert_eq!(human.deaths, 9);
+        assert_eq!(human.world_deaths, 1);
+        assert_eq!(human.bot_kills, 6);
+    }
+
     #[test]
     fn a_human_tape_carries_a_scorecard_if_present() {
         let path = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -4506,6 +4671,92 @@ ARGEVT Reap spawned
         assert!(csv.contains("stall_parity,"), "{csv}");
         // the verdict itself is the first line, as a comment
         assert!(csv.starts_with("# "), "{csv}");
+    }
+
+    fn stamped(build: &str, frame_us: u64, seed: u64) -> MatchBrief {
+        let mut b = brief_text(&log_a(), None);
+        b.totals.duration_sec = 185.0;
+        b.identity.build = Some(build.into());
+        b.identity.clock = Some(crate::tape_identity::TapeClock {
+            frame_us,
+            tick_us: if frame_us > 0 { 1000 } else { 13900 },
+            seed,
+            kind: if frame_us > 0 { "fixed" } else { "realtime" },
+        });
+        b
+    }
+
+    /// A fixed-clock tape reads the listen tick class, so it passes the
+    /// tick guard against a wall-clock one. The clock difference must
+    /// still reach the verdict (#852).
+    #[test]
+    fn a_compare_across_engine_clocks_says_so() {
+        let fixed = [stamped("aaaa1111", 14250, 1), stamped("aaaa1111", 14250, 2)];
+        let wall = [stamped("aaaa1111", 0, 0), stamped("aaaa1111", 0, 0)];
+        let r = compare_band(&fixed, &wall);
+        assert!(
+            r.findings.iter().any(|f| f
+                .starts_with("engine clocks differ: control realtime, candidate fixed 14.25 ms")),
+            "{:?}",
+            r.findings
+        );
+        let same = compare_band(&wall, &wall);
+        assert!(
+            !same
+                .findings
+                .iter()
+                .any(|f| f.contains("engine clocks differ")),
+            "{:?}",
+            same.findings
+        );
+    }
+
+    #[test]
+    fn a_compare_across_builds_names_both() {
+        let r = compare_band(&[stamped("bbbb2222", 0, 0)], &[stamped("aaaa1111", 0, 0)]);
+        assert!(
+            r.findings
+                .iter()
+                .any(|f| f.starts_with("the arms ran different builds: aaaa1111 against bbbb2222")),
+            "{:?}",
+            r.findings
+        );
+        let mixed = compare_band(
+            &[stamped("bbbb2222", 0, 0)],
+            &[stamped("aaaa1111", 0, 0), stamped("cccc3333", 0, 0)],
+        );
+        assert!(
+            mixed
+                .findings
+                .iter()
+                .any(|f| f.starts_with("builds differ inside an arm: control aaaa1111, cccc3333")),
+            "{:?}",
+            mixed.findings
+        );
+    }
+
+    /// One seed on one build is one match, however many times it ran.
+    #[test]
+    fn an_arm_holding_one_seed_twice_is_refused() {
+        let ctl = [stamped("aaaa1111", 14250, 5), stamped("aaaa1111", 14250, 6)];
+        let twice = [stamped("bbbb2222", 14250, 7), stamped("bbbb2222", 14250, 7)];
+        let r = compare_band(&twice, &ctl);
+        assert_eq!(r.verdict, Verdict::Mixed);
+        assert!(
+            r.gates.is_empty() && r.band.is_empty(),
+            "no gate may be read"
+        );
+        assert!(
+            r.findings.iter().any(
+                |f| f.starts_with("the candidate arm repeats seed 7 on one build (tapes 1, 2)")
+            ),
+            "{:?}",
+            r.findings
+        );
+        // the same seed on two builds is two matches
+        let two_builds = [stamped("bbbb2222", 14250, 7), stamped("dddd4444", 14250, 7)];
+        let ok = compare_band(&two_builds, &ctl);
+        assert!(!ok.gates.is_empty(), "{:?}", ok.findings);
     }
 
     #[test]

@@ -91,8 +91,8 @@ wall-clock tapes against 20 fixed tapes per map, and a criterion per metric
 30 per cent of the wall-clock mean or one event, Different when the 95 per
 cent interval excludes zero). A map is accepted when nothing reads Different
 and engagements, coverage and goals read Equivalent. Average speed was
-registered but the corpus does not carry it, so it was not measured
-([#843](https://github.com/saworbit/argus/issues/843)).
+registered but the corpus did not carry it then, so it was not measured
+([#843](https://github.com/saworbit/argus/issues/843), since fixed).
 `tools/argus_clock_validation.py` applies the rule.
 
 ### dm2 at 13.9 ms: accepted
