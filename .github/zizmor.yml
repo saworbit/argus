@@ -9,5 +9,5 @@ rules:
     # so adopting it would trade one linter's finding for another's error.
     # The "./" references here run straight after a non-persisted checkout
     # of the triggering commit, before any step can write to .github/.
-    # Revisit when actionlint accepts the new syntax.
+    # Revisit when actionlint accepts the new syntax (#847).
     disable: true

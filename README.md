@@ -85,6 +85,12 @@ the excessive-reversal issue remains open, with its
 Download and extract this repository, or use a local clone. The folder to
 install is `game/argus` inside that checkout, not the whole repository.
 
+Alternatively, download `argus-<tag>.zip` from a
+[release](https://github.com/saworbit/argus/releases): it holds the same
+`argus` folder, ready to copy. Releases built by the release workflow also
+attach a `.sha256` checksum and a signed provenance attestation; the
+[security policy](SECURITY.md#scope) shows how to verify one.
+
 ### Classic engines: QuakeSpasm, Ironwail or vkQuake
 
 1. Copy **the `argus` folder inside `game/`** beside your engine's `id1`
