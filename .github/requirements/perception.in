@@ -1,0 +1,8 @@
+# CI's hash-locked copy of tools/requirements-perception-cohort.txt (#846).
+# That file is frozen study evidence: never edit it to match this one.
+# argus_ci.py pins fails when the two name different versions.
+# Regenerate perception.txt only if the frozen file ever changes:
+#   cd .github/requirements
+#   uv pip compile perception.in --python-version 3.12 --python-platform x86_64-manylinux_2_28 --generate-hashes --no-annotate -o perception.txt
+numpy==2.4.4
+scipy==1.17.1

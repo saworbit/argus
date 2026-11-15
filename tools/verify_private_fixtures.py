@@ -21,7 +21,6 @@ import os
 from pathlib import Path
 import re
 import shutil
-import subprocess
 import time
 
 from check_health_fixture import audit as audit_health, check as check_health

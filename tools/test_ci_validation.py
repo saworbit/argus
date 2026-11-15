@@ -241,6 +241,42 @@ class CIValidationTests(unittest.TestCase):
             self.assertEqual(len(failures), 1, failures)
             self.assertIn("tools/test_lab.py", failures[0])
 
+    def _pins_root(self, td, workflow, copy):
+        root = self._suite_root(td, workflow)
+        (root / "tools" / "requirements-perception-cohort.txt").write_text(
+            "numpy==2.4.4\nscipy==1.17.1\n", encoding="utf-8")
+        (root / ".github" / "requirements").mkdir()
+        (root / ".github" / "requirements" / "perception.txt").write_text(copy, encoding="utf-8")
+        return root
+
+    def test_pins_gate_fails_when_the_ci_copy_drifts_from_the_frozen_pins(self):
+        hashed = "run: python3 -m pip install --require-hashes -r .github/requirements/perception.txt\n"
+        same = ("# header\nnumpy==2.4.4 \\\n    --hash=sha256:aa\n"
+                "scipy==1.17.1 \\\n    --hash=sha256:bb\n")
+        with tempfile.TemporaryDirectory() as td:
+            root = self._pins_root(td, hashed, same)
+            self.assertEqual(ci.check_pins(root), [])
+            (root / ".github" / "requirements" / "perception.txt").write_text(
+                same.replace("scipy==1.17.1", "scipy==1.18.0"), encoding="utf-8")
+            failures = ci.check_pins(root)
+            self.assertEqual(len(failures), 1, failures)
+            self.assertIn("scipy==1.18.0", failures[0])
+            self.assertIn("never edit the frozen file", failures[0])
+
+    def test_pins_gate_fails_on_an_install_without_hashes(self):
+        same = "numpy==2.4.4 \\\n    --hash=sha256:aa\nscipy==1.17.1 \\\n    --hash=sha256:bb\n"
+        workflow = ("run: python3 -m pip install -r tools/requirements-perception-cohort.txt\n"
+                    "run: pipx run ruff==0.14.6 check tools\n"
+                    "# a comment naming pip install is not an install\n")
+        with tempfile.TemporaryDirectory() as td:
+            failures = ci.check_pins(self._pins_root(td, workflow, same))
+            self.assertEqual([f.split(" installs")[0] for f in failures],
+                             ["pins: .github/workflows/fast.yml:1", "pins: .github/workflows/fast.yml:2"])
+
+    def test_all_runs_the_pins_gate_and_it_passes_on_the_tree(self):
+        self.assertIs(ci.CHECKS["pins"], ci.check_pins)
+        self.assertEqual(ci.check_pins(ci.ROOT), [])
+
     def test_all_runs_the_suites_gate_and_it_passes_on_the_tree(self):
         self.assertIs(ci.CHECKS["suites"], ci.check_suites)
         self.assertEqual(ci.check_suites(ci.ROOT), [])

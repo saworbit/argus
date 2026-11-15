@@ -1,0 +1,7 @@
+# Lint tools for .github/workflows/lint.yml, installed with
+# pip install --require-hashes -r .github/requirements/lint.txt (#846).
+# Regenerate lint.txt after changing a pin here (Dependabot does this too):
+#   cd .github/requirements
+#   uvx --python 3.12 --from pip-tools pip-compile --generate-hashes --allow-unsafe --strip-extras --no-emit-index-url --output-file lint.txt lint.in
+check-jsonschema==0.38.0
+ruff==0.14.6

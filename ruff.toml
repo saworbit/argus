@@ -1,0 +1,8 @@
+# Ruff configuration for the lint gate in .github/workflows/lint.yml, which
+# picks its own rule set with --select.
+#
+# A script whose SHA-256 a results file records is evidence, not code to
+# tidy: editing it breaks the receipt. Those keep their findings here instead.
+[lint.per-file-ignores]
+# runs/muzzle1_clearance.results.json records this file's hash
+"tools/verify_muzzle_clearance.py" = ["F401"]

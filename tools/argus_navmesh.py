@@ -739,7 +739,7 @@ def link_runs(bsp, doc, speed=RUN, gravity=GRAVITY):
         a, b = row[0], row[1]
         if (a, b) in typed or nodes[a][2] - nodes[b][2] <= STEP:
             continue
-        (ax, ay, az), (bx, by, bz) = nodes[a], nodes[b]
+        (ax, ay, az), (bx, by, _) = nodes[a], nodes[b]
         d = math.hypot(bx - ax, by - ay)
         if d < 1.0:
             continue

@@ -41,6 +41,27 @@ updates:
           - "minor"
           - "patch"
 
+  # CI's hash-locked Python installs (#846). lint.in/lint.txt are the lint
+  # tools and stay current like any dependency. perception.in/perception.txt
+  # copy the frozen study pins below and must keep naming the same versions
+  # (argus_ci.py pins), so numpy and scipy are ignored here as they are there.
+  - package-ecosystem: "pip"
+    directory: "/.github/requirements"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "github_actions"
+    ignore:
+      - dependency-name: "numpy"
+      - dependency-name: "scipy"
+    groups:
+      lint-tools:
+        patterns:
+          - "*"
+
   # tools/requirements-perception-cohort.txt is FROZEN study evidence, not a
   # dependency to keep current: its SHA-256 is registered in
   # docs/perception-engagement-cohort-protocol.json and
