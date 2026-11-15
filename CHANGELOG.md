@@ -588,6 +588,17 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep the lab's Rust suite green on a loaded machine (#836). Three fixed
+  waits in the lab itself are now bounds on a condition: `stop` waits up to
+  5 s for a killed engine to exit instead of 200 ms, so it no longer reports
+  a dying engine as running; shutdown gives aborted tasks 10 s, not 2 s, to
+  release the run gate; and the Windows console helper may take 15 s to
+  start, not 5. The six tests named on the issue, and five more of the same
+  kind, wait on conditions with deadlines instead of fixed sleeps, and the
+  real-engine tests now hold the live-match test lock, because their matches
+  wrote the live state the fake-match server tests assert on. Three full
+  parallel runs passed 437 of 437 with a busy loop on every core.
+
 - Classify lava by hull-0 contents in `measure`'s null-pair gate audit and
   stopping-rule audit, as its limits table already did. Both read dm2 and
   e1m7 lava as zero on every tape; the dm2 null pairs now read their real

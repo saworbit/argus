@@ -785,10 +785,13 @@ async fn win_inject(pid: u32, line: &str) -> Result<(), String> {
             line,
         ])
         .creation_flags(windows_sys::Win32::System::Threading::CREATE_NO_WINDOW);
+    // A bound, not a delay: the helper exits as soon as its line is written.
+    // 5 s was not enough for a fresh process to start on a loaded machine
+    // (#836), and a refused inject fails a live tune or match command.
     let result = crate::python_helper::capture(
         &mut command,
         "Windows console helper",
-        std::time::Duration::from_secs(5),
+        std::time::Duration::from_secs(15),
     )
     .await?;
     if !result.status.success() {
@@ -1063,6 +1066,9 @@ mod tests {
         let _gate = super::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut cfg = crate::config::load_for_reads_from(
             &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
@@ -1124,7 +1130,8 @@ mod tests {
         };
         let ((mut left, left_error), (mut right, right_error)) =
             tokio::join!(send(left, "left"), send(right, "right"));
-        let received = tokio::time::timeout(std::time::Duration::from_secs(5), async {
+        // a deadline, not a delay (#836)
+        let received = tokio::time::timeout(std::time::Duration::from_secs(20), async {
             loop {
                 if left
                     .log_text()
@@ -1472,6 +1479,9 @@ mod tests {
         let _gate = crate::engine::ENGINE_TEST_LOCK
             .lock()
             .unwrap_or_else(|p| p.into_inner());
+        // Real matches write the process-wide live-match state that the
+        // fake-match server tests assert on, so hold their lock too.
+        let _live = crate::match_ctrl::live_test_lock_async().await;
         let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
         let mut env = std::collections::HashMap::new();
         env.insert("ARGUS_ROOT".into(), root.display().to_string());
@@ -1515,7 +1525,17 @@ mod tests {
         }
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         let inject = ctrl.command("status").await;
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+        // wait for the reply with a deadline rather than a fixed 2 s (#836)
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(20), async {
+            loop {
+                let log = ctrl.log_text().unwrap_or_default();
+                if log.contains("host:") || log.contains("players:") {
+                    break;
+                }
+                tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+            }
+        })
+        .await;
         let log = ctrl.log_text().unwrap_or_default();
         let _ = ctrl.stop(std::time::Duration::from_secs(3)).await;
         inject.expect("console inject must not error");
