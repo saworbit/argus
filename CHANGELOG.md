@@ -588,6 +588,18 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Classify lava by hull-0 contents in `measure`'s null-pair gate audit and
+  stopping-rule audit, as its limits table already did. Both read dm2 and
+  e1m7 lava as zero on every tape; the dm2 null pairs now read their real
+  lava (0 to 8), none convicts, and the stopping-rule audit gains one reject
+  in the regenerated limits doc. A test now covers the listen-class arm
+  filter (#835).
+
+- Name the arm and both halves when the stopping-rule audit accepts a null.
+  The e1m6 stall accept at the listen-class sigma is #324's seven-tape
+  candidate arm, whose own spread (28.2) exceeds the pooled 21.0; the larger
+  baked sigma stays, with that evidence beside it (#834).
+
 - Count a human death as a bot kill in the brief's human scorecard only when a
   bot is the killer. A self-splash used to count, so the 16 September dm4
   session read eight bot kills where the bots got six (#844).
