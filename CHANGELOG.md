@@ -1069,6 +1069,13 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Clear 35 of the 37 pyflakes findings in `tools/` and widen the `python
+  critical lint` gate from Ruff's critical set to all of pyflakes. The other
+  two sit in `verify_muzzle_clearance.py`, whose hash a results file records,
+  so `ruff.toml` exempts it rather than editing it. The two unused variables
+  in navgen's `beeline_ok` were leftovers of reverted attempts; a dm2
+  regeneration is byte-identical before and after (#850).
+
 - Record the repository settings applied with the GitHub hardening, which
   live outside Git: `main` now accepts changes only through pull requests
   and requires seven checks (`repo invariants`, `lab test suite (rust)`,
@@ -1136,6 +1143,13 @@ passing botmatch does not establish better human play.
   stops warning about it ([#807](https://github.com/saworbit/argus/issues/807)).
 
 #### Security
+
+- Install every Python package CI uses from a hash-locked file in
+  `.github/requirements/` with `pip install --require-hashes`, transitive
+  dependencies included. The perception copy must name exactly the frozen
+  study pins, which stay byte-identical, and `argus_ci.py pins` fails on
+  drift or on an install without hashes. Dependabot keeps the lint tools
+  current and ignores numpy and scipy (#846).
 
 - Pin every GitHub Action to a full commit SHA, stop checkouts persisting
   the job token, move workflow expressions out of shell scripts, give every

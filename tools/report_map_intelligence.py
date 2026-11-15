@@ -7,7 +7,6 @@ import json
 import os
 from pathlib import Path
 import statistics
-import subprocess
 from argus_registration import registration
 from argus_source import source_identity
 from argus_validation import require

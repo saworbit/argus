@@ -9,7 +9,6 @@ import io
 import json
 import math
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -780,7 +779,7 @@ class TestSecondRoundFindings(unittest.TestCase):
         body = 'ARGEVT Reap spawned\n'
         for i in range(deaths):
             body += sample('Reap', i * 2.0, 0, 0, -296) + sample('Reap', i * 2.0 + 0.5, 0, 0, -384, hp=40)
-            body += f"ARGEVT Reap death world pos '0 0 -384'\nARGEVT Reap respawn\n"
+            body += "ARGEVT Reap death world pos '0 0 -384'\nARGEVT Reap respawn\n"
         return tape(started=started, body=body)
 
     def test_an_open_claim_on_a_fixed_cell_does_not_hide_a_regression(self):

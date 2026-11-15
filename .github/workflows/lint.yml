@@ -65,19 +65,25 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Install the lint tools (hash-locked)
+        # every package, transitive ones included, is pinned and hash
+        # checked from .github/requirements/lint.txt
+        run: |
+          python3 -m venv "$RUNNER_TEMP/lint"
+          "$RUNNER_TEMP/lint/bin/python" -m pip install --require-hashes -r .github/requirements/lint.txt
+
       - name: Validate GitHub configuration against published schemas
-        env:
-          CHECK_JSONSCHEMA: check-jsonschema==0.38.0
         run: |
           # Dependabot and issue form mistakes are silent until the bot or
           # a contributor trips over them; catch them at review time
-          pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.dependabot .github/dependabot.yml
-          pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.github-issue-config .github/ISSUE_TEMPLATE/config.yml
+          cj="$RUNNER_TEMP/lint/bin/check-jsonschema"
+          "$cj" --builtin-schema vendor.dependabot .github/dependabot.yml
+          "$cj" --builtin-schema vendor.github-issue-config .github/ISSUE_TEMPLATE/config.yml
           find .github/ISSUE_TEMPLATE -name '*.yml' ! -name config.yml -print0 \
-            | xargs -0 pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.github-issue-forms
+            | xargs -0 "$cj" --builtin-schema vendor.github-issue-forms
           find .github/DISCUSSION_TEMPLATE -name '*.yml' -print0 \
-            | xargs -0 pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.github-discussion
-          pipx run "$CHECK_JSONSCHEMA" --builtin-schema vendor.citation-file-format CITATION.cff
+            | xargs -0 "$cj" --builtin-schema vendor.github-discussion
+          "$cj" --builtin-schema vendor.citation-file-format CITATION.cff
 
   python:
     name: python critical lint
@@ -88,13 +94,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Ruff (syntax errors and undefined names)
-        env:
-          RUFF: ruff==0.14.6
+      - name: Install the lint tools (hash-locked)
         run: |
-          # the flake8 "critical" set: code that cannot run as written.
-          # Style is deliberately out of scope for this gate.
-          pipx run "$RUFF" check --output-format=github --select E9,F63,F7,F82 tools
+          python3 -m venv "$RUNNER_TEMP/lint"
+          "$RUNNER_TEMP/lint/bin/python" -m pip install --require-hashes -r .github/requirements/lint.txt
+
+      - name: Ruff (syntax errors and pyflakes)
+        run: |
+          # the flake8 "critical" set (code that cannot run as written) plus
+          # the rest of pyflakes: unused imports and variables, empty
+          # f-strings. Style is deliberately out of scope for this gate.
+          "$RUNNER_TEMP/lint/bin/ruff" check --output-format=github --select E9,F63,F7,F tools
 
   shell:
     name: shell lint

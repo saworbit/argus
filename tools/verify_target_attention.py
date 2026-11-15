@@ -103,7 +103,7 @@ def main():
                 shutil.copy2(output / 'lq1/progs.dat', folder / 'progs.dat')
                 for map_name in maps:
                     name = args.prefix + '_' + map_name
-                    result = run_match(lab, map_name, 10, name, port=args.port, timeout=40, environment=env, stderr_path=output / (map_name + '.stderr'))
+                    run_match(lab, map_name, 10, name, port=args.port, timeout=40, environment=env, stderr_path=output / (map_name + '.stderr'))
                     raw, text = read_tape(output, name, map_name)
                     # Keep even a failing oracle result before judging it.
                     row = dict(map=map_name, **source_receipt(output / 'src'),

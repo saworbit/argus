@@ -212,7 +212,7 @@ def main():
                 shutil.copy2(output / 'lq1/progs.dat', folder / 'progs.dat')
                 for map_name in maps:
                     name = args.prefix + '_' + map_name
-                    result = run_match(lab, map_name, int('36' if args.case in (8,9) else '24'), name, port=args.port, timeout=65, environment=env, stderr_path=output / (map_name + '.stderr'))
+                    run_match(lab, map_name, int('36' if args.case in (8,9) else '24'), name, port=args.port, timeout=65, environment=env, stderr_path=output / (map_name + '.stderr'))
                     raw, text = read_tape(output, name, map_name)
                     row = dict(map=map_name, case=args.case, control=args.control,
                         source_sha256=source_identity(output / 'src'),

@@ -10,7 +10,6 @@ import math
 from pathlib import Path
 import re
 import shutil
-import sys
 
 from argus_fixture_harness import new_output, stage_fixture, private_game, read_tape
 from argus_source import source_identity

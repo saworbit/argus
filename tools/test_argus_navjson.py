@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from argus_navjson import FAMILIES, FREE, GATED, WALK, edges, load_nav
+from argus_navjson import FAMILIES, GATED, edges, load_nav
 from argus_registration import registration
 
 

@@ -37,7 +37,7 @@ decimal. The played-rate cutoff is 0.5135, leaving a 1 ms margin below
 the legacy cluster so repeated runs do not cross classes on sampling jitter.
 Written for docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 """
-import re, sys, os, glob, statistics as st
+import sys, os, glob, statistics as st
 
 from argus_tape import samples
 

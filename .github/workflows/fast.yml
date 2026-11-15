@@ -137,7 +137,7 @@ jobs:
 
       - name: Run observation boundary and tactical fixture tests
         run: |
-          python3 -m pip install -r tools/requirements-perception-cohort.txt
+          python3 -m pip install --require-hashes -r .github/requirements/perception.txt
           python3 -m unittest discover -s tools -p 'test_perception*.py'
           python3 -O tools/test_perception_health.py
           python3 -O tools/test_perception_fixture.py

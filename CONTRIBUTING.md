@@ -246,17 +246,17 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 
 | Check | Workflow | What it gates |
 |---|---|---|
-| `repo invariants` | [fast](.github/workflows/fast.yml) | `argus_ci.py all`: shipped binary pair, line endings, protected tapes, nav integrity, links, dashes, refuted rules, lab claims, suite wiring, build stamp |
+| `repo invariants` | [fast](.github/workflows/fast.yml) | `argus_ci.py all`: shipped binary pair, line endings, protected tapes, nav integrity, links, dashes, refuted rules, lab claims, suite wiring, build stamp, hashed Python installs |
 | `lab test suite (rust)` | [fast](.github/workflows/fast.yml) | rustfmt, strict Clippy, rustdoc, the Rust suite and the Python suites |
 | `workflow lint` | [lint](.github/workflows/lint.yml) | actionlint and the zizmor workflow security audit |
 | `config schemas` | [lint](.github/workflows/lint.yml) | Dependabot, issue form, discussion form and `CITATION.cff` schemas |
-| `python critical lint` | [lint](.github/workflows/lint.yml) | Ruff's syntax-error and undefined-name rules over `tools/` |
+| `python critical lint` | [lint](.github/workflows/lint.yml) | Ruff's syntax-error rules and the full pyflakes set over `tools/` |
 | `shell lint` | [lint](.github/workflows/lint.yml) | ShellCheck over tracked shell scripts |
 | `dependency review` | [dependencies](.github/workflows/dependencies.yml) | new dependencies with moderate or worse advisories |
 
 These also run, without blocking a merge: the QuakeC compile, private fixture compiles and the LibreQuake botmatch smoke ([compile](.github/workflows/compile.yml), when sources change), CodeQL ([codeql](.github/workflows/codeql.yml)), `cargo deny` ([dependencies](.github/workflows/dependencies.yml)), strict Clippy on Windows ([windows](.github/workflows/windows.yml), when the lab changes) and path labels ([labeler](.github/workflows/labeler.yml)).
 
-**Changing a workflow**: pin every action to a full commit SHA with its version as a comment, set `persist-credentials: false` on checkout, pass `${{ }}` values to scripts through `env:`, give every job `timeout-minutes`, and run Linux jobs on `ubuntu-24.04` (`test_tools_cli.py` rejects a `*-latest` label). Before pushing, run `actionlint` and `zizmor --persona pedantic .github`. Audits deliberately disabled are recorded, with the reason, in [.github/zizmor.yml](.github/zizmor.yml).
+**Changing a workflow**: pin every action to a full commit SHA with its version as a comment, set `persist-credentials: false` on checkout, pass `${{ }}` values to scripts through `env:`, give every job `timeout-minutes`, and run Linux jobs on `ubuntu-24.04` (`test_tools_cli.py` rejects a `*-latest` label). Install Python packages only with `pip install --require-hashes` from a lock file in `.github/requirements/` (`argus_ci.py pins` fails otherwise). Before pushing, run `actionlint` and `zizmor --persona pedantic .github`. Audits deliberately disabled are recorded, with the reason, in [.github/zizmor.yml](.github/zizmor.yml).
 
 ---
 

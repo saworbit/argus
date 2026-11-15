@@ -1,7 +1,6 @@
 """Evidence gates and lab cleanup must survive optimized Python and failures."""
 import contextlib
 import io
-import json
 import os
 from pathlib import Path
 import subprocess

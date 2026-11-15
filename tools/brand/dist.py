@@ -208,7 +208,7 @@ def banner(w=1280.0, h=400.0, bg=ROCK, fg=INK, sub=MUTED, rule=LINE):
             f'stroke-width="2"/>'
             f'<g transform="translate(84 300)">{tb}</g>'
             + brush(84, 58, 58, 12, 5, ACCENT) +
-            f'</svg>')
+            '</svg>')
 
 
 def social(w=1280.0, h=640.0):
@@ -234,7 +234,7 @@ def social(w=1280.0, h=640.0):
             f'<g transform="translate({(w - tw) / 2:.2f} {ty:.0f})">'
             f'{tb}</g>'
             + brush(w / 2 - 29, by, 58, 12, 5, ACCENT) +
-            f'</svg>')
+            '</svg>')
 
 
 # the motif: the same 45-degree cut, as a container rule

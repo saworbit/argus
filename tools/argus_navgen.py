@@ -742,7 +742,6 @@ def beeline_points(a, b):
     px, py = -(by-ay) / dist, (bx-ax) / dist    # unit perpendicular
     z = az
     bad = 0
-    wallrun = 0
     for s in range(1, steps + 1):
         f = s / steps
         cx, cy = ax + (bx-ax)*f, ay + (by-ay)*f
@@ -750,7 +749,6 @@ def beeline_points(a, b):
         # walkmove slides along walls, so a line that clips a corner is
         # still walkable when floor continues just beside it: probe the
         # line first, then perpendicular offsets either side
-        useoff = 0
         for off in (0, 16, -16, 32, -32):
             floors = column_floors(cx + px*off, cy + py*off)
             for fz in floors:                 # climbable step first
@@ -767,7 +765,6 @@ def beeline_points(a, b):
             if nz is not None and hostile_at(cx + px*off, cy + py*off, nz):
                 nz = None
             if nz is not None:
-                useoff = off
                 break
         if nz is None:
             # tolerate brief nicks; sustained wall is a lie
@@ -4622,7 +4619,6 @@ with io.StringIO() as f:
         f.write(f"        Argus_Nav_Spawn_{MAPNAME} ();\n")
         f.write("};\n")
     _qc_text = f.getvalue()
-import json
 _nav_doc = {"nodes": [pos(w) for w in ways],
            # sorted so the json is CANONICAL: the passes that add
            # links late (closure, knit, trace mining, the mined
