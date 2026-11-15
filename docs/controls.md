@@ -71,7 +71,8 @@ After the session, `python tools/argus_lab.py review <stem>` lists each mark
 with what the bot was doing around it, and `python tools/argus_gallery.py
 build <stem>` cuts a short clip of each one from the session demo for a
 quick ruling ([the session gallery](session-gallery.md)). Marks need
-`+developer 1`, which the session launch command already sets.
+`+developer 1`, which the session launch command already sets; without it the
+game answers `mark not saved` rather than pretending.
 
 ## ArgusCam
 

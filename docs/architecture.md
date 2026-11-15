@@ -204,11 +204,13 @@ Compare matched tick classes and retain the source identity for every arm.
 | `src/argus_nav_<map>.seats.json` | Seats, walks and cuts applied to a shipped graph by `argus_navgen.py --seat-links` |
 | `src/argus_cam.qc` | Spectator camera and HUD |
 | `src/defs.qc` / `src/progs.src` | Definitions, client-message shims and compile order |
+| `src/argus_build.qc` | Generated build identity (`tools/argus_build_stamp.py`); every tape prints it as `ARGUS build` |
 | `tools/argus_mcp/` | Lab server, wizard, CLI, puppet and native reports |
 | `tools/argus_navgen.py` | BSP navigation generation |
 | `tools/harvest_session.py` | Preserve console logs and demos from human play |
 | `tools/argus_lab.py` | Lab spine: session state, staleness, triage, comparison audit, evidence tiers |
 | `tools/lab_objective.json` / `tools/lab_claims.json` | The lab's written objective and its claims ledger |
+| `tools/lab_instruments.json` | Where the [fixed lab clock](fixed-clock.md) and the [stand-in human](stand-in.md) may be trusted |
 | `runs/` | Saved tapes, outcomes and build provenance |
 
 Engine installs, licensed maps/models, local configuration, demos and dated
@@ -227,7 +229,8 @@ backups are machine-local where specified by `.gitignore`.
   Camera and firing code must convert deliberately.
 - **Console versus chat:** Diagnostics use `dprint` with `developer 1`.
   Dedicated logs do not prove client-visible `bprint` chat; observe through
-  the puppet's `last_prints` to verify it.
+  the puppet's `last_prints` to verify it. Obituaries are `bprint` too, so a
+  dedicated tape holds none: count kills from `ARGEVT ... death` lines.
 - **Evidence:** A goal selection is not a pickup, a shot is not a hit and a
   passing short tape is not proof of improved player experience. Use the
   [recording and report contracts](telemetry.md).

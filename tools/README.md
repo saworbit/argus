@@ -304,6 +304,15 @@ Applies the registered fixed-clock criterion (`docs/specs/2026-11-15-fixed-clock
   ```
 - **Behavior**: exits 0 when the map is accepted. Metrics come from `argus-mcp corpus`; a metric the corpus does not carry reads "not measured", never zero.
 
+### 20. `argus_standin_calibration.py`
+Applies the registered stand-in calibration (`docs/specs/2026-11-15-stand-in-calibration.md`) to tapes named `<stem>_k<skill>_<seed>`: dose response (Spearman between bot skill and bot kills on the stand-in, and a top-minus-bottom Welch interval) and level against a person's mean. See [the stand-in human](../docs/stand-in.md).
+- **Usage**:
+  ```bash
+  python tools/argus_standin_calibration.py --glob 'standin_cal_dm4_k*' --person-mean 1.27
+  ```
+- **Behavior**: counts kills from `ARGEVT ... death` lines (a dedicated tape has no obituaries), taking a kill as a death whose killer is a bot by name; exits 0 when dose response passes.
+- **Tests**: `test_argus_instrument_tools.py`, with `argus_clock_validation.py`.
+
 ---
 
 The fixed lab clock and the stand-in human are Rust lab CLI commands:

@@ -37,8 +37,9 @@ passing botmatch does not establish better human play.
   registered protocol: 13.9 ms failed on dm4 (more lava deaths and
   routefails than the wall clock), and 14.25 ms passed a registered
   confirmation on fresh seeds on dm4 and dm2, with lava, world deaths and
-  routefails (and dm4 stalls) as limits
-  ([details](docs/fixed-clock.md)).
+  routefails (and dm4 stalls) as limits; average speed could not be measured
+  because the corpus does not carry it
+  ([details](docs/fixed-clock.md), [#843](https://github.com/saworbit/argus/issues/843)).
 
 - Stamp a build identity into every tape (#823). `src/argus_build.qc` holds a
   hash of the QC source with comments and layout removed, so a comment-only
@@ -67,7 +68,8 @@ passing botmatch does not establish better human play.
   rate and refuses lava. Its registered calibration on dm4 failed dose
   response (bot kills on it did not rise with bot skill, Spearman 0.13,
   because its time in sight of bots ran 0 to 2608 ticks between matches), so
-  it does not screen threat claims yet ([details](docs/stand-in.md)).
+  it does not screen threat claims yet ([details](docs/stand-in.md),
+  [#842](https://github.com/saworbit/argus/issues/842)).
 
 - Add `tools/lab_instruments.json`, where the fixed clock and the stand-in may
   be trusted, read by `argus_lab.py state`, validated by `argus_ci.py lab`,

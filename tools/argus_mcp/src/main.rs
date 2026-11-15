@@ -496,8 +496,8 @@ stand-in's; docs/specs/2026-11-15-stand-in-calibration.md says what they are wor
                 println!("usage: argus-mcp seeds <map> <count> <stem> [--duration N] [--skill N] [--lanes N] [--first N] [--seed-list a,b,c] [--coop]
 
 Run <count> fixed-clock matches on <map>, several engines at once, and print a JSON
-report. Tapes are runs/<stem>_s<seed>.log. The fixed clock runs the played 72 Hz
-frame faster than real time and repeats exactly for one seed and build, so any
+report. Tapes are runs/<stem>_s<seed>.log. The fixed clock runs the wall-clock lab's
+14.25 ms frame faster than real time and repeats exactly for one seed and build, so any
 tape can be replayed with `argus-mcp match <map> <secs> <run> --seed <seed>`.
 
   --duration N    game seconds per match (default 185)
@@ -674,7 +674,7 @@ tape can be replayed with `argus-mcp match <map> <secs> <run> --seed <seed>`.
 
 Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.
 
---seed N (1..10000) runs the fixed lab clock: the played 72 Hz frame, faster than
+--seed N (1..2000) runs the fixed lab clock: the lab's 14.25 ms frame, faster than
 real time, ending at duration_sec of game time, and the same match every time for
 one seed and build. Without it the match runs on the wall clock.");
                 return Ok(());
