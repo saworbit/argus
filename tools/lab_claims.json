@@ -858,10 +858,11 @@
         "dm4"
       ],
       "statement": "Three in four mid-turn route deflections begin straight after a previous deflection, on lab_voidcorner (2402 of 3131, 28 control tapes) and on dm4 (600 of 780, two control tapes): routed mode 2 is exempt from the steering-side hazard check, so after the guard deflects the velocity, route steering turns the heading back at the node for a frame or two and the guard fires again. Episodes run about four times encounters. Encounters themselves start most often from steady routed running (30 per cent on the lab map, 44 on dm4).",
-      "next": "Judge brink changes on movement.brink_encounters. A mode-2 hazard check after a deflection cut the flicker on the lab map and not on dm4 (mode2-brink-check); find out whether its gate opens on dm4's dry-drop lips before a second attempt.",
+      "next": "Judge brink changes on movement.brink_encounters. A mode-2 hazard check after a deflection cut the re-entries whose wish points at lava or a void by about 40 per cent on both maps, which is 95 per cent of the lab map's re-entries and 39 of dm4's (mode2-brink-check). Measure the share of dm4's other re-entries that the run-off landing test causes before a second attempt, and build any new lab map for this with dm4's mix of lethal and dry-drop lips.",
       "evidence": [
         "runs/lab-voidcorner-turn-diagnosis.results.json",
-        "docs/lab-scenarios.md"
+        "docs/lab-scenarios.md",
+        "runs/lab-voidcorner-brink-flicker-gate.results.json"
       ],
       "cheapest_tier": 2
     },
@@ -874,12 +875,13 @@
       "maps": [
         "lab_voidcorner"
       ],
-      "statement": "Isolation tier. For a quarter second after a real brink deflection, routing a vetoed mode-2 heading through Argus_HazardSteer cut route-steer deflection episodes per 1000 route-steer samples on lab_voidcorner from 63.6 to 50.9 over seven listen pairs (detection limit 11.2), encounters level, no guard regressing, with a lava warning (five candidate deaths against none, two of them undamaged airborne departures). Its registered dm4 rung held without transferring: primary 55.3 against 55.6 (limit 12.2), lava 2.0 against 1.4, stalls 6.1 against 3.4, engagements up 66.9 to 76.2 (flagged). No measurable harm on dm4 and no benefit there. Not a general improvement; reverted.",
-      "next": "Read on dm4 whether the gate opens before trying it again; do not ship on this evidence.",
+      "statement": "Isolation tier. For a quarter second after a real brink deflection, routing a vetoed mode-2 heading through Argus_HazardSteer cut route-steer deflection episodes per 1000 route-steer samples on lab_voidcorner from 63.6 to 50.9 over seven listen pairs (detection limit 11.2), encounters level, no guard regressing, with a lava warning (five candidate deaths against none, two of them undamaged airborne departures). Its registered dm4 rung held without transferring: primary 55.3 against 55.6 (limit 12.2), lava 2.0 against 1.4, stalls 6.1 against 3.4, engagements up 66.9 to 76.2 (flagged). No measurable harm on dm4 and no benefit there. Not a general improvement; reverted. Why: it acted on dm4 too, and cut the re-entries whose wanted heading points at lava or a void by 41 per cent there (37 on the lab map), but those are 39 per cent of dm4's re-entries against 95 on the lab map; most of dm4's lie where neither heading sees lava or a void within the guard's floor reach.",
+      "next": "Do not ship on this evidence. dm4's remaining re-entries point at the guard's run-off landing test; measure its share before a second version.",
       "evidence": [
         "docs/specs/2026-11-17-brink-flicker-protocol.md",
         "runs/lab-voidcorner-brink-flicker.results.json",
-        "runs/lab-voidcorner-brink-flicker-dm4.results.json"
+        "runs/lab-voidcorner-brink-flicker-dm4.results.json",
+        "runs/lab-voidcorner-brink-flicker-gate.results.json"
       ],
       "cheapest_tier": 2
     }

@@ -105,8 +105,27 @@ only because bots spent less time route steering. By the decision rule the
 claim stays at the isolation tier, with dm4 recorded as non-regression only,
 and the change is reverted. Results: `runs/lab-voidcorner-brink-flicker-dm4.results.json`.
 
-Why it did not transfer is not measured. The fix acts only when the 48u probe
-along the wanted heading vetoes it, and most of dm4's lips drop to dry floor
-within the guard's survivable-drop rule, where that probe can approve the
-heading the physics guard still deflects at speed. The next step is to read,
-on dm4 tapes, whether the gate opened at all.
+## Why it did not transfer (read 2026-11-17 from the same tapes)
+
+The check did act on dm4. After a routed deflection, the share of episodes whose
+wish turned towards the guard's held heading over the next three frames rose
+from 12 to 36 per cent on the lab map and from 34 to 45 per cent on dm4.
+
+What differs is what the re-entries are. Probing each re-entry's wish and
+velocity headings 48u ahead against the map's BSP with the guard's floor rules
+(lava or slime, or no floor within 280u):
+
+| Re-entry kind | Lab control | Lab candidate | dm4 control | dm4 candidate |
+|---|---|---|---|---|
+| Wish points into lava or a void | 354 (95%) | 224 (88%) | 540 (39%) | 317 (29%) |
+| Momentum: safe wish, hazardous velocity | 8 | 14 | 38 | 52 |
+| Neither probe sees lava or a void | 9 | 16 | 791 (58%) | 720 (66%) |
+
+Where the wanted heading itself points at lava or a void, the check works the
+same on both maps: those re-entries fell 37 per cent on the lab map and 41 per
+cent on dm4. On the lab map, every lip of which is lethal, they are 95 per cent
+of re-entries; on dm4 they are 39 per cent. Most dm4 re-entries happen where
+neither heading sees lava or a void within the guard's floor reach, which
+points at its speed-dependent run-off landing test (the scan leaves it out; not
+measured). The lab map over-represented the one lip type this check can act
+on. Results: `runs/lab-voidcorner-brink-flicker-gate.results.json`.

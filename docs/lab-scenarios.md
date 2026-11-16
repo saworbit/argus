@@ -316,8 +316,23 @@ second after a real deflection (`mode2-brink-check`), cut the flicker a fifth
 on the lab map, with a lava warning there, and changed nothing on dm4 while
 harming nothing, so it too is an isolation-tier result and reverted. The
 diagnosis found the same re-entry share on dm4, so the next question is
-whether that check's gate opens on dm4's dry-drop lips at all. The diagnosis
-is in `runs/lab-voidcorner-turn-diagnosis.results.json`.
+whether that check's gate opens on dm4's dry-drop lips at all. It does: the
+check acted on both maps and cut the re-entries whose wanted heading points at
+lava or a void by about 40 per cent on each. But those are 95 per cent of the
+lab map's re-entries and 39 per cent of dm4's, where most re-entries happen at
+lips no floor probe calls lethal, which points at the guard's run-off landing
+test (`runs/lab-voidcorner-brink-flicker-gate.results.json`). The diagnosis is
+in `runs/lab-voidcorner-turn-diagnosis.results.json`.
+
+### A lesson for building lab maps
+
+A micro-map isolates a mechanism by stripping everything else out, and it can
+strip out the case that matters on the stock map. Every lip of lab_voidcorner
+drops into lava, so it measured a change that acts on lethal lips at full
+strength and said nothing about dm4's dry-drop lips, where most of dm4's
+flicker happens. Before trusting a lab map for a stock-map question, compare
+the mechanism's mix on both (the diagnosis files show how) and give the lab map
+the stock map's mix: for brink work, lethal lips beside dry drops.
 
 ## Limits
 
