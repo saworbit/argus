@@ -11411,7 +11411,7 @@ void() Argus_AI =
             while (diff > 180)  diff = diff - 360;
             while (diff < -180) diff = diff + 360;
             turn = AR_TURNRATE * frametime;
-            // TWO CORNER CHANGES, laddered on lab_voidcorner and REVERTED
+            // THREE CORNER CHANGES, laddered on lab_voidcorner and REVERTED
             // (docs/lab-scenarios.md, docs/specs/2026-11-16-*). On a 64u
             // walkway over lava, 74 per cent of the brink deflections
             // that follow route steering begin mid-turn, with this limit
@@ -11432,6 +11432,14 @@ void() Argus_AI =
             // corner episodes up rather than down. Parked, not refuted:
             // a larger ladder could still find it, and it is the change
             // to try first if lava corners ever cost deaths in play.
+            // (3) The early turn handed the steering to the next node 0.35 s
+            // of travel out (48 to 112u) at a corner whose apex cut probe
+            // saw a hazard, which offline integration said keeps a 64u
+            // corner on the floor. Ten 180 s pairs: 53.2 to 56.9 per 1000
+            // route-steer samples (limit 8.6), the wrong way, corners
+            // flat. Refuted. Turn timing at the waypoint is not what puts
+            // these bots on the lip; read where the turns start before a
+            // fourth corner change.
             if (diff > turn)        diff = turn;
             else if (diff < -turn)  diff = -turn;
             self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "route_steer");

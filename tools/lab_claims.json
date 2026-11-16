@@ -828,6 +828,22 @@
         "runs/lab-voidcorner-brink-turn-confirmation.results.json"
       ],
       "cheapest_tier": 2
+    },
+    {
+      "id": "early-turn-lava-corners",
+      "title": "Early turn at hazard corners",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "lab_voidcorner"
+      ],
+      "statement": "Handing the steering to the next node 0.35 s of travel out (48 to 112u) at corners whose apex cut probe sees a hazard, sized by offline NQ integration to keep a 64u corner on the floor, did not reduce route-steer deflections on the lab map: 53.2 against 56.9 per 1000 route-steer samples over ten 180 s pairs (detection limit 8.6), the wrong way, with corner episodes flat. Turn timing at the waypoint is not what puts these bots on the lip.",
+      "evidence": [
+        "docs/specs/2026-11-16-early-turn-protocol.md",
+        "runs/lab-voidcorner-early-turn.results.json"
+      ],
+      "cheapest_tier": 2
     }
   ]
 }

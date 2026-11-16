@@ -42,11 +42,12 @@ passing botmatch does not establish better human play.
   claim that names a stock map without citing a tape recorded on it, or that
   cites a lab tape without naming the lab map. The first scenario is
   `lab_voidcorner`, a 64u walkway ring over lava with four tight corners,
-  registered through the gate. Two corner changes were laddered on it under
-  registered protocols and neither cleared its bar, so play is unchanged: the
-  route elbow showed no effect (refuted), and the brink turn read about 20 per
+  registered through the gate. Three corner changes were laddered on it under
+  registered protocols and none cleared its bar, so play is unchanged: the
+  route elbow showed no effect (refuted), the brink turn read about 20 per
   cent fewer route-steer deflections in two ladders without leaving the noise
-  (parked). Both are reverted with post-mortems in `Argus_AI`; the map showed
+  (parked), and an early turn at hazard corners moved them the wrong way
+  (refuted). All are reverted with post-mortems in `Argus_AI`; the map showed
   that 74 per cent of those deflections begin mid-turn, where a 90 degree turn
   at 200 u/s overshoots about 97u
   ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)).

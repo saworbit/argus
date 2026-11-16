@@ -246,7 +246,7 @@ same diagonal.
 
 It was registered through `lab-request` (scenario `lab_voidcorner-70ece72d72`,
 graph MD5 `324e18b2`): the mill walked all 44 links, six of them only on the
-confirming walk, and the gate passed. Three registered ladders ran on it, each
+confirming walk, and the gate passed. Four registered ladders ran on it, each
 with control and candidate built from private source copies and run from
 scratch game directories, every tape at the listen tick class:
 
@@ -255,13 +255,14 @@ scratch game directories, every tape at the listen tick class:
 | [Route elbow](specs/2026-11-16-route-elbow-protocol.md), 5 x 120 s | steer at the axis-aligned elbow when the line to the node crosses a void | route-steer deflection episodes a tape | 87.4 | 90.6 | 49.2 | no effect; refuted |
 | [Brink turn](specs/2026-11-16-brink-turn-protocol.md), 5 x 120 s | beside lethal liquid, turn the movement heading 3x faster and double friction while turning | the same | 114.8 | 89.0 | 56.1 | no detectable effect |
 | Brink turn confirmation, 8 x 180 s | the same | episodes per 1000 route-steer samples | 56.9 | 45.8 | 12.1 | no detectable effect; parked |
+| [Early turn](specs/2026-11-16-early-turn-protocol.md), 10 x 180 s | at a hazard corner, hand the steering to the next node 0.35 s of travel out | the same | 53.2 | 56.9 | 8.6 | the wrong way; refuted |
 
-Neither change was run on a stock map, because neither cleared the lab bar,
-and both are reverted with their post-mortems beside the route steering in
-`Argus_AI`. The claims are `route-elbow-void-corners` (refuted) and
-`brink-turn-lava-corners` (parked) in `tools/lab_claims.json`, and every
-tape's map, size and SHA-256 is in the three `runs/lab-voidcorner-*.results.json`
-files.
+None of the three changes was run on a stock map, because none cleared the
+lab bar, and all are reverted with their post-mortems beside the route
+steering in `Argus_AI`. The claims are `route-elbow-void-corners` (refuted),
+`brink-turn-lava-corners` (parked) and `early-turn-lava-corners` (refuted) in
+`tools/lab_claims.json`, and every tape's map, size and SHA-256 is in the four
+`runs/lab-voidcorner-*.results.json` files.
 
 What the scenario established, which no stock tape had shown:
 
@@ -275,10 +276,15 @@ What the scenario established, which no stock tape had shown:
   more than a 64u walkway's half-width. A corner fix has to start the turn
   early or shed speed; running to the corner centre first (the elbow) adds
   overshoot.
-- The instrument's own spread is large: the same control code read 49.8, 66.6
-  and 56.9 episodes per 1000 route-steer samples in three ladders. A change
+- The instrument's own spread is large: the same control code read 49.8, 66.6,
+  56.9 and 53.2 episodes per 1000 route-steer samples in four ladders. A change
   needs a bigger effect than the brink turn's 20 per cent, or more tapes than
-  eight pairs, to clear it.
+  ten pairs, to clear it.
+- Starting the turn earlier at the waypoint, sized by that integration to keep
+  a centred bot on the floor, changed nothing. The integration models a clean
+  corner entry; the turns that end on the lip start somewhere else
+  (re-routing, a goal change, resuming after a fight, an off-centre entry),
+  and the next corner change should find where before it is written.
 
 ## Limits
 
