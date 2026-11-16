@@ -257,7 +257,8 @@ scratch game directories, every tape at the listen tick class:
 |---|---|---|---|---|---|---|
 | [Route elbow](specs/2026-11-16-route-elbow-protocol.md), 5 x 120 s | steer at the axis-aligned elbow when the line to the node crosses a void | route-steer deflection episodes a tape | 105.6 | 112.2 | 59.4 | no effect; refuted |
 | [Brink turn](specs/2026-11-16-brink-turn-protocol.md), 5 x 120 s | beside lethal liquid, turn the movement heading 3x faster and double friction while turning | the same | 129.2 | 105.6 | 69.1 | no detectable effect |
-| Brink turn confirmation, 8 x 180 s | the same | episodes per 1000 route-steer samples | 59.2 | 45.9 | 12.3 | moved; stock rung not yet run |
+| Brink turn confirmation, 8 x 180 s | the same | episodes per 1000 route-steer samples | 59.2 | 45.9 | 12.3 | moved |
+| Brink turn stock rung, dm4, 5 x 185 s | the same | the same | 52.5 | 55.3 | 13.4 | level, no guard regressed: no harm, no benefit |
 | [Early turn](specs/2026-11-16-early-turn-protocol.md), 10 x 180 s | at a hazard corner, hand the steering to the next node 0.35 s of travel out | the same | 56.1 | 58.8 | 7.9 | the wrong way; refuted |
 
 These are the corrected readings. The first analysis read motion rows with a
@@ -270,10 +271,13 @@ effect).
 
 All three changes are reverted, with their post-mortems beside the route
 steering in `Argus_AI`. The route elbow and the early turn are refuted. The
-brink turn is supported at the isolation tier only, by a thin margin, and its
-dm4 stock rung has not run, so it is an open hypothesis
-(`brink-turn-lava-corners`) and stays out of the build until that rung decides
-it. Every tape's map, size and SHA-256 is in the `runs/lab-voidcorner-*.results.json`
+brink turn is supported at the isolation tier only (`brink-turn-lava-corners`):
+it cut flicker on the lab map by a thin margin, and its registered dm4 stock
+rung held without transferring, every guard inside its limit and the primary
+level. That is evidence it does no harm on dm4, not that it helps there, so
+the claim names the lab map alone and the change stays out of the build. Why
+it did not transfer is not measured; its lethal-liquid gate may simply trip
+too rarely on dm4, whose brinks mostly drop to dry floor. Every tape's map, size and SHA-256 is in the `runs/lab-voidcorner-*.results.json`
 files.
 
 ### What the scenario established

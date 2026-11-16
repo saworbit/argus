@@ -11431,7 +11431,8 @@ void() Argus_AI =
             // 45.9 (limit 12.3) once a parser fault in the analysis was
             // fixed. Brink encounters did not move (14.4 to 12.7, limit
             // 2.7) and corner episodes rose: it cut the flicker at a
-            // brink, not the visits. Reverted until its dm4 rung runs.
+            // brink, not the visits. Its dm4 rung held (no guard moved)
+            // with no benefit: an isolation-tier result, not shipped.
             // (3) The early turn handed the steering to the next node 0.35 s
             // of travel out (48 to 112u) at a corner whose apex cut probe
             // saw a hazard, which offline integration said keeps a 64u

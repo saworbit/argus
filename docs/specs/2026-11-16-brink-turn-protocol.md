@@ -133,3 +133,29 @@ not registered) read 14.4 against 12.7 with a detection limit of 2.7, no
 detectable effect. So the brink turn reduced how often route steering and the
 guard alternate at a brink, not how often bots reach one. The change stays
 reverted until the stock rung has run.
+
+## Result of the stock rung (recorded 2026-11-16, after the five dm4 pairs)
+
+| Metric | Control mean | Candidate mean | Change | Detection limit | Reading |
+|---|---|---|---|---|---|
+| Route-steer deflection episodes per 1000 route-steer samples (primary, predicted down or level) | 52.5 | 55.3 | +2.8 | 13.4 | level |
+| Lava deaths | 1.6 | 2.0 | +0.4 | 1.7 | no regression |
+| World deaths | 1.6 | 2.2 | +0.6 | 2.0 | no regression |
+| Stalls | 6.2 | 6.0 | -0.2 | 5.0 | no regression |
+| Freezes | 0 | 0 | 0 | | no regression |
+| Goals | 25.0 | 21.0 | -4.0 | 7.4 | no regression |
+| Engagements | 68.0 | 73.0 | +5.0 | 14.3 | no regression |
+| Brink encounters per 1000 route-steer samples (not registered) | 14.7 | 14.5 | -0.2 | 1.2 | level |
+
+All ten tapes held the listen tick class. By this protocol's decision rule the
+stock rung holds: the primary is level and no guard regressed, so the change
+does no measurable harm on dm4. It also shows no benefit there: the flicker
+reduction measured on the lab map did not reproduce. The claim therefore stays
+at the isolation tier (`brink-turn-lava-corners`, maps `lab_voidcorner`), with
+the dm4 tapes cited as non-regression evidence, and the change stays reverted:
+nothing here supports shipping it.
+
+Why it did not transfer is not measured. Its gate is lethal liquid found by a
+hazard probe in the last half second, and most of dm4's brinks drop to dry
+floor; only the pit's lips and the lava floors trip it, so it may simply act
+too rarely there to show. Results: `runs/lab-voidcorner-brink-turn-dm4.results.json`.

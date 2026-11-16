@@ -47,8 +47,9 @@ passing botmatch does not establish better human play.
   an early turn at hazard corners (refuted) moved nothing, and the brink
   turn's eight-pair confirmation cut route-steer deflection episodes 23 per
   cent past its detection limit once a parser fault in the analysis was fixed,
-  without moving brink encounters; it stays reverted until its dm4 stock rung
-  runs. The map showed that three in four mid-turn route deflections, on it
+  without moving brink encounters, and its registered dm4 rung held (no guard
+  regressed) without reproducing the benefit, so it stays an isolation-tier
+  result and is not shipped. The map showed that three in four mid-turn route deflections, on it
   and on dm4, begin straight after a previous deflection, because routed
   steering is exempt from the steering-side hazard check
   ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)).

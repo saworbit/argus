@@ -815,21 +815,21 @@
     {
       "id": "brink-turn-lava-corners",
       "title": "Brink turn at lava corners",
-      "status": "open",
+      "status": "supported",
       "kind": "hypothesis",
       "tier": 1,
       "maps": [
         "lab_voidcorner"
       ],
-      "statement": "Beside lethal liquid, turning the movement heading at three times AR_TURNRATE and doubling friction while the velocity lags the wish moved its registered lab primary once a parser fault in the analysis was fixed: route-steer deflection episodes per 1000 route-steer samples 59.2 against 45.9 over eight 180 s pairs, detection limit 12.3, no guard regressing. Brink encounters did not move (14.4 against 12.7, limit 2.7, not registered) and corner episodes rose, so it reduces flicker at a brink, not visits to one. Isolation tier only; reverted pending its dm4 stock rung.",
+      "statement": "Isolation tier. Beside lethal liquid, turning the movement heading at three times AR_TURNRATE and doubling friction while the velocity lags the wish cut route-steer deflection episodes per 1000 route-steer samples on lab_voidcorner from 59.2 to 45.9 over eight 180 s pairs (detection limit 12.3, no guard regressing), a reduction in flicker at a brink, not in visits to one (encounters 14.4 against 12.7, limit 2.7). Its registered dm4 stock rung held without transferring: primary 52.5 against 55.3 (limit 13.4), every guard inside its limit, so it does no measurable harm on dm4 and shows no benefit there. Not a general improvement; reverted.",
       "evidence": [
         "docs/specs/2026-11-16-brink-turn-protocol.md",
         "runs/lab-voidcorner-brink-turn.results.json",
-        "runs/lab-voidcorner-brink-turn-confirmation.results.json"
+        "runs/lab-voidcorner-brink-turn-confirmation.results.json",
+        "runs/lab-voidcorner-brink-turn-dm4.results.json"
       ],
       "cheapest_tier": 2,
-      "refute_by": "The dm4 stock rung registered in docs/specs/2026-11-16-brink-turn-protocol.md: five 185 s pairs, the same normalised primary and guards.",
-      "next": "Run the dm4 stock rung before reinstating the change."
+      "next": "Do not ship on this evidence. Reinstate only after a stock map shows a benefit, judged on movement.brink_encounters."
     },
     {
       "id": "early-turn-lava-corners",
