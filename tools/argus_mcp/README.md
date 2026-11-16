@@ -1249,6 +1249,27 @@ Candidate code opts in by testing `self.ar_abarm`; absent such a gate both
 arms are identical and the pair measures the instrument's null error. This is
 not valid for nav graphs or any other world-level change shared by both arms.
 
+## Lab scenarios (lab_request)
+
+`lab_request` (MCP) and `argus-mcp lab-request <request.json> [--no-mill]
+[--no-register]` build a purpose-built micro-map from a structured request:
+`tools/lab_mapgen.py` validates it, writes the `.map` and a generated texture
+WAD, compiles with the pinned ericw-tools and installs the BSP; then the lab's
+own `nav_generate`, the mill with confirmation, and `nav_sync::register_maps`
+for that one map, gated like any first registration. The scenario lands in
+`tools/lab_instruments.json` under `lab_scenarios` with `claim_tier:
+isolation`, and `argus_ci.py lab` refuses a supported or fixed claim that names
+a stock map on lab tapes alone. The request schema, the stages and the ladder
+recipe are in [docs/lab-scenarios.md](../../docs/lab-scenarios.md).
+
+`register_maps` registers exactly the maps it is given. `nav_sync_dispatch`
+still asks for every graph on disk, so an experimental graph (e1m3, e1m4)
+stops it before any map sorted after it.
+
+Every brief's `movement.deflection_causes` (tapes recorded with `scratch1 697`)
+counts brink-deflection episodes by the steering cause that led into each,
+which is how a corner change can be read apart from combat strafes.
+
 ## The mill (probelinks and the verdict files)
 
 Empirical link verification - the killer app the netclient was
@@ -1258,7 +1279,7 @@ the puppet, dev-teleport it to the link's start (impulse 216 +
 walk toward the far node, judge arrival.
 
 ```
-argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]
+argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--confirm]
                                                 cap 80 per run; chunk with
                                                 skip. ~2600 links/hour, so a
                                                 full-rotation sweep is an
@@ -1266,7 +1287,11 @@ argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]
 ```
 
 The default pass covers ordinary walk and drop links. `--jumps` covers the
-generated jump subset. A community BSP found only in `ARGUS_MAPS` is copied
+generated jump subset. `--confirm` walks every first-attempt failure (a walk
+that stopped short or a teleport that never landed) once more at the end of the
+sweep and convicts only a second failure; the report counts the rescues as
+`confirmed`. lab_request always confirms, because on a micro-map the roster
+stands on the walkway being walked. A community BSP found only in `ARGUS_MAPS` is copied
 into the game directory for the pass and removed when the engine stops.
 
 The report lists a `verdicts` entry for every link it walked, in sweep
@@ -1521,6 +1546,7 @@ item routes return that error rather than claiming no item exists.
 | `list_maps` | `ARGUS_ROOT` | Maps on disk and in id1 PAKs |
 | `nav_generate` | full lab | Generate per-map waypoint QC/JSON and an optional PNG. Return `preview_generated`, edict and playability verdicts; attach an image only with a matching freshness receipt. Over-budget graphs and first-time maps without current reach and mill evidence are not registered. |
 | `nav_sync_dispatch` | `ARGUS_ROOT` | Register new `argus_nav_<map>.qc` in the dispatcher and `progs.src` |
+| `lab_request` | full lab, ericw-tools | Build a lab micro-map from a structured request and take it through navgen, the confirming mill and the registration gate; returns the manifest and scenario id. See [lab scenarios](#lab-scenarios-lab_request) |
 
 Generation counts unique destinations across every typed family against the
 runtime's eight slots. Walk pruning preserves typed connectivity. More than
@@ -2235,6 +2261,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
+| 0.32 | Lab scenarios: `lab_request` and `argus-mcp lab-request` build a micro-map from a structured request with `tools/lab_mapgen.py` and the pinned ericw-tools, then run navgen, the confirming mill and single-map registration ([lab scenarios](#lab-scenarios-lab_request)). `probelinks --confirm`. `nav_sync::register_maps`. Briefs carry `movement.deflection_causes`. |
 | 0.31 | The fixed lab clock (`match --seed`, `seeds`): the played frame faster than real time, repeating exactly for one seed and build, validated per map. The stand-in human (`standin`). Build identity: compile stamps `src/argus_build.qc` and briefs carry the tape's build, clock and session marks. Run-directory leases and a hostname-aware port probe (GitHub #832). Capture may start up to 900 s into a demo, with a deadline that grows with the seek. |
 | 0.30 | Triggered POV capture. `watch-pov` and `bot_capture_pov_frame` `on` tail the live console and cut the camera to the first bot that stalls, stands still or emits a chosen marker, then record and render it; see [triggered capture](#triggered-capture). |
 | 0.30 | Typed mill artefacts (GitHub #419). `GraphRevision` resources use content-hash ids and keep the producing commit, date, trace inputs and sidecar hashes. `ProbeVerdict` resources wrap probe and proven sidecars. The read-only `mill` tool lists history and diffs two revisions by coordinate link id, including added, removed and type-changed links plus matching convictions. A link absent from both sources is an error. Historical bytes come from Git, so there is no new on-disk format. Tape collections remain the `corpus` surface from 0.28 rather than a duplicate type. 214 tests. |

@@ -69,5 +69,27 @@
         ]
       }
     }
+  },
+  "lab_scenarios": {
+    "about": "Generated micro-maps (tools/lab_mapgen.py, the lab_request MCP tool). Each isolates one mechanism and is trusted for isolation-tier claims only.",
+    "rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
+    "docs": "docs/lab-scenarios.md",
+    "scenarios": {
+      "lab_voidcorner": {
+        "id": "lab_voidcorner-70ece72d72",
+        "claim_tier": "isolation",
+        "intent": "Isolate route handoffs at void-edged corners: a 64u walkway ring over lava with four tight 90 degree corners and open air on both sides, so an early waypoint switch or apex corner cut that draws its line across the void shows up as hazard deflections and lava run-offs.",
+        "claims": [
+          "e1m7-early-switch-runoffs",
+          "dm4-walkway-corner"
+        ],
+        "request": "labmaps/lab_voidcorner/request.json",
+        "manifest": "labmaps/lab_voidcorner/manifest.json",
+        "source_sha256": "70ece72d72724b42f763dfd2281128090a1f32978896412175b8b68ccba43448",
+        "bsp_sha256": "73e82412c2d7d472b76b75574956b865d6e5f95a1ef115493e03c31377b998d1",
+        "registered": true,
+        "playable": true
+      }
+    }
   }
 }

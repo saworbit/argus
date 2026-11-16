@@ -795,6 +795,39 @@
         "docs/specs/2026-09-16-lab-measurement-limits.md",
         "docs/plans/2026-09-14-regression-analysis-and-recovery.md"
       ]
+    },
+    {
+      "id": "route-elbow-void-corners",
+      "title": "Route elbow at void-edged corners",
+      "status": "refuted",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "lab_voidcorner"
+      ],
+      "statement": "Steering at the axis-aligned elbow whenever the straight walk to the routed node crossed a void fired (corner wishes axis-aligned 27 to 60 per cent) and did not move its registered primary on the lab map: route-steer deflection episodes 87.4 against 90.6 a tape, detection limit 49.2. It made bots run to the corner centre before turning, which adds overshoot; 74 per cent of those deflections begin mid-turn.",
+      "evidence": [
+        "docs/specs/2026-11-16-route-elbow-protocol.md",
+        "runs/lab-voidcorner-route-elbow.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "brink-turn-lava-corners",
+      "title": "Brink turn at lava corners",
+      "status": "parked",
+      "kind": "graveyard",
+      "tier": 1,
+      "maps": [
+        "lab_voidcorner"
+      ],
+      "statement": "Beside lethal liquid, turning the movement heading at three times AR_TURNRATE and doubling friction while the velocity lagged the wish cut route-steer deflections per 1000 route-steer samples from 66.6 to 45.6 (limit 28.2) and then, on a registered eight-pair confirmation, from 56.9 to 45.8 (limit 12.1): the right direction twice, the bar neither time, and corner episodes rose. Parked, not refuted; reverted with its post-mortem in Argus_AI. Never run on a stock map, so it says nothing about dm4.",
+      "evidence": [
+        "docs/specs/2026-11-16-brink-turn-protocol.md",
+        "runs/lab-voidcorner-brink-turn.results.json",
+        "runs/lab-voidcorner-brink-turn-confirmation.results.json"
+      ],
+      "cheapest_tier": 2
     }
   ]
 }

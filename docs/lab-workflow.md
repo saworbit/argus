@@ -203,6 +203,7 @@ python tools/test_ally_barrel.py
 python tools/test_startup_skill.py
 python tools/test_target_attention.py
 python tools/test_argus_mapgate.py
+python tools/test_lab_mapgen.py
 ```
 
 The budget, map-report, freeze-receipt and mover-receipt suites above also
@@ -536,6 +537,11 @@ This generates QC, its JSON twin and a graph image. Registration is requested
 by default, but a new map remains experimental until current reach and engine
 mill evidence pass; over-budget graphs are refused. Inspect the returned
 edict/playability verdict and follow its next steps.
+
+To isolate one behaviour on a purpose-built micro-map instead, request it
+with `lab_request` (MCP) or `argus-mcp lab-request <request.json>`; it takes
+the same generation, mill and registration path. See
+[lab scenarios](lab-scenarios.md).
 
 Never hand-edit `src/argus_nav_<map>.qc`. Keep probe convictions and proven
 links in their sidecars for the next generation. Curated seats and walks go

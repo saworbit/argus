@@ -15,7 +15,7 @@ describes the result and links to its implementation or detailed evidence.
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
-| Lab version | 0.31; [operator guide and version history](tools/argus_mcp/README.md#versions) |
+| Lab version | 0.32; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
 Main-update dates are UTC merge dates. Numbered builds retain their recorded
 build dates. A merged change does not imply a new numbered release, and a
@@ -26,6 +26,41 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Add lab scenarios: purpose-built micro-maps that isolate one bot behaviour
+  ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP) and
+  `argus-mcp lab-request <request.json>` take a structured request (named
+  regions, entities placed by region name, brush and entity budgets,
+  `claim_tier: isolation`), and `tools/lab_mapgen.py` writes a plain-text
+  `.map` and a generated texture WAD, compiles a BSP29 with the pinned
+  ericw-tools 0.18.1 (`python tools/lab_mapgen.py tools --install` verifies
+  the release's SHA-256) and writes a manifest with counts, region adjacency,
+  hashes and navgen readiness. The map then takes the stock road: the lab's
+  `nav_generate`, the mill and the first-registration gate, and the scenario
+  is recorded in `tools/lab_instruments.json`. A lab-map result supports an
+  isolation-tier claim only: `argus_ci.py lab` fails a supported or fixed
+  claim that names a stock map without citing a tape recorded on it, or that
+  cites a lab tape without naming the lab map. The first scenario is
+  `lab_voidcorner`, a 64u walkway ring over lava with four tight corners,
+  registered through the gate. Two corner changes were laddered on it under
+  registered protocols and neither cleared its bar, so play is unchanged: the
+  route elbow showed no effect (refuted), and the brink turn read about 20 per
+  cent fewer route-steer deflections in two ladders without leaving the noise
+  (parked). Both are reverted with post-mortems in `Argus_AI`; the map showed
+  that 74 per cent of those deflections begin mid-turn, where a 90 degree turn
+  at 200 u/s overshoots about 97u
+  ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)).
+
+- `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
+  more at the end of the sweep and convicts only a second failure; on a
+  micro-map the roster stands on the walkway the puppet is walking, and two
+  sweeps of one graph convicted different links. `nav_sync::register_maps`
+  registers named maps alone, because `nav_sync_dispatch` stops at the first
+  experimental graph on disk (e1m3).
+
+- Briefs of tapes recorded with `scratch1 697` carry
+  `movement.deflection_causes`: brink-deflection episodes by the steering
+  cause that led into each, which the throttled `hazards` count cannot say.
 
 - Add the fixed lab clock: `argus-mcp seeds <map> <count> <stem>` and
   `argus-mcp match ... --seed N` run matches at the wall-clock lab's measured

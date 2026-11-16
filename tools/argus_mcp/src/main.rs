@@ -345,16 +345,17 @@ async fn run() -> anyhow::Result<()> {
             let port = take_port(&mut rest)?;
             let coop = rest.iter().any(|a| a == "--coop");
             let jumps_only = rest.iter().any(|a| a == "--jumps");
+            let confirm = rest.iter().any(|a| a == "--confirm");
             let mut pos = rest
                 .iter()
                 .filter(|a| !a.starts_with("--") || a.as_str() == "--help");
             let map = pos.next().cloned().ok_or_else(|| {
                 anyhow::anyhow!(
-                    "usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--port N]"
+                    "usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--confirm] [--port N]"
                 )
             })?;
             if map == "-h" || map == "--help" || map == "help" {
-                println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--port N]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.\n--jumps verifies generated jump links instead of ordinary walk/drop links.");
+                println!("usage: argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--confirm] [--port N]\n\nEmpirical link verification: puppet walks navigation graph links.\n--coop runs the server in co-op, where spawnflags 2048 entities are NOT stripped.\n--jumps verifies generated jump links instead of ordinary walk/drop links.\n--confirm walks each first-attempt failure once more at the end of the sweep and convicts only a second failure.");
                 return Ok(());
             }
             let map = argus_mcp::paths::map_name(&map).map_err(|e| anyhow::anyhow!(e))?;
@@ -362,8 +363,8 @@ async fn run() -> anyhow::Result<()> {
             let skip: usize = pos.next().and_then(|s| s.parse().ok()).unwrap_or(0);
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             let mut ctrl = argus_mcp::match_ctrl::MatchCtrl::on_port(port);
-            let report = argus_mcp::netclient::probe_links_with_ctrl(
-                &cfg, &map, limit, skip, coop, jumps_only, &mut ctrl,
+            let report = argus_mcp::netclient::probe_links_confirmed(
+                &cfg, &map, limit, skip, coop, jumps_only, confirm, &mut ctrl,
             )
             .await
             .map_err(|e| anyhow::anyhow!(e))?;
@@ -1392,6 +1393,47 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             }
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             run_python_script(&cfg, "tools/argus_reach.py", &sub_args)
+        }
+        Some("lab-request") => {
+            // The lab_request MCP tool without a client: build a lab
+            // micro-map from a request file and take it down the stock road.
+            //   argus-mcp lab-request <request.json> [--no-mill] [--no-register]
+            let sub_args: Vec<String> = args.collect();
+            if sub_args.is_empty()
+                || sub_args
+                    .iter()
+                    .any(|a| a == "-h" || a == "--help" || a == "help")
+            {
+                println!(
+                    "usage: argus-mcp lab-request <request.json> [--no-mill] [--no-register]\n\
+                     \n\
+                     Generate, compile (pinned ericw-tools), navgen, mill and register a lab\n\
+                     micro-map, then record its scenario in tools/lab_instruments.json.\n\
+                     The request schema is in docs/lab-scenarios.md. Lab maps support\n\
+                     isolation-tier claims only."
+                );
+                return Ok(());
+            }
+            let path = sub_args
+                .iter()
+                .find(|a| !a.starts_with("--"))
+                .ok_or_else(|| anyhow::anyhow!("usage: argus-mcp lab-request <request.json>"))?;
+            let request = argus_mcp::lab_scenario::read_request(std::path::Path::new(path))
+                .map_err(|e| anyhow::anyhow!(e))?;
+            let opts = argus_mcp::lab_scenario::LabRequestOptions {
+                mill: !sub_args.iter().any(|a| a == "--no-mill"),
+                register: !sub_args.iter().any(|a| a == "--no-register"),
+            };
+            let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            cfg.require_ready().map_err(|e| anyhow::anyhow!("{e:?}"))?;
+            let report = argus_mcp::lab_scenario::lab_request(&cfg, &request, opts)
+                .await
+                .map_err(|e| anyhow::anyhow!(e))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            if !report.ok {
+                std::process::exit(1);
+            }
+            Ok(())
         }
         Some("campaign") => {
             let mut sub_args: Vec<String> = args.collect();

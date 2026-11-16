@@ -1,0 +1,515 @@
+{
+  "schema": 1,
+  "protocol": "docs/specs/2026-11-16-brink-turn-protocol.md",
+  "arms": {
+    "ctl": "90E5DEC08594EEE65A5C0F011129C49B",
+    "cand": "34809FD9EE30F7EDDB31F3E21E837F5D"
+  },
+  "instrument": "deflection episodes by preceding motion cause (ARGMOT, scratch1 697); brief totals for guards",
+  "corner_cells": [
+    [
+      32,
+      32
+    ],
+    [
+      736,
+      32
+    ],
+    [
+      736,
+      736
+    ],
+    [
+      32,
+      736
+    ]
+  ],
+  "analysis": {
+    "route": {
+      "ctl": [
+        94,
+        149,
+        136,
+        116,
+        79
+      ],
+      "cand": [
+        61,
+        123,
+        124,
+        87,
+        50
+      ],
+      "ctl_mean": 114.8,
+      "cand_mean": 89,
+      "diff": -25.8,
+      "limit": 56.09,
+      "verdict": "no detectable effect"
+    },
+    "corner_route": {
+      "ctl": [
+        36,
+        61,
+        56,
+        58,
+        18
+      ],
+      "cand": [
+        45,
+        54,
+        65,
+        48,
+        26
+      ],
+      "ctl_mean": 45.8,
+      "cand_mean": 47.6,
+      "diff": 1.8,
+      "limit": 29.17,
+      "verdict": "no detectable effect"
+    },
+    "all_defl": {
+      "ctl": [
+        746,
+        800,
+        733,
+        866,
+        755
+      ],
+      "cand": [
+        786,
+        808,
+        777,
+        964,
+        764
+      ],
+      "ctl_mean": 780,
+      "cand_mean": 819.8,
+      "diff": 39.8,
+      "limit": 123.34,
+      "verdict": "no detectable effect"
+    },
+    "combat_defl": {
+      "ctl": [
+        568,
+        552,
+        498,
+        679,
+        595
+      ],
+      "cand": [
+        611,
+        610,
+        550,
+        787,
+        624
+      ],
+      "ctl_mean": 578.4,
+      "cand_mean": 636.4,
+      "diff": 58.0,
+      "limit": 139.03,
+      "verdict": "no detectable effect"
+    },
+    "lava": {
+      "ctl": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cand": [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "ctl_mean": 0.2,
+      "cand_mean": 0.4,
+      "diff": 0.2,
+      "limit": 0.89,
+      "verdict": "no detectable effect"
+    },
+    "world": {
+      "ctl": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cand": [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "ctl_mean": 0.2,
+      "cand_mean": 0.4,
+      "diff": 0.2,
+      "limit": 0.89,
+      "verdict": "no detectable effect"
+    },
+    "stalls": {
+      "ctl": [
+        2,
+        2,
+        1,
+        1,
+        1
+      ],
+      "cand": [
+        2,
+        1,
+        2,
+        2,
+        3
+      ],
+      "ctl_mean": 1.4,
+      "cand_mean": 2,
+      "diff": 0.6,
+      "limit": 1.12,
+      "verdict": "no detectable effect"
+    },
+    "freezes": {
+      "ctl": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cand": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ctl_mean": 0,
+      "cand_mean": 0,
+      "diff": 0,
+      "limit": 0.0,
+      "verdict": "no detectable effect"
+    },
+    "goals": {
+      "ctl": [
+        6,
+        10,
+        11,
+        11,
+        16
+      ],
+      "cand": [
+        15,
+        12,
+        10,
+        15,
+        10
+      ],
+      "ctl_mean": 10.8,
+      "cand_mean": 12.4,
+      "diff": 1.6,
+      "limit": 5.46,
+      "verdict": "no detectable effect"
+    },
+    "engages": {
+      "ctl": [
+        97,
+        88,
+        94,
+        85,
+        88
+      ],
+      "cand": [
+        89,
+        82,
+        92,
+        98,
+        90
+      ],
+      "ctl_mean": 90.4,
+      "cand_mean": 90.2,
+      "diff": -0.2,
+      "limit": 9.5,
+      "verdict": "no detectable effect"
+    },
+    "hazards": {
+      "ctl": [
+        187,
+        195,
+        192,
+        193,
+        194
+      ],
+      "cand": [
+        184,
+        199,
+        204,
+        192,
+        186
+      ],
+      "ctl_mean": 192.2,
+      "cand_mean": 193,
+      "diff": 0.8,
+      "limit": 11.32,
+      "verdict": "no detectable effect"
+    }
+  },
+  "tapes": [
+    {
+      "run": "labvc2_ctl_r1",
+      "map": "lab_voidcorner",
+      "bytes": 3861214,
+      "sha256": "662a7e79f50f35adf8229e11fb51d72e7dda38495e12658f30b2287f1c91e06c",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc2_ctl_r1",
+        "tick": "listen",
+        "route": 94,
+        "corner_route": 36,
+        "all_defl": 746,
+        "combat_defl": 568,
+        "lava": 1,
+        "world": 1,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 6,
+        "engages": 97,
+        "hazards": 187,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_ctl_r2",
+      "map": "lab_voidcorner",
+      "bytes": 3927950,
+      "sha256": "d8d94c7e76fa186a37fcb4cfd19bfabaf93bc35fa5482645661f1f257c04dd8c",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc2_ctl_r2",
+        "tick": "listen",
+        "route": 149,
+        "corner_route": 61,
+        "all_defl": 800,
+        "combat_defl": 552,
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 10,
+        "engages": 88,
+        "hazards": 195,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_ctl_r3",
+      "map": "lab_voidcorner",
+      "bytes": 3997250,
+      "sha256": "d60f0c3f02d8d06064c301433b9e7cdbc9b64901c952d934ce7b7afdba9f288c",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc2_ctl_r3",
+        "tick": "listen",
+        "route": 136,
+        "corner_route": 56,
+        "all_defl": 733,
+        "combat_defl": 498,
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 11,
+        "engages": 94,
+        "hazards": 192,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_ctl_r4",
+      "map": "lab_voidcorner",
+      "bytes": 3903077,
+      "sha256": "68719833e9c1ac57521ea45af3d761b89d9c5c931b2aa7c8a50d44742f7c1f57",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc2_ctl_r4",
+        "tick": "listen",
+        "route": 116,
+        "corner_route": 58,
+        "all_defl": 866,
+        "combat_defl": 679,
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 11,
+        "engages": 85,
+        "hazards": 193,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_ctl_r5",
+      "map": "lab_voidcorner",
+      "bytes": 3851317,
+      "sha256": "5f3d1dfda7872fffb21b83b5faefeaf3c10f60c31557118073a188d3d22bcda4",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc2_ctl_r5",
+        "tick": "listen",
+        "route": 79,
+        "corner_route": 18,
+        "all_defl": 755,
+        "combat_defl": 595,
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 16,
+        "engages": 88,
+        "hazards": 194,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_cand_r1",
+      "map": "lab_voidcorner",
+      "bytes": 3941964,
+      "sha256": "d84f4c11201aab6369a9c2a268f57eafb585b762adf4a6fe235f4b3d4b7ad0ef",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc2_cand_r1",
+        "tick": "listen",
+        "route": 61,
+        "corner_route": 45,
+        "all_defl": 786,
+        "combat_defl": 611,
+        "lava": 1,
+        "world": 1,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 15,
+        "engages": 89,
+        "hazards": 184,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_cand_r2",
+      "map": "lab_voidcorner",
+      "bytes": 3912817,
+      "sha256": "48a3b7a2563335fc439f0ddae4adb5b91781aea633c37428d82ff9bb7b8efc5c",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc2_cand_r2",
+        "tick": "listen",
+        "route": 123,
+        "corner_route": 54,
+        "all_defl": 808,
+        "combat_defl": 610,
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 12,
+        "engages": 82,
+        "hazards": 199,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_cand_r3",
+      "map": "lab_voidcorner",
+      "bytes": 3793773,
+      "sha256": "7102e2ff42af21d26b90abfbdec316e93207155d955b4f8d2ac7b65259cfe04f",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc2_cand_r3",
+        "tick": "listen",
+        "route": 124,
+        "corner_route": 65,
+        "all_defl": 777,
+        "combat_defl": 550,
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 10,
+        "engages": 92,
+        "hazards": 204,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_cand_r4",
+      "map": "lab_voidcorner",
+      "bytes": 3791848,
+      "sha256": "9f0c3f7669f73182a4791c94b14b0e2f853d01aef6962d551843220e9cb866f0",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc2_cand_r4",
+        "tick": "listen",
+        "route": 87,
+        "corner_route": 48,
+        "all_defl": 964,
+        "combat_defl": 787,
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 15,
+        "engages": 98,
+        "hazards": 192,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc2_cand_r5",
+      "map": "lab_voidcorner",
+      "bytes": 3861452,
+      "sha256": "4e826a1729fa0e76fb5d8b2172a20c75aca1480c5945217ba90516d9af5bef0b",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc2_cand_r5",
+        "tick": "listen",
+        "route": 50,
+        "corner_route": 26,
+        "all_defl": 764,
+        "combat_defl": 624,
+        "lava": 1,
+        "world": 1,
+        "stalls": 3,
+        "freezes": 0,
+        "goals": 10,
+        "engages": 90,
+        "hazards": 186,
+        "minutes": 2.0
+      }
+    }
+  ],
+  "tape_storage": "machine-local; hashes recorded here",
+  "verdict": "not supported: the registered primary (route_steer episodes per tape) shows no detectable effect",
+  "scenario": "lab_voidcorner-70ece72d72",
+  "exploratory": {
+    "metric": "route_steer deflection episodes per 1000 route_steer frames",
+    "ctl": [
+      53.7,
+      76.9,
+      88.5,
+      61.9,
+      51.8
+    ],
+    "cand": [
+      32.7,
+      48.0,
+      61.4,
+      60.2,
+      25.7
+    ],
+    "diff": -21.0,
+    "limit": 28.2,
+    "note": "not registered; it motivated the confirmation ladder"
+  }
+}

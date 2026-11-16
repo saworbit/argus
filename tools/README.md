@@ -313,6 +313,17 @@ Applies the registered stand-in calibration (`docs/specs/2026-11-15-stand-in-cal
 - **Behavior**: counts kills from `ARGEVT ... death` lines (a dedicated tape has no obituaries), taking a kill as a death whose killer is a bot by name; exits 0 when dose response passes.
 - **Tests**: `test_argus_instrument_tools.py`, with `argus_clock_validation.py`.
 
+### 21. `lab_mapgen.py`
+Generates purpose-built lab micro-maps from a structured request: a plain-text Quake `.map` of axis-aligned brushes inside one sealed hull, a generated texture WAD, a BSP29 compiled by the pinned ericw-tools 0.18.1 under `lab_mapgen_profile.json`, and a manifest. The lab MCP's `lab_request` runs it, then the stock navgen, mill and registration path. See [lab scenarios](../docs/lab-scenarios.md).
+- **Usage**:
+  ```bash
+  python tools/lab_mapgen.py tools --install
+  python tools/lab_mapgen.py check labmaps/lab_voidcorner/request.json
+  python tools/lab_mapgen.py build labmaps/lab_voidcorner/request.json
+  ```
+- **Behavior**: `check` validates the request and every budget without writing; `generate` writes the `.map` and WAD (deterministic, no tools needed); `compile` adds qbsp, vis and light; `build` also installs the BSP into `ARGUS_MAPS` and the engine game directory and writes `labmaps/<map>/manifest.json`; `record` folds navgen, mill and registration results into the manifest and the scenario into `lab_instruments.json`. A request error exits 2, a build error 1.
+- **Tests**: `test_lab_mapgen.py` (determinism, brush syntax and orientation, placement by region name, budgets, the WAD, the promotion rule; a real compile and navgen pass when ericw-tools is installed, and an engine load with `ARGUS_LAB_SMOKE_ENGINE=1`).
+
 ---
 
 The fixed lab clock and the stand-in human are Rust lab CLI commands:

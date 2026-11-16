@@ -51,6 +51,7 @@ says which instrument answers which question.
 | Harvest a human session | `python tools/harvest_session.py --tag vNNN` (FIRST, before any new engine launch - launches truncate qconsole.log) |
 | Read the session's demo | `see what=demo name=<stem>` (full-rate named tracks; PVS-culled to the recorder's view) |
 | Directed reach of shipped graphs | `python tools/argus_reach.py [map]` |
+| Isolate one behaviour on a generated micro-map | `lab_request request={...}` ([lab scenarios](docs/lab-scenarios.md); the result is isolation-tier until a stock map repeats it) |
 | Can this comparison be believed | `python tools/argus_lab.py skeptic <control runs> --vs <candidate runs>` (voids, confounds, each metric against its detection limit) |
 | Whose trouble is in this tape | `python tools/argus_lab.py triage <tape>` (names the claim behind each cluster; a fixed cell past its measured allowance reads `regression?`) |
 | Which artefacts went stale | `python tools/argus_lab.py stale` (19 Hz or old-graph baselines, stale benchmark pins, refused links still shipping) |
@@ -65,6 +66,15 @@ says which instrument answers which question.
 | Human attach / deploy | `argus-mcp gui` (you do not drive the browser) |
 | Verify spectator-camera code | start a match, then `argus-mcp client impulse 210` - the puppet's ARGLOG stops at the impulse (FrameAll's `cam_active` skip), which proves the camera took the client without a human watching |
 | Verify anything `bprint` (chat) | drive the puppet: `argus-mcp client observe <secs>` returns `last_prints`. `bprint` is invisible in a dedicated log, so this is the only headless way to see chat |
+
+To isolate one behaviour, request a purpose-built micro-map instead of
+hunting for it in a stock map: `lab_request` (MCP) or `argus-mcp lab-request
+<request.json>` takes a structured request (regions, entities by region name,
+budgets, `claim_tier: isolation`), compiles it with the pinned ericw-tools and
+sends it through navgen, the mill and the registration gate like any stock
+map ([lab scenarios](docs/lab-scenarios.md)). A lab-map result supports an
+isolation-tier claim only: a claim that names a stock map must also cite tapes
+recorded on that stock geometry, and `argus_ci.py lab` fails one that does not.
 
 Trust `next_steps` on experiment / compare. Do not re-parse ARGLOG.
 Lava deaths are hull-0 contents (z < -300 is the no-BSP fallback only).

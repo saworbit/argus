@@ -19,6 +19,7 @@ pub mod history;
 pub mod inspection_error;
 pub mod intel;
 pub mod lab;
+pub mod lab_scenario;
 pub mod learn;
 pub mod live;
 pub mod match_ctrl;

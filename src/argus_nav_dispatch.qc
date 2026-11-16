@@ -29,4 +29,6 @@ void() Argus_Nav_Spawn =
         Argus_Nav_Spawn_e1m7 ();
     else if (mapname == "e1m8")
         Argus_Nav_Spawn_e1m8 ();
+    else if (mapname == "lab_voidcorner")
+        Argus_Nav_Spawn_lab_voidcorner ();
 };

@@ -45,6 +45,11 @@ class TestToolsCLI(unittest.TestCase):
         res = self.run_tool('test_nav_contracts.py')
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
 
+    def test_lab_mapgen_regressions(self):
+        # the compile case self-skips where ericw-tools is not installed
+        res = self.run_tool('test_lab_mapgen.py')
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
     def test_navgen_normalizes_the_generated_map_symbol(self):
         tmp = self.door_fixture(collision_gap=True)
         qc, png = tmp / 'normalized.qc', tmp / 'normalized.png'

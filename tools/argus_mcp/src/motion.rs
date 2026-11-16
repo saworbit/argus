@@ -11,6 +11,9 @@ pub struct MotionReport {
     pub layout: String,
     pub eligible_for_reversal_claims: bool,
     pub errors: Vec<String>,
+    /// Brink deflection episodes for every bot, keyed by the steering
+    /// cause that preceded each one (see `BotMotion::deflection_causes`).
+    pub deflection_causes: BTreeMap<String, usize>,
     pub bots: Vec<BotMotion>,
 }
 
@@ -26,6 +29,12 @@ pub struct BotMotion {
     pub reversal_causes: BTreeMap<String, usize>,
     /// Context is useful evidence, but is not relabelled as a proven cause.
     pub unattributed_context: BTreeMap<String, usize>,
+    /// A run of `hazard_*` samples is one deflection episode, credited to
+    /// the last non-hazard cause before it. The ARGEVT hazard count is
+    /// throttled to one a second per bot and cannot say whether route
+    /// steering or a combat strafe met the brink; this can (
+    /// docs/specs/2026-11-16-route-elbow-protocol.md).
+    pub deflection_causes: BTreeMap<String, usize>,
     pub reversal_events: Vec<ReversalObservation>,
 }
 
@@ -171,9 +180,11 @@ pub fn inspect(text: &str, events: &[GameEvent]) -> Option<MotionReport> {
         let mut unattributed = 0;
         let mut causes = BTreeMap::new();
         let mut context = BTreeMap::new();
+        let mut deflections = BTreeMap::new();
         let mut reversal_events = Vec::new();
         let epoch_count = streams.len();
         for stream in streams.values() {
+            count_deflections(&stream.context, &mut deflections);
             let Some(stats) = movement_stats(&stream.t, &stream.pos) else {
                 continue;
             };
@@ -242,16 +253,44 @@ pub fn inspect(text: &str, events: &[GameEvent]) -> Option<MotionReport> {
                 unattributed,
                 reversal_causes: causes,
                 unattributed_context: context,
+                deflection_causes: deflections,
                 reversal_events,
             });
+        }
+    }
+    let mut deflection_causes = BTreeMap::new();
+    for bot in &rows {
+        for (cause, n) in &bot.deflection_causes {
+            *deflection_causes.entry(cause.clone()).or_insert(0) += n;
         }
     }
     Some(MotionReport {
         layout: "argus-motion-v2".into(),
         eligible_for_reversal_claims: errors.is_empty() && !rows.is_empty(),
         errors,
+        deflection_causes,
         bots: rows,
     })
+}
+
+/// Fold one epoch's per-sample causes into deflection episodes by the
+/// steering cause that led into each. An epoch that opens mid-deflection
+/// credits it to "unknown" rather than guessing.
+fn count_deflections(causes: &[String], out: &mut BTreeMap<String, usize>) {
+    let mut before: Option<&str> = None;
+    let mut inside = false;
+    for cause in causes {
+        if cause.starts_with("hazard_") {
+            if !inside {
+                *out.entry(before.unwrap_or("unknown").to_string())
+                    .or_insert(0) += 1;
+            }
+            inside = true;
+        } else {
+            inside = false;
+            before = Some(cause);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -293,6 +332,39 @@ mod tests {
         assert_eq!(bot.marker_attributed, 1);
         assert_eq!(bot.unattributed, 0);
         assert_eq!(bot.reversal_causes.get("strafe_reroll"), Some(&1));
+    }
+
+    #[test]
+    fn deflection_episodes_are_credited_to_the_cause_before_them() {
+        let row = |ms: u32, x: i32, cause: &str| {
+            format!("ARGMOT Romero ms {ms} pos '{x} 0 24' wish 0 cause {cause} ctx '2 0 1' hp 100 ground worldspawn
+")
+        };
+        let mut text = String::from(
+            "ARGMOT begin layout 2
+",
+        );
+        for (i, cause) in [
+            "hazard_fan",
+            "route_steer",
+            "hazard_fan",
+            "hazard_hold",
+            "route_steer",
+            "combat_hazard",
+            "hazard_hold",
+            "combat_hazard",
+        ]
+        .iter()
+        .enumerate()
+        {
+            text.push_str(&row(100 * i as u32, 4 * i as i32, cause));
+        }
+        let report = inspect(&text, &[born("Romero")]).unwrap();
+        let bot = &report.bots[0];
+        assert_eq!(bot.deflection_causes.get("route_steer"), Some(&1));
+        assert_eq!(bot.deflection_causes.get("combat_hazard"), Some(&1));
+        assert_eq!(bot.deflection_causes.get("unknown"), Some(&1));
+        assert_eq!(report.deflection_causes, bot.deflection_causes);
     }
 
     #[test]
