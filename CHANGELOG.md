@@ -1092,6 +1092,18 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Explain the project in the README. A new section says what Argus is, which
+  rules all of its code follows and how a map file becomes a measured match.
+  Five Mermaid diagrams show the main data flows: the build, play and measure
+  stages, one server frame, the navigation pipeline, one lab experiment and
+  the improvement cycle. A telemetry sample comes from the dm4 smoke tape of
+  the supplied build. Two stale statements are corrected: the development
+  status said the recent behaviour work was not installed, but the
+  2026-11-15 install shipped it, and the map table now lists the six
+  registered episode-one maps. The status paragraphs become two tables that
+  keep every link. The prose follows ASD-STE100 Simplified Technical English
+  where it fits.
+
 - Bring the guides in line with #834, #835, #844, #846 and #852: the lab
   operator guide names the repeated-seed refusal, the confounds the Rust
   verdicts now report and the audits' lava rule, the fixed-clock and lab spine
