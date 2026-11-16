@@ -105,3 +105,22 @@ unsupported isolation result has nothing to promote. Two dm4 pairs had
 already run (`dm4elbow_ctl_r1`, `r2`, `dm4elbow_cand_r1`, `r2`); they are
 kept and not read. The change is reverted, with its post-mortem beside the
 route steering in `Argus_AI`.
+
+## Correction (2026-11-16, after the brink turn and early turn ladders)
+
+The first analysis read motion rows with a pattern that expected one space after `wish`; QuakeC's `ftos` pads fractional values (`wish  66.8`), so about 8 per cent of samples, every frame with a fractional wish, were dropped. The corrected pattern matches the lab's own parser (`tools/argus_mcp/src/motion.rs`) exactly. The results file now holds the corrected analysis, with the first recording kept as `original_analysis`. The verdict is unchanged; the numbers in the result section above
+are superseded by these:
+
+| Metric | Control | Candidate | Change | Detection limit | Reading |
+|---|---|---|---|---|---|
+| Route-steer deflection episodes a tape (primary) | 105.6 | 112.2 | +6.6 | 59.4 | no detectable effect |
+| Of those within 128u of a corner | 38.8 | 41.2 | +2.4 | 17.5 | no detectable effect |
+
+Mode-2 route frames within 128u of a corner held an axis-aligned wish 27 per
+cent of the time in the control and 58 per cent in the candidate. Over the 28
+control tapes of all four lab_voidcorner ladders, 71 per cent of route-steer
+deflection episodes begin mid-turn, and 77 per cent of those begin straight
+after a previous deflection: route steering re-asserts its heading for a frame
+or two and the guard fires again. Under 1 per cent begin at a waypoint
+handoff, which is why a handoff change could not move this metric
+(`runs/lab-voidcorner-turn-diagnosis.results.json`).

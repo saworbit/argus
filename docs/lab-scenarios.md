@@ -222,9 +222,12 @@ five tapes an arm, interleave control and candidate, and keep every tape.
   `ARGUS_GAME` for `argus-mcp match <map> <secs> <run> --port N`.
 - For movement questions, add `scratch1 697` to that scratch `autoexec.cfg`.
   The tapes then carry the full-rate `ARGMOT` motion rows, and every brief's
-  `movement.deflection_causes` counts brink-deflection episodes by the steering
-  cause that led into each one. The brief's `hazards` total is throttled to one
-  a second per bot and mostly measures combat strafes on narrow walkways.
+  `movement.brink_encounters` counts brink encounters (deflections under 250 ms
+  apart merged) by what started each one; `movement.deflection_causes` counts
+  the raw episodes, which include flicker within one encounter. The brief's
+  `hazards` total is throttled to one a second per bot and mostly measures
+  combat strafes on narrow walkways. Parse motion rows with the lab's grammar:
+  `ftos` pads fractional values, so `wish  66.8` carries two spaces.
 - Run the same arms on a stock map before a claim names one (the promotion
   rule above).
 - Write the ladder's results file into `runs/` (protocol, arm MD5s, per-tape
@@ -252,39 +255,59 @@ scratch game directories, every tape at the listen tick class:
 
 | Ladder | Change | Primary | Control | Candidate | Detection limit | Reading |
 |---|---|---|---|---|---|---|
-| [Route elbow](specs/2026-11-16-route-elbow-protocol.md), 5 x 120 s | steer at the axis-aligned elbow when the line to the node crosses a void | route-steer deflection episodes a tape | 87.4 | 90.6 | 49.2 | no effect; refuted |
-| [Brink turn](specs/2026-11-16-brink-turn-protocol.md), 5 x 120 s | beside lethal liquid, turn the movement heading 3x faster and double friction while turning | the same | 114.8 | 89.0 | 56.1 | no detectable effect |
-| Brink turn confirmation, 8 x 180 s | the same | episodes per 1000 route-steer samples | 56.9 | 45.8 | 12.1 | no detectable effect; parked |
-| [Early turn](specs/2026-11-16-early-turn-protocol.md), 10 x 180 s | at a hazard corner, hand the steering to the next node 0.35 s of travel out | the same | 53.2 | 56.9 | 8.6 | the wrong way; refuted |
+| [Route elbow](specs/2026-11-16-route-elbow-protocol.md), 5 x 120 s | steer at the axis-aligned elbow when the line to the node crosses a void | route-steer deflection episodes a tape | 105.6 | 112.2 | 59.4 | no effect; refuted |
+| [Brink turn](specs/2026-11-16-brink-turn-protocol.md), 5 x 120 s | beside lethal liquid, turn the movement heading 3x faster and double friction while turning | the same | 129.2 | 105.6 | 69.1 | no detectable effect |
+| Brink turn confirmation, 8 x 180 s | the same | episodes per 1000 route-steer samples | 59.2 | 45.9 | 12.3 | moved; stock rung not yet run |
+| [Early turn](specs/2026-11-16-early-turn-protocol.md), 10 x 180 s | at a hazard corner, hand the steering to the next node 0.35 s of travel out | the same | 56.1 | 58.8 | 7.9 | the wrong way; refuted |
 
-None of the three changes was run on a stock map, because none cleared the
-lab bar, and all are reverted with their post-mortems beside the route
-steering in `Argus_AI`. The claims are `route-elbow-void-corners` (refuted),
-`brink-turn-lava-corners` (parked) and `early-turn-lava-corners` (refuted) in
-`tools/lab_claims.json`, and every tape's map, size and SHA-256 is in the four
-`runs/lab-voidcorner-*.results.json` files.
+These are the corrected readings. The first analysis read motion rows with a
+pattern that expected one space after `wish`, and QuakeC's `ftos` pads
+fractional values, so about 8 per cent of samples were dropped. Each protocol
+keeps its first-recorded numbers and a correction section, and each results
+file keeps `original_analysis`. The correction changed one verdict: the brink
+turn confirmation's registered primary moved (it had read no detectable
+effect).
 
-What the scenario established, which no stock tape had shown:
+All three changes are reverted, with their post-mortems beside the route
+steering in `Argus_AI`. The route elbow and the early turn are refuted. The
+brink turn is supported at the isolation tier only, by a thin margin, and its
+dm4 stock rung has not run, so it is an open hypothesis
+(`brink-turn-lava-corners`) and stays out of the build until that rung decides
+it. Every tape's map, size and SHA-256 is in the `runs/lab-voidcorner-*.results.json`
+files.
 
-- The brief's `hazards` count is throttled and dominated by combat strafes:
-  on this map route steering led into about one deflection episode in eight.
-  `movement.deflection_causes` now separates them.
-- 74 per cent of the deflections that follow route steering begin mid-turn,
-  with the movement heading rotating at `AR_TURNRATE` (320 degrees a second)
-  at about 200 u/s. Stock acceleration only adds along the wish, so offline NQ
-  integration puts the overshoot of a 90 degree turn at that speed at 97u,
-  more than a 64u walkway's half-width. A corner fix has to start the turn
-  early or shed speed; running to the corner centre first (the elbow) adds
-  overshoot.
-- The instrument's own spread is large: the same control code read 49.8, 66.6,
-  56.9 and 53.2 episodes per 1000 route-steer samples in four ladders. A change
-  needs a bigger effect than the brink turn's 20 per cent, or more tapes than
-  ten pairs, to clear it.
-- Starting the turn earlier at the waypoint, sized by that integration to keep
-  a centred bot on the floor, changed nothing. The integration models a clean
-  corner entry; the turns that end on the lip start somewhere else
-  (re-routing, a goal change, resuming after a fight, an off-centre entry),
-  and the next corner change should find where before it is written.
+### What the scenario established
+
+- The brief's `hazards` count is throttled and dominated by combat strafes;
+  route steering leads into about one deflection episode in eight on this map.
+- Deflection episodes mostly count flicker. Over the 28 control tapes, 71 per
+  cent of route-steer episodes begin mid-turn, and 77 per cent of those begin
+  straight after a previous deflection: routed mode 2 is exempt from the
+  steering-side hazard check, so route steering turns the heading back at the
+  node for a frame or two and the guard fires again. Two dm4 control tapes
+  show the same 77 per cent. Episodes run about four times brink encounters
+  (episodes under 250 ms apart merged), and the encounter rate is much
+  steadier between ladders (13.2 to 14.4 per 1000 route-steer samples on the
+  same control code, against 53.3 to 67.8 for episodes). Briefs now carry
+  `movement.brink_encounters` beside `movement.deflection_causes`; judge a
+  brink change on encounters.
+- Waypoint handoffs start under 1 per cent of mid-turn route deflections on
+  the lab map and 4.5 per cent on dm4, which is why the elbow and the early
+  turn, both handoff changes, moved nothing. Encounters start most often from
+  steady routed running (30 per cent on the lab map, 44 on dm4), then from
+  resuming after combat (lab) or after a noise (dm4).
+- Stock acceleration only adds along the wish, so offline NQ integration puts
+  the overshoot of a 90 degree turn begun at 200 u/s at 97u, more than a 64u
+  walkway's half-width; that integration models a clean, centred entry, which
+  is not where these encounters start.
+- None of the four ladders moved brink encounters (not registered; each
+  results file carries them). The brink turn cut flicker within encounters,
+  not visits to the brink.
+
+The open defect is `route-steer-brink-flicker`. Its suggested next candidate
+works on the flicker itself: while the guard deflected in the last quarter
+second, route the wanted heading through `Argus_HazardSteer` when its own 48u
+probe is vetoed. The diagnosis is in `runs/lab-voidcorner-turn-diagnosis.results.json`.
 
 ## Limits
 

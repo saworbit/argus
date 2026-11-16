@@ -25,6 +25,591 @@
     ]
   ],
   "analysis": {
+    "route_rate": {
+      "ctl": [
+        39.91,
+        45.63,
+        52.33,
+        62.92,
+        65.73
+      ],
+      "cand": [
+        47.76,
+        38.16,
+        45.78,
+        55.06,
+        60.43
+      ],
+      "ctl_mean": 53.3,
+      "cand_mean": 49.44,
+      "diff": -3.87,
+      "limit": 17.51,
+      "verdict": "no detectable effect"
+    },
+    "route": {
+      "ctl": [
+        93,
+        59,
+        100,
+        159,
+        117
+      ],
+      "cand": [
+        129,
+        92,
+        84,
+        99,
+        157
+      ],
+      "ctl_mean": 105.6,
+      "cand_mean": 112.2,
+      "diff": 6.6,
+      "limit": 59.43,
+      "verdict": "no detectable effect"
+    },
+    "corner_route": {
+      "ctl": [
+        39,
+        20,
+        43,
+        42,
+        50
+      ],
+      "cand": [
+        45,
+        43,
+        31,
+        35,
+        52
+      ],
+      "ctl_mean": 38.8,
+      "cand_mean": 41.2,
+      "diff": 2.4,
+      "limit": 17.53,
+      "verdict": "no detectable effect"
+    },
+    "all_defl": {
+      "ctl": [
+        1046,
+        866,
+        1042,
+        1077,
+        987
+      ],
+      "cand": [
+        732,
+        835,
+        846,
+        897,
+        937
+      ],
+      "ctl_mean": 1003.6,
+      "cand_mean": 849.4,
+      "diff": -154.2,
+      "limit": 142.51,
+      "verdict": "moved"
+    },
+    "combat_defl": {
+      "ctl": [
+        857,
+        721,
+        800,
+        830,
+        767
+      ],
+      "cand": [
+        492,
+        644,
+        650,
+        664,
+        678
+      ],
+      "ctl_mean": 795,
+      "cand_mean": 625.6,
+      "diff": -169.4,
+      "limit": 116.05,
+      "verdict": "moved"
+    },
+    "lava": {
+      "ctl": [
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "cand": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ctl_mean": 0.4,
+      "cand_mean": 0,
+      "diff": -0.4,
+      "limit": 0.69,
+      "verdict": "no detectable effect"
+    },
+    "world": {
+      "ctl": [
+        1,
+        0,
+        1,
+        0,
+        0
+      ],
+      "cand": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ctl_mean": 0.4,
+      "cand_mean": 0,
+      "diff": -0.4,
+      "limit": 0.69,
+      "verdict": "no detectable effect"
+    },
+    "stalls": {
+      "ctl": [
+        2,
+        0,
+        0,
+        0,
+        1
+      ],
+      "cand": [
+        2,
+        2,
+        1,
+        1,
+        0
+      ],
+      "ctl_mean": 0.6,
+      "cand_mean": 1.2,
+      "diff": 0.6,
+      "limit": 1.53,
+      "verdict": "no detectable effect"
+    },
+    "freezes": {
+      "ctl": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "cand": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ctl_mean": 0,
+      "cand_mean": 0,
+      "diff": 0,
+      "limit": 0.0,
+      "verdict": "no detectable effect"
+    },
+    "goals": {
+      "ctl": [
+        13,
+        12,
+        14,
+        15,
+        11
+      ],
+      "cand": [
+        16,
+        8,
+        14,
+        11,
+        9
+      ],
+      "ctl_mean": 13,
+      "cand_mean": 11.6,
+      "diff": -1.4,
+      "limit": 4.65,
+      "verdict": "no detectable effect"
+    },
+    "engages": {
+      "ctl": [
+        83,
+        88,
+        103,
+        75,
+        87
+      ],
+      "cand": [
+        85,
+        80,
+        96,
+        92,
+        83
+      ],
+      "ctl_mean": 87.2,
+      "cand_mean": 87.2,
+      "diff": 0.0,
+      "limit": 15.23,
+      "verdict": "no detectable effect"
+    },
+    "hazards": {
+      "ctl": [
+        184,
+        172,
+        192,
+        205,
+        208
+      ],
+      "cand": [
+        183,
+        173,
+        192,
+        183,
+        187
+      ],
+      "ctl_mean": 192.2,
+      "cand_mean": 183.6,
+      "diff": -8.6,
+      "limit": 20.61,
+      "verdict": "no detectable effect"
+    }
+  },
+  "tapes": [
+    {
+      "run": "labvc_ctl_r1",
+      "map": "lab_voidcorner",
+      "bytes": 3872722,
+      "sha256": "0c1a1bdd15951954a67afbe34c084b32346e27b8cfbbffdaffe8d0b363a2e9fd",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc_ctl_r1",
+        "tick": "listen",
+        "route": 93,
+        "corner_route": 39,
+        "route_frames": 2330,
+        "route_rate": 39.91,
+        "all_defl": 1046,
+        "combat_defl": 857,
+        "lava": 1,
+        "world": 1,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 13,
+        "engages": 83,
+        "hazards": 184,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc_ctl_r2",
+      "map": "lab_voidcorner",
+      "bytes": 3537165,
+      "sha256": "899afa70ca9c2cff8bdcb0db8a9ee9782dcd98ec1bb3ccf9477c02abc7a0623e",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc_ctl_r2",
+        "tick": "listen",
+        "route": 59,
+        "corner_route": 20,
+        "route_frames": 1293,
+        "route_rate": 45.63,
+        "all_defl": 866,
+        "combat_defl": 721,
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 12,
+        "engages": 88,
+        "hazards": 172,
+        "minutes": 1.84
+      }
+    },
+    {
+      "run": "labvc_ctl_r3",
+      "map": "lab_voidcorner",
+      "bytes": 3915221,
+      "sha256": "e20f3e924c974dc93352ccb2688fd37bfdaf2521af6f9c026c73f4558e7f39c4",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc_ctl_r3",
+        "tick": "listen",
+        "route": 100,
+        "corner_route": 43,
+        "route_frames": 1911,
+        "route_rate": 52.33,
+        "all_defl": 1042,
+        "combat_defl": 800,
+        "lava": 1,
+        "world": 1,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 14,
+        "engages": 103,
+        "hazards": 192,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc_ctl_r4",
+      "map": "lab_voidcorner",
+      "bytes": 3980784,
+      "sha256": "56a70b42c7f86d67d44bb2f0b14473c2d636e673be78fa5e12fba63f87edefd4",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc_ctl_r4",
+        "tick": "listen",
+        "route": 159,
+        "corner_route": 42,
+        "route_frames": 2527,
+        "route_rate": 62.92,
+        "all_defl": 1077,
+        "combat_defl": 830,
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 15,
+        "engages": 75,
+        "hazards": 205,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc_ctl_r5",
+      "map": "lab_voidcorner",
+      "bytes": 3909785,
+      "sha256": "1a71fdcba2ed9c7a57b54283afe3b6c52a809cf5507c84eba9326663ee76cdb4",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labvc_ctl_r5",
+        "tick": "listen",
+        "route": 117,
+        "corner_route": 50,
+        "route_frames": 1780,
+        "route_rate": 65.73,
+        "all_defl": 987,
+        "combat_defl": 767,
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 11,
+        "engages": 87,
+        "hazards": 208,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc_cand_r1",
+      "map": "lab_voidcorner",
+      "bytes": 3945493,
+      "sha256": "3071f64b815fe38430c9496d597883ea290ffa3a05693ad8396000bf7436e7d6",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc_cand_r1",
+        "tick": "listen",
+        "route": 129,
+        "corner_route": 45,
+        "route_frames": 2701,
+        "route_rate": 47.76,
+        "all_defl": 732,
+        "combat_defl": 492,
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 16,
+        "engages": 85,
+        "hazards": 183,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc_cand_r2",
+      "map": "lab_voidcorner",
+      "bytes": 3474228,
+      "sha256": "52f0dfdb37d57d561c42840fa5cc43fa8c52a0b1da1357c63ef2ad1c0e1c97ed",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc_cand_r2",
+        "tick": "listen",
+        "route": 92,
+        "corner_route": 43,
+        "route_frames": 2411,
+        "route_rate": 38.16,
+        "all_defl": 835,
+        "combat_defl": 644,
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 8,
+        "engages": 80,
+        "hazards": 173,
+        "minutes": 1.8
+      }
+    },
+    {
+      "run": "labvc_cand_r3",
+      "map": "lab_voidcorner",
+      "bytes": 3893583,
+      "sha256": "2afa10b1e80159b614dbca9aedc0b8174e8f4ab3b5ee27ffefeb190cddf73e09",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc_cand_r3",
+        "tick": "listen",
+        "route": 84,
+        "corner_route": 31,
+        "route_frames": 1835,
+        "route_rate": 45.78,
+        "all_defl": 846,
+        "combat_defl": 650,
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 14,
+        "engages": 96,
+        "hazards": 192,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc_cand_r4",
+      "map": "lab_voidcorner",
+      "bytes": 3937085,
+      "sha256": "32292953526636d6b434113bbd9049dbf68cad7597f82f171498b0b939122124",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc_cand_r4",
+        "tick": "listen",
+        "route": 99,
+        "corner_route": 35,
+        "route_frames": 1798,
+        "route_rate": 55.06,
+        "all_defl": 897,
+        "combat_defl": 664,
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 11,
+        "engages": 92,
+        "hazards": 183,
+        "minutes": 2.0
+      }
+    },
+    {
+      "run": "labvc_cand_r5",
+      "map": "lab_voidcorner",
+      "bytes": 3997270,
+      "sha256": "ddf96679e49c9344466c645f3094566c4993e2f49bad242a73ae32931f207d25",
+      "arm": "cand",
+      "metrics": {
+        "run": "labvc_cand_r5",
+        "tick": "listen",
+        "route": 157,
+        "corner_route": 52,
+        "route_frames": 2598,
+        "route_rate": 60.43,
+        "all_defl": 937,
+        "combat_defl": 678,
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 9,
+        "engages": 83,
+        "hazards": 187,
+        "minutes": 2.0
+      }
+    }
+  ],
+  "tape_storage": "machine-local; hashes recorded here",
+  "verdict": "refuted: the registered primary (route_steer) shows no detectable effect",
+  "scenario": "lab_voidcorner-70ece72d72",
+  "development_probes": [
+    {
+      "run": "labvc_ctl_probe1",
+      "map": "lab_voidcorner",
+      "bytes": 97191,
+      "sha256": "a6ec52792ba8e79c1aaed1b8e6b9bda46f7486401f983a939ac94c3acc7e6e10"
+    },
+    {
+      "run": "labvc_cand_smoke1",
+      "map": "lab_voidcorner",
+      "bytes": 98989,
+      "sha256": "515deecea5361654966e9f207c365f97fb91a70cd3aee4997e23842d1c38ad0f"
+    },
+    {
+      "run": "labvc_diag_ctl1",
+      "map": "lab_voidcorner",
+      "bytes": 3844203,
+      "sha256": "6f9dacf4718c260e4c45b62d8a3f140d834341b5ab39912a00c5fa03233c222a"
+    },
+    {
+      "run": "labvc_diag_cand1",
+      "map": "lab_voidcorner",
+      "bytes": 3886876,
+      "sha256": "55fdff7a8eae9fa94c87f5f6062dafe2dee46e360fadcef9264b2e4374116b07"
+    }
+  ],
+  "cancelled_stock_rung": {
+    "reason": "the lab primary failed, so nothing could be promoted",
+    "tapes": [
+      {
+        "run": "dm4elbow_ctl_r1",
+        "map": "dm4",
+        "bytes": 5269422,
+        "sha256": "b231b5accd06b6fac07c392eec31d60d820eb0704e0aef82ba3fb76a179b82b7"
+      },
+      {
+        "run": "dm4elbow_cand_r1",
+        "map": "dm4",
+        "bytes": 5203290,
+        "sha256": "3e858c163164de28e574a343ccb0a3eec7f5ca626ea9fae63b5b9d94ca2f8829"
+      },
+      {
+        "run": "dm4elbow_ctl_r2",
+        "map": "dm4",
+        "bytes": 5281189,
+        "sha256": "4f6af41542c88047a74186601d5bed0c188f946449cf6673273f06052e4aef44"
+      },
+      {
+        "run": "dm4elbow_cand_r2",
+        "map": "dm4",
+        "bytes": 5253919,
+        "sha256": "5c237c7dfec3fa212c60c968cfc80b74994274649162f5c9cd460b0d87343200"
+      }
+    ]
+  },
+  "exploratory_brink_encounters_per_1000": {
+    "note": "not registered; episodes less than 250 ms apart merged (movement.brink_encounters)",
+    "ctl": [
+      7.3,
+      12.37,
+      13.61,
+      14.64,
+      17.98
+    ],
+    "cand": [
+      11.48,
+      7.47,
+      15.8,
+      10.57,
+      15.4
+    ],
+    "ctl_mean": 13.18,
+    "cand_mean": 12.14,
+    "limit": 6.55
+  },
+  "correction": "Corrected 2026-11-16: the analysis read motion rows with a pattern that expected one space after 'wish', and QuakeC's ftos pads fractional values ('wish  66.8'), so about 8 per cent of samples, every frame with a fractional wish, were dropped. The analysis below is recomputed with the corrected pattern, which matches the lab's own parser (tools/argus_mcp/src/motion.rs) exactly; original_analysis keeps what was first recorded.",
+  "original_analysis": {
     "route": {
       "ctl": [
         84,
@@ -257,294 +842,6 @@
       "verdict": "no detectable effect"
     }
   },
-  "tapes": [
-    {
-      "run": "labvc_ctl_r1",
-      "map": "lab_voidcorner",
-      "bytes": 3872722,
-      "sha256": "0c1a1bdd15951954a67afbe34c084b32346e27b8cfbbffdaffe8d0b363a2e9fd",
-      "arm": "ctl",
-      "metrics": {
-        "run": "labvc_ctl_r1",
-        "tick": "listen",
-        "route": 84,
-        "corner_route": 37,
-        "all_defl": 870,
-        "combat_defl": 699,
-        "lava": 1,
-        "world": 1,
-        "stalls": 2,
-        "freezes": 0,
-        "goals": 13,
-        "engages": 83,
-        "hazards": 184,
-        "minutes": 2.0
-      }
-    },
-    {
-      "run": "labvc_ctl_r2",
-      "map": "lab_voidcorner",
-      "bytes": 3537165,
-      "sha256": "899afa70ca9c2cff8bdcb0db8a9ee9782dcd98ec1bb3ccf9477c02abc7a0623e",
-      "arm": "ctl",
-      "metrics": {
-        "run": "labvc_ctl_r2",
-        "tick": "listen",
-        "route": 52,
-        "corner_route": 19,
-        "all_defl": 705,
-        "combat_defl": 573,
-        "lava": 0,
-        "world": 0,
-        "stalls": 0,
-        "freezes": 0,
-        "goals": 12,
-        "engages": 88,
-        "hazards": 172,
-        "minutes": 1.84
-      }
-    },
-    {
-      "run": "labvc_ctl_r3",
-      "map": "lab_voidcorner",
-      "bytes": 3915221,
-      "sha256": "e20f3e924c974dc93352ccb2688fd37bfdaf2521af6f9c026c73f4558e7f39c4",
-      "arm": "ctl",
-      "metrics": {
-        "run": "labvc_ctl_r3",
-        "tick": "listen",
-        "route": 79,
-        "corner_route": 32,
-        "all_defl": 816,
-        "combat_defl": 606,
-        "lava": 1,
-        "world": 1,
-        "stalls": 0,
-        "freezes": 0,
-        "goals": 14,
-        "engages": 103,
-        "hazards": 192,
-        "minutes": 2.0
-      }
-    },
-    {
-      "run": "labvc_ctl_r4",
-      "map": "lab_voidcorner",
-      "bytes": 3980784,
-      "sha256": "56a70b42c7f86d67d44bb2f0b14473c2d636e673be78fa5e12fba63f87edefd4",
-      "arm": "ctl",
-      "metrics": {
-        "run": "labvc_ctl_r4",
-        "tick": "listen",
-        "route": 127,
-        "corner_route": 35,
-        "all_defl": 896,
-        "combat_defl": 687,
-        "lava": 0,
-        "world": 0,
-        "stalls": 0,
-        "freezes": 0,
-        "goals": 15,
-        "engages": 75,
-        "hazards": 205,
-        "minutes": 2.0
-      }
-    },
-    {
-      "run": "labvc_ctl_r5",
-      "map": "lab_voidcorner",
-      "bytes": 3909785,
-      "sha256": "1a71fdcba2ed9c7a57b54283afe3b6c52a809cf5507c84eba9326663ee76cdb4",
-      "arm": "ctl",
-      "metrics": {
-        "run": "labvc_ctl_r5",
-        "tick": "listen",
-        "route": 95,
-        "corner_route": 42,
-        "all_defl": 832,
-        "combat_defl": 647,
-        "lava": 0,
-        "world": 0,
-        "stalls": 1,
-        "freezes": 0,
-        "goals": 11,
-        "engages": 87,
-        "hazards": 208,
-        "minutes": 2.0
-      }
-    },
-    {
-      "run": "labvc_cand_r1",
-      "map": "lab_voidcorner",
-      "bytes": 3945493,
-      "sha256": "3071f64b815fe38430c9496d597883ea290ffa3a05693ad8396000bf7436e7d6",
-      "arm": "cand",
-      "metrics": {
-        "run": "labvc_cand_r1",
-        "tick": "listen",
-        "route": 111,
-        "corner_route": 39,
-        "all_defl": 621,
-        "combat_defl": 409,
-        "lava": 0,
-        "world": 0,
-        "stalls": 2,
-        "freezes": 0,
-        "goals": 16,
-        "engages": 85,
-        "hazards": 183,
-        "minutes": 2.0
-      }
-    },
-    {
-      "run": "labvc_cand_r2",
-      "map": "lab_voidcorner",
-      "bytes": 3474228,
-      "sha256": "52f0dfdb37d57d561c42840fa5cc43fa8c52a0b1da1357c63ef2ad1c0e1c97ed",
-      "arm": "cand",
-      "metrics": {
-        "run": "labvc_cand_r2",
-        "tick": "listen",
-        "route": 74,
-        "corner_route": 33,
-        "all_defl": 708,
-        "combat_defl": 545,
-        "lava": 0,
-        "world": 0,
-        "stalls": 2,
-        "freezes": 0,
-        "goals": 8,
-        "engages": 80,
-        "hazards": 173,
-        "minutes": 1.8
-      }
-    },
-    {
-      "run": "labvc_cand_r3",
-      "map": "lab_voidcorner",
-      "bytes": 3893583,
-      "sha256": "2afa10b1e80159b614dbca9aedc0b8174e8f4ab3b5ee27ffefeb190cddf73e09",
-      "arm": "cand",
-      "metrics": {
-        "run": "labvc_cand_r3",
-        "tick": "listen",
-        "route": 65,
-        "corner_route": 28,
-        "all_defl": 714,
-        "combat_defl": 548,
-        "lava": 0,
-        "world": 0,
-        "stalls": 1,
-        "freezes": 0,
-        "goals": 14,
-        "engages": 96,
-        "hazards": 192,
-        "minutes": 2.0
-      }
-    },
-    {
-      "run": "labvc_cand_r4",
-      "map": "lab_voidcorner",
-      "bytes": 3937085,
-      "sha256": "32292953526636d6b434113bbd9049dbf68cad7597f82f171498b0b939122124",
-      "arm": "cand",
-      "metrics": {
-        "run": "labvc_cand_r4",
-        "tick": "listen",
-        "route": 73,
-        "corner_route": 25,
-        "all_defl": 724,
-        "combat_defl": 540,
-        "lava": 0,
-        "world": 0,
-        "stalls": 1,
-        "freezes": 0,
-        "goals": 11,
-        "engages": 92,
-        "hazards": 183,
-        "minutes": 2.0
-      }
-    },
-    {
-      "run": "labvc_cand_r5",
-      "map": "lab_voidcorner",
-      "bytes": 3997270,
-      "sha256": "ddf96679e49c9344466c645f3094566c4993e2f49bad242a73ae32931f207d25",
-      "arm": "cand",
-      "metrics": {
-        "run": "labvc_cand_r5",
-        "tick": "listen",
-        "route": 130,
-        "corner_route": 43,
-        "all_defl": 764,
-        "combat_defl": 541,
-        "lava": 0,
-        "world": 0,
-        "stalls": 0,
-        "freezes": 0,
-        "goals": 9,
-        "engages": 83,
-        "hazards": 187,
-        "minutes": 2.0
-      }
-    }
-  ],
-  "tape_storage": "machine-local; hashes recorded here",
-  "verdict": "refuted: the registered primary (route_steer) shows no detectable effect",
-  "scenario": "lab_voidcorner-70ece72d72",
-  "development_probes": [
-    {
-      "run": "labvc_ctl_probe1",
-      "map": "lab_voidcorner",
-      "bytes": 97191,
-      "sha256": "a6ec52792ba8e79c1aaed1b8e6b9bda46f7486401f983a939ac94c3acc7e6e10"
-    },
-    {
-      "run": "labvc_cand_smoke1",
-      "map": "lab_voidcorner",
-      "bytes": 98989,
-      "sha256": "515deecea5361654966e9f207c365f97fb91a70cd3aee4997e23842d1c38ad0f"
-    },
-    {
-      "run": "labvc_diag_ctl1",
-      "map": "lab_voidcorner",
-      "bytes": 3844203,
-      "sha256": "6f9dacf4718c260e4c45b62d8a3f140d834341b5ab39912a00c5fa03233c222a"
-    },
-    {
-      "run": "labvc_diag_cand1",
-      "map": "lab_voidcorner",
-      "bytes": 3886876,
-      "sha256": "55fdff7a8eae9fa94c87f5f6062dafe2dee46e360fadcef9264b2e4374116b07"
-    }
-  ],
-  "cancelled_stock_rung": {
-    "reason": "the lab primary failed, so nothing could be promoted",
-    "tapes": [
-      {
-        "run": "dm4elbow_ctl_r1",
-        "map": "dm4",
-        "bytes": 5269422,
-        "sha256": "b231b5accd06b6fac07c392eec31d60d820eb0704e0aef82ba3fb76a179b82b7"
-      },
-      {
-        "run": "dm4elbow_cand_r1",
-        "map": "dm4",
-        "bytes": 5203290,
-        "sha256": "3e858c163164de28e574a343ccb0a3eec7f5ca626ea9fae63b5b9d94ca2f8829"
-      },
-      {
-        "run": "dm4elbow_ctl_r2",
-        "map": "dm4",
-        "bytes": 5281189,
-        "sha256": "4f6af41542c88047a74186601d5bed0c188f946449cf6673273f06052e4aef44"
-      },
-      {
-        "run": "dm4elbow_cand_r2",
-        "map": "dm4",
-        "bytes": 5253919,
-        "sha256": "5c237c7dfec3fa212c60c968cfc80b74994274649162f5c9cd460b0d87343200"
-      }
-    ]
-  }
+  "registered_primary": "route",
+  "registered_verdict": "no detectable effect"
 }

@@ -805,7 +805,7 @@
       "maps": [
         "lab_voidcorner"
       ],
-      "statement": "Steering at the axis-aligned elbow whenever the straight walk to the routed node crossed a void fired (corner wishes axis-aligned 27 to 60 per cent) and did not move its registered primary on the lab map: route-steer deflection episodes 87.4 against 90.6 a tape, detection limit 49.2. It made bots run to the corner centre before turning, which adds overshoot; 74 per cent of those deflections begin mid-turn.",
+      "statement": "Steering at the axis-aligned elbow whenever the straight walk to the routed node crossed a void fired (corner wishes axis-aligned 27 to 58 per cent) and did not move its registered primary on the lab map: route-steer deflection episodes 105.6 against 112.2 a tape, detection limit 59.4. Under 1 per cent of mid-turn route deflections there begin at a waypoint handoff, the only place it acts.",
       "evidence": [
         "docs/specs/2026-11-16-route-elbow-protocol.md",
         "runs/lab-voidcorner-route-elbow.results.json"
@@ -815,19 +815,21 @@
     {
       "id": "brink-turn-lava-corners",
       "title": "Brink turn at lava corners",
-      "status": "parked",
-      "kind": "graveyard",
+      "status": "open",
+      "kind": "hypothesis",
       "tier": 1,
       "maps": [
         "lab_voidcorner"
       ],
-      "statement": "Beside lethal liquid, turning the movement heading at three times AR_TURNRATE and doubling friction while the velocity lagged the wish cut route-steer deflections per 1000 route-steer samples from 66.6 to 45.6 (limit 28.2) and then, on a registered eight-pair confirmation, from 56.9 to 45.8 (limit 12.1): the right direction twice, the bar neither time, and corner episodes rose. Parked, not refuted; reverted with its post-mortem in Argus_AI. Never run on a stock map, so it says nothing about dm4.",
+      "statement": "Beside lethal liquid, turning the movement heading at three times AR_TURNRATE and doubling friction while the velocity lags the wish moved its registered lab primary once a parser fault in the analysis was fixed: route-steer deflection episodes per 1000 route-steer samples 59.2 against 45.9 over eight 180 s pairs, detection limit 12.3, no guard regressing. Brink encounters did not move (14.4 against 12.7, limit 2.7, not registered) and corner episodes rose, so it reduces flicker at a brink, not visits to one. Isolation tier only; reverted pending its dm4 stock rung.",
       "evidence": [
         "docs/specs/2026-11-16-brink-turn-protocol.md",
         "runs/lab-voidcorner-brink-turn.results.json",
         "runs/lab-voidcorner-brink-turn-confirmation.results.json"
       ],
-      "cheapest_tier": 2
+      "cheapest_tier": 2,
+      "refute_by": "The dm4 stock rung registered in docs/specs/2026-11-16-brink-turn-protocol.md: five 185 s pairs, the same normalised primary and guards.",
+      "next": "Run the dm4 stock rung before reinstating the change."
     },
     {
       "id": "early-turn-lava-corners",
@@ -838,10 +840,28 @@
       "maps": [
         "lab_voidcorner"
       ],
-      "statement": "Handing the steering to the next node 0.35 s of travel out (48 to 112u) at corners whose apex cut probe sees a hazard, sized by offline NQ integration to keep a 64u corner on the floor, did not reduce route-steer deflections on the lab map: 53.2 against 56.9 per 1000 route-steer samples over ten 180 s pairs (detection limit 8.6), the wrong way, with corner episodes flat. Turn timing at the waypoint is not what puts these bots on the lip.",
+      "statement": "Handing the steering to the next node 0.35 s of travel out (48 to 112u) at corners whose apex cut probe sees a hazard, sized by offline NQ integration to keep a 64u corner on the floor, did not reduce route-steer deflections on the lab map: 56.1 against 58.8 per 1000 route-steer samples over ten 180 s pairs (detection limit 7.9), the wrong way, with corner episodes flat. Under 1 per cent of mid-turn route deflections begin at a waypoint handoff on the lab map.",
       "evidence": [
         "docs/specs/2026-11-16-early-turn-protocol.md",
         "runs/lab-voidcorner-early-turn.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "route-steer-brink-flicker",
+      "title": "Route steering and the brink guard alternate at a brink",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": [
+        "lab_voidcorner",
+        "dm4"
+      ],
+      "statement": "Three in four mid-turn route deflections begin straight after a previous deflection, on lab_voidcorner (2402 of 3131, 28 control tapes) and on dm4 (600 of 780, two control tapes): routed mode 2 is exempt from the steering-side hazard check, so after the guard deflects the velocity, route steering turns the heading back at the node for a frame or two and the guard fires again. Episodes run about four times encounters. Encounters themselves start most often from steady routed running (30 per cent on the lab map, 44 on dm4).",
+      "next": "Judge brink changes on movement.brink_encounters, not episodes. Candidate: while the guard deflected in the last quarter second, route the wanted heading through Argus_HazardSteer when its own 48u probe is vetoed.",
+      "evidence": [
+        "runs/lab-voidcorner-turn-diagnosis.results.json",
+        "docs/lab-scenarios.md"
       ],
       "cheapest_tier": 2
     }

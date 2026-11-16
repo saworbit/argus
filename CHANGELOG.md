@@ -43,13 +43,14 @@ passing botmatch does not establish better human play.
   cites a lab tape without naming the lab map. The first scenario is
   `lab_voidcorner`, a 64u walkway ring over lava with four tight corners,
   registered through the gate. Three corner changes were laddered on it under
-  registered protocols and none cleared its bar, so play is unchanged: the
-  route elbow showed no effect (refuted), the brink turn read about 20 per
-  cent fewer route-steer deflections in two ladders without leaving the noise
-  (parked), and an early turn at hazard corners moved them the wrong way
-  (refuted). All are reverted with post-mortems in `Argus_AI`; the map showed
-  that 74 per cent of those deflections begin mid-turn, where a 90 degree turn
-  at 200 u/s overshoots about 97u
+  registered protocols, and play is unchanged: the route elbow (refuted) and
+  an early turn at hazard corners (refuted) moved nothing, and the brink
+  turn's eight-pair confirmation cut route-steer deflection episodes 23 per
+  cent past its detection limit once a parser fault in the analysis was fixed,
+  without moving brink encounters; it stays reverted until its dm4 stock rung
+  runs. The map showed that three in four mid-turn route deflections, on it
+  and on dm4, begin straight after a previous deflection, because routed
+  steering is exempt from the steering-side hazard check
   ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
@@ -60,8 +61,10 @@ passing botmatch does not establish better human play.
   experimental graph on disk (e1m3).
 
 - Briefs of tapes recorded with `scratch1 697` carry
-  `movement.deflection_causes`: brink-deflection episodes by the steering
-  cause that led into each, which the throttled `hazards` count cannot say.
+  `movement.deflection_causes` (brink-deflection episodes by the steering cause
+  that led into each) and `movement.brink_encounters` (episodes under 250 ms
+  apart merged, by what started each encounter), which the throttled `hazards`
+  count cannot say.
 
 - Add the fixed lab clock: `argus-mcp seeds <map> <count> <stem>` and
   `argus-mcp match ... --seed N` run matches at the wall-clock lab's measured

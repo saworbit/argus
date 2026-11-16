@@ -11413,7 +11413,7 @@ void() Argus_AI =
             turn = AR_TURNRATE * frametime;
             // THREE CORNER CHANGES, laddered on lab_voidcorner and REVERTED
             // (docs/lab-scenarios.md, docs/specs/2026-11-16-*). On a 64u
-            // walkway over lava, 74 per cent of the brink deflections
+            // walkway over lava, 71 per cent of the brink deflections
             // that follow route steering begin mid-turn, with this limit
             // rotating the movement heading at AR_TURNRATE. Stock
             // acceleration only adds along the wish, so the old heading
@@ -11421,25 +11421,27 @@ void() Argus_AI =
             // puts the overshoot of a 90 degree turn at 200 u/s at 97u.
             // (1) The route elbow steered at the axis-aligned elbow when
             // the line to the node crossed a void. It fired (corner
-            // wishes axis-aligned 27 to 60 per cent) and moved nothing,
+            // wishes axis-aligned 27 to 58 per cent) and moved nothing,
             // because running to the corner centre before turning adds
             // overshoot. (2) The brink turn, beside lethal liquid, turned
             // the movement heading at three times this rate and doubled
             // friction while the velocity lagged the wish. It pointed the
-            // right way in both ladders and cleared the bar in neither:
-            // per 1000 route-steer samples 66.6 to 45.6 (limit 28.2),
-            // then 56.9 to 45.8 on eight 180 s pairs (limit 12.1), with
-            // corner episodes up rather than down. Parked, not refuted:
-            // a larger ladder could still find it, and it is the change
-            // to try first if lava corners ever cost deaths in play.
+            // right way in both ladders; on eight 180 s pairs it moved
+            // route-steer episodes per 1000 route-steer samples 59.2 to
+            // 45.9 (limit 12.3) once a parser fault in the analysis was
+            // fixed. Brink encounters did not move (14.4 to 12.7, limit
+            // 2.7) and corner episodes rose: it cut the flicker at a
+            // brink, not the visits. Reverted until its dm4 rung runs.
             // (3) The early turn handed the steering to the next node 0.35 s
             // of travel out (48 to 112u) at a corner whose apex cut probe
             // saw a hazard, which offline integration said keeps a 64u
-            // corner on the floor. Ten 180 s pairs: 53.2 to 56.9 per 1000
-            // route-steer samples (limit 8.6), the wrong way, corners
-            // flat. Refuted. Turn timing at the waypoint is not what puts
-            // these bots on the lip; read where the turns start before a
-            // fourth corner change.
+            // corner on the floor. Ten 180 s pairs: 56.1 to 58.8 per 1000
+            // route-steer samples (limit 7.9), the wrong way, corners
+            // flat. Refuted. Under 1 per cent of these turns start at a
+            // waypoint handoff; three in four start straight after a
+            // previous deflection, because mode 2 is exempt from the
+            // steering-side hazard check above and turns straight back at
+            // the node (route-steer-brink-flicker in lab_claims.json).
             if (diff > turn)        diff = turn;
             else if (diff < -turn)  diff = -turn;
             self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "route_steer");

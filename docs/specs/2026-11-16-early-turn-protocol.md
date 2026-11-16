@@ -86,3 +86,17 @@ end on the lip in play (re-routing, a goal change, the resumption after a
 fight, an off-centre entry), it is not the moment of the waypoint handoff
 at the corner. The next corner change should first read where those turns
 begin, from the motion rows and the route events together.
+
+## Correction (2026-11-16, the same day)
+
+The first analysis read motion rows with a pattern that expected one space after `wish`; QuakeC's `ftos` pads fractional values (`wish  66.8`), so about 8 per cent of samples, every frame with a fractional wish, were dropped. The corrected pattern matches the lab's own parser (`tools/argus_mcp/src/motion.rs`) exactly. The results file now holds the corrected analysis, with the first recording kept as `original_analysis`. The verdict is unchanged; the numbers in the result section above are
+superseded by these:
+
+| Metric | Control | Candidate | Change | Detection limit | Reading |
+|---|---|---|---|---|---|
+| Route-steer deflection episodes per 1000 route-steer samples (primary) | 56.1 | 58.8 | +2.7 | 7.9 | no detectable effect |
+| Of those within 128u of a corner, a tape | 68.4 | 62.8 | -5.6 | 16.8 | no detectable effect |
+
+The diagnosis that followed (`runs/lab-voidcorner-turn-diagnosis.results.json`)
+found that under 1 per cent of mid-turn route deflections on lab_voidcorner
+begin at a waypoint handoff, and about 4.5 per cent on dm4.

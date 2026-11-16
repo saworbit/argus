@@ -1266,9 +1266,12 @@ recipe are in [docs/lab-scenarios.md](../../docs/lab-scenarios.md).
 still asks for every graph on disk, so an experimental graph (e1m3, e1m4)
 stops it before any map sorted after it.
 
-Every brief's `movement.deflection_causes` (tapes recorded with `scratch1 697`)
-counts brink-deflection episodes by the steering cause that led into each,
-which is how a corner change can be read apart from combat strafes.
+Every brief's `movement.brink_encounters` (tapes recorded with `scratch1 697`)
+counts brink encounters, deflections under 250 ms apart merged, by what
+started each one: the steering cause before it, or `route_turn`,
+`route_steady` and `route_seek` for route steering. `movement.deflection_causes`
+counts the raw episodes; three in four routed ones follow a previous
+deflection within a frame or two, so judge brink changes on encounters.
 
 ## The mill (probelinks and the verdict files)
 
@@ -2261,7 +2264,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
-| 0.32 | Lab scenarios: `lab_request` and `argus-mcp lab-request` build a micro-map from a structured request with `tools/lab_mapgen.py` and the pinned ericw-tools, then run navgen, the confirming mill and single-map registration ([lab scenarios](#lab-scenarios-lab_request)). `probelinks --confirm`. `nav_sync::register_maps`. Briefs carry `movement.deflection_causes`. |
+| 0.32 | Lab scenarios: `lab_request` and `argus-mcp lab-request` build a micro-map from a structured request with `tools/lab_mapgen.py` and the pinned ericw-tools, then run navgen, the confirming mill and single-map registration ([lab scenarios](#lab-scenarios-lab_request)). `probelinks --confirm`. `nav_sync::register_maps`. Briefs carry `movement.deflection_causes` and `movement.brink_encounters`. |
 | 0.31 | The fixed lab clock (`match --seed`, `seeds`): the played frame faster than real time, repeating exactly for one seed and build, validated per map. The stand-in human (`standin`). Build identity: compile stamps `src/argus_build.qc` and briefs carry the tape's build, clock and session marks. Run-directory leases and a hostname-aware port probe (GitHub #832). Capture may start up to 900 s into a demo, with a deadline that grows with the seek. |
 | 0.30 | Triggered POV capture. `watch-pov` and `bot_capture_pov_frame` `on` tail the live console and cut the camera to the first bot that stalls, stands still or emits a chosen marker, then record and render it; see [triggered capture](#triggered-capture). |
 | 0.30 | Typed mill artefacts (GitHub #419). `GraphRevision` resources use content-hash ids and keep the producing commit, date, trace inputs and sidecar hashes. `ProbeVerdict` resources wrap probe and proven sidecars. The read-only `mill` tool lists history and diffs two revisions by coordinate link id, including added, removed and type-changed links plus matching convictions. A link absent from both sources is an error. Historical bytes come from Git, so there is no new on-disk format. Tape collections remain the `corpus` surface from 0.28 rather than a duplicate type. 214 tests. |

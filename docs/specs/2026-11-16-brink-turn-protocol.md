@@ -112,3 +112,24 @@ The change is reverted, with its post-mortem beside the route steering in
 `Argus_AI`, and parked rather than refuted: it pointed the right way on the
 normalised rate in both ladders. Results:
 `runs/lab-voidcorner-brink-turn-confirmation.results.json`.
+
+## Correction (2026-11-16, after the early turn ladder)
+
+The first analysis read motion rows with a pattern that expected one space after `wish`; QuakeC's `ftos` pads fractional values (`wish  66.8`), so about 8 per cent of samples, every frame with a fractional wish, were dropped. The corrected pattern matches the lab's own parser (`tools/argus_mcp/src/motion.rs`) exactly. The results file now holds the corrected analysis, with the first recording kept as `original_analysis`. The numbers in both result sections above are superseded by these:
+
+| Ladder | Metric | Control | Candidate | Change | Detection limit | Reading |
+|---|---|---|---|---|---|---|
+| First, 5 x 120 s | route-steer episodes a tape (primary) | 129.2 | 105.6 | -23.6 | 69.1 | no detectable effect |
+| Confirmation, 8 x 180 s | route-steer episodes per 1000 route-steer samples (primary) | 59.2 | 45.9 | -13.4 | 12.3 | moved |
+| Confirmation | of those within 128u of a corner, a tape | 58.8 | 72.4 | +13.6 | 33.3 | no detectable effect |
+| Confirmation | lava deaths, stalls, goals, engagements (guards) | 0.1, 1.0, 15.5, 129.4 | 0.2, 1.6, 15.2, 129.1 | | 0.6, 1.6, 5.4, 15.9 | none regressed |
+
+The confirmation's registered primary moved, by a thin margin, with no guard
+regressing, so under this protocol the claim is supported at the isolation
+tier and the dm4 stock rung is due. It has not been run. What moved is the
+count of deflection episodes, which mostly measures flicker within one brink
+encounter; brink encounters themselves (episodes under 250 ms apart merged,
+not registered) read 14.4 against 12.7 with a detection limit of 2.7, no
+detectable effect. So the brink turn reduced how often route steering and the
+guard alternate at a brink, not how often bots reach one. The change stays
+reverted until the stock rung has run.
