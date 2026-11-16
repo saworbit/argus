@@ -855,14 +855,16 @@
       "tier": 1,
       "maps": [
         "lab_voidcorner",
-        "dm4"
+        "dm4",
+        "lab_drymix"
       ],
       "statement": "Three in four mid-turn route deflections begin straight after a previous deflection, on lab_voidcorner (2402 of 3131, 28 control tapes) and on dm4 (600 of 780, two control tapes): routed mode 2 is exempt from the steering-side hazard check, so after the guard deflects the velocity, route steering turns the heading back at the node for a frame or two and the guard fires again. Episodes run about four times encounters. Encounters themselves start most often from steady routed running (30 per cent on the lab map, 44 on dm4).",
-      "next": "Judge brink changes on movement.brink_encounters. A mode-2 hazard check after a deflection cut the re-entries whose wish points at lava or a void by about 40 per cent on both maps, which is 95 per cent of the lab map's re-entries and 39 of dm4's (mode2-brink-check). Measure the share of dm4's other re-entries that the run-off landing test causes before a second attempt, and build any new lab map for this with dm4's mix of lethal and dry-drop lips.",
+      "next": "Judge brink changes on movement.brink_encounters. Measure the share of dm4's re-entries that the run-off landing test causes before a second attempt. A lab map for this must pass the mix check first: lab_voidcorner read 95 per cent lethal-lip re-entries and lab_drymix 55, against dm4's 39.",
       "evidence": [
         "runs/lab-voidcorner-turn-diagnosis.results.json",
         "docs/lab-scenarios.md",
-        "runs/lab-voidcorner-brink-flicker-gate.results.json"
+        "runs/lab-voidcorner-brink-flicker-gate.results.json",
+        "runs/lab-drymix-mode2.results.json"
       ],
       "cheapest_tier": 2
     },

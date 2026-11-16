@@ -214,12 +214,24 @@ async fn mill(cfg: &Config, map: &str, stages: &mut Vec<Stage>) -> serde_json::V
     out
 }
 
+/// The request as an object. The tool's schema accepts any JSON value, and
+/// the first real MCP call arrived with the nested request serialised as a
+/// string, so a string that parses to an object is taken as that object.
+pub fn coerce_request(value: &serde_json::Value) -> Result<serde_json::Value, String> {
+    match value {
+        serde_json::Value::String(text) => serde_json::from_str(text)
+            .map_err(|e| format!("the request arrived as a string that is not JSON: {e}")),
+        other => Ok(other.clone()),
+    }
+}
+
 /// The whole road: generate, compile, install, navgen, mill, register, record.
 pub async fn lab_request(
     cfg: &Config,
     request: &serde_json::Value,
     opts: LabRequestOptions,
 ) -> Result<LabRequestReport, String> {
+    let request = &coerce_request(request)?;
     let map = request_map(request)?;
     let dir = cfg.root.join("labmaps").join(&map);
     std::fs::create_dir_all(&dir).map_err(|e| format!("create {}: {e}", dir.display()))?;
@@ -394,6 +406,20 @@ mod tests {
         ] {
             assert!(request_map(&bad).is_err(), "{bad} was accepted");
         }
+    }
+
+    #[test]
+    fn a_request_serialised_as_a_string_is_read_as_its_object() {
+        let object = serde_json::json!({"name": "lab_voidcorner", "regions": []});
+        let as_text = serde_json::Value::String(object.to_string());
+        assert_eq!(coerce_request(&as_text).unwrap(), object);
+        assert_eq!(coerce_request(&object).unwrap(), object);
+        assert_eq!(
+            request_map(&coerce_request(&as_text).unwrap()).unwrap(),
+            "lab_voidcorner"
+        );
+        let broken = serde_json::Value::String("{not json".into());
+        assert!(coerce_request(&broken).unwrap_err().contains("not JSON"));
     }
 
     #[test]

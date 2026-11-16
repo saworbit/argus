@@ -75,6 +75,21 @@
     "rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
     "docs": "docs/lab-scenarios.md",
     "scenarios": {
+      "lab_drymix": {
+        "id": "lab_drymix-288fc2055f",
+        "claim_tier": "isolation",
+        "intent": "Give brink work dm4's mix of lips: a 96u walkway ring with lethal lava lips on the north and east, a dry 96u ledge 80u down on the west with lava beyond it (a running bot's landing falls in the lava, so the guard's run-off test decides), and a plain 64u dry drop to a lower floor on the south, each dry floor with stairs back up.",
+        "claims": [
+          "route-steer-brink-flicker",
+          "mode2-brink-check"
+        ],
+        "request": "labmaps/lab_drymix/request.json",
+        "manifest": "labmaps/lab_drymix/manifest.json",
+        "source_sha256": "288fc2055fc62f522b637d91c6845dd17225a17fe736eef92b8e8f40520d92de",
+        "bsp_sha256": "85e57053801440eb6ac62363b4257eeb2f55c822835b0f05906f12d9af0d0250",
+        "registered": true,
+        "playable": true
+      },
       "lab_voidcorner": {
         "id": "lab_voidcorner-70ece72d72",
         "claim_tier": "isolation",

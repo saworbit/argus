@@ -55,7 +55,12 @@ passing botmatch does not establish better human play.
   hazard check for routed steering after a deflection cut that flicker a fifth
   on the lab map and changed nothing on dm4 (no guard regressed), so it is an
   isolation-tier result too and is not shipped
-  ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)).
+  ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)). A
+  second scenario, `lab_drymix`, built through the MCP tool with dm4's mix of
+  lethal and dry-drop lips, missed its registered mix band by one point and does
+  not qualify as the brink lab map
+  ([findings](docs/lab-scenarios.md#the-second-scenario-lab_drymix)); its first
+  call made `lab_request` accept a request sent as a JSON string.
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
   more at the end of the sweep and convicts only a second failure; on a

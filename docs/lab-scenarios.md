@@ -334,6 +334,29 @@ flicker happens. Before trusting a lab map for a stock-map question, compare
 the mechanism's mix on both (the diagnosis files show how) and give the lab map
 the stock map's mix: for brink work, lethal lips beside dry drops.
 
+## The second scenario: lab_drymix
+
+`lab_drymix` keeps dm4's 96u walkway width and adds dm4's other lip types: a dry
+ledge 80u down with lava beyond it on the west, and a plain 64u dry drop with
+stairs back up on the south, beside lethal lava lips on the north and east. It
+was the first scenario built through the `lab_request` MCP tool. That first
+call found a defect in the tool itself: the client sent the nested request as a
+JSON string, and the tool now reads a string that parses to an object as that
+object. The first pass of the mill then convicted six links on both walks,
+among them a stair-side crossing a riser too tall to walk and a corner diagonal
+over lava, so the gate refused registration; the rerun regenerated the graph
+with those convictions consumed and walked all 342 links clean. That is the
+stock road working as it should.
+
+Its registered ladder ([protocol](specs/2026-11-17-drymix-protocol.md)) asked
+whether the map carries dm4's mix and whether it then predicts dm4's result for
+the mode-2 brink check. It does not qualify: 55 per cent of its control
+re-entries point at lava or a void, one point outside the 24 to 54 per cent band
+around dm4's 39 (`lab_voidcorner` read 95), and its noisier control left the
+change's reading (88.4 to 73.6, limit 24.7) unable to tell dm4's result from
+`lab_voidcorner`'s. The mix check needed only the control arm, so run it first
+on any new lab map meant to stand in for a stock map.
+
 ## Limits
 
 - Brushes are axis-aligned boxes: no slopes, curves or diagonal walls.
