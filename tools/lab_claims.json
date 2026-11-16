@@ -858,10 +858,28 @@
         "dm4"
       ],
       "statement": "Three in four mid-turn route deflections begin straight after a previous deflection, on lab_voidcorner (2402 of 3131, 28 control tapes) and on dm4 (600 of 780, two control tapes): routed mode 2 is exempt from the steering-side hazard check, so after the guard deflects the velocity, route steering turns the heading back at the node for a frame or two and the guard fires again. Episodes run about four times encounters. Encounters themselves start most often from steady routed running (30 per cent on the lab map, 44 on dm4).",
-      "next": "Judge brink changes on movement.brink_encounters, not episodes. Candidate: while the guard deflected in the last quarter second, route the wanted heading through Argus_HazardSteer when its own 48u probe is vetoed.",
+      "next": "Judge brink changes on movement.brink_encounters. A mode-2 hazard check after a deflection cut the flicker on the lab map and not on dm4 (mode2-brink-check); find out whether its gate opens on dm4's dry-drop lips before a second attempt.",
       "evidence": [
         "runs/lab-voidcorner-turn-diagnosis.results.json",
         "docs/lab-scenarios.md"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "mode2-brink-check",
+      "title": "Hazard check for routed steering after a brink deflection",
+      "status": "supported",
+      "kind": "hypothesis",
+      "tier": 1,
+      "maps": [
+        "lab_voidcorner"
+      ],
+      "statement": "Isolation tier. For a quarter second after a real brink deflection, routing a vetoed mode-2 heading through Argus_HazardSteer cut route-steer deflection episodes per 1000 route-steer samples on lab_voidcorner from 63.6 to 50.9 over seven listen pairs (detection limit 11.2), encounters level, no guard regressing, with a lava warning (five candidate deaths against none, two of them undamaged airborne departures). Its registered dm4 rung held without transferring: primary 55.3 against 55.6 (limit 12.2), lava 2.0 against 1.4, stalls 6.1 against 3.4, engagements up 66.9 to 76.2 (flagged). No measurable harm on dm4 and no benefit there. Not a general improvement; reverted.",
+      "next": "Read on dm4 whether the gate opens before trying it again; do not ship on this evidence.",
+      "evidence": [
+        "docs/specs/2026-11-17-brink-flicker-protocol.md",
+        "runs/lab-voidcorner-brink-flicker.results.json",
+        "runs/lab-voidcorner-brink-flicker-dm4.results.json"
       ],
       "cheapest_tier": 2
     }

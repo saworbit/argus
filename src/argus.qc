@@ -11370,6 +11370,20 @@ void() Argus_AI =
         // from every pit-side approach - and give the goal up only
         // when no side is safe. Routed mode 2 is left alone: its
         // links are walk-verified and its drops land on solid.
+        //
+        // A MODE-2 CHECK AFTER A DEFLECTION WAS TRIED AND REVERTED
+        // (docs/specs/2026-11-17-brink-flicker-protocol.md). Three in four
+        // mid-turn route deflections, on lab_voidcorner and on dm4, start
+        // straight after a previous one, because this exemption lets route
+        // steering turn back at the node a frame after the guard swung the
+        // velocity off the lip. For a quarter second after a real deflection
+        // a vetoed routed heading went through Argus_HazardSteer (never a
+        // reversal, never on a typed hop). On the lab map it cut the flicker
+        // a fifth (63.6 to 50.9 per 1000 route-steer samples, limit 11.2),
+        // with five lava deaths against none; on dm4 it changed nothing
+        // (55.3 to 55.6, limit 12.2) and harmed nothing. Find out whether the
+        // 48u probe on the wanted heading vetoes at dm4's dry-drop lips at
+        // all before trying it again.
         if (self.ar_mode != 2 && Argus_MoveHazard (want, 48))
         {
             want = Argus_HazardSteer (want, 48);

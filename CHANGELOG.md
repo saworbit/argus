@@ -49,9 +49,12 @@ passing botmatch does not establish better human play.
   cent past its detection limit once a parser fault in the analysis was fixed,
   without moving brink encounters, and its registered dm4 rung held (no guard
   regressed) without reproducing the benefit, so it stays an isolation-tier
-  result and is not shipped. The map showed that three in four mid-turn route deflections, on it
-  and on dm4, begin straight after a previous deflection, because routed
-  steering is exempt from the steering-side hazard check
+  result and is not shipped. The map showed that three in four mid-turn route
+  deflections, on it and on dm4, begin straight after a previous deflection,
+  because routed steering is exempt from the steering-side hazard check; a
+  hazard check for routed steering after a deflection cut that flicker a fifth
+  on the lab map and changed nothing on dm4 (no guard regressed), so it is an
+  isolation-tier result too and is not shipped
   ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once

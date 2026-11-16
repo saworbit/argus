@@ -259,6 +259,8 @@ scratch game directories, every tape at the listen tick class:
 | [Brink turn](specs/2026-11-16-brink-turn-protocol.md), 5 x 120 s | beside lethal liquid, turn the movement heading 3x faster and double friction while turning | the same | 129.2 | 105.6 | 69.1 | no detectable effect |
 | Brink turn confirmation, 8 x 180 s | the same | episodes per 1000 route-steer samples | 59.2 | 45.9 | 12.3 | moved |
 | Brink turn stock rung, dm4, 5 x 185 s | the same | the same | 52.5 | 55.3 | 13.4 | level, no guard regressed: no harm, no benefit |
+| [Mode-2 brink check](specs/2026-11-17-brink-flicker-protocol.md), 7 listen x 180 s | after a deflection, route a vetoed routed heading through the guard's HazardSteer | episodes per 1000 route-steer samples | 63.6 | 50.9 | 11.2 | moved |
+| Mode-2 brink check stock rung, dm4, 8 x 185 s | the same | the same | 55.3 | 55.6 | 12.2 | level, no guard regressed: no harm, no benefit |
 | [Early turn](specs/2026-11-16-early-turn-protocol.md), 10 x 180 s | at a hazard corner, hand the steering to the next node 0.35 s of travel out | the same | 56.1 | 58.8 | 7.9 | the wrong way; refuted |
 
 These are the corrected readings. The first analysis read motion rows with a
@@ -308,10 +310,14 @@ files.
   results file carries them). The brink turn cut flicker within encounters,
   not visits to the brink.
 
-The open defect is `route-steer-brink-flicker`. Its suggested next candidate
-works on the flicker itself: while the guard deflected in the last quarter
-second, route the wanted heading through `Argus_HazardSteer` when its own 48u
-probe is vetoed. The diagnosis is in `runs/lab-voidcorner-turn-diagnosis.results.json`.
+The open defect is `route-steer-brink-flicker`. The candidate built
+straight from the diagnosis, a hazard check for routed steering in the quarter
+second after a real deflection (`mode2-brink-check`), cut the flicker a fifth
+on the lab map, with a lava warning there, and changed nothing on dm4 while
+harming nothing, so it too is an isolation-tier result and reverted. The
+diagnosis found the same re-entry share on dm4, so the next question is
+whether that check's gate opens on dm4's dry-drop lips at all. The diagnosis
+is in `runs/lab-voidcorner-turn-diagnosis.results.json`.
 
 ## Limits
 
