@@ -472,10 +472,17 @@ registered protocol ([protocol](specs/2026-11-17-overhead-target-protocol.md)).
 Its lab rung was void (no mechanism on `lab_dropwall2`). Its first version
 exempted jump hops and so could not reach the room case. The second, without
 that exemption, cut dm4's overhead-target re-entries from 15.75 to 11.62 a
-tape, inside the detection limit of 6.99, with no guard regressing, and so is
-not supported. Post hoc, the room case survived because dm4's jump is staged
-and the staged run-up runs under a state the clause still exempts. The change
-is a recorded patch (`runs/dm4-overhead-target.results.json`), not shipped.
+tape, inside the detection limit of 6.99. The room case survived it because
+dm4's jump is staged and the staged run-up ran under a state the clause still
+exempted, so a third version acted there too; it moved the re-entries from
+12.12 to 12.75 (limit 7.94). Neither regressed a guard, and the hypothesis is
+refuted by its own registered test. Post hoc, the third version did shorten
+the room stays (the longest routed stay 3.8 s against the control's 8.6), but
+the room holds only one to three of the twelve to sixteen overhead-target
+events a dm4 tape carries, so fixing it cannot move that primary, and the same
+control binary read 15.75 on one ladder and 12.12 on the next. Both patches
+are recorded (`runs/dm4-overhead-target.results.json`), not shipped. The
+lesson for the next ladder: size the primary to the mechanism it targets.
 
 The lab maps taught one more rule: a lab map has to keep dm4's balance of
 routing and fighting, not just its geometry. An open room gives every bot a

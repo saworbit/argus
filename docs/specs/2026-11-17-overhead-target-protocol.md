@@ -172,3 +172,80 @@ exempts. Where nothing exempts the clause, the events fell from 14.88 to 8.25
 a tape. A third version would let the clause act during a staged run-up too,
 whose landing navgen bounds the same way as a jump's; it needs its own
 registration. Results: `runs/dm4-overhead-target.results.json`.
+
+## Revision: the third candidate (registered 2026-11-17, before its tapes)
+
+The second candidate without the sprint exemption, and the re-plan clears the
+staged run-up it abandons (`ar_sprintstate`) along with the jump hop. A staged
+run-up steers at a point behind the launch seat whose floor `Argus_JumpRunup`
+accepts only between 40u below and 16u above the seat, then charges at a
+landing navgen puts at most 40u above the seat. Neither stands 64u over a bot
+that is still on the walkway, so a grounded bot whose run-up point or landing
+does is already off the line. Phase 3 (sprint flight) is airborne, and the
+clause demands ground. Lift, train, rocket jump, swim exit, door and lift wait
+stay exempt.
+
+| Arm | Source | progs.dat MD5 |
+|---|---|---|
+| Control | as above | `819F9AB90BC77DF84A34491601430DF2` |
+| Candidate 3 | the control plus the clause without the jump or sprint exemptions | `5CA1A55855C65977ADEE4BD7B60C7667` |
+
+The tree at the second candidate's commit (c0a41da) still compiles byte-exact
+to the control MD5, so the control arm is the one the earlier rungs ran.
+
+Private game directories `engine/argus_ohctl` and `engine/argus_oh3cand`.
+
+**Rung: dm4 only**, for the reason given for the second candidate. dm4, skill
+2, 180 s, eight pairs, tapes `dm4ov3_ctl_r1` to `r8` and `dm4ov3_cand_r1` to
+`r8`, the control and candidate launched together on ports 26111 and 26112.
+Fresh control tapes, not the second candidate's: the pair design compares arms
+run side by side. Primary, guards, reported counts and verdict rules are the
+ones registered above.
+
+Added for this version, reported with no criterion: the room split the second
+candidate's post hoc reading used (overhead-target events and routed seconds
+inside the room under the walkway jump, the box x 690 to 1060, y -700 to -390,
+z -160 to -90 that reading used), so the mechanism can be read beside the
+verdict rather than after it.
+
+**dm2.** The addendum above applies to this candidate unchanged: if dm4
+supports it, the dm2 guard rung runs with this candidate in place of the
+second (tapes `dm2ov3_ctl_r1` to `r8` and `dm2ov3_cand_r1` to `r8`), and the
+change reaches `src/argus.qc` only if dm2 holds its guards. If dm4 does not
+support it, dm2 is not run.
+
+## Results of the third candidate (recorded 2026-11-17)
+
+All sixteen dm4 tapes held the listen tick class.
+
+| Metric | Control mean | Candidate 3 mean | Change | Detection limit | Reading |
+|---|---|---|---|---|---|
+| Overhead-target wall re-entries a tape (primary) | 12.12 | 12.75 | +0.62 | 7.94 | level |
+| Lava deaths | 2.25 | 2.25 | 0 | 1.94 | no regression |
+| World deaths | 2.25 | 2.38 | +0.12 | 1.96 | no regression |
+| Stalls | 6.75 | 9.25 | +2.50 | 5.22 | no regression |
+| Freezes | 0 | 0 | 0 | 0 | no regression |
+| Goals | 23.5 | 20.88 | -2.62 | 7.44 | no regression |
+
+Reported: wall re-entries 54.2 to 62.6, all re-entries 143.6 to 151.6, route
+events 240.1 to 240.4, routefails 1.6 to 1.2, trapped 0 to 0. The registered
+room split: overhead-target events in the room 2.62 to 1.00 a tape, elsewhere
+9.50 to 11.75, routed seconds in the room 5.7 to 5.3 (limit 8.7).
+
+**Verdict.** The primary did not move, so the dm4 rung does not support the
+third candidate. By the addendum, dm2 is not run, and the change stays a
+recorded patch: `src/argus.qc` is unchanged. This is the outcome the claim
+`overhead-target-replan` registered as its refutation, and it is recorded as
+refuted.
+
+**Why (post hoc, not registered).** The third version did shorten the stays it
+was built for: the candidate's longest routed stay in the room was 3.8 s, at
+match end and routing normally, against the control's 8.6 and 6.2 s, and stays
+over 3 s fell from 4 to 2. The room is too small a share of the primary for
+that to show. It holds about one to three of the twelve to sixteen
+overhead-target events a control tape carries, so a complete fix there cannot
+clear a limit near 8, and the rest moved 9.50 to 11.75 here against 14.88 to
+8.25 on the second candidate's ladder, which reads as noise. The same control
+binary read 15.75 on one ladder and 12.12 on the next. A fix aimed at the room
+would need a primary sized to it, such as routed seconds in the room,
+registered before its tapes. Results: `runs/dm4-overhead-target.results.json`.

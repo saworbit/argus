@@ -898,21 +898,19 @@
     {
       "id": "overhead-target-replan",
       "title": "Re-plan a grounded bot whose steering point stands overhead behind solid",
-      "status": "open",
-      "kind": "hypothesis",
+      "status": "refuted",
+      "kind": "graveyard",
       "tier": 1,
       "maps": [
         "dm4",
         "lab_dropwall2"
       ],
-      "statement": "dm4's largest wall cluster is bots that miss the staged walkway jump from node 111 to 115, land in the room it crosses still on the hop, and steer at a point 128u overhead behind the walkway's side wall; the displacement guard re-plans only beyond 340u horizontally and its vertical clause covers water alone. A dry-land clause (target above step plus jump reach, solid on the line, 0.3 s) was laddered: the lab rung on lab_dropwall2 was void (no mechanism), the first version exempted jump hops and could not fire there, and the second cut dm4's overhead-target wall re-entries from 15.75 to 11.62 a tape, inside the detection limit of 6.99, with no guard regressing. Not supported; not shipped. Post hoc, the room case survived because the staged run-up runs under ar_sprintstate, which the second version still exempts.",
-      "next": "Register a third version that also acts during a staged jump run-up, and judge it on dm4 with the same primary; a lab map holding the mechanism needs a jump the mill accepts.",
+      "statement": "dm4's largest wall cluster is bots that miss the staged walkway jump from node 111 to 115, land in the room it crosses still on the hop or the run-up, and steer at a point 128u overhead behind the walkway's side wall; the displacement guard re-plans only beyond 340u horizontally and its vertical clause covers water alone. A dry-land clause (target above step plus jump reach, solid on the line, 0.3 s) was laddered under a registered protocol: the lab rung on lab_dropwall2 was void (no mechanism), the first version exempted jump hops and could not fire there, the second cut dm4's overhead-target wall re-entries from 15.75 to 11.62 a tape (limit 6.99), and the third, which also acted during the staged run-up, moved them from 12.12 to 12.75 (limit 7.94), each over eight listen pairs with no guard regressing. Refuted by its registered refute_by. Post hoc, the third version did shorten the room stays (longest routed stay 3.8 s against 8.6), but the room holds one to three of the 12 to 16 overhead-target events a dm4 tape carries, so this primary could not see a fix there.",
       "evidence": [
         "docs/specs/2026-11-17-overhead-target-protocol.md",
         "runs/dm4-overhead-target.results.json"
       ],
-      "cheapest_tier": 2,
-      "refute_by": "A third version, registered before its tapes, that also acts during a staged jump run-up and still leaves dm4's overhead-target wall re-entries inside their detection limit over eight listen pairs."
+      "cheapest_tier": 2
     }
   ]
 }

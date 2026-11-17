@@ -82,8 +82,10 @@ passing botmatch does not establish better human play.
   dm4's largest wall cluster turned out to be bots that miss the staged
   walkway jump over a room, land in it still on the hop and steer at a point
   128u overhead. A grounded re-plan for that case was laddered under a
-  registered protocol: its second version cut dm4's overhead-target
-  re-entries by a quarter, inside the detection limit, and is not shipped
+  registered protocol: neither its second version (a quarter fewer
+  overhead-target re-entries, inside the detection limit) nor a third that
+  also acted during the staged run-up moved them, so the hypothesis is
+  refuted and nothing is shipped
   ([findings](docs/lab-scenarios.md#the-overhead-target-lab_dropwall-lab_dropwall2-and-lab_jumpgap)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
