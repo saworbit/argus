@@ -61,6 +61,9 @@ engine/history.txt
 compile.log
 match.log
 *.png
+# nav preview receipts pair with their ignored PNGs, and the lab refuses to
+# write a preview whose receipt is tracked
+/runs/*.png.json
 
 # keep the telemetry record: runs/*.log are plain-text project
 # history and safe to commit (runs/*.png are regenerable plots)

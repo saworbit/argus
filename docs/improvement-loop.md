@@ -45,6 +45,14 @@ accepted and which metrics are its limits, and whether the stand-in passed
 dose response and level. `argus_lab.py state` prints it, `argus_ci.py lab`
 validates it, and the pyramid plans rungs 3 and 5 from it.
 
+A [lab scenario](lab-scenarios.md) runs rung 4 on a generated micro-map built
+to hold one behaviour. It can show that a change acts on that behaviour in
+isolation and nothing more: the result supports an isolation-tier claim until
+a stock-map run reproduces it, and `argus_ci.py lab` enforces that. Of the
+corner and brink changes laddered on `lab_voidcorner`, the two that moved
+their lab primary did not reproduce on dm4, so read a lab result as a reason
+to run the stock rung, not as a substitute for it.
+
 ## One build a cycle
 
 Several changes may merge in a cycle, but one install closes it, so every

@@ -10906,6 +10906,25 @@ void() Argus_AI =
                 // links. Every typed hop is exempt: a swim exit,
                 // a lift and a train all legitimately target a node
                 // above, and the e1m2 swim links rise 112u.
+                //
+                // A DRY-LAND TWIN WAS TRIED AND REFUTED
+                // (docs/specs/2026-11-17-overhead-target-protocol.md,
+                // overhead-target-replan in lab_claims.json). On dm4,
+                // bots that miss the staged walkway jump from node 111
+                // to 115 land in the room below and steer at a point
+                // 128u overhead behind the walkway's side wall. A
+                // grounded clause here (target above step plus jump
+                // reach, solid on the line, for 0.3 s, then re-plan)
+                // was laddered over eight listen pairs per version: with
+                // jump hops exempt it could not fire there; without
+                // them, overhead-target wall re-entries went 15.75 to
+                // 11.62 a tape (limit 6.99); without the staged run-up
+                // exemption too, 12.12 to 12.75 (limit 7.94). No guard
+                // regressed. The last version did shorten the room stays
+                // (longest routed stay 3.8 s against 8.6), but the room
+                // is one to three of the 12 to 16 events a tape carries.
+                // Do not retry against that primary; size one to the
+                // room first.
                 self.ar_node = world;
                 self.ar_pending = 1;
                 self.ar_mode = 0;

@@ -482,7 +482,11 @@ the room holds only one to three of the twelve to sixteen overhead-target
 events a dm4 tape carries, so fixing it cannot move that primary, and the same
 control binary read 15.75 on one ladder and 12.12 on the next. Both patches
 are recorded (`runs/dm4-overhead-target.results.json`), not shipped. The
-lesson for the next ladder: size the primary to the mechanism it targets.
+lesson for the next ladder: size the primary to the mechanism it targets. The
+room case itself stays open
+([#867](https://github.com/saworbit/argus/issues/867)), and the scorer behind
+this primary ran outside the repo
+([#868](https://github.com/saworbit/argus/issues/868)).
 
 The lab maps taught one more rule: a lab map has to keep dm4's balance of
 routing and fighting, not just its geometry. An open room gives every bot a
@@ -499,3 +503,7 @@ stops happening.
 - The generated graph is still navgen's. A lab map tests navigation and
   runtime behaviour on that graph, and it can expose a navgen limitation as
   readily as a runtime one.
+- A `jump` connection does not yet survive the mill: both of `lab_jumpgap`'s
+  jump links were refused at a 128u gap and at 96u, the puppet falling into
+  the gap each way, so a scenario that needs a jump cannot register
+  ([#866](https://github.com/saworbit/argus/issues/866)).

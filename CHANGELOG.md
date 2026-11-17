@@ -28,65 +28,61 @@ passing botmatch does not establish better human play.
 #### Added
 
 - Add lab scenarios: purpose-built micro-maps that isolate one bot behaviour
-  ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP) and
-  `argus-mcp lab-request <request.json>` take a structured request (named
-  regions, entities placed by region name, brush and entity budgets,
-  `claim_tier: isolation`), and `tools/lab_mapgen.py` writes a plain-text
-  `.map` and a generated texture WAD, compiles a BSP29 with the pinned
-  ericw-tools 0.18.1 (`python tools/lab_mapgen.py tools --install` verifies
-  the release's SHA-256) and writes a manifest with counts, region adjacency,
-  hashes and navgen readiness. The map then takes the stock road: the lab's
-  `nav_generate`, the mill and the first-registration gate, and the scenario
-  is recorded in `tools/lab_instruments.json`. A lab-map result supports an
-  isolation-tier claim only: `argus_ci.py lab` fails a supported or fixed
-  claim that names a stock map without citing a tape recorded on it, or that
-  cites a lab tape without naming the lab map. The first scenario is
-  `lab_voidcorner`, a 64u walkway ring over lava with four tight corners,
-  registered through the gate. Three corner changes were laddered on it under
-  registered protocols, and play is unchanged: the route elbow (refuted) and
-  an early turn at hazard corners (refuted) moved nothing, and the brink
-  turn's eight-pair confirmation cut route-steer deflection episodes 23 per
-  cent past its detection limit once a parser fault in the analysis was fixed,
-  without moving brink encounters, and its registered dm4 rung held (no guard
-  regressed) without reproducing the benefit, so it stays an isolation-tier
-  result and is not shipped. The map showed that three in four mid-turn route
-  deflections, on it and on dm4, begin straight after a previous deflection,
-  because routed steering is exempt from the steering-side hazard check; a
-  hazard check for routed steering after a deflection cut that flicker a fifth
-  on the lab map and changed nothing on dm4 (no guard regressed), so it is an
-  isolation-tier result too and is not shipped
-  ([findings](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner)). A
-  second scenario, `lab_drymix`, built through the MCP tool with dm4's mix of
-  lethal and dry-drop lips, missed its registered mix band by one point and does
-  not qualify as the brink lab map
-  ([findings](docs/lab-scenarios.md#the-second-scenario-lab_drymix)); its first
-  call made `lab_request` accept a request sent as a JSON string. A third,
-  `lab_drymix2`, read 64 per cent, further from dm4's 39, and its tapes showed
-  that both drymix maps registered with a run-off ledge the generated graph
-  seats no waypoint on, which carried a third to over half of their
-  re-entries, while every dm4 re-entry happens on the graph. `lab_request` now
-  refuses registration while a standable floor has no waypoint, unless the
-  request marks it `off_graph`
+  ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP, which also
+  accepts the request as a JSON string) and `argus-mcp lab-request
+  <request.json>` take a structured request (named regions, entities placed
+  by region name, brush and entity budgets, `claim_tier: isolation`), and
+  `tools/lab_mapgen.py` writes a plain-text `.map` and a generated texture
+  WAD, compiles a BSP29 with the pinned ericw-tools 0.18.1 (`python
+  tools/lab_mapgen.py tools --install` verifies the release's SHA-256) and
+  writes a manifest with counts, region adjacency, hashes and navgen
+  readiness. The map then takes the stock road: the lab's `nav_generate`, the
+  mill and the first-registration gate, and the scenario is recorded in
+  `tools/lab_instruments.json`.
+
+- A lab-map result supports an isolation-tier claim only: `argus_ci.py lab`
+  fails a supported or fixed claim that names a stock map without citing a
+  tape recorded on it, or that cites a lab tape without naming the lab map
+  ([promotion rule](docs/lab-scenarios.md#the-promotion-rule)).
+
+- `lab_request` refuses registration while a standable floor at least 32u
+  wide seats no waypoint within 64u above it, unless the request marks the
+  region `off_graph`; `tools/lab_mapgen.py coverage <request>` runs the same
+  check. Both drymix maps had registered with a run-off ledge the graph never
+  seated, which carried a third to over half of their re-entries, while every
+  dm4 re-entry happens on the graph
   ([findings](docs/lab-scenarios.md#lab_drymix2-and-the-coverage-gate)).
-  `tools/argus_guard_replica.py` replays the physics brink guard offline from a
-  full-rate tape and names the branch behind each deflection: of dm4's routed
+
+- Add `tools/argus_guard_replica.py`, which replays the physics brink guard
+  offline from a `scratch1 697` tape and names the branch behind each
+  deflection (wall, lava, void, run-off landing). Of dm4's routed
   re-entries, 47 per cent are walls, 36 lava, 6 voids and 2.5 the run-off
-  landing test, while on every lab map so far 97 to 98 per cent are lava,
+  landing test, while on the first three lab maps 97 to 98 per cent are lava,
   because a generated slab over open air turns a buried probe into a lava
   veto ([findings](docs/lab-scenarios.md#what-deflects-routed-bots-dm4-against-the-lab-maps)).
-  `lab_wallmix`, a walkway ring against the hull walls with pillars rising from
-  the base at two inner corners, is the first lab map whose walls the guard
-  reads as walls; its registered mix check read 20 per cent walls and 77 lava
-  against dm4's 47 and 42, so it does not stand in for dm4
-  ([findings](docs/lab-scenarios.md#lab_wallmix-walls-the-guard-reads-as-walls)).
-  dm4's largest wall cluster turned out to be bots that miss the staged
-  walkway jump over a room, land in it still on the hop and steer at a point
-  128u overhead. A grounded re-plan for that case was laddered under a
-  registered protocol: neither its second version (a quarter fewer
-  overhead-target re-entries, inside the detection limit) nor a third that
-  also acted during the staged run-up moved them, so the hypothesis is
-  refuted and nothing is shipped
-  ([findings](docs/lab-scenarios.md#the-overhead-target-lab_dropwall-lab_dropwall2-and-lab_jumpgap)).
+
+- Seven scenarios are recorded in `labmaps/`, six registered:
+  `lab_voidcorner` (a 64u walkway ring over lava with four tight corners),
+  `lab_drymix` and `lab_drymix2` (dm4's mix of lethal and dry-drop lips;
+  neither matched it), `lab_wallmix` (the first whose walls the guard reads
+  as walls, at 20 per cent walls against dm4's 47), and `lab_dropwall` and
+  `lab_dropwall2` (dm4's walkway over a room: the open room let bots fight
+  instead of route, and the bays restored routing without the mechanism).
+  `lab_jumpgap` is recorded and not registered: the mill refused its jump
+  links at a 128u and a 96u gap.
+
+- Evidence and limits: play is unchanged. Five changes were laddered on these
+  maps and dm4 under registered protocols, and none shipped. The route elbow
+  and an early turn at hazard corners were refuted on `lab_voidcorner`. The
+  brink turn cut route-steer deflection episodes 23 per cent there and held
+  on dm4 without the benefit. A hazard check for routed steering after a
+  deflection cut that flicker a fifth there and changed nothing on dm4. A
+  grounded re-plan for a steering point overhead behind solid, aimed at dm4's
+  largest wall cluster (bots that miss the staged walkway jump and land in
+  the room below), did not move dm4's overhead-target re-entries in its
+  second or third version and is refuted
+  ([corners](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner),
+  [overhead target](docs/lab-scenarios.md#the-overhead-target-lab_dropwall-lab_dropwall2-and-lab_jumpgap)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
   more at the end of the sweep and convicts only a second failure; on a
