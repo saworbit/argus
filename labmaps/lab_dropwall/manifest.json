@@ -1,0 +1,338 @@
+{
+  "schema": 1,
+  "scenario_id": "lab_dropwall-be907f5db2",
+  "map": "lab_dropwall",
+  "intent": "Copy the dm4 geometry behind its largest wall cluster: a raised walkway whose edge is a legal 128u drop into a room below, its side face a wall solid to the base, with the only way back up far away, beside walkways over lava.",
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker"
+  ],
+  "promotion_rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
+  "generator": {
+    "version": 1,
+    "source_sha256": "be907f5db2779a55e41f84e9e999eee0092d49f86089feea6e3df925cfd85e74",
+    "map_sha256": "0ae95e64c25e560c87e63428cdc4eece55420bda5cc9d15cea28b354d54c7fdc",
+    "wad_sha256": "a5ce3172cca20051c824deec9a98ddbc85bf9a4c8f4b06b75775cff155d95438"
+  },
+  "counts": {
+    "brushes": 19,
+    "entities": 14,
+    "max_brushes": 80,
+    "max_entities": 40
+  },
+  "extent": [
+    0,
+    0,
+    -192,
+    1024,
+    672,
+    320
+  ],
+  "regions": [
+    {
+      "name": "room",
+      "kind": "floor",
+      "min": [
+        0,
+        0
+      ],
+      "size": [
+        640,
+        576
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "south",
+      "kind": "floor",
+      "min": [
+        640,
+        0
+      ],
+      "size": [
+        384,
+        96
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "east",
+      "kind": "floor",
+      "min": [
+        928,
+        96
+      ],
+      "size": [
+        96,
+        224
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "east_stairs",
+      "kind": "stairs",
+      "min": [
+        928,
+        320
+      ],
+      "size": [
+        96,
+        256
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "north",
+      "kind": "floor",
+      "min": [
+        0,
+        576
+      ],
+      "size": [
+        1024,
+        96
+      ],
+      "floor_z": 128
+    }
+  ],
+  "adjacency": [
+    {
+      "a": "room",
+      "b": "south",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "room",
+      "b": "north",
+      "relation": "edge",
+      "length": 640,
+      "dz": 128,
+      "walk": "drop"
+    },
+    {
+      "a": "south",
+      "b": "east",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "east_stairs",
+      "relation": "gap",
+      "gap": 224,
+      "dz": 0
+    },
+    {
+      "a": "east",
+      "b": "east_stairs",
+      "relation": "edge",
+      "length": 96,
+      "dz": 16,
+      "walk": "walk"
+    },
+    {
+      "a": "east",
+      "b": "north",
+      "relation": "gap",
+      "gap": 256,
+      "dz": 128
+    },
+    {
+      "a": "east_stairs",
+      "b": "north",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    }
+  ],
+  "connections": [
+    {
+      "from": "room",
+      "to": "south",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "south",
+      "to": "east",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "east",
+      "to": "east_stairs",
+      "type": "stairs",
+      "length": 96,
+      "dz": -16
+    },
+    {
+      "from": "north",
+      "to": "east_stairs",
+      "type": "stairs",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "north",
+      "to": "room",
+      "type": "drop",
+      "length": 640,
+      "dz": 128
+    }
+  ],
+  "navgen_readiness": {
+    "spawns": 4,
+    "pickups": 7,
+    "standable_area": 549888,
+    "entities_before_waypoints": 23,
+    "waypoint_room": 517,
+    "ready": true,
+    "reasons": []
+  },
+  "files": {
+    "request": "labmaps/lab_dropwall/request.json",
+    "map": "labmaps/lab_dropwall/lab_dropwall.map"
+  },
+  "compile": {
+    "ericw_tools": "0.18.1",
+    "ericw_commit": "b6e2431f29a1f5763d4aa5fa37cb06838580f41a",
+    "profile_sha256": "93ab3b7e3aada8f68982966bad71d912b3db8c4e9eb7bd303a0c45bd7db965cc",
+    "steps": {
+      "qbsp": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0,
+        "leak": false
+      },
+      "vis": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      },
+      "light": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      }
+    },
+    "bsp": "labmaps/lab_dropwall/lab_dropwall.bsp",
+    "bsp_bytes": 53548,
+    "bsp_sha256": "b4b83bfeea3d0f5f47fedf2b0d35b17550038dd390cfb362e783a1e3cb3215f4",
+    "bsp_entities": 14
+  },
+  "install": {
+    "maps": "maps_local/lab_dropwall.bsp",
+    "engine": "engine/argus/maps/lab_dropwall.bsp"
+  },
+  "nav": {
+    "qc": "src/argus_nav_lab_dropwall.qc",
+    "graph": "src/argus_nav_lab_dropwall.qc.json",
+    "nodes": 54,
+    "links": 328,
+    "edict_budget": "edict budget: status ok; waypoints 54; live bsp entities 14 of 14; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 137 of 600; slack 463",
+    "playability": {
+      "playable": true,
+      "spawns": 5,
+      "pickups": 7,
+      "graph_md5": "179a846c8f0c1aa64ce983aa9615bc87",
+      "reasons": []
+    }
+  },
+  "coverage": {
+    "covered": true,
+    "uncovered": [],
+    "exempt": [],
+    "regions": [
+      {
+        "name": "room",
+        "waypoints": 32
+      },
+      {
+        "name": "south",
+        "waypoints": 4
+      },
+      {
+        "name": "east",
+        "waypoints": 2
+      },
+      {
+        "name": "north",
+        "waypoints": 11
+      }
+    ]
+  },
+  "mill": {
+    "confirm": true,
+    "passes": [
+      {
+        "confirmed": 9,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "179a846c8f0c1aa64ce983aa9615bc87",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 0,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 5,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "179a846c8f0c1aa64ce983aa9615bc87",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 80,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 5,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "179a846c8f0c1aa64ce983aa9615bc87",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 160,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 11,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "179a846c8f0c1aa64ce983aa9615bc87",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 240,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 0,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "179a846c8f0c1aa64ce983aa9615bc87",
+        "kind": "walk",
+        "passed": 8,
+        "probed": 8,
+        "skip": 320,
+        "teleport_failures": 0
+      }
+    ]
+  },
+  "registration": {
+    "registered": true,
+    "dispatcher": true,
+    "progs_src": true,
+    "requested": true
+  }
+}

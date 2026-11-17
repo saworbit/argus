@@ -79,6 +79,12 @@ passing botmatch does not establish better human play.
   reads as walls; its registered mix check read 20 per cent walls and 77 lava
   against dm4's 47 and 42, so it does not stand in for dm4
   ([findings](docs/lab-scenarios.md#lab_wallmix-walls-the-guard-reads-as-walls)).
+  dm4's largest wall cluster turned out to be bots that miss the staged
+  walkway jump over a room, land in it still on the hop and steer at a point
+  128u overhead. A grounded re-plan for that case was laddered under a
+  registered protocol: its second version cut dm4's overhead-target
+  re-entries by a quarter, inside the detection limit, and is not shipped
+  ([findings](docs/lab-scenarios.md#the-overhead-target-lab_dropwall-lab_dropwall2-and-lab_jumpgap)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
   more at the end of the sweep and convicts only a second failure; on a

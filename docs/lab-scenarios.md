@@ -447,6 +447,41 @@ at the end of a wall column, where routes leave the room into a corridor that
 turns around the wall end (`runs/lab-wallmix-mix.results.json`). That turn is
 what the next map needs.
 
+### The overhead target: lab_dropwall, lab_dropwall2 and lab_jumpgap
+
+Read frame by frame, dm4's cell is not a corridor turn. Node 111 on the walkway
+carries a staged jump to node 115 across the open top of the room below. A bot
+lining up for it turns more slowly than it runs, its run-up carries it off the
+walkway edge (a legal 128u drop the guard allows), and it lands in the room
+still on the hop, steering at a point 128u overhead behind the walkway's side
+wall. The displacement guard re-plans only beyond 340u horizontally, and its
+vertical clause covers water alone, so the bot slides along that wall for
+seconds until a stall.
+
+Three lab maps tried to hold that. `lab_dropwall` copied the walkway and room
+but left the room open, and its bots fought instead of routing: route steering
+was 0.4 per cent of motion samples against dm4's 27, and its mix check failed on
+13 re-entries (`runs/lab-dropwall-mix.results.json`). `lab_dropwall2` split the
+room into bays and restored routing, but its walls are bay-wall ends at the
+bots' own level, with no overhead target. `lab_jumpgap` cut the walkway with a
+jump over the room, and the mill refused the jump at a 128u gap and at 96u, so
+it was not registered.
+
+A grounded re-plan for an overhead target behind solid was laddered under a
+registered protocol ([protocol](specs/2026-11-17-overhead-target-protocol.md)).
+Its lab rung was void (no mechanism on `lab_dropwall2`). Its first version
+exempted jump hops and so could not reach the room case. The second, without
+that exemption, cut dm4's overhead-target re-entries from 15.75 to 11.62 a
+tape, inside the detection limit of 6.99, with no guard regressing, and so is
+not supported. Post hoc, the room case survived because dm4's jump is staged
+and the staged run-up runs under a state the clause still exempts. The change
+is a recorded patch (`runs/dm4-overhead-target.results.json`), not shipped.
+
+The lab maps taught one more rule: a lab map has to keep dm4's balance of
+routing and fighting, not just its geometry. An open room gives every bot a
+line of sight to every other, and the routed travel the brink work measures
+stops happening.
+
 ## Limits
 
 - Brushes are axis-aligned boxes: no slopes, curves or diagonal walls.

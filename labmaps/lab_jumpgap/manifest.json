@@ -1,0 +1,527 @@
+{
+  "schema": 1,
+  "scenario_id": "lab_jumpgap-74f0aafee5",
+  "map": "lab_jumpgap",
+  "intent": "Copy dm4's walkway jump over a room: the raised walkway is split by a 96u gap above the room, crossed by a jump, so a bot that misses the run-up lands in the room still on the jump hop with its target overhead.",
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker"
+  ],
+  "promotion_rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
+  "generator": {
+    "version": 1,
+    "source_sha256": "74f0aafee59e9206d38f27ae5e069a431ec2b8453339f7167ed4b608374a8fe3",
+    "map_sha256": "8b950b51502c04e789ec0ef0ffe94c7dee4ea0565cba5f266a1fcef09ef9a8ee",
+    "wad_sha256": "a5ce3172cca20051c824deec9a98ddbc85bf9a4c8f4b06b75775cff155d95438"
+  },
+  "counts": {
+    "brushes": 23,
+    "entities": 15,
+    "max_brushes": 80,
+    "max_entities": 40
+  },
+  "extent": [
+    0,
+    0,
+    -192,
+    1024,
+    672,
+    448
+  ],
+  "regions": [
+    {
+      "name": "room",
+      "kind": "floor",
+      "min": [
+        0,
+        0
+      ],
+      "size": [
+        640,
+        576
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "south",
+      "kind": "floor",
+      "min": [
+        640,
+        0
+      ],
+      "size": [
+        384,
+        96
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "east",
+      "kind": "floor",
+      "min": [
+        928,
+        96
+      ],
+      "size": [
+        96,
+        224
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "east_stairs",
+      "kind": "stairs",
+      "min": [
+        928,
+        320
+      ],
+      "size": [
+        96,
+        256
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "bay_wall_w",
+      "kind": "block",
+      "min": [
+        192,
+        0
+      ],
+      "size": [
+        32,
+        416
+      ],
+      "floor_z": -192
+    },
+    {
+      "name": "bay_wall_e",
+      "kind": "block",
+      "min": [
+        416,
+        0
+      ],
+      "size": [
+        32,
+        416
+      ],
+      "floor_z": -192
+    },
+    {
+      "name": "north_w",
+      "kind": "floor",
+      "min": [
+        0,
+        576
+      ],
+      "size": [
+        400,
+        96
+      ],
+      "floor_z": 128
+    },
+    {
+      "name": "gap_floor",
+      "kind": "floor",
+      "min": [
+        400,
+        576
+      ],
+      "size": [
+        96,
+        96
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "north_e",
+      "kind": "floor",
+      "min": [
+        496,
+        576
+      ],
+      "size": [
+        528,
+        96
+      ],
+      "floor_z": 128
+    }
+  ],
+  "adjacency": [
+    {
+      "a": "room",
+      "b": "south",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "room",
+      "b": "bay_wall_w",
+      "relation": "overlap",
+      "area": 13312,
+      "dz": 256
+    },
+    {
+      "a": "room",
+      "b": "bay_wall_e",
+      "relation": "overlap",
+      "area": 13312,
+      "dz": 256
+    },
+    {
+      "a": "room",
+      "b": "north_w",
+      "relation": "edge",
+      "length": 400,
+      "dz": 128,
+      "walk": "drop"
+    },
+    {
+      "a": "room",
+      "b": "gap_floor",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "room",
+      "b": "north_e",
+      "relation": "edge",
+      "length": 144,
+      "dz": 128,
+      "walk": "drop"
+    },
+    {
+      "a": "south",
+      "b": "east",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "east_stairs",
+      "relation": "gap",
+      "gap": 224,
+      "dz": 0
+    },
+    {
+      "a": "south",
+      "b": "bay_wall_e",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 256
+    },
+    {
+      "a": "east",
+      "b": "east_stairs",
+      "relation": "edge",
+      "length": 96,
+      "dz": 16,
+      "walk": "walk"
+    },
+    {
+      "a": "east",
+      "b": "north_e",
+      "relation": "gap",
+      "gap": 256,
+      "dz": 128
+    },
+    {
+      "a": "east_stairs",
+      "b": "north_e",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "bay_wall_w",
+      "b": "bay_wall_e",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 0
+    },
+    {
+      "a": "bay_wall_w",
+      "b": "north_w",
+      "relation": "gap",
+      "gap": 160,
+      "dz": 128
+    },
+    {
+      "a": "bay_wall_e",
+      "b": "gap_floor",
+      "relation": "gap",
+      "gap": 160,
+      "dz": 256
+    },
+    {
+      "a": "north_w",
+      "b": "gap_floor",
+      "relation": "edge",
+      "length": 96,
+      "dz": 128,
+      "walk": "drop"
+    },
+    {
+      "a": "north_w",
+      "b": "north_e",
+      "relation": "gap",
+      "gap": 96,
+      "dz": 0
+    },
+    {
+      "a": "gap_floor",
+      "b": "north_e",
+      "relation": "edge",
+      "length": 96,
+      "dz": 128,
+      "walk": "drop"
+    }
+  ],
+  "connections": [
+    {
+      "from": "room",
+      "to": "south",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "south",
+      "to": "east",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "east",
+      "to": "east_stairs",
+      "type": "stairs",
+      "length": 96,
+      "dz": -16
+    },
+    {
+      "from": "north_w",
+      "to": "room",
+      "type": "drop",
+      "length": 400,
+      "dz": 128
+    },
+    {
+      "from": "north_w",
+      "to": "north_e",
+      "type": "jump",
+      "gap": 96,
+      "dz": 0
+    },
+    {
+      "from": "north_w",
+      "to": "gap_floor",
+      "type": "drop",
+      "length": 96,
+      "dz": 128
+    },
+    {
+      "from": "gap_floor",
+      "to": "room",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "north_e",
+      "to": "east_stairs",
+      "type": "stairs",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "north_e",
+      "to": "room",
+      "type": "drop",
+      "length": 144,
+      "dz": 128
+    },
+    {
+      "from": "north_e",
+      "to": "north_w",
+      "type": "jump",
+      "gap": 96,
+      "dz": 0
+    },
+    {
+      "from": "north_e",
+      "to": "gap_floor",
+      "type": "drop",
+      "length": 96,
+      "dz": 128
+    }
+  ],
+  "navgen_readiness": {
+    "spawns": 4,
+    "pickups": 8,
+    "standable_area": 576512,
+    "entities_before_waypoints": 24,
+    "waypoint_room": 516,
+    "ready": true,
+    "reasons": []
+  },
+  "files": {
+    "request": "labmaps/lab_jumpgap/request.json",
+    "map": "labmaps/lab_jumpgap/lab_jumpgap.map"
+  },
+  "compile": {
+    "ericw_tools": "0.18.1",
+    "ericw_commit": "b6e2431f29a1f5763d4aa5fa37cb06838580f41a",
+    "profile_sha256": "93ab3b7e3aada8f68982966bad71d912b3db8c4e9eb7bd303a0c45bd7db965cc",
+    "steps": {
+      "qbsp": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0,
+        "leak": false
+      },
+      "vis": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      },
+      "light": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      }
+    },
+    "bsp": "labmaps/lab_jumpgap/lab_jumpgap.bsp",
+    "bsp_bytes": 63340,
+    "bsp_sha256": "7806ac75f522a20c24a458375f97e560dabef8ba628c0d76646c758ab81247ab",
+    "bsp_entities": 15
+  },
+  "install": {
+    "maps": "maps_local/lab_jumpgap.bsp",
+    "engine": "engine/argus/maps/lab_jumpgap.bsp"
+  },
+  "nav": {
+    "qc": "src/argus_nav_lab_jumpgap.qc",
+    "graph": "src/argus_nav_lab_jumpgap.qc.json",
+    "nodes": 50,
+    "links": 275,
+    "jlinks": 2,
+    "edict_budget": "edict budget: status ok; waypoints 50; live bsp entities 15 of 15; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 134 of 600; slack 466",
+    "playability": {
+      "playable": false,
+      "spawns": 5,
+      "pickups": 8,
+      "graph_md5": "37ae07377ef8e535bc13b7f0deede8dc",
+      "reasons": [
+        "the jump mill pass refused 2 link(s)"
+      ]
+    }
+  },
+  "coverage": {
+    "covered": true,
+    "uncovered": [],
+    "exempt": [],
+    "regions": [
+      {
+        "name": "room",
+        "waypoints": 29
+      },
+      {
+        "name": "south",
+        "waypoints": 4
+      },
+      {
+        "name": "east",
+        "waypoints": 1
+      },
+      {
+        "name": "north_w",
+        "waypoints": 4
+      },
+      {
+        "name": "gap_floor",
+        "waypoints": 1
+      },
+      {
+        "name": "north_e",
+        "waypoints": 6
+      }
+    ]
+  },
+  "mill": {
+    "confirm": true,
+    "passes": [
+      {
+        "confirmed": 4,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "37ae07377ef8e535bc13b7f0deede8dc",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 0,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 6,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "37ae07377ef8e535bc13b7f0deede8dc",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 80,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 5,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "37ae07377ef8e535bc13b7f0deede8dc",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 160,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 0,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "37ae07377ef8e535bc13b7f0deede8dc",
+        "kind": "walk",
+        "passed": 33,
+        "probed": 33,
+        "skip": 240,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 0,
+        "failed": 2,
+        "failed_links": [
+          "n18->n30 stopped 33 short at (480 609 24)",
+          "n30->n18 stopped 95 short at (416 609 24)"
+        ],
+        "graph_md5": "37ae07377ef8e535bc13b7f0deede8dc",
+        "kind": "jump",
+        "passed": 0,
+        "probed": 2,
+        "skip": 0,
+        "teleport_failures": 0
+      }
+    ]
+  },
+  "registration": {
+    "registered": false,
+    "dispatcher": false,
+    "progs_src": false,
+    "requested": false
+  }
+}

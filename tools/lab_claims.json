@@ -858,7 +858,8 @@
         "dm4",
         "lab_drymix",
         "lab_drymix2",
-        "lab_wallmix"
+        "lab_wallmix",
+        "lab_dropwall"
       ],
       "statement": "Three in four mid-turn route deflections begin straight after a previous deflection, on lab_voidcorner (2402 of 3131, 28 control tapes) and on dm4 (600 of 780, two control tapes): routed mode 2 is exempt from the steering-side hazard check, so after the guard deflects the velocity, route steering turns the heading back at the node for a frame or two and the guard fires again. Episodes run about four times encounters. Encounters themselves start most often from steady routed running (30 per cent on the lab map, 44 on dm4). What deflects them, replayed offline with the physics guard (recall 0.895, false vetoes 0.019 on eight dm4 control tapes): of dm4's 1369 re-entries, 47 per cent are the probe buried in a wall, 36 per cent lava under the probe, 6 per cent a void and 2.5 per cent the run-off landing test; on the three lab maps 97 to 98 per cent are lava and none are walls.",
       "next": "Judge brink changes on movement.brink_encounters. A change aimed at lethal lips reaches at most the 42 per cent of dm4's re-entries that are lava or void; walls cause half, and the run-off landing test 2.5 per cent. dm4's wall re-entries cluster (one cell, the north-west corner of the room at 768 -384 -104, holds 122 of 647), so a wall-aware change can be judged on dm4 directly, or on a lab map that copies that room-to-corridor turn: lab_wallmix's ring corners read 20 per cent walls against dm4's 47.",
@@ -869,7 +870,8 @@
         "runs/lab-drymix-mode2.results.json",
         "runs/lab-drymix2-mix.results.json",
         "runs/dm4-reentry-guard.results.json",
-        "runs/lab-wallmix-mix.results.json"
+        "runs/lab-wallmix-mix.results.json",
+        "runs/lab-dropwall-mix.results.json"
       ],
       "cheapest_tier": 2
     },
@@ -883,14 +885,34 @@
         "lab_voidcorner"
       ],
       "statement": "Isolation tier. For a quarter second after a real brink deflection, routing a vetoed mode-2 heading through Argus_HazardSteer cut route-steer deflection episodes per 1000 route-steer samples on lab_voidcorner from 63.6 to 50.9 over seven listen pairs (detection limit 11.2), encounters level, no guard regressing, with a lava warning (five candidate deaths against none, two of them undamaged airborne departures). Its registered dm4 rung held without transferring: primary 55.3 against 55.6 (limit 12.2), lava 2.0 against 1.4, stalls 6.1 against 3.4, engagements up 66.9 to 76.2 (flagged). No measurable harm on dm4 and no benefit there. Not a general improvement; reverted. Why: it acted on dm4 too, and cut the re-entries whose wanted heading points at lava or a void by 41 per cent there (37 on the lab map), but those are 39 per cent of dm4's re-entries against 95 on the lab map; most of dm4's lie where neither heading sees lava or a void within the guard's floor reach.",
-      "next": "Do not ship on this evidence. dm4's remaining re-entries point at the guard's run-off landing test; measure its share before a second version.",
+      "next": "Do not ship on this evidence. Measured since: the run-off landing test causes 2.5 per cent of dm4's re-entries and walls 47 per cent (runs/dm4-reentry-guard.results.json), so a lethal-lip change reaches at most two in five of them.",
       "evidence": [
         "docs/specs/2026-11-17-brink-flicker-protocol.md",
         "runs/lab-voidcorner-brink-flicker.results.json",
         "runs/lab-voidcorner-brink-flicker-dm4.results.json",
-        "runs/lab-voidcorner-brink-flicker-gate.results.json"
+        "runs/lab-voidcorner-brink-flicker-gate.results.json",
+        "runs/dm4-reentry-guard.results.json"
       ],
       "cheapest_tier": 2
+    },
+    {
+      "id": "overhead-target-replan",
+      "title": "Re-plan a grounded bot whose steering point stands overhead behind solid",
+      "status": "open",
+      "kind": "hypothesis",
+      "tier": 1,
+      "maps": [
+        "dm4",
+        "lab_dropwall2"
+      ],
+      "statement": "dm4's largest wall cluster is bots that miss the staged walkway jump from node 111 to 115, land in the room it crosses still on the hop, and steer at a point 128u overhead behind the walkway's side wall; the displacement guard re-plans only beyond 340u horizontally and its vertical clause covers water alone. A dry-land clause (target above step plus jump reach, solid on the line, 0.3 s) was laddered: the lab rung on lab_dropwall2 was void (no mechanism), the first version exempted jump hops and could not fire there, and the second cut dm4's overhead-target wall re-entries from 15.75 to 11.62 a tape, inside the detection limit of 6.99, with no guard regressing. Not supported; not shipped. Post hoc, the room case survived because the staged run-up runs under ar_sprintstate, which the second version still exempts.",
+      "next": "Register a third version that also acts during a staged jump run-up, and judge it on dm4 with the same primary; a lab map holding the mechanism needs a jump the mill accepts.",
+      "evidence": [
+        "docs/specs/2026-11-17-overhead-target-protocol.md",
+        "runs/dm4-overhead-target.results.json"
+      ],
+      "cheapest_tier": 2,
+      "refute_by": "A third version, registered before its tapes, that also acts during a staged jump run-up and still leaves dm4's overhead-target wall re-entries inside their detection limit over eight listen pairs."
     }
   ]
 }

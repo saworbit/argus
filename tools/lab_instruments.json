@@ -75,6 +75,36 @@
     "rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
     "docs": "docs/lab-scenarios.md",
     "scenarios": {
+      "lab_dropwall": {
+        "id": "lab_dropwall-be907f5db2",
+        "claim_tier": "isolation",
+        "intent": "Copy the dm4 geometry behind its largest wall cluster: a raised walkway whose edge is a legal 128u drop into a room below, its side face a wall solid to the base, with the only way back up far away, beside walkways over lava.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_dropwall/request.json",
+        "manifest": "labmaps/lab_dropwall/manifest.json",
+        "source_sha256": "be907f5db2779a55e41f84e9e999eee0092d49f86089feea6e3df925cfd85e74",
+        "bsp_sha256": "b4b83bfeea3d0f5f47fedf2b0d35b17550038dd390cfb362e783a1e3cb3215f4",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": []
+      },
+      "lab_dropwall2": {
+        "id": "lab_dropwall2-da26a88635",
+        "claim_tier": "isolation",
+        "intent": "lab_dropwall with its room split into three bays by walls rising from the base, opening onto a corridor along the raised walkway's face, so bots route through the room instead of fighting across it.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_dropwall2/request.json",
+        "manifest": "labmaps/lab_dropwall2/manifest.json",
+        "source_sha256": "da26a886358dfce4792c5d49124e42c5c86f6ea52d2468eeb419a3bd42be17df",
+        "bsp_sha256": "6cf7ec2bfd87b50b0b52ffec0d135fcd15390bcff873203b6221f66a3d6758d8",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": []
+      },
       "lab_drymix": {
         "id": "lab_drymix-288fc2055f",
         "claim_tier": "isolation",
@@ -111,6 +141,21 @@
         "off_graph_regions": [
           "ledge_s"
         ]
+      },
+      "lab_jumpgap": {
+        "id": "lab_jumpgap-74f0aafee5",
+        "claim_tier": "isolation",
+        "intent": "Copy dm4's walkway jump over a room: the raised walkway is split by a 96u gap above the room, crossed by a jump, so a bot that misses the run-up lands in the room still on the jump hop with its target overhead.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_jumpgap/request.json",
+        "manifest": "labmaps/lab_jumpgap/manifest.json",
+        "source_sha256": "74f0aafee59e9206d38f27ae5e069a431ec2b8453339f7167ed4b608374a8fe3",
+        "bsp_sha256": "7806ac75f522a20c24a458375f97e560dabef8ba628c0d76646c758ab81247ab",
+        "registered": false,
+        "playable": false,
+        "off_graph_regions": []
       },
       "lab_voidcorner": {
         "id": "lab_voidcorner-70ece72d72",

@@ -1,0 +1,277 @@
+{
+  "schema": 1,
+  "protocol": "docs/specs/2026-11-17-dropwall-mix-protocol.md",
+  "scenario": "lab_dropwall-be907f5db2",
+  "arms": {
+    "ctl": "C4EB81C5EB8FAFB1791009C31287F44C"
+  },
+  "instrument": "tools/argus_guard_replica.py over the listen control tapes",
+  "listen_tapes": 8,
+  "validation": {
+    "route_led_starts_on_ground": 46,
+    "recall": 1.0,
+    "steady_frames_sampled": 107,
+    "false_veto": 0.0
+  },
+  "valid": true,
+  "re_entries": {
+    "n": 13,
+    "wall": 3,
+    "lava": 10,
+    "share": {
+      "wall": 0.231,
+      "lava": 0.769
+    }
+  },
+  "route_led_starts": {
+    "n": 46,
+    "wall": 14,
+    "lava": 31,
+    "void": 1,
+    "share": {
+      "wall": 0.304,
+      "lava": 0.674,
+      "void": 0.022
+    }
+  },
+  "per_tape_re_entries": {
+    "labdw_ctl_r1": {
+      "n": 0,
+      "share": {}
+    },
+    "labdw_ctl_r2": {
+      "n": 0,
+      "share": {}
+    },
+    "labdw_ctl_r3": {
+      "n": 0,
+      "share": {}
+    },
+    "labdw_ctl_r4": {
+      "n": 3,
+      "wall": 2,
+      "lava": 1,
+      "share": {
+        "wall": 0.667,
+        "lava": 0.333
+      }
+    },
+    "labdw_ctl_r5": {
+      "n": 2,
+      "lava": 2,
+      "share": {
+        "lava": 1.0
+      }
+    },
+    "labdw_ctl_r6": {
+      "n": 0,
+      "share": {}
+    },
+    "labdw_ctl_r7": {
+      "n": 7,
+      "wall": 1,
+      "lava": 6,
+      "share": {
+        "wall": 0.143,
+        "lava": 0.857
+      }
+    },
+    "labdw_ctl_r8": {
+      "n": 1,
+      "lava": 1,
+      "share": {
+        "lava": 1.0
+      }
+    }
+  },
+  "shares": {
+    "wall": 0.231,
+    "lava_plus_void": 0.769,
+    "run_off": 0.0
+  },
+  "dm4": {
+    "wall": 0.473,
+    "lava_plus_void": 0.423,
+    "run_off": 0.024
+  },
+  "band": {
+    "wall": [
+      0.32,
+      0.62
+    ],
+    "lava_plus_void": [
+      0.27,
+      0.57
+    ]
+  },
+  "carries_dm4_mix": false,
+  "tapes": [
+    {
+      "run": "labdw_ctl_r1",
+      "map": "lab_dropwall",
+      "bytes": 4640080,
+      "sha256": "5d816bdc132fd753299ea4fe00cb054441640f4c7ea5bb616bc37ea9320bf305",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 22,
+        "engages": 147,
+        "seconds": 170.8
+      }
+    },
+    {
+      "run": "labdw_ctl_r2",
+      "map": "lab_dropwall",
+      "bytes": 4806185,
+      "sha256": "12d5f8b12e338cf3227bf91c6a0c0708eb438c8557d27c3f47643efbcd922b8d",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 26,
+        "engages": 157,
+        "seconds": 172.1
+      }
+    },
+    {
+      "run": "labdw_ctl_r3",
+      "map": "lab_dropwall",
+      "bytes": 4843304,
+      "sha256": "5ebf45e6030c66147eba04e00ca714554679aed62fcbd3502890406d85d52683",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 26,
+        "engages": 166,
+        "seconds": 179.9
+      }
+    },
+    {
+      "run": "labdw_ctl_r4",
+      "map": "lab_dropwall",
+      "bytes": 4934913,
+      "sha256": "a519d5bf6911028b6f6e632e989eb42a897208f790fc81e1e824622acfba3b27",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 23,
+        "engages": 163,
+        "seconds": 179.9
+      }
+    },
+    {
+      "run": "labdw_ctl_r5",
+      "map": "lab_dropwall",
+      "bytes": 4865246,
+      "sha256": "49dff0949e105184ab48c4c4a2692c66249ada7e24b6365eba328ffa14c84065",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 26,
+        "engages": 170,
+        "seconds": 180.1
+      }
+    },
+    {
+      "run": "labdw_ctl_r6",
+      "map": "lab_dropwall",
+      "bytes": 4919432,
+      "sha256": "ba2e30f5743da8b6b8023148713555996404ea9c8a94dc43a6e72ed808344d08",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 23,
+        "engages": 169,
+        "seconds": 180.0
+      }
+    },
+    {
+      "run": "labdw_ctl_r7",
+      "map": "lab_dropwall",
+      "bytes": 4917759,
+      "sha256": "bebdba9ea218924379a752446bfe4e49d6a01decad62fd71f47be36400cc1e6f",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 25,
+        "engages": 164,
+        "seconds": 179.9
+      }
+    },
+    {
+      "run": "labdw_ctl_r8",
+      "map": "lab_dropwall",
+      "bytes": 4868806,
+      "sha256": "0fc2c91012cd4a3905b33efd3a4a8a7e70351fb7f4e1cd87f62f8f570c2702af",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 34,
+        "engages": 165,
+        "seconds": 180.1
+      }
+    }
+  ],
+  "tape_storage": "machine-local; hashes recorded here",
+  "re_entries_by_place": {
+    "room by the walkway face": {
+      "lava": 2,
+      "wall": 3
+    },
+    "room elsewhere": {
+      "lava": 7
+    },
+    "south and east walkways, stairs": {
+      "lava": 1
+    }
+  },
+  "motion_causes": {
+    "samples": 242851,
+    "top": {
+      "combat_strafe": 0.524,
+      "cover_retreat": 0.16,
+      "combat_hazard": 0.096,
+      "battle_item": 0.078,
+      "combat_approach": 0.054,
+      "combat_backoff": 0.026,
+      "noise_investigate": 0.02,
+      "hazard_fan": 0.008
+    },
+    "route_steer": 0.004,
+    "dm4_route_steer_one_tape": 0.272,
+    "lab_wallmix_route_steer_one_tape": 0.104
+  },
+  "verdict": "no: 13 re-entries over eight tapes, 23 per cent walls and 77 per cent lava; the open room gave every bot a line of sight to every other, so combat overrode route steering",
+  "next": "lab_dropwall2 splits the room into bays so bots route there (docs/specs/2026-11-17-overhead-target-protocol.md)"
+}

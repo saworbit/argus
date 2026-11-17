@@ -1,0 +1,313 @@
+{
+  "base": {
+    "floor_z": -192,
+    "liquid": "lava",
+    "liquid_depth": 48
+  },
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker"
+  ],
+  "constraints": {
+    "liquids": [
+      "lava"
+    ],
+    "margin": 0,
+    "max_brushes": 80,
+    "max_entities": 40,
+    "min_spawns": 4
+  },
+  "entities": [
+    {
+      "angle": 0,
+      "at": [
+        0.3,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "south"
+    },
+    {
+      "angle": 0,
+      "at": [
+        0.5,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "north_w"
+    },
+    {
+      "angle": 180,
+      "at": [
+        0.3,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "north_e"
+    },
+    {
+      "angle": 90,
+      "at": [
+        0.5,
+        0.3
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "east"
+    },
+    {
+      "at": [
+        0.15,
+        0.5
+      ],
+      "classname": "weapon_supernailgun",
+      "region": "north_w"
+    },
+    {
+      "at": [
+        0.85,
+        0.5
+      ],
+      "classname": "item_spikes",
+      "region": "north_w"
+    },
+    {
+      "at": [
+        0.55,
+        0.5
+      ],
+      "classname": "item_health",
+      "region": "north_e"
+    },
+    {
+      "at": [
+        0.5,
+        0.25
+      ],
+      "classname": "item_armor1",
+      "region": "room"
+    },
+    {
+      "at": [
+        0.15,
+        0.25
+      ],
+      "classname": "item_shells",
+      "region": "room"
+    },
+    {
+      "at": [
+        0.85,
+        0.25
+      ],
+      "classname": "item_health",
+      "region": "room"
+    },
+    {
+      "at": [
+        0.6,
+        0.5
+      ],
+      "classname": "weapon_supershotgun",
+      "region": "south"
+    },
+    {
+      "at": [
+        0.5,
+        0.7
+      ],
+      "classname": "item_health",
+      "region": "east"
+    }
+  ],
+  "headroom": 192,
+  "intent": "Copy dm4's walkway jump over a room: the raised walkway is split by a 96u gap above the room, crossed by a jump, so a bot that misses the run-up lands in the room still on the jump hop with its target overhead.",
+  "name": "lab_jumpgap",
+  "notes": "dm4's largest wall cluster is bots that missed the walkway jump from node 111 to 115, which crosses the open top of the room below, and kept steering at its target 128u overhead while on the hop (docs/specs/2026-11-17-overhead-target-protocol.md). lab_dropwall2's room and bays, with the walkway cut into two parts over a floor extension of the room. The gap is 96u: at 128u the mill's puppet missed both jumps. Spawns stand on the walkways. No splash weapons.",
+  "regions": [
+    {
+      "connections": [
+        {
+          "to": "south",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "room",
+      "min": [
+        0,
+        0
+      ],
+      "name": "room",
+      "size": [
+        640,
+        576
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "east",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        640,
+        0
+      ],
+      "name": "south",
+      "size": [
+        384,
+        96
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "east_stairs",
+          "type": "stairs"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        928,
+        96
+      ],
+      "name": "east",
+      "size": [
+        96,
+        224
+      ],
+      "solid_below": true
+    },
+    {
+      "axis": "+y",
+      "floor_z": 0,
+      "kind": "stairs",
+      "min": [
+        928,
+        320
+      ],
+      "name": "east_stairs",
+      "size": [
+        96,
+        256
+      ],
+      "solid_below": true,
+      "to_z": 128
+    },
+    {
+      "floor_z": -192,
+      "height": 448,
+      "kind": "block",
+      "min": [
+        192,
+        0
+      ],
+      "name": "bay_wall_w",
+      "size": [
+        32,
+        416
+      ]
+    },
+    {
+      "floor_z": -192,
+      "height": 448,
+      "kind": "block",
+      "min": [
+        416,
+        0
+      ],
+      "name": "bay_wall_e",
+      "size": [
+        32,
+        416
+      ]
+    },
+    {
+      "connections": [
+        {
+          "to": "room",
+          "type": "drop"
+        },
+        {
+          "to": "north_e",
+          "type": "jump"
+        },
+        {
+          "to": "gap_floor",
+          "type": "drop"
+        }
+      ],
+      "floor_z": 128,
+      "kind": "walkway",
+      "min": [
+        0,
+        576
+      ],
+      "name": "north_w",
+      "size": [
+        400,
+        96
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "room",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "floor",
+      "min": [
+        400,
+        576
+      ],
+      "name": "gap_floor",
+      "size": [
+        96,
+        96
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "east_stairs",
+          "type": "stairs"
+        },
+        {
+          "to": "room",
+          "type": "drop"
+        },
+        {
+          "to": "north_w",
+          "type": "jump"
+        },
+        {
+          "to": "gap_floor",
+          "type": "drop"
+        }
+      ],
+      "floor_z": 128,
+      "kind": "walkway",
+      "min": [
+        496,
+        576
+      ],
+      "name": "north_e",
+      "size": [
+        528,
+        96
+      ],
+      "solid_below": true
+    }
+  ],
+  "schema": 1
+}
