@@ -35,4 +35,6 @@ void() Argus_Nav_Spawn =
         Argus_Nav_Spawn_lab_drymix ();
     else if (mapname == "lab_drymix2")
         Argus_Nav_Spawn_lab_drymix2 ();
+    else if (mapname == "lab_wallmix")
+        Argus_Nav_Spawn_lab_wallmix ();
 };

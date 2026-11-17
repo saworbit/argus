@@ -127,6 +127,21 @@
         "registered": true,
         "playable": true,
         "off_graph_regions": []
+      },
+      "lab_wallmix": {
+        "id": "lab_wallmix-58ab73b5ac",
+        "claim_tier": "isolation",
+        "intent": "Give brink work dm4's two commonest guard vetoes: a 96u walkway ring over lava whose outer edges are the hull walls, with solid pillars filling two inner corners, so bots turn two corners around a wall the guard reads as a wall and two around a lethal lava lip.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_wallmix/request.json",
+        "manifest": "labmaps/lab_wallmix/manifest.json",
+        "source_sha256": "58ab73b5ac6be3b53c38c3160d7efc60b2dc3b5fd97126df79f862ab0e5471a3",
+        "bsp_sha256": "7a64021175da8693abca295f8b8bc1ff1ec4bea48dc7e6b3cb4d09ab97689a56",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": []
       }
     }
   }

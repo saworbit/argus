@@ -427,6 +427,26 @@ flicker needs walls that the guard reads as walls, which in a generated map
 should mean `walls` on regions with `solid_below` (untested), and its mix
 should be read with the replica.
 
+### lab_wallmix: walls the guard reads as walls
+
+`lab_wallmix` is a ring of 96u walkways over lava whose outer edges are the hull
+walls (`margin: 0`, walkways `solid_below`), with pillars rising from the base
+to fill two of the four inner corners. Before any tape the replica read a probe
+into the hull wall or a pillar as a wall, which confirms the recipe: a wall
+reads as a wall when the solid under it reaches the base. It registered on the
+first call, and the coverage gate passed on its first live use.
+
+Its registered mix check ([protocol](specs/2026-11-17-wallmix-mix-protocol.md))
+read 20 per cent walls and 77 per cent lava over 357 re-entries, against bands
+of 32 to 62 and 27 to 57, so it does not carry dm4's mix, though it is the first
+lab map with any walls at all. Three in four of its re-entries are at the inner
+lava lip of the straights. Its corners carry few, because a ring's corner
+square leaves a walkway-wide space to turn in. dm4's wall re-entries cluster
+instead: one 128u cell holds 122 of 647, the north-west corner of an open room
+at the end of a wall column, where routes leave the room into a corridor that
+turns around the wall end (`runs/lab-wallmix-mix.results.json`). That turn is
+what the next map needs.
+
 ## Limits
 
 - Brushes are axis-aligned boxes: no slopes, curves or diagonal walls.

@@ -1,0 +1,324 @@
+{
+  "schema": 1,
+  "protocol": "docs/specs/2026-11-17-wallmix-mix-protocol.md",
+  "scenario": "lab_wallmix-58ab73b5ac",
+  "arms": {
+    "ctl": "364BC8500BD43CCDF9D36DAB8327F25E"
+  },
+  "instrument": "tools/argus_guard_replica.py over the listen control tapes",
+  "listen_tapes": 8,
+  "validation": {
+    "route_led_starts_on_ground": 916,
+    "recall": 0.947,
+    "steady_frames_sampled": 3350,
+    "false_veto": 0.007
+  },
+  "valid": true,
+  "re_entries": {
+    "n": 357,
+    "wall": 72,
+    "lava": 275,
+    "none": 10,
+    "share": {
+      "wall": 0.202,
+      "lava": 0.77,
+      "none": 0.028
+    }
+  },
+  "route_led_starts": {
+    "n": 916,
+    "wall": 241,
+    "lava": 626,
+    "none": 49,
+    "share": {
+      "wall": 0.263,
+      "lava": 0.683,
+      "none": 0.053
+    }
+  },
+  "per_tape_re_entries": {
+    "labwm_ctl_r1": {
+      "n": 61,
+      "wall": 6,
+      "lava": 53,
+      "none": 2,
+      "share": {
+        "wall": 0.098,
+        "lava": 0.869,
+        "none": 0.033
+      }
+    },
+    "labwm_ctl_r2": {
+      "n": 26,
+      "wall": 3,
+      "lava": 21,
+      "none": 2,
+      "share": {
+        "wall": 0.115,
+        "lava": 0.808,
+        "none": 0.077
+      }
+    },
+    "labwm_ctl_r3": {
+      "n": 66,
+      "wall": 14,
+      "lava": 52,
+      "share": {
+        "wall": 0.212,
+        "lava": 0.788
+      }
+    },
+    "labwm_ctl_r4": {
+      "n": 37,
+      "wall": 10,
+      "lava": 26,
+      "none": 1,
+      "share": {
+        "wall": 0.27,
+        "lava": 0.703,
+        "none": 0.027
+      }
+    },
+    "labwm_ctl_r5": {
+      "n": 22,
+      "wall": 7,
+      "lava": 15,
+      "share": {
+        "wall": 0.318,
+        "lava": 0.682
+      }
+    },
+    "labwm_ctl_r6": {
+      "n": 31,
+      "wall": 10,
+      "lava": 18,
+      "none": 3,
+      "share": {
+        "wall": 0.323,
+        "lava": 0.581,
+        "none": 0.097
+      }
+    },
+    "labwm_ctl_r7": {
+      "n": 52,
+      "wall": 8,
+      "lava": 42,
+      "none": 2,
+      "share": {
+        "wall": 0.154,
+        "lava": 0.808,
+        "none": 0.038
+      }
+    },
+    "labwm_ctl_r8": {
+      "n": 62,
+      "wall": 14,
+      "lava": 48,
+      "share": {
+        "wall": 0.226,
+        "lava": 0.774
+      }
+    }
+  },
+  "shares": {
+    "wall": 0.202,
+    "lava_plus_void": 0.77,
+    "run_off": 0.0
+  },
+  "dm4": {
+    "wall": 0.473,
+    "lava_plus_void": 0.423,
+    "run_off": 0.024
+  },
+  "band": {
+    "wall": [
+      0.32,
+      0.62
+    ],
+    "lava_plus_void": [
+      0.27,
+      0.57
+    ]
+  },
+  "carries_dm4_mix": false,
+  "tapes": [
+    {
+      "run": "labwm_ctl_r1",
+      "map": "lab_wallmix",
+      "bytes": 5100684,
+      "sha256": "d131ed690c6d70c9b2d0499737730ed5117b1f2f6a2d90da82bbc23d23ef1b19",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 3,
+        "freezes": 0,
+        "goals": 34,
+        "engages": 144,
+        "seconds": 180.0
+      }
+    },
+    {
+      "run": "labwm_ctl_r2",
+      "map": "lab_wallmix",
+      "bytes": 5029259,
+      "sha256": "6aef1483d628fb8159495add121a9b33a3cea1e4133b5241e6e85d3b9cfdb2f0",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 35,
+        "engages": 137,
+        "seconds": 179.8
+      }
+    },
+    {
+      "run": "labwm_ctl_r3",
+      "map": "lab_wallmix",
+      "bytes": 5293407,
+      "sha256": "ca2aee0dc269beef006c0f401e6e00d17af6d76bf1a4510b8fe97e4d232da9b7",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 21,
+        "engages": 129,
+        "seconds": 180.1
+      }
+    },
+    {
+      "run": "labwm_ctl_r4",
+      "map": "lab_wallmix",
+      "bytes": 4912995,
+      "sha256": "eb2321e6029a0dcf4f435179a8f70aa7fb77fa5dda0299eabab2925b30218c46",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 36,
+        "engages": 151,
+        "seconds": 180.0
+      }
+    },
+    {
+      "run": "labwm_ctl_r5",
+      "map": "lab_wallmix",
+      "bytes": 5000183,
+      "sha256": "3decfdab7235e2385ad48675d52bacd52b20c1459b9592458ba8b1c9b793c2e9",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 27,
+        "engages": 149,
+        "seconds": 179.9
+      }
+    },
+    {
+      "run": "labwm_ctl_r6",
+      "map": "lab_wallmix",
+      "bytes": 5307655,
+      "sha256": "e969583d638d20178b65f7821afb7f743ff8ee341cafca1ba05900400a63c3a7",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 37,
+        "engages": 120,
+        "seconds": 180.1
+      }
+    },
+    {
+      "run": "labwm_ctl_r7",
+      "map": "lab_wallmix",
+      "bytes": 5048358,
+      "sha256": "d721ba3bc4b923a0d266c1d72b0bbfbf066b1987ff99ef396d17bd0d05b54969",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 1,
+        "freezes": 0,
+        "goals": 35,
+        "engages": 138,
+        "seconds": 179.8
+      }
+    },
+    {
+      "run": "labwm_ctl_r8",
+      "map": "lab_wallmix",
+      "bytes": 5308706,
+      "sha256": "de1728d710faa9935cd550e7e081deb07ebced56a195e0f14a15f345eb85004a",
+      "arm": "ctl",
+      "metrics": {
+        "tick": "listen",
+        "lava": 0,
+        "world": 0,
+        "stalls": 0,
+        "freezes": 0,
+        "goals": 28,
+        "engages": 123,
+        "seconds": 179.9
+      }
+    }
+  ],
+  "tape_storage": "machine-local; hashes recorded here",
+  "verdict": "no: walls 20 per cent of re-entries (band 32 to 62) and lava 77 per cent (band 27 to 57); the replica held (recall 0.947, false vetoes 0.007)",
+  "where": {
+    "method": "post hoc: re-entries by the bot's position at its last route frame and the replica's branch",
+    "straight walkway": {
+      "lava": 268,
+      "wall": 30,
+      "none": 9
+    },
+    "beside pillar_ne": {
+      "wall": 21,
+      "lava": 7,
+      "none": 1
+    },
+    "beside pillar_sw": {
+      "wall": 15
+    },
+    "SE corner (lava)": {
+      "wall": 4
+    },
+    "NE corner (pillar)": {
+      "wall": 2
+    },
+    "reading": "the inner lava lip of the straights carries three in four re-entries; the corners carry few, and the pillars give 38 of the 72 wall re-entries"
+  },
+  "dm4_wall_cluster": {
+    "method": "post hoc: dm4's 647 wall re-entries (dm4fl control tapes) in 128u cells",
+    "cells": 62,
+    "top_12_share": 0.64,
+    "top_cell": {
+      "centre": [
+        768,
+        -384,
+        -128
+      ],
+      "wall_re_entries": 122,
+      "bots_at": "x 753 to 805, y -438 to -400, origin z -104",
+      "geometry": "the north-west corner of an open room, at the end of a wall column; routes leave the room west into a corridor that turns north, so route steering aims around the wall end while the run carries the bot into the corner"
+    }
+  },
+  "next": "A dm4-like lab map needs the turn that carries dm4's wall re-entries: an open room left through a corridor that turns around a wall end, with the walls solid to the base, rather than a ring whose corners leave a walkway-wide square to turn in. The ring's straights already carry the lava lips.",
+  "navgen_note": "navgen seated a waypoint on each pillar top and minted a rocket-jump link up to it; the map has no rocket launcher, so neither link can fire"
+}

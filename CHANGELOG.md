@@ -74,6 +74,11 @@ passing botmatch does not establish better human play.
   landing test, while on every lab map so far 97 to 98 per cent are lava,
   because a generated slab over open air turns a buried probe into a lava
   veto ([findings](docs/lab-scenarios.md#what-deflects-routed-bots-dm4-against-the-lab-maps)).
+  `lab_wallmix`, a walkway ring against the hull walls with pillars rising from
+  the base at two inner corners, is the first lab map whose walls the guard
+  reads as walls; its registered mix check read 20 per cent walls and 77 lava
+  against dm4's 47 and 42, so it does not stand in for dm4
+  ([findings](docs/lab-scenarios.md#lab_wallmix-walls-the-guard-reads-as-walls)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
   more at the end of the sweep and convicts only a second failure; on a
