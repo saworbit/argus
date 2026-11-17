@@ -57,6 +57,7 @@ says which instrument answers which question.
 | Which artefacts went stale | `python tools/argus_lab.py stale` (19 Hz or old-graph baselines, stale benchmark pins, refused links still shipping) |
 | How human does a tape's movement look | `python tools/argus_humanness.py runs/<tape>.log --profile` (map-matched distance plus SIGNED per-feature gaps; the bare distance says a feature is wrong, never which way) |
 | Was that stationary window a chosen pause | `python tools/argus_gait.py runs/<tape>.log` (attributes freezes to this bot's own `hesitate` marker; exits 1 on an attributable failure, and a window with no marker is the pre-existing wedge class) |
+| Which guard branch deflected a routed bot (wall, lava, void, run-off) | `python tools/argus_guard_replica.py dm4 runs/<tape>.log ...` (offline replay of the physics brink guard over hull 0 on a `scratch1 697` tape; it reports its own recall and false vetoes) |
 | What is under a vetoed void, how tight is a seat | `python tools/argus_voidprobe.py dm4 dm2 [--clearance]` (offline hull-0 read of the SHIPPED graph; needs maps_local/<map>.bsp - two gait changes were built on guesses this answers) |
 | Why did it pick that goal | `tune command="scratch1 1"` then grep ARGDBG (scratch1 0 to silence) |
 | Walk a link in the REAL engine | `argus-mcp probelinks <map> [limit<=80] [skip]` (`verdicts` names every walked link; refusals persist by endpoint in ARGUS_SRC's argus_nav_<map>.probe.json; teleport_failures need AABB triage on tele maps) |

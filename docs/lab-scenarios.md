@@ -396,6 +396,37 @@ gate. Their scenario entries carry `off_graph_regions`, and they are not fit
 for a mix question. To give a ledge a way back up, put the stairs at the end of
 the ledge, rising along it, not across it.
 
+### What deflects routed bots: dm4 against the lab maps
+
+The mix checks above probed 48u along the wish, which is not what the guard
+does. `tools/argus_guard_replica.py` replays the physics guard itself: the
+velocity heading after one frame of friction and acceleration, the
+speed-scaled 32 to 52u probe, and every branch of `Argus_MoveHazard`, including
+the run-off landing test. It validates itself on each tape against frames
+whose verdict is known, and on eight dm4 control tapes it recalls 89.5 per cent
+of route-led deflections with 1.9 per cent false vetoes
+(`runs/dm4-reentry-guard.results.json`).
+
+Of dm4's 1369 re-entries, 47 per cent are the guard's probe buried in a wall,
+36 per cent lava under the probe, 6 per cent a void, and 2.5 per cent the run-off
+landing test. The 48u wish probe's lethal share (39 per cent) matches the
+replica's lava plus void (42), and its other class was mostly walls, not
+run-off lips. So the mode-2 brink check, which acts on lethal lips, could
+reach at most two in five of dm4's re-entries, and the run-off test is not
+worth a change of its own.
+
+On all three lab maps, 97 to 98 per cent of re-entries are lava vetoes and none
+are walls. A generated floor or stair tread is a 16u slab over open air, and a
+trace that starts inside solid and leaves it reports the next solid it meets,
+so a probe buried in a slab finds the lava below. (The replica first treated
+every start in solid as finding nothing, and missed a quarter of the drymix
+vetoes. On the probes where the two rules disagree, the engine's rule
+predicted 1250 of 1365 known outcomes and the other 518.) No lab map built so
+far contains dm4's commonest re-entry. A map meant to stand in for dm4's
+flicker needs walls that the guard reads as walls, which in a generated map
+should mean `walls` on regions with `solid_below` (untested), and its mix
+should be read with the replica.
+
 ## Limits
 
 - Brushes are axis-aligned boxes: no slopes, curves or diagonal walls.

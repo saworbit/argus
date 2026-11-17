@@ -325,6 +325,23 @@ Generates purpose-built lab micro-maps from a structured request: a plain-text Q
 - **Coverage**: `python tools/lab_mapgen.py coverage <request.json>` lists the floor regions the generated graph seats no waypoint on; `lab_request` refuses registration while one is uncovered and not marked `off_graph` in the request.
 - **Tests**: `test_lab_mapgen.py` (determinism, brush syntax and orientation, placement by region name, budgets, the WAD, the promotion rule, the coverage gate against the shipped lab_drymix graph; a real compile and navgen pass when ericw-tools is installed, and an engine load with `ARGUS_LAB_SMOKE_ENGINE=1`).
 
+### 22. `argus_guard_replica.py`
+Names the branch of the per-frame brink guard that deflected each routed bot, read offline from a full-rate ARGMOT tape (`scratch1 697`) and the map's hull-0 tree.
+- **Usage**:
+  ```bash
+  python tools/argus_guard_replica.py dm4 runs/dm4fl_ctl_r1.log runs/dm4fl_ctl_r2.log
+  python tools/argus_guard_replica.py lab_drymix runs/labdm_ctl_r1.log --json
+  python tools/argus_guard_replica.py --help
+  ```
+- **Behavior**:
+  - Replays `Argus_Physics`'s guard: the velocity heading after one frame of friction and acceleration, the speed-scaled 32 to 52u probe, and every branch of `Argus_MoveHazard` including the bridge test, the stair rescue and the run-off landing test (`Argus_DropLandHazard`). Verdicts are `wall`, `lava`, `void`, `run_off_lava`, `run_off_void` or `none`.
+  - Traces follow the engine's hull check: one that starts in solid and never leaves it returns fraction 1, and one that leaves it reports an impact at the next solid it enters. A probe buried in a 16u slab over open air therefore finds what lies under the slab.
+  - Validates itself on the tape: route-led deflection starts are known vetoes (mode 2 route steering has no steering-side hazard check) and steady routed frames are known passes. Brush entities are invisible to it.
+  - Measured on eight dm4 control tapes: recall 0.895, false vetoes 0.019; of 1369 re-entries, 47 per cent are wall vetoes, 36 lava, 6 void and 2.5 run-off ([results](../runs/dm4-reentry-guard.results.json)).
+- **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`) and one or more tapes.
+- **Exit Code**: `0` on success or `--help`, `2` when the BSP or a tape is missing.
+- **Tests**: `test_tools_cli.py` (trace semantics, each verdict on synthetic geometry, the re-entry count from a synthetic tape).
+
 ---
 
 The fixed lab clock and the stand-in human are Rust lab CLI commands:

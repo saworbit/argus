@@ -68,6 +68,12 @@ passing botmatch does not establish better human play.
   refuses registration while a standable floor has no waypoint, unless the
   request marks it `off_graph`
   ([findings](docs/lab-scenarios.md#lab_drymix2-and-the-coverage-gate)).
+  `tools/argus_guard_replica.py` replays the physics brink guard offline from a
+  full-rate tape and names the branch behind each deflection: of dm4's routed
+  re-entries, 47 per cent are walls, 36 lava, 6 voids and 2.5 the run-off
+  landing test, while on every lab map so far 97 to 98 per cent are lava,
+  because a generated slab over open air turns a buried probe into a lava
+  veto ([findings](docs/lab-scenarios.md#what-deflects-routed-bots-dm4-against-the-lab-maps)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
   more at the end of the sweep and convicts only a second failure; on a

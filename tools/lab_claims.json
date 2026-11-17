@@ -859,14 +859,15 @@
         "lab_drymix",
         "lab_drymix2"
       ],
-      "statement": "Three in four mid-turn route deflections begin straight after a previous deflection, on lab_voidcorner (2402 of 3131, 28 control tapes) and on dm4 (600 of 780, two control tapes): routed mode 2 is exempt from the steering-side hazard check, so after the guard deflects the velocity, route steering turns the heading back at the node for a frame or two and the guard fires again. Episodes run about four times encounters. Encounters themselves start most often from steady routed running (30 per cent on the lab map, 44 on dm4).",
-      "next": "Judge brink changes on movement.brink_encounters. Measure the share of dm4's re-entries that the run-off landing test causes before a second attempt. A lab map for this must pass the mix check on a graph that covers every standable floor: dm4 reads 39 per cent lethal-lip re-entries, all on the graph, while lab_voidcorner read 95 and both drymix maps about 71 on the graph, with an off-graph ledge besides.",
+      "statement": "Three in four mid-turn route deflections begin straight after a previous deflection, on lab_voidcorner (2402 of 3131, 28 control tapes) and on dm4 (600 of 780, two control tapes): routed mode 2 is exempt from the steering-side hazard check, so after the guard deflects the velocity, route steering turns the heading back at the node for a frame or two and the guard fires again. Episodes run about four times encounters. Encounters themselves start most often from steady routed running (30 per cent on the lab map, 44 on dm4). What deflects them, replayed offline with the physics guard (recall 0.895, false vetoes 0.019 on eight dm4 control tapes): of dm4's 1369 re-entries, 47 per cent are the probe buried in a wall, 36 per cent lava under the probe, 6 per cent a void and 2.5 per cent the run-off landing test; on the three lab maps 97 to 98 per cent are lava and none are walls.",
+      "next": "Judge brink changes on movement.brink_encounters. A change aimed at lethal lips reaches at most the 42 per cent of dm4's re-entries that are lava or void; walls cause half, and the run-off landing test 2.5 per cent, too few for a change of its own. A lab map for this needs wall brinks the guard reads as walls (walls on solid_below regions, untested), a graph that covers every standable floor, and a mix read with tools/argus_guard_replica.py.",
       "evidence": [
         "runs/lab-voidcorner-turn-diagnosis.results.json",
         "docs/lab-scenarios.md",
         "runs/lab-voidcorner-brink-flicker-gate.results.json",
         "runs/lab-drymix-mode2.results.json",
-        "runs/lab-drymix2-mix.results.json"
+        "runs/lab-drymix2-mix.results.json",
+        "runs/dm4-reentry-guard.results.json"
       ],
       "cheapest_tier": 2
     },
