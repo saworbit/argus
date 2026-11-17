@@ -60,7 +60,14 @@ passing botmatch does not establish better human play.
   lethal and dry-drop lips, missed its registered mix band by one point and does
   not qualify as the brink lab map
   ([findings](docs/lab-scenarios.md#the-second-scenario-lab_drymix)); its first
-  call made `lab_request` accept a request sent as a JSON string.
+  call made `lab_request` accept a request sent as a JSON string. A third,
+  `lab_drymix2`, read 64 per cent, further from dm4's 39, and its tapes showed
+  that both drymix maps registered with a run-off ledge the generated graph
+  seats no waypoint on, which carried a third to over half of their
+  re-entries, while every dm4 re-entry happens on the graph. `lab_request` now
+  refuses registration while a standable floor has no waypoint, unless the
+  request marks it `off_graph`
+  ([findings](docs/lab-scenarios.md#lab_drymix2-and-the-coverage-gate)).
 
 - `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
   more at the end of the sweep and convicts only a second failure; on a

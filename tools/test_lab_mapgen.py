@@ -269,6 +269,50 @@ class ConstraintTests(unittest.TestCase):
             mg.plan(mg.normalise(req))
 
 
+class CoverageTests(unittest.TestCase):
+    def test_a_floor_with_no_waypoint_is_uncovered_unless_marked_off_graph(self):
+        req = mg.normalise(small_request())
+        nodes = [[128, 128, 24], [512, 128, 88]]
+        self.assertEqual(mg.coverage(req, nodes)["uncovered"], [])
+        # a waypoint above the floor's seat height (a block top, a walkway over it) does not count
+        cut = mg.coverage(req, [[128, 128, 24], [512, 128, 200]])
+        self.assertEqual(cut["uncovered"], ["east"])
+        self.assertFalse(cut["covered"])
+        marked = small_request()
+        marked["regions"][2]["off_graph"] = True
+        exempt = mg.coverage(mg.normalise(marked), [[128, 128, 24]])
+        self.assertTrue(exempt["covered"])
+        self.assertEqual(exempt["exempt"], ["east"])
+        # stairs are not checked, and off_graph is refused where nothing is checked
+        self.assertEqual([r["name"] for r in exempt["regions"]], ["west", "east"])
+        bad = small_request()
+        bad["regions"][1]["off_graph"] = True
+        with self.assertRaisesRegex(mg.RequestError, "off_graph"):
+            mg.normalise(bad)
+
+    def test_off_graph_false_keeps_the_scenario_id(self):
+        plain = mg.normalise(small_request())
+        said = small_request()
+        said["regions"][0]["off_graph"] = False
+        self.assertEqual(mg.scenario_id(plain), mg.scenario_id(mg.normalise(said)))
+
+    def test_the_gate_would_have_refused_lab_drymix(self):
+        # lab_drymix registered with its west run-off ledge off the graph, and
+        # that pocket carried 58 per cent of its brink re-entries
+        name = "lab_drymix"
+        graph = ROOT / "src" / f"argus_nav_{name}.qc.json"
+        if not graph.is_file():
+            self.skipTest(f"no {graph.name}")
+        req = mg.load_request(ROOT / "labmaps" / name / "request.json")
+        nodes = json.loads(graph.read_text(encoding="utf-8"))["nodes"]
+        result = mg.coverage(req, nodes)
+        self.assertFalse(result["covered"])
+        self.assertIn("ledge_s", result["uncovered"])
+        voidcorner = mg.load_request(ROOT / "labmaps" / "lab_voidcorner" / "request.json")
+        vgraph = ROOT / "src" / "argus_nav_lab_voidcorner.qc.json"
+        self.assertTrue(mg.coverage(voidcorner, json.loads(vgraph.read_text(encoding="utf-8"))["nodes"])["covered"])
+
+
 class WadTests(unittest.TestCase):
     def test_wad_holds_every_texture_the_map_names(self):
         data = mg.wad_bytes()

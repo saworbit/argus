@@ -115,6 +115,9 @@ Kinds:
 
 `ceiling` adds a ceiling slab that height above a region's floor, and
 `walls` (`sides`, `height`, `thickness`) adds walls inside chosen edges.
+`off_graph: true` on a floor exempts it from the coverage gate (below), for a
+pocket the map means to have; without it, a floor the generated graph seats no
+waypoint on refuses registration.
 
 Connections are declared on a region and checked against the geometry before
 anything is written. A connection the layout cannot provide is refused with
@@ -171,10 +174,18 @@ stages and return the manifest, a scenario id and `next_steps`:
    first attempt fails, or whose teleport never lands, is walked again at the
    end of the sweep and only a second failure convicts
    (`argus-mcp probelinks <map> --confirm` does the same by hand).
-4. **Register** through the first-registration gate, for this map alone:
+4. **Coverage** (`python tools/lab_mapgen.py coverage`): every floor region at
+   least 32u wide must seat a waypoint of the generated graph within 64u above
+   its floor. A floor with none is a pocket that bots fall into and leave by
+   no link, and their routed motion there measures that, not the behaviour
+   the map isolates; `lab_drymix` and `lab_drymix2` registered with one
+   before this gate existed. A region the request marks `off_graph` is exempt;
+   stairs, blocks, pits and voids are not checked. An uncovered floor skips
+   registration.
+5. **Register** through the first-registration gate, for this map alone:
    every spawn must reach every pickup and the mill must pass the current
    graph. A map that fails stays experimental, and the stage says why.
-5. **Record**: fold the navgen, mill and registration results into
+6. **Record**: fold the navgen, mill, coverage and registration results into
    `labmaps/<map>/manifest.json` and register the scenario in
    `tools/lab_instruments.json`.
 
@@ -192,7 +203,9 @@ hash (the normalised request plus the generator version), the map, WAD and
 BSP hashes, the compile profile hash, per-step compile results, navgen
 readiness before navgen runs (spawns, pickups, standable area, room for
 waypoints), and afterwards the graph counts, edict budget, playability verdict,
-mill passes and registration.
+mill passes, waypoints per floor region (`coverage`) and registration. The
+scenario entry in `tools/lab_instruments.json` lists any uncovered floor as
+`off_graph_regions`.
 
 Two compiles of the same request produce byte-identical BSPs, which the
 integration test checks.
@@ -356,6 +369,32 @@ around dm4's 39 (`lab_voidcorner` read 95), and its noisier control left the
 change's reading (88.4 to 73.6, limit 24.7) unable to tell dm4's result from
 `lab_voidcorner`'s. The mix check needed only the control arm, so run it first
 on any new lab map meant to stand in for a stock map.
+
+### lab_drymix2 and the coverage gate
+
+`lab_drymix2` added a second run-off ledge along the north walkway to push the
+share down. Its registered mix check
+([protocol](specs/2026-11-17-drymix2-mix-protocol.md)) read 64 per cent, ten
+points above the band, and two post-hoc readings of the recorded tapes say
+why. First, a run-off ledge is a dry drop only from the walkway above it: its
+own inner edge drops straight into lava, so a bot on the ledge meets a lethal
+lip. Second, and worse for the instrument, splitting re-entries by whether the
+bot stood within 128u of a waypoint showed that every one of dm4's control
+re-entries happens on the graph, while 58 per cent of `lab_drymix`'s and 36 per
+cent of `lab_drymix2`'s happen on `ledge_s`, a ledge the generated graph seats
+no waypoint on. The stairs in both requests run across the ledge and cut it
+into a pocket that bots fall into and leave by no link. On the graph, both maps
+read about 71 per cent lethal against dm4's 39; `lab_drymix`'s near miss was an
+average of that and an off-graph artefact
+(`runs/lab-drymix2-mix.results.json`).
+
+`lab_request` registered both maps anyway, because nothing checked that the
+graph covers the layout. It now does: the `coverage` stage refuses
+registration while a standable floor seats no waypoint, unless the request
+marks that region `off_graph`. Both drymix maps were registered before the
+gate. Their scenario entries carry `off_graph_regions`, and they are not fit
+for a mix question. To give a ledge a way back up, put the stairs at the end of
+the ledge, rising along it, not across it.
 
 ## Limits
 

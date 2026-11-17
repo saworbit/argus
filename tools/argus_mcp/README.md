@@ -1255,8 +1255,10 @@ not valid for nav graphs or any other world-level change shared by both arms.
 [--no-register]` build a purpose-built micro-map from a structured request:
 `tools/lab_mapgen.py` validates it, writes the `.map` and a generated texture
 WAD, compiles with the pinned ericw-tools and installs the BSP; then the lab's
-own `nav_generate`, the mill with confirmation, and `nav_sync::register_maps`
-for that one map, gated like any first registration. The scenario lands in
+own `nav_generate`, the mill with confirmation, a coverage check (every
+standable floor must seat a waypoint unless the request marks it `off_graph`),
+and `nav_sync::register_maps` for that one map, gated like any first
+registration. The scenario lands in
 `tools/lab_instruments.json` under `lab_scenarios` with `claim_tier:
 isolation`, and `argus_ci.py lab` refuses a supported or fixed claim that names
 a stock map on lab tapes alone. The request schema, the stages and the ladder
@@ -2264,7 +2266,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
-| 0.32 | Lab scenarios: `lab_request` and `argus-mcp lab-request` build a micro-map from a structured request with `tools/lab_mapgen.py` and the pinned ericw-tools, then run navgen, the confirming mill and single-map registration ([lab scenarios](#lab-scenarios-lab_request)). `probelinks --confirm`. `nav_sync::register_maps`. Briefs carry `movement.deflection_causes` and `movement.brink_encounters`. |
+| 0.32 | Lab scenarios: `lab_request` and `argus-mcp lab-request` build a micro-map from a structured request with `tools/lab_mapgen.py` and the pinned ericw-tools, then run navgen, the confirming mill and single-map registration ([lab scenarios](#lab-scenarios-lab_request)), refused while a standable floor seats no waypoint. `probelinks --confirm`. `nav_sync::register_maps`. Briefs carry `movement.deflection_causes` and `movement.brink_encounters`. |
 | 0.31 | The fixed lab clock (`match --seed`, `seeds`): the played frame faster than real time, repeating exactly for one seed and build, validated per map. The stand-in human (`standin`). Build identity: compile stamps `src/argus_build.qc` and briefs carry the tape's build, clock and session marks. Run-directory leases and a hostname-aware port probe (GitHub #832). Capture may start up to 900 s into a demo, with a deadline that grows with the seek. |
 | 0.30 | Triggered POV capture. `watch-pov` and `bot_capture_pov_frame` `on` tail the live console and cut the camera to the first bot that stalls, stands still or emits a chosen marker, then record and render it; see [triggered capture](#triggered-capture). |
 | 0.30 | Typed mill artefacts (GitHub #419). `GraphRevision` resources use content-hash ids and keep the producing commit, date, trace inputs and sidecar hashes. `ProbeVerdict` resources wrap probe and proven sidecars. The read-only `mill` tool lists history and diffs two revisions by coordinate link id, including added, removed and type-changed links plus matching convictions. A link absent from both sources is an error. Historical bytes come from Git, so there is no new on-disk format. Tape collections remain the `corpus` surface from 0.28 rather than a duplicate type. 214 tests. |

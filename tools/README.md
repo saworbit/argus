@@ -322,7 +322,8 @@ Generates purpose-built lab micro-maps from a structured request: a plain-text Q
   python tools/lab_mapgen.py build labmaps/lab_voidcorner/request.json
   ```
 - **Behavior**: `check` validates the request and every budget without writing; `generate` writes the `.map` and WAD (deterministic, no tools needed); `compile` adds qbsp, vis and light; `build` also installs the BSP into `ARGUS_MAPS` and the engine game directory and writes `labmaps/<map>/manifest.json`; `record` folds navgen, mill and registration results into the manifest and the scenario into `lab_instruments.json`. A request error exits 2, a build error 1.
-- **Tests**: `test_lab_mapgen.py` (determinism, brush syntax and orientation, placement by region name, budgets, the WAD, the promotion rule; a real compile and navgen pass when ericw-tools is installed, and an engine load with `ARGUS_LAB_SMOKE_ENGINE=1`).
+- **Coverage**: `python tools/lab_mapgen.py coverage <request.json>` lists the floor regions the generated graph seats no waypoint on; `lab_request` refuses registration while one is uncovered and not marked `off_graph` in the request.
+- **Tests**: `test_lab_mapgen.py` (determinism, brush syntax and orientation, placement by region name, budgets, the WAD, the promotion rule, the coverage gate against the shipped lab_drymix graph; a real compile and navgen pass when ericw-tools is installed, and an engine load with `ARGUS_LAB_SMOKE_ENGINE=1`).
 
 ---
 

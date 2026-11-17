@@ -18,6 +18,7 @@ usage:
   python tools/lab_mapgen.py compile REQUEST.json [--out DIR]
   python tools/lab_mapgen.py build REQUEST.json [--no-install] [--json]
   python tools/lab_mapgen.py nav REQUEST.json [--qc PATH] [--png PATH]
+  python tools/lab_mapgen.py coverage REQUEST.json [--qc PATH] [--json]
   python tools/lab_mapgen.py record REQUEST.json [--nav-out FILE] [--mill FILE]
                                     [--registered yes|no] [--json]
   python tools/lab_mapgen.py tools [--install] [--from-zip ZIP]
@@ -29,6 +30,9 @@ build     compile, install the BSP into ARGUS_MAPS and the engine's game maps
           directory, and write the manifest beside the request
 nav       run tools/argus_navgen.py on the built BSP (no registration); the lab
           MCP's lab_request uses its own nav_generate path instead
+coverage  list the standable floors the generated graph seats no waypoint on;
+          lab_request refuses registration while one is uncovered and not
+          marked off_graph in the request
 record    fold navgen, mill and registration results into the manifest and
           register the scenario in tools/lab_instruments.json
 tools     report (or --install) the pinned ericw-tools build
@@ -353,7 +357,7 @@ def _region(r, i, names, constraints):
     if not isinstance(r, dict):
         raise RequestError(f"{where} is an object")
     known = {"name", "kind", "min", "size", "floor_z", "to_z", "axis", "height", "liquid",
-             "liquid_depth", "ceiling", "walls", "connections", "solid_below"}
+             "liquid_depth", "ceiling", "walls", "connections", "solid_below", "off_graph"}
     unknown = sorted(set(r) - known)
     if unknown:
         raise RequestError(f"{where}: unknown field(s) {', '.join(unknown)}")
@@ -406,6 +410,15 @@ def _region(r, i, names, constraints):
             raise RequestError(f"{where}: a {kind} has no ceiling")
         out["ceiling"] = _int(r["ceiling"], f"{where}.ceiling", 72, 2048)
     out["solid_below"] = bool(r.get("solid_below", False))
+    if "off_graph" in r:
+        if not isinstance(r["off_graph"], bool):
+            raise RequestError(f"{where}.off_graph is true or false")
+        if kind != "floor":
+            raise RequestError(f"{where}: off_graph exempts a standable floor from the coverage gate; "
+                               f"a {kind} is not checked")
+        if r["off_graph"]:
+            # only when set, so requests without it keep their scenario ids
+            out["off_graph"] = True
     walls = r.get("walls")
     if walls is not None:
         if kind == "void":
@@ -989,6 +1002,45 @@ def readiness(request, the_plan):
             "ready": not reasons, "reasons": reasons}
 
 
+SEAT_RISE = 64     # a waypoint stands at most this far above its floor (navgen seats at +24)
+SEAT_WIDTH = 32    # a footprint narrower than the player hull cannot seat a waypoint
+
+
+def coverage(request, nodes):
+    """Which standable floors the generated graph seats a waypoint on.
+
+    A floor region with no waypoint is a pocket: bots that fall or are knocked
+    onto it are off the graph, steering at a waypoint they cannot reach by a
+    link, and every routed motion there measures that, not the behaviour the
+    map was built to isolate. lab_drymix and lab_drymix2 registered with one
+    (ledge_s, 58 and 36 per cent of their brink re-entries). A region the
+    request marks off_graph is exempt; stairs, blocks, pits and voids are not
+    checked, and nor is a footprint too narrow to seat the player hull.
+    """
+    regions, uncovered, exempt = [], [], []
+    for r in request["regions"]:
+        if r["kind"] != "floor":
+            continue
+        x0, y0, x1, y1 = footprint(r)
+        if min(r["size"]) < SEAT_WIDTH:
+            continue
+        z = r["floor_z"]
+        seated = sum(1 for n in nodes if x0 <= n[0] <= x1 and y0 <= n[1] <= y1 and z <= n[2] <= z + SEAT_RISE)
+        regions.append({"name": r["name"], "waypoints": seated})
+        if seated == 0:
+            (exempt if r.get("off_graph") else uncovered).append(r["name"])
+    return {"covered": not uncovered, "uncovered": uncovered, "exempt": exempt, "regions": regions}
+
+
+def graph_coverage(root, request, qc_path=None):
+    qc_path = Path(qc_path) if qc_path else src_dir(root) / f"argus_nav_{request['name']}.qc"
+    graph = Path(str(qc_path) + ".json")
+    if not graph.is_file():
+        raise RuntimeError(f"no graph at {rel(root, graph)}; run navgen first")
+    nodes = json.loads(graph.read_text(encoding="utf-8")).get("nodes", [])
+    return coverage(request, nodes)
+
+
 def map_text(request, the_plan):
     src = source_sha256(request)
     lines = [
@@ -1394,6 +1446,8 @@ def register_scenario(root, manifest):
         "registered": bool(manifest.get("registration", {}).get("registered")),
         "playable": bool(nav.get("playability", {}).get("playable")),
     }
+    if "coverage" in manifest:
+        scenarios[manifest["map"]]["off_graph_regions"] = manifest["coverage"]["uncovered"]
     doc["lab_scenarios"]["scenarios"] = dict(sorted(scenarios.items()))
     write_json(path, doc)
     return scenarios[manifest["map"]]
@@ -1408,6 +1462,7 @@ def record(root, request, nav_text=None, mill=None, registered=None, qc_path=Non
     qc_path = Path(qc_path) if qc_path else src_dir(root) / f"argus_nav_{request['name']}.qc"
     if Path(str(qc_path) + ".json").is_file():
         manifest["nav"] = nav_summary(root, request, qc_path, nav_text or "")
+        manifest["coverage"] = graph_coverage(root, request, qc_path)
     if mill is not None:
         manifest["mill"] = mill
     if registered is not None:
@@ -1484,6 +1539,8 @@ def main(argv=None):
         elif cmd == "nav":
             done = run_navgen(root, request, qc, png)
             result = nav_summary(root, request, done["qc"], done["stdout"])
+        elif cmd == "coverage":
+            result = graph_coverage(root, request, qc)
         elif cmd == "record":
             nav_text = Path(nav_out).read_text(encoding="utf-8") if nav_out else None
             mill = json.loads(Path(mill_file).read_text(encoding="utf-8")) if mill_file else None

@@ -267,5 +267,28 @@
     "dispatcher": true,
     "progs_src": true,
     "requested": true
+  },
+  "coverage": {
+    "covered": true,
+    "uncovered": [],
+    "exempt": [],
+    "regions": [
+      {
+        "name": "south",
+        "waypoints": 6
+      },
+      {
+        "name": "east",
+        "waypoints": 5
+      },
+      {
+        "name": "north",
+        "waypoints": 6
+      },
+      {
+        "name": "west",
+        "waypoints": 5
+      }
+    ]
   }
 }

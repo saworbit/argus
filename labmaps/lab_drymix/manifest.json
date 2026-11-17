@@ -604,5 +604,51 @@
     "dispatcher": true,
     "progs_src": true,
     "requested": true
+  },
+  "coverage": {
+    "covered": false,
+    "uncovered": [
+      "ledge_s",
+      "ledge_n"
+    ],
+    "exempt": [],
+    "regions": [
+      {
+        "name": "south",
+        "waypoints": 11
+      },
+      {
+        "name": "east",
+        "waypoints": 7
+      },
+      {
+        "name": "north",
+        "waypoints": 10
+      },
+      {
+        "name": "west",
+        "waypoints": 7
+      },
+      {
+        "name": "ledge_s",
+        "waypoints": 0
+      },
+      {
+        "name": "ledge_n",
+        "waypoints": 0
+      },
+      {
+        "name": "low_w",
+        "waypoints": 8
+      },
+      {
+        "name": "low_mid",
+        "waypoints": 1
+      },
+      {
+        "name": "low_e",
+        "waypoints": 8
+      }
+    ]
   }
 }

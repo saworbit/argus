@@ -72,7 +72,9 @@ hunting for it in a stock map: `lab_request` (MCP) or `argus-mcp lab-request
 <request.json>` takes a structured request (regions, entities by region name,
 budgets, `claim_tier: isolation`), compiles it with the pinned ericw-tools and
 sends it through navgen, the mill and the registration gate like any stock
-map ([lab scenarios](docs/lab-scenarios.md)). A lab-map result supports an
+map ([lab scenarios](docs/lab-scenarios.md)); registration also needs a
+waypoint on every standable floor, because a pocket off the graph skews any
+motion measured there. A lab-map result supports an
 isolation-tier claim only: a claim that names a stock map must also cite tapes
 recorded on that stock geometry, and `argus_ci.py lab` fails one that does not.
 

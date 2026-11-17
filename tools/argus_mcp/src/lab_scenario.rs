@@ -308,7 +308,24 @@ pub async fn lab_request(
     );
 
     let mut gate = String::new();
-    if nav.ok && opts.register {
+    let mut covered = nav.ok;
+    if nav.ok {
+        let coverage_args: [&OsStr; 3] = [
+            OsStr::new("coverage"),
+            request_path.as_os_str(),
+            OsStr::new("--json"),
+        ];
+        let (ok, detail) = match run_mapgen(cfg, &coverage_args, RECORD_DEADLINE).await {
+            Ok(c) => coverage_verdict(&c),
+            Err(e) => (false, e),
+        };
+        covered = ok;
+        if !ok {
+            gate = detail.clone();
+        }
+        stage(&mut stages, "coverage", ok, detail);
+    }
+    if covered && opts.register {
         match crate::nav_sync::register_maps(cfg, vec![map.clone()]).await {
             Ok(r) => {
                 report.registered = true;
@@ -352,6 +369,40 @@ pub async fn lab_request(
     report.next_steps = next_steps(&map, report.registered, nav.ok, &gate);
     report.stages = stages;
     Ok(report)
+}
+
+/// The coverage gate's verdict on `lab_mapgen.py coverage` output. A
+/// standable floor with no waypoint is a pocket a bot can land in and never
+/// leave by a link; lab_drymix and lab_drymix2 registered with one, and it
+/// carried a third to over half of their brink re-entries.
+fn coverage_verdict(c: &serde_json::Value) -> (bool, String) {
+    let names = |key: &str| -> Vec<String> {
+        c[key]
+            .as_array()
+            .map(|v| {
+                v.iter()
+                    .filter_map(|n| n.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    let uncovered = names("uncovered");
+    let exempt = names("exempt");
+    if c["covered"].as_bool() != Some(true) || !uncovered.is_empty() {
+        return (
+            false,
+            format!(
+                "no waypoint on standable floor {}: a bot that lands there is off the graph; give it a walkable way on and off, or mark it off_graph in the request",
+                uncovered.join(", ")
+            ),
+        );
+    }
+    let checked = c["regions"].as_array().map_or(0, |v| v.len());
+    let mut detail = format!("every standable floor seats a waypoint ({checked} checked)");
+    if !exempt.is_empty() {
+        detail.push_str(&format!("; off_graph by request: {}", exempt.join(", ")));
+    }
+    (true, detail)
 }
 
 fn next_steps(map: &str, registered: bool, nav_ok: bool, gate: &str) -> Vec<String> {
@@ -420,6 +471,31 @@ mod tests {
         );
         let broken = serde_json::Value::String("{not json".into());
         assert!(coerce_request(&broken).unwrap_err().contains("not JSON"));
+    }
+
+    #[test]
+    fn a_floor_with_no_waypoint_refuses_registration() {
+        // lab_drymix2 as built: the west run-off ledge cut off by its own stairs
+        let pocket = serde_json::json!({"covered": false, "uncovered": ["ledge_s"], "exempt": [],
+            "regions": [{"name": "south", "waypoints": 11}, {"name": "ledge_s", "waypoints": 0}]});
+        let (ok, detail) = coverage_verdict(&pocket);
+        assert!(!ok);
+        assert!(
+            detail.contains("ledge_s") && detail.contains("off_graph"),
+            "{detail}"
+        );
+
+        let exempted = serde_json::json!({"covered": true, "uncovered": [], "exempt": ["ledge_s"],
+            "regions": [{"name": "south", "waypoints": 11}, {"name": "ledge_s", "waypoints": 0}]});
+        let (ok, detail) = coverage_verdict(&exempted);
+        assert!(ok);
+        assert!(
+            detail.contains("2 checked") && detail.contains("ledge_s"),
+            "{detail}"
+        );
+
+        // a malformed answer never passes as covered
+        assert!(!coverage_verdict(&serde_json::json!({})).0);
     }
 
     #[test]

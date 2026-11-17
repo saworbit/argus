@@ -1,0 +1,395 @@
+{
+  "base": {
+    "floor_z": -192,
+    "liquid": "lava",
+    "liquid_depth": 48
+  },
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker",
+    "mode2-brink-check"
+  ],
+  "constraints": {
+    "liquids": [
+      "lava"
+    ],
+    "margin": 128,
+    "max_brushes": 80,
+    "max_entities": 40,
+    "min_spawns": 4
+  },
+  "entities": [
+    {
+      "angle": 0,
+      "at": [
+        0.25,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "south"
+    },
+    {
+      "angle": 90,
+      "at": [
+        0.5,
+        0.25
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "east"
+    },
+    {
+      "angle": 180,
+      "at": [
+        0.75,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "north"
+    },
+    {
+      "angle": 270,
+      "at": [
+        0.5,
+        0.75
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "west"
+    },
+    {
+      "at": [
+        0.6,
+        0.5
+      ],
+      "classname": "item_armor1",
+      "region": "south"
+    },
+    {
+      "at": [
+        0.4,
+        0.5
+      ],
+      "classname": "weapon_supernailgun",
+      "region": "north"
+    },
+    {
+      "at": [
+        0.6,
+        0.5
+      ],
+      "classname": "item_spikes",
+      "region": "north"
+    },
+    {
+      "at": [
+        0.5,
+        0.7
+      ],
+      "classname": "item_health",
+      "region": "east"
+    },
+    {
+      "at": [
+        0.5,
+        0.3
+      ],
+      "classname": "weapon_supershotgun",
+      "region": "west"
+    },
+    {
+      "at": "centre",
+      "classname": "item_shells",
+      "region": "low_w"
+    },
+    {
+      "at": "centre",
+      "classname": "item_health",
+      "region": "ledge_n"
+    },
+    {
+      "at": "centre",
+      "classname": "item_spikes",
+      "region": "ledge_ne"
+    }
+  ],
+  "headroom": 192,
+  "intent": "lab_drymix with a second run-off ledge: a dry 96u ledge 80u down along the north inner side with lava beyond it, beside the west one, so run-off lips (where the guard's landing test decides) carry the share of brink re-entries they carry on dm4.",
+  "name": "lab_drymix2",
+  "notes": "lab_drymix read 55 per cent lethal-lip re-entries against dm4's 39 (runs/lab-drymix-mode2.results.json); its non-lethal re-entries came from the run-off ledge, so this adds another. No splash weapons.",
+  "regions": [
+    {
+      "connections": [
+        {
+          "to": "east",
+          "type": "open"
+        },
+        {
+          "to": "west",
+          "type": "open"
+        },
+        {
+          "to": "low_w",
+          "type": "drop"
+        },
+        {
+          "to": "low_e",
+          "type": "drop"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        0,
+        0
+      ],
+      "name": "south",
+      "size": [
+        1024,
+        96
+      ]
+    },
+    {
+      "connections": [
+        {
+          "to": "north",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        928,
+        96
+      ],
+      "name": "east",
+      "size": [
+        96,
+        832
+      ]
+    },
+    {
+      "connections": [
+        {
+          "to": "west",
+          "type": "open"
+        },
+        {
+          "to": "ledge_nw",
+          "type": "drop"
+        },
+        {
+          "to": "ledge_ne",
+          "type": "drop"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        0,
+        928
+      ],
+      "name": "north",
+      "size": [
+        1024,
+        96
+      ]
+    },
+    {
+      "connections": [
+        {
+          "to": "ledge_s",
+          "type": "drop"
+        },
+        {
+          "to": "ledge_n",
+          "type": "drop"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        0,
+        96
+      ],
+      "name": "west",
+      "size": [
+        96,
+        832
+      ]
+    },
+    {
+      "floor_z": -80,
+      "kind": "ledge",
+      "min": [
+        96,
+        96
+      ],
+      "name": "ledge_s",
+      "size": [
+        96,
+        352
+      ]
+    },
+    {
+      "axis": "-x",
+      "connections": [
+        {
+          "to": "west",
+          "type": "stairs"
+        }
+      ],
+      "floor_z": -80,
+      "kind": "stairs",
+      "min": [
+        96,
+        448
+      ],
+      "name": "ledge_stairs",
+      "size": [
+        96,
+        96
+      ],
+      "to_z": 0
+    },
+    {
+      "floor_z": -80,
+      "kind": "ledge",
+      "min": [
+        96,
+        544
+      ],
+      "name": "ledge_n",
+      "size": [
+        96,
+        384
+      ]
+    },
+    {
+      "floor_z": -64,
+      "kind": "floor",
+      "min": [
+        0,
+        -192
+      ],
+      "name": "low_w",
+      "size": [
+        448,
+        192
+      ]
+    },
+    {
+      "axis": "+y",
+      "connections": [
+        {
+          "to": "south",
+          "type": "stairs"
+        }
+      ],
+      "floor_z": -64,
+      "kind": "stairs",
+      "min": [
+        448,
+        -128
+      ],
+      "name": "low_stairs",
+      "size": [
+        128,
+        128
+      ],
+      "to_z": 0
+    },
+    {
+      "connections": [
+        {
+          "to": "low_stairs",
+          "type": "stairs"
+        }
+      ],
+      "floor_z": -64,
+      "kind": "floor",
+      "min": [
+        448,
+        -192
+      ],
+      "name": "low_mid",
+      "size": [
+        128,
+        64
+      ]
+    },
+    {
+      "floor_z": -64,
+      "kind": "floor",
+      "min": [
+        576,
+        -192
+      ],
+      "name": "low_e",
+      "size": [
+        448,
+        192
+      ]
+    },
+    {
+      "floor_z": -192,
+      "height": 384,
+      "kind": "block",
+      "min": [
+        512,
+        384
+      ],
+      "name": "column",
+      "size": [
+        256,
+        256
+      ]
+    },
+    {
+      "floor_z": -80,
+      "kind": "ledge",
+      "min": [
+        192,
+        832
+      ],
+      "name": "ledge_nw",
+      "size": [
+        304,
+        96
+      ]
+    },
+    {
+      "axis": "+y",
+      "connections": [
+        {
+          "to": "north",
+          "type": "stairs"
+        }
+      ],
+      "floor_z": -80,
+      "kind": "stairs",
+      "min": [
+        496,
+        832
+      ],
+      "name": "ledge_n_stairs",
+      "size": [
+        96,
+        96
+      ],
+      "to_z": 0
+    },
+    {
+      "floor_z": -80,
+      "kind": "ledge",
+      "min": [
+        592,
+        832
+      ],
+      "name": "ledge_ne",
+      "size": [
+        336,
+        96
+      ]
+    }
+  ],
+  "schema": 1
+}
