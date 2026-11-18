@@ -198,9 +198,11 @@ Attributes a tape's stationary windows to a deliberate pause or to something els
   ```
 - **Behavior**:
   - Freeze windows come from the shared `argus_tape.freeze_windows`, aligned with `MatchTape::freezes` in the Rust lab parser.
-  - A window is credited to a hesitation only when that bot's own `ARGUS <name> hesitate <heard|junction|settle>` marker sits just before it. A window with no marker near it is the pre-existing fight-pin class ([#322](https://github.com/saworbit/argus/issues/322)).
-  - A freeze count alone cannot separate the two, and both laddered maps produce long fight-pin freezes on unchanged code.
-- **Exit Code**: `0` when no stationary window is attributable to a chosen pause that outlasted its own hold or took damage, `1` when one is.
+  - A window is credited to a hesitation only when that bot's own `ARGUS <name> hesitate <heard|junction|settle>` marker sits just before it.
+  - Otherwise a window that opens inside that bot's own `ARGEVT <name> lift` or `train` hop is a `mover wait`: the controller parks a bot at a mover pad (`ar_liftwait`) without a marker. The row names the hop, what closed it (`abandon`, a new `route` or `goal`, `stall`, death, `deadline` at the hop's 20 s lift or 15 s train bound, or `tape end`) and whether the bot boarded, so a bot waiting at a lift that never comes reads `closed by abandon, never boarded` ([#628](https://github.com/saworbit/argus/issues/628)). A window that runs on more than a second past its hop's close or bound is a `mover overrun` instead: the hold outlived the controller's own give-up, which is a defect of its own.
+  - A window with neither near it is the pre-existing fight-pin class ([#322](https://github.com/saworbit/argus/issues/322)).
+  - A freeze count alone cannot separate these, and both laddered maps produce long fight-pin freezes on unchanged code.
+- **Exit Code**: `0` when no stationary window is attributable to a chosen pause that outlasted its own hold or took damage, `1` when one is. Mover waits never fail it.
 
 ---
 
