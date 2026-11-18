@@ -477,6 +477,36 @@ passing botmatch does not establish better human play.
   check with identical output both times, and the six graph-preserving modes
   matched on dm3, dm4, e1m1, e1m2 and e1m7.
 
+- navgen's reachability knit (section 7g2) has three last-resort stitches
+  for a pocket its walk, jump, drop and dive stitches leave stranded
+  ([#623](https://github.com/saworbit/argus/issues/623),
+  [#624](https://github.com/saworbit/argus/issues/624)). A swim stitch joins
+  two underwater seats both ways when a player box fits through water
+  between them. A bank stitch walks a dry seat into the water and vaults
+  back out onto a lip up to 44u above the surface, which it finds itself:
+  7d's surface probe stops 320u above a seat, so a seat on a deeper floor
+  saw a surface that is not there. A deep-drop stitch lets a pocket holding
+  the seat nearest a deathmatch spawn or live pickup escape by a fall of up
+  to 240u, past DROPMAX's 200 but short of falling damage (264u at gravity
+  800) and inside the runtime's 280u floor probe. On e1m4 a flooded
+  courtyard and a 504u deep lake had cut the south of the map and the start
+  building's shore off from the rest, leaving six of nine spawns 527 to 860u
+  from the graph; now all nine are within 142u, pickups reachable from every
+  spawn rise from 21 to 50 of 58 and the map gate's reasons fall from 117 to
+  49, at 186 waypoints and 576 of 600 edicts. On e1m3 the super nailgun's
+  ledge escapes by a 216u fall, so the weapon is no longer 209u from the
+  graph: 53 of 55 pickups, 17 reasons, 177 waypoints and 597 of 600 edicts.
+  Both maps stay unregistered. e1m3's super shotgun shelf is climbed by 24
+  to 32u risers on 16u treads that SV_CheckBottom refuses as seats, so only
+  a rocket jump reaches it. e1m4's other eight pickups sit behind a
+  two-button secret door, in a walled room behind a trigger-lowered door, on
+  a trigger-started train and in an air pocket under the lake, and nine of
+  its eleven teleporter links name teleporters that fire only for 0.2 s
+  after a trigger. Regenerating with the original and the changed navgen
+  gave byte-identical QC, JSON, preview receipts and logs on dm2, dm4, dm6,
+  e1m1, e1m7, e1m8 and the six registered lab maps, and identical refusals
+  at the jump anchor check on dm3, e1m2, e1m5, e1m6 and lqdm2.
+
 - A full navgen regeneration applies `src/argus_nav_<map>.seats.json`
   ([#778](https://github.com/saworbit/argus/issues/778)). Only `--seat-links`
   read it before, so regenerating dm3 dropped its five elbow seats and

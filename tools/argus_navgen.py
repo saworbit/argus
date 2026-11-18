@@ -148,7 +148,8 @@ from argus_nav_budget import (
 )
 from argus_nav_tactics import compute_tactics
 from argus_nav_anchors import load_anchors
-from argus_mapgate import assess_playability
+from argus_mapgate import (SPAWNFLAG_NOT_DEATHMATCH, assess_playability,
+                           _is_pickup as _gate_pickup)
 from argus_navjson import STEP, FAMILIES, load_nav
 from argus_registration import registration
 from argus_nav_preview import generate_preview
@@ -774,7 +775,7 @@ def h0_line_clear(a, b, node=None):
     return h0_line_clear(a, mid, near) and h0_line_clear(mid, b, far)
 
 
-def beeline_points(a, b, floors=None):
+def beeline_points(a, b, floors=None, dropmax=DROPMAX):
     """6b's beeline walk between two origins (beeline_ok minus pos()).
 
     Lives up here so the shipped-graph modes can call navgen's own
@@ -782,6 +783,8 @@ def beeline_points(a, b, floors=None):
     this refuses. floors reads a column's standable heights and is
     the world's column_floors for every link but a level walk off a
     spawn pad, whose first steps stand on a brush entity (7g2f, #783).
+    dropmax is DROPMAX for every caller but the knit's deep-drop
+    escape (7g2), which grades a longer fall with the same walk.
     """
     if floors is None:
         floors = column_floors
@@ -816,7 +819,7 @@ def beeline_points(a, b, floors=None):
                     break
             if nz is None:
                 for fz in heights:            # forward drop is fine
-                    if STEP < z - fz <= DROPMAX:
+                    if STEP < z - fz <= dropmax:
                         nz = fz
                         break
             # a lava or slime floor is not a step, it is a death:
@@ -3870,6 +3873,161 @@ def _centre_void(_s, _d):
     return _worst
 
 
+# THREE LAST-RESORT STITCHES (#623, #624), a swim, a bank and a long
+# fall. They run only for a pocket the walk, jump, drop and dive stitches
+# below have already failed, so a graph those heal is untouched by them.
+#
+# A FALL LONGER THAN DROPMAX. e1m3's super nailgun stands on a secret
+# ledge whose only way down is a 216 to 220u fall onto the room floor,
+# and DROPMAX's 200 left the ledge with no exit: the poison prune ate its
+# two seats and the weapon finished 209u from the graph. The runtime
+# survives that fall and keeps its route. PlayerPostThink charges falling
+# damage below -650 u/s, which a fall of 650^2 / 2g reaches (264u at
+# gravity 800), and Argus_MoveHazard finds a floor within 280u of the
+# origin. 24u under the damage line is the margin for discrete
+# integration, and 240 keeps low-gravity e1m8 inside the floor probe.
+# DROPMAX stays the rule for every link the fine graph and the ordinary
+# knit mint, and this fall is used only where the alternative is losing
+# seats: as an ESCAPE from a pocket holding the nearest seat to a
+# deathmatch spawn or live pickup, which are what the map gate measures.
+# A pocket with no escape is deleted by the poison prune (7g3), its items
+# with it; one with no entry survives, and 8a05 marks it stranded so the
+# runtime will not shop a goal there. A bare pocket is better pruned, as
+# a bot standing in one routes from the nearest surviving seat. The same
+# fall would heal entry pockets on dm6, e1m2 and e1m6, one of them
+# replacing a rocket jump, but those graphs are registered and laddered
+# as they are.
+KNIT_DEEP_DROP = min(240.0, 650.0 ** 2 / (2 * GRAVITY) - 24.0)
+# A SWIM THROUGH DEEP WATER. The fine graph walks the FLOOR of a pool,
+# so water deeper than a step splits the floors it covers into islands
+# that only a swimmer joins. e1m4's southern courtyard floods into a
+# 400u trench, and the courtyard's submerged seats had no link to the
+# trench floor or to the far bank's submerged ramp: the knit found no
+# entry or escape, the poison prune ate the whole south of the map, and
+# four of nine spawns finished 527 to 860u from the graph. 7d only
+# vaults an underwater seat out onto a DRY lip, which a flooded floor
+# is not. A swim stitch joins two underwater seats both ways over a
+# path that stays in water: the runtime swims between submerged seats
+# on a plain link (Argus_WalkArrivalReady), diving at 120 u/s toward a
+# seat below and rising toward one above. The depth is bounded so that a
+# dive to a seat and the climb back out, about 8.5 s at that rate, stay
+# inside the 12 s air supply; e1m4's lake floor sits 504u under its
+# surface, the deepest water a stitch below has to cross.
+KNIT_SWIM_RISE = 512.0
+
+
+def _gate_anchors():
+    """Seats nearest each deathmatch spawn and live pickup, as the gate.
+
+    argus_mapgate.assess_playability snaps every spawn and pickup to its
+    nearest node by straight distance and fails a graph that cannot
+    route to them, so these are the seats a pocket must not lose.
+    """
+    _out = set()
+    for _b in ent_blocks:
+        _e = kv(_b)
+        _c = _e.get("classname", "")
+        try:
+            _sf = int(float(_e.get("spawnflags", "0") or 0))
+        except ValueError:
+            _sf = 0
+        if _c not in ("info_player_deathmatch", "info_player_start") and not (
+                _gate_pickup(_c) and not _sf & SPAWNFLAG_NOT_DEATHMATCH):
+            continue
+        try:
+            _o = [float(v) for v in _e.get("origin", "").split()]
+        except ValueError:
+            continue
+        if len(_o) != 3 or not ways:
+            continue
+        _out.add(min(range(len(ways)), key=lambda _i: sum(
+            (pos(ways[_i])[_k] - _o[_k]) ** 2 for _k in range(3))))
+    return _out
+
+
+def _swims(_p):
+    """Is this origin under water, as 7d's underwater seats are?"""
+    return h0_contents(_p[0], _p[1], _p[2] + 8) == CONTENTS_WATER
+
+
+def _swim_path_clear(_a, _b):
+    """Does a player-sized swimmer fit, in water, from _a to _b?
+
+    The path rises (or descends) in the LOWER seat's column to the upper
+    seat's height and crosses there, which is how the runtime moves: it
+    swims toward the next seat's yaw at full speed while it climbs or
+    dives, so a trench wall in the way stops the crossing until the climb
+    clears its top, and a dive carries over the lip before it sinks.
+    Every sample must be empty in hull 1, so the box fits, and under
+    water, so the bot is swimming rather than falling.
+    """
+    _lo, _hi = (_a, _b) if _a[2] <= _b[2] else (_b, _a)
+    _z = _lo[2]
+    while _z < _hi[2]:
+        if (hull_contents(_lo[0], _lo[1], _z) != CONTENTS_EMPTY
+                or not _swims((_lo[0], _lo[1], _z))):
+            return False
+        _z += 16
+    _dist = ((_hi[0] - _lo[0]) ** 2 + (_hi[1] - _lo[1]) ** 2) ** 0.5
+    _steps = int(_dist // 8) + 1
+    for _st in range(_steps + 1):
+        _f = _st / _steps
+        _p = (_lo[0] + (_hi[0] - _lo[0]) * _f,
+              _lo[1] + (_hi[1] - _lo[1]) * _f, _hi[2])
+        if hull_contents(*_p) != CONTENTS_EMPTY or not _swims(_p):
+            return False
+    return True
+
+
+def _bank_path(_wet, _dry):
+    """(exit, entry) between an underwater seat and a dry bank seat.
+
+    Exit is the vault 7d already types as a swim link: up through the
+    water to the surface, along it until the bank stops the swim, and out
+    onto a lip no higher than the waterjump's 44u, then a walk to the
+    seat that beeline_ok accepts. Entry is the same path the other way: a
+    walk to the edge, a fall of at most DROPMAX into the water, the swim
+    and the dive. 7d cannot see either when the seat lies deeper than
+    water_top's 320u reach, because it then measures from a surface that
+    is not there: e1m4's lake floor sits 504u under its surface, and the
+    west shore beside it had no way in or out. This finds the surface
+    itself. The climb, the swim and the vault are all empty in hull 1,
+    and the swim stays in water.
+    """
+    _wx, _wy, _wz = _wet
+    _dx, _dy, _dz = _dry
+    _s = _wz
+    while _s - _wz <= KNIT_SWIM_RISE and _swims((_wx, _wy, _s + 8)):
+        _s += 8
+    if _s - _wz > KNIT_SWIM_RISE:
+        return False, False
+    _surf = _s + 8                       # highest water sample, to 8u
+    if not (_surf - 12 <= _dz <= _surf + DROPMAX):
+        return False, False
+    _z = _wz
+    while _z < _s:
+        if hull_contents(_wx, _wy, _z) != CONTENTS_EMPTY:
+            return False, False
+        _z += 16
+    _dist = ((_dx - _wx) ** 2 + (_dy - _wy) ** 2) ** 0.5
+    _steps = int(_dist // 8) + 1
+    _lx, _ly = _wx, _wy
+    for _st in range(1, _steps + 1):
+        _p = (_wx + (_dx - _wx) * _st / _steps,
+              _wy + (_dy - _wy) * _st / _steps, _s)
+        if hull_contents(*_p) != CONTENTS_EMPTY or not _swims(_p):
+            break
+        _lx, _ly = _p[0], _p[1]
+    _z = _s
+    while _z <= max(_dz, _surf + 8):
+        if hull_contents(_lx, _ly, _z) != CONTENTS_EMPTY:
+            return False, False
+        _z += 8
+    if not beeline_points((_lx, _ly, _dz), _dry):
+        return False, False
+    return _dz <= _surf + 44, True
+
+
 def _knit_pass(_toward_main, _use_rj):
     # _toward_main True stitches ESCAPES (pocket -> mainland-reaching
     # set); False stitches ENTRIES (mainland-reachable set -> pocket).
@@ -3881,6 +4039,8 @@ def _knit_pass(_toward_main, _use_rj):
     _added = 0
     _frozen = set()
     _reported = set()
+    _wetseat = [_swims(pos(_w)) for _w in ways]
+    _anchors = _gate_anchors()
     for _round in range(96):
         _fwd = collections.defaultdict(set)
         for _i in links:
@@ -3919,6 +4079,9 @@ def _knit_pass(_toward_main, _use_rj):
         _walkc = []
         _dropc = []
         _rjc = []
+        _swimc = []
+        _bankc = []
+        _deepc = []
         for _m in _comp:
             _mx, _my, _mz = pos(ways[_m])
             for _o in _good:
@@ -3951,6 +4114,14 @@ def _knit_pass(_toward_main, _use_rj):
                                      else (_mx, _my, _mz))
                     if h0_contents(_lx, _ly, _lz) == CONTENTS_WATER:
                         _dropc.append((_h + _dd + 500, _m, _o, 1))
+                if (_toward_main and DROPMAX < _dd <= KNIT_DEEP_DROP
+                        and _h <= 240 and _comp & _anchors):
+                    _deepc.append((_h + _dd, _m, _o))
+                if (_h <= 320 and abs(_dz) <= KNIT_SWIM_RISE
+                        and _wetseat[_m] and _wetseat[_o]):
+                    _swimc.append((_h + abs(_dz), _m, _o))
+                if _h <= 320 and _wetseat[_m] != _wetseat[_o]:
+                    _bankc.append((_h + abs(_dz), _m, _o))
                 _du = -_dz if _toward_main else _dz
                 if (40 < _du <= 240 and _h <= 260 and not NO_RJ
                         and _use_rj):
@@ -4062,6 +4233,60 @@ def _knit_pass(_toward_main, _use_rj):
                     continue
                 links.setdefault(_s, {})[_d] = (_sc, 0)
                 print(f"knit {'dive' if _wet else 'drop'} {_s}->{_d}")
+                _stitched = True
+                break
+        if not _stitched:
+            # SWIM, both ways when both ends have a slot: the path is
+            # the same water whichever end it starts from.
+            for _sc, _m, _o in sorted(_swimc)[:48]:
+                _s, _d = _src_dst(_m, _o)
+                if not _slot_free(_s):
+                    continue
+                if not _swim_path_clear(pos(ways[_s]), pos(ways[_d])):
+                    continue
+                links.setdefault(_s, {})[_d] = (_sc, 0)
+                if _slot_free(_d) and _s not in links.get(_d, {}):
+                    links.setdefault(_d, {})[_s] = (_sc, 0)
+                print(f"knit swim {_s}->{_d}")
+                _stitched = True
+                break
+        if not _stitched:
+            # BANK: out of the water as 7d's swim link, into it as a
+            # plain walk off the edge; the other way too when it holds.
+            for _sc, _m, _o in sorted(_bankc)[:48]:
+                _s, _d = _src_dst(_m, _o)
+                if not _slot_free(_s):
+                    continue
+                _out = _wetseat[_s]
+                _wi, _di = (_s, _d) if _out else (_d, _s)
+                _exit, _entry = _bank_path(pos(ways[_wi]), pos(ways[_di]))
+                if not (_exit if _out else _entry):
+                    continue
+                if _out:
+                    swims.append((_s, _d))
+                else:
+                    links.setdefault(_s, {})[_d] = (_sc, 0)
+                if _slot_free(_d) and (_entry if _out else _exit):
+                    if _out and _s not in links.get(_d, {}):
+                        links.setdefault(_d, {})[_s] = (_sc, 0)
+                    elif not _out and (_d, _s) not in swims:
+                        swims.append((_d, _s))
+                print(f"knit {'bank exit' if _out else 'bank entry'} {_s}->{_d}")
+                _stitched = True
+                break
+        if not _stitched:
+            # DEEP DROP: beeline_ok's own walk with the longer fall,
+            # so the line still needs honest floor up to the lip and a
+            # dry, hazard-free landing at the far seat's height.
+            for _sc, _m, _o in sorted(_deepc)[:48]:
+                _s, _d = _src_dst(_m, _o)
+                if not _slot_free(_s):
+                    continue
+                if not beeline_points(pos(ways[_s]), pos(ways[_d]),
+                                      dropmax=KNIT_DEEP_DROP):
+                    continue
+                links.setdefault(_s, {})[_d] = (_sc, 0)
+                print(f"knit deep drop {_s}->{_d}")
                 _stitched = True
                 break
         if not _stitched:
