@@ -689,6 +689,12 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- The step1b amend helper's test no longer pins the newest amendment's
+  name, which made it fail on the first real edit to `src/argus.qc` after
+  it landed. It checks that the manifest it was given is unchanged, and
+  takes the duplicate case from the manifest itself
+  ([#871](https://github.com/saworbit/argus/issues/871)).
+
 - Stop the lab's Rust tests leaving directories in `%TEMP%`
   ([#861](https://github.com/saworbit/argus/issues/861)). The console
   injection and network client tests leaked one each on every run with an
