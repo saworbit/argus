@@ -437,6 +437,24 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- `tools/argus_bsp.py` is now the one Python BSP29 reader
+  ([#814](https://github.com/saworbit/argus/issues/814)). Its `Bsp` class
+  checks the header once and serves navgen, the navmesh and its graph, the
+  pointfile overlays, the analyzer and nav preview wireframe, the reach audit,
+  the map gate and the lab map compiler, and it holds the one `check_bottom`
+  and the one water-surface probe. A file that is not BSP29 now raises the
+  same `ValueError` from all of them, under `python -O` too, where the two
+  `assert` checks used to vanish; `tools/test_argus_bsp.py` holds that in both
+  modes. The water probe keeps navgen's 320u ceiling rather than the
+  pointfile's 512u, because 320u decides which swim links exist and the
+  surface overlay is there to show what navgen saw. `argus_nav_preview.py` no
+  longer imports the `analyze_match.py` script. Regenerating with the original
+  and the changed navgen gave byte-identical QC, JSON, output and exit codes
+  on dm2, dm4, dm6, e1m1, e1m3, e1m4, e1m7, e1m8 and the six registered lab
+  maps, while dm3, e1m2, e1m5, e1m6 and lqdm2 refused at the same jump anchor
+  check with identical output both times, and the six graph-preserving modes
+  matched on dm3, dm4, e1m1, e1m2 and e1m7.
+
 - A full navgen regeneration applies `src/argus_nav_<map>.seats.json`
   ([#778](https://github.com/saworbit/argus/issues/778)). Only `--seat-links`
   read it before, so regenerating dm3 dropped its five elbow seats and

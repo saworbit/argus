@@ -27,9 +27,10 @@ Exit code 1 when any spawn's all-edges reach is under 60% (the 7h
 WARNING bar), so a rig script can gate on it.
 """
 import os
-import struct
 import sys
 from pathlib import Path
+
+from argus_bsp import Bsp
 
 ROOT = Path(__file__).resolve().parent.parent
 WARN_PCT = 60
@@ -44,23 +45,8 @@ def dist(a, b):
 
 
 def bsp_spawns(path):
-    data = path.read_bytes()
-    (version,) = struct.unpack_from("<i", data, 0)
-    if version != 29:
-        raise SystemExit(f"{path}: BSP version {version}, expected 29")
-    ofs, ln = struct.unpack_from("<ii", data, 4)  # lump 0 = entities
-    text = data[ofs:ofs + ln].split(b"\0")[0].decode("latin-1")
     spawns = []
-    for block in text.split("}"):
-        if '"classname"' not in block:
-            continue
-        kv = {}
-        for line in block.splitlines():
-            line = line.strip()
-            if line.startswith('"'):
-                parts = line.split('"')
-                if len(parts) >= 5:
-                    kv[parts[1]] = parts[3]
+    for kv in Bsp(path).entities():
         if kv.get("classname") in ("info_player_deathmatch",
                                    "info_player_start"):
             o = kv.get("origin", "0 0 0").split()

@@ -70,31 +70,6 @@ def real_floor(bsp, x, y, oz):
             or bsp.h0(x, y, oz - 25.0 - STEP) == nm.CONTENTS_SOLID)
 
 
-def check_bottom(bsp, x, y, oz):
-    """SV_CheckBottom for a player box with its origin at oz."""
-    fz = oz - 24.0
-    corners = ((x - 16, y - 16), (x + 16, y - 16),
-               (x - 16, y + 16), (x + 16, y + 16))
-    if all(bsp.h0(cx, cy, fz - 1) == nm.CONTENTS_SOLID for cx, cy in corners):
-        return True
-
-    def under(cx, cy):
-        d = 0.0
-        while d <= 2 * STEP:
-            if bsp.h0(cx, cy, fz - d) == nm.CONTENTS_SOLID:
-                return fz - d
-            d += 2.0
-        return None
-    mid = under(x, y)
-    if mid is None:
-        return False
-    for cx, cy in corners:
-        c = under(cx, cy)
-        if c is None or c < mid - STEP:
-            return False
-    return True
-
-
 def hostile_feet(bsp, x, y, oz):
     return bsp.h0(x, y, oz - 23.0) in HOSTILE
 
@@ -119,7 +94,7 @@ def clearance(bsp, mi, x, y, z, reach=96.0):
 
 def teleport_boxes(bsp):
     out = []
-    for e in bsp.entities:
+    for e in bsp.entities():
         if e.get("classname") != "trigger_teleport":
             continue
         m = e.get("model", "")
@@ -274,7 +249,7 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
             z = nm.plane_z(f["plane"], x, y)
             if hostile_feet(bsp, x, y, z) or not real_floor(bsp, x, y, z):
                 continue
-            if not check_bottom(bsp, x, y, z):
+            if not bsp.check_bottom(x, y, z):
                 continue
             if any(in_box((x, y, z), b) for b in tboxes):
                 continue
@@ -310,7 +285,7 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
             return False
 
         # 3. control items get a seat of their own, as navgen's 5a3 does
-        for e in bsp.entities:
+        for e in bsp.entities():
             cls = e.get("classname", "")
             mega = cls == "item_health" and int(e.get("spawnflags", "0")) & 2
             if not (cls.startswith(CONTROL) or mega) or "origin" not in e:
