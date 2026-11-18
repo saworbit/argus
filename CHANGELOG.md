@@ -1171,6 +1171,15 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Read average speed on the fixed-clock confirmation tapes
+  ([#863](https://github.com/saworbit/argus/issues/863)). It was registered
+  with the validation but the corpus did not carry it when the verdicts were
+  made. Read afterwards on the same tapes, it is equivalent on both maps:
+  dm4 212.2 against 209.4 u/s (90 per cent interval -6.7 to +1.0, margin
+  63.7) and dm2 182.9 against 183.7 (-9.5 to +11.0, margin 54.9). Neither
+  verdict and no limit changes. `docs/fixed-clock.md` and
+  `tools/lab_instruments.json` record it as read after the verdicts.
+
 - `cargo deny` ignores RUSTSEC-2026-0543, the notice that `chrono` is
   unmaintained. No upgrade exists, and `rmcp` and `schemars` depend on it as
   well as the lab, so the policy records why it is ignored and when to look
