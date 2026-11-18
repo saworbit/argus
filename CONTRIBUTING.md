@@ -102,6 +102,8 @@ ARGUS_REQUIRE_SOURCE_MCP=1 python3 tools/test_tools_cli.py
 
 These match the `lab test suite (rust)` CI job. `--locked` fails when `Cargo.toml` changed without its `Cargo.lock`, instead of resolving a new lock silently. Build the CLI before the tests: the Windows console-inject tests spawn it (#805). After a dependency change, `cargo deny check` from `tools/argus_mcp` applies the advisory, licence and source policy in [deny.toml](tools/argus_mcp/deny.toml).
 
+The demo, BSP and ARGLOG parsers are also fuzzed weekly on nightly ([fuzz](.github/workflows/fuzz.yml), or locally per [the lab guide](tools/argus_mcp/README.md#tests)); commit any crashing input it finds as a stable regression test before its fix.
+
 ### Running a Headless Smoke Match
 
 For the maintained plan, entry, combat, button and door contracts, use the engine-free checks:

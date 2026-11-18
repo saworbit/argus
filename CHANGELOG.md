@@ -1417,6 +1417,18 @@ passing botmatch does not establish better human play.
 
 #### Security
 
+- Fuzz the lab's three parsers of outside input: the protocol 15 demo
+  reader, the BSP and PAK reader and the ARGLOG tape parser. Three cargo-fuzz
+  targets in `tools/argus_mcp/fuzz` run weekly and by hand from a nightly
+  `fuzz` workflow, seeded from committed tapes, LibreQuake's free maps and
+  synthesised demos, never id Software content. A bounded mutation test
+  carries the same never panic, never spin contract in the stable suite, and
+  on its first run it found two defects, now fixed with regression tests: a
+  PAK whose directory held a negative offset overflowed the bounds arithmetic,
+  and a demo whose view yaw neared the float limit spun the aim-rate wrap
+  forever, because subtracting 360 from such a value changes nothing
+  ([#849](https://github.com/saworbit/argus/issues/849)).
+
 - Install every Python package CI uses from a hash-locked file in
   `.github/requirements/` with `pip install --require-hashes`, transitive
   dependencies included. The perception copy must name exactly the frozen
