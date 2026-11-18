@@ -669,6 +669,15 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Stop the lab's Rust tests leaving directories in `%TEMP%`
+  ([#861](https://github.com/saworbit/argus/issues/861)). The console
+  injection and network client tests leaked one each on every run with an
+  engine present, and the two backup tests, the fingerprint test and the
+  stop-match test leaked one whenever they failed. All six now use
+  `test_support::TestDir`, which removes its directory on drop, so a panic
+  cleans up too. Before the change a run of the two engine tests left two new
+  directories; after it, a run in which one of them failed left none.
+
 - Keep the lab's Rust suite green on a loaded machine (#836). Three fixed
   waits in the lab itself are now bounds on a condition: `stop` waits up to
   5 s for a killed engine to exit instead of 200 ms, so it no longer reports

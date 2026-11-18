@@ -396,7 +396,8 @@ mod tests {
 
     #[test]
     fn backup_and_restore_roundtrip() {
-        let root = std::env::temp_dir().join(format!("argus-bak-{}", std::process::id()));
+        let dir = crate::test_support::TestDir::new("bak").unwrap();
+        let root = dir.path().to_path_buf();
         let src = root.join("src");
         let lq1 = root.join("lq1");
         fs::create_dir_all(&src).unwrap();
@@ -433,7 +434,6 @@ mod tests {
         assert_eq!(fs::read(src.join("argus_nav_dm4.qc")).unwrap(), b"nav-a");
         assert!(safe_backup_id("../x").is_none());
         assert!(safe_rel("../etc/passwd").is_none());
-        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
@@ -466,7 +466,8 @@ mod tests {
     // and from every later restore, with ok: true reported.
     #[test]
     fn two_installs_outside_the_root_both_survive() {
-        let base = std::env::temp_dir().join(format!("argus-bak2-{}", std::process::id()));
+        let dir = crate::test_support::TestDir::new("bak2").unwrap();
+        let base = dir.path();
         let root = base.join("repo");
         let outside = base.join("steam");
         fs::create_dir_all(root.join("src")).unwrap();
@@ -526,6 +527,5 @@ mod tests {
                 f.rel
             );
         }
-        let _ = fs::remove_dir_all(&base);
     }
 }
