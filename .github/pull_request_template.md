@@ -21,7 +21,7 @@
 - [ ] **Lab tests**: `cargo test --manifest-path tools/argus_mcp/Cargo.toml --locked --tests` passes, as CI runs it.
 - [ ] **Invariants**: `python tools/argus_ci.py all` passes locally.
 - [ ] **Directed reach**: `python tools/argus_reach.py <map>` verified if navigation changed.
-- [ ] **Changelog**: An entry under **Unreleased** in `CHANGELOG.md` describes the observable result, if there is one.
+- [ ] **Changelog**: A file in `changelog.d/` names its category and describes the observable result, if there is one.
 - [ ] **Licensing**: QC code in `src/` complies with GPLv2; tooling in `tools/` complies with MIT.
 
 ## Verification

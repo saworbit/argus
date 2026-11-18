@@ -76,6 +76,67 @@ class CIValidationTests(unittest.TestCase):
         self.assertEqual(len(failures), 1)
         self.assertIn("git ls-files failed", failures[0])
 
+    def test_changelog_fold_keeps_history_and_is_repeatable(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            fragments = root / "changelog.d"
+            fragments.mkdir()
+            changelog = root / "CHANGELOG.md"
+            history = "### 2026-11-18\n\n#### Fixed\n\n- Earlier release.\n"
+            changelog.write_text(
+                "## Main updates\n\n### Unreleased\n\n#### Fixed\n\n- Old fix.\n\n" + history,
+                encoding="utf-8")
+            (fragments / "910-lockfile.md").write_text("Fixed\nUpdate the lockfile.\n", encoding="utf-8")
+            (fragments / "912-build.md").write_text("Fixed\nRecord the build.\n", encoding="utf-8")
+            (fragments / "911-retired.md").write_text("Removed\nDrop an old flag.\n", encoding="utf-8")
+            self.assertIn("changelog", ci.CHECKS)
+            self.assertEqual(ci.check_changelog(root, fold=True), [])
+            folded = changelog.read_text(encoding="utf-8")
+            self.assertIn("#### Fixed\n\n- Record the build.\n- Update the lockfile.\n- Old fix.", folded)
+            self.assertIn("#### Removed\n\n- Drop an old flag.", folded)
+            self.assertTrue(folded.endswith(history))
+            self.assertEqual(len(list(fragments.iterdir())), 3)
+            self.assertEqual(ci.check_changelog(root, fold=True), [])
+            self.assertEqual(changelog.read_text(encoding="utf-8"), folded)
+
+    def test_changelog_rejects_invalid_fragments_before_writing(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            changelog = root / "CHANGELOG.md"
+            original = "### Unreleased\n\n"
+            changelog.write_text(original, encoding="utf-8")
+            fragments = root / "changelog.d"
+            fragments.mkdir()
+            for name, entry in {
+                "good.md": "Fixed\nA valid entry.\n",
+                "bad-category.md": "Bug\nUnknown category.\n",
+                "bad-dash.md": "Fixed\nAn em dash \u2014 here.\n",
+                "bad-body.md": "Added\nFirst line.\nSecond line.\n",
+                "bad-extension.MD": "Fixed\nUppercase extension.\n",
+            }.items():
+                (fragments / name).write_text(entry, encoding="utf-8")
+            failures = ci.check_changelog(root, fold=True)
+            self.assertEqual(len(failures), 4, failures)
+            for name in ("bad-category.md", "bad-dash.md", "bad-body.md", "bad-extension.MD"):
+                self.assertTrue(any(name in failure for failure in failures), failures)
+            self.assertEqual(changelog.read_text(encoding="utf-8"), original)
+
+    def test_changelog_failed_replace_keeps_old_file_and_pending_entry(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            changelog = root / "CHANGELOG.md"
+            original = "### Unreleased\n\n"
+            changelog.write_text(original, encoding="utf-8")
+            fragments = root / "changelog.d"
+            fragments.mkdir()
+            fragment = fragments / "910-lockfile.md"
+            fragment.write_text("Fixed\nUpdate the lockfile.\n", encoding="utf-8")
+            with patch.object(Path, "replace", side_effect=PermissionError("file in use")):
+                self.assertEqual(ci.check_changelog(root, fold=True), ["changelog: file in use"])
+            self.assertEqual(changelog.read_text(encoding="utf-8"), original)
+            self.assertTrue(fragment.is_file())
+            self.assertCountEqual(root.iterdir(), (changelog, fragments))
+
     @staticmethod
     def _refuted_repo(td, files, registry=None):
         """A throwaway git repo holding a synthetic refuted-claims registry."""

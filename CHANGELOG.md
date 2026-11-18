@@ -4,6 +4,7 @@ Changes to bot behaviour, navigation and the lab, newest first. Each entry
 describes the result and links to its implementation or detailed evidence.
 
 [Recent changes](#main-updates) |
+[Pending entries](changelog.d/) |
 [Versioned builds](#versioned-builds) |
 [Earlier builds](#earlier-builds) |
 [Full historical notes](docs/changelog-history.md) |
@@ -529,6 +530,8 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Give each pull request its own changelog entry file so concurrent changes can merge cleanly ([#909](https://github.com/saworbit/argus/issues/909)).
 
 - `tools/argus_reach.py` measures a spawn's distance to the graph where the
   body comes to rest ([#789](https://github.com/saworbit/argus/issues/789)):
@@ -2080,9 +2083,11 @@ Ranges are kept where the original record grouped several builds together.
 
 ## Maintaining this log
 
-- Add a dated section at the top of **Main updates**, using the UTC merge
-  date. Put new work under **Added**, **Changed**, **Fixed**, **Removed** or
-  **Maintenance**; omit empty categories.
+- Pull requests record pending entries in [`changelog.d/`](changelog.d/).
+- Before a release, run `python tools/argus_ci.py changelog --fold` in a
+  clean worktree. Review the new **Unreleased** bullets and stage the
+  changelog with the removal of the folded fragments in the same commit.
+  Running the fold again keeps each bullet once.
 - Write one concrete result per bullet, name the affected component, and link
   the PR. Describe what a player or lab operator can now observe.
 - Put test evidence and remaining limitations in separate bullets. State

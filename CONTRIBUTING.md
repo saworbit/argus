@@ -240,7 +240,7 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
    - Run `cargo test --manifest-path tools/argus_mcp/Cargo.toml --locked --tests`, as CI does.
    - Run `python tools/argus_ci.py all` for the repository invariants.
    - Run a short match to verify that telemetry records cleanly without engine warnings.
-3. **Open a PR**: Fill out the provided [Pull Request Template](.github/pull_request_template.md). Explain what changed, the rationale, and any telemetry observations. Add an entry under **Unreleased** in [CHANGELOG.md](CHANGELOG.md) when the change has an observable result.
+3. **Open a PR**: Fill out the provided [Pull Request Template](.github/pull_request_template.md). Explain what changed, the rationale, and any telemetry observations. When the change has an observable result, add a file such as `changelog.d/909-changelog-entries.md`. Use one category on the first line (**Added**, **Changed**, **Fixed**, **Removed**, **Maintenance** or **Security**) and one plain Markdown sentence on the next line with the issue number, if there is one. Use full URLs for links so they work after the entry is folded. Run `python tools/argus_ci.py changelog`.
 
 ### What CI checks
 
@@ -248,7 +248,7 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 
 | Check | Workflow | What it gates |
 |---|---|---|
-| `repo invariants` | [fast](.github/workflows/fast.yml) | `argus_ci.py all`: shipped binary pair, line endings, protected tapes, ignored machine-local study tapes, nav integrity, links, dashes, refuted rules, lab claims, suite wiring, build stamp, hashed Python installs |
+| `repo invariants` | [fast](.github/workflows/fast.yml) | `argus_ci.py all`: shipped binary pair, line endings, protected tapes, ignored machine-local study tapes, nav integrity, links, dashes, refuted rules, lab claims, suite wiring, build stamp, hashed Python installs, changelog fragments |
 | `lab test suite (rust)` | [fast](.github/workflows/fast.yml) | rustfmt, strict Clippy, rustdoc, the Rust suite and the Python suites |
 | `workflow lint` | [lint](.github/workflows/lint.yml) | actionlint and the zizmor workflow security audit |
 | `config schemas` | [lint](.github/workflows/lint.yml) | Dependabot, issue form, discussion form and `CITATION.cff` schemas |
