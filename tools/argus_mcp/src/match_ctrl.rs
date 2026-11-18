@@ -133,6 +133,19 @@ impl MatchCtrl {
         self.live.as_ref().map(|l| l.run_dir.join("qconsole.log"))
     }
 
+    /// Where a tool should tail the live match: qconsole.log when the
+    /// engine wrote one in the run directory, else the captured stdout,
+    /// which carries the same console lines (#810).
+    pub fn live_log_source(&self) -> Option<crate::pov_trigger::LogSource> {
+        let live = self.live.as_ref()?;
+        let q = live.run_dir.join("qconsole.log");
+        if q.is_file() {
+            Some(crate::pov_trigger::LogSource::File(q))
+        } else {
+            Some(crate::pov_trigger::LogSource::Buffer(live.stdout.clone()))
+        }
+    }
+
     /// Advisory launch preflight, not a reservation against other processes.
     pub fn check_port_available(&self) -> Result<(), String> {
         #[cfg(test)]
