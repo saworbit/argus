@@ -128,7 +128,9 @@ float argus_plan_serial;
 .vector ar_lastpos;
 .float  ar_stalls;
 .float  ar_goals;
-.float  ar_jump;
+.float  ar_jump;                // 1 reachability or escort, 2 a stall
+.float  ar_stallyaw;            // the heading a stall jump was checked on
+.float  ar_stallflight;         // airborne on a stall jump: hold that heading
 .float  ar_wanderturn;
 .float  ar_swim;
 .float  ar_nextjump;
@@ -1903,6 +1905,49 @@ float() Argus_JumpApex =
     return AR_JUMPVEL * AR_JUMPVEL / (2 * Argus_Gravity ());
 };
 
+// Should a reachability jump fire toward tp? Both branches of Argus_AI
+// used to fire whenever the steering point stood more than 24u above
+// the bot within 80u, with no other test, which was wrong at both ends.
+// Low end (#774): on ordinary 16-per-32 stairs the next seat is always
+// two treads up inside the 48u arrival radius, so every bot hopped dm3's
+// stairs and, airborne, overshot the 64u top walkway's corners. walkmove
+// steps 18u risers on its own, so the jump now waits for a riser taller
+// than that within 32u of the origin along the line, which on 32u treads
+// is never the second riser. High end (#782): on e1m7 a walkway seat
+// 160u overhead drew 70 of 104 untyped jumps from the low floor, futile
+// wherever they landed, because a jump climbs Argus_JumpApex (about 45u)
+// plus one step. Above that the bot keeps steering by its route.
+// Both tests are for dry feet only. A bot standing in a liquid keeps the
+// old rule: the first cut applied them everywhere and dm4 lava deaths rose
+// from 15 to 22 on ten fixed-clock seeds, the new ones bots standing still
+// and burning on the pit floor at z -384, where the old jump at any seat
+// above was part of how they got out.
+float(vector tp) Argus_ReachJumpWanted =
+{
+    local vector to, from;
+    local float rise, wet;
+
+    rise = tp_z - self.origin_z;
+    wet = (self.ar_feettype == CONTENT_LAVA || self.ar_feettype == CONTENT_SLIME
+           || self.ar_feettype == CONTENT_WATER);
+    if (rise <= 24 || (!wet && rise > Argus_JumpApex () + 18))
+        return FALSE;
+    to = tp - self.origin;
+    to_z = 0;
+    if (vlen (to) >= 80 || vlen (to) < 1)
+        return FALSE;
+    if (!(self.flags & FL_ONGROUND) || time <= self.ar_nextjump)
+        return FALSE;
+    if (wet)
+        return TRUE;
+    // a riser taller than a step, just ahead: brush entities count,
+    // players do not (MOVE_NOMONSTERS clips against bmodels only)
+    from = self.origin;
+    from_z = self.origin_z - 24 + 19;
+    traceline (from, from + normalize (to) * 32, TRUE, self);
+    return trace_fraction < 1;
+};
+
 // predictive gap jump (2026-08-20, the Omicron review, sampling
 // 10.3: at a non-walkable area their bot predicts the jump in 0.1 s
 // steps, collisions included, and jumps only "if it is satisfied
@@ -1978,12 +2023,11 @@ float(float myaw, float spd) Argus_GapJumpOK =
 // walkway seat 160u overhead is "above and within 80u", so a bot running
 // at the lake edge under it jumped, at 164 to 442 u/s) and 4 were gap
 // jumps. No jump site asked where it would land.
-float() Argus_JumpLandHazard =
+float(vector vh) Argus_JumpLandHazardVel =
 {
-    local vector vh, dir, p0, p1;
+    local vector dir, p0, p1;
     local float spd, t, g, tmax, c;
 
-    vh = self.velocity;
     vh_z = 0;
     spd = vlen (vh);
     if (spd < 1)
@@ -2026,6 +2070,29 @@ float() Argus_JumpLandHazard =
     if (pointcontents (p0) == CONTENT_WATER)
         return FALSE;           // a pool breaks any fall
     return TRUE;                // no landing in the window: the unknown
+};
+
+float() Argus_JumpLandHazard =
+{
+    return Argus_JumpLandHazardVel (self.velocity);
+};
+
+// The flight a stall jump will actually fly (#797). The stall detector
+// turns the bot 120 to 240 degrees on the tick it asks for the jump, and
+// a stalled bot carries almost no speed, so checking the launch velocity
+// approved a hop that air control then flew somewhere else: Joe Rogan
+// gained 116 u/s in the air on dm4 and turned 130 degrees into the north
+// west lava pocket. The flight is held on the stall heading (see the
+// airborne block), and with the wish fixed on one heading NQ air
+// acceleration adds at most 30 u/s along it, so that is the velocity
+// checked here.
+float() Argus_StallJumpLandHazard =
+{
+    local vector vh;
+    makevectors ('0 1 0' * self.ar_stallyaw);
+    vh = self.velocity;
+    vh_z = 0;
+    return Argus_JumpLandHazardVel (vh + v_forward * 30);
 };
 
 // wall slide on a blocked ground step (2026-09-16, GitHub #380).
@@ -2356,7 +2423,7 @@ void() Argus_Physics =
 {
     local vector wishdir, vh, rto;
     local float wl, spd, moveok, myaw, rhoriz, sready, wdrag, hopok, ljyaw;
-    local float protectedstep, tacticmove, vault;
+    local float protectedstep, tacticmove, vault, jumpkind, jumpveto;
 
     // Reset can run in the trigger before this frame's physics. Hold the
     // braking envelope briefly instead of accelerating a stale tactical yaw
@@ -2735,20 +2802,32 @@ void() Argus_Physics =
 
         if (!tacticmove && self.ar_jump)
         {
+            jumpkind = self.ar_jump;
             self.ar_jump = 0;
             // Reachability, stall and escort jumps fire wherever the bot
             // stands and carry its run speed. One that lands in lava is
-            // dropped, and the frame walks on under the brink guard.
-            if (!Argus_JumpLandHazard ())
+            // dropped, and the frame walks on under the brink guard. A
+            // stall jump is checked on the heading it will fly (#797).
+            if (jumpkind == 2)
+                jumpveto = Argus_StallJumpLandHazard ();
+            else
+                jumpveto = Argus_JumpLandHazard ();
+            if (!jumpveto)
             {
                 self.velocity_z = AR_JUMPVEL;
                 self.flags = self.flags - (self.flags & FL_ONGROUND);
+                self.ar_stallflight = (jumpkind == 2);
                 Argus_Event ("jump");
                 return;
             }
-            dprint ("ARGUS ");
-            dprint (self.netname);
-            dprint (" jumpveto\n");
+            // a bot already in lava or slime is told nothing new by a
+            // refusal, and logging every one buried the real vetoes (#797)
+            if (self.ar_feettype != CONTENT_LAVA && self.ar_feettype != CONTENT_SLIME)
+            {
+                dprint ("ARGUS ");
+                dprint (self.netname);
+                dprint (" jumpveto\n");
+            }
         }
 
         // Water-vault for wading bots standing on pool floor:
@@ -2786,6 +2865,7 @@ void() Argus_Physics =
             return;
         }
 
+        self.ar_stallflight = 0;        // so does a stall jump's
         if (self.ar_sprintstate == 3)
             self.ar_sprintstate = 0;    // sprint flight ends on any
                                         // grounded frame
@@ -3338,6 +3418,12 @@ void() Argus_Physics =
             vh_z = 0;
             if (vlen (vh) > 30)
                 wishdir = normalize (vh);
+        }
+        else if (self.ar_stallflight)
+        {
+            // the stall jump's checked heading (#797)
+            makevectors ('0 1 0' * self.ar_stallyaw);
+            wishdir = v_forward;
         }
         else if (self.ar_hopair && self.ar_node != world)
         {
@@ -11229,15 +11315,10 @@ void() Argus_AI =
     if (fighting)
     {
         // facing and moveyaw already set by combat; jumps for reachability only
-        if (havetarget && tp_z > self.origin_z + 24)
+        if (havetarget && Argus_ReachJumpWanted (tp))
         {
-            to = tp - self.origin;
-            to_z = 0;
-            if (vlen (to) < 80 && (self.flags & FL_ONGROUND) && time > self.ar_nextjump)
-            {
-                self.ar_jump = 1;
-                self.ar_nextjump = time + 0.8;
-            }
+            self.ar_jump = 1;
+            self.ar_nextjump = time + 0.8;
         }
     }
     else if (coop > 0 && self.ar_coop_local)
@@ -11463,15 +11544,10 @@ void() Argus_AI =
         }
         else
         {
-            if (tp_z > self.origin_z + 24 && !self.ar_liftwait)
+            if (!self.ar_liftwait && Argus_ReachJumpWanted (tp))
             {
-                to = tp - self.origin;
-                to_z = 0;
-                if (vlen (to) < 80 && (self.flags & FL_ONGROUND) && time > self.ar_nextjump)
-                {
-                    self.ar_jump = 1;
-                    self.ar_nextjump = time + 0.8;
-                }
+                self.ar_jump = 1;
+                self.ar_nextjump = time + 0.8;
             }
             // integrate the movement heading on ar_moveyaw, not on
             // facing: corner pre-aim below may point the eyes away
@@ -11603,9 +11679,22 @@ void() Argus_AI =
                 dprint (vtos(self.ar_node.origin));
                 dprint ("\n");
             }
-            if (self.flags & FL_ONGROUND)
-                self.ar_jump = 1;
             self.angles_y = self.angles_y + 120 + random () * 120;
+            // A stall jump flies the new heading, so it is checked and held
+            // on it (#797). From feet in a liquid it stays the old jump,
+            // checked on its launch line and not held: some pit floors are
+            // left that way, and refusing them outright cost lava deaths.
+            if (self.flags & FL_ONGROUND)
+            {
+                if (self.ar_feettype == CONTENT_LAVA || self.ar_feettype == CONTENT_SLIME
+                    || self.ar_feettype == CONTENT_WATER)
+                    self.ar_jump = 1;
+                else
+                {
+                    self.ar_jump = 2;
+                    self.ar_stallyaw = self.angles_y;
+                }
+            }
             if (self.ar_stallrun < 2)
             {
                 self.ar_node = world;
