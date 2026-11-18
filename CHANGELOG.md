@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Main as of 2026-11-15 is installed; the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) and the parked step 1b gate ([#583](https://github.com/saworbit/argus/issues/583)) remain open |
+| Development source | Main carries gameplay and navigation changes merged on 2026-11-18 that are not installed yet ([#884](https://github.com/saworbit/argus/pull/884), [#886](https://github.com/saworbit/argus/pull/886), [#891](https://github.com/saworbit/argus/pull/891), [#895](https://github.com/saworbit/argus/pull/895), [#896](https://github.com/saworbit/argus/pull/896), [#897](https://github.com/saworbit/argus/pull/897), [#903](https://github.com/saworbit/argus/pull/903)); the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) remains open |
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -886,6 +886,14 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- A fixed-clock tape is classed by its stated frame, not its sample gap
+  ([#901](https://github.com/saworbit/argus/issues/901)). At 14.25 ms the
+  telemetry fires every 36 frames, 0.513 s, and the one-decimal stamps
+  scatter the mean around the 0.5135 listen cutoff, so the #854 e1m7
+  validation dropped seed 250 as not listen while identical tapes passed.
+  Briefs, the corpus, compare and `argus_clock_validation.py` now read a
+  frame of 13 to 15 ms as `listen`; wall-clock tapes and other frames keep
+  the gap rule. `tools/argus_tick.py` reports such a tape by its frame.
 - Retire the three puppet-refused walks still shipping on e1m2 and e1m8
   ([#821](https://github.com/saworbit/argus/issues/821)): e1m2 n87 to n193,
   e1m8 n5 to n2 and n7 to n98. Both maps had refused their last
@@ -1564,6 +1572,31 @@ passing botmatch does not establish better human play.
   QC filenames with `--register` before any files change (#537).
 
 #### Maintenance
+
+- Shane's 2026-11-19 dm2 session on the installed build `004b4ff9ddf7` is
+  recorded as `runs/shane_dm2_2026-11-19_build004b4ff9.log` with its row in
+  `runs/human_scorecard.tsv`. It ran 4.1 minutes at skill 1 against three
+  bots and failed no scorecard gate: bots killed the player 2.44 times a
+  minute and the kill ratio was 0.70, the same reading as the 2026-11-18 dm4
+  session (2.1 and 0.6). Bots had no lava or world deaths and no freezes.
+  `argus_humanness.py`, with this session left out of the reference set,
+  scores the bot tracks at 1.398 against 1.568 to 1.648 on the three dm2
+  sessions before it; direction changes (58 a minute against a person's 41,
+  [#697](https://github.com/saworbit/argus/issues/697)) and local dwell stay
+  the largest gaps. dm2 now has one of the three sessions the objective needs
+  ([#610](https://github.com/saworbit/argus/issues/610)).
+
+- Shane's 2026-11-18 dm4 session on the installed build `004b4ff9ddf7` is
+  recorded as `runs/shane_dm4_2026-11-18_build004b4ff9.log` with its row in
+  `runs/human_scorecard.tsv`. It ran 3.8 minutes at skill 1 and failed no
+  scorecard gate. Bots killed the player 2.1 times a minute, the first
+  session inside the draft 2.0 to 3.0 band, and the kill ratio was 0.6,
+  under the draft 1.2 to 2.0 band; the sessions before it read 1.0 to 1.6
+  and 2.2 to 4.7. It is one of the three dm4 sessions the objective needs
+  ([#610](https://github.com/saworbit/argus/issues/610)). The status table
+  above now says main carries 2026-11-18 changes that are not installed and
+  no longer lists #583, closed on 2026-11-13. AGENTS.md names
+  `argus_floorlinks.py` and `argus_wishflips.py` in its question table.
 
 - Machine-local study tapes no longer need a `.gitignore` line per ladder
   stem ([#872](https://github.com/saworbit/argus/issues/872)). A run named
