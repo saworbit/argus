@@ -15,6 +15,11 @@ Pipeline:
       (quad/pent/ring/mega/LG/RL, horiz to 260u, at most two per
       landing; --no-rj skips pads)
   7b. lift links from func_plat (boarding/exit pads + vertical hop)
+  7c. a seat on each deathmatch spawn that stands on a solid brush
+      entity (e1m7's func_wall pads, section 7g2f), with up to four
+      one-way exits the runtime brink guard passes and whose run-off
+      lands dry; the reach report names every deathmatch spawn more
+      than 64u from a seat
   8. analyze static node visibility, exposure and nearest walk cover
   9. emit argus_nav_<map>.qc + JSON + a debug plot of the graph
      (pass --no-dispatcher; the dispatcher file is hand-maintained)
@@ -137,6 +142,7 @@ from argus_nav_slots import slot_count, clamp_walk, require_slots
 from argus_nav_artifacts import canonical_sidecar, refresh_banner, validate_pair, publish_pair, existing_bytes
 from argus_jump_anchor import require_anchor, audit as audit_jump_anchors
 from argus_bsp import Bsp
+import argus_navmesh as _navmesh
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -637,20 +643,26 @@ if RETYPE_DOORS:
 hull_contents = _bsp.h1
 
 # ---- 3. column sampling ----
-def column_floors(x, y):
-    """standable origin z values for this column, top down"""
+def column_floors(x, y, contents=None):
+    """standable origin z values for this column, top down
+
+    contents is the world's hull 1 unless a caller passes another test:
+    the spawn-pad pass (7g2f) passes one that also holds solid brush
+    entities, which the world hull does not (#783).
+    """
+    h1 = hull_contents if contents is None else contents
     out = []
     z = maxs[2] + 40
-    prev = hull_contents(x, y, z)
+    prev = h1(x, y, z)
     z -= 4
     while z > mins[2] - 4:
-        c = hull_contents(x, y, z)
+        c = h1(x, y, z)
         if prev == CONTENTS_EMPTY and c != CONTENTS_EMPTY:
             # refine boundary: lowest empty z in (z, z+4]
             lo, hi = z, z + 4
             for _ in range(6):
                 mid = (lo + hi) / 2
-                if hull_contents(x, y, mid) == CONTENTS_EMPTY: hi = mid
+                if h1(x, y, mid) == CONTENTS_EMPTY: hi = mid
                 else: lo = mid
             if c == CONTENTS_SOLID:            # standing on ground, not liquid/sky
                 out.append(round(hi, 1))
@@ -697,13 +709,17 @@ def h0_line_clear(a, b, node=None):
     return h0_line_clear(a, mid, near) and h0_line_clear(mid, b, far)
 
 
-def beeline_points(a, b):
+def beeline_points(a, b, floors=None):
     """6b's beeline walk between two origins (beeline_ok minus pos()).
 
     Lives up here so the shipped-graph modes can call navgen's own
     referee before sampling exists: --seat-links refuses any walk
-    this refuses.
+    this refuses. floors reads a column's standable heights and is
+    the world's column_floors for every link but a level walk off a
+    spawn pad, whose first steps stand on a brush entity (7g2f, #783).
     """
+    if floors is None:
+        floors = column_floors
     ax, ay, az = a
     bx, by, bz = b
     dist = ((bx-ax)**2 + (by-ay)**2) ** 0.5
@@ -728,13 +744,13 @@ def beeline_points(a, b):
         # still walkable when floor continues just beside it: probe the
         # line first, then perpendicular offsets either side
         for off in (0, 16, -16, 32, -32):
-            floors = column_floors(cx + px*off, cy + py*off)
-            for fz in floors:                 # climbable step first
+            heights = floors(cx + px*off, cy + py*off)
+            for fz in heights:                # climbable step first
                 if -STEP <= z - fz <= STEP:
                     nz = fz
                     break
             if nz is None:
-                for fz in floors:             # forward drop is fine
+                for fz in heights:            # forward drop is fine
                     if STEP < z - fz <= DROPMAX:
                         nz = fz
                         break
@@ -4210,6 +4226,188 @@ if _seatspec:
     print(f"seats sidecar: {_seats_added} seat(s) appended, {_seat_added} walk(s) "
           f"added, {_seat_had} already present, {len(_seat_cuts)} cut(s)")
 
+# ---- 7g2f. seats on spawn pads (#783) ----
+# e1m7's four z 280 deathmatch spawns stand on func_wall pads (spawnflags
+# 1792, deathmatch only). Hull 1 is the world's and holds no brush entity,
+# so nothing above ever sampled a pad: a bot spawned on one was 150u or
+# more from its nearest seat, and its first heading ran straight at a
+# walkway seat over the pad's edge. In six full-rate tapes 6 of 43 lava
+# deaths left a pad within 0.3 s of spawning (#773,
+# docs/e1m7-lava-investigation.md).
+#
+# A deathmatch spawn whose first floor is the top of a solid brush entity
+# at its spawn position (argus_navmesh.brush_boxes, the air layer's rules),
+# more than a step above any world floor in that column, gets a seat at
+# its exact position, the way 7g2e seats the sidecar: no fine sample, and
+# only the links minted here join it, so no Dijkstra, knit or closure link
+# ever reaches it. Its links are one-way exits to waypoints within
+# LINK_PATH_MAX and no more than DROPMAX below, nearest first, at most
+# PAD_EXITS, judged by what a bot running the line does, at run and at
+# walk speed:
+#
+#   - The runtime's brink guard has to pass the heading on every step of
+#     the run to the pad's edge (argus_guard_replica.Guard, the
+#     Argus_MoveHazard replica, over a hull 0 that holds the brush
+#     entities). Argus_DropLandHazard projects the landing from its probe
+#     point with the drop to the floor under that point, which beside a
+#     pad is the low floor 224u down, so it refuses every short drop onto
+#     e1m7's narrow walkways at speed. A link the guard refuses is one the
+#     bot is deflected off at the edge, so it is not minted.
+#   - The flight off the edge (argus_navmesh.run_off, the air layer's
+#     flight through hull 1 with the brush entities) must land dry, on no
+#     brush entity, within a step of the target's height, with floor at
+#     that height PAD_LAND_MARGIN further on: a body that lands at speed
+#     keeps sliding, and only a margin past the guard's probe lets the
+#     guard turn it before the edge. A walkway exit flown at run speed
+#     lands on its far lip, with the lake beyond it.
+#   - From the landing, beeline_points has to walk to the target.
+#
+# A line that leaves the pad with no lip, onto floor at its own height, is
+# a walk, and beeline_points judges it over floors that include the brush
+# tops. A pad with no exit stays unseated, and 7h names every deathmatch
+# spawn more than SPAWN_SEAT_MAX from a seat.
+PAD_EXITS = 4
+PAD_LAND_MARGIN = 48  # the guard probes 40u ahead at run speed
+SPAWN_SEAT_MAX = 64
+_pad_protect = set()  # (pad, exit), kept first at the clamp like 7g2e's walks
+_dm_spawns = [[float(v) for v in kv(b).get("origin", "0 0 0").split()]
+              for b in ent_blocks if kv(b).get("classname") == "info_player_deathmatch"]
+_pad_boxes = _navmesh.brush_boxes(_bsp) if _dm_spawns else []
+if _pad_boxes:
+    import argus_guard_replica as _guard_replica
+    _pad_world = _navmesh.WithBrushes(_bsp, _pad_boxes)
+    _pad_floor_cache = {}
+
+    def _pad_floors(x, y):
+        """column_floors with the brush entities standing where they spawn."""
+        if (x, y) not in _pad_floor_cache:
+            _pad_floor_cache[(x, y)] = column_floors(x, y, _pad_world.h1)
+        return _pad_floor_cache[(x, y)]
+
+    def _pad_h0(x, y, z):
+        """Hull 0 with the brush entities solid where they spawn."""
+        for _cls, _mn, _mx in _pad_boxes:
+            if (_mn[0] <= x <= _mx[0] and _mn[1] <= y <= _mx[1]
+                    and _mn[2] <= z <= _mx[2]):
+                return CONTENTS_SOLID
+        return h0_contents(x, y, z)
+
+    _pad_guard = _guard_replica.Guard(_pad_h0, gravity=GRAVITY)
+
+    def _pad_guard_veto(seat, target, speed):
+        """The guard branch that deflects a run from seat toward target."""
+        _d = ((target[0] - seat[0]) ** 2 + (target[1] - seat[1]) ** 2) ** 0.5
+        _ux, _uy = (target[0] - seat[0]) / _d, (target[1] - seat[1]) / _d
+        _yaw = _dmath.degrees(_dmath.atan2(_uy, _ux))
+        _reach = _guard_replica.probe_distance(speed)
+        _s = 0.0
+        while _s < _d:
+            _x, _y = seat[0] + _ux * _s, seat[1] + _uy * _s
+            _f = _navmesh.fall_to(_pad_world, _x, _y, seat[2] + STEP, maxdrop=2 * STEP)
+            if _f is None:
+                return None  # past the edge: airborne, the guard is done
+            _v = _pad_guard.move_hazard(_x, _y, _f, _yaw, _reach, speed)
+            if _v != "none":
+                return _v
+            _s += 4.0
+        return None
+
+    def _pad_exit_refusal(seat, target):
+        """Why seat -> target is not a pad exit, or None when it is."""
+        _r = _navmesh.run_off(_pad_world, seat, target, _navmesh.RUN, GRAVITY)
+        if _r is None:
+            # no lip: a level walk off the pad, or a wall before any edge
+            return None if beeline_points(seat, target, _pad_floors) else "beeline refuses"
+        _d = ((target[0] - seat[0]) ** 2 + (target[1] - seat[1]) ** 2) ** 0.5
+        _ux, _uy = (target[0] - seat[0]) / _d, (target[1] - seat[1]) / _d
+        for _speed in (_navmesh.RUN, _navmesh.WALK):
+            _veto = _pad_guard_veto(seat, target, _speed)
+            if _veto:
+                return f"the brink guard deflects the run ({_veto})"
+            if _speed != _navmesh.RUN:
+                _r = _navmesh.run_off(_pad_world, seat, target, _speed, GRAVITY)
+            if _r["run"] != "floor":
+                return f"lands in {_r['run']}"
+            if _r["on"]:
+                return "lands on a brush entity"
+            _land = _r["land"]
+            if abs(_land[2] - target[2]) > STEP:
+                return "lands off the target's level"
+            for _m in range(8, PAD_LAND_MARGIN + 1, 8):
+                _x, _y = _land[0] + _ux * _m, _land[1] + _uy * _m
+                if _pad_world.h1(_x, _y, _land[2] + STEP) != CONTENTS_EMPTY:
+                    break  # a wall stops the slide
+                _f = _navmesh.fall_to(_pad_world, _x, _y, _land[2] + STEP, maxdrop=2 * STEP)
+                if _f is None or hostile_at(_x, _y, _f):
+                    return "lands too near an edge"
+            if not beeline_points(_land, target):
+                return "no walk from the landing"
+        return None
+
+    _pad_base = len(ways)  # exits go only to waypoints that are not pads
+    _pads_seated, _pad_exit_count = 0, 0
+    _pad_refused = collections.Counter()
+    for _k, _o in enumerate(_dm_spawns):
+        _fz = next((f for f in _pad_floors(_o[0], _o[1]) if f <= _o[2] + 2.0), None)
+        if _fz is None:
+            continue
+        _wz = next((f for f in column_floors(_o[0], _o[1]) if f <= _o[2] + 2.0), None)
+        if _wz is not None and _fz - _wz <= STEP:
+            continue  # world floor, or a plate lying on one: sampled already
+        _on = _pad_world.box_at(_o[0], _o[1], _fz - 0.5)
+        if _on is None:
+            continue
+        _seat = (_o[0], _o[1], _fz)
+        _where = f"({_o[0]:.0f} {_o[1]:.0f} {_o[2]:.0f}) on {_on}"
+        if hull_contents(*_seat) != CONTENTS_EMPTY or hostile_at(*_seat):
+            print(f"  spawn pad {_where}: no dry standing room at z {_fz:.0f}; left unseated")
+            continue
+        _cands = []
+        for _j in range(_pad_base):
+            _t = pos(ways[_j])
+            _flat = ((_t[0] - _seat[0]) ** 2 + (_t[1] - _seat[1]) ** 2) ** 0.5
+            if 1.0 <= _flat <= LINK_PATH_MAX and -DROPMAX <= _t[2] - _fz <= STEP:
+                _cands.append((_flat, _j, _t))
+        _exits = []
+        for _flat, _j, _t in sorted(_cands):
+            if len(_exits) >= PAD_EXITS:
+                break
+            _why = "target stands in lava or slime" if hostile_at(*_t) else \
+                _pad_exit_refusal(_seat, _t)
+            if _why:
+                _pad_refused[_why] += 1
+                continue
+            _exits.append((_j, _flat))
+        if not _cands:
+            print(f"  spawn pad {_where}: no waypoint within {LINK_PATH_MAX}u and "
+                  f"{DROPMAX}u below; left unseated")
+            continue
+        if not _exits:
+            print(f"  spawn pad {_where}: none of {len(_cands)} waypoint(s) in "
+                  f"reach has a safe exit; left unseated")
+            continue
+        if not _limits.admits(len(ways), infrastructure=True):
+            print(f"  spawn pad {_where}: the waypoint budget is spent; left unseated")
+            continue
+        if len(ways) >= PROMO_CAP:
+            infra_spent += 1
+        # no fine sample: pos() answers from the exact-position table
+        _proven_positions[("pad", _k, 0)] = _seat
+        ways.append(("pad", _k, 0))
+        _i = len(ways) - 1
+        for _j, _flat in _exits:
+            links.setdefault(_i, {})[_j] = (_flat, 0)
+            _pad_protect.add((_i, _j))
+        _pads_seated += 1
+        _pad_exit_count += len(_exits)
+        print(f"  spawn pad {_where}: seat n{_i} at z {_fz:.0f}, exits "
+              + ", ".join(f"n{_j}" for _j, _ in _exits))
+    if _pads_seated or _pad_refused:
+        _why_text = ", ".join(f"{_n} {_w}" for _w, _n in sorted(_pad_refused.items()))
+        print(f"spawn pads: {_pads_seated} seat(s) on brush entities, "
+              f"{_pad_exit_count} exit link(s); refused {sum(_pad_refused.values())}"
+              + (f" ({_why_text})" if _why_text else ""))
+
 # ---- 7e1b. typed-link dedupe sweep ----
 # Emit-time dedupe is not enough on its own: the late passes (symmetric
 # closure, knitting, jump stitches, trace mining) add WALK links after
@@ -4244,7 +4442,8 @@ _indeg = collections.Counter(_j for outgoing in links.values() for _j in outgoin
 try:
     _nclamp = clamp_walk(
         links, teles, rjlinks, lifts, swims, trains, sprints,
-        key=lambda source, kv: (0 if (source, kv[0]) in _seat_protect else 1,
+        key=lambda source, kv: (0 if (source, kv[0]) in _seat_protect
+                                or (source, kv[0]) in _pad_protect else 1,
                                0 if kv[1][1] else 1,
                                -1_000_000 // max(1, _indeg[kv[0]]), kv[1][0]))
 except ValueError as error:
@@ -4452,6 +4651,23 @@ if _spawn_reach:
         print("directed reach: WARNING - routes from that spawn will "
               "fail most goals; bots there take the trapped exit. Do "
               "NOT ship this graph without a look.")
+
+# Reach is measured from the seat NEAREST each spawn, however far away it
+# is, so a spawn the graph never seated reads as healthy here. e1m7's pads
+# did (#783): every bot spawned on one started 150u from its seat, with
+# the pad's edge in between. Name every deathmatch spawn that far out.
+_far_spawns = []
+for _o in _dm_spawns:
+    _bd = min((((_w[0] - _o[0]) ** 2 + (_w[1] - _o[1]) ** 2 + (_w[2] - _o[2]) ** 2) ** 0.5
+               for _w in map(pos, ways)), default=None)
+    if _bd is None or _bd > SPAWN_SEAT_MAX:
+        _far_spawns.append((_bd, _o))
+if _dm_spawns:
+    print(f"spawn seats: {len(_far_spawns)} of {len(_dm_spawns)} deathmatch "
+          f"spawn(s) more than {SPAWN_SEAT_MAX}u from a seat")
+    for _bd, _o in _far_spawns:
+        print(f"  spawn ({_o[0]:.0f} {_o[1]:.0f} {_o[2]:.0f}) is "
+              + ("not near any seat" if _bd is None else f"{_bd:.0f}u from its nearest seat"))
 
 # The route-poison and isolated-waypoint prunes run after section 7g2e,
 # and a seat they strip takes its walks with it: check every sidecar walk
