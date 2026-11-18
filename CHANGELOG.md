@@ -4,6 +4,7 @@ Changes to bot behaviour, navigation and the lab, newest first. Each entry
 describes the result and links to its implementation or detailed evidence.
 
 [Recent changes](#main-updates) |
+[Pending entries](changelog.d/) |
 [Versioned builds](#versioned-builds) |
 [Earlier builds](#earlier-builds) |
 [Full historical notes](docs/changelog-history.md) |
@@ -15,7 +16,7 @@ describes the result and links to its implementation or detailed evidence.
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
-| Lab version | 0.32; [operator guide and version history](tools/argus_mcp/README.md#versions) |
+| Lab version | 0.33. See the [operator guide and version history](tools/argus_mcp/README.md#versions). |
 
 Main-update dates are UTC merge dates. Numbered builds retain their recorded
 build dates. A merged change does not imply a new numbered release, and a
@@ -529,6 +530,8 @@ passing botmatch does not establish better human play.
   engine on dm4 and dm2 (#530).
 
 #### Changed
+
+- Give each pull request its own changelog entry file so concurrent changes can merge cleanly ([#909](https://github.com/saworbit/argus/issues/909)).
 
 - `tools/argus_reach.py` measures a spawn's distance to the graph where the
   body comes to rest ([#789](https://github.com/saworbit/argus/issues/789)):
@@ -1573,6 +1576,10 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Keep the current swim drag after five played pairs each on dm3 and e1m2. The faster setting met the gates and recorded more swim entries on both maps ([#761](https://github.com/saworbit/argus/issues/761)).
+
+- Bump the lab to 0.33.0 for the fixed-clock MCP, mill and tooling changes ([#910](https://github.com/saworbit/argus/issues/910)).
+
 - Shane's 2026-11-19 dm2 session on the installed build `004b4ff9ddf7` is
   recorded as `runs/shane_dm2_2026-11-19_build004b4ff9.log` with its row in
   `runs/human_scorecard.tsv`. It ran 4.1 minutes at skill 1 against three
@@ -2076,9 +2083,11 @@ Ranges are kept where the original record grouped several builds together.
 
 ## Maintaining this log
 
-- Add a dated section at the top of **Main updates**, using the UTC merge
-  date. Put new work under **Added**, **Changed**, **Fixed**, **Removed** or
-  **Maintenance**; omit empty categories.
+- Pull requests record pending entries in [`changelog.d/`](changelog.d/).
+- Before a release, run `python tools/argus_ci.py changelog --fold` in a
+  clean worktree. Review the new **Unreleased** bullets and stage the
+  changelog with the removal of the folded fragments in the same commit.
+  Running the fold again keeps each bullet once.
 - Write one concrete result per bullet, name the affected component, and link
   the PR. Describe what a player or lab operator can now observe.
 - Put test evidence and remaining limitations in separate bullets. State
