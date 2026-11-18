@@ -421,6 +421,9 @@ button/door, offset-entry, active-health, plan and muzzle
 amendments in memory, then reconstructs
 the historical health/inventory candidate for static checks. Those historical
 checks alone do not establish the behaviour of a current build.
+`python tools/health_inventory_parked.py --amend <name> --base <rev> --scope
+"<text>"` adds the reverse patch and manifest entries that any edit to
+`src/argus.qc` needs (CONTRIBUTING.md, "Production source manifest").
 
 Step 1b is now reactivated in development. The manifest additionally verifies
 the actual active function hashes; reverse patches retain the frozen historical
