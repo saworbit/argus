@@ -1162,6 +1162,16 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Machine-local study tapes no longer need a `.gitignore` line per ladder
+  stem ([#872](https://github.com/saworbit/argus/issues/872)). A run named
+  `study_<stem>_...` is covered, tape and navigation receipt, by one rule on
+  every branch, so a branch's tapes are no longer trackable on main until its
+  ignore lines merge, the gap through which a `git clean` deleted 197 of
+  them. The new `argus_ci.py localtapes` check fails when a results file in
+  `runs/` says its tapes are machine-local but Git would track one of them;
+  it passes on the 14 existing records. The older lines for 22 stems stay, so
+  recorded run names still hold.
+
 - `cargo deny` ignores RUSTSEC-2026-0543, the notice that `chrono` is
   unmaintained. No upgrade exists, and `rmcp` and `schemars` depend on it as
   well as the lab, so the policy records why it is ignored and when to look

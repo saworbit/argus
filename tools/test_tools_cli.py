@@ -1885,6 +1885,50 @@ tool_timeout_sec = 700
         p.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return str(p)
 
+    def _localtapes_repo(self, root, runs):
+        """A repo with the real .gitignore and one machine-local results file."""
+        subprocess.run(["git", "init", "-q"], capture_output=True,
+                       cwd=str(root), check=True)
+        shutil.copy(ROOT / ".gitignore", root / ".gitignore")
+        (root / "runs").mkdir()
+        doc = {"tape_storage": "machine-local; hashes recorded here",
+               "tapes": [{"run": run, "map": "dm4", "bytes": 1,
+                          "sha256": "0" * 64} for run in runs]}
+        (root / "runs" / "study.results.json").write_text(
+            json.dumps(doc), encoding="utf-8")
+
+    def test_argus_ci_localtapes_needs_no_ignore_line_for_a_study_prefix(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._localtapes_repo(Path(td), ["study_newladder_ctl_r1",
+                                             "study_newladder_cand_r1"])
+            res = self.run_tool("argus_ci.py", "localtapes", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("localtapes: ok", res.stdout)
+
+    def test_argus_ci_localtapes_rejects_a_trackable_machine_local_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._localtapes_repo(Path(td), ["study_ok_r1", "newstem_ctl_r1"])
+            res = self.run_tool("argus_ci.py", "localtapes", "--root", td)
+            self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+            self.assertIn("runs/study.results.json", res.stdout)
+            self.assertIn("track 2 of them, e.g. runs/newstem_ctl_r1.log", res.stdout)
+            self.assertNotIn("study_ok_r1", res.stdout)
+
+    def test_argus_ci_localtapes_skips_without_machine_local_results(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._localtapes_repo(Path(td), [])
+            doc = {"tapes": [{"run": "newstem_ctl_r1"}]}
+            (Path(td) / "runs" / "study.results.json").write_text(
+                json.dumps(doc), encoding="utf-8")
+            res = self.run_tool("argus_ci.py", "localtapes", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("localtapes: skipped", res.stdout)
+
+    def test_argus_ci_localtapes_passes_on_the_committed_records(self):
+        res = self.run_tool("argus_ci.py", "localtapes")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("localtapes: ok", res.stdout)
+
     def test_argus_ci_tapes_allows_additions(self):
         with tempfile.TemporaryDirectory() as td:
             cf = self._changed_file(td, [
