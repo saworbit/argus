@@ -177,6 +177,8 @@ void() Argus_Nav_Spawn_e1m3 =
     local entity n172;
     local entity n173;
     local entity n174;
+    local entity n175;
+    local entity n176;
 
     n0 = Argus_NavNode ('-1719 -591 -336');
     n1 = Argus_NavNode ('-1655 -559 -488');
@@ -338,21 +340,23 @@ void() Argus_Nav_Spawn_e1m3 =
     n157 = Argus_NavNode ('1545 753 560');
     n158 = Argus_NavNode ('1545 945 560');
     n159 = Argus_NavNode ('1609 -655 -136');
-    n160 = Argus_NavNode ('1609 177 -136');
-    n161 = Argus_NavNode ('1673 -303 -136');
-    n162 = Argus_NavNode ('1641 -15 -136');
-    n163 = Argus_NavNode ('1673 305 669');
-    n164 = Argus_NavNode ('1673 465 669');
-    n165 = Argus_NavNode ('1673 721 669');
-    n166 = Argus_NavNode ('1673 945 669');
-    n167 = Argus_NavNode ('1609 -591 -136');
-    n168 = Argus_NavNode ('425 -847 -328');
-    n169 = Argus_NavNode ('425 -815 -104');
-    n170 = Argus_NavNode ('169 -1039 -128');
-    n171 = Argus_NavNode ('9 -1007 72');
-    n172 = Argus_NavNode ('1321 273 -136');
-    n173 = Argus_NavNode ('1513 337 576');
-    n174 = Argus_NavNode ('-1143 -527 -368');
+    n160 = Argus_NavNode ('1577 -367 84');
+    n161 = Argus_NavNode ('1577 -143 80');
+    n162 = Argus_NavNode ('1609 177 -136');
+    n163 = Argus_NavNode ('1673 -303 -136');
+    n164 = Argus_NavNode ('1641 -15 -136');
+    n165 = Argus_NavNode ('1673 305 669');
+    n166 = Argus_NavNode ('1673 465 669');
+    n167 = Argus_NavNode ('1673 721 669');
+    n168 = Argus_NavNode ('1673 945 669');
+    n169 = Argus_NavNode ('1609 -591 -136');
+    n170 = Argus_NavNode ('425 -847 -328');
+    n171 = Argus_NavNode ('425 -815 -104');
+    n172 = Argus_NavNode ('169 -1039 -128');
+    n173 = Argus_NavNode ('9 -1007 72');
+    n174 = Argus_NavNode ('1321 273 -136');
+    n175 = Argus_NavNode ('1513 337 576');
+    n176 = Argus_NavNode ('-1143 -527 -368');
 
     Argus_NavLink (n0, n1);
     Argus_NavLink (n1, n3);
@@ -397,7 +401,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n16, n14);
     Argus_NavLink (n16, n21);
     Argus_NavLink (n16, n5);
-    Argus_NavLink (n17, n174);
+    Argus_NavLink (n17, n176);
     Argus_NavLink (n17, n8);
     Argus_NavLink (n17, n25);
     Argus_NavLink (n17, n20);
@@ -405,7 +409,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLinkDoor (n18, n32);
     Argus_NavLink (n19, n6);
     Argus_NavLink (n19, n10);
-    Argus_NavLink (n20, n174);
+    Argus_NavLink (n20, n176);
     Argus_NavLink (n20, n11);
     Argus_NavLink (n20, n25);
     Argus_NavLink (n20, n17);
@@ -425,7 +429,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n24, n34);
     Argus_NavLink (n24, n23);
     Argus_NavLink (n24, n31);
-    Argus_NavLink (n25, n174);
+    Argus_NavLink (n25, n176);
     Argus_NavLink (n25, n20);
     Argus_NavLink (n25, n17);
     Argus_NavLink (n25, n23);
@@ -572,7 +576,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n73, n58);
     Argus_NavLink (n73, n72);
     Argus_NavLinkDoor (n73, n64);
-    Argus_NavLink (n74, n171);
+    Argus_NavLink (n74, n173);
     Argus_NavLink (n74, n64);
     Argus_NavLink (n75, n88);
     Argus_NavLink (n75, n68);
@@ -592,7 +596,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n85, n86);
     Argus_NavLink (n86, n93);
     Argus_NavLink (n86, n85);
-    Argus_NavLink (n87, n170);
+    Argus_NavLink (n87, n172);
     Argus_NavLink (n87, n97);
     Argus_NavLink (n88, n75);
     Argus_NavLink (n88, n95);
@@ -601,7 +605,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n89, n83);
     Argus_NavLink (n90, n94);
     Argus_NavLink (n90, n100);
-    Argus_NavLink (n91, n170);
+    Argus_NavLink (n91, n172);
     Argus_NavLink (n91, n97);
     Argus_NavLink (n91, n101);
     Argus_NavLink (n92, n99);
@@ -610,15 +614,15 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n93, n99);
     Argus_NavLink (n93, n86);
     Argus_NavLink (n94, n90);
-    Argus_NavLink (n94, n170);
+    Argus_NavLink (n94, n172);
     Argus_NavLink (n94, n97);
     Argus_NavLink (n94, n100);
     Argus_NavLink (n95, n88);
-    Argus_NavLink (n95, n168);
+    Argus_NavLink (n95, n170);
     Argus_NavLink (n95, n75);
     Argus_NavLink (n96, n80);
     Argus_NavLink (n96, n103);
-    Argus_NavLink (n97, n170);
+    Argus_NavLink (n97, n172);
     Argus_NavLink (n97, n87);
     Argus_NavLink (n97, n91);
     Argus_NavLink (n97, n101);
@@ -635,7 +639,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n101, n111);
     Argus_NavLinkDoor (n101, n98);
     Argus_NavLink (n101, n97);
-    Argus_NavLink (n102, n169);
+    Argus_NavLink (n102, n171);
     Argus_NavLink (n102, n107);
     Argus_NavLink (n103, n104);
     Argus_NavLink (n103, n113);
@@ -647,12 +651,12 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n105, n104);
     Argus_NavLink (n105, n114);
     Argus_NavLink (n105, n99);
-    Argus_NavLink (n106, n168);
+    Argus_NavLink (n106, n170);
     Argus_NavLink (n106, n117);
     Argus_NavLink (n106, n108);
     Argus_NavLink (n107, n109);
     Argus_NavLink (n107, n102);
-    Argus_NavLink (n108, n168);
+    Argus_NavLink (n108, n170);
     Argus_NavLink (n108, n106);
     Argus_NavLink (n108, n117);
     Argus_NavLink (n109, n115);
@@ -671,9 +675,9 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLink (n115, n109);
     Argus_NavLink (n116, n115);
     Argus_NavLink (n117, n106);
-    Argus_NavLink (n117, n168);
+    Argus_NavLink (n117, n170);
     Argus_NavLink (n117, n108);
-    Argus_NavLinkJump (n118, n169, 0);    // approach 0, landing 56, arc 0
+    Argus_NavLinkJump (n118, n171, 0);    // approach 0, landing 56, arc 0
     Argus_NavLink (n119, n111);
     Argus_NavLink (n120, n122);
     Argus_NavLink (n120, n124);
@@ -761,78 +765,81 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavLinkDoor (n149, n142);
     Argus_NavLinkDoor (n149, n148);
     Argus_NavLink (n150, n139);
-    Argus_NavLink (n150, n160);
-    Argus_NavLinkDoor (n150, n172);
+    Argus_NavLink (n150, n162);
+    Argus_NavLinkDoor (n150, n174);
     Argus_NavLinkDoor (n150, n141);
-    Argus_NavLink (n151, n173);
+    Argus_NavLink (n151, n175);
     Argus_NavLink (n151, n140);
-    Argus_NavLink (n152, n172);
+    Argus_NavLink (n152, n174);
     Argus_NavLinkDoor (n153, n144);
-    Argus_NavLink (n153, n161);
-    Argus_NavLinkDoor (n153, n167);
+    Argus_NavLink (n153, n163);
+    Argus_NavLinkDoor (n153, n169);
     Argus_NavLinkDoor (n153, n159);
-    Argus_NavLink (n154, n162);
-    Argus_NavLink (n154, n161);
-    Argus_NavLink (n155, n173);
+    Argus_NavLink (n154, n164);
+    Argus_NavLink (n154, n163);
+    Argus_NavLink (n155, n175);
     Argus_NavLink (n157, n158);
     Argus_NavLink (n157, n147);
     Argus_NavLink (n157, n148);
     Argus_NavLink (n158, n157);
     Argus_NavLink (n158, n148);
-    Argus_NavLinkDoor (n159, n167);
+    Argus_NavLinkDoor (n159, n169);
     Argus_NavLinkDoor (n159, n153);
-    Argus_NavLink (n160, n150);
-    Argus_NavLink (n160, n162);
-    Argus_NavLink (n161, n153);
-    Argus_NavLink (n161, n154);
-    Argus_NavLink (n161, n162);
-    Argus_NavLink (n162, n154);
-    Argus_NavLink (n162, n160);
-    Argus_NavLink (n162, n161);
-    Argus_NavLink (n163, n173);
-    Argus_NavLinkJump (n164, n163, 0);    // approach 0, landing 0, arc 0
-    Argus_NavLinkJump (n165, n164, 0);    // approach 0, landing 0, arc 0
+    Argus_NavLinkJump (n160, n161, 0);    // approach 0, landing 80, arc 0
+    Argus_NavLink (n161, n164);
+    Argus_NavLink (n162, n150);
+    Argus_NavLink (n162, n164);
+    Argus_NavLink (n163, n153);
+    Argus_NavLink (n163, n154);
+    Argus_NavLink (n163, n164);
+    Argus_NavLink (n164, n154);
+    Argus_NavLink (n164, n162);
+    Argus_NavLink (n164, n163);
+    Argus_NavLink (n165, n175);
     Argus_NavLinkJump (n166, n165, 0);    // approach 0, landing 0, arc 0
-    Argus_NavLinkDoor (n167, n159);
-    Argus_NavLinkDoor (n167, n153);
-    Argus_NavLink (n168, n108);
-    Argus_NavLink (n168, n106);
-    Argus_NavLink (n168, n95);
-    Argus_NavLink (n168, n117);
-    Argus_NavLink (n169, n102);
-    Argus_NavLinkJump (n169, n118, 0);    // approach 0, landing 88, arc 0
-    Argus_NavLink (n170, n87);
-    Argus_NavLink (n170, n97);
-    Argus_NavLink (n170, n91);
-    Argus_NavLink (n171, n74);
-    Argus_NavLinkDoor (n172, n150);
-    Argus_NavLink (n172, n152);
-    Argus_NavLink (n173, n155);
-    Argus_NavLink (n173, n151);
-    Argus_NavLink (n174, n17);
-    Argus_NavLink (n174, n25);
-    Argus_NavLink (n174, n20);
+    Argus_NavLinkJump (n167, n166, 0);    // approach 0, landing 0, arc 0
+    Argus_NavLinkJump (n168, n167, 0);    // approach 0, landing 0, arc 0
+    Argus_NavLinkDoor (n169, n159);
+    Argus_NavLinkDoor (n169, n153);
+    Argus_NavLink (n170, n108);
+    Argus_NavLink (n170, n106);
+    Argus_NavLink (n170, n95);
+    Argus_NavLink (n170, n117);
+    Argus_NavLink (n171, n102);
+    Argus_NavLinkJump (n171, n118, 0);    // approach 0, landing 88, arc 0
+    Argus_NavLink (n172, n87);
+    Argus_NavLink (n172, n97);
+    Argus_NavLink (n172, n91);
+    Argus_NavLink (n173, n74);
+    Argus_NavLinkDoor (n174, n150);
+    Argus_NavLink (n174, n152);
+    Argus_NavLink (n175, n155);
+    Argus_NavLink (n175, n151);
+    Argus_NavLink (n176, n17);
+    Argus_NavLink (n176, n25);
+    Argus_NavLink (n176, n20);
     Argus_NavLinkSprint (n107, n118);
-    Argus_NavLinkSprint (n11, n174);
-    Argus_NavLinkSprint (n174, n11);
+    Argus_NavLinkSprint (n11, n176);
+    Argus_NavLinkSprint (n176, n11);
     Argus_NavLinkSprint (n102, n118);
     Argus_NavLinkSprint (n128, n126);
-    Argus_NavLink (n160, n147);    // teleporter
+    Argus_NavLink (n162, n147);    // teleporter
+    Argus_NavLink (n159, n160);    // teleporter
     Argus_NavLink (n15, n16);    // teleporter
     Argus_NavLink (n143, n148);    // teleporter
     Argus_NavLink (n143, n133);    // teleporter
     Argus_NavLink (n156, n158);    // teleporter
     Argus_NavLink (n132, n36);    // teleporter
-    Argus_NavLinkRocket (n1, n0);
     Argus_NavLinkRocket (n126, n122);
-    Argus_NavLinkLift (n168, n169);
     Argus_NavLinkLift (n170, n171);
     Argus_NavLinkLift (n172, n173);
-    Argus_NavLinkLift (n173, n172);
+    Argus_NavLinkLift (n174, n175);
+    Argus_NavLinkLift (n175, n174);
     Argus_NavLinkLift (n81, n82);
     Argus_NavLinkLift (n82, n81);
-    Argus_NavLinkLift (n13, n174);
-    Argus_NavLinkLift (n174, n13);
+    Argus_NavLinkLift (n13, n176);
+    Argus_NavLinkLift (n176, n13);
+    Argus_NavLinkSwim (n1, n0);
     Argus_NavLinkSwim (n3, n4);
     Argus_NavLinkSwim (n3, n2);
     Argus_NavLinkSwim (n13, n17);
@@ -842,10 +849,10 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavRegion (n15, 1);
     Argus_NavRegion (n112, 2);
     Argus_NavRegion (n116, 3);
-    Argus_NavRegion (n163, 4);
-    Argus_NavRegion (n164, 4);
     Argus_NavRegion (n165, 4);
     Argus_NavRegion (n166, 4);
+    Argus_NavRegion (n167, 4);
+    Argus_NavRegion (n168, 4);
 
     // Static tactical annotations: exposure, hidden target, first walk hop
     Argus_NavTactics (n0, 1, world, world);
@@ -908,7 +915,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavTactics (n57, 7, n66, n67);
     Argus_NavTactics (n58, 9, n66, n67);
     Argus_NavTactics (n59, 5, world, world);
-    Argus_NavTactics (n60, 5, n168, n68);
+    Argus_NavTactics (n60, 5, n170, n68);
     Argus_NavTactics (n61, 6, world, world);
     Argus_NavTactics (n62, 5, world, world);
     Argus_NavTactics (n63, 11, world, world);
@@ -916,7 +923,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavTactics (n65, 14, n39, n56);
     Argus_NavTactics (n66, 9, n56, n65);
     Argus_NavTactics (n67, 13, n56, n66);
-    Argus_NavTactics (n68, 6, n168, n88);
+    Argus_NavTactics (n68, 6, n170, n88);
     Argus_NavTactics (n69, 6, world, world);
     Argus_NavTactics (n70, 10, world, world);
     Argus_NavTactics (n71, 11, n47, n65);
@@ -935,15 +942,15 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavTactics (n84, 3, world, world);
     Argus_NavTactics (n85, 6, world, world);
     Argus_NavTactics (n86, 3, world, world);
-    Argus_NavTactics (n87, 2, n91, n170);
-    Argus_NavTactics (n88, 6, n168, n95);
+    Argus_NavTactics (n87, 2, n91, n172);
+    Argus_NavTactics (n88, 6, n170, n95);
     Argus_NavTactics (n89, 5, n62, n76);
     Argus_NavTactics (n90, 4, n109, n100);
     Argus_NavTactics (n91, 4, n101, n101);
     Argus_NavTactics (n92, 2, n86, n93);
     Argus_NavTactics (n93, 4, world, world);
     Argus_NavTactics (n94, 2, n115, n100);
-    Argus_NavTactics (n95, 9, n106, n168);
+    Argus_NavTactics (n95, 9, n106, n170);
     Argus_NavTactics (n96, 3, n113, n103);
     Argus_NavTactics (n97, 5, n111, n101);
     Argus_NavTactics (n98, 2, world, world);
@@ -954,9 +961,9 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavTactics (n103, 6, n114, n104);
     Argus_NavTactics (n104, 4, n113, n113);
     Argus_NavTactics (n105, 3, n114, n114);
-    Argus_NavTactics (n106, 4, n95, n168);
+    Argus_NavTactics (n106, 4, n95, n170);
     Argus_NavTactics (n107, 6, n100, n109);
-    Argus_NavTactics (n108, 5, n88, n168);
+    Argus_NavTactics (n108, 5, n88, n170);
     Argus_NavTactics (n109, 5, n100, n115);
     Argus_NavTactics (n110, 2, world, world);
     Argus_NavTactics (n111, 3, n97, n101);
@@ -965,7 +972,7 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavTactics (n114, 2, n105, n105);
     Argus_NavTactics (n115, 4, n94, n100);
     Argus_NavTactics (n116, 3, world, world);
-    Argus_NavTactics (n117, 8, n75, n168);
+    Argus_NavTactics (n117, 8, n75, n170);
     Argus_NavTactics (n118, 7, world, world);
     Argus_NavTactics (n119, 4, n97, n111);
     Argus_NavTactics (n120, 9, world, world);
@@ -987,42 +994,44 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_NavTactics (n136, 5, world, world);
     Argus_NavTactics (n137, 17, n132, n138);
     Argus_NavTactics (n138, 18, n130, n132);
-    Argus_NavTactics (n139, 5, n162, n150);
+    Argus_NavTactics (n139, 5, n164, n150);
     Argus_NavTactics (n140, 16, n133, n130);
     Argus_NavTactics (n141, 5, world, world);
     Argus_NavTactics (n142, 15, world, world);
     Argus_NavTactics (n143, 0, world, world);
-    Argus_NavTactics (n144, 13, world, world);
+    Argus_NavTactics (n144, 14, world, world);
     Argus_NavTactics (n145, 4, world, world);
     Argus_NavTactics (n146, 4, n128, n134);
     Argus_NavTactics (n147, 19, world, world);
     Argus_NavTactics (n148, 17, n131, n138);
     Argus_NavTactics (n149, 11, world, world);
-    Argus_NavTactics (n150, 5, n154, n160);
+    Argus_NavTactics (n150, 5, n154, n162);
     Argus_NavTactics (n151, 15, n132, n140);
     Argus_NavTactics (n152, 4, world, world);
-    Argus_NavTactics (n153, 14, n150, n161);
-    Argus_NavTactics (n154, 6, n150, n162);
-    Argus_NavTactics (n155, 15, n132, n173);
+    Argus_NavTactics (n153, 15, n150, n163);
+    Argus_NavTactics (n154, 6, n150, n164);
+    Argus_NavTactics (n155, 15, n132, n175);
     Argus_NavTactics (n156, 0, world, world);
     Argus_NavTactics (n157, 13, n151, n147);
-    Argus_NavTactics (n158, 15, n173, n148);
+    Argus_NavTactics (n158, 15, n175, n148);
     Argus_NavTactics (n159, 6, world, world);
-    Argus_NavTactics (n160, 8, world, world);
-    Argus_NavTactics (n161, 13, n150, n162);
-    Argus_NavTactics (n162, 9, n139, n160);
-    Argus_NavTactics (n163, 13, world, world);
-    Argus_NavTactics (n164, 17, world, world);
-    Argus_NavTactics (n165, 14, world, world);
-    Argus_NavTactics (n166, 12, world, world);
-    Argus_NavTactics (n167, 6, world, world);
-    Argus_NavTactics (n168, 6, n88, n95);
-    Argus_NavTactics (n169, 4, n109, n102);
-    Argus_NavTactics (n170, 5, n111, n97);
-    Argus_NavTactics (n171, 9, world, world);
-    Argus_NavTactics (n172, 6, world, world);
-    Argus_NavTactics (n173, 14, n132, n151);
-    Argus_NavTactics (n174, 17, world, world);
+    Argus_NavTactics (n160, 3, world, world);
+    Argus_NavTactics (n161, 4, world, world);
+    Argus_NavTactics (n162, 9, world, world);
+    Argus_NavTactics (n163, 14, n150, n164);
+    Argus_NavTactics (n164, 9, n139, n162);
+    Argus_NavTactics (n165, 13, world, world);
+    Argus_NavTactics (n166, 17, world, world);
+    Argus_NavTactics (n167, 14, world, world);
+    Argus_NavTactics (n168, 12, world, world);
+    Argus_NavTactics (n169, 7, world, world);
+    Argus_NavTactics (n170, 6, n88, n95);
+    Argus_NavTactics (n171, 4, n109, n102);
+    Argus_NavTactics (n172, 5, n111, n97);
+    Argus_NavTactics (n173, 9, world, world);
+    Argus_NavTactics (n174, 6, world, world);
+    Argus_NavTactics (n175, 14, n132, n151);
+    Argus_NavTactics (n176, 17, world, world);
 
     // Camera vantage nodes (Cartographer spectator anchors)
     Argus_AddCamNode ('-1367 -143 -40', '-15 -9 0', "arena_1");
@@ -1031,5 +1040,5 @@ void() Argus_Nav_Spawn_e1m3 =
     Argus_AddCamNode ('-1015 -527 -336', '-15 159 0', "arena_4");
     Argus_AddCamNode ('-887 -207 -336', '-15 -10 0', "arena_5");
     Argus_AddCamNode ('-823 -1711 120', '-15 -12 0', "arena_6");
-    dprint ("ARGNAV 175 nodes, 485 links\n");
+    dprint ("ARGNAV 177 nodes, 488 links\n");
 };
