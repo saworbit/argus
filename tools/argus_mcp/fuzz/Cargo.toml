@@ -1,0 +1,51 @@
+# cargo-fuzz targets for the lab's three external-input parsers (#849).
+# Its own workspace and lock file, so the stable build, Clippy, the suite and
+# cargo deny in tools/argus_mcp never see it. libFuzzer needs nightly; the
+# fuzz workflow (.github/workflows/fuzz.yml) overrides the pinned toolchain.
+#
+#   cargo +nightly fuzz run demo   (or bsp, arglog) from tools/argus_mcp
+#
+# Seed corpora come from committed runs/*.log tapes and LibreQuake's free
+# maps only (seed_corpus.py); id Software maps and demos never become corpus.
+#
+# The lock file starts as a copy of ../Cargo.lock, so the lab's dependencies
+# resolve to the versions it ships with. When the workflow's locked fetch
+# fails after a dependency change, refresh it the same way: copy ../Cargo.lock
+# here, then run `cargo fetch --manifest-path fuzz/Cargo.toml` once.
+
+[package]
+name = "argus-mcp-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+argus-mcp = { path = ".." }
+
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "demo"
+path = "fuzz_targets/demo.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "bsp"
+path = "fuzz_targets/bsp.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "arglog"
+path = "fuzz_targets/arglog.rs"
+test = false
+doc = false
+bench = false
