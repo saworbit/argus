@@ -9,9 +9,10 @@ exactly. It is a screening instrument, validated per map: read
 [where it agrees](#where-it-agrees-with-the-wall-clock) before trusting a
 fixed tape.
 
-**Current standing:** accepted on dm4 and dm2 at 14.25 ms, with lava deaths,
-world deaths and routefails (and stalls on dm4) as limits. Not validated on
-any other map. `tools/lab_instruments.json` holds the record the lab reads.
+**Current standing:** accepted on dm4, dm2, dm3 and e1m7 at 14.25 ms. Limits:
+routefails everywhere; lava and world deaths on dm4, dm2 and e1m7; stalls on
+dm4, dm3 and e1m7; deaths on dm3. Not validated on any other map.
+`tools/lab_instruments.json` holds the record the lab reads.
 
 ## What it does
 
@@ -53,10 +54,10 @@ over 1 to 9973; each tape names its seed, and the build they ran capped at
 So a freeze or a death that happened once can be made to happen again:
 
 ```text
-argus-mcp match dm4 185 replay_dm4 --seed 7919 --skill 2
+argus-mcp match dm4 185 replay_dm4 --seed 1292 --skill 2
 ```
 
-replays the tape of seed 7919 exactly, as long as the build is the same (the
+replays the tape of seed 1292 exactly, as long as the build is the same (the
 tape's `ARGUS build` line names it).
 
 ## Commands
@@ -66,11 +67,30 @@ argus-mcp seeds <map> <count> <stem> [--duration 185] [--skill N] [--lanes 4] [-
 argus-mcp match <map> <secs> <run> --seed N
 ```
 
+and through the MCP server:
+
+```text
+match_run map=dm4 duration_sec=185 run_name=replay_dm4 seeds=[1292]
+match_run map=dm4 duration_sec=185 run_name=fx_dm4 seeds=[1292,584,1875]
+```
+
 `seeds` runs on lanes with ports 26060 upward and names tapes
 `<stem>_s<seed>`. A run that dies at network start-up is retried once;
 engines launched in the same instant have been seen to lose one on Windows,
 so lanes start 1.5 s apart. The stand-in human cannot use the fixed clock: it
 acts on the wall clock and would play at a sixth of the game's speed.
+
+`match_run seeds` (#853) is the same clock for an agent, with two
+differences. It is refused on any map where `tools/lab_instruments.json` does
+not record the fixed clock as accepted, while the CLI stays open on every map
+because a validation has to record fixed tapes on a map first. And it runs
+its seeds one after another on one engine, at most ten, because the server
+tracks a single live engine for `match_stop` and shutdown: one seed returns
+the ordinary result under `run_name`, several return the `seeds` report with
+tapes named `<run_name>_s<seed>`. Both carry `fixed_clock`, which names the
+clock, its frame, the seeds and the map's limits. A ladder costs about half
+a minute of wall time per 185 s tape. The seeds above are the first three
+that `seeds` walks.
 
 Fixed tapes read the listen tick class (their telemetry gap is 0.5004 s), so
 the tick-class guard does not tell them from wall-clock tapes. The `ARGUS
@@ -206,6 +226,44 @@ nobody should read a dm4 lava result off a fixed ladder.
 A fixed tape models the lab's wall clock, not a person: the human plays
 13.9 ms frames on a listen server.
 
+### Amendment 1: dm3 and e1m7 at 14.25 ms
+
+The [amendment](specs/2026-11-18-fixed-clock-validation-amendment.md) was
+registered before any of its fixed tapes ([#854](https://github.com/saworbit/argus/issues/854)).
+Same question and criterion; the build is main at 89b9852 (`9387e1e77737`)
+and the wall-clock arm is the played-rate control tapes of that build from
+other ladders the same day, all recorded before the amendment and some of
+their totals already read. That is weaker than a control recorded for the
+validation itself. The fixed arm is 20 fresh seeds a map, `seed_for(41..=60)`.
+
+| Metric | dm3 wall | dm3 fixed | dm3 reading | e1m7 wall | e1m7 fixed | e1m7 reading |
+| --- | --- | --- | --- | --- | --- | --- |
+| stalls | 20.8 | 19.9 | inconclusive | 2.1 | 1.5 | inconclusive |
+| engagements | 19.7 | 19.1 | equivalent | 95.3 | 95.0 | equivalent |
+| lava deaths | 0.0 | 0.0 | equivalent | 1.3 | 0.9 | inconclusive |
+| world deaths | 0.0 | 0.0 | equivalent | 1.3 | 0.9 | inconclusive |
+| freezes | 0.0 | 0.0 | equivalent | 0.2 | 0.1 | equivalent |
+| coverage | 515.1 | 502.8 | equivalent | 386.2 | 393.8 | equivalent |
+| goals | 23.1 | 24.8 | equivalent | 22.8 | 23.1 | equivalent |
+| deaths | 6.2 | 6.8 | inconclusive | 34.7 | 34.0 | equivalent |
+| routefails | 3.4 | 2.6 | inconclusive | 3.3 | 2.8 | inconclusive |
+| average speed | 196.0 | 195.9 | equivalent | 213.0 | 208.6 | equivalent |
+
+Both maps are accepted: nothing reads different, and engagements, coverage
+and goals read equivalent. dm3 had 11 wall-clock tapes and 20 fixed; e1m7 had
+13 and 19. dm3's lava reads equivalent only because neither arm had a lava
+death, so it says nothing about lava there; treat it as untested rather than
+trusted.
+
+One e1m7 fixed tape, seed 250, was excluded as outside the listen tick class.
+The class is read from the mean gap between a bot's half-second samples, and
+the listen boundary is 0.5135 s. At a 14.25 ms frame the telemetry fires
+every 36 frames, 0.513 s, every time, and the one-decimal time stamps scatter
+the measured mean around that: seed 250 read 0.5132 and seed 125 read 0.5135.
+Fixed tapes can fall either side of the boundary by chance
+([#901](https://github.com/saworbit/argus/issues/901)). The verdict does not
+depend on that tape.
+
 ## Evidence
 
 Played arm: `runs/fxval_played_dm4_r1` to `r10`, `runs/fxval_played_dm2_r1` to
@@ -214,6 +272,14 @@ Played arm: `runs/fxval_played_dm4_r1` to `r10`, `runs/fxval_played_dm2_r1` to
 `runs/fxconf_fixed1425_<map>_s<seed>` (the confirmation). Reproduce a reading
 with `python tools/argus_clock_validation.py --map dm4 --played-glob
 'fxval_played_dm4_r*' --fixed-glob 'fxconf_fixed1425_dm4_s*'`.
+
+Amendment 1: `runs/fxval2_played_dm3_<ladder>_ctl_r<n>` and
+`runs/fxval2_played_e1m7_<ladder>_ctl_r<n>` are the control tapes the
+amendment names, copied under these names unchanged (`study_sw761d3_ctl_r1`
+is `fxval2_played_dm3_sw761d3_ctl_r1`, and so on), and
+`runs/fxval2_fixed_<map>_s<seed>` the fixed arm. Reproduce with
+`python tools/argus_clock_validation.py --map dm3 --played-glob
+'fxval2_played_dm3_*' --fixed-glob 'fxval2_fixed_dm3_s*'`.
 
 ## What it cannot say
 
