@@ -107,6 +107,8 @@ print('four optimized rejections verified')
 
     def test_amend_pins_an_edit_and_keeps_the_chain_continuous(self):
         manifest=json.loads((ROOT/'tools/fixtures/health-inventory-step1b.json').read_text())
+        given=json.loads(json.dumps(manifest))
+        newest=manifest['production_amendments'][0][:-len('-reverse.patch')]
         base=(ROOT/'src/argus.qc').read_text()
         lines=base.splitlines(True)
         commented=''.join(lines[:40]+['// a comment-only amendment\n']+lines[40:])
@@ -120,8 +122,7 @@ print('four optimized rejections verified')
         self.assertEqual(updated['active_text_sha256'],hashlib.sha256(commented.encode()).hexdigest())
         read=lambda name:patch if name=='test-comment-reverse.patch' else (ROOT/'tools/fixtures'/name).read_text()
         self.assertEqual(replay(commented,updated,read),parked_source()[0])
-        self.assertEqual(manifest['production_amendments'][0],'lab-scenarios-comments-reverse.patch',
-                         'amend must not modify the manifest it was given')
+        self.assertEqual(manifest,given,'amend must not modify the manifest it was given')
         retuned=base.replace('self.ar_recoveryuntil = time + 0.8;','self.ar_recoveryuntil = time + 0.9;')
         self.assertNotEqual(retuned,base)
         self.assertFalse(amend(manifest,base,retuned,'test-code','a test retune')[2]['comment_only'])
@@ -136,7 +137,7 @@ print('four optimized rejections verified')
                          manifest['active_functions']['Argus_Combat'])
         for refused in [lambda:amend(manifest,commented,retuned,'test-code','a chain gap'),
                         lambda:amend(manifest,base,base,'test-none','nothing'),
-                        lambda:amend(manifest,base,commented,'lab-scenarios-comments','a duplicate'),
+                        lambda:amend(manifest,base,commented,newest,'a duplicate'),
                         lambda:amend(manifest,base,commented,'Bad_Name','a bad name'),
                         lambda:amend(manifest,base,commented,'test-comment','  ')]:
             with self.assertRaises(AssertionError):refused()
