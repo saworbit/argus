@@ -1344,6 +1344,34 @@ tool_timeout_sec = 700
             self.assertIsNone(report["findings"][0]["mover"])
             self.assertEqual(report["failures"], 1)
 
+    def test_wishflips_counts_per_frame_flip_runs(self):
+        # Romero flips 87/245 for four frames while moving 3u, then holds;
+        # Joe turns once by 150 (one flip, not a run) and strafes steadily.
+        rows = ["ARGMOT begin layout 2"]
+        wishes = [87, 245, 87, 245, 87, 90, 90]
+        for i, w in enumerate(wishes):
+            rows.append(f"ARGMOT Romero ms {1000 + 14 * i} pos '{100 + i * 0.5:.1f} 0.0 24.0' "
+                        f"wish {w} cause combat_hazard ctx '  2.0   0.0   1.0' hp 100 ground worldspawn")
+        for i, w in enumerate([10, 160, 160, 162, 164]):
+            rows.append(f"ARGMOT Joe Rogan ms {1000 + 14 * i} pos '0.0 {i * 4:.1f} 24.0' "
+                        f"wish {w} cause combat_strafe ctx '  2.0   0.0   1.0' hp 100 ground worldspawn")
+        with tempfile.TemporaryDirectory() as td:
+            tape = Path(td) / "flips.log"
+            tape.write_text("\n".join(rows) + "\n", encoding="utf-8")
+            res = self.run_tool("argus_wishflips.py", str(tape), "--json")
+            self.assertEqual(res.returncode, 0, res.stderr)
+            report = json.loads(res.stdout)[0]
+            self.assertEqual(report["runs"], 1)
+            self.assertEqual(report["bots"]["Joe Rogan"], [])
+            run = report["bots"]["Romero"][0]
+            self.assertEqual((run["flips"], run["seconds"], run["wish"][:2]), (4, 0.06, [87.0, 245.0]))
+            self.assertEqual(json.loads(self.run_tool("argus_wishflips.py", str(tape), "--json",
+                                                      "--min-run", "5").stdout)[0]["runs"], 0)
+            empty = Path(td) / "empty.log"
+            empty.write_text("ARGLOG nothing\n", encoding="utf-8")
+            self.assertEqual(self.run_tool("argus_wishflips.py", str(empty)).returncode, 2)
+            self.assertEqual(self.run_tool("argus_wishflips.py", str(tape), "--min-run", "x").returncode, 2)
+
     def test_guard_replica_follows_engine_traces_and_names_each_branch(self):
         """A buried probe sees through a slab; walls, lava and run-offs are told apart."""
         sys.path.insert(0, str(ROOT / "tools"))

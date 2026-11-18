@@ -27,6 +27,14 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- `tools/argus_wishflips.py` counts runs of per-frame wish flips in a
+  full-rate ARGMOT tape ([#754](https://github.com/saworbit/argus/issues/754)),
+  the dithering the reversal count cannot see because it only counts turns at
+  speed. On ten fixed-seed tapes per map main shows 893 runs on dm4 and 510 on
+  dm2. A candidate that held the combat strafe side cut those to 156 and 58,
+  and is not shipped: over eight played dm4 pairs it took world deaths in lava
+  from 16 to 27, the extra ones in fights, after damage and with no hazard
+  deflection before them.
 - `python tools/health_inventory_parked.py --amend <name> --base <rev>
   --scope "<text>"` writes the reverse patch and manifest entries that every
   edit to `src/argus.qc` needs, a comment-only one included
