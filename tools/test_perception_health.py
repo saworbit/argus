@@ -2,6 +2,7 @@ import tempfile
 from pathlib import Path
 import unittest
 import hashlib
+import json
 import os
 import subprocess
 import sys
@@ -9,7 +10,7 @@ from unittest.mock import patch
 
 from check_health_fixture import audit, check, LABELS
 from run_health_fixture import prepare, audit_private, body
-from health_inventory_parked import candidate_source, parked_source
+from health_inventory_parked import amend, candidate_source, parked_source, replay
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -103,6 +104,42 @@ print('four optimized rejections verified')
             with (path/'src/argus.qc').open('a') as f:f.write('\nfloat unintended_fixture_mutation;\n')
             with self.assertRaises(AssertionError):audit_private(path,False)
         self.assertEqual((ROOT/'src/defs.qc').read_bytes(),original)
+
+    def test_amend_pins_an_edit_and_keeps_the_chain_continuous(self):
+        manifest=json.loads((ROOT/'tools/fixtures/health-inventory-step1b.json').read_text())
+        base=(ROOT/'src/argus.qc').read_text()
+        lines=base.splitlines(True)
+        commented=''.join(lines[:40]+['// a comment-only amendment\n']+lines[40:])
+        updated,patch,report=amend(manifest,base,commented,'test-comment','a test comment')
+        self.assertEqual(report,{'patch':'test-comment-reverse.patch','hunks':1,
+                                 'comment_only':True,'functions':[]})
+        self.assertEqual(updated['production_amendments'],
+                         ['test-comment-reverse.patch']+manifest['production_amendments'])
+        self.assertTrue(updated['amendment_scope'].startswith(
+            'Reverse a test comment in memory, then reverse '))
+        self.assertEqual(updated['active_text_sha256'],hashlib.sha256(commented.encode()).hexdigest())
+        read=lambda name:patch if name=='test-comment-reverse.patch' else (ROOT/'tools/fixtures'/name).read_text()
+        self.assertEqual(replay(commented,updated,read),parked_source()[0])
+        self.assertEqual(manifest['production_amendments'][0],'lab-scenarios-comments-reverse.patch',
+                         'amend must not modify the manifest it was given')
+        retuned=base.replace('self.ar_recoveryuntil = time + 0.8;','self.ar_recoveryuntil = time + 0.9;')
+        self.assertNotEqual(retuned,base)
+        self.assertFalse(amend(manifest,base,retuned,'test-code','a test retune')[2]['comment_only'])
+        header='void() Argus_Perceive =\n{\n'
+        self.assertEqual(base.count(header),1)
+        inside=base.replace(header,header+'    // a comment inside an active function\n')
+        updated,_,report=amend(manifest,base,inside,'test-inside','a comment in Argus_Perceive')
+        self.assertEqual((report['comment_only'],report['functions']),(True,['Argus_Perceive']))
+        self.assertNotEqual(updated['active_functions']['Argus_Perceive'],
+                            manifest['active_functions']['Argus_Perceive'])
+        self.assertEqual(updated['active_functions']['Argus_Combat'],
+                         manifest['active_functions']['Argus_Combat'])
+        for refused in [lambda:amend(manifest,commented,retuned,'test-code','a chain gap'),
+                        lambda:amend(manifest,base,base,'test-none','nothing'),
+                        lambda:amend(manifest,base,commented,'lab-scenarios-comments','a duplicate'),
+                        lambda:amend(manifest,base,commented,'Bad_Name','a bad name'),
+                        lambda:amend(manifest,base,commented,'test-comment','  ')]:
+            with self.assertRaises(AssertionError):refused()
 
     def test_active_recovery_edits_cannot_bypass_the_frozen_source_guard(self):
         target=ROOT/'src/argus.qc'
