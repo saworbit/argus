@@ -793,6 +793,18 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- dm3 no longer routes through two typed links bots cannot take
+  ([#779](https://github.com/saworbit/argus/issues/779),
+  [#780](https://github.com/saworbit/argus/issues/780)). On 20 fixed-seed
+  tapes of the previous main, bots reached the launch of the sprint n241 to
+  n52 55 times and arrived once, and the launch of the jump n36 to n46 14
+  times and never arrived. The router counts hops, so the sprint beat the
+  eight-hop walk to the red armour, and those routes ended with bots stalled
+  on the walkway under the platform, jumping at the seat 64u above them (24
+  walkway stalls in those tapes). A seats sidecar cut may now retire a jump
+  or sprint link as well as a plain walk, in `--seat-links` and in a full
+  regeneration; both links are cut from `src/argus_nav_dm3.seats.json`, and
+  directed reach is unchanged at 98 per cent worst spawn (92 ungated).
 - Triggered POV capture no longer depends on the engine writing
   `qconsole.log` in the run directory
   ([#810](https://github.com/saworbit/argus/issues/810)). Where that file is
