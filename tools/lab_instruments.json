@@ -54,18 +54,18 @@
     }
   },
   "stand_in": {
-    "protocol": "docs/specs/2026-11-15-stand-in-calibration.md",
+    "protocol": "docs/specs/2026-11-18-stand-in-calibration-2.md",
     "results": "docs/stand-in.md",
     "maps": {
       "dm4": {
         "dose_response": false,
         "level": true,
-        "spearman": 0.13,
-        "note": "Bot kills on the stand-in did not rise with bot skill (Spearman 0.13; skill 3 minus 0 +0.16 a minute, 95 per cent -1.18 to +1.50). Its time in sight of bots ran 0 to 2608 ticks between matches, which swamps the effect. Level at skill 1 matched (1.19 against 1.27) but means nothing without a dose response.",
+        "spearman": 0.58,
+        "note": "Calibration 2 (kills per minute in sight, registered): Spearman 0.58 but skill 3 minus 0 +6.44 a minute, 95 per cent -5.12 to +18.01, so dose response fails; level at skill 1 matched (3.99 against 3.92). Exposure is still thin (0.13 to 1.06 minutes in sight a match). The first calibration, per minute of match, read Spearman 0.13.",
         "evidence": [
           "docs/stand-in.md",
-          "standin_cal_dm4_k0_1",
-          "standin_cal_dm4_k3_4"
+          "standin_cal2_dm4_k0_5",
+          "standin_cal2_dm4_k3_8"
         ]
       }
     }
