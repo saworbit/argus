@@ -73,6 +73,15 @@ HULL = 16          # outer hull thickness
 STEP = 16          # stair riser, inside the engine's 18u step
 WALK_DZ = 18       # a walk edge rises at most this far
 DROP_DZ = 200      # navgen's longest one-way drop
+JUMP_GAP = 160     # a jump connection's widest gap
+JUMP_RISE = 40     # and its highest landing (navgen's JUMPUP)
+# argus.qc's plain jump hop: jump velocity, gravity, the run speed (the
+# fastest any hop is flown) and the lookahead that fires it
+JUMP_VEL = 270.0
+JUMP_GRAVITY = 800.0
+JUMP_RUN = 320.0
+JUMP_LOOKAHEAD = 32
+PLAYER_HALF = 16   # half the player box's width
 DOOR_HEIGHT = 96
 TELEPORTER_SIZE = 64
 
@@ -636,6 +645,22 @@ def adjacency(request):
     return out
 
 
+def jump_reach(rise):
+    """The widest gap a running jump crosses onto a landing `rise` up, or None.
+
+    The plain hop fires when its 32u lookahead finds no floor, so it takes
+    off 32u short of the lip, and the box lands once its 16u half-width is
+    over the far edge: the flight runs gap + 16 and must still be at or
+    above the landing when it gets there. At the 320 u/s run speed that is
+    200u level and 129u at a 40u rise. Above the 45u apex nothing lands.
+    """
+    disc = JUMP_VEL ** 2 - 2 * JUMP_GRAVITY * rise
+    if disc < 0:
+        return None
+    flight = (JUMP_VEL + math.sqrt(disc)) / JUMP_GRAVITY
+    return JUMP_RUN * flight - (JUMP_LOOKAHEAD - PLAYER_HALF)
+
+
 def check_connections(request):
     """Each declared connection against the geometry; raises on one the layout cannot provide."""
     by_name = {r["name"]: r for r in request["regions"]}
@@ -654,10 +679,17 @@ def check_connections(request):
             if kind == "jump":
                 gap = gap_between(r, other)
                 dz = surface_z(other) - surface_z(r)
-                if gap is None or gap > 160 or dz > 40:
+                if gap is None or gap > JUMP_GAP or dz > JUMP_RISE:
                     raise RequestError(f"connection {r['name']} -> {other['name']}: a jump needs facing "
-                                       f"footprints at most 160u apart and a landing at most 40u up "
-                                       f"(gap {gap}, rise {dz})")
+                                       f"footprints at most {JUMP_GAP}u apart and a landing at most "
+                                       f"{JUMP_RISE}u up (gap {gap}, rise {dz})")
+                reach = jump_reach(dz)
+                if gap > reach:
+                    raise RequestError(f"connection {r['name']} -> {other['name']}: no running jump crosses "
+                                       f"a {gap}u gap onto a landing {dz}u up; taking off {JUMP_LOOKAHEAD}u "
+                                       f"short of the lip at {JUMP_RUN:.0f} u/s, where the bot's jump fires, "
+                                       f"the player box clears the far edge only up to {reach:.0f}u. "
+                                       "Narrow the gap or lower the landing")
                 row.update(gap=gap, dz=dz)
                 results.append(row)
                 continue
