@@ -402,6 +402,26 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- A full navgen regeneration applies `src/argus_nav_<map>.seats.json`
+  ([#778](https://github.com/saworbit/argus/issues/778)). Only `--seat-links`
+  read it before, so regenerating dm3 dropped its five elbow seats and
+  sixteen walks into the red armour's south upper area and re-minted the
+  n45 to n40 diagonal the sidecar cuts, which carried the origin 119u over a
+  346u drop. Section 7g2e now appends the seats at their exact positions,
+  joined only by the sidecar's walks, adds the walks under `beeline_ok` and
+  the 340u limit, keeps them first at the slot clamp, and applies the cuts
+  under the same reachability guard. An entry that cannot apply refuses the
+  regeneration before anything is written, and a second regeneration is
+  byte-identical. No shipped graph changes: dm3 is the only map with the
+  sidecar, and its fresh regeneration is still refused by the #719 jump
+  anchor.
+
+- Evidence: with that one anchor check stubbed in a scratch harness, a dm3
+  regeneration reproduces the shipped graph's 249 nodes in order and its
+  regions exactly, with both elbow routes and without the diagonal. The 12
+  and 3 remaining edge differences are the separate `--repair-links` and
+  jump-link cases a regeneration without the sidecar also shows (14 and 19).
+
 - Trim rationale four lab tool descriptions repeated from the guides, and a
   stale tape count, reclaiming tool-surface headroom from 3 bytes to 262.
   `bot_capture_pov_frame` spends part of it on `wait_sec` (5 to 110, default
