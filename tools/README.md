@@ -398,6 +398,36 @@ Lists the shipped level walk links whose own line fails the early-switch floor t
 
 ---
 
+### 25. `argus_turnsim.py`
+
+Replays routed turns on the world BSP at the played 14.25 ms frame, with
+ground friction, acceleration, heading slew, step heights and the runtime
+arrival checks. Each direction uses lateral offsets of -12u, 0u and 12u at
+280, 320 and 360 u/s. [#923](https://github.com/saworbit/argus/issues/923)
+
+```text
+python tools/argus_turnsim.py audit dm3 --fwd 46 245 36
+python tools/argus_turnsim.py audit dm3 --fwd 46 245 36 --without-floor-test
+python tools/argus_turnsim.py search dm3
+python tools/argus_turnsim.py search dm4 --fwd 10 X13 21
+```
+
+`audit` without `--fwd` checks directed turns of at least 15 degrees
+between ordinary walk links with at most 18u of height change per link. It
+lists falls, wall frames and other failures. `search` ranks seats by
+completed trials, then fewer wall frames, then less time. Its default dm3
+fixture uses the four corridors from the graph at `d70c4f8`, before #922.
+Use `--graph` for a different graph, `--back` for a different starting
+distance and `--json` for results to compare. The BSP comes from
+`ARGUS_MAPS` or `maps_local/`.
+
+This is a world-geometry model. Movers, liquids and on-demand routing
+need engine evidence. Validate proposed legs with navgen and run the
+played ladders before shipping any seats. See
+[the dm3 corner study](../docs/navmesh-experiment.md#turning-late-after-775-904).
+
+---
+
 The fixed lab clock and the stand-in human are Rust lab CLI commands:
 
 ```text
