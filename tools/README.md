@@ -238,7 +238,7 @@ Regenerates every file in `docs/brand` (mark, wordmark, banners, social preview,
 - **Behavior**: `dist.py` writes the SVGs and `raster.js` the two PNGs. Output is deterministic: a rerun reproduces the committed files byte for byte. The lab GUI inlines its own copy of `docs/brand/favicon.svg`, so update both together; no test catches that drift yet ([#678](https://github.com/saworbit/argus/issues/678)). See the [brand guide](../docs/brand/README.md).
 
 ### 14. `argus_navmesh.py`
-Exact navigation mesh read from a BSP's player clip hull (hull 1), with an audit of a shipped graph and an air layer for falls and jumps. Experimental audit tooling; it changes no graph. See [the navmesh experiment](../docs/navmesh-experiment.md).
+Exact navigation mesh read from a BSP's player clip hull (hull 1), with an audit of a shipped graph, an air layer for falls and jumps, a water layer for swimming and a time layer for movers. Experimental audit tooling; it changes no graph. See [the navmesh experiment](../docs/navmesh-experiment.md).
 - **Usage**:
   ```bash
   python tools/argus_navmesh.py maps_local/dm4.bsp --audit
@@ -247,13 +247,14 @@ Exact navigation mesh read from a BSP's player clip hull (hull 1), with an audit
   python tools/argus_navmesh.py --help
   ```
 - **Options**:
-  - `--audit`: Cross-examine the shipped graph (`src/argus_nav_<map>.qc.json`, or the file `--nav` names): seats whose feet stand in lava or slime, seats on no mesh fragment, rising zero-length walks, and plain links with no mesh walk or drop path. Each off-mesh seat gets a reason: in liquid (the lava seats `--repair-links` keeps on purpose), on a face too steep to stand on, no world floor within 30 units, inside the world, or dry with no fragment, the only one that would be an extractor miss ([#788](https://github.com/saworbit/argus/issues/788)).
-  - `--air`: Fly a body off every ledge point, 16 units apart, at walk (240), run (320) and run turned 30 degrees either way, plus a running jump, and grade each point danger, risky, momentum or safe by where it lands. Gravity is 100 on e1m8 and 800 elsewhere; `--gravity` overrides it.
+  - `--audit`: Cross-examine the shipped graph (`src/argus_nav_<map>.qc.json`, or the file `--nav` names): seats whose feet stand in lava or slime, seats on no mesh fragment, rising zero-length walks, and plain links with no mesh walk or drop path. Each off-mesh seat gets a reason: in liquid (the lava seats `--repair-links` keeps on purpose), on a face too steep to stand on, no world floor within 30 units, inside the world, or dry with no fragment, the only one that would be an extractor miss ([#788](https://github.com/saworbit/argus/issues/788)). It ends with the water layer ([#791](https://github.com/saworbit/argus/issues/791)): exact swim volumes, their exits onto the mesh by navgen's lip rules, the longest dive and the longest unavoidable crossing between surfaces at an assumed 300 u/s against 12 s of air, and every shipped swim link judged confirmed, walk from an exit, or by the rule it fails.
+  - `--air`: Fly a body off every ledge point, 16 units apart, at walk (240), run (320) and run turned 30 degrees either way, plus a running jump, and grade each point danger, risky, momentum or safe by where it lands. Gravity is 100 on e1m8 and 800 elsewhere; `--gravity` overrides it. It ends with the time layer ([#791](https://github.com/saworbit/argus/issues/791)): every plat, door and train with its positions and the times stock QC holds each, and the ledges beside it graded at every position as walled, bridged or an air verdict.
   - `--tapes <log> [...]`: With `--air`, test each lava entry's last second against the danger ledges, using every ordinary second of movement as the base rate, and split run-offs from entries that followed a jump event.
-  - `--no-brushes`: With `--air`, fly through the world hull only. By default solid walls, doors, secret doors and plats count as boxes at their deathmatch spawn positions; trains are left out.
+  - `--no-brushes`: With `--air`, fly through the world hull only, and skip the time layer. By default solid walls, doors, secret doors and plats count as boxes at their deathmatch spawn positions; trains are left out.
+  - `--no-water`, `--no-movers`: Skip the water layer in `--audit`, or the time layer in `--air`. The water layer adds up to about 6 s on a map with much water (e1m4) and the time layer up to about 14 s on a map with many movers (e1m2).
   - `--png`, `--air-png`, `--json`: Draw the mesh or the ledge verdicts, or write the fragments as JSON. Plotting needs matplotlib; the audit and air layer do not.
 - **Inputs**: A BSP29 file, usually `maps_local/<map>.bsp` (machine-local).
-- **Tests**: `test_navmesh_repair.py` and `test_navmesh_air.py`, both on built fixtures. They are not yet in fast CI ([#787](https://github.com/saworbit/argus/issues/787)).
+- **Tests**: `test_navmesh_repair.py`, `test_navmesh_air.py` and `test_navmesh_layers.py` (a pit pool, a pool split by a hanging wall, a plat at both ends of its travel, and the door and train timing), all on built fixtures and all in fast CI.
 - `argus_pointfile.py <map> --what mesh` draws the mesh outlines into a listen game. It has not been checked by eye.
 
 ### 15. `argus_navmesh_graph.py`
@@ -371,6 +372,25 @@ Counts runs of per-frame wish flips in full-rate ARGMOT tapes (`scratch1 697`), 
   - On ten fixed-seed tapes per map, main shows 893 runs on dm4 and 510 on dm2. A candidate that held the strafe side cut those to 156 and 58 and was not shipped, because it raised dm4 lava (the numbers are on #754).
 - **Exit Code**: `0` on success or `--help`, `2` when a tape is missing, carries no ARGMOT rows or a flag is malformed.
 - **Tests**: `test_tools_cli.py` (a four-flip run counted with its duration and headings, a single turn not counted, `--min-run`, and the exit codes).
+
+---
+
+### 24. `argus_floorlinks.py`
+Lists the shipped level walk links whose own line fails the early-switch floor test ([#905](https://github.com/saworbit/argus/issues/905)).
+- **Usage**:
+  ```bash
+  python tools/argus_floorlinks.py dm3
+  python tools/argus_floorlinks.py dm4 dm2 e1m8 --json
+  python tools/argus_floorlinks.py dm3 --graph path/to/argus_nav_dm3.qc.json
+  ```
+- **Behavior**:
+  - Replays `Argus_WalkLineFloored` offline on hull 0 for every level walk link (height change at most 18u, not typed) from its own source seat: a sample every 12u at the height interpolated between the seats, traced 60u down. A sample that starts in solid is a wall, not a void, as in the runtime.
+  - A listed link crosses a void corner, so the runtime holds a bot on it until it stands within 8u of the seat. That hold keeps bots on the line navgen verified: on dm4 these links ring the lava pit, and skipping the test on them raised world lava deaths from 13 to 22 over eight played pairs ([#905](https://github.com/saworbit/argus/issues/905)). Each listed link is a corner that wants an elbow seat, the #778 and #904 pattern.
+  - Brush entities are not in hull 0, so a link over a func_wall or plat reads as a void here while the runtime sees floor. Treat those as suspect.
+  - On the shipped graphs at #905: dm4 20 of 608, dm6 12 of 1259, dm2 6 of 847, dm3 2 of 617, e1m2 41 of 346, e1m8 83 of 319.
+- **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`) and `src/argus_nav_<map>.qc.json`, or `--graph` for one map.
+- **Exit Code**: `0` on success or `--help`, `2` when a BSP or graph is missing or an argument is malformed.
+- **Tests**: `test_tools_cli.py` (a corner-cutting walk listed with its first void sample, level, typed and height links told apart, a wall sample not counted as a void, and the exit codes).
 
 ---
 
