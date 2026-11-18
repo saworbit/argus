@@ -437,6 +437,28 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- navgen seats a deathmatch spawn that stands on a solid brush entity
+  ([#783](https://github.com/saworbit/argus/issues/783)). A spawn whose first
+  floor is a brush top at its spawn position, more than a step above any
+  world floor there, gets a seat on that top after the late link passes,
+  joined only by up to four one-way exits. An exit is kept only when the
+  runtime's brink guard passes the run to the pad's edge at run and walk
+  speed (the `argus_guard_replica` replica, which now takes the map's
+  gravity) and the flight off the edge lands dry, on no brush entity, within
+  a step of the target's height, with 48u of floor beyond and a walk from
+  there to the target. The 7h report now names every deathmatch spawn more
+  than 64u from a seat. The short drops onto e1m7's walkways beside the pads
+  are refused, because the guard deflects them at speed and a run lands on
+  the walkway's far lip. A fresh e1m7 regeneration lacks the 41 lake seats
+  `--repair-links` kept, so the new `--seat-spawn-pads` mode applies the same
+  rules to a shipped graph: seats and link calls are appended, a rerun
+  changes nothing, and a pad it cannot seat refuses the splice with nothing
+  written. Applied to the shipped e1m7 graph: the four z 280 pads gain seats
+  n204 to n207, 1u from their spawns, with nine exits, each running east or
+  west off a pad; every deathmatch spawn is within 46u of a seat, and every
+  other spawn still reaches the same 139 nodes (66 per cent of 208, from 68
+  per cent of 204, because nothing enters a pad). dm4, dm2 and e1m3
+  regenerate byte for byte as on main.
 - `tools/argus_bsp.py` is now the one Python BSP29 reader
   ([#814](https://github.com/saworbit/argus/issues/814)). Its `Bsp` class
   checks the header once and serves navgen, the navmesh and its graph, the
