@@ -25,6 +25,7 @@ sys.path.insert(0, str(HERE))
 
 import lab_mapgen as mg  # noqa: E402 - tools path set just above
 import argus_lab  # noqa: E402
+from argus_bsp import Bsp  # noqa: E402
 
 PLANE = re.compile(r"^\( (-?\d+) (-?\d+) (-?\d+) \) \( (-?\d+) (-?\d+) (-?\d+) \) "
                    r"\( (-?\d+) (-?\d+) (-?\d+) \) (\S+) 0 0 0 1 1$")
@@ -421,7 +422,7 @@ class IntegrationSmoke(unittest.TestCase):
             self.assertTrue(all(step["ok"] for step in compiled["steps"].values()), compiled)
             self.assertFalse(compiled["steps"]["qbsp"]["leak"])
             bsp = out / "lab_smoketest.bsp"
-            self.assertEqual(struct.unpack_from("<i", bsp.read_bytes(), 0)[0], 29)
+            self.assertEqual(Bsp(bsp).version, 29)
             self.assertEqual(compiled["bsp_entities"], the_plan["entity_count"])
             self.assertTrue((td / "maps" / "lab_smoketest.bsp").is_file(), placed)
             again, _, _ = mg.compile_map(ROOT, req, td / "again")
