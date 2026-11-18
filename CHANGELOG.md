@@ -15,7 +15,7 @@ describes the result and links to its implementation or detailed evidence.
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
-| Lab version | 0.32; [operator guide and version history](tools/argus_mcp/README.md#versions) |
+| Lab version | 0.33. See the [operator guide and version history](tools/argus_mcp/README.md#versions). |
 
 Main-update dates are UTC merge dates. Numbered builds retain their recorded
 build dates. A merged change does not imply a new numbered release, and a
@@ -1572,6 +1572,8 @@ passing botmatch does not establish better human play.
   QC filenames with `--register` before any files change (#537).
 
 #### Maintenance
+
+- Bump the lab to 0.33.0 for the fixed-clock MCP, mill and tooling changes ([#910](https://github.com/saworbit/argus/issues/910)).
 
 - Shane's 2026-11-19 dm2 session on the installed build `004b4ff9ddf7` is
   recorded as `runs/shane_dm2_2026-11-19_build004b4ff9.log` with its row in
