@@ -37,9 +37,30 @@ decimal. The played-rate cutoff is 0.5135, leaving a 1 ms margin below
 the legacy cluster so repeated runs do not cross classes on sampling jitter.
 Written for docs/plans/2026-09-14-regression-analysis-and-recovery.md.
 """
-import sys, os, glob, statistics as st
+import glob
+import os
+import re
+import statistics as st
+import sys
 
 from argus_tape import samples
+
+# A fixed-clock tape states its frame (#901). Inside this band, which holds
+# the 13.9 ms listen server and the lab's 14.25 ms, it is the played rate by
+# construction; its sample gap cannot say so, because at 14.25 ms the
+# telemetry fires every 36 frames (0.513 s) and the one-decimal stamps
+# scatter the mean around the 0.5135 cutoff. Mirrors PLAYED_FRAME_US in
+# argus_mcp's parse_arglog.rs.
+PLAYED_FRAME_US = (13000, 15000)
+CLOCK = re.compile(r"^ARGUS clock frame_us\s+(\d+) tick_us\s+(\d+) seed\s+(\d+)\s*$", re.M)
+
+
+def fixed_frame_us(text):
+    """The frame a fixed-clock tape states, or None for a wall-clock tape."""
+    m = CLOCK.search(text)
+    if m and int(m.group(1)) > 0:
+        return int(m.group(1))
+    return None
 
 
 def estimate(path):
@@ -81,7 +102,13 @@ if __name__ == '__main__':
         files = args
     for p in files:
         r = estimate(p)
-        if r:
+        with open(p, errors='replace') as fh:
+            frame = fixed_frame_us(fh.read())
+        played = frame is not None and PLAYED_FRAME_US[0] <= frame <= PLAYED_FRAME_US[1]
+        if r and played:
+            print(f"{os.path.basename(p):44} gap {r[0]:.4f}  n={r[1]:<5} "
+                  f"about 70 Hz (fixed {frame / 1000:g} ms frame)")
+        elif r:
             print(f"{os.path.basename(p):44} gap {r[0]:.4f}  n={r[1]:<5} {classify(r[0])}")
         else:
             print(f"{os.path.basename(p):44} too few samples")

@@ -807,7 +807,9 @@ pub(crate) fn brief_tape_lava(
 
     let ev = |k: &str| *tape.event_counts.get(k).unwrap_or(&0);
     let tick_gap_mean = tape.tick_gap_mean();
-    let tick_class = tick_gap_mean.map(|g| crate::parse_arglog::tick_class(g).to_string());
+    let tick_class =
+        crate::parse_arglog::tick_class_of(tape.identity.clock.as_ref(), tick_gap_mean)
+            .map(str::to_string);
     let totals = Totals {
         duration_sec: duration,
         failed_spawns: tape.failed_spawns.clone(),
@@ -5191,6 +5193,71 @@ ARGEVT Reap spawned
             );
             let got = b.totals.tick_gap_mean.expect("gap");
             assert!((got - gap).abs() < 0.0015, "{name} gap {got} wanted {gap}");
+        }
+    }
+
+    /// A tape whose bots log every `gap` seconds of game time, stamped
+    /// to one decimal like Argus_Telemetry, with an optional clock line.
+    fn cadence_tape(clock: Option<&str>, gap: f64) -> String {
+        let mut text = String::new();
+        if let Some(line) = clock {
+            text.push_str(line);
+            text.push('\n');
+        }
+        for bot in ["Reap", "Omi"] {
+            let mut t = 1.0;
+            while t < 120.0 {
+                text.push_str(&format!(
+                    "ARGLOG {bot} t {t:.1} pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n"
+                ));
+                t += gap;
+            }
+        }
+        text
+    }
+
+    #[test]
+    fn a_fixed_tape_reads_listen_from_its_frame_on_either_side_of_the_gap_boundary() {
+        // #901: identical 14.25 ms fixed tapes measured 0.5132 and 0.5135,
+        // and the second was dropped from a validation as not listen.
+        for gap in [0.5130, 0.5140] {
+            let fixed = brief_text(
+                &cadence_tape(Some("ARGUS clock frame_us 14250 tick_us 1000 seed 7"), gap),
+                None,
+            );
+            assert_eq!(
+                fixed.totals.tick_class.as_deref(),
+                Some("listen"),
+                "fixed at {gap}"
+            );
+            let at_139 = brief_text(
+                &cadence_tape(Some("ARGUS clock frame_us 13900 tick_us 1000 seed 7"), gap),
+                None,
+            );
+            assert_eq!(
+                at_139.totals.tick_class.as_deref(),
+                Some("listen"),
+                "13.9 ms at {gap}"
+            );
+        }
+        // the gap rule still decides a wall-clock tape and an unplayed frame
+        for clock in [
+            None,
+            Some("ARGUS clock frame_us 0 tick_us 13900 seed 0"),
+            Some("ARGUS clock frame_us 50000 tick_us 1000 seed 7"),
+        ] {
+            let slow = brief_text(&cadence_tape(clock, 0.5140), None);
+            let gap = slow.totals.tick_gap_mean.expect("gap");
+            assert_eq!(
+                slow.totals.tick_class.as_deref(),
+                Some(crate::parse_arglog::tick_class(gap)),
+                "{clock:?}"
+            );
+            assert_ne!(
+                slow.totals.tick_class.as_deref(),
+                Some("listen"),
+                "{clock:?} gap {gap}"
+            );
         }
     }
 

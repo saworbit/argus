@@ -1741,6 +1741,13 @@ period because `Argus_Telemetry` fires on the first frame after
 | `dedicated_fast` | about 19 Hz | the lab before 2026-09-15, 1 ms Windows timer |
 | `dedicated_slow` | about 14 to 15 Hz | the same lab on a coarse-timer day |
 
+A fixed-clock tape is classed by the frame its `ARGUS clock` line states
+instead ([#901](https://github.com/saworbit/argus/issues/901)): a frame of 13
+to 15 ms is `listen` by construction. Its gap cannot say so, because at 14.25
+ms the telemetry fires every 36 frames (0.513 s) and the one-decimal stamps
+scatter the mean around the 0.5135 cutoff; identical fixed tapes read both
+sides of it. Wall-clock tapes keep the gap rule.
+
 Of the 635 readable tapes in `runs/`, 438 are fast, 124 slow and 73
 listen. **Compare refuses to judge across two classes**: the verdict
 is forced to Mixed, a finding names the cause and the gate card

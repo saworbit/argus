@@ -1732,6 +1732,29 @@ tool_timeout_sec = 700
             self.assertEqual(res.returncode, 0, res.stderr)
             self.assertIn("70 Hz", res.stdout)
 
+    def test_tick_estimator_reads_a_fixed_tape_from_its_frame(self):
+        """A 14.25 ms fixed tape above the gap cutoff is still the played rate (#901)."""
+        def tape(path, clock, long_gaps):
+            t, lines = 1.0, [clock + "\n"] if clock else []
+            for i in range(101):
+                lines.append(f"ARGLOG Reap t {t:.1f} pos '0 0 24' spd 0 "
+                             "yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n")
+                t += 0.6 if i < long_gaps else 0.5
+            path.write_text("".join(lines))
+            return str(path)
+
+        with tempfile.TemporaryDirectory() as td:
+            # 15 long gaps in 100 reads 0.515, past the 0.5135 cutoff
+            fixed = tape(Path(td) / "fixed.log", "ARGUS clock frame_us 14250 tick_us 1000 seed 250", 15)
+            wall = tape(Path(td) / "wall.log", "ARGUS clock frame_us 0 tick_us 13900 seed 0", 15)
+            other = tape(Path(td) / "other.log", "ARGUS clock frame_us 50000 tick_us 1000 seed 7", 15)
+            res = self.run_tool("argus_tick.py", fixed, wall, other)
+            self.assertEqual(res.returncode, 0, res.stderr)
+            rows = dict(line.split(None, 1) for line in res.stdout.splitlines())
+            self.assertIn("fixed 14.25 ms frame", rows["fixed.log"])
+            self.assertIn("19 Hz", rows["wall.log"])
+            self.assertIn("19 Hz", rows["other.log"])
+
     def test_harvest_appends_a_scorecard_row(self):
         """Every harvested session lands one row in the scorecard.
 

@@ -477,6 +477,34 @@ impl MatchTape {
 /// launcher reach 0.51282, so the old 0.5105 boundary classified
 /// ordinary sampling jitter as a different engine regime (#412).
 pub fn tick_class(gap: f64) -> &'static str {
+    tick_class_gap(gap)
+}
+
+/// The frames, in microseconds, that a fixed-clock tape may run and still
+/// be the played rate: the 13.9 ms listen server and the lab's measured
+/// 14.25 ms both fall inside it.
+pub const PLAYED_FRAME_US: std::ops::RangeInclusive<u64> = 13_000..=15_000;
+
+/// A tape's class from what it says about itself first (#901).
+///
+/// A fixed-clock tape ran at the frame its `ARGUS clock` line states, so
+/// a frame inside [`PLAYED_FRAME_US`] is `listen` by construction. Its
+/// sample gap cannot say so reliably: at 14.25 ms the telemetry fires
+/// every 36 frames, 0.513 s, every time, and the one-decimal time stamps
+/// scatter the measured mean around the 0.5135 boundary, so identical
+/// fixed tapes landed on both sides of it. Wall-clock tapes (`frame_us
+/// 0`), and fixed tapes at any other frame, keep the gap rule.
+pub fn tick_class_of(
+    clock: Option<&crate::tape_identity::TapeClock>,
+    gap: Option<f64>,
+) -> Option<&'static str> {
+    if clock.is_some_and(|c| c.frame_us > 0 && PLAYED_FRAME_US.contains(&c.frame_us)) {
+        return Some("listen");
+    }
+    gap.map(tick_class_gap)
+}
+
+fn tick_class_gap(gap: f64) -> &'static str {
     if gap < 0.5135 {
         "listen"
     } else if gap < 0.522 {
