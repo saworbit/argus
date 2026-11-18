@@ -319,14 +319,130 @@ link in, so the ledge verdicts are evidence and the link verdicts are not.
 Limits: air control is not modelled (bots steer in flight only on typed
 jump hops); real bots leave a ledge at any angle, not only straight out or
 at 30 degrees; brushes are bounding boxes, which over-claim floor for an
-irregular brush, and doors and plats sit where they spawn, not where play
-moves them; ledge points come from the world mesh, so the edges of a pad
+irregular brush, and the verdicts above take doors and plats where they
+spawn (the [time layer](#the-time-layer) grades the ledges beside each one
+at every position); ledge points come from the world mesh, so the edges of a pad
 or deck are not sampled as ledges themselves; the 32u and 48u crossing tolerances are judgement calls; a
 faller's own pre-entry windows count as ordinary moves, which inflates the
 base rate and makes every lift above conservative. e1m8 rests on 16 tapes.
 `tools/test_navmesh_air.py` builds a platform beside a lava strip where a
 straight drop lands dry, a walk and a run land in the lava and a running
 jump clears it.
+
+## The water layer
+
+The floor mesh flags water floors wet and stops there, but a swimmer moves
+through a volume, and dm3, e1m1, e1m2 and e1m4 all route through water.
+`--audit` now ends with the swim volumes and a cross-check of the shipped
+swim links (`swimlinks` in `src/argus_nav_<map>.qc.json`); `--no-water`
+leaves them out.
+
+```bash
+python tools/argus_navmesh.py maps_local/e1m2.bsp --audit
+```
+
+- The volume is every player origin that hull 1 admits and hull 0 puts in
+  water: waterlevel 2, where `Argus_Waterlevel` starts the swim block. Each
+  hull-1 empty leaf inside a water area is split down the hull-0 tree at
+  the origin and again 22 units above it, so every cell is exact and either
+  breathable (the eyes clear the water, and `Argus_WaterMove` restores the
+  air) or submerged. Slime and lava are not swum, as in navgen.
+- Cells that share a face join into pools. An exit is a floor fragment
+  that passes navgen 7d's lip rules: an origin 12 units below to 44 above
+  the water surface, within the 48 units 7d leaves to the vault, and a
+  hull-1 path that rises from the water, crosses the lip under the vault's
+  apex (290 u/s, about 52 units at gravity 800) and steps down. A floor is
+  dry by navgen's rule, water no higher than 8 units over the origin, so a
+  wading floor with the waist just under is an exit too.
+- The air budget assumes the bot's swim terminal speed, 300 u/s, against
+  `air_finished = time + 12`: 3600 units with the eyes under. The dive is
+  the farthest submerged point from air (a straight leg inside its own
+  cell, portal centre to portal centre after that). The crossing is the
+  longest swim with the eyes under that getting between two separate
+  surfaces cannot avoid, which is the longest edge of a spanning tree over
+  the pool's air regions, because a swimmer may surface in any of them on
+  the way. A face onto dry player space counts as air for the dive.
+- Pools that hull 1 closes on every side, and films or puddles with no
+  exit whose every point is within 32 units of air, are counted on one
+  line each rather than listed.
+- A shipped swim link is confirmed when its seat lies in a pool and its exit
+  seat on one of that pool's exits, and "walk from an exit" when the exit
+  seat is reached on foot over the mesh's walk and drop portals from one,
+  within navgen's 320 units.
+
+| Map | Swim volumes listed | Cells | Exits | Longest dive | Longest crossing | Shipped swim links |
+|---|---|---|---|---|---|---|
+| dm3 | 1 | 252 | 15 | 351u, 1.2 s | 760u, 2.5 s | 1 confirmed, 3 walk from an exit |
+| e1m2 | 3, and 1 sealed pocket | 545 | 52 | 108u, 0.4 s | 416u, 1.4 s | 8 of 8 confirmed |
+| e1m1 | 1 | 140 | 15 | 43u, 0.1 s | none | 15 of 15 confirmed |
+| e1m4 | 2, and 1 puddle | 1252 | 52 | 475u, 1.6 s | 676u, 2.3 s | 10 confirmed, 1 walk from an exit |
+
+No pool on a map with a shipped graph asks for much more than a quarter of
+the air: the longest, e1m4's deepest dive of 475 units, is 3.2 s there and
+back. What the cross-check found:
+
+- dm3's three walk-from-exit links (n111 to n99, n112 and n115 to n100)
+  leave the trench for seats on the floor at z -184 behind a wall along the
+  trench's west side. The way out to them is a gap in that wall whose sill
+  (fragment f577, 40 units over the surface) the vault lands on; the seats
+  are 255 to 317 units on foot from it. Each link's
+  straight line crosses the wall beside the gap: navgen 7d samples the swim
+  path every 24 units and steps over the wall's 16. The routes are real; the
+  links point through the wall.
+- e1m2's eight are all real, and two rules were needed to see it. n85 and
+  n106 to n80 leave through the end of a channel under the court wall, which
+  the nearest point of the water alone missed because it sat on the wall's
+  corner, so every 8 units of the water's edge is tried. n168 and n183 to
+  n175 land on a shore floor 4 units under the surface, which the mesh's
+  wet flag refuses and navgen's dry rule accepts.
+
+`tools/test_navmesh_layers.py` builds a pit pool (exact volume, the eye
+split at 22 units, both banks as exits, a 130 unit dive) and the same pit
+with a wall hanging into the water, whose two surfaces join only under it.
+
+## The time layer
+
+A plat or a door is a floor or a wall depending on when a body arrives:
+e1m1's `*3` and dm2's `*31` and `*34` are floors only while parked. `--air`
+now ends with a mover report; `--no-movers` leaves it out, and so does
+`--no-brushes`.
+
+- Every func_plat, func_door and func_train gets the positions stock QC
+  moves it between, how long it holds each and when in one cycle it is
+  there: `plats.qc` (speed 150, a plat untargeted rests at the bottom and
+  holds its top 3 s), `doors.qc` (speed 100, `wait` 3 by default and never
+  back for -1 or a key, a toggle door holding both ends, DOOR_START_OPEN
+  spawning a travel away and closing when triggered), func_train (speed
+  100, the min corner on each path_corner, each corner held for its `wait`
+  or the 0.1 s think) and `SUB_CalcMove` (no move under 0.1 s). Each
+  position carries its box, a wall while present, and its deck, the top
+  face in origin space, a floor while present. func_door_secret stays where
+  it was built: its two-stage move is not modelled.
+- Each world-mesh ledge point within 64 units of a mover's travel in plan,
+  and no more than a jump below it, is graded once per position, with every
+  other mover at its spawn position (trains at their first corner): walled
+  (the mover fills the step or the spot), bridged (its deck is a floor
+  within a step past the edge), or the air layer's verdict. The deck's own
+  free edges are graded at each position too.
+
+```text
+e1m1  *3 func_door, targeted: shut (spawn, rest); open (5.0 s of each 9.6 s cycle); 2.3 s each way at 100 u/s
+        14 ledge points beside it: shut: bridged 6, safe 8 | open: safe 14
+      *8 func_door, targeted: open (spawn, rest); shut (from 0.4 s on); 0.4 s each way at 600 u/s
+        101 ledge points beside it: open: danger 91, risky 5, safe 5 | shut: bridged 30, danger 25, ...
+dm2   *1 func_door, targeted: shut (spawn, rest); open (3.0 s of each 8.9 s cycle); 2.9 s each way at 100 u/s
+        134 ledge points beside it: shut: bridged 16, safe 118 | open: bridged 11, danger 55, ...
+      *31 func_plat, touch: bottom (spawn, rest); top (3.0 s of each 5.0 s cycle); 1.0 s each way at 150 u/s
+        7 ledge points beside it: bottom: safe 7 | top: bridged 7
+```
+
+dm2 has 20 movers, 14 of which change a ledge verdict with their position;
+e1m1 has 13 and 8, e1m2 25 and 3. The floor panels `*1` and `*2` slide apart
+over dm2's lava: 55 and 38 danger ledges while open, none while shut, which
+the spawn-position air layer cannot see. `tools/test_navmesh_layers.py`
+builds a plat whose top stands level with a platform and whose bottom rests
+in a lava strip: a ledge in front of it is bridged at the top, and at the
+bottom a walk lands on the deck while a run overshoots it into the lava.
 
 ## The mesh graph ladder
 
@@ -687,11 +803,18 @@ Tapes: `runs/study_g790d3_{ctl,m790dm3}_r1` to `r5` and
   seats with no fragment and no reason, which is 0 on every shipped graph.
   Whether a bot can hold a steep seat is a runtime question. dm4 has none,
   so the ladder above is unaffected.
-- Water floors are only flagged wet, and movers stand at their deathmatch
-  spawn positions; func_train is left out of the air layer. Swim volumes
-  and mover timing are [#791](https://github.com/saworbit/argus/issues/791).
-- `tools/test_navmesh_repair.py`, `tools/test_navmesh_air.py` (both since
-  #799) and `tools/test_navmesh_typed.py` run in fast CI.
+- The water and time layers ([#791](https://github.com/saworbit/argus/issues/791))
+  report; nothing reads them yet. The swim distances run portal centre to
+  portal centre, and the swim speed is the assumed horizontal terminal
+  speed: the swim block drives a bot up for air, or down to a submerged
+  seat, at 120 u/s, so a vertical leg takes longer than its figure says.
+  Movers are bounding boxes
+  graded at the ends of their travel, never between, one mover at a time
+  with the rest at spawn; func_door_secret is not moved. The main air layer
+  verdicts still take movers at their spawn positions and leave trains out.
+- `tools/test_navmesh_repair.py`, `tools/test_navmesh_air.py`,
+  `tools/test_navmesh_layers.py` and `tools/test_navmesh_typed.py` run in
+  fast CI.
 - The straight-fall drop model is stricter than play: dm4 n45 to n66 crosses
   about 40u of lava on momentum and killed nobody in 120 tapes.
 - dm3 at its 244-seat budget covered 90 per cent of the mesh against the
