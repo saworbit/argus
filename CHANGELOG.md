@@ -35,6 +35,15 @@ passing botmatch does not establish better human play.
   and is not shipped: over eight played dm4 pairs it took world deaths in lava
   from 16 to 27, the extra ones in fights, after damage and with no hazard
   deflection before them.
+- The fixed lab clock is accepted on dm3 and e1m7 at 14.25 ms
+  ([#854](https://github.com/saworbit/argus/issues/854)), under an amendment
+  registered before its fixed tapes. Its wall-clock arm is the control tapes
+  of other ladders of the same build, which is weaker than a control recorded
+  for the purpose, and the doc says so. Limits: stalls, deaths and routefails
+  on dm3, where lava is untested because neither arm had a lava death; stalls,
+  lava and world deaths and routefails on e1m7. `tools/lab_instruments.json`
+  carries both maps and the 64 tapes are in `runs/` under the amendment's
+  names.
 - `python tools/health_inventory_parked.py --amend <name> --base <rev>
   --scope "<text>"` writes the reverse patch and manifest entries that every
   edit to `src/argus.qc` needs, a comment-only one included
@@ -82,6 +91,16 @@ passing botmatch does not establish better human play.
   The recorded reading took only the waypoint closest in bearing to the wish,
   not any in the 8 degree cone the protocol's wording admits; counting any
   gives 718 events on those 32 tapes against 418.
+
+- `match_run` takes `seeds`, so an agent can run the fixed lab clock through
+  the MCP server ([#853](https://github.com/saworbit/argus/issues/853)). It
+  is refused on any map where `tools/lab_instruments.json` does not record
+  the clock as accepted (dm4 and dm2 today). One seed returns the usual
+  result; up to ten run one after another on one engine as
+  `<run_name>_s<seed>` and report like `argus-mcp seeds`. Both name the
+  clock, its 14.25 ms frame, the seeds and the map's limits, and a
+  `match_stop`, shutdown or Task cancel ends the whole ladder. No tool was
+  added: the surface is 25,446 bytes against its 25,500 bound.
 
 - A lab-map result supports an isolation-tier claim only: `argus_ci.py lab`
   fails a supported or fixed claim that names a stock map without citing a
