@@ -51,6 +51,18 @@ passing botmatch does not establish better human play.
   mill and the first-registration gate, and the scenario is recorded in
   `tools/lab_instruments.json`.
 
+- `tools/argus_guard_replica.py --overhead GRAPH.qc.json [--region X0 X1 Y0
+  Y1 Z0 Z1]` scores the overhead-target primary per tape, and the same counts
+  plus routed seconds inside a box
+  ([#868](https://github.com/saworbit/argus/issues/868)). On the recorded
+  tapes it reproduces `runs/dm4-overhead-target.results.json` tape for tape:
+  means 15.75 and 11.62 (dm4ov2 control and candidate) and 12.12 and 12.75
+  (dm4ov3), and in the room under the walkway jump 0.88 and 3.38 events a
+  tape (dm4ov2) and 2.62 and 1.00 (dm4ov3), with every routed-seconds figure.
+  The recorded reading took only the waypoint closest in bearing to the wish,
+  not any in the 8 degree cone the protocol's wording admits; counting any
+  gives 718 events on those 32 tapes against 418.
+
 - A lab-map result supports an isolation-tier claim only: `argus_ci.py lab`
   fails a supported or fixed claim that names a stock map without citing a
   tape recorded on it, or that cites a lab tape without naming the lab map

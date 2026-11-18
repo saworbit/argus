@@ -41,12 +41,38 @@ MEASURED 2026-11-17 on eight dm4 control tapes (recall 0.895, false vetoes
 are lava vetoes, because a generated floor is a 16u slab over open air and a
 probe buried in one finds the lava below (runs/dm4-reentry-guard.results.json).
 
+--overhead GRAPH.qc.json scores the overhead-target protocol's primary
+(docs/specs/2026-11-17-overhead-target-protocol.md) per tape: wall re-entries
+whose steering points at a waypoint overhead behind solid. From row k-1's pose
+and wish (the frame judge() replays), take the graph waypoint 24 to 340u away
+horizontally whose bearing lies closest to the wish. The re-entry counts when
+that bearing is within 8 degrees of the wish, the waypoint stands 64u or more
+above the bot's origin, and a hull-0 sample every 8u on the straight line
+between them, both ends excluded, is solid. The protocol's wording admits any
+waypoint in the cone; the recorded reading took the closest in bearing only,
+and that choice is what reproduces it. On the 32 dm4ov2 and dm4ov3 tapes this
+matches every per-tape count in runs/dm4-overhead-target.results.json
+(control and candidate means 15.75 and 11.62, then 12.12 and 12.75), and so it
+does on the lab_dropwall2 rung and the first dm4 pair, which it was not fitted
+on. Counting any waypoint in the cone gives 718 events on those 32 tapes
+against the recorded 418.
+
+--region X0 X1 Y0 Y1 Z0 Z1 adds, per tape, the same counts for events whose
+row k-1 pose lies strictly inside that box, and the routed seconds spent
+there: the intervals from each mode 2 row inside the box to the next row,
+summed over stays. A stay still open when the bot's rows end is left out,
+because the tape was cut inside it and its length is unknown. With the box
+x 690 to 1060, y -700 to -390, z -160 to -90 this matches the room split in
+that results file tape for tape (0.88 and 3.38 events a tape on dm4ov2, 2.62
+and 1.00 on dm4ov3) and every routed-seconds figure to its one decimal.
+
 usage:
   python tools/argus_guard_replica.py MAP TAPE.log [TAPE.log ...] [--json]
+      [--overhead GRAPH.qc.json [--region X0 X1 Y0 Y1 Z0 Z1]]
   python tools/argus_guard_replica.py --help
 
 MAP resolves to ARGUS_MAPS/<map>.bsp (default maps_local/). Exit 0 on success,
-2 when the BSP or a tape is missing.
+2 when the BSP, a tape or the graph is missing or a flag is malformed.
 """
 import collections
 import json
@@ -67,6 +93,9 @@ MAXSPEED, STOPSPEED, FRICTION, ACCEL, GRAVITY = 320.0, 100.0, 4.0, 10.0, 800.0
 FLOOR_REACH = 280.0
 STEP = 4.0
 BRANCHES = ("wall", "lava", "void", "run_off_lava", "run_off_void", "none", "unjudged")
+# the overhead-target primary: cone, rise, horizontal reach and line sampling
+OVERHEAD_CONE, OVERHEAD_RISE, OVERHEAD_NEAR, OVERHEAD_FAR, LINE_STEP = 8.0, 64.0, 24.0, 340.0, 8.0
+TAPE_COUNTS = ("route_led_starts", "re_entries", "wall_re_entries", "overhead")
 
 
 class Guard:
@@ -131,6 +160,17 @@ class Guard:
                 return lo
             d = nd
         return None
+
+    def solid_between(self, a, b, step=LINE_STEP):
+        """True when a sample every step units strictly between points a and b is solid."""
+        d = math.dist(a, b)
+        i = 1
+        while i * step < d:
+            t = i * step / d
+            if self.c(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t) == SOLID:
+                return True
+            i += 1
+        return False
 
     def _bridge_solid(self, x, y, z):
         f = self.trace_down(x, y, z + 4, z - 48)
@@ -243,32 +283,121 @@ def _table(counter):
     return out
 
 
-def classify(guard, tapes):
-    """Validation, route-led deflection starts and re-entries by branch over the given tapes."""
+def route_led_starts(guard, rows):
+    """Each route-led deflection start on one bot's rows: (k, verdict, grounded, re_entry).
+
+    A start is a hazard_* cause right after a mode 2 route_steer row; it is a
+    re-entry when it comes within two route frames of the bot's previous
+    deflection episode.
+    """
+    route_run, seen = 99, False
+    for k in range(1, len(rows)):
+        cause, prev = rows[k][5], rows[k - 1]
+        haz = cause.startswith("hazard_")
+        if haz and not prev[5].startswith("hazard_"):
+            if prev[5] == "route_steer" and prev[6] == 2 and k >= 2:
+                yield k, judge(guard, rows, k) or "unjudged", prev[7] == 1, seen and route_run <= 2
+            seen = True
+        route_run = 0 if haz else (route_run + 1 if cause == "route_steer" else 99)
+
+
+def steady_frames(rows):
+    """Every fifth steady routed ground frame on one bot's rows: known guard passes."""
+    n = 0
+    for k in range(2, len(rows)):
+        prev = rows[k - 1]
+        if rows[k][5] == "route_steer" and prev[5] == "route_steer" and prev[6] == 2 and prev[7] == 1:
+            n += 1
+            if n % 5 == 0:
+                yield k
+
+
+def load_nodes(path):
+    """Waypoint origins from a navgen graph: the .qc.json "nodes" list, or a bare list."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    return [tuple(float(v) for v in n[:3]) for n in (data["nodes"] if isinstance(data, dict) else data)]
+
+
+def overhead_target(guard, nodes, rows, k):
+    """The waypoint index behind an overhead-target re-entry at row k, or None.
+
+    From row k-1's pose and wish, the waypoint 24 to 340u away horizontally
+    whose bearing lies closest to the wish; it counts when that bearing is
+    within 8 degrees, it stands 64u or more above the bot and solid lies on
+    the straight line to it.
+    """
+    _, x, y, z, wish = rows[k - 1][0:5]
+    best, off = None, None
+    for i, (nx, ny, nz) in enumerate(nodes):
+        if OVERHEAD_NEAR <= math.hypot(nx - x, ny - y) <= OVERHEAD_FAR:
+            d = abs((math.degrees(math.atan2(ny - y, nx - x)) - wish + 180) % 360 - 180)
+            if off is None or d < off:
+                best, off = i, d
+    if best is None or off > OVERHEAD_CONE or nodes[best][2] - z < OVERHEAD_RISE:
+        return None
+    return best if guard.solid_between((x, y, z), nodes[best]) else None
+
+
+def in_box(box, x, y, z):
+    """True when (x, y, z) lies strictly inside box (x0, x1, y0, y1, z0, z1)."""
+    return box[0] < x < box[1] and box[2] < y < box[3] and box[4] < z < box[5]
+
+
+def routed_seconds(rows, box):
+    """Seconds one bot spent routed (mode 2) inside box, over the stays the tape closes."""
+    total = stay = 0.0
+    for k in range(1, len(rows)):
+        prev = rows[k - 1]
+        if prev[6] == 2 and in_box(box, *prev[1:4]):
+            stay += (rows[k][0] - prev[0]) / 1000.0
+        else:
+            total, stay = total + stay, 0.0
+    return total
+
+
+def _mean(values):
+    return round(sum(values) / len(values), 2) if values else None
+
+
+def classify(guard, tapes, nodes=None, box=None):
+    """Validation, route-led deflection starts and re-entries by branch over the given tapes.
+
+    Given a graph's nodes it also scores each tape's overhead-target wall
+    re-entries, and given a box as well, the same counts and the routed
+    seconds inside it.
+    """
     reentry, starts, steady = collections.Counter(), collections.Counter(), collections.Counter()
+    per_tape = []
     for tape in tapes:
+        tally, inside = collections.Counter(), collections.Counter()
         for rows in read_tape(tape).values():
-            route_run, seen, n = 99, False, 0
-            for k in range(1, len(rows)):
-                cause, prev = rows[k][5], rows[k - 1]
-                haz = cause.startswith("hazard_")
-                if haz and not prev[5].startswith("hazard_"):
-                    if prev[5] == "route_steer" and prev[6] == 2 and k >= 2:
-                        verdict = judge(guard, rows, k) or "unjudged"
-                        if prev[7] == 1:
-                            starts[verdict] += 1
-                        if seen and route_run <= 2:
-                            reentry[verdict] += 1
-                    seen = True
-                elif (not haz and k >= 2 and cause == "route_steer" and prev[5] == "route_steer"
-                      and prev[6] == 2 and prev[7] == 1):
-                    n += 1
-                    if n % 5 == 0:
-                        steady[judge(guard, rows, k) or "unjudged"] += 1
-                route_run = 0 if haz else (route_run + 1 if cause == "route_steer" else 99)
+            for k, verdict, grounded, again in route_led_starts(guard, rows):
+                kinds = []
+                if grounded:
+                    starts[verdict] += 1
+                    kinds.append("route_led_starts")
+                if again:
+                    reentry[verdict] += 1
+                    kinds.append("re_entries")
+                    if verdict == "wall":
+                        kinds.append("wall_re_entries")
+                        if nodes is not None and overhead_target(guard, nodes, rows, k) is not None:
+                            kinds.append("overhead")
+                tally.update(kinds)
+                if box is not None and in_box(box, *rows[k - 1][1:4]):
+                    inside.update(kinds)
+            for k in steady_frames(rows):
+                steady[judge(guard, rows, k) or "unjudged"] += 1
+            if box is not None:
+                inside["routed_seconds"] += routed_seconds(rows, box)
+        entry = {"tape": str(tape), **{key: tally[key] for key in TAPE_COUNTS}}
+        if box is not None:
+            entry["region"] = {**{key: inside[key] for key in TAPE_COUNTS},
+                               "routed_seconds": round(inside["routed_seconds"], 1)}
+        per_tape.append(entry)
     judged = sum(v for b, v in starts.items() if b != "unjudged")
     sampled = sum(v for b, v in steady.items() if b != "unjudged")
-    return {
+    report = {
         "validation": {
             "route_led_starts_on_ground": judged,
             "recall": round(1 - starts["none"] / judged, 3) if judged else None,
@@ -278,6 +407,74 @@ def classify(guard, tapes):
         "route_led_starts": _table(starts),
         "re_entries": _table(reentry),
     }
+    if nodes is not None:
+        report["overhead"] = {
+            "rule": {"cone_deg": OVERHEAD_CONE, "rise": OVERHEAD_RISE, "near": OVERHEAD_NEAR,
+                     "far": OVERHEAD_FAR, "line_step": LINE_STEP, "waypoint": "closest bearing to the wish"},
+            "mean": _mean([t["overhead"] for t in per_tape]),
+            "per_tape": per_tape,
+        }
+        if box is not None:
+            report["overhead"]["region"] = {
+                "box": list(box),
+                "mean": _mean([t["region"]["overhead"] for t in per_tape]),
+                "mean_routed_seconds": _mean([t["region"]["routed_seconds"] for t in per_tape]),
+            }
+    return report
+
+
+USAGE = ("usage: argus_guard_replica.py MAP TAPE.log [TAPE.log ...] [--json] "
+         "[--overhead GRAPH.qc.json [--region X0 X1 Y0 Y1 Z0 Z1]]")
+
+
+def _take(args, flag, n):
+    """Remove flag and its n values from args: the values, or None when the flag is absent."""
+    if flag not in args:
+        return None
+    i = args.index(flag)
+    values = args[i + 1:i + 1 + n]
+    del args[i:i + 1 + n]
+    if len(values) < n:
+        raise ValueError(f"{flag} takes {n} value(s)")
+    return values
+
+
+def _parse(args):
+    """(map and tapes, graph path or None, box or None, as_json) from the command line."""
+    graph = _take(args, "--overhead", 1)
+    box = _take(args, "--region", 6)
+    as_json = "--json" in args
+    args = [a for a in args if a != "--json"]
+    if box is not None:
+        if graph is None:
+            raise ValueError("--region needs --overhead GRAPH.qc.json")
+        try:
+            box = tuple(float(v) for v in box)
+        except ValueError:
+            raise ValueError("--region takes six numbers: X0 X1 Y0 Y1 Z0 Z1") from None
+        if not (box[0] < box[1] and box[2] < box[3] and box[4] < box[5]):
+            raise ValueError("--region wants each axis low then high")
+    if len(args) < 2:
+        raise ValueError("a map and at least one tape are required")
+    return args, graph[0] if graph else None, box, as_json
+
+
+def _print_overhead(o):
+    rule = o["rule"]
+    print(f"  overhead-target wall re-entries: mean {o['mean']} a tape (cone {rule['cone_deg']:g} deg, "
+          f"rise {rule['rise']:g}u, {rule['near']:g} to {rule['far']:g}u, closest waypoint by bearing)")
+    for t in o["per_tape"]:
+        print(f"    {t['tape']}: {t['overhead']} of {t['wall_re_entries']} wall re-entries "
+              f"({t['re_entries']} re-entries, {t['route_led_starts']} route-led starts)")
+    if "region" in o:
+        r = o["region"]
+        b = r["box"]
+        print(f"  inside x {b[0]:g} to {b[1]:g}, y {b[2]:g} to {b[3]:g}, z {b[4]:g} to {b[5]:g}: "
+              f"overhead-target mean {r['mean']} a tape, routed {r['mean_routed_seconds']} s a tape")
+        for t in o["per_tape"]:
+            g = t["region"]
+            print(f"    {t['tape']}: {g['overhead']} of {g['wall_re_entries']} wall re-entries, "
+                  f"{g['routed_seconds']} s routed")
 
 
 def main(argv=None):
@@ -285,18 +482,22 @@ def main(argv=None):
     if not args or args[0] in ("-h", "--help", "help"):
         print(__doc__.strip())
         return 0
-    as_json = "--json" in args
-    args = [a for a in args if a != "--json"]
-    if len(args) < 2:
-        print("usage: argus_guard_replica.py MAP TAPE.log [TAPE.log ...] [--json]", file=sys.stderr)
+    try:
+        args, graph, box, as_json = _parse(args)
+    except ValueError as exc:
+        print(f"{exc}\n{USAGE}", file=sys.stderr)
         return 2
     maps = Path(os.environ.get("ARGUS_MAPS", HERE.parent / "maps_local"))
     bsp = maps / f"{args[0]}.bsp"
-    missing = [str(p) for p in [bsp, *map(Path, args[1:])] if not Path(p).is_file()]
+    wanted = [bsp, *map(Path, args[1:])] + ([Path(graph)] if graph else [])
+    missing = [str(p) for p in wanted if not Path(p).is_file()]
     if missing:
         print("missing: " + ", ".join(missing), file=sys.stderr)
         return 2
-    report = {"map": args[0], "tapes": args[1:], **classify(Guard.from_bsp(bsp), args[1:])}
+    nodes = load_nodes(graph) if graph else None
+    report = {"map": args[0], "tapes": args[1:], **classify(Guard.from_bsp(bsp), args[1:], nodes, box)}
+    if graph:
+        report["overhead"] = {"graph": graph, "nodes": len(nodes), **report["overhead"]}
     if as_json:
         print(json.dumps(report, indent=2))
     else:
@@ -308,6 +509,8 @@ def main(argv=None):
             t = report[key]
             parts = ", ".join(f"{b} {t[b]} ({100 * t['share'][b]:.0f}%)" for b in BRANCHES if b in t)
             print(f"  {key.replace('_', ' ')}: {t['n']}: {parts}")
+        if graph:
+            _print_overhead(report["overhead"])
     return 0
 
 
