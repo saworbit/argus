@@ -257,10 +257,12 @@ trusted.
 
 One e1m7 fixed tape, seed 250, was excluded as outside the listen tick class.
 The class is read from the mean gap between a bot's half-second samples, and
-the listen boundary is 0.5135 s. At a 14.25 ms frame a sample lands every 36
-frames (0.513 s) and sometimes 37, so a fixed tape's mean gap sits on that
-boundary: seed 250 read 0.5132 and seed 125 read 0.5135. Fixed tapes can fall
-either side of it by chance. The verdict does not depend on that tape.
+the listen boundary is 0.5135 s. At a 14.25 ms frame the telemetry fires
+every 36 frames, 0.513 s, every time, and the one-decimal time stamps scatter
+the measured mean around that: seed 250 read 0.5132 and seed 125 read 0.5135.
+Fixed tapes can fall either side of the boundary by chance
+([#901](https://github.com/saworbit/argus/issues/901)). The verdict does not
+depend on that tape.
 
 ## Evidence
 
