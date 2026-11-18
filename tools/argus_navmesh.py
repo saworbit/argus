@@ -20,9 +20,10 @@ import argparse
 import json
 import math
 import re
-import struct
 import sys
 from pathlib import Path
+
+from argus_bsp import Bsp
 
 CONTENTS_EMPTY, CONTENTS_SOLID = -1, -2
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
@@ -33,57 +34,8 @@ SHIFT = 0.125          # how far below a floor face its support is read
 ON = 0.01              # plane-side tolerance for polygon clipping
 
 
-class Bsp:
-    """The handful of BSP29 lumps a navmesh needs."""
-
-    def __init__(self, path):
-        data = Path(path).read_bytes()
-        if struct.unpack_from("<i", data, 0)[0] != 29:
-            raise ValueError(f"{path}: not a BSP29 file")
-
-        def lump(i):
-            off, length = struct.unpack_from("<ii", data, 4 + i * 8)
-            return data[off:off + length]
-
-        raw = lump(1)
-        self.planes = [struct.unpack_from("<4f", raw, i * 20)
-                       for i in range(len(raw) // 20)]
-        raw = lump(9)
-        self.clip = [struct.unpack_from("<ihh", raw, i * 8)
-                     for i in range(len(raw) // 8)]
-        raw = lump(5)
-        self.nodes0 = [struct.unpack_from("<i8h2H", raw, i * 24)
-                       for i in range(len(raw) // 24)]
-        raw = lump(10)
-        self.leaves0 = [struct.unpack_from("<2i6h2H4B", raw, i * 28)
-                        for i in range(len(raw) // 28)]
-        raw = lump(14)
-        self.models = [struct.unpack_from("<9f7i", raw, i * 64)
-                       for i in range(len(raw) // 64)]
-        m0 = self.models[0]
-        self.mins, self.maxs = m0[0:3], m0[3:6]
-        self.hull0, self.hull1 = m0[9], m0[10]
-        text = lump(0).split(b"\0")[0].decode("ascii", "replace")
-        self.entities = [dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', b))
-                         for b in re.findall(r"\{(.*?)\}", text, re.S)]
-
-    def h1(self, x, y, z, node=None):
-        n = self.hull1 if node is None else node
-        clip, planes = self.clip, self.planes
-        while n >= 0:
-            pn, c0, c1 = clip[n]
-            nx, ny, nz, d = planes[pn]
-            n = c0 if nx * x + ny * y + nz * z - d >= 0 else c1
-        return n
-
-    def h0(self, x, y, z):
-        n = self.hull0
-        nodes, planes = self.nodes0, self.planes
-        while n >= 0:
-            node = nodes[n]
-            nx, ny, nz, d = planes[node[0]]
-            n = node[1] if nx * x + ny * y + nz * z - d >= 0 else node[2]
-        return self.leaves0[-1 - n][0]
+# Bsp (the handful of BSP29 lumps a navmesh needs, and its hull 0 and
+# hull 1 point tests) is argus_bsp's, imported above (#814).
 
 
 # ---- polygon helpers (3D, convex, vertex lists) ----
@@ -505,7 +457,7 @@ def brush_boxes(bsp, deathmatch=True):
     entity in deathmatch.
     """
     out = []
-    for e in bsp.entities:
+    for e in bsp.entities():
         cls = e.get("classname", "")
         m = e.get("model", "")
         if cls not in BRUSH_CLASSES or not m.startswith("*"):

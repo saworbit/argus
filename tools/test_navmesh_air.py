@@ -205,10 +205,10 @@ class Brushes(unittest.TestCase):
     def test_spawn_positions_follow_doors_qc_and_plats_qc(self):
         b = type("B", (), {})()
         b.models = [None, (0.0, 0.0, 0.0, 64.0, 16.0, 64.0)]
-        b.entities = [{"classname": "func_door", "model": "*1", "angle": "0",
-                       "spawnflags": "1", "lip": "8"},
-                      {"classname": "func_plat", "model": "*1"},
-                      {"classname": "func_wall", "model": "*1", "spawnflags": "2048"}]
+        b.entities = lambda: [{"classname": "func_door", "model": "*1", "angle": "0",
+                               "spawnflags": "1", "lip": "8"},
+                              {"classname": "func_plat", "model": "*1"},
+                              {"classname": "func_wall", "model": "*1", "spawnflags": "2048"}]
         boxes = nm.brush_boxes(b)
         # START_OPEN door: travel 64 - 8 = 56 along +x; plat: down 64 - 8 = 56
         self.assertEqual(boxes[0], ("func_door", (56.0, 0.0, 0.0), (120.0, 16.0, 64.0)))
