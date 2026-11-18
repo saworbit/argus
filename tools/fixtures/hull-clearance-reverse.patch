@@ -1,0 +1,84 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -8461,49 +8461,22 @@
+         && hi_z > trig.absmin_z && lo_z < trig.absmax_z);
+ };
+ 
+-// One sample of the player hull. any: anything but empty air blocks,
+-// the box test's rule; otherwise only solid world does, the embedded
+-// test's rule, so a bot wading in water or lava is not "embedded".
+-// pointcontents reads the world model only, so a plat, door or train
+-// never trips either.
+-float(vector q, float any) Argus_HullPointBlocked =
+-{
+-    local float c;
+-    c = pointcontents (q);
+-    if (any) return c != CONTENT_EMPTY;
+-    return c == CONTENT_SOLID;
+-};
+-
+-// Eleven points: centre, head, feet, and the four corners of the
+-// standard player hull at two heights. The corners sit on the hull's
+-// real 16u half-width (#755): at 15, as they were, a spot whose hull
+-// clipped a wall by up to a unit passed, and every engine move from it
+-// then started in solid (dm4 '12.8 -272.9 -72' against the wall face at
+-// y -288, dm3 '335.1 125.9 -200'). The engine keeps a resting hull a
+-// DIST_EPSILON clear of every face, and a point exactly on a face reads
+-// its front side, so a hull flush against a wall stays clear. Head and
+-// feet stay inside the hull's height, clear of the floor it stands on.
+-float(vector p, float any) Argus_HullBlocked =
+-{
+-    if (Argus_HullPointBlocked (p, any))                      return TRUE;
+-    if (Argus_HullPointBlocked (p + '0 0 28', any))           return TRUE;
+-    if (Argus_HullPointBlocked (p - '0 0 20', any))           return TRUE;
+-    if (Argus_HullPointBlocked (p + '16 16 0', any))          return TRUE;
+-    if (Argus_HullPointBlocked (p + '-16 16 0', any))         return TRUE;
+-    if (Argus_HullPointBlocked (p + '16 -16 0', any))         return TRUE;
+-    if (Argus_HullPointBlocked (p + '-16 -16 0', any))        return TRUE;
+-    if (Argus_HullPointBlocked (p + '16 16 28', any))         return TRUE;
+-    if (Argus_HullPointBlocked (p + '-16 16 28', any))        return TRUE;
+-    if (Argus_HullPointBlocked (p + '16 -16 28', any))        return TRUE;
+-    if (Argus_HullPointBlocked (p + '-16 -16 28', any))       return TRUE;
+-    return FALSE;
+-};
+-
+-// The catchup warp, the unstick destination, the body nudge and the
+-// tactic path samples all ask this one question.
++// Eleven points: centre, head, feet, and the four box corners at two
++// heights. That is the same set the catchup warp has always used.
+ float(vector p) Argus_BoxClear =
+ {
+-    return !Argus_HullBlocked (p, TRUE);
++    if (pointcontents (p) != CONTENT_EMPTY)                  return FALSE;
++    if (pointcontents (p + '0 0 28') != CONTENT_EMPTY)       return FALSE;
++    if (pointcontents (p - '0 0 20') != CONTENT_EMPTY)       return FALSE;
++    if (pointcontents (p + '15 15 0') != CONTENT_EMPTY)      return FALSE;
++    if (pointcontents (p + '-15 15 0') != CONTENT_EMPTY)     return FALSE;
++    if (pointcontents (p + '15 -15 0') != CONTENT_EMPTY)     return FALSE;
++    if (pointcontents (p + '-15 -15 0') != CONTENT_EMPTY)    return FALSE;
++    if (pointcontents (p + '15 15 28') != CONTENT_EMPTY)     return FALSE;
++    if (pointcontents (p + '-15 15 28') != CONTENT_EMPTY)    return FALSE;
++    if (pointcontents (p + '15 -15 28') != CONTENT_EMPTY)    return FALSE;
++    if (pointcontents (p + '-15 -15 28') != CONTENT_EMPTY)   return FALSE;
++    return TRUE;
+ };
+ 
+ // Argus_PadCrowded's rule against a bare point, and it skips self.
+@@ -8588,16 +8561,7 @@
+     local entity n, best;
+     local float d, bd, embedded, mind, fightpin;
+ 
+-    // Embedded means the hull, not just the origin, is in solid (#756).
+-    // A hull that clips a wall by less than its 16u half-width has a
+-    // clear origin and cannot move at all: Joe Rogan held dm4
+-    // '12.8 -272.9 -72' with speed 0 for six seconds while four walk
+-    // recoveries each started in solid, waiting on the slower stall,
+-    // hurt and fight branches. The same eleven samples as the box test
+-    // catch it, solid only, so water and lava do not count. No zero-step
+-    // walkmove: that fires triggers and fails on any ledge where
+-    // SV_CheckBottom refuses the centre, which is not being stuck.
+-    embedded = Argus_HullBlocked (self.origin, FALSE);
++    embedded = (pointcontents (self.origin) == CONTENT_SOLID);
+ 
+     // BEING INSIDE SOLID FOR AN INSTANT IS NORMAL. The first cut of
+     // this fired on contents plus a low speed, and dm4 promptly
