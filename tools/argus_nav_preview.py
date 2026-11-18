@@ -41,7 +41,7 @@ def render_graph(bsp, mapname, qc, png):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
-    from analyze_match import load_bsp
+    from argus_bsp import load_bsp
     from argus_navjson import load_nav
     from argus_linkstyle import LINK_STYLES
     nav = load_nav(str(qc) + '.json')
