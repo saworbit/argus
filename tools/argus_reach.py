@@ -116,6 +116,13 @@ def bsp_dir():
     return Path(os.environ["ARGUS_MAPS"]) if os.environ.get("ARGUS_MAPS") else ROOT / "maps_local"
 
 
+def load_world(bsp):
+    """The BSP and the solid brush entities at spawn, for standing_point."""
+    from argus_navmesh import brush_boxes
+    world = Bsp(bsp)
+    return world, brush_boxes(world)
+
+
 def audit(mapname, explicit=False):
     bsp = bsp_dir() / f"{mapname}.bsp"
     navj = ROOT / "src" / f"argus_nav_{mapname}.qc.json"
@@ -131,10 +138,14 @@ def audit(mapname, explicit=False):
         fwd_ungated[a].append(b)
 
     spawns = bsp_spawns(bsp)
-    world = Bsp(bsp)
-    from argus_navmesh import brush_boxes
-    boxes = brush_boxes(world)
     n = len(nodes)
+    if not spawns:
+        # the #113 case, answered before the world is read: a BSP with no
+        # deathmatch spawn needs no standing points
+        print(f"{mapname}: {n} nodes, 0 spawns (gated edges: {len(gated)})")
+        print("  no spawn points found in BSP")
+        return False
+    world, boxes = load_world(bsp)
     rows = []
     for spawn in spawns:
         o = standing_point(world, spawn, boxes)
