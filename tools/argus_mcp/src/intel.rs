@@ -169,6 +169,9 @@ pub struct MatchBrief {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub movement: Option<crate::motion::MotionReport>,
     pub map: Option<String>,
+    /// Present only when the tape recorded a different map.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    requested_map: Option<String>,
     pub totals: Totals,
     pub mode_share: ModeShare,
     pub bots: Vec<crate::parse_arglog::BotStats>,
@@ -682,14 +685,25 @@ pub fn is_controlled_fixture(brief: &MatchBrief) -> bool {
         .any(|flag| flag == CONTROLLED_FIXTURE_FLAG)
 }
 
+fn brief_map(tape: &MatchTape, map_hint: Option<&str>) -> Option<String> {
+    tape.map
+        .clone()
+        .or_else(|| map_hint.map(str::to_ascii_lowercase))
+}
+
 pub(crate) fn brief_tape_lava(
     tape: &MatchTape,
     map_hint: Option<&str>,
     hull: Option<&crate::bsp::Hull0>,
 ) -> MatchBrief {
-    let map = map_hint
-        .map(|s| s.to_ascii_lowercase())
-        .or_else(|| tape.map.clone());
+    let map = brief_map(tape, map_hint);
+    let requested_map = map_hint
+        .filter(|hint| {
+            tape.map
+                .as_deref()
+                .is_some_and(|map| !map.eq_ignore_ascii_case(hint))
+        })
+        .map(str::to_ascii_lowercase);
     let summary = tape.summary();
     // bands, gates and flags are statements about the BOT build:
     // every bot-quality figure below excludes human tracks (v3.72's
@@ -921,6 +935,7 @@ pub(crate) fn brief_tape_lava(
     let mut brief = MatchBrief {
         movement: tape.movement.clone(),
         map,
+        requested_map,
         totals,
         mode_share,
         bots: summary.bots,
@@ -939,6 +954,9 @@ pub(crate) fn brief_tape_lava(
         human_scorecard: None,
         identity: tape.identity.clone(),
     };
+    if let Some(mismatch) = brief.recorded_map_mismatch() {
+        brief.flags.insert(0, format!("WRONG MAP: {mismatch}"));
+    }
     brief.human_scorecard = human_scorecard(tape, &brief.totals);
     brief.next_steps = suggest_next(&brief, None);
     brief.headline = headline_one(&brief.totals, &brief.flags, brief.map.as_deref());
@@ -985,9 +1003,7 @@ pub fn brief_text(text: &str, map_hint: Option<&str>) -> MatchBrief {
 /// on dm4 (solid pit floors at -360).
 pub fn brief_text_hull(cfg: &Config, text: &str, map_hint: Option<&str>) -> MatchBrief {
     let tape = parse_tape(text);
-    let map = map_hint
-        .map(|s| s.to_ascii_lowercase())
-        .or_else(|| tape.map.clone());
+    let map = brief_map(&tape, map_hint);
     let hull = map.as_deref().and_then(|m| hull0_for_map(cfg, m));
     brief_tape_lava(&tape, map_hint, hull.as_ref())
 }
@@ -1010,9 +1026,7 @@ pub fn hull0_for_map(cfg: &Config, map: &str) -> Option<crate::bsp::Hull0> {
 pub fn brief_run(cfg: &Config, log: &str, map_hint: Option<&str>) -> Result<MatchBrief, String> {
     let path = resolve_run_ref(cfg, log, map_hint)?;
     let tape = parse_tape_path(&path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let map = map_hint
-        .map(|s| s.to_ascii_lowercase())
-        .or_else(|| tape.map.clone());
+    let map = brief_map(&tape, map_hint);
     let hull = map.as_deref().and_then(|m| hull0_for_map(cfg, m));
     let mut brief = brief_tape_lava(&tape, map_hint, hull.as_ref());
     attach_nav(cfg, &mut brief);
@@ -1560,7 +1574,7 @@ pub fn compare_band_primary_scaled(
     if candidates
         .iter()
         .chain(controls)
-        .any(|b| is_controlled_fixture(b) || !b.totals.failed_spawns.is_empty())
+        .any(|b| is_controlled_fixture(b) || b.has_wrong_map())
     {
         return compare_band_primary(candidates, controls, primary);
     }
@@ -2067,6 +2081,17 @@ impl MatchBrief {
     pub fn empty() -> MatchBrief {
         brief_text("", None)
     }
+
+    pub(crate) fn recorded_map_mismatch(&self) -> Option<String> {
+        let (requested, actual) = self.requested_map.as_deref().zip(self.map.as_deref())?;
+        Some(format!(
+            "requested '{requested}', engine recorded '{actual}'"
+        ))
+    }
+
+    fn has_wrong_map(&self) -> bool {
+        self.requested_map.is_some() || !self.totals.failed_spawns.is_empty()
+    }
 }
 
 /// The tape whose stall count is the median: a real match to show,
@@ -2089,6 +2114,9 @@ fn wrong_map_findings(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Vec
     let mut findings = Vec::new();
     for (arm, briefs) in [("candidate", candidates), ("control", controls)] {
         for (index, brief) in briefs.iter().enumerate() {
+            if let Some(mismatch) = brief.recorded_map_mismatch() {
+                findings.push(format!("WRONG MAP: {arm} tape {} {mismatch}", index + 1));
+            }
             if !brief.totals.failed_spawns.is_empty() {
                 findings.push(format!(
                     "WRONG MAP: {arm} tape {} refused {} and describes '{}'; no gameplay verdict",
@@ -2105,17 +2133,12 @@ fn wrong_map_findings(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Vec
 fn refuse_wrong_map(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> CompareReport {
     CompareReport {
         verdict: Verdict::Mixed,
-        headline: "Mixed: a refused map spawn invalidates this comparison".into(),
+        headline: "Mixed: a wrong-map tape invalidates this comparison".into(),
         gate_card: "WRONG MAP: no gameplay verdict; stage the requested BSP and record fresh tapes"
             .into(),
         gates: Vec::new(),
         findings,
-        next_steps: vec![NextStep {
-            priority: 1,
-            area: "maps".into(),
-            look_at: "the refused BSP and invalid tapes".into(),
-            why: "Stage the requested map and record fresh tapes before comparing.".into(),
-        }],
+        next_steps: vec![wrong_map_next_step()],
         a,
         b,
         scaled: false,
@@ -2124,6 +2147,15 @@ fn refuse_wrong_map(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> Comp
         band: Vec::new(),
         stats: Vec::new(),
         primary: None,
+    }
+}
+
+fn wrong_map_next_step() -> NextStep {
+    NextStep {
+        priority: 1,
+        area: "maps".into(),
+        look_at: "the requested map and recorded tapes".into(),
+        why: "Verify the requested map launches and record fresh tapes before comparing.".into(),
     }
 }
 
@@ -2575,8 +2607,8 @@ pub fn scale_brief_to_duration(
 pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
     if is_controlled_fixture(&a)
         || is_controlled_fixture(&b)
-        || !a.totals.failed_spawns.is_empty()
-        || !b.totals.failed_spawns.is_empty()
+        || a.has_wrong_map()
+        || b.has_wrong_map()
     {
         return compare_briefs(a, b);
     }
@@ -2743,6 +2775,9 @@ fn count_event_rest(tape: &MatchTape, verb: &str) -> BTreeMap<String, u32> {
 }
 
 pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep> {
+    if brief.has_wrong_map() {
+        return vec![wrong_map_next_step()];
+    }
     let mut steps = Vec::new();
     let lava_fail = gates
         .map(|g| g.iter().any(|x| x.name == "lava_deaths" && !x.pass))
@@ -4980,6 +5015,38 @@ ARGEVT Reap spawned
             "{}",
             single.gate_card
         );
+    }
+
+    #[test]
+    fn wrong_recorded_map_refuses_comparisons_with_a_map_hint() {
+        let clean = brief_text(&log_a(), Some("DM4"));
+        let text = log_a().replace("ARGUS init on dm4", "SpawnServer: start");
+        let wrong = brief_text(&text, Some("dm4"));
+        assert_eq!(wrong.map.as_deref(), Some("start"));
+        assert!(wrong.totals.failed_spawns.is_empty());
+        assert!(wrong.flags[0].contains("WRONG MAP"));
+        assert!(wrong.flags[0].contains("dm4"));
+        assert!(wrong.flags[0].contains("start"));
+
+        for report in [
+            compare_briefs(clean.clone(), wrong.clone()),
+            compare_briefs_scaled(wrong.clone(), clean.clone()),
+            compare_band_primary_scaled(
+                &[clean.clone(), wrong],
+                std::slice::from_ref(&clean),
+                Some("stall_parity"),
+            ),
+        ] {
+            assert_eq!(report.verdict, Verdict::Mixed);
+            assert!(report.gate_card.contains("WRONG MAP"));
+            assert!(report.gates.is_empty());
+        }
+
+        let historical = log_a().replace("ARGUS init on dm4\n", "");
+        for brief in [clean, brief_text(&historical, Some("DM4"))] {
+            assert_eq!(brief.map.as_deref(), Some("dm4"));
+            assert!(!brief.flags.iter().any(|flag| flag.contains("WRONG MAP")));
+        }
     }
 
     #[test]

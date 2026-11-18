@@ -626,6 +626,9 @@ impl MatchCtrl {
             ));
             brief
         });
+        if let Some(mismatch) = brief.recorded_map_mismatch() {
+            return Err(format!("WRONG MAP: {mismatch}. Tape at {log_path}"));
+        }
         Ok(MatchRunResult {
             ok: true,
             run_name: st.run_name.unwrap_or_default(),
@@ -1274,6 +1277,28 @@ mod tests {
         TAIL_MAX_LINES,
     };
     use crate::test_support::{git_test_lock, run_git, TestDir};
+
+    #[tokio::test]
+    async fn wrong_recorded_map_keeps_the_tape_and_fails_the_match() {
+        let _live = super::live_test_lock_async().await;
+        let (_temp, cfg) = tmp_cfg("wrong-recorded-map");
+        let tape =
+            "SpawnServer: start\nARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n";
+        let engine = crate::engine::FakeEngineControl::new("");
+        let mut ctrl = super::MatchCtrl::with_fake_engines([engine.clone()]);
+        ctrl.start(&cfg, "dm4", Some(10), Some("wrong-map"), None, None, None)
+            .await
+            .unwrap();
+        std::fs::write(ctrl.live_log_path().unwrap(), tape).unwrap();
+        engine.complete();
+        let error = ctrl.finish(&cfg, "dm4").await.unwrap_err();
+        assert!(error.contains("WRONG MAP"), "{error}");
+        assert!(error.contains("start") && error.contains("dm4"), "{error}");
+        let log = cfg.runs.join("wrong-map.log");
+        assert!(error.contains(log.to_str().unwrap()), "{error}");
+        assert_eq!(std::fs::read_to_string(log).unwrap(), tape);
+        assert!(!ctrl.status().running);
+    }
 
     #[test]
     fn tape_regression_live_retry_and_harvest_guard_accept_bronze_text() {
