@@ -1,5 +1,5 @@
 {
-  "note": "Elbow seats into dm3's south upper area (red armour 256 -704 304), consumed by argus_navgen.py --seat-links. tools/argus_navmesh.py found the route: 64u walkways along pit edges at z 56, 152 and 328 whose corners fail beeline_ok end to end. Bots switch to their next waypoint 48u early and Argus_WalkArrivalReady only refuses a wall, so each elbow sits toward the outer corner, and the top U gets three seats, placed so that switching 48u early with 12u of lateral error still keeps the origin over floor in both directions. Every walk passes navgen's beeline_ok and the mesh walker in tools/argus_navmesh_graph.py, with SV_CheckBottom holding at every 4u sample. The cut diagonal n45-n40 carried the origin 119u over a 346u drop; the mesh walker refuses it and the v3.96 mill refused its predecessor.",
+  "note": "Elbow seats into dm3's south upper area (red armour 256 -704 304), consumed by argus_navgen.py --seat-links. tools/argus_navmesh.py found the route: 64u walkways along pit edges at z 56, 152 and 328 whose corners fail beeline_ok end to end. Bots switch to their next waypoint 48u early and Argus_WalkArrivalReady only refuses a wall, so each elbow sits toward the outer corner, and the top U gets three seats, placed so that switching 48u early with 12u of lateral error still keeps the origin over floor in both directions. Every walk passes navgen's beeline_ok and the mesh walker in tools/argus_navmesh_graph.py, with SV_CheckBottom holding at every 4u sample. The cut diagonal n45-n40 carried the origin 119u over a 346u drop; the mesh walker refuses it and the v3.96 mill refused its predecessor. The cuts also retire two typed links bots could not take (#779): the sprint n241 -> n52 across the top gap, whose run-up runs down the stairs while the jump goes south (1 arrival in 55 visits over 20 fixed-seed tapes, and the routes through it ended under the platform), and the jump n36 -> n46 (0 arrivals in 14), which the elbow seat above replaces.",
   "seats": [
     [492.0, -528.0, 56.0],
     [-236.0, -532.0, 152.0],
@@ -27,6 +27,8 @@
   ],
   "cuts": [
     [[-27.0, -543.0, 328.0], [-155.0, -703.0, 328.0]],
-    [[-155.0, -703.0, 328.0], [-27.0, -543.0, 328.0]]
+    [[-155.0, -703.0, 328.0], [-27.0, -543.0, 328.0]],
+    [[101.0, -543.0, 296.0], [101.0, -703.0, 328.0]],
+    [[-219.0, -639.0, 152.0], [-27.0, -543.0, 152.0]]
   ]
 }
