@@ -1271,6 +1271,79 @@ tool_timeout_sec = 700
             self.assertEqual(report["findings"][0]["verdict"], "pre-existing")
             self.assertEqual(report["failures"], 0)
 
+    def test_gait_audit_names_mover_waits(self):
+        """A still window inside the bot's own lift hop is the mover hold, not a wedge (#628)."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_gait
+
+        def tape(path, events, marker_at=None, losing=False, still_from=10.0):
+            # Spaced name on purpose: events resolve whole names first.
+            lines = ["ARGUS init on e1m5\n", "ARGEVT Joe Rogan spawned\n"]
+            for i in range(60):
+                t = i * 0.5
+                still = still_from <= t <= still_from + 8.0
+                speed = 0 if still else 320
+                hp = 100 - (t - still_from) * 4 if (still and losing) else 100
+                lines.append(
+                    f"ARGLOG Joe Rogan t {t} pos '-630 1535 -24' spd {speed} yaw 0 "
+                    f"mode 2 st 0 gl 0 hp {hp:.0f} frg 0\n"
+                )
+                for at, verb in events:
+                    if abs(t - at) < 0.01:
+                        lines.append(f"ARGEVT Joe Rogan {verb}\n")
+                if marker_at is not None and abs(t - marker_at) < 0.01:
+                    lines.append("ARGUS Joe Rogan hesitate settle\n")
+            path.write_text("".join(lines), encoding="utf-8")
+            return path
+
+        with tempfile.TemporaryDirectory() as td:
+            # Lift hop planned, the bot parks, the 8 s pad deadline gives up.
+            report = argus_gait.audit(
+                tape(Path(td) / "pad.log", [(9.5, "lift"), (18.0, "abandon")]), 8.0, 4.0)
+            row = report["findings"][0]
+            self.assertEqual(row["verdict"], "mover wait")
+            self.assertEqual(row["mover"], {"verb": "lift", "t": 9.5, "close": "abandon",
+                                            "boarded": False, "overrun": 0.0})
+            self.assertEqual(report["mover_waits"], 1)
+            self.assertEqual(report["failures"], 0)
+
+            # Still standing well after the give-up: the hold outlived the
+            # hop that explains it, which is not hidden as a mover wait.
+            report = argus_gait.audit(
+                tape(Path(td) / "overrun.log", [(9.5, "lift"), (13.0, "abandon")]), 8.0, 4.0)
+            row = report["findings"][0]
+            self.assertEqual(row["verdict"], "mover overrun")
+            self.assertEqual(row["mover"]["overrun"], 5.0)
+            self.assertEqual(report["mover_overruns"], 1)
+            self.assertEqual(report["failures"], 0)
+
+            # Boarding keeps the hop open: a long ride is still the mover's,
+            # here until the tape stops short of the 20 s lift bound.
+            report = argus_gait.audit(
+                tape(Path(td) / "ride.log", [(10.0, "lift"), (10.5, "board")]), 8.0, 4.0)
+            self.assertEqual(report["findings"][0]["mover"]["boarded"], True)
+            self.assertEqual(report["findings"][0]["mover"]["close"], "tape end")
+
+            # A hop given up before the window explains nothing.
+            report = argus_gait.audit(
+                tape(Path(td) / "closed.log", [(8.0, "lift"), (9.5, "abandon")]), 8.0, 4.0)
+            self.assertEqual(report["findings"][0]["verdict"], "pre-existing")
+            self.assertIsNone(report["findings"][0]["mover"])
+
+            # Nor does one whose own 15 s train bound passed before it.
+            report = argus_gait.audit(
+                tape(Path(td) / "stale.log", [(0.5, "train")], still_from=16.0), 8.0, 4.0)
+            self.assertEqual(report["findings"][0]["verdict"], "pre-existing")
+
+            # A hesitation keeps first claim, so a gait failure is never
+            # excused as a mover wait.
+            report = argus_gait.audit(
+                tape(Path(td) / "both.log", [(9.5, "lift")], marker_at=9.5, losing=True),
+                8.0, 4.0)
+            self.assertEqual(report["findings"][0]["verdict"], "FAIL")
+            self.assertIsNone(report["findings"][0]["mover"])
+            self.assertEqual(report["failures"], 1)
+
     def test_guard_replica_follows_engine_traces_and_names_each_branch(self):
         """A buried probe sees through a slab; walls, lava and run-offs are told apart."""
         sys.path.insert(0, str(ROOT / "tools"))
