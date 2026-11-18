@@ -1,0 +1,8 @@
+# cargo-fuzz working directories. A corpus or crash input can be derived
+# from whatever map or demo seeded it, and id Software content must never
+# be committed (#849), so none of these is ever tracked. A crash worth
+# keeping becomes a regression test in the stable suite instead.
+target/
+corpus/
+artifacts/
+coverage/

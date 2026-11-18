@@ -338,53 +338,69 @@ fn f32_le(data: &[u8], off: usize) -> f32 {
 /// Minimal PACK reader: find a file by basename (case-insensitive).
 pub fn pak_find(pak: &Path, basename: &str) -> Result<Option<Vec<u8>>, String> {
     let data = std::fs::read(pak).map_err(|e| format!("{}: {e}", pak.display()))?;
-    if data.len() < 12 || &data[0..4] != b"PACK" {
-        return Err(format!("{}: not a PAK", pak.display()));
-    }
-    let dir_ofs = i32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-    let dir_len = i32::from_le_bytes(data[8..12].try_into().unwrap()) as usize;
+    pak_find_bytes(&data, basename).map_err(|e| format!("{}: {e}", pak.display()))
+}
+
+/// [`pak_find`] over PAK bytes already in memory (#849 fuzzes this).
+pub fn pak_find_bytes(data: &[u8], basename: &str) -> Result<Option<Vec<u8>>, String> {
     let want = basename.to_ascii_lowercase();
     let mut found = None;
-    let mut i = dir_ofs;
-    let end = dir_ofs.saturating_add(dir_len);
-    while i + 64 <= end.min(data.len()) {
-        let raw = &data[i..i + 56];
-        let nlen = raw.iter().position(|&b| b == 0).unwrap_or(56);
-        let name = String::from_utf8_lossy(&raw[..nlen]).replace('\\', "/");
-        let ofs = i32::from_le_bytes(data[i + 56..i + 60].try_into().unwrap()) as usize;
-        let length = i32::from_le_bytes(data[i + 60..i + 64].try_into().unwrap()) as usize;
+    for (name, ofs, length) in pak_directory(data)? {
         let base = name
             .rsplit('/')
             .next()
             .unwrap_or(&name)
             .to_ascii_lowercase();
-        if base == want && ofs + length <= data.len() {
-            found = Some(data[ofs..ofs + length].to_vec());
+        if base != want {
+            continue;
         }
-        i += 64;
+        if let Some(file) = ofs.checked_add(length).and_then(|end| data.get(ofs..end)) {
+            found = Some(file.to_vec());
+        }
     }
     Ok(found)
 }
 
+/// A PAK's directory: each entry's name, file offset and length.
+///
+/// #849: the header and entry fields are signed ints, and a negative one
+/// read `as usize` became a huge value whose bounds arithmetic overflowed
+/// (a panic in a debug build, an out of range slice in release). Read
+/// unsigned, a negative field is merely too large: a directory that starts
+/// past the end reads as empty, one that runs past it keeps the entries that
+/// fit, and an entry's own offset and length are the caller's to check.
+fn pak_directory(data: &[u8]) -> Result<Vec<(String, usize, usize)>, String> {
+    if data.len() < 12 || &data[0..4] != b"PACK" {
+        return Err("not a PAK".into());
+    }
+    let field =
+        |raw: &[u8], at: usize| u32::from_le_bytes(raw[at..at + 4].try_into().unwrap()) as usize;
+    let (dir_ofs, dir_len) = (field(data, 4), field(data, 8));
+    let end = dir_ofs.saturating_add(dir_len).min(data.len());
+    let directory = data.get(dir_ofs..end).unwrap_or_default();
+    Ok(directory
+        .chunks_exact(64)
+        .map(|raw| {
+            let nlen = raw[..56].iter().position(|&b| b == 0).unwrap_or(56);
+            let name = String::from_utf8_lossy(&raw[..nlen]).replace('\\', "/");
+            (name, field(raw, 56), field(raw, 60))
+        })
+        .collect())
+}
+
 pub fn pak_list_maps(pak: &Path) -> Result<Vec<String>, String> {
     let data = std::fs::read(pak).map_err(|e| format!("{}: {e}", pak.display()))?;
-    if data.len() < 12 || &data[0..4] != b"PACK" {
-        return Err(format!("{}: not a PAK", pak.display()));
-    }
-    let dir_ofs = i32::from_le_bytes(data[4..8].try_into().unwrap()) as usize;
-    let dir_len = i32::from_le_bytes(data[8..12].try_into().unwrap()) as usize;
+    pak_list_maps_bytes(&data).map_err(|e| format!("{}: {e}", pak.display()))
+}
+
+/// [`pak_list_maps`] over PAK bytes already in memory (#849 fuzzes this).
+pub fn pak_list_maps_bytes(data: &[u8]) -> Result<Vec<String>, String> {
     let mut maps = Vec::new();
-    let mut i = dir_ofs;
-    let end = dir_ofs.saturating_add(dir_len);
-    while i + 64 <= end.min(data.len()) {
-        let raw = &data[i..i + 56];
-        let nlen = raw.iter().position(|&b| b == 0).unwrap_or(56);
-        let name = String::from_utf8_lossy(&raw[..nlen]).replace('\\', "/");
+    for (name, _, _) in pak_directory(data)? {
         let base = name.rsplit('/').next().unwrap_or(&name).to_string();
         if base.to_ascii_lowercase().ends_with(".bsp") {
             maps.push(base);
         }
-        i += 64;
     }
     maps.sort();
     maps.dedup();
@@ -487,6 +503,48 @@ mod tests {
                 head,
             };
             assert_eq!(hull.contents_at([0.0; 3]), CONTENTS_SOLID);
+        }
+    }
+
+    fn pak(dir_ofs: i32, dir_len: i32, entry_ofs: i32, entry_len: i32) -> Vec<u8> {
+        let mut out = b"PACK".to_vec();
+        out.extend_from_slice(&dir_ofs.to_le_bytes());
+        out.extend_from_slice(&dir_len.to_le_bytes());
+        out.extend_from_slice(b"BSPDATA!");
+        let mut name = [0u8; 56];
+        name[..13].copy_from_slice(b"maps/fuzz.bsp");
+        out.extend_from_slice(&name);
+        out.extend_from_slice(&entry_ofs.to_le_bytes());
+        out.extend_from_slice(&entry_len.to_le_bytes());
+        out
+    }
+
+    /// #849: a negative header or directory field read as a huge usize and
+    /// the bounds arithmetic overflowed (found by mutating a PAK): a panic in
+    /// a debug build, an out of range slice in release. A bad entry is
+    /// skipped and a bad directory reads as empty.
+    #[test]
+    fn pak_reader_rejects_negative_offsets_and_lengths() {
+        let good = pak(20, 64, 12, 8);
+        assert_eq!(
+            pak_find_bytes(&good, "fuzz.bsp").unwrap().unwrap(),
+            b"BSPDATA!"
+        );
+        assert_eq!(pak_list_maps_bytes(&good).unwrap(), ["fuzz.bsp"]);
+        for (dir_ofs, dir_len, entry_ofs, entry_len) in [
+            (-1, 64, 12, 8),
+            (i32::MIN, 64, 12, 8),
+            (-64, -1, 12, 8),
+            (20, 64, -1, 8),
+            (20, 64, 12, -1),
+            (20, 64, i32::MIN, i32::MIN),
+            (20, 64, i32::MAX, i32::MAX),
+        ] {
+            let data = pak(dir_ofs, dir_len, entry_ofs, entry_len);
+            let case = (dir_ofs, dir_len, entry_ofs, entry_len);
+            assert_eq!(pak_find_bytes(&data, "fuzz.bsp"), Ok(None), "{case:?}");
+            let maps = pak_list_maps_bytes(&data).unwrap();
+            assert!(maps.len() <= 1, "{case:?}: {maps:?}");
         }
     }
 
