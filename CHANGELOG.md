@@ -27,6 +27,16 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Two registered ladders and their results. The run-up floor veto
+  ([#867](https://github.com/saworbit/argus/issues/867),
+  [protocol](docs/specs/2026-11-18-runup-floor-protocol.md)) refuses a drop of
+  more than a step while a bot lines up dm4's staged walkway jump. Over eight
+  dm4 pairs it cut routed seconds in the room below from 9.26 to 3.40 a tape,
+  short of the 10.76 limit, so it is not supported and not merged. The e1m7
+  jump landing check ([#785](https://github.com/saworbit/argus/issues/785),
+  [protocol](docs/specs/2026-11-18-e1m7-jumpcheck-kd-spread-protocol.md)) does
+  not widen `kd_spread`: 5.1 against 6.6 over ten pairs, limit 2.9, frag totals
+  29.1 against 30.5. Play is unchanged.
 - `tools/argus_standin_calibration.py --measure sight` reads bot kills on the
   stand-in per minute in sight of a bot, rebuilt from the tape on a clear
   hull-0 line ([#842](https://github.com/saworbit/argus/issues/842)). A
