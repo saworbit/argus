@@ -9,9 +9,10 @@ exactly. It is a screening instrument, validated per map: read
 [where it agrees](#where-it-agrees-with-the-wall-clock) before trusting a
 fixed tape.
 
-**Current standing:** accepted on dm4 and dm2 at 14.25 ms, with lava deaths,
-world deaths and routefails (and stalls on dm4) as limits. Not validated on
-any other map. `tools/lab_instruments.json` holds the record the lab reads.
+**Current standing:** accepted on dm4, dm2, dm3 and e1m7 at 14.25 ms. Limits:
+routefails everywhere; lava and world deaths on dm4, dm2 and e1m7; stalls on
+dm4, dm3 and e1m7; deaths on dm3. Not validated on any other map.
+`tools/lab_instruments.json` holds the record the lab reads.
 
 ## What it does
 
@@ -225,6 +226,44 @@ nobody should read a dm4 lava result off a fixed ladder.
 A fixed tape models the lab's wall clock, not a person: the human plays
 13.9 ms frames on a listen server.
 
+### Amendment 1: dm3 and e1m7 at 14.25 ms
+
+The [amendment](specs/2026-11-18-fixed-clock-validation-amendment.md) was
+registered before any of its fixed tapes ([#854](https://github.com/saworbit/argus/issues/854)).
+Same question and criterion; the build is main at 89b9852 (`9387e1e77737`)
+and the wall-clock arm is the played-rate control tapes of that build from
+other ladders the same day, all recorded before the amendment and some of
+their totals already read. That is weaker than a control recorded for the
+validation itself. The fixed arm is 20 fresh seeds a map, `seed_for(41..=60)`.
+
+| Metric | dm3 wall | dm3 fixed | dm3 reading | e1m7 wall | e1m7 fixed | e1m7 reading |
+| --- | --- | --- | --- | --- | --- | --- |
+| stalls | 20.8 | 19.9 | inconclusive | 2.1 | 1.5 | inconclusive |
+| engagements | 19.7 | 19.1 | equivalent | 95.3 | 95.0 | equivalent |
+| lava deaths | 0.0 | 0.0 | equivalent | 1.3 | 0.9 | inconclusive |
+| world deaths | 0.0 | 0.0 | equivalent | 1.3 | 0.9 | inconclusive |
+| freezes | 0.0 | 0.0 | equivalent | 0.2 | 0.1 | equivalent |
+| coverage | 515.1 | 502.8 | equivalent | 386.2 | 393.8 | equivalent |
+| goals | 23.1 | 24.8 | equivalent | 22.8 | 23.1 | equivalent |
+| deaths | 6.2 | 6.8 | inconclusive | 34.7 | 34.0 | equivalent |
+| routefails | 3.4 | 2.6 | inconclusive | 3.3 | 2.8 | inconclusive |
+| average speed | 196.0 | 195.9 | equivalent | 213.0 | 208.6 | equivalent |
+
+Both maps are accepted: nothing reads different, and engagements, coverage
+and goals read equivalent. dm3 had 11 wall-clock tapes and 20 fixed; e1m7 had
+13 and 19. dm3's lava reads equivalent only because neither arm had a lava
+death, so it says nothing about lava there; treat it as untested rather than
+trusted.
+
+One e1m7 fixed tape, seed 250, was excluded as outside the listen tick class.
+The class is read from the mean gap between a bot's half-second samples, and
+the listen boundary is 0.5135 s. At a 14.25 ms frame the telemetry fires
+every 36 frames, 0.513 s, every time, and the one-decimal time stamps scatter
+the measured mean around that: seed 250 read 0.5132 and seed 125 read 0.5135.
+Fixed tapes can fall either side of the boundary by chance
+([#901](https://github.com/saworbit/argus/issues/901)). The verdict does not
+depend on that tape.
+
 ## Evidence
 
 Played arm: `runs/fxval_played_dm4_r1` to `r10`, `runs/fxval_played_dm2_r1` to
@@ -233,6 +272,14 @@ Played arm: `runs/fxval_played_dm4_r1` to `r10`, `runs/fxval_played_dm2_r1` to
 `runs/fxconf_fixed1425_<map>_s<seed>` (the confirmation). Reproduce a reading
 with `python tools/argus_clock_validation.py --map dm4 --played-glob
 'fxval_played_dm4_r*' --fixed-glob 'fxconf_fixed1425_dm4_s*'`.
+
+Amendment 1: `runs/fxval2_played_dm3_<ladder>_ctl_r<n>` and
+`runs/fxval2_played_e1m7_<ladder>_ctl_r<n>` are the control tapes the
+amendment names, copied under these names unchanged (`study_sw761d3_ctl_r1`
+is `fxval2_played_dm3_sw761d3_ctl_r1`, and so on), and
+`runs/fxval2_fixed_<map>_s<seed>` the fixed arm. Reproduce with
+`python tools/argus_clock_validation.py --map dm3 --played-glob
+'fxval2_played_dm3_*' --fixed-glob 'fxval2_fixed_dm3_s*'`.
 
 ## What it cannot say
 
