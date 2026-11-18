@@ -728,6 +728,31 @@ passing botmatch does not establish better human play.
   13.7 to 15.7, lava 0 both. e1m8, five a side: stalls 41.4 to 32.6,
   engagements 11.2 to 21.8, goals 4.8 to 2.6 inside a limit of 2.9,
   lava 1.6 to 1.8.
+- The box test samples the player hull's real 16u corners, and the unstick
+  test calls a bot embedded when its hull, not just its origin, is in solid
+  ([#755](https://github.com/saworbit/argus/issues/755),
+  [#756](https://github.com/saworbit/argus/issues/756)). At 15u a spot whose
+  hull clipped a wall by up to a unit passed, so the catchup warp, the
+  unstick destination, the airborne body nudge and the tactic path samples
+  could approve a place every engine move then left in solid. A hull that
+  clipped a wall with a clear origin waited for the slower stall, hurt or
+  fight rescues: Joe Rogan held dm4 '12.8 -272.9 -72' for six seconds. The
+  embedded test reads solid only, so water and lava do not count, and
+  `pointcontents` cannot see movers, so a plat, door or train never trips
+  it.
+
+- Evidence: replayed against hull 0, both reported spots (dm4
+  '12.8 -272.9 -72' and dm3 '335.1 125.9 -200') pass at 15u and are refused
+  at 16u, and a hull flush against the dm4 wall stays clear. Ten fixed-clock
+  seeds a map against main read identical on dm4 and dm2 (cover moved by
+  0.1), so the path is rare in ordinary play. A real-engine fixture that
+  places a hull on the dm4 spot was not built.
+
+- The step1b amend helper's test no longer pins the newest amendment's
+  name, which made it fail on the first real edit to `src/argus.qc` after
+  it landed. It checks that the manifest it was given is unchanged, and
+  takes the duplicate case from the manifest itself
+  ([#871](https://github.com/saworbit/argus/issues/871)).
 - Say why each shipped seat stands on no navmesh fragment
   ([#788](https://github.com/saworbit/argus/issues/788)). The dry ones
   were not floors the extractor lost: every one stands on a hull-1 face
