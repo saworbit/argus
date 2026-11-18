@@ -1417,7 +1417,7 @@ impl Argus {
                 if !controller.poll().0 {
                     return tool_err("start the owned lab match before live recording");
                 }
-                match controller.live_log_path() {
+                match controller.live_log_source() {
                     Some(log) => Some((triggers, focus, controller.port(), log)),
                     None => return tool_err("the owned match has no live log"),
                 }
@@ -1448,7 +1448,7 @@ impl Argus {
                     wait,
                     8.0,
                     port,
-                    &log,
+                    log,
                 )
             })
             .await
