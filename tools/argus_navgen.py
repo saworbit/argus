@@ -104,8 +104,10 @@ so no existing index or slot moves. It refuses a seat that is not a dry
 standable origin, a walk whose ends are not seats, a walk beeline_ok
 refuses or longer than LINK_PATH_MAX, and a ninth slot. "cuts" retires
 plain walks an elbow replaces (the router always prefers the shorter
-diagonal), refused unless the far end stays reachable without it; the
-remaining calls keep their order. Entries already applied are skipped, so
+diagonal), and jump or sprint links bots cannot execute (#779: the router
+counts hops, so a one-hop typed link beats any walking route while it
+stands). A cut is refused unless the far end stays reachable without it,
+and any other type is refused; the remaining calls keep their order. Entries already applied are skipped, so
 a rerun changes nothing. Then it rebakes regions and tactics. Built for
 elbow seats: a corridor that turns a corner fails beeline_ok end to end,
 and a seat at the turn makes two walks that pass. A full regeneration
@@ -1310,6 +1312,13 @@ def _rebake_regions(text, doc):
     return text, doc, rid
 
 
+# The link families a seats sidecar may cut, and the QC calls that carry
+# them. A teleporter, lift, swim, train, door or rocket link is a fact of
+# the map or a weapon-gated prize route, not a guess about movement.
+CUTTABLE = ("links", "jlinks", "sprintlinks")
+CUTTABLE_VERBS = ("Argus_NavLink", "Argus_NavLinkJump", "Argus_NavLinkSprint")
+
+
 def _seat_links(text, doc, spec_path):
     """--seat-links: append seats and beeline-verified walks, then rebake.
 
@@ -1367,8 +1376,11 @@ def _seat_links(text, doc, spec_path):
         walks.append((a, b))
     # a CUT retires a plain walk an elbow replaces: the router prices a
     # corner-cutting diagonal below any two-leg detour, so a seat beside
-    # it is never used while it stands. Only plain walks, and only when
-    # the far end stays reachable without it.
+    # it is never used while it stands. It also retires a jump or sprint
+    # link bots cannot execute (#779): the router counts hops, so dm3's
+    # one-hop sprint n241 -> n52 beat the eight-hop walk to the red armour
+    # and bots that took it stalled under the platform. Only those types,
+    # and only when the far end stays reachable without it.
     cuts = []
     for pair in spec.get("cuts", []):
         a, b = _find(pair[0]), _find(pair[1])
@@ -1376,8 +1388,8 @@ def _seat_links(text, doc, spec_path):
             raise ValueError(f"cut {pair} does not join two seats")
         if (a, b) not in present:
             continue
-        if edges.get((a, b)) != "links":
-            raise ValueError(f"cut n{a} -> n{b} is not a plain walk")
+        if edges.get((a, b)) not in CUTTABLE:
+            raise ValueError(f"cut n{a} -> n{b} is not a walk, jump or sprint link")
         present.discard((a, b))
         cuts.append((a, b))
     dests = collections.defaultdict(set)
@@ -1423,7 +1435,7 @@ def _append_to_graph(text, doc, nodes, added, walks, cuts=()):
 
     def _cut(l):
         m = _LINK.match(l)
-        return (m is not None and m.group(1) == "Argus_NavLink"
+        return (m is not None and m.group(1) in CUTTABLE_VERBS
                 and "teleporter" not in m.group(4)
                 and (int(m.group(2)), int(m.group(3))) in cutset)
     lines = [l for l in lines if not _cut(l)]
@@ -4709,6 +4721,7 @@ if __import__("os").path.exists(_provenpath):
 # refuse the regeneration if one was still lost. Entries already in the
 # graph are kept as they are, so a regeneration reproduces the graph.
 _seat_cuts = []
+_seat_typed_cuts = []   # jump and sprint cuts, applied after 7e1b (#779)
 if _seatspec:
     def _seat_way(_point):
         _point = tuple(float(v) for v in _point)
@@ -4764,10 +4777,15 @@ if _seatspec:
             _seat_refusal(f"cut {_pair} does not join two waypoints of this generation")
         if (_a, _b) in _seat_protect:
             _seat_refusal(f"cut {_pair} is also listed as a walk")
-        if _b not in links.get(_a, {}):
+        if (_a, _b) in doorlinks:
+            _seat_refusal(f"cut {_pair} is a door link")
+        if _b in links.get(_a, {}) and links[_a][_b][1]:
+            _seat_typed_cuts.append((_a, _b, _pair))
             continue
-        if links[_a][_b][1] or (_a, _b) in doorlinks:
-            _seat_refusal(f"cut {_pair} is not a plain walk")
+        if _b not in links.get(_a, {}):
+            # a sprint is minted later; 7e1b applies this then (#779)
+            _seat_typed_cuts.append((_a, _b, _pair))
+            continue
         del links[_a][_b]
         _seat_cuts.append((_a, _b, _pair))
     print(f"seats sidecar: {_seats_added} seat(s) appended, {_seat_added} walk(s) "
@@ -4845,6 +4863,24 @@ def _dedupe_typed(pairs, label):
 swims = _dedupe_typed(swims, "swim")
 rjlinks = _dedupe_typed(rjlinks, "rocket")
 sprints = _dedupe_typed(sprints, "sprint")
+
+# ---- 7e1c. typed cuts from the seats sidecar (#779) ----
+# A jump or sprint the sidecar retires is cut here, after every pass that
+# can mint one, so the regeneration matches --seat-links on the shipped
+# graph. A pair that is neither by now was never typed and stays as 7g2e
+# left it.
+_typed_applied = 0
+for _a, _b, _pair in _seat_typed_cuts:
+    if (_a, _b) in sprints:
+        sprints = [p for p in sprints if p != (_a, _b)]
+    elif _b in links.get(_a, {}) and links[_a][_b][1]:
+        del links[_a][_b]
+    else:
+        continue
+    _seat_cuts.append((_a, _b, _pair))
+    _typed_applied += 1
+if _typed_applied:
+    print(f"seats sidecar: {_typed_applied} jump or sprint cut(s) applied")
 
 # ---- 7e2. final slot clamp ----
 # 7e budgets slots BEFORE the late passes, but symmetric closure,
