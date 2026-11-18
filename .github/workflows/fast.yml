@@ -119,6 +119,7 @@ jobs:
           python3 tools/test_navmesh_repair.py
           python3 tools/test_navmesh_air.py
           python3 tools/test_navmesh_typed.py
+          python3 tools/test_navgen_knit.py
           python3 tools/test_argus_bsp.py
           python3 -O tools/test_argus_bsp.py
           python3 tools/test_ci_validation.py
