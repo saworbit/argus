@@ -58,6 +58,25 @@ def small_request(**extra):
     return request
 
 
+def jump_request(gap, rise):
+    """Two walkways facing across `gap`, the east one `rise` higher, joined by a jump."""
+    return {
+        "name": "lab_unitjump",
+        "intent": "unit test jump",
+        "regions": [
+            {"name": "west", "kind": "walkway", "min": [0, 0], "size": [256, 96], "floor_z": 0,
+             "solid_below": True, "connections": [{"to": "east", "type": "jump"}]},
+            {"name": "east", "kind": "walkway", "min": [256 + gap, 0], "size": [256, 96],
+             "floor_z": rise, "solid_below": True},
+        ],
+        "entities": [
+            {"classname": "info_player_deathmatch", "region": "west", "at": [0.25, 0.5], "angle": 0},
+            {"classname": "info_player_deathmatch", "region": "east", "at": [0.75, 0.5], "angle": 180},
+            {"classname": "item_health", "region": "east", "at": "centre"},
+        ],
+    }
+
+
 def cross(a, b):
     return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0])
 
@@ -192,6 +211,26 @@ class GeometryTests(unittest.TestCase):
         drop["regions"][0]["floor_z"] = 64
         drop["regions"][0]["connections"] = [{"to": "east", "type": "drop"}, {"to": "west", "type": "drop"}]
         self.assertTrue(mg.plan(mg.normalise(drop))["connections"])
+
+    def test_a_jump_no_running_jump_crosses_is_refused_before_compiling(self):
+        # The plain hop takes off 32u short of the lip and lands once the
+        # box is over the far edge: at 320 u/s, 200u level, 129u at 40 up.
+        self.assertAlmostEqual(mg.jump_reach(0), 200.0, places=3)
+        self.assertAlmostEqual(mg.jump_reach(40), 129.7, places=1)
+        self.assertIsNone(mg.jump_reach(48), "nothing lands above the apex")
+        # lab_jumpgap's 96u level gap is buildable both ways (#866)
+        req = mg.normalise(json.loads(
+            (ROOT / "labmaps" / "lab_jumpgap" / "request.json").read_text(encoding="utf-8")))
+        jumps = [(c["gap"], c["dz"]) for c in mg.check_connections(req) if c["type"] == "jump"]
+        self.assertEqual(jumps, [(96, 0), (96, 0)])
+        self.assertTrue(mg.plan(mg.normalise(jump_request(160, 0)))["connections"])
+        self.assertTrue(mg.plan(mg.normalise(jump_request(128, 40)))["connections"])
+        # plan() runs before generate() writes the .map, so before any compile
+        with self.assertRaisesRegex(mg.RequestError, r"no running jump crosses a 136u gap onto a "
+                                    r"landing 40u up.*only up to 130u"):
+            mg.plan(mg.normalise(jump_request(136, 40)))
+        with self.assertRaisesRegex(mg.RequestError, "at most 160u apart"):
+            mg.plan(mg.normalise(jump_request(168, 0)))
 
     def test_the_hull_occupant_stands_in_clear_air(self):
         req = mg.normalise(ring_request())
