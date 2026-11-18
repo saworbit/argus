@@ -2575,8 +2575,10 @@ void() Argus_Physics =
         // a 0.1 s frame, which the lab never ran at, so it is not the
         // feel the old per-frame drag had: at the real 19 Hz, 0.8 per
         // frame was about 4.3/s, which the first cut (k = 4, impulse
-        // 1200) matched. Whether to restore that is a feel decision,
-        // #761. At the played rate the time constant is 0.5 s.
+        // 1200) matched. Keep k = 2 after the played-rate ladder in #761.
+        // Both arms met the gates on dm3 and e1m2. The faster response
+        // increased swim entries on both and average stalls on dm3.
+        // At the played rate the chosen time constant is 0.5 s.
         wdrag = 1 - 2 * frametime;
         if (wdrag < 0)
             wdrag = 0;

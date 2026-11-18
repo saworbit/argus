@@ -1573,6 +1573,8 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Keep the current swim drag after five played pairs each on dm3 and e1m2. The faster setting met the gates and recorded more swim entries on both maps ([#761](https://github.com/saworbit/argus/issues/761)).
+
 - Bump the lab to 0.33.0 for the fixed-clock MCP, mill and tooling changes ([#910](https://github.com/saworbit/argus/issues/910)).
 
 - Shane's 2026-11-19 dm2 session on the installed build `004b4ff9ddf7` is
