@@ -15,11 +15,23 @@ Tapes are named `<stem>_k<skill>_<seed>`. Kill counts come from the tape's
 ARGEVT death lines: a kill on the stand-in is a death whose killer is a bot
 by name, so its own suicides and world deaths credit nobody.
 
+--measure sight (#842) divides the kills by the minutes the stand-in spent in
+sight of a living bot instead of by the minutes of match. How much fighting a
+match gave the stand-in swamped the skill effect in the first calibration
+(0 to 2608 ticks in sight between matches). Sight is rebuilt from the tape:
+at each sample the stand-in counts as in sight when a living bot stands within
+1800u (the stand-in's own sight range) with a clear hull-0 line between their
+eyes (origin + 22). It needs maps_local/<map>.bsp (ARGUS_MAPS names another
+folder). A match with under 3 s in sight carries no rate and is left out.
+
 usage:
   argus_standin_calibration.py --glob 'standin_cal_dm4_k*' --person-mean 1.27 [--skill 1] [--json]
+  argus_standin_calibration.py --glob 'standin_cal2_dm4_k*' --measure sight --map dm4 --person-mean 1.27
 """
 import argparse
 import json
+import math
+import os
 import re
 import statistics
 import sys
@@ -82,7 +94,43 @@ def tape_rates(path):
                 bot_kills=bot_kills, kills=kills)
 
 
-def evaluate(root, pattern, person_mean, skill=1):
+SIGHT_RANGE = 1800.0
+SIGHT_MIN_MINUTES = 0.05
+
+
+def _clear(contents, a, b):
+    d = math.dist(a, b)
+    n = max(1, int(d // 16))
+    for i in range(1, n):
+        f = i / n
+        if contents(a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f) == -2:
+            return False
+    return True
+
+
+def sight_minutes(tape, human, contents):
+    """Minutes the human track spent alive with a living bot in clear sight."""
+    snaps = {}
+    for name, rows in tape.samples.items():
+        for s in rows:
+            snaps.setdefault(round(s['t'] * 2) / 2, {})[name] = ((s['x'], s['y'], s['z'] + 22), s['hp'])
+    times = sorted(snaps)
+    if len(times) < 2:
+        return 0.0
+    step = statistics.median(b - a for a, b in zip(times, times[1:]))
+    seen = 0.0
+    for t in times:
+        snap = snaps[t]
+        if human not in snap or snap[human][1] <= 0:
+            continue
+        me = snap[human][0]
+        if any(n != human and hp > 0 and math.dist(p, me) <= SIGHT_RANGE and _clear(contents, p, me)
+               for n, (p, hp) in snap.items()):
+            seen += step
+    return seen / 60
+
+
+def evaluate(root, pattern, person_mean, skill=1, measure='match', contents=None):
     rows = []
     for path in sorted((Path(root) / 'runs').glob(pattern + '.log')):
         m = NAME.search(path.stem)
@@ -91,6 +139,12 @@ def evaluate(root, pattern, person_mean, skill=1):
         rates = tape_rates(path)
         if rates is None:
             continue
+        if measure == 'sight':
+            tape = argus_tape.parse_tape(Path(path).read_text(encoding='utf-8', errors='replace'))
+            rates['sight_minutes'] = sight_minutes(tape, rates['human'], contents)
+            if rates['sight_minutes'] < SIGHT_MIN_MINUTES:
+                continue
+            rates['bot_kills_pm'] = rates['bot_kills'] / rates['sight_minutes']
         rows.append(dict(run=path.stem, skill=int(m[1]), seed=int(m[2]), **rates))
     if len(rows) < 4:
         return dict(rows=rows, error='fewer than four tapes')
@@ -106,7 +160,7 @@ def evaluate(root, pattern, person_mean, skill=1):
                                               sd=statistics.stdev(v) if len(v) > 1 else 0.0) for k, v in by.items()},
                 spearman=rho, top_minus_bottom=dict(d=d, ci95=[lo95, hi95], skills=[lo_k, hi_k]),
                 dose_response=dose, level_skill=skill, level_mean=level_mean, person_mean=person_mean,
-                level_band=[0.5 * person_mean, 1.5 * person_mean], level=level)
+                level_band=[0.5 * person_mean, 1.5 * person_mean], level=level, measure=measure)
 
 
 def report(rep, out=None):
@@ -114,7 +168,8 @@ def report(rep, out=None):
     if 'error' in rep:
         print(rep['error'], file=out)
         return
-    print('| Bot skill | Tapes | Bot kills on the stand-in a minute | SD |', file=out)
+    unit = 'minute in sight' if rep.get('measure') == 'sight' else 'minute'
+    print(f'| Bot skill | Tapes | Bot kills on the stand-in a {unit} | SD |', file=out)
     print('| --- | --- | --- | --- |', file=out)
     for k, v in rep['per_skill'].items():
         print(f'| {k} | {v["n"]} | {v["mean"]:.2f} | {v["sd"]:.2f} |', file=out)
@@ -135,9 +190,21 @@ def main(argv=None):
     ap.add_argument('--person-mean', type=float, required=True,
                     help="the person's bot kills a minute at the calibration skill")
     ap.add_argument('--skill', type=int, default=1)
+    ap.add_argument('--measure', choices=('match', 'sight'), default='match',
+                    help='divide kills by minutes of match (the first protocol) or minutes in sight of a bot')
+    ap.add_argument('--map', default='dm4', help='the map whose BSP rebuilds sight (--measure sight)')
     ap.add_argument('--json', action='store_true')
     args = ap.parse_args(argv)
-    rep = evaluate(Path(args.root), args.glob, args.person_mean, args.skill)
+    contents = None
+    if args.measure == 'sight':
+        from argus_bsp import load_classifier
+        maps = Path(os.environ.get('ARGUS_MAPS', Path(args.root) / 'maps_local'))
+        bsp = maps / f'{args.map}.bsp'
+        if not bsp.is_file():
+            print(f'missing {bsp}: --measure sight rebuilds line of sight from the map', file=sys.stderr)
+            return 2
+        contents = load_classifier(bsp)
+    rep = evaluate(Path(args.root), args.glob, args.person_mean, args.skill, args.measure, contents)
     if args.json:
         print(json.dumps(rep, indent=2))
     else:

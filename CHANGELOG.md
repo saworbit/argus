@@ -27,6 +27,43 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- `tools/argus_wishflips.py` counts runs of per-frame wish flips in a
+  full-rate ARGMOT tape ([#754](https://github.com/saworbit/argus/issues/754)),
+  the dithering the reversal count cannot see because it only counts turns at
+  speed. On ten fixed-seed tapes per map main shows 893 runs on dm4 and 510 on
+  dm2. A candidate that held the combat strafe side cut those to 156 and 58,
+  and is not shipped: over eight played dm4 pairs it took world deaths in lava
+  from 16 to 27, the extra ones in fights, after damage and with no hazard
+  deflection before them.
+- Two registered ladders and their results. The run-up floor veto
+  ([#867](https://github.com/saworbit/argus/issues/867),
+  [protocol](docs/specs/2026-11-18-runup-floor-protocol.md)) refuses a drop of
+  more than a step while a bot lines up dm4's staged walkway jump. Over eight
+  dm4 pairs it cut routed seconds in the room below from 9.26 to 3.40 a tape,
+  short of the 10.76 limit, so it is not supported and not merged. The e1m7
+  jump landing check ([#785](https://github.com/saworbit/argus/issues/785),
+  [protocol](docs/specs/2026-11-18-e1m7-jumpcheck-kd-spread-protocol.md)) does
+  not widen `kd_spread`: 5.1 against 6.6 over ten pairs, limit 2.9, frag totals
+  29.1 against 30.5. Play is unchanged.
+- `tools/argus_standin_calibration.py --measure sight` reads bot kills on the
+  stand-in per minute in sight of a bot, rebuilt from the tape on a clear
+  hull-0 line ([#842](https://github.com/saworbit/argus/issues/842)). A
+  second calibration registered on it (`docs/specs/2026-11-18-stand-in-calibration-2.md`)
+  read Spearman 0.58 against the first's 0.13, but its skill 3 minus skill 0
+  interval spans zero, so dose response still fails; the level matches
+  (3.99 against the person's 3.92). Exposure, 0.13 to 1.06 minutes in sight
+  a match, is what is left to fix.
+
+- `tools/argus_floorlinks.py` lists the shipped level walk links whose own
+  line fails the early-switch floor test
+  ([#905](https://github.com/saworbit/argus/issues/905)): dm4 20 of 608, dm6
+  12, dm2 6, dm3 2, e1m2 41, e1m8 83. The runtime holds a bot on such a link
+  until it stands within 8u of the seat. Skipping the test on them was
+  laddered and is not shipped: over eight played dm4 pairs world lava deaths
+  rose from 13 to 22 (1.6 to 2.8 a tape, limit 2.1), and ten fixed seeds read
+  16 to 27, because dm4's listed links ring the lava pit and the hold keeps
+  bots on the line navgen verified. Each listed link is a corner that wants an
+  elbow seat.
 - The fixed lab clock is accepted on dm3 and e1m7 at 14.25 ms
   ([#854](https://github.com/saworbit/argus/issues/854)), under an amendment
   registered before its fixed tapes. Its wall-clock arm is the control tapes
@@ -106,6 +143,20 @@ passing botmatch does not establish better human play.
   seated, which carried a third to over half of their re-entries, while every
   dm4 re-entry happens on the graph
   ([findings](docs/lab-scenarios.md#lab_drymix2-and-the-coverage-gate)).
+
+- Add a water layer and a time layer to the clip-hull navmesh
+  ([#791](https://github.com/saworbit/argus/issues/791)). `--audit` now reads
+  exact swim volumes (hull-1 origins in hull-0 water, split where the eyes
+  leave it), their exits onto the floor mesh by navgen's lip rules, and the
+  air each pool asks for at an assumed 300 u/s against the 12 s of air, and
+  cross-checks the shipped swim links: dm3 1 confirmed and 3 reached on foot
+  from the trench sill, e1m2 8 of 8, e1m1 15 of 15. `--air` now grades the
+  ledges beside every plat, door and train at each of its positions, with
+  the times stock QC holds it there; beside dm2's sliding floor panels `*1`
+  and `*2` it finds 55 and 38 danger ledges while they are open and none
+  while they are shut. The floor mesh and every existing line of output are
+  unchanged
+  ([details](docs/navmesh-experiment.md#the-water-layer)).
 
 - Add `tools/argus_guard_replica.py`, which replays the physics brink guard
   offline from a `scratch1 697` tape and names the branch behind each
