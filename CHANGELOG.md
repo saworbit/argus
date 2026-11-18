@@ -96,6 +96,24 @@ passing botmatch does not establish better human play.
   because a generated slab over open air turns a buried probe into a lava
   veto ([findings](docs/lab-scenarios.md#what-deflects-routed-bots-dm4-against-the-lab-maps)).
 
+- `python tools/argus_navmesh_graph.py <map> OUTDIR --native-typed` builds the
+  experimental mesh graph without inheriting any typed link
+  ([#790](https://github.com/saworbit/argus/issues/790)).
+  `tools/argus_navmesh_typed.py` finds jumps and climbs where the runtime
+  fires them (within the 96u anchor, flown at 270 u/s through hull 1 and the
+  brush entities with nothing touched), drop arcs that land where the target
+  is a walk at 240 and 320 u/s, lift pads by navgen's func_plat rules and
+  teleporters from the entity lump, and refuses straight-fall drops whose
+  240 u/s run-off lands in lava or slime. Offline, the native dm4 graph
+  (126 seats, three jumps, five teleporters) reaches every seat from every
+  spawn against the shipped graph's 93 per cent. `--max-seats` now removes
+  seats that cost no coverage first, which takes dm3 at 249 seats from 77.1
+  to 95.5 per cent of the mesh covered (shipped 89.2). The report gives reach,
+  coverage and the edict estimate for both graphs, and BSPs may come from
+  `ARGUS_MAPS`. Rocket jumps, sprints, swims and trains are not found, so
+  native dm3 reaches 65 per cent; the dm3 and dm4 ladders are still to run
+  ([the finder](docs/navmesh-experiment.md#mesh-native-typed-links)).
+
 - Seven scenarios are recorded in `labmaps/`, six registered:
   `lab_voidcorner` (a 64u walkway ring over lava with four tight corners),
   `lab_drymix` and `lab_drymix2` (dm4's mix of lethal and dry-drop lips;

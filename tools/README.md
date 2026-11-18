@@ -250,18 +250,21 @@ Exact navigation mesh read from a BSP's player clip hull (hull 1), with an audit
   - `--no-brushes`: With `--air`, fly through the world hull only. By default solid walls, doors, secret doors and plats count as boxes at their deathmatch spawn positions; trains are left out.
   - `--png`, `--air-png`, `--json`: Draw the mesh or the ledge verdicts, or write the fragments as JSON. Plotting needs matplotlib; the audit and air layer do not.
 - **Inputs**: A BSP29 file, usually `maps_local/<map>.bsp` (machine-local).
-- **Tests**: `test_navmesh_repair.py` and `test_navmesh_air.py`, both on built fixtures. They are not yet in fast CI ([#787](https://github.com/saworbit/argus/issues/787)).
+- **Tests**: `test_navmesh_repair.py` and `test_navmesh_air.py`, both on built fixtures and both in fast CI.
 - `argus_pointfile.py <map> --what mesh` draws the mesh outlines into a listen game. It has not been checked by eye.
 
 ### 15. `argus_navmesh_graph.py`
-Experimental waypoint graph derived from the mesh. Typed links are inherited from the shipped graph with their exact seats, so only the walk graph is new. On dm4 it played at parity with navgen's graph ([ladder](../docs/navmesh-experiment.md#the-mesh-graph-ladder)); other maps are [#790](https://github.com/saworbit/argus/issues/790).
+Experimental waypoint graph derived from the mesh. By default typed links are inherited from the shipped graph with their exact seats, so only the walk graph is new. On dm4 it played at parity with navgen's graph ([ladder](../docs/navmesh-experiment.md#the-mesh-graph-ladder)). `--native-typed` inherits nothing and finds its own typed links ([#790](https://github.com/saworbit/argus/issues/790), [the finder](../docs/navmesh-experiment.md#mesh-native-typed-links)).
 - **Usage**:
   ```bash
-  python tools/argus_navmesh_graph.py dm4 OUTDIR [--max-seats N] [--radius R] [--min-clear C] [--prune P]
+  python tools/argus_navmesh_graph.py dm4 OUTDIR [--max-seats N] [--radius R] [--min-clear C] [--prune P] [--native-typed] [--bsp PATH]
   python tools/argus_navmesh_graph.py --help
   ```
-- **Behavior**: Seats control items, then covers the mesh roomiest first. It accepts a walk link only when a body following it stays on the mesh with world floor under its centre. `--max-seats` builds dense, then removes the most crowded seat only while every in-neighbour still reaches every out-neighbour within three hops. Run navgen's `--reanalyze-tactics` on the output pair to fill exposure and cover.
-- **Output**: A QC and JSON pair in `OUTDIR`, named like the shipped pair (`argus_nav_<map>.qc` and `.qc.json`). Pass a scratch directory, not `src/`, unless you mean to replace the shipped graph.
+- **Behavior**: Seats control items, then covers the mesh roomiest first. It accepts a walk link only when a body following it stays on the mesh with world floor under its centre. `--max-seats` builds dense, then removes seats while every in-neighbour still reaches every out-neighbour within three hops: first those whose floor other seats also cover, then the cheapest in uncovered floor, crowding breaking ties. Run navgen's `--reanalyze-tactics` on the output pair to fill exposure and cover.
+- **`--native-typed`**: `argus_navmesh_typed.py` finds jumps and climbs (fired where the runtime fires them, within the 96u anchor, flown at 270 u/s through hull 1 and the brush entities with no wall or ceiling touched), drop arcs (a run off at 240 and 320 u/s that lands where the target is a walk), lift pads by navgen's func_plat rules and teleporters from the entity lump. It refuses straight-fall drops whose 240 u/s run-off lands in lava or slime. Rocket jumps, sprints, swims and trains are not found. No shipped graph is needed.
+- **Inputs**: `maps_local/<map>.bsp`, or the folder `ARGUS_MAPS` names, so a worktree can borrow the main checkout's maps; `--bsp` names a file outright.
+- **Output**: A QC and JSON pair in `OUTDIR`, named like the shipped pair (`argus_nav_<map>.qc` and `.qc.json`). Pass a scratch directory, not `src/`, unless you mean to replace the shipped graph. The report (printed, and kept in the JSON as `mesh_report`) gives worst-spawn reach in `argus_reach.py`'s terms, mesh coverage, reachable coverage and the edict estimate for the new graph and the shipped one.
+- **Tests**: `test_navmesh_typed.py` builds a row of platforms over a pit (a gap a jump clears, one it cannot, a climb, a run-off drop, a teleporter), reuses the air layer's lava strip for the refused drop and checks the lift rules on a stub lump.
 
 ### 16. `argus_lab.py`
 The lab spine: joins the corpus, scorecard, baselines, benchmarks, verdict sidecars and limits with the objective (`lab_objective.json`) and claims ledger (`lab_claims.json`). See [the lab spine](../docs/lab-spine.md).

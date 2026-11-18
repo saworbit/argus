@@ -125,6 +125,7 @@ from argus_nav_budget import (
     RUNTIME_RESERVE,
     WORLD_AND_CLIENT_SLOTS,
     assess_edict_budget,
+    survives_spawn,
     waypoint_limits,
 )
 from argus_nav_tactics import compute_tactics
@@ -1855,18 +1856,9 @@ def spawns_an_edict(block):
     seats from those two, and it is played in co-op as well, where
     they are real. The budget has to hold in the worse mode.
     """
-    d = kv("{" + block + "}") if False else dict(
-        re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
-    c = d.get("classname", "")
-    if c == "light" and not d.get("targetname"):
-        return False
-    if c == "info_null":
-        return False
-    if c in ("light_globe", "light_torch_small_walltorch",
-             "light_flame_large_yellow", "light_flame_small_yellow",
-             "light_flame_small_white", "func_illusionary"):
-        return False
-    return True
+    # The rule lives in argus_nav_budget, so the navmesh graph's edict
+    # estimate reads the same one.
+    return survives_spawn(dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', block)))
 
 live_ents = [b for b in ent_blocks if spawns_an_edict(b)]
 # THE BUDGET SAYS WHAT IT IS MADE OF NOW, and the parts are measured
