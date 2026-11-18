@@ -185,6 +185,16 @@ engine/argus/edump.cfg
 # Generated local review assets; keep the reusable tools/ HTML template.
 /reviews/blind-perception-*/
 
+# Machine-local study tapes (#872). Name every study run study_<stem>_...
+# and these two rules keep its tape and navigation receipt out of Git on
+# every branch, so a new ladder needs no line here. The results file in
+# runs/ records each tape's map, size and SHA-256 under tape_storage
+# "machine-local", and argus_ci.py localtapes fails when one is not ignored.
+/runs/study_*.log
+/runs/study_*.nav.json
+
+# Older stems, one line each, kept so their recorded run names still hold.
+# Do not add more: use the study_ prefix above.
 # Frozen local study tapes. Hashes are retained in runs/local-study-tapes.json.
 /runs/bhv[0-2]_*.log
 /runs/perc[1-3]_*.log
