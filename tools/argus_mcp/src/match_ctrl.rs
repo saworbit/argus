@@ -1635,9 +1635,8 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
     #[allow(clippy::zombie_processes)]
     async fn stop_matching_filters_by_run_name_and_pid() {
         let _live = super::live_test_lock_async().await;
-        let tmp =
-            std::env::temp_dir().join(format!("argus-stop-match-test-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&tmp);
+        let dir = crate::test_support::TestDir::new("stop-match-test").unwrap();
+        let tmp = dir.path();
         std::fs::create_dir_all(tmp.join("exp_dm4")).unwrap();
 
         let run_dir = tmp.join("exp_dm4");
@@ -1706,7 +1705,5 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
             .unwrap();
         assert!(!st3.running, "matching run_name must stop the match");
         assert!(ctrl.live.is_none());
-
-        let _ = std::fs::remove_dir_all(&tmp);
     }
 }
