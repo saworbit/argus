@@ -2374,13 +2374,11 @@ mod tests {
         // a temp runs/ so the probe tape never lands in the real one:
         // resolve_latest picks the newest runs/*.log, and a 7 s test
         // tape became what "latest" meant for the next compare
-        let tmp_runs = std::env::temp_dir().join(format!(
-            "argus-{}-{}",
-            "probe_netclient_test",
-            std::process::id()
-        ));
-        let _ = std::fs::create_dir_all(&tmp_runs);
-        cfg.runs = tmp_runs.clone();
+        // TestDir removes it on drop, so a pass, a failure and a panic all
+        // leave %TEMP% as they found it (#861)
+        let tmp_runs = crate::test_support::TestDir::new("probe_netclient_test")
+            .expect("create the probe's temp runs dir");
+        cfg.runs = tmp_runs.path().to_path_buf();
         let mut ctrl = crate::match_ctrl::MatchCtrl::default();
         if let Err(error) = ctrl
             .start(

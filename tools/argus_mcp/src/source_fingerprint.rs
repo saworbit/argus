@@ -94,7 +94,8 @@ mod tests {
 
     #[test]
     fn crlf_and_lf_checkouts_share_one_fingerprint() {
-        let base = std::env::temp_dir().join(format!("argus-fp-{}", std::process::id()));
+        let dir = crate::test_support::TestDir::new("fp").unwrap();
+        let base = dir.path();
         let (lf, crlf) = (base.join("lf"), base.join("crlf"));
         tree(&lf, "\n");
         tree(&crlf, "\r\n");
@@ -103,6 +104,5 @@ mod tests {
         // Content still counts: a changed line is a different build.
         std::fs::write(lf.join("build.rs"), "fn main() { let _ = 1; }\n").unwrap();
         assert_ne!(lf_print, fingerprint(&lf).unwrap());
-        let _ = std::fs::remove_dir_all(&base);
     }
 }
