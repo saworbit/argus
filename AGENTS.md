@@ -116,7 +116,8 @@ the whole tape describes the fallback map - judge nothing).
   indices and slots kept, regions and tactics rebaked. Mind the 48u
   early waypoint switch on void-edged corners (dm3, docs/navmesh-experiment.md).
   The proper path is still the sidecar files (probe.json convictions,
-  proven.json entries) consumed at the next real regen.
+  proven.json entries, seats.json seats, walks and cuts) consumed at the
+  next real regen.
 - One compiler at a time. Record the tree state on every A/B log.
 - The lab runs at the played rate: every normal match passes
   `+sys_ticrate 0.0139`, about 70 frames a second. Express rates per
