@@ -100,6 +100,8 @@ const SU_VIEWHEIGHT: u16 = 1;
 const SU_IDEALPITCH: u16 = 1 << 1;
 const SU_PUNCH1: u16 = 1 << 2;
 const SU_VELOCITY1: u16 = 1 << 5;
+/// FL_ONGROUND on the client's own edict; the bit is the whole field.
+const SU_ONGROUND: u16 = 1 << 10;
 const SU_WEAPONFRAME: u16 = 1 << 12;
 const SU_ARMOR: u16 = 1 << 13;
 const SU_WEAPON: u16 = 1 << 14;
@@ -201,6 +203,11 @@ pub struct ClientWorld {
     pub health: i16,
     pub ammo: [u8; 4],
     pub weapon: u8,
+    /// FL_ONGROUND and the velocity from the same svc_clientdata. The
+    /// velocity travels as a signed byte of sixteenths, so it is good to
+    /// 16 u/s: enough for a heading, not for a speed gate.
+    pub onground: bool,
+    pub velocity: [f32; 3],
 }
 
 struct DemoRecording {
@@ -831,14 +838,17 @@ impl NetClient {
                     if bits & SU_IDEALPITCH != 0 {
                         need!(r.i8());
                     }
-                    for i in 0..3 {
+                    let mut velocity = [0.0f32; 3];
+                    for (i, axis) in velocity.iter_mut().enumerate() {
                         if bits & (SU_PUNCH1 << i) != 0 {
                             need!(r.i8());
                         }
                         if bits & (SU_VELOCITY1 << i) != 0 {
-                            need!(r.i8());
+                            *axis = need!(r.i8()) as f32 * 16.0;
                         }
                     }
+                    self.world.onground = bits & SU_ONGROUND != 0;
+                    self.world.velocity = velocity;
                     let items = need!(r.i32());
                     if bits & SU_WEAPONFRAME != 0 {
                         need!(r.u8());
@@ -1052,9 +1062,11 @@ impl NetClient {
                 }
                 // auto-hop: a human holds +jump at ledges and steps
                 // without thinking; when progress stagnates for a few
-                // ticks, tap jump. This is what lets the puppet
-                // verify jump-typed links too - the arc happens at
-                // whatever speed the approach carried.
+                // ticks, tap jump. That carries a walk over a riser or
+                // a jump-up, but it is NOT a jump probe: a running
+                // puppet never stagnates at a lip, it runs off it, so a
+                // gap with a floor below can only be crossed by falling
+                // (#866). Jump links go through `jump_toward`.
                 if let Some(prev) = track.last() {
                     let step = ((p[0] - prev[0]).powi(2) + (p[1] - prev[1]).powi(2)).sqrt();
                     if step < 8.0 {
@@ -1089,6 +1101,173 @@ impl NetClient {
         }
     }
 
+    /// Fly a typed jump link the way argus.qc flies it (#866).
+    ///
+    /// `walk_toward` crossed a gap only when falling carried it over: on
+    /// dm4 it passed every drop-down jump and failed both level ones, and
+    /// it failed lab_jumpgap's 96u gap both ways. So the jump pass flies
+    /// the runtime's own approach instead. With a baked approach speed
+    /// the puppet walks to the run-up point Argus_JumpRunup would pick and
+    /// charges at that speed, as the staged hop does; without one it
+    /// charges at run speed, as an unstaged hop does. It presses jump on
+    /// the plain hop's two rules: the gap rule (on the ground, inside the
+    /// speed gate, within the launch anchor of the seat, at least 48u
+    /// short of the landing, no floor 32u ahead) and the climb rule (on
+    /// the ground, within 72u of a landing more than 18u up). A link
+    /// neither rule fires on is walked, which is what the runtime does
+    /// with it too. The walk pass is untouched.
+    pub fn jump_toward(
+        &mut self,
+        seat: [f32; 3],
+        target: [f32; 3],
+        approach: f32,
+        contents: &dyn Fn([f32; 3]) -> i32,
+        secs: f32,
+    ) -> JumpOutcome {
+        let end = Instant::now() + Duration::from_secs_f32(secs);
+        if approach > 0.0 {
+            let runup = jump_runup(contents, seat, target, approach);
+            if horizontal(runup, seat) > 1.0 {
+                // Ease in: the run-up point is checked for floor only as
+                // far as itself, and a puppet arriving at run speed would
+                // coast past it. The bot has the brink guard; the puppet
+                // has no guard at all.
+                let stop = (Instant::now() + Duration::from_secs(3)).min(end);
+                while Instant::now() < stop {
+                    if let Some(p) = self.my_pos() {
+                        let h = horizontal(runup, p);
+                        if h <= 36.0 {
+                            break;
+                        }
+                        let yaw = (runup[1] - p[1]).atan2(runup[0] - p[0]).to_degrees();
+                        let fwd = (h * 3.0).clamp(80.0, 320.0) as i16;
+                        self.set_move(0.0, yaw, fwd, 0, 0);
+                    }
+                    self.pump(Duration::from_millis(20));
+                }
+            }
+        }
+
+        let charge = if approach > 0.0 {
+            approach.round().clamp(1.0, 320.0) as i16
+        } else {
+            320
+        };
+        let charged = Instant::now();
+        let mut closest = f32::MAX;
+        let mut track: Vec<[f32; 3]> = Vec::new();
+        let mut stuck = 0u32;
+        let mut sampled: Option<Instant> = None;
+        let mut launch: Option<JumpLaunch> = None;
+        let mut hold_until: Option<Instant> = None;
+        while Instant::now() < end {
+            if let Some(p) = self.my_pos() {
+                let dx = target[0] - p[0];
+                let dy = target[1] - p[1];
+                let h = (dx * dx + dy * dy).sqrt();
+                let dz = (target[2] - p[2]).abs();
+                closest = closest.min(h);
+                let fwd = if launch.is_none() { charge } else { 320 };
+                // The stuck hop, for a face neither rule names. It counts
+                // grounded 50 ms steps under half the commanded travel:
+                // walk_toward's flat 8u is half of a 320 run, and at an
+                // 85 u/s approach it read every step as stuck and hopped
+                // the whole link. A flight is not a stall, and neither is
+                // the half second the charge takes to turn round from
+                // the run-up. A dead puppet counts every step, as
+                // walk_toward always did: its stuck hop is also what
+                // respawns it, and a corpse left in lava cannot take the
+                // next link's teleport.
+                if sampled.is_none_or(|t| t.elapsed() >= Duration::from_millis(50)) {
+                    if let Some(prev) = track.last() {
+                        let stalled = horizontal(p, *prev) < f32::from(fwd) / 40.0;
+                        let dead = self.world.stats_seen && self.world.health <= 0;
+                        stuck = if !dead
+                            && (!self.world.onground
+                                || charged.elapsed() < Duration::from_millis(500))
+                        {
+                            0
+                        } else if stalled {
+                            stuck + 1
+                        } else {
+                            0
+                        };
+                    }
+                    track.push(p);
+                    sampled = Some(Instant::now());
+                }
+                if h < 24.0 && dz < 72.0 {
+                    self.set_move(0.0, 0.0, 0, 0, 0);
+                    return JumpOutcome {
+                        walk: WalkOutcome {
+                            reached: true,
+                            closest,
+                            final_pos: p,
+                            track,
+                        },
+                        launch,
+                    };
+                }
+                let from_seat = distance(p, seat);
+                let velocity = self.world.velocity;
+                let speed = velocity[0].hypot(velocity[1]);
+                let heading = if speed > 1.0 {
+                    [velocity[0] / speed, velocity[1] / speed]
+                } else {
+                    [dx / h.max(1e-3), dy / h.max(1e-3)]
+                };
+                let mut press = false;
+                if launch.is_none() && self.world.onground {
+                    let gap = launch_speed_ok(speed, approach)
+                        && from_seat < LAUNCH_ANCHOR
+                        && h >= LANDING_CLEAR
+                        && floor_runs_out(contents, p, heading);
+                    let climb = target[2] > p[2] + 18.0 && h < 72.0;
+                    if gap || climb {
+                        launch = Some(JumpLaunch {
+                            pos: p,
+                            speed,
+                            from_seat,
+                        });
+                        hold_until = Some(Instant::now() + Duration::from_millis(150));
+                        press = true;
+                    }
+                }
+                // hold jump until the server reports the take-off, then
+                // let go so the landing does not pogo
+                if let Some(until) = hold_until {
+                    if !press && (!self.world.onground || Instant::now() >= until) {
+                        hold_until = None;
+                    }
+                }
+                let buttons = if hold_until.is_some() || stuck >= 4 {
+                    2
+                } else {
+                    0
+                };
+                let yaw = dy.atan2(dx).to_degrees();
+                self.set_move(0.0, yaw, fwd, 0, buttons);
+                if press {
+                    // the lip is 32u away: do not wait for the keepalive
+                    self.send_move_now();
+                    self.last_move = Instant::now();
+                }
+            }
+            self.pump(Duration::from_millis(10));
+        }
+        let fp = self.my_pos().unwrap_or_default();
+        self.set_move(0.0, 0.0, 0, 0, 0);
+        JumpOutcome {
+            walk: WalkOutcome {
+                reached: false,
+                closest,
+                final_pos: fp,
+                track,
+            },
+            launch,
+        }
+    }
+
     pub fn disconnect(mut self) {
         let msg = [CLC_DISCONNECT];
         self.send_unreliable(&msg);
@@ -1102,6 +1281,153 @@ pub struct WalkOutcome {
     pub final_pos: [f32; 3],
     #[serde(skip)]
     pub track: Vec<[f32; 3]>,
+}
+
+/// argus.qc's plain jump hop fires within this distance of its seat;
+/// tools/argus_jump_anchor.py holds navgen's launch model to the same bar.
+const LAUNCH_ANCHOR: f32 = 96.0;
+/// ...and never inside the landing's 48u arrival envelope.
+const LANDING_CLEAR: f32 = 48.0;
+/// The plain hop fires when this far ahead along its heading has no floor.
+const LAUNCH_LOOKAHEAD: f32 = 32.0;
+
+/// Where and how fast the jump pass pressed jump.
+#[derive(Serialize, Clone, Copy, Debug, PartialEq)]
+pub struct JumpLaunch {
+    pub pos: [f32; 3],
+    /// Horizontal speed at the press, from svc_clientdata (16 u/s steps).
+    pub speed: f32,
+    pub from_seat: f32,
+}
+
+pub struct JumpOutcome {
+    pub walk: WalkOutcome,
+    /// None when the fire test never passed: the puppet walked or fell.
+    pub launch: Option<JumpLaunch>,
+}
+
+fn horizontal(a: [f32; 3], b: [f32; 3]) -> f32 {
+    (a[0] - b[0]).hypot(a[1] - b[1])
+}
+
+fn distance(a: [f32; 3], b: [f32; 3]) -> f32 {
+    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2) + (a[2] - b[2]).powi(2)).sqrt()
+}
+
+/// A point trace straight down, as a runtime traceline reads it. Only solid
+/// stops a trace; liquids and sky do not.
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Down {
+    StartSolid,
+    /// The height just above the first solid met, to a unit.
+    Floor(f32),
+    Open,
+}
+
+fn trace_down(contents: &dyn Fn([f32; 3]) -> i32, top: [f32; 3], depth: f32) -> Down {
+    if contents(top) == crate::bsp::CONTENTS_SOLID {
+        return Down::StartSolid;
+    }
+    let mut d = 1.0;
+    while d <= depth {
+        if contents([top[0], top[1], top[2] - d]) == crate::bsp::CONTENTS_SOLID {
+            return Down::Floor(top[2] - d + 1.0);
+        }
+        d += 1.0;
+    }
+    Down::Open
+}
+
+fn line_clear(contents: &dyn Fn([f32; 3]) -> i32, a: [f32; 3], b: [f32; 3]) -> bool {
+    let steps = (distance(a, b) / 4.0).ceil().max(1.0) as usize;
+    (0..=steps).all(|i| {
+        let t = i as f32 / steps as f32;
+        let p = [
+            a[0] + (b[0] - a[0]) * t,
+            a[1] + (b[1] - a[1]) * t,
+            a[2] + (b[2] - a[2]) * t,
+        ];
+        contents(p) != crate::bsp::CONTENTS_SOLID
+    })
+}
+
+/// The plain jump hop's speed gate in argus.qc: within -5 to +15 of a baked
+/// approach speed, or at least 250 for an unstaged hop. The reading comes
+/// from svc_clientdata, which truncates each axis to 16 u/s, so it can sit
+/// up to 23 u/s under the true speed and never over it: the floor allows
+/// for that, the ceiling cannot be fooled by it.
+pub fn launch_speed_ok(reading: f32, approach: f32) -> bool {
+    const TRUNCATION: f32 = 23.0;
+    if approach > 0.0 {
+        reading + TRUNCATION >= approach - 5.0 && reading <= approach + 15.0
+    } else {
+        reading + TRUNCATION >= 250.0
+    }
+}
+
+/// The plain jump hop's fire test in argus.qc: a point trace from 4u above
+/// to 40u below the spot 32u ahead along the heading meets no solid and does
+/// not start in it. A lip over liquid fires, as it does in the runtime.
+pub fn floor_runs_out(
+    contents: &dyn Fn([f32; 3]) -> i32,
+    origin: [f32; 3],
+    heading: [f32; 2],
+) -> bool {
+    let ahead = [
+        origin[0] + heading[0] * LAUNCH_LOOKAHEAD,
+        origin[1] + heading[1] * LAUNCH_LOOKAHEAD,
+        origin[2] + 4.0,
+    ];
+    trace_down(contents, ahead, 44.0) == Down::Open
+}
+
+/// The runtime's floor-and-dry test at a standing origin `q`: a trace from
+/// 16u above to 40u below meets a floor with empty air 4u above it.
+fn dry_floor(contents: &dyn Fn([f32; 3]) -> i32, q: [f32; 3]) -> Option<f32> {
+    match trace_down(contents, [q[0], q[1], q[2] + 16.0], 56.0) {
+        Down::Floor(z) if contents([q[0], q[1], z + 4.0]) == crate::bsp::CONTENTS_EMPTY => Some(z),
+        _ => None,
+    }
+}
+
+/// Argus_JumpRunup in argus.qc: the point behind the seat, on the extended
+/// jump line, that a staged hop walks to before it charges. It starts
+/// 60 + 0.3 x the approach speed back, at most 150, and shrinks by 40 while
+/// the line from the seat is blocked or the floor along it is missing or
+/// wet; nothing valid leaves the seat itself.
+pub fn jump_runup(
+    contents: &dyn Fn([f32; 3]) -> i32,
+    seat: [f32; 3],
+    landing: [f32; 3],
+    approach: f32,
+) -> [f32; 3] {
+    let (dx, dy) = (seat[0] - landing[0], seat[1] - landing[1]);
+    let len = dx.hypot(dy);
+    if len < 1e-3 {
+        return seat;
+    }
+    let along = |d: f32| [seat[0] + dx / len * d, seat[1] + dy / len * d, seat[2]];
+    let mut d = (60.0 + approach * 0.3).min(150.0);
+    while d > 60.0 {
+        let p = along(d);
+        let mut dry = line_clear(
+            contents,
+            [seat[0], seat[1], seat[2] + 16.0],
+            [p[0], p[1], p[2] + 16.0],
+        );
+        let mut k = 16.0;
+        while dry && k < d {
+            dry = dry_floor(contents, along(k)).is_some();
+            k += 16.0;
+        }
+        if dry {
+            if let Some(z) = dry_floor(contents, p) {
+                return [p[0], p[1], z + 24.0];
+            }
+        }
+        d -= 40.0;
+    }
+    seat
 }
 
 #[derive(Serialize)]
@@ -1409,12 +1735,31 @@ pub async fn probe_links_confirmed(
     // control: if the puppet clears the other jump links on the map
     // and jams on one, the verdict is about the link and not about the
     // puppet's hop.
+    //
+    // THAT CONTROL HAD A BLIND SPOT (#866). The puppet walked a jump
+    // link like a walk link and hopped only after stalling, so it
+    // crossed a gap only when falling carried it over. The drop-down
+    // jumps that passed were the control, and they could not speak for
+    // a level gap: on dm4 it passed all four drop-downs and failed both
+    // level jumps, and it failed lab_jumpgap's 96u gap both ways. The
+    // jump pass now flies the runtime's approach and fire test against
+    // the map's own hull 0 (`jump_toward`).
     let links: Vec<(usize, usize)> = if jumps_only {
         let mut v: Vec<(usize, usize)> = jump.iter().copied().collect();
         v.sort();
         v
     } else {
         links
+    };
+    let approach = jump_approach_speeds(&nav);
+    let jump_world = if jumps_only {
+        Some(crate::intel::hull0_for_map(cfg, map).ok_or_else(|| {
+            format!(
+                "the jump pass needs {map}'s BSP in ARGUS_MAPS or the id1 paks: it finds the lip the runtime launches from"
+            )
+        })?)
+    } else {
+        None
     };
     let window: Vec<(usize, usize)> = links.into_iter().skip(skip).take(limit.min(80)).collect();
     let door_skipped = window.iter().filter(|p| doorlinks.contains(p)).count();
@@ -1427,7 +1772,14 @@ pub async fn probe_links_confirmed(
     }
 
     let mode = if coop { "coop" } else { "deathmatch" };
-    let secs = (todo.len() as u32) * if confirm { 12 } else { 9 } + 40;
+    // a jump walks to its run-up before it charges
+    let per_link = match (jumps_only, confirm) {
+        (true, true) => 20,
+        (true, false) => 14,
+        (false, true) => 12,
+        (false, false) => 9,
+    };
+    let secs = (todo.len() as u32) * per_link + 40;
     let _staged_map = stage_map_for_probe(cfg, map)?;
     ctrl.start(
         cfg,
@@ -1520,7 +1872,15 @@ pub async fn probe_links_confirmed(
             report.record(a, b, h, "teleport_failed");
             continue;
         }
-        let out = client.walk_toward(to, h / 240.0 + 3.0);
+        let (out, launch) = match &jump_world {
+            Some(hull) => {
+                let approach = approach.get(&(a, b)).copied().unwrap_or(0.0);
+                let contents = |p: [f32; 3]| hull.contents_at(p);
+                let flown = client.jump_toward(from, to, approach, &contents, h / 240.0 + 6.0);
+                (flown.walk, Some(flown.launch))
+            }
+            None => (client.walk_toward(to, h / 240.0 + 3.0), None),
+        };
         if out.reached {
             report.passed += 1;
             if retry {
@@ -1528,7 +1888,9 @@ pub async fn probe_links_confirmed(
             }
             report.record(a, b, h, "passed");
             if report.passed_sample.len() < 8 {
-                report.passed_sample.push(format!("n{a}->n{b} h {h:.0}"));
+                report
+                    .passed_sample
+                    .push(format!("n{a}->n{b} h {h:.0}{}", launch_note(launch)));
             }
         } else if confirm && !retry {
             retries.push((a, b, true));
@@ -1544,8 +1906,12 @@ pub async fn probe_links_confirmed(
                 reached: false,
                 closest: out.closest,
                 note: format!(
-                    "stopped {} short at ({:.0} {:.0} {:.0})",
-                    out.closest as i32, out.final_pos[0], out.final_pos[1], out.final_pos[2]
+                    "stopped {} short at ({:.0} {:.0} {:.0}){}",
+                    out.closest as i32,
+                    out.final_pos[0],
+                    out.final_pos[1],
+                    out.final_pos[2],
+                    launch_note(launch)
                 ),
             });
         }
@@ -1578,6 +1944,38 @@ pub async fn probe_links_confirmed(
         let _ = std::fs::write(&vpath, s);
     }
     Ok(report)
+}
+
+/// The approach speed navgen baked for each jump link (`jumpapproach` rows
+/// are `[a, b, speed, runway, margin]`); 0 or absent means an unstaged hop.
+fn jump_approach_speeds(nav: &serde_json::Value) -> std::collections::HashMap<(usize, usize), f32> {
+    nav["jumpapproach"]
+        .as_array()
+        .map(|rows| {
+            rows.iter()
+                .filter_map(|row| {
+                    let row = row.as_array()?;
+                    let a = row.first()?.as_u64()? as usize;
+                    let b = row.get(1)?.as_u64()? as usize;
+                    let speed = row.get(2)?.as_f64()? as f32;
+                    Some(((a, b), speed))
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// What a failed jump did at the lip, for the verdict note. A walk pass
+/// (`None`) adds nothing.
+fn launch_note(launch: Option<Option<JumpLaunch>>) -> String {
+    match launch {
+        None => String::new(),
+        Some(None) => ", never jumped: the fire test did not pass".into(),
+        Some(Some(l)) => format!(
+            ", jumped at {:.0} u/s {:.0}u from the seat at ({:.0} {:.0} {:.0})",
+            l.speed, l.from_seat, l.pos[0], l.pos[1], l.pos[2]
+        ),
+    }
 }
 
 /// Fold one sweep's convictions into a verdict file.
@@ -1767,7 +2165,11 @@ mod tests {
     }
 
     use super::NetClient;
-    use super::{merge_verdicts, stage_map_for_probe, LinkVerdict, ProbeReport};
+    use super::{
+        floor_runs_out, jump_approach_speeds, jump_runup, launch_note, launch_speed_ok,
+        merge_verdicts, stage_map_for_probe, JumpLaunch, LinkVerdict, ProbeReport, SU_ONGROUND,
+        SU_VELOCITY1, SVC_CLIENTDATA,
+    };
     use std::time::Duration;
 
     fn report_with(mode: &str, pairs: &[([f32; 3], [f32; 3])]) -> ProbeReport {
@@ -1923,6 +2325,133 @@ mod tests {
         assert_eq!(doc["typed_failed"][0]["kind"], "jump");
         assert_eq!(doc["verification"]["graph_md5"], "fixture-hash");
         assert_eq!(doc["verification"]["deathmatch"]["jump"]["swept"], 1);
+    }
+
+    /// lab_jumpgap's cut walkway in hull 0: walkway tops at z 128 west of
+    /// x 400 and east of x 496, the gap's floor at z 0 between them, so a
+    /// standing origin on a walkway sits at z 152 (#866).
+    fn jumpgap(p: [f32; 3]) -> i32 {
+        let walkway = (p[0] < 400.0 || p[0] > 496.0) && p[2] < 128.0;
+        if walkway || p[2] < 0.0 {
+            crate::bsp::CONTENTS_SOLID
+        } else {
+            crate::bsp::CONTENTS_EMPTY
+        }
+    }
+
+    #[test]
+    fn clientdata_carries_the_ground_flag_and_velocity() {
+        // svc_clientdata: SU_ONGROUND plus x and y velocity, as sixteenths
+        let bits: i16 = (SU_ONGROUND | SU_VELOCITY1 | (SU_VELOCITY1 << 1)) as i16;
+        let mut message = vec![SVC_CLIENTDATA];
+        message.extend_from_slice(&bits.to_le_bytes());
+        message.extend_from_slice(&[16u8, (-4i8) as u8]);
+        message.extend_from_slice(&0i32.to_le_bytes()); // items
+        message.extend_from_slice(&100i16.to_le_bytes()); // health
+        message.extend_from_slice(&[25, 25, 0, 0, 0, 1]); // ammo, weapon
+        let client = NetClient::protocol_fixture(message);
+        assert!(client.world.onground);
+        assert_eq!(client.world.velocity, [256.0, -64.0, 0.0]);
+        assert_eq!(client.world.health, 100);
+
+        let mut airborne = vec![SVC_CLIENTDATA];
+        airborne.extend_from_slice(&0i16.to_le_bytes());
+        airborne.extend_from_slice(&0i32.to_le_bytes());
+        airborne.extend_from_slice(&100i16.to_le_bytes());
+        airborne.extend_from_slice(&[25, 25, 0, 0, 0, 1]);
+        let client = NetClient::protocol_fixture(airborne);
+        assert!(!client.world.onground);
+        assert_eq!(client.world.velocity, [0.0; 3]);
+    }
+
+    /// The fire test is argus.qc's: no solid from 4u above to 40u below the
+    /// spot 32u ahead. On lab_jumpgap that passes 32u short of each lip.
+    #[test]
+    fn the_jump_fires_where_the_runtime_lookahead_finds_no_floor() {
+        let east = [1.0, 0.0];
+        let west = [-1.0, 0.0];
+        assert!(!floor_runs_out(&jumpgap, [360.0, 609.0, 152.0], east));
+        assert!(floor_runs_out(&jumpgap, [370.0, 609.0, 152.0], east));
+        assert!(!floor_runs_out(&jumpgap, [530.0, 609.0, 152.0], west));
+        assert!(floor_runs_out(&jumpgap, [526.0, 609.0, 152.0], west));
+        // a spot inside solid is a wall, never a lip
+        assert!(!floor_runs_out(&jumpgap, [300.0, 609.0, 60.0], east));
+        // a trace passes through liquid, so a lip over lava still fires
+        let over_lava = |p: [f32; 3]| {
+            if (400.0..=496.0).contains(&p[0]) && p[2] < 120.0 {
+                crate::bsp::CONTENTS_LAVA
+            } else {
+                jumpgap(p)
+            }
+        };
+        assert!(floor_runs_out(&over_lava, [370.0, 609.0, 152.0], east));
+    }
+
+    #[test]
+    fn the_speed_gate_allows_for_the_truncated_velocity_reading() {
+        // n18->n30 approaches at 270: the window is 265 to 285
+        assert!(launch_speed_ok(256.0, 270.0));
+        assert!(!launch_speed_ok(240.0, 270.0));
+        assert!(!launch_speed_ok(290.0, 270.0));
+        // an unstaged hop needs 250 or more
+        assert!(launch_speed_ok(240.0, 0.0));
+        assert!(!launch_speed_ok(224.0, 0.0));
+        assert!(!launch_speed_ok(0.0, 0.0));
+    }
+
+    /// Argus_JumpRunup: 60 + 0.3 x approach back from the seat, at most 150,
+    /// shrinking by 40 while the line is blocked or the floor wet or missing.
+    #[test]
+    fn the_run_up_is_the_point_argus_jump_runup_picks() {
+        let seat = [513.0, 609.0, 152.0];
+        let landing = [321.0, 609.0, 152.0];
+        let runup = jump_runup(&jumpgap, seat, landing, 220.0);
+        assert!((runup[0] - 639.0).abs() < 0.01, "{runup:?}");
+        // standing on the walkway's top at z 128
+        assert_eq!(runup[1..], [609.0, 152.0]);
+        // the cap
+        let far = jump_runup(&jumpgap, seat, landing, 320.0);
+        assert!((far[0] - 663.0).abs() < 0.01, "{far:?}");
+        // a wall 70u behind the seat leaves no candidate beyond 60
+        let walled = |p: [f32; 3]| {
+            if p[0] >= 583.0 {
+                crate::bsp::CONTENTS_SOLID
+            } else {
+                jumpgap(p)
+            }
+        };
+        assert_eq!(jump_runup(&walled, seat, landing, 220.0), seat);
+        // lava on the run-up path refuses it, as the dry check does
+        let wet = |p: [f32; 3]| {
+            if p[0] > 560.0 && (128.0..140.0).contains(&p[2]) {
+                crate::bsp::CONTENTS_LAVA
+            } else {
+                jumpgap(p)
+            }
+        };
+        assert_eq!(jump_runup(&wet, seat, landing, 220.0), seat);
+        // no direction, no run-up
+        assert_eq!(jump_runup(&jumpgap, seat, seat, 220.0), seat);
+    }
+
+    #[test]
+    fn the_jump_note_says_what_happened_at_the_lip() {
+        assert_eq!(launch_note(None), "");
+        assert!(launch_note(Some(None)).contains("never jumped"));
+        let note = launch_note(Some(Some(JumpLaunch {
+            pos: [370.0, 609.0, 152.0],
+            speed: 256.0,
+            from_seat: 49.0,
+        })));
+        assert_eq!(
+            note,
+            ", jumped at 256 u/s 49u from the seat at (370 609 152)"
+        );
+        let nav = serde_json::json!({"jumpapproach": [[18, 30, 270.0, 128.0, 10.4], [30, 18, 0.0, 128.0, 0.0]]});
+        let speeds = jump_approach_speeds(&nav);
+        assert_eq!(speeds[&(18, 30)], 270.0);
+        assert_eq!(speeds[&(30, 18)], 0.0);
+        assert!(jump_approach_speeds(&serde_json::json!({})).is_empty());
     }
 
     #[test]

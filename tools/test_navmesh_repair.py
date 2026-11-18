@@ -224,6 +224,60 @@ class SeatLinks(unittest.TestCase):
         self.assertEqual(self.links_in_order(), kept + [(0, 5), (5, 1)])
 
 
+    def type_links(self, verbs):
+        """Re-type fixture links, e.g. {(0, 1): "Argus_NavLinkSprint"}, QC and JSON together."""
+        from argus_nav_artifacts import canonical_sidecar
+        path = self.tmp / "nav.qc"
+        qc = path.read_bytes().decode("ascii")
+        for (a, b), verb in verbs.items():
+            extra = ", 0" if verb == "Argus_NavLinkJump" else ""
+            old = f"Argus_NavLink (n{a}, n{b});"
+            self.assertIn(old, qc)
+            qc = qc.replace(old, f"{verb} (n{a}, n{b}{extra});")
+        path.write_bytes(qc.encode("ascii"))
+        doc = json.loads((self.tmp / "nav.qc.json").read_text())
+        doc = canonical_sidecar(doc, qc)
+        if any(v == "Argus_NavLinkJump" for v in verbs.values()):
+            doc["jumpapproach"] = [[a, b, 0.0, 96.0, 0.0] for (a, b), v in verbs.items()
+                                   if v == "Argus_NavLinkJump"]
+        (self.tmp / "nav.qc.json").write_text(json.dumps(doc))
+
+    def test_cut_retires_a_sprint_or_jump_bots_cannot_take(self):
+        # #779: n0 -> n1 as a sprint and n1 -> n0 as a jump, both replaced
+        # by walks through an elbow seat
+        self.type_links({(0, 1): "Argus_NavLinkSprint", (1, 0): "Argus_NavLinkJump"})
+        res = self.seat({"seats": [[64, 64, 24]],
+                         "walks": [[[0, 0, 24], [64, 64, 24]], [[64, 64, 24], [128, 0, 24]],
+                                   [[128, 0, 24], [64, 64, 24]], [[64, 64, 24], [0, 0, 24]]],
+                         "cuts": [[[0, 0, 24], [128, 0, 24]], [[128, 0, 24], [0, 0, 24]]]})
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn("cut 2 replaced walk(s)", res.stdout)
+        qc = (self.tmp / "nav.qc").read_bytes().decode("ascii")
+        self.assertNotIn("(n0, n1", qc)
+        self.assertNotIn("(n1, n0", qc)
+        doc = json.loads((self.tmp / "nav.qc.json").read_text())
+        self.assertEqual(doc.get("sprintlinks", []), [])
+        self.assertEqual(doc.get("jlinks", []), [])
+        self.assertEqual(doc.get("jumpapproach", []), [])
+        res = self.seat({"cuts": [[[0, 0, 24], [128, 0, 24]]]})
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("cut 0 replaced walk(s)", res.stdout)
+
+    def test_cut_refuses_other_types_and_a_stranding_typed_cut(self):
+        self.type_links({(1, 2): "Argus_NavLinkLift", (1, 3): "Argus_NavLinkJump"})
+        before = [(self.tmp / n).read_bytes() for n in ("nav.qc", "nav.qc.json")]
+        for spec, why in (
+            ({"cuts": [[[128, 0, 24], [320, 0, 24]]]}, "not a walk, jump or sprint link"),
+            # n3's only way in is the jump
+            ({"cuts": [[[128, 0, 24], [128, 0, 184]]]}, "unreachable"),
+        ):
+            res = self.seat(spec)
+            self.assertEqual(res.returncode, 1, (spec, res.stdout))
+            self.assertIn(why, res.stderr)
+            self.assertEqual([(self.tmp / n).read_bytes() for n in ("nav.qc", "nav.qc.json")],
+                             before, spec)
+
+
 class RegenSeats(unittest.TestCase):
     """A full regeneration applies argus_nav_<map>.seats.json (#778).
 
