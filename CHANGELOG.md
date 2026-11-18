@@ -27,6 +27,16 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- `tools/argus_floorlinks.py` lists the shipped level walk links whose own
+  line fails the early-switch floor test
+  ([#905](https://github.com/saworbit/argus/issues/905)): dm4 20 of 608, dm6
+  12, dm2 6, dm3 2, e1m2 41, e1m8 83. The runtime holds a bot on such a link
+  until it stands within 8u of the seat. Skipping the test on them was
+  laddered and is not shipped: over eight played dm4 pairs world lava deaths
+  rose from 13 to 22 (1.6 to 2.8 a tape, limit 2.1), and ten fixed seeds read
+  16 to 27, because dm4's listed links ring the lava pit and the hold keeps
+  bots on the line navgen verified. Each listed link is a corner that wants an
+  elbow seat.
 - The fixed lab clock is accepted on dm3 and e1m7 at 14.25 ms
   ([#854](https://github.com/saworbit/argus/issues/854)), under an amendment
   registered before its fixed tapes. Its wall-clock arm is the control tapes
@@ -106,6 +116,20 @@ passing botmatch does not establish better human play.
   seated, which carried a third to over half of their re-entries, while every
   dm4 re-entry happens on the graph
   ([findings](docs/lab-scenarios.md#lab_drymix2-and-the-coverage-gate)).
+
+- Add a water layer and a time layer to the clip-hull navmesh
+  ([#791](https://github.com/saworbit/argus/issues/791)). `--audit` now reads
+  exact swim volumes (hull-1 origins in hull-0 water, split where the eyes
+  leave it), their exits onto the floor mesh by navgen's lip rules, and the
+  air each pool asks for at an assumed 300 u/s against the 12 s of air, and
+  cross-checks the shipped swim links: dm3 1 confirmed and 3 reached on foot
+  from the trench sill, e1m2 8 of 8, e1m1 15 of 15. `--air` now grades the
+  ledges beside every plat, door and train at each of its positions, with
+  the times stock QC holds it there; beside dm2's sliding floor panels `*1`
+  and `*2` it finds 55 and 38 danger ledges while they are open and none
+  while they are shut. The floor mesh and every existing line of output are
+  unchanged
+  ([details](docs/navmesh-experiment.md#the-water-layer)).
 
 - Add `tools/argus_guard_replica.py`, which replays the physics brink guard
   offline from a `scratch1 697` tape and names the branch behind each
