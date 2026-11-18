@@ -59,6 +59,8 @@ says which instrument answers which question.
 | Was that stationary window a chosen pause | `python tools/argus_gait.py runs/<tape>.log` (attributes freezes to this bot's own `hesitate` marker, or to its own open `lift` or `train` hop as a mover wait with how the hop ended (a mover overrun when it outlives the hop); exits 1 on an attributable hesitation failure, and a window with neither is the pre-existing wedge class) |
 | Which guard branch deflected a routed bot (wall, lava, void, run-off) | `python tools/argus_guard_replica.py dm4 runs/<tape>.log ...` (offline replay of the physics brink guard over hull 0 on a `scratch1 697` tape; it reports its own recall and false vetoes) |
 | What is under a vetoed void, how tight is a seat | `python tools/argus_voidprobe.py dm4 dm2 [--clearance]` (offline hull-0 read of the SHIPPED graph; needs maps_local/<map>.bsp - two gait changes were built on guesses this answers) |
+| Which walk links hold a bot for the early switch | `python tools/argus_floorlinks.py dm4 dm2 [--json]` (offline hull-0 replay of `Argus_WalkLineFloored` from each level walk link's own seat; a listed link is a corner that wants an elbow seat, because skipping the test there raised dm4 lava, #905) |
+| Is a bot dithering frame to frame | `python tools/argus_wishflips.py runs/<tape>.log` (runs of per-frame wish flips on a `scratch1 697` tape, which the reversal measure misses, #754) |
 | Why did it pick that goal | `tune command="scratch1 1"` then grep ARGDBG (scratch1 0 to silence) |
 | Walk a link in the REAL engine | `argus-mcp probelinks <map> [limit<=80] [skip]` (`verdicts` names every walked link; refusals persist by endpoint in ARGUS_SRC's argus_nav_<map>.probe.json; teleport_failures need AABB triage on tele maps) |
 | Puppet a live match | `argus-mcp client observe|walk|walkrel|impulse <n>` (impulse 101 = 4th bot, 100 = menu, headless 4-player) |
@@ -114,7 +116,8 @@ the whole tape describes the fallback map - judge nothing).
   `argus_navgen.py ... --seat-links src/argus_nav_<map>.seats.json` is
   that splice for seats and walks: coordinates in, beeline_ok enforced,
   indices and slots kept, regions and tactics rebaked. Mind the 48u
-  early waypoint switch on void-edged corners (dm3, docs/navmesh-experiment.md).
+  early waypoint switch on void-edged corners (dm3, docs/navmesh-experiment.md);
+  `tools/argus_floorlinks.py <map>` lists the links that need an elbow.
   The proper path is still the sidecar files (probe.json convictions,
   proven.json entries, seats.json seats, walks and cuts) consumed at the
   next real regen.
