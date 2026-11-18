@@ -1230,6 +1230,15 @@ passing botmatch does not establish better human play.
   again (`tools/argus_mcp/deny.toml`,
   [#870](https://github.com/saworbit/argus/issues/870)).
 
+- Read average speed on the fixed-clock confirmation tapes
+  ([#863](https://github.com/saworbit/argus/issues/863)). It was registered
+  with the validation but the corpus did not carry it when the verdicts were
+  made. Read afterwards on the same tapes, it is equivalent on both maps:
+  dm4 212.2 against 209.4 u/s (90 per cent interval -6.7 to +1.0, margin
+  63.7) and dm2 182.9 against 183.7 (-9.5 to +11.0, margin 54.9). Neither
+  verdict and no limit changes. `docs/fixed-clock.md` and
+  `tools/lab_instruments.json` record it as read after the verdicts.
+
 - Explain the project in the README. A new section says what Argus is, which
   rules all of its code follows and how a map file becomes a measured match.
   Five Mermaid diagrams show the main data flows: the build, play and measure
