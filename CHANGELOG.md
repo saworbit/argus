@@ -802,6 +802,21 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Retire the three puppet-refused walks still shipping on e1m2 and e1m8
+  ([#821](https://github.com/saworbit/argus/issues/821)): e1m2 n87 to n193,
+  e1m8 n5 to n2 and n7 to n98. Both maps had refused their last
+  regeneration, so navgen never consumed the convictions. No void lies
+  under any of the lines, so navgen's 7g2c rule would drop them rather
+  than remint them as jumps; each map's new seats sidecar cuts them
+  through `--seat-links`, keeping every node and slot. Directed reach is
+  unchanged on both maps and `argus_lab.py stale` no longer reports
+  verdicts for either.
+
+- Evidence: played-rate pairs against main, skill 2, 185 s, no detectable
+  effect on any metric. e1m2, three a side: stalls 21.0 to 19.3, goals
+  13.7 to 15.7, lava 0 both. e1m8, five a side: stalls 41.4 to 32.6,
+  engagements 11.2 to 21.8, goals 4.8 to 2.6 inside a limit of 2.9,
+  lava 1.6 to 1.8.
 - dm3 no longer routes through two typed links bots cannot take
   ([#779](https://github.com/saworbit/argus/issues/779),
   [#780](https://github.com/saworbit/argus/issues/780)). On 20 fixed-seed
