@@ -360,6 +360,24 @@ Names the branch of the per-frame brink guard that deflected each routed bot, re
 
 ---
 
+### 23. `argus_wishflips.py`
+Counts runs of per-frame wish flips in full-rate ARGMOT tapes (`scratch1 697`), the dithering the reversal measure cannot see ([#754](https://github.com/saworbit/argus/issues/754)).
+- **Usage**:
+  ```bash
+  python tools/argus_wishflips.py runs/study_fxdm4_ctlm_s*.log
+  python tools/argus_wishflips.py runs/my_tape.log --json --min-run 4 --degrees 120
+  python tools/argus_wishflips.py --help
+  ```
+- **Behavior**:
+  - A flip is a frame whose wish heading moved more than `--degrees` (default 100) from the previous frame. A run is `--min-run` (default 3) or more flips on adjacent frames by one bot.
+  - Each run prints its start time, flip count, duration, how far the bot moved and its first four wish headings, so a bot that dithers in place stands out from one that turns once.
+  - The reversal measure ([#697](https://github.com/saworbit/argus/issues/697)) counts turns over 120 degrees at over 120 u/s, so it misses a bot flipping every frame while it barely moves.
+  - On ten fixed-seed tapes per map, main shows 893 runs on dm4 and 510 on dm2. A candidate that held the strafe side cut those to 156 and 58 and was not shipped, because it raised dm4 lava (the numbers are on #754).
+- **Exit Code**: `0` on success or `--help`, `2` when a tape is missing, carries no ARGMOT rows or a flag is malformed.
+- **Tests**: `test_tools_cli.py` (a four-flip run counted with its duration and headings, a single turn not counted, `--min-run`, and the exit codes).
+
+---
+
 ### 24. `argus_floorlinks.py`
 Lists the shipped level walk links whose own line fails the early-switch floor test ([#905](https://github.com/saworbit/argus/issues/905)).
 - **Usage**:
