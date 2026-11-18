@@ -701,6 +701,23 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- `tools/argus_gait.py` no longer files a bot parked at a mover pad as the
+  wedge class ([#628](https://github.com/saworbit/argus/issues/628)). A lift
+  or train hop parks the bot with `ar_liftwait`, friction only and no marker,
+  so the e1m5 window the issue quotes (Romero, 6.0 s from t=33.1 in
+  `broad_mhb_e1m5_2`) read as "pre-existing" although the tape shows the hop
+  planned at t=31.0 and the 8 s pad give-up at t=39.1. A window that opens
+  inside the bot's own hop is now a `mover wait`, with the verb that closed
+  the hop and whether the bot boarded; one that runs on more than a second
+  past its hop's close or bound is a `mover overrun`, so a hold that outlives
+  the controller's own give-up is not hidden either. A hesitation marker
+  keeps first claim, and neither class fails the exit status. All three e1m5
+  windows on record (`broad_mhb_e1m5_2`, `broad_ecu_e1m5_2` and the
+  `broad_ecpin5` trace) now read `lift hop ... closed by abandon, never
+  boarded`. The waits themselves are not fixed here: they are at e1m5's
+  targeted plat (`func_plat *2`, targetname `t2`), which stays raised and
+  inert until its button fires.
+
 - Stop the lab's Rust tests leaving directories in `%TEMP%`
   ([#861](https://github.com/saworbit/argus/issues/861)). The console
   injection and network client tests leaked one each on every run with an

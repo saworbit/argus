@@ -217,9 +217,13 @@ want opposite reactions, so `hesitate` carries the cause that produced it.
 `tools/argus_gait.py` reads the markers against the shared freeze windows and
 attributes each stationary window to a hesitation only when that bot's own
 marker precedes it; it exits non-zero when an attributed window lost health or
-outlived the hold. Use it rather than a freeze count alone when judging a
-change to the gait: dm4 and dm2 both produce long, pre-existing fight-pin
-freezes on unchanged code.
+outlived the hold. The mover hold is the other designed wait with no marker:
+a window that opens inside the bot's own `lift` or `train` hop is reported as
+a mover wait, with the verb that closed the hop and whether the bot boarded,
+rather than as a wedge (#628), and one that runs on more than a second past
+the hop's close or bound as a mover overrun. Use it rather than a freeze
+count alone when judging a change to the gait: dm4 and dm2 both produce long,
+pre-existing fight-pin freezes on unchanged code.
 
 Human and instrument tracks stay outside bot bands and freeze totals.
 Freezes use speed under 20 u/s within a strict 32-unit XY circle for at least
