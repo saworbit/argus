@@ -1,0 +1,206 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -1059,17 +1059,10 @@
+ 
+ // ---------------------------------------------------------------- physics
+ 
+-// Stock SV_UserFriction, edge term included (#794): friction is multiplied
+-// by edgefriction (default 2) when nothing lies within 34u below a point
+-// 16u ahead along the travel line at the feet. Every human player gets it
+-// and the bot path never did, so a bot turning at the full turn rate could
+-// settle near 494 u/s on flat ground and carry it off a ledge; with the
+-// edge term the same held-angle equilibrium tops out near 354 u/s, and
+-// only where the ground runs out.
+ void() Argus_Friction =
+ {
+-    local vector vh, start;
+-    local float spd, control, newspeed, fric;
++    local vector vh;
++    local float spd, control, newspeed;
+ 
+     vh = self.velocity;
+     vh_z = 0;
+@@ -1080,16 +1073,10 @@
+         self.velocity_y = 0;
+         return;
+     }
+-    fric = AR_FRICTION;
+-    start = self.origin + vh * (16 / spd);
+-    start_z = self.origin_z - 24;
+-    traceline (start, start - '0 0 34', TRUE, self);
+-    if (trace_fraction == 1)
+-        fric = AR_FRICTION * cvar ("edgefriction");
+     control = spd;
+     if (control < AR_STOPSPEED)
+         control = AR_STOPSPEED;
+-    newspeed = spd - frametime * control * fric;
++    newspeed = spd - frametime * control * AR_FRICTION;
+     if (newspeed < 0)
+         newspeed = 0;
+     newspeed = newspeed / spd;
+@@ -2145,7 +2132,7 @@
+ float(float myaw, float spd, float probe) Argus_WallSlide =
+ {
+     local vector vh, n, fwd, side, a;
+-    local float back, cspd, cyaw, reach, i, wd;
++    local float back, cspd, cyaw, reach, i;
+ 
+     makevectors ('0 0 0' + myaw * '0 1 0');
+     fwd = v_forward;
+@@ -2185,14 +2172,6 @@
+         return FALSE;           // already moving out of the plane
+ 
+     vh = vh - n * back;         // stock ClipVelocity, overbounce 1
+-    // stock SV_WallFriction (#794): facing within 60 degrees of head-on
+-    // into the wall, the speed left along it is scaled by 1 + d, where d
+-    // is the facing's dot with the wall normal plus 0.5. Stock reads
+-    // v_angle; a bot's facing is angles_y, pitch left out.
+-    makevectors ('0 1 0' * self.angles_y);
+-    wd = v_forward * n + 0.5;
+-    if (wd < 0)
+-        vh = vh * (1 + wd);
+     cspd = vlen (vh);
+     if (cspd < 20)
+         return FALSE;           // head on: stock stops here too, and
+@@ -4558,39 +4537,9 @@
+     return best;
+ };
+ 
+-// A plat with a targetname spawns raised and inert until its button
+-// fires it (stock plats.qc: STATE_UP, use = plat_use), and touching it does
+-// nothing. The lift wait read "not at the bottom" as "on its way" and stood
+-// still beside the footprint for the full 8 s give-up: e1m5's *2 lift
+-// (t2, button *3 at -544 1070 -8) held 47 such windows across the e1m5
+-// tapes and none boarded (#628). A plat that is really travelling up has a
+-// velocity and a think scheduled; this one has neither.
+-float() Argus_PadPlatDisabled =
+-{
+-    local entity nx;
+-    nx = Argus_NearestMover (320);
+-    return (nx != world && nx.classname == "plat" && nx.state == STATE_UP
+-            && nx.velocity == '0 0 0' && nx.nextthink <= nx.ltime);
+-};
+-
+-// The leaf of a linked door pair that carries the pair's targetname
+-// (#643). Stock LinkDoors points every leaf's owner at the master and
+-// copies any leaf's targetname onto the master only, so the leaf a bot
+-// actually meets can read as touch-open while only a button elsewhere
+-// opens the pair: e1m6's lower door is *7 (t88, "This door is opened
+-// elsewhere") and *20, which has no targetname, and Romero pushed into
+-// *20 for up to 56 s, sliding along the slab, until a give-up happened
+-// to fire with *7 on the line.
+-entity(entity d) Argus_DoorMaster =
+-{
+-    if (d.owner != world && d.owner.classname == d.classname)
+-        return d.owner;
+-    return d;
+-};
+-
+ void(entity d) Argus_TakeDoor =
+ {
+-    local entity best, m;
++    local entity best;
+ 
+     self.ar_door = d;
+     self.ar_doortime = time + 8;
+@@ -4609,11 +4558,10 @@
+         return;
+     }
+ 
+-    m = Argus_DoorMaster (d);
+-    if (m.targetname == "")
++    if (d.targetname == "")
+         return;                 // touch-open: walk in, masquerade fires it
+     argus_door_search_budget = 32;
+-    best = Argus_DoorOpener (m, 0);
++    best = Argus_DoorOpener (d, 0);
+     self.ar_doorbtn = best;
+     // THROTTLED 1 s PER BOT, like the hazard deflection, because
+     // this is not once per door. An OPEN slab on the line is
+@@ -9919,36 +9867,6 @@
+     dprint ("\n");
+ };
+ 
+-// Does floor run under the whole straight line from a to b (#775)? The side
+-// traces above only refuse a wall, and open air is not a wall: on a walkway
+-// bordered by a void a bot switching 48u short of a mid-corner elbow headed
+-// for the next node on a line 8u inside the void, and all four skill-1 bots
+-// that reached dm3's top walkway fell there. Every 12u along the line, a
+-// trace from origin height must find floor within 60u. A start in solid is
+-// a wall the side traces already judged, not a void.
+-float(vector a, vector b) Argus_WalkLineFloored =
+-{
+-    local vector d, p;
+-    local float len, s;
+-    d = b - a;
+-    d_z = 0;
+-    len = vlen (d);
+-    if (len < 1)
+-        return TRUE;
+-    d = normalize (d);
+-    s = 12;
+-    while (s < len)
+-    {
+-        p = a + d * s;
+-        p_z = a_z + (b_z - a_z) * (s / len);
+-        traceline (p, p - '0 0 60', TRUE, self);
+-        if (trace_fraction == 1 && !trace_startsolid && !trace_allsolid)
+-            return FALSE;
+-        s = s + 12;
+-    }
+-    return TRUE;
+-};
+-
+ // A flat walking handoff needs a supported, body-clear entry. The eye ray can
+ // clear the next corridor while the side of the body still clips its mouth.
+ // Water supports swimming between submerged seats without FL_ONGROUND;
+@@ -9992,8 +9910,7 @@
+     traceline (a + side, b + side, TRUE, self);
+     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+     traceline (a - side, b - side, TRUE, self);
+-    if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+-    return Argus_WalkLineFloored (self.origin, next.origin);
++    return (trace_fraction == 1 && !trace_startsolid && !trace_allsolid);
+ };
+ 
+ // A visible prize cannot cancel an action the route still requires. Parent
+@@ -10762,10 +10679,9 @@
+                 // sends it, and on e1m1 the useful direction is DOWN
+                 // - the start area's floor IS the slab, and dropping
+                 // 230 units on it is the only way out (#281).
+-                if (time > self.ar_liftstart + 8 || Argus_PadPlatDisabled ())
++                if (time > self.ar_liftstart + 8)
+                 {
+-                    // waiting AT the pad and the lift never came, or
+-                    // never can (#628, Argus_PadPlatDisabled):
++                    // waiting AT the pad and the lift never came:
+                     // shelve the errand globally and cool this pad
+                     self.ar_hoplift = 0;
+                     if (Argus_GoalOK (self.ar_goal))
+@@ -10841,7 +10757,7 @@
+                                 self.velocity_y = 0;
+                             }
+                             else if (fabs (tp_z - self.origin_z) > 48
+-                                     && Argus_DoorMaster (nx).targetname != ""
++                                     && nx.targetname != ""
+                                      && self.ar_door == world
+                                      && !Argus_DoorShelved (nx))
+                                 Argus_TakeDoor (nx);
+@@ -10904,7 +10820,7 @@
+                                 self.velocity_y = 0;
+                             }
+                         }
+-                        else if (Argus_DoorMaster (nx).targetname == "")
++                        else if (nx.targetname == "")
+                         {
+                             // touch-open and parked out of reach:
+                             // walk into it, the masquerade fires it
+@@ -11499,7 +11415,7 @@
+                 havetarget = 0;
+                 Argus_CoopCommitKey (self.ar_door);
+             }
+-            else if (Argus_DoorMaster (self.ar_door).targetname == "")
++            else if (self.ar_door.targetname == "")
+             {
+                 // touch-open: keep walking into the slab
+             }
