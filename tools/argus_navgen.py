@@ -36,8 +36,9 @@ Sidecar files, all optional, all read from the output directory:
                                probe session (how proven.json was
                                derived); not consumed by navgen
   argus_nav_<map>.seats.json   seats, walks and cuts by coordinates;
-                               read only by --seat-links on a
-                               shipped graph, not by a full regen
+                               --seat-links splices them into a
+                               shipped graph, and 7g2e applies them
+                               at every full regen
 
 usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj]
        argus_navgen.py map.bsp mapname shipped.qc unused.png --retype-doors
@@ -101,7 +102,10 @@ diagonal), refused unless the far end stays reachable without it; the
 remaining calls keep their order. Entries already applied are skipped, so
 a rerun changes nothing. Then it rebakes regions and tactics. Built for
 elbow seats: a corridor that turns a corner fails beeline_ok end to end,
-and a seat at the turn makes two walks that pass.
+and a seat at the turn makes two walks that pass. A full regeneration
+applies the same file after its late link passes (section 7g2e) with the
+same rules, and refuses to publish when an entry cannot apply, for example
+a walk end that is no longer a waypoint.
 
 --reconcile-artifacts derives sidecar families and the banner from shipped QC
 without changing nodes, link calls or their slot order. It rejects stale cover
@@ -2159,6 +2163,37 @@ for _anchor in proven_anchors:
 if proven_anchors:
     print(f"engine-proven seats: {len(_proven_positions)} distinct nominations promoted")
 
+# ---- 5a1b. the seats sidecar (#778) ----
+# argus_nav_<map>.seats.json names seats, walks and cuts by coordinates.
+# --seat-links splices it into a shipped graph, but a full regeneration
+# used to ignore it, so regenerating dm3 dropped the five elbow seats into
+# the red armour's south upper area and minted the diagonal they replace.
+# It is read here so a bad file refuses before sampling work is spent;
+# section 7g2e applies it. Any entry that cannot be applied refuses the
+# regeneration before anything is written.
+_seatspec_path = Path(OUTQC).parent / f"argus_nav_{MAPNAME}.seats.json"
+_seatspec = {}
+_seat_protect = {}  # (source, target) -> the walk entry, kept first at the clamp
+
+
+def _seat_refusal(message):
+    print(f"error: {_seatspec_path.name}: {message}; generation refused before "
+          f"publication", file=sys.stderr)
+    sys.exit(1)
+
+
+if _seatspec_path.exists():
+    try:
+        _seatspec = __import__("json").loads(_seatspec_path.read_text(encoding="utf-8"))
+        for _p in _seatspec.get("seats", []):
+            if len(_p) != 3:
+                raise ValueError(f"seat {_p} is not an origin")
+        for _key in ("walks", "cuts"):
+            for _pair in _seatspec.get(_key, []):
+                if len(_pair) != 2 or any(len(_q) != 3 for _q in _pair):
+                    raise ValueError(f"{_key[:-1]} {_pair} is not a pair of origins")
+    except (OSError, ValueError, TypeError, AttributeError) as _error:
+        _seat_refusal(f"unreadable ({_error})")
 
 def boarding_pad(bm, face_z):
     """WAIT_NODE discipline (mre's Obot design, proven necessary by
@@ -4156,6 +4191,83 @@ if __import__("os").path.exists(_provenpath):
         print(f"engine-proven entry: {_src}->{_dst} minted as JUMP")
     print(f"engine-proven pass: {_npv} entry link(s) minted")
 
+# ---- 7g2e. seats sidecar seats, walks and cuts (#778) ----
+# --seat-links' rules on the regenerated graph, after every pass that adds
+# links, which is where the splice put them on the shipped graph. A seat
+# is appended at its exact position (a dry, standable origin, inside the
+# waypoint budget) and is joined only by the sidecar's walks, so no knit
+# or Dijkstra link reaches it. Its other named points must already be
+# waypoints. A walk must pass beeline_ok between the exact positions and
+# stay within LINK_PATH_MAX; a cut retires only a plain walk whose far end
+# stays reachable without rocket or sprint links. The clamp below keeps
+# every sidecar walk first, and the checks after it and after the prunes
+# refuse the regeneration if one was still lost. Entries already in the
+# graph are kept as they are, so a regeneration reproduces the graph.
+_seat_cuts = []
+if _seatspec:
+    def _seat_way(_point):
+        _point = tuple(float(v) for v in _point)
+        for _i, _w in enumerate(ways):
+            if max(abs(_u - _v) for _u, _v in zip(pos(_w), _point)) < 1.0:
+                return _i
+        return None
+
+    _seats_added = 0
+    for _k, _p in enumerate(_seatspec.get("seats", [])):
+        _p = tuple(float(v) for v in _p)
+        if _seat_way(_p) is not None:
+            continue
+        _where = f"({_p[0]:.0f} {_p[1]:.0f} {_p[2]:.0f})"
+        if hull_contents(*_p) != CONTENTS_EMPTY:
+            _seat_refusal(f"seat {_where} is inside the hull-1 world")
+        if not any(abs(_f - _p[2]) <= 2.0 for _f in column_floors(_p[0], _p[1])):
+            _seat_refusal(f"seat {_where} does not stand on a floor")
+        if hostile_at(*_p):
+            _seat_refusal(f"seat {_where} stands in lava or slime")
+        if not _limits.admits(len(ways), infrastructure=True):
+            _seat_refusal(f"seat {_where} exceeds the waypoint budget")
+        if len(ways) >= PROMO_CAP:
+            infra_spent += 1
+        # no fine sample: pos() answers from the exact-position table
+        _proven_positions[("seat", _k, 0)] = _p
+        ways.append(("seat", _k, 0))
+        _seats_added += 1
+    _typed = set(teles) | set(rjlinks) | set(lifts) | set(swims) | set(trains) | set(sprints)
+    _seat_added, _seat_had = 0, 0
+    for _pair in _seatspec.get("walks", []):
+        _a, _b = _seat_way(_pair[0]), _seat_way(_pair[1])
+        if _a is None or _b is None:
+            _seat_refusal(f"walk {_pair} does not join two waypoints of this generation")
+        if (_a, _b) in _typed:
+            _seat_had += 1
+            continue
+        _seat_protect[(_a, _b)] = _pair
+        if _b in links.get(_a, {}):
+            _seat_had += 1
+            continue
+        _pa, _pb = pos(ways[_a]), pos(ways[_b])
+        _flat = ((_pb[0] - _pa[0]) ** 2 + (_pb[1] - _pa[1]) ** 2) ** 0.5
+        if _flat > LINK_PATH_MAX:
+            _seat_refusal(f"walk n{_a} -> n{_b} is {_flat:.0f}u, past {LINK_PATH_MAX}")
+        if not beeline_points(_pa, _pb):
+            _seat_refusal(f"beeline_ok refuses walk {_pair}")
+        links.setdefault(_a, {})[_b] = (_flat, 0)
+        _seat_added += 1
+    for _pair in _seatspec.get("cuts", []):
+        _a, _b = _seat_way(_pair[0]), _seat_way(_pair[1])
+        if _a is None or _b is None:
+            _seat_refusal(f"cut {_pair} does not join two waypoints of this generation")
+        if (_a, _b) in _seat_protect:
+            _seat_refusal(f"cut {_pair} is also listed as a walk")
+        if _b not in links.get(_a, {}):
+            continue
+        if links[_a][_b][1] or (_a, _b) in doorlinks:
+            _seat_refusal(f"cut {_pair} is not a plain walk")
+        del links[_a][_b]
+        _seat_cuts.append((_a, _b, _pair))
+    print(f"seats sidecar: {_seats_added} seat(s) appended, {_seat_added} walk(s) "
+          f"added, {_seat_had} already present, {len(_seat_cuts)} cut(s)")
+
 # ---- 7e1b. typed-link dedupe sweep ----
 # Emit-time dedupe is not enough on its own: the late passes (symmetric
 # closure, knitting, jump stitches, trace mining) add WALK links after
@@ -4190,7 +4302,8 @@ _indeg = collections.Counter(_j for outgoing in links.values() for _j in outgoin
 try:
     _nclamp = clamp_walk(
         links, teles, rjlinks, lifts, swims, trains, sprints,
-        key=lambda source, kv: (0 if kv[1][1] else 1,
+        key=lambda source, kv: (0 if (source, kv[0]) in _seat_protect else 1,
+                               0 if kv[1][1] else 1,
                                -1_000_000 // max(1, _indeg[kv[0]]), kv[1][0]))
 except ValueError as error:
     print(f"error: {error}", file=sys.stderr)
@@ -4199,6 +4312,28 @@ except ValueError as error:
 if _nclamp:
     print(f"final slot clamp evicted {_nclamp} link(s) past the "
           f"8-slot runtime budget")
+
+# The sidecar's walks went first at the clamp; one can still lose its
+# slot to typed links or to more sidecar walks than the node can hold.
+for (_a, _b), _pair in _seat_protect.items():
+    if _b not in links.get(_a, {}):
+        _seat_refusal(f"walk {_pair} lost its runtime slot at the clamp")
+if _seat_cuts:
+    _ungated = collections.defaultdict(set)
+    for _i in links:
+        _ungated[_i].update(links[_i])
+    for _a, _b in teles + lifts + swims + trains:
+        _ungated[_a].add(_b)
+    for _a, _b, _pair in _seat_cuts:
+        _seen, _stack = {_a}, [_a]
+        while _stack:
+            _u = _stack.pop()
+            for _v in _ungated[_u] - _seen:
+                _seen.add(_v)
+                _stack.append(_v)
+        if _b not in _seen:
+            _seat_refusal(f"cut {_pair} leaves its far end unreachable")
+
 
 # ---- 7g3. route-poison prune ----
 # A node that STILL cannot reach the mainland after knitting is route
@@ -4375,6 +4510,16 @@ if _spawn_reach:
         print("directed reach: WARNING - routes from that spawn will "
               "fail most goals; bots there take the trapped exit. Do "
               "NOT ship this graph without a look.")
+
+# The route-poison and isolated-waypoint prunes run after section 7g2e,
+# and a seat they strip takes its walks with it: check every sidecar walk
+# again on the graph that will be written.
+if _seatspec:
+    _typed = set(teles) | set(rjlinks) | set(lifts) | set(swims) | set(trains) | set(sprints)
+    for _pair in _seatspec.get("walks", []):
+        _a, _b = _seat_way(_pair[0]), _seat_way(_pair[1])
+        if _a is None or _b is None or not (_b in links.get(_a, {}) or (_a, _b) in _typed):
+            _seat_refusal(f"walk {_pair} did not survive the prunes")
 
 # ---- 8a05. region classes (dm3 musing S4) ----
 # After the poison prune every surviving node can REACH the mainland;

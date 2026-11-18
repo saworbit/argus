@@ -545,9 +545,10 @@ the same generation, mill and registration path. See
 
 Never hand-edit `src/argus_nav_<map>.qc`. Keep probe convictions and proven
 links in their sidecars for the next generation. Curated seats and walks go
-in `src/argus_nav_<map>.seats.json` and are applied to the shipped graph with
-`argus_navgen.py --seat-links`; a full regeneration does not read that file
-yet. For **terminal** link checks:
+in `src/argus_nav_<map>.seats.json`. `argus_navgen.py --seat-links` applies
+them to the shipped graph, and a full regeneration applies the same file
+after its late link passes, refusing to publish when an entry cannot apply
+(#778). For **terminal** link checks:
 
 ```text
 python tools/argus_reach.py mymap
