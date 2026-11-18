@@ -1171,6 +1171,12 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- `cargo deny` ignores RUSTSEC-2026-0543, the notice that `chrono` is
+  unmaintained. No upgrade exists, and `rmcp` and `schemars` depend on it as
+  well as the lab, so the policy records why it is ignored and when to look
+  again (`tools/argus_mcp/deny.toml`,
+  [#870](https://github.com/saworbit/argus/issues/870)).
+
 - Read average speed on the fixed-clock confirmation tapes
   ([#863](https://github.com/saworbit/argus/issues/863)). It was registered
   with the validation but the corpus did not carry it when the verdicts were
@@ -1179,12 +1185,6 @@ passing botmatch does not establish better human play.
   63.7) and dm2 182.9 against 183.7 (-9.5 to +11.0, margin 54.9). Neither
   verdict and no limit changes. `docs/fixed-clock.md` and
   `tools/lab_instruments.json` record it as read after the verdicts.
-
-- `cargo deny` ignores RUSTSEC-2026-0543, the notice that `chrono` is
-  unmaintained. No upgrade exists, and `rmcp` and `schemars` depend on it as
-  well as the lab, so the policy records why it is ignored and when to look
-  again (`tools/argus_mcp/deny.toml`,
-  [#870](https://github.com/saworbit/argus/issues/870)).
 
 - Explain the project in the README. A new section says what Argus is, which
   rules all of its code follows and how a map file becomes a measured match.
