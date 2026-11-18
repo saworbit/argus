@@ -728,6 +728,19 @@ passing botmatch does not establish better human play.
   13.7 to 15.7, lava 0 both. e1m8, five a side: stalls 41.4 to 32.6,
   engagements 11.2 to 21.8, goals 4.8 to 2.6 inside a limit of 2.9,
   lava 1.6 to 1.8.
+- Say why each shipped seat stands on no navmesh fragment
+  ([#788](https://github.com/saworbit/argus/issues/788)). The dry ones
+  were not floors the extractor lost: every one stands on a hull-1 face
+  too steep to stand on (normal z 0.24 to 0.66), which the mesh leaves out
+  under the FL_ONGROUND rule, and with that cut lowered the extractor finds
+  a face under each within 0.1u. `argus_navmesh.py --audit` now splits its
+  off-mesh line into liquid seats the repair keeps, steep faces with the
+  distance to the nearest fragment, no world floor within 30u, seats inside
+  the world, and dry seats with no fragment and no reason. Dry off-mesh
+  seats before, and dry seats with no fragment and no reason after: e1m8
+  25 to 0, e1m3 5 to 0, e1m7 3 to 0, e1m2 2 to 0, lqdm2 1 to 0, all 36
+  now reported as steep; dm2, dm3, dm4, dm6, e1m1, e1m4, e1m5, e1m6 and
+  the six lab maps 0 to 0.
 
 - Stop the lab's Rust tests leaving directories in `%TEMP%`
   ([#861](https://github.com/saworbit/argus/issues/861)). The console
