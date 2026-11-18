@@ -38,6 +38,18 @@ passing botmatch does not establish better human play.
   patch and manifest byte for byte. CONTRIBUTING.md now points at it instead
   of the manual steps.
 
+- `python tools/argus_lab_mutants.py` makes the lab spine's mutation check
+  reproducible ([#824](https://github.com/saworbit/argus/issues/824)). It
+  breaks each of 67 guards in `tools/argus_lab.py` in turn, in memory only,
+  runs `tools/test_argus_lab.py` against each and reports every guard caught
+  or missed. A row whose original text no longer names exactly one place in
+  the spine stops the run before any suite starts. Its first run missed 10
+  guards, among them a gate with no bound, a goal target with low above
+  high, a session off a goal map and a sweep whose failure got worse; each
+  now has a test, and all 67 are caught. Fast CI checks the table and the
+  harness only; run the whole table before a change to the spine merges
+  ([the mutation check](docs/lab-spine.md#the-mutation-check)).
+
 - Add lab scenarios: purpose-built micro-maps that isolate one bot behaviour
   ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP, which also
   accepts the request as a JSON string) and `argus-mcp lab-request
