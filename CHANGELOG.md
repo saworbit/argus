@@ -889,6 +889,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Reject lab matches that record a different map from the request. Keep the raw tape and exclude it from quality gates ([#918](https://github.com/saworbit/argus/issues/918)).
+
 - A fixed-clock tape is classed by its stated frame, not its sample gap
   ([#901](https://github.com/saworbit/argus/issues/901)). At 14.25 ms the
   telemetry fires every 36 frames, 0.513 s, and the one-decimal stamps
