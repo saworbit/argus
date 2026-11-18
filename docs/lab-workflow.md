@@ -544,8 +544,9 @@ the same generation, mill and registration path. See
 [lab scenarios](lab-scenarios.md).
 
 Never hand-edit `src/argus_nav_<map>.qc`. Keep probe convictions and proven
-links in their sidecars for the next generation. Curated seats and walks go
-in `src/argus_nav_<map>.seats.json`. `argus_navgen.py --seat-links` applies
+links in their sidecars for the next generation. Curated seats, walks and cuts
+go in `src/argus_nav_<map>.seats.json`; a cut retires a plain walk, or a jump
+or sprint link bots cannot take (#779). `argus_navgen.py --seat-links` applies
 them to the shipped graph, and a full regeneration applies the same file
 after its late link passes, refusing to publish when an entry cannot apply
 (#778). For **terminal** link checks:
