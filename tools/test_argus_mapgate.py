@@ -41,6 +41,24 @@ class TestArgusMapGate(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, 'endpoints must be integers'):
                     assess_playability(self.bsp, self.graph, self.probe)
 
+    def test_reach_measures_a_spawn_where_the_body_comes_to_rest(self):
+        # #789: a floating spawn falls to the first floor; #783: a spawn on a
+        # brush-entity pad stays on it; a spawn on the floor keeps its origin.
+        from argus_reach import standing_point
+
+        class World:
+            def floor_under(self, x, y, z, maxdrop):
+                return -740.0 - 24 if x > 900 else 0.0
+
+        world = World()
+        self.assertEqual(standing_point(world, (1024.0, 720.0, -104.0)), (1024.0, 720.0, -740.0))
+        self.assertEqual(standing_point(world, (0.0, 0.0, 24.0)), (0.0, 0.0, 24.0))
+        pad = [("func_wall", (100.0, -400.0, 0.0), (160.0, -320.0, 256.0))]
+        self.assertEqual(standing_point(world, (128.0, -360.0, 280.0), pad), (128.0, -360.0, 280.0))
+        self.assertEqual(standing_point(world, (128.0, -360.0, 280.0)), (128.0, -360.0, 24.0))
+        above = [("func_wall", (100.0, -400.0, 0.0), (160.0, -320.0, 400.0))]
+        self.assertEqual(standing_point(world, (128.0, -360.0, 280.0), above), (128.0, -360.0, 24.0))
+
     def test_door_only_hop_is_in_every_reader(self):
         from argus_mapgate import _graph_edges
         from argus_pointfile import _adj

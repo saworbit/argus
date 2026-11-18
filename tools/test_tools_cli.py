@@ -495,6 +495,8 @@ tool_timeout_sec = 700
         }))
         orig_spawns = argus_reach.bsp_spawns
         orig_root = argus_reach.ROOT
+        orig_world = argus_reach.load_world
+        orig_stand = argus_reach.standing_point
         try:
             argus_reach.ROOT = tmp
             # a BSP with no deathmatch spawn at all is the #113 case
@@ -503,12 +505,18 @@ tool_timeout_sec = 700
             # and with a spawn present the same graph passes, so the
             # False above is the empty-spawn branch and not the skip
             argus_reach.bsp_spawns = lambda path: [(0, 0, 24)]
+            # the stand-in BSP has no world to drop a spawn into, so the
+            # body comes to rest where it spawned
+            argus_reach.load_world = lambda path: (None, [])
+            argus_reach.standing_point = lambda world, spawn, boxes: spawn
             self.assertIs(argus_reach.audit("fixture"), True)
             # a map with no BSP still skips, returning None
             self.assertIsNone(argus_reach.audit("absent"))
         finally:
             argus_reach.bsp_spawns = orig_spawns
             argus_reach.ROOT = orig_root
+            argus_reach.load_world = orig_world
+            argus_reach.standing_point = orig_stand
             shutil.rmtree(tmp, ignore_errors=True)
 
     # ---- --retype-doors (#330) ----
