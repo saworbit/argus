@@ -621,20 +621,55 @@ ac7e48a00f6ec92c3df6821f65f9e28b.
 
 ### Ladder verdicts
 
-NOT YET RUN. To be recorded here: dm3, the inherited-typed mesh graph at 249
-seats against the shipped graph, five tapes a side; and dm4, the native-typed
-graph against the shipped graph, in a matched ladder.
+Recorded 2026-11-18. dm4 and dm3, skill 2, 185 s, wall clock at the played
+rate (`+sys_ticrate 0.0139`), five pairs a map launched together, every tape
+in the listen tick class. The control is main at 89b9852 (build
+9387e1e77737) with the shipped graphs; each candidate is the same source with
+only `argus_nav_<map>.qc` swapped, built as above. Primary: stall parity, as
+in the first mesh ladder. Gates and limits from `argus_lab.py skeptic`.
 
 | Map | Arm | Tapes | Primary | Control median | Candidate median | Verdict |
 |---|---|---|---|---|---|---|
-| dm3 | mesh, inherited typed, 249 seats | | | | | |
-| dm4 | mesh, native typed | | | | | |
+| dm3 | mesh, inherited typed, 249 seats | 5 + 5 | stalls | 16 | 9 | parity on stalls; goals fell past their limit; not adopted |
+| dm4 | mesh, native typed | 5 + 5 | stalls | 8 | 4 | parity on every gate |
+
+Per tape, stalls ran 15, 21, 16, 11, 26 (dm3 control) against 4, 9, 13, 24, 9,
+and 8, 8, 3, 4, 11 (dm4 control) against 12, 3, 4, 2, 4.
+
+| Map | Metric | Control mean | Candidate mean | Change | Detection limit | Reading |
+|---|---|---|---|---|---|---|
+| dm3 | stalls | 17.8 | 11.8 | -6.0 | 24.6 | no detectable effect |
+| dm3 | engages | 18.4 | 28.6 | +10.2 | 12.0 | no detectable effect |
+| dm3 | goals | 23.2 | 12.2 | -11.0 | 10.1 | moved |
+| dm3 | lava, freezes | 0, 0 | 0, 0 | 0 | | no change |
+| dm4 | stalls | 6.8 | 5.0 | -1.8 | 10.1 | no detectable effect |
+| dm4 | engages | 70.2 | 70.8 | +0.6 | 28.9 | no detectable effect |
+| dm4 | lava | 3.0 | 1.0 | -2.0 | 2.7 | no detectable effect |
+| dm4 | goals | 20.4 | 16.6 | -3.8 | 8.9 | no detectable effect |
+| dm4 | freezes | 0 | 0 | 0 | 1.2 | no detectable effect |
+
+**dm4.** The native-typed graph stands alone: it carries no inherited typed
+link, reaches 100 per cent from its worst spawn against the shipped graph's
+93, and holds parity on every gate. That meets the bar #790 set for it. It
+is not proposed for shipping: parity is not a gain, and the shipped graph's
+rocket and sprint links are prize routes the native finder does not mint.
+
+**dm3.** The inherited-typed mesh graph holds stall parity but routed goal
+completions fell by more than their limit, so it is not adopted. Post hoc,
+not registered: battle-scan grabs rose from 21 to 43 over the five tapes and
+engagements rose by 10 a tape, so part of the fall may be pickups taken in
+fights rather than as planned goals. Telling those apart needs a pickup
+count that does not care how the bot came to the item, registered before
+any rerun.
+
+Tapes: `runs/study_g790d3_{ctl,m790dm3}_r1` to `r5` and
+`runs/study_g790d4_{ctl,m790dm4}_r1` to `r5` (machine-local).
 
 ## Limits
 
-- One map laddered. dm4 is the best-instrumented map in the lab and also the
-  one whose shipped graph the mesh agrees with most (699 of 700 plain links
-  pass), so it is the hardest place for a new graph to win.
+- Two maps laddered, five pairs each. dm4 is the best-instrumented map in the
+  lab and also the one whose shipped graph the mesh agrees with most (699 of
+  700 plain links pass), so it is the hardest place for a new graph to win.
 - By default the graph inherits navgen's typed seats. `--native-typed` finds
   jumps, climbs, drop arcs, lifts and teleporters itself, but not rocket
   jumps, sprints, swims or trains, so it stands alone only on a map that

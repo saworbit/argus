@@ -111,8 +111,13 @@ passing botmatch does not establish better human play.
   to 95.5 per cent of the mesh covered (shipped 89.2). The report gives reach,
   coverage and the edict estimate for both graphs, and BSPs may come from
   `ARGUS_MAPS`. Rocket jumps, sprints, swims and trains are not found, so
-  native dm3 reaches 65 per cent; the dm3 and dm4 ladders are still to run
-  ([the finder](docs/navmesh-experiment.md#mesh-native-typed-links)).
+  native dm3 reaches 65 per cent
+  ([the finder](docs/navmesh-experiment.md#mesh-native-typed-links)). Five
+  played pairs a map against the shipped graphs: the dm4 native graph, with
+  no inherited typed link, holds parity on every gate; the dm3 mesh graph
+  holds stall parity but routed goals fell from 23.2 to 12.2 a tape, past
+  the 10.1 limit, so it is not adopted
+  ([verdicts](docs/navmesh-experiment.md#ladder-verdicts)).
 
 - Seven scenarios are recorded in `labmaps/`, six registered:
   `lab_voidcorner` (a 64u walkway ring over lava with four tight corners),
