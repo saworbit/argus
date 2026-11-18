@@ -598,7 +598,6 @@ void() Argus_Nav_Spawn_dm3 =
     Argus_NavLink (n36, n37);
     Argus_NavLink (n36, n41);
     Argus_NavLink (n36, n185);
-    Argus_NavLinkJump (n36, n46, 0);    // approach 0, landing 96, arc 0
     Argus_NavLink (n37, n185);
     Argus_NavLink (n37, n41);
     Argus_NavLink (n37, n50);
@@ -1311,7 +1310,6 @@ void() Argus_Nav_Spawn_dm3 =
     Argus_NavLinkSprint (n234, n243);
     Argus_NavLinkSprint (n28, n236);
     Argus_NavLinkSprint (n236, n28);
-    Argus_NavLinkSprint (n241, n52);
     Argus_NavLink (n181, n134);    // teleporter
     Argus_NavLink (n16, n56);    // teleporter
     Argus_NavLinkRocket (n239, n237);
@@ -1604,5 +1602,5 @@ void() Argus_Nav_Spawn_dm3 =
     Argus_AddCamNode ('-379 705 216', '-15 -117 0', "arena_4");
     Argus_AddCamNode ('-251 353 16', '-15 79 0', "arena_5");
     Argus_AddCamNode ('-219 -639 184', '-15 -16 0', "arena_6");
-    dprint ("ARGNAV 249 nodes, 840 links\n");
+    dprint ("ARGNAV 249 nodes, 838 links\n");
 };
