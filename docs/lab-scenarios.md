@@ -244,9 +244,12 @@ five tapes an arm, interleave control and candidate, and keep every tape.
 - Run the same arms on a stock map before a claim names one (the promotion
   rule above).
 - Write the ladder's results file into `runs/` (protocol, arm MD5s, per-tape
-  metrics, and every tape's map, size and SHA-256) and cite it in the claim;
-  the tapes themselves are listed in `.gitignore` when they are too large to
-  commit.
+  metrics, and every tape's map, size and SHA-256) and cite it in the claim.
+  When the tapes are too large to commit, name the ladder's runs
+  `study_<stem>_...`, which one `.gitignore` rule keeps out of Git with their
+  navigation receipts, and set the results file's `tape_storage` to
+  `machine-local`; `argus_ci.py localtapes` fails while any tape it lists is
+  trackable (#872).
 
 ## The first scenario: lab_voidcorner
 
