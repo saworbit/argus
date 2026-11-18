@@ -118,6 +118,8 @@ jobs:
           python3 tools/test_jump_anchor.py
           python3 tools/test_navmesh_repair.py
           python3 tools/test_navmesh_air.py
+          python3 tools/test_argus_bsp.py
+          python3 -O tools/test_argus_bsp.py
           python3 tools/test_ci_validation.py
 
       - name: Run Python tape parity tests
