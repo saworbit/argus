@@ -44,6 +44,8 @@ struct FakeEngineState {
     killed: std::sync::atomic::AtomicBool,
     quit_requested: std::sync::atomic::AtomicBool,
     stdout: Arc<Mutex<String>>,
+    /// The clock the controller would have launched a real engine on.
+    clock: Mutex<Option<EngineClock>>,
 }
 
 #[cfg(test)]
@@ -65,8 +67,19 @@ impl FakeEngineControl {
                 killed: std::sync::atomic::AtomicBool::new(false),
                 quit_requested: std::sync::atomic::AtomicBool::new(false),
                 stdout: Arc::new(Mutex::new(output.into())),
+                clock: Mutex::new(None),
             }),
         }
+    }
+
+    /// Record the clock a real launch would have used.
+    pub(crate) fn note_clock(&self, clock: EngineClock) {
+        *self.state.clock.lock().expect("fake clock lock poisoned") = Some(clock);
+    }
+
+    /// The clock this engine was launched on, once a controller took it.
+    pub(crate) fn launched_clock(&self) -> Option<EngineClock> {
+        *self.state.clock.lock().expect("fake clock lock poisoned")
     }
 
     pub(crate) fn complete(&self) {
