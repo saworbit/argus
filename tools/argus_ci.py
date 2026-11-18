@@ -31,6 +31,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -858,6 +859,93 @@ def check_pins(root, **_kw):
     return fails
 
 
+CHANGELOG_CATEGORIES = ("Added", "Changed", "Fixed", "Removed", "Maintenance", "Security")
+CHANGELOG_FRAGMENT_NAME = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*\.md")
+
+
+def fold_changelog(text, entries):
+    """Insert single-line entries into Unreleased, retaining existing history."""
+    heading = re.search(r"(?m)^### Unreleased\n", text)
+    if not heading:
+        raise ValueError("missing the Unreleased heading")
+    rest = text[heading.end():]
+    next_heading = re.search(r"(?m)^#{1,3} ", rest)
+    end = next_heading.start() if next_heading else len(rest)
+    intro, *sections = re.split(r"(?m)^#### (.+)\n", rest[:end])
+    existing = dict(zip(sections[::2], sections[1::2]))
+    if len(existing) * 2 != len(sections):
+        raise ValueError("duplicate category headings under Unreleased")
+    for category in CHANGELOG_CATEGORIES:
+        if category not in entries:
+            continue
+        body = existing.get(category, "\n")
+        current_lines = set(body.splitlines())
+        added = dict.fromkeys(entry for entry in entries[category]
+                              if entry not in current_lines)
+        if added:
+            existing[category] = "\n" + "\n".join(added) + "\n" + (
+                body.lstrip("\n") if body.strip() else "\n")
+    unreleased = intro + "".join(f"#### {name}\n{body}" for name, body in existing.items())
+    return text[:heading.end()] + unreleased + rest[end:]
+
+
+def check_changelog(root, fold=False, **_kw):
+    """Check pending entries and optionally fold them into the changelog."""
+    entries = collections.defaultdict(list)
+    fails = []
+    try:
+        paths = sorted((root / "changelog.d").iterdir(), reverse=True)
+    except FileNotFoundError:
+        return []
+    except OSError as error:
+        return [f"changelog: {error}"]
+    for path in paths:
+        if path.name == ".gitkeep":
+            continue
+        name = path.relative_to(root).as_posix()
+        if (not CHANGELOG_FRAGMENT_NAME.fullmatch(path.name)
+                or path.is_symlink() or not path.is_file()):
+            fails.append(f"changelog: {name}: expected a lower-case slug and a regular file")
+            continue
+        try:
+            category, _, entry = path.read_text(encoding="utf-8").partition("\n")
+        except (OSError, UnicodeError) as error:
+            fails.append(f"changelog: {name}: {error}")
+            continue
+        entry = entry.strip()
+        if category not in CHANGELOG_CATEGORIES:
+            fails.append(f"changelog: {name}: first line must be one of "
+                         + ", ".join(CHANGELOG_CATEGORIES))
+        elif not entry or len(entry.splitlines()) != 1 or entry.startswith(("- ", "#")):
+            fails.append(f"changelog: {name}: write one entry without a bullet or heading")
+        elif any(dash in entry for dash in "\u2013\u2014"):
+            fails.append(f"changelog: {name}: use words or punctuation in place of en or em dashes")
+        else:
+            entries[category].append(f"- {entry}")
+
+    if fails or not fold or not entries:
+        return fails
+
+    changelog = root / "CHANGELOG.md"
+    temporary = None
+    try:
+        original = changelog.read_text(encoding="utf-8")
+        updated = fold_changelog(original, entries)
+        if updated != original:
+            with NamedTemporaryFile(mode="w", encoding="utf-8", newline="\n",
+                                    dir=root, delete=False) as output:
+                temporary = Path(output.name)
+                output.write(updated)
+            temporary.chmod(changelog.stat().st_mode)
+            temporary.replace(changelog)
+    except (OSError, UnicodeError, ValueError) as error:
+        fails.append(f"changelog: {error}")
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
+    return fails
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(
         prog="argus_ci.py",
@@ -869,7 +957,10 @@ def main(argv=None):
     ap.add_argument("--changed-files")
     ap.add_argument("--base")
     ap.add_argument("--commit-msg", default="")
+    ap.add_argument("--fold", action="store_true", help="fold pending changelog entries into Unreleased")
     args = ap.parse_args(argv)
+    if args.fold and args.check != "changelog":
+        ap.error("--fold requires the changelog check")
     root = Path(args.root)
 
     names = list(CHECKS) if args.check == "all" else [args.check]
@@ -877,7 +968,7 @@ def main(argv=None):
     for name in names:
         fn = CHECKS[name]
         got = fn(root, changed_files=args.changed_files, base=args.base,
-                 commit_msg=args.commit_msg)
+                 commit_msg=args.commit_msg, fold=args.fold)
         if isinstance(got, Skipped):
             print("%s: skipped (%s)" % (name, got.reason))
         elif isinstance(got, PartialOk):
@@ -895,7 +986,8 @@ CHECKS = {"ship": check_ship, "eol": check_eol,
           "tapes": check_tapes, "localtapes": check_localtapes,
           "nav": check_nav, "links": check_links,
           "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab,
-          "suites": check_suites, "stamp": check_stamp, "pins": check_pins}
+          "suites": check_suites, "stamp": check_stamp, "pins": check_pins,
+          "changelog": check_changelog}
 
 
 if __name__ == "__main__":
