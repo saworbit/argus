@@ -331,6 +331,8 @@ Names the branch of the per-frame brink guard that deflected each routed bot, re
   ```bash
   python tools/argus_guard_replica.py dm4 runs/dm4fl_ctl_r1.log runs/dm4fl_ctl_r2.log
   python tools/argus_guard_replica.py lab_drymix runs/labdm_ctl_r1.log --json
+  python tools/argus_guard_replica.py dm4 runs/dm4ov2_ctl_r*.log --overhead src/argus_nav_dm4.qc.json
+  python tools/argus_guard_replica.py dm4 runs/dm4ov3_ctl_r*.log --overhead src/argus_nav_dm4.qc.json --region 690 1060 -700 -390 -160 -90
   python tools/argus_guard_replica.py --help
   ```
 - **Behavior**:
@@ -338,9 +340,12 @@ Names the branch of the per-frame brink guard that deflected each routed bot, re
   - Traces follow the engine's hull check: one that starts in solid and never leaves it returns fraction 1, and one that leaves it reports an impact at the next solid it enters. A probe buried in a 16u slab over open air therefore finds what lies under the slab.
   - Validates itself on the tape: route-led deflection starts are known vetoes (mode 2 route steering has no steering-side hazard check) and steady routed frames are known passes. Brush entities are invisible to it.
   - Measured on eight dm4 control tapes: recall 0.895, false vetoes 0.019; of 1369 re-entries, 47 per cent are wall vetoes, 36 lava, 6 void and 2.5 run-off ([results](../runs/dm4-reentry-guard.results.json)).
-- **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`) and one or more tapes.
-- **Exit Code**: `0` on success or `--help`, `2` when the BSP or a tape is missing.
-- **Tests**: `test_tools_cli.py` (trace semantics, each verdict on synthetic geometry, the re-entry count from a synthetic tape).
+  - `--overhead GRAPH.qc.json` adds the overhead-target primary ([protocol](../docs/specs/2026-11-17-overhead-target-protocol.md)) per tape, with each tape's route-led starts, re-entries and wall re-entries beside it and the mean over the tapes. A wall re-entry counts when, from the pose and wish the guard replay uses (row k-1), the graph waypoint 24 to 340u away horizontally whose bearing lies closest to the wish is within 8 degrees of it, stands 64u or more above the bot's origin, and has solid on the straight line to it (a hull-0 sample every 8u, both ends excluded). The protocol's wording admits any waypoint in the cone, but the recorded reading took the closest in bearing only: that gives 418 events on the 32 dm4ov2 and dm4ov3 tapes, any waypoint in the cone 718.
+  - `--region X0 X1 Y0 Y1 Z0 Z1` (needs `--overhead`) adds, per tape, the same counts for events whose row k-1 pose lies strictly inside the box, and the routed seconds spent there: the interval from each mode 2 row inside the box to the next row, summed over stays. A stay still open when the bot's rows end is left out, because the tape was cut inside it.
+  - Reproduces `runs/dm4-overhead-target.results.json` tape for tape: overhead-target means 15.75 and 11.62 (dm4ov2 control and candidate) and 12.12 and 12.75 (dm4ov3), and with the box `690 1060 -700 -390 -160 -90` the room split, 0.88 and 3.38 events a tape (dm4ov2, `post_hoc`) and 2.62 and 1.00 (dm4ov3, `rungs.dm4_v3.room_split`), with every routed-seconds figure to its one decimal. It also reproduces the `lab_dropwall2` rung and the first dm4 pair, which the definition was not fitted on.
+- **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`), one or more tapes, and for `--overhead` the graph the tapes ran (`src/argus_nav_<map>.qc.json`; check the tape's `ARGNAV` line).
+- **Exit Code**: `0` on success or `--help`, `2` when the BSP, a tape or the graph is missing or a flag is malformed.
+- **Tests**: `test_tools_cli.py` (trace semantics, each verdict on synthetic geometry, the re-entry count from a synthetic tape; the overhead-target rule, including the closest-bearing choice, and the region's strict box and closed stays on a built fixture).
 
 ---
 

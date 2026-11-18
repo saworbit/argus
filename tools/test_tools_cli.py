@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """CLI regression tests for developer scripts in tools/."""
+import contextlib
 import hashlib
+import io
 import json
 import math
 import os
@@ -1339,6 +1341,85 @@ tool_timeout_sec = 700
         self.assertEqual(report["re_entries"]["n"], 1)
         self.assertEqual(report["re_entries"]["wall"], 1)
 
+    def test_guard_replica_scores_the_overhead_target_primary_and_a_region(self):
+        """The waypoint closest in bearing decides; a box counts events and closed routed stays."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_guard_replica as gr
+
+        SOLID, EMPTY = -2, -1
+
+        def walkway_wall(x, y, z):
+            # a room floor at z 0 and, from x 100, a walkway block whose top is z 128
+            if z <= 0 or (x >= 100 and z <= 128):
+                return SOLID
+            return EMPTY
+
+        guard = gr.Guard(walkway_wall)
+
+        def row(ms, x, cause, mode=2):
+            return (f"ARGMOT Reap ms {ms} pos '{x:.1f} 0.0 24.0' wish 0 cause {cause} "
+                    f"ctx '{mode} 0 1' hp 100 ground worldspawn\n")
+
+        # routed running at the wall: a deflection, two route frames, the
+        # re-entry (judged from row 6 at x 65.2, wish 0), then the bot leaves
+        # routing, which closes its stay in any box around it
+        causes = ["route_steer"] * 4 + ["hazard_fan", "route_steer", "route_steer", "hazard_fan"]
+        lines = [row(1000 + 14 * i, 40 + 4.2 * i, c) for i, c in enumerate(causes)]
+        lines += [row(1000 + 14 * i, 69.4, "wander", mode=0) for i in (8, 9)]
+        overhead = (265.2, 0.0, 152.0)                    # on the walkway, dead ahead, 128u up
+        off_axis = (65.2 + 200 * math.cos(math.radians(5)), 200 * math.sin(math.radians(5)), 152.0)
+        level = (65.2 + 150, 0.0, 24.0)                   # dead ahead at the bot's own height
+        wide = (65.2 + 200 * math.cos(math.radians(12)), 200 * math.sin(math.radians(12)), 152.0)
+        box = (0.0, 90.0, -50.0, 50.0, 0.0, 60.0)
+        with tempfile.TemporaryDirectory() as td:
+            tape = Path(td) / "wall.log"
+            tape.write_text("".join(lines), encoding="utf-8")
+            rows = gr.read_tape(tape)["Reap"]
+
+            def score(nodes, region=None):
+                return gr.classify(guard, [tape], nodes, region)["overhead"]
+
+            self.assertEqual(gr.judge(guard, rows, 7), "wall")
+            self.assertEqual(gr.overhead_target(guard, [wide, overhead], rows, 7), 1)
+            self.assertEqual(score([overhead])["per_tape"][0]["overhead"], 1)
+            # within the 8 degree cone counts, outside it does not
+            self.assertEqual(score([off_axis])["per_tape"][0]["overhead"], 1)
+            self.assertEqual(score([wide])["per_tape"][0]["overhead"], 0)
+            # the waypoint closest in bearing decides: a level one dead ahead
+            # hides the overhead one 5 degrees off, which the cone alone admits
+            self.assertEqual(score([off_axis, level])["per_tape"][0]["overhead"], 0)
+            # out of the 24 to 340u band, or below 64u of rise, it is not overhead
+            self.assertEqual(score([(65.2 + 400, 0.0, 152.0)])["per_tape"][0]["overhead"], 0)
+            self.assertEqual(score([(265.2, 0.0, 80.0)])["per_tape"][0]["overhead"], 0)
+            # no solid on the line: a waypoint in the air above the room
+            self.assertEqual(score([(95.0, 0.0, 152.0)])["per_tape"][0]["overhead"], 0)
+
+            o = score([overhead], box)
+            t = o["per_tape"][0]
+            self.assertEqual((t["route_led_starts"], t["re_entries"], t["wall_re_entries"]), (2, 1, 1))
+            self.assertEqual(t["region"]["overhead"], 1)
+            self.assertEqual(o["mean"], 1.0)
+            self.assertEqual(o["region"]["box"], list(box))
+            # eight routed rows inside the box, 14 ms each, closed by the wander rows
+            self.assertAlmostEqual(gr.routed_seconds(rows, box), 0.112, places=6)
+            # a stay the tape cuts off has no known length and is left out
+            self.assertEqual(gr.routed_seconds(rows[:8], box), 0.0)
+            # the box is strict: a pose on its face is outside
+            self.assertEqual(score([overhead], (65.2, 90.0, -50.0, 50.0, 0.0, 60.0))["per_tape"][0]["region"]["overhead"], 0)
+
+            # the command line: the graph and the box ride on flags
+            graph = Path(td) / "graph.qc.json"
+            graph.write_text(json.dumps({"nodes": [list(overhead)]}), encoding="utf-8")
+            self.assertEqual(gr.load_nodes(graph), [overhead])
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(gr.main(["dm4", str(tape), "--region", "0", "90", "-50", "50", "0", "60"]), 2)
+                self.assertEqual(gr.main(["dm4", str(tape), "--overhead", str(graph), "--region", "1", "2"]), 2)
+                self.assertEqual(gr.main(["dm4", str(tape), "--overhead", str(graph),
+                                          "--region", "90", "0", "-50", "50", "0", "60"]), 2)
+            self.assertEqual(gr._parse(["dm4", str(tape), "--overhead", str(graph), "--json",
+                                        "--region", "0", "90", "-50", "50", "0", "60"]),
+                             (["dm4", str(tape)], str(graph), box, True))
+
     def test_voidprobe_separates_lethal_floor_from_lethal_void(self):
         """The guard's two hazard verdicts are different questions."""
         sys.path.insert(0, str(ROOT / "tools"))
@@ -1884,6 +1965,50 @@ tool_timeout_sec = 700
         p = Path(root) / "changed.txt"
         p.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return str(p)
+
+    def _localtapes_repo(self, root, runs):
+        """A repo with the real .gitignore and one machine-local results file."""
+        subprocess.run(["git", "init", "-q"], capture_output=True,
+                       cwd=str(root), check=True)
+        shutil.copy(ROOT / ".gitignore", root / ".gitignore")
+        (root / "runs").mkdir()
+        doc = {"tape_storage": "machine-local; hashes recorded here",
+               "tapes": [{"run": run, "map": "dm4", "bytes": 1,
+                          "sha256": "0" * 64} for run in runs]}
+        (root / "runs" / "study.results.json").write_text(
+            json.dumps(doc), encoding="utf-8")
+
+    def test_argus_ci_localtapes_needs_no_ignore_line_for_a_study_prefix(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._localtapes_repo(Path(td), ["study_newladder_ctl_r1",
+                                             "study_newladder_cand_r1"])
+            res = self.run_tool("argus_ci.py", "localtapes", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("localtapes: ok", res.stdout)
+
+    def test_argus_ci_localtapes_rejects_a_trackable_machine_local_tape(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._localtapes_repo(Path(td), ["study_ok_r1", "newstem_ctl_r1"])
+            res = self.run_tool("argus_ci.py", "localtapes", "--root", td)
+            self.assertEqual(res.returncode, 1, res.stdout + res.stderr)
+            self.assertIn("runs/study.results.json", res.stdout)
+            self.assertIn("track 2 of them, e.g. runs/newstem_ctl_r1.log", res.stdout)
+            self.assertNotIn("study_ok_r1", res.stdout)
+
+    def test_argus_ci_localtapes_skips_without_machine_local_results(self):
+        with tempfile.TemporaryDirectory() as td:
+            self._localtapes_repo(Path(td), [])
+            doc = {"tapes": [{"run": "newstem_ctl_r1"}]}
+            (Path(td) / "runs" / "study.results.json").write_text(
+                json.dumps(doc), encoding="utf-8")
+            res = self.run_tool("argus_ci.py", "localtapes", "--root", td)
+            self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+            self.assertIn("localtapes: skipped", res.stdout)
+
+    def test_argus_ci_localtapes_passes_on_the_committed_records(self):
+        res = self.run_tool("argus_ci.py", "localtapes")
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+        self.assertIn("localtapes: ok", res.stdout)
 
     def test_argus_ci_tapes_allows_additions(self):
         with tempfile.TemporaryDirectory() as td:
