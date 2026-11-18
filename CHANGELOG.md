@@ -27,6 +27,17 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- `python tools/health_inventory_parked.py --amend <name> --base <rev>
+  --scope "<text>"` writes the reverse patch and manifest entries that every
+  edit to `src/argus.qc` needs, a comment-only one included
+  ([#871](https://github.com/saworbit/argus/issues/871)). It refuses a base
+  whose text does not match the current pin, re-pins any changed active
+  function, replays the chain to the frozen step1b text before writing, and
+  says whether the edit changed only comments and layout. Given the
+  revisions either side of 5787b7a it reproduces that commit's hand-written
+  patch and manifest byte for byte. CONTRIBUTING.md now points at it instead
+  of the manual steps.
+
 - Add lab scenarios: purpose-built micro-maps that isolate one bot behaviour
   ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP, which also
   accepts the request as a JSON string) and `argus-mcp lab-request
