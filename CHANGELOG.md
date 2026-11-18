@@ -731,6 +731,29 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Reachability jumps fire only where a jump helps, and a stall jump is
+  checked on the flight it will fly
+  ([#774](https://github.com/saworbit/argus/issues/774),
+  [#782](https://github.com/saworbit/argus/issues/782),
+  [#797](https://github.com/saworbit/argus/issues/797)). Both reachability
+  branches fired at any steering point 24u or more above within 80u. On dry
+  feet a jump now waits for a riser taller than a step within 32u along the
+  line, so ordinary stairs are walked, and is refused above
+  `Argus_JumpApex` plus a step, where no jump climbs. The stall jump is
+  tagged, checked along the post-turn heading with the 30 u/s that NQ air
+  acceleration can add along one wish, and the flight is held on that
+  heading. A refusal is no longer logged for a bot already in lava or
+  slime. In a liquid both keep the old rule: applying the new one there
+  left bots burning on the dm4 pit floor in the first candidate.
+
+- Evidence: jump events halve (dm4 187 to 93, dm2 2,148 to 1,144 over 30
+  fixed-clock seeds, e1m7 185 to 30). dm3's n55 to n45 stairs go from 14
+  jumps to 2, both stall jumps, and none from routed steering; e1m7
+  low-floor jumps go from 175 to 23. Against main every gate reads no
+  detectable effect: 30 fixed-clock seeds a side on dm4 and dm2 (lava 1.9
+  to 2.1 and 0.9 to 1.0), ten on e1m7, and three played-rate pairs each on
+  dm4, dm3 and e1m7.
+
 - `tools/argus_gait.py` no longer files a bot parked at a mover pad as the
   wedge class ([#628](https://github.com/saworbit/argus/issues/628)). A lift
   or train hop parks the bot with `ar_liftwait`, friction only and no marker,
