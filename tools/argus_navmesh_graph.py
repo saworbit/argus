@@ -9,11 +9,19 @@ train) are inherited from the shipped graph WITH THEIR EXACT ENDPOINT
 SEATS, so every arc navgen verified survives unchanged and the
 experiment isolates one variable: how the walk graph is built.
 
+--native-typed (#790) inherits nothing: argus_navmesh_typed finds jumps,
+climbs and drop arcs from the air layer's flights, lift pads from
+func_plat and teleporters from the entity lump, and no shipped graph is
+needed (one is read, when present, for its camera nodes and the
+comparison figures only).
+
     python tools/argus_navmesh_graph.py dm4 OUTDIR [--radius 112]
-        [--min-clear 20] [--prune 1.02]
+        [--min-clear 20] [--prune 1.02] [--max-seats N] [--native-typed]
 
 Writes OUTDIR/argus_nav_<map>.qc and its .json sidecar. Run navgen's
 --reanalyze-tactics on the pair afterwards to fill exposure and cover.
+BSPs come from maps_local/, or from the folder ARGUS_MAPS names, so a
+worktree can borrow the main checkout's machine-local maps.
 """
 from __future__ import annotations
 
@@ -21,12 +29,16 @@ import argparse
 import collections
 import json
 import math
+import os
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import argus_navmesh as nm  # noqa: E402
+import argus_navmesh_typed as nt  # noqa: E402
 from argus_nav_artifacts import canonical_sidecar, validate_pair  # noqa: E402
+from argus_nav_budget import assess_edict_budget, survives_spawn  # noqa: E402
+from argus_navjson import edges as nav_edges, normalize_nav  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 STEP, DROPMAX = nm.STEP, nm.DROPMAX
@@ -39,6 +51,12 @@ CONTROL = ("weapon_", "item_armor", "item_artifact")
 TYPED = ("jlinks", "sprintlinks", "rjlinks", "liftlinks", "swimlinks",
          "trainlinks")
 HOSTILE = (nm.CONTENTS_LAVA, nm.CONTENTS_SLIME)
+
+
+def bsp_dir():
+    """maps_local/, or the folder ARGUS_MAPS names (as argus_reach reads it)."""
+    env = os.environ.get("ARGUS_MAPS")
+    return Path(env) if env else ROOT / "maps_local"
 
 
 class MeshIndex:
@@ -62,6 +80,18 @@ class MeshIndex:
             if nm.point_in_poly_xy(x, y, f["poly"]):
                 out.append(nm.plane_z(f["plane"], x, y))
         return out
+
+    def locate(self, x, y, z, tol=3.0):
+        """The fragment whose floor is nearest z under (x, y), within tol."""
+        best, bd = None, tol
+        key = (math.floor(x / self.cell), math.floor(y / self.cell))
+        for i in self.grid.get(key, ()):
+            f = self.frags[i]
+            if nm.point_in_poly_xy(x, y, f["poly"]):
+                d = abs(nm.plane_z(f["plane"], x, y) - z)
+                if d <= bd:
+                    best, bd = i, d
+        return best
 
 
 def real_floor(bsp, x, y, oz):
@@ -112,8 +142,14 @@ def in_box(p, box):
     return all(mn[i] < p[i] < mx[i] for i in range(3))
 
 
-def walk(bsp, mi, a, b, tboxes, end_in_tele=False):
-    """Follow a->b on the mesh. Returns 'walk', 'drop' or None."""
+def walk(bsp, mi, a, b, tboxes, end_in_tele=False, end_box=None):
+    """Follow a->b on the mesh. Returns 'walk', 'drop' or None.
+
+    end_box is the trigger the target seat stands in. A body teleports
+    the moment it touches that trigger, so a link may cross it at any
+    depth (the native finder seats a teleporter source at the middle of
+    its trigger, which on dm3 is more than 48u from every edge).
+    """
     ax, ay, az = a
     bx, by, bz = b
     d = math.hypot(bx - ax, by - ay)
@@ -163,7 +199,7 @@ def walk(bsp, mi, a, b, tboxes, end_in_tele=False):
         miss = 0.0
         z = nz
         if tboxes and not (end_in_tele and d * (1 - f) < 48):
-            if any(in_box((x, y, z), bx_) for bx_ in tboxes):
+            if any(in_box((x, y, z), bx_) for bx_ in tboxes if bx_ is not end_box):
                 return None
     if abs(z - bz) > STEP:
         return None
@@ -223,15 +259,21 @@ def sccs(fwd, n):
 
 
 def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
-          gap_max=200.0):
-    bsp, frags, stats = nm.load_mesh(ROOT / "maps_local" / f"{mapname}.bsp")
+          gap_max=200.0, native=False, bsp_path=None, ship_path=None):
+    bsp_path = Path(bsp_path) if bsp_path else bsp_dir() / f"{mapname}.bsp"
+    bsp, frags, stats = nm.load_mesh(bsp_path)
     mi = MeshIndex(frags)
     tboxes = teleport_boxes(bsp)
-    ship = json.loads((ROOT / "src" / f"argus_nav_{mapname}.qc.json").read_text())
-    snodes = [tuple(p) for p in ship["nodes"]]
+    ship_path = Path(ship_path) if ship_path else ROOT / "src" / f"argus_nav_{mapname}.qc.json"
+    if native and not ship_path.exists():
+        ship = {}
+    else:
+        ship = json.loads(ship_path.read_text())
+    snodes = [tuple(p) for p in ship.get("nodes", [])]
 
     # 2. candidate seats on the mesh
     cands = []
+    cand_frag = {}
     for fi, f in enumerate(frags):
         poly = f["poly"]
         xs = [p[0] for p in poly]
@@ -254,7 +296,19 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
             if any(in_box((x, y, z), b) for b in tboxes):
                 continue
             cands.append((x, y, z))
+            cand_frag.setdefault((x, y, z), fi)
     clear = {c: clearance(bsp, mi, *c) for c in cands}
+
+    # 2b. native typed infrastructure (#790): what the map's own
+    # entities and ledges ask for, found before any seat is placed
+    ctx = native_seats = None
+    if native:
+        ctx = nt.Context(
+            bsp=bsp, world=nm.WithBrushes(bsp, nm.brush_boxes(bsp)), frags=frags,
+            floors=mi.floors, locate=mi.locate,
+            walk=lambda a, b: walk(bsp, mi, a, b, tboxes),
+            gravity=nm.map_gravity(bsp_path), tboxes=tboxes)
+        native_seats = native_infrastructure(ctx, cands, cand_frag)
 
     def clear_at(p):
         return clear.get(tuple(p), 0.0)
@@ -269,13 +323,28 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
                 origin[src] = len(seats) - 1
             return len(seats) - 1
 
-        # 1. inherited seats: every endpoint of a typed or teleporter hop
-        inherit = set()
-        for fam in TYPED + ("teles",):
-            for row in ship.get(fam, []):
-                inherit.update(row[:2])
-        for s in sorted(inherit):
-            add_seat(snodes[s], "inherit", s)
+        native_pairs = []
+        if native:
+            # 1n. native seats: teleporter and lift pads, then the seats
+            # the arc sites asked for, each placed once
+            at = {}
+
+            def seat_at(p):
+                if p not in at:
+                    at[p] = add_seat(p, "typed")
+                return at[p]
+            for fam, a, b in native_seats["pairs"]:
+                native_pairs.append((fam, seat_at(a), seat_at(b)))
+            for p in native_seats["seats"]:
+                seat_at(p)
+        else:
+            # 1. inherited seats: every endpoint of a typed or teleporter hop
+            inherit = set()
+            for fam in TYPED + ("teles",):
+                for row in ship.get(fam, []):
+                    inherit.update(row[:2])
+            for s in sorted(inherit):
+                add_seat(snodes[s], "inherit", s)
 
         def covered(c, r):
             for s in seats:
@@ -313,9 +382,9 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
             if not covered(c, radius * 0.75):
                 add_seat(c, "narrow")
 
-        return seats, kinds, origin
+        return seats, kinds, origin, native_pairs
 
-    seats, kinds, origin = place(radius)
+    seats, kinds, origin, native_pairs = place(radius)
 
     # 5. walk links, verified on the mesh
     n = len(seats)
@@ -324,11 +393,22 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
     # trigger, and two dm4 destinations double as sources, which a
     # list-based rule turned into dead ends (spawn reach 29 per cent)
     tele_src = {i for i in range(n) if any(in_box(seats[i], b) for b in tboxes)}
-    typed_pairs = set()
-    for fam in TYPED + ("teles",):
-        for row in ship.get(fam, []):
-            if row[0] in origin and row[1] in origin:
-                typed_pairs.add((origin[row[0]], origin[row[1]]))
+    tele_box = {}
+    if native:
+        tele_box = {i: next(b for b in tboxes if in_box(seats[i], b)) for i in tele_src}
+    # typed maps a pair to its family and, for a jump, its approach
+    # (speed, landing runway, arc margin); both modes fill it
+    typed = {}
+    if native:
+        for fam, i, j in native_pairs:
+            if i != j:
+                typed[(i, j)] = (fam, None)
+    else:
+        for fam in TYPED + ("teles",):
+            for row in ship.get(fam, []):
+                if row[0] in origin and row[1] in origin:
+                    typed.setdefault((origin[row[0]], origin[row[1]]), (fam, None))
+    typed_pairs = set(typed)
     ok = {}
     for i in range(n):
         for j in range(n):
@@ -339,9 +419,36 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
                 continue
             if i in tele_src:
                 continue    # arriving in a teleporter sends you away
-            r = walk(bsp, mi, a, b, tboxes, end_in_tele=j in tele_src)
+            r = walk(bsp, mi, a, b, tboxes, end_in_tele=j in tele_src,
+                     end_box=tele_box.get(j))
             if r:
                 ok[(i, j)] = r
+
+    # 5n. native jumps, climbs and drop arcs between the seats, and the
+    # straight-fall drops whose run-off lands in lava or slime refused
+    native_stats = collections.Counter()
+    if native:
+        for (i, j), r in list(ok.items()):
+            if r == "drop" and nt.drop_lands_lethal(ctx, seats[i], seats[j]):
+                del ok[(i, j)]
+                native_stats["drops_refused_lethal_runoff"] += 1
+            elif r == "drop" and nt.drop_lands_lethal(ctx, seats[i], seats[j], nt.RUN):
+                native_stats["drops_lethal_at_run_only"] += 1
+        jumps, arcs, found = nt.find_links(ctx, seats, ok, native_seats["ledges"],
+                                           skip=frozenset(tele_src))
+        native_stats.update(found)
+        # a teleporter costs a nominal 64u in the length test and a lift
+        # its ride, so a jump that only duplicates either is refused
+        extra = {pair: 64.0 if kind[0] == "teles" else math.dist(seats[pair[0]], seats[pair[1]])
+                 for pair, kind in typed.items()}
+        jumps, arcs = nt.keep_useful(seats, ok, jumps, arcs, extra)
+        for (i, j), prof in jumps.items():
+            typed[(i, j)] = ("jlinks", (prof["speed"], prof["runway"], prof["margin"]))
+            native_stats["climbs_kept" if prof.get("climb") else "jumps_kept"] += 1
+        for pair in arcs:
+            ok[pair] = "arc"
+        native_stats["drop_arcs_kept"] = len(arcs)
+        typed_pairs = set(typed)
 
     def L(i, j):
         return math.dist(seats[i], seats[j])
@@ -365,6 +472,10 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
             fadj[i].add(j)
             radj[j].add(i)
         fixed = {i for i in range(n) if kinds[i] in ("inherit", "item")}
+        if native:
+            # native typed seats are fixed only when a link stands on them
+            fixed |= {i for pair in typed_pairs for i in pair}
+            fixed |= {i for pair, r in ok.items() if r == "arc" for i in pair}
 
         def crowd(v):
             return sum(1 for u in alive if u != v and L(u, v) < 160)
@@ -383,14 +494,29 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
                 frontier = nxt
             return False
 
+        # COVERAGE FIRST (#790). Crowding alone took dm3 at 249 seats to
+        # 77 per cent of the mesh covered against the shipped graph's 89,
+        # because it cannot tell a crowded seat that covers floor nobody
+        # else sees from one that is redundant. So a seat's cost is the
+        # candidate points only it covers, and the cheapest go first;
+        # crowding breaks ties. A seat whose cost rose since the pass was
+        # sorted waits for the next pass.
+        covers = cover_lists(bsp, cands, seats)
+        count = collections.Counter(c for cs in covers for c in cs)
+
+        def unique(v):
+            return sum(1 for c in covers[v] if count[c] == 1)
+
         changed = True
         while changed and len(alive) > max_seats:
             changed = False
-            order = sorted((v for v in alive if v not in fixed),
-                           key=lambda v: (-crowd(v), clear_at(seats[v]), v))
+            cost = {v: unique(v) for v in alive if v not in fixed}
+            order = sorted(cost, key=lambda v: (cost[v], -crowd(v), clear_at(seats[v]), v))
             for v in order:
                 if len(alive) <= max_seats:
                     break
+                if unique(v) > cost[v]:
+                    continue
                 ins = [u for u in radj[v] if u in alive and u != v]
                 outs = [w for w in fadj[v] if w in alive and w != v]
                 if not all(reaches(u, w, v) for u in ins for w in outs if u != w):
@@ -400,6 +526,8 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
                            for u in alive if u != v):
                     continue
                 alive.discard(v)
+                for c in covers[v]:
+                    count[c] -= 1
                 removed += 1
                 changed = True
         keep = sorted(alive)
@@ -411,6 +539,8 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
               if i in remap and j in remap}
         typed_pairs = {(remap[i], remap[j]) for (i, j) in typed_pairs
                        if i in remap and j in remap}
+        typed = {(remap[i], remap[j]): v for (i, j), v in typed.items()
+                 if i in remap and j in remap}
         n = len(seats)
 
     out_adj = collections.defaultdict(set)
@@ -492,6 +622,8 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
                     regions[v] = rid
                     q.append(v)
 
+    families = (native_families(typed) if native
+                else inherited_families(ship, origin))
     report = {
         "fragments": len(frags), "candidates": len(cands), "seats": n,
         "radius": round(radius, 1), "decimated": removed,
@@ -503,17 +635,230 @@ def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
         "reach_from_mainland": len(reach), "stranded_regions": rid,
         "teleport_boxes": len(tboxes), **stats,
     }
+    if native:
+        report.update({
+            "typed_source": "native",
+            "gravity": ctx.gravity,
+            "drop_arcs": sum(1 for p in final_plain if kept.get(p) == "arc"),
+            "climbs": sum(1 for p in families["jlinks"]
+                          if seats[p[1]][2] - seats[p[0]][2] > STEP),
+            "finder": dict(sorted(native_stats.items())),
+            "arc_sites": native_seats["sites"],
+            "refused_teleporters": native_seats["refused_teleporters"],
+            "refused_lifts": native_seats["refused_lifts"],
+        })
     return {
         "map": mapname, "seats": seats, "kinds": kinds, "origin": origin,
         "plain": final_plain, "kept": kept, "typed": typed_pairs,
-        "regions": regions, "ship": ship, "report": report,
+        "families": families, "regions": regions, "ship": ship, "report": report,
+        "bsp": bsp, "cands": cands, "native": native,
     }
+
+
+def inherited_families(ship, origin):
+    """The shipped graph's typed families in this graph's seat numbers."""
+    jl = {(origin[r[0]], origin[r[1]]) for r in ship.get("jlinks", [])
+          if r[0] in origin and r[1] in origin}
+    appr = {(origin[r[0]], origin[r[1]]): r[2:] for r in ship.get("jumpapproach", [])
+            if r[0] in origin and r[1] in origin}
+
+    def remap(fam):
+        return [[origin[r[0]], origin[r[1]]] for r in ship.get(fam, [])
+                if r[0] in origin and r[1] in origin]
+    out = {"jlinks": jl, "jumpapproach": appr}
+    for fam in ("sprintlinks", "teles", "rjlinks", "liftlinks", "swimlinks", "trainlinks"):
+        out[fam] = remap(fam)
+    return out
+
+
+def native_families(typed):
+    """The finder's typed pairs, grouped as the emitter writes them."""
+    jl = {p for p, (fam, _) in typed.items() if fam == "jlinks"}
+    out = {"jlinks": jl,
+           "jumpapproach": {p: list(typed[p][1]) for p in jl}}
+    for fam in ("sprintlinks", "teles", "rjlinks", "liftlinks", "swimlinks", "trainlinks"):
+        out[fam] = [list(p) for p in sorted(p for p, (f, _) in typed.items() if f == fam)]
+    return out
+
+
+def native_infrastructure(ctx, cands, cand_frag):
+    """Seats the native finder needs before coverage seating.
+
+    Teleporter and lift pads come in pairs; arc sites (jumps and drops
+    off ledges that save a long walk) each ask for a seat behind the
+    launch and one past the landing, chosen from the mesh candidates.
+    """
+    out = {"pairs": [], "seats": [], "sites": {}, "refused_teleporters": [],
+           "refused_lifts": []}
+    tele, refused = nt.teleporters(ctx)
+    for src, dst, _ in tele:
+        out["pairs"].append(("teles", src, dst))
+    out["refused_teleporters"] = [[t, s and list(s), d and list(d)] for t, s, d in refused]
+    lifts, refused = nt.lift_pads(ctx, cands)
+    for lo, hi, _ in lifts:
+        out["pairs"].append(("liftlinks", lo, hi))
+    out["refused_lifts"] = [[list(c), lo and list(lo), hi and list(hi)] for c, lo, hi in refused]
+    ledges = nm.ledge_points(ctx.world, ctx.frags)
+    out["ledges"] = ledges
+    sites = nt.cluster(nt.arc_sites(ctx, nt.fragment_graph(ctx), ledges))
+    out["sites"] = dict(collections.Counter(s["kind"] for s in sites))
+    grid = collections.defaultdict(list)
+    for c in cands:
+        grid[(math.floor(c[0] / 32), math.floor(c[1] / 32))].append(c)
+
+    def pick(target, frag, reach):
+        best, bd = None, None
+        x, y, z = target
+        for gx in range(math.floor((x - reach) / 32), math.floor((x + reach) / 32) + 1):
+            for gy in range(math.floor((y - reach) / 32), math.floor((y + reach) / 32) + 1):
+                for c in grid.get((gx, gy), ()):
+                    if abs(c[2] - z) > STEP:
+                        continue
+                    d = math.hypot(c[0] - x, c[1] - y)
+                    if d > reach:
+                        continue
+                    key = (cand_frag.get(c) != frag, d)
+                    if bd is None or key < bd:
+                        best, bd = c, key
+        return best
+    placed = []
+    for site in sites:
+        src_t, dst_t = nt.site_targets(site)
+        src = pick(src_t, site["fa"], 48.0)
+        dst = pick(dst_t, site["fb"], 64.0) or pick(site["land"], site["fb"], 64.0)
+        if src is None or dst is None:
+            continue
+        for p in (src, dst):
+            if not any(math.dist(p, q) < 24.0 for q in placed):
+                placed.append(p)
+    out["seats"] = placed
+    return out
+
+
+def spawn_reach(nav, spawns):
+    """argus_reach's worst-spawn figures for a graph held in memory."""
+    nav = normalize_nav(nav)
+    nodes = nav["nodes"]
+    n = len(nodes)
+    if not n or not spawns:
+        return None
+    fwd = {}
+    for gated in (True, False):
+        fwd[gated] = [[] for _ in range(n)]
+        for a, b in nav_edges(nav, gated=gated):
+            fwd[gated][a].append(b)
+
+    def reach_from(start, adj):
+        seen, q = {start}, [start]
+        while q:
+            u = q.pop()
+            for v in adj[u]:
+                if v not in seen:
+                    seen.add(v)
+                    q.append(v)
+        return seen
+    rows, far = [], 0.0
+    for o in spawns:
+        best = min(range(n), key=lambda i: sum((nodes[i][k] - o[k]) ** 2 for k in range(3)))
+        far = max(far, math.dist(nodes[best], o))
+        every, ungated = reach_from(best, fwd[True]), reach_from(best, fwd[False])
+        rows.append((len(every), len(ungated), sorted(every)))
+    rows.sort()
+    r_all, r_un, reached = rows[0]
+    return {"nodes": n, "spawns": len(spawns), "worst_all": r_all,
+            "worst_ungated": r_un, "worst_all_pct": 100 * r_all // n,
+            "worst_ungated_pct": 100 * r_un // n, "farthest_spawn_u": round(far),
+            "reached": reached}
+
+
+def spawn_points(bsp):
+    out = []
+    for e in bsp.entities():
+        if e.get("classname") in ("info_player_deathmatch", "info_player_start"):
+            out.append(tuple(float(v) for v in e.get("origin", "0 0 0").split()))
+    return out
+
+
+def _near_seats(seats, radius):
+    grid = collections.defaultdict(list)
+    for i, s in enumerate(seats):
+        grid[(math.floor(s[0] / radius), math.floor(s[1] / radius))].append(i)
+
+    def near(c):
+        gx, gy = math.floor(c[0] / radius), math.floor(c[1] / radius)
+        for ix in (gx - 1, gx, gx + 1):
+            for iy in (gy - 1, gy, gy + 1):
+                yield from grid.get((ix, iy), ())
+    return near
+
+
+def _covers(bsp, s, c, radius, dz):
+    """Placement's own test: within radius, a step band of 36u, in sight."""
+    return (math.hypot(s[0] - c[0], s[1] - c[1]) < radius and abs(s[2] - c[2]) <= dz
+            and los(bsp, s, c))
+
+
+def cover_lists(bsp, cands, seats, radius=112.0, dz=36.0):
+    """Per seat, the indices of the candidate points it covers."""
+    near = _near_seats(seats, radius)
+    out = [[] for _ in seats]
+    for ci, c in enumerate(cands):
+        for i in near(c):
+            if _covers(bsp, seats[i], c, radius, dz):
+                out[i].append(ci)
+    return out
+
+
+def coverage(bsp, cands, seats, radius=112.0, dz=36.0):
+    """Share of mesh candidate points a seat covers, by placement's own test."""
+    if not cands:
+        return 0.0
+    seats = [tuple(s) for s in seats]
+    near = _near_seats(seats, radius)
+    hit = sum(1 for c in cands
+              if any(_covers(bsp, seats[i], c, radius, dz) for i in near(c)))
+    return hit / len(cands)
+
+
+def assess(g, doc):
+    """Reach, coverage and edicts for the emitted graph and the shipped one.
+
+    Reach percentages count each graph's own nodes, so a graph that seats
+    lava (the shipped dm4 keeps its pit-floor escape seats) reads lower
+    for it. Reachable coverage does not: it is the share of mesh points
+    covered by a seat the worst spawn can reach, the same floor for both.
+    """
+    bsp, ship = g["bsp"], g["ship"]
+    spawns = spawn_points(bsp)
+    ents = bsp.entities()
+    live = sum(1 for e in ents if survives_spawn(e))
+
+    def figures(nav):
+        nodes = normalize_nav(nav)["nodes"]
+        reach = spawn_reach(nav, spawns)
+        reached = reach.pop("reached") if reach else range(len(nodes))
+        budget = assess_edict_budget(len(nodes), live, len(ents))
+        return {
+            "reach": reach,
+            "coverage_pct": round(100 * coverage(bsp, g["cands"], nodes), 1),
+            "reachable_coverage_pct": round(
+                100 * coverage(bsp, g["cands"], [nodes[i] for i in reached]), 1),
+            "edicts": {"status": budget.status, "waypoints": budget.waypoints,
+                       "live_entities": live, "total": budget.total,
+                       "ceiling": budget.ceiling, "slack": budget.slack},
+            "typed_by_family": {f: len(nav.get(f, [])) for f in TYPED + ("teles",)},
+        }
+    out = figures(doc)
+    if ship.get("nodes"):
+        out["shipped"] = figures(ship)
+    return out
 
 
 def emit(g, outdir):
     m = g["map"]
-    seats, origin, ship = g["seats"], g["origin"], g["ship"]
-    lines = ["/* generated by argus_navmesh_graph.py (EXPERIMENTAL) - do not edit */",
+    seats, ship = g["seats"], g["ship"]
+    banner = "EXPERIMENTAL, native typed links" if g.get("native") else "EXPERIMENTAL"
+    lines = [f"/* generated by argus_navmesh_graph.py ({banner}) - do not edit */",
              "", f"void() Argus_Nav_Spawn_{m} =", "{"]
     lines += [f"    local entity n{i};" for i in range(len(seats))]
     lines.append("")
@@ -528,10 +873,8 @@ def emit(g, outdir):
         emitted.add((a, b))
         lines.append(f"    {verb} (n{a}, n{b}{extra});{tail}")
 
-    jl = {(origin[r[0]], origin[r[1]]) for r in ship.get("jlinks", [])
-          if r[0] in origin and r[1] in origin}
-    appr = {(origin[r[0]], origin[r[1]]): r[2:] for r in ship.get("jumpapproach", [])
-            if r[0] in origin and r[1] in origin}
+    fams = g["families"]
+    jl, appr = fams["jlinks"], fams["jumpapproach"]
     walkpairs = sorted(g["plain"] | jl)
     for a, b in walkpairs:
         if (a, b) in jl:
@@ -541,11 +884,8 @@ def emit(g, outdir):
         else:
             put("Argus_NavLink", a, b)
 
-    def remap(fam):
-        return [[origin[r[0]], origin[r[1]]] for r in ship.get(fam, [])
-                if r[0] in origin and r[1] in origin]
-    sprints, teles, rjs = remap("sprintlinks"), remap("teles"), remap("rjlinks")
-    lifts, swims, trains = remap("liftlinks"), remap("swimlinks"), remap("trainlinks")
+    sprints, teles, rjs = fams["sprintlinks"], fams["teles"], fams["rjlinks"]
+    lifts, swims, trains = fams["liftlinks"], fams["swimlinks"], fams["trainlinks"]
     for a, b in sprints:
         put("Argus_NavLinkSprint", a, b)
     for a, b in teles:
@@ -584,6 +924,8 @@ def emit(g, outdir):
     }
     doc = canonical_sidecar(doc, text)
     validate_pair(text, doc, tactics=False)
+    if g.get("bsp") is not None:
+        g["report"]["assessment"] = assess(g, doc)
     outdir = Path(outdir)
     outdir.mkdir(parents=True, exist_ok=True)
     qc = outdir / f"argus_nav_{m}.qc"
@@ -601,8 +943,14 @@ def main(argv=None):
     ap.add_argument("--min-clear", type=float, default=20.0)
     ap.add_argument("--prune", type=float, default=1.02)
     ap.add_argument("--max-seats", type=int)
+    ap.add_argument("--native-typed", action="store_true",
+                    help="inherit no typed link: find jumps, climbs, drop arcs, lifts "
+                         "and teleporters from the map itself (#790)")
+    ap.add_argument("--bsp", help="the BSP to read (default: maps_local/<map>.bsp, "
+                                  "or the folder ARGUS_MAPS names)")
     a = ap.parse_args(argv)
-    g = build(a.map, a.radius, a.min_clear, a.prune, a.max_seats)
+    g = build(a.map, a.radius, a.min_clear, a.prune, a.max_seats,
+              native=a.native_typed, bsp_path=a.bsp)
     qc = emit(g, a.outdir)
     print(json.dumps(g["report"], indent=1))
     print("wrote", qc)

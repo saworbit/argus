@@ -10,6 +10,27 @@ WORLD_AND_CLIENT_SLOTS = 9
 # entities. This is almost twice the measured busy-match peak overhead.
 RUNTIME_RESERVE = 60
 TIGHT_SLACK = 20
+# Classes misc.qc hands to makestatic (builtin #69), which copies them into
+# the static list and frees the edict: a precache, never an edict.
+STATIC_CLASSES = ("light_globe", "light_torch_small_walltorch",
+                  "light_flame_large_yellow", "light_flame_small_yellow",
+                  "light_flame_small_white", "func_illusionary")
+
+
+def survives_spawn(entity):
+    """Does this entity (a key/value dict) still hold an edict after spawn?
+
+    navgen's 4c gives the measurements behind each class: an untargeted
+    light removes itself, info_null is removed outright, and the static
+    classes free their edict. Monsters and spawnflags 2048 entities are
+    counted on purpose, because co-op keeps them.
+    """
+    c = entity.get("classname", "")
+    if c == "light" and not entity.get("targetname"):
+        return False
+    if c == "info_null":
+        return False
+    return c not in STATIC_CLASSES
 
 
 @dataclass(frozen=True)

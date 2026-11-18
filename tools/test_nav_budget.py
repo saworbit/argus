@@ -1,7 +1,7 @@
 """Physical entity limits apply to optional and infrastructure promotions."""
 import unittest
 
-from argus_nav_budget import assess_edict_budget, waypoint_limits
+from argus_nav_budget import assess_edict_budget, survives_spawn, waypoint_limits
 
 
 class WaypointAllocation(unittest.TestCase):
@@ -32,6 +32,20 @@ class WaypointAllocation(unittest.TestCase):
     def test_exhausted_map_has_no_decimation_target(self):
         self.assertEqual(waypoint_limits(531).decimation, 0)
         self.assertEqual(waypoint_limits(600).capacity, 0)
+
+
+class SpawnSurvival(unittest.TestCase):
+    def test_self_removing_and_static_classes_hold_no_edict(self):
+        self.assertFalse(survives_spawn({"classname": "light"}))
+        self.assertTrue(survives_spawn({"classname": "light", "targetname": "t1"}))
+        self.assertFalse(survives_spawn({"classname": "info_null"}))
+        self.assertFalse(survives_spawn({"classname": "light_flame_small_yellow"}))
+        self.assertFalse(survives_spawn({"classname": "func_illusionary"}))
+
+    def test_monsters_and_deathmatch_removals_still_count(self):
+        self.assertTrue(survives_spawn({"classname": "monster_army"}))
+        self.assertTrue(survives_spawn({"classname": "item_health", "spawnflags": "2048"}))
+        self.assertTrue(survives_spawn({}))
 
 
 if __name__ == '__main__':

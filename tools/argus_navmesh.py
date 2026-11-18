@@ -660,10 +660,12 @@ def fly(bsp, x, y, z, ux, uy, speed, vz=0.0, gravity=GRAVITY, tmax=3.0):
     whatever lies under it) or "void" (nothing within tmax). A wall met in
     flight stops the motion into it, axis by axis, the way SV_FlyMove
     clips velocity; a ceiling kills the rise. "fall" is how far below the
-    launch the body ends up.
+    launch the body ends up, and "clip" counts the frames a wall or a
+    ceiling took motion away, so a caller that needs a clean arc (the
+    mesh-native jump finder) can refuse one that only landed by sliding.
     """
     vx, vy = ux * speed, uy * speed
-    z0, t = z, 0.0
+    z0, t, clip = z, 0.0, 0
     while t < tmax:
         t += AIR_DT
         # Still on a floor: keep running at this height until it ends. A
@@ -677,6 +679,7 @@ def fly(bsp, x, y, z, ux, uy, speed, vz=0.0, gravity=GRAVITY, tmax=3.0):
             vz -= gravity * AIR_DT
         nx, ny = x + vx * AIR_DT, y + vy * AIR_DT
         if bsp.h1(nx, ny, z) != CONTENTS_EMPTY:
+            clip += 1
             if bsp.h1(nx, y, z) == CONTENTS_EMPTY:
                 ny, vy = y, 0.0
             elif bsp.h1(x, ny, z) == CONTENTS_EMPTY:
@@ -687,6 +690,7 @@ def fly(bsp, x, y, z, ux, uy, speed, vz=0.0, gravity=GRAVITY, tmax=3.0):
         if bsp.h1(nx, ny, nz) != CONTENTS_EMPTY:
             if vz > 0:
                 vz, nz = 0.0, z
+                clip += 1
             else:
                 land = fall_to(bsp, nx, ny, z + 0.5, maxdrop=(z - nz) + 2.0)
                 lz = land if land is not None else nz
@@ -694,14 +698,15 @@ def fly(bsp, x, y, z, ux, uy, speed, vz=0.0, gravity=GRAVITY, tmax=3.0):
                 box_at = getattr(bsp, "box_at", None)
                 on = box_at(nx, ny, lz - 0.5) if box_at else None
                 return {"kind": kind if kind else "floor", "pos": (nx, ny, lz),
-                        "t": t, "fall": z0 - lz, "on": on}
+                        "t": t, "fall": z0 - lz, "on": on, "clip": clip}
         kind = _feet_kind(bsp, nx, ny, nz)
         if kind:
-            return {"kind": kind, "pos": (nx, ny, nz), "t": t, "fall": z0 - nz}
+            return {"kind": kind, "pos": (nx, ny, nz), "t": t, "fall": z0 - nz,
+                    "clip": clip}
         x, y, z = nx, ny, nz
         if z < bsp.mins[2] - 64:
             break
-    return {"kind": "void", "pos": (x, y, z), "t": t, "fall": z0 - z}
+    return {"kind": "void", "pos": (x, y, z), "t": t, "fall": z0 - z, "clip": clip}
 
 
 def ledge_points(bsp, frags, spacing=16.0):

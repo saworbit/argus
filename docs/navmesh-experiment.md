@@ -47,13 +47,14 @@ python tools/argus_navmesh.py maps_local/dm4.bsp --png dm4_mesh.png --nav src/ar
 `tools/argus_navmesh_graph.py` derives a waypoint graph from the mesh.
 
 ```bash
-python tools/argus_navmesh_graph.py dm4 OUTDIR [--max-seats N]
+python tools/argus_navmesh_graph.py dm4 OUTDIR [--max-seats N] [--native-typed]
 ```
 
 - Typed links (jump, rocket, sprint, teleporter, lift, swim, train) are
   inherited from the shipped graph WITH THEIR EXACT ENDPOINT SEATS, so every
   arc navgen verified survives and the experiment isolates one variable: how
-  the walk graph is built.
+  the walk graph is built. `--native-typed` inherits none of them and finds
+  its own (see [Mesh-native typed links](#mesh-native-typed-links)).
 - Control items get a seat. Coverage seats are placed roomiest first, so a
   seat stands in the middle of a space and a corridor only spends one where
   nothing covers it.
@@ -62,11 +63,14 @@ python tools/argus_navmesh_graph.py dm4 OUTDIR [--max-seats N]
   feet. Each step may slide up to 16u sideways, as walkmove does along a
   wall. A link that starts in shallow lava may cross it (escape mode), so a
   knocked-in bot can still reach navgen's rocket-jump pad out of the pit.
-- `--max-seats` builds dense and then removes the most crowded seat only when
-  every in-neighbour still reaches every out-neighbour within three hops.
-  Growing the radius instead (navgen's answer) left dm3 with 132 of 241
-  seats on the mainland, because sparse seats cannot see each other round
-  corners.
+- `--max-seats` builds dense and then removes a seat only when every
+  in-neighbour still reaches every out-neighbour within three hops. Growing
+  the radius instead (navgen's answer) left dm3 with 132 of 241 seats on the
+  mainland, because sparse seats cannot see each other round corners. Since
+  #790 the seats that cost no coverage go first (every candidate point they
+  cover is covered by another seat), then the cheapest in uncovered points,
+  with crowding breaking ties; crowding alone left dm3 at 249 seats covering
+  77 per cent of the mesh.
 - navgen's own `--reanalyze-tactics` accepts the emitted pair and fills
   exposure and cover.
 
@@ -602,15 +606,191 @@ Why trips still fall short:
   150 ms waits are shorter than this rig's command latency; `probelinks`
   retries for 1.8 s and works.
 
+## Mesh-native typed links
+
+[#790](https://github.com/saworbit/argus/issues/790), 2026-11-18. Offline
+work only: nothing here is installed or laddered yet.
+
+```bash
+python tools/argus_navmesh_graph.py dm4 OUTDIR --native-typed
+```
+
+`--native-typed` inherits no typed link and needs no shipped graph (one is
+read, when present, for its camera nodes and for the comparison figures).
+`tools/argus_navmesh_typed.py` finds the links from the map, judged by the
+rules the runtime executes them under:
+
+- Jumps. A plain jump hop fires where a hull-0 point trace 32u ahead, from 4u
+  above the origin to 40u below, finds no floor; only within 96u of the seat
+  it was minted from (#665); only 48u or more short of the landing seat; and
+  it leaves at 270 u/s on the line to the landing. A link stands when that
+  launch, flown through hull 1 and the solid brush entities at spawn (the air
+  layer's `fly`, at the map's gravity), touches no wall or ceiling, passes at
+  least 2u over the far edge and lands dry on world floor from which the
+  landing seat is a mesh walk. The approach speed follows navgen: the lowest
+  staged speed whose whole -5 to +15 firing window passes, else the 250 to
+  320 fallback window, else no link.
+- Climbs. A jump hop to a seat more than a step up fires a standing jump within
+  72u of it. A link stands when the rise is under the jump apex (navgen's 44u
+  at gravity 800), the take-off has headroom, and the upper floor begins
+  before any void and within those 72u.
+- Drop arcs. A run off the line at the routed drop commit's 240 u/s and at
+  320 must both land clean where the target is a walk, and the physics
+  guard's straight-down probes past the lip must find floor, not a void or a
+  liquid, or the bot never takes the step. Going down, an arc is tried before
+  a jump. A straight-fall drop the walker accepts is refused when its 240 u/s
+  run-off lands in lava or slime.
+- Lifts, by navgen's 5b rules: travel is the `height` key or size_z - 8; the
+  boarding pad is the nearest seat outside the swept column, at most 96u out,
+  standing within 20u of the slab's seated top; the exit pad is the nearest
+  seat to the top centre within 120u, height counted double.
+- Teleporters: a seat on the floor inside each trigger (arriving sends the
+  body away, so a link to it may cross its own trigger at any depth) and one
+  where stock `teleport_touch` drops the body, the destination's origin + 27.
+- Falls stop at DROPMAX 200 at gravity 800. Elsewhere the limit scales by
+  800/g, because the fall-damage rule keys on landing speed (`velocity_z`
+  below -650), and never passes the 280u the guard traces down for a floor.
+- Before seating, every ledge point is flown off (a jump at 280 u/s, drops at
+  240 and 320) and an arc that saves more than 1.5x its length plus 128u of
+  mesh walking asks for a seat behind its launch and one past its landing.
+  After the walk links, a jump or arc is kept only where the graph, with the
+  teleporters and lifts in it, has no route within 1.5x the hop plus 128u.
+  Hops are taken greedily, largest saving first, each joining the graph
+  before the next is judged, and two per source at most.
+
+Not found: rocket jumps, sprints, swims and trains, vertical func_door
+platforms (navgen's 5b2) and virtual plat pads.
+
+### Offline figures
+
+Reach is `argus_reach.py`'s worst spawn over all edges and over ungated ones
+(no rocket jumps or sprints), as a share of each graph's own nodes. Coverage
+is the share of the mesh's candidate points within 112u of a seat, in a 36u
+height band and in sight; reachable coverage counts only seats the worst spawn
+reaches, so a graph that seats lava is not flattered or penalised for it. The
+earlier "90 against 95 per cent" dm3 figures used a measure that was not
+recorded; under this one the crowding-only decimation read 77 against 89.
+Edicts follow navgen's budget: waypoints, live entities, nine world and
+client slots and a reserve of 60, against 600.
+
+Plain links exclude teleporters; the bracket counts those that descend past
+an 18u step.
+
+| Graph | Seats | Plain links (descending) | Typed by family | Worst reach, all / ungated | Coverage | Reachable coverage | Edicts |
+|---|---|---|---|---|---|---|---|
+| dm4 shipped | 137 | 697 (70) | jump 6, sprint 2, rocket 6, teleporter 5 | 128 (93%) / 128 (93%) | 99.9% | 99.0% | 263 |
+| dm4 mesh, inherited typed | 124 | 658 (127) | as shipped, all 19 kept | 118 (95%) / 118 (95%) | 100% | 100% | 250 |
+| dm4 mesh, native typed | 126 | 684 (127) | jump 3, teleporter 5 | 126 (100%) / 126 (100%) | 100% | 100% | 252 |
+| dm3 shipped | 249 | 794 (112) | jump 22, sprint 10, rocket 5, lift 3, swim 4, teleporter 2 | 246 (98%) / 230 (92%) | 89.2% | 87.8% | 427 |
+| dm3 mesh, inherited typed, 249 seats | 249 | 1151 (311) | as shipped | 249 (100%) / 229 (91%) | 95.5% | 95.5% | 427 |
+| dm3 mesh, native typed (diagnostic) | 249 | 1137 (318), 4 of them arcs | jump 23, climb 2, lift 3, teleporter 2 | 164 (65%) / 164 (65%) | 93.6% | 64.3% | 427 |
+
+dm4 needs no inherited link to match: the native graph reaches every seat from
+every spawn, where the shipped graph's 93 per cent is its seven pit-floor
+seats, which stand in lava, and two walkway seats at z -104 (n45, n50) it
+cannot route to. Its three jumps cross the lava pit, where nothing walks or
+drops: two from the big room's z -104 walkway to the z -296 floor, one from
+the z -72 ledge to the walkway. navgen's own `--audit-jump-anchors` profiles
+all three as gap jumps with no anchor violation. The finder does not mint the shipped east-walkway jumps: every
+speed of each clips a wall in flight, the clean-arc rule refuses them, and the
+native graph walks those areas instead. Of the walker's straight-fall drops,
+three land in lava at the drop commit's 240 u/s and are refused; fifteen more
+do so only at 320 and are kept, because the guard re-judges a run-off at the
+bot's own speed (#773).
+
+The dm3 ladder candidate is the inherited-typed graph at the shipped graph's
+249 seats, so the arms differ in how the walk graph is built and seated, not
+in size or edict cost. Coverage-first decimation closes the coverage gap
+(77.1 per cent under crowding alone, 95.5 now, shipped 89.2). It inherits the
+shipped graph's one anchor violation (n73 to n86, launch 100u from its seat).
+
+The native dm3 graph is a diagnostic, not a candidate. Its six lift pads
+stand 15 to 39u from navgen's on all three plats, at the same heights, as
+expected when the same rules choose from the mesh's 16u candidate lattice
+instead of navgen's samples. It cannot reach 85 seats:
+25 on the west upper floor, which every graph enters only by rocket jump, and
+60 in the east basement, which is entered by drops of more than 200u into the
+pool (water breaks the fall) and left by swim exits, neither of which the
+finder models. That is [#791](https://github.com/saworbit/argus/issues/791).
+
+### Building a candidate arm
+
+The candidate pairs, tactics baked by navgen's `--reanalyze-tactics`, are
+outside the repository. To compile one, from the main checkout (Git Bash),
+with `CAND` the candidate folder and `MAP` dm4 or dm3:
+
+```bash
+T=$TEMP/arm_$MAP; rm -rf "$T"; mkdir -p "$T/lq1"; cp -r src "$T/src"
+cp "$CAND/argus_nav_$MAP.qc" "$T/src/argus_nav_$MAP.qc"
+python tools/argus_build_stamp.py --src "$T/src" --write
+(cd "$T/src" && /c/argus/tools/win/fteqcc/fteqw-2026-07-13/fteqcc64.exe)
+mkdir -p engine/argus_m790$MAP
+cp -r engine/argus/autoexec.cfg engine/argus/maps engine/argus/progs engine/argus_m790$MAP/
+cp "$T/lq1/progs.dat" engine/argus_m790$MAP/progs.dat
+```
+
+Trust the "Compile finished" line, not fteqcc's exit code, and run the arm
+with `ARGUS_GAME=argus_m790$MAP`. The control arm is the same steps without
+the copy of the candidate QC. Compiled from this branch's `src/`, the dm4
+native arm's progs MD5 was 64b9ac067dc203ea358646533cc85c4d and the dm3 arm's
+ac7e48a00f6ec92c3df6821f65f9e28b.
+
+### Ladder verdicts
+
+Recorded 2026-11-18. dm4 and dm3, skill 2, 185 s, wall clock at the played
+rate (`+sys_ticrate 0.0139`), five pairs a map launched together, every tape
+in the listen tick class. The control is main at 89b9852 (build
+9387e1e77737) with the shipped graphs; each candidate is the same source with
+only `argus_nav_<map>.qc` swapped, built as above. Primary: stall parity, as
+in the first mesh ladder. Gates and limits from `argus_lab.py skeptic`.
+
+| Map | Arm | Tapes | Primary | Control median | Candidate median | Verdict |
+|---|---|---|---|---|---|---|
+| dm3 | mesh, inherited typed, 249 seats | 5 + 5 | stalls | 16 | 9 | parity on stalls; goals fell past their limit; not adopted |
+| dm4 | mesh, native typed | 5 + 5 | stalls | 8 | 4 | parity on every gate |
+
+Per tape, stalls ran 15, 21, 16, 11, 26 (dm3 control) against 4, 9, 13, 24, 9,
+and 8, 8, 3, 4, 11 (dm4 control) against 12, 3, 4, 2, 4.
+
+| Map | Metric | Control mean | Candidate mean | Change | Detection limit | Reading |
+|---|---|---|---|---|---|---|
+| dm3 | stalls | 17.8 | 11.8 | -6.0 | 24.6 | no detectable effect |
+| dm3 | engages | 18.4 | 28.6 | +10.2 | 12.0 | no detectable effect |
+| dm3 | goals | 23.2 | 12.2 | -11.0 | 10.1 | moved |
+| dm3 | lava, freezes | 0, 0 | 0, 0 | 0 | | no change |
+| dm4 | stalls | 6.8 | 5.0 | -1.8 | 10.1 | no detectable effect |
+| dm4 | engages | 70.2 | 70.8 | +0.6 | 28.9 | no detectable effect |
+| dm4 | lava | 3.0 | 1.0 | -2.0 | 2.7 | no detectable effect |
+| dm4 | goals | 20.4 | 16.6 | -3.8 | 8.9 | no detectable effect |
+| dm4 | freezes | 0 | 0 | 0 | 1.2 | no detectable effect |
+
+**dm4.** The native-typed graph stands alone: it carries no inherited typed
+link, reaches 100 per cent from its worst spawn against the shipped graph's
+93, and holds parity on every gate. That meets the bar #790 set for it. It
+is not proposed for shipping: parity is not a gain, and the shipped graph's
+rocket and sprint links are prize routes the native finder does not mint.
+
+**dm3.** The inherited-typed mesh graph holds stall parity but routed goal
+completions fell by more than their limit, so it is not adopted. Post hoc,
+not registered: battle-scan grabs rose from 21 to 43 over the five tapes and
+engagements rose by 10 a tape, so part of the fall may be pickups taken in
+fights rather than as planned goals. Telling those apart needs a pickup
+count that does not care how the bot came to the item, registered before
+any rerun.
+
+Tapes: `runs/study_g790d3_{ctl,m790dm3}_r1` to `r5` and
+`runs/study_g790d4_{ctl,m790dm4}_r1` to `r5` (machine-local).
+
 ## Limits
 
-- One map laddered. dm4 is the best-instrumented map in the lab and also the
-  one whose shipped graph the mesh agrees with most (699 of 700 plain links
-  pass), so it is the hardest place for a new graph to win.
-- The graph inherits navgen's typed seats. A mesh-native jump, drop-arc and
-  lift finder would remove that dependency and has not been written. Both
-  this and a second map are
-  [#790](https://github.com/saworbit/argus/issues/790).
+- Two maps laddered, five pairs each. dm4 is the best-instrumented map in the
+  lab and also the one whose shipped graph the mesh agrees with most (699 of
+  700 plain links pass), so it is the hardest place for a new graph to win.
+- By default the graph inherits navgen's typed seats. `--native-typed` finds
+  jumps, climbs, drop arcs, lifts and teleporters itself, but not rocket
+  jumps, sprints, swims or trains, so it stands alone only on a map that
+  needs none of them: dm4 does, dm3 does not
+  ([#790](https://github.com/saworbit/argus/issues/790)).
 - The mesh leaves out faces too steep to stand on (normal z at most 0.7,
   the FL_ONGROUND rule), and 36 shipped seats with dry feet stand on one:
   e1m8 25 (faces of 49 degrees), e1m3 5, e1m7 3, e1m2 2, lqdm2 1.
@@ -632,10 +812,13 @@ Why trips still fall short:
   graded at the ends of their travel, never between, one mover at a time
   with the rest at spawn; func_door_secret is not moved. The main air layer
   verdicts still take movers at their spawn positions and leave trains out.
-- `tools/test_navmesh_repair.py`, `tools/test_navmesh_air.py` and
-  `tools/test_navmesh_layers.py` run in fast CI.
+- `tools/test_navmesh_repair.py`, `tools/test_navmesh_air.py`,
+  `tools/test_navmesh_layers.py` and `tools/test_navmesh_typed.py` run in
+  fast CI.
 - The straight-fall drop model is stricter than play: dm4 n45 to n66 crosses
   about 40u of lava on momentum and killed nobody in 120 tapes.
-- dm3 at its 244-seat budget covers 90 per cent of the mesh against the
-  shipped graph's 95 per cent. Corner seats survive decimation at the
-  expense of open-room coverage.
+- dm3 at its 244-seat budget covered 90 per cent of the mesh against the
+  shipped graph's 95 per cent, because crowding-only decimation kept corner
+  seats at the expense of open-room coverage. Coverage-first decimation
+  (#790) puts dm3 at 249 seats ahead of the shipped graph; see
+  [Offline figures](#offline-figures).
