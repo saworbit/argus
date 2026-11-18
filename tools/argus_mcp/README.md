@@ -396,6 +396,27 @@ the registered validation: [the fixed lab clock](../../docs/fixed-clock.md).
 The skeptic reports arms on different clocks or frames as a confound and voids
 an arm holding one seed and build twice.
 
+Through the MCP, `match_run` takes `seeds` (GitHub #853): 1 to 10 seeds, each
+1 to 2000. It is refused before any engine starts on a map where
+`tools/lab_instruments.json` does not record the fixed clock as accepted, and
+when `ARGUS_FIXED_FRAME` would run a frame other than the one the map was
+validated at. One seed returns the ordinary `match_run` result under
+`run_name`. Several run one after another on one engine, named
+`<run_name>_s<seed>`, and return the `seeds` report (runs, game and wall
+seconds, throughput). That costs about half a minute of wall time per 185 s
+tape, so ten seeds take about five minutes where four CLI lanes take about
+two. Both responses carry `fixed_clock`: the clock, its frame, the seeds, and
+the map's limits, which are every metric its validation did not read
+equivalent, with the reading. A `match_stop`, a shutdown or a Task cancel
+ends the tape on the engine and every seed still to come.
+
+The lanes run in turn because the server tracks one live engine: `match_stop`
+and shutdown kill the process in its single live slot, so parallel lanes
+inside the server would leave all but the last uncancellable. Parallel lanes
+stay with the CLI, which stays open on every map because a validation has to
+record fixed tapes on a map before it can accept one. `experiment` stays on
+the wall clock: its verdict reads against the wall-clock baseline band.
+
 Every match, fixed or not, takes a lease on `runs/<run>/` before it spawns:
 a `.lease` file holding the owner's process id, created exclusively and
 removed when the match ends. A second start with a live run's name is refused
@@ -1438,7 +1459,8 @@ successful data.
 Long-running `match_run`, `experiment`, `campaign_experiment`, and
 `matrix_experiment` calls honor the MCP request progress token when a client
 supplies one. Notifications name the compile, match, and analysis stage;
-active matches advance by elapsed seconds against the requested duration.
+active matches advance by elapsed seconds (game seconds on the fixed clock)
+against the requested duration.
 Progress delivery is best-effort and never changes the synchronous result.
 Repeated or backward progress values are skipped, including duplicate stage
 boundaries, so every delivered value strictly increases for its request token.
@@ -1579,7 +1601,7 @@ default QC path. Preview status uses a fresh receipt, independent of stdout.
 |------|-------|------|
 | `config_check` | nothing | Resolved paths, exists or not |
 | `compile_qc` | full lab | fteqcc from `src/`. Success is the `Compile finished` / `id format` line, not the exit code. Copies `progs.dat` to every install path: `game/argus`, the basedir game dir, and the rerelease Saved Games copy when it exists. Splits known LibreQuake warning noise from new errors. |
-| `match_run` | full lab | Timed dedicated match, harvest `runs/<name>.log`, return a full brief. A `run_name` whose tape is already committed to git is REFUSED before the engine starts (#328), because that file is evidence and this path used to replace it silently. Pick a free name, or delete the committed tape first. `matrix_experiment` is exempt: its `mx_<map>` probes are meant to be refreshed. |
+| `match_run` | full lab | Timed dedicated match, harvest `runs/<name>.log`, return a full brief. A `run_name` whose tape is already committed to git is REFUSED before the engine starts (#328), because that file is evidence and this path used to replace it silently. Pick a free name, or delete the committed tape first. `matrix_experiment` is exempt: its `mx_<map>` probes are meant to be refreshed. `seeds` runs the fixed lab clock, one engine at a time, on maps where it is validated; see [the fixed lab clock](#the-fixed-lab-clock-and-seeded-ladders). |
 | `match_start` / `match_command` / `match_status` / `match_stop` | full lab | Same single child, interactive. Status includes a live headline once ARGLOG appears. `match_status since_line=N` returns only new lines plus `next_line`. |
 | `analyze_match` | full lab | Existing plotter plus brief and, if two logs, a compare |
 | `list_runs` | `ARGUS_ROOT` | Top-level `runs/*.log`, newest first, known baselines annotated |
