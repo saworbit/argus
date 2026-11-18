@@ -234,6 +234,11 @@ it watched. Without `--run` or `--log`, the CLI picks the one run directory
 whose `qconsole.log` grew in the last 30 s and refuses when two are live,
 because the camera joins the match on its port and the log must belong to that
 same match.
+QuakeSpasm on Windows writes that log in the run directory. Where the engine
+writes it elsewhere or not at all (the Linux rig is unverified), the MCP tool
+tails the controller's captured stdout instead, which carries the same console
+lines, and the CLI refuses with the path it expected and asks for `--log`
+(#810).
 
 The view is the bot's body orientation, not its perception. Bots see through
 line traces, a horizontal field-of-view test and hearing; the camera's pitch
