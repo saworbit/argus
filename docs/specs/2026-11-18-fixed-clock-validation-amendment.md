@@ -26,3 +26,18 @@ build differ, and both differences are stated here (#854).
 `tools/argus_clock_validation.py --map <map>` with the control and fixed
 sets above, each map accepted or not by the original criterion, recorded in
 `tools/lab_instruments.json` and `docs/fixed-clock.md` with its limits.
+
+## Result (recorded 2026-11-18)
+
+Both maps are accepted at 14.25 ms. dm3: 11 wall-clock and 20 fixed tapes;
+limits stalls, deaths and routefails, and its lava reads equivalent only
+because neither arm had a lava death. e1m7: 13 wall-clock and 19 fixed tapes,
+seed 250 excluded as outside the listen tick class; limits stalls, lava and
+world deaths, and routefails. The table and the tick-class note are in
+[the fixed lab clock](../fixed-clock.md#amendment-1-dm3-and-e1m7-at-1425-ms).
+
+The fixed tapes were run under the arm name `ctl` and recorded as
+`study_fxval2_fixed_<map>_ctl_s<seed>`, not the registered
+`fxval2_fixed_<map>_s<seed>`; they are committed under the registered names,
+unchanged, and the control tapes beside them as `fxval2_played_<map>_<run>`.
+Seeds, frame, build and skill are as registered.

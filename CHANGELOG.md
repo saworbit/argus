@@ -27,6 +27,15 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- The fixed lab clock is accepted on dm3 and e1m7 at 14.25 ms
+  ([#854](https://github.com/saworbit/argus/issues/854)), under an amendment
+  registered before its fixed tapes. Its wall-clock arm is the control tapes
+  of other ladders of the same build, which is weaker than a control recorded
+  for the purpose, and the doc says so. Limits: stalls, deaths and routefails
+  on dm3, where lava is untested because neither arm had a lava death; stalls,
+  lava and world deaths and routefails on e1m7. `tools/lab_instruments.json`
+  carries both maps and the 64 tapes are in `runs/` under the amendment's
+  names.
 - `python tools/health_inventory_parked.py --amend <name> --base <rev>
   --scope "<text>"` writes the reverse patch and manifest entries that every
   edit to `src/argus.qc` needs, a comment-only one included
