@@ -88,6 +88,20 @@ passing botmatch does not establish better human play.
   dm4 re-entry happens on the graph
   ([findings](docs/lab-scenarios.md#lab_drymix2-and-the-coverage-gate)).
 
+- Add a water layer and a time layer to the clip-hull navmesh
+  ([#791](https://github.com/saworbit/argus/issues/791)). `--audit` now reads
+  exact swim volumes (hull-1 origins in hull-0 water, split where the eyes
+  leave it), their exits onto the floor mesh by navgen's lip rules, and the
+  air each pool asks for at an assumed 300 u/s against the 12 s of air, and
+  cross-checks the shipped swim links: dm3 1 confirmed and 3 reached on foot
+  from the trench sill, e1m2 8 of 8, e1m1 15 of 15. `--air` now grades the
+  ledges beside every plat, door and train at each of its positions, with
+  the times stock QC holds it there; beside dm2's sliding floor panels `*1`
+  and `*2` it finds 55 and 38 danger ledges while they are open and none
+  while they are shut. The floor mesh and every existing line of output are
+  unchanged
+  ([details](docs/navmesh-experiment.md#the-water-layer)).
+
 - Add `tools/argus_guard_replica.py`, which replays the physics brink guard
   offline from a `scratch1 697` tape and names the branch behind each
   deflection (wall, lava, void, run-off landing). Of dm4's routed
