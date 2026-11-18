@@ -606,6 +606,47 @@ Why trips still fall short:
   150 ms waits are shorter than this rig's command latency; `probelinks`
   retries for 1.8 s and works.
 
+### Turning late after #775 (#904)
+
+#775 refused an early waypoint switch whose line crosses open air. On these
+walkways it also stopped the 112u corner cut, so bots turned at each corner
+instead of before it. The movement heading turns at 320 degrees a second, so
+a 90 degree turn at run speed carries about 100u. At n245 bots ran off the
+outer edge of the z 152 walkway and dropped to z -16, and at n244 they slid
+along the z 56 wall. No bot reached the armour in 20 fixed seeds on main.
+
+Four one-way seats now replace the old corners on the way up, and the old
+corners stay for the way down:
+
+| Seat | Origin | Replaces |
+|---|---|---|
+| n254 | 461 -607 56 | n244, z 56 |
+| n251 | -244 -607 152 | n245, z 152 |
+| n252 | 301 -839 264 | n64, z 264 |
+| n253 | -176 -580 328 | n246, z 328 |
+
+Each was chosen by integrating a bot through the corner offline: NQ friction
+and acceleration at the 14.25 ms frame, the turn rate, the 48u switch and the
+112u cut with the floor test, 12u of lateral error and 280 to 360 u/s. The
+model reproduced both sides of the bisect: on main every run falls off at
+n245, and with the floor test off every run gets round. Two more seats split
+turns the floor test refused outright: n249 (-219 -863 152) for n35 to n47,
+whose turn no point 16u short of n35 can take, and n250 (369 -547 264) for
+n66 to n230. The forward links through the old corners and the two direct
+links are cut, because the router counts hops.
+
+| dm3, skill 2 | Main | Seats |
+|---|---|---|
+| Platform visits, 20 fixed seeds | 0 | 21 |
+| n52 visits, 20 fixed seeds | 0 | 28 |
+| z 56 elbow dwell, 20 fixed seeds | 20.8 s | 7.2 s |
+| Platform visits, 4 played pairs | 0 | 8 |
+
+No dm3 gate moved on either ladder (stalls 15.7 to 15.1 fixed and 15.2 to
+17.0 played, against limits of 12.3 and 27.5), and neither arm had a lava or
+world death. One stall in 20 seeds steered at a seat beside the platform,
+against none on main.
+
 ## Mesh-native typed links
 
 [#790](https://github.com/saworbit/argus/issues/790), 2026-11-18. Offline
