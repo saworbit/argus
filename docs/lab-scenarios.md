@@ -128,7 +128,7 @@ the measurements:
 | `open` | A shared edge at least 32u long, standing heights within 18u |
 | `drop` | A shared edge, falling more than 18u and at most 200u from `from` to `to` |
 | `stairs` | A shared edge within 18u, with a stairs region at one end |
-| `jump` | Facing footprints at most 160u apart, landing at most 40u up |
+| `jump` | Facing footprints at most 160u apart, landing at most 40u up, and a gap a running jump crosses (see Limits) |
 | `door` | A shared edge within 18u; builds a touch-opened `func_door` across it |
 | `teleporter` | A floor at the far end; builds a `trigger_teleport` and its destination |
 
@@ -168,12 +168,15 @@ stages and return the manifest, a scenario id and `next_steps`:
    game `maps/` directory.
 2. **Navgen** through the lab's own `nav_generate`, exactly as for a stock
    map: `src/argus_nav_<map>.qc` and its `.qc.json` twin.
-3. **The mill**: every walk link (and every jump link, when there are any) is
-   walked by the puppet in the real engine. On a micro-map the three skill-0
-   bots share the walkway being walked, so lab_request confirms: a link whose
-   first attempt fails, or whose teleport never lands, is walked again at the
-   end of the sweep and only a second failure convicts
-   (`argus-mcp probelinks <map> --confirm` does the same by hand).
+3. **The mill**: every walk link is walked by the puppet in the real engine,
+   and every jump link, when there are any, is flown the way the runtime flies
+   it: from the run-up the bot would pick, at the approach speed navgen baked
+   (or at run speed when there is none), jumping where the bot's own fire test
+   passes. On a micro-map the three skill-0 bots share the walkway being
+   walked, so lab_request confirms: a link whose first attempt fails, or whose
+   teleport never lands, is walked again at the end of the sweep and only a
+   second failure convicts (`argus-mcp probelinks <map> --confirm` does the
+   same by hand).
 4. **Coverage** (`python tools/lab_mapgen.py coverage`): every floor region at
    least 32u wide must seat a waypoint of the generated graph within 64u above
    its floor. A floor with none is a pocket that bots fall into and leave by
@@ -468,7 +471,20 @@ was 0.4 per cent of motion samples against dm4's 27, and its mix check failed on
 room into bays and restored routing, but its walls are bay-wall ends at the
 bots' own level, with no overhead target. `lab_jumpgap` cut the walkway with a
 jump over the room, and the mill refused the jump at a 128u gap and at 96u, so
-it was not registered.
+it was not registered. The refusal was the mill's, not the map's
+([#866](https://github.com/saworbit/argus/issues/866)): its puppet walked a jump
+link like a walk link and pressed jump only after stalling, so it ran off every
+lip and crossed a gap only when falling carried it over. On dm4 it passed all
+four drop-down jumps and failed both level ones, 111 to 115 and 95 to 124.
+The jump pass now flies the runtime's approach, and `lab_jumpgap`'s 96u jumps
+pass both ways on the first attempt, taking off 32u short of each lip at
+their baked 270 and 220 u/s. Registering it needs a `lab_request` rerun, which
+needs the compiler. On dm4 the new pass still refuses both level jumps, now for
+reasons of their own: 95 to 124's arc meets solid on its line (navgen bakes it
+no approach speed for the same reason), and 111 to 115 jumps at a 14u notch
+just past its seat, where navgen's profile and the runtime both fire, then runs
+on into a second gap about 180u along the same line and drops into the room:
+the room case of [#867](https://github.com/saworbit/argus/issues/867).
 
 A grounded re-plan for an overhead target behind solid was laddered under a
 registered protocol ([protocol](specs/2026-11-17-overhead-target-protocol.md)).
@@ -507,7 +523,18 @@ stops happening.
 - The generated graph is still navgen's. A lab map tests navigation and
   runtime behaviour on that graph, and it can expose a navgen limitation as
   readily as a runtime one.
-- A `jump` connection does not yet survive the mill: both of `lab_jumpgap`'s
-  jump links were refused at a 128u gap and at 96u, the puppet falling into
-  the gap each way, so a scenario that needs a jump cannot register
+- A `jump` connection builds no brushes. It names a gap between two facing
+  floors, at most 160u across with the landing at most 40u up, and the request
+  is refused before anything compiles when no running jump crosses it. The
+  runtime's plain jump hop fires when its 32u lookahead finds no floor, so it
+  takes off 32u short of the lip, and the player box lands once its 16u
+  half-width is over the far edge. At the 320 u/s run speed, the fastest any
+  hop is flown, that is 200u level and 129u at a 40u rise
   ([#866](https://github.com/saworbit/argus/issues/866)).
+- A buildable gap is still only a gap. Whether the graph carries a jump across
+  it is navgen's decision (its jump-edge scan, or the reachability knit, which
+  minted `lab_jumpgap`'s), and whether it registers is the mill's: the puppet
+  flies it from the runtime's run-up at navgen's baked approach speed, or at
+  run speed when navgen bakes none, and convicts it if the runtime's own fire
+  test and that speed do not carry it over. Only `lab_jumpgap`'s 96u level gap
+  has been flown.

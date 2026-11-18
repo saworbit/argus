@@ -817,6 +817,18 @@ passing botmatch does not establish better human play.
   13.7 to 15.7, lava 0 both. e1m8, five a side: stalls 41.4 to 32.6,
   engagements 11.2 to 21.8, goals 4.8 to 2.6 inside a limit of 2.9,
   lava 1.6 to 1.8.
+- dm3 no longer routes through two typed links bots cannot take
+  ([#779](https://github.com/saworbit/argus/issues/779),
+  [#780](https://github.com/saworbit/argus/issues/780)). On 20 fixed-seed
+  tapes of the previous main, bots reached the launch of the sprint n241 to
+  n52 55 times and arrived once, and the launch of the jump n36 to n46 14
+  times and never arrived. The router counts hops, so the sprint beat the
+  eight-hop walk to the red armour, and those routes ended with bots stalled
+  on the walkway under the platform, jumping at the seat 64u above them (24
+  walkway stalls in those tapes). A seats sidecar cut may now retire a jump
+  or sprint link as well as a plain walk, in `--seat-links` and in a full
+  regeneration; both links are cut from `src/argus_nav_dm3.seats.json`, and
+  directed reach is unchanged at 98 per cent worst spawn (92 ungated).
 - Triggered POV capture no longer depends on the engine writing
   `qconsole.log` in the run directory
   ([#810](https://github.com/saworbit/argus/issues/810)). Where that file is
@@ -944,6 +956,26 @@ passing botmatch does not establish better human play.
   `test_support::TestDir`, which removes its directory on drop, so a panic
   cleans up too. Before the change a run of the two engine tests left two new
   directories; after it, a run in which one of them failed left none.
+
+- Fly jump links in the mill the way the runtime does, and refuse a lab `jump`
+  connection no running jump can cross
+  ([#866](https://github.com/saworbit/argus/issues/866)). The mill's puppet
+  walked a jump link like a walk link and pressed jump only after stalling,
+  so it ran off every lip: on dm4 it passed all four drop-down jumps by
+  falling and failed both level ones, and it failed `lab_jumpgap`'s 96u gap
+  both ways. `probelinks --jumps` now walks to the run-up the runtime would
+  pick, charges at the baked approach speed (run speed when there is none)
+  and jumps on the plain hop's fire test, read from the map's hull 0.
+  `lab_jumpgap`'s two jumps passed on the first attempt in four sweeps,
+  launching 32u short of each lip, and `lab_drymix`'s twelve passed without
+  the five confirming walks they needed before. On dm2, dm3, dm4 and dm6 no
+  link the old pass cleared fails, and seven it convicted pass (dm2 loses
+  four to six teleports a sweep either way). dm4 still refuses its two level
+  jumps, now for their own reasons: 95 to 124's arc meets solid, and 111 to
+  115 drops into the room through a second gap (#867). `lab_mapgen.py`
+  refuses a jump gap wider than a 320 u/s running jump carries from the
+  runtime's take-off (200u level, 129u at a 40u rise) before anything
+  compiles, and docs/lab-scenarios.md says what a jump connection builds.
 
 - Keep the lab's Rust suite green on a loaded machine (#836). Three fixed
   waits in the lab itself are now bounds on a condition: `stop` waits up to
