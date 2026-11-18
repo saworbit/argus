@@ -284,6 +284,45 @@ convicted it and `do_not_retry`. When a fix lands, set `status` to `fixed` and
 the goal targets are proposals. The values mirror the objective page; change
 them in both places.
 
+## The mutation check
+
+`tools/test_argus_lab.py` is worth only what it catches, and
+`tools/argus_lab_mutants.py` measures that (#824). Each row of its table
+names one guard in `argus_lab.py`, a condition that refuses, flags or
+classifies, with its original text and the smallest edit that switches it
+off. The script runs the suite against the spine with one edit at a time and
+reports each guard caught (a test fails) or missed (the suite still passes).
+The broken spine lives in memory only: each mutant compiles the edited source
+into its own process and registers it as `argus_lab` before the suite
+imports it, so nothing in `tools/` is rewritten.
+
+```text
+python tools/argus_lab_mutants.py                    the whole table, four at a time
+python tools/argus_lab_mutants.py --only "a cell bounds height"
+python tools/argus_lab_mutants.py --check            the table against the spine; runs nothing
+```
+
+Run the whole table before a change to `argus_lab.py` or `test_argus_lab.py`
+merges, and expect every guard caught. It takes about four minutes on a
+quiet machine with four workers (`--jobs` sets the number, `--timeout` the
+seconds one mutant may take), so fast CI runs only
+`test_argus_lab_mutants.py`, which fails as soon as a row's original text
+stops naming exactly one place in the spine and checks the harness on one
+mutant.
+
+- A missed guard is a gap in the suite: add a test named for the guard that
+  fails when it breaks.
+- A row whose original text moved, changed or became ambiguous stops the run
+  before any suite starts (exit 2): find where the guard went and update the
+  row. A new guard gets a new row.
+- The unbroken suite runs first. If it fails, no mutant result means
+  anything and the script exits 3. Otherwise it exits 1 when a guard is
+  missed, a mutant times out or a mutant will not load, and 0 when every
+  guard is caught.
+
+The lab-scenario guards (`promotion_errors`, `validate_scenarios`) are tested
+by `test_lab_mapgen.py` and are not in the table.
+
 ## Limits
 
 - Build attribution uses the merge time of the commit that last changed
