@@ -244,9 +244,12 @@ five tapes an arm, interleave control and candidate, and keep every tape.
 - Run the same arms on a stock map before a claim names one (the promotion
   rule above).
 - Write the ladder's results file into `runs/` (protocol, arm MD5s, per-tape
-  metrics, and every tape's map, size and SHA-256) and cite it in the claim;
-  the tapes themselves are listed in `.gitignore` when they are too large to
-  commit.
+  metrics, and every tape's map, size and SHA-256) and cite it in the claim.
+  When the tapes are too large to commit, name the ladder's runs
+  `study_<stem>_...`, which one `.gitignore` rule keeps out of Git with their
+  navigation receipts, and set the results file's `tape_storage` to
+  `machine-local`; `argus_ci.py localtapes` fails while any tape it lists is
+  trackable (#872).
 
 ## The first scenario: lab_voidcorner
 
@@ -484,8 +487,9 @@ control binary read 15.75 on one ladder and 12.12 on the next. Both patches
 are recorded (`runs/dm4-overhead-target.results.json`), not shipped. The
 lesson for the next ladder: size the primary to the mechanism it targets. The
 room case itself stays open
-([#867](https://github.com/saworbit/argus/issues/867)), and the scorer behind
-this primary ran outside the repo
+([#867](https://github.com/saworbit/argus/issues/867)). The scorer behind
+this primary first ran outside the repo; `tools/argus_guard_replica.py
+--overhead` and `--region` now reproduce it and the room split tape for tape
 ([#868](https://github.com/saworbit/argus/issues/868)).
 
 The lab maps taught one more rule: a lab map has to keep dm4's balance of
