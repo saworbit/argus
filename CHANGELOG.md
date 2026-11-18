@@ -464,6 +464,36 @@ passing botmatch does not establish better human play.
   check with identical output both times, and the six graph-preserving modes
   matched on dm3, dm4, e1m1, e1m2 and e1m7.
 
+- navgen's reachability knit (section 7g2) has three last-resort stitches
+  for a pocket its walk, jump, drop and dive stitches leave stranded
+  ([#623](https://github.com/saworbit/argus/issues/623),
+  [#624](https://github.com/saworbit/argus/issues/624)). A swim stitch joins
+  two underwater seats both ways when a player box fits through water
+  between them. A bank stitch walks a dry seat into the water and vaults
+  back out onto a lip up to 44u above the surface, which it finds itself:
+  7d's surface probe stops 320u above a seat, so a seat on a deeper floor
+  saw a surface that is not there. A deep-drop stitch lets a pocket holding
+  the seat nearest a deathmatch spawn or live pickup escape by a fall of up
+  to 240u, past DROPMAX's 200 but short of falling damage (264u at gravity
+  800) and inside the runtime's 280u floor probe. On e1m4 a flooded
+  courtyard and a 504u deep lake had cut the south of the map and the start
+  building's shore off from the rest, leaving six of nine spawns 527 to 860u
+  from the graph; now all nine are within 142u, pickups reachable from every
+  spawn rise from 21 to 50 of 58 and the map gate's reasons fall from 117 to
+  49, at 186 waypoints and 576 of 600 edicts. On e1m3 the super nailgun's
+  ledge escapes by a 216u fall, so the weapon is no longer 209u from the
+  graph: 53 of 55 pickups, 17 reasons, 177 waypoints and 597 of 600 edicts.
+  Both maps stay unregistered. e1m3's super shotgun shelf is climbed by 24
+  to 32u risers on 16u treads that SV_CheckBottom refuses as seats, so only
+  a rocket jump reaches it. e1m4's other eight pickups sit behind a
+  two-button secret door, in a walled room behind a trigger-lowered door, on
+  a trigger-started train and in an air pocket under the lake, and nine of
+  its eleven teleporter links name teleporters that fire only for 0.2 s
+  after a trigger. Regenerating with the original and the changed navgen
+  gave byte-identical QC, JSON, preview receipts and logs on dm2, dm4, dm6,
+  e1m1, e1m7, e1m8 and the six registered lab maps, and identical refusals
+  at the jump anchor check on dm3, e1m2, e1m5, e1m6 and lqdm2.
+
 - A full navgen regeneration applies `src/argus_nav_<map>.seats.json`
   ([#778](https://github.com/saworbit/argus/issues/778)). Only `--seat-links`
   read it before, so regenerating dm3 dropped its five elbow seats and
@@ -739,6 +769,40 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- A bot no longer stands at a lift that can never come, or pushes into a door
+  leaf that only a button opens
+  ([#628](https://github.com/saworbit/argus/issues/628),
+  [#643](https://github.com/saworbit/argus/issues/643)). A plat with a
+  targetname spawns raised and inert until its button fires (e1m5's *2, button
+  *3); the lift wait read it as on its way and stood still for the full 8 s
+  give-up, and now gives up at once. Stock LinkDoors copies a pair's
+  targetname onto the master only, so the leaf a bot meets could read as
+  touch-open (e1m6's *20 beside *7, "This door is opened elsewhere");
+  `Argus_DoorMaster` makes the touch-open test and the opener search use the
+  master. Played-rate pairs, five a side: e1m5 freezes 2.4 to 0 a tape, mover
+  waits at the pad 17 to 0, goals 23.6 to 30.6; e1m6 seconds pinned at the
+  door face 58.7 to 10.7 over five tapes. Every gate reads no detectable
+  effect, and dm4, with no such door or plat, replays its fixed-clock seeds
+  identically.
+
+- A routed bot switches early to its next waypoint only while floor runs under
+  the straight line to it
+  ([#775](https://github.com/saworbit/argus/issues/775)): the side traces
+  refused only walls, so on a void-edged walkway a bot 48u short of a
+  mid-corner elbow could head across open air. Parity on dm4 and dm3 (three
+  played-rate pairs each) and lab_voidcorner (five); the original fall was not
+  reproduced, because #772 re-seated dm3's elbows.
+
+- The bot ground physics gains stock edge friction and wall friction
+  ([#794](https://github.com/saworbit/argus/issues/794)): friction doubles
+  (cvar `edgefriction`) when nothing lies 34u below a point 16u ahead at the
+  feet, and a wall slide facing within 60 degrees of head-on keeps 1 + d of its
+  speed along the wall, as `SV_UserFriction` and `SV_WallFriction` do for
+  players. Ground samples over 400 u/s fall on dm4 from 5.57 to 4.96 per cent
+  (edge) and 4.68 (wall), with separate ten-seed ladders at parity on dm4 and
+  dm2 and played-rate pairs of both together at parity (three on dm4, five on
+  dm2).
 
 - Reachability jumps fire only where a jump helps, and a stall jump is
   checked on the flight it will fly
