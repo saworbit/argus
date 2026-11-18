@@ -38,6 +38,18 @@ passing botmatch does not establish better human play.
   patch and manifest byte for byte. CONTRIBUTING.md now points at it instead
   of the manual steps.
 
+- `python tools/argus_lab_mutants.py` makes the lab spine's mutation check
+  reproducible ([#824](https://github.com/saworbit/argus/issues/824)). It
+  breaks each of 67 guards in `tools/argus_lab.py` in turn, in memory only,
+  runs `tools/test_argus_lab.py` against each and reports every guard caught
+  or missed. A row whose original text no longer names exactly one place in
+  the spine stops the run before any suite starts. Its first run missed 10
+  guards, among them a gate with no bound, a goal target with low above
+  high, a session off a goal map and a sweep whose failure got worse; each
+  now has a test, and all 67 are caught. Fast CI checks the table and the
+  harness only; run the whole table before a change to the spine merges
+  ([the mutation check](docs/lab-spine.md#the-mutation-check)).
+
 - Add lab scenarios: purpose-built micro-maps that isolate one bot behaviour
   ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP, which also
   accepts the request as a JSON string) and `argus-mcp lab-request
@@ -425,6 +437,24 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- `tools/argus_bsp.py` is now the one Python BSP29 reader
+  ([#814](https://github.com/saworbit/argus/issues/814)). Its `Bsp` class
+  checks the header once and serves navgen, the navmesh and its graph, the
+  pointfile overlays, the analyzer and nav preview wireframe, the reach audit,
+  the map gate and the lab map compiler, and it holds the one `check_bottom`
+  and the one water-surface probe. A file that is not BSP29 now raises the
+  same `ValueError` from all of them, under `python -O` too, where the two
+  `assert` checks used to vanish; `tools/test_argus_bsp.py` holds that in both
+  modes. The water probe keeps navgen's 320u ceiling rather than the
+  pointfile's 512u, because 320u decides which swim links exist and the
+  surface overlay is there to show what navgen saw. `argus_nav_preview.py` no
+  longer imports the `analyze_match.py` script. Regenerating with the original
+  and the changed navgen gave byte-identical QC, JSON, output and exit codes
+  on dm2, dm4, dm6, e1m1, e1m3, e1m4, e1m7, e1m8 and the six registered lab
+  maps, while dm3, e1m2, e1m5, e1m6 and lqdm2 refused at the same jump anchor
+  check with identical output both times, and the six graph-preserving modes
+  matched on dm3, dm4, e1m1, e1m2 and e1m7.
+
 - A full navgen regeneration applies `src/argus_nav_<map>.seats.json`
   ([#778](https://github.com/saworbit/argus/issues/778)). Only `--seat-links`
   read it before, so regenerating dm3 dropped its five elbow seats and
@@ -700,6 +730,45 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- The box test samples the player hull's real 16u corners, and the unstick
+  test calls a bot embedded when its hull, not just its origin, is in solid
+  ([#755](https://github.com/saworbit/argus/issues/755),
+  [#756](https://github.com/saworbit/argus/issues/756)). At 15u a spot whose
+  hull clipped a wall by up to a unit passed, so the catchup warp, the
+  unstick destination, the airborne body nudge and the tactic path samples
+  could approve a place every engine move then left in solid. A hull that
+  clipped a wall with a clear origin waited for the slower stall, hurt or
+  fight rescues: Joe Rogan held dm4 '12.8 -272.9 -72' for six seconds. The
+  embedded test reads solid only, so water and lava do not count, and
+  `pointcontents` cannot see movers, so a plat, door or train never trips
+  it.
+
+- Evidence: replayed against hull 0, both reported spots (dm4
+  '12.8 -272.9 -72' and dm3 '335.1 125.9 -200') pass at 15u and are refused
+  at 16u, and a hull flush against the dm4 wall stays clear. Ten fixed-clock
+  seeds a map against main read identical on dm4 and dm2 (cover moved by
+  0.1), so the path is rare in ordinary play. A real-engine fixture that
+  places a hull on the dm4 spot was not built.
+
+- The step1b amend helper's test no longer pins the newest amendment's
+  name, which made it fail on the first real edit to `src/argus.qc` after
+  it landed. It checks that the manifest it was given is unchanged, and
+  takes the duplicate case from the manifest itself
+  ([#871](https://github.com/saworbit/argus/issues/871)).
+- Say why each shipped seat stands on no navmesh fragment
+  ([#788](https://github.com/saworbit/argus/issues/788)). The dry ones
+  were not floors the extractor lost: every one stands on a hull-1 face
+  too steep to stand on (normal z 0.24 to 0.66), which the mesh leaves out
+  under the FL_ONGROUND rule, and with that cut lowered the extractor finds
+  a face under each within 0.1u. `argus_navmesh.py --audit` now splits its
+  off-mesh line into liquid seats the repair keeps, steep faces with the
+  distance to the nearest fragment, no world floor within 30u, seats inside
+  the world, and dry seats with no fragment and no reason. Dry off-mesh
+  seats before, and dry seats with no fragment and no reason after: e1m8
+  25 to 0, e1m3 5 to 0, e1m7 3 to 0, e1m2 2 to 0, lqdm2 1 to 0, all 36
+  now reported as steep; dm2, dm3, dm4, dm6, e1m1, e1m4, e1m5, e1m6 and
+  the six lab maps 0 to 0.
 
 - Stop the lab's Rust tests leaving directories in `%TEMP%`
   ([#861](https://github.com/saworbit/argus/issues/861)). The console
@@ -1249,6 +1318,15 @@ passing botmatch does not establish better human play.
   well as the lab, so the policy records why it is ignored and when to look
   again (`tools/argus_mcp/deny.toml`,
   [#870](https://github.com/saworbit/argus/issues/870)).
+
+- Read average speed on the fixed-clock confirmation tapes
+  ([#863](https://github.com/saworbit/argus/issues/863)). It was registered
+  with the validation but the corpus did not carry it when the verdicts were
+  made. Read afterwards on the same tapes, it is equivalent on both maps:
+  dm4 212.2 against 209.4 u/s (90 per cent interval -6.7 to +1.0, margin
+  63.7) and dm2 182.9 against 183.7 (-9.5 to +11.0, margin 54.9). Neither
+  verdict and no limit changes. `docs/fixed-clock.md` and
+  `tools/lab_instruments.json` record it as read after the verdicts.
 
 - Explain the project in the README. A new section says what Argus is, which
   rules all of its code follows and how a map file becomes a measured match.

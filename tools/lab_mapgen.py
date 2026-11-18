@@ -1313,10 +1313,13 @@ def compile_map(root, request, out_dir, the_plan=None, files=None):
             raise RuntimeError(f"{step} failed for {name} (exit {code}); see "
                                f"{rel(root, out_dir / (name + '.compile.log'))}")
     write_text(out_dir / f"{name}.compile.log", "\n".join(log))
-    data = bsp.read_bytes()
-    version = struct.unpack_from("<i", data, 0)[0]
-    if version != 29:
-        raise RuntimeError(f"{bsp} is BSP version {version}; the lab ships BSP29 for vanilla engines")
+    sys.path.insert(0, str(HERE))
+    from argus_bsp import Bsp  # noqa: E402 - tools path set just above
+    try:
+        compiled = Bsp(bsp)
+    except ValueError as error:
+        raise RuntimeError(f"{error}; the lab ships BSP29 for vanilla engines") from error
+    data = compiled.data
     return {
         "ericw_tools": profile["ericw_tools"]["version"],
         "ericw_commit": profile["ericw_tools"]["commit"],
@@ -1325,19 +1328,8 @@ def compile_map(root, request, out_dir, the_plan=None, files=None):
         "bsp": rel(root, bsp),
         "bsp_bytes": len(data),
         "bsp_sha256": sha256_bytes(data),
-        "bsp_entities": len(bsp_entities(data)),
+        "bsp_entities": sum(1 for entity in compiled.entities() if entity),
     }, the_plan, files
-
-
-def bsp_entities(data):
-    offset, length = struct.unpack_from("<ii", data, 4)
-    text = data[offset:offset + length].split(b"\0")[0].decode("latin-1")
-    out = []
-    for block in text.split("}"):
-        keys = dict(re.findall(r'"([^"]*)"\s+"([^"]*)"', block))
-        if keys:
-            out.append(keys)
-    return out
 
 
 # ---------------------------------------------------------------- build

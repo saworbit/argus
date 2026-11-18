@@ -4,20 +4,9 @@ nav-graph overlay, combat deaths. Lava deaths classify by hull-0
 contents at the death position (z < -300 is the no-BSP fallback only).
 usage:
   analyze_match.py map.bsp logA [logB] out.png [nav.json]"""
-import struct, sys
-from argus_bsp import load_classifier
+import sys
+from argus_bsp import load_bsp, load_classifier
 from argus_tape import PAT as PAT_V1, LEGACY_SAMPLE as PAT_V0, parse_tape, deaths as tape_deaths
-
-def load_bsp(path):
-    data = open(path, "rb").read()
-    assert struct.unpack_from("<i", data, 0)[0] == 29
-    lumps = [struct.unpack_from("<ii", data, 4 + i * 8) for i in range(15)]
-    vo, vl = lumps[3]; eo, el = lumps[12]; mo, _ = lumps[14]
-    verts = [struct.unpack_from("<fff", data, vo + i * 12) for i in range(vl // 12)]
-    edges = [struct.unpack_from("<HH", data, eo + i * 4) for i in range(el // 4)]
-    mins = struct.unpack_from("<fff", data, mo)
-    maxs = struct.unpack_from("<fff", data, mo + 12)
-    return verts, edges, mins, maxs
 
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
 

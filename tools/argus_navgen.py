@@ -115,7 +115,7 @@ those annotations before publishing both files together.
 --render-only reads a shipped graph and writes only the PNG and its freshness
 receipt. It cannot be combined with generation or registration options.
 """
-import re, struct, sys, heapq, collections
+import re, sys, heapq, collections
 import io
 import math as _dmath
 from pathlib import Path
@@ -136,6 +136,7 @@ from argus_nav_preview import generate_preview
 from argus_nav_slots import slot_count, clamp_walk, require_slots
 from argus_nav_artifacts import canonical_sidecar, refresh_banner, validate_pair, publish_pair, existing_bytes
 from argus_jump_anchor import require_anchor, audit as audit_jump_anchors
+from argus_bsp import Bsp
 
 if len(sys.argv) < 5 or "--help" in sys.argv or "-h" in sys.argv:
     # operators get the usage docstring, never an IndexError traceback
@@ -268,25 +269,14 @@ LINK_PATH_MAX = 340
 MAX_NODES = 200
 MAX_LINKS = 8
 
-data = open(BSP, "rb").read()
-assert struct.unpack_from("<i", data, 0)[0] == 29
-lumps = [struct.unpack_from("<ii", data, 4 + i * 8) for i in range(15)]
-
-def lump(i): o, l = lumps[i]; return data[o:o+l]
-
-# planes
-pl = lump(1)
-planes = [struct.unpack_from("<ffff", pl, i * 20)[:4] for i in range(len(pl) // 20)]
-# clipnodes
-cn = lump(9)
-clip = [struct.unpack_from("<ihh", cn, i * 8) for i in range(len(cn) // 8)]
-# models
-md = lump(14)
-m0 = struct.unpack_from("<9f7i", md, 0)
-mins, maxs = m0[0:3], m0[3:6]
-HULL1 = m0[10]  # headnode[1]
-# entities
-ents_txt = lump(0).split(b"\0")[0].decode("ascii", "replace")
+# ---- 1. the BSP ----
+# Read through argus_bsp, the one Python BSP29 reader (#814). It checks
+# the version once and raises ValueError for anything else, under -O
+# too, where the assert that used to stand here vanished.
+_bsp = Bsp(BSP)
+planes = _bsp.planes
+mins, maxs = _bsp.mins, _bsp.maxs
+ents_txt = _bsp.entity_text()
 
 # ---- 2b. the entity lump, and the door geometry that reads it ----
 # These sit ahead of sampling because --retype-doors (2c) needs the
@@ -298,7 +288,7 @@ ents_txt = lump(0).split(b"\0")[0].decode("ascii", "replace")
 ent_blocks = re.findall(r"\{(.*?)\}", ents_txt, re.S)
 def kv(block):
     return dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
-bmodels = [struct.unpack_from("<9f7i", md, i * 64) for i in range(len(md)//64)]
+bmodels = _bsp.models
 
 def _door_lip(entity):
     # doors.qc defaults the numeric value, including an explicit zero.
@@ -643,13 +633,8 @@ if RETYPE_DOORS:
           f"every typed list other than doorlinks are untouched")
     sys.exit(0)
 
-def hull_contents(x, y, z, node=None):
-    n = HULL1 if node is None else node
-    while n >= 0:
-        pn, c0, c1 = clip[n]
-        nx, ny, nz, d = planes[pn]
-        n = c0 if (nx * x + ny * y + nz * z - d) >= 0 else c1
-    return n
+# hull 1, the player hull: EMPTY means a player origin fits here
+hull_contents = _bsp.h1
 
 # ---- 3. column sampling ----
 def column_floors(x, y):
@@ -676,19 +661,8 @@ def column_floors(x, y):
 # hull 0 sees what the clip hulls cannot: liquids. Parsed here, ahead
 # of sampling, because seats and links need it, not just swim exits.
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
-nd = lump(5)
-h0nodes = [struct.unpack_from("<i8h2H", nd, i * 24) for i in range(len(nd) // 24)]
-lf = lump(10)
-h0leaves = [struct.unpack_from("<2i6h2H4B", lf, i * 28) for i in range(len(lf) // 28)]
-HULL0 = m0[9]
-
-def h0_contents(x, y, z):
-    n = HULL0
-    while n >= 0:
-        node = h0nodes[n]
-        nx, ny, nz, d = planes[node[0]]
-        n = node[1] if (nx * x + ny * y + nz * z - d) >= 0 else node[2]
-    return h0leaves[-1 - n][0]
+h0nodes, h0leaves, HULL0 = _bsp.nodes, _bsp.leaves, _bsp.hull0
+h0_contents = _bsp.h0
 
 
 def hostile_at(x, y, oz):
@@ -1307,46 +1281,13 @@ if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS:
     print(f"wrote {_qcpath} + .json")
     sys.exit(0)
 
-def water_surface_z(x, y, z):
-    top = z
-    while top < z + 320 and h0_contents(x, y, top + 8) == CONTENTS_WATER:
-        top += 8
-    return top
-
-
 # Shared by full generation and topology-preserving jump reprofile.
 JUMPSPEED, JUMPVEL, GRAV = 280.0, 270.0, GRAVITY
 
 
-def _floor_under(x, y, z, maxdrop):
-    d = 0.0
-    while d <= maxdrop:
-        if h0_contents(x, y, z - d) == CONTENTS_SOLID:
-            return z - d
-        d += 2.0
-    return None
-
-
-def check_bottom(x, y, oz):
-    """SV_CheckBottom for a player box whose origin sits at oz."""
-    fz = oz - 24                       # mins[2] of the player box
-    cs = ((x - 16, y - 16), (x + 16, y - 16),
-          (x - 16, y + 16), (x + 16, y + 16))
-    ok = True
-    for cx, cy in cs:
-        if h0_contents(cx, cy, fz - 1) != CONTENTS_SOLID:
-            ok = False
-            break
-    if ok:
-        return True
-    mid = _floor_under(x, y, fz, 2 * STEP)
-    if mid is None:
-        return False
-    for cx, cy in cs:
-        c = _floor_under(cx, cy, fz, 2 * STEP)
-        if c is None or c < mid - STEP:
-            return False
-    return True
+# SV_CheckBottom for a player box whose origin sits at oz. The one copy
+# lives in argus_bsp, shared with the navmesh graph and the pointfile.
+check_bottom = _bsp.check_bottom
 
 
 _standable_cache = {}
@@ -3155,7 +3096,8 @@ print(f"sprint links: {len(sprints)} typed "
 # waterjump gated to swim-link hops only, which by construction can
 # never fire over dm4's lava: swim links are only emitted for
 # CONTENTS_WATER, never slime or lava.
-# h0_contents / water_surface_z now live above sampling (lava slice)
+# h0_contents lives above sampling (lava slice); the surface probe is
+# argus_bsp's water_top, its one copy (#814)
 
 
 n_swimnodes = 0
@@ -3164,7 +3106,7 @@ for i, w in enumerate(ways):
     if h0_contents(wx, wy, wz + 8) != CONTENTS_WATER:
         continue
     n_swimnodes += 1
-    surf = water_surface_z(wx, wy, wz)
+    surf = _bsp.water_top(wx, wy, wz)
     exits = []
     for j, v in enumerate(ways):
         if i == j:

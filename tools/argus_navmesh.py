@@ -20,9 +20,10 @@ import argparse
 import json
 import math
 import re
-import struct
 import sys
 from pathlib import Path
+
+from argus_bsp import Bsp
 
 CONTENTS_EMPTY, CONTENTS_SOLID = -1, -2
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
@@ -33,57 +34,8 @@ SHIFT = 0.125          # how far below a floor face its support is read
 ON = 0.01              # plane-side tolerance for polygon clipping
 
 
-class Bsp:
-    """The handful of BSP29 lumps a navmesh needs."""
-
-    def __init__(self, path):
-        data = Path(path).read_bytes()
-        if struct.unpack_from("<i", data, 0)[0] != 29:
-            raise ValueError(f"{path}: not a BSP29 file")
-
-        def lump(i):
-            off, length = struct.unpack_from("<ii", data, 4 + i * 8)
-            return data[off:off + length]
-
-        raw = lump(1)
-        self.planes = [struct.unpack_from("<4f", raw, i * 20)
-                       for i in range(len(raw) // 20)]
-        raw = lump(9)
-        self.clip = [struct.unpack_from("<ihh", raw, i * 8)
-                     for i in range(len(raw) // 8)]
-        raw = lump(5)
-        self.nodes0 = [struct.unpack_from("<i8h2H", raw, i * 24)
-                       for i in range(len(raw) // 24)]
-        raw = lump(10)
-        self.leaves0 = [struct.unpack_from("<2i6h2H4B", raw, i * 28)
-                        for i in range(len(raw) // 28)]
-        raw = lump(14)
-        self.models = [struct.unpack_from("<9f7i", raw, i * 64)
-                       for i in range(len(raw) // 64)]
-        m0 = self.models[0]
-        self.mins, self.maxs = m0[0:3], m0[3:6]
-        self.hull0, self.hull1 = m0[9], m0[10]
-        text = lump(0).split(b"\0")[0].decode("ascii", "replace")
-        self.entities = [dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', b))
-                         for b in re.findall(r"\{(.*?)\}", text, re.S)]
-
-    def h1(self, x, y, z, node=None):
-        n = self.hull1 if node is None else node
-        clip, planes = self.clip, self.planes
-        while n >= 0:
-            pn, c0, c1 = clip[n]
-            nx, ny, nz, d = planes[pn]
-            n = c0 if nx * x + ny * y + nz * z - d >= 0 else c1
-        return n
-
-    def h0(self, x, y, z):
-        n = self.hull0
-        nodes, planes = self.nodes0, self.planes
-        while n >= 0:
-            node = nodes[n]
-            nx, ny, nz, d = planes[node[0]]
-            n = node[1] if nx * x + ny * y + nz * z - d >= 0 else node[2]
-        return self.leaves0[-1 - n][0]
+# Bsp (the handful of BSP29 lumps a navmesh needs, and its hull 0 and
+# hull 1 point tests) is argus_bsp's, imported above (#814).
 
 
 # ---- polygon helpers (3D, convex, vertex lists) ----
@@ -409,6 +361,115 @@ def fall_to(bsp, x, y, z, maxdrop=DROPMAX + 8.0):
     return None
 
 
+def floor_under(bsp, x, y, z, maxdrop=DROPMAX + 8.0):
+    """The hull-1 floor below an origin, as (height, plane) or None.
+
+    fall_to brackets the floor to 1/32u. The plane is the first clip node
+    whose plane separates the empty point at that height from the solid
+    one 1/16u below it, turned so its normal faces the empty side: the
+    face a trace for the player box would report, and so the face whose
+    normal z decides FL_ONGROUND.
+    """
+    f = fall_to(bsp, x, y, z, maxdrop)
+    if f is None:
+        return None
+    za, zb = f, f - 1.0 / 16
+    n = bsp.hull1
+    while n >= 0:
+        pn, c0, c1 = bsp.clip[n]
+        nx, ny, nz, d = bsp.planes[pn]
+        sa = nx * x + ny * y + nz * za - d
+        sb = nx * x + ny * y + nz * zb - d
+        ca = c0 if sa >= 0 else c1
+        if ca != (c0 if sb >= 0 else c1):
+            s = 1.0 if sa >= 0 else -1.0
+            return f, (s * nx, s * ny, s * nz, s * d)
+        n = ca
+    return None
+
+
+def nearest_fragment(frags, x, y, z, ztol=STEP, reach=64.0):
+    """Plan distance to the nearest fragment within ztol of z, or None.
+
+    Height is read on the fragment's own plane at its point nearest
+    (x, y), so a floor counts only where a body could step onto it.
+    Nothing past reach counts.
+    """
+    best = None
+    for f in frags:
+        poly = f["poly"]
+        if (x < min(p[0] for p in poly) - reach or x > max(p[0] for p in poly) + reach
+                or y < min(p[1] for p in poly) - reach
+                or y > max(p[1] for p in poly) + reach):
+            continue
+        if point_in_poly_xy(x, y, poly):
+            d, px, py = 0.0, x, y
+        else:
+            d, px, py = None, x, y
+            m = len(poly)
+            for i in range(m):
+                ax, ay = poly[i][0], poly[i][1]
+                bx, by = poly[(i + 1) % m][0], poly[(i + 1) % m][1]
+                dx, dy = bx - ax, by - ay
+                L2 = dx * dx + dy * dy
+                t = 0.0 if L2 < 1e-9 else max(0.0, min(1.0, ((x - ax) * dx + (y - ay) * dy) / L2))
+                qx, qy = ax + dx * t, ay + dy * t
+                e = math.hypot(x - qx, y - qy)
+                if d is None or e < d:
+                    d, px, py = e, qx, qy
+        if d > reach or (best is not None and d >= best):
+            continue
+        if abs(plane_z(f["plane"], px, py) - z) <= ztol:
+            best = d
+    return best
+
+
+# Why a shipped seat locates on no fragment (audit section 2b), in the order
+# the audit tests them. Only "unexplained" is a candidate extractor miss.
+OFFMESH_WHY = ("liquid", "in_solid", "no_floor", "steep", "unexplained")
+OFFMESH_LABELS = (
+    ("liquid", "in liquid, kept by the repair (feet in lava or slime)"),
+    ("steep", f"dry, on a face too steep to stand on (normal z at most {WALKABLE_NZ})"),
+    ("no_floor", "dry, no world floor within 30u below (a brush entity or mid-air)"),
+    ("in_solid", "dry, inside the world"),
+    ("unexplained", "dry, no fragment"),
+)
+
+
+def explain_offmesh(bsp, frags, seat, ztol=30.0):
+    """Say why a seat that locates on no fragment cannot.
+
+    Returns {"why", "nz", "near"}. why is one of OFFMESH_WHY: "liquid"
+    (feet in lava or slime, whose fragments load_mesh drops; navgen
+    --repair-links keeps such seats as exits), "in_solid" (the seat is
+    inside the hull-1 world), "no_floor" (no hull-1 floor within ztol
+    below it: a brush entity's top, a mover or mid-air), "steep" (the
+    floor is a face whose normal z is at most WALKABLE_NZ, which a body
+    cannot stand on and floor_fragments leaves out by design) or
+    "unexplained". nz is the floor face's normal z where there is one;
+    near is the plan distance to the nearest fragment within a step of
+    the seat's height (nearest_fragment), None past 64u.
+    """
+    x, y, z = seat
+    out = {"why": "unexplained", "nz": None,
+           "near": nearest_fragment(frags, x, y, z)}
+    if bsp.h0(x, y, z - 23) in (CONTENTS_LAVA, CONTENTS_SLIME):
+        out["why"] = "liquid"
+        return out
+    # a seat embedded less than 1u in its floor still reads as on it
+    if bsp.h1(x, y, z + 1.0) != CONTENTS_EMPTY:
+        out["why"] = "in_solid"
+        return out
+    fl = floor_under(bsp, x, y, z + 1.0, maxdrop=ztol + 1.0)
+    if fl is None:
+        out["why"] = "no_floor"
+        return out
+    out["nz"] = fl[1][2]
+    if fl[1][2] <= WALKABLE_NZ:
+        out["why"] = "steep"
+    return out
+
+
 def components(n, portals, kinds=("walk",)):
     parent = list(range(n))
 
@@ -505,7 +566,7 @@ def brush_boxes(bsp, deathmatch=True):
     entity in deathmatch.
     """
     out = []
-    for e in bsp.entities:
+    for e in bsp.entities():
         cls = e.get("classname", "")
         m = e.get("model", "")
         if cls not in BRUSH_CLASSES or not m.startswith("*"):
@@ -904,6 +965,12 @@ def audit(bsp, frags, doc):
     # 2. seats on no fragment at all
     where = [locate(frags, x, y, z, 30.0) for x, y, z in nodes]
     out["offmesh_seats"] = [i for i, f in enumerate(where) if f is None]
+    # 2b. and why (#788): the line used to lump the lava seats the repair
+    # keeps on purpose in with dry ones, and every dry one on the shipped
+    # graphs turned out to stand on a face too steep to stand on, not on a
+    # floor the extractor lost
+    out["offmesh"] = [dict(explain_offmesh(bsp, frags, nodes[i]), seat=i)
+                      for i in out["offmesh_seats"]]
     # 3. plain links the mesh cannot carry: no walk/drop path between
     # the fragments under the two seats (typed hops are exempt)
     ports = build_portals(bsp, frags)
@@ -985,6 +1052,17 @@ def main(argv=None):
         print(f"  ordinary links from a dry seat into one of them: "
               f"{len(r['liquid_entries'])}")
         print(f"  seats on no mesh fragment: {len(r['offmesh_seats'])}")
+        for why, label in OFFMESH_LABELS:
+            rows = [o for o in r["offmesh"] if o["why"] == why]
+            print(f"    {label}: {len(rows)}")
+            if why == "liquid":
+                continue
+            for o in rows[:8]:
+                n = nodes[o["seat"]]
+                bits = [] if o["nz"] is None else [f"floor normal z {o['nz']:.2f}"]
+                bits.append("no fragment within 64u" if o["near"] is None else
+                            f"nearest fragment {o['near']:.0f}u away")
+                print(f"      n{o['seat']} {tuple(round(v) for v in n)} {', '.join(bits)}")
         print(f"  vertical walk links (same xy, rising past a step): "
               f"{len(r['vertical_walks'])}")
         for x, y in r["vertical_walks"][:8]:
