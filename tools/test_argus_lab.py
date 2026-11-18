@@ -1303,6 +1303,99 @@ class TestInstruments(unittest.TestCase):
             self.assertFalse([s for s in steps if s['tier'] == 5])
 
 
+class TestMutationGaps(unittest.TestCase):
+    """One test per guard tools/argus_lab_mutants.py found no test failing for (#824)."""
+
+    def objective_errors(self, edit):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            obj = json.loads((fx.root / 'tools/lab_objective.json').read_text())
+            edit(obj)
+            fx.write('tools/lab_objective.json', json.dumps(obj))
+            return '\n'.join(argus_lab.validate(fx.root))
+
+    def test_a_gate_gives_exactly_one_bound(self):
+        def edit(obj):
+            obj['hard_gates'] += [{'id': 'unbounded', 'column': 'fz_max'},
+                                  {'id': 'both', 'column': 'fz_max', 'max': 1, 'below': 2}]
+        errors = self.objective_errors(edit)
+        self.assertIn('gate unbounded: give exactly one of max or below', errors)
+        self.assertIn('gate both: give exactly one of max or below', errors)
+
+    def test_a_goal_target_has_low_at_most_high(self):
+        errors = self.objective_errors(lambda obj: obj['goal_targets']['kill_ratio'].update(low=3.0, high=1.0))
+        self.assertIn('goal target kill_ratio: needs numeric low <= high', errors)
+
+    def test_a_claim_kind_is_one_of_the_kinds(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.claims([claim(id='odd-kind', kind='bug')])
+            self.assertIn('claim odd-kind: kind must be one of', '\n'.join(argus_lab.validate(fx.root)))
+
+    def session(self, fx, tape_text, **over):
+        fx.write('runs/shane_dm4_2026-10-01.log', tape_text)
+        row = dict(file='shane_dm4_2026-10-01.log', map='dm4', dur='240', bot_world='0', bot_world_unforced='0',
+                   fz_fire='0', fz_max='0', unstick='0', bot_kills_human='10', human_kills_bot='15')
+        row.update(over)
+        return argus_lab.evaluate_session(fx.root, row, argus_lab.objective(fx.root), [], {})
+
+    def test_a_statue_of_ten_seconds_fails_its_gate(self):
+        with tempfile.TemporaryDirectory() as td:
+            self.assertEqual(self.session(Fixture(td), tape(base=1), fz_max='10')['failed'], ['statue-10s'])
+
+    def test_a_session_off_a_goal_map_does_not_count(self):
+        with tempfile.TemporaryDirectory() as td:
+            s = self.session(Fixture(td), tape(base=1), map='dm6')
+            self.assertEqual(s['reasons'], ['map dm6 is not a goal map'])
+
+    def test_a_tape_mixing_skill_tiers_does_not_count(self):
+        mixed = tape(base=1, body='ARGUS difficulty Omi t   1.1 base 2 cognition 1 aim 1\n')
+        with tempfile.TemporaryDirectory() as td:
+            s = self.session(Fixture(td), mixed)
+            self.assertEqual(s['skill'], [1, 2])
+            self.assertEqual(s['reasons'], ['skill 1,2, not 1'])
+
+    def test_graphs_differing_inside_an_arm_are_a_confound(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.add_run('ab_dm4_a1', text=tape(nodes=137))
+            fx.add_run('ab_dm4_a2', text=tape(nodes=145))
+            fx.add_run('ab_dm4_b1', text=tape(nodes=137))
+            fx.add_run('ab_dm4_b2', text=tape(nodes=137))
+            with no_lab_binary():
+                rep = argus_lab.skeptic(fx.root, ['ab_dm4_a1', 'ab_dm4_a2'], ['ab_dm4_b1', 'ab_dm4_b2'])
+            self.assertTrue(any(c.startswith('graphs differ inside an arm') for c in rep['confounds']), rep['confounds'])
+
+    def test_a_clock_mix_inside_the_arms_is_a_confound(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            for arm, seed in (('a', 3), ('b', 4)):
+                fx.add_run(f'ab_dm4_{arm}0', text=stamped())
+                fx.add_run(f'fx_dm4_{arm}1', text=stamped(frame=14250, seed=seed))
+            with no_lab_binary():
+                rep = argus_lab.skeptic(fx.root, ['ab_dm4_a0', 'fx_dm4_a1'], ['ab_dm4_b0', 'fx_dm4_b1'])
+            self.assertTrue(any(c.startswith('engine clocks differ: control fixed 14.25 ms, realtime')
+                                for c in rep['confounds']), rep['confounds'])
+
+    def test_instrument_readings_come_from_the_vocabulary(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            TestInstruments.registry(self, fx, fixed={'dm2': {'accepted': False, 'frame_ms': 13.9,
+                                                              'metrics': {'engages': 'same'}, 'evidence': []}})
+            self.assertIn('metrics map each metric to one of', '\n'.join(argus_lab.validate_instruments(fx.root)))
+
+    def test_a_sweep_alerts_on_a_failure_that_got_worse(self):
+        def reach(pct):
+            return [sys.executable, '-c', f'print("  worst spawn: {pct}% all, 50% ungated"); raise SystemExit(1)']
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            code, report = TestNight.sweep(self, fx, [dict(tier=1, name='reach', cmd=reach(55), parse='reach')])
+            self.assertEqual(code, 0, report)
+            code, report = TestNight.sweep(self, fx, [dict(tier=1, name='reach', cmd=reach(40), parse='reach')])
+            self.assertEqual(code, 1, report)
+            self.assertIn('failing worse than before: reach', report)
+
+
 class TestCommandLine(unittest.TestCase):
     def test_every_command_runs_on_the_fixture(self):
         with tempfile.TemporaryDirectory() as td:
