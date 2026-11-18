@@ -863,6 +863,14 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- A fixed-clock tape is classed by its stated frame, not its sample gap
+  ([#901](https://github.com/saworbit/argus/issues/901)). At 14.25 ms the
+  telemetry fires every 36 frames, 0.513 s, and the one-decimal stamps
+  scatter the mean around the 0.5135 listen cutoff, so the #854 e1m7
+  validation dropped seed 250 as not listen while identical tapes passed.
+  Briefs, the corpus, compare and `argus_clock_validation.py` now read a
+  frame of 13 to 15 ms as `listen`; wall-clock tapes and other frames keep
+  the gap rule. `tools/argus_tick.py` reports such a tape by its frame.
 - Retire the three puppet-refused walks still shipping on e1m2 and e1m8
   ([#821](https://github.com/saworbit/argus/issues/821)): e1m2 n87 to n193,
   e1m8 n5 to n2 and n7 to n98. Both maps had refused their last
