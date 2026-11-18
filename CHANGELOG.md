@@ -27,6 +27,14 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- `tools/argus_wishflips.py` counts runs of per-frame wish flips in a
+  full-rate ARGMOT tape ([#754](https://github.com/saworbit/argus/issues/754)),
+  the dithering the reversal count cannot see because it only counts turns at
+  speed. On ten fixed-seed tapes per map main shows 893 runs on dm4 and 510 on
+  dm2. A candidate that held the combat strafe side cut those to 156 and 58,
+  and is not shipped: over eight played dm4 pairs it took world deaths in lava
+  from 16 to 27, the extra ones in fights, after damage and with no hazard
+  deflection before them.
 - Two registered ladders and their results. The run-up floor veto
   ([#867](https://github.com/saworbit/argus/issues/867),
   [protocol](docs/specs/2026-11-18-runup-floor-protocol.md)) refuses a drop of
