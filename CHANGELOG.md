@@ -507,6 +507,16 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- `tools/argus_reach.py` measures a spawn's distance to the graph where the
+  body comes to rest ([#789](https://github.com/saworbit/argus/issues/789)):
+  the first floor under its feet, counting the solid brush entities present
+  at spawn. e1m8's 1024 720 -104 floats over a 634u fall that e1m8's
+  gravity makes harmless and lands 46u from n71, so it no longer reads 606u
+  from the graph; e1m7's four pad spawns stay on their `func_wall` pads. A
+  floating spawn is reported with how far it falls. e1m8's coverage check
+  still fails on 880 128 24, which stands on an upper level the shipped
+  graph does not seat.
+
 - navgen seats a deathmatch spawn that stands on a solid brush entity
   ([#783](https://github.com/saworbit/argus/issues/783)). A spawn whose first
   floor is a brush top at its spawn position, more than a step above any

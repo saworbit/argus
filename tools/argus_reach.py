@@ -54,6 +54,35 @@ def bsp_spawns(path):
     return spawns
 
 
+# A spawn point can float: e1m8's 1024 720 -104 has open air down to a floor
+# at -764, and a body spawned there lands 636u below, 46u from n71, at
+# e1m8's gravity of 100 unhurt (#789). Nearest node and distance are taken
+# where the body comes to rest: the first floor under its feet, searched
+# down to SPAWN_FALL_MAX, at standing height. A spawn whose feet are on a
+# floor keeps its own origin.
+SPAWN_FALL_MAX = 2048
+
+
+def standing_point(world, spawn, boxes=()):
+    """Where a body spawned at spawn comes to rest.
+
+    boxes are the solid brush entities at their spawn positions
+    (argus_navmesh.brush_boxes): the world hull has none of them, and
+    e1m7's four z 280 deathmatch spawns stand on func_wall pads that a
+    world-only fall would drop through to the floor 226u below (#783).
+    """
+    x, y, z = spawn
+    feet = z - 24
+    floor = world.floor_under(x, y, feet, SPAWN_FALL_MAX)
+    for _cls, mn, mx in boxes:
+        if (mn[0] - 16 < x < mx[0] + 16 and mn[1] - 16 < y < mx[1] + 16
+                and mx[2] <= feet + 2 and (floor is None or mx[2] > floor)):
+            floor = mx[2]
+    if floor is None or floor >= feet - 2:
+        return spawn
+    return (x, y, floor + 24)
+
+
 def load_graph(path):
     from argus_navjson import load_nav, pairs, WALK, FREE, GATED
     nav = load_nav(path)
@@ -87,6 +116,13 @@ def bsp_dir():
     return Path(os.environ["ARGUS_MAPS"]) if os.environ.get("ARGUS_MAPS") else ROOT / "maps_local"
 
 
+def load_world(bsp):
+    """The BSP and the solid brush entities at spawn, for standing_point."""
+    from argus_navmesh import brush_boxes
+    world = Bsp(bsp)
+    return world, brush_boxes(world)
+
+
 def audit(mapname, explicit=False):
     bsp = bsp_dir() / f"{mapname}.bsp"
     navj = ROOT / "src" / f"argus_nav_{mapname}.qc.json"
@@ -103,12 +139,20 @@ def audit(mapname, explicit=False):
 
     spawns = bsp_spawns(bsp)
     n = len(nodes)
+    if not spawns:
+        # the #113 case, answered before the world is read: a BSP with no
+        # deathmatch spawn needs no standing points
+        print(f"{mapname}: {n} nodes, 0 spawns (gated edges: {len(gated)})")
+        print("  no spawn points found in BSP")
+        return False
+    world, boxes = load_world(bsp)
     rows = []
-    for o in spawns:
+    for spawn in spawns:
+        o = standing_point(world, spawn, boxes)
         best = min(range(n), key=lambda i: (nodes[i][0] - o[0]) ** 2
                    + (nodes[i][1] - o[1]) ** 2 + (nodes[i][2] - o[2]) ** 2)
         rows.append((reach_from(best, fwd_all),
-                     reach_from(best, fwd_ungated), best, o))
+                     reach_from(best, fwd_ungated), best, o, spawn))
     rows.sort()
     print(f"{mapname}: {n} nodes, {len(spawns)} spawns "
           f"(gated edges: {len(gated)})")
@@ -116,7 +160,7 @@ def audit(mapname, explicit=False):
         print("  no spawn points found in BSP")
         return False
     ok = True
-    for r_all, r_un, node, o in rows:
+    for r_all, r_un, node, o, spawn in rows:
         pa = 100 * r_all // max(1, n)
         pu = 100 * r_un // max(1, n)
         d = dist(nodes[node], o)
@@ -128,7 +172,10 @@ def audit(mapname, explicit=False):
             mark = f"  << {d:.0f}u from any waypoint"
         elif pa - pu >= 20:
             mark = "  << gated-edge dependent"
-        print(f"  spawn {o[0]:6.0f} {o[1]:6.0f} {o[2]:5.0f}  n{node:<4} "
+        fell = spawn[2] - o[2]
+        if fell > 18:
+            mark += f"  (lands {fell:.0f}u below the spawn point)"
+        print(f"  spawn {spawn[0]:6.0f} {spawn[1]:6.0f} {spawn[2]:5.0f}  n{node:<4} "
               f"all {r_all}/{n} ({pa}%)  ungated {r_un}/{n} ({pu}%){mark}")
     worst = rows[0]
     print(f"  worst spawn: {100 * worst[0] // max(1, n)}% all, "
@@ -147,9 +194,9 @@ def audit(mapname, explicit=False):
     # that way: it is a statement about the map, not about the graph's
     # internal structure. Four spawns resolving to the same node is
     # the same finding said another way.
-    far = [(dist(nodes[b], o), o) for _, _, b, o in rows]
+    far = [(dist(nodes[b], o), s) for _, _, b, o, s in rows]
     worst_d, worst_o = max(far)
-    snapped = len({b for _, _, b, _ in rows})
+    snapped = len({b for _, _, b, _, _ in rows})
     if worst_d > SPAWN_MAX_U:
         n_far = sum(1 for d, _ in far if d > SPAWN_MAX_U)
         print(f"  COVERAGE: {n_far} of {len(far)} spawns are over "
