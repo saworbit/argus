@@ -248,7 +248,7 @@ Argus includes built-in navigation graphs for `dm2`, `dm3`, `dm4`, `dm6`, and `l
 
 | Check | Workflow | What it gates |
 |---|---|---|
-| `repo invariants` | [fast](.github/workflows/fast.yml) | `argus_ci.py all`: shipped binary pair, line endings, protected tapes, nav integrity, links, dashes, refuted rules, lab claims, suite wiring, build stamp, hashed Python installs |
+| `repo invariants` | [fast](.github/workflows/fast.yml) | `argus_ci.py all`: shipped binary pair, line endings, protected tapes, ignored machine-local study tapes, nav integrity, links, dashes, refuted rules, lab claims, suite wiring, build stamp, hashed Python installs |
 | `lab test suite (rust)` | [fast](.github/workflows/fast.yml) | rustfmt, strict Clippy, rustdoc, the Rust suite and the Python suites |
 | `workflow lint` | [lint](.github/workflows/lint.yml) | actionlint and the zizmor workflow security audit |
 | `config schemas` | [lint](.github/workflows/lint.yml) | Dependabot, issue form, discussion form and `CITATION.cff` schemas |

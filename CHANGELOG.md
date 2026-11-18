@@ -51,6 +51,18 @@ passing botmatch does not establish better human play.
   mill and the first-registration gate, and the scenario is recorded in
   `tools/lab_instruments.json`.
 
+- `tools/argus_guard_replica.py --overhead GRAPH.qc.json [--region X0 X1 Y0
+  Y1 Z0 Z1]` scores the overhead-target primary per tape, and the same counts
+  plus routed seconds inside a box
+  ([#868](https://github.com/saworbit/argus/issues/868)). On the recorded
+  tapes it reproduces `runs/dm4-overhead-target.results.json` tape for tape:
+  means 15.75 and 11.62 (dm4ov2 control and candidate) and 12.12 and 12.75
+  (dm4ov3), and in the room under the walkway jump 0.88 and 3.38 events a
+  tape (dm4ov2) and 2.62 and 1.00 (dm4ov3), with every routed-seconds figure.
+  The recorded reading took only the waypoint closest in bearing to the wish,
+  not any in the 8 degree cone the protocol's wording admits; counting any
+  gives 718 events on those 32 tapes against 418.
+
 - A lab-map result supports an isolation-tier claim only: `argus_ci.py lab`
   fails a supported or fixed claim that names a stock map without citing a
   tape recorded on it, or that cites a lab tape without naming the lab map
@@ -1202,11 +1214,30 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Machine-local study tapes no longer need a `.gitignore` line per ladder
+  stem ([#872](https://github.com/saworbit/argus/issues/872)). A run named
+  `study_<stem>_...` is covered, tape and navigation receipt, by one rule on
+  every branch, so a branch's tapes are no longer trackable on main until its
+  ignore lines merge, the gap through which a `git clean` deleted 197 of
+  them. The new `argus_ci.py localtapes` check fails when a results file in
+  `runs/` says its tapes are machine-local but Git would track one of them;
+  it passes on the 14 existing records. The older lines for 22 stems stay, so
+  recorded run names still hold.
+
 - `cargo deny` ignores RUSTSEC-2026-0543, the notice that `chrono` is
   unmaintained. No upgrade exists, and `rmcp` and `schemars` depend on it as
   well as the lab, so the policy records why it is ignored and when to look
   again (`tools/argus_mcp/deny.toml`,
   [#870](https://github.com/saworbit/argus/issues/870)).
+
+- Read average speed on the fixed-clock confirmation tapes
+  ([#863](https://github.com/saworbit/argus/issues/863)). It was registered
+  with the validation but the corpus did not carry it when the verdicts were
+  made. Read afterwards on the same tapes, it is equivalent on both maps:
+  dm4 212.2 against 209.4 u/s (90 per cent interval -6.7 to +1.0, margin
+  63.7) and dm2 182.9 against 183.7 (-9.5 to +11.0, margin 54.9). Neither
+  verdict and no limit changes. `docs/fixed-clock.md` and
+  `tools/lab_instruments.json` record it as read after the verdicts.
 
 - Explain the project in the README. A new section says what Argus is, which
   rules all of its code follows and how a map file becomes a measured match.
