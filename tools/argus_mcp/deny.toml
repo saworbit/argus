@@ -19,7 +19,7 @@ ignore = [
     # chrono is unmaintained (2026-11-18). No safe version exists, and rmcp and
     # schemars pull it in as well as argus-mcp, so dropping our own use would
     # not clear it. It is a maintenance notice, not a vulnerability. Look again
-    # when rmcp and schemars move to time or jiff.
+    # when rmcp and schemars move to time or jiff (#870).
     { id = "RUSTSEC-2026-0543", reason = "chrono unmaintained; no upgrade, required by rmcp and schemars" },
 ]
 

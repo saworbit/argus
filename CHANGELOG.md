@@ -1165,7 +1165,8 @@ passing botmatch does not establish better human play.
 - `cargo deny` ignores RUSTSEC-2026-0543, the notice that `chrono` is
   unmaintained. No upgrade exists, and `rmcp` and `schemars` depend on it as
   well as the lab, so the policy records why it is ignored and when to look
-  again (`tools/argus_mcp/deny.toml`).
+  again (`tools/argus_mcp/deny.toml`,
+  [#870](https://github.com/saworbit/argus/issues/870)).
 
 - Explain the project in the README. A new section says what Argus is, which
   rules all of its code follows and how a map file becomes a measured match.
