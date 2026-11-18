@@ -45,6 +45,11 @@ class TestToolsCLI(unittest.TestCase):
         res = self.run_tool('test_nav_contracts.py')
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
 
+    def test_lab_mutants_regressions(self):
+        # the table check and one mutant; the full table stays out of CI (#824)
+        res = self.run_tool('test_argus_lab_mutants.py')
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
     def test_lab_mapgen_regressions(self):
         # the compile case self-skips where ericw-tools is not installed
         res = self.run_tool('test_lab_mapgen.py')
