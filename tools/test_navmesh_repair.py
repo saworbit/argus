@@ -220,6 +220,90 @@ class SeatLinks(unittest.TestCase):
         self.assertEqual(self.links_in_order(), kept + [(0, 5), (5, 1)])
 
 
+class RegenSeats(unittest.TestCase):
+    """A full regeneration applies argus_nav_<map>.seats.json (#778).
+
+    On the fixture the dry floor west of the lava strip is the mainland and
+    decimation seats it on a grid, which includes (-208 -80 24) and the
+    corner pair (-496 -496 24) and (-496 -368 24).
+    """
+    SEAT = [-450.0, -150.0, 24.0]
+    GRID = [-208.0, -80.0, 24.0]
+    CUT = [[-496.0, -496.0, 24.0], [-496.0, -368.0, 24.0]]
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="argus-regen-seats-"))
+        write_fixture(self.tmp)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def regen(self, spec=None):
+        if spec is not None:
+            (self.tmp / "argus_nav_fixture.seats.json").write_text(json.dumps(spec))
+        return subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "argus_navgen.py"),
+             str(self.tmp / "fixture.bsp"), "fixture",
+             str(self.tmp / "argus_nav_fixture.qc"), str(self.tmp / "out.png"),
+             "--no-dispatcher", "--no-rj"],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=120)
+
+    def graph(self):
+        doc = json.loads((self.tmp / "argus_nav_fixture.qc.json").read_text())
+        nodes = [tuple(n) for n in doc["nodes"]]
+        return nodes, {(nodes[a], nodes[b]) for a, b, _ in doc["links"]}, doc
+
+    def outputs(self):
+        return [(self.tmp / n).read_bytes()
+                for n in ("argus_nav_fixture.qc", "argus_nav_fixture.qc.json")]
+
+    def test_regen_applies_seats_walks_and_cuts_and_repeats_exactly(self):
+        res = self.regen()
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        nodes, links, _ = self.graph()
+        seat, grid = tuple(self.SEAT), tuple(self.GRID)
+        cut = tuple(map(tuple, self.CUT))
+        self.assertNotIn(seat, nodes)
+        self.assertIn(grid, nodes)
+        self.assertIn(cut, links, "the fixture must have the walk to cut")
+        res = self.regen({"seats": [self.SEAT],
+                          "walks": [[self.SEAT, self.GRID], [self.GRID, self.SEAT]],
+                          "cuts": [self.CUT]})
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn("seats sidecar: 1 seat(s) appended, 2 walk(s) added, "
+                      "0 already present, 1 cut(s)", res.stdout)
+        nodes, links, doc = self.graph()
+        self.assertEqual(nodes[-1], seat, "the seat keeps its exact position")
+        self.assertIn((seat, grid), links)
+        self.assertIn((grid, seat), links)
+        self.assertEqual({p for p in links if seat in p}, {(seat, grid), (grid, seat)},
+                         "only the sidecar's walks reach the seat")
+        self.assertNotIn(cut, links)
+        self.assertIn(cut[::-1], links)
+        self.assertEqual(doc["regions"][-1], 0)
+        once = self.outputs()
+        self.assertEqual(self.regen().returncode, 0)
+        self.assertEqual(self.outputs(), once)
+
+    def test_an_entry_that_cannot_apply_refuses_and_writes_nothing(self):
+        for spec, why in (
+            ({"seats": [[320.0, 128.0, 24.0]]}, "stands in lava or slime"),
+            ({"seats": [[-450.0, -150.0, 60.0]]}, "does not stand on a floor"),
+            # both seats are dry, the line between them crosses the strip
+            ({"seats": [[200.0, 0.0, 24.0], [448.0, 0.0, 24.0]],
+              "walks": [[[200.0, 0.0, 24.0], [448.0, 0.0, 24.0]]]}, "beeline_ok refuses"),
+            ({"walks": [[self.SEAT, self.GRID]]}, "does not join two waypoints"),
+            ({"cuts": [self.CUT], "walks": [self.CUT]}, "also listed as a walk"),
+            ({"seats": [[1.0, 2.0]]}, "unreadable"),
+        ):
+            res = self.regen(spec)
+            self.assertEqual(res.returncode, 1, (spec, res.stdout))
+            self.assertIn(why, res.stderr)
+            self.assertIn("generation refused before publication", res.stderr)
+            self.assertFalse((self.tmp / "argus_nav_fixture.qc").exists(), spec)
+
+
 class MeshAudit(unittest.TestCase):
     def test_audit_sees_shallow_lava_and_vertical_walks(self):
         with tempfile.TemporaryDirectory() as td:
