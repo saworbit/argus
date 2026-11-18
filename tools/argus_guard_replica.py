@@ -99,10 +99,15 @@ TAPE_COUNTS = ("route_led_starts", "re_entries", "wall_re_entries", "overhead")
 
 
 class Guard:
-    """Argus_MoveHazard over a contents(x, y, z) function."""
+    """Argus_MoveHazard over a contents(x, y, z) function.
 
-    def __init__(self, contents):
+    gravity is the map's sv_gravity, which Argus_DropLandHazard reads
+    through Argus_Gravity: 100 on e1m8, 800 elsewhere.
+    """
+
+    def __init__(self, contents, gravity=GRAVITY):
         self.c = contents
+        self.gravity = gravity
 
     @classmethod
     def from_bsp(cls, bsp):
@@ -187,7 +192,7 @@ class Guard:
         drop = oz - 24 - floorz
         if drop <= 18 or spd < 1:
             return None
-        carry = spd * math.sqrt(2 * drop / GRAVITY)
+        carry = spd * math.sqrt(2 * drop / self.gravity)
         hit = self.trace_ahead(ax, ay, oz, fx, fy, carry)
         if hit is not None:
             carry = max(0.0, hit - 16)
