@@ -1542,6 +1542,19 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Shane's 2026-11-19 dm2 session on the installed build `004b4ff9ddf7` is
+  recorded as `runs/shane_dm2_2026-11-19_build004b4ff9.log` with its row in
+  `runs/human_scorecard.tsv`. It ran 4.1 minutes at skill 1 against three
+  bots and failed no scorecard gate: bots killed the player 2.44 times a
+  minute and the kill ratio was 0.70, the same reading as the 2026-11-18 dm4
+  session (2.1 and 0.6). Bots had no lava or world deaths and no freezes.
+  `argus_humanness.py`, with this session left out of the reference set,
+  scores the bot tracks at 1.398 against 1.568 to 1.648 on the three dm2
+  sessions before it; direction changes (58 a minute against a person's 41,
+  [#697](https://github.com/saworbit/argus/issues/697)) and local dwell stay
+  the largest gaps. dm2 now has one of the three sessions the objective needs
+  ([#610](https://github.com/saworbit/argus/issues/610)).
+
 - Shane's 2026-11-18 dm4 session on the installed build `004b4ff9ddf7` is
   recorded as `runs/shane_dm4_2026-11-18_build004b4ff9.log` with its row in
   `runs/human_scorecard.tsv`. It ran 3.8 minutes at skill 1 and failed no
