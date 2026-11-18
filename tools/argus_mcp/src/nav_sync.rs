@@ -131,6 +131,27 @@ pub async fn nav_sync_dispatch(cfg: &Config) -> Result<NavSyncReport, String> {
     if maps.is_empty() {
         return Err("no argus_nav_<map>.qc files under ARGUS_SRC".into());
     }
+    register_maps(cfg, maps).await
+}
+
+/// Register exactly these maps, each through the first-registration gate.
+///
+/// nav_sync_dispatch asks for every graph on disk, and the gate stops at
+/// the first one that fails, so a single experimental graph (e1m3 and
+/// e1m4 sit on disk unregistered) blocks every map sorted after it.
+/// lab_request registers its own map through here instead.
+pub async fn register_maps(cfg: &Config, maps: Vec<String>) -> Result<NavSyncReport, String> {
+    for map in &maps {
+        let normalized = crate::paths::map_name(map)?;
+        if &normalized != map {
+            return Err(format!(
+                "refused {map}: the canonical map name is {normalized}"
+            ));
+        }
+        if !cfg.src.join(format!("argus_nav_{map}.qc")).is_file() {
+            return Err(format!("no argus_nav_{map}.qc under ARGUS_SRC"));
+        }
+    }
 
     let mut added_dispatch = Vec::new();
     let mut added_progs = Vec::new();

@@ -1,0 +1,1758 @@
+{
+  "schema": 1,
+  "protocol": "docs/specs/2026-11-17-overhead-target-protocol.md",
+  "what": "A grounded re-plan for a routed bot whose steering point stands out of step and jump reach overhead, behind solid, for 0.3 s: the dry-land sibling of the displacement guard's water clause.",
+  "arms": {
+    "ctl": "819F9AB90BC77DF84A34491601430DF2",
+    "cand_v1": "457F046853D12C0A3702E434E8A399F6",
+    "cand_v2": "1FF4C96DCD4311E4ABE1D361ADAAD94F",
+    "cand_v3": "5CA1A55855C65977ADEE4BD7B60C7667"
+  },
+  "candidate_v1_diff": "--- src/argus.qc\n+++ src/argus.qc\n@@ -213,2 +213,4 @@\n .float  ar_wetdwell;            // time we were last NOT afloat\n+.float  ar_overhead;            // since when the steering node has stood overhead behind solid\n+.float  ar_overheadseen;        // the last frame it did\n float ar_opm_ears;              // OPM slice B ladder switch: hearing\n@@ -1903,2 +1905,34 @@\n     return AR_JUMPVEL * AR_JUMPVEL / (2 * Argus_Gravity ());\n+};\n+\n+// TRUE when a grounded routed bot's steering node has stood out of reach\n+// overhead, behind solid, for 0.3 s. The 340u displacement guard measures\n+// horizontal distance and the vertical guard below it covers water alone, so\n+// a bot that ran off a legal drop under its node, or was knocked into a pit\n+// beneath it, kept steering at it: on dm4 one walkway node 128u over a room\n+// held bots sliding along the wall under it for seconds\n+// (runs/lab-wallmix-mix.results.json). Above step plus jump reach and behind\n+// solid it is displacement. Every typed hop is exempt: a lift, a train, a\n+// rocket jump, a swim exit and a door all legitimately target a node above.\n+float(vector tp) Argus_OverheadTarget =\n+{\n+    if (!(self.flags & FL_ONGROUND)\n+        || tp_z <= self.origin_z + 18 + Argus_JumpApex ()\n+        || self.ar_hoplift || self.ar_hoptrain || self.ar_hopjump\n+        || self.ar_hoprj || self.ar_hopswim || self.ar_hopdoor\n+        || self.ar_sprintstate || self.ar_liftwait)\n+    {\n+        self.ar_overhead = 0;\n+        return FALSE;\n+    }\n+    traceline (self.origin, tp, TRUE, self);\n+    if (trace_fraction == 1)\n+    {\n+        self.ar_overhead = 0;\n+        return FALSE;\n+    }\n+    if (!self.ar_overhead || time > self.ar_overheadseen + 0.1)\n+        self.ar_overhead = time;\n+    self.ar_overheadseen = time;\n+    return (time >= self.ar_overhead + 0.3);\n };\n@@ -10912,2 +10946,10 @@\n             }\n+            else if (Argus_OverheadTarget (tp))\n+            {\n+                // displaced vertically, on dry ground: re-plan\n+                self.ar_overhead = 0;\n+                self.ar_node = world;\n+                self.ar_pending = 1;\n+                self.ar_mode = 0;\n+            }\n             else if (vlen (to) < 48",
+  "candidate_v2_diff": "--- src/argus.qc\n+++ src/argus.qc\n@@ -213,2 +213,4 @@\n .float  ar_wetdwell;            // time we were last NOT afloat\n+.float  ar_overhead;            // since when the steering node has stood overhead behind solid\n+.float  ar_overheadseen;        // the last frame it did\n float ar_opm_ears;              // OPM slice B ladder switch: hearing\n@@ -1903,2 +1905,38 @@\n     return AR_JUMPVEL * AR_JUMPVEL / (2 * Argus_Gravity ());\n+};\n+\n+// TRUE when a grounded routed bot's steering node has stood out of reach\n+// overhead, behind solid, for 0.3 s. The 340u displacement guard measures\n+// horizontal distance and the vertical guard below it covers water alone, so\n+// a bot that ran off a legal drop under its node, or was knocked into a pit\n+// beneath it, kept steering at it: on dm4 one walkway node 128u over a room\n+// held bots sliding along the wall under it for seconds\n+// (runs/lab-wallmix-mix.results.json). Above step plus jump reach and behind\n+// solid it is displacement. A lift, a train, a rocket jump, a swim exit and\n+// a door legitimately target a node above and are exempt. A jump is not:\n+// navgen lands a jump at most 40u above its takeoff, below this reach, so a\n+// jump hop whose target stands this far overhead has already failed. dm4's\n+// walkway jump from node 111 to 115 crosses the open top of the room below,\n+// and bots that miss the run-up land in the room still on that hop.\n+float(vector tp) Argus_OverheadTarget =\n+{\n+    if (!(self.flags & FL_ONGROUND)\n+        || tp_z <= self.origin_z + 18 + Argus_JumpApex ()\n+        || self.ar_hoplift || self.ar_hoptrain\n+        || self.ar_hoprj || self.ar_hopswim || self.ar_hopdoor\n+        || self.ar_sprintstate || self.ar_liftwait)\n+    {\n+        self.ar_overhead = 0;\n+        return FALSE;\n+    }\n+    traceline (self.origin, tp, TRUE, self);\n+    if (trace_fraction == 1)\n+    {\n+        self.ar_overhead = 0;\n+        return FALSE;\n+    }\n+    if (!self.ar_overhead || time > self.ar_overheadseen + 0.1)\n+        self.ar_overhead = time;\n+    self.ar_overheadseen = time;\n+    return (time >= self.ar_overhead + 0.3);\n };\n@@ -10912,2 +10950,13 @@\n             }\n+            else if (Argus_OverheadTarget (tp))\n+            {\n+                // displaced vertically, on dry ground: re-plan, and\n+                // drop the jump hop it may have failed\n+                self.ar_overhead = 0;\n+                self.ar_hopjump = 0;\n+                self.ar_hopspeed = 0;\n+                self.ar_node = world;\n+                self.ar_pending = 1;\n+                self.ar_mode = 0;\n+            }\n             else if (vlen (to) < 48",
+  "primary": "overhead-target wall re-entries per tape: route-led re-entries the guard replica calls wall whose wish heading lies within 8 degrees of a waypoint 64u or more above, 24 to 340u away horizontally, with solid on the straight line to it",
+  "rungs": {
+    "lab_dropwall2_v1": {
+      "verdict": "void: control 0.75 a tape against a registered floor of 3",
+      "analysis": {
+        "overhead": {
+          "ctl": [
+            0,
+            0,
+            2,
+            1,
+            0,
+            1,
+            1,
+            1
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            4,
+            0,
+            0,
+            0,
+            1
+          ],
+          "ctl_mean": 0.75,
+          "cand_mean": 0.62,
+          "diff": -0.12,
+          "limit": 1.56,
+          "moved": false
+        },
+        "wall_reentries": {
+          "ctl": [
+            39,
+            33,
+            51,
+            46,
+            40,
+            25,
+            37,
+            53
+          ],
+          "cand": [
+            49,
+            54,
+            18,
+            51,
+            50,
+            26,
+            31,
+            46
+          ],
+          "ctl_mean": 40.5,
+          "cand_mean": 40.62,
+          "diff": 0.12,
+          "limit": 16.31,
+          "moved": false
+        },
+        "reentries": {
+          "ctl": [
+            43,
+            39,
+            74,
+            61,
+            42,
+            44,
+            46,
+            58
+          ],
+          "cand": [
+            53,
+            61,
+            54,
+            60,
+            59,
+            29,
+            44,
+            56
+          ],
+          "ctl_mean": 50.88,
+          "cand_mean": 52,
+          "diff": 1.12,
+          "limit": 16.09,
+          "moved": false
+        },
+        "route_led_starts": {
+          "ctl": [
+            150,
+            117,
+            205,
+            198,
+            137,
+            161,
+            162,
+            179
+          ],
+          "cand": [
+            167,
+            187,
+            150,
+            214,
+            166,
+            98,
+            152,
+            169
+          ],
+          "ctl_mean": 163.62,
+          "cand_mean": 162.88,
+          "diff": -0.75,
+          "limit": 44.21,
+          "moved": false
+        },
+        "lava": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0.12,
+          "cand_mean": 0.12,
+          "diff": 0.0,
+          "limit": 0.49,
+          "moved": false
+        },
+        "world": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0.12,
+          "cand_mean": 0.12,
+          "diff": 0.0,
+          "limit": 0.49,
+          "moved": false
+        },
+        "stalls": {
+          "ctl": [
+            1,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            2
+          ],
+          "cand": [
+            1,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
+          ],
+          "ctl_mean": 0.5,
+          "cand_mean": 0.5,
+          "diff": 0.0,
+          "limit": 0.92,
+          "moved": false
+        },
+        "freezes": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0,
+          "cand_mean": 0,
+          "diff": 0,
+          "limit": 0.0,
+          "moved": false
+        },
+        "goals": {
+          "ctl": [
+            25,
+            27,
+            23,
+            23,
+            17,
+            18,
+            21,
+            22
+          ],
+          "cand": [
+            30,
+            18,
+            32,
+            20,
+            21,
+            23,
+            28,
+            30
+          ],
+          "ctl_mean": 22,
+          "cand_mean": 25.25,
+          "diff": 3.25,
+          "limit": 6.26,
+          "moved": false
+        },
+        "engages": {
+          "ctl": [
+            119,
+            116,
+            129,
+            121,
+            133,
+            123,
+            110,
+            99
+          ],
+          "cand": [
+            115,
+            124,
+            136,
+            116,
+            108,
+            112,
+            101,
+            119
+          ],
+          "ctl_mean": 118.75,
+          "cand_mean": 116.38,
+          "diff": -2.38,
+          "limit": 14.89,
+          "moved": false
+        },
+        "route_events": {
+          "ctl": [
+            252,
+            229,
+            230,
+            245,
+            253,
+            244,
+            230,
+            223
+          ],
+          "cand": [
+            215,
+            253,
+            244,
+            245,
+            248,
+            241,
+            227,
+            229
+          ],
+          "ctl_mean": 238.25,
+          "cand_mean": 237.75,
+          "diff": -0.5,
+          "limit": 17.1,
+          "moved": false
+        },
+        "routefails": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0,
+          "cand_mean": 0.12,
+          "diff": 0.12,
+          "limit": 0.35,
+          "moved": false
+        },
+        "trapped": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0,
+          "cand_mean": 0,
+          "diff": 0,
+          "limit": 0.0,
+          "moved": false
+        }
+      }
+    },
+    "dm4_v1": {
+      "verdict": "stopped after one completed pair without a verdict: the clause exempted jump hops, and dm4's room case is a failed jump hop (node 111 to 115)",
+      "pair_1": {
+        "ctl": {
+          "overhead": 11,
+          "wall_reentries": 44,
+          "reentries": 72,
+          "route_led_starts": 239,
+          "route_events": 257,
+          "routefails": 6,
+          "trapped": 0
+        },
+        "cand": {
+          "overhead": 22,
+          "wall_reentries": 135,
+          "reentries": 252,
+          "route_led_starts": 553,
+          "route_events": 269,
+          "routefails": 3,
+          "trapped": 0
+        }
+      }
+    },
+    "dm4_v2": {
+      "verdict": "not supported: the primary fell 15.75 to 11.62 a tape (-26 per cent) inside its detection limit of 6.99; no guard regressed",
+      "analysis": {
+        "overhead": {
+          "ctl": [
+            16,
+            23,
+            20,
+            11,
+            10,
+            22,
+            14,
+            10
+          ],
+          "cand": [
+            11,
+            4,
+            16,
+            11,
+            8,
+            19,
+            11,
+            13
+          ],
+          "ctl_mean": 15.75,
+          "cand_mean": 11.62,
+          "diff": -4.12,
+          "limit": 6.99,
+          "moved": false
+        },
+        "wall_reentries": {
+          "ctl": [
+            83,
+            44,
+            66,
+            43,
+            72,
+            79,
+            66,
+            38
+          ],
+          "cand": [
+            66,
+            48,
+            48,
+            81,
+            63,
+            81,
+            38,
+            61
+          ],
+          "ctl_mean": 61.38,
+          "cand_mean": 60.75,
+          "diff": -0.62,
+          "limit": 23.11,
+          "moved": false
+        },
+        "reentries": {
+          "ctl": [
+            126,
+            153,
+            116,
+            130,
+            121,
+            144,
+            186,
+            122
+          ],
+          "cand": [
+            148,
+            92,
+            95,
+            151,
+            140,
+            119,
+            162,
+            153
+          ],
+          "ctl_mean": 137.25,
+          "cand_mean": 132.5,
+          "diff": -4.75,
+          "limit": 35.41,
+          "moved": false
+        },
+        "route_led_starts": {
+          "ctl": [
+            335,
+            324,
+            360,
+            342,
+            311,
+            429,
+            395,
+            320
+          ],
+          "cand": [
+            392,
+            277,
+            278,
+            364,
+            377,
+            359,
+            379,
+            347
+          ],
+          "ctl_mean": 352,
+          "cand_mean": 346.62,
+          "diff": -5.38,
+          "limit": 60.06,
+          "moved": false
+        },
+        "lava": {
+          "ctl": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            0,
+            2,
+            4
+          ],
+          "cand": [
+            2,
+            4,
+            3,
+            1,
+            2,
+            3,
+            2,
+            1
+          ],
+          "ctl_mean": 1.5,
+          "cand_mean": 2.25,
+          "diff": 0.75,
+          "limit": 1.65,
+          "moved": false
+        },
+        "world": {
+          "ctl": [
+            1,
+            1,
+            0,
+            2,
+            2,
+            0,
+            2,
+            4
+          ],
+          "cand": [
+            2,
+            4,
+            3,
+            1,
+            2,
+            3,
+            2,
+            1
+          ],
+          "ctl_mean": 1.5,
+          "cand_mean": 2.25,
+          "diff": 0.75,
+          "limit": 1.65,
+          "moved": false
+        },
+        "stalls": {
+          "ctl": [
+            9,
+            1,
+            3,
+            5,
+            3,
+            7,
+            11,
+            9
+          ],
+          "cand": [
+            6,
+            6,
+            3,
+            6,
+            4,
+            7,
+            8,
+            3
+          ],
+          "ctl_mean": 6,
+          "cand_mean": 5.38,
+          "diff": -0.62,
+          "limit": 3.96,
+          "moved": false
+        },
+        "freezes": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0,
+          "cand_mean": 0,
+          "diff": 0,
+          "limit": 0.0,
+          "moved": false
+        },
+        "goals": {
+          "ctl": [
+            19,
+            22,
+            21,
+            28,
+            21,
+            27,
+            14,
+            32
+          ],
+          "cand": [
+            25,
+            11,
+            22,
+            18,
+            23,
+            16,
+            20,
+            17
+          ],
+          "ctl_mean": 23,
+          "cand_mean": 19,
+          "diff": -4,
+          "limit": 7.18,
+          "moved": false
+        },
+        "engages": {
+          "ctl": [
+            66,
+            75,
+            71,
+            83,
+            81,
+            64,
+            49,
+            85
+          ],
+          "cand": [
+            63,
+            53,
+            74,
+            80,
+            64,
+            85,
+            72,
+            69
+          ],
+          "ctl_mean": 71.75,
+          "cand_mean": 70,
+          "diff": -1.75,
+          "limit": 15.56,
+          "moved": false
+        },
+        "route_events": {
+          "ctl": [
+            281,
+            246,
+            250,
+            238,
+            240,
+            269,
+            186,
+            247
+          ],
+          "cand": [
+            228,
+            216,
+            222,
+            234,
+            249,
+            276,
+            262,
+            238
+          ],
+          "ctl_mean": 244.62,
+          "cand_mean": 240.62,
+          "diff": -4.0,
+          "limit": 34.29,
+          "moved": false
+        },
+        "routefails": {
+          "ctl": [
+            2,
+            0,
+            1,
+            0,
+            4,
+            0,
+            0,
+            2
+          ],
+          "cand": [
+            2,
+            3,
+            0,
+            1,
+            1,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 1.12,
+          "cand_mean": 0.88,
+          "diff": -0.25,
+          "limit": 1.82,
+          "moved": false
+        },
+        "trapped": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0,
+          "cand_mean": 0,
+          "diff": 0,
+          "limit": 0.0,
+          "moved": false
+        }
+      }
+    },
+    "dm2_v2": {
+      "verdict": "not run: the registered addendum runs dm2 only if dm4 supports"
+    },
+    "dm4_v3": {
+      "verdict": "not supported: the primary moved 12.12 to 12.75 a tape (+0.62) inside its detection limit of 7.94; no guard regressed. This is the claim's registered refute_by",
+      "analysis": {
+        "overhead": {
+          "ctl": [
+            8,
+            10,
+            19,
+            11,
+            26,
+            2,
+            12,
+            9
+          ],
+          "cand": [
+            12,
+            10,
+            17,
+            12,
+            17,
+            8,
+            11,
+            15
+          ],
+          "ctl_mean": 12.12,
+          "cand_mean": 12.75,
+          "diff": 0.62,
+          "limit": 7.94,
+          "moved": false
+        },
+        "wall_reentries": {
+          "ctl": [
+            41,
+            60,
+            47,
+            43,
+            84,
+            36,
+            73,
+            50
+          ],
+          "cand": [
+            50,
+            48,
+            89,
+            63,
+            74,
+            48,
+            60,
+            69
+          ],
+          "ctl_mean": 54.25,
+          "cand_mean": 62.62,
+          "diff": 8.38,
+          "limit": 21.93,
+          "moved": false
+        },
+        "reentries": {
+          "ctl": [
+            124,
+            125,
+            180,
+            106,
+            154,
+            105,
+            199,
+            156
+          ],
+          "cand": [
+            96,
+            89,
+            227,
+            119,
+            136,
+            144,
+            119,
+            283
+          ],
+          "ctl_mean": 143.62,
+          "cand_mean": 151.62,
+          "diff": 8.0,
+          "limit": 75.46,
+          "moved": false
+        },
+        "route_led_starts": {
+          "ctl": [
+            308,
+            338,
+            346,
+            323,
+            426,
+            295,
+            413,
+            384
+          ],
+          "cand": [
+            318,
+            261,
+            458,
+            339,
+            371,
+            363,
+            345,
+            531
+          ],
+          "ctl_mean": 354.12,
+          "cand_mean": 373.25,
+          "diff": 19.12,
+          "limit": 96.3,
+          "moved": false
+        },
+        "lava": {
+          "ctl": [
+            2,
+            0,
+            4,
+            2,
+            5,
+            2,
+            1,
+            2
+          ],
+          "cand": [
+            2,
+            2,
+            4,
+            1,
+            2,
+            2,
+            1,
+            4
+          ],
+          "ctl_mean": 2.25,
+          "cand_mean": 2.25,
+          "diff": 0.0,
+          "limit": 1.94,
+          "moved": false
+        },
+        "world": {
+          "ctl": [
+            2,
+            0,
+            4,
+            2,
+            5,
+            2,
+            1,
+            2
+          ],
+          "cand": [
+            2,
+            3,
+            4,
+            1,
+            2,
+            2,
+            1,
+            4
+          ],
+          "ctl_mean": 2.25,
+          "cand_mean": 2.38,
+          "diff": 0.12,
+          "limit": 1.96,
+          "moved": false
+        },
+        "stalls": {
+          "ctl": [
+            4,
+            3,
+            11,
+            3,
+            8,
+            8,
+            8,
+            9
+          ],
+          "cand": [
+            15,
+            8,
+            10,
+            13,
+            2,
+            13,
+            7,
+            6
+          ],
+          "ctl_mean": 6.75,
+          "cand_mean": 9.25,
+          "diff": 2.5,
+          "limit": 5.22,
+          "moved": false
+        },
+        "freezes": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0,
+          "cand_mean": 0,
+          "diff": 0,
+          "limit": 0.0,
+          "moved": false
+        },
+        "goals": {
+          "ctl": [
+            24,
+            22,
+            14,
+            30,
+            24,
+            30,
+            21,
+            23
+          ],
+          "cand": [
+            21,
+            12,
+            17,
+            19,
+            21,
+            24,
+            31,
+            22
+          ],
+          "ctl_mean": 23.5,
+          "cand_mean": 20.88,
+          "diff": -2.62,
+          "limit": 7.44,
+          "moved": false
+        },
+        "engages": {
+          "ctl": [
+            70,
+            71,
+            57,
+            84,
+            59,
+            78,
+            61,
+            68
+          ],
+          "cand": [
+            51,
+            68,
+            75,
+            83,
+            79,
+            52,
+            79,
+            85
+          ],
+          "ctl_mean": 68.5,
+          "cand_mean": 71.5,
+          "diff": 3.0,
+          "limit": 16.18,
+          "moved": false
+        },
+        "route_events": {
+          "ctl": [
+            216,
+            285,
+            217,
+            258,
+            245,
+            222,
+            229,
+            249
+          ],
+          "cand": [
+            254,
+            217,
+            261,
+            251,
+            224,
+            234,
+            255,
+            227
+          ],
+          "ctl_mean": 240.12,
+          "cand_mean": 240.38,
+          "diff": 0.25,
+          "limit": 28.93,
+          "moved": false
+        },
+        "routefails": {
+          "ctl": [
+            0,
+            6,
+            3,
+            1,
+            1,
+            0,
+            1,
+            1
+          ],
+          "cand": [
+            1,
+            1,
+            3,
+            1,
+            2,
+            1,
+            0,
+            1
+          ],
+          "ctl_mean": 1.62,
+          "cand_mean": 1.25,
+          "diff": -0.38,
+          "limit": 2.16,
+          "moved": false
+        },
+        "trapped": {
+          "ctl": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "cand": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "ctl_mean": 0,
+          "cand_mean": 0,
+          "diff": 0,
+          "limit": 0.0,
+          "moved": false
+        }
+      },
+      "room_split": {
+        "note": "registered for this version, reported with no criterion",
+        "box": "x 690 to 1060, y -700 to -390, z -160 to -90",
+        "ctl": {
+          "by_place": {
+            "room under the walkway jump": [
+              0,
+              0,
+              11,
+              0,
+              2,
+              0,
+              8,
+              0
+            ],
+            "pit floor": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "elsewhere": [
+              8,
+              10,
+              8,
+              11,
+              24,
+              2,
+              4,
+              9
+            ]
+          },
+          "room_routed_seconds": [
+            0.0,
+            1.9,
+            18.7,
+            5.5,
+            2.3,
+            0.0,
+            14.9,
+            2.4
+          ]
+        },
+        "cand": {
+          "by_place": {
+            "room under the walkway jump": [
+              4,
+              0,
+              1,
+              0,
+              2,
+              0,
+              0,
+              1
+            ],
+            "pit floor": [
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ],
+            "elsewhere": [
+              8,
+              10,
+              16,
+              12,
+              15,
+              8,
+              11,
+              14
+            ]
+          },
+          "room_routed_seconds": [
+            14.6,
+            1.3,
+            3.5,
+            0.9,
+            1.8,
+            7.7,
+            1.7,
+            10.8
+          ]
+        }
+      }
+    },
+    "dm2_v3": {
+      "verdict": "not run: the registered addendum runs dm2 only if dm4 supports"
+    }
+  },
+  "post_hoc": {
+    "note": "read after the verdict, not registered",
+    "dm4_v2_by_place": {
+      "ctl": {
+        "by_place": {
+          "room under the walkway jump": [
+            2,
+            0,
+            2,
+            0,
+            1,
+            2,
+            0,
+            0
+          ],
+          "pit floor": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "elsewhere": [
+            14,
+            23,
+            18,
+            11,
+            9,
+            20,
+            14,
+            10
+          ]
+        },
+        "room_routed_seconds": [
+          10.7,
+          0.0,
+          20.8,
+          1.5,
+          4.6,
+          3.6,
+          4.2,
+          0.3
+        ]
+      },
+      "cand": {
+        "by_place": {
+          "room under the walkway jump": [
+            0,
+            0,
+            6,
+            5,
+            0,
+            14,
+            0,
+            2
+          ],
+          "pit floor": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "elsewhere": [
+            11,
+            4,
+            10,
+            6,
+            8,
+            5,
+            11,
+            11
+          ]
+        },
+        "room_routed_seconds": [
+          1.7,
+          0.0,
+          4.5,
+          21.9,
+          2.3,
+          16.8,
+          0.0,
+          8.9
+        ]
+      }
+    },
+    "reading": "the overhead-target events in the room under the walkway jump did not fall (0.88 to 3.38 a tape) and nor did routed time there (5.7 to 7.0 s, limit 10.7): a candidate tape's longest room stay (8.1 s) steered at the staged jump's run-up point behind node 111 with node 115 as its stall node, and the staged run-up runs under ar_sprintstate, which the second candidate still exempts. Elsewhere, where nothing exempts the clause, the events fell from 14.88 to 8.25 a tape.",
+    "dm4_v3": {
+      "note": "read after the verdict, not registered",
+      "longest_routed_room_stays": {
+        "dm4ov2": {
+          "ctl": {
+            "longest_seconds": [
+              1.8,
+              0.0,
+              6.4,
+              0.9,
+              1.8,
+              1.0,
+              3.8,
+              0.3
+            ],
+            "stays_over_3s": [
+              0,
+              0,
+              3,
+              0,
+              0,
+              0,
+              1,
+              0
+            ]
+          },
+          "cand": {
+            "longest_seconds": [
+              0.6,
+              0.0,
+              1.9,
+              5.0,
+              1.9,
+              8.1,
+              0.0,
+              2.7
+            ],
+            "stays_over_3s": [
+              0,
+              0,
+              0,
+              4,
+              0,
+              2,
+              0,
+              0
+            ]
+          }
+        },
+        "dm4ov3": {
+          "ctl": {
+            "longest_seconds": [
+              0.0,
+              0.9,
+              8.6,
+              1.6,
+              1.2,
+              0.0,
+              6.2,
+              1.0
+            ],
+            "stays_over_3s": [
+              0,
+              0,
+              2,
+              0,
+              0,
+              0,
+              2,
+              0
+            ]
+          },
+          "cand": {
+            "longest_seconds": [
+              3.8,
+              1.0,
+              1.0,
+              0.5,
+              1.7,
+              1.7,
+              1.0,
+              1.4
+            ],
+            "stays_over_3s": [
+              2,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0,
+              0
+            ]
+          }
+        }
+      },
+      "reading": "the third version shortened the room stays: its longest routed stay in the room was 3.8 s (at match end, routing normally toward the lightning gun) against the control's 8.6 and 6.2 s, and stays over 3 s fell from 4 to 2. But the room holds 0.9 to 2.6 of the 12 to 16 overhead-target events a control tape carries, so even a complete fix there cannot move the primary past a limit near 8, and the rest of the primary went 9.50 to 11.75 a tape here against 14.88 to 8.25 on the second version's ladder, so it reads as noise. The same control binary read 15.75 on one ladder and 12.12 on the next."
+    }
+  },
+  "lab_maps": {
+    "lab_dropwall": "runs/lab-dropwall-mix.results.json (mix check failed: combat, route steering 0.4 per cent)",
+    "lab_dropwall2": "registered, lab_dropwall2-da26a88635: routing restored, no overhead-target mechanism",
+    "lab_jumpgap": "not registered: the mill refused both jump links at a 128u gap and again at 96u, the puppet dropping into the gap each way (labmaps/lab_jumpgap/manifest.json)"
+  },
+  "tapes": [
+    {
+      "run": "labov_ctl_r1",
+      "map": "lab_dropwall2",
+      "bytes": 4624168,
+      "sha256": "4abf3492d7df73823ba6ce6621993fec26e08b1a79faec17d35b610122f55166",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_ctl_r2",
+      "map": "lab_dropwall2",
+      "bytes": 4603508,
+      "sha256": "dfcccf76f296596df605f77f8afba2685aafc2faf99a73d1af56a19e46bb36c7",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_ctl_r3",
+      "map": "lab_dropwall2",
+      "bytes": 4479767,
+      "sha256": "4f0704840c42085abe32050c1cd976c4e1ae8756564bb3441d52358b3248690b",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_ctl_r4",
+      "map": "lab_dropwall2",
+      "bytes": 4631862,
+      "sha256": "bd3fb83a2ca2c89488e699579ba9bfbb08c87d2823b224a3550db78a49746948",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_ctl_r5",
+      "map": "lab_dropwall2",
+      "bytes": 4599236,
+      "sha256": "05d3f509e01c23df95c27174e5ac553c30b3a1e386782c7fe6c37d4e4252b08e",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_ctl_r6",
+      "map": "lab_dropwall2",
+      "bytes": 4649050,
+      "sha256": "f7ac7196b9c720982c389fc848444d377af4582bbb6a9144c998308ab938d674",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_ctl_r7",
+      "map": "lab_dropwall2",
+      "bytes": 4631025,
+      "sha256": "ec74d4f60a1402d0d345679739a2c2f04a97b48879605247aa73321346cc7e69",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_ctl_r8",
+      "map": "lab_dropwall2",
+      "bytes": 4625991,
+      "sha256": "4b575cf558c8beef1147a7c23d620747ce9bee2a064f9f5f177313f78d6a1acd",
+      "arm": "ctl"
+    },
+    {
+      "run": "labov_cand_r1",
+      "map": "lab_dropwall2",
+      "bytes": 4704843,
+      "sha256": "f89062ba2a9d7808660bb6a7709cc0ed658d8aa3e39d9d78bd700b9aaaa5aabe",
+      "arm": "cand"
+    },
+    {
+      "run": "labov_cand_r2",
+      "map": "lab_dropwall2",
+      "bytes": 4642381,
+      "sha256": "cd9f8c95bb71812efb91187e4a0ee66727e22ecd8f67104b785810499aecc72b",
+      "arm": "cand"
+    },
+    {
+      "run": "labov_cand_r3",
+      "map": "lab_dropwall2",
+      "bytes": 4532302,
+      "sha256": "9cb0236e6ce316b5075e1918247f979da7fdfd2db852c1fd4bc360fbf7d5fa6d",
+      "arm": "cand"
+    },
+    {
+      "run": "labov_cand_r4",
+      "map": "lab_dropwall2",
+      "bytes": 4700092,
+      "sha256": "471a522f055d695106294d4c4c87347daec2eb1f6e2afd6b2774f828b16bc8d5",
+      "arm": "cand"
+    },
+    {
+      "run": "labov_cand_r5",
+      "map": "lab_dropwall2",
+      "bytes": 4644108,
+      "sha256": "5380475a78231d970ff5ded5b200d49d8630098689c623a47072097dd4661060",
+      "arm": "cand"
+    },
+    {
+      "run": "labov_cand_r6",
+      "map": "lab_dropwall2",
+      "bytes": 4652775,
+      "sha256": "26c35c21c1d231e5624c8ab774ef217b2239c75319563f07136ae1fb4c766d61",
+      "arm": "cand"
+    },
+    {
+      "run": "labov_cand_r7",
+      "map": "lab_dropwall2",
+      "bytes": 4662221,
+      "sha256": "92852d5475fe28c55f9565b44dbef846df62f7b97bf5132b76b73280bdbd0435",
+      "arm": "cand"
+    },
+    {
+      "run": "labov_cand_r8",
+      "map": "lab_dropwall2",
+      "bytes": 4554864,
+      "sha256": "24839e5b9bfe04608c2749306d267a71ab8f286502bf34040af3260245613830",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov_ctl_r1",
+      "map": "dm4",
+      "bytes": 5054268,
+      "sha256": "c37b841a314c225e41dbec15ef77962837d2bc115b2171f67c39ad26101f496e",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov_cand_r1",
+      "map": "dm4",
+      "bytes": 5092332,
+      "sha256": "d2e398c52877bd4bb759002dc1d5071bef4893b327913e3c7337c37d21cc1e1a",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_ctl_r1",
+      "map": "dm4",
+      "bytes": 5149566,
+      "sha256": "0ff57ca9ea4d4125497b75c1f8413e3fbb7adf646d684233545428aa4a4c5915",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_ctl_r2",
+      "map": "dm4",
+      "bytes": 5099875,
+      "sha256": "bd266f5296d725a850192137471d3fad723180ebe1c52c8e2734ed0f30fb4900",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_ctl_r3",
+      "map": "dm4",
+      "bytes": 5131736,
+      "sha256": "adefddcac50c19622fb561b5cd404ae9b3e543f40d61f50a1ff14c48f49c1cb9",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_ctl_r4",
+      "map": "dm4",
+      "bytes": 5016101,
+      "sha256": "93ac0e71b4bbaa1ee64e96355bc9c99c13b02fa087d74e36f959312af9a56027",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_ctl_r5",
+      "map": "dm4",
+      "bytes": 5149736,
+      "sha256": "b294b89e02abf616e1961c18beb54f5c18ba9e72b657924e86406c819bbf77d2",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_ctl_r6",
+      "map": "dm4",
+      "bytes": 5115886,
+      "sha256": "b399cc7c93490319e182e2841080dc743aaa50a9c12fa7965ee94f8f9ba0291d",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_ctl_r7",
+      "map": "dm4",
+      "bytes": 5006017,
+      "sha256": "41dbbc5a9356f89815bb6c4ece670db8fba6690f87a21f58970df3480aaec503",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_ctl_r8",
+      "map": "dm4",
+      "bytes": 5049075,
+      "sha256": "9ad497eced064ce9e7a2d2c9cba41b782605f1b06789494c74d1233a1dce0ab7",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov2_cand_r1",
+      "map": "dm4",
+      "bytes": 5119779,
+      "sha256": "d85ab94ef5ac1a2c7e8949fda62dd0e066902d9efcd0e7c2c5eac3fbaca14c31",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_cand_r2",
+      "map": "dm4",
+      "bytes": 5149798,
+      "sha256": "d26a4fcb772cae9423800b1386053208c70d63de49e8f443f7329c296a3b2e41",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_cand_r3",
+      "map": "dm4",
+      "bytes": 4933718,
+      "sha256": "7c26ab642ab3825a0b33e1f16e1d576285a907a1131ea0087b214de431cb1026",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_cand_r4",
+      "map": "dm4",
+      "bytes": 5097671,
+      "sha256": "447a088c121201d32889ff8049de571d42d58a8fda2031026957524a979a8d74",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_cand_r5",
+      "map": "dm4",
+      "bytes": 5061831,
+      "sha256": "856a457cad7cb938cd9812e23be1fc5425573f6967a9b84a30f4435b0586aa6f",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_cand_r6",
+      "map": "dm4",
+      "bytes": 5190141,
+      "sha256": "fcf9d653e302b229f870c37a7877276adefe4568d99a365d23b60862247524c7",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_cand_r7",
+      "map": "dm4",
+      "bytes": 5085489,
+      "sha256": "94cb869b8ec31c07bfb726c5c3029fcbc4f24ebfaba12866ea79e51d46b3a47c",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov2_cand_r8",
+      "map": "dm4",
+      "bytes": 5216614,
+      "sha256": "7b46948620b14de555a4d879a1616b8b03ec0e1640cb646f5929cb3879c88599",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_ctl_r1",
+      "map": "dm4",
+      "bytes": 5057912,
+      "sha256": "adf3e5b78b0dbaa895ab6b628bda38cbd8ca0704c8e54905826d7df6f18f9219",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_ctl_r2",
+      "map": "dm4",
+      "bytes": 4774718,
+      "sha256": "95e7d8f610297de878de5a2b17bf0d3c4ffbd6b3531a1429b776d21100e436d8",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_ctl_r3",
+      "map": "dm4",
+      "bytes": 5019438,
+      "sha256": "3d30e83d5113941f33fc626391ed72f3ad160db1f2ed1d76fa16dfe0b6f09674",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_ctl_r4",
+      "map": "dm4",
+      "bytes": 5079773,
+      "sha256": "a500c46df6666da1653ae27d38754fd32d8d9bacc83f053673cd51308e609ba4",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_ctl_r5",
+      "map": "dm4",
+      "bytes": 5124112,
+      "sha256": "5ad0b0879767ab448137dead92ef7af808b20f60f89a91de6dd6ad957430a4dd",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_ctl_r6",
+      "map": "dm4",
+      "bytes": 5092056,
+      "sha256": "6a4c48176ff8ef4e024cfdd69d7a61b8cb15f46c7f71fd1f868cebf034eb8027",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_ctl_r7",
+      "map": "dm4",
+      "bytes": 5173594,
+      "sha256": "8b2215ba93cc0b1598105d9fb4e301cdd63f07c6bbcf92523f8adbedf48a01ad",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_ctl_r8",
+      "map": "dm4",
+      "bytes": 5105990,
+      "sha256": "23d059094e0d23bb9229995fc540584ba21957648e80bf7270e77e70ac2a6610",
+      "arm": "ctl"
+    },
+    {
+      "run": "dm4ov3_cand_r1",
+      "map": "dm4",
+      "bytes": 4983396,
+      "sha256": "278000163f346aedeadac6acf5f8d9705478d8772c006f89f3eb945b5dd05336",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_cand_r2",
+      "map": "dm4",
+      "bytes": 4921705,
+      "sha256": "18151517d552ed0458045f3bded31d134dc6655645088037c18ddc15e7f6b5ed",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_cand_r3",
+      "map": "dm4",
+      "bytes": 5083954,
+      "sha256": "e0eca93a3e044a66411a3dee7b1889f622b7dbf346ef087529ebee4c58b2183e",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_cand_r4",
+      "map": "dm4",
+      "bytes": 5070618,
+      "sha256": "e5a02e434e2602ee5998e6a4b905e636854e2bdecf86ad28b8f2f6feae4f67ae",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_cand_r5",
+      "map": "dm4",
+      "bytes": 5112894,
+      "sha256": "65f4b0b251992785a0e34751b44e566a8a3e01688bb906ee30b52f4fc55fc251",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_cand_r6",
+      "map": "dm4",
+      "bytes": 5133672,
+      "sha256": "7cd6e08dfa324a5745e77712f0ca14e8c15257c4f32a99350c6a5b0baee96e76",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_cand_r7",
+      "map": "dm4",
+      "bytes": 5054918,
+      "sha256": "baef919d7c9449d359bb6ab92c1c7a6566ae4f23c3e8ecce0bf58c862623e30e",
+      "arm": "cand"
+    },
+    {
+      "run": "dm4ov3_cand_r8",
+      "map": "dm4",
+      "bytes": 5016405,
+      "sha256": "5e90aaf3e36353b6bbc48f721ac66007f7b41bebe082d74788e26bb84860d37c",
+      "arm": "cand"
+    }
+  ],
+  "tape_storage": "machine-local; hashes recorded here",
+  "verdict": "refuted under its own registered refute_by: neither the second nor the third version moved dm4's overhead-target wall re-entries past their detection limit; both stay recorded patches and src/argus.qc is unchanged",
+  "next": "none on this hypothesis. The room under the walkway jump is a real but small case (one to three events a tape); a fix aimed there needs a primary sized to it, such as routed seconds in the room, registered before its tapes",
+  "candidate_v3_diff": "--- src/argus.qc\n+++ src/argus.qc\n@@ -213,2 +213,4 @@\n .float  ar_wetdwell;            // time we were last NOT afloat\n+.float  ar_overhead;            // since when the steering node has stood overhead behind solid\n+.float  ar_overheadseen;        // the last frame it did\n float ar_opm_ears;              // OPM slice B ladder switch: hearing\n@@ -1903,2 +1905,40 @@\n     return AR_JUMPVEL * AR_JUMPVEL / (2 * Argus_Gravity ());\n+};\n+\n+// TRUE when a grounded routed bot's steering node has stood out of reach\n+// overhead, behind solid, for 0.3 s. The 340u displacement guard measures\n+// horizontal distance and the vertical guard below it covers water alone, so\n+// a bot that ran off a legal drop under its node, or was knocked into a pit\n+// beneath it, kept steering at it: on dm4 one walkway node 128u over a room\n+// held bots sliding along the wall under it for seconds\n+// (runs/lab-wallmix-mix.results.json). Above step plus jump reach and behind\n+// solid it is displacement. A lift, a train, a rocket jump, a swim exit and\n+// a door legitimately target a node above and are exempt. A jump is not:\n+// navgen lands a jump at most 40u above its takeoff, below this reach, so a\n+// jump hop whose target stands this far overhead has already failed. dm4's\n+// walkway jump from node 111 to 115 crosses the open top of the room below,\n+// and bots that miss the run-up land in the room still on that hop. Nor is a\n+// staged run-up: Argus_JumpRunup seats its run-up point within 16u above the\n+// launch seat, so a grounded bot under one by this much is off the line.\n+float(vector tp) Argus_OverheadTarget =\n+{\n+    if (!(self.flags & FL_ONGROUND)\n+        || tp_z <= self.origin_z + 18 + Argus_JumpApex ()\n+        || self.ar_hoplift || self.ar_hoptrain\n+        || self.ar_hoprj || self.ar_hopswim || self.ar_hopdoor\n+        || self.ar_liftwait)\n+    {\n+        self.ar_overhead = 0;\n+        return FALSE;\n+    }\n+    traceline (self.origin, tp, TRUE, self);\n+    if (trace_fraction == 1)\n+    {\n+        self.ar_overhead = 0;\n+        return FALSE;\n+    }\n+    if (!self.ar_overhead || time > self.ar_overheadseen + 0.1)\n+        self.ar_overhead = time;\n+    self.ar_overheadseen = time;\n+    return (time >= self.ar_overhead + 0.3);\n };\n@@ -10912,2 +10952,14 @@\n             }\n+            else if (Argus_OverheadTarget (tp))\n+            {\n+                // displaced vertically, on dry ground: re-plan, and\n+                // drop the jump hop or run-up it may have failed\n+                self.ar_overhead = 0;\n+                self.ar_hopjump = 0;\n+                self.ar_hopspeed = 0;\n+                self.ar_sprintstate = 0;\n+                self.ar_node = world;\n+                self.ar_pending = 1;\n+                self.ar_mode = 0;\n+            }\n             else if (vlen (to) < 48"
+}

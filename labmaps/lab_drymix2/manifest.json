@@ -1,0 +1,806 @@
+{
+  "schema": 1,
+  "scenario_id": "lab_drymix2-e81474c4ef",
+  "map": "lab_drymix2",
+  "intent": "lab_drymix with a second run-off ledge: a dry 96u ledge 80u down along the north inner side with lava beyond it, beside the west one, so run-off lips (where the guard's landing test decides) carry the share of brink re-entries they carry on dm4.",
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker",
+    "mode2-brink-check"
+  ],
+  "promotion_rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
+  "generator": {
+    "version": 1,
+    "source_sha256": "e81474c4ef9bf465159e3ec262591c4cf74d59facf7bfc00705d2467c95c32b5",
+    "map_sha256": "c3269b75bb9384317a69e77335fcfb927e12338aa955d45e5baa78618e17e2f3",
+    "wad_sha256": "a5ce3172cca20051c824deec9a98ddbc85bf9a4c8f4b06b75775cff155d95438"
+  },
+  "counts": {
+    "brushes": 33,
+    "entities": 15,
+    "max_brushes": 80,
+    "max_entities": 40
+  },
+  "extent": [
+    -128,
+    -320,
+    -192,
+    1152,
+    1152,
+    384
+  ],
+  "regions": [
+    {
+      "name": "south",
+      "kind": "floor",
+      "min": [
+        0,
+        0
+      ],
+      "size": [
+        1024,
+        96
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "east",
+      "kind": "floor",
+      "min": [
+        928,
+        96
+      ],
+      "size": [
+        96,
+        832
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "north",
+      "kind": "floor",
+      "min": [
+        0,
+        928
+      ],
+      "size": [
+        1024,
+        96
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "west",
+      "kind": "floor",
+      "min": [
+        0,
+        96
+      ],
+      "size": [
+        96,
+        832
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "ledge_s",
+      "kind": "floor",
+      "min": [
+        96,
+        96
+      ],
+      "size": [
+        96,
+        352
+      ],
+      "floor_z": -80
+    },
+    {
+      "name": "ledge_stairs",
+      "kind": "stairs",
+      "min": [
+        96,
+        448
+      ],
+      "size": [
+        96,
+        96
+      ],
+      "floor_z": -80
+    },
+    {
+      "name": "ledge_n",
+      "kind": "floor",
+      "min": [
+        96,
+        544
+      ],
+      "size": [
+        96,
+        384
+      ],
+      "floor_z": -80
+    },
+    {
+      "name": "low_w",
+      "kind": "floor",
+      "min": [
+        0,
+        -192
+      ],
+      "size": [
+        448,
+        192
+      ],
+      "floor_z": -64
+    },
+    {
+      "name": "low_stairs",
+      "kind": "stairs",
+      "min": [
+        448,
+        -128
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "floor_z": -64
+    },
+    {
+      "name": "low_mid",
+      "kind": "floor",
+      "min": [
+        448,
+        -192
+      ],
+      "size": [
+        128,
+        64
+      ],
+      "floor_z": -64
+    },
+    {
+      "name": "low_e",
+      "kind": "floor",
+      "min": [
+        576,
+        -192
+      ],
+      "size": [
+        448,
+        192
+      ],
+      "floor_z": -64
+    },
+    {
+      "name": "column",
+      "kind": "block",
+      "min": [
+        512,
+        384
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "floor_z": -192
+    },
+    {
+      "name": "ledge_nw",
+      "kind": "floor",
+      "min": [
+        192,
+        832
+      ],
+      "size": [
+        304,
+        96
+      ],
+      "floor_z": -80
+    },
+    {
+      "name": "ledge_n_stairs",
+      "kind": "stairs",
+      "min": [
+        496,
+        832
+      ],
+      "size": [
+        96,
+        96
+      ],
+      "floor_z": -80
+    },
+    {
+      "name": "ledge_ne",
+      "kind": "floor",
+      "min": [
+        592,
+        832
+      ],
+      "size": [
+        336,
+        96
+      ],
+      "floor_z": -80
+    }
+  ],
+  "adjacency": [
+    {
+      "a": "south",
+      "b": "east",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "west",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "ledge_s",
+      "relation": "edge",
+      "length": 96,
+      "dz": 80,
+      "walk": "drop"
+    },
+    {
+      "a": "south",
+      "b": "low_w",
+      "relation": "edge",
+      "length": 448,
+      "dz": 64,
+      "walk": "drop"
+    },
+    {
+      "a": "south",
+      "b": "low_stairs",
+      "relation": "edge",
+      "length": 128,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "low_mid",
+      "relation": "gap",
+      "gap": 128,
+      "dz": 64
+    },
+    {
+      "a": "south",
+      "b": "low_e",
+      "relation": "edge",
+      "length": 448,
+      "dz": 64,
+      "walk": "drop"
+    },
+    {
+      "a": "east",
+      "b": "north",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "east",
+      "b": "low_e",
+      "relation": "gap",
+      "gap": 96,
+      "dz": 64
+    },
+    {
+      "a": "east",
+      "b": "column",
+      "relation": "gap",
+      "gap": 160,
+      "dz": 192
+    },
+    {
+      "a": "east",
+      "b": "ledge_ne",
+      "relation": "edge",
+      "length": 96,
+      "dz": 80,
+      "walk": "drop"
+    },
+    {
+      "a": "north",
+      "b": "west",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "north",
+      "b": "ledge_n",
+      "relation": "edge",
+      "length": 96,
+      "dz": 80,
+      "walk": "drop"
+    },
+    {
+      "a": "north",
+      "b": "ledge_nw",
+      "relation": "edge",
+      "length": 304,
+      "dz": 80,
+      "walk": "drop"
+    },
+    {
+      "a": "north",
+      "b": "ledge_n_stairs",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "north",
+      "b": "ledge_ne",
+      "relation": "edge",
+      "length": 336,
+      "dz": 80,
+      "walk": "drop"
+    },
+    {
+      "a": "west",
+      "b": "ledge_s",
+      "relation": "edge",
+      "length": 352,
+      "dz": 80,
+      "walk": "drop"
+    },
+    {
+      "a": "west",
+      "b": "ledge_stairs",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "west",
+      "b": "ledge_n",
+      "relation": "edge",
+      "length": 384,
+      "dz": 80,
+      "walk": "drop"
+    },
+    {
+      "a": "west",
+      "b": "low_w",
+      "relation": "gap",
+      "gap": 96,
+      "dz": 64
+    },
+    {
+      "a": "west",
+      "b": "ledge_nw",
+      "relation": "gap",
+      "gap": 96,
+      "dz": 80
+    },
+    {
+      "a": "ledge_s",
+      "b": "ledge_stairs",
+      "relation": "edge",
+      "length": 96,
+      "dz": 48,
+      "walk": "drop"
+    },
+    {
+      "a": "ledge_s",
+      "b": "ledge_n",
+      "relation": "gap",
+      "gap": 96,
+      "dz": 0
+    },
+    {
+      "a": "ledge_s",
+      "b": "low_w",
+      "relation": "gap",
+      "gap": 96,
+      "dz": 16
+    },
+    {
+      "a": "ledge_stairs",
+      "b": "ledge_n",
+      "relation": "edge",
+      "length": 96,
+      "dz": 48,
+      "walk": "drop"
+    },
+    {
+      "a": "ledge_n",
+      "b": "ledge_nw",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "low_w",
+      "b": "low_stairs",
+      "relation": "edge",
+      "length": 128,
+      "dz": 32,
+      "walk": "drop"
+    },
+    {
+      "a": "low_w",
+      "b": "low_mid",
+      "relation": "edge",
+      "length": 64,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "low_w",
+      "b": "low_e",
+      "relation": "gap",
+      "gap": 128,
+      "dz": 0
+    },
+    {
+      "a": "low_stairs",
+      "b": "low_mid",
+      "relation": "edge",
+      "length": 128,
+      "dz": 16,
+      "walk": "walk"
+    },
+    {
+      "a": "low_stairs",
+      "b": "low_e",
+      "relation": "edge",
+      "length": 128,
+      "dz": 32,
+      "walk": "drop"
+    },
+    {
+      "a": "low_mid",
+      "b": "low_e",
+      "relation": "edge",
+      "length": 64,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "column",
+      "b": "ledge_n_stairs",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 272
+    },
+    {
+      "a": "column",
+      "b": "ledge_ne",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 272
+    },
+    {
+      "a": "ledge_nw",
+      "b": "ledge_n_stairs",
+      "relation": "edge",
+      "length": 96,
+      "dz": 48,
+      "walk": "drop"
+    },
+    {
+      "a": "ledge_nw",
+      "b": "ledge_ne",
+      "relation": "gap",
+      "gap": 96,
+      "dz": 0
+    },
+    {
+      "a": "ledge_n_stairs",
+      "b": "ledge_ne",
+      "relation": "edge",
+      "length": 96,
+      "dz": 48,
+      "walk": "drop"
+    }
+  ],
+  "connections": [
+    {
+      "from": "south",
+      "to": "east",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "south",
+      "to": "west",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "south",
+      "to": "low_w",
+      "type": "drop",
+      "length": 448,
+      "dz": 64
+    },
+    {
+      "from": "south",
+      "to": "low_e",
+      "type": "drop",
+      "length": 448,
+      "dz": 64
+    },
+    {
+      "from": "east",
+      "to": "north",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "north",
+      "to": "west",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "north",
+      "to": "ledge_nw",
+      "type": "drop",
+      "length": 304,
+      "dz": 80
+    },
+    {
+      "from": "north",
+      "to": "ledge_ne",
+      "type": "drop",
+      "length": 336,
+      "dz": 80
+    },
+    {
+      "from": "west",
+      "to": "ledge_s",
+      "type": "drop",
+      "length": 352,
+      "dz": 80
+    },
+    {
+      "from": "west",
+      "to": "ledge_n",
+      "type": "drop",
+      "length": 384,
+      "dz": 80
+    },
+    {
+      "from": "ledge_stairs",
+      "to": "west",
+      "type": "stairs",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "low_stairs",
+      "to": "south",
+      "type": "stairs",
+      "length": 128,
+      "dz": 0
+    },
+    {
+      "from": "low_mid",
+      "to": "low_stairs",
+      "type": "stairs",
+      "length": 128,
+      "dz": -16
+    },
+    {
+      "from": "ledge_n_stairs",
+      "to": "north",
+      "type": "stairs",
+      "length": 96,
+      "dz": 0
+    }
+  ],
+  "navgen_readiness": {
+    "spawns": 4,
+    "pickups": 8,
+    "standable_area": 769024,
+    "entities_before_waypoints": 24,
+    "waypoint_room": 516,
+    "ready": true,
+    "reasons": []
+  },
+  "files": {
+    "request": "labmaps/lab_drymix2/request.json",
+    "map": "labmaps/lab_drymix2/lab_drymix2.map"
+  },
+  "compile": {
+    "ericw_tools": "0.18.1",
+    "ericw_commit": "b6e2431f29a1f5763d4aa5fa37cb06838580f41a",
+    "profile_sha256": "93ab3b7e3aada8f68982966bad71d912b3db8c4e9eb7bd303a0c45bd7db965cc",
+    "steps": {
+      "qbsp": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0,
+        "leak": false
+      },
+      "vis": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      },
+      "light": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      }
+    },
+    "bsp": "labmaps/lab_drymix2/lab_drymix2.bsp",
+    "bsp_bytes": 116272,
+    "bsp_sha256": "2d3e439c969cbc41c768697002b457db1c1a4db6f6ea2d73fab0266584d91af9",
+    "bsp_entities": 15
+  },
+  "install": {
+    "maps": "maps_local/lab_drymix2.bsp",
+    "engine": "engine/argus/maps/lab_drymix2.bsp"
+  },
+  "nav": {
+    "qc": "src/argus_nav_lab_drymix2.qc",
+    "graph": "src/argus_nav_lab_drymix2.qc.json",
+    "nodes": 67,
+    "links": 377,
+    "jlinks": 12,
+    "rjlinks": 4,
+    "edict_budget": "edict budget: status ok; waypoints 67; live bsp entities 15 of 15; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 151 of 600; slack 449",
+    "playability": {
+      "playable": true,
+      "spawns": 5,
+      "pickups": 8,
+      "graph_md5": "5f60d52570e8b0c80cc693c030dafa80",
+      "reasons": []
+    }
+  },
+  "mill": {
+    "confirm": true,
+    "passes": [
+      {
+        "confirmed": 0,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "5f60d52570e8b0c80cc693c030dafa80",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 0,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 0,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "5f60d52570e8b0c80cc693c030dafa80",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 80,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 1,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "5f60d52570e8b0c80cc693c030dafa80",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 160,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 7,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "5f60d52570e8b0c80cc693c030dafa80",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 240,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 1,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "5f60d52570e8b0c80cc693c030dafa80",
+        "kind": "walk",
+        "passed": 45,
+        "probed": 45,
+        "skip": 320,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 0,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "5f60d52570e8b0c80cc693c030dafa80",
+        "kind": "jump",
+        "passed": 12,
+        "probed": 12,
+        "skip": 0,
+        "teleport_failures": 0
+      }
+    ]
+  },
+  "registration": {
+    "registered": true,
+    "dispatcher": true,
+    "progs_src": true,
+    "requested": true
+  },
+  "coverage": {
+    "covered": false,
+    "uncovered": [
+      "ledge_s"
+    ],
+    "exempt": [],
+    "regions": [
+      {
+        "name": "south",
+        "waypoints": 11
+      },
+      {
+        "name": "east",
+        "waypoints": 7
+      },
+      {
+        "name": "north",
+        "waypoints": 10
+      },
+      {
+        "name": "west",
+        "waypoints": 7
+      },
+      {
+        "name": "ledge_s",
+        "waypoints": 0
+      },
+      {
+        "name": "ledge_n",
+        "waypoints": 3
+      },
+      {
+        "name": "low_w",
+        "waypoints": 8
+      },
+      {
+        "name": "low_mid",
+        "waypoints": 1
+      },
+      {
+        "name": "low_e",
+        "waypoints": 8
+      },
+      {
+        "name": "ledge_nw",
+        "waypoints": 3
+      },
+      {
+        "name": "ledge_ne",
+        "waypoints": 4
+      }
+    ]
+  }
+}

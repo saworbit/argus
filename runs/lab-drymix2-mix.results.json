@@ -1,0 +1,349 @@
+{
+  "schema": 1,
+  "protocol": "docs/specs/2026-11-17-drymix2-mix-protocol.md",
+  "scenario": "lab_drymix2-e81474c4ef",
+  "arms": {
+    "ctl": "53FF71E0A0D0E85A9038ABC4AD70C78D"
+  },
+  "instrument": "re-entries of routed deflection episodes, the wanted heading probed 48u ahead against the map's BSP with the guard's floor rules (ARGMOT, scratch1 697)",
+  "listen_tapes": 8,
+  "question_mix": {
+    "registered": "share of control re-entries whose wanted heading points at lava or a void; carries dm4's mix if 24 to 54 per cent",
+    "control": {
+      "re_entries": 684,
+      "wish_into_hazard": 439,
+      "momentum": 45,
+      "neither": 200,
+      "share": 0.642
+    },
+    "per_tape_share": [
+      0.595,
+      0.667,
+      0.405,
+      0.845,
+      0.845,
+      0.652,
+      0.699,
+      0.518
+    ],
+    "per_tape": {
+      "labdm2_ctl_r1": {
+        "momentum": 8,
+        "wish_into_hazard": 50,
+        "other": 26
+      },
+      "labdm2_ctl_r2": {
+        "wish_into_hazard": 24,
+        "other": 8,
+        "momentum": 4
+      },
+      "labdm2_ctl_r3": {
+        "wish_into_hazard": 47,
+        "other": 66,
+        "momentum": 3
+      },
+      "labdm2_ctl_r4": {
+        "wish_into_hazard": 71,
+        "other": 12,
+        "momentum": 1
+      },
+      "labdm2_ctl_r5": {
+        "wish_into_hazard": 87,
+        "other": 10,
+        "momentum": 6
+      },
+      "labdm2_ctl_r6": {
+        "other": 12,
+        "wish_into_hazard": 30,
+        "momentum": 4
+      },
+      "labdm2_ctl_r7": {
+        "momentum": 7,
+        "wish_into_hazard": 72,
+        "other": 24
+      },
+      "labdm2_ctl_r8": {
+        "wish_into_hazard": 58,
+        "other": 42,
+        "momentum": 12
+      }
+    },
+    "dm4": 0.39,
+    "lab_drymix": 0.552,
+    "lab_voidcorner": 0.95,
+    "verdict": "no: 64 per cent, ten points above the band"
+  },
+  "tapes": [
+    {
+      "run": "labdm2_ctl_r1",
+      "map": "lab_drymix2",
+      "bytes": 5167396,
+      "sha256": "1aa931802151011b618af154ed88c767de0dadad786aeaeeddbc84e2b830f3a8",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r1",
+        "tick": "listen",
+        "route": 272,
+        "corner_route": 36,
+        "route_frames": 3628,
+        "route_rate": 74.97,
+        "all_defl": 1204,
+        "combat_defl": 739,
+        "lava": 1,
+        "world": 1,
+        "stalls": 5,
+        "freezes": 0,
+        "goals": 11,
+        "engages": 116,
+        "hazards": 250,
+        "minutes": 3.0
+      }
+    },
+    {
+      "run": "labdm2_ctl_r2",
+      "map": "lab_drymix2",
+      "bytes": 5146035,
+      "sha256": "52ab2dfb2773d4a1f8475ba2c3ef40aead62da31a5a45d47ceddc06cd327cfe7",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r2",
+        "tick": "listen",
+        "route": 117,
+        "corner_route": 7,
+        "route_frames": 1225,
+        "route_rate": 95.51,
+        "all_defl": 1572,
+        "combat_defl": 1167,
+        "lava": 1,
+        "world": 1,
+        "stalls": 3,
+        "freezes": 0,
+        "goals": 17,
+        "engages": 112,
+        "hazards": 273,
+        "minutes": 3.0
+      }
+    },
+    {
+      "run": "labdm2_ctl_r3",
+      "map": "lab_drymix2",
+      "bytes": 5240350,
+      "sha256": "0026f77d85324dd75b0b54de7f7c0e6ba4f715919f5ad1d05f47c919e031c8ca",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r3",
+        "tick": "listen",
+        "route": 241,
+        "corner_route": 31,
+        "route_frames": 2980,
+        "route_rate": 80.87,
+        "all_defl": 1457,
+        "combat_defl": 1083,
+        "lava": 0,
+        "world": 0,
+        "stalls": 5,
+        "freezes": 0,
+        "goals": 22,
+        "engages": 111,
+        "hazards": 271,
+        "minutes": 3.0
+      }
+    },
+    {
+      "run": "labdm2_ctl_r4",
+      "map": "lab_drymix2",
+      "bytes": 5192438,
+      "sha256": "6d58730cf299b0c06572ff3ed3ae56cb60183bf7723e558f42557f5363155e8c",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r4",
+        "tick": "listen",
+        "route": 257,
+        "corner_route": 77,
+        "route_frames": 4109,
+        "route_rate": 62.55,
+        "all_defl": 1210,
+        "combat_defl": 869,
+        "lava": 0,
+        "world": 0,
+        "stalls": 6,
+        "freezes": 0,
+        "goals": 17,
+        "engages": 102,
+        "hazards": 264,
+        "minutes": 3.0
+      }
+    },
+    {
+      "run": "labdm2_ctl_r5",
+      "map": "lab_drymix2",
+      "bytes": 5073852,
+      "sha256": "722f72b684df2457af9b8f42a0d4ddfd2ab4ab88fa058465225c6a5da7180f78",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r5",
+        "tick": "listen",
+        "route": 322,
+        "corner_route": 52,
+        "route_frames": 4806,
+        "route_rate": 67.0,
+        "all_defl": 1158,
+        "combat_defl": 654,
+        "lava": 1,
+        "world": 1,
+        "stalls": 8,
+        "freezes": 0,
+        "goals": 22,
+        "engages": 94,
+        "hazards": 263,
+        "minutes": 3.0
+      }
+    },
+    {
+      "run": "labdm2_ctl_r6",
+      "map": "lab_drymix2",
+      "bytes": 5275380,
+      "sha256": "71365e93db78454af18ee85518fc8c1f0702248a1312aac09159465c429c5eb6",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r6",
+        "tick": "listen",
+        "route": 176,
+        "corner_route": 23,
+        "route_frames": 2621,
+        "route_rate": 67.15,
+        "all_defl": 1287,
+        "combat_defl": 921,
+        "lava": 1,
+        "world": 1,
+        "stalls": 9,
+        "freezes": 0,
+        "goals": 15,
+        "engages": 113,
+        "hazards": 250,
+        "minutes": 3.0
+      }
+    },
+    {
+      "run": "labdm2_ctl_r7",
+      "map": "lab_drymix2",
+      "bytes": 5301481,
+      "sha256": "3761656081dcef31649564d20f2bbd70149139159a6926c2f2672566f087571c",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r7",
+        "tick": "listen",
+        "route": 237,
+        "corner_route": 21,
+        "route_frames": 2330,
+        "route_rate": 101.72,
+        "all_defl": 1115,
+        "combat_defl": 702,
+        "lava": 0,
+        "world": 0,
+        "stalls": 2,
+        "freezes": 0,
+        "goals": 19,
+        "engages": 111,
+        "hazards": 273,
+        "minutes": 3.0
+      }
+    },
+    {
+      "run": "labdm2_ctl_r8",
+      "map": "lab_drymix2",
+      "bytes": 5390264,
+      "sha256": "f8e35f07d24309c314b8712729768d3c0afb7f1c53ddcf014dc799426ab4b1fa",
+      "arm": "ctl",
+      "metrics": {
+        "run": "labdm2_ctl_r8",
+        "tick": "listen",
+        "route": 287,
+        "corner_route": 66,
+        "route_frames": 3629,
+        "route_rate": 79.09,
+        "all_defl": 1228,
+        "combat_defl": 774,
+        "lava": 2,
+        "world": 2,
+        "stalls": 6,
+        "freezes": 0,
+        "goals": 23,
+        "engages": 104,
+        "hazards": 270,
+        "minutes": 3.0
+      }
+    }
+  ],
+  "tape_storage": "machine-local; hashes recorded here",
+  "graph_split": {
+    "method": "post hoc, not registered: a re-entry is on the graph when a waypoint of the map's shipped graph lies within 128u horizontally and 64u vertically of the bot at its last route frame",
+    "dm4": {
+      "on": {
+        "re_entries": 1369,
+        "wish_into_hazard": 540,
+        "momentum": 38,
+        "other": 791,
+        "share": 0.394
+      },
+      "off": {
+        "re_entries": 0,
+        "wish_into_hazard": 0,
+        "momentum": 0,
+        "other": 0,
+        "share": null
+      },
+      "all": {
+        "re_entries": 1369,
+        "share": 0.394
+      },
+      "off_graph_fraction": 0.0
+    },
+    "lab_drymix": {
+      "on": {
+        "re_entries": 360,
+        "wish_into_hazard": 255,
+        "momentum": 17,
+        "other": 88,
+        "share": 0.708
+      },
+      "off": {
+        "re_entries": 492,
+        "wish_into_hazard": 215,
+        "momentum": 79,
+        "other": 198,
+        "share": 0.437
+      },
+      "all": {
+        "re_entries": 852,
+        "share": 0.552
+      },
+      "off_graph_fraction": 0.577
+    },
+    "lab_drymix2": {
+      "on": {
+        "re_entries": 437,
+        "wish_into_hazard": 314,
+        "momentum": 27,
+        "other": 96,
+        "share": 0.719
+      },
+      "off": {
+        "re_entries": 247,
+        "wish_into_hazard": 125,
+        "momentum": 18,
+        "other": 104,
+        "share": 0.506
+      },
+      "all": {
+        "re_entries": 684,
+        "share": 0.642
+      },
+      "off_graph_fraction": 0.361
+    },
+    "dm4_tapes": "runs/lab-voidcorner-brink-flicker-dm4.results.json (control arm)",
+    "lab_drymix_tapes": "runs/lab-drymix-mode2.results.json (control arm)",
+    "reading": "every dm4 re-entry happens on the graph, 39 per cent of them lethal; on both drymix maps the on-graph share is about 71 per cent, and every off-graph re-entry sits on ledge_s (on lab_drymix also ledge_n), run-off ledges the generated graph seats no waypoint on because the stairs placed across each ledge cut it into pockets"
+  },
+  "verdict": "lab_drymix2 does not carry dm4's mix under its registered criterion; neither lab map's on-graph re-entries come near dm4's, and both registered with an off-graph run-off ledge, which lab_request's coverage gate now refuses"
+}

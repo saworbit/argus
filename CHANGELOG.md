@@ -15,7 +15,7 @@ describes the result and links to its implementation or detailed evidence.
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
-| Lab version | 0.31; [operator guide and version history](tools/argus_mcp/README.md#versions) |
+| Lab version | 0.32; [operator guide and version history](tools/argus_mcp/README.md#versions) |
 
 Main-update dates are UTC merge dates. Numbered builds retain their recorded
 build dates. A merged change does not imply a new numbered release, and a
@@ -26,6 +26,76 @@ passing botmatch does not establish better human play.
 ### Unreleased
 
 #### Added
+
+- Add lab scenarios: purpose-built micro-maps that isolate one bot behaviour
+  ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP, which also
+  accepts the request as a JSON string) and `argus-mcp lab-request
+  <request.json>` take a structured request (named regions, entities placed
+  by region name, brush and entity budgets, `claim_tier: isolation`), and
+  `tools/lab_mapgen.py` writes a plain-text `.map` and a generated texture
+  WAD, compiles a BSP29 with the pinned ericw-tools 0.18.1 (`python
+  tools/lab_mapgen.py tools --install` verifies the release's SHA-256) and
+  writes a manifest with counts, region adjacency, hashes and navgen
+  readiness. The map then takes the stock road: the lab's `nav_generate`, the
+  mill and the first-registration gate, and the scenario is recorded in
+  `tools/lab_instruments.json`.
+
+- A lab-map result supports an isolation-tier claim only: `argus_ci.py lab`
+  fails a supported or fixed claim that names a stock map without citing a
+  tape recorded on it, or that cites a lab tape without naming the lab map
+  ([promotion rule](docs/lab-scenarios.md#the-promotion-rule)).
+
+- `lab_request` refuses registration while a standable floor at least 32u
+  wide seats no waypoint within 64u above it, unless the request marks the
+  region `off_graph`; `tools/lab_mapgen.py coverage <request>` runs the same
+  check. Both drymix maps had registered with a run-off ledge the graph never
+  seated, which carried a third to over half of their re-entries, while every
+  dm4 re-entry happens on the graph
+  ([findings](docs/lab-scenarios.md#lab_drymix2-and-the-coverage-gate)).
+
+- Add `tools/argus_guard_replica.py`, which replays the physics brink guard
+  offline from a `scratch1 697` tape and names the branch behind each
+  deflection (wall, lava, void, run-off landing). Of dm4's routed
+  re-entries, 47 per cent are walls, 36 lava, 6 voids and 2.5 the run-off
+  landing test, while on the first three lab maps 97 to 98 per cent are lava,
+  because a generated slab over open air turns a buried probe into a lava
+  veto ([findings](docs/lab-scenarios.md#what-deflects-routed-bots-dm4-against-the-lab-maps)).
+
+- Seven scenarios are recorded in `labmaps/`, six registered:
+  `lab_voidcorner` (a 64u walkway ring over lava with four tight corners),
+  `lab_drymix` and `lab_drymix2` (dm4's mix of lethal and dry-drop lips;
+  neither matched it), `lab_wallmix` (the first whose walls the guard reads
+  as walls, at 20 per cent walls against dm4's 47), and `lab_dropwall` and
+  `lab_dropwall2` (dm4's walkway over a room: the open room let bots fight
+  instead of route, and the bays restored routing without the mechanism).
+  `lab_jumpgap` is recorded and not registered: the mill refused its jump
+  links at a 128u and a 96u gap.
+
+- Evidence and limits: play is unchanged. Five changes were laddered on these
+  maps and dm4 under registered protocols, and none shipped. The route elbow
+  and an early turn at hazard corners were refuted on `lab_voidcorner`. The
+  brink turn cut route-steer deflection episodes 23 per cent there and held
+  on dm4 without the benefit. A hazard check for routed steering after a
+  deflection cut that flicker a fifth there and changed nothing on dm4. A
+  grounded re-plan for a steering point overhead behind solid, aimed at dm4's
+  largest wall cluster (bots that miss the staged walkway jump and land in
+  the room below), did not move dm4's overhead-target re-entries in its
+  second or third version and is refuted
+  ([corners](docs/lab-scenarios.md#the-first-scenario-lab_voidcorner),
+  [overhead target](docs/lab-scenarios.md#the-overhead-target-lab_dropwall-lab_dropwall2-and-lab_jumpgap)).
+
+- `argus-mcp probelinks <map> --confirm` walks every first-attempt failure once
+  more at the end of the sweep and convicts only a second failure; on a
+  micro-map the roster stands on the walkway the puppet is walking, and two
+  sweeps of one graph convicted different links. `nav_sync::register_maps`
+  registers named maps alone, because `nav_sync_dispatch` stops at the first
+  experimental graph on disk (e1m3).
+
+- Briefs of tapes recorded with `scratch1 697` carry
+  `movement.deflection_causes` (brink-deflection episodes by the steering cause
+  that led into each) and `movement.brink_encounters` (episodes under 250 ms
+  apart merged, by what started each encounter), which the throttled `hazards`
+  count cannot say.
 
 - Add the fixed lab clock: `argus-mcp seeds <map> <count> <stem>` and
   `argus-mcp match ... --seed N` run matches at the wall-clock lab's measured
@@ -1091,6 +1161,12 @@ passing botmatch does not establish better human play.
   QC filenames with `--register` before any files change (#537).
 
 #### Maintenance
+
+- `cargo deny` ignores RUSTSEC-2026-0543, the notice that `chrono` is
+  unmaintained. No upgrade exists, and `rmcp` and `schemars` depend on it as
+  well as the lab, so the policy records why it is ignored and when to look
+  again (`tools/argus_mcp/deny.toml`,
+  [#870](https://github.com/saworbit/argus/issues/870)).
 
 - Explain the project in the README. A new section says what Argus is, which
   rules all of its code follows and how a map file becomes a measured match.

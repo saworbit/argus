@@ -10906,6 +10906,25 @@ void() Argus_AI =
                 // links. Every typed hop is exempt: a swim exit,
                 // a lift and a train all legitimately target a node
                 // above, and the e1m2 swim links rise 112u.
+                //
+                // A DRY-LAND TWIN WAS TRIED AND REFUTED
+                // (docs/specs/2026-11-17-overhead-target-protocol.md,
+                // overhead-target-replan in lab_claims.json). On dm4,
+                // bots that miss the staged walkway jump from node 111
+                // to 115 land in the room below and steer at a point
+                // 128u overhead behind the walkway's side wall. A
+                // grounded clause here (target above step plus jump
+                // reach, solid on the line, for 0.3 s, then re-plan)
+                // was laddered over eight listen pairs per version: with
+                // jump hops exempt it could not fire there; without
+                // them, overhead-target wall re-entries went 15.75 to
+                // 11.62 a tape (limit 6.99); without the staged run-up
+                // exemption too, 12.12 to 12.75 (limit 7.94). No guard
+                // regressed. The last version did shorten the room stays
+                // (longest routed stay 3.8 s against 8.6), but the room
+                // is one to three of the 12 to 16 events a tape carries.
+                // Do not retry against that primary; size one to the
+                // room first.
                 self.ar_node = world;
                 self.ar_pending = 1;
                 self.ar_mode = 0;
@@ -11370,6 +11389,20 @@ void() Argus_AI =
         // from every pit-side approach - and give the goal up only
         // when no side is safe. Routed mode 2 is left alone: its
         // links are walk-verified and its drops land on solid.
+        //
+        // A MODE-2 CHECK AFTER A DEFLECTION WAS TRIED AND REVERTED
+        // (docs/specs/2026-11-17-brink-flicker-protocol.md). Three in four
+        // mid-turn route deflections, on lab_voidcorner and on dm4, start
+        // straight after a previous one, because this exemption lets route
+        // steering turn back at the node a frame after the guard swung the
+        // velocity off the lip. For a quarter second after a real deflection
+        // a vetoed routed heading went through Argus_HazardSteer (never a
+        // reversal, never on a typed hop). On the lab map it cut the flicker
+        // a fifth (63.6 to 50.9 per 1000 route-steer samples, limit 11.2),
+        // with five lava deaths against none; on dm4 it changed nothing
+        // (55.3 to 55.6, limit 12.2) and harmed nothing. Find out whether the
+        // 48u probe on the wanted heading vetoes at dm4's dry-drop lips at
+        // all before trying it again.
         if (self.ar_mode != 2 && Argus_MoveHazard (want, 48))
         {
             want = Argus_HazardSteer (want, 48);
@@ -11411,6 +11444,38 @@ void() Argus_AI =
             while (diff > 180)  diff = diff - 360;
             while (diff < -180) diff = diff + 360;
             turn = AR_TURNRATE * frametime;
+            // THREE CORNER CHANGES, laddered on lab_voidcorner and REVERTED
+            // (docs/lab-scenarios.md, docs/specs/2026-11-16-*). On a 64u
+            // walkway over lava, 71 per cent of the brink deflections
+            // that follow route steering begin mid-turn, with this limit
+            // rotating the movement heading at AR_TURNRATE. Stock
+            // acceleration only adds along the wish, so the old heading
+            // bleeds off through friction alone: offline NQ integration
+            // puts the overshoot of a 90 degree turn at 200 u/s at 97u.
+            // (1) The route elbow steered at the axis-aligned elbow when
+            // the line to the node crossed a void. It fired (corner
+            // wishes axis-aligned 27 to 58 per cent) and moved nothing,
+            // because running to the corner centre before turning adds
+            // overshoot. (2) The brink turn, beside lethal liquid, turned
+            // the movement heading at three times this rate and doubled
+            // friction while the velocity lagged the wish. It pointed the
+            // right way in both ladders; on eight 180 s pairs it moved
+            // route-steer episodes per 1000 route-steer samples 59.2 to
+            // 45.9 (limit 12.3) once a parser fault in the analysis was
+            // fixed. Brink encounters did not move (14.4 to 12.7, limit
+            // 2.7) and corner episodes rose: it cut the flicker at a
+            // brink, not the visits. Its dm4 rung held (no guard moved)
+            // with no benefit: an isolation-tier result, not shipped.
+            // (3) The early turn handed the steering to the next node 0.35 s
+            // of travel out (48 to 112u) at a corner whose apex cut probe
+            // saw a hazard, which offline integration said keeps a 64u
+            // corner on the floor. Ten 180 s pairs: 56.1 to 58.8 per 1000
+            // route-steer samples (limit 7.9), the wrong way, corners
+            // flat. Refuted. Under 1 per cent of these turns start at a
+            // waypoint handoff; three in four start straight after a
+            // previous deflection, because mode 2 is exempt from the
+            // steering-side hazard check above and turns straight back at
+            // the node (route-steer-brink-flicker in lab_claims.json).
             if (diff > turn)        diff = turn;
             else if (diff < -turn)  diff = -turn;
             self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "route_steer");

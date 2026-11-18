@@ -102,6 +102,7 @@ const MUTATING_TOOLS: &[&str] = &[
     "cartograph",
     "compile_qc",
     "experiment",
+    "lab_request",
     "learn_hotspots",
     "match_command",
     "match_run",
@@ -844,6 +845,11 @@ pub struct NavArgs {
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
+pub struct LabRequestArgs {
+    pub request: serde_json::Value,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct MatchRunArgs {
     pub map: String,
     #[schemars(description = "Wall-clock seconds, 10 to 600")]
@@ -898,9 +904,7 @@ pub struct BriefArgs {
     pub map: Option<String>,
     #[schemars(description = "brief (default) or full")]
     pub detail: Option<String>,
-    #[schemars(
-        description = "json (default) or csv. The per-bot rows, hotspots, kill matrix and event counts are tables, and a table as CSV is about half the tokens."
-    )]
+    #[schemars(description = "json (default) or csv, about half the tokens.")]
     pub format: Option<String>,
 }
 
@@ -1077,7 +1081,7 @@ pub struct ExperimentArgs {
     )]
     pub repeats: Option<u32>,
     #[schemars(
-        description = "PRE-REGISTER the metric this change should move, before the tapes exist: stall_parity | engagements | lava_deaths | freezes. Only that gate can convict; the rest are flagged. All four together convict a null change 19 per cent of the time."
+        description = "PRE-REGISTER the metric this change should move, before the tapes exist: stall_parity | engagements | lava_deaths | freezes. Only that gate can convict; the rest are flagged."
     )]
     pub primary: Option<String>,
 }
@@ -1634,6 +1638,28 @@ impl Argus {
     }
 
     #[tool(
+        description = "Lab micro-map from a request (docs/lab-scenarios.md): build, navgen, mill, gated registration. Isolation tier only."
+    )]
+    async fn lab_request(
+        &self,
+        Parameters(args): Parameters<LabRequestArgs>,
+    ) -> Result<CallToolResult, McpError> {
+        let cfg = match cfg_or_err() {
+            Ok(c) => c,
+            Err(r) => return Ok(r),
+        };
+        // the whole stock road, always; the CLI can skip the mill
+        let opts = crate::lab_scenario::LabRequestOptions::default();
+        // the mill launches engines, so it queues behind whole matches the
+        // way experiments do; the read paths stay free
+        let _one_at_a_time = self.run_gate.lock().await;
+        match crate::lab_scenario::lab_request(&cfg, &args.request, opts).await {
+            Ok(r) => json_ok(&r),
+            Err(e) => tool_err(e),
+        }
+    }
+
+    #[tool(
         description = "Register argus_nav_<map>.qc files in argus_nav_dispatch.qc and progs.src. A first-time map must have a current playable verdict."
     )]
     async fn nav_sync_dispatch(&self) -> Result<CallToolResult, McpError> {
@@ -1885,7 +1911,7 @@ impl Argus {
     }
 
     #[tool(
-        description = "Query the tape corpus instead of briefing one tape at a time. CSV out. tapes: filter and aggregate. cells: the same for hotspot cells. changes: dated steps with a permutation p and the tick class either side. bisect: localise one step and say where to spend the next tapes. Read-only."
+        description = "Query the tape corpus. CSV out. tapes: filter and aggregate. cells: the same for hotspot cells. changes: dated steps with a permutation p and the tick class either side. bisect: localise one step and say where to spend the next tapes. Read-only."
     )]
     async fn corpus(
         &self,
@@ -4741,6 +4767,11 @@ mod tests {
         // Reclaimed the same day (#808) by trimming rationale that four
         // descriptions repeated from the guides, then spent part of it on
         // bot_capture_pov_frame's wait_sec: 25,238, 262 bytes of headroom.
+        // lab_request (2026-11-16) costs about 410 bytes: one object
+        // parameter, a one-line description, the schema left to
+        // docs/lab-scenarios.md. Paid for by cutting rationale the guides
+        // already carry from the corpus, format and primary descriptions:
+        // 25,466, 34 bytes of headroom.
         // That is about 6,300 tokens on EVERY request. The bound sits
         // just above the measured surface on purpose: a bound three
         // times the actual is not a bound. If this fails, the question

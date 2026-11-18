@@ -69,5 +69,125 @@
         ]
       }
     }
+  },
+  "lab_scenarios": {
+    "about": "Generated micro-maps (tools/lab_mapgen.py, the lab_request MCP tool). Each isolates one mechanism and is trusted for isolation-tier claims only.",
+    "rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
+    "docs": "docs/lab-scenarios.md",
+    "scenarios": {
+      "lab_dropwall": {
+        "id": "lab_dropwall-be907f5db2",
+        "claim_tier": "isolation",
+        "intent": "Copy the dm4 geometry behind its largest wall cluster: a raised walkway whose edge is a legal 128u drop into a room below, its side face a wall solid to the base, with the only way back up far away, beside walkways over lava.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_dropwall/request.json",
+        "manifest": "labmaps/lab_dropwall/manifest.json",
+        "source_sha256": "be907f5db2779a55e41f84e9e999eee0092d49f86089feea6e3df925cfd85e74",
+        "bsp_sha256": "b4b83bfeea3d0f5f47fedf2b0d35b17550038dd390cfb362e783a1e3cb3215f4",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": []
+      },
+      "lab_dropwall2": {
+        "id": "lab_dropwall2-da26a88635",
+        "claim_tier": "isolation",
+        "intent": "lab_dropwall with its room split into three bays by walls rising from the base, opening onto a corridor along the raised walkway's face, so bots route through the room instead of fighting across it.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_dropwall2/request.json",
+        "manifest": "labmaps/lab_dropwall2/manifest.json",
+        "source_sha256": "da26a886358dfce4792c5d49124e42c5c86f6ea52d2468eeb419a3bd42be17df",
+        "bsp_sha256": "6cf7ec2bfd87b50b0b52ffec0d135fcd15390bcff873203b6221f66a3d6758d8",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": []
+      },
+      "lab_drymix": {
+        "id": "lab_drymix-288fc2055f",
+        "claim_tier": "isolation",
+        "intent": "Give brink work dm4's mix of lips: a 96u walkway ring with lethal lava lips on the north and east, a dry 96u ledge 80u down on the west with lava beyond it (a running bot's landing falls in the lava, so the guard's run-off test decides), and a plain 64u dry drop to a lower floor on the south, each dry floor with stairs back up.",
+        "claims": [
+          "route-steer-brink-flicker",
+          "mode2-brink-check"
+        ],
+        "request": "labmaps/lab_drymix/request.json",
+        "manifest": "labmaps/lab_drymix/manifest.json",
+        "source_sha256": "288fc2055fc62f522b637d91c6845dd17225a17fe736eef92b8e8f40520d92de",
+        "bsp_sha256": "85e57053801440eb6ac62363b4257eeb2f55c822835b0f05906f12d9af0d0250",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": [
+          "ledge_s",
+          "ledge_n"
+        ]
+      },
+      "lab_drymix2": {
+        "id": "lab_drymix2-e81474c4ef",
+        "claim_tier": "isolation",
+        "intent": "lab_drymix with a second run-off ledge: a dry 96u ledge 80u down along the north inner side with lava beyond it, beside the west one, so run-off lips (where the guard's landing test decides) carry the share of brink re-entries they carry on dm4.",
+        "claims": [
+          "route-steer-brink-flicker",
+          "mode2-brink-check"
+        ],
+        "request": "labmaps/lab_drymix2/request.json",
+        "manifest": "labmaps/lab_drymix2/manifest.json",
+        "source_sha256": "e81474c4ef9bf465159e3ec262591c4cf74d59facf7bfc00705d2467c95c32b5",
+        "bsp_sha256": "2d3e439c969cbc41c768697002b457db1c1a4db6f6ea2d73fab0266584d91af9",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": [
+          "ledge_s"
+        ]
+      },
+      "lab_jumpgap": {
+        "id": "lab_jumpgap-74f0aafee5",
+        "claim_tier": "isolation",
+        "intent": "Copy dm4's walkway jump over a room: the raised walkway is split by a 96u gap above the room, crossed by a jump, so a bot that misses the run-up lands in the room still on the jump hop with its target overhead.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_jumpgap/request.json",
+        "manifest": "labmaps/lab_jumpgap/manifest.json",
+        "source_sha256": "74f0aafee59e9206d38f27ae5e069a431ec2b8453339f7167ed4b608374a8fe3",
+        "bsp_sha256": "7806ac75f522a20c24a458375f97e560dabef8ba628c0d76646c758ab81247ab",
+        "registered": false,
+        "playable": false,
+        "off_graph_regions": []
+      },
+      "lab_voidcorner": {
+        "id": "lab_voidcorner-70ece72d72",
+        "claim_tier": "isolation",
+        "intent": "Isolate route handoffs at void-edged corners: a 64u walkway ring over lava with four tight 90 degree corners and open air on both sides, so an early waypoint switch or apex corner cut that draws its line across the void shows up as hazard deflections and lava run-offs.",
+        "claims": [
+          "e1m7-early-switch-runoffs",
+          "dm4-walkway-corner"
+        ],
+        "request": "labmaps/lab_voidcorner/request.json",
+        "manifest": "labmaps/lab_voidcorner/manifest.json",
+        "source_sha256": "70ece72d72724b42f763dfd2281128090a1f32978896412175b8b68ccba43448",
+        "bsp_sha256": "73e82412c2d7d472b76b75574956b865d6e5f95a1ef115493e03c31377b998d1",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": []
+      },
+      "lab_wallmix": {
+        "id": "lab_wallmix-58ab73b5ac",
+        "claim_tier": "isolation",
+        "intent": "Give brink work dm4's two commonest guard vetoes: a 96u walkway ring over lava whose outer edges are the hull walls, with solid pillars filling two inner corners, so bots turn two corners around a wall the guard reads as a wall and two around a lethal lava lip.",
+        "claims": [
+          "route-steer-brink-flicker"
+        ],
+        "request": "labmaps/lab_wallmix/request.json",
+        "manifest": "labmaps/lab_wallmix/manifest.json",
+        "source_sha256": "58ab73b5ac6be3b53c38c3160d7efc60b2dc3b5fd97126df79f862ab0e5471a3",
+        "bsp_sha256": "7a64021175da8693abca295f8b8bc1ff1ec4bea48dc7e6b3cb4d09ab97689a56",
+        "registered": true,
+        "playable": true,
+        "off_graph_regions": []
+      }
+    }
   }
 }

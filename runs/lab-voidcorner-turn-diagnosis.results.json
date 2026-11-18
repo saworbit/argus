@@ -1,0 +1,253 @@
+{
+  "schema": 1,
+  "what": "Where the turns that end in a brink deflection start, on the control arm of every lab_voidcorner ladder and on the two dm4 control tapes of the cancelled route elbow stock rung (unchanged code, motion diagnostic on).",
+  "method": {
+    "episode": "a run of hazard_* motion samples, credited to the last non-hazard cause before it",
+    "mid_turn": "the wish rotated at least 3.5 degrees a frame, the same way, over the three route frames before",
+    "trigger": "walk back while the wish keeps rotating the same way at 1.5 degrees a frame; resume:<cause> when the frame before was not route steering; goal or route when this bot's event fell within 150 ms; advance when routed and none of those (a waypoint handoff); seek when unrouted",
+    "encounter": "episodes less than 250 ms apart merged (movement.brink_encounters in the lab's briefs)",
+    "parser": "motion rows read with the lab's own grammar (wish values may be space padded)"
+  },
+  "lab_voidcorner_control_28_tapes": {
+    "route_episodes": 4383,
+    "mid_turn_share": 0.714,
+    "mid_turn_episodes": 3131,
+    "mid_turn_by_trigger": {
+      "resume:hazard_hold": 1716,
+      "resume:hazard_fan": 686,
+      "resume:combat*": 273,
+      "resume:cover_retreat": 107,
+      "seek": 96,
+      "resume:noise_investigate": 95,
+      "resume:wander": 94,
+      "advance": 27,
+      "other": 37
+    },
+    "encounters": 1034,
+    "encounter_starts": {
+      "route steady": 313,
+      "resume:combat*": 225,
+      "resume:cover_retreat": 104,
+      "seek": 91,
+      "resume:noise_investigate": 87,
+      "resume:wander": 78,
+      "advance": 23,
+      "other": 113
+    },
+    "encounters_per_1000_route_samples_by_ladder_control": [
+      13.2,
+      14.3,
+      14.4,
+      13.5
+    ]
+  },
+  "dm4_control_2_tapes": {
+    "route_episodes": 1233,
+    "mid_turn_share": 0.633,
+    "mid_turn_episodes": 780,
+    "mid_turn_by_trigger": {
+      "resume:hazard_hold": 335,
+      "resume:hazard_fan": 265,
+      "resume:noise_investigate": 57,
+      "advance": 35,
+      "resume:combat*": 32,
+      "seek": 27,
+      "resume:wander": 16,
+      "other": 13
+    },
+    "encounters": 286,
+    "encounter_starts": {
+      "route steady": 125,
+      "resume:noise_investigate": 45,
+      "advance": 31,
+      "resume:combat*": 23,
+      "seek": 20,
+      "resume:wander": 15,
+      "other": 27
+    }
+  },
+  "reading": "Three in four mid-turn route deflections begin straight after a previous deflection on both maps: route steering re-asserts its heading for a frame or two and the guard fires again, so the episode count measures flicker within one encounter. Waypoint handoffs start under 1 per cent of them on the lab map and 4.5 per cent on dm4. Encounters start most often from steady routed running (30 per cent on the lab map, 44 on dm4), then from resuming after combat (lab) or a noise (dm4).",
+  "tapes": [
+    {
+      "run": "labvc_ctl_r1",
+      "map": "lab_voidcorner",
+      "bytes": 3872722,
+      "sha256": "0c1a1bdd15951954a67afbe34c084b32346e27b8cfbbffdaffe8d0b363a2e9fd"
+    },
+    {
+      "run": "labvc_ctl_r2",
+      "map": "lab_voidcorner",
+      "bytes": 3537165,
+      "sha256": "899afa70ca9c2cff8bdcb0db8a9ee9782dcd98ec1bb3ccf9477c02abc7a0623e"
+    },
+    {
+      "run": "labvc_ctl_r3",
+      "map": "lab_voidcorner",
+      "bytes": 3915221,
+      "sha256": "e20f3e924c974dc93352ccb2688fd37bfdaf2521af6f9c026c73f4558e7f39c4"
+    },
+    {
+      "run": "labvc_ctl_r4",
+      "map": "lab_voidcorner",
+      "bytes": 3980784,
+      "sha256": "56a70b42c7f86d67d44bb2f0b14473c2d636e673be78fa5e12fba63f87edefd4"
+    },
+    {
+      "run": "labvc_ctl_r5",
+      "map": "lab_voidcorner",
+      "bytes": 3909785,
+      "sha256": "1a71fdcba2ed9c7a57b54283afe3b6c52a809cf5507c84eba9326663ee76cdb4"
+    },
+    {
+      "run": "labvc2_ctl_r1",
+      "map": "lab_voidcorner",
+      "bytes": 3861214,
+      "sha256": "662a7e79f50f35adf8229e11fb51d72e7dda38495e12658f30b2287f1c91e06c"
+    },
+    {
+      "run": "labvc2_ctl_r2",
+      "map": "lab_voidcorner",
+      "bytes": 3927950,
+      "sha256": "d8d94c7e76fa186a37fcb4cfd19bfabaf93bc35fa5482645661f1f257c04dd8c"
+    },
+    {
+      "run": "labvc2_ctl_r3",
+      "map": "lab_voidcorner",
+      "bytes": 3997250,
+      "sha256": "d60f0c3f02d8d06064c301433b9e7cdbc9b64901c952d934ce7b7afdba9f288c"
+    },
+    {
+      "run": "labvc2_ctl_r4",
+      "map": "lab_voidcorner",
+      "bytes": 3903077,
+      "sha256": "68719833e9c1ac57521ea45af3d761b89d9c5c931b2aa7c8a50d44742f7c1f57"
+    },
+    {
+      "run": "labvc2_ctl_r5",
+      "map": "lab_voidcorner",
+      "bytes": 3851317,
+      "sha256": "5f3d1dfda7872fffb21b83b5faefeaf3c10f60c31557118073a188d3d22bcda4"
+    },
+    {
+      "run": "labvc3_ctl_r1",
+      "map": "lab_voidcorner",
+      "bytes": 5614142,
+      "sha256": "6982cfe0399946d1f748e6451dd1eedb8bc0dc5a9d052770212a653d982b5905"
+    },
+    {
+      "run": "labvc3_ctl_r2",
+      "map": "lab_voidcorner",
+      "bytes": 4255866,
+      "sha256": "4af42f598d1b5d4529d059f4222ba17fe4fc5c5b074a8d80381ac18f7b5aeda2"
+    },
+    {
+      "run": "labvc3_ctl_r3",
+      "map": "lab_voidcorner",
+      "bytes": 5658325,
+      "sha256": "12f44a766aceb27e769ca5304551998e2d06db8d4fee60c56b617c342d5ce3b0"
+    },
+    {
+      "run": "labvc3_ctl_r4",
+      "map": "lab_voidcorner",
+      "bytes": 5856052,
+      "sha256": "3c01d672789cbd87f9934a109bb77ad9f4699925f675e1286f4868f17a71ea2b"
+    },
+    {
+      "run": "labvc3_ctl_r5",
+      "map": "lab_voidcorner",
+      "bytes": 5893774,
+      "sha256": "ade5a1b2a354c9e08b2944ca0c097d0491c743bb28152d64c9b902c382f593ce"
+    },
+    {
+      "run": "labvc3_ctl_r6",
+      "map": "lab_voidcorner",
+      "bytes": 5881932,
+      "sha256": "ec6ede54aa7acb43e811c8c329c58e87377f56f0820e725cad11022ca5a52514"
+    },
+    {
+      "run": "labvc3_ctl_r7",
+      "map": "lab_voidcorner",
+      "bytes": 5773461,
+      "sha256": "e0b7d57ae96dc6273d615f0d67c28acbae3940748365f9eea60bcb7a06050424"
+    },
+    {
+      "run": "labvc3_ctl_r8",
+      "map": "lab_voidcorner",
+      "bytes": 5825999,
+      "sha256": "40b2bf2885f06081f8a47a5b7a940782eb70bcebfe9d6c29a1c9352683b20d99"
+    },
+    {
+      "run": "labvc4_ctl_r1",
+      "map": "lab_voidcorner",
+      "bytes": 6056123,
+      "sha256": "e9af7e7ec9c129227e9c941502d4a8bd1a9fa8f7ba7fc9e7a109f4df5bbb0fe8"
+    },
+    {
+      "run": "labvc4_ctl_r2",
+      "map": "lab_voidcorner",
+      "bytes": 5793640,
+      "sha256": "edaa74cf2a53925311c19f216b9c03d8bfcf9ba8018d53b5649b7d19829cef0b"
+    },
+    {
+      "run": "labvc4_ctl_r3",
+      "map": "lab_voidcorner",
+      "bytes": 6019653,
+      "sha256": "c0e1ad9a152d871127e818dd679ef666b9594f308551365b03d71eab3da27b6b"
+    },
+    {
+      "run": "labvc4_ctl_r4",
+      "map": "lab_voidcorner",
+      "bytes": 5654127,
+      "sha256": "21106ed88fa8ecc4d5e47043b0a34a9fb21fd78f754ea4514402f1bb21e027b8"
+    },
+    {
+      "run": "labvc4_ctl_r5",
+      "map": "lab_voidcorner",
+      "bytes": 5865089,
+      "sha256": "f97f8e5177a35ab5565a0696509dc6da459569f9741541782bc16f6363750d6c"
+    },
+    {
+      "run": "labvc4_ctl_r6",
+      "map": "lab_voidcorner",
+      "bytes": 5651051,
+      "sha256": "27272207fbc2f2c1fee4b2f55406f77ebca253304842cfd28c6a39886cede914"
+    },
+    {
+      "run": "labvc4_ctl_r7",
+      "map": "lab_voidcorner",
+      "bytes": 5622245,
+      "sha256": "2ea6f972fc8663260f5bf033a8e2b2f20d860cc2e8978b9ef74130c589e58431"
+    },
+    {
+      "run": "labvc4_ctl_r8",
+      "map": "lab_voidcorner",
+      "bytes": 5918165,
+      "sha256": "4a8a3e1a1c3f0888491c6a561ae71aab59fca9e08b80f416722be4e8a231f8be"
+    },
+    {
+      "run": "labvc4_ctl_r9",
+      "map": "lab_voidcorner",
+      "bytes": 5750823,
+      "sha256": "9670a0effd2f6dc28a6c9b321822dbc882451e4161103de2ad75f8a3ccab46c5"
+    },
+    {
+      "run": "labvc4_ctl_r10",
+      "map": "lab_voidcorner",
+      "bytes": 5887848,
+      "sha256": "2c567b287044fb38feee3182cc0beb9dc09d109d398e291c7a625e98f5c17c7a"
+    },
+    {
+      "run": "dm4elbow_ctl_r1",
+      "map": "dm4",
+      "bytes": 5269422,
+      "sha256": "b231b5accd06b6fac07c392eec31d60d820eb0704e0aef82ba3fb76a179b82b7"
+    },
+    {
+      "run": "dm4elbow_ctl_r2",
+      "map": "dm4",
+      "bytes": 5281189,
+      "sha256": "4f6af41542c88047a74186601d5bed0c188f946449cf6673273f06052e4aef44"
+    }
+  ],
+  "tape_storage": "machine-local; hashes recorded here"
+}

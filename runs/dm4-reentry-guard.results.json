@@ -1,0 +1,210 @@
+{
+  "schema": 1,
+  "what": "Which branch of the per-frame physics brink guard deflects routed bots at their re-entries, on dm4 and the three lab maps, read offline from control tapes already recorded. No new matches.",
+  "question": "route-steer-brink-flicker's open step: measure the share of dm4's re-entries that the run-off landing test (Argus_DropLandHazard) causes",
+  "instrument": "tools/argus_guard_replica.py as committed with this file: the velocity heading after one frame of friction and acceleration, the speed-scaled 32 to 52u probe, and every branch of Argus_MoveHazard, against the map's hull-0 tree. Brush entities are invisible to it.",
+  "re_entry": "a route-led deflection start (row k-1 route_steer in mode 2, row k hazard_*) within two route frames of the bot's previous deflection episode, as in the lab_voidcorner gate analysis",
+  "trace_semantics": {
+    "rule": "a traceline that starts in solid and never leaves it returns fraction 1; one that leaves it reports an impact at the next solid it enters (SV_RecursiveHullCheck)",
+    "test": "route-led frames on the ground whose probe point starts in solid with air below within 280u: the frames where the two rules disagree. Known vetoes are route-led deflection starts, known passes every fifth steady routed frame",
+    "dm4": {
+      "veto": 168,
+      "pass": 146,
+      "engine_rule_right": 238,
+      "fraction_one_rule_right": 168
+    },
+    "lab_drymix": {
+      "veto": 607,
+      "pass": 9,
+      "engine_rule_right": 607,
+      "fraction_one_rule_right": 189
+    },
+    "lab_drymix2": {
+      "veto": 405,
+      "pass": 30,
+      "engine_rule_right": 405,
+      "fraction_one_rule_right": 161
+    },
+    "total": {
+      "probes": 1365,
+      "engine_rule_right": 1250,
+      "fraction_one_rule_right": 518
+    },
+    "sensitivity": "under the fraction-one rule dm4's re-entries read wall 51.4, lava 35.9, void 6.4, run-off 1.9 and none 4.4 per cent (recall 0.918, false vetoes 0.033); the run-off share is about 2 per cent under either rule"
+  },
+  "maps": {
+    "dm4": {
+      "tapes": [
+        "dm4fl_ctl_r1",
+        "dm4fl_ctl_r2",
+        "dm4fl_ctl_r3",
+        "dm4fl_ctl_r4",
+        "dm4fl_ctl_r5",
+        "dm4fl_ctl_r6",
+        "dm4fl_ctl_r7",
+        "dm4fl_ctl_r8"
+      ],
+      "tape_hashes_in": "runs/lab-voidcorner-brink-flicker-dm4.results.json",
+      "validation": {
+        "route_led_starts_on_ground": 3308,
+        "recall": 0.895,
+        "steady_frames_sampled": 9968,
+        "false_veto": 0.019
+      },
+      "route_led_starts": {
+        "n": 3308,
+        "wall": 1663,
+        "lava": 970,
+        "void": 214,
+        "run_off_lava": 9,
+        "run_off_void": 104,
+        "none": 348,
+        "share": {
+          "wall": 0.503,
+          "lava": 0.293,
+          "void": 0.065,
+          "run_off_lava": 0.003,
+          "run_off_void": 0.031,
+          "none": 0.105
+        }
+      },
+      "re_entries": {
+        "n": 1369,
+        "wall": 647,
+        "lava": 491,
+        "void": 87,
+        "run_off_lava": 6,
+        "run_off_void": 28,
+        "none": 110,
+        "share": {
+          "wall": 0.473,
+          "lava": 0.359,
+          "void": 0.064,
+          "run_off_lava": 0.004,
+          "run_off_void": 0.02,
+          "none": 0.08
+        }
+      }
+    },
+    "lab_voidcorner": {
+      "tapes": [
+        "labvc5_ctl_r1",
+        "labvc5_ctl_r2",
+        "labvc5_ctl_r3",
+        "labvc5_ctl_r5",
+        "labvc5_ctl_r6",
+        "labvc5_ctl_r7",
+        "labvc5_ctl_r8"
+      ],
+      "tape_hashes_in": "runs/lab-voidcorner-brink-flicker.results.json",
+      "validation": {
+        "route_led_starts_on_ground": 1013,
+        "recall": 0.953,
+        "steady_frames_sampled": 2909,
+        "false_veto": 0.025
+      },
+      "route_led_starts": {
+        "n": 1013,
+        "lava": 965,
+        "none": 48,
+        "share": {
+          "lava": 0.953,
+          "none": 0.047
+        }
+      },
+      "re_entries": {
+        "n": 371,
+        "lava": 365,
+        "none": 6,
+        "share": {
+          "lava": 0.984,
+          "none": 0.016
+        }
+      }
+    },
+    "lab_drymix": {
+      "tapes": [
+        "labdm_ctl_r1",
+        "labdm_ctl_r2",
+        "labdm_ctl_r3",
+        "labdm_ctl_r4",
+        "labdm_ctl_r5",
+        "labdm_ctl_r6",
+        "labdm_ctl_r7",
+        "labdm_ctl_r8"
+      ],
+      "tape_hashes_in": "runs/lab-drymix-mode2.results.json",
+      "validation": {
+        "route_led_starts_on_ground": 1953,
+        "recall": 0.956,
+        "steady_frames_sampled": 3411,
+        "false_veto": 0.014
+      },
+      "route_led_starts": {
+        "n": 1953,
+        "lava": 1841,
+        "run_off_lava": 26,
+        "none": 86,
+        "share": {
+          "lava": 0.943,
+          "run_off_lava": 0.013,
+          "none": 0.044
+        }
+      },
+      "re_entries": {
+        "n": 852,
+        "lava": 831,
+        "run_off_lava": 4,
+        "none": 17,
+        "share": {
+          "lava": 0.975,
+          "run_off_lava": 0.005,
+          "none": 0.02
+        }
+      }
+    },
+    "lab_drymix2": {
+      "tapes": [
+        "labdm2_ctl_r1",
+        "labdm2_ctl_r2",
+        "labdm2_ctl_r3",
+        "labdm2_ctl_r4",
+        "labdm2_ctl_r5",
+        "labdm2_ctl_r6",
+        "labdm2_ctl_r7",
+        "labdm2_ctl_r8"
+      ],
+      "tape_hashes_in": "runs/lab-drymix2-mix.results.json",
+      "validation": {
+        "route_led_starts_on_ground": 1501,
+        "recall": 0.962,
+        "steady_frames_sampled": 3215,
+        "false_veto": 0.028
+      },
+      "route_led_starts": {
+        "n": 1501,
+        "lava": 1398,
+        "run_off_lava": 46,
+        "none": 57,
+        "share": {
+          "lava": 0.931,
+          "run_off_lava": 0.031,
+          "none": 0.038
+        }
+      },
+      "re_entries": {
+        "n": 684,
+        "lava": 666,
+        "run_off_lava": 4,
+        "none": 14,
+        "share": {
+          "lava": 0.974,
+          "run_off_lava": 0.006,
+          "none": 0.02
+        }
+      }
+    }
+  },
+  "reading": "The run-off landing test causes 34 of dm4's 1369 re-entries (2.5 per cent). Half of them (47 per cent) are the guard's probe buried in a wall: the 'no floor within 280u' branch, which the guard keeps on purpose because that deflection turns walls into slides, so route steering turns back into the wall and the guard fires again. Lava under the probe causes 36 per cent and voids 6. The earlier 48u probe along the wish read 39 per cent lethal (lava or void), which agrees with the replica's 42; its 'neither' class was mostly walls, not run-off lips. On all three lab maps 97 to 98 per cent of re-entries are lava vetoes and none are walls: a generated floor or stair tread is a 16u slab over open air, so a probe buried in one finds the lava below. No lab map built so far contains dm4's dominant re-entry type.",
+  "next": "A brink change aimed at lethal lips can reach at most the 42 per cent of dm4's re-entries that are lava or void; the run-off landing test is not worth a change on its own. A lab map that stands in for dm4's flicker needs wall brinks the guard reads as walls, which in a generated map means walls on regions with solid_below (untested), and its mix check should be read with this tool rather than the 48u wish probe."
+}

@@ -210,7 +210,8 @@ Compare matched tick classes and retain the source identity for every arm.
 | `tools/harvest_session.py` | Preserve console logs and demos from human play |
 | `tools/argus_lab.py` | Lab spine: session state, staleness, triage, comparison audit, evidence tiers |
 | `tools/lab_objective.json` / `tools/lab_claims.json` | The lab's written objective and its claims ledger |
-| `tools/lab_instruments.json` | Where the [fixed lab clock](fixed-clock.md) and the [stand-in human](stand-in.md) may be trusted |
+| `tools/lab_instruments.json` | Where the [fixed lab clock](fixed-clock.md) and the [stand-in human](stand-in.md) may be trusted, and the registered [lab scenarios](lab-scenarios.md) |
+| `tools/lab_mapgen.py`, `labmaps/<map>/` | Generated micro-maps that isolate one behaviour: request, `.map` and manifest ([lab scenarios](lab-scenarios.md)) |
 | `runs/` | Saved tapes, outcomes and build provenance |
 
 Engine installs, licensed maps/models, local configuration, demos and dated

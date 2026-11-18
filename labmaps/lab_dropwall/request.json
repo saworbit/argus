@@ -1,0 +1,221 @@
+{
+  "base": {
+    "floor_z": -192,
+    "liquid": "lava",
+    "liquid_depth": 48
+  },
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker"
+  ],
+  "constraints": {
+    "liquids": [
+      "lava"
+    ],
+    "margin": 0,
+    "max_brushes": 80,
+    "max_entities": 40,
+    "min_spawns": 4
+  },
+  "entities": [
+    {
+      "angle": 0,
+      "at": [
+        0.3,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "south"
+    },
+    {
+      "angle": 0,
+      "at": [
+        0.2,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "north"
+    },
+    {
+      "angle": 180,
+      "at": [
+        0.5,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "north"
+    },
+    {
+      "angle": 90,
+      "at": [
+        0.5,
+        0.3
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "east"
+    },
+    {
+      "at": [
+        0.06,
+        0.5
+      ],
+      "classname": "weapon_supernailgun",
+      "region": "north"
+    },
+    {
+      "at": [
+        0.35,
+        0.5
+      ],
+      "classname": "item_spikes",
+      "region": "north"
+    },
+    {
+      "at": [
+        0.5,
+        0.5
+      ],
+      "classname": "item_armor1",
+      "region": "room"
+    },
+    {
+      "at": [
+        0.15,
+        0.8
+      ],
+      "classname": "item_shells",
+      "region": "room"
+    },
+    {
+      "at": [
+        0.6,
+        0.5
+      ],
+      "classname": "weapon_supershotgun",
+      "region": "south"
+    },
+    {
+      "at": [
+        0.5,
+        0.7
+      ],
+      "classname": "item_health",
+      "region": "east"
+    },
+    {
+      "at": [
+        0.75,
+        0.5
+      ],
+      "classname": "item_health",
+      "region": "north"
+    }
+  ],
+  "headroom": 192,
+  "intent": "Copy the dm4 geometry behind its largest wall cluster: a raised walkway whose edge is a legal 128u drop into a room below, its side face a wall solid to the base, with the only way back up far away, beside walkways over lava.",
+  "name": "lab_dropwall",
+  "notes": "dm4's wall re-entries cluster (122 of 647 in one 128u cell, runs/lab-wallmix-mix.results.json). Read frame by frame, a bot routing on the walkway at z 24 turns back toward a waypoint behind it, runs off the legal drop into the room, and keeps steering at the walkway waypoint 128u overhead behind the walkway's side wall, which the 340u horizontal displacement guard never re-plans. Here the north walkway stands 128u above the room with a long route back up by the east stairs; its east half and the south and east walkways have lava lips. Margin 0, everything solid to the base. No splash weapons. Spawns stand on the walkways, not in the room: with two in the room the mill's roster body-blocked the puppet on the open floor and convicted a different flat link on each of three passes.",
+  "regions": [
+    {
+      "connections": [
+        {
+          "to": "south",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "room",
+      "min": [
+        0,
+        0
+      ],
+      "name": "room",
+      "size": [
+        640,
+        576
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "east",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        640,
+        0
+      ],
+      "name": "south",
+      "size": [
+        384,
+        96
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "east_stairs",
+          "type": "stairs"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        928,
+        96
+      ],
+      "name": "east",
+      "size": [
+        96,
+        224
+      ],
+      "solid_below": true
+    },
+    {
+      "axis": "+y",
+      "floor_z": 0,
+      "kind": "stairs",
+      "min": [
+        928,
+        320
+      ],
+      "name": "east_stairs",
+      "size": [
+        96,
+        256
+      ],
+      "solid_below": true,
+      "to_z": 128
+    },
+    {
+      "connections": [
+        {
+          "to": "east_stairs",
+          "type": "stairs"
+        },
+        {
+          "to": "room",
+          "type": "drop"
+        }
+      ],
+      "floor_z": 128,
+      "kind": "walkway",
+      "min": [
+        0,
+        576
+      ],
+      "name": "north",
+      "size": [
+        1024,
+        96
+      ],
+      "solid_below": true
+    }
+  ],
+  "schema": 1
+}

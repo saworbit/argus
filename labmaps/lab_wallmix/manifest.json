@@ -1,0 +1,335 @@
+{
+  "schema": 1,
+  "scenario_id": "lab_wallmix-58ab73b5ac",
+  "map": "lab_wallmix",
+  "intent": "Give brink work dm4's two commonest guard vetoes: a 96u walkway ring over lava whose outer edges are the hull walls, with solid pillars filling two inner corners, so bots turn two corners around a wall the guard reads as a wall and two around a lethal lava lip.",
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker"
+  ],
+  "promotion_rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
+  "generator": {
+    "version": 1,
+    "source_sha256": "58ab73b5ac6be3b53c38c3160d7efc60b2dc3b5fd97126df79f862ab0e5471a3",
+    "map_sha256": "0ac79c0a1056bd3eccc33e223c42133a54029ffb0d31548360c3509d22969f82",
+    "wad_sha256": "a5ce3172cca20051c824deec9a98ddbc85bf9a4c8f4b06b75775cff155d95438"
+  },
+  "counts": {
+    "brushes": 14,
+    "entities": 14,
+    "max_brushes": 80,
+    "max_entities": 40
+  },
+  "extent": [
+    0,
+    0,
+    -192,
+    1024,
+    1024,
+    384
+  ],
+  "regions": [
+    {
+      "name": "south",
+      "kind": "floor",
+      "min": [
+        0,
+        0
+      ],
+      "size": [
+        1024,
+        96
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "east",
+      "kind": "floor",
+      "min": [
+        928,
+        96
+      ],
+      "size": [
+        96,
+        832
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "north",
+      "kind": "floor",
+      "min": [
+        0,
+        928
+      ],
+      "size": [
+        1024,
+        96
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "west",
+      "kind": "floor",
+      "min": [
+        0,
+        96
+      ],
+      "size": [
+        96,
+        832
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "pillar_sw",
+      "kind": "block",
+      "min": [
+        96,
+        96
+      ],
+      "size": [
+        96,
+        96
+      ],
+      "floor_z": -192
+    },
+    {
+      "name": "pillar_ne",
+      "kind": "block",
+      "min": [
+        832,
+        832
+      ],
+      "size": [
+        96,
+        96
+      ],
+      "floor_z": -192
+    },
+    {
+      "name": "column",
+      "kind": "block",
+      "min": [
+        384,
+        384
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "floor_z": -192
+    }
+  ],
+  "adjacency": [
+    {
+      "a": "south",
+      "b": "east",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "west",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "pillar_sw",
+      "relation": "edge",
+      "length": 96,
+      "dz": 192,
+      "walk": "drop"
+    },
+    {
+      "a": "east",
+      "b": "north",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "east",
+      "b": "pillar_ne",
+      "relation": "edge",
+      "length": 96,
+      "dz": 192,
+      "walk": "drop"
+    },
+    {
+      "a": "north",
+      "b": "west",
+      "relation": "edge",
+      "length": 96,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "north",
+      "b": "pillar_ne",
+      "relation": "edge",
+      "length": 96,
+      "dz": 192,
+      "walk": "drop"
+    },
+    {
+      "a": "west",
+      "b": "pillar_sw",
+      "relation": "edge",
+      "length": 96,
+      "dz": 192,
+      "walk": "drop"
+    }
+  ],
+  "connections": [
+    {
+      "from": "south",
+      "to": "east",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "south",
+      "to": "west",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "east",
+      "to": "north",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    },
+    {
+      "from": "north",
+      "to": "west",
+      "type": "open",
+      "length": 96,
+      "dz": 0
+    }
+  ],
+  "navgen_readiness": {
+    "spawns": 4,
+    "pickups": 7,
+    "standable_area": 440320,
+    "entities_before_waypoints": 23,
+    "waypoint_room": 517,
+    "ready": true,
+    "reasons": []
+  },
+  "files": {
+    "request": "labmaps/lab_wallmix/request.json",
+    "map": "labmaps/lab_wallmix/lab_wallmix.map"
+  },
+  "compile": {
+    "ericw_tools": "0.18.1",
+    "ericw_commit": "b6e2431f29a1f5763d4aa5fa37cb06838580f41a",
+    "profile_sha256": "93ab3b7e3aada8f68982966bad71d912b3db8c4e9eb7bd303a0c45bd7db965cc",
+    "steps": {
+      "qbsp": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0,
+        "leak": false
+      },
+      "vis": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      },
+      "light": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      }
+    },
+    "bsp": "labmaps/lab_wallmix/lab_wallmix.bsp",
+    "bsp_bytes": 69580,
+    "bsp_sha256": "7a64021175da8693abca295f8b8bc1ff1ec4bea48dc7e6b3cb4d09ab97689a56",
+    "bsp_entities": 14
+  },
+  "install": {
+    "maps": "maps_local/lab_wallmix.bsp",
+    "engine": "engine/argus/maps/lab_wallmix.bsp"
+  },
+  "nav": {
+    "qc": "src/argus_nav_lab_wallmix.qc",
+    "graph": "src/argus_nav_lab_wallmix.qc.json",
+    "nodes": 37,
+    "links": 142,
+    "rjlinks": 2,
+    "edict_budget": "edict budget: status ok; waypoints 37; live bsp entities 14 of 14; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 120 of 600; slack 480",
+    "playability": {
+      "playable": true,
+      "spawns": 5,
+      "pickups": 7,
+      "graph_md5": "f5e024fa70cb28a0cfd3058f0564bc4f",
+      "reasons": []
+    }
+  },
+  "coverage": {
+    "covered": true,
+    "uncovered": [],
+    "exempt": [],
+    "regions": [
+      {
+        "name": "south",
+        "waypoints": 11
+      },
+      {
+        "name": "east",
+        "waypoints": 7
+      },
+      {
+        "name": "north",
+        "waypoints": 11
+      },
+      {
+        "name": "west",
+        "waypoints": 6
+      }
+    ]
+  },
+  "mill": {
+    "confirm": true,
+    "passes": [
+      {
+        "confirmed": 0,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "f5e024fa70cb28a0cfd3058f0564bc4f",
+        "kind": "walk",
+        "passed": 80,
+        "probed": 80,
+        "skip": 0,
+        "teleport_failures": 0
+      },
+      {
+        "confirmed": 5,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "f5e024fa70cb28a0cfd3058f0564bc4f",
+        "kind": "walk",
+        "passed": 62,
+        "probed": 62,
+        "skip": 80,
+        "teleport_failures": 0
+      }
+    ]
+  },
+  "registration": {
+    "registered": true,
+    "dispatcher": true,
+    "progs_src": true,
+    "requested": true
+  }
+}

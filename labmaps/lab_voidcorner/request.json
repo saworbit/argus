@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "name": "lab_voidcorner",
+  "intent": "Isolate route handoffs at void-edged corners: a 64u walkway ring over lava with four tight 90 degree corners and open air on both sides, so an early waypoint switch or apex corner cut that draws its line across the void shows up as hazard deflections and lava run-offs.",
+  "claim_tier": "isolation",
+  "claims": ["e1m7-early-switch-runoffs", "dm4-walkway-corner"],
+  "notes": "No splash weapons, so knock-ins stay rare and lava deaths mean movement. A central column blocks sight across the ring.",
+  "constraints": {"max_brushes": 60, "max_entities": 30, "liquids": ["lava"], "min_spawns": 4, "margin": 128},
+  "base": {"floor_z": -192, "liquid": "lava", "liquid_depth": 48},
+  "headroom": 192,
+  "regions": [
+    {"name": "south", "kind": "walkway", "min": [0, 0], "size": [768, 64], "floor_z": 0,
+     "connections": [{"to": "east", "type": "open"}, {"to": "west", "type": "open"}]},
+    {"name": "east", "kind": "walkway", "min": [704, 64], "size": [64, 640], "floor_z": 0,
+     "connections": [{"to": "north", "type": "open"}]},
+    {"name": "north", "kind": "walkway", "min": [0, 704], "size": [768, 64], "floor_z": 0,
+     "connections": [{"to": "west", "type": "open"}]},
+    {"name": "west", "kind": "walkway", "min": [0, 64], "size": [64, 640], "floor_z": 0},
+    {"name": "column", "kind": "block", "min": [256, 256], "size": [256, 256], "floor_z": -192, "height": 384}
+  ],
+  "entities": [
+    {"classname": "info_player_deathmatch", "region": "south", "at": [0.25, 0.5], "angle": 0},
+    {"classname": "info_player_deathmatch", "region": "east", "at": [0.5, 0.25], "angle": 90},
+    {"classname": "info_player_deathmatch", "region": "north", "at": [0.75, 0.5], "angle": 180},
+    {"classname": "info_player_deathmatch", "region": "west", "at": [0.5, 0.75], "angle": 270},
+    {"classname": "item_armor1", "region": "south", "at": [0.6, 0.5]},
+    {"classname": "weapon_supernailgun", "region": "north", "at": [0.4, 0.5]},
+    {"classname": "item_health", "region": "east", "at": [0.5, 0.7]},
+    {"classname": "weapon_supershotgun", "region": "west", "at": [0.5, 0.3]},
+    {"classname": "item_spikes", "region": "north", "at": [0.6, 0.5]},
+    {"classname": "item_shells", "region": "south", "at": [0.4, 0.5]}
+  ]
+}

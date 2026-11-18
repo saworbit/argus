@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "about": "The one compile profile for generated lab maps (tools/lab_mapgen.py). Change it only with a new GENERATOR_VERSION or a note in docs/lab-scenarios.md: every manifest records this file's SHA-256, so a BSP names the profile it was built with.",
+  "ericw_tools": {
+    "version": "0.18.1",
+    "tag": "v0.18.1",
+    "commit": "b6e2431f29a1f5763d4aa5fa37cb06838580f41a",
+    "release": "https://github.com/ericwa/ericw-tools/releases/tag/v0.18.1",
+    "licence": "GPL-3.0 (the tools only; nothing of theirs is redistributed by this repository)",
+    "install_dir": "tools/external/ericw-tools",
+    "assets": {
+      "win64": {
+        "name": "ericw-tools-v0.18.1-win64.zip",
+        "url": "https://github.com/ericwa/ericw-tools/releases/download/v0.18.1/ericw-tools-v0.18.1-win64.zip",
+        "size": 12780109,
+        "sha256": "a0f39c6faeb29cd08b267880cdcebb310f9938fef4cbbff07d1f6843c36e9cd3"
+      },
+      "linux": {
+        "name": "ericw-tools-v0.18.1-Linux.zip",
+        "url": "https://github.com/ericwa/ericw-tools/releases/download/v0.18.1/ericw-tools-v0.18.1-Linux.zip",
+        "size": 14594502,
+        "sha256": "986531ff66d692fa732b7f75a6c871dcbd152b98721d1c2475b76d3367f040e2"
+      }
+    }
+  },
+  "qbsp": ["-nopercent"],
+  "vis": ["-threads", "1"],
+  "light": ["-threads", "1"],
+  "timeouts_sec": {
+    "qbsp": 120,
+    "vis": 300,
+    "light": 300
+  }
+}

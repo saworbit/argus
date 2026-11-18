@@ -29,4 +29,16 @@ void() Argus_Nav_Spawn =
         Argus_Nav_Spawn_e1m7 ();
     else if (mapname == "e1m8")
         Argus_Nav_Spawn_e1m8 ();
+    else if (mapname == "lab_voidcorner")
+        Argus_Nav_Spawn_lab_voidcorner ();
+    else if (mapname == "lab_drymix")
+        Argus_Nav_Spawn_lab_drymix ();
+    else if (mapname == "lab_drymix2")
+        Argus_Nav_Spawn_lab_drymix2 ();
+    else if (mapname == "lab_wallmix")
+        Argus_Nav_Spawn_lab_wallmix ();
+    else if (mapname == "lab_dropwall")
+        Argus_Nav_Spawn_lab_dropwall ();
+    else if (mapname == "lab_dropwall2")
+        Argus_Nav_Spawn_lab_dropwall2 ();
 };

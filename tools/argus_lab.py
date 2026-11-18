@@ -698,7 +698,91 @@ def validate(root):
         for ref in (c.get('evidence') if isinstance(c.get('evidence'), list) else []):
             if not evidence_resolves(root, ref):
                 errors.append(f'{where}: evidence {ref} does not resolve (a file in the repo, #n or a run in runs/)')
+        errors += promotion_errors(root, c, where)
     errors += validate_instruments(root)
+    return errors
+
+
+# ---------------------------------------------------------------- lab scenarios
+
+def lab_maps(root):
+    """Map names of the generated lab scenarios (tools/lab_instruments.json lab_scenarios)."""
+    block = instruments(root).get('lab_scenarios', {})
+    scenarios = block.get('scenarios', {}) if isinstance(block, dict) else {}
+    return set(scenarios) if isinstance(scenarios, dict) else set()
+
+
+TAPE_MAP = re.compile(r'^SpawnServer: (\S+)', re.M)
+
+
+def tape_map(root, ref):
+    """The map a runs/ tape was recorded on, from the engine's own SpawnServer line, or None."""
+    if not re.fullmatch(r'[\w.-]+', str(ref)):
+        return None
+    path = Path(root) / 'runs' / f'{ref}.log'
+    if not path.is_file():
+        return None
+    with path.open('r', encoding='latin-1') as handle:
+        head = handle.read(16384)
+    match = TAPE_MAP.search(head)
+    return match.group(1).lower() if match else None
+
+
+def evidence_maps(root, ref):
+    """Maps a piece of evidence records tapes on: a runs/ tape, or a ladder results file.
+
+    Large diagnostic tapes stay machine-local, like the frozen study tapes;
+    their ladder's committed results file lists every tape with the map read
+    from its SpawnServer line, its size and its SHA-256 ("tapes": [{"run",
+    "map", "sha256"}]), so a clean checkout can still see what was run where.
+    """
+    one = tape_map(root, ref)
+    if one:
+        return {one}
+    if not str(ref).endswith('.json'):
+        return set()
+    path = Path(root) / str(ref)
+    try:
+        doc = read_json(path) if path.is_file() else {}
+    except (OSError, ValueError):
+        return set()
+    tapes = doc.get('tapes') if isinstance(doc, dict) else None
+    if not isinstance(tapes, list):
+        return set()
+    return {str(t['map']).lower() for t in tapes
+            if isinstance(t, dict) and t.get('map') and re.fullmatch(r'[0-9a-f]{64}', str(t.get('sha256', '')))}
+
+
+def promotion_errors(root, claim, where):
+    """The lab-map promotion rule (docs/lab-scenarios.md), as validation errors.
+
+    A lab map is an isolation instrument. Any claim citing a lab-map tape names
+    that map in its maps, so the lab result cannot hide inside a stock claim; and
+    a supported or fixed claim that also names a stock map must cite at least one
+    tape recorded on that stock geometry beside the lab tapes.
+    """
+    labs = lab_maps(root)
+    if not labs:
+        return []
+    errors = []
+    maps = [m for m in claim.get('maps', []) if isinstance(m, str)] if isinstance(claim.get('maps'), list) else []
+    evidence = claim.get('evidence') if isinstance(claim.get('evidence'), list) else []
+    recorded = set()
+    for ref in evidence:
+        found = evidence_maps(root, ref)
+        recorded |= found
+        for m in sorted(found):
+            if m in labs and m not in maps:
+                errors.append(f'{where}: evidence {ref} holds a {m} tape, a lab map the claim does not name in maps')
+    named_labs = [m for m in maps if m in labs]
+    stock = [m for m in maps if m not in labs]
+    if named_labs and stock and claim.get('status') in ('supported', 'fixed'):
+        if not any(m in labs for m in recorded):
+            errors.append(f'{where}: names lab map {", ".join(named_labs)} but cites no tape recorded on it')
+        missing = [m for m in stock if m not in recorded]
+        if missing:
+            errors.append(f'{where}: a lab-map result cannot reach a stock-map claim without a run on real '
+                          f'geometry: cite a tape recorded on {", ".join(missing)} (docs/lab-scenarios.md)')
     return errors
 
 
@@ -769,6 +853,46 @@ def validate_instruments(root):
             for ref in row.get('evidence', []) if isinstance(row.get('evidence'), list) else []:
                 if not evidence_resolves(root, ref):
                     errors.append(f'{here}: evidence {ref} does not resolve')
+    errors += validate_scenarios(root, doc)
+    return errors
+
+
+def validate_scenarios(root, doc):
+    """The lab_scenarios block: each generated map's identity, tier and files, and the promotion rule."""
+    block = doc.get('lab_scenarios')
+    if block is None:
+        return []
+    where = 'lab_instruments.json lab_scenarios'
+    if not isinstance(block, dict) or not isinstance(block.get('scenarios'), dict):
+        return [f'{where}: an object with scenarios']
+    errors = []
+    rule = str(block.get('rule', ''))
+    if 'isolation' not in rule or 'stock' not in rule:
+        errors.append(f'{where}: rule must state that lab maps are isolation instruments and that a stock-map '
+                      'claim needs a run on real geometry')
+    if not evidence_resolves(root, block.get('docs', '')):
+        errors.append(f'{where}: docs {block.get("docs")} does not resolve')
+    for name, row in block['scenarios'].items():
+        here = f'{where} {name}'
+        if not re.fullmatch(r'lab_[a-z0-9_]{1,28}', str(name)):
+            errors.append(f'{here}: a lab scenario map is named lab_<words>')
+        if not isinstance(row, dict):
+            errors.append(f'{here}: an object')
+            continue
+        if row.get('claim_tier') != 'isolation':
+            errors.append(f'{here}: claim_tier is isolation, the only tier a generated map carries')
+        if not re.fullmatch(rf'{re.escape(str(name))}-[0-9a-f]{{10}}', str(row.get('id', ''))):
+            errors.append(f'{here}: id is <map>-<first 10 hex of the source sha256>')
+        if not re.fullmatch(r'[0-9a-f]{64}', str(row.get('source_sha256', ''))):
+            errors.append(f'{here}: source_sha256 is a sha256')
+        elif not str(row['source_sha256']).startswith(str(row.get('id', '')).rsplit('-', 1)[-1]):
+            errors.append(f'{here}: id does not match source_sha256')
+        for key in ('request', 'manifest'):
+            if not evidence_resolves(root, row.get(key, '')):
+                errors.append(f'{here}: {key} {row.get(key)} does not resolve')
+        for cid in row.get('claims', []) if isinstance(row.get('claims'), list) else ['?']:
+            if not re.fullmatch(r'[a-z0-9][a-z0-9-]*', str(cid)):
+                errors.append(f'{here}: claims are claim ids')
     return errors
 
 

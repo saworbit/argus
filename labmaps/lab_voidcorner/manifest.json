@@ -1,0 +1,294 @@
+{
+  "schema": 1,
+  "scenario_id": "lab_voidcorner-70ece72d72",
+  "map": "lab_voidcorner",
+  "intent": "Isolate route handoffs at void-edged corners: a 64u walkway ring over lava with four tight 90 degree corners and open air on both sides, so an early waypoint switch or apex corner cut that draws its line across the void shows up as hazard deflections and lava run-offs.",
+  "claim_tier": "isolation",
+  "claims": [
+    "e1m7-early-switch-runoffs",
+    "dm4-walkway-corner"
+  ],
+  "promotion_rule": "Lab maps are isolation instruments. A result measured on a lab map can support an isolation-tier claim only. A claim about stock geometry needs a separate run on real geometry (dm2, dm3, dm4, dm6 or another stock map), and it cites the lab tapes and the stock tapes together.",
+  "generator": {
+    "version": 1,
+    "source_sha256": "70ece72d72724b42f763dfd2281128090a1f32978896412175b8b68ccba43448",
+    "map_sha256": "204988de3aec4c6f0f10188515de003df6361a7419e72e6ebc938dbb002118d8",
+    "wad_sha256": "a5ce3172cca20051c824deec9a98ddbc85bf9a4c8f4b06b75775cff155d95438"
+  },
+  "counts": {
+    "brushes": 12,
+    "entities": 13,
+    "max_brushes": 60,
+    "max_entities": 30
+  },
+  "extent": [
+    -128,
+    -128,
+    -192,
+    896,
+    896,
+    384
+  ],
+  "regions": [
+    {
+      "name": "south",
+      "kind": "floor",
+      "min": [
+        0,
+        0
+      ],
+      "size": [
+        768,
+        64
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "east",
+      "kind": "floor",
+      "min": [
+        704,
+        64
+      ],
+      "size": [
+        64,
+        640
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "north",
+      "kind": "floor",
+      "min": [
+        0,
+        704
+      ],
+      "size": [
+        768,
+        64
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "west",
+      "kind": "floor",
+      "min": [
+        0,
+        64
+      ],
+      "size": [
+        64,
+        640
+      ],
+      "floor_z": 0
+    },
+    {
+      "name": "column",
+      "kind": "block",
+      "min": [
+        256,
+        256
+      ],
+      "size": [
+        256,
+        256
+      ],
+      "floor_z": -192
+    }
+  ],
+  "adjacency": [
+    {
+      "a": "south",
+      "b": "east",
+      "relation": "edge",
+      "length": 64,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "west",
+      "relation": "edge",
+      "length": 64,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "south",
+      "b": "column",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 192
+    },
+    {
+      "a": "east",
+      "b": "north",
+      "relation": "edge",
+      "length": 64,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "east",
+      "b": "column",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 192
+    },
+    {
+      "a": "north",
+      "b": "west",
+      "relation": "edge",
+      "length": 64,
+      "dz": 0,
+      "walk": "walk"
+    },
+    {
+      "a": "north",
+      "b": "column",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 192
+    },
+    {
+      "a": "west",
+      "b": "column",
+      "relation": "gap",
+      "gap": 192,
+      "dz": 192
+    }
+  ],
+  "connections": [
+    {
+      "from": "south",
+      "to": "east",
+      "type": "open",
+      "length": 64,
+      "dz": 0
+    },
+    {
+      "from": "south",
+      "to": "west",
+      "type": "open",
+      "length": 64,
+      "dz": 0
+    },
+    {
+      "from": "east",
+      "to": "north",
+      "type": "open",
+      "length": 64,
+      "dz": 0
+    },
+    {
+      "from": "north",
+      "to": "west",
+      "type": "open",
+      "length": 64,
+      "dz": 0
+    }
+  ],
+  "navgen_readiness": {
+    "spawns": 4,
+    "pickups": 6,
+    "standable_area": 245760,
+    "entities_before_waypoints": 22,
+    "waypoint_room": 518,
+    "ready": true,
+    "reasons": []
+  },
+  "files": {
+    "request": "labmaps/lab_voidcorner/request.json",
+    "map": "labmaps/lab_voidcorner/lab_voidcorner.map"
+  },
+  "compile": {
+    "ericw_tools": "0.18.1",
+    "ericw_commit": "b6e2431f29a1f5763d4aa5fa37cb06838580f41a",
+    "profile_sha256": "93ab3b7e3aada8f68982966bad71d912b3db8c4e9eb7bd303a0c45bd7db965cc",
+    "steps": {
+      "qbsp": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0,
+        "leak": false
+      },
+      "vis": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      },
+      "light": {
+        "ok": true,
+        "exit": 0,
+        "warnings": 0
+      }
+    },
+    "bsp": "labmaps/lab_voidcorner/lab_voidcorner.bsp",
+    "bsp_bytes": 74988,
+    "bsp_sha256": "73e82412c2d7d472b76b75574956b865d6e5f95a1ef115493e03c31377b998d1",
+    "bsp_entities": 13
+  },
+  "install": {
+    "maps": "maps_local/lab_voidcorner.bsp",
+    "engine": "engine/argus/maps/lab_voidcorner.bsp"
+  },
+  "nav": {
+    "qc": "src/argus_nav_lab_voidcorner.qc",
+    "graph": "src/argus_nav_lab_voidcorner.qc.json",
+    "nodes": 22,
+    "links": 44,
+    "edict_budget": "edict budget: status ok; waypoints 22; live bsp entities 13 of 13; world and client slots 9; runtime reserve 60 for four bots and dynamic entities; total 104 of 600; slack 496",
+    "playability": {
+      "playable": true,
+      "spawns": 5,
+      "pickups": 6,
+      "graph_md5": "324e18b2c08308cd50d29fa08ca0f37b",
+      "reasons": []
+    }
+  },
+  "mill": {
+    "confirm": true,
+    "passes": [
+      {
+        "confirmed": 6,
+        "failed": 0,
+        "failed_links": [],
+        "graph_md5": "324e18b2c08308cd50d29fa08ca0f37b",
+        "kind": "walk",
+        "passed": 44,
+        "probed": 44,
+        "skip": 0,
+        "teleport_failures": 0
+      }
+    ]
+  },
+  "registration": {
+    "registered": true,
+    "dispatcher": true,
+    "progs_src": true,
+    "requested": true
+  },
+  "coverage": {
+    "covered": true,
+    "uncovered": [],
+    "exempt": [],
+    "regions": [
+      {
+        "name": "south",
+        "waypoints": 6
+      },
+      {
+        "name": "east",
+        "waypoints": 5
+      },
+      {
+        "name": "north",
+        "waypoints": 6
+      },
+      {
+        "name": "west",
+        "waypoints": 5
+      }
+    ]
+  }
+}

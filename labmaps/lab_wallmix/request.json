@@ -1,0 +1,241 @@
+{
+  "base": {
+    "floor_z": -192,
+    "liquid": "lava",
+    "liquid_depth": 48
+  },
+  "claim_tier": "isolation",
+  "claims": [
+    "route-steer-brink-flicker"
+  ],
+  "constraints": {
+    "liquids": [
+      "lava"
+    ],
+    "margin": 0,
+    "max_brushes": 80,
+    "max_entities": 40,
+    "min_spawns": 4
+  },
+  "entities": [
+    {
+      "angle": 0,
+      "at": [
+        0.3,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "south"
+    },
+    {
+      "angle": 90,
+      "at": [
+        0.5,
+        0.3
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "east"
+    },
+    {
+      "angle": 180,
+      "at": [
+        0.7,
+        0.5
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "north"
+    },
+    {
+      "angle": 270,
+      "at": [
+        0.5,
+        0.7
+      ],
+      "classname": "info_player_deathmatch",
+      "region": "west"
+    },
+    {
+      "at": [
+        0.05,
+        0.5
+      ],
+      "classname": "item_armor1",
+      "region": "south"
+    },
+    {
+      "at": [
+        0.95,
+        0.5
+      ],
+      "classname": "weapon_supernailgun",
+      "region": "north"
+    },
+    {
+      "at": [
+        0.95,
+        0.5
+      ],
+      "classname": "weapon_supershotgun",
+      "region": "south"
+    },
+    {
+      "at": [
+        0.05,
+        0.5
+      ],
+      "classname": "item_health",
+      "region": "north"
+    },
+    {
+      "at": [
+        0.5,
+        0.6
+      ],
+      "classname": "item_spikes",
+      "region": "east"
+    },
+    {
+      "at": [
+        0.5,
+        0.4
+      ],
+      "classname": "item_shells",
+      "region": "west"
+    },
+    {
+      "at": [
+        0.6,
+        0.5
+      ],
+      "classname": "item_health",
+      "region": "south"
+    }
+  ],
+  "headroom": 192,
+  "intent": "Give brink work dm4's two commonest guard vetoes: a 96u walkway ring over lava whose outer edges are the hull walls, with solid pillars filling two inner corners, so bots turn two corners around a wall the guard reads as a wall and two around a lethal lava lip.",
+  "name": "lab_wallmix",
+  "notes": "Built after tools/argus_guard_replica.py read dm4's re-entries as 47 per cent wall, 36 lava, 6 void and 2.5 run-off, and every earlier lab map as 97 to 98 per cent lava with no walls (runs/dm4-reentry-guard.results.json): a generated slab over open air turns a buried probe into a lava veto. Walls here are solid to the base: margin 0 puts the hull walls on the walkways' outer edges, the walkways are solid_below, and the pillars rise from the base. No splash weapons. A central column blocks sight across the lava.",
+  "regions": [
+    {
+      "connections": [
+        {
+          "to": "east",
+          "type": "open"
+        },
+        {
+          "to": "west",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        0,
+        0
+      ],
+      "name": "south",
+      "size": [
+        1024,
+        96
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "north",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        928,
+        96
+      ],
+      "name": "east",
+      "size": [
+        96,
+        832
+      ],
+      "solid_below": true
+    },
+    {
+      "connections": [
+        {
+          "to": "west",
+          "type": "open"
+        }
+      ],
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        0,
+        928
+      ],
+      "name": "north",
+      "size": [
+        1024,
+        96
+      ],
+      "solid_below": true
+    },
+    {
+      "floor_z": 0,
+      "kind": "walkway",
+      "min": [
+        0,
+        96
+      ],
+      "name": "west",
+      "size": [
+        96,
+        832
+      ],
+      "solid_below": true
+    },
+    {
+      "floor_z": -192,
+      "height": 384,
+      "kind": "block",
+      "min": [
+        96,
+        96
+      ],
+      "name": "pillar_sw",
+      "size": [
+        96,
+        96
+      ]
+    },
+    {
+      "floor_z": -192,
+      "height": 384,
+      "kind": "block",
+      "min": [
+        832,
+        832
+      ],
+      "name": "pillar_ne",
+      "size": [
+        96,
+        96
+      ]
+    },
+    {
+      "floor_z": -192,
+      "height": 384,
+      "kind": "block",
+      "min": [
+        384,
+        384
+      ],
+      "name": "column",
+      "size": [
+        256,
+        256
+      ]
+    }
+  ],
+  "schema": 1
+}

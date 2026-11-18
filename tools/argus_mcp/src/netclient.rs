@@ -1201,6 +1201,11 @@ pub struct ProbeReport {
     pub passed: usize,
     pub failed: usize,
     pub teleport_failures: usize,
+    /// With confirmation on, links whose first attempt failed (a walk
+    /// that stopped short or a teleport that never landed) and whose
+    /// second attempt at the end of the same sweep passed. Only a second
+    /// failure is a conviction.
+    pub confirmed: usize,
     pub failed_links: Vec<LinkVerdict>,
     pub passed_sample: Vec<String>,
     /// One verdict per link probed, in sweep order (#781). passed_sample
@@ -1302,6 +1307,29 @@ pub async fn probe_links_with_ctrl(
     jumps_only: bool,
     ctrl: &mut crate::match_ctrl::MatchCtrl,
 ) -> Result<ProbeReport, String> {
+    probe_links_confirmed(cfg, map, limit, skip, coop, jumps_only, false, ctrl).await
+}
+
+/// The sweep, optionally CONFIRMING its failures. The roster shares the
+/// map with the puppet, and on a micro-map built to isolate one corner
+/// (labmaps/, docs/lab-scenarios.md) the three skill-0 bots stand on the
+/// very walkway being walked: the first lab_voidcorner sweep convicted
+/// two straight 128u walks along a 64u walkway and lost four teleports,
+/// and a rerun of the same graph convicted a different link and lost
+/// three others. With `confirm`, every first-attempt failure is walked
+/// once more after the rest of the sweep; a link the geometry refuses
+/// fails twice, and only that second failure is recorded.
+#[allow(clippy::too_many_arguments)]
+pub async fn probe_links_confirmed(
+    cfg: &crate::config::Config,
+    map: &str,
+    limit: usize,
+    skip: usize,
+    coop: bool,
+    jumps_only: bool,
+    confirm: bool,
+    ctrl: &mut crate::match_ctrl::MatchCtrl,
+) -> Result<ProbeReport, String> {
     // ARGUS_SRC, not root/src: a worktree sweep must read and record the
     // graph it is testing, not the main checkout's
     let navj = cfg.src.join(format!("argus_nav_{map}.qc.json"));
@@ -1399,7 +1427,7 @@ pub async fn probe_links_with_ctrl(
     }
 
     let mode = if coop { "coop" } else { "deathmatch" };
-    let secs = (todo.len() as u32) * 9 + 40;
+    let secs = (todo.len() as u32) * if confirm { 12 } else { 9 } + 40;
     let _staged_map = stage_map_for_probe(cfg, map)?;
     ctrl.start(
         cfg,
@@ -1437,11 +1465,19 @@ pub async fn probe_links_with_ctrl(
         passed: 0,
         failed: 0,
         teleport_failures: 0,
+        confirmed: 0,
         failed_links: Vec::new(),
         passed_sample: Vec::new(),
         verdicts: Vec::new(),
     };
-    for (a, b) in todo {
+    let mut queue: std::collections::VecDeque<(usize, usize, bool)> =
+        todo.iter().map(|&(a, b)| (a, b, false)).collect();
+    let mut retries: Vec<(usize, usize, bool)> = Vec::new();
+    // first attempts in sweep order, then the confirming walks
+    while let Some((a, b, retry)) = queue.pop_front().or_else(|| {
+        queue.extend(retries.drain(..));
+        queue.pop_front()
+    }) {
         let from = nodes[a];
         let to = nodes[b];
         // scratch cvars through the tune inject - ONE line per link
@@ -1471,9 +1507,15 @@ pub async fn probe_links_with_ctrl(
                 }
             }
         }
-        report.probed += 1;
+        if !retry {
+            report.probed += 1;
+        }
         let h = ((to[0] - from[0]).powi(2) + (to[1] - from[1]).powi(2)).sqrt();
         if !landed {
+            if confirm && !retry {
+                retries.push((a, b, true));
+                continue;
+            }
             report.teleport_failures += 1;
             report.record(a, b, h, "teleport_failed");
             continue;
@@ -1481,10 +1523,15 @@ pub async fn probe_links_with_ctrl(
         let out = client.walk_toward(to, h / 240.0 + 3.0);
         if out.reached {
             report.passed += 1;
+            if retry {
+                report.confirmed += 1;
+            }
             report.record(a, b, h, "passed");
             if report.passed_sample.len() < 8 {
                 report.passed_sample.push(format!("n{a}->n{b} h {h:.0}"));
             }
+        } else if confirm && !retry {
+            retries.push((a, b, true));
         } else {
             report.failed += 1;
             report.record(a, b, h, "failed");
@@ -1732,6 +1779,7 @@ mod tests {
             passed: 0,
             failed: pairs.len(),
             teleport_failures: 0,
+            confirmed: 0,
             failed_links: pairs
                 .iter()
                 .map(|(a, b)| LinkVerdict {

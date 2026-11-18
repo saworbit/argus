@@ -477,6 +477,7 @@ Open items:
 | Set up the lab, add a map or run a controlled comparison | [Lab workflow](docs/lab-workflow.md) |
 | See what is true now, what is stale, and whether a comparison can be believed | [The lab spine](docs/lab-spine.md) |
 | Know which instrument answers which question, from a static check to a human session | [The improvement loop](docs/improvement-loop.md) |
+| Isolate one bot behaviour on a generated micro-map | [Lab scenarios](docs/lab-scenarios.md) |
 | Run ladders faster than real time, or replay a match exactly by its seed | [The fixed lab clock](docs/fixed-clock.md) |
 | Estimate how often bots kill a person without one | [The stand-in human](docs/stand-in.md) |
 | Rule on the marked and suspect moments of a session in two minutes | [The session gallery](docs/session-gallery.md) |

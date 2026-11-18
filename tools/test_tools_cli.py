@@ -45,6 +45,11 @@ class TestToolsCLI(unittest.TestCase):
         res = self.run_tool('test_nav_contracts.py')
         self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
 
+    def test_lab_mapgen_regressions(self):
+        # the compile case self-skips where ericw-tools is not installed
+        res = self.run_tool('test_lab_mapgen.py')
+        self.assertEqual(res.returncode, 0, res.stdout + res.stderr)
+
     def test_navgen_normalizes_the_generated_map_symbol(self):
         tmp = self.door_fixture(collision_gap=True)
         qc, png = tmp / 'normalized.qc', tmp / 'normalized.png'
@@ -1258,6 +1263,81 @@ tool_timeout_sec = 700
             report = argus_gait.audit(tape(Path(td) / "stale.log", 2.0), 8.0, 4.0)
             self.assertEqual(report["findings"][0]["verdict"], "pre-existing")
             self.assertEqual(report["failures"], 0)
+
+    def test_guard_replica_follows_engine_traces_and_names_each_branch(self):
+        """A buried probe sees through a slab; walls, lava and run-offs are told apart."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_guard_replica as gr
+
+        SOLID, EMPTY, LAVA = -2, -1, -5
+
+        def slab_over_lava(x, y, z):
+            # a 16u floor slab over open air, the base 200u down under lava
+            if z <= -200:
+                return SOLID
+            if z <= -150:
+                return LAVA
+            if x < 100 and -16 <= z <= 0:
+                return SOLID
+            return EMPTY
+
+        guard = gr.Guard(slab_over_lava)
+        # a trace that starts in the slab leaves it and reports the base
+        self.assertAlmostEqual(guard.trace_down(50, 0, -8, -280), -200, delta=1)
+        # one that leaves it and finds nothing else returns fraction 1
+        self.assertIsNone(guard.trace_down(50, 0, -8, -100))
+        # one that never leaves solid returns fraction 1
+        self.assertIsNone(gr.Guard(lambda x, y, z: SOLID).trace_down(0, 0, 0, -280))
+        # walking the slab is safe; a probe off its edge finds the lava
+        self.assertEqual(guard.move_hazard(40, 0, 24, 0, 32, 200), "none")
+        self.assertEqual(guard.move_hazard(70, 0, 24, 0, 52, 320), "lava")
+
+        def thick_wall(x, y, z):
+            if x >= 100 or z <= 0:
+                return SOLID
+            return EMPTY
+
+        self.assertEqual(gr.Guard(thick_wall).move_hazard(70, 0, 24, 0, 40, 300), "wall")
+
+        def run_off(x, y, z):
+            if z <= -200:
+                return SOLID
+            if z <= -150:
+                return LAVA
+            if x < 100 and -16 <= z <= 0:
+                return SOLID
+            if 100 <= x < 160 and -96 <= z <= -80:
+                return SOLID        # a dry ledge 80u down, lava beyond it
+            return EMPTY
+
+        ledge = gr.Guard(run_off)
+        # at run speed the bot flies over the ledge into the lava
+        self.assertEqual(ledge.move_hazard(80, 0, 24, 0, gr.probe_distance(320), 320), "run_off_lava")
+        # a slow step comes down on the ledge
+        self.assertEqual(ledge.move_hazard(80, 0, 24, 0, gr.probe_distance(50), 50), "none")
+
+        # the physics heading: from rest, one frame of acceleration along the wish
+        yaw, spd = gr.physics_heading(0, 0, 90, 0.014)
+        self.assertAlmostEqual(yaw, 90, places=3)
+        self.assertAlmostEqual(spd, 10 * 0.014 * 320, places=3)
+        self.assertEqual(gr.probe_distance(200), 32)
+        self.assertEqual(gr.probe_distance(500), 52)
+
+        # a tape: steady routed running at the wall, a deflection, two route
+        # frames, and a second deflection, which is the re-entry
+        def row(ms, x, cause):
+            return (f"ARGMOT Reap ms {ms} pos '{x:.1f} 0.0 24.0' wish 0 cause {cause} "
+                    f"ctx '2 0 1' hp 100 ground worldspawn\n")
+
+        causes = ["route_steer"] * 4 + ["hazard_fan", "route_steer", "route_steer", "hazard_fan"]
+        lines = [row(1000 + 14 * i, 40 + 4.2 * i, c) for i, c in enumerate(causes)]
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "wall.log"
+            path.write_text("".join(lines), encoding="utf-8")
+            report = gr.classify(gr.Guard(thick_wall), [path])
+        self.assertEqual(report["route_led_starts"]["n"], 2)
+        self.assertEqual(report["re_entries"]["n"], 1)
+        self.assertEqual(report["re_entries"]["wall"], 1)
 
     def test_voidprobe_separates_lethal_floor_from_lethal_void(self):
         """The guard's two hazard verdicts are different questions."""
