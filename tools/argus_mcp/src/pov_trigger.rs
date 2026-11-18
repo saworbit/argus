@@ -301,14 +301,50 @@ impl Detector {
     }
 }
 
+/// Where a live match's console text is read from (#810). QuakeSpasm on
+/// Windows writes qconsole.log to the launch directory, the run directory
+/// here; where the engine writes it elsewhere or not at all, the
+/// controller's captured stdout carries the same lines.
+#[derive(Clone)]
+pub enum LogSource {
+    File(PathBuf),
+    Buffer(std::sync::Arc<std::sync::Mutex<String>>),
+}
+
+impl LogSource {
+    pub fn describe(&self) -> String {
+        match self {
+            LogSource::File(p) => p.display().to_string(),
+            LogSource::Buffer(_) => "the engine's captured stdout".into(),
+        }
+    }
+}
+
 /// Reads only what a live log gained since the last call, line by line.
 pub struct LogTail {
     path: PathBuf,
+    buffer: Option<std::sync::Arc<std::sync::Mutex<String>>>,
     offset: u64,
     partial: Vec<u8>,
 }
 
 impl LogTail {
+    /// Start at the end of either source.
+    pub fn at_end_of(source: &LogSource) -> Result<Self, String> {
+        match source {
+            LogSource::File(p) => Self::at_end(p),
+            LogSource::Buffer(b) => {
+                let len = b.lock().map_err(|_| "stdout buffer poisoned")?.len() as u64;
+                Ok(LogTail {
+                    path: PathBuf::new(),
+                    buffer: Some(b.clone()),
+                    offset: len,
+                    partial: Vec::new(),
+                })
+            }
+        }
+    }
+
     /// Start at the log's current end: earlier lines belong to moments the
     /// camera can no longer film.
     pub fn at_end(path: &Path) -> Result<Self, String> {
@@ -317,6 +353,7 @@ impl LogTail {
             .len();
         Ok(LogTail {
             path: path.to_path_buf(),
+            buffer: None,
             offset: len,
             partial: Vec::new(),
         })
@@ -326,6 +363,7 @@ impl LogTail {
     pub fn from_start(path: &Path) -> Self {
         LogTail {
             path: path.to_path_buf(),
+            buffer: None,
             offset: 0,
             partial: Vec::new(),
         }
@@ -333,6 +371,19 @@ impl LogTail {
 
     /// Complete lines appended since the previous call.
     pub fn read_lines(&mut self) -> Result<Vec<String>, String> {
+        if let Some(buffer) = &self.buffer {
+            let text = buffer.lock().map_err(|_| "stdout buffer poisoned")?;
+            let bytes = text.as_bytes();
+            if (bytes.len() as u64) < self.offset {
+                self.offset = 0;
+                self.partial.clear();
+            }
+            let start = self.offset as usize;
+            self.partial.extend_from_slice(&bytes[start..]);
+            self.offset = bytes.len() as u64;
+            drop(text);
+            return Ok(self.drain_lines());
+        }
         let mut f = std::fs::File::open(&self.path)
             .map_err(|e| format!("match log {}: {e}", self.path.display()))?;
         let len = f.metadata().map_err(|e| e.to_string())?.len();
@@ -352,13 +403,17 @@ impl LogTail {
             .map_err(|e| e.to_string())?;
         self.offset += buf.len() as u64;
         self.partial.extend_from_slice(&buf);
+        Ok(self.drain_lines())
+    }
+
+    fn drain_lines(&mut self) -> Vec<String> {
         let mut lines = Vec::new();
         while let Some(nl) = self.partial.iter().position(|&b| b == b'\n') {
             let raw: Vec<u8> = self.partial.drain(..=nl).collect();
             let text = String::from_utf8_lossy(&raw);
             lines.push(text.trim_end_matches(['\r', '\n']).to_string());
         }
-        Ok(lines)
+        lines
     }
 }
 
@@ -541,6 +596,30 @@ mod tests {
         std::fs::write(&path, "new\n").unwrap();
         assert_eq!(tail.read_lines().unwrap(), vec!["new"]);
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    // #810: where the engine writes no qconsole.log in the run directory,
+    // the controller's captured stdout is tailed the same way.
+    #[test]
+    fn the_tail_reads_a_stdout_buffer_like_a_file() {
+        let buffer = std::sync::Arc::new(std::sync::Mutex::new(String::from("old line\n")));
+        let source = LogSource::Buffer(buffer.clone());
+        assert_eq!(source.describe(), "the engine's captured stdout");
+        let mut tail = LogTail::at_end_of(&source).unwrap();
+        assert!(tail.read_lines().unwrap().is_empty());
+        buffer
+            .lock()
+            .unwrap()
+            .push_str("ARGEVT Romero stall\r\nhalf a li");
+        assert_eq!(tail.read_lines().unwrap(), vec!["ARGEVT Romero stall"]);
+        buffer.lock().unwrap().push_str("ne\n");
+        assert_eq!(tail.read_lines().unwrap(), vec!["half a line"]);
+        *buffer.lock().unwrap() = String::from("new\n");
+        assert_eq!(tail.read_lines().unwrap(), vec!["new"]);
+        let missing = std::env::temp_dir()
+            .join("argus-no-such-dir")
+            .join("qconsole.log");
+        assert!(LogTail::at_end_of(&LogSource::File(missing)).is_err());
     }
 
     /// The detector against a real committed tape: dm4 fires early on a
