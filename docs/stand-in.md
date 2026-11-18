@@ -93,15 +93,42 @@ scorecard now counts the same way; it used to subtract only world deaths, which
 credited the stand-in's own rocket suicides to the bots
 ([#844](https://github.com/saworbit/argus/issues/844)).
 
+## Calibration 2: kills per minute in sight
+
+The [second protocol](specs/2026-11-18-stand-in-calibration-2.md) was
+registered before its tapes: the same dm4 design on build `9387e1e77737`,
+stand-in seeds 5 to 8, and bot kills on the stand-in per minute in sight of a
+bot (`argus_standin_calibration.py --measure sight`), sight rebuilt from each
+0.5 s sample as a living bot within 1800u on a clear hull-0 line between the
+eyes. The person's level on the same measure is 3.92 (his last four dm4
+sessions, 3.05 to 5.50).
+
+| Bot skill | Tapes | Bot kills on the stand-in a minute in sight | SD |
+| --- | --- | --- | --- |
+| 0 | 4 | 4.33 | 0.63 |
+| 1 | 4 | 3.99 | 3.07 |
+| 2 | 4 | 9.26 | 3.21 |
+| 3 | 4 | 10.77 | 7.30 |
+
+Spearman 0.58, past the 0.5 bar, but skill 3 minus skill 0 is +6.44 a minute
+with a 95 per cent interval of -5.12 to +18.01, which spans zero. **Dose
+response fails**, narrowly. Level at skill 1 is 3.99 against 3.92, inside the
+band. The interval is wide because exposure is still thin: the matches spent
+0.13 to 1.06 minutes in sight, and one skill 3 match recorded no kill in its
+0.22 minutes. Read after the first calibration's verdict, its 16 tapes on the
+same measure gave Spearman 0.60 and an interval clear of zero; that reading
+was not registered and is not a pass.
+
 ## What would fix it
 
-Two things, either of which needs its own registered calibration
-([#842](https://github.com/saworbit/argus/issues/842)):
+The measure is now right; what is missing is exposure
+([#842](https://github.com/saworbit/argus/issues/842)). Either needs its own
+registered calibration:
 
 - Navigation that keeps it in the game: the remaining stalls are on dm4's
   walkway steps and in corners the nav graph's nearest node cannot see.
-- A measure that does not depend on how much it fought: bot kills per minute
-  in sight of a bot, rather than per minute of match.
+- More exposure per tier: longer matches or more of them, so a single match
+  with a few seconds in sight cannot swing a tier's mean.
 
 Until then `tools/lab_instruments.json` records it as failing dose response on
 dm4, `argus_lab.py pyramid --through 5` does not plan it, and threat claims

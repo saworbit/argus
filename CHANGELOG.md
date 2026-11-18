@@ -35,6 +35,15 @@ passing botmatch does not establish better human play.
   and is not shipped: over eight played dm4 pairs it took world deaths in lava
   from 16 to 27, the extra ones in fights, after damage and with no hazard
   deflection before them.
+- `tools/argus_standin_calibration.py --measure sight` reads bot kills on the
+  stand-in per minute in sight of a bot, rebuilt from the tape on a clear
+  hull-0 line ([#842](https://github.com/saworbit/argus/issues/842)). A
+  second calibration registered on it (`docs/specs/2026-11-18-stand-in-calibration-2.md`)
+  read Spearman 0.58 against the first's 0.13, but its skill 3 minus skill 0
+  interval spans zero, so dose response still fails; the level matches
+  (3.99 against the person's 3.92). Exposure, 0.13 to 1.06 minutes in sight
+  a match, is what is left to fix.
+
 - `tools/argus_floorlinks.py` lists the shipped level walk links whose own
   line fails the early-switch floor test
   ([#905](https://github.com/saworbit/argus/issues/905)): dm4 20 of 608, dm6
