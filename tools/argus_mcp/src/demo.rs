@@ -367,6 +367,13 @@ pub fn resolve_demo(cfg: &Config, name: &str) -> Result<PathBuf, String> {
 
 pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
     let data = std::fs::read(path).map_err(|e| format!("{}: {e}", path.display()))?;
+    parse_demo(&path.display().to_string(), &data)
+}
+
+/// Parse demo bytes already in memory; `file` only labels the brief. A demo
+/// can come from outside the repository, so malformed input must return an
+/// error or a truncated brief, never panic or spin (#849 fuzzes this).
+pub fn parse_demo(file: &str, data: &[u8]) -> Result<Demo, String> {
     // header: cd-track line terminated by \n
     let hdr_end = data
         .iter()
@@ -861,7 +868,7 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
     let highlights = find_highlights(&prints, &all_names);
 
     let brief = DemoBrief {
-        file: path.display().to_string(),
+        file: file.to_string(),
         protocol,
         level,
         maxclients,
@@ -894,10 +901,23 @@ fn aim_stats(t: &[f64], yaw: &[f32]) -> Option<AimStats> {
     let mut rates = Vec::new();
     for i in 1..t.len() {
         let dt = t[i] - t[i - 1];
-        if dt <= 0.0 || dt > 0.5 {
+        // written so that a NaN interval fails too
+        let usable = dt > 0.0 && dt <= 0.5;
+        if !usable {
             continue;
         }
-        let mut dy = (yaw[i] - yaw[i - 1]) as f64;
+        let mut dy = f64::from(yaw[i] - yaw[i - 1]);
+        // #849: a corrupt angle near the float limit spun the wrap below
+        // forever, because subtracting 360 from a float that large changes
+        // nothing, and an infinite or NaN one cannot be wrapped at all. Skip
+        // those; fmod is exact, so any step the loop could finish wraps to
+        // the same angle, and none takes more than one turn of it.
+        if !dy.is_finite() {
+            continue;
+        }
+        if dy.abs() > 540.0 {
+            dy %= 360.0;
+        }
         while dy > 180.0 {
             dy -= 360.0;
         }
@@ -911,7 +931,8 @@ fn aim_stats(t: &[f64], yaw: &[f32]) -> Option<AimStats> {
     }
     let mean = rates.iter().sum::<f64>() / rates.len() as f64;
     let mut sorted = rates.clone();
-    sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    // a total order: sort_by may panic on a comparator that is not one
+    sorted.sort_by(f64::total_cmp);
     let p95 = sorted[((sorted.len() - 1) as f64 * 0.95) as usize];
     let mut flicks = 0usize;
     let mut hot = false;
@@ -1181,6 +1202,47 @@ mod movement_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Run `f` on a worker and fail, rather than hang the suite, if it spins.
+    fn returns_within<T: Send + 'static>(f: impl FnOnce() -> T + Send + 'static) -> T {
+        let (tx, rx) = std::sync::mpsc::channel();
+        std::thread::spawn(move || tx.send(f()));
+        rx.recv_timeout(std::time::Duration::from_secs(20))
+            .expect("did not return within 20 s")
+    }
+
+    /// #849: a POV yaw of -2.49e38 (found by mutating a demo) or an infinite
+    /// one spun the yaw wrap forever, because subtracting 360 from a float
+    /// that large changes nothing. Non-finite angles and times must be
+    /// skipped rather than averaged in as NaN.
+    #[test]
+    fn absurd_angles_and_times_do_not_spin_or_poison_aim_stats() {
+        let t: Vec<f64> = (0..12).map(|i| f64::from(i) * 0.05).collect();
+        let steady: Vec<f32> = (0..12).map(|i| i as f32 * 5.0).collect();
+        let baseline = aim_stats(&t, &steady).unwrap();
+        // a huge finite step is wrapped; an infinite or NaN one is dropped
+        for (bad, dropped) in [
+            (-2.485_656_4e38, 0),
+            (f32::MAX, 0),
+            (f32::INFINITY, 2),
+            (f32::NAN, 2),
+        ] {
+            let mut yaw = steady.clone();
+            yaw[6] = bad;
+            let t = t.clone();
+            let stats = returns_within(move || aim_stats(&t, &yaw)).expect("stats");
+            assert!(stats.mean_dps.is_finite(), "{bad}: mean {}", stats.mean_dps);
+            assert_eq!(stats.samples, baseline.samples - dropped, "{bad}");
+        }
+        let mut t = t.clone();
+        t[3] = f64::NAN;
+        let stats = aim_stats(&t, &steady).unwrap();
+        assert!(
+            stats.mean_dps.is_finite(),
+            "NaN time: mean {}",
+            stats.mean_dps
+        );
+    }
 
     #[test]
     fn print_session_demos_if_present() {
