@@ -9995,6 +9995,7 @@ float(entity node) Argus_WalkArrivalReady =
     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
     traceline (a - side, b - side, TRUE, self);
     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+    if (self.ar_feettype == CONTENT_WATER) return TRUE;
     return Argus_WalkLineFloored (self.origin, next.origin);
 };
 
