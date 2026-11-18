@@ -49,10 +49,11 @@ The particle pool caps how much shows at once, so raise it with
 -particles 16384 on the command line. Points are static and client
 side: they never touch the server, the bots, or a match.
 """
-import argparse, json, re, struct, sys
+import argparse, json, re, sys
 from pathlib import Path
 
-from argus_navjson import STEP, edges, load_nav
+from argus_bsp import Bsp, CONTENTS_SOLID, CONTENTS_WATER
+from argus_navjson import edges, load_nav
 from argus_tape import parse_tape, roles, samples
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -88,80 +89,11 @@ def tape_points(tape):
 # Two of these overlays are geometry questions, not graph questions:
 # whether a seat would pass the engine's own SV_CheckBottom, and where
 # a water surface actually sits relative to the lip a swimmer has to
-# climb. Both need the BSP, and both read it exactly the way navgen
-# does, because the point of drawing them is to see what navgen saw.
-CONTENTS_SOLID = -2
-CONTENTS_WATER = -3
-
-
-class Bsp:
-    def __init__(self, path):
-        self.d = Path(path).read_bytes()
-        if struct.unpack_from("<i", self.d, 0)[0] != 29:
-            sys.exit(f"{path} is not a BSP29 file")
-        self.lumps = [struct.unpack_from("<ii", self.d, 4 + i * 8)
-                      for i in range(15)]
-        pl = self._lump(1)
-        self.planes = [struct.unpack_from("<ffff", pl, i * 20)[:4]
-                       for i in range(len(pl) // 20)]
-        nd = self._lump(5)
-        self.nodes = [struct.unpack_from("<ihh", nd, i * 24)
-                      for i in range(len(nd) // 24)]
-        lf = self._lump(10)
-        self.leaves = [struct.unpack_from("<2i6h2H4B", lf, i * 28)
-                       for i in range(len(lf) // 28)]
-        md = self._lump(14)
-        m0 = struct.unpack_from("<9f7i", md, 0)
-        self.head0 = m0[9]
-
-    def _lump(self, i):
-        o, l = self.lumps[i]
-        return self.d[o:o + l]
-
-    def contents(self, x, y, z):
-        n = self.head0
-        while n >= 0:
-            node = self.nodes[n]
-            nx, ny, nz, dd = self.planes[node[0]]
-            n = node[1] if (nx * x + ny * y + nz * z - dd) >= 0 else node[2]
-        return self.leaves[-1 - n][0]
-
-    def floor_under(self, x, y, z, maxdrop):
-        d = 0.0
-        while d <= maxdrop:
-            if self.contents(x, y, z - d) == CONTENTS_SOLID:
-                return z - d
-            d += 2.0
-        return None
-
-    def check_bottom(self, x, y, oz):
-        """SV_CheckBottom for a player box whose origin sits at oz.
-
-        Same test navgen runs before it seats a waypoint (#250). A
-        seat that fails it is one the engine will refuse to walk onto,
-        which is how e1m6 shipped a node 14 units past a lava lip.
-        """
-        fz = oz - 24
-        cs = ((x - 16, y - 16), (x + 16, y - 16),
-              (x - 16, y + 16), (x + 16, y + 16))
-        if all(self.contents(cx, cy, fz - 1) == CONTENTS_SOLID
-               for cx, cy in cs):
-            return True
-        mid = self.floor_under(x, y, fz, 2 * STEP)
-        if mid is None:
-            return False
-        for cx, cy in cs:
-            c = self.floor_under(cx, cy, fz, 2 * STEP)
-            if c is None or c < mid - STEP:
-                return False
-        return True
-
-    def water_top(self, x, y, z):
-        """The surface above a point known to be in water."""
-        top = z
-        while top < z + 512 and self.contents(x, y, top + 8) == CONTENTS_WATER:
-            top += 8
-        return top
+# climb. Both need the BSP, and both read it through navgen's own
+# reader, argus_bsp (#814): Bsp.check_bottom is the test navgen runs
+# before it seats a waypoint (#250), and Bsp.water_top is the probe
+# navgen's swim links are built on, ceiling included, because the
+# point of drawing them is to see what navgen saw.
 
 
 def find_bsp(mapname):
@@ -207,7 +139,7 @@ def surface_points(mapname, d, nodes, step):
         a, c = nodes[L[0]], nodes[L[1]]
         out.append(tuple(a))
         out.append(tuple(c))
-        if b.contents(a[0], a[1], a[2]) != CONTENTS_WATER:
+        if b.h0(a[0], a[1], a[2]) != CONTENTS_WATER:
             print(f"  n{L[0]} is not in water; skipping its surface")
             continue
         top = b.water_top(a[0], a[1], a[2])
@@ -267,9 +199,7 @@ def solid_point(mapname):
     if p is None:
         sys.exit(f"--pad needs maps_local/{mapname}.bsp to hide its filler")
     b = Bsp(p)
-    lf = b._lump(14)
-    mn = struct.unpack_from("<3f", lf, 0)
-    mx = struct.unpack_from("<3f", lf, 12)
+    mn, mx = b.mins, b.maxs
     step = 64.0
     z = mn[2] + 8
     while z < mx[2]:
@@ -277,7 +207,7 @@ def solid_point(mapname):
         while y < mx[1]:
             x = mn[0] + 8
             while x < mx[0]:
-                if b.contents(x, y, z) == CONTENTS_SOLID:
+                if b.h0(x, y, z) == CONTENTS_SOLID:
                     return (x, y, z)
                 x += step
             y += step

@@ -12,10 +12,10 @@ Usage: python tools/argus_mapgate.py map.bsp nav.qc.json [probe.json]
 from dataclasses import dataclass
 import hashlib
 import json
-import struct
 import sys
 from pathlib import Path
 
+from argus_bsp import Bsp
 from argus_navjson import edges as nav_edges, load_nav
 
 
@@ -26,32 +26,6 @@ SPAWNFLAG_NOT_DEATHMATCH = 2048
 
 def _distance(a, b):
     return sum((a[i] - b[i]) ** 2 for i in range(3)) ** 0.5
-
-
-def _parse_entities(path):
-    data = Path(path).read_bytes()
-    if len(data) < 4 + 15 * 8:
-        raise ValueError(f"{path}: file is too small for a BSP29 header")
-    (version,) = struct.unpack_from("<i", data, 0)
-    if version != 29:
-        raise ValueError(f"{path}: BSP version {version}, expected 29")
-    offset, length = struct.unpack_from("<ii", data, 4)
-    if offset < 0 or length < 0 or offset + length > len(data):
-        raise ValueError(f"{path}: invalid entity lump")
-    text = data[offset:offset + length].split(b"\0")[0].decode("latin-1")
-    entities = []
-    for block in text.split("}"):
-        values = {}
-        for line in block.splitlines():
-            line = line.strip()
-            if not line.startswith('"'):
-                continue
-            parts = line.split('"')
-            if len(parts) >= 5:
-                values[parts[1]] = parts[3]
-        if values:
-            entities.append(values)
-    return entities
 
 
 def _origin(entity):
@@ -135,7 +109,7 @@ def assess_playability(bsp_path, graph_path, probe_path=None):
     graph = load_nav(graph_path)
     nodes = graph.get("nodes", [])
     digest = graph_md5(graph_path)
-    entities = _parse_entities(bsp_path)
+    entities = Bsp(bsp_path).entities()
     spawns = []
     items = []
     for entity in entities:
