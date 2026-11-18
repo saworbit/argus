@@ -75,6 +75,16 @@ passing botmatch does not establish better human play.
   not any in the 8 degree cone the protocol's wording admits; counting any
   gives 718 events on those 32 tapes against 418.
 
+- `match_run` takes `seeds`, so an agent can run the fixed lab clock through
+  the MCP server ([#853](https://github.com/saworbit/argus/issues/853)). It
+  is refused on any map where `tools/lab_instruments.json` does not record
+  the clock as accepted (dm4 and dm2 today). One seed returns the usual
+  result; up to ten run one after another on one engine as
+  `<run_name>_s<seed>` and report like `argus-mcp seeds`. Both name the
+  clock, its 14.25 ms frame, the seeds and the map's limits, and a
+  `match_stop`, shutdown or Task cancel ends the whole ladder. No tool was
+  added: the surface is 25,446 bytes against its 25,500 bound.
+
 - A lab-map result supports an isolation-tier claim only: `argus_ci.py lab`
   fails a supported or fixed claim that names a stock map without citing a
   tape recorded on it, or that cites a lab tape without naming the lab map
