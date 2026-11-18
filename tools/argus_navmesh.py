@@ -805,33 +805,52 @@ def link_runs(bsp, doc, speed=RUN, gravity=GRAVITY):
         a, b = row[0], row[1]
         if (a, b) in typed or nodes[a][2] - nodes[b][2] <= STEP:
             continue
-        (ax, ay, az), (bx, by, _) = nodes[a], nodes[b]
-        d = math.hypot(bx - ax, by - ay)
-        if d < 1.0:
+        r = run_off(bsp, nodes[a], nodes[b], speed, gravity)
+        if r is None:
             continue
-        ux, uy = (bx - ax) / d, (by - ay) / d
-        z, t, lip = az, 0.0, None
-        while t < d:
-            t += 4.0
-            x, y = ax + ux * t, ay + uy * t
-            if bsp.h1(x, y, z + STEP) != CONTENTS_EMPTY:
-                break                         # a wall before any lip
-            f = fall_to(bsp, x, y, z + STEP, maxdrop=2 * STEP)
-            if f is None:
-                lip = (x - ux * 4.0, y - uy * 4.0, z)
-                break
-            z = f
-        if lip is None:
-            continue
-        straight = fall_to(bsp, lip[0] + ux * 1.5, lip[1] + uy * 1.5,
-                           lip[2] + 1.0, maxdrop=4096.0)
-        skind = ("void" if straight is None else
-                 _feet_kind(bsp, lip[0] + ux * 1.5, lip[1] + uy * 1.5, straight) or "floor")
-        r = fly(bsp, lip[0], lip[1], lip[2], ux, uy, speed, 0.0, gravity)
-        miss = math.hypot(r["pos"][0] - bx, r["pos"][1] - by)
-        rows.append({"a": a, "b": b, "lip": lip, "straight": skind,
-                     "run": r["kind"], "land": r["pos"], "miss": miss})
+        rows.append({"a": a, "b": b, "lip": r["lip"], "straight": r["straight"],
+                     "run": r["run"], "land": r["land"], "miss": r["miss"]})
     return rows
+
+
+def run_off(bsp, a, b, speed=RUN, gravity=GRAVITY):
+    """Run the straight line from origin a toward b and fly off its lip.
+
+    The walk keeps to hull 1 a step at a time; the first point where the
+    floor falls more than a step away is the lip, and the body flies off
+    it along the line at speed. None when the line meets a wall or reaches
+    b with no lip. Otherwise the lip, the straight-down landing kind
+    ("straight"), the at-speed flight's kind ("run"), landing ("land") and
+    the brush entity it landed on, if any ("on"), and how far that landing
+    ends from b horizontally ("miss"). link_runs grades every descending
+    link this way; navgen grades a spawn pad's exits with it (#783).
+    """
+    (ax, ay, az), (bx, by, _) = a, b
+    d = math.hypot(bx - ax, by - ay)
+    if d < 1.0:
+        return None
+    ux, uy = (bx - ax) / d, (by - ay) / d
+    z, t, lip = az, 0.0, None
+    while t < d:
+        t += 4.0
+        x, y = ax + ux * t, ay + uy * t
+        if bsp.h1(x, y, z + STEP) != CONTENTS_EMPTY:
+            break                         # a wall before any lip
+        f = fall_to(bsp, x, y, z + STEP, maxdrop=2 * STEP)
+        if f is None:
+            lip = (x - ux * 4.0, y - uy * 4.0, z)
+            break
+        z = f
+    if lip is None:
+        return None
+    straight = fall_to(bsp, lip[0] + ux * 1.5, lip[1] + uy * 1.5,
+                       lip[2] + 1.0, maxdrop=4096.0)
+    skind = ("void" if straight is None else
+             _feet_kind(bsp, lip[0] + ux * 1.5, lip[1] + uy * 1.5, straight) or "floor")
+    r = fly(bsp, lip[0], lip[1], lip[2], ux, uy, speed, 0.0, gravity)
+    miss = math.hypot(r["pos"][0] - bx, r["pos"][1] - by)
+    return {"lip": lip, "straight": skind, "run": r["kind"], "land": r["pos"],
+            "on": r.get("on"), "miss": miss}
 
 
 def _seg_dist(px, py, ax, ay, bx, by):
