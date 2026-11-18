@@ -52,6 +52,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
        argus_navgen.py map.bsp mapname shipped.qc unused.png --repair-links
        argus_navgen.py map.bsp mapname shipped.qc unused.png --seat-links seats.json
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --seat-spawn-pads
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reconcile-artifacts [--reanalyze-tactics]
        argus_navgen.py map.bsp mapname shipped.qc out.png --render-only
 
@@ -111,6 +112,19 @@ and a seat at the turn makes two walks that pass. A full regeneration
 applies the same file after its late link passes (section 7g2e) with the
 same rules, and refuses to publish when an entry cannot apply, for example
 a walk end that is no longer a waypoint.
+
+--seat-spawn-pads seats, on a shipped graph, every deathmatch spawn that
+stands on a solid brush entity (#783), by the rules section 7g2f applies
+at a full regeneration (section 2d says what they are): a seat on the
+brush top at the spawn, with up to four one-way exits the brink guard
+passes at run and walk speed and whose run-off lands dry. Seats go after
+the last node and link calls after the last link call, so no existing
+index or slot moves; a pad already seated is left as it is, so a rerun
+changes nothing. It refuses, and writes nothing, when a pad has no dry
+standing room or no safe exit, or a seat would pass the waypoint or edict
+budget or a ninth slot. Then it rebakes regions and tactics as
+--seat-links does, and names every deathmatch spawn more than 64u from a
+seat.
 
 --reconcile-artifacts derives sidecar families and the banner from shipped QC
 without changing nodes, link calls or their slot order. It rejects stale cover
@@ -200,6 +214,7 @@ if "--seat-links" in sys.argv[5:]:
         print("error: --seat-links requires a seats.json path", file=sys.stderr)
         sys.exit(1)
     SEAT_LINKS = sys.argv[_seat_idx + 1]
+SEAT_SPAWN_PADS = "--seat-spawn-pads" in sys.argv[5:]
 if "--register" in sys.argv[5:]:
     if Path(OUTQC).name != f"argus_nav_{MAPNAME}.qc":
         print(f"error: --register requires argus_nav_{MAPNAME}.qc", file=sys.stderr)
@@ -294,6 +309,56 @@ ents_txt = _bsp.entity_text()
 ent_blocks = re.findall(r"\{(.*?)\}", ents_txt, re.S)
 def kv(block):
     return dict(re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
+
+
+# spawns_an_edict is read by the edict budget in 4c and by
+# --seat-spawn-pads, which runs before sampling.
+def spawns_an_edict(block):
+    """Does this entity still exist after its spawn function runs?
+
+    The budget below is about RUNTIME edicts, and several classes free
+    themselves the moment they spawn. An untargeted `light` is the big
+    one: misc.qc's light() removes it as an inert light, and id's maps
+    are full of them - e1m8 carries 283, more than half its lump. Also
+    info_null (removed outright) and trigger_setskill (removed in
+    deathmatch).
+
+    Counting them made the cap collapse on every SP map: e1m5 read 536
+    entities where only 341 survive, so the cap fell to its floor of
+    60, the decimation radius ballooned to 405u, links could not
+    verify across that spacing and the prune ate the graph down to 3
+    usable nodes. Episode 1 was unusable for exactly this reason.
+
+    A MAKESTATIC ENTITY IS NOT AN EDICT EITHER (#319 follow-on). The
+    six classes below set a model and hand themselves to builtin #69,
+    which copies them into the static list and frees the edict, so a
+    wall torch costs a precache and nothing else. e1m2 carries 24 of
+    them, e1m5 22, lqdm2 22, dm6 15, e1m6 16, e1m7 6, and counting
+    them is what put e1m2's budget 24 seats under the truth. MEASURED
+    rather than reasoned: an `edicts` dump of a live e1m2 shows
+    light_flame_small_yellow at 16 in the lump and 0 in the world, in
+    deathmatch AND in co-op.
+
+    NOT included, deliberately: monsters, which every spawn function
+    in this tree removes in deathmatch, and the spawnflags 2048
+    entities the engine frees there. e1m2 alone would gain 53 more
+    seats from those two, and it is played in co-op as well, where
+    they are real. The budget has to hold in the worse mode.
+    """
+    d = kv("{" + block + "}") if False else dict(
+        re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
+    c = d.get("classname", "")
+    if c == "light" and not d.get("targetname"):
+        return False
+    if c == "info_null":
+        return False
+    if c in ("light_globe", "light_torch_small_walltorch",
+             "light_flame_large_yellow", "light_flame_small_yellow",
+             "light_flame_small_white", "func_illusionary"):
+        return False
+    return True
+
+
 bmodels = _bsp.models
 
 def _door_lip(entity):
@@ -827,6 +892,201 @@ def _wades_hazard(a, b):
     return False
 
 
+# ---- 2d. spawn pads (#783): the rules section 7g2f and --seat-spawn-pads share ----
+# e1m7's four z 280 deathmatch spawns stand on func_wall pads (spawnflags
+# 1792, deathmatch only). Hull 1 is the world's and holds no brush entity,
+# so nothing ever sampled a pad: a bot spawned on one was 150u or more
+# from its nearest seat, and its first heading ran straight at a walkway
+# seat over the pad's edge. In six full-rate tapes 6 of 43 lava deaths
+# left a pad within 0.3 s of spawning (#773,
+# docs/e1m7-lava-investigation.md).
+#
+# A deathmatch spawn whose first floor is the top of a solid brush entity
+# at its spawn position (argus_navmesh.brush_boxes, the air layer's rules),
+# more than a step above any world floor in that column, gets a seat at
+# its exact position. Its links are one-way exits to waypoints within
+# LINK_PATH_MAX and no more than DROPMAX below, nearest first, at most
+# PAD_EXITS, judged by what a bot running the line does, at run and at
+# walk speed:
+#
+#   - The runtime's brink guard has to pass the heading on every step of
+#     the run to the pad's edge (argus_guard_replica.Guard, the
+#     Argus_MoveHazard replica, over a hull 0 that holds the brush
+#     entities). Argus_DropLandHazard projects the landing from its probe
+#     point with the drop to the floor under that point, which beside a
+#     pad is the low floor 224u down, so it refuses every short drop onto
+#     e1m7's narrow walkways at speed. A link the guard refuses is one the
+#     bot is deflected off at the edge, so it is not minted.
+#   - The flight off the edge (argus_navmesh.run_off, the air layer's
+#     flight through hull 1 with the brush entities) must land dry, on no
+#     brush entity, within a step of the target's height, with floor at
+#     that height PAD_LAND_MARGIN further on: a body that lands at speed
+#     keeps sliding, and only a margin past the guard's probe lets the
+#     guard turn it before the edge. A walkway exit flown at run speed
+#     lands on its far lip, with the lake beyond it.
+#   - From the landing, beeline_points has to walk to the target.
+#
+# A line that leaves the pad with no lip, onto floor at its own height, is
+# a walk, and beeline_points judges it over floors that include the brush
+# tops. A full regeneration applies these rules in section 7g2f and
+# leaves a pad with no exit unseated; --seat-spawn-pads applies them to a
+# shipped graph and refuses instead. Both name every deathmatch spawn more
+# than SPAWN_SEAT_MAX from a seat.
+PAD_EXITS = 4
+PAD_LAND_MARGIN = 48  # the guard probes 40u ahead at run speed
+SPAWN_SEAT_MAX = 64
+
+
+def _dm_spawn_origins():
+    return [[float(v) for v in kv(b).get("origin", "0 0 0").split()]
+            for b in ent_blocks if kv(b).get("classname") == "info_player_deathmatch"]
+
+
+def _far_spawns(spawns, seats):
+    """(distance or None, origin) for each spawn more than SPAWN_SEAT_MAX from a seat."""
+    out = []
+    for o in spawns:
+        d = min((((w[0] - o[0]) ** 2 + (w[1] - o[1]) ** 2 + (w[2] - o[2]) ** 2) ** 0.5
+                 for w in seats), default=None)
+        if d is None or d > SPAWN_SEAT_MAX:
+            out.append((d, o))
+    return out
+
+
+def _report_far_spawns(spawns, seats):
+    far = _far_spawns(spawns, seats)
+    if spawns:
+        print(f"spawn seats: {len(far)} of {len(spawns)} deathmatch "
+              f"spawn(s) more than {SPAWN_SEAT_MAX}u from a seat")
+        for d, o in far:
+            print(f"  spawn ({o[0]:.0f} {o[1]:.0f} {o[2]:.0f}) is "
+                  + ("not near any seat" if d is None else f"{d:.0f}u from its nearest seat"))
+    return far
+
+
+class _PadJudge:
+    """The spawn-pad rules over this map's brush entities where they spawn."""
+
+    def __init__(self, boxes):
+        import argus_guard_replica as _guard_replica
+        self.boxes = boxes
+        self.world = _navmesh.WithBrushes(_bsp, boxes)
+        self.guard = _guard_replica.Guard(self.h0, gravity=GRAVITY)
+        self.probe = _guard_replica.probe_distance
+        self._floors = {}
+
+    def floors(self, x, y):
+        """column_floors with the brush entities standing where they spawn."""
+        if (x, y) not in self._floors:
+            self._floors[(x, y)] = column_floors(x, y, self.world.h1)
+        return self._floors[(x, y)]
+
+    def h0(self, x, y, z):
+        """Hull 0 with the brush entities solid where they spawn."""
+        for _cls, mn, mx in self.boxes:
+            if mn[0] <= x <= mx[0] and mn[1] <= y <= mx[1] and mn[2] <= z <= mx[2]:
+                return CONTENTS_SOLID
+        return h0_contents(x, y, z)
+
+    def seat(self, o):
+        """(seat, brush class, refusal) for a spawn on a pad, else None.
+
+        refusal is None when the seat has dry standing room."""
+        fz = next((f for f in self.floors(o[0], o[1]) if f <= o[2] + 2.0), None)
+        if fz is None:
+            return None
+        wz = next((f for f in column_floors(o[0], o[1]) if f <= o[2] + 2.0), None)
+        if wz is not None and fz - wz <= STEP:
+            return None  # world floor, or a plate lying on one: sampled already
+        on = self.world.box_at(o[0], o[1], fz - 0.5)
+        if on is None:
+            return None
+        seat = (o[0], o[1], fz)
+        why = None
+        if hull_contents(*seat) != CONTENTS_EMPTY or hostile_at(*seat):
+            why = f"no dry standing room at z {fz:.0f}"
+        return seat, on, why
+
+    def guard_veto(self, seat, target, speed):
+        """The guard branch that deflects a run from seat toward target."""
+        d = ((target[0] - seat[0]) ** 2 + (target[1] - seat[1]) ** 2) ** 0.5
+        ux, uy = (target[0] - seat[0]) / d, (target[1] - seat[1]) / d
+        yaw = _dmath.degrees(_dmath.atan2(uy, ux))
+        reach = self.probe(speed)
+        s = 0.0
+        while s < d:
+            x, y = seat[0] + ux * s, seat[1] + uy * s
+            f = _navmesh.fall_to(self.world, x, y, seat[2] + STEP, maxdrop=2 * STEP)
+            if f is None:
+                return None  # past the edge: airborne, the guard is done
+            v = self.guard.move_hazard(x, y, f, yaw, reach, speed)
+            if v != "none":
+                return v
+            s += 4.0
+        return None
+
+    def exit_refusal(self, seat, target):
+        """Why seat -> target is not a pad exit, or None when it is."""
+        if hostile_at(*target):
+            return "target stands in lava or slime"
+        r = _navmesh.run_off(self.world, seat, target, _navmesh.RUN, GRAVITY)
+        if r is None:
+            # no lip: a level walk off the pad, or a wall before any edge
+            return None if beeline_points(seat, target, self.floors) else "beeline refuses"
+        d = ((target[0] - seat[0]) ** 2 + (target[1] - seat[1]) ** 2) ** 0.5
+        ux, uy = (target[0] - seat[0]) / d, (target[1] - seat[1]) / d
+        for speed in (_navmesh.RUN, _navmesh.WALK):
+            veto = self.guard_veto(seat, target, speed)
+            if veto:
+                return f"the brink guard deflects the run ({veto})"
+            if speed != _navmesh.RUN:
+                r = _navmesh.run_off(self.world, seat, target, speed, GRAVITY)
+            if r["run"] != "floor":
+                return f"lands in {r['run']}"
+            if r["on"]:
+                return "lands on a brush entity"
+            land = r["land"]
+            if abs(land[2] - target[2]) > STEP:
+                return "lands off the target's level"
+            for m in range(8, PAD_LAND_MARGIN + 1, 8):
+                x, y = land[0] + ux * m, land[1] + uy * m
+                if self.world.h1(x, y, land[2] + STEP) != CONTENTS_EMPTY:
+                    break  # a wall stops the slide
+                f = _navmesh.fall_to(self.world, x, y, land[2] + STEP, maxdrop=2 * STEP)
+                if f is None or hostile_at(x, y, f):
+                    return "lands too near an edge"
+            if not beeline_points(land, target):
+                return "no walk from the landing"
+        return None
+
+    def exits(self, seat, waypoints, refused):
+        """([(index, flat)], candidates) for seat over [(index, origin)].
+
+        Nearest first, at most PAD_EXITS; each refusal is counted in
+        refused by its reason."""
+        cands = []
+        for j, t_ in waypoints:
+            flat = ((t_[0] - seat[0]) ** 2 + (t_[1] - seat[1]) ** 2) ** 0.5
+            if 1.0 <= flat <= LINK_PATH_MAX and -DROPMAX <= t_[2] - seat[2] <= STEP:
+                cands.append((flat, j, t_))
+        out = []
+        for flat, j, t_ in sorted(cands):
+            if len(out) >= PAD_EXITS:
+                break
+            why = self.exit_refusal(seat, t_)
+            if why:
+                refused[why] += 1
+                continue
+            out.append((j, flat))
+        return out, len(cands)
+
+
+def _spawn_pad_judge(spawns):
+    """A _PadJudge when the map has deathmatch spawns and brush entities."""
+    boxes = _navmesh.brush_boxes(_bsp) if spawns else []
+    return _PadJudge(boxes) if boxes else None
+
+
 def _repair_links(text, doc):
     """--repair-links: drop vertical walks and routes into liquid."""
     nodes = [tuple(p) for p in doc["nodes"]]
@@ -1058,7 +1318,7 @@ def _seat_links(text, doc, spec_path):
     and one seat in each elbow makes two walks that pass.
     """
     import json as _sj
-    from argus_nav_artifacts import qc_graph as _qcg, NODE as _NODE, LINK as _LINK
+    from argus_nav_artifacts import qc_graph as _qcg
     spec = _sj.loads(Path(spec_path).read_text(encoding="utf-8"))
     nodes = [tuple(float(v) for v in p) for p in doc["nodes"]]
 
@@ -1139,6 +1399,20 @@ def _seat_links(text, doc, spec_path):
             raise ValueError(f"cut n{a} -> n{b} leaves n{b} unreachable from n{a}")
     if not added and not walks and not cuts:
         return text, doc, added, walks, cuts
+    text, doc = _append_to_graph(text, doc, nodes, added, walks, cuts)
+    return text, doc, added, walks, cuts
+
+
+def _append_to_graph(text, doc, nodes, added, walks, cuts=()):
+    """Append seats and plain walks to a shipped pair, then rebake regions.
+
+    New seats go after the last node and new link calls after the last
+    link call, so no existing index or slot moves; cuts are plain walk
+    lines removed in place, so the remaining calls keep their order.
+    nodes holds every origin, the added indices included. Shared by
+    --seat-links and --seat-spawn-pads.
+    """
+    from argus_nav_artifacts import NODE as _NODE, LINK as _LINK
     lines = text.splitlines(keepends=True)
     nl = "\r\n" if "\r\n" in text else "\n"
     local_re = re.compile(r"^\s*local entity n\d+;")
@@ -1166,15 +1440,92 @@ def _seat_links(text, doc, spec_path):
     doc = dict(doc)
     doc["nodes"] = list(doc["nodes"]) + [list(nodes[i]) for i in added]
     text, doc, _rid = _rebake_regions(text, doc)
-    return text, doc, added, walks, cuts
+    return text, doc
 
 
-if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS:
+def _seat_spawn_pads(text, doc):
+    """--seat-spawn-pads: section 2d's pad seats and exits on a shipped graph.
+
+    e1m7's shipped graph carries the 41 lake seats --repair-links kept
+    (#770), which a fresh regeneration no longer seats, so its pads
+    cannot ship through a regeneration without dropping them (#783).
+    This applies the same rules as 7g2f and keeps everything else: exit
+    candidates are the shipped waypoints, seats and link calls are
+    appended, and a pad already seated (a waypoint within 1u of its
+    seat) is left exactly as it is, so a rerun changes nothing. Unlike
+    7g2f it refuses rather than leave a pad unseated: a pad with no
+    standing room or no safe exit, the waypoint or edict budget, or a
+    ninth slot raises ValueError and nothing is written.
+    """
+    from argus_nav_artifacts import qc_graph as _qcg
+    nodes = [tuple(float(v) for v in p) for p in doc["nodes"]]
+    spawns = _dm_spawn_origins()
+    judge = _spawn_pad_judge(spawns)
+    report = {"seated": [], "present": [], "refused": collections.Counter()}
+    if judge is None:
+        return text, doc, report
+
+    def _find(p):
+        return next((i for i, n in enumerate(nodes)
+                     if max(abs(n[k] - p[k]) for k in range(3)) < 1.0), None)
+
+    pads = []
+    for o in spawns:
+        hit = judge.seat(o)
+        if hit is None:
+            continue
+        seat, on, why = hit
+        where = f"({o[0]:.0f} {o[1]:.0f} {o[2]:.0f}) on {on}"
+        if why:
+            raise ValueError(f"spawn pad {where}: {why}")
+        pads.append((seat, where))
+    pad_seats = {_find(seat) for seat, _ in pads} - {None}
+    waypoints = [(j, n) for j, n in enumerate(nodes) if j not in pad_seats]
+    live = sum(1 for b in ent_blocks if spawns_an_edict(b))
+    limits = waypoint_limits(live, target=MAX_NODES)
+    added, walks = [], []
+    for seat, where in pads:
+        have = _find(seat)
+        if have is not None:
+            report["present"].append(have)
+            continue
+        exits, ncands = judge.exits(seat, waypoints, report["refused"])
+        if not ncands:
+            raise ValueError(f"spawn pad {where}: no waypoint within {LINK_PATH_MAX}u "
+                             f"and {DROPMAX}u below")
+        if not exits:
+            raise ValueError(f"spawn pad {where}: none of {ncands} waypoint(s) in "
+                             f"reach has a safe exit")
+        if not limits.admits(len(nodes), infrastructure=True):
+            raise ValueError(f"spawn pad {where}: the waypoint budget is spent "
+                             f"({len(nodes)} waypoints, {live} live bsp entities)")
+        nodes.append(seat)
+        added.append(len(nodes) - 1)
+        walks.extend((len(nodes) - 1, j) for j, _ in exits)
+        report["seated"].append((len(nodes) - 1, where, [j for j, _ in exits]))
+    if not added:
+        return text, doc, report
+    _, edges = _qcg(text)
+    dests = collections.defaultdict(set)
+    for a, b in list(edges) + walks:
+        dests[a].add(b)
+    over = {a: len(d) for a, d in dests.items() if len(d) > MAX_LINKS}
+    if over:
+        raise ValueError(f"link slot overflow: {over}")
+    budget = assess_edict_budget(len(nodes), live, len(ent_blocks))
+    if not budget.can_register:
+        raise ValueError(budget.line())
+    text, doc = _append_to_graph(text, doc, nodes, added, walks)
+    return text, doc, report
+
+
+if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_SPAWN_PADS:
     import os as _tos
     _qcpath, _jspath = OUTQC, OUTQC + ".json"
     if not (_tos.path.exists(_qcpath) and _tos.path.exists(_jspath)):
-        print("error: --reanalyze-tactics, --repair-links and --seat-links need "
-              "shipped QC and JSON to exist already", file=sys.stderr)
+        print("error: --reanalyze-tactics, --repair-links, --seat-links and "
+              "--seat-spawn-pads need shipped QC and JSON to exist already",
+              file=sys.stderr)
         sys.exit(1)
     _old_qc = Path(_qcpath).read_bytes()
     _old_json = Path(_jspath).read_bytes()
@@ -1215,6 +1566,23 @@ if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS:
         for _a, _b in _walks:
             print(f"  walk: n{_a} {tuple(round(v) for v in _tdoc['nodes'][_a])} -> "
                   f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
+    if SEAT_SPAWN_PADS:
+        try:
+            _candidate_qc, _tdoc, _pads = _seat_spawn_pads(_candidate_qc, _tdoc)
+        except (ValueError, KeyError, IndexError, TypeError) as _error:
+            print(f"error: --seat-spawn-pads: {_error}; nothing written", file=sys.stderr)
+            sys.exit(1)
+        _nexits = sum(len(_e) for _, _, _e in _pads["seated"])
+        _why = ", ".join(f"{_n} {_w}" for _w, _n in sorted(_pads["refused"].items()))
+        print(f"spawn pads: appended {len(_pads['seated'])} seat(s) and {_nexits} exit "
+              f"link(s), {len(_pads['present'])} already seated; refused "
+              f"{sum(_pads['refused'].values())}" + (f" ({_why})" if _why else ""))
+        for _i, _where, _exits in _pads["seated"]:
+            print(f"  spawn pad {_where}: seat n{_i} "
+                  f"{tuple(round(v) for v in _tdoc['nodes'][_i])}, exits "
+                  + ", ".join(f"n{_j} {tuple(round(v) for v in _tdoc['nodes'][_j])}"
+                              for _j in _exits))
+        _report_far_spawns(_dm_spawn_origins(), [tuple(_p) for _p in _tdoc["nodes"]])
     _candidate_qc = refresh_banner(_candidate_qc)
     _tnodes = [tuple(_p) for _p in _tdoc.get("nodes", [])]
     if not _tnodes:
@@ -1837,53 +2205,7 @@ if COST_CELLS:
 # waypoint nodes: cap waypoints so bsp entities + nodes stay under 500
 # (Shane's project review: a 350-entity map plus a 200-node graph
 # would Host_Error at spawn)
-# ent_blocks, kv and bmodels are parsed in 2b, ahead of sampling.
-
-def spawns_an_edict(block):
-    """Does this entity still exist after its spawn function runs?
-
-    The budget below is about RUNTIME edicts, and several classes free
-    themselves the moment they spawn. An untargeted `light` is the big
-    one: misc.qc's light() removes it as an inert light, and id's maps
-    are full of them - e1m8 carries 283, more than half its lump. Also
-    info_null (removed outright) and trigger_setskill (removed in
-    deathmatch).
-
-    Counting them made the cap collapse on every SP map: e1m5 read 536
-    entities where only 341 survive, so the cap fell to its floor of
-    60, the decimation radius ballooned to 405u, links could not
-    verify across that spacing and the prune ate the graph down to 3
-    usable nodes. Episode 1 was unusable for exactly this reason.
-
-    A MAKESTATIC ENTITY IS NOT AN EDICT EITHER (#319 follow-on). The
-    six classes below set a model and hand themselves to builtin #69,
-    which copies them into the static list and frees the edict, so a
-    wall torch costs a precache and nothing else. e1m2 carries 24 of
-    them, e1m5 22, lqdm2 22, dm6 15, e1m6 16, e1m7 6, and counting
-    them is what put e1m2's budget 24 seats under the truth. MEASURED
-    rather than reasoned: an `edicts` dump of a live e1m2 shows
-    light_flame_small_yellow at 16 in the lump and 0 in the world, in
-    deathmatch AND in co-op.
-
-    NOT included, deliberately: monsters, which every spawn function
-    in this tree removes in deathmatch, and the spawnflags 2048
-    entities the engine frees there. e1m2 alone would gain 53 more
-    seats from those two, and it is played in co-op as well, where
-    they are real. The budget has to hold in the worse mode.
-    """
-    d = kv("{" + block + "}") if False else dict(
-        re.findall(r'"([^"]+)"\s+"([^"]*)"', block))
-    c = d.get("classname", "")
-    if c == "light" and not d.get("targetname"):
-        return False
-    if c == "info_null":
-        return False
-    if c in ("light_globe", "light_torch_small_walltorch",
-             "light_flame_large_yellow", "light_flame_small_yellow",
-             "light_flame_small_white", "func_illusionary"):
-        return False
-    return True
-
+# ent_blocks, kv, bmodels and spawns_an_edict are in 2b, ahead of sampling.
 live_ents = [b for b in ent_blocks if spawns_an_edict(b)]
 # THE BUDGET SAYS WHAT IT IS MADE OF NOW, and the parts are measured
 # rather than guessed (#319 follow-on). It used to be a flat 500,
@@ -4227,163 +4549,35 @@ if _seatspec:
           f"added, {_seat_had} already present, {len(_seat_cuts)} cut(s)")
 
 # ---- 7g2f. seats on spawn pads (#783) ----
-# e1m7's four z 280 deathmatch spawns stand on func_wall pads (spawnflags
-# 1792, deathmatch only). Hull 1 is the world's and holds no brush entity,
-# so nothing above ever sampled a pad: a bot spawned on one was 150u or
-# more from its nearest seat, and its first heading ran straight at a
-# walkway seat over the pad's edge. In six full-rate tapes 6 of 43 lava
-# deaths left a pad within 0.3 s of spawning (#773,
-# docs/e1m7-lava-investigation.md).
-#
-# A deathmatch spawn whose first floor is the top of a solid brush entity
-# at its spawn position (argus_navmesh.brush_boxes, the air layer's rules),
-# more than a step above any world floor in that column, gets a seat at
-# its exact position, the way 7g2e seats the sidecar: no fine sample, and
-# only the links minted here join it, so no Dijkstra, knit or closure link
-# ever reaches it. Its links are one-way exits to waypoints within
-# LINK_PATH_MAX and no more than DROPMAX below, nearest first, at most
-# PAD_EXITS, judged by what a bot running the line does, at run and at
-# walk speed:
-#
-#   - The runtime's brink guard has to pass the heading on every step of
-#     the run to the pad's edge (argus_guard_replica.Guard, the
-#     Argus_MoveHazard replica, over a hull 0 that holds the brush
-#     entities). Argus_DropLandHazard projects the landing from its probe
-#     point with the drop to the floor under that point, which beside a
-#     pad is the low floor 224u down, so it refuses every short drop onto
-#     e1m7's narrow walkways at speed. A link the guard refuses is one the
-#     bot is deflected off at the edge, so it is not minted.
-#   - The flight off the edge (argus_navmesh.run_off, the air layer's
-#     flight through hull 1 with the brush entities) must land dry, on no
-#     brush entity, within a step of the target's height, with floor at
-#     that height PAD_LAND_MARGIN further on: a body that lands at speed
-#     keeps sliding, and only a margin past the guard's probe lets the
-#     guard turn it before the edge. A walkway exit flown at run speed
-#     lands on its far lip, with the lake beyond it.
-#   - From the landing, beeline_points has to walk to the target.
-#
-# A line that leaves the pad with no lip, onto floor at its own height, is
-# a walk, and beeline_points judges it over floors that include the brush
-# tops. A pad with no exit stays unseated, and 7h names every deathmatch
-# spawn more than SPAWN_SEAT_MAX from a seat.
-PAD_EXITS = 4
-PAD_LAND_MARGIN = 48  # the guard probes 40u ahead at run speed
-SPAWN_SEAT_MAX = 64
+# Section 2d's rules on the regenerated graph, after every pass that adds
+# links, the way 7g2e seats the sidecar: a seat at its exact position with
+# no fine sample, joined only by the exits minted here, so no Dijkstra,
+# knit or closure link ever reaches it. A pad with no exit stays unseated,
+# and 7h names every deathmatch spawn more than SPAWN_SEAT_MAX from a seat.
 _pad_protect = set()  # (pad, exit), kept first at the clamp like 7g2e's walks
-_dm_spawns = [[float(v) for v in kv(b).get("origin", "0 0 0").split()]
-              for b in ent_blocks if kv(b).get("classname") == "info_player_deathmatch"]
-_pad_boxes = _navmesh.brush_boxes(_bsp) if _dm_spawns else []
-if _pad_boxes:
-    import argus_guard_replica as _guard_replica
-    _pad_world = _navmesh.WithBrushes(_bsp, _pad_boxes)
-    _pad_floor_cache = {}
-
-    def _pad_floors(x, y):
-        """column_floors with the brush entities standing where they spawn."""
-        if (x, y) not in _pad_floor_cache:
-            _pad_floor_cache[(x, y)] = column_floors(x, y, _pad_world.h1)
-        return _pad_floor_cache[(x, y)]
-
-    def _pad_h0(x, y, z):
-        """Hull 0 with the brush entities solid where they spawn."""
-        for _cls, _mn, _mx in _pad_boxes:
-            if (_mn[0] <= x <= _mx[0] and _mn[1] <= y <= _mx[1]
-                    and _mn[2] <= z <= _mx[2]):
-                return CONTENTS_SOLID
-        return h0_contents(x, y, z)
-
-    _pad_guard = _guard_replica.Guard(_pad_h0, gravity=GRAVITY)
-
-    def _pad_guard_veto(seat, target, speed):
-        """The guard branch that deflects a run from seat toward target."""
-        _d = ((target[0] - seat[0]) ** 2 + (target[1] - seat[1]) ** 2) ** 0.5
-        _ux, _uy = (target[0] - seat[0]) / _d, (target[1] - seat[1]) / _d
-        _yaw = _dmath.degrees(_dmath.atan2(_uy, _ux))
-        _reach = _guard_replica.probe_distance(speed)
-        _s = 0.0
-        while _s < _d:
-            _x, _y = seat[0] + _ux * _s, seat[1] + _uy * _s
-            _f = _navmesh.fall_to(_pad_world, _x, _y, seat[2] + STEP, maxdrop=2 * STEP)
-            if _f is None:
-                return None  # past the edge: airborne, the guard is done
-            _v = _pad_guard.move_hazard(_x, _y, _f, _yaw, _reach, speed)
-            if _v != "none":
-                return _v
-            _s += 4.0
-        return None
-
-    def _pad_exit_refusal(seat, target):
-        """Why seat -> target is not a pad exit, or None when it is."""
-        _r = _navmesh.run_off(_pad_world, seat, target, _navmesh.RUN, GRAVITY)
-        if _r is None:
-            # no lip: a level walk off the pad, or a wall before any edge
-            return None if beeline_points(seat, target, _pad_floors) else "beeline refuses"
-        _d = ((target[0] - seat[0]) ** 2 + (target[1] - seat[1]) ** 2) ** 0.5
-        _ux, _uy = (target[0] - seat[0]) / _d, (target[1] - seat[1]) / _d
-        for _speed in (_navmesh.RUN, _navmesh.WALK):
-            _veto = _pad_guard_veto(seat, target, _speed)
-            if _veto:
-                return f"the brink guard deflects the run ({_veto})"
-            if _speed != _navmesh.RUN:
-                _r = _navmesh.run_off(_pad_world, seat, target, _speed, GRAVITY)
-            if _r["run"] != "floor":
-                return f"lands in {_r['run']}"
-            if _r["on"]:
-                return "lands on a brush entity"
-            _land = _r["land"]
-            if abs(_land[2] - target[2]) > STEP:
-                return "lands off the target's level"
-            for _m in range(8, PAD_LAND_MARGIN + 1, 8):
-                _x, _y = _land[0] + _ux * _m, _land[1] + _uy * _m
-                if _pad_world.h1(_x, _y, _land[2] + STEP) != CONTENTS_EMPTY:
-                    break  # a wall stops the slide
-                _f = _navmesh.fall_to(_pad_world, _x, _y, _land[2] + STEP, maxdrop=2 * STEP)
-                if _f is None or hostile_at(_x, _y, _f):
-                    return "lands too near an edge"
-            if not beeline_points(_land, target):
-                return "no walk from the landing"
-        return None
-
+_dm_spawns = _dm_spawn_origins()
+_pad_judge = _spawn_pad_judge(_dm_spawns)
+if _pad_judge:
     _pad_base = len(ways)  # exits go only to waypoints that are not pads
     _pads_seated, _pad_exit_count = 0, 0
     _pad_refused = collections.Counter()
     for _k, _o in enumerate(_dm_spawns):
-        _fz = next((f for f in _pad_floors(_o[0], _o[1]) if f <= _o[2] + 2.0), None)
-        if _fz is None:
+        _hit = _pad_judge.seat(_o)
+        if _hit is None:
             continue
-        _wz = next((f for f in column_floors(_o[0], _o[1]) if f <= _o[2] + 2.0), None)
-        if _wz is not None and _fz - _wz <= STEP:
-            continue  # world floor, or a plate lying on one: sampled already
-        _on = _pad_world.box_at(_o[0], _o[1], _fz - 0.5)
-        if _on is None:
-            continue
-        _seat = (_o[0], _o[1], _fz)
+        _seat, _on, _why = _hit
         _where = f"({_o[0]:.0f} {_o[1]:.0f} {_o[2]:.0f}) on {_on}"
-        if hull_contents(*_seat) != CONTENTS_EMPTY or hostile_at(*_seat):
-            print(f"  spawn pad {_where}: no dry standing room at z {_fz:.0f}; left unseated")
+        if _why:
+            print(f"  spawn pad {_where}: {_why}; left unseated")
             continue
-        _cands = []
-        for _j in range(_pad_base):
-            _t = pos(ways[_j])
-            _flat = ((_t[0] - _seat[0]) ** 2 + (_t[1] - _seat[1]) ** 2) ** 0.5
-            if 1.0 <= _flat <= LINK_PATH_MAX and -DROPMAX <= _t[2] - _fz <= STEP:
-                _cands.append((_flat, _j, _t))
-        _exits = []
-        for _flat, _j, _t in sorted(_cands):
-            if len(_exits) >= PAD_EXITS:
-                break
-            _why = "target stands in lava or slime" if hostile_at(*_t) else \
-                _pad_exit_refusal(_seat, _t)
-            if _why:
-                _pad_refused[_why] += 1
-                continue
-            _exits.append((_j, _flat))
-        if not _cands:
+        _exits, _ncands = _pad_judge.exits(
+            _seat, [(_j, pos(ways[_j])) for _j in range(_pad_base)], _pad_refused)
+        if not _ncands:
             print(f"  spawn pad {_where}: no waypoint within {LINK_PATH_MAX}u and "
                   f"{DROPMAX}u below; left unseated")
             continue
         if not _exits:
-            print(f"  spawn pad {_where}: none of {len(_cands)} waypoint(s) in "
+            print(f"  spawn pad {_where}: none of {_ncands} waypoint(s) in "
                   f"reach has a safe exit; left unseated")
             continue
         if not _limits.admits(len(ways), infrastructure=True):
@@ -4400,7 +4594,7 @@ if _pad_boxes:
             _pad_protect.add((_i, _j))
         _pads_seated += 1
         _pad_exit_count += len(_exits)
-        print(f"  spawn pad {_where}: seat n{_i} at z {_fz:.0f}, exits "
+        print(f"  spawn pad {_where}: seat n{_i} at z {_seat[2]:.0f}, exits "
               + ", ".join(f"n{_j}" for _j, _ in _exits))
     if _pads_seated or _pad_refused:
         _why_text = ", ".join(f"{_n} {_w}" for _w, _n in sorted(_pad_refused.items()))
@@ -4656,18 +4850,7 @@ if _spawn_reach:
 # is, so a spawn the graph never seated reads as healthy here. e1m7's pads
 # did (#783): every bot spawned on one started 150u from its seat, with
 # the pad's edge in between. Name every deathmatch spawn that far out.
-_far_spawns = []
-for _o in _dm_spawns:
-    _bd = min((((_w[0] - _o[0]) ** 2 + (_w[1] - _o[1]) ** 2 + (_w[2] - _o[2]) ** 2) ** 0.5
-               for _w in map(pos, ways)), default=None)
-    if _bd is None or _bd > SPAWN_SEAT_MAX:
-        _far_spawns.append((_bd, _o))
-if _dm_spawns:
-    print(f"spawn seats: {len(_far_spawns)} of {len(_dm_spawns)} deathmatch "
-          f"spawn(s) more than {SPAWN_SEAT_MAX}u from a seat")
-    for _bd, _o in _far_spawns:
-        print(f"  spawn ({_o[0]:.0f} {_o[1]:.0f} {_o[2]:.0f}) is "
-              + ("not near any seat" if _bd is None else f"{_bd:.0f}u from its nearest seat"))
+_report_far_spawns(_dm_spawns, [pos(_w) for _w in ways])
 
 # The route-poison and isolated-waypoint prunes run after section 7g2e,
 # and a seat they strip takes its walks with it: check every sidecar walk
