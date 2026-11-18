@@ -761,6 +761,40 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- A bot no longer stands at a lift that can never come, or pushes into a door
+  leaf that only a button opens
+  ([#628](https://github.com/saworbit/argus/issues/628),
+  [#643](https://github.com/saworbit/argus/issues/643)). A plat with a
+  targetname spawns raised and inert until its button fires (e1m5's *2, button
+  *3); the lift wait read it as on its way and stood still for the full 8 s
+  give-up, and now gives up at once. Stock LinkDoors copies a pair's
+  targetname onto the master only, so the leaf a bot meets could read as
+  touch-open (e1m6's *20 beside *7, "This door is opened elsewhere");
+  `Argus_DoorMaster` makes the touch-open test and the opener search use the
+  master. Played-rate pairs, five a side: e1m5 freezes 2.4 to 0 a tape, mover
+  waits at the pad 17 to 0, goals 23.6 to 30.6; e1m6 seconds pinned at the
+  door face 58.7 to 10.7 over five tapes. Every gate reads no detectable
+  effect, and dm4, with no such door or plat, replays its fixed-clock seeds
+  identically.
+
+- A routed bot switches early to its next waypoint only while floor runs under
+  the straight line to it
+  ([#775](https://github.com/saworbit/argus/issues/775)): the side traces
+  refused only walls, so on a void-edged walkway a bot 48u short of a
+  mid-corner elbow could head across open air. Parity on dm4 and dm3 (three
+  played-rate pairs each) and lab_voidcorner (five); the original fall was not
+  reproduced, because #772 re-seated dm3's elbows.
+
+- The bot ground physics gains stock edge friction and wall friction
+  ([#794](https://github.com/saworbit/argus/issues/794)): friction doubles
+  (cvar `edgefriction`) when nothing lies 34u below a point 16u ahead at the
+  feet, and a wall slide facing within 60 degrees of head-on keeps 1 + d of its
+  speed along the wall, as `SV_UserFriction` and `SV_WallFriction` do for
+  players. Ground samples over 400 u/s fall on dm4 from 5.57 to 4.96 per cent
+  (edge) and 4.68 (wall), with separate ten-seed ladders at parity on dm4 and
+  dm2 and played-rate pairs of both together at parity (three on dm4, five on
+  dm2).
+
 - Reachability jumps fire only where a jump helps, and a stall jump is
   checked on the flight it will fly
   ([#774](https://github.com/saworbit/argus/issues/774),
