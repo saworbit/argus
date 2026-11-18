@@ -266,7 +266,7 @@ pub fn record_triggered(
     wait_sec: f32,
     keep_sec: f32,
     port: u16,
-    log: &Path,
+    log: crate::pov_trigger::LogSource,
 ) -> Result<TriggeredRecording, String> {
     if port < 1024 {
         return Err("record port must be 1024..=65535".into());
@@ -292,11 +292,13 @@ pub fn record_triggered(
             return Err("roster slot must be 0..3".into());
         }
     }
-    if !log.is_file() {
-        return Err(format!(
-            "no live match log at {}; start a lab match first",
-            log.display()
-        ));
+    if let crate::pov_trigger::LogSource::File(path) = &log {
+        if !path.is_file() {
+            return Err(format!(
+                "no live match log at {}; start a lab match first, or pass --log PATH",
+                path.display()
+            ));
+        }
     }
     let dir = cfg.runs.join("demos");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -342,7 +344,7 @@ pub fn record_triggered(
             _ => Some(watching.clone()),
         };
         let mut detector = crate::pov_trigger::Detector::new(triggers, focus_name);
-        let mut tail = crate::pov_trigger::LogTail::at_end(log)?;
+        let mut tail = crate::pov_trigger::LogTail::at_end_of(&log)?;
         let started = Instant::now();
         let deadline = started + Duration::from_secs_f32(wait_sec);
         let mut skipped: Vec<String> = Vec::new();
@@ -380,7 +382,7 @@ pub fn record_triggered(
                 return Err(if detector.lines_read == 0 {
                     format!(
                         "the match log did not grow in {wait_sec} s; is {} the live match's log?",
-                        log.display()
+                        log.describe()
                     )
                 } else {
                     format!(
@@ -1589,7 +1591,7 @@ mod tests {
                 90.0,
                 3.0,
                 port,
-                &log,
+                crate::pov_trigger::LogSource::File(log),
             )
         })
         .await
