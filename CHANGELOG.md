@@ -783,6 +783,13 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Triggered POV capture no longer depends on the engine writing
+  `qconsole.log` in the run directory
+  ([#810](https://github.com/saworbit/argus/issues/810)). Where that file is
+  absent, `bot_capture_pov_frame` with `on` tails the match controller's
+  captured stdout, which carries the same console lines, and the
+  `watch-pov` CLI refuses with the path it expected and asks for `--log`.
+  Covered by a unit test; not yet run on the Linux rig.
 - A bot no longer stands at a lift that can never come, or pushes into a door
   leaf that only a button opens
   ([#628](https://github.com/saworbit/argus/issues/628),
