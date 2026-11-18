@@ -38,6 +38,18 @@ passing botmatch does not establish better human play.
   patch and manifest byte for byte. CONTRIBUTING.md now points at it instead
   of the manual steps.
 
+- `python tools/argus_lab_mutants.py` makes the lab spine's mutation check
+  reproducible ([#824](https://github.com/saworbit/argus/issues/824)). It
+  breaks each of 67 guards in `tools/argus_lab.py` in turn, in memory only,
+  runs `tools/test_argus_lab.py` against each and reports every guard caught
+  or missed. A row whose original text no longer names exactly one place in
+  the spine stops the run before any suite starts. Its first run missed 10
+  guards, among them a gate with no bound, a goal target with low above
+  high, a session off a goal map and a sweep whose failure got worse; each
+  now has a test, and all 67 are caught. Fast CI checks the table and the
+  harness only; run the whole table before a change to the spine merges
+  ([the mutation check](docs/lab-spine.md#the-mutation-check)).
+
 - Add lab scenarios: purpose-built micro-maps that isolate one bot behaviour
   ([lab scenarios](docs/lab-scenarios.md)). `lab_request` (MCP, which also
   accepts the request as a JSON string) and `argus-mcp lab-request
@@ -1255,6 +1267,15 @@ passing botmatch does not establish better human play.
   well as the lab, so the policy records why it is ignored and when to look
   again (`tools/argus_mcp/deny.toml`,
   [#870](https://github.com/saworbit/argus/issues/870)).
+
+- Read average speed on the fixed-clock confirmation tapes
+  ([#863](https://github.com/saworbit/argus/issues/863)). It was registered
+  with the validation but the corpus did not carry it when the verdicts were
+  made. Read afterwards on the same tapes, it is equivalent on both maps:
+  dm4 212.2 against 209.4 u/s (90 per cent interval -6.7 to +1.0, margin
+  63.7) and dm2 182.9 against 183.7 (-9.5 to +11.0, margin 54.9). Neither
+  verdict and no limit changes. `docs/fixed-clock.md` and
+  `tools/lab_instruments.json` record it as read after the verdicts.
 
 - Explain the project in the README. A new section says what Argus is, which
   rules all of its code follows and how a map file becomes a measured match.
