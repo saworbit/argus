@@ -50,6 +50,52 @@
           "fxval_played_dm2_r1",
           "fxconf_fixed1425_dm2_s273"
         ]
+      },
+      "dm3": {
+        "accepted": true,
+        "frame_ms": 14.25,
+        "metrics": {
+          "stalls": "inconclusive",
+          "engages": "equivalent",
+          "lava_deaths": "equivalent",
+          "world_deaths": "equivalent",
+          "freezes": "equivalent",
+          "cover": "equivalent",
+          "goals": "equivalent",
+          "deaths": "inconclusive",
+          "routefails": "inconclusive",
+          "avg_speed": "equivalent"
+        },
+        "note": "Amendment 1 (#854): build 9387e1e77737, 11 wall-clock tapes recorded as the controls of other ladders before the amendment, against 20 fresh fixed seeds. Lava and world deaths read equivalent only because both arms had none.",
+        "evidence": [
+          "docs/fixed-clock.md",
+          "docs/specs/2026-11-18-fixed-clock-validation-amendment.md",
+          "fxval2_played_dm3_sw761d3_ctl_r1",
+          "fxval2_fixed_dm3_s125"
+        ]
+      },
+      "e1m7": {
+        "accepted": true,
+        "frame_ms": 14.25,
+        "metrics": {
+          "stalls": "inconclusive",
+          "engages": "equivalent",
+          "lava_deaths": "inconclusive",
+          "world_deaths": "inconclusive",
+          "freezes": "equivalent",
+          "cover": "equivalent",
+          "goals": "equivalent",
+          "deaths": "equivalent",
+          "routefails": "inconclusive",
+          "avg_speed": "equivalent"
+        },
+        "note": "Amendment 1 (#854): build 9387e1e77737, 13 wall-clock tapes recorded as the controls of other ladders before the amendment, against 19 fixed seeds; seed 250 was excluded as outside the listen tick class, because a fixed tape's sample gap sits on that class boundary.",
+        "evidence": [
+          "docs/fixed-clock.md",
+          "docs/specs/2026-11-18-fixed-clock-validation-amendment.md",
+          "fxval2_played_e1m7_kd785_ctl_r1",
+          "fxval2_fixed_e1m7_s125"
+        ]
       }
     }
   },
