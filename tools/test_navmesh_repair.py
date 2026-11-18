@@ -13,7 +13,9 @@ enough that WaterMove burns at waterlevel 1. Five seats:
 
 and eight links, one per rule the repair applies. A second fixture,
 write_slopes_fixture, carries a flat, a gentle and a steep floor and a lava
-pool, for the audit's reasons a seat stands on no fragment (#788).
+pool, for the audit's reasons a seat stands on no fragment (#788). The
+first fixture with func_wall pads added (write_pads_fixture) carries the
+spawn-pad seats of #783.
 """
 import json
 import struct
@@ -33,7 +35,7 @@ NODES = [[0.0, 0.0, 24.0], [128.0, 0.0, 24.0], [320.0, 0.0, 24.0],
 LINKS = [(0, 1), (1, 0), (1, 2), (2, 1), (1, 3), (3, 1), (1, 4), (4, 1)]
 
 
-def write_fixture(tmp):
+def write_fixture(tmp, ents_extra=b"", models_extra=b""):
     planes = b"".join(struct.pack("<ffffi", *row) for row in (
         (0.0, 0.0, 1.0, 0.0, 2),     # p0 world floor
         (1.0, 0.0, 0.0, 256.0, 0),   # p1 lava strip west edge
@@ -54,8 +56,8 @@ def write_fixture(tmp):
     # hull 1 collapses liquids to empty, exactly as qbsp does
     clipnodes = struct.pack("<ihh", 4, -1, -2)
     models = struct.pack("<9f7i", -512.0, -512.0, -64.0, 640.0, 512.0, 512.0,
-                         0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0)
-    ents = b'{\n"classname" "worldspawn"\n}\n\0'
+                         0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0) + models_extra
+    ents = b'{\n"classname" "worldspawn"\n}\n' + ents_extra + b'\0'
     table, blob, base = [(0, 0)] * 15, b"", 4 + 15 * 8
     for idx, payload in ((0, ents), (1, planes), (5, h0nodes), (9, clipnodes),
                          (10, leaves), (14, models)):
@@ -304,6 +306,202 @@ class RegenSeats(unittest.TestCase):
             self.assertIn(why, res.stderr)
             self.assertIn("generation refused before publication", res.stderr)
             self.assertFalse((self.tmp / "argus_nav_fixture.qc").exists(), spec)
+
+
+# Brush entities for the spawn-pad fixture (#783), each a box where its
+# spawn code leaves it, as (mins, maxs). A deathmatch spawn stands on
+# each, and one more stands on the world floor.
+PAD_WEST = ((-192.0, -32.0, 80.0), (-64.0, 32.0, 96.0))     # dry floor all round
+PAD_STRIP = ((96.0, 160.0, 80.0), (160.0, 224.0, 96.0))     # the lava strip east
+PAD_HIGH = ((448.0, -192.0, 280.0), (576.0, -64.0, 296.0))  # 296u over the floor
+PLATE = ((-528.0, -400.0, 0.0), (-464.0, -336.0, 2.0))      # lies on the floor
+PAD_SPAWNS = {"west": (-128, 0, 121), "strip": (128, 192, 121),
+              "high": (512, -128, 321), "plate": (-496, -368, 27),
+              "world": (-496, -496, 25)}
+
+
+def write_pads_fixture(tmp, high=True):
+    """write_fixture with the pads; high=False leaves out the high pad."""
+    ents, models = b"", b""
+    walls = (PAD_WEST, PAD_STRIP, PAD_HIGH, PLATE) if high else (PAD_WEST, PAD_STRIP, PLATE)
+    for k, (mn, mx) in enumerate(walls, start=1):
+        ents += (b'{\n"classname" "func_wall"\n"model" "*%d"\n'
+                 b'"spawnflags" "1792"\n}\n' % k)
+        models += struct.pack("<9f7i", *mn, *mx, 0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0)
+    for name, (x, y, z) in PAD_SPAWNS.items():
+        if high or name != "high":
+            ents += (b'{\n"classname" "info_player_deathmatch"\n'
+                     b'"origin" "%d %d %d"\n}\n' % (x, y, z))
+    write_fixture(tmp, ents, models)
+
+
+class SpawnPads(unittest.TestCase):
+    """A deathmatch spawn on a solid brush entity gets a seat and exits (#783).
+
+    The world hull is the fixture's flat floor (origin 24) with the lava
+    strip at x 256..384, and four func_walls stand on or over it. The west
+    pad and the strip pad hang 96u over dry floor, so each gets a seat on
+    its top (origin 120) with drop exits to floor seats; the strip pad's
+    eastward runs land in the lava and are refused. The high pad stands
+    296u up, past navgen's 200u drop, so it has no exit, stays unseated
+    and is reported. The plate lies on the floor, so its spawn is the
+    world's, like the world spawn's.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp(prefix="argus-spawn-pads-"))
+        write_pads_fixture(cls.tmp)
+        cls.res = subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "argus_navgen.py"),
+             str(cls.tmp / "fixture.bsp"), "fixture",
+             str(cls.tmp / "argus_nav_fixture.qc"), str(cls.tmp / "out.png"),
+             "--no-dispatcher", "--no-rj"],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=300)
+        cls.nodes, cls.links = [], set()
+        if cls.res.returncode == 0:
+            doc = json.loads((cls.tmp / "argus_nav_fixture.qc.json").read_text())
+            cls.nodes = [tuple(n) for n in doc["nodes"]]
+            for a, b, both in doc["links"]:
+                cls.links.add((a, b))
+                if both:
+                    cls.links.add((b, a))
+        bsp = nm.Bsp(cls.tmp / "fixture.bsp")
+        cls.world = nm.WithBrushes(bsp, nm.brush_boxes(bsp))
+
+    @classmethod
+    def tearDownClass(cls):
+        import shutil
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def seat(self, name):
+        x, y, _ = PAD_SPAWNS[name]
+        return self.nodes.index((float(x), float(y), 120.0))
+
+    def exits(self, name):
+        seat = self.seat(name)
+        return sorted(b for a, b in self.links if a == seat)
+
+    def test_generation_succeeds(self):
+        self.assertEqual(self.res.returncode, 0, self.res.stderr + self.res.stdout)
+
+    def test_each_pad_over_dry_floor_gets_a_seat_and_one_way_exits(self):
+        self.assertIn("spawn pads: 2 seat(s) on brush entities", self.res.stdout)
+        for name in ("west", "strip"):
+            seat = self.seat(name)
+            self.assertTrue(self.exits(name), name)
+            self.assertLessEqual(len(self.exits(name)), 4)
+            self.assertFalse([a for a, b in self.links if b == seat],
+                             f"only the pad's own exits touch the {name} seat")
+            for b in self.exits(name):
+                self.assertEqual(self.nodes[b][2], 24.0, (name, self.nodes[b]))
+
+    def test_every_exit_lands_dry_at_run_and_walk_speed(self):
+        for name in ("west", "strip"):
+            seat = self.nodes[self.seat(name)]
+            for b in self.exits(name):
+                for speed in (nm.RUN, nm.WALK):
+                    r = nm.run_off(self.world, seat, self.nodes[b], speed)
+                    self.assertIsNotNone(r, (name, self.nodes[b]))
+                    self.assertEqual(r["run"], "floor", (name, self.nodes[b], r))
+
+    def test_the_strip_pads_wet_runs_are_refused(self):
+        line = next(ln for ln in self.res.stdout.splitlines()
+                    if ln.startswith("spawn pads:"))
+        self.assertNotIn("refused 0", line)
+        seat = self.nodes[self.seat("strip")]
+        wet = [n for n in self.nodes if n[2] == 24.0 and 160 < n[0] < 256
+               and nm.run_off(self.world, seat, n, nm.RUN)["run"] == "lava"]
+        self.assertTrue(wet, "the fixture must offer the strip pad a wet run")
+        for n in wet:
+            self.assertNotIn(self.nodes.index(n), self.exits("strip"))
+
+    def test_world_and_plate_spawns_are_untouched(self):
+        self.assertEqual([n for n in self.nodes if n[2] != 24.0],
+                         [(-128.0, 0.0, 120.0), (128.0, 192.0, 120.0)],
+                         "the pad seats are the only nodes off the world floor")
+        self.assertIn((-496.0, -496.0, 24.0), self.nodes)
+        self.assertIn((-496.0, -368.0, 24.0), self.nodes)
+
+    def test_the_unseated_pad_is_reported(self):
+        self.assertIn("spawn pad (512 -128 321) on func_wall: no waypoint within",
+                      self.res.stdout)
+        self.assertIn("spawn seats: 1 of 5 deathmatch spawn(s) more than 64u "
+                      "from a seat", self.res.stdout)
+        self.assertIn("  spawn (512 -128 321) is ", self.res.stdout)
+
+
+class SeatSpawnPads(unittest.TestCase):
+    """--seat-spawn-pads on the five-seat shipped pair (#783).
+
+    Without the high pad, the west and strip pads both reach n0 and n1 on
+    the dry floor; the strip pad's run toward n2 ends in the lava seat
+    and is refused. With the high pad, nothing is in its reach, so the
+    splice refuses and writes nothing.
+    """
+
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp(prefix="argus-seat-pads-"))
+        write_pads_fixture(self.tmp, high=False)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def splice(self):
+        return subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "argus_navgen.py"),
+             str(self.tmp / "fixture.bsp"), "fixture", str(self.tmp / "nav.qc"),
+             str(self.tmp / "out.png"), "--seat-spawn-pads"],
+            capture_output=True, text=True, cwd=str(ROOT), timeout=120)
+
+    def outputs(self):
+        return [(self.tmp / n).read_bytes() for n in ("nav.qc", "nav.qc.json")]
+
+    def test_usage_names_the_mode(self):
+        res = subprocess.run([sys.executable, str(ROOT / "tools" / "argus_navgen.py"),
+                              "--help"], capture_output=True, text=True)
+        self.assertIn("--seat-spawn-pads", res.stdout)
+
+    def test_appends_after_everything_and_rebakes(self):
+        before = (self.tmp / "nav.qc").read_text(encoding="ascii")
+        res = self.splice()
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn("spawn pads: appended 2 seat(s) and 4 exit link(s), 0 already "
+                      "seated; refused 1 (1 target stands in lava or slime)", res.stdout)
+        self.assertIn("spawn seats: 2 of 4 deathmatch spawn(s) more than 64u", res.stdout)
+        qc = (self.tmp / "nav.qc").read_text(encoding="ascii")
+        doc = json.loads((self.tmp / "nav.qc.json").read_text())
+        self.assertEqual(doc["nodes"][:5], NODES, "no existing seat moves")
+        self.assertEqual(doc["nodes"][5:], [[-128.0, 0.0, 120.0], [128.0, 192.0, 120.0]])
+        old = [ln for ln in before.splitlines() if "Argus_NavLink" in ln]
+        new = [ln for ln in qc.splitlines() if "Argus_NavLink" in ln]
+        self.assertEqual(new[:len(old)], old, "existing link calls keep their slots")
+        self.assertEqual(new[len(old):], ["    Argus_NavLink (n5, n0);", "    Argus_NavLink (n5, n1);",
+                                          "    Argus_NavLink (n6, n1);", "    Argus_NavLink (n6, n0);"])
+        self.assertIn("    n6 = Argus_NavNode ('128 192 120');", qc)
+        self.assertIn('ARGNAV 7 nodes, 12 links', qc)
+        # the pads are entered from nowhere: each is its own pocket
+        self.assertEqual(doc["regions"][5:], [1, 2])
+        self.assertEqual(len(doc["exposure"]), 7)
+        self.assertEqual(len(doc["cover_targets"]), 7)
+
+    def test_rerun_changes_nothing(self):
+        self.assertEqual(self.splice().returncode, 0)
+        once = self.outputs()
+        res = self.splice()
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("appended 0 seat(s) and 0 exit link(s), 2 already seated", res.stdout)
+        self.assertEqual(self.outputs(), once)
+
+    def test_a_pad_with_no_exit_refuses_and_writes_nothing(self):
+        write_pads_fixture(self.tmp, high=True)
+        before = self.outputs()
+        res = self.splice()
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn("spawn pad (512 -128 321) on func_wall: no waypoint within", res.stderr)
+        self.assertIn("nothing written", res.stderr)
+        self.assertEqual(self.outputs(), before)
 
 
 class MeshAudit(unittest.TestCase):

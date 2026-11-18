@@ -97,7 +97,7 @@ async fn run() -> anyhow::Result<()> {
                     wait as f32,
                     keep as f32,
                     port,
-                    &log,
+                    argus_mcp::pov_trigger::LogSource::File(log),
                 )
             })
             .await?
@@ -1686,7 +1686,9 @@ fn live_log(
     match live.len() {
         1 => Ok(live.remove(0)),
         0 => anyhow::bail!(
-            "no live match log under {}; start a lab match or pass --run NAME",
+            "no live match log under {}: watch-pov tails <runs>/<run>/qconsole.log, which \
+             QuakeSpasm on Windows writes in the run directory; start a lab match, pass \
+             --run NAME, or pass --log PATH where this engine writes its console log",
             cfg.runs.display()
         ),
         _ => anyhow::bail!(
