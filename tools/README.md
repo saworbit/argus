@@ -244,7 +244,7 @@ Exact navigation mesh read from a BSP's player clip hull (hull 1), with an audit
   python tools/argus_navmesh.py --help
   ```
 - **Options**:
-  - `--audit`: Cross-examine the shipped graph (`src/argus_nav_<map>.qc.json`, or the file `--nav` names): seats whose feet stand in lava or slime, seats on no mesh fragment, rising zero-length walks, and plain links with no mesh walk or drop path. The off-mesh line also counts the lava seats `--repair-links` keeps on purpose ([#788](https://github.com/saworbit/argus/issues/788)).
+  - `--audit`: Cross-examine the shipped graph (`src/argus_nav_<map>.qc.json`, or the file `--nav` names): seats whose feet stand in lava or slime, seats on no mesh fragment, rising zero-length walks, and plain links with no mesh walk or drop path. Each off-mesh seat gets a reason: in liquid (the lava seats `--repair-links` keeps on purpose), on a face too steep to stand on, no world floor within 30 units, inside the world, or dry with no fragment, the only one that would be an extractor miss ([#788](https://github.com/saworbit/argus/issues/788)).
   - `--air`: Fly a body off every ledge point, 16 units apart, at walk (240), run (320) and run turned 30 degrees either way, plus a running jump, and grade each point danger, risky, momentum or safe by where it lands. Gravity is 100 on e1m8 and 800 elsewhere; `--gravity` overrides it.
   - `--tapes <log> [...]`: With `--air`, test each lava entry's last second against the danger ledges, using every ordinary second of movement as the base rate, and split run-offs from entries that followed a jump event.
   - `--no-brushes`: With `--air`, fly through the world hull only. By default solid walls, doors, secret doors and plats count as boxes at their deathmatch spawn positions; trains are left out.
@@ -275,6 +275,7 @@ The lab spine: joins the corpus, scorecard, baselines, benchmarks, verdict sidec
   ```
 - **Behavior**: `stale` reports void and stale artefacts with fixes; `skeptic` voids or caveats a comparison and reads each metric against its detection limit; `triage` matches a tape's trouble to claim cells; `session` scores human sessions against the hard gates and goal targets; `pyramid` runs the cheap evidence tiers first.
 - **Tests**: `test_argus_lab.py` on a built fixture tree; `argus_ci.py lab` validates the objective and claims.
+- **Mutation check**: `python tools/argus_lab_mutants.py` breaks each guard in `argus_lab.py` in memory and reports whether `test_argus_lab.py` catches it; run it before a spine change merges ([#824](https://github.com/saworbit/argus/issues/824), [the mutation check](../docs/lab-spine.md#the-mutation-check), tested by `test_argus_lab_mutants.py`).
 
 ### 17. `argus_build_stamp.py`
 Writes the QC build identity (#823) into `src/argus_build.qc`: a hash of every file `progs.src` lists, with comments and layout removed, so a comment-only change keeps the stamp and the compiled bytes. Every match prints it as `ARGUS build <id>`, and the spine credits a session to the build its tape names.
