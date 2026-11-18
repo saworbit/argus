@@ -47,6 +47,8 @@ behaviour, not the experimental navigation.
 | e1m3, bounded coarse sample | 143 | 563 / 600 | 63% / 18% | 196 playability reasons |
 | e1m3, bounded refined sample | 175 | 595 / 600 | 96% / 94% | 26 playability reasons |
 | e1m4 | 106 | 496 / 600 | Spawn coverage fails | 117 playability reasons |
+| e1m3, knit stitches (#623) | 177 | 597 / 600 | 96% / 94% | 17 playability reasons |
+| e1m4, knit stitches (#624) | 186 | 576 / 600 | 94% / 94% | 49 playability reasons |
 
 The refined e1m3 graph has five spare edicts after the existing runtime
 reserve. That is a tight budget, not a new runtime peak measurement.
@@ -55,6 +57,24 @@ remain disconnected. On e1m4, six of nine spawns are more than 200 units
 from navigation; the worst is about 860 units away. Passing a broad
 reach percentage does not establish that every live pickup is reachable.
 No link mill was used to bypass these failures and no support was promoted.
+
+The knit stitch rows come from navgen's swim, bank and deep-drop stitches,
+which leave every registered graph byte-identical; their reason counts
+include the missing mill verdict. All nine e1m4 spawns are now within 142
+units and 50 of its 58 pickups are within reach of every spawn, and e1m3's
+super nailgun is back on the graph through a 216 unit fall from its ledge.
+e1m3's super shotgun and rockets stand on a shelf climbed by 24 to 32 unit
+risers on 16 unit treads, which SV_CheckBottom refuses as seats, so only a
+rocket jump reaches them. e1m4's other eight pickups are behind a two-button
+secret door (invisibility, grenade launcher, health), in a walled room
+behind a trigger-lowered door (spikes, two health), on a trigger-started
+train (armour) and in an air pocket under the lake (rockets). Nine of
+e1m4's eleven teleporter links, and both of its train links, name movers
+that stock QuakeC runs only after a trigger, and the triggers here are
+one-shot, a button or never fired; without those links its gate would
+report 125 reasons, not 49. Registered e1m2, e1m5, e1m6 and e1m7 graphs
+carry links through targetnamed teleporters too, and whether their triggers
+keep them usable has not been checked.
 
 Source hashes retain the original native output bytes. Git normalises the
 experimental QC sources to LF; graph JSON and raw tape identities are
