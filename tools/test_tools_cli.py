@@ -1344,6 +1344,43 @@ tool_timeout_sec = 700
             self.assertIsNone(report["findings"][0]["mover"])
             self.assertEqual(report["failures"], 1)
 
+    def test_floorlinks_lists_walks_whose_own_line_crosses_a_void(self):
+        """#905: a corner-cutting walk fails; level walks, typed and height links do not."""
+        sys.path.insert(0, str(ROOT / "tools"))
+        import argus_floorlinks as fl
+        from argus_guard_replica import SOLID, Guard
+
+        def walkway(x, y, z):
+            # floor at z 0 everywhere but a void at the corner, and a pillar
+            if 40 <= x <= 100 and 40 <= y <= 100:
+                return 0                      # open all the way down
+            if 200 <= x <= 216 and -8 <= y <= 8:
+                return SOLID                  # a wall the line runs into
+            return SOLID if z < 0 else 0
+
+        guard = Guard(walkway)
+        doc = {"nodes": [[0, 0, 24], [128, 0, 24], [128, 128, 24], [0, 128, 64], [320, 0, 24]],
+               "links": [[0, 1, 1], [1, 0, 1], [1, 2, 1], [0, 2, 0], [2, 0, 0], [0, 3, 0],
+                         [1, 4, 0]],
+               "jlinks": [[2, 0]]}
+        checked, failing = fl.failing_links(guard, doc)
+        # 0->3 rises 40u and 2->0 is a jump: neither is a level walk
+        self.assertEqual(checked, 5)
+        self.assertEqual([(a, b) for a, b, _ in failing], [(0, 2)])
+        x, y, z, along = failing[0][2]
+        self.assertTrue(40 <= x <= 100 and 40 <= y <= 100, failing)
+        self.assertEqual((z, along), (24.0, 60.0))
+        # a sample inside the pillar is a wall, not a void: 1->4 passes
+        self.assertIsNone(fl.first_void(guard, (128, 0, 24), (320, 0, 24)))
+        with tempfile.TemporaryDirectory() as td:
+            res = subprocess.run([sys.executable, str(ROOT / "tools" / "argus_floorlinks.py"),
+                                  "nosuchmap"], capture_output=True, text=True, cwd=str(ROOT),
+                                 env=dict(os.environ, ARGUS_MAPS=td))
+            self.assertEqual(res.returncode, 2)
+            self.assertIn("missing", res.stderr)
+        self.assertEqual(self.run_tool("argus_floorlinks.py", "dm3", "--graph").returncode, 2)
+        self.assertEqual(self.run_tool("argus_floorlinks.py", "dm3", "dm4", "--graph", "x").returncode, 2)
+
     def test_guard_replica_follows_engine_traces_and_names_each_branch(self):
         """A buried probe sees through a slab; walls, lava and run-offs are told apart."""
         sys.path.insert(0, str(ROOT / "tools"))

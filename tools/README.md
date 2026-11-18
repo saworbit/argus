@@ -357,6 +357,25 @@ Names the branch of the per-frame brink guard that deflected each routed bot, re
 
 ---
 
+### 24. `argus_floorlinks.py`
+Lists the shipped level walk links whose own line fails the early-switch floor test ([#905](https://github.com/saworbit/argus/issues/905)).
+- **Usage**:
+  ```bash
+  python tools/argus_floorlinks.py dm3
+  python tools/argus_floorlinks.py dm4 dm2 e1m8 --json
+  python tools/argus_floorlinks.py dm3 --graph path/to/argus_nav_dm3.qc.json
+  ```
+- **Behavior**:
+  - Replays `Argus_WalkLineFloored` offline on hull 0 for every level walk link (height change at most 18u, not typed) from its own source seat: a sample every 12u at the height interpolated between the seats, traced 60u down. A sample that starts in solid is a wall, not a void, as in the runtime.
+  - A listed link crosses a void corner, so the runtime holds a bot on it until it stands within 8u of the seat. That hold keeps bots on the line navgen verified: on dm4 these links ring the lava pit, and skipping the test on them raised world lava deaths from 13 to 22 over eight played pairs ([#905](https://github.com/saworbit/argus/issues/905)). Each listed link is a corner that wants an elbow seat, the #778 and #904 pattern.
+  - Brush entities are not in hull 0, so a link over a func_wall or plat reads as a void here while the runtime sees floor. Treat those as suspect.
+  - On the shipped graphs at #905: dm4 20 of 608, dm6 12 of 1259, dm2 6 of 847, dm3 2 of 617, e1m2 41 of 346, e1m8 83 of 319.
+- **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`) and `src/argus_nav_<map>.qc.json`, or `--graph` for one map.
+- **Exit Code**: `0` on success or `--help`, `2` when a BSP or graph is missing or an argument is malformed.
+- **Tests**: `test_tools_cli.py` (a corner-cutting walk listed with its first void sample, level, typed and height links told apart, a wall sample not counted as a void, and the exit codes).
+
+---
+
 The fixed lab clock and the stand-in human are Rust lab CLI commands:
 
 ```text
