@@ -635,7 +635,6 @@ void() Argus_Nav_Spawn_e1m2 =
     Argus_NavLink (n86, n90);
     Argus_NavLink (n87, n71);
     Argus_NavLink (n87, n110);
-    Argus_NavLink (n87, n193);
     Argus_NavLink (n88, n76);
     Argus_NavLink (n88, n93);
     Argus_NavLink (n88, n111);
@@ -981,8 +980,6 @@ void() Argus_Nav_Spawn_e1m2 =
     Argus_NavRegion (n170, 7);
     Argus_NavRegion (n180, 8);
 
-
-
     // Static tactical annotations: exposure, hidden target, first walk hop
     Argus_NavTactics (n0, 4, world, world);
     Argus_NavTactics (n1, 7, world, world);
@@ -1055,7 +1052,7 @@ void() Argus_Nav_Spawn_e1m2 =
     Argus_NavTactics (n68, 6, n57, n64);
     Argus_NavTactics (n69, 4, n64, n68);
     Argus_NavTactics (n70, 3, n49, n58);
-    Argus_NavTactics (n71, 6, n193, n87);
+    Argus_NavTactics (n71, 6, n100, n87);
     Argus_NavTactics (n72, 8, world, world);
     Argus_NavTactics (n73, 9, n138, n90);
     Argus_NavTactics (n74, 8, world, world);
@@ -1071,7 +1068,7 @@ void() Argus_Nav_Spawn_e1m2 =
     Argus_NavTactics (n84, 6, n49, n70);
     Argus_NavTactics (n85, 8, n57, n189);
     Argus_NavTactics (n86, 9, n109, n90);
-    Argus_NavTactics (n87, 7, n193, n193);
+    Argus_NavTactics (n87, 7, n101, n110);
     Argus_NavTactics (n88, 14, n103, n103);
     Argus_NavTactics (n89, 3, n103, n103);
     Argus_NavTactics (n90, 8, world, world);
@@ -1182,6 +1179,7 @@ void() Argus_Nav_Spawn_e1m2 =
     Argus_NavTactics (n195, 4, world, world);
     Argus_NavTactics (n196, 7, world, world);
     Argus_NavTactics (n197, 10, n111, n135);
+
     // Camera vantage nodes (Cartographer spectator anchors)
     Argus_AddCamNode ('-623 -671 652', '-15 37 0', "arena_1");
     Argus_AddCamNode ('-367 257 352', '-15 -28 0', "arena_2");
@@ -1189,5 +1187,5 @@ void() Argus_Nav_Spawn_e1m2 =
     Argus_AddCamNode ('-367 -159 524', '-15 90 0', "arena_4");
     Argus_AddCamNode ('-111 -31 696', '-15 106 0', "arena_5");
     Argus_AddCamNode ('-111 609 452', '-15 -74 0', "arena_6");
-    dprint ("ARGNAV 198 nodes, 572 links\n");
+    dprint ("ARGNAV 198 nodes, 571 links\n");
 };
