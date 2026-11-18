@@ -11,6 +11,7 @@ usage:
   argus_ci.py ship                 the binary and the paper trail agree
   argus_ci.py eol                  committed LF text blobs contain no CRLF
   argus_ci.py tapes [--changed-files F]   evidence is append-once
+  argus_ci.py localtapes           every tape a results file keeps machine-local is ignored by Git
   argus_ci.py nav                  runtime limits, QC/JSON edges, banners and cover hops
   argus_ci.py links                tracked documentation paths and anchors resolve
   argus_ci.py dashes               tracked prose and sources contain no en or em dashes
@@ -252,6 +253,75 @@ def check_tapes(root, changed_files=None, base=None, commit_msg="", **_kw):
             "in the commit message or the pull request title."
             % (path, verb, TAPE_ESCAPE))
     return fails
+
+
+# ---------------------------------------------------------- localtapes
+
+LOCAL_TAPE_LIST = "runs/local-study-tapes.json"
+
+
+def local_tape_paths(root):
+    """Map every tape a results file keeps machine-local to that file.
+
+    A results file in runs/ says so with a tape_storage that names
+    machine-local, and lists each tape by run name: runs/<run>.log and its
+    runs/<run>.nav.json receipt. runs/local-study-tapes.json lists paths.
+    """
+    out = {}
+    for p in sorted((root / "runs").glob("*.json")):
+        try:
+            doc = json.loads(p.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            continue
+        if not isinstance(doc, dict):
+            continue
+        rel = p.relative_to(root).as_posix()
+        if rel == LOCAL_TAPE_LIST:
+            for entry in doc.get("files") or []:
+                if isinstance(entry, dict) and entry.get("path"):
+                    out.setdefault(entry["path"], rel)
+        elif "machine-local" in str(doc.get("tape_storage", "")):
+            for tape in doc.get("tapes") or []:
+                run = tape.get("run") if isinstance(tape, dict) else None
+                if run:
+                    out.setdefault(f"runs/{run}.log", rel)
+                    out.setdefault(f"runs/{run}.nav.json", rel)
+    return out
+
+
+def check_localtapes(root, **_kw):
+    """Fail when a tape a results file keeps machine-local is not ignored.
+
+    Guards #872: study tapes stayed out of Git through one .gitignore line
+    per ladder stem, which failed open. Until a branch's lines reached main
+    its tapes were untracked everywhere else, and a git clean on main
+    deleted 197 of them with their navigation receipts. A study run named
+    study_<stem>_... is covered by one rule on every branch.
+    """
+    paths = local_tape_paths(root)
+    if not paths:
+        return Skipped("no results file keeps its tapes machine-local")
+    try:
+        # NUL-separated bytes: a text pipe on Windows would send CRLF, and
+        # git would then match "path\r" against nothing
+        result = subprocess.run(
+            ["git", "check-ignore", "--no-index", "--stdin", "-z"],
+            input="\0".join(sorted(paths)).encode("utf-8") + b"\0",
+            cwd=str(root), capture_output=True)
+    except OSError as exc:
+        return [f"localtapes: git check-ignore could not run: {exc}"]
+    if result.returncode not in (0, 1):  # 1: none of the paths is ignored
+        return ["localtapes: git check-ignore failed: "
+                + result.stderr.decode("utf-8", "replace").strip()]
+    ignored = set(result.stdout.decode("utf-8", "replace").split("\0"))
+    missed = collections.defaultdict(list)
+    for path, source in sorted(paths.items()):
+        if path not in ignored:
+            missed[source].append(path)
+    return [f"localtapes: {source} keeps its tapes machine-local, but Git would "
+            f"track {len(found)} of them, e.g. {found[0]}. Name study runs "
+            "study_<stem>_..., which one .gitignore rule covers on every branch"
+            for source, found in sorted(missed.items())]
 
 
 # ----------------------------------------------------------------- nav
@@ -822,7 +892,8 @@ def main(argv=None):
 
 
 CHECKS = {"ship": check_ship, "eol": check_eol,
-          "tapes": check_tapes, "nav": check_nav, "links": check_links,
+          "tapes": check_tapes, "localtapes": check_localtapes,
+          "nav": check_nav, "links": check_links,
           "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab,
           "suites": check_suites, "stamp": check_stamp, "pins": check_pins}
 
