@@ -53,10 +53,10 @@ over 1 to 9973; each tape names its seed, and the build they ran capped at
 So a freeze or a death that happened once can be made to happen again:
 
 ```text
-argus-mcp match dm4 185 replay_dm4 --seed 7919 --skill 2
+argus-mcp match dm4 185 replay_dm4 --seed 1292 --skill 2
 ```
 
-replays the tape of seed 7919 exactly, as long as the build is the same (the
+replays the tape of seed 1292 exactly, as long as the build is the same (the
 tape's `ARGUS build` line names it).
 
 ## Commands
@@ -66,11 +66,30 @@ argus-mcp seeds <map> <count> <stem> [--duration 185] [--skill N] [--lanes 4] [-
 argus-mcp match <map> <secs> <run> --seed N
 ```
 
+and through the MCP server:
+
+```text
+match_run map=dm4 duration_sec=185 run_name=replay_dm4 seeds=[1292]
+match_run map=dm4 duration_sec=185 run_name=fx_dm4 seeds=[1292,584,1875]
+```
+
 `seeds` runs on lanes with ports 26060 upward and names tapes
 `<stem>_s<seed>`. A run that dies at network start-up is retried once;
 engines launched in the same instant have been seen to lose one on Windows,
 so lanes start 1.5 s apart. The stand-in human cannot use the fixed clock: it
 acts on the wall clock and would play at a sixth of the game's speed.
+
+`match_run seeds` (#853) is the same clock for an agent, with two
+differences. It is refused on any map where `tools/lab_instruments.json` does
+not record the fixed clock as accepted, while the CLI stays open on every map
+because a validation has to record fixed tapes on a map first. And it runs
+its seeds one after another on one engine, at most ten, because the server
+tracks a single live engine for `match_stop` and shutdown: one seed returns
+the ordinary result under `run_name`, several return the `seeds` report with
+tapes named `<run_name>_s<seed>`. Both carry `fixed_clock`, which names the
+clock, its frame, the seeds and the map's limits. A ladder costs about half
+a minute of wall time per 185 s tape. The seeds above are the first three
+that `seeds` walks.
 
 Fixed tapes read the listen tick class (their telemetry gap is 0.5004 s), so
 the tick-class guard does not tell them from wall-clock tapes. The `ARGUS

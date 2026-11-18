@@ -116,6 +116,11 @@ impl MatchCtrl {
         self.clock = clock;
     }
 
+    /// The clock the next launch will use.
+    pub fn clock(&self) -> crate::engine::EngineClock {
+        self.clock
+    }
+
     /// The UDP port used by this controller and its attached clients.
     pub fn port(&self) -> u16 {
         self.port.unwrap_or(DEFAULT_PORT)
@@ -349,7 +354,9 @@ impl MatchCtrl {
         #[cfg(test)]
         let child = match self.fake_engines.as_mut() {
             Some(engines) => {
-                EngineChild::fake(engines.pop_front().ok_or("test engine queue is empty")?)
+                let control = engines.pop_front().ok_or("test engine queue is empty")?;
+                control.note_clock(clock);
+                EngineChild::fake(control)
             }
             None => EngineChild::spawn(
                 cfg,
@@ -526,7 +533,7 @@ impl MatchCtrl {
                 if last.is_some_and(|t| t >= goal) || !running || live_cancelled() {
                     break;
                 }
-                if elapsed >= limit + 60 {
+                if elapsed >= limit + FIXED_WALL_SLACK_SEC {
                     short = Some(last.unwrap_or(0.0));
                     break;
                 }
@@ -536,13 +543,7 @@ impl MatchCtrl {
             if let Some(t) = short {
                 // a loaded box can run a fixed match slower than real time;
                 // a tape cut short must say so rather than brief as whole
-                res.brief.flags.insert(
-                    0,
-                    format!(
-                        "fixed-clock match stopped by the wall-clock cap at game time {t:.1} of \
-                         {duration_sec} s: the tape is short"
-                    ),
-                );
+                res.brief.flags.insert(0, fixed_cap_flag(t, duration_sec));
             }
             return Ok(res);
         } else {
@@ -722,7 +723,20 @@ fn format_match_fail(log_path: &str, text: &str, why: &str) -> String {
 
 /// A played 185 s tape's last sample sits at about t 184.5, since ARGLOG
 /// runs twice a second; a fixed match is complete once it gets that far.
-const FIXED_END_SLACK_SEC: f64 = 0.6;
+pub const FIXED_END_SLACK_SEC: f64 = 0.6;
+
+/// How long past its length a fixed match may run on the wall before it is
+/// called hung. A fixed match runs faster than real time on an idle box, so
+/// this only guards an engine that stopped advancing.
+pub const FIXED_WALL_SLACK_SEC: u64 = 60;
+
+/// The brief flag for a fixed-clock tape the wall-clock cap cut short.
+pub fn fixed_cap_flag(game_time: f64, duration_sec: u32) -> String {
+    format!(
+        "fixed-clock match stopped by the wall-clock cap at game time {game_time:.1} of \
+         {duration_sec} s: the tape is short"
+    )
+}
 
 /// The latest game time any ARGLOG sample in `text` reached.
 pub fn last_game_time(text: &str) -> Option<f64> {
@@ -786,6 +800,11 @@ static LIVE_CANCEL: AtomicBool = AtomicBool::new(false);
 /// a PID registered by a successor.
 static LIVE_OWNER: AtomicU64 = AtomicU64::new(0);
 static NEXT_LIVE_OWNER: AtomicU64 = AtomicU64::new(1);
+/// Counts `cancel_live` calls (match_stop and shutdown). A run that spans
+/// several matches through the one live slot, such as a seeded ladder
+/// (#853), notes it when it starts: a stop meant for the tape on the engine
+/// must also stop the tapes still to come, including one about to launch.
+static CANCEL_EPOCH: AtomicU64 = AtomicU64::new(0);
 
 /// One run's cancellation identity. Creating or cancelling a waiting owner
 /// never touches the process-global live slot; only `claim_live` associates it
@@ -794,6 +813,8 @@ static NEXT_LIVE_OWNER: AtomicU64 = AtomicU64::new(1);
 pub struct RunCancellation {
     id: u64,
     requested: Arc<AtomicBool>,
+    /// Set by `spanning`: the `CANCEL_EPOCH` this run began under.
+    epoch: Option<u64>,
 }
 
 impl Default for RunCancellation {
@@ -807,7 +828,16 @@ impl RunCancellation {
         Self {
             id: NEXT_LIVE_OWNER.fetch_add(1, Ordering::SeqCst).max(1),
             requested: Arc::new(AtomicBool::new(false)),
+            epoch: None,
         }
+    }
+
+    /// The same run, also cancelled by any `cancel_live` from now on. Only a
+    /// run of several matches wants this: a single match queued behind
+    /// another must not be cancelled by a stop meant for the one ahead.
+    pub fn spanning(mut self) -> Self {
+        self.epoch = Some(CANCEL_EPOCH.load(Ordering::SeqCst));
+        self
     }
 
     /// Record cooperative cancellation and kill the child only if this run
@@ -819,6 +849,9 @@ impl RunCancellation {
 
     pub fn is_requested(&self) -> bool {
         self.requested.load(Ordering::SeqCst)
+            || self
+                .epoch
+                .is_some_and(|epoch| CANCEL_EPOCH.load(Ordering::SeqCst) != epoch)
     }
 
     /// Claim the child registered by the current `begin`. A cancellation that
@@ -883,6 +916,7 @@ pub fn live_cancelled() -> bool {
 /// the MatchCtrl mutex. Returns the pid it killed, if any. The owner
 /// still runs its own stop path and tidies up.
 pub fn cancel_live() -> Option<u32> {
+    CANCEL_EPOCH.fetch_add(1, Ordering::SeqCst);
     LIVE_OWNER.store(0, Ordering::SeqCst);
     LIVE_CANCEL.store(true, Ordering::SeqCst);
     let pid = LIVE_PID.swap(0, Ordering::SeqCst);
@@ -1513,6 +1547,28 @@ mod tests {
         // starting a match clears the flag again
         register_live(0);
         assert!(!live_cancelled());
+        clear_live();
+    }
+
+    /// #853: a seeded ladder runs several matches through the one live slot,
+    /// so a match_stop or shutdown meant for its current tape must also end
+    /// the tapes still to come. A single queued match must not be.
+    #[test]
+    fn only_a_spanning_run_is_cancelled_by_a_stop_meant_for_another() {
+        let _serial = live_test_lock();
+        clear_live();
+        let single = RunCancellation::new();
+        let ladder = RunCancellation::new().spanning();
+        assert!(!ladder.is_requested());
+        assert_eq!(cancel_live(), None);
+        assert!(ladder.is_requested(), "the ladder must see the stop");
+        assert!(
+            ladder.clone().is_requested(),
+            "and so must its lanes' clones"
+        );
+        assert!(!single.is_requested(), "a queued single match must not");
+        let later = RunCancellation::new().spanning();
+        assert!(!later.is_requested(), "a ladder begun after the stop runs");
         clear_live();
     }
 

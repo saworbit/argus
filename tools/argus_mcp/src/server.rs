@@ -5,6 +5,7 @@ use crate::cartograph::{
 use crate::compile::compile_qc;
 use crate::compile::compile_qc_dir;
 use crate::config::Config;
+use crate::engine::EngineClock;
 use crate::intel::{
     brief_lite, brief_run as intel_brief, compare_lite, compare_runs as intel_compare,
     compare_runs_scaled as intel_compare_scaled, sim_report, want_full, QUALITY_BARS,
@@ -45,7 +46,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use tokio::sync::Mutex;
 
 // The outer deadline bounds the RPC. compile.rs separately owns the child
@@ -271,6 +272,43 @@ impl Argus {
         cancellation: Option<RunCancellation>,
         task_context: Option<TaskContext>,
     ) -> Result<crate::match_ctrl::MatchRunResult, String> {
+        self.drive_match_on(
+            EngineClock::Played,
+            cfg,
+            map,
+            duration_sec,
+            run_name,
+            slots,
+            skill,
+            coop,
+            progress,
+            cancellation,
+            task_context,
+        )
+        .await
+    }
+
+    /// `drive_match` on a chosen engine clock. The shared controller holds
+    /// `clock` only for the launch, under the same lock as the launch, so no
+    /// other caller can start an engine on it. A fixed-clock match runs
+    /// faster than the wall and the bots end it at the timelimit, so it is
+    /// timed on game time (the tape's last ARGLOG `t`), as `MatchCtrl::run`
+    /// times it for the CLI, with the wall only capping a hung engine.
+    #[allow(clippy::too_many_arguments)]
+    async fn drive_match_on(
+        &self,
+        clock: EngineClock,
+        cfg: &crate::config::Config,
+        map: &str,
+        duration_sec: u32,
+        run_name: Option<&str>,
+        slots: Option<u32>,
+        skill: Option<u32>,
+        coop: Option<bool>,
+        progress: Option<MatchProgress>,
+        cancellation: Option<RunCancellation>,
+        task_context: Option<TaskContext>,
+    ) -> Result<crate::match_ctrl::MatchRunResult, String> {
         let _one_at_a_time = self.run_gate.lock().await;
         if cancellation
             .as_ref()
@@ -278,8 +316,13 @@ impl Argus {
         {
             return Err("match cancelled before startup".into());
         }
+        let fixed = clock.is_fixed();
+        let what = match clock {
+            EngineClock::Fixed { seed, .. } => format!("{map} seed {seed}"),
+            EngineClock::Played => map.to_string(),
+        };
         if let Some(context) = &task_context {
-            context.set_status_message(format!("starting {map}"));
+            context.set_status_message(format!("starting {what}"));
         }
         if let Some(p) = &progress {
             p.reporter
@@ -288,24 +331,43 @@ impl Argus {
         }
         {
             let mut g = self.matches.lock().await;
-            g.begin(cfg, map, duration_sec, run_name, slots, skill, coop)
-                .await?;
+            let previous = g.clock();
+            g.set_clock(clock);
+            let begun = g
+                .begin(cfg, map, duration_sec, run_name, slots, skill, coop)
+                .await;
+            g.set_clock(previous);
+            begun?;
         }
         if let Some(cancel) = &cancellation {
             let _ = cancel.claim_live();
         }
+        // the seconds this match is timed on: game time on the fixed clock
+        let unit = if fixed { "game " } else { "" };
         if let Some(context) = &task_context {
-            context.set_status_message(format!("running {map}: 0/{duration_sec}s"));
+            context.set_status_message(format!("running {what}: {unit}0/{duration_sec}s"));
         }
         let limit = duration_sec as u64;
+        let goal = f64::from(duration_sec) - crate::match_ctrl::FIXED_END_SLACK_SEC;
+        let mut capped_at = None;
         let mut last_reported = u64::MAX;
         loop {
-            let (running, elapsed) = {
+            let (running, elapsed, game) = {
                 let mut g = self.matches.lock().await;
-                g.poll()
+                let (running, elapsed) = g.poll();
+                let game = fixed
+                    .then(|| g.log_text())
+                    .flatten()
+                    .and_then(|text| crate::match_ctrl::last_game_time(&text));
+                (running, elapsed, game)
+            };
+            let reached = if fixed {
+                game.is_some_and(|t| t >= goal)
+            } else {
+                elapsed >= limit
             };
             if !running
-                || elapsed >= limit
+                || reached
                 || crate::match_ctrl::live_cancelled()
                 || cancellation
                     .as_ref()
@@ -313,34 +375,53 @@ impl Argus {
             {
                 break;
             }
-            if elapsed != last_reported {
+            if fixed && elapsed >= limit + crate::match_ctrl::FIXED_WALL_SLACK_SEC {
+                capped_at = Some(game.unwrap_or(0.0));
+                break;
+            }
+            let shown = if fixed {
+                game.unwrap_or(0.0) as u64
+            } else {
+                elapsed
+            };
+            if shown != last_reported {
                 if let Some(context) = &task_context {
-                    context.set_status_message(format!("running {map}: {elapsed}/{duration_sec}s"));
+                    context.set_status_message(format!(
+                        "running {what}: {unit}{shown}/{duration_sec}s"
+                    ));
                 }
                 if let Some(p) = &progress {
                     let fraction = if limit == 0 {
                         1.0
                     } else {
-                        (elapsed as f64 / limit as f64).clamp(0.0, 1.0)
+                        (shown as f64 / limit as f64).clamp(0.0, 1.0)
                     };
                     p.reporter
                         .send(
                             p.start + p.span * fraction,
                             p.total,
-                            format!("{}: {elapsed}/{limit}s", p.label),
+                            format!("{}: {unit}{shown}/{limit}s", p.label),
                         )
                         .await;
                 }
-                last_reported = elapsed;
+                last_reported = shown;
             }
-            tokio::time::sleep(std::time::Duration::from_millis(400)).await;
+            let pause = if fixed { 200 } else { 400 };
+            tokio::time::sleep(std::time::Duration::from_millis(pause)).await;
         }
         if let Some(context) = &task_context {
-            context.set_status_message(format!("finalizing {map}"));
+            context.set_status_message(format!("finalizing {what}"));
         }
         let mut g = self.matches.lock().await;
-        let result = g.finish(cfg, map).await;
+        let mut result = g.finish(cfg, map).await;
         drop(g);
+        if let (Some(t), Ok(r)) = (capped_at, result.as_mut()) {
+            // a loaded box can run a fixed match slower than real time; a
+            // tape cut short must say so rather than brief as whole
+            r.brief
+                .flags
+                .insert(0, crate::match_ctrl::fixed_cap_flag(t, duration_sec));
+        }
         if let Some(p) = &progress {
             p.reporter
                 .send(p.start + p.span, p.total, format!("finished {}", p.label))
@@ -363,6 +444,10 @@ impl Argus {
                 None,
             ));
         }
+        if let Some(seeds) = &args.seeds {
+            crate::seeds::validate_mcp_seeds(seeds)
+                .map_err(|error| McpError::invalid_params(error, None))?;
+        }
         let cfg = match config_override {
             Some(cfg) => cfg,
             None => match cfg_or_err() {
@@ -370,6 +455,11 @@ impl Argus {
                 Err(result) => return Ok(result),
             },
         };
+        if let Some(seeds) = &args.seeds {
+            return self
+                .run_seeded_call(&cfg, args, seeds, progress, cancellation, task_context)
+                .await;
+        }
         match self
             .drive_match(
                 &cfg,
@@ -388,6 +478,138 @@ impl Argus {
             Ok(result) => json_ok(&result),
             Err(error) => tool_err(error),
         }
+    }
+
+    /// `match_run seeds` (#853): the fixed lab clock through the MCP, on a
+    /// map where tools/lab_instruments.json accepts it. One seed returns the
+    /// ordinary match_run result under `run_name`. Several run one after
+    /// another through the single live slot, one engine at a time, as
+    /// `<run_name>_s<seed>`, and return the CLI ladder's report. Both carry
+    /// `fixed_clock`: the clock, frame, seeds and the map's limits. A
+    /// match_stop, a shutdown or a task cancel ends the tape on the engine
+    /// and every tape still to come.
+    async fn run_seeded_call(
+        &self,
+        cfg: &Config,
+        args: &MatchRunArgs,
+        seeds: &[u32],
+        progress: Option<MatchProgress>,
+        cancellation: Option<RunCancellation>,
+        task_context: Option<TaskContext>,
+    ) -> Result<CallToolResult, McpError> {
+        let map = match crate::paths::map_name(&args.map) {
+            Ok(map) => map,
+            Err(error) => return tool_err(error),
+        };
+        let card = match crate::seeds::fixed_clock_standing(cfg, &map, seeds) {
+            Ok(card) => card,
+            Err(error) => return tool_err(error),
+        };
+        let card_value = serde_json::to_value(&card)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        if let [seed] = seeds {
+            let result = self
+                .drive_match_on(
+                    EngineClock::fixed(*seed),
+                    cfg,
+                    &map,
+                    args.duration_sec,
+                    args.run_name.as_deref(),
+                    args.dedicated_slots,
+                    args.skill,
+                    None,
+                    progress,
+                    cancellation,
+                    task_context,
+                )
+                .await;
+            return match result {
+                Ok(result) => {
+                    let mut value = serde_json::to_value(&result)
+                        .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+                    value["fixed_clock"] = card_value;
+                    json_ok(&value)
+                }
+                Err(error) => tool_err(error),
+            };
+        }
+        let stem = args
+            .run_name
+            .clone()
+            .unwrap_or_else(crate::paths::default_run_name);
+        if let Some(seed) = seeds
+            .iter()
+            .find(|seed| !crate::paths::valid_run_name(&format!("{stem}_s{seed}")))
+        {
+            return tool_err(format!(
+                "run_name {stem}_s{seed} {}",
+                crate::paths::RUN_NAME_RULE
+            ));
+        }
+        let cancel = cancellation.unwrap_or_default().spanning();
+        let started = Instant::now();
+        let count = seeds.len();
+        let mut runs = Vec::with_capacity(count);
+        let mut stopped = None;
+        for (index, &seed) in seeds.iter().enumerate() {
+            if cancel.is_requested() {
+                stopped = Some(format!(
+                    "cancelled before seed {seed}: {index} of {count} tapes ran"
+                ));
+                break;
+            }
+            let name = format!("{stem}_s{seed}");
+            let lane_progress = progress.as_ref().map(|p| MatchProgress {
+                reporter: p.reporter.clone(),
+                start: p.start + p.span * index as f64 / count as f64,
+                span: p.span / count as f64,
+                total: p.total,
+                label: format!("{map} seed {seed} ({}/{count})", index + 1),
+            });
+            let lane_started = Instant::now();
+            let result = self
+                .drive_match_on(
+                    EngineClock::fixed(seed),
+                    cfg,
+                    &map,
+                    args.duration_sec,
+                    Some(&name),
+                    args.dedicated_slots,
+                    args.skill,
+                    None,
+                    lane_progress,
+                    Some(cancel.clone()),
+                    task_context.clone(),
+                )
+                .await;
+            let wall = lane_started.elapsed().as_secs_f64();
+            let mut run = match result {
+                Ok(result) => crate::seeds::SeedRun::from_result(name, seed, 0, wall, &result),
+                Err(error) => crate::seeds::SeedRun::failed(name, seed, 0, wall, error),
+            };
+            if cancel.is_requested() {
+                if run.ok {
+                    run.ok = false;
+                    run.error = Some("cancelled mid-match: the tape is short".into());
+                }
+                runs.push(run);
+                stopped = Some(format!(
+                    "cancelled during seed {seed}: {} of {count} tapes ran",
+                    index + 1
+                ));
+                break;
+            }
+            runs.push(run);
+        }
+        let report =
+            crate::seeds::SeedReport::from_runs(map, 1, runs, started.elapsed().as_secs_f64());
+        let mut value = serde_json::to_value(&report)
+            .map_err(|e| McpError::internal_error(e.to_string(), None))?;
+        value["fixed_clock"] = card_value;
+        if let Some(stopped) = stopped {
+            value["stopped"] = serde_json::Value::String(stopped);
+        }
+        json_ok(&value)
     }
 
     fn spawn_match_task(
@@ -806,7 +1028,7 @@ pub struct SpecSimulateArgs {
     pub duration_seconds: Option<u32>,
     #[schemars(description = "Ignored; Reap, Omi, Zeus are compiled in.")]
     pub bot_count: Option<u32>,
-    #[schemars(description = "Ignored; 100x dilation would change frametime and break A/B.")]
+    #[schemars(description = "Ignored.")]
     pub time_dilation: Option<f64>,
 }
 
@@ -852,12 +1074,14 @@ pub struct LabRequestArgs {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct MatchRunArgs {
     pub map: String,
-    #[schemars(description = "Wall-clock seconds, 10 to 600")]
+    #[schemars(description = "Seconds, 10 to 600")]
     pub duration_sec: u32,
     pub run_name: Option<String>,
     pub dedicated_slots: Option<u32>,
-    #[schemars(description = "skill 0-3; applied at spawn via Argus_SetSkill")]
+    #[schemars(description = "0-3")]
     pub skill: Option<u32>,
+    #[schemars(description = "Fixed lab clock, validated maps only: one tape per seed (1-2000)")]
+    pub seeds: Option<Vec<u32>>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -866,7 +1090,7 @@ pub struct MatchStartArgs {
     pub duration_sec: Option<u32>,
     pub run_name: Option<String>,
     pub dedicated_slots: Option<u32>,
-    #[schemars(description = "skill 0-3; applied at spawn via Argus_SetSkill")]
+    #[schemars(description = "0-3")]
     pub skill: Option<u32>,
 }
 
@@ -2961,9 +3185,7 @@ impl Argus {
         }))
     }
 
-    #[tool(
-        description = "Short experiment on several maps after one compile. Default dm2,dm3,dm4,dm6,lqdm2 at 20s each."
-    )]
+    #[tool(description = "Short experiment on several maps after one compile.")]
     async fn matrix_experiment(
         &self,
         Parameters(args): Parameters<MatrixArgs>,
@@ -3433,6 +3655,10 @@ impl ServerHandler for Argus {
                     None,
                 ));
             }
+            if let Some(seeds) = &args.seeds {
+                crate::seeds::validate_mcp_seeds(seeds)
+                    .map_err(|error| McpError::invalid_params(error, None))?;
+            }
             let task = self.spawn_match_task(args, self.task_match_config.clone());
             return Ok(CallToolResponse::Task(CreateTaskResult::new(task)));
         }
@@ -3895,6 +4121,7 @@ mod tests {
             run_name: Some(run_name.into()),
             dedicated_slots: None,
             skill: None,
+            seeds: None,
         }
     }
 
@@ -4082,6 +4309,7 @@ mod tests {
                 run_name: Some("task_cancelled".into()),
                 dedicated_slots: None,
                 skill: None,
+                seeds: None,
             },
             Some(completion_cfg(root.path())),
         );
@@ -4403,6 +4631,224 @@ mod tests {
             serde_json::from_value(serde_json::Value::Object(result)).unwrap();
         assert_eq!(result.is_error, Some(true));
         assert!(result_text(&result).contains("test engine queue is empty"));
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+    }
+
+    /// A fake tape already at its 10 s goal, so a fixed-clock wait ends on
+    /// game time rather than on the engine or the wall.
+    const FIXED_TAPE: &str = "ARGUS init on dm4\nARGLOG Reap t 9.5 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
+
+    fn write_instruments(root: &Path) {
+        let frame = crate::seeds::launch_frame_ms();
+        let entry = |accepted: bool| {
+            serde_json::json!({
+                "accepted": accepted,
+                "frame_ms": frame,
+                "metrics": {
+                    "stalls": "inconclusive",
+                    "engages": "equivalent",
+                    "lava_deaths": "inconclusive",
+                    "avg_speed": "not measured"
+                }
+            })
+        };
+        let record = serde_json::json!({"fixed_clock": {"frame_ms": frame, "maps": {
+            "dm4": entry(true), "dm2": entry(true), "dm3": entry(false)
+        }}});
+        fs::create_dir_all(root.join("tools")).unwrap();
+        fs::write(root.join("tools/lab_instruments.json"), record.to_string()).unwrap();
+    }
+
+    fn seeded_args(run_name: &str, seeds: &[u32]) -> MatchRunArgs {
+        MatchRunArgs {
+            seeds: Some(seeds.to_vec()),
+            ..fake_match_args(run_name)
+        }
+    }
+
+    fn fixed(seed: u32) -> Option<EngineClock> {
+        Some(EngineClock::Fixed {
+            seed,
+            limit_sec: Some(DURATION_MIN),
+        })
+    }
+
+    /// #853: one seed is the ordinary match_run result on the fixed clock,
+    /// with the clock, frame, seed and the map's limits beside it, and the
+    /// shared controller back on the wall clock for everyone else.
+    #[tokio::test]
+    async fn a_seeded_match_runs_the_fixed_clock_and_names_its_limits() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-seeded-one").unwrap();
+        write_instruments(root.path());
+        let control = FakeEngineControl::new(FIXED_TAPE);
+        let server = fake_match_server(root.path(), vec![control.clone()]);
+        let cfg = server.task_match_config.clone();
+        let result = server
+            .run_match_call(&seeded_args("fx_one", &[273]), None, None, None, cfg)
+            .await
+            .unwrap();
+        assert_ne!(result.is_error, Some(true), "{}", result_text(&result));
+        assert_eq!(control.launched_clock(), fixed(273));
+        assert!(
+            !control.was_killed(),
+            "the match ended on game time, not by the wall cap"
+        );
+        assert_eq!(server.matches.lock().await.clock(), EngineClock::Played);
+        let data: serde_json::Value = serde_json::from_str(result_text(&result)).unwrap();
+        assert_eq!(data["ok"], true);
+        assert_eq!(data["run_name"], "fx_one");
+        let card = &data["fixed_clock"];
+        assert_eq!(card["clock"], "fixed");
+        assert_eq!(card["frame_ms"], crate::seeds::launch_frame_ms());
+        assert_eq!(card["seeds"], serde_json::json!([273]));
+        assert_eq!(
+            card["limits"],
+            serde_json::json!({
+                "avg_speed": "not measured",
+                "lava_deaths": "inconclusive",
+                "stalls": "inconclusive"
+            })
+        );
+        assert!(card["rule"].as_str().unwrap().contains("wall-clock tapes"));
+        assert_eq!(live_state(), (0, 0, false));
+        assert!(server.run_gate.try_lock().is_ok());
+    }
+
+    /// Several seeds run one after another on one engine, each its own
+    /// fixed-clock launch and tape, and report like `argus-mcp seeds`.
+    #[tokio::test]
+    async fn a_seeded_ladder_runs_its_tapes_in_turn_on_one_engine() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-seeded-ladder").unwrap();
+        write_instruments(root.path());
+        let controls: Vec<_> = (0..3).map(|_| FakeEngineControl::new(FIXED_TAPE)).collect();
+        let server = fake_match_server(root.path(), controls.clone());
+        let seeds = [1291, 583, 1874];
+        let cfg = server.task_match_config.clone();
+        let result = server
+            .run_match_call(&seeded_args("fx_ladder", &seeds), None, None, None, cfg)
+            .await
+            .unwrap();
+        assert_ne!(result.is_error, Some(true), "{}", result_text(&result));
+        for (control, seed) in controls.iter().zip(seeds) {
+            assert_eq!(control.launched_clock(), fixed(seed));
+        }
+        let data: serde_json::Value = serde_json::from_str(result_text(&result)).unwrap();
+        assert_eq!(data["clock"], "fixed");
+        assert_eq!(data["lanes"], 1);
+        assert_eq!(
+            (data["ok"].clone(), data["failed"].clone()),
+            (3.into(), 0.into())
+        );
+        let names: Vec<&str> = data["runs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|run| run["run_name"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            names,
+            ["fx_ladder_s1291", "fx_ladder_s583", "fx_ladder_s1874"]
+        );
+        assert!(root.path().join("runs/fx_ladder_s583.log").is_file());
+        assert_eq!(data["fixed_clock"]["seeds"], serde_json::json!(seeds));
+        assert!(data.get("stopped").is_none());
+        assert_eq!(server.matches.lock().await.clock(), EngineClock::Played);
+        assert_eq!(live_state(), (0, 0, false));
+    }
+
+    #[tokio::test]
+    async fn seeds_are_refused_before_any_engine_where_they_are_not_validated() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-seeded-refused").unwrap();
+        write_instruments(root.path());
+        let control = FakeEngineControl::new(FIXED_TAPE);
+        let server = fake_match_server(root.path(), vec![control.clone()]);
+        let cfg = server.task_match_config.clone();
+        for map in ["dm3", "dm6"] {
+            let args = MatchRunArgs {
+                map: map.into(),
+                ..seeded_args("fx_refused", &[273])
+            };
+            let result = server
+                .run_match_call(&args, None, None, None, cfg.clone())
+                .await
+                .unwrap();
+            assert_eq!(result.is_error, Some(true));
+            let text = result_text(&result);
+            assert!(
+                text.contains(&format!("not validated on {map}")) && text.contains("dm2, dm4 only"),
+                "{text}"
+            );
+        }
+        let malformed: [Vec<u32>; 5] =
+            [vec![], vec![0], vec![2_001], vec![5, 5], (1..=11).collect()];
+        for seeds in malformed {
+            let error = server
+                .run_match_call(
+                    &seeded_args("fx_refused", &seeds),
+                    None,
+                    None,
+                    None,
+                    cfg.clone(),
+                )
+                .await
+                .unwrap_err();
+            assert!(error.message.contains("seed"), "{}", error.message);
+        }
+        assert_eq!(control.launched_clock(), None, "no engine started");
+        assert!(!root.path().join("runs/fx_refused").exists());
+    }
+
+    /// A match_stop during a ladder kills the tape on the engine and no
+    /// later seed launches: the ladder cannot outlive the stop.
+    #[tokio::test]
+    async fn a_stop_ends_the_seeded_ladder_and_nothing_launches_after_it() {
+        let _serial = live_test_lock_async().await;
+        let root = TestDir::new("server-seeded-stop").unwrap();
+        write_instruments(root.path());
+        // the first tape never reaches its goal, so only the stop ends it
+        let first = FakeEngineControl::new(FAKE_TAPE);
+        let later: Vec<_> = (0..2).map(|_| FakeEngineControl::new(FIXED_TAPE)).collect();
+        let mut controls = vec![first.clone()];
+        controls.extend(later.iter().cloned());
+        let server = fake_match_server(root.path(), controls);
+        let call = {
+            let server = server.clone();
+            tokio::spawn(async move {
+                let cfg = server.task_match_config.clone();
+                server
+                    .run_match_call(
+                        &seeded_args("fx_stopped", &[11, 22, 33]),
+                        None,
+                        None,
+                        None,
+                        cfg,
+                    )
+                    .await
+            })
+        };
+        wait_for_live_match(&server).await;
+        assert!(crate::match_ctrl::cancel_live().is_some());
+        let result = tokio::time::timeout(SETTLE, call)
+            .await
+            .expect("the ladder outlived the stop")
+            .unwrap()
+            .unwrap();
+        assert!(first.was_killed());
+        assert!(
+            later.iter().all(|c| c.launched_clock().is_none()),
+            "a seed launched after the stop"
+        );
+        let data: serde_json::Value = serde_json::from_str(result_text(&result)).unwrap();
+        assert_eq!(data["runs"].as_array().unwrap().len(), 1);
+        assert_eq!(data["runs"][0]["ok"], false);
+        assert!(
+            data["stopped"].as_str().unwrap().contains("1 of 3"),
+            "{data}"
+        );
         assert_eq!(live_state(), (0, 0, false));
         assert!(server.run_gate.try_lock().is_ok());
     }
@@ -4772,6 +5218,11 @@ mod tests {
         // docs/lab-scenarios.md. Paid for by cutting rationale the guides
         // already carry from the corpus, format and primary descriptions:
         // 25,466, 34 bytes of headroom.
+        // match_run's `seeds` (#853, 2026-11-18) costs about 180 bytes.
+        // Paid for by dropping the Argus_SetSkill aside from both match
+        // tools' skill, matrix_experiment's defaults (its fields carry
+        // them) and bot_simulate_match's dilation rationale: 25,446, 54
+        // bytes of headroom.
         // That is about 6,300 tokens on EVERY request. The bound sits
         // just above the measured surface on purpose: a bound three
         // times the actual is not a bound. If this fails, the question
