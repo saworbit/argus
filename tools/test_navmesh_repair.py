@@ -11,7 +11,9 @@ enough that WaterMove burns at waterlevel 1. Five seats:
     n3 (128 0 184)   directly above n1
     n4 (512 0 24)    dry, beyond the strip
 
-and eight links, one per rule the repair applies.
+and eight links, one per rule the repair applies. A second fixture,
+write_slopes_fixture, carries a flat, a gentle and a steep floor and a lava
+pool, for the audit's reasons a seat stands on no fragment (#788).
 """
 import json
 import struct
@@ -318,6 +320,9 @@ class MeshAudit(unittest.TestCase):
             self.assertEqual(r["liquid_entries"], [(1, 2)])
             self.assertEqual(r["vertical_walks"], [(1, 3)])
             self.assertEqual(r["offmesh_seats"], [3])
+            # n3 hangs 160u over n1's floor, past the 30u the audit looks
+            self.assertEqual([(o["seat"], o["why"]) for o in r["offmesh"]],
+                             [(3, "no_floor")])
 
     def test_fall_finds_the_floor(self):
         with tempfile.TemporaryDirectory() as td:
@@ -326,6 +331,135 @@ class MeshAudit(unittest.TestCase):
             bsp = nm.Bsp(tmp / "fixture.bsp")
             self.assertAlmostEqual(nm.fall_to(bsp, 0.0, 0.0, 150.0), 24.0, delta=0.1)
             self.assertIsNone(nm.fall_to(bsp, 0.0, 0.0, 400.0))   # past DROPMAX
+
+
+# Seats on the slopes fixture, in hull-1 origin space (#788)
+SLOPE_SEATS = [[-64.0, 64.0, 24.0],     # n0 dry flat floor
+               [96.0, -128.0, 96.0],    # n1 on the gentle ramp, normal z 0.8
+               [48.0, 128.0, 88.0],     # n2 mid steep ramp, normal z 0.6
+               [6.0, 128.0, 32.0],      # n3 steep ramp, 6u up from the floor
+               [-128.0, -192.0, 24.0],  # n4 feet in the lava pool
+               [-64.0, 64.0, 120.0],    # n5 96u over the floor
+               [-64.0, 64.0, -40.0]]    # n6 inside the world, 64u down
+
+
+def write_slopes_fixture(tmp):
+    """Floors of every slope class the audit has to tell apart (#788).
+
+    Hull 1, west of x 0: a flat floor at origin height 24, lava over the
+    part south of y -128 (hull 0 only, as qbsp does it). East of x 0, two
+    ramps rise from that floor's height: north of y 0 a steep one,
+    z = 24 + 4x/3 (normal z 0.6, which no body can stand on), south of it
+    a gentle one, z = 24 + 0.75x (normal z 0.8). The 31 dry seats #788
+    counted all stood on faces like the steep one; the gentle one pins the
+    sloped-plane clipping and the walk-back the issue suspected.
+    """
+    planes = b"".join(struct.pack("<ffffi", *row) for row in (
+        (1.0, 0.0, 0.0, 0.0, 0),       # p0 x 0: flat floor west, ramps east
+        (0.0, 0.0, 1.0, 24.0, 2),      # p1 hull-1 flat floor (origin height)
+        (0.0, 1.0, 0.0, 0.0, 1),       # p2 y 0: steep ramp north, gentle south
+        (-0.8, 0.0, 0.6, 14.4, 3),     # p3 steep ramp, z = 24 + 4x/3
+        (-0.6, 0.0, 0.8, 19.2, 5),     # p4 gentle ramp, z = 24 + 0.75x
+        (0.0, 1.0, 0.0, -128.0, 1),    # p5 y -128: lava pool to the south
+        (0.0, 0.0, 1.0, 40.0, 2),      # p6 lava surface (hull 0)
+    ))
+    # hull 0 is only read for liquid here: lava west of x 0, south of
+    # y -128 and below z 40, empty everywhere else
+    h0tree = ((0, -1, 1), (5, -1, 2), (6, -1, -3))
+    h0nodes = b"".join(
+        struct.pack("<i8h2H", p, c0, c1, -256, -256, -64, 256, 256, 512, 0, 0)
+        for p, c0, c1 in h0tree)
+    leaves = b"".join(
+        struct.pack("<2i6h2H4B", content, -1, -256, -256, -64, 256, 256, 512,
+                    0, 0, 0, 0, 0, 0)
+        for content in (-1, -2, -5))
+    clipnodes = b"".join(struct.pack("<ihh", *row) for row in (
+        (0, 1, 5),      # c0 ramps east, flat floor west
+        (2, 3, 4),      # c1 steep north, gentle south
+        (1, -1, -2),    # c2 flat floor, dry part
+        (3, -1, -2),    # c3 steep ramp
+        (4, -1, -2),    # c4 gentle ramp
+        (5, 2, 6),      # c5 dry north of y -128, the pool south of it
+        (1, -1, -2),    # c6 flat floor under the pool
+    ))
+    models = struct.pack("<9f7i", -256.0, -256.0, -64.0, 256.0, 256.0, 512.0,
+                         0.0, 0.0, 0.0, 0, 0, 0, 0, 0, 0, 0)
+    ents = b'{\n"classname" "worldspawn"\n}\n\0'
+    table, blob, base = [(0, 0)] * 15, b"", 4 + 15 * 8
+    for idx, payload in ((0, ents), (1, planes), (5, h0nodes), (9, clipnodes),
+                         (10, leaves), (14, models)):
+        table[idx] = (base + len(blob), len(payload))
+        blob += payload
+    (tmp / "slopes.bsp").write_bytes(
+        struct.pack("<i", 29)
+        + b"".join(struct.pack("<ii", o, n) for o, n in table) + blob)
+    (tmp / "slopes.qc.json").write_text(json.dumps(
+        {"nodes": SLOPE_SEATS, "links": [[0, 1, 1], [1, 0, 1]]}))
+
+
+class SteepFloors(unittest.TestCase):
+    """Why a seat is off the mesh, on floors of every slope class (#788)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.dir = Path(cls.tmp.name)
+        write_slopes_fixture(cls.dir)
+        cls.bsp, cls.frags, cls.stats = nm.load_mesh(cls.dir / "slopes.bsp")
+        cls.doc = json.loads((cls.dir / "slopes.qc.json").read_text())
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def test_gentle_ramp_is_floor_and_steep_ramp_is_not(self):
+        self.assertEqual(self.stats["hostile_dropped"], 1, "the pool floor goes")
+        self.assertTrue(all(f["plane"][2] > nm.WALKABLE_NZ for f in self.frags))
+        f = nm.locate(self.frags, 96.0, -128.0, 96.0, 1.0)
+        self.assertIsNotNone(f, "a seat on a walkable slope stands on the mesh")
+        self.assertAlmostEqual(self.frags[f]["plane"][2], 0.8, places=5)
+        self.assertAlmostEqual(nm.plane_z(self.frags[f]["plane"], 96.0, -128.0),
+                               96.0, delta=0.01)
+
+    def test_floor_under_reads_the_face_a_trace_would(self):
+        z, plane = nm.floor_under(self.bsp, 48.0, 128.0, 100.0)
+        self.assertAlmostEqual(z, 88.0, delta=0.05)
+        self.assertAlmostEqual(plane[0], -0.8, places=5)
+        self.assertAlmostEqual(plane[2], 0.6, places=5)
+        z, plane = nm.floor_under(self.bsp, -64.0, 64.0, 100.0)
+        self.assertAlmostEqual(z, 24.0, delta=0.05)
+        self.assertEqual(plane[:3], (0.0, 0.0, 1.0))
+        self.assertIsNone(nm.floor_under(self.bsp, -64.0, 64.0, 100.0, maxdrop=30.0))
+
+    def test_audit_says_why_each_seat_is_off_the_mesh(self):
+        r = nm.audit(self.bsp, self.frags, self.doc)
+        self.assertEqual(r["offmesh_seats"], [2, 3, 4, 5, 6])
+        why = {o["seat"]: o for o in r["offmesh"]}
+        self.assertEqual({i: o["why"] for i, o in why.items()},
+                         {2: "steep", 3: "steep", 4: "liquid", 5: "no_floor",
+                          6: "in_solid"})
+        for i in (2, 3):
+            self.assertAlmostEqual(why[i]["nz"], 0.6, places=5)
+        self.assertIsNone(why[2]["near"], "the flat floor is 64u below n2")
+        self.assertAlmostEqual(why[3]["near"], 6.0, delta=0.01)
+
+    def test_cli_reports_liquid_and_dry_misses_separately(self):
+        import contextlib
+        import io
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf):
+            nm.main([str(self.dir / "slopes.bsp"), "--audit",
+                     "--nav", str(self.dir / "slopes.qc.json")])
+        text = buf.getvalue()
+        for line in ("seats on no mesh fragment: 5",
+                     "in liquid, kept by the repair (feet in lava or slime): 1",
+                     "dry, on a face too steep to stand on (normal z at most 0.7): 2",
+                     "n2 (48, 128, 88) floor normal z 0.60, no fragment within 64u",
+                     "n3 (6, 128, 32) floor normal z 0.60, nearest fragment 6u away",
+                     "dry, no world floor within 30u below (a brush entity or mid-air): 1",
+                     "dry, inside the world: 1",
+                     "dry, no fragment: 0"):
+            self.assertIn(line, text)
 
 
 if __name__ == "__main__":

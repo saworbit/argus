@@ -111,8 +111,9 @@ wall-clock tapes against 20 fixed tapes per map, and a criterion per metric
 30 per cent of the wall-clock mean or one event, Different when the 95 per
 cent interval excludes zero). A map is accepted when nothing reads Different
 and engagements, coverage and goals read Equivalent. Average speed was
-registered but the corpus did not carry it then, so it was not measured
-([#843](https://github.com/saworbit/argus/issues/843), since fixed).
+registered but the corpus did not carry it then
+([#843](https://github.com/saworbit/argus/issues/843)), so it was read on the
+confirmation tapes after both verdicts, once the corpus carried it (below).
 `tools/argus_clock_validation.py` applies the rule.
 
 ### dm2 at 13.9 ms: accepted
@@ -201,6 +202,17 @@ to 40, seeds 273 to 9949), against the same ten wall-clock tapes a map:
 | goals | 23.3 | 23.9 | equivalent | 10.5 | 11.2 | equivalent |
 | deaths | 27.0 | 26.1 | equivalent | 12.7 | 11.8 | equivalent |
 | routefails | 0.4 | 0.9 | inconclusive | 5.7 | 6.2 | inconclusive |
+
+Average speed, registered with the rest but read on 2026-11-18 after both
+verdicts ([#863](https://github.com/saworbit/argus/issues/863)), because the
+corpus did not carry it when they were made. Its margin is 30 per cent of the
+wall-clock mean. It reads equivalent on both maps, so neither verdict and no
+limit changes:
+
+| Map | Wall clock | Fixed | Change | 90% interval | Margin | Reading |
+| --- | --- | --- | --- | --- | --- | --- |
+| dm4 | 212.2 | 209.4 | -2.9 | -6.7 to +1.0 | 63.7 | equivalent |
+| dm2 | 182.9 | 183.7 | +0.7 | -9.5 to +11.0 | 54.9 | equivalent |
 
 As registered, the default frame is now 14.25 ms. On both maps a fixed ladder
 may screen a change for engagements, coverage, goals, deaths and freezes (and
