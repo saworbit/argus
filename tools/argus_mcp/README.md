@@ -2238,6 +2238,16 @@ tapes and briefs; parsing a whole-line prefix must preserve the map, contain no
 future sample or event, and never exceed the full brief's additive totals. The
 fixtures need no engine, BSP or machine-local run.
 
+The demo, BSP and PAK, and ARGLOG parsers read files from outside the
+repository and must never panic or spin on malformed input (#849).
+`tests/parser_robustness.rs` mutates a synthesised demo, BSP and PAK and
+windows of committed tapes on every run, each input under a wall-clock bound;
+`ARGUS_ROBUSTNESS_SCALE=N` multiplies its cases for a longer local run. The
+cargo-fuzz targets in `fuzz/` run weekly from the `fuzz` workflow, or by hand
+from `tools/argus_mcp` with `cargo +nightly fuzz run demo` (or `bsp`,
+`arglog`) and seeds from `python fuzz/seed_corpus.py --out fuzz/corpus`. On
+Windows libFuzzer links only with the MSVC AddressSanitizer runtime installed.
+
 The parsed navigation graph has a per-node metamorphic oracle for every route
 edge family. Adding a link may only enlarge each source node's reachable set;
 removing it may only shrink that set. A separate equal-aggregate fixture keeps
