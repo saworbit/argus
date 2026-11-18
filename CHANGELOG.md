@@ -749,6 +749,45 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Reachability jumps fire only where a jump helps, and a stall jump is
+  checked on the flight it will fly
+  ([#774](https://github.com/saworbit/argus/issues/774),
+  [#782](https://github.com/saworbit/argus/issues/782),
+  [#797](https://github.com/saworbit/argus/issues/797)). Both reachability
+  branches fired at any steering point 24u or more above within 80u. On dry
+  feet a jump now waits for a riser taller than a step within 32u along the
+  line, so ordinary stairs are walked, and is refused above
+  `Argus_JumpApex` plus a step, where no jump climbs. The stall jump is
+  tagged, checked along the post-turn heading with the 30 u/s that NQ air
+  acceleration can add along one wish, and the flight is held on that
+  heading. A refusal is no longer logged for a bot already in lava or
+  slime. In a liquid both keep the old rule: applying the new one there
+  left bots burning on the dm4 pit floor in the first candidate.
+
+- Evidence: jump events halve (dm4 187 to 93, dm2 2,148 to 1,144 over 30
+  fixed-clock seeds, e1m7 185 to 30). dm3's n55 to n45 stairs go from 14
+  jumps to 2, both stall jumps, and none from routed steering; e1m7
+  low-floor jumps go from 175 to 23. Against main every gate reads no
+  detectable effect: 30 fixed-clock seeds a side on dm4 and dm2 (lava 1.9
+  to 2.1 and 0.9 to 1.0), ten on e1m7, and three played-rate pairs each on
+  dm4, dm3 and e1m7.
+
+- `tools/argus_gait.py` no longer files a bot parked at a mover pad as the
+  wedge class ([#628](https://github.com/saworbit/argus/issues/628)). A lift
+  or train hop parks the bot with `ar_liftwait`, friction only and no marker,
+  so the e1m5 window the issue quotes (Romero, 6.0 s from t=33.1 in
+  `broad_mhb_e1m5_2`) read as "pre-existing" although the tape shows the hop
+  planned at t=31.0 and the 8 s pad give-up at t=39.1. A window that opens
+  inside the bot's own hop is now a `mover wait`, with the verb that closed
+  the hop and whether the bot boarded; one that runs on more than a second
+  past its hop's close or bound is a `mover overrun`, so a hold that outlives
+  the controller's own give-up is not hidden either. A hesitation marker
+  keeps first claim, and neither class fails the exit status. All three e1m5
+  windows on record (`broad_mhb_e1m5_2`, `broad_ecu_e1m5_2` and the
+  `broad_ecpin5` trace) now read `lift hop ... closed by abandon, never
+  boarded`. The waits themselves are not fixed here: they are at e1m5's
+  targeted plat (`func_plat *2`, targetname `t2`), which stays raised and
+  inert until its button fires.
 - The box test samples the player hull's real 16u corners, and the unstick
   test calls a bot embedded when its hull, not just its origin, is in solid
   ([#755](https://github.com/saworbit/argus/issues/755),
