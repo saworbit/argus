@@ -11,7 +11,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Main as of 2026-11-15 is installed; the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) and the parked step 1b gate ([#583](https://github.com/saworbit/argus/issues/583)) remain open |
+| Development source | Main carries gameplay and navigation changes merged on 2026-11-18 that are not installed yet ([#884](https://github.com/saworbit/argus/pull/884), [#886](https://github.com/saworbit/argus/pull/886), [#891](https://github.com/saworbit/argus/pull/891), [#895](https://github.com/saworbit/argus/pull/895), [#896](https://github.com/saworbit/argus/pull/896), [#897](https://github.com/saworbit/argus/pull/897), [#903](https://github.com/saworbit/argus/pull/903)); the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) remains open |
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -1541,6 +1541,18 @@ passing botmatch does not establish better human play.
   QC filenames with `--register` before any files change (#537).
 
 #### Maintenance
+
+- Shane's 2026-11-18 dm4 session on the installed build `004b4ff9ddf7` is
+  recorded as `runs/shane_dm4_2026-11-18_build004b4ff9.log` with its row in
+  `runs/human_scorecard.tsv`. It ran 3.8 minutes at skill 1 and failed no
+  scorecard gate. Bots killed the player 2.1 times a minute, the first
+  session inside the draft 2.0 to 3.0 band, and the kill ratio was 0.6,
+  under the draft 1.2 to 2.0 band; the sessions before it read 1.0 to 1.6
+  and 2.2 to 4.7. It is one of the three dm4 sessions the objective needs
+  ([#610](https://github.com/saworbit/argus/issues/610)). The status table
+  above now says main carries 2026-11-18 changes that are not installed and
+  no longer lists #583, closed on 2026-11-13. AGENTS.md names
+  `argus_floorlinks.py` and `argus_wishflips.py` in its question table.
 
 - Machine-local study tapes no longer need a `.gitignore` line per ladder
   stem ([#872](https://github.com/saworbit/argus/issues/872)). A run named
