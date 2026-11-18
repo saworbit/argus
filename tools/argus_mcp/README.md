@@ -1318,9 +1318,16 @@ argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps] [--confirm]
 ```
 
 The default pass covers ordinary walk and drop links. `--jumps` covers the
-generated jump subset. `--confirm` walks every first-attempt failure (a walk
-that stopped short or a teleport that never landed) once more at the end of the
-sweep and convicts only a second failure; the report counts the rescues as
+generated jump subset and flies each link the way the runtime does (#866):
+from the run-up `Argus_JumpRunup` would pick, at the link's baked approach
+speed (run speed when it has none), pressing jump on the plain hop's fire test
+(on the ground, inside its speed gate, within 96u of the seat, at least 48u
+short of the landing, no floor 32u ahead, read from the map's hull 0) or its
+climb rule. It needs the map's BSP in `ARGUS_MAPS` or the id1 paks. A failed
+jump's note says where it jumped and how fast, or that it never did.
+`--confirm` walks every first-attempt failure (a walk that stopped short or a
+teleport that never landed) once more at the end of the sweep and convicts
+only a second failure; the report counts the rescues as
 `confirmed`. lab_request always confirms, because on a micro-map the roster
 stands on the walkway being walked. A community BSP found only in `ARGUS_MAPS` is copied
 into the game directory for the pass and removed when the engine stops.
