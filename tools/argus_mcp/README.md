@@ -363,7 +363,7 @@ argus-mcp standin <map> <secs> <run> [--route TAPE] [--skill N] [--port N] [--se
 - `analyze`: Runs `analyze_match.py` to parse telemetry logs into briefs, stats, and plots.
 - `harvest`: Runs `harvest_session.py` to archive listen server logs and paired demos into `runs/`.
 - `reach`: Runs `argus_reach.py` to audit directed item reachability for shipped navigation graphs.
-- `measure`: The detection limit per map and metric over every committed same-build arm, and what four gates cost measured on the null corpus. Read-only. Writes `docs/specs/2026-09-16-lab-measurement-limits.md`.
+- `measure`: The detection limit per map and metric over committed same-build arms, and what four gates cost measured on the null corpus. It skips arms with a recorded map mismatch and reports their run names and maps on stderr. Read-only. Writes `docs/specs/2026-09-16-lab-measurement-limits.md`.
 - `match --seed`, `seeds`: the fixed lab clock; see [the fixed lab clock and seeded ladders](#the-fixed-lab-clock-and-seeded-ladders).
 - `standin`: a puppet that plays like a person; see [the stand-in human](#the-stand-in-human).
 
