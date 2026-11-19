@@ -929,6 +929,7 @@ passing botmatch does not establish better human play.
 
 - Keep the requested map on Windows launches with long game names ([#927](https://github.com/saworbit/argus/issues/927)).
 - Pass seat sidecars to native nav generation so a refused entry leaves the published graph intact ([#956](https://github.com/saworbit/argus/issues/956)).
+- Record navigation provenance on the first compile after a QuakeC edit ([#964](https://github.com/saworbit/argus/issues/964)).
 - Retire the three puppet-refused walks still shipping on e1m2 and e1m8
   ([#821](https://github.com/saworbit/argus/issues/821)): e1m2 n87 to n193,
   e1m8 n5 to n2 and n7 to n98. Both maps had refused their last
