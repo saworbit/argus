@@ -607,27 +607,39 @@ fn windows_args(
     coop: bool,
     clock: EngineClock,
 ) -> Result<String, String> {
-    let exe = cfg.engine.display().to_string();
-    let portarg = format!(" -port {}", port.unwrap_or(crate::match_ctrl::DEFAULT_PORT));
+    // CreateProcessW receives the full executable path separately.
+    const ARGV0: &str = "argus-engine";
+    let port = port.unwrap_or(crate::match_ctrl::DEFAULT_PORT);
     let mode_arg = if coop {
         "+coop 1 +deathmatch 0"
     } else {
         "+deathmatch 1"
     };
     let tick = clock.args().join(" ");
-    let mut args = format!(
-        "\"{exe}\" -dedicated {slots} -basedir \"{}\" -game {}{portarg} -condebug +developer 1 {tick} {mode_arg}",
-        cfg.basedir.display(),
-        cfg.game
-    );
+    let mut startup =
+        format!("-dedicated {slots} -port {port} -condebug +developer 1 {tick} {mode_arg}");
     if let Some(s) = skill {
         if s > 3 {
             return Err("skill must be 0..3".into());
         }
-        args.push_str(&format!(" +skill {s}"));
+        startup.push_str(&format!(" +skill {s}"));
     }
-    args.push_str(&format!(" +map {map}"));
-    Ok(args)
+    startup.push_str(&format!(" +map {map}"));
+
+    // QuakeSpasm 0.96.3's COM_InitArgv keeps 255 bytes of space-joined argv
+    // for stuffcmds. The engine reads -basedir and -game from the full argv,
+    // so put their variable-length values after the last startup command.
+    const QUAKE_CMDLINE_BYTES: usize = 255;
+    if ARGV0.len() + 1 + startup.len() > QUAKE_CMDLINE_BYTES {
+        return Err(format!(
+            "Windows startup commands through '+map {map}' exceed QuakeSpasm's {QUAKE_CMDLINE_BYTES}-byte command limit"
+        ));
+    }
+    Ok(format!(
+        "{ARGV0} {startup} -basedir \"{}\" -game {}",
+        cfg.basedir.display(),
+        cfg.game
+    ))
 }
 
 #[cfg(windows)]
@@ -649,6 +661,12 @@ fn spawn_windows(
 
     let args = windows_args(cfg, map, slots, skill, port, coop, clock)?;
 
+    let exe_wide: Vec<u16> = cfg
+        .engine
+        .as_os_str()
+        .encode_wide()
+        .chain(std::iter::once(0))
+        .collect();
     let mut cmd_wide: Vec<u16> = args.encode_utf16().chain(std::iter::once(0)).collect();
     let cwd_wide: Vec<u16> = cwd
         .as_os_str()
@@ -667,7 +685,7 @@ fn spawn_windows(
     // real console. Do not set STARTF_USESTDHANDLES.
     let ok = unsafe {
         CreateProcessW(
-            std::ptr::null(),
+            exe_wide.as_ptr(),
             cmd_wide.as_mut_ptr(),
             std::ptr::null(),
             std::ptr::null(),
@@ -1402,6 +1420,39 @@ mod tests {
             .args()
             .iter()
             .any(|a| a == "+timelimit"));
+    }
+
+    #[test]
+    fn windows_startup_map_fits_with_long_and_short_game_names() {
+        let mut cfg = tick_cfg();
+        cfg.engine = r"C:\argus\engine\quakespasm.exe".into();
+        cfg.basedir = r"C:\argus\engine".into();
+        let clock = EngineClock::fixed(84).with_limit(Some(10));
+        for game in ["w697_ctl", "motioncheck_walkway697_ctl4b"] {
+            cfg.game = game.into();
+            let args = windows_args(&cfg, "dm4", 8, Some(2), None, false, clock).unwrap();
+            assert!(args.contains(&format!("-game {game}")), "{args}");
+            // COM_InitArgv rebuilds cmdline from unquoted argv and keeps 255 bytes.
+            let cmdline = args.replace('"', "");
+            let visible = &cmdline[..cmdline.len().min(255)];
+            assert!(visible.contains("+map dm4"), "{game}: {visible}");
+        }
+    }
+
+    #[test]
+    fn windows_rejects_startup_commands_that_exceed_the_engine_limit() {
+        let map = "a".repeat(255);
+        let error = windows_args(
+            &tick_cfg(),
+            &map,
+            8,
+            Some(2),
+            None,
+            false,
+            EngineClock::Played,
+        )
+        .unwrap_err();
+        assert!(error.contains("255-byte command limit"), "{error}");
     }
 
     #[test]

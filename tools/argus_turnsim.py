@@ -6,12 +6,12 @@ from collections import Counter, defaultdict
 from dataclasses import asdict, dataclass
 import json
 import math
-import os
 from pathlib import Path
 
 from argus_bsp import Bsp, CONTENTS_EMPTY, CONTENTS_LAVA, CONTENTS_SLIME, CONTENTS_SOLID, STEPSIZE
 from argus_floorlinks import LEVEL, TYPED, first_void
 from argus_guard_replica import Guard
+from argus_paths import bsp_path
 
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -39,7 +39,13 @@ class World:
     def fits(self, x, y, z):
         return self.bsp.h1(x, y, z) == CONTENTS_EMPTY
 
+    def hull_support(self, x, y, z):
+        # A clip ledge can support the player even when the render hull is empty.
+        return self.bsp.h1(x, y, z - .125) == CONTENTS_SOLID
+
     def supported(self, x, y, z):
+        if self.hull_support(x, y, z):
+            return True
         feet = z - FEET
         return any(self.guard.trace_down(x + dx, y + dy, feet + 1, feet - 2)
                    is not None for dx, dy in FOOTPRINT)
@@ -62,7 +68,8 @@ class World:
         x, y, z = point
         feet = z - FEET
         return (self.fits(x, y, z)
-                and self.guard.trace_down(x, y, feet + 1, feet - 2) is not None
+                and (self.hull_support(x, y, z)
+                     or self.guard.trace_down(x, y, feet + 1, feet - 2) is not None)
                 and self.bsp.h0(x, y, feet + 1) not in (CONTENTS_LAVA, CONTENTS_SLIME))
 
     def clear_line(self, a, b):
@@ -266,9 +273,11 @@ def main(argv=None):
         not 4 <= args.spacing <= args.radius <= 192 or args.radius % args.spacing
     ):
         parser.error("--radius must be a multiple of --spacing, up to 192, with spacing at least 4")
-    bsp_dir = Path(os.environ.get("ARGUS_MAPS", ROOT / "maps_local"))
     try:
-        world = World(Bsp(bsp_dir / f"{map_name}.bsp"))
+        bsp = bsp_path(ROOT, map_name)
+        if bsp is None:
+            raise FileNotFoundError(f"missing {map_name}.bsp (set ARGUS_MAPS)")
+        world = World(Bsp(bsp))
         if args.command == "search" and not args.fwd and map_name == "dm3" and not args.graph:
             fixture = ROOT / "tools/fixtures/turnsim_dm3.json"
             corners = json.loads(fixture.read_text(encoding="utf-8"))

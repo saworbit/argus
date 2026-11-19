@@ -42,7 +42,6 @@ import json
 import math
 import os
 import re
-import shutil
 import statistics
 import subprocess
 import sys
@@ -51,6 +50,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import argus_build_stamp  # noqa: E402
 import argus_longi  # noqa: E402
+from argus_paths import LabMissing, bsp_path, lab_binary, local_roots  # noqa: E402
 import argus_tape  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -448,35 +448,6 @@ def finding(area, severity, item, detail, fix='', key=None):
                 key=key or f'{area}:{item}:{severity}')
 
 
-def common_checkout(root):
-    """The main checkout behind a worktree, which holds the machine-local maps, binaries and lab config."""
-    out = git(root, 'rev-parse', '--path-format=absolute', '--git-common-dir')
-    if not out:
-        return None
-    common = Path(out.strip())
-    parent = common.parent if common.name == '.git' else None
-    return parent if parent and parent.resolve() != root.resolve() else None
-
-
-def local_roots(root):
-    return [r for r in (root, common_checkout(root)) if r]
-
-
-def lab_binary(root):
-    env = os.environ.get('ARGUS_LAB')
-    if env and Path(env).is_file():
-        # absolute: Windows CreateProcess does not find a relative path
-        # with forward slashes once the child gets its own environment
-        return str(Path(env).resolve())
-    for base in local_roots(root):
-        for rel in ('tools/argus_mcp/target-stage/release', 'tools/argus_mcp/install/bin',
-                    'tools/argus_mcp/target/release', 'tools/argus_mcp/target/debug'):
-            for name in ('argus-mcp.exe', 'argus-mcp'):
-                if (base / rel / name).is_file():
-                    return str(base / rel / name)
-    return shutil.which('argus-mcp')
-
-
 def lab_env(root):
     """The environment argus-mcp needs, from the shell or the machine-local .mcp.json, reading this tree."""
     env = dict(os.environ)
@@ -496,16 +467,6 @@ def lab_env(root):
             break
     env['ARGUS_ROOT'] = str(root)
     return env
-
-
-def bsp_path(root, mapname):
-    folders = [os.environ.get('ARGUS_MAPS')]
-    for base in local_roots(root):
-        folders += [base / 'maps_local', base / 'engine' / 'argus' / 'maps']
-    for folder in folders:
-        if folder and (Path(folder) / f'{mapname}.bsp').is_file():
-            return Path(folder) / f'{mapname}.bsp'
-    return None
 
 
 def corpus_rows(root, names, mapname=None):
@@ -712,33 +673,18 @@ def lab_maps(root):
     return set(scenarios) if isinstance(scenarios, dict) else set()
 
 
-TAPE_MAP = re.compile(r'^SpawnServer: (\S+)', re.M)
-
-
-def tape_map(root, ref):
-    """The map a runs/ tape was recorded on, from the engine's own SpawnServer line, or None."""
-    if not re.fullmatch(r'[\w.-]+', str(ref)):
-        return None
-    path = Path(root) / 'runs' / f'{ref}.log'
-    if not path.is_file():
-        return None
-    with path.open('r', encoding='latin-1') as handle:
-        head = handle.read(16384)
-    match = TAPE_MAP.search(head)
-    return match.group(1).lower() if match else None
-
-
 def evidence_maps(root, ref):
     """Maps a piece of evidence records tapes on: a runs/ tape, or a ladder results file.
 
     Large diagnostic tapes stay machine-local, like the frozen study tapes;
-    their ladder's committed results file lists every tape with the map read
-    from its SpawnServer line, its size and its SHA-256 ("tapes": [{"run",
+    their ladder's committed results file lists every tape with the recorded map,
+    its size and its SHA-256 ("tapes": [{"run",
     "map", "sha256"}]), so a clean checkout can still see what was run where.
     """
-    one = tape_map(root, ref)
-    if one:
-        return {one}
+    if re.fullmatch(r'[\w.-]+', str(ref)):
+        tape = Path(root) / 'runs' / f'{ref}.log'
+        if recorded := argus_tape.map_name(read_text(tape)):
+            return {recorded}
     if not str(ref).endswith('.json'):
         return set()
     path = Path(root) / str(ref)
@@ -2518,4 +2464,7 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except LabMissing as error:
+        sys.exit(str(error))

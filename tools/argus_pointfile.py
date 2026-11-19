@@ -54,6 +54,7 @@ from pathlib import Path
 
 from argus_bsp import Bsp, CONTENTS_SOLID, CONTENTS_WATER
 from argus_navjson import edges, load_nav
+from argus_paths import bsp_path
 from argus_tape import parse_tape, roles, samples
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -97,18 +98,14 @@ def tape_points(tape):
 
 
 def find_bsp(mapname):
-    for d in (ROOT / "maps_local", ROOT / "engine" / "argus" / "maps"):
-        p = d / f"{mapname}.bsp"
-        if p.exists():
-            return p
-    return None
+    return bsp_path(ROOT, mapname)
 
 
 def badseat_points(mapname, nodes):
     """Seats the engine's own floor test would refuse (#254 item 4)."""
     p = find_bsp(mapname)
     if p is None:
-        sys.exit(f"--what badseats needs maps_local/{mapname}.bsp")
+        sys.exit(f"--what badseats needs {mapname}.bsp (set ARGUS_MAPS)")
     b = Bsp(p)
     out = []
     for i, n in enumerate(nodes):
@@ -129,7 +126,7 @@ def surface_points(mapname, d, nodes, step):
     """
     p = find_bsp(mapname)
     if p is None:
-        sys.exit(f"--what surface needs maps_local/{mapname}.bsp")
+        sys.exit(f"--what surface needs {mapname}.bsp (set ARGUS_MAPS)")
     b = Bsp(p)
     sl = d.get("swimlinks", [])
     if not sl:
@@ -197,7 +194,7 @@ def solid_point(mapname):
     """Somewhere inside the world's solid, for filler points to hide in."""
     p = find_bsp(mapname)
     if p is None:
-        sys.exit(f"--pad needs maps_local/{mapname}.bsp to hide its filler")
+        sys.exit(f"--pad needs {mapname}.bsp to hide its filler (set ARGUS_MAPS)")
     b = Bsp(p)
     mn, mx = b.mins, b.maxs
     step = 64.0

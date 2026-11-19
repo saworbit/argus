@@ -131,6 +131,7 @@ float argus_plan_serial;
 .float  ar_jump;                // 1 reachability or escort, 2 a stall
 .float  ar_stallyaw;            // the heading a stall jump was checked on
 .float  ar_stallflight;         // airborne on a stall jump: hold that heading
+.float  ar_eastdeck;            // falling from e1m8's lower deck east lip
 .float  ar_wanderturn;
 .float  ar_swim;
 .float  ar_nextjump;
@@ -1483,7 +1484,7 @@ float(float a) Argus_Sqrt =
 // 9 dm4, 3 e1m6, 2 e1m1 and 23 low-gravity e1m8 drop links that a slow
 // bot can still take. A wall in the flight path ends it early and the bot
 // drops beside it.
-float(vector ahead, float myaw, float floorz) Argus_DropLandHazard =
+float(vector ahead, float myaw, float floorz, float depth) Argus_DropLandHazard =
 {
     local vector vh, land, fwd;
     local float drop, spd, carry, c;
@@ -1503,7 +1504,7 @@ float(vector ahead, float myaw, float floorz) Argus_DropLandHazard =
     traceline (ahead, land, TRUE, self);
     if (trace_fraction < 1)
         land = trace_endpos - fwd * 16;
-    traceline (land + '0 0 4', land - '0 0 280', TRUE, self);
+    traceline (land + '0 0 4', land - '0 0 1' * depth, TRUE, self);
     if (trace_fraction == 1)
     {
         // the same water rule as the probe: a pool breaks any fall
@@ -1512,6 +1513,9 @@ float(vector ahead, float myaw, float floorz) Argus_DropLandHazard =
         return TRUE;
     }
     c = pointcontents (trace_endpos + '0 0 2');
+    if (depth > 280 && land_z - trace_endpos_z > 280
+        && fabs (trace_endpos_z - (self.ar_node.origin_z - 24)) > 18)
+        return TRUE;
     if (c == CONTENT_LAVA || c == CONTENT_SLIME)
     {
         if (Argus_HazardBridge (land))
@@ -1537,8 +1541,8 @@ float(vector ahead, float myaw, float floorz) Argus_DropLandHazard =
 // is what turns walls into slides.
 float(float myaw, float pdist) Argus_MoveHazard =
 {
-    local vector ahead;
-    local float c;
+    local vector ahead, landing;
+    local float c, depth;
 
     if (self.ar_feettype == CONTENT_LAVA || self.ar_feettype == CONTENT_SLIME)
         return FALSE;               // already in it: any move is an escape
@@ -1546,7 +1550,39 @@ float(float myaw, float pdist) Argus_MoveHazard =
     makevectors ('0 0 0' + myaw * '0 1 0');
     ahead = self.origin + v_forward * pdist;
 
-    traceline (ahead + '0 0 4', ahead - '0 0 280', TRUE, self);
+    // e1m8's low gravity makes the upper spawn's 272u drop survivable.
+    // Probe that depth only on a routed approach aimed at a lower seat.
+    depth = 280;
+    if (mapname == "e1m8" && deathmatch && self.ar_mode == 2
+        && self.ar_node != world && self.ar_enemy == world
+        && (self.flags & FL_ONGROUND))
+    {
+        landing = self.ar_node.origin - self.origin;
+        if (landing_z < -240 && landing_z >= -280)
+        {
+            landing_z = 0;
+            if (vlen (landing) <= 340 && v_forward * normalize (landing) > 0.98)
+                depth = 312;
+        }
+    }
+    traceline (ahead + '0 0 4', ahead - '0 0 1' * depth, TRUE, self);
+    // The middle shelf has open space before the lower floor starts.
+    // Check across that gap only on the aligned deep route above. The
+    // longer ray must find the named landing height through open air.
+    if (depth > 280 && pdist < 72 && trace_fraction == 1
+        && !trace_startsolid && !trace_allsolid)
+    {
+        makevectors ('0 0 0' + myaw * '0 1 0');
+        landing = self.origin + v_forward * 72;
+        traceline (self.origin, landing, TRUE, self);
+        if (trace_fraction < 1 || trace_startsolid || trace_allsolid)
+            return TRUE;
+        traceline (landing + '0 0 4', landing - '0 0 1' * depth, TRUE, self);
+        if (trace_fraction == 1 || trace_startsolid || trace_allsolid
+            || fabs (trace_endpos_z - (self.ar_node.origin_z - 24)) > 18)
+            return TRUE;
+        ahead = landing;
+    }
     if (trace_fraction == 1)
     {
         // "no floor" can also mean the probe START is buried in
@@ -1623,6 +1659,9 @@ float(float myaw, float pdist) Argus_MoveHazard =
         return TRUE;                // no floor within a survivable drop
     }
     c = pointcontents (trace_endpos + '0 0 2');
+    if (depth > 280 && ahead_z - trace_endpos_z > 280
+        && fabs (trace_endpos_z - (self.ar_node.origin_z - 24)) > 18)
+        return TRUE;
     if (c == CONTENT_LAVA || c == CONTENT_SLIME)
     {
         if (Argus_HazardBridge (ahead))
@@ -1637,7 +1676,7 @@ float(float myaw, float pdist) Argus_MoveHazard =
     }
     // The floor under the probe is only where a bot STEPPING off would
     // land. One running off keeps its speed and lands further on.
-    if (Argus_DropLandHazard (ahead, myaw, trace_endpos_z))
+    if (Argus_DropLandHazard (ahead, myaw, trace_endpos_z, depth))
         return TRUE;
     return FALSE;
 };
@@ -2519,6 +2558,20 @@ void() Argus_Physics =
     // the guard waits.
     if (self.flags & FL_ONGROUND)
         self.ar_wetdwell = time;
+
+    // This e1m8 deck has a dry landing directly east, with lava
+    // immediately south of it. Keep the horizontal velocity checked by
+    // the drop guard until this walk-off lands. Low gravity gives combat
+    // steering time to carry a bot out of the dry landing strip.
+    if (mapname == "e1m8" && deathmatch)
+    {
+        if (self.flags & FL_ONGROUND)
+            self.ar_eastdeck = (fabs (self.origin_z + 368) <= 2
+                && self.origin_x >= 896 && self.origin_x <= 980
+                && self.origin_y >= -384 && self.origin_y <= -80);
+        else if (self.velocity_z > 0 || self.origin_x < 944)
+            self.ar_eastdeck = 0;
+    }
 
     Argus_HazardProofSetup ();
     Argus_HazardProofMark ();
@@ -3560,7 +3613,9 @@ void() Argus_Physics =
                 }
             }
         }
-        Argus_AirAccelerate (wishdir, AR_MAXSPEED);
+        if (!self.ar_eastdeck || self.ar_sprintstate == 3
+            || self.ar_stallflight || self.ar_hopair)
+            Argus_AirAccelerate (wishdir, AR_MAXSPEED);
     }
     Argus_SupportButton ();
 };
@@ -4179,6 +4234,7 @@ void(entity bot, float won) Argus_SkillResult =
 
 void() Argus_BaseStats =
 {
+    self.ar_eastdeck = 0;
     Argus_RecoveryReset ();
     self.ar_hurttime = 0; self.ar_stuckhurt = 0; self.ar_stucktime = 0;
     self.ar_actionnode = world; self.ar_actiongoal = world;

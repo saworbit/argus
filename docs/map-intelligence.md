@@ -164,8 +164,9 @@ copies a source snapshot, compiles with `install=false`, and uses its own game
 directory. Named raw tapes stay in `runs/`; source hashes, compile reports,
 native briefs, comparisons and progress stay beneath the chosen output.
 Existing output directories and tapes are refused.
-The default lab path is `tools/argus_mcp/target-stage/release/argus-mcp`
-(`.exe` on Windows); `--lab` accepts another current source-built binary.
+The shared lookup prefers the staged release build. Use `--lab` to select
+another current source-built binary. See the [lab workflow](lab-workflow.md)
+for the search order.
 An already connected older MCP process needs reconnection before it can
 serve the repaired verdict. Require `lab_identity.authoritative: true`.
 

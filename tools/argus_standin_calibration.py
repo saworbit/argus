@@ -21,8 +21,8 @@ match gave the stand-in swamped the skill effect in the first calibration
 (0 to 2608 ticks in sight between matches). Sight is rebuilt from the tape:
 at each sample the stand-in counts as in sight when a living bot stands within
 1800u (the stand-in's own sight range) with a clear hull-0 line between their
-eyes (origin + 22). It needs maps_local/<map>.bsp (ARGUS_MAPS names another
-folder). A match with under 3 s in sight carries no rate and is left out.
+eyes (origin + 22). It needs the map's BSP (ARGUS_MAPS first). A match with
+under 3 s in sight carries no rate and is left out.
 
 usage:
   argus_standin_calibration.py --glob 'standin_cal_dm4_k*' --person-mean 1.27 [--skill 1] [--json]
@@ -31,7 +31,6 @@ usage:
 import argparse
 import json
 import math
-import os
 import re
 import statistics
 import sys
@@ -39,6 +38,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import argus_clock_validation  # noqa: E402
+from argus_paths import bsp_path  # noqa: E402
 import argus_tape  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -198,10 +198,9 @@ def main(argv=None):
     contents = None
     if args.measure == 'sight':
         from argus_bsp import load_classifier
-        maps = Path(os.environ.get('ARGUS_MAPS', Path(args.root) / 'maps_local'))
-        bsp = maps / f'{args.map}.bsp'
-        if not bsp.is_file():
-            print(f'missing {bsp}: --measure sight rebuilds line of sight from the map', file=sys.stderr)
+        bsp = bsp_path(args.root, args.map)
+        if bsp is None:
+            print(f'missing {args.map}.bsp (set ARGUS_MAPS): --measure sight needs the map', file=sys.stderr)
             return 2
         contents = load_classifier(bsp)
     rep = evaluate(Path(args.root), args.glob, args.person_mean, args.skill, args.measure, contents)

@@ -24,19 +24,19 @@ usage:
   python tools/argus_floorlinks.py dm4 dm2 e1m8 --json
   python tools/argus_floorlinks.py dm3 --graph path/to/argus_nav_dm3.qc.json
 
-MAP resolves to ARGUS_MAPS/<map>.bsp (default maps_local/) and the graph to
+MAP uses the shared BSP lookup (ARGUS_MAPS first) and the graph defaults to
 src/argus_nav_<map>.qc.json. Exit 0 on success, 2 when a BSP or graph is
 missing or an argument is malformed.
 """
 import json
 import math
-import os
 import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from argus_guard_replica import SOLID, Guard  # noqa: E402 - tools path set just above
+from argus_paths import bsp_path  # noqa: E402
 
 SAMPLE = 12.0       # Argus_WalkLineFloored's step
 DEPTH = 60.0        # how far below the line it looks for floor
@@ -98,12 +98,13 @@ def main(argv=None):
     if not args or (graph is not None and len(args) != 1):
         print("give one or more maps (exactly one with --graph)", file=sys.stderr)
         return 2
-    maps = Path(os.environ.get("ARGUS_MAPS", HERE.parent / "maps_local"))
     reports = []
     for name in args:
-        bsp = maps / f"{name}.bsp"
+        bsp = bsp_path(HERE.parent, name)
         path = graph or HERE.parent / "src" / f"argus_nav_{name}.qc.json"
-        missing = [str(p) for p in (bsp, path) if not p.is_file()]
+        missing = [f"{name}.bsp"] if bsp is None else []
+        if not path.is_file():
+            missing.append(str(path))
         if missing:
             print("missing: " + ", ".join(missing), file=sys.stderr)
             return 2

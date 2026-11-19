@@ -8,6 +8,8 @@ self-skips when the tools are not installed (python tools/lab_mapgen.py tools
 ARGUS_BASEDIR and a built argus-mcp) it also loads the map in the engine.
 """
 import copy
+from contextlib import redirect_stdout
+import io
 import json
 import os
 import re
@@ -17,6 +19,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -392,6 +395,37 @@ class ScenarioTests(unittest.TestCase):
             (root / "runs" / f"{run}.log").write_text(f"SpawnServer: {mapname}\nARGUS init on {mapname}\n")
         return root
 
+    def test_interrupted_registry_replace_preserves_the_previous_document(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self.make_root(td)
+            path = root / "tools" / "lab_instruments.json"
+            before = path.read_bytes()
+            files = set(path.parent.iterdir())
+            manifest = {
+                "map": "lab_second", "scenario_id": "lab_second-test", "claim_tier": "isolation",
+                "intent": "Check a second scenario.", "claims": [],
+                "files": {"request": "labmaps/lab_second/request.json"},
+                "generator": {"source_sha256": "0" * 64},
+            }
+
+            def interrupted(staged, dest):
+                self.assertEqual(Path(dest), path)
+                self.assertEqual(Path(staged).parent, path.parent)
+                staged_doc = json.loads(Path(staged).read_text(encoding="utf-8"))
+                self.assertIn("lab_second", staged_doc["lab_scenarios"]["scenarios"])
+                self.assertEqual(path.read_bytes(), before)
+                raise OSError("interrupted before replace")
+
+            with patch.object(mg.os, "replace", side_effect=interrupted):
+                with self.assertRaisesRegex(OSError, "interrupted before replace"):
+                    mg.register_scenario(root, manifest)
+            self.assertEqual(path.read_bytes(), before)
+            self.assertEqual(set(path.parent.iterdir()), files)
+
+            mg.register_scenario(root, manifest)
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(set(doc["lab_scenarios"]["scenarios"]), {"lab_voidcorner", "lab_second"})
+
     def test_register_scenario_validates(self):
         with tempfile.TemporaryDirectory() as td:
             root = self.make_root(td)
@@ -431,6 +465,98 @@ class ScenarioTests(unittest.TestCase):
             unhashed = root / "runs" / "loose.results.json"
             unhashed.write_text(json.dumps({"tapes": [{"run": "b", "map": "dm4"}]}))
             self.assertEqual(argus_lab.evidence_maps(root, "runs/loose.results.json"), set())
+
+
+class CliOutputPaths(unittest.TestCase):
+    def setUp(self):
+        fixture = tempfile.TemporaryDirectory()
+        self.addCleanup(fixture.cleanup)
+        self.parent = Path(fixture.name)
+        self.root = self.parent / "checkout"
+        self.root.mkdir()
+        self.request = self.parent / "request.json"
+        self.request.write_text(json.dumps(small_request()), encoding="utf-8")
+        env = {k: v for k, v in os.environ.items() if not k.startswith("ARGUS_")}
+        env["ARGUS_ROOT"] = str(self.root)
+        patch_env = patch.dict(os.environ, env, clear=True)
+        patch_env.start()
+        self.addCleanup(patch_env.stop)
+
+    def invoke(self, command, *args):
+        stdout = io.StringIO()
+        with redirect_stdout(stdout):
+            status = mg.main([command, str(self.request), *map(str, args), "--json"])
+        return status, json.loads(stdout.getvalue())
+
+    def test_generate_rejects_an_absolute_directory_outside_the_checkout(self):
+        misplaced = self.parent / "misplaced"
+        result = subprocess.run([sys.executable, str(HERE / "lab_mapgen.py"),
+                                 "generate", str(self.request), "--out", str(misplaced), "--json"],
+                                capture_output=True, text=True, timeout=10)
+        self.assertEqual(result.returncode, 2, result.stdout)
+        self.assertIn("--out", json.loads(result.stdout)["error"])
+        self.assertFalse(misplaced.exists())
+
+    def test_generate_accepts_a_directory_under_labmaps(self):
+        status, result = self.invoke("generate", "--out", "labmaps/private")
+        self.assertEqual(status, 0, result)
+        self.assertTrue((self.root / result["map"]).is_file())
+
+    def test_nav_checks_both_outputs_before_starting_navgen(self):
+        for flag, destination in (("--qc", "runs/preview.qc"), ("--png", "src/preview.png")):
+            with self.subTest(flag=flag), patch.object(mg.subprocess, "run") as launch:
+                status, result = self.invoke("nav", flag, destination)
+                self.assertEqual(status, 2, result)
+                self.assertIn(flag, result["error"])
+                launch.assert_not_called()
+
+    def test_nav_checks_the_qc_sidecar_before_starting_navgen(self):
+        source = self.root / "src"
+        source.mkdir()
+        qc = source / "private.qc"
+        sidecar = self.parent / "target.json"
+        sidecar.write_text("keep", encoding="utf-8")
+        try:
+            Path(f"{qc}.json").symlink_to(sidecar)
+        except OSError:
+            self.skipTest("creating a file symlink requires permission")
+        with patch.object(mg.subprocess, "run") as launch:
+            status, result = self.invoke("nav", "--qc", qc)
+        self.assertEqual(status, 2, result)
+        self.assertIn(".qc.json", result["error"])
+        launch.assert_not_called()
+        self.assertEqual(sidecar.read_text(encoding="utf-8"), "keep")
+
+    def test_nav_preserves_existing_source_but_keeps_the_map_regeneration_path(self):
+        source = self.root / "src"
+        source.mkdir()
+        existing = source / "argus.qc"
+        existing.write_text("keep", encoding="utf-8")
+        status, result = self.invoke("nav", "--qc", existing)
+        self.assertEqual(status, 2, result)
+        self.assertEqual(existing.read_text(encoding="utf-8"), "keep")
+
+        installed = self.root / "maps_local"
+        installed.mkdir()
+        (installed / "lab_unit.bsp").touch()
+        default_qc = source / "argus_nav_lab_unit.qc"
+        default_qc.touch()
+        with patch.object(mg.subprocess, "run") as launch:
+            launch.return_value = subprocess.CompletedProcess([], 0, "", "")
+            mg.run_navgen(self.root, mg.normalise(small_request()))
+        self.assertIn(str(default_qc), launch.call_args.args[0])
+
+    def test_record_accepts_the_native_nav_log_location(self):
+        log = self.root / "labmaps" / "lab_unit" / "navgen.log"
+        log.parent.mkdir(parents=True)
+        log.write_text("review", encoding="utf-8")
+        with patch.object(mg, "record", return_value={"ok": True}) as record:
+            status, result = self.invoke("record", "--nav-out", log)
+            self.assertEqual(status, 0, result)
+            self.assertEqual(record.call_args.args[2], "review")
+        status, result = self.invoke("record", "--nav-out", self.request)
+        self.assertEqual(status, 2, result)
+        self.assertIn("--nav-out", result["error"])
 
 
 TOOLS_READY = mg.tools_status(ROOT)["ready"]
@@ -508,7 +634,8 @@ class IntegrationSmoke(unittest.TestCase):
                 self.assertTrue((root / "engine" / "argus" / "maps" / "lab_recordtest.bsp").is_file())
                 self.assertEqual(manifest["install"]["maps"], "maps/lab_recordtest.bsp")
                 self.assertTrue(manifest["navgen_readiness"]["ready"], manifest["navgen_readiness"])
-                done = mg.run_navgen(root, req, png=str(root / "nav.png"))
+                (root / "runs").mkdir()
+                done = mg.run_navgen(root, req, png=str(root / "runs" / "nav.png"))
                 mill = {"confirm": True, "passes": [{"kind": "walk", "failed": 0, "teleport_failures": 0}]}
                 final = mg.record(root, req, done["stdout"], mill, registered=False)
             finally:

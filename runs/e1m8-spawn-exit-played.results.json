@@ -1,0 +1,433 @@
+{
+  "passed": true,
+  "registration": {
+    "url": "https://github.com/saworbit/argus/issues/789#issuecomment-7004928494",
+    "registered_utc": "2026-11-19T09:18:48.8034544Z",
+    "protocol_sha256": "2c56c18859539e10ef1ce7ddfa16daf9a9d3d00dfaf2326a8b1787e7fe5ef029"
+  },
+  "builds": {
+    "base_commit": "826275ac8ee91d2b5b1a0bcc7f6bba13f39fa178",
+    "lab_sha256": "33bf0558172949444173f21e506c78622d27aaa3b74557c5e20cf6d4dfac898d",
+    "engine_sha256": "b81e50bcb2d3b2b91f640739a3e111f956aceb1d0b852d7eb1ff532d671ac3ba",
+    "arm": {
+      "control": {
+        "build": "148d482e6ba7",
+        "progs_md5": "f1f861440f34ccb3b79edf970c741cd9",
+        "progs_sha256": "4cbc3c9413763fe50a0d727c4f2a0a58c4fba650953d7c146c9d5a7343160580",
+        "bsp_sha256": "68cb9173303631d70f4b5da3d430c08d2c9932d32500d48e36aa4320a23522fc",
+        "graph_sha256": "036da1c92f0a1939140a003e61e1f4378cbea04305679aa7c648d1b814c1b478"
+      },
+      "candidate": {
+        "build": "e1cb6d0031f7",
+        "progs_md5": "4a6b1f520a9198c5c645887baa445ea3",
+        "progs_sha256": "b3d6064fc5658363902059bcd683cf69898e2f73b115357e372af3fe26288167",
+        "bsp_sha256": "68cb9173303631d70f4b5da3d430c08d2c9932d32500d48e36aa4320a23522fc",
+        "graph_sha256": "40d0ad55f7753fe272db910eea5bf4fce000e01f4393170379b41c3ceaa8e0ab"
+      }
+    },
+    "map": "e1m8",
+    "skill": 2,
+    "count": 3,
+    "duration_sec": 185,
+    "tick_us": 13900
+  },
+  "tapes": [
+    {
+      "run": "p789west_e1m8_control_r01_a1",
+      "map": "e1m8",
+      "arm": "control",
+      "sha256": "2453570365d9fab798498378ea0a2e8b5d4668712e1eb7f36c90f9e7c62a907f",
+      "size": 207467,
+      "build": "148d482e6ba7",
+      "graph_md5": "a505bf6ad0803795fb16bf4e91619f33",
+      "duration_sec": 185.0,
+      "tick": "listen"
+    },
+    {
+      "run": "p789west_e1m8_candidate_r01_a1",
+      "map": "e1m8",
+      "arm": "candidate",
+      "sha256": "52afe7c37de032f8e69a193d20d9582f86c9ec1fb478d292603f9291582c230b",
+      "size": 170094,
+      "build": "e1cb6d0031f7",
+      "graph_md5": "82ea54b85647b4d2913c6d79d7b907f5",
+      "duration_sec": 184.9,
+      "tick": "listen"
+    },
+    {
+      "run": "p789west_e1m8_candidate_r02_a1",
+      "map": "e1m8",
+      "arm": "candidate",
+      "sha256": "75ffa648213ffdc766da0a640f3e922d4524c45e904a391dde398b1d6cc988c6",
+      "size": 167206,
+      "build": "e1cb6d0031f7",
+      "graph_md5": "82ea54b85647b4d2913c6d79d7b907f5",
+      "duration_sec": 185.20000000000002,
+      "tick": "listen"
+    },
+    {
+      "run": "p789west_e1m8_control_r02_a1",
+      "map": "e1m8",
+      "arm": "control",
+      "sha256": "bfeed675bb28dcf6df2d3bf738bc96ca7ac1b1f01206d2f754d00a375f99498e",
+      "size": 185130,
+      "build": "148d482e6ba7",
+      "graph_md5": "a505bf6ad0803795fb16bf4e91619f33",
+      "duration_sec": 185.0,
+      "tick": "listen"
+    },
+    {
+      "run": "p789west_e1m8_control_r03_a1",
+      "map": "e1m8",
+      "arm": "control",
+      "sha256": "91335429ebd17a7d45989f04c97fcce8ae7950a47123ef45b5ef0c1a09d542bc",
+      "size": 194100,
+      "build": "148d482e6ba7",
+      "graph_md5": "a505bf6ad0803795fb16bf4e91619f33",
+      "duration_sec": 184.9,
+      "tick": "listen"
+    },
+    {
+      "run": "p789west_e1m8_candidate_r03_a1",
+      "map": "e1m8",
+      "arm": "candidate",
+      "sha256": "39dc600987f2eaa419ffebe1c940daac25696b55e825bd8dd91aa38fc1852d82",
+      "size": 162554,
+      "build": "e1cb6d0031f7",
+      "graph_md5": "82ea54b85647b4d2913c6d79d7b907f5",
+      "duration_sec": 185.10000000000002,
+      "tick": "listen"
+    }
+  ],
+  "graph_md5": {
+    "control": "a505bf6ad0803795fb16bf4e91619f33",
+    "candidate": "82ea54b85647b4d2913c6d79d7b907f5"
+  },
+  "raw": {
+    "control": {
+      "stalls": [
+        34,
+        38,
+        34
+      ],
+      "engages": [
+        7,
+        13,
+        15
+      ],
+      "lava_deaths": [
+        2,
+        1,
+        4
+      ],
+      "freezes": [
+        0,
+        0,
+        0
+      ],
+      "routefails": [
+        7,
+        6,
+        8
+      ],
+      "world_deaths": [
+        2,
+        1,
+        4
+      ],
+      "goals": [
+        0,
+        4,
+        2
+      ]
+    },
+    "candidate": {
+      "stalls": [
+        34,
+        20,
+        14
+      ],
+      "engages": [
+        11,
+        15,
+        25
+      ],
+      "lava_deaths": [
+        1,
+        1,
+        1
+      ],
+      "freezes": [
+        0,
+        0,
+        0
+      ],
+      "routefails": [
+        14,
+        19,
+        12
+      ],
+      "world_deaths": [
+        1,
+        1,
+        1
+      ],
+      "goals": [
+        3,
+        10,
+        6
+      ]
+    }
+  },
+  "native_cards": {
+    "all": {
+      "verdict": "Parity",
+      "bands": {
+        "stall_parity": {
+          "name": "stall_parity",
+          "candidate_median": 20.0,
+          "control_median": 34.0,
+          "lo": 12.0,
+          "hi": 56.0,
+          "call": "in band"
+        },
+        "engagements": {
+          "name": "engagements",
+          "candidate_median": 15.0,
+          "control_median": 13.0,
+          "lo": 5.0,
+          "hi": 19.0,
+          "call": "in band"
+        },
+        "lava_deaths": {
+          "name": "lava_deaths",
+          "candidate_median": 1.0,
+          "control_median": 2.0,
+          "lo": 0.0,
+          "hi": 6.0,
+          "call": "in band"
+        },
+        "freezes": {
+          "name": "freezes",
+          "candidate_median": 0.0,
+          "control_median": 0.0,
+          "lo": 0.0,
+          "hi": 1.0,
+          "call": "in band"
+        }
+      }
+    },
+    "stall": {
+      "verdict": "Parity",
+      "bands": {
+        "stall_parity": {
+          "name": "stall_parity",
+          "candidate_median": 20.0,
+          "control_median": 34.0,
+          "lo": 12.0,
+          "hi": 56.0,
+          "call": "in band"
+        },
+        "engagements": {
+          "name": "engagements",
+          "candidate_median": 15.0,
+          "control_median": 13.0,
+          "lo": 5.0,
+          "hi": 19.0,
+          "call": "in band"
+        },
+        "lava_deaths": {
+          "name": "lava_deaths",
+          "candidate_median": 1.0,
+          "control_median": 2.0,
+          "lo": 0.0,
+          "hi": 6.0,
+          "call": "in band"
+        },
+        "freezes": {
+          "name": "freezes",
+          "candidate_median": 0.0,
+          "control_median": 0.0,
+          "lo": 0.0,
+          "hi": 1.0,
+          "call": "in band"
+        }
+      }
+    }
+  },
+  "spawn_cell_hotspot_counts": {
+    "control": [
+      0,
+      15,
+      0
+    ],
+    "candidate": [
+      0,
+      0,
+      0
+    ]
+  },
+  "lava_mean": {
+    "control": 2.3333333333333335,
+    "candidate": 1
+  },
+  "medians": {
+    "control": {
+      "stalls": 34,
+      "engages": 13,
+      "lava_deaths": 2,
+      "freezes": 0,
+      "routefails": 7,
+      "world_deaths": 2,
+      "goals": 2
+    },
+    "candidate": {
+      "stalls": 20,
+      "engages": 15,
+      "lava_deaths": 1,
+      "freezes": 0,
+      "routefails": 14,
+      "world_deaths": 1,
+      "goals": 6
+    }
+  },
+  "native_route_tasks": {
+    "old_guard": {
+      "suite": "old_guard",
+      "map": "e1m8",
+      "graph_md5": "4697c014aa9e7cda6a4de4418fcde89a",
+      "skill": 2,
+      "results": [
+        {
+          "name": "spawn_to_lower_shelf",
+          "split": "heldout",
+          "completed": false,
+          "wall_sec": 27.497543
+        }
+      ],
+      "all": {
+        "tasks": 1,
+        "completed": 0,
+        "completion_rate": 0.0
+      },
+      "train": {
+        "tasks": 0,
+        "completed": 0,
+        "completion_rate": 0.0
+      },
+      "heldout": {
+        "tasks": 1,
+        "completed": 0,
+        "completion_rate": 0.0
+      }
+    },
+    "descent-west0": {
+      "suite": "descent-west0",
+      "map": "e1m8",
+      "graph_md5": "63c588fb8e70867da0114989b58468f6",
+      "skill": 2,
+      "results": [
+        {
+          "name": "spawn_to_connected_graph",
+          "split": "heldout",
+          "completed": true,
+          "game_sec": 7.7,
+          "wall_sec": 7.7700634
+        },
+        {
+          "name": "offset_to_connected_graph",
+          "split": "heldout",
+          "completed": true,
+          "game_sec": 8.2,
+          "wall_sec": 8.24684
+        }
+      ],
+      "all": {
+        "tasks": 2,
+        "completed": 2,
+        "completion_rate": 1.0,
+        "median_game_sec": 7.949999809265137
+      },
+      "train": {
+        "tasks": 0,
+        "completed": 0,
+        "completion_rate": 0.0
+      },
+      "heldout": {
+        "tasks": 2,
+        "completed": 2,
+        "completion_rate": 1.0,
+        "median_game_sec": 7.949999809265137
+      }
+    },
+    "west-north-control": {
+      "suite": "west-north-control",
+      "map": "e1m8",
+      "graph_md5": "0b037b9872521b7af31d729bfe8da72b",
+      "skill": 2,
+      "results": [
+        {
+          "name": "west_face_to_north_walk",
+          "split": "heldout",
+          "completed": false,
+          "wall_sec": 21.58891
+        }
+      ],
+      "all": {
+        "tasks": 1,
+        "completed": 0,
+        "completion_rate": 0.0
+      },
+      "train": {
+        "tasks": 0,
+        "completed": 0,
+        "completion_rate": 0.0
+      },
+      "heldout": {
+        "tasks": 1,
+        "completed": 0,
+        "completion_rate": 0.0
+      }
+    },
+    "west-north-candidate": {
+      "suite": "west-north-candidate",
+      "map": "e1m8",
+      "graph_md5": "63c588fb8e70867da0114989b58468f6",
+      "skill": 2,
+      "results": [
+        {
+          "name": "west_face_to_north_walk",
+          "split": "heldout",
+          "completed": true,
+          "game_sec": 5.7,
+          "wall_sec": 5.4918256
+        }
+      ],
+      "all": {
+        "tasks": 1,
+        "completed": 1,
+        "completion_rate": 1.0,
+        "median_game_sec": 5.699999809265137
+      },
+      "train": {
+        "tasks": 0,
+        "completed": 0,
+        "completion_rate": 0.0
+      },
+      "heldout": {
+        "tasks": 1,
+        "completed": 1,
+        "completion_rate": 1.0,
+        "median_game_sec": 5.699999809265137
+      }
+    }
+  },
+  "spawn_coverage": {
+    "covered": 7,
+    "total": 7,
+    "worst_reach": 119,
+    "waypoints": 135,
+    "worst_ungated_reach": 107,
+    "edicts_reserved_total": 391
+  }
+}

@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Let navgen screen and splice offline elbow candidates on a completed graph with `--seat-elbows`, with a reason for each unresolved walk ([#907](https://github.com/saworbit/argus/issues/907)).
+
 - Add an offline corner simulator that replays bot turns and ranks elbow seats for navgen review ([#923](https://github.com/saworbit/argus/issues/923)).
 
 - `tools/argus_wishflips.py` counts runs of per-frame wish flips in a
@@ -893,9 +895,22 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Join e1m8's middle shelf to the descent and keep the east-deck drop on its checked flight line ([#947](https://github.com/saworbit/argus/pull/947), [played results](docs/specs/2026-11-19-e1m8-east-deck.md)).
+
+- Give e1m8's upper deathmatch spawn a verified route to the lower shelf ([#789](https://github.com/saworbit/argus/issues/789), [played results](docs/specs/2026-11-19-e1m8-spawn-exit.md)).
+
+- Add engine-probed elbow seats on dm4 and e1m2. The played hard gates held on both maps and dm2 ([#907](https://github.com/saworbit/argus/issues/907), [ladder results](docs/specs/2026-11-19-navgen-elbows-played.md)).
+
+- Confine the lab map generator's CLI outputs to the configured map, source and runs directories ([#935](https://github.com/saworbit/argus/issues/935)).
+- Atomically replace lab map generator outputs, including the scenario registry, so an interrupted write leaves the previous file readable ([#936](https://github.com/saworbit/argus/issues/936)).
+
 - Restore dm3's route to the red armour platform with four one-way elbow seats. Platform visits rose from 0 to 21 over 20 fixed seeds and from 0 to 8 over four played pairs. The dm3 gates held. [#904](https://github.com/saworbit/argus/issues/904)
+- Recognise player-hull support in the offline turn simulator so seats on clip ledges are available to the elbow audit ([#907](https://github.com/saworbit/argus/issues/907)).
 - Reject lab matches that record a different map from the request. Keep the raw tape and exclude it from quality gates ([#918](https://github.com/saworbit/argus/issues/918)).
 - Skip calibration arms with a recorded map mismatch and report the affected tapes ([#928](https://github.com/saworbit/argus/issues/928)).
+- Use the same native lab executable lookup for Python studies, the lab spine and the gallery. Explicit overrides fail with build instructions if the file is missing ([#937](https://github.com/saworbit/argus/issues/937)).
+- Validate claim evidence against the tape's recorded map, including when the engine falls back after refusing the requested map ([#938](https://github.com/saworbit/argus/issues/938)).
+- Share BSP lookup across Python map readers so the gallery, scorecard and map audits use the same geometry ([#939](https://github.com/saworbit/argus/issues/939)).
 
 - A fixed-clock tape is classed by its stated frame, not its sample gap
   ([#901](https://github.com/saworbit/argus/issues/901)). At 14.25 ms the
@@ -905,6 +920,8 @@ passing botmatch does not establish better human play.
   Briefs, the corpus, compare and `argus_clock_validation.py` now read a
   frame of 13 to 15 ms as `listen`; wall-clock tapes and other frames keep
   the gap rule. `tools/argus_tick.py` reports such a tape by its frame.
+
+- Keep the requested map on Windows launches with long game names ([#927](https://github.com/saworbit/argus/issues/927)).
 - Retire the three puppet-refused walks still shipping on e1m2 and e1m8
   ([#821](https://github.com/saworbit/argus/issues/821)): e1m2 n87 to n193,
   e1m8 n5 to n2 and n7 to n98. Both maps had refused their last
