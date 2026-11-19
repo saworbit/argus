@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Main carries gameplay and navigation changes merged on 2026-11-18, including the dm3 red armour route ([#922](https://github.com/saworbit/argus/pull/922)) and the earlier [#884](https://github.com/saworbit/argus/pull/884), [#886](https://github.com/saworbit/argus/pull/886), [#891](https://github.com/saworbit/argus/pull/891), [#895](https://github.com/saworbit/argus/pull/895), [#896](https://github.com/saworbit/argus/pull/896), [#897](https://github.com/saworbit/argus/pull/897) and [#903](https://github.com/saworbit/argus/pull/903). These changes await a gameplay build. The [human play verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2) concerns the installed gait build. |
+| Development source | Main carries gameplay and navigation changes merged on 2026-11-18, including the dm3 red armour route ([#922](https://github.com/saworbit/argus/pull/922)) and the earlier [#884](https://github.com/saworbit/argus/pull/884), [#886](https://github.com/saworbit/argus/pull/886), [#891](https://github.com/saworbit/argus/pull/891), [#895](https://github.com/saworbit/argus/pull/895), [#896](https://github.com/saworbit/argus/pull/896), [#897](https://github.com/saworbit/argus/pull/897) and [#903](https://github.com/saworbit/argus/pull/903). Main also carries the engine-checked dm4 and e1m2 navigation elbows ([#946](https://github.com/saworbit/argus/pull/946)) and e1m8's tested spawn and shelf routes ([#947](https://github.com/saworbit/argus/pull/947), [#948](https://github.com/saworbit/argus/pull/948)). These changes await a gameplay build. The [human play verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2) concerns the installed gait build. |
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -536,6 +536,8 @@ passing botmatch does not establish better human play.
 #### Changed
 
 - Reduce hard movement reversals on dm4 and dm2 by rounding clear turns and carrying only the velocity along a brink exit ([#697](https://github.com/saworbit/argus/issues/697)).
+- Document the checks for targeted navigation repairs and record the e1m8
+  route and lava trials in the [lab guide](docs/lab-workflow.md#verify-a-targeted-navigation-splice).
 
 - Give each pull request its own changelog entry file so concurrent changes can merge cleanly ([#909](https://github.com/saworbit/argus/issues/909)).
 

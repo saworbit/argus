@@ -523,6 +523,13 @@ heading the stall turn had picked
 The probe tapes, both diffs against `src/argus.qc`, both builds and the
 analysis scripts are machine-local in `backups/pump-probe-20261114/`.
 
+### Review playtest for the ground-turn candidate
+
+Shane's skill 1 verdict on the #940 candidate was “felt better”. The dm2
+run lasted 55 seconds. The dm4 tape includes two unforced world deaths and a
+long idle period. The verdict applies to the build played in that session.
+[PR #940 playtest](https://github.com/saworbit/argus/pull/940)
+
 ## Shared failed-plan recognition
 
 `Argus_PlanObserve` keeps current goal identity, closest useful objective

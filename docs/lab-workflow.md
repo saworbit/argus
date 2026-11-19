@@ -563,6 +563,33 @@ Use bounded chunks and check generated jump families as described in the
 [mill guide](../tools/argus_mcp/README.md#the-mill-probelinks-and-the-verdict-files).
 After a navigation change, run the lab experiment/matrix loop.
 
+### Verify a targeted navigation splice
+
+1. Work on a private copy of the shipped QC/JSON pair. Keep the coordinate
+   sidecar with the change and apply it with `--seat-links`. Check the emitted
+   diff, including unchanged waypoint indices and any links the splice
+   retires. A full regeneration can choose different waypoints. When it
+   refuses a required endpoint, retain the refusal and verify the exact
+   splice under review.
+2. Run `python tools/argus_reach.py <map>` with the candidate graph in its
+   worktree and the BSP available in `maps_local/` or `ARGUS_MAPS`. This
+   checks settled deathmatch spawns. Probe the affected links in the engine
+   and use a native benchmark with fixed starts and goals for the whole
+   route. The route can fail even when its individual links pass.
+3. Before recording, pin the actual control and candidate programs, graph
+   receipts, map, cadence, pair count and acceptance conditions. Run both
+   builds at the same played cadence in private game and run directories.
+   Check each tape's map, build, clock and navigation receipt before
+   counting it.
+4. Judge the registered route, spawn and lava conditions alongside the
+   native hard bands. For the e1m8 follow-ups, the lava gate used the
+   mean BSP-backed lava death count per tape. A passing native median band
+   can coexist with a higher mean. Keep the tapes and the specific reason
+   a candidate was held.
+
+[The merged dm4 and e1m2 elbow ladders](specs/2026-11-19-navgen-elbows-played.md)
+and [the e1m8 soak](specs/2026-11-20-e1m8-soak.md) show these checks in use.
+
 ## Update or restore the lab
 
 - **Stale build.** Rerun the install command with `--force` when
