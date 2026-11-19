@@ -10388,7 +10388,9 @@ void() Argus_AI =
         if (vlen (to) > 80 && vlen (to) < turn)
         {
             want = vectoyaw (to);
-            if (!Argus_MoveHazard (want, 48))
+            traceline (self.origin + '0 0 22', self.ar_sndpos + '0 0 22',
+                       TRUE, self);
+            if (trace_fraction == 1 && !Argus_MoveHazard (want, 48))
             {
                 diff = want - self.ar_moveyaw;
                 while (diff > 180)  diff = diff - 360;
@@ -10401,6 +10403,8 @@ void() Argus_AI =
                 fighting = 1;       // borrow the combat override:
                                     // goal steering stands down
             }
+            else
+                self.ar_sndtime = 0; // do not pull blindly into walls/brinks (#924)
         }
     }
 
