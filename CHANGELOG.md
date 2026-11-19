@@ -891,6 +891,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Confine the lab map generator's CLI outputs to the configured map, source and runs directories ([#935](https://github.com/saworbit/argus/issues/935)).
+
 - Restore dm3's route to the red armour platform with four one-way elbow seats. Platform visits rose from 0 to 21 over 20 fixed seeds and from 0 to 8 over four played pairs. The dm3 gates held. [#904](https://github.com/saworbit/argus/issues/904)
 - Reject lab matches that record a different map from the request. Keep the raw tape and exclude it from quality gates ([#918](https://github.com/saworbit/argus/issues/918)).
 - Skip calibration arms with a recorded map mismatch and report the affected tapes ([#928](https://github.com/saworbit/argus/issues/928)).
