@@ -1417,6 +1417,72 @@ tool_timeout_sec = 700
         self.assertEqual(self.run_tool("argus_floorlinks.py", "dm3", "--graph").returncode, 2)
         self.assertEqual(self.run_tool("argus_floorlinks.py", "dm3", "dm4", "--graph", "x").returncode, 2)
 
+    def test_turnsim_follows_steps_and_refuses_an_overheight_ledge(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from argus_turnsim import World, simulate
+        from argus_bsp import CONTENTS_EMPTY, CONTENTS_SOLID
+
+        class Staircase:
+            @staticmethod
+            def height(x):
+                if x < 32:
+                    return 0
+                if x < 96:
+                    return 12
+                return 24 if x < 160 else 56
+
+            def h0(self, x, y, z):
+                return CONTENTS_SOLID if z < self.height(x) else CONTENTS_EMPTY
+
+            def h1(self, x, y, z):
+                return self.h0(x, y, z - 24)
+
+        world = World(Staircase())
+        uphill = world.ground_height(32, 0, 24)
+        self.assertIsNotNone(uphill)
+        self.assertAlmostEqual(uphill, 36, delta=1)
+        self.assertAlmostEqual(world.ground_height(16, 0, 36), 24, delta=1)
+        self.assertIsNone(world.ground_height(160, 0, 48))
+        run = simulate(world, ((0, 0, 24), (64, 0, 36), (128, 0, 48)))
+        self.assertEqual(run.outcome, "arrived", run)
+        self.assertAlmostEqual(run.position[2], 48, delta=1)
+
+    def test_turnsim_reproduces_the_dm3_n245_floor_test_bisect(self):
+        maps = Path(os.environ.get("ARGUS_MAPS", ROOT / "maps_local"))
+        if not (maps / "dm3.bsp").is_file():
+            self.skipTest("dm3 BSP is machine-local")
+        fixture = json.loads((ROOT / "tools/fixtures/turnsim_dm3.json").read_text(encoding="utf-8"))
+        nodes = next(row["points"] for row in fixture if row["nodes"] == [46, 245, 36])
+        with tempfile.TemporaryDirectory() as td:
+            graph = Path(td) / "n245.json"
+            graph.write_text(json.dumps({"nodes": nodes}), encoding="utf-8")
+            args = ("audit", "dm3", "--graph", str(graph), "--fwd", "0", "1", "2", "--json")
+            comparisons = {}
+            for floor_test, extra in [(True, ()), (False, ("--without-floor-test",))]:
+                result = self.run_tool("argus_turnsim.py", *args, *extra)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                comparisons[floor_test] = json.loads(result.stdout)["corners"][0]
+        guarded = comparisons[True]
+        self.assertEqual(guarded["outcomes"], {"arrived": 3, "fell": 6})
+        centre = guarded["trials"][4]
+        self.assertEqual(centre["outcome"], "fell")
+        self.assertAlmostEqual(centre["position"][0], -272, delta=4)
+        self.assertAlmostEqual(centre["position"][1], -575, delta=4)
+        self.assertEqual(comparisons[False]["outcomes"], {"arrived": 9})
+
+    def test_turnsim_search_finds_four_pre_fix_dm3_seats(self):
+        maps = Path(os.environ.get("ARGUS_MAPS", ROOT / "maps_local"))
+        if not (maps / "dm3.bsp").is_file():
+            self.skipTest("dm3 BSP is machine-local")
+        result = self.run_tool("argus_turnsim.py", "search", "dm3", "--json")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        rows = json.loads(result.stdout)["corners"]
+        self.assertEqual([row["nodes"][1] for row in rows], [244, 245, 64, 246])
+        for row in rows:
+            self.assertNotEqual(row["seat"], row["original"])
+            self.assertEqual(row["after"]["outcomes"], {"arrived": 9})
+        self.assertLess(rows[0]["after"]["wall_frames"], rows[0]["before"]["wall_frames"])
+
     def test_guard_replica_follows_engine_traces_and_names_each_branch(self):
         """A buried probe sees through a slab; walls, lava and run-offs are told apart."""
         sys.path.insert(0, str(ROOT / "tools"))

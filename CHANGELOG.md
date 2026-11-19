@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Add an offline corner simulator that replays bot turns and ranks elbow seats for navgen review ([#923](https://github.com/saworbit/argus/issues/923)).
+
 - `tools/argus_wishflips.py` counts runs of per-frame wish flips in a
   full-rate ARGMOT tape ([#754](https://github.com/saworbit/argus/issues/754)),
   the dithering the reversal count cannot see because it only counts turns at
@@ -888,6 +890,8 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Reject lab matches that record a different map from the request. Keep the raw tape and exclude it from quality gates ([#918](https://github.com/saworbit/argus/issues/918)).
 
 - A fixed-clock tape is classed by its stated frame, not its sample gap
   ([#901](https://github.com/saworbit/argus/issues/901)). At 14.25 ms the

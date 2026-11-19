@@ -118,6 +118,9 @@ the whole tape describes the fallback map - judge nothing).
   indices and slots kept, regions and tactics rebaked. Mind the 48u
   early waypoint switch on void-edged corners (dm3, docs/navmesh-experiment.md);
   `tools/argus_floorlinks.py <map>` lists the links that need an elbow.
+  Judge an elbow by the turn, not the floor test alone: the heading turns
+  at 320 deg/s, so a 90 degree corner at run speed carries about 100u, and
+  dm3's #904 seats were chosen by simulating it (docs/navmesh-experiment.md).
   The proper path is still the sidecar files (probe.json convictions,
   proven.json entries, seats.json seats, walks and cuts) consumed at the
   next real regen.
