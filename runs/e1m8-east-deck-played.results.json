@@ -1,0 +1,444 @@
+{
+  "passed": true,
+  "registration": {
+    "url": "https://github.com/saworbit/argus/pull/947#issuecomment-7007740948",
+    "registered_utc": "2026-11-19T11:26:08.0007170Z",
+    "protocol_sha256": "6672532ee539bcae2dcc161d4eb22ee22ce8e2da82a71015ae92280f36e96aeb"
+  },
+  "builds": {
+    "base_commit": "7b22e4f04c3bdd330bfde848e8390dced6ce1565",
+    "lab_sha256": "33bf0558172949444173f21e506c78622d27aaa3b74557c5e20cf6d4dfac898d",
+    "engine_sha256": "b81e50bcb2d3b2b91f640739a3e111f956aceb1d0b852d7eb1ff532d671ac3ba",
+    "arm": {
+      "control": {
+        "build": "e1cb6d0031f7",
+        "progs_md5": "4a6b1f520a9198c5c645887baa445ea3",
+        "progs_sha256": "b3d6064fc5658363902059bcd683cf69898e2f73b115357e372af3fe26288167",
+        "bsp_sha256": "68cb9173303631d70f4b5da3d430c08d2c9932d32500d48e36aa4320a23522fc",
+        "graph_sha256": "40d0ad55f7753fe272db910eea5bf4fce000e01f4393170379b41c3ceaa8e0ab"
+      },
+      "candidate": {
+        "build": "71362aa44a3e",
+        "progs_md5": "a3b605730c81bcb2a103bad00b940382",
+        "progs_sha256": "3ab4ebaa77c8bbe8f11f56724856805c951a708a9157fa8e941e548199cc918f",
+        "bsp_sha256": "68cb9173303631d70f4b5da3d430c08d2c9932d32500d48e36aa4320a23522fc",
+        "graph_sha256": "f0bb7459d561ab526e8624e315f91e99055f7ad5b889ac50bb3562f78a857dea"
+      }
+    },
+    "map": "e1m8",
+    "skill": 2,
+    "count": 3,
+    "duration_sec": 185,
+    "tick_us": 13900
+  },
+  "tapes": [
+    {
+      "run": "study_e1m8east_control_r01_a1",
+      "map": "e1m8",
+      "arm": "control",
+      "sha256": "04835384e4d449c7c9d8b4dfae4445ad3e34d843c683e4d7857bdd58d5501b0f",
+      "size": 169521,
+      "build": "e1cb6d0031f7",
+      "graph_md5": "82ea54b85647b4d2913c6d79d7b907f5",
+      "duration_sec": 185.20000000000002,
+      "tick": "listen"
+    },
+    {
+      "run": "study_e1m8east_candidate_r01_a1",
+      "map": "e1m8",
+      "arm": "candidate",
+      "sha256": "938f92e31e900a055941708d23e3ce981d0c4490e48fd1fd81a52f05ba630778",
+      "size": 138759,
+      "build": "71362aa44a3e",
+      "graph_md5": "16e30ac432579c83df6603c44a2f95ee",
+      "duration_sec": 185.0,
+      "tick": "listen"
+    },
+    {
+      "run": "study_e1m8east_candidate_r02_a1",
+      "map": "e1m8",
+      "arm": "candidate",
+      "sha256": "fdcf74e382c55bce3aa831e7d6c07f05aae5dd01867eed1efd3164c1a2f50170",
+      "size": 144762,
+      "build": "71362aa44a3e",
+      "graph_md5": "16e30ac432579c83df6603c44a2f95ee",
+      "duration_sec": 185.3,
+      "tick": "listen"
+    },
+    {
+      "run": "study_e1m8east_control_r02_a1",
+      "map": "e1m8",
+      "arm": "control",
+      "sha256": "e48fe2bd1beea94553ac9315c3db4cc7fb640e01cae4671295dbe01289cd7a86",
+      "size": 159337,
+      "build": "e1cb6d0031f7",
+      "graph_md5": "82ea54b85647b4d2913c6d79d7b907f5",
+      "duration_sec": 185.3,
+      "tick": "listen"
+    },
+    {
+      "run": "study_e1m8east_control_r03_a1",
+      "map": "e1m8",
+      "arm": "control",
+      "sha256": "dae545669a9e979502c19a0fe0510258acaa52a8bce76d3e33956baa4869cfd3",
+      "size": 150624,
+      "build": "e1cb6d0031f7",
+      "graph_md5": "82ea54b85647b4d2913c6d79d7b907f5",
+      "duration_sec": 185.20000000000002,
+      "tick": "listen"
+    },
+    {
+      "run": "study_e1m8east_candidate_r03_a1",
+      "map": "e1m8",
+      "arm": "candidate",
+      "sha256": "8bc1637900738353586e83b588b561c426152981998b33a4d5e7f0213930262d",
+      "size": 137919,
+      "build": "71362aa44a3e",
+      "graph_md5": "16e30ac432579c83df6603c44a2f95ee",
+      "duration_sec": 185.0,
+      "tick": "listen"
+    }
+  ],
+  "graph_md5": {
+    "control": "82ea54b85647b4d2913c6d79d7b907f5",
+    "candidate": "16e30ac432579c83df6603c44a2f95ee"
+  },
+  "raw": {
+    "control": {
+      "stalls": [
+        30,
+        26,
+        7
+      ],
+      "engages": [
+        13,
+        29,
+        22
+      ],
+      "lava_deaths": [
+        4,
+        2,
+        3
+      ],
+      "freezes": [
+        1,
+        0,
+        0
+      ],
+      "routefails": [
+        3,
+        4,
+        5
+      ],
+      "world_deaths": [
+        4,
+        2,
+        3
+      ],
+      "goals": [
+        2,
+        5,
+        3
+      ]
+    },
+    "candidate": {
+      "stalls": [
+        22,
+        21,
+        12
+      ],
+      "engages": [
+        34,
+        40,
+        33
+      ],
+      "lava_deaths": [
+        2,
+        1,
+        1
+      ],
+      "freezes": [
+        0,
+        0,
+        0
+      ],
+      "routefails": [
+        3,
+        5,
+        0
+      ],
+      "world_deaths": [
+        2,
+        1,
+        1
+      ],
+      "goals": [
+        5,
+        5,
+        4
+      ]
+    }
+  },
+  "native_cards": {
+    "all": {
+      "verdict": "Improved",
+      "bands": {
+        "stall_parity": {
+          "name": "stall_parity",
+          "candidate_median": 21.0,
+          "control_median": 26.0,
+          "lo": 5.0,
+          "hi": 43.0,
+          "call": "in band"
+        },
+        "engagements": {
+          "name": "engagements",
+          "candidate_median": 34.0,
+          "control_median": 22.0,
+          "lo": 11.0,
+          "hi": 31.0,
+          "call": "improved"
+        },
+        "lava_deaths": {
+          "name": "lava_deaths",
+          "candidate_median": 1.0,
+          "control_median": 3.0,
+          "lo": 0.0,
+          "hi": 7.0,
+          "call": "in band"
+        },
+        "freezes": {
+          "name": "freezes",
+          "candidate_median": 0.0,
+          "control_median": 0.0,
+          "lo": 0.0,
+          "hi": 2.0,
+          "call": "in band"
+        }
+      }
+    },
+    "stall": {
+      "verdict": "Parity",
+      "bands": {
+        "stall_parity": {
+          "name": "stall_parity",
+          "candidate_median": 21.0,
+          "control_median": 26.0,
+          "lo": 5.0,
+          "hi": 43.0,
+          "call": "in band"
+        },
+        "engagements": {
+          "name": "engagements",
+          "candidate_median": 34.0,
+          "control_median": 22.0,
+          "lo": 11.0,
+          "hi": 31.0,
+          "call": "improved"
+        },
+        "lava_deaths": {
+          "name": "lava_deaths",
+          "candidate_median": 1.0,
+          "control_median": 3.0,
+          "lo": 0.0,
+          "hi": 7.0,
+          "call": "in band"
+        },
+        "freezes": {
+          "name": "freezes",
+          "candidate_median": 0.0,
+          "control_median": 0.0,
+          "lo": 0.0,
+          "hi": 2.0,
+          "call": "in band"
+        }
+      }
+    }
+  },
+  "spawn_cell_hotspot_counts": {
+    "control": [
+      0,
+      0,
+      0
+    ],
+    "candidate": [
+      0,
+      0,
+      0
+    ]
+  },
+  "lava_mean": {
+    "control": 3,
+    "candidate": 1.3333333333333333
+  },
+  "shelf_routefails": {
+    "control": [
+      0,
+      3,
+      1
+    ],
+    "candidate": [
+      0,
+      0,
+      0
+    ]
+  },
+  "medians": {
+    "control": {
+      "stalls": 26,
+      "engages": 22,
+      "lava_deaths": 3,
+      "freezes": 0,
+      "routefails": 4,
+      "world_deaths": 3,
+      "goals": 3
+    },
+    "candidate": {
+      "stalls": 21,
+      "engages": 34,
+      "lava_deaths": 1,
+      "freezes": 0,
+      "routefails": 3,
+      "world_deaths": 1,
+      "goals": 5
+    }
+  },
+  "tape_storage": "machine-local under the Argus backups directory",
+  "spawn_coverage": {
+    "covered": 7,
+    "total": 7,
+    "waypoints": 142,
+    "worst_reach": 119,
+    "worst_ungated": 107
+  },
+  "route_tasks": {
+    "suite": "route-and-spawn",
+    "map": "e1m8",
+    "graph_md5": "774de4a4be0cc618a8b12f4f3886c24b",
+    "skill": 2,
+    "results": [
+      {
+        "name": "northwest_to_lower",
+        "split": "heldout",
+        "completed": true,
+        "game_sec": 8.4,
+        "wall_sec": 8.249108
+      },
+      {
+        "name": "south_to_lower",
+        "split": "heldout",
+        "completed": true,
+        "game_sec": 4.9,
+        "wall_sec": 4.890708
+      },
+      {
+        "name": "west_to_lower",
+        "split": "heldout",
+        "completed": true,
+        "game_sec": 10.1,
+        "wall_sec": 10.112965
+      },
+      {
+        "name": "upper_spawn_to_lower",
+        "split": "heldout",
+        "completed": true,
+        "game_sec": 7.5,
+        "wall_sec": 7.6016574
+      },
+      {
+        "name": "upper_offset_to_lower",
+        "split": "heldout",
+        "completed": true,
+        "game_sec": 7.5,
+        "wall_sec": 7.458758
+      }
+    ],
+    "all": {
+      "tasks": 5,
+      "completed": 5,
+      "completion_rate": 1.0,
+      "median_game_sec": 7.5
+    },
+    "train": {
+      "tasks": 0,
+      "completed": 0,
+      "completion_rate": 0.0
+    },
+    "heldout": {
+      "tasks": 5,
+      "completed": 5,
+      "completion_rate": 1.0,
+      "median_game_sec": 7.5
+    }
+  },
+  "east_fixture": {
+    "shelf-original-v3": {
+      "build": "2b2640b22db2",
+      "raw_sha256": "d987c1b72a86b825d2bd2215b7feced675689f6230d7238a0e0b435c4dd85269",
+      "cases": [
+        {
+          "case": 1,
+          "end": "'1221.8 -739.2  24.0'",
+          "walked_off": true,
+          "entered_lava": false,
+          "health": 100
+        },
+        {
+          "case": 2,
+          "end": "'1127.0 -441.0 -748.6'",
+          "walked_off": true,
+          "entered_lava": true,
+          "health": 100
+        },
+        {
+          "case": 3,
+          "end": "'1256.3 -744.0  24.0'",
+          "walked_off": true,
+          "entered_lava": false,
+          "health": 100
+        },
+        {
+          "case": 4,
+          "end": "'1258.5 -744.0  24.0'",
+          "walked_off": true,
+          "entered_lava": false,
+          "health": 100
+        }
+      ]
+    },
+    "shelf-hold-v3": {
+      "build": "9fbea3a5a24f",
+      "raw_sha256": "e8972726e2ca00016b62b20ceba34b15a1a3dbd9fb22d48479ba5c6421441329",
+      "cases": [
+        {
+          "case": 1,
+          "end": "'1011.8 -685.6 -712.0'",
+          "walked_off": true,
+          "entered_lava": false,
+          "health": 100
+        },
+        {
+          "case": 2,
+          "end": "'976.0 -323.6 -544.0'",
+          "walked_off": true,
+          "entered_lava": false,
+          "health": 100
+        },
+        {
+          "case": 3,
+          "end": "'741.0 -752.0 -712.0'",
+          "walked_off": true,
+          "entered_lava": false,
+          "health": 100
+        },
+        {
+          "case": 4,
+          "end": "'997.9 -332.6 -544.0'",
+          "walked_off": true,
+          "entered_lava": false,
+          "health": 100
+        }
+      ]
+    }
+  }
+}

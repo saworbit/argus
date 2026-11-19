@@ -893,6 +893,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Join e1m8's middle shelf to the descent and keep the east-deck drop on its checked flight line ([#947](https://github.com/saworbit/argus/pull/947), [played results](docs/specs/2026-11-19-e1m8-east-deck.md)).
+
 - Give e1m8's upper deathmatch spawn a verified route to the lower shelf ([#789](https://github.com/saworbit/argus/issues/789), [played results](docs/specs/2026-11-19-e1m8-spawn-exit.md)).
 
 - Add engine-probed elbow seats on dm4 and e1m2. The played hard gates held on both maps and dm2 ([#907](https://github.com/saworbit/argus/issues/907), [ladder results](docs/specs/2026-11-19-navgen-elbows-played.md)).
