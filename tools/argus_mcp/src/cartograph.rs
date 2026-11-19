@@ -637,28 +637,39 @@ pub fn parse_entities(text: &str) -> Vec<BTreeMap<String, String>> {
     out
 }
 
+// Keep this list aligned with tools/argus_nav_budget.py.
+const STATIC_EDICT_CLASSES: &[&str] = &[
+    "light_globe",
+    "light_torch_small_walltorch",
+    "light_flame_large_yellow",
+    "light_flame_small_yellow",
+    "light_flame_small_white",
+    "func_illusionary",
+];
+
 /// Does this entity still exist after its spawn function runs?
 ///
-/// The mirror of `spawns_an_edict` in tools/argus_navgen.py, and it
+/// The mirror of `survives_spawn` in tools/argus_nav_budget.py, and it
 /// exists because the two tools were answering the same question two
 /// different ways and disagreeing by most of the number (#280). An
 /// untargeted `light` is removed by misc.qc's light() as an inert
 /// light, and id's maps are full of them: 35 to 57 per cent of the
 /// lump across the e1m rotation, 283 of e1m8's 495. info_null is
-/// removed outright.
+/// removed outright. `makestatic` frees the torch, flame and illusionary
+/// brush edicts after putting them in the static list.
 ///
 /// Counting them made cartograph report e1m1 at 592 of 600 edicts,
 /// eight spare, when the live figure is nearer 403 and the map has
 /// about 197 to spare. A reader acting on that would decline to
 /// regenerate a graph that badly needed it.
 pub fn spawns_an_edict(classname: &str, targetname: Option<&str>) -> bool {
-    if classname == "light" && targetname.is_none() {
+    if classname == "light" && targetname.is_none_or(str::is_empty) {
         return false;
     }
     if classname == "info_null" {
         return false;
     }
-    true
+    !STATIC_EDICT_CLASSES.contains(&classname)
 }
 
 pub fn classify(classname: &str) -> &'static str {
@@ -2269,6 +2280,31 @@ mod tests {
         assert!(mega.is_some());
         assert_eq!(item_value("item_health", 2).unwrap().1, "megahealth");
         assert!(item_value("item_health", 0).is_none());
+    }
+
+    #[test]
+    fn live_edicts_exclude_a_static_torch_and_empty_light_targets() {
+        for &class in STATIC_EDICT_CLASSES {
+            assert!(!spawns_an_edict(class, Some("target")), "{class}");
+        }
+        let fixture = crate::test_support::TestDir::new("cartograph-live-edicts").unwrap();
+        let root = fixture.path();
+        let env = HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
+        let cfg = load_for_reads_from(&env, root).unwrap();
+        let entities = r#"
+        { "classname" "worldspawn" }
+        { "classname" "light" }
+        { "classname" "light" "targetname" "" }
+        { "classname" "light" "targetname" "needs_switch" }
+        { "classname" "light_torch_small_walltorch" }
+        { "classname" "info_null" }
+        { "classname" "monster_army" }
+        { "classname" "item_health" "spawnflags" "2048" }
+        "#;
+        let bsp = crate::bsp::parse_bsp29(&write_mini_bsp(entities, [0.0; 3], [128.0; 3])).unwrap();
+        let atlas = atlas_from_bsp("edicts", &root.join("edicts.bsp"), "filesystem", &bsp, &cfg);
+        assert_eq!(atlas.counts["entities"], 8);
+        assert_eq!(atlas.counts["live_entities"], 4);
     }
 
     #[test]

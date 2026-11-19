@@ -898,6 +898,7 @@ passing botmatch does not establish better human play.
 #### Fixed
 
 - Measure cartograph spawn coverage from settled starts, including solid brush pads ([#953](https://github.com/saworbit/argus/issues/953)).
+- Count live edicts in cartograph using the same spawn rules as navgen ([#960](https://github.com/saworbit/argus/issues/960)).
 
 - Join e1m8's middle shelf to the descent and keep the east-deck drop on its checked flight line ([#947](https://github.com/saworbit/argus/pull/947), [played results](docs/specs/2026-11-19-e1m8-east-deck.md)).
 

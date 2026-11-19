@@ -758,9 +758,9 @@ not a raw entity dump:
 - **spawn coverage** warns when a deathmatch or single-player start settles
   more than 200u from the nearest waypoint. It checks the world floor and
   solid brush pads using the same rules as `tools/argus_reach.py`.
-- **edict estimate**: waypoint count plus entity lump, against
-  vanilla `max_edicts 600`; use the full budget verdict (live entities,
-  world/client slots and runtime reserve) when deciding registration
+- **edict estimate**: waypoint count plus entities that retain an edict
+  after spawn, using the same rule as navgen. Use the full budget verdict
+  with world/client slots and runtime reserve for registration.
 - **height bands** from the waypoint graph (on dm4: walkway / mid /
   pit / deep)
 - **recipe**: the next `experiment` / `match_run` line
