@@ -113,7 +113,7 @@ pub async fn nav_generate(
     )?;
     let staged_png = files.add(&out_png, false)?;
     files.add(&std::path::PathBuf::from(&receipt), false)?;
-    for kind in ["costs", "probe", "proven", "mined"] {
+    for kind in ["costs", "probe", "proven", "mined", "seats"] {
         let input = out_qc
             .parent()
             .unwrap()
@@ -163,6 +163,51 @@ pub async fn nav_generate(
 
 #[cfg(test)]
 mod tests {
+    #[tokio::test]
+    async fn seat_sidecar_refusal_keeps_the_published_graph() {
+        let dir = crate::test_support::TestDir::new("nav-seat-sidecar").unwrap();
+        let root = dir.path();
+        for name in ["src", "tools", "runs"] {
+            std::fs::create_dir(root.join(name)).unwrap();
+        }
+        std::fs::write(root.join("map.bsp"), "bsp").unwrap();
+        let qc = root.join("src/argus_nav_dm4.qc");
+        let graph = root.join("src/argus_nav_dm4.qc.json");
+        let seats = root.join("src/argus_nav_dm4.seats.json");
+        let sidecar = r#"{"walks":[[[0,0,24],[64,0,24]]]}"#;
+        std::fs::write(&qc, "published QC").unwrap();
+        std::fs::write(&graph, "published graph").unwrap();
+        std::fs::write(&seats, sidecar).unwrap();
+        std::fs::write(
+            root.join("tools/argus_navgen.py"),
+            r#"import json, pathlib, sys
+qc = pathlib.Path(sys.argv[3])
+qc.write_text('candidate QC')
+qc.with_suffix('.qc.json').write_text('candidate graph')
+seats = qc.with_suffix('.seats.json')
+if seats.exists() and json.loads(seats.read_text())['walks'] == [[[0, 0, 24], [64, 0, 24]]]:
+    sys.exit('seat walk refused before publication')
+"#,
+        )
+        .unwrap();
+        let cfg = crate::config::load_for_reads_from(
+            &std::collections::HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+            root,
+        )
+        .unwrap();
+        let result = super::nav_generate(&cfg, "map.bsp", "dm4", None, None, false)
+            .await
+            .unwrap();
+        assert!(!result.ok, "a refused seat walk was published: {result:?}");
+        assert!(result
+            .stdout_tail
+            .iter()
+            .any(|line| line.contains("seat walk refused before publication")));
+        assert_eq!(std::fs::read_to_string(qc).unwrap(), "published QC");
+        assert_eq!(std::fs::read_to_string(graph).unwrap(), "published graph");
+        assert_eq!(std::fs::read_to_string(seats).unwrap(), sidecar);
+    }
+
     #[tokio::test]
     async fn cancelled_generation_cannot_publish_source_or_registration() {
         let dir = crate::test_support::TestDir::new("nav-cancel").unwrap();

@@ -789,7 +789,9 @@ still live only inside the PAKs.
 (`--no-dispatcher`, and `--register` by default so `progs.src` and
 `argus_nav_dispatch.qc` are wired after the first-registration gate passes).
 Pass `register=false` to generate an experimental graph before its reach and
-mill passes.
+mill passes. Native regeneration reads the seat sidecar beside the requested
+QC output and refuses to publish the graph if a recorded seat, walk or cut
+cannot be applied.
 
 Generated QC and its JSON sidecar must describe the same directed edges and
 winning types. The ARGNAV banner counts emitted calls, including teleporters,
