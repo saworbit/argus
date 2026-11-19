@@ -362,8 +362,18 @@ sessions' own human tracks. The botmatch figures above (1.321 to 1.022 on dm4)
 are not comparable: a human session puts bots in a different match.
 
 One tape cannot separate the gait from earlier builds in either direction.
-[#610](https://github.com/saworbit/argus/issues/610) still needs the human's
-written verdict on feel and a dm2 session.
+
+### Player verdict on dm4 and dm2
+
+Shane played dm4 on 2026-11-18 and dm2 on 2026-11-19 on build
+`004b4ff9ddf7`. The [human scorecard](../runs/human_scorecard.tsv) has
+both sessions. `argus_gait.py` counted 9 hesitations on dm4 and 15 on
+dm2, with zero freezes and no attributable hesitation failure.
+
+Shane described the bots' movement as "bumper cars". That completes the
+[human play check](https://github.com/saworbit/argus/issues/610).
+[The movement reversal issue](https://github.com/saworbit/argus/issues/697)
+tracks the remaining problem.
 
 ## Movement reversals
 
