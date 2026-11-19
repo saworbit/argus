@@ -533,6 +533,8 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Reduce hard movement reversals on dm4 and dm2 by rounding clear turns and carrying only the velocity along a brink exit ([#697](https://github.com/saworbit/argus/issues/697)).
+
 - Give each pull request its own changelog entry file so concurrent changes can merge cleanly ([#909](https://github.com/saworbit/argus/issues/909)).
 
 - `tools/argus_reach.py` measures a spawn's distance to the graph where the

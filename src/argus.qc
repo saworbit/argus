@@ -2417,6 +2417,39 @@ float() Argus_RecoveryWalk =
     return FALSE;
 };
 
+// Look for a clear continuation before reversing at a brink. Check the
+// body-width lane and near level support so a legal drop is not chosen as
+// an escape from a combat or wander heading.
+float() Argus_BrinkAdvance =
+{
+    local vector travel;
+    local float yaw, candidate, offset;
+    if (deathmatch <= 0 || !(self.flags & FL_ONGROUND)
+        || self.ar_hoplift || self.ar_hoptrain || self.ar_hopjump
+        || self.ar_hoprj || self.ar_hopswim || self.ar_hopdoor
+        || self.ar_sprintstate || Argus_GaitApproachAction ())
+        return 999;
+    travel = self.velocity;
+    travel_z = 0;
+    if (vlen (travel) < 80)
+        return 999;
+    yaw = vectoyaw (travel);
+    offset = 0;
+    while (fabs (offset) <= 75)
+    {
+        candidate = yaw + offset;
+        if (Argus_RecoveryClear (candidate)
+            && Argus_WalkFloorOK (self.origin + v_forward * 24, 32)
+            && Argus_WalkFloorOK (self.origin + v_forward * 48, 32))
+            return candidate;
+        if (offset > 0)
+            offset = 0 - offset;
+        else
+            offset = 25 - offset;
+    }
+    return 999;
+};
+
 // A docked platform can leave a short seam before its routed exit.
 // Check the arc at our actual speed and require a landing on that floor.
 float(float yaw, float spd) Argus_MoverGapJumpOK =
@@ -2447,6 +2480,7 @@ void() Argus_Physics =
     local vector wishdir, vh, rto;
     local float wl, spd, moveok, myaw, rhoriz, sready, wdrag, hopok, ljyaw;
     local float protectedstep, tacticmove, vault, jumpkind, jumpveto;
+    local float ordinarymove, travel_yaw, turn_yaw, turn_delta;
 
     // Reset can run in the trigger before this frame's physics. Hold the
     // braking envelope briefly instead of accelerating a stale tactical yaw
@@ -2957,6 +2991,34 @@ void() Argus_Physics =
                      && time < self.ar_brinkliquid + 0.5)
                 wdrag = AR_MAXSPEED * 0.62;
         }
+        ordinarymove = deathmatch > 0 && !tacticmove
+            && !self.ar_sprintstate && !self.ar_hopjump && !self.ar_hoprj
+            && !self.ar_hoplift && !self.ar_hoptrain && !self.ar_hopdoor
+            && !self.ar_hopswim && !self.ar_jump && self.ar_taskgoal == world
+            && !Argus_GaitApproachAction ();
+        if (ordinarymove && time >= self.ar_dodgetime
+            && time >= self.ar_recoveryuntil && wdrag > 0)
+        {
+            vh = self.velocity;
+            vh_z = 0;
+            if (vlen (vh) >= 80 && normalize (vh) * wishdir < 0.342)
+            {
+                // Make room for the turn while holding running speed.
+                // If there is no clear arc, keep the requested heading
+                // and let the normal brake and brink checks handle it.
+                travel_yaw = vectoyaw (vh);
+                turn_delta = self.ar_moveyaw - travel_yaw;
+                while (turn_delta > 180) turn_delta = turn_delta - 360;
+                while (turn_delta < -180) turn_delta = turn_delta + 360;
+                turn_yaw = 55;
+                if (turn_delta < 0)
+                    turn_yaw = -55;
+                if (Argus_RecoveryClear (travel_yaw + turn_yaw))
+                    wishdir = v_forward;
+                else if (Argus_RecoveryClear (travel_yaw - turn_yaw))
+                    wishdir = v_forward;
+            }
+        }
         Argus_Accelerate (wishdir, wdrag);
 
         vh = self.velocity;
@@ -3317,12 +3379,24 @@ void() Argus_Physics =
                         return;
                     }
                 }
-                // deflect along the brink, keeping speed: a dead stop
-                // here reads as a stall and bleeds all momentum.
-                // HazardSteer holds the last safe heading so the
-                // +50/-50 fan does not flip every frame at a corner.
+                // HazardSteer holds the last safe heading at a corner.
+                // Keep full speed for typed and tactical movement.
+                // Ordinary moves carry the part of their velocity that
+                // already points along the clear heading.
                 myaw = Argus_HazardSteer (myaw, rhoriz);
                 makevectors ('0 0 0' + myaw * '0 1 0');
+                if (ordinarymove)
+                {
+                    // Retain travel along the cleared heading. Brake the
+                    // component driving over the edge, with one normal
+                    // acceleration step available to begin the escape.
+                    wdrag = self.velocity * v_forward;
+                    hopok = AR_ACCEL * frametime * AR_MAXSPEED;
+                    if (wdrag < hopok)
+                        wdrag = hopok;
+                    if (wdrag < spd)
+                        spd = wdrag;
+                }
                 self.velocity_x = v_forward_x * spd;
                 self.velocity_y = v_forward_y * spd;
                 // "a brink is under me RIGHT NOW", stamped unthrottled.
@@ -7110,21 +7184,26 @@ float() Argus_Combat =
     // with the fake-retreat/corner-ambush state machine. Tapes:
     // ab_dm4_retreat.log, ab_dm4_retreat2.log.
 
-    // never strafe or chase into lava: try the current strafe side first
-    // so a refused non-strafe heading (approach, backoff, battle_item,
-    // high_ground, dodge, cover_retreat) does not flip ar_strafedir
-    // every frame; flip only if that side is also hazardous, then fall
-    // back to backing off; the physics brink guard catches anything left
+    // When combat picks a hazardous heading, first look for a lane
+    // that continues our travel. If none is open, recheck the held
+    // strafe side before flipping. Back off if both sides are blocked.
+    // The physics guard still checks the resulting velocity.
     if ((time < self.ar_combathaztime && time >= self.ar_dodgetime)
         || Argus_MoveHazard (self.ar_moveyaw, 48))
     {
         if (!self.ar_strafedir)
             self.ar_strafedir = 1;
-        want = vectoyaw (to) + orbit * self.ar_strafedir;
-        if (Argus_MoveHazard (want, 48))
+        want = 999;
+        if (time >= self.ar_dodgetime)
+            want = Argus_BrinkAdvance ();
+        if (want == 999)
         {
-            self.ar_strafedir = 0 - self.ar_strafedir;
             want = vectoyaw (to) + orbit * self.ar_strafedir;
+            if (Argus_MoveHazard (want, 48))
+            {
+                self.ar_strafedir = 0 - self.ar_strafedir;
+                want = vectoyaw (to) + orbit * self.ar_strafedir;
+            }
         }
         if (time >= self.ar_combathaztime)
         {
@@ -11735,7 +11814,11 @@ void() Argus_AI =
         {
             self.ar_wanderturn = time + 1 + random () * 2;
             self.ar_wanderhaz = time + 0.3;
-            self.angles_y = self.angles_y + 120 + random () * 120;
+            turn = self.angles_y + 120 + random () * 120;
+            want = Argus_BrinkAdvance ();
+            if (want == 999)
+                want = turn;
+            self.angles_y = want;
         }
         else if (time > self.ar_wanderturn)
         {

@@ -443,6 +443,40 @@ The first human session on the installed build
 (`runs/shane_dm4_2026-11-14_ed8926.log`) still shows bots making 57 to 60 hard
 reversals per moving minute against the human's 15.
 
+### Ground turns near brinks
+
+In a fresh five-seed control per map, combat hazard steering was the most
+frequent marker before a reversal, 181 times on dm4 and 117 on dm2.
+Another 115 reversals on dm4 and 58 on dm2 had no turn marker while route
+steering was active. Of those, 78 and 25 respectively included a heading
+change of at least 45 degrees between consecutive movement samples. The
+physics guard can redirect travel at full speed even while the route's
+requested heading is turning gradually.
+
+The candidate tries a clear lane in its direction of travel before
+flipping a refused combat or wander heading. It rounds a sharp turn
+when there is room and brakes the part of its velocity that points
+across the guard's chosen exit. Typed links and their nearby approaches
+keep their existing steering and speed rules.
+
+Three paired 120-second dm4 matches and five dm2 pairs ran at skill 2
+and about 69 Hz. The control was `4f2318abddbd` and the candidate was
+`dca67e147b54`. Rates pool reversals over moving time. The target is
+33.67 per moving minute, 1.5 times the median of the six human tapes
+referenced in [#697](https://github.com/saworbit/argus/issues/697).
+
+| Map | Pairs | Reversals/min | Median stalls | Median lava deaths | Median engagements |
+| --- | ---: | --- | --- | --- | --- |
+| dm4 | 3 | 65.21 to 28.59 | 4 to 5 | 3 to 2 | 45 to 45 |
+| dm2 | 5 | 43.08 to 26.09 | 18 to 17 | 0 to 0 | 19 to 20 |
+
+Every candidate tape was below the target. Both lab comparisons read
+parity, and all tapes had zero freezes. Total lava deaths on dm2 were
+two in the control and four in the candidate. An earlier version without
+the approach check was rejected after two dm2 train-pad freezes,
+including a 13.6-second stop flagged by the under-fire gate when
+overheal decayed. Human feel on the candidate is still unverified.
+
 ### Ground overspeed comes from cornering, not the brink deflection
 
 In that session, a bot at full health ran off a dm4 ledge into lava at about
