@@ -56,6 +56,7 @@ import shutil
 import struct
 import subprocess
 import sys
+import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -217,8 +218,21 @@ def canonical(obj):
 
 
 def write_text(path, text):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    Path(path).write_bytes(text.encode("utf-8"))
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    staged = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f".{path.name}.", delete=False) as handle:
+            staged = Path(handle.name)
+            handle.write(text.encode("utf-8"))
+            handle.flush()
+            os.fsync(handle.fileno())
+        if os.name != "nt" and path.is_file():
+            shutil.copymode(path, staged)
+        os.replace(staged, path)
+    finally:
+        if staged is not None:
+            staged.unlink(missing_ok=True)
 
 
 def write_json(path, obj):
