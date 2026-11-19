@@ -16,10 +16,9 @@ yanked = "deny"
 # Each ignore names its advisory, why it cannot be fixed now and when to look
 # again. An ignore is for a notice with no upgrade path, never a vulnerability.
 ignore = [
-    # chrono is unmaintained (2026-11-18). No safe version exists, and rmcp and
-    # schemars pull it in as well as argus-mcp, so dropping our own use would
-    # not clear it. It is a maintenance notice, not a vulnerability. Look again
-    # when rmcp and schemars move to time or jiff (#870).
+    # Reviewed 2026-11-20. Retain the chrono maintenance exception. rmcp 3.11.0
+    # still depends on chrono and enables chrono04 in schemars, which 1.2.3
+    # still provides. Recheck both paths on the next rmcp or schemars bump (#870).
     { id = "RUSTSEC-2026-0543", reason = "chrono unmaintained; no upgrade, required by rmcp and schemars" },
 ]
 

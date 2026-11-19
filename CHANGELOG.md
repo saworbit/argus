@@ -1653,6 +1653,8 @@ passing botmatch does not establish better human play.
   again (`tools/argus_mcp/deny.toml`,
   [#870](https://github.com/saworbit/argus/issues/870)).
 
+- Review the `chrono` advisory exception against `rmcp` 3.11.0 and `schemars` 1.2.3 ([#870](https://github.com/saworbit/argus/issues/870)).
+
 - Read average speed on the fixed-clock confirmation tapes
   ([#863](https://github.com/saworbit/argus/issues/863)). It was registered
   with the validation but the corpus did not carry it when the verdicts were
