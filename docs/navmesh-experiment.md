@@ -647,6 +647,13 @@ No dm3 gate moved on either ladder (stalls 15.7 to 15.1 fixed and 15.2 to
 world death. One stall in 20 seeds steered at a seat beside the platform,
 against none on main.
 
+The [turn simulator](../tools/README.md#25-argus_turnsimpy) replays the
+n245 bisect and searches the four pre-#922 corridors. At its default
+80u start distance, six of nine n245 runs fall with the floor test active.
+All nine round the corner with the test disabled in the simulator. The
+search found a replacement at every corner, completing all 36 simulated
+runs. Navgen accepted all eight proposed walk legs in a private splice.
+
 ## Mesh-native typed links
 
 [#790](https://github.com/saworbit/argus/issues/790), 2026-11-18. Offline
