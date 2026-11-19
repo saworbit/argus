@@ -1447,6 +1447,26 @@ tool_timeout_sec = 700
         self.assertEqual(run.outcome, "arrived", run)
         self.assertAlmostEqual(run.position[2], 48, delta=1)
 
+    def test_turnsim_recognises_seat_support_from_the_player_hull(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from argus_bsp import CONTENTS_EMPTY, CONTENTS_SOLID
+        from argus_turnsim import World
+
+        class ClipLedge:
+            def h0(self, x, y, z):
+                return CONTENTS_SOLID if z < 0 else CONTENTS_EMPTY
+
+            def h1(self, x, y, z):
+                height = 64 if x < 32 else 24
+                return CONTENTS_SOLID if z < height else CONTENTS_EMPTY
+
+        world = World(ClipLedge())
+        self.assertEqual(world.ground_height(0, 0, 64), 64)
+        self.assertTrue(world.seat_ok((0, 0, 64)))
+        self.assertIsNone(world.ground_height(64, 0, 64))
+        self.assertFalse(world.seat_ok((64, 0, 64)))
+        self.assertFalse(world.seat_ok((0, 0, 63)))
+
     def test_turnsim_reproduces_the_dm3_n245_floor_test_bisect(self):
         maps = Path(os.environ.get("ARGUS_MAPS", ROOT / "maps_local"))
         if not (maps / "dm3.bsp").is_file():

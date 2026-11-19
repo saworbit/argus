@@ -402,7 +402,9 @@ Lists the shipped level walk links whose own line fails the early-switch floor t
 
 Replays routed turns on the world BSP at the played 14.25 ms frame, with
 ground friction, acceleration, heading slew, step heights and the runtime
-arrival checks. Each direction uses lateral offsets of -12u, 0u and 12u at
+arrival checks. A player-hull contact can support a seat over the render
+hull. The early-switch floor check still uses the runtime's point trace.
+Each direction uses lateral offsets of -12u, 0u and 12u at
 280, 320 and 360 u/s. [#923](https://github.com/saworbit/argus/issues/923)
 
 ```text
