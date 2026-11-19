@@ -1320,6 +1320,12 @@ CUTTABLE = ("links", "jlinks", "sprintlinks")
 CUTTABLE_VERBS = ("Argus_NavLink", "Argus_NavLinkJump", "Argus_NavLinkSprint")
 
 
+def _seat_walk_ok(a, b):
+    drop = a[2] - b[2]
+    depth = 280 if MAPNAME == "e1m8" and 240 < drop <= 280 else DROPMAX
+    return beeline_points(a, b, dropmax=depth)
+
+
 def _seat_links(text, doc, spec, *, exact=False):
     """--seat-links: append seats and beeline-verified walks, then rebake.
 
@@ -1371,7 +1377,7 @@ def _seat_links(text, doc, spec, *, exact=False):
         flat = ((nb[0] - na[0]) ** 2 + (nb[1] - na[1]) ** 2) ** 0.5
         if flat > LINK_PATH_MAX:
             raise ValueError(f"walk n{a} -> n{b} is {flat:.0f}u, past {LINK_PATH_MAX}")
-        if not beeline_points(na, nb):
+        if not _seat_walk_ok(na, nb):
             raise ValueError(f"beeline_ok refuses n{a} {_fmt(na)} -> n{b} {_fmt(nb)}")
         present.add((a, b))
         walks.append((a, b))
@@ -4811,7 +4817,7 @@ if _seatspec:
         _flat = ((_pb[0] - _pa[0]) ** 2 + (_pb[1] - _pa[1]) ** 2) ** 0.5
         if _flat > LINK_PATH_MAX:
             _seat_refusal(f"walk n{_a} -> n{_b} is {_flat:.0f}u, past {LINK_PATH_MAX}")
-        if not beeline_points(_pa, _pb):
+        if not _seat_walk_ok(_pa, _pb):
             _seat_refusal(f"beeline_ok refuses walk {_pair}")
         links.setdefault(_a, {})[_b] = (_flat, 0)
         _seat_added += 1
