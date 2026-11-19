@@ -9,21 +9,41 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from argus_bsp import (LUMP_ENTITIES, LUMP_LEAVES, LUMP_MODELS, LUMP_NAMES,
+                       LUMP_NODES, LUMP_PLANES)
 from argus_mapgate import assess_playability
 
 
-def write_bsp(path, entities):
+def write_bsp(path, entities, *, brush_pad=False):
     ent_lump = "".join(
         "{\n" + "".join(f'"{key}" "{value}"\n' for key, value in ent.items()) + "}\n"
         for ent in entities
     ).encode("ascii") + b"\0"
-    header_size = 4 + 15 * 8
-    lumps = [(0, 0)] * 15
-    lumps[0] = (header_size, len(ent_lump))
+    # World floor at z 0, with an optional brush reaching up to z 256.
+    data = [b""] * len(LUMP_NAMES)
+    data[LUMP_ENTITIES] = ent_lump
+    data[LUMP_PLANES] = struct.pack("<4fi", 0, 0, 1, 0, 2)
+    data[LUMP_NODES] = struct.pack("<i8h2H", 0, -1, -2, *([0] * 8))
+    data[LUMP_LEAVES] = b"".join(
+        struct.pack("<2i6h2H4B", contents, -1, *([0] * 12))
+        for contents in (-1, -2)
+    )
+
+    def model(bounds):
+        return struct.pack("<9f7i", *bounds, *([0] * 10))
+
+    data[LUMP_MODELS] = model((-1024, -1024, -256, 1024, 1024, 1024))
+    if brush_pad:
+        data[LUMP_MODELS] += model((480, -32, 0, 544, 32, 256))
+    offset = 4 + len(data) * 8
+    lumps = []
+    for lump in data:
+        lumps.append((offset, len(lump)))
+        offset += len(lump)
     path.write_bytes(
         struct.pack("<i", 29)
         + b"".join(struct.pack("<ii", offset, length) for offset, length in lumps)
-        + ent_lump
+        + b"".join(data)
     )
 
 
@@ -130,13 +150,13 @@ class TestArgusMapGate(unittest.TestCase):
             }
         }))
 
-    def write_entities(self, *extra):
+    def write_entities(self, *extra, brush_pad=False):
         write_bsp(self.bsp, [
             {"classname": "worldspawn"},
             {"classname": "info_player_deathmatch", "origin": "0 0 24"},
             {"classname": "weapon_rocketlauncher", "origin": "128 0 24"},
             *extra,
-        ])
+        ], brush_pad=brush_pad)
 
     def test_current_reach_and_engine_evidence_are_playable(self):
         self.write_entities()
@@ -160,6 +180,34 @@ class TestArgusMapGate(unittest.TestCase):
         self.assertFalse(verdict.playable)
         self.assertTrue(any("cannot reach weapon_rocketlauncher" in r
                             for r in verdict.reasons), verdict.reasons)
+
+    def test_floating_spawn_uses_the_floor_for_distance_and_reach(self):
+        self.write_entities({"classname": "info_player_deathmatch", "origin": "0 0 500"})
+        self.write_graph()
+        graph = json.loads(self.graph.read_text())
+        for aerial_seats in ([], [[0, 0, 500]]):
+            with self.subTest(aerial_seats=aerial_seats):
+                self.graph.write_text(json.dumps({
+                    **graph, "nodes": graph["nodes"] + aerial_seats,
+                }))
+                self.write_probe()
+                verdict = assess_playability(self.bsp, self.graph, self.probe)
+                self.assertTrue(verdict.playable, verdict.reasons)
+
+    def test_floating_spawn_lands_on_a_solid_brush_pad(self):
+        self.write_entities(
+            {"classname": "func_wall", "model": "*1"},
+            {"classname": "info_player_deathmatch", "origin": "512 0 512"},
+            brush_pad=True,
+        )
+        self.write_graph()
+        graph = json.loads(self.graph.read_text())
+        graph["nodes"] += [[512, 0, 280], [512, 0, 24]]
+        graph["links"].append([3, 2, 0])
+        self.graph.write_text(json.dumps(graph))
+        self.write_probe()
+        verdict = assess_playability(self.bsp, self.graph, self.probe)
+        self.assertTrue(verdict.playable, verdict.reasons)
 
     def test_probe_must_name_the_current_graph(self):
         self.write_entities()

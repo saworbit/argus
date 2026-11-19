@@ -3,8 +3,8 @@
 
 The verdict joins two claims which stay deliberately separate:
 
-* every deathmatch spawn can route to every live pickup in the BSP without
-  equipment-gated rocket jumps or skill-gated sprints;
+* every deathmatch spawn can route from its settled position to every live
+  pickup in the BSP without equipment-gated rocket jumps or skill-gated sprints;
 * the current graph has a short engine probe for ordinary and jump links.
 
 Usage: python tools/argus_mapgate.py map.bsp nav.qc.json [probe.json]
@@ -16,7 +16,9 @@ import sys
 from pathlib import Path
 
 from argus_bsp import Bsp
+from argus_navmesh import brush_boxes
 from argus_navjson import edges as nav_edges, load_nav
+from argus_reach import standing_point
 
 
 SPAWN_MAX_U = 200
@@ -109,7 +111,8 @@ def assess_playability(bsp_path, graph_path, probe_path=None):
     graph = load_nav(graph_path)
     nodes = graph.get("nodes", [])
     digest = graph_md5(graph_path)
-    entities = Bsp(bsp_path).entities()
+    world = Bsp(bsp_path)
+    entities = world.entities()
     spawns = []
     items = []
     for entity in entities:
@@ -143,10 +146,11 @@ def assess_playability(bsp_path, graph_path, probe_path=None):
                 f"{classname} at {point[0]:.0f} {point[1]:.0f} {point[2]:.0f} "
                 f"is {distance:.0f}u from the graph"
             )
+    brushes = brush_boxes(world) if nodes and spawns else ()
     for _, point in spawns:
-        node, distance = _nearest(nodes, point)
-        if node is None:
+        if not nodes:
             continue
+        node, distance = _nearest(nodes, standing_point(world, point, brushes))
         if distance > SPAWN_MAX_U:
             reasons.append(
                 f"spawn at {point[0]:.0f} {point[1]:.0f} {point[2]:.0f} "
