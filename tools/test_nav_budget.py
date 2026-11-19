@@ -1,7 +1,9 @@
 """Physical entity limits apply to optional and infrastructure promotions."""
+from pathlib import Path
+import re
 import unittest
 
-from argus_nav_budget import assess_edict_budget, survives_spawn, waypoint_limits
+from argus_nav_budget import STATIC_CLASSES, assess_edict_budget, survives_spawn, waypoint_limits
 
 
 class WaypointAllocation(unittest.TestCase):
@@ -37,10 +39,18 @@ class WaypointAllocation(unittest.TestCase):
 class SpawnSurvival(unittest.TestCase):
     def test_self_removing_and_static_classes_hold_no_edict(self):
         self.assertFalse(survives_spawn({"classname": "light"}))
+        self.assertFalse(survives_spawn({"classname": "light", "targetname": ""}))
         self.assertTrue(survives_spawn({"classname": "light", "targetname": "t1"}))
         self.assertFalse(survives_spawn({"classname": "info_null"}))
         self.assertFalse(survives_spawn({"classname": "light_flame_small_yellow"}))
         self.assertFalse(survives_spawn({"classname": "func_illusionary"}))
+
+    def test_cartograph_uses_the_same_static_classes(self):
+        source = Path(__file__).with_name('argus_mcp') / 'src/cartograph.rs'
+        rust = source.read_text(encoding='utf-8')
+        static = re.search(r'const STATIC_EDICT_CLASSES: &\[&str\] = &\[(.*?)\];', rust, re.S)
+        self.assertIsNotNone(static)
+        self.assertCountEqual(re.findall(r'"([^"]+)"', static[1]), STATIC_CLASSES)
 
     def test_monsters_and_deathmatch_removals_still_count(self):
         self.assertTrue(survives_spawn({"classname": "monster_army"}))
