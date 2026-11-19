@@ -44,7 +44,6 @@ static COMPILE_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
     let _serialised = COMPILE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    let nav_inputs = crate::nav_provenance::capture(cfg);
     if let Err(e) = fs::create_dir_all(cfg.root.join("lq1")) {
         return CompileResult {
             ok: false,
@@ -81,6 +80,7 @@ pub fn compile_qc(cfg: &Config, install: bool) -> CompileResult {
             };
         }
     };
+    let nav_inputs = crate::nav_provenance::capture(cfg);
 
     // Unlink old progs.dat before compiling so a failed compile never leaves
     // or re-installs a stale binary from a previous run.
@@ -291,6 +291,87 @@ fn finish(cfg: &Config, install: bool, report: FteqccReport) -> CompileResult {
 #[cfg(test)]
 mod tests {
     use std::fs;
+
+    #[test]
+    fn first_compile_records_the_stamped_source_and_rejects_later_edits() {
+        use crate::test_support::TestDir;
+        use std::collections::HashMap;
+
+        for edits_source in [false, true] {
+            let dir = TestDir::new("compile-stamp-receipt").unwrap();
+            let root = dir.path();
+            let mut cfg = crate::config::load_for_reads_from(
+                &HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]),
+                root,
+            )
+            .unwrap();
+            cfg.basedir = root.join("engine");
+            cfg.progs = root.join("lq1/progs.dat");
+            fs::create_dir(&cfg.src).unwrap();
+            fs::write(
+                cfg.src.join("progs.src"),
+                "#pragma progs_dat \"../lq1/progs.dat\"\n#includelist\nargus_build.qc\nargus.qc\nargus_nav_test.qc\n#endlist\n",
+            )
+            .unwrap();
+            fs::write(cfg.src.join("argus.qc"), "float value;\n").unwrap();
+            fs::write(cfg.src.join("argus_nav_test.qc"), "// waypoint code\n").unwrap();
+            fs::write(
+                cfg.src.join("argus_nav_test.qc.json"),
+                r#"{"nodes":[[0,0,24]],"links":[]}"#,
+            )
+            .unwrap();
+            fs::write(
+                cfg.src.join("argus_nav_dispatch.qc"),
+                "if (mapname == \"test\") Argus_Nav_Spawn_test ();\n",
+            )
+            .unwrap();
+            fs::write(cfg.src.join("argus_build.qc"), "// stale build stamp\n").unwrap();
+
+            if cfg!(windows) {
+                cfg.fteqcc = root.join("fteqcc.cmd");
+                let edit = if edits_source {
+                    "echo changed>>argus.qc\r\n"
+                } else {
+                    ""
+                };
+                fs::write(&cfg.fteqcc, format!("@echo off\r\n{edit}echo test program>..\\lq1\\progs.dat\r\necho Compile finished (id format)\r\n")).unwrap();
+            } else {
+                cfg.fteqcc = root.join("fteqcc");
+                let edit = if edits_source {
+                    "echo changed >>argus.qc\n"
+                } else {
+                    ""
+                };
+                fs::write(&cfg.fteqcc, format!("#!/bin/sh\n{edit}echo 'test program' >../lq1/progs.dat\necho 'Compile finished (id format)'\n")).unwrap();
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&cfg.fteqcc, fs::Permissions::from_mode(0o700)).unwrap();
+            }
+
+            let result = super::compile_qc(&cfg, false);
+            assert!(result.ok && result.build.is_some(), "{:?}", result.raw_tail);
+            assert!(result.installed_to.is_empty());
+            let game = cfg.basedir.join(&cfg.game);
+            fs::create_dir_all(&game).unwrap();
+            fs::copy(&cfg.progs, game.join("progs.dat")).unwrap();
+            let receipt = crate::nav_provenance::for_launch(&cfg, "test");
+            if edits_source {
+                assert!(receipt.is_none());
+                assert!(result
+                    .raw_tail
+                    .iter()
+                    .any(|line| line.contains("source changed during compilation")));
+            } else {
+                assert!(
+                    receipt.is_some_and(|snapshot| snapshot.runtime_navigation()),
+                    "{:?}",
+                    result.raw_tail
+                );
+            }
+        }
+    }
 
     #[test]
     fn unwritten_progs_fails_and_never_installs() {
