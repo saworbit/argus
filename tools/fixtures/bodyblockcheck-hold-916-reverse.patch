@@ -1,0 +1,31 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -5914,22 +5914,15 @@
+                 if (!(cl.flags & FL_ONGROUND) || cl.button0 || time < cl.attack_finished
+                     || (coop > 0 && cl == self.ar_teammate))
+                 {
+-                    if (time < self.ar_dodgetime
+-                        && !Argus_MoveHazard (self.ar_dodgeyaw, 48)
+-                        && Argus_SideClear (self.ar_dodgeyaw))
+-                        side = self.ar_dodgeyaw;
+-                    else
++                    side = vectoyaw (to) + 90;
++                    if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
+                     {
+-                        side = vectoyaw (to) + 90;
++                        side = vectoyaw (to) - 90;
+                         if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
+-                        {
+-                            side = vectoyaw (to) - 90;
+-                            if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
+-                                return;
+-                        }
+-                        self.ar_dodgeyaw = side;
+-                        self.ar_dodgetime = time + 0.25;
++                            return;
+                     }
++                    self.ar_dodgeyaw = side;
++                    self.ar_dodgetime = time + 0.25;
+                     self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, side, "bodyblockcheck");
+                     // SIDESTEP IN BOTH MODES, HOLD FIRE ONLY IN CO-OP
+                     // (2026-09-15). The trigger release is the whole

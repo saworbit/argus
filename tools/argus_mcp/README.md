@@ -1995,10 +1995,11 @@ argus-mcp compare cand1,cand2,cand3 ctl1,ctl2,ctl3 --primary stall_parity
 ```
 
 Only the named gate convicts; the rest are computed, printed and
-flagged. A refused map spawn in any candidate or control tape invalidates
-the comparison: it returns `mixed` with a `WRONG MAP` card and no statistical
-gates. `totals.failed_spawns` retains the refused names when present, including
-through duration scaling. Stage the requested BSP and record fresh tapes.
+flagged. A refused map spawn or a mismatch with the requested map in any
+candidate or control tape returns `mixed` with a `WRONG MAP` card and no
+statistical gates. Briefs use the recorded map and include `requested_map`
+when it differs. `totals.failed_spawns` retains refused names through duration
+scaling. A match that records a different map fails and keeps its raw tape.
 An arm holding one fixed-clock seed and build twice is refused the same way,
 with a `REPEATED SEED` card, and different builds or engine clocks between or
 inside the arms are reported in the findings (#852).
@@ -2317,6 +2318,7 @@ shell.
 
 | Ver | What landed |
 |-----|-------------|
+| 0.33 | Fixed seeds in MCP `match_run` (#887), tick classification from the stated fixed frame (#902), jump-link flight matched to the runtime in the mill (#889), captured stdout tailed when `qconsole.log` is absent (#883), seat sidecars applied on full regeneration (#876), parser fuzzing (#885) and test directory clean-up on failure (#873). |
 | 0.32 | Lab scenarios: `lab_request` and `argus-mcp lab-request` build a micro-map from a structured request with `tools/lab_mapgen.py` and the pinned ericw-tools, then run navgen, the confirming mill and single-map registration ([lab scenarios](#lab-scenarios-lab_request)), refused while a standable floor seats no waypoint. `probelinks --confirm`. `nav_sync::register_maps`. Briefs carry `movement.deflection_causes` and `movement.brink_encounters`. |
 | 0.31 | The fixed lab clock (`match --seed`, `seeds`): the played frame faster than real time, repeating exactly for one seed and build, validated per map. The stand-in human (`standin`). Build identity: compile stamps `src/argus_build.qc` and briefs carry the tape's build, clock and session marks. Run-directory leases and a hostname-aware port probe (GitHub #832). Capture may start up to 900 s into a demo, with a deadline that grows with the seek. |
 | 0.30 | Triggered POV capture. `watch-pov` and `bot_capture_pov_frame` `on` tail the live console and cut the camera to the first bot that stalls, stands still or emits a chosen marker, then record and render it; see [triggered capture](#triggered-capture). |

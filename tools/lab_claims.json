@@ -172,15 +172,15 @@
     {
       "id": "swim-drag-half",
       "title": "Swim acceleration at half its tuned value",
-      "status": "open",
+      "status": "parked",
       "kind": "hypothesis",
       "tier": 4,
       "maps": [
         "dm3",
         "e1m2"
       ],
-      "statement": "v4.07 set swim drag to k = 2 per second from the refuted 10 Hz rate. At the real rate the original 0.8 per frame was about 4.3 per second, so swim acceleration has run at half its tuned value since 2026-08-29. Terminal speed never changed.",
-      "refute_by": "A played-rate ladder on dm3 and e1m2 comparing k = 2 and k = 4.",
+      "statement": "v4.07 set swim drag to k = 2 per second from the refuted 10 Hz rate. At the real rate the original 0.8 per frame was about 4.3 per second, so swim acceleration has run at half its tuned value since 2026-08-29. Terminal speed never changed. Five played pairs each on dm3 and e1m2 met the gates at both settings with no drownings. Keep k = 2. The faster setting recorded more swim entries on both maps. The study did not measure submerged time.",
+      "refute_by": "Revisit the k = 2 choice if a played-rate comparison with direct submerged time or a human session shows better swim response.",
       "evidence": [
         "#761"
       ],

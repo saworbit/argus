@@ -390,10 +390,41 @@ Lists the shipped level walk links whose own line fails the early-switch floor t
   - Replays `Argus_WalkLineFloored` offline on hull 0 for every level walk link (height change at most 18u, not typed) from its own source seat: a sample every 12u at the height interpolated between the seats, traced 60u down. A sample that starts in solid is a wall, not a void, as in the runtime.
   - A listed link crosses a void corner, so the runtime holds a bot on it until it stands within 8u of the seat. That hold keeps bots on the line navgen verified: on dm4 these links ring the lava pit, and skipping the test on them raised world lava deaths from 13 to 22 over eight played pairs ([#905](https://github.com/saworbit/argus/issues/905)). Each listed link is a corner that wants an elbow seat, the #778 and #904 pattern.
   - Brush entities are not in hull 0, so a link over a func_wall or plat reads as a void here while the runtime sees floor. Treat those as suspect.
+  - It checks each link from its own seat only. The runtime tests from where the bot stands, so a turn can hold a bot even when both of its links pass: on dm3, no point 16u short of n35 on the leg from n36 sees floor to n47 ([#904](https://github.com/saworbit/argus/issues/904)). A seat that passes can still lose the bot to overshoot, so choose elbows by the turn ([dm3's #904 seats](../docs/navmesh-experiment.md#turning-late-after-775-904)).
   - On the shipped graphs at #905: dm4 20 of 608, dm6 12 of 1259, dm2 6 of 847, dm3 2 of 617, e1m2 41 of 346, e1m8 83 of 319.
 - **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`) and `src/argus_nav_<map>.qc.json`, or `--graph` for one map.
 - **Exit Code**: `0` on success or `--help`, `2` when a BSP or graph is missing or an argument is malformed.
 - **Tests**: `test_tools_cli.py` (a corner-cutting walk listed with its first void sample, level, typed and height links told apart, a wall sample not counted as a void, and the exit codes).
+
+---
+
+### 25. `argus_turnsim.py`
+
+Replays routed turns on the world BSP at the played 14.25 ms frame, with
+ground friction, acceleration, heading slew, step heights and the runtime
+arrival checks. Each direction uses lateral offsets of -12u, 0u and 12u at
+280, 320 and 360 u/s. [#923](https://github.com/saworbit/argus/issues/923)
+
+```text
+python tools/argus_turnsim.py audit dm3 --fwd 46 245 36
+python tools/argus_turnsim.py audit dm3 --fwd 46 245 36 --without-floor-test
+python tools/argus_turnsim.py search dm3
+python tools/argus_turnsim.py search dm4 --fwd 10 X13 21
+```
+
+`audit` without `--fwd` checks directed turns of at least 15 degrees
+between ordinary walk links with at most 18u of height change per link. It
+lists falls, wall frames and other failures. `search` ranks seats by
+completed trials, then fewer wall frames, then less time. Its default dm3
+fixture uses the four corridors from the graph at `d70c4f8`, before #922.
+Use `--graph` for a different graph, `--back` for a different starting
+distance and `--json` for results to compare. The BSP comes from
+`ARGUS_MAPS` or `maps_local/`.
+
+This is a world-geometry model. Movers, liquids and on-demand routing
+need engine evidence. Validate proposed legs with navgen and run the
+played ladders before shipping any seats. See
+[the dm3 corner study](../docs/navmesh-experiment.md#turning-late-after-775-904).
 
 ---
 

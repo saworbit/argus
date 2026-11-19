@@ -1,0 +1,10 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -9995,7 +9995,6 @@
+     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+     traceline (a - side, b - side, TRUE, self);
+     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+-    if (self.ar_feettype == CONTENT_WATER) return TRUE;
+     return Argus_WalkLineFloored (self.origin, next.origin);
+ };
+ 

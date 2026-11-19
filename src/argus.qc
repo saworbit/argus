@@ -2577,8 +2577,10 @@ void() Argus_Physics =
         // a 0.1 s frame, which the lab never ran at, so it is not the
         // feel the old per-frame drag had: at the real 19 Hz, 0.8 per
         // frame was about 4.3/s, which the first cut (k = 4, impulse
-        // 1200) matched. Whether to restore that is a feel decision,
-        // #761. At the played rate the time constant is 0.5 s.
+        // 1200) matched. Keep k = 2 after the played-rate ladder in #761.
+        // Both arms met the gates on dm3 and e1m2. The faster response
+        // increased swim entries on both and average stalls on dm3.
+        // At the played rate the chosen time constant is 0.5 s.
         wdrag = 1 - 2 * frametime;
         if (wdrag < 0)
             wdrag = 0;
@@ -5914,15 +5916,22 @@ void() Argus_BodyBlockCheck =
                 if (!(cl.flags & FL_ONGROUND) || cl.button0 || time < cl.attack_finished
                     || (coop > 0 && cl == self.ar_teammate))
                 {
-                    side = vectoyaw (to) + 90;
-                    if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
+                    if (time < self.ar_dodgetime
+                        && !Argus_MoveHazard (self.ar_dodgeyaw, 48)
+                        && Argus_SideClear (self.ar_dodgeyaw))
+                        side = self.ar_dodgeyaw;
+                    else
                     {
-                        side = vectoyaw (to) - 90;
+                        side = vectoyaw (to) + 90;
                         if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
-                            return;
+                        {
+                            side = vectoyaw (to) - 90;
+                            if (Argus_MoveHazard (side, 48) || !Argus_SideClear (side))
+                                return;
+                        }
+                        self.ar_dodgeyaw = side;
+                        self.ar_dodgetime = time + 0.25;
                     }
-                    self.ar_dodgeyaw = side;
-                    self.ar_dodgetime = time + 0.25;
                     self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, side, "bodyblockcheck");
                     // SIDESTEP IN BOTH MODES, HOLD FIRE ONLY IN CO-OP
                     // (2026-09-15). The trigger release is the whole
@@ -10010,6 +10019,7 @@ float(entity node) Argus_WalkArrivalReady =
     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
     traceline (a - side, b - side, TRUE, self);
     if (trace_fraction < 1 || trace_startsolid || trace_allsolid) return FALSE;
+    if (self.ar_feettype == CONTENT_WATER) return TRUE;
     return Argus_WalkLineFloored (self.origin, next.origin);
 };
 
@@ -10403,7 +10413,9 @@ void() Argus_AI =
         if (vlen (to) > 80 && vlen (to) < turn)
         {
             want = vectoyaw (to);
-            if (!Argus_MoveHazard (want, 48))
+            traceline (self.origin + '0 0 22', self.ar_sndpos + '0 0 22',
+                       TRUE, self);
+            if (trace_fraction == 1 && !Argus_MoveHazard (want, 48))
             {
                 diff = want - self.ar_moveyaw;
                 while (diff > 180)  diff = diff - 360;
@@ -10416,6 +10428,8 @@ void() Argus_AI =
                 fighting = 1;       // borrow the combat override:
                                     // goal steering stands down
             }
+            else
+                self.ar_sndtime = 0; // do not pull blindly into walls/brinks (#924)
         }
     }
 

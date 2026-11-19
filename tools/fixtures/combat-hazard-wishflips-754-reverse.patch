@@ -9,7 +9,7 @@
  .float  ar_threatclass;         // last visible player weapon class
  .float  ar_threatlog;           // once-per-class tactical branch bits
  .entity ar_secondary;           // nearest other visible player threat
-@@ -7101,28 +7099,13 @@
+@@ -7110,28 +7108,13 @@
      // with the fake-retreat/corner-ambush state machine. Tapes:
      // ab_dm4_retreat.log, ab_dm4_retreat2.log.
  
@@ -45,7 +45,7 @@
          if (Argus_MoveHazard (self.ar_moveyaw, 48))
              self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - to), "combat_backoff");
      }
-@@ -11716,11 +11699,9 @@
+@@ -11730,11 +11713,9 @@
      {
          // wandering toward a hazard: turn now, not when the wander
          // timer feels like it, or the bot queues at the brink
