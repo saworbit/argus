@@ -30,7 +30,7 @@
 //!     the bands do not cover.
 
 use crate::config::Config;
-use crate::intel::{brief_path, compare_band, MatchBrief, Verdict};
+use crate::intel::{compare_band, MatchBrief, Verdict};
 use crate::stats;
 use serde::Serialize;
 use std::path::Path;
@@ -311,7 +311,7 @@ pub struct Limit {
 /// the validation tests run on a bare checkout. A validation set that
 /// skips itself on CI is not a validation set.
 fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBrief>)> {
-    arms_named(runs_dir, cfg)
+    arms_named(runs_dir, cfg, |warning| eprintln!("{warning}"))
         .into_iter()
         .map(|(map, _, briefs)| (map, briefs))
         .collect()
@@ -322,6 +322,7 @@ fn arms_with(runs_dir: &Path, cfg: Option<&Config>) -> Vec<(String, Vec<MatchBri
 fn arms_named(
     runs_dir: &Path,
     cfg: Option<&Config>,
+    mut warn: impl FnMut(String),
 ) -> Vec<(String, Vec<String>, Vec<MatchBrief>)> {
     let mut out: Vec<(String, Vec<String>)> = Vec::new();
     let mut hulls = std::collections::HashMap::new();
@@ -348,17 +349,8 @@ fn arms_named(
         let mut briefs = Vec::new();
         let mut names = Vec::new();
         for r in &runs {
-            let hint = if map.is_empty() {
-                None
-            } else {
-                Some(map.as_str())
-            };
             let path = runs_dir.join(format!("{r}.log"));
-            let brief = match cfg {
-                Some(_) => crate::corpus::brief_for(&path, cfg, &mut hulls),
-                None => brief_path(&path, hint),
-            };
-            if let Ok(b) = brief {
+            if let Ok(b) = crate::corpus::brief_for(&path, cfg, &mut hulls) {
                 briefs.push(b);
                 names.push(r.clone());
             }
@@ -366,8 +358,30 @@ fn arms_named(
         if briefs.len() < 2 {
             continue;
         }
-        // a tape knows its own map; trust that over the list it came in
-        let m = briefs[0].map.clone().unwrap_or_else(|| map.clone());
+        let expected = if map.is_empty() {
+            let Some(recorded) = briefs.iter().find_map(|b| b.map.as_deref()) else {
+                continue;
+            };
+            recorded
+        } else {
+            &map
+        };
+        if briefs.iter().any(|b| {
+            b.map
+                .as_deref()
+                .is_some_and(|actual| !actual.eq_ignore_ascii_case(expected))
+        }) {
+            let recorded: Vec<_> = names
+                .iter()
+                .zip(&briefs)
+                .map(|(run, brief)| format!("{run}={}", brief.map.as_deref().unwrap_or("unknown")))
+                .collect();
+            warn(format!(
+                "Skipping calibration arm for {expected}: recorded maps {}",
+                recorded.join(", ")
+            ));
+            continue;
+        }
         // a mixed-rate arm is two different games and its spread is not
         // the instrument's (the tick-class rule)
         let classes: std::collections::BTreeSet<String> = briefs
@@ -377,7 +391,7 @@ fn arms_named(
         if classes.len() > 1 {
             continue;
         }
-        loaded.push((m, names, briefs));
+        loaded.push((expected.to_ascii_lowercase(), names, briefs));
     }
     loaded
 }
@@ -586,7 +600,8 @@ fn sprt_audit_with(runs_dir: &Path, cfg: Option<&Config>) -> SprtAudit {
     };
     let mut sample_numbers: Vec<f64> = Vec::new();
     let mut caps: Vec<f64> = Vec::new();
-    for (map, runs, briefs) in arms_named(runs_dir, cfg) {
+    // The limits pass reports rejected arms.
+    for (map, runs, briefs) in arms_named(runs_dir, cfg, |_| {}) {
         if briefs.len() < 4 {
             continue;
         }
@@ -839,6 +854,55 @@ mod tests {
 
     fn runs_dir() -> std::path::PathBuf {
         std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../runs")
+    }
+
+    #[test]
+    fn limits_require_the_recorded_map_to_match_the_named_arm() {
+        let directory =
+            std::env::temp_dir().join(format!("argus-measure-maps-{}", std::process::id()));
+        std::fs::create_dir(&directory).unwrap();
+        let baselines = directory.join("baselines.json");
+        let tapes = [
+            ("control_a", "dm4", 0),
+            ("control_b", "dm4", 2),
+            ("fallback_a", "start", 12),
+            ("fallback_b", "start", 14),
+        ];
+        for (run, map, stalls) in tapes {
+            let log = format!(
+                "SpawnServer: {map}\n\
+                 ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n\
+                 ARGLOG Reap t 1.5 pos '0 0 24' spd 0 yaw 0 mode 0 st {stalls} gl 0\n"
+            );
+            std::fs::write(directory.join(format!("{run}.log")), log).unwrap();
+        }
+
+        let cases = [
+            ("control_a", "control_b"),
+            ("control_a", "fallback_a"),
+            ("fallback_a", "fallback_b"),
+        ];
+        let rows: Vec<_> = cases
+            .into_iter()
+            .map(|(a, b)| {
+                std::fs::write(&baselines, format!(r#"{{"dm4":["{a}","{b}"]}}"#)).unwrap();
+                limits_in(&directory)
+            })
+            .collect();
+        for (run, _, _) in tapes {
+            std::fs::remove_file(directory.join(format!("{run}.log"))).unwrap();
+        }
+        std::fs::remove_file(baselines).unwrap();
+        std::fs::remove_dir(directory).unwrap();
+
+        let stalls = rows[0].iter().find(|row| row.metric == "stalls").unwrap();
+        assert_eq!(
+            (stalls.map.as_str(), stalls.arms, stalls.tapes),
+            ("dm4", 1, 2)
+        );
+        assert!((stalls.mean - 1.0).abs() < f64::EPSILON);
+        assert!(rows[1].is_empty(), "mixed-map arm entered calibration");
+        assert!(rows[2].is_empty(), "fallback-only arm entered calibration");
     }
 
     /// Once a map has a listen-class arm, a 19 Hz arm's spread describes
