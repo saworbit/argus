@@ -39,7 +39,13 @@ class World:
     def fits(self, x, y, z):
         return self.bsp.h1(x, y, z) == CONTENTS_EMPTY
 
+    def hull_support(self, x, y, z):
+        # A clip ledge can support the player even when the render hull is empty.
+        return self.bsp.h1(x, y, z - .125) == CONTENTS_SOLID
+
     def supported(self, x, y, z):
+        if self.hull_support(x, y, z):
+            return True
         feet = z - FEET
         return any(self.guard.trace_down(x + dx, y + dy, feet + 1, feet - 2)
                    is not None for dx, dy in FOOTPRINT)
@@ -62,7 +68,8 @@ class World:
         x, y, z = point
         feet = z - FEET
         return (self.fits(x, y, z)
-                and self.guard.trace_down(x, y, feet + 1, feet - 2) is not None
+                and (self.hull_support(x, y, z)
+                     or self.guard.trace_down(x, y, feet + 1, feet - 2) is not None)
                 and self.bsp.h0(x, y, feet + 1) not in (CONTENTS_LAVA, CONTENTS_SLIME))
 
     def clear_line(self, a, b):
