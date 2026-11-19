@@ -893,6 +893,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Add engine-probed elbow seats on dm4 and e1m2. The played hard gates held on both maps and dm2 ([#907](https://github.com/saworbit/argus/issues/907), [ladder results](docs/specs/2026-11-19-navgen-elbows-played.md)).
+
 - Confine the lab map generator's CLI outputs to the configured map, source and runs directories ([#935](https://github.com/saworbit/argus/issues/935)).
 - Atomically replace lab map generator outputs, including the scenario registry, so an interrupted write leaves the previous file readable ([#936](https://github.com/saworbit/argus/issues/936)).
 
