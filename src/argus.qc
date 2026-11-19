@@ -245,6 +245,8 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_track;               // when tracking of this target began
 .float  ar_strafedir;
 .float  ar_strafetime;
+.float  ar_combathaztime;       // hold combat_hazard strafe across 1-frame lip flicker
+.float  ar_wanderhaz;           // cooldown on wander brink turn
 .float  ar_threatclass;         // last visible player weapon class
 .float  ar_threatlog;           // once-per-class tactical branch bits
 .entity ar_secondary;           // nearest other visible player threat
@@ -7108,13 +7110,28 @@ float() Argus_Combat =
     // with the fake-retreat/corner-ambush state machine. Tapes:
     // ab_dm4_retreat.log, ab_dm4_retreat2.log.
 
-    // never strafe or chase into lava: flip the strafe first, fall back
-    // to backing off; the physics brink guard catches anything left
-    if (Argus_MoveHazard (self.ar_moveyaw, 48))
+    // never strafe or chase into lava: try the current strafe side first
+    // so a refused non-strafe heading (approach, backoff, battle_item,
+    // high_ground, dodge, cover_retreat) does not flip ar_strafedir
+    // every frame; flip only if that side is also hazardous, then fall
+    // back to backing off; the physics brink guard catches anything left
+    if ((time < self.ar_combathaztime && time >= self.ar_dodgetime)
+        || Argus_MoveHazard (self.ar_moveyaw, 48))
     {
-        self.ar_strafedir = 0 - self.ar_strafedir;
-        self.ar_strafetime = time + 0.5 + random () * 0.5;
-        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (to) + orbit * self.ar_strafedir, "combat_hazard");
+        if (!self.ar_strafedir)
+            self.ar_strafedir = 1;
+        want = vectoyaw (to) + orbit * self.ar_strafedir;
+        if (Argus_MoveHazard (want, 48))
+        {
+            self.ar_strafedir = 0 - self.ar_strafedir;
+            want = vectoyaw (to) + orbit * self.ar_strafedir;
+        }
+        if (time >= self.ar_combathaztime)
+        {
+            self.ar_strafetime = time + 0.5 + random () * 0.5;
+            self.ar_combathaztime = time + 0.25;
+        }
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, want, "combat_hazard");
         if (Argus_MoveHazard (self.ar_moveyaw, 48))
             self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - to), "combat_backoff");
     }
@@ -11713,9 +11730,11 @@ void() Argus_AI =
     {
         // wandering toward a hazard: turn now, not when the wander
         // timer feels like it, or the bot queues at the brink
-        if (Argus_MoveHazard (self.angles_y, 48))
+        if ((self.flags & FL_ONGROUND) && time > self.ar_wanderhaz
+            && Argus_MoveHazard (self.angles_y, 48))
         {
             self.ar_wanderturn = time + 1 + random () * 2;
+            self.ar_wanderhaz = time + 0.3;
             self.angles_y = self.angles_y + 120 + random () * 120;
         }
         else if (time > self.ar_wanderturn)
