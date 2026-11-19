@@ -38,6 +38,9 @@ record    fold navgen, mill and registration results into the manifest and
 tools     report (or --install) the pinned ericw-tools build
 
 The default output directory is labmaps/<map>/ under the repository root.
+Relative output overrides are checkout-relative. --out stays under labmaps/,
+nav --qc under ARGUS_SRC and nav --png under ARGUS_RUNS (default runs/).
+record --nav-out reads a log under labmaps/ or ARGUS_RUNS.
 Paths: ARGUS_ROOT (default: this checkout), ARGUS_MAPS (default maps_local/),
 ARGUS_BASEDIR and ARGUS_GAME (engine game directory, default engine/argus),
 ARGUS_SRC (default src/), ARGUS_ERICW (a directory holding qbsp, vis and
@@ -160,6 +163,31 @@ def maps_dir(root):
 
 def src_dir(root):
     return env_path("ARGUS_SRC", root / "src")
+
+
+def runs_dir(root):
+    return env_path("ARGUS_RUNS", root / "runs")
+
+
+def confined_path(root, value, allowed, flag):
+    path = Path(value)
+    if ".." in path.parts:
+        raise RequestError(f"{flag} cannot use parent traversal: {value}")
+    path = Path(root) / path
+    if path.is_symlink():
+        raise RequestError(f"{flag} cannot be a symlink: {path}")
+    try:
+        target = path.resolve()
+    except RuntimeError as exc:
+        raise RequestError(f"{flag} cannot resolve {path}: {exc}") from exc
+    if not any(target != folder and target.is_relative_to(folder) for folder in allowed):
+        names = " or ".join(str(folder) for folder in allowed)
+        raise RequestError(f"{flag} must stay under {names}: {path}")
+    return target
+
+
+def labmaps_dir(root):
+    return confined_path(root, "labmaps", (Path(root).resolve(),), "labmaps")
 
 
 def engine_maps_dir(root):
@@ -1174,7 +1202,14 @@ def wad_bytes():
 # ---------------------------------------------------------------- generate
 
 def out_dir_for(root, request, out=None):
-    return Path(out).resolve() if out else (Path(root) / "labmaps" / request["name"]).resolve()
+    labmaps = labmaps_dir(root)
+    out_dir = confined_path(root, out or labmaps / request["name"], (labmaps,), "--out")
+    name = request["name"]
+    # The compiler and the generator both write fixed-name files here.
+    for leaf in ("request.json", "manifest.json", "lab_textures.wad",
+                 *(f"{name}.{suffix}" for suffix in ("map", "bsp", "prt", "pts", "lit", "compile.log"))):
+        confined_path(root, out_dir / leaf, (out_dir,), "--out")
+    return out_dir
 
 
 def generate(request, out_dir):
@@ -1410,13 +1445,20 @@ def nav_counts(qc_json):
 def run_navgen(root, request, qc=None, png=None):
     """tools/argus_navgen.py on the built BSP, without registration (the CLI path)."""
     name = request["name"]
+    source, runs = src_dir(root), runs_dir(root)
+    default_qc = source / f"argus_nav_{name}.qc"
+    qc = confined_path(root, qc or default_qc, (source,), "--qc")
+    png = confined_path(root, png or runs / f"nav_{name}.png", (runs,), "--png")
+    if qc.suffix != ".qc" or png.suffix != ".png":
+        raise RequestError("nav --qc needs a .qc path and --png needs a .png path")
+    graph = confined_path(root, f"{qc}.json", (source,), "--qc")
+    if qc != default_qc and (qc.exists() or graph.exists()):
+        raise RequestError(f"--qc refuses to replace a file outside this map's generated pair: {qc}")
     bsp = maps_dir(root) / f"{name}.bsp"
     if not bsp.is_file():
         bsp = out_dir_for(root, request) / f"{name}.bsp"
     if not bsp.is_file():
         raise RuntimeError(f"no BSP for {name}; run build first")
-    qc = Path(qc) if qc else src_dir(root) / f"argus_nav_{name}.qc"
-    png = Path(png) if png else Path(root) / "runs" / f"nav_{name}.png"
     proc = subprocess.run([sys.executable, str(HERE / "argus_navgen.py"), str(bsp), name, str(qc), str(png),
                            "--no-dispatcher"], cwd=str(root), capture_output=True, text=True,
                           errors="replace", timeout=900)
@@ -1542,6 +1584,8 @@ def main(argv=None):
         args = [a for a in args if a != "--no-install"]
         if len(args) != 1:
             raise SystemExit(f"usage: lab_mapgen.py {cmd} REQUEST.json (see --help)")
+        if out is not None and cmd not in ("generate", "compile"):
+            raise RequestError("--out is only available with generate or compile")
         request = load_request(args[0])
         if cmd == "check":
             the_plan = plan(request)
@@ -1566,7 +1610,10 @@ def main(argv=None):
         elif cmd == "coverage":
             result = graph_coverage(root, request, qc)
         elif cmd == "record":
-            nav_text = Path(nav_out).read_text(encoding="utf-8") if nav_out else None
+            nav_text = None
+            if nav_out:
+                nav_log = confined_path(root, nav_out, (labmaps_dir(root), runs_dir(root)), "--nav-out")
+                nav_text = nav_log.read_text(encoding="utf-8")
             mill = json.loads(Path(mill_file).read_text(encoding="utf-8")) if mill_file else None
             reg = None if registered is None else registered.lower() in ("yes", "true", "1")
             result = record(root, request, nav_text, mill, reg, qc)
