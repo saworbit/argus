@@ -90,7 +90,7 @@
     {
       "id": "e1m8-n56-cell",
       "title": "e1m8 spawns far from any seat",
-      "status": "open",
+      "status": "fixed",
       "kind": "defect",
       "tier": 1,
       "maps": [
@@ -125,13 +125,15 @@
           "radius": 64
         }
       ],
-      "statement": "e1m8's spawn at 880 128 24 is 488u from any seat and snaps to n56 392u below, which is the 860 64 32 stall cell. The spawn at 1024 720 -104 is 606u out with no floor under it. The lava repair pushed more traffic onto the cell (stalls 28 to 49).",
-      "next": "Seat the spawns, then a benchmark task from each.",
+      "statement": "The upper e1m8 spawn at 880 128 24 formerly snapped to n56 across the level. Eight seats now join it to the lower shelf. The e1m8 coverage and played gates passed.",
       "evidence": [
         "#789",
-        "docs/navmesh-experiment.md"
+        "docs/navmesh-experiment.md",
+        "docs/specs/2026-11-19-e1m8-spawn-exit.md",
+        "runs/e1m8-spawn-exit-played.results.json"
       ],
-      "cheapest_tier": 1
+      "cheapest_tier": 1,
+      "fixed_on": "2026-11-19"
     },
     {
       "id": "movement-reversals",

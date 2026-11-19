@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "name": "e1m8_spawn_exit_west",
+  "map": "e1m8",
+  "graph_md5": "63c588fb8e70867da0114989b58468f6",
+  "skill": 2,
+  "tasks": [
+    {
+      "name": "spawn_to_connected_graph",
+      "start": [
+        880,
+        128,
+        24
+      ],
+      "goal": [
+        641,
+        -127,
+        -368
+      ],
+      "budget_sec": 24,
+      "split": "heldout"
+    },
+    {
+      "name": "offset_to_connected_graph",
+      "start": [
+        896,
+        120,
+        24
+      ],
+      "goal": [
+        641,
+        -127,
+        -368
+      ],
+      "budget_sec": 24,
+      "split": "heldout"
+    }
+  ]
+}
