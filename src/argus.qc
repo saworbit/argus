@@ -131,6 +131,7 @@ float argus_plan_serial;
 .float  ar_jump;                // 1 reachability or escort, 2 a stall
 .float  ar_stallyaw;            // the heading a stall jump was checked on
 .float  ar_stallflight;         // airborne on a stall jump: hold that heading
+.float  ar_eastdeck;            // falling from e1m8's lower deck east lip
 .float  ar_wanderturn;
 .float  ar_swim;
 .float  ar_nextjump;
@@ -1565,6 +1566,23 @@ float(float myaw, float pdist) Argus_MoveHazard =
         }
     }
     traceline (ahead + '0 0 4', ahead - '0 0 1' * depth, TRUE, self);
+    // The middle shelf has open space before the lower floor starts.
+    // Check across that gap only on the aligned deep route above. The
+    // longer ray must find the named landing height through open air.
+    if (depth > 280 && pdist < 72 && trace_fraction == 1
+        && !trace_startsolid && !trace_allsolid)
+    {
+        makevectors ('0 0 0' + myaw * '0 1 0');
+        landing = self.origin + v_forward * 72;
+        traceline (self.origin, landing, TRUE, self);
+        if (trace_fraction < 1 || trace_startsolid || trace_allsolid)
+            return TRUE;
+        traceline (landing + '0 0 4', landing - '0 0 1' * depth, TRUE, self);
+        if (trace_fraction == 1 || trace_startsolid || trace_allsolid
+            || fabs (trace_endpos_z - (self.ar_node.origin_z - 24)) > 18)
+            return TRUE;
+        ahead = landing;
+    }
     if (trace_fraction == 1)
     {
         // "no floor" can also mean the probe START is buried in
@@ -2506,6 +2524,20 @@ void() Argus_Physics =
     // the guard waits.
     if (self.flags & FL_ONGROUND)
         self.ar_wetdwell = time;
+
+    // This e1m8 deck has a dry landing directly east, with lava
+    // immediately south of it. Keep the horizontal velocity checked by
+    // the drop guard until this walk-off lands. Low gravity gives combat
+    // steering time to carry a bot out of the dry landing strip.
+    if (mapname == "e1m8" && deathmatch)
+    {
+        if (self.flags & FL_ONGROUND)
+            self.ar_eastdeck = (fabs (self.origin_z + 368) <= 2
+                && self.origin_x >= 896 && self.origin_x <= 980
+                && self.origin_y >= -384 && self.origin_y <= -80);
+        else if (self.velocity_z > 0 || self.origin_x < 944)
+            self.ar_eastdeck = 0;
+    }
 
     Argus_HazardProofSetup ();
     Argus_HazardProofMark ();
@@ -3507,7 +3539,9 @@ void() Argus_Physics =
                 }
             }
         }
-        Argus_AirAccelerate (wishdir, AR_MAXSPEED);
+        if (!self.ar_eastdeck || self.ar_sprintstate == 3
+            || self.ar_stallflight || self.ar_hopair)
+            Argus_AirAccelerate (wishdir, AR_MAXSPEED);
     }
     Argus_SupportButton ();
 };
@@ -4126,6 +4160,7 @@ void(entity bot, float won) Argus_SkillResult =
 
 void() Argus_BaseStats =
 {
+    self.ar_eastdeck = 0;
     Argus_RecoveryReset ();
     self.ar_hurttime = 0; self.ar_stuckhurt = 0; self.ar_stucktime = 0;
     self.ar_actionnode = world; self.ar_actiongoal = world;

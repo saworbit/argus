@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "name": "e1m8_middle_shelf_exit",
+  "map": "e1m8",
+  "graph_md5": "774de4a4be0cc618a8b12f4f3886c24b",
+  "skill": 2,
+  "tasks": [
+    {
+      "name": "northwest_to_lower",
+      "start": [
+        486,
+        -143,
+        -104
+      ],
+      "goal": [
+        641,
+        -127,
+        -368
+      ],
+      "budget_sec": 22,
+      "split": "heldout"
+    },
+    {
+      "name": "south_to_lower",
+      "start": [
+        728,
+        -514,
+        -104
+      ],
+      "goal": [
+        641,
+        -127,
+        -368
+      ],
+      "budget_sec": 24,
+      "split": "heldout"
+    },
+    {
+      "name": "west_to_lower",
+      "start": [
+        430,
+        -354,
+        -104
+      ],
+      "goal": [
+        641,
+        -127,
+        -368
+      ],
+      "budget_sec": 24,
+      "split": "heldout"
+    }
+  ]
+}
