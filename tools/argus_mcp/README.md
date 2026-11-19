@@ -16,8 +16,9 @@ cargo install --locked --path tools/argus_mcp --root tools/argus_mcp/install
 
 Binary: `tools/argus_mcp/install/bin/argus-mcp` (`.exe` on Windows).
 Point the client at this installed binary so startup is not a cargo build and
-`cargo clean` cannot delete the configured server. Rerun the install command to
-update it, then restart the client.
+`cargo clean` cannot delete the configured server. Rerun the install command
+to update it. If Cargo reports the same package version is already installed,
+add `--force`. Then restart the client.
 
 Every structured MCP response carries `lab_identity`: the running package version and a
 build-time fingerprint of `Cargo.toml`, `Cargo.lock`, `build.rs`, and the Rust

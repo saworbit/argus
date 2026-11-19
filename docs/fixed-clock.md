@@ -92,10 +92,16 @@ clock, its frame, the seeds and the map's limits. A ladder costs about half
 a minute of wall time per 185 s tape. The seeds above are the first three
 that `seeds` walks.
 
-Fixed tapes read the listen tick class (their telemetry gap is 0.5004 s), so
-the tick-class guard does not tell them from wall-clock tapes. The `ARGUS
-clock` line does: the skeptic, and since #852 the Rust `compare`, band and
-`experiment` verdicts, report arms on different clocks as a confound.
+A fixed tape with a recorded frame from 13 to 15 ms reads as listen class.
+At 14.25 ms its telemetry is due every 36 frames, about 0.513 s. The skeptic
+and the Rust `compare`, band and `experiment` verdicts use the `ARGUS clock`
+line to report a fixed versus wall-clock comparison as a confound.
+
+A seeded run fails with `WRONG MAP` if the engine records a different
+map. The failure names both maps and preserves the tape. On Windows, a
+long private `ARGUS_GAME` name can cause a launch to load `start`. Use a
+shorter private game name and record fresh tapes for that case.
+[#918](https://github.com/saworbit/argus/issues/918)
 
 `ARGUS_FIXED_FRAME` overrides the frame for an experiment, the way
 `ARGUS_TICRATE` does for the wall clock. Every tape records its frame. The

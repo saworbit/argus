@@ -35,6 +35,11 @@ Cheapest first; a rung that refutes the change stops the climb.
 | 5 | [Stand-in human](stand-in.md) (`argus-mcp standin`) | the direction of a threat change, before a session is spent, where calibrated | how a person feels about it |
 | 6 | Human session with marks, then the [session gallery](session-gallery.md) | threat, fairness and feel | nothing the objective asks; it is the referee |
 
+Use the [turn simulator](../tools/README.md#25-argus_turnsimpy) on rung 1
+when an elbow passes the floor check and bots still fall or slide at the
+turn. Check the proposed legs with the engine and use played-rate tapes
+to judge navigation regressions.
+
 `argus_lab.py pyramid --maps M --through 5 --dry-run` prints the plan for a
 map, including how many tapes each metric needs and whether rungs 3 and 5 are
 trustworthy there (`tools/lab_instruments.json`, below).

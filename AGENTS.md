@@ -101,8 +101,9 @@ cluster in a directed sink implicates the tested graph only with
 build-attributed coverage), `nav_coverage` (provenance and dormant
 typed-link families), `item_control` (per-prize clock
 tightness), `totals.human` (human tracks are review data, never in
-bot bands or gates), and the WRONG MAP flag (a refused spawn means
-the whole tape describes the fallback map - judge nothing).
+bot bands or gates), and the `WRONG MAP` flag. A refused spawn or a mismatch
+between the requested and recorded maps invalidates the comparison. Keep the
+raw tape for launch diagnosis.
 
 ## Hard rules
 
@@ -117,10 +118,11 @@ the whole tape describes the fallback map - judge nothing).
   that splice for seats and walks: coordinates in, beeline_ok enforced,
   indices and slots kept, regions and tactics rebaked. Mind the 48u
   early waypoint switch on void-edged corners (dm3, docs/navmesh-experiment.md);
-  `tools/argus_floorlinks.py <map>` lists the links that need an elbow.
-  Judge an elbow by the turn, not the floor test alone: the heading turns
-  at 320 deg/s, so a 90 degree corner at run speed carries about 100u, and
-  dm3's #904 seats were chosen by simulating it (docs/navmesh-experiment.md).
+  `tools/argus_floorlinks.py <map>` lists links whose own line fails the floor test.
+  Use `python tools/argus_turnsim.py audit <map> --fwd A ELBOW B` to check how a bot
+  turns, and `search <map> --fwd A XELBOW B` to rank replacement seats. Verify
+  the chosen legs in navgen and in the engine. See the
+  [turn simulator guide](tools/README.md#25-argus_turnsimpy).
   The proper path is still the sidecar files (probe.json convictions,
   proven.json entries, seats.json seats, walks and cuts) consumed at the
   next real regen.
