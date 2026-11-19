@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Main carries gameplay and navigation changes merged on 2026-11-18 that are not installed yet ([#884](https://github.com/saworbit/argus/pull/884), [#886](https://github.com/saworbit/argus/pull/886), [#891](https://github.com/saworbit/argus/pull/891), [#895](https://github.com/saworbit/argus/pull/895), [#896](https://github.com/saworbit/argus/pull/896), [#897](https://github.com/saworbit/argus/pull/897), [#903](https://github.com/saworbit/argus/pull/903)); the human-play check ([#610](https://github.com/saworbit/argus/issues/610)) remains open |
+| Development source | Main carries gameplay and navigation changes merged on 2026-11-18, including the dm3 red armour route ([#922](https://github.com/saworbit/argus/pull/922)) and the earlier [#884](https://github.com/saworbit/argus/pull/884), [#886](https://github.com/saworbit/argus/pull/886), [#891](https://github.com/saworbit/argus/pull/891), [#895](https://github.com/saworbit/argus/pull/895), [#896](https://github.com/saworbit/argus/pull/896), [#897](https://github.com/saworbit/argus/pull/897) and [#903](https://github.com/saworbit/argus/pull/903). These changes await a gameplay build. The human-play check ([#610](https://github.com/saworbit/argus/issues/610)) remains open. |
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -891,6 +891,7 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Restore dm3's route to the red armour platform with four one-way elbow seats. Platform visits rose from 0 to 21 over 20 fixed seeds and from 0 to 8 over four played pairs. The dm3 gates held. [#904](https://github.com/saworbit/argus/issues/904)
 - Reject lab matches that record a different map from the request. Keep the raw tape and exclude it from quality gates ([#918](https://github.com/saworbit/argus/issues/918)).
 
 - A fixed-clock tape is classed by its stated frame, not its sample gap

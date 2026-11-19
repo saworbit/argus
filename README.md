@@ -426,6 +426,10 @@ The supplied `game/argus/progs.dat` is built from main as of 2026-11-15
 all of the behaviour work below. The [changelog](CHANGELOG.md) records each
 change and its build.
 
+The dm3 red armour route has been restored in development source and awaits
+a new gameplay binary. The [dm3 study](docs/navmesh-experiment.md#turning-late-after-775-904)
+records the fixed-seed and played-rate results.
+
 | Area | What the bot does | Details |
 |---|---|---|
 | Visual memory (step 1a) | Keeps the last observation of its target for a short time. A hidden prediction lasts not more than 0.4 seconds and 128 units. | [Perception step 1a](docs/behaviour-diagnostics.md#perception-step-1a) |

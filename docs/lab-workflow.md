@@ -562,16 +562,19 @@ After a navigation change, run the lab experiment/matrix loop.
 
 ## Update or restore the lab
 
-- **Stale build:** rerun the install command and reconnect the MCP client.
-  Check the original chat's running/checkout identities; a fresh verification
-  session does not replace its existing connection. Require
-  `lab_identity.authoritative: true` before quality verdicts.
+- **Stale build.** Rerun the install command with `--force` when
+  Cargo reports the same package version is already installed. Reconnect
+  the MCP client and check `lab_identity.authoritative: true` in the
+  original chat before reading quality verdicts.
 - **Windows executable locked:** use the operator guide's
   [staged update procedure](../tools/argus_mcp/README.md#update-a-running-windows-server).
   The startup that swaps the file still runs the old image; reconnect again
   to load the new one.
 - **Restore a build:** use the wizard's dated backups. Keep human session
   evidence separate from build restoration.
+- **Wrong map.** A run whose recorded map differs from the request fails
+  and keeps its tape. Verify both maps in the error before repeating the
+  run. See the [seeded launch notes](fixed-clock.md#commands).
 
 The [water-route checks](../tools/argus_mcp/README.md#water-route-decision-checks)
 use the `water` private compile family.
