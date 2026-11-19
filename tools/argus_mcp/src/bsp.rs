@@ -440,18 +440,23 @@ pub fn write_mini_bsp(ents: &str, mins: [f32; 3], maxs: [f32; 3]) -> Vec<u8> {
     out
 }
 
-/// Test BSP: hull 0 is a z=0 plane, empty above, lava below.
+/// Test BSP: hull 0 is a z=0 plane, empty above, lava below by default.
 #[cfg(test)]
 pub fn write_halfspace_bsp() -> Vec<u8> {
+    write_halfspace_bsp_with_contents(CONTENTS_LAVA)
+}
+
+#[cfg(test)]
+pub fn write_halfspace_bsp_with_contents(contents: i32) -> Vec<u8> {
     let mut planes = vec![0u8; 20];
     planes[8..12].copy_from_slice(&1.0f32.to_le_bytes()); // normal z
     let mut node = vec![0u8; 24];
     node[4..6].copy_from_slice(&(-1i16).to_le_bytes()); // leaf 0 (empty)
-    node[6..8].copy_from_slice(&(-2i16).to_le_bytes()); // leaf 1 (lava)
+    node[6..8].copy_from_slice(&(-2i16).to_le_bytes()); // leaf 1 (below)
     let mut leaf_empty = vec![0u8; 28];
     leaf_empty[0..4].copy_from_slice(&CONTENTS_EMPTY.to_le_bytes());
-    let mut leaf_lava = vec![0u8; 28];
-    leaf_lava[0..4].copy_from_slice(&CONTENTS_LAVA.to_le_bytes());
+    let mut leaf_below = vec![0u8; 28];
+    leaf_below[0..4].copy_from_slice(&contents.to_le_bytes());
     let mut model = vec![0u8; MODEL_SIZE];
     // headnode[0] = 0 at offset 36
     model[36..40].copy_from_slice(&0i32.to_le_bytes());
@@ -470,7 +475,7 @@ pub fn write_halfspace_bsp() -> Vec<u8> {
     out.extend_from_slice(&planes);
     out.extend_from_slice(&node);
     out.extend_from_slice(&leaf_empty);
-    out.extend_from_slice(&leaf_lava);
+    out.extend_from_slice(&leaf_below);
     out.extend_from_slice(&model);
     out
 }

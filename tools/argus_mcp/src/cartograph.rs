@@ -1,8 +1,10 @@
 //! Map cartographer: ingest a BSP and return a structured atlas.
 
-use crate::bsp::{pak_find, pak_list_maps, read_bsp29, Bsp29, ClipHull};
+use crate::bsp::{
+    pak_find, pak_list_maps, read_bsp29, BModel, Bsp29, ClipHull, Hull0, CONTENTS_SOLID,
+};
 use crate::config::Config;
-use crate::nav_graph::NavGraph;
+use crate::nav_graph::{nearest_node, NavGraph};
 use crate::paths::resolve_input;
 use regex::Regex;
 use serde::Serialize;
@@ -972,36 +974,8 @@ fn atlas_from_bsp(
     // the edict ceiling, so "too few nodes to describe the map" is a
     // normal outcome of a correct rule.
     if let Some(g) = graph.as_ref() {
-        let nearest = |p: [f32; 3]| -> f32 {
-            g.nodes
-                .iter()
-                .map(|n| {
-                    let dx = n[0] - p[0];
-                    let dy = n[1] - p[1];
-                    let dz = n[2] - p[2];
-                    (dx * dx + dy * dy + dz * dz).sqrt()
-                })
-                .fold(f32::INFINITY, f32::min)
-        };
-        let spawn_d: Vec<f32> = items
-            .iter()
-            .filter(|i| i.kind == "spawn")
-            .filter_map(|i| i.origin)
-            .map(nearest)
-            .filter(|d| d.is_finite())
-            .collect();
-        if let Some(worst) = spawn_d
-            .iter()
-            .cloned()
-            .fold(None::<f32>, |a, b| Some(a.map(|v| v.max(b)).unwrap_or(b)))
-        {
-            let orphans = spawn_d.iter().filter(|d| **d > 200.0).count();
-            if worst > 200.0 {
-                implications.push(format!(
-                    "GRAPH DOES NOT COVER THIS MAP: {orphans} of {} spawn(s) are further                      than 200 u from any waypoint, worst {worst:.0} u. A bot spawning                      there snaps to a node across the level. Reach and island scores                      cannot see this - they only measure the nodes that exist",
-                    spawn_d.len()
-                ));
-            }
+        if let Some(warning) = spawn_coverage_warning(bsp, &ents, g) {
+            implications.push(warning);
         }
         let off = control.iter().filter(|c| c.reach == "off_graph").count();
         if off > 0 && off * 2 >= control.len() {
@@ -1179,6 +1153,139 @@ fn plat_has_lift_link(g: &NavGraph, mins: [f32; 3], maxs: [f32; 3]) -> bool {
         }
     }
     false
+}
+
+// Match the start classes and distances used by tools/argus_reach.py.
+fn spawn_coverage_warning(
+    bsp: &Bsp29,
+    entities: &[BTreeMap<String, String>],
+    graph: &NavGraph,
+) -> Option<String> {
+    const MAX_DISTANCE: f32 = 200.0;
+    if graph.nodes.is_empty() {
+        return None;
+    }
+    let starts = entities
+        .iter()
+        .filter_map(|e| match e.get("classname").map(String::as_str)? {
+            "info_player_deathmatch" | "info_player_start" => {
+                parse_origin(Some(e.get("origin").map_or("0 0 0", String::as_str)))
+                    .filter(|origin| origin.iter().all(|value| value.is_finite()))
+            }
+            _ => None,
+        });
+    let Some(hull) = &bsp.hull0 else {
+        return (starts.count() > 0)
+            .then(|| "Spawn coverage unavailable: BSP has no world hull".into());
+    };
+    let brushes: Vec<_> = entities
+        .iter()
+        .filter_map(|e| spawn_brush_bounds(bsp, e))
+        .collect();
+    let mut total = 0;
+    let mut uncovered = 0;
+    let mut worst: f32 = 0.0;
+    for origin in starts {
+        let [x, y, z] = settled_spawn(hull, &brushes, origin);
+        let (_, distance) = nearest_node(graph, x, y, z);
+        total += 1;
+        uncovered += usize::from(distance > MAX_DISTANCE);
+        worst = worst.max(distance);
+    }
+    (uncovered > 0).then(|| {
+        format!(
+            "GRAPH DOES NOT COVER THIS MAP: {uncovered} of {total} settled starts are further \
+             than {MAX_DISTANCE:.0} u from any waypoint, worst {worst:.0} u. Reach and island \
+             scores only measure the nodes that exist"
+        )
+    })
+}
+
+// Mirror the spawn-position brush boxes in tools/argus_navmesh.py.
+fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<BModel> {
+    let class = entity.get("classname")?.as_str();
+    if !matches!(
+        class,
+        "func_wall" | "func_door" | "func_door_secret" | "func_plat"
+    ) {
+        return None;
+    }
+    let number = |key: &str| {
+        entity
+            .get(key)
+            .and_then(|s| s.trim().parse::<f32>().ok())
+            .filter(|value| value.is_finite())
+            .unwrap_or(0.0)
+    };
+    let flags = number("spawnflags") as i32;
+    if flags & SPAWNFLAG_NOT_DEATHMATCH as i32 != 0 {
+        return None;
+    }
+    let index = entity
+        .get("model")?
+        .strip_prefix('*')?
+        .parse::<usize>()
+        .ok()?;
+    let mut bounds = bsp.models.get(index)?.clone();
+    if class == "func_door" && flags & 1 != 0 {
+        let direction = match number("angle") {
+            -1.0 => [0.0, 0.0, 1.0],
+            -2.0 => [0.0, 0.0, -1.0],
+            angle => {
+                let (sin, cos) = angle.to_radians().sin_cos();
+                [cos, sin, 0.0]
+            }
+        };
+        let lip = number("lip");
+        let lip = if lip == 0.0 { 8.0 } else { lip };
+        let travel = (0..3)
+            .map(|axis| direction[axis] * (bounds.maxs[axis] - bounds.mins[axis]))
+            .sum::<f32>()
+            .abs()
+            - lip;
+        for (axis, component) in direction.into_iter().enumerate() {
+            let offset = component * travel.max(0.0);
+            bounds.mins[axis] += offset;
+            bounds.maxs[axis] += offset;
+        }
+    } else if class == "func_plat" && entity.get("targetname").is_none_or(String::is_empty) {
+        let height = number("height");
+        let travel = if height == 0.0 {
+            bounds.maxs[2] - bounds.mins[2] - 8.0
+        } else {
+            height
+        };
+        bounds.mins[2] -= travel;
+        bounds.maxs[2] -= travel;
+    }
+    Some(bounds)
+}
+
+fn settled_spawn(hull: &Hull0, brushes: &[BModel], [x, y, z]: [f32; 3]) -> [f32; 3] {
+    const FEET_OFFSET: f32 = 24.0;
+    const HALF_WIDTH: f32 = 16.0;
+    const FLOOR_TOLERANCE: f32 = 2.0;
+    let feet = z - FEET_OFFSET;
+    let world_floor = (0..=2048)
+        .step_by(2)
+        .map(|drop| feet - drop as f32)
+        .find(|floor| hull.contents_at([x, y, *floor]) == CONTENTS_SOLID);
+    let floor = brushes
+        .iter()
+        .filter(|brush| {
+            brush.mins[0] - HALF_WIDTH < x
+                && x < brush.maxs[0] + HALF_WIDTH
+                && brush.mins[1] - HALF_WIDTH < y
+                && y < brush.maxs[1] + HALF_WIDTH
+                && brush.maxs[2] <= feet + FLOOR_TOLERANCE
+        })
+        .map(|brush| brush.maxs[2])
+        .chain(world_floor)
+        .reduce(f32::max);
+    let settled_z = floor
+        .filter(|floor| *floor < feet - FLOOR_TOLERANCE)
+        .map_or(z, |floor| floor + FEET_OFFSET);
+    [x, y, settled_z]
 }
 
 fn analyze_plats(items: &[AtlasItem], bsp: &Bsp29, graph: Option<&NavGraph>) -> Vec<PlatBrief> {
@@ -2162,6 +2269,61 @@ mod tests {
         assert!(mega.is_some());
         assert_eq!(item_value("item_health", 2).unwrap().1, "megahealth");
         assert!(item_value("item_health", 0).is_none());
+    }
+
+    #[test]
+    fn spawn_coverage_uses_landings_and_solid_pads() {
+        use crate::bsp::{parse_bsp29, write_halfspace_bsp_with_contents, BModel};
+
+        let mut bsp = parse_bsp29(&write_halfspace_bsp_with_contents(
+            crate::bsp::CONTENTS_SOLID,
+        ))
+        .unwrap();
+        bsp.models.push(BModel {
+            mins: [280.0, -32.0, 280.0],
+            maxs: [320.0, 32.0, 300.0],
+        });
+        let entities = r#"
+        { "classname" "info_player_deathmatch" "origin" "0 0 650" }
+        { "classname" "info_player_start" "origin" "300 0 324" }
+        { "classname" "info_player_coop" "origin" "900 0 24" }
+        { "classname" "func_wall" "model" "*1" }
+        "#;
+        let graph = NavGraph {
+            nodes: vec![[0.0, 0.0, 24.0], [300.0, 0.0, 324.0]],
+            ..NavGraph::default()
+        };
+        assert_eq!(
+            spawn_coverage_warning(&bsp, &parse_entities(entities), &graph),
+            None
+        );
+
+        let uncovered = r#"{ "classname" "info_player_deathmatch" "origin" "-400 0 24" }"#;
+        let entities = parse_entities(&format!("{entities}{uncovered}"));
+        let warning = spawn_coverage_warning(&bsp, &entities, &graph).unwrap();
+        assert!(warning.contains("1 of 3 settled starts"), "{warning}");
+        assert!(warning.contains("worst 400 u"), "{warning}");
+    }
+
+    #[test]
+    fn spawn_coverage_on_real_e1m8_if_present() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        if !root.join("maps_local/e1m8.bsp").exists() {
+            return;
+        }
+        let mut env = HashMap::new();
+        env.insert("ARGUS_ROOT".into(), root.display().to_string());
+        let cfg = load_for_reads_from(&env, &root).unwrap();
+        let atlas = cartograph(&cfg, "e1m8").unwrap();
+        assert!(atlas.nav.is_some());
+        assert!(
+            !atlas
+                .implications
+                .iter()
+                .any(|i| i.starts_with("GRAPH DOES NOT COVER THIS MAP")),
+            "{:?}",
+            atlas.implications
+        );
     }
 
     #[test]
