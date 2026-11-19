@@ -905,6 +905,8 @@ passing botmatch does not establish better human play.
   Briefs, the corpus, compare and `argus_clock_validation.py` now read a
   frame of 13 to 15 ms as `listen`; wall-clock tapes and other frames keep
   the gap rule. `tools/argus_tick.py` reports such a tape by its frame.
+
+- Keep the requested map on Windows launches with long game names ([#927](https://github.com/saworbit/argus/issues/927)).
 - Retire the three puppet-refused walks still shipping on e1m2 and e1m8
   ([#821](https://github.com/saworbit/argus/issues/821)): e1m2 n87 to n193,
   e1m8 n5 to n2 and n7 to n98. Both maps had refused their last

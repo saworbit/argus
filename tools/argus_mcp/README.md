@@ -545,6 +545,11 @@ The config report shows these resolved paths, including paths not yet created.
 which checks only required settings.
 Other tools name the missing key and refuse.
 
+On Windows, the dedicated launcher passes the executable path separately and
+puts `-basedir` and `-game` last so the complete `+map` command fits.
+If the startup commands still exceed QuakeSpasm's 255-byte limit,
+the lab reports the limit before starting the engine.
+
 Examples (fill real paths; do not commit secrets or this machine's
 exe paths as if they were defaults): `tools/argus_mcp.toml.example`,
 `.mcp.json.example`.
