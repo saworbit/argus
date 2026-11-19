@@ -18,19 +18,17 @@ first one:
              sink for any bot that cannot pay the toll.
 
 Usage: python tools/argus_reach.py [map ...]
-       (default: every map with both maps_local/<map>.bsp and
-        src/argus_nav_<map>.qc.json; ARGUS_MAPS names another BSP
-        folder, as for the scorecard, so a worktree can borrow the
-        main checkout's machine-local maps)
+       (default: every map with a BSP and src/argus_nav_<map>.qc.json;
+        ARGUS_MAPS supplies an optional BSP folder)
 
 Exit code 1 when any spawn's all-edges reach is under 60% (the 7h
 WARNING bar), so a rig script can gate on it.
 """
-import os
 import sys
 from pathlib import Path
 
 from argus_bsp import Bsp
+from argus_paths import bsp_path
 
 ROOT = Path(__file__).resolve().parent.parent
 WARN_PCT = 60
@@ -112,10 +110,6 @@ def reach_from(start, fwd):
     return len(seen)
 
 
-def bsp_dir():
-    return Path(os.environ["ARGUS_MAPS"]) if os.environ.get("ARGUS_MAPS") else ROOT / "maps_local"
-
-
 def load_world(bsp):
     """The BSP and the solid brush entities at spawn, for standing_point."""
     from argus_navmesh import brush_boxes
@@ -124,10 +118,10 @@ def load_world(bsp):
 
 
 def audit(mapname, explicit=False):
-    bsp = bsp_dir() / f"{mapname}.bsp"
+    bsp = bsp_path(ROOT, mapname)
     navj = ROOT / "src" / f"argus_nav_{mapname}.qc.json"
-    if not bsp.exists() or not navj.exists():
-        print(f"{mapname}: skipped (need {bsp.name} and {navj.name})")
+    if bsp is None or not navj.exists():
+        print(f"{mapname}: skipped (need {mapname}.bsp and {navj.name})")
         return False if explicit else None
     nodes, walk, free, gated = load_graph(navj)
     fwd_all = [list(n) for n in walk]

@@ -40,6 +40,7 @@ import math
 from collections import Counter
 from pathlib import Path
 from argus_bsp import load_classifier as classifier
+from argus_paths import bsp_path
 
 # Hull-0 leaf contents, as the BSP stores them.
 SOLID, WATER, SLIME, LAVA = -2, -3, -4, -5
@@ -134,7 +135,7 @@ def main(argv=None):
     parser.add_argument("maps", nargs="+", help="map names, e.g. dm4 dm2")
     parser.add_argument("--reach", type=int, default=DEFAULT_REACH,
                         help=f"probe distance ahead (default {DEFAULT_REACH})")
-    parser.add_argument("--bsp-dir", default="maps_local")
+    parser.add_argument("--bsp-dir", type=Path, help="read BSPs from this folder")
     parser.add_argument("--nav-dir", default="src")
     parser.add_argument("--clearance", action="store_true",
                         help="also audit per-waypoint cardinal clearance against "
@@ -144,10 +145,11 @@ def main(argv=None):
 
     report = {}
     for name in args.maps:
-        bsp = Path(args.bsp_dir) / f"{name}.bsp"
+        bsp = args.bsp_dir / f"{name}.bsp" if args.bsp_dir else bsp_path(
+            Path(__file__).resolve().parent.parent, name)
         nav = Path(args.nav_dir) / f"argus_nav_{name}.qc.json"
-        if not bsp.is_file() or not nav.is_file():
-            print(f"{name}: skipped (need {bsp} and {nav})")
+        if bsp is None or not bsp.is_file() or not nav.is_file():
+            print(f"{name}: skipped (need {bsp or name + '.bsp'} and {nav})")
             continue
         verdicts, under_void, depths = survey(bsp, nav, args.reach)
         total = verdicts["probes"]

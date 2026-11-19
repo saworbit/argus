@@ -47,14 +47,14 @@ def identities(paths):
 
 
 def preflight(root, output, prefix, executable=None):
-    executable = lab_executable(executable)
+    lab_executable(executable, root=root)
     output = output.resolve()
     if not output.is_relative_to((root/'backups').resolve()) or output.exists():
         raise ValueError('output must be a new directory beneath backups/')
     if not re.fullmatch(r'[a-z0-9_]{1,48}', prefix):
         raise ValueError('prefix must contain 1..48 lowercase letters, digits or underscores')
-    if not (root/'src/progs.src').is_file() or not executable.is_file():
-        raise ValueError('current sources and a source-built native lab are required')
+    if not (root/'src/progs.src').is_file():
+        raise ValueError('current sources are required')
     return output
 
 
@@ -241,7 +241,7 @@ def health_trial(lab, stem, map_name, env, client_run):
 def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=None):
     if fixture not in {'muzzle', 'health', 'combat', 'button', 'door'}:
         raise ValueError('unknown fixture')
-    executable = lab_executable()
+    executable = lab_executable(root=root)
     output = preflight(root, output, prefix, executable)
     # Exclusive creation also refuses a racing invocation or a reused output.
     output.mkdir(parents=True, exist_ok=False)

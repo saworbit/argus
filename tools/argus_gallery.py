@@ -30,7 +30,6 @@ import argparse
 import html
 import http.server
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -40,6 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import argus_longi  # noqa: E402
+from argus_paths import LabMissing, bsp_path, lab_binary  # noqa: E402
 import argus_tape  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -49,18 +49,6 @@ VERDICTS = ('broken', 'looks wrong', 'fine')
 
 def gallery_dir(root, stem):
     return Path(root) / 'runs' / 'demos' / 'gallery' / stem
-
-
-def lab_binary(root):
-    env = os.environ.get('ARGUS_LAB')
-    if env and Path(env).is_file():
-        return env
-    for rel in ('tools/argus_mcp/target/release/argus-mcp.exe', 'tools/argus_mcp/target/debug/argus-mcp.exe',
-                'tools/argus_mcp/target/release/argus-mcp', 'tools/argus_mcp/target/debug/argus-mcp',
-                'tools/argus_mcp/install/bin/argus-mcp.exe', 'tools/argus_mcp/install/bin/argus-mcp'):
-        if (Path(root) / rel).is_file():
-            return str(Path(root) / rel)
-    return shutil.which('argus-mcp')
 
 
 def moments(text, limit=12, contents=None):
@@ -126,13 +114,8 @@ def moments(text, limit=12, contents=None):
 
 def classifier(root, mapname):
     """The map's hull-0 contents classifier, or None without its BSP."""
-    if not mapname:
-        return None
-    for base in (Path(root), Path(root) / '..'):
-        bsp = base / 'maps_local' / f'{mapname}.bsp'
-        if bsp.is_file():
-            return argus_longi._classifier(str(bsp))
-    return None
+    bsp = bsp_path(root, mapname)
+    return argus_longi._classifier(str(bsp)) if bsp else None
 
 
 def demo_start(root, stem, lab):
@@ -163,7 +146,7 @@ def build(root, stem, limit=12, dry_run=False, out=None):
         raise SystemExit(f'no paired demo runs/demos/{stem}.dem: the gallery needs the session demo')
     lab = lab_binary(root)
     if not lab:
-        raise SystemExit('no argus-mcp binary; build it or set ARGUS_LAB')
+        raise LabMissing(f'{Path(root).resolve()} or PATH')
     start_time, duration = demo_start(root, stem, lab)
     gdir = gallery_dir(root, stem)
     gdir.mkdir(parents=True, exist_ok=True)
@@ -410,4 +393,7 @@ def main(argv=None):
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+    try:
+        sys.exit(main())
+    except LabMissing as error:
+        sys.exit(str(error))

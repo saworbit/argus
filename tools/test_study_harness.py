@@ -14,6 +14,8 @@ from unittest.mock import patch
 
 import run_behaviour_equivalence as native
 import run_map_intelligence as maps
+import argus_gallery
+import argus_lab
 from argus_source import source_identity
 import argus_fixture_harness as fixtures
 
@@ -26,6 +28,7 @@ class ExecutableContract(unittest.TestCase):
             root = Path(td)
             (root / 'runs').mkdir()
             exe = root / 'lab'
+            exe.touch()
             rows = []
             for map_name in ('dm2', 'dm4'):
                 for mode in ('control', 'candidate'):
@@ -45,13 +48,42 @@ class ExecutableContract(unittest.TestCase):
     def test_default_and_override_are_shared_by_mcp_and_cli(self):
         with tempfile.TemporaryDirectory() as td:
             exe = Path(td) / 'chosen-lab'
+            exe.touch()
             with patch.dict(os.environ, ARGUS_LAB=str(exe)):
                 self.assertEqual(native.lab_executable(), maps.lab_executable())
                 self.assertEqual(native.lab_executable(), exe)
                 with patch.object(native.subprocess, 'run') as run:
                     native.lab_cli(exe, 'compare', 'a', 'b', timeout=3, runner=run)
-                self.assertEqual(run.call_args.args[0][0], str(exe))
+                self.assertEqual(run.call_args.args[0][0], str(exe.resolve()))
                 self.assertEqual(run.call_args.kwargs['encoding'], 'utf-8')
+
+    def test_lab_lookup_order_and_invalid_environment_override(self):
+        with tempfile.TemporaryDirectory() as td, patch.dict(os.environ, {'ARGUS_LAB': ''}):
+            root = Path(td)
+            name = 'argus-mcp.exe' if os.name == 'nt' else 'argus-mcp'
+            builds = [root / 'tools/argus_mcp' / directory / name for directory in (
+                'target-stage/release', 'install/bin', 'target/release', 'target/debug')]
+            for path in builds:
+                path.parent.mkdir(parents=True)
+                path.touch()
+            for path in builds:
+                self.assertEqual(native.lab_executable(root=root), path.resolve())
+                self.assertEqual(argus_lab.lab_binary(root), str(path.resolve()))
+                self.assertEqual(argus_gallery.lab_binary(root), str(path.resolve()))
+                path.unlink()
+
+            missing = root / 'missing'
+            override = root / 'explicit'
+            override.touch()
+            with patch.dict(os.environ, {'ARGUS_LAB': str(missing)}):
+                for lookup in (lambda: native.lab_executable(root=root),
+                               lambda: argus_lab.lab_binary(root),
+                               lambda: argus_gallery.lab_binary(root)):
+                    with self.assertRaises(native.LabMissing) as caught:
+                        lookup()
+                    self.assertIn(str(missing.resolve()), str(caught.exception))
+                    self.assertIn('cargo build', str(caught.exception))
+                self.assertEqual(native.lab_executable(override, root=root), override.resolve())
 
     def test_one_lab_class_uses_the_selected_path_and_a_request_deadline(self):
         program = '''
@@ -77,7 +109,7 @@ for line in sys.stdin:
                     self.assertIs(maps.Lab, native.Lab)
                 finally:
                     native.finish_lab(lab, active=False)
-            self.assertEqual(selected, [str(exe)])
+            self.assertEqual(selected, [str(exe.resolve())])
             self.assertEqual(lab.p.returncode, 0)
             self.assertFalse(errors.closed)
 

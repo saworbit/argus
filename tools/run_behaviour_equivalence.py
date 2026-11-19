@@ -6,6 +6,7 @@ tapes; parses only the new BHVTIME grammar, never reconstructs ARGLOG metrics.
 """
 from argus_validation import require
 from argus_source import source_identity
+from argus_paths import LabMissing, lab_binary
 import argparse
 import ctypes
 import datetime as dt
@@ -28,40 +29,24 @@ MODES = dict(off=0, on=590, compute=591, legacy=592)
 TIMING = re.compile(r'^BHVTIME t\s+([\d.]+) frames\s+(\d+) seconds\s+([\d.]+) mean_ms\s+([\d.]+) max_ms\s+([\d.]+) over20\s+(\d+) over50\s+(\d+)$', re.M)
 
 
-def lab_executable(override=None):
-    """Resolve one source-built lab for MCP, CLI calls and receipt hashes."""
-    selected = override or os.environ.get('ARGUS_LAB')
-    if not selected:
-        selected = ROOT / 'tools/argus_mcp/target-stage/release' / (
-            'argus-mcp.exe' if os.name == 'nt' else 'argus-mcp')
-    return Path(selected).expanduser().resolve()
+def lab_executable(override=None, *, root=None):
+    """Resolve one native lab for MCP, CLI calls and receipt hashes."""
+    root = ROOT if root is None else Path(root)
+    path = lab_binary(root, override)
+    if path is None:
+        raise LabMissing(f'{root.resolve()} or PATH')
+    return Path(path)
 
 
-class LabMissing(FileNotFoundError):
-    """The resolved lab binary does not exist."""
-
-
-def require_lab(override=None):
-    """Resolve the lab and fail with the path and the fix when it is missing.
-
-    A fresh checkout or worktree has no target-stage build, and a bare
-    FileNotFoundError from subprocess names neither the path nor the fix.
-    """
-    path = lab_executable(override)
-    if not path.is_file():
-        built = Path('tools/argus_mcp/target/debug') / ('argus-mcp.exe' if os.name == 'nt' else 'argus-mcp')
-        raise LabMissing(
-            f'no lab binary at {path}. Build one with '
-            f'`cargo build --manifest-path tools/argus_mcp/Cargo.toml --bin argus-mcp` '
-            f'and set ARGUS_LAB to {built}, or set ARGUS_LAB to a lab you have already built.')
-    return path
+require_lab = lab_executable
 
 
 def lab_cli(executable, *arguments, timeout=45, environment=None, cwd=None, runner=None):
     """Run the selected lab with bounded UTF-8 capture and child cleanup."""
     root = Path(cwd) if cwd is not None else ROOT
     # A test transport owns no real child, so only a real spawn needs the binary.
-    path = lab_executable(executable) if runner is not None else require_lab(executable)
+    path = (Path(executable).expanduser().resolve() if runner is not None and executable
+            else require_lab(executable, root=root))
     command = [str(path), *map(str, arguments)]
     options = dict(cwd=root, env={**os.environ, 'ARGUS_ROOT': str(root), **(environment or {})},
                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
@@ -150,10 +135,11 @@ def cpu_seconds(pid):
 
 class Lab:
     def __init__(self, stderr, environment=None, *, exe=None, timeout=45):
-        self.executable = require_lab(exe)
+        env = {**os.environ, 'ARGUS_ROOT': str(ROOT), **(environment or {})}
+        self.executable = require_lab(exe, root=env['ARGUS_ROOT'])
         self.timeout = timeout
         self.p = subprocess.Popen([str(self.executable)], cwd=ROOT,
-            env={**os.environ, 'ARGUS_ROOT': str(ROOT), **(environment or {})}, stdin=subprocess.PIPE,
+            env=env, stdin=subprocess.PIPE,
             stdout=subprocess.PIPE, stderr=stderr, text=True, encoding='utf-8')
         self.records = queue.Queue()
         self.serial = 0

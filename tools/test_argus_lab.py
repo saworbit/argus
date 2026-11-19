@@ -18,6 +18,9 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import argus_lab  # noqa: E402
+import argus_gallery  # noqa: E402
+import argus_longi  # noqa: E402
+import argus_pointfile  # noqa: E402
 
 REPO = Path(__file__).resolve().parent.parent
 INDEX_HEAD = ('run\tmap\tstarted\ttick_class\tkind\tduration_sec\tstalls\tengages\tlava_deaths\tworld_deaths\t'
@@ -148,6 +151,39 @@ class TestValidation(unittest.TestCase):
             self.assertTrue(argus_lab.evidence_resolves(fx.root, 'ab_dm4_x1'))
             self.assertFalse(argus_lab.evidence_resolves(fx.root, 'ab_dm4_missing'))
             self.assertFalse(argus_lab.evidence_resolves(fx.root, '#forty'))
+
+    def test_evidence_uses_recorded_map_identity(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            for name, lines, expected in (
+                ('refused', "SpawnServer: lqdm2\nCouldn't spawn server maps/lqdm2.bsp\n"
+                            'SpawnServer: start\nARGUS init on start\n', {'start'}),
+                ('confirmed', 'SpawnServer: dm4\nARGUS init on dm2\n', {'dm2'}),
+                ('legacy', 'SpawnServer: dm4\n', {'dm4'}),
+            ):
+                with self.subTest(name=name):
+                    fx.add_run(name, text=lines)
+                    self.assertEqual(argus_lab.evidence_maps(fx.root, name), expected)
+
+    def test_bsp_consumers_share_search_order(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            configured = root / 'configured'
+            paths = [folder / 'dm4.bsp' for folder in (
+                configured, root / 'maps_local', root / 'engine/argus/maps')]
+            for path in paths:
+                path.parent.mkdir(parents=True)
+                path.touch()
+            with mock.patch.dict(os.environ, {'ARGUS_MAPS': str(configured)}), \
+                 mock.patch.object(argus_pointfile, 'ROOT', root), \
+                 mock.patch.object(argus_longi, '_classifier', side_effect=Path):
+                for path in [*paths, None]:
+                    self.assertEqual(argus_lab.bsp_path(root, 'dm4'), path)
+                    self.assertEqual(argus_longi.bsp_for('dm4', root=root), path)
+                    self.assertEqual(argus_gallery.classifier(root, 'dm4'), path)
+                    self.assertEqual(argus_pointfile.find_bsp('dm4'), path)
+                    if path is not None:
+                        path.unlink()
 
 
 class TestLimits(unittest.TestCase):

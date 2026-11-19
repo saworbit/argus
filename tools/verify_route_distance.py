@@ -32,15 +32,15 @@ def main():
     parser.add_argument('--ticrate', type=float, choices=(.0139, .1), default=.0139)
     parser.add_argument('--compile-only', action='store_true')
     parser.add_argument('--port', type=int, default=26007)
-    parser.add_argument('--lab', type=Path, default=lab_executable())
+    parser.add_argument('--lab', type=Path)
     args = parser.parse_args()
     require((re.fullmatch(r'[a-z0-9_]{1,48}', args.prefix)))
     require(1024 <= args.port <= 65535, 'invalid fixture port')
+    executable = lab_executable(args.lab)
     output = new_output(args.output, root=ROOT, create=False)
     src = stage(ROOT, output, args.source)
     with private_game(ROOT, args.prefix, 'routecheck') as folder:
         game = folder.name
-        executable = lab_executable(args.lab)
         env = dict(ARGUS_SRC=str(src), ARGUS_PROGS=str(output / 'lq1/progs.dat'),
                    ARGUS_RUNS=str(output / 'runs'), ARGUS_GAME=game,
                    ARGUS_PYTHON=sys.executable, ARGUS_TICRATE=str(args.ticrate))

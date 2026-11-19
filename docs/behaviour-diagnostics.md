@@ -775,11 +775,10 @@ cleanup and done records. Case 9 deliberately sends a second impulse and
 requires one busy refusal. Bad IDs, duplicates, missing records, disconnects
 and timeouts fail; the runner stops its owned engine on failure.
 
-Use the CLI built from this checkout. The study runners default to
-`tools/argus_mcp/target-stage/release/argus-mcp` (`.exe` on Windows), or the
-explicit `ARGUS_LAB` override; an older installed MCP/CLI does
-not acquire the new command until rebuilt. The examples assume matching QC
-has been staged in the disposable lab.
+Use the CLI built from this checkout. The shared lookup prefers the staged
+release unless `ARGUS_LAB` is set. Older installed builds need a rebuild for
+these commands. The examples assume matching QC has been staged in the
+disposable lab. See the [lab workflow](lab-workflow.md) for the search order.
 
 ```text
 argus-mcp behaviour-suite dm4 bhv_dm4_off --diagnostics off --no-compile

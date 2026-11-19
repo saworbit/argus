@@ -401,12 +401,15 @@ location before using them:
 cargo build --release --manifest-path tools/argus_mcp/Cargo.toml --target-dir tools/argus_mcp/target-stage
 ```
 
-The runners use `tools/argus_mcp/target-stage/release/argus-mcp` (`.exe` on
-Windows). MCP, CLI calls and receipt hashes use the same selected file.
-`ARGUS_LAB` overrides the default; runners with `--lab` use that explicit
-choice first. Relative overrides resolve from the process cwd. When the
-selected file does not exist, the runner stops before starting anything and
-names the path it tried and how to build one. Request
+The Python runners, lab spine and gallery share native lab lookup. They use
+`--lab` where supported, then `ARGUS_LAB`. Relative overrides resolve from the
+process working directory. An override that names a missing file reports
+the path and how to build the lab. With no override, each checkout is
+searched under `tools/argus_mcp/` in order: `target-stage/release`,
+`install/bin`, `target/release`, then `target/debug`. A linked worktree
+also searches the main checkout before falling back to `PATH`. On Windows
+the executable has the `.exe` suffix. MCP, CLI calls and receipt hashes
+use the same selected file. Request
 deadlines are per-session arguments to the shared `Lab` client. The existing
 `ARGUS_*` configuration and local engine/map assets are still required.
 No game-engine extensions are introduced.

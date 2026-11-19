@@ -92,14 +92,14 @@ def main():
     parser.add_argument('candidate', type=Path)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--native-gates', type=Path, help='new directory for native band gate cards')
-    parser.add_argument('--lab', type=Path, default=lab_executable())
+    parser.add_argument('--lab', type=Path)
     args = parser.parse_args()
     result = compare(args.control.resolve(), args.candidate.resolve())
     if args.native_gates:
         require(result['complete'], 'complete both arms before judging bands')
         require(not args.native_gates.exists(), 'retain existing native gates output')
+        executable = lab_executable(args.lab)
         args.native_gates.mkdir(parents=True)
-        executable = args.lab.resolve()
         result['analysis_lab_sha256'] = hashlib.sha256(executable.read_bytes()).hexdigest()
         arms = [json.loads((p / 'results.json').read_text()) for p in (args.control, args.candidate)]
         for row in result['maps']:

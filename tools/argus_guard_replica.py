@@ -71,13 +71,12 @@ usage:
       [--overhead GRAPH.qc.json [--region X0 X1 Y0 Y1 Z0 Z1]]
   python tools/argus_guard_replica.py --help
 
-MAP resolves to ARGUS_MAPS/<map>.bsp (default maps_local/). Exit 0 on success,
+MAP uses the shared BSP lookup (ARGUS_MAPS first). Exit 0 on success,
 2 when the BSP, a tape or the graph is missing or a flag is malformed.
 """
 import collections
 import json
 import math
-import os
 import re
 import sys
 from pathlib import Path
@@ -85,6 +84,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 from argus_bsp import load_classifier  # noqa: E402 - tools path set just above
+from argus_paths import bsp_path  # noqa: E402
 
 ROW = re.compile(r"^ARGMOT (.+?) ms (\S+) pos '\s*(\S+)\s+(\S+)\s+(\S+)' wish\s+(\S+) cause (\S+) "
                  r"ctx '\s*(\S+)\s+(\S+)\s+(\S+)'")
@@ -492,10 +492,10 @@ def main(argv=None):
     except ValueError as exc:
         print(f"{exc}\n{USAGE}", file=sys.stderr)
         return 2
-    maps = Path(os.environ.get("ARGUS_MAPS", HERE.parent / "maps_local"))
-    bsp = maps / f"{args[0]}.bsp"
-    wanted = [bsp, *map(Path, args[1:])] + ([Path(graph)] if graph else [])
-    missing = [str(p) for p in wanted if not Path(p).is_file()]
+    bsp = bsp_path(HERE.parent, args[0])
+    wanted = [*map(Path, args[1:])] + ([Path(graph)] if graph else [])
+    missing = [f"{args[0]}.bsp"] if bsp is None else []
+    missing.extend(str(path) for path in wanted if not path.is_file())
     if missing:
         print("missing: " + ", ".join(missing), file=sys.stderr)
         return 2
