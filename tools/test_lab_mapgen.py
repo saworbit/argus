@@ -395,6 +395,37 @@ class ScenarioTests(unittest.TestCase):
             (root / "runs" / f"{run}.log").write_text(f"SpawnServer: {mapname}\nARGUS init on {mapname}\n")
         return root
 
+    def test_interrupted_registry_replace_preserves_the_previous_document(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = self.make_root(td)
+            path = root / "tools" / "lab_instruments.json"
+            before = path.read_bytes()
+            files = set(path.parent.iterdir())
+            manifest = {
+                "map": "lab_second", "scenario_id": "lab_second-test", "claim_tier": "isolation",
+                "intent": "Check a second scenario.", "claims": [],
+                "files": {"request": "labmaps/lab_second/request.json"},
+                "generator": {"source_sha256": "0" * 64},
+            }
+
+            def interrupted(staged, dest):
+                self.assertEqual(Path(dest), path)
+                self.assertEqual(Path(staged).parent, path.parent)
+                staged_doc = json.loads(Path(staged).read_text(encoding="utf-8"))
+                self.assertIn("lab_second", staged_doc["lab_scenarios"]["scenarios"])
+                self.assertEqual(path.read_bytes(), before)
+                raise OSError("interrupted before replace")
+
+            with patch.object(mg.os, "replace", side_effect=interrupted):
+                with self.assertRaisesRegex(OSError, "interrupted before replace"):
+                    mg.register_scenario(root, manifest)
+            self.assertEqual(path.read_bytes(), before)
+            self.assertEqual(set(path.parent.iterdir()), files)
+
+            mg.register_scenario(root, manifest)
+            doc = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(set(doc["lab_scenarios"]["scenarios"]), {"lab_voidcorner", "lab_second"})
+
     def test_register_scenario_validates(self):
         with tempfile.TemporaryDirectory() as td:
             root = self.make_root(td)

@@ -190,7 +190,8 @@ stages and return the manifest, a scenario id and `next_steps`:
    graph. A map that fails stays experimental, and the stage says why.
 6. **Record**: fold the navgen, mill, coverage and registration results into
    `labmaps/<map>/manifest.json` and register the scenario in
-   `tools/lab_instruments.json`.
+   `tools/lab_instruments.json`. Each output file is staged beside its
+   destination and replaced after the write completes.
 
 For direct Python CLI calls, relative output overrides are relative to the
 checkout. `generate` and `compile` accept `--out` under `labmaps/`. The
