@@ -91,11 +91,13 @@ Offline BSP29 hull 1 clipnode parser and waypoint/link compiler. Generates `src/
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --reanalyze-tactics
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --repair-links
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --seat-links src/argus_nav_<map>.seats.json
+  python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --seat-elbows
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <unused.png> --seat-spawn-pads
   python tools/argus_navgen.py <map.bsp> <mapname> <shipped.qc> <out.png> --render-only
   python tools/argus_navgen.py --help
   ```
 - **Options**:
+  - `--seat-elbows`: Screen a completed QC/JSON pair with the floor audit. Try nearby dry seats with the turn simulator in both directions, check both legs and apply the waypoint and edict limits. Replace accepted walks through the same splice as `--seat-links`. Legs refused at those coordinates in the map's probe sidecar are skipped. Print each unresolved walk and its reason. Use a private graph copy for engine probes and played ladders.
   - `--render-only`: Render the existing QC/JSON graph into a PNG and freshness receipt. No navigation, tactics or registration file is changed. Cannot be combined with generation options; plotting failure returns a nonzero status.
   - `--no-dispatcher`: Suppress generation of the per-map `Argus_Nav_Spawn` function (recommended when using `argus_nav_dispatch.qc`).
   - `--no-rj`: Suppress rocket-jump link exploration.

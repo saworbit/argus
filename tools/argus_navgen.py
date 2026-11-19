@@ -52,6 +52,7 @@ usage: argus_navgen.py map.bsp mapname out.qc out.png [--no-dispatcher] [--no-rj
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reanalyze-tactics
        argus_navgen.py map.bsp mapname shipped.qc unused.png --repair-links
        argus_navgen.py map.bsp mapname shipped.qc unused.png --seat-links seats.json
+       argus_navgen.py map.bsp mapname shipped.qc unused.png --seat-elbows
        argus_navgen.py map.bsp mapname shipped.qc unused.png --seat-spawn-pads
        argus_navgen.py map.bsp mapname shipped.qc unused.png --reconcile-artifacts [--reanalyze-tactics]
        argus_navgen.py map.bsp mapname shipped.qc out.png --render-only
@@ -115,6 +116,12 @@ applies the same file after its late link passes (section 7g2e) with the
 same rules, and refuses to publish when an entry cannot apply, for example
 a walk end that is no longer a waypoint.
 
+--seat-elbows screens a completed graph for level walks that fail the
+early-switch floor test. It tries nearby dry seats with the offline turn
+simulator, checks both directions and splices accepted seats through the
+same rules as --seat-links. It skips legs refused at the same coordinates
+in the engine probe sidecar and names each walk it leaves in place.
+
 --seat-spawn-pads seats, on a shipped graph, every deathmatch spawn that
 stands on a solid brush entity (#783), by the rules section 7g2f applies
 at a full regeneration (section 2d says what they are): a seat on the
@@ -138,6 +145,7 @@ receipt. It cannot be combined with generation or registration options.
 """
 import re, sys, heapq, collections
 import io
+import json
 import math as _dmath
 from pathlib import Path
 
@@ -219,6 +227,7 @@ if "--seat-links" in sys.argv[5:]:
         sys.exit(1)
     SEAT_LINKS = sys.argv[_seat_idx + 1]
 SEAT_SPAWN_PADS = "--seat-spawn-pads" in sys.argv[5:]
+SEAT_ELBOWS = "--seat-elbows" in sys.argv[5:]
 if "--register" in sys.argv[5:]:
     if Path(OUTQC).name != f"argus_nav_{MAPNAME}.qc":
         print(f"error: --register requires argus_nav_{MAPNAME}.qc", file=sys.stderr)
@@ -1311,7 +1320,7 @@ CUTTABLE = ("links", "jlinks", "sprintlinks")
 CUTTABLE_VERBS = ("Argus_NavLink", "Argus_NavLinkJump", "Argus_NavLinkSprint")
 
 
-def _seat_links(text, doc, spec_path):
+def _seat_links(text, doc, spec, *, exact=False):
     """--seat-links: append seats and beeline-verified walks, then rebake.
 
     The case it was written for (2026-11-13): dm3's south upper area,
@@ -1321,15 +1330,15 @@ def _seat_links(text, doc, spec_path):
     beeline_ok end to end, which is why navgen never linked across it,
     and one seat in each elbow makes two walks that pass.
     """
-    import json as _sj
     from argus_nav_artifacts import qc_graph as _qcg
-    spec = _sj.loads(Path(spec_path).read_text(encoding="utf-8"))
     nodes = [tuple(float(v) for v in p) for p in doc["nodes"]]
 
     def _find(p):
-        hit = [i for i, n in enumerate(nodes)
-               if max(abs(n[k] - float(p[k])) for k in range(3)) < 1.0]
-        return hit[0] if hit else None
+        p = tuple(float(v) for v in p)
+        if exact:
+            return next((i for i, n in enumerate(nodes) if n == p), None)
+        return next((i for i, n in enumerate(nodes)
+                     if max(abs(n[k] - p[k]) for k in range(3)) < 1.0), None)
 
     def _fmt(p):
         return f"({p[0]:.0f} {p[1]:.0f} {p[2]:.0f})"
@@ -1526,11 +1535,11 @@ def _seat_spawn_pads(text, doc):
     return text, doc, report
 
 
-if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_SPAWN_PADS:
+if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_ELBOWS or SEAT_SPAWN_PADS:
     import os as _tos
     _qcpath, _jspath = OUTQC, OUTQC + ".json"
     if not (_tos.path.exists(_qcpath) and _tos.path.exists(_jspath)):
-        print("error: --reanalyze-tactics, --repair-links, --seat-links and "
+        print("error: --reanalyze-tactics, --repair-links, --seat-links, --seat-elbows and "
               "--seat-spawn-pads need shipped QC and JSON to exist already",
               file=sys.stderr)
         sys.exit(1)
@@ -1556,8 +1565,8 @@ if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_SPAWN_PADS:
                       f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
     if SEAT_LINKS:
         try:
-            _candidate_qc, _tdoc, _added, _walks, _cuts = _seat_links(
-                _candidate_qc, _tdoc, SEAT_LINKS)
+            _spec = json.loads(Path(SEAT_LINKS).read_text(encoding="utf-8"))
+            _candidate_qc, _tdoc, _added, _walks, _cuts = _seat_links(_candidate_qc, _tdoc, _spec)
         except (OSError, ValueError, KeyError, IndexError, TypeError) as _error:
             print(f"error: --seat-links: {_error}", file=sys.stderr)
             sys.exit(1)
@@ -1573,6 +1582,49 @@ if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_SPAWN_PADS:
         for _a, _b in _walks:
             print(f"  walk: n{_a} {tuple(round(v) for v in _tdoc['nodes'][_a])} -> "
                   f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
+    if SEAT_ELBOWS:
+        from argus_elbows import plan_elbows
+        from argus_turnsim import World
+        _elbow_limits = waypoint_limits(sum(spawns_an_edict(b) for b in ent_blocks), target=MAX_NODES)
+        _elbow_doors = _shut_boxes()
+        _elbow_open_doors = _open_boxes()
+        _elbow_verdicts = Path(OUTQC).with_name(f"argus_nav_{MAPNAME}.probe.json")
+
+        def _elbow_seat(point):
+            x, y, z = point
+            return any(abs(height - z) <= 2.0 for height in column_floors(x, y))
+
+        def _elbow_walk(a, b):
+            return (abs(a[2] - b[2]) <= STEP
+                    and _dmath.hypot(b[0] - a[0], b[1] - a[1]) <= LINK_PATH_MAX
+                    and (tuple(round(v) for v in a), tuple(round(v) for v in b)) not in _elbow_refused
+                    and not hostile_at(*a) and not hostile_at(*b)
+                    and not any(_seg_hits_aabb(*a, *b, mn, mx) for mn, mx in _elbow_doors)
+                    and not any(_seg_hits_open(a, b, mn, mx) for _, (mn, mx) in _elbow_open_doors)
+                    and beeline_points(a, b))
+
+        try:
+            _elbow_refused = set()
+            if _elbow_verdicts.is_file():
+                _verdict = json.loads(_elbow_verdicts.read_text(encoding="utf-8"))
+                _elbow_refused = {tuple(tuple(round(v) for v in pos) for pos in pair)
+                                  for pair in _verdict.get("failed", [])}
+            _spec, _unresolved = plan_elbows(
+                World(_bsp), _tdoc, seat_ok=_elbow_seat, walk_ok=_elbow_walk,
+                admits=lambda count: _elbow_limits.admits(count, infrastructure=True))
+            _candidate_qc, _tdoc, _added, _walks, _cuts = _seat_links(
+                _candidate_qc, _tdoc, _spec, exact=True)
+        except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as _error:
+            print(f"error: --seat-elbows: {_error}; nothing written", file=sys.stderr)
+            sys.exit(1)
+        print(f"elbows: {len(_added)} seats, {len(_cuts)} replaced walks, "
+              f"{len(_unresolved)} unresolved walks")
+        for _a, _b in _cuts:
+            print(f"  replaced: n{_a} -> n{_b}")
+        for _a, _b, _why in _unresolved:
+            print(f"  unresolved: n{_a} -> n{_b}: {_why}")
+        if not _added and not (REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_SPAWN_PADS):
+            sys.exit(0)
     if SEAT_SPAWN_PADS:
         try:
             _candidate_qc, _tdoc, _pads = _seat_spawn_pads(_candidate_qc, _tdoc)

@@ -14,6 +14,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -829,6 +830,20 @@ tool_timeout_sec = 700
         self.assertEqual(res.returncode, 1)
         self.assertIn("have to exist already", res.stderr)
 
+    def test_navgen_elbow_pass_leaves_unsupported_graph_byte_identical(self):
+        nodes = [point.copy() for point in self.DOOR_FIXTURE_NODES]
+        nodes[1][0] = 112
+        nodes[5][0] = 112
+        tmp = self.door_fixture(nodes=nodes, collision_gap=True)
+        paths = [tmp / "nav.qc", tmp / "nav.qc.json"]
+        before = [path.read_bytes() for path in paths]
+        result = self.run_tool("argus_navgen.py", str(tmp / "fixture.bsp"), "fixture",
+                               str(paths[0]), str(tmp / "unused.png"), "--seat-elbows")
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("elbows: 0 seats, 0 replaced walks", result.stdout)
+        self.assertRegex(result.stdout, r"unresolved: n\d+ -> n\d+: unsupported")
+        self.assertEqual([path.read_bytes() for path in paths], before)
+
     def test_argus_navgen_reprofile_jumps_refuses_a_mismatched_graph(self):
         tmp = self.door_fixture(jsonnodes=self.DOOR_FIXTURE_NODES[:5])
         before = (tmp / "nav.qc").read_bytes()
@@ -1466,6 +1481,45 @@ tool_timeout_sec = 700
         self.assertIsNone(world.ground_height(64, 0, 64))
         self.assertFalse(world.seat_ok((64, 0, 64)))
         self.assertFalse(world.seat_ok((0, 0, 63)))
+
+    def test_elbow_plan_protects_reverse_turn_and_budget(self):
+        sys.path.insert(0, str(ROOT / "tools"))
+        from types import SimpleNamespace
+        import argus_elbows as elbows
+
+        start, end, seat = (0, 0, 24), (128, 128, 24), (128, 0, 24)
+        graph = {"nodes": [start, end], "links": [[0, 1], [1, 0]]}
+        failed = [(0, 1, (64, 64, 24, 90)), (1, 0, (64, 64, 24, 90))]
+        world = SimpleNamespace(guard=None, seat_ok=lambda point: True)
+        with (patch.object(elbows, "failing_links", return_value=(2, failed)),
+              patch.object(elbows, "nearby_seats", return_value=[seat]),
+              patch.object(elbows, "first_void", return_value=None),
+              patch.object(elbows, "simulate") as simulate):
+            simulate.side_effect = lambda world, chain, lateral, speed: SimpleNamespace(
+                outcome="fell" if chain[0] == end and lateral == -12 else "arrived")
+            spec, reasons = elbows.plan_elbows(world, graph, seat_ok=lambda p: True,
+                                               walk_ok=lambda a, b: True,
+                                               admits=lambda count: count < 3)
+            self.assertEqual(spec["cuts"], [])
+            self.assertEqual([(a, b) for a, b, _ in reasons], [(0, 1), (1, 0)])
+
+            simulate.side_effect = None
+            simulate.return_value = SimpleNamespace(outcome="arrived")
+            spec, reasons = elbows.plan_elbows(world, graph, seat_ok=lambda p: True,
+                                               walk_ok=lambda a, b: True,
+                                               admits=lambda count: count < 3)
+            self.assertEqual(reasons, [])
+            self.assertEqual(spec["seats"], [seat])
+            self.assertEqual(spec["cuts"], [(start, end), (end, start)])
+            self.assertEqual(spec["walks"], [(start, seat), (seat, end), (end, seat), (seat, start)])
+
+            simulate.reset_mock()
+            spec, reasons = elbows.plan_elbows(world, graph, seat_ok=lambda p: True,
+                                               walk_ok=lambda a, b: True,
+                                               admits=lambda count: count < 2)
+            self.assertEqual(spec["seats"], [])
+            self.assertEqual(reasons, [(0, 1, "waypoint budget"), (1, 0, "waypoint budget")])
+            simulate.assert_not_called()
 
     def test_turnsim_reproduces_the_dm3_n245_floor_test_bisect(self):
         maps = Path(os.environ.get("ARGUS_MAPS", ROOT / "maps_local"))

@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Let navgen screen and splice offline elbow candidates on a completed graph with `--seat-elbows`, with a reason for each unresolved walk ([#907](https://github.com/saworbit/argus/issues/907)).
+
 - Add an offline corner simulator that replays bot turns and ranks elbow seats for navgen review ([#923](https://github.com/saworbit/argus/issues/923)).
 
 - `tools/argus_wishflips.py` counts runs of per-frame wish flips in a
