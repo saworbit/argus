@@ -538,8 +538,9 @@ cartograph bsp=maps_local/mymap.bsp generate_nav=true
 
 This generates QC, its JSON twin and a graph image. Registration is requested
 by default, but a new map remains experimental until current reach and engine
-mill evidence pass; over-budget graphs are refused. Inspect the returned
-edict/playability verdict and follow its next steps.
+mill evidence pass. The reach gate measures every spawn from its settled
+position, including solid brush support. Over-budget graphs are refused.
+Inspect the returned edict/playability verdict and follow its next steps.
 
 To isolate one behaviour on a purpose-built micro-map instead, request it
 with `lab_request` (MCP) or `argus-mcp lab-request <request.json>`; it takes
