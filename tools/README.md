@@ -55,8 +55,8 @@ Directed-reach audit for shipped navigation graphs using spawn-point BFS travers
   python tools/argus_reach.py --help
   ```
 - **Behavior**:
-  - Without arguments, audits every map that has both `maps_local/<map>.bsp` and `src/argus_nav_<map>.qc.json`.
-  - `ARGUS_MAPS` overrides the BSP folder, as it does for the lab, so a worktree can point at the main checkout's `maps_local/`.
+  - Without arguments, audits every map that has both a BSP and `src/argus_nav_<map>.qc.json`.
+  - Uses the [shared BSP lookup](../docs/lab-spine.md) with `ARGUS_MAPS` first.
   - Calculates directed forward reach from each spawn across all edges (`walk`, `jump`, `tele`, `rj`, `lift`, `swim`, `train`, `sprint`) and ungated edges.
 - **Exit Code**:
   - `0`: All spawn points meet the $\ge 60\%$ directed reach threshold.
@@ -266,7 +266,7 @@ Experimental waypoint graph derived from the mesh. By default typed links are in
   ```
 - **Behavior**: Seats control items, then covers the mesh roomiest first. It accepts a walk link only when a body following it stays on the mesh with world floor under its centre. `--max-seats` builds dense, then removes seats while every in-neighbour still reaches every out-neighbour within three hops: first those whose floor other seats also cover, then the cheapest in uncovered floor, crowding breaking ties. Run navgen's `--reanalyze-tactics` on the output pair to fill exposure and cover.
 - **`--native-typed`**: `argus_navmesh_typed.py` finds jumps and climbs (fired where the runtime fires them, within the 96u anchor, flown at 270 u/s through hull 1 and the brush entities with no wall or ceiling touched), drop arcs (a run off at 240 and 320 u/s that lands where the target is a walk), lift pads by navgen's func_plat rules and teleporters from the entity lump. It refuses straight-fall drops whose 240 u/s run-off lands in lava or slime. Rocket jumps, sprints, swims and trains are not found. No shipped graph is needed.
-- **Inputs**: `maps_local/<map>.bsp`, or the folder `ARGUS_MAPS` names, so a worktree can borrow the main checkout's maps; `--bsp` names a file outright.
+- **Inputs**: The map's BSP from the shared lookup. Use `--bsp` to name a file directly.
 - **Output**: A QC and JSON pair in `OUTDIR`, named like the shipped pair (`argus_nav_<map>.qc` and `.qc.json`). Pass a scratch directory, not `src/`, unless you mean to replace the shipped graph. The report (printed, and kept in the JSON as `mesh_report`) gives worst-spawn reach in `argus_reach.py`'s terms, mesh coverage, reachable coverage and the edict estimate for the new graph and the shipped one.
 - **Tests**: `test_navmesh_typed.py` builds a row of platforms over a pit (a gap a jump clears, one it cannot, a climb, a run-off drop, a teleporter), reuses the air layer's lava strip for the refused drop and checks the lift rules on a stub lump.
 
@@ -354,7 +354,7 @@ Names the branch of the per-frame brink guard that deflected each routed bot, re
   - `--overhead GRAPH.qc.json` adds the overhead-target primary ([protocol](../docs/specs/2026-11-17-overhead-target-protocol.md)) per tape, with each tape's route-led starts, re-entries and wall re-entries beside it and the mean over the tapes. A wall re-entry counts when, from the pose and wish the guard replay uses (row k-1), the graph waypoint 24 to 340u away horizontally whose bearing lies closest to the wish is within 8 degrees of it, stands 64u or more above the bot's origin, and has solid on the straight line to it (a hull-0 sample every 8u, both ends excluded). The protocol's wording admits any waypoint in the cone, but the recorded reading took the closest in bearing only: that gives 418 events on the 32 dm4ov2 and dm4ov3 tapes, any waypoint in the cone 718.
   - `--region X0 X1 Y0 Y1 Z0 Z1` (needs `--overhead`) adds, per tape, the same counts for events whose row k-1 pose lies strictly inside the box, and the routed seconds spent there: the interval from each mode 2 row inside the box to the next row, summed over stays. A stay still open when the bot's rows end is left out, because the tape was cut inside it.
   - Reproduces `runs/dm4-overhead-target.results.json` tape for tape: overhead-target means 15.75 and 11.62 (dm4ov2 control and candidate) and 12.12 and 12.75 (dm4ov3), and with the box `690 1060 -700 -390 -160 -90` the room split, 0.88 and 3.38 events a tape (dm4ov2, `post_hoc`) and 2.62 and 1.00 (dm4ov3, `rungs.dm4_v3.room_split`), with every routed-seconds figure to its one decimal. It also reproduces the `lab_dropwall2` rung and the first dm4 pair, which the definition was not fitted on.
-- **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`), one or more tapes, and for `--overhead` the graph the tapes ran (`src/argus_nav_<map>.qc.json`; check the tape's `ARGNAV` line).
+- **Inputs**: The map's BSP from the shared lookup, one or more tapes, and for `--overhead` the graph the tapes ran (`src/argus_nav_<map>.qc.json`; check the tape's `ARGNAV` line).
 - **Exit Code**: `0` on success or `--help`, `2` when the BSP, a tape or the graph is missing or a flag is malformed.
 - **Tests**: `test_tools_cli.py` (trace semantics, each verdict on synthetic geometry, the re-entry count from a synthetic tape; the overhead-target rule, including the closest-bearing choice, and the region's strict box and closed stays on a built fixture).
 
@@ -392,7 +392,7 @@ Lists the shipped level walk links whose own line fails the early-switch floor t
   - Brush entities are not in hull 0, so a link over a func_wall or plat reads as a void here while the runtime sees floor. Treat those as suspect.
   - It checks each link from its own seat only. The runtime tests from where the bot stands, so a turn can hold a bot even when both of its links pass: on dm3, no point 16u short of n35 on the leg from n36 sees floor to n47 ([#904](https://github.com/saworbit/argus/issues/904)). A seat that passes can still lose the bot to overshoot, so choose elbows by the turn ([dm3's #904 seats](../docs/navmesh-experiment.md#turning-late-after-775-904)).
   - On the shipped graphs at #905: dm4 20 of 608, dm6 12 of 1259, dm2 6 of 847, dm3 2 of 617, e1m2 41 of 346, e1m8 83 of 319.
-- **Inputs**: `ARGUS_MAPS/<map>.bsp` (default `maps_local/`) and `src/argus_nav_<map>.qc.json`, or `--graph` for one map.
+- **Inputs**: The map's BSP from the shared lookup and `src/argus_nav_<map>.qc.json`. Use `--graph` to specify a different graph for one map.
 - **Exit Code**: `0` on success or `--help`, `2` when a BSP or graph is missing or an argument is malformed.
 - **Tests**: `test_tools_cli.py` (a corner-cutting walk listed with its first void sample, level, typed and height links told apart, a wall sample not counted as a void, and the exit codes).
 
@@ -420,8 +420,7 @@ lists falls, wall frames and other failures. `search` ranks seats by
 completed trials, then fewer wall frames, then less time. Its default dm3
 fixture uses the four corridors from the graph at `d70c4f8`, before #922.
 Use `--graph` for a different graph, `--back` for a different starting
-distance and `--json` for results to compare. The BSP comes from
-`ARGUS_MAPS` or `maps_local/`.
+distance and `--json` for results to compare. The BSP uses the shared lookup.
 
 This is a world-geometry model. Movers, liquids and on-demand routing
 need engine evidence. Validate proposed legs with navgen and run the

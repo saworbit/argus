@@ -33,6 +33,7 @@ from functools import lru_cache
 from pathlib import Path
 
 from argus_bsp import load_classifier
+from argus_paths import bsp_path
 from argus_tape import PAT, read_tape, track_names, freeze_windows, tactic_counts, deaths as tape_deaths, map_name
 from argus_tape import EVT  # noqa: F401  test_tools_cli checks this tool reads the shared event vocabulary
 PLAIN = re.compile(r"^ARGUS (.+?) (unstick (?:embedded|pinned|fightpin|underfire)|shove|hunch|prefire|watch spawn|sprintjump)\b")
@@ -55,15 +56,8 @@ BOB_SEC = 1.0      # a dry gap this short inside the hazard is a bob, not an exi
 _LOOKUP = object()
 
 
-def bsp_for(mapname):
-    """The map's BSP, or None: ARGUS_MAPS first, then the machine-local copies."""
-    if not mapname:
-        return None
-    root = Path(__file__).resolve().parent.parent
-    for folder in (os.environ.get('ARGUS_MAPS'), root / 'maps_local', root / 'engine' / 'argus' / 'maps'):
-        if folder and (Path(folder) / f'{mapname}.bsp').is_file():
-            return Path(folder) / f'{mapname}.bsp'
-    return None
+def bsp_for(mapname, root=Path(__file__).resolve().parent.parent):
+    return bsp_path(root, mapname)
 
 
 @lru_cache(maxsize=None)

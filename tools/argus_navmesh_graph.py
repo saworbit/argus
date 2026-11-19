@@ -20,8 +20,8 @@ comparison figures only).
 
 Writes OUTDIR/argus_nav_<map>.qc and its .json sidecar. Run navgen's
 --reanalyze-tactics on the pair afterwards to fill exposure and cover.
-BSPs come from maps_local/, or from the folder ARGUS_MAPS names, so a
-worktree can borrow the main checkout's machine-local maps.
+BSPs use the shared lookup (ARGUS_MAPS first), so a worktree can borrow
+the main checkout's machine-local maps.
 """
 from __future__ import annotations
 
@@ -29,7 +29,6 @@ import argparse
 import collections
 import json
 import math
-import os
 import sys
 from pathlib import Path
 
@@ -39,6 +38,7 @@ import argus_navmesh_typed as nt  # noqa: E402
 from argus_nav_artifacts import canonical_sidecar, validate_pair  # noqa: E402
 from argus_nav_budget import assess_edict_budget, survives_spawn  # noqa: E402
 from argus_navjson import edges as nav_edges, normalize_nav  # noqa: E402
+from argus_paths import bsp_path as find_bsp  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 STEP, DROPMAX = nm.STEP, nm.DROPMAX
@@ -51,12 +51,6 @@ CONTROL = ("weapon_", "item_armor", "item_artifact")
 TYPED = ("jlinks", "sprintlinks", "rjlinks", "liftlinks", "swimlinks",
          "trainlinks")
 HOSTILE = (nm.CONTENTS_LAVA, nm.CONTENTS_SLIME)
-
-
-def bsp_dir():
-    """maps_local/, or the folder ARGUS_MAPS names (as argus_reach reads it)."""
-    env = os.environ.get("ARGUS_MAPS")
-    return Path(env) if env else ROOT / "maps_local"
 
 
 class MeshIndex:
@@ -260,7 +254,9 @@ def sccs(fwd, n):
 
 def build(mapname, radius=112.0, min_clear=20.0, prune=1.02, max_seats=None,
           gap_max=200.0, native=False, bsp_path=None, ship_path=None):
-    bsp_path = Path(bsp_path) if bsp_path else bsp_dir() / f"{mapname}.bsp"
+    bsp_path = Path(bsp_path) if bsp_path else find_bsp(ROOT, mapname)
+    if bsp_path is None:
+        raise FileNotFoundError(f"missing {mapname}.bsp (set ARGUS_MAPS or --bsp)")
     bsp, frags, stats = nm.load_mesh(bsp_path)
     mi = MeshIndex(frags)
     tboxes = teleport_boxes(bsp)
@@ -946,8 +942,7 @@ def main(argv=None):
     ap.add_argument("--native-typed", action="store_true",
                     help="inherit no typed link: find jumps, climbs, drop arcs, lifts "
                          "and teleporters from the map itself (#790)")
-    ap.add_argument("--bsp", help="the BSP to read (default: maps_local/<map>.bsp, "
-                                  "or the folder ARGUS_MAPS names)")
+    ap.add_argument("--bsp", help="the BSP to read (default: shared BSP lookup, ARGUS_MAPS first)")
     a = ap.parse_args(argv)
     g = build(a.map, a.radius, a.min_clear, a.prune, a.max_seats,
               native=a.native_typed, bsp_path=a.bsp)

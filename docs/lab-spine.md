@@ -27,9 +27,11 @@ Raw artefacts stay the source of truth. When the skeptic needs a tape that
 the corpus cache has not persisted, it asks `argus-mcp corpus` to parse it
 rather than parsing metrics in Python.
 
-In a worktree the machine-local BSPs, the lab binary and `.mcp.json` live in
-the main checkout; the spine finds them there. `ARGUS_MAPS` and `ARGUS_LAB`
-override both. Every command takes `--root DIR` to read another checkout.
+Python map readers look for a named BSP in `ARGUS_MAPS`, then in
+`maps_local/` and `engine/argus/maps/` under the checkout. Linked
+worktrees also search those two folders in the main checkout. The spine
+can borrow the main checkout's native lab and `.mcp.json` as well.
+Every spine command takes `--root DIR` to read another checkout.
 
 ## Commands
 

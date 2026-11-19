@@ -97,7 +97,7 @@ def main():
     parser.add_argument('--baseline', type=Path)
     parser.add_argument('--ticrate', type=float, default=.0139)
     parser.add_argument('--port', type=int)
-    parser.add_argument('--lab', type=Path, default=lab_executable())
+    parser.add_argument('--lab', type=Path)
     parser.add_argument('--primary', choices=SUPPORTED_PRIMARIES,
                         default='stall_parity')
     args = parser.parse_args()
@@ -110,7 +110,6 @@ def main():
     require((args.port is None or 1024 <= args.port <= 65535))
     output = new_output(args.output, root=ROOT, create=False)
     executable = lab_executable(args.lab)
-    require((executable.exists()), 'build the current native lab first')
     comparison_protocol = dict(maps=maps, seconds=args.seconds, skill=args.skill,
                                requested_ticrate=args.ticrate, primary=args.primary,
                                cli_sha256=digest(executable))
