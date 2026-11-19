@@ -73,6 +73,24 @@ class TestTapeConsumers(unittest.TestCase):
         words = re.search(r'const EVENT_VERBS: &str = "([^"]+)";', rust)[1]
         self.assertEqual(VERBS, frozenset(words.split('|')))
 
+    def test_harvest_names_the_recorded_map(self):
+        from harvest_session import session_map
+
+        refused = "SpawnServer: lqdm2\nCouldn't spawn server maps/lqdm2.bsp\n"
+        cases = (
+            ('SpawnServer: dm4\nARGUS init on dm2\n', 'dm2'),
+            ('ARGUS init on dm4\n', 'dm4'),
+            (refused + 'SpawnServer: start\nARGUS init on start\n', 'start'),
+            ('SpawnServer: dm4\n' + refused, 'dm4'),
+            ('SpawnServer: dm4\n', 'dm4'),
+            ('SpawnServer: dm4\nARGUS init on dm4\n'
+             'SpawnServer: dm2\nARGUS init on dm2\n', 'unknown'),
+            ('', 'unknown'),
+        )
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(session_map(text), expected)
+
     def test_pointfile_preserves_spaced_names_and_excludes_legacy_humans(self):
         from tempfile import TemporaryDirectory
         row = "ARGLOG Big Bob t {} pos '{} 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n"

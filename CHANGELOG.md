@@ -914,6 +914,7 @@ passing botmatch does not establish better human play.
 - Skip calibration arms with a recorded map mismatch and report the affected tapes ([#928](https://github.com/saworbit/argus/issues/928)).
 - Use the same native lab executable lookup for Python studies, the lab spine and the gallery. Explicit overrides fail with build instructions if the file is missing ([#937](https://github.com/saworbit/argus/issues/937)).
 - Validate claim evidence against the tape's recorded map, including when the engine falls back after refusing the requested map ([#938](https://github.com/saworbit/argus/issues/938)).
+- Name harvested sessions from the recorded map using the shared tape reader ([#961](https://github.com/saworbit/argus/issues/961)).
 - Share BSP lookup across Python map readers so the gallery, scorecard and map audits use the same geometry ([#939](https://github.com/saworbit/argus/issues/939)).
 
 - A fixed-clock tape is classed by its stated frame, not its sample gap

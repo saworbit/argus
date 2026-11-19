@@ -10,43 +10,27 @@ demo stay paired:
     runs/shane_<map>_<date>[_<tag>].log
     runs/demos/shane_<map>_<date>[_<tag>].dem
 
-The map is read from the tape's last confirmed SpawnServer (a refused
-spawn falls through to the fallback map - the mx_lqdm2 lesson). Runs
-are never overwritten: a stem collision appends b, c, ...
+The archive uses the tape's confirmed Argus map or a legacy console map
+line. Tapes with more than one confirmed map use unknown. A stem
+collision appends b, c, ...
 
 Usage: python tools/harvest_session.py [--tag v373] [--dry-run]
 """
 import argparse
 import datetime as dt
-import re
 import shutil
 import sys
 from pathlib import Path
+
+from argus_tape import map_name
 
 ROOT = Path(__file__).resolve().parent.parent
 GAMEDIR = ROOT / "engine" / "argus"
 
 
 def session_map(text):
-    """Last SpawnServer that was not refused."""
-    confirmed = None
-    pending = None
-    for line in text.splitlines():
-        m = re.match(r"SpawnServer: (\w+)", line)
-        if m:
-            # the previous pending spawn was never refused, so it ran:
-            # bank it before starting the next one. Without this a
-            # session that played dm4 and then tried to load a map
-            # that does not exist archived as "unknown".
-            if pending:
-                confirmed = pending
-            pending = m.group(1).lower()
-            continue
-        if line.startswith("Couldn't spawn server maps/"):
-            pending = None
-    if pending:
-        confirmed = pending
-    return confirmed or "unknown"
+    """Recorded map for the archive stem."""
+    return map_name(text) or "unknown"
 
 
 def unique(path):

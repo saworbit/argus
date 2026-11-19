@@ -44,6 +44,8 @@ The actual harvest moves inputs into `runs/<stem>.log` and
 scorecard, and prints the session's reading against the lab objective (see
 [the lab spine](lab-spine.md#review)). Use the stem printed by the tool in
 subsequent calls.
+The stem uses the recorded map from the shared tape reader. A tape with
+multiple confirmed maps is archived under `unknown`.
 
 The scorecard's `bot_world_unforced` column counts bot world deaths with no
 health lost in the 3 s before the bot reached lava or slime, which separates
