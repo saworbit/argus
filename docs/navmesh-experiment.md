@@ -830,6 +830,28 @@ any rerun.
 Tapes: `runs/study_g790d3_{ctl,m790dm3}_r1` to `r5` and
 `runs/study_g790d4_{ctl,m790dm4}_r1` to `r5` (machine-local).
 
+## Retiring the lqdm2 jump
+
+The old lqdm2 link from n159 to n162 resolves its launch exactly 96u
+from the source. The runtime requires a launch closer than 96u. The
+native jump probe still crossed the old link, so the anchor calculation
+alone gave no reason to assume the crossing was unusable.
+
+The seat sidecar cuts the jump and keeps the existing walks from n159
+through n198 and n148 to n162. QuakeSpasm walked each of the three links
+at played and 100 ms cadence. Two held-out tasks per cadence on each
+graph reached the same goal from `(625 -495 -88)` within 18 seconds.
+The alternate graph's route search found three hops. The separate walk
+probes establish that each leg is executable even if a task shortcuts
+after the goal comes into sight.
+
+Two ordinary 60-second matches per arm passed the native bands.
+Median stalls changed from two to zero and engagements from 17 to 16.
+Both arms had zero median freezes and lava deaths. The splice preserves
+waypoint positions and directed reach and changes the graph MD5 from
+`1d38c9af81608c45ff72a4259f0ea93d` to `d317737dc46ce147a794fc1c65ecc982`.
+The remaining three maps are tracked in the same issue. [Jump anchors](https://github.com/saworbit/argus/issues/719)
+
 ## Limits
 
 - Two maps laddered, five pairs each. dm4 is the best-instrumented map in the
