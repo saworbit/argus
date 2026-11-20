@@ -909,6 +909,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Retire the e1m5 jump into a solid landing and preserve the playable routes ([#719](https://github.com/saworbit/argus/issues/719)).
+
 - Retire the lqdm2 jump that exceeds its launch anchor and keep the verified three-walk bypass ([#719](https://github.com/saworbit/argus/issues/719)).
 
 - Release a stationary bot from a missed train hop after eight seconds when it is far from its boarding seat on dry floor ([#1003](https://github.com/saworbit/argus/issues/1003)).

@@ -850,7 +850,23 @@ Median stalls changed from two to zero and engagements from 17 to 16.
 Both arms had zero median freezes and lava deaths. The splice preserves
 waypoint positions and directed reach and changes the graph MD5 from
 `1d38c9af81608c45ff72a4259f0ea93d` to `d317737dc46ce147a794fc1c65ecc982`.
-The remaining three maps are tracked in the same issue. [Jump anchors](https://github.com/saworbit/argus/issues/719)
+
+## Retiring the e1m5 jump
+
+The native jump check refused n19 to n28. The old launch estimate is
+104u from n19, and the landing at `(-1079 2185 24)` is solid at the
+bot's origin and chest. The probe sidecar records the failed direction
+by coordinates, so full generation can remove the jump before it checks
+the anchor. The regenerated graph carries all 195 previous seats and
+every other directed pair. None of the 55 eligible pickups or the
+spawn positions assigns to n28. The build accounts for 583 of 600 edicts,
+including the runtime reserve.
+
+Both moat tasks kept their goal and reached the dry checkpoint at played
+and 100 ms cadence. The played tasks took 3.1 and 7.2 seconds. The 100 ms
+tasks took 4.0 and 9.9 seconds. Two 55-second ordinary match pairs passed
+the native gates for that duration. Every match recorded zero freezes
+and lava deaths. [Jump anchors](https://github.com/saworbit/argus/issues/719)
 
 ## Limits
 
