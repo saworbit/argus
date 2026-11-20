@@ -220,6 +220,9 @@ documents event counting and shared Python/Rust contracts.
 | `ARGUS clock` | The engine clock: `frame_us 0` is an ordinary server on the wall clock; a positive `frame_us` is the lab's fixed clock (`host_framerate`), and `seed` names which repeat of an exactly repeatable match it is ([the fixed lab clock](fixed-clock.md)) |
 | `ARGUS mark` | A session bookmark the player pressed (`bind m mark`), with the bot nearest their eye; not a defect by itself, a pointer to look ([controls](controls.md#session-marks)) |
 
+Tape identity readers skip bookmarks with invalid numeric fields and keep
+reading the build, clock and other bookmarks.
+
 Names may contain spaces and event words. Parsers resolve full known track
 names before interpreting verbs; older ambiguous rows without sample/spawn
 context retain the legacy interpretation. Do not split names on whitespace.

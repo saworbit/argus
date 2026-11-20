@@ -1257,6 +1257,14 @@ class TestTapeIdentity(unittest.TestCase):
             history = argus_lab.install_stamps(fx.root, argus_lab.installs(fx.root))
             self.assertEqual([h['stamp'] for h in history], ['0123456789ab', None])
 
+    def test_damaged_bookmarks_leave_other_identity_rows_readable(self):
+        path = REPO / 'tools/argus_mcp/testdata/tape_invalid_marks.json'
+        lines = json.loads(path.read_text(encoding='utf-8'))
+        identity = argus_lab.argus_tape.identity('\n'.join(lines))
+        self.assertEqual(identity['build'], '4a6980c09cea')
+        self.assertEqual(identity['clock']['seed'], 7)
+        self.assertEqual([(mark['n'], mark['t']) for mark in identity['marks']], [(9, 6.25)])
+
     def test_triage_reports_each_mark_with_its_context(self):
         rows = [sample('Reap', t, 1000, 0, 24, spd=0 if t >= 10 else 200) for t in range(1, 30)]
         rows.insert(0, 'ARGEVT Reap spawned\n')
