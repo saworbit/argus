@@ -2022,6 +2022,7 @@ statistical gates. Briefs use the recorded map and include `requested_map`
 when it differs. `totals.failed_spawns` retains refused names through duration
 scaling. A match that records a different map or a fatal engine error fails
 and keeps its raw tape, including any telemetry recorded before the error.
+A fatal tape stays readable in `brief_run` and invalidates its comparison arm.
 An arm holding one fixed-clock seed and build twice is refused the same way,
 with a `REPEATED SEED` card, and different builds or engine clocks between or
 inside the arms are reported in the findings (#852).

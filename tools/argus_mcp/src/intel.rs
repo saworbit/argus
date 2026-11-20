@@ -677,6 +677,7 @@ pub fn brief_tape(tape: &MatchTape, map_hint: Option<&str>) -> MatchBrief {
 
 pub const CONTROLLED_FIXTURE_FLAG: &str =
     "CONTROLLED FIXTURE: inspect separately; excluded from ordinary gameplay bands";
+const FATAL_TAPE_PREFIX: &str = "FATAL TAPE: ";
 
 pub fn is_controlled_fixture(brief: &MatchBrief) -> bool {
     brief
@@ -871,6 +872,9 @@ pub(crate) fn brief_tape_lava(
     let mut flags = flags(&totals, &hotspots, map.as_deref());
     if tape.controlled_fixture {
         flags.insert(0, CONTROLLED_FIXTURE_FLAG.into());
+    }
+    if let Some(error) = &tape.engine_error {
+        flags.insert(0, format!("{FATAL_TAPE_PREFIX}{error}"));
     }
     if !tape.failed_spawns.is_empty() {
         // every historical mx_lqdm2 probe briefed as lqdm2 while the
@@ -1574,7 +1578,7 @@ pub fn compare_band_primary_scaled(
     if candidates
         .iter()
         .chain(controls)
-        .any(|b| is_controlled_fixture(b) || b.has_wrong_map())
+        .any(|b| is_controlled_fixture(b) || b.has_wrong_map() || b.fatal_engine_error().is_some())
     {
         return compare_band_primary(candidates, controls, primary);
     }
@@ -1700,6 +1704,10 @@ pub fn compare_band_primary(
     let wrong_maps = wrong_map_findings(candidates, controls);
     if !wrong_maps.is_empty() {
         return refuse_wrong_map(rep_ctl, rep_cand, wrong_maps);
+    }
+    let fatal_errors = fatal_tape_findings(candidates, controls);
+    if !fatal_errors.is_empty() {
+        return refuse_fatal_tape(rep_ctl, rep_cand, fatal_errors);
     }
     let identity = identity_check(controls, candidates);
     if !identity.void.is_empty() {
@@ -2092,6 +2100,12 @@ impl MatchBrief {
     fn has_wrong_map(&self) -> bool {
         self.requested_map.is_some() || !self.totals.failed_spawns.is_empty()
     }
+
+    fn fatal_engine_error(&self) -> Option<&str> {
+        self.flags
+            .iter()
+            .find_map(|flag| flag.strip_prefix(FATAL_TAPE_PREFIX))
+    }
 }
 
 /// The tape whose stall count is the median: a real match to show,
@@ -2139,6 +2153,40 @@ fn refuse_wrong_map(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> Comp
         gates: Vec::new(),
         findings,
         next_steps: vec![wrong_map_next_step()],
+        a,
+        b,
+        scaled: false,
+        scale_note: None,
+        baseline_run: None,
+        band: Vec::new(),
+        stats: Vec::new(),
+        primary: None,
+    }
+}
+
+fn fatal_tape_findings(candidates: &[MatchBrief], controls: &[MatchBrief]) -> Vec<String> {
+    let mut findings = Vec::new();
+    for (arm, briefs) in [("candidate", candidates), ("control", controls)] {
+        for (index, brief) in briefs.iter().enumerate() {
+            if let Some(error) = brief.fatal_engine_error() {
+                findings.push(format!(
+                    "{FATAL_TAPE_PREFIX}{arm} tape {}: {error}",
+                    index + 1
+                ));
+            }
+        }
+    }
+    findings
+}
+
+fn refuse_fatal_tape(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> CompareReport {
+    CompareReport {
+        verdict: Verdict::Mixed,
+        headline: "Mixed: a fatal engine error invalidates this comparison".into(),
+        gate_card: "FATAL TAPE: record a replacement before comparing gameplay".into(),
+        gates: Vec::new(),
+        findings,
+        next_steps: Vec::new(),
         a,
         b,
         scaled: false,
@@ -2609,6 +2657,8 @@ pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
         || is_controlled_fixture(&b)
         || a.has_wrong_map()
         || b.has_wrong_map()
+        || a.fatal_engine_error().is_some()
+        || b.fatal_engine_error().is_some()
     {
         return compare_briefs(a, b);
     }
@@ -3877,6 +3927,32 @@ ARGEVT Reap hazard
         let report = compare_briefs(a, b);
         assert_eq!(report.verdict, Verdict::Parity);
         assert!(report.gates.iter().all(|g| g.pass));
+    }
+
+    #[test]
+    fn fatal_tape_invalidates_every_comparison_even_outside_representative_rows() {
+        let clean = brief_text(&log_a(), Some("dm4"));
+        let mut fatal = brief_text(
+            &format!("{}\nHost_Error: Program error\n", log_a()),
+            Some("dm4"),
+        );
+        assert!(fatal.fatal_engine_error().unwrap().contains("Host_Error"));
+        fatal.totals.stalls = clean.totals.stalls + 100;
+        let band = [clean.clone(), clean.clone(), fatal.clone()];
+        assert!(representative(&band).fatal_engine_error().is_none());
+        for report in [
+            compare_briefs(clean.clone(), fatal.clone()),
+            compare_briefs_scaled(fatal, clean.clone()),
+            compare_band(&band, std::slice::from_ref(&clean)),
+            compare_band_primary_scaled(std::slice::from_ref(&clean), &band, Some("stall_parity")),
+        ] {
+            assert!(matches!(report.verdict, Verdict::Mixed));
+            assert!(report.gates.is_empty() && report.band.is_empty() && report.stats.is_empty());
+            assert!(report
+                .findings
+                .iter()
+                .any(|finding| finding.contains("Host_Error: Program error")));
+        }
     }
 
     #[test]
