@@ -3,6 +3,7 @@
 Does not parse or redefine ARGLOG/ARGEVT metrics. TACFIX remains the separate
 movement/damage oracle; BHVFIX adds identity, cleanup and noninterference.
 """
+from argus_engine_errors import fatal_engine_line
 import argparse
 import json
 import math
@@ -100,7 +101,7 @@ def audit_diagnostic_ownership(sources):
 
 
 def check(text, *, diagnostics, expected=None, hz=None):
-    assert not any(s in text for s in ("Host_Error", "runaway loop error", "BHVFIX refused")), "engine/fixture error"
+    assert fatal_engine_line(text) is None and "BHVFIX refused" not in text, "engine/fixture error"
     lines = text.splitlines()
     results = []
     active = None

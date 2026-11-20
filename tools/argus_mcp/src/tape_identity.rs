@@ -150,6 +150,27 @@ mod tests {
     use super::*;
 
     #[test]
+    fn identity_matches_the_shared_cases() {
+        #[derive(serde::Deserialize)]
+        struct Case {
+            name: String,
+            lines: Vec<String>,
+            expected: serde_json::Value,
+        }
+        let cases: Vec<Case> =
+            serde_json::from_str(include_str!("../testdata/tape_identity_cases.json")).unwrap();
+        for case in cases {
+            let actual = inspect(&case.lines.join("\r\n"));
+            assert_eq!(
+                serde_json::to_value(actual).unwrap(),
+                case.expected,
+                "{}",
+                case.name
+            );
+        }
+    }
+
+    #[test]
     fn reads_build_clock_and_marks() {
         let text = "ARGUS init on dm4\nARGUS build 4a6980c09cea\n\
             ARGUS clock frame_us 13900 tick_us 1000 seed 7\n\

@@ -1,15 +1,22 @@
 //! Turn a dead match log into one actionable sentence.
 
+use std::sync::OnceLock;
+
 const CONSOLE_PIPE_ERROR: &str = "Error getting # of console events";
 const CONSOLE_PIPE_HELP: &str =
     "engine Host_Error on piped stdin (GetNumberOfConsoleInputEvents). \
 Windows spawn must not inherit the MCP stdio pipe.";
 
 pub fn fatal_engine_error(text: &str) -> Option<String> {
+    static PREFIXES: OnceLock<Vec<String>> = OnceLock::new();
+    let prefixes = PREFIXES.get_or_init(|| {
+        serde_json::from_str(include_str!("fatal_engine_prefixes.json"))
+            .expect("valid fatal engine prefix contract")
+    });
     let line = text.lines().map(str::trim).find(|line| {
-        ["QUAKE ERROR:", "Host_Error:", "Sys_Error:"]
-            .into_iter()
-            .any(|prefix| line.starts_with(prefix))
+        prefixes
+            .iter()
+            .any(|prefix| line.starts_with(prefix.as_str()))
     })?;
     if line.contains(CONSOLE_PIPE_ERROR) {
         return Some(CONSOLE_PIPE_HELP.into());
@@ -74,6 +81,16 @@ pub fn tail_nonempty(text: &str, n: usize) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn fatal_engine_records_match_the_shared_cases() {
+        let cases: Vec<(String, Option<String>)> =
+            serde_json::from_str(include_str!("../testdata/fatal_engine_cases.json")).unwrap();
+        for (text, expected) in cases {
+            let expected = expected.map(|line| format!("engine error: {line}"));
+            assert_eq!(fatal_engine_error(&text), expected, "{text:?}");
+        }
+    }
 
     #[test]
     fn flags_console_pipe() {

@@ -1,4 +1,5 @@
 """Private source, game and tape ownership for native fixture runners."""
+from argus_engine_errors import fatal_engine_line
 from contextlib import contextmanager
 import hashlib
 from pathlib import Path
@@ -125,7 +126,7 @@ def private_game(root, prefix, family, *, autoexec=None):
 
 
 def check_tape(text, map_name=None):
-    require(not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error')), 'engine error in tape')
+    require(fatal_engine_line(text) is None, 'engine error in tape')
     maps = re.findall(r'^ARGUS init on (\S+)\r?$', text, re.M)
     valid = maps == [canonical_map(map_name)] if map_name is not None else len(maps) <= 1
     require(valid, f'wrong or repeated map init: {maps}')

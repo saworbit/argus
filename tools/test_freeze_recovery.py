@@ -33,7 +33,7 @@ class RecoveryReceipts(unittest.TestCase):
                 inspect_fixture(broken, True, .0139)
 
     def test_wrong_rate_and_engine_failure_cannot_pass(self):
-        for text in (receipt(frame_ms=100), receipt() + 'Program error\n'):
+        for text in (receipt(frame_ms=100), receipt() + 'Host_Error: Program error\n'):
             with self.assertRaises(AssertionError):
                 inspect_fixture(text, True, .0139)
 

@@ -2,6 +2,7 @@
 """Tests for tools/argus_build_stamp.py, the QC build identity (#823)."""
 import contextlib
 import io
+import json
 import sys
 import tempfile
 import unittest
@@ -31,6 +32,12 @@ def tree(root, progs=PROGS, defs=DEFS, argus=ARGUS):
 
 
 class Normalise(unittest.TestCase):
+    def test_normalise_matches_the_shared_cases(self):
+        path = Path(__file__).resolve().parent / 'argus_mcp/testdata/build_normalise_cases.json'
+        for case in json.loads(path.read_text(encoding='utf-8')):
+            with self.subTest(case=case['name']):
+                self.assertEqual(stamp.normalise(case['source']), case['expected'])
+
     def test_line_and_block_comments_are_whitespace(self):
         self.assertEqual(stamp.normalise("a // c\nb"), "a\nb")
         self.assertEqual(stamp.normalise("a /* c */ b"), "a b")

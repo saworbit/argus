@@ -18,6 +18,7 @@ import argus_gallery
 import argus_lab
 from argus_source import source_identity
 import argus_fixture_harness as fixtures
+from argus_engine_errors import fatal_engine_line
 
 
 class ExecutableContract(unittest.TestCase):
@@ -183,6 +184,17 @@ class SourceContract(unittest.TestCase):
 
 
 class FixtureContract(unittest.TestCase):
+    def test_fatal_engine_records_match_the_shared_cases(self):
+        path = Path(__file__).resolve().parent / 'argus_mcp/testdata/fatal_engine_cases.json'
+        for text, expected in json.loads(path.read_text(encoding='utf-8')):
+            with self.subTest(text=text):
+                self.assertEqual(fatal_engine_line(text), expected)
+                if expected is None:
+                    fixtures.check_tape(text, 'dm4')
+                else:
+                    with self.assertRaisesRegex(AssertionError, 'engine error'):
+                        fixtures.check_tape(text, 'dm4')
+
     def test_every_runner_refuses_the_absent_backups_root_itself(self):
         import verify_freeze_recovery, verify_mover_transfer, verify_target_attention
         import verify_water_route, verify_route_distance
@@ -228,7 +240,7 @@ class FixtureContract(unittest.TestCase):
             with self.assertRaises(FileNotFoundError): fixtures.read_tape(root, 'chosen', 'dm4')
             path = root / 'runs/chosen.log'
             for text in ('ARGUS init on dm4\nARGUS init on dm4\n',
-                         'ARGUS init on dm2\n', 'ARGUS init on dm4\nHost_Error broken\n'):
+                         'ARGUS init on dm2\n', 'ARGUS init on dm4\nHost_Error: broken\n'):
                 path.write_text(text)
                 with self.assertRaises(AssertionError): fixtures.read_tape(root, 'chosen', 'dm4')
             path.write_bytes(b'ARGUS init on dm4\r\nretained\xff\r\n')

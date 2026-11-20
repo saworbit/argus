@@ -1,4 +1,5 @@
 """Independent decision/physical oracles; do not reconstruct ARGLOG metrics."""
+from argus_engine_errors import fatal_engine_line
 from argus_validation import require
 import math
 import re
@@ -38,7 +39,7 @@ new_goal_gets_new_visits visit_marks_per_bot peer_revisit_not_progress epoch_rol
 
 def common(text):
     require(('BHVRPL begin plan_fixture' in text), 'missing fixture quarantine')
-    require((not any(t in text for t in ('Host_Error', 'Program error', 'runaway loop error'))), 'engine error')
+    require(fatal_engine_line(text) is None, 'engine error')
 
 
 def check_contract(text, map_name, edges=False):
@@ -104,7 +105,7 @@ def check_physical(text, case):
 def check_physical_edges(text, case, deadline_control=False):
     """Accept physical contact/continuous travel, never selections as pickup."""
     require(('BHVRPL begin plan_physical_edges' in text), 'missing physical quarantine')
-    require((not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error'))), 'engine error')
+    require(fatal_engine_line(text) is None, 'engine error')
     rows = [line for line in text.splitlines() if line.startswith('PMFIX ')]
     require((len(rows) >= 5), 'truncated physical receipt')
     begin = re.fullmatch(r"PMFIX begin (dm2|e1m2) case ([3456]) coop ([01]) dm ([01]) pace (160|320) start '([^']+)' goal '([^']+)' solid 0", rows[0])

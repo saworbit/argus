@@ -20,6 +20,29 @@ def muzzle_tape(failures=()):
         f'MFIX end checks 14 ok {int(not failures)}\n')
 
 
+class PrivateLabIdentityTests(unittest.TestCase):
+    def test_stale_response_preserves_warning_and_missing_identity_has_a_fallback(self):
+        lab = runner.PrivateFixtureLab.__new__(runner.PrivateFixtureLab)
+        warning = 'STALE LAB: running and checkout sources differ. Rebuild and restart.'
+        for payload, expected in [
+            (dict(lab_identity=dict(authoritative=False, warning=warning)), warning),
+            ({}, 'matching source-built native lab required'),
+        ]:
+            with self.subTest(payload=payload):
+                reply = dict(result=dict(content=[dict(text=json.dumps(payload))]))
+                with patch.object(lab, 'request', return_value=reply):
+                    with self.assertRaises(ValueError) as error:
+                        lab.call('see', what='project')
+                self.assertEqual(str(error.exception), expected)
+
+    def test_current_response_keeps_the_payload(self):
+        lab = runner.PrivateFixtureLab.__new__(runner.PrivateFixtureLab)
+        payload = dict(lab_identity=dict(authoritative=True), value=42)
+        reply = dict(result=dict(content=[dict(text=json.dumps(payload))]))
+        with patch.object(lab, 'request', return_value=reply):
+            self.assertEqual(lab.call('see', what='project'), payload)
+
+
 class PrivateTests(unittest.TestCase):
     def setUp(self):
         self.temp=TemporaryDirectory()
