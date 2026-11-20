@@ -9,8 +9,10 @@ The 312u probe applies on e1m8 to an aligned, grounded route to a seat
 240u to 280u below. The floor and projected landing checks still reject
 lava, slime and a deeper trace that misses the intended shelf height.
 The coordinate sidecar reproduces the tested splice onto the shipped graph.
-A full regeneration has different waypoints and refuses the splice endpoint.
-The stock sidecar also refuses a full regeneration on a missing cut endpoint.
+Full generation uses different waypoint coordinates from the splice and
+has its own entries in the same sidecar. The
+[regeneration trials](2026-11-20-e1m8-soak.md#full-regeneration) record the
+comparison with the shipped graph.
 
 QuakeSpasm took the real bot from the exact spawn into the connected
 graph in 7.7 s and from the offset start in 8.2 s. Both reached the
