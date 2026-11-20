@@ -100,18 +100,17 @@
     }
   },
   "stand_in": {
-    "protocol": "docs/specs/2026-11-18-stand-in-calibration-2.md",
+    "protocol": "#842",
     "results": "docs/stand-in.md",
     "maps": {
       "dm4": {
-        "dose_response": false,
-        "level": true,
+        "dose_response": true,
+        "level": false,
         "spearman": 0.58,
-        "note": "Calibration 2 (kills per minute in sight, registered): Spearman 0.58 but skill 3 minus 0 +6.44 a minute, 95 per cent -5.12 to +18.01, so dose response fails; level at skill 1 matched (3.99 against 3.92). Exposure is still thin (0.13 to 1.06 minutes in sight a match). The first calibration, per minute of match, read Spearman 0.13.",
+        "note": "Registered calibration 3 used eight 360-second matches per skill and kills per minute in sight. Spearman 0.58 and skill 3 minus skill 0 +5.24 a minute (95 per cent +2.57 to +7.90) pass dose response. Skill 1 averaged 7.33, above the human level band of 1.96 to 5.88. Use this replay and sight measure for directional screening on dm4.",
         "evidence": [
           "docs/stand-in.md",
-          "standin_cal2_dm4_k0_5",
-          "standin_cal2_dm4_k3_8"
+          "runs/standin-calibration-3.results.json"
         ]
       }
     }

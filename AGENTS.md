@@ -27,8 +27,9 @@ says which instrument answers which question.
   clock; trusted only where `tools/lab_instruments.json` says, and never
   for that map's listed limits). Replay one tape exactly with
   `argus-mcp match <map> <secs> <run> --seed N`.
-- Threat questions still need a human session: the stand-in
-  (`argus-mcp standin`) failed its dose-response calibration (#842).
+- On dm4, the stand-in (`argus-mcp standin`) may screen the direction of a
+  threat change using the calibrated replay and kills per minute in sight (#842).
+  Use a human session for the threat verdict and how often bots kill the player.
 - After a session: `argus_lab.py review <stem>` lists the player's marks;
   `argus_gallery.py build <stem>` cuts them for a ruling.
 - After editing `src/`, `python tools/argus_build_stamp.py --write`
