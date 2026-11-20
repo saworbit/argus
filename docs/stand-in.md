@@ -7,8 +7,9 @@ The objective's threat goal, bot kills on a person per minute at skill 1, is
 measured only in human sessions, and those are the scarcest evidence the lab
 has. The stand-in is a puppet client that plays a deathmatch the way a person
 roughly does, so the lab can ask the same question without one. It is an
-instrument with a calibration record, and **on the current record it may not
-screen threat claims**: see [calibration](#calibration).
+calibrated instrument for screening the direction of threat changes on dm4.
+Human sessions decide the threat verdict and measure how often bots kill the player.
+See [calibration 3](#calibration-3-longer-exposure).
 
 ## Running it
 
@@ -119,17 +120,29 @@ band. The interval is wide because exposure is still thin: the matches spent
 same measure gave Spearman 0.60 and an interval clear of zero; that reading
 was not registered and is not a pass.
 
-## What would fix it
+## Calibration 3: longer exposure
 
-The measure is now right; what is missing is exposure
-([#842](https://github.com/saworbit/argus/issues/842)). Either needs its own
-registered calibration:
+The [third calibration](https://github.com/saworbit/argus/issues/842#issuecomment-7023289389)
+kept the same replay, movement and aim profile, and sight measure. It used
+build `1129a18536ba`, eight 360-second dm4 matches per skill, and fresh
+stand-in seeds 9 to 16. The skill order rotated by seed. All 32 wall-clock
+tapes passed map, build and cadence checks and met the three-second minimum
+in sight.
 
-- Navigation that keeps it in the game: the remaining stalls are on dm4's
-  walkway steps and in corners the nav graph's nearest node cannot see.
-- More exposure per tier: longer matches or more of them, so a single match
-  with a few seconds in sight cannot swing a tier's mean.
+| Bot skill | Tapes | Bot kills on the stand-in a minute in sight | SD |
+| --- | --- | --- | --- |
+| 0 | 8 | 4.33 | 2.34 |
+| 1 | 8 | 7.33 | 3.74 |
+| 2 | 8 | 10.05 | 4.23 |
+| 3 | 8 | 9.57 | 2.62 |
 
-Until then `tools/lab_instruments.json` records it as failing dose response on
-dm4, `argus_lab.py pyramid --through 5` does not plan it, and threat claims
-still need a human session.
+Spearman was 0.58. Skill 3 minus skill 0 was +5.24 kills per minute in
+sight, with a 95 per cent Welch interval of +2.57 to +7.90. **Dose response
+passes** the registered rule. The skill 1 mean was 7.33 against the human
+reference of 3.92, above its 1.96 to 5.88 band.
+
+`argus_lab.py pyramid --through 5` may now plan a directional screen on dm4.
+Use the same replay and sight measure for that screen. Human sessions
+remain the evidence for the absolute rate of bot kills on the player and the
+threat verdict.
+[Per-tape readings and identities](../runs/standin-calibration-3.results.json).

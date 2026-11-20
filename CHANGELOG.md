@@ -897,6 +897,7 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Calibrate the dm4 stand-in for directional threat screening with 32 longer matches ([#842](https://github.com/saworbit/argus/issues/842)).
 - Measure cartograph spawn coverage from settled starts, including solid brush pads ([#953](https://github.com/saworbit/argus/issues/953)).
 - Check first-registration reach and distance from the same settled spawns as the reach audit ([#966](https://github.com/saworbit/argus/issues/966)).
 - Count live edicts in cartograph using the same spawn rules as navgen ([#960](https://github.com/saworbit/argus/issues/960)).
