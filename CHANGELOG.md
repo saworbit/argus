@@ -897,6 +897,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Verify the compiled graph and tape receipt before reporting a benchmark, and refresh the dm3 and dm4 graph pins ([#979](https://github.com/saworbit/argus/issues/979)).
+
 - Record the completed GUI timeout, console helper and lava classification fixes in the lab claims ledger ([#976](https://github.com/saworbit/argus/issues/976)).
 
 - Split rapid wish flip runs at bot respawns ([#974](https://github.com/saworbit/argus/issues/974)).

@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::Config;
 use crate::match_ctrl::MatchCtrl;
+use crate::nav_provenance::{self, MapSnapshot};
 use crate::netclient::NetClient;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -128,15 +129,49 @@ pub fn validate_suite(suite: &TaskSuite) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_graph(cfg: &Config, suite: &TaskSuite) -> Result<(), String> {
+fn verify_graph(cfg: &Config, suite: &TaskSuite) -> Result<serde_json::Value, String> {
     let path = cfg.src.join(format!("argus_nav_{}.qc.json", suite.map));
     let bytes = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
-    let actual = format!("{:x}", md5::compute(bytes));
+    let actual = format!("{:x}", md5::compute(&bytes));
     if actual != suite.graph_md5.to_ascii_lowercase() {
         return Err(format!(
             "task suite graph is stale: expected {}, current {actual}",
             suite.graph_md5
         ));
+    }
+    serde_json::from_slice(&bytes).map_err(|e| format!("{}: {e}", path.display()))
+}
+
+fn verify_program_graph(
+    snapshot: Option<MapSnapshot>,
+    graph: &serde_json::Value,
+) -> Result<MapSnapshot, String> {
+    let snapshot = snapshot.ok_or(
+        "no benchmark graph receipt for the installed program. Compile and install through the lab",
+    )?;
+    if !snapshot.runtime_navigation() || snapshot.graph.as_ref() != Some(graph) {
+        return Err("the installed program's graph does not match the benchmark pin".into());
+    }
+    Ok(snapshot)
+}
+
+fn verify_recorded_graph(
+    path: &Path,
+    map: &str,
+    live_text: &str,
+    mut expected: MapSnapshot,
+) -> Result<(), String> {
+    let recorded = crate::paths::read_engine_text(path).map_err(|e| e.to_string())?;
+    // A retained tape from an older run can share the name and graph.
+    let prefix = live_text
+        .rsplit_once('\n')
+        .map_or(live_text, |(lines, _)| lines);
+    if !recorded.starts_with(prefix) {
+        return Err("retained tape does not match the current run".into());
+    }
+    expected.loaded_in_tape = Some(true);
+    if nav_provenance::read_tape(path, map)? != Some(expected) {
+        return Err("tape did not confirm the benchmark graph for the launched program".into());
     }
     Ok(())
 }
@@ -506,11 +541,12 @@ pub async fn run_suite_with_ctrl(
     normalized.map = crate::paths::map_name(&suite.map)?;
     let suite = &normalized;
     validate_suite(suite)?;
-    verify_graph(cfg, suite)?;
+    let graph = verify_graph(cfg, suite)?;
     let count = limit.unwrap_or(suite.tasks.len()).min(suite.tasks.len());
     if count == 0 {
         return Err("benchmark limit must be at least 1".into());
     }
+    let program = verify_program_graph(nav_provenance::for_launch(cfg, &suite.map), &graph)?;
     let tasks = &suite.tasks[..count];
     let seconds = tasks
         .iter()
@@ -535,9 +571,11 @@ pub async fn run_suite_with_ctrl(
     let text = ctrl.log_text().unwrap_or_default();
     let stopped = ctrl.stop(Duration::from_secs(3)).await;
     let result = result?;
-    let log_path = stopped?.log_path.unwrap_or_default();
+    let log_path = stopped?.log_path.ok_or("benchmark retained no tape path")?;
     verify_recorded_map(&text, &suite.map)
         .map_err(|reason| format!("WRONG MAP: {reason}. Tape at {log_path}"))?;
+    verify_recorded_graph(Path::new(&log_path), &suite.map, &text, program)
+        .map_err(|reason| format!("BENCHMARK GRAPH: {reason}. Tape at {log_path}"))?;
     Ok(result)
 }
 
@@ -610,6 +648,50 @@ mod tests {
                 .unwrap_err()
                 .contains(reason));
         }
+    }
+
+    fn registered_graph() -> MapSnapshot {
+        MapSnapshot {
+            map: "dm4".into(),
+            program_md5: "program".into(),
+            inputs_md5: "inputs".into(),
+            in_progs_src: true,
+            in_dispatcher: true,
+            qc_present: true,
+            graph: Some(serde_json::json!({"nodes": [[0, 0, 24]], "links": []})),
+            loaded_in_tape: None,
+        }
+    }
+
+    #[test]
+    fn benchmark_checks_the_installed_graph_and_registration() {
+        let mut snapshot = registered_graph();
+        let graph = snapshot.graph.clone().unwrap();
+        assert!(verify_program_graph(None, &graph).is_err());
+        assert!(verify_program_graph(Some(snapshot.clone()), &graph).is_ok());
+        let other = serde_json::json!({"nodes": [[32, 0, 24]], "links": []});
+        assert!(verify_program_graph(Some(snapshot.clone()), &other).is_err());
+        snapshot.in_dispatcher = false;
+        assert!(verify_program_graph(Some(snapshot), &graph).is_err());
+    }
+
+    #[test]
+    fn benchmark_requires_a_current_tape_with_the_launched_graph() {
+        let dir = crate::test_support::TestDir::new("benchmark-graph-proof").unwrap();
+        let path = dir.path().join("benchmark.log");
+        let snapshot = registered_graph();
+        let no_graph = "ARGUS init on dm4\n";
+        let loaded = "ARGNAV 1 nodes, 0 links\nARGUS init on dm4\n";
+        std::fs::write(&path, no_graph).unwrap();
+        nav_provenance::record_tape(&path, no_graph.as_bytes(), Some(&snapshot)).unwrap();
+        assert!(verify_recorded_graph(&path, "dm4", no_graph, snapshot.clone()).is_err());
+        std::fs::write(&path, loaded).unwrap();
+        nav_provenance::record_tape(&path, loaded.as_bytes(), Some(&snapshot)).unwrap();
+        assert!(verify_recorded_graph(&path, "dm4", loaded, snapshot.clone()).is_ok());
+        assert!(verify_recorded_graph(&path, "dm4", no_graph, snapshot.clone()).is_err());
+        let mut other_program = snapshot;
+        other_program.program_md5 = "other program".into();
+        assert!(verify_recorded_graph(&path, "dm4", loaded, other_program).is_err());
     }
 
     #[test]
