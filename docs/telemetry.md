@@ -160,6 +160,16 @@ the private [target-decision contracts](combat-attention.md), including
 measured cadence, ordered checks and a final failure count. Those tapes emit
 `BHVRPL begin target_attention` and stay outside ordinary match bands.
 
+`ARGUS tele timing '<entry seat>' -> '<exit seat>'` records confirmation of
+a pre-existing graph link for item respawn estimates. A deferred confirmation
+appears when the active search has finished. Use traversal and pickup
+records for match counts.
+
+The [classic bot studies](classic-bot-comparisons.md) keep private decision
+tapes under unique `study_` names and list their checks and hashes in the
+result receipts. Use the receipts for fixture outcomes. For match comparisons
+select the separately recorded fixed-clock or played-rate arms.
+
 Blind-review ratings are subjective evidence, separate from native match
 metrics. Keep build identity in a separate key until scoring is complete.
 The `labcamera` recorder is an instrument, excluded from both bot and human

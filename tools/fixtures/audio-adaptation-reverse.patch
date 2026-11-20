@@ -1,0 +1,211 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -195,7 +195,6 @@
+ .vector ar_sndpos;              // OPM: last heard sound position
+ .float  ar_sndtime;             // OPM: when it was heard
+ .entity ar_sndent;              // OPM: who made it
+-.float  ar_sndspent;            // this cue has served its movement purpose
+ .entity ar_nemesis;             // OPM: who keeps killing this bot
+ .float  ar_nemkills;            // OPM: consecutive deaths to them;
+                                 // 3+ is a vendetta, any kill vents it
+@@ -4257,11 +4256,6 @@
+     self.ar_lastfoe = world;
+     self.ar_hurtfoe = world; self.ar_hurtfoetime = 0;
+     self.ar_targetscan = 0; self.ar_targethold = 0;
+-    self.ar_sndpos = '0 0 0';
+-    self.ar_sndtime = 0;
+-    self.ar_sndent = world;
+-    self.ar_sndweap = 0;
+-    self.ar_sndspent = 0;
+     self.ar_bitem = world; self.ar_bitemlast = world;
+     self.ar_bitemscan = 0; self.ar_bitemend = 0; self.ar_bitemcool = 0;
+     Argus_SetSkill ();
+@@ -5054,10 +5048,12 @@
+     dprint ("\n");
+ };
+ 
+-// Live listeners remember a shot or pickup in earshot. Walls damp the
+-// radius by 1.4x. A pickup has a neutral weapon cue and yields to a
+-// shot less than 0.6 seconds old.
+-void(vector spos, entity who, float shotweapon) Argus_HearSound =
++// OPM slice B: gunfire is the tactical sound. Every live bot in
++// earshot records it in a one-slot audio memory; a wall between damps
++// the radius by 1.4x (an eye trace, not real propagation - the right
++// lie at deathmatch scale). Called from W_Attack for every player,
++// human or bot, so bots hear Shane the way he hears them.
++void(vector spos, entity who) Argus_HearSound =
+ {
+     local entity b;
+     local float d;
+@@ -5065,8 +5061,7 @@
+     b = argus_bots;
+     while (b != world)
+     {
+-        if (b != who && b.health > 0
+-            && (shotweapon || !b.ar_sndweap || time >= b.ar_sndtime + 0.6))
++        if (b != who && b.health > 0)
+         {
+             d = vlen (b.origin - spos);
+             if (d < 1000)
+@@ -5084,8 +5079,10 @@
+                     b.ar_sndpos = spos;
+                     b.ar_sndtime = time;
+                     b.ar_sndent = who;
+-                    b.ar_sndweap = shotweapon;
+-                    b.ar_sndspent = 0;
++                    // weapon-sound classification (mre Predator):
++                    // the listener knows WHAT it heard, and the
++                    // investigation gate scales its appetite by it
++                    b.ar_sndweap = who.weapon;
+                 }
+             }
+         }
+@@ -5301,8 +5298,7 @@
+                     if (normalize (fov) * v_forward < 0.2)
+                     {
+                         ok = 0;
+-                        if (self.ar_sndtime > 0
+-                            && time < self.ar_sndtime + 2
++                        if (time < self.ar_sndtime + 2
+                                              + self.ar_skill * 0.5
+                             && vlen (b.origin - self.ar_sndpos) < 300)
+                             ok = 1;
+@@ -10298,70 +10294,6 @@
+         && !self.ar_sprintstate && self.ar_door == world && !self.ar_tactic;
+ };
+ 
+-float() Argus_InvestigateNoise =
+-{
+-    local entity hop;
+-    local vector to;
+-    local float distance, reach, want, diff, turn, clear;
+-
+-    if (!ar_opm_ears || self.ar_skill < AR_SKILL_MEMORY || self.ar_enemy != world
+-        || !Argus_CanInvestigateNoise () || self.ar_sndspent || self.ar_sndtime <= 0
+-        || time >= self.ar_sndtime + 2.5 + self.ar_skill * 0.5)
+-        return FALSE;
+-
+-    // Heard rockets and lightning draw healthy bots. A weak bot keeps
+-    // its distance until it has a better stack or a powerup to spend.
+-    reach = 700;
+-    if (self.super_damage_finished > time)
+-        reach = 1000;
+-    else if (self.ar_sndweap == IT_ROCKET_LAUNCHER || self.ar_sndweap == IT_LIGHTNING)
+-    {
+-        if (self.health + self.armorvalue * self.armortype < 60)
+-            reach = 350;
+-        else if (self.health > 80)
+-            reach = 850;
+-    }
+-
+-    to = self.ar_sndpos - self.origin;
+-    to_z = 0;
+-    distance = vlen (to);
+-    if (distance >= reach)
+-        return FALSE;
+-    if (distance <= 80)
+-    {
+-        self.ar_sndspent = 1;
+-        return FALSE;
+-    }
+-
+-    want = vectoyaw (to);
+-    traceline (self.origin + '0 0 22', self.ar_sndpos + '0 0 22', TRUE, self);
+-    clear = trace_fraction == 1 && !trace_startsolid && !trace_allsolid;
+-    if (!clear || Argus_MoveHazard (want, 48) || !Argus_SafeLine (self.ar_sndpos))
+-    {
+-        // Only a nearby, fresh shot earns a detour. The ordinary waypoint
+-        // hop must open onto the remembered location and keep dry floor.
+-        hop = world;
+-        if (!clear && self.ar_sndweap && self.ar_sndweap != IT_AXE && distance < 320
+-            && time < self.ar_sndtime + 1.25)
+-            hop = Argus_PursuitHop (self.ar_sndpos);
+-        if (hop == world)
+-        {
+-            self.ar_sndspent = 1;
+-            return FALSE;
+-        }
+-        want = vectoyaw (hop.origin - self.origin);
+-    }
+-    diff = want - self.ar_moveyaw;
+-    while (diff > 180)  diff = diff - 360;
+-    while (diff < -180) diff = diff + 360;
+-    turn = AR_TURNRATE * frametime;
+-    if (diff > turn)        diff = turn;
+-    else if (diff < -turn)  diff = -turn;
+-    self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "noise_investigate");
+-    self.angles_y = self.ar_moveyaw;
+-    return TRUE;
+-};
+-
+ void() Argus_AI =
+ {
+     local vector gp, tp, to, sdir;
+@@ -10680,9 +10612,64 @@
+     Argus_BodyBlockCheck ();
+ 
+     // investigation (v3.41, the second half of the hearing slice):
+-    // Borrow combat steering for the cue while preserving the route goal.
+-    if (!fighting)
+-        fighting = Argus_InvestigateNoise ();
++    // fresh gunfire PULLS an unengaged bot toward it instead of just
++    // turning its head. The "getting dumber" feel was traffic
++    // dilution - corridor mode and doors opened the whole map, bots
++    // commute far-flung errands, and a human blazing away drew only
++    // glances. Bounded 700u, hazard-guarded, route-preserving (the
++    // node target survives; steering just borrows the combat
++    // override for the moment), and it decays with the sound.
++    // cognition gate: a warmup partner glances at noises but never
++    // hunts them - skill 1+ investigates
++    if (!fighting && ar_opm_ears && Argus_CanInvestigateNoise ()
++        && self.ar_skill >= AR_SKILL_MEMORY && self.ar_enemy == world
++        && self.ar_sndtime > 0
++        && time < self.ar_sndtime + 2.5 + self.ar_skill * 0.5)
++    {
++        // weapon-sound classification (mre Predator): how far a bot
++        // will go to investigate depends on WHAT it heard and how
++        // much it can afford. Heavy gunfire (RL/LG) heard on a thin
++        // stack keeps its distance; a healthy bot hunts the big
++        // fight harder than small-arms chatter.
++        turn = 700;
++        if (self.super_damage_finished > time)
++            turn = 1000;        // quad in hand: thirty seconds to
++                                // SPEND, not to shop - hunt any noise
++                                // at full earshot ("they don't
++                                // understand the powerup", v380 dm3
++                                // session)
++        else if (self.ar_sndweap == IT_ROCKET_LAUNCHER
++                 || self.ar_sndweap == IT_LIGHTNING)
++        {
++            if (self.health + self.armorvalue * self.armortype < 60)
++                turn = 350;
++            else if (self.health > 80)
++                turn = 850;
++        }
++        to = self.ar_sndpos - self.origin;
++        to_z = 0;
++        if (vlen (to) > 80 && vlen (to) < turn)
++        {
++            want = vectoyaw (to);
++            traceline (self.origin + '0 0 22', self.ar_sndpos + '0 0 22',
++                       TRUE, self);
++            if (trace_fraction == 1 && !Argus_MoveHazard (want, 48))
++            {
++                diff = want - self.ar_moveyaw;
++                while (diff > 180)  diff = diff - 360;
++                while (diff < -180) diff = diff + 360;
++                turn = AR_TURNRATE * frametime;
++                if (diff > turn)        diff = turn;
++                else if (diff < -turn)  diff = -turn;
++                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "noise_investigate");
++                self.angles_y = self.ar_moveyaw;
++                fighting = 1;       // borrow the combat override:
++                                    // goal steering stands down
++            }
++            else
++                self.ar_sndtime = 0; // do not pull blindly into walls/brinks (#924)
++        }
++    }
+ 
+     havetarget = 0;
+     tp = self.origin;

@@ -1,0 +1,108 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -5830,13 +5830,12 @@
+ // open run at a box still loses to any real cover elsewhere).
+ // 500u where the battle grab uses 240: the grab is a detour from
+ // a fight the bot is winning, this is the way out of one it is not.
+-float(float away) Argus_RetreatSupplyYaw =
+-{
+-    local entity it;
+-    local vector point, offset;
+-    local float v, bv, cls, dy, yaw, bestyaw;
+-
+-    bestyaw = away;
++entity() Argus_RetreatSupply =
++{
++    local entity it, best;
++    local float v, bv, cls;
++
++    best = world;
+     bv = 0;
+     it = findradius (self.origin, 500);
+     while (it != world)
+@@ -5846,32 +5845,17 @@
+             cls = Argus_ItemClass (it);
+             if (cls == AR_C_HEALTH || cls == AR_C_ARMOR)
+             {
+-                point = Argus_GoalPoint (it);
+-                offset = point - self.origin;
+-                // A nearby pickup can pay off within the current cover leg.
+-                v = Argus_ItemValue (it, cls) * 160 / (vlen (offset) + 160);
+-                dy = vectoyaw (offset) - away;
+-                while (dy > 180) dy = dy - 360;
+-                while (dy < -180) dy = dy + 360;
+-                if (v > bv && fabs (dy) <= 100)
++                v = Argus_ItemValue (it, cls);
++                if (v > bv && Argus_SafeLine (Argus_GoalPoint (it)))
+                 {
+-                    // SafeLine checks floor, so check for a wall on the
+-                    // direct approach as well as floor on the cover leg.
+-                    traceline (self.origin + '0 0 16', point, TRUE, self);
+-                    yaw = away + dy;
+-                    if (trace_fraction == 1 && !trace_startsolid && !trace_allsolid
+-                        && !Argus_MoveHazard (yaw, 48) && !Argus_MoveHazard (yaw, 90)
+-                        && Argus_SafeLine (point))
+-                    {
+-                        bestyaw = yaw;
+-                        bv = v;
+-                    }
++                    best = it;
++                    bv = v;
+                 }
+             }
+         }
+         it = it.chain;
+     }
+-    return bestyaw;
++    return best;
+ };
+ 
+ // "rocket", not stock's "missile". The 55% commit chance keeps the
+@@ -6249,7 +6233,7 @@
+ float() Argus_Combat =
+ {
+     local string movecause;
+-    local entity e, cnode, ctarget, chop;
++    local entity e, sup, cnode, ctarget, chop;
+     local vector to, aimpt, err, cvr, shd, shp, motstep, moterr;
+     local float d, want, diff, turn, trackt, errscale, loft;
+     local float sub, h, trem;
+@@ -7137,8 +7121,21 @@
+             // Inside the fallback, the way to a live health/armour item
+             // is candidate zero, so cover TOWARD supplies beats the other
+             // fan headings and a floor-safe supply run beats their plain
+-            // fallbacks. Supply headings stay within 100 degrees of
+-            // directly away from the enemy.
++            // fallbacks. Never
++            // back toward the enemy: more than 100 degrees off the
++            // away line and the candidate is skipped (sy == want
++            // is the none sentinel - it just duplicates ck 1).
++            sy = want;
++            sup = Argus_RetreatSupply ();
++            if (sup != world)
++            {
++                dy = vectoyaw (Argus_GoalPoint (sup) - self.origin)
++                     - want;
++                while (dy > 180)  dy = dy - 360;
++                while (dy < -180) dy = dy + 360;
++                if (fabs (dy) <= 100)
++                    sy = want + dy;
++            }
+             required = 2;
+             if (self.ar_secondary != world)
+                 required = 3;
+@@ -7188,13 +7185,7 @@
+                     }
+                 }
+             }
+-            ck = 1;
+-            if (cfound < required)
+-            {
+-                sy = Argus_RetreatSupplyYaw (want);
+-                if (sy != want)
+-                    ck = 0;
+-            }
++            ck = 0;
+             while (ck < 6 && cfound < required)
+             {
+                 if (ck == 0)        cy = sy;

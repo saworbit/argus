@@ -48,6 +48,7 @@ These keys may also be supplied as environment variables; environment wins.
 | `ARGUS_FTEQCC` | Modern fteqcc executable |
 | `ARGUS_ENGINE` | Dedicated-capable Quake executable |
 | `ARGUS_BASEDIR` | Engine data directory containing `id1/` and the `argus/` mod |
+| `ARGUS_RUNS` | Native lab tape and receipt directory, defaulting to `runs/` |
 | `ARGUS_PYTHON` | Python 3 executable |
 
 `ARGUS_MAPS` optionally overrides the default `maps_local/`. The game data,
@@ -527,6 +528,15 @@ The default maps are dm6 and lqdm2. Outputs and prefixes must be new;
 `--legacy-control` must reproduce exactly the declared fixation failures.
 Its receipt/privacy tests run in fast CI and the `attention` private family
 is compiled with the other maintained variants.
+
+The [classic bot comparisons](classic-bot-comparisons.md) record the stock
+scenes, build IDs and private fixture receipts for pursuit, pickups, firing
+and portal confirmation. Use the decision results for those cases and the
+separate played-rate tapes for match safety. When native matches write to a
+private `ARGUS_RUNS` directory, copy the selected tapes and their navigation
+receipts under their original, unique `study_` names into the checkout's
+`runs/` before running `argus_lab.py skeptic`.
+[Private tape lookup issue](https://github.com/saworbit/argus/issues/1002)
 
 ## Add or regenerate navigation
 

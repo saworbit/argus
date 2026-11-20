@@ -902,6 +902,175 @@
       "cheapest_tier": 2
     },
     {
+      "id": "retreat-supply-selection",
+      "title": "Retreat can overlook usable supplies",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 3,
+      "maps": [
+        "dm2",
+        "dm3"
+      ],
+      "statement": "In controlled engine cases on dm2 and dm3, a pickup facing the enemy or across a wall could displace a reachable retreat supply. The selector now checks each candidate's approach and escape direction before giving it priority, and weighs pickup value against distance. It chose the reachable alternative in both maps and kept the escape fallback when no supply qualified.",
+      "evidence": [
+        "docs/behaviour-diagnostics.md",
+        "runs/retreat-supply-selection.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "pickup-audio-weapon-cue",
+      "title": "Pickup audio inherited the actor's weapon",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 2,
+      "maps": ["dm2", "dm3", "dm6"],
+      "statement": "Native armour touches now record a neutral pickup cue and a fresh life clears the old hearing memory. Stock firing callbacks produce the sound of the shot that actually fired, including ammunition fallbacks and sustained nail or lightning fire. A fresh shot takes precedence over a pickup. On the longer dm2 repeat both arms had one missed-train freeze and the candidate's was shorter.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/audio-adaptation.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "lightning-range-burst",
+      "title": "Small range changes broke lightning bursts",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 3,
+      "maps": ["dm2", "dm3"],
+      "statement": "A target moving across 480 units repeatedly cancelled the firing chain. A wider range for the equipped weapon hit the freeze-under-fire and rescue-warp gates. The retained 20-unit extension applies to active bursts only and passed the weapon cases on dm2 and dm3 and the played-rate stationary gates on dm3 and dm4.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/classic-combat.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "teleport-pickup-timing",
+      "title": "Teleporter chords inflated pickup arrival estimates",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 3,
+      "maps": ["dm3", "dm6"],
+      "statement": "Pickup timing treated a teleporter link as a walk between its endpoints. After an actual warp confirms an always-active link, the respawn estimate allows for the exit coast and both seat offsets. On dm3 and dm6 the candidate passed over a too-early pickup on direct and walk-plus-teleport paths and retained the route when the pickup was due.",
+      "evidence": [
+        "docs/map-intelligence.md",
+        "runs/teleport-pickup-timing.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "cached-pursuit-corner",
+      "title": "A hidden opponent can draw direct pursuit into a wall",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 2,
+      "maps": ["dm2", "dm6"],
+      "statement": "The direct chase checked its initial step only. In stock corner fixtures the candidate rejected the blocked line and steered along one ordinary waypoint edge towards the last observed position. Mover, airborne, retreat and low-skill cases rejected the detour.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/ten-bot-rounds.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "combat-pickup-commitment",
+      "title": "Combat pickup scans could renew a failed commitment",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 2,
+      "maps": ["dm2", "dm3"],
+      "statement": "Repeated scans renewed the target deadline before the timeout could apply. The candidate keeps the active deadline, cools an expired target and weighs eligible pickups by reachability, utility and distance. The dm2 and dm3 fixtures also verified that loss of a fight and respawn clear the relevant state.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/ten-bot-rounds.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "invulnerable-combat-retreat",
+      "title": "Invulnerable bots could retreat at low health",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 2,
+      "maps": ["dm2", "dm3"],
+      "statement": "In both native fixtures a low-health bot could start or continue a retreat while invulnerable. The live invulnerability timer now releases an ongoing retreat and prevents a new one.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/ten-bot-rounds.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "teleport-observation-during-search",
+      "title": "A route search could discard a live portal observation",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 2,
+      "maps": ["dm3", "dm6"],
+      "statement": "Successful uses of unconditional portals during a route search went unrecorded. Stock teleport touches on dm3 and dm6 now preserve the running search and confirm the portal at the next idle route frame.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/ten-bot-rounds.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "safe-shot-investigation-corner",
+      "title": "A wall stopped investigation of nearby gunfire",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 2,
+      "maps": ["dm2", "dm6"],
+      "statement": "A fresh shot within 320 units can draw an idle bot along one ordinary waypoint edge with safe floor and a clear opening. Stock fixtures preserve the pickup goal and reject detours for old shots, pickup sounds, warmup skill and committed movers. Arrival consumes the movement cue.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/audio-adaptation.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "overlapping-teleport-observations",
+      "title": "One busy-search portal observation could displace another",
+      "status": "fixed",
+      "fixed_on": "2026-11-20",
+      "kind": "defect",
+      "tier": 2,
+      "maps": ["dm3", "dm6"],
+      "statement": "Both unconditional warp links are confirmed at the next idle frame when used during one active search. Repeated uses of either trigger leave one observation, and conditional gates still do not confirm the shortcut.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/audio-adaptation.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
+      "id": "train-boarding-wait",
+      "title": "A missed train can leave a bot standing on the boarding pad",
+      "status": "open",
+      "kind": "defect",
+      "tier": 1,
+      "maps": ["dm2"],
+      "statement": "The fixed-clock control recorded a 10.8-second train wait that ended without boarding. An earlier played-rate candidate stood 12.1 seconds at the other boarding pad. A longer hearing comparison reproduced the wait in both arms: 12.7 seconds in the control and 11.1 in the candidate. Both were attributed to a train hop that ended without boarding.",
+      "next": "Start from each pad at several phases of the train cycle and measure waiting and successful boarding before changing the route cost or timeout.",
+      "evidence": [
+        "docs/classic-bot-comparisons.md",
+        "runs/classic-combat.results.json",
+        "runs/audio-adaptation.results.json"
+      ],
+      "cheapest_tier": 2
+    },
+    {
       "id": "overhead-target-replan",
       "title": "Re-plan a grounded bot whose steering point stands overhead behind solid",
       "status": "refuted",

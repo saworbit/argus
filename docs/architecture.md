@@ -46,7 +46,10 @@ flowchart TD
 Development navigation preserves fewest-link routing, then minimises geometric
 distance among equal-link alternatives. A better parent propagates its distance
 to descendants, so shopping and installed routes use the same settled distance
-space. See the [cross-map audit and engine contracts](map-intelligence.md).
+space. Shopping also carries a pickup timing estimate along that path. A
+successful unconditional warp can confirm a shorter estimate for an existing
+link. Distinct confirmations made during a flood are applied at the next idle
+route frame. See the [cross-map audit and engine contracts](map-intelligence.md).
 
 Development movement reacts to failed walking while combat owns steering.
 It tries a short checked exit while retaining aim and fire. Recent hostile
@@ -58,6 +61,22 @@ Development combat also reassesses its target using recent hostile damage,
 observed powerups and a commitment margin. It can answer a visible third-party
 attacker or prefer a vulnerable opponent while preserving reaction delay,
 goal ownership and fair observation. See the [decision policy and controls](combat-attention.md).
+
+Combat pickup scoring weighs value against distance after checking a clear
+approach and floor. A live target receives one 1.5-second attempt and goes on
+an eight-second cooldown if it stays available past the deadline. Retreat
+resupply checks the escape heading as well as reach. Own invulnerability
+prevents or releases low-stack retreat. An active lightning burst can hold
+out to 500 units, with a 480-unit threshold for new bursts and the existing
+ammunition and water checks. See the [combat decisions and checks](classic-bot-comparisons.md).
+
+The hearing cache stores one observation per listener and clears on respawn.
+`Argus_HearSound(position, actor, shotweapon)` takes the weapon actually
+fired from the stock firing code. Item touches pass zero and yield to weapon
+sounds younger than 0.6 seconds. A blocked chase or nearby fresh shot can
+borrow steering for one verified ordinary waypoint leg. The leg preserves
+route goals and yields to committed route actions. A spent sound approach
+can still supply an orientation cue. See the [hearing and route checks](classic-bot-comparisons.md#ten-hearing-and-route-learning-rounds).
 
 The tactical attack-cover-return state machine owns movement temporarily on
 two authored routes. It preserves item-route state but suppresses incompatible
@@ -197,6 +216,7 @@ Compare matched tick classes and retain the source identity for every arm.
 | `src/argus_tactics.qc` | Bounded tactical state machine |
 | `src/argus_tactic_fixture.qc` | Explicit developer-only engine fixture |
 | `src/argus_nav.qc` | Runtime sliced search and route handling |
+| `src/items.qc` / `src/weapons.qc` / `src/triggers.qc` | Stock pickup, firing and teleport behaviours that provide live observations to Argus |
 | `src/argus_nav_dispatch.qc` | Hand-maintained map dispatcher |
 | `src/argus_nav_<map>.qc` | Generated graph; active only with compilation-list and dispatcher entries |
 | `src/argus_nav_<map>.qc.json` | Machine-readable graph twin |

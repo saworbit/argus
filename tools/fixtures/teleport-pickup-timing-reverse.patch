@@ -1,0 +1,39 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -7888,7 +7888,7 @@
+     local float sw, sa, sh, sr, sp, so;
+     local vector gp, d;
+     local float dist, neard, lifedist, shelf, cls, v, sc, ws, u, bu, final;
+-    local float breg, lifefight, arrival;
++    local float breg, lifefight;
+ 
+     bw = world;  ba = world;  bh = world;
+     br = world;  bp = world;  bo = world;
+@@ -8047,8 +8047,8 @@
+                 v = Argus_ItemValue (e, cls);
+                 // the item-clock gate: chase a pending respawn only
+                 // when we would arrive at most ~3 s before it pops -
+-                // a timing run, not a camp. Convert the route estimate
+-                // to seconds at a conservative 280u/s. Clocks apply only
++                // a timing run, not a camp. dist * 0.0036 is travel
++                // time at a conservative 280 u/s. Clocks apply only
+                 // to items WORTH timing (weapons, armour, powerups,
+                 // the mega): the first clock ladder had bots orbiting
+                 // empty SHELL spawns on the dm4 pit floor at the lava
+@@ -8057,14 +8057,13 @@
+                 // band). Humans do not time shell boxes either.
+                 if (e.solid == SOLID_NOT)
+                 {
+-                    arrival = (dist + (rnode.an_etadist - rnode.an_dist)) * 0.0036;
+                     if (cls != AR_C_WEAPON && cls != AR_C_ARMOR
+                         && cls != AR_C_POWER
+                         && !(cls == AR_C_HEALTH && e.healamount >= 100))
+                         v = 0;
+-                    else if (e.nextthink - time > arrival + 10)
++                    else if (e.nextthink - time > dist * 0.0036 + 10)
+                         v = 0;
+-                    else if (e.nextthink - time > arrival + 3)
++                    else if (e.nextthink - time > dist * 0.0036 + 3)
+                         // pre-positioning (campaign item 4, cortex
+                         // CONTROL_MAJOR "be early, not on time";
+                         // Shane's circuits review x2): a major coming

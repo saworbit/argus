@@ -1,0 +1,503 @@
+{
+  "schema": 1,
+  "measured": "2026-11-20",
+  "skill": 1,
+  "builds": {
+    "control": "551c48049913",
+    "candidate": "d6d11aafc80d"
+  },
+  "fixtures": {
+    "study_tenrounds_fixture_control_dm2": {
+      "blocked_direct_pursuit": false,
+      "visible_walk_detour": false,
+      "walk_detour_combat_owns_steering": true,
+      "keeps_committed_mover": true,
+      "keeps_air_control": true,
+      "keeps_low_skill": true,
+      "keeps_retreat_priority": true,
+      "rejects_pickup_behind_wall": false,
+      "near_health_beats_distant_armour": false,
+      "keeps_pickup_commitment": false,
+      "expired_pickup_cools_and_replans": false,
+      "spawn_clears_pickup_state": false,
+      "lost_enemy_clears_pickup": false,
+      "low_stack_can_keep_retreating": true,
+      "invulnerability_ends_retreat": false,
+      "invulnerability_prevents_new_retreat": false
+    },
+    "study_tenrounds_fixture_control_dm3": {
+      "near_health_beats_distant_armour": false,
+      "keeps_pickup_commitment": false,
+      "expired_pickup_cools_and_replans": false,
+      "spawn_clears_pickup_state": false,
+      "lost_enemy_clears_pickup": false,
+      "low_stack_can_keep_retreating": true,
+      "invulnerability_ends_retreat": false,
+      "invulnerability_prevents_new_retreat": false,
+      "live_portal_shop_started": true,
+      "warp_leaves_active_flood_unchanged": true,
+      "idle_frame_learns_busy_warp": false
+    },
+    "study_tenrounds_fixture_control_dm6": {
+      "blocked_direct_pursuit": false,
+      "visible_walk_detour": false,
+      "walk_detour_combat_owns_steering": true,
+      "keeps_committed_mover": true,
+      "keeps_air_control": true,
+      "keeps_low_skill": true,
+      "keeps_retreat_priority": true,
+      "live_portal_shop_started": true,
+      "warp_leaves_active_flood_unchanged": true,
+      "idle_frame_learns_busy_warp": false
+    },
+    "study_tenrounds_fixture_candidate_dm2": {
+      "blocked_direct_pursuit": true,
+      "visible_walk_detour": true,
+      "walk_detour_combat_owns_steering": true,
+      "keeps_committed_mover": true,
+      "keeps_air_control": true,
+      "keeps_low_skill": true,
+      "keeps_retreat_priority": true,
+      "rejects_pickup_behind_wall": true,
+      "near_health_beats_distant_armour": true,
+      "keeps_pickup_commitment": true,
+      "expired_pickup_cools_and_replans": true,
+      "spawn_clears_pickup_state": true,
+      "lost_enemy_clears_pickup": true,
+      "low_stack_can_keep_retreating": true,
+      "invulnerability_ends_retreat": true,
+      "invulnerability_prevents_new_retreat": true
+    },
+    "study_tenrounds_fixture_candidate_dm3": {
+      "near_health_beats_distant_armour": true,
+      "keeps_pickup_commitment": true,
+      "expired_pickup_cools_and_replans": true,
+      "spawn_clears_pickup_state": true,
+      "lost_enemy_clears_pickup": true,
+      "low_stack_can_keep_retreating": true,
+      "invulnerability_ends_retreat": true,
+      "invulnerability_prevents_new_retreat": true,
+      "live_portal_shop_started": true,
+      "warp_leaves_active_flood_unchanged": true,
+      "idle_frame_learns_busy_warp": true
+    },
+    "study_tenrounds_fixture_candidate_dm6": {
+      "blocked_direct_pursuit": true,
+      "visible_walk_detour": true,
+      "walk_detour_combat_owns_steering": true,
+      "keeps_committed_mover": true,
+      "keeps_air_control": true,
+      "keeps_low_skill": true,
+      "keeps_retreat_priority": true,
+      "live_portal_shop_started": true,
+      "warp_leaves_active_flood_unchanged": true,
+      "idle_frame_learns_busy_warp": true
+    }
+  },
+  "screens": {
+    "fixed-dm3": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 8.0,
+          "b": 6.666666666666667,
+          "limit": 2.4693678903269514,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 282.0,
+          "b": 277.6666666666667,
+          "limit": 114.82655519424843,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 9.333333333333334,
+          "b": 10.0,
+          "limit": 7.108054898806313,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 3.3333333333333335,
+          "b": 4.666666666666667,
+          "limit": 3.4922135609890117,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        }
+      },
+      "gates": {}
+    },
+    "fixed-dm4": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 36.333333333333336,
+          "b": 31.0,
+          "limit": 9.877471561307805,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 251.0,
+          "b": 260.0,
+          "limit": 24.78171368838994,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 9.333333333333334,
+          "b": 8.666666666666666,
+          "limit": 11.043348928452616,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 3.3333333333333335,
+          "b": 6.333333333333333,
+          "limit": 6.984427121978023,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 1.3333333333333333,
+          "b": 2.0,
+          "limit": 3.3651811904330566,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {}
+    },
+    "played-dm2": {
+      "duration_sec": 60,
+      "metrics": {
+        "engages": {
+          "a": 8.333333333333334,
+          "b": 10.666666666666666,
+          "limit": 8.18996676156598,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 214.33333333333334,
+          "b": 199.0,
+          "limit": 39.641953085644566,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 1.3333333333333333,
+          "b": 2.6666666666666665,
+          "limit": 3.095516470998373,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 6.666666666666667,
+          "b": 7.666666666666667,
+          "limit": 6.398610960374308,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 1.6666666666666667,
+          "b": 0.6666666666666666,
+          "limit": 2.6398653164297774,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 5
+        },
+        "candidate": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 2
+        }
+      }
+    },
+    "played-dm4": {
+      "duration_sec": 60,
+      "metrics": {
+        "engages": {
+          "a": 25.0,
+          "b": 22.666666666666668,
+          "limit": 10.008884941779367,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 196.0,
+          "b": 203.0,
+          "limit": 26.066581415035355,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 8.0,
+          "b": 11.0,
+          "limit": 6.466323014923809,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 3.0,
+          "b": 1.6666666666666667,
+          "limit": 5.902918298980975,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 1.3333333333333333,
+          "limit": 2.4693678903269514,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 0
+        },
+        "candidate": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 4
+        }
+      }
+    },
+    "played-dm6": {
+      "duration_sec": 60,
+      "metrics": {
+        "engages": {
+          "a": 18.0,
+          "b": 17.0,
+          "limit": 5.361591803435494,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 243.33333333333334,
+          "b": 237.0,
+          "limit": 26.28290530194695,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 6.0,
+          "b": 8.666666666666666,
+          "limit": 6.533333333333333,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 2.0,
+          "b": 4.0,
+          "limit": 3.2331615074619044,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 0
+        },
+        "candidate": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 0
+        }
+      }
+    },
+    "confirmation-dm4": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 30.0,
+          "b": 27.5,
+          "limit": 10.127849393298328,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 260.5,
+          "b": 264.5,
+          "limit": 30.757546499463615,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 12.0,
+          "b": 10.5,
+          "limit": 7.625396164571823,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 2.75,
+          "b": 1.5,
+          "limit": 4.832873541348528,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.5,
+          "b": 0.25,
+          "limit": 1.565247584249853,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 2
+        },
+        "candidate": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 1
+        }
+      }
+    }
+  },
+  "smoke": {
+    "dm3": "dm3 20s: 1 frags, 1 deaths (0 lava, 0 third-party), 0 stalls, 6 goals, 1 engages, 29 hazards, spread 1",
+    "e1m7": "e1m7 20s: 1 frags, 1 deaths (0 lava, 0 third-party), 0 stalls, 4 goals, 8 engages, 28 hazards, spread 1"
+  },
+  "tape_storage": "The study_ tapes are machine-local.",
+  "installed_binary_sha256_before_and_after": {
+    "lq1/progs.dat": "9bb92d8351e2457b429219633011475cadbf39517cff99519ef7dc7f977bc67c",
+    "engine/argus/progs.dat": "767c99435f5578b087b28807a4bfcca2218ca2f09a90e71c7d1e2478361b54cb",
+    "game/argus/progs.dat": "767c99435f5578b087b28807a4bfcca2218ca2f09a90e71c7d1e2478361b54cb"
+  },
+  "comparison_notes": [
+    "All matches used skill 1. Each fixed-clock pair shares its seed.",
+    "Movement safety and lava comparisons use played-rate tapes.",
+    "The dm4 confirmation uses four fresh tapes per arm and is scored separately from the initial screen.",
+    "Controlled fixtures use the stock map and named local scenes with synthetic opponents and pickups."
+  ],
+  "tapes": [
+    {"run": "study_tenrounds_fixture_control_dm2", "map": "dm2", "arm": "control", "clock": "fixture", "bytes": 9388, "sha256": "ab3ddb09b35ec29fc54dab58a3275940b0a38de0dbc91646aab1c8e0be07a931"},
+    {"run": "study_tenrounds_fixture_control_dm3", "map": "dm3", "arm": "control", "clock": "fixture", "bytes": 8475, "sha256": "0c16c0f1434f7d07315c50ef77441ca1565516a4363a395fa94950feb6b7e049"},
+    {"run": "study_tenrounds_fixture_control_dm6", "map": "dm6", "arm": "control", "clock": "fixture", "bytes": 9917, "sha256": "c729a4b097940829c494844a5fae645c4b7742a9cede0bed777ef1d6d8037ade"},
+    {"run": "study_tenrounds_fixture_candidate_dm2", "map": "dm2", "arm": "candidate", "clock": "fixture", "bytes": 9346, "sha256": "b8b6b0ae229540fcc919766a6c1046a28f755922e96b8da09ae6b65888ed9afa"},
+    {"run": "study_tenrounds_fixture_candidate_dm3", "map": "dm3", "arm": "candidate", "clock": "fixture", "bytes": 8617, "sha256": "9bdda95bfd226166eca96e38a2e0c604a6bd042ad758ae566a924a14fed42a50"},
+    {"run": "study_tenrounds_fixture_candidate_dm6", "map": "dm6", "arm": "candidate", "clock": "fixture", "bytes": 9191, "sha256": "a1c8735f3d3678e9c9748e3136971577d91dd3481d59d8cc2073a166e17d53e7"},
+    {"run": "study_tenrounds_fx_control_dm3_s1292", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 75136, "sha256": "7b74018ee859686c10468ebfff6fdfd9ea5fbce4816380c3c2dfa2480b381855", "seed": 1292},
+    {"run": "study_tenrounds_fx_control_dm3_s1875", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 75346, "sha256": "588655b9f2ec781ebf8bc963784a0706d02099406083d1c0bc9ba3525d465d0b", "seed": 1875},
+    {"run": "study_tenrounds_fx_control_dm3_s584", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 75418, "sha256": "50d0230a5c9952b4c40ec94551510e09613549b9581fdf7482b8de26c799e173", "seed": 584},
+    {"run": "study_tenrounds_fx_candidate_dm3_s1292", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 73544, "sha256": "76dcfd43778e998786c726e443f49101e3d914260ec35eeefc0cfccf7af612a3", "seed": 1292},
+    {"run": "study_tenrounds_fx_candidate_dm3_s1875", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 78348, "sha256": "cbe2b00864ffa562d787b7a241ee8dc61ea58943da09900b665b9cbd67d3477a", "seed": 1875},
+    {"run": "study_tenrounds_fx_candidate_dm3_s584", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 69422, "sha256": "e06044b0166744a833e72f25d7e6670db88baadb58ab326649217a68e89c0622", "seed": 584},
+    {"run": "study_tenrounds_fx_control_dm4_s1292", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 87960, "sha256": "6249ffe30d61f3577a25f910140691cfd3ae421febfbfb2899086cf47cb7b4e1", "seed": 1292},
+    {"run": "study_tenrounds_fx_control_dm4_s1875", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 88352, "sha256": "3886d0265a4f765a8c50111452c02006370e297e20d854e79960d086f389d413", "seed": 1875},
+    {"run": "study_tenrounds_fx_control_dm4_s584", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 87568, "sha256": "25ed197334fd72639d5d1fa07f213281c8e42505f9260cbbfad73c11c5db087b", "seed": 584},
+    {"run": "study_tenrounds_fx_candidate_dm4_s1292", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 88503, "sha256": "fef527a404507654f94a9c9776467e38fdee7daf6298346c93aba021686a96e3", "seed": 1292},
+    {"run": "study_tenrounds_fx_candidate_dm4_s1875", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 86347, "sha256": "eb6f0bb3e948ac4cf99d619c5ef1c7cca1e7ddf718d94900583a982db200dad4", "seed": 1875},
+    {"run": "study_tenrounds_fx_candidate_dm4_s584", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 78874, "sha256": "e476422bf1fda64e298eb5dfc114941cdd86d38d38dd1a76eca066146d6bf7f9", "seed": 584},
+    {"run": "study_tenrounds_wc_control_dm2_r1", "map": "dm2", "arm": "control", "clock": "played", "bytes": 51366, "sha256": "e1f225af7d56bd7ebfc630609bb9573d47dedd152a146fa5b4d989b521d8cb49", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm2_r2", "map": "dm2", "arm": "control", "clock": "played", "bytes": 57226, "sha256": "4c3072e6eae04ff36a20852832237fe49ec85aa7c780b64a27dfbe2ae58e0725", "max_freeze_sec": 0.0, "lava_deaths": 3, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm2_r3", "map": "dm2", "arm": "control", "clock": "played", "bytes": 50594, "sha256": "fea617429ec7fcb978b6f82d39a2ad6b242491909d2ba0ab1a7e77a62644b504", "max_freeze_sec": 0.0, "lava_deaths": 2, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm2_r1", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 49185, "sha256": "3fa020f01db1e4578d48314f93ffba60cb5efcbca01dcebe1fbcc9c078833a5c", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm2_r2", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 56354, "sha256": "23400545f8db90611d21eebf0963a24b193216711b04f4fc482917f0e974eb6a", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm2_r3", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 53478, "sha256": "68213abfb10249a8d2c25474c1573b992f9ffae7918eaeb81c86d5de61ef91a4", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm4_r1", "map": "dm4", "arm": "control", "clock": "played", "bytes": 58209, "sha256": "2d544477f20a0a2b92145c4184136abd96cbda6973a540664249e257c479e430", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm4_r2", "map": "dm4", "arm": "control", "clock": "played", "bytes": 58322, "sha256": "ec4a4626f6841bae94d96057a72c0cec9d90caa77db9282eec030e4717d0db65", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm4_r3", "map": "dm4", "arm": "control", "clock": "played", "bytes": 64656, "sha256": "ab8db45d49470a53fbdb581e77da6f577e9cb929b4bde48770934ab870e1c5d1", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm4_r1", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 57970, "sha256": "d94d2990faf172f37fae74fef09b9c753e21875e5fb228b1239f9ec90bb97826", "max_freeze_sec": 0.0, "lava_deaths": 3, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm4_r2", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 58263, "sha256": "12fc2558061756e96d68f553f4168e1c47baca0e9e2154a6e28173e568ee8eec", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm4_r3", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 54374, "sha256": "60730c2dbf6235995e6672c993809e38fec434cb1ccd96899f00f26c6edcf5ab", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm6_r1", "map": "dm6", "arm": "control", "clock": "played", "bytes": 56147, "sha256": "3fdd00f3225243273677ba13f6c1d30262925c43a97fcad960b44ed5441eaf50", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm6_r2", "map": "dm6", "arm": "control", "clock": "played", "bytes": 58040, "sha256": "4412decf3ef0c52bec66ec4c411f6e5c864c8c3a861b13e7669790c8103b099f", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_control_dm6_r3", "map": "dm6", "arm": "control", "clock": "played", "bytes": 60167, "sha256": "da67d11ede3b7bfbfc02998feaa364fb57d52487ede887e90d1f7876e64d8917", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm6_r1", "map": "dm6", "arm": "candidate", "clock": "played", "bytes": 53746, "sha256": "93501f176fa56439981208f2e7c3183e83bd4c3828036fee45ac6169f2e09972", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm6_r2", "map": "dm6", "arm": "candidate", "clock": "played", "bytes": 56874, "sha256": "5d2bdf1d8233a78116cd3b8cdb8958dd71e5f7077684f340187cdf42dd91a6fa", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_wc_candidate_dm6_r3", "map": "dm6", "arm": "candidate", "clock": "played", "bytes": 56943, "sha256": "ad119fd49f671efd697ddbc165b0f4486e49b6b46298af4474d79d6965187638", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_confirm_control_dm4_r1", "map": "dm4", "arm": "control", "clock": "confirmation", "bytes": 89353, "sha256": "017522df89f9a336e34603197eec1df3a5ac284933322111b96c778e3728937f", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_confirm_control_dm4_r2", "map": "dm4", "arm": "control", "clock": "confirmation", "bytes": 83973, "sha256": "161dea9e4695896721a701c5c3f3a3ea4bc80875898ea734c1d330fed6c7cc6f", "max_freeze_sec": 0.0, "lava_deaths": 2, "warps": 0},
+    {"run": "study_tenrounds_confirm_control_dm4_r3", "map": "dm4", "arm": "control", "clock": "confirmation", "bytes": 91813, "sha256": "6811c96e84cf0ae2173d88557898b442f013b45aa66cc4d1031beb763ad0772d", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_confirm_control_dm4_r4", "map": "dm4", "arm": "control", "clock": "confirmation", "bytes": 88934, "sha256": "18398c315b8e52bb01e6dc3354b6a8502e67ab847035bc3f5be407a87bcbd596", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_confirm_candidate_dm4_r1", "map": "dm4", "arm": "candidate", "clock": "confirmation", "bytes": 87421, "sha256": "72fbadef61413354311d4485fd0c4eef58bf7ef49e93ed6e59d43c669ce1dbdc", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_confirm_candidate_dm4_r2", "map": "dm4", "arm": "candidate", "clock": "confirmation", "bytes": 84584, "sha256": "31314a8dd564c64116b27dfa5473cd41fc4459e75234f53fe03b905cf4ff2d78", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_tenrounds_confirm_candidate_dm4_r3", "map": "dm4", "arm": "candidate", "clock": "confirmation", "bytes": 84069, "sha256": "78f7262a254edc25de951c8de2270dd24c52df42b412f643ef178b876fb204de", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_confirm_candidate_dm4_r4", "map": "dm4", "arm": "candidate", "clock": "confirmation", "bytes": 80013, "sha256": "e390f07a07b82ca5473d8a9c2bc454af0d314a4bbb9d894a55328b221a4d005b", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_tenrounds_smoke_candidate_dm3", "map": "dm3", "arm": "candidate", "clock": "smoke", "bytes": 18004, "sha256": "fcc4800a7a064343500afbde595067fa9cafef7cb0b27df6b6cb69dad67bf98c"},
+    {"run": "study_tenrounds_smoke_candidate_e1m7", "map": "e1m7", "arm": "candidate", "clock": "smoke", "bytes": 22771, "sha256": "0165b9d8b1b580248b594dee783b9e0991ed30807be17c6f4ec694cc5666ae08"}
+  ]
+}

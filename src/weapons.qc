@@ -321,6 +321,7 @@ void() W_FireShotgun =
 	local vector dir;
 
 	sound (self, CHAN_WEAPON, "weapons/guncock.wav", 1, ATTN_NORM);
+	Argus_HearSound (self.origin, self, IT_SHOTGUN);
 
 	SmallKick();
 	
@@ -358,6 +359,7 @@ void() W_FireSuperShotgun =
 	}
 
 	sound (self ,CHAN_WEAPON, "weapons/shotgn2.wav", 1, ATTN_NORM);
+	Argus_HearSound (self.origin, self, IT_SUPER_SHOTGUN);
 
 	BigKick();
 
@@ -475,6 +477,7 @@ void() W_FireRocket =
 		self.currentammo = self.ammo_rockets = self.ammo_rockets - 1;
 
 	sound (self, CHAN_WEAPON, "weapons/sgun1.wav", 1, ATTN_NORM);
+	Argus_HearSound (self.origin, self, IT_ROCKET_LAUNCHER);
 
 	SmallKick();
 
@@ -624,6 +627,7 @@ void() W_FireLightning =
 	if (self.t_width < time)
 	{
 		sound (self, CHAN_WEAPON, "weapons/lhit.wav", 1, ATTN_NORM);
+		Argus_HearSound (self.origin, self, IT_LIGHTNING);
 		self.t_width = time + 0.6;
 	}
 
@@ -715,6 +719,7 @@ void() W_FireGrenade =
 		self.currentammo = self.ammo_rockets = self.ammo_rockets - 1;
 
 	sound (self, CHAN_WEAPON, "weapons/grenade.wav", 1, ATTN_NORM);
+	Argus_HearSound (self.origin, self, IT_GRENADE_LAUNCHER);
 
 	SmallKick();
 
@@ -798,6 +803,7 @@ void() W_FireSuperSpikes =
 	local vector	dir;
 
 	sound (self, CHAN_WEAPON, "weapons/spike2.wav", 1, ATTN_NORM);
+	Argus_HearSound (self.origin, self, IT_SUPER_NAILGUN);
 	self.attack_finished = time + 0.2;
 
 	if (!deathmatch_unlimited_ammo())
@@ -838,6 +844,7 @@ void(float ox) W_FireSpikes =
 	}
 
 	sound (self, CHAN_WEAPON, "weapons/rocket1i.wav", 1, ATTN_NORM);
+	Argus_HearSound (self.origin, self, IT_NAILGUN);
 	self.attack_finished = time + 0.2;
 
 	if (!deathmatch_unlimited_ammo())
@@ -1093,11 +1100,10 @@ void() W_Attack =
 
 	makevectors	(self.v_angle);		// calculate forward angle for velocity
 	self.show_hostile = time + 1;	// wake monsters up
-	Argus_HearSound (self.origin, self);	// ARGUS: bots hear gunfire
-
 	if (self.weapon == IT_AXE)
 	{
 		sound (self, CHAN_WEAPON, "weapons/ax1.wav", 1, ATTN_NORM);
+		Argus_HearSound (self.origin, self, IT_AXE);
 		r = random();
 		if (r < 0.25)
 			player_axe1 ();
@@ -1156,6 +1162,7 @@ void() W_Attack =
 		player_light1();
 		self.attack_finished = time + 0.1;
 		sound (self, CHAN_AUTO, "weapons/lstart.wav", 1, ATTN_NORM);
+		Argus_HearSound (self.origin, self, IT_LIGHTNING);
 	}
 };
 

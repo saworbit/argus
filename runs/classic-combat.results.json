@@ -1,0 +1,723 @@
+{
+  "schema": 1,
+  "measured": "2026-11-20",
+  "skill": 1,
+  "builds": {
+    "control": "dee84cb70dd9",
+    "candidate": "40e5771069a5",
+    "active-burst": "357dffd4b048",
+    "beam-only": "85f146364bd2"
+  },
+  "scope": "Pickup and gunfire cues, fresh-life reset and lightning burst continuity.",
+  "fixtures": {
+    "study_classic_fixture-control_dm2": {
+      "pickup_heard": true,
+      "pickup_has_no_weapon_cue": false,
+      "lightning_cue": true,
+      "fresh_life_discards_cue": false,
+      "outer_band_keeps_rockets": true,
+      "inner_band_selects_lightning": true,
+      "lightning_burst_started": true,
+      "range_jitter_preserves_burst": false,
+      "outer_range_releases_lightning": true,
+      "empty_beam_releases_lightning": true,
+      "submerged_releases_lightning": true
+    },
+    "study_classic_fixture-control_dm3": {
+      "pickup_heard": true,
+      "pickup_has_no_weapon_cue": false,
+      "lightning_cue": true,
+      "fresh_life_discards_cue": false,
+      "outer_band_keeps_rockets": true,
+      "inner_band_selects_lightning": true,
+      "lightning_burst_started": true,
+      "range_jitter_preserves_burst": false,
+      "outer_range_releases_lightning": true,
+      "empty_beam_releases_lightning": true,
+      "submerged_releases_lightning": true
+    },
+    "study_classic_fixture-candidate_dm2": {
+      "pickup_heard": true,
+      "pickup_has_no_weapon_cue": true,
+      "lightning_cue": true,
+      "fresh_life_discards_cue": true,
+      "outer_band_keeps_rockets": true,
+      "inner_band_selects_lightning": true,
+      "lightning_burst_started": true,
+      "range_jitter_preserves_burst": true,
+      "outer_range_releases_lightning": true,
+      "empty_beam_releases_lightning": true,
+      "submerged_releases_lightning": true
+    },
+    "study_classic_fixture-candidate_dm3": {
+      "pickup_heard": true,
+      "pickup_has_no_weapon_cue": true,
+      "lightning_cue": true,
+      "fresh_life_discards_cue": true,
+      "outer_band_keeps_rockets": true,
+      "inner_band_selects_lightning": true,
+      "lightning_burst_started": true,
+      "range_jitter_preserves_burst": true,
+      "outer_range_releases_lightning": true,
+      "empty_beam_releases_lightning": true,
+      "submerged_releases_lightning": true
+    },
+    "study_classic_fixture-active-burst_dm2": {
+      "pickup_heard": true,
+      "pickup_has_no_weapon_cue": false,
+      "lightning_cue": true,
+      "fresh_life_discards_cue": false,
+      "outer_band_keeps_rockets": true,
+      "idle_beam_leaves_at_normal_range": true,
+      "inner_band_selects_lightning": true,
+      "lightning_burst_started": true,
+      "range_jitter_preserves_burst": true,
+      "outer_range_releases_lightning": true,
+      "expired_burst_leaves_at_normal_range": true,
+      "empty_beam_releases_lightning": true,
+      "submerged_releases_lightning": true
+    },
+    "study_classic_fixture-active-burst_dm3": {
+      "pickup_heard": true,
+      "pickup_has_no_weapon_cue": false,
+      "lightning_cue": true,
+      "fresh_life_discards_cue": false,
+      "outer_band_keeps_rockets": true,
+      "idle_beam_leaves_at_normal_range": true,
+      "inner_band_selects_lightning": true,
+      "lightning_burst_started": true,
+      "range_jitter_preserves_burst": true,
+      "outer_range_releases_lightning": true,
+      "expired_burst_leaves_at_normal_range": true,
+      "empty_beam_releases_lightning": true,
+      "submerged_releases_lightning": true
+    }
+  },
+  "screen_result_order": [
+    "control_mean",
+    "candidate_mean",
+    "detection_limit"
+  ],
+  "screen_target_seconds": {
+    "fixed": 120,
+    "played": 75,
+    "confirmation": 120,
+    "beam-fixed": 120,
+    "beam-played": 75,
+    "active-fixed": 120,
+    "active-played": 75
+  },
+  "screens": {
+    "fixed-dm2": {
+      "engages": [
+        15.5,
+        21.5,
+        10.723
+      ],
+      "cover": [
+        337.75,
+        363.0,
+        86.236
+      ],
+      "goals": [
+        6.5,
+        6.25,
+        5.096
+      ],
+      "stalls": [
+        19.0,
+        14.25,
+        8.882
+      ],
+      "freezes": [
+        0.5,
+        0.5,
+        1.617
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        1.0,
+        1.75,
+        2.886
+      ]
+    },
+    "fixed-dm3": {
+      "engages": [
+        8.5,
+        11.0,
+        7.275
+      ],
+      "cover": [
+        336.25,
+        347.25,
+        113.021
+      ],
+      "goals": [
+        13.0,
+        13.0,
+        6.665
+      ],
+      "stalls": [
+        7.75,
+        5.75,
+        5.452
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.0,
+        0.0,
+        null
+      ]
+    },
+    "fixed-dm4": {
+      "engages": [
+        45.75,
+        46.0,
+        5.871
+      ],
+      "cover": [
+        307.25,
+        323.75,
+        22.855
+      ],
+      "goals": [
+        13.5,
+        11.75,
+        4.966
+      ],
+      "stalls": [
+        4.0,
+        3.5,
+        5.541
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        2.0,
+        1.5,
+        2.139
+      ]
+    },
+    "played-dm2": {
+      "engages": [
+        11.0,
+        7.333,
+        5.197
+      ],
+      "cover": [
+        254.333,
+        234.0,
+        26.283
+      ],
+      "goals": [
+        5.0,
+        2.333,
+        2.951
+      ],
+      "stalls": [
+        7.667,
+        9.333,
+        3.492
+      ],
+      "freezes": [
+        0.0,
+        0.333,
+        0.933
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.667,
+        0.667,
+        1.32
+      ]
+    },
+    "played-dm4": {
+      "engages": [
+        27.667,
+        30.333,
+        9.518
+      ],
+      "cover": [
+        212.0,
+        240.333,
+        46.16
+      ],
+      "goals": [
+        11.0,
+        10.0,
+        3.615
+      ],
+      "stalls": [
+        1.0,
+        1.0,
+        3.233
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.0,
+        0.333,
+        0.933
+      ]
+    },
+    "confirmation-dm2": {
+      "engages": [
+        19.25,
+        22.25,
+        10.014
+      ],
+      "cover": [
+        366.25,
+        355.5,
+        38.475
+      ],
+      "goals": [
+        4.25,
+        4.5,
+        3.77
+      ],
+      "stalls": [
+        15.75,
+        14.0,
+        8.032
+      ],
+      "freezes": [
+        0.0,
+        0.25,
+        0.7
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.25,
+        0.0,
+        0.7
+      ]
+    },
+    "beam-fixed-dm3": {
+      "engages": [
+        8.5,
+        9.25,
+        4.409
+      ],
+      "cover": [
+        336.25,
+        337.25,
+        122.166
+      ],
+      "goals": [
+        13.0,
+        13.75,
+        6.702
+      ],
+      "stalls": [
+        7.75,
+        6.0,
+        6.799
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.0,
+        0.0,
+        null
+      ]
+    },
+    "beam-fixed-dm4": {
+      "engages": [
+        45.75,
+        43.25,
+        14.937
+      ],
+      "cover": [
+        307.25,
+        296.0,
+        18.051
+      ],
+      "goals": [
+        13.5,
+        14.75,
+        6.554
+      ],
+      "stalls": [
+        4.0,
+        5.5,
+        7.275
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        2.0,
+        2.0,
+        2.286
+      ]
+    },
+    "beam-played-dm3": {
+      "engages": [
+        8.5,
+        11.0,
+        10.192
+      ],
+      "cover": [
+        283.5,
+        253.5,
+        28.348
+      ],
+      "goals": [
+        8.5,
+        10.0,
+        3.13
+      ],
+      "stalls": [
+        4.5,
+        2.5,
+        5.94
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.0,
+        0.0,
+        null
+      ]
+    },
+    "beam-played-dm4": {
+      "engages": [
+        28.0,
+        21.5,
+        5.772
+      ],
+      "cover": [
+        231.0,
+        217.5,
+        22.618
+      ],
+      "goals": [
+        8.5,
+        10.5,
+        1.98
+      ],
+      "stalls": [
+        2.0,
+        12.0,
+        22.4
+      ],
+      "freezes": [
+        0.0,
+        0.5,
+        1.4
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.5,
+        1.4
+      ],
+      "lava_deaths": [
+        0.0,
+        1.5,
+        1.4
+      ]
+    },
+    "active-fixed-dm3": {
+      "engages": [
+        8.5,
+        9.25,
+        4.409
+      ],
+      "cover": [
+        336.25,
+        337.25,
+        122.166
+      ],
+      "goals": [
+        13.0,
+        13.75,
+        6.702
+      ],
+      "stalls": [
+        7.75,
+        6.0,
+        6.799
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.0,
+        0.0,
+        null
+      ]
+    },
+    "active-fixed-dm4": {
+      "engages": [
+        45.75,
+        47.5,
+        8.233
+      ],
+      "cover": [
+        307.25,
+        307.0,
+        20.934
+      ],
+      "goals": [
+        13.5,
+        12.5,
+        5.238
+      ],
+      "stalls": [
+        4.0,
+        4.75,
+        5.032
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        2.0,
+        1.75,
+        2.65
+      ]
+    },
+    "active-played-dm3": {
+      "engages": [
+        6.333,
+        3.0,
+        4.939
+      ],
+      "cover": [
+        242.667,
+        259.667,
+        18.122
+      ],
+      "goals": [
+        9.333,
+        13.667,
+        3.492
+      ],
+      "stalls": [
+        6.0,
+        2.333,
+        4.939
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        0.0,
+        0.0,
+        null
+      ]
+    },
+    "active-played-dm4": {
+      "engages": [
+        21.333,
+        33.333,
+        9.518
+      ],
+      "cover": [
+        237.0,
+        223.0,
+        21.928
+      ],
+      "goals": [
+        7.333,
+        7.667,
+        5.753
+      ],
+      "stalls": [
+        1.0,
+        2.0,
+        4.572
+      ],
+      "freezes": [
+        0.0,
+        0.0,
+        null
+      ],
+      "freeze_underfire": [
+        0.0,
+        0.0,
+        null
+      ],
+      "lava_deaths": [
+        1.0,
+        0.0,
+        1.617
+      ]
+    }
+  },
+  "tape_storage": "The study_ tapes are machine-local.",
+  "smoke": {
+    "dm6": "dm6 20s: 0 frags, 0 deaths (0 lava, 0 third-party), 0 stalls, 0 goals, 3 engages, 25 hazards, spread 0",
+    "e1m7": "e1m7 20s: 3 frags, 3 deaths (0 lava, 0 third-party), 0 stalls, 1 goals, 11 engages, 36 hazards, spread 0"
+  },
+  "tapes": [
+    {"run": "study_classic_fixture-control_dm2", "map": "dm2", "arm": "control", "clock": "fixture", "bytes": 8852, "sha256": "89f1381a79038a2107fe61ba1883d35d091758e17727582c313c59b10ca535b9"},
+    {"run": "study_classic_fixture-control_dm3", "map": "dm3", "arm": "control", "clock": "fixture", "bytes": 8660, "sha256": "920285f80ee1b2de9ce4d29cdb89c3fa838b7df54df4244a82962e2215d64127"},
+    {"run": "study_classic_fixture-candidate_dm2", "map": "dm2", "arm": "candidate", "clock": "fixture", "bytes": 8495, "sha256": "6c3ff4e318d04bb526bebfd5b8497abcc29a357d3353739a02e155a721777b1f"},
+    {"run": "study_classic_fixture-candidate_dm3", "map": "dm3", "arm": "candidate", "clock": "fixture", "bytes": 8622, "sha256": "093c9488ab890b3be54a6a6e5132e2efcb8723fb37c31fad70258500854ebcc9"},
+    {"run": "study_classic_fixture-active-burst_dm2", "map": "dm2", "arm": "active-burst", "clock": "fixture", "bytes": 8950, "sha256": "9050ff403cb630bd9a6a86a29d8814e4c1b635b5336656e24ed9d5d91458292d"},
+    {"run": "study_classic_fixture-active-burst_dm3", "map": "dm3", "arm": "active-burst", "clock": "fixture", "bytes": 8758, "sha256": "299bdc40b6f726c17c50787ac5f8c0bbe106f73e6f906422242c7a8e750b7114"},
+    {"run": "study_classicfx_control_dm2_s1167", "map": "dm2", "arm": "control", "clock": "fixed", "bytes": 98446, "sha256": "aa3f3fed7ede61a99c88f0cbc0d0552409d3c69f90d5e56c9bf89da91e215e90", "seed": 1167},
+    {"run": "study_classicfx_control_dm2_s1292", "map": "dm2", "arm": "control", "clock": "fixed", "bytes": 111945, "sha256": "24a1d080e9643bec17f12d49587d878635e5f5e04330f351bac2b3d1d39efc40", "seed": 1292},
+    {"run": "study_classicfx_control_dm2_s1875", "map": "dm2", "arm": "control", "clock": "fixed", "bytes": 106065, "sha256": "89f328f177ab0612ccf13bc128bda3a81ed4a50e51710ff601baf62eae09bd09", "seed": 1875},
+    {"run": "study_classicfx_control_dm2_s584", "map": "dm2", "arm": "control", "clock": "fixed", "bytes": 109012, "sha256": "a28079e5413b466920079f9c3a4fe1af6efeff456c2feaf0ca6084d815f56794", "seed": 584},
+    {"run": "study_classicfx_candidate_dm2_s1167", "map": "dm2", "arm": "candidate", "clock": "fixed", "bytes": 99638, "sha256": "04bd36bc6c352c875fcf501352b22286ad088c4bc2935b8749a1d456e9760084", "seed": 1167},
+    {"run": "study_classicfx_candidate_dm2_s1292", "map": "dm2", "arm": "candidate", "clock": "fixed", "bytes": 107496, "sha256": "f0e7082e97dc1bd7c7b25c03a7e50df593f74157e63f1553035a3336f7a7bed9", "seed": 1292},
+    {"run": "study_classicfx_candidate_dm2_s1875", "map": "dm2", "arm": "candidate", "clock": "fixed", "bytes": 114134, "sha256": "a114fe563a20491c327bcd810277272d16c0f4dcda50f93a81bff3890f50a9ca", "seed": 1875},
+    {"run": "study_classicfx_candidate_dm2_s584", "map": "dm2", "arm": "candidate", "clock": "fixed", "bytes": 106323, "sha256": "cfa2c5f7334c68cd1ebed1956b249bc0bb0a255431250efd07e3f406be75f65f", "seed": 584},
+    {"run": "study_classicfx_candidate_dm3_s1167", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 97683, "sha256": "fc899a253a40e97de1e8978dec691c547bf766d38c9ac24b6e0c7998385a3167", "seed": 1167},
+    {"run": "study_classicfx_candidate_dm3_s1292", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 102632, "sha256": "6f2233ed282ca93dded5f7eb7bcd5531cb38cc4894235eeb42913ba2080852cf", "seed": 1292},
+    {"run": "study_classicfx_candidate_dm3_s1875", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 106433, "sha256": "a58c5b2ad3ddec4640923ea31136845066f48c30ef5a738fcfb711260fe1eaff", "seed": 1875},
+    {"run": "study_classicfx_candidate_dm3_s584", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 111204, "sha256": "df095f9f7c0f7cb39f3b66bc756c0b9553c0b4edac002d700d5993b4f3e2e53e", "seed": 584},
+    {"run": "study_classicfx_candidate_dm4_s1167", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 119951, "sha256": "417d75d09b015d8459255d001cf1dd9a9b992ab3f6964398a17f87aefed7fd7d", "seed": 1167},
+    {"run": "study_classicfx_candidate_dm4_s1292", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 123865, "sha256": "6fefe743b8fff019d56e2fd356a71b58ab8f868079cb671380fdc26e53c5d755", "seed": 1292},
+    {"run": "study_classicfx_candidate_dm4_s1875", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 118647, "sha256": "c8ff495bac0ea8c47764496cfc1fb28a5e171ce4c1c620ee5b6e0303b4d1232c", "seed": 1875},
+    {"run": "study_classicfx_candidate_dm4_s584", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 118528, "sha256": "cfa96d91226f60b2df144b1a4bb56d56638552f2c0c6a1a1e1072c7988d17d04", "seed": 584},
+    {"run": "study_classicwc_control_dm2_r1", "map": "dm2", "arm": "control", "clock": "played", "bytes": 63559, "sha256": "a48b323f59e2bce0436e920d1f937f2b65e8458f0a314ddb48b84dd539aaeaa0", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_control_dm2_r2", "map": "dm2", "arm": "control", "clock": "played", "bytes": 69919, "sha256": "eaeb46288f8602f3725d17e2002fb54fb50047e5d8e701edfa15c8756ad478a3", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_control_dm2_r3", "map": "dm2", "arm": "control", "clock": "played", "bytes": 70065, "sha256": "91272761c2a3e870bcf4ba4fdd27af5a4bbb338841b3b1227cf89d1d0e3b4983", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_candidate_dm2_r1", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 70155, "sha256": "5e170f8964e287bdf730c5aa4986fde83ff08f480074d349e82e3454d8240f1c", "max_freeze_sec": 12.099999999999994, "warps": 0},
+    {"run": "study_classicwc_candidate_dm2_r2", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 59634, "sha256": "55ce74873fa289b309fc7f60f6271f05f0782e0dbe895a3d36c1892a032e711a", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_candidate_dm2_r3", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 61776, "sha256": "f742e7f2ccd4b9a45a8a8fb65aab7b61b41d5bdb038c4de9fff0067797596f52", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_control_dm4_r1", "map": "dm4", "arm": "control", "clock": "played", "bytes": 74215, "sha256": "2d736dc8f13a064104ca020d37515d421c8cd5e3f4b687c3e64b2a02833d6c16", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_control_dm4_r2", "map": "dm4", "arm": "control", "clock": "played", "bytes": 72001, "sha256": "e69c377f464810d476d4628c5e84e36dbe10d6c1ff4b226020b22beccad7c620", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_control_dm4_r3", "map": "dm4", "arm": "control", "clock": "played", "bytes": 72979, "sha256": "87f6ba03c5f03723b7ce7d6b390ca8430b3e410f590a8071ef00dfeba8d6eb7e", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_candidate_dm4_r1", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 77047, "sha256": "bd66de0db3c6166873230e2f4c2ca648f4f7c0b53153e367cdc78d2e1ba59be9", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_candidate_dm4_r2", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 75363, "sha256": "49bd28a19a78d6ffba8157efd8d404ea4f91c7a340d5e856dc233f9b843561b7", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicwc_candidate_dm4_r3", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 77617, "sha256": "3868885dae9e85e0db5f2dfa6622d934a44c1b3bbe19d4faf33723012a0d411a", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicconfirm_control_dm2_r1", "map": "dm2", "arm": "control", "clock": "confirmation", "bytes": 108622, "sha256": "48960ed92b26f04c9a348722900aaf179015d5683dcaaa8fa8cbb57d5a14a94a", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicconfirm_control_dm2_r2", "map": "dm2", "arm": "control", "clock": "confirmation", "bytes": 108658, "sha256": "97518a761bc99e60fb93d101becd5b0576589fff7ad6f71ea53ac1ebb2903777", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicconfirm_control_dm2_r3", "map": "dm2", "arm": "control", "clock": "confirmation", "bytes": 104871, "sha256": "5f0e38d56c7165e902606cabf632cd05490d9926868e21b30ba6ec1b91ece890", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicconfirm_control_dm2_r4", "map": "dm2", "arm": "control", "clock": "confirmation", "bytes": 107282, "sha256": "8c4e00f4ca4a441e6dffbe13fcd7b842bf46052aeb60a5b6905404fbcea1fd49", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicconfirm_candidate_dm2_r1", "map": "dm2", "arm": "candidate", "clock": "confirmation", "bytes": 106638, "sha256": "98321580e9fbd2e794c60fcc7a4ea5501c99d0d0234fd2c0da47fd1762dc9012", "max_freeze_sec": 9.099999999999994, "warps": 0},
+    {"run": "study_classicconfirm_candidate_dm2_r2", "map": "dm2", "arm": "candidate", "clock": "confirmation", "bytes": 104496, "sha256": "ed645eff3af2da71acb8c42568c5d7c845823f53dc3c2fe5c6b3e7a5cf9ba248", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicconfirm_candidate_dm2_r3", "map": "dm2", "arm": "candidate", "clock": "confirmation", "bytes": 106069, "sha256": "ed7931a99ebefef9d1a8f25f233bdfd47a021c83a1957ddc20366377aa1d7119", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicconfirm_candidate_dm2_r4", "map": "dm2", "arm": "candidate", "clock": "confirmation", "bytes": 113143, "sha256": "70bc39ab9fc050ea2059f66df02ae50703625511cd7df176cd3a855d129b454f", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeam_dm3_s1167", "map": "dm3", "arm": "beam-only", "clock": "beam-fixed", "bytes": 98388, "sha256": "9b4b76942a6557cc4880dbb139f94caecd140790fe668b0cc17f2bad4c36f41f", "seed": 1167},
+    {"run": "study_classicbeam_dm3_s1292", "map": "dm3", "arm": "beam-only", "clock": "beam-fixed", "bytes": 99725, "sha256": "21464b1a4f99018b335582bce6f7c7e3e14b9f6a365a90fcf6e75a98e8bb8bbf", "seed": 1292},
+    {"run": "study_classicbeam_dm3_s1875", "map": "dm3", "arm": "beam-only", "clock": "beam-fixed", "bytes": 98860, "sha256": "32575226b618d1bccb087e3f4bdc74426c5a763d5acf805837739e80513c51fc", "seed": 1875},
+    {"run": "study_classicbeam_dm3_s584", "map": "dm3", "arm": "beam-only", "clock": "beam-fixed", "bytes": 101129, "sha256": "56a549e8c7f00fc5a013d91b7cda253dae4fde42765d5545b54f5dcfbfdae2b6", "seed": 584},
+    {"run": "study_classicbeam_dm4_s1167", "map": "dm4", "arm": "beam-only", "clock": "beam-fixed", "bytes": 113497, "sha256": "806243b8ad48bb6b0dd207c7ac87a949fe01b94b8ccc6c2889ab1bf40f5d7f74", "seed": 1167},
+    {"run": "study_classicbeam_dm4_s1292", "map": "dm4", "arm": "beam-only", "clock": "beam-fixed", "bytes": 117125, "sha256": "8e62335b7d7d98b7e42a84c4ca1753292ac24ce124a3955da77059992be3019b", "seed": 1292},
+    {"run": "study_classicbeam_dm4_s1875", "map": "dm4", "arm": "beam-only", "clock": "beam-fixed", "bytes": 117084, "sha256": "5ff5620c3b457f599d5b6da59fc58f2b8ca6eac111f045b1fc3283727a4a0797", "seed": 1875},
+    {"run": "study_classicbeam_dm4_s584", "map": "dm4", "arm": "beam-only", "clock": "beam-fixed", "bytes": 115234, "sha256": "b3dd2a975b26a0d792236444c198722faff5a2dba0fc19bbdec8bae6cfc0ba44", "seed": 584},
+    {"run": "study_classicbeamwc_control_dm3_r1", "map": "dm3", "arm": "control", "clock": "beam-played", "bytes": 68345, "sha256": "f8cd4396280a3c420e83881dc93dd9af07e1d63a6aac1ced0cfb209acedbaaa8", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeamwc_control_dm3_r2", "map": "dm3", "arm": "control", "clock": "beam-played", "bytes": 67091, "sha256": "f58e3b4a9d2e7774aa9c17622cbc1af2f574de80a4ef2df4b6111ac4eea417c4", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeamwc_beam-only_dm3_r1", "map": "dm3", "arm": "beam-only", "clock": "beam-played", "bytes": 68699, "sha256": "5695384ee787207f51f812bc8bb81f4feddbf5b3056641f4badf7d78b1d0b2d6", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeamwc_beam-only_dm3_r2", "map": "dm3", "arm": "beam-only", "clock": "beam-played", "bytes": 67968, "sha256": "d40e9b20514de2ea7f8399eadc4b082861b99f29578245b361efc6cb863561cd", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeamwc_control_dm4_r1", "map": "dm4", "arm": "control", "clock": "beam-played", "bytes": 77245, "sha256": "e9132b61a77b82b2bff0f2b8f5574d3ee63b326677deb6254b84a01bf915441d", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeamwc_control_dm4_r2", "map": "dm4", "arm": "control", "clock": "beam-played", "bytes": 72294, "sha256": "6275087848632cc44ce87679d8f6a0eb2a213eccb3aeaa4b2d856d04452f9d60", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeamwc_beam-only_dm4_r1", "map": "dm4", "arm": "beam-only", "clock": "beam-played", "bytes": 71422, "sha256": "fc51753e2c6328ecf518939fcca464bad07d2a10e8eca8dd55f4b2214998b51c", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicbeamwc_beam-only_dm4_r2", "map": "dm4", "arm": "beam-only", "clock": "beam-played", "bytes": 78396, "sha256": "a4f6e00329d26735063e8b79a4151fcf8030057b67c62e03146b87990d8aa199", "max_freeze_sec": 9.100000000000001, "warps": 1},
+    {"run": "study_classicfx_control_dm3_s1167", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 98287, "sha256": "bbbdb0c077e889ffafdc7c938d6581da402a70b66eb2f4f4eab5de812ec15d14", "seed": 1167},
+    {"run": "study_classicfx_control_dm3_s1292", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 99720, "sha256": "60edd146c680568e900ef7bc2082471fa52b914b5b080e426d7fa0178770778a", "seed": 1292},
+    {"run": "study_classicfx_control_dm3_s1875", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 98855, "sha256": "a59ca3c32c11f1144fd5005e01aab36afc74f3367302c9e2a050224ef466e8ce", "seed": 1875},
+    {"run": "study_classicfx_control_dm3_s584", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 98647, "sha256": "ee48db25b70a7462bd58dd320e64e7c7435808ad2c47ee8f816ed3faa2b2c009", "seed": 584},
+    {"run": "study_classicactive_dm3_s1167", "map": "dm3", "arm": "active-burst", "clock": "active-fixed", "bytes": 98302, "sha256": "7bd1ec92ba7485e7fb8b356a4be1afcfc073be4b9288f4aa89e01c802d4b9dcd", "seed": 1167},
+    {"run": "study_classicactive_dm3_s1292", "map": "dm3", "arm": "active-burst", "clock": "active-fixed", "bytes": 99735, "sha256": "c4233e2f179c26d80359c07e5eb5737d02d1a0dafb491bff7336d039d8ab8d33", "seed": 1292},
+    {"run": "study_classicactive_dm3_s1875", "map": "dm3", "arm": "active-burst", "clock": "active-fixed", "bytes": 98771, "sha256": "25057b5112f6486dab02fa4f9d6a96a1028b380d0d203b5143f774fe8200f343", "seed": 1875},
+    {"run": "study_classicactive_dm3_s584", "map": "dm3", "arm": "active-burst", "clock": "active-fixed", "bytes": 101139, "sha256": "46779b910ce58adddbdbd4efbc83dc9c5109c496070530be0bbecffc794b02fd", "seed": 584},
+    {"run": "study_classicfx_control_dm4_s1167", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 115736, "sha256": "c57a5a1e7cd36d26688407bca71fa5079245e86a75c50a51c340b0d78023e3fd", "seed": 1167},
+    {"run": "study_classicfx_control_dm4_s1292", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 116479, "sha256": "3227d12b8181c6efceadb2b3e0f52bd13f06686df149dfc6cb9bc5f8692851eb", "seed": 1292},
+    {"run": "study_classicfx_control_dm4_s1875", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 122875, "sha256": "8ae0a6a6b19858654fd8fc2e8842e0c1b8fe3e77354fc251915a46520c60c58c", "seed": 1875},
+    {"run": "study_classicfx_control_dm4_s584", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 117051, "sha256": "e5858acc3ae8bd270fd94e3dc3a8d7ac5f0ed74bd3441db89c64646176e67371", "seed": 584},
+    {"run": "study_classicactive_dm4_s1167", "map": "dm4", "arm": "active-burst", "clock": "active-fixed", "bytes": 115857, "sha256": "77e3b45630b514f7457ac0ef51536029d444fceaffba197e8f8bb999e5b51c5a", "seed": 1167},
+    {"run": "study_classicactive_dm4_s1292", "map": "dm4", "arm": "active-burst", "clock": "active-fixed", "bytes": 116206, "sha256": "595d60c351f73e5337e297b1f36a0c42ebaf44480f6e887bcda9489e56a449c0", "seed": 1292},
+    {"run": "study_classicactive_dm4_s1875", "map": "dm4", "arm": "active-burst", "clock": "active-fixed", "bytes": 115743, "sha256": "f938a782c1c0b680013790fe4de513394ff0e368f03680eac9bbb27b938180d2", "seed": 1875},
+    {"run": "study_classicactive_dm4_s584", "map": "dm4", "arm": "active-burst", "clock": "active-fixed", "bytes": 119794, "sha256": "59bac4852ac8f96a843ff274b47a1884cea2a89cca3a9574c9d46f4499a46246", "seed": 584},
+    {"run": "study_classicactivewc_control_dm3_r1", "map": "dm3", "arm": "control", "clock": "active-played", "bytes": 61027, "sha256": "9aba2ef9f821891f0a9b4e621d9f58b598c2032aab066fdb8358c2c9e5af2ddd", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_control_dm3_r2", "map": "dm3", "arm": "control", "clock": "active-played", "bytes": 59589, "sha256": "ee9d29c983d7230548bcea26f4dbbec8ec6dbf65e9c7b825cba66e64789766bb", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_control_dm3_r3", "map": "dm3", "arm": "control", "clock": "active-played", "bytes": 64557, "sha256": "8402d98d1e3f646e6d991fd9eb157d22e52f2c3d855339832b0879cfcfdd7b12", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_active-burst_dm3_r1", "map": "dm3", "arm": "active-burst", "clock": "active-played", "bytes": 61572, "sha256": "65e96186e1726c5a07fa43431d3f1ac2a175fcc5680bf439c2c1a005060121df", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_active-burst_dm3_r2", "map": "dm3", "arm": "active-burst", "clock": "active-played", "bytes": 61030, "sha256": "2c84c3fc90a154545bd3c3ecfcb9cf86f8668df9170aa979fcef00f36c192d84", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_active-burst_dm3_r3", "map": "dm3", "arm": "active-burst", "clock": "active-played", "bytes": 60210, "sha256": "7cd323c975ff89951135821fe5bc61a2a19f2fe2e727d2f2ed4751ac17d523c3", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_control_dm4_r1", "map": "dm4", "arm": "control", "clock": "active-played", "bytes": 68890, "sha256": "fbf5d7660657b031bfe57bd9be2cad366eb507569b99a8507446cd92d0775a23", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_control_dm4_r2", "map": "dm4", "arm": "control", "clock": "active-played", "bytes": 70580, "sha256": "5f1c1d4a4739893f00107add884296107f59ac96c3c102fb99158a85fa262691", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_control_dm4_r3", "map": "dm4", "arm": "control", "clock": "active-played", "bytes": 71508, "sha256": "60b461df20c1fc282058dd3336bf1b65b3d9cefa321e5c13a41eed9c50fc5a54", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_active-burst_dm4_r1", "map": "dm4", "arm": "active-burst", "clock": "active-played", "bytes": 78583, "sha256": "72994beae9b7a27d2b4648ec49943b2096f5677c10df383ef15d0769f1d17add", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_active-burst_dm4_r2", "map": "dm4", "arm": "active-burst", "clock": "active-played", "bytes": 74694, "sha256": "ac872b7bfb277577e5488d175ffb5720409f209587054d0710e3ff6f1abad187", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_classicactivewc_active-burst_dm4_r3", "map": "dm4", "arm": "active-burst", "clock": "active-played", "bytes": 78916, "sha256": "3243430eedf6812ef5e95be7bbaeabb2584f395ffd4b3d10c6cef6d1404359cb", "max_freeze_sec": 0.0, "warps": 0}
+  ]
+}

@@ -11,6 +11,12 @@ checks retain their own evidential scope.
 
 ## Current development status
 
+The [classic bot comparisons](classic-bot-comparisons.md) cover the current
+development work on combat pickups, pursuit, hearing and portal timing.
+The focused checks and played-rate comparisons use private development
+builds. The [missed-train waits](classic-bot-comparisons.md#ten-hearing-and-route-learning-rounds)
+reproduced on both arms of the longer dm2 comparison.
+
 The [e1m6 dock-exit investigation](e1m6-decisions.md) adds a supported ride
 hold through docking and a checked exit jump that retains the route. Private
 transfer fixtures check world-floor landing, a changed route node and
@@ -67,6 +73,35 @@ and [upstream artifact-download warning](https://github.com/saworbit/argus/issue
 They do not authorise more cohorts or deployment. The original warning has not
 been labelled noise; historical test totals and tapes remain attached to their
 recorded inputs and stopping rules.
+
+## Retreat supply choice
+
+When a retreat needs the cover fan, Argus can consider a direct leg towards
+health or armour. The old selector ranked pickups by value before the fan
+ruled out headings towards the opponent. Its floor check could also accept
+an approach with a wall across it. In either case a poor first choice could
+leave an available pickup out of the fan.
+
+The selector now checks the direction, the unobstructed approach and the two
+floor probes for each candidate it considers. It weighs the existing pickup
+value against distance. A nearby health box can beat distant red armour when
+the bot needs a resupply within the current leg. Baked cover and the live
+cover checks still take priority.
+
+In private engine fixtures on dm2 and dm3, the control chose the wrong
+heading when the highest-value pickup faced the enemy, was farther away or
+was across a wall. The candidate chose the reachable alternative in all six
+cases. Both builds fell back to the direct escape heading in the two cases
+with no eligible supply.
+
+Skill-1 regression screens covered 24 fixed-seed matches on dm2, dm3 and
+dm4, and 20 played-rate matches on dm2 and dm4. The short dm2 comparison
+averaged 13.3 versus 8.3 engagements per match against a detection limit of
+5.03. In the separate 120-second follow-up, both builds averaged 21.5
+engagements. That follow-up recorded two unforced lava deaths in each arm
+and one 6.1-second candidate freeze without damage. The candidate also
+completed smoke matches on dm6 and e1m7. See the
+[fixture receipts and match results](../runs/retreat-supply-selection.results.json).
 
 ## Human gait: hesitation and cautious liquid approach
 

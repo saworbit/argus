@@ -725,8 +725,7 @@ void() Argus_ABControl;          // ARGUS: counterbalanced within-match arms
 float argus_omicron;                // (console "omicron" / impulse 146)
 void(float what) Argus_Chat;    // ARGUS: bot chat, defined in argus.qc
                                 // and called from powerup_touch (4)
-void(vector spos, entity who) Argus_HearSound;  // ARGUS: OPM hearing,
-                            // defined in argus.qc, called by W_Attack
+void(vector spos, entity who, float shotweapon) Argus_HearSound;
 float() Argus_JumpApex;     // ARGUS: how far a jump climbs at this
                             // map's gravity. Defined in argus.qc,
                             // which compiles after argus_nav.qc, and

@@ -6,4 +6,4 @@
 // as "ARGUS build <id>". The lab's compile and ship steps rewrite it, and
 // the CI check argus_ci.py stamp fails while it is stale.
 
-string ARGUS_BUILD = "7e9c3bc6a33f";
+string ARGUS_BUILD = "d2a1ad76e9b2";
