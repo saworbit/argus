@@ -476,7 +476,6 @@ void() Argus_Nav_Spawn_e1m5 =
     Argus_NavLinkDoor (n18, n2);
     Argus_NavLink (n19, n13);
     Argus_NavLink (n19, n12);
-    Argus_NavLinkJump (n19, n28, 0);    // approach 0, landing 0, arc 0
     Argus_NavLinkJump (n20, n17, 0);    // approach 0, landing 128, arc 0
     Argus_NavLink (n21, n27);
     Argus_NavLink (n21, n16);
@@ -1089,33 +1088,34 @@ void() Argus_Nav_Spawn_e1m5 =
     Argus_NavLink (n69, n64);    // teleporter
     Argus_NavLinkRocket (n96, n167);
     Argus_NavLinkRocket (n170, n167);
-    Argus_NavLinkSwim (n100, n103);
     Argus_NavLinkRocket (n120, n98);
     Argus_NavLinkLift (n170, n77);
     Argus_NavLinkLift (n171, n172);
+    Argus_NavLinkSwim (n100, n103);
     Argus_NavLinkSwim (n124, n161);
     Argus_NavLinkTrain (n173, n174);
     Argus_NavLinkTrain (n174, n173);
     Argus_NavRegion (n25, 1);
-    Argus_NavRegion (n52, 2);
-    Argus_NavRegion (n53, 2);
-    Argus_NavRegion (n67, 3);
-    Argus_NavRegion (n69, 2);
-    Argus_NavRegion (n72, 2);
-    Argus_NavRegion (n73, 2);
-    Argus_NavRegion (n85, 2);
-    Argus_NavRegion (n87, 2);
-    Argus_NavRegion (n97, 4);
-    Argus_NavRegion (n99, 5);
-    Argus_NavRegion (n110, 4);
-    Argus_NavRegion (n118, 6);
-    Argus_NavRegion (n122, 4);
-    Argus_NavRegion (n134, 4);
-    Argus_NavRegion (n137, 4);
-    Argus_NavRegion (n140, 4);
-    Argus_NavRegion (n141, 7);
-    Argus_NavRegion (n149, 8);
-    Argus_NavRegion (n156, 9);
+    Argus_NavRegion (n28, 2);
+    Argus_NavRegion (n52, 3);
+    Argus_NavRegion (n53, 3);
+    Argus_NavRegion (n67, 4);
+    Argus_NavRegion (n69, 3);
+    Argus_NavRegion (n72, 3);
+    Argus_NavRegion (n73, 3);
+    Argus_NavRegion (n85, 3);
+    Argus_NavRegion (n87, 3);
+    Argus_NavRegion (n97, 5);
+    Argus_NavRegion (n99, 6);
+    Argus_NavRegion (n110, 5);
+    Argus_NavRegion (n118, 7);
+    Argus_NavRegion (n122, 5);
+    Argus_NavRegion (n134, 5);
+    Argus_NavRegion (n137, 5);
+    Argus_NavRegion (n140, 5);
+    Argus_NavRegion (n141, 8);
+    Argus_NavRegion (n149, 9);
+    Argus_NavRegion (n156, 10);
 
     // Static tactical annotations: exposure, hidden target, first walk hop
     Argus_NavTactics (n0, 11, n17, n14);
@@ -1321,5 +1321,5 @@ void() Argus_Nav_Spawn_e1m5 =
     Argus_AddCamNode ('-1175 2153 184', '-15 164 0', "arena_4");
     Argus_AddCamNode ('-855 265 0', '-15 11 0', "arena_5");
     Argus_AddCamNode ('-823 713 374', '-15 90 0', "arena_6");
-    dprint ("ARGNAV 195 nodes, 702 links\n");
+    dprint ("ARGNAV 195 nodes, 701 links\n");
 };

@@ -146,9 +146,38 @@ behind the earlier trial. Both builds recorded one freeze during a missed
 train. The longest was 12.7 seconds in the control and 11.1 seconds in
 the candidate. The control hop closed by deadline and the candidate hop
 closed by abandon, with neither bot boarding. The candidate recorded
-zero freezes under fire and zero rescue warps. The train boarding claim
-remains open. [dm2 train boarding issue](https://github.com/saworbit/argus/issues/1003)
+zero freezes under fire and zero rescue warps. The later train fix bounded
+the displaced waits. [dm2 train boarding issue](https://github.com/saworbit/argus/issues/1003)
 [Decision checks and match receipts](../runs/audio-adaptation.results.json)
+
+## Two-leg pursuit evaluation
+
+`tools/verify_pursuit_two_leg.py` builds a private program with the current
+one-leg search and an optional two-leg fallback. The fallback takes the
+existing cue and uses ordinary links with dry floor, clear traces and a
+350u total path limit. The fixture seats the actual bot on stock geometry
+and runs the production noise and movement code until the cue releases.
+An old cue, a novice bot and a committed train hop each decline steering.
+
+On dm2, the one-leg control declined the occluded cue. The fallback
+steered the bot for about 1.3 seconds, reached within 80u of the cue and
+released steering. Every sample kept the original goal and dry feet.
+Both arms declined the scripted dm4 case.
+
+Two ordinary cohorts each recorded two 90-second pairs per map at 14 ms
+frame intervals. Neither dm2 cohort exercised the search. The control had
+zero rapid flip runs there and the candidate had one across both cohorts.
+On dm4, control and candidate counts were five and two in the first cohort
+and five and three in the repeat. One pursuit episode in each cohort
+exercised the fallback, with five and thirteen search calls respectively.
+Neither episode had a rapid flip for the pursuing bot in the measured
+window. The sampled episodes are too few for a gameplay adoption verdict.
+The prototype stays in the private verifier.
+[Two-leg evaluation](https://github.com/saworbit/argus/issues/1007)
+
+Run the verifier with `--output backups/pursuit_trial --prefix pursuit_trial`.
+Add `--played` to record the longer match pairs with bot and time markers.
+The output retains the build, source and tape identities.
 
 ## Comparison method
 
@@ -158,12 +187,10 @@ screen used the retreat supply build as its control. The two ten-round
 screens used the previous development build named in each study. All three
 used skill 1.
 
-The private decisions still need a maintained runner with a fixture marker.
-Further gameplay cases cover switching among several loaded weapons and
-pursuit around more than one corner.
+The private decision runner marks its tapes so the gameplay gates refuse
+them. It also covers switching among several loaded weapons.
 [Fixture runner and quarantine](https://github.com/saworbit/argus/issues/1004),
-[loaded weapon selection](https://github.com/saworbit/argus/issues/1005),
-[multi-corner pursuit](https://github.com/saworbit/argus/issues/1007)
+[loaded weapon selection](https://github.com/saworbit/argus/issues/1005)
 
 A cross-bot replay comparison needs the same maps, rules and recording
 perspective, with each bot's version and skill recorded.
