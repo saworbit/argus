@@ -26,7 +26,7 @@ class AttentionContracts(unittest.TestCase):
         for text in (good + good, good.replace('BHVRPL begin target_attention', ''),
                      good.replace('ATFIX check hidden_attacker_not_seen 1\n', ''),
                      good.replace('secondary_is_not_primary', 'goal_retained'),
-                     receipt(ms=100), good + 'Program error\n'):
+                     receipt(ms=100), good + 'Sys_Error: no free memory\n'):
             with self.subTest(text=text):
                 with self.assertRaises(AssertionError):
                     inspect_fixture(text, 'dm6', .0139)

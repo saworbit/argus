@@ -1,0 +1,11 @@
+[
+  {"name": "line comment", "source": "a // c\r\nb", "expected": "a\nb"},
+  {"name": "block comment between tokens", "source": "a/* c */b", "expected": "a b"},
+  {"name": "multiline block overrides a space", "source": "a \t/* c\n d */  b", "expected": "a\nb"},
+  {"name": "layout on directive lines", "source": " \t#define X 1\r\n\n\f  foo\u000b  bar\t", "expected": "#define X 1\nfoo bar"},
+  {"name": "comment delimiters within a string", "source": "s = \"http://x /* y */\";", "expected": "s = \"http://x /* y */\";"},
+  {"name": "escaped double quotes and backslash", "source": "s = \"say \\\"hi\\\" // path \\\\x\";", "expected": "s = \"say \\\"hi\\\" // path \\\\x\";"},
+  {"name": "vector literal layout and escape", "source": "v  = '0  0 1';  p = 'a\\'b';", "expected": "v = '0  0 1'; p = 'a\\'b';"},
+  {"name": "unterminated comment at EOF", "source": "a /* trailing\n", "expected": "a"},
+  {"name": "Latin-1 literal bytes", "source": "s = \"caf\u00e9 \u00a0\";", "expected": "s = \"caf\u00e9 \u00a0\";"}
+]

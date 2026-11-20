@@ -3,6 +3,7 @@
 Never evaluates a partial cohort. ARGLOG metrics come exclusively from the
 authoritative native briefs; raw scanning is confined to timing and validity.
 """
+from argus_engine_errors import fatal_engine_line
 import argparse
 import datetime as dt
 import hashlib
@@ -75,7 +76,8 @@ def audit(protocol_path):
         assert math.isfinite(row['wall_seconds']) and row['wall_seconds'] >= 60
         path = ROOT / f"runs/{row['name']}.log"
         text = path.read_text(errors='replace')
-        assert not any(token in text for token in ('BHVFIX ', 'TACFIX begin', 'BHVRPL begin', 'Host_Error'))
+        assert fatal_engine_line(text) is None
+        assert not any(token in text for token in ('BHVFIX ', 'TACFIX begin', 'BHVRPL begin'))
         assert ('BHVDBG ' in text) == (row['mode'] == 'on')
         assert path.stat().st_size == row['bytes']
         windows = [dict(zip(('t', 'frames', 'seconds', 'mean_ms', 'max_ms', 'over20', 'over50'), map(float, record)))

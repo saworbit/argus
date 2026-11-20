@@ -1,4 +1,5 @@
 """Physical solid-button receipt oracle. Never reconstructs match metrics."""
+from argus_engine_errors import fatal_engine_line
 import math
 import re
 from check_perception_fixture import function
@@ -6,7 +7,7 @@ from check_perception_fixture import function
 
 def check(text,case,expected):
     assert 'BHVRPL begin button_physical' in text
-    assert not any(s in text for s in ('Host_Error','Program error','runaway loop'))
+    assert fatal_engine_line(text) is None
     rows=[s for s in text.splitlines() if s.startswith('BPFIX ')]
     assert len(rows)>=5 and rows[0]==f"BPFIX begin case {case} start '-45.0 288.0 320.0'"
     samples=[]

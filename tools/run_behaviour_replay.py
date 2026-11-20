@@ -5,6 +5,7 @@ vanilla host_framerate cvar, and stops after 3842 server frames. Compilation,
 engine ownership and briefing all use the native lab MCP. Two disabled repeats
 must agree before enabled/compute/legacy arms can provide evidence.
 """
+from argus_engine_errors import fatal_engine_line
 import argparse
 import hashlib
 import json
@@ -109,7 +110,7 @@ def extract(text, map_name, seed):
     starts = list(re.finditer(rf'^BHVRPL begin {re.escape(map_name)} seed\s+{seed}[ \t]*$', text, re.M))
     assert starts, 'missing controlled-input start'
     segment = text[starts[-1].start():]
-    assert not any(error in segment for error in ('Host_Error', 'runaway loop error', 'Program error')), 'engine error in replay'
+    assert fatal_engine_line(segment) is None, 'engine error in replay'
     assert len(re.findall(r'^BHVRPL begin ', segment, re.M)) == 1, 'wrong final input seed'
     ends = re.findall(r'^BHVRPL end frames (\d+) calls (\d+)[ \t]*$', segment, re.M)
     assert len(ends) == 1 and int(ends[0][0]) == 3842 and int(ends[0][1]) > 0, 'incomplete/duplicate fixed-frame replay'

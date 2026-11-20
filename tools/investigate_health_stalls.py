@@ -1,4 +1,5 @@
 """Fixed, small dm4 component isolation through the native lab. No deployment."""
+from argus_engine_errors import fatal_engine_line
 import hashlib
 import json
 import re
@@ -94,7 +95,8 @@ def main():
                         assert brief['map']=='dm4' and brief['totals']['tick_class']=='listen'
                         assert 28<=brief['totals']['duration_sec']<=34
                         assert not any('WRONG MAP' in f or 'CONTROLLED FIXTURE' in f for f in brief['flags'])
-                        assert not any(t in text for t in ('Host_Error','Program error','BHVFIX ','HIFIX ','PERFIX ','BHVDBG '))
+                        assert fatal_engine_line(text) is None
+                        assert not any(t in text for t in ('BHVFIX ', 'HIFIX ', 'PERFIX ', 'BHVDBG '))
                         assert identity('dm4')==tree
                         rows.append(row);save('results.json',rows)
                         print(json.dumps(dict(completed=len(rows),arm=arm,stalls=brief['totals']['stalls'])),flush=True)

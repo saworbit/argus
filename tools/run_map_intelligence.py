@@ -4,6 +4,7 @@ Uses a separate game directory and never installs over the playable build.
 Receipts retain native briefs, input identities and every named tape.
 """
 
+from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity
 from argus_fixture_harness import new_output, stage_fixture, private_game, run_match as fixture_match
 
@@ -171,7 +172,7 @@ def main():
                         write(output / (name + '.brief.json'), brief)
                         raw = ROOT / f'runs/{name}.log'
                         text = raw.read_text(errors='replace')
-                        require((not any(s in text for s in ('Host_Error', 'Program error', 'runaway loop error'))))
+                        require(fatal_engine_line(text) is None)
                         require((brief['map'] == map_name))
                         require((not any('WRONG MAP' in flag for flag in brief['flags'])), brief['flags'])
                         require((args.seconds - 2 <= brief['totals']['duration_sec'] <= args.seconds + 3))
