@@ -1268,13 +1268,14 @@ currently installed build and its lab receipt.
 Each step is confirmed in the server log before the next one runs. Every
 console line ends with an `echo ARGUS_BENCH_ACK <n>` marker and is resent
 until the marker appears. Opponents are removed one at a time while the
-puppet's scoreboard still shows more than one bot. The goal is assigned
-straight after the placement, and both are confirmed by the task bot's route
-event: its start node at the task start and its goal node at the task goal.
-A bot runs on between its placement and its next 2 Hz `ARGLOG` row, so a
-position check alone misses placements that worked. Each attempt places
-again, up to four times. A task that never starts is reported incomplete
-with a `note`.
+puppet's scoreboard still shows more than one bot. The engine stages each
+start and then applies it in the same server call that assigns the goal.
+The `ARGTASK` receipt records the bot's actual origin and the goal position
+to one decimal place. Reports include `verified_start` from that receipt.
+The harness retries missing impulses up to four times per step. A repeated
+goal impulse cannot move the bot or reset its timer. Missing or mismatched
+setup receipts fail the benchmark and keep the raw tape. An older program
+without these receipts must be recompiled before it can run a benchmark.
 
 ## Counterbalanced within-match A/B
 

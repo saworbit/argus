@@ -109,6 +109,8 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 .float ar_actionbest, ar_actiontime;
 .float  ar_goalstart;
 .entity ar_taskgoal;            // developer-only fixed-task marker (#384)
+.vector ar_taskplace;           // requested start, consumed when the goal is assigned
+.float  ar_taskstaged;
 .float  ar_taskstart;           // game time when the trial began
 .float  ar_taskdeadline;        // hard cleanup ceiling; harness may stop sooner
 .float  ar_abarm;               // 0 control, 1 candidate in a paired lab match
@@ -9542,16 +9544,17 @@ void() Argus_CoopThink =
 };
 
 // External fixed-task control, driven by the lab puppet's impulses 217-219.
-// scratch1 3841 places the selected bot at scratch2/3/4; 3842 assigns a
-// synthetic goal at those coordinates; 3840 cancels. The two-step protocol
-// lets three stock scratch coordinate cvars carry both endpoints without an
-// engine extension or file input.
+// scratch1 3841 stages the start at scratch2/3/4; 3842 places the bot and
+// assigns the goal at scratch2/3/4 in the same server call. 3840 cancels.
+// The start is consumed once, so a repeated goal impulse cannot move the bot
+// or restart its timer. The dedicated log confirms both endpoints.
 void(entity bot) Argus_TaskClear =
 {
     local entity marker;
 
     marker = bot.ar_taskgoal;
     bot.ar_taskgoal = world;
+    bot.ar_taskstaged = 0;
     if (bot.ar_goal == marker)
         bot.ar_goal = world;
     bot.ar_node = world;
@@ -9566,7 +9569,7 @@ void(float slot) Argus_TaskControl =
 {
     local entity bot, marker;
     local float mode;
-    local vector point;
+    local vector point, start;
 
     if (!cvar ("developer"))
         return;
@@ -9592,14 +9595,21 @@ void(float slot) Argus_TaskControl =
     if (mode == 3841)
     {
         Argus_TaskClear (bot);
-        setorigin (bot, point);
-        bot.velocity = '0 0 0';
-        bot.ar_lastpos = point;
-        bot.ar_nextstall = time + 2;
+        bot.ar_taskplace = point;
+        bot.ar_taskstaged = 1;
+        dprint ("ARGTASK "); dprint (ftos (slot));
+        dprint (" staged "); dprint (vtos (bot.ar_taskplace)); dprint ("\n");
         return;
     }
 
+    if (!bot.ar_taskstaged || bot.deadflag != DEAD_NO || bot.health <= 0)
+        return;
+    start = bot.ar_taskplace;
     Argus_TaskClear (bot);
+    setorigin (bot, start);
+    bot.velocity = '0 0 0';
+    bot.ar_lastpos = bot.origin;
+    bot.ar_nextstall = time + 2;
     marker = spawn ();
     marker.classname = "argus_task_goal";
     marker.solid = SOLID_TRIGGER;
@@ -9614,6 +9624,9 @@ void(float slot) Argus_TaskControl =
     bot.ar_pending = 1;
     bot.ar_mode = 0;
     bot.ar_node = world;
+    dprint ("ARGTASK "); dprint (ftos (slot));
+    dprint (" start "); dprint (vtos (bot.origin));
+    dprint (" goal "); dprint (vtos (marker.origin)); dprint ("\n");
 };
 
 // Assign both experimental arms inside one match (#374). scratch4 is a bit

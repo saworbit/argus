@@ -43,15 +43,14 @@ pub struct NavigationTask {
 pub struct TaskResult {
     pub name: String,
     pub split: String,
+    /// Bot origin recorded by the server when it assigned the goal.
+    pub verified_start: [f32; 3],
     /// A success event with finite, nonnegative game time within the task budget.
     pub completed: bool,
     /// Reported engine time, retained even when late completion is rejected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub game_sec: Option<f32>,
     pub wall_sec: f32,
-    /// Why a task never started, when the harness could not confirm a step.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub note: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -297,52 +296,38 @@ fn echoed(log: &str, mark: usize, token: &str) -> bool {
     lines_after(log, mark).any(|line| line.trim() == token)
 }
 
-fn parse_vec(text: &str) -> Option<[f32; 3]> {
-    let mut it = text.split_whitespace().map(|v| v.parse::<f32>().ok());
-    Some([it.next()??, it.next()??, it.next()??])
+/// Match the engine's one-decimal vtos rounding on each coordinate.
+fn confirmed_point(text: &str, expected: [f32; 3]) -> Option<[f32; 3]> {
+    let mut fields = text
+        .strip_prefix('\'')?
+        .strip_suffix('\'')?
+        .split_whitespace();
+    let point = [
+        fields.next()?.parse::<f32>().ok()?,
+        fields.next()?.parse::<f32>().ok()?,
+        fields.next()?.parse::<f32>().ok()?,
+    ];
+    (fields.next().is_none()
+        && point
+            .iter()
+            .zip(expected)
+            .all(|(actual, wanted)| (actual - wanted).abs() <= 0.051))
+    .then_some(point)
 }
 
-/// The quoted vector after `key` in `line`, as in `pos '1 2 3'`.
-fn quoted_vec(line: &str, key: &str) -> Option<[f32; 3]> {
-    let rest = &line[line.find(key)? + key.len()..];
-    let rest = rest.trim_start().strip_prefix('\'')?;
-    parse_vec(&rest[..rest.find('\'')?])
+fn staged_task(log: &str, mark: usize, start: [f32; 3]) -> Option<[f32; 3]> {
+    lines_after(log, mark)
+        .find_map(|line| confirmed_point(line.strip_prefix("ARGTASK 0 staged ")?, start))
 }
 
-fn near(a: [f32; 3], b: [f32; 3], horizontal: f32, vertical: f32) -> bool {
-    ((a[0] - b[0]).powi(2) + (a[1] - b[1]).powi(2)).sqrt() < horizontal
-        && (a[2] - b[2]).abs() < vertical
-}
-
-/// Whether `bot` started the task after `mark`: a route whose start node is
-/// at the task start and whose goal node is at the task goal. That one line
-/// proves both the placement and the goal landed. A bot moves between its
-/// placement and its next 2 Hz ARGLOG row, so a position check alone misses
-/// placements that worked. Before the goal impulse lands the bot shops for
-/// ordinary goals, whose routes end elsewhere. A `routefail` counts when an
-/// ARGLOG row after `mark` puts the bot near the start, since it carries no
-/// endpoints of its own.
-fn started_task(log: &str, mark: usize, bot: &str, start: [f32; 3], goal: [f32; 3]) -> bool {
-    let route = format!("ARGEVT {bot} route ");
-    let failed = format!("ARGEVT {bot} routefail");
-    let row = format!("ARGLOG {bot} t ");
-    let mut near_start = false;
-    for line in lines_after(log, mark) {
-        if line.starts_with(&row) {
-            near_start |= quoted_vec(line, " pos ").is_some_and(|p| near(p, start, 256.0, 72.0));
-        } else if line.starts_with(&route) {
-            let from = quoted_vec(line, " start ");
-            let to = quoted_vec(line, " goal ");
-            if from.is_some_and(|f| near(f, start, 160.0, 72.0))
-                && to.is_some_and(|g| near(g, goal, 128.0, 96.0))
-            {
-                return true;
-            }
-        } else if line.starts_with(&failed) && near_start {
-            return true;
-        }
-    }
-    false
+fn started_task(log: &str, mark: usize, start: [f32; 3], goal: [f32; 3]) -> Option<[f32; 3]> {
+    lines_after(log, mark).find_map(|line| {
+        let (origin, marker) = line
+            .strip_prefix("ARGTASK 0 start ")?
+            .split_once(" goal ")?;
+        confirmed_point(marker, goal)?;
+        confirmed_point(origin, start)
+    })
 }
 
 /// The roster's bots: named scoreboard rows other than the puppet.
@@ -355,48 +340,47 @@ fn roster_bots(names: &std::collections::BTreeMap<u8, String>) -> Vec<String> {
 }
 
 /// Run `attempt` until `check` passes on the log written after it, up to
-/// STEP_ATTEMPTS times, pumping `client` while it waits. Each attempt takes
-/// a fresh mark, so a confirmation is always newer than the attempt it
-/// confirms.
-fn confirm<C>(
+/// STEP_ATTEMPTS times, pumping `client` while it waits. A delayed receipt
+/// from any retry of this step still counts. Earlier steps are before `mark`.
+fn confirm<C, T>(
     client: &mut C,
     read_log: &dyn Fn() -> String,
     pump: &dyn Fn(&mut C),
     wait: Duration,
-    mut attempt: impl FnMut(&mut C, u32) -> Result<(), String>,
-    check: impl Fn(&str, usize, u32) -> bool,
-) -> Result<bool, String> {
-    for n in 1..=STEP_ATTEMPTS as u32 {
-        let mark = read_log().lines().count();
-        attempt(client, n)?;
+    mut attempt: impl FnMut(&mut C) -> Result<(), String>,
+    check: impl Fn(&str, usize) -> Option<T>,
+) -> Result<Option<T>, String> {
+    let mark = read_log().lines().count();
+    for _ in 0..STEP_ATTEMPTS {
+        attempt(client)?;
         let started = Instant::now();
         while started.elapsed() < wait {
             pump(client);
-            if check(&read_log(), mark, n) {
-                return Ok(true);
+            if let Some(value) = check(&read_log(), mark) {
+                return Ok(Some(value));
             }
         }
     }
-    Ok(false)
+    Ok(check(&read_log(), mark))
 }
 
 /// Fire `impulse` until `check` passes, through the live match's log.
-fn impulse_confirmed(
+fn impulse_confirmed<T>(
     ctrl: &MatchCtrl,
     client: &mut NetClient,
     impulse: u8,
-    check: impl Fn(&str, usize) -> bool,
-) -> Result<bool, String> {
+    check: impl Fn(&str, usize) -> Option<T>,
+) -> Result<Option<T>, String> {
     confirm(
         client,
         &|| ctrl.log_text().unwrap_or_default(),
         &|c: &mut NetClient| c.pump(Duration::from_millis(100)),
         STEP_WAIT,
-        |c, _| {
+        |c| {
             c.set_impulse(impulse);
             Ok(())
         },
-        |log, mark, _| check(log, mark),
+        check,
     )
 }
 
@@ -464,36 +448,29 @@ async fn run_connected(
 
     let mut results = Vec::new();
     for task in tasks {
-        // Place, then assign the goal at once, and confirm both from the
-        // route that starts the task. Every attempt places again, so a bot
-        // that wandered off before its goal landed starts over.
+        command_confirmed(
+            ctrl,
+            &mut client,
+            &command_point(3841, task.start),
+            &mut seq,
+        )
+        .await?;
+        impulse_confirmed(ctrl, &mut client, 217, |log, mark| {
+            staged_task(log, mark, task.start)
+        })?
+        .ok_or_else(|| format!("{}: {bot} did not confirm the staged start", task.name))?;
+
+        command_confirmed(ctrl, &mut client, &command_point(3842, task.goal), &mut seq).await?;
         let first_print = client.world.prints.len();
-        let mut began = false;
-        for _ in 0..STEP_ATTEMPTS {
-            command_confirmed(
-                ctrl,
-                &mut client,
-                &command_point(3841, task.start),
-                &mut seq,
-            )
-            .await?;
-            let mark = ctrl.log_text().unwrap_or_default().lines().count();
-            client.set_impulse(217);
-            client.pump(Duration::from_millis(250));
-            command_confirmed(ctrl, &mut client, &command_point(3842, task.goal), &mut seq).await?;
-            began = impulse_confirmed(ctrl, &mut client, 217, |log, _| {
-                started_task(log, mark, &bot, task.start, task.goal)
-            })?;
-            if began {
-                break;
-            }
-        }
-        let note = (!began).then(|| format!("{bot} never started a route from the task start"));
+        let verified_start = impulse_confirmed(ctrl, &mut client, 217, |log, mark| {
+            started_task(log, mark, task.start, task.goal)
+        })?
+        .ok_or_else(|| format!("{}: {bot} did not confirm placement and goal", task.name))?;
 
         let started = Instant::now();
         let wall_limit = Duration::from_secs_f32(task.budget_sec + 3.0);
         let mut outcome = None;
-        while note.is_none() && started.elapsed() < wall_limit && !client.world.disconnected {
+        while started.elapsed() < wall_limit && !client.world.disconnected {
             client.pump(Duration::from_millis(200));
             outcome = client.world.prints[first_print..]
                 .iter()
@@ -511,10 +488,10 @@ async fn run_connected(
         results.push(TaskResult {
             name: task.name.clone(),
             split: task.split.clone(),
+            verified_start,
             completed,
             game_sec: outcome.map(|_| game_sec),
             wall_sec: started.elapsed().as_secs_f32(),
-            note,
         });
     }
     client.disconnect();
@@ -570,8 +547,8 @@ pub async fn run_suite_with_ctrl(
     // tape with the same name. Stop still owns cleanup and raw tape harvest.
     let text = ctrl.log_text().unwrap_or_default();
     let stopped = ctrl.stop(Duration::from_secs(3)).await;
-    let result = result?;
     let log_path = stopped?.log_path.ok_or("benchmark retained no tape path")?;
+    let result = result.map_err(|reason| format!("{reason}. Tape at {log_path}"))?;
     verify_recorded_map(&text, &suite.map)
         .map_err(|reason| format!("WRONG MAP: {reason}. Tape at {log_path}"))?;
     verify_recorded_graph(Path::new(&log_path), &suite.map, &text, program)
@@ -713,18 +690,18 @@ mod tests {
             TaskResult {
                 name: "train_route".into(),
                 split: "train".into(),
+                verified_start: [0.0, 0.0, 24.0],
                 completed: true,
                 game_sec: Some(4.0),
                 wall_sec: 4.0,
-                note: None,
             },
             TaskResult {
                 name: "heldout_route".into(),
                 split: "heldout".into(),
+                verified_start: [0.0, 0.0, 24.0],
                 completed: false,
                 game_sec: Some(12.0),
                 wall_sec: 12.0,
-                note: None,
             },
         ];
         let report = report(&suite(), rows);
@@ -752,10 +729,10 @@ mod tests {
                 vec![TaskResult {
                     name: "train_route".into(),
                     split: "train".into(),
+                    verified_start: [0.0, 0.0, 24.0],
                     completed,
                     game_sec: seconds,
                     wall_sec: 0.1,
-                    note: None,
                 }],
             );
             assert_eq!(value.results[0].completed, expected, "elapsed {seconds:?}");
@@ -775,46 +752,50 @@ mod tests {
     fn step_checks_read_only_lines_after_their_mark() {
         let log = "\
 ARGUS_BENCH_ACK 1
-ARGLOG Joe Rogan t 4.5 pos '485 -703 56' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
-ARGEVT Joe Rogan route 7 start '485 -703 56' goal '261 -703 328'
-ARGEVT Joe Rogan route 3 start '485 -703 56' goal '900 0 0'
+ARGTASK 0 staged '480.0 -700.0 60.0'
+ARGTASK 0 start '480.0 -700.0 60.0' goal '261.0 -703.0 328.0'
 ";
         assert!(echoed(log, 0, "ARGUS_BENCH_ACK 1"));
         assert!(!echoed(log, 1, "ARGUS_BENCH_ACK 1"));
         assert!(!echoed(log, 0, "ARGUS_BENCH_ACK 11"));
+        let start = [480.01, -700.02, 60.04];
         let goal = [261.0, -703.0, 328.0];
-        let start = [480.0, -700.0, 60.0];
-        // a spaced name is matched whole, and only a route from the start
-        // to the goal counts
-        assert!(started_task(log, 0, "Joe Rogan", start, goal));
-        assert!(!started_task(log, 0, "Joe", start, goal));
-        assert!(!started_task(log, 0, "Joe Rogan", [0.0, 0.0, 56.0], goal));
-        assert!(!started_task(
-            log,
-            0,
-            "Joe Rogan",
-            start,
-            [900.0, 900.0, 0.0]
-        ));
-        assert!(!started_task(log, 3, "Joe Rogan", start, goal));
-        // a routefail counts only once a row after the mark puts the bot
-        // near the start, as a bot that ran on after its placement still is
-        let ran_on =
-            "ARGLOG Carmack t 52.6 pos '-25.5 -551.7 -16.0' spd 451\nARGEVT Carmack routefail\n";
-        assert!(started_task(
-            ran_on,
-            0,
-            "Carmack",
-            [69.0, -671.0, -16.0],
-            goal
-        ));
-        assert!(!started_task(
-            "ARGEVT Carmack routefail\n",
-            0,
-            "Carmack",
-            [69.0, -671.0, -16.0],
-            goal
-        ));
+        assert_eq!(staged_task(log, 1, start), Some([480.0, -700.0, 60.0]));
+        assert_eq!(staged_task(log, 2, start), None);
+        assert_eq!(
+            started_task(log, 2, start, goal),
+            Some([480.0, -700.0, 60.0])
+        );
+        assert_eq!(started_task(log, 3, start, goal), None);
+        assert_eq!(started_task(log, 2, [480.1, -700.0, 60.0], goal), None);
+        assert_eq!(started_task(log, 2, start, [261.0, -703.1, 328.0]), None);
+        assert_eq!(
+            started_task(&log.replace("ARGTASK 0", "ARGTASK 1"), 0, start, goal),
+            None
+        );
+        assert_eq!(
+            started_task(&log.replace("480.0", "NaN"), 0, start, goal),
+            None
+        );
+        assert_eq!(
+            started_task(&log.replace("60.0'", "60.0 99.0'"), 0, start, goal),
+            None
+        );
+    }
+
+    #[test]
+    fn nearby_route_does_not_confirm_task_placement() {
+        let displaced = "ARGLOG Carmack t 9.1 pos '552.3 280.3 -712.0' spd 300\n\
+                         ARGEVT Carmack route 12 start '577.0 289.0 -712.0' goal '1249.0 -127.0 -552.0'\n";
+        assert_eq!(
+            started_task(
+                displaced,
+                0,
+                [673.0, 321.0, -712.0],
+                [1249.0, -127.0, -552.0],
+            ),
+            None
+        );
     }
 
     #[test]
@@ -835,7 +816,7 @@ ARGEVT Joe Rogan route 3 start '485 -703 56' goal '900 0 0'
         use std::cell::RefCell;
         let start = [485.0, -703.0, 56.0];
         let goal = [261.0, -703.0, 328.0];
-        let row = "ARGEVT Carmack route 7 start '485 -703 56' goal '261 -703 328'\n";
+        let row = "ARGTASK 0 start '485 -703 56' goal '261 -703 328'\n";
         // A stale row before the first attempt, then nothing until the third.
         let log = RefCell::new(row.to_string());
         let mut fired = 0u32;
@@ -844,17 +825,17 @@ ARGEVT Joe Rogan route 3 start '485 -703 56' goal '900 0 0'
             &|| log.borrow().clone(),
             &|_| {},
             Duration::from_millis(20),
-            |count: &mut u32, n| {
+            |count: &mut u32| {
                 *count += 1;
-                if n == 3 {
+                if *count == 3 {
                     log.borrow_mut().push_str(row);
                 }
                 Ok(())
             },
-            |text, mark, _| started_task(text, mark, "Carmack", start, goal),
+            |text, mark| started_task(text, mark, start, goal),
         )
         .unwrap();
-        assert!(ok);
+        assert_eq!(ok, Some(start));
         assert_eq!(fired, 3);
 
         let mut fired = 0u32;
@@ -863,14 +844,40 @@ ARGEVT Joe Rogan route 3 start '485 -703 56' goal '900 0 0'
             &|| log.borrow().clone(),
             &|_| {},
             Duration::from_millis(20),
-            |count: &mut u32, _| {
+            |count: &mut u32| {
                 *count += 1;
                 Ok(())
             },
-            |text, mark, _| started_task(text, mark, "Carmack", start, goal),
+            |text, mark| started_task(text, mark, start, goal),
         )
         .unwrap();
-        assert!(!never);
+        assert_eq!(never, None);
         assert_eq!(fired as usize, STEP_ATTEMPTS);
+    }
+
+    #[test]
+    fn one_shot_receipt_remains_valid_across_retries() {
+        use std::cell::RefCell;
+        let log = RefCell::new(String::new());
+        let start = [485.0, -703.0, 56.0];
+        let goal = [261.0, -703.0, 328.0];
+        let mut fired = 0u32;
+        let result = confirm(
+            &mut fired,
+            &|| log.borrow().clone(),
+            &|_| {},
+            Duration::ZERO,
+            |count: &mut u32| {
+                *count += 1;
+                if *count == 1 {
+                    log.borrow_mut()
+                        .push_str("ARGTASK 0 start '485 -703 56' goal '261 -703 328'\n");
+                }
+                Ok(())
+            },
+            |text, mark| started_task(text, mark, start, goal),
+        )
+        .unwrap();
+        assert_eq!(result, Some(start));
     }
 }
