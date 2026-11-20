@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Record the two-leg pursuit evaluation and add a private stock-map verifier ([#1007](https://github.com/saworbit/argus/issues/1007)).
+
 - Give e1m8 full regeneration its own sidecar seats and walks. The [matched route trials](docs/specs/2026-11-20-e1m8-soak.md#full-regeneration) keep the tested splice in play ([#950](https://github.com/saworbit/argus/issues/950)).
 
 - Repeat the hearing, combat pickup and two-portal checks in a private stock-map fixture that refuses gameplay comparison ([#1004](https://github.com/saworbit/argus/issues/1004)).

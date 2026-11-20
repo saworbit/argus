@@ -197,9 +197,9 @@ class FixtureContract(unittest.TestCase):
 
     def test_every_runner_refuses_the_absent_backups_root_itself(self):
         import verify_freeze_recovery, verify_mover_transfer, verify_target_attention
-        import verify_water_route, verify_route_distance, verify_train_wait
+        import verify_water_route, verify_route_distance, verify_train_wait, verify_pursuit_two_leg
         modules = (verify_freeze_recovery, verify_mover_transfer, verify_target_attention,
-                   verify_water_route, verify_route_distance, verify_train_wait, maps)
+                   verify_water_route, verify_route_distance, verify_train_wait, verify_pursuit_two_leg, maps)
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             for module in modules:
@@ -219,6 +219,16 @@ class FixtureContract(unittest.TestCase):
         for invalid in ('', line * 2):
             with self.assertRaisesRegex(AssertionError, 'route install changed'):
                 observe_route_install(invalid)
+
+    def test_pursuit_fixture_requires_candidate_movement(self):
+        from verify_pursuit_two_leg import inspect_fixture
+
+        raw = ('BHVRPL begin live_pursuit\nPL begin dt_ms 14\n'
+               'PL expired 0\nPL committed 0\nPL novice 0\n'
+               "PL frame 0 active 0 pos '1281 -599 192' feet -1 speed 0 age 0.2 goal 1 before 0 after 0\n")
+        self.assertFalse(inspect_fixture(raw, 'dm2', candidate=False)['reached'])
+        with self.assertRaisesRegex(AssertionError, 'unexpected steering decision'):
+            inspect_fixture(raw, 'dm2', candidate=True)
 
     def test_shared_stage_writes_lf_and_rolls_back_a_failed_copy(self):
         with tempfile.TemporaryDirectory() as td:
