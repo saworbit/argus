@@ -118,8 +118,8 @@ def tsv(path):
     return [dict(zip(head, l.split('\t'))) for l in lines[1:]]
 
 
-def tape_index(root):
-    return {r['run']: r for r in tsv(root / 'runs' / 'tape_index.tsv')}
+def tape_index(root, *, runs_dir=None):
+    return {r['run']: r for r in tsv((runs_dir or root / 'runs') / 'tape_index.tsv')}
 
 
 def scorecard(root):
@@ -375,6 +375,11 @@ def graph(root, mapname):
     return dict(md5=md5(path), nodes=len(doc.get('nodes', [])), doc=doc, banner=nav_banner(root, mapname))
 
 
+def benchmark_graph_matches(suite, shipped):
+    pin = suite.get('graph_md5')
+    return shipped is not None and isinstance(pin, str) and pin.isascii() and pin.lower() == shipped['md5']
+
+
 LOG_STARTED = re.compile(r'^LOG started on: (\d{2})/(\d{2})/(\d{4})(?: (\d{2}:\d{2}:\d{2}))?', re.M)
 
 
@@ -469,16 +474,17 @@ def lab_env(root):
     return env
 
 
-def corpus_rows(root, names, mapname=None):
+def corpus_rows(root, names, mapname=None, *, runs_dir=None):
     """Tape-index rows for these runs: the cache first, then argus-mcp corpus, which parses the rest.
 
     Returns (rows by run, how each was found). Python never parses a tape's
     metrics itself; the Rust parser is the gate definition.
     """
-    index = tape_index(root)
+    runs_dir = runs_dir or root / 'runs'
+    index = tape_index(root, runs_dir=runs_dir)
     rows = {n: index[n] for n in names if n in index}
     source = {n: 'index' for n in rows}
-    missing = [n for n in names if n not in rows and (root / 'runs' / f'{n}.log').is_file()]
+    missing = [n for n in names if n not in rows and (runs_dir / f'{n}.log').is_file()]
     lab = lab_binary(root) if missing else None
     # The corpus answers one kind at a time and defaults to bot tapes, so a
     # human or fixture tape is asked for by kind before it is called missing.
@@ -488,7 +494,7 @@ def corpus_rows(root, names, mapname=None):
         cmd = [lab, 'corpus', '--kind', kind] + (['--map', mapname] if mapname else [])
         try:
             res = subprocess.run(cmd, capture_output=True, text=True, encoding='utf-8', errors='replace',
-                                 env=lab_env(root), timeout=600)
+                                 env=dict(lab_env(root), ARGUS_RUNS=str(runs_dir)), timeout=600)
         except (OSError, subprocess.TimeoutExpired):
             res = None
         if res is None or res.returncode != 0:
@@ -1082,7 +1088,7 @@ def stale_findings(root, obj):
         g = graph(root, doc.get('map', ''))
         if g is None:
             out.append(finding('benchmark', 'void', suite.name, f'no shipped graph for {doc.get("map")}'))
-        elif doc.get('graph_md5') != g['md5']:
+        elif not benchmark_graph_matches(doc, g):
             out.append(finding('benchmark', 'stale', suite.name,
                                f'pins graph {str(doc.get("graph_md5"))[:8]}, the shipped {doc["map"]} graph is {g["md5"][:8]}',
                                'check each task still starts and ends on the graph, then re-pin graph_md5'))
@@ -1220,17 +1226,16 @@ def boundaries_crossed(obj, metric, dates):
             if metric in b['metrics'] and b.get('source', 'emission') == 'emission' and lo < b['date'] <= hi]
 
 
-def hull0_lava(root, name, mapname):
+def hull0_lava(root, name, mapname, *, runs_dir=None):
     """Bot lava and slime deaths in one tape, judged by hull-0 contents at the death origin and 24u below.
 
-    The quality bar's definition. The corpus index counts deaths below z -300
-    instead, which misses dm2's and e1m7's lava entirely. None without a BSP.
+    The quality bar's definition. Return None if the BSP cannot be read.
     """
     bsp = bsp_path(root, mapname) if mapname else None
     contents = argus_longi._classifier(str(bsp)) if bsp else None
     if contents is None:
         return None
-    tape = argus_tape.read_tape(str(root / 'runs' / f'{name}.log'))
+    tape = argus_tape.read_tape(str((runs_dir or root / 'runs') / f'{name}.log'))
     bots = set(argus_tape.track_names(tape.samples, tape.events)[0])
     count = 0
     for _, victim, killer, x, y, z in argus_tape.deaths(tape.events):
@@ -1243,6 +1248,8 @@ def hull0_lava(root, name, mapname):
 def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     """Every reason the comparison of arm_a (control) with arm_b cannot be read at face value."""
     obj = obj or objective(root)
+    private_runs = os.environ.get('ARGUS_RUNS')
+    runs_dir = Path(private_runs).resolve() if private_runs else root / 'runs'
     void, confounds, notes = [], [], []
     arm_a, arm_b = [run_name(n) for n in arm_a], [run_name(n) for n in arm_b]
     for label, arm in (('control', arm_a), ('candidate', arm_b)):
@@ -1253,20 +1260,20 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     overlap = sorted(set(arm_a) & set(arm_b))
     if overlap:
         void.append(f'the same tape is in both arms: {", ".join(overlap)}')
-    known = tape_index(root)
+    known = tape_index(root, runs_dir=runs_dir)
     guesses = {n: (known[n]['map'] if n in known else map_from_name(root, n)) for n in names}
     found, source = {}, {}
     if None in guesses.values():
-        found, source = corpus_rows(root, names, None)
+        found, source = corpus_rows(root, names, runs_dir=runs_dir)
     else:
         for m in sorted(set(guesses.values())):
-            got, how = corpus_rows(root, [n for n in names if guesses[n] == m], m)
+            got, how = corpus_rows(root, [n for n in names if guesses[n] == m], m, runs_dir=runs_dir)
             found.update(got)
             source.update(how)
     missing = [n for n in names if n not in found]
     for n in missing:
-        if not (root / 'runs' / f'{n}.log').is_file():
-            void.append(f'{n} is not in runs/')
+        if not (runs_dir / f'{n}.log').is_file():
+            void.append(f'{n} is not in {runs_dir if private_runs else "runs/"}')
         else:
             void.append(f'{n} has no corpus row: the index lacks it and argus-mcp could not parse it'
                         + ('' if lab_binary(root) else ' (no argus-mcp binary; set ARGUS_LAB)'))
@@ -1298,10 +1305,10 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
         void.append(f'no duration, a stub tape: {", ".join(stubs)}')
 
     def per_arm(arm, reader):
-        return {n: reader(read_text(root / 'runs' / f'{n}.log')) for n in arm}
+        return {n: reader(read_text(runs_dir / f'{n}.log')) for n in arm}
 
     graph_map = maps[0] if len(maps) == 1 else None
-    ran = {n: tape_graph(root, graph_map, root / 'runs' / f'{n}.log') if graph_map else None for n in names}
+    ran = {n: tape_graph(root, graph_map, runs_dir / f'{n}.log') if graph_map else None for n in names}
     def common(arm):
         sets = [ran[n]['ids'] for n in arm if ran.get(n)]
         return frozenset.intersection(*sets) if sets else None
@@ -1319,7 +1326,7 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     skills_b = {tuple(s) for s in per_arm(arm_b, skill_of).values() if s}
     if skills_a and skills_b and skills_a != skills_b:
         confounds.append(f'skill tiers differ: {sorted(skills_a)} against {sorted(skills_b)}')
-    ids = {n: argus_tape.tape_identity(read_text(root / 'runs' / f'{n}.log')) for n in names}
+    ids = {n: argus_tape.tape_identity(read_text(runs_dir / f'{n}.log')) for n in names}
     builds_a = sorted({ids[n]['build'] for n in arm_a if ids[n]['build']})
     builds_b = sorted({ids[n]['build'] for n in arm_b if ids[n]['build']})
     mixed = [f'{label} {", ".join(b)}' for label, b in (('control', builds_a), ('candidate', builds_b)) if len(b) > 1]
@@ -1372,12 +1379,12 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     dates = [r.get('started', '')[:10] for r in rows]
     lava = {}
     if 'lava_deaths' in (metrics or LIMIT_METRICS) and mapname and not void:
-        lava = {r['run']: hull0_lava(root, r['run'], mapname) for r in rows}
+        lava = {r['run']: hull0_lava(root, r['run'], mapname, runs_dir=runs_dir) for r in rows}
         if all(v is not None for v in lava.values()):
-            notes.append('lava_deaths recounted from hull-0 contents at each death (the corpus counts z below -300)')
+            notes.append('lava_deaths recounted from hull-0 contents at each death and 24 units below')
         else:
             lava = {}
-            notes.append('lava_deaths is the corpus z-below-300 count; without the BSP it misses lava above that')
+            notes.append('lava_deaths uses the corpus counts; the corpus rows do not identify the classifier used')
     results = {}
     for metric in metrics or LIMIT_METRICS:
         if metric == 'lava_deaths' and lava:
@@ -1954,7 +1961,7 @@ def pyramid_plan(root, maps, through, obj, effect_pct=30.0):
             if doc.get('map') not in maps:
                 continue
             g = graph(root, doc['map'])
-            if g is None or doc.get('graph_md5') != g['md5']:
+            if not benchmark_graph_matches(doc, g):
                 steps.append(dict(tier=2, name=f'benchmark {suite.name}', skip='suite pins a graph that is no longer shipped', blocks=True))
             elif not lab:
                 steps.append(dict(tier=2, name=f'benchmark {suite.name}', skip='no argus-mcp binary (set ARGUS_LAB)'))

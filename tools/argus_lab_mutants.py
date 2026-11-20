@@ -122,7 +122,7 @@ MUTANTS = [
      "if shipped and ran and shipped['id'] not in ran['ids']:",
      "if shipped and ran and shipped['id'] in ran['ids']:"),
     ('a suite pinned to an old graph is stale',
-     "elif doc.get('graph_md5') != g['md5']:",
+     "elif not benchmark_graph_matches(doc, g):",
      "elif doc.get('graph_md5') is None:"),
     ('a refused jump link still shipped is stale',
      "if ia is not None and ib is not None and (ia, ib) in jumps:",

@@ -123,11 +123,9 @@ the per-cell verdicts.
 Lists every reason a comparison cannot be read at face value, before anyone
 reads it. The first arm is the control.
 
-Named tapes are resolved in the checkout's `runs/` directory. For a study
-recorded with the native lab's private `ARGUS_RUNS`, copy both arms' tapes
-and their navigation receipts under their unique `study_` names into
-`runs/` before comparing them.
-[Private tape lookup issue](https://github.com/saworbit/argus/issues/1002)
+Named tapes are resolved in `ARGUS_RUNS` when set in the shell, or in the
+checkout's `runs/` directory by default. Set the same `ARGUS_RUNS` used to
+record both arms of a private study.
 
 - **Void**: the same tape in both arms or twice in one, tapes from different
   maps, human or fixture tapes, mixed or unknown tick classes, a stub tape
@@ -143,10 +141,10 @@ and their navigation receipts under their unique `study_` names into
   spread is used only for tapes of its own length (about 185 s). A change inside
   the limit is "no detectable effect", never "improved". When durations
   differ, per-minute rates are compared and the spread comes from the arms.
-- **Lava**: the corpus index counts lava deaths below z -300, which misses
-  dm2's and e1m7's lava entirely. With the map's BSP the skeptic recounts lava
-  from hull-0 contents at each death and 24 units below, the quality bar's
-  definition, and says so.
+- **Lava**. With a readable BSP, the skeptic recounts lava and slime deaths
+  using hull-0 contents at each death and 24 units below. Otherwise it uses
+  the corpus counts. The corpus uses hull-0 with a usable BSP and a height
+  fallback without one. Corpus rows do not name the classifier used.
 
 Run names may be given as `x`, `x.log` or `runs/x.log`, and `--metric` must
 name a corpus metric. A tape the corpus cache lacks is parsed by

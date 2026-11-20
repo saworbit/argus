@@ -549,6 +549,8 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Let `skeptic` read private runs from `ARGUS_RUNS` ([#1002](https://github.com/saworbit/argus/issues/1002)), describe where its lava counts came from ([#997](https://github.com/saworbit/argus/issues/997)), and accept either case in shipped benchmark graph pins ([#1011](https://github.com/saworbit/argus/issues/1011)).
+
 - Reduce hard movement reversals on dm4 and dm2 by rounding clear turns and carrying only the velocity along a brink exit ([#697](https://github.com/saworbit/argus/issues/697)).
 - Document the checks for targeted navigation repairs and record the e1m8
   route and lava trials in the [lab guide](docs/lab-workflow.md#verify-a-targeted-navigation-splice).

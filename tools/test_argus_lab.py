@@ -270,6 +270,39 @@ class TestSkeptic(unittest.TestCase):
         with no_lab_binary():
             return argus_lab.skeptic(fx.root, a, b, **kw)
 
+    def test_private_runs_use_the_same_directory_for_corpus_and_recount(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            control, candidate = 'ab_dm4_private_a', 'ab_dm4_private_b'
+            fx.add_run(control, kind='human', text=tape(base=3))
+            fx.write(f'private/{control}.log', tape())
+            death = ('ARGEVT Reap spawned\n' + sample('Reap', 1.0, 0, 0, -20)
+                     + "ARGEVT Reap death world pos '0 0 -30'\n")
+            fx.write(f'private/{candidate}.log', tape(body=death))
+            runs_dir = fx.root / 'private'
+            csv = '\n'.join(row.replace('\t', ',') for row in (INDEX_HEAD, index_row(control), index_row(candidate)))
+            with mock.patch.dict(os.environ, {'ARGUS_RUNS': str(runs_dir)}), \
+                    mock.patch.object(argus_lab, 'lab_binary', return_value='argus-mcp'), \
+                    mock.patch.object(argus_lab, 'graph_history', return_value=()), \
+                    mock.patch.object(argus_lab, 'bsp_path', return_value=Path('dm4.bsp')), \
+                    mock.patch.object(argus_lab.argus_longi, '_classifier', return_value=lambda x, y, z: -5), \
+                    mock.patch.object(argus_lab.subprocess, 'run', return_value=mock.Mock(returncode=0, stdout=csv)) as native:
+                rep = argus_lab.skeptic(fx.root, [control], [candidate], metrics=['lava_deaths'])
+            self.assertEqual(rep['verdict'], 'clean')
+            self.assertEqual(native.call_args.kwargs['env']['ARGUS_RUNS'], str(runs_dir.resolve()))
+            self.assertEqual((rep['metrics']['lava_deaths']['a'], rep['metrics']['lava_deaths']['b']), (0.0, 1.0))
+
+    def test_lava_corpus_note_leaves_the_classifier_open(self):
+        with tempfile.TemporaryDirectory() as td:
+            fx = Fixture(td)
+            fx.add_run('ab_dm4_a', lava=1)
+            fx.add_run('ab_dm4_b', lava=2)
+            with mock.patch.object(argus_lab, 'bsp_path', return_value=None):
+                rep = self.run_skeptic(fx, ['ab_dm4_a'], ['ab_dm4_b'], metrics=['lava_deaths'])
+            self.assertEqual((rep['metrics']['lava_deaths']['a'], rep['metrics']['lava_deaths']['b']), (1.0, 2.0))
+            self.assertIn('lava_deaths uses the corpus counts; the corpus rows do not identify the classifier used',
+                          rep['notes'])
+
     def test_a_clean_comparison_classifies_effects_against_the_limit(self):
         with tempfile.TemporaryDirectory() as td:
             fx = Fixture(td)
@@ -462,6 +495,21 @@ class TestSessions(unittest.TestCase):
 
 
 class TestPyramid(unittest.TestCase):
+    def test_graph_pin_matches_the_shared_benchmark_cases(self):
+        cases = json.loads((REPO / 'tools/argus_mcp/testdata/benchmark_graph_pins.json').read_text(encoding='utf-8'))
+        with tempfile.TemporaryDirectory() as td, no_lab_binary():
+            fx = Fixture(td)
+            fx.write('src/argus_nav_dm4.qc.json', cases['graph'])
+            obj = argus_lab.objective(fx.root)
+            for case in cases['cases']:
+                with self.subTest(pin=case['pin']):
+                    fx.write('benchmarks/dm4.json', json.dumps({'map': 'dm4', 'graph_md5': case['pin'], 'tasks': []}))
+                    findings = argus_lab.stale_findings(fx.root, obj)
+                    step = next(s for s in argus_lab.pyramid_plan(fx.root, ['dm4'], 2, obj)
+                                if s['name'] == 'benchmark dm4.json')
+                    self.assertEqual(any(row['area'] == 'benchmark' for row in findings), not case['matches'])
+                    self.assertEqual(step.get('blocks', False), not case['matches'])
+
     def test_plan_blocks_stale_suites_and_sizes_ladders(self):
         with tempfile.TemporaryDirectory() as td:
             fx = Fixture(td)

@@ -129,11 +129,11 @@ pub fn validate_suite(suite: &TaskSuite) -> Result<(), String> {
     Ok(())
 }
 
-fn verify_graph(cfg: &Config, suite: &TaskSuite) -> Result<serde_json::Value, String> {
-    let path = cfg.src.join(format!("argus_nav_{}.qc.json", suite.map));
+fn verify_graph(src: &Path, suite: &TaskSuite) -> Result<serde_json::Value, String> {
+    let path = src.join(format!("argus_nav_{}.qc.json", suite.map));
     let bytes = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
     let actual = format!("{:x}", md5::compute(&bytes));
-    if actual != suite.graph_md5.to_ascii_lowercase() {
+    if !actual.eq_ignore_ascii_case(&suite.graph_md5) {
         return Err(format!(
             "task suite graph is stale: expected {}, current {actual}",
             suite.graph_md5
@@ -517,7 +517,7 @@ pub async fn run_suite_with_ctrl(
     normalized.map = crate::paths::map_name(&suite.map)?;
     let suite = &normalized;
     validate_suite(suite)?;
-    let graph = verify_graph(cfg, suite)?;
+    let graph = verify_graph(&cfg.src, suite)?;
     let count = limit.unwrap_or(suite.tasks.len()).min(suite.tasks.len());
     if count == 0 {
         return Err("benchmark limit must be at least 1".into());
@@ -625,6 +625,27 @@ mod tests {
         value = suite();
         value.tasks[0].start[1] = f32::NAN;
         assert!(validate_suite(&value).unwrap_err().contains("finite"));
+    }
+
+    #[test]
+    fn benchmark_graph_pin_matches_the_shared_cases() {
+        let cases: serde_json::Value =
+            serde_json::from_str(include_str!("../testdata/benchmark_graph_pins.json")).unwrap();
+        let dir = crate::test_support::TestDir::new("benchmark-graph-pin").unwrap();
+        std::fs::write(
+            dir.path().join("argus_nav_dm4.qc.json"),
+            cases["graph"].as_str().unwrap(),
+        )
+        .unwrap();
+        let mut suite = suite();
+        for case in cases["cases"].as_array().unwrap() {
+            suite.graph_md5 = case["pin"].as_str().unwrap().into();
+            assert_eq!(
+                (validate_suite(&suite).is_ok() && verify_graph(dir.path(), &suite).is_ok()),
+                case["matches"].as_bool().unwrap(),
+                "{case}"
+            );
+        }
     }
 
     #[test]
