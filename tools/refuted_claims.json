@@ -130,6 +130,18 @@
         "docs/architecture.md"
       ],
       "example": "re-fit the 71 Hz spring constants so their settle times match the lab"
+    },
+    {
+      "id": "aggregate-routes-refute-atlas-reach",
+      "pattern": "atlas reach labels\\s+contradicted by tape evidence|the runtime graph disagrees with the atlas",
+      "claim": "match-wide route and route failure counts confirm or refute the atlas reach label for a selected item",
+      "correction": "a goal event names a selected class, and route totals pool all destinations. An item reach verdict needs evidence for the specific location",
+      "refuted": "2026-11-20",
+      "evidence": [
+        "#972",
+        "stock e1m8 tape soak_2026-11-20_0222_001_e1m8"
+      ],
+      "example": "atlas reach labels contradicted by tape evidence"
     }
   ]
 }

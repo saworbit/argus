@@ -897,6 +897,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep atlas item warnings visible when a match routes well and report route failures as match-wide counts ([#972](https://github.com/saworbit/argus/issues/972)).
+
 - Reject fixed-route benchmark reports if the engine tape does not confirm a single start on the manifest map ([#970](https://github.com/saworbit/argus/issues/970)).
 
 - Keep grounded bots on the approach deck while lining up a staged jump. The dm4 room stay fell from 18.32 to 5.73 seconds per tape, and the dm4 and dm2 guards held ([#867](https://github.com/saworbit/argus/issues/867)).
