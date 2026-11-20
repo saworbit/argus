@@ -113,9 +113,12 @@ a rerun changes nothing. Then it rebakes regions and tactics. Built for
 elbow seats: a corridor that turns a corner fails beeline_ok end to end,
 and a seat at the turn makes two walks that pass. A full regeneration
 applies the same rules after its late link passes (section 7g2e). If a
-sidecar supplies a "regeneration" object, full generation uses its seats,
-walks and cuts in place of the top-level entries. The splice still uses
-the top-level entries. Both refuse to publish when an entry cannot apply.
+sidecar supplies a "regeneration" object, full generation uses its entries
+in place of the top-level entries. The splice still uses the top-level
+entries. A "swims" pair joins a submerged seat to a dry bank and uses the
+same hull checks as bank links found during generation. A verified bank
+may replace a rocket link in the same slot. Both modes refuse publication
+when an entry cannot apply.
 
 --seat-elbows screens a completed graph for level walks that fail the
 early-switch floor test. It tries nearby dry seats with the offline turn
@@ -1327,6 +1330,73 @@ def _seat_walk_ok(a, b):
     return beeline_points(a, b, dropmax=depth)
 
 
+# A 512u climb and dive at 120u/s fit the 12-second air supply and cover
+# e1m4's lake, whose floor lies 504u beneath the surface.
+KNIT_SWIM_RISE = 512.0
+
+
+def _swims(_p):
+    """Is this origin under water, as 7d's underwater seats are?"""
+    return h0_contents(_p[0], _p[1], _p[2] + 8) == CONTENTS_WATER
+
+
+def _bank_path(_wet, _dry):
+    """(exit, entry) between an underwater seat and a dry bank seat.
+
+    Exit is the vault 7d already types as a swim link: up through the
+    water to the surface, along it until the bank stops the swim, and out
+    onto a lip no higher than the waterjump's 44u, then a walk to the
+    seat that beeline_ok accepts. Entry is the same path the other way: a
+    walk to the edge, a fall of at most DROPMAX into the water, the swim
+    and the dive. 7d cannot see either when the seat lies deeper than
+    water_top's 320u reach, because it then measures from a surface that
+    is not there: e1m4's lake floor sits 504u under its surface, and the
+    west shore beside it had no way in or out. This finds the surface
+    itself. The climb, the swim and the vault are all empty in hull 1,
+    and the swim stays in water.
+    """
+    _wx, _wy, _wz = _wet
+    _dx, _dy, _dz = _dry
+    _s = _wz
+    while _s - _wz <= KNIT_SWIM_RISE and _swims((_wx, _wy, _s + 8)):
+        _s += 8
+    if _s - _wz > KNIT_SWIM_RISE:
+        return False, False
+    _surf = _s + 8                       # highest water sample, to 8u
+    if not (_surf - 12 <= _dz <= _surf + DROPMAX):
+        return False, False
+    _z = _wz
+    while _z < _s:
+        if hull_contents(_wx, _wy, _z) != CONTENTS_EMPTY:
+            return False, False
+        _z += 16
+    _dist = ((_dx - _wx) ** 2 + (_dy - _wy) ** 2) ** 0.5
+    _steps = int(_dist // 8) + 1
+    _lx, _ly = _wx, _wy
+    for _st in range(1, _steps + 1):
+        _p = (_wx + (_dx - _wx) * _st / _steps,
+              _wy + (_dy - _wy) * _st / _steps, _s)
+        if hull_contents(*_p) != CONTENTS_EMPTY or not _swims(_p):
+            break
+        _lx, _ly = _p[0], _p[1]
+    _z = _s
+    while _z <= max(_dz, _surf + 8):
+        if hull_contents(_lx, _ly, _z) != CONTENTS_EMPTY:
+            return False, False
+        _z += 8
+    if not beeline_points((_lx, _ly, _dz), _dry):
+        return False, False
+    return _dz <= _surf + 44, True
+
+
+def _seat_swim_ok(wet, dry):
+    return (_swims(wet) and not hostile_at(*wet)
+            and h0_contents(dry[0], dry[1], dry[2] - 23) == CONTENTS_EMPTY
+            and any(abs(f - dry[2]) <= 2 for f in column_floors(*dry[:2]))
+            and ((wet[0] - dry[0]) ** 2 + (wet[1] - dry[1]) ** 2) ** .5 <= LINK_PATH_MAX
+            and _bank_path(wet, dry)[0])
+
+
 def _seat_links(text, doc, spec, *, exact=False):
     """--seat-links: append seats and beeline-verified walks, then rebake.
 
@@ -1382,6 +1452,22 @@ def _seat_links(text, doc, spec, *, exact=False):
             raise ValueError(f"beeline_ok refuses n{a} {_fmt(na)} -> n{b} {_fmt(nb)}")
         present.add((a, b))
         walks.append((a, b))
+    swim_exits = []
+    swim_retypes = set()
+    for pair in spec.get("swims", []):
+        a, b = _find(pair[0]), _find(pair[1])
+        if a is None or b is None:
+            raise ValueError(f"swim {pair} does not join two seats")
+        if edges.get((a, b)) == "swimlinks" or (a, b) in swim_exits:
+            continue
+        if (a, b) in present and edges.get((a, b)) != "rjlinks":
+            raise ValueError(f"swim {pair} conflicts with an existing link")
+        if not _seat_swim_ok(nodes[a], nodes[b]):
+            raise ValueError(f"bank path refuses swim {pair}")
+        if edges.get((a, b)) == "rjlinks":
+            swim_retypes.add((a, b))
+        present.add((a, b))
+        swim_exits.append((a, b))
     # a CUT retires a plain walk an elbow replaces: the router prices a
     # corner-cutting diagonal below any two-leg detour, so a seat beside
     # it is never used while it stands. It also retires a jump or sprint
@@ -1408,7 +1494,7 @@ def _seat_links(text, doc, spec, *, exact=False):
         raise ValueError(f"link slot overflow: {over}")
     ungated = collections.defaultdict(set)
     for a, b in present:
-        if edges.get((a, b)) not in ("rjlinks", "sprintlinks"):
+        if (a, b) in swim_retypes or edges.get((a, b)) not in ("rjlinks", "sprintlinks"):
             ungated[a].add(b)
     for a, b in cuts:
         seen, stack = {a}, [a]
@@ -1420,14 +1506,14 @@ def _seat_links(text, doc, spec, *, exact=False):
                     stack.append(v)
         if b not in seen:
             raise ValueError(f"cut n{a} -> n{b} leaves n{b} unreachable from n{a}")
-    if not added and not walks and not cuts:
-        return text, doc, added, walks, cuts
-    text, doc = _append_to_graph(text, doc, nodes, added, walks, cuts)
-    return text, doc, added, walks, cuts
+    if added or walks or cuts or swim_exits:
+        text, doc = _append_to_graph(text, doc, nodes, added, walks, cuts,
+                                     swims=swim_exits, swim_retypes=swim_retypes)
+    return text, doc, added, walks, cuts, swim_exits
 
 
-def _append_to_graph(text, doc, nodes, added, walks, cuts=()):
-    """Append seats and plain walks to a shipped pair, then rebake regions.
+def _append_to_graph(text, doc, nodes, added, walks, cuts=(), *, swims=(), swim_retypes=()):
+    """Append seats, walks and swim exits, then rebake regions.
 
     New seats go after the last node and new link calls after the last
     link call, so no existing index or slot moves; cuts are plain walk
@@ -1447,13 +1533,20 @@ def _append_to_graph(text, doc, nodes, added, walks, cuts=()):
                 and "teleporter" not in m.group(4)
                 and (int(m.group(2)), int(m.group(3))) in cutset)
     lines = [l for l in lines if not _cut(l)]
+    if swim_retypes:
+        for i, line in enumerate(lines):
+            match = _LINK.match(line)
+            if match and (int(match[2]), int(match[3])) in swim_retypes:
+                lines[i] = line.replace("Argus_NavLinkRocket", "Argus_NavLinkSwim", 1)
 
     def _after_last(pred):
         return max(i for i, l in enumerate(lines) if pred(l)) + 1
     # links first, then spawns, then locals: each insertion sits below
     # the next one's anchor, so no anchor moves before it is used
     at = _after_last(lambda l: _LINK.match(l))
-    lines[at:at] = [f"    Argus_NavLink (n{a}, n{b});{nl}" for a, b in walks]
+    lines[at:at] = ([f"    Argus_NavLink (n{a}, n{b});{nl}" for a, b in walks]
+                    + [f"    Argus_NavLinkSwim (n{a}, n{b});{nl}" for a, b in swims
+                       if (a, b) not in swim_retypes])
     at = _after_last(lambda l: _NODE.match(l))
     lines[at:at] = [f"    n{i} = Argus_NavNode ('{nodes[i][0]:.0f} {nodes[i][1]:.0f} "
                     f"{nodes[i][2]:.0f}');{nl}" for i in added]
@@ -1573,7 +1666,7 @@ if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_ELBOWS or SEAT_SPAWN_
     if SEAT_LINKS:
         try:
             _spec = json.loads(Path(SEAT_LINKS).read_text(encoding="utf-8"))
-            _candidate_qc, _tdoc, _added, _walks, _cuts = _seat_links(_candidate_qc, _tdoc, _spec)
+            _candidate_qc, _tdoc, _added, _walks, _cuts, _swim_exits = _seat_links(_candidate_qc, _tdoc, _spec)
         except (OSError, ValueError, KeyError, IndexError, TypeError) as _error:
             print(f"error: --seat-links: {_error}", file=sys.stderr)
             sys.exit(1)
@@ -1589,6 +1682,8 @@ if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_ELBOWS or SEAT_SPAWN_
         for _a, _b in _walks:
             print(f"  walk: n{_a} {tuple(round(v) for v in _tdoc['nodes'][_a])} -> "
                   f"n{_b} {tuple(round(v) for v in _tdoc['nodes'][_b])}")
+        for _a, _b in _swim_exits:
+            print(f"  swim: n{_a} -> n{_b}")
     if SEAT_ELBOWS:
         from argus_elbows import plan_elbows
         from argus_turnsim import World
@@ -1619,7 +1714,7 @@ if REANALYZE_TACTICS or REPAIR_LINKS or SEAT_LINKS or SEAT_ELBOWS or SEAT_SPAWN_
             _spec, _unresolved = plan_elbows(
                 World(_bsp), _tdoc, seat_ok=_elbow_seat, walk_ok=_elbow_walk,
                 admits=lambda count: _elbow_limits.admits(count, infrastructure=True))
-            _candidate_qc, _tdoc, _added, _walks, _cuts = _seat_links(
+            _candidate_qc, _tdoc, _added, _walks, _cuts, _ = _seat_links(
                 _candidate_qc, _tdoc, _spec, exact=True)
         except (OSError, ValueError, KeyError, TypeError, IndexError, AttributeError) as _error:
             print(f"error: --seat-elbows: {_error}; nothing written", file=sys.stderr)
@@ -2532,13 +2627,13 @@ if _seatspec_path.exists():
         _seatspec = __import__("json").loads(_seatspec_path.read_text(encoding="utf-8"))
         if "regeneration" in _seatspec:
             _seatspec = _seatspec["regeneration"]
-            if not isinstance(_seatspec, dict) or not _seatspec.keys() & {"seats", "walks", "cuts"}:
-                raise ValueError("regeneration must list seats, walks or cuts")
+            if not isinstance(_seatspec, dict) or not _seatspec.keys() & {"seats", "walks", "cuts", "swims"}:
+                raise ValueError("regeneration must list seats, walks, swims or cuts")
             print(f"seats sidecar: using regeneration entries from {_seatspec_path.name}")
         for _p in _seatspec.get("seats", []):
             if len(_p) != 3:
                 raise ValueError(f"seat {_p} is not an origin")
-        for _key in ("walks", "cuts"):
+        for _key in ("walks", "cuts", "swims"):
             for _pair in _seatspec.get(_key, []):
                 if len(_pair) != 2 or any(len(_q) != 3 for _q in _pair):
                     raise ValueError(f"{_key[:-1]} {_pair} is not a pair of origins")
@@ -3977,11 +4072,7 @@ KNIT_DEEP_DROP = min(240.0, 650.0 ** 2 / (2 * GRAVITY) - 24.0)
 # is not. A swim stitch joins two underwater seats both ways over a
 # path that stays in water: the runtime swims between submerged seats
 # on a plain link (Argus_WalkArrivalReady), diving at 120 u/s toward a
-# seat below and rising toward one above. The depth is bounded so that a
-# dive to a seat and the climb back out, about 8.5 s at that rate, stay
-# inside the 12 s air supply; e1m4's lake floor sits 504u under its
-# surface, the deepest water a stitch below has to cross.
-KNIT_SWIM_RISE = 512.0
+# seat below and rising toward one above.
 
 
 def _gate_anchors():
@@ -4013,11 +4104,6 @@ def _gate_anchors():
     return _out
 
 
-def _swims(_p):
-    """Is this origin under water, as 7d's underwater seats are?"""
-    return h0_contents(_p[0], _p[1], _p[2] + 8) == CONTENTS_WATER
-
-
 def _swim_path_clear(_a, _b):
     """Does a player-sized swimmer fit, in water, from _a to _b?
 
@@ -4045,55 +4131,6 @@ def _swim_path_clear(_a, _b):
         if hull_contents(*_p) != CONTENTS_EMPTY or not _swims(_p):
             return False
     return True
-
-
-def _bank_path(_wet, _dry):
-    """(exit, entry) between an underwater seat and a dry bank seat.
-
-    Exit is the vault 7d already types as a swim link: up through the
-    water to the surface, along it until the bank stops the swim, and out
-    onto a lip no higher than the waterjump's 44u, then a walk to the
-    seat that beeline_ok accepts. Entry is the same path the other way: a
-    walk to the edge, a fall of at most DROPMAX into the water, the swim
-    and the dive. 7d cannot see either when the seat lies deeper than
-    water_top's 320u reach, because it then measures from a surface that
-    is not there: e1m4's lake floor sits 504u under its surface, and the
-    west shore beside it had no way in or out. This finds the surface
-    itself. The climb, the swim and the vault are all empty in hull 1,
-    and the swim stays in water.
-    """
-    _wx, _wy, _wz = _wet
-    _dx, _dy, _dz = _dry
-    _s = _wz
-    while _s - _wz <= KNIT_SWIM_RISE and _swims((_wx, _wy, _s + 8)):
-        _s += 8
-    if _s - _wz > KNIT_SWIM_RISE:
-        return False, False
-    _surf = _s + 8                       # highest water sample, to 8u
-    if not (_surf - 12 <= _dz <= _surf + DROPMAX):
-        return False, False
-    _z = _wz
-    while _z < _s:
-        if hull_contents(_wx, _wy, _z) != CONTENTS_EMPTY:
-            return False, False
-        _z += 16
-    _dist = ((_dx - _wx) ** 2 + (_dy - _wy) ** 2) ** 0.5
-    _steps = int(_dist // 8) + 1
-    _lx, _ly = _wx, _wy
-    for _st in range(1, _steps + 1):
-        _p = (_wx + (_dx - _wx) * _st / _steps,
-              _wy + (_dy - _wy) * _st / _steps, _s)
-        if hull_contents(*_p) != CONTENTS_EMPTY or not _swims(_p):
-            break
-        _lx, _ly = _p[0], _p[1]
-    _z = _s
-    while _z <= max(_dz, _surf + 8):
-        if hull_contents(_lx, _ly, _z) != CONTENTS_EMPTY:
-            return False, False
-        _z += 8
-    if not beeline_points((_lx, _ly, _dz), _dry):
-        return False, False
-    return _dz <= _surf + 44, True
 
 
 def _knit_pass(_toward_main, _use_rj):
@@ -4827,12 +4864,31 @@ if _seatspec:
             _seat_refusal(f"beeline_ok refuses walk {_pair}")
         links.setdefault(_a, {})[_b] = (_flat, 0)
         _seat_added += 1
+    _seat_swim_added = 0
+    for _pair in _seatspec.get("swims", []):
+        _a, _b = _seat_way(_pair[0]), _seat_way(_pair[1])
+        if _a is None or _b is None:
+            _seat_refusal(f"swim {_pair} does not join two waypoints of this generation")
+        if (_a, _b) in swims:
+            continue
+        if (_a, _b) in _typed - set(rjlinks) or _b in links.get(_a, {}):
+            _seat_refusal(f"swim {_pair} conflicts with an existing link")
+        if not _seat_swim_ok(pos(ways[_a]), pos(ways[_b])):
+            _seat_refusal(f"bank path refuses swim {_pair}")
+        if (_a, _b) in rjlinks:
+            rjlinks.remove((_a, _b))
+        swims.append((_a, _b))
+        _seat_swim_added += 1
+    if _seat_swim_added:
+        print(f"seats sidecar: {_seat_swim_added} bank swim(s) installed")
     for _pair in _seatspec.get("cuts", []):
         _a, _b = _seat_way(_pair[0]), _seat_way(_pair[1])
         if _a is None or _b is None:
             _seat_refusal(f"cut {_pair} does not join two waypoints of this generation")
         if (_a, _b) in _seat_protect:
             _seat_refusal(f"cut {_pair} is also listed as a walk")
+        if (_a, _b) in swims:
+            _seat_refusal(f"cut {_pair} is a swim link")
         if (_a, _b) in doorlinks:
             _seat_refusal(f"cut {_pair} is a door link")
         if _b in links.get(_a, {}) and links[_a][_b][1]:
@@ -5178,6 +5234,9 @@ if _seatspec:
         _a, _b = _seat_way(_pair[0]), _seat_way(_pair[1])
         if _a is None or _b is None or not (_b in links.get(_a, {}) or (_a, _b) in _typed):
             _seat_refusal(f"walk {_pair} did not survive the prunes")
+    for _pair in _seatspec.get("swims", []):
+        if (_seat_way(_pair[0]), _seat_way(_pair[1])) not in swims:
+            _seat_refusal(f"swim {_pair} did not survive the prunes")
 
 # ---- 8a05. region classes (dm3 musing S4) ----
 # After the poison prune every surviving node can REACH the mainland;

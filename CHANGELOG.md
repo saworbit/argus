@@ -911,6 +911,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Restore the e1m5 moat to mega route with a hull-checked swim in the old rocket link's slot ([#636](https://github.com/saworbit/argus/issues/636)).
+
 - Clear the previous mover action at fixed-task placement and reacquire support at the exact start ([#992](https://github.com/saworbit/argus/issues/992)).
 
 - Validate benchmark options before compiling ([#993](https://github.com/saworbit/argus/issues/993)), refuse fatal benchmark tapes ([#994](https://github.com/saworbit/argus/issues/994)), keep comparison checks independent of display text ([#1009](https://github.com/saworbit/argus/issues/1009)), and show the accepted match duration in help ([#1001](https://github.com/saworbit/argus/issues/1001)).
