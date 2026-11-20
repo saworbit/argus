@@ -1,0 +1,38 @@
+[
+  {
+    "name": "fixed clock and two marks",
+    "lines": [
+      "ARGUS init on dm4",
+      "ARGUS build 4a6980c09cea",
+      "ARGUS clock frame_us 13900 tick_us 1000 seed 7",
+      "ARGUS mark 1 t  12.4 pos ' 12.0 -34.5  24.0' yaw -90 seen 1 dist 240 near Joe Rogan",
+      "ARGUS mark 2 t 130.0 pos '0.0 0.0 0.0' yaw 0 near none"
+    ],
+    "expected": {
+      "build": "4a6980c09cea",
+      "clock": {"frame_us": 13900, "tick_us": 1000, "seed": 7, "kind": "fixed"},
+      "marks": [
+        {"n": 1, "t": 12.4, "pos": [12.0, -34.5, 24.0], "yaw": -90.0, "seen": true, "dist": 240.0, "near": "Joe Rogan"},
+        {"n": 2, "t": 130.0, "pos": [0.0, 0.0, 0.0], "yaw": 0.0}
+      ]
+    }
+  },
+  {
+    "name": "first build and last clock",
+    "lines": [
+      "ARGUS build aaaaaa000000",
+      "ARGUS clock frame_us 13900 tick_us 1000 seed 7",
+      "ARGUS build bbbbbb111111",
+      "ARGUS build aaaaaa000000",
+      "ARGUS build bbbbbb111111",
+      "ARGUS clock frame_us 0 tick_us 50000 seed 0",
+      "ARGUS mark of the beast"
+    ],
+    "expected": {
+      "build": "aaaaaa000000",
+      "other_builds": ["bbbbbb111111"],
+      "clock": {"frame_us": 0, "tick_us": 50000, "seed": 0, "kind": "realtime"}
+    }
+  },
+  {"name": "older tape", "lines": ["ARGUS init on dm4", "ARGLOG x t 1 pos '1 2 3'"], "expected": {}}
+]

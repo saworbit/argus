@@ -1646,6 +1646,8 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Check the Python and Rust build stamps and tape identity readers against shared cases ([#1013](https://github.com/saworbit/argus/issues/1013), [#1012](https://github.com/saworbit/argus/issues/1012)), and show the stale lab warning in the private fixture verifier ([#996](https://github.com/saworbit/argus/issues/996)).
+
 - Record the player verdict on dm4 and dm2 after the gait update ([#610](https://github.com/saworbit/argus/issues/610)).
 
 - Keep the current swim drag after five played pairs each on dm3 and e1m2. The faster setting met the gates and recorded more swim entries on both maps ([#761](https://github.com/saworbit/argus/issues/761)).

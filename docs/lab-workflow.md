@@ -275,6 +275,9 @@ python tools/verify_private_fixtures.py --help
 python tools/verify_private_fixtures.py muzzle --output backups/muzzle-check-1 --prefix muzzle_check_1
 ```
 
+If the lab build is stale, the verifier prints the server's warning and
+stops before starting the fixture.
+
 Choose a fresh directory and prefix for every invocation. Replace `muzzle`
 with one of these fixture names:
 

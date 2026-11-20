@@ -231,15 +231,28 @@ mod tests {
     }
 
     #[test]
-    fn normalise_matches_the_python_rules() {
-        assert_eq!(normalise(b"a // c\nb"), b"a\nb");
-        assert_eq!(normalise(b"a /* c */ b"), b"a b");
-        assert_eq!(normalise(b"a /* c\n d */ b"), b"a\nb");
-        assert_eq!(normalise(b"a   b\n\n\n  c"), b"a b\nc");
-        let s = br#"dprint ("http://x /* y */");"#;
-        assert_eq!(normalise(s), s.to_vec());
-        let esc = br#"s = "say \"hi\" // still string";"#;
-        assert_eq!(normalise(esc), esc.to_vec());
+    fn normalise_matches_the_shared_cases() {
+        #[derive(serde::Deserialize)]
+        struct Case {
+            name: String,
+            source: String,
+            expected: String,
+        }
+        let cases: Vec<Case> =
+            serde_json::from_str(include_str!("../testdata/build_normalise_cases.json")).unwrap();
+        let bytes = |text: &str| {
+            text.chars()
+                .map(|c| u8::try_from(c as u32).unwrap())
+                .collect::<Vec<_>>()
+        };
+        for case in cases {
+            assert_eq!(
+                normalise(&bytes(&case.source)),
+                bytes(&case.expected),
+                "{}",
+                case.name
+            );
+        }
     }
 
     #[test]
