@@ -897,6 +897,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Split rapid wish flip runs at bot respawns ([#974](https://github.com/saworbit/argus/issues/974)).
+
 - Keep atlas item warnings visible when a match routes well and report route failures as match-wide counts ([#972](https://github.com/saworbit/argus/issues/972)).
 
 - Reject fixed-route benchmark reports if the engine tape does not confirm a single start on the manifest map ([#970](https://github.com/saworbit/argus/issues/970)).

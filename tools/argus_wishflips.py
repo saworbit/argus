@@ -8,7 +8,8 @@ re-chooses a strafe side every frame whenever the heading it refuses is not
 the strafe heading. This reads consecutive ARGMOT rows per bot (the tape
 needs `scratch1 697`) and counts runs of three or more adjacent frames whose
 wish changes by more than 100 degrees from the previous frame, with how long
-each run lasted and how far the bot moved during it.
+each run lasted and how far the bot moved during it. A spawn frame starts
+a new wish history.
 
 usage:
   python tools/argus_wishflips.py TAPE.log [TAPE.log ...] [--json] [--min-run N] [--degrees D]
@@ -37,7 +38,8 @@ def flip_runs(rows, degrees=100.0, min_run=3):
     """
     runs, start = [], None
     for k in range(1, len(rows) + 1):
-        flipped = k < len(rows) and angle_change(rows[k - 1][4], rows[k][4]) > degrees
+        flipped = (k < len(rows) and rows[k][5] != "spawn"
+                   and angle_change(rows[k - 1][4], rows[k][4]) > degrees)
         if flipped and start is None:
             start = k - 1
         elif not flipped and start is not None:
