@@ -29,6 +29,7 @@ from pathlib import Path
 
 from argus_bsp import Bsp
 from argus_paths import bsp_path
+from argus_spawn_settling import SPAWN_SETTLING
 
 ROOT = Path(__file__).resolve().parent.parent
 WARN_PCT = 60
@@ -56,9 +57,8 @@ def bsp_spawns(path):
 # at -764, and a body spawned there lands 636u below, 46u from n71, at
 # e1m8's gravity of 100 unhurt (#789). Nearest node and distance are taken
 # where the body comes to rest: the first floor under its feet, searched
-# down to SPAWN_FALL_MAX, at standing height. A spawn whose feet are on a
+# down to the world drop limit, at standing height. A spawn whose feet are on a
 # floor keeps its own origin.
-SPAWN_FALL_MAX = 2048
 
 
 def standing_point(world, spawn, boxes=()):
@@ -70,15 +70,19 @@ def standing_point(world, spawn, boxes=()):
     world-only fall would drop through to the floor 226u below (#783).
     """
     x, y, z = spawn
-    feet = z - 24
-    floor = world.floor_under(x, y, feet, SPAWN_FALL_MAX)
+    feet_offset = SPAWN_SETTLING["feet_offset_u"]
+    half_width = SPAWN_SETTLING["half_width_u"]
+    tolerance = SPAWN_SETTLING["floor_tolerance_u"]
+    feet = z - feet_offset
+    floor = world.floor_under(x, y, feet, SPAWN_SETTLING["world_drop_u"],
+                              step=SPAWN_SETTLING["world_step_u"])
     for _cls, mn, mx in boxes:
-        if (mn[0] - 16 < x < mx[0] + 16 and mn[1] - 16 < y < mx[1] + 16
-                and mx[2] <= feet + 2 and (floor is None or mx[2] > floor)):
+        if (mn[0] - half_width < x < mx[0] + half_width and mn[1] - half_width < y < mx[1] + half_width
+                and mx[2] <= feet + tolerance and (floor is None or mx[2] > floor)):
             floor = mx[2]
-    if floor is None or floor >= feet - 2:
+    if floor is None or floor >= feet - tolerance:
         return spawn
-    return (x, y, floor + 24)
+    return (x, y, floor + feet_offset)
 
 
 def load_graph(path):

@@ -167,13 +167,15 @@ class Bsp:
             n = c0 if (nx * x + ny * y + nz * z - d) >= 0 else c1
         return n
 
-    def floor_under(self, x, y, z, maxdrop):
-        """The first hull-0 solid at or below z in 2u steps, or None."""
+    def floor_under(self, x, y, z, maxdrop, *, step=2.0):
+        """The first sampled hull-0 solid at or below z, or None."""
+        if step <= 0:
+            raise ValueError("floor step must be positive")
         d = 0.0
         while d <= maxdrop:
             if self.h0(x, y, z - d) == CONTENTS_SOLID:
                 return z - d
-            d += 2.0
+            d += step
         return None
 
     def check_bottom(self, x, y, oz):

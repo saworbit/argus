@@ -30,6 +30,7 @@ import sys
 from pathlib import Path
 
 from argus_bsp import Bsp
+from argus_spawn_settling import SPAWN_SETTLING
 
 CONTENTS_EMPTY, CONTENTS_SOLID = -1, -2
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
@@ -553,9 +554,6 @@ AIR_VARIANTS = (("walk", WALK, 0.0, 0.0), ("run", RUN, 0.0, 0.0),
                 ("jump", RUN, 0.0, JUMPVEL))
 
 
-BRUSH_CLASSES = ("func_wall", "func_door", "func_door_secret", "func_plat")
-
-
 def brush_boxes(bsp, deathmatch=True):
     """World boxes of solid brush entities, where each sits at spawn.
 
@@ -575,30 +573,30 @@ def brush_boxes(bsp, deathmatch=True):
     for e in bsp.entities():
         cls = e.get("classname", "")
         m = e.get("model", "")
-        if cls not in BRUSH_CLASSES or not m.startswith("*"):
+        if cls not in SPAWN_SETTLING["brush_classes"] or not m.startswith("*"):
             continue
         sf = int(float(e.get("spawnflags", "0") or 0))
-        if deathmatch and sf & 2048:
+        if deathmatch and sf & SPAWN_SETTLING["not_deathmatch_flag"]:
             continue
         mdl = bsp.models[int(m[1:])]
         mn, mx = list(mdl[0:3]), list(mdl[3:6])
-        if cls == "func_door" and sf & 1:
-            a = (e.get("angle", "0") or "0").strip()
-            if a in ("-1", "-2"):
-                d = (0.0, 0.0, 1.0 if a == "-1" else -1.0)
+        if cls == "func_door" and sf & SPAWN_SETTLING["door_start_open_flag"]:
+            try:
+                angle = float(e.get("angle") or 0)
+            except ValueError:
+                angle = 0.0
+            if angle in (-1.0, -2.0):
+                d = (0.0, 0.0, 1.0 if angle == -1.0 else -1.0)
             else:
-                try:
-                    r = math.radians(float(a))
-                except ValueError:
-                    r = 0.0
+                r = math.radians(angle) if math.isfinite(angle) else 0.0
                 d = (math.cos(r), math.sin(r), 0.0)
-            lip = float(e.get("lip", 8) or 8) or 8.0
+            lip = float(e.get("lip") or 0) or SPAWN_SETTLING["door_default_lip_u"]
             travel = abs(sum(d[k] * (mx[k] - mn[k]) for k in range(3))) - lip
             if travel > 0:
                 mn = [mn[k] + d[k] * travel for k in range(3)]
                 mx = [mx[k] + d[k] * travel for k in range(3)]
         elif cls == "func_plat" and not e.get("targetname"):
-            h = float(e.get("height", 0) or 0) or (mx[2] - mn[2] - 8.0)
+            h = float(e.get("height", 0) or 0) or (mx[2] - mn[2] - SPAWN_SETTLING["plat_default_inset_u"])
             mn[2] -= h
             mx[2] -= h
         out.append((cls, tuple(mn), tuple(mx)))
