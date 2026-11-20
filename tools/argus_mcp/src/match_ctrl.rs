@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnose::{diagnose_log, log_has_tape, tail_nonempty};
+use crate::diagnose::{diagnose_log, fatal_engine_error, log_has_tape, tail_nonempty};
 use crate::engine::EngineChild;
 use crate::intel::{brief_text, brief_text_hull, MatchBrief};
 use crate::parse_arglog::{parse_arglog, MatchSummary};
@@ -610,10 +610,8 @@ impl MatchCtrl {
         tokio::time::sleep(Duration::from_millis(250)).await;
         let log_path = st.log_path.clone().unwrap_or_default();
         let text = read_log_retry(&log_path, 6);
-        if let Some(why) = diagnose_log(&text) {
-            if !log_has_tape(&text) {
-                return Err(format_match_fail(&log_path, &text, &why));
-            }
+        if let Some(why) = fatal_engine_error(&text) {
+            return Err(format_match_fail(&log_path, &text, &why));
         }
         if !log_has_tape(&text) {
             let why = diagnose_log(&text).unwrap_or_else(|| "server may have died at spawn".into());
@@ -1316,6 +1314,30 @@ mod tests {
                 .kind(),
             std::io::ErrorKind::NotFound
         );
+    }
+
+    #[tokio::test]
+    async fn fatal_engine_error_after_samples_fails_the_match_and_retains_the_tape() {
+        let _live = super::live_test_lock_async().await;
+        let (_temp, cfg) = tmp_cfg("fatal-recorded-match");
+        let tape = concat!(
+            "ARGUS init on dm4\n",
+            "ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0\n",
+            "Host_Error: Program error\n"
+        );
+        let engine = crate::engine::FakeEngineControl::new("");
+        let mut ctrl = super::MatchCtrl::with_fake_engines([engine.clone()]);
+        ctrl.start(&cfg, "dm4", Some(10), Some("fatal"), None, None, None)
+            .await
+            .unwrap();
+        std::fs::write(ctrl.live_log_path().unwrap(), tape).unwrap();
+        engine.complete();
+        let error = ctrl.finish(&cfg, "dm4").await.unwrap_err();
+        let path = cfg.runs.join("fatal.log");
+        assert!(error.contains("Host_Error: Program error"), "{error}");
+        assert!(error.contains(path.to_str().unwrap()), "{error}");
+        assert_eq!(std::fs::read_to_string(path).unwrap(), tape);
+        assert!(!ctrl.status().running);
     }
 
     /// A poll has a ceiling on bytes, as well as lines, whatever the match is doing.
