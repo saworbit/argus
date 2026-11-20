@@ -123,6 +123,12 @@ the per-cell verdicts.
 Lists every reason a comparison cannot be read at face value, before anyone
 reads it. The first arm is the control.
 
+Named tapes are resolved in the checkout's `runs/` directory. For a study
+recorded with the native lab's private `ARGUS_RUNS`, copy both arms' tapes
+and their navigation receipts under their unique `study_` names into
+`runs/` before comparing them.
+[Private tape lookup issue](https://github.com/saworbit/argus/issues/1002)
+
 - **Void**: the same tape in both arms or twice in one, tapes from different
   maps, human or fixture tapes, mixed or unknown tick classes, a stub tape
   with no duration, a run with no corpus row.

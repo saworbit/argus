@@ -195,6 +195,7 @@ float argus_plan_serial;
 .vector ar_sndpos;              // OPM: last heard sound position
 .float  ar_sndtime;             // OPM: when it was heard
 .entity ar_sndent;              // OPM: who made it
+.float  ar_sndspent;            // this cue has served its movement purpose
 .entity ar_nemesis;             // OPM: who keeps killing this bot
 .float  ar_nemkills;            // OPM: consecutive deaths to them;
                                 // 3+ is a vendetta, any kill vents it
@@ -4256,6 +4257,13 @@ void() Argus_BaseStats =
     self.ar_lastfoe = world;
     self.ar_hurtfoe = world; self.ar_hurtfoetime = 0;
     self.ar_targetscan = 0; self.ar_targethold = 0;
+    self.ar_sndpos = '0 0 0';
+    self.ar_sndtime = 0;
+    self.ar_sndent = world;
+    self.ar_sndweap = 0;
+    self.ar_sndspent = 0;
+    self.ar_bitem = world; self.ar_bitemlast = world;
+    self.ar_bitemscan = 0; self.ar_bitemend = 0; self.ar_bitemcool = 0;
     Argus_SetSkill ();
     self.health = 100;
     // spawn-field parity with PutClientInServer: max_health 0 made
@@ -5046,12 +5054,10 @@ void(string branch) Argus_CrossfireLog =
     dprint ("\n");
 };
 
-// OPM slice B: gunfire is the tactical sound. Every live bot in
-// earshot records it in a one-slot audio memory; a wall between damps
-// the radius by 1.4x (an eye trace, not real propagation - the right
-// lie at deathmatch scale). Called from W_Attack for every player,
-// human or bot, so bots hear Shane the way he hears them.
-void(vector spos, entity who) Argus_HearSound =
+// Live listeners remember a shot or pickup in earshot. Walls damp the
+// radius by 1.4x. A pickup has a neutral weapon cue and yields to a
+// shot less than 0.6 seconds old.
+void(vector spos, entity who, float shotweapon) Argus_HearSound =
 {
     local entity b;
     local float d;
@@ -5059,7 +5065,8 @@ void(vector spos, entity who) Argus_HearSound =
     b = argus_bots;
     while (b != world)
     {
-        if (b != who && b.health > 0)
+        if (b != who && b.health > 0
+            && (shotweapon || !b.ar_sndweap || time >= b.ar_sndtime + 0.6))
         {
             d = vlen (b.origin - spos);
             if (d < 1000)
@@ -5077,10 +5084,8 @@ void(vector spos, entity who) Argus_HearSound =
                     b.ar_sndpos = spos;
                     b.ar_sndtime = time;
                     b.ar_sndent = who;
-                    // weapon-sound classification (mre Predator):
-                    // the listener knows WHAT it heard, and the
-                    // investigation gate scales its appetite by it
-                    b.ar_sndweap = who.weapon;
+                    b.ar_sndweap = shotweapon;
+                    b.ar_sndspent = 0;
                 }
             }
         }
@@ -5296,7 +5301,8 @@ void() Argus_Perceive =
                     if (normalize (fov) * v_forward < 0.2)
                     {
                         ok = 0;
-                        if (time < self.ar_sndtime + 2
+                        if (self.ar_sndtime > 0
+                            && time < self.ar_sndtime + 2
                                              + self.ar_skill * 0.5
                             && vlen (b.origin - self.ar_sndpos) < 300)
                             ok = 1;
@@ -5532,7 +5538,7 @@ float() Argus_CombatBand =
 // path), so ammo gating happens here; W_Attack itself never checks.
 void(float d, float closeband) Argus_SelectWeapon =
 {
-    local float w, splashmin;
+    local float w, splashmin, beamreach;
     local string wn;
 
     // Weak stacks yield the splash preference for another 0..50 units when
@@ -5558,8 +5564,14 @@ void(float d, float closeband) Argus_SelectWeapon =
     // watertype stays as the second half. It is engine owned and
     // correct, and it covers the frame before a freshly spawned bot
     // has run any physics at all, when ar_wetlevel is still zero.
+    // Give a live lightning burst a little room to finish when an
+    // opponent crosses 480u. New bursts use the normal selection range.
+    beamreach = 480;
+    if (self.weapon == IT_LIGHTNING && self.ar_fireweapon == IT_LIGHTNING
+        && time < self.ar_fireburst)
+        beamreach = 500;
     if ((self.items & IT_LIGHTNING) && self.ammo_cells >= 1
-        && d < 480 && self.watertype > CONTENT_WATER
+        && d < beamreach && self.watertype > CONTENT_WATER
         && self.ar_wetlevel <= 1)
         w = IT_LIGHTNING;
     else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1
@@ -5649,15 +5661,16 @@ void(float d, float closeband) Argus_SelectWeapon =
 // the whole detour.
 float(entity it, float cls) Argus_ItemValue;
 vector(entity it) Argus_GoalPoint;
+float(vector point) Argus_CombatLine;
 
 void() Argus_BattleItemScan =
 {
     local entity it, best;
+    local vector point;
     local float v, bv;
 
     best = world;
-    bv = 11;        // grab floor: below this the detour is not worth
-                    // breaking the circle for
+    bv = 0;
     it = findradius (self.origin, 240);
     while (it != world)
     {
@@ -5665,20 +5678,21 @@ void() Argus_BattleItemScan =
             && !(it == self.ar_bitemlast && time < self.ar_bitemcool))
         {
             v = Argus_ItemValue (it, Argus_ItemClass (it));
-            if (v > bv && Argus_SafeLine (Argus_GoalPoint (it)))
+            if (v > 11)
             {
-                best = it;
-                bv = v;
+                point = Argus_GoalPoint (it);
+                v = v * 160 / (vlen (point - self.origin) + 160);
+                if (v > bv && Argus_CombatLine (point))
+                {
+                    best = it;
+                    bv = v;
+                }
             }
         }
         it = it.chain;
     }
-    if (best == world || best == self.ar_bitem)
-        return;             // never refresh a running commit: a grab
-                            // gets ONE 1.5 s window, so an item that
-                            // SafeLine likes but walkmove cannot reach
-                            // (the '2448 -80 104' perch pin, bitem1)
-                            // cannot hold the steer forever
+    if (best == world)
+        return;
     dprint ("ARGEVT ");
     dprint (self.netname);
     dprint (" grab ");
@@ -5686,6 +5700,26 @@ void() Argus_BattleItemScan =
     dprint ("\n");
     self.ar_bitem = best;
     self.ar_bitemend = time + 1.5;
+};
+
+void() Argus_UpdateBattleItem =
+{
+    if (self.ar_bitem != world)
+    {
+        if (self.ar_bitem.solid == SOLID_TRIGGER)
+        {
+            if (time < self.ar_bitemend)
+                return;
+            self.ar_bitemlast = self.ar_bitem;
+            self.ar_bitemcool = time + 8;
+        }
+        self.ar_bitem = world;
+    }
+    if (time > self.ar_bitemscan)
+    {
+        self.ar_bitemscan = time + 0.5;
+        Argus_BattleItemScan ();
+    }
 };
 
 // the hunch (2026-08-27, theory of mind slice 1): when a foe breaks
@@ -5830,12 +5864,13 @@ void(entity foe) Argus_Hunch =
 // open run at a box still loses to any real cover elsewhere).
 // 500u where the battle grab uses 240: the grab is a detour from
 // a fight the bot is winning, this is the way out of one it is not.
-entity() Argus_RetreatSupply =
+float(float away) Argus_RetreatSupplyYaw =
 {
-    local entity it, best;
-    local float v, bv, cls;
+    local entity it;
+    local vector point, offset;
+    local float v, bv, cls, dy, yaw, bestyaw;
 
-    best = world;
+    bestyaw = away;
     bv = 0;
     it = findradius (self.origin, 500);
     while (it != world)
@@ -5845,17 +5880,32 @@ entity() Argus_RetreatSupply =
             cls = Argus_ItemClass (it);
             if (cls == AR_C_HEALTH || cls == AR_C_ARMOR)
             {
-                v = Argus_ItemValue (it, cls);
-                if (v > bv && Argus_SafeLine (Argus_GoalPoint (it)))
+                point = Argus_GoalPoint (it);
+                offset = point - self.origin;
+                // A nearby pickup can pay off within the current cover leg.
+                v = Argus_ItemValue (it, cls) * 160 / (vlen (offset) + 160);
+                dy = vectoyaw (offset) - away;
+                while (dy > 180) dy = dy - 360;
+                while (dy < -180) dy = dy + 360;
+                if (v > bv && fabs (dy) <= 100)
                 {
-                    best = it;
-                    bv = v;
+                    // SafeLine checks floor, so check for a wall on the
+                    // direct approach as well as floor on the cover leg.
+                    traceline (self.origin + '0 0 16', point, TRUE, self);
+                    yaw = away + dy;
+                    if (trace_fraction == 1 && !trace_startsolid && !trace_allsolid
+                        && !Argus_MoveHazard (yaw, 48) && !Argus_MoveHazard (yaw, 90)
+                        && Argus_SafeLine (point))
+                    {
+                        bestyaw = yaw;
+                        bv = v;
+                    }
                 }
             }
         }
         it = it.chain;
     }
-    return best;
+    return bestyaw;
 };
 
 // "rocket", not stock's "missile". The 55% commit chance keeps the
@@ -6229,18 +6279,68 @@ float(entity from, entity hop) Argus_CoverHopOK =
     return (from.origin_z - hop.origin_z <= 18);
 };
 
+float(vector point) Argus_CombatLine =
+{
+    traceline (self.origin + '0 0 16', point, TRUE, self);
+    return trace_fraction == 1 && !trace_startsolid && !trace_allsolid
+        && Argus_SafeLine (point);
+};
+
+float() Argus_CanInvestigateNoise;
+
+// Use one ordinary graph leg to round a corner. Both the turn and the
+// opening towards the cached sighting must be visible in world geometry.
+entity(vector sighting) Argus_PursuitHop =
+{
+    local entity seat, hop, best;
+    local vector delta;
+    local float i, length, cost, bestcost;
+
+    if (self.ar_skill < AR_SKILL_MEMORY || self.ar_retreating
+        || !(self.flags & FL_ONGROUND) || !Argus_CanInvestigateNoise ())
+        return world;
+    seat = Argus_NearestNode (self.origin);
+    if (seat == world || vlen (seat.origin - self.origin) > 64)
+        return world;
+
+    best = world;
+    bestcost = 99999;
+    i = 0;
+    while (i < seat.an_nlinks)
+    {
+        hop = Argus_NavGetLink (seat, i);
+        delta = hop.origin - self.origin;
+        length = vlen (delta);
+        cost = length + vlen (sighting - hop.origin);
+        if (length >= 24 && length <= 192 && fabs (delta_z) <= 18
+            && cost < bestcost && !Argus_LinkIsTyped (seat, hop))
+        {
+            traceline (hop.origin + '0 0 16', sighting, TRUE, self);
+            if (trace_fraction == 1 && !trace_startsolid && !trace_allsolid
+                && Argus_CombatLine (hop.origin)
+                && !Argus_MoveHazard (vectoyaw (delta), 48))
+            {
+                best = hop;
+                bestcost = cost;
+            }
+        }
+        i = i + 1;
+    }
+    return best;
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
     local string movecause;
-    local entity e, sup, cnode, ctarget, chop;
+    local entity e, cnode, ctarget, chop;
     local vector to, aimpt, err, cvr, shd, shp, motstep, moterr;
     local float d, want, diff, turn, trackt, errscale, loft;
     local float sub, h, trem;
     local float cy, ck, cfound, ceff, sy, dy, sfrac;
     local float closeband, orbit, highmult, retreatin, retreatout;
     local float dt, motmag, mfrac, baseyaw, altyaw, required, primarycover;
-    local float tactclass;
+    local float tactclass, direct;
     local float flight;         // projectile time of flight, seconds
     local vector epos, evel;
     local vector preaim, ldv, src;  // #363: the lead, on its own
@@ -6252,6 +6352,7 @@ float() Argus_Combat =
     if (e == world)
     {
         self.button0 = 0;
+        self.ar_bitem = world;
         self.ar_threatclass = AR_THREAT_UNKNOWN;
         self.ar_threatlog = 0;
         self.ar_secondary = world;
@@ -6283,7 +6384,13 @@ float() Argus_Combat =
         if (time < self.ar_seen + 2.5 && vlen (to) > 80)
         {
             want = vectoyaw (to);
-            if (!Argus_MoveHazard (want, 48))
+            direct = Argus_CombatLine (self.ar_lastseen) && !Argus_MoveHazard (want, 48);
+            chop = world;
+            if (!direct)
+                chop = Argus_PursuitHop (self.ar_lastseen);
+            if (chop != world)
+                want = vectoyaw (chop.origin - self.origin);
+            if (direct || chop != world)
             {
                 if (!self.ar_pursuing)
                 {
@@ -6315,7 +6422,7 @@ float() Argus_Combat =
                 dy = want - self.angles_y;
                 while (dy > 180) dy = dy - 360;
                 while (dy < -180) dy = dy + 360;
-                if (coop <= 0 && fabs (dy) < 8
+                if (direct && coop <= 0 && fabs (dy) < 8
                     && !self.ar_prefired && self.ar_skill >= AR_SKILL_PREFIRE
                     && self.weapon == IT_ROCKET_LAUNCHER
                     && self.ammo_rockets >= 2
@@ -6990,28 +7097,10 @@ float() Argus_Combat =
     // below re-checks whatever heading survives.
     if (!self.ar_retreating)
     {
-        if (time > self.ar_bitemscan)
-        {
-            self.ar_bitemscan = time + 0.5;
-            Argus_BattleItemScan ();
-        }
+        Argus_UpdateBattleItem ();
         if (self.ar_bitem != world)
-        {
-            if (self.ar_bitem.solid != SOLID_TRIGGER)
-                self.ar_bitem = world;      // eaten - clean success
-            else if (time > self.ar_bitemend)
-            {
-                // commit lapsed with the item still live: the walk
-                // is not landing (perch, thin wall, crowd). Cool
-                // this item so the scan cannot re-pin us on it.
-                self.ar_bitemlast = self.ar_bitem;
-                self.ar_bitemcool = time + 8;
-                self.ar_bitem = world;
-            }
-            else
-                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (Argus_GoalPoint (self.ar_bitem)
-                              - self.origin), "battle_item");
-        }
+            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (Argus_GoalPoint (self.ar_bitem)
+                          - self.origin), "battle_item");
     }
 
     // missile dodge (cortex's design, upgraded from the idea bank):
@@ -7076,15 +7165,15 @@ float() Argus_Combat =
         // exact read of the opponent's hidden health.
         if (Argus_EnemyPowerThreat ())
         {
-            if (ceff > 90
-                || self.super_damage_finished > time)
+            if (ceff > 90 || self.super_damage_finished > time
+                || self.invincible_finished > time)
             {
                 self.ar_retreating = 0;
                 self.ar_retreatclass = AR_THREAT_UNKNOWN;
             }
         }
-        else if (ceff > retreatout
-                 || self.super_damage_finished > time)
+        else if (ceff > retreatout || self.super_damage_finished > time
+                 || self.invincible_finished > time)
         {
             self.ar_retreating = 0;
             self.ar_retreatclass = AR_THREAT_UNKNOWN;
@@ -7093,10 +7182,12 @@ float() Argus_Combat =
     else if ((ceff < retreatin
               || (ceff < 70 && Argus_EnemyPowerThreat ()))
              && self.super_damage_finished < time
+             && self.invincible_finished <= time
              && self.weapon != IT_AXE
              && time > self.ar_retreatlock)
     {
         self.ar_retreating = 1;
+        self.ar_bitem = world;
         self.ar_retreatclass = self.ar_threatclass;
         self.ar_covertime = 0;      // pick a cover leg this frame
         if (self.ar_threatclass)
@@ -7121,21 +7212,8 @@ float() Argus_Combat =
             // Inside the fallback, the way to a live health/armour item
             // is candidate zero, so cover TOWARD supplies beats the other
             // fan headings and a floor-safe supply run beats their plain
-            // fallbacks. Never
-            // back toward the enemy: more than 100 degrees off the
-            // away line and the candidate is skipped (sy == want
-            // is the none sentinel - it just duplicates ck 1).
-            sy = want;
-            sup = Argus_RetreatSupply ();
-            if (sup != world)
-            {
-                dy = vectoyaw (Argus_GoalPoint (sup) - self.origin)
-                     - want;
-                while (dy > 180)  dy = dy - 360;
-                while (dy < -180) dy = dy + 360;
-                if (fabs (dy) <= 100)
-                    sy = want + dy;
-            }
+            // fallbacks. Supply headings stay within 100 degrees of
+            // directly away from the enemy.
             required = 2;
             if (self.ar_secondary != world)
                 required = 3;
@@ -7185,7 +7263,13 @@ float() Argus_Combat =
                     }
                 }
             }
-            ck = 0;
+            ck = 1;
+            if (cfound < required)
+            {
+                sy = Argus_RetreatSupplyYaw (want);
+                if (sy != want)
+                    ck = 0;
+            }
             while (ck < 6 && cfound < required)
             {
                 if (ck == 0)        cy = sy;
@@ -7873,7 +7957,7 @@ void() Argus_PickGoal =
     local float sw, sa, sh, sr, sp, so;
     local vector gp, d;
     local float dist, neard, lifedist, shelf, cls, v, sc, ws, u, bu, final;
-    local float breg, lifefight;
+    local float breg, lifefight, arrival;
 
     bw = world;  ba = world;  bh = world;
     br = world;  bp = world;  bo = world;
@@ -8032,8 +8116,8 @@ void() Argus_PickGoal =
                 v = Argus_ItemValue (e, cls);
                 // the item-clock gate: chase a pending respawn only
                 // when we would arrive at most ~3 s before it pops -
-                // a timing run, not a camp. dist * 0.0036 is travel
-                // time at a conservative 280 u/s. Clocks apply only
+                // a timing run, not a camp. Convert the route estimate
+                // to seconds at a conservative 280u/s. Clocks apply only
                 // to items WORTH timing (weapons, armour, powerups,
                 // the mega): the first clock ladder had bots orbiting
                 // empty SHELL spawns on the dm4 pit floor at the lava
@@ -8042,13 +8126,14 @@ void() Argus_PickGoal =
                 // band). Humans do not time shell boxes either.
                 if (e.solid == SOLID_NOT)
                 {
+                    arrival = (dist + (rnode.an_etadist - rnode.an_dist)) * 0.0036;
                     if (cls != AR_C_WEAPON && cls != AR_C_ARMOR
                         && cls != AR_C_POWER
                         && !(cls == AR_C_HEALTH && e.healamount >= 100))
                         v = 0;
-                    else if (e.nextthink - time > dist * 0.0036 + 10)
+                    else if (e.nextthink - time > arrival + 10)
                         v = 0;
-                    else if (e.nextthink - time > dist * 0.0036 + 3)
+                    else if (e.nextthink - time > arrival + 3)
                         // pre-positioning (campaign item 4, cortex
                         // CONTROL_MAJOR "be early, not on time";
                         // Shane's circuits review x2): a major coming
@@ -10213,6 +10298,70 @@ float() Argus_CanInvestigateNoise =
         && !self.ar_sprintstate && self.ar_door == world && !self.ar_tactic;
 };
 
+float() Argus_InvestigateNoise =
+{
+    local entity hop;
+    local vector to;
+    local float distance, reach, want, diff, turn, clear;
+
+    if (!ar_opm_ears || self.ar_skill < AR_SKILL_MEMORY || self.ar_enemy != world
+        || !Argus_CanInvestigateNoise () || self.ar_sndspent || self.ar_sndtime <= 0
+        || time >= self.ar_sndtime + 2.5 + self.ar_skill * 0.5)
+        return FALSE;
+
+    // Heard rockets and lightning draw healthy bots. A weak bot keeps
+    // its distance until it has a better stack or a powerup to spend.
+    reach = 700;
+    if (self.super_damage_finished > time)
+        reach = 1000;
+    else if (self.ar_sndweap == IT_ROCKET_LAUNCHER || self.ar_sndweap == IT_LIGHTNING)
+    {
+        if (self.health + self.armorvalue * self.armortype < 60)
+            reach = 350;
+        else if (self.health > 80)
+            reach = 850;
+    }
+
+    to = self.ar_sndpos - self.origin;
+    to_z = 0;
+    distance = vlen (to);
+    if (distance >= reach)
+        return FALSE;
+    if (distance <= 80)
+    {
+        self.ar_sndspent = 1;
+        return FALSE;
+    }
+
+    want = vectoyaw (to);
+    traceline (self.origin + '0 0 22', self.ar_sndpos + '0 0 22', TRUE, self);
+    clear = trace_fraction == 1 && !trace_startsolid && !trace_allsolid;
+    if (!clear || Argus_MoveHazard (want, 48) || !Argus_SafeLine (self.ar_sndpos))
+    {
+        // Only a nearby, fresh shot earns a detour. The ordinary waypoint
+        // hop must open onto the remembered location and keep dry floor.
+        hop = world;
+        if (!clear && self.ar_sndweap && self.ar_sndweap != IT_AXE && distance < 320
+            && time < self.ar_sndtime + 1.25)
+            hop = Argus_PursuitHop (self.ar_sndpos);
+        if (hop == world)
+        {
+            self.ar_sndspent = 1;
+            return FALSE;
+        }
+        want = vectoyaw (hop.origin - self.origin);
+    }
+    diff = want - self.ar_moveyaw;
+    while (diff > 180)  diff = diff - 360;
+    while (diff < -180) diff = diff + 360;
+    turn = AR_TURNRATE * frametime;
+    if (diff > turn)        diff = turn;
+    else if (diff < -turn)  diff = -turn;
+    self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "noise_investigate");
+    self.angles_y = self.ar_moveyaw;
+    return TRUE;
+};
+
 void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
@@ -10531,64 +10680,9 @@ void() Argus_AI =
     Argus_BodyBlockCheck ();
 
     // investigation (v3.41, the second half of the hearing slice):
-    // fresh gunfire PULLS an unengaged bot toward it instead of just
-    // turning its head. The "getting dumber" feel was traffic
-    // dilution - corridor mode and doors opened the whole map, bots
-    // commute far-flung errands, and a human blazing away drew only
-    // glances. Bounded 700u, hazard-guarded, route-preserving (the
-    // node target survives; steering just borrows the combat
-    // override for the moment), and it decays with the sound.
-    // cognition gate: a warmup partner glances at noises but never
-    // hunts them - skill 1+ investigates
-    if (!fighting && ar_opm_ears && Argus_CanInvestigateNoise ()
-        && self.ar_skill >= AR_SKILL_MEMORY && self.ar_enemy == world
-        && self.ar_sndtime > 0
-        && time < self.ar_sndtime + 2.5 + self.ar_skill * 0.5)
-    {
-        // weapon-sound classification (mre Predator): how far a bot
-        // will go to investigate depends on WHAT it heard and how
-        // much it can afford. Heavy gunfire (RL/LG) heard on a thin
-        // stack keeps its distance; a healthy bot hunts the big
-        // fight harder than small-arms chatter.
-        turn = 700;
-        if (self.super_damage_finished > time)
-            turn = 1000;        // quad in hand: thirty seconds to
-                                // SPEND, not to shop - hunt any noise
-                                // at full earshot ("they don't
-                                // understand the powerup", v380 dm3
-                                // session)
-        else if (self.ar_sndweap == IT_ROCKET_LAUNCHER
-                 || self.ar_sndweap == IT_LIGHTNING)
-        {
-            if (self.health + self.armorvalue * self.armortype < 60)
-                turn = 350;
-            else if (self.health > 80)
-                turn = 850;
-        }
-        to = self.ar_sndpos - self.origin;
-        to_z = 0;
-        if (vlen (to) > 80 && vlen (to) < turn)
-        {
-            want = vectoyaw (to);
-            traceline (self.origin + '0 0 22', self.ar_sndpos + '0 0 22',
-                       TRUE, self);
-            if (trace_fraction == 1 && !Argus_MoveHazard (want, 48))
-            {
-                diff = want - self.ar_moveyaw;
-                while (diff > 180)  diff = diff - 360;
-                while (diff < -180) diff = diff + 360;
-                turn = AR_TURNRATE * frametime;
-                if (diff > turn)        diff = turn;
-                else if (diff < -turn)  diff = -turn;
-                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.ar_moveyaw + diff, "noise_investigate");
-                self.angles_y = self.ar_moveyaw;
-                fighting = 1;       // borrow the combat override:
-                                    // goal steering stands down
-            }
-            else
-                self.ar_sndtime = 0; // do not pull blindly into walls/brinks (#924)
-        }
-    }
+    // Borrow combat steering for the cue while preserving the route goal.
+    if (!fighting)
+        fighting = Argus_InvestigateNoise ();
 
     havetarget = 0;
     tp = self.origin;

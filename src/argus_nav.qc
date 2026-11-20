@@ -34,8 +34,14 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .float  an_swimmask;        // bit i set = link slot i swims out of water
 .float  an_trainmask;       // bit i set = link slot i rides a func_train
 .float  an_doormask;        // bit i set = link slot i crosses a door
+.float  an_telemask;        // confirmed teleport slots for pickup timing
+.float  an_telecost;        // conservative walking-equivalent cost of those slots
+.float  ar_telechecked;     // on a teleporter trigger: mapping already attempted
+.entity ar_telelanding;     // pending confirmation on this live trigger
+.entity ar_telenext;
 .float  an_mark;            // generation stamp
 .float  an_dist;            // walked graph distance from the shopping root
+.float  an_etadist;         // same path, with confirmed teleport costs
 .float  an_hops;            // prefer fewer movement steps before shorter distance
 .float  an_exposure;        // other nav nodes visible through static world
 .entity an_cover;           // nearest walk-reachable node hidden from here
@@ -63,6 +69,7 @@ float   an_shopready;       // PickGoal may read an_mark/an_dist/an_par
 entity  an_bot;             // bot whose search is running
 entity  an_goalnode;
 entity  an_startnode;
+entity  an_pendingtelegate; // first outstanding trigger confirmation
 entity  an_cachegoal;       // goal node of the last completed flood
 float   an_cachegen;        // stamps an_cgen along that route
 float   an_cachetime;       // freshness: adoptions stop after 10 s
@@ -243,8 +250,8 @@ float(entity from, entity to, float bit) Argus_LinkAvoided =
 
     if (!Argus_AvoidLine (from.origin, to.origin, TRUE))
         return FALSE;
-    // Teleporter links are deliberately plain links in the shipped data, so
-    // no runtime mask distinguishes the five short teleports from long walks.
+    // Generated teleport links use the plain link verb. This check also
+    // covers portals the timing cache has yet to recognise.
     // Pay for a world-only trace only after the cheap line test says a spot
     // would reject the link. A blocked chord is not a walk segment; test its
     // destination like Quake 3 tests a teleport instead.
@@ -517,6 +524,81 @@ float(entity a, entity b) Argus_NavGetLinkBit =
     if (a.an_l6 == b) return 64;
     if (a.an_l7 == b) return 128;
     return 0;
+};
+
+// Match navgen's nearest-seat search, including its heavier vertical
+// penalty. Visibility and the travelling bot do not enter this lookup.
+entity(vector point) Argus_TeleSeat =
+{
+    local entity node, best;
+    local vector delta;
+    local float cost, bestcost;
+
+    best = world;
+    bestcost = 0;
+    node = find (world, classname, "argus_node");
+    while (node != world)
+    {
+        delta = node.origin - point;
+        delta_z = delta_z * 2;
+        cost = delta * delta;
+        if (best == world || cost < bestcost)
+        {
+            best = node;
+            bestcost = cost;
+        }
+        node = find (node, classname, "argus_node");
+    }
+    return best;
+};
+
+float(entity from, entity to) Argus_LinkIsTyped;
+
+void(entity gate, entity landing) Argus_ConfirmTeleTiming =
+{
+    local entity entry, exitnode;
+    local vector centre;
+    local float bit, cost;
+
+    // Triggered gates can close again after a successful use.
+    if (gate.classname != "trigger_teleport" || gate.ar_telechecked
+        || gate.targetname != string_null
+        || landing.classname != "info_teleport_destination")
+        return;
+    // Keep a running flood's estimates coherent. Retain one observation
+    // per gate for the next idle frame without allocating edicts.
+    if (an_busy)
+    {
+        if (gate.ar_telelanding == world)
+        {
+            gate.ar_telelanding = landing;
+            gate.ar_telenext = an_pendingtelegate;
+            an_pendingtelegate = gate;
+        }
+        return;
+    }
+    gate.ar_telechecked = 1;
+
+    centre = (gate.absmin + gate.absmax) * 0.5;
+    entry = Argus_TeleSeat (centre);
+    // info_teleport_destination adds 27u after navgen reads the BSP.
+    exitnode = Argus_TeleSeat (landing.origin - '0 0 27');
+    if (entry == world || exitnode == world || entry == exitnode)
+        return;
+    bit = Argus_NavGetLinkBit (entry, exitnode);
+    if (!bit || Argus_LinkIsTyped (entry, exitnode))
+        return;
+
+    // Budget the full 0.7-second coast at the item clock's nominal
+    // 280u/s, plus the offsets between the live portal and the seats.
+    cost = 196 + vlen (centre - entry.origin)
+               + vlen (landing.origin - exitnode.origin);
+    if (cost > entry.an_telecost)
+        entry.an_telecost = cost;
+    entry.an_telemask = entry.an_telemask | bit;
+    dprint ("ARGUS tele timing ");
+    dprint (vtos (entry.origin)); dprint (" -> ");
+    dprint (vtos (exitnode.origin)); dprint ("\n");
 };
 
 // nonzero when the link a -> b is rocket-jump-typed
@@ -888,6 +970,7 @@ float(entity bot, entity startnode) Argus_Shop_Start =
 
     startnode.an_mark = an_gen;
     startnode.an_dist = 0;
+    startnode.an_etadist = 0;
     startnode.an_hops = 0;
     startnode.an_par = world;
     startnode.an_qnext = world;
@@ -1180,11 +1263,22 @@ void() Argus_Route_Fail =
 
 void() Argus_Nav_Frame =
 {
-    local entity cur, nb;
-    local float pops, i, bit, dist, hops;
+    local entity cur, nb, gate, landing;
+    local float pops, i, bit, dist, hops, leg;
 
     if (!an_busy)
+    {
+        while (an_pendingtelegate != world)
+        {
+            gate = an_pendingtelegate;
+            an_pendingtelegate = gate.ar_telenext;
+            landing = gate.ar_telelanding;
+            gate.ar_telenext = world;
+            gate.ar_telelanding = world;
+            Argus_ConfirmTeleTiming (gate, landing);
+        }
         return;
+    }
 
     if (an_shop && (an_bot.health <= 0 || an_bot.ar_goal != world))
     {
@@ -1219,7 +1313,8 @@ void() Argus_Nav_Frame =
         while (i < cur.an_nlinks)
         {
             nb = Argus_NavGetLink (cur, i);
-            dist = cur.an_dist + vlen (nb.origin - cur.origin);
+            leg = vlen (nb.origin - cur.origin);
+            dist = cur.an_dist + leg;
             hops = cur.an_hops + 1;
             // Keep the original fewest-step discipline. A pure distance
             // search added steps and exposed mover trouble in the broader
@@ -1278,6 +1373,12 @@ void() Argus_Nav_Frame =
                         nb.an_dist = dist;
                         nb.an_hops = hops;
                         nb.an_par = cur;
+                        if (an_shop)
+                        {
+                            if ((cur.an_telemask & bit) && leg > cur.an_telecost)
+                                leg = cur.an_telecost;
+                            nb.an_etadist = cur.an_etadist + leg;
+                        }
                         // A pending entry already sees the new distance.
                         // Appending it twice would corrupt the linked queue.
                         if (nb.an_queued != an_gen)

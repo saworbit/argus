@@ -1,0 +1,588 @@
+{
+  "schema": 1,
+  "measured": "2026-11-20",
+  "skill": 1,
+  "builds": {
+    "control": "d6d11aafc80d",
+    "candidate": "d2a1ad76e9b2"
+  },
+  "fixtures": {
+    "study_audiobots_fixture_control_dm2": {
+      "real_pickup_is_audible": true,
+      "pickup_has_no_weapon_class": false,
+      "lightning_start_is_audible": true,
+      "pickup_yields_to_fresh_shot": false,
+      "pickup_replaces_older_shot": false,
+      "one_shell_sounds_like_single_shotgun": false,
+      "two_shells_sound_like_double_shotgun": true,
+      "continuing_super_nail_fire_is_audible": false,
+      "one_nail_sounds_like_single_nailgun": false,
+      "empty_nail_frame_is_silent": true,
+      "continuing_lightning_is_audible": false,
+      "lightning_cue_respects_sound_clock": true,
+      "a_new_life_discards_hearing": false,
+      "open_floor_keeps_direct_investigation": true,
+      "near_fresh_shot_can_round_corner": false,
+      "pickup_does_not_draw_corner_detour": true,
+      "old_shot_does_not_draw_corner_detour": true,
+      "investigation_preserves_mover_commitment": true,
+      "slow_tier_glances_without_chasing": true,
+      "arrival_spends_movement_cue_but_keeps_sound": false
+    },
+    "study_audiobots_fixture_control_dm3": {
+      "real_pickup_is_audible": true,
+      "pickup_has_no_weapon_class": false,
+      "lightning_start_is_audible": true,
+      "pickup_yields_to_fresh_shot": false,
+      "pickup_replaces_older_shot": false,
+      "one_shell_sounds_like_single_shotgun": false,
+      "two_shells_sound_like_double_shotgun": true,
+      "continuing_super_nail_fire_is_audible": false,
+      "one_nail_sounds_like_single_nailgun": false,
+      "empty_nail_frame_is_silent": true,
+      "continuing_lightning_is_audible": false,
+      "lightning_cue_respects_sound_clock": true,
+      "a_new_life_discards_hearing": false,
+      "two_live_portals_and_graph_search": true,
+      "busy_routes_keep_previous_cost": true,
+      "repeat_is_safe_and_conditional_gate_is_ignored": true,
+      "both_warps_leave_active_search_unchanged": true,
+      "both_portals_learned_when_idle": false
+    },
+    "study_audiobots_fixture_control_dm6": {
+      "real_pickup_is_audible": true,
+      "pickup_has_no_weapon_class": false,
+      "lightning_start_is_audible": true,
+      "pickup_yields_to_fresh_shot": false,
+      "pickup_replaces_older_shot": false,
+      "one_shell_sounds_like_single_shotgun": false,
+      "two_shells_sound_like_double_shotgun": true,
+      "continuing_super_nail_fire_is_audible": false,
+      "one_nail_sounds_like_single_nailgun": false,
+      "empty_nail_frame_is_silent": true,
+      "continuing_lightning_is_audible": false,
+      "lightning_cue_respects_sound_clock": true,
+      "a_new_life_discards_hearing": false,
+      "open_floor_keeps_direct_investigation": true,
+      "near_fresh_shot_can_round_corner": false,
+      "pickup_does_not_draw_corner_detour": true,
+      "old_shot_does_not_draw_corner_detour": true,
+      "investigation_preserves_mover_commitment": true,
+      "slow_tier_glances_without_chasing": true,
+      "arrival_spends_movement_cue_but_keeps_sound": false,
+      "two_live_portals_and_graph_search": true,
+      "busy_routes_keep_previous_cost": true,
+      "repeat_is_safe_and_conditional_gate_is_ignored": true,
+      "both_warps_leave_active_search_unchanged": true,
+      "both_portals_learned_when_idle": false
+    },
+    "study_audiobots_fixture_candidate_dm2": {
+      "real_pickup_is_audible": true,
+      "pickup_has_no_weapon_class": true,
+      "lightning_start_is_audible": true,
+      "pickup_yields_to_fresh_shot": true,
+      "pickup_replaces_older_shot": true,
+      "one_shell_sounds_like_single_shotgun": true,
+      "two_shells_sound_like_double_shotgun": true,
+      "continuing_super_nail_fire_is_audible": true,
+      "one_nail_sounds_like_single_nailgun": true,
+      "empty_nail_frame_is_silent": true,
+      "continuing_lightning_is_audible": true,
+      "lightning_cue_respects_sound_clock": true,
+      "a_new_life_discards_hearing": true,
+      "open_floor_keeps_direct_investigation": true,
+      "near_fresh_shot_can_round_corner": true,
+      "pickup_does_not_draw_corner_detour": true,
+      "old_shot_does_not_draw_corner_detour": true,
+      "investigation_preserves_mover_commitment": true,
+      "slow_tier_glances_without_chasing": true,
+      "arrival_spends_movement_cue_but_keeps_sound": true
+    },
+    "study_audiobots_fixture_candidate_dm3": {
+      "real_pickup_is_audible": true,
+      "pickup_has_no_weapon_class": true,
+      "lightning_start_is_audible": true,
+      "pickup_yields_to_fresh_shot": true,
+      "pickup_replaces_older_shot": true,
+      "one_shell_sounds_like_single_shotgun": true,
+      "two_shells_sound_like_double_shotgun": true,
+      "continuing_super_nail_fire_is_audible": true,
+      "one_nail_sounds_like_single_nailgun": true,
+      "empty_nail_frame_is_silent": true,
+      "continuing_lightning_is_audible": true,
+      "lightning_cue_respects_sound_clock": true,
+      "a_new_life_discards_hearing": true,
+      "two_live_portals_and_graph_search": true,
+      "busy_routes_keep_previous_cost": true,
+      "repeat_is_safe_and_conditional_gate_is_ignored": true,
+      "both_warps_leave_active_search_unchanged": true,
+      "both_portals_learned_when_idle": true
+    },
+    "study_audiobots_fixture_candidate_dm6": {
+      "real_pickup_is_audible": true,
+      "pickup_has_no_weapon_class": true,
+      "lightning_start_is_audible": true,
+      "pickup_yields_to_fresh_shot": true,
+      "pickup_replaces_older_shot": true,
+      "one_shell_sounds_like_single_shotgun": true,
+      "two_shells_sound_like_double_shotgun": true,
+      "continuing_super_nail_fire_is_audible": true,
+      "one_nail_sounds_like_single_nailgun": true,
+      "empty_nail_frame_is_silent": true,
+      "continuing_lightning_is_audible": true,
+      "lightning_cue_respects_sound_clock": true,
+      "a_new_life_discards_hearing": true,
+      "open_floor_keeps_direct_investigation": true,
+      "near_fresh_shot_can_round_corner": true,
+      "pickup_does_not_draw_corner_detour": true,
+      "old_shot_does_not_draw_corner_detour": true,
+      "investigation_preserves_mover_commitment": true,
+      "slow_tier_glances_without_chasing": true,
+      "arrival_spends_movement_cue_but_keeps_sound": true,
+      "two_live_portals_and_graph_search": true,
+      "busy_routes_keep_previous_cost": true,
+      "repeat_is_safe_and_conditional_gate_is_ignored": true,
+      "both_warps_leave_active_search_unchanged": true,
+      "both_portals_learned_when_idle": true
+    }
+  },
+  "screens": {
+    "fixed-dm3": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 7.0,
+          "b": 6.666666666666667,
+          "limit": 5.4422217685222805,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 315.0,
+          "b": 310.3333333333333,
+          "limit": 48.69460385345017,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 14.0,
+          "b": 16.333333333333332,
+          "limit": 11.694633147065556,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 4.333333333333333,
+          "b": 6.666666666666667,
+          "limit": 6.599663291074444,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        }
+      },
+      "gates": {}
+    },
+    "fixed-dm4": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 27.0,
+          "b": 29.666666666666668,
+          "limit": 14.123896220393451,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 233.33333333333334,
+          "b": 255.0,
+          "limit": 20.017769883558735,
+          "effect": "moved"
+        },
+        "goals": {
+          "a": 8.666666666666666,
+          "b": 7.666666666666667,
+          "limit": 7.696463834486299,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 5.666666666666667,
+          "b": 6.666666666666667,
+          "limit": 12.276083342101511,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.6666666666666666,
+          "b": 1.3333333333333333,
+          "limit": 2.0869967789998034,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {}
+    },
+    "played-dm2": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 12.666666666666666,
+          "b": 15.0,
+          "limit": 5.902918298980975,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 282.6666666666667,
+          "b": 280.3333333333333,
+          "limit": 70.95789048599332,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 4.666666666666667,
+          "b": 2.3333333333333335,
+          "limit": 4.476109421758538,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 10.666666666666666,
+          "b": 13.333333333333334,
+          "limit": 5.521674464226308,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.3333333333333333,
+          "b": 0.3333333333333333,
+          "limit": 1.3199326582148887,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 1,
+          "mover_waits": 5
+        },
+        "candidate": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 1,
+          "mover_waits": 4
+        }
+      }
+    },
+    "played-dm4": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 31.666666666666668,
+          "b": 33.0,
+          "limit": 13.843570509245238,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 259.0,
+          "b": 259.6666666666667,
+          "limit": 18.098004801020963,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 8.666666666666666,
+          "b": 10.666666666666666,
+          "limit": 9.518169758706533,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 3.0,
+          "b": 6.0,
+          "limit": 3.6147844564602556,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 1.0,
+          "b": 1.0,
+          "limit": 2.2861904265976327,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 3,
+          "mover_waits": 0
+        },
+        "candidate": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 3,
+          "mover_waits": 0
+        }
+      }
+    },
+    "played-dm6": {
+      "duration_sec": 90,
+      "metrics": {
+        "engages": {
+          "a": 24.666666666666668,
+          "b": 20.666666666666668,
+          "limit": 7.349074015744355,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 333.6666666666667,
+          "b": 325.0,
+          "limit": 12.660349301833834,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 15.666666666666666,
+          "b": 12.0,
+          "limit": 8.136611361275923,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 4.666666666666667,
+          "b": 5.333333333333333,
+          "limit": 3.4922135609890117,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 0,
+          "mover_waits": 0
+        },
+        "candidate": {
+          "freeze_max_sec": 0,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 0,
+          "mover_waits": 0
+        }
+      }
+    },
+    "confirmation-dm2": {
+      "duration_sec": 120,
+      "metrics": {
+        "engages": {
+          "a": 20.0,
+          "b": 20.0,
+          "limit": 8.705553782882895,
+          "effect": "no detectable effect"
+        },
+        "cover": {
+          "a": 363.0,
+          "b": 360.6666666666667,
+          "limit": 40.19839687240165,
+          "effect": "no detectable effect"
+        },
+        "goals": {
+          "a": 4.666666666666667,
+          "b": 6.333333333333333,
+          "limit": 5.026153819992205,
+          "effect": "no detectable effect"
+        },
+        "stalls": {
+          "a": 13.333333333333334,
+          "b": 21.666666666666668,
+          "limit": 15.811669389690918,
+          "effect": "no detectable effect"
+        },
+        "freezes": {
+          "a": 0.3333333333333333,
+          "b": 0.3333333333333333,
+          "limit": 1.3199326582148887,
+          "effect": "no detectable effect"
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null,
+          "effect": "no change"
+        },
+        "lava_deaths": {
+          "a": 0.3333333333333333,
+          "b": 0.3333333333333333,
+          "limit": 1.3199326582148887,
+          "effect": "no detectable effect"
+        }
+      },
+      "gates": {
+        "control": {
+          "freeze_max_sec": 12.700000000000003,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 1,
+          "mover_waits": 9
+        },
+        "candidate": {
+          "freeze_max_sec": 11.099999999999994,
+          "freeze_underfire": 0,
+          "rescue_warps": 0,
+          "lava_deaths": 1,
+          "mover_waits": 6
+        }
+      }
+    }
+  },
+  "smoke": {
+    "dm3": "dm3 20s: 0 frags, 0 deaths (0 lava, 0 third-party), 1 stalls, 5 goals, 2 engages, 23 hazards, spread 0",
+    "e1m7": "e1m7 20s: 1 frags, 1 deaths (0 lava, 0 third-party), 0 stalls, 5 goals, 4 engages, 29 hazards, spread 1"
+  },
+  "tape_storage": "The study_ tapes are machine-local.",
+  "installed_binary_sha256_before_and_after": {
+    "lq1/progs.dat": "9bb92d8351e2457b429219633011475cadbf39517cff99519ef7dc7f977bc67c",
+    "engine/argus/progs.dat": "767c99435f5578b087b28807a4bfcca2218ca2f09a90e71c7d1e2478361b54cb",
+    "game/argus/progs.dat": "767c99435f5578b087b28807a4bfcca2218ca2f09a90e71c7d1e2478361b54cb"
+  },
+  "comparison_notes": [
+    "All matches used skill 1. Each fixed-clock pair shares its seed.",
+    "Movement safety and lava comparisons use played-rate tapes.",
+    "The dm2 confirmation uses three fresh 120-second tapes per arm and is scored separately from the initial screen.",
+    "Controlled fixtures use stock firing callbacks, armour touches, real warp triggers and local stock-map scenes."
+  ],
+  "dm2_freeze_attribution": [
+    {
+      "run": "study_audiobots_confirm_control_dm2_r3",
+      "cause": "train hop deadline",
+      "seconds": 12.7,
+      "health_lost": 0,
+      "boarded": false,
+      "position": [
+        1376,
+        -656.5,
+        344
+      ]
+    },
+    {
+      "run": "study_audiobots_confirm_candidate_dm2_r1",
+      "cause": "train hop abandon",
+      "seconds": 11.1,
+      "health_lost": 0,
+      "boarded": false,
+      "position": [
+        1376,
+        -729.7,
+        344
+      ]
+    }
+  ],
+  "tool_issue": "https://github.com/saworbit/argus/issues/1002",
+  "tapes": [
+    {"run": "study_audiobots_fixture_control_dm2", "map": "dm2", "arm": "control", "clock": "fixture", "bytes": 9219, "sha256": "3dff7e3bfb5b8ecc8d9b6e1abf9663bcc186d9d384a819837265452e7b5cd81a"},
+    {"run": "study_audiobots_fixture_control_dm3", "map": "dm3", "arm": "control", "clock": "fixture", "bytes": 8744, "sha256": "226d1f618e0f966df19c92b99e466f5b0495a1accdfc435aa817e56feaddcc2c"},
+    {"run": "study_audiobots_fixture_control_dm6", "map": "dm6", "arm": "control", "clock": "fixture", "bytes": 10386, "sha256": "1ad5aa36c4b2f7582ef1f388795a3a6d25139ebe5e788573e509dde3c763d497"},
+    {"run": "study_audiobots_fixture_candidate_dm2", "map": "dm2", "arm": "candidate", "clock": "fixture", "bytes": 9221, "sha256": "9e2318e4e9cfaf978923840308197ddc8021f5730d0f68bff2a3f292106bc245"},
+    {"run": "study_audiobots_fixture_candidate_dm3", "map": "dm3", "arm": "candidate", "clock": "fixture", "bytes": 8811, "sha256": "e850a9a7830c08e371ef13007b52bcab9074df72221878581661fb5ceb05d54a"},
+    {"run": "study_audiobots_fixture_candidate_dm6", "map": "dm6", "arm": "candidate", "clock": "fixture", "bytes": 11293, "sha256": "ccb6d413f5fe3963e5e235b97f03e09a561771299c1ba571680514a179fbe540"},
+    {"run": "study_audiobots_fx_control_dm3_s1042", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 71557, "sha256": "abd7586687d26edd1a7c0fa093c219a7504c96ea9ee67b923303fe763e351e77", "seed": 1042},
+    {"run": "study_audiobots_fx_control_dm3_s1750", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 75060, "sha256": "7b23ac4ef581aebdcbaa7c49b8f56edb4834b853a7bc3e86ccbc4cb6fd335e56", "seed": 1750},
+    {"run": "study_audiobots_fx_control_dm3_s459", "map": "dm3", "arm": "control", "clock": "fixed", "bytes": 69360, "sha256": "34914bb4a99283faa6a6da7ba011f7e3481fa005c9bcaff849decaeee44a7f4a", "seed": 459},
+    {"run": "study_audiobots_fx_candidate_dm3_s1042", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 78258, "sha256": "82065dc890e605579b6ffd13ed8ede521c6bb0eb2075f55a3faab6a0a2371b33", "seed": 1042},
+    {"run": "study_audiobots_fx_candidate_dm3_s1750", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 74718, "sha256": "2bbc6dee92e8f3848cecc9c3da7c9f55c2df765566b406e2268a8ef358a754ad", "seed": 1750},
+    {"run": "study_audiobots_fx_candidate_dm3_s459", "map": "dm3", "arm": "candidate", "clock": "fixed", "bytes": 70572, "sha256": "8b27bd2ef2a9ec2f5c13e6849f072050a6abcb54d5191b63545cac28f7e515a6", "seed": 459},
+    {"run": "study_audiobots_fx_control_dm4_s1042", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 84748, "sha256": "463a4f7052771a7571d0162b4e20558bcfc8f9e5568be60d80542a4b53edfc09", "seed": 1042},
+    {"run": "study_audiobots_fx_control_dm4_s1750", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 86307, "sha256": "8fb635e80c5d65316d806fa9bc0ea360e0dc20fcb6d958810d03e2e61b825de3", "seed": 1750},
+    {"run": "study_audiobots_fx_control_dm4_s459", "map": "dm4", "arm": "control", "clock": "fixed", "bytes": 81965, "sha256": "5f555c4a1fdc899630e571a44b23224e06a51bbfd5a5a44be8df12ae45d7eb9d", "seed": 459},
+    {"run": "study_audiobots_fx_candidate_dm4_s1042", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 89781, "sha256": "add848f95fe84ce6fa44ab183c708ae28d16e02c765bb2cb4ff07bf3390b79bf", "seed": 1042},
+    {"run": "study_audiobots_fx_candidate_dm4_s1750", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 83094, "sha256": "523425f93aa01a0217c72afd947a9fd18918a8aa22552b0d6035c3154dcd4bbf", "seed": 1750},
+    {"run": "study_audiobots_fx_candidate_dm4_s459", "map": "dm4", "arm": "candidate", "clock": "fixed", "bytes": 86686, "sha256": "e34d602b8c4ca7916187a09f95fdf7a8697447143ca18f0c735bd5a159aaad5a", "seed": 459},
+    {"run": "study_audiobots_wc_control_dm2_r1", "map": "dm2", "arm": "control", "clock": "played", "bytes": 78946, "sha256": "fe753c5cd62c611566228139264ee0a04a18e7c41cd26f11e67fdab0f90ab6a7", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm2_r2", "map": "dm2", "arm": "control", "clock": "played", "bytes": 74264, "sha256": "7e56e1a02b9345da48e79b5fdf8f881918b2ce5302ddbf5e2e04dec41e45e6ee", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm2_r3", "map": "dm2", "arm": "control", "clock": "played", "bytes": 72886, "sha256": "fed11befb9654844dab1a1d3f4895958b62cbfa283f7d778719c1b75968bc69b", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm2_r1", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 84719, "sha256": "c4e475b940cf02361855235e17906799b736ef3c42445a9c3cdeca255f225029", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm2_r2", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 74666, "sha256": "9df6fa93f666ba9ee50230752d6d22e73a067d53a0c1a7802e9317e453a8b0af", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm2_r3", "map": "dm2", "arm": "candidate", "clock": "played", "bytes": 80409, "sha256": "a5150e7b7b7e52941d4d9e301632ddd294e0a843758d7589b36d334fd44bd508", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm4_r1", "map": "dm4", "arm": "control", "clock": "played", "bytes": 90704, "sha256": "a711da33c4034b13f0499ac711872bbd44655bfa19c2371ff7a3a30308157e05", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm4_r2", "map": "dm4", "arm": "control", "clock": "played", "bytes": 85883, "sha256": "dd86d0d9910dafa33e9b8968602a7f980383bd1aa962db4a2bd5aff90b2cd3b5", "max_freeze_sec": 0.0, "lava_deaths": 2, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm4_r3", "map": "dm4", "arm": "control", "clock": "played", "bytes": 84498, "sha256": "eb02976bb4ee9ae7b383564a8d4311260a951f69875b8d356effa2b88016ba92", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm4_r1", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 80152, "sha256": "67283870999bfcef3e51f4c8e6568fbada119a24836845b5da220df9f683e91e", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm4_r2", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 92242, "sha256": "658d1fc8c06e42158ec63fdbd579d41aea82e2f5fad126f12769ecd44ff4a87f", "max_freeze_sec": 0.0, "lava_deaths": 2, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm4_r3", "map": "dm4", "arm": "candidate", "clock": "played", "bytes": 90146, "sha256": "ce02617c67c3d017bae33c4beb1b33b4c5c28ff5ebbb9ac3243de3532f030369", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm6_r1", "map": "dm6", "arm": "control", "clock": "played", "bytes": 78703, "sha256": "ffd58a8305a031efaf79a25c750446e0ca3061ea12b2b4a9c6129ac87657e798", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm6_r2", "map": "dm6", "arm": "control", "clock": "played", "bytes": 75481, "sha256": "a98663c39dfc2db20ef0430ba325d2ec46ac1bce4519ee7a6ce713ddb966437d", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_control_dm6_r3", "map": "dm6", "arm": "control", "clock": "played", "bytes": 80827, "sha256": "759213867769c4433a0401dfd6f6fcaa6d428f6f8a311a8c1d9d2b52ce1fdedb", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm6_r1", "map": "dm6", "arm": "candidate", "clock": "played", "bytes": 81450, "sha256": "40d1670603681f59f4abb4e37963d4e5baf8cb9dbf32a8b2b0a5f27c5baa97f4", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm6_r2", "map": "dm6", "arm": "candidate", "clock": "played", "bytes": 79416, "sha256": "c64a1656ec09d9aebedf60eafe192c54cd3a378f5d5ffdd4a45e03bf6c0bbd17", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_wc_candidate_dm6_r3", "map": "dm6", "arm": "candidate", "clock": "played", "bytes": 79477, "sha256": "d871a92858ac7c1af1a846288f5a3e3acd6f8f1edb142531d2a0dd37fe05eeda", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_confirm_control_dm2_r1", "map": "dm2", "arm": "control", "clock": "confirmation", "bytes": 102820, "sha256": "bc56bfd775f16336e5468a7161c30b92cc87a415fc7b563f229a7940af01ba80", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_confirm_control_dm2_r2", "map": "dm2", "arm": "control", "clock": "confirmation", "bytes": 110546, "sha256": "b58bb0baa6b5c3e91058366fddb17326d3fc49624fe9c1625e64164608a2509e", "max_freeze_sec": 0.0, "lava_deaths": 1, "warps": 0},
+    {"run": "study_audiobots_confirm_control_dm2_r3", "map": "dm2", "arm": "control", "clock": "confirmation", "bytes": 104150, "sha256": "0418d3e80d32f476465bbc838418252ef6d28703a9682b3bc253cdf90885d287", "max_freeze_sec": 12.700000000000003, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_confirm_candidate_dm2_r1", "map": "dm2", "arm": "candidate", "clock": "confirmation", "bytes": 100899, "sha256": "a6c2d6c02b029b04ef9055ecdb90d58b4de716872416b1d32fcbd1f872066a5f", "max_freeze_sec": 11.099999999999994, "lava_deaths": 1, "warps": 0},
+    {"run": "study_audiobots_confirm_candidate_dm2_r2", "map": "dm2", "arm": "candidate", "clock": "confirmation", "bytes": 105037, "sha256": "0dd52171bed1a45d93bd9071651e5677a4043f79227b2c6191cac038530665a6", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_confirm_candidate_dm2_r3", "map": "dm2", "arm": "candidate", "clock": "confirmation", "bytes": 103616, "sha256": "b39cd9042a50ea65ef64384227d05815ab82f851aa9a5dc4611d3e7f73a4bbfa", "max_freeze_sec": 0.0, "lava_deaths": 0, "warps": 0},
+    {"run": "study_audiobots_smoke_candidate_dm3", "map": "dm3", "arm": "candidate", "clock": "smoke", "bytes": 18989, "sha256": "c37fd3634cedcbbb763e33e51a30aa0bc9910f45e05feefa1c94ea5b04d2c1a4"},
+    {"run": "study_audiobots_smoke_candidate_e1m7", "map": "e1m7", "arm": "candidate", "clock": "smoke", "bytes": 22949, "sha256": "ff3473c3fc40fca7ee8d51ab91c589cb07374d4239bb1a746a465cdd0ad583f5"}
+  ]
+}

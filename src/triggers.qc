@@ -478,6 +478,7 @@ void() teleport_touch =
 			other.flags = other.flags - FL_ONGROUND;
 
 		other.velocity = v_forward * 300;
+		Argus_ConfirmTeleTiming (self, t);
 	}
 
 	other.flags = other.flags - other.flags & FL_ONGROUND;

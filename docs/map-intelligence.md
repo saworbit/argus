@@ -18,10 +18,48 @@ installing a route or scoring items.
 Equal distances retain the first parent. Existing equipment, skill, jump
 apex, keyed-door and shared avoidance gates still apply.
 
-Distances retain the existing geometric link-length model and preference for
-fewer movement steps. They do not
-estimate lift waiting time, teleport transit time or combat risk. Improving
-that cost model is a separate question from computing it correctly.
+Route ordering uses geometric link lengths and favours fewer movement
+steps. Pickup respawn clocks use a separate estimate for confirmed
+teleporters. Lift and train waiting time and combat risk remain open.
+[Mover arrival estimate issue](https://github.com/saworbit/argus/issues/1006)
+
+## Timing pickups through teleporters
+
+A successful warp through an always-active portal can confirm a link
+already present in the map graph. Argus matches the live entry and exit to
+the graph seats and records a cost while the search queue is idle. The
+estimate allows for the full 0.7-second exit coast and the distances
+between both seats and the portal. Triggered gates and unmatched links
+retain their existing timing.
+
+A search uses one coherent set of estimates. If two distinct gates are used
+while it is busy, both observations wait until the next idle route frame.
+Repeat use of the same pending gate adds no second observation. Fixtures
+exercised both cases with the live triggers on dm3 and dm6.
+[Portal queue fixtures](../runs/audio-adaptation.results.json)
+
+The shopping flood carries this estimate along its chosen parent chain.
+The respawn window uses it to judge how early a bot would arrive. Route
+ordering, live pickup utility and failed-life avoidance continue to use
+geometric distance.
+
+Two stock-map fixtures exercised the live teleport touch and the
+production shopping flood. On dm3 the estimated portal leg fell from
+5.0 seconds to 1.1, and on dm6 from 3.0 seconds to 1.2. Both controls
+committed too early to the pending rocket launcher. Both candidates passed
+it over and still routed to due and live pickups.
+Triggered gates and crossings during the search retained the older
+estimate for the active flood in both fixtures.
+
+The walk-plus-teleport cases carried the timing estimate across a
+two-link route and kept the first walk hop when the pickup was due.
+All 30 timing checks and 29 existing route-distance checks passed.
+
+The short played-rate dm6 screen averaged 27 engagements per control
+match and 20 per candidate match. In four fresh 120-second matches per
+arm, the averages were 35.0 and 35.25. The played-rate candidates recorded
+no freezes or rescue warps on dm4 or dm6.
+[Fixtures and match results](../runs/teleport-pickup-timing.results.json)
 
 ## Graph evidence
 

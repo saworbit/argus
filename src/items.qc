@@ -102,7 +102,7 @@ local string    s;
 		self = stemp;
 	}
 
-	Argus_HearSound (self.origin, other);
+	Argus_HearSound (self.origin, other, 0);
 
 	activator = other;
 	SUB_UseTargets();                               // fire all targets / killtargets
@@ -172,7 +172,7 @@ local string    s;
 	bprint (PRINT_LOW, " seconds remaining!\n");
       
 
-	Argus_HearSound (self.origin, other);
+	Argus_HearSound (self.origin, other, 0);
 
 	activator = other;
 	SUB_UseTargets();                               // fire all targets / killtargets
@@ -388,7 +388,7 @@ void() health_touch =
 	// Small boxes stay quiet - shell-box noise would flood the
 	// one-slot audio memory that gunfire needs.
 	if (self.healtype == 2)
-		Argus_HearSound (self.origin, other);
+		Argus_HearSound (self.origin, other, 0);
 
 	// Megahealth = rot down the player's super health
 	if (self.healtype == 2 && !deathmatch_supermode())
@@ -491,7 +491,7 @@ void() armor_touch =
 	self.model = string_null;
 	ReleaseClaim (self);
 
-	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup
+	Argus_HearSound (self.origin, other, 0);
 
 	if (deathmatch_item_respawn())
 		self.nextthink = time + 20;
@@ -805,7 +805,7 @@ void() weapon_touch =
 	// ARGUS: a weapon pickup is audible intel (Omicron review: their
 	// bots heard item sounds, not just gunfire) - bots in earshot
 	// note who took the gun and where
-	Argus_HearSound (self.origin, other);
+	Argus_HearSound (self.origin, other, 0);
 
 	if (deathmatch && !deathmatch_weapon_stay())
 		self.nextthink = time + 30;
@@ -1610,7 +1610,7 @@ void() powerup_touch =
 	self.model = string_null;
 	ReleaseClaim (self);
 
-	Argus_HearSound (self.origin, other);	// ARGUS: audible pickup -
+	Argus_HearSound (self.origin, other, 0);	// ARGUS: audible pickup -
 						// everyone hears the quad go
 
 	// ARGUS: Argus_Chat(4) is the powerup line every persona already
@@ -1954,7 +1954,7 @@ void() BackpackTouch =
 	sound (other, CHAN_ITEM, "weapons/lock4.wav", 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
 
-	Argus_HearSound (self.origin, other);	// ARGUS: looting is audible
+	Argus_HearSound (self.origin, other, 0);	// ARGUS: looting is audible
 
 	Argus_ItemChain_Remove (self);
 	ReleaseClaim (self);

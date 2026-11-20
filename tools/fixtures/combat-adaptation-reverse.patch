@@ -1,0 +1,251 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -4256,8 +4256,6 @@
+     self.ar_lastfoe = world;
+     self.ar_hurtfoe = world; self.ar_hurtfoetime = 0;
+     self.ar_targetscan = 0; self.ar_targethold = 0;
+-    self.ar_bitem = world; self.ar_bitemlast = world;
+-    self.ar_bitemscan = 0; self.ar_bitemend = 0; self.ar_bitemcool = 0;
+     Argus_SetSkill ();
+     self.health = 100;
+     // spawn-field parity with PutClientInServer: max_health 0 made
+@@ -5657,16 +5655,15 @@
+ // the whole detour.
+ float(entity it, float cls) Argus_ItemValue;
+ vector(entity it) Argus_GoalPoint;
+-float(vector point) Argus_CombatLine;
+ 
+ void() Argus_BattleItemScan =
+ {
+     local entity it, best;
+-    local vector point;
+     local float v, bv;
+ 
+     best = world;
+-    bv = 0;
++    bv = 11;        // grab floor: below this the detour is not worth
++                    // breaking the circle for
+     it = findradius (self.origin, 240);
+     while (it != world)
+     {
+@@ -5674,21 +5671,20 @@
+             && !(it == self.ar_bitemlast && time < self.ar_bitemcool))
+         {
+             v = Argus_ItemValue (it, Argus_ItemClass (it));
+-            if (v > 11)
++            if (v > bv && Argus_SafeLine (Argus_GoalPoint (it)))
+             {
+-                point = Argus_GoalPoint (it);
+-                v = v * 160 / (vlen (point - self.origin) + 160);
+-                if (v > bv && Argus_CombatLine (point))
+-                {
+-                    best = it;
+-                    bv = v;
+-                }
++                best = it;
++                bv = v;
+             }
+         }
+         it = it.chain;
+     }
+-    if (best == world)
+-        return;
++    if (best == world || best == self.ar_bitem)
++        return;             // never refresh a running commit: a grab
++                            // gets ONE 1.5 s window, so an item that
++                            // SafeLine likes but walkmove cannot reach
++                            // (the '2448 -80 104' perch pin, bitem1)
++                            // cannot hold the steer forever
+     dprint ("ARGEVT ");
+     dprint (self.netname);
+     dprint (" grab ");
+@@ -5696,26 +5692,6 @@
+     dprint ("\n");
+     self.ar_bitem = best;
+     self.ar_bitemend = time + 1.5;
+-};
+-
+-void() Argus_UpdateBattleItem =
+-{
+-    if (self.ar_bitem != world)
+-    {
+-        if (self.ar_bitem.solid == SOLID_TRIGGER)
+-        {
+-            if (time < self.ar_bitemend)
+-                return;
+-            self.ar_bitemlast = self.ar_bitem;
+-            self.ar_bitemcool = time + 8;
+-        }
+-        self.ar_bitem = world;
+-    }
+-    if (time > self.ar_bitemscan)
+-    {
+-        self.ar_bitemscan = time + 0.5;
+-        Argus_BattleItemScan ();
+-    }
+ };
+ 
+ // the hunch (2026-08-27, theory of mind slice 1): when a foe breaks
+@@ -6275,56 +6251,6 @@
+     return (from.origin_z - hop.origin_z <= 18);
+ };
+ 
+-float(vector point) Argus_CombatLine =
+-{
+-    traceline (self.origin + '0 0 16', point, TRUE, self);
+-    return trace_fraction == 1 && !trace_startsolid && !trace_allsolid
+-        && Argus_SafeLine (point);
+-};
+-
+-float() Argus_CanInvestigateNoise;
+-
+-// Use one ordinary graph leg to round a corner. Both the turn and the
+-// opening towards the cached sighting must be visible in world geometry.
+-entity(vector sighting) Argus_PursuitHop =
+-{
+-    local entity seat, hop, best;
+-    local vector delta;
+-    local float i, length, cost, bestcost;
+-
+-    if (self.ar_skill < AR_SKILL_MEMORY || self.ar_retreating
+-        || !(self.flags & FL_ONGROUND) || !Argus_CanInvestigateNoise ())
+-        return world;
+-    seat = Argus_NearestNode (self.origin);
+-    if (seat == world || vlen (seat.origin - self.origin) > 64)
+-        return world;
+-
+-    best = world;
+-    bestcost = 99999;
+-    i = 0;
+-    while (i < seat.an_nlinks)
+-    {
+-        hop = Argus_NavGetLink (seat, i);
+-        delta = hop.origin - self.origin;
+-        length = vlen (delta);
+-        cost = length + vlen (sighting - hop.origin);
+-        if (length >= 24 && length <= 192 && fabs (delta_z) <= 18
+-            && cost < bestcost && !Argus_LinkIsTyped (seat, hop))
+-        {
+-            traceline (hop.origin + '0 0 16', sighting, TRUE, self);
+-            if (trace_fraction == 1 && !trace_startsolid && !trace_allsolid
+-                && Argus_CombatLine (hop.origin)
+-                && !Argus_MoveHazard (vectoyaw (delta), 48))
+-            {
+-                best = hop;
+-                bestcost = cost;
+-            }
+-        }
+-        i = i + 1;
+-    }
+-    return best;
+-};
+-
+ // returns TRUE while combat is steering the bot
+ float() Argus_Combat =
+ {
+@@ -6336,7 +6262,7 @@
+     local float cy, ck, cfound, ceff, sy, dy, sfrac;
+     local float closeband, orbit, highmult, retreatin, retreatout;
+     local float dt, motmag, mfrac, baseyaw, altyaw, required, primarycover;
+-    local float tactclass, direct;
++    local float tactclass;
+     local float flight;         // projectile time of flight, seconds
+     local vector epos, evel;
+     local vector preaim, ldv, src;  // #363: the lead, on its own
+@@ -6348,7 +6274,6 @@
+     if (e == world)
+     {
+         self.button0 = 0;
+-        self.ar_bitem = world;
+         self.ar_threatclass = AR_THREAT_UNKNOWN;
+         self.ar_threatlog = 0;
+         self.ar_secondary = world;
+@@ -6380,13 +6305,7 @@
+         if (time < self.ar_seen + 2.5 && vlen (to) > 80)
+         {
+             want = vectoyaw (to);
+-            direct = Argus_CombatLine (self.ar_lastseen) && !Argus_MoveHazard (want, 48);
+-            chop = world;
+-            if (!direct)
+-                chop = Argus_PursuitHop (self.ar_lastseen);
+-            if (chop != world)
+-                want = vectoyaw (chop.origin - self.origin);
+-            if (direct || chop != world)
++            if (!Argus_MoveHazard (want, 48))
+             {
+                 if (!self.ar_pursuing)
+                 {
+@@ -6418,7 +6337,7 @@
+                 dy = want - self.angles_y;
+                 while (dy > 180) dy = dy - 360;
+                 while (dy < -180) dy = dy + 360;
+-                if (direct && coop <= 0 && fabs (dy) < 8
++                if (coop <= 0 && fabs (dy) < 8
+                     && !self.ar_prefired && self.ar_skill >= AR_SKILL_PREFIRE
+                     && self.weapon == IT_ROCKET_LAUNCHER
+                     && self.ammo_rockets >= 2
+@@ -7093,10 +7012,28 @@
+     // below re-checks whatever heading survives.
+     if (!self.ar_retreating)
+     {
+-        Argus_UpdateBattleItem ();
++        if (time > self.ar_bitemscan)
++        {
++            self.ar_bitemscan = time + 0.5;
++            Argus_BattleItemScan ();
++        }
+         if (self.ar_bitem != world)
+-            self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (Argus_GoalPoint (self.ar_bitem)
+-                          - self.origin), "battle_item");
++        {
++            if (self.ar_bitem.solid != SOLID_TRIGGER)
++                self.ar_bitem = world;      // eaten - clean success
++            else if (time > self.ar_bitemend)
++            {
++                // commit lapsed with the item still live: the walk
++                // is not landing (perch, thin wall, crowd). Cool
++                // this item so the scan cannot re-pin us on it.
++                self.ar_bitemlast = self.ar_bitem;
++                self.ar_bitemcool = time + 8;
++                self.ar_bitem = world;
++            }
++            else
++                self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw (Argus_GoalPoint (self.ar_bitem)
++                              - self.origin), "battle_item");
++        }
+     }
+ 
+     // missile dodge (cortex's design, upgraded from the idea bank):
+@@ -7161,15 +7098,15 @@
+         // exact read of the opponent's hidden health.
+         if (Argus_EnemyPowerThreat ())
+         {
+-            if (ceff > 90 || self.super_damage_finished > time
+-                || self.invincible_finished > time)
++            if (ceff > 90
++                || self.super_damage_finished > time)
+             {
+                 self.ar_retreating = 0;
+                 self.ar_retreatclass = AR_THREAT_UNKNOWN;
+             }
+         }
+-        else if (ceff > retreatout || self.super_damage_finished > time
+-                 || self.invincible_finished > time)
++        else if (ceff > retreatout
++                 || self.super_damage_finished > time)
+         {
+             self.ar_retreating = 0;
+             self.ar_retreatclass = AR_THREAT_UNKNOWN;
+@@ -7178,12 +7115,10 @@
+     else if ((ceff < retreatin
+               || (ceff < 70 && Argus_EnemyPowerThreat ()))
+              && self.super_damage_finished < time
+-             && self.invincible_finished <= time
+              && self.weapon != IT_AXE
+              && time > self.ar_retreatlock)
+     {
+         self.ar_retreating = 1;
+-        self.ar_bitem = world;
+         self.ar_retreatclass = self.ar_threatclass;
+         self.ar_covertime = 0;      // pick a cover leg this frame
+         if (self.ar_threatclass)

@@ -1,0 +1,27 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -5532,7 +5532,7 @@
+ // path), so ammo gating happens here; W_Attack itself never checks.
+ void(float d, float closeband) Argus_SelectWeapon =
+ {
+-    local float w, splashmin, beamreach;
++    local float w, splashmin;
+     local string wn;
+ 
+     // Weak stacks yield the splash preference for another 0..50 units when
+@@ -5558,14 +5558,8 @@
+     // watertype stays as the second half. It is engine owned and
+     // correct, and it covers the frame before a freshly spawned bot
+     // has run any physics at all, when ar_wetlevel is still zero.
+-    // Give a live lightning burst a little room to finish when an
+-    // opponent crosses 480u. New bursts use the normal selection range.
+-    beamreach = 480;
+-    if (self.weapon == IT_LIGHTNING && self.ar_fireweapon == IT_LIGHTNING
+-        && time < self.ar_fireburst)
+-        beamreach = 500;
+     if ((self.items & IT_LIGHTNING) && self.ammo_cells >= 1
+-        && d < beamreach && self.watertype > CONTENT_WATER
++        && d < 480 && self.watertype > CONTENT_WATER
+         && self.ar_wetlevel <= 1)
+         w = IT_LIGHTNING;
+     else if ((self.items & IT_ROCKET_LAUNCHER) && self.ammo_rockets >= 1

@@ -269,12 +269,14 @@ For each live bot, `Argus_AI` decides what to do and `Argus_Physics` moves
 the bot:
 
 - **Perception.** A bot sees through a soft field of view and hears weapons
-  and item pickups. It keeps a short memory of what it saw.
+  and item pickups as distinct cues. At higher skill it can take a short,
+  safe waypoint detour towards a nearby shot or a last-seen opponent.
 - **Goals.** Utility scores rank all items by value to the bot and by
   distance. A planner adds a prerequisite when necessary. For example, an
   unarmed bot gets a weapon before it goes for the Quad Damage.
 - **Combat.** The bot fires through the stock weapon code. Ammunition, refire
-  time and projectiles are the same as for a human player.
+  time and projectiles follow the player rules. It weighs reachable supplies
+  by distance during fights and retreats.
 - **Physics.** The bot movement copies the NetQuake player rules for
   friction, acceleration and air control. A hazard check examines the floor
   ahead and turns the bot away from lava, slime and long drops.
@@ -445,6 +447,7 @@ records the fixed-seed and played-rate results.
 | Route distance | Of the routes with the fewest links, chooses the shortest | [Map intelligence](docs/map-intelligence.md) |
 | Pinned under fire | Tries a short, checked exit and keeps its aim and fire | [Freeze recovery](docs/freeze-recovery.md) |
 | Target choice | Changes target when another visible player attacks it, or when its target is invulnerable and another opponent is not. Focus and reaction delay stay. | [Combat attention](docs/combat-attention.md) |
+| Combat adaptation | Uses nearby supplies, preserves an active lightning burst through small range changes, and investigates fresh gunfire around safe corners | [Classic bot comparisons and tests](docs/classic-bot-comparisons.md) |
 | Route actions | Keeps swim and jump plans, chooses actions it can do, and plans again when it does not get closer to the next waypoint | [e1m5 encounters](docs/e1m5-encounters.md) |
 | Moving platforms | Stays on a moving platform until it docks, and examines the landing arc before it jumps off | [e1m6 decisions](docs/e1m6-decisions.md) |
 | Body separation | Ignores players on other floors, and does not move to a spot where the player hull cannot fit | [Height](docs/body-height-investigation.md), [same floor](docs/body-nudge-investigation.md) |
@@ -494,6 +497,7 @@ Open items:
 | Measure movement at the full frame rate from a demo | [Demo ingest](tools/argus_mcp/README.md#demo-ingest) |
 | Record a bot POV or export images and video clips | [Rendered POV evidence](tools/argus_mcp/README.md#rendered-pov-evidence) |
 | Understand the bot and source layout | [Architecture](docs/architecture.md) |
+| Compare Argus behaviour with classic Quake bots | [Classic bot comparisons](docs/classic-bot-comparisons.md) |
 | See what changed and which build it belongs to | [Changelog](CHANGELOG.md) |
 | Contribute or report a problem | [Contributing](CONTRIBUTING.md), [support](SUPPORT.md), [discussions](https://github.com/saworbit/argus/discussions) |
 | Use the Argus mark, banner or palette | [Brand](docs/brand/README.md) |

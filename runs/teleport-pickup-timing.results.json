@@ -1,0 +1,545 @@
+{
+  "schema": 1,
+  "measured": "2026-11-20",
+  "skill": 1,
+  "builds": {
+    "control": "357dffd4b048",
+    "candidate": "551c48049913"
+  },
+  "scope": "Respawn timing along a confirmed always-active teleport link.",
+  "fixtures": {
+    "study_teletiming_fixture-control_dm3": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": false,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true
+      },
+      "chord_units": 1384.3,
+      "planned_leg_units": 312.4,
+      "seconds_to_respawn": 13.1
+    },
+    "study_teletiming_fixture-v2-control_dm3": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "ordinary_approach_keeps_old_clock_before_confirmation": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": false,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true,
+        "confirmed_time_propagates_to_route_with_approach": false,
+        "due_respawn_keeps_first_walk_hop": true
+      }
+    },
+    "study_teletiming_fixture-control_dm6": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": false,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true
+      },
+      "chord_units": 838.3,
+      "planned_leg_units": 330.6,
+      "seconds_to_respawn": 12.1
+    },
+    "study_teletiming_fixture-v2-control_dm6": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "ordinary_approach_keeps_old_clock_before_confirmation": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": false,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true,
+        "confirmed_time_propagates_to_route_with_approach": false,
+        "due_respawn_keeps_first_walk_hop": true
+      }
+    },
+    "study_teletiming_fixture-candidate_dm3": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": true,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true
+      },
+      "chord_units": 1384.3,
+      "planned_leg_units": 312.4,
+      "seconds_to_respawn": 13.1
+    },
+    "study_teletiming_fixture-v2-candidate_dm3": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "ordinary_approach_keeps_old_clock_before_confirmation": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": true,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true,
+        "confirmed_time_propagates_to_route_with_approach": true,
+        "due_respawn_keeps_first_walk_hop": true
+      }
+    },
+    "study_teletiming_fixture-candidate_dm6": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": true,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true
+      },
+      "chord_units": 838.3,
+      "planned_leg_units": 330.6,
+      "seconds_to_respawn": 12.1
+    },
+    "study_teletiming_fixture-v2-candidate_dm6": {
+      "cases": {
+        "live_link": true,
+        "separated_clock_windows": true,
+        "unknown_portal_uses_old_clock": true,
+        "ordinary_approach_keeps_old_clock_before_confirmation": true,
+        "triggered_warp_succeeds": true,
+        "triggered_portal_keeps_old_clock": true,
+        "busy_shopping_started": true,
+        "busy_warp_succeeds": true,
+        "busy_portal_keeps_old_clock": true,
+        "unconditional_warp_succeeds": true,
+        "confirmed_portal_refuses_early_respawn": true,
+        "due_respawn_still_uses_portal": true,
+        "live_pickup_still_uses_portal": true,
+        "confirmed_time_propagates_to_route_with_approach": true,
+        "due_respawn_keeps_first_walk_hop": true
+      }
+    }
+  },
+  "checks": {
+    "route_distance": {
+      "checks": [
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "fewest_hops_first",
+          "1"
+        ],
+        [
+          "first_parent",
+          "1"
+        ],
+        [
+          "step_discipline",
+          "1"
+        ],
+        [
+          "route_chain",
+          "1"
+        ],
+        [
+          "no_parent_cycle",
+          "1"
+        ],
+        [
+          "route_ownership",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "equal_hops_shorter",
+          "1"
+        ],
+        [
+          "equal_hops_branch",
+          "1"
+        ],
+        [
+          "descendant_distance",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "pending_improvement",
+          "1"
+        ],
+        [
+          "queue_drained",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "unreachable",
+          "1"
+        ],
+        [
+          "frame_budget",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "abort_and_new_root",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "rocket_toll",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "sprint_toll",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "sprint_permitted",
+          "1"
+        ],
+        [
+          "settles",
+          "1"
+        ],
+        [
+          "jump_apex_toll",
+          "1"
+        ],
+        [
+          "shopping_distance",
+          "1"
+        ],
+        [
+          "shopping_cleanup",
+          "1"
+        ]
+      ],
+      "failures": [],
+      "frame_ms": 14.0,
+      "requested_ticrate": 0.0139,
+      "source_sha256": "2e1845119c7a73c9cb8875f16f67cbd8edfecebb564a46ee6ad121f1554f4c75",
+      "raw_sha256": "a04f7223509d8b63562c21cfbba6f021b7b8a953a93a9a210617f020b65910cd",
+      "binary_sha256": "084c3e951c736680adc398ef78bf54b555453424c22aecce42716c04ec56e0d8"
+    },
+    "smoke": {
+      "dm3": "dm3 20s: 0 frags, 0 deaths (0 lava, 0 third-party), 0 stalls, 3 goals, 2 engages, 26 hazards, spread 0",
+      "e1m7": "e1m7 20s: 1 frags, 1 deaths (0 lava, 0 third-party), 0 stalls, 3 goals, 8 engages, 28 hazards, spread 1"
+    }
+  },
+  "screens": {
+    "fixed-dm3": {
+      "duration_sec": 120,
+      "metrics": {
+        "engages": {
+          "a": 9.25,
+          "b": 9.25,
+          "limit": 4.678
+        },
+        "cover": {
+          "a": 337.25,
+          "b": 337.0,
+          "limit": 123.488
+        },
+        "goals": {
+          "a": 13.75,
+          "b": 13.75,
+          "limit": 6.738
+        },
+        "stalls": {
+          "a": 6.0,
+          "b": 6.0,
+          "limit": 7.047
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        }
+      }
+    },
+    "fixed-dm4": {
+      "duration_sec": 120,
+      "metrics": {
+        "engages": {
+          "a": 47.25,
+          "b": 47.25,
+          "limit": 8.143
+        },
+        "cover": {
+          "a": 307.0,
+          "b": 306.5,
+          "limit": 24.343
+        },
+        "goals": {
+          "a": 12.5,
+          "b": 12.5,
+          "limit": 4.121
+        },
+        "stalls": {
+          "a": 4.75,
+          "b": 4.75,
+          "limit": 3.381
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "lava_deaths": {
+          "a": 1.75,
+          "b": 1.75,
+          "limit": 2.491
+        }
+      }
+    },
+    "played-dm4": {
+      "duration_sec": 75,
+      "metrics": {
+        "engages": {
+          "a": 29.333,
+          "b": 22.333,
+          "limit": 10.924
+        },
+        "cover": {
+          "a": 225.333,
+          "b": 227.333,
+          "limit": 43.877
+        },
+        "goals": {
+          "a": 7.667,
+          "b": 9.0,
+          "limit": 4.939
+        },
+        "stalls": {
+          "a": 2.333,
+          "b": 3.667,
+          "limit": 4.174
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "lava_deaths": {
+          "a": 1.0,
+          "b": 1.667,
+          "limit": 0.933
+        }
+      }
+    },
+    "played-dm6": {
+      "duration_sec": 75,
+      "metrics": {
+        "engages": {
+          "a": 27.0,
+          "b": 20.0,
+          "limit": 6.466
+        },
+        "cover": {
+          "a": 291.667,
+          "b": 272.333,
+          "limit": 40.274
+        },
+        "goals": {
+          "a": 10.0,
+          "b": 10.0,
+          "limit": 5.112
+        },
+        "stalls": {
+          "a": 2.333,
+          "b": 3.333,
+          "limit": 4.174
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        }
+      }
+    },
+    "confirmation-dm6": {
+      "duration_sec": 120,
+      "metrics": {
+        "engages": {
+          "a": 35.0,
+          "b": 35.25,
+          "limit": 7.95
+        },
+        "cover": {
+          "a": 403.75,
+          "b": 417.5,
+          "limit": 50.191
+        },
+        "goals": {
+          "a": 15.5,
+          "b": 16.0,
+          "limit": 9.53
+        },
+        "stalls": {
+          "a": 6.25,
+          "b": 6.5,
+          "limit": 9.207
+        },
+        "freezes": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "freeze_underfire": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        },
+        "lava_deaths": {
+          "a": 0.0,
+          "b": 0.0,
+          "limit": null
+        }
+      }
+    }
+  },
+  "tape_storage": "The study_ tapes are machine-local.",
+  "tapes": [
+    {"run": "study_teletiming_fixture-control_dm3", "map": "dm3", "arm": "control", "clock": "fixture", "portal_confirmations": 0, "bytes": 9131, "sha256": "4248ce37c339814725ab0d739e552278023a38c734ad027f145ac8a43b9ab520"},
+    {"run": "study_teletiming_fixture-v2-control_dm3", "map": "dm3", "arm": "control", "clock": "fixture with walk approach", "portal_confirmations": 0, "bytes": 9630, "sha256": "e8cf2ee64c2b2a10cceae583434fac419376cc7229f2b41903aeac8f44f10ea5"},
+    {"run": "study_teletiming_fixture-control_dm6", "map": "dm6", "arm": "control", "clock": "fixture", "portal_confirmations": 0, "bytes": 10061, "sha256": "61ec13620ab4f5d2c12a5b689b79b582a253fdaf197e7030dc386dcc77abe1b3"},
+    {"run": "study_teletiming_fixture-v2-control_dm6", "map": "dm6", "arm": "control", "clock": "fixture with walk approach", "portal_confirmations": 0, "bytes": 10560, "sha256": "5723341309c35c5aa469aa0501c626446f877a74387006571a6f248451c328ce"},
+    {"run": "study_teletiming_fixture-candidate_dm3", "map": "dm3", "arm": "candidate", "clock": "fixture", "portal_confirmations": 1, "bytes": 9008, "sha256": "983d263f34199711104100905090ed0c677dd700285585b93c1650fbb5061eed"},
+    {"run": "study_teletiming_fixture-v2-candidate_dm3", "map": "dm3", "arm": "candidate", "clock": "fixture with walk approach", "portal_confirmations": 1, "bytes": 9481, "sha256": "7c515d52038282a9232bbcf788839310b07cab904707e978760758b04dc1292b"},
+    {"run": "study_teletiming_fixture-candidate_dm6", "map": "dm6", "arm": "candidate", "clock": "fixture", "portal_confirmations": 1, "bytes": 10019, "sha256": "418a15e320ce958f495e346db3ae44c99a7ef78ca8d82dfd4ab44fec5e851113"},
+    {"run": "study_teletiming_fixture-v2-candidate_dm6", "map": "dm6", "arm": "candidate", "clock": "fixture with walk approach", "portal_confirmations": 1, "bytes": 10411, "sha256": "1d14feeb5039c06323ce1fdc9cd57a0463a0050ca2e09f859ced60b0ea928d48"},
+    {"run": "study_teletimingfx_control_dm3_s1167", "map": "dm3", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 98384, "sha256": "9933fe95fcb84f57c69f72175e1f5c7b91ce3944ccdbc5e581d432948a1705b6", "seed": 1167},
+    {"run": "study_teletimingfx_control_dm3_s1292", "map": "dm3", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 99721, "sha256": "c3c9a0800046a7c5199c8457b0ea5a014ca810523af2d509f49d2abeab138bee", "seed": 1292},
+    {"run": "study_teletimingfx_control_dm3_s1875", "map": "dm3", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 98856, "sha256": "188550b3ced62893ba9dc58a23f1a9b5cef355f89f6eb9b148351a5f953ccc28", "seed": 1875},
+    {"run": "study_teletimingfx_control_dm3_s584", "map": "dm3", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 101125, "sha256": "ea0153191abfa77ae4416928bb325e0286ce6799755bf154b128036fbf40c3d7", "seed": 584},
+    {"run": "study_teletimingfx_candidate_dm3_s1167", "map": "dm3", "arm": "candidate", "clock": "fixed", "portal_confirmations": 0, "bytes": 98384, "sha256": "d1ff14378f918ea3eabd3811f418920ba67a492c00f93f70f5a9743019d09eba", "seed": 1167},
+    {"run": "study_teletimingfx_candidate_dm3_s1292", "map": "dm3", "arm": "candidate", "clock": "fixed", "portal_confirmations": 0, "bytes": 99721, "sha256": "ac0c33b49754ad681d07b4f1432dff84932598fe3eeda628219287e85d8b66d5", "seed": 1292},
+    {"run": "study_teletimingfx_candidate_dm3_s1875", "map": "dm3", "arm": "candidate", "clock": "fixed", "portal_confirmations": 1, "bytes": 98921, "sha256": "429324edbae869b6e783355291e7e8f0d9e1846b2bb23d4fc5c877c099742163", "seed": 1875},
+    {"run": "study_teletimingfx_candidate_dm3_s584", "map": "dm3", "arm": "candidate", "clock": "fixed", "portal_confirmations": 1, "bytes": 100970, "sha256": "5ac3a20bbffad8238172e46106a1bef171b6442931444ef93fe4c7c7d233bd27", "seed": 584},
+    {"run": "study_teletimingfx_control_dm4_s1167", "map": "dm4", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 115724, "sha256": "5d36d69e740812f4cdfee618527645889382b711414255b63a35f76e773a22c9", "seed": 1167},
+    {"run": "study_teletimingfx_control_dm4_s1292", "map": "dm4", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 116192, "sha256": "014b2bad1788ffa634231823237e9c897d0f4fc149d9a1b7ee6a09bc8c2f370a", "seed": 1292},
+    {"run": "study_teletimingfx_control_dm4_s1875", "map": "dm4", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 116337, "sha256": "dccb9a723d1e150d66a5ce53a965516410968726e42a327ccf33ee8cd6331b84", "seed": 1875},
+    {"run": "study_teletimingfx_control_dm4_s584", "map": "dm4", "arm": "control", "clock": "fixed", "portal_confirmations": 0, "bytes": 119228, "sha256": "4436c78c43ab5744a4f90fb1dbebb23f3855b10f848b6fa29da4aa772a17f4b3", "seed": 584},
+    {"run": "study_teletimingfx_candidate_dm4_s1167", "map": "dm4", "arm": "candidate", "clock": "fixed", "portal_confirmations": 4, "bytes": 115781, "sha256": "36fc7ecd61195f35a512990e436686e0710d8aaf37d85da7b143f2adecc41c3a", "seed": 1167},
+    {"run": "study_teletimingfx_candidate_dm4_s1292", "map": "dm4", "arm": "candidate", "clock": "fixed", "portal_confirmations": 4, "bytes": 116696, "sha256": "90fbc6d2318e11ce0371c577dafe5ed5344447070ef43ca1b1adfe99b4299eae", "seed": 1292},
+    {"run": "study_teletimingfx_candidate_dm4_s1875", "map": "dm4", "arm": "candidate", "clock": "fixed", "portal_confirmations": 4, "bytes": 116595, "sha256": "28c394cad420d7e847fd902a73f335574acb4a2d8fa7db257cbfbf5809f279f5", "seed": 1875},
+    {"run": "study_teletimingfx_candidate_dm4_s584", "map": "dm4", "arm": "candidate", "clock": "fixed", "portal_confirmations": 3, "bytes": 119600, "sha256": "cec1a1f317b04be1159b7200b46645033f118862fe62d3c7e11ca919ac8bdfaa", "seed": 584},
+    {"run": "study_teletimingwc_control_dm4_r1", "map": "dm4", "arm": "control", "clock": "played", "portal_confirmations": 0, "bytes": 70236, "sha256": "e5d5079dbeabdf98350fcfc79f220b57edb69d235ccc9a145f3ef00f01492639", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_control_dm4_r2", "map": "dm4", "arm": "control", "clock": "played", "portal_confirmations": 0, "bytes": 74274, "sha256": "a32f6c603a5e7e82747b6b6febe4a780f3979d858b64c17b867c4988d7ddec45", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_control_dm4_r3", "map": "dm4", "arm": "control", "clock": "played", "portal_confirmations": 0, "bytes": 72309, "sha256": "e556608ef0f8104a50ffa398455a20b9ab104d894ca26190336ddc5fe95f8367", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_candidate_dm4_r1", "map": "dm4", "arm": "candidate", "clock": "played", "portal_confirmations": 3, "bytes": 75485, "sha256": "b8cc8805b06fb9fec09516f2f3950e19a5496e70f715ac6e4da1b4b2469544cc", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_candidate_dm4_r2", "map": "dm4", "arm": "candidate", "clock": "played", "portal_confirmations": 3, "bytes": 74456, "sha256": "d45a20a80826dca62610196af01afb53b818fe5c85b8b63d3a48dc3db18fc6d5", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_candidate_dm4_r3", "map": "dm4", "arm": "candidate", "clock": "played", "portal_confirmations": 3, "bytes": 72739, "sha256": "b9c0c6e3c702da6df4eed9986062c7282a42702d735b1a6edd00c8ce5f94e1f0", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_control_dm6_r1", "map": "dm6", "arm": "control", "clock": "played", "portal_confirmations": 0, "bytes": 74837, "sha256": "389165fa8d2f8f7a558c5fa20ddd1fb41bcb0222012947bfe069e7421cec988b", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_control_dm6_r2", "map": "dm6", "arm": "control", "clock": "played", "portal_confirmations": 0, "bytes": 68431, "sha256": "af0f9377a0beff9c1d4cb1b4220b2136f78a59202d97dd3107e0f446d3c63844", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_control_dm6_r3", "map": "dm6", "arm": "control", "clock": "played", "portal_confirmations": 0, "bytes": 72515, "sha256": "0704e83cd14fe9e81e40c11a0cf669c01638f1fb346e4cd4da9874197e990a5b", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_candidate_dm6_r1", "map": "dm6", "arm": "candidate", "clock": "played", "portal_confirmations": 3, "bytes": 70591, "sha256": "ad32caa7a3981749b9a3e9e7eaa50ed0d156efd56ebec9b451b64112c124e72d", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_candidate_dm6_r2", "map": "dm6", "arm": "candidate", "clock": "played", "portal_confirmations": 4, "bytes": 68568, "sha256": "6c0ece5c75a5bbe2d602d97fce1cb2c55fd809124194b7b93b471a479987218e", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingwc_candidate_dm6_r3", "map": "dm6", "arm": "candidate", "clock": "played", "portal_confirmations": 4, "bytes": 64707, "sha256": "dfa4100e65c88857ad9a49f02274b34d48535f925c3fa7c2ae603788c9671ac4", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_control_dm6_r1", "map": "dm6", "arm": "control", "clock": "confirmation", "portal_confirmations": 0, "bytes": 107703, "sha256": "b7ad9101f3c96d8bb3c41322c4c66a74062326795665194ccd907a445e233d9e", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_control_dm6_r2", "map": "dm6", "arm": "control", "clock": "confirmation", "portal_confirmations": 0, "bytes": 110936, "sha256": "47f5e7cc868cd04559a5402562453bee20befb56aefa1d87941f5a65780f11ca", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_control_dm6_r3", "map": "dm6", "arm": "control", "clock": "confirmation", "portal_confirmations": 0, "bytes": 116408, "sha256": "ba5a67c45703dfc5988e2ad7156e4958da41e12d63f899ddfe39153ef0f0f621", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_control_dm6_r4", "map": "dm6", "arm": "control", "clock": "confirmation", "portal_confirmations": 0, "bytes": 109283, "sha256": "1f89d2d28514c5c0386fa1246dfc776642a9b0778f2266c975694d5f600a527b", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_candidate_dm6_r1", "map": "dm6", "arm": "candidate", "clock": "confirmation", "portal_confirmations": 3, "bytes": 110694, "sha256": "4a3a27fd10adee443eea1fe234cd2d6523cb69bad32e79cf75257e272ef76b59", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_candidate_dm6_r2", "map": "dm6", "arm": "candidate", "clock": "confirmation", "portal_confirmations": 4, "bytes": 110028, "sha256": "68f5319d0be255d5554cb89fe839a6eb5da679a9dec4f024ad0d48acfd19467c", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_candidate_dm6_r3", "map": "dm6", "arm": "candidate", "clock": "confirmation", "portal_confirmations": 3, "bytes": 110442, "sha256": "200c84f72f8fc1df78b30b5588c8aa04e683fe21c65856279df506439b6407f5", "max_freeze_sec": 0.0, "warps": 0},
+    {"run": "study_teletimingconfirm_candidate_dm6_r4", "map": "dm6", "arm": "candidate", "clock": "confirmation", "portal_confirmations": 3, "bytes": 113004, "sha256": "33ef38000353f5e3dea40ddaa09bd21eec7ce99476d3173d01bfe1016f16c9db", "max_freeze_sec": 0.0, "warps": 0}
+  ]
+}

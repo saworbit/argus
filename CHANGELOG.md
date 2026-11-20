@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Let bots use a short, safe waypoint detour when a corner blocks pursuit of a last sighting or investigation of a nearby shot.
+
 - Let navgen screen and splice offline elbow candidates on a completed graph with `--seat-elbows`, with a reason for each unresolved walk ([#907](https://github.com/saworbit/argus/issues/907)).
 
 - Add an offline corner simulator that replays bot turns and ranks elbow seats for navgen review ([#923](https://github.com/saworbit/argus/issues/923)).
@@ -896,6 +898,12 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Distinguish pickup sounds from actual weapon fire, keep fresh gunfire cues over loot sounds, and clear hearing on respawn.
+- Keep an active lightning burst going through small changes in enemy distance.
+- Give reachable combat pickups a bounded attempt and let invulnerable bots stay in a fight at low health.
+- Weigh reachability, direction and distance when choosing health or armour during a retreat.
+- Account for confirmed teleporter shortcuts when timing item respawns, including distinct crossings observed during one route search.
 
 - Start fixed navigation benchmarks with one bot and record its health and item bits at goal assignment ([#990](https://github.com/saworbit/argus/issues/990)).
 

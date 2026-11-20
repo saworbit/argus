@@ -358,6 +358,9 @@ argus-mcp seeds <map> <count> <stem> [--duration N] [--skill N] [--lanes N] [--f
 argus-mcp standin <map> <secs> <run> [--route TAPE] [--skill N] [--port N] [--seed N] [--reaction S]
 ```
 
+`match` accepts 10 to 600 seconds. Use at least 10 seconds for short
+decision fixtures. [CLI help issue](https://github.com/saworbit/argus/issues/1001)
+
 - `compile`: Compiles QuakeC `progs.dat` via `fteqcc` with timestamp verification and optional backup creation and installation.
 - `nav`: Runs `argus_navgen.py` to generate waypoint navigation graphs (`src/argus_nav_<map>.qc`) and minimap PNGs (`runs/nav_<map>.png`). First registration requires the current graph to pass reach and the mill.
 - `analyze`: Runs `analyze_match.py` to parse telemetry logs into briefs, stats, and plots.
@@ -526,6 +529,10 @@ Optional, with defaults under `ARGUS_ROOT`:
 | `ARGUS_RUNS` | `$ARGUS_ROOT/runs` |
 | `ARGUS_PROGS` | `$ARGUS_ROOT/lq1/progs.dat` |
 | `ARGUS_MAPS` | `$ARGUS_ROOT/maps_local` |
+
+The native lab uses `ARGUS_RUNS` for tape output. Python's
+`argus_lab.py skeptic` resolves named tapes in the checkout's `runs/`.
+For the private-tape workflow, see the [comparison runbook](../../docs/lab-spine.md#skeptic).
 
 Load order: optional TOML, then env. Env wins. TOML path is
 `$ARGUS_MCP_CONFIG`, else `$ARGUS_ROOT/tools/argus_mcp.toml`, else
