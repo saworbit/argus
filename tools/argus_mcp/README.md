@@ -1277,7 +1277,9 @@ tape's navigation receipt must confirm that the graph loaded.
 Completion requires finite engine game time within the task's `budget_sec`,
 including the exact boundary. Late finishes keep their raw `game_sec` but
 count as incomplete and do not enter successful-time medians. Wall-clock
-grace only bounds the harness wait.
+grace only bounds the harness wait. The engine completes the task when the
+bot enters the goal radius. The same outcome can occur before touchdown
+on a jump or drop. Record ground contact separately for a landing check.
 The command checks the suite argument and options before compilation.
 Compilation and installation happen by default. For a private trial, use a
 compatible lab-compiled program with its graph receipt. Set `ARGUS_GAME` to

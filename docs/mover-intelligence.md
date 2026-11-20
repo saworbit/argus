@@ -80,6 +80,23 @@ Source hashes retain the original native output bytes. Git normalises the
 experimental QC sources to LF; graph JSON and raw tape identities are
 preserved unchanged. A source line-ending change is not a new engine trial.
 
+### Stock-map follow-up
+
+On e1m3, the current graph still lacks an ungated route from each of the
+eight spawns to the super shotgun and rockets on the shelf. A private
+native-typed generation stayed within 597 of 600 edicts and raised the
+strict gate count from 17 to 223. Keep both maps experimental until their
+spawn, pickup and engine link checks pass.
+[E1m3 pickup coverage](https://github.com/saworbit/argus/issues/623)
+
+On e1m4, a private split swim from `(521 793 344)` towards
+`(305 721 728)` reached dry world support in all three 100 ms trials
+after compensating for the engine's larger gravity step during submerged
+ascent. Each run took 4.8 seconds. All three slow controls timed out. At
+played cadence both arms finished in 5.2 to 5.4 seconds. The exact private
+graph still had 45 directed pickup gaps, three distance failures and no
+mill verdict. [E1m4 swim trial](https://github.com/saworbit/argus/issues/624#issuecomment-7051560958)
+
 ## A real platform fault, an insufficient runtime fix
 
 On e1m6, the high-reach hotspot at platform `*72` is a local execution

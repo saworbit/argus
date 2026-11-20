@@ -868,6 +868,17 @@ tasks took 4.0 and 9.9 seconds. Two 55-second ordinary match pairs passed
 the native gates for that duration. Every match recorded zero freezes
 and lava deaths. [Jump anchors](https://github.com/saworbit/argus/issues/719)
 
+The anchor audit now passes on e1m5 and lqdm2. It still flags dm3 n73 to
+n86 and e1m6 n167 to n160. The tested dm3 detour timed out on the full
+route at both cadences. The e1m6 terminal cut raised stalls from 19 to
+26 and from 8 to 18 in two matched 120-second played pairs. Both
+remaining candidates stayed local.
+
+The configured e1m5 and lqdm2 bands predate these two jump retirements.
+Check `python tools/argus_lab.py stale` before using them to judge the new
+graphs. [Baseline provenance](lab-spine.md#stale) and
+[band refresh](https://github.com/saworbit/argus/issues/1036).
+
 ## Limits
 
 - Two maps laddered, five pairs each. dm4 is the best-instrumented map in the
