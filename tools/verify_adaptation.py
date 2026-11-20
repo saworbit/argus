@@ -15,7 +15,11 @@ from run_behaviour_equivalence import ROOT, Lab, finish_lab, lab_executable
 
 COMMON = {'real_pickup_is_audible', 'pickup_has_no_weapon_class',
           'one_shell_sounds_like_single_shotgun', 'one_nail_sounds_like_single_nailgun',
-          'near_fresh_shot_can_round_corner', 'old_shot_does_not_draw_corner_detour'}
+          'near_fresh_shot_can_round_corner', 'old_shot_does_not_draw_corner_detour',
+          'loaded_nailgun_fires_below_splash_band', 'splash_crossing_cancels_outgoing_nail_chain',
+          'loaded_switches_follow_repeated_splash_crossings', 'nail_depletion_selects_a_firing_shotgun',
+          'grenade_launcher_fires_when_rockets_are_unavailable', 'expired_beam_releases_to_loaded_rockets',
+          'water_entry_cancels_lightning_and_fires_safe_fallback'}
 REQUIRED = {
     'dm2': COMMON | {'keeps_pickup_commitment', 'expired_pickup_cools_and_replans'},
     'dm6': COMMON | {'two_live_portals_and_graph_search', 'both_warps_leave_active_search_unchanged',
