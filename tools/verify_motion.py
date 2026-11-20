@@ -25,7 +25,11 @@ def stage(root, output, source=None, *, contracts=False):
     fixtures={}
     wrap=None
     if contracts:
-        fixtures={'motion_observer_fixture.qc':(root/'tools/fixtures/motion_observer.qc').read_text(encoding='utf-8')}
+        fixture = (root/'tools/fixtures/motion_observer.qc').read_text(encoding='utf-8')
+        combat = (Path(source or root/'src')/'argus.qc').read_text(encoding='utf-8')
+        if 'Argus_CombatHazardHeading =' in combat:
+            fixture = '#define COMBAT_HAZARD_CONTRACTS\n' + fixture
+        fixtures = {'motion_observer_fixture.qc': fixture}
         wrap='MotionObserverFixture ();\n    Argus_FrameAll ();'
     return stage_fixture(root,output,source,fixtures=fixtures,frame_wrap=wrap)
 
