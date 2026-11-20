@@ -427,14 +427,11 @@ cannot settle.
 
 ## Development status
 
-The supplied `game/argus/progs.dat` is built from main as of 2026-11-15
-(build `004b4ff9ddf7`, MD5 `5FD814CC448AF8FBA7BFB16CD29062BC`). It contains
-all of the behaviour work below. The [changelog](CHANGELOG.md) records each
-change and its build.
-
-The dm3 red armour route has been restored in development source and awaits
-a new gameplay binary. The [dm3 study](docs/navmesh-experiment.md#turning-late-after-775-904)
-records the fixed-seed and played-rate results.
+The supplied `game/argus/progs.dat` was built from main on 2026-11-15
+(build `004b4ff9ddf7`, MD5 `5FD814CC448AF8FBA7BFB16CD29062BC`).
+Development source includes the restored dm3 red armour route, the checked
+combat escape, and the tested jump retirements on e1m5 and lqdm2. These changes
+await a new gameplay binary. [Changelog](CHANGELOG.md#unreleased)
 
 | Area | What the bot does | Details |
 |---|---|---|

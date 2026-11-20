@@ -161,6 +161,13 @@ For exact baselines, primary metrics and repeated-run statistics, use the
 
 ### Focused checks without deployment
 
+For a change to `src/argus.qc`, use the
+[production source manifest procedure](../CONTRIBUTING.md#core-engineering-rules--gotchas)
+before submitting the patch. The build stamp ignores comments and layout.
+The perception fixture checks the entire source and reverses each amendment
+to recover its frozen inputs. Run `python -O tools/test_perception_health.py`
+locally after amending the manifest.
+
 For observation, historical-source reconstruction, combat, button, door,
 plan and entry contracts,
 these **terminal commands** do not launch an engine:
@@ -601,7 +608,9 @@ After a navigation change, run the lab experiment/matrix loop.
    and use a native benchmark with fixed starts and goals for the whole
    route. Follow the [benchmark setup](../tools/argus_mcp/README.md#fixed-navigation-benchmark)
    and check `verified_start` for each task. The route can fail even when its
-   individual links pass.
+   individual links pass. For a route that ends in a drop or jump, record
+   dry ground contact separately when the acceptance check requires a
+   landing. Entering the target radius can complete a task in midair.
 3. Before recording, pin the actual control and candidate programs, graph
    receipts, map, cadence, pair count and acceptance conditions. Run both
    builds at the same played cadence in private game and run directories.
