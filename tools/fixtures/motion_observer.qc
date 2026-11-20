@@ -39,5 +39,25 @@ void() MotionObserverFixture =
     MotionObserverCheck ("trace_preserved", trace_fraction == fraction && trace_endpos == endpoint);
     dprint ("MOCHECK end checks "); dprint (ftos (mo_checks));
     dprint (" failures "); dprint (ftos (mo_failures)); dprint ("\n");
+#ifdef COMBAT_HAZARD_CONTRACTS
+    // Already in lava allows every escape. A position above the map
+    // makes the same old heading fail both floor probes.
+    self.ar_feettype = CONTENT_LAVA;
+    self.ar_combathazvalid = 1;
+    self.ar_combathazyaw = 90;
+    self.ar_combathaztime = time + 0.25;
+    if (Argus_CombatHazardHeading (270) != 90) error ("combat hazard lost a checked heading");
+    if (Argus_CombatHazardHeading (145) != 145) error ("combat hazard blocked a small turn");
+    self.ar_dodgetime = time + 0.1;
+    if (Argus_CombatHazardHeading (270) != 270) error ("combat hazard overrode a dodge");
+    self.ar_dodgetime = 0;
+    self.ar_combathaztime = time;
+    if (Argus_CombatHazardHeading (270) != 270) error ("combat hazard held past commitment");
+    self.ar_combathaztime = time + 0.25;
+    self.ar_feettype = CONTENT_EMPTY;
+    setorigin (self, '0 0 8192');
+    if (Argus_CombatHazardHeading (270) != 270) error ("combat hazard kept a refused heading");
+    dprint ("MOHAZ passed\n");
+#endif
     argus_motion_diag = enabled; remove (actor); self = saved;
 };

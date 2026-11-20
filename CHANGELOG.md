@@ -911,6 +911,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Commit a combat strafe side after selecting its checked escape heading ([#754](https://github.com/saworbit/argus/issues/754)).
+
 - Retire the e1m5 jump into a solid landing and preserve the playable routes ([#719](https://github.com/saworbit/argus/issues/719)).
 
 - Retire the lqdm2 jump that exceeds its launch anchor and keep the verified three-walk bypass ([#719](https://github.com/saworbit/argus/issues/719)).
