@@ -150,18 +150,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn damaged_bookmarks_leave_other_identity_rows_readable() {
-        let lines: Vec<String> =
-            serde_json::from_str(include_str!("../testdata/tape_invalid_marks.json")).unwrap();
-        let identity = inspect(&lines.join("\n"));
-        assert_eq!(identity.build.as_deref(), Some("4a6980c09cea"));
-        assert_eq!(identity.clock.unwrap().seed, 7);
-        assert_eq!(identity.marks.len(), 1);
-        assert_eq!(identity.marks[0].n, 9);
-        assert_eq!(identity.marks[0].t, 6.25);
-    }
-
-    #[test]
     fn reads_build_clock_and_marks() {
         let text = "ARGUS init on dm4\nARGUS build 4a6980c09cea\n\
             ARGUS clock frame_us 13900 tick_us 1000 seed 7\n\
@@ -204,5 +192,17 @@ mod tests {
         assert!(id.marks.is_empty());
         assert_eq!(id.build.as_deref(), Some("aaaaaa000000"));
         assert_eq!(id.other_builds, vec!["bbbbbb111111".to_string()]);
+    }
+
+    #[test]
+    fn damaged_bookmarks_leave_other_identity_rows_readable() {
+        let lines: Vec<String> =
+            serde_json::from_str(include_str!("../testdata/tape_invalid_marks.json")).unwrap();
+        let identity = inspect(&lines.join("\n"));
+        assert_eq!(identity.build.as_deref(), Some("4a6980c09cea"));
+        assert_eq!(identity.clock.unwrap().seed, 7);
+        assert_eq!(identity.marks.len(), 1);
+        assert_eq!(identity.marks[0].n, 9);
+        assert_eq!(identity.marks[0].t, 6.25);
     }
 }
