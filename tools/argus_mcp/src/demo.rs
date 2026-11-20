@@ -345,6 +345,14 @@ pub struct Demo {
     pub brief: DemoBrief,
     pub tracks: Vec<Track>,
     pub pov: PovAim,
+    pub(crate) map_starts: Vec<Option<String>>,
+    pub(crate) visible_players: BTreeMap<u16, Vec<VisiblePlayer>>,
+}
+
+pub(crate) struct VisiblePlayer {
+    pub(crate) block: usize,
+    pub(crate) time: f64,
+    pub(crate) pos: [f32; 3],
 }
 
 pub fn resolve_demo(cfg: &Config, name: &str) -> Result<PathBuf, String> {
@@ -374,6 +382,14 @@ pub fn read_demo(path: &PathBuf) -> Result<Demo, String> {
 /// can come from outside the repository, so malformed input must return an
 /// error or a truncated brief, never panic or spin (#849 fuzzes this).
 pub fn parse_demo(file: &str, data: &[u8]) -> Result<Demo, String> {
+    parse_demo_inner(file, data, false)
+}
+
+pub(crate) fn parse_demo_with_players(file: &str, data: &[u8]) -> Result<Demo, String> {
+    parse_demo_inner(file, data, true)
+}
+
+fn parse_demo_inner(file: &str, data: &[u8], record_players: bool) -> Result<Demo, String> {
     // header: cd-track line terminated by \n
     let hdr_end = data
         .iter()
@@ -385,6 +401,8 @@ pub fn parse_demo(file: &str, data: &[u8]) -> Result<Demo, String> {
     let mut protocol = 0i32;
     let mut level = String::new();
     let mut maxclients = 0u8;
+    let mut map_starts = Vec::new();
+    let mut visible_players: BTreeMap<u16, Vec<VisiblePlayer>> = BTreeMap::new();
     let mut models: Vec<String> = Vec::new();
     let mut names: BTreeMap<u8, String> = BTreeMap::new();
     let mut prints: Vec<(f64, String)> = Vec::new();
@@ -507,6 +525,19 @@ pub fn parse_demo(file: &str, data: &[u8]) -> Result<Demo, String> {
                     if skin > 0 {
                         st.player_skin = skin;
                     }
+                    if record_players {
+                        let series = visible_players.entry(ent).or_default();
+                        let sample = VisiblePlayer {
+                            block: blocks,
+                            time: cur_time,
+                            pos,
+                        };
+                        if let Some(last) = series.last_mut().filter(|last| last.block == blocks) {
+                            *last = sample;
+                        } else {
+                            series.push(sample);
+                        }
+                    }
                 } else if (Some(model) == missile_m || Some(model) == grenade_m) && model != 0 {
                     st.was_projectile = true;
                 }
@@ -593,6 +624,14 @@ pub fn parse_demo(file: &str, data: &[u8]) -> Result<Demo, String> {
                             break;
                         }
                         models.push(m);
+                    }
+                    if record_players {
+                        map_starts.push(models.first().and_then(|world| {
+                            world
+                                .strip_prefix("maps/")?
+                                .strip_suffix(".bsp")
+                                .map(str::to_owned)
+                        }));
                     }
                     loop {
                         let s = need!(r.string());
@@ -888,7 +927,13 @@ pub fn parse_demo(file: &str, data: &[u8]) -> Result<Demo, String> {
             .collect(),
         notes,
     };
-    Ok(Demo { brief, tracks, pov })
+    Ok(Demo {
+        brief,
+        tracks,
+        pov,
+        map_starts,
+        visible_players,
+    })
 }
 
 /// Angular-rate statistics over a yaw series. Rates are per adjacent
