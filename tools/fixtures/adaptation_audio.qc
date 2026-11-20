@@ -1,5 +1,7 @@
 // Stock-map witnesses retained from the hearing and portal study.
 float af_done;
+void() player_nail2;
+void() player_light2;
 
 void(string name, float ok) AfCheck =
 {
@@ -34,6 +36,84 @@ void(float held) AfEquip =
     self.watertype = CONTENT_EMPTY;
     self.v_angle = '0 90 0';
     W_SetCurrentAmmo ();
+};
+
+void() AfLoadedSwitches =
+{
+    local float i, crossed, cells;
+    local vector dry;
+
+    AfEquip (IT_SHOTGUN);
+    self.items = self.items | IT_ROCKET_LAUNCHER | IT_GRENADE_LAUNCHER;
+    self.ammo_rockets = 8;
+    self.ammo_cells = 0;
+    Argus_SelectWeapon (229, 180);
+    self.button0 = 1;
+    W_Attack ();
+    AfCheck ("loaded_nailgun_fires_below_splash_band", self.weapon == IT_SUPER_NAILGUN
+             && self.ammo_nails == 8 && self.think == player_nail2);
+    self.ar_fireweapon = IT_SUPER_NAILGUN;
+    self.ar_fireburst = time + 1;
+    Argus_SelectWeapon (231, 180);
+    AfCheck ("splash_crossing_cancels_outgoing_nail_chain", self.weapon == IT_ROCKET_LAUNCHER
+             && self.think != player_nail2 && !self.ar_fireweapon && !self.ar_fireburst && !self.button0);
+
+    crossed = 1;
+    i = 0;
+    while (i < 3)
+    {
+        Argus_SelectWeapon (229, 180);
+        if (self.weapon != IT_SUPER_NAILGUN) crossed = 0;
+        Argus_SelectWeapon (231, 180);
+        if (self.weapon != IT_ROCKET_LAUNCHER) crossed = 0;
+        i = i + 1;
+    }
+    AfCheck ("loaded_switches_follow_repeated_splash_crossings", crossed);
+
+    self.ammo_nails = 1;
+    Argus_SelectWeapon (229, 180);
+    W_Attack ();
+    AfCheck ("nail_depletion_selects_a_firing_shotgun", self.weapon == IT_SUPER_SHOTGUN
+             && self.ammo_shells == 8 && self.ammo_nails == 1);
+    self.items = self.items - (self.items & IT_ROCKET_LAUNCHER);
+    Argus_SelectWeapon (231, 180);
+    W_Attack ();
+    AfCheck ("grenade_launcher_fires_when_rockets_are_unavailable", self.weapon == IT_GRENADE_LAUNCHER
+             && self.ammo_rockets == 7);
+
+    self.items = self.items | IT_ROCKET_LAUNCHER;
+    self.ammo_cells = 4;
+    Argus_SelectWeapon (479, 180);
+    self.button0 = 1;
+    W_Attack ();
+    self.ar_fireweapon = IT_LIGHTNING;
+    self.ar_fireburst = time - 0.05;
+    Argus_SelectWeapon (490, 180);
+    AfCheck ("expired_beam_releases_to_loaded_rockets", self.weapon == IT_ROCKET_LAUNCHER
+             && self.ammo_cells == 3 && self.think != player_light2 && !self.ar_fireweapon);
+
+    Argus_SelectWeapon (200, 180);
+    self.button0 = 1;
+    W_Attack ();
+    self.ar_fireweapon = IT_LIGHTNING;
+    self.ar_fireburst = time + 1;
+    cells = self.ammo_cells;
+    dry = self.origin;
+    setsize (self, '-16 -16 -24', '16 16 32');
+    if (mapname == "dm2") setorigin (self, '1297 -1063 33');
+    else setorigin (self, '433 -1087 -239');
+    self.watertype = pointcontents (self.origin);
+    self.ar_wetlevel = Argus_Waterlevel ();
+    self.waterlevel = self.ar_wetlevel;
+    Argus_SelectWeapon (200, 180);
+    W_Attack ();
+    AfCheck ("water_entry_cancels_lightning_and_fires_safe_fallback", self.ar_wetlevel > 1
+             && self.weapon == IT_SUPER_SHOTGUN && self.ammo_shells == 6
+             && self.ammo_cells == cells && self.think != player_light2 && !self.ar_fireweapon);
+    setorigin (self, dry);
+    self.watertype = CONTENT_EMPTY;
+    self.ar_wetlevel = 0;
+    self.waterlevel = 0;
 };
 
 void(vector position, float weaponbit, float age) AfMemory =
@@ -162,6 +242,7 @@ void() AfFixture =
     listener.ar_sndtime = previous;
     self.think ();
     AfCheck ("lightning_cue_respects_sound_clock", listener.ar_sndtime == previous);
+    AfLoadedSwitches ();
     self = listener;
     Argus_BaseStats ();
     AfCheck ("a_new_life_discards_hearing", !self.ar_sndtime && !self.ar_sndweap
