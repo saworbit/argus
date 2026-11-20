@@ -1251,12 +1251,14 @@ reviewed deliberately. Reports preserve individual results and summarize
 completion rate plus median game time for all, train, and held-out tasks.
 The tape must confirm exactly one start on the manifest map. A refused
 spawn or level change fails the benchmark and keeps its raw tape.
+The installed program's build receipt must match the pin, and the retained
+tape's navigation receipt must confirm that the graph loaded.
 Completion requires finite engine game time within the task's `budget_sec`,
 including the exact boundary. Late finishes keep their raw `game_sec` but
 count as incomplete and do not enter successful-time medians. Wall-clock
 grace only bounds the harness wait.
-Compilation and installation happen by default; `--no-compile` deliberately
-measures the currently installed build.
+Compilation and installation happen by default. `--no-compile` uses the
+currently installed build and its lab receipt.
 
 Each step is confirmed in the server log before the next one runs. Every
 console line ends with an `echo ARGUS_BENCH_ACK <n>` marker and is resent
