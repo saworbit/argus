@@ -6,6 +6,7 @@ Current cases and centred/grounded controls must pass. The old_handoff
 airborne-offset case 3 must fail with a valid physical receipt.
 """
 
+from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity
 import argparse
 import hashlib
@@ -33,7 +34,7 @@ def audit_fixture(source):
 def check(text, case):
     import math
     import re
-    assert 'BHVRPL begin offset_entry' in text and 'Host_Error' not in text
+    assert 'BHVRPL begin offset_entry' in text and fatal_engine_line(text) is None
     lines = [s for s in text.splitlines() if s.startswith('OFFIX ')]
     assert len(lines)>=5, 'incomplete physical receipt'
     assert re.fullmatch(r"OFFIX begin case " + str(case) + r" start '[^']+' solid 0", lines[0])

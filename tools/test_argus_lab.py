@@ -1207,6 +1207,20 @@ def stamped(build='aaaaaa000001', frame=0, seed=0, body=''):
 class TestTapeIdentity(unittest.TestCase):
     """The build stamp (#823), the fixed lab clock and session marks."""
 
+    def test_identity_matches_the_shared_cases(self):
+        def omit_absent(value):
+            if isinstance(value, dict):
+                return {k: omit_absent(v) for k, v in value.items() if v is not None and v != []}
+            if isinstance(value, (list, tuple)):
+                return [omit_absent(v) for v in value]
+            return value
+
+        path = REPO / 'tools/argus_mcp/testdata/tape_identity_cases.json'
+        for case in json.loads(path.read_text(encoding='utf-8')):
+            with self.subTest(case=case['name']):
+                identity = argus_lab.argus_tape.identity('\r\n'.join(case['lines']))
+                self.assertEqual(omit_absent(identity), case['expected'])
+
     def run_skeptic(self, fx, a, b, **kw):
         with no_lab_binary():
             return argus_lab.skeptic(fx.root, a, b, **kw)

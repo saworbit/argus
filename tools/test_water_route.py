@@ -42,7 +42,7 @@ class WaterRouteContracts(unittest.TestCase):
                     good.replace('dt_ms 14','dt_ms 100'),
                     good.replace('start \'-279 425 8\'','start \'0 0 0\''),
                     good+'\nWRFIX unknown 1', good.replace('hp 100','hp 99'),
-                    good.replace('active 1','active 0'), good+'\nProgram error'):
+                    good.replace('active 1','active 0'), good+'\nHost_Error: Program error'):
             with self.subTest(bad=bad):
                 with self.assertRaises(AssertionError): inspect_fixture(bad,'e1m5',.0139)
 

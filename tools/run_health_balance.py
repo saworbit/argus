@@ -3,6 +3,7 @@
 Eight counterbalanced pairs per map; not a powered gameplay equivalence test.
 """
 
+from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity as source_digest
 
 from run_behaviour_equivalence import lab_executable, lab_cli
@@ -95,7 +96,8 @@ def main():
                             brief = lab.call('brief_run', log=name, map=map_name)
                             path = ROOT / f'runs/{name}.log'; text = path.read_text(errors='replace')
                             (OUT / f'{name}.attempt.json').write_text(json.dumps(dict(name=name,map=map_name,mode=mode,repeat=repeat,identity=before,start=start,stop=stop,brief=brief,raw_sha256=digest(path)),indent=2))
-                            assert not any(tag in text for tag in ('BHVFIX ', 'PERFIX ', 'HIFIX ', 'BHVRPL ', 'BHVDBG ', 'TACFIX begin', 'Host_Error', 'Program error'))
+                            assert fatal_engine_line(text) is None
+                            assert not any(tag in text for tag in ('BHVFIX ', 'PERFIX ', 'HIFIX ', 'BHVRPL ', 'BHVDBG ', 'TACFIX begin'))
                             assert not any('WRONG MAP' in flag or 'CONTROLLED FIXTURE' in flag for flag in brief['flags'])
                             assert brief['map'] == map_name and brief['totals']['tick_class'] == 'listen'
                             assert identity(map_name) == before

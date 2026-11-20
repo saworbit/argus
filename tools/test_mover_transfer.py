@@ -119,7 +119,7 @@ class TransferReceipts(unittest.TestCase):
         good = receipt()
         for text in (good + good, good.replace('MVFIX result', 'missing'),
                      good.replace('begin dt_ms', 'missing'), good.replace('on e1m6', 'on dm3'),
-                     good + 'Program error\n', receipt(100)):
+                     good + 'QUAKE ERROR: disk full\n', receipt(100)):
             with self.subTest(text=text):
                 with self.assertRaises(AssertionError):
                     inspect_fixture(text, 'e1m6', .0139)

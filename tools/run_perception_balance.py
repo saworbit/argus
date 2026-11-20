@@ -3,6 +3,7 @@
 Three counterbalanced pairs per map; not a powered gameplay equivalence test.
 """
 
+from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity as source_digest
 
 from run_behaviour_equivalence import lab_executable, lab_cli
@@ -86,7 +87,8 @@ def main():
                             stop = lab.call('match_stop'); active = False
                             brief = lab.call('brief_run', log=name, map=map_name)
                             path = ROOT / f'runs/{name}.log'; text = path.read_text(errors='replace')
-                            assert not any(tag in text for tag in ('BHVFIX ', 'PERFIX ', 'BHVRPL ', 'Host_Error'))
+                            assert fatal_engine_line(text) is None
+                            assert not any(tag in text for tag in ('BHVFIX ', 'PERFIX ', 'BHVRPL '))
                             assert not any('WRONG MAP' in flag or 'CONTROLLED FIXTURE' in flag for flag in brief['flags'])
                             assert identity(map_name) == before
                             assert 58 <= brief['totals']['duration_sec'] <= 64

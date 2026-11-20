@@ -216,6 +216,8 @@ physical outcomes.
 The repo invariant job also blocks on `python tools/argus_ci.py all`.
 Water-route proofs, private fixture staging and study compatibility checks use
 explicit validation that stays active under `python -O` and `PYTHONOPTIMIZE`.
+The active Python checkers and the native lab share the same fatal console
+prefixes. Registered cohort scripts retain the checks pinned in their protocols.
 These checks retain their `AssertionError` contract. Runner teardown always
 closes the lab, skips another request while a failure is unwinding, and bounds
 a healthy stop request to two seconds before closing the process.
@@ -274,6 +276,9 @@ existing output directories:
 python tools/verify_private_fixtures.py --help
 python tools/verify_private_fixtures.py muzzle --output backups/muzzle-check-1 --prefix muzzle_check_1
 ```
+
+If the lab build is stale, the verifier prints the server's warning and
+stops before starting the fixture.
 
 Choose a fresh directory and prefix for every invocation. Replace `muzzle`
 with one of these fixture names:

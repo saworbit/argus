@@ -12,6 +12,7 @@ No historical snapshots, cohorts or deployment. Health checks do not resolve
 the outstanding dm4 gameplay warning in #583.
 """
 
+from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity
 from argus_validation import require
 import argparse
@@ -32,6 +33,24 @@ from check_perception_fixture import check as check_perception
 from run_behaviour_equivalence import Lab, ROOT, lab_executable, lab_cli
 from run_health_fixture import prepare as prepare_health, audit_private
 from verify_plan_progress import copy_assets, save, sha
+
+
+def require_current_lab(data):
+    identity = data.get('lab_identity') or {}
+    if not identity.get('authoritative'):
+        raise ValueError(identity.get('warning') or 'matching source-built native lab required')
+
+
+class PrivateFixtureLab(Lab):
+    """Reuse the study transport and surface the current lab identity warning."""
+
+    def call(self, tool, **arguments):
+        response = self.request('tools/call', dict(name=tool, arguments=arguments))
+        result = response.get('result', {})
+        require(not response.get('error') and not result.get('isError'), response)
+        data = json.loads(result['content'][0]['text'])
+        require_current_lab(data)
+        return data
 
 
 def tree_identity(folder):
@@ -186,8 +205,7 @@ def native_config(lab_factory, output, executable):
         lab = lab_factory(err, {'TOKIO_WORKER_THREADS': '2'}, exe=executable)
         try:
             project = lab.call('see', what='project')
-            if not project.get('lab_identity', {}).get('authoritative'):
-                raise ValueError('matching source-built native lab required')
+            require_current_lab(project)
             config = lab.call('config_check')
             if not config['complete']:
                 raise ValueError('native lab configuration is incomplete')
@@ -238,7 +256,7 @@ def health_trial(lab, stem, map_name, env, client_run):
         lab.call('match_stop')
 
 
-def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=None):
+def run(fixture, output, prefix, *, root=ROOT, lab_factory=PrivateFixtureLab, client_run=None):
     if fixture not in {'muzzle', 'health', 'combat', 'button', 'door'}:
         raise ValueError('unknown fixture')
     executable = lab_executable(root=root)
@@ -346,7 +364,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=None)
                                     raise RuntimeError('private engine experiment failed')
                             text = tape.read_text(errors='replace')
                             row['tape_sha256'] = sha(tape)
-                            if any(s in text for s in ('Host_Error', 'Program error', 'runaway loop', "Couldn't spawn server")):
+                            if fatal_engine_line(text) is not None or "Couldn't spawn server" in text:
                                 raise RuntimeError('engine failure in retained tape')
                             if fixture == 'health':
                                 row['perception'] = check_perception(text, map_name, 0, [1])
