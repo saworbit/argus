@@ -428,9 +428,19 @@ impl MatchCtrl {
     }
 
     pub async fn stop(&mut self, timeout: Duration) -> Result<MatchStatus, String> {
+        self.stop_with_exit(timeout).await.map(|(status, _)| status)
+    }
+
+    /// Return the engine's exit code if it exited without a forced kill.
+    pub(crate) async fn stop_with_exit(
+        &mut self,
+        timeout: Duration,
+    ) -> Result<(MatchStatus, Option<i32>), String> {
         if self.live.is_none() {
-            return Ok(self.status());
+            let status = self.status();
+            return Ok((status, None));
         }
+        let mut exit = None;
         clear_live();
         if let Some(live) = self.live.as_mut() {
             if live.child.has_stdin() {
@@ -442,6 +452,7 @@ impl MatchCtrl {
             match live.child.try_wait() {
                 Ok(Some(code)) => {
                     live.last_exit = Some(code);
+                    exit = Some(code);
                     break;
                 }
                 Ok(None) if Instant::now() >= deadline => {
@@ -470,7 +481,7 @@ impl MatchCtrl {
                 Err(e) => return Err(e),
             }
         }
-        Ok(self.status())
+        Ok((self.status(), exit))
     }
 
     pub async fn stop_matching(

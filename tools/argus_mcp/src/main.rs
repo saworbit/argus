@@ -374,17 +374,29 @@ async fn run() -> anyhow::Result<()> {
         Some("benchmark") => {
             let mut rest: Vec<String> = args.collect();
             let port = take_port(&mut rest)?;
-            if rest.is_empty()
-                || rest
-                    .iter()
-                    .any(|a| a == "-h" || a == "--help" || a == "help")
+            if rest
+                .iter()
+                .any(|a| a == "-h" || a == "--help" || a == "help")
             {
                 println!("usage: argus-mcp benchmark <suite.json> [limit] [--no-compile] [--port N]\n\nRun fixed navigation tasks with a real Argus bot. The suite pins its navigation graph and keeps train and held-out scores separate.");
                 return Ok(());
             }
-            let no_compile = rest.iter().any(|a| a == "--no-compile");
-            let mut pos = rest.iter().filter(|a| !a.starts_with("--"));
-            let suite_path = std::path::PathBuf::from(pos.next().expect("checked above"));
+            let mut no_compile = false;
+            let mut positional = Vec::new();
+            for arg in &rest {
+                match arg.as_str() {
+                    "--no-compile" => no_compile = true,
+                    flag if flag.starts_with('-') => {
+                        anyhow::bail!("unknown benchmark option: {flag}")
+                    }
+                    value => positional.push(value),
+                }
+            }
+            let mut pos = positional.into_iter();
+            let suite_path = std::path::PathBuf::from(
+                pos.next()
+                    .ok_or_else(|| anyhow::anyhow!("benchmark requires a suite path"))?,
+            );
             let limit = pos
                 .next()
                 .map(|value| {
@@ -393,6 +405,9 @@ async fn run() -> anyhow::Result<()> {
                         .map_err(|_| anyhow::anyhow!("benchmark limit must be an integer"))
                 })
                 .transpose()?;
+            if limit == Some(0) {
+                anyhow::bail!("benchmark limit must be at least 1");
+            }
             if pos.next().is_some() {
                 return Err(anyhow::anyhow!(
                     "usage: argus-mcp benchmark <suite.json> [limit] [--no-compile] [--port N]"
@@ -671,9 +686,11 @@ tape can be replayed with `argus-mcp match <map> <secs> <run> --seed <seed>`.
                 .any(|a| a == "-h" || a == "--help" || a == "help")
                 || rest.is_empty()
             {
+                use argus_mcp::match_ctrl::{DURATION_MAX, DURATION_MIN};
                 println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--port N] [--coop] [--seed N]
 
 Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.
+The accepted duration is {DURATION_MIN}..={DURATION_MAX} seconds.
 
 --seed N (1..2000) runs the fixed lab clock: the lab's 14.25 ms frame, faster than
 real time, ending at duration_sec of game time, and the same match every time for

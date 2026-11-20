@@ -14,6 +14,7 @@ use crate::config::Config;
 use crate::match_ctrl::MatchCtrl;
 use crate::nav_provenance::{self, MapSnapshot};
 use crate::netclient::NetClient;
+use crate::pov_trigger::LogSource;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct TaskSuite {
@@ -542,15 +543,40 @@ pub async fn run_suite_with_ctrl(
     .await
     .map_err(|e| format!("engine start: {e}"))?;
     let result = run_connected(ctrl, suite, tasks).await;
-    // The live log belongs to this run even if harvest preserves an older
-    // tape with the same name. Stop still owns cleanup and raw tape harvest.
-    let text = ctrl.log_text().unwrap_or_default();
-    let stopped = ctrl.stop(Duration::from_secs(3)).await;
-    let log_path = stopped?.log_path.ok_or("benchmark retained no tape path")?;
+    // Keep this run's console source. Harvest can preserve an older tape
+    // with the same name when the current run has no gameplay samples.
+    let source = ctrl.live_log_source();
+    let (stopped, exit) = ctrl.stop_with_exit(Duration::from_secs(3)).await?;
+    let log_path = stopped.log_path.ok_or("benchmark retained no tape path")?;
+    let text = match source {
+        Some(LogSource::File(path)) => crate::paths::read_engine_text(path).ok(),
+        Some(LogSource::Buffer(stdout)) => stdout.lock().ok().map(|text| text.clone()),
+        None => None,
+    }
+    .ok_or_else(|| format!("benchmark could not read its final console. Tape at {log_path}"))?;
+    finish_report(result, exit, &text, &log_path, &suite.map, program)
+}
+
+fn finish_report(
+    result: Result<BenchmarkReport, String>,
+    exit: Option<i32>,
+    text: &str,
+    log_path: &str,
+    map: &str,
+    program: MapSnapshot,
+) -> Result<BenchmarkReport, String> {
+    if let Some(reason) = crate::diagnose::fatal_engine_error(text) {
+        return Err(format!("{reason}. Tape at {log_path}"));
+    }
+    if let Some(code) = exit.filter(|&code| code != 0) {
+        return Err(format!(
+            "benchmark engine exited with code {code}. Tape at {log_path}"
+        ));
+    }
     let result = result.map_err(|reason| format!("{reason}. Tape at {log_path}"))?;
-    verify_recorded_map(&text, &suite.map)
+    verify_recorded_map(text, map)
         .map_err(|reason| format!("WRONG MAP: {reason}. Tape at {log_path}"))?;
-    verify_recorded_graph(Path::new(&log_path), &suite.map, &text, program)
+    verify_recorded_graph(Path::new(log_path), map, text, program)
         .map_err(|reason| format!("BENCHMARK GRAPH: {reason}. Tape at {log_path}"))?;
     Ok(result)
 }
@@ -668,6 +694,48 @@ mod tests {
         let mut other_program = snapshot;
         other_program.program_md5 = "other program".into();
         assert!(verify_recorded_graph(&path, "dm4", loaded, other_program).is_err());
+    }
+
+    #[test]
+    fn benchmark_checks_the_final_tape_after_task_completion() {
+        let dir = crate::test_support::TestDir::new("benchmark-final-tape").unwrap();
+        let path = dir.path().join("benchmark.log");
+        let log_path = path.to_str().unwrap();
+        let snapshot = registered_graph();
+        let (completed, game_sec) = parse_task_print("ARGTASK 0 complete 0.0").unwrap();
+        let task = TaskResult {
+            name: "train_route".into(),
+            split: "train".into(),
+            verified_start: [0.0, 0.0, 24.0],
+            completed,
+            game_sec: Some(game_sec),
+            wall_sec: 1.0,
+        };
+        let tape =
+            "ARGNAV 1 nodes, 0 links\nARGUS init on dm4\nplayer: I saw Host_Error: Program error\n";
+        for fatal in [
+            None,
+            Some("Host_Error: Program error"),
+            Some("Sys_Error: no free memory"),
+            Some("QUAKE ERROR: disk full"),
+        ] {
+            let text = format!("{tape}{}\n", fatal.unwrap_or_default());
+            std::fs::write(&path, &text).unwrap();
+            nav_provenance::record_tape(&path, text.as_bytes(), Some(&snapshot)).unwrap();
+            let score = || Ok(report(&suite(), vec![task.clone()]));
+            let result = finish_report(score(), None, &text, log_path, "dm4", snapshot.clone());
+            if let Some(fatal) = fatal {
+                let error = result.unwrap_err();
+                assert!(error.contains(fatal) && error.contains(log_path));
+                assert_eq!(std::fs::read_to_string(&path).unwrap(), text);
+            } else {
+                assert!(result.is_ok());
+                let error =
+                    finish_report(score(), Some(2), &text, log_path, "dm4", snapshot.clone())
+                        .unwrap_err();
+                assert!(error.contains("exited with code 2"));
+            }
+        }
     }
 
     #[test]
