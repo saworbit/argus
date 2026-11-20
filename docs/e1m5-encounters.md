@@ -88,7 +88,8 @@ A thirty-second moat-to-rocket-launcher task failed in the west wing in
 several earlier candidates; another identical-source repeat reached the
 main-map target in 16.7 seconds. That route remains variable. The regenerated
 graph also fails an eighteen-second return-to-mega task despite making
-handoffs. Escaping the moat is not proof that every item route works.
+handoffs in that study. The [later moat return](#moat-return-to-the-mega)
+repairs the short route on the tested splice.
 
 The final comparison uses sixteen unchanged-source controls and sixteen
 fresh candidate matches: two sixty-second skill-2 repeats on dm3, dm6,
@@ -107,13 +108,29 @@ seconds at 100 ms, retaining the goal and health with no rocket launcher.
 The first, weaker airborne completion is retained separately. These are
 checkpoint witnesses, not an instrumented mega pickup count.
 
-The generator previously kept a rocket action ahead of a swim action on
-the same pair. Emission now preserves the weapon-free swim action. The
-shipped graph is unchanged: a fresh native regeneration refuses its
-104-unit legacy jump launch before publication (#719). No ordinary cohort
-or graph-adoption claim is made for this generator-only repair. The
-seventeen-slot allowance and broader encounter gates still apply to a
-future regenerated candidate (#636).
+## Moat return to the mega
+
+The generator's earlier swim preference could not update the shipped
+graph while full e1m5 generation refused the separate 104u launch in
+[#719](https://github.com/saworbit/argus/issues/719). The e1m5 seat
+sidecar now lets `--seat-links` replace the existing rocket link from
+`(-183 169 -32)` to `(-183 73 80)` with a swim in the same slot. The
+generator checks the submerged start, the body-sized bank path and the
+dry exit. The splice keeps every other link and seat and leaves all
+seventeen spare edicts available.
+
+The generated pair reached dry world support in 3.2 seconds at played
+cadence and 4.0 seconds at 100 ms. Both runs kept the task and current
+goal through three handoffs and finished with 200 health. The previous
+graph lost goal ownership and timed out at both cadences.
+
+Two matched 45-second pairs on e1m5 and dm3 passed the native bands.
+The first two e1m6 pairs fell outside the stall band even though that
+map's graph and gameplay source were identical. With two additional
+pairs, e1m6 passed the same bands. All sixteen tapes had zero freezes,
+and median lava deaths were zero in every arm.
+
+## Broader encounter baselines
 
 Each cell is the mean per sixty-second match, two repeats per arm.
 
