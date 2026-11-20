@@ -7,6 +7,7 @@ pub mod build_stamp;
 pub mod campaign;
 pub mod cartograph;
 pub(crate) mod child_process;
+pub mod classic_replay;
 pub mod compile;
 pub mod config;
 pub mod corpus;

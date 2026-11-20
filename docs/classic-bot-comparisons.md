@@ -2,6 +2,36 @@
 
 [Architecture](architecture.md) | [Lab workflow](lab-workflow.md)
 
+## Compare recorded movement
+
+Run `argus-mcp classic-replay suite.json` on protocol 15 demos recorded on the
+same map with matching engine, rules and observer setup. The command reads
+the demos offline and prints a JSON scorecard. Paths are relative to the
+manifest. Use `argus-mcp demo <stem>` to inspect player-model entity numbers
+and confirm the subject and opponent in playback. Set each bot's version
+and actual skill setting separately.
+
+```json
+{
+  "map": "dm4",
+  "engine": "QuakeSpasm 0.96.3, protocol 15",
+  "rules": "deathmatch 1, skill set per mod, two bots, 5 minute limit",
+  "perspective": "fixed observer at the same seat in both recordings",
+  "recordings": [
+    {"demo": "argus.dem", "bot": "Argus", "version": "build-id", "skill": "skill 1", "subject_entity": 12, "opponent_entity": 13},
+    {"demo": "reaper.dem", "bot": "Reaper", "version": "v0.5", "skill": "documented mod setting", "subject_entity": 9, "opponent_entity": 10}
+  ]
+}
+```
+
+Read each observation in the order of the manifest. The report includes the
+demo hash, recorded time, observed time, distance, sustained pauses and time
+both entities were recorded within 256 units. Compare observed exposure
+alongside each count. An entity can be absent from the demo while it is out
+of the recorder's visibility. Proximity measures co-observation, and combat
+or route claims still need their own evidence. Use the existing Argus gates
+for Argus match telemetry.
+
 ## Capabilities
 
 | Reference | Behaviour to compare | Argus status |

@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Compare recorded movement, pauses and proximity across protocol 15 bot demos without requiring Argus telemetry ([#998](https://github.com/saworbit/argus/issues/998)).
+
 - Show teleporter activation and emitted waypoint positions in map inspection ([#999](https://github.com/saworbit/argus/issues/999), [#1000](https://github.com/saworbit/argus/issues/1000)), and use the shared spawn defaults for malformed brush numbers ([#1014](https://github.com/saworbit/argus/issues/1014)).
 
 - Let bots use a short, safe waypoint detour when a corner blocks pursuit of a last sighting or investigation of a nearby shot.
