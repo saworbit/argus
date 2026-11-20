@@ -1581,7 +1581,6 @@ void() Argus_Nav_Spawn_lqdm2 =
     Argus_NavLink (n159, n156);
     Argus_NavLink (n159, n144);
     Argus_NavLink (n159, n134);
-    Argus_NavLinkJump (n159, n162, 110);    // approach 110, landing 128, arc 42
     Argus_NavLink (n160, n145);
     Argus_NavLink (n160, n161);
     Argus_NavLink (n160, n143);
@@ -1908,8 +1907,6 @@ void() Argus_Nav_Spawn_lqdm2 =
     Argus_NavRegion (n117, 1);
     Argus_NavRegion (n118, 1);
 
-
-
     // Static tactical annotations: exposure, hidden target, first walk hop
     Argus_NavTactics (n0, 20, n48, n21);
     Argus_NavTactics (n1, 55, n36, n10);
@@ -2126,6 +2123,7 @@ void() Argus_Nav_Spawn_lqdm2 =
     Argus_NavTactics (n212, 82, n180, n194);
     Argus_NavTactics (n213, 73, n38, n203);
     Argus_NavTactics (n214, 48, world, world);
+
     // Camera vantage nodes (Cartographer spectator anchors)
     Argus_AddCamNode ('-559 -591 216', '-15 12 0', "arena_1");
     Argus_AddCamNode ('-559 -335 -90', '-15 3 0', "arena_2");
@@ -2133,5 +2131,5 @@ void() Argus_Nav_Spawn_lqdm2 =
     Argus_AddCamNode ('-303 -559 -100', '-15 130 0', "arena_4");
     Argus_AddCamNode ('-271 -47 248', '-15 43 0', "arena_5");
     Argus_AddCamNode ('-239 209 280', '-15 -48 0', "arena_6");
-    dprint ("ARGNAV 215 nodes, 1471 links\n");
+    dprint ("ARGNAV 215 nodes, 1470 links\n");
 };
