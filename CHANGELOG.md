@@ -1663,6 +1663,8 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Record live lift and train timings against a six-second pickup respawn window ([#1006](https://github.com/saworbit/argus/issues/1006)).
+
 - Share fatal engine prefixes between the active Python fixture and study checkers and the native lab ([#1010](https://github.com/saworbit/argus/issues/1010)).
 
 - Check the Python and Rust build stamps and tape identity readers against shared cases ([#1013](https://github.com/saworbit/argus/issues/1013), [#1012](https://github.com/saworbit/argus/issues/1012)), and show the stale lab warning in the private fixture verifier ([#996](https://github.com/saworbit/argus/issues/996)).
