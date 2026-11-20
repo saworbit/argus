@@ -1395,6 +1395,20 @@ tool_timeout_sec = 700
             self.assertEqual(self.run_tool("argus_wishflips.py", str(empty)).returncode, 2)
             self.assertEqual(self.run_tool("argus_wishflips.py", str(tape), "--min-run", "x").returncode, 2)
 
+    def test_wishflips_splits_at_respawn_in_both_tick_classes(self):
+        from argus_wishflips import flip_runs
+
+        def row(ms, wish, cause="combat_hazard"):
+            return ms, 0.0, 0.0, 24.0, wish, cause, 2, 1
+
+        for step in (14, 100):
+            with self.subTest(step=step):
+                rows = [row(0, 174), row(step, 384), row(1500, 270, "spawn"), row(1500 + step, 97)]
+                self.assertEqual(flip_runs(rows), [])
+                rows.extend([row(1500 + 2 * step, 270), row(1500 + 3 * step, 97)])
+                runs = flip_runs(rows)
+                self.assertEqual([(run["t"], run["flips"]) for run in runs], [(1.5, 3)])
+
     def test_floorlinks_lists_walks_whose_own_line_crosses_a_void(self):
         """#905: a corner-cutting walk fails; level walks, typed and height links do not."""
         sys.path.insert(0, str(ROOT / "tools"))

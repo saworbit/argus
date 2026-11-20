@@ -364,6 +364,7 @@ Names the branch of the per-frame brink guard that deflected each routed bot, re
 
 ### 23. `argus_wishflips.py`
 Counts runs of per-frame wish flips in full-rate ARGMOT tapes (`scratch1 697`), the dithering the reversal measure cannot see ([#754](https://github.com/saworbit/argus/issues/754)).
+Each spawn starts a fresh wish history.
 - **Usage**:
   ```bash
   python tools/argus_wishflips.py runs/study_fxdm4_ctlm_s*.log
