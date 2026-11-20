@@ -783,6 +783,10 @@ so `see what=path name=dm4:quad->lg` can use the pad hop.
 `detail=full` adds every entity, every teleporter, and button-door
 causality (including one relay hop and `func_door_secret`). Atlases
 and nav graphs cache until the BSP or nav JSON mtime changes.
+The teleporter list includes `requires_activation` and the trigger's
+`activation_name` when present. A node lookup reports the sampled JSON
+`origin` and the `emitted_origin` when the matching generated QuakeC node
+is available.
 
 `lab_status` lists maps with bsp / nav / dispatcher flags and a
 recipe string. It does not ingest every BSP (that was 0.11). Use
@@ -914,6 +918,9 @@ HARVEST BEFORE STARTING ANYTHING NEW.
 
 `argus-mcp demo <stem>[:export]` is the CLI face of the same reader,
 for sessions without an MCP client.
+
+`argus-mcp classic-replay <suite.json>` compares visible movement, pauses and
+proximity across protocol 15 demos. See the [manifest and limits](../../docs/classic-bot-comparisons.md#compare-recorded-movement).
 
 Player tracks include `movement` using `argus-reversal-v1`: a horizontal turn
 over 120 degrees within 250 ms, speed above 120 units/s at both ends, with a

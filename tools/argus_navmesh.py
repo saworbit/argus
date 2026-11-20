@@ -30,7 +30,7 @@ import sys
 from pathlib import Path
 
 from argus_bsp import Bsp
-from argus_spawn_settling import SPAWN_SETTLING
+from argus_spawn_settling import SPAWN_SETTLING, brush_spawnflags, entity_number
 
 CONTENTS_EMPTY, CONTENTS_SOLID = -1, -2
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
@@ -575,28 +575,25 @@ def brush_boxes(bsp, deathmatch=True):
         m = e.get("model", "")
         if cls not in SPAWN_SETTLING["brush_classes"] or not m.startswith("*"):
             continue
-        sf = int(float(e.get("spawnflags", "0") or 0))
+        sf = brush_spawnflags(e)
         if deathmatch and sf & SPAWN_SETTLING["not_deathmatch_flag"]:
             continue
         mdl = bsp.models[int(m[1:])]
         mn, mx = list(mdl[0:3]), list(mdl[3:6])
         if cls == "func_door" and sf & SPAWN_SETTLING["door_start_open_flag"]:
-            try:
-                angle = float(e.get("angle") or 0)
-            except ValueError:
-                angle = 0.0
+            angle = entity_number(e, "angle")
             if angle in (-1.0, -2.0):
                 d = (0.0, 0.0, 1.0 if angle == -1.0 else -1.0)
             else:
-                r = math.radians(angle) if math.isfinite(angle) else 0.0
+                r = math.radians(angle)
                 d = (math.cos(r), math.sin(r), 0.0)
-            lip = float(e.get("lip") or 0) or SPAWN_SETTLING["door_default_lip_u"]
+            lip = entity_number(e, "lip") or SPAWN_SETTLING["door_default_lip_u"]
             travel = abs(sum(d[k] * (mx[k] - mn[k]) for k in range(3))) - lip
             if travel > 0:
                 mn = [mn[k] + d[k] * travel for k in range(3)]
                 mx = [mx[k] + d[k] * travel for k in range(3)]
         elif cls == "func_plat" and not e.get("targetname"):
-            h = float(e.get("height", 0) or 0) or (mx[2] - mn[2] - SPAWN_SETTLING["plat_default_inset_u"])
+            h = entity_number(e, "height") or (mx[2] - mn[2] - SPAWN_SETTLING["plat_default_inset_u"])
             mn[2] -= h
             mx[2] -= h
         out.append((cls, tuple(mn), tuple(mx)))
@@ -2001,7 +1998,7 @@ def _timeline(mv, phases):
 
 
 def _plat(e, mn, mx):
-    h = _qnum(e, "height", 0.0) or (mx[2] - mn[2] - 8.0)
+    h = entity_number(e, "height") or (mx[2] - mn[2] - SPAWN_SETTLING["plat_default_inset_u"])
     speed = _qnum(e, "speed", 150.0)
     T = _leg(abs(h), speed)
     top = _state("top", mn, mx, PLAT_WAIT)
@@ -2019,16 +2016,14 @@ def _plat(e, mn, mx):
 
 
 def _door(e, mn, mx, sf):
-    a = (e.get("angle", "0") or "0").strip()
-    if a in ("-1", "-2"):
-        d = (0.0, 0.0, 1.0 if a == "-1" else -1.0)      # subs.qc SetMovedir
+    angle = entity_number(e, "angle")
+    vertical = angle in (-1.0, -2.0)
+    if vertical:
+        d = (0.0, 0.0, 1.0 if angle == -1.0 else -1.0)  # subs.qc SetMovedir
     else:
-        try:
-            r = math.radians(float(a))
-        except ValueError:
-            r = 0.0
+        r = math.radians(angle)
         d = (math.cos(r), math.sin(r), 0.0)
-    lip = float(e.get("lip", 8) or 8) or 8.0
+    lip = entity_number(e, "lip") or SPAWN_SETTLING["door_default_lip_u"]
     travel = abs(sum(d[k] * (mx[k] - mn[k]) for k in range(3))) - lip
     if travel <= 0:
         return None
@@ -2051,7 +2046,7 @@ def _door(e, mn, mx, sf):
           "spawn": rest["name"], "rest": rest["name"], "trigger": trigger,
           "wait": wait, "toggle": toggle,
           "period": None if hold is None else 2 * T + hold,
-          "vertical": a in ("-1", "-2")}
+          "vertical": vertical}
     if hold is None:
         _timeline(mv, [(None, 0.0, T), (other["name"], T, None)])
     else:
@@ -2137,8 +2132,8 @@ def movers(bsp, deathmatch=True):
         m = e.get("model", "")
         if cls not in MOVER_CLASSES or not m.startswith("*"):
             continue
-        sf = int(float(e.get("spawnflags", "0") or 0))
-        if deathmatch and sf & 2048:
+        sf = brush_spawnflags(e)
+        if deathmatch and sf & SPAWN_SETTLING["not_deathmatch_flag"]:
             continue
         mdl = bsp.models[int(m[1:])]
         mn, mx = tuple(mdl[0:3]), tuple(mdl[3:6])

@@ -335,6 +335,23 @@ async fn run() -> anyhow::Result<()> {
             println!("{}", serde_json::to_string_pretty(&brief)?);
             Ok(())
         }
+        Some("classic-replay") => {
+            let suite = args.next();
+            if suite
+                .as_deref()
+                .is_none_or(|arg| matches!(arg, "--help" | "-h"))
+            {
+                println!("usage: argus-mcp classic-replay <suite.json>\n\nCompare visible movement from protocol 15 demos under a declared setup.");
+                return Ok(());
+            }
+            let suite = suite
+                .filter(|arg| !arg.starts_with('-') && args.next().is_none())
+                .ok_or_else(|| anyhow::anyhow!("classic-replay expects one suite path"))?;
+            let report = argus_mcp::classic_replay::compare(std::path::Path::new(&suite))
+                .map_err(|error| anyhow::anyhow!(error))?;
+            println!("{}", serde_json::to_string_pretty(&report)?);
+            Ok(())
+        }
         Some("probelinks") => {
             // empirical link verification: the puppet walks the graph
             //   argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]
@@ -1853,6 +1870,8 @@ fn print_help() {
          argus-mcp demo <stem>[:export]\n\
                                 parse a harvested .dem (append :export\n\
                                 to also write <stem>.tracks.json)\n\
+         argus-mcp classic-replay <suite.json>\n\
+                                compare visible tracks across protocol 15 demos\n\
          argus-mcp probelinks <map> [limit] [skip] [--coop] [--jumps]\n\
                                 empirical link verification: puppet walks\n\
                                 navigation graph links in the real engine\n\
