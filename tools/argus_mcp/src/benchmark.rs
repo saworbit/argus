@@ -141,6 +141,31 @@ fn verify_graph(cfg: &Config, suite: &TaskSuite) -> Result<(), String> {
     Ok(())
 }
 
+fn verify_recorded_map(text: &str, requested: &str) -> Result<(), String> {
+    let tape = crate::parse_arglog::parse_tape(text);
+    if !tape.failed_spawns.is_empty() {
+        return Err(format!(
+            "engine refused to spawn {}",
+            tape.failed_spawns.join(", ")
+        ));
+    }
+    // Check every initialisation. The brief can pick one level from a mixed
+    // tape, and a switch before the first sample need not create a segment.
+    let maps: Vec<_> = text
+        .lines()
+        .filter_map(|line| line.strip_prefix("ARGUS init on "))
+        .map(str::trim)
+        .collect();
+    match maps.as_slice() {
+        [map] if map.eq_ignore_ascii_case(requested) && tape.segments == 1 => Ok(()),
+        [] => Err(format!("requested '{requested}', no confirmed map in tape")),
+        _ => Err(format!(
+            "requested one run on '{requested}', map starts: {}",
+            maps.join(", ")
+        )),
+    }
+}
+
 fn command_point(mode: u32, point: [f32; 3]) -> String {
     format!(
         "scratch1 {mode}; scratch2 {}; scratch3 {}; scratch4 {}",
@@ -505,8 +530,15 @@ pub async fn run_suite_with_ctrl(
     .await
     .map_err(|e| format!("engine start: {e}"))?;
     let result = run_connected(ctrl, suite, tasks).await;
-    let _ = ctrl.stop(Duration::from_secs(3)).await;
-    result
+    // The live log belongs to this run even if harvest preserves an older
+    // tape with the same name. Stop still owns cleanup and raw tape harvest.
+    let text = ctrl.log_text().unwrap_or_default();
+    let stopped = ctrl.stop(Duration::from_secs(3)).await;
+    let result = result?;
+    let log_path = stopped?.log_path.unwrap_or_default();
+    verify_recorded_map(&text, &suite.map)
+        .map_err(|reason| format!("WRONG MAP: {reason}. Tape at {log_path}"))?;
+    Ok(result)
 }
 
 #[cfg(test)]
@@ -553,6 +585,31 @@ mod tests {
         value = suite();
         value.tasks[0].start[1] = f32::NAN;
         assert!(validate_suite(&value).unwrap_err().contains("finite"));
+    }
+
+    #[test]
+    fn benchmark_requires_one_confirmed_manifest_map() {
+        assert!(verify_recorded_map("SpawnServer: dm4\nARGUS init on DM4\n", "dm4").is_ok());
+        for (log, reason) in [
+            ("SpawnServer: dm4\n", "no confirmed map"),
+            ("ARGUS init on dm2\n", "map starts: dm2"),
+            (
+                "ARGUS init on dm4\nARGUS init on dm2\n",
+                "map starts: dm4, dm2",
+            ),
+            (
+                "ARGUS init on dm4\nARGUS init on dm4\n",
+                "map starts: dm4, dm4",
+            ),
+            (
+                "Couldn't spawn server maps/dm2.bsp\nARGUS init on dm4\n",
+                "refused to spawn dm2",
+            ),
+        ] {
+            assert!(verify_recorded_map(log, "dm4")
+                .unwrap_err()
+                .contains(reason));
+        }
     }
 
     #[test]

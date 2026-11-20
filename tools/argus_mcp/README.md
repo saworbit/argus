@@ -1248,6 +1248,8 @@ budgets, and `train` or `heldout` labels. Each suite pins the MD5 of its nav
 JSON: a regenerated graph invalidates the yardstick until its routes are
 reviewed deliberately. Reports preserve individual results and summarize
 completion rate plus median game time for all, train, and held-out tasks.
+The tape must confirm exactly one start on the manifest map. A refused
+spawn or level change fails the benchmark and keeps its raw tape.
 Completion requires finite engine game time within the task's `budget_sec`,
 including the exact boundary. Late finishes keep their raw `game_sec` but
 count as incomplete and do not enter successful-time medians. Wall-clock
