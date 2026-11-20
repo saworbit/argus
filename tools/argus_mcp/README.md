@@ -1241,9 +1241,10 @@ See [the physical contract](../../docs/behaviour-diagnostics.md#solid-floor-butt
 
 The benchmark is the low-variance complement to free-running matches. It
 places one real Argus bot at a declared nav coordinate, assigns a synthetic
-goal, and observes completion through the NetQuake puppet. The other bots are
-removed and the task bot ignores the observer, so combat and spawn luck cannot
-change the route trial.
+goal, and observes completion through the NetQuake puppet. The engine starts
+with the task bot alone, and that bot ignores the observer. Raw tapes record
+its health and item bits when each task starts. The bot can still pick up
+items or take map damage between tasks.
 
 ```
 argus-mcp benchmark benchmarks/dm4_navigation.json [limit] [--no-compile]
@@ -1267,15 +1268,16 @@ currently installed build and its lab receipt.
 
 Each step is confirmed in the server log before the next one runs. Every
 console line ends with an `echo ARGUS_BENCH_ACK <n>` marker and is resent
-until the marker appears. Opponents are removed one at a time while the
-puppet's scoreboard still shows more than one bot. The engine stages each
-start and then applies it in the same server call that assigns the goal.
+until the marker appears. The harness checks the spawn events and scoreboard
+for the single task bot. The engine stages each start and then applies it in
+the same server call that assigns the goal.
 The `ARGTASK` receipt records the bot's actual origin and the goal position
 to one decimal place. Reports include `verified_start` from that receipt.
 The harness retries missing impulses up to four times per step. A repeated
 goal impulse cannot move the bot or reset its timer. Missing or mismatched
 setup receipts fail the benchmark and keep the raw tape. An older program
-without these receipts must be recompiled before it can run a benchmark.
+without the solo roster or these receipts must be recompiled before it can
+run a benchmark.
 
 ## Counterbalanced within-match A/B
 

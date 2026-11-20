@@ -339,6 +339,20 @@ fn roster_bots(names: &std::collections::BTreeMap<u8, String>) -> Vec<String> {
         .collect()
 }
 
+fn verify_solo_roster(log: &str, bot: &str) -> Result<(), String> {
+    let spawned: Vec<_> = log
+        .lines()
+        .filter_map(|line| line.strip_prefix("ARGEVT ")?.strip_suffix(" spawned"))
+        .collect();
+    if spawned.as_slice() != [bot] {
+        return Err(format!(
+            "benchmark requires one bot from map start, saw [{}]",
+            spawned.join(", ")
+        ));
+    }
+    Ok(())
+}
+
 /// Run `attempt` until `check` passes on the log written after it, up to
 /// STEP_ATTEMPTS times, pumping `client` while it waits. A delayed receipt
 /// from any retry of this step still counts. Earlier steps are before `mark`.
@@ -422,29 +436,13 @@ async fn run_connected(
     }
     let mut seq = 0u32;
 
-    // Keep slot zero and remove the free-running opponents one at a time,
-    // firing again only while more than one bot remains, so a late impulse
-    // cannot take the task bot too. scratch1 147 is the server-admin gate
-    // for roster impulses.
-    command_confirmed(ctrl, &mut client, "scratch1 147", &mut seq).await?;
-    for _ in 0..STEP_ATTEMPTS * 2 {
-        let before = roster_bots(&client.world.names).len();
-        if before <= 1 {
-            break;
-        }
-        client.set_impulse(102);
-        let started = Instant::now();
-        while started.elapsed() < STEP_WAIT && roster_bots(&client.world.names).len() >= before {
-            client.pump(Duration::from_millis(100));
-        }
-    }
     let bots = roster_bots(&client.world.names);
     let [bot] = bots.as_slice() else {
         return Err(format!(
-            "could not reduce the roster to the task bot; it still holds {bots:?}"
+            "benchmark requires one visible task bot, saw {bots:?}"
         ));
     };
-    let bot = bot.clone();
+    verify_solo_roster(&ctrl.log_text().unwrap_or_default(), bot)?;
 
     let mut results = Vec::new();
     for task in tasks {
@@ -531,6 +529,7 @@ pub async fn run_suite_with_ctrl(
         .sum::<u32>()
         .saturating_add(30)
         .min(590);
+    ctrl.use_benchmark_roster_once();
     ctrl.start(
         cfg,
         &suite.map,
@@ -807,6 +806,18 @@ ARGTASK 0 start '480.0 -700.0 60.0' goal '261.0 -703.0 328.0'
             (7u8, "Carmack".to_string()),
         ]);
         assert_eq!(roster_bots(&names), vec!["Joe Rogan", "Carmack"]);
+    }
+
+    #[test]
+    fn solo_benchmark_requires_the_same_bot_from_map_start() {
+        let single = "ARGEVT Carmack spawned\nARGEVT Carmack respawn\n";
+        assert!(verify_solo_roster(single, "Carmack").is_ok());
+        assert!(verify_solo_roster(single, "Joe Rogan").is_err());
+        assert!(verify_solo_roster("", "Carmack").is_err());
+        // The scoreboard can hide a bot. Its spawn before signon still
+        // invalidates the one-bot setup even if it is gone at assignment.
+        let initial_fight = format!("{single}ARGEVT Joe Rogan spawned\n");
+        assert!(verify_solo_roster(&initial_fight, "Carmack").is_err());
     }
 
     /// The harness fires again until the log confirms the step, and a
