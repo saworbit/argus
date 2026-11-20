@@ -131,7 +131,7 @@ unsafe impl Sync for SendHandle {}
 
 impl EngineChild {
     #[allow(clippy::too_many_arguments)]
-    pub fn spawn(
+    pub(crate) fn spawn(
         cfg: &Config,
         map: &str,
         slots: u32,
@@ -140,6 +140,7 @@ impl EngineChild {
         port: Option<u16>,
         coop: bool,
         clock: EngineClock,
+        roster: EngineRoster,
     ) -> Result<Self, String> {
         let map = crate::paths::map_name(map)?;
         let map = map.as_str();
@@ -157,11 +158,11 @@ impl EngineChild {
         check_port_available(actual_port)?;
         #[cfg(windows)]
         {
-            spawn_windows(cfg, map, slots, skill, cwd, port, coop, clock)
+            spawn_windows(cfg, map, slots, skill, cwd, port, coop, clock, roster)
         }
         #[cfg(not(windows))]
         {
-            spawn_unix(cfg, map, slots, skill, cwd, port, coop, clock)
+            spawn_unix(cfg, map, slots, skill, cwd, port, coop, clock, roster)
         }
     }
 
@@ -328,9 +329,10 @@ fn spawn_unix(
     port: Option<u16>,
     coop: bool,
     clock: EngineClock,
+    roster: EngineRoster,
 ) -> Result<EngineChild, String> {
     let mut cmd = Command::new(&cfg.engine);
-    apply_args(&mut cmd, cfg, map, slots, skill, port, coop, clock);
+    apply_args(&mut cmd, cfg, map, slots, skill, port, coop, clock, roster);
     cmd.current_dir(cwd)
         .kill_on_drop(true)
         .stdin(Stdio::piped())
@@ -487,6 +489,22 @@ impl EngineClock {
     }
 }
 
+#[derive(Clone, Copy, Default)]
+pub(crate) enum EngineRoster {
+    #[default]
+    Standard,
+    FixedRoute,
+}
+
+impl EngineRoster {
+    fn args(self) -> &'static [&'static str] {
+        match self {
+            Self::Standard => &[],
+            Self::FixedRoute => &["+scratch1", "3843"],
+        }
+    }
+}
+
 #[cfg(any(not(windows), test))]
 #[allow(clippy::too_many_arguments)]
 fn apply_args(
@@ -498,6 +516,7 @@ fn apply_args(
     port: Option<u16>,
     coop: bool,
     clock: EngineClock,
+    roster: EngineRoster,
 ) {
     cmd.arg("-dedicated")
         .arg(slots.to_string())
@@ -520,7 +539,7 @@ fn apply_args(
         cmd.arg("+skill").arg(s.to_string());
     }
     // Map loading runs QC and spawns the roster before later commands.
-    cmd.arg("+map").arg(map);
+    cmd.args(roster.args()).arg("+map").arg(map);
 }
 
 #[cfg(not(windows))]
@@ -606,6 +625,7 @@ fn windows_args(
     port: Option<u16>,
     coop: bool,
     clock: EngineClock,
+    roster: EngineRoster,
 ) -> Result<String, String> {
     // CreateProcessW receives the full executable path separately.
     const ARGV0: &str = "argus-engine";
@@ -623,6 +643,10 @@ fn windows_args(
             return Err("skill must be 0..3".into());
         }
         startup.push_str(&format!(" +skill {s}"));
+    }
+    for arg in roster.args() {
+        startup.push(' ');
+        startup.push_str(arg);
     }
     startup.push_str(&format!(" +map {map}"));
 
@@ -653,13 +677,14 @@ fn spawn_windows(
     port: Option<u16>,
     coop: bool,
     clock: EngineClock,
+    roster: EngineRoster,
 ) -> Result<EngineChild, String> {
     use std::os::windows::ffi::OsStrExt;
     use windows_sys::Win32::System::Threading::{
         CreateProcessW, PROCESS_INFORMATION, STARTF_USESHOWWINDOW, STARTUPINFOW,
     };
 
-    let args = windows_args(cfg, map, slots, skill, port, coop, clock)?;
+    let args = windows_args(cfg, map, slots, skill, port, coop, clock, roster)?;
 
     let exe_wide: Vec<u16> = cfg
         .engine
@@ -1231,6 +1256,7 @@ mod tests {
             Some(port),
             false,
             super::EngineClock::Played,
+            super::EngineRoster::Standard,
         );
         let error = match result {
             Err(error) => error,
@@ -1281,9 +1307,17 @@ mod tests {
         let cfg = tick_cfg();
         for skill in 0..=3 {
             for coop in [false, true] {
-                let windows =
-                    windows_args(&cfg, "dm3", 8, Some(skill), None, coop, EngineClock::Played)
-                        .unwrap();
+                let windows = windows_args(
+                    &cfg,
+                    "dm3",
+                    8,
+                    Some(skill),
+                    None,
+                    coop,
+                    EngineClock::Played,
+                    EngineRoster::Standard,
+                )
+                .unwrap();
                 let mut cmd = Command::new("x");
                 apply_args(
                     &mut cmd,
@@ -1294,6 +1328,7 @@ mod tests {
                     None,
                     coop,
                     EngineClock::Played,
+                    EngineRoster::Standard,
                 );
                 let unix = cmd
                     .as_std()
@@ -1315,7 +1350,17 @@ mod tests {
     #[test]
     fn absent_startup_skill_keeps_inherited_configuration() {
         let cfg = tick_cfg();
-        let windows = windows_args(&cfg, "dm3", 8, None, None, false, EngineClock::Played).unwrap();
+        let windows = windows_args(
+            &cfg,
+            "dm3",
+            8,
+            None,
+            None,
+            false,
+            EngineClock::Played,
+            EngineRoster::Standard,
+        )
+        .unwrap();
         let mut cmd = Command::new("x");
         apply_args(
             &mut cmd,
@@ -1326,6 +1371,7 @@ mod tests {
             None,
             false,
             EngineClock::Played,
+            EngineRoster::Standard,
         );
         let unix = cmd
             .as_std()
@@ -1355,6 +1401,7 @@ mod tests {
             None,
             false,
             EngineClock::Played,
+            EngineRoster::Standard,
         );
         let joined: Vec<String> = cmd
             .as_std()
@@ -1369,8 +1416,17 @@ mod tests {
     #[cfg(windows)]
     fn every_windows_launch_pins_the_played_tick_rate() {
         let cfg = tick_cfg();
-        let args =
-            windows_args(&cfg, "dm4", 8, None, None, false, EngineClock::Played).expect("args");
+        let args = windows_args(
+            &cfg,
+            "dm4",
+            8,
+            None,
+            None,
+            false,
+            EngineClock::Played,
+            EngineRoster::Standard,
+        )
+        .expect("args");
         assert!(args.contains("+sys_ticrate 0.0139"), "{args}");
         let coop = windows_args(
             &cfg,
@@ -1380,6 +1436,7 @@ mod tests {
             Some(26011),
             true,
             EngineClock::Played,
+            EngineRoster::Standard,
         )
         .expect("args");
         assert!(coop.contains("+sys_ticrate 0.0139"), "{coop}");
@@ -1393,9 +1450,29 @@ mod tests {
     fn the_fixed_clock_pins_frame_seed_and_limit_before_the_map() {
         let cfg = tick_cfg();
         let clock = EngineClock::fixed(7).with_limit(Some(185));
-        let windows = windows_args(&cfg, "dm4", 8, Some(2), None, false, clock).unwrap();
+        let windows = windows_args(
+            &cfg,
+            "dm4",
+            8,
+            Some(2),
+            None,
+            false,
+            clock,
+            EngineRoster::Standard,
+        )
+        .unwrap();
         let mut cmd = Command::new("x");
-        apply_args(&mut cmd, &cfg, "dm4", 8, Some(2), None, false, clock);
+        apply_args(
+            &mut cmd,
+            &cfg,
+            "dm4",
+            8,
+            Some(2),
+            None,
+            false,
+            clock,
+            EngineRoster::Standard,
+        );
         let unix = cmd
             .as_std()
             .get_args()
@@ -1430,7 +1507,17 @@ mod tests {
         let clock = EngineClock::fixed(84).with_limit(Some(10));
         for game in ["w697_ctl", "motioncheck_walkway697_ctl4b"] {
             cfg.game = game.into();
-            let args = windows_args(&cfg, "dm4", 8, Some(2), None, false, clock).unwrap();
+            let args = windows_args(
+                &cfg,
+                "dm4",
+                8,
+                Some(2),
+                None,
+                false,
+                clock,
+                EngineRoster::Standard,
+            )
+            .unwrap();
             assert!(args.contains(&format!("-game {game}")), "{args}");
             // COM_InitArgv rebuilds cmdline from unquoted argv and keeps 255 bytes.
             let cmdline = args.replace('"', "");
@@ -1450,9 +1537,54 @@ mod tests {
             None,
             false,
             EngineClock::Played,
+            EngineRoster::Standard,
         )
         .unwrap_err();
         assert!(error.contains("255-byte command limit"), "{error}");
+    }
+
+    #[test]
+    fn only_benchmark_launches_request_a_solo_roster_before_loading_the_map() {
+        let cfg = tick_cfg();
+        for roster in [EngineRoster::Standard, EngineRoster::FixedRoute] {
+            let windows = windows_args(
+                &cfg,
+                "e1m8",
+                4,
+                Some(2),
+                None,
+                false,
+                EngineClock::Played,
+                roster,
+            )
+            .unwrap();
+            let mut cmd = Command::new("x");
+            apply_args(
+                &mut cmd,
+                &cfg,
+                "e1m8",
+                4,
+                Some(2),
+                None,
+                false,
+                EngineClock::Played,
+                roster,
+            );
+            let unix = cmd
+                .as_std()
+                .get_args()
+                .map(|arg| arg.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(" ");
+            for args in [windows, unix] {
+                match roster {
+                    EngineRoster::Standard => assert!(!args.contains("+scratch1"), "{args}"),
+                    EngineRoster::FixedRoute => {
+                        assert!(args.contains("+scratch1 3843 +map e1m8"), "{args}")
+                    }
+                }
+            }
+        }
     }
 
     #[test]

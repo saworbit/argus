@@ -87,6 +87,8 @@ pub struct MatchCtrl {
     /// The engine clock for this controller's launches. `Played` unless a
     /// caller asks for the fixed lab clock (see `EngineClock`).
     clock: crate::engine::EngineClock,
+    /// One launch of the fixed-route benchmark's solo roster.
+    next_roster: crate::engine::EngineRoster,
     #[cfg(test)]
     fake_engines: Option<std::collections::VecDeque<crate::engine::FakeEngineControl>>,
 }
@@ -114,6 +116,10 @@ impl MatchCtrl {
     /// each match at its requested length through `timelimit`.
     pub fn set_clock(&mut self, clock: crate::engine::EngineClock) {
         self.clock = clock;
+    }
+
+    pub(crate) fn use_benchmark_roster_once(&mut self) {
+        self.next_roster = crate::engine::EngineRoster::FixedRoute;
     }
 
     /// The clock the next launch will use.
@@ -301,6 +307,7 @@ impl MatchCtrl {
         skill: Option<u32>,
         coop: Option<bool>,
     ) -> Result<MatchStatus, String> {
+        let roster = std::mem::take(&mut self.next_roster);
         self.reap();
         if self.live.is_some() {
             let name = self
@@ -380,6 +387,7 @@ impl MatchCtrl {
                 self.port,
                 coop.unwrap_or(false),
                 clock,
+                roster,
             )?,
         };
         #[cfg(not(test))]
@@ -392,6 +400,7 @@ impl MatchCtrl {
             self.port,
             coop.unwrap_or(false),
             clock,
+            roster,
         )?;
         let stdout = child.stdout_buf();
         let navigation = navigation

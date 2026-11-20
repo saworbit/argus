@@ -9627,6 +9627,9 @@ void(float slot) Argus_TaskControl =
     dprint ("ARGTASK "); dprint (ftos (slot));
     dprint (" start "); dprint (vtos (bot.origin));
     dprint (" goal "); dprint (vtos (marker.origin)); dprint ("\n");
+    dprint ("ARGTASK "); dprint (ftos (slot));
+    dprint (" state hp "); dprint (ftos (bot.health));
+    dprint (" items "); dprint (ftos (bot.items)); dprint ("\n");
 };
 
 // Assign both experimental arms inside one match (#374). scratch4 is a bit
@@ -12347,7 +12350,8 @@ void() Argus_Init =
     // treatment on Shane's next rebuild; until then spaced names are
     // invisible to it (v3.36 tape: all of Joe Rogan's lines dropped).
     Argus_SpawnOne ("Carmack");
-    if (!coop)
+    // The fixed-route lab reserves slot zero before any opponents can fight.
+    if (!coop && (!cvar ("developer") || cvar ("scratch1") != 3843))
     {
         Argus_SpawnOne ("Romero");
         Argus_SpawnOne ("Joe Rogan");
