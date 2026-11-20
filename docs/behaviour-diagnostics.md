@@ -464,9 +464,9 @@ does not show the hold caused them, and the fixed rule refuses it either way.
 
 Changing only the response to a veto either moves the oscillation or trades it
 for stalls, which matches the post-mortems beside the strafe code. The next
-question is positioning. [#754](https://github.com/saworbit/argus/issues/754) tracks a separate path these attempts
-never touched: a refused non-strafe heading re-chooses a side every frame, at
-speeds the reversal measure does not count.
+question is positioning. A separate case re-chose the strafe side every
+frame when combat kept proposing a refused heading. It ran at speeds
+the reversal measure does not count. [Combat hazard flips](https://github.com/saworbit/argus/issues/754)
 
 Receipts are machine-local: `backups/motion697_*` for the markers, and
 `backups/strafe697` for the frozen source, the hold candidate patch (SHA256
@@ -477,6 +477,22 @@ ranking and not as fixed proportions.
 The first human session on the installed build
 (`runs/shane_dm4_2026-11-14_ed8926.log`) still shows bots making 57 to 60 hard
 reversals per moving minute against the human's 15.
+
+### Combat hazard commitment
+
+The hazard fallback commits an alternate strafe side after its heading
+is selected. When the next choice would reverse more than 100 degrees
+during that commitment, it keeps the previous escape if both the 32u
+and 48u hazard probes still pass. An expired commitment, an active dodge
+or a refused previous heading releases the hold.
+
+The candidate recorded zero runs of three or more consecutive wish flips
+in three 40-second pairs per cadence on dm4 and five per cadence on dm2.
+One control run occurred on played dm4. All four native bands passed.
+Played median stalls went from 2 to 3 on dm4 and 5 to 7 on dm2. Played
+median lava deaths went from 0 to 1 on dm4. Both shifts were within their
+control bands. The short windows give limited exposure to the rare flip.
+[Combat hazard flips](https://github.com/saworbit/argus/issues/754)
 
 ### Ground turns near brinks
 

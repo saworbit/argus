@@ -251,6 +251,8 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_strafedir;
 .float  ar_strafetime;
 .float  ar_combathaztime;       // hold combat_hazard strafe across 1-frame lip flicker
+.float  ar_combathazvalid;      // previous escape heading passed the hazard check
+.float  ar_combathazyaw;
 .float  ar_wanderhaz;           // cooldown on wander brink turn
 .float  ar_threatclass;         // last visible player weapon class
 .float  ar_threatlog;           // once-per-class tactical branch bits
@@ -1689,6 +1691,22 @@ float(float myaw, float pdist) Argus_MoveHazard =
     if (Argus_DropLandHazard (ahead, myaw, trace_endpos_z, depth))
         return TRUE;
     return FALSE;
+};
+
+// Keep a checked escape through a large reversal during its commitment.
+// The previous heading must still pass both hazard probe distances.
+float(float requested) Argus_CombatHazardHeading =
+{
+    local float delta;
+    if (!self.ar_combathazvalid || time >= self.ar_combathaztime || time < self.ar_dodgetime)
+        return requested;
+    delta = requested - self.ar_combathazyaw;
+    while (delta > 180) delta = delta - 360;
+    while (delta < -180) delta = delta + 360;
+    if (fabs (delta) <= 100 || Argus_MoveHazard (self.ar_combathazyaw, 48)
+        || Argus_MoveHazard (self.ar_combathazyaw, 32))
+        return requested;
+    return self.ar_combathazyaw;
 };
 
 // Pick a heading that stays off lava/slime/void. Prefers the last
@@ -4244,6 +4262,7 @@ void(entity bot, float won) Argus_SkillResult =
 
 void() Argus_BaseStats =
 {
+    self.ar_combathazvalid = 0;
     self.ar_eastdeck = 0;
     Argus_RecoveryReset ();
     self.ar_hurttime = 0; self.ar_stuckhurt = 0; self.ar_stucktime = 0;
@@ -6333,6 +6352,7 @@ entity(vector sighting) Argus_PursuitHop =
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
+    local float hazard_side;
     local string movecause;
     local entity e, cnode, ctarget, chop;
     local vector to, aimpt, err, cvr, shd, shp, motstep, moterr;
@@ -7342,6 +7362,7 @@ float() Argus_Combat =
     {
         if (!self.ar_strafedir)
             self.ar_strafedir = 1;
+        hazard_side = 0;
         want = 999;
         if (time >= self.ar_dodgetime)
             want = Argus_BrinkAdvance ();
@@ -7350,10 +7371,12 @@ float() Argus_Combat =
             want = vectoyaw (to) + orbit * self.ar_strafedir;
             if (Argus_MoveHazard (want, 48))
             {
-                self.ar_strafedir = 0 - self.ar_strafedir;
-                want = vectoyaw (to) + orbit * self.ar_strafedir;
+                want = vectoyaw (to) - orbit * self.ar_strafedir;
+                if (!Argus_MoveHazard (want, 48))
+                    hazard_side = 0 - self.ar_strafedir;
             }
         }
+        want = Argus_CombatHazardHeading (want);
         if (time >= self.ar_combathaztime)
         {
             self.ar_strafetime = time + 0.5 + random () * 0.5;
@@ -7362,6 +7385,11 @@ float() Argus_Combat =
         self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, want, "combat_hazard");
         if (Argus_MoveHazard (self.ar_moveyaw, 48))
             self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, vectoyaw ('0 0 0' - to), "combat_backoff");
+        self.ar_combathazvalid = (self.ar_moveyaw == want && time >= self.ar_dodgetime);
+        self.ar_combathazyaw = want;
+        if (hazard_side && self.ar_moveyaw == want
+            && want == vectoyaw (to) + orbit * hazard_side)
+            self.ar_strafedir = hazard_side;
     }
 
     }
