@@ -20,8 +20,7 @@ apex, keyed-door and shared avoidance gates still apply.
 
 Route ordering uses geometric link lengths and favours fewer movement
 steps. Pickup respawn clocks use a separate estimate for confirmed
-teleporters. Lift and train waiting time and combat risk remain open.
-[Mover arrival estimate issue](https://github.com/saworbit/argus/issues/1006)
+teleporters. Lift and train legs still use geometric length for pickup timing.
 
 ## Timing pickups through teleporters
 
@@ -60,6 +59,28 @@ match and 20 per candidate match. In four fresh 120-second matches per
 arm, the averages were 35.0 and 35.25. The played-rate candidates recorded
 no freezes or rescue warps on dm4 or dm6.
 [Fixtures and match results](../runs/teleport-pickup-timing.results.json)
+
+## Pickup timing on lifts and trains
+
+Private QuakeSpasm fixtures ran the stock e1m1 armour lift and dm2 grenade
+launcher train at played cadence. Each scheduled the real item to respawn
+six seconds after the test started. The fixture applied the current
+geometric timing formula to the seeded route and measured when the bot
+first boarded, dismounted and came within 48u of the item after dismount.
+
+| Completed approach | Estimate (s) | Entry wait (s) | Ride (s) | Final approach (s) | Total (s) |
+|---|---:|---:|---:|---:|---:|
+| e1m1 lift at bottom | 2.0 | 0.4 | 2.8 | 1.0 | 4.2 |
+| dm2 train, second phase in the first series | 2.4 | 4.1 | 3.3 | 0.4 | 7.8 |
+| dm2 train near the dock | 2.4 | 0.2 | 3.5 | 7.7 | 11.4 |
+
+Both other lift runs boarded but recorded no approach. Across the six
+train runs, boarding took 0.2 to 14.9 seconds and only two runs recorded
+an approach. The lift reached its item before the six-second window in
+one phase. Both complete train approaches arrived after the window. The
+variation after dismount leaves a phase-only correction unverified, so
+the live timing formula and route ordering stay as they are.
+[Phase measurements](https://github.com/saworbit/argus/issues/1006#issuecomment-7040229808)
 
 ## Graph evidence
 
