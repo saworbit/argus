@@ -233,6 +233,29 @@ six seconds, including the first sample. Multi-level tapes use the busiest
 segment, with the last segment winning a tie. Lava deaths use BSP hull-0
 contents; the `z < -300` rule is only a fallback when the BSP is absent.
 
+### Fixed navigation benchmark records
+
+The dedicated console tape records the server's task setup. The runner uses
+slot `0`. Coordinates are written to one decimal place.
+
+```text
+ARGTASK <slot> staged '<x y z>'
+ARGTASK <slot> start '<x y z>' goal '<x y z>'
+ARGTASK <slot> state hp <health> items <bitmask>
+```
+
+`staged` acknowledges the requested start. `start` records the bot's actual
+origin and the goal marker's origin at assignment. `state` records the bot's
+health and item bitmask at that point. The runner exposes the confirmed
+origin as `verified_start` in its JSON report. The receipt establishes
+placement. A lift trial also needs evidence of fresh mover contact and a
+successful dismount ([#992](https://github.com/saworbit/argus/issues/992)).
+
+`ARGTASK <slot> complete <seconds>` and `ARGTASK <slot> timeout <seconds>`
+are client broadcasts. The NetQuake puppet reads them to score the task
+against its game-time budget. Keep the tape and the JSON report together.
+See the [benchmark guide](../tools/argus_mcp/README.md#fixed-navigation-benchmark).
+
 ## Plot or inspect a run
 
 These **terminal commands** use a locally installed BSP and saved log:

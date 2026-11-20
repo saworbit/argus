@@ -600,11 +600,12 @@ Why trips still fall short:
   tape where a bot got there it never fired the sprint; it dithered on the
   stairs, then steered at the visible armour from the walkway below.
 - The fixed navigation benchmark, `benchmarks/dm3_red_armour.json` (four
-  tasks between the mainland and the armour seat), could not run. The harness
-  placed the task bot but lost the console commands that remove the other
-  bots and assign the goal, at both skills and with the engine alone. Its
-  150 ms waits are shorter than this rig's command latency; `probelinks`
-  retries for 1.8 s and works.
+  tasks between the mainland and the armour seat), could not run in this
+  study. The harness placed the task bot, then lost the console commands to
+  remove the other bots and assign the goal, at both skills and with the
+  engine alone. The 150 ms waits were shorter than this rig's command latency.
+  The [current benchmark runner](../tools/argus_mcp/README.md#fixed-navigation-benchmark)
+  starts with one bot and requires server receipts for the start and goal.
 
 ### Turning late after #775 (#904)
 

@@ -191,15 +191,18 @@ and 0 otherwise.
 - **Tier 1, static checks**: the CI battery, the claims, the navmesh audit
   (no link from dry ground into a liquid seat, no vertical walk link) and
   directed reach for each map.
-- **Tier 2, deterministic cases**: each benchmark suite whose pinned graph
+- **Tier 2, fixed cases**: each benchmark suite whose pinned graph
   still ships. A suite pinned to an old graph is reported as blocked, not run.
   The benchmark runs `--no-compile`, so it measures the installed build the
   lab engine loads, which the step names; to test a source change, compile
-  and install it into a scratch game folder first (`ARGUS_GAME`). The
-  benchmark always exits 0, so the pyramid reads its report and holds a
-  ratchet keyed by the graph and the installed binary: the first run sets the
-  bar, and a later run fails if a task that pair used to finish no longer
-  finishes. A task that has never finished does not block anything.
+  and stage it in a scratch game folder first (`ARGUS_GAME`). Use a program
+  with a matching graph receipt and support for the solo roster and task
+  receipts. A setup, map or graph error exits non-zero and fails the step.
+  A valid run can report incomplete routes and still exit zero. The pyramid
+  reads that report and holds a ratchet keyed by the graph and the installed binary.
+  The first valid run sets the bar. A later run fails the step if a previously
+  completed task now misses its budget. A task with no previous completion
+  sets no completion requirement. See the [benchmark guide](../tools/argus_mcp/README.md#fixed-navigation-benchmark).
 - **Tier 4, with `--through 4`**: the ladder plan, meaning how many
   listen-class tapes a side each map needs to see a 30 per cent change, from
   the limits doc. It plans ladders; it does not run them. Each line also says

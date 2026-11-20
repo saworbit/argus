@@ -391,6 +391,10 @@ harvest command runs in a **terminal**.
 5. **Watch or adjust.** `see what=status` returns an incremental cursor.
    `tune command="skill 3"` changes the live baseline for the next respawn.
 
+For a specific route, the [fixed navigation benchmark](tools/argus_mcp/README.md#fixed-navigation-benchmark)
+runs one bot and checks its starting position against the manifest before
+scoring the attempt.
+
 If the lab reports a build or checkout mismatch, install the current server.
 Then restart the MCP client before you trust a quality verdict. Do not edit
 the generated `src/argus_nav_<map>.qc` files by hand. Use the navigation

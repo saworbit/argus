@@ -897,9 +897,9 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
-- Start fixed navigation benchmarks with one bot and record its health and items at each task start. This removes combat before setup ([#990](https://github.com/saworbit/argus/issues/990)).
+- Start fixed navigation benchmarks with one bot and record its health and item bits at goal assignment ([#990](https://github.com/saworbit/argus/issues/990)).
 
-- Apply and verify a fixed benchmark start when the goal is assigned. Fail the benchmark and retain its tape if the engine cannot confirm the position ([#988](https://github.com/saworbit/argus/issues/988)).
+- Verify the bot's actual origin and goal when a fixed benchmark task starts. Include `verified_start` in the report, and retain the tape when setup fails ([#988](https://github.com/saworbit/argus/issues/988)).
 
 - Refresh the dm3, dm4, e1m2 and e1m7 bands with three played-rate matches each on their current graphs. Keep the previous bands in the noise corpus ([#980](https://github.com/saworbit/argus/issues/980)).
 

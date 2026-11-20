@@ -1247,7 +1247,7 @@ its health and item bits when each task starts. The bot can still pick up
 items or take map damage between tasks.
 
 ```
-argus-mcp benchmark benchmarks/dm4_navigation.json [limit] [--no-compile]
+argus-mcp benchmark benchmarks/dm4_navigation.json [limit] [--no-compile] [--port N]
 ```
 
 Suites are JSON manifests containing a map, skill, start/goal coordinates,
@@ -1263,8 +1263,11 @@ Completion requires finite engine game time within the task's `budget_sec`,
 including the exact boundary. Late finishes keep their raw `game_sec` but
 count as incomplete and do not enter successful-time medians. Wall-clock
 grace only bounds the harness wait.
-Compilation and installation happen by default. `--no-compile` uses the
-currently installed build and its lab receipt.
+Compilation and installation happen by default. For a private trial, use a
+compatible lab-compiled program with its graph receipt. Set `ARGUS_GAME` to
+the scratch game holding the program, `ARGUS_SRC` to its graph's source
+directory and `ARGUS_RUNS` to a private output folder. Run with `--no-compile`.
+The engine loads `progs.dat` from the selected game.
 
 Each step is confirmed in the server log before the next one runs. Every
 console line ends with an `echo ARGUS_BENCH_ACK <n>` marker and is resent
@@ -1277,7 +1280,9 @@ The harness retries missing impulses up to four times per step. A repeated
 goal impulse cannot move the bot or reset its timer. Missing or mismatched
 setup receipts fail the benchmark and keep the raw tape. An older program
 without the solo roster or these receipts must be recompiled before it can
-run a benchmark.
+run a benchmark. A valid run returns a JSON report even when routes time out.
+See the [task record grammar](../../docs/telemetry.md#fixed-navigation-benchmark-records)
+for the console receipts and the puppet's outcome messages.
 
 ## Counterbalanced within-match A/B
 
