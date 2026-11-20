@@ -143,6 +143,7 @@ float argus_plan_serial;
                                 // steers the flight at ar_node
 .float  ar_nextairlog;          // air control: marker throttle, 1/s
 .entity ar_jumpfrom;            // plain jump hop: the link source seat
+.entity ar_trainfrom;           // train hop: the boarding seat
 .float  ar_hazardyaw;           // last safe deflection heading
 .float  ar_hazhold;             // 1 = ar_hazardyaw is live (0 is a legal yaw)
 .float  ar_moveyaw;             // movement heading (may differ from facing)
@@ -10770,11 +10771,18 @@ void() Argus_AI =
             // HOLDING (the liftwait friction-hold); the ordinary
             // steering below does all the walking, so boarding and
             // stepping off are just walks that happen when the hold
-            // releases. 12 s give-up covers two patrol legs of dm2's
-            // longest shuttle.
+            // releases. Keep the 15 s limit at the pad and on the car.
+            // A bot displaced far from its boarding seat should try a
+            // new route before spending that long waiting on dry floor.
             if (self.ar_hoptrain)
             {
-                if (time > self.ar_liftstart + 15)
+                if (time > self.ar_liftstart + 15
+                    || (!self.ar_boarded && self.ar_trainfrom != world
+                        && time > self.ar_liftstart + 8
+                        && vlen (self.origin - self.ar_trainfrom.origin) > 160
+                        && self.groundentity == world && (self.flags & FL_ONGROUND)
+                        && self.ar_feettype == CONTENT_EMPTY
+                        && vlen (self.velocity) < 10))
                 {
                     self.ar_hoptrain = 0;
                     if (Argus_GoalOK (self.ar_goal))
@@ -11595,6 +11603,7 @@ void() Argus_AI =
                         else
                         {
                             self.ar_hoptrain = 1;
+                            self.ar_trainfrom = oldnode;
                             self.ar_liftstart = time;
                             self.ar_boarded = 0;
                             Argus_Event ("train");

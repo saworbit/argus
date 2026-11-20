@@ -197,9 +197,9 @@ class FixtureContract(unittest.TestCase):
 
     def test_every_runner_refuses_the_absent_backups_root_itself(self):
         import verify_freeze_recovery, verify_mover_transfer, verify_target_attention
-        import verify_water_route, verify_route_distance
+        import verify_water_route, verify_route_distance, verify_train_wait
         modules = (verify_freeze_recovery, verify_mover_transfer, verify_target_attention,
-                   verify_water_route, verify_route_distance, maps)
+                   verify_water_route, verify_route_distance, verify_train_wait, maps)
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             for module in modules:
@@ -209,6 +209,16 @@ class FixtureContract(unittest.TestCase):
                     with self.assertRaisesRegex(ValueError, 'strict child'): module.main()
                 lab.assert_not_called()
                 self.assertFalse((root / 'backups').exists())
+
+    def test_train_observer_requires_one_route_install(self):
+        from verify_train_wait import observe_route_install
+
+        line = '    an_bot.ar_hopdoor = 0;\n'
+        observed = observe_route_install(line)
+        self.assertIn(line + '    TrainWaitRouteReady (an_bot);\n', observed)
+        for invalid in ('', line * 2):
+            with self.assertRaisesRegex(AssertionError, 'route install changed'):
+                observe_route_install(invalid)
 
     def test_shared_stage_writes_lf_and_rolls_back_a_failed_copy(self):
         with tempfile.TemporaryDirectory() as td:

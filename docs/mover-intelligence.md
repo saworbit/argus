@@ -160,6 +160,33 @@ promotion still needs current spawn/item reach checks and engine-proven
 links. The preserved platform fixture provides a reproducible failure for
 that work without adding map-specific runtime branches.
 
+## Displaced train waits on dm2
+
+The normal train hop can wait 15 seconds at the boarding seat or on a
+stationary car. A bot that has never boarded, is nearly still on dry world
+floor and is over 160u from its boarding seat now uses the same replan
+path after eight seconds. A moving rider still renews the original clock.
+
+The two logged wait origins sit against a clip-hull boundary, so the
+private fixture uses nearby supported seats at `(1375 -714 344)` and
+`(1375 -729.7 344)`. It verifies support before handing each case to
+production AI. Each seat is exercised in three live shuttle phases,
+alongside three trials from the actual boarding seat. The candidate must
+release and acquire an alternate route in under ten seconds with full
+health. At least one control must board the car and reach the far deck.
+
+The six stock cases released at 15.0 seconds and installed an alternate
+route at 15.1 to 16.4 seconds. The six candidate cases released at 8.0
+seconds and replanned at 8.2 to 8.8 seconds. The stock recorded one far
+deck crossing and the candidate recorded two. Two ordinary 120-second
+matches per arm had zero freezes and no train hops, so the fixtures
+carry the evidence for the changed branch.
+
+Run `python tools/verify_train_wait.py --output backups/train_wait_candidate --prefix train_wait_candidate`.
+Use `--source` with a clean copy of the old `src` and `--control` for the
+15-second arm. The fixture retains the raw tape, private program and
+source hashes. [Missed boarding evidence](https://github.com/saworbit/argus/issues/1003)
+
 ## Tracked follow-ups
 
 The documentation audit searched open and closed issues before filing these
