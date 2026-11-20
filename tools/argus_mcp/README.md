@@ -783,6 +783,10 @@ so `see what=path name=dm4:quad->lg` can use the pad hop.
 `detail=full` adds every entity, every teleporter, and button-door
 causality (including one relay hop and `func_door_secret`). Atlases
 and nav graphs cache until the BSP or nav JSON mtime changes.
+The teleporter list includes `requires_activation` and the trigger's
+`activation_name` when present. A node lookup reports the sampled JSON
+`origin` and the `emitted_origin` when the matching generated QuakeC node
+is available.
 
 `lab_status` lists maps with bsp / nav / dispatcher flags and a
 recipe string. It does not ingest every BSP (that was 0.11). Use
@@ -1263,13 +1267,15 @@ JSON: a regenerated graph invalidates the yardstick until its routes are
 reviewed deliberately. Reports preserve individual results and summarize
 completion rate plus median game time for all, train, and held-out tasks.
 The tape must confirm exactly one start on the manifest map. A refused
-spawn or level change fails the benchmark and keeps its raw tape.
+spawn, level change or fatal engine error fails the benchmark and keeps
+its raw tape, even after a task reports completion.
 The installed program's build receipt must match the pin, and the retained
 tape's navigation receipt must confirm that the graph loaded.
 Completion requires finite engine game time within the task's `budget_sec`,
 including the exact boundary. Late finishes keep their raw `game_sec` but
 count as incomplete and do not enter successful-time medians. Wall-clock
 grace only bounds the harness wait.
+The command checks the suite argument and options before compilation.
 Compilation and installation happen by default. For a private trial, use a
 compatible lab-compiled program with its graph receipt. Set `ARGUS_GAME` to
 the scratch game holding the program, `ARGUS_SRC` to its graph's source

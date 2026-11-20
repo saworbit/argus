@@ -41,6 +41,9 @@ fn is_zero_u32(v: &u32) -> bool {
 #[derive(Debug, Clone, Serialize)]
 pub struct Teleport {
     pub target: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub activation_name: Option<String>,
+    pub requires_activation: bool,
     pub dest_origin: Option<[f32; 3]>,
     pub dest_name: String,
     pub trigger_center: Option<[f32; 3]>,
@@ -275,6 +278,9 @@ pub struct ControlItem {
 #[derive(Debug, Clone, Serialize)]
 pub struct TeleportBrief {
     pub target: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub activation_name: Option<String>,
+    pub requires_activation: bool,
     pub dest_name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub dest_origin: Option<[f32; 3]>,
@@ -284,7 +290,11 @@ pub struct TeleportBrief {
 pub struct NodeView {
     pub map: String,
     pub node: u32,
+    /// Sampled position from the navigation JSON.
     pub origin: [f32; 3],
+    /// Waypoint position in the corresponding generated QuakeC source.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub emitted_origin: Option<[f32; 3]>,
     pub band: String,
     pub nearby_control: Vec<String>,
 }
@@ -470,6 +480,15 @@ pub fn lookup_node(cfg: &Config, map: &str, node: u32) -> Result<NodeView, Strin
         n.get(1).and_then(|x| x.as_f64()).unwrap_or(0.0) as f32,
         n.get(2).and_then(|x| x.as_f64()).unwrap_or(0.0) as f32,
     ];
+    let emitted_origin = std::fs::read_to_string(path.with_extension(""))
+        .ok()
+        .and_then(|text| {
+            let node_call = format!("n{node} = Argus_NavNode ('");
+            let vector = text
+                .lines()
+                .find_map(|line| line.trim().strip_prefix(&node_call)?.strip_suffix("');"));
+            parse_origin(vector)
+        });
     let nearby_control = atlas
         .control
         .iter()
@@ -480,6 +499,7 @@ pub fn lookup_node(cfg: &Config, map: &str, node: u32) -> Result<NodeView, Strin
         map: atlas.map.clone(),
         node,
         origin,
+        emitted_origin,
         band: band_label(&atlas.map, origin[2]),
         nearby_control,
     })
@@ -500,6 +520,8 @@ pub fn atlas_brief(atlas: &MapAtlas) -> AtlasBrief {
             .iter()
             .map(|t| TeleportBrief {
                 target: t.target.clone(),
+                activation_name: t.activation_name.clone(),
+                requires_activation: t.requires_activation,
                 dest_name: t.dest_name.clone(),
                 dest_origin: t.dest_origin,
             })
@@ -783,6 +805,8 @@ fn atlas_from_bsp(
             });
         teleports.push(Teleport {
             target: target.clone(),
+            activation_name: e.get("targetname").cloned(),
+            requires_activation: e.contains_key("targetname"),
             dest_origin: dest.map(|d| d.0),
             dest_name: dest.map(|d| d.1.clone()).unwrap_or_default(),
             trigger_center,
@@ -1224,6 +1248,7 @@ struct SpawnSettling {
     door_start_open_flag: i32,
     door_default_lip_u: f32,
     plat_default_inset_u: f32,
+    invalid_entity_number: f32,
 }
 
 fn spawn_settling() -> &'static SpawnSettling {
@@ -1249,7 +1274,7 @@ fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<
             .get(key)
             .and_then(|s| s.trim().parse::<f32>().ok())
             .filter(|value| value.is_finite())
-            .unwrap_or(0.0)
+            .unwrap_or(rule.invalid_entity_number)
     };
     let flags = number("spawnflags") as i32;
     if flags & rule.not_deathmatch_flag != 0 {
@@ -2283,6 +2308,12 @@ mod tests {
 "model" "*1"
 }
 {
+"classname" "trigger_teleport"
+"target" "t1"
+"targetname" "switch_portal"
+"model" "*1"
+}
+{
 "classname" "info_teleport_destination"
 "targetname" "t1"
 "origin" "10 20 30"
@@ -2373,6 +2404,9 @@ mod tests {
             name: String,
             origin: [f32; 3],
             settled: [f32; 3],
+            model: Option<String>,
+            #[serde(default)]
+            keys: BTreeMap<String, String>,
         }
 
         let bsp =
@@ -2380,11 +2414,20 @@ mod tests {
         let cases: Vec<Case> =
             serde_json::from_str(include_str!("../testdata/spawn_settling_cases.json")).unwrap();
         let hull = bsp.hull0.as_ref().unwrap();
-        let brushes: Vec<_> = parse_entities(&bsp.entities)
-            .iter()
-            .filter_map(|entity| spawn_brush_bounds(&bsp, entity))
-            .collect();
+        let entities = parse_entities(&bsp.entities);
         for case in cases {
+            let mut edited = entities.clone();
+            if let Some(model) = case.model {
+                let entity = edited
+                    .iter_mut()
+                    .find(|entity| entity.get("model") == Some(&model))
+                    .expect("model in settling fixture");
+                entity.extend(case.keys);
+            }
+            let brushes: Vec<_> = edited
+                .iter()
+                .filter_map(|entity| spawn_brush_bounds(&bsp, entity))
+                .collect();
             assert_eq!(
                 settled_spawn(hull, &brushes, case.origin),
                 case.settled,
@@ -2432,8 +2475,16 @@ mod tests {
         assert_eq!(atlas.message.as_deref(), Some("The Bad Place"));
         assert_eq!(atlas.counts.get("weapon"), Some(&1));
         assert_eq!(atlas.counts.get("spawn"), Some(&1));
-        assert_eq!(atlas.teleports.len(), 1);
+        assert_eq!(atlas.teleports.len(), 2);
         assert_eq!(atlas.teleports[0].dest_origin, Some([10.0, 20.0, 30.0]));
+        let brief = serde_json::to_value(atlas_brief(&atlas)).unwrap();
+        assert_eq!(brief["tele_list"][0]["requires_activation"], false);
+        assert_eq!(
+            brief["tele_list"][0]["activation_name"],
+            serde_json::Value::Null
+        );
+        assert_eq!(brief["tele_list"][1]["requires_activation"], true);
+        assert_eq!(brief["tele_list"][1]["activation_name"], "switch_portal");
         assert!(atlas
             .causality
             .iter()
@@ -2473,6 +2524,35 @@ mod tests {
             .iter()
             .any(|c| c.reach == "rocket_jump" || c.elevated));
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn node_lookup_distinguishes_sampled_and_emitted_coordinates() {
+        let temp = crate::test_support::TestDir::new("cartograph-node").unwrap();
+        let root = temp.path();
+        let maps = root.join("maps_local");
+        fs::create_dir_all(&maps).unwrap();
+        fs::write(
+            maps.join("dmtest.bsp"),
+            write_mini_bsp(ents(), [-256.0, -256.0, -64.0], [256.0, 256.0, 256.0]),
+        )
+        .unwrap();
+        let env = HashMap::from([("ARGUS_ROOT".into(), root.display().to_string())]);
+        let cfg = load_for_reads_from(&env, root).unwrap();
+        fs::create_dir_all(&cfg.src).unwrap();
+        fs::write(
+            cfg.src.join("argus_nav_dmtest.qc.json"),
+            r#"{"nodes":[[-64.5,0,164.4]],"links":[]}"#,
+        )
+        .unwrap();
+        fs::write(
+            cfg.src.join("argus_nav_dmtest.qc"),
+            "    n0 = Argus_NavNode ('-64 0 164');\n",
+        )
+        .unwrap();
+        let node = lookup_node(&cfg, "dmtest", 0).unwrap();
+        assert_eq!(node.origin, [-64.5, 0.0, 164.4]);
+        assert_eq!(node.emitted_origin, Some([-64.0, 0.0, 164.0]));
     }
 
     #[test]

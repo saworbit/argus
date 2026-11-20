@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Show teleporter activation and emitted waypoint positions in map inspection ([#999](https://github.com/saworbit/argus/issues/999), [#1000](https://github.com/saworbit/argus/issues/1000)), and use the shared spawn defaults for malformed brush numbers ([#1014](https://github.com/saworbit/argus/issues/1014)).
+
 - Let bots use a short, safe waypoint detour when a corner blocks pursuit of a last sighting or investigation of a nearby shot.
 
 - Let navgen screen and splice offline elbow candidates on a completed graph with `--seat-elbows`, with a reason for each unresolved walk ([#907](https://github.com/saworbit/argus/issues/907)).
@@ -900,6 +902,8 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Validate benchmark options before compiling ([#993](https://github.com/saworbit/argus/issues/993)), refuse fatal benchmark tapes ([#994](https://github.com/saworbit/argus/issues/994)), keep comparison checks independent of display text ([#1009](https://github.com/saworbit/argus/issues/1009)), and show the accepted match duration in help ([#1001](https://github.com/saworbit/argus/issues/1001)).
 
 - Distinguish pickup sounds from actual weapon fire, keep fresh gunfire cues over loot sounds, and clear hearing on respawn.
 - Keep an active lightning burst going through small changes in enemy distance.
