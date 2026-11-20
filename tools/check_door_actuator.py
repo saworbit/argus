@@ -1,4 +1,5 @@
 """Strict native opener-chain contract receipts."""
+from argus_engine_errors import fatal_engine_line
 import re
 from check_perception_fixture import function
 
@@ -16,7 +17,7 @@ DIRECT_ONLY_FAILURES=['ceiling_relay_uses_floor_button','logical_relay_uses_butt
 
 def check(text,map_name):
     assert 'BHVRPL begin door_actuator' in text
-    assert not any(s in text for s in ('Host_Error','Program error','runaway loop'))
+    assert fatal_engine_line(text) is None
     rows=[s for s in text.splitlines() if s.startswith('DAFIX ')]
     assert len(rows)==len(LABELS)+2 and rows[0]==f'DAFIX begin {map_name}'
     checks=re.findall(r'^DAFIX check (\w+) ([01])$',text,re.M)

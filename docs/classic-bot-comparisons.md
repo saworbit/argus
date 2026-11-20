@@ -43,6 +43,17 @@ for Argus match telemetry.
 
 ## Combat trials
 
+Repeat the neutral pickup, stock weapon fallback, corner investigation, combat
+pickup expiry and two-portal cases with the private verifier.
+
+```text
+python tools/verify_adaptation.py --output backups/adaptation-check --prefix adaptation_check
+```
+
+The runner keeps the source and binary hashes and the native tape receipts for
+dm2 and dm6. It also runs an ordinary dm6 arm and checks that comparing it with
+the controlled dm6 tape refuses a gameplay verdict.
+
 Pickup sounds previously inherited the weapon bit of the player who took
 the item. An armour pickup could make a listener react as though it heard a
 rocket or lightning attack. The first candidate took weapon cues from actual shots,

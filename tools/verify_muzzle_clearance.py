@@ -1,4 +1,5 @@
 """Bounded native-engine verification. One smoke and three private fixtures."""
+from argus_engine_errors import fatal_engine_line
 import hashlib,json,re,shutil
 from pathlib import Path
 from run_behaviour_equivalence import ROOT,Lab,identity
@@ -53,7 +54,7 @@ def main():
                         repeats=1,primary='stall_parity',run_name=name)
                     save(folder/'native.json',native);assert native['ok']
                     tape=ROOT/f'runs/{name}.log';text=tape.read_text(errors='replace')
-                    assert not any(t in text for t in ('Host_Error','Program error','WRONG MAP'))
+                    assert fatal_engine_line(text) is None and 'WRONG MAP' not in text
                     row=dict(mode=mode,name=name,compile=compiled,native=native,
                         identity=identity('dm4'),binary_sha256=sha(binary),raw_sha256=sha(tape))
                     if mode!='production':

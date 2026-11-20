@@ -12,6 +12,7 @@ No historical snapshots, cohorts or deployment. Health checks do not resolve
 the outstanding dm4 gameplay warning in #583.
 """
 
+from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity
 from argus_validation import require
 import argparse
@@ -363,7 +364,7 @@ def run(fixture, output, prefix, *, root=ROOT, lab_factory=PrivateFixtureLab, cl
                                     raise RuntimeError('private engine experiment failed')
                             text = tape.read_text(errors='replace')
                             row['tape_sha256'] = sha(tape)
-                            if any(s in text for s in ('Host_Error', 'Program error', 'runaway loop', "Couldn't spawn server")):
+                            if fatal_engine_line(text) is not None or "Couldn't spawn server" in text:
                                 raise RuntimeError('engine failure in retained tape')
                             if fixture == 'health':
                                 row['perception'] = check_perception(text, map_name, 0, [1])

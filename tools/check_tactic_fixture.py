@@ -1,4 +1,5 @@
 """Assert real-engine outcomes from the opt-in TACFIX observer."""
+from argus_engine_errors import fatal_engine_line
 import argparse
 import json
 import math
@@ -8,7 +9,7 @@ from pathlib import Path
 SAMPLE = re.compile(r"TACFIX sample\s+([\d.]+) pos '([^']+)' hidden\s+(\d+) rockets\s+([\d.-]+) targethp\s+([\d.-]+) hp\s+([\d.-]+) state\s+(\d+)")
 
 def check(text):
-    assert "Host_Error" not in text and "runaway loop error" not in text, "engine error in fixture tape"
+    assert fatal_engine_line(text) is None, "engine error in fixture tape"
     results = []
     blocks = text.split("TACFIX begin ")
     for index, block in enumerate(blocks[1:]):

@@ -216,6 +216,8 @@ physical outcomes.
 The repo invariant job also blocks on `python tools/argus_ci.py all`.
 Water-route proofs, private fixture staging and study compatibility checks use
 explicit validation that stays active under `python -O` and `PYTHONOPTIMIZE`.
+The active Python checkers and the native lab share the same fatal console
+prefixes. Registered cohort scripts retain the checks pinned in their protocols.
 These checks retain their `AssertionError` contract. Runner teardown always
 closes the lab, skips another request while a failure is unwinding, and bounds
 a healthy stop request to two seconds before closing the process.

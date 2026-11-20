@@ -1,4 +1,5 @@
 """Independent oracle for controlled-input PERFIX; never parses ARGLOG metrics."""
+from argus_engine_errors import fatal_engine_line
 from argus_validation import require
 import argparse
 import json
@@ -46,7 +47,7 @@ def audit(source):
 
 def check(text, map_name, ring, expected_ids):
     require(('BHVFIX begin perception' in text), 'missing native fixture quarantine marker')
-    require((not any(x in text for x in ('Host_Error', 'Program error', 'runaway loop error'))), 'engine error')
+    require(fatal_engine_line(text) is None, 'engine error')
     active = None
     completed = []
     for line in text.splitlines():

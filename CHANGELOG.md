@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Repeat the hearing, combat pickup and two-portal checks in a private stock-map fixture that refuses gameplay comparison ([#1004](https://github.com/saworbit/argus/issues/1004)).
+
 - Compare recorded movement, pauses and proximity across protocol 15 bot demos without requiring Argus telemetry ([#998](https://github.com/saworbit/argus/issues/998)).
 
 - Show teleporter activation and emitted waypoint positions in map inspection ([#999](https://github.com/saworbit/argus/issues/999), [#1000](https://github.com/saworbit/argus/issues/1000)), and use the shared spawn defaults for malformed brush numbers ([#1014](https://github.com/saworbit/argus/issues/1014)).
@@ -1645,6 +1647,8 @@ passing botmatch does not establish better human play.
   QC filenames with `--register` before any files change (#537).
 
 #### Maintenance
+
+- Share fatal engine prefixes between the active Python fixture and study checkers and the native lab ([#1010](https://github.com/saworbit/argus/issues/1010)).
 
 - Check the Python and Rust build stamps and tape identity readers against shared cases ([#1013](https://github.com/saworbit/argus/issues/1013), [#1012](https://github.com/saworbit/argus/issues/1012)), and show the stale lab warning in the private fixture verifier ([#996](https://github.com/saworbit/argus/issues/996)).
 
