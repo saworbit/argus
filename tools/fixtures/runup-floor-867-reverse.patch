@@ -1,0 +1,15 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -1674,12 +1674,6 @@
+         self.ar_brinkliquid = time;
+         return TRUE;
+     }
+-    // A staged jump lines up on the approach deck before it charges.
+-    // Refuse an ordinary drop while the bot is still walking back (#867).
+-    if (self.ar_hopjump == 1 && (self.flags & FL_ONGROUND)
+-        && (self.ar_sprintstate == -1 || self.ar_sprintstate == 1)
+-        && self.origin_z + self.mins_z - trace_endpos_z > 18)
+-        return TRUE;
+     // The floor under the probe is only where a bot STEPPING off would
+     // land. One running off keeps its speed and lands further on.
+     if (Argus_DropLandHazard (ahead, myaw, trace_endpos_z, depth))
