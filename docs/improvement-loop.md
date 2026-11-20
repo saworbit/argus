@@ -29,7 +29,7 @@ Cheapest first; a rung that refutes the change stops the climb.
 | Rung | Instrument | Settles | Cannot settle |
 | --- | --- | --- | --- |
 | 1 | Static checks, navmesh audit, directed reach (`argus_lab.py pyramid`) | broken graphs, unreachable items, stale artefacts | anything about play |
-| 2 | Fixtures and benchmark tasks | a specific behaviour, deterministically | how often it matters in a match |
+| 2 | Fixtures and benchmark tasks | how a specific behaviour fares under a prescribed setup | how often it matters in a match |
 | 3 | [Fixed-clock ladder](fixed-clock.md) (`argus-mcp seeds`) | a movement or economy change, quickly, on maps where the clock is accepted | metrics listed as its limits there, and anything human |
 | 4 | Wall-clock band (`experiment`, `argus-mcp match`) | the same, at the lab's own rate; the tapes a ship decision needs | anything human |
 | 5 | [Stand-in human](stand-in.md) (`argus-mcp standin`) | the direction of a threat change, before a session is spent, where calibrated | how a person feels about it |

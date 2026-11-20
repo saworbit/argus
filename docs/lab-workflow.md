@@ -576,12 +576,15 @@ After a navigation change, run the lab experiment/matrix loop.
    worktree and the BSP available in `maps_local/` or `ARGUS_MAPS`. This
    checks settled deathmatch spawns. Probe the affected links in the engine
    and use a native benchmark with fixed starts and goals for the whole
-   route. The route can fail even when its individual links pass.
+   route. Follow the [benchmark setup](../tools/argus_mcp/README.md#fixed-navigation-benchmark)
+   and check `verified_start` for each task. The route can fail even when its
+   individual links pass.
 3. Before recording, pin the actual control and candidate programs, graph
    receipts, map, cadence, pair count and acceptance conditions. Run both
    builds at the same played cadence in private game and run directories.
-   Check each tape's map, build, clock and navigation receipt before
-   counting it.
+   Check each tape's map, build, clock and navigation receipt before counting
+   it. A benchmark setup error invalidates the trial. For a mover route, also
+   verify the bot rode the mover and reached the intended landing.
 4. Judge the registered route, spawn and lava conditions alongside the
    native hard bands. For the e1m8 follow-ups, the lava gate used the
    mean BSP-backed lava death count per tape. A passing native median band
