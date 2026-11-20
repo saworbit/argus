@@ -112,9 +112,10 @@ and any other type is refused; the remaining calls keep their order. Entries alr
 a rerun changes nothing. Then it rebakes regions and tactics. Built for
 elbow seats: a corridor that turns a corner fails beeline_ok end to end,
 and a seat at the turn makes two walks that pass. A full regeneration
-applies the same file after its late link passes (section 7g2e) with the
-same rules, and refuses to publish when an entry cannot apply, for example
-a walk end that is no longer a waypoint.
+applies the same rules after its late link passes (section 7g2e). If a
+sidecar supplies a "regeneration" object, full generation uses its seats,
+walks and cuts in place of the top-level entries. The splice still uses
+the top-level entries. Both refuse to publish when an entry cannot apply.
 
 --seat-elbows screens a completed graph for level walks that fail the
 early-switch floor test. It tries nearby dry seats with the offline turn
@@ -2529,6 +2530,11 @@ def _seat_refusal(message):
 if _seatspec_path.exists():
     try:
         _seatspec = __import__("json").loads(_seatspec_path.read_text(encoding="utf-8"))
+        if "regeneration" in _seatspec:
+            _seatspec = _seatspec["regeneration"]
+            if not isinstance(_seatspec, dict) or not _seatspec.keys() & {"seats", "walks", "cuts"}:
+                raise ValueError("regeneration must list seats, walks or cuts")
+            print(f"seats sidecar: using regeneration entries from {_seatspec_path.name}")
         for _p in _seatspec.get("seats", []):
             if len(_p) != 3:
                 raise ValueError(f"seat {_p} is not an origin")
