@@ -63,6 +63,11 @@ pub const NULL_PAIRS: [(&str, &str); 16] = [
 /// an arm of a committed ladder, named in the changelog entry that
 /// shipped it.
 const LADDER_ARMS: &[(&str, &[&str])] = &[
+    // The November 14 bands superseded by #980 remain same-build noise arms.
+    ("dm3", &["band_dm3_r1", "band_dm3_r2", "band_dm3_r3"]),
+    ("dm4", &["band_dm4_r1", "band_dm4_r2", "band_dm4_r3"]),
+    ("e1m2", &["band_e1m2_r1", "band_e1m2_r2", "band_e1m2_r3"]),
+    ("e1m7", &["band_e1m7_r4", "band_e1m7_r5", "band_e1m7_r6"]),
     // the v4.18 ship ladder, four a side on byte-identical bytes
     (
         "dm4",

@@ -897,6 +897,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Refresh the dm3, dm4, e1m2 and e1m7 bands with three played-rate matches each on their current graphs. Keep the previous bands in the noise corpus ([#980](https://github.com/saworbit/argus/issues/980)).
+
 - Verify the compiled graph and tape receipt before reporting a benchmark, and refresh the dm3 and dm4 graph pins ([#979](https://github.com/saworbit/argus/issues/979)).
 
 - Record the completed GUI timeout, console helper and lava classification fixes in the lab claims ledger ([#976](https://github.com/saworbit/argus/issues/976)).

@@ -19,6 +19,7 @@
 *.cfg text
 
 # Study receipts hash the original console bytes, including CRLF.
+runs/band_*_20261120_r*.log -text !eol -whitespace
 runs/broad_*.log -text !eol -whitespace
 runs/freeze_*.log -text !eol -whitespace
 runs/mover_forecast_v1_*.log -text !eol -whitespace
