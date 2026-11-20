@@ -919,6 +919,9 @@ HARVEST BEFORE STARTING ANYTHING NEW.
 `argus-mcp demo <stem>[:export]` is the CLI face of the same reader,
 for sessions without an MCP client.
 
+`argus-mcp classic-replay <suite.json>` compares visible movement, pauses and
+proximity across protocol 15 demos. See the [manifest and limits](../../docs/classic-bot-comparisons.md#compare-recorded-movement).
+
 Player tracks include `movement` using `argus-reversal-v1`: a horizontal turn
 over 120 degrees within 250 ms, speed above 120 units/s at both ends, with a
 500 ms refractory period. Rates use moving exposure. Gaps above 250 ms,
