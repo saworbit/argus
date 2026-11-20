@@ -902,6 +902,7 @@ passing botmatch does not establish better human play.
 - Verify the compiled graph and tape receipt before reporting a benchmark, and refresh the dm3 and dm4 graph pins ([#979](https://github.com/saworbit/argus/issues/979)).
 
 - Fail a match on a fatal engine error after telemetry starts and retain the partial tape ([#984](https://github.com/saworbit/argus/issues/984)).
+- Keep retained fatal tapes out of gameplay comparisons and show the engine reason in their briefs ([#986](https://github.com/saworbit/argus/issues/986)).
 
 - Record the completed GUI timeout, console helper and lava classification fixes in the lab claims ledger ([#976](https://github.com/saworbit/argus/issues/976)).
 

@@ -82,6 +82,9 @@ pub struct MatchTape {
     /// Activated lab encounters/replays are inspectable, not ordinary matches.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub controlled_fixture: bool,
+    /// Fatal engine diagnostics remain inspectable in a retained partial tape.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub engine_error: Option<String>,
     pub map: Option<String>,
     pub samples: BTreeMap<String, Vec<Sample>>,
     pub deaths: Vec<DeathEvent>,
@@ -606,6 +609,7 @@ pub fn parse_tape(text: &str) -> MatchTape {
             .unwrap();
         let mut tape = parse_one(best);
         tape.controlled_fixture = controlled_fixture(text);
+        tape.engine_error = crate::diagnose::fatal_engine_error(text);
         // A refused request elsewhere in a multi-level tape must not disappear
         // when a different segment wins the sample-count selection.
         tape.failed_spawns = text
@@ -880,6 +884,7 @@ fn parse_one(text: &str) -> MatchTape {
     }
     let movement = crate::motion::inspect(text, &events);
     MatchTape {
+        engine_error: crate::diagnose::fatal_engine_error(text),
         movement,
         controlled_fixture: controlled_fixture(text),
         map,
