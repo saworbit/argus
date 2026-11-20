@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Give e1m8 full regeneration its own sidecar seats and walks. The [matched route trials](docs/specs/2026-11-20-e1m8-soak.md#full-regeneration) keep the tested splice in play ([#950](https://github.com/saworbit/argus/issues/950)).
+
 - Repeat the hearing, combat pickup and two-portal checks in a private stock-map fixture that refuses gameplay comparison ([#1004](https://github.com/saworbit/argus/issues/1004)).
 
 - Exercise loaded weapon switches, burst cancellation and water entry on dm2 and dm6 ([#1005](https://github.com/saworbit/argus/issues/1005)).
@@ -908,6 +910,8 @@ passing botmatch does not establish better human play.
   with Python (#538).
 
 #### Fixed
+
+- Clear the previous mover action at fixed-task placement and reacquire support at the exact start ([#992](https://github.com/saworbit/argus/issues/992)).
 
 - Validate benchmark options before compiling ([#993](https://github.com/saworbit/argus/issues/993)), refuse fatal benchmark tapes ([#994](https://github.com/saworbit/argus/issues/994)), keep comparison checks independent of display text ([#1009](https://github.com/saworbit/argus/issues/1009)), and show the accepted match duration in help ([#1001](https://github.com/saworbit/argus/issues/1001)).
 

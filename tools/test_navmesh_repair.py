@@ -361,6 +361,26 @@ class RegenSeats(unittest.TestCase):
             self.assertIn("generation refused before publication", res.stderr)
             self.assertFalse((self.tmp / "argus_nav_fixture.qc").exists(), spec)
 
+    def test_regeneration_uses_its_own_entries_and_still_refuses_a_missing_endpoint(self):
+        spec = {"walks": [[[0, 0, 24], [0, 999, 24]]],
+                "regeneration": {"seats": [self.SEAT], "walks": [[self.SEAT, self.GRID]]}}
+        res = self.regen(spec)
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        _, links, _ = self.graph()
+        self.assertIn((tuple(self.SEAT), tuple(self.GRID)), links)
+        before = self.outputs()
+        spec["regeneration"]["walks"].append([self.SEAT, [0, 999, 24]])
+        res = self.regen(spec)
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn("generation refused before publication", res.stderr)
+        self.assertEqual(self.outputs(), before)
+
+    def test_empty_regeneration_section_refuses_before_publication(self):
+        res = self.regen({"regeneration": {"note": "missing entries"}})
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn("regeneration must list seats, walks or cuts", res.stderr)
+        self.assertFalse((self.tmp / "argus_nav_fixture.qc").exists())
+
 
 # Brush entities for the spawn-pad fixture (#783), each a box where its
 # spawn code leaves it, as (mins, maxs). A deathmatch spawn stands on
