@@ -34,6 +34,24 @@ from run_health_fixture import prepare as prepare_health, audit_private
 from verify_plan_progress import copy_assets, save, sha
 
 
+def require_current_lab(data):
+    identity = data.get('lab_identity') or {}
+    if not identity.get('authoritative'):
+        raise ValueError(identity.get('warning') or 'matching source-built native lab required')
+
+
+class PrivateFixtureLab(Lab):
+    """Reuse the study transport and surface the current lab identity warning."""
+
+    def call(self, tool, **arguments):
+        response = self.request('tools/call', dict(name=tool, arguments=arguments))
+        result = response.get('result', {})
+        require(not response.get('error') and not result.get('isError'), response)
+        data = json.loads(result['content'][0]['text'])
+        require_current_lab(data)
+        return data
+
+
 def tree_identity(folder):
     """Whole-tree audit including graph JSON, distinct from source_sha256."""
     files = {p.relative_to(folder).as_posix(): sha(p)
@@ -186,8 +204,7 @@ def native_config(lab_factory, output, executable):
         lab = lab_factory(err, {'TOKIO_WORKER_THREADS': '2'}, exe=executable)
         try:
             project = lab.call('see', what='project')
-            if not project.get('lab_identity', {}).get('authoritative'):
-                raise ValueError('matching source-built native lab required')
+            require_current_lab(project)
             config = lab.call('config_check')
             if not config['complete']:
                 raise ValueError('native lab configuration is incomplete')
@@ -238,7 +255,7 @@ def health_trial(lab, stem, map_name, env, client_run):
         lab.call('match_stop')
 
 
-def run(fixture, output, prefix, *, root=ROOT, lab_factory=Lab, client_run=None):
+def run(fixture, output, prefix, *, root=ROOT, lab_factory=PrivateFixtureLab, client_run=None):
     if fixture not in {'muzzle', 'health', 'combat', 'button', 'door'}:
         raise ValueError('unknown fixture')
     executable = lab_executable(root=root)
