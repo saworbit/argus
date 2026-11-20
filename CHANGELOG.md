@@ -899,6 +899,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Validate benchmark options before compiling ([#993](https://github.com/saworbit/argus/issues/993)), refuse fatal benchmark tapes ([#994](https://github.com/saworbit/argus/issues/994)), keep comparison checks independent of display text ([#1009](https://github.com/saworbit/argus/issues/1009)), and show the accepted match duration in help ([#1001](https://github.com/saworbit/argus/issues/1001)).
+
 - Distinguish pickup sounds from actual weapon fire, keep fresh gunfire cues over loot sounds, and clear hearing on respawn.
 - Keep an active lightning burst going through small changes in enemy distance.
 - Give reachable combat pickups a bounded attempt and let invulnerable bots stay in a fight at low health.

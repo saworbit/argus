@@ -690,13 +690,11 @@ mod tests {
 
     #[test]
     fn fixtures_and_humans_require_explicit_review_queries() {
-        let mut brief = MatchBrief::empty();
-        brief
-            .flags
-            .push(crate::intel::CONTROLLED_FIXTURE_FLAG.into());
+        let mut brief = crate::intel::brief_text("ARGUS init on dm4\nBHVRPL begin review\n", None);
+        brief.flags.clear();
         assert_eq!(kind_of("named_arbitrarily", &brief), "fixture");
         assert_eq!(kind_of("shane_fixture", &brief), "fixture");
-        brief.flags.clear();
+        let brief = MatchBrief::empty();
         assert_eq!(kind_of("shane_old", &brief), "human");
         let mut row = mk("fixture", "dm4", "", 0.0);
         row.kind = "fixture".into();

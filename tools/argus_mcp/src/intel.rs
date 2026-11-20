@@ -172,6 +172,10 @@ pub struct MatchBrief {
     /// Present only when the tape recorded a different map.
     #[serde(skip_serializing_if = "Option::is_none")]
     requested_map: Option<String>,
+    #[serde(skip)]
+    controlled_fixture: bool,
+    #[serde(skip)]
+    engine_error: Option<String>,
     pub totals: Totals,
     pub mode_share: ModeShare,
     pub bots: Vec<crate::parse_arglog::BotStats>,
@@ -680,10 +684,7 @@ pub const CONTROLLED_FIXTURE_FLAG: &str =
 const FATAL_TAPE_PREFIX: &str = "FATAL TAPE: ";
 
 pub fn is_controlled_fixture(brief: &MatchBrief) -> bool {
-    brief
-        .flags
-        .iter()
-        .any(|flag| flag == CONTROLLED_FIXTURE_FLAG)
+    brief.controlled_fixture
 }
 
 fn brief_map(tape: &MatchTape, map_hint: Option<&str>) -> Option<String> {
@@ -940,6 +941,8 @@ pub(crate) fn brief_tape_lava(
         movement: tape.movement.clone(),
         map,
         requested_map,
+        controlled_fixture: tape.controlled_fixture,
+        engine_error: tape.engine_error.clone(),
         totals,
         mode_share,
         bots: summary.bots,
@@ -2102,9 +2105,7 @@ impl MatchBrief {
     }
 
     fn fatal_engine_error(&self) -> Option<&str> {
-        self.flags
-            .iter()
-            .find_map(|flag| flag.strip_prefix(FATAL_TAPE_PREFIX))
+        self.engine_error.as_deref()
     }
 }
 
@@ -3815,9 +3816,14 @@ mod tests {
         let mut ordinary = super::MatchBrief::empty();
         ordinary.map = Some("dm4".into());
         ordinary.totals.duration_sec = 60.0;
-        let mut fixture = ordinary.clone();
+        let mut fixture =
+            super::brief_text("ARGUS init on dm4\nBHVRPL begin review\n", Some("dm4"));
+        assert!(fixture
+            .flags
+            .iter()
+            .any(|flag| flag == super::CONTROLLED_FIXTURE_FLAG));
+        fixture.flags.clear();
         fixture.totals.duration_sec = 61.0;
-        fixture.flags.push(super::CONTROLLED_FIXTURE_FLAG.into());
         fixture.totals.goals = 900;
         for report in [
             super::compare_band_primary(
@@ -3937,6 +3943,11 @@ ARGEVT Reap hazard
             Some("dm4"),
         );
         assert!(fatal.fatal_engine_error().unwrap().contains("Host_Error"));
+        assert!(fatal
+            .flags
+            .iter()
+            .any(|flag| flag.starts_with(FATAL_TAPE_PREFIX)));
+        fatal.flags.clear();
         fatal.totals.stalls = clean.totals.stalls + 100;
         let band = [clean.clone(), clean.clone(), fatal.clone()];
         assert!(representative(&band).fatal_engine_error().is_none());
