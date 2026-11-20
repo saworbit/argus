@@ -1290,6 +1290,8 @@ console line ends with an `echo ARGUS_BENCH_ACK <n>` marker and is resent
 until the marker appears. The harness checks the spawn events and scoreboard
 for the single task bot. The engine stages each start and then applies it in
 the same server call that assigns the goal.
+At placement, the bot releases the old movement action and uses a fresh
+hull probe to identify support at the exact start.
 The `ARGTASK` receipt records the bot's actual origin and the goal position
 to one decimal place. Reports include `verified_start` from that receipt.
 The harness retries missing impulses up to four times per step. A repeated

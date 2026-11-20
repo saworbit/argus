@@ -292,6 +292,14 @@ with one of these fixture names:
 | `door` | Bounded opener lookup, activation acknowledgement and opening ownership/timeout |
 
 
+The fixed-task placement verifier runs on stock e1m8. It checks for a clean
+action after relocating the bot and confirms that a freshly acquired lift
+can carry it. Give it a new output directory and prefix.
+
+```text
+python tools/verify_task_placement.py --output backups/task-placement-check --prefix task_placement_check
+```
+
 Compile-only CI checks every maintained family registered in
 [`compile_private_fixtures.py`](../tools/compile_private_fixtures.py).
 The [compile workflow](../.github/workflows/compile.yml) selects each family
