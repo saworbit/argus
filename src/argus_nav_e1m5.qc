@@ -1089,7 +1089,7 @@ void() Argus_Nav_Spawn_e1m5 =
     Argus_NavLink (n69, n64);    // teleporter
     Argus_NavLinkRocket (n96, n167);
     Argus_NavLinkRocket (n170, n167);
-    Argus_NavLinkRocket (n100, n103);
+    Argus_NavLinkSwim (n100, n103);
     Argus_NavLinkRocket (n120, n98);
     Argus_NavLinkLift (n170, n77);
     Argus_NavLinkLift (n171, n172);

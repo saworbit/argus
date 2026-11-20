@@ -35,12 +35,12 @@ NODES = [[0.0, 0.0, 24.0], [128.0, 0.0, 24.0], [320.0, 0.0, 24.0],
 LINKS = [(0, 1), (1, 0), (1, 2), (2, 1), (1, 3), (3, 1), (1, 4), (4, 1)]
 
 
-def write_fixture(tmp, ents_extra=b"", models_extra=b""):
+def write_fixture(tmp, ents_extra=b"", models_extra=b"", *, liquid=-5, surface=16.0):
     planes = b"".join(struct.pack("<ffffi", *row) for row in (
         (0.0, 0.0, 1.0, 0.0, 2),     # p0 world floor
         (1.0, 0.0, 0.0, 256.0, 0),   # p1 lava strip west edge
         (1.0, 0.0, 0.0, 384.0, 0),   # p2 lava strip east edge
-        (0.0, 0.0, 1.0, 16.0, 2),    # p3 lava surface
+        (0.0, 0.0, 1.0, surface, 2), # p3 liquid surface
         (0.0, 0.0, 1.0, 24.0, 2),    # p4 hull-1 floor (origin height)
     ))
     # hull 0: solid below z 0; lava between the x planes below z 16.
@@ -52,7 +52,7 @@ def write_fixture(tmp, ents_extra=b"", models_extra=b""):
     leaves = b"".join(
         struct.pack("<2i6h2H4B", content, -1, -512, -512, -64, 512, 512, 512,
                     0, 0, 0, 0, 0, 0)
-        for content in (-1, -2, -5))
+        for content in (-1, -2, liquid))
     # hull 1 collapses liquids to empty, exactly as qbsp does
     clipnodes = struct.pack("<ihh", 4, -1, -2)
     models = struct.pack("<9f7i", -512.0, -512.0, -64.0, 640.0, 512.0, 512.0,
@@ -158,6 +158,32 @@ class SeatLinks(unittest.TestCase):
         import re
         return [(int(a), int(b)) for a, b in
                 re.findall(r"Argus_NavLink \(n(\d+), n(\d+)\);", qc)]
+
+    def test_swim_replaces_rocket_in_place_and_is_repeatable(self):
+        from argus_nav_artifacts import LINK
+        write_fixture(self.tmp, liquid=-3, surface=33.0)
+        self.type_links({(2, 1): 'Argus_NavLinkRocket'})
+        path = self.tmp / 'nav.qc'
+        before = [(a, b) for _, a, b, _ in LINK.findall(path.read_text())]
+        spec = {'swims': [[NODES[2], NODES[1]]]}
+        res = self.seat(spec)
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertEqual([(a, b) for _, a, b, _ in LINK.findall(path.read_text())], before)
+        after = [p.read_bytes() for p in (path, path.with_suffix('.qc.json'))]
+        sidecar = json.loads(after[1])
+        self.assertEqual(sidecar['swimlinks'], [[2, 1]])
+        self.assertEqual(sidecar['rjlinks'], [])
+        self.assertEqual(self.seat(spec).returncode, 0)
+        self.assertEqual([p.read_bytes() for p in (path, path.with_suffix('.qc.json'))], after)
+
+    def test_swim_refuses_a_lava_source_without_publishing(self):
+        self.type_links({(2, 1): 'Argus_NavLinkRocket'})
+        paths = [self.tmp / name for name in ('nav.qc', 'nav.qc.json')]
+        before = [path.read_bytes() for path in paths]
+        res = self.seat({'swims': [[NODES[2], NODES[1]]]})
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn('bank path refuses swim', res.stderr)
+        self.assertEqual([path.read_bytes() for path in paths], before)
 
     def test_usage_names_the_mode(self):
         res = subprocess.run([sys.executable, str(ROOT / "tools" / "argus_navgen.py"),
@@ -378,8 +404,22 @@ class RegenSeats(unittest.TestCase):
     def test_empty_regeneration_section_refuses_before_publication(self):
         res = self.regen({"regeneration": {"note": "missing entries"}})
         self.assertEqual(res.returncode, 1, res.stdout)
-        self.assertIn("regeneration must list seats, walks or cuts", res.stderr)
+        self.assertIn("regeneration must list seats, walks, swims or cuts", res.stderr)
         self.assertFalse((self.tmp / "argus_nav_fixture.qc").exists())
+
+    def test_regeneration_keeps_the_verified_swim_through_pruning(self):
+        write_fixture(self.tmp, liquid=-3, surface=33.0)
+        wet, dry = (304, 112, 24), (176, -80, 24)
+        res = self.regen({'swims': [[wet, dry]]})
+        self.assertEqual(res.returncode, 0, res.stderr + res.stdout)
+        self.assertIn('1 bank swim(s) installed', res.stdout)
+        nodes, _, doc = self.graph()
+        self.assertIn([nodes.index(wet), nodes.index(dry)], doc['swimlinks'])
+        before = self.outputs()
+        res = self.regen({'swims': [[[304, 112, 32], dry]]})
+        self.assertEqual(res.returncode, 1, res.stdout)
+        self.assertIn('generation refused before publication', res.stderr)
+        self.assertEqual(self.outputs(), before)
 
 
 # Brush entities for the spawn-pad fixture (#783), each a box where its
