@@ -849,6 +849,11 @@ a fresh spawn cannot assume the required equipment or skill. Python reach and
 pointfile readers use the same family list, with gated routes available only
 in their explicit gated view.
 
+Cartograph, Python reach and navmesh read the same spawn-settling constants
+from `src/spawn_settling.json`. Both language suites check the same synthetic
+BSP and expected landings in `testdata/`, including brush pads, start-open
+doors, plat travel and the world-floor walk limit.
+
 A match brief attaches `goal_reach` from the first atlas entry for each
 selected classname. Multiple copies of an item can have different reach
 labels. Inspect the specific route or pickup to judge one copy.

@@ -67,7 +67,7 @@ class TestArgusMapGate(unittest.TestCase):
         from argus_reach import standing_point
 
         class World:
-            def floor_under(self, x, y, z, maxdrop):
+            def floor_under(self, x, y, z, maxdrop, *, step=2.0):
                 return -740.0 - 24 if x > 900 else 0.0
 
         world = World()
@@ -78,6 +78,19 @@ class TestArgusMapGate(unittest.TestCase):
         self.assertEqual(standing_point(world, (128.0, -360.0, 280.0)), (128.0, -360.0, 24.0))
         above = [("func_wall", (100.0, -400.0, 0.0), (160.0, -320.0, 400.0))]
         self.assertEqual(standing_point(world, (128.0, -360.0, 280.0), above), (128.0, -360.0, 24.0))
+
+    def test_spawn_settling_matches_the_shared_bsp_cases(self):
+        from argus_bsp import Bsp
+        from argus_navmesh import brush_boxes
+        from argus_reach import standing_point
+
+        data = Path(__file__).resolve().parent / "argus_mcp/testdata"
+        bsp = Bsp(data / "spawn_settling.bsp")
+        boxes = brush_boxes(bsp)
+        cases = json.loads((data / "spawn_settling_cases.json").read_text(encoding="utf-8"))
+        for case in cases:
+            with self.subTest(case=case["name"]):
+                self.assertEqual(standing_point(bsp, tuple(case["origin"]), boxes), tuple(case["settled"]))
 
     def test_door_only_hop_is_in_every_reader(self):
         from argus_mapgate import _graph_edges

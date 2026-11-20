@@ -5,13 +5,16 @@ use std::path::{Path, PathBuf};
 const FNV_OFFSET: u64 = 0xcbf29ce484222325;
 const FNV_PRIME: u64 = 0x100000001b3;
 
-fn collect_rs(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
+fn collect_sources(dir: &Path, files: &mut Vec<PathBuf>) -> Result<(), String> {
     let entries = std::fs::read_dir(dir).map_err(|error| format!("{}: {error}", dir.display()))?;
     for entry in entries {
         let path = entry.map_err(|error| error.to_string())?.path();
         if path.is_dir() {
-            collect_rs(&path, files)?;
-        } else if path.extension().is_some_and(|extension| extension == "rs") {
+            collect_sources(&path, files)?;
+        } else if path
+            .extension()
+            .is_some_and(|extension| extension == "rs" || extension == "json")
+        {
             files.push(path);
         }
     }
@@ -42,15 +45,15 @@ fn feed_text(hash: &mut u64, bytes: &[u8]) {
     }
 }
 
-/// Fingerprint every Rust source plus the files that select dependencies and
-/// build-time behavior. Paths participate so a rename is a different build.
+/// Fingerprint Rust sources, compiled JSON contracts and files that select
+/// dependencies or build-time behaviour. Renames change the fingerprint.
 pub fn fingerprint(manifest_dir: &Path) -> Result<String, String> {
     let mut files = vec![
         manifest_dir.join("Cargo.toml"),
         manifest_dir.join("Cargo.lock"),
         manifest_dir.join("build.rs"),
     ];
-    collect_rs(&manifest_dir.join("src"), &mut files)?;
+    collect_sources(&manifest_dir.join("src"), &mut files)?;
     files.sort();
 
     let mut hash = FNV_OFFSET;
@@ -85,6 +88,7 @@ mod tests {
         std::fs::write(root.join("Cargo.lock"), text(&["version = 4"])).unwrap();
         std::fs::write(root.join("build.rs"), text(&["fn main() {}"])).unwrap();
         std::fs::write(root.join("src/lib.rs"), text(&["//! x", "pub mod inner;"])).unwrap();
+        std::fs::write(root.join("src/contract.json"), text(&["{}"])).unwrap();
         std::fs::write(
             root.join("src/inner/mod.rs"),
             text(&["pub fn f() {}", "// lone \r stays"]),
@@ -101,6 +105,9 @@ mod tests {
         tree(&crlf, "\r\n");
         let lf_print = fingerprint(&lf).unwrap();
         assert_eq!(lf_print, fingerprint(&crlf).unwrap());
+        std::fs::write(crlf.join("src/contract.json"), "{\"step\": 2}").unwrap();
+        assert_ne!(lf_print, fingerprint(&crlf).unwrap());
+        std::fs::write(crlf.join("src/contract.json"), "{}\r\n").unwrap();
         // Content still counts: a changed line is a different build.
         std::fs::write(lf.join("build.rs"), "fn main() { let _ = 1; }\n").unwrap();
         assert_ne!(lf_print, fingerprint(&lf).unwrap());

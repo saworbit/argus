@@ -1212,13 +1212,36 @@ fn spawn_coverage_warning(
     })
 }
 
-// Mirror the spawn-position brush boxes in tools/argus_navmesh.py.
+#[derive(serde::Deserialize)]
+struct SpawnSettling {
+    feet_offset_u: f32,
+    half_width_u: f32,
+    floor_tolerance_u: f32,
+    world_drop_u: u32,
+    world_step_u: usize,
+    brush_classes: Vec<String>,
+    not_deathmatch_flag: i32,
+    door_start_open_flag: i32,
+    door_default_lip_u: f32,
+    plat_default_inset_u: f32,
+}
+
+fn spawn_settling() -> &'static SpawnSettling {
+    static CONTRACT: OnceLock<SpawnSettling> = OnceLock::new();
+    CONTRACT.get_or_init(|| {
+        serde_json::from_str(include_str!("spawn_settling.json"))
+            .expect("valid spawn settling contract")
+    })
+}
+
 fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<BModel> {
+    let rule = spawn_settling();
     let class = entity.get("classname")?.as_str();
-    if !matches!(
-        class,
-        "func_wall" | "func_door" | "func_door_secret" | "func_plat"
-    ) {
+    if !rule
+        .brush_classes
+        .iter()
+        .any(|supported| supported == class)
+    {
         return None;
     }
     let number = |key: &str| {
@@ -1229,7 +1252,7 @@ fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<
             .unwrap_or(0.0)
     };
     let flags = number("spawnflags") as i32;
-    if flags & SPAWNFLAG_NOT_DEATHMATCH as i32 != 0 {
+    if flags & rule.not_deathmatch_flag != 0 {
         return None;
     }
     let index = entity
@@ -1238,7 +1261,7 @@ fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<
         .parse::<usize>()
         .ok()?;
     let mut bounds = bsp.models.get(index)?.clone();
-    if class == "func_door" && flags & 1 != 0 {
+    if class == "func_door" && flags & rule.door_start_open_flag != 0 {
         let direction = match number("angle") {
             -1.0 => [0.0, 0.0, 1.0],
             -2.0 => [0.0, 0.0, -1.0],
@@ -1248,7 +1271,11 @@ fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<
             }
         };
         let lip = number("lip");
-        let lip = if lip == 0.0 { 8.0 } else { lip };
+        let lip = if lip == 0.0 {
+            rule.door_default_lip_u
+        } else {
+            lip
+        };
         let travel = (0..3)
             .map(|axis| direction[axis] * (bounds.maxs[axis] - bounds.mins[axis]))
             .sum::<f32>()
@@ -1262,7 +1289,7 @@ fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<
     } else if class == "func_plat" && entity.get("targetname").is_none_or(String::is_empty) {
         let height = number("height");
         let travel = if height == 0.0 {
-            bounds.maxs[2] - bounds.mins[2] - 8.0
+            bounds.maxs[2] - bounds.mins[2] - rule.plat_default_inset_u
         } else {
             height
         };
@@ -1273,29 +1300,27 @@ fn spawn_brush_bounds(bsp: &Bsp29, entity: &BTreeMap<String, String>) -> Option<
 }
 
 fn settled_spawn(hull: &Hull0, brushes: &[BModel], [x, y, z]: [f32; 3]) -> [f32; 3] {
-    const FEET_OFFSET: f32 = 24.0;
-    const HALF_WIDTH: f32 = 16.0;
-    const FLOOR_TOLERANCE: f32 = 2.0;
-    let feet = z - FEET_OFFSET;
-    let world_floor = (0..=2048)
-        .step_by(2)
+    let rule = spawn_settling();
+    let feet = z - rule.feet_offset_u;
+    let world_floor = (0..=rule.world_drop_u)
+        .step_by(rule.world_step_u)
         .map(|drop| feet - drop as f32)
         .find(|floor| hull.contents_at([x, y, *floor]) == CONTENTS_SOLID);
     let floor = brushes
         .iter()
         .filter(|brush| {
-            brush.mins[0] - HALF_WIDTH < x
-                && x < brush.maxs[0] + HALF_WIDTH
-                && brush.mins[1] - HALF_WIDTH < y
-                && y < brush.maxs[1] + HALF_WIDTH
-                && brush.maxs[2] <= feet + FLOOR_TOLERANCE
+            brush.mins[0] - rule.half_width_u < x
+                && x < brush.maxs[0] + rule.half_width_u
+                && brush.mins[1] - rule.half_width_u < y
+                && y < brush.maxs[1] + rule.half_width_u
+                && brush.maxs[2] <= feet + rule.floor_tolerance_u
         })
         .map(|brush| brush.maxs[2])
         .chain(world_floor)
         .reduce(f32::max);
     let settled_z = floor
-        .filter(|floor| *floor < feet - FLOOR_TOLERANCE)
-        .map_or(z, |floor| floor + FEET_OFFSET);
+        .filter(|floor| *floor < feet - rule.floor_tolerance_u)
+        .map_or(z, |floor| floor + rule.feet_offset_u);
     [x, y, settled_z]
 }
 
@@ -2339,6 +2364,34 @@ mod tests {
         let warning = spawn_coverage_warning(&bsp, &entities, &graph).unwrap();
         assert!(warning.contains("1 of 3 settled starts"), "{warning}");
         assert!(warning.contains("worst 400 u"), "{warning}");
+    }
+
+    #[test]
+    fn spawn_settling_matches_the_shared_bsp_cases() {
+        #[derive(serde::Deserialize)]
+        struct Case {
+            name: String,
+            origin: [f32; 3],
+            settled: [f32; 3],
+        }
+
+        let bsp =
+            crate::bsp::parse_bsp29(include_bytes!("../testdata/spawn_settling.bsp")).unwrap();
+        let cases: Vec<Case> =
+            serde_json::from_str(include_str!("../testdata/spawn_settling_cases.json")).unwrap();
+        let hull = bsp.hull0.as_ref().unwrap();
+        let brushes: Vec<_> = parse_entities(&bsp.entities)
+            .iter()
+            .filter_map(|entity| spawn_brush_bounds(&bsp, entity))
+            .collect();
+        for case in cases {
+            assert_eq!(
+                settled_spawn(hull, &brushes, case.origin),
+                case.settled,
+                "{}",
+                case.name
+            );
+        }
     }
 
     #[test]
