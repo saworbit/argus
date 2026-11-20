@@ -909,6 +909,7 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Release a stationary bot from a missed train hop after eight seconds when it is far from its boarding seat on dry floor ([#1003](https://github.com/saworbit/argus/issues/1003)).
 - Restore the e1m5 moat to mega route with a hull-checked swim in the old rocket link's slot ([#636](https://github.com/saworbit/argus/issues/636)).
 
 - Clear the previous mover action at fixed-task placement and reacquire support at the exact start ([#992](https://github.com/saworbit/argus/issues/992)).
