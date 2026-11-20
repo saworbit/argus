@@ -363,12 +363,13 @@
     },
     {
       "id": "gui-render-timeout",
-      "title": "GUI rendering test times out on the CI runner",
-      "status": "open",
+      "title": "GUI rendering test could time out on the CI runner",
+      "status": "fixed",
+      "fixed_on": "2026-11-14",
       "kind": "defect",
       "tier": null,
       "maps": [],
-      "statement": "test_gui_rendering's headless Chrome run hits its 25 s timeout on the GitHub runner intermittently: it failed main at 3d3b450, which changed no GUI code, and failed #815 once before passing on a re-run.",
+      "statement": "Headless Chrome sometimes reached the 25 s launch timeout on CI. The harness now kills the timed-out process tree, retries once and includes both attempts' stderr if the retry fails.",
       "evidence": [
         "#817",
         "tools/test_gui_rendering.py"
@@ -377,12 +378,13 @@
     },
     {
       "id": "parallel-inject-tests",
-      "title": "Console-inject tests fail only in a full parallel run",
-      "status": "open",
+      "title": "Missing CLI helper blocked Windows console-inject tests",
+      "status": "fixed",
+      "fixed_on": "2026-11-14",
       "kind": "defect",
       "tier": null,
       "maps": [],
-      "statement": "Five Windows console-inject tests fail in a full parallel cargo test run and pass single-threaded or alone. Cause unknown.",
+      "statement": "A missing CLI helper caused the same error in single-threaded tests. The test harness now identifies missing or stale helpers, and the contributor checks build the CLI before running the library tests.",
       "evidence": [
         "#805"
       ],
@@ -390,8 +392,9 @@
     },
     {
       "id": "corpus-lava-z-rule",
-      "title": "The corpus counts lava with the retired z rule",
-      "status": "open",
+      "title": "The corpus used the retired lava height rule on maps with a BSP",
+      "status": "fixed",
+      "fixed_on": "2026-11-14",
       "kind": "defect",
       "tier": null,
       "maps": [
@@ -399,9 +402,10 @@
         "e1m7",
         "dm4"
       ],
-      "statement": "argus-mcp corpus builds its rows without the map's BSP, so lava deaths fall back to z below -300: dm2 and e1m7 read 0 on every tape in runs/tape_index.tsv, and the limits doc inherits it. The skeptic recounts lava from hull-0 contents per tape until it is fixed.",
+      "statement": "Corpus and measurement rows now classify lava by hull-0 contents when the map BSP is available. The tape index schema was bumped, and the index and limits were rebuilt with the corrected classifier.",
       "evidence": [
-        "#816"
+        "#816",
+        "#831"
       ],
       "cheapest_tier": 1
     },

@@ -897,6 +897,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Record the completed GUI timeout, console helper and lava classification fixes in the lab claims ledger ([#976](https://github.com/saworbit/argus/issues/976)).
+
 - Split rapid wish flip runs at bot respawns ([#974](https://github.com/saworbit/argus/issues/974)).
 
 - Keep atlas item warnings visible when a match routes well and report route failures as match-wide counts ([#972](https://github.com/saworbit/argus/issues/972)).
