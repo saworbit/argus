@@ -119,14 +119,25 @@ pub fn inspect(text: &str) -> TapeIdentity {
                 kind: if frame_us > 0 { "fixed" } else { "realtime" },
             });
         } else if let Some(c) = mark_re().captures(line) {
-            let num = |i: usize| c[i].parse::<f64>().unwrap_or(0.0);
+            let num = |i: usize| c[i].parse::<f64>().ok().filter(|n| n.is_finite());
+            let (Ok(n), Some(t), Some(x), Some(y), Some(z), Some(yaw)) =
+                (c[1].parse(), num(2), num(3), num(4), num(5), num(6))
+            else {
+                continue;
+            };
+            let dist = if c.get(8).is_some() {
+                let Some(value) = num(8) else { continue };
+                Some(value)
+            } else {
+                None
+            };
             id.marks.push(SessionMark {
-                n: c[1].parse().unwrap_or(0),
-                t: num(2),
-                pos: [num(3), num(4), num(5)],
-                yaw: num(6),
+                n,
+                t,
+                pos: [x, y, z],
+                yaw,
                 seen: c.get(7).map(|m| m.as_str() == "1"),
-                dist: c.get(8).and_then(|m| m.as_str().parse().ok()),
+                dist,
                 near: c.get(9).map(|m| m.as_str().to_string()),
             });
         }
@@ -202,5 +213,17 @@ mod tests {
         assert!(id.marks.is_empty());
         assert_eq!(id.build.as_deref(), Some("aaaaaa000000"));
         assert_eq!(id.other_builds, vec!["bbbbbb111111".to_string()]);
+    }
+
+    #[test]
+    fn damaged_bookmarks_leave_other_identity_rows_readable() {
+        let lines: Vec<String> =
+            serde_json::from_str(include_str!("../testdata/tape_invalid_marks.json")).unwrap();
+        let identity = inspect(&lines.join("\n"));
+        assert_eq!(identity.build.as_deref(), Some("4a6980c09cea"));
+        assert_eq!(identity.clock.unwrap().seed, 7);
+        assert_eq!(identity.marks.len(), 1);
+        assert_eq!(identity.marks[0].n, 9);
+        assert_eq!(identity.marks[0].t, 6.25);
     }
 }

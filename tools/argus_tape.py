@@ -252,9 +252,19 @@ def identity(text):
             out["clock"] = dict(frame_us=frame, tick_us=int(m[2]), seed=int(m[3]),
                                 kind="fixed" if frame > 0 else "realtime")
         elif m := MARK_LINE.match(line):
-            out["marks"].append(dict(n=int(m[1]), t=float(m[2]), pos=(float(m[3]), float(m[4]), float(m[5])),
-                                     yaw=float(m[6]), seen=None if m[7] is None else m[7] == "1",
-                                     dist=None if m[8] is None else float(m[8]), near=m[9]))
+            fields = m.group(1, 2, 3, 4, 5, 6, 8)
+            if any(field is not None and not field.isascii() for field in fields):
+                continue
+            try:
+                n = int(m[1])
+                t, x, y, z, yaw = map(float, fields[1:6])
+                dist = None if m[8] is None else float(m[8])
+            except ValueError:
+                continue
+            if n > 0xFFFFFFFF or not all(map(math.isfinite, (t, x, y, z, yaw, dist if dist is not None else 0.0))):
+                continue
+            out["marks"].append(dict(n=n, t=t, pos=(x, y, z), yaw=yaw,
+                                     seen=None if m[7] is None else m[7] == "1", dist=dist, near=m[9]))
     return out
 
 
