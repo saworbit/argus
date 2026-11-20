@@ -1,0 +1,58 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -9650,46 +9650,6 @@
+         remove (marker);
+ };
+ 
+-void(entity bot, vector start) Argus_TaskPlace =
+-{
+-    local entity saved;
+-
+-    bot.ar_hopjump = 0;
+-    bot.ar_hopspeed = 0;
+-    bot.ar_sprintstate = 0;
+-    bot.ar_hoprj = 0;
+-    bot.ar_rjweapon = 0;
+-    bot.ar_hoplift = 0;
+-    bot.ar_hopswim = 0;
+-    bot.ar_hoptrain = 0;
+-    bot.ar_hopdoor = 0;
+-    bot.ar_hopair = 0;
+-    bot.ar_liftwait = 0;
+-    bot.ar_liftstart = 0;
+-    bot.ar_boarded = 0;
+-    bot.ar_jump = 0;
+-    bot.ar_door = world;
+-    bot.ar_doorbtn = world;
+-    bot.ar_actionnode = world;
+-    bot.ar_actiongoal = world;
+-    bot.flags = bot.flags - (bot.flags & (FL_ONGROUND | FL_PARTIALGROUND));
+-    bot.groundentity = world;
+-
+-    // The native hull drop identifies the actual support at the new seat.
+-    // Its floor search is deeper than a valid starting contact. Keep the
+-    // contact only within the seat's tolerance and restore the exact origin.
+-    setorigin (bot, start + '0 0 0.125');
+-    saved = self;
+-    self = bot;
+-    if (!droptofloor () || fabs (start_z - bot.origin_z) > 2 || !checkbottom (bot))
+-    {
+-        bot.flags = bot.flags - (bot.flags & FL_ONGROUND);
+-        bot.groundentity = world;
+-    }
+-    self = saved;
+-    setorigin (bot, start);
+-};
+-
+ void(float slot) Argus_TaskControl =
+ {
+     local entity bot, marker;
+@@ -9731,7 +9691,7 @@
+         return;
+     start = bot.ar_taskplace;
+     Argus_TaskClear (bot);
+-    Argus_TaskPlace (bot, start);
++    setorigin (bot, start);
+     bot.velocity = '0 0 0';
+     bot.ar_lastpos = bot.origin;
+     bot.ar_nextstall = time + 2;
