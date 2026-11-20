@@ -783,6 +783,10 @@ so `see what=path name=dm4:quad->lg` can use the pad hop.
 `detail=full` adds every entity, every teleporter, and button-door
 causality (including one relay hop and `func_door_secret`). Atlases
 and nav graphs cache until the BSP or nav JSON mtime changes.
+The teleporter list includes `requires_activation` and the trigger's
+`activation_name` when present. A node lookup reports the sampled JSON
+`origin` and the `emitted_origin` when the matching generated QuakeC node
+is available.
 
 `lab_status` lists maps with bsp / nav / dispatcher flags and a
 recipe string. It does not ingest every BSP (that was 0.11). Use

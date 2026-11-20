@@ -7,6 +7,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from argus_bsp import (LUMP_ENTITIES, LUMP_LEAVES, LUMP_MODELS, LUMP_NAMES,
@@ -81,15 +82,20 @@ class TestArgusMapGate(unittest.TestCase):
 
     def test_spawn_settling_matches_the_shared_bsp_cases(self):
         from argus_bsp import Bsp
-        from argus_navmesh import brush_boxes
+        from argus_navmesh import brush_boxes, movers
         from argus_reach import standing_point
 
         data = Path(__file__).resolve().parent / "argus_mcp/testdata"
         bsp = Bsp(data / "spawn_settling.bsp")
-        boxes = brush_boxes(bsp)
+        entities = bsp.entities()
         cases = json.loads((data / "spawn_settling_cases.json").read_text(encoding="utf-8"))
         for case in cases:
             with self.subTest(case=case["name"]):
+                edited = [dict(e, **case["keys"]) if "model" in case and e.get("model") == case["model"] else e
+                          for e in entities]
+                with mock.patch.object(bsp, "entities", return_value=edited):
+                    boxes = brush_boxes(bsp)
+                    movers(bsp)
                 self.assertEqual(standing_point(bsp, tuple(case["origin"]), boxes), tuple(case["settled"]))
 
     def test_door_only_hop_is_in_every_reader(self):

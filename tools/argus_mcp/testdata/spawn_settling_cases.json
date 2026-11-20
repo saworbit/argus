@@ -17,5 +17,14 @@
   {"name": "targeted plat stays extended", "origin": [1900, 0, 300], "settled": [1900, 0, 280]},
   {"name": "train is excluded from spawn floor", "origin": [2100, 0, 300], "settled": [2100, 0, 22]},
   {"name": "closed door stays in place", "origin": [2280, 0, 300], "settled": [2280, 0, 184]},
-  {"name": "start-open door with explicit lip", "origin": [2565, 0, 300], "settled": [2565, 0, 22]}
+  {"name": "start-open door with explicit lip", "origin": [2565, 0, 300], "settled": [2565, 0, 22]},
+  {"name": "malformed door lip", "model": "*3", "keys": {"lip": " invalid "}, "origin": [760, 0, 300], "settled": [760, 0, 184]},
+  {"name": "non-finite door lip", "model": "*3", "keys": {"lip": "NaN"}, "origin": [760, 0, 300], "settled": [760, 0, 184]},
+  {"name": "malformed wall flags", "model": "*2", "keys": {"spawnflags": "x"}, "origin": [508, 0, 300], "settled": [508, 0, 280]},
+  {"name": "non-finite wall flags", "model": "*2", "keys": {"spawnflags": "Inf"}, "origin": [508, 0, 300], "settled": [508, 0, 280]},
+  {"name": "malformed door angle", "model": "*4", "keys": {"angle": "garbage"}, "origin": [900, 0, 300], "settled": [900, 0, 188]},
+  {"name": "non-finite door angle", "model": "*4", "keys": {"angle": "1e99"}, "origin": [900, 0, 300], "settled": [900, 0, 188]},
+  {"name": "malformed plat height", "model": "*8", "keys": {"height": "4_0"}, "origin": [1700, 0, 300], "settled": [1700, 0, 160]},
+  {"name": "non-finite plat height", "model": "*8", "keys": {"height": "-Inf"}, "origin": [1700, 0, 300], "settled": [1700, 0, 160]},
+  {"name": "padded decimal plat height", "model": "*8", "keys": {"height": " 4.0e1 "}, "origin": [1700, 0, 300], "settled": [1700, 0, 240]}
 ]
