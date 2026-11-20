@@ -1,4 +1,5 @@
 """Strict actual-combat-trigger receipts, separate from gameplay evidence."""
+from argus_engine_errors import fatal_engine_line
 import re
 import math
 from argus_validation import require
@@ -8,7 +9,7 @@ LABELS=['geometry','combat_blocked','combat_clear','combat_backdrop','embedded_c
 
 def check(text):
     require('BHVRPL begin muzzle_combat' in text)
-    require(not any(s in text for s in ('Host_Error','Program error','runaway loop')))
+    require(fatal_engine_line(text) is None)
     lines=[s for s in text.splitlines() if s.startswith('MCFIX ')]
     require(len(lines)==12 and lines[0]=='MCFIX begin dm4','incomplete/duplicate combat receipt')
     checks=re.findall(r'^MCFIX check (\w+) ([01])$',text,re.M)
