@@ -2985,10 +2985,6 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
             })
         })
         .collect();
-    // the tape is ground truth and the atlas is a theory: when the
-    // two disagree, say so instead of letting the labels stand (the
-    // item_eye bug briefed 11 of 12 dm4 control items off_graph on a
-    // map whose tapes route 57% of the time, and nothing shouted)
     let current_graph_digest = std::fs::read(cfg.src.join(format!("argus_nav_{map}.qc.json")))
         .ok()
         .and_then(|bytes| serde_json::from_slice(&bytes).ok())
@@ -2998,25 +2994,12 @@ fn attach_atlas(cfg: &Config, brief: &mut MatchBrief, hull: Option<&crate::bsp::
             && current_graph_digest.is_some()
             && coverage.provenance.graph_md5 == current_graph_digest
     });
-    let evidence = if matches_build {
-        reach_evidence_flags(&brief.goal_reach, &brief.events, &brief.mode_share)
+    if matches_build {
+        brief
+            .flags
+            .extend(reach_evidence_flags(&brief.goal_reach, &brief.events));
     } else {
         brief.flags.push("atlas and goal_reach use the current on-disk graph; tested build is unverified or different".into());
-        Vec::new()
-    };
-    let contradicted = !evidence.is_empty() && evidence[0].contains("CONTRADICTED");
-    brief.flags.extend(evidence);
-    if matches_build
-        && !contradicted
-        && brief
-            .goal_reach
-            .iter()
-            .any(|g| g.reach == "rocket_jump" || g.reach == "off_graph")
-    {
-        brief.flags.push(
-            "bots goaled an item the nav graph cannot walk to; expect routefail, not a stall loop"
-                .into(),
-        );
     }
     if atlas
         .control
@@ -3105,29 +3088,20 @@ fn hotspot_cause(
     None
 }
 
-/// Tape-vs-atlas referee, pure so it is testable: the labels claim
-/// reachability, the route/routefail events measure it.
-fn reach_evidence_flags(
-    goal_reach: &[GoalReach],
-    events: &BTreeMap<String, u32>,
-    mode_share: &ModeShare,
-) -> Vec<String> {
-    let off = goal_reach.iter().filter(|g| g.reach == "off_graph").count();
+/// Goal counts describe class selections. Route totals pool all destinations.
+fn reach_evidence_flags(goal_reach: &[GoalReach], events: &BTreeMap<String, u32>) -> Vec<String> {
+    let mut out = Vec::new();
+    if goal_reach
+        .iter()
+        .any(|goal| matches!(goal.reach.as_str(), "off_graph" | "rocket_jump"))
+    {
+        out.push("the atlas has a rocket-jump or off-graph entry for a selected item class. Check the specific route or pickup".into());
+    }
     let routes = *events.get("route").unwrap_or(&0);
     let fails = *events.get("routefail").unwrap_or(&0);
-    let mut out = Vec::new();
-    if off >= 3
-        && routes >= 30
-        && (fails as f64) < 0.15 * routes as f64
-        && mode_share.routed >= 0.35
-    {
+    if routes >= 20 && fails > routes / 2 {
         out.push(format!(
-            "atlas reach labels CONTRADICTED by tape evidence: {off} goaled control items read off_graph yet the match routed {:.0}% of the time ({fails} fails in {routes} routes) - suspect the reach classifier or a stale nav cache, not the map; tools/argus_reach.py is the referee",
-            mode_share.routed * 100.0
-        ));
-    } else if off <= 1 && routes >= 20 && fails as f64 > 0.5 * routes as f64 {
-        out.push(format!(
-            "routing collapses ({fails} fails in {routes} routes) despite walkable atlas labels - the runtime graph disagrees with the atlas; run tools/argus_reach.py for the directed-reach numbers"
+            "frequent route failures ({fails} failures and {routes} routes). Inspect directed reach with tools/argus_reach.py"
         ));
     }
     out
@@ -4356,7 +4330,7 @@ ARGEVT Reap hazard
     }
 
     #[test]
-    fn reach_evidence_referee_judges_both_directions() {
+    fn reach_flags_keep_item_warning_when_routing_succeeds() {
         let gr = |reach: &str| GoalReach {
             classname: "x".into(),
             times: 5,
@@ -4367,37 +4341,25 @@ ARGEVT Reap hazard
         let mut ev = BTreeMap::new();
         ev.insert("route".to_string(), 100u32);
         ev.insert("routefail".to_string(), 5u32);
-        let ms = ModeShare {
-            seeking: 0.3,
-            combat: 0.1,
-            routed: 0.6,
-        };
-        // labels say unreachable, tape routes fine: labels are wrong
-        let flags = reach_evidence_flags(
-            &[
-                gr("off_graph"),
-                gr("off_graph"),
-                gr("off_graph"),
-                gr("walk"),
-            ],
-            &ev,
-            &ms,
-        );
-        assert!(
-            flags.iter().any(|f| f.contains("CONTRADICTED")),
-            "{flags:?}"
-        );
-        // labels say walkable, routing collapses: graph is wrong
+        let goals = [
+            gr("off_graph"),
+            gr("off_graph"),
+            gr("off_graph"),
+            gr("walk"),
+        ];
+        let warning = "the atlas has a rocket-jump or off-graph entry for a selected item class";
+        let flags = reach_evidence_flags(&goals, &ev);
+        assert_eq!(flags.len(), 1, "{flags:?}");
+        assert!(flags[0].starts_with(warning), "{flags:?}");
+
         let mut ev2 = BTreeMap::new();
         ev2.insert("route".to_string(), 40u32);
         ev2.insert("routefail".to_string(), 30u32);
-        let flags2 = reach_evidence_flags(&[gr("walk")], &ev2, &ms);
-        assert!(
-            flags2.iter().any(|f| f.contains("routing collapses")),
-            "{flags2:?}"
-        );
-        // agreement: silence
-        assert!(reach_evidence_flags(&[gr("walk")], &ev, &ms).is_empty());
+        let flags2 = reach_evidence_flags(&[gr("walk")], &ev2);
+        assert_eq!(flags2.len(), 1, "{flags2:?}");
+        assert!(flags2[0].starts_with("frequent route failures (30 failures and 40 routes)"));
+        assert_eq!(reach_evidence_flags(&[gr("rocket_jump")], &ev2).len(), 2);
+        assert!(reach_evidence_flags(&[gr("walk")], &ev).is_empty());
     }
 
     #[test]
