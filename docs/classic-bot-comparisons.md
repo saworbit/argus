@@ -54,6 +54,14 @@ The runner keeps the source and binary hashes and the native tape receipts for
 dm2 and dm6. It also runs an ordinary dm6 arm and checks that comparing it with
 the controlled dm6 tape refuses a gameplay verdict.
 
+Loaded-switch cases use both stock maps. The super nailgun fires below the
+230-unit splash boundary, then its animation stops as the bot selects rockets
+above the boundary. Repeated crossings keep those choices. Depleted nails
+select a firing super shotgun, and an unavailable rocket launcher leaves room
+for the grenade launcher. An expired lightning burst selects rockets outside
+the start range. Entering deep water cancels a live burst before the super
+shotgun fires. All seven cases passed on both maps, so the policy stays as it is.
+
 Pickup sounds previously inherited the weapon bit of the player who took
 the item. An armour pickup could make a listener react as though it heard a
 rocket or lightning attack. The first candidate took weapon cues from actual shots,
