@@ -531,7 +531,7 @@ Optional, with defaults under `ARGUS_ROOT`:
 | `ARGUS_MAPS` | `$ARGUS_ROOT/maps_local` |
 
 The native lab uses `ARGUS_RUNS` for tape output. Python's
-`argus_lab.py skeptic` resolves named tapes in the checkout's `runs/`.
+`argus_lab.py skeptic` also reads the shell's `ARGUS_RUNS` for tape lookup.
 For the private-tape workflow, see the [comparison runbook](../../docs/lab-spine.md#skeptic).
 
 Load order: optional TOML, then env. Env wins. TOML path is
