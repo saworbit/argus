@@ -613,6 +613,7 @@ fn engine_job() -> windows_sys::Win32::Foundation::HANDLE {
 }
 
 #[cfg(any(windows, test))]
+#[allow(clippy::too_many_arguments)]
 /// Build the dedicated engine's command line. Split out of
 /// `spawn_windows` so a test can assert on it without spawning a
 /// process: the tick-rate flag is the one argument the whole lab's
