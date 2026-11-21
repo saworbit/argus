@@ -28,6 +28,10 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Give active studies and fixtures a shared Python lab client with Windows and Linux CPU timing ([#1035](https://github.com/saworbit/argus/issues/1035)).
+
+- Show the standalone CLI's lab build identity and include same-version Windows recovery in stale build warnings ([#1052](https://github.com/saworbit/argus/issues/1052), [#1043](https://github.com/saworbit/argus/issues/1043)).
+
 - Record the [e1m8 shelf trials](docs/specs/2026-11-20-e1m8-soak.md#west-floor-route-to-the-rocket-shelf) and the [e1m4 swim cadence trial](docs/mover-intelligence.md#stock-map-follow-up), with the checks still needed before adoption.
 
 - Record the two-leg pursuit evaluation and add a private stock-map verifier ([#1007](https://github.com/saworbit/argus/issues/1007)).
@@ -553,6 +557,8 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Align lava death probes across the lab and analyser, distinguish freeze HP loss from the release threshold, and clarify the combat detour and weapon switch totals ([#1039](https://github.com/saworbit/argus/issues/1039), [#1046](https://github.com/saworbit/argus/issues/1046), [#1058](https://github.com/saworbit/argus/issues/1058)).
+
 - Let `skeptic` read private runs from `ARGUS_RUNS` ([#1002](https://github.com/saworbit/argus/issues/1002)), describe where its lava counts came from ([#997](https://github.com/saworbit/argus/issues/997)), and accept either case in shipped benchmark graph pins ([#1011](https://github.com/saworbit/argus/issues/1011)).
 
 - Reduce hard movement reversals on dm4 and dm2 by rounding clear turns and carrying only the velocity along a brink exit ([#697](https://github.com/saworbit/argus/issues/697)).
@@ -929,6 +935,8 @@ passing botmatch does not establish better human play.
 - Restore the e1m5 moat to mega route with a hull-checked swim in the old rocket link's slot ([#636](https://github.com/saworbit/argus/issues/636)).
 
 - Clear the previous mover action at fixed-task placement and reacquire support at the exact start ([#992](https://github.com/saworbit/argus/issues/992)).
+
+- Keep vertical lift travel out of the stationary freeze gate and show lift reversals and pauses in gait review ([#1051](https://github.com/saworbit/argus/issues/1051)).
 
 - Validate benchmark options before compiling ([#993](https://github.com/saworbit/argus/issues/993)), refuse fatal benchmark tapes ([#994](https://github.com/saworbit/argus/issues/994)), keep comparison checks independent of display text ([#1009](https://github.com/saworbit/argus/issues/1009)), and show the accepted match duration in help ([#1001](https://github.com/saworbit/argus/issues/1001)).
 

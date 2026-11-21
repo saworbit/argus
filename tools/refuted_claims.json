@@ -12,6 +12,15 @@
   ],
   "claims": [
     {
+      "id": "acquisitions-count-item-touches",
+      "pattern": "\\bacquisitions\\b[^\\n]{0,80}\\bcontested-map consumption\\b|\\bdid they take stuff\\b",
+      "claim": "The acquisitions total shows contested-map consumption",
+      "correction": "The historical field adds combat detour selections and weapon switches. A selection can be abandoned, and a switch can repeat with unchanged inventory.",
+      "refuted": "2026-11-21",
+      "evidence": ["#1058", "tools/argus_mcp/src/parse_arglog.rs legacy_acquisitions_count_decisions_in_an_aborted_detour"],
+      "example": "acquisitions: the figure that shows contested-map consumption"
+    },
+    {
       "id": "lab-frametime-0.1",
       "pattern": "frametime[`\\s]+0\\.1\\b|\\b0\\.1[`\\s]+frametime",
       "claim": "the lab runs at frametime 0.1, so calibrate per-frame constants to it",

@@ -8,8 +8,8 @@ from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity
 from argus_fixture_harness import new_output, stage_fixture, private_game, run_match as fixture_match
 
-from run_behaviour_equivalence import Lab
-from run_behaviour_equivalence import lab_executable, lab_cli
+from argus_lab_client import Lab
+from argus_lab_client import lab_executable, lab_cli
 from argus_validation import require
 import argparse
 import hashlib
@@ -21,7 +21,7 @@ import shutil
 import subprocess
 import sys
 
-import run_behaviour_equivalence as native
+import argus_lab_client as native
 
 ROOT = native.ROOT
 

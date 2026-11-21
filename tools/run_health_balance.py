@@ -6,7 +6,7 @@ Eight counterbalanced pairs per map; not a powered gameplay equivalence test.
 from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity as source_digest
 
-from run_behaviour_equivalence import lab_executable, lab_cli
+from argus_lab_client import lab_executable, lab_cli
 import argparse
 import hashlib
 import json
@@ -14,7 +14,7 @@ import os
 import shutil
 import time
 
-from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity, timing, cpu_seconds
+from argus_lab_client import finish_lab, ROOT, Lab, identity, timing, cpu_seconds, cpu_elapsed
 
 OUT = ROOT / 'backups/perception-step1b'
 
@@ -91,7 +91,7 @@ def main():
                             cpu_start = cpu_seconds(start['pid']); wall_start = time.monotonic()
                             time.sleep(60)
                             wall = time.monotonic() - wall_start
-                            cpu = cpu_seconds(start['pid']) - cpu_start
+                            cpu = cpu_elapsed(start['pid'], cpu_start)
                             stop = lab.call('match_stop'); active = False
                             brief = lab.call('brief_run', log=name, map=map_name)
                             path = ROOT / f'runs/{name}.log'; text = path.read_text(errors='replace')

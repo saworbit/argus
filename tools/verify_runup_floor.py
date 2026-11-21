@@ -8,7 +8,7 @@ import sys
 from argus_fixture_harness import frame_ms, new_output, private_game, read_tape, run_match, stage_fixture
 from argus_source import source_identity
 from argus_validation import require
-from run_behaviour_equivalence import Lab, finish_lab, lab_executable
+from argus_lab_client import Lab, finish_lab, lab_executable
 from run_map_intelligence import ROOT, digest, write
 
 

@@ -12,13 +12,37 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import run_behaviour_equivalence as native
+import argus_lab_client as native
 import run_map_intelligence as maps
 import argus_gallery
 import argus_lab
 from argus_source import source_identity
 import argus_fixture_harness as fixtures
 from argus_engine_errors import fatal_engine_line
+
+
+
+class LabClientTests(unittest.TestCase):
+    def test_fixture_harness_does_not_import_registered_runner(self):
+        code = (
+            "import sys; sys.modules['run_behaviour_equivalence'] = None; "
+            "import argus_lab_client, argus_fixture_harness"
+        )
+        checked = subprocess.run(
+            [sys.executable, '-c', code], cwd=native.ROOT / 'tools',
+            capture_output=True, text=True, timeout=5,
+        )
+        self.assertEqual(checked.returncode, 0, checked.stderr)
+
+    def test_cpu_seconds_for_current_process(self):
+        if os.name != 'nt' and not Path('/proc/self/stat').exists():
+            self.skipTest('no supported process clock')
+        start = native.cpu_seconds(os.getpid())
+        self.assertIsNotNone(start)
+        self.assertGreaterEqual(start, 0)
+        self.assertGreaterEqual(native.cpu_elapsed(os.getpid(), start), 0)
+        self.assertIsNone(native.cpu_elapsed(os.getpid(), None))
+        self.assertIsNone(native.cpu_seconds(0))
 
 
 class ExecutableContract(unittest.TestCase):

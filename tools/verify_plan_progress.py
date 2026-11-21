@@ -12,7 +12,7 @@ import shutil
 from pathlib import Path
 
 from check_plan_progress import check_contract, check_physical, check_physical_edges, audit_physical_edges
-from run_behaviour_equivalence import Lab, ROOT
+from argus_lab_client import Lab, ROOT
 from argus_source import source_identity
 
 

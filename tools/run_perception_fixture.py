@@ -1,7 +1,7 @@
 """Private controlled-input observation trials through the native lab only."""
 from argus_validation import require
 
-from run_behaviour_equivalence import lab_executable, lab_cli
+from argus_lab_client import lab_executable, lab_cli
 import argparse
 import hashlib
 import json
@@ -11,7 +11,7 @@ import re
 import shutil
 import time
 
-from run_behaviour_equivalence import finish_lab, ROOT, Lab, identity
+from argus_lab_client import finish_lab, ROOT, Lab, identity
 from check_perception_fixture import check
 
 INPUTS = '''// PRIVATE controlled-input fixture, never in production progs.src.

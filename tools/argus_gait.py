@@ -164,6 +164,10 @@ def audit(path, max_hold, attribute_sec):
                 (hop for hop in own_hops if hop["start"] - 0.5 <= start < hop["end"]),
                 None,
             )
+            motion = vertical_motion(rows, window)
+            verdict = _verdict(window, attributed, hop, max_hold)
+            if motion and hop and hop["boarded"] and verdict == "mover wait":
+                verdict = f"vertical {hop['verb']} travel"
             findings.append(
                 {
                     "bot": name,
@@ -184,7 +188,8 @@ def audit(path, max_hold, attribute_sec):
                         "boarded": hop["boarded"],
                         "overrun": round(max(0.0, window.end["t"] - hop["end"]), 1),
                     },
-                    "verdict": _verdict(window, attributed, hop, max_hold),
+                    "vertical_motion": motion,
+                    "verdict": verdict,
                 }
             )
     findings.sort(key=lambda row: row["start"])
@@ -197,9 +202,32 @@ def audit(path, max_hold, attribute_sec):
         "freezes": len(findings),
         "mover_waits": sum(1 for row in findings if row["verdict"] == "mover wait"),
         "mover_overruns": sum(1 for row in findings if row["verdict"] == "mover overrun"),
+        "vertical_travel": sum(1 for row in findings if row["verdict"].startswith("vertical ")),
         "findings": findings,
         "failures": sum(1 for row in findings if row["verdict"] == "FAIL"),
     }
+
+
+def vertical_motion(rows, window):
+    track = [r for r in rows if window.start["line"] <= r["line"] <= window.end["line"]]
+    span = max(r["z"] for r in track) - min(r["z"] for r in track)
+    if span < 32:
+        return None
+    direction, reversals = 0, 0
+    pause = longest = 0.0
+    for a, b in zip(track, track[1:]):
+        elapsed = b["t"] - a["t"]
+        delta = b["z"] - a["z"]
+        if elapsed <= 0 or elapsed > 1.25:
+            direction, pause = 0, 0.0
+        elif abs(delta) < 4:
+            pause += elapsed
+            longest = max(longest, pause)
+        else:
+            new_direction = 1 if delta > 0 else -1
+            reversals += int(direction != 0 and direction != new_direction)
+            direction, pause = new_direction, 0.0
+    return dict(span=round(span, 1), reversals=reversals, longest_pause_sec=round(longest, 1))
 
 
 def _verdict(window, attributed, hop, max_hold):
@@ -265,7 +293,8 @@ def main(argv=None):
             movers = [
                 f"{label} {report[key]}"
                 for key, label in (("mover_waits", "mover waits"),
-                                   ("mover_overruns", "mover overruns"))
+                                   ("mover_overruns", "mover overruns"),
+                                   ("vertical_travel", "vertical travel windows"))
                 if report[key]
             ]
             print(
@@ -275,10 +304,15 @@ def main(argv=None):
                 + (f" ({', '.join(movers)})" if movers else "")
             )
             for row in report["findings"]:
+                motion = row["vertical_motion"]
+                note = ""
+                if motion:
+                    note = (f" z span {motion['span']:.1f}u, {motion['reversals']} reversals,"
+                            f" longest vertical pause {motion['longest_pause_sec']:.1f}s")
                 print(
                     f"    {row['verdict']:<13} {row['bot']:<10} t={row['start']:>7.1f}"
                     f" {row['seconds']:>5.1f}s hp_lost={row['hp_lost']:>4.0f}"
-                    f" mode={row['mode']} at {row['pos']}" + _hop_note(row["mover"])
+                    f" mode={row['mode']} at {row['pos']}" + _hop_note(row["mover"]) + note
                 )
         if len(reports) > 1:
             print(

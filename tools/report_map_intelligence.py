@@ -1,6 +1,6 @@
 """Summarise native multi-map receipts without reconstructing tape metrics."""
 
-from run_behaviour_equivalence import lab_executable, lab_cli
+from argus_lab_client import lab_executable, lab_cli
 import argparse
 import hashlib
 import json

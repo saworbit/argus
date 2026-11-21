@@ -17,7 +17,7 @@ from argus_validation import require
 from argus_source import source_identity
 from argus_fixture_harness import (new_output, stage_fixture, private_game,
     read_tape, check_tape, frame_ms, run_match)
-from run_behaviour_equivalence import lab_executable, finish_lab
+from argus_lab_client import lab_executable, finish_lab
 from run_map_intelligence import ROOT, Lab, digest, write
 
 CASES = {1: 'feasible', 2: 'brush_obstruction', 3: 'mismatched_floor',

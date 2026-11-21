@@ -14,7 +14,7 @@ import re
 import shutil
 import time
 
-from run_behaviour_equivalence import ROOT, OUT, Lab, MODES, identity, cpu_seconds
+from argus_lab_client import ROOT, OUT, Lab, MODES, identity, cpu_seconds, cpu_elapsed
 
 FIXTURE = '''// PRIVATE TEST INPUT PROVIDER. Never included in shipped progs.src.
 .float bhvrng_state, bhvrng_calls;
@@ -228,9 +228,9 @@ def main():
                                 if not status.get('running'): break
                                 elapsed = time.monotonic() - wall_begin
                                 if cpu_window is None and elapsed >= 50:
-                                    consumed = cpu_seconds(start['pid']) - cpu_begin
+                                    consumed = cpu_elapsed(start['pid'], cpu_begin)
                                     cpu_window = dict(wall_seconds=elapsed, cpu_seconds=consumed,
-                                                      cpu_ms_per_wall_second=1000 * consumed / elapsed)
+                                                      cpu_ms_per_wall_second=None if consumed is None else 1000 * consumed / elapsed)
                                 assert time.monotonic() < deadline, 'controlled replay timed out'
                             stop = lab.call('match_stop')
                             active = False

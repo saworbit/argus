@@ -1,9 +1,9 @@
 """Four ordinary recordings, fixed clip windows, anonymous local review."""
 
-from run_behaviour_equivalence import lab_executable, lab_cli
+from argus_lab_client import lab_executable, lab_cli
 import hashlib,json,os,secrets,shutil,subprocess,time
 from pathlib import Path
-from run_behaviour_equivalence import ROOT,Lab,identity
+from argus_lab_client import ROOT,Lab,identity
 
 PRIVATE=ROOT/'backups/blind-perception-v1'
 PUBLIC=ROOT/'reviews/blind-perception-v1'

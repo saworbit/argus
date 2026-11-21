@@ -9,7 +9,7 @@ import sys
 
 from argus_names import map_name as canonical_map
 from argus_validation import require
-from run_behaviour_equivalence import lab_cli
+from argus_lab_client import lab_cli
 
 
 def _must_be_absent(path):

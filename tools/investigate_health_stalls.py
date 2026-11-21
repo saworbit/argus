@@ -7,7 +7,7 @@ import shutil
 import time
 from pathlib import Path
 
-from run_behaviour_equivalence import ROOT, Lab, identity
+from argus_lab_client import ROOT, Lab, identity
 from run_health_fixture import body
 from argus_source import source_identity as source_digest
 

@@ -179,11 +179,12 @@ class Freeze:
     hp_drop: float
 
 
-def freeze_windows(samples):
+def freeze_windows(samples, *, stationary=False):
     """Under 20 u/s, inside a strict 32u XY circle, for at least 6s.
 
-    Keep tape order. Rust has no Z or sample-gap filter. Missing initial
-    health is zero, and later health can only lower that initial minimum.
+    The historical window ignores Z. The stationary gate also requires
+    the whole Z range to stay within 32 units. Both keep tape order and
+    the historical treatment of sample gaps and missing health.
     """
     out, i = [], 0
     while i < len(samples):
@@ -193,10 +194,14 @@ def freeze_windows(samples):
             continue
         hp_first = first.get('hp') if first.get('hp') is not None else 0.0
         hp_min, j = hp_first, i
+        low_z = high_z = first['z']
         while j + 1 < len(samples):
             row = samples[j + 1]
             dx, dy = row['x'] - first['x'], row['y'] - first['y']
             if row['spd'] >= 20 or math.sqrt(dx * dx + dy * dy) >= 32:
+                break
+            low_z, high_z = min(low_z, row['z']), max(high_z, row['z'])
+            if stationary and high_z - low_z >= 32:
                 break
             if row.get('hp') is not None:
                 hp_min = min(hp_min, row['hp'])
