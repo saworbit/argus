@@ -540,6 +540,12 @@ pub fn atlas_brief(atlas: &MapAtlas) -> AtlasBrief {
     }
 }
 
+/// Load the BSP used by the lab's map-backed receipts.
+pub fn bsp_for_map(cfg: &Config, map: &str) -> Option<std::sync::Arc<Bsp29>> {
+    let (path, _) = ingest_bsp(cfg, map).ok()?;
+    read_bsp29_cached(&path).ok()
+}
+
 /// Ingest point: existing path / maps_local / short name, else extract from id1 PAKs.
 pub fn ingest_bsp(cfg: &Config, given: &str) -> Result<(PathBuf, String), String> {
     if let Ok(p) = resolve_input(cfg, given) {

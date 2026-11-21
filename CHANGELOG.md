@@ -915,6 +915,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep campaign JSON output to one report and use the co-op map's keys to classify timeouts ([#1047](https://github.com/saworbit/argus/issues/1047), [#1050](https://github.com/saworbit/argus/issues/1050)).
+
 - Commit a combat strafe side after selecting its checked escape heading. Keep that heading through a sharp reversal while it still passes both hazard checks ([#754](https://github.com/saworbit/argus/issues/754)).
 
 - Retire the e1m5 jump into a solid landing and preserve the playable routes ([#719](https://github.com/saworbit/argus/issues/719)).

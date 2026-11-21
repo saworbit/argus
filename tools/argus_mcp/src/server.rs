@@ -3167,7 +3167,8 @@ impl Argus {
             seat,
             &ran.log_path,
             ran.elapsed_sec,
-            crate::intel::hull0_for_map(&cfg, &args.map).as_ref(),
+            crate::cartograph::bsp_for_map(&cfg, &args.map).as_deref(),
+            args.skill,
         );
         progress.send(total, total, "campaign complete").await;
         json_ok(&serde_json::json!({

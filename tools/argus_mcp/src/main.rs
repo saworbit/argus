@@ -1536,15 +1536,19 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             mc.check_port_available().map_err(|e| anyhow::anyhow!(e))?;
             let cfg = argus_mcp::config::Config::load().map_err(|e| anyhow::anyhow!("{e:?}"))?;
             if compile {
-                println!("Compiling QuakeC progs.dat...");
+                campaign_progress(json_only, format_args!("Compiling QuakeC progs.dat..."));
                 let cres = argus_mcp::compile::compile_qc(&cfg, true);
                 if !cres.ok {
-                    eprintln!("QuakeC compilation failed!");
-                    std::process::exit(1);
+                    anyhow::bail!("QuakeC compilation failed:\n{}", cres.raw_tail.join("\n"));
                 }
             }
 
-            println!("Running campaign match on {map} (seat={seat}, duration={duration}s)...");
+            campaign_progress(
+                json_only,
+                format_args!(
+                    "Running campaign match on {map} (seat={seat}, duration={duration}s)..."
+                ),
+            );
             let puppet_port = mc.port();
             let run_name = format!("campaign_{}_{}", map, seat);
 
@@ -1596,7 +1600,8 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 &seat,
                 &ran.log_path,
                 ran.elapsed_sec,
-                argus_mcp::intel::hull0_for_map(&cfg, map).as_ref(),
+                argus_mcp::cartograph::bsp_for_map(&cfg, map).as_deref(),
+                skill,
             );
 
             if json_only {
@@ -1840,6 +1845,14 @@ async fn run_stdio() -> anyhow::Result<()> {
     let _ = running.waiting().await;
     server.shutdown().await;
     Ok(())
+}
+
+fn campaign_progress(json_only: bool, message: std::fmt::Arguments<'_>) {
+    if json_only {
+        eprintln!("{message}");
+    } else {
+        println!("{message}");
+    }
 }
 
 fn print_help() {
