@@ -56,6 +56,13 @@ cent interval of -2.00 to +3.85. The threat result is inconclusive.
 [e1m1 lift freeze](https://github.com/saworbit/argus/issues/1051) |
 [dm4 lava deaths](https://github.com/saworbit/argus/issues/1055)
 
+The candidate rebased onto `9ebe2dc` (build `8d8f41ea7313`) passed 180
+automated decision checks and four stock pursuit cases. In 22 fresh played-rate
+matches, the native gates returned parity on e1m1 and dm4 at skill 2 and
+lqdm2 at skill 3. The fresh lqdm2 stall medians were three and five, with an
+improvement interval of -4.3 to +2.7 stalls. The original rejection stays
+on record.
+
 #### Added
 
 - Let scripts enforce registered match gates with `--require-green`. A mixed or regressed verdict keeps its gate cards and exits with status 2.
