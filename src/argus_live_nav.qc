@@ -22,6 +22,364 @@ float al_peak_edicts;
 .float al_item_scan;
 .float al_swim_until;
 .vector al_swim_wish;
+.float al_exit_scan, al_exit_memory;
+.vector al_exit_from, al_exit_avoid, al_exit_previous, al_exit_older, al_exit_oldest;
+.entity al_exit_button, al_exit_prize;
+.float al_exit_button_after, al_exit_prize_until;
+
+void() Argus_ExploreReset =
+{
+    self.ar_exploreuntil = 0;
+    self.ar_exploring = FALSE;
+    self.al_exit_scan = 0;
+    self.al_exit_memory = 0;
+    self.al_exit_button = world;
+    self.al_exit_button_after = 0;
+    self.al_exit_prize = world;
+    self.al_exit_prize_until = 0;
+};
+
+// Use the same weapon value as shopping. A supply behind a wall can bias
+// which exit to try, but every candidate still needs a traversable lane.
+entity() Argus_ExploreSupply =
+{
+    local entity item, pick;
+    local float score, best, distance;
+
+    best = 0;
+    pick = world;
+    item = argus_itemchain;
+    while (item != world)
+    {
+        if (item.solid == SOLID_TRIGGER && Argus_ItemClass (item) == AR_C_WEAPON)
+        {
+            distance = vlen (Argus_GoalPoint (item) - self.origin);
+            if (distance < 1450)
+            {
+                score = Argus_ItemValue (item, AR_C_WEAPON) / (320 + distance);
+                if (score > best)
+                {
+                    best = score;
+                    pick = item;
+                }
+            }
+        }
+        item = item.ar_nextitem;
+    }
+    return pick;
+};
+
+// A doorway can open onto a lower floor. Require two dry, walkable landing
+// samples and clearance at both sides of the body before taking the drop.
+vector(vector direction, float distance) Argus_ExploreDrop =
+{
+    local vector point, landing, side;
+    local float drop;
+
+    point = self.origin + direction * distance + '0 0 12';
+    traceline (point, point - '0 0 168', TRUE, self);
+    if (trace_fraction == 1 || trace_startsolid || trace_plane_normal_z < 0.65
+        || pointcontents (trace_endpos + '0 0 4') != CONTENT_EMPTY)
+        return self.origin;
+    landing = trace_endpos + '0 0 24';
+    drop = self.origin_z - landing_z;
+    if (drop < 22 || drop > 120) return self.origin;
+    point = landing + direction * 28;
+    if (!Argus_WalkFloorOK (point, 38)) return self.origin;
+    side = direction_y * '-14 0 0' + direction_x * '0 14 0';
+    traceline (landing + side, point + side, TRUE, self);
+    if (trace_fraction < 1 || trace_startsolid) return self.origin;
+    traceline (landing - side, point - side, TRUE, self);
+    if (trace_fraction < 1 || trace_startsolid) return self.origin;
+    return point;
+};
+
+vector(vector direction, float distance, float wet) Argus_ExploreLane =
+{
+    local vector side, start, offset, landing;
+    local float sample, contents;
+
+    side = direction_y * '-14 0 0' + direction_x * '0 14 0';
+    start = self.origin + '0 0 10';
+    offset = direction * distance;
+    traceline (start + side, start + side + offset, TRUE, self);
+    if (trace_startsolid) return self.origin;
+    if (trace_fraction < 1) distance = distance * trace_fraction - 18;
+    if (distance < 44) return self.origin;
+    offset = direction * distance;
+    traceline (start - side, start - side + offset, TRUE, self);
+    if (trace_startsolid) return self.origin;
+    if (trace_fraction < 1) distance = distance * trace_fraction - 18;
+    sample = 24;
+    while (sample <= distance)
+    {
+        offset = self.origin + direction * sample;
+        if (!wet)
+        {
+            if (!Argus_WalkFloorOK (offset, 44))
+            {
+                if (sample + 28 <= distance)
+                {
+                    landing = Argus_ExploreDrop (direction, sample);
+                    if (landing != self.origin) return landing;
+                }
+                return self.origin + direction * (sample - 28);
+            }
+        }
+        else
+        {
+            contents = pointcontents (offset - '0 0 20');
+            if (contents == CONTENT_LAVA || contents == CONTENT_SLIME)
+                return self.origin + direction * (sample - 28);
+        }
+        sample = sample + 36;
+    }
+    return self.origin + direction * distance;
+};
+
+// Find a dry landing just beyond a low wall so swim steering can take
+// the ordinary water vault. A long channel alone can circle a pool.
+vector(vector direction, float wall) Argus_ExploreBank =
+{
+    local vector start, landing;
+
+    if (wall < 22 || wall > 114) return '0 0 0';
+    start = self.origin + '0 0 56';
+    landing = start + direction * (wall + 34);
+    traceline (start, landing, TRUE, self);
+    if (trace_fraction < 1 || trace_startsolid) return '0 0 0';
+    traceline (landing, landing - '0 0 88', TRUE, self);
+    if (trace_fraction == 1 || trace_startsolid || trace_plane_normal_z < 0.65
+        || pointcontents (trace_endpos + '0 0 4') != CONTENT_EMPTY)
+        return '0 0 0';
+    landing = trace_endpos + '0 0 24';
+    if (landing_z > self.origin_z + 48 || landing_z < self.origin_z - 8
+        || pointcontents (landing + '0 0 28') != CONTENT_EMPTY)
+        return '0 0 0';
+    return landing;
+};
+
+// A nearby touch button is worth a short detour when it opens a door to
+// a useful weapon. Compare weapons on the far side of this door together.
+entity() Argus_ExploreSwitch =
+{
+    local entity button, door, item, prize;
+    local vector point, approach, direction, doorpoint, supply;
+    local float distance, value, best;
+
+    button = find (world, classname, "func_button");
+    while (button != world)
+    {
+        if (button.health <= 0 && button.state == STATE_BOTTOM && button.target != "")
+        {
+            point = (button.absmin + button.absmax) * 0.5;
+            distance = vlen (point - self.origin);
+            if (distance < 172 && fabs (point_z - self.origin_z) < 32)
+            {
+                door = find (world, targetname, button.target);
+                if (Argus_IsDoor (door) && !door.items && door.state == STATE_BOTTOM)
+                {
+                    traceline (self.origin + '0 0 12', point, TRUE, self);
+                    if (trace_ent == button || trace_fraction == 1)
+                    {
+                        direction = point - self.origin;
+                        direction_z = 0;
+                        direction = normalize (direction);
+                        approach = self.origin + direction * (distance - 24);
+                        if (Argus_WalkFloorOK (approach, 32) && Argus_SafeLine (approach))
+                        {
+                            best = 39;
+                            prize = world;
+                            doorpoint = Argus_DoorShut (door);
+                            item = argus_itemchain;
+                            while (item != world)
+                            {
+                                if (item.solid == SOLID_TRIGGER && Argus_ItemClass (item) == AR_C_WEAPON)
+                                {
+                                    supply = Argus_GoalPoint (item);
+                                    value = Argus_ItemValue (item, AR_C_WEAPON);
+                                    if (value > best && vlen (doorpoint - supply) < 340
+                                        && !Argus_DoorPast (door, supply))
+                                    {
+                                        best = value;
+                                        prize = item;
+                                    }
+                                }
+                                item = item.ar_nextitem;
+                            }
+                            if (prize != world)
+                            {
+                                self.al_exit_prize = prize;
+                                self.al_exit_prize_until = time + 7;
+                                return button;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        button = find (button, classname, "func_button");
+    }
+    return world;
+};
+
+// A blocked walkmove may leave the bot touching the brush without
+// delivering the client's impact callback. Confirm contact and the exact
+// brush before using the stock touch handler.
+void(entity button) Argus_ExplorePress =
+{
+    local entity actor, savedother, savedactivator;
+    local vector point;
+
+    if (button.state != STATE_BOTTOM || button.touch != button_touch
+        || !Argus_TouchingBox (button)) return;
+    point = (button.absmin + button.absmax) * 0.5;
+    traceline (self.origin + '0 0 12', point, TRUE, self);
+    if (trace_ent != button) return;
+
+    actor = self;
+    savedother = other;
+    savedactivator = activator;
+    self = button;
+    other = actor;
+    button_touch ();
+    self = actor;
+    other = savedother;
+    activator = savedactivator;
+};
+
+// Keep the selected passage until arrival or timeout. Penalise recent
+// departures so the next scan looks beyond the room we just left.
+float() Argus_ExploreExit =
+{
+    local float wet, remaining, range, yaw, reach, wall, score, best, i, door;
+    local vector direction, heading, supply, start, point, chosen, bank;
+    local entity item;
+
+    if (!deathmatch || coop || self.ar_taskgoal != world || self.ar_mode == 2
+        || self.ar_feettype < CONTENT_WATER || self.teleport_time > time)
+        return FALSE;
+
+    wet = self.ar_feettype == CONTENT_WATER;
+    if (self.ar_exploreuntil > 0)
+    {
+        remaining = vlen (self.ar_exploregoal - self.origin);
+        if (remaining < 380 && time < self.ar_exploreuntil)
+        {
+            if (self.al_exit_button != world)
+            {
+                Argus_ExplorePress (self.al_exit_button);
+                if (self.al_exit_button.state == STATE_BOTTOM) return TRUE;
+            }
+            else if (remaining > 30) return TRUE;
+        }
+        self.al_exit_button = world;
+        self.al_exit_oldest = self.al_exit_older;
+        self.al_exit_older = self.al_exit_previous;
+        self.al_exit_previous = self.al_exit_avoid;
+        self.al_exit_avoid = self.al_exit_from;
+        if (vlen (self.origin - self.al_exit_from) < 64)
+            self.al_exit_avoid = self.ar_exploregoal;
+        if (self.al_exit_memory <= time)
+        {
+            self.al_exit_previous = self.al_exit_avoid;
+            self.al_exit_older = self.al_exit_avoid;
+            self.al_exit_oldest = self.al_exit_avoid;
+        }
+        self.al_exit_memory = time + 16;
+        self.ar_exploreuntil = 0;
+    }
+    if (time < self.al_exit_scan || (!wet && !(self.flags & FL_ONGROUND)))
+        return FALSE;
+    self.al_exit_scan = time + 0.55;
+
+    supply = '0 0 0';
+    self.al_exit_button = world;
+    if (!wet && time >= self.al_exit_button_after)
+        self.al_exit_button = Argus_ExploreSwitch ();
+    if (self.al_exit_button != world)
+    {
+        self.al_exit_from = self.origin;
+        self.ar_exploregoal = (self.al_exit_button.absmin + self.al_exit_button.absmax) * 0.5;
+        self.ar_exploreuntil = time + 1.3;
+        self.al_exit_button_after = time + 5;
+        dprint ("ARGUS explore switch "); dprint (self.netname); dprint ("\n");
+        return TRUE;
+    }
+    item = self.al_exit_prize;
+    if (time >= self.al_exit_prize_until || item.solid != SOLID_TRIGGER)
+        item = Argus_ExploreSupply ();
+    if (item != world)
+    {
+        supply = Argus_GoalPoint (item) - self.origin;
+        supply_z = 0;
+        supply = normalize (supply);
+    }
+    makevectors (self.ar_moveyaw * '0 1 0');
+    heading = v_forward;
+    range = 250;
+    if (wet) range = 224;
+    start = self.origin + '0 0 10';
+    best = 0;
+    i = 0;
+    while (i < 17)
+    {
+        yaw = self.ar_moveyaw + i * 22.5;
+        if (i == 16 && supply != '0 0 0') yaw = vectoyaw (supply);
+        makevectors (yaw * '0 1 0');
+        direction = v_forward;
+        traceline (start, start + direction * range, TRUE, self);
+        door = (!wet && Argus_IsDoor (trace_ent) && !Argus_DoorMaster (trace_ent).items);
+        wall = trace_fraction * range;
+        reach = wall;
+        bank = '0 0 0';
+        if (wet && trace_fraction < 1) bank = Argus_ExploreBank (direction, reach);
+        score = direction * supply * 100 + direction * heading * 20;
+        if (bank != '0 0 0')
+        {
+            point = bank;
+            reach = vlen (bank - self.origin);
+            score = score + 170;
+        }
+        else
+        {
+            if (door) score = score + 64;
+            if (reach < 74 || reach + score + wet * 52 <= best)
+            {
+                i = i + 1;
+                continue;
+            }
+            point = Argus_ExploreLane (direction, reach - 28, wet);
+            reach = vlen (point - self.origin);
+            if (wet && pointcontents (point - '0 0 20') == CONTENT_EMPTY)
+                if (Argus_WalkFloorOK (point, 40)) score = score + 52;
+        }
+        score = score + reach;
+        if (time < self.al_exit_memory)
+        {
+            if (vlen (point - self.al_exit_avoid) < 128) score = score - 150;
+            else if (vlen (point - self.al_exit_previous) < 144) score = score - 130;
+            else if (vlen (point - self.al_exit_older) < 144) score = score - 105;
+            else if (vlen (point - self.al_exit_oldest) < 144) score = score - 80;
+        }
+        if (reach >= 44 && score > best && !Argus_MoveHazard (yaw, 48))
+        {
+            if (door && reach + 38 >= wall) point = point + direction * 40;
+            chosen = point;
+            best = score;
+        }
+        i = i + 1;
+    }
+    if (!best) return FALSE;
+
+    self.al_exit_from = self.origin;
+    self.ar_exploregoal = chosen;
+    self.ar_exploreuntil = time + 1.8;
+    if (wet) self.ar_exploreuntil = time + 2.6;
+    dprint ("ARGUS explore "); dprint (self.netname); dprint (" ");
+    dprint (vtos (self.origin)); dprint (" -> "); dprint (vtos (chosen)); dprint ("\n");
+    return TRUE;
+};
 
 // When exploration reaches a pool with no route, retain the clearest
 // channel long enough to get out of a wall pocket. The swim physics still
