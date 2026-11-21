@@ -2,6 +2,7 @@
 float af_done;
 void() player_nail2;
 void() player_light2;
+extern entity s;
 
 void(string name, float ok) AfCheck =
 {
@@ -146,6 +147,49 @@ void(entity gate, entity rider) AfWarp =
     other = savedother;
 };
 
+void(entity listener, entity rider, entity gate) AfTeleportCue =
+{
+    local entity saved, fog;
+    local vector soundpos;
+
+    saved = self;
+    listener.ar_sndtime = 0;
+    listener.ar_sndweap = 0;
+    AfWarp (gate, rider);
+    fog = s;
+    soundpos = fog.origin;
+    setorigin (listener, soundpos + '0 0 24');
+    AfCheck ("warp_waits_for_audible_playback", listener.ar_sndtime == 0);
+    self = fog;
+    self.think ();
+    AfCheck ("warp_exit_is_a_neutral_audible_cue",
+             listener.ar_sndtime == time && listener.ar_sndpos == soundpos
+             && listener.ar_sndent == rider && listener.ar_sndweap == 0);
+
+    listener.ar_sndweap = IT_LIGHTNING;
+    AfWarp (gate, rider);
+    self = s;
+    self.think ();
+    AfCheck ("warp_respects_recent_shot_priority", listener.ar_sndweap == IT_LIGHTNING);
+    self = saved;
+};
+
+void() AfStraightFlight =
+{
+    local vector offset;
+    local float flight;
+
+    offset = '400 0 0';
+    flight = Argus_StraightFlight (offset, '320 0 0', 0.4);
+    AfCheck ("receding_target_lead", fabs (flight - 400 / 680) < 0.025);
+    flight = Argus_StraightFlight (offset, '-320 0 0', 0.4);
+    AfCheck ("closing_target_lead", fabs (flight - 400 / 1320) < 0.015);
+    flight = Argus_StraightFlight (offset, '0 320 0', 0.4);
+    AfCheck ("crossing_target_lead", fabs (flight - 0.4222) < 0.006);
+    AfCheck ("extreme_speed_retains_legacy_lead",
+             Argus_StraightFlight (offset, '0 600 0', 0.4) == 0.4);
+};
+
 void() AfFixture =
 {
     local entity saved, listener, actor, roster, jacket;
@@ -158,6 +202,7 @@ void() AfFixture =
     if (mapname != "dm2" && mapname != "dm6") return;
     af_done = 1;
     dprint ("BHVRPL begin adaptation\n");
+    AfStraightFlight ();
     saved = self;
     roster = argus_bots;
     listener = spawn ();
@@ -329,6 +374,7 @@ void() AfFixture =
         Argus_Nav_Frame ();
         AfCheck ("both_portals_learned_when_idle", (entrya.an_telemask & bit_a) != 0
                  && (entryb.an_telemask & bit_b) != 0 && an_pendingtelegate == world);
+        AfTeleportCue (listener, actor, gatea);
     }
 
     argus_bots = roster;

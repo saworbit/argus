@@ -176,6 +176,8 @@ float argus_plan_serial;
 // minutes (the bimodal lava matches, 2026-08-18)
 
 .float  ar_nextchat;            // chat throttle
+.float  ar_localshop;           // next pickup scan without a graph
+.float  ar_localgoal;           // local direct approach awaits a pickup touch
 .float  ar_greeted;             // said hello yet
 .float  ar_h2otime;             // water enter/exit sound throttle (the
                                 // swim bob skims the surface; see
@@ -4266,6 +4268,8 @@ void() Argus_BaseStats =
     self.ar_eastdeck = 0;
     Argus_RecoveryReset ();
     self.ar_hurttime = 0; self.ar_stuckhurt = 0; self.ar_stucktime = 0;
+    self.ar_localshop = 0;
+    self.ar_localgoal = 0;
     self.ar_actionnode = world; self.ar_actiongoal = world;
     self.ar_actionbest = 0; self.ar_actiontime = 0;
     self.ar_plan_goal = world; self.ar_plan_leg = world;
@@ -6306,6 +6310,18 @@ float(vector point) Argus_CombatLine =
         && Argus_SafeLine (point);
 };
 
+// Two refinements reduce the range-at-impact error at normal target speeds.
+float(vector offset, vector vel, float fallback) Argus_StraightFlight =
+{
+    local float flight;
+
+    if (vel * vel >= 250000)
+        return fallback;
+    flight = vlen (offset) * 0.001;
+    flight = vlen (offset + vel * flight) * 0.001;
+    return vlen (offset + vel * flight) * 0.001;
+};
+
 float() Argus_CanInvestigateNoise;
 
 // Use one ordinary graph leg to round a corner. Both the turn and the
@@ -6693,20 +6709,17 @@ float() Argus_Combat =
     else
         aimpt = epos + '0 0 12' + err;
 
-    // projectile leading (Shane's review): aim where they will be.
-    // Time of flight = dist over projectile speed - rockets and nails
-    // 1000 u/s, grenades a ~600 u/s toss. Hitscan (SG/SSG/LG) and the
-    // axe lead nothing. One step, not an iterated solution: close
-    // enough at DM ranges, and the error model still rides on top.
+    // Estimate flight from the muzzle. Grenades retain their loft estimate
+    // below, and hitscan and axe do not need a flight time.
     flight = 0;
     if (self.ar_skill >= AR_SKILL_LEAD)
     {
-        if (self.weapon == IT_ROCKET_LAUNCHER)
-            flight = d / 1000;
-        else if (self.weapon == IT_GRENADE_LAUNCHER)
+        if (self.weapon == IT_GRENADE_LAUNCHER)
             flight = d / 600;
-        else if (self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
-            flight = d / 1000;
+        else if (self.weapon == IT_ROCKET_LAUNCHER
+                 || self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
+            flight = Argus_StraightFlight (epos - self.origin - '0 0 4',
+                                           evel, d / 1000);
     }
     if (flight > 0)
     {
@@ -7978,15 +7991,94 @@ string(float cls) Argus_ClassWord =
     return "loot";
 };
 
+void(entity pick) Argus_LogPickupGoal =
+{
+    local string name;
+
+    name = pick.classname;
+    if (name == "")
+    {
+        if (pick.touch == BackpackTouch) name = "backpack";
+        else name = "unknown";
+    }
+    dprint ("ARGEVT ");
+    dprint (self.netname);
+    dprint (" goal ");
+    dprint (name);
+    dprint ("\n");
+};
+
+// Supply the direct approach when no graph can route a pickup. Bound the
+// geometry work and let the normal wander steering explore between scans.
+void() Argus_PickLocalGoal =
+{
+    local entity item, pick;
+    local vector point, offset;
+    local float cls, dist, score, best, probes, ws;
+
+    if (time < self.ar_localshop || !(self.flags & FL_ONGROUND)
+        || self.ar_feettype != CONTENT_EMPTY)
+        return;
+    self.ar_localshop = time + 0.8;
+    ws = Argus_WorldState ();
+    pick = world;
+    best = 0;
+    probes = 0;
+    item = argus_itemchain;
+    while (item != world && probes < 6)
+    {
+        if (item.solid == SOLID_TRIGGER && (item.flags & FL_ITEM)
+            && !(item.ar_claimer == self && time < item.ar_claimtime + 20)
+            && !(item.claimed_by != world && item.claimed_by != self
+                 && item.claimed_by.health > 0 && time < item.claim_time + 3))
+        {
+            point = Argus_GoalPoint (item);
+            offset = point - self.origin;
+            dist = vlen (offset);
+            if (dist < 240 && fabs (offset_z) < 48)
+            {
+                cls = Argus_ItemClass (item);
+                score = Argus_ItemValue (item, cls) / (160 + dist);
+                if (cls == AR_C_WEAPON && !(ws & AR_WS_ARMED))
+                    score = score * 1.6;
+                if (score > best)
+                {
+                    probes = probes + 1;
+                    if (Argus_CombatLine (point)
+                        && !Argus_AvoidLine (self.origin, point, TRUE)
+                        && !Argus_MoveHazard (vectoyaw (offset), 48))
+                    {
+                        best = score;
+                        pick = item;
+                    }
+                }
+            }
+        }
+        item = item.ar_nextitem;
+    }
+    if (pick == world)
+        return;
+    if (!TryClaim (pick))
+        return;
+
+    self.ar_goal = pick;
+    self.ar_goalstart = time;
+    self.ar_planfinal = Argus_ItemClass (pick);
+    self.ar_planwant = self.ar_planfinal;
+    self.ar_localgoal = TRUE;
+    self.ar_mode = 1;
+    Argus_LogPickupGoal (pick);
+};
+
 void() Argus_PickGoal =
 {
     local entity e, b, pick, near, lifenear, rnode, startnode;
-    local entity dn1, dn2, dn3, dn4, dn5, dn6;
     local entity bw, ba, bh, br, bp, bo;
     local float sw, sa, sh, sr, sp, so;
     local vector gp, d;
     local float dist, neard, lifedist, shelf, cls, v, sc, ws, u, bu, final;
-    local float breg, lifefight, arrival;
+    local float breg, lifefight, arrival, denial;
+    local vector denialpos;
 
     bw = world;  ba = world;  bh = world;
     br = world;  bp = world;  bo = world;
@@ -8007,7 +8099,13 @@ void() Argus_PickGoal =
         self.ar_pending = 0;
         self.ar_node = world;
         self.ar_mode = 0;
+        self.ar_localgoal = FALSE;
         startnode = Argus_NearestNode (self.origin);
+        if (startnode == world && deathmatch == 1 && !coop)
+        {
+            Argus_PickLocalGoal ();
+            return;
+        }
         Argus_Shop_Start (self, startnode);
         return;
     }
@@ -8025,28 +8123,21 @@ void() Argus_PickGoal =
                 && time < self.ar_lastlifeuntil
                 && self.ar_enemy != world && time <= self.ar_seen + 0.4;
 
-    // item denial (#48): gather the live opponents ONCE. This used to
-    // run a full find() chain per candidate item - on a 60-item map
-    // that is 60 walks of the whole edict array for one goal pick.
-    // Six slots covers the 4-bot roster plus humans; beyond that the
-    // extra bodies simply do not add denial pressure.
-    dn1 = world;  dn2 = world;  dn3 = world;
-    dn4 = world;  dn5 = world;  dn6 = world;
-    if (self.ar_skill >= AR_SKILL_DENIAL)
+    // Denial uses a recent sighting or an audible shot from the area.
+    denial = FALSE;
+    if (deathmatch && !coop && self.ar_skill >= AR_SKILL_DENIAL)
     {
-        b = find (world, classname, "player");
-        while (b != world)
+        if (self.ar_obsenemy != world && self.ar_obsenemy == self.ar_enemy
+            && time <= self.ar_seen + 0.4)
         {
-            if (b != self && b.health > 0 && !b.cam_active)
-            {
-                if (dn1 == world)       dn1 = b;
-                else if (dn2 == world)  dn2 = b;
-                else if (dn3 == world)  dn3 = b;
-                else if (dn4 == world)  dn4 = b;
-                else if (dn5 == world)  dn5 = b;
-                else if (dn6 == world)  dn6 = b;
-            }
-            b = find (b, classname, "player");
+            denialpos = self.ar_lastseen;
+            denial = TRUE;
+        }
+        else if (self.ar_sndweap && self.ar_sndtime > 0
+                 && time <= self.ar_sndtime + 0.6)
+        {
+            denialpos = self.ar_sndpos;
+            denial = TRUE;
         }
     }
 
@@ -8241,29 +8332,8 @@ void() Argus_PickGoal =
                             sc = sc * 0.6;
                         b = b.ar_chain;
                     }
-                    // item denial (OPM slice C): an opponent standing
-                    // near this item makes taking it sweeter. Skill
-                    // 1+ - a warmup partner does not play keep-away
-                    // find() walks the whole edict array, and this
-                    // ran once per candidate ITEM - 50-80 full sweeps
-                    // of 600 edicts for a single goal pick. The
-                    // players were gathered once before the loop
-                    // (dn1..dn6); only the distance test stays here.
-                    if (self.ar_skill >= AR_SKILL_DENIAL)
-                    {
-                        if (dn1 != world && vlen (dn1.origin - e.origin) < 300)
-                            sc = sc + 12;
-                        if (dn2 != world && vlen (dn2.origin - e.origin) < 300)
-                            sc = sc + 12;
-                        if (dn3 != world && vlen (dn3.origin - e.origin) < 300)
-                            sc = sc + 12;
-                        if (dn4 != world && vlen (dn4.origin - e.origin) < 300)
-                            sc = sc + 12;
-                        if (dn5 != world && vlen (dn5.origin - e.origin) < 300)
-                            sc = sc + 12;
-                        if (dn6 != world && vlen (dn6.origin - e.origin) < 300)
-                            sc = sc + 12;
-                    }
+                    if (denial && vlen (denialpos - e.origin) < 300)
+                        sc = sc + 12;
                     // the hunch (theory of mind): the item we bet a
                     // vanished foe is running for is suddenly very
                     // attractive - interception through the same
@@ -8474,28 +8544,7 @@ void() Argus_PickGoal =
             dprint (Argus_ClassWord (self.ar_planwant));
             dprint ("\n");
         }
-        dprint ("ARGEVT ");
-        dprint (self.netname);
-        dprint (" goal ");
-        // A dropped backpack has no classname. DropBackpack never
-        // assigns one, which is why Argus_ItemValue identifies packs
-        // by touch rather than by class, and the telemetry never got
-        // the same treatment: 7% of one dm2 tape's goal lines were
-        // "ARGEVT <name> goal " with nothing after the verb (#269).
-        // That breaks the documented grammar and makes pack shopping
-        // structurally invisible to the per-class goal map, so the
-        // v3.45 fresh-pack bonus had no instrument that could ever
-        // show it being chosen.
-        if (pick.classname == "")
-        {
-            if (pick.touch == BackpackTouch)
-                dprint ("backpack");
-            else
-                dprint ("unknown");
-        }
-        else
-            dprint (pick.classname);
-        dprint ("\n");
+        Argus_LogPickupGoal (pick);
 
         gp = Argus_GoalPoint (pick);
         if (vlen (gp - self.origin) < 300 && an_goalnode == startnode
@@ -9018,8 +9067,6 @@ float() Argus_Unstick =
     // catch it, solid only, so water and lava do not count. No zero-step
     // walkmove: that fires triggers and fails on any ledge where
     // SV_CheckBottom refuses the centre, which is not being stuck.
-    embedded = Argus_HullBlocked (self.origin, FALSE);
-
     // BEING INSIDE SOLID FOR AN INSTANT IS NORMAL. The first cut of
     // this fired on contents plus a low speed, and dm4 promptly
     // teleported Romero 192 units down into the pit while he was
@@ -9041,12 +9088,11 @@ float() Argus_Unstick =
         && self.ar_hurttime >= self.ar_stucktime)
         self.ar_stuckhurt = time;
 
+    if (time < self.ar_stucktime + 3)
+        return FALSE;
+    embedded = Argus_HullBlocked (self.origin, FALSE);
     if (embedded)
-    {
-        if (time < self.ar_stucktime + 3)
-            return FALSE;
         mind = 0;
-    }
     else if (self.ar_stalls - self.ar_stuckstalls >= 4
              && time > self.ar_stucktime + 6)
     {
@@ -10663,7 +10709,8 @@ void() Argus_AI =
             // displaces the bot so the next menu is shopped from new
             // ground (or proves the pit for the exit above).
         }
-        else if (!Argus_GoalOK (self.ar_goal))
+        else if (!Argus_GoalOK (self.ar_goal)
+                 || (self.ar_localgoal && self.ar_goal.solid != SOLID_TRIGGER))
         {
             // a goal that stopped being an item under our feet was
             // eaten, almost always by us: the touch beats the arrival
@@ -10675,7 +10722,9 @@ void() Argus_AI =
                 self.ar_goals = self.ar_goals + 1;
             Argus_PickGoal ();
         }
-        else if (time > self.ar_goalstart + 20)
+        else if (time > self.ar_goalstart + 20
+                 || (self.ar_localgoal && self.ar_enemy == world
+                     && time > self.ar_goalstart + 3))
         {
             // A fight on the way to a goal is not a failure to reach
             // it. The clock used to run through the duel, so a long
@@ -11722,7 +11771,7 @@ void() Argus_AI =
             tp = gp;
             to = tp - self.origin;
             to_z = 0;
-            if (self.ar_goal.solid == SOLID_NOT && vlen (to) < 150
+            if (!self.ar_localgoal && self.ar_goal.solid == SOLID_NOT && vlen (to) < 150
                 && fabs (gp_z - self.origin_z) < 72)
             {
                 // EARLY at a clocked major: loiter, do not complete.
@@ -11763,7 +11812,7 @@ void() Argus_AI =
                 tp = self.origin + v_forward * 96;
                 havetarget = 1;
             }
-            else if (vlen (to) < 32 && fabs (gp_z - self.origin_z) < 56
+            else if (!self.ar_localgoal && vlen (to) < 32 && fabs (gp_z - self.origin_z) < 56
                 && (self.ar_goal != self.ar_taskgoal || !self.ar_taskgoal.spawnflags))
             {
                 self.ar_goals = self.ar_goals + 1;

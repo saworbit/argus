@@ -15,6 +15,59 @@ entity(string type, vector seat) AdaptationPickupItem =
     return item;
 };
 
+void(entity foe) AdaptationDenial =
+{
+    local entity near, far, seat, items, startnode, goalnode;
+    local float ready;
+
+    items = argus_itemchain;
+    startnode = an_startnode;
+    goalnode = an_goalnode;
+    ready = an_shopready;
+    seat = spawn ();
+    setorigin (seat, self.origin);
+    seat.an_mark = an_gen;
+    an_startnode = seat;
+    an_shopready = TRUE;
+
+    near = AdaptationPickupItem ("item_armor1", self.origin + '100 0 0');
+    far = AdaptationPickupItem ("item_armor1", self.origin + '440 0 0');
+    near.ar_goalnode = seat;
+    far.ar_goalnode = seat;
+    near.ar_gnodeset = TRUE;
+    far.ar_gnodeset = TRUE;
+    near.ar_nextitem = far;
+    argus_itemchain = near;
+    self.ar_warmor = 1;
+    foe.classname = "player";
+    setorigin (foe, far.origin);
+    self.ar_obsenemy = world;
+    self.ar_sndweap = 0;
+    Argus_PickGoal ();
+    AfCheck ("unseen_opponent_leaves_pickup_ranking_alone", self.ar_goal == near);
+
+    Argus_ObserveEnemy (foe);
+    setorigin (foe, near.origin);
+    Argus_PickGoal ();
+    AfCheck ("denial_uses_last_sighting", self.ar_goal == far);
+
+    self.ar_seen = time - 0.5;
+    AfMemory (far.origin, IT_LIGHTNING, 0.2);
+    Argus_PickGoal ();
+    AfCheck ("denial_can_use_fresh_gunfire", self.ar_goal == far);
+    self.ar_sndtime = time - 0.7;
+    Argus_PickGoal ();
+    AfCheck ("denial_expires_stale_evidence", self.ar_goal == near);
+
+    argus_itemchain = items;
+    an_startnode = startnode;
+    an_goalnode = goalnode;
+    an_shopready = ready;
+    remove (near);
+    remove (far);
+    remove (seat);
+};
+
 void() AdaptationPickupFixture =
 {
     local entity saved, bot, foe, stock, healthbox, armour;
@@ -75,6 +128,7 @@ void() AdaptationPickupFixture =
     Argus_Combat ();
     AfCheck ("expired_pickup_cools_and_replans", bot.ar_bitemlast == healthbox
              && bot.ar_bitemcool > time + 7 && bot.ar_bitem == armour);
+    AdaptationDenial (foe);
 
     stock = argus_itemchain;
     while (stock != world)

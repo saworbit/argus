@@ -150,6 +150,78 @@ zero freezes under fire and zero rescue warps. The later train fix bounded
 the displaced waits. [dm2 train boarding issue](https://github.com/saworbit/argus/issues/1003)
 [Decision checks and match receipts](../runs/audio-adaptation.results.json)
 
+## Map-agnostic adaptation pre-mortem
+
+1. Reaper and FrikBot can roam using waypoints learned during play. Argus
+   follows typed routes where a graph is registered. On a map without one,
+   shopping has no start node and the bot falls back to wandering. Nearby
+   pickups are the first test of whether bounded live geometry can improve
+   that behaviour without spending edicts on speculative nodes.
+2. Omicron uses observed and heard activity to locate opponents. Argus
+   already ranks items by need and times their actual respawns, but its
+   denial bonus uses opponents' live positions even when they are hidden.
+   Treat fresh sightings and shots as evidence with a short expiry.
+3. Frogbot prioritises estimated travel time in item routes. In combat,
+   Argus already leads projectiles, compensates gravity and checks splash
+   clearance. Its rocket and nail lead assumed the opponent stayed at the
+   same range during flight. Measure the effect of correcting that
+   estimate before revisiting grenade arcs or the splash constraints.
+
+Any runtime graph must fit under the 600-edict cap and must not publish
+routes before traversal proves them. Geometry checks for local shopping
+need a fixed budget and a rescan interval. Changing a pickup each frame
+would interfere with route ownership, so keep the current claim and
+completion rules. Aim changes must preserve the final muzzle and movement
+guards. Played cadence is observable in native receipts. It cannot
+attribute CPU time to a QuakeC routine.
+
+## Map-agnostic adaptation results
+
+The candidate uses direct, checked approaches to live items on maps
+without a registered graph in deathmatch 1. Each scan tests up to six
+approaches within 240 units. It prioritises a usable weapon when unarmed,
+shares the existing item claim and leaves an unsuccessful approach on
+the bot's existing cooldown. Shopping resumes as the bot explores.
+This extends first-load pickup behaviour. Multi-room navigation using
+learned links remains open.
+
+Two 40-second matches per arm and map ran at skill 2 and played cadence.
+Both maps passed the native stall-parity gate. Pickups below count only
+successful touches of the bot's selected goal.
+
+| Map | Verified goal pickups, control to candidate | Mean stalls, control to candidate |
+| --- | ---: | ---: |
+| dm1 | 0 to 6 | 2.0 to 0.5 |
+| dm5 | 0 to 8 | 13.0 to 10.5 |
+
+The four candidate matches recorded no freezes, rescue warps or world
+deaths. Smoke matches on start, e1m3 and e1m7 checked that the build ran
+on further geometry. The private adaptation suite passed 77 checks
+across dm2 and dm6. The added checks cover lead for closing, receding
+and crossing targets, the expiry of denial evidence, and neutral
+teleporter exit sounds that yield to recent shots.
+
+On registered graphs, three 60-second matches per arm and map passed
+the stall-parity gate on dm2, dm4 and dm6. Control build `9ca6ea0341b3`
+and candidate `b46571398dc3` both ran at skill 2 and played cadence.
+
+| Map | Verified goal pickups | Mean stalls | Mean speed (u/s) | Bot kills |
+| --- | ---: | ---: | ---: | ---: |
+| dm2 | 13 to 14 | 10.7 to 9.7 | 226 to 209 | 7 to 7 |
+| dm4 | 27 to 28 | 1.3 to 2.3 | 232 to 221 | 19 to 22 |
+| dm6 | 42 to 51 | 1.0 to 3.0 | 253 to 255 | 19 to 11 |
+
+The nine candidate matches recorded no freezes or rescue warps. They
+recorded two world deaths against zero in the control, including one
+classified as lava on dm4. These short self-play bands leave a general
+gain in fighting efficiency or movement speed unverified.
+
+Two 120-second skill-1 dm4 stand-in matches per build estimated a
+difference of +1.84 bot kills per minute in sight. The 95 per cent
+interval was -36.41 to +40.08, so the threat direction is inconclusive.
+Matched results against the classic bots are still needed.
+[Classic replay suite](https://github.com/saworbit/argus/issues/1079)
+
 ## Two-leg pursuit evaluation
 
 `tools/verify_pursuit_two_leg.py` builds a private program with the current
