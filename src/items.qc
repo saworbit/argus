@@ -21,6 +21,15 @@ void() W_SetCurrentAmmo;
 BE .8 .3 .4 IN COLOR */
 
 
+// Called by a successful touch while self still names the item.
+void() Argus_LogGoalPickup =
+{
+	if (!other.ar_isbot || other.ar_goal != self)
+		return;
+	dprint ("ARGEVT "); dprint (other.netname);
+	dprint (" goal_pickup_v1 "); dprint (self.classname); dprint ("\n");
+};
+
 void() SUB_regen =
 {
 	self.model = self.mdl;		// restore original model
@@ -64,6 +73,7 @@ local string    s;
 	sound (other, CHAN_VOICE, self.noise, 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
 	self.solid = SOLID_NOT;
+	Argus_LogGoalPickup ();
 	Argus_ItemChain_Remove (self);
 	other.items = other.items | IT_QUAD;
 	self.model = string_null;
@@ -158,6 +168,7 @@ local string    s;
 	sound (other, CHAN_VOICE, self.noise, 1, ATTN_NORM);
 	stuffcmd (other, "bf\n");
 	self.solid = SOLID_NOT;
+	Argus_LogGoalPickup ();
 	Argus_ItemChain_Remove (self);
 	other.items = other.items | IT_INVISIBILITY;
 	self.model = string_null;
@@ -382,6 +393,7 @@ void() health_touch =
 
 	self.model = string_null;
 	self.solid = SOLID_NOT;
+	Argus_LogGoalPickup ();
 	ReleaseClaim (self);
 
 	// ARGUS: the mega is a control item; taking it is audible intel.
@@ -489,6 +501,7 @@ void() armor_touch =
 
 	self.solid = SOLID_NOT;
 	self.model = string_null;
+	Argus_LogGoalPickup ();
 	ReleaseClaim (self);
 
 	Argus_HearSound (self.origin, other, 0);
@@ -794,6 +807,7 @@ void() weapon_touch =
 
 	self = stemp;
 
+	Argus_LogGoalPickup ();
 	if (leave)
 		return;
 
@@ -1032,6 +1046,7 @@ void() ammo_touch =
 	// remove it in single player, or setup for respawning in deathmatch
 	self.model = string_null;
 	self.solid = SOLID_NOT;
+	Argus_LogGoalPickup ();
 	ReleaseClaim (self);
 
 	if (deathmatch_item_respawn())
@@ -1312,6 +1327,7 @@ void() key_touch =
 		self.model = string_null;
 	}
 
+	Argus_LogGoalPickup ();
 	ReleaseClaim (self);
 
 	// Checkpoint telemetry (#176)
@@ -1518,6 +1534,7 @@ void() sigil_touch =
 	self.solid = SOLID_NOT;
 	self.model = string_null;
 	serverflags = serverflags | (self.spawnflags & 15);
+	Argus_LogGoalPickup ();
 	self.classname = string_null;		// so rune doors won't find it
 
 	activator = other;
@@ -1608,6 +1625,7 @@ void() powerup_touch =
 	self.solid = SOLID_NOT;
 	other.items = other.items | self.items;
 	self.model = string_null;
+	Argus_LogGoalPickup ();
 	ReleaseClaim (self);
 
 	Argus_HearSound (self.origin, other, 0);	// ARGUS: audible pickup -
@@ -1837,6 +1855,7 @@ void() BackpackTouch =
 		// vanishes from Argus_PickGoal. If the reused edict is chained
 		// again the add makes it point at itself and the PickGoal walk
 		// never terminates, which is a runaway loop and a dead server.
+		Argus_LogGoalPickup ();
 		Argus_ItemChain_Remove (self);
 		ReleaseClaim (self);
 		remove(self);
@@ -1956,6 +1975,7 @@ void() BackpackTouch =
 
 	Argus_HearSound (self.origin, other, 0);	// ARGUS: looting is audible
 
+	Argus_LogGoalPickup ();
 	Argus_ItemChain_Remove (self);
 	ReleaseClaim (self);
 	remove(self);

@@ -36,6 +36,8 @@ passing botmatch does not establish better human play.
 
 - Record the two-leg pursuit evaluation and add a private stock-map verifier ([#1007](https://github.com/saworbit/argus/issues/1007)).
 
+- Record verified pickups from successful item touches while keeping the historical goal completion count ([#1044](https://github.com/saworbit/argus/issues/1044)).
+
 - Let fixed navigation tasks require dry foot contact and record the landing position and time ([#1038](https://github.com/saworbit/argus/issues/1038)).
 
 - Give e1m8 full regeneration its own sidecar seats and walks. The [matched route trials](docs/specs/2026-11-20-e1m8-soak.md#full-regeneration) keep the tested splice in play ([#950](https://github.com/saworbit/argus/issues/950)).
