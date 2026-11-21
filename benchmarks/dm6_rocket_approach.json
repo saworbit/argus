@@ -2,10 +2,12 @@
   "schema_version": 1,
   "name": "dm6_rocket_approach",
   "map": "dm6",
-  "graph_md5": "4ea3f359781679c3b7b4d5f79bfabf14",
+  "graph_md5": "70452faed27e8a5caf2f98d43b01469b",
   "skill": 2,
   "tasks": [
-    {"name": "upper_rocket_drop", "start": [449, -1103, 256], "goal": [193, -1103, 112], "split": "train", "budget_sec": 6, "dry_landing": true},
+    {"name": "upper_rocket_approach", "start": [449, -1103, 256], "goal": [193, -1103, 112], "split": "train", "budget_sec": 12, "dry_landing": true},
+    {"name": "upper_rocket_offset", "start": [449, -1085, 256], "goal": [193, -1103, 112], "split": "train", "budget_sec": 12, "dry_landing": true},
+    {"name": "upper_rocket_wall", "start": [400, -1103, 256], "goal": [193, -1103, 112], "split": "train", "budget_sec": 12, "dry_landing": true},
     {"name": "lower_rocket_approach", "start": [129, -1167, 112], "goal": [200, -1112, 112], "split": "train", "budget_sec": 6, "dry_landing": true},
     {"name": "rocket_ledge_exit", "start": [193, -1103, 112], "goal": [129, -1039, 112], "split": "train", "budget_sec": 6, "dry_landing": true}
   ]

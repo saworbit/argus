@@ -10443,6 +10443,7 @@ void() Argus_AI =
     local vector gp, tp, to, sdir;
     local float want, diff, turn, havetarget, fighting, sproj, linkbit;
     local float mface;          // a ridden mover's top face vs our feet
+    local float dm6portal;
     local entity oldnode, nx, dr, gn, jseat;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
@@ -10810,6 +10811,16 @@ void() Argus_AI =
             tp = self.ar_node.origin;
             to = tp - self.origin;
             to_z = 0;
+
+            // dm6's south portal sits behind the entry seat. The exit
+            // waypoint points back up the hall before the trigger fires.
+            // Keep the seat active and aim into the stock trigger instead.
+            dm6portal = FALSE;
+            if (mapname == "dm6" && tp == '193 -1743 56' && vlen (to) < 115)
+            {
+                nx = Argus_GetNext (self.ar_node, self);
+                dm6portal = (nx != world && nx.origin == '257 -911 136');
+            }
 
             // train ride (dm2 slice 4): the car patrols on its own
             // clock - no trigger to press. This block only decides
@@ -11510,7 +11521,7 @@ void() Argus_AI =
                 self.ar_pending = 1;
                 self.ar_mode = 0;
             }
-            else if (vlen (to) < 48
+            else if (vlen (to) < 48 && !dm6portal
                      && Argus_WalkArrivalReady (self.ar_node)
                      && (fabs (tp_z - self.origin_z) < 48
                          || (self.origin_z - tp_z > 0
@@ -11658,7 +11669,7 @@ void() Argus_AI =
                         self.ar_hopdoor = 1;
                 }
             }
-            else if (!self.ar_hopjump && vlen (to) < 112
+            else if (!dm6portal && !self.ar_hopjump && vlen (to) < 112
                      && Argus_WalkArrivalReady (self.ar_node))
             {
                 // apex cornering: when the node after this one is
@@ -11694,6 +11705,7 @@ void() Argus_AI =
             if (self.ar_mode == 2 && self.ar_node != world)
             {
                 tp = self.ar_node.origin;
+                if (dm6portal) tp = '248 -1784 56';
                 if (self.ar_hopjump && self.ar_sprintstate
                     && self.ar_sprintstate < 2)
                     tp = self.ar_sprintrun;

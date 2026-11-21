@@ -37,6 +37,7 @@ rejection still blocks adoption.
 #### Fixed
 
 - Keep the climb to an overhead route entry before taking a direct shortcut, as in the lqdm2 health approach ([#1053](https://github.com/saworbit/argus/issues/1053)).
+- Route the dm6 rocket ledge approach around the wall and guide bots through the south portal ([#1057](https://github.com/saworbit/argus/issues/1057)).
 
 #### Added
 
