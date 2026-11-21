@@ -17,7 +17,7 @@ from argus_guard_replica import read_tape as motion_tracks
 from argus_source import source_identity
 from argus_validation import require
 from argus_wishflips import scan
-from run_behaviour_equivalence import ROOT, Lab, finish_lab, lab_executable
+from argus_lab_client import ROOT, Lab, finish_lab, lab_executable
 
 FRAME = re.compile(r"^PL frame\s+(\d+) active ([01]) pos '([^']+)' feet (-?\d+) "
                    r"speed\s+([\d.]+) age\s+([\d.]+) goal ([01]) before\s+([-\d.]+) after\s+([-\d.]+)$", re.M)

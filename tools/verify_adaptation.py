@@ -11,7 +11,7 @@ import sys
 from argus_fixture_harness import new_output, private_game, read_tape, run_match, stage_fixture, write_text
 from argus_source import source_identity
 from argus_validation import require
-from run_behaviour_equivalence import ROOT, Lab, finish_lab, lab_executable
+from argus_lab_client import ROOT, Lab, finish_lab, lab_executable
 
 COMMON = {'real_pickup_is_audible', 'pickup_has_no_weapon_class',
           'one_shell_sounds_like_single_shotgun', 'one_nail_sounds_like_single_nailgun',

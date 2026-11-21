@@ -28,6 +28,8 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Give active studies and fixtures a shared Python lab client with Windows and Linux CPU timing ([#1035](https://github.com/saworbit/argus/issues/1035)).
+
 - Show the standalone CLI's lab build identity and include same-version Windows recovery in stale build warnings ([#1052](https://github.com/saworbit/argus/issues/1052), [#1043](https://github.com/saworbit/argus/issues/1043)).
 
 - Record the [e1m8 shelf trials](docs/specs/2026-11-20-e1m8-soak.md#west-floor-route-to-the-rocket-shelf) and the [e1m4 swim cadence trial](docs/mover-intelligence.md#stock-map-follow-up), with the checks still needed before adoption.

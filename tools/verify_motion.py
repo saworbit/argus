@@ -14,7 +14,7 @@ import shutil
 from argus_fixture_harness import new_output, stage_fixture, private_game, read_tape
 from argus_source import source_identity
 from argus_validation import require
-from run_behaviour_equivalence import Lab, finish_lab, lab_executable, lab_cli
+from argus_lab_client import Lab, finish_lab, lab_executable, lab_cli
 from run_map_intelligence import ROOT, digest, write
 
 LABELS = ('disabled_yaw','disabled_fields',*('raw_yaw',)*7,

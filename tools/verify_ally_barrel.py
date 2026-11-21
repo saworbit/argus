@@ -9,7 +9,7 @@ import shutil
 from argus_fixture_harness import new_output,stage_fixture,private_game,read_tape,frame_ms
 from argus_source import source_identity
 from argus_validation import require
-from run_behaviour_equivalence import Lab,lab_executable,finish_lab
+from argus_lab_client import Lab,lab_executable,finish_lab
 from run_map_intelligence import ROOT,write,digest
 
 SHOTS=('lagged_barrel_hold','aligned_shot','aim_only_ally')

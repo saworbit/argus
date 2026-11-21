@@ -30,7 +30,7 @@ from check_muzzle_combat import check as check_combat
 from check_button_physical import audit as audit_button, check as check_button
 from check_door_actuator import audit as audit_door, check as check_door, DIRECT_ONLY_FAILURES
 from check_perception_fixture import check as check_perception
-from run_behaviour_equivalence import Lab, ROOT, lab_executable, lab_cli
+from argus_lab_client import Lab, ROOT, lab_executable, lab_cli
 from run_health_fixture import prepare as prepare_health, audit_private
 from verify_plan_progress import copy_assets, save, sha
 
