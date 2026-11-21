@@ -574,6 +574,12 @@ points; existing entry points retain their default controller.
 The injected controller remains the caller's owner of the engine; callers
 that cancel a helper future must stop that controller or drop it.
 
+`campaign --json` writes one report to stdout and sends progress to stderr.
+Campaign timeout reports use the map's key entities and the selected co-op
+skill to infer an unclaimed key. With inherited skill, only keys available at
+every skill count towards that inference. Explicit failure traces still apply
+when the BSP is unavailable.
+
 Engine startup checks whether the selected UDP port is already occupied
 and refuses before creating a child. This is a launch-time check, not a
 reservation against another process binding between the check and spawn.
