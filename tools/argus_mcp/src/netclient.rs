@@ -1788,7 +1788,7 @@ pub async fn probe_links_confirmed(
         Some("probe_links_run"),
         None,
         Some(0),
-        Some(coop),
+        Some(crate::engine::MatchRules::from_coop(coop)),
     )
     .await
     .map_err(|e| format!("engine start: {e}"))?;

@@ -356,13 +356,22 @@ argus-mcp analyze <log_path> [options]
 argus-mcp harvest [--tag <name>]
 argus-mcp reach [map]
 argus-mcp measure [--write <path>]
-argus-mcp match <map> [secs] [run] [--skill N] [--port N] [--seed N]
+argus-mcp match <map> [secs] [run] [--skill N] [--port N] [--seed N] [--coop | --deathmatch 1|2]
 argus-mcp seeds <map> <count> <stem> [--duration N] [--skill N] [--lanes N] [--first N] [--seed-list a,b]
 argus-mcp standin <map> <secs> <run> [--route TAPE] [--skill N] [--port N] [--seed N] [--reaction S]
 ```
 
 `match` accepts 10 to 600 seconds. Use at least 10 seconds for short
 decision fixtures. [CLI help issue](https://github.com/saworbit/argus/issues/1001)
+
+Use `match --deathmatch 2` or set `deathmatch=2` in `match_run`,
+`match_start`, or `experiment` for weapons stay. Ordinary deathmatch
+defaults to 1. The CLI's `--coop` selects co-op and is mutually exclusive
+with `--deathmatch`. A weapons-stay run needs a build that prints
+`ARGUS rules deathmatch 2 coop 0`. Briefs carry the effective startup
+rules under `identity.rules`. Comparisons refuse conflicting rules and
+require receipts for nonstandard modes. Historical tapes without receipts
+remain comparable with ordinary deathmatch baselines.
 
 - `compile`: Compiles QuakeC `progs.dat` via `fteqcc` with timestamp verification and optional backup creation and installation.
 - `nav`: Runs `argus_navgen.py` to generate waypoint navigation graphs (`src/argus_nav_<map>.qc`) and minimap PNGs (`runs/nav_<map>.png`). First registration requires the current graph to pass reach and the mill.

@@ -6,6 +6,7 @@
 //!   ordinary server whose frames last as long as the wall clock says. A
 //!   positive frame_us is the lab's fixed-frame clock (host_framerate),
 //!   which runs faster than real time and repeats exactly for a given seed.
+//! - `ARGUS rules deathmatch <n> coop <n>`: effective startup rules.
 //! - `ARGUS mark <n> t <t> pos '<x y z>' yaw <deg> [seen <0|1> dist <u>]
 //!   near <name|none>`: the session bookmark (Argus_Mark, impulse 200).
 //!
@@ -25,6 +26,8 @@ pub struct TapeIdentity {
     pub other_builds: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub clock: Option<TapeClock>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rules: Option<TapeRules>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub marks: Vec<SessionMark>,
 }
@@ -34,6 +37,7 @@ impl TapeIdentity {
         self.build.is_none()
             && self.other_builds.is_empty()
             && self.clock.is_none()
+            && self.rules.is_none()
             && self.marks.is_empty()
     }
 
@@ -41,6 +45,12 @@ impl TapeIdentity {
     pub fn fixed_frame(&self) -> bool {
         self.clock.as_ref().is_some_and(|c| c.frame_us > 0)
     }
+}
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Serialize)]
+pub struct TapeRules {
+    pub deathmatch: u32,
+    pub coop: u32,
 }
 
 #[derive(Debug, Clone, Serialize, PartialEq)]
@@ -82,6 +92,13 @@ fn clock_re() -> &'static Regex {
     })
 }
 
+fn rules_re() -> &'static Regex {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    RE.get_or_init(|| {
+        Regex::new(r"^ARGUS rules deathmatch ([0-9]+) coop ([0-9]+)\s*$").expect("rules regex")
+    })
+}
+
 fn mark_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
@@ -118,6 +135,10 @@ pub fn inspect(text: &str) -> TapeIdentity {
                 seed: c[3].parse().unwrap_or(0),
                 kind: if frame_us > 0 { "fixed" } else { "realtime" },
             });
+        } else if let Some(c) = rules_re().captures(line) {
+            if let (Ok(deathmatch), Ok(coop)) = (c[1].parse(), c[2].parse()) {
+                id.rules = Some(TapeRules { deathmatch, coop });
+            }
         } else if let Some(c) = mark_re().captures(line) {
             let num = |i: usize| c[i].parse::<f64>().ok().filter(|n| n.is_finite());
             let (Ok(n), Some(t), Some(x), Some(y), Some(z), Some(yaw)) =

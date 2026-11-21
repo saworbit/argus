@@ -275,7 +275,7 @@ async fn run_inner(
     let legacy_source_md5 = legacy_tree_digest(&cfg.src)?;
     let binary_md5 = digest(&cfg.basedir.join(&cfg.game).join("progs.dat"))?;
     let nav_md5 = digest(&cfg.src.join(format!("argus_nav_{map}.qc.json")))?;
-    ctrl.begin(cfg, map, 600, Some(name), Some(8), Some(1), Some(false))
+    ctrl.begin(cfg, map, 600, Some(name), Some(8), Some(1), None)
         .await?;
     let result = async {
         let initial_offset = ctrl.log_text().unwrap_or_default().len();

@@ -236,6 +236,7 @@ def tactic_counts(events):
 #   ARGUS mark <n> t <t> pos '<x y z>' yaw <deg> [seen <0|1> dist <u>] near <name|none>
 BUILD_LINE = re.compile(r"^ARGUS build ([0-9a-f]{6,32})\s*$")
 CLOCK_LINE = re.compile(r"^ARGUS clock frame_us\s+(\d+) tick_us\s+(\d+) seed\s+(\d+)\s*$")
+RULES_LINE = re.compile(r"^ARGUS rules deathmatch ([0-9]+) coop ([0-9]+)\s*$")
 MARK_LINE = re.compile(r"^ARGUS mark (\d+) t\s+(-?[\d.]+) pos '\s*(-?[\d.]+)\s+(-?[\d.]+)\s+(-?[\d.]+)'"
                        r" yaw\s+(-?[\d.]+)(?: near none| seen ([01]) dist\s+(-?[\d.]+) near (.+?))\s*$")
 
@@ -256,6 +257,10 @@ def identity(text):
             frame = int(m[1])
             out["clock"] = dict(frame_us=frame, tick_us=int(m[2]), seed=int(m[3]),
                                 kind="fixed" if frame > 0 else "realtime")
+        elif m := RULES_LINE.match(line):
+            deathmatch, coop = int(m[1]), int(m[2])
+            if deathmatch <= 0xFFFFFFFF and coop <= 0xFFFFFFFF:
+                out["rules"] = dict(deathmatch=deathmatch, coop=coop)
         elif m := MARK_LINE.match(line):
             fields = m.group(1, 2, 3, 4, 5, 6, 8)
             if any(field is not None and not field.isascii() for field in fields):
