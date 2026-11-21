@@ -356,7 +356,7 @@ argus-mcp analyze <log_path> [options]
 argus-mcp harvest [--tag <name>]
 argus-mcp reach [map]
 argus-mcp measure [--write <path>]
-argus-mcp match <map> [secs] [run] [--skill N] [--port N] [--seed N] [--coop | --deathmatch 1|2]
+argus-mcp match <map> [secs] [run] [--skill N] [--slots N] [--port N] [--seed N] [--coop | --deathmatch 1|2]
 argus-mcp seeds <map> <count> <stem> [--duration N] [--skill N] [--lanes N] [--first N] [--seed-list a,b]
 argus-mcp standin <map> <secs> <run> [--route TAPE] [--skill N] [--port N] [--seed N] [--reaction S]
 ```
@@ -1283,9 +1283,10 @@ argus-mcp benchmark benchmarks/dm4_navigation.json [limit] [--no-compile] [--por
 ```
 
 Suites are JSON manifests containing a map, skill, start/goal coordinates,
-budgets, and `train` or `heldout` labels. Each suite pins the MD5 of its nav
-JSON: a regenerated graph invalidates the yardstick until its routes are
-reviewed deliberately. Reports preserve individual results and summarize
+budgets, and `train` or `heldout` labels. Set `graph_md5` to the 32-digit
+hexadecimal MD5 of the navigation JSON. Uppercase and lowercase hex digits
+are accepted. If the graph changes, review the routes before updating the
+pin. Reports preserve individual results and summarize
 completion rate plus median game time for all, train, and held-out tasks.
 The tape must confirm exactly one start on the manifest map. A refused
 spawn, level change or fatal engine error fails the benchmark and keeps
@@ -1300,7 +1301,10 @@ when the bot enters the goal radius. Set `"dry_landing": true` on a jump
 or drop task to require dry foot contact in the goal area. Its result
 records the confirmed `landing_pos` and game time.
 The [dm4 landing suite](../../benchmarks/dm4_dry_landing.json) exercises
-airborne proximity, dry contact and an unsupported goal.
+airborne proximity, dry contact and an unsupported goal. Other fixed suites
+cover the [dm6 rocket ledge](../../benchmarks/dm6_rocket_approach.json),
+the [lqdm2 health approach](../../benchmarks/lqdm2_health_approach.json)
+and the [e1m1 lower slime stair](../../benchmarks/e1m1_lower_stair.json).
 The command checks the suite argument and options before compilation.
 Compilation and installation happen by default. For a private trial, use a
 compatible lab-compiled program with its graph receipt. Set `ARGUS_GAME` to
@@ -1855,9 +1859,9 @@ this lab produces:
 | world deaths | 0 to 4x | no |
 | freezes | 0 to 3 | no |
 | coverage | 0.70 to 1.19 | yes |
-| goal pickups | 0.82 to 1.27 | yes |
+| goal completions (gl) | 0.82 to 1.27 | yes |
 
-Coverage and goal pickups are the only two metrics here with enough
+Coverage and goal completions are the only two metrics here with enough
 signal to read a change off a single pair. Remember that before
 quoting a stall count at anyone.
 

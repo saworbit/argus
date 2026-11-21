@@ -124,14 +124,20 @@ also changed other links and timed out from the recorded wall position.
 The final build reached the shelf dry from that position in 7.8 seconds.
 In three 185-second matches per arm, stalls at the wall fell from nine to
 zero. Whole-map median stalls went from twelve to seven. The native gates
-returned parity.
+returned parity. Those comparisons used matched controls. The default dm6
+band still needs a refresh on this graph.
+[Baseline follow-up](https://github.com/saworbit/argus/issues/1076)
 
 On e1m3, the current graph still lacks an ungated route from each of the
 eight spawns to the super shotgun and rockets on the shelf. A private
 native-typed generation stayed within 597 of 600 edicts and raised the
-strict gate count from 17 to 223. Keep both maps experimental until their
-spawn, pickup and engine link checks pass.
-[E1m3 pickup coverage](https://github.com/saworbit/argus/issues/623)
+strict gate count from 17 to 223. In a separate private trial, ordinary
+routing selected the four-tread climb and reached dry shelf support in
+3.0 seconds from the exact stair entrance. With two added approach seats
+(599 of 600 edicts), the entrance run took 26.1 seconds against a
+25-second budget and both farther starts timed out. Keep both maps
+experimental until their spawn, pickup and engine link checks pass.
+[E1m3 route trial](https://github.com/saworbit/argus/issues/623#issuecomment-7061860314)
 
 On e1m4, a private split swim from `(521 793 344)` towards
 `(305 721 728)` reached dry world support in all three 100 ms trials
@@ -139,7 +145,12 @@ after compensating for the engine's larger gravity step during submerged
 ascent. Each run took 4.8 seconds. All three slow controls timed out. At
 played cadence both arms finished in 5.2 to 5.4 seconds. The exact private
 graph still had 45 directed pickup gaps, three distance failures and no
-mill verdict. [E1m4 swim trial](https://github.com/saworbit/argus/issues/624#issuecomment-7051560958)
+mill verdict. The armour train starts after both buttons (*71 and *72)
+fire their two-count relay. The t101 teleporter's only activator is a
+scrag removed in deathmatch. Route coverage through those movers still
+needs live activation evidence or an alternate path.
+[E1m4 swim trial](https://github.com/saworbit/argus/issues/624#issuecomment-7051560958) and
+[stock activator audit](https://github.com/saworbit/argus/issues/624#issuecomment-7061860364).
 
 ## A real platform fault, an insufficient runtime fix
 
@@ -248,26 +259,7 @@ Use `--source` with a clean copy of the old `src` and `--control` for the
 15-second arm. The fixture retains the raw tape, private program and
 source hashes. [Missed boarding evidence](https://github.com/saworbit/argus/issues/1003)
 
-## Tracked follow-ups
-
-The documentation audit searched open and closed issues before filing these
-distinct items. The issue bodies identify the uncommitted study inputs and
-retain the difference between observations and proven causes.
-
-| Issue | Work / status |
-|---|---|
-| [#622](https://github.com/saworbit/argus/issues/622) | Completed by [#645](https://github.com/saworbit/argus/pull/645): narrower dock-exit repair with separate frozen validation; later prize touch remains a separate outcome |
-| [#623](https://github.com/saworbit/argus/issues/623) | Close e1m3 pickup reach gaps within the legal budget before registration |
-| [#624](https://github.com/saworbit/argus/issues/624) | Cover e1m4 deathmatch spawns and pickups before registration |
-| [#625](https://github.com/saworbit/argus/issues/625) | Give native graph inventory and coverage explicit compilation provenance |
-| [#626](https://github.com/saworbit/argus/issues/626) | Completed: native parsing quarantines recovery/transfer fixtures and invalidates older cached labels |
-| [#627](https://github.com/saworbit/argus/issues/627) | Completed: all four engine-free budget/report/receipt suites block fast CI |
-| [#628](https://github.com/saworbit/argus/issues/628) | Diagnose the e1m5 six-second window without assuming a chosen pause or a new mover regression |
-| [#629](https://github.com/saworbit/argus/issues/629) | Completed: per-tape native cards retain the registered primary and refuse incompatible protocols |
-
-The existing [human-play check #610](https://github.com/saworbit/argus/issues/610)
-and [step 1b warning #583](https://github.com/saworbit/argus/issues/583) remain
-open; these match sets do not replace or resolve them.
+### Near-seat waits
 
 On dm2, the eight-second replan also covers a bot on the same dry deck
 when it is outside the 120u boarding range and within 16u of the boarding
@@ -281,3 +273,40 @@ Six paired 185-second dm2 matches at skills 1 and 3 passed the
 registered freeze gate. Neither arm reproduced the reported local waits
 in those matches.
 [Train recovery evidence](https://github.com/saworbit/argus/issues/1054)
+
+Run the targeted fixture from the checkout root.
+
+```text
+python tools/verify_train_wait.py --output backups/train_wait_near --prefix train_wait_near --near-seats
+```
+
+For the near-seat control, use a fresh output and prefix with
+`--near-seats --control --source <pre-1054-src>`. The source copy must
+already include the far-displacement fix from #1003. Keep the dry
+dismount receipt with the timing and route receipts. The separate e1m5
+detour passed all three 100 ms cases. Two of three played-rate starts
+missed the eight-second budget.
+[E1m5 trial and dm2 fix](https://github.com/saworbit/argus/issues/1054#issuecomment-7061860204)
+
+## Tracked follow-ups
+
+The documentation audit searched open and closed issues before filing these
+distinct items. The issue bodies identify the uncommitted study inputs and
+retain the difference between observations and proven causes.
+
+| Issue | Work / status |
+|---|---|
+| [#622](https://github.com/saworbit/argus/issues/622) | Completed by [#645](https://github.com/saworbit/argus/pull/645): narrower dock-exit repair with separate frozen validation; later prize touch remains a separate outcome |
+| [#623](https://github.com/saworbit/argus/issues/623) | Close e1m3 pickup reach gaps within the legal budget before registration |
+| [#624](https://github.com/saworbit/argus/issues/624) | Cover e1m4 deathmatch spawns and pickups before registration |
+| [#625](https://github.com/saworbit/argus/issues/625) | Completed by [#717](https://github.com/saworbit/argus/pull/717): separate on-disk graphs from compiled navigation and record provenance |
+| [#626](https://github.com/saworbit/argus/issues/626) | Completed: native parsing quarantines recovery/transfer fixtures and invalidates older cached labels |
+| [#627](https://github.com/saworbit/argus/issues/627) | Completed: all four engine-free budget/report/receipt suites block fast CI |
+| [#628](https://github.com/saworbit/argus/issues/628) | Completed by [#896](https://github.com/saworbit/argus/pull/896): release the lift wait when a raised platform still needs its button |
+| [#629](https://github.com/saworbit/argus/issues/629) | Completed: per-tape native cards retain the registered primary and refuse incompatible protocols |
+
+The human-play check and the step 1b deployment warning were tracked
+separately. The gait review is complete, and the step 1b warning did not
+recur in the deployment checks.
+[Human-play check #610](https://github.com/saworbit/argus/issues/610) and
+[step 1b warning #583](https://github.com/saworbit/argus/issues/583).

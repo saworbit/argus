@@ -48,7 +48,7 @@ These keys may also be supplied as environment variables; environment wins.
 | `ARGUS_FTEQCC` | Modern fteqcc executable |
 | `ARGUS_ENGINE` | Dedicated-capable Quake executable |
 | `ARGUS_BASEDIR` | Engine data directory containing `id1/` and the `argus/` mod |
-| `ARGUS_RUNS` | Native lab tape and receipt directory, defaulting to `runs/` |
+| `ARGUS_RUNS` | Native lab tape and receipt directory and `skeptic` tape lookup, defaulting to `runs/` |
 | `ARGUS_PYTHON` | Python 3 executable |
 
 `ARGUS_MAPS` optionally overrides the default `maps_local/`. The game data,
@@ -150,6 +150,10 @@ only new output.
   On Windows the lab starts each engine one priority class above normal, so a
   busy machine is less likely to push a ladder out of the listen class. On
   Linux raising priority needs privileges, so check `tick_class` there.
+- Compare tapes with matching startup rules. To test weapons stay, use
+  `argus-mcp match dm2 60 dm2_weapons_stay --deathmatch 2` or pass
+  `deathmatch=2` to `experiment`. Check for
+  `ARGUS rules deathmatch 2 coop 0` in the tape.
 - One movement tape settles nothing. Use two maps or a suitable repeated
   control, and keep outliers and failed attempts.
 - A short clean match is smoke evidence. It does not establish better win
@@ -560,10 +564,10 @@ The [classic bot comparisons](classic-bot-comparisons.md) record the stock
 scenes, build IDs and private fixture receipts for pursuit, pickups, firing
 and portal confirmation. Use the decision results for those cases and the
 separate played-rate tapes for match safety. When native matches write to a
-private `ARGUS_RUNS` directory, copy the selected tapes and their navigation
-receipts under their original, unique `study_` names into the checkout's
-`runs/` before running `argus_lab.py skeptic`.
-[Private tape lookup issue](https://github.com/saworbit/argus/issues/1002)
+private directory, set `ARGUS_RUNS` in the shell to that directory
+before running `argus_lab.py skeptic`. Keep both arms' tapes and navigation
+receipts together under their original, unique `study_` names.
+[Comparison runbook](lab-spine.md#skeptic)
 
 ## Add or regenerate navigation
 
@@ -585,12 +589,16 @@ the same generation, mill and registration path. See
 [lab scenarios](lab-scenarios.md).
 
 Never hand-edit `src/argus_nav_<map>.qc`. Keep probe convictions and proven
-links in their sidecars for the next generation. Curated seats, walks and cuts
-go in `src/argus_nav_<map>.seats.json`; a cut retires a plain walk, or a jump
-or sprint link bots cannot take (#779). `argus_navgen.py --seat-links` applies
-them to the shipped graph, and a full regeneration applies the same file
-after its late link passes, refusing to publish when an entry cannot apply
-(#778). For **terminal** link checks:
+links in their sidecars for the next generation. Curated seats, walks, swim
+exits and cuts go in `src/argus_nav_<map>.seats.json`. A cut retires a plain
+walk, or a jump or sprint link bots cannot take (#779). A swim exit can
+replace a rocket link after the hull checks pass. `argus_navgen.py --seat-links`
+uses the top-level entries on the shipped graph. Full regeneration uses the
+same entries, or the `regeneration` block when present, after its late link
+passes. It refuses publication when a required entry cannot apply (#778).
+[Seat sidecar reference](../tools/README.md#4-argus_navgenpy)
+
+For **terminal** link checks:
 
 ```text
 python tools/argus_reach.py mymap
@@ -615,9 +623,10 @@ After a navigation change, run the lab experiment/matrix loop.
    and use a native benchmark with fixed starts and goals for the whole
    route. Follow the [benchmark setup](../tools/argus_mcp/README.md#fixed-navigation-benchmark)
    and check `verified_start` for each task. The route can fail even when its
-   individual links pass. For a route that ends in a drop or jump, record
-   dry ground contact separately when the acceptance check requires a
-   landing. Entering the target radius can complete a task in midair.
+   individual links pass. Set `"dry_landing": true` when a jump or drop
+   task requires dry foot contact in the goal area. Check `landing_pos`
+   and `completed` together. A late landing can retain its position while
+   missing the budget. The default task can complete in midair.
 3. Before recording, pin the actual control and candidate programs, graph
    receipts, map, cadence, pair count and acceptance conditions. Run both
    builds at the same played cadence in private game and run directories.

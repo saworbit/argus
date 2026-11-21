@@ -202,6 +202,8 @@ ARGUS <name> hurdle speed <horizontal-speed> up <vertical-speed>
 ARGUS <name> bodynudge <moved|refused>
 ARGUS <name> jumpveto
 ARGUS build <id>
+ARGUS rules deathmatch <n> coop <n>
+ARGUS goal_pickup v1
 ARGUS clock frame_us <microseconds> tick_us <microseconds> seed <n>
 ARGUS mark <n> t <time> pos '<x y z>' yaw <deg> [seen <0|1> dist <units>] near <name|none>
 ```
@@ -213,14 +215,10 @@ documents event counting and shared Python/Rust contracts.
 
 | Record or field | What it establishes |
 |---|---|
-| `goal <class>` | A goal was selected, not that the item was taken |
-| Sample `gl` | Historical goal completion count. Includes proximity arrivals and goals invalidated nearby. |
-| `ARGEVT <bot> goal_pickup_v1 <classname>` | Accepted touch of the item held as this bot's current goal. |
-
-The tape header `ARGUS goal_pickup v1` declares touch coverage. The native
-brief shows `verified_goal_pickups_v1` including zero on these tapes. The
-A/B card keeps the historical `gl` counter under Goal Completions.
-| `grab <class>` | A recorded pickup; separate from goal selections |
+| `goal <class>` | The bot selected a goal |
+| Sample `gl` | Historical goal completion count, including proximity arrivals and goals invalidated nearby |
+| `ARGEVT <bot> goal_pickup_v1 <classname>` | Accepted touch of the item this bot was pursuing as its current goal |
+| `grab <class>` | The bot committed to a combat item detour |
 | Tactical `prepare` | The manoeuvre started, not that it completed |
 | Tactical `returnshot` | A shot was acknowledged, not that it hit |
 | `TACTICCHECK` | A throttled tactical entry check, not an independent encounter |
@@ -235,6 +233,16 @@ A/B card keeps the historical `gl` counter under Goal Completions.
 | `ARGUS clock` | The engine clock: `frame_us 0` is an ordinary server on the wall clock; a positive `frame_us` is the lab's fixed clock (`host_framerate`), and `seed` names which repeat of an exactly repeatable match it is ([the fixed lab clock](fixed-clock.md)) |
 | `ARGUS mark` | A session bookmark the player pressed (`bind m mark`), with the bot nearest their eye; not a defect by itself, a pointer to look ([controls](controls.md#session-marks)) |
 
+The tape header `ARGUS goal_pickup v1` declares touch coverage. The native
+brief reports `verified_goal_pickups_v1`, including zero, on these tapes.
+The A/B card keeps the historical `gl` counter under Goal Completions.
+
+The startup `ARGUS rules` record supplies `identity.rules` in the brief.
+Ordinary deathmatch reports mode 1, and weapons stay reports mode 2.
+Comparisons require a rules receipt for nonstandard modes and refuse
+conflicting rules. See the
+[match options](../tools/argus_mcp/README.md#developer-cli-subcommands).
+
 Tape identity readers skip bookmarks with invalid numeric fields and keep
 reading the build, clock and other bookmarks.
 
@@ -242,8 +250,9 @@ Names may contain spaces and event words. Parsers resolve full known track
 names before interpreting verbs; older ambiguous rows without sample/spawn
 context retain the legacy interpretation. Do not split names on whitespace.
 
-A chosen pause and a wedge look identical in a 0.5 Hz sample row, and they
-want opposite reactions, so `hesitate` carries the cause that produced it.
+Each `ARGLOG` track aims for one sample every half-second of game time.
+A single row cannot distinguish a chosen pause from a wedge. The
+`hesitate` marker records the cause of a chosen pause.
 `tools/argus_gait.py` reads the markers against the shared freeze windows and
 attributes each stationary window to a hesitation only when that bot's own
 marker precedes it; it exits non-zero when an attributed window lost health or

@@ -587,6 +587,9 @@ append-once evidence. Installed gameplay binaries remain unchanged.
 | `verify_route_distance.py` | `--output`, `--prefix`; optional `--source`, `--ticrate`, `--port`, `--lab`, `--compile-only`, `--expect-failure` | Native routing and shopping contracts; declared legacy control must fail |
 | `verify_freeze_recovery.py` | `--output`, `--prefix`; optional `--source`, `--maps`, `--seat original\|corner\|south`, `--ticrate`, `--port` | Private physical recovery and guard receipts; control/source and seat determine expected checks |
 | `verify_mover_transfer.py` | `--output`, `--prefix`; optional `--source`, `--maps e1m6,dm3`, `--control`, `--ticrate`, `--port` | Continuing-route transfer, safe launch, dry static-floor landing and zero rescue warps; `--control` retains an incomplete baseline |
+| `verify_train_wait.py` | `--output`, `--prefix`; optional `--near-seats`, `--source`, `--control`, `--lab`, `--port` | Stock dm2 release, replan and train crossing. Use `--near-seats` for the two reported displacements and an on-pad crossing control. |
+| `verify_health_approach.py` | `--output`, `--prefix`; optional `--source`, `--lab`, `--port` | Both stock lqdm2 health approaches and an upper-floor control |
+| `verify_shelf_treads.py` | `--output`, `--prefix`; optional `--lab`, `--port` | Four-rise e1m3 shelf climb at played and 100 ms cadence |
 
 The registered primaries are `stall_parity`, `engagements`, `lava_deaths` and
 `freezes`. New per-tape `.compare.json` artifacts pass the frozen selection

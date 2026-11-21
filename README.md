@@ -317,7 +317,7 @@ Do not edit the generated `src/argus_nav_<map>.qc` files by hand. Use the
 ### Telemetry
 
 With `-condebug` and `+developer 1`, each bot writes its state to the
-console log once a second (`ARGLOG`). It also writes one line for each event
+console log about twice a second (`ARGLOG`). It also writes one line for each event
 (`ARGEVT`). Near the start, the log names the build, so each log identifies
 the code that made it.
 These lines are from a dm4 smoke match on the supplied build:
@@ -331,9 +331,11 @@ ARGEVT Romero engage Joe Rogan
 ARGEVT Joe Rogan death Carmack pos '368.7 -56.9 -296.0'
 ```
 
-A `goal` event records a decision, not a pickup. The
-[telemetry guide](docs/telemetry.md) gives the full grammar and the rules
-for reading it.
+A `goal` event records a selection. The `gl` field counts goal completions,
+including nearby invalidations. Development builds with the
+`ARGUS goal_pickup v1` header also report accepted touches of current goals
+as `goal_pickup_v1` events. The
+[telemetry guide](docs/telemetry.md) explains how to read these records.
 
 ## Lab workflow
 
@@ -395,7 +397,8 @@ harvest command runs in a **terminal**.
 
 For a specific route, the [fixed navigation benchmark](tools/argus_mcp/README.md#fixed-navigation-benchmark)
 runs one bot and checks its starting position against the manifest before
-scoring the attempt.
+scoring arrival. Set `"dry_landing": true` in a jump or drop task when
+success requires dry foot contact in the goal area.
 
 If the lab reports a build or checkout mismatch, install the current server.
 Then restart the MCP client before you trust a quality verdict. Do not edit
@@ -429,9 +432,9 @@ cannot settle.
 
 The supplied `game/argus/progs.dat` was built from main on 2026-11-15
 (build `004b4ff9ddf7`, MD5 `5FD814CC448AF8FBA7BFB16CD29062BC`).
-Development source includes the restored dm3 red armour route, the checked
-combat escape, and the tested jump retirements on e1m5 and lqdm2. These changes
-await a new gameplay binary. [Changelog](CHANGELOG.md#unreleased)
+Development source includes the dm2 train recovery, the lqdm2 health
+approach fix and the dm6 rocket ledge reroute. These changes await a new
+gameplay binary. [Changelog](CHANGELOG.md#unreleased)
 
 | Area | What the bot does | Details |
 |---|---|---|
@@ -449,16 +452,19 @@ await a new gameplay binary. [Changelog](CHANGELOG.md#unreleased)
 | Moving platforms | Stays on a moving platform until it docks, and examines the landing arc before it jumps off | [e1m6 decisions](docs/e1m6-decisions.md) |
 | Body separation | Ignores players on other floors, and does not move to a spot where the player hull cannot fit | [Height](docs/body-height-investigation.md), [same floor](docs/body-nudge-investigation.md) |
 
-Open items:
+The human-play check of the supplied gait build is complete. The logs
+passed its gait check, and the player still reported bumper-car movement.
+The subsequent turn changes passed their played checks.
+[Player verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2),
+[gait follow-up](https://github.com/saworbit/argus/issues/697) and
+[combat strafe follow-up](https://github.com/saworbit/argus/issues/754).
 
-| Item | State | Reference |
+| Current item | State | Reference |
 |---|---|---|
-| Human-play check of the installed build | Open | [#610](https://github.com/saworbit/argus/issues/610) |
-| The dm4 gameplay warning for step 1b | Not resolved; the gate is parked | [#583](https://github.com/saworbit/argus/issues/583) |
 | Incoming-projectile perception | On hold | [Current status](docs/behaviour-diagnostics.md#current-development-status) |
-| Too many movement reversals | Open | [Findings so far](docs/behaviour-diagnostics.md#movement-reversals) |
-| e1m3 and e1m4 navigation | Experimental and not registered | [Mover investigation](docs/mover-intelligence.md) |
-| Other outstanding work | Listed | [Session audit, 2026-11-02](docs/session-cleanup-2026-11-02.md) |
+| e1m3 and e1m4 navigation | Experimental and unregistered | [#623](https://github.com/saworbit/argus/issues/623), [#624](https://github.com/saworbit/argus/issues/624) |
+| e1m5 train crossing | Played-rate acceptance still open | [#1054](https://github.com/saworbit/argus/issues/1054) |
+| dm6 default baseline band | Refresh pending after the rocket ledge reroute | [#1076](https://github.com/saworbit/argus/issues/1076) |
 
 > [!NOTE]
 > Botmatch studies do not show better play against people. Only a human

@@ -87,13 +87,13 @@ The development perception code gives ordinary combat an observation cache
 for its target's position, velocity, movement flags and powerup cues. Hidden
 prediction lasts at most 0.4 seconds and travels at most 128 units. Damage
 alone cannot create a visual observation, and entity lifecycle changes clear
-cached identity. Step 1b health/inventory perception is active again in
-development: acquisition, retreat and hunch use observed cues and fixed priors
-rather than exact opponent health/inventory. Its earlier dm4 stall warning
-remains unresolved; controlled boundary checks do not establish gameplay
-regression safety. Projectile
-recognition remains a separate follow-up on hold. See the
-[observation boundary and engine checks](behaviour-diagnostics.md#perception-step-1a).
+cached identity. Step 1b health and inventory perception is active.
+Acquisition, retreat and hunch use observed cues and fixed priors. The
+earlier dm4 stall warning did not recur in the follow-up checks, and the
+deployment ticket closed after step 1b shipped. Projectile recognition
+remains on hold.
+[Observation boundary and engine checks](behaviour-diagnostics.md#perception-step-1a)
+and [step 1b deployment follow-up](https://github.com/saworbit/argus/issues/583).
 
 `Argus_MuzzleClear` gates the ordinary final-aim rocket trigger after movement
 has been computed. It traces the actual firing direction for the nearer of
@@ -221,7 +221,7 @@ Compare matched tick classes and retain the source identity for every arm.
 | `src/argus_nav_<map>.qc` | Generated graph; active only with compilation-list and dispatcher entries |
 | `src/argus_nav_<map>.qc.json` | Machine-readable graph twin |
 | `src/argus_nav_<map>.probe.json` / `.proven.json` | Engine refusals / proven candidates |
-| `src/argus_nav_<map>.seats.json` | Coordinate-based seats, walks and cuts shared by `argus_navgen.py --seat-links` and full regeneration. Regeneration refuses publication if an entry cannot be applied to its new graph. |
+| `src/argus_nav_<map>.seats.json` | Coordinate-based seats, walks, swim exits and cuts for `argus_navgen.py --seat-links` and full regeneration. A `regeneration` block supplies separate entries for the new graph. Regeneration refuses publication if a required entry cannot apply. |
 | `src/argus_cam.qc` | Spectator camera and HUD |
 | `src/defs.qc` / `src/progs.src` | Definitions, client-message shims and compile order |
 | `src/argus_build.qc` | Generated build identity (`tools/argus_build_stamp.py`); every tape prints it as `ARGUS build` |
