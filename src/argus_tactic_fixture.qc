@@ -25,7 +25,7 @@ void(entity attacker, float damage) Argus_TacticFixtureTargetPain =
 void() Argus_TacticFixtureShopChecks =
 {
     local entity node, owner;
-    local float ok, oldoff;
+    local float ok, oldoff, started;
     node = Argus_NearestNode (self.origin);
     // Other bots are frozen for this fixture, but their sliced flood may
     // still own the shared queue. Release it and re-arm its ordinary errand.
@@ -38,22 +38,25 @@ void() Argus_TacticFixtureShopChecks =
     ok = Argus_Shop_Start (self, node);
     self.health = 0;
     Argus_Die ();
-    ok = ok && !self.ar_shopping && !an_shop && !an_busy;
+    ok = (ok && !self.ar_shopping && !an_shop && !an_busy);
     Argus_Respawn ();
-    ok = ok && Argus_Shop_Start (self, node);
+    started = Argus_Shop_Start (self, node);
+    ok = (ok && started);
     Argus_Respawn ();
-    ok = ok && !self.ar_shopping && !an_shop && !an_busy;
-    ok = ok && Argus_Shop_Start (self, node);
+    ok = (ok && !self.ar_shopping && !an_shop && !an_busy);
+    started = Argus_Shop_Start (self, node);
+    ok = (ok && started);
     oldoff = self.ar_skilloff;
     self.ar_skilloff = 2;
     Argus_SetSkill ();
-    ok = ok && !self.ar_shopping && !an_shop && !an_busy;
+    ok = (ok && !self.ar_shopping && !an_shop && !an_busy);
     self.ar_skilloff = oldoff;
     Argus_SetSkill ();
     // Cancelling an unrelated bot must leave the owner's queue intact.
-    ok = ok && Argus_Shop_Start (self, node);
+    started = Argus_Shop_Start (self, node);
+    ok = (ok && started);
     Argus_Nav_Abort (ar_tf_target);
-    ok = ok && an_busy && an_shop && self.ar_shopping && an_bot == self;
+    ok = (ok && an_busy && an_shop && self.ar_shopping && an_bot == self);
     Argus_Nav_Abort (self);
     dprint ("TACFIX shopchecks "); dprint (ftos (ok)); dprint ("\n");
 };

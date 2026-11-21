@@ -83,7 +83,7 @@ void() MuzzleCombatFixture =
             angles = '0 0 0'; angles_y = yaw; makevectors (angles);
             traceline (src, src + v_forward * 240, TRUE, world);
             distance = trace_fraction * 240;
-            wall = distance > 180 && distance < 230 && !trace_startsolid && !trace_allsolid;
+            wall = (distance > 180 && distance < 230 && !trace_startsolid && !trace_allsolid);
             if (wall)
             {
                 mc_embed = src + v_forward * (distance + 8);
