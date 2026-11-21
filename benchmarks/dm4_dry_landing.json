@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "name": "dry_landing_1038",
+  "map": "dm4",
+  "graph_md5": "f97553c069a7cb84bdbfb11f82a8f5ef",
+  "tasks": [
+    {
+      "name": "proximity_in_air",
+      "start": [-239, -599, -52],
+      "goal": [-239, -599, -72],
+      "budget_sec": 2,
+      "split": "train"
+    },
+    {
+      "name": "dry_touchdown",
+      "start": [-239, -599, -66],
+      "goal": [-239, -599, -72],
+      "dry_landing": true,
+      "budget_sec": 2,
+      "split": "train"
+    },
+    {
+      "name": "unsupported_goal",
+      "start": [-239, -599, -52],
+      "goal": [-239, -599, -25],
+      "dry_landing": true,
+      "budget_sec": 2,
+      "split": "train"
+    }
+  ]
+}

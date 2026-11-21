@@ -44,3 +44,38 @@ fn match_help_uses_the_current_duration_limits() {
     assert!(String::from_utf8_lossy(&output.stdout)
         .contains(&format!("{DURATION_MIN}..={DURATION_MAX} seconds")));
 }
+
+#[test]
+fn identity_reports_matching_and_stale_checkouts_without_a_compiler() {
+    use argus_mcp::build_identity::{BUILD_SOURCE, RUNNING_VERSION};
+    use std::path::Path;
+
+    let checkout = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    for (root, expected_authoritative) in
+        [(checkout.clone(), true), (checkout.join("missing"), false)]
+    {
+        let output = Command::new(env!("CARGO_BIN_EXE_argus-mcp"))
+            .args(["identity", "--json"])
+            .env("ARGUS_ROOT", root)
+            .env("ARGUS_FTEQCC", "missing-compiler")
+            .output()
+            .expect("run argus-mcp");
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        let identity: serde_json::Value = serde_json::from_slice(&output.stdout).unwrap();
+        assert_eq!(identity["running_version"], RUNNING_VERSION);
+        assert_eq!(identity["build_source"], BUILD_SOURCE);
+        assert_eq!(identity["authoritative"], expected_authoritative);
+        if expected_authoritative {
+            assert_eq!(identity["checkout_version"], RUNNING_VERSION);
+            assert_eq!(identity["checkout_source"], BUILD_SOURCE);
+        } else {
+            assert!(identity["checkout_version"].is_null());
+            assert!(identity["checkout_source"].is_null());
+            assert!(identity["warning"].as_str().unwrap().contains("--force"));
+        }
+    }
+}

@@ -631,7 +631,8 @@ and [the e1m8 soak](specs/2026-11-20-e1m8-soak.md) show these checks in use.
 - **Stale build.** Rerun the install command with `--force` when
   Cargo reports the same package version is already installed. Reconnect
   the MCP client and check `lab_identity.authoritative: true` in the
-  original chat before reading quality verdicts.
+  original chat before reading quality verdicts. Run
+  `argus-mcp identity --json` to check the executable found on PATH.
 - **Windows executable locked:** use the operator guide's
   [staged update procedure](../tools/argus_mcp/README.md#update-a-running-windows-server).
   The startup that swaps the file still runs the old image; reconnect again

@@ -1,0 +1,70 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -9659,8 +9659,7 @@
+ 
+ // External fixed-task control, driven by the lab puppet's impulses 217-219.
+ // scratch1 3841 stages the start at scratch2/3/4; 3842 places the bot and
+-// assigns the goal at scratch2/3/4 in the same server call. 3844 assigns a
+-// goal that requires dry foot contact. 3840 cancels.
++// assigns the goal at scratch2/3/4 in the same server call. 3840 cancels.
+ // The start is consumed once, so a repeated goal impulse cannot move the bot
+ // or restart its timer. The dedicated log confirms both endpoints.
+ void(entity bot) Argus_TaskClear =
+@@ -9729,7 +9728,7 @@
+     if (!cvar ("developer"))
+         return;
+     mode = cvar ("scratch1");
+-    if (mode != 3840 && mode != 3841 && mode != 3842 && mode != 3844)
++    if (mode != 3840 && mode != 3841 && mode != 3842)
+         return;
+ 
+     bot = argus_bots;
+@@ -9767,7 +9766,6 @@
+     bot.ar_nextstall = time + 2;
+     marker = spawn ();
+     marker.classname = "argus_task_goal";
+-    marker.spawnflags = (mode == 3844);
+     marker.solid = SOLID_TRIGGER;
+     marker.flags = FL_ITEM;
+     setsize (marker, '-8 -8 -8', '8 8 8');
+@@ -10450,23 +10448,13 @@
+     if (self.ar_taskgoal != world)
+     {
+         if (vlen (self.origin - self.ar_taskgoal.origin) < 32
+-            && (!self.ar_taskgoal.spawnflags
+-                || ((self.flags & FL_ONGROUND) && !Argus_Waterlevel ())))
+-        {
+-            if (self.ar_taskgoal.spawnflags)
+-            {
+-                dprint ("ARGTASK "); dprint (ftos (self.ar_slot));
+-                dprint (" landed "); dprint (ftos (time - self.ar_taskstart));
+-                dprint (" "); dprint (vtos (self.origin)); dprint ("\n");
+-            }
+-            else
+-            {
+-                bprint (PRINT_HIGH, "ARGTASK ");
+-                bprint (PRINT_HIGH, ftos (self.ar_slot));
+-                bprint (PRINT_HIGH, " complete ");
+-                bprint (PRINT_HIGH, ftos (time - self.ar_taskstart));
+-                bprint (PRINT_HIGH, "\n");
+-            }
++            && fabs (self.origin_z - self.ar_taskgoal.origin_z) < 56)
++        {
++            bprint (PRINT_HIGH, "ARGTASK ");
++            bprint (PRINT_HIGH, ftos (self.ar_slot));
++            bprint (PRINT_HIGH, " complete ");
++            bprint (PRINT_HIGH, ftos (time - self.ar_taskstart));
++            bprint (PRINT_HIGH, "\n");
+             Argus_TaskClear (self);
+         }
+         else if (time >= self.ar_taskdeadline)
+@@ -11742,8 +11730,7 @@
+                 tp = self.origin + v_forward * 96;
+                 havetarget = 1;
+             }
+-            else if (vlen (to) < 32 && fabs (gp_z - self.origin_z) < 56
+-                && (self.ar_goal != self.ar_taskgoal || !self.ar_taskgoal.spawnflags))
++            else if (vlen (to) < 32 && fabs (gp_z - self.origin_z) < 56)
+             {
+                 self.ar_goals = self.ar_goals + 1;
+                 self.ar_goal.ar_claimer = self;

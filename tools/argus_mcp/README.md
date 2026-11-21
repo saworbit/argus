@@ -27,8 +27,11 @@ reads CRLF as LF, so a worktree and the main checkout of one commit share an
 identity whatever line endings Git gave each. Inspection stays
 available when those identities differ, but the lab refuses quality-gate
 verdicts from `compare_runs`, `suggest_next` compare mode, `experiment`,
-`campaign_experiment`, and `matrix_experiment`. Repair an identity mismatch with
-the install command above, then restart the MCP client. This checkout comparison
+`campaign_experiment`, and `matrix_experiment`. For a mismatch, follow the
+[lab update steps](../../docs/lab-workflow.md#update-or-restore-the-lab).
+Run `argus-mcp identity --json` from the checkout, or set `ARGUS_ROOT`,
+to check the exact CLI image against the MCP response. The command also reports
+stale builds and works without an engine or compiler. This checkout comparison
 catches an old installed process even when no newer `target-stage` build exists;
 the older `lab_stale` stage banner remains a separate early-warning mechanism.
 
@@ -1283,9 +1286,12 @@ tape's navigation receipt must confirm that the graph loaded.
 Completion requires finite engine game time within the task's `budget_sec`,
 including the exact boundary. Late finishes keep their raw `game_sec` but
 count as incomplete and do not enter successful-time medians. Wall-clock
-grace only bounds the harness wait. The engine completes the task when the
-bot enters the goal radius. The same outcome can occur before touchdown
-on a jump or drop. Record ground contact separately for a landing check.
+grace only bounds the harness wait. The engine completes the default task
+when the bot enters the goal radius. Set `"dry_landing": true` on a jump
+or drop task to require dry foot contact in the goal area. Its result
+records the confirmed `landing_pos` and game time.
+The [dm4 landing suite](../../benchmarks/dm4_dry_landing.json) exercises
+airborne proximity, dry contact and an unsupported goal.
 The command checks the suite argument and options before compilation.
 Compilation and installation happen by default. For a private trial, use a
 compatible lab-compiled program with its graph receipt. Set `ARGUS_GAME` to

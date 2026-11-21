@@ -28,9 +28,13 @@ passing botmatch does not establish better human play.
 
 #### Added
 
+- Show the standalone CLI's lab build identity and include same-version Windows recovery in stale build warnings ([#1052](https://github.com/saworbit/argus/issues/1052), [#1043](https://github.com/saworbit/argus/issues/1043)).
+
 - Record the [e1m8 shelf trials](docs/specs/2026-11-20-e1m8-soak.md#west-floor-route-to-the-rocket-shelf) and the [e1m4 swim cadence trial](docs/mover-intelligence.md#stock-map-follow-up), with the checks still needed before adoption.
 
 - Record the two-leg pursuit evaluation and add a private stock-map verifier ([#1007](https://github.com/saworbit/argus/issues/1007)).
+
+- Let fixed navigation tasks require dry foot contact and record the landing position and time ([#1038](https://github.com/saworbit/argus/issues/1038)).
 
 - Give e1m8 full regeneration its own sidecar seats and walks. The [matched route trials](docs/specs/2026-11-20-e1m8-soak.md#full-regeneration) keep the tested splice in play ([#950](https://github.com/saworbit/argus/issues/950)).
 

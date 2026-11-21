@@ -38,6 +38,8 @@ pub struct NavigationTask {
     pub goal: [f32; 3],
     pub budget_sec: f32,
     pub split: String,
+    #[serde(default)]
+    pub dry_landing: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -51,6 +53,9 @@ pub struct TaskResult {
     /// Reported engine time, retained even when late completion is rejected.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub game_sec: Option<f32>,
+    /// Bot origin when the engine confirmed dry foot contact in the goal area.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub landing_pos: Option<[f32; 3]>,
     pub wall_sec: f32,
 }
 
@@ -208,18 +213,20 @@ fn command_point(mode: u32, point: [f32; 3]) -> String {
     )
 }
 
-fn parse_task_print(line: &str) -> Option<(bool, f32)> {
+fn parse_task_print(line: &str) -> Option<(bool, f32, Option<[f32; 3]>)> {
+    let line = line.trim();
     let mut fields = line.split_whitespace();
     if fields.next()? != "ARGTASK" || fields.next()? != "0" {
         return None;
     }
-    let completed = match fields.next()? {
-        "complete" => true,
-        "timeout" => false,
-        _ => return None,
-    };
+    let event = fields.next()?;
     let seconds = fields.next()?.parse().ok()?;
-    Some((completed, seconds))
+    match event {
+        "complete" => Some((true, seconds, None)),
+        "timeout" => Some((false, seconds, None)),
+        "landed" => Some((true, seconds, Some(task_point(&line[line.find('\'')?..])?))),
+        _ => None,
+    }
 }
 
 fn median(mut values: Vec<f64>) -> Option<f64> {
@@ -264,9 +271,19 @@ fn report(suite: &TaskSuite, mut results: Vec<TaskResult>) -> BenchmarkReport {
             .iter()
             .find(|task| task.name == result.name)
             .is_some_and(|task| {
-                result.game_sec.is_some_and(|seconds| {
+                let within_budget = result.game_sec.is_some_and(|seconds| {
                     seconds.is_finite() && seconds >= 0.0 && seconds <= task.budget_sec
-                })
+                });
+                // vtos rounds each coordinate to a tenth of a unit.
+                within_budget
+                    && (!task.dry_landing
+                        || result.landing_pos.is_some_and(|pos| {
+                            pos.iter()
+                                .zip(task.goal)
+                                .map(|(a, b)| (a - b).powi(2))
+                                .sum::<f32>()
+                                <= 32.1_f32.powi(2)
+                        }))
             });
     }
     BenchmarkReport {
@@ -297,8 +314,7 @@ fn echoed(log: &str, mark: usize, token: &str) -> bool {
     lines_after(log, mark).any(|line| line.trim() == token)
 }
 
-/// Match the engine's one-decimal vtos rounding on each coordinate.
-fn confirmed_point(text: &str, expected: [f32; 3]) -> Option<[f32; 3]> {
+fn task_point(text: &str) -> Option<[f32; 3]> {
     let mut fields = text
         .strip_prefix('\'')?
         .strip_suffix('\'')?
@@ -308,12 +324,17 @@ fn confirmed_point(text: &str, expected: [f32; 3]) -> Option<[f32; 3]> {
         fields.next()?.parse::<f32>().ok()?,
         fields.next()?.parse::<f32>().ok()?,
     ];
-    (fields.next().is_none()
-        && point
-            .iter()
-            .zip(expected)
-            .all(|(actual, wanted)| (actual - wanted).abs() <= 0.051))
-    .then_some(point)
+    (fields.next().is_none() && point.iter().all(|value| value.is_finite())).then_some(point)
+}
+
+/// Match the engine's one-decimal vtos rounding on each coordinate.
+fn confirmed_point(text: &str, expected: [f32; 3]) -> Option<[f32; 3]> {
+    let point = task_point(text)?;
+    point
+        .iter()
+        .zip(expected)
+        .all(|(actual, wanted)| (actual - wanted).abs() <= 0.051)
+        .then_some(point)
 }
 
 fn staged_task(log: &str, mark: usize, start: [f32; 3]) -> Option<[f32; 3]> {
@@ -459,8 +480,16 @@ async fn run_connected(
         })?
         .ok_or_else(|| format!("{}: {bot} did not confirm the staged start", task.name))?;
 
-        command_confirmed(ctrl, &mut client, &command_point(3842, task.goal), &mut seq).await?;
+        let goal_command = if task.dry_landing { 3844 } else { 3842 };
+        command_confirmed(
+            ctrl,
+            &mut client,
+            &command_point(goal_command, task.goal),
+            &mut seq,
+        )
+        .await?;
         let first_print = client.world.prints.len();
+        let first_line = ctrl.log_text().unwrap_or_default().lines().count();
         let verified_start = impulse_confirmed(ctrl, &mut client, 217, |log, mark| {
             started_task(log, mark, task.start, task.goal)
         })?
@@ -473,7 +502,15 @@ async fn run_connected(
             client.pump(Duration::from_millis(200));
             outcome = client.world.prints[first_print..]
                 .iter()
-                .find_map(|(_, line)| parse_task_print(line));
+                .filter_map(|(_, line)| parse_task_print(line))
+                .find(|(completed, _, _)| !task.dry_landing || !completed);
+            if task.dry_landing && outcome.is_none() {
+                if let Some(log) = ctrl.log_text() {
+                    outcome = lines_after(&log, first_line)
+                        .filter_map(parse_task_print)
+                        .find(|(_, _, landing)| landing.is_some());
+                }
+            }
             if outcome.is_some() {
                 break;
             }
@@ -483,13 +520,14 @@ async fn run_connected(
             client.set_impulse(217);
             client.pump(Duration::from_millis(300));
         }
-        let (completed, game_sec) = outcome.unwrap_or((false, task.budget_sec));
+        let (completed, game_sec, landing_pos) = outcome.unwrap_or((false, task.budget_sec, None));
         results.push(TaskResult {
             name: task.name.clone(),
             split: task.split.clone(),
             verified_start,
             completed,
             game_sec: outcome.map(|_| game_sec),
+            landing_pos,
             wall_sec: started.elapsed().as_secs_f32(),
         });
     }
@@ -599,6 +637,7 @@ mod tests {
                     goal: [128.0, 0.0, 24.0],
                     budget_sec: 10.0,
                     split: "train".into(),
+                    dry_landing: false,
                 },
                 NavigationTask {
                     name: "heldout_route".into(),
@@ -606,6 +645,7 @@ mod tests {
                     goal: [0.0, 128.0, 24.0],
                     budget_sec: 12.0,
                     split: "heldout".into(),
+                    dry_landing: false,
                 },
             ],
         }
@@ -723,13 +763,15 @@ mod tests {
         let path = dir.path().join("benchmark.log");
         let log_path = path.to_str().unwrap();
         let snapshot = registered_graph();
-        let (completed, game_sec) = parse_task_print("ARGTASK 0 complete 0.0").unwrap();
+        let (completed, game_sec, landing_pos) =
+            parse_task_print("ARGTASK 0 complete 0.0").unwrap();
         let task = TaskResult {
             name: "train_route".into(),
             split: "train".into(),
             verified_start: [0.0, 0.0, 24.0],
             completed,
             game_sec: Some(game_sec),
+            landing_pos,
             wall_sec: 1.0,
         };
         let tape =
@@ -763,13 +805,45 @@ mod tests {
     fn task_prints_distinguish_completion_from_timeout() {
         assert_eq!(
             parse_task_print("ARGTASK 0 complete 7.5"),
-            Some((true, 7.5))
+            Some((true, 7.5, None))
         );
         assert_eq!(
             parse_task_print("ARGTASK 0 timeout 60"),
-            Some((false, 60.0))
+            Some((false, 60.0, None))
         );
         assert_eq!(parse_task_print("ARGTASK 1 complete 2"), None);
+        assert_eq!(
+            parse_task_print("ARGTASK 0 landed 2.5 ' 10 20 24'"),
+            Some((true, 2.5, Some([10.0, 20.0, 24.0])))
+        );
+        assert_eq!(parse_task_print("ARGTASK 0 landed 2.5 'NaN 0 24'"), None);
+        assert_eq!(parse_task_print("ARGTASK 0 landed 2.5"), None);
+    }
+
+    #[test]
+    fn dry_tasks_require_landing_at_the_goal_within_the_budget() {
+        let mut suite = suite();
+        suite.tasks[0].dry_landing = true;
+        for (game_sec, landing_pos, expected) in [
+            (1.0, None, false),
+            (1.0, Some([0.0, 0.0, 24.0]), false),
+            (2.0, Some(suite.tasks[0].goal), true),
+            (10.1, Some(suite.tasks[0].goal), false),
+        ] {
+            let result = TaskResult {
+                name: suite.tasks[0].name.clone(),
+                split: suite.tasks[0].split.clone(),
+                verified_start: suite.tasks[0].start,
+                completed: true,
+                game_sec: Some(game_sec),
+                landing_pos,
+                wall_sec: game_sec,
+            };
+            assert_eq!(
+                report(&suite, vec![result]).all.completed,
+                usize::from(expected)
+            );
+        }
     }
 
     #[test]
@@ -781,6 +855,7 @@ mod tests {
                 verified_start: [0.0, 0.0, 24.0],
                 completed: true,
                 game_sec: Some(4.0),
+                landing_pos: None,
                 wall_sec: 4.0,
             },
             TaskResult {
@@ -789,6 +864,7 @@ mod tests {
                 verified_start: [0.0, 0.0, 24.0],
                 completed: false,
                 game_sec: Some(12.0),
+                landing_pos: None,
                 wall_sec: 12.0,
             },
         ];
@@ -820,6 +896,7 @@ mod tests {
                     verified_start: [0.0, 0.0, 24.0],
                     completed,
                     game_sec: seconds,
+                    landing_pos: None,
                     wall_sec: 0.1,
                 }],
             );
