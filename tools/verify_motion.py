@@ -19,27 +19,34 @@ from run_map_intelligence import ROOT, digest, write
 
 LABELS = ('disabled_yaw','disabled_fields',*('raw_yaw',)*7,
           'no_steering_write','basis_preserved','trace_preserved')
+COMBAT_HAZARD_DEFINITION = re.compile(
+    r'^\s*float\s*\([^)]*\)\s*Argus_CombatHazardHeading\s*=\s*\{', re.M)
 
 
 def stage(root, output, source=None, *, contracts=False):
     fixtures={}
     wrap=None
+    combat_hazard = False
     if contracts:
         fixture = (root/'tools/fixtures/motion_observer.qc').read_text(encoding='utf-8')
         combat = (Path(source or root/'src')/'argus.qc').read_text(encoding='utf-8')
-        if 'Argus_CombatHazardHeading =' in combat:
+        combat_hazard = bool(COMBAT_HAZARD_DEFINITION.search(combat))
+        if combat_hazard:
             fixture = '#define COMBAT_HAZARD_CONTRACTS\n' + fixture
         fixtures = {'motion_observer_fixture.qc': fixture}
         wrap='MotionObserverFixture ();\n    Argus_FrameAll ();'
-    return stage_fixture(root,output,source,fixtures=fixtures,frame_wrap=wrap)
+    stage_fixture(root,output,source,fixtures=fixtures,frame_wrap=wrap)
+    return combat_hazard
 
 
-def inspect_contracts(text):
+def inspect_contracts(text, *, combat_hazard=False):
     require(text.count('BHVRPL begin motion_observer')==1,'missing observer quarantine')
     checks=re.findall(r'^MOCHECK (\w+) ([01])\r?$',text,re.M)
     require(tuple(name for name,_ in checks)==LABELS,'missing observer contracts')
     require(all(ok=='1' for _,ok in checks),'observer changed requested yaw or shared state')
     require(re.findall(r'^MOCHECK end checks (\d+) failures (\d+)\r?$',text,re.M)==[(str(len(LABELS)),'0')])
+    markers = sum(line == 'MOHAZ passed' for line in text.splitlines())
+    require(markers == int(combat_hazard), 'combat hazard contracts marker does not match the staged fixture')
     return len(checks)
 
 
@@ -88,7 +95,8 @@ def main():
     for path in (ROOT/'qconsole.log',ROOT/'engine/qconsole.log'):
         require(not path.exists(),'harvest the pending human log before an engine launch: '+str(path))
     require(not list((ROOT/'engine/argus').glob('*.dem')),'harvest pending human demos first')
-    out=new_output(args.output,root=ROOT,create=False);stage(ROOT,out,args.source,contracts=args.contracts)
+    out=new_output(args.output,root=ROOT,create=False)
+    combat_hazard = stage(ROOT,out,args.source,contracts=args.contracts)
     with private_game(ROOT,args.prefix,'motioncheck',autoexec=
             f'sv_protocol 15\nmax_edicts 600\nscratch1 {0 if args.disabled else 697}\n') as game:
         env=dict(ARGUS_SRC=str(out/'src'),ARGUS_PROGS=str(out/'lq1/progs.dat'),
@@ -115,6 +123,7 @@ def main():
                 raw,text=read_tape(out,args.prefix,args.map)
                 brief=lab.call('brief_run',log=str(raw),map=args.map,detail='full');write(out/'brief.json',brief)
                 identity=dict(map=args.map,ticrate=args.ticrate,contracts=args.contracts,
+                    combat_hazard_contracts=combat_hazard,
                     diagnostics=not args.disabled,source_sha256=source_identity(out/'src'),
                     binary_sha256=digest(game/'progs.dat'),raw_sha256=digest(raw),raw=raw.relative_to(ROOT).as_posix())
                 write(out/'identity.json',identity)
@@ -128,7 +137,7 @@ def main():
                         tracks_sha256=digest(demo.with_suffix('.tracks.json')))
                     write(out/'identity.json',identity)
                     alignment=inspect_demo_alignment(text,json.loads(demo.with_suffix('.tracks.json').read_text(encoding='utf-8')),'Carmack')
-                if args.contracts:inspect_contracts(text)
+                if args.contracts:inspect_contracts(text, combat_hazard=combat_hazard)
                 motion=brief.get('movement')
                 if args.disabled:require(motion is None,'disabled diagnostics emitted data')
                 else:

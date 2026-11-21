@@ -34,6 +34,8 @@ passing botmatch does not establish better human play.
 
 - Record the two-leg pursuit evaluation and add a private stock-map verifier ([#1007](https://github.com/saworbit/argus/issues/1007)).
 
+- Let fixed navigation tasks require dry foot contact and record the landing position and time ([#1038](https://github.com/saworbit/argus/issues/1038)).
+
 - Give e1m8 full regeneration its own sidecar seats and walks. The [matched route trials](docs/specs/2026-11-20-e1m8-soak.md#full-regeneration) keep the tested splice in play ([#950](https://github.com/saworbit/argus/issues/950)).
 
 - Repeat the hearing, combat pickup and two-portal checks in a private stock-map fixture that refuses gameplay comparison ([#1004](https://github.com/saworbit/argus/issues/1004)).
@@ -917,6 +919,8 @@ passing botmatch does not establish better human play.
 
 #### Fixed
 
+- Keep campaign JSON output to one report and use the co-op map's keys to classify timeouts ([#1047](https://github.com/saworbit/argus/issues/1047), [#1050](https://github.com/saworbit/argus/issues/1050)).
+
 - Commit a combat strafe side after selecting its checked escape heading. Keep that heading through a sharp reversal while it still passes both hazard checks ([#754](https://github.com/saworbit/argus/issues/754)).
 
 - Retire the e1m5 jump into a solid landing and preserve the playable routes ([#719](https://github.com/saworbit/argus/issues/719)).
@@ -1672,6 +1676,8 @@ passing botmatch does not establish better human play.
   QC filenames with `--register` before any files change (#537).
 
 #### Maintenance
+
+- Check the step1b source manifest in preflight, require the motion fixture's staged hazard marker, and preserve empty Git config values in Windows lab tests ([#1037](https://github.com/saworbit/argus/issues/1037), [#1040](https://github.com/saworbit/argus/issues/1040), [#1048](https://github.com/saworbit/argus/issues/1048)).
 
 - Record live lift and train timings against a six-second pickup respawn window ([#1006](https://github.com/saworbit/argus/issues/1006)).
 

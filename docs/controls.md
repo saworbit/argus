@@ -170,7 +170,8 @@ and impulses for isolated lab tests.
 - Impulses `217`-`219` also serve the gated fixed-navigation task protocol.
   With `developer 1`, `scratch1 3841` stages the selected bot's start from
   `scratch2` through `scratch4`. `3842` reads the goal from those same cvars,
-  applies the staged start and assigns the goal in one server call. `3840`
+  applies the staged start and assigns the goal in one server call. `3844`
+  uses the same setup and requires dry foot contact for completion. `3840`
   cancels the staged or active task. The runner uses startup `+scratch1 3843`
   before `+map` to spawn only the task bot.
   Use the [benchmark runner](../tools/argus_mcp/README.md#fixed-navigation-benchmark)

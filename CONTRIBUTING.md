@@ -235,6 +235,10 @@ below cover first registration of a new map.
 
 ## Submitting Pull Requests
 
+Run `python tools/argus_ci.py step1b` for the fast production source manifest
+check. It also runs in `argus_ci.py all` and replays the reverse patches
+without writing to the source or to the frozen inputs.
+
 > [!TIP]
 > **Brainstorming a new feature or tactic?** Before writing code, feel free to open a thread in [GitHub Discussions (Ideas)](https://github.com/saworbit/argus/discussions/categories/ideas) to discuss the approach and telemetry implications with the community.
 

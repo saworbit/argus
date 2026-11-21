@@ -577,6 +577,12 @@ points; existing entry points retain their default controller.
 The injected controller remains the caller's owner of the engine; callers
 that cancel a helper future must stop that controller or drop it.
 
+`campaign --json` writes one report to stdout and sends progress to stderr.
+Campaign timeout reports use the map's key entities and the selected co-op
+skill to infer an unclaimed key. With inherited skill, only keys available at
+every skill count towards that inference. Explicit failure traces still apply
+when the BSP is unavailable.
+
 Engine startup checks whether the selected UDP port is already occupied
 and refuses before creating a child. This is a launch-time check, not a
 reservation against another process binding between the check and spawn.
@@ -1280,9 +1286,12 @@ tape's navigation receipt must confirm that the graph loaded.
 Completion requires finite engine game time within the task's `budget_sec`,
 including the exact boundary. Late finishes keep their raw `game_sec` but
 count as incomplete and do not enter successful-time medians. Wall-clock
-grace only bounds the harness wait. The engine completes the task when the
-bot enters the goal radius. The same outcome can occur before touchdown
-on a jump or drop. Record ground contact separately for a landing check.
+grace only bounds the harness wait. The engine completes the default task
+when the bot enters the goal radius. Set `"dry_landing": true` on a jump
+or drop task to require dry foot contact in the goal area. Its result
+records the confirmed `landing_pos` and game time.
+The [dm4 landing suite](../../benchmarks/dm4_dry_landing.json) exercises
+airborne proximity, dry contact and an unsupported goal.
 The command checks the suite argument and options before compilation.
 Compilation and installation happen by default. For a private trial, use a
 compatible lab-compiled program with its graph receipt. Set `ARGUS_GAME` to

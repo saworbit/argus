@@ -106,7 +106,44 @@ def no_lab_binary():
         yield
 
 
+@contextlib.contextmanager
+def temporary_env(name, value):
+    # Restoring the entire mapping can drop unrelated empty values on Windows.
+    previous = os.environ.get(name)
+    os.environ[name] = value
+    try:
+        yield
+    finally:
+        if previous is None:
+            del os.environ[name]
+        else:
+            os.environ[name] = previous
+
+
 class TestValidation(unittest.TestCase):
+    @unittest.skipUnless(sys.platform == 'win32', 'Windows process environment')
+    def test_lab_tests_preserve_empty_git_config_values(self):
+        script = """
+import subprocess
+import unittest
+from test_argus_lab import TestValidation, TestSkeptic
+
+def read_config():
+    return subprocess.check_output(['git', 'config', '--get', 'argus.testempty'])
+
+assert not read_config().strip()
+suite = unittest.TestSuite([
+    TestValidation('test_bsp_consumers_share_search_order'),
+    TestSkeptic('test_private_runs_use_the_same_directory_for_corpus_and_recount'),
+])
+assert unittest.TextTestRunner().run(suite).wasSuccessful()
+assert not read_config().strip()
+"""
+        env = dict(os.environ, GIT_CONFIG_COUNT='1', GIT_CONFIG_KEY_0='argus.testempty',
+                   GIT_CONFIG_VALUE_0='')
+        result = subprocess.run([sys.executable, '-c', script], cwd=REPO / 'tools',
+                                env=env, text=True, capture_output=True, timeout=20)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
     def test_the_committed_objective_and_claims_are_sound(self):
         self.assertEqual(argus_lab.validate(REPO), [])
 
@@ -174,7 +211,7 @@ class TestValidation(unittest.TestCase):
             for path in paths:
                 path.parent.mkdir(parents=True)
                 path.touch()
-            with mock.patch.dict(os.environ, {'ARGUS_MAPS': str(configured)}), \
+            with temporary_env('ARGUS_MAPS', str(configured)), \
                  mock.patch.object(argus_pointfile, 'ROOT', root), \
                  mock.patch.object(argus_longi, '_classifier', side_effect=Path):
                 for path in [*paths, None]:
@@ -281,7 +318,7 @@ class TestSkeptic(unittest.TestCase):
             fx.write(f'private/{candidate}.log', tape(body=death))
             runs_dir = fx.root / 'private'
             csv = '\n'.join(row.replace('\t', ',') for row in (INDEX_HEAD, index_row(control), index_row(candidate)))
-            with mock.patch.dict(os.environ, {'ARGUS_RUNS': str(runs_dir)}), \
+            with temporary_env('ARGUS_RUNS', str(runs_dir)), \
                     mock.patch.object(argus_lab, 'lab_binary', return_value='argus-mcp'), \
                     mock.patch.object(argus_lab, 'graph_history', return_value=()), \
                     mock.patch.object(argus_lab, 'bsp_path', return_value=Path('dm4.bsp')), \
