@@ -40,6 +40,7 @@ def apply_patch_text(source,patch):
     for line in patch.splitlines(keepends=True)[2:]:
         if line.startswith('@@'):
             hunk=re.match(r'@@ -(\d+)(?:,(\d+))?',line)
+            require(hunk is not None, 'malformed reverse patch hunk')
             start=int(hunk[1])-(0 if hunk[2]=='0' else 1)
             out.extend(lines[pos:start]);pos=start
         else:
@@ -67,14 +68,15 @@ def replay(source,manifest,read_patch):
 def read_fixture(name):
     return (FIXTURES/name).read_text()
 
-def parked_source():
-    manifest=json.loads((FIXTURES/MANIFEST).read_text())
-    source=(ROOT/'src/argus.qc').read_text()
-    return replay(source,manifest,read_fixture),manifest
+def parked_source(root=ROOT):
+    fixtures = root / 'tools/fixtures'
+    manifest = json.loads((fixtures / MANIFEST).read_text(encoding='utf-8'))
+    source = (root / 'src/argus.qc').read_text(encoding='utf-8')
+    return replay(source, manifest, lambda name: (fixtures / name).read_text(encoding='utf-8')), manifest
 
-def candidate_source():
-    source,manifest=parked_source()
-    candidate=apply_patch_text(source,(FIXTURES/manifest['patch']).read_text())
+def candidate_source(root=ROOT):
+    source,manifest=parked_source(root)
+    candidate=apply_patch_text(source,(root/'tools/fixtures'/manifest['patch']).read_text(encoding='utf-8'))
     require((digest(candidate)==manifest['candidate_text_sha256']), 'candidate patch changed')
     return candidate,manifest
 

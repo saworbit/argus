@@ -19,6 +19,7 @@ usage:
   argus_ci.py lab                  the lab objective and claims ledger are sound and cite real evidence
   argus_ci.py suites               every tools/test_*.py suite runs in a workflow
   argus_ci.py stamp                src/argus_build.qc names the source it sits in
+  argus_ci.py step1b               replay the production source manifest
   argus_ci.py pins                 CI installs Python packages by hash, and its perception copy matches the frozen pins
 """
 import argparse
@@ -982,11 +983,27 @@ def main(argv=None):
     return 1 if fails else 0
 
 
+def check_step1b(root, **_kw):
+    """Verify the active production source and both frozen step1b sources."""
+    from health_inventory_parked import candidate_source
+
+    try:
+        candidate_source(root)
+    except (AssertionError, OSError, ValueError, KeyError, IndexError) as error:
+        message = str(error) or "reverse patch does not match the source"
+        failures = [f"step1b: {message}"]
+        if message.startswith(("active production source changed", "active function changed")):
+            failures.append('Amend with: python tools/health_inventory_parked.py '
+                            '--amend <name> --base main --scope "<what the patch reverses>"')
+        return failures
+    return []
+
+
 CHECKS = {"ship": check_ship, "eol": check_eol,
           "tapes": check_tapes, "localtapes": check_localtapes,
           "nav": check_nav, "links": check_links,
           "dashes": check_dashes, "refuted": check_refuted, "lab": check_lab,
-          "suites": check_suites, "stamp": check_stamp, "pins": check_pins,
+          "suites": check_suites, "stamp": check_stamp, "step1b": check_step1b, "pins": check_pins,
           "changelog": check_changelog}
 
 
