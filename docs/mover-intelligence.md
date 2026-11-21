@@ -82,6 +82,27 @@ preserved unchanged. A source line-ending change is not a new engine trial.
 
 ### Stock-map follow-up
 
+The [e1m3 tread fixture](../tools/verify_shelf_treads.py) places one bot on
+the first tread and gives it four ordinary jump impulses along the shelf
+route. QuakeSpasm controls flight and landing. Each jump after the first
+starts at the previous landing, even where the narrow tread fails
+`CheckBottom`. The last impulse crosses west onto the shelf. The fixture
+proves the physical climb at played and 100 ms cadence. The route still
+needs a graph entry and execution by the ordinary controller.
+
+```text
+python tools/verify_shelf_treads.py --output backups/shelf-treads --prefix shelf_treads
+```
+
+The benchmark suites for [dm6](../benchmarks/dm6_rocket_approach.json),
+[e1m1](../benchmarks/e1m1_lower_stair.json) and
+[lqdm2](../benchmarks/lqdm2_health_approach.json) keep the observed starts and
+nearby easier approaches on the current registered graphs. Run a suite
+with `argus-mcp benchmark`. Inspect the raw tape for `unstick` before
+calling a dry landing a physical escape. The health and rocket destinations
+in these suites are positional tasks. Actual item collection needs a stock
+pickup receipt.
+
 On e1m3, the current graph still lacks an ungated route from each of the
 eight spawns to the super shotgun and rockets on the shelf. A private
 native-typed generation stayed within 597 of 600 edicts and raised the

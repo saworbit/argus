@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "name": "e1m1_lower_stair",
+  "map": "e1m1",
+  "graph_md5": "42b0f57c925e773c50f95c9e65ac0e3f",
+  "skill": 2,
+  "tasks": [
+    {"name": "observed_slime_approach", "start": [735, 2211, -456], "goal": [785, 2145, -396.4], "split": "train", "budget_sec": 6, "dry_landing": true},
+    {"name": "upstream_stair_control", "start": [849, 2145, -396.4], "goal": [785, 2145, -396.4], "split": "train", "budget_sec": 6, "dry_landing": true},
+    {"name": "bank_escape_alternate", "start": [735, 2211, -456], "goal": [817, 2273, -366.3], "split": "train", "budget_sec": 6, "dry_landing": true}
+  ]
+}

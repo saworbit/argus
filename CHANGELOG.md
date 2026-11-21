@@ -36,6 +36,8 @@ rejection still blocks adoption.
 
 #### Added
 
+- Keep fixed stock-map witnesses for the dm6 rocket ledge, e1m1 slime stair, lqdm2 health pin and e1m3 shelf climb ([#1057](https://github.com/saworbit/argus/issues/1057), [#1056](https://github.com/saworbit/argus/issues/1056), [#1053](https://github.com/saworbit/argus/issues/1053), [#623](https://github.com/saworbit/argus/issues/623)).
+
 - Let scripts enforce registered match gates with `--require-green`. A mixed or regressed verdict keeps its gate cards and exits with status 2.
 
 - Give active studies and fixtures a shared Python lab client with Windows and Linux CPU timing ([#1035](https://github.com/saworbit/argus/issues/1035)).
