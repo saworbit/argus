@@ -1,0 +1,20 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -3123,17 +3123,6 @@
+             else if (self.ar_enemy == world && self.ar_mode != 0
+                      && time < self.ar_brinkliquid + 0.5)
+                 wdrag = AR_MAXSPEED * 0.62;
+-        }
+-        if (!tacticmove && self.ar_exploring && self.ar_exploregoal_z < self.origin_z - 22 && wdrag > 185)
+-        {
+-            // Enter a checked lower landing along the probed line. Old
+-            // sideways speed can carry a runner past a narrow landing.
+-            spd = self.velocity * wishdir;
+-            if (spd < 0) spd = 0;
+-            if (spd > 185) spd = 185;
+-            self.velocity_x = wishdir_x * spd;
+-            self.velocity_y = wishdir_y * spd;
+-            wdrag = 185;
+         }
+         ordinarymove = deathmatch > 0 && !tacticmove
+             && !self.ar_sprintstate && !self.ar_hopjump && !self.ar_hoprj
