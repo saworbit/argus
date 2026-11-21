@@ -266,7 +266,11 @@ successful dismount ([#992](https://github.com/saworbit/argus/issues/992)).
 
 `ARGTASK <slot> complete <seconds>` and `ARGTASK <slot> timeout <seconds>`
 are client broadcasts. The NetQuake puppet reads them to score the task
-against its game-time budget. Keep the tape and the JSON report together.
+against its game-time budget. A task with `dry_landing` enabled records
+`ARGTASK <slot> landed <seconds> '<x y z>'` upon dry foot contact in the
+goal area in the server tape. The JSON report keeps this position as
+`landing_pos`.
+Keep the tape and the JSON report together.
 See the [benchmark guide](../tools/argus_mcp/README.md#fixed-navigation-benchmark).
 
 ## Plot or inspect a run
