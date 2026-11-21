@@ -24,6 +24,9 @@ pub struct Totals {
     pub failed_spawns: Vec<String>,
     pub stalls: i32,
     pub goals: i32,
+    /// Successful touches of the bot's own goal when the tape has v1 instrumentation.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub verified_goal_pickups_v1: Option<u32>,
     pub frags: i32,
     pub deaths: i32,
     /// Bot deaths landed by someone other than the player the victim was
@@ -873,6 +876,12 @@ pub(crate) fn brief_tape_lava(
         tick_class,
         stalls,
         goals,
+        verified_goal_pickups_v1: (tape.identity.goal_pickup_version == Some(1)).then(|| {
+            tape.events
+                .iter()
+                .filter(|event| event.verb == "goal_pickup_v1" && is_bot(&event.bot))
+                .count() as u32
+        }),
         frags,
         deaths,
         third_party_deaths,
@@ -1369,7 +1378,7 @@ pub fn format_gate_card(
         add_row("Weapon Engages", status, &delta, verd);
     }
 
-    // 4. Goal Pickups (gl)
+    // 4. Goal Completions (gl)
     {
         let ga = a_totals.goals as f64;
         let gb = b_totals.goals as f64;
@@ -1385,7 +1394,7 @@ pub fn format_gate_card(
         } else {
             ("🔴", "FAIL")
         };
-        add_row("Goal Pickups (gl)", status, &delta, verd);
+        add_row("Goal Completions (gl)", status, &delta, verd);
     }
 
     // 5. Frag Spread Balance

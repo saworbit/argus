@@ -21,6 +21,15 @@
       "example": "acquisitions: the figure that shows contested-map consumption"
     },
     {
+      "id": "gl-counts-consumed-pickups",
+      "pattern": "\\b(?:consumed goal-pickup counter|consumed-pickup counter|current-goal touches only)\\b",
+      "claim": "The gl total counts successful goal pickups",
+      "correction": "The gl counter includes proximity arrivals and goals invalidated nearby. The versioned goal pickup event comes from an accepted touch.",
+      "refuted": "2026-11-21",
+      "evidence": ["#1044", "tools/fixtures/goal_pickup.qc"],
+      "example": "The consumed goal-pickup counter"
+    },
+    {
       "id": "lab-frametime-0.1",
       "pattern": "frametime[`\\s]+0\\.1\\b|\\b0\\.1[`\\s]+frametime",
       "claim": "the lab runs at frametime 0.1, so calibrate per-frame constants to it",

@@ -214,7 +214,12 @@ documents event counting and shared Python/Rust contracts.
 | Record or field | What it establishes |
 |---|---|
 | `goal <class>` | A goal was selected, not that the item was taken |
-| Sample `gl` | The consumed goal-pickup counter |
+| Sample `gl` | Historical goal completion count. Includes proximity arrivals and goals invalidated nearby. |
+| `ARGEVT <bot> goal_pickup_v1 <classname>` | Accepted touch of the item held as this bot's current goal. |
+
+The tape header `ARGUS goal_pickup v1` declares touch coverage. The native
+brief shows `verified_goal_pickups_v1` including zero on these tapes. The
+A/B card keeps the historical `gl` counter under Goal Completions.
 | `grab <class>` | A recorded pickup; separate from goal selections |
 | Tactical `prepare` | The manoeuvre started, not that it completed |
 | Tactical `returnshot` | A shot was acknowledged, not that it hit |

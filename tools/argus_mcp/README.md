@@ -465,7 +465,7 @@ are gitignored. The loop is:
    command="skill 3"` then `see what=live` for a running child
    (Unix stdin; Windows console inject).
 
-The long form (`compile_qc` → `match_run` → `compare_runs`) is still
+The long form (`compile_qc` â†’ `match_run` â†’ `compare_runs`) is still
 there. Use it for a full-length, unscaled A/B (185 s vs the shipped
 baseline). `experiment` is the one-call loop.
 
@@ -602,10 +602,10 @@ second stall fails with the browser's stderr from both attempts (#817).
 
 `see` is the one inspect call. Pass `what` and, when needed, `name`.
 Omit `what` (or pass `start` / `orient`) for `project`. Aliases:
-`qc`/`func` → `fn`, `atlas` → `map`, `session` → `last`,
-`bots` → `live`, `route` → `path`, `grep`/`find` → `search`,
-`pickup` → `item`, `events` → `timeline`, `near`/`pos` → `around`,
-`goap`/`goalplan` → `plan`, `dem`/`replay` → `demo`.
+`qc`/`func` â†’ `fn`, `atlas` â†’ `map`, `session` â†’ `last`,
+`bots` â†’ `live`, `route` â†’ `path`, `grep`/`find` â†’ `search`,
+`pickup` â†’ `item`, `events` â†’ `timeline`, `near`/`pos` â†’ `around`,
+`goap`/`goalplan` â†’ `plan`, `dem`/`replay` â†’ `demo`.
 `see what=help` prints the vocabulary.
 
 Tool errors are JSON `{error, hint}` with a next call. Configuration failures
@@ -1696,7 +1696,7 @@ default QC path. Preview status uses a fresh receipt, independent of stdout.
 | `quality_bars` | nothing | The bars used by compare |
 
 Log arguments accept a path, a run name (`ab_dm4_parity`), `baseline`
-/ `shipped` (dm4 → `ab_dm4_water`), or `latest` (newest
+/ `shipped` (dm4 â†’ `ab_dm4_water`), or `latest` (newest
 `runs/*.log`).
 
 ## Extra spec tools (do not replace the native set)
@@ -1704,7 +1704,7 @@ Log arguments accept a path, a run name (`ab_dm4_parity`), `baseline`
 `docs/mcp_quake_dev_spec.md` asked for five more tools. They sit
 **beside** `compile_qc`, `cartograph`, `match_run`, `tune`, and
 `analyze_match`. Native tools keep their jobs. Descriptions start
-with "Prefer …" so a client ranks the native call first.
+with "Prefer â€¦" so a client ranks the native call first.
 
 | Extra tool | Extra job | Prefer instead |
 |------------|-----------|----------------|
@@ -1785,7 +1785,7 @@ stops a leftover live match first.
   Vanilla QuakeC cannot load files, so those only change when
   `progs.dat` is rebuilt.
 - Workflow: `see what=search name=AR_AIMRATE` or
-  `see what=fn name=Argus_SetSkill` → edit →
+  `see what=fn name=Argus_SetSkill` â†’ edit â†’
   `experiment map=dm4 duration_sec=30 skill=2`.
 
 ## The tick rate, and why a verdict can be void
@@ -2184,7 +2184,7 @@ Encoded from the project charter, not invented per call:
 | Known walkway cells | `Argus_HazardSteer` hold at `200 -900 24` / `700 -800 -200` |
 | Engagements gone | `button0` / perception / `W_FireLightning` |
 | No weapon events | `src/items.qc` `weapon_touch` |
-| Elevated quad + routefail | `Argus_BotCanRJ` / `ARGEVT rjump` / dm4 pad 142→56 |
+| Elevated quad + routefail | `Argus_BotCanRJ` / `ARGEVT rjump` / dm4 pad 142â†’56 |
 | Quad goaled, zero `rjump` | bot never paid the toll (no RL, dry, hp < 70, or quad) |
 | Almost no routed time | `argus_nav_dispatch.qc` and `argus_nav_<map>.qc` |
 | Freezes / under-fire statue | pad waits in `argus.qc` (`ar_liftwait` holds), the wait give-up clocks |
@@ -2389,7 +2389,7 @@ shell.
 | 0.10 | Extra spec tools beside the native set. Cartographer briefs. `see` / `probe` / `tune`. |
 | 0.11 | `see what=project`, `experiment`, session last-seen, MCP resources, `orient` prompt. |
 | 0.12 | Lite defaults. `lab_status` no longer cartographs every map. Atlas cache. Windows `CREATE_NEW_CONSOLE`. Honest no-ARGLOG error. Extra tools defer to native names. |
-| 0.13 | Windows `CreateProcess` does not inherit the MCP pipe (hidden console). Fail-fast if the child dies before ARGLOG. Diagnose crash logs. Reap dead children. `see` aliases (`qc`→`fn`, empty→`project`). Structured `{error,hint}` tool errors. Compile 90 s timeout. |
+| 0.13 | Windows `CreateProcess` does not inherit the MCP pipe (hidden console). Fail-fast if the child dies before ARGLOG. Diagnose crash logs. Reap dead children. `see` aliases (`qc`â†’`fn`, emptyâ†’`project`). Structured `{error,hint}` tool errors. Compile 90 s timeout. |
 | 0.14 | Deeper `see`: nav path/item/around, QC calls/callers/search/file, bot tape + timeline. Resources `argus://path/{spec}` and `argus://search/{needle}`. |
 | 0.15 | MegaHealth spawnflags. Safer QC slice. Death event dedup. Windows console inject for tune. PNG image blocks. `nav_sync_dispatch`, `matrix_experiment`, `see what=plan`. Config discovery from `game/argus/autoexec.cfg`. Edict estimate on cartograph. Alongside this release the QC tree shipped prize-only rocket-jump pads, `Argus_HazardSteer`, and GL/RL loft (see CLAUDE.md). |
 | 0.16 | Cursor `since_line` on `match_status` / `live_snapshot`. mtime cache invalidation. Hull-1 snap + door/plat reach labels. Causal relay hops and secret doors. Inspect BFS walks rocket/lift/swim. Cartograph `generate_nav` registers by default. Experiment baseline is `ab_dm4_water`. |
@@ -2399,7 +2399,7 @@ shell.
 | 0.20 | The tape and the map argue with each other. Reach classifier fixed (floor-seated item origins traced 2u inside the hull-1 floor: eleven of twelve dm4 control items read off_graph). Human tracks split out of bot bands (`totals.human`); a refused map spawn flags the whole tape (every historical mx_lqdm2 probe had silently run on the start map). Hotspots carry `cause` (door / plat_column / lava_edge) and `reach_pct` (routefail clusters in directed sinks are named). Briefs added a match-wide atlas contradiction warning (refuted by #972) and report `nav_coverage` (visited nodes, dormant typed-link families) and `item_control` (per-prize clock tightness). `see what=demo`: protocol-15 .dem parser with named full-rate tracks. Companions: `tools/argus_reach.py`, `tools/harvest_session.py`. Then the analysis layer: demo view angles + POV aim, per-player aim statistics, the highlight reel, `:export` track dumps; `argus-mcp soak` (capped unattended match loop) and `argus-mcp cycle` (guarded learn->regen->probe->adopt/restore); `scratch1-4` on the tune whitelist for the ARGDBG decision tape; CI runs the Rust suite plus a headless LibreQuake stability smoke with the reach gate. Stack sweep: Windows live tune FIXED (after AttachConsole the console input buffer must be opened as CONIN$ - GetStdHandle returns the MCP's own pipe; the inject had been broken since 0.15 and a live-engine integration test now guards it), `argus-mcp demo` CLI verb, and the plain `ARGUS shove` / `routecache adopt` console lines count as pseudo-events (`shove`, `routecache_adopt`) in briefs. |
 | 0.22 | The lab joins the game: a real NetQuake client (`argus-mcp client observe/walk/walkrel`), the empirical link-verification harness (`argus-mcp probelinks`), engine-verdict files consumed by navgen, orphan-engine kill on failed matches, serialized engine tests. |
 | 0.21 | The operational gaps. STALENESS SELF-AWARENESS: at startup the server detects a newer staged build, auto-swaps it into place for the next restart (Windows allows renaming a running exe), and stamps `lab_stale` on every JSON response for the rest of the session - a stale server can never again hand out an unmarked opinion. HARVEST GUARD: every match starter (MCP tools, soak, cycle) refuses to launch over an un-harvested play session (the harvester now MOVES its inputs, so leftovers are the signal). PAIRED DEMO JOIN: brief_run folds the same-stem .dem into the brief (aim stats, highlight reel, tracks) - the whole "played, review" ritual is one call. `ship` (compile + install everywhere + MD5s) and `baseline_set` (rewrite runs/baselines.json safely) close the loop's last manual steps. `soak --parallel 2` runs two engines on separate ports, halving ladder wall clock. Last-seen session memory persists to runs/.lab_session.json across restarts; `see what=project` stops listing fifty pak-only maps; compare flags any human tape as review-only material. |
-| 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (current-goal touches only, v3.17 boundary) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |
+| 0.23 | The issue-tracker sweep (GitHub #6-#9). Brief totals gain `grabs` and `acquisitions` (weapon switches + battle-grabs) so contested maps stop reading as consumption defects when `gl` (then described as current-goal touches only, refuted by #1044) looks starved; the no-pickups next_step keys on acquisitions now. The auto-swap resolves its staged twin via `ARGUS_ROOT` when the running image is a client copy outside `target/release` (the ~/.grok/bin binary can now swap itself; both client configs already set the env). Cartograph implication strings refreshed from the current graphs - no baked era counts (dm2's "31 lava-side waypoints" had outlived the lava slice by ten versions); a regression test keeps them honest. `ARGUS <name> watch spawn` counts as pseudo-event `watch` (the v3.91 post-kill spawn watch). The dm4 `see what=map` timeout (#9) did not reproduce on 0.22+: warm and cold (mtime-invalidated) atlas rebuilds both return in under a second - the observed hang is attributed to the stale pre-swap client binary that the `ARGUS_ROOT` fix retires. Later under the same stamp: pseudo-event `sprintjump` (the v3.93 launch marker), the `client impulse <n>` CLI verb (roster control and dev teleport from the puppet's seat - the headless 4-player match that closed #2 and found the RosterName misalignment), and probelinks' `teleport_failures` count. |
 | 0.30 | A stale lab can no longer issue a quality-gate verdict (GitHub #499). The build embeds a deterministic fingerprint of its manifest, lockfile, build script, and Rust source; every response reports that identity beside the live checkout identity. Read-only inspection remains available under skew, while compare and experiment surfaces refuse with the exact install-and-restart remedy. This closes the gap left by 0.21's stage-only banner: a long-lived old process is detected even when no staged binary exists. |
 | 0.29 | Response shaping, measured (GitHub #371). `brief_run` and `compare_runs` take `format=csv`: measured on a real dm4 tape a brief is 1765 bytes as CSV against 3464 as compact JSON, and more again against the pretty JSON the server actually sends. JSON stays the default. **The live tail paginates on SIZE, not line count**: telemetry lines vary by five times, so the old flat eighty-line cut returned between 1.5 and 8 KB depending on what the match happened to be doing, and a busy match returned the most. 6 KB budget, 120 line ceiling, `since_line` still the cursor, and always at least one line so a poll loop cannot stall. **THE TOOL SURFACE NOW HAS A PRICE ON IT**: 39 tools, 18,816 bytes, about 4,700 tokens on every request, with a bound in the suite so adding a tool is a decision rather than a drift. That measurement REFUSED the third part of the issue: retiring the three parked extras would save 1,206 bytes, 6 per cent, and break a documented spec capture, while 581 of those bytes were available by trimming the schema of `corpus` itself - which was the most expensive tool in the server, written one version earlier to save tokens. |
 | 0.28 | The corpus becomes something you can ask a question of (GitHub #372, #378, #386). `corpus` is one tool with a `what` selector, like `see`: `tapes` filters and aggregates an index of every committed tape, `cells` does the same for hotspot cells, `changes` runs change point detection over the dated series, `bisect` localises one step with a noisy oracle. It returns CSV, which is about half the tokens of the same table as JSON. The index is `runs/tape_index.tsv`, a cache rather than a source of truth: a tape it does not name is parsed on demand, and nothing re-parses 752 tapes on an ordinary call. **SQLITE WAS CONSIDERED AND REFUSED**: the corpus is a few hundred rows of a fixed schema, and a named filter-and-aggregate surface costs an agent less than discovering a schema and writing SQL against it. The detector reproduces the record: dm4 lava stepping 12.3 to 4.4 at `ab_dm4_B3` is the 2026-08-14 hazard fix, e1m1 engages 1.1 to 17.8 at `ab_e1m1_mover1` is #281, and it dates the September dm2 stall rise that `CLAUDE.md` calls "not bisected" to 2026-08-29 at `ab_dm2_v403_control` - while flagging on the row that the tick class differs either side, so it must not be read as code without a single-class re-run. **TWO PARSER DEFECTS THE INDEX FOUND**: the lab puppet emits ARGLOG rows and never spawns, so the human split read it as a person and every tape it connected to briefed as a human session, two committed baselines included; and human ARGLOG tracks only exist from v3.66, so 46 of 73 harvested sessions were sitting in the bot series. Both fixed, and no tape's numbers move - verified by diffing the whole index across the change. `docs/specs/2026-09-16-corpus-change-points.md`. 182 tests. |

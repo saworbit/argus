@@ -91,10 +91,10 @@ Read events for what they ARE. `ARGEVT "<bot> goal <class>"` is
 emitted at goal SELECTION, not on pickup - "quad goalled 8 times"
 can mean zero touches (on dm4 its quad sits on a rocket-jump ledge:
 a 150 s probe recorded three selections and, when instrumented,
-*no* artifact pickups at all). The brief's `gl`/goals TOTAL is the
-consumed-pickup counter; the per-class map beside it is selections.
-To answer "did a bot ever take this", instrument the touch or watch
-a real client.
+*no* artifact pickups at all). The brief's `gl`/goals total counts
+goal arrivals and goals invalidated nearby. The per-class map records
+selections. `verified_goal_pickups_v1` counts a bot's successful touches
+of its own goal on a tape that declares the v1 instrumentation.
 
 Brief fields to trust before reconstructing by hand: hotspot `cause`
 (door / plat_column / lava_edge) and `reach_pct` (a routefail
