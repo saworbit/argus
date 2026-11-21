@@ -492,6 +492,12 @@ New per-tape `.compare.json` files use `registered-native-compare-v1`, with
 `native_gate_card`. These single-pair cards remain advisory; complete both
 arms before requesting the final band cards. Older artifacts are unchanged.
 A primary cannot waive the severe-freeze veto on any individual candidate tape.
+Add `--native-gates <new-directory> --require-green` to
+`report_map_intelligence.py` to enforce the result in scripts. It retains all
+cards and exits 2 if any map has a mixed or regressed verdict. Set
+`ARGUS_RUNS` when both arms' raw tapes live in a private run directory.
+The metric table reflects the recorded receipts. The gate cards come from
+the current native analyser.
 The [recovery study](freeze-recovery.md) keeps physical replays separate from
 ordinary map matches:
 

@@ -1059,11 +1059,12 @@ and what running four gates costs measured over the null corpus. Read-only.
             // With no controls the map's baseline band is used.
             let rest: Vec<String> = args.collect();
             if rest.is_empty() || rest.iter().any(|a| a == "-h" || a == "--help") {
-                println!("usage: argus-mcp compare <candidate[,candidate...]> [control[,control...]] [--primary <metric>]
+                println!("usage: argus-mcp compare <candidate[,candidate...]> [control[,control...]] [--primary <metric>] [--require-green]
 
 Judge candidate tapes against control tapes as bands. With no controls, the map's baseline band from runs/baselines.json is used.
 --primary names the metric the change was predicted to move: only that gate convicts, the rest flag.
-  stall_parity | engagements | lava_deaths | freezes");
+  stall_parity | engagements | lava_deaths | freezes
+--require-green exits 2 after printing a mixed or regressed verdict.");
                 return Ok(());
             }
             let split = |s: &str| -> Vec<String> {
@@ -1079,12 +1080,16 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                 .position(|a| a == "--primary")
                 .and_then(|i| rest.get(i + 1))
                 .cloned();
+            let require_green = rest.iter().any(|a| a == "--require-green");
             let positional: Vec<String> = {
                 let mut v = Vec::new();
                 let mut it = rest.iter();
                 while let Some(a) = it.next() {
                     if a == "--primary" {
                         it.next();
+                        continue;
+                    }
+                    if a == "--require-green" {
                         continue;
                     }
                     v.push(a.clone());
@@ -1131,6 +1136,16 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
             println!("{}", report.headline);
             for f in &report.findings {
                 println!("  - {f}");
+            }
+            if require_green
+                && matches!(
+                    report.verdict,
+                    argus_mcp::intel::Verdict::Mixed | argus_mcp::intel::Verdict::Regressed
+                )
+            {
+                use std::io::Write;
+                std::io::stdout().flush()?;
+                std::process::exit(2);
             }
             Ok(())
         }

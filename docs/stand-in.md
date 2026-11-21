@@ -8,7 +8,8 @@ measured only in human sessions, and those are the scarcest evidence the lab
 has. The stand-in is a puppet client that plays a deathmatch the way a person
 roughly does, so the lab can ask the same question without one. It is an
 calibrated instrument for screening the direction of threat changes on dm4.
-Human sessions decide the threat verdict and measure how often bots kill the player.
+The calibrated replay supplies an automated verdict on the direction of a
+threat change. Use player tapes to measure the absolute rate against a person.
 See [calibration 3](#calibration-3-longer-exposure).
 
 ## Running it
@@ -142,7 +143,8 @@ passes** the registered rule. The skill 1 mean was 7.33 against the human
 reference of 3.92, above its 1.96 to 5.88 band.
 
 `argus_lab.py pyramid --through 5` may now plan a directional screen on dm4.
-Use the same replay and sight measure for that screen. Human sessions
-remain the evidence for the absolute rate of bot kills on the player and the
-threat verdict.
+Use the same replay and sight measure for the automated verdict on threat
+direction. An interval that spans zero is inconclusive. Apply the ordinary
+match hard gates independently, and keep absolute rates against people
+attributed to their own tapes.
 [Per-tape readings and identities](../runs/standin-calibration-3.results.json).

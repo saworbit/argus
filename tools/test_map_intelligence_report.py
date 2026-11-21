@@ -1,8 +1,11 @@
 """An experimental graph on disk is not evidence that bots loaded navigation."""
 import hashlib
 import json
+import os
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -45,7 +48,7 @@ class ReportProvenance(unittest.TestCase):
                          for p in src.iterdir()}
                 (folder / 'protocol.json').write_text(json.dumps(dict(binary_sha256='binary', source_files=files)))
             protocol()
-            with patch.object(report, 'ROOT', root):
+            with patch.dict(os.environ, {'ARGUS_RUNS': str(root / 'runs')}):
                 _, rows = report.load(folder)
                 self.assertFalse(rows[0]['compiled_navigation'])
                 (src / 'argus_nav_dispatch.qc').write_text('if (mapname == "e1m3") Argus_Nav_Spawn_e1m3 ();\n')
@@ -62,6 +65,69 @@ class ReportProvenance(unittest.TestCase):
                 tape.write_bytes(b'changed')
                 with self.assertRaises(AssertionError):
                     report.load(folder)
+
+
+class RequiredNativeGates(unittest.TestCase):
+    def setUp(self):
+        folder = TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.root = Path(folder.name)
+        self.lab = self.root / 'argus-mcp'
+        self.lab.write_bytes(b'lab')
+        self.maps = ('dm2', 'dm4')
+        for arm in ('control', 'candidate'):
+            path = self.root / arm
+            path.mkdir()
+            (path / 'results.json').write_text(json.dumps([
+                {'map': name, 'name': f'{arm}_{name}'} for name in self.maps
+            ]))
+        self.result = dict(
+            complete=True, control_protocol={'repeats': 1},
+            candidate_protocol={'repeats': 1, 'primary': 'stall_parity'},
+            maps=[dict(map=name, control_n=1, candidate_n=1, compiled_navigation={},
+                       metrics={metric: {'control': 0, 'candidate': 0}
+                                for metric in report.METRICS}) for name in self.maps],
+            tapes={f'{arm}_{name}': 'hash' for arm in ('control', 'candidate')
+                   for name in self.maps},
+        )
+        self.gates = self.root / 'gates'
+        self.output = self.root / 'report.json'
+        self.argv = ['report_map_intelligence.py', str(self.root / 'control'),
+                     str(self.root / 'candidate'), '--native-gates', str(self.gates),
+                     '--output', str(self.output), '--require-green']
+
+    def invoke(self, codes):
+        responses = [SimpleNamespace(returncode=code, stdout=f'card {code}\n', stderr='')
+                     for code in codes]
+        with (patch.object(sys, 'argv', self.argv),
+              patch.object(report, 'compare', return_value=self.result),
+              patch.object(report, 'lab_executable', return_value=self.lab),
+              patch.object(report, 'lab_cli', side_effect=responses) as call,
+              patch('builtins.print')):
+            code = report.main()
+        return code, call
+
+    def test_preserves_all_cards_and_fails_when_a_map_rejects(self):
+        code, call = self.invoke([2, 0])
+        self.assertEqual(code, 2)
+        self.assertEqual(call.call_count, 2)
+        self.assertIn('--require-green', call.call_args.args)
+        self.assertEqual((self.gates / 'dm2.txt').read_text(), 'card 2\n')
+        self.assertEqual((self.gates / 'dm4.txt').read_text(), 'card 0\n')
+        result = json.loads(self.output.read_text())
+        self.assertFalse(result['native_gates_passed'])
+        self.assertEqual([row['native_gate_passed'] for row in result['maps']], [False, True])
+
+    def test_returns_success_only_when_every_native_gate_passes(self):
+        code, _ = self.invoke([0, 0])
+        self.assertIsNone(code)
+        self.assertTrue(json.loads(self.output.read_text())['native_gates_passed'])
+
+    def test_duplicate_tapes_refuse_qualification_before_comparison(self):
+        self.result['tapes'].pop('candidate_dm2')
+        with self.assertRaisesRegex(AssertionError, 'distinct tapes'):
+            self.invoke([])
+        self.assertFalse(self.gates.exists())
 
 
 if __name__ == '__main__':

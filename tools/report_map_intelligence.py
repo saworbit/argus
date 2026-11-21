@@ -36,6 +36,7 @@ def load(folder):
     rows = json.loads((folder / 'results.json').read_text())
     source_list = folder / 'src/progs.src'
     dispatcher = folder / 'src/argus_nav_dispatch.qc'
+    runs = Path(os.environ.get('ARGUS_RUNS') or ROOT / 'runs')
     frozen = protocol.get('source_files', {})
     linked_source = {'src/progs.src', 'src/argus_nav_dispatch.qc'} <= frozen.keys()
     if linked_source:
@@ -47,7 +48,7 @@ def load(folder):
             require(source_identity(folder / 'src') == protocol['source_sha256'], 'frozen source identity changed')
     for row in rows:
         require(row['binary_sha256'] == protocol['binary_sha256'], 'row names a different build')
-        raw = ROOT / 'runs' / (row['name'] + '.log')
+        raw = runs / (row['name'] + '.log')
         require(hashlib.sha256(raw.read_bytes()).hexdigest() == row['raw_sha256'], 'tape changed')
         if linked_source and source_list.is_file() and dispatcher.is_file():
             dispatched, included = registration(dispatcher.read_text(), source_list.read_text(), row['map'])
@@ -92,25 +93,47 @@ def main():
     parser.add_argument('candidate', type=Path)
     parser.add_argument('--output', type=Path)
     parser.add_argument('--native-gates', type=Path, help='new directory for native band gate cards')
+    parser.add_argument('--require-green', action='store_true',
+                        help='exit 2 if any native band verdict is mixed or regressed')
     parser.add_argument('--lab', type=Path)
     args = parser.parse_args()
+    if args.require_green and not args.native_gates:
+        parser.error('--require-green needs --native-gates')
     result = compare(args.control.resolve(), args.candidate.resolve())
     if args.native_gates:
         require(result['complete'], 'complete both arms before judging bands')
         require(not args.native_gates.exists(), 'retain existing native gates output')
+        arms = [json.loads((p / 'results.json').read_text()) for p in (args.control, args.candidate)]
+        if args.require_green:
+            require(result['maps'], 'qualification needs at least one map')
+            require(len(result['tapes']) == sum(len(arm) for arm in arms),
+                    'qualification needs distinct tapes')
+            for row in result['maps']:
+                require(row['control_n'] == result['control_protocol']['repeats']
+                        and row['candidate_n'] == result['candidate_protocol']['repeats'],
+                        f'incomplete repeats on {row["map"]}')
         executable = lab_executable(args.lab)
         args.native_gates.mkdir(parents=True)
         result['analysis_lab_sha256'] = hashlib.sha256(executable.read_bytes()).hexdigest()
-        arms = [json.loads((p / 'results.json').read_text()) for p in (args.control, args.candidate)]
+        gate_options = ('--require-green',) if args.require_green else ()
         for row in result['maps']:
             names = [','.join(r['name'] for r in rows if r['map'] == row['map']) for rows in arms]
-            response = lab_cli(executable, 'compare', names[1], names[0], '--primary', result['candidate_protocol'].get('primary', 'stall_parity'), cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT)), timeout=30)
-            require(response.returncode == 0, response.stderr)
+            response = lab_cli(
+                executable, 'compare', names[1], names[0], '--primary',
+                result['candidate_protocol'].get('primary', 'stall_parity'), *gate_options,
+                cwd=ROOT, environment=dict(os.environ, ARGUS_ROOT=str(ROOT)), timeout=30,
+            )
+            require(response.returncode == 0 or (args.require_green and response.returncode == 2),
+                    response.stderr)
             (args.native_gates / (row['map'] + '.txt')).write_text(response.stdout, encoding='utf-8')
             row['native_gate_card'] = response.stdout
+            if args.require_green:
+                row['native_gate_passed'] = response.returncode == 0
+        if args.require_green:
+            result['native_gates_passed'] = all(row['native_gate_passed'] for row in result['maps'])
     if args.output:
         args.output.write_text(json.dumps(result, indent=2) + '\n')
-    print('map,n A/B,stalls A/B,engages A/B,pickups A/B,freezes A/B,under fire A/B,warps A/B,world deaths A/B')
+    print('map,n A/B,stalls A/B,engages A/B,goal completions A/B,freezes A/B,under fire A/B,warps A/B,world deaths A/B')
     for row in result['maps']:
         cells = [row['map'], f"{row['control_n']}/{row['candidate_n']}"]
         for name in ('stalls', 'engages', 'goals', 'freezes', 'freeze_underfire', 'unstick_warps', 'world_deaths'):
@@ -121,7 +144,12 @@ def main():
     unmapped = [r['map'] for r in result['maps'] if False in r['compiled_navigation'].values()]
     if unmapped:
         print('No compiled navigation; spatial graph coverage is not a runtime navigation score:', ','.join(unmapped))
+    if args.require_green:
+        failed = [row['map'] for row in result['maps'] if not row['native_gate_passed']]
+        if failed:
+            print('Native gates rejected:', ', '.join(failed))
+            return 2
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())

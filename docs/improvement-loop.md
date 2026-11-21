@@ -32,8 +32,8 @@ Cheapest first; a rung that refutes the change stops the climb.
 | 2 | Fixtures and benchmark tasks | how a specific behaviour fares under a prescribed setup | how often it matters in a match |
 | 3 | [Fixed-clock ladder](fixed-clock.md) (`argus-mcp seeds`) | a movement or economy change, quickly, on maps where the clock is accepted | metrics listed as its limits there, and anything human |
 | 4 | Wall-clock band (`experiment`, `argus-mcp match`) | the same, at the lab's own rate; the tapes a ship decision needs | anything human |
-| 5 | [Stand-in human](stand-in.md) (`argus-mcp standin`) | the direction of a threat change, before a session is spent, where calibrated | how a person feels about it |
-| 6 | Human session with marks, then the [session gallery](session-gallery.md) | threat, fairness and feel | nothing the objective asks; it is the referee |
+| 5 | [Calibrated stand-in](stand-in.md) (`argus-mcp standin`) | whether the measured threat direction clears its uncertainty interval | the absolute rate against a person |
+| 6 | Optional marked play test, then the [session gallery](session-gallery.md) | direct observations of threat, fairness and feel | the effects of a change across controlled repeats |
 
 Use the [turn simulator](../tools/README.md#25-argus_turnsimpy) on rung 1
 when an elbow passes the floor check and bots still fall or slide at the
@@ -68,11 +68,14 @@ install.
 
 1. Pick the claim the objective most needs, from `argus_lab.py state`.
 2. Change, then climb the rungs above as far as the claim needs.
-3. Merge; at the end of the cycle, install once (`ship`) and smoke it.
-4. Play: at least one session on a goal map at skill 1, binding `mark`.
-5. `harvest_session.py` scores it and prints its review; `argus_gallery.py`
-   cuts the marked and suspect moments for a ruling.
-6. Rulings and review findings become claims, and the next cycle starts.
+3. Require the relevant fixtures and played-rate gates before adoption. Use
+   `report_map_intelligence.py <control> <candidate> --native-gates <new-dir> --require-green`
+   to enforce the registered comparisons. For claims about threat direction,
+   use the stand-in where its replay and measure are calibrated.
+4. Merge; at the end of the cycle, install once (`ship`) and smoke it.
+5. If someone plays, `harvest_session.py` scores the session and
+   `argus_gallery.py` cuts marked and suspect moments for review.
+6. Turn new evidence into claims and start the next cycle.
 
 ## What a session needs from the player
 
