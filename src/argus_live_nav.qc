@@ -22,6 +22,8 @@ float al_peak_edicts;
 .float al_item_scan;
 .float al_swim_until;
 .vector al_swim_wish;
+.float al_swim_request, al_swim_retry, al_swim_diving;
+.vector al_swim_tried;
 .float al_exit_scan, al_exit_memory;
 .vector al_exit_from, al_exit_avoid, al_exit_previous, al_exit_older, al_exit_oldest;
 .entity al_exit_button, al_exit_prize;
@@ -298,6 +300,8 @@ float() Argus_ExploreExit =
     if (!deathmatch || coop || self.ar_taskgoal != world || self.ar_mode == 2
         || self.ar_feettype < CONTENT_WATER || self.teleport_time > time)
         return FALSE;
+    if (self.ar_feettype == CONTENT_WATER && time < self.ar_swimescape_until)
+        return FALSE;
 
     wet = self.ar_feettype == CONTENT_WATER;
     if (self.ar_exploreuntil > 0)
@@ -499,6 +503,124 @@ vector(vector wish) Argus_LiveSwimWish =
     return chosen;
 };
 
+void() Argus_RequestSwimEscape =
+{
+    if (time >= self.ar_swimescape_until)
+        self.al_swim_request = time + 0.7;
+};
+
+// A muzzle ray can see through a spillway while the swimmer's head or
+// shoulders still meet the brush. Clip the run at each face of the body.
+float(vector start, vector direction, float distance) Argus_SwimLane =
+{
+    local vector side, top, feet;
+    local float sample;
+
+    top = start + '0 0 28';
+    feet = start - '0 0 22';
+    side = direction_y * '-14 0 0' + direction_x * '0 14 0';
+    traceline (top, top + direction * distance, TRUE, self);
+    if (trace_startsolid) return 0;
+    if (trace_fraction < 1) distance = distance * trace_fraction - 18;
+    if (distance < 56) return 0;
+    traceline (feet, feet + direction * distance, TRUE, self);
+    if (trace_startsolid) return 0;
+    if (trace_fraction < 1) distance = distance * trace_fraction - 18;
+    if (distance < 56) return 0;
+    traceline (start + side, start + side + direction * distance, TRUE, self);
+    if (trace_startsolid) return 0;
+    if (trace_fraction < 1) distance = distance * trace_fraction - 18;
+    if (distance < 56) return 0;
+    traceline (start - side, start - side + direction * distance, TRUE, self);
+    if (trace_startsolid) return 0;
+    if (trace_fraction < 1) distance = distance * trace_fraction - 18;
+    sample = distance;
+    while (sample > 0)
+    {
+        if (pointcontents (feet + direction * sample) != CONTENT_WATER) return 0;
+        sample = sample - 36;
+    }
+    return distance;
+};
+
+// Try a clear run at the current depth or below an obstruction. Keep the
+// dive short and leave five seconds of air for the ordinary ascent policy.
+float() Argus_SwimEscape =
+{
+    local float depth, angle, i, distance, score, best, reached;
+    local vector start, direction, point, chosen;
+
+    if (!argus_live_nav || self.ar_enemy != world || self.ar_taskgoal != world
+        || self.ar_mode == 2 || self.air_finished <= time + 5)
+    {
+        self.ar_swimescape_until = 0;
+        return FALSE;
+    }
+    reached = FALSE;
+    if (time < self.ar_swimescape_until)
+    {
+        if (vlen (self.ar_swimescape_goal - self.origin) > 24) return TRUE;
+        reached = TRUE;
+        dprint ("ARGUS swim escape reached "); dprint (self.netname); dprint (" ");
+        dprint (vtos (self.origin)); dprint ("\n");
+    }
+    self.ar_swimescape_until = 0;
+    if (time >= self.al_swim_request && (!reached || self.al_swim_diving)) return FALSE;
+    self.al_swim_request = 0;
+
+    best = 0;
+    depth = 0;
+    // A surface leg can reach the mouth of a passage that was occluded
+    // at the stall. Look below it once before reverting to surface swim.
+    if (reached) depth = 28;
+    while (depth <= 56)
+    {
+        start = self.origin - '0 0 1' * depth;
+        traceline (self.origin - '0 0 22', start - '0 0 24', TRUE, self);
+        if (depth > 0 && (trace_fraction < 1 || trace_startsolid))
+            break;
+        i = 0;
+        while (i < 12)
+        {
+            angle = self.ar_moveyaw + i * 30;
+            makevectors (angle * '0 1 0');
+            direction = v_forward;
+            distance = Argus_SwimLane (start, direction, 176);
+            if (distance >= 56)
+            {
+                point = start + direction * distance;
+                score = distance - depth * 0.5;
+                if (depth > 0)
+                {
+                    traceline (self.origin + '0 0 28', self.origin + '0 0 28' + direction * distance, TRUE, self);
+                    if (trace_fraction < 0.7) score = score + 32;
+                }
+                if (time < self.al_swim_retry && vlen (point - self.al_swim_tried) < 70)
+                    score = score - 80;
+                if (score > best)
+                {
+                    best = score;
+                    chosen = point;
+                }
+            }
+            i = i + 1;
+        }
+        depth = depth + 28;
+    }
+    if (!best) return FALSE;
+
+    self.ar_swimescape_goal = chosen;
+    self.ar_swimescape_until = time + 2.3;
+    self.al_swim_diving = (chosen_z < self.origin_z - 14);
+    self.al_swim_tried = chosen;
+    self.al_swim_retry = time + 6;
+    self.al_swim_until = 0;
+    self.ar_exploreuntil = 0;
+    dprint ("ARGUS swim escape "); dprint (self.netname); dprint (" ");
+    dprint (vtos (self.origin)); dprint (" -> "); dprint (vtos (chosen)); dprint ("\n");
+    return TRUE;
+};
+
 // Check clearance at the centre and both shoulders. Check support separately,
 // because a chest ray over a gap is a valid shot and an invalid walk.
 float(vector from, vector to) Argus_LiveWalk =
@@ -642,6 +764,9 @@ void() Argus_LiveNavReset =
     self.al_door_until = 0;
     self.al_wet = 0;
     self.al_swim_until = 0;
+    self.al_swim_request = 0;
+    self.al_swim_retry = 0;
+    self.ar_swimescape_until = 0;
 };
 
 void(entity actor) Argus_LiveNavDoor =

@@ -184,6 +184,10 @@ void() Argus_LiveNavReset;
 void() Argus_LiveNavSample;
 void() Argus_LiveNavReject;
 vector(vector wish) Argus_LiveSwimWish;
+.vector ar_swimescape_goal;
+.float ar_swimescape_until;
+float() Argus_SwimEscape;
+void() Argus_RequestSwimEscape;
 .vector ar_exploregoal;
 .float ar_exploring, ar_exploreuntil;
 float() Argus_ExploreExit;
@@ -2579,6 +2583,7 @@ void() Argus_Physics =
     local float wl, spd, moveok, myaw, rhoriz, sready, wdrag, hopok, ljyaw;
     local float protectedstep, tacticmove, vault, jumpkind, jumpveto;
     local float ordinarymove, travel_yaw, turn_yaw, turn_delta;
+    local float swim_escape;
 
     // Reset can run in the trigger before this frame's physics. Hold the
     // braking envelope briefly instead of accelerating a stale tactical yaw
@@ -2676,7 +2681,8 @@ void() Argus_Physics =
 
     if (wl >= 2 && (wl == 3 || !(self.flags & FL_ONGROUND)))
     {
-        if (argus_live_nav && !self.ar_exploring && !tacticmove && self.ar_feettype == CONTENT_WATER
+        swim_escape = (!tacticmove && self.ar_feettype == CONTENT_WATER && Argus_SwimEscape ());
+        if (!swim_escape && argus_live_nav && !self.ar_exploring && !tacticmove && self.ar_feettype == CONTENT_WATER
             && self.ar_mode == 0 && self.ar_enemy == world)
             wishdir = Argus_LiveSwimWish (wishdir);
 
@@ -2684,7 +2690,18 @@ void() Argus_Physics =
         // in a wadeable pool walks like anyone else. The tread-with-
         // floor case was the residual splash cycle in Shane's third
         // sound playtest - lift, break surface, fall, splash, again.
-        if (!tacticmove && self.ar_mode == 2 && self.ar_node != world
+        if (swim_escape)
+        {
+            rto = self.ar_swimescape_goal - self.origin;
+            self.velocity_z = rto_z * 6;
+            if (self.velocity_z < -110) self.velocity_z = -110;
+            if (self.velocity_z > 110) self.velocity_z = 110;
+            moveok = (fabs (rto_z) < 14);
+            rto_z = 0;
+            wishdir = '0 0 0';
+            if (moveok) wishdir = normalize (rto);
+        }
+        else if (!tacticmove && self.ar_mode == 2 && self.ar_node != world
             && self.ar_node.origin_z < self.origin_z - 8
             && self.air_finished > time + 5
             && pointcontents (self.ar_node.origin) == CONTENT_WATER)
@@ -2813,7 +2830,7 @@ void() Argus_Physics =
         // CARRIES: 225 up alone rises ~31u and fell straight back
         // down the same lip - the forward push lands the arc on the
         // bank like a real waterjump.
-        if (self.ar_feettype == CONTENT_WATER && time > self.ar_gapjump)
+        if (!swim_escape && self.ar_feettype == CONTENT_WATER && time > self.ar_gapjump)
         {
             vault = 290;
             if (self.ar_hopswim && self.ar_node != world)
@@ -2886,6 +2903,7 @@ void() Argus_Physics =
         return;
     }
     self.ar_swim = 0;
+    self.ar_swimescape_until = 0;
 
     // teleporter exit coast: teleport_touch stamps teleport_time =
     // time + 0.7 and launches down the destination's v_forward at
@@ -12360,6 +12378,8 @@ void() Argus_AI =
             self.ar_stalls = self.ar_stalls + 1;
             self.ar_stallrun = self.ar_stallrun + 1;
             Argus_Event ("stall");
+            if (argus_live_nav && self.ar_feettype == CONTENT_WATER)
+                Argus_RequestSwimEscape ();
             // diagnostic: what was the routed steering target?
             if (self.ar_mode == 2 && self.ar_node != world)
             {
