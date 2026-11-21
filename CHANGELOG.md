@@ -1675,6 +1675,8 @@ passing botmatch does not establish better human play.
 
 #### Maintenance
 
+- Refresh the e1m5 and lqdm2 baseline bands on their shipped graphs and recalculate the lab's detection limits ([#1036](https://github.com/saworbit/argus/issues/1036), [#1041](https://github.com/saworbit/argus/issues/1041)).
+
 - Check the step1b source manifest in preflight, require the motion fixture's staged hazard marker, and preserve empty Git config values in Windows lab tests ([#1037](https://github.com/saworbit/argus/issues/1037), [#1040](https://github.com/saworbit/argus/issues/1040), [#1048](https://github.com/saworbit/argus/issues/1048)).
 
 - Record live lift and train timings against a six-second pickup respawn window ([#1006](https://github.com/saworbit/argus/issues/1006)).
