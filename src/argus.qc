@@ -10317,6 +10317,8 @@ float(entity node) Argus_WalkArrivalReady =
     }
     if (self.ar_hopjump || self.ar_hoprj || self.ar_hoplift
         || self.ar_hopswim || self.ar_hoptrain || self.ar_hopdoor) return TRUE;
+    // A bot below an ordinary first seat still has to climb to its floor.
+    if (node.origin_z > self.origin_z + 18) return FALSE;
     if (next == world || Argus_LinkIsTyped (node, next)) return TRUE;
     if (fabs (next.origin_z - node.origin_z) > 18) return TRUE;
     if (!(self.flags & FL_ONGROUND)
@@ -10348,6 +10350,9 @@ float() Argus_RouteCanShortcut =
         || (self.ar_feettype == CONTENT_WATER
             && !(self.flags & FL_ONGROUND))) return FALSE;
     n = self.ar_node; steps = 0;
+    // A level chain can start above the bot, as at lqdm2's health riser.
+    if (n != world && n.origin_z > self.origin_z + 18)
+        return FALSE;
     while (n != world && steps < 12)
     {
         nx = Argus_GetNext (n, self);

@@ -34,6 +34,10 @@ fresh comparisons passed on the rebased build. The earlier lqdm2 stall
 rejection still blocks adoption.
 [Behaviour changes and automated results](docs/map-intelligence.md#bot-adaptation-verification)
 
+#### Fixed
+
+- Keep the climb to an overhead route entry before taking a direct shortcut, as in the lqdm2 health approach ([#1053](https://github.com/saworbit/argus/issues/1053)).
+
 #### Added
 
 - Keep fixed stock-map witnesses for the dm6 rocket ledge, e1m1 slime stair, lqdm2 health pin and e1m3 shelf climb ([#1057](https://github.com/saworbit/argus/issues/1057), [#1056](https://github.com/saworbit/argus/issues/1056), [#1053](https://github.com/saworbit/argus/issues/1053), [#623](https://github.com/saworbit/argus/issues/623)).

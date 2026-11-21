@@ -103,6 +103,19 @@ calling a dry landing a physical escape. The health and rocket destinations
 in these suites are positional tasks. Actual item collection needs a stock
 pickup receipt.
 
+On lqdm2, the rounded observation `(-272 208 216)` is inside the player
+hull's solid boundary. The fixed start uses `(-272 207.75 216)`, which has
+world support on the lower floor. From there the first route seat is 32u
+above the bot. Keep that entry long enough to start the climb before
+turning straight towards the health. The stock fixture checks real
+pickups from the lower floor and a direct approach from the upper floor.
+`python tools/verify_health_approach.py --output backups/health-approach --prefix health_approach`
+runs the fixture at played cadence.
+Three 185-second skill-3 matches per arm reduced stalls in the lower corner
+from four to one. Whole-map median stalls went from six to eight, inside the
+native band. The dm4 cross-check kept median stalls at seven. Both maps
+passed the hard gates.
+
 On e1m3, the current graph still lacks an ungated route from each of the
 eight spawns to the super shotgun and rockets on the shelf. A private
 native-typed generation stayed within 597 of 600 edicts and raised the
