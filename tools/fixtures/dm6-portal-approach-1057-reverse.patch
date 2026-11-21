@@ -1,0 +1,23 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -10446 +10445,0 @@
+-    local float dm6portal;
+@@ -10814,10 +10812,0 @@
+-
+-            // dm6's south portal sits behind the entry seat. The exit
+-            // waypoint points back up the hall before the trigger fires.
+-            // Keep the seat active and aim into the stock trigger instead.
+-            dm6portal = FALSE;
+-            if (mapname == "dm6" && tp == '193 -1743 56' && vlen (to) < 115)
+-            {
+-                nx = Argus_GetNext (self.ar_node, self);
+-                dm6portal = (nx != world && nx.origin == '257 -911 136');
+-            }
+@@ -11524 +11513 @@
+-            else if (vlen (to) < 48 && !dm6portal
++            else if (vlen (to) < 48
+@@ -11672 +11661 @@
+-            else if (!dm6portal && !self.ar_hopjump && vlen (to) < 112
++            else if (!self.ar_hopjump && vlen (to) < 112
+@@ -11708 +11696,0 @@
+-                if (dm6portal) tp = '248 -1784 56';

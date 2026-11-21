@@ -240,6 +240,7 @@ void() Argus_Nav_Spawn_dm6 =
     local entity n235;
     local entity n236;
     local entity n237;
+    local entity n238;
 
     n0 = Argus_NavNode ('33 -1871 56');
     n1 = Argus_NavNode ('33 -1743 40');
@@ -479,6 +480,7 @@ void() Argus_Nav_Spawn_dm6 =
     n235 = Argus_NavNode ('929 -1103 -40');
     n236 = Argus_NavNode ('929 -1039 -40');
     n237 = Argus_NavNode ('1377 -527 160');
+    n238 = Argus_NavNode ('449 -1543 256');
 
     Argus_NavLink (n0, n1);
     Argus_NavLink (n0, n6);
@@ -744,27 +746,21 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavLink (n41, n26);
     Argus_NavLink (n42, n185);
     Argus_NavLink (n42, n43);
-    Argus_NavLink (n42, n41);
     Argus_NavLink (n42, n187);
     Argus_NavLink (n42, n44);
     Argus_NavLink (n43, n42);
     Argus_NavLink (n43, n44);
     Argus_NavLink (n43, n185);
-    Argus_NavLink (n43, n41);
     Argus_NavLink (n43, n45);
     Argus_NavLink (n44, n43);
     Argus_NavLink (n44, n45);
-    Argus_NavLink (n44, n36);
     Argus_NavLink (n44, n52);
     Argus_NavLink (n44, n42);
     Argus_NavLink (n45, n52);
     Argus_NavLink (n45, n44);
-    Argus_NavLink (n45, n36);
     Argus_NavLink (n45, n56);
     Argus_NavLink (n45, n43);
     Argus_NavLink (n45, n61);
-    Argus_NavLink (n45, n19);
-    Argus_NavLink (n45, n28);
     Argus_NavLink (n46, n35);
     Argus_NavLink (n46, n51);
     Argus_NavLink (n46, n33);
@@ -801,7 +797,6 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavLink (n52, n56);
     Argus_NavLink (n52, n44);
     Argus_NavLink (n52, n61);
-    Argus_NavLink (n52, n36);
     Argus_NavLink (n52, n64);
     Argus_NavLink (n52, n74);
     Argus_NavLink (n53, n179);
@@ -1995,6 +1990,9 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavLink (n16, n30);    // teleporter
     Argus_NavLink (n90, n33);    // teleporter
     Argus_NavLink (n179, n102);    // teleporter
+    Argus_NavLink (n43, n238);
+    Argus_NavLink (n42, n238);
+    Argus_NavLink (n238, n41);
     Argus_NavRegion (n3, 1);
     Argus_NavRegion (n47, 2);
     Argus_NavRegion (n49, 2);
@@ -2008,21 +2006,21 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavRegion (n229, 2);
 
     // Static tactical annotations: exposure, hidden target, first walk hop
-    Argus_NavTactics (n0, 35, n33, n25);
-    Argus_NavTactics (n1, 40, n23, n6);
+    Argus_NavTactics (n0, 36, n33, n25);
+    Argus_NavTactics (n1, 41, n23, n6);
     Argus_NavTactics (n2, 39, n25, n7);
     Argus_NavTactics (n3, 19, world, world);
-    Argus_NavTactics (n4, 36, n43, n180);
-    Argus_NavTactics (n5, 35, n43, n180);
-    Argus_NavTactics (n6, 39, n186, n5);
-    Argus_NavTactics (n7, 39, n25, n16);
+    Argus_NavTactics (n4, 37, n43, n180);
+    Argus_NavTactics (n5, 36, n43, n180);
+    Argus_NavTactics (n6, 40, n186, n5);
+    Argus_NavTactics (n7, 40, n25, n16);
     Argus_NavTactics (n8, 15, n17, n17);
     Argus_NavTactics (n9, 14, n36, n19);
     Argus_NavTactics (n10, 17, world, world);
     Argus_NavTactics (n11, 25, world, world);
     Argus_NavTactics (n12, 14, n22, n13);
     Argus_NavTactics (n13, 14, n30, n30);
-    Argus_NavTactics (n14, 33, n43, n24);
+    Argus_NavTactics (n14, 34, n43, n24);
     Argus_NavTactics (n15, 32, n26, n16);
     Argus_NavTactics (n16, 33, n25, n25);
     Argus_NavTactics (n17, 31, n8, n8);
@@ -2032,7 +2030,7 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavTactics (n21, 15, world, world);
     Argus_NavTactics (n22, 9, n12, n13);
     Argus_NavTactics (n23, 14, n17, n25);
-    Argus_NavTactics (n24, 33, n44, n32);
+    Argus_NavTactics (n24, 34, n44, n32);
     Argus_NavTactics (n25, 28, n16, n16);
     Argus_NavTactics (n26, 33, n8, n17);
     Argus_NavTactics (n27, 13, n36, n19);
@@ -2040,23 +2038,23 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavTactics (n29, 28, n22, n20);
     Argus_NavTactics (n30, 13, n13, n13);
     Argus_NavTactics (n31, 20, n17, n25);
-    Argus_NavTactics (n32, 31, n52, n37);
+    Argus_NavTactics (n32, 32, n52, n37);
     Argus_NavTactics (n33, 25, n16, n25);
     Argus_NavTactics (n34, 13, n16, n25);
     Argus_NavTactics (n35, 26, n38, n38);
     Argus_NavTactics (n36, 31, world, world);
-    Argus_NavTactics (n37, 31, n45, n183);
+    Argus_NavTactics (n37, 32, n45, n183);
     Argus_NavTactics (n38, 17, n46, n33);
-    Argus_NavTactics (n39, 31, n52, n184);
-    Argus_NavTactics (n40, 34, n52, n41);
-    Argus_NavTactics (n41, 34, n52, n43);
-    Argus_NavTactics (n42, 23, n52, n43);
-    Argus_NavTactics (n43, 17, n52, n44);
-    Argus_NavTactics (n44, 17, n56, n52);
-    Argus_NavTactics (n45, 25, n72, n61);
+    Argus_NavTactics (n39, 32, n52, n184);
+    Argus_NavTactics (n40, 35, n52, n41);
+    Argus_NavTactics (n41, 35, n52, n43);
+    Argus_NavTactics (n42, 24, n52, n43);
+    Argus_NavTactics (n43, 18, n52, n44);
+    Argus_NavTactics (n44, 18, n56, n52);
+    Argus_NavTactics (n45, 26, n72, n61);
     Argus_NavTactics (n46, 27, n38, n33);
     Argus_NavTactics (n47, 9, world, world);
-    Argus_NavTactics (n48, 27, n52, n186);
+    Argus_NavTactics (n48, 28, n52, n186);
     Argus_NavTactics (n49, 8, n75, n63);
     Argus_NavTactics (n50, 40, n20, n29);
     Argus_NavTactics (n51, 24, n38, n33);
@@ -2188,15 +2186,15 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavTactics (n177, 30, n205, n205);
     Argus_NavTactics (n178, 70, n79, n115);
     Argus_NavTactics (n179, 9, world, world);
-    Argus_NavTactics (n180, 35, n43, n182);
-    Argus_NavTactics (n181, 32, n45, n37);
-    Argus_NavTactics (n182, 34, n43, n181);
-    Argus_NavTactics (n183, 31, n45, n39);
-    Argus_NavTactics (n184, 33, n52, n40);
-    Argus_NavTactics (n185, 30, n52, n42);
-    Argus_NavTactics (n186, 27, n45, n188);
-    Argus_NavTactics (n187, 29, n52, n42);
-    Argus_NavTactics (n188, 27, n52, n187);
+    Argus_NavTactics (n180, 36, n43, n182);
+    Argus_NavTactics (n181, 33, n45, n37);
+    Argus_NavTactics (n182, 35, n43, n181);
+    Argus_NavTactics (n183, 32, n45, n39);
+    Argus_NavTactics (n184, 34, n52, n40);
+    Argus_NavTactics (n185, 31, n52, n42);
+    Argus_NavTactics (n186, 28, n45, n188);
+    Argus_NavTactics (n187, 30, n52, n42);
+    Argus_NavTactics (n188, 28, n52, n187);
     Argus_NavTactics (n189, 72, n97, n215);
     Argus_NavTactics (n190, 62, n114, n93);
     Argus_NavTactics (n191, 70, n97, n87);
@@ -2240,12 +2238,13 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_NavTactics (n229, 9, world, world);
     Argus_NavTactics (n230, 40, n170, n204);
     Argus_NavTactics (n231, 42, n170, n206);
-    Argus_NavTactics (n232, 36, n43, n182);
+    Argus_NavTactics (n232, 37, n43, n182);
     Argus_NavTactics (n233, 45, n170, n231);
     Argus_NavTactics (n234, 77, n102, n85);
     Argus_NavTactics (n235, 77, n110, n236);
     Argus_NavTactics (n236, 77, n196, n215);
     Argus_NavTactics (n237, 41, n154, n220);
+    Argus_NavTactics (n238, 28, n52, n41);
 
     // Camera vantage nodes (Cartographer spectator anchors)
     Argus_AddCamNode ('33 -1871 88', '-15 51 0', "arena_1");
@@ -2254,5 +2253,5 @@ void() Argus_Nav_Spawn_dm6 =
     Argus_AddCamNode ('129 -1039 144', '-15 -14 0', "arena_4");
     Argus_AddCamNode ('97 -783 168', '-15 -56 0', "arena_5");
     Argus_AddCamNode ('289 -2063 72', '-15 63 0', "arena_6");
-    dprint ("ARGNAV 238 nodes, 1515 links\n");
+    dprint ("ARGNAV 239 nodes, 1511 links\n");
 };

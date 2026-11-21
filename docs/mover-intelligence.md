@@ -116,6 +116,16 @@ from four to one. Whole-map median stalls went from six to eight, inside the
 native band. The dm4 cross-check kept median stalls at seven. Both maps
 passed the hard gates.
 
+On dm6, the upper ledge links to the rocket shelf pass through a solid wall.
+The replacement takes the south hall around the wall through an elbow at
+`(449 -1543 256)` and enters the t2 portal before steering for its exit.
+The splice keeps the existing graph outside this route. Full regeneration
+also changed other links and timed out from the recorded wall position.
+The final build reached the shelf dry from that position in 7.8 seconds.
+In three 185-second matches per arm, stalls at the wall fell from nine to
+zero. Whole-map median stalls went from twelve to seven. The native gates
+returned parity.
+
 On e1m3, the current graph still lacks an ungated route from each of the
 eight spawns to the super shotgun and rockets on the shelf. A private
 native-typed generation stayed within 597 of 600 edicts and raised the
