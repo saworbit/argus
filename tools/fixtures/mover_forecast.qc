@@ -86,7 +86,7 @@ void() MoverForecastSetup =
         center = (block.mins + block.maxs) * 0.5;
         setorigin (block, '561 1393 336' - center);
         traceline ('625 1417 380', '529 1393 380', TRUE, self);
-        mc_blocked = trace_fraction < 1 && trace_ent == block;
+        mc_blocked = (trace_fraction < 1 && trace_ent == block);
     }
     setorigin (self, mc_seed); setsize (self, '-16 -16 -24', '16 16 32');
     self.movetype = MOVETYPE_STEP; self.flags = FL_ONGROUND;

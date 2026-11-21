@@ -28,10 +28,10 @@ void(string label, vector origin, vector angles, float range, float gun, float p
     makevectors (angles); aimpt = origin + '0 0 16' + v_forward * range;
     self.button0 = 1;
     allowed = Argus_MuzzleClear (aimpt);
-    ok = allowed == !blocked && self.button0 == !blocked;
-    ok = ok && self.velocity == '23 7 0' && self.ar_moveyaw == 137;
-    if (phase == 4 && expired && blocked) ok = ok && !self.ar_tactic;
-    else ok = ok && self.ar_tactic == phase;
+    ok = (allowed == !blocked && self.button0 == !blocked);
+    ok = (ok && self.velocity == '23 7 0' && self.ar_moveyaw == 137);
+    if (phase == 4 && expired && blocked) ok = (ok && !self.ar_tactic);
+    else ok = (ok && self.ar_tactic == phase);
     // Exercise the real stock weapon emission after the shared firing gate.
     // This is a gate-to-fire harness, not a replay of the whole combat AI.
     before = self.currentammo;
@@ -45,11 +45,11 @@ void(string label, vector origin, vector angles, float range, float gun, float p
         { count = count + 1; remove (missile); }
         missile = next;
     }
-    if (blocked) ok = ok && before == after && count == 0;
+    if (blocked) ok = (ok && before == after && count == 0);
     else
     {
-        ok = ok && before - after == 1;
-        if (gun != IT_SHOTGUN) ok = ok && count == 1;
+        ok = (ok && before - after == 1);
+        if (gun != IT_SHOTGUN) ok = (ok && count == 1);
     }
     MuzzleCheck (label, ok);
     self = saved; remove (b); newmis = world;
