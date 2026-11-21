@@ -506,6 +506,7 @@ impl Argus {
     /// `fixed_clock`: the clock, frame, seeds and the map's limits. A
     /// match_stop, a shutdown or a task cancel ends the tape on the engine
     /// and every tape still to come.
+    #[allow(clippy::too_many_arguments)]
     async fn run_seeded_call(
         &self,
         cfg: &Config,
