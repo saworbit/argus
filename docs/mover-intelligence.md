@@ -268,3 +268,16 @@ retain the difference between observations and proven causes.
 The existing [human-play check #610](https://github.com/saworbit/argus/issues/610)
 and [step 1b warning #583](https://github.com/saworbit/argus/issues/583) remain
 open; these match sets do not replace or resolve them.
+
+On dm2, the eight-second replan also covers a bot on the same dry deck
+when it is outside the 120u boarding range and within 16u of the boarding
+height. The 160u rule still applies at other heights and on other maps.
+
+The `--near-seats` fixture uses the two origins from #1054 and samples
+both train directions. The waits ended at 8.0 seconds, down from 15.0,
+and alternate routes installed at 8.1 and 8.2 seconds. The on-pad control
+boarded and stepped onto the far deck at full health in both builds.
+Six paired 185-second dm2 matches at skills 1 and 3 passed the
+registered freeze gate. Neither arm reproduced the reported local waits
+in those matches.
+[Train recovery evidence](https://github.com/saworbit/argus/issues/1054)

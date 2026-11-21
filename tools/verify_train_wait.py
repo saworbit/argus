@@ -19,7 +19,8 @@ EXIT = (1921, -1047, 344)
 START = re.compile(r"^TW start (\d+) support 1 pos '([^']+)' car '([^']+)' carvel '([^']+)'$", re.M)
 SAMPLE = re.compile(r"^TW sample (\d+) elapsed\s+([\d.]+) pos '([^']+)' car '[^']+' "
                     r"hold ([01]) hp\s+([\d.]+) goal ([01]) node '([^']+)'$", re.M)
-EVENT = re.compile(r'^TW (release|board|replan) (\d+) elapsed\s+([\d.]+)$', re.M)
+EVENT = re.compile(r'^TW (release|board|dismount|replan) (\d+) elapsed\s+([\d.]+)$', re.M)
+NEAR_SEATS = ((1372.7, -912.5, 344), (1370.4, -907.6, 344), (1453, -1024, 344))
 
 
 def point(text):
@@ -28,11 +29,14 @@ def point(text):
     return result
 
 
-def inspect_fixture(raw, control=False):
+def inspect_fixture(raw, control=False, near_seats=False):
     require(raw.splitlines().count('BHVRPL begin train_wait') == 1, 'missing fixture marker')
     ms = frame_ms(raw, 'TW', .0139)
     starts = START.findall(raw)
-    require([int(row[0]) for row in starts] == list(range(1, 10)), 'missing start or floor support')
+    missed_cases = 2 if near_seats else 6
+    expected_cases = len(NEAR_SEATS) if near_seats else 9
+    require([int(row[0]) for row in starts] == list(range(1, expected_cases + 1)),
+            'missing start or floor support')
     events = {(kind, num): float(sec) for kind, num, sec in EVENT.findall(raw)}
     samples = SAMPLE.findall(raw)
     result = []
@@ -42,6 +46,8 @@ def inspect_fixture(raw, control=False):
         expected = (1375, -714, 344) if number <= 3 else (1375, -729.7, 344)
         if number > 6:
             expected = (1441, -1015, 344)
+        if near_seats:
+            expected = NEAR_SEATS[number - 1]
         require(seat == expected, 'wrong stock position')
         observations = [(float(t), point(p), int(hold), float(hp), int(goal), point(node))
                         for n, t, p, hold, hp, goal, node in samples if n == case]
@@ -52,7 +58,7 @@ def inspect_fixture(raw, control=False):
         boarded = events.get(('board', case))
         entry = dict(case=number, seat=seat, car=point(car), car_velocity=point(velocity),
                      release_seconds=released, board_seconds=boarded)
-        if number <= 6:
+        if number <= missed_cases:
             bound = 15 if control else 8
             require(boarded is None and released is not None and bound <= released <= bound + .1,
                     f'case {case} released at {released} s')
@@ -71,13 +77,21 @@ def inspect_fixture(raw, control=False):
                 t >= boarded and hp > 0 and p[0] >= EXIT[0]
                 and abs(p[1] - EXIT[1]) <= 128 and abs(p[2] - EXIT[2]) <= 18
                 for t, p, _, hp, _, _ in observations)
+            if near_seats:
+                dismounted = events.get(('dismount', case))
+                require(boarded is not None and dismounted is not None and dismounted >= boarded,
+                        'missing dry far-deck dismount')
+                require(all(hp >= 100 for t, _, _, hp, _, _ in observations if t <= dismounted),
+                        'train crossing caused damage')
+                entry['dismount_seconds'] = dismounted
         result.append(entry)
-    for offset in (0, 3):
-        group = result[offset:offset + 3]
-        require(len({round(row['car'][0]) for row in group}) == 3
+    phase_group = 2 if near_seats else 3
+    for offset in range(0, missed_cases, phase_group):
+        group = result[offset:offset + phase_group]
+        require(len({round(row['car'][0]) for row in group}) == phase_group
                 and {row['car_velocity'][0] > 0 for row in group} == {False, True},
                 'missed cases did not sample both live train directions')
-    require(any(row['board_seconds'] is not None and row['reached_exit'] for row in result[6:]),
+    require(any(row['board_seconds'] is not None and row['reached_exit'] for row in result[missed_cases:]),
             'no working stock board and exit control')
     return dict(frame_ms=ms, cases=result)
 
@@ -97,14 +111,17 @@ def main():
     parser.add_argument('--lab', type=Path)
     parser.add_argument('--port', type=int, default=26011)
     parser.add_argument('--control', action='store_true')
+    parser.add_argument('--near-seats', action='store_true', help='check the two dm2 displacements from #1054')
     args = parser.parse_args()
     output = new_output(args.output, root=ROOT, create=False)
     production = (args.source / 'argus.qc').read_text(encoding='utf-8')
     has_seat = '.entity ar_trainfrom;' in production
-    require(has_seat != args.control, 'source does not match the requested arm')
+    require(has_seat == (args.near_seats or not args.control), 'source does not match the requested arm')
     fixture = (ROOT / 'tools/fixtures/train_wait.qc').read_text(encoding='utf-8')
     if has_seat:
         fixture = '#define TRAIN_WAIT_HAS_SEAT\n' + fixture
+    if args.near_seats:
+        fixture = '#define TRAIN_WAIT_NEAR_SEATS\n' + fixture
     src = stage_fixture(ROOT, output, args.source, fixtures={'train_wait_fixture.qc': fixture},
                         edits={'argus_nav.qc': observe_route_install},
                         frame_wrap='TrainWaitBefore ();\n    Argus_FrameAll ();\n    TrainWaitAfter ();')
@@ -121,7 +138,8 @@ def main():
                 write_text(output / 'compile.json', json.dumps(compiled, indent=2))
                 require(compiled['ok'] and not compiled['installed_to'], compiled)
                 shutil.copy2(binary, game / 'progs.dat')
-                run_match(lab, 'dm2', 170, args.prefix, skill=1, port=args.port, timeout=195,
+                seconds = 55 if args.near_seats else 170
+                run_match(lab, 'dm2', seconds, args.prefix, skill=1, port=args.port, timeout=seconds + 25,
                           environment=env, stderr_path=output / 'match.stderr')
                 tape, raw = read_tape(output, args.prefix, 'dm2')
                 require(f'ARGUS build {compiled["build"]}' in raw.splitlines(), 'wrong build')
@@ -129,7 +147,7 @@ def main():
                                 binary_sha256=hashlib.sha256(binary.read_bytes()).hexdigest(),
                                 tape_sha256=hashlib.sha256(tape.read_bytes()).hexdigest())
                 write_text(output / 'identity.json', json.dumps(identity, indent=2))
-                receipt = dict(identity, **inspect_fixture(raw, args.control))
+                receipt = dict(identity, **inspect_fixture(raw, args.control, args.near_seats))
                 write_text(output / 'receipt.json', json.dumps(receipt, indent=2))
                 print(json.dumps(receipt))
             finally:
