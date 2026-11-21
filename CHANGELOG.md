@@ -551,6 +551,8 @@ passing botmatch does not establish better human play.
 
 #### Changed
 
+- Align lava death probes across the lab and analyser, distinguish freeze HP loss from the release threshold, and clarify the combat detour and weapon switch totals ([#1039](https://github.com/saworbit/argus/issues/1039), [#1046](https://github.com/saworbit/argus/issues/1046), [#1058](https://github.com/saworbit/argus/issues/1058)).
+
 - Let `skeptic` read private runs from `ARGUS_RUNS` ([#1002](https://github.com/saworbit/argus/issues/1002)), describe where its lava counts came from ([#997](https://github.com/saworbit/argus/issues/997)), and accept either case in shipped benchmark graph pins ([#1011](https://github.com/saworbit/argus/issues/1011)).
 
 - Reduce hard movement reversals on dm4 and dm2 by rounding clear turns and carrying only the velocity along a brink exit ([#697](https://github.com/saworbit/argus/issues/697)).

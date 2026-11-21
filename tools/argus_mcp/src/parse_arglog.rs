@@ -107,9 +107,8 @@ pub struct MatchTape {
 
 /// A statue: 6 s or longer at under 20 u/s inside a 32u circle,
 /// aligned with tools/argus_review.py's freeze detector. `hp_drop`
-/// above zero means the bot took damage while frozen - the class
-/// Shane farmed at the west train pad (v363 tape) while the ship
-/// gates stayed green because nothing measured it.
+/// above zero means the observed HP dropped during the window.
+/// This can include timed superhealth decay.
 #[derive(Debug, Clone, Serialize)]
 pub struct Freeze {
     pub bot: String,
@@ -1140,6 +1139,35 @@ ARGEVT Gap lift goal spawned\n";
         assert_eq!(brief.totals.freezes, 3);
         assert_eq!(brief.totals.freeze_max_sec, 8.0);
         assert_eq!(brief.totals.freeze_underfire, 2);
+    }
+
+    #[test]
+    fn shared_freeze_hp_loss_fixture_keeps_the_release_threshold() {
+        let brief = crate::intel::brief_text(
+            include_str!("../../testdata/freeze_hp_loss.log"),
+            Some("dm2"),
+        );
+        assert_eq!(brief.totals.freezes, 2);
+        assert_eq!(brief.totals.freeze_with_hp_loss, 2);
+        assert_eq!(brief.totals.freeze_underfire, 1);
+    }
+
+    #[test]
+    fn legacy_acquisitions_count_decisions_in_an_aborted_detour() {
+        let text = "ARGUS init on dm2\n\
+ARGEVT Reap spawned\n\
+ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n\
+ARGEVT Reap weapon shotgun\n\
+ARGEVT Reap weapon rocket_launcher\n\
+ARGEVT Reap weapon shotgun\n\
+ARGEVT Reap grab item_health\n\
+ARGEVT Reap abandon item_health\n\
+ARGLOG Reap t 6.0 pos '4 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0\n";
+        let brief = crate::intel::brief_text(text, Some("dm2"));
+        assert_eq!(brief.totals.weapons, 3);
+        assert_eq!(brief.totals.grabs, 1);
+        assert_eq!(brief.totals.acquisitions, 4);
+        assert_eq!(brief.totals.goals, 0);
     }
 
     #[test]

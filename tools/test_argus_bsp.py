@@ -7,6 +7,7 @@ one with SystemExit. Every reader now refuses a file that is not BSP29
 with the same ValueError, under -O as well, and these tests hold that
 against a small built fixture.
 """
+import json
 import struct
 import subprocess
 import sys
@@ -17,6 +18,17 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 import argus_bsp  # noqa: E402 - tools path set just above
+from analyze_match import death_is_lava  # noqa: E402
+
+
+class DeathClassification(unittest.TestCase):
+    def test_shared_native_cases(self):
+        cases = json.loads((HERE / 'testdata/lava_death_cases.json').read_text(encoding='utf-8'))
+        for case in cases:
+            with self.subTest(case=case['name']):
+                hull = case['hull']
+                contents = None if hull is None else lambda x, y, z: hull[1] if z >= hull[0] else hull[2]
+                self.assertEqual(death_is_lava(contents, 0, 0, case['z']), case['lava'])
 
 
 def write_bsp(path, version=29):

@@ -578,4 +578,32 @@ mod tests {
         assert!(death_is_lava(None, 0.0, 0.0, -360.0));
         assert!(!death_is_lava(None, 0.0, 0.0, -35.0));
     }
+
+    #[test]
+    fn lava_deaths_match_the_shared_python_cases() {
+        #[derive(serde::Deserialize)]
+        struct Case {
+            name: String,
+            z: f64,
+            hull: Option<(f32, i32, i32)>,
+            lava: bool,
+        }
+
+        let cases: Vec<Case> =
+            serde_json::from_str(include_str!("../../testdata/lava_death_cases.json")).unwrap();
+        for case in cases {
+            let hull = case.hull.map(|(plane, above, below)| Hull0 {
+                planes: vec![([0.0, 0.0, 1.0], plane)],
+                nodes: vec![(0, -1, -2)],
+                leaves: vec![above, below],
+                head: 0,
+            });
+            assert_eq!(
+                death_is_lava(hull.as_ref(), 0.0, 0.0, case.z),
+                case.lava,
+                "{}",
+                case.name
+            );
+        }
+    }
 }

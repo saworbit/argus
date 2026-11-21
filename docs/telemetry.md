@@ -74,6 +74,16 @@ track. Use the console tape for full-map event counts and quality gates.
 
 ## Log records and their meaning
 
+The `grabs` total counts combat detour selections, including aborted attempts.
+The `weapons` total counts weapon switches, including repeat switches with the
+same inventory. The historical `acquisitions` total adds these two decision
+counters. Use item touch evidence to verify pickups.
+
+The native brief and triage report any observed HP loss during a freeze
+separately from the `freeze_underfire` release threshold of at least 10 HP.
+Health can also fall through timed superhealth decay, so use attributed
+damage evidence to identify an attacker.
+
 Optional `BHVDBG` snapshots and isolated `BHVFIX` trials have a separate
 [behaviour diagnostics contract](behaviour-diagnostics.md). They do not
 change the ordinary ARGLOG/ARGEVT metric grammar. `BHVTIME` reports independent

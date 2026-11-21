@@ -1,0 +1,11 @@
+[
+  {"name":"no hull at the boundary","z":-300,"hull":null,"lava":false},
+  {"name":"no hull below the boundary","z":-300.01,"hull":null,"lava":true},
+  {"name":"lava at the origin","z":-1,"hull":[0,-1,-5],"lava":true},
+  {"name":"slime at the origin","z":-1,"hull":[0,-1,-4],"lava":true},
+  {"name":"lava at the lower probe only","z":12,"hull":[0,-1,-5],"lava":true},
+  {"name":"slime at the lower probe only","z":12,"hull":[0,-1,-4],"lava":true},
+  {"name":"water at both probes","z":12,"hull":[0,-3,-3],"lava":false},
+  {"name":"solid below the legacy limit","z":-400,"hull":[0,-1,-2],"lava":false},
+  {"name":"rounded onto the plane at the lower probe","z":23.9999995,"hull":[0,-1,-5],"lava":false}
+]

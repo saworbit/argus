@@ -5,10 +5,8 @@ contents at the death position (z < -300 is the no-BSP fallback only).
 usage:
   analyze_match.py map.bsp logA [logB] out.png [nav.json]"""
 import sys
-from argus_bsp import load_bsp, load_classifier
+from argus_bsp import death_is_lava, load_bsp, load_classifier
 from argus_tape import PAT as PAT_V1, LEGACY_SAMPLE as PAT_V0, parse_tape, deaths as tape_deaths
-
-CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
 
 def bsp_contents_classifier(bsp_path):
     """Return the shared hull-0 reader, or None when the BSP cannot be opened."""
@@ -16,17 +14,6 @@ def bsp_contents_classifier(bsp_path):
         return load_classifier(bsp_path)
     except OSError:
         return None
-
-def death_is_lava(contents, x, y, z):
-    # CLASSIFICATION BOUNDARY (2026-08-18): lava deaths were judged by
-    # z < -300, a dm4-shaped rule that misses dm2's killing lava at
-    # z about -35 and miscounts dm4's solid pit floors at -360. The
-    # death position is the victim's origin, above the surface, so
-    # probe it and one step below.
-    if contents is None:
-        return z < -300          # legacy rule, no BSP on hand
-    return (contents(x, y, z) in (CONTENTS_LAVA, CONTENTS_SLIME)
-            or contents(x, y, z - 24) in (CONTENTS_LAVA, CONTENTS_SLIME))
 
 # bot names may contain spaces (the v3.37 homage roster): anchor on
 # the grammar keywords, never on whitespace-splitting

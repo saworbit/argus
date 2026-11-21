@@ -36,15 +36,11 @@ pub struct Totals {
     pub hazards: u32,
     pub abandons: u32,
     pub routefails: u32,
+    /// Weapon switches (ARGEVT weapon), including repeats with the same inventory.
     pub weapons: u32,
-    /// battle-grabs (ARGEVT grab). Together with weapons this is
-    /// acquisitions: the figure that shows contested-map consumption
-    /// when gl (current-goal touches) looks starved.
+    /// Combat detour selections (ARGEVT grab), including aborted detours.
     pub grabs: u32,
-    /// weapon switches plus battle-grabs. gl counts only the goal
-    /// the bot currently holds; a passer-by eating the prize
-    /// invalidates the goalers and gl stays low while everyone is
-    /// still armed. This is the honest "did they take stuff" count.
+    /// Historical name for the sum of weapon switches and combat detour selections.
     pub acquisitions: u32,
     pub cover: usize,
     pub avg_speed: f64,
@@ -63,9 +59,11 @@ pub struct Totals {
     /// the thing that matters and the count was hiding it.
     #[serde(default, skip_serializing_if = "crate::intel::is_zero_f64")]
     pub freeze_total_sec: f64,
-    /// freezes during which the bot lost 10+ hp: a bot being shot
-    /// while standing still, the worst class a human can witness
+    /// The release gate counts freeze windows with at least 10 HP lost.
     pub freeze_underfire: u32,
+    /// Freeze windows with any observed HP loss, whatever the cause.
+    #[serde(default)]
+    pub freeze_with_hp_loss: u32,
     /// typed-hop success accounting: lift/train waits vs actual
     /// boardings (ARGEVT board). A wait storm with zero boards means
     /// a pad or gate is geometrically broken, not merely slow.
@@ -811,6 +809,7 @@ pub(crate) fn brief_tape_lava(
         .filter(|f| is_bot(&f.bot))
         .collect();
     let freeze_underfire = fz.iter().filter(|f| f.hp_drop >= 10.0).count() as u32;
+    let freeze_with_hp_loss = fz.iter().filter(|f| f.hp_drop > 0.0).count() as u32;
     let freeze_max_sec = fz.first().map(|f| f.dur).unwrap_or(0.0);
     // 220 units and 5 seconds: wide enough that a corridor fight or a
     // pre-position orbit is not reported every tape, tight enough to
@@ -855,6 +854,7 @@ pub(crate) fn brief_tape_lava(
         freeze_max_sec,
         freeze_total_sec: fz.iter().map(|f| f.dur).sum(),
         freeze_underfire,
+        freeze_with_hp_loss,
         mover_waits: ev("lift") + ev("train"),
         boards: ev("board"),
         confine_max_sec: cf.first().map(|c| c.dur).unwrap_or(0.0),
@@ -2898,8 +2898,7 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
             priority: 2,
             area: "items".into(),
             look_at: "src/items.qc weapon_touch FL_CLIENT guard (must admit ar_isbot)".into(),
-            why: "no weapon switches and no battle-grabs; bots may be stuck on spawn shotguns"
-                .into(),
+            why: "no weapon switches or combat detour selections were observed".into(),
         });
     }
     let quad = *brief.goals.get("item_artifact_super_damage").unwrap_or(&0);
