@@ -1578,7 +1578,7 @@ def triage(root, tape_path, claims=None, radius=96.0):
                 points.append(dict(kind=kind, bot=name, **pos))
             lives[name] = line
     for name in bots:
-        for f in argus_tape.freeze_windows(samples.get(name, [])):
+        for f in argus_tape.freeze_windows(samples.get(name, []), stationary=True):
             kind = 'freeze under fire' if f.hp_drop >= 10 else 'freeze'
             points.append(dict(kind=kind, bot=name, x=f.start['x'], y=f.start['y'], z=f.start['z'],
                                dur=f.dur, hp_drop=f.hp_drop))

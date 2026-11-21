@@ -16,6 +16,21 @@ EXPECTED = json.loads(FIXTURE.with_suffix(".json").read_text())
 
 
 class TestTapeConsumers(unittest.TestCase):
+    def test_stationary_freezes_split_vertical_travel(self):
+        from argus_gait import audit
+        from argus_tape import freeze_windows, read_tape
+        path = FIXTURE.with_name('freeze_vertical.log')
+        tape = read_tape(path)
+        self.assertEqual(len(freeze_windows(tape.samples['Lift traveller'])), 1)
+        self.assertEqual(freeze_windows(tape.samples['Lift traveller'], stationary=True), [])
+        self.assertEqual(len(freeze_windows(tape.samples['Stationary'], stationary=True)), 1)
+        findings = {row['bot']: row for row in audit(path, 8, 4)['findings']}
+        ride = findings['Lift traveller']
+        self.assertEqual(ride['verdict'], 'vertical lift travel')
+        self.assertEqual(ride['vertical_motion']['reversals'], 2)
+        self.assertEqual(ride['vertical_motion']['longest_pause_sec'], 1.5)
+        self.assertEqual(ride['hp_lost'], 32)
+
     def test_retarget_is_distinct_from_starting_an_engagement(self):
         from collections import Counter
         from argus_tape import parse_tape

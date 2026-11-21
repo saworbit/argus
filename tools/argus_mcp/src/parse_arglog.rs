@@ -180,6 +180,15 @@ impl MatchTape {
     /// respawns the bot elsewhere, which breaks the position run, so
     /// a freeze never spans a respawn.
     pub fn freezes(&self) -> Vec<Freeze> {
+        self.freeze_windows(false)
+    }
+
+    /// The release gate also bounds vertical displacement across the window.
+    pub fn stationary_freezes(&self) -> Vec<Freeze> {
+        self.freeze_windows(true)
+    }
+
+    fn freeze_windows(&self, stationary: bool) -> Vec<Freeze> {
         let mut out = Vec::new();
         for (name, rec) in &self.samples {
             let mut i = 0;
@@ -189,6 +198,7 @@ impl MatchTape {
                     continue;
                 }
                 let (x0, y0) = (rec[i].pos.x, rec[i].pos.y);
+                let (mut low_z, mut high_z) = (rec[i].pos.z, rec[i].pos.z);
                 let hp_first = rec[i].hp.unwrap_or(0.0);
                 let mut hp_min = hp_first;
                 let mut j = i;
@@ -197,6 +207,11 @@ impl MatchTape {
                     let dx = s.pos.x - x0;
                     let dy = s.pos.y - y0;
                     if s.spd < 20.0 && (dx * dx + dy * dy).sqrt() < 32.0 {
+                        low_z = low_z.min(s.pos.z);
+                        high_z = high_z.max(s.pos.z);
+                        if stationary && high_z - low_z >= 32.0 {
+                            break;
+                        }
                         if let Some(h) = s.hp {
                             if h < hp_min {
                                 hp_min = h;

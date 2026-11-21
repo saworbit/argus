@@ -251,8 +251,13 @@ count alone when judging a change to the gait: dm4 and dm2 both produce long,
 pre-existing fight-pin freezes on unchanged code.
 
 Human and instrument tracks stay outside bot bands and freeze totals.
-Freezes use speed under 20 u/s within a strict 32-unit XY circle for at least
-six seconds, including the first sample. Multi-level tapes use the busiest
+The historical freeze totals use speed under 20 u/s within a strict 32-unit
+XY circle for at least six seconds. The stationary release gate also requires
+less than 32 units of Z travel across the window. The brief includes
+`stationary_freezes` when the gate totals differ from the historical totals.
+`argus_gait.py` attributes observed vertical travel to boarded movers and
+reports the Z span, direction changes, pauses and HP loss.
+Multi-level tapes use the busiest
 segment, with the last segment winning a tie. Lava deaths use BSP hull-0
 contents; the `z < -300` rule is only a fallback when the BSP is absent.
 
