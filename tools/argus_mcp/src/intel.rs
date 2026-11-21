@@ -1678,6 +1678,9 @@ pub fn compare_band_primary_scaled(
         Err(error) => return invalid_duration_report(error, primary),
     };
     let mut report = compare_band_primary(&scaled_candidates, &scaled_controls, primary);
+    if report.gates.is_empty() {
+        return report;
+    }
     if !coverage_eligible {
         if let Some(coverage) = report.gates.iter_mut().find(|g| g.name == "coverage") {
             coverage.pass = true;
@@ -1761,6 +1764,9 @@ pub fn compare_band_primary(
     let fatal_errors = fatal_tape_findings(candidates, controls);
     if !fatal_errors.is_empty() {
         return refuse_fatal_tape(rep_ctl, rep_cand, fatal_errors);
+    }
+    if let Some(report) = incompatible_rules(candidates, controls, &rep_ctl, &rep_cand) {
+        return report;
     }
     let identity = identity_check(controls, candidates);
     if !identity.void.is_empty() {
@@ -2357,12 +2363,70 @@ fn refuse_repeated_seed(a: MatchBrief, b: MatchBrief, findings: Vec<String>) -> 
     report
 }
 
+/// Historical ordinary deathmatch baselines predate rule receipts.
+fn incompatible_rules(
+    candidates: &[MatchBrief],
+    controls: &[MatchBrief],
+    representative_control: &MatchBrief,
+    representative_candidate: &MatchBrief,
+) -> Option<CompareReport> {
+    use crate::tape_identity::TapeRules;
+    use std::collections::BTreeSet;
+    let ordinary = TapeRules {
+        deathmatch: 1,
+        coop: 0,
+    };
+    let mut present = BTreeSet::new();
+    let mut legacy = false;
+    for brief in candidates.iter().chain(controls) {
+        if let Some(rules) = brief.identity.rules {
+            present.insert(rules);
+        } else {
+            legacy = true;
+        }
+    }
+    if present.len() <= 1 && (!legacy || present.is_empty() || present.contains(&ordinary)) {
+        return None;
+    }
+    let label = |arm: &[MatchBrief]| {
+        arm.iter()
+            .map(|brief| {
+                brief.identity.rules.map_or_else(
+                    || "no receipt".into(),
+                    |rules| format!("deathmatch {} coop {}", rules.deathmatch, rules.coop),
+                )
+            })
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let mut report = refuse_wrong_map(
+        representative_control.clone(),
+        representative_candidate.clone(),
+        vec![format!(
+            "rules differ: control {}, candidate {}",
+            label(controls),
+            label(candidates)
+        )],
+    );
+    report.headline = "Mixed: rules differ within or across comparison arms".into();
+    report.gate_card = "RULESET MISMATCH: record both arms with the same rules".into();
+    report.next_steps.clear();
+    Some(report)
+}
+
 /// One tape against one tape, with every diagnostic gate the lab has
 /// ever grown. Banded comparisons decide statistical verdicts separately.
 fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
     let wrong_maps = wrong_map_findings(std::slice::from_ref(&b), std::slice::from_ref(&a));
     if !wrong_maps.is_empty() {
         return refuse_wrong_map(a, b, wrong_maps);
+    }
+    if let Some(report) =
+        incompatible_rules(std::slice::from_ref(&b), std::slice::from_ref(&a), &a, &b)
+    {
+        return report;
     }
     let mut gates = Vec::new();
     let bars = bars_for(b.map.as_deref().or(a.map.as_deref()));
@@ -2728,6 +2792,9 @@ pub fn compare_briefs_scaled(a: MatchBrief, b: MatchBrief) -> CompareReport {
             Err(error) => return invalid_duration_report(error, None),
         };
         let mut report = compare_briefs(a2, b);
+        if report.gates.is_empty() {
+            return report;
+        }
         report.scaled = true;
         report.scale_note = Some(format!(
             "baseline counts scaled from {da:.0}s to {db:.0}s so the tapes are comparable"
@@ -5460,6 +5527,39 @@ ARGEVT Reap spawned
                 "{clock:?} gap {gap}"
             );
         }
+    }
+
+    #[test]
+    fn ruleset_mismatch_refuses_single_and_banded_comparisons() {
+        let text =
+            "ARGUS init on dm4\nARGLOG Carmack t 30 pos '0 0 0' spd 0 yaw 0 mode 1 st 0 gl 0\n";
+        let brief = |rules: &str| {
+            let mut brief = brief_text(&format!("{text}{rules}\n"), Some("dm4"));
+            brief.totals.duration_sec = 30.0;
+            brief
+        };
+        let legacy = brief("");
+        let ordinary = brief("ARGUS rules deathmatch 1 coop 0");
+        let stay = brief("ARGUS rules deathmatch 2 coop 0");
+        let coop = brief("ARGUS rules deathmatch 0 coop 1");
+        for other in [&legacy, &ordinary, &coop] {
+            let report = compare_briefs(other.clone(), stay.clone());
+            assert!(report.gates.is_empty(), "{}", report.gate_card);
+            assert!(report.gate_card.starts_with("RULESET MISMATCH"));
+        }
+        let report = compare_band(
+            &[stay.clone(), ordinary.clone()],
+            std::slice::from_ref(&stay),
+        );
+        assert!(report.gates.is_empty(), "{}", report.gate_card);
+        let mut longer = ordinary.clone();
+        longer.totals.duration_sec = 90.0;
+        let result = compare_briefs_scaled(longer.clone(), stay.clone());
+        assert!(result.gate_card.starts_with("RULESET MISMATCH"));
+        let result = compare_band_primary_scaled(std::slice::from_ref(&stay), &[longer], None);
+        assert!(result.gate_card.starts_with("RULESET MISMATCH"));
+        assert!(!compare_briefs(stay.clone(), stay).gates.is_empty());
+        assert!(!compare_briefs(legacy, ordinary).gates.is_empty());
     }
 
     #[test]

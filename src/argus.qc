@@ -12526,6 +12526,11 @@ void() Argus_Init =
     dprint (" seed ");
     dprint (ftos (seed));
     dprint ("\n");
+    dprint ("ARGUS rules deathmatch ");
+    dprint (ftos (cvar ("deathmatch")));
+    dprint (" coop ");
+    dprint (ftos (cvar ("coop")));
+    dprint ("\n");
 
     ar_opm_ears = 1;            // OPM slice B live (hearing + soft FOV)
 

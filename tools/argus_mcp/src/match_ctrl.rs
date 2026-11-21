@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::diagnose::{diagnose_log, fatal_engine_error, log_has_tape, tail_nonempty};
-use crate::engine::EngineChild;
+use crate::engine::{EngineChild, MatchRules};
 use crate::intel::{brief_text, brief_text_hull, MatchBrief};
 use crate::parse_arglog::{parse_arglog, MatchSummary};
 use crate::paths::{default_run_name, valid_run_name};
@@ -59,6 +59,7 @@ pub struct MatchRunResult {
 }
 
 struct LiveMatch {
+    rules: MatchRules,
     child: EngineChild,
     run_name: String,
     map: String,
@@ -305,9 +306,10 @@ impl MatchCtrl {
         run_name: Option<&str>,
         dedicated_slots: Option<u32>,
         skill: Option<u32>,
-        coop: Option<bool>,
+        rules: Option<MatchRules>,
     ) -> Result<MatchStatus, String> {
         let roster = std::mem::take(&mut self.next_roster);
+        let rules = rules.unwrap_or_default();
         self.reap();
         if self.live.is_some() {
             let name = self
@@ -379,34 +381,19 @@ impl MatchCtrl {
                 EngineChild::fake(control)
             }
             None => EngineChild::spawn(
-                cfg,
-                map,
-                slots,
-                skill,
-                &run_dir,
-                self.port,
-                coop.unwrap_or(false),
-                clock,
-                roster,
+                cfg, map, slots, skill, &run_dir, self.port, rules, clock, roster,
             )?,
         };
         #[cfg(not(test))]
         let child = EngineChild::spawn(
-            cfg,
-            map,
-            slots,
-            skill,
-            &run_dir,
-            self.port,
-            coop.unwrap_or(false),
-            clock,
-            roster,
+            cfg, map, slots, skill, &run_dir, self.port, rules, clock, roster,
         )?;
         let stdout = child.stdout_buf();
         let navigation = navigation
             .filter(|before| crate::nav_provenance::for_launch(cfg, map).as_ref() == Some(before));
         register_live(child.id());
         self.live = Some(LiveMatch {
+            rules,
             child,
             run_name: name,
             map: map.to_string(),
@@ -540,7 +527,7 @@ impl MatchCtrl {
         run_name: Option<&str>,
         dedicated_slots: Option<u32>,
         skill: Option<u32>,
-        coop: Option<bool>,
+        rules: Option<MatchRules>,
     ) -> Result<MatchRunResult, String> {
         self.begin(
             cfg,
@@ -549,7 +536,7 @@ impl MatchCtrl {
             run_name,
             dedicated_slots,
             skill,
-            coop,
+            rules,
         )
         .await?;
         let limit = duration_sec as u64;
@@ -603,7 +590,7 @@ impl MatchCtrl {
         run_name: Option<&str>,
         dedicated_slots: Option<u32>,
         skill: Option<u32>,
-        coop: Option<bool>,
+        rules: Option<MatchRules>,
     ) -> Result<(), String> {
         self.start(
             cfg,
@@ -612,7 +599,7 @@ impl MatchCtrl {
             run_name,
             dedicated_slots,
             skill,
-            coop,
+            rules,
         )
         .await?;
         // (start() runs the un-harvested-session guard)
@@ -625,6 +612,7 @@ impl MatchCtrl {
 
     /// Stop the live match and build its result.
     pub async fn finish(&mut self, cfg: &Config, map: &str) -> Result<MatchRunResult, String> {
+        let rules = self.live.as_ref().map(|live| live.rules);
         let st = self.stop(Duration::from_secs(5)).await?;
         // qconsole.log can lag a tick after TerminateProcess
         tokio::time::sleep(Duration::from_millis(250)).await;
@@ -646,6 +634,15 @@ impl MatchCtrl {
         });
         if let Some(mismatch) = brief.recorded_map_mismatch() {
             return Err(format!("WRONG MAP: {mismatch}. Tape at {log_path}"));
+        }
+        if rules == Some(MatchRules::WeaponsStay)
+            && brief.identity.rules
+                != Some(crate::tape_identity::TapeRules {
+                    deathmatch: 2,
+                    coop: 0,
+                })
+        {
+            return Err(format!("deathmatch 2 needs an effective rules receipt. Check the installed build and cfg. Tape at {log_path}"));
         }
         Ok(MatchRunResult {
             ok: true,
@@ -1696,6 +1693,7 @@ mod tests {
 ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
 ";
         let live = LiveMatch {
+            rules: MatchRules::Deathmatch,
             child: EngineChild::mock(),
             run_name: "buf".into(),
             map: "dm4".into(),
@@ -1732,6 +1730,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
         .unwrap();
 
         let live = LiveMatch {
+            rules: MatchRules::Deathmatch,
             child: EngineChild::mock(),
             run_name: "exp_dm4".into(),
             map: "dm4".into(),
@@ -1803,6 +1802,7 @@ ARGLOG Reap t 1.0 pos '0 0 24' spd 0 yaw 0 mode 0 st 0 gl 0 hp 100 frg 0
         let live_pid = child.id();
         let mut ctrl = MatchCtrl {
             live: Some(LiveMatch {
+                rules: MatchRules::Deathmatch,
                 child,
                 run_name: "exp_dm4".into(),
                 map: "dm4".into(),

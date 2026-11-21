@@ -226,7 +226,7 @@ async fn run_trial(
         Some(run_name),
         Some(5),
         Some(skill),
-        Some(false),
+        None,
     )
     .await?;
 

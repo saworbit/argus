@@ -367,7 +367,7 @@ pub async fn run(cfg: Arc<Config>, opts: SeedOptions) -> Result<SeedReport, Stri
                             Some(&run_name),
                             None,
                             opts.skill,
-                            Some(opts.coop),
+                            Some(crate::engine::MatchRules::from_coop(opts.coop)),
                         )
                         .await;
                     let wall = t0.elapsed().as_secs_f64();
