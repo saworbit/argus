@@ -19,11 +19,15 @@ COMMON = {'real_pickup_is_audible', 'pickup_has_no_weapon_class',
           'loaded_nailgun_fires_below_splash_band', 'splash_crossing_cancels_outgoing_nail_chain',
           'loaded_switches_follow_repeated_splash_crossings', 'nail_depletion_selects_a_firing_shotgun',
           'grenade_launcher_fires_when_rockets_are_unavailable', 'expired_beam_releases_to_loaded_rockets',
-          'water_entry_cancels_lightning_and_fires_safe_fallback'}
+          'water_entry_cancels_lightning_and_fires_safe_fallback', 'receding_target_lead',
+          'closing_target_lead', 'crossing_target_lead', 'extreme_speed_retains_legacy_lead'}
 REQUIRED = {
-    'dm2': COMMON | {'keeps_pickup_commitment', 'expired_pickup_cools_and_replans'},
+    'dm2': COMMON | {'keeps_pickup_commitment', 'expired_pickup_cools_and_replans',
+                     'unseen_opponent_leaves_pickup_ranking_alone', 'denial_uses_last_sighting',
+                     'denial_can_use_fresh_gunfire', 'denial_expires_stale_evidence'},
     'dm6': COMMON | {'two_live_portals_and_graph_search', 'both_warps_leave_active_search_unchanged',
-                     'both_portals_learned_when_idle'},
+                     'both_portals_learned_when_idle', 'warp_waits_for_audible_playback',
+                     'warp_exit_is_a_neutral_audible_cue', 'warp_respects_recent_shot_priority'},
 }
 
 

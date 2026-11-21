@@ -330,6 +330,8 @@ void() play_teleport =
 		tmpstr = "misc/r_tele5.wav";
 
 	sound (self, CHAN_VOICE, tmpstr, 1, ATTN_NORM);
+	if (self.owner != world)
+		Argus_HearSound (self.origin, self.owner, 0);
 	remove (self);
 };
 
@@ -456,6 +458,8 @@ void() teleport_touch =
 	org = t.origin + 32 * v_forward;
 
 	spawn_tfog (org);
+	if (deathmatch && !coop && other.classname == "player")
+		s.owner = other;
 	spawn_tdeath(t.origin, other);
 
 	// move the player and lock him down for a little while
