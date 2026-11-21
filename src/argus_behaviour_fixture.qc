@@ -456,8 +456,8 @@ void() Argus_BehaviourFixturePost =
     local entity b, saved;
     local float clean;
     if (!ar_bf_active || ar_tacfixture_until) return;
-    clean = ar_bf_ended && ar_tf_target == world && ar_tf_secondary == world
-            && ar_tacfixture_bot == world;
+    clean = (ar_bf_ended && ar_tf_target == world && ar_tf_secondary == world
+            && ar_tacfixture_bot == world);
     b = argus_bots;
     while (b != world)
     {
@@ -844,13 +844,13 @@ void() Argus_HealthFixtureChecks =
         if (state >= 2) ar_pf_target.super_damage_finished = time + 20;
         self = ar_pf_a; Argus_PerceptionProbe (self, IT_ROCKET_LAUNCHER, hp);
         self.ar_enemy = ar_pf_target; self.ar_retreatlock = time - 1;
-        self.ar_retreating = state == 1 || state == 3;
+        self.ar_retreating = (state == 1 || state == 3);
         self.ar_obspower = 0; if (state >= 2) self.ar_obspower = 1;
         Argus_HealthTarget (0); calls = ar_pf_rngcalls; owned = Argus_Combat ();
         draws = ar_pf_rngcalls - calls;
         self = ar_pf_b; Argus_PerceptionProbe (self, IT_ROCKET_LAUNCHER, hp);
         self.ar_enemy = ar_pf_target; self.ar_retreatlock = time - 1;
-        self.ar_retreating = state == 1 || state == 3;
+        self.ar_retreating = (state == 1 || state == 3);
         self.ar_obspower = 0; if (state >= 2) self.ar_obspower = 1;
         Argus_HealthTarget (1); calls = ar_pf_rngcalls; ok = Argus_Combat ();
         label = "hidden_enter";

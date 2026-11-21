@@ -26,9 +26,38 @@ passing botmatch does not establish better human play.
 
 ### Unreleased
 
+#### Bot adaptation candidate
+
+Build `a577f46c1529` was tested and archived as a development candidate.
+
+- **Target choice.** Preserve target preference through brief sight gaps.
+  Once the sighting expires, compare a visible challenger directly with the
+  remembered opponent. Track damage from two recent opponents independently
+  so a glancing hit leaves the stronger cue available.
+- **Pursuit and crossing decisions.** Check momentum and landing safety before
+  pursuing a last sighting directly. Apply the fight detour for a remembered
+  failed crossing only while the bot has a fresh sighting.
+- **Supply planning.** Consider any loaded fighting weapon, including a
+  well-stocked alternative to an empty favourite. Drop a health, ammo or
+  armour errand when a separate pickup meets the need and travel can safely
+  be redirected. Skip owned weapons that stay in place under the match rules.
+- **Shared route failures.** Let a bot reconsider a nearby prize after another
+  bot's failed approach when it has a clear, safe path from the same waypoint.
+
+The candidate passed 19 of 20 broad comparisons across 120 played-rate
+matches on 11 maps at skills 0 to 3. The pooled skill-3 lqdm2 stall result
+favoured the control across eight matches per build. A follow-up e1m1 match
+hit the lift freeze gate used in that study. Skill-2 dm4 recorded 9 to 18 lava deaths across
+seven matches per build, an increase below the lab's detection limit.
+Human play remains unverified.
+[lqdm2 stalls](https://github.com/saworbit/argus/issues/1053) |
+[e1m1 lift freeze](https://github.com/saworbit/argus/issues/1051) |
+[dm4 lava deaths](https://github.com/saworbit/argus/issues/1055)
+
 #### Added
 
 - Give active studies and fixtures a shared Python lab client with Windows and Linux CPU timing ([#1035](https://github.com/saworbit/argus/issues/1035)).
+- Evaluate all the clauses in shopping, retreat, mover and muzzle fixture assignments ([#1049](https://github.com/saworbit/argus/issues/1049)).
 
 - Show the standalone CLI's lab build identity and include same-version Windows recovery in stale build warnings ([#1052](https://github.com/saworbit/argus/issues/1052), [#1043](https://github.com/saworbit/argus/issues/1043)).
 

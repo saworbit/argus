@@ -123,9 +123,9 @@ void() TargetAttentionFixture =
     self.ar_retreatclass = AR_THREAT_BEAM;
     self.ar_covertime = time + 5; self.ar_retreatlock = time + 10;
     AttentionHit (); Argus_Perceive ();
-    held = self.ar_retreating && self.ar_retreatlock == time + 10;
+    held = (self.ar_retreating && self.ar_retreatlock == time + 10);
     if (self.ar_enemy == at_challenger)
-        held = held && self.ar_retreatclass == self.ar_threatclass && !self.ar_covertime;
+        held = (held && self.ar_retreatclass == self.ar_threatclass && !self.ar_covertime);
     AttentionCheck ("retreat_intent_retained", held);
 
     AttentionPrime (); AttentionHit ();
@@ -149,7 +149,7 @@ void() TargetAttentionFixture =
     AttentionPrime (); setorigin (at_challenger, at_hidden);
     AttentionHit (); calls = at_rngcalls; Argus_Perceive ();
     firstcalls = at_rngcalls - calls;
-    held = self.ar_enemy == at_primary && self.ar_obsenemy == at_primary;
+    held = (self.ar_enemy == at_primary && self.ar_obsenemy == at_primary);
     AttentionPrime (); setorigin (at_challenger, at_hidden);
     at_challenger.health = 999; at_challenger.armorvalue = 200;
     at_challenger.ammo_rockets = 100; at_challenger.weapon = IT_LIGHTNING;
@@ -192,15 +192,15 @@ void() TargetAttentionFixture =
     AttentionCheck ("world_self_not_hostile", held);
     AttentionPrime (); AttentionHit (); Argus_ObservationRemoved (at_challenger);
 #ifdef ATTENTION_CANDIDATE
-    held = self.ar_hurtfoe == world && !self.ar_hurtfoetime;
+    held = (self.ar_hurtfoe == world && !self.ar_hurtfoetime);
 #else
     held = 1;
 #endif
     AttentionCheck ("removed_attacker_forgotten", held && self.ar_enemy == at_primary);
     AttentionPrime (); AttentionHit (); Argus_BaseStats ();
 #ifdef ATTENTION_CANDIDATE
-    held = self.ar_hurtfoe == world && !self.ar_hurtfoetime
-        && !self.ar_targetscan && !self.ar_targethold;
+    held = (self.ar_hurtfoe == world && !self.ar_hurtfoetime
+        && !self.ar_targetscan && !self.ar_targethold);
 #else
     held = self.ar_enemy == world;
 #endif
