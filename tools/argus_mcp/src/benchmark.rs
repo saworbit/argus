@@ -576,7 +576,7 @@ pub async fn run_suite_with_ctrl(
         Some(&format!("benchmark_{}", suite.name)),
         Some(4),
         Some(suite.skill),
-        Some(false),
+        None,
     )
     .await
     .map_err(|e| format!("engine start: {e}"))?;

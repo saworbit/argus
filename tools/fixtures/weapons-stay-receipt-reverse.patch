@@ -1,0 +1,14 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -12526,11 +12526,6 @@
+     dprint (" seed ");
+     dprint (ftos (seed));
+     dprint ("\n");
+-    dprint ("ARGUS rules deathmatch ");
+-    dprint (ftos (cvar ("deathmatch")));
+-    dprint (" coop ");
+-    dprint (ftos (cvar ("coop")));
+-    dprint ("\n");
+ 
+     ar_opm_ears = 1;            // OPM slice B live (hearing + soft FOV)
+ 

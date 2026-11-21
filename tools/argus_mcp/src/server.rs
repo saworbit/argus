@@ -267,7 +267,7 @@ impl Argus {
         run_name: Option<&str>,
         slots: Option<u32>,
         skill: Option<u32>,
-        coop: Option<bool>,
+        rules: Option<crate::engine::MatchRules>,
         progress: Option<MatchProgress>,
         cancellation: Option<RunCancellation>,
         task_context: Option<TaskContext>,
@@ -280,7 +280,7 @@ impl Argus {
             run_name,
             slots,
             skill,
-            coop,
+            rules,
             progress,
             cancellation,
             task_context,
@@ -304,7 +304,7 @@ impl Argus {
         run_name: Option<&str>,
         slots: Option<u32>,
         skill: Option<u32>,
-        coop: Option<bool>,
+        rules: Option<crate::engine::MatchRules>,
         progress: Option<MatchProgress>,
         cancellation: Option<RunCancellation>,
         task_context: Option<TaskContext>,
@@ -334,7 +334,7 @@ impl Argus {
             let previous = g.clock();
             g.set_clock(clock);
             let begun = g
-                .begin(cfg, map, duration_sec, run_name, slots, skill, coop)
+                .begin(cfg, map, duration_sec, run_name, slots, skill, rules)
                 .await;
             g.set_clock(previous);
             begun?;
@@ -448,6 +448,7 @@ impl Argus {
             crate::seeds::validate_mcp_seeds(seeds)
                 .map_err(|error| McpError::invalid_params(error, None))?;
         }
+        let rules = Self::requested_rules(args.deathmatch)?;
         let cfg = match config_override {
             Some(cfg) => cfg,
             None => match cfg_or_err() {
@@ -457,7 +458,15 @@ impl Argus {
         };
         if let Some(seeds) = &args.seeds {
             return self
-                .run_seeded_call(&cfg, args, seeds, progress, cancellation, task_context)
+                .run_seeded_call(
+                    &cfg,
+                    args,
+                    seeds,
+                    rules,
+                    progress,
+                    cancellation,
+                    task_context,
+                )
                 .await;
         }
         match self
@@ -468,7 +477,7 @@ impl Argus {
                 args.run_name.as_deref(),
                 args.dedicated_slots,
                 args.skill,
-                None,
+                rules,
                 progress,
                 cancellation,
                 task_context,
@@ -480,6 +489,15 @@ impl Argus {
         }
     }
 
+    fn requested_rules(
+        deathmatch: Option<u32>,
+    ) -> Result<Option<crate::engine::MatchRules>, McpError> {
+        deathmatch
+            .map(crate::engine::MatchRules::deathmatch)
+            .transpose()
+            .map_err(|error| McpError::invalid_params(error, None))
+    }
+
     /// `match_run seeds` (#853): the fixed lab clock through the MCP, on a
     /// map where tools/lab_instruments.json accepts it. One seed returns the
     /// ordinary match_run result under `run_name`. Several run one after
@@ -488,11 +506,13 @@ impl Argus {
     /// `fixed_clock`: the clock, frame, seeds and the map's limits. A
     /// match_stop, a shutdown or a task cancel ends the tape on the engine
     /// and every tape still to come.
+    #[allow(clippy::too_many_arguments)]
     async fn run_seeded_call(
         &self,
         cfg: &Config,
         args: &MatchRunArgs,
         seeds: &[u32],
+        rules: Option<crate::engine::MatchRules>,
         progress: Option<MatchProgress>,
         cancellation: Option<RunCancellation>,
         task_context: Option<TaskContext>,
@@ -517,7 +537,7 @@ impl Argus {
                     args.run_name.as_deref(),
                     args.dedicated_slots,
                     args.skill,
-                    None,
+                    rules,
                     progress,
                     cancellation,
                     task_context,
@@ -576,7 +596,7 @@ impl Argus {
                     Some(&name),
                     args.dedicated_slots,
                     args.skill,
-                    None,
+                    rules,
                     lane_progress,
                     Some(cancel.clone()),
                     task_context.clone(),
@@ -1080,6 +1100,8 @@ pub struct MatchRunArgs {
     pub dedicated_slots: Option<u32>,
     #[schemars(description = "0-3")]
     pub skill: Option<u32>,
+    #[schemars(description = "1 (default), 2 weapons stay.")]
+    pub deathmatch: Option<u32>,
     #[schemars(description = "Fixed lab clock, validated maps only: one tape per seed (1-2000)")]
     pub seeds: Option<Vec<u32>>,
 }
@@ -1092,6 +1114,8 @@ pub struct MatchStartArgs {
     pub dedicated_slots: Option<u32>,
     #[schemars(description = "0-3")]
     pub skill: Option<u32>,
+    #[schemars(description = "1 (default), 2 weapons stay.")]
+    pub deathmatch: Option<u32>,
 }
 
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
@@ -1288,24 +1312,22 @@ pub struct LiveSnapshotArgs {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct ExperimentArgs {
     pub map: String,
-    #[schemars(
-        description = "Wall-clock seconds, 10-185. Default 30. Compare is duration-scaled against the shipped baseline."
-    )]
+    #[schemars(description = "10-185 s, default 30.")]
     pub duration_sec: Option<u32>,
     #[schemars(description = "Compile first. Default true.")]
     pub compile: Option<bool>,
     pub skill: Option<u32>,
-    #[schemars(description = "Baseline log, run name, or 'baseline'. Default baseline.")]
+    #[schemars(description = "1 (default), 2 weapons stay.")]
+    pub deathmatch: Option<u32>,
+    #[schemars(description = "Log or run name, default 'baseline'.")]
     pub baseline: Option<String>,
     pub run_name: Option<String>,
-    #[schemars(description = "brief (default) or full (compile + match + both briefs)")]
+    #[schemars(description = "brief (default) or full.")]
     pub detail: Option<String>,
-    #[schemars(
-        description = "Candidate matches, 1-5 (default 3). One tape cannot tell a change from noise: same-build dm2 stalls run 17 to 100."
-    )]
+    #[schemars(description = "1-5 candidate tapes, default 3.")]
     pub repeats: Option<u32>,
     #[schemars(
-        description = "PRE-REGISTER the metric this change should move, before the tapes exist: stall_parity | engagements | lava_deaths | freezes. Only that gate can convict; the rest are flagged."
+        description = "Pre-register the deciding gate: stall_parity | engagements | lava_deaths | freezes."
     )]
     pub primary: Option<String>,
 }
@@ -1897,9 +1919,7 @@ impl Argus {
         }
     }
 
-    #[tool(
-        description = "Run a timed dedicated match, harvest runs/<name>.log, return ARGLOG/ARGEVT metrics."
-    )]
+    #[tool(description = "Run a timed match, harvest its tape and return a brief.")]
     async fn match_run(
         &self,
         Parameters(args): Parameters<MatchRunArgs>,
@@ -1923,9 +1943,7 @@ impl Argus {
         .await
     }
 
-    #[tool(
-        description = "Start a dedicated match and return once the process is up. At most one live match."
-    )]
+    #[tool(description = "Start the single live dedicated match.")]
     async fn match_start(
         &self,
         Parameters(args): Parameters<MatchStartArgs>,
@@ -1938,6 +1956,7 @@ impl Argus {
                 ));
             }
         }
+        let rules = Self::requested_rules(args.deathmatch)?;
         let cfg = match cfg_or_err() {
             Ok(c) => c,
             Err(r) => return Ok(r),
@@ -1951,7 +1970,7 @@ impl Argus {
                 args.run_name.as_deref(),
                 args.dedicated_slots,
                 args.skill,
-                None,
+                rules,
             )
             .await
         {
@@ -2839,9 +2858,7 @@ impl Argus {
         }
     }
 
-    #[tool(
-        description = "After a QC edit: compile + short match + duration-scaled A/B. Default return is lite (verdict, gates, next)."
-    )]
+    #[tool(description = "Compile and run short matches for a duration-scaled A/B.")]
     async fn experiment(
         &self,
         Parameters(args): Parameters<ExperimentArgs>,
@@ -2860,6 +2877,7 @@ impl Argus {
                 return Err(McpError::invalid_params("skill must be 0..3", None));
             }
         }
+        let rules = Self::requested_rules(args.deathmatch)?;
         let cfg = match cfg_or_err() {
             Ok(c) => c,
             Err(r) => return Ok(r),
@@ -2932,7 +2950,7 @@ impl Argus {
                     Some(&name),
                     None,
                     args.skill,
-                    None,
+                    rules,
                     Some(MatchProgress {
                         reporter: progress.clone(),
                         start,
@@ -3122,7 +3140,7 @@ impl Argus {
                 Some(&run_name),
                 None,
                 args.skill,
-                Some(true),
+                Some(crate::engine::MatchRules::Coop),
                 Some(MatchProgress {
                     reporter: progress.clone(),
                     start: f64::from(compile_units),
@@ -4122,6 +4140,7 @@ mod tests {
             run_name: Some(run_name.into()),
             dedicated_slots: None,
             skill: None,
+            deathmatch: None,
             seeds: None,
         }
     }
@@ -4310,6 +4329,7 @@ mod tests {
                 run_name: Some("task_cancelled".into()),
                 dedicated_slots: None,
                 skill: None,
+                deathmatch: None,
                 seeds: None,
             },
             Some(completion_cfg(root.path())),
@@ -4663,6 +4683,7 @@ mod tests {
 
     fn seeded_args(run_name: &str, seeds: &[u32]) -> MatchRunArgs {
         MatchRunArgs {
+            deathmatch: None,
             seeds: Some(seeds.to_vec()),
             ..fake_match_args(run_name)
         }

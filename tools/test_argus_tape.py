@@ -16,6 +16,11 @@ EXPECTED = json.loads(FIXTURE.with_suffix(".json").read_text())
 
 
 class TestTapeConsumers(unittest.TestCase):
+    def test_tape_identity_reports_effective_startup_rules(self):
+        from argus_tape import tape_identity
+        tape = "ARGUS init on dm4\nARGUS rules deathmatch 2 coop 0\n"
+        self.assertEqual(tape_identity(tape)["rules"], {"deathmatch": 2, "coop": 0})
+        self.assertNotIn("rules", tape_identity("ARGUS init on dm4\n"))
     def test_stationary_freezes_split_vertical_travel(self):
         from argus_gait import audit
         from argus_tape import freeze_windows, read_tape

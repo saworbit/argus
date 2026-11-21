@@ -1327,6 +1327,14 @@ def skeptic(root, arm_a, arm_b, metrics=None, obj=None):
     if skills_a and skills_b and skills_a != skills_b:
         confounds.append(f'skill tiers differ: {sorted(skills_a)} against {sorted(skills_b)}')
     ids = {n: argus_tape.tape_identity(read_text(runs_dir / f'{n}.log')) for n in names}
+    def rules_of(n):
+        rules = ids[n].get('rules')
+        return None if rules is None else (rules['deathmatch'], rules['coop'])
+
+    rules = {rules_of(n) for n in names}
+    declared = rules - {None}
+    if len(declared) > 1 or (None in rules and declared - {(1, 0)}):
+        void.append('rules differ: record both arms with the same deathmatch and co-op settings')
     builds_a = sorted({ids[n]['build'] for n in arm_a if ids[n]['build']})
     builds_b = sorted({ids[n]['build'] for n in arm_b if ids[n]['build']})
     mixed = [f'{label} {", ".join(b)}' for label, b in (('control', builds_a), ('candidate', builds_b)) if len(b) > 1]
