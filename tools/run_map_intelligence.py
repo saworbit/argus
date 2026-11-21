@@ -7,6 +7,7 @@ Receipts retain native briefs, input identities and every named tape.
 from argus_engine_errors import fatal_engine_line
 from argus_source import source_identity
 from argus_fixture_harness import new_output, stage_fixture, private_game, run_match as fixture_match
+from argus_build_stamp import write as stamp_build
 
 from argus_lab_client import Lab
 from argus_lab_client import lab_executable, lab_cli
@@ -99,6 +100,8 @@ def main():
     parser.add_argument('--ticrate', type=float, default=.0139)
     parser.add_argument('--port', type=int)
     parser.add_argument('--lab', type=Path)
+    parser.add_argument('--host-speeds', action='store_true',
+                        help='record engine host frame timing in the private tapes')
     parser.add_argument('--primary', choices=SUPPORTED_PRIMARIES,
                         default='stall_parity')
     args = parser.parse_args()
@@ -117,7 +120,12 @@ def main():
     baseline_protocol, baseline_rows = (load_comparison_baseline(args.baseline, comparison_protocol)
                                         if args.baseline else (None, []))
     stage_fixture(ROOT, output, args.source, runs=False)
-    with private_game(ROOT, args.prefix, 'maplab') as game_dir:
+    stamp_build(output / 'src')
+    autoexec = None
+    if args.host_speeds:
+        autoexec = (ROOT / 'game/argus/autoexec.cfg').read_text(encoding='utf-8')
+        autoexec += '\nhost_speeds 1\n'
+    with private_game(ROOT, args.prefix, 'maplab', autoexec=autoexec) as game_dir:
         game = game_dir.name
         inputs = {p.relative_to(output).as_posix(): digest(p)
                   for p in sorted((output / 'src').rglob('*')) if p.is_file()}
@@ -125,6 +133,7 @@ def main():
                            ARGUS_GAME=game, ARGUS_PYTHON=sys.executable,
                            ARGUS_TICRATE=str(args.ticrate))
         protocol = dict(**comparison_protocol, repeats=args.repeats, port=args.port,
+                        host_speeds=args.host_speeds,
                         source_files=inputs, game=game,
                         tree_head=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                         tree_diff=subprocess.check_output(['git', 'diff', '--binary'], cwd=ROOT, text=True),

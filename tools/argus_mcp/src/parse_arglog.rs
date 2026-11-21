@@ -974,7 +974,7 @@ fn death_re() -> &'static Regex {
     })
 }
 
-const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|goal_pickup_v1|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|retarget|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats";
+const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|goal_pickup_v1|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|retarget|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats|major_pickup_v1|self_damage_v1|momentum|contest";
 
 // A complete sample name is stronger evidence than a word inside the
 // closed verb vocabulary. Prefer the longest known identity. Terminal
