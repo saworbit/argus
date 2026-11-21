@@ -422,6 +422,15 @@ def sample(name, t, x, y, z, spd=200, hp=100):
 
 
 class TestTriage(unittest.TestCase):
+    def test_health_loss_and_freeze_release_threshold_are_distinct(self):
+        fixture = REPO / 'tools/testdata/freeze_hp_loss.log'
+        rep = argus_lab.triage(REPO, fixture, claims=[])
+        clusters = {tuple(c['bots']): c for c in rep['clusters']}
+        self.assertEqual(clusters[('Small lost',)]['kinds'], {'freeze': 1})
+        self.assertEqual(clusters[('Small lost',)]['freeze_with_hp_loss'], 1)
+        self.assertEqual(clusters[('Threshold',)]['kinds'], {'freeze under fire': 1})
+        self.assertEqual(clusters[('Threshold',)]['freeze_with_hp_loss'], 1)
+
     def stalls_at(self, x, y, z, n=5, started='10/01/2026'):
         body = 'ARGEVT Reap spawned\n'
         for i in range(n):

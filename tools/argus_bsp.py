@@ -12,6 +12,7 @@ and its graph, the pointfile overlays, the analyzer's wireframe and lava
 classifier, the reach audit, the map gate and the lab map compiler. The
 Rust lab keeps its own reader in tools/argus_mcp/src/bsp.rs.
 """
+from ctypes import c_float
 from functools import cached_property
 from pathlib import Path
 import re
@@ -29,6 +30,16 @@ HEADER_SIZE = 4 + len(LUMP_NAMES) * 8
 
 CONTENTS_EMPTY, CONTENTS_SOLID = -1, -2
 CONTENTS_WATER, CONTENTS_SLIME, CONTENTS_LAVA = -3, -4, -5
+
+
+def death_is_lava(contents, x, y, z):
+    """Probe hull 0 at the death origin and 24 units below, as the native lab does."""
+    if contents is None:
+        return z < -300
+    # The native lab rounds the position and the lower probe to f32.
+    x, y, z = (c_float(value).value for value in (x, y, z))
+    hazards = (CONTENTS_LAVA, CONTENTS_SLIME)
+    return contents(x, y, z) in hazards or contents(x, y, c_float(z - 24).value) in hazards
 
 # sv_move.c STEPSIZE: how far below the centre SV_CheckBottom lets a
 # corner's floor sit before it calls the box unsupported.

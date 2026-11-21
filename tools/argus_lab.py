@@ -48,6 +48,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from argus_bsp import death_is_lava  # noqa: E402
 import argus_build_stamp  # noqa: E402
 import argus_longi  # noqa: E402
 from argus_paths import LabMissing, bsp_path, lab_binary, local_roots  # noqa: E402
@@ -1239,8 +1240,7 @@ def hull0_lava(root, name, mapname, *, runs_dir=None):
     bots = set(argus_tape.track_names(tape.samples, tape.events)[0])
     count = 0
     for _, victim, killer, x, y, z in argus_tape.deaths(tape.events):
-        if victim in bots and killer == 'world' and (contents(x, y, z) in argus_longi.HAZARD
-                                                      or contents(x, y, z - 24) in argus_longi.HAZARD):
+        if victim in bots and killer == 'world' and death_is_lava(contents, x, y, z):
             count += 1
     return count
 
@@ -1578,9 +1578,10 @@ def triage(root, tape_path, claims=None, radius=96.0):
                 points.append(dict(kind=kind, bot=name, **pos))
             lives[name] = line
     for name in bots:
-        for f in argus_tape.freeze_windows(samples.get(name, [])):
-            kind = 'freeze under fire' if f.hp_drop > 0 else 'freeze'
-            points.append(dict(kind=kind, bot=name, x=f.start['x'], y=f.start['y'], z=f.start['z'], dur=f.dur))
+        for f in argus_tape.freeze_windows(samples.get(name, []), stationary=True):
+            kind = 'freeze under fire' if f.hp_drop >= 10 else 'freeze'
+            points.append(dict(kind=kind, bot=name, x=f.start['x'], y=f.start['y'], z=f.start['z'],
+                               dur=f.dur, hp_drop=f.hp_drop))
 
     clusters = []
     for p in points:
@@ -1648,6 +1649,7 @@ def triage(root, tape_path, claims=None, radius=96.0):
             elif verdicts and len(verdicts) == len(matches):
                 flag = 'before the fix'
         out.append(dict(centre=[round(v) for v in c['centre']], count=len(c['points']), kinds=dict(kinds),
+                        freeze_with_hp_loss=sum(p.get('hp_drop', 0) > 0 for p in c['points']),
                         bots=sorted({p['bot'] for p in c['points']}), matches=matches, flag=flag,
                         severe=severe, unexplained=dict(unexplained)))
     out.sort(key=lambda c: (-c['severe'], -c['count']))
@@ -1707,6 +1709,8 @@ def print_triage(rep, min_count=3, out=None):
     print('| --- | --- | --- | --- | --- | --- |', file=out)
     for c in shown:
         what = ', '.join(f'{k} {v}' for k, v in sorted(c['kinds'].items()))
+        if c.get('freeze_with_hp_loss'):
+            what += f', HP loss in {c["freeze_with_hp_loss"]} freeze(s)'
         claim = ', '.join(f'{m["id"]} ({m["status"]})' for m in c['matches']) or '-'
         print(f'| {" ".join(map(str, c["centre"]))} | {c["count"]} | {what} | {", ".join(c["bots"])} | {claim} '
               f'| {reading(c)} |', file=out)

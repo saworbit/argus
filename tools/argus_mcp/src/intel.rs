@@ -36,15 +36,11 @@ pub struct Totals {
     pub hazards: u32,
     pub abandons: u32,
     pub routefails: u32,
+    /// Weapon switches (ARGEVT weapon), including repeats with the same inventory.
     pub weapons: u32,
-    /// battle-grabs (ARGEVT grab). Together with weapons this is
-    /// acquisitions: the figure that shows contested-map consumption
-    /// when gl (current-goal touches) looks starved.
+    /// Combat detour selections (ARGEVT grab), including aborted detours.
     pub grabs: u32,
-    /// weapon switches plus battle-grabs. gl counts only the goal
-    /// the bot currently holds; a passer-by eating the prize
-    /// invalidates the goalers and gl stays low while everyone is
-    /// still armed. This is the honest "did they take stuff" count.
+    /// Historical name for the sum of weapon switches and combat detour selections.
     pub acquisitions: u32,
     pub cover: usize,
     pub avg_speed: f64,
@@ -63,9 +59,14 @@ pub struct Totals {
     /// the thing that matters and the count was hiding it.
     #[serde(default, skip_serializing_if = "crate::intel::is_zero_f64")]
     pub freeze_total_sec: f64,
-    /// freezes during which the bot lost 10+ hp: a bot being shot
-    /// while standing still, the worst class a human can witness
+    /// Historical XY freeze windows with at least 10 HP lost.
     pub freeze_underfire: u32,
+    /// Historical XY freeze windows with any observed HP loss.
+    #[serde(default)]
+    pub freeze_with_hp_loss: u32,
+    /// Stationary release counts when vertical travel changed the historical XY counts.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub stationary_freezes: Option<FreezeGateTotals>,
     /// typed-hop success accounting: lift/train waits vs actual
     /// boardings (ARGEVT board). A wait storm with zero boards means
     /// a pad or gate is geometrically broken, not merely slow.
@@ -154,6 +155,36 @@ pub struct Hotspot {
     /// automatically instead of by a forensics session).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reach_pct: Option<u32>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Serialize)]
+pub struct FreezeGateTotals {
+    pub count: u32,
+    pub longest_sec: f64,
+    pub total_sec: f64,
+    pub underfire: u32,
+}
+
+impl FreezeGateTotals {
+    fn from_windows(windows: &[crate::parse_arglog::Freeze]) -> Self {
+        Self {
+            count: windows.len() as u32,
+            longest_sec: windows.first().map_or(0.0, |f| f.dur),
+            total_sec: windows.iter().map(|f| f.dur).sum(),
+            underfire: windows.iter().filter(|f| f.hp_drop >= 10.0).count() as u32,
+        }
+    }
+}
+
+impl Totals {
+    fn freeze_gate(&self) -> FreezeGateTotals {
+        self.stationary_freezes.unwrap_or(FreezeGateTotals {
+            count: self.freezes,
+            longest_sec: self.freeze_max_sec,
+            total_sec: self.freeze_total_sec,
+            underfire: self.freeze_underfire,
+        })
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -811,7 +842,16 @@ pub(crate) fn brief_tape_lava(
         .filter(|f| is_bot(&f.bot))
         .collect();
     let freeze_underfire = fz.iter().filter(|f| f.hp_drop >= 10.0).count() as u32;
+    let freeze_with_hp_loss = fz.iter().filter(|f| f.hp_drop > 0.0).count() as u32;
     let freeze_max_sec = fz.first().map(|f| f.dur).unwrap_or(0.0);
+    let stationary: Vec<_> = tape
+        .stationary_freezes()
+        .into_iter()
+        .filter(|f| is_bot(&f.bot))
+        .collect();
+    let stationary_gate = FreezeGateTotals::from_windows(&stationary);
+    let stationary_freezes =
+        (stationary_gate != FreezeGateTotals::from_windows(&fz)).then_some(stationary_gate);
     // 220 units and 5 seconds: wide enough that a corridor fight or a
     // pre-position orbit is not reported every tape, tight enough to
     // catch the dm2 oscillation that started this (#272).
@@ -855,6 +895,8 @@ pub(crate) fn brief_tape_lava(
         freeze_max_sec,
         freeze_total_sec: fz.iter().map(|f| f.dur).sum(),
         freeze_underfire,
+        freeze_with_hp_loss,
+        stationary_freezes,
         mover_waits: ev("lift") + ev("train"),
         boards: ev("board"),
         confine_max_sec: cf.first().map(|c| c.dur).unwrap_or(0.0),
@@ -922,10 +964,13 @@ pub(crate) fn brief_tape_lava(
             worst.bot
         ));
     }
-    if totals.freeze_underfire > 0 {
+    if stationary_freezes.is_some() {
+        flags.push("vertical travel changed the stationary freeze counts".into());
+    }
+    if stationary_gate.underfire > 0 {
         flags.push(format!(
             "{} freeze(s) UNDER FIRE - a bot lost 10+ hp standing still",
-            totals.freeze_underfire
+            stationary_gate.underfire
         ));
     }
     if totals.mover_waits >= 3 && totals.boards == 0 {
@@ -1871,26 +1916,27 @@ pub fn compare_band_primary(
     // taking damage while frozen is always a hard failure.
     let control_longest = controls
         .iter()
-        .map(|b| b.totals.freeze_max_sec)
+        .map(|b| b.totals.freeze_gate().longest_sec)
         .fold(0.0, f64::max);
     let control_frozen = controls
         .iter()
-        .map(|b| b.totals.freeze_total_sec)
+        .map(|b| b.totals.freeze_gate().total_sec)
         .fold(0.0, f64::max);
     let hard_freeze = candidates.iter().enumerate().find(|(_, b)| {
-        b.totals.freeze_underfire > 0
-            || (b.totals.freeze_max_sec >= 10.0 && b.totals.freeze_max_sec > control_longest + 2.0)
-            || (b.totals.freeze_total_sec >= 30.0
-                && b.totals.freeze_total_sec > control_frozen + 30.0)
+        let freeze = b.totals.freeze_gate();
+        freeze.underfire > 0
+            || (freeze.longest_sec >= 10.0 && freeze.longest_sec > control_longest + 2.0)
+            || (freeze.total_sec >= 30.0 && freeze.total_sec > control_frozen + 30.0)
     });
     let freeze_failure = hard_freeze.map(|(index, b)| {
+        let freeze = b.totals.freeze_gate();
         format!(
             "hard freeze failure in candidate tape {}: {} under-fire freeze(s), \
              longest {:.1}s, total {:.1}s lost to statues (control maxima {:.1}s / {:.1}s)",
             index + 1,
-            b.totals.freeze_underfire,
-            b.totals.freeze_max_sec,
-            b.totals.freeze_total_sec,
+            freeze.underfire,
+            freeze.longest_sec,
+            freeze.total_sec,
             control_longest,
             control_frozen,
         )
@@ -1899,7 +1945,7 @@ pub fn compare_band_primary(
         if let Some(gate) = report.gates.iter_mut().find(|g| g.name == "freezes") {
             gate.pass = false;
             gate.a = control_longest;
-            gate.b = b.totals.freeze_max_sec;
+            gate.b = b.totals.freeze_gate().longest_sec;
             gate.note = freeze_failure.clone().unwrap_or_default();
         }
     }
@@ -2405,43 +2451,40 @@ fn compare_gates(a: MatchBrief, b: MatchBrief) -> CompareReport {
     // ones would have failed. Total frozen time is the figure that
     // actually describes what a watcher sees, so a candidate that
     // loses 30 s more than its baseline fails whatever the count did.
-    let fz_pass = b.totals.freeze_underfire == 0
-        && (b.totals.freeze_max_sec < 10.0
-            || b.totals.freeze_max_sec <= a.totals.freeze_max_sec + 2.0)
-        && b.totals.freezes <= a.totals.freezes + 2
-        && (b.totals.freeze_total_sec < 30.0
-            || b.totals.freeze_total_sec <= a.totals.freeze_total_sec + 30.0);
+    let a_freeze = a.totals.freeze_gate();
+    let b_freeze = b.totals.freeze_gate();
+    let fz_pass = b_freeze.underfire == 0
+        && (b_freeze.longest_sec < 10.0 || b_freeze.longest_sec <= a_freeze.longest_sec + 2.0)
+        && b_freeze.count <= a_freeze.count + 2
+        && (b_freeze.total_sec < 30.0 || b_freeze.total_sec <= a_freeze.total_sec + 30.0);
     gates.push(Gate {
         name: "freezes".into(),
         pass: fz_pass,
-        a: a.totals.freeze_max_sec,
-        b: b.totals.freeze_max_sec,
-        note: if b.totals.freeze_underfire > 0 {
-            "a bot took damage while frozen - free frag for a human".into()
+        a: a_freeze.longest_sec,
+        b: b_freeze.longest_sec,
+        note: if b_freeze.underfire > 0 {
+            "a stationary bot lost at least 10 HP".into()
         } else if !fz_pass
-            && b.totals.freeze_total_sec > a.totals.freeze_total_sec + 30.0
-            && b.totals.freeze_max_sec < 10.0
+            && b_freeze.total_sec > a_freeze.total_sec + 30.0
+            && b_freeze.longest_sec < 10.0
         {
             format!(
                 "{:.0} s lost to statues against the baseline's {:.0} s, across {} freeze(s)",
-                b.totals.freeze_total_sec, a.totals.freeze_total_sec, b.totals.freezes
+                b_freeze.total_sec, a_freeze.total_sec, b_freeze.count
             )
-        } else if !fz_pass && b.totals.freeze_max_sec >= 10.0 {
+        } else if !fz_pass && b_freeze.longest_sec >= 10.0 {
             format!(
                 "a {:.1} s statue the baseline does not have",
-                b.totals.freeze_max_sec
+                b_freeze.longest_sec
             )
         } else if !fz_pass {
-            format!(
-                "freezes {} vs baseline {}",
-                b.totals.freezes, a.totals.freezes
-            )
-        } else if b.totals.freezes == 0 {
+            format!("freezes {} vs baseline {}", b_freeze.count, a_freeze.count)
+        } else if b_freeze.count == 0 {
             "no statues".into()
         } else {
             format!(
                 "{} bounded freeze(s), longest {:.1} s",
-                b.totals.freezes, b.totals.freeze_max_sec
+                b_freeze.count, b_freeze.longest_sec
             )
         },
     });
@@ -2640,6 +2683,9 @@ pub fn scale_brief_to_duration(
     // inside the first minute or two, so scaling a 185 s figure of 446
     // cells down to 72 made the coverage gate impossible to fail.
     brief.totals.freezes = scale_u32(brief.totals.freezes, k);
+    if let Some(stationary) = brief.totals.stationary_freezes.as_mut() {
+        stationary.count = scale_u32(stationary.count, k);
+    }
     brief.totals.mover_waits = scale_u32(brief.totals.mover_waits, k);
     brief.totals.boards = scale_u32(brief.totals.boards, k);
     // freeze_max_sec and freeze_underfire are severities, not rates:
@@ -2898,8 +2944,7 @@ pub fn suggest_next(brief: &MatchBrief, gates: Option<&[Gate]>) -> Vec<NextStep>
             priority: 2,
             area: "items".into(),
             look_at: "src/items.qc weapon_touch FL_CLIENT guard (must admit ar_isbot)".into(),
-            why: "no weapon switches and no battle-grabs; bots may be stuck on spawn shotguns"
-                .into(),
+            why: "no weapon switches or combat detour selections were observed".into(),
         });
     }
     let quad = *brief.goals.get("item_artifact_super_damage").unwrap_or(&0);
@@ -4332,6 +4377,41 @@ ARGEVT Reap hazard
             g2.note.contains("lost to statues"),
             "the note should say what failed: {}",
             g2.note
+        );
+    }
+
+    #[test]
+    fn stationary_freeze_gate_accepts_transport_and_rejects_stationary_hp_loss() {
+        let text = include_str!("../../testdata/freeze_vertical.log");
+        let lift_only = text
+            .lines()
+            .filter(|line| !line.contains("Stationary"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let lift = brief_text(&lift_only, Some("e1m1"));
+        assert_eq!(lift.totals.freeze_underfire, 1);
+        assert_eq!(lift.totals.freeze_gate().underfire, 0);
+        let report = compare_gates(lift.clone(), lift.clone());
+        assert!(
+            report
+                .gates
+                .iter()
+                .find(|g| g.name == "freezes")
+                .unwrap()
+                .pass
+        );
+
+        let combined = brief_text(text, Some("e1m1"));
+        assert_eq!(combined.totals.freeze_underfire, 2);
+        assert_eq!(combined.totals.freeze_gate().underfire, 1);
+        let report = compare_gates(lift, combined);
+        assert!(
+            !report
+                .gates
+                .iter()
+                .find(|g| g.name == "freezes")
+                .unwrap()
+                .pass
         );
     }
 
