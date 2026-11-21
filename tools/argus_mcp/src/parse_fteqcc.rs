@@ -40,12 +40,17 @@ pub fn parse_fteqcc(output: &str) -> FteqccReport {
             success_line = Some((*line).trim().to_string());
         }
         if let Some(caps) = diag_re.captures(line) {
-            let message = caps[4].trim().to_string();
+            let message = caps[5].trim();
+            let noise = is_known_noise(message);
+            let message = caps.get(4).map_or_else(
+                || message.to_string(),
+                |code| format!("{}: {message}", code.as_str()),
+            );
             diagnostics.push(Diagnostic {
                 file: caps[1].to_string(),
                 line: caps[2].parse().unwrap_or(0),
                 severity: caps[3].to_ascii_lowercase(),
-                noise: is_known_noise(&message),
+                noise,
                 message,
             });
         }
@@ -79,7 +84,8 @@ pub fn is_known_noise(message: &str) -> bool {
 fn diag_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
     RE.get_or_init(|| {
-        Regex::new(r"(?i)^([^:\r\n]+):(\d+):\s*(warning|error):\s*(.+)$").expect("diag regex")
+        Regex::new(r"(?i)^(.+?):(\d+):\s*(warning|error)(?:\s+([a-z]\d+))?:\s*(.+)$")
+            .expect("diag regex")
     })
 }
 
@@ -135,5 +141,16 @@ mod tests {
             .diagnostics
             .iter()
             .any(|d| d.severity == "warning" && d.file == "weapons.qc"));
+    }
+
+    #[test]
+    fn numbered_diagnostics_are_retained_with_windows_paths() {
+        let report = parse_fteqcc(
+            "C:\\argus\\src\\combat.qc:135: warning Q302: unused local\nitems.qc:29: error Q201: unknown field\n",
+        );
+        assert_eq!(report.diagnostics.len(), 2);
+        assert_eq!(report.diagnostics[0].line, 135);
+        assert_eq!(report.diagnostics[0].message, "Q302: unused local");
+        assert_eq!(report.diagnostics[1].severity, "error");
     }
 }
