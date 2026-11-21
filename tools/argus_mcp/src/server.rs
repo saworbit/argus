@@ -1100,7 +1100,7 @@ pub struct MatchRunArgs {
     pub dedicated_slots: Option<u32>,
     #[schemars(description = "0-3")]
     pub skill: Option<u32>,
-    #[schemars(description = "Deathmatch rules: 1 (default) or 2 (weapons stay)")]
+    #[schemars(description = "1 (default), 2 weapons stay.")]
     pub deathmatch: Option<u32>,
     #[schemars(description = "Fixed lab clock, validated maps only: one tape per seed (1-2000)")]
     pub seeds: Option<Vec<u32>>,
@@ -1114,7 +1114,7 @@ pub struct MatchStartArgs {
     pub dedicated_slots: Option<u32>,
     #[schemars(description = "0-3")]
     pub skill: Option<u32>,
-    #[schemars(description = "Deathmatch rules: 1 (default) or 2 (weapons stay)")]
+    #[schemars(description = "1 (default), 2 weapons stay.")]
     pub deathmatch: Option<u32>,
 }
 
@@ -1312,26 +1312,22 @@ pub struct LiveSnapshotArgs {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 pub struct ExperimentArgs {
     pub map: String,
-    #[schemars(
-        description = "Wall-clock seconds, 10-185. Default 30. Compare is duration-scaled against the shipped baseline."
-    )]
+    #[schemars(description = "10-185 s, default 30.")]
     pub duration_sec: Option<u32>,
     #[schemars(description = "Compile first. Default true.")]
     pub compile: Option<bool>,
     pub skill: Option<u32>,
-    #[schemars(description = "Deathmatch rules: 1 (default) or 2 (weapons stay)")]
+    #[schemars(description = "1 (default), 2 weapons stay.")]
     pub deathmatch: Option<u32>,
-    #[schemars(description = "Baseline log, run name, or 'baseline'. Default baseline.")]
+    #[schemars(description = "Log or run name, default 'baseline'.")]
     pub baseline: Option<String>,
     pub run_name: Option<String>,
-    #[schemars(description = "brief (default) or full (compile + match + both briefs)")]
+    #[schemars(description = "brief (default) or full.")]
     pub detail: Option<String>,
-    #[schemars(
-        description = "Candidate matches, 1-5 (default 3). One tape cannot tell a change from noise: same-build dm2 stalls run 17 to 100."
-    )]
+    #[schemars(description = "1-5 candidate tapes, default 3.")]
     pub repeats: Option<u32>,
     #[schemars(
-        description = "PRE-REGISTER the metric this change should move, before the tapes exist: stall_parity | engagements | lava_deaths | freezes. Only that gate can convict; the rest are flagged."
+        description = "Pre-register the deciding gate: stall_parity | engagements | lava_deaths | freezes."
     )]
     pub primary: Option<String>,
 }
@@ -1923,9 +1919,7 @@ impl Argus {
         }
     }
 
-    #[tool(
-        description = "Run a timed dedicated match, harvest runs/<name>.log, return ARGLOG/ARGEVT metrics."
-    )]
+    #[tool(description = "Run a timed match, harvest its tape and return a brief.")]
     async fn match_run(
         &self,
         Parameters(args): Parameters<MatchRunArgs>,
@@ -1949,9 +1943,7 @@ impl Argus {
         .await
     }
 
-    #[tool(
-        description = "Start a dedicated match and return once the process is up. At most one live match."
-    )]
+    #[tool(description = "Start the single live dedicated match.")]
     async fn match_start(
         &self,
         Parameters(args): Parameters<MatchStartArgs>,
@@ -2866,9 +2858,7 @@ impl Argus {
         }
     }
 
-    #[tool(
-        description = "After a QC edit: compile + short match + duration-scaled A/B. Default return is lite (verdict, gates, next)."
-    )]
+    #[tool(description = "Compile and run short matches for a duration-scaled A/B.")]
     async fn experiment(
         &self,
         Parameters(args): Parameters<ExperimentArgs>,
