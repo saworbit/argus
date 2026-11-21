@@ -1,6 +1,7 @@
 // The fixture seats a continuing train hop once per case. Production owns
 // the live car, steering, recovery and any subsequent route.
 float tw_case, tw_next, tw_started, tw_sample, tw_released, tw_boarded, tw_replanned;
+float tw_dismounted;
 entity tw_bot, tw_goal, tw_car, tw_dock, tw_exit;
 
 void(entity routed) TrainWaitRouteReady =
@@ -19,7 +20,11 @@ void() TrainWaitBefore =
     local float support;
 
     if (mapname != "dm2" || cvar ("scratch2") != 3003 || time < 2 || time < tw_next) return;
+#ifdef TRAIN_WAIT_NEAR_SEATS
+    if (tw_case == 3) return;
+#else
     if (tw_case == 9) return;
+#endif
     if (!tw_case)
     {
         dprint ("BHVRPL begin train_wait\n");
@@ -47,9 +52,16 @@ void() TrainWaitBefore =
     tw_case = tw_case + 1;
     tw_started = time; tw_next = time + 18.3; tw_sample = time;
     tw_released = 0; tw_boarded = 0; tw_replanned = 0;
+    tw_dismounted = 0;
+#ifdef TRAIN_WAIT_NEAR_SEATS
+    if (tw_case == 1) seat = '1372.7 -912.5 344';
+    else if (tw_case == 2) seat = '1370.4 -907.6 344';
+    else seat = '1453 -1024 344';
+#else
     if (tw_case <= 3) seat = '1375 -714 344';
     else if (tw_case <= 6) seat = '1375 -729.7 344';
     else seat = '1441 -1015 344';
+#endif
 
     saved = self; self = tw_bot;
     Argus_TaskClear (self); Argus_Nav_Abort (self);
@@ -94,6 +106,16 @@ void() TrainWaitAfter =
     {
         tw_released = 1;
         dprint ("TW release "); dprint (ftos (tw_case)); dprint (" elapsed ");
+        dprint (ftos (time - tw_started)); dprint ("\n");
+    }
+    if (tw_boarded && !tw_dismounted && tw_bot.groundentity == world
+        && (tw_bot.flags & FL_ONGROUND) && tw_bot.origin_x >= tw_exit.origin_x
+        && fabs (tw_bot.origin_y - tw_exit.origin_y) <= 128
+        && fabs (tw_bot.origin_z - tw_exit.origin_z) <= 18
+        && pointcontents (tw_bot.origin + '0 0 -22') == CONTENT_EMPTY)
+    {
+        tw_dismounted = 1;
+        dprint ("TW dismount "); dprint (ftos (tw_case)); dprint (" elapsed ");
         dprint (ftos (time - tw_started)); dprint ("\n");
     }
     if (time < tw_sample) return;

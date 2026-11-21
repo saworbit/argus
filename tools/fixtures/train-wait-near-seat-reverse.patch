@@ -1,0 +1,14 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -10831,3 +10831,2 @@
+-            // A displaced bot should try a new route before waiting
+-            // that long on dry floor. The dm2 approach stalls just beyond
+-            // the 120u boarding range on the same deck.
++            // A bot displaced far from its boarding seat should try a
++            // new route before spending that long waiting on dry floor.
+@@ -10839,4 +10838 @@
+-                        && (vlen (self.origin - self.ar_trainfrom.origin) > 160
+-                            || (mapname == "dm2"
+-                                && fabs (self.origin_z - self.ar_trainfrom.origin_z) <= 16
+-                                && vlen (self.origin - self.ar_trainfrom.origin) > 120))
++                        && vlen (self.origin - self.ar_trainfrom.origin) > 160

@@ -10828,14 +10828,18 @@ void() Argus_AI =
             // steering below does all the walking, so boarding and
             // stepping off are just walks that happen when the hold
             // releases. Keep the 15 s limit at the pad and on the car.
-            // A bot displaced far from its boarding seat should try a
-            // new route before spending that long waiting on dry floor.
+            // A displaced bot should try a new route before waiting
+            // that long on dry floor. The dm2 approach stalls just beyond
+            // the 120u boarding range on the same deck.
             if (self.ar_hoptrain)
             {
                 if (time > self.ar_liftstart + 15
                     || (!self.ar_boarded && self.ar_trainfrom != world
                         && time > self.ar_liftstart + 8
-                        && vlen (self.origin - self.ar_trainfrom.origin) > 160
+                        && (vlen (self.origin - self.ar_trainfrom.origin) > 160
+                            || (mapname == "dm2"
+                                && fabs (self.origin_z - self.ar_trainfrom.origin_z) <= 16
+                                && vlen (self.origin - self.ar_trainfrom.origin) > 120))
                         && self.groundentity == world && (self.flags & FL_ONGROUND)
                         && self.ar_feettype == CONTENT_EMPTY
                         && vlen (self.velocity) < 10))
