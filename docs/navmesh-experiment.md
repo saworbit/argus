@@ -874,10 +874,11 @@ route at both cadences. The e1m6 terminal cut raised stalls from 19 to
 26 and from 8 to 18 in two matched 120-second played pairs. Both
 remaining candidates stayed local.
 
-The configured e1m5 and lqdm2 bands predate these two jump retirements.
-Check `python tools/argus_lab.py stale` before using them to judge the new
-graphs. [Baseline provenance](lab-spine.md#stale) and
-[band refresh](https://github.com/saworbit/argus/issues/1036).
+The e1m5 and lqdm2 bands now point to three played-rate tapes per map on
+the post-retirement graphs. Check `python tools/argus_lab.py stale` before
+using configured bands after another graph change.
+[Baseline provenance](lab-spine.md#stale) and
+[band refresh](https://github.com/saworbit/argus/pull/1064).
 
 ## Limits
 

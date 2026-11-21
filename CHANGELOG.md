@@ -12,7 +12,7 @@ describes the result and links to its implementation or detailed evidence.
 
 | Status | What to use |
 |---|---|
-| Development source | Main includes the checked combat escape ([#1033](https://github.com/saworbit/argus/pull/1033)) and tested jump retirements on e1m5 and lqdm2 ([#719](https://github.com/saworbit/argus/issues/719)). The Unreleased section records these and other changes awaiting a gameplay build. The [human play verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2) concerns the installed gait build. |
+| Development source | [Unreleased](#unreleased) includes the dm2 train recovery ([#1075](https://github.com/saworbit/argus/pull/1075)), lqdm2 health approach ([#1073](https://github.com/saworbit/argus/pull/1073)) and dm6 rocket ledge route ([#1074](https://github.com/saworbit/argus/pull/1074)). The [human play verdict](docs/behaviour-diagnostics.md#player-verdict-on-dm4-and-dm2) concerns the supplied gait build. |
 | Latest gameplay update | 2026-11-15: build `004b4ff9ddf7` installed (tape identity, the fixed-clock seed and session marks; no change to play); see Unreleased |
 | Gameplay binary | `game/argus/progs.dat` and `engine/argus/progs.dat`; MD5 `5FD814CC448AF8FBA7BFB16CD29062BC` |
 | Last explicitly numbered build | v4.21, 2026-09-16; subsequent changes are recorded by merge date below |
@@ -41,6 +41,8 @@ rejection still blocks adoption.
 - Route the dm6 rocket ledge approach around the wall and guide bots through the south portal ([#1057](https://github.com/saworbit/argus/issues/1057)).
 
 #### Added
+
+- Verify missed dm2 train waits from the two reported deck positions with the `--near-seats` fixture, including a dry far-deck crossing from the boarding pad ([#1054](https://github.com/saworbit/argus/issues/1054)).
 
 - Keep fixed stock-map witnesses for the dm6 rocket ledge, e1m1 slime stair, lqdm2 health pin and e1m3 shelf climb ([#1057](https://github.com/saworbit/argus/issues/1057), [#1056](https://github.com/saworbit/argus/issues/1056), [#1053](https://github.com/saworbit/argus/issues/1053), [#623](https://github.com/saworbit/argus/issues/623)).
 
