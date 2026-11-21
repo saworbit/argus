@@ -2064,6 +2064,10 @@ experiment  map=dm4 primary=lava_deaths
 argus-mcp compare cand1,cand2,cand3 ctl1,ctl2,ctl3 --primary stall_parity
 ```
 
+Add `--require-green` for an automated release check. The CLI prints the
+same gate card and exits with status 2 when the native verdict is mixed or
+regressed.
+
 Only the named gate convicts; the rest are computed, printed and
 flagged. A refused map spawn or a mismatch with the requested map in any
 candidate or control tape returns `mixed` with a `WRONG MAP` card and no

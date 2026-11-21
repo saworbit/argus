@@ -27,9 +27,10 @@ says which instrument answers which question.
   clock; trusted only where `tools/lab_instruments.json` says, and never
   for that map's listed limits). Replay one tape exactly with
   `argus-mcp match <map> <secs> <run> --seed N`.
-- On dm4, the stand-in (`argus-mcp standin`) may screen the direction of a
-  threat change using the calibrated replay and kills per minute in sight (#842).
-  Use a human session for the threat verdict and how often bots kill the player.
+- On dm4, use the calibrated stand-in (`argus-mcp standin`) to judge the
+  direction of threat changes by kills per minute in sight (#842). Keep an
+  interval that spans zero inconclusive. Use actual player tapes when the
+  claim is about the measured rate against a person.
 - After a session: `argus_lab.py review <stem>` lists the player's marks;
   `argus_gallery.py build <stem>` cuts them for a ruling.
 - After editing `src/`, `python tools/argus_build_stamp.py --write`
@@ -47,6 +48,7 @@ says which instrument answers which question.
 | After a QC edit | `experiment map=dm4 duration_sec=30 skill=2` |
 | Several maps, one compile | `matrix_experiment` |
 | Full-length A/B | `compare_runs log_b=latest` |
+| Enforce an ordinary match ladder | `python tools/report_map_intelligence.py <control> <candidate> --native-gates <new-dir> --require-green` |
 | Live skill / fraglimit | `tune command="skill 3"` (Windows console injection is supported) |
 | Live log without spam | `see what=status` then `since_line=<next_line>` |
 | Harvest a human session | `python tools/harvest_session.py --tag vNNN` (FIRST, before any new engine launch - launches truncate qconsole.log) |

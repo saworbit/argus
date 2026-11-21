@@ -44,17 +44,21 @@ Build `a577f46c1529` was tested and archived as a development candidate.
 - **Shared route failures.** Let a bot reconsider a nearby prize after another
   bot's failed approach when it has a clear, safe path from the same waypoint.
 
-The candidate passed 19 of 20 broad comparisons across 120 played-rate
-matches on 11 maps at skills 0 to 3. The pooled skill-3 lqdm2 stall result
-favoured the control across eight matches per build. A follow-up e1m1 match
-hit the lift freeze gate used in that study. Skill-2 dm4 recorded 9 to 18 lava deaths across
-seven matches per build, an increase below the lab's detection limit.
-Human play remains unverified.
+**Automated verdict.** The current lab reanalysed 120 played-rate tapes
+across 11 maps and skills 0 to 3. It passed 19 of 20 broad comparisons and
+rejected the candidate on skill-3 lqdm2 stalls. The e1m1 follow-up passed
+the current stationary gate, which identifies the flagged window as lift
+travel. Skill-2 dm4 recorded 9 to 18 lava deaths across seven matches per
+build, an increase below the detection limit. The calibrated dm4 stand-in
+estimated a change of +0.92 bot kills per minute in sight, with a 95 per
+cent interval of -2.00 to +3.85. The threat result is inconclusive.
 [lqdm2 stalls](https://github.com/saworbit/argus/issues/1053) |
 [e1m1 lift freeze](https://github.com/saworbit/argus/issues/1051) |
 [dm4 lava deaths](https://github.com/saworbit/argus/issues/1055)
 
 #### Added
+
+- Let scripts enforce registered match gates with `--require-green`. A mixed or regressed verdict keeps its gate cards and exits with status 2.
 
 - Give active studies and fixtures a shared Python lab client with Windows and Linux CPU timing ([#1035](https://github.com/saworbit/argus/issues/1035)).
 - Evaluate all the clauses in shopping, retreat, mover and muzzle fixture assignments ([#1049](https://github.com/saworbit/argus/issues/1049)).
