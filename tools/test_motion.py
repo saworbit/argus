@@ -2,9 +2,11 @@
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 import unittest
+from unittest.mock import patch
 
-from verify_motion import LABELS, inspect_contracts, inspect_demo_alignment
+from verify_motion import LABELS, inspect_contracts, inspect_demo_alignment, stage
 
 
 def contracts():
@@ -33,6 +35,28 @@ class MotionObserver(unittest.TestCase):
     def test_finalized_positions_allow_only_wire_rounding(self):
         raw,exported=trajectory(.1)
         self.assertEqual(inspect_demo_alignment(raw,exported,'Carmack')['paired'],110)
+
+    def test_combat_hazard_marker_must_match_the_staged_contract(self):
+        good = contracts()
+        marker = 'MOHAZ passed\n'
+        self.assertEqual(inspect_contracts(good + marker, combat_hazard=True), 12)
+        self.assertEqual(inspect_contracts(good, combat_hazard=False), 12)
+        for text, included in [(good, True), (good + marker * 2, True), (good + marker, False)]:
+            with self.assertRaisesRegex(AssertionError, 'combat hazard contracts'):
+                inspect_contracts(text, combat_hazard=included)
+
+    def test_staging_detects_a_reformatted_definition_and_allows_older_sources(self):
+        root = Path(__file__).resolve().parents[1]
+        with tempfile.TemporaryDirectory() as folder, patch('verify_motion.stage_fixture') as stage_fixture:
+            source = Path(folder)
+            for text, expected in [
+                ('float(float requested) Argus_CombatHazardHeading=\n{\n}', True),
+                ('float(float requested) Argus_CombatHazardHeading;', False),
+            ]:
+                (source / 'argus.qc').write_text(text, encoding='utf-8')
+                self.assertEqual(stage(root, source / 'out', source, contracts=True), expected)
+                fixture = stage_fixture.call_args.kwargs['fixtures']['motion_observer_fixture.qc']
+                self.assertEqual(fixture.startswith('#define COMBAT_HAZARD_CONTRACTS\n'), expected)
 
     def test_intermediate_poses_and_old_phase_are_rejected(self):
         raw,exported=trajectory(3)

@@ -23,6 +23,33 @@ def tape(failed=False):
 
 
 class HealthTests(unittest.TestCase):
+    def test_step1b_preflight_reports_source_and_reverse_patch_failures(self):
+        from argus_ci import check_step1b
+
+        self.assertEqual(check_step1b(ROOT), [])
+        manifest_path = ROOT / 'tools/fixtures/health-inventory-step1b.json'
+        patch_path = manifest_path.parent / json.loads(manifest_path.read_text())['production_amendments'][0]
+        original_read = Path.read_text
+
+        def changed(path, *args, **kwargs):
+            text = original_read(path, *args, **kwargs)
+            if path == ROOT / 'src/argus.qc':
+                return text + '\n// unregistered comment-only change\n'
+            return text
+
+        with patch.object(Path, 'read_text', changed):
+            failures = '\n'.join(check_step1b(ROOT))
+        self.assertIn('active production source changed', failures)
+        self.assertIn('health_inventory_parked.py --amend', failures)
+
+        def damaged(path, *args, **kwargs):
+            text = original_read(path, *args, **kwargs)
+            return text.replace('@@ -', '@@ ?', 1) if path == patch_path else text
+
+        with patch.object(Path, 'read_text', damaged):
+            failures = '\n'.join(check_step1b(ROOT))
+        self.assertIn('malformed reverse patch hunk', failures)
+
     def test_optimized_interpreter_keeps_evidence_and_output_guards(self):
         script=r'''
 from pathlib import Path
