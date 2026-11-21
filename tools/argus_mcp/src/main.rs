@@ -732,16 +732,18 @@ tape can be replayed with `argus-mcp match <map> <secs> <run> --seed <seed>`.
             //   argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--coop] [--slots N]
             let mut rest: Vec<String> = args.collect();
             let port = take_port(&mut rest)?;
+            let deathmatch = take_value(&mut rest, "--deathmatch")?;
             if rest
                 .iter()
                 .any(|a| a == "-h" || a == "--help" || a == "help")
                 || rest.is_empty()
             {
                 use argus_mcp::match_ctrl::{DURATION_MAX, DURATION_MIN};
-                println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--port N] [--coop] [--seed N]
+                println!("usage: argus-mcp match <map> [duration_sec] [run_name] [--skill N] [--slots N] [--port N] [--coop | --deathmatch 1|2] [--seed N]
 
 Run one named match and print its brief as JSON. The tape lands in runs/<run_name>.log.
 The accepted duration is {DURATION_MIN}..={DURATION_MAX} seconds.
+Deathmatch defaults to 1. Use --deathmatch 2 for weapons stay.
 
 --seed N (1..2000) runs the fixed lab clock: the lab's 14.25 ms frame, faster than
 real time, ending at duration_sec of game time, and the same match every time for
@@ -754,6 +756,17 @@ one seed and build. Without it the match runs on the wall clock.");
                     .and_then(|i| rest.get(i + 1).cloned())
             };
             let coop = rest.iter().any(|a| a == "--coop");
+            if coop && deathmatch.is_some() {
+                anyhow::bail!("--coop and --deathmatch are mutually exclusive");
+            }
+            let rules = match deathmatch {
+                Some(value) => value
+                    .parse::<u32>()
+                    .ok()
+                    .and_then(|value| argus_mcp::engine::MatchRules::deathmatch(value).ok())
+                    .ok_or_else(|| anyhow::anyhow!("--deathmatch needs 1 or 2"))?,
+                None => argus_mcp::engine::MatchRules::from_coop(coop),
+            };
             let skill: Option<u32> = flag("--skill").and_then(|s| s.parse().ok());
             let slots: Option<u32> = flag("--slots").and_then(|s| s.parse().ok());
             let seed: Option<u32> = match flag("--seed") {
@@ -810,7 +823,7 @@ one seed and build. Without it the match runs on the wall clock.");
                     run_name.as_deref(),
                     slots,
                     skill,
-                    Some(coop),
+                    Some(rules),
                 )
                 .await
                 .map_err(|e| anyhow::anyhow!(e))?;
@@ -1615,7 +1628,7 @@ Judge candidate tapes against control tapes as bands. With no controls, the map'
                     Some(&run_name),
                     None,
                     skill,
-                    Some(true),
+                    Some(argus_mcp::engine::MatchRules::Coop),
                 )
                 .await;
 

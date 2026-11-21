@@ -138,7 +138,7 @@ impl EngineChild {
         skill: Option<u32>,
         cwd: &Path,
         port: Option<u16>,
-        coop: bool,
+        rules: MatchRules,
         clock: EngineClock,
         roster: EngineRoster,
     ) -> Result<Self, String> {
@@ -158,11 +158,11 @@ impl EngineChild {
         check_port_available(actual_port)?;
         #[cfg(windows)]
         {
-            spawn_windows(cfg, map, slots, skill, cwd, port, coop, clock, roster)
+            spawn_windows(cfg, map, slots, skill, cwd, port, rules, clock, roster)
         }
         #[cfg(not(windows))]
         {
-            spawn_unix(cfg, map, slots, skill, cwd, port, coop, clock, roster)
+            spawn_unix(cfg, map, slots, skill, cwd, port, rules, clock, roster)
         }
     }
 
@@ -327,12 +327,12 @@ fn spawn_unix(
     skill: Option<u32>,
     cwd: &Path,
     port: Option<u16>,
-    coop: bool,
+    rules: MatchRules,
     clock: EngineClock,
     roster: EngineRoster,
 ) -> Result<EngineChild, String> {
     let mut cmd = Command::new(&cfg.engine);
-    apply_args(&mut cmd, cfg, map, slots, skill, port, coop, clock, roster);
+    apply_args(&mut cmd, cfg, map, slots, skill, port, rules, clock, roster);
     cmd.current_dir(cwd)
         .kill_on_drop(true)
         .stdin(Stdio::piped())
@@ -409,6 +409,41 @@ pub fn fixed_frame() -> String {
         .ok()
         .filter(|v| v.parse::<f64>().is_ok_and(|f| (0.005..=0.1).contains(&f)))
         .unwrap_or_else(|| FIXED_FRAME.to_string())
+}
+
+/// Rules applied when the engine loads a map.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum MatchRules {
+    #[default]
+    Deathmatch,
+    WeaponsStay,
+    Coop,
+}
+
+impl MatchRules {
+    pub fn deathmatch(value: u32) -> Result<Self, String> {
+        match value {
+            1 => Ok(Self::Deathmatch),
+            2 => Ok(Self::WeaponsStay),
+            _ => Err("deathmatch must be 1 or 2".into()),
+        }
+    }
+
+    pub fn from_coop(coop: bool) -> Self {
+        if coop {
+            Self::Coop
+        } else {
+            Self::Deathmatch
+        }
+    }
+
+    fn cvars(self) -> (&'static str, &'static str) {
+        match self {
+            Self::Deathmatch => ("1", "0"),
+            Self::WeaponsStay => ("2", "0"),
+            Self::Coop => ("0", "1"),
+        }
+    }
 }
 
 /// How the engine's clock runs for one launch.
@@ -514,7 +549,7 @@ fn apply_args(
     slots: u32,
     skill: Option<u32>,
     port: Option<u16>,
-    coop: bool,
+    rules: MatchRules,
     clock: EngineClock,
     roster: EngineRoster,
 ) {
@@ -528,11 +563,8 @@ fn apply_args(
         .arg("+developer")
         .arg("1")
         .args(clock.args());
-    if coop {
-        cmd.arg("+coop").arg("1").arg("+deathmatch").arg("0");
-    } else {
-        cmd.arg("+deathmatch").arg("1");
-    }
+    let (deathmatch, coop) = rules.cvars();
+    cmd.args(["+coop", coop, "+deathmatch", deathmatch]);
     cmd.arg("-port")
         .arg(port.unwrap_or(crate::match_ctrl::DEFAULT_PORT).to_string());
     if let Some(s) = skill {
@@ -624,18 +656,15 @@ fn windows_args(
     slots: u32,
     skill: Option<u32>,
     port: Option<u16>,
-    coop: bool,
+    rules: MatchRules,
     clock: EngineClock,
     roster: EngineRoster,
 ) -> Result<String, String> {
     // CreateProcessW receives the full executable path separately.
     const ARGV0: &str = "argus-engine";
     let port = port.unwrap_or(crate::match_ctrl::DEFAULT_PORT);
-    let mode_arg = if coop {
-        "+coop 1 +deathmatch 0"
-    } else {
-        "+deathmatch 1"
-    };
+    let (deathmatch, coop) = rules.cvars();
+    let mode_arg = format!("+coop {coop} +deathmatch {deathmatch}");
     let tick = clock.args().join(" ");
     let mut startup =
         format!("-dedicated {slots} -port {port} -condebug +developer 1 {tick} {mode_arg}");
@@ -676,7 +705,7 @@ fn spawn_windows(
     skill: Option<u32>,
     cwd: &Path,
     port: Option<u16>,
-    coop: bool,
+    rules: MatchRules,
     clock: EngineClock,
     roster: EngineRoster,
 ) -> Result<EngineChild, String> {
@@ -685,7 +714,7 @@ fn spawn_windows(
         CreateProcessW, PROCESS_INFORMATION, STARTF_USESHOWWINDOW, STARTUPINFOW,
     };
 
-    let args = windows_args(cfg, map, slots, skill, port, coop, clock, roster)?;
+    let args = windows_args(cfg, map, slots, skill, port, rules, clock, roster)?;
 
     let exe_wide: Vec<u16> = cfg
         .engine
@@ -1255,7 +1284,7 @@ mod tests {
             Some(2),
             temp.path(),
             Some(port),
-            false,
+            MatchRules::Deathmatch,
             super::EngineClock::Played,
             super::EngineRoster::Standard,
         );
@@ -1307,14 +1336,18 @@ mod tests {
     fn startup_skill_precedes_map_on_both_spawn_paths() {
         let cfg = tick_cfg();
         for skill in 0..=3 {
-            for coop in [false, true] {
+            for rules in [
+                MatchRules::Deathmatch,
+                MatchRules::WeaponsStay,
+                MatchRules::Coop,
+            ] {
                 let windows = windows_args(
                     &cfg,
                     "dm3",
                     8,
                     Some(skill),
                     None,
-                    coop,
+                    rules,
                     EngineClock::Played,
                     EngineRoster::Standard,
                 )
@@ -1327,7 +1360,7 @@ mod tests {
                     8,
                     Some(skill),
                     None,
-                    coop,
+                    rules,
                     EngineClock::Played,
                     EngineRoster::Standard,
                 );
@@ -1341,6 +1374,15 @@ mod tests {
                     assert!(
                         args.find(&format!("+skill {skill}")).unwrap()
                             < args.find("+map dm3").unwrap(),
+                        "{args}"
+                    );
+                    let flags = match rules {
+                        MatchRules::Deathmatch => "+coop 0 +deathmatch 1",
+                        MatchRules::WeaponsStay => "+coop 0 +deathmatch 2",
+                        MatchRules::Coop => "+coop 1 +deathmatch 0",
+                    };
+                    assert!(
+                        args.find(flags).unwrap() < args.find("+map dm3").unwrap(),
                         "{args}"
                     );
                 }
@@ -1357,7 +1399,7 @@ mod tests {
             8,
             None,
             None,
-            false,
+            MatchRules::Deathmatch,
             EngineClock::Played,
             EngineRoster::Standard,
         )
@@ -1370,7 +1412,7 @@ mod tests {
             8,
             None,
             None,
-            false,
+            MatchRules::Deathmatch,
             EngineClock::Played,
             EngineRoster::Standard,
         );
@@ -1400,7 +1442,7 @@ mod tests {
             8,
             None,
             None,
-            false,
+            MatchRules::Deathmatch,
             EngineClock::Played,
             EngineRoster::Standard,
         );
@@ -1423,7 +1465,7 @@ mod tests {
             8,
             None,
             None,
-            false,
+            MatchRules::Deathmatch,
             EngineClock::Played,
             EngineRoster::Standard,
         )
@@ -1435,7 +1477,7 @@ mod tests {
             4,
             Some(1),
             Some(26011),
-            true,
+            MatchRules::Coop,
             EngineClock::Played,
             EngineRoster::Standard,
         )
@@ -1457,7 +1499,7 @@ mod tests {
             8,
             Some(2),
             None,
-            false,
+            MatchRules::Deathmatch,
             clock,
             EngineRoster::Standard,
         )
@@ -1470,7 +1512,7 @@ mod tests {
             8,
             Some(2),
             None,
-            false,
+            MatchRules::Deathmatch,
             clock,
             EngineRoster::Standard,
         );
@@ -1514,7 +1556,7 @@ mod tests {
                 8,
                 Some(2),
                 None,
-                false,
+                MatchRules::Deathmatch,
                 clock,
                 EngineRoster::Standard,
             )
@@ -1536,7 +1578,7 @@ mod tests {
             8,
             Some(2),
             None,
-            false,
+            MatchRules::Deathmatch,
             EngineClock::Played,
             EngineRoster::Standard,
         )
@@ -1554,7 +1596,7 @@ mod tests {
                 4,
                 Some(2),
                 None,
-                false,
+                MatchRules::Deathmatch,
                 EngineClock::Played,
                 roster,
             )
@@ -1567,7 +1609,7 @@ mod tests {
                 4,
                 Some(2),
                 None,
-                false,
+                MatchRules::Deathmatch,
                 EngineClock::Played,
                 roster,
             );

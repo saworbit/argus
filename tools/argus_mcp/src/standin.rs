@@ -878,16 +878,8 @@ pub async fn run_match(
     let mut ctrl = crate::match_ctrl::MatchCtrl::on_port(port);
     // The stand-in acts on the wall clock (20 Hz moves), so its match must
     // too: a fixed-clock server would run six times faster than it thinks.
-    ctrl.start(
-        cfg,
-        map,
-        Some(secs + 15),
-        Some(run_name),
-        None,
-        skill,
-        Some(false),
-    )
-    .await?;
+    ctrl.start(cfg, map, Some(secs + 15), Some(run_name), None, skill, None)
+        .await?;
     tokio::time::sleep(Duration::from_secs(3)).await;
     let mut client = match NetClient::connect_match(&ctrl, NAME) {
         Ok(c) => c,
