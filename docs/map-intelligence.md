@@ -216,6 +216,47 @@ goals. It is retained as a diagnostic, not adopted or treated as a broader win.
   not an estimate of lift waits, jump setup or combat exposure. The refused
   distance-only arm is a counterexample to treating those as interchangeable.
 
+## Bot adaptation verification
+
+The development candidate changes four decisions:
+
+- Preserve focus through a brief sight gap, then compare visible challengers
+  with the remembered target. Track two recent sources of damage independently
+  so a light hit leaves the stronger cue available.
+- Check momentum and landing safety before pursuing a last sighting directly.
+  A remembered failed crossing triggers a fight detour only with fresh sight.
+- Plan supplies around any loaded fighting weapon. Release a health, ammo or
+  armour errand after an incidental pickup fills the need and travel can safely
+  be redirected. Skip owned weapons that stay in place under the match rules.
+- Reconsider a nearby item after another bot's failed approach when it is
+  safely reachable from the current waypoint.
+
+The current lab reanalysed 120 archived played-rate tapes from 11 maps at
+skills 0 to 3. Build `a577f46c1529` passed 19 of 20 comparisons. The
+skill-3 lqdm2 stall comparison failed. The archived e1m1 follow-up passed
+the current stationary freeze gate, which classifies the flagged window as
+lift travel. Skill-2 dm4 recorded 9 control and 18 candidate lava deaths
+across seven matches per build, below the detection limit.
+[lqdm2 stalls](https://github.com/saworbit/argus/issues/1053) |
+[e1m1 lift travel](https://github.com/saworbit/argus/issues/1051) |
+[dm4 lava deaths](https://github.com/saworbit/argus/issues/1055)
+
+The candidate rebased onto `9ebe2dc` (build `8d8f41ea7313`) passed 180
+automated decision checks and four stock pursuit cases. The 22 fresh matches
+used control build `cbbd30ece9ce` and returned parity on all three primary gates.
+
+| Map | Skill | Matches per build | Primary | Median, control to candidate |
+| --- | ---: | ---: | --- | ---: |
+| e1m1 | 2 | 3 | Stalls | 30 to 32 |
+| dm4 | 2 | 3 | Lava deaths | 2 to 2 |
+| lqdm2 | 3 | 5 | Stalls | 3 to 5 |
+
+The fresh lqdm2 improvement interval was -4.3 to +2.7 stalls. The earlier
+rejection remains open. The calibrated skill-1 dm4 stand-in estimated
++0.92 bot kills per minute in sight, with a 95 per cent interval of -2.00 to
++3.85. That threat direction is inconclusive. The gameplay candidate remains
+unshipped.
+
 ## Repeating the evaluation
 
 Build the current native lab using the operator guide. The bounded runner
