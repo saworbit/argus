@@ -172,8 +172,8 @@ MUTANTS = [
      "elif abs(delta) > limit:",
      "elif abs(delta) > 2 * limit:"),
     ('lava is recounted 24 units below the death too',
-     "or contents(x, y, z - 24) in argus_longi.HAZARD",
-     "or contents(x, y, z) in argus_longi.HAZARD"),
+     "and death_is_lava(contents, x, y, z):",
+     "and contents(x, y, z) in argus_longi.HAZARD:"),
 
     # metric boundaries
     ("a tape on a boundary's day already carries the new metric",
