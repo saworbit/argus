@@ -21,12 +21,14 @@ def measure(path):
     text = path.read_text(encoding="utf-8", errors="replace")
     tape = parse_tape(text)
     bots, _, _ = track_names(tape.samples, tape.events)
-    arms = {actor: payload for _, actor, verb, payload in tape.events
-            if verb == "arm" and actor in bots}
+    assignments = [(line, actor, payload) for line, actor, verb, payload in tape.events
+                   if verb == "arm" and actor in bots]
+    arms = {actor: payload for _, actor, payload in assignments}
+    start = max((line for line, _, _ in assignments), default=0)
     ledgers = defaultdict(Counter)
     handles = set(bots)
-    for _, actor, verb, payload in tape.events:
-        if actor not in handles:
+    for line, actor, verb, payload in tape.events:
+        if line <= start or actor not in handles:
             continue
         arm = arms.get(actor, "bots")
         if verb == "major_pickup_v1" and payload in MAJORS:
@@ -35,7 +37,9 @@ def measure(path):
             ledgers[arm]["self_damage_hp"] += float(payload)
         if verb in ("momentum", "contest"):
             ledgers[arm][verb] += 1
-    for _, victim, killer, *_ in deaths(tape.events):
+    for line, victim, killer, *_ in deaths(tape.events):
+        if line <= start:
+            continue
         if victim in handles:
             ledgers[arms.get(victim, "bots")]["deaths"] += 1
         if killer in handles and victim != killer:
