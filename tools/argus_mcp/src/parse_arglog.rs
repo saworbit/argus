@@ -960,7 +960,7 @@ fn death_re() -> &'static Regex {
     })
 }
 
-const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|retarget|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats";
+const EVENT_VERBS: &str = "spawned|respawn|goal_push|goal_pop|goal|goal_pickup_v1|route|routefail|trapped|abandon|stall|stallnode|jump|rjump|lift|swim|door|train|board|hazard|engage|retarget|pursue|retreat|coverroute|lifeveto|grab|weapon|plan|arm|tactic|death|checkpoint|win|coop_stats";
 
 // A complete sample name is stronger evidence than a word inside the
 // closed verb vocabulary. Prefer the longest known identity. Terminal
@@ -1140,6 +1140,27 @@ ARGEVT Gap lift goal spawned\n";
         assert_eq!(brief.totals.freezes, 3);
         assert_eq!(brief.totals.freeze_max_sec, 8.0);
         assert_eq!(brief.totals.freeze_underfire, 2);
+    }
+
+    #[test]
+    fn verified_goal_pickups_do_not_inherit_the_historical_completion_count() {
+        let rows = "ARGUS init on dm4\n\
+ARGEVT Joe Rogan spawned\n\
+ARGLOG Joe Rogan t 0 pos '0 0 24' spd 0 yaw 0 mode 1 st 0 gl 0 hp 60 frg 0\n\
+ARGEVT Joe Rogan goal item_health\n\
+ARGLOG Joe Rogan t 1 pos '0 0 24' spd 0 yaw 0 mode 1 st 0 gl 2 hp 85 frg 0\n";
+        let old = crate::intel::brief_text(rows, Some("dm4"));
+        assert_eq!(old.totals.goals, 2);
+        assert_eq!(old.totals.verified_goal_pickups_v1, None);
+
+        let current = format!("ARGUS goal_pickup v1\n{rows}");
+        let brief = crate::intel::brief_text(&current, Some("dm4"));
+        assert_eq!(brief.totals.verified_goal_pickups_v1, Some(0));
+
+        let with_touch = format!("{current}ARGEVT Joe Rogan goal_pickup_v1 item_health\n");
+        let brief = crate::intel::brief_text(&with_touch, Some("dm4"));
+        assert_eq!(brief.totals.goals, 2);
+        assert_eq!(brief.totals.verified_goal_pickups_v1, Some(1));
     }
 
     #[test]

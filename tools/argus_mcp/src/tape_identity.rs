@@ -25,6 +25,8 @@ pub struct TapeIdentity {
     pub other_builds: Vec<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub clock: Option<TapeClock>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub goal_pickup_version: Option<u8>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub marks: Vec<SessionMark>,
 }
@@ -34,6 +36,7 @@ impl TapeIdentity {
         self.build.is_none()
             && self.other_builds.is_empty()
             && self.clock.is_none()
+            && self.goal_pickup_version.is_none()
             && self.marks.is_empty()
     }
 
@@ -101,7 +104,9 @@ pub fn inspect(text: &str) -> TapeIdentity {
         if !line.starts_with("ARGUS ") {
             continue;
         }
-        if let Some(c) = build_re().captures(line) {
+        if line == "ARGUS goal_pickup v1" {
+            id.goal_pickup_version = Some(1);
+        } else if let Some(c) = build_re().captures(line) {
             let build = c[1].to_string();
             match &id.build {
                 None => id.build = Some(build),
