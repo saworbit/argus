@@ -184,6 +184,10 @@ void() Argus_LiveNavReset;
 void() Argus_LiveNavSample;
 void() Argus_LiveNavReject;
 vector(vector wish) Argus_LiveSwimWish;
+.vector ar_exploregoal;
+.float ar_exploring, ar_exploreuntil;
+float() Argus_ExploreExit;
+void() Argus_ExploreReset;
 .float ar_momentum_next, ar_momentum_flight;
 .float ar_trade_until, ar_trade_damage, ar_splashwait;
 .float ar_contest_scan, ar_water_cue;
@@ -2672,7 +2676,7 @@ void() Argus_Physics =
 
     if (wl >= 2 && (wl == 3 || !(self.flags & FL_ONGROUND)))
     {
-        if (argus_live_nav && !tacticmove && self.ar_feettype == CONTENT_WATER
+        if (argus_live_nav && !self.ar_exploring && !tacticmove && self.ar_feettype == CONTENT_WATER
             && self.ar_mode == 0 && self.ar_enemy == world)
             wishdir = Argus_LiveSwimWish (wishdir);
 
@@ -2915,6 +2919,12 @@ void() Argus_Physics =
     {
         self.ar_hopair = 0;             // grounded: air control is done
         self.ar_momentum_flight = 0;
+        if (!tacticmove && self.ar_exploring == 2 && self.ar_feettype == CONTENT_EMPTY)
+        {
+            // Turn before accelerating off the checked approach.
+            Argus_Friction ();
+            return;
+        }
         if (self.ar_hoprj == 2)
         {
             self.ar_hoprj = 0;          // landed: the blast ride is over
@@ -4315,6 +4325,7 @@ void() Argus_BaseStats =
     self.ar_localshop = 0;
     self.ar_localgoal = 0;
     Argus_LiveNavReset ();
+    Argus_ExploreReset ();
     self.ar_momentum_flight = 0;
     self.ar_momentum_next = 0;
     self.ar_trade_target = world;
@@ -10606,6 +10617,7 @@ void() Argus_AI =
     local entity oldnode, nx, dr, gn, jseat, liveportal;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
+    self.ar_exploring = FALSE;
 
     // FIXED NAVIGATION TASKS (#384). The external harness places one bot and
     // assigns one synthetic goal through Argus_TaskControl. Completion is
@@ -11955,6 +11967,16 @@ void() Argus_AI =
         }
     }
 
+    // Follow a checked exit when neither an opponent nor an item is steering.
+    if (fighting || havetarget)
+        self.ar_exploreuntil = 0;
+    else if (Argus_ExploreExit ())
+    {
+        tp = self.ar_exploregoal;
+        self.ar_exploring = TRUE;
+        havetarget = TRUE;
+    }
+
     // a closed door on the current hop beats combat displacement:
     // fighting used to skip this block and walk the slab (t6).
     if (fighting && self.ar_door != world && self.ar_door.state == STATE_BOTTOM)
@@ -12188,7 +12210,8 @@ void() Argus_AI =
             self.ar_mode = 0;
             self.angles_y = self.angles_y + 150;
             self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, self.angles_y, "goal_abandon");
-            Argus_Event ("abandon");
+            if (self.ar_exploring) self.ar_exploreuntil = time;
+            else Argus_Event ("abandon");
         }
         else
         {
@@ -12203,6 +12226,8 @@ void() Argus_AI =
             diff = want - self.ar_moveyaw;
             while (diff > 180)  diff = diff - 360;
             while (diff < -180) diff = diff + 360;
+            if (self.ar_exploring && fabs (diff) > 18)
+                self.ar_exploring = 2;
             turn = AR_TURNRATE * frametime;
             // THREE CORNER CHANGES, laddered on lab_voidcorner and REVERTED
             // (docs/lab-scenarios.md, docs/specs/2026-11-16-*). On a 64u
