@@ -8,7 +8,7 @@ from argus_fixture_harness import new_output,stage_fixture,private_game,read_tap
 from argus_source import source_identity
 from argus_validation import require
 from check_muzzle_combat import check
-from run_behaviour_equivalence import Lab,lab_executable,finish_lab
+from argus_lab_client import Lab,lab_executable,finish_lab
 from run_map_intelligence import ROOT,write,digest
 
 CASES=('owned','gates','seen','enemy','cache','weapon','tactic','motor_set','motor_equal','velocity')

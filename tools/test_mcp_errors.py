@@ -4,7 +4,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from run_behaviour_equivalence import Lab, finish_lab
+from argus_lab_client import Lab, finish_lab
 
 
 class McpErrors(unittest.TestCase):

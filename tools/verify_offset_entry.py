@@ -15,7 +15,7 @@ import re
 from pathlib import Path
 import shutil
 
-from run_behaviour_equivalence import Lab, ROOT
+from argus_lab_client import Lab, ROOT
 from verify_plan_progress import prepare, copy_assets, save, sha
 
 

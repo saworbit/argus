@@ -4,7 +4,7 @@ from argus_source import source_identity
 from argus_fixture_harness import (new_output, stage_fixture, private_game,
     read_tape, check_tape, frame_ms as measured_frame_ms, run_match)
 
-from run_behaviour_equivalence import lab_executable
+from argus_lab_client import lab_executable
 from argus_validation import require
 from ctypes import c_float
 import argparse
@@ -15,7 +15,7 @@ import re
 import shutil
 import sys
 
-import run_behaviour_equivalence as native
+import argus_lab_client as native
 from run_map_intelligence import ROOT, Lab, digest, write
 
 DECISION_LABELS = ('walk_chain','typed_jump','typed_sprint','typed_rocket','typed_swim',

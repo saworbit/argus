@@ -13,7 +13,7 @@ from argus_fixture_harness import (frame_ms, new_output, private_game, read_tape
                                   run_match, stage_fixture, write_text)
 from argus_source import source_identity
 from argus_validation import require
-from run_behaviour_equivalence import ROOT, Lab, finish_lab, lab_executable
+from argus_lab_client import ROOT, Lab, finish_lab, lab_executable
 
 EXIT = (1921, -1047, 344)
 START = re.compile(r"^TW start (\d+) support 1 pos '([^']+)' car '([^']+)' carvel '([^']+)'$", re.M)

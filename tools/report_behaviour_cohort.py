@@ -13,7 +13,7 @@ from pathlib import Path
 import statistics
 
 from check_behaviour_equivalence import evaluate, frame_interval, frame_mean, interval
-from run_behaviour_equivalence import ROOT, TIMING
+from argus_lab_client import ROOT, TIMING
 
 
 def audit(protocol_path):

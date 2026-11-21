@@ -2,7 +2,7 @@
 from argus_engine_errors import fatal_engine_line
 import hashlib,json,re,shutil
 from pathlib import Path
-from run_behaviour_equivalence import ROOT,Lab,identity
+from argus_lab_client import ROOT,Lab,identity
 from run_health_fixture import body
 from check_muzzle_fixture import check,audit
 from health_inventory_parked import parked_source

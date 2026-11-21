@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
-import run_behaviour_equivalence as native
+import argus_lab_client as native
 import verify_plan_progress as plan
 
 

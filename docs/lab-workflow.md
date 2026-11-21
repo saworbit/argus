@@ -444,7 +444,8 @@ inputs and are separate identities. Historical receipts are retained verbatim.
 Native tactic reports label their older unprefixed MD5 as `legacy_source_md5`.
 
 The routing, recovery, mover, attention and water fixture drivers share
-`argus_fixture_harness`. Output must be a new strict child of `backups/`.
+`argus_fixture_harness`, which calls the native lab through `argus_lab_client`.
+Output must be a new strict child of `backups/`.
 Staging writes fixture edits as UTF-8 with LF and removes an incomplete copy
 on failure. Private game directories must be absent, including aliases;
 installed binaries in `game/argus`, `engine/argus` and `lq1` are checked on

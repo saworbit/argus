@@ -5,7 +5,7 @@ from argus_source import source_identity
 from argus_fixture_harness import (new_output, stage_fixture, private_game,
     read_tape, check_tape, frame_ms as measured_frame_ms, run_match)
 
-from run_behaviour_equivalence import lab_executable
+from argus_lab_client import lab_executable
 import argparse
 import json
 from pathlib import Path
@@ -13,7 +13,7 @@ import re
 import shutil
 import sys
 
-import run_behaviour_equivalence as native
+import argus_lab_client as native
 from run_map_intelligence import ROOT, Lab, digest, write
 
 def source_receipt(src):
