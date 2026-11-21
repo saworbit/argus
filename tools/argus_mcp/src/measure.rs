@@ -65,7 +65,10 @@ pub const NULL_PAIRS: [(&str, &str); 16] = [
 const LADDER_ARMS: &[(&str, &[&str])] = &[
     // Superseded by the graph-matched November 21 bands (#1036).
     ("e1m5", &["band_e1m5_r1", "band_e1m5_r2", "band_e1m5_r3"]),
-    ("lqdm2", &["band_lqdm2_r1", "band_lqdm2_r2", "band_lqdm2_r3"]),
+    (
+        "lqdm2",
+        &["band_lqdm2_r1", "band_lqdm2_r2", "band_lqdm2_r3"],
+    ),
     // The November 14 bands superseded by #980 remain same-build noise arms.
     ("dm3", &["band_dm3_r1", "band_dm3_r2", "band_dm3_r3"]),
     ("dm4", &["band_dm4_r1", "band_dm4_r2", "band_dm4_r3"]),
