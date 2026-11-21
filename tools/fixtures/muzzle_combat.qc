@@ -66,7 +66,7 @@ void(string label, vector origin, vector target, float yaw, float blocked) Muzzl
 void() MuzzleCombatFixture =
 {
     local entity node, ent, saved, b;
-    local vector src, angles, target, shot, backdrop, oldseat, oldvisible;
+    local vector src, angles, target, shot, backdrop;
     local float yaw, side, wall, geometry, distance, fraction, startsolid, allsolid;
     local float before, after, allowed;
     if (mc_done || time < 1) return;

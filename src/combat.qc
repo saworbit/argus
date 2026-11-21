@@ -248,6 +248,8 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 
 
 	// do the damage
+	if (deathmatch && attacker.ar_isbot)
+		Argus_DuelDamage (targ, attacker, take, save);
 	targ.health = targ.health - take;
 
 	if (targ.health <= 0)

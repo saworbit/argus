@@ -217,6 +217,7 @@ void() door_touch =
 {
 	if (other.classname != "player")
 		return;
+	Argus_LiveNavDoor (other);
 
 	if (self.owner.attack_finished > time)
 		return;

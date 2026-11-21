@@ -57,6 +57,7 @@ void() button_fire =
 	if (self.state == STATE_UP || self.state == STATE_TOP)
 		return;
 
+	Argus_LiveNavDoor (self.enemy);
 	sound (self, CHAN_VOICE, self.noise, 1, ATTN_NORM);
 
 	self.state = STATE_UP;

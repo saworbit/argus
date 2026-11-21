@@ -39,6 +39,15 @@ void(entity foe) AdaptationDenial =
     near.ar_nextitem = far;
     argus_itemchain = near;
     self.ar_warmor = 1;
+    far.classname = "item_armorInv";
+    far.nextthink = time + 4;
+    self.health = 100;
+    AfCheck ("real_respawn_clock_boosts_healthy_denial",
+             Argus_MajorTiming (far, 60, 0) > 60);
+    self.health = 20;
+    AfCheck ("low_stack_discounts_waiting_for_armour",
+             Argus_MajorTiming (far, 60, 0) < 60);
+    far.classname = "item_armor1";
     foe.classname = "player";
     setorigin (foe, far.origin);
     self.ar_obsenemy = world;

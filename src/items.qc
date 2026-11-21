@@ -17,13 +17,36 @@
     See file, 'COPYING', for details.
 */
 void() W_SetCurrentAmmo;
+.float healamount, healtype;
 /* ALL LIGHTS SHOULD BE 0 1 0 IN COLOR ALL OTHER ITEMS SHOULD
 BE .8 .3 .4 IN COLOR */
 
 
 // Called by a successful touch while self still names the item.
+string(entity item) Argus_MajorName =
+{
+	if (item.classname == "item_armorInv") return "ra";
+	if (item.classname == "item_armor2") return "ya";
+	if (item.classname == "item_health" && item.healtype == 2) return "mh";
+	if (item.classname == "weapon_rocketlauncher") return "rl";
+	if (item.classname == "weapon_lightning") return "lg";
+	if (item.classname == "item_artifact_super_damage" && item.think != SUB_Remove) return "quad";
+	if (item.classname == "item_artifact_invulnerability") return "pent";
+	return "";
+};
+
 void() Argus_LogGoalPickup =
 {
+	local string major;
+	if (deathmatch)
+	{
+		major = Argus_MajorName (self);
+		if (major != "")
+		{
+			dprint ("ARGEVT "); dprint (other.netname);
+			dprint (" major_pickup_v1 "); dprint (major); dprint ("\n");
+		}
+	}
 	if (!other.ar_isbot || other.ar_goal != self)
 		return;
 	dprint ("ARGEVT "); dprint (other.netname);
@@ -296,7 +319,6 @@ one point per second.
 
 float	H_ROTTEN = 1;
 float	H_MEGA = 2;
-.float	healamount, healtype;
 void() health_touch;
 void() item_megahealth_rot;
 
