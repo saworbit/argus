@@ -202,7 +202,10 @@ void() worldspawn =
 	blinit.think = Argus_Init;
 	blinit.nextthink = time + 0.1;
 	dprint ("ARGUS worldspawn reached\n");
-	Argus_Nav_Spawn ();
+	if (!(cvar ("developer") && cvar ("scratch3") == 641))
+		Argus_Nav_Spawn ();
+	argus_live_nav = (deathmatch && !coop
+		&& find (world, classname, "argus_node") == world);
 
 	lastspawn = world;
 	InitBodyQueue ();

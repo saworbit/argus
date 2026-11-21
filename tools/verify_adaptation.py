@@ -20,22 +20,33 @@ COMMON = {'real_pickup_is_audible', 'pickup_has_no_weapon_class',
           'loaded_switches_follow_repeated_splash_crossings', 'nail_depletion_selects_a_firing_shotgun',
           'grenade_launcher_fires_when_rockets_are_unavailable', 'expired_beam_releases_to_loaded_rockets',
           'water_entry_cancels_lightning_and_fires_safe_fallback', 'receding_target_lead',
-          'closing_target_lead', 'crossing_target_lead', 'extreme_speed_retains_legacy_lead'}
+          'closing_target_lead', 'crossing_target_lead', 'extreme_speed_retains_legacy_lead',
+          'splash_gate_uses_actual_armour_absorption', 'velocity_relative_wish_adds_horizontal_speed',
+          'separate_attackers_retain_independent_bearings', 'actor_reset_preserves_other_threat',
+          'learned_drop_is_directed_and_keeps_typed_handoff', 'loaded_lightning_keeps_clear_close_range'}
 REQUIRED = {
     'dm2': COMMON | {'keeps_pickup_commitment', 'expired_pickup_cools_and_replans',
                      'unseen_opponent_leaves_pickup_ranking_alone', 'denial_uses_last_sighting',
-                     'denial_can_use_fresh_gunfire', 'denial_expires_stale_evidence'},
+                     'denial_can_use_fresh_gunfire', 'denial_expires_stale_evidence',
+                     'real_respawn_clock_boosts_healthy_denial', 'low_stack_discounts_waiting_for_armour'},
     'dm6': COMMON | {'two_live_portals_and_graph_search', 'both_warps_leave_active_search_unchanged',
                      'both_portals_learned_when_idle', 'warp_waits_for_audible_playback',
-                     'warp_exit_is_a_neutral_audible_cue', 'warp_respects_recent_shot_priority'},
+                     'warp_exit_is_a_neutral_audible_cue', 'warp_respects_recent_shot_priority',
+                     'real_warp_learns_directed_portal'},
 }
 
 
 def stage(root, output, source=None):
     names = ('adaptation_audio.qc', 'adaptation_pickups.qc')
     fixtures = {name: (root / 'tools/fixtures' / name).read_text(encoding='utf-8') for name in names}
+    def move_fog_declaration(text):
+        declaration = '\nentity s;\n'
+        require(text.count(declaration) == 1, 'expected the teleport fog declaration')
+        return text.replace(declaration, '\n')
+
     return stage_fixture(root, output, source, fixtures=fixtures,
-                         frame_wrap='AfFixture ();\n    AdaptationPickupFixture ();\n    Argus_FrameAll ();')
+                         frame_wrap='AfFixture ();\n    AdaptationPickupFixture ();\n    Argus_FrameAll ();',
+                         edits={'triggers.qc': move_fog_declaration})
 
 
 def inspect_fixture(raw, map_name, build):

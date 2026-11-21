@@ -2,7 +2,7 @@
 float af_done;
 void() player_nail2;
 void() player_light2;
-extern entity s;
+entity s;
 
 void(string name, float ok) AfCheck =
 {
@@ -174,6 +174,29 @@ void(entity listener, entity rider, entity gate) AfTeleportCue =
     self = saved;
 };
 
+void(entity rider, entity gate) AfRuntimePortal =
+{
+    local entity from, to, node;
+
+    argus_live_nav = TRUE;
+    AfWarp (gate, rider);
+    to = al_nodes;
+    from = to.al_next;
+    AfCheck ("real_warp_learns_directed_portal",
+             from != world && to != world && from.al_gate == gate && from.al_exit == to
+             && Argus_LinkIsTyped (from, to) && !Argus_NavGetLinkBit (to, from));
+    while (al_nodes != world)
+    {
+        node = al_nodes;
+        al_nodes = node.al_next;
+        remove (node);
+    }
+    Argus_LiveNavReset ();
+    al_count = 0;
+    al_peak_edicts = 0;
+    argus_live_nav = FALSE;
+};
+
 void() AfStraightFlight =
 {
     local vector offset;
@@ -188,6 +211,66 @@ void() AfStraightFlight =
     AfCheck ("crossing_target_lead", fabs (flight - 0.4222) < 0.006);
     AfCheck ("extreme_speed_retains_legacy_lead",
              Argus_StraightFlight (offset, '0 600 0', 0.4) == 0.4);
+};
+
+void(entity listener, entity actor) AfDuelContracts =
+{
+    local entity saved, other_actor, from, to;
+    local vector wish, horizontal;
+    local float original_health, stock, veto;
+
+    saved = self;
+    self = listener;
+    original_health = self.health;
+    self.health = 35;
+    veto = !Argus_SurvivesSplash (self.origin, 120);
+    self.armortype = 0.8;
+    self.armorvalue = 100;
+    AfCheck ("splash_gate_uses_actual_armour_absorption",
+             veto && Argus_SurvivesSplash (self.origin, 120));
+    self.armortype = 0;
+    self.armorvalue = 0;
+    self.health = original_health;
+
+    self.ammo_cells = 12;
+    AfCheck ("loaded_lightning_keeps_clear_close_range",
+             Argus_DuelWeapon (230, self.origin + '128 32 -192', IT_LIGHTNING) == IT_LIGHTNING);
+    self.ammo_cells = 0;
+
+    self.velocity = '320 0 0';
+    wish = Argus_MomentumWish ('1 0 0');
+    Argus_AirAccelerate (wish, AR_MAXSPEED);
+    horizontal = self.velocity;
+    horizontal_z = 0;
+    AfCheck ("velocity_relative_wish_adds_horizontal_speed",
+             vlen (horizontal) > 320 && fabs (self.velocity_z) < 1);
+    self.velocity = '0 0 0';
+
+    other_actor = spawn ();
+    other_actor.classname = "player";
+    Argus_ThreatMark (listener, actor, '64 24 0', 2.6);
+    Argus_ThreatMark (listener, other_actor, '48 8 0', 1.4);
+    AfCheck ("separate_attackers_retain_independent_bearings",
+             Argus_ThreatConfidence (actor) > Argus_ThreatConfidence (other_actor)
+             && Argus_ThreatConfidence (other_actor) > 0
+             && Argus_ThreatBearing () == '64 24 0');
+    Argus_ObservationRemoved (actor);
+    AfCheck ("actor_reset_preserves_other_threat",
+             !Argus_ThreatConfidence (actor) && Argus_ThreatConfidence (other_actor) > 0);
+    remove (other_actor);
+    self.ar_threat_until0 = 0;
+    self.ar_threat_until1 = 0;
+
+    from = Argus_NavNode (self.origin);
+    to = Argus_NavNode (self.origin + '64 0 -48');
+    Argus_LiveLink (from, to, AL_DROP);
+    stock = Argus_NavGetLinkBit (from, to);
+    AfCheck ("learned_drop_is_directed_and_keeps_typed_handoff",
+             stock && Argus_LinkIsTyped (from, to)
+             && !Argus_NavGetLinkBit (to, from));
+    remove (to);
+    remove (from);
+    self = saved;
 };
 
 void() AfFixture =
@@ -234,6 +317,7 @@ void() AfFixture =
     }
     setorigin (listener, source);
     setorigin (actor, source + '64 0 0');
+    AfDuelContracts (listener, actor);
     jacket = spawn ();
     jacket.classname = "item_armor1";
     setorigin (jacket, source + '88 0 0');
@@ -375,6 +459,7 @@ void() AfFixture =
         AfCheck ("both_portals_learned_when_idle", (entrya.an_telemask & bit_a) != 0
                  && (entryb.an_telemask & bit_b) != 0 && an_pendingtelegate == world);
         AfTeleportCue (listener, actor, gatea);
+        AfRuntimePortal (actor, gatea);
     }
 
     argus_bots = roster;

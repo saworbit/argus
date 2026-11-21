@@ -726,6 +726,7 @@ float argus_omicron;                // (console "omicron" / impulse 146)
 void(float what) Argus_Chat;    // ARGUS: bot chat, defined in argus.qc
                                 // and called from powerup_touch (4)
 void(vector spos, entity who, float shotweapon) Argus_HearSound;
+void(entity victim, entity attacker, float take, float saved) Argus_DuelDamage;
 float() Argus_JumpApex;     // ARGUS: how far a jump climbs at this
                             // map's gravity. Defined in argus.qc,
                             // which compiles after argus_nav.qc, and

@@ -640,6 +640,7 @@ void() PutClientInServer =
 #endif
 	// A new life in the same client edict invalidates bot visual memory.
 	Argus_ObservationRemoved (self);
+	Argus_LiveNavReset ();
 
 	self.classname = "player";
 	self.health = 100;
@@ -1144,7 +1145,10 @@ void() WaterMove =
 			sound (self, CHAN_BODY, "player/inlava.wav", 1, ATTN_NORM);
 
 		if (self.watertype == CONTENT_WATER)
+		{
 			sound (self, CHAN_BODY, "player/inh2o.wav", 1, ATTN_NORM);
+			Argus_HearSound (self.origin, self, 0);
+		}
 
 		if (self.watertype == CONTENT_SLIME)
 			sound (self, CHAN_BODY, "player/slimbrn2.wav", 1, ATTN_NORM);
@@ -1485,6 +1489,8 @@ void() PlayerPostThink =
 	// ARGUSCAM: Spectators do not execute player landing or weapon frames
 	if (self.cam_active)
 		return;
+
+	if (argus_live_nav) Argus_LiveNavSample ();
 
 	// check to see if player landed and play landing sound
 	if ((self.jump_flag < -300) && (self.flags & FL_ONGROUND) && (self.health > 0))

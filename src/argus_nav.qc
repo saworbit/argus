@@ -36,6 +36,10 @@ float ANQ_POPS = 48;        // node expansions per server frame
 .float  an_doormask;        // bit i set = link slot i crosses a door
 .float  an_telemask;        // confirmed teleport slots for pickup timing
 .float  an_telecost;        // conservative walking-equivalent cost of those slots
+.float  al_dropmask;
+.float  al_badbit, al_baduntil, al_failures, al_linkLogged;
+.entity al_gate, al_exit;
+float argus_live_nav;
 .float  ar_telechecked;     // on a teleporter trigger: mapping already attempted
 .entity ar_telelanding;     // pending confirmation on this live trigger
 .entity ar_telenext;
@@ -643,6 +647,7 @@ float(entity a, entity b, entity bot) Argus_RouteLinkBit =
     while (i < a.an_nlinks)
     {
         if (Argus_NavGetLink (a, i) == b
+            && !(a.al_badbit == bit && a.al_baduntil > time)
             && (!(a.an_sprintmask & bit) || bot.ar_skill >= 2)
             && (!(a.an_jumpmask & bit)
                 || b.origin_z - a.origin_z <= Argus_JumpApex ()))
@@ -719,6 +724,8 @@ float(entity a, entity b) Argus_LinkIsTyped =
     bit = Argus_NavGetLinkBit (a, b);
     if (!bit)
         return 0;
+    if ((a.al_dropmask & bit) || (a.al_gate != world && a.al_exit == b))
+        return TRUE;
     return ((a.an_jumpmask | a.an_sprintmask | a.an_rjmask | a.an_liftmask | a.an_swimmask | a.an_trainmask | a.an_doormask) & bit);
 };
 
@@ -1357,6 +1364,7 @@ void() Argus_Nav_Frame =
                 // the bot at the lip with the route still telling it to
                 // climb, which is the dm2 n0 pin the ceiling was for.
                 if ((!(cur.an_rjmask & bit) || Argus_BotCanRJ (an_bot))
+                    && !(cur.al_badbit == bit && cur.al_baduntil > time)
                     && (!(cur.an_sprintmask & bit) || an_bot.ar_skill >= 2)
                     && (!(cur.an_jumpmask & bit)
                         || nb.origin_z - cur.origin_z <= an_apex)

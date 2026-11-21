@@ -178,6 +178,31 @@ float argus_plan_serial;
 .float  ar_nextchat;            // chat throttle
 .float  ar_localshop;           // next pickup scan without a graph
 .float  ar_localgoal;           // local direct approach awaits a pickup touch
+entity(vector point, float radius) Argus_LiveNear;
+entity(entity item) Argus_LiveItemSeat;
+void() Argus_LiveNavReset;
+void() Argus_LiveNavSample;
+void() Argus_LiveNavReject;
+vector(vector wish) Argus_LiveSwimWish;
+.float ar_momentum_next, ar_momentum_flight;
+.float ar_trade_until, ar_trade_damage, ar_splashwait;
+.float ar_contest_scan, ar_water_cue;
+.entity ar_trade_target, ar_threat_actor0, ar_threat_actor1;
+.float ar_threat_until0, ar_threat_until1;
+.vector ar_threat_pos0, ar_threat_pos1;
+float() Argus_EffectiveStack;
+float(vector wish) Argus_MomentumLaunch;
+vector(vector desired) Argus_MomentumWish;
+float(vector impact, float radiusDamage) Argus_SurvivesSplash;
+float(vector target) Argus_DuelSplashClear;
+float(float d, vector target, float preferred) Argus_DuelWeapon;
+void(entity listener, entity actor, vector point, float weight) Argus_ThreatMark;
+float(entity actor) Argus_ThreatConfidence;
+vector() Argus_ThreatBearing;
+float(entity item, float value, float arrival) Argus_MajorTiming;
+float() Argus_ContestNearby;
+float argus_duel_ab;
+float() Argus_Advanced;
 .float  ar_greeted;             // said hello yet
 .float  ar_h2otime;             // water enter/exit sound throttle (the
                                 // swim bob skims the surface; see
@@ -2614,7 +2639,14 @@ void() Argus_Physics =
     if (self.jump_flag < -300 && (self.flags & FL_ONGROUND) && self.health > 0)
     {
         if (self.ar_feettype == CONTENT_WATER)
+        {
             sound (self, CHAN_BODY, "player/h2ojump.wav", 1, ATTN_NORM);
+            if (time >= self.ar_water_cue)
+            {
+                self.ar_water_cue = time + 1.5;
+                Argus_HearSound (self.origin, self, 0);
+            }
+        }
         else if (self.jump_flag < -650)
         {
             self.deathtype = "falling";
@@ -2640,6 +2672,10 @@ void() Argus_Physics =
 
     if (wl >= 2 && (wl == 3 || !(self.flags & FL_ONGROUND)))
     {
+        if (argus_live_nav && !tacticmove && self.ar_feettype == CONTENT_WATER
+            && self.ar_mode == 0 && self.ar_enemy == world)
+            wishdir = Argus_LiveSwimWish (wishdir);
+
         // swim only when actually swimming: a bot STANDING chest-deep
         // in a wadeable pool walks like anyone else. The tread-with-
         // floor case was the residual splash cycle in Shane's third
@@ -2878,6 +2914,7 @@ void() Argus_Physics =
     if (self.flags & FL_ONGROUND)
     {
         self.ar_hopair = 0;             // grounded: air control is done
+        self.ar_momentum_flight = 0;
         if (self.ar_hoprj == 2)
         {
             self.ar_hoprj = 0;          // landed: the blast ride is over
@@ -2941,6 +2978,9 @@ void() Argus_Physics =
             self.ar_pending = 1;
             self.ar_mode = 0;
         }
+
+        if (!tacticmove && !self.ar_jump && Argus_MomentumLaunch (wishdir))
+            return;
 
         if (!tacticmove && self.ar_jump)
         {
@@ -3643,6 +3683,8 @@ void() Argus_Physics =
                 }
             }
         }
+        if (self.ar_momentum_flight && self.ar_enemy == world)
+            wishdir = Argus_MomentumWish (wishdir);
         if (!self.ar_eastdeck || self.ar_sprintstate == 3
             || self.ar_stallflight || self.ar_hopair)
             Argus_AirAccelerate (wishdir, AR_MAXSPEED);
@@ -3990,6 +4032,8 @@ void(entity attacker, float dmg) Argus_Pain =
         {
             self.ar_hurtfoe = attacker;
             self.ar_hurtfoetime = time;
+            if (damage_inflictor != world)
+                Argus_ThreatMark (self, attacker, damage_inflictor.origin, 2.6);
         }
     }
     // flinch: tracking restarts, aim error widens for a moment
@@ -4270,6 +4314,18 @@ void() Argus_BaseStats =
     self.ar_hurttime = 0; self.ar_stuckhurt = 0; self.ar_stucktime = 0;
     self.ar_localshop = 0;
     self.ar_localgoal = 0;
+    Argus_LiveNavReset ();
+    self.ar_momentum_flight = 0;
+    self.ar_momentum_next = 0;
+    self.ar_trade_target = world;
+    self.ar_trade_damage = 0;
+    self.ar_splashwait = 0;
+    self.ar_threat_actor0 = world;
+    self.ar_threat_actor1 = world;
+    self.ar_threat_until0 = 0;
+    self.ar_threat_until1 = 0;
+    self.ar_contest_scan = 0;
+    self.ar_water_cue = 0;
     self.ar_actionnode = world; self.ar_actiongoal = world;
     self.ar_actionbest = 0; self.ar_actiontime = 0;
     self.ar_plan_goal = world; self.ar_plan_leg = world;
@@ -4910,6 +4966,7 @@ void(entity e) Argus_ObserveEnemy =
     self.ar_seen = time;
     self.ar_lastseen = e.origin;
     self.ar_obsvelocity = e.velocity;
+    Argus_ThreatMark (self, e, e.origin, 1.9);
     self.ar_obsground = (e.flags & FL_ONGROUND) != 0;
     self.ar_obsair = !self.ar_obsground && e.waterlevel < 2
                     && e.movetype != MOVETYPE_FLY && e.movetype != MOVETYPE_NOCLIP;
@@ -4987,6 +5044,12 @@ void(entity target) Argus_ObservationRemoved =
         if (b.ar_lastfoe == target) b.ar_lastfoe = world;
         if (b.ar_hurtfoe == target)
         { b.ar_hurtfoe = world; b.ar_hurtfoetime = 0; }
+        if (b.ar_threat_actor0 == target)
+        { b.ar_threat_actor0 = world; b.ar_threat_until0 = 0; }
+        if (b.ar_threat_actor1 == target)
+        { b.ar_threat_actor1 = world; b.ar_threat_until1 = 0; }
+        if (b.ar_trade_target == target)
+        { b.ar_trade_target = world; b.ar_trade_until = 0; }
         b = b.ar_chain;
     }
     self = saved;
@@ -5089,8 +5152,7 @@ void(vector spos, entity who, float shotweapon) Argus_HearSound =
     b = argus_bots;
     while (b != world)
     {
-        if (b != who && b.health > 0
-            && (shotweapon || !b.ar_sndweap || time >= b.ar_sndtime + 0.6))
+        if (b != who && b.health > 0)
         {
             d = vlen (b.origin - spos);
             if (d < 1000)
@@ -5105,11 +5167,16 @@ void(vector spos, entity who, float shotweapon) Argus_HearSound =
                     d = d * 1.4;
                 if (d < 1000)
                 {
-                    b.ar_sndpos = spos;
-                    b.ar_sndtime = time;
-                    b.ar_sndent = who;
-                    b.ar_sndweap = shotweapon;
-                    b.ar_sndspent = 0;
+                    if (shotweapon) Argus_ThreatMark (b, who, spos, 2.1);
+                    else Argus_ThreatMark (b, who, spos, 0.95);
+                    if (shotweapon || !b.ar_sndweap || time >= b.ar_sndtime + 0.6)
+                    {
+                        b.ar_sndpos = spos;
+                        b.ar_sndtime = time;
+                        b.ar_sndent = who;
+                        b.ar_sndweap = shotweapon;
+                        b.ar_sndspent = 0;
+                    }
                 }
             }
         }
@@ -5352,6 +5419,8 @@ void() Argus_Perceive =
                             && time < self.ar_hurtfoetime + 2
                             && self.ar_skill >= AR_SKILL_MEMORY)
                             ok = 1;
+                        if (Argus_Advanced () && Argus_ThreatConfidence (b) > 0.8)
+                            ok = 1;
                     }
                 }
                 if (ok && Argus_CanSee (b))
@@ -5381,6 +5450,7 @@ void() Argus_Perceive =
         && self.ar_sndtime > 0 && time < self.ar_sndtime + 2.0)
     {
         to = self.ar_sndpos - self.origin;
+        if (Argus_Advanced ()) to = Argus_ThreatBearing () - self.origin;
         to_z = 0;
         if (vlen (to) > 40)
         {
@@ -5545,7 +5615,7 @@ float() Argus_CombatBand =
 {
     local float band, stack;
 
-    stack = self.health + self.armorvalue * self.armortype;
+    stack = Argus_EffectiveStack ();
     band = 180 - stack * 0.5;
     if (band < 60) band = 60;
     if (band > 180) band = 180;
@@ -5635,6 +5705,9 @@ void(float d, float closeband) Argus_SelectWeapon =
     else
         w = IT_AXE;
 
+    if (self.ar_enemy != world && self.ar_obsenemy == self.ar_enemy
+        && time <= self.ar_seen + 0.12)
+        w = Argus_DuelWeapon (d, Argus_EnemyPosition (), w);
     if (w == self.weapon)
         return;
 
@@ -6468,7 +6541,8 @@ float() Argus_Combat =
                 {
                     traceline (self.origin + '0 0 16',
                                self.ar_lastseen, TRUE, self);
-                    if (trace_fraction == 1)
+                    if (trace_fraction == 1
+                        && (!Argus_Advanced () || Argus_SurvivesSplash (self.ar_lastseen, 120)))
                     {
                         to = vectoangles (self.ar_lastseen
                                           - (self.origin + '0 0 16'));
@@ -6715,7 +6789,15 @@ float() Argus_Combat =
     if (self.ar_skill >= AR_SKILL_LEAD)
     {
         if (self.weapon == IT_GRENADE_LAUNCHER)
+        {
             flight = d / 600;
+            if (Argus_Advanced ())
+            {
+                if (vlen (evel) < 395)
+                    flight = vlen (epos - self.origin + evel * flight) / 600;
+                if (flight > 1.1) flight = 1.1;
+            }
+        }
         else if (self.weapon == IT_ROCKET_LAUNCHER
                  || self.weapon == IT_NAILGUN || self.weapon == IT_SUPER_NAILGUN)
             flight = Argus_StraightFlight (epos - self.origin - '0 0 4',
@@ -6842,7 +6924,8 @@ float() Argus_Combat =
         // The 800 was hidden in the 900 (#282). On e1m8 at gravity
         // 100 the drop over the same flight is an eighth, so every
         // grenade was being lofted about eight times too high.
-        loft = (Argus_Gravity () * d * d / 720000) - (d / 3);
+        if (flight <= 0) flight = d / 600;
+        loft = 0.5 * Argus_Gravity () * flight * flight - 200 * flight;
         if (loft < 0)
             loft = 0;
         if (epos_z > self.origin_z + 32)
@@ -6863,6 +6946,16 @@ float() Argus_Combat =
             // into the drink, themselves included - the 2026-08-27
             // skill-0 probes ran lava 6-7 per 125 s)
             aimpt_z = epos_z - 16;
+            // A cover manoeuvre has already committed to its checked lane.
+            if (!self.ar_tactic && Argus_Advanced () && d > 165 && d < 900
+                && self.ar_seen == time)
+            {
+                src = aimpt + '0 0 56';
+                traceline (src, src - '0 0 92', TRUE, self);
+                if (trace_fraction < 1 && !trace_startsolid
+                    && trace_plane_normal_z > 0.65)
+                    aimpt_z = trace_endpos_z + 5;
+            }
 
             // offensive displacement (mre Mastermind, 2026-08-26 -
             // the bot-side version of Shane's own signature move).
@@ -7020,6 +7113,8 @@ float() Argus_Combat =
     if (time > self.ar_strafetime)
     {
         self.ar_strafetime = time + 0.8 + random ();
+        if (Argus_Advanced () && self.ar_strafedir < 0)
+            self.ar_strafetime = self.ar_strafetime + 0.2;
         if (random () < 0.4)
         {
             self.ar_strafedir = 0 - self.ar_strafedir;
@@ -7186,6 +7281,10 @@ float() Argus_Combat =
         retreatin = 55;
         retreatout = 75;
     }
+    if (Argus_Advanced () && !self.ar_retreating && self.ar_trade_target == e
+        && time < self.ar_trade_until && self.ar_trade_damage >= 45
+        && !Argus_EnemyPowerThreat ())
+        retreatin = retreatin - 8;
     // an enemy carrying a live quad or pent four-times the trade (or
     // refuses it entirely): the retreat bar doubles against a carrier
     // ("they don't understand... an opponent having a powerup", v380
@@ -7495,6 +7594,13 @@ float() Argus_Combat =
         self.v_angle_y = self.angles_y;
         if (!Argus_MuzzleClear (aimpt))
             return TRUE;
+        if (Argus_Advanced () && time >= self.attack_finished && !Argus_DuelSplashClear (aimpt))
+        {
+            self.button0 = 0;
+            self.ar_splashwait = time + 0.35;
+            Argus_SelectWeapon (d, closeband);
+            return TRUE;
+        }
         // HOLD FIRE THROUGH A TEAM MATE. Not targeting them is not
         // enough: the first e1m2 death was a bot with a monster for an
         // enemy, firing at its last known position during the
@@ -8100,7 +8206,15 @@ void() Argus_PickGoal =
         self.ar_node = world;
         self.ar_mode = 0;
         self.ar_localgoal = FALSE;
-        startnode = Argus_NearestNode (self.origin);
+        if (argus_live_nav)
+        {
+            // A checked direct pickup can be reached without borrowing
+            // a sampled route whose last approach may still be unknown.
+            Argus_PickLocalGoal ();
+            if (self.ar_goal != world) return;
+            startnode = Argus_LiveNear (self.origin, 120);
+        }
+        else startnode = Argus_NearestNode (self.origin);
         if (startnode == world && deathmatch == 1 && !coop)
         {
             Argus_PickLocalGoal ();
@@ -8162,7 +8276,8 @@ void() Argus_PickGoal =
             // item with crow-flight distance for another.
             if (!e.ar_gnodeset)
             {
-                rnode = Argus_NearestNode (Argus_GoalPoint (e));
+                if (argus_live_nav) rnode = Argus_LiveItemSeat (e);
+                else rnode = Argus_NearestNode (Argus_GoalPoint (e));
                 if (rnode != world)
                 {
                     e.ar_gnodeset = 1;
@@ -8251,17 +8366,8 @@ void() Argus_PickGoal =
                         && cls != AR_C_POWER
                         && !(cls == AR_C_HEALTH && e.healamount >= 100))
                         v = 0;
-                    else if (e.nextthink - time > arrival + 10)
-                        v = 0;
-                    else if (e.nextthink - time > arrival + 3)
-                        // pre-positioning (campaign item 4, cortex
-                        // CONTROL_MAJOR "be early, not on time";
-                        // Shane's circuits review x2): a major coming
-                        // up inside 10 s is worth walking to EARLY -
-                        // discounted, so anything live still outranks
-                        // a camp - and the mode-1 loiter below orbits
-                        // the spawn until it pops
-                        v = v * 0.55;
+                    else
+                        v = Argus_MajorTiming (e, v, arrival);
                 }
                 // The last-life account may prefer a materially nearer
                 // stack, not arbitrary nearby ammo. Keep that alternative
@@ -8482,6 +8588,11 @@ void() Argus_PickGoal =
         }
     }
 
+    if (pick == world && argus_live_nav)
+    {
+        Argus_PickLocalGoal ();
+        return;
+    }
     self.ar_goal = pick;
     if (an_shopready && pick != world)
         an_goalnode = pick.ar_goalnode;
@@ -9848,6 +9959,7 @@ void() Argus_ABControl =
         return;
     // One console authorisation permits one snapshot, including direct calls.
     cvar_set ("scratch1", "0");
+    argus_duel_ab = TRUE;
     mask = floor (cvar ("scratch4"));
     bot = argus_bots;
     while (bot != world)
@@ -10053,6 +10165,7 @@ void(float paused) Argus_ActionObserve =
     if (!Argus_ActionBlocked (paused)) return;
     dprint ("ARGUS "); dprint (self.netname); dprint (" actionfail ");
     dprint (vtos (self.ar_node.origin)); dprint ("\n");
+    Argus_LiveNavReject ();
     Argus_AvoidAdd (self.ar_node.origin, 64, 12);
     Argus_Nav_Abort (self);
     self.ar_hopjump = 0; self.ar_hoprj = 0; self.ar_hopswim = 0;
@@ -10490,7 +10603,7 @@ void() Argus_AI =
     local float want, diff, turn, havetarget, fighting, sproj, linkbit;
     local float mface;          // a ridden mover's top face vs our feet
     local float dm6portal;
-    local entity oldnode, nx, dr, gn, jseat;
+    local entity oldnode, nx, dr, gn, jseat, liveportal;
 
     self.ar_liftwait = 0;       // re-earned every frame by the ride branch
 
@@ -10722,6 +10835,10 @@ void() Argus_AI =
                 self.ar_goals = self.ar_goals + 1;
             Argus_PickGoal ();
         }
+        else if (Argus_ContestNearby ())
+        {
+            // A short, floor-checked intercept owns direct steering.
+        }
         else if (time > self.ar_goalstart + 20
                  || (self.ar_localgoal && self.ar_enemy == world
                      && time > self.ar_goalstart + 3))
@@ -10865,6 +10982,10 @@ void() Argus_AI =
             // waypoint points back up the hall before the trigger fires.
             // Keep the seat active and aim into the stock trigger instead.
             dm6portal = FALSE;
+            liveportal = world;
+            if (self.ar_node.al_gate != world && vlen (to) < 115)
+                if (Argus_GetNext (self.ar_node, self) == self.ar_node.al_exit)
+                    liveportal = self.ar_node.al_gate;
             if (mapname == "dm6" && tp == '193 -1743 56' && vlen (to) < 115)
             {
                 nx = Argus_GetNext (self.ar_node, self);
@@ -11574,7 +11695,7 @@ void() Argus_AI =
                 self.ar_pending = 1;
                 self.ar_mode = 0;
             }
-            else if (vlen (to) < 48 && !dm6portal
+            else if (vlen (to) < 48 && !dm6portal && liveportal == world
                      && Argus_WalkArrivalReady (self.ar_node)
                      && (fabs (tp_z - self.origin_z) < 48
                          || (self.origin_z - tp_z > 0
@@ -11722,7 +11843,7 @@ void() Argus_AI =
                         self.ar_hopdoor = 1;
                 }
             }
-            else if (!dm6portal && !self.ar_hopjump && vlen (to) < 112
+            else if (!dm6portal && liveportal == world && !self.ar_hopjump && vlen (to) < 112
                      && Argus_WalkArrivalReady (self.ar_node))
             {
                 // apex cornering: when the node after this one is
@@ -11759,6 +11880,7 @@ void() Argus_AI =
             {
                 tp = self.ar_node.origin;
                 if (dm6portal) tp = '248 -1784 56';
+                if (liveportal != world) tp = (liveportal.absmin + liveportal.absmax) * 0.5;
                 if (self.ar_hopjump && self.ar_sprintstate
                     && self.ar_sprintstate < 2)
                     tp = self.ar_sprintrun;
@@ -12369,6 +12491,7 @@ void() Argus_FrameAll =
             {
                 Argus_AI ();
                 Argus_Physics ();
+                if (argus_live_nav) Argus_LiveNavSample ();
             }
         }
 
@@ -12589,6 +12712,7 @@ void() Argus_Init =
     dprint (ARGUS_BUILD);
     dprint ("\n");
     dprint ("ARGUS goal_pickup v1\n");
+    dprint ("ARGUS duel_metrics v1\n");
     dprint ("ARGUS clock frame_us ");
     dprint (ftos (rint (cvar ("host_framerate") * 1000000)));
     dprint (" tick_us ");

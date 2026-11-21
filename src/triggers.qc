@@ -423,7 +423,7 @@ void(vector org, entity death_owner) spawn_tdeath =
 void() teleport_touch =
 {
 	local entity	t;
-	local vector	org;
+	local vector	org, entry;
 
 	if (self.targetname != string_null)
 	{
@@ -470,6 +470,7 @@ void() teleport_touch =
 		return;
 	}
 
+	entry = other.origin;
 	setorigin (other, t.origin);
 	other.angles = t.mangle;
 
@@ -482,6 +483,7 @@ void() teleport_touch =
 			other.flags = other.flags - FL_ONGROUND;
 
 		other.velocity = v_forward * 300;
+		if (argus_live_nav) Argus_LiveNavWarp (other, self, entry);
 		Argus_ConfirmTeleTiming (self, t);
 	}
 
