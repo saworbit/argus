@@ -41,7 +41,7 @@ fn inspect_dir(manifest_dir: &Path, running_version: &str, build_source: &str) -
         version.as_deref() == Some(running_version) && source.as_deref() == Some(build_source);
     let warning = (!authoritative).then(|| {
         format!(
-            "STALE LAB: running argus-mcp {running_version} ({build_source}) does not match checkout {} ({}). Quality-gate verdicts are refused. Run `cargo install --locked --path tools/argus_mcp --root tools/argus_mcp/install`, then restart the MCP client.",
+            "STALE LAB: running argus-mcp {running_version} ({build_source}) does not match checkout {} ({}). Quality-gate verdicts are refused. Run `cargo install --locked --force --path tools/argus_mcp --root tools/argus_mcp/install` from the checkout. If the Windows executable is locked, use the staged replacement and reconnect twice as described in docs/lab-workflow.md#update-or-restore-the-lab. After reconnecting, check that `lab_identity.authoritative` is true.",
             version.as_deref().unwrap_or("unreadable"),
             source.as_deref().unwrap_or("unreadable")
         )
@@ -57,8 +57,13 @@ fn inspect_dir(manifest_dir: &Path, running_version: &str, build_source: &str) -
 }
 
 pub fn inspect(cfg: &Config) -> LabIdentity {
+    inspect_root(&cfg.root)
+}
+
+/// Compare this executable with the lab source in the given checkout.
+pub fn inspect_root(root: &Path) -> LabIdentity {
     inspect_dir(
-        &cfg.root.join("tools").join("argus_mcp"),
+        &root.join("tools").join("argus_mcp"),
         RUNNING_VERSION,
         BUILD_SOURCE,
     )
@@ -105,7 +110,10 @@ mod tests {
         let refusal = require_identity(identity).unwrap_err();
         assert!(refusal.contains("0.29.0"));
         assert!(refusal.contains("Quality-gate verdicts are refused"));
-        assert!(refusal.contains("cargo install --locked"));
+        assert!(refusal.contains("cargo install --locked --force"));
+        assert!(refusal.contains("docs/lab-workflow.md#update-or-restore-the-lab"));
+        assert!(refusal.contains("reconnect twice"));
+        assert!(refusal.contains("lab_identity.authoritative"));
     }
 
     #[test]

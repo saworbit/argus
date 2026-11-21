@@ -14,6 +14,40 @@ fn main() -> anyhow::Result<()> {
 async fn run() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
+        Some("identity") => {
+            let json = match (args.next().as_deref(), args.next()) {
+                (None, None) => false,
+                (Some("--json"), None) => true,
+                (Some("--help" | "-h"), None) => {
+                    println!("usage: argus-mcp identity [--json]\nReport the running build and checkout identity.");
+                    return Ok(());
+                }
+                _ => anyhow::bail!("usage: argus-mcp identity [--json]"),
+            };
+            let cfg = argus_mcp::config::Config::load_for_reads().ok();
+            let root = cfg
+                .as_ref()
+                .map_or(std::path::Path::new("."), |cfg| cfg.root.as_path());
+            let identity = argus_mcp::build_identity::inspect_root(root);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&identity)?);
+            } else {
+                println!(
+                    "Running {} ({})",
+                    identity.running_version, identity.build_source
+                );
+                println!(
+                    "Checkout {} ({})",
+                    identity.checkout_version.as_deref().unwrap_or("unreadable"),
+                    identity.checkout_source.as_deref().unwrap_or("unreadable")
+                );
+                println!("Authoritative {}", identity.authoritative);
+                if let Some(warning) = identity.warning {
+                    eprintln!("{warning}");
+                }
+            }
+            Ok(())
+        }
         Some("record-pov") => {
             let mut rest: Vec<String> = args.collect();
             let port = take_port(&mut rest)?;
@@ -1847,6 +1881,7 @@ fn print_help() {
         "Argus lab\n\
          \n\
          argus-mcp              stdio MCP server (default)\n\
+         argus-mcp identity [--json]  running and checkout build identity\n\
          argus-mcp gui          localhost deploy wizard (127.0.0.1:7420)\n\
          argus-mcp gui --port N\n\
          argus-mcp gui --no-open\n\

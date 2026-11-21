@@ -27,8 +27,11 @@ reads CRLF as LF, so a worktree and the main checkout of one commit share an
 identity whatever line endings Git gave each. Inspection stays
 available when those identities differ, but the lab refuses quality-gate
 verdicts from `compare_runs`, `suggest_next` compare mode, `experiment`,
-`campaign_experiment`, and `matrix_experiment`. Repair an identity mismatch with
-the install command above, then restart the MCP client. This checkout comparison
+`campaign_experiment`, and `matrix_experiment`. For a mismatch, follow the
+[lab update steps](../../docs/lab-workflow.md#update-or-restore-the-lab).
+Run `argus-mcp identity --json` from the checkout, or set `ARGUS_ROOT`,
+to check the exact CLI image against the MCP response. The command also reports
+stale builds and works without an engine or compiler. This checkout comparison
 catches an old installed process even when no newer `target-stage` build exists;
 the older `lab_stale` stage banner remains a separate early-warning mechanism.
 
