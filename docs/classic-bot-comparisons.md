@@ -36,10 +36,10 @@ for Argus match telemetry.
 
 | Reference | Behaviour to compare | Argus status |
 | --- | --- | --- |
-| Omicron | Uses pickup sounds to locate opponents and can pursue through the waypoint graph. [Release notes](https://mrelusive.com/oldprojects/obots/skorpion/obots102/OBOTS.HTM) · [Sound model](https://mrelusive.com/oldprojects/obots/ObotDoc/sampling.htm) | Argus can take one safe waypoint leg around a corner towards a last confirmed sighting or a nearby, fresh shot. Longer pursuit routes remain open. |
-| Reaper | The original Reaper learned maps during play. The Reaper-derived MRE adds weapon-specific sound investigation and adapts weapon preferences from past results. [Polge's archived v0.5 readme](https://github.com/Jason2Brownlee/QuakeBotArchive/blob/main/research/essays/b23_reaper.md#reaper-bot-v05) · [MRE source and feature notes](https://github.com/saworbit/mre) | Argus assesses heard gunfire using its own health and armour, distinguishes pickups from weapons, and gives a fresh shot priority. It uses an offline graph and a local recovery layer when it has no useful route. |
-| FrikBot X | Uses player firing routines and reduced weapon switching in its v0.06 changes. Its dynamic waypoints and waypoint files support roaming and authored routes. [Source and release notes](https://code.nephatrine.net/QuakeArchive/frikbot/src/branch/master/frikbot) | Argus hears the actual stock firing routine, including a fallback shot or a continuing nail or lightning burst. An active lightning burst can continue through small changes in range. Wider weapon-selection comparisons need cases with several viable loaded weapons. |
-| Frogbot | Scores paths with estimated time to the item and precomputes escape destinations. [Frogbot v2 technical notes](https://github.com/DrLex0/quake-frogbots/blob/master/doc/TechNotes.md) | Argus checks live cover during retreats and weighs nearby supplies against distance. Confirmed portals inform pickup respawn timing. The next idle graph frame applies observations of distinct portals used during a search. Mover arrival and travel time for route ordering remain open. [Argus route model](map-intelligence.md#timing-pickups-through-teleporters) |
+| Omicron | Uses pickup sounds to locate opponents and can pursue through the waypoint graph. [Release notes](https://mrelusive.com/oldprojects/obots/skorpion/obots102/OBOTS.HTM) · [Sound model](https://mrelusive.com/oldprojects/obots/ObotDoc/sampling.htm) | Argus keeps two decaying opponent bearings and can take a checked waypoint leg towards a confirmed sighting or nearby shot. Effective stack and the opponent's recent pressure affect whether it retreats. |
+| Reaper | The original Reaper learned maps during play. The Reaper-derived MRE adds weapon-specific sound investigation and adapts weapon preferences from past results. [Polge's archived v0.5 readme](https://github.com/Jason2Brownlee/QuakeBotArchive/blob/main/research/essays/b23_reaper.md#reaper-bot-v05) · [MRE source and feature notes](https://github.com/saworbit/mre) | On a BSP without a registered graph, Argus learns directed links from traversals. It distinguishes pickups from actual weapon fire and retains the more useful cue for pursuit. |
+| FrikBot X | Uses player firing routines and reduced weapon switching in its v0.06 changes. Its dynamic waypoints and waypoint files support roaming and authored routes. [Source and release notes](https://code.nephatrine.net/QuakeArchive/frikbot/src/branch/master/frikbot) | Argus has dedicated lift, train, door and swim route actions. It infers those link types from live movement as well as using registered links. Actual firing and water state constrain weapon switching. |
+| Frogbot | Scores paths with estimated time to the item and precomputes escape destinations. [Frogbot v2 technical notes](https://github.com/DrLex0/quake-frogbots/blob/master/doc/TechNotes.md) | Argus times nearby major respawns, incorporates observed portal travel and can gain speed through air acceleration on a checked runway. Mover travel time for item ordering remains open. [Argus route model](map-intelligence.md#timing-pickups-through-teleporters) |
 
 ## Combat trials
 
@@ -221,6 +221,145 @@ difference of +1.84 bot kills per minute in sight. The 95 per cent
 interval was -36.41 to +40.08, so the threat direction is inconclusive.
 Matched results against the classic bots are still needed.
 [Classic replay suite](https://github.com/saworbit/argus/issues/1079)
+
+## Runtime navigation and duel decisions
+
+Three bottlenecks drove this pass. A BSP without a registered graph left
+bots repeatedly trying direct lines to blocked items. Fixed weapon bands
+and torso lead left damage on the table near lips and on uneven floors.
+Single-cue attention and current-item utility made it easy to miss a
+second opponent or a major pickup about to return. These are the areas
+where the runtime adaptation of Reaper, movement coverage of FrikBot,
+stack decisions of Omicron and movement and item control of Frogbot are
+the relevant benchmarks.
+
+The main risks were exhausting edicts when exploration kept adding seats,
+spending the frame on geometry queries, and changing goals or weapons
+more often than a bot could execute them. Sampling is throttled, query
+distance is bounded, and graph growth stops while the route queue is
+working. Item scans have a cooldown and respect claims. Weapon scoring
+favours the currently firing gun when its score is close, and an unsafe
+explosive shot temporarily suppresses that choice.
+
+Maps without a registered graph can learn one from bot and player
+movement. Existing maps can exercise the same learner with developer
+`scratch3 641` before the map loads. A grounded position becomes a seat
+after the actor moves far enough to warrant a new one. Three clearance
+rays and floor samples validate ordinary walks. Airborne transitions can
+produce directed jump and drop links. The learner also accepts a live
+unconditional warp, an observed mover ride, a dry exit from water and
+recent door or button activation as traversal evidence.
+
+The graph uses the existing route queue and item claims. It limits
+itself to 104 seats, keeps room below the 600-edict budget and waits
+until the queue is idle before adding links. Failed route actions
+temporarily block the observed edge. The current walk and jump
+recovery remains available. A learnt grenade-assisted escape and
+replacement of seats in a full graph remain open.
+
+On a dry, checked straightaway, a short hop retains horizontal velocity
+and steers just off perpendicular to gain speed through air acceleration.
+The launch requires a checked runway and overhead clearance. Route
+actions, water, combat and deliberate waits have priority over these
+hops. The ammo and range scorer uses actual own inventory, recent
+damage to a visibly tracked target and the predicted blast position.
+The blast guard computes armour absorption and health damage before
+ordinary firing. A bouncing grenade can still land somewhere other
+than the predicted impact.
+
+Bots keep two recent opponent bearings in existing player edicts.
+Confirmed sightings, audible activity and the location of the damage
+inflictor refresh those bearings. A bearing can turn the bot towards
+a threat. Firing still needs the visibility and muzzle checks. A major
+pickup keeps the stock item's respawn schedule. The healthy bot can
+interrupt a minor direct errand for a nearby major that will return
+in three to five seconds, if its own path and the claim check pass.
+This uses the actual armour and powerup intervals for the mod, including
+Megahealth's delayed timer after decay.
+
+`tools/report_architecture.py` reads accepted major pickups and actual
+self-damage from the tape. In counterbalanced trials, major item share
+uses the combined pickups of both arms as the denominator. A missing
+share means neither arm picked up the item. Engine host timing measures
+whole-server pacing, including the timing of the harness. Per-routine
+QuakeC CPU cost remains unmeasured.
+
+### Graphless checks
+
+The held-out `lab_jumpgap` BSP has no dispatched graph. The release build
+reported at least 64 seats on each first load, with 94 and 96 live edicts
+at those samples. The tapes witnessed walk links and a directed drop.
+They did not witness a crossing of the gap. The native fixture proves
+the directed drop and a real trigger warp in controlled placements.
+Lift, train and door inference still need witnessed route completion on
+an unregistered stock or custom BSP.
+
+The first combined build failed the dm5 stall-parity gate with 32 stalls
+across two 40-second tapes, against 10 for the control. Most of the
+failures were in water. Holding a clear swim heading and taking a checked
+direct pickup before requesting a learned route brought the follow-up to
+15 stalls. The selected native gate passed on that dm5 follow-up.
+
+### Counterbalanced dm6 trial
+
+The native `within-ab` runner swaps which two of four slots use the new
+duel policy and holds the graph, item logic and program binary fixed.
+Cross-arm kills are its primary outcome. Kills and deaths in the table
+also include same-arm fights and self deaths. The control here is the
+paired policy path inside the release binary. The independent match
+ladder below uses `121c714` as its control.
+
+| Pair | Candidate vs control cross-arm kills | Candidate vs control K/D | Candidate minus control speed (u/s) | Candidate vs control self-damage (HP) |
+| --- | ---: | ---: | ---: | ---: |
+| Release pair 1 | 17 to 5 | 22/10 to 12/24 | -13.3 | 54 to 37 |
+| Release pair 2 | 4 to 15 | 13/24 to 21/10 | -0.3 | 84 to 13 |
+| Four 95-second matches | 21 to 20 | 35/34 to 33/34 | -6.8 | 138 to 50 |
+
+The two pairs' 95 per cent log-strength intervals were 0.20 to 2.12 and
+-2.29 to -0.19. The direction reversed on the same binary. Earlier
+90- and 120-second pairs on development builds finished 9 to 10 and 13
+to 13. The evidence leaves a sustained dm6 combat advantage unproven.
+
+Across the four release matches, the candidate took 7 of 10 red armours
+(70%), 4 of 8 Megahealths (50%) and 10 of 23 rocket launchers (43%). It took
+one of two lightning guns. Neither side took yellow armour or Quad. No
+bot pre-empted a goal through the new contest policy in these dm6 tapes.
+The fixture demonstrates the decision under controlled placement.
+
+### Independent match ladder
+
+The control was `121c714` with pickup and damage receipts added. The
+release build was `c03df079392d`. Each arm ran two 40-second skill 2
+matches per map on QuakeSpasm 0.97.0 at a requested 0.0139-second tick.
+The columns report control to release, and the totals describe all bots
+in each match. Major pickup entries are accepted touches in RA, YA, MH,
+RL, Quad order. Head-to-head item shares use the counterbalanced results
+above.
+
+| Map | Kills/deaths | Mean speed (u/s) | Stalls | Goal pickups | World deaths | Self-damage (HP) | Major pickups |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| dm1 | 5/5 to 7/7 | 247.9 to 267.7 | 4 to 1 | 17 to 16 | 0 to 0 | 0 to 0 | 0/0/0/0/0 to 0/0/0/0/0 |
+| dm2 | 0/0 to 3/3 | 219.7 to 219.3 | 14 to 12 | 7 to 7 | 0 to 0 | 0 to 0 | 0/3/0/2/0 to 0/2/0/0/0 |
+| dm4 | 7/8 to 10/10 | 223.1 to 240.8 | 2 to 0 | 10 to 11 | 1 to 0 | 140 to 203 | 2/0/2/6/0 to 1/0/2/4/0 |
+| dm5 | 6/6 to 6/6 | 185.1 to 156.9 | 10 to 18 | 17 to 8 | 0 to 0 | 0 to 0 | 0/2/0/0/0 to 0/2/0/0/0 |
+| dm6 | 9/9 to 8/8 | 257.1 to 263.0 | 5 to 0 | 19 to 22 | 0 to 0 | 0 to 36 | 1/0/1/5/0 to 4/0/2/5/0 |
+| lab_jumpgap | 21/21 to 18/18 | 273.7 to 278.1 | 0 to 2 | 23 to 12 | 0 to 0 | 0 to 0 | 0/0/0/0/0 to 0/0/0/0/0 |
+
+All six comparisons passed the selected native stall-parity gate. The
+raw dm5 stall flag still fired. Its median of nine was inside the
+control band of zero to twelve, and the speed and pickup losses make
+water traversal a remaining weakness. The release tapes recorded 21
+momentum hops, zero freezes, and zero world deaths. Per-tape server
+frame p95 was 15 to 16 ms in both arms. The largest frame was 114 ms in
+the control and 66 ms in the release arm. These are short match samples
+under the same nominal dedicated cadence.
+
+The NetQuake build compiled with zero warnings. The adaptation fixture
+passed 46 checks each on dm2 and dm6. The tactical suite passed 15 cases
+each on dm2 and dm4. The private muzzle, combat, button, door and health
+checks also passed. These checks establish behaviour within Argus.
+Matched recordings against Reaper, Omicron, FrikBot and Frogbot remain
+necessary to establish relative performance.
 
 ## Two-leg pursuit evaluation
 
