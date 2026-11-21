@@ -60,7 +60,6 @@ void() noclass =
 void() q_touch =
 {
 local entity    stemp;
-local float     best;
 local string    s;
 
 	if (other.classname != "player")
@@ -154,8 +153,6 @@ void() r_touch;
 
 void() r_touch =
 {
-local entity    stemp;
-local float     best;
 local string    s;
 
 	if (other.classname != "player")

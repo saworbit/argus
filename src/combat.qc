@@ -132,7 +132,6 @@ void(entity targ, entity inflictor, entity attacker, float damage) T_Damage=
 	local	float	save;
 	local	float	take;
 	local	string	temp_deathtype;
-	local   string	s;
 	local	float	on_team;
 	local	float	rj;
 

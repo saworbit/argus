@@ -185,7 +185,9 @@ entity() FindIntermission =
 
 void() GotoNextMap =
 {
+#ifdef __QW__
 	local string newmap;
+#endif
 
 	if (cvar("samelevel"))	// if samelevel is set, stay on same level
 	{
@@ -633,7 +635,9 @@ void() PlayerDie;
 void() PutClientInServer =
 {
 	local	entity spot;
+#ifdef __QW__
 	local	float  axes_only;
+#endif
 	// A new life in the same client edict invalidates bot visual memory.
 	Argus_ObservationRemoved (self);
 
