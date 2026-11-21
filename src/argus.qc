@@ -12518,6 +12518,7 @@ void() Argus_Init =
     dprint ("ARGUS build ");
     dprint (ARGUS_BUILD);
     dprint ("\n");
+    dprint ("ARGUS goal_pickup v1\n");
     dprint ("ARGUS clock frame_us ");
     dprint (ftos (rint (cvar ("host_framerate") * 1000000)));
     dprint (" tick_us ");
