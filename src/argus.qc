@@ -287,6 +287,8 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_track;               // when tracking of this target began
 .float  ar_strafedir;
 .float  ar_strafetime;
+.float  ar_dm4_walkway_dir;
+.float  ar_dm4_walkway_until;
 .float  ar_combathaztime;       // hold combat_hazard strafe across 1-frame lip flicker
 .float  ar_combathazvalid;      // previous escape heading passed the hazard check
 .float  ar_combathazyaw;
@@ -4544,6 +4546,8 @@ void() Argus_Respawn =
 
     Argus_TacticReset ();
     self.ar_tactic_cool = 0;
+    self.ar_dm4_walkway_dir = 0;
+    self.ar_dm4_walkway_until = 0;
     Argus_Dm4WarpClear (self);
     self.ar_tactic_settle = 0;
     Argus_Nav_Abort (self);
@@ -6483,10 +6487,49 @@ entity(vector sighting) Argus_PursuitHop =
     return best;
 };
 
+// Private dm4 trial on the n26 to n65 pit walkway. Continue to a dry
+// mouth before ordinary combat steering resumes. The physics guard retains
+// final control; a blocked heading or emergency still yields.
+float() Argus_Dm4WalkwayYaw =
+{
+    local float yaw;
+    local vector exit;
+    if (mapname != "dm4") return 999;
+    if (self.origin_x < -48 || self.origin_x > 359
+        || self.origin_y < -286 || self.origin_y > -195
+        || fabs (self.origin_z + 296) > 8)
+    {
+        self.ar_dm4_walkway_dir = 0;
+        return 999;
+    }
+    if (!(self.flags & FL_ONGROUND) || self.ar_retreating
+        || time < self.ar_dodgetime
+        || self.ar_hopjump || self.ar_hoprj || self.ar_hoplift
+        || self.ar_hoptrain || self.ar_hopdoor || self.ar_hopswim)
+        return 999;
+    if (!self.ar_dm4_walkway_dir)
+    {
+        if (fabs (self.velocity_x) >= 45)
+        {
+            if (self.velocity_x > 0) self.ar_dm4_walkway_dir = 1;
+            else self.ar_dm4_walkway_dir = -1;
+        }
+        else if (self.origin_x < 160) self.ar_dm4_walkway_dir = -1;
+        else self.ar_dm4_walkway_dir = 1;
+        self.ar_dm4_walkway_until = time + 2.25;
+    }
+    if (time >= self.ar_dm4_walkway_until) return 999;
+    if (self.ar_dm4_walkway_dir > 0) exit = '379 -241 -296';
+    else exit = '-67 -241 -296';
+    yaw = vectoyaw (exit - self.origin);
+    if (Argus_MoveHazard (yaw, 48)) return 999;
+    return yaw;
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
-    local float hazard_side;
+    local float hazard_side, walkway_yaw;
     local string movecause;
     local entity e, cnode, ctarget, chop;
     local vector to, aimpt, err, cvr, shd, shp, motstep, moterr;
@@ -7514,7 +7557,10 @@ float() Argus_Combat =
     // that continues our travel. If none is open, recheck the held
     // strafe side before flipping. Back off if both sides are blocked.
     // The physics guard still checks the resulting velocity.
-    if ((time < self.ar_combathaztime && time >= self.ar_dodgetime)
+    walkway_yaw = Argus_Dm4WalkwayYaw ();
+    if (walkway_yaw != 999)
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, walkway_yaw, "walkway_exit");
+    else if ((time < self.ar_combathaztime && time >= self.ar_dodgetime)
         || Argus_MoveHazard (self.ar_moveyaw, 48))
     {
         if (!self.ar_strafedir)
