@@ -12,6 +12,15 @@
   ],
   "claims": [
     {
+      "id": "door-trigger-overlap-acknowledges-touch",
+      "pattern": "\\bmovement that got us here has\\s*(?://\\s*)?already fired it\\b|\\btrigger overlap confirms activation\\b",
+      "claim": "Trigger overlap confirms activation",
+      "correction": "Expanded bounds can overlap before the engine delivers touch. Keep approaching a touch trigger while its door is closed.",
+      "refuted": "2026-11-22",
+      "evidence": ["tools/fixtures/door_actuator.qc trigger_overlap_preserved"],
+      "example": "Trigger overlap confirms activation"
+    },
+    {
       "id": "acquisitions-count-item-touches",
       "pattern": "\\bacquisitions\\b[^\\n]{0,80}\\bcontested-map consumption\\b|\\bdid they take stuff\\b",
       "claim": "The acquisitions total shows contested-map consumption",

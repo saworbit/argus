@@ -47,7 +47,10 @@ void() DoorActuatorFixture =
     DoorActuatorCheck ("latched_button_acknowledged", Argus_DoorPressed (button));
     button.classname = "trigger_multiple";
     button.state = STATE_BOTTOM;
-    DoorActuatorCheck ("trigger_overlap_preserved", Argus_DoorPressed (button));
+    door.state = STATE_BOTTOM; self.ar_liftwait = 0;
+    DoorDecision (seat + '0 128 0');
+    DoorActuatorCheck ("trigger_overlap_preserved", Argus_DoorPressed (button)
+        && da_havetarget && !self.ar_liftwait);
     setorigin (button, seat);
     point = UseStandPoint (button);
     dprint ("DAGEOM stand "); dprint (vtos (point)); dprint (" seat "); dprint (vtos (seat)); dprint ("\n");
