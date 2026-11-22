@@ -1,0 +1,28 @@
+--- a/src/argus.qc
++++ b/src/argus.qc
+@@ -191,7 +191,6 @@
+ .vector ar_exploregoal;
+ .float ar_exploring, ar_exploreuntil;
+ float() Argus_ExploreExit;
+-float() Argus_ExploreSwitchRun;
+ void() Argus_ExploreReset;
+ .float ar_momentum_next, ar_momentum_flight;
+ .float ar_trade_until, ar_trade_damage, ar_splashwait;
+@@ -2402,7 +2401,7 @@
+         || self.ar_hopdoor || self.ar_sprintstate)
+         return FALSE;
+     if (self.ar_door != world || self.ar_taskgoal != world
+-        || Argus_GaitApproachAction () || Argus_ExploreSwitchRun ())
++        || Argus_GaitApproachAction ())
+         return FALSE;
+     return TRUE;
+ };
+@@ -10293,7 +10292,7 @@
+         || self.ar_hopdoor || self.ar_sprintstate)
+         return;
+     if (self.ar_door != world || self.ar_taskgoal != world
+-        || Argus_GaitApproachAction () || Argus_ExploreSwitchRun ())
++        || Argus_GaitApproachAction ())
+         return;
+     if (self.ar_mode == 1)
+         return;                 // direct seeking includes the item-clock
