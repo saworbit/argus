@@ -279,6 +279,7 @@ The lab spine: joins the corpus, scorecard, baselines, benchmarks, verdict sidec
   ```bash
   python tools/argus_lab.py state
   python tools/argus_lab.py stale [--strict]
+  python tools/argus_lab.py receipts --map dm2 --inconclusive
   python tools/argus_lab.py skeptic RUN ... --vs RUN ...
   python tools/argus_lab.py triage TAPE
   python tools/argus_lab.py --help
@@ -286,6 +287,9 @@ The lab spine: joins the corpus, scorecard, baselines, benchmarks, verdict sidec
 - **Behavior**: `stale` reports void and stale artefacts with fixes; `skeptic` voids or caveats a comparison and reads each metric against its detection limit; `triage` matches a tape's trouble to claim cells; `session` scores human sessions against the hard gates and goal targets; `pyramid` runs the cheap evidence tiers first.
 - **Tests**: `test_argus_lab.py` on a built fixture tree; `argus_ci.py lab` validates the objective and claims.
 - **Mutation check**: `python tools/argus_lab_mutants.py` breaks each guard in `argus_lab.py` in memory and reports whether `test_argus_lab.py` catches it; run it before a spine change merges ([#824](https://github.com/saworbit/argus/issues/824), [the mutation check](../docs/lab-spine.md#the-mutation-check), tested by `test_argus_lab_mutants.py`).
+
+`backup_telemetry.py` copies changed evidence and receipts in dated batches
+with SHA-256 manifests. See the [backup and restore procedure](../docs/telemetry.md#back-up-new-evidence).
 
 ### 17. `argus_build_stamp.py`
 Writes the QC build identity (#823) into `src/argus_build.qc`: a hash of every file `progs.src` lists, with comments and layout removed, so a comment-only change keeps the stamp and the compiled bytes. Every match prints it as `ARGUS build <id>`, and the spine credits a session to the build its tape names.

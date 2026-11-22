@@ -530,7 +530,7 @@ No baked-in machine paths. Required for a full lab:
 | `ARGUS_FTEQCC` | Modern fteqcc executable. |
 | `ARGUS_ENGINE` | Dedicated-capable Quake (QuakeSpasm in the lab). |
 | `ARGUS_BASEDIR` | Engine `-basedir` (contains `id1/` and the game dir). |
-| `ARGUS_PYTHON` | Python 3, used only for `argus_navgen.py` and `analyze_match.py`. |
+| `ARGUS_PYTHON` | Python 3 for lab helpers, including navigation generation, match analysis and receipt search. |
 
 Optional, with defaults under `ARGUS_ROOT`:
 
@@ -542,8 +542,10 @@ Optional, with defaults under `ARGUS_ROOT`:
 | `ARGUS_PROGS` | `$ARGUS_ROOT/lq1/progs.dat` |
 | `ARGUS_MAPS` | `$ARGUS_ROOT/maps_local` |
 
-The native lab uses `ARGUS_RUNS` for tape output. Python's
-`argus_lab.py skeptic` also reads the shell's `ARGUS_RUNS` for tape lookup.
+The native lab writes tapes and experiment receipts to `ARGUS_RUNS`. The
+MCP's `see what=receipts` reads that directory using `ARGUS_PYTHON`.
+The terminal commands `argus_lab.py skeptic` and `argus_lab.py receipts`
+also honour the shell's `ARGUS_RUNS`.
 For the private-tape workflow, see the [comparison runbook](../../docs/lab-spine.md#skeptic).
 
 Load order: optional TOML, then env. Env wins. TOML path is
@@ -616,6 +618,12 @@ Omit `what` (or pass `start` / `orient`) for `project`. Aliases:
 `pickup` â†’ `item`, `events` â†’ `timeline`, `near`/`pos` â†’ `around`,
 `goap`/`goalplan` â†’ `plan`, `dem`/`replay` â†’ `demo`.
 `see what=help` prints the vocabulary.
+
+Use `see what=receipts name=failed` for failed calls or
+`see what=receipts name=dm2:inconclusive` for unanswered statistical tests.
+A bare map name filters by map. Omit `name` for the ten newest receipts.
+If the command is missing, reconnect the installed server and check
+`lab_identity.authoritative` with `see what=project`.
 
 Tool errors are JSON `{error, hint}` with a next call. Configuration failures
 also include `kind: unconfigured`. Prompts and resources carry the same fields

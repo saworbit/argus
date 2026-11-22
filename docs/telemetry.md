@@ -76,23 +76,40 @@ Back up the receipt directory with the tapes and demos. It is machine-local
 and Git ignores it. Record durable rulings in the
 [lab claims register](lab-spine.md#claims) with a reference to the evidence.
 Search the saved records with [`argus_lab.py receipts`](lab-spine.md#receipts).
+Receipt status records how the call finished. Statistical calls are saved in
+`comparison*.json`, where a completed run may still need more tapes.
 
 ## Back up new evidence
 
 Run the incremental backup against a destination outside the checkout.
-An optional verified snapshot seeds the index on the first run.
 
 ```text
-python tools/backup_telemetry.py --destination <backup-folder> --seed <verified-snapshot>
+python tools/backup_telemetry.py --destination <backup-folder>
 ```
 
-The command backs up `runs/` including receipts and demos, selected fixture
-evidence in `backups/`, and the lab's claims and benchmarks. Each new or
-changed file lands in a dated `updates/` batch with a SHA-256 manifest.
-Files that change while being copied are retried on the next run. Earlier
-batches and seed files remain available when a live file is replaced or
-removed. To restore the latest copy of a file, start with the seed (including
-its supplement, if present), then apply the dated batches in order.
+On the first run, add `--seed <verified-snapshot>` to reuse a previous
+snapshot whose `backup-summary.json` names this checkout and has no
+unresolved differences. The runner reads that snapshot's SHA-256 manifest
+and any verified supplement. Pass `--source <checkout>` if the script is
+installed outside the checkout.
+
+The command backs up the checkout's `runs/` directory, including receipts
+and demos, selected fixture evidence in `backups/`, and the lab's claims
+and benchmarks. A separate directory configured through `ARGUS_RUNS`
+needs its own backup. Each new or changed file lands in a dated
+`updates/` batch with its path and SHA-256 in `manifest.json`.
+
+A local scheduler can repeat the same command. Save its exit status and
+output. Copy or verification errors give a non-zero exit. A file that
+changes or disappears during copying is listed as deferred and can be
+picked up by a later scan. A desktop scheduled task needs the computer and
+the app running to access local files.
+
+To restore to a separate folder, start with the seed and its verified
+supplement if present. Apply the files listed in each update manifest in
+chronological order. `runs/` maps to the run archive, `fixture-evidence/`
+to `backups/`, and `knowledge/` to the relative paths in the checkout.
+Earlier copies stay in place when the source is replaced or removed.
 
 ## Read a saved session
 

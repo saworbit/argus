@@ -395,6 +395,12 @@ harvest command runs in a **terminal**.
 5. **Watch or adjust.** `see what=status` returns an incremental cursor.
    `tune command="skill 3"` changes the live baseline for the next respawn.
 
+The lab saves MCP experiment and comparison receipts in `runs/receipts/`.
+Use `see what=receipts name=failed` to find rejected or failed attempts, or
+`see what=receipts name=dm2:inconclusive` to find comparisons whose
+statistical tests did not settle. Keep copies with the tapes using the
+[telemetry backup procedure](docs/telemetry.md#back-up-new-evidence).
+
 For a specific route, the [fixed navigation benchmark](tools/argus_mcp/README.md#fixed-navigation-benchmark)
 runs one bot and checks its starting position against the manifest before
 scoring arrival. Set `"dry_landing": true` in a jump or drop task when

@@ -53,6 +53,7 @@ says which instrument answers which question.
 | Live log without spam | `see what=status` then `since_line=<next_line>` |
 | Harvest a human session | `python tools/harvest_session.py --tag vNNN` (FIRST, before any new engine launch - launches truncate qconsole.log) |
 | Read the session's demo | `see what=demo name=<stem>` (full-rate named tracks; PVS-culled to the recorder's view) |
+| Find saved experiment receipts | `see what=receipts name=failed` or `see what=receipts name=dm2:inconclusive` |
 | Directed reach of shipped graphs | `python tools/argus_reach.py [map]` |
 | Isolate one behaviour on a generated micro-map | `lab_request request={...}` ([lab scenarios](docs/lab-scenarios.md); the result is isolation-tier until a stock map repeats it) |
 | Can this comparison be believed | `python tools/argus_lab.py skeptic <control runs> --vs <candidate runs>` (voids, confounds, each metric against its detection limit) |
