@@ -390,6 +390,185 @@ Run the verifier with `--output backups/pursuit_trial --prefix pursuit_trial`.
 Add `--played` to record the longer match pairs with bot and time markers.
 The output retains the build, source and tape identities.
 
+## Learned graph knitting and the dodge side
+
+### Bottlenecks
+
+1. Learned graphs starve on first load. On dm1 and dm5 the learned
+   graph reached its fixed 104-seat ceiling within about 40 seconds, at
+   about 170 of 600 edicts, and learned nothing more for the rest of the
+   match. Before that, links joined only consecutive seats along one
+   actor's path, and an item could end a route only when a seat already
+   sat within 72 units of it. Bots spent 70 to 90 per cent of their
+   samples wandering, against 22 per cent on the registered dm4 graph.
+   FrikBot and Reaper avoid this by linking each dropped waypoint to the
+   waypoints around it.
+   [Learned graph issue](https://github.com/saworbit/argus/issues/1093)
+2. The missile dodge steps across the shot. Both dodge loops tried the
+   side left of the shot first and kept it whenever it was clear, so a
+   bot standing right of the track stepped into the blast. The grenade
+   loop's own comment said to step away from its track. The fix is
+   proven by fixture and not yet adopted (below).
+   [Dodge issue](https://github.com/saworbit/argus/issues/1094)
+3. The lab cannot see the interpreter budget. Every bot runs inside one
+   `StartFrame` call. id's interpreter stops a call after 100000
+   statements, and QuakeSpasm allows 16777216, so a frame that would end
+   a server on the original engine passes every lab gate.
+   [Runaway limit issue](https://github.com/saworbit/argus/issues/1091)
+
+The previous pass already covers the remaining items in the brief:
+closing-range lead, gravity on airborne targets, lead clipping at walls,
+foot splash and grenade loft (`Argus_Combat`), effective-stack retreat
+and cover legs, respawn clocks for majors (`Argus_GoalOK`,
+`Argus_MajorTiming`), sound and damage bearings (`Argus_ThreatMark`),
+momentum hops on checked runways and rocket-jump links. Their
+graveyards (range fighting, pit-adjacent fear, unhurried shopping) are
+recorded beside the code and were not retried.
+
+### Pre-mortem
+
+- Edicts. A larger learned graph could crowd out projectiles, gibs and
+  backpacks. The existing guard refuses a seat once 456 edicts are
+  allocated, and the new ceiling of 224 seats matches the size of the
+  authored graphs the router already runs.
+- Frame budget. Each new loop has a fixed bound per frame: one knit
+  with at most eight neighbour tests, and at most six item seat scans.
+  Nothing measures statements per call yet, so the bounds are the
+  safeguard (#1091).
+- False links. A knitted link passes `Argus_LiveWalk` in its own
+  direction, the same test that already mints a traversed seat's reverse
+  link. Wet seats are left to traversal. A link that fails a route is
+  cooled by `Argus_LiveNavReject` as before.
+- Slot starvation. Typed evidence (drop, jump, portal, mover, door,
+  swim) comes only from traversal, so knitting stops at six of a seat's
+  eight link slots.
+- Oscillation. More links give more alternative routes. The router
+  still takes the fewest hops and plans only at goal selection, so a
+  denser graph does not change goals between frames.
+- Dodge near brinks. Both sides already pass the same hazard and
+  clearance probes; only the order changes. It is gated at skill 2 and
+  up so the skill 1 dodge that the human sessions calibrated is
+  unchanged.
+
+### What changed
+
+`Argus_LiveKnit` links each new seat to up to eight nearby seats on the
+same level, one direction at a time, when `Argus_LiveWalk` passes. The
+seat ceiling is `AL_SEAT_CAP` (224), still behind the 456-edict guard.
+`Argus_LiveItemSeat` scans at most six unseated items a frame.
+`ARGUS live graph status seats <n> links <n> items_seated <n> of <n>`
+reports the graph every ten seconds on any map running the learner.
+
+The dodge fix is on the local branch `feat/dodge-away-from-track`, not
+on this one, until a longer ladder clears it (results below).
+`Argus_DodgeAway` there chooses the first dodge side from the sign of
+the bot's lateral offset from the shot's track, at skill 2 and up and
+only beyond 4 units from the track. Both dodge loops keep their
+fallback.
+
+A third candidate was laddered and dropped: seating a nearby unseated
+item from the actor's seat. It made more items routable and lowered
+goal-to-touch conversion on five of six maps (dm1 0.57 and 0.68 to
+0.42 and 0.40), with no gain in total pickups.
+
+### Results
+
+All arms ran at skill 2, 90 seconds, at the played rate (every tape
+listen class), on `run_map_intelligence.py` private game directories,
+against `origin/main` at `e7433e3` unless noted. Two tapes per arm and
+map unless noted. Every native band card below read parity.
+
+Graphless stock maps, knit, ceiling and scan budget only. Batch 1 ran
+against the earlier base `31b4663`, batch 2 against `e7433e3`; each
+cell is control to knit.
+
+| Map | Batch | Verified pickups | Total pickups | Routes | Stalls | Kills |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| dm1 | 1 | 20.5 to 24.5 | 30.0 to 36.5 | 36.5 to 48.5 | 5.5 to 2.0 | 6 to 10 |
+| dm1 | 2 | 23.0 to 13.0 | 39.0 to 29.5 | 43 to 39 | 2.0 to 2.5 | 11 to 8.5 |
+| dm5 | 1 | 15.5 to 15.5 | 36.0 to 28.5 | 16 to 23.5 | 13 to 10.5 | 5.5 to 7.5 |
+| dm5 | 2 | 14.5 to 14.5 | 30.0 to 30.5 | 18 to 34.5 | 10 to 9.5 | 4.5 to 4 |
+| e1m3 | 1 | 13 to 18.5 | 17.0 to 20.0 | 19 to 22.5 | 2.5 to 5.5 | 4 to 2 |
+| e1m3 | 2 | 21.5 to 15.5 | 24.0 to 15.5 | 35 to 17 | 12 to 4.5 | 3 to 2 |
+| e1m4 | 1 | 4 to 3.5 | 4.0 to 3.5 | 3.5 to 5 | 3.5 to 4.5 | 0 to 0 |
+| e1m4 | 2 | 4 to 4 | 4.5 to 4.0 | 9.5 to 3.5 | 2 to 3 | 1.5 to 0.5 |
+
+The two batches disagree in direction on dm1 and e1m3, and the
+control-to-control spread between them (e1m3 13 against 21.5) is as
+large as any difference. Pooled over four tapes per arm, verified
+pickups are dm1 21.75 to 18.75, dm5 15.0 to 15.0, e1m3 17.25 to 17.0
+and e1m4 4.0 to 3.75: parity. The graph grew past the old ceiling in
+all 35 candidate tapes (107 to 212 seats at 90 seconds, against 104
+by about 40 seconds).
+
+The learned graph on dm4 and dm6, with `--cvar scratch3=641` so the
+same geometry can be judged against the authored graph:
+
+| Map and arm | Tapes | Verified pickups | Routed goals picked up | Stalls | Kills |
+| --- | ---: | ---: | --- | ---: | ---: |
+| dm4 control | 2 | 23.0 | 6/20, 6/31 | 1.5 | 10.5 |
+| dm4 knit only | 2 | 30.0 | 15/35, 14/23 | 3.0 | 6.0 |
+| dm6 control | 5 | 30.8 | 49/143 (34%) | 1.0 | 6.4 |
+| dm6 knit only | 2 | 22.5 | 21/67 (31%) | 3.0 | 5.5 |
+| dm6 knit, item seats, dodge | 5 | 26.6 | 73/194 (38%) | 4.0 | 6.4 |
+
+On dm4 the knit roughly doubled the routed errands that ended in a
+pickup. On dm6 the candidate routed a third more often and finished a
+slightly larger share of routed errands, but took fewer direct pickups
+on the way, so its total fell. The first two tapes of every dm6
+candidate arm read low (22 and 23) before three replicas returned 27,
+29 and 32 against control's 31, 28 and 29.
+
+The knit removes the ceiling that froze the learned graph and connects
+its chains, and no native card failed it. A gain in self-play pickups,
+kills or stalls is not established: it reads better on learned dm4,
+slightly worse on learned dm6 and at parity on the graphless maps, at
+two to five 90-second tapes per arm. Two limits apply to every row. In
+self-play the item supply is shared, so better routing can move a
+pickup from one bot to another without adding one. And 90 seconds is
+too short for the ceiling, which costs the control most in the minutes
+after it binds.
+
+The dodge, on the registered graphs where the learned graph never
+runs, so only the dodge differs. Means per tape, control to dodge:
+
+| Map | Tapes | Verified pickups | Stalls | Kills | World deaths | Freezes | Self-damage outside rocket jumps (HP) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| dm2 | 8 | 8.5 to 8.6 | 17.4 to 15.5 | 3.5 to 4.0 | 0.6 to 0.4 | 0.4 to 0.1 | 10.0 to 7.8 |
+| dm4 | 5 | 11.4 to 15.2 | 4.8 to 3.8 | 9.4 to 8.8 | 0.4 to 1.0 | 0 to 0 | 25.2 to 25.2 |
+| dm6 | 2 | 21.5 to 21.5 | 1.5 to 2.0 | 7.5 to 5.5 | 0 to 0 | 0 to 0 | 30.5 to 50.5 |
+
+dm2 shows why its tapes are read in fives: after five tapes the dodge
+arm's stalls ran 18.8 against 12.8, and the next three ran 8, 10 and 12
+against control's 27, 25 and 23. The screen registered before reading
+the pool still failed twice. dm4 world deaths were 5 against 2, all at
+the lava pit floor after route, abandon and cover-retreat events, and
+one dm2 tape held an 11.6-second freeze under fire at the chronic
+(2002 -1109 344) deck cell, where control froze for 6.7 seconds.
+Neither is attributed to the dodge, which is not logged as an event,
+but neither is excluded, so the change waits for a longer ladder. In
+self-play every bot gets the better dodge, so kills cannot show an
+individual gain, and the counterbalanced runner cannot isolate one
+feature from the earlier `Argus_Advanced ()` package (#1092). The
+fixture establishes the decision itself: 52 checks pass on dm2 and
+dm6, and the previous code fails both right-of-track cases.
+
+### Still open
+
+- A full graph, and water. 224 seats were not reached in 90 seconds;
+  seat recycling for long matches on large maps is unbuilt, and wet
+  seats are never knitted, so dm5 and e1m4 still spend 73 to 92 per
+  cent of their samples wandering.
+  [Recycling and water issue](https://github.com/saworbit/argus/issues/1096)
+- No brief reads the learned graph, which is why the 104-seat freeze
+  went unnoticed.
+  [Learned graph brief issue](https://github.com/saworbit/argus/issues/1095)
+- Routed errands that are replaced before pickup on tight maps such as
+  dm6, and longer matches than 90 seconds.
+- Statements per `StartFrame` call (#1091), a within-ab trial scoped to
+  one feature (#1092), and matched recordings against the classic bots
+  (#1079).
+
 ## Comparison method
 
 Controlled native fixtures exercise the production armour touch, attack
