@@ -66,7 +66,8 @@ records what the run was intended to settle.
 - `match-*.json` records each attempted match and any error. When available,
   the console tape and matching navigation receipt are copied alongside it,
   so the evidence survives reuse of a run name.
-- `compile.json` records compiler diagnostics when the compiler returns them.
+- `compile.json` records compiler diagnostics when the compiler returns them,
+  including numbered fteqcc warnings and errors.
   `comparison*.json` records input tape names and checksums, the native
   findings, verdict and any statistical calls, or the comparison error.
 - `result.json` records the outcome of the call, including failures. A
@@ -260,6 +261,7 @@ ARGUS <name> jumpveto
 ARGUS build <id>
 ARGUS rules deathmatch <n> coop <n>
 ARGUS goal_pickup v1
+ARGUS duel_metrics v1
 ARGUS clock frame_us <microseconds> tick_us <microseconds> seed <n>
 ARGUS mark <n> t <time> pos '<x y z>' yaw <deg> [seen <0|1> dist <units>] near <name|none>
 ```
@@ -274,6 +276,10 @@ documents event counting and shared Python/Rust contracts.
 | `goal <class>` | The bot selected a goal |
 | Sample `gl` | Historical goal completion count, including proximity arrivals and goals invalidated nearby |
 | `ARGEVT <bot> goal_pickup_v1 <classname>` | Accepted touch of the item this bot was pursuing as its current goal |
+| `ARGEVT <bot> major_pickup_v1 <item>` | Accepted pickup of RA, YA, Megahealth, RL, LG, Quad or Pent, including incidental pickups |
+| `ARGEVT <bot> self_damage_v1 <hp>` | Health lost to damage the bot dealt to itself, after armour absorption |
+| `ARGEVT <bot> momentum` | A momentum hop was launched |
+| `ARGEVT <bot> contest` | The bot chose to contest a nearby major item |
 | `grab <class>` | The bot committed to a combat item detour |
 | Tactical `prepare` | The manoeuvre started, not that it completed |
 | Tactical `returnshot` | A shot was acknowledged, not that it hit |
@@ -292,6 +298,13 @@ documents event counting and shared Python/Rust contracts.
 The tape header `ARGUS goal_pickup v1` declares touch coverage. The native
 brief reports `verified_goal_pickups_v1`, including zero, on these tapes.
 The A/B card keeps the historical `gl` counter under Goal Completions.
+
+`ARGUS duel_metrics v1` declares major-pickup and self-damage coverage.
+`tools/report_architecture.py` returns null for these fields on tapes
+without coverage. On assigned A/B tapes, it counts bot events after the last
+arm assignment and divides each arm's pickups by the total for that item
+across both arms. An item with no pickups has a null share.
+[Runbook](lab-workflow.md#measure-runtime-navigation-and-duel-outcomes)
 
 The startup `ARGUS rules` record supplies `identity.rules` in the brief.
 Ordinary deathmatch reports mode 1, and weapons stay reports mode 2.

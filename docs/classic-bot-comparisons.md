@@ -361,6 +361,28 @@ checks also passed. These checks establish behaviour within Argus.
 Matched recordings against Reaper, Omicron, FrikBot and Frogbot remain
 necessary to establish relative performance.
 
+### Ordinary pickups through timed switches
+
+The last switch fix in [#1084](https://github.com/saworbit/argus/pull/1084)
+allows for the turn into the switch approach and honours a confirmed touch
+at the deadline. A full-rate diagnostic took 1.534 seconds from switch
+selection to confirmed departure, beyond the previous 1.3-second budget.
+
+Nine ordinary 60-second, skill-2 dm5 matches from stock spawns on build
+`dde73b1bd8b9` recorded 10 accepted rocket launcher touches across all nine
+matches. Against nine matches on `7288ada99e93`, first post-switch stalls
+fell from one to zero and total stalls fell from 60 to 53. The median stayed
+at six and passed the native stall-parity gate. Three e1m4 matches per arm
+also passed stall parity, with medians of three and four. Weapon engagements
+on e1m4 were an advisory flag, with medians of one and zero.
+
+The lesson from the final ladder is specific to the switch approach and
+departure. The dm5 armour approach clustered more stalls in the candidate
+and remains under investigation. The final sample is an automated stock-map
+check, with human play and matched classic-bot comparisons still open.
+[Armour approach follow-up](https://github.com/saworbit/argus/issues/1083) |
+[Matched recordings](https://github.com/saworbit/argus/issues/1079)
+
 ## Two-leg pursuit evaluation
 
 `tools/verify_pursuit_two_leg.py` builds a private program with the current

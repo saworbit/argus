@@ -218,7 +218,9 @@ goals. It is retained as a diagnostic, not adopted or treated as a broader win.
 
 ## Bot adaptation verification
 
-The development candidate changes four decisions:
+This earlier candidate evaluated four decision changes. The later
+[merged adaptation series](classic-bot-comparisons.md#runtime-navigation-and-duel-decisions)
+has separate build identities, controls and stock-match results.
 
 - Preserve focus through a brief sight gap, then compare visible challengers
   with the remembered target. Track two recent sources of damage independently
@@ -252,10 +254,10 @@ used control build `cbbd30ece9ce` and returned parity on all three primary gates
 | lqdm2 | 3 | 5 | Stalls | 3 to 5 |
 
 The fresh lqdm2 improvement interval was -4.3 to +2.7 stalls. The earlier
-rejection remains open. The calibrated skill-1 dm4 stand-in estimated
-+0.92 bot kills per minute in sight, with a 95 per cent interval of -2.00 to
-+3.85. That threat direction is inconclusive. The gameplay candidate remains
-unshipped.
+rejection applied to this candidate. The calibrated skill-1 dm4 stand-in
+estimated +0.92 bot kills per minute in sight, with a 95 per cent interval of
+-2.00 to +3.85. That threat direction is inconclusive. These builds remain
+historical study arms.
 
 ## Repeating the evaluation
 

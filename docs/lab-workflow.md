@@ -577,6 +577,31 @@ before running `argus_lab.py skeptic`. Keep both arms' tapes and navigation
 receipts together under their original, unique `study_` names.
 [Comparison runbook](lab-spine.md#skeptic)
 
+### Measure runtime navigation and duel outcomes
+
+Use ordinary deathmatch spawns to verify a switch-to-weapon run. Keep the
+map, duration, skill and measured cadence matched across arms. For example,
+the cross-map runner can record a five-match batch with whole-server timing.
+
+```text
+python tools/run_map_intelligence.py --maps dm5 --seconds 60 --repeats 5 --skill 2 --host-speeds --output backups/dm5-check/first --prefix dm5check_a
+python tools/report_architecture.py runs/dm5check_a_dm5_1.log
+```
+
+Pass the named raw tapes from the run results to `report_architecture.py`
+to report all repeats. The map runner stamps the private staged source
+before compiling it, and `--host-speeds` adds logging to the private
+game's configuration. Use the same timing option across arms. The report
+shows mean, 95th percentile and maximum server-frame time when timing
+rows are present. This measures whole-server work.
+
+Use the native briefs and the accepted-touch events to distinguish a weapon
+pickup from selecting or reaching a pickup goal. Learned-link rows witness
+a sample of observed links. To verify use of a learned route, retain a
+physical traversal or pickup witness alongside the graph and link rows.
+[Event meanings](telemetry.md#log-records-and-their-meaning) |
+[Stock match results](classic-bot-comparisons.md#ordinary-pickups-through-timed-switches)
+
 ## Add or regenerate navigation
 
 Use **MCP**, with a real local BSP path in place of the example:

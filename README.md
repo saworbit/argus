@@ -283,9 +283,12 @@ the bot:
 
 ### Navigation
 
-QuakeC cannot read files. Because of this, the navigation generator makes
-the waypoint graph for each map before the match. The compiler then puts the
-graph into `progs.dat`.
+For maps with a registered graph, the navigation generator samples the BSP
+offline and the compiler puts the graph into `progs.dat`. In deathmatch on
+other maps, bots and players build a bounded graph as they move. When a bot
+runs out of chase and supply routes, it looks for a checked passage,
+including an accessible switch that opens a route to a weapon.
+[Runtime navigation](docs/architecture.md#navigation-graphs)
 
 ```mermaid
 flowchart TB
@@ -438,9 +441,10 @@ cannot settle.
 
 The supplied `game/argus/progs.dat` was built from main on 2026-11-15
 (build `004b4ff9ddf7`, MD5 `5FD814CC448AF8FBA7BFB16CD29062BC`).
-Development source includes the dm2 train recovery, the lqdm2 health
-approach fix and the dm6 rocket ledge reroute. These changes await a new
-gameplay binary. [Changelog](CHANGELOG.md#unreleased)
+Development source includes learned navigation, checked room exits, and
+timed switch approaches to weapons, in addition to the earlier train and
+ledge repairs. These changes await a new gameplay binary.
+[Changelog](CHANGELOG.md#unreleased)
 
 | Area | What the bot does | Details |
 |---|---|---|
@@ -453,7 +457,8 @@ gameplay binary. [Changelog](CHANGELOG.md#unreleased)
 | Route distance | Of the routes with the fewest links, chooses the shortest | [Map intelligence](docs/map-intelligence.md) |
 | Pinned under fire | Tries a short, checked exit and keeps its aim and fire | [Freeze recovery](docs/freeze-recovery.md) |
 | Target choice | Changes target when another visible player attacks it, or when its target is invulnerable and another opponent is not. Focus and reaction delay stay. | [Combat attention](docs/combat-attention.md) |
-| Combat adaptation | Uses nearby supplies, preserves an active lightning burst through small range changes, and investigates fresh gunfire around safe corners | [Classic bot comparisons and tests](docs/classic-bot-comparisons.md) |
+| Combat adaptation | Uses recent threat bearings, own ammo and stack to choose weapons and contest nearby major items. Maintains an active lightning burst through small range changes. | [Decision and match results](docs/classic-bot-comparisons.md#runtime-navigation-and-duel-decisions) |
+| Exploration and weapons | Tries checked exits when routes run out, follows timed switch openings and completes learned pickup goals on touch | [Stock match results](docs/classic-bot-comparisons.md#ordinary-pickups-through-timed-switches) |
 | Route actions | Keeps swim and jump plans, chooses actions it can do, and plans again when it does not get closer to the next waypoint | [e1m5 encounters](docs/e1m5-encounters.md) |
 | Moving platforms | Stays on a moving platform until it docks, and examines the landing arc before it jumps off | [e1m6 decisions](docs/e1m6-decisions.md) |
 | Body separation | Ignores players on other floors, and does not move to a spot where the player hull cannot fit | [Height](docs/body-height-investigation.md), [same floor](docs/body-nudge-investigation.md) |

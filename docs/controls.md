@@ -158,6 +158,9 @@ and impulses for isolated lab tests.
 
 - `developer 1` enables diagnostics. `scratch1 1` enables goal-decision traces;
   set `scratch1 0` to silence them.
+- Set `developer 1` and `scratch3 641` before loading a map to bypass its
+  compiled graph and exercise runtime learning in deathmatch. Set
+  `scratch3 0` before the next map load to restore normal graph selection.
 - With `developer 1` and server-console `scratch1 374`, impulse `215` assigns
   A/B arms from `scratch4`. A successful snapshot consumes the key.
 - With `developer 1` and server-console `scratch1 216`, impulse `216` teleports
