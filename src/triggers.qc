@@ -485,6 +485,17 @@ void() teleport_touch =
 		other.velocity = v_forward * 300;
 		if (argus_live_nav) Argus_LiveNavWarp (other, self, entry);
 		Argus_ConfirmTeleTiming (self, t);
+        if (mapname == "dm4" && deathmatch && !coop && !argus_live_nav && other.ar_isbot
+            && other.ar_taskgoal == world)
+        {
+            if (vlen (t.origin - '376 -240 -269') < 4)
+                Argus_Dm4WarpBegin (other);
+            else if (other.ar_dm4warp_until)
+            {
+                Argus_Nav_Abort (other);
+                Argus_Dm4WarpClear (other);
+            }
+        }
 	}
 
 	other.flags = other.flags - other.flags & FL_ONGROUND;
