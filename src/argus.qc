@@ -106,6 +106,7 @@ float argus_nextnames;          // next periodic scoreboard rebroadcast
 // Route_Finish has to compare the finished flood's errand against the
 // bot's current one
 .entity ar_actionnode, ar_actiongoal;
+void(entity bot) Argus_Dm4WarpClear;
 .float ar_actionbest, ar_actiontime;
 .float  ar_goalstart;
 .entity ar_taskgoal;            // developer-only fixed-task marker (#384)
@@ -250,6 +251,8 @@ float ar_opm_ears;              // OPM slice B ladder switch: hearing
 .float  ar_track;               // when tracking of this target began
 .float  ar_strafedir;
 .float  ar_strafetime;
+.float  ar_dm4_walkway_dir;
+.float  ar_dm4_walkway_until;
 .float  ar_combathaztime;       // hold combat_hazard strafe across 1-frame lip flicker
 .float  ar_combathazvalid;      // previous escape heading passed the hazard check
 .float  ar_combathazyaw;
@@ -3914,6 +3917,7 @@ void() Argus_Die =
     }
 
     Argus_TacticReset ();
+    Argus_Dm4WarpClear (self);
     self.ar_enemy = world;
     self.ar_goal = world;
     self.ar_node = world;
@@ -4440,6 +4444,9 @@ void() Argus_Respawn =
 
     Argus_TacticReset ();
     self.ar_tactic_cool = 0;
+    self.ar_dm4_walkway_dir = 0;
+    self.ar_dm4_walkway_until = 0;
+    Argus_Dm4WarpClear (self);
     self.ar_tactic_settle = 0;
     Argus_Nav_Abort (self);
 
@@ -6349,10 +6356,49 @@ entity(vector sighting) Argus_PursuitHop =
     return best;
 };
 
+// Private dm4 trial on the n26 to n65 pit walkway. Continue to a dry
+// mouth before ordinary combat steering resumes. The physics guard retains
+// final control; a blocked heading or emergency still yields.
+float() Argus_Dm4WalkwayYaw =
+{
+    local float yaw;
+    local vector exit;
+    if (mapname != "dm4") return 999;
+    if (self.origin_x < -48 || self.origin_x > 359
+        || self.origin_y < -286 || self.origin_y > -195
+        || fabs (self.origin_z + 296) > 8)
+    {
+        self.ar_dm4_walkway_dir = 0;
+        return 999;
+    }
+    if (!(self.flags & FL_ONGROUND) || self.ar_retreating
+        || time < self.ar_dodgetime
+        || self.ar_hopjump || self.ar_hoprj || self.ar_hoplift
+        || self.ar_hoptrain || self.ar_hopdoor || self.ar_hopswim)
+        return 999;
+    if (!self.ar_dm4_walkway_dir)
+    {
+        if (fabs (self.velocity_x) >= 45)
+        {
+            if (self.velocity_x > 0) self.ar_dm4_walkway_dir = 1;
+            else self.ar_dm4_walkway_dir = -1;
+        }
+        else if (self.origin_x < 160) self.ar_dm4_walkway_dir = -1;
+        else self.ar_dm4_walkway_dir = 1;
+        self.ar_dm4_walkway_until = time + 2.25;
+    }
+    if (time >= self.ar_dm4_walkway_until) return 999;
+    if (self.ar_dm4_walkway_dir > 0) exit = '379 -241 -296';
+    else exit = '-67 -241 -296';
+    yaw = vectoyaw (exit - self.origin);
+    if (Argus_MoveHazard (yaw, 48)) return 999;
+    return yaw;
+};
+
 // returns TRUE while combat is steering the bot
 float() Argus_Combat =
 {
-    local float hazard_side;
+    local float hazard_side, walkway_yaw;
     local string movecause;
     local entity e, cnode, ctarget, chop;
     local vector to, aimpt, err, cvr, shd, shp, motstep, moterr;
@@ -7357,7 +7403,10 @@ float() Argus_Combat =
     // that continues our travel. If none is open, recheck the held
     // strafe side before flipping. Back off if both sides are blocked.
     // The physics guard still checks the resulting velocity.
-    if ((time < self.ar_combathaztime && time >= self.ar_dodgetime)
+    walkway_yaw = Argus_Dm4WalkwayYaw ();
+    if (walkway_yaw != 999)
+        self.ar_moveyaw = Argus_MotionTurn (self.ar_moveyaw, walkway_yaw, "walkway_exit");
+    else if ((time < self.ar_combathaztime && time >= self.ar_dodgetime)
         || Argus_MoveHazard (self.ar_moveyaw, 48))
     {
         if (!self.ar_strafedir)
@@ -7677,6 +7726,57 @@ void(entity item) Argus_ReleaseClaim =
     ReleaseClaim (item);
 };
 
+// Release only the pickup mutex. Shelves and shared avoid spots survive.
+void(entity bot, entity item) Argus_Dm4WarpRelease =
+{
+    if (item != world && item.claimed_by == bot)
+    {
+        item.claimed_by = world;
+        item.claim_time = 0;
+    }
+};
+
+void(entity bot) Argus_Dm4WarpClear =
+{
+    if (!bot.ar_dm4warp_until) return;
+    if (bot.ar_dm4warp_goal != bot.ar_goal)
+        Argus_Dm4WarpRelease (bot, bot.ar_dm4warp_goal);
+    bot.ar_dm4warp_goal = world;
+    bot.ar_dm4warp_until = 0;
+};
+
+void(entity bot, string result) Argus_Dm4WarpLog =
+{
+    if (!argus_motion_diag) return;
+    dprint ("D4WARP "); dprint (result); dprint (" "); dprint (bot.netname);
+    dprint (" ms "); dprint (ftos (time * 1000));
+    dprint (" pos "); dprint (vtos (bot.origin));
+    dprint (" old "); dprint (bot.ar_dm4warp_goal.classname);
+    dprint (" goal "); dprint (bot.ar_goal.classname);
+    dprint (" seat "); dprint (vtos (bot.ar_node.origin)); dprint ("\n");
+};
+
+void(entity bot) Argus_Dm4WarpShopped =
+{
+    // Route_Finish checks the parent chain against the live marks again.
+    // If a mark changed since the flood, retry from the grounded position.
+    if (bot.ar_pending && bot.ar_goal != world)
+    {
+        if (bot.ar_goal != bot.ar_dm4warp_goal)
+            Argus_Dm4WarpRelease (bot, bot.ar_goal);
+        bot.ar_goal = world;
+        bot.ar_pending = 0;
+        return;
+    }
+    if (bot.ar_goal == world)
+        Argus_Dm4WarpLog (bot, "empty");
+    else if (bot.ar_goal == bot.ar_dm4warp_goal)
+        Argus_Dm4WarpLog (bot, "keep");
+    else
+        Argus_Dm4WarpLog (bot, "local");
+    Argus_Dm4WarpClear (bot);
+};
+
 // ---- utility and GOAP goal layer ----
 //
 // Goal selection is two stacked ideas. UTILITY: every live item gets a
@@ -7988,6 +8088,28 @@ void() Argus_PickGoal =
     local float dist, neard, lifedist, shelf, cls, v, sc, ws, u, bu, final;
     local float breg, lifefight, arrival;
 
+    if (self.ar_dm4warp_until)
+    {
+        if (!an_shopready) return;
+        e = self.ar_dm4warp_goal;
+        if (Argus_GoalOK (e))
+        {
+            gp = Argus_GoalPoint (e);
+            if (e.ar_gnodeset) rnode = e.ar_goalnode;
+            else rnode = Argus_NearestNode (gp);
+            if (rnode != world && rnode.an_mark == an_gen
+                && !Argus_AvoidLine (rnode.origin, gp, TRUE) && TryClaim (e))
+            {
+                self.ar_goal = e;
+                self.ar_goalstart = time;
+                self.ar_pending = 1;
+                an_goalnode = rnode;
+                return;
+            }
+        }
+        Argus_Dm4WarpRelease (self, e);
+    }
+
     bw = world;  ba = world;  bh = world;
     br = world;  bp = world;  bo = world;
     sw = 0;  sa = 0;  sh = 0;  sr = 0;  sp = 0;  so = 0;
@@ -8135,6 +8257,12 @@ void() Argus_PickGoal =
                 dist = rnode.an_dist
                        + vlen (self.origin - startnode.origin)
                        + vlen (gp - rnode.origin);
+                if (self.ar_dm4warp_until && (dist > 640 || e.solid != SOLID_TRIGGER
+                    || Argus_AvoidLine (rnode.origin, gp, TRUE)))
+                {
+                    e = e.ar_nextitem;
+                    continue;
+                }
                 if (dist < neard && e.solid == SOLID_TRIGGER
                     && !(lifefight && e == self.ar_lastlifegoal))
                 {
@@ -10438,6 +10566,60 @@ float() Argus_InvestigateNoise =
     return TRUE;
 };
 
+// East dm4 exit: the old route belongs to the far side of the portal.
+void(entity bot) Argus_Dm4WarpBegin =
+{
+    if (!bot.ar_dm4warp_until)
+        bot.ar_dm4warp_goal = bot.ar_goal;
+    bot.ar_dm4warp_until = time + 1.6;
+    Argus_Nav_Abort (bot);
+    bot.ar_goal = world;
+    bot.ar_routegen = bot.ar_routegen + 1;
+    bot.ar_routefail = 0;
+    bot.ar_pending = 0;
+    bot.ar_mode = 0;
+    bot.ar_node = world;
+    bot.ar_routegoal = world;
+    bot.ar_hopjump = 0; bot.ar_hopspeed = 0; bot.ar_hoprj = 0;
+    bot.ar_hoplift = 0; bot.ar_hopswim = 0; bot.ar_hoptrain = 0;
+    bot.ar_hopdoor = 0; bot.ar_hopair = 0; bot.ar_sprintstate = 0;
+    bot.ar_door = world; bot.ar_doorbtn = world; bot.ar_jump = 0;
+    bot.ar_actionnode = world; bot.ar_actiongoal = world;
+    bot.ar_lastpos = bot.origin;
+    bot.ar_nextstall = time + 1.6;
+    bot.ar_nextai = bot.teleport_time;
+    bot.ar_moveyaw = vectoyaw (bot.velocity);
+    Argus_Dm4WarpLog (bot, "begin");
+};
+
+void() Argus_Dm4WarpPoll =
+{
+    local entity seat;
+    local vector to;
+    if (self.ar_shopping) return;
+    if (time >= self.ar_dm4warp_until)
+    {
+        Argus_Dm4WarpLog (self, "timeout");
+        Argus_Dm4WarpClear (self);
+        return;
+    }
+    if (time < self.ar_nextai || an_busy) return;
+    self.ar_nextai = time + .12;
+    // Use the full exit coast, then a dry stance with actual floor support.
+    // Quake can leave FL_ONGROUND clear just after an otherwise dry settle.
+    if (pointcontents (self.origin - '0 0 23') != CONTENT_EMPTY
+        || !checkbottom (self)) return;
+    seat = Argus_NearestNode (self.origin);
+    if (seat == world) return;
+    to = seat.origin - self.origin;
+    if (vlen (to) > 128 || fabs (to_z) > 24
+        || Argus_AvoidLine (self.origin, seat.origin, TRUE)) return;
+    traceline (self.origin + '0 0 22', seat.origin + '0 0 22', TRUE, self);
+    if (trace_fraction != 1 || !Argus_WalkLineFloored (self.origin, seat.origin)) return;
+    if (!Argus_Shop_Start (self, seat)) return;
+    Argus_Dm4WarpLog (self, "search");
+};
+
 void() Argus_AI =
 {
     local vector gp, tp, to, sdir;
@@ -10499,8 +10681,11 @@ void() Argus_AI =
     // for up to 200 ms after expiry
     Argus_CheckPowerups ();
 
+    if (self.ar_dm4warp_until)
+        Argus_Dm4WarpPoll ();
+
     // ---- periodic goal maintenance ----
-    if (time > self.ar_nextai)
+    if (!self.ar_dm4warp_until && time > self.ar_nextai)
     {
         self.ar_nextai = time + 0.2;
 
@@ -10752,6 +10937,16 @@ void() Argus_AI =
     if (self.ar_tactic)
     {
         Argus_PlanObserve (TRUE, world);
+        if (time > self.ar_nextlog)
+        {
+            self.ar_nextlog = time + 0.5;
+            Argus_Telemetry ();
+        }
+        return;
+    }
+
+    if (self.ar_dm4warp_until)
+    {
         if (time > self.ar_nextlog)
         {
             self.ar_nextlog = time + 0.5;
