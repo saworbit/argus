@@ -328,17 +328,21 @@ float() Argus_ExploreExit =
         if (remaining > 30 && self.al_exit_level && !wet && (self.flags & FL_ONGROUND)
             && fabs (to_z) <= 36 && to_x * to_x + to_y * to_y <= 16 * 16)
             remaining = 0;
-        if (remaining < 380 && time < self.ar_exploreuntil)
+        if (remaining < 380)
         {
             if (self.al_exit_button != world)
             {
+                // A touch at the deadline still completes the approach.
                 Argus_ExplorePress (self.al_exit_button);
-                if (self.al_exit_button.state == STATE_BOTTOM) return TRUE;
-                self.al_exit_prize_until = time + 7;
-                switch_depart = self.al_exit_button.enemy == self;
-                if (switch_depart) self.al_exit_scan = 0;
+                if (self.al_exit_button.state != STATE_BOTTOM)
+                {
+                    self.al_exit_prize_until = time + 7;
+                    switch_depart = self.al_exit_button.enemy == self;
+                    if (switch_depart) self.al_exit_scan = 0;
+                }
+                else if (time < self.ar_exploreuntil) return TRUE;
             }
-            else if (remaining > 30) return TRUE;
+            else if (remaining > 30 && time < self.ar_exploreuntil) return TRUE;
         }
         self.al_exit_button = world;
         self.al_exit_oldest = self.al_exit_older;
@@ -375,7 +379,11 @@ float() Argus_ExploreExit =
             self.al_exit_from = self.origin;
             self.ar_exploregoal = point;
             self.al_exit_level = FALSE;
-            self.ar_exploreuntil = time + 1.3;
+            // Keep the same contact window after the initial turn.
+            yaw = vectoyaw (point - self.origin) - self.ar_moveyaw;
+            while (yaw > 180) yaw = yaw - 360;
+            while (yaw < -180) yaw = yaw + 360;
+            self.ar_exploreuntil = time + 1.3 + fabs (yaw) / AR_TURNRATE;
             self.al_exit_button_after = time + 5;
             dprint ("ARGUS explore switch "); dprint (self.netname); dprint ("\n");
             return TRUE;
