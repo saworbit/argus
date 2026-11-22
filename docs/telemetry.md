@@ -306,6 +306,17 @@ arm assignment and divides each arm's pickups by the total for that item
 across both arms. An item with no pickups has a null share.
 [Runbook](lab-workflow.md#measure-runtime-navigation-and-duel-outcomes)
 
+On stock dm4, `scratch1 697` also enables `D4WARP` markers for east-exit
+recovery. `begin` records the landing and the previous goal, and `search`
+records the start of the route search from a supported waypoint. `keep`
+retains the previous goal, `local` selects a replacement, `empty` records a
+completed search with no goal, and `timeout` records an expired handoff.
+Use the bot's name and the millisecond timestamps to compare a landing
+with that bot's subsequent `routefail` events. For a replacement pickup,
+look for that bot's `goal_pickup_v1` event while the selected item is still
+its goal. In full-rate movement records, `walkway_exit` labels the
+combat steering towards wider ground. [dm4 recovery and verification](map-intelligence.md#replan-after-the-east-teleporter-on-dm4)
+
 The startup `ARGUS rules` record supplies `identity.rules` in the brief.
 Ordinary deathmatch reports mode 1, and weapons stay reports mode 2.
 Comparisons require a rules receipt for nonstandard modes and refuse

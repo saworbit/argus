@@ -442,6 +442,23 @@ branch turns by 120 to 240 degrees when a brink refuses its heading. Of its 41
 reversals, 20 are in the pit floor pocket around `0 500 -296` and the rest are
 spread across the map.
 
+### dm4 walkway contact
+
+During combat on the narrow lower walkway, a grounded bot follows its
+direction of travel towards wider ground. If it has little east-west
+speed, it chooses an end based on its position. The steering hold is bounded
+and yields when a hazard blocks the heading, during dodges or retreats,
+and on special navigation links.
+
+Eight 185-second stock dm4 matches per build at skill 1 tested this
+steering with the east-teleporter replan. Route failures within 1.8
+seconds of landing fell from 6 in 86 arrivals to 0 in 92. Stalls fell
+from 89 to 43 and lava deaths from 22 to 18. The pooled walkway hard
+reversal rate was roughly 27.6 to 27.4 per bot-minute on the walkway.
+These are botmatch results. Contact steering remains open for further
+verification. [Merged change and A/B results](https://github.com/saworbit/argus/pull/1088),
+[Contact steering follow-up](https://github.com/saworbit/argus/issues/1089)
+
 ### Refused: answering a pinched strafe differently
 
 Both attempts fire when the side a hazard flip just chose is refused inside

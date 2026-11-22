@@ -215,7 +215,7 @@ per-slot difficulty, chat commands and developer controls.
 
 | Map | Name | Navigation highlights |
 |---|---|---|
-| `dm4` | The Bad Place | Lava walkways, rocket-jump Quad route, teleporters |
+| `dm4` | The Bad Place | Lava walkways, rocket-jump Quad route, [east-teleporter recovery](docs/map-intelligence.md#replan-after-the-east-teleporter-on-dm4) |
 | `dm2` | Claustrophobopolis | Doors, lifts and moving-platform bridge |
 | `dm3` | The Abandoned Base | Water routes, stairs and connected platform islands |
 | `dm6` | The Dark Zone | Teleport loops and sprint-jump links |
