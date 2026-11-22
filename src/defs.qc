@@ -815,6 +815,7 @@ float GOAL_RETREAT        = 7;
 // because argus_nav.qc compiles before it and Route_Finish must know
 // whether the errand changed while its flood was in flight.
 .entity ar_goal;
+.entity ar_goal_pickup;        // accepted touch awaiting the bot's next think
 .entity ar_lastlifegoal;        // routed item this bot died walking toward
 .float  ar_lastlifeuntil;       // short next-life refusal window
 .float  ar_lastlifevetoed;      // marker is emitted once per failed life

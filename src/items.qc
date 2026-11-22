@@ -51,6 +51,7 @@ void() Argus_LogGoalPickup =
 		return;
 	dprint ("ARGEVT "); dprint (other.netname);
 	dprint (" goal_pickup_v1 "); dprint (self.classname); dprint ("\n");
+	other.ar_goal_pickup = self;
 };
 
 void() SUB_regen =
