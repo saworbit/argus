@@ -42,6 +42,15 @@ void() Argus_ExploreReset =
     self.al_exit_prize_until = 0;
 };
 
+// Pressing the switch and running to the prize share a short window.
+// An optional pause can use up the time the door stays open.
+float() Argus_ExploreSwitchRun =
+{
+    return (time < self.al_exit_prize_until
+        || (self.al_exit_button != world && time < self.ar_exploreuntil))
+        && self.al_exit_prize != world && self.al_exit_prize.solid == SOLID_TRIGGER;
+};
+
 // Use the same weapon value as shopping. A supply behind a wall can bias
 // which exit to try, but every candidate still needs a traversable lane.
 entity() Argus_ExploreSupply =
